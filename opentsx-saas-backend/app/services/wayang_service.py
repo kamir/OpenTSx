@@ -2,6 +2,7 @@ import hashlib
 import json
 import math
 import re
+import uuid
 from datetime import timedelta
 
 import httpx
@@ -10,7 +11,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.core.config import settings
 from app.models.flow import Flow
-from app.models.wayang import WayangContinuous, WayangCycle, WayangDeployment, WayangTopicOwner, utc_now
+from app.models.wayang import WayangContinuous, WayangCycle, WayangDeployment, WayangPublication, WayangSwitch, WayangTopicOwner, utc_now
 
 
 class WayangError(Exception):
@@ -74,8 +75,9 @@ async def driver(path, body=None):
     try:
         async with http_client() as client:
             url = settings.WAYANG_URL.rstrip("/") + path
-            response = await client.get(url) if body is None else await client.post(
-                url, content=body.encode("utf-8"), headers={"Content-Type": "application/json"})
+            headers = {"X-OpenTSx-Run-Token": settings.DAG_RUN_TOKEN} if settings.DAG_RUN_TOKEN else {}
+            response = await client.get(url, headers=headers) if body is None else await client.post(
+                url, content=body.encode("utf-8"), headers={**headers, "Content-Type": "application/json"})
     except httpx.HTTPError as error:
         raise WayangError(502, "The Wayang service could not be reached; execution may need reconciliation.") from error
     if len(response.content) > 1_048_576:
@@ -92,6 +94,17 @@ async def driver(path, body=None):
     if not isinstance(value, dict):
         raise WayangError(502, "The Wayang service returned an invalid object.")
     return text, value
+
+
+async def publication_fencing():
+    if not settings.DAG_RUN_TOKEN:
+        return False
+    _, capabilities = await driver("/v1/capabilities")
+    enabled = capabilities.get("publicationFencing", False)
+    modes = capabilities.get("switchModes", [])
+    if type(enabled) is not bool or modes != (["resume", "restart"] if enabled else []):
+        raise WayangError(502, "The Wayang service returned incompatible publication fencing capabilities.")
+    return enabled
 
 
 def plan_assignments(plan):
@@ -191,7 +204,25 @@ def validate_plan(plan, deployment, dag_text, created_at, profile="bounded", pre
     return assignments
 
 
-def public_deployment(row):
+def validate_replacement(old, new):
+    previous = {item["inputTopic"]: item for item in plan_assignments(old)}
+    replacement = {item["inputTopic"]: item for item in plan_assignments(new)}
+    if set(previous) != set(replacement):
+        raise WayangError(409, "A replacement must retain the complete input-topic set.")
+    for topic, item in replacement.items():
+        if any(item[key] != previous[topic][key] for key in ("node", "partitionCount")):
+            raise WayangError(409, "A replacement must retain whole-topic placement and partition inventory.")
+    before = {item["outputTopic"] for item in previous.values()}
+    after = {item["outputTopic"] for item in replacement.values()}
+    if len(before) != 1 or len(after) != 1 or before == after:
+        raise WayangError(409, "A changed DAG requires a distinct fresh output topic.")
+    endpoints = {item["inputTopic"]: item["endpoint"] for item in old["assignments"]}
+    if any(item["endpoint"] != endpoints[item["inputTopic"]] for item in new["assignments"]):
+        raise WayangError(409, "A replacement cannot change its worker endpoints.")
+    return next(iter(after))
+
+
+def public_deployment(row, operation=None):
     assignments = plan_assignments(strict_json(row.plan_text))
     statuses = row.result.get("assignments", []) if row.result else []
     by_node = {item.get("node"): item for item in statuses if isinstance(item, dict)}
@@ -210,6 +241,16 @@ def public_deployment(row):
             total = control.totals["assignments"].get(item["node"], {})
             item.update(cumulativeInputRecords=total.get("inputRecords", "0"),
                         cumulativeOutputRecords=total.get("outputRecords", "0"), positions=total.get("positions", []))
+    publication = row.publication
+    if publication is not None:
+        result["publicationEpoch"] = str(publication.epoch)
+        result["publicationRetired"] = publication.retired
+        current = operation if operation is not None else publication.operation
+        if current is not None:
+            result["switch"] = {"operation": current.id, "mode": current.mode, "state": current.state,
+                                "expectedEpoch": str(current.expected_epoch), "deployment": current.replacement_id or row.id,
+                                "publicationEpoch": str(current.publication_epoch) if current.publication_epoch is not None else None,
+                                "error": current.error}
     return result
 
 
@@ -235,9 +276,10 @@ class Journal:
                                     .order_by(WayangDeployment.created_at.desc()).limit(100)
                                     .execution_options(populate_existing=True))).scalars().all()
 
-    async def accept(self, row, assignments, profile="bounded"):
+    async def accept(self, row, assignments, profile="bounded", fenced=False):
         topics = {topic for item in assignments for topic in (item["inputTopic"], item["outputTopic"])}
         row.continuous = WayangContinuous(deployment_id=row.id) if profile == "continuous" else None
+        row.publication = WayangPublication(deployment_id=row.id, operation=None) if fenced else None
         self.db.add(row)
         try:
             await self.db.flush()
@@ -259,7 +301,7 @@ class Journal:
     async def next(self):
         return (await self.db.execute(select(WayangDeployment).outerjoin(
             WayangContinuous, WayangContinuous.deployment_id == WayangDeployment.id).where(or_(
-                WayangDeployment.state.in_(["queued", "running", "stopping"]),
+                WayangDeployment.state.in_(["queued", "running", "stopping", "switching"]),
                 and_(WayangDeployment.state == "idle", WayangContinuous.next_poll_at <= utc_now())))
             .order_by(WayangDeployment.updated_at, WayangDeployment.id).limit(1)
             .execution_options(populate_existing=True))).scalar_one_or_none()
@@ -274,10 +316,78 @@ class Journal:
             WayangCycle.deployment_id == row.id, WayangCycle.number == row.continuous.current_cycle)
             .execution_options(populate_existing=True))).scalar_one()
 
+    async def publication(self, row):
+        if row.publication is None:
+            return None
+        return (await self.db.execute(select(WayangPublication).where(
+            WayangPublication.deployment_id == row.id).with_for_update(of=WayangPublication)
+            .execution_options(populate_existing=True))).scalar_one()
+
+    async def switch(self, row, expected_epoch):
+        return (await self.db.execute(select(WayangSwitch).where(
+            WayangSwitch.deployment_id == row.id, WayangSwitch.expected_epoch == expected_epoch)
+            .execution_options(populate_existing=True))).scalar_one_or_none()
+
+    async def replacement(self, operation):
+        if operation.replacement_id is None:
+            return None
+        return (await self.db.execute(select(WayangDeployment).where(
+            WayangDeployment.id == operation.replacement_id).execution_options(populate_existing=True))).scalar_one()
+
+    async def output_available(self, topic):
+        return (await self.db.execute(select(WayangTopicOwner).where(WayangTopicOwner.topic == topic))).scalar_one_or_none() is None
+
+    async def replace(self, row, expected_epoch, mode, body_hash, replacement=None):
+        control = await self.control(row) if row.continuous is not None else None
+        publication = await self.publication(row)
+        existing = await self.switch(row, expected_epoch)
+        if existing is not None:
+            if existing.body_hash != body_hash:
+                raise WayangError(409, "This publication epoch already has another replacement request.")
+            return existing
+        if (publication is None or publication.retired or publication.epoch != expected_epoch
+                or control is None or control.stop_requested or control.completed_cycles < 1
+                or row.state not in ("idle", "queued", "running")):
+            raise WayangError(409, "Replacement requires an active fenced deployment and its current publication epoch.")
+        if publication.operation is not None and publication.operation.state == "pending":
+            raise WayangError(409, "A deployment replacement is already pending.")
+        deployment_id, owner_id = row.id, row.owner_id
+        operation = WayangSwitch(id="switch-" + str(uuid.uuid4()), deployment_id=row.id,
+                                expected_epoch=expected_epoch, mode=mode, body_hash=body_hash,
+                                replacement_id=replacement.id if replacement is not None else None, state="pending")
+        try:
+            if replacement is not None:
+                replacement.continuous = WayangContinuous(deployment_id=replacement.id)
+                replacement.publication = WayangPublication(deployment_id=replacement.id, epoch=0, operation=None)
+                self.db.add(replacement)
+                await self.db.flush()
+                replacement.publication.operation = operation
+                self.db.add(WayangCycle(deployment_id=replacement.id, number=1, plan_hash=replacement.plan_hash,
+                                        plan_text=replacement.plan_text, state="queued"))
+                output = plan_assignments(strict_json(replacement.plan_text))[0]["outputTopic"]
+                self.db.add(WayangTopicOwner(topic=output, deployment_id=replacement.id))
+            publication.operation = operation
+            row.state, row.error = "switching", None
+            self.db.add(operation)
+            await self.save(row)
+        except IntegrityError as error:
+            await self.db.rollback()
+            reloaded = await self.get(owner_id, deployment_id)
+            existing = await self.switch(reloaded, expected_epoch) if reloaded is not None else None
+            if existing is not None and existing.body_hash == body_hash:
+                return existing
+            raise WayangError(409, "The replacement conflicts with another source identity or pending switch.") from error
+        return operation
+
     async def stop(self, row):
         if row.continuous is None:
             raise WayangError(409, "Only continuous Wayang deployments support this stop operation.")
         control = await self.control(row)
+        publication = await self.publication(row)
+        if row.state == "replaced":
+            raise WayangError(409, "This deployment has been replaced.")
+        if publication is not None and publication.operation is not None and publication.operation.state == "pending":
+            raise WayangError(409, "A deployment replacement is still pending.")
         control.stop_requested = True
         if row.state != "stopped":
             row.state = "stopping"
@@ -337,7 +447,81 @@ def accumulate(control, plan, result):
     return totals
 
 
+def pending_switch(publication):
+    return publication is not None and publication.operation is not None and publication.operation.state == "pending"
+
+
+def publication_reply(value, operation, deployment, state, previous):
+    if (set(value) != {"operation", "publicationEpoch", "state", "deployment"}
+            or value["operation"] != operation or value["deployment"] != deployment or value["state"] != state):
+        raise WayangError(502, "The Wayang publication transition response is invalid.")
+    epoch = decimal(value["publicationEpoch"], 1)
+    if epoch <= previous:
+        raise WayangError(502, "The Wayang publication epoch did not advance.")
+    return epoch
+
+
+async def reconcile_switch(journal, row, cycle, publication):
+    operation = publication.operation
+    replacement = await journal.replacement(operation)
+    body = {"operation": operation.id, "mode": operation.mode, "expectedEpoch": str(operation.expected_epoch),
+            "plan": strict_json(cycle.plan_text), "result": cycle.result,
+            "replacement": strict_json(replacement.plan_text) if replacement is not None else None}
+    await journal.save(row)
+    _, value = await driver("/v1/switch", json.dumps(body))
+    epoch = publication_reply(value, operation.id, replacement.id if replacement is not None else row.id,
+                              "active", operation.expected_epoch)
+    control = await journal.control(row)
+    publication = await journal.publication(row)
+    if publication.epoch != operation.expected_epoch or publication.retired:
+        raise WayangError(502, "The durable publication authority changed during replacement.")
+    if replacement is None:
+        publication.epoch = epoch
+        row.state, row.error = "idle", None
+        control.next_poll_at = utc_now() + timedelta(seconds=2)
+    else:
+        old_assignments = plan_assignments(strict_json(row.plan_text))
+        new_assignments = plan_assignments(strict_json(replacement.plan_text))
+        topics = {item["inputTopic"] for item in old_assignments}
+        owners = (await journal.db.execute(select(WayangTopicOwner).where(
+            WayangTopicOwner.topic.in_(sorted(topics))).with_for_update())).scalars().all()
+        if len(owners) != len(topics) or any(owner.deployment_id != row.id for owner in owners):
+            raise WayangError(502, "The replacement lost its complete input-topic ownership.")
+        output = new_assignments[0]["outputTopic"]
+        reserved = (await journal.db.execute(select(WayangTopicOwner).where(
+            WayangTopicOwner.topic == output).with_for_update())).scalar_one_or_none()
+        if reserved is None or reserved.deployment_id != replacement.id:
+            raise WayangError(502, "The replacement lost its reserved output topic.")
+        for owner in owners:
+            owner.deployment_id = replacement.id
+        await journal.db.execute(delete(WayangTopicOwner).where(
+            WayangTopicOwner.deployment_id == row.id, WayangTopicOwner.topic.not_in(sorted(topics))))
+        publication.retired = True
+        replacement.publication.epoch = epoch
+        replacement.state, replacement.error = "queued", None
+        row.state, row.error = "replaced", None
+    operation.state, operation.publication_epoch, operation.error = "active", epoch, None
+    operation.updated_at = utc_now()
+    await journal.save(row)
+
+
+async def retire_publication(journal, row):
+    publication = await journal.publication(row)
+    if pending_switch(publication):
+        raise WayangError(409, "A deployment replacement is still pending.")
+    if publication is not None and not publication.retired:
+        if publication.retire_operation is None:
+            publication.retire_operation = "retire-" + str(uuid.uuid4())
+        body = {"operation": publication.retire_operation, "deployment": row.id, "expectedEpoch": str(publication.epoch)}
+        await journal.save(row)
+        _, value = await driver("/v1/retire", json.dumps(body))
+        epoch = publication_reply(value, publication.retire_operation, row.id, "retired", publication.epoch)
+        publication = await journal.publication(row)
+        publication.epoch, publication.retired = epoch, True
+
+
 async def finish_stop(journal, row, cycle):
+    await retire_publication(journal, row)
     if cycle.state == "queued":
         cycle.state = "cancelled"
     row.state = "stopped"
@@ -345,9 +529,25 @@ async def finish_stop(journal, row, cycle):
     await journal.save(row, terminal=True)
 
 
+async def execute_publication(journal, row, result):
+    publication = await journal.publication(row)
+    if publication is not None:
+        epoch = decimal(result.get("publicationEpoch"), 1)
+        if publication.epoch not in (0, epoch) or publication.retired:
+            raise WayangError(502, "The Wayang completion has another publication epoch.")
+        publication.epoch = epoch
+    elif "publicationEpoch" in result:
+        raise WayangError(502, "Fenced execution requires persisted publication authority.")
+    return publication
+
+
 async def reconcile_continuous(journal, row):
     cycle = await journal.cycle(row)
     control = await journal.control(row)
+    publication = await journal.publication(row)
+    if pending_switch(publication) and cycle.state == "completed":
+        await reconcile_switch(journal, row, cycle, publication)
+        return
     if control.stop_requested and cycle.state != "running":
         await finish_stop(journal, row, cycle)
         return
@@ -355,6 +555,11 @@ async def reconcile_continuous(journal, row):
         await journal.save(row)
         _, next_value = await driver("/v1/next", json.dumps({"plan": strict_json(cycle.plan_text), "result": cycle.result}))
         control = await journal.control(row)
+        publication = await journal.publication(row)
+        if pending_switch(publication):
+            row.state = "switching"
+            await journal.save(row)
+            return
         if control.stop_requested:
             await finish_stop(journal, row, cycle)
             return
@@ -380,12 +585,13 @@ async def reconcile_continuous(journal, row):
     if cycle.state not in ("queued", "running"):
         raise WayangError(502, "The continuous Wayang cycle requires an explicit stop after failure.")
     cycle.state = "running"
-    row.state = "stopping" if control.stop_requested else "running"
+    row.state = "switching" if pending_switch(publication) else "stopping" if control.stop_requested else "running"
     await journal.save(row)
     _, result = await driver("/v1/execute", cycle.plan_text)
     plan = strict_json(cycle.plan_text)
     validate_result(plan, result)
     control = await journal.control(row)
+    publication = await execute_publication(journal, row, result)
     if result["state"] == "completed":
         totals = accumulate(control, plan, result)
         control.totals = totals
@@ -398,7 +604,19 @@ async def reconcile_continuous(journal, row):
     cycle.updated_at = utc_now()
     row.result = result
     row.error = result.get("error") if isinstance(result.get("error"), str) else None
-    if control.stop_requested:
+    if pending_switch(publication):
+        if result["state"] == "failed":
+            replacement = await journal.replacement(publication.operation)
+            if replacement is not None:
+                replacement.state = "failed"
+                replacement.error = "The preceding deployment failed before the replacement boundary."
+            publication.operation.state = "failed"
+            publication.operation.error = row.error or "The admitted cycle failed before the replacement boundary."
+            row.state = "failed"
+        else:
+            row.state = "switching"
+        await journal.save(row)
+    elif control.stop_requested:
         await finish_stop(journal, row, cycle)
     else:
         row.state = "idle" if result["state"] == "completed" else "failed"
@@ -410,6 +628,9 @@ async def reconcile_once(journal):
     if row is None:
         return False
     try:
+        if row.publication is None and await publication_fencing():
+            row.publication = WayangPublication(deployment_id=row.id, epoch=0, operation=None)
+            await journal.save(row)
         if row.continuous is not None:
             await reconcile_continuous(journal, row)
             return True
@@ -417,8 +638,11 @@ async def reconcile_once(journal):
         await journal.save(row)
         _, result = await driver("/v1/execute", row.plan_text)
         validate_result(strict_json(row.plan_text), result)
-        row.state, row.result = result["state"], result
+        await execute_publication(journal, row, result)
+        row.result = result
         row.error = result.get("error") if isinstance(result.get("error"), str) else None
+        await retire_publication(journal, row)
+        row.state = result["state"]
         await journal.save(row, terminal=True)
     except WayangError as error:
         row.error = error.message
@@ -427,6 +651,9 @@ async def reconcile_once(journal):
             control.next_poll_at = utc_now() + timedelta(seconds=2)
             if control.stop_requested:
                 row.state = "stopping"
+            elif pending_switch(row.publication):
+                row.state = "switching"
+                row.publication.operation.error = error.message
             elif error.status in (400, 409):
                 row.state = "failed"
         await journal.save(row)

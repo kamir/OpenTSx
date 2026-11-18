@@ -89,7 +89,9 @@ statistics, prediction and what-if, and the node graph of each system's wiring p
   See the [three-worker local guide](docs/devguide/integration/wayang-rust-compose.md).
 * **Continuous Rust execution through Wayang.** The explicit continuous target keeps complete topics on fixed
   workers, persists successive cuts and resumes acknowledged positions and operator state after service restart.
-  Transient preparation failures retain private candidates for identical retry before activation.
+  Transient preparation failures retain private candidates for identical retry before activation. The local publication
+  gateway fences retired grants; explicit resume preserves state, while changed-DAG restart replays whole topics into
+  a distinct fresh output. Unknown broker outcomes halt replacement.
   See the [continuous Compose guide](docs/devguide/integration/wayang-rust-continuous.md).
 * **Classic analytics.** DFA, MFDFA, event synchronization, return-interval statistics.
 
@@ -159,7 +161,7 @@ The full walk-through, including KafScale, statistics and OpenMetadata, is in
 | `opentsx-saas-backend/`, `-frontend/` | experimental web stack (planned personal service layer) |
 
 The Wayang module supports signed bounded JVM federation, plus bounded and
-trusted-local continuous whole-topic Rust execution.
+trusted-local continuous whole-topic Rust execution with a capped publication gateway and explicit deployment replacement.
 
 The 2025 documentation and old demos are in [`archive/`](archive/). Retired modules were removed from `master`
 (last state: commit `315f01d`, see the [migration chapter](docs/user-manual/13-migration.md)).

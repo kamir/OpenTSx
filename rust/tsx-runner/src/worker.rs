@@ -2,12 +2,14 @@ use crate::admission::{self, Admitted, REQUEST_BYTES};
 use crate::broker::Broker;
 use crate::checkpoint::{Completion, Receipt};
 use crate::operators::{STATE_ABI, SUPPORTED_OPS};
+use crate::publication::PublicationGrant;
 use crate::runner::{self, Prepared};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
+use std::net::IpAddr;
 use std::path::{Component, Path, PathBuf};
 use tiny_http::{Header, Method, Request, Response, Server};
 
@@ -43,6 +45,12 @@ pub struct Status {
     pub sequence: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub previous_request_hash: Option<Option<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub publication_epoch: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub prepared_output_digest: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub prepared_output_records: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -53,6 +61,8 @@ struct Journal {
     publication_started: bool,
     prepared: Option<Prepared>,
     error: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    publication_grant: Option<PublicationGrant>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -68,6 +78,16 @@ struct Envelope {
 struct IncrementState {
     head: Option<IncrementHead>,
     candidate: Option<Journal>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    publication: Option<PublicationInstallation>,
+}
+
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct PublicationInstallation {
+    grant: PublicationGrant,
+    reset: bool,
+    expected_head: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -78,12 +98,15 @@ struct IncrementHead {
     input_owners: BTreeMap<String, i32>,
     input_series: Vec<String>,
     output_series: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    publication_epoch: Option<String>,
 }
 
 pub struct Worker {
     config: Config,
     active: Option<String>,
     _lock: File,
+    controller: Option<IpAddr>,
 }
 
 impl Worker {
@@ -99,21 +122,17 @@ impl Worker {
         }
         admission::validate_bootstrap(&config.bootstrap)?;
         directory(&config.state, true)?;
+        private_directory(&config.state)?;
         let lock_path = config.state.join(".worker.lock");
         regular_or_absent(&lock_path)?;
-        let lock = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true)
-            .truncate(false)
-            .open(&lock_path)
-            .map_err(|e| format!("cannot open worker lock: {e}"))?;
+        let lock = private_lock(&lock_path)?;
         lock.try_lock()
             .map_err(|e| format!("worker state is locked or cannot be locked: {e}"))?;
         let mut worker = Self {
             config,
             active: None,
             _lock: lock,
+            controller: None,
         };
         for entry in fs::read_dir(&worker.config.state)
             .map_err(|e| format!("cannot list worker state: {e}"))?
@@ -148,7 +167,7 @@ impl Worker {
     pub fn capabilities(&self) -> Value {
         let mut operators = vec!["decode.avro-soe"];
         operators.extend_from_slice(SUPPORTED_OPS);
-        json!({"schema":"opentsx.local-worker.v1","node":self.config.node,
+        let mut capabilities = json!({"schema":"opentsx.local-worker.v1","node":self.config.node,
             "site":self.config.site,"artifactDigest":self.config.artifact_digest,
             "version":env!("CARGO_PKG_VERSION"),"catalog":"tsx-catalog/1",
             "requestSchema":"opentsx.local-bounded-run.v1","stateAbi":STATE_ABI,
@@ -158,7 +177,11 @@ impl Worker {
                 "samples":100000,"outputBytes":16777216,"series":64,"stateBytes":1048576,
                 "requestBytes":REQUEST_BYTES,"partitions":admission::MAX_PARTITIONS,
                 "incrementalChains":1,
-                "episodeSamples":admission::MAX_EPISODE_SAMPLES}})
+                "episodeSamples":admission::MAX_EPISODE_SAMPLES}});
+        if self.controller.is_some() {
+            capabilities["publicationFencing"] = json!(true);
+        }
+        capabilities
     }
 
     pub fn prepare(&mut self, text: &str, broker: &mut impl Broker) -> Result<Status, String> {
@@ -180,6 +203,10 @@ impl Worker {
         if self.active.is_some() {
             return Err("worker is busy with another unfinished request".into());
         }
+        let authority = self.increment_load()?.publication;
+        let publication_grant =
+            broker.capture_grant(&run, authority.as_ref().map(|value| &value.grant))?;
+        verify_capture(&run, publication_grant.as_ref(), authority.as_ref())?;
         let prepared = runner::prepare(&mut run, broker);
         let mut journal = Journal {
             request_text: text.into(),
@@ -187,6 +214,7 @@ impl Worker {
             publication_started: false,
             prepared: None,
             error: None,
+            publication_grant,
         };
         match prepared {
             Ok(prepared) => {
@@ -225,11 +253,12 @@ impl Worker {
         journal.publication_started = true;
         journal.error = None;
         self.save(request_hash, &journal)?;
-        let result = runner::activate(
+        let result = runner::activate_captured(
             &run,
             journal.prepared.as_ref().ok_or("prepared output missing")?,
             broker,
             &self.job_path(request_hash)?.join("completed.json"),
+            journal.publication_grant.as_ref(),
         );
         match result {
             Ok(_) => {
@@ -321,6 +350,9 @@ impl Worker {
         if run.request_hash != request_hash {
             return Err("persisted request hash mismatch".into());
         }
+        if let Some(grant) = &journal.publication_grant {
+            grant.validate_run(&run)?;
+        }
         if let Some(prepared) = &journal.prepared {
             runner::validate_prepared(&run, prepared)?;
         }
@@ -396,16 +428,12 @@ impl Worker {
         }
         let dir = self.job_path(request_hash)?;
         directory(&dir, true)?;
+        private_directory(&dir)?;
         let path = dir.join("prepared.json");
         let pending = dir.join(".prepared.pending");
         regular_or_absent(&path)?;
         regular_or_absent(&pending)?;
-        let mut file = OpenOptions::new()
-            .create(true)
-            .truncate(true)
-            .write(true)
-            .open(&pending)
-            .map_err(|e| format!("cannot open pending preparation: {e}"))?;
+        let mut file = private_output(&pending)?;
         file.write_all(&bytes)
             .and_then(|()| file.sync_all())
             .map_err(|e| format!("cannot synchronize preparation: {e}"))?;
@@ -470,6 +498,22 @@ impl Worker {
             error,
             sequence: None,
             previous_request_hash: None,
+            publication_epoch: journal
+                .publication_grant
+                .as_ref()
+                .map(|grant| grant.epoch.clone()),
+            prepared_output_digest: journal.publication_grant.as_ref().and_then(|_| {
+                journal
+                    .prepared
+                    .as_ref()
+                    .map(|prepared| prepared.completion.receipt.output_digest.clone())
+            }),
+            prepared_output_records: journal.publication_grant.as_ref().and_then(|_| {
+                journal
+                    .prepared
+                    .as_ref()
+                    .map(|prepared| prepared.completion.receipt.output_records.to_string())
+            }),
         })
     }
 
@@ -511,12 +555,34 @@ impl Worker {
         }
         let state: IncrementState = serde_json::from_value(envelope.payload)
             .map_err(|_| "invalid increment checkpoint payload")?;
+        if let Some(publication) = &state.publication {
+            publication.grant.validate()?;
+            if publication.grant.node != self.config.node
+                || publication
+                    .expected_head
+                    .as_ref()
+                    .is_some_and(|head| !hash(head))
+            {
+                return Err("invalid persisted publication installation".into());
+            }
+        }
         if let Some(head) = &state.head {
             let run = self.admit(&head.request_text)?;
             if run.increment.is_none() {
                 return Err("increment head contains a bounded request".into());
             }
             runner::verify_completion(&run, &head.completion)?;
+            if let Some(epoch) = &head.publication_epoch {
+                let epoch = admission::canonical_i64(epoch, "publication epoch")?;
+                let current = state
+                    .publication
+                    .as_ref()
+                    .ok_or("publication authority is missing")?;
+                let current = admission::canonical_i64(&current.grant.epoch, "publication epoch")?;
+                if epoch <= 0 || epoch > current {
+                    return Err("increment head has an invalid publication epoch".into());
+                }
+            }
             runner::check_retained_owners(&run, &head.completion, &head.input_owners)?;
             if head.input_series != head.input_owners.keys().cloned().collect::<Vec<_>>()
                 || head.output_series
@@ -529,6 +595,11 @@ impl Worker {
             let run = self.admit(&candidate.request_text)?;
             self.increment_successor(&run, &candidate.request_text, state.head.as_ref())?;
             validate_journal(candidate, &run)?;
+            verify_capture(
+                &run,
+                candidate.publication_grant.as_ref(),
+                state.publication.as_ref(),
+            )?;
             if candidate.phase == "completed" {
                 return Err("completed increment must be the authoritative head".into());
             }
@@ -566,16 +637,12 @@ impl Worker {
         }
         let dir = self.config.state.join("increments");
         directory(&dir, true)?;
+        private_directory(&dir)?;
         let path = dir.join("checkpoint.json");
         let pending = dir.join(".checkpoint.pending");
         regular_or_absent(&path)?;
         regular_or_absent(&pending)?;
-        let mut file = OpenOptions::new()
-            .create(true)
-            .truncate(true)
-            .write(true)
-            .open(&pending)
-            .map_err(|e| format!("cannot open pending increment checkpoint: {e}"))?;
+        let mut file = private_output(&pending)?;
         file.write_all(&bytes)
             .and_then(|()| file.sync_all())
             .map_err(|e| format!("cannot synchronize increment checkpoint: {e}"))?;
@@ -665,6 +732,9 @@ impl Worker {
             return Err("worker is busy with another increment candidate".into());
         }
         self.increment_successor(&run, text, state.head.as_ref())?;
+        let publication_grant =
+            broker.capture_grant(&run, state.publication.as_ref().map(|value| &value.grant))?;
+        verify_capture(&run, publication_grant.as_ref(), state.publication.as_ref())?;
         let owners = if let Some(head) = &state.head {
             run.pipeline.restore(&head.completion.state)?;
             head.input_owners.clone()
@@ -677,6 +747,7 @@ impl Worker {
             publication_started: false,
             prepared: None,
             error: None,
+            publication_grant,
         };
         match runner::prepare_continued(&mut run, broker, owners) {
             Ok(prepared) => {
@@ -734,7 +805,11 @@ impl Worker {
             .prepared
             .as_ref()
             .ok_or("increment output missing")?;
-        match broker.publish(&run, &prepared.records) {
+        match broker.publish_captured(
+            &run,
+            &prepared.records,
+            candidate.publication_grant.as_ref(),
+        ) {
             Ok(()) => {
                 let prepared = candidate
                     .prepared
@@ -746,6 +821,10 @@ impl Worker {
                     input_owners: prepared.input_owners,
                     input_series: prepared.input_series,
                     output_series: prepared.output_series,
+                    publication_epoch: candidate
+                        .publication_grant
+                        .as_ref()
+                        .map(|grant| grant.epoch.clone()),
                 });
                 state.candidate = None;
             }
@@ -763,14 +842,22 @@ impl Worker {
         if let Some(head) = &state.head {
             if head.completion.request_hash == request_hash {
                 let run = self.admit(&head.request_text)?;
-                return self.increment_status_value(
+                let mut status = self.increment_status_value(
                     &run,
                     "completed",
                     false,
                     (head.input_series.clone(), head.output_series.clone()),
                     Some(head.completion.receipt.clone()),
                     None,
-                );
+                )?;
+                status.publication_epoch = head.publication_epoch.clone();
+                if head.publication_epoch.is_some() {
+                    status.prepared_output_digest =
+                        Some(head.completion.receipt.output_digest.clone());
+                    status.prepared_output_records =
+                        Some(head.completion.receipt.output_records.to_string());
+                }
+                return Ok(status);
             }
         }
         let candidate = state
@@ -790,7 +877,7 @@ impl Worker {
             (Vec::new(), Vec::new())
         };
         let publishing = candidate.phase == "publishing";
-        self.increment_status_value(
+        let mut status = self.increment_status_value(
             &run,
             if publishing {
                 "failed"
@@ -805,7 +892,22 @@ impl Worker {
             } else {
                 candidate.error.clone()
             },
-        )
+        )?;
+        status.publication_epoch = candidate
+            .publication_grant
+            .as_ref()
+            .map(|grant| grant.epoch.clone());
+        if candidate.publication_grant.is_some() {
+            status.prepared_output_digest = candidate
+                .prepared
+                .as_ref()
+                .map(|prepared| prepared.completion.receipt.output_digest.clone());
+            status.prepared_output_records = candidate
+                .prepared
+                .as_ref()
+                .map(|prepared| prepared.completion.receipt.output_records.to_string());
+        }
+        Ok(status)
     }
 
     fn increment_status_value(
@@ -833,6 +935,9 @@ impl Worker {
             error,
             sequence: Some(increment.sequence.to_string()),
             previous_request_hash: Some(increment.previous_request_hash.clone()),
+            publication_epoch: None,
+            prepared_output_digest: None,
+            prepared_output_records: None,
         })
     }
 
@@ -854,15 +959,144 @@ impl Worker {
         self.increment_status(request_hash)
     }
 
+    pub fn install_publication(&mut self, text: &str) -> Result<Value, String> {
+        let value = tsx_contracts::parse_json(text, REQUEST_BYTES)
+            .map_err(|_| "invalid publication installation")?;
+        if !value.is_object()
+            || value
+                .as_object()
+                .is_none_or(|fields| fields.len() != 3 || !fields.contains_key("expectedHead"))
+        {
+            return Err("publication installation requires grant, reset and expectedHead".into());
+        }
+        let installation: PublicationInstallation =
+            serde_json::from_value(value).map_err(|_| "invalid publication installation")?;
+        installation.grant.validate()?;
+        if installation.grant.node != self.config.node
+            || installation
+                .expected_head
+                .as_ref()
+                .is_some_and(|head| !hash(head))
+        {
+            return Err("publication installation does not match this worker".into());
+        }
+        let mut state = self.increment_load()?;
+        if let Some(current) = &state.publication {
+            if current.grant.operation == installation.grant.operation {
+                if current != &installation {
+                    return Err("publication operation conflicts with recorded content".into());
+                }
+                return Ok(installed_publication(&installation.grant));
+            }
+            if admission::canonical_i64(&installation.grant.epoch, "publication epoch")?
+                <= admission::canonical_i64(&current.grant.epoch, "publication epoch")?
+            {
+                return Err("publication epoch must advance".into());
+            }
+            if !installation.reset
+                && (current.grant.deployment != installation.grant.deployment
+                    || current.grant.input_topic != installation.grant.input_topic
+                    || current.grant.output_topic != installation.grant.output_topic)
+            {
+                return Err("publication resume cannot change deployment or topic identity".into());
+            }
+        }
+        if self.active.is_some()
+            || state
+                .candidate
+                .as_ref()
+                .is_some_and(|candidate| candidate.phase != "cancelled")
+        {
+            return Err("publication installation requires no pending candidate".into());
+        }
+        let head = state
+            .head
+            .as_ref()
+            .map(|head| head.completion.request_hash.clone());
+        if head != installation.expected_head {
+            return Err("publication installation does not match the completed head".into());
+        }
+        if installation.reset {
+            let previous = state
+                .head
+                .as_ref()
+                .ok_or("publication reset requires a completed head")?;
+            let previous = self.admit(&previous.request_text)?;
+            if previous.cut.topic != installation.grant.input_topic
+                || previous.assignment["deployment"].as_str()
+                    == Some(&installation.grant.deployment)
+                || previous.request.sink.topic == installation.grant.output_topic
+            {
+                return Err("publication reset requires the same whole input topic and a distinct deployment and output".into());
+            }
+            state.head = None;
+        } else if let Some(head) = &state.head {
+            installation
+                .grant
+                .validate_run(&self.admit(&head.request_text)?)?;
+        }
+        let reply = installed_publication(&installation.grant);
+        state.candidate = None;
+        state.publication = Some(installation);
+        self.increment_save(&state)?;
+        Ok(reply)
+    }
+
+    pub fn publication_status(&self) -> Result<Value, String> {
+        let state = self.increment_load()?;
+        Ok(match state.publication {
+            Some(publication) => json!({"publicationEpoch":publication.grant.epoch,
+                "deployment":publication.grant.deployment,"operation":publication.grant.operation}),
+            None => json!({"publicationEpoch":null,"deployment":null,"operation":null}),
+        })
+    }
+
     pub fn handle(&mut self, request: &mut Request, broker: &mut impl Broker) -> (u16, Value) {
         let route = request.url().to_string();
         let method = request.method().clone();
+        if method == Method::Post
+            && self.controller.is_some_and(|controller| {
+                request
+                    .remote_addr()
+                    .is_none_or(|peer| peer.ip() != controller)
+            })
+        {
+            return (
+                403,
+                json!({"error":"worker mutations require the configured controller peer"}),
+            );
+        }
         let body = match request_body(request) {
             Ok(body) => body,
             Err((status, error)) => return (status, json!({"error":error})),
         };
         if method == Method::Get && route == "/v1/capabilities" && body.is_empty() {
             return (200, self.capabilities());
+        }
+        if method == Method::Get
+            && route == "/v1/publication"
+            && body.is_empty()
+            && self.controller.is_some()
+        {
+            return match self.publication_status() {
+                Ok(status) => (200, status),
+                Err(_) => (500, json!({"error":"cannot load publication status"})),
+            };
+        }
+        if method == Method::Post && route == "/v1/publication" && self.controller.is_some() {
+            let text = match std::str::from_utf8(&body) {
+                Ok(text) => text,
+                Err(_) => {
+                    return (
+                        400,
+                        json!({"error":"publication installation is not UTF-8"}),
+                    )
+                }
+            };
+            return match self.install_publication(text) {
+                Ok(reply) => (200, reply),
+                Err(error) => (409, json!({"error":error})),
+            };
         }
         if method == Method::Post && route == "/v1/prepare" {
             let text = match std::str::from_utf8(&body) {
@@ -894,7 +1128,27 @@ impl Worker {
         (404, json!({"error":"unknown worker operation"}))
     }
 
-    pub fn serve(mut self, listen: &str, mut broker: impl Broker) -> Result<(), String> {
+    pub fn serve(self, listen: &str, broker: impl Broker) -> Result<(), String> {
+        if broker.fenced() {
+            return Err("fenced publication requires a controller peer".into());
+        }
+        self.serve_loop(listen, broker)
+    }
+
+    pub fn serve_with_controller(
+        mut self,
+        listen: &str,
+        broker: impl Broker,
+        controller: IpAddr,
+    ) -> Result<(), String> {
+        if !broker.fenced() {
+            return Err("a controller peer requires fenced publication".into());
+        }
+        self.controller = Some(controller);
+        self.serve_loop(listen, broker)
+    }
+
+    fn serve_loop(mut self, listen: &str, mut broker: impl Broker) -> Result<(), String> {
         let server =
             Server::http(listen).map_err(|e| format!("cannot bind worker HTTP listener: {e}"))?;
         loop {
@@ -938,6 +1192,9 @@ fn json_result(result: Result<Status, String>, error_status: u16) -> (u16, Value
 }
 
 fn validate_journal(journal: &Journal, run: &Admitted) -> Result<(), String> {
+    if let Some(grant) = &journal.publication_grant {
+        grant.validate_run(run)?;
+    }
     if let Some(prepared) = &journal.prepared {
         runner::validate_prepared(run, prepared)?;
     }
@@ -1016,6 +1273,80 @@ fn busy(journal: &Journal) -> bool {
     journal.phase == "prepared"
         || journal.phase == "publishing"
         || (journal.publication_started && journal.phase != "completed")
+}
+
+fn installed_publication(grant: &PublicationGrant) -> Value {
+    json!({"operation":grant.operation,"publicationEpoch":grant.epoch,"node":grant.node,"state":"installed"})
+}
+
+fn verify_capture(
+    run: &Admitted,
+    captured: Option<&PublicationGrant>,
+    installed: Option<&PublicationInstallation>,
+) -> Result<(), String> {
+    match (captured, installed) {
+        (None, None) => Ok(()),
+        (Some(captured), Some(installed)) if captured == &installed.grant => {
+            captured.validate_run(run)
+        }
+        _ => Err("prepared publication grant does not match the installed authority".into()),
+    }
+}
+
+fn private_directory(path: &Path) -> Result<(), String> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(path, fs::Permissions::from_mode(0o700))
+            .map_err(|_| "cannot make worker state private".into())
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = path;
+        Err("private worker state requires Unix filesystem permissions".into())
+    }
+}
+
+fn private_output(path: &Path) -> Result<File, String> {
+    let mut options = OpenOptions::new();
+    options.create(true).write(true).truncate(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+        options.mode(0o600);
+        let file = options
+            .open(path)
+            .map_err(|_| "cannot open private worker checkpoint")?;
+        file.set_permissions(fs::Permissions::from_mode(0o600))
+            .map_err(|_| "cannot make worker checkpoint private")?;
+        Ok(file)
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = options;
+        Err("private worker checkpoints require Unix filesystem permissions".into())
+    }
+}
+
+fn private_lock(path: &Path) -> Result<File, String> {
+    let mut options = OpenOptions::new();
+    options.read(true).write(true).create(true).truncate(false);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+        options.mode(0o600);
+        let file = options
+            .open(path)
+            .map_err(|_| "cannot open private worker lock")?;
+        file.set_permissions(fs::Permissions::from_mode(0o600))
+            .map_err(|_| "cannot make worker lock private")?;
+        Ok(file)
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = options;
+        Err("private worker checkpoints require Unix filesystem permissions".into())
+    }
 }
 
 fn bounded_error(mut error: String) -> String {
@@ -1109,5 +1440,74 @@ mod tests {
     #[test]
     fn http_without_body_headers_has_zero_length() {
         assert_eq!(super::framed_length(None, &[]), Ok(0));
+    }
+
+    #[test]
+    fn fenced_mutations_require_the_actual_controller_peer_and_ignore_forwarded_headers() {
+        use super::{Config, Worker};
+        use crate::admission::Admitted;
+        use crate::broker::{Broker, InputRecord, OutputRecord};
+        use serde_json::json;
+        use std::fs;
+        use tiny_http::{Header, Method, TestRequest};
+
+        struct NoIo;
+        impl Broker for NoIo {
+            fn read(&mut self, _: &Admitted) -> Result<Vec<InputRecord>, String> {
+                panic!("unexpected input read")
+            }
+            fn publish(&mut self, _: &Admitted, _: &[OutputRecord]) -> Result<(), String> {
+                panic!("unexpected publication")
+            }
+        }
+
+        let path = std::env::temp_dir()
+            .canonicalize()
+            .unwrap()
+            .join(format!("tsx-controller-peer-{}", std::process::id()));
+        fs::create_dir(&path).unwrap();
+        let mut worker = Worker::open(Config {
+            node: "worker-1".into(),
+            site: "local".into(),
+            bootstrap: "localhost:9092".into(),
+            artifact_digest: format!("sha256:{}", tsx_contracts::sha256("artifact")),
+            state: path.clone(),
+        })
+        .unwrap();
+        assert!(worker.capabilities().get("publicationFencing").is_none());
+        worker.controller = Some("172.31.0.10".parse().unwrap());
+        assert_eq!(worker.capabilities()["publicationFencing"], true);
+        for route in [
+            "/v1/publication",
+            "/v1/prepare",
+            "/v1/activate/unknown",
+            "/v1/abort/unknown",
+        ] {
+            let mut request = TestRequest::new()
+                .with_method(Method::Post)
+                .with_path(route)
+                .with_remote_addr("172.31.0.11:12345".parse().unwrap())
+                .with_header(Header::from_bytes("X-Forwarded-For", "172.31.0.10").unwrap())
+                .with_body("{}")
+                .into();
+            assert_eq!(worker.handle(&mut request, &mut NoIo).0, 403);
+        }
+        let mut trusted = TestRequest::new()
+            .with_method(Method::Post)
+            .with_path("/v1/publication")
+            .with_remote_addr("172.31.0.10:12345".parse().unwrap())
+            .with_body("{}")
+            .into();
+        assert_eq!(worker.handle(&mut trusted, &mut NoIo).0, 409);
+        let mut status = TestRequest::new().with_path("/v1/publication").into();
+        assert_eq!(
+            worker.handle(&mut status, &mut NoIo),
+            (
+                200,
+                json!({"publicationEpoch":null,"deployment":null,"operation":null})
+            )
+        );
+        drop(worker);
+        fs::remove_dir_all(path).unwrap();
     }
 }

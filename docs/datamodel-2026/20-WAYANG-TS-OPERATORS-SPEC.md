@@ -2,8 +2,8 @@
 
 > Status: **fleet specification draft 0.1; Catalog 1 frozen**, 2026-11-17.
 > All 16 native Java entries in S1.7 are available. Implemented Rust profiles
-> are qualified separately in S1.9, S1.10 and the local continuous profile S1.11. Signed continuous fleet requirements
-> remain separate contracts. Concept and research:
+> are qualified separately in S1.9, S1.10, local continuous profile S1.11 and local publication fencing S1.12.
+> Signed continuous fleet requirements remain separate contracts. Concept and research:
 > [20-WAYANG-TS-OPERATORS.md](20-WAYANG-TS-OPERATORS.md). Tasks and acceptance criteria:
 > [TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.md). Catalog checks use
 > Apache Wayang tag `wayang-1.1.1` and JDK 21.
@@ -239,11 +239,11 @@ the authenticated backend. Administrator permission is required. Existing contin
 | Physical plan | `RustRollout` normalizes catalog parameters, freezes zero-based complete partition cuts, and binds one complete topic to each assigned node. Each fragment has a distinct ID/hash while preserving the original source text/hash. Partition positions do not authorize splitting topic ownership. |
 | Runtime admission | Worker node/site, supported operators, exact binary digest, Episode fingerprint, state ABI and explicit caps must match. Placement is static by topic order and sorted worker ID, with no partition fallback or cost-based placement claim. |
 | Wayang execution | Logical topic sources, optional `UnionAllOperator`, optional fused clean chain and sink map through `RustPlugin` to one connected `RustPlatform` stage. `RustExecutor` invokes the stage action once. Topology channels cannot materialize raw records and unsupported mappings have no Java fallback. |
-| Durable control | The backend persists original source, physical plan/hash, accepted clock and whole-topic ownership before execution. The standalone coordinator owns a PostgreSQL advisory lock and reconciles the same persisted plan. The Java driver has no second authoritative journal. |
+| Durable control | The backend persists original source, physical plan/hash, accepted clock and whole-topic ownership before execution. The standalone coordinator owns a PostgreSQL advisory lock and reconciles the same persisted plan. The Java driver has no second deployment journal; its separate S1.12 publication ledger enforces Kafka write authority. |
 | Prepare | Every worker fully reads and computes the capped cut privately. All preparations must succeed and input/output series ownership must be disjoint across topics before activation. |
-| Activate and recover | Workers publish prepared output and commit the completed checkpoint only after all output acknowledgements. Exact completed retry returns the receipt. `activationRetryable=true` retains saved candidate bytes and request identity; the coordinator retains running state and topic ownership until identical retry is reconciled. |
+| Activate and recover | Fenced workers publish prepared output through the S1.12 gateway and commit the completed checkpoint only after its verified publication receipt. Exact completed retry returns the receipt. `activationRetryable=true` retains saved candidate bytes and request identity; the coordinator retains running state and topic ownership until identical retry is reconciled. |
 | Completion | Completion requires verified receipts from every assigned worker. Partial activation can expose at-least-once output; there is no atomic multi-worker publication or transactional rollback. Open resample tails remain in retained state. |
-| Local transport | HTTP workers and the driver are internal trusted Compose services. Normal application login remains enabled and `TEST_LOGIN` remains false. These checks do not implement S7 signatures, production transport authentication or distributed stale-output fencing. |
+| Local transport | HTTP workers and the driver are internal trusted Compose services. Normal application login remains enabled and `TEST_LOGIN` remains false. The S1.12 local gateway, controller-peer gate, segregated proxies and broker ACL enforce write authority. They do not implement signed S7 fleet activation or transport authentication for a production fleet. |
 
 The [local guide](../devguide/integration/wayang-rust-compose.md) records helper commands and evidence locations.
 `RustPlatformTest` exercises real Wayang stage selection without network transport; `RustRolloutTest` checks planning,
@@ -283,18 +283,76 @@ unresolved. If any preparation remains unresolved, retain all candidates even wh
 refusal. Resolve the missing outcome before cleanup; a successful retry still validates every status and series owner.
 
 The worker advertises `incrementalRequestSchema: opentsx.local-increment.v1` and `limits.incrementalChains: 1`.
-One worker retains one immutable continuous chain after Stop; replacement requires explicit reset of disposable
-state after conclusive stop. There is no implicit retirement, failover or migration. Open resample windows retain
-the existing maximum of 100,000 valid samples. Output is at least once and activation is not atomic across workers.
+One worker retains one completed continuous chain after Stop. S1.12 permits explicit same-chain resume or
+changed-DAG reset into a distinct fresh output after authority revocation. There is no implicit reset, failover or
+migration. Open resample windows retain the existing maximum of 100,000 valid samples. Output is at least once
+and activation is not atomic across workers.
 
 `RustContinuousRolloutTest`, `tests/increments.rs`, backend continuous tests and the
 [continuous Compose acceptance](../devguide/integration/wayang-rust-continuous.md) cover finite successors,
 cumulative ownership, idle, exact retry, stateful service restart, single-worker downtime, queued new data and Stop.
 Planner regressions distinguish lost preparation responses, unresolved/permanent refusal combinations and ownership
-collisions after recovery. Broker restart, topic-incarnation qualification, distributed stale-writer fencing and the
-signed S5/S7 fleet contract remain open.
+collisions after recovery. S1.12 adds local publication fencing. Broker restart, topic-incarnation qualification, high-availability
+publication recovery and the signed S5/S7 fleet contract remain separate gates.
 The existing cleaning policy skips a block whose first event timestamp precedes the retained series end, increments
 the skipped-block counter and advances its input cursor. Continuous execution does not introduce late-data revisions.
+
+<a id="s112-fence-local-publication-and-replace-a-continuous-deployment"></a>
+
+### S1.12 Fence local publication and replace a continuous deployment
+
+The implemented local profile uses `RustPublicationGateway` as the single output authority. Its scope is the
+S1.9 cleaning subset on one to three fixed workers. It does not change numerical kernels, assignment schema,
+whole-topic ownership or the signed fleet requirements in S5/S7.
+
+| Boundary | Exact local contract |
+| --- | --- |
+| Transport | All OpenTSx producers, including fixtures, MUST use Apache Kafka Broker or KafScale Proxy. Workers read through a fetch-only Proxy. The driver and host fixture use the write Proxy; the host and Docker control plane remain trusted. No worker has a broker, write-network or published broker route. Separate non-internal bridges contain only the write Proxy and frontend, respectively, for loopback host publication; they do not share a host bridge. |
+| Local fixture source | The single-broker fixture builds pinned KafScale v1.6.0 with the guarded `tools/kafscale_metadata_overlay.py` build overlay. One store-local mutex serializes `CreateTopic`, `CreatePartitions`, `DeleteTopic` and watcher `refreshSnapshot`. Preserve the original source checksum and record overlay/binary provenance. This is a local source overlay, with no multi-broker metadata qualification. |
+| Local Proxy protocol | The guarded `tools/kafscale_proxy_protocol_overlay.py` verifies the pinned v1.6.0 Proxy source checksum, removes duplicate frame-length prefixes from re-encoded Produce/Fetch requests and uses protocol constructors for synthetic error-partition defaults. Successful fan-out keeps its backend eligible for subsequent requests. The builder runs its protocol regressions against the overlaid upstream `cmd/proxy` package. Record this overlay and its tests in bundle provenance; the fixture is not an unmodified upstream binary. |
+| Broker authorization | Use `remote_addr` principal identity and fixed broker-facing read/write Proxy addresses, default deny and fail-closed ACL loading. Read grants permit topic `fetch`; write grants permit required publication/provisioning. Disable automatic topic creation. A forged `client.id` does not confer write authority. |
+| Controller isolation | Fenced `serve` requires `--publisher` and `--controller` together. Worker mutation routes admit only the configured controller's actual TCP peer; forwarded headers are ignored. Workers drop all Linux capabilities, use read-only roots and `no-new-privileges`. |
+| Driver interfaces | Bind control and publication HTTP to separate private interfaces. Control requires the existing `X-OpenTSx-Run-Token`; publication requires the captured per-node grant. The backend uses private `DAG_RUN_TOKEN`. No credential appears in DAGs, assignments or public status. |
+| Authority identity | `publicationEpoch` is a positive canonical signed-64-bit decimal string separate from immutable assignment `generation` and `fence`. Rotate the whole admitted input-topic group and sink together. Preserve retired topic epochs and refuse reopening a retired deployment identity. |
+| Private grant | `opentsx.publication-grant.v1` contains exactly `schema`, `operation`, `deployment`, `epoch`, `node`, `inputTopic`, `outputTopic` and `token`. The token is random 32-byte authority encoded as 64 lowercase hex characters. Each prepared journal captures its grant once. |
+| Worker installation | `POST /v1/publication` accepts exactly `grant`, `reset` and `expectedHead`. Require the matching node, a larger epoch, no pending candidate and the expected completed request hash. Identical operation/content is idempotent. Resume preserves the head; reset additionally requires the same whole input, distinct deployment/output and a completed old head. |
+| Registration | After every worker prepares and ownership checks succeed, register the exact request text/hash, epoch, node, topic binding, output digest and output count. An unregistered or changed request cannot publish. |
+| Publication request | `POST /v1/publish` requires `Authorization: Bearer` with the captured token and exactly `epoch`, `requestText`, `records`. Each ordered record has string `key`, strictly positive signed-64-bit millisecond `timestamp` and byte-array `payload`. Validate admitted count, payload and total-byte limits before Kafka I/O. |
+| Digest | SHA-256 covers each ordered record as unsigned-64-bit big-endian UTF-8 key length, key bytes, signed-64-bit big-endian timestamp, unsigned-64-bit big-endian payload length, then payload bytes. |
+| Publication receipt | `opentsx.publication-receipt.v1` contains `publicationEpoch`, `requestHash`, `outputDigest` and `outputRecords` alongside `schema`. Epoch and record count are canonical decimal strings. The worker verifies every field before committing its head. |
+| Serialization | The configured single-chain pool serializes execute, replace and retire control operations, including fresh-worker preflight and admission. A separate gateway lock spans authority validation, durable send intent, all Kafka acknowledgements and durable completion. Rotation uses that gateway lock. Persist `publishing` before send and `acknowledged` before replying. Kafka retries and idempotent/transactional producers do not provide this fence. |
+| Ambiguity | A send error or interruption can leave an unknown broker outcome. Retain `publishing`/`uncertain`, refuse retransmission and block replacement/retirement for that group. A lost HTTP reply after durable `acknowledged` returns the cached receipt without Kafka I/O. Never infer absence from a missing reply. |
+| Ledger | Use one checksummed atomic `opentsx.publication-ledger.v1` envelope, fsynced file/directory updates and an exclusive process lock. Directories are `0700`; private files are `0600`. Corruption, missing initialized state, a second owner or storage failure rejects work. Reuse the same private directory after restart. |
+| Capacity | Retain at most 64 deployment groups, 64 operation receipts and 256 request entries. The serialized ledger envelope is at most 4,194,304 bytes. Driver control HTTP bodies are capped at 1,048,576 bytes, independently of the 32,768-byte original DAG limit. The publication HTTP body is separately capped at 85,000,000 bytes. Each active group reserves one operation slot for retirement: recorded operations plus active groups MUST NOT exceed 64. Admission/switching preserve that reserve. Capacity is fail-closed, not an eviction or tenant-quota policy. |
+
+The authenticated owner route `POST /api/v1/dags/wayang-rust/deployments/{id}/replace` accepts a canonical
+`expectedEpoch` and `mode`, either `resume` or `restart`. Resume accepts no replacement flow/DAG fields.
+Restart requires `flowId` and exact `dagText`, verifies flow ownership, changed source hash, unchanged complete
+input-topic placement and a distinct fresh output. At least one increment must be completed. Persist switch intent
+before remote calls, drain dispatched work and suspend successor planning without releasing topic ownership.
+
+The internal `POST /v1/switch` body is exactly `operation`, `mode`, `expectedEpoch`, `plan`, `result` and
+`replacement`. Verify the last completed old boundary. For restart, require a continuous sequence-one replacement
+with zero `from` positions and an empty sink. Atomically retire old grants and persist the larger group epoch before
+installing worker authority. An installation failure MUST NOT reactivate the old epoch. Repeat the same operation
+for reconciliation; conflicting content under its operation identity rejects.
+
+Resume retains deployment/source/clock, state and next positions, including an open resample window. Restart creates
+a distinct deployment with changed DAG/hash and its own clock, resets worker heads after revocation and replays every
+partition from zero into a fresh output. Keep old output intact. Transfer input-topic ownership only after successful
+revocation and installation. Stop revokes before releasing ownership. Unknown publication retains ownership.
+Stop is terminal for the retained worker chain and does not make the single-chain pool reusable for an unrelated
+deployment; same-DAG resume or changed-DAG restart requires the active completed deployment boundary.
+
+Capabilities expose `publicationFencing` and `switchModes`; public views expose `publicationEpoch` and switch
+progress. Public prepared status may expose epoch, prepared digest and count, never the grant token.
+
+The gateway, worker, backend, topology and Compose checks are separate evidence boundaries. A stale-owner acceptance
+case MUST attempt activation of an old prepared candidate with its captured old grant after rotation, observe
+publication denial and compare actual output end offsets before/after. A completed-head retry is insufficient.
+Also exercise read-Proxy Produce with forged client identity and direct broker, write-Proxy and host-gateway bypasses.
+This local cap does not establish signed fleet enrollment, gateway high availability, automatic failover,
+backup/restore reconciliation, cross-runtime state migration, topic-incarnation handling or durable Iceberg publication.
 
 ## S2. Plan translation
 

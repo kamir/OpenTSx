@@ -1,164 +1,129 @@
-# Run continuous input on three Rust workers through Wayang
+# Continue and replace whole-topic Rust deployments through Wayang
 
-Run a continuous workbench DAG with Apache Wayang 1.1.1 and `tsx-runner` 0.1.0, verified through the real UI and
-three Compose workers on 2026-11-18.
+Use the local continuous profile with Apache Wayang 1.1.1 and `tsx-runner` 0.1.0.
 
-You need the prerequisites of the [three-worker Compose guide](wayang-rust-compose.md): Docker with Compose,
-JDK 21, Maven, npm, Node 24.22.2 and Playwright 1.62.1 with Chromium. Use disposable local data and an unprivileged
-host user. The profile uses existing pinned images and builds a Rust binary, without building container images.
+You need the prerequisites and private network setup in the [three-worker guide](wayang-rust-compose.md).
+Use disposable local data and retain the same worker and publication state across service restart.
 
-## Keep each topic on one worker
+## Advance complete-topic cuts
 
-Open **Smart Topic**, choose **Continuous Wayang on Rust** under **Deployment target**, select the complete input
-topics and cleaning output, then use **Run continuously with Wayang**. Normal administrator authentication and flow
-ownership apply. Supported operations remain Avro decode, plausible-range checks, unit conversion and an optional
-trailing resample. There is no numerical Java fallback or wider Rust operator catalog.
+Select **Continuous Wayang on Rust** under **Deployment target** and use **Run continuously with Wayang**.
+Administrator permission and flow ownership apply. The supported subset remains Avro decode, plausible-range
+checks, unit conversion and an optional trailing resample. There is no wider Rust catalog or numerical Java fallback.
 
-The deployment retains the exact UI text, `specHash`, accepted provenance clock, compiled fragments, worker bindings,
-artifact digest and limits. The whole topic remains the deployment unit. Every increment includes every internal
-partition of each assigned topic, including empty spans; a topic is never split between workers.
+Each deployment retains the exact UI text, `specHash`, accepted clock, fragments, placement, binary digest and
+limits. Every finite increment covers every internal partition of each assigned topic, including empty spans.
+The next cut begins at the preceding verified positions and restores operator state locally rather than replaying
+the prefix. Rotating partition priority bounds busy input without changing whole-topic ownership.
 
-Wayang executes the connected Rust source/union/clean-chain/sink stage for each finite increment. Each increment
-starts at the preceding acknowledged positions, restores its saved operator state locally and reads only its new
-cut. It does not replay the full topic prefix. All workers prepare privately and expose cumulative input/output
-series ownership before any worker activates. This also detects a collision that appears in a later increment.
+The per-topic record budget is `min(records, inputBytes / payloadBytes, samples / episodeSamples)` with integer
+division. Payload, state, output and lifetime-series limits apply independently. Every worker prepares privately;
+cumulative input and output ownership prevents later increments from introducing a cross-topic series collision.
 
-The record budget per topic is the minimum of `records`, `inputBytes / payloadBytes` and `samples / episodeSamples`,
-using integer division. The current limits give four records. Rotating partition priority prevents a busy internal
-partition from permanently excluding its siblings. Complete partition coverage and fixed placement remain intact.
-Payload, retained state, output and lifetime series caps still reject before publication; they are not unlimited
-streaming resource budgets.
+A late or overlapping episode whose first event timestamp precedes the retained series end is skipped. Its cursor
+and input count still advance. Continuous processing does not add late-data revisions. Unfinished resample windows
+remain in retained state; Stop does not flush them. The existing ceiling is 100,000 valid samples per open window.
 
-Cleaning retains its existing event-time policy: a late or overlapping episode whose first timestamp is before
-the saved series end is skipped. Its Kafka cursor and input count still advance. This profile does not revise
-earlier output or claim late-data completeness.
+## Separate plans, state and publication authority
 
-## Follow the persisted lifecycle
+PostgreSQL retains the continuous control, pending plans, latest two completed cycle rows and cumulative progress.
+The coordinator persists dispatch before remote execution and retains topic ownership through idle, uncertainty
+and a pending replacement. The worker keeps one completed head and at most one candidate in
+`increments/checkpoint.json`. Sequence and predecessor hashes bind each successor to the preceding acknowledged
+state. Caller-supplied state and file paths are forbidden.
 
-```mermaid
-stateDiagram-v2
-    [*] --> queued: Persist first plan and topic ownership
-    queued --> running: Persist dispatch before execution
-    running --> running: Retry the identical uncertain increment
-    running --> idle: Commit every verified receipt and cumulative progress
-    idle --> idle: No new input, keep topic ownership
-    idle --> queued: Persist the next complete-topic plan
-    idle --> stopping: Record durable stop
-    queued --> stopping: Record stop before dispatch
-    running --> stopping: Record stop during execution
-    stopping --> stopping: Reconcile uncertain publication
-    stopping --> stopped: Cancel undispatched work or commit conclusive outcome
-    running --> failed: Record a conclusive failed increment
-    failed --> stopping: Record explicit stop
-```
+A transient preparation failure retains the exact plan and all private candidates for identical retry. Every
+preparation and ownership check must still succeed before activation. A confirmed preparation refusal is distinct
+from an unknown publication outcome.
 
-PostgreSQL stores continuous control and cycle rows in the additive `wayang_continuous` and `wayang_cycles` tables.
-The existing coordinator owns one database advisory lock. It persists each exact cycle plan before dispatch,
-retains topic ownership between increments and keeps only the latest two completed cycle rows plus pending work.
-Cumulative counters and the latest completed positions survive that pruning. Leases have no wall-clock expiry.
+`publicationEpoch` is separate from immutable assignment `generation` and `fence`. The private gateway ledger
+records output authority for the entire input-topic group and sink. The driver installs one opaque grant per node
+and epoch. Each prepared candidate captures its grant once. The worker publishes only that captured authority
+through the gateway; it never obtains current authority merely by changing a public JSON epoch.
 
-If a preparation response is lost after the worker saves its private candidate, the driver retains that candidate
-and the admitted plan for identical retry. A transient preparation failure does not cancel the other workers'
-private candidates. No worker activates until every preparation and the cross-topic ownership checks succeed.
-Permanent preparation refusals and ownership collisions still fail closed. A worker outage does not move its topic
-to another worker; restart the same worker with its retained state.
-The driver reports `worker preparation requires identical retry; retain private candidates` as its reconciliation
-reason. The coordinator retries the persisted plan; no new UI deployment request is needed.
+The gateway stores send intent before Kafka I/O and durable acknowledgement before returning a receipt. A lost
+HTTP response after that durable acknowledgement can return the same receipt. An unknown broker outcome is
+quarantined and blocks publication retry, replacement and retirement. The bounded local ledger limits and
+network/ACL enforcement are specified in the [three-worker guide](wayang-rust-compose.md#respect-the-local-gateway-capacity).
+There is no automatic gateway failover or operator command that discards uncertainty. The local fixture uses
+pinned KafScale v1.6.0 plus guarded metadata and Proxy protocol build overlays documented in the
+[transport setup](wayang-rust-compose.md#run-the-isolated-acceptance-helper). Its single-broker metadata
+serialization is separate from gateway fencing and does not qualify a multi-broker deployment. The protocol
+overlay corrects Produce/Fetch re-encoding and synthetic error defaults, and keeps successful fan-out backends
+eligible. Bundle provenance records the actual local overlays rather than an unmodified upstream binary.
 
-The driver returns no new plan on global idle. A new plan preserves placement, partition counts and clock, advances
-the sequence by one and links its `previousPlanHash`. Retention gaps, truncated inputs, changed topic partition
-counts, changed output inventory and incompatible workers fail closed. Topic recreation is not qualified by this
-local profile; the broker remains alive during the acceptance test. Fixture and worker producers use KafScale
-Proxy. The helper builds a pinned Proxy bundle with independent embedded etcd metadata; read the
-[local transport setup](../../../opentsx-kafscale-conformance/README.md#build-the-pinned-transport-bundle).
+## Resume the identical DAG with a new publication epoch
 
-The worker request `opentsx.local-increment.v1` adds `sequence` and `previousRequestHash` to the six bounded-request
-fields. The inner assignment is a finite bounded cut. The first sequence is `"1"`, has a null predecessor and
-starts every partition at zero. A successor requires the completed head hash, the next sequence and exact prior
-`next` positions. Caller-supplied operator state or file paths are not accepted.
+After at least one completed increment, the UI offers **Resume deployment ... with fencing** when the capability
+is available. It submits the current `expectedEpoch` and `mode: resume` for the owned continuous deployment.
+The backend persists a switch operation before remote calls, drains dispatched work and pauses successor planning.
 
-Each worker atomically retains one completed head and at most one prepared or uncertain candidate in
-`increments/checkpoint.json` under its configured state directory. The head contains operator state and cumulative
-series ownership. Completed output payload history is removed; the latest exact retry returns its receipt without
-broker I/O. Stale, skipped, forked and changed-context requests are refused. An uncertain candidate keeps its saved
-output bytes until acknowledgement and durable head commit.
+The driver verifies the last completed plan and result. Under the same lock used by publication, the gateway
+revokes the old grants and durably installs a larger epoch for the entire topic group and sink. The driver then
+idempotently installs new worker grants against each expected completed head. A failed installation never
+reactivates old authority; reconciliation repeats the recorded operation.
 
-Publication remains at least once. An interruption after acknowledgement but before durable state commit can replay
-identical output. Activation across three workers is not atomic. The unfinished resample tail remains in the
-checkpoint; Stop does not flush it. An open window retains the existing ceiling of 100,000 valid samples.
+Resume preserves deployment ID, exact source text/hash, accepted clock, whole-topic placement, completed heads,
+cursors and operator state. It preserves an open resample window and does not replay the topic prefix. It is an
+explicit publication-authority change, not automatic migration or takeover by another node.
 
-## Stop without abandoning an uncertain write
+## Restart a changed DAG into a fresh output
 
-Use **Stop deployment** in the continuous panel. The authenticated stop route records a durable request.
-Undispatched work can stop immediately; an already dispatched increment is reconciled first. An uncertain write
-keeps the deployment in `stopping` with topic ownership retained. A confirmed stop enters `stopped` and releases
-the backend's topic ownership. Retrying the same UI text returns the same deployment and does not resume a stopped
-deployment. Reusing that text with another execution profile returns a conflict.
+The UI offers **Restart changed DAG for deployment ...**. Keep the same complete input-topic set and placement,
+change the DAG, and choose a distinct fresh output topic. The backend verifies flow ownership and persists a new
+continuous deployment and its switch operation before activation. A conflicting output owner is rejected.
 
-One worker retains one immutable continuous chain, including after Stop. Replacing that chain requires an explicit
-reset of its disposable worker state after its deployment has conclusively stopped. The application has no implicit
-reset, retirement, migration or failover command. Process restart reuses the same state and node binding.
+The driver requires the replacement sink to be empty, verifies the old completed boundary and rotates authority
+before resetting worker chains. Reset requires the expected old completed head and no pending candidate. It
+clears the old operator head only after revocation. The replacement starts at sequence `"1"`, with every internal
+partition at offset zero, its own source hash and accepted clock. Retained input must still permit that replay.
+The old output topic remains intact. There is no state conversion or silent reset under the old deployment ID.
 
-## Verify new data and restart in Compose
+Identical replacement retries reuse their recorded operation. Another request body for the same expected epoch
+conflicts. Public deployment views expose `publicationEpoch` and switch progress, never grants or their tokens.
 
-Check the helper interface from the repository root:
+![Publication and deployment replacement sequence](uml/wayang-rust-rollout.svg)
+
+Editable [PlantUML](uml/wayang-rust-rollout.puml) and [PNG](uml/wayang-rust-rollout.png).
+
+## Stop after resolving dispatched output
+
+**Stop deployment** records durable intent. Undispatched work can stop immediately; dispatched work must reach a
+conclusive result. The gateway revokes the active epoch before the backend releases topic ownership. A pending
+switch or unknown publication outcome retains ownership and blocks a completed stop. Stop does not flush an open
+resample tail. A stopped deployment identity remains retired; submitting its old text is not implicit reactivation.
+The worker pool retains its one completed continuous chain. Stop does not reset it for an unrelated deployment, and resume
+is available only while the deployment is active. Request changed-DAG restart before Stop, or use a fresh isolated
+worker pool for another local experiment. Never discard an uncertain publication ledger to reuse a pool.
+
+## Inspect the acceptance evidence
+
+Read the helper's installed profiles from the repository root:
 
 ```bash
 python3 tools/verify_wayang_rust_compose.py --help
 ```
 
-Run the continuous acceptance profile:
+The continuous profile checks new data, identical idle retry, execution-service restart, a single-worker outage,
+backlog recovery and Stop. The fencing profile adds same-DAG resume, changed-DAG replay into a fresh output,
+captured old-candidate rejection and transport bypass checks. The helper and Java fixture compare records with
+actual submitted-DAG Java output. An already completed retry alone is not evidence of stale-writer fencing.
 
-```bash
-python3 tools/verify_wayang_rust_compose.py --profile continuous
-```
+A valid stale-owner check activates an old prepared candidate using its captured old grant after rotation and
+checks actual publication rejection plus unchanged output end offsets. Also inspect attempts through the read
+Proxy with a forged `client.id`, direct broker IP, write Proxy IP and host gateway. Network configuration alone is
+not proof that those attempts failed in the running environment.
 
-`KAFSCALE_BROKER_PORT` defaults to `39093`; `WAYANG_UI_PORT` defaults to `18081`. Use available loopback ports.
-The existing `--node`, `--playwright-module`, `--skip-build` and `--keep` options retain their documented behavior.
-The helper refuses another running instance of project `opentsx-wayang-rust` and preserves unrelated projects.
+Sanitized reports belong in `target/wayang-rust-compose/`; private state and credentials stay in the separate
+private directory. Use generated evidence from the current run rather than earlier success files. The in-memory
+broker remains alive during worker and driver restart, so those results do not establish broker durability.
 
-The real browser creates the DAG through the operation controls. The acceptance sequence is:
+Read [SPEC S1.12](../../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment),
+the [gateway tests](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPublicationGatewayTest.java),
+[worker fencing regressions](../../../rust/tsx-runner/tests/publication_fencing.rs),
+[backend switch tests](../../../opentsx-saas-backend/tests/test_wayang_switch.py) and
+[topology guards](../../../tools/test_kafscale_fenced_topology.py).
 
-1. Submit once and consume one short episode per partition of topics with one, two and three partitions.
-2. Retry the exact UI text while idle; retain the same deployment, clock, positions and output.
-3. Append a second episode per partition and consume it without another deployment request.
-4. Stop only the coordinator, Wayang driver and three workers. Keep Kafka, PostgreSQL and the backend alive.
-   Append through four episodes per partition while execution is down, then restart the same services and state.
-5. Consume that backlog automatically. Append a fifth episode per partition and consume it without redeployment.
-6. Stop only `runner-2` and append a sixth episode per partition. Verify the visible error and unchanged confirmed
-   progress while Kafka, PostgreSQL, the backend, coordinator, driver and workers one and three keep running.
-7. Start the same `runner-2` with its retained state and consume the sixth episode automatically.
-8. Append a seventh episode per partition and consume it without another deployment request.
-9. Stop through the actual UI and verify that all confirmed positions and output remain unchanged.
-
-The local acceptance on 2026-11-18 completed all nine phases. Its seven acknowledged increments consumed 42 input
-records and produced 42 distinct output episodes. The one-, two- and three-partition topics retained their original
-workers; every final internal `next` position was `"7"`. During the single-worker outage, all eight other services
-kept running and confirmed progress stayed at five increments and 30 records. Restarting that worker consumed the
-backlog automatically. Exact retry and Stop produced no additional output.
-
-`RustContinuousComposeFixture` derives reference output from the actual submitted DAG through continuing Java
-`SeriesStream` state. Its short episodes leave resample windows open across both increment and restart boundaries.
-Verification checks canonical Avro bytes, episode and series identities, values, axes, Kafka keys, timestamps,
-partitioning, schema headers, cumulative counters and all six internal partition watermarks. Only the expected
-runtime producer label and accepted provenance clock are normalized for comparison.
-
-Sanitized evidence is written to `target/wayang-rust-compose/`. The continuous profile records nine per-phase browser,
-public deployment and Java verification reports plus `result.json`. Credentials and worker state remain private in
-the separate directory documented by the Compose guide. Each new run invalidates old success evidence.
-`worker-outage.json` records the interrupted worker, appended input prefix and the other eight live services.
-
-The single-worker Compose outage starts while the deployment is idle. The separate Java planner regressions inject
-lost preparation responses and verify retained candidates, exact retry and refusal before activation.
-
-## Inspect the implementation boundary
-
-Read the [continuous planner](../../../opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustRollout.java),
-[coordinator journal](../../../opentsx-saas-backend/app/services/wayang_service.py),
-[worker head and candidate store](../../../rust/tsx-runner/src/worker.rs),
-[increment regressions](../../../rust/tsx-runner/tests/increments.rs) and
-[acceptance fixture](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixture.java).
-
-This trusted local profile does not qualify broker restart or durable external storage. Signed activation,
-distributed stale-writer fencing, automatic failover, dynamic rescaling, operational quotas, broader Rust kernels
-and durable Iceberg publication remain outside its contract. See the [delivery plan](wayang-unified-plan.md).
+Signed fleet activation, gateway high availability, backup/restore reconciliation, automatic worker failover,
+state migration, topic-incarnation qualification, dynamic rescaling, broader operators and durable Iceberg
+publication remain separate work in the [unified plan](wayang-unified-plan.md).

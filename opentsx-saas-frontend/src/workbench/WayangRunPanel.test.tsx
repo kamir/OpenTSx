@@ -179,3 +179,99 @@ it('keeps stopped deployments terminal without offering a resume or replacement 
   expect(screen.queryByRole('button', { name: 'Stop deployment local-one' })).not.toBeInTheDocument();
   expect(screen.getByText('This deployment is stopped. Reset disposable worker state before deploying a replacement.')).toBeInTheDocument();
 });
+
+function fencedDeployment(): WayangDeployment {
+  return { ...deployment, profile: 'continuous', state: 'idle', currentCycle: '2', completedCycles: '2',
+    stopRequested: false, inputRecords: '24', outputRecords: '12', publicationEpoch: '7', publicationRetired: false };
+}
+
+function advertiseFencing() {
+  useFlow.getState().setSavedId(9);
+  vi.mocked(wayangAPI.capabilities).mockResolvedValue({ canRun: true, reason: null, operators,
+    profiles: ['bounded', 'continuous'], publicationFencing: true, switchModes: ['resume', 'restart'] });
+}
+
+it('resumes the current deployment with its actual epoch without saving or redeploying the DAG', async () => {
+  advertiseFencing();
+  const current = fencedDeployment();
+  vi.mocked(wayangAPI.list).mockResolvedValue([current]);
+  const replace = vi.spyOn(wayangAPI, 'replace').mockResolvedValue({ ...current, state: 'switching',
+    switch: { operation: 'switch-one', mode: 'resume', state: 'pending', expectedEpoch: '7',
+      deployment: current.id, publicationEpoch: null, error: null } });
+  const save = vi.fn();
+  render(<WayangRunPanel profile="continuous" onSave={save} />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Resume deployment local-one with fencing' }));
+  await screen.findByText('Continuous deployment local-one: switching');
+  expect(replace).toHaveBeenCalledWith('local-one', { expectedEpoch: '7', mode: 'resume' });
+  expect(save).not.toHaveBeenCalled();
+  expect(wayangAPI.deploy).not.toHaveBeenCalled();
+  expect(screen.getByText('Publication epoch 7')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Stop deployment local-one' })).toBeDisabled();
+});
+
+it('requires a changed output and saves the exact changed DAG before requesting a fresh restart', async () => {
+  advertiseFencing();
+  const current = fencedDeployment();
+  vi.mocked(wayangAPI.list).mockResolvedValue([current]);
+  const replace = vi.spyOn(wayangAPI, 'replace').mockResolvedValue({ ...current, state: 'switching',
+    switch: { operation: 'switch-one', mode: 'restart', state: 'pending', expectedEpoch: '7',
+      deployment: 'local-next', publicationEpoch: null, error: null } });
+  const save = vi.fn(async () => 9);
+  render(<WayangRunPanel profile="continuous" onSave={save} />);
+  const restart = await screen.findByRole('button', { name: 'Restart changed DAG for deployment local-one' });
+  expect(restart).toBeDisabled();
+  fireEvent.change(screen.getByLabelText('Rust output topic'), { target: { value: 'tsx.fresh.clean.v2' } });
+  expect(restart).toBeEnabled();
+  expect(screen.getByText('Restart replays all selected topics from the start into a fresh output topic.')).toBeInTheDocument();
+  fireEvent.click(restart);
+  await waitFor(() => expect(replace).toHaveBeenCalledWith('local-one', { expectedEpoch: '7', mode: 'restart', flowId: 9,
+    dagText: buildWayangDag(useFlow.getState(), { ...configuration, outputTopic: 'tsx.fresh.clean.v2' }, operators) }));
+  expect(save).toHaveBeenCalledOnce();
+  expect(wayangAPI.deploy).not.toHaveBeenCalled();
+  expect(screen.getByText('Replacement target: local-next')).toBeInTheDocument();
+});
+
+it('polls pending switches and keeps publication uncertainty visible without allowing Stop', async () => {
+  vi.useFakeTimers();
+  try {
+    advertiseFencing();
+    const pending: WayangDeployment = { ...fencedDeployment(), state: 'switching', error: 'Publication outcome remains uncertain.',
+      switch: { operation: 'switch-one', mode: 'resume', state: 'pending', expectedEpoch: '7',
+        deployment: 'local-one', publicationEpoch: null, error: 'Publication outcome remains uncertain.' } };
+    vi.mocked(wayangAPI.list).mockResolvedValueOnce([pending]).mockResolvedValue([{ ...pending, state: 'idle', error: null,
+      publicationEpoch: '8', switch: { ...pending.switch!, state: 'active', publicationEpoch: '8', error: null } }]);
+    await act(async () => { render(<WayangRunPanel profile="continuous" onSave={vi.fn()} />); });
+    expect(screen.getByRole('button', { name: 'Stop deployment local-one' })).toBeDisabled();
+    expect(screen.getAllByText('Publication outcome remains uncertain.').length).toBeGreaterThan(0);
+    await act(async () => { await vi.advanceTimersByTimeAsync(2000); });
+    expect(screen.getByText('Publication epoch 8')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Resume deployment local-one with fencing' })).toBeEnabled();
+    expect(wayangAPI.deploy).not.toHaveBeenCalled();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('does not offer switching for unallocated epochs, other selected flows or legacy capabilities', async () => {
+  advertiseFencing();
+  vi.mocked(wayangAPI.list).mockResolvedValue([{ ...fencedDeployment(), publicationEpoch: '0' },
+    { ...fencedDeployment(), id: 'another-flow', flowId: 10 }]);
+  render(<WayangRunPanel profile="continuous" onSave={vi.fn()} />);
+  await screen.findByText('Continuous deployment local-one: idle');
+  expect(screen.queryByRole('button', { name: /with fencing/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Restart changed DAG/ })).not.toBeInTheDocument();
+});
+
+it('keeps a retired deployment terminal when its output topic changes', async () => {
+  advertiseFencing();
+  vi.mocked(wayangAPI.list).mockResolvedValue([{ ...fencedDeployment(), state: 'stopped', stopRequested: true,
+    publicationRetired: true, publicationEpoch: '8' }]);
+  render(<WayangRunPanel profile="continuous" onSave={vi.fn()} />);
+  await screen.findByText('Continuous deployment local-one: stopped');
+  expect(screen.queryByRole('button', { name: /with fencing/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Restart changed DAG/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Run continuously with Wayang' })).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Rust output topic'), { target: { value: 'tsx.fresh.clean.v2' } });
+  expect(screen.queryByRole('button', { name: 'Run continuously with Wayang' })).not.toBeInTheDocument();
+  expect(screen.getByText('This deployment is retired. Replacement is unavailable after Stop.')).toBeInTheDocument();
+});

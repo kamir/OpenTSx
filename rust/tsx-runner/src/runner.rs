@@ -192,6 +192,16 @@ pub fn activate(
     broker: &mut impl Broker,
     checkpoint: &Path,
 ) -> Result<Receipt, String> {
+    activate_captured(run, prepared, broker, checkpoint, None)
+}
+
+pub fn activate_captured(
+    run: &Admitted,
+    prepared: &Prepared,
+    broker: &mut impl Broker,
+    checkpoint: &Path,
+    grant: Option<&crate::publication::PublicationGrant>,
+) -> Result<Receipt, String> {
     if run.increment.is_some() {
         return Err("increment requests require the worker's durable predecessor state".into());
     }
@@ -205,7 +215,7 @@ pub fn activate(
         return Ok(saved.receipt);
     }
     store.validate(&prepared.completion)?;
-    broker.publish(run, &prepared.records)?;
+    broker.publish_captured(run, &prepared.records, grant)?;
     store.commit(&prepared.completion)?;
     Ok(prepared.completion.receipt.clone())
 }

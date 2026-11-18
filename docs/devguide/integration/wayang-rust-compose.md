@@ -1,181 +1,163 @@
 # Run a workbench DAG on three Rust workers through Wayang
 
-Run a workbench DAG with Apache Wayang 1.1.1 and `tsx-runner` 0.1.0, verified through the UI on 2026-11-17
-with three Compose workers, exact retry and service restart.
+Use the local capped deployment profile with Apache Wayang 1.1.1 and `tsx-runner` 0.1.0.
 
-You need Linux or macOS, Docker with Compose, JDK 21, Maven, npm, Node 24.22.2, Playwright 1.62.1 and its Chromium
-browser. The helper uses `fcntl` and an unprivileged host user. It downloads existing runtime/compiler images and
-builds the Linux Rust binary in `rust:1.99.1-bookworm`; it does not build container images. Use disposable local data.
+You need Linux or macOS, Docker Compose, JDK 21, Maven, npm, Node 24.22.2, Playwright 1.62.1 with Chromium,
+and an unprivileged host user. Use disposable local data. The helper builds Linux binaries in pinned compiler
+containers without building container images.
 
-## Follow the bounded execution boundary
+## Preserve the DAG and whole-topic placement
 
-Open **Smart Topic**, then select **Bounded Wayang on Rust** under **Deployment target**. The
-**Run bounded with Wayang** action submits the exact `opentsx.dag.v2` text to the authenticated backend.
-PostgreSQL stores that text, its `specHash`, the accepted clock, the complete physical plan and its
-`planHash`. A separate coordinator owns the PostgreSQL advisory lock and reconciles queued or running deployments.
-The Java driver is stateless with respect to authoritative deployment control.
+Open **Smart Topic** and select **Bounded Wayang on Rust**. **Run bounded with Wayang** submits the exact
+`opentsx.dag.v2` text to the authenticated backend. PostgreSQL stores the original text, `specHash`, accepted
+clock, physical plan and `planHash`. A standalone coordinator reconciles persisted work under a PostgreSQL
+advisory lock. The Java driver owns the separate private publication ledger that enforces output authority.
 
-```mermaid
-flowchart LR
-    UI[Workbench DAG] --> API[Authenticated backend]
-    API --> PG[(PostgreSQL deployment journal)]
-    C[Standalone coordinator] --> PG
-    C --> W[Wayang RustPlatform and RustExecutor]
-    W --> R1[Rust worker 1]
-    W --> R2[Rust worker 2]
-    W --> R3[Rust worker 3]
-    T1[(Whole topic: 1 partition)] --> R1
-    T2[(Whole topic: 2 partitions)] --> R2
-    T3[(Whole topic: 3 partitions)] --> R3
-    R1 --> O[(Shared clean topic)]
-    R2 --> O
-    R3 --> O
-```
+The compiler accepts one to three distinct whole input topics and one distinct episode sink. Topic order maps
+to workers sorted by node ID. Every internal partition stays on its topic's worker. Partition-count changes,
+missing positions, retention that removes offset zero and capacity violations reject admission rather than split a topic.
+All workers must match the admitted artifact digest and state ABI. An initial fenced sink must be empty.
 
-Wayang receives connected logical topic sources, `UnionAllOperator` nodes when needed, an optional fused cleaning
-chain and a topic sink. `RustMappings` selects physical operators on one `RustPlatform`; `RustExecutor` executes the
-complete stage once. Its channels carry internal topology, without materializing episode payloads in Java.
-Original UI node IDs and ordered operation parameters remain attached to the logical and physical operators.
-The stage fans out complete fragments to the workers. There is no remote call per numerical operation or Java
-execution fallback. The load/cost defaults are placeholders; placement is static, not cost-based node selection.
+Supported operations remain `decode.avro-soe`, `dq.checks` with `PLAUSIBLE_RANGE`, `convert.unit` and an optional
+trailing `resample`. The UI maps `dq.plausible-range` to `dq.checks`. Other operators reject. Cleaning parameters,
+resource limits and numerical semantics are unchanged by fencing.
 
-The local compiler admits one to three distinct whole source topics and one distinct episode sink. Topic order is
-paired with workers sorted by node ID. All workers must advertise the same artifact digest and compatible state ABI.
-The supported operations are `decode.avro-soe`, `dq.checks` with `PLAUSIBLE_RANGE`, `convert.unit` and an optional
-trailing `resample`. The UI aliases `dq.plausible-range` to `dq.checks`. Unsupported operators fail admission.
-The backend and worker enforce their existing byte, record, sample, series and state caps.
+`RustMappings` selects physical sources, optional unions, a fused cleaning chain and sink on one `RustPlatform`.
+`RustExecutor` executes the connected stage once. These Wayang channels carry topology rather than raw input
+payloads. Original UI node IDs, ordered parameters and raw-text hashes remain attached to the plan. Placement is
+static; placeholder costs are not a measured node-selection policy. There is no numerical Java fallback.
 
-Each assignment owns every partition of its source topic. The driver freezes ordered internal positions from zero
-to each observed end offset and refuses retained inputs whose beginning is no longer zero. Each fragment has its own
-ID and text hash; all fragments preserve the exact original UI text and original `specHash`. Partition count changes,
-missing positions and oversized topics fail closed. Splitting a topic between workers is never a placement fallback.
+![Local three-worker deployment and enforced publication path](uml/wayang-rust-deployment.svg)
 
-## Keep preparation, acknowledgement and retry distinct
+Editable [PlantUML](uml/wayang-rust-deployment.puml) and [PNG](uml/wayang-rust-deployment.png).
 
-```mermaid
-sequenceDiagram
-    participant UI as Workbench
-    participant API as Backend
-    participant DB as PostgreSQL
-    participant C as Coordinator
-    participant W as Wayang stage
-    participant R as All assigned Rust workers
-    participant K as Kafka
-    UI->>API: Submit flowId and exact dagText
-    API->>W: Plan using capabilities and complete topic cuts
-    W-->>API: Frozen plan, fragments and request hashes
-    API->>DB: Persist plan, clock and topic ownership
-    API-->>UI: Durable deployment handle
-    C->>DB: Reconcile persisted deployment
-    C->>W: Execute the same plan
-    W->>R: Prepare all requests privately
-    R->>K: Read frozen cuts and compute capped output
-    R-->>W: Persisted candidates and input/output series ownership
-    W->>W: Reject cross-topic input or output series collisions
-    W->>R: Activate prepared requests in parallel
-    R->>K: Publish records and await acknowledgements
-    R->>R: Persist completed checkpoint and receipt
-    R-->>W: Verified receipts
-    W-->>C: Completed result
-    C->>DB: Persist outcome and release topic ownership
-    UI->>API: Read durable status
-```
+## Publish through the current authority
 
-Preparation reads and computes the complete bounded input privately on every worker. No worker publishes until all
-preparations succeed and the stage checks that input and derived series ownership do not collide across topics.
-Activation can partially publish before a different worker fails. Output is at least once; this profile provides
-neither atomic publication across workers nor transactional Kafka rollback.
+Every worker prepares its capped input and candidate output privately. The stage requires all preparations and
+checks cross-topic input and derived-series ownership before activation. The gateway registers each exact request
+hash, prepared output digest and count after those checks.
 
-The exact DAG text is accepted once per installation so a retry retains its original cut, clock and identities.
-A conflicting owner receives a conflict instead of a new run with another clock. Changing whitespace changes the raw
-`specHash`. Repeating the same submission does not refresh its input cut. Completion requires all output
-acknowledgements and valid receipts. Each worker stores its retained
-pipeline state, next positions and receipt in a checksummed local checkpoint. An open resample tail remains in state.
-An exact completed retry returns the saved receipt without publishing more records.
+Workers read through `kafscale-read`. Their output goes to the Java publication gateway through a private captured
+grant. The gateway validates the grant, epoch, original request bytes, ordered records, digest and count before
+any Kafka write. It publishes only through `kafscale-write`. OpenTSx producers use Apache Kafka Broker or KafScale
+Proxy; no fixture or worker publishes directly to KafScale Broker.
 
-An uncertain activation is retryable with the same request hash and saved candidate bytes. The
-`activationRetryable` status keeps the deployment under reconciliation and retains its PostgreSQL topic ownership.
-It does not authorize moving the topic to another node, changing the cut, or choosing another clock.
-Worker or coordinator restart reuses the persisted plan and worker state. Automatic failover and rescaling are outside
-this profile.
+The driver serializes execution, replacement and retirement for its single-chain worker pool. Concurrent fresh
+deployments cannot both admit publication authority for the same workers. Publication uses a separate gateway
+lock, so worker publication can complete while a control operation waits for its result.
+
+The gateway serializes publication and authority rotation under one lock. It persists a `publishing` intent
+before Kafka I/O, waits for every output acknowledgement and persists `acknowledged` before returning a receipt.
+A lost HTTP response after durable acknowledgement returns the cached receipt without another Kafka send.
+A crash or broker error with an unknown write outcome leaves `publishing` or `uncertain` evidence. That request
+is quarantined: identical retry, replacement and Stop cannot assume that no records were written.
+
+The worker commits its completed checkpoint only after verifying the gateway receipt. A prepared journal captures
+its grant once; installing a newer grant cannot refresh an old candidate's authority. An exact completed retry
+returns the retained receipt. Partial activation can expose an output prefix; there is no atomic multi-worker
+publication, Kafka transaction or exactly-once claim.
+
+## Keep control credentials and the ledger private
+
+The Compose topology has four internal role networks:
+
+| Network | Members and purpose |
+| --- | --- |
+| `broker_net`, `172.29.73.0/24` | Broker, etcd and the two proxies. Broker-facing Proxy IPs `.10` and `.11` identify read and write authority. |
+| `worker_net`, `172.29.74.0/24` | Read Proxy, three workers and the driver's publication interface. |
+| `writer_net`, `172.29.75.0/24` | Write Proxy and driver. The host fixture reaches only the loopback-published write Proxy port. |
+| `control_net`, `172.29.76.0/24` | Backend, coordinator, PostgreSQL, frontend and driver control interface. |
+
+Two separate non-internal bridges support host port publication: `proxy_host_net` contains only `kafscale-write`,
+and `ui_host_net` contains only `frontend`. They are separate so the frontend does not gain a direct write-Proxy
+network path. Workers, the read Proxy, broker, etcd, driver and backend do not join either host bridge.
+
+The broker uses `remote_addr` ACL identity, default deny and fail-closed configuration. The read Proxy receives
+only topic `fetch` permission; the write Proxy receives publication and provisioning permission. Metadata
+auto-creation is disabled. The broker has no published host port. Workers have read-only roots, drop all Linux
+capabilities and use `no-new-privileges`. A forged Kafka `client.id` cannot turn the read Proxy into a writer.
+
+Driver control binds `172.29.76.10:8095` and requires `X-OpenTSx-Run-Token`. Publication binds
+`172.29.74.10:8096`, with the worker-network alias `wayang-publication`, and requires the per-node grant.
+Fenced worker mutations require the actual controller TCP peer `172.29.74.10`; forwarded headers do not authorize
+them. Backend and coordinator obtain the existing `DAG_RUN_TOKEN` from their private environment.
+
+The helper stores `run-token`, `publication-acl.json`, driver arguments, worker state and the publication ledger
+under `target/wayang-rust-private/<random>/`. Private files use mode `0600`; state directories use `0700`.
+The driver's `/publication` mount contains the checksummed atomic ledger and an exclusive process lock. Reuse
+that directory on driver restart. Missing initialized ledgers, corrupt contents, conflicting process owners and
+storage failures fail closed. Never clear or copy an uncertain ledger to admit a replacement.
+
+## Respect the local gateway capacity
+
+| Inventory | Limit |
+| --- | --- |
+| Deployment groups | 64 |
+| Recorded authority operations | 64 |
+| Registered request entries | 256 |
+| Serialized ledger envelope | 4,194,304 bytes, or 4 MiB |
+| Driver control HTTP body | 1,048,576 bytes, or 1 MiB |
+| Publication HTTP body | 85,000,000 bytes |
+
+The control body may contain the completed old plan/result and a replacement plan. Its 1 MiB transport ceiling
+does not change the 32,768-byte original DAG limit. The publication data interface has its own larger body cap.
+
+Retired identities and operation receipts remain recorded. Each active group reserves one operation slot for
+retirement, so recorded operations plus active-group reservations cannot exceed 64. New admission or switching
+rejects before consuming that reserve. A full ledger rejects further work. These are local
+caps, not tenant quotas or a scalable deployment registry. The gateway has one process owner and no automatic
+failover. PostgreSQL control recovery does not replace publication-ledger recovery. The host and Docker control
+plane remain trusted; the host fixture listener is not a production client-authentication boundary.
 
 ## Run the isolated acceptance helper
 
-The helper uses project `opentsx-wayang-rust` and refuses occupied ports or an existing project. It starts PostgreSQL,
-a KafScale v1.6.0 Proxy with a loopback-only broker, private embedded etcd metadata and the in-memory S3 test
-backend, plus the application, driver and three workers. The helper builds the
-[pinned transport bundle](../../../opentsx-kafscale-conformance/README.md#build-the-pinned-transport-bundle)
-without building a container image. The broker stays alive during worker/coordinator restart.
-This test supplies no S3 durability or broker-restart proof. Fixture and worker producers use the Proxy.
-Only the frontend and Proxy listener are published on loopback. Driver, worker and PostgreSQL ports stay internal.
-The generated administrator uses normal login and role checks; `TEST_LOGIN` remains false.
-
-The Compose profile requires nonempty `POSTGRES_PASSWORD`, `SECRET_KEY` and
-`FIRST_SUPERUSER_PASSWORD` values. The helper creates fresh values for each run
-and supplies them through its process environment and private `generated.env`.
-It validates the configuration with `config --quiet` before starting services.
-Missing or empty credential variables reject configuration; credentials have no
-fallback values. Keep the private environment file out of logs and artifacts.
-
-Check the installed command interface:
+Read the installed interface from the repository root:
 
 ```bash
 python3 tools/verify_wayang_rust_compose.py --help
 ```
 
-Run from the repository root after installing the prerequisites:
+The bounded profile uses the real workbench controls and compares actual submitted-DAG output with continuing
+Java implementations. The continuous and fencing profiles exercise their own lifecycle boundaries; read the
+[continuous guide](wayang-rust-continuous.md). Generated reports establish only the run that produced them.
 
-```bash
-python3 tools/verify_wayang_rust_compose.py
-```
+`KAFSCALE_BROKER_PORT` defaults to `39093` and selects the Proxy listener; `WAYANG_UI_PORT` defaults to `18081`.
+The write Proxy advertises `kafscale-write`; the private host resolver maps it to loopback for Java fixtures.
+`--node` selects the Node executable, `--playwright-module` selects the installed browser module, `--skip-build`
+requires matching source hashes, and `--keep` retains this project's private state. The helper refuses occupied
+ports and existing project resources rather than stopping unrelated services.
 
-`KAFSCALE_BROKER_PORT` defaults to `39093`; `WAYANG_UI_PORT` defaults to `18081`. Set an available value explicitly if
-one is occupied. Use `--node <node-executable>` for Node 24.22.2 outside `PATH`, and
-`--playwright-module <module-directory>` for an existing Playwright 1.62.1 installation. `--skip-build` requires
-artifacts matching the current source hash. `--keep` retains this project's containers, database and private state
-for inspection.
-The helper never stops another Compose project. Normal cleanup removes this project's data and retains build caches.
+The helper builds the [pinned KafScale bundle](../../../opentsx-kafscale-conformance/README.md#build-the-pinned-transport-bundle),
+starts separate etcd, broker, read/write proxies, PostgreSQL and three workers, then runs the application and driver.
+The local bundle uses pinned KafScale v1.6.0 source with a guarded
+[EtcdStore build overlay](../../../tools/kafscale_metadata_overlay.py), in addition to the broker version stamp.
+The overlay serializes `CreateTopic`, `CreatePartitions`, `DeleteTopic` and watcher `refreshSnapshot` through one
+store-local mutex. Its scope is the single-broker, single-metadata-writer fixture. Multi-broker metadata
+coordination remains unqualified. The original pinned checkout stays unchanged; the built fixture includes the
+overlay and must be identified by its recorded source/overlay and binary hashes.
+The guarded [Proxy protocol overlay](../../../tools/kafscale_proxy_protocol_overlay.py) checks the pinned Proxy
+source checksum, removes the duplicate frame-length prefix from re-encoded Produce/Fetch requests and uses
+protocol constructors for synthetic error-partition defaults. Successful fan-out keeps the backend eligible
+for later requests. The builder runs its protocol regressions against the overlaid upstream `cmd/proxy` package
+before compiling the bundle. This local fixture includes both overlays;
+its provenance does not identify an unmodified upstream release.
 
-The browser uses the real operation controls to build plausible-range checks, unit conversion and a 20-second mean
-resample. It submits one DAG for topics with one, two and three internal partitions. The Java fixture checks twelve
-output episodes after initial execution, exact UI retry and worker/driver/coordinator restart. It recomputes expected
-output from the actual submitted DAG through `DagToWayang.parameters`, `CleanChain` and `SeriesStream`.
-Canonical Avro bytes, identities, axes, keys, Kafka timestamps, partitioning, schema headers and receipts are checked.
-Only the expected runtime producer label and accepted provenance clock are normalized for the Java comparison.
+It supplies fresh private application credentials, `DAG_RUN_TOKEN` and ACL files before Compose validation.
+Only the frontend and write Proxy are published on host loopback. The in-memory S3 test backend stays alive during
+worker and driver restart; this is no broker-restart or durable external-storage qualification.
 
-Sanitized evidence is written under `target/wayang-rust-compose/`, including `submitted-dag.txt`, per-phase public
-deployment views, `verified-<phase>.json` and `result.json`. Generated credentials, driver arguments and worker state
-are private under `target/wayang-rust-private/<random>/`; keep that directory out of artifacts and logs.
+Sanitized evidence belongs in `target/wayang-rust-compose/`. Private candidates and grants remain under the
+separate private directory and must not be uploaded as artifacts or printed in logs.
 
-## Check credential guards without starting services
+## Inspect the contract and remaining work
 
-Run the deterministic
-[helper tests](../../../tools/test_verify_wayang_rust_compose.py) from the
-repository root:
+Read [SPEC S1.12](../../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment),
+the [gateway](../../../opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustPublicationGateway.java),
+[rollout stage](../../../opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustRollout.java),
+[worker grant transport](../../../rust/tsx-runner/src/publication.rs),
+[worker lifecycle](../../../rust/tsx-runner/src/worker.rs) and
+[backend journal](../../../opentsx-saas-backend/app/services/wayang_service.py).
 
-```bash
-python3 -m unittest tools/test_verify_wayang_rust_compose.py
-```
-
-The tests cover all four credential substitutions, reject fixtures that replace
-required interpolation with a fallback or allow empty values, and verify that
-the helper supplies its generated credentials before configuration validation.
-These guards check the existing profile behavior without starting Docker
-services or printing credential values.
-
-## Inspect the implementation and remaining limits
-
-Read the [UI builder](../../../opentsx-saas-frontend/src/workbench/wayang.ts),
-[backend journal](../../../opentsx-saas-backend/app/services/wayang_service.py),
-[coordinator](../../../opentsx-saas-backend/app/wayang_worker.py),
-[Wayang compiler and stage action](../../../opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustRollout.java),
-[executor](../../../opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustExecutor.java) and
-[worker lifecycle](../../../rust/tsx-runner/src/worker.rs).
-The [acceptance helper](../../../tools/verify_wayang_rust_compose.py) and
-[Java fixture](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/RustRolloutComposeFixture.java) define the checks.
-
-This is a trusted local bounded deployment, not the signed fleet protocol in specification S5/S7.
-The separate [continuous profile](wayang-rust-continuous.md) adds acknowledged increments and stateful service restart.
-Automatic failover, broad operator coverage, operational tenant quotas, artifact signatures and durable Iceberg
-publication remain separate work in the [unified plan](wayang-unified-plan.md). HTTP generation/hash checks do not
-establish production authentication, network isolation or distributed stale-writer fencing.
+This local protocol does not implement the signed S5/S7 fleet protocol, gateway high availability, automatic
+worker failover, state migration, dynamic rescaling, durable Iceberg publication or broader Rust operators.
+See the [unified plan](wayang-unified-plan.md) for those separate gates.

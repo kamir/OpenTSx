@@ -147,9 +147,13 @@ public final class RustContinuousComposeFixture {
     }
 
     static SeriesStream stream(String sourceText, Path catalog, JsonNode state) throws Exception {
+        return stream(sourceText, catalog, state, OUTPUT);
+    }
+
+    static SeriesStream stream(String sourceText, Path catalog, JsonNode state, String output) throws Exception {
         JsonNode dag = DagToWayang.parameters(YAML.readTree(sourceText), catalog);
         if (!dag.path("schema").asText().equals("opentsx.dag.v2") || !dag.path("source").path("kind").asText().equals("kafscale-broker")
-                || dag.path("sinks").size() != 1 || !dag.path("sinks").get(0).path("topic").asText().equals(OUTPUT)) {
+                || dag.path("sinks").size() != 1 || !dag.path("sinks").get(0).path("topic").asText().equals(output)) {
             throw new IllegalStateException("submitted continuous UI DAG has a different output contract");
         }
         Set<String> topics = new HashSet<>(); dag.path("source").path("topics").forEach(topic -> topics.add(topic.asText()));
@@ -180,8 +184,12 @@ public final class RustContinuousComposeFixture {
     }
 
     static List<Episode> expected(String sourceText, long createdAt, Path catalog, int through) throws Exception {
+        return expected(sourceText, createdAt, catalog, through, OUTPUT);
+    }
+
+    static List<Episode> expected(String sourceText, long createdAt, Path catalog, int through, String output) throws Exception {
         blocks(Integer.toString(through));
-        SeriesStream stream = stream(sourceText, catalog);
+        SeriesStream stream = stream(sourceText, catalog, null, output);
         List<Episode> result = new ArrayList<>();
         for (int worker = 1; worker <= 3; worker++) for (int partition = 0; partition < worker; partition++) for (int block = 0; block < through; block++) {
             for (Episode episode : stream.add(raw(worker, partition, block))) {
@@ -194,6 +202,10 @@ public final class RustContinuousComposeFixture {
     }
 
     private static void verify(String bootstrap, Path directory, Path deploymentPath, Path sourcePath, int through) throws Exception {
+        verify(bootstrap, directory, deploymentPath, sourcePath, through, OUTPUT);
+    }
+
+    static void verify(String bootstrap, Path directory, Path deploymentPath, Path sourcePath, int through, String output) throws Exception {
         JsonNode deployment = JSON.readTree(deploymentPath.toFile());
         String sourceText = Files.readString(sourcePath, StandardCharsets.UTF_8);
         String specHash = ExecutionAssignments.sha256(sourceText);
@@ -202,7 +214,7 @@ public final class RustContinuousComposeFixture {
             throw new IllegalStateException("continuous deployment is not caught up with the submitted UI graph");
         }
         long createdAt = decimal(deployment.path("createdAtMicros"));
-        List<Episode> episodes = expected(sourceText, createdAt, Path.of("systems", "processors"), through);
+        List<Episode> episodes = expected(sourceText, createdAt, Path.of("systems", "processors"), through, output);
         Map<String, Episode> expected = new LinkedHashMap<>();
         for (Episode episode : episodes) if (expected.put(episode.getEpisodeId(), episode) != null) throw new IllegalStateException("duplicate expected continuous identity");
         if (decimal(deployment.path("inputRecords")) != 6L * through || decimal(deployment.path("outputRecords")) != expected.size()
@@ -213,7 +225,7 @@ public final class RustContinuousComposeFixture {
         for (JsonNode assignment : deployment.path("assignments")) {
             int worker = 0; for (int index = 1; index <= 3; index++) if (input(index).equals(assignment.path("inputTopic").asText())) worker = index;
             if (worker == 0 || !assignment.path("node").asText().equals("worker-" + worker) || !nodes.add(assignment.path("node").asText())
-                    || !topics.add(assignment.path("inputTopic").asText()) || !assignment.path("outputTopic").asText().equals(OUTPUT)
+                    || !topics.add(assignment.path("inputTopic").asText()) || !assignment.path("outputTopic").asText().equals(output)
                     || !assignment.path("specHash").asText().equals(specHash) || decimal(assignment.path("partitionCount")) != worker
                     || decimal(assignment.path("cumulativeInputRecords")) != (long) worker * through) throw new IllegalStateException("continuous whole-topic assignment changed");
             int selectedWorker = worker;
@@ -227,7 +239,7 @@ public final class RustContinuousComposeFixture {
             if (!receipt.path("schema").asText().equals("opentsx.local-receipt.v1") || !receipt.path("requestHash").equals(assignment.path("requestHash"))
                     || !receipt.path("requestHash").asText().matches("[0-9a-f]{64}") || !requests.add(receipt.path("requestHash").asText())
                     || !receipt.path("node").equals(assignment.path("node")) || !receipt.path("deployment").equals(deployment.path("id"))
-                    || !receipt.path("inputTopic").equals(assignment.path("inputTopic")) || !receipt.path("outputTopic").asText().equals(OUTPUT)
+                    || !receipt.path("inputTopic").equals(assignment.path("inputTopic")) || !receipt.path("outputTopic").asText().equals(output)
                     || !receipt.path("positions").equals(assignment.path("positions")) || !receipt.path("artifactDigest").asText().matches("sha256:[0-9a-f]{64}")
                     || !receipt.path("outputDigest").asText().matches("[0-9a-f]{64}") || !receipt.path("stateDigest").asText().matches("[0-9a-f]{64}")) {
                 throw new IllegalStateException("continuous receipt differs from the admitted worker");
@@ -237,8 +249,8 @@ public final class RustContinuousComposeFixture {
         if (nodes.size() != 3 || topics.size() != 3 || artifacts.size() != 1) throw new IllegalStateException("continuous deployment lacks its three verified workers");
         Set<String> seen = new HashSet<>();
         try (KafkaConsumer<byte[], byte[]> consumer = KafScaleClients.consumer(bootstrap)) {
-            List<TopicPartition> partitions = List.of(new TopicPartition(OUTPUT, 0), new TopicPartition(OUTPUT, 1), new TopicPartition(OUTPUT, 2));
-            if (consumer.partitionsFor(OUTPUT, TIMEOUT).size() != 3) throw new IllegalStateException("continuous output partition inventory changed");
+            List<TopicPartition> partitions = List.of(new TopicPartition(output, 0), new TopicPartition(output, 1), new TopicPartition(output, 2));
+            if (consumer.partitionsFor(output, TIMEOUT).size() != 3) throw new IllegalStateException("continuous output partition inventory changed");
             var starts = consumer.beginningOffsets(partitions, TIMEOUT); var ends = consumer.endOffsets(partitions, TIMEOUT);
             Map<TopicPartition, long[]> ranges = new LinkedHashMap<>(); long total = 0;
             for (TopicPartition partition : partitions) {

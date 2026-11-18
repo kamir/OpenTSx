@@ -89,7 +89,8 @@ configuration. It supports pass-through and three cleaning operations. The separ
 `RustPlatform` and `RustExecutor` to map one connected source/union/clean/sink stage to one to three HTTP workers.
 The backend owns the frozen plan and clock in PostgreSQL; the Java driver has no authoritative deployment journal.
 All workers prepare privately before cross-topic series ownership checks and parallel activation. Completed retries
-reuse stored receipts; uncertain publication retries the same saved requests while topic ownership remains held.
+reuse stored receipts. The local gateway retains unknown publication outcomes and topic ownership; a durable
+acknowledgement can be retried through its cached receipt without another Kafka send.
 Activation can expose partial at-least-once output. Placeholder load costs do not select worker placement, and this
 local profile does not implement the signed continuous fleet contract.
 
@@ -98,7 +99,12 @@ stages on the same complete-topic bindings. PostgreSQL persists each plan before
 their own preceding state and verify sequence/hash/cursor continuity. Idle keeps topic ownership. New input and
 service restart continue without redeployment. Durable Stop reconciles dispatched work before releasing ownership.
 Transient preparation failures retain the exact plan and private candidates for retry before any activation.
-This profile retains one immutable chain per worker and does not provide production migration or fencing.
+The capped local gateway fences old captured grants at the publication boundary. Explicit same-DAG resume rotates
+publication authority while preserving the completed head; changed-DAG restart replays the same whole topics into
+a distinct fresh output after revocation. Its private ledger has one process owner, 64 groups, 64 operation/retirement slots,
+256 request entries and a 4 MiB byte ceiling. Unknown broker outcomes block replacement and retirement.
+Read [SPEC S1.12](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment).
+This is no gateway high-availability or signed production-fleet qualification.
 
 ## Use the plugin
 
