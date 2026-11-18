@@ -46,6 +46,13 @@ Disjoint partition groups keep a healthy backend eligible for later groups in th
 The builder executes the actual overlaid Proxy and metadata package regressions before compiling the binaries.
 The manifest includes the protocol overlay and wire-test hashes.
 
+The isolated launcher requires a known nonzero public Proxy listen port and excludes it
+when choosing its three
+private ports. The etcd client, etcd peer and broker ports are distinct. Allocation rejects
+repeated candidates and fails after 64 unsuccessful candidates for a private port.
+The builder and CI run launcher regressions with injected candidates without opening sockets;
+the manifest includes the launcher-test hash. This does not reserve ports across process handoff.
+
 ## Start the local Proxy
 
 Export nonempty `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` from your private
