@@ -1,7 +1,7 @@
 # Deliver UI DAGs through Wayang to Java and Rust nodes
 
 Use this plan with the implemented local bounded and continuous profiles and Apache Wayang 1.1.1,
-inspected on 2026-11-17.
+inspected on 2026-11-18.
 
 You need [concept 20](../../datamodel-2026/20-WAYANG-TS-OPERATORS.md), its
 [specification](../../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md) and
@@ -17,6 +17,7 @@ The [continuous UI profile](wayang-rust-continuous.md) advances acknowledged fin
 bindings. It persists every increment before dispatch, restores worker-local state, retains cumulative ownership
 through idle and reconciles dispatched work before Stop. One immutable chain is retained per worker; production
 replacement and fencing remain outside this profile.
+Transient preparation failures retain the admitted plan and private candidates for identical retry before activation.
 
 The separate [standalone replay](rust-runner-local.md) fixture runs three independent bounded jobs.
 [Shared-contract validation](wayang-shared-contracts.md) remains an offline library boundary.
@@ -141,7 +142,7 @@ Planning IDs below are local work packages, not created issue numbers. Owners ar
 | U02: driver lowering; Wayang owner | U01 | Implemented custom Rust logical/physical operators, mappings, topology channel and complete-stage executor. Deterministic tests exercise three connected sources, preserved UI IDs, private prepare and receipt/retry failures. Costs remain placeholders and node placement remains static. |
 | U03: durable control; backend owner | U01 | PostgreSQL deployment/topic ownership, continuous control, bounded cycle history and the advisory-lock coordinator are implemented. Exact source/clock and each pending plan survive restart; idle and uncertainty retain ownership. Durable Stop reconciles dispatched work. Restore fencing and general retire remain open. |
 | U04: minimal Rust runner; Rust owner | U00, U01 | Local bounded replay and continuous increments implement pass-through, range checks, unit conversion and trailing resample. One atomic head/candidate checkpoint retains state, cumulative owners and exact retries. One immutable continuous chain is retained per worker. Full cross-target/conformance qualification remains separate. |
-| U05: UI-to-three-worker local prototype; application/platform | U02, U03, U04 | Explicit bounded/continuous targets and Compose profiles cover whole topics with one, two and three partitions. Continuous acceptance adds live input, downtime backlog, stateful restart, later input and Stop against Java. Actual run evidence is required; this does not qualify production fleet operation. |
+| U05: UI-to-three-worker local prototype; application/platform | U02, U03, U04 | Explicit bounded/continuous targets and Compose profiles cover whole topics with one, two and three partitions. Continuous acceptance adds live input, downtime backlog, stateful restart, single-worker outage, later input and Stop against Java. Actual run evidence is required; this does not qualify production fleet operation. |
 | U06: production ownership and rollout; platform/security | U05; approvals | Enforce stale-output rejection, policy/signatures, resource limits, staged rollout, retention and restore runbooks. Network-partition, partial activation and operating qualification before production. |
 | U07: catalog expansion; algorithm owners | Per-operator vectors | Continue A2/A3 Java kernels and Rust ports without blocking U02/U04 on every operator. No duplicate generator or conflicting ownership of shared algorithm fixtures. |
 | U08: bounded storage profile; storage/backend | U00, U01, U03; completion requires U02 and a qualified bounded executor plus selected U07 kernels | Snapshot acquisition, durable Avro seal, actual bounded Wayang execution, retained-state parity, private Iceberg staging and pointer-aware reads. Independently verify both tables and reconcile ambiguous publication. Storage work may start in parallel. |

@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.opentsx.model.contracts.ExecutionAssignments;
 
 import java.nio.file.Path;
@@ -11,6 +14,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -45,6 +49,8 @@ class RustContinuousRolloutTest {
         final Map<String, JsonNode> statuses = new ConcurrentHashMap<>();
         final Map<String, JsonNode> requests = new ConcurrentHashMap<>();
         final List<String> events = new CopyOnWriteArrayList<>();
+        final Map<String, Integer> prepareFailures = new ConcurrentHashMap<>();
+        final Set<String> failAfterPreparation = ConcurrentHashMap.newKeySet();
         final long[][] ends = {{8}, {8, 8}, {8, 8, 8}};
         final long[][] starts = {{0}, {0, 0}, {0, 0, 0}};
         int records = 10_000;
@@ -80,7 +86,11 @@ class RustContinuousRolloutTest {
             if (path.equals("/v1/prepare")) {
                 String hash = ExecutionAssignments.sha256(body);
                 events.add("prepare:" + hash);
-                if (statuses.containsKey(hash)) return statuses.get(hash).deepCopy();
+                if (!failAfterPreparation.contains(worker.node())) failPreparation(worker);
+                if (statuses.containsKey(hash)) {
+                    failPreparation(worker);
+                    return statuses.get(hash).deepCopy();
+                }
                 JsonNode request = RustRollout.json(body);
                 requests.put(hash, request);
                 JsonNode assignment = RustRollout.json(request.path("assignmentText").asText());
@@ -94,11 +104,15 @@ class RustContinuousRolloutTest {
                 status.putArray("inputSeries").add(id);
                 status.putArray("outputSeries").add(id);
                 statuses.put(hash, status);
+                failPreparation(worker);
                 return status.deepCopy();
             }
             String hash = path.substring(path.lastIndexOf('/') + 1);
             ObjectNode status = (ObjectNode) statuses.get(hash);
-            if (path.startsWith("/v1/abort/")) return status.put("state", "cancelled").deepCopy();
+            if (path.startsWith("/v1/abort/")) {
+                events.add("abort:" + hash);
+                return status.put("state", "cancelled").deepCopy();
+            }
             assertTrue(path.startsWith("/v1/activate/"));
             if (status.path("state").asText().equals("completed")) return status.deepCopy();
             events.add("activate:" + hash);
@@ -119,6 +133,13 @@ class RustContinuousRolloutTest {
             return status.deepCopy();
         }
 
+        private void failPreparation(RustRollout.Worker worker) {
+            Integer status = prepareFailures.get(worker.node());
+            if (status == null) return;
+            if (status == 0) throw new IllegalStateException("preparation response lost");
+            throw new Rejected(status, "worker preparation refused");
+        }
+
         @Override
         public RustRollout.Inventory inspect(List<String> topics, String output) {
             Map<String, List<RustRollout.Position>> inputs = new LinkedHashMap<>();
@@ -135,6 +156,90 @@ class RustContinuousRolloutTest {
             assertEquals(OUTPUT, output);
             assertEquals(3, partitions);
         }
+    }
+
+
+    @ParameterizedTest
+    @CsvSource({"0,false", "0,true", "503,false", "503,true", "429,false", "500,true"})
+    void uncertainPreparationRetainsPrivateCandidatesAndRetriesTheExactPlan(int status, boolean persisted) {
+        Fake fake = new Fake();
+        RustRollout rollout = fake.rollout();
+        JsonNode plan = rollout.planContinuous("continuous-1", SOURCE, CLOCK);
+        fake.prepareFailures.put("worker-2", status);
+        if (persisted) fake.failAfterPreparation.add("worker-2");
+        RustRolloutServer server = new RustRolloutServer(rollout);
+        String text = RustRollout.stringify(plan);
+        assertThrows(RuntimeException.class, () -> server.request("POST", "/v1/execute", text));
+        assertTrue(fake.events.stream().noneMatch(event -> event.startsWith("abort:") || event.startsWith("activate:")));
+        assertTrue(fake.statuses.values().stream().allMatch(value -> value.path("state").asText().equals("prepared")));
+        assertEquals(persisted ? 3 : 2, fake.statuses.size());
+        Map<String, JsonNode> retained = new LinkedHashMap<>(fake.requests);
+        fake.prepareFailures.clear();
+        assertEquals("completed", server.request("POST", "/v1/execute", text).path("state").asText());
+        retained.forEach((hash, request) -> assertEquals(request, fake.requests.get(hash)));
+        assertEquals(3, fake.events.stream().filter(event -> event.startsWith("activate:")).count());
+        assertFalse(fake.events.stream().anyMatch(event -> event.startsWith("abort:")));
+        JsonNode repeated = server.request("POST", "/v1/execute", text);
+        assertEquals("completed", repeated.path("state").asText());
+        assertEquals(3, fake.events.stream().filter(event -> event.startsWith("activate:")).count());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {400, 409, 413, 422})
+    void conclusivePreparationRefusalCancelsPreparedPeersWithoutActivation(int status) {
+        Fake fake = new Fake();
+        RustRollout rollout = fake.rollout();
+        JsonNode plan = rollout.planContinuous("continuous-1", SOURCE, CLOCK);
+        fake.prepareFailures.put("worker-2", status);
+        assertEquals("failed", rollout.execute(plan).path("state").asText());
+        assertEquals(2, fake.events.stream().filter(event -> event.startsWith("abort:")).count());
+        assertFalse(fake.events.stream().anyMatch(event -> event.startsWith("activate:")));
+    }
+
+    @Test
+    void mixedUncertainAndConclusivePreparationRefusalsRetainCandidatesUntilAllOutcomesAreKnown() {
+        Fake fake = new Fake();
+        RustRollout rollout = fake.rollout();
+        JsonNode plan = rollout.planContinuous("continuous-1", SOURCE, CLOCK);
+        fake.prepareFailures.put("worker-2", 422);
+        fake.prepareFailures.put("worker-3", 503);
+        fake.failAfterPreparation.add("worker-3");
+        assertThrows(RuntimeException.class, () -> rollout.execute(plan));
+        assertEquals(2, fake.statuses.size());
+        assertTrue(fake.events.stream().noneMatch(event -> event.startsWith("abort:") || event.startsWith("activate:")));
+        fake.prepareFailures.remove("worker-3");
+        assertEquals("failed", rollout.execute(plan).path("state").asText());
+        assertEquals(2, fake.events.stream().filter(event -> event.startsWith("abort:")).count());
+        assertFalse(fake.events.stream().anyMatch(event -> event.startsWith("activate:")));
+    }
+
+    @Test
+    void recoveredPreparationStillRejectsCrossTopicOwnershipCollisionsBeforeActivation() {
+        Fake fake = new Fake();
+        RustRollout rollout = fake.rollout();
+        JsonNode plan = rollout.planContinuous("continuous-1", SOURCE, CLOCK);
+        fake.prepareFailures.put("worker-2", 0);
+        fake.failAfterPreparation.add("worker-2");
+        assertThrows(RuntimeException.class, () -> rollout.execute(plan));
+        fake.prepareFailures.clear();
+        ObjectNode status = (ObjectNode) fake.statuses.get(RustRollout.requestHash(plan.path("assignments").get(0)));
+        status.putArray("outputSeries").add("3".repeat(16));
+        assertEquals("failed", rollout.execute(plan).path("state").asText());
+        assertEquals(3, fake.events.stream().filter(event -> event.startsWith("abort:")).count());
+        assertFalse(fake.events.stream().anyMatch(event -> event.startsWith("activate:")));
+    }
+
+    @Test
+    void boundedPreparationKeepsItsExistingCancellationAfterALostResponse() {
+        Fake fake = new Fake();
+        for (long[] ends : fake.ends) java.util.Arrays.fill(ends, 1);
+        RustRollout rollout = fake.rollout();
+        JsonNode plan = rollout.plan("bounded-1", SOURCE, CLOCK);
+        fake.prepareFailures.put("worker-2", 0);
+        fake.failAfterPreparation.add("worker-2");
+        assertEquals("failed", rollout.execute(plan).path("state").asText());
+        assertEquals(3, fake.events.stream().filter(event -> event.startsWith("abort:")).count());
+        assertFalse(fake.events.stream().anyMatch(event -> event.startsWith("activate:")));
     }
 
     @Test

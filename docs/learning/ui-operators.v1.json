@@ -2168,7 +2168,8 @@
         "This value transform does not produce a full DataQuality event record.",
         "Clipping changes values and can hide extremes from later analysis.",
         "The browser workload remains local. The explicit bounded Wayang action is a separate authenticated execution path with frozen whole-topic cuts and does not use this zero-based lesson clock for Kafka timestamps.",
-        "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero."
+        "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
+        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation."
       ],
       "parameterKeys": [
         "min",
@@ -2289,7 +2290,8 @@
         "The operator trusts the supplied factor and offset.",
         "An empty target unit retains the original unit metadata.",
         "The browser workload remains local. The explicit bounded Wayang action is a separate authenticated execution path with frozen whole-topic cuts and does not use this zero-based lesson clock for Kafka timestamps.",
-        "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero."
+        "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
+        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation."
       ],
       "parameterKeys": [
         "factor",
@@ -2415,7 +2417,8 @@
         "The browser workload remains local. The explicit bounded Wayang action is a separate authenticated execution path with frozen whole-topic cuts and does not use this zero-based lesson clock for Kafka timestamps.",
         "The Rust Kafka cut retains an unfinished trailing window instead of flushing it at batch end.",
         "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
-        "An unfinished window spans increments and service restart. Stop does not flush it, and the existing valid-sample ceiling still applies."
+        "An unfinished window spans increments and service restart. Stop does not flush it, and the existing valid-sample ceiling still applies.",
+        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation."
       ],
       "parameterKeys": [
         "every",

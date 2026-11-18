@@ -33,6 +33,8 @@ input series. A finite increment is not a new deployment, and a partition cursor
 The source/sink/checkpoint/assignment lessons trace the infrastructure without introducing another operator catalog.
 Private preparation precedes every activation; completed retry reuses receipts, while uncertain activation retains
 ownership and retries saved bytes. These are at-least-once bounded writes, without atomic publication across workers.
+For continuous increments, a transient preparation failure retains private candidates and the exact admitted plan.
+Its identical retry still requires every preparation and cross-topic ownership check before activation.
 Their zero-based coordinates do not establish a Kafka timestamp policy: published Rust records require
 `tStart / 1000` rounded down to be strictly positive milliseconds.
 Open resample tails remain in retained state at the cut; source series cannot merge into one derived identity.

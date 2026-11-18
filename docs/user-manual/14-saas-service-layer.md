@@ -17,7 +17,8 @@
     stores the exact DAG, accepted clock, source cuts and whole-topic ownership; a standalone coordinator reconciles
     the saved plan through a custom Wayang Rust platform,
   * **Continuous Wayang on Rust** retains complete-topic ownership between increments, saves confirmed positions
-    and cumulative counts, and restores worker state after service restart. **Stop deployment** reconciles dispatched
+    and cumulative counts, and restores worker state after service restart. Transient preparation failures retain
+    private candidates for identical retry. **Stop deployment** reconciles dispatched
     work before releasing ownership. See the [continuous guide](../devguide/integration/wayang-rust-continuous.md),
   * a `FlinkService` that submits processing-flow descriptors as Flink jobs.
 * **Frontend:**

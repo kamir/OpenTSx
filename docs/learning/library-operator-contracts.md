@@ -37,6 +37,8 @@ fragments run on HTTP workers. It does not expand the original local Java compil
 The [continuous local target](../devguide/integration/wayang-rust-continuous.md) executes successive finite cuts on
 the same whole-topic bindings. Source/sink/checkpoint/assignment lessons also reference its durable predecessor,
 cumulative ownership and restart tests. Their standalone workloads remain unchanged and do not deploy a service.
+Continuous preparation recovery retains private candidates after a transient failure, including a lost response.
+Identical retry still requires every preparation and cross-topic ownership check before activation.
 
 The finite forecasting and preparation examples use the scientific runtime
 pinned by the [local CP profile](../devguide/local-cp-workbench.md). They need

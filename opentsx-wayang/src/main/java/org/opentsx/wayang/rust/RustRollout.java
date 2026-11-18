@@ -369,6 +369,10 @@ public final class RustRollout {
         List<JsonNode> units = new ArrayList<>();
         plan.path("assignments").forEach(units::add);
         List<Call> prepared = parallel(units, unit -> client.post(worker(unit), "/v1/prepare", unit.path("requestText").asText()));
+        if (CONTINUOUS_SCHEMA.equals(plan.path("schema").asText()) && prepared.stream().anyMatch(call -> call.error() != null
+                && !(call.error() instanceof RustWorkerClient.Rejected rejected && Set.of(400, 409, 413, 422).contains(rejected.status())))) {
+            throw new IllegalStateException("worker preparation requires identical retry; retain private candidates");
+        }
         if (prepared.stream().anyMatch(call -> call.error() != null)) return abort(plan, prepared, "worker preparation failed");
         try {
             Set<String> inputs = new HashSet<>();

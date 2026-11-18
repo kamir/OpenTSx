@@ -89,6 +89,7 @@ statistics, prediction and what-if, and the node graph of each system's wiring p
   See the [three-worker local guide](docs/devguide/integration/wayang-rust-compose.md).
 * **Continuous Rust execution through Wayang.** The explicit continuous target keeps complete topics on fixed
   workers, persists successive cuts and resumes acknowledged positions and operator state after service restart.
+  Transient preparation failures retain private candidates for identical retry before activation.
   See the [continuous Compose guide](docs/devguide/integration/wayang-rust-continuous.md).
 * **Classic analytics.** DFA, MFDFA, event synchronization, return-interval statistics.
 

@@ -20,6 +20,46 @@ SPEC.loader.exec_module(HELPER)
 
 
 class WayangComposeGuardsTest(unittest.TestCase):
+    def test_single_worker_outage_preserves_other_containers_and_appends_before_restart(self):
+        events = []
+        live = ["backend", "coordinator", "frontend", "kafscale-broker", "postgres", "runner-1", "runner-3", "wayang"]
+        before = "\n".join(f"{name} id-{name} running" for name in [*live, "runner-2"])
+        during = "\n".join(f"{name} id-{name} running" for name in live) + "\nrunner-2 id-runner-2 exited"
+        def execute(command, *args, **kwargs):
+            events.append(command)
+            if command[1:3] == ["ps", "--all"]:
+                return before if len(events) == 1 else during
+            return ""
+        with tempfile.TemporaryDirectory() as directory, patch.object(HELPER, "DIRECTORY", Path(directory)), \
+                patch.object(HELPER, "run", side_effect=execute):
+            HELPER.interrupt_one_worker(["java", "fixture"], "127.0.0.1:39093", ["compose"], {}, 6)
+            proof = json.loads((Path(directory) / "worker-outage.json").read_text())
+            self.assertEqual(live, proof["liveServices"])
+            self.assertEqual("worker-2", proof["worker"])
+            self.assertEqual(6, proof["throughBlocks"])
+        self.assertEqual(["compose", "stop", "runner-2"], events[1])
+        self.assertEqual(["java", "fixture", "append", "127.0.0.1:39093"], events[2][:4])
+        self.assertEqual("6", events[2][-1])
+        self.assertFalse(any(command[1:2] == ["start"] for command in events))
+
+    def test_single_worker_outage_rejects_another_restarted_or_stopped_service(self):
+        names = ["backend", "coordinator", "frontend", "kafscale-broker", "postgres", "runner-1", "runner-2", "runner-3", "wayang"]
+        before = "\n".join(f"{name} id-{name} running" for name in names)
+        with tempfile.TemporaryDirectory() as directory, patch.object(HELPER, "DIRECTORY", Path(directory)):
+            for changed in ["runner-1 replaced running", "runner-1 id-runner-1 exited"]:
+                during = before.replace("runner-1 id-runner-1 running", changed).replace(
+                    "runner-2 id-runner-2 running", "runner-2 id-runner-2 exited")
+                with self.subTest(changed=changed), patch.object(HELPER, "run", side_effect=[
+                        before, "", "", during]):
+                    with self.assertRaisesRegex(RuntimeError, "single-worker outage"):
+                        HELPER.interrupt_one_worker(["java"], "bootstrap", ["compose"], {}, 6)
+                    self.assertFalse((Path(directory) / "worker-outage.json").exists())
+
+    def test_continuous_acceptance_requires_single_worker_outage_and_post_recovery_input(self):
+        self.assertEqual([("initial", 1), ("retry", 1), ("new-data", 2), ("restart", 4),
+                          ("after-restart", 5), ("worker-unavailable", 5), ("worker-restart", 6),
+                          ("after-worker-restart", 7), ("stopped", 7)], HELPER.CONTINUOUS_PHASES)
+
     def test_continuous_evidence_requires_fixed_topics_clock_and_confirmed_progress(self):
         with tempfile.TemporaryDirectory() as directory, patch.object(HELPER, "DIRECTORY", Path(directory)):
             root = Path(directory)
@@ -27,13 +67,15 @@ class WayangComposeGuardsTest(unittest.TestCase):
             sources = [{"topic": f"tsx.test.input{n}.v2", "partitions": n} for n in range(1, 4)]
             (root / "fixture.json").write_text(json.dumps({"sources": sources}))
             (root / "submitted-dag.txt").write_bytes(graph)
-            for phase, blocks in [("initial", 1), ("retry", 1), ("new-data", 2), ("restart", 4),
-                                  ("after-restart", 5), ("stopped", 5)]:
+            (root / "worker-outage.json").write_text(json.dumps({"worker": "worker-2", "throughBlocks": 6,
+                "liveServices": ["backend", "coordinator", "frontend", "kafscale-broker", "postgres", "runner-1", "runner-3", "wayang"]}))
+            for phase, blocks in HELPER.CONTINUOUS_PHASES:
                 value = {"id": "local-test", "specHash": hashlib.sha256(graph).hexdigest(),
                          "createdAtMicros": "1700000000000000", "profile": "continuous",
                          "planHash": hashlib.sha256(str(blocks).encode()).hexdigest(),
                          "state": "stopped" if phase == "stopped" else "idle", "stopRequested": phase == "stopped",
                          "currentCycle": str(blocks), "completedCycles": str(blocks),
+                         "error": "worker could not be reached" if phase == "worker-unavailable" else None,
                          "inputRecords": str(6 * blocks), "outputRecords": str(6 * blocks), "assignments": [
                              {"node": f"worker-{n}", "inputTopic": source["topic"], "partitionCount": str(n),
                               "cumulativeInputRecords": str(n * blocks), "cumulativeOutputRecords": str(n * blocks),
@@ -45,7 +87,7 @@ class WayangComposeGuardsTest(unittest.TestCase):
                 (root / f"verified-{phase}.json").write_text(json.dumps({"verifiedRecords": 6 * blocks,
                     "distinctEpisodes": 6 * blocks, "workerReceipts": 3, "throughBlocks": blocks,
                     "inputRecords": 6 * blocks}))
-            self.assertEqual(30, HELPER.verify_continuous_views()["verifiedRecords"])
+            self.assertEqual(42, HELPER.verify_continuous_views()["verifiedRecords"])
             path = root / "deployment-restart.json"
             original = json.loads(path.read_text())
             for key, changed in [("createdAtMicros", "1700000000000001"), ("inputRecords", "12"),
