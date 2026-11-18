@@ -1,0 +1,269 @@
+.device-diagnostics,
+.device-data-preview,
+.device-notebook {
+  color: var(--ink, #e9eff4);
+  padding: 20px;
+  min-width: 0;
+}
+
+.device-view-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.device-view-heading h2 {
+  font-size: 20px;
+  margin: 4px 0;
+}
+
+.device-eyebrow {
+  color: var(--ink-2, #aab8c5);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.device-diagnostic-controls {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.device-diagnostic-controls label {
+  display: grid;
+  gap: 6px;
+  min-width: 120px;
+  flex: 1;
+}
+
+.device-diagnostic-controls input,
+.device-diagnostic-controls select {
+  width: 100%;
+  min-height: 36px;
+}
+
+.device-diagnostic-policy {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: var(--ink-2, #aab8c5);
+  font-size: 12px;
+  margin: 14px 0;
+}
+
+.device-diagnostic-policy label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.device-diagnostic-plots {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.device-plot {
+  min-width: 0;
+  border: 1px solid var(--line, #34434e);
+  border-radius: 6px;
+  margin: 12px 0;
+  background: #101820;
+  color: #e7edf4;
+}
+
+.device-plot h3 {
+  font-size: 14px;
+  margin: 12px 16px 0;
+}
+
+.device-plot svg {
+  display: block;
+  width: 100%;
+  max-height: 350px;
+}
+
+.device-plot text {
+  fill: #c3d0da;
+  font:
+    11px ui-monospace,
+    monospace;
+}
+
+.device-gridline {
+  stroke: #2b3b47;
+  stroke-width: 1;
+}
+
+.device-trace {
+  fill: none;
+  stroke: #28dce8;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.device-bar {
+  stroke-width: 4;
+}
+
+.device-view-error {
+  border-left: 3px solid #efb44b;
+  background: #352b17;
+  color: #ffdda0;
+  padding: 12px 16px;
+}
+
+.device-view-empty {
+  padding: 32px 16px;
+  border: 1px dashed var(--line, #34434e);
+  color: var(--ink-2, #aab8c5);
+}
+
+.device-table-scroll {
+  overflow: auto;
+  max-height: 430px;
+}
+
+.device-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: left;
+}
+
+.device-data-table th {
+  background: var(--panel-2, #1a2630);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-weight: 600;
+}
+
+.device-data-table th,
+.device-data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line, #34434e);
+  overflow-wrap: anywhere;
+}
+
+.device-data-table td:first-child,
+.device-data-table td:nth-child(3) {
+  font-family: ui-monospace, monospace;
+}
+
+.device-missing {
+  color: #f8c56b;
+}
+
+.device-data-preview details,
+.device-diagnostics details {
+  margin-top: 16px;
+}
+
+.device-notebook {
+  background: #f4f6f8;
+  color: #17232c;
+  --ink: #17232c;
+  --ink-2: #526473;
+  --line: #ccd5dc;
+  --panel-2: #e8edf1;
+}
+
+.device-recipe-cell {
+  border: 1px solid #ccd5dc;
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 18px;
+  background: #fff;
+}
+
+.device-recipe-cell > header {
+  display: flex;
+  align-items: start;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.device-recipe-cell > header b {
+  border-radius: 4px;
+  padding: 10px;
+  background: #c6f1f3;
+  color: #12454a;
+  font:
+    16px ui-monospace,
+    monospace;
+}
+
+.device-recipe-cell h3 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.device-recipe-cell p {
+  color: #526473;
+  line-height: 1.6;
+  margin: 6px 0 14px;
+}
+
+.device-recipe-cell dl {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 10px;
+  font-size: 13px;
+}
+
+.device-recipe-cell dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.device-recipe-cell pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 16px;
+  border: 1px solid #ccd5dc;
+  background: #f3f6f8;
+  color: #17232c;
+  max-height: 320px;
+  overflow: auto;
+  font-size: 12px;
+}
+
+.device-notebook .device-data-preview {
+  color: #17232c;
+  padding: 20px 0 0;
+}
+
+.device-recipe-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.device-recipe-steps button {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  max-width: 230px;
+}
+
+.device-recipe-steps span {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .device-diagnostic-plots {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .device-recipe-cell dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

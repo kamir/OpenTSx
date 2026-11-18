@@ -5,8 +5,10 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { crossings, fmt, stats } from './ops';
+import { crossings, fmt, sampleInterval, stats } from './ops';
 import { Bucket, Series } from './types';
+import { ScopeBand, scopeBands, scopeChannelAtY, scopeDragDelta, scopeX, scopeY } from './scopeGeometry';
+import './scope-instrument.css';
 
 const CHANNEL_COLORS = ['#f2d21b', '#3fd0ee', '#ef74d8', '#63dd72', '#ff9d45', '#b9a2ff', '#ff7373', '#e9ece8'];
 const HDIV = 10;
@@ -62,7 +64,7 @@ function extent(values: ArrayLike<number>): [number, number] {
   return min <= max ? [min, max] : [0, 1];
 }
 
-function autoset(b: Bucket, prev?: View): View {
+function autoset(b: Bucket, prev?: View, initialLock = true): View {
   let x0 = Infinity;
   let x1 = -Infinity;
   for (const s of b.series) {
@@ -74,7 +76,7 @@ function autoset(b: Bucket, prev?: View): View {
     x0 = 0;
     x1 = 1;
   }
-  const lockY = prev?.lockY ?? true;
+  const lockY = prev?.lockY ?? initialLock;
   const visible = b.series.map((_, i) => prev?.visible[i] ?? true);
   let all: [number, number] = [Infinity, -Infinity];
   const each = b.series.map((s, i) => {
@@ -156,17 +158,18 @@ function measure(s: Series | undefined, from: number, to: number): Measure | nul
 interface ScopeProps {
   bucket: Bucket;
   showLabels: boolean;
+  instrument?: boolean;
   /** Called when the trigger settings are taken over as a segmenter node. */
   onUseTrigger: (level: number, rising: boolean) => void;
   /** The range the signal on the screen should stay in; drawn as two lines on the scale of the active channel. */
   expected?: { min?: number; max?: number; unit?: string };
 }
 
-export default function Scope({ bucket, showLabels, onUseTrigger, expected }: ScopeProps) {
+export default function Scope({ bucket, showLabels, onUseTrigger, expected, instrument = false }: ScopeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 800, h: 420 });
-  const [view, setView] = useState<View>(() => autoset(bucket));
+  const [view, setView] = useState<View>(() => autoset(bucket, undefined, !instrument));
   const [running, setRunning] = useState(false);
   const viewRef = useRef(view);
   viewRef.current = view;
@@ -174,8 +177,14 @@ export default function Scope({ bucket, showLabels, onUseTrigger, expected }: Sc
   // Ground truth belongs to the time axis; a spectrum or a histogram has none.
   const marks = useMemo(() => (isTime ? (bucket.marks ?? []) : []), [bucket, isTime]);
   // Clock time (UTC) where the data has absolute time, otherwise the offset on the x axis.
-  const when = (x: number) =>
-    bucket.t0Ms === undefined ? span(x, true) : `${new Date(bucket.t0Ms + x * 1000).toISOString().slice(11, 19)} UTC`;
+  const when = useCallback((x: number) =>
+    bucket.t0Ms === undefined ? span(x, true) : `${new Date(bucket.t0Ms + x * 1000).toISOString().slice(11, 19)} UTC`, [bucket.t0Ms]);
+  const channelInfo = useMemo(() => bucket.series.map((series) => ({
+    interval: sampleInterval(series.x),
+    missing: series.y.some((value) => !Number.isFinite(value)),
+    flagged: series.quality?.some((quality, index) => quality !== 0 && series.qualityKnown?.[index] !== 0) ?? false,
+    unknownQuality: !series.quality || (series.qualityKnown?.some((known) => known === 0) ?? false),
+  })), [bucket]);
 
   // A new bucket gets a fresh auto set; channel visibility is kept by position.
   useEffect(() => {
@@ -224,6 +233,30 @@ export default function Scope({ bucket, showLabels, onUseTrigger, expected }: Sc
   }, [running, record]);
 
   const active = bucket.series[view.active];
+  const episodeRail = useMemo(() => {
+    if (!active) return [];
+    return [...(bucket.episodes ?? [])]
+      .filter((episode) => episode.seriesId === active.id)
+      .sort((a, b) => a.start - b.start)
+      .map((episode) => {
+        const first = lowerBound(active.x, episode.start);
+        const last = lowerBound(active.x, episode.end);
+        let missing = false;
+        let flagged = false;
+        let unknown = !active.quality;
+        for (let index = first; index < last; index++) {
+          if (!Number.isFinite(active.y[index])) missing = true;
+          if (active.quality && active.quality[index] !== 0 && active.qualityKnown?.[index] !== 0) flagged = true;
+          if (active.qualityKnown?.[index] === 0) unknown = true;
+        }
+        const invalid = !Number.isFinite(episode.start) || !Number.isFinite(episode.end) || episode.end <= episode.start;
+        return {
+          episode,
+          invalid,
+          quality: invalid ? 'Invalid range' : missing ? 'Missing samples' : flagged ? 'Flagged samples' : unknown ? 'Quality not declared' : 'Unflagged',
+        };
+      });
+  }, [active, bucket.episodes]);
   const xRight = view.xLeft + view.xPerDiv * HDIV;
   const m = useMemo(() => measure(active, view.xLeft, xRight), [active, view.xLeft, xRight]);
 
@@ -239,6 +272,162 @@ export default function Scope({ bucket, showLabels, onUseTrigger, expected }: Sc
     const g = canvas.getContext('2d');
     if (!g) return;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (instrument) {
+      g.fillStyle = '#101820';
+      g.fillRect(0, 0, w, h);
+      const bands = scopeBands(w, h, view.visible, true);
+      g.font = '11px ui-monospace, Menlo, Consolas, monospace';
+      for (const band of bands) {
+        const c = band.channel;
+        const s = bucket.series[c];
+        if (!s) continue;
+        const color = ['#25d9e5', '#b693f7', '#ebc46b', '#71d7ad'][c % 4];
+        const X = (value: number) => scopeX(value, view.xLeft, view.xPerDiv, band);
+        const Y = (value: number) => scopeY(value, view.yCenter[c], view.yPerDiv[c], band);
+        const right = band.left + band.width;
+        const bottom = band.top + band.height;
+        g.strokeStyle = '#293641';
+        g.lineWidth = 1;
+        g.beginPath();
+        for (let column = 0; column <= HDIV; column++) {
+          const x = band.left + (column * band.width) / HDIV;
+          g.moveTo(x, band.top);
+          g.lineTo(x, bottom);
+        }
+        for (let row = 0; row <= VDIV; row += 2) {
+          const y = band.top + (row * band.height) / VDIV;
+          g.moveTo(band.left, y);
+          g.lineTo(right, y);
+        }
+        g.stroke();
+        g.fillStyle = color;
+        g.textAlign = 'left';
+        g.textBaseline = 'top';
+        if (showLabels) g.fillText(`CH${c + 1} ${s.label} [${s.unit ?? 'unit not declared'}]`, band.left, band.top - 18);
+        const info = channelInfo[c];
+        if (info.missing || info.unknownQuality || info.flagged) {
+          g.fillStyle = info.missing || info.flagged ? '#ebc46b' : '#b8c7d2';
+          g.textAlign = 'right';
+          g.fillText(info.missing ? 'Missing samples' : info.flagged ? 'Flagged samples present' : 'Quality not fully declared', right, band.top - 18);
+        }
+        g.save();
+        g.beginPath();
+        g.rect(band.left, band.top, band.width, band.height);
+        g.clip();
+        if (view.marks) {
+          for (const mark of marks) {
+            const first = Math.max(band.left, X(mark.from));
+            const last = Math.min(right, X(mark.to));
+            if (last <= first) continue;
+            g.fillStyle = mark.kind === 'sensor_fault' ? '#9e552b33' : '#e8d66b18';
+            g.fillRect(first, band.top, last - first, band.height);
+          }
+        }
+        const first = Math.max(0, lowerBound(s.x, view.xLeft) - 1);
+        const last = Math.min(s.x.length, lowerBound(s.x, xRight) + 1);
+        if (info.missing || info.flagged) {
+          g.fillStyle = '#ebc46b24';
+          for (let index = first; index < last; index++) {
+            if (Number.isFinite(s.y[index]) && (!s.quality || s.quality[index] === 0 || s.qualityKnown?.[index] === 0)) continue;
+            const x = X(s.x[index] - info.interval / 2);
+            const width = Math.max(1, X(s.x[index] + info.interval / 2) - x);
+            g.fillRect(x, band.top, width, band.height);
+          }
+        }
+        g.strokeStyle = color;
+        g.lineWidth = c === view.active ? 1.7 : 1.3;
+        g.beginPath();
+        if (last - first > band.width * 3) {
+          let index = first;
+          for (let pixel = 0; pixel < band.width && index < last; pixel++) {
+            const limit = view.xLeft + ((pixel + 1) / band.width) * view.xPerDiv * HDIV;
+            let low = Infinity;
+            let high = -Infinity;
+            while (index < last && s.x[index] < limit) {
+              const value = s.y[index++];
+              if (!Number.isFinite(value)) continue;
+              low = Math.min(low, value);
+              high = Math.max(high, value);
+            }
+            if (low <= high) {
+              g.moveTo(band.left + pixel + 0.5, Y(high));
+              g.lineTo(band.left + pixel + 0.5, Y(low) + 1);
+            }
+          }
+        } else {
+          let pen = false;
+          for (let index = first; index < last; index++) {
+            if (!Number.isFinite(s.y[index])) {
+              pen = false;
+              continue;
+            }
+            if (index > first && s.x[index] - s.x[index - 1] > info.interval * 1.5) pen = false;
+            if (pen) g.lineTo(X(s.x[index]), Y(s.y[index]));
+            else g.moveTo(X(s.x[index]), Y(s.y[index]));
+            pen = true;
+          }
+        }
+        g.stroke();
+        if (expected && isTime && c === view.active) {
+          g.strokeStyle = '#77c9f8';
+          g.setLineDash([2, 5]);
+          for (const limit of [expected.min, expected.max]) {
+            if (limit === undefined) continue;
+            g.beginPath();
+            g.moveTo(band.left, Y(limit));
+            g.lineTo(right, Y(limit));
+            g.stroke();
+          }
+          g.setLineDash([]);
+        }
+        if (view.trigger && c === view.active) {
+          g.strokeStyle = '#ebc46b';
+          g.setLineDash([6, 4]);
+          g.beginPath();
+          g.moveTo(band.left, Y(view.level));
+          g.lineTo(right, Y(view.level));
+          g.stroke();
+          g.setLineDash([]);
+        }
+        if (view.cursors) {
+          g.strokeStyle = '#dce7ef';
+          g.setLineDash([3, 4]);
+          g.beginPath();
+          for (const x of view.cx) {
+            g.moveTo(X(x), band.top);
+            g.lineTo(X(x), bottom);
+          }
+          if (c === view.active) {
+            for (const y of view.cy) {
+              g.moveTo(band.left, Y(y));
+              g.lineTo(right, Y(y));
+            }
+          }
+          g.stroke();
+          g.setLineDash([]);
+        }
+        g.restore();
+        g.fillStyle = '#bdccd6';
+        g.textAlign = 'right';
+        g.textBaseline = 'middle';
+        for (let row = 0; row <= VDIV; row += 2) {
+          const value = view.yCenter[c] + (VDIV / 2 - row) * view.yPerDiv[c];
+          g.fillText(fmt(value), band.left - 8, band.top + (row * band.height) / VDIV);
+        }
+        g.textBaseline = 'top';
+        const ticks = Math.max(1, Math.min(5, Math.floor(band.width / 125)));
+        for (let column = 0; column <= ticks; column++) {
+          const value = view.xLeft + (column / ticks) * view.xPerDiv * HDIV;
+          g.textAlign = column === 0 ? 'left' : column === ticks ? 'right' : 'center';
+          g.fillText(isTime ? when(value) : fmt(value), band.left + (column / ticks) * band.width, bottom + 5);
+        }
+      }
+      if (bands.length === 0) {
+        g.fillStyle = '#dce7ef';
+        g.fillText('Select a channel to inspect its signal.', 16, 24);
+      }
+      return;
+    }
     g.fillStyle = '#0b1513';
     g.fillRect(0, 0, w, h);
 
@@ -447,7 +636,7 @@ export default function Scope({ bucket, showLabels, onUseTrigger, expected }: Sc
         row++;
       });
     }
-  }, [bucket, view, size, running, showLabels, active, xRight, isTime, marks, expected]);
+  }, [bucket, view, size, running, showLabels, active, xRight, isTime, marks, expected, instrument, channelInfo, when]);
 
   // ---------------------------------------------------------------- interaction
 
@@ -479,23 +668,36 @@ export default function Scope({ bucket, showLabels, onUseTrigger, expected }: Sc
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       if (e.shiftKey) scaleY(e.deltaY > 0 ? 1 : -1);
-      else zoomX(e.deltaY > 0 ? 1.25 : 0.8, e.offsetX / el.clientWidth);
+      else {
+        const visibility = instrument ? viewRef.current.visible : bucket.series.map(() => true);
+        const band = scopeBands(size.w, size.h, visibility, instrument)[0];
+        if (!band) return;
+        const anchor = Math.min(1, Math.max(0, (e.offsetX - band.left) / band.width));
+        zoomX(e.deltaY > 0 ? 1.25 : 0.8, anchor);
+      }
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, [zoomX, scaleY]);
+  }, [zoomX, scaleY, instrument, size, bucket]);
 
-  const drag = useRef<{ kind: string; x: number; y: number; start: View } | null>(null);
+  const drag = useRef<{ kind: string; x: number; y: number; start: View; band: ScopeBand } | null>(null);
 
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const v = viewRef.current;
+    let v = viewRef.current;
     const r = e.currentTarget.getBoundingClientRect();
     const px = e.clientX - r.left;
     const py = e.clientY - r.top;
-    const dx = size.w / HDIV;
-    const dy = size.h / VDIV;
-    const X = (x: number) => ((x - v.xLeft) / v.xPerDiv) * dx;
-    const Y = (y: number) => size.h / 2 - ((y - v.yCenter[v.active]) / v.yPerDiv[v.active]) * dy;
+    const bands = scopeBands(size.w, size.h, instrument ? v.visible : bucket.series.map(() => true), instrument);
+    const channel = instrument ? scopeChannelAtY(py, bands) : v.active;
+    if (channel === null) return;
+    const band = bands.find((candidate) => candidate.channel === channel);
+    if (!band) return;
+    if (channel !== v.active) {
+      v = { ...v, active: channel };
+      setView(v);
+    }
+    const X = (x: number) => scopeX(x, v.xLeft, v.xPerDiv, band);
+    const Y = (y: number) => scopeY(y, v.yCenter[v.active], v.yPerDiv[v.active], band);
     let kind = 'pan';
     if (v.cursors) {
       if (Math.abs(px - X(v.cx[0])) < 7) kind = 'cx0';
@@ -504,7 +706,7 @@ export default function Scope({ bucket, showLabels, onUseTrigger, expected }: Sc
       else if (Math.abs(py - Y(v.cy[1])) < 7) kind = 'cy1';
     }
     if (kind === 'pan' && v.trigger && Math.abs(py - Y(v.level)) < 7) kind = 'level';
-    drag.current = { kind, x: px, y: py, start: v };
+    drag.current = { kind, x: px, y: py, start: v, band };
     e.currentTarget.setPointerCapture(e.pointerId);
   };
 
@@ -512,9 +714,10 @@ export default function Scope({ bucket, showLabels, onUseTrigger, expected }: Sc
     const d = drag.current;
     if (!d) return;
     const r = e.currentTarget.getBoundingClientRect();
-    const mx = ((e.clientX - r.left - d.x) / (size.w / HDIV)) * d.start.xPerDiv;
     const c = d.start.active;
-    const my = (-(e.clientY - r.top - d.y) / (size.h / VDIV)) * (d.start.yPerDiv[c] ?? 1);
+    const delta = scopeDragDelta(e.clientX - r.left - d.x, e.clientY - r.top - d.y, d.start.xPerDiv, d.start.yPerDiv[c] ?? 1, d.band);
+    const mx = delta.x;
+    const my = delta.y;
     setView((v) => {
       switch (d.kind) {
         case 'cx0':
@@ -528,7 +731,7 @@ export default function Scope({ bucket, showLabels, onUseTrigger, expected }: Sc
         case 'level':
           return { ...v, level: d.start.level + my };
         default: {
-          const divs = (e.clientY - r.top - d.y) / (size.h / VDIV);
+          const divs = (e.clientY - r.top - d.y) / (d.band.height / VDIV);
           return {
             ...v,
             xLeft: d.start.xLeft - mx,
@@ -575,8 +778,8 @@ export default function Scope({ bucket, showLabels, onUseTrigger, expected }: Sc
   const unit = active?.unit ? ` ${active.unit}` : '';
 
   return (
-    <div className="wb-scope">
-      <div className="wb-screen" ref={wrapRef}>
+    <div className={instrument ? 'wb-scope wb-scope-instrument' : 'wb-scope'}>
+      <div className="wb-screen" ref={wrapRef} style={instrument ? { minHeight: Math.max(240, view.visible.filter(Boolean).length * 120) } : undefined}>
         <canvas
           ref={canvasRef}
           style={{ width: size.w, height: size.h }}
@@ -590,12 +793,49 @@ export default function Scope({ bucket, showLabels, onUseTrigger, expected }: Sc
         />
       </div>
 
+      {instrument && (
+        <section className="wb-episode-rail" aria-label="Episode timeline">
+          <div className="wb-episode-heading"><strong>Episodes</strong><span>{active?.label ?? 'No active channel'}</span></div>
+          {episodeRail.length === 0 ? <p>Episode identities not supplied.</p> : (
+            <div className="wb-episode-items">
+              {episodeRail.map(({ episode, invalid, quality }, index) => {
+                const previous = episodeRail[index - 1]?.episode;
+                const coordinate = (value: number) => Number.isFinite(value) ? (isTime ? when(value) : `${fmt(value)} ${bucket.xLabel}`) : 'Invalid coordinate';
+                return (
+                  <div className="wb-episode-item" key={episode.episodeId}>
+                    {previous && previous.end < episode.start && (
+                      <div className="wb-episode-gap" title={`${coordinate(previous.end)} to ${coordinate(episode.start)}`}>
+                        <strong>Gap</strong><small>{coordinate(previous.end)} to {coordinate(episode.start)}</small>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      aria-label={`Focus episode ${episode.episodeId}`}
+                      disabled={invalid}
+                      title={`${episode.episodeId}: ${coordinate(episode.start)} to ${coordinate(episode.end)}; ${quality}`}
+                      onClick={() => {
+                        if (invalid) return;
+                        setView((v) => ({ ...v, xLeft: episode.start, xPerDiv: (episode.end - episode.start) / HDIV }));
+                      }}
+                    >
+                      <strong>{episode.episodeId}</strong>
+                      <small>{coordinate(episode.start)} to {coordinate(episode.end)}</small>
+                      <span>{quality}</span>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
+
       <div className="wb-knobs">
         <fieldset>
           <legend>Acquire</legend>
           <div className="wb-row">
             <button className={running ? 'wb-run on' : 'wb-run'} onClick={() => setRunning((r) => !r)}>
-              {running ? 'Stop' : 'Run'}
+              {instrument ? (running ? 'Pause sweep' : 'Sweep snapshot') : (running ? 'Stop' : 'Run')}
             </button>
             <button onClick={() => setView((v) => autoset(bucket, v))}>Auto set</button>
           </div>

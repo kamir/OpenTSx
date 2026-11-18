@@ -51,6 +51,11 @@ import { fetchSignalStatus } from '../systems/load';
 import { NOT_PORTED, OPS, OP_BY_ID, defaultParams, fmt, stats } from '../workbench/ops';
 import { Bucket, FlowNode, OpDef, OpGroup, ParamDef, Params, ParamValue } from '../workbench/types';
 import '../workbench/workbench.css';
+import { DeviceSources, DeviceInspector } from '../workbench/DeviceTools';
+import { DataPreview, DiagnosticBench, RecipeNotebook } from '../workbench/DeviceViews';
+import { PRESENTATION_KEY, readPresentation, type Presentation, type WorkbenchMode } from '../workbench/presentation';
+import { thermalDemo } from '../workbench/deviceSample';
+import '../workbench/device.css';
 
 function download(name: string, text: string, type = 'text/plain') {
   const url = URL.createObjectURL(new Blob([text], { type }));
@@ -590,7 +595,33 @@ export default function Workbench() {
   remoteBase.current = remote.base;
   const fileRef = useRef<HTMLInputElement>(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  const signedIn = !!localStorage.getItem('access_token');
+  const [initialPresentation] = useState(() => readPresentation(searchParams.get('mode')));
+  const [presentation, setPresentation] = useState(initialPresentation.value);
+  const [presentationError, setPresentationError] = useState(initialPresentation.error);
+  const [draftOp, setDraftOp] = useState<string | null>(null);
+  const legacy = presentation.mode === 'legacy';
+  const layout = presentation.mode === 'data' ? presentation.data : presentation.engineer;
+  const changePresentation = (next: Presentation) => {
+    setPresentation(next);
+    const query = new URLSearchParams(searchParams);
+    query.set('mode', next.mode);
+    setSearchParams(query, { replace: true });
+    try {
+      localStorage.setItem(PRESENTATION_KEY, JSON.stringify(next));
+      setPresentationError(null);
+    } catch {
+      setPresentationError('The presentation preference could not be saved. The selected layout remains active for this session.');
+    }
+  };
+  useEffect(() => { setDraftOp(null); }, [selectedId]);
+
+  let signedIn = false;
+  let signInStorageError: string | null = null;
+  try {
+    signedIn = !!localStorage.getItem('access_token');
+  } catch {
+    signInStorageError = 'Browser storage could not be read. Sign-in controls are unavailable; working data is unchanged.';
+  }
   const flowParam = searchParams.get('flow');
   const systemParam = searchParams.get('system');
   const signalParam = searchParams.get('signal');
@@ -825,7 +856,25 @@ export default function Workbench() {
   };
 
   return (
-    <div className="wb">
+    <div className={`wb ${legacy ? 'wb-legacy' : 'wb-device'}`} data-mode={presentation.mode} data-layout={layout} data-inspecting={!!draftOp || (!!selected && selected.op !== 'source')}>
+      <nav className="wb-presentation" aria-label="Workbench presentation">
+        <strong className="device-brand"><span aria-hidden="true">∿</span> OpenTSx</strong>
+        <div className="device-mode-switch" role="group" aria-label="Working mode">
+          {([['engineer', 'Signal Engineer'], ['data', 'Data Worker'], ['legacy', 'Legacy']] as const).map(([mode, label]) =>
+            <button key={mode} aria-pressed={presentation.mode === mode} onClick={() => changePresentation({ ...presentation, mode: mode as WorkbenchMode })}>{label}</button>
+          )}
+        </div>
+        <label className="device-layout-label">Workspace layout
+          <select aria-label="Workspace layout" disabled={legacy} value={layout} onChange={e => changePresentation(presentation.mode === 'data'
+            ? { ...presentation, data: e.target.value as Presentation['data'] }
+            : { ...presentation, engineer: e.target.value as Presentation['engineer'] })}>
+            {(presentation.mode === 'data' ? [['pipeline', 'Pipeline Studio'], ['notebook', 'Recipe Notebook']] : [['instrument', 'Instrument Console'], ['diagnostics', 'Diagnostic Bench']]).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+          </select>
+        </label>
+        <span className="device-mode-description">{legacy ? 'Classic workbench' : presentation.mode === 'engineer' ? 'Hard-Core Signal Processor Engineer' : 'Software-Centric Data Worker'}</span>
+        {!legacy && <button onClick={() => setAnalysisView('modelling')}>Models</button>}
+        {!legacy && <button aria-pressed={sideTab === 'topic'} onClick={() => setSideTab(t => t === 'topic' ? 'tree' : 'topic')}>Smart Topics</button>}
+      </nav>
       <header className="wb-toolbar">
         <h1>OpenTSx Workbench</h1>
         <label className="wb-param">
@@ -833,6 +882,10 @@ export default function Workbench() {
           <input type="text" value={state.track} onChange={(e) => state.setTrack(e.target.value)} />
         </label>
         <span className="wb-sep" />
+        {!legacy && <button className="wb-primary" onClick={() => {
+          setError(null);
+          loadBucket(thermalDemo(), { kind: 'generator', detail: 'Thermal bench v1 (synthetic)' });
+        }}>Load thermal demo</button>}
         <button onClick={loadSample}>Load sample bucket</button>
         <button onClick={() => fileRef.current?.click()}>Open bucket file</button>
         <input
@@ -931,10 +984,16 @@ export default function Workbench() {
           onClose={() => setFlowsOpen(false)}
         />
       )}
+      {(presentationError || signInStorageError) && <div className="wb-error" role="alert">{presentationError ?? signInStorageError}</div>}
       {(error || result.error) && <div className="wb-error" role="alert">{error ?? `The operation failed: ${result.error}`}</div>}
 
       <main className={`wb-main ${sideTab === 'topic' ? 'wb-side-wide' : ''}`}>
-        <SidePanel tab={sideTab} setTab={setSideTab} base={remote.base} onSave={saveFlow} />
+        <div className="device-legacy-side" hidden={!legacy && sideTab !== 'topic'}>
+          <SidePanel tab={sideTab} setTab={setSideTab} base={remote.base} onSave={saveFlow} />
+        </div>
+        <div className="device-source-slot" hidden={legacy || sideTab === 'topic'}>
+          <DeviceSources bucket={bucket} draftOp={draftOp} onChooseOperator={setDraftOp} onModelling={() => setAnalysisView('modelling')} />
+        </div>
 
         <div className="wb-center">
           <section
@@ -947,7 +1006,7 @@ export default function Workbench() {
             }}
           >
             <div className="wb-tabs" role="tablist" aria-label="Analysis views">
-              {[['scope', 'Scope'], ['modelling', 'Modelling'], ['pairs', 'Pair results'], ['episodes', 'Episodes and quality'], ['snapshot', 'Snapshot'], ['results', 'Analysis results']].map(([id, title]) => (
+              {[['scope', legacy ? 'Scope' : layout === 'pipeline' ? 'Data preview' : layout === 'notebook' ? 'Recipe' : layout === 'diagnostics' ? 'Diagnostics' : 'Signals'], ['modelling', 'Modelling'], ['pairs', 'Pair results'], ['episodes', 'Episodes and quality'], ['snapshot', 'Snapshot'], ['results', 'Analysis results']].map(([id, title]) => (
                 <button key={id} role="tab" aria-selected={analysisView === id} onClick={() => setAnalysisView(id)}>{title}</button>
               ))}
             </div>
@@ -955,8 +1014,9 @@ export default function Workbench() {
             <div hidden={analysisView !== 'modelling'}>
               <ModellingPanel bucket={bucket} />
             </div>
-            {analysisView === 'modelling' ? null : analysisView === 'scope' ? (bucket && bucket.series.length > 0 ? (
-              <Scope bucket={bucket} showLabels={showLabels} onUseTrigger={useTrigger} expected={expectedOn(bucket)} />
+            <div className="device-scope-slot" hidden={analysisView !== 'scope' || (!legacy && layout !== 'instrument')}>
+              {bucket && bucket.series.length > 0 ? (
+              <Scope instrument={!legacy} bucket={bucket} showLabels={showLabels} onUseTrigger={useTrigger} expected={expectedOn(bucket)} />
             ) : (
               <div className="wb-empty">
                 {source ? (
@@ -981,7 +1041,12 @@ export default function Workbench() {
                   </>
                 )}
               </div>
-            )) : analysisView === 'pairs' ? (
+            )}
+            </div>
+            <div className="device-view-slot" hidden={legacy || analysisView !== 'scope' || layout !== 'diagnostics'}><DiagnosticBench bucket={bucket} /></div>
+            <div className="device-view-slot" hidden={legacy || analysisView !== 'scope' || layout !== 'pipeline'}><DataPreview bucket={bucket} /></div>
+            <div className="device-view-slot" hidden={legacy || analysisView !== 'scope' || layout !== 'notebook'}><RecipeNotebook bucket={bucket} onModelling={() => setAnalysisView('modelling')} onSnapshot={() => setAnalysisView('snapshot')} /></div>
+            {analysisView === 'modelling' || analysisView === 'scope' ? null : analysisView === 'pairs' ? (
               bucket?.series.some((s) => s.metric?.startsWith('pair.')) ? <PairResults bucket={bucket} /> : <p>Select a pair-analysis node in the flow to inspect its measured relationships.</p>
             ) : analysisView === 'episodes' ? (
               bucket ? <EpisodeInspector bucket={bucket} /> : <p>Load a bucket to inspect its episodes and quality.</p>
@@ -995,18 +1060,19 @@ export default function Workbench() {
             )}
             </div>
           </section>
-          <OperationPanel showLabels={showLabels} setShowLabels={setShowLabels} onModel={() => setAnalysisView('modelling')} />
+          <div hidden={!legacy} className="device-legacy-operations"><OperationPanel showLabels={showLabels} setShowLabels={setShowLabels} onModel={() => setAnalysisView('modelling')} /></div>
           <section className="wb-graph" aria-label="Processing flow graph">
             {nodes.length > 0 ? <FlowGraph /> : <p className="wb-muted pad">The processing flow appears here once a bucket is loaded.</p>}
           </section>
         </div>
 
-        <Inspector />
+        <div className="device-legacy-inspector" hidden={!legacy}><Inspector /></div>
+        <div className="device-inspector-slot" hidden={legacy}><DeviceInspector draftOp={draftOp} onApplied={() => setDraftOp(null)} /></div>
       </main>
 
       <footer className="wb-status">
         <span>{status}</span>
-        <span>Wheel: time base. Shift + wheel: vertical scale. Drag: move. Double click: auto set.</span>
+        <span>{legacy ? 'Wheel: time base. Shift + wheel: vertical scale. Drag: move. Double click: auto set.' : 'Finite research snapshot · mode changes preserve working data'}</span>
       </footer>
     </div>
   );
