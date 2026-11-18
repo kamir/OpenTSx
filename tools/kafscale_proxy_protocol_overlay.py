@@ -42,6 +42,10 @@ def protocol_overlay(source, output, source_root=None, output_root=None):
     if text.count(formatter) != 2:
         raise RuntimeError("pinned KafScale Proxy request framing anchors differ")
     text = text.replace(formatter, formatter + "[4:]")
+    healthy_backend = "\t\ttriedBackends[targetAddr] = true\n"
+    if text.count(healthy_backend) != 2:
+        raise RuntimeError("pinned KafScale Proxy healthy backend exclusion anchors differ")
+    text = text.replace(healthy_backend, "")
     patched, regression = output / "proxy-main.go", output / "proxy-protocol_test.go"
     if output.is_symlink() or patched.is_symlink() or regression.is_symlink():
         raise RuntimeError("protocol overlay output must not be a symbolic link")

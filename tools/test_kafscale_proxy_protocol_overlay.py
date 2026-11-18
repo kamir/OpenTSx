@@ -46,6 +46,18 @@ func encodeProduceRequest() {
 func encodeFetchRequest() {
 	return formatter.AppendRequest(nil, req, header.CorrelationID)
 }
+
+func fanOutProduce() {
+		triedBackends[targetAddr] = true
+}
+
+func fanOutFetch() {
+		triedBackends[targetAddr] = true
+}
+
+func handleGroupRouting() {
+		triedBackends[actualAddr] = true
+}
 '''
 
 
@@ -71,6 +83,8 @@ class KafScaleProxyProtocolOverlayTest(unittest.TestCase):
         self.assertEqual(2, generated.count("responsePartition.ErrorCode = errorCode"))
         self.assertEqual(2, generated.count("responsePartition.BaseOffset = -1"))
         self.assertEqual(2, generated.count("return formatter.AppendRequest(nil, req, header.CorrelationID)[4:]"))
+        self.assertNotIn("triedBackends[targetAddr] = true", generated)
+        self.assertEqual(1, generated.count("triedBackends[actualAddr] = true"))
 
     def test_mapping_includes_actual_package_regressions_without_editing_upstream(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -94,7 +108,8 @@ class KafScaleProxyProtocolOverlayTest(unittest.TestCase):
     def test_constructor_field_and_framing_changes_fail_closed(self):
         for text in [SOURCE + SOURCE, SOURCE.replace("BaseOffset: -1", "BaseOffset: 0", 1),
                      SOURCE.replace("kmsg.FetchResponseTopicPartition{", "kmsg.MissingPartition{", 1),
-                     SOURCE.replace("return formatter.AppendRequest(nil, req, header.CorrelationID)", "return nil", 1)]:
+                     SOURCE.replace("return formatter.AppendRequest(nil, req, header.CorrelationID)", "return nil", 1),
+                     SOURCE.replace("\t\ttriedBackends[targetAddr] = true\n", "", 1)]:
             with self.subTest(source=text[:20]), tempfile.TemporaryDirectory() as directory:
                 with self.assertRaises(RuntimeError):
                     self.generate(directory, text)

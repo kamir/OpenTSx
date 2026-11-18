@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"net"
 	"reflect"
 	"testing"
 
@@ -104,6 +106,77 @@ func TestOpenTSxProxySyntheticPartitionDefaults(t *testing.T) {
 			expected.Topics = []kmsg.FetchResponseTopic{{Topic: "orders", TopicID: [16]byte{1}, Partitions: []kmsg.FetchResponseTopicPartition{partition}}}
 			if !reflect.DeepEqual(actual, expected) || !bytes.Equal(protocol.EncodeResponse(9, version, actual), protocol.EncodeResponse(9, version, expected)) {
 				t.Fatal("synthetic fetch failure has invented leader, epoch, replica or offset fields")
+			}
+		})
+	}
+}
+
+func TestOpenTSxProxyFanOutKeepsHealthyBackendEligible(t *testing.T) {
+	for _, kind := range []string{"produce", "fetch"} {
+		t.Run(kind, func(t *testing.T) {
+			client, backend := net.Pipe()
+			t.Cleanup(func() { client.Close(); backend.Close() })
+			pool := newConnPool(0)
+			pool.Return("healthy-backend", client)
+			tried := map[string]bool{"previous-failure": true}
+			var request kmsg.Request
+			var response kmsg.Response
+			if kind == "produce" {
+				value := kmsg.NewPtrProduceRequest()
+				value.SetVersion(9)
+				value.Acks = 1
+				value.Topics = []kmsg.ProduceRequestTopic{{Topic: "orders", Partitions: []kmsg.ProduceRequestTopicPartition{{Partition: 2}}}}
+				request = value
+				answer := kmsg.NewPtrProduceResponse()
+				partition := kmsg.NewProduceResponseTopicPartition()
+				partition.Partition = 2
+				answer.Topics = []kmsg.ProduceResponseTopic{{Topic: "orders", Partitions: []kmsg.ProduceResponseTopicPartition{partition}}}
+				response = answer
+			} else {
+				value := kmsg.NewPtrFetchRequest()
+				value.SetVersion(13)
+				value.Topics = []kmsg.FetchRequestTopic{{TopicID: [16]byte{1}, Partitions: []kmsg.FetchRequestTopicPartition{{Partition: 2}}}}
+				request = value
+				answer := kmsg.NewPtrFetchResponse()
+				partition := kmsg.NewFetchResponseTopicPartition()
+				partition.Partition = 2
+				answer.Topics = []kmsg.FetchResponseTopic{{TopicID: [16]byte{1}, Partitions: []kmsg.FetchResponseTopicPartition{partition}}}
+				response = answer
+			}
+			clientID := "fan-out-regression"
+			header := &protocol.RequestHeader{APIKey: request.Key(), APIVersion: request.GetVersion(), CorrelationID: 11, ClientID: &clientID}
+			payload := kmsg.NewRequestFormatter(kmsg.FormatterClientID(clientID)).AppendRequest(nil, request, header.CorrelationID)[4:]
+			finished := make(chan error, 1)
+			go func() {
+				defer backend.Close()
+				frame, err := protocol.ReadFrame(backend)
+				if err == nil && !bytes.Equal(frame.Payload, payload) {
+					err = fmt.Errorf("the original single-group payload changed")
+				}
+				if err == nil {
+					err = protocol.WriteFrame(backend, protocol.EncodeResponse(header.CorrelationID, header.APIVersion, response))
+				}
+				finished <- err
+			}()
+			p := &proxy{}
+			if kind == "produce" {
+				groups := map[string]*kmsg.ProduceRequest{"healthy-backend": request.(*kmsg.ProduceRequest)}
+				results := p.fanOutProduce(context.Background(), header, groups, payload, tried, pool)
+				if len(results) != 1 || results[0].err != nil || results[0].target != "healthy-backend" {
+					t.Fatalf("the in-memory produce backend did not succeed: %+v", results)
+				}
+			} else {
+				groups := map[string]*kmsg.FetchRequest{"healthy-backend": request.(*kmsg.FetchRequest)}
+				results := p.fanOutFetch(context.Background(), header, groups, payload, tried, pool)
+				if len(results) != 1 || results[0].err != nil || results[0].target != "healthy-backend" {
+					t.Fatalf("the in-memory fetch backend did not succeed: %+v", results)
+				}
+			}
+			if err := <-finished; err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(tried, map[string]bool{"previous-failure": true}) {
+				t.Fatal("a healthy backend became excluded from another disjoint partition group")
 			}
 		})
 	}
