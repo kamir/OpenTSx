@@ -104,6 +104,8 @@ Read the helper's installed profiles from the repository root:
 python3 tools/verify_wayang_rust_compose.py --help
 ```
 
+Run the fencing profile with the [tested helper invocation](wayang-rust-compose.md#run-the-isolated-acceptance-helper).
+
 The continuous profile checks new data, identical idle retry, execution-service restart, a single-worker outage,
 backlog recovery and Stop. The fencing profile adds same-DAG resume, changed-DAG replay into a fresh output,
 captured old-candidate rejection and transport bypass checks. The helper and Java fixture compare records with

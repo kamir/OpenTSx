@@ -117,6 +117,18 @@ Read the installed interface from the repository root:
 python3 tools/verify_wayang_rust_compose.py --help
 ```
 
+For the fencing acceptance, replace `<node-executable>` with your absolute Node 24.22.2 executable and
+`<playwright-package-directory>` with your installed Playwright 1.62.1 package directory. Port `18082` must be free.
+Run from the repository root with JDK 21 selected:
+
+```bash
+WAYANG_UI_PORT=18082 python3 tools/verify_wayang_rust_compose.py --profile fencing --keep \
+  --node <node-executable> --playwright-module <playwright-package-directory>
+```
+
+Read `target/wayang-rust-compose/result.json` after the helper exits successfully. It requires all seven phases,
+three complete-topic assignments, submitted-DAG Java parity, stale-grant rejection and unchanged denial offsets.
+
 The bounded profile uses the real workbench controls and compares actual submitted-DAG output with continuing
 Java implementations. The continuous and fencing profiles exercise their own lifecycle boundaries; read the
 [continuous guide](wayang-rust-continuous.md). Generated reports establish only the run that produced them.
