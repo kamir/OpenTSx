@@ -73,7 +73,10 @@ Components of the PFD runtime:
 * `functions.TimeSeriesAggregateFunction` collects the observations of a window into a `TimeSeriesObject`.
   The aggregation tests exercise nullable getters with local Observation fixtures. Avro timestamp and value
   fields remain required; the generated setters cannot construct null primitive fields.
-* `serdes.ObservationSchema` decodes 2.x Avro `Observation` records from Kafka.
+* `serdes.ObservationSchema` decodes raw Avro binary records for the legacy
+  `org.opentsx.data.model.Observation` class. Null Kafka tombstones emit nothing. Malformed payloads fail with
+  `IOException`, record coordinates and the original cause; downstream collector failures propagate unchanged.
+  `DynamicTopologyJob` assigns the decoded observation timestamps when configuring watermarks.
 * `serdes.TimeSeriesObjectSerializer` and `TimeSeriesObjectTypeInfo` serialize `TimeSeriesObject` state
   (about 16 bytes per data point).
 
@@ -86,6 +89,8 @@ KAFSCALE_BOOTSTRAP=localhost:9092 mvn -pl opentsx-flink-core -am test    # also 
 
 * `StatsJobTest`: the job on a mini cluster gives the same `SeriesStats` as one `StatsEngine` over the same
   episodes; a restore from a checkpoint after half the input counts every value once; GLOBAL timers.
+* `ObservationSchemaTest`: raw legacy Avro records, decoder reuse, tombstones, malformed and truncated payloads,
+  retained decode causes and collector failures, using local `ConsumerRecord` and `Collector` fixtures.
 * `StatsEngineSerializerTest`: round trip, independent copies, snapshot and compatibility rules.
 * `StatsJobKafScaleTest`: episodes written to KafScale come back as the same `SeriesStats` on the series-stats
   topic. It runs in the KafScale CI job.

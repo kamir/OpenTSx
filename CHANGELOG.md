@@ -313,6 +313,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- The legacy PFD Kafka decoder fails on malformed Avro records with topic, partition and offset context and the
+  original cause. Null tombstones emit nothing, and downstream collector failures propagate unchanged.
+
 - Native shuffling validates selections, pass counts, finite samples and a requested-work limit before copying or
   shuffling. Cancellation is quiet, failures are visible, and results preserve original coordinates, axis labels
   and Y multiplicities. The chart opens before recording one transformation; rejected input preserves history.
