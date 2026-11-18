@@ -220,7 +220,7 @@ def federation_result(directory, site_count):
         number(float(row["elapsed_ms"]), "elapsed_ms", positive=True)
         site = int(row["site"][1:])
         if http:
-            if row["topic"] or int(row["http_records"]) != 420 or min(int(row[f]) for f in ("http_body_bytes", "tls_client_bytes")) < 1:
+            if not row["topic"] or int(row["http_records"]) != 420 or min(int(row[f]) for f in ("http_body_bytes", "tls_client_bytes")) < 1:
                 raise ValueError("job-state evidence is incomplete")
         else:
             turbines = sum((turbine * site_count + 9) // 10 == site for turbine in range(1, 11))

@@ -45,7 +45,7 @@ class TrackAEvaluationTest(unittest.TestCase):
             for site in range(1, sites + 1):
                 http = route == "job-state"
                 rows.append(dict(zip(self.tool.FEDERATION.FIELDS,
-                                     (route, f"s{site}", "" if http else "tsx.wind.aggregates.v2", "" if http else "100",
+                                     (route, f"s{site}", "tsx.wind.episodes.v2" if route == "centralized" else "tsx.wind.aggregates.v2", "" if http else "100",
                                       "" if http else str(360 * sum((i * sites + 9) // 10 == site for i in range(1, 11)) if route == "centralized" else 420), "" if http else "0",
                                       "20" if http else "", "420" if http else "", "30" if http else "", "1.5"))))
         self.csv("bytes.csv", rows)
