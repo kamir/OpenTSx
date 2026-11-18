@@ -29,15 +29,19 @@ dozens to hundreds of writes per hour. The per-turbine detail stays in `series-s
 ```bash
 # 1. statistics (opentsx-stats) over the simulated episodes
 StatsProcessorApp --kafscale localhost:9092 --domain wind --checkpoint stats.ckpt --once true
-# 2. publish everything, including profiles (hourly) and data-quality results (10 min)
+# 2. the bot token, read without echo and kept out of the shell history
+read -rs OPENMETADATA_JWT && export OPENMETADATA_JWT
+# 3. publish everything, including profiles (hourly) and data-quality results (10 min)
 WindparkMetadata --scenario opentsx-windpark/scenarios/ostsee-demo.yaml \
-  --om http://localhost:8585/api --token "$OPENMETADATA_JWT" \
+  --om http://localhost:8585/api \
   --kafscale localhost:9092 --domain wind --profile-window PT1H --dq-window PT10M
 # without a server: write every request as JSON for review
 WindparkMetadata --scenario opentsx-windpark/scenarios/ostsee-demo.yaml --dry-run om-requests/
 ```
 
-All writes are create-or-update, so publishing again is idempotent. Use a bot token. The client retries on 429 and 5xx.
+All writes are create-or-update, so publishing again is idempotent. Use a bot token. The client reads it from
+`OPENMETADATA_JWT`; `--token <jwt>` wins over it, but the process list and the shell history then show the token.
+The client retries on 429 and 5xx.
 
 The client is plain JDK HTTP plus Jackson. The official Java client `openmetadata-java-client:2.0.5` is compiled for
 Java 21, and OpenTSx targets Java 17.
@@ -87,6 +91,7 @@ requests that change this module. It starts OpenMetadata 2.0.5 from the `docker-
 It then publishes again to check that every write is create-or-update. Locally, against your own server:
 
 ```bash
-OM_URL=http://localhost:8585/api OPENMETADATA_JWT=<bot token> \
+read -rs OPENMETADATA_JWT && export OPENMETADATA_JWT
+OM_URL=http://localhost:8585/api \
   mvn -pl opentsx-openmetadata -am test -Dtest=OpenMetadataSmokeTest -Dsurefire.failIfNoSpecifiedTests=false
 ```

@@ -10,7 +10,8 @@
 #                      (+ Iceberg with LAKE=true); restarts the stats processor so it sees new partitions
 #   stats              shows the statistics processor's state: logs, checkpoint, record counts (series-stats topic)
 #   metadata           OpenMetadata requests as a dry run (JSON files on the data PVC)
-#   metadata-publish   publish to OpenMetadata (needs OM_URL and OPENMETADATA_JWT in 20-configure.sh)
+#   metadata-publish   publish to OpenMetadata (needs OM_URL, and OPENMETADATA_JWT exported or in deploy/k3s/.env;
+#                      see 20-configure.sh --help)
 #   twin | house | boat   the three digital-twin scenarios (H2 chain, house Erzgebirge, boat Etap 22)
 #   studio-export      runs the Studio export inside the cluster (size + checksum of the scenario JSON)
 #   retrieval          queries the retrieval REST API through a temporary port-forward
@@ -155,7 +156,7 @@ demo_dwd_forward() {
 case "$DEMO" in
   kafscale-check|metadata|metadata-publish|twin|house|boat|studio-export)
     if [[ "$DEMO" == "metadata-publish" ]]; then
-      [[ -n "$OM_URL" ]] || die "OM_URL not set - 20-configure.sh OM_URL=http://host:8585/api OPENMETADATA_JWT=<bot token>"
+      [[ -n "$OM_URL" ]] || die "OM_URL: not set; run read -rs OPENMETADATA_JWT && export OPENMETADATA_JWT, then 20-configure.sh OM_URL=http://<host>:8585/api and 30-deploy.sh"
     fi
     run_job "$DEMO" "$EXTRA" ;;
   windpark-sim) run_job windpark-sim "$EXTRA"; restart_stats ;;

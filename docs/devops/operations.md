@@ -185,8 +185,8 @@ signals.
   the image, pass it in `JAVA_OPTS`, for example `JAVA_OPTS=-Dorg.slf4j.simpleLogger.log.org.apache.kafka=info`.
 * Central logging is optional: Grafana Loki with Grafana Alloy (or Vector) as a DaemonSet; 14–30 days retention is
   enough for a lab.
-* No script prints secrets; `20-configure.sh` writes them only to `deploy/k3s/.env` (mode 600) and the Secret. Do not
-  paste `kubectl get secret -o yaml` output into tickets.
+* No script prints secrets; `20-configure.sh` writes them only to `deploy/k3s/.env` (mode 600) and the Secret, and
+  `20-configure.sh --print` leaves the Secrets out. Do not paste `kubectl get secret -o yaml` output into tickets.
 
 ## Backup and restore
 
@@ -235,9 +235,9 @@ deploy/k3s/71-restore.sh DIR --only stats-state --yes
 * **Images:** one tag per build. `20-configure.sh OPENTSX_TAG=3.0.1-local`, `10-build.sh`, `11-import-images.sh`,
   `30-deploy.sh`. A new tag needs no restart tricks; re-importing the **same** tag needs `30-deploy.sh --restart`.
   For production-like environments use `3.0.1-<git sha>` and a registry.
-* **Configuration:** `20-configure.sh KEY=VALUE` re-renders the overlay; check with
-  `kubectl diff -k deploy/k3s/overlays/local`, apply with `30-deploy.sh --restart` (the Deployments read the
-  ConfigMap at start).
+* **Configuration:** `20-configure.sh KEY=VALUE` re-renders the overlay (secret keys exported, see
+  [Secrets](#secrets)); check with `kubectl diff -k deploy/k3s/overlays/local`, apply with `30-deploy.sh --restart`
+  (the Deployments read the ConfigMap at start).
 * **Rollback, declarative (preferred):** `20-configure.sh OPENTSX_TAG=<previous tag>` and `30-deploy.sh`. The old
   image must still be in containerd or the registry, so keep the previous tag.
 * **Rollback, quick:** `kubectl -n opentsx rollout undo deployment/opentsx-retrieval` (or `opentsx-stats`). This
@@ -268,9 +268,10 @@ deploy/k3s/71-restore.sh DIR --only stats-state --yes
 
 * Git ignores `deploy/k3s/.env`, `deploy/k3s/overlays/local/`, `config/private/**`, backups
   (`opentsx-backup-*`) and probe output (`probe-report-*.md`, `probe-logs-*`).
-* Rotation: `20-configure.sh OPENMETADATA_JWT=<new>` (or `S3_ACCESS_KEY=… S3_SECRET_KEY=…`), then
-  `30-deploy.sh --restart`. For in-cluster MinIO, changing the root credentials needs the data re-keyed; in a lab,
-  create a new MinIO user instead.
+* Rotation: `read -rs OPENMETADATA_JWT && export OPENMETADATA_JWT` (the same for `S3_ACCESS_KEY` and
+  `S3_SECRET_KEY`), then `20-configure.sh` and `30-deploy.sh --restart`. `20-configure.sh` refuses a secret key as
+  an argument. For in-cluster MinIO, changing the root credentials needs the data re-keyed; in a lab, create a new
+  MinIO user instead.
 * Backups made by `70-backup.sh` contain `.env` and therefore the secrets.
 * The Studio image is built from the scenario templates only; no private data goes into an image.
 
@@ -362,8 +363,12 @@ Each runbook: symptom → check → cause → fix → verify. Start every invest
 * **Check:** `kubectl -n opentsx logs deploy/opentsx-iceberg-rest`; `kubectl -n opentsx logs deploy/opentsx-minio`;
   `kubectl -n opentsx logs job/opentsx-minio-bucket`.
 * **Cause:** MinIO not ready or bucket missing, wrong `S3_ENDPOINT`/keys, catalog PVC lost or corrupt (SQLite).
-* **Fix:** wait for MinIO, `30-deploy.sh` (recreates the bucket Job); fix S3 settings via `20-configure.sh`; catalog
-  lost → `71-restore.sh DIR --only iceberg-catalog,minio` (restore both from the same backup).
+  The bucket Job tries 60 times, 3 s apart, then fails with
+  `opentsx-minio:9000: no answer after 60 tries 3 s apart; check the logs of deploy/opentsx-minio and the S3 keys`;
+  Kubernetes retries it and stops it after 900 s (`activeDeadlineSeconds`).
+* **Fix:** wait for MinIO, `30-deploy.sh` (recreates the bucket Job); fix the S3 settings with `20-configure.sh`
+  (keys exported, see [Secrets](#secrets)); catalog lost → `71-restore.sh DIR --only iceberg-catalog,minio` (restore
+  both from the same backup).
 * **Verify:** `curl` via port-forward `http://localhost:8181/v1/config` answers; `40-demo.sh retrieval` returns
   `wind.met.wind_speed` episodes.
 
@@ -372,8 +377,8 @@ Each runbook: symptom → check → cause → fix → verify. Start every invest
 * **Symptom:** `metadata-publish` fails with HTTP 401 (or 403).
 * **Check:** `kubectl -n opentsx logs job/opentsx-metadata-publish`; is `OM_URL` the API base (`…:8585/api`)?
 * **Cause:** bot token expired, revoked or for another OpenMetadata instance; token missing in the Secret.
-* **Fix:** create a new token for the bot in OpenMetadata (Settings → Bots), `20-configure.sh OPENMETADATA_JWT=<token>`,
-  `30-deploy.sh` (updates the Secret).
+* **Fix:** create a new token for the bot in OpenMetadata (Settings → Bots),
+  `read -rs OPENMETADATA_JWT && export OPENMETADATA_JWT`, `20-configure.sh`, `30-deploy.sh` (updates the Secret).
 * **Verify:** `40-demo.sh metadata-publish` completes; `40-demo.sh metadata` (dry run) always works without a server.
 
 ### R6: DWD fetch failing

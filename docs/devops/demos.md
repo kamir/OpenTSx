@@ -112,7 +112,7 @@ after the first checkpoint, and a checkpoint file of 135 KB for the 100 series. 
 
 ```bash
 deploy/k3s/40-demo.sh metadata            # dry run: request JSONs on the data PVC under /data/om-requests
-deploy/k3s/40-demo.sh metadata-publish    # real: needs OM_URL + OPENMETADATA_JWT (20-configure.sh)
+deploy/k3s/40-demo.sh metadata-publish    # real: needs OM_URL and OPENMETADATA_JWT, see ../../deploy/k3s/README.md#set-secrets
 ```
 
 Dry-run output:

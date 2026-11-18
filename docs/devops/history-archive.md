@@ -29,8 +29,8 @@ about 1 h later.
 
 ```bash
 # after 30-deploy.sh (namespace opentsx, image opentsx/tools imported)
-kubectl -n opentsx create secret generic opentsx-market \
-    --from-literal=ENTSOE_TOKEN=... --from-literal=NTP_CLIENT_ID=... --from-literal=NTP_CLIENT_SECRET=...   # optional
+# optional: ENTSOE_TOKEN=<token>, NTP_CLIENT_ID=<id> and NTP_CLIENT_SECRET=<secret>, one per line, in a file of mode 600 outside the repository
+kubectl -n opentsx create secret generic opentsx-market --from-env-file=<file>
 kubectl -n opentsx apply -k deploy/k3s/history                       # PVC + three CronJobs
 kubectl -n opentsx apply -f deploy/k3s/history/backfill-job.yaml     # one-off, about 1 h at the default pause
 kubectl -n opentsx apply -f deploy/k3s/history/weather-backfill-job.yaml   # one-off, a few minutes

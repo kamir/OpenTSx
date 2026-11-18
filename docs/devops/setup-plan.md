@@ -146,6 +146,10 @@ advertised address, then the topics of the domain with record counts, and `OK`.
 `20-configure.sh` takes `KEY=VALUE` arguments (precedence: arguments > environment > existing `.env` >
 [`env.example`](../../deploy/k3s/env.example)), writes `deploy/k3s/.env` (mode 600) and renders
 `deploy/k3s/overlays/local/` (git-ignored). It validates the values and renders the overlay with `kubectl kustomize`.
+Secret keys (`S3_ACCESS_KEY`, `S3_SECRET_KEY`, `OPENMETADATA_JWT`, `RETRIEVAL_DAG_RUN_TOKEN`, `SAAS_DB_PASSWORD`,
+`SAAS_SECRET_KEY`, `SAAS_ADMIN_PASSWORD`) are refused as arguments: export them, for example
+`read -rs OPENMETADATA_JWT && export OPENMETADATA_JWT`, or write them into `deploy/k3s/.env`
+([k3s README](../../deploy/k3s/README.md#set-secrets)).
 
 | Key | Default | Meaning |
 |-----|---------|---------|
@@ -208,9 +212,20 @@ See [Demos](demos.md).
 
 ## Optional: lake profile (Iceberg + S3)
 
+With MinIO in the cluster, `20-configure.sh` generates the credentials:
+
 ```bash
-deploy/k3s/20-configure.sh LAKE=true                     # + MinIO in the cluster (credentials generated)
-deploy/k3s/20-configure.sh LAKE=true LAKE_MINIO=false S3_ENDPOINT=http://nas.lan:9000 S3_ACCESS_KEY=… S3_SECRET_KEY=…
+deploy/k3s/20-configure.sh LAKE=true
+deploy/k3s/10-build.sh --with-s3 && deploy/k3s/11-import-images.sh && deploy/k3s/30-deploy.sh --restart
+```
+
+With your own S3 or MinIO, read the keys without echo first. `20-configure.sh` keeps them in `deploy/k3s/.env`
+(mode 600) and refuses them as arguments:
+
+```bash
+read -rs S3_ACCESS_KEY && export S3_ACCESS_KEY
+read -rs S3_SECRET_KEY && export S3_SECRET_KEY
+deploy/k3s/20-configure.sh LAKE=true LAKE_MINIO=false S3_ENDPOINT=http://nas.lan:9000
 deploy/k3s/10-build.sh --with-s3 && deploy/k3s/11-import-images.sh && deploy/k3s/30-deploy.sh --restart
 ```
 
@@ -230,7 +245,8 @@ deploy/k3s/10-build.sh --with-s3 && deploy/k3s/11-import-images.sh && deploy/k3s
 ## Optional: OpenMetadata
 
 ```bash
-deploy/k3s/20-configure.sh OM_URL=http://openmetadata.lan:8585/api OPENMETADATA_JWT=<bot token>
+read -rs OPENMETADATA_JWT && export OPENMETADATA_JWT     # the bot token, not echoed, not in the shell history
+deploy/k3s/20-configure.sh OM_URL=http://openmetadata.lan:8585/api
 deploy/k3s/30-deploy.sh && deploy/k3s/40-demo.sh metadata-publish
 ```
 

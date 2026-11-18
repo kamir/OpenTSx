@@ -42,10 +42,16 @@ Base URL: `http://<host>:<port>`. Times are ISO-8601 instants (UTC).
 | episodes one request selects: `GET /v1/episodes` without `limit`, `POST /v1/patterns/search`, `/v1/episodes/similar` and `/v1/segments` | 20000 | `EpisodeService.MAX_EPISODES` | 400 `selection: more than 20000 episodes match; narrow it with metric, tags, series, from or to`; `GET /v1/episodes` adds `, or set limit` |
 
 **Run token:** `POST /v1/dags/deploy`, `POST /v1/dags/stop` and `POST /v1/systems/{id}/generate` write to KafScale.
-Set a run token with `--dag-run-token <token>` or the environment variable `OPENTSX_DAG_RUN_TOKEN`; the option wins.
-Callers then send the token in the header `X-OpenTSx-Run-Token`. Without a token, anyone who reaches the port can
-deploy and stop DAGs and write generated series. A server with `--kafscale`, `--dag-runs true` and no token prints at
-start:
+Set a run token in the environment variable `OPENTSX_DAG_RUN_TOKEN` before you start the server:
+
+```bash
+read -rs OPENTSX_DAG_RUN_TOKEN && export OPENTSX_DAG_RUN_TOKEN
+```
+
+`--dag-run-token <token>` also sets it and wins over the variable, but the process list and the shell history then
+show the token. Callers send the token in the header `X-OpenTSx-Run-Token`. Without a token, anyone who reaches the
+port can deploy and stop DAGs and write generated series. A server with `--kafscale`, `--dag-runs true` and no token
+prints at start:
 
 ```text
 dag deployments: OPEN, anyone who reaches this port can deploy and stop DAGs (set OPENTSX_DAG_RUN_TOKEN)

@@ -71,9 +71,9 @@ This writes 10-minute, hourly and global statistics per series to `tsx.wind.seri
 bin/opentsx metadata --scenario opentsx-windpark/scenarios/ostsee-demo.yaml --dry-run om-requests/
 ```
 
-Every request is written as JSON to `om-requests/`. To publish for real, use
-`--om http://localhost:8585/api --token "$OPENMETADATA_JWT" --kafscale localhost:9092`
-([chapter 8](08-openmetadata.md#82-publish-to-openmetadata)).
+Every request is written as JSON to `om-requests/`. To publish for real, read the bot token with
+`read -rs OPENMETADATA_JWT && export OPENMETADATA_JWT` and use
+`--om http://localhost:8585/api --kafscale localhost:9092` ([chapter 8](08-openmetadata.md#82-publish-to-openmetadata)).
 
 **4. Search the data.**
 

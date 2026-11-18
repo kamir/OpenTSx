@@ -27,6 +27,43 @@ deploy/k3s/71-restore.sh ./opentsx-backup-<time>                  # back into th
 | `lib.sh` | shared shell helpers |
 | `../docker/` | Dockerfiles, staging script, image entrypoint, deployment helper |
 
+`20-configure.sh` exits with 0 when it wrote the configuration, 1 when a value failed its check or writing or
+rendering failed, and 2 on a usage error: an unknown key, an argument that is not `KEY=VALUE` or an option, or a
+secret key as an argument. `bash deploy/k3s/test/test-20-configure.sh` tests it without a cluster.
+
+## Set secrets
+
+`20-configure.sh` refuses a secret key as an argument, because the shell history and the process list keep
+arguments. The secret keys are `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `OPENMETADATA_JWT`, `RETRIEVAL_DAG_RUN_TOKEN`,
+`SAAS_DB_PASSWORD`, `SAAS_SECRET_KEY` and `SAAS_ADMIN_PASSWORD`. Export them before you run the script, or write them
+into `deploy/k3s/.env` (mode 600). The environment wins over `.env`, and the script writes the effective values into
+`.env`.
+
+```bash
+read -rs OPENMETADATA_JWT && export OPENMETADATA_JWT
+deploy/k3s/20-configure.sh OM_URL=http://<host>:8585/api
+```
+
+`<host>` is your OpenMetadata server. A secret key as an argument, for example `OPENMETADATA_JWT=<token>`, exits
+with 2 and writes nothing:
+
+```text
+error: OPENMETADATA_JWT: secret keys are not accepted on the command line; export OPENMETADATA_JWT or put it in deploy/k3s/.env (mode 600)
+```
+
+With `SAAS=true` the script also refuses the published example values that the SaaS backend refuses at start. It
+reads them from `PUBLISHED_EXAMPLES` in `opentsx-saas-backend/app/core/config.py` and exits with 1:
+
+```text
+error: SAAS_ADMIN_PASSWORD: published example value; set a random password of at least 12 characters
+```
+
+With `LAKE=true` and `LAKE_MINIO=true` the bucket Job hands the S3 keys to `mc` in the URL `MC_HOST_lake`, so the
+keys may hold only letters, digits, `.`, `_`, `~` and `-`. The generated keys do.
+
+`20-configure.sh --print` shows the rendered manifests without the Secrets. Read one value with
+`kubectl -n opentsx get secret opentsx-secrets -o jsonpath='{.data.OPENMETADATA_JWT}' | base64 -d`.
+
 ## Retrieval server on the episodes topic
 
 By default the retrieval server serves a synthetic demo store. `20-configure.sh RETRIEVAL_SOURCE=kafscale` adds the

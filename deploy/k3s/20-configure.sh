@@ -11,6 +11,9 @@
 #
 # Precedence: KEY=VALUE arguments > environment variables > existing deploy/k3s/.env > env.example defaults.
 # Keys: see deploy/k3s/env.example. Idempotent: run it again to change a value.
+# Secret keys are refused as arguments, because the shell history and the process list keep arguments:
+#   S3_ACCESS_KEY S3_SECRET_KEY OPENMETADATA_JWT RETRIEVAL_DAG_RUN_TOKEN SAAS_DB_PASSWORD SAAS_SECRET_KEY SAAS_ADMIN_PASSWORD
+# Export them (read -rs OPENMETADATA_JWT && export OPENMETADATA_JWT) or write them into deploy/k3s/.env.
 #
 # Writes (all git-ignored, secrets with mode 600):
 #   deploy/k3s/.env                          the effective configuration (including generated MinIO credentials)
@@ -22,11 +25,18 @@
 #   service      an in-cluster name opentsx-kafscale.<ns>.svc for the bootstrap (selector-less Service +
 #                EndpointSlice for an IP, ExternalName for a DNS name). Only the bootstrap goes through it: the
 #                broker's ADVERTISED address must still be reachable from the pods.
-# --print   show the rendered manifests (kubectl kustomize) after writing.
+# --print   show the rendered manifests (kubectl kustomize) after writing, without the Secrets.
+#
+# Exit codes:
+#   0  configuration written
+#   1  a value failed its check, or writing or rendering failed
+#   2  usage error: an unknown key, an argument that is not KEY=VALUE or an option, a secret key as an argument
 set -euo pipefail
 # shellcheck source=deploy/k3s/lib.sh
 source "$(dirname "$0")/lib.sh"
 
+SECRET_KEYS=(S3_ACCESS_KEY S3_SECRET_KEY OPENMETADATA_JWT RETRIEVAL_DAG_RUN_TOKEN SAAS_DB_PASSWORD SAAS_SECRET_KEY
+  SAAS_ADMIN_PASSWORD)
 PRINT=false
 declare -A SET=()
 for arg in "$@"; do
@@ -35,9 +45,11 @@ for arg in "$@"; do
     --print) PRINT=true ;;
     *=*)
       key="${arg%%=*}"
-      [[ " ${CONFIG_KEYS[*]} " == *" $key "* ]] || die "unknown key $key (see deploy/k3s/env.example)"
+      [[ " ${CONFIG_KEYS[*]} " == *" $key "* ]] || usage_error "$key: unknown key; use a key of deploy/k3s/env.example"
+      [[ " ${SECRET_KEYS[*]} " != *" $key "* ]] \
+        || usage_error "$key: secret keys are not accepted on the command line; export $key or put it in deploy/k3s/.env (mode 600)"
       SET[$key]="${arg#*=}" ;;
-    *) die "expected KEY=VALUE, got '$arg' (see --help)" ;;
+    *) usage_error "$arg: unexpected argument; expected 20-configure.sh [KEY=VALUE ...] [--print]" ;;
   esac
 done
 load_env
@@ -80,12 +92,15 @@ if [[ "$KAFSCALE_NETWORK" == "service" ]]; then
   KS_HOST="${KAFSCALE_BOOTSTRAP%:*}"; KS_PORT="${KAFSCALE_BOOTSTRAP##*:}"
   POD_BOOTSTRAP="opentsx-kafscale.$OPENTSX_NS.svc.cluster.local:$KS_PORT"
 fi
+gen_secret() { LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c "$1" || true; }
 if is_true "$LAKE"; then
   if is_true "$LAKE_MINIO"; then
     S3_ENDPOINT="${S3_ENDPOINT:-http://opentsx-minio:9000}"
-    gen() { LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c "$1" || true; }
-    [[ -n "$S3_ACCESS_KEY" ]] || S3_ACCESS_KEY="opentsx-$(gen 8)"
-    [[ -n "$S3_SECRET_KEY" ]] || S3_SECRET_KEY="$(gen 32)"
+    [[ -n "$S3_ACCESS_KEY" ]] || S3_ACCESS_KEY="opentsx-$(gen_secret 8)"
+    [[ -n "$S3_SECRET_KEY" ]] || S3_SECRET_KEY="$(gen_secret 32)"
+    for key in S3_ACCESS_KEY S3_SECRET_KEY; do
+      [[ "${!key}" =~ ^[A-Za-z0-9._~-]+$ ]] || die "$key: holds a character that does not fit into the URL MC_HOST_lake of the bucket Job; with LAKE_MINIO=true use letters, digits, '.', '_', '~' and '-'"
+    done
   else
     [[ -n "$S3_ENDPOINT" ]] || die "LAKE=true with LAKE_MINIO=false needs S3_ENDPOINT (your S3 / MinIO URL)"
     [[ -n "$S3_ACCESS_KEY" && -n "$S3_SECRET_KEY" ]] || die "LAKE=true with LAKE_MINIO=false needs S3_ACCESS_KEY and S3_SECRET_KEY"
@@ -95,7 +110,6 @@ else
   ICEBERG_PROPS=""
 fi
 
-gen_secret() { LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c "$1" || true; }
 # characters as the SaaS backend counts them (UTF-8 lead bytes), in any locale
 utf8_chars() { printf %s "$1" | LC_ALL=C tr -d '\200-\277' | LC_ALL=C wc -c; }
 if is_true "$RETRIEVAL_DAG_RUNS"; then
@@ -107,11 +121,33 @@ fi
 if is_true "$SAAS" && is_true "$SAAS_TEST_LOGIN"; then
   warn "SAAS_TEST_LOGIN=true: admin/admin signs in as administrator. Everyone who reaches the page can deploy DAGs. Lab networks only."
 fi
+# the values the SaaS backend refuses at start, read from its source so that both checks use one list
+PUBLISHED_EXAMPLES=()
+read_published_examples() {
+  local file="$ROOT/opentsx-saas-backend/app/core/config.py" line inside=false
+  [[ -f "$file" ]] || die "$file: no such file; SAAS=true reads PUBLISHED_EXAMPLES from it"
+  while IFS= read -r line; do
+    if ! $inside; then [[ "$line" == "PUBLISHED_EXAMPLES = frozenset({" ]] && inside=true; continue; fi
+    if [[ "$line" == "})" ]]; then (( ${#PUBLISHED_EXAMPLES[@]} )) && return 0; break; fi
+    [[ "$line" =~ ^\ +\"([^\"\\]+)\",$ ]] \
+      || die "$file: PUBLISHED_EXAMPLES holds the line '$line'; keep one double-quoted value with a comma per line"
+    PUBLISHED_EXAMPLES+=("${BASH_REMATCH[1]}")
+  done < "$file"
+  die "$file: no values in PUBLISHED_EXAMPLES = frozenset({ ... }); keep one double-quoted value with a comma per line"
+}
+is_published_example() { local v; for v in "${PUBLISHED_EXAMPLES[@]}"; do [[ "$1" == "$v" ]] && return 0; done; return 1; }
 if is_true "$SAAS"; then
   [[ "$SAAS_ADMIN_EMAIL" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$ ]] || die "SAAS_ADMIN_EMAIL=$SAAS_ADMIN_EMAIL is not an e-mail address"
   [[ -n "$SAAS_DB_PASSWORD" ]] || SAAS_DB_PASSWORD="$(gen_secret 32)"
   [[ -n "$SAAS_SECRET_KEY" ]] || SAAS_SECRET_KEY="$(gen_secret 48)"
   [[ -n "$SAAS_ADMIN_PASSWORD" ]] || SAAS_ADMIN_PASSWORD="$(gen_secret 20)"
+  read_published_examples
+  ! is_published_example "$SAAS_ADMIN_PASSWORD" \
+    || die "SAAS_ADMIN_PASSWORD: published example value; set a random password of at least 12 characters"
+  ! is_published_example "$SAAS_DB_PASSWORD" \
+    || die "SAAS_DB_PASSWORD: published example value; set at least 12 random letters and digits"
+  ! is_published_example "$SAAS_SECRET_KEY" \
+    || die "SAAS_SECRET_KEY: published example value; generate a random key of at least 32 characters"
   # both end up in a URL (database) and in an env file: keep them to letters and digits
   [[ "$SAAS_DB_PASSWORD" =~ ^[A-Za-z0-9]+$ ]] || die "SAAS_DB_PASSWORD may only hold letters and digits"
   (( ${#SAAS_DB_PASSWORD} >= 12 )) || die "SAAS_DB_PASSWORD: shorter than 12 characters; set at least 12 letters and digits"
@@ -332,7 +368,12 @@ if kc version --client >/dev/null 2>&1; then
   n="$(kc kustomize "$OVERLAY" | grep -c '^kind:')" || die "kubectl kustomize $OVERLAY failed"
   m="$(kc kustomize "$OVERLAY/jobs" | grep -c '^kind:')" || die "kubectl kustomize $OVERLAY/jobs failed"
   ok "renders: $n objects, $m demo Jobs"
-  $PRINT && kc kustomize "$OVERLAY"
+  $PRINT && kc kustomize "$OVERLAY" | awk '
+    function flush() { if (doc != "" && !secret) { printf "%s%s", sep, doc; sep = "---\n" } doc = ""; secret = 0 }
+    /^---$/ { flush(); next }
+    /^kind: Secret$/ { secret = 1 }
+    { doc = doc $0 "\n" }
+    END { flush() }'
 else
   warn "kubectl not available - rendering not checked"
 fi

@@ -23,13 +23,17 @@ Module: `opentsx-openmetadata` ([README](../../opentsx-openmetadata/README.md)).
 # review first: every request is written to a directory
 bin/opentsx metadata --scenario opentsx-windpark/scenarios/ostsee-demo.yaml --dry-run om-requests/
 
+# the bot token: paste it and press Enter; it is not echoed and not kept in the shell history
+read -rs OPENMETADATA_JWT && export OPENMETADATA_JWT
+
 # publish, including profiles (hourly) and DQ results (10 minutes) from the statistics topic
 bin/opentsx metadata --scenario opentsx-windpark/scenarios/ostsee-demo.yaml \
-    --om http://localhost:8585/api --token "$OPENMETADATA_JWT" \
+    --om http://localhost:8585/api \
     --kafscale localhost:9092 --domain wind --profile-window PT1H --dq-window PT10M
 ```
 
-* Use a **bot token**. Without `--token`, the client reads the environment variable `OPENMETADATA_JWT`.
+* Use a **bot token**. The client reads it from the environment variable `OPENMETADATA_JWT`. `--token <jwt>` also
+  sets it and wins over the variable, but the process list and the shell history then show the token.
 * All writes are create-or-update, so publishing again is idempotent.
 * The client retries 429, 502, 503 and 504 responses, up to 5 attempts, with pauses of 1, 2, 4 and 8 s. Any other
   error status, 500 included, fails at once. A `GET` that gets 404 reads as a missing entity. A network error is not

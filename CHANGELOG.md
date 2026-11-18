@@ -190,6 +190,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `opentsx.properties.example` names the commands that read the key registry and says that 2.x `ProductionConfig` does
   not apply `opentsx.log.level` to logging. `bin/episode_10_production_config.sh` says that `OPENTSX_LOG_LEVEL` takes
   `error`, `warn`, `info`, `debug` or `trace`.
+- `deploy/k3s/20-configure.sh` exits with 2 on a usage error (an unknown key, or an argument that is neither
+  `KEY=VALUE` nor an option) and documents the exit codes 0, 1 and 2 in its header. `deploy/k3s/lib.sh` gets
+  `usage_error`.
+- The user manual, the devops guide, the k3s README and the READMEs of `opentsx-openmetadata` and `opentsx-retrieval`
+  read the OpenMetadata bot token, the run token and the S3 keys with `read -rs <KEY> && export <KEY>` and no longer
+  put a secret on a command line. The history archive comment creates `opentsx-market` with `--from-env-file`, and
+  `40-demo.sh` names that way in its `--help` and when `OM_URL` is missing for `metadata-publish`.
 
 ### Removed
 
@@ -498,6 +505,20 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The retrieval server caps `topK` at 1000, a search pattern at 100000 values, `limit` at 20000 and the episodes one
   request selects at 20000 (`EpisodeService.MAX_TOP_K`, `MAX_PATTERN_LENGTH`, `MAX_EPISODES`). Beyond a cap it answers
   400 naming the cap. A search compares, and an answer carries, at most 20000 episodes.
+- `deploy/k3s/20-configure.sh` refuses `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `OPENMETADATA_JWT`,
+  `RETRIEVAL_DAG_RUN_TOKEN`, `SAAS_DB_PASSWORD`, `SAAS_SECRET_KEY` and `SAAS_ADMIN_PASSWORD` as arguments with exit
+  code 2 and writes nothing. Export them or write them into `deploy/k3s/.env`.
+- `deploy/k3s/20-configure.sh --print` leaves out every `kind: Secret`.
+- With `SAAS=true`, `deploy/k3s/20-configure.sh` refuses the published example values that the SaaS backend refuses at
+  start. It reads them from `PUBLISHED_EXAMPLES` in `opentsx-saas-backend/app/core/config.py`.
+- The MinIO bucket Job `opentsx-minio-bucket` gives `mc` the S3 keys in the environment variable `MC_HOST_lake`
+  instead of as arguments. It stops waiting for MinIO after 60 tries 3 s apart with a message that names no namespace,
+  and has `activeDeadlineSeconds: 900`. With `LAKE_MINIO=true`, `20-configure.sh` refuses S3 keys that hold characters
+  other than letters, digits, `.`, `_`, `~` and `-`.
+- The history archive page creates the `opentsx-market` Secret from a mode-600 file with `--from-env-file`, and the
+  configuration chapter reads `OPENMETADATA_JWT` with `read -rs`. The secrets check of
+  `deploy/k3s/test/test-20-configure.sh` now covers `docs/`, the top-level and module READMEs and the READMEs under
+  `deploy/k3s/`.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

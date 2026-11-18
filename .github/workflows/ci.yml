@@ -124,7 +124,7 @@ jobs:
           command -v shellcheck || { sudo apt-get update -q && sudo apt-get install -y -q shellcheck; }
           shellcheck --version
           shellcheck -x -P SCRIPTDIR deploy/k3s/*.sh deploy/k3s/test/*.sh deploy/docker/*.sh
-      - name: Configure limits (deploy/k3s/test)
+      - name: 20-configure.sh, secrets in docs and the MinIO bucket Job (deploy/k3s/test)
         run: bash deploy/k3s/test/test-20-configure.sh
       - name: Launchers and logger settings (deploy/docker/test-launchers.sh)
         run: bash deploy/docker/test-launchers.sh

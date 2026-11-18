@@ -17,6 +17,7 @@ ok()   { echo "  ${C_GRN}ok${C_OFF}    $*"; }
 warn() { echo "  ${C_YEL}warn${C_OFF}  $*" >&2; }
 fail() { echo "  ${C_RED}FAIL${C_OFF}  $*" >&2; }
 die()  { echo "${C_RED}error:${C_OFF} $*" >&2; exit 1; }
+usage_error() { echo "${C_RED}error:${C_OFF} $*" >&2; exit 2; }
 
 # Prints the comment header of the calling script (lines 2.. up to the first non-comment line).
 usage() { sed -n '2,/^[^#]/{/^#/p}' "$0" | grep -v '^# shellcheck' | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }

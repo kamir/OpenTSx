@@ -74,7 +74,8 @@ spec:
       port: 9001
       targetPort: console
 ---
-# Creates the warehouse bucket (idempotent). The MinIO image contains the mc client.
+# Creates the warehouse bucket (idempotent). The MinIO image contains the mc client. mc takes the keys from
+# MC_HOST_lake in its environment, so they never appear on a command line.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -83,6 +84,7 @@ metadata:
     opentsx.org/setup: "true"
 spec:
   backoffLimit: 6
+  activeDeadlineSeconds: 900
   template:
     spec:
       restartPolicy: OnFailure
@@ -91,8 +93,16 @@ spec:
           image: quay.io/minio/minio:RELEASE.2024-09-22T00-33-43Z
           command: [/bin/sh, -c]
           args:
-            - >-
-              until mc alias set lake http://opentsx-minio:9000 "$S3_ACCESS_KEY" "$S3_SECRET_KEY"; do sleep 3; done &&
+            - |
+              tries=0
+              until mc ls lake >/dev/null; do
+                tries=$((tries + 1))
+                if [ "$tries" -ge 60 ]; then
+                  echo "opentsx-minio:9000: no answer after 60 tries 3 s apart; check the logs of deploy/opentsx-minio and the S3 keys" >&2
+                  exit 1
+                fi
+                sleep 3
+              done
               mc mb --ignore-existing "lake/$S3_BUCKET" && mc ls lake
           env:
             - name: S3_BUCKET
@@ -101,6 +111,8 @@ spec:
               valueFrom: {secretKeyRef: {name: opentsx-secrets, key: S3_ACCESS_KEY}}
             - name: S3_SECRET_KEY
               valueFrom: {secretKeyRef: {name: opentsx-secrets, key: S3_SECRET_KEY}}
+            - name: MC_HOST_lake
+              value: http://$(S3_ACCESS_KEY):$(S3_SECRET_KEY)@opentsx-minio:9000
             - name: HOME
               value: /tmp
           resources:

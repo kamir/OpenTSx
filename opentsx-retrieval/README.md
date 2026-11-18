@@ -135,8 +135,10 @@ Vector topics are written by the vector processor (below). The server is its fro
   control topic. `POST /v1/dags/stop?name=<dag>` appends the stop. Both exist only with `--dag-runs true`.
 * The processor runs `align.vector` on the series of the source topic only (`in: [decode]`); any other operator
   before the vector is refused with the id of the node. `source.series` must name the series.
-* **Run token.** With `--dag-run-token <token>` or the environment variable `OPENTSX_DAG_RUN_TOKEN` the two write
-  routes need the token in the header `X-OpenTSx-Run-Token`; anything else gets 401. Without a token, whoever
+* **Run token.** With a token in the environment variable `OPENTSX_DAG_RUN_TOKEN`
+  (`read -rs OPENTSX_DAG_RUN_TOKEN && export OPENTSX_DAG_RUN_TOKEN` before the start) the two write routes need the
+  token in the header `X-OpenTSx-Run-Token`; anything else gets 401. `--dag-run-token <token>` also sets it and wins
+  over the variable, but the process list and the shell history then show the token. Without a token, whoever
   reaches the port can deploy and stop. The SaaS backend holds the token and forwards for its users
   (`POST /api/v1/dags/deploy`, `/stop`); it names the user in `X-OpenTSx-By`, which ends up in the control record.
 
