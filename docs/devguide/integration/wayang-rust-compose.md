@@ -144,7 +144,8 @@ starts separate etcd, broker, read/write proxies, PostgreSQL and three workers, 
 The local bundle uses pinned KafScale v1.6.0 source with a guarded
 [EtcdStore build overlay](../../../tools/kafscale_metadata_overlay.py), in addition to the broker version stamp.
 The overlay serializes `CreateTopic`, `CreatePartitions`, `DeleteTopic` and watcher `refreshSnapshot` through one
-store-local mutex. Its scope is the single-broker, single-metadata-writer fixture. Multi-broker metadata
+store-local mutex. Public metadata reads refresh the durable snapshot and propagate refresh errors.
+Its scope is the single-broker, single-metadata-writer fixture. Multi-broker metadata
 coordination remains unqualified. The original pinned checkout stays unchanged; the built fixture includes the
 overlay and must be identified by its recorded source/overlay and binary hashes.
 The guarded [Proxy protocol overlay](../../../tools/kafscale_proxy_protocol_overlay.py) checks the pinned Proxy

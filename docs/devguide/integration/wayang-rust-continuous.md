@@ -48,7 +48,8 @@ network/ACL enforcement are specified in the [three-worker guide](wayang-rust-co
 There is no automatic gateway failover or operator command that discards uncertainty. The local fixture uses
 pinned KafScale v1.6.0 plus guarded metadata and Proxy protocol build overlays documented in the
 [transport setup](wayang-rust-compose.md#run-the-isolated-acceptance-helper). Its single-broker metadata
-serialization is separate from gateway fencing and does not qualify a multi-broker deployment. The protocol
+serialization is separate from gateway fencing and does not qualify a multi-broker deployment. Public metadata
+reads refresh the durable snapshot and propagate refresh errors. The protocol
 overlay corrects Produce/Fetch re-encoding and synthetic error defaults, and keeps successful fan-out backends
 eligible. Bundle provenance records the actual local overlays rather than an unmodified upstream binary.
 

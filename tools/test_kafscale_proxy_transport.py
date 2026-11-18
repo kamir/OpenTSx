@@ -81,6 +81,7 @@ class KafScaleProxyTransportTest(unittest.TestCase):
             (root / "tools").mkdir()
             (root / "tools/kafscale_proxy_cluster.go").write_text("pinned launcher")
             (root / "tools/kafscale_metadata_overlay.py").write_text("pinned metadata overlay")
+            (root / "tools/kafscale_metadata_test.go").write_text("pinned metadata tests")
             (root / "tools/kafscale_proxy_protocol_overlay.py").write_text("pinned protocol overlay")
             (root / "tools/kafscale_proxy_protocol_test.go").write_text("pinned protocol tests")
             directory = root / "target/bundle"
@@ -103,6 +104,9 @@ class KafScaleProxyTransportTest(unittest.TestCase):
             self.assertEqual("2", compiler[compiler.index("--cpus") + 1])
             self.assertEqual("3g", compiler[compiler.index("--memory") + 1])
             self.assertIn("GOMAXPROCS=2", compiler)
+            program = compiler[-1]
+            self.assertIn("./cmd/proxy ./pkg/metadata", program)
+            self.assertIn("^TestOpenTSx(Proxy|Metadata)", program)
 
     def test_bundle_verification_rejects_changed_binaries_and_sources(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -113,6 +117,8 @@ class KafScaleProxyTransportTest(unittest.TestCase):
             launcher = root / "tools/kafscale_proxy_cluster.go"
             launcher.write_text("pinned launcher")
             (root / "tools/kafscale_metadata_overlay.py").write_text("pinned metadata overlay")
+            metadata_tests = root / "tools/kafscale_metadata_test.go"
+            metadata_tests.write_text("pinned metadata tests")
             (root / "tools/kafscale_proxy_protocol_overlay.py").write_text("pinned protocol overlay")
             (root / "tools/kafscale_proxy_protocol_test.go").write_text("pinned protocol tests")
             with patch.object(BUILD, "ROOT", root), patch.object(BUILD, "DIRECTORY", directory):
@@ -123,6 +129,11 @@ class KafScaleProxyTransportTest(unittest.TestCase):
                 manifest = {"identity": BUILD.identity(), "binaries": {name: BUILD.digest(directory / name) for name in BUILD.BINARIES}}
                 (directory / "manifest.json").write_text(json.dumps(manifest))
                 self.assertEqual(manifest, BUILD.verify())
+                self.assertEqual(BUILD.digest(metadata_tests), manifest["identity"]["metadataTestsSha256"])
+                metadata_tests.write_text("changed metadata tests")
+                with self.assertRaisesRegex(RuntimeError, "sources differ"):
+                    BUILD.verify()
+                metadata_tests.write_text("pinned metadata tests")
                 (directory / "kafscale-proxy").write_bytes(b"changed")
                 with self.assertRaisesRegex(RuntimeError, "binary differs"):
                     BUILD.verify()
