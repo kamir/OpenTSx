@@ -15,16 +15,22 @@ import org.opentsx.model.v2.BucketManifest;
 import org.opentsx.model.v2.BucketState;
 import org.opentsx.model.v2.Episode;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -141,6 +147,34 @@ class BucketWriterTest {
         assertEquals(List.of(BucketState.OPEN), manifests(producer));
     }
 
+    @Test
+    void doesNotSealWhenTheAcknowledgementsTakeLongerThanTheWait() {
+        MockProducer<String, byte[]> producer = new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()) {
+            @Override
+            public synchronized Future<RecordMetadata> send(ProducerRecord<String, byte[]> record, Callback callback) {
+                return record.topic().equals(layout.episodes()) ? new CompletableFuture<>() : super.send(record, callback);
+            }
+        };
+        BucketWriter w = BucketWriter.open(producer, layout, new InMemoryEpisodeIndex(), "b-7", "exp", Map.of());
+        w.ackWait = Duration.ofMillis(10);
+        w.append(WindData.episodes(1, List.of("wind_speed"), 1, 10, 7).get(0));
+        BucketWriter.BucketWriteException e = assertThrows(BucketWriter.BucketWriteException.class, w::seal);
+        assertEquals("bucket b-7 not sealed: episodes not acknowledged within PT0.01S", e.getMessage());
+        assertInstanceOf(TimeoutException.class, e.getCause());
+        assertEquals(List.of(BucketState.OPEN), manifests(producer));
+    }
+
+    @Test
+    void anInterruptWhileAManifestIsSentFailsTheWriterAndKeepsTheInterrupt() {
+        MockProducer<String, byte[]> producer = new MockProducer<>(false, new StringSerializer(), new ByteArraySerializer());
+        Thread.currentThread().interrupt();
+        BucketWriter.BucketWriteException e = assertThrows(BucketWriter.BucketWriteException.class,
+                () -> BucketWriter.open(producer, layout, new InMemoryEpisodeIndex(), "b-6", "exp", Map.of()));
+        assertTrue(Thread.interrupted(), "the interrupt is kept for the caller");
+        assertEquals("cannot write OPEN manifest of bucket b-6", e.getMessage());
+        assertInstanceOf(InterruptedException.class, e.getCause());
+    }
+
     private List<BucketState> manifests(MockProducer<String, byte[]> producer) {
         return producer.history().stream().filter(r -> r.topic().equals(layout.buckets()))
                 .map(r -> avro.decode(r.value(), BucketManifest.class).getState()).toList();
@@ -170,6 +204,21 @@ class BucketWriterTest {
             assertTrue(reloaded.find(null, 20, 30).isEmpty());
             assertNull(reloaded.find(Set.of("s2"), 0, 100).get(0).bucketId());
         }
+    }
+
+    @Test
+    void aBadIndexFileNamesTheFileAndTheLine(@TempDir Path dir) throws IOException {
+        Path file = Files.writeString(dir.resolve("index.tsv"), "e1\ts1\t0\t10\tb\tt\t0\t5\ne2\ts2\t10\n");
+        IllegalArgumentException malformed = assertThrows(IllegalArgumentException.class, () -> new FileEpisodeIndex(file));
+        assertEquals(file + ":2: malformed index line \"e2\ts2\t10\"; expected 8 tab-separated fields, see the header line",
+                malformed.getMessage());
+
+        Path notANumber = Files.writeString(dir.resolve("offset.tsv"), "#header\ne1\ts1\t0\t10\tb\tt\t0\tfive\n");
+        IllegalArgumentException offset = assertThrows(IllegalArgumentException.class, () -> new FileEpisodeIndex(notANumber));
+        assertTrue(offset.getMessage().startsWith(notANumber + ":2: "), offset.getMessage());
+
+        UncheckedIOException unreadable = assertThrows(UncheckedIOException.class, () -> new FileEpisodeIndex(dir));
+        assertEquals("cannot open episode index " + dir, unreadable.getMessage());
     }
 
     @Test

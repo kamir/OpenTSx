@@ -7,10 +7,14 @@ import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.Test;
+import org.opentsx.model.Episodes;
+import org.opentsx.model.Micros;
 import org.opentsx.model.OpenTsxAvro;
 import org.opentsx.model.v2.Episode;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -53,8 +57,78 @@ class EpisodeIndexerTest {
         values.add(avro.encode(written.get(1)));
         InMemoryEpisodeIndex index = new InMemoryEpisodeIndex();
         EpisodeIndexer.Result r = EpisodeIndexer.rebuild(log(values), layout, index, Duration.ofSeconds(5));
-        assertEquals(new EpisodeIndexer.Result(2, 1), r);
+        assertEquals(new EpisodeIndexer.Result(2, 1, 0), r);
         assertEquals(2, index.size());
+    }
+
+    @Test
+    void onlyTheFirstUndecodableRecordOfAPartitionIsReported() {
+        List<Episode> written = WindData.episodes(1, List.of("wind_speed"), 1, 30, 15);
+        List<byte[]> values = List.of(avro.encode(written.get(0)), "not avro".getBytes(StandardCharsets.UTF_8),
+                "also not avro".getBytes(StandardCharsets.UTF_8));
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        PrintStream stderr = System.err;
+        EpisodeIndexer.Result r;
+        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+        try {
+            r = EpisodeIndexer.rebuild(log(values), layout, new InMemoryEpisodeIndex(), Duration.ofSeconds(5));
+        } finally {
+            System.setErr(stderr);
+        }
+        assertEquals(new EpisodeIndexer.Result(1, 2, 0), r);
+        assertEquals(layout.episodes() + "-0 offset 1: undecodable record (unrecognised payload framing); skipped and counted"
+                + " in skipped, later undecodable records of this partition are only counted" + System.lineSeparator(),
+                err.toString(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void anInconsistentEpisodeIsCountedAsInvalidReportedOncePerPartitionAndSkipped() {
+        List<Episode> written = WindData.episodes(1, List.of("wind_speed"), 2, 30, 13);
+        List<byte[]> values = List.of(avro.encode(written.get(0)), avro.encode(countMismatch(written.get(0), "bad-1")),
+                avro.encode(written.get(1)), avro.encode(countMismatch(written.get(1), "bad-2")));
+        InMemoryEpisodeIndex index = new InMemoryEpisodeIndex();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        PrintStream stderr = System.err;
+        EpisodeIndexer.Result r;
+        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+        try {
+            r = EpisodeIndexer.rebuild(log(values), layout, index, Duration.ofSeconds(5));
+        } finally {
+            System.setErr(stderr);
+        }
+        assertEquals(new EpisodeIndexer.Result(2, 0, 2), r);
+        assertEquals(List.of(written.get(0).getEpisodeId(), written.get(1).getEpisodeId()),
+                index.find(null, Long.MIN_VALUE, Long.MAX_VALUE).stream().map(IndexEntry::episodeId).toList());
+        assertEquals(layout.episodes() + "-0 offset 1: invalid episode (count 3 != values 2); skipped and counted in invalid,"
+                + " later invalid episodes of this partition are only counted" + System.lineSeparator(),
+                err.toString(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void aRegularEpisodeWithoutAnIntervalIsCountedAsInvalid() {
+        List<Episode> written = WindData.episodes(1, List.of("wind_speed"), 2, 30, 14);
+        List<byte[]> values = List.of(avro.encode(written.get(0)),
+                avro.encode(Episode.newBuilder(written.get(1)).setIntervalMicros(null).build()));
+        InMemoryEpisodeIndex index = new InMemoryEpisodeIndex();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        PrintStream stderr = System.err;
+        EpisodeIndexer.Result r;
+        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+        try {
+            r = EpisodeIndexer.rebuild(log(values), layout, index, Duration.ofSeconds(5));
+        } finally {
+            System.setErr(stderr);
+        }
+        assertEquals(new EpisodeIndexer.Result(1, 0, 1), r);
+        assertEquals(layout.episodes() + "-0 offset 1: invalid episode (intervalMicros: missing in a REGULAR episode; expected"
+                + " a positive number of microseconds); skipped and counted in invalid, later invalid episodes of this"
+                + " partition are only counted" + System.lineSeparator(), err.toString(StandardCharsets.UTF_8));
+    }
+
+    private static Episode countMismatch(Episode e, String episodeId) {
+        Episode two = Episodes.regular(e.getSeries(), Micros.of(e.getTStart()), 1_000_000L, new double[]{1, 2})
+                .episodeId(episodeId).source("test").build();
+        return Episode.newBuilder(two).setCount(3).build();
     }
 
     @Test

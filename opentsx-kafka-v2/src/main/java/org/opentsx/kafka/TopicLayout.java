@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 
 /**
@@ -25,6 +26,7 @@ public final class TopicLayout {
 
     private static final Pattern DOMAIN = Pattern.compile("[a-z0-9][a-z0-9_-]*");
     private static final Pattern SMART_NAME = Pattern.compile("[a-z0-9][a-z0-9-]*");
+    private static final Map<String, String> CONFIGS = Map.of("compression.type", "zstd", "cleanup.policy", "delete");
 
     private final String domain;
 
@@ -68,25 +70,12 @@ public final class TopicLayout {
      * stays ordered; data topics get {@code dataPartitions}.
      */
     public void provision(Admin admin, int dataPartitions, short replicationFactor) {
-        Map<String, String> configs = Map.of("compression.type", "zstd", "cleanup.policy", "delete");
         List<NewTopic> topics = new ArrayList<>();
         for (String t : all()) {
             int partitions = t.equals(buckets()) || t.equals(series()) ? 1 : dataPartitions;
-            topics.add(new NewTopic(t, partitions, replicationFactor).configs(configs));
+            topics.add(new NewTopic(t, partitions, replicationFactor));
         }
-        try {
-            Set<String> existing = admin.listTopics().names().get(30, TimeUnit.SECONDS);
-            topics.removeIf(t -> existing.contains(t.name()));
-            if (!topics.isEmpty()) {
-                admin.createTopics(topics).all().get(30, TimeUnit.SECONDS);
-            }
-        } catch (ExecutionException e) {
-            if (!(e.getCause() instanceof TopicExistsException)) {
-                throw new IllegalStateException("topic provisioning failed for domain " + domain, e.getCause());
-            }
-        } catch (Exception e) {
-            throw new IllegalStateException("topic provisioning failed for domain " + domain, e);
-        }
+        create(admin, topics, "topic provisioning failed for domain " + domain);
     }
 
     /**
@@ -127,24 +116,8 @@ public final class TopicLayout {
 
     /** Creates the control and status topics when they are missing, one partition each. */
     public void provisionDagTopics(Admin admin, short replicationFactor) {
-        try {
-            Set<String> existing = admin.listTopics().names().get(30, TimeUnit.SECONDS);
-            List<NewTopic> missing = new ArrayList<>();
-            for (String t : List.of(dags(), dagStatus())) {
-                if (!existing.contains(t)) {
-                    missing.add(new NewTopic(t, 1, replicationFactor).configs(Map.of("compression.type", "zstd", "cleanup.policy", "delete")));
-                }
-            }
-            if (!missing.isEmpty()) {
-                admin.createTopics(missing).all().get(30, TimeUnit.SECONDS);
-            }
-        } catch (ExecutionException e) {
-            if (!(e.getCause() instanceof TopicExistsException)) {
-                throw new IllegalStateException("could not create the DAG topics of domain " + domain, e.getCause());
-            }
-        } catch (Exception e) {
-            throw new IllegalStateException("could not create the DAG topics of domain " + domain, e);
-        }
+        create(admin, List.of(new NewTopic(dags(), 1, replicationFactor),
+                new NewTopic(dagStatus(), 1, replicationFactor)), "could not create the DAG topics of domain " + domain);
     }
 
     /**
@@ -165,24 +138,28 @@ public final class TopicLayout {
         return topic("features");
     }
 
-    /** Creates the vector topic when it is missing: one partition, so a scan reads the measuring points in order. */
-    public void provisionSmartVectors(Admin admin, String name, short replicationFactor) {
-        provisionTopic(admin, smartVectors(name), replicationFactor);
-    }
-
     /** Creates a topic a flow writes when it is missing: one partition, so a scan reads it in order. */
     public void provisionTopic(Admin admin, String topic, short replicationFactor) {
+        create(admin, List.of(new NewTopic(topic, 1, replicationFactor)), "could not create " + topic);
+    }
+
+    private static void create(Admin admin, List<NewTopic> topics, String failure) {
         try {
-            if (!admin.listTopics().names().get(30, TimeUnit.SECONDS).contains(topic)) {
-                admin.createTopics(List.of(new NewTopic(topic, 1, replicationFactor)
-                        .configs(Map.of("compression.type", "zstd", "cleanup.policy", "delete")))).all().get(30, TimeUnit.SECONDS);
+            Set<String> existing = admin.listTopics().names().get(30, TimeUnit.SECONDS);
+            List<NewTopic> missing = topics.stream().filter(t -> !existing.contains(t.name()))
+                    .map(t -> t.configs(CONFIGS)).toList();
+            if (!missing.isEmpty()) {
+                admin.createTopics(missing).all().get(30, TimeUnit.SECONDS);
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(failure, e);
         } catch (ExecutionException e) {
             if (!(e.getCause() instanceof TopicExistsException)) {
-                throw new IllegalStateException("could not create " + topic, e.getCause());
+                throw new IllegalStateException(failure, e.getCause());
             }
-        } catch (Exception e) {
-            throw new IllegalStateException("could not create " + topic, e);
+        } catch (TimeoutException e) {
+            throw new IllegalStateException(failure, e);
         }
     }
 

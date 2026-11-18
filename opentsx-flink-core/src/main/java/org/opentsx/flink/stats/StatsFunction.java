@@ -8,6 +8,8 @@ import org.apache.flink.metrics.Counter;
 import org.apache.flink.streaming.api.TimeDomain;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
+import org.apache.kafka.common.TopicPartition;
+import org.opentsx.model.Episodes;
 import org.opentsx.model.Micros;
 import org.opentsx.model.OpenTsxAvro;
 import org.opentsx.model.v2.Episode;
@@ -15,15 +17,19 @@ import org.opentsx.model.v2.Observation;
 import org.opentsx.model.v2.SeriesStats;
 import org.opentsx.stats.StatsEngine;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Runs one {@link StatsEngine} per series id, the same calls as the KafScale processor makes.
  *
  * <ul>
  *   <li>Every input goes to {@link StatsEngine#onEpisode} or {@link StatsEngine#onObservation}; the windows it
- *       closes are emitted. An input that does not decode is counted in the metric {@code undecodable} and dropped; a
- *       failure of the engine fails the task, which restarts from the last checkpoint.</li>
+ *       closes are emitted. An input that does not decode is counted in the metric {@code undecodable} and dropped.
+ *       An episode that decodes but fails {@link Episodes#validate} is counted in the metric {@code invalid} and
+ *       dropped. The first input of each kind per subtask and partition is reported on stderr. A failure of the
+ *       engine fails the task, which restarts from the last checkpoint.</li>
  *   <li>GLOBAL: a processing-time timer emits {@link StatsEngine#emitGlobal()} every {@code globalEveryMs}
  *       (0 = only at the end of a bounded run).</li>
  *   <li>End of a bounded run: an event-time timer at {@link Long#MAX_VALUE} fires with the final watermark and
@@ -42,6 +48,9 @@ public final class StatsFunction extends KeyedProcessFunction<String, StatsInput
     private transient ValueState<Long> nextGlobal;
     private transient OpenTsxAvro avro;
     private transient Counter undecodable;
+    private transient Counter invalid;
+    private transient Set<TopicPartition> undecodableReported;
+    private transient Set<TopicPartition> invalidReported;
 
     public StatsFunction(EngineSpec spec, long globalEveryMs) {
         if (globalEveryMs < 0) {
@@ -57,6 +66,9 @@ public final class StatsFunction extends KeyedProcessFunction<String, StatsInput
         nextGlobal = getRuntimeContext().getState(new ValueStateDescriptor<>("next-global", Types.LONG));
         avro = new OpenTsxAvro();
         undecodable = getRuntimeContext().getMetricGroup().counter("undecodable");
+        invalid = getRuntimeContext().getMetricGroup().counter("invalid");
+        undecodableReported = new HashSet<>();
+        invalidReported = new HashSet<>();
     }
 
     @Override
@@ -75,6 +87,14 @@ public final class StatsFunction extends KeyedProcessFunction<String, StatsInput
             }
         } catch (RuntimeException ex) {
             undecodable.inc();
+            TopicPartition tp = new TopicPartition(in.topic, in.partition);
+            if (undecodableReported.add(tp)) {
+                System.err.println(tp + " offset " + in.offset + ": undecodable record (" + ex.getMessage() + "); skipped"
+                        + " and counted in undecodable, this subtask only counts later undecodable records of this partition");
+            }
+            return;
+        }
+        if (episode != null && !consistent(in, episode)) {
             return;
         }
         List<SeriesStats> closed = in.episode ? e.onEpisode(episode) : e.onObservation(observation);
@@ -101,6 +121,21 @@ public final class StatsFunction extends KeyedProcessFunction<String, StatsInput
             nextGlobal.clear();    // the next input of this series arms the timer again
         }
         engine.update(e);
+    }
+
+    private boolean consistent(StatsInput in, Episode episode) {
+        try {
+            Episodes.validate(episode);
+            return true;
+        } catch (IllegalArgumentException e) {
+            invalid.inc();
+            TopicPartition tp = new TopicPartition(in.topic, in.partition);
+            if (invalidReported.add(tp)) {
+                System.err.println(tp + " offset " + in.offset + ": invalid episode (" + e.getMessage() + "); skipped and"
+                        + " counted in invalid, this subtask only counts later invalid episodes of this partition");
+            }
+            return false;
+        }
     }
 
     private void emit(List<SeriesStats> stats, Collector<StatsRecord> out) {

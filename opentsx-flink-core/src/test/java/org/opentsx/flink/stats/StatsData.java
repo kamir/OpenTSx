@@ -40,7 +40,7 @@ final class StatsData {
     static List<StatsInput> inputs(List<Episode> episodes) {
         OpenTsxAvro avro = new OpenTsxAvro();
         return episodes.stream()
-                .map(e -> new StatsInput(e.getSeries().getSeriesId(), true, avro.encode(e)))
+                .map(e -> new StatsInput(e.getSeries().getSeriesId(), true, avro.encode(e), "tsx.unit.episodes.v2", 0, 0))
                 .toList();
     }
 

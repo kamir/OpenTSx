@@ -12,6 +12,7 @@ import org.opentsx.model.v2.BucketState;
 import org.opentsx.model.v2.Episode;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -21,7 +22,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -48,11 +48,10 @@ public final class BucketWriter implements AutoCloseable {
     private final List<String> episodeIds = new ArrayList<>();
     private final List<CompletableFuture<IndexEntry>> pending = new ArrayList<>();
     private final AtomicReference<Exception> failure = new AtomicReference<>();
-    private final AtomicLong payloadBytes = new AtomicLong();
-    private long values;
     private long tMin = Long.MAX_VALUE;
     private long tMax = Long.MIN_VALUE;
     private BucketManifest sealed;
+    Duration ackWait = Duration.ofMinutes(5);
 
     private BucketWriter(Producer<String, byte[]> producer, TopicLayout layout, EpisodeIndex index, BucketManifest open) {
         this.producer = producer;
@@ -99,8 +98,6 @@ public final class BucketWriter implements AutoCloseable {
             throw new IllegalArgumentException("episode " + e.getEpisodeId() + " belongs to bucket " + e.getBucketId());
         }
         byte[] payload = avro.encode(e);
-        payloadBytes.addAndGet(payload.length);
-        values += e.getCount();
         long tStart = Micros.of(e.getTStart());
         long tEnd = Micros.of(e.getTEnd());
         tMin = Math.min(tMin, tStart);
@@ -149,14 +146,14 @@ public final class BucketWriter implements AutoCloseable {
         }
         producer.flush();
         try {
-            CompletableFuture.allOf(pending.toArray(new CompletableFuture[0])).get(5, TimeUnit.MINUTES);
+            CompletableFuture.allOf(pending.toArray(new CompletableFuture[0])).get(ackWait.toNanos(), TimeUnit.NANOSECONDS);
         } catch (ExecutionException e) {
             // reported below via failure
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new BucketWriteException("bucket " + bucketId() + " not sealed: interrupted while waiting for acknowledgements", e);
         } catch (TimeoutException e) {
-            throw new BucketWriteException("bucket " + bucketId() + " not sealed: episodes not acknowledged within 5 minutes", e);
+            throw new BucketWriteException("bucket " + bucketId() + " not sealed: episodes not acknowledged within " + ackWait, e);
         }
         Exception ex = failure.get();
         if (ex != null) {
@@ -179,22 +176,19 @@ public final class BucketWriter implements AutoCloseable {
         seal();
     }
 
-    /** Encoded episode bytes handed to the producer (before compression). */
-    public long payloadBytes() {
-        return payloadBytes.get();
-    }
-
-    public synchronized long valueCount() {
-        return values;
-    }
-
     private void sendManifest(BucketManifest manifest) {
         ProducerRecord<String, byte[]> record = new ProducerRecord<>(layout.buckets(), manifest.getBucketId(), avro.encode(manifest));
         record.headers().add(TopicLayout.HEADER_SCHEMA, "org.opentsx.model.v2.BucketManifest".getBytes(StandardCharsets.UTF_8));
+        String message = "cannot write " + manifest.getState() + " manifest of bucket " + manifest.getBucketId();
         try {
             producer.send(record).get(2, TimeUnit.MINUTES);
-        } catch (Exception e) {
-            throw new BucketWriteException("cannot write " + manifest.getState() + " manifest of bucket " + manifest.getBucketId(), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new BucketWriteException(message, e);
+        } catch (ExecutionException e) {
+            throw new BucketWriteException(message, e.getCause());
+        } catch (TimeoutException e) {
+            throw new BucketWriteException(message, e);
         }
     }
 

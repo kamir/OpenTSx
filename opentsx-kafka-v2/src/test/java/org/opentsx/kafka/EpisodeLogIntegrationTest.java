@@ -109,6 +109,7 @@ class EpisodeLogIntegrationTest {
         InMemoryEpisodeIndex rebuilt = new InMemoryEpisodeIndex();
         EpisodeIndexer.Result scan = EpisodeIndexer.rebuild(consumer, layout, rebuilt, TIMEOUT);
         assertEquals(0, scan.skipped());
+        assertEquals(0, scan.invalid());
         for (IndexEntry e : index.entries()) {
             assertEquals(e, rebuilt.bucket(e.bucketId()).stream()
                     .filter(x -> x.episodeId().equals(e.episodeId())).findFirst().orElseThrow());

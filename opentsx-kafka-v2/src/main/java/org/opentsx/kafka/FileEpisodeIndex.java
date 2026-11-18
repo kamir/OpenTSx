@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.List;
 
 /**
  * Index persisted as an append-only TSV file (one line per entry). Good enough for local experiments;
@@ -16,14 +17,18 @@ public final class FileEpisodeIndex extends InMemoryEpisodeIndex implements Auto
 
     private static final String HEADER = "#episodeId\tseriesId\ttStartMicros\ttEndMicros\tbucketId\ttopic\tpartition\toffset";
 
+    private final Path file;
     private final BufferedWriter out;
 
     public FileEpisodeIndex(Path file) {
+        this.file = file;
         try {
             if (Files.exists(file)) {
-                for (String line : Files.readAllLines(file, StandardCharsets.UTF_8)) {
+                List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
+                for (int i = 0; i < lines.size(); i++) {
+                    String line = lines.get(i);
                     if (!line.isBlank() && !line.startsWith("#")) {
-                        super.add(parse(line));
+                        super.add(parse(line, i + 1));
                     }
                 }
             }
@@ -35,7 +40,7 @@ public final class FileEpisodeIndex extends InMemoryEpisodeIndex implements Auto
                 out.flush();
             }
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw new UncheckedIOException("cannot open episode index " + file, e);
         }
     }
 
@@ -49,7 +54,7 @@ public final class FileEpisodeIndex extends InMemoryEpisodeIndex implements Auto
             out.newLine();
             out.flush();
         } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
+            throw new UncheckedIOException("cannot append to episode index " + file, ex);
         }
     }
 
@@ -58,16 +63,22 @@ public final class FileEpisodeIndex extends InMemoryEpisodeIndex implements Auto
         try {
             out.close();
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw new UncheckedIOException("cannot close episode index " + file, e);
         }
     }
 
-    private static IndexEntry parse(String line) {
+    private IndexEntry parse(String line, int number) {
         String[] f = line.split("\t", -1);
         if (f.length != 8) {
-            throw new IllegalArgumentException("malformed index line: " + line);
+            throw new IllegalArgumentException(file + ":" + number + ": malformed index line \"" + line
+                    + "\"; expected 8 tab-separated fields, see the header line");
         }
-        return new IndexEntry(f[0], f[1], Long.parseLong(f[2]), Long.parseLong(f[3]), "-".equals(f[4]) ? null : f[4],
-                f[5], Integer.parseInt(f[6]), Long.parseLong(f[7]));
+        try {
+            return new IndexEntry(f[0], f[1], Long.parseLong(f[2]), Long.parseLong(f[3]), "-".equals(f[4]) ? null : f[4],
+                    f[5], Integer.parseInt(f[6]), Long.parseLong(f[7]));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(file + ":" + number + ": malformed index line \"" + line
+                    + "\"; tStartMicros, tEndMicros, partition and offset must be whole numbers", e);
+        }
     }
 }

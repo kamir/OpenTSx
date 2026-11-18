@@ -125,6 +125,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `seed`), instead of the threshold 0.1. Gaussian series with linear correlations pass in about 1 of 20 cases; values
   with a broad distribution pass.
 - `opentsx-saas-backend/requirements-dev.txt` pins `PyYAML==6.0.3`, which the compose tests import.
+- Flink `StatsJob`: an episode that decodes but fails `Episodes.validate`, for example a count that differs from the
+  number of values, is counted in the new metric `invalid` and dropped. It no longer produces statistics or fails the
+  task after every restart. Each subtask prints the first one per partition on stderr with topic, partition and
+  offset. A failure of the engine still fails the task.
+- `EpisodeIndexer.rebuild` returns `Result(indexed, skipped, invalid)`: an episode that fails `Episodes.validate` is
+  counted in `invalid` and not indexed, and the first one per partition is printed on stderr with topic, partition and
+  offset.
+- The `BucketWriter` seal timeout message names the wait, `episodes not acknowledged within PT5M`, and a test covers
+  the timeout.
+- `StorageCostTest` asserts each published storage figure (raw 8.40, 8.36 and 10.32 B/value, zstd 2.18, 6.96 and 4.07
+  B/value) to two decimals and pins the episode ids and creation times it measures, so the figures do not depend on
+  the clock. An encoding change that moves a figure in the README, the user manual or the sizing plan fails the build.
 
 ### Removed
 
@@ -140,6 +152,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   its volume and the backend's `REDIS_*` entries.
 - The commented Confluent Cloud bootstrap hosts in TSOProducer and TSOEventAnalysisProducer, and the commented copy
   commands with a real host and the unreachable failure branch in bin/010_build.sh.
+- `BucketWriter.payloadBytes()`, `BucketWriter.valueCount()`, `TopicLayout.provisionSmartVectors` and
+  `EpisodeIndex.addAll`, which had no callers. Use `provisionTopic(admin, layout.smartVectors(name),
+  replicationFactor)` for a vector topic.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -288,6 +303,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   without `timeDeltas` and timestamps that do not increase with an `IllegalArgumentException` that names the field.
   The statistics processor, the Flink job `StatsJob` and `EpisodeIndexer.rebuild` count such episodes in `invalid`
   instead of stopping on a `NullPointerException` or computing statistics from them.
+- `TopicLayout.provision`, `provisionDagTopics` and `provisionTopic` and the manifest send of `BucketWriter` keep the
+  interrupt flag of the thread when they are interrupted, and they catch only interrupts, execution failures and
+  timeouts. The three provisioning methods share one implementation.
+- `FileEpisodeIndex` errors name the file, and a malformed line also names its line number, for example `<file>:2:
+  malformed index line "..."; expected 8 tab-separated fields, see the header line`. A non-numeric field is reported
+  the same way and no longer as a bare `NumberFormatException`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

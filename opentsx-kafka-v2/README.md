@@ -17,6 +17,10 @@ Designed for [KafScale](https://kafscale.io), so it relies only on what KafScale
 Episode records: key = `seriesId`, record timestamp = `tStart`, headers `tsx-schema`, `tsx-bucket`,
 value = Avro single-object encoding.
 
+`provision`, `provisionDagTopics` and `provisionTopic` create the missing topics. They throw `IllegalStateException`
+when the broker does not answer within 30 s, when it refuses a creation, or when the thread is interrupted. After an
+interrupt the interrupt flag of the thread stays set. A topic that another client created meanwhile counts as created.
+
 ## Write a bucket
 
 ```java
@@ -31,8 +35,12 @@ try (KafkaProducer<String, byte[]> producer = KafScaleClients.producer(bootstrap
 ```
 
 A bucket is **not sealed** (`BucketWriteException`) when an episode was not acknowledged, when its index entry could
-not be added, or when `seal()` is interrupted before every episode is acknowledged. When the send or the index entry
-fails, the future that `append` returned for that episode completes exceptionally.
+not be added, when the episodes are not acknowledged within 5 minutes, or when `seal()` is interrupted before every
+episode is acknowledged. When the send or the index entry fails, the future that `append` returned for that episode
+completes exceptionally. `BucketWriter.open` and `seal()` wait up to 2 minutes for the acknowledgement of the OPEN and
+the SEALED manifest; when it fails, does not arrive or the thread is interrupted, they throw `BucketWriteException`
+with the message `cannot write <state> manifest of bucket <bucketId>`. After an interrupt the interrupt flag of the
+thread stays set.
 
 ## Replay
 
@@ -49,8 +57,37 @@ try (KafkaConsumer<byte[], byte[]> consumer = KafScaleClients.consumer(bootstrap
 
 Episodes arrive in event-time order (`tStart`, `episodeId`); memory is bounded by `maxEpisodesInMemory`.
 The index is derived state: `EpisodeIndexer.rebuild(consumer, layout, index, timeout)` recreates it from the log,
-and `BucketCatalog.load(...)` lists all buckets with their current manifest. The rebuild counts records that do not
-decode as an episode in `skipped`; a failure of the index stops it.
+and `BucketCatalog.load(...)` lists all buckets with their current manifest. The rebuild returns
+`Result(indexed, skipped, invalid)`:
+
+* A record that does not decode as an episode is counted in `skipped`. The first one per partition is printed on
+  stderr with the message of the decoder; later ones on that partition are only counted:
+
+  ```text
+  <topic>-<partition> offset <offset>: undecodable record (<reason>); skipped and counted in skipped, later undecodable records of this partition are only counted
+  ```
+
+* An episode that decodes but fails `Episodes.validate`, for example a count that differs from the number of values,
+  is counted in `invalid` and not indexed. The first one per partition is printed on stderr; later ones on that
+  partition are only counted:
+
+  ```text
+  <topic>-<partition> offset <offset>: invalid episode (<reason>); skipped and counted in invalid, later invalid episodes of this partition are only counted
+  ```
+
+* A failure of the index stops the rebuild.
+
+`FileEpisodeIndex` reads its file when it is created. A line that does not have 8 tab-separated fields, or whose
+times, partition or offset are not whole numbers, fails with `IllegalArgumentException`:
+
+```text
+<file>:<line>: malformed index line "<content>"; expected 8 tab-separated fields, see the header line
+<file>:<line>: malformed index line "<content>"; tStartMicros, tEndMicros, partition and offset must be whole numbers
+```
+
+Move the file away and rebuild the index with `EpisodeIndexer.rebuild`. A file that cannot be read or written fails
+with `UncheckedIOException` and the message `cannot open episode index <file>`, `cannot append to episode index <file>`
+or `cannot close episode index <file>`.
 
 Legacy TSBucket files (`*.tsb.vec.seq`) are converted with `org.opentsx.bridge.LegacyBucketImport` and then written
 with a `BucketWriter`.
@@ -76,7 +113,8 @@ A log start above 0 on the first poll is not counted.
 
 ## Storage cost (measured, `StorageCostTest`)
 
-Episodes of 10 min at 1 Hz, Avro single-object records batched to ~512 KB and compressed with zstd (level 3):
+Episodes of 10 min at 1 Hz, Avro single-object records batched to ~512 KB and compressed with zstd (level 3).
+`StorageCostTest` asserts each figure, rounded to two decimals:
 
 | Data | raw | zstd |
 |------|-----|------|

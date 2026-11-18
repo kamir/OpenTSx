@@ -36,8 +36,8 @@ The layout names more topics. `provision` does not create them:
 | `dagStatus()` | `tsx.wind.dag-status.v1` | status per sink, reported by the vector processor (JSON) |
 | `smartVectors(name)` | `tsx.wind.smart.<name>.vectors.v1` | vectors of a Smart Topic (`opentsx.vector.v1`, JSON) |
 
-`<name>` is the name of the Smart Topic: lowercase letters, digits and hyphens. `provisionTopic`,
-`provisionDagTopics` and `provisionSmartVectors` create these topics with one partition, zstd and the delete policy.
+`<name>` is the name of the Smart Topic: lowercase letters, digits and hyphens. `provisionTopic` and
+`provisionDagTopics` create these topics with one partition, zstd and the delete policy.
 `bin/opentsx vectors` creates the control and status topics, and the sink topic of a DAG when the DAG arrives
 ([appendix A](appendix-a-cli.md)).
 

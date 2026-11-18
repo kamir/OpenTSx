@@ -1,24 +1,51 @@
 package org.opentsx.flink.stats;
 
+import org.apache.flink.api.common.functions.util.ListCollector;
+import org.apache.flink.api.common.serialization.DeserializationSchema;
+import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeinfo.Types;
+import org.apache.flink.metrics.Counter;
+import org.apache.flink.metrics.MetricGroup;
+import org.apache.flink.metrics.groups.UnregisteredMetricsGroup;
 import org.apache.flink.runtime.checkpoint.OperatorSubtaskState;
+import org.apache.flink.runtime.jobgraph.OperatorID;
+import org.apache.flink.runtime.metrics.groups.InternalOperatorMetricGroup;
+import org.apache.flink.runtime.metrics.groups.UnregisteredMetricGroups;
+import org.apache.flink.runtime.metrics.util.InterceptingOperatorMetricGroup;
+import org.apache.flink.runtime.operators.testutils.MockEnvironment;
+import org.apache.flink.runtime.operators.testutils.MockEnvironmentBuilder;
+import org.apache.flink.runtime.state.VoidNamespace;
+import org.apache.flink.runtime.state.VoidNamespaceSerializer;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.operators.KeyedProcessOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.streaming.util.KeyedOneInputStreamOperatorTestHarness;
+import org.apache.flink.util.SimpleUserCodeClassLoader;
+import org.apache.flink.util.UserCodeClassLoader;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
+import org.opentsx.model.Episodes;
+import org.opentsx.model.Micros;
+import org.opentsx.model.OpenTsxAvro;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.model.v2.SeriesStats;
 import org.opentsx.stats.SeriesStatsLog;
 import org.opentsx.stats.StatsEngine;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -103,20 +130,172 @@ class StatsJobTest {
     void undecodableInputIsSkipped() throws Exception {
         try (var h = harness()) {
             h.open();
-            h.processElement(new StreamRecord<>(new StatsInput("x", true, new byte[]{1, 2, 3})));
+            h.processElement(new StreamRecord<>(new StatsInput("x", true, new byte[]{1, 2, 3}, "tsx.unit.episodes.v2", 0, 0)));
             h.processWatermark(Long.MAX_VALUE);
             assertTrue(h.extractOutputValues().isEmpty());
         }
     }
 
     @Test
+    void onlyTheFirstUndecodableInputOfAPartitionIsReported() throws Exception {
+        InterceptingOperatorMetricGroup metrics = new InterceptingOperatorMetricGroup();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        List<StatsRecord> out = runCapturingStderr(List.of(new StatsInput("x", true, new byte[]{1, 2, 3}, "tsx.unit.episodes.v2", 1, 4),
+                new StatsInput("x", true, new byte[]{4, 5, 6}, "tsx.unit.episodes.v2", 1, 5)), metrics, err);
+
+        assertTrue(out.isEmpty());
+        assertEquals(2, ((Counter) metrics.get("undecodable")).getCount());
+        assertEquals("tsx.unit.episodes.v2-1 offset 4: undecodable record (unrecognised payload framing); skipped and counted"
+                + " in undecodable, this subtask only counts later undecodable records of this partition"
+                + System.lineSeparator(), err.toString(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void theDeserializerReportsOnlyTheFirstUndecodableRecordOfAPartition() {
+        StatsInputDeserializer deserializer = new StatsInputDeserializer("tsx.unit.episodes.v2");
+        InterceptingOperatorMetricGroup metrics = new InterceptingOperatorMetricGroup();
+        deserializer.open(new DeserializationSchema.InitializationContext() {
+            @Override
+            public MetricGroup getMetricGroup() {
+                return metrics;
+            }
+
+            @Override
+            public UserCodeClassLoader getUserCodeClassLoader() {
+                return SimpleUserCodeClassLoader.create(getClass().getClassLoader());
+            }
+        });
+        List<StatsInput> inputs = new ArrayList<>();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        PrintStream stderr = System.err;
+        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+        try {
+            deserializer.deserialize(record(2, 10, new byte[]{1, 2, 3}), new ListCollector<>(inputs));
+            deserializer.deserialize(record(2, 11, null), new ListCollector<>(inputs));
+            deserializer.deserialize(record(3, 12, null), new ListCollector<>(inputs));
+        } finally {
+            System.setErr(stderr);
+        }
+
+        assertTrue(inputs.isEmpty());
+        assertEquals(3, ((Counter) metrics.get("undecodable")).getCount());
+        String later = "; skipped and counted in undecodable, this subtask only counts later undecodable records of this partition";
+        assertEquals(List.of("tsx.unit.episodes.v2-2 offset 10: undecodable record (unrecognised payload framing)" + later,
+                        "tsx.unit.episodes.v2-3 offset 12: undecodable record (no value)" + later),
+                err.toString(StandardCharsets.UTF_8).lines().toList());
+    }
+
+    @Test
+    void anInconsistentEpisodeIsCountedAsInvalidReportedOncePerPartitionAndSkipped() throws Exception {
+        List<Episode> episodes = StatsData.episodes("invalid", Duration.ofMinutes(10), 1);
+        Episode valid = episodes.get(0);
+        Episode other = episodes.stream().filter(e -> !e.getSeries().getSeriesId().equals(valid.getSeries().getSeriesId()))
+                .findFirst().orElseThrow();
+        OpenTsxAvro avro = new OpenTsxAvro();
+        List<StatsInput> inputs = new ArrayList<>();
+        StatsInputDeserializer deserializer = new StatsInputDeserializer("tsx.unit.episodes.v2");
+        deserializer.open(new DeserializationSchema.InitializationContext() {
+            @Override
+            public MetricGroup getMetricGroup() {
+                return new UnregisteredMetricsGroup();
+            }
+
+            @Override
+            public UserCodeClassLoader getUserCodeClassLoader() {
+                return SimpleUserCodeClassLoader.create(getClass().getClassLoader());
+            }
+        });
+        ListCollector<StatsInput> collector = new ListCollector<>(inputs);
+        deserializer.deserialize(record(2, 40, avro.encode(valid)), collector);
+        deserializer.deserialize(record(2, 41, avro.encode(countMismatch(other, "bad-1"))), collector);
+        deserializer.deserialize(record(2, 42, avro.encode(countMismatch(other, "bad-2"))), collector);
+        InterceptingOperatorMetricGroup metrics = new InterceptingOperatorMetricGroup();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        PrintStream stderr = System.err;
+        List<StatsRecord> out;
+        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+        try (MockEnvironment env = environment(metrics); var h = harness(env)) {
+            h.open();
+            for (StatsInput in : inputs) {
+                h.processElement(new StreamRecord<>(in));
+            }
+            h.processWatermark(Long.MAX_VALUE);
+            out = h.extractOutputValues();
+        } finally {
+            System.setErr(stderr);
+        }
+
+        Set<String> series = StatsData.decode(out).stream().map(s -> s.getSeriesId().toString()).collect(Collectors.toSet());
+        assertEquals(Set.of(valid.getSeries().getSeriesId()), series, "the inconsistent episodes produce no statistics");
+        assertEquals(0, ((Counter) metrics.get("undecodable")).getCount());
+        assertNotNull(metrics.get("invalid"), "the function registers the metric invalid");
+        assertEquals(2, ((Counter) metrics.get("invalid")).getCount());
+        assertEquals("tsx.unit.episodes.v2-2 offset 41: invalid episode (count 3 != values 2); skipped and counted in"
+                + " invalid, this subtask only counts later invalid episodes of this partition" + System.lineSeparator(),
+                err.toString(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void aRegularEpisodeWithoutAnIntervalIsCountedAsInvalid() throws Exception {
+        Episode valid = StatsData.episodes("no-interval", Duration.ofMinutes(10), 1).get(0);
+        Episode missing = Episode.newBuilder(valid).setEpisodeId("no-interval").setIntervalMicros(null).build();
+        OpenTsxAvro avro = new OpenTsxAvro();
+        String id = valid.getSeries().getSeriesId();
+        InterceptingOperatorMetricGroup metrics = new InterceptingOperatorMetricGroup();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        List<StatsRecord> out = runCapturingStderr(List.of(new StatsInput(id, true, avro.encode(valid), "tsx.unit.episodes.v2", 3, 7),
+                new StatsInput(id, true, avro.encode(missing), "tsx.unit.episodes.v2", 3, 8)), metrics, err);
+
+        assertEquals(StatsData.direct(List.of(valid), SPEC), StatsData.decode(out));
+        assertEquals(1, ((Counter) metrics.get("invalid")).getCount());
+        assertEquals("tsx.unit.episodes.v2-3 offset 8: invalid episode (intervalMicros: missing in a REGULAR episode; expected"
+                + " a positive number of microseconds); skipped and counted in invalid, this subtask only counts later invalid"
+                + " episodes of this partition" + System.lineSeparator(), err.toString(StandardCharsets.UTF_8));
+    }
+
+    private static List<StatsRecord> runCapturingStderr(List<StatsInput> inputs, InterceptingOperatorMetricGroup metrics,
+                                                        ByteArrayOutputStream err) throws Exception {
+        PrintStream stderr = System.err;
+        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+        try (MockEnvironment env = environment(metrics); var h = harness(env)) {
+            h.open();
+            for (StatsInput in : inputs) {
+                h.processElement(new StreamRecord<>(in));
+            }
+            h.processWatermark(Long.MAX_VALUE);
+            return h.extractOutputValues();
+        } finally {
+            System.setErr(stderr);
+        }
+    }
+
+    private static ConsumerRecord<byte[], byte[]> record(int partition, long offset, byte[] value) {
+        return new ConsumerRecord<>("tsx.unit.episodes.v2", partition, offset, null, value);
+    }
+
+    private static Episode countMismatch(Episode e, String episodeId) {
+        Episode two = Episodes.regular(e.getSeries(), Micros.of(e.getTStart()), 1_000_000L, new double[]{1, 2})
+                .episodeId(episodeId).source("test").build();
+        return Episode.newBuilder(two).setCount(3).build();
+    }
+
+    @Test
     void anEngineFailureFailsTheTask() throws Exception {
-        Episode e = StatsData.episodes("engine", Duration.ofMinutes(10), 1).get(0);
-        Episode inconsistent = Episode.newBuilder(e).setCount(e.getCount() - 1).build();
+        StatsInput in = StatsData.inputs(StatsData.episodes("engine", Duration.ofMinutes(10), 1)).get(0);
+        IllegalStateException cause = new IllegalStateException("interval catalog unavailable");
+        StatsEngine failing = new StatsEngine(SPEC.config().withExpectedInterval(id -> {
+            throw cause;
+        }));
         try (var h = harness()) {
             h.open();
-            assertThrows(ArrayIndexOutOfBoundsException.class, () -> h.processElement(new StreamRecord<>(
-                    StatsData.inputs(List.of(inconsistent)).get(0))));
+            h.getOperator().setCurrentKey(in.getSeriesId());
+            h.getOperator().<String>getKeyedStateBackend().getPartitionedState(VoidNamespace.INSTANCE,
+                    VoidNamespaceSerializer.INSTANCE, new ValueStateDescriptor<>("engine", new StatsEngineSerializer(SPEC)))
+                    .update(failing);
+            IllegalStateException e = assertThrows(IllegalStateException.class, () -> h.processElement(new StreamRecord<>(in)));
+            assertSame(cause, e);
         }
     }
 
@@ -146,6 +325,21 @@ class StatsJobTest {
 
     private static KeyedOneInputStreamOperatorTestHarness<String, StatsInput, StatsRecord> harness() throws Exception {
         return harness(0);
+    }
+
+    private static MockEnvironment environment(InterceptingOperatorMetricGroup metrics) {
+        return new MockEnvironmentBuilder().setMetricGroup(new UnregisteredMetricGroups.UnregisteredTaskMetricGroup() {
+            @Override
+            public InternalOperatorMetricGroup getOrAddOperator(OperatorID id, String name) {
+                return metrics;
+            }
+        }).build();
+    }
+
+    private static KeyedOneInputStreamOperatorTestHarness<String, StatsInput, StatsRecord> harness(MockEnvironment env)
+            throws Exception {
+        return new KeyedOneInputStreamOperatorTestHarness<>(new KeyedProcessOperator<>(new StatsFunction(SPEC, 0)),
+                StatsInput::getSeriesId, Types.STRING, env);
     }
 
     private static KeyedOneInputStreamOperatorTestHarness<String, StatsInput, StatsRecord> harness(long globalEveryMs)
