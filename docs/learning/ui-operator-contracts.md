@@ -29,10 +29,11 @@ survive service restart. The three browser workloads retain their original local
 separate increment and Compose regressions establish the continuous runtime behavior.
 Transient preparation failures retain private candidates and the exact plan for retry; activation waits for every
 preparation and ownership check. This recovery rule does not change the three numerical browser workloads.
-The
-workbench aliases `dq.plausible-range` to `dq.checks` and `stats.window` to `stats.welford-ddsketch` ; the latter still
-has a parameter-contract mismatch in the
-[execution SPEC](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1).
+The workbench aliases `dq.plausible-range` to `dq.checks` and `stats.window` to
+`stats.welford-ddsketch`. Its statistics deployment exporter writes a catalog
+duration and a full statistics sink; the stored flow retains the selected
+browser field. Read the [compiler instructions](../../opentsx-wayang/README.md#compile-a-catalog-dag)
+for the required metadata bindings and runtime admission context.
 
 Finite predictions use absolute comparison to ten decimal places in the lesson tests; missing-value positions must match
 exactly. Existing shared operator vectors retain their own tolerances. Each operation is repeated with a fresh input to
@@ -281,8 +282,9 @@ Java API `TsxPair` also executes the four sampled-series cases through Wayang,
 including B held in `TsxState` and restored before A arrives in a later
 increment. The other four cases contain event lists only and are kernel checks.
 `pair.es` version 1 belongs to the
-[frozen catalog](../../systems/catalogs/tsx-catalog-1.yaml). Native availability
-does not establish a deployed UI DAG binding or full A4 compiler support. Read
+[frozen catalog](../../systems/catalogs/tsx-catalog-1.yaml). The local Java
+compiler lowers this catalog operator; runtime deployment and its admission
+profile remain separate. Read
 [Use frozen catalog 1](../user-manual/17-learn-operators.md#use-frozen-catalog-1)
 for the catalog boundary and canonical text representation of pair windows.
 Whole-number seeds use their value modulo `2^32` for the random state; labels
@@ -432,8 +434,11 @@ Operator: `stats.window`. Defaults: `window=0.25`, `field="STD"`
 
 Reuses the workbench tumbling-window aggregation and returns a selected MEAN, sample STD, MIN or MAX per window. Ignores
 nonfinite values, retains input axis kind/units and emits the final partial window. DAG export names
-stats.welford-ddsketch, but the window/field to windows/alpha parameter translation is unresolved in the execution SPEC;
-do not claim deployment parity.
+`stats.welford-ddsketch`: it writes the width as a one-entry `windows` duration
+list and uses the processor description's alpha default. The sink writes full
+`org.opentsx.model.v2.SeriesStats` records. `field` stays in the stored flow as a
+browser view; the browser result remains one selected statistic series. A
+nonpositive or nonfinite deployed width and an unknown view field reject.
 
 Source: [ops.ts#windowStats](../../opentsx-saas-frontend/src/workbench/ops.ts#windowStats) . Executable exercise:
 `ui.stats.window` .

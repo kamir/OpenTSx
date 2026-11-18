@@ -470,8 +470,6 @@ export function evaluate(source: Bucket | null, nodes: FlowNode[], id: string): 
   return results.get(id) ?? null;
 }
 
-// ---------------------------------------------------------------- exports
-
 function yamlScalar(v: unknown): string {
   if (typeof v === 'number') return String(v);
   const s = String(v);
@@ -493,8 +491,13 @@ export function vectorComponents(nodes: FlowNode[], node: FlowNode): string[] {
 
 /** Parameters as written into the DAG. Catalog operators get the shape of the catalog. */
 function dagParams(nodes: FlowNode[], node: FlowNode, seconds = false): Params | string {
-  // on the way to a series sink the x axis is time: a width in seconds is written as a duration
-  if (node.op === 'resample' && seconds) return `{ every: PT${node.params.every}S, agg: ${node.params.agg} }`;
+  if (node.op === 'resample') return `{ every: PT${node.params.every}S, agg: ${node.params.agg} }`;
+  if (node.op === 'stats.window') {
+    const window = Number(node.params.window);
+    if (!Number.isFinite(window) || window <= 0) throw new Error('A deployed statistics window must be a positive number of seconds.');
+    if (!['MEAN', 'STD', 'MIN', 'MAX'].includes(String(node.params.field))) throw new Error('A statistics field must be MEAN, STD, MIN or MAX.');
+    return `{ windows: [PT${window}S] }`;
+  }
   if (node.op === 'feature.rolling' && seconds) return `{ window: PT${node.params.window}S, fn: ${node.params.fn} }`;
   if (node.op === 'dq.plausible-range') {
     return `{ checks: [PLAUSIBLE_RANGE], min: ${node.params.min}, max: ${node.params.max}, mode: ${node.params.mode} }`;
@@ -745,8 +748,8 @@ export function toDagYaml(s: FlowDoc): string {
       );
       continue;
     }
-    const schema = sink.op === VECTOR_OP ? `, schema: ${VECTOR_SCHEMA}` : '';
-    lines.push(`  - { from: ${sink.id === SOURCE_ID ? 'decode' : sink.id}, topic: ${yamlScalar(sink.sinkTopic!)}${schema} }`);
+    const schema = sink.op === VECTOR_OP ? VECTOR_SCHEMA : sink.op === 'stats.window' ? 'org.opentsx.model.v2.SeriesStats' : EPISODE_SCHEMA;
+    lines.push(`  - { from: ${sink.id === SOURCE_ID ? 'decode' : sink.id}, topic: ${yamlScalar(sink.sinkTopic!)}, schema: ${schema} }`);
   }
   return lines.join('\n') + '\n';
 }

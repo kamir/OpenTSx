@@ -1,0 +1,20 @@
+# opentsx.dag.v1, written by the OpenTSx web workbench
+dag: lab-exp2-smart
+version: 1
+source:
+  kind: kafscale-broker
+  topics: [tsx.lab.observations.v2]
+checkpoint: { backend: file }
+nodes:
+  - id: decode
+    op: decode.avro-soe
+  - id: n1
+    op: resample
+    in: [decode]
+    params: { every: PT2S, agg: MEAN }
+  - id: n2
+    op: stats.welford-ddsketch
+    in: [n1]
+    params: { windows: [PT4S] }
+sinks:
+  - { from: n2, topic: tsx.lab.smart.vol.metrics.v2, schema: org.opentsx.model.v2.SeriesStats }

@@ -2,59 +2,363 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://opentsx.org/schemas/opentsx.site-conformance.v1.schema.json",
   "title": "opentsx.site-conformance.v1",
-  "description": "Draft. The report a site sends before it may receive a site plan: one result per conformance check, the runtime that ran them, and the values the driver compares with the job contract. Sent as the payload of a compact JWS signed with the site key. See docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md, S3.3.",
+  "description": "Signed job-bound JVM site conformance report. Exactly one detailed result is required for each check. Semantic admission compares qualified runtime pins, the exact challenge, freshness, topic inventories and cross-site series identities.",
   "type": "object",
-  "required": ["schema", "site", "at", "track", "artifact", "catalog", "checks", "topics", "series"],
+  "required": [
+    "site",
+    "node",
+    "job",
+    "schema",
+    "planVersion",
+    "generation",
+    "admissionHash",
+    "at",
+    "issued",
+    "expires",
+    "track",
+    "artifact",
+    "catalog",
+    "checks",
+    "topics",
+    "series"
+  ],
   "additionalProperties": false,
   "properties": {
-    "schema": {"const": "opentsx.site-conformance.v1"},
-    "site": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"},
-    "at": {"type": "string", "format": "date-time"},
-    "track": {"enum": ["A", "B"]},
+    "site": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+    },
+    "node": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+    },
+    "job": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+    },
+    "schema": {
+      "const": "opentsx.site-conformance.v1"
+    },
+    "planVersion": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "generation": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]*$",
+      "maxLength": 19
+    },
+    "admissionHash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "issued": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "expires": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "track": {
+      "const": "A"
+    },
     "artifact": {
       "type": "object",
-      "required": ["version", "digest"],
+      "required": [
+        "version",
+        "digest",
+        "stateAbi"
+      ],
       "additionalProperties": false,
       "properties": {
-        "version": {"type": "string"},
-        "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
-      }
-    },
-    "catalog": {"type": "string", "pattern": "^tsx-catalog/[1-9][0-9]*$"},
-    "checks": {
-      "type": "array",
-      "minItems": 10,
-      "items": {
-        "type": "object",
-        "required": ["id", "result"],
-        "additionalProperties": false,
-        "properties": {
-          "id": {"enum": ["vectors.wire", "vectors.series-id", "vectors.operators", "kafscale.required", "topics.names", "topics.partitions", "topics.fingerprints", "partitioner.murmur2", "series.disjoint", "runtime.identity"]},
-          "result": {"enum": ["pass", "fail"]},
-          "detail": {"type": "string"}
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "stateAbi": {
+          "type": "string",
+          "minLength": 1
         }
       }
     },
-    "topics": {
+    "catalog": {
+      "type": "string",
+      "pattern": "^tsx-catalog/[1-9][0-9]*$"
+    },
+    "checks": {
       "type": "array",
+      "minItems": 10,
+      "maxItems": 10,
       "items": {
         "type": "object",
-        "required": ["topic", "partitions", "fingerprints"],
+        "required": [
+          "id",
+          "result",
+          "detail"
+        ],
         "additionalProperties": false,
         "properties": {
-          "topic": {"type": "string"},
-          "partitions": {"type": "integer", "minimum": 1},
-          "fingerprints": {"type": "array", "items": {"type": "string", "pattern": "^[0-9a-f]{16}$"}}
+          "id": {
+            "enum": [
+              "vectors.wire",
+              "vectors.series-id",
+              "vectors.operators",
+              "kafscale.required",
+              "topics.names",
+              "topics.partitions",
+              "topics.fingerprints",
+              "partitioner.murmur2",
+              "series.disjoint",
+              "runtime.identity"
+            ]
+          },
+          "result": {
+            "enum": [
+              "pass",
+              "fail"
+            ]
+          },
+          "detail": {
+            "type": "string",
+            "pattern": "\\S"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "const": "vectors.wire"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "const": "vectors.series-id"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "const": "vectors.operators"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "const": "kafscale.required"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "const": "topics.names"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "const": "topics.partitions"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "const": "topics.fingerprints"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "const": "partitioner.murmur2"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "const": "series.disjoint"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "const": "runtime.identity"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    },
+    "topics": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "items": {
+        "type": "object",
+        "required": [
+          "role",
+          "binding",
+          "topic",
+          "partitions",
+          "fingerprints"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "role": {
+            "enum": [
+              "input",
+              "output"
+            ]
+          },
+          "binding": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+          },
+          "topic": {
+            "type": "string",
+            "pattern": "^tsx\\.[a-z0-9-]+\\.[a-z0-9.-]+\\.v[0-9]+$",
+            "maxLength": 249
+          },
+          "partitions": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "fingerprints": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{16}$"
+            }
+          }
         }
       }
     },
     "series": {
       "type": "object",
-      "required": ["count", "ids"],
+      "required": [
+        "count",
+        "ids"
+      ],
       "additionalProperties": false,
       "properties": {
-        "count": {"type": "integer", "minimum": 0},
-        "ids": {"type": "array", "items": {"type": "string", "pattern": "^[0-9a-f]{16}$"}, "description": "The site's seriesId set, sorted ascending."}
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{16}$"
+          },
+          "description": "Sorted unique series inventory; semantic validation compares count, ordering and cross-site disjointness."
+        }
       }
     }
   }

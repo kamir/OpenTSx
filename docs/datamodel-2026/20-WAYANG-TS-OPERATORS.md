@@ -533,11 +533,16 @@ key/revision or stale generations is refused. The evidence envelope is an explic
 | Point | Rule |
 |---|---|
 | delivery | at-least-once; nothing is committed to the broker; progress is the checkpoint |
-| output id | derived episode: `"c"` plus xxHash64 hex of `seriesId|from|to|specHash`, as `SeriesStream.java:152-153` does today. Aggregate: Kafka key `job|site|group series id|windowStart` plus header `tsx-revision` ([S4.2](20-WAYANG-TS-OPERATORS-SPEC.md#s42-aggregate-record), [S6.2](20-WAYANG-TS-OPERATORS-SPEC.md#s62-deterministic-ids)) |
+| output id | derived episode hash; partial aggregate key and revision; merged key omits site |
 | checkpoint | per task: offsets, operator state, `specHash`, catalog version; temporary file, fsync, rename, after all earlier deliveries are acknowledged |
 | producer retries | unbounded within `delivery.timeout.ms=180000` (`KafScaleClients.DELIVERY_TIMEOUT`); KafScale refuses produce for about a minute when its object store is degraded (`KafScaleClients.java:19-22`) |
 | refused fetch | reset to the positions before the fetch and retry, as `Patience` does |
 | one writer | one owner per assigned whole topic and fragment; local refusal alone does not enforce distributed ownership |
+
+A derived episode ID is `"c"` plus xxHash64 hex of `seriesId|from|to|specHash`, as `SeriesStream.java:152-153` does.
+A partial aggregate uses Kafka key `job|site|group series id|windowType|windowStart` and header `tsx-revision`;
+merged keys omit site. See [S4.2](20-WAYANG-TS-OPERATORS-SPEC.md#s42-aggregate-record) and
+[S6.2](20-WAYANG-TS-OPERATORS-SPEC.md#s62-deterministic-ids).
 
 | Failure | Effect | Recovery |
 |---|---|---|
@@ -675,6 +680,46 @@ durable-storage behavior, a remote-network result or Track B parity.
 5. Sample RSS, CPU time and lag every second from `/proc`; record start time to first fetch and to first output.
 6. Check that both tracks produced identical output records (section 13) before any number is reported.
 7. Publish raw samples and the scripts in the repository.
+
+### 14.3 Measure bounded JVM federation
+
+You need JDK 17 or 21, Maven 3.9+, Git, Python 3.10+ and Go with the pinned
+`go1.25.2` toolchain available. Start from a clean checkout with no untracked
+runtime, fixture or tool sources. Use a new `<output-dir>` and set `<jdk-home>`
+to the JDK installation directory. Run from the repository root:
+
+```bash
+python3 tools/wayang_federation_measurement.py --output <output-dir> --java-home <jdk-home>
+python3 -m json.tool <output-dir>/run.json
+```
+
+The [harness](../../tools/wayang_federation_measurement.py) builds KafScale
+v1.6.0 from its pinned source, freezes the Java classpath and executes the
+complete W3 scenario with three site instances in one execution JVM and four
+independent in-memory brokers. Transient build and conformance subprocesses
+are excluded from that execution topology. Source hashes and HEAD are checked
+before and after execution. Each route checks the actual received records.
+
+The [report](measurements/wayang-federation-2026-11-17/REPORT.md),
+[site samples](measurements/wayang-federation-2026-11-17/bytes.csv),
+[window comparisons](measurements/wayang-federation-2026-11-17/windows.csv),
+[run evidence](measurements/wayang-federation-2026-11-17/run.json) and
+[metadata](measurements/wayang-federation-2026-11-17/metadata.json) retain the
+executed commands, source/runtime hashes, hardware, OS, JDK and results.
+The input is synthetic W data. All 420 windows and 2,520 merge-order comparisons
+pass with exact counts, extrema and uncollapsed sketch bytes. The approved
+bounded-W3 tolerance for mean and M2 is relative `3e-12`.
+
+Kafka samples count complete Produce request frames with the existing
+`KafScaleClients` producer settings: `zstd`, `acks=all` and `linger.ms=50`.
+They exclude other Kafka requests, responses and TCP/IP overhead. HTTP samples
+count aggregate-delivery bodies. TLS samples count encrypted client-to-server
+stream bytes during execution, including plan polls, status and delivery ACKs;
+they exclude responses and setup conformance. These are distinct metrics.
+Centralized elapsed time covers raw transfer and acknowledgements; federated
+clocks also include site computation and merge. They do not establish a latency
+or speed comparison. This run qualifies the bounded local profile; it does not
+establish the one/three/ten-site matrix of A5 or remote-network performance.
 
 ## 15. When to use which track
 

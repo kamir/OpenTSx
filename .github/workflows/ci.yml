@@ -243,6 +243,8 @@ jobs:
           cache: maven
       - name: Build and test
         run: xvfb-run --auto-servernum mvn -B -ntp verify
+      - name: Check shared aggregate transport bytes
+        run: python3 tools/aggregate_transport_vectors.py --check
 
   python:
     name: Python ${{ matrix.python }}
@@ -392,6 +394,7 @@ jobs:
       - name: Run conformance suite, episode-log, wire round-trip, wind-farm, statistics, event-topic and streaming integration tests
         env:
           KAFSCALE_BOOTSTRAP: 127.0.0.1:39092
+          KAFSCALE_BROKER_BINARY: ${{ runner.temp }}/kafscale-broker
         # opentsx-legacy-bridge pulls in opentsx-core, whose Swing tests need a display
         run: xvfb-run --auto-servernum mvn -B -ntp -pl opentsx-kafscale-conformance,opentsx-kafka-v2,opentsx-legacy-bridge,opentsx-windpark,opentsx-stats,opentsx-twin-live,opentsx-retrieval,opentsx-wayang -am test
       - name: Require executed streaming acceptance
@@ -411,7 +414,7 @@ jobs:
               raise SystemExit("streaming acceptance is missing, skipped or failed")
           print("All three streaming acceptance cases executed successfully")
           PYTHON
-      - name: Require executed Wayang acceptance (TASK-020 A1 to A3)
+      - name: Require executed Wayang acceptance (TASK-020 A1 to A4)
         if: always()
         run: |
           python3 - <<'PYTHON'
@@ -425,7 +428,29 @@ jobs:
               "TsxStatusIntegrationTest": 2,
               "TsxCleanVectorsTest": 3,
               "TsxStatsVectorsTest": 12,
-              "DagToWayangErrorsTest": 4,
+              "DagToWayangErrorsTest": 35,
+              "DagToWayangWorkbenchTest": 6,
+              "DagToWayangCatalogTest": 28,
+              "TsxPairWithinTest": 1,
+              "TsxStrictCutTest": 7,
+              "TsxSitePlatformTest": 2,
+              "SiteConformanceChecksTest": 3,
+              "SiteLifecycleIntegrationTest": 2,
+              "LatencyProtocolObserverTest": 2,
+              "MergeOrderTest": 8,
+              "W3StatsMergeTest": 2,
+              "ConformanceHandshakeTest": 3,
+              "FederatedStatsIntegrationTest": 1,
+              "CompletenessIntegrationTest": 1,
+              "JobStateRouteIntegrationTest": 1,
+              "federation.AggregateRecordTest": 5,
+              "federation.CompletenessCoordinatorTest": 6,
+              "federation.AggregateForwarderTest": 5,
+              "federation.SiteStatsTest": 2,
+              "federation.AggregateTransportVectorsTest": 13,
+              "site.TsxSiteAgentPlanTest": 14,
+              "site.ConformanceHandshakeTest": 13,
+              "site.SiteStatusTest": 5,
               "TsxVectorVectorsTest": 13,
               "TsxVectorIntegrationTest": 1,
               "TsxPairVectorsTest": 12,
@@ -465,6 +490,8 @@ jobs:
                   if len(vectors) != 5:
                       raise SystemExit("all five pair.xcorr vectors must execute through Wayang")
               factories = {
+                  "DagToWayangErrorsTest": ("allNormativeRejections()[", 22),
+                  "DagToWayangCatalogTest": ("allSixteenCatalogBindingsExecuteThroughCompiledWayangPlans()[", 16),
                   "TsxPairEsWayangTest": ("everySeriesCaseMatchesThroughAWayangPlan()[", 4),
                   "TsxSegmentVectorsTest": ("sharedVectorsThroughRealWayangPlans()[", 12),
                   "TsxSaxVectorsTest": ("allSharedWordsMatchThroughWayang()[", 7),
@@ -489,6 +516,14 @@ jobs:
           if not required.issubset(executed):
               raise SystemExit("one of the catalog freeze regressions was not executed")
           print("Catalog 1 membership, versions and descriptions validated")
+          for name, minimum in {"SiteControlSchemaTest": 3, "AggregateEnvelopeSchemaTest": 4}.items():
+              suite = ET.parse(f"opentsx-retrieval/target/surefire-reports/TEST-org.opentsx.retrieval.system.{name}.xml").getroot()
+              if int(suite.attrib["tests"]) < minimum or any(int(suite.attrib[k]) for k in ("failures", "errors", "skipped")):
+                  raise SystemExit(f"{name} is missing, skipped or failed")
+          suite = ET.parse("opentsx-kafka-v2/target/surefire-reports/TEST-org.opentsx.kafka.TopicLayoutFederationTest.xml").getroot()
+          if int(suite.attrib["tests"]) < 4 or any(int(suite.attrib[k]) for k in ("failures", "errors", "skipped")):
+              raise SystemExit("federated topic names were not validated")
+          print("Signed bounded JVM admission and federation acceptance executed")
           PYTHON
       - name: Verify recorder PFD through Kafka and Flink
         env:
