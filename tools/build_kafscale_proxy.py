@@ -28,6 +28,7 @@ def identity():
             "launcherSha256": digest(ROOT / "tools/kafscale_proxy_cluster.go"),
             "builderSha256": digest(Path(__file__).resolve()),
             "metadataOverlaySha256": digest(ROOT / "tools/kafscale_metadata_overlay.py"),
+            "metadataTestsSha256": digest(ROOT / "tools/kafscale_metadata_test.go"),
             "protocolOverlaySha256": digest(ROOT / "tools/kafscale_proxy_protocol_overlay.py"),
             "protocolTestsSha256": digest(ROOT / "tools/kafscale_proxy_protocol_test.go")}
 
@@ -97,7 +98,7 @@ def build():
                "--mount", f"type=bind,src={cache},dst=/cache",
                "--workdir", "/source", "--env", "CGO_ENABLED=0", "--env", "GOMAXPROCS=2", "--env", "GOTOOLCHAIN=local",
                "--env", "GOPATH=/cache/modules", "--env", "GOCACHE=/cache/build", COMPILER_IMAGE,
-               "sh", "-ec", "go test -overlay=/artifacts/broker-overlay.json -run '^TestOpenTSxProxy' -count=1 -v ./cmd/proxy; "
+               "sh", "-ec", "go test -overlay=/artifacts/broker-overlay.json -run '^TestOpenTSx(Proxy|Metadata)' -count=1 -v ./cmd/proxy ./pkg/metadata; "
                "go build -overlay=/artifacts/broker-overlay.json -trimpath -buildvcs=false -ldflags=-buildid= -o /artifacts/kafscale-broker ./cmd/broker; "
                "go build -overlay=/artifacts/broker-overlay.json -trimpath -buildvcs=false -ldflags=-buildid= -o /artifacts/kafscale-proxy ./cmd/proxy; "
                "go build -overlay=/artifacts/broker-overlay.json -trimpath -buildvcs=false -ldflags=-buildid= -o /artifacts/kafscale-cluster /cluster.go"]
