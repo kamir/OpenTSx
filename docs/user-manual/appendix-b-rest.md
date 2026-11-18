@@ -5,10 +5,10 @@ Base URL: `http://<host>:<port>`. Times are ISO-8601 instants (UTC).
 | Method and path | Parameters / body | Response |
 |-----------------|-------------------|----------|
 | `GET /v1/health` | none | `{"status":"ok"}` |
-| `GET /v1/episodes` | `metric`, `tag.<key>=<value>` (repeatable), `series=id,id`, `from`, `to`, `limit`, `clip=true`, `resample=PT1M`, `agg=MEAN\|MIN\|MAX\|FIRST\|LAST\|SUM\|COUNT` | episodes |
-| `GET /v1/episodes/{id}` | none | episodes: an array with the one episode, or 404 |
-| `POST /v1/patterns/search` | `pattern` (array of at least 4 finite values) **or** `episodeId`+`offset`+`length`; `metric`, `tags` (object), `series`, `from`, `to`, `distance` (`zED`\|`DTW`), `band` (DTW, default 0.1), `topK` (default 10) | matches |
-| `POST /v1/episodes/similar` | `episodeId`; `metric` (default: the metric of the episode), `tags`, `series`, `from`, `to`, `distance`, `band`, `topK` | matches |
+| `GET /v1/episodes` | `metric`, `tag.<key>=<value>` (repeatable), `series=id,id`, `from`, `to`, `limit` (1 to 20000), `clip=true\|false` (default `false`), `resample=PT1M`, `agg=MEAN\|MIN\|MAX\|FIRST\|LAST\|SUM\|COUNT` (default `MEAN`) | episodes |
+| `GET /v1/episodes/{id}` | none | episodes: an array with the one episode; 404 for an unknown id; 400 for an id that holds `/` |
+| `POST /v1/patterns/search` | `pattern` (array of 4 to 100000 finite values) **or** `episodeId`+`offset`+`length`; `metric`, `tags` (object), `series`, `from`, `to`, `distance` (`zED`\|`DTW`, in any case), `band` (DTW, default 0.1), `topK` (1 to 1000, default 10) | matches; 404 for an unknown `episodeId` |
+| `POST /v1/episodes/similar` | `episodeId`; `metric` (default: the metric of the episode), `tags`, `series`, `from`, `to`, `distance`, `band`, `topK` | matches; 404 for an unknown `episodeId` |
 | `GET /v1/inventory` | none | `opentsx.ts-inventory.v1`: every series with extent, value range, labels and ground-truth marks (see `opentsx-retrieval/README.md`) |
 | `GET /v1/systems` | none | the systems the server knows (`--systems`), each with the number of signals by source and by state |
 | `GET /v1/systems/{id}/signals` | none | `opentsx.signal-status.v1`: every signal of the system with its expectation, the source of each grade (raw, clean, features), what the inventory holds for it, its state and the next step; `problems` lists what is wrong in the system document |
@@ -36,6 +36,10 @@ Base URL: `http://<host>:<port>`. Times are ISO-8601 instants (UTC).
 | JSON body of `POST /v1/patterns/search`, `/v1/episodes/similar`, `/v1/segments` and `/v1/systems/{id}/...` | 262144 bytes | `RetrievalServer.MAX_BODY_BYTES` | 413 `request body: larger than 262144 bytes; send at most 262144 bytes` |
 | DAG document of `POST /v1/dags/deploy` | 262144 bytes | `RetrievalServer.MAX_DAG_BYTES` | 400 `the DAG is larger than 262144 bytes` |
 | points of one episode after `resample` | 100000 | `Resampling.MAX_POINTS` | 400, for example `resample: "PT0.005S" gives 120000 points for one episode; expected a longer step that gives at most 100000` |
+| `topK` of `POST /v1/patterns/search` and `/v1/episodes/similar` | 1 to 1000 | `EpisodeService.MAX_TOP_K` | 400 `topK: 1000000 is out of range; expected a whole number from 1 to 1000` |
+| values of `pattern` | 4 to 100000 | `EpisodeService.MAX_PATTERN_LENGTH` | 400 `pattern: 100001 values; expected 4 to 100000 values` |
+| `limit` of `GET /v1/episodes` | 1 to 20000 | `EpisodeService.MAX_EPISODES` | 400 `limit: 20001 is out of range; expected a whole number from 1 to 20000` |
+| episodes one request selects: `GET /v1/episodes` without `limit`, `POST /v1/patterns/search`, `/v1/episodes/similar` and `/v1/segments` | 20000 | `EpisodeService.MAX_EPISODES` | 400 `selection: more than 20000 episodes match; narrow it with metric, tags, series, from or to`; `GET /v1/episodes` adds `, or set limit` |
 
 **Run token:** `POST /v1/dags/deploy`, `POST /v1/dags/stop` and `POST /v1/systems/{id}/generate` write to KafScale.
 Set a run token with `--dag-run-token <token>` or the environment variable `OPENTSX_DAG_RUN_TOKEN`; the option wins.
@@ -79,9 +83,26 @@ an absent or `null` one is a 400 `<field>: missing; ...`. A string, also a numbe
 or a fraction where a whole number belongs is a 400 that names the field:
 
 ```text
-topK: "ten" is not a whole number; expected a whole number from -2147483648 to 2147483647 without quotes
+topK: "ten" is not a whole number; expected a whole number from 1 to 1000 without quotes
 pattern[1]: "a" is not a number; expected a number without quotes, such as 0.01 or 1e-3
 params.prominence: missing; expected a number without quotes, such as 0.01 or 1e-3
+```
+
+`POST /v1/patterns/search` with neither `pattern` nor `episodeId` is a 400
+`pattern: missing; expected an array of 4 to 100000 numbers, or episodeId with offset and length`.
+
+**Other parameters:** `from` and `to` are ISO-8601 instants, and `from` lies before `to`. With `to` alone, `from` is
+`1970-01-01T00:00:00Z`; with `from` alone, `to` is `9999-01-01T00:00:00Z`. `resample` and the duration
+parameters of a segmentation are ISO-8601 durations. `agg`, `clip`, `distance`, `strategy`, `params.feature` and
+`params.direction` take only the values listed on this page. Any other value is a 400 that names the parameter and what it
+takes:
+
+```text
+limit: "abc" is not an int; expected a whole number from 1 to 20000
+agg: "mean" is not allowed; expected one of MEAN, MIN, MAX, FIRST, LAST, SUM, COUNT
+from: "yesterday" is not an instant; expected an ISO-8601 instant such as 2026-01-01T00:00:00Z
+to: "1960-01-01T00:00:00Z" is not after from, which defaults to 1970-01-01T00:00:00Z; expected a later to or an earlier from
+params.duration: "1h" is not a duration; expected an ISO-8601 duration such as PT1M
 ```
 
 **Response formats:**
@@ -96,15 +117,47 @@ params.prominence: missing; expected a number without quotes, such as 0.01 or 1e
   distance, not the series metric: `zED` or `DTW(w=<band>)`, with `@paa64` appended for whole episodes. For whole
   episodes `queryId` is the SAX word of the query, `offset` is 0 and `length` is the number of values of the episode.
 
-**Errors:** the body is `{"error": "..."}`.
+**Errors:** every error answer is a JSON object with two fields, `error` and `type`:
 
-| Status | When |
-|--------|------|
-| `400` | invalid input, an unknown episode in a POST body, a DAG that cannot be run or is over 262144 bytes, a `resample` step that gives more than 100000 points for one episode |
-| `401` | the server has a run token and the request lacks it |
-| `404` | an unknown episode in `GET /v1/episodes/{id}`; an unknown route, system or run; a system without a scenario on the run routes; a route the server does not offer without `--systems`, `--kafscale` or `--dag-runs true` |
-| `413` | a `POST /v1/patterns/search`, `/v1/episodes/similar`, `/v1/segments` or `/v1/systems/{id}/...` request with a body over 262144 bytes |
-| `500` | a server error |
+```json
+{"error":"limit: \"abc\" is not an int; expected a whole number from 1 to 20000","type":"bad_request"}
+```
 
-A POST body that is not valid JSON gets no answer: the server closes the connection, and `curl` reports
-`Empty reply from server`. This does not apply to `POST /v1/dags/deploy`: a body that is not valid YAML is a 400.
+`error` is the reason in words. `type` is one of `bad_request`, `not_found`, `method_not_allowed`, `too_large`,
+`unauthorized`, `forbidden`, `unavailable` and `internal`. Branch on `type`, not on the text. The retrieval server
+answers the six types in the table below, never `forbidden` or `unavailable`. The event bridge of `opentsx-twin-live`
+uses the same body and also answers `unavailable`.
+
+| Status | `type` | When |
+|--------|--------|------|
+| `400` | `bad_request` | a parameter or a body field that is missing, malformed or outside its limit; a POST body that is not valid JSON or not a JSON object; an episode id that holds `/`; a DAG that cannot be run, is not valid YAML or is over 262144 bytes; a `resample` step that gives more than 100000 points for one episode |
+| `401` | `unauthorized` | the server has a run token and the request lacks it |
+| `404` | `not_found` | an unknown episode in `GET /v1/episodes/{id}`, `POST /v1/episodes/similar` or `POST /v1/patterns/search`; a path the server does not know, also outside `/v1/`; an unknown system or run; a system without a scenario on the run routes; a route the server does not offer without `--systems`, `--kafscale` or `--dag-runs true` |
+| `405` | `method_not_allowed` | a known path with a method it does not take; the `Allow` header lists the methods it takes |
+| `413` | `too_large` | a `POST /v1/patterns/search`, `/v1/episodes/similar`, `/v1/segments` or `/v1/systems/{id}/...` request with a body over 262144 bytes |
+| `500` | `internal` | a fault in the server; the body is always `{"error":"internal error","type":"internal"}` |
+
+A POST body that is not valid JSON is a 400 with the parser message, for example the body `{"pattern":[1,2`:
+
+```text
+the body is not valid JSON: Unexpected end-of-input: expected close marker for Array (start marker at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 12])
+```
+
+A wrong method names the methods the path takes:
+
+```bash
+curl -s -i -X DELETE http://<host>:<port>/v1/episodes
+```
+
+```text
+HTTP/1.1 405 Method Not Allowed
+Allow: GET
+{"error":"DELETE /v1/episodes: method not allowed; expected GET","type":"method_not_allowed"}
+```
+
+A 500 writes one line at ERROR to the log of the server (stderr), with the method, the path and the exception with
+its causes. The stack trace is logged at DEBUG only:
+
+```text
+request failed method=<method> path=<path> status=500 cause=<exception>; caused by <exception>
+```

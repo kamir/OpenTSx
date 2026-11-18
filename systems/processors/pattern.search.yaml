@@ -16,13 +16,13 @@ inputs:
 outputs:
   - { name: matches, type: events, cardinality: many, description: "PatternMatch per window, best first: episodeId, seriesId, offset, length, distance, metric zED or DTW(w=band)" }
 params:
-  - { name: pattern, type: list, description: "Query values, at least 4. Instead of pattern: episodeId, offset and length." }
+  - { name: pattern, type: list, description: "Query values, 4 to 100000 (EpisodeService.MAX_PATTERN_LENGTH). Instead of pattern: episodeId, offset and length." }
   - { name: episodeId, type: string, description: Episode that holds the query. }
   - { name: offset, type: integer, min: 0, description: First sample of the query in that episode. }
   - { name: length, type: integer, min: 4, description: Number of samples of the query. }
   - { name: distance, type: enum, values: [zED, DTW], default: zED, description: z-normalized Euclidean distance or dynamic time warping. }
   - { name: band, type: number, default: 0.1, min: 0, max: 1, description: "DTW only: width of the Sakoe-Chiba band as a share of m." }
-  - { name: topK, type: integer, default: 10, min: 1, description: Number of matches. }
+  - { name: topK, type: integer, default: 10, min: 1, max: 1000, description: Number of matches. }
 semantics: { needs: series, deterministic: true }
 runtimes:
   java:

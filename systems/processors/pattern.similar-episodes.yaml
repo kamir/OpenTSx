@@ -19,7 +19,7 @@ params:
   - { name: episodeId, type: string, required: true, description: The query episode. }
   - { name: distance, type: enum, values: [zED, DTW], default: zED, description: Euclidean distance of the representations or DTW on them. }
   - { name: band, type: number, default: 0.1, min: 0, max: 1, description: "DTW only: width of the Sakoe-Chiba band as a share of 64." }
-  - { name: topK, type: integer, default: 10, min: 1, description: Number of matches. }
+  - { name: topK, type: integer, default: 10, min: 1, max: 1000, description: Number of matches. }
   - { name: points, type: integer, default: 64, description: "Java only: length of the representation." }
   - { name: saxLength, type: integer, default: 16, description: "Java only: letters of a SAX word; at most points." }
   - { name: alphabet, type: integer, default: 8, description: "Java only: size of the SAX alphabet." }

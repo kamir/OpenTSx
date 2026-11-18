@@ -19,6 +19,8 @@ import org.opentsx.retrieval.segment.Segmenter;
 import org.opentsx.retrieval.system.Systems;
 import org.opentsx.store.InMemorySeriesStore;
 import org.opentsx.store.SeriesStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -29,11 +31,16 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 /**
  * Thin REST layer over {@link EpisodeService} (JDK HTTP server, no framework).
@@ -61,6 +68,8 @@ import java.util.concurrent.Executors;
 public final class RetrievalServer implements AutoCloseable {
 
     public static final String AVRO_STREAM = "application/x-opentsx-avro-stream";
+
+    private static final Logger LOG = LoggerFactory.getLogger(RetrievalServer.class);
 
     private final EpisodeService service;
     private final SeriesInventory inventory;
@@ -145,7 +154,7 @@ public final class RetrievalServer implements AutoCloseable {
         this.dagRunToken = dagRunToken == null || dagRunToken.isBlank() ? null : dagRunToken.getBytes(StandardCharsets.UTF_8);
         this.http = HttpServer.create(new InetSocketAddress(port), 0);
         http.setExecutor(Executors.newFixedThreadPool(4));
-        http.createContext("/v1/", this::handle);
+        http.createContext("/", this::handle);
         http.start();
     }
 
@@ -163,7 +172,11 @@ public final class RetrievalServer implements AutoCloseable {
         String path = ex.getRequestURI().getPath();
         String method = ex.getRequestMethod();
         try {
-            if (method.equals("GET") && path.equals("/v1/health")) {
+            String allow = allowed(path);
+            if (allow != null && !Arrays.asList(allow.split(", ")).contains(method)) {
+                ex.getResponseHeaders().set("Allow", allow);
+                error(ex, 405, method + " " + path + ": method not allowed; expected " + allow);
+            } else if (method.equals("GET") && path.equals("/v1/health")) {
                 json(ex, 200, EpisodeJson.JSON.createObjectNode().put("status", "ok"));
             } else if (method.equals("GET") && path.equals("/v1/inventory")) {
                 json(ex, 200, inventory.get());
@@ -173,7 +186,7 @@ public final class RetrievalServer implements AutoCloseable {
                 systemsPost(ex, path);
             } else if (method.equals("GET") && path.equals("/v1/dags")) {
                 if (dags == null) {
-                    json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "this server has no DAGs (it needs --kafscale)"));
+                    error(ex, 404, "this server has no DAGs (it needs --kafscale)");
                 } else {
                     ObjectNode list = (ObjectNode) dags.list();
                     list.put("writes", dagWrites);
@@ -181,11 +194,9 @@ public final class RetrievalServer implements AutoCloseable {
                 }
             } else if (method.equals("POST") && (path.equals("/v1/dags/deploy") || path.equals("/v1/dags/stop"))) {
                 if (!dagWrites) {
-                    json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error",
-                            "this server does not deploy DAGs (it needs --kafscale and --dag-runs true)"));
+                    error(ex, 404, "this server does not deploy DAGs (it needs --kafscale and --dag-runs true)");
                 } else if (!mayRun(ex)) {
-                    json(ex, 401, EpisodeJson.JSON.createObjectNode().put("error",
-                            "this server deploys DAGs for callers with its run token only (header " + RUN_TOKEN_HEADER + ")"));
+                    error(ex, 401, "this server deploys DAGs for callers with its run token only (header " + RUN_TOKEN_HEADER + ")");
                 } else if (path.equals("/v1/dags/stop")) {
                     json(ex, 200, dags.stop(query(ex).get("name"), by(ex)));
                 } else {
@@ -194,10 +205,10 @@ public final class RetrievalServer implements AutoCloseable {
             } else if (method.equals("GET") && path.equals("/v1/episodes")) {
                 episodes(ex, listEpisodes(query(ex)));
             } else if (method.equals("GET") && path.startsWith("/v1/episodes/")) {
-                String id = path.substring("/v1/episodes/".length());
+                String id = episodeId(path.substring("/v1/episodes/".length()), "episode id");
                 var e = service.episode(id);
                 if (e.isEmpty()) {
-                    json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "unknown episode " + id));
+                    error(ex, 404, "unknown episode " + id);
                 } else {
                     episodes(ex, List.of(e.get()));
                 }
@@ -208,17 +219,52 @@ public final class RetrievalServer implements AutoCloseable {
             } else if (method.equals("POST") && path.equals("/v1/segments")) {
                 episodes(ex, segments(body(ex)));
             } else {
-                json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "no such endpoint"));
+                error(ex, 404, "no such endpoint: " + path);
             }
         } catch (TooLarge e) {
-            json(ex, 413, EpisodeJson.JSON.createObjectNode().put("error", e.getMessage()));
+            error(ex, 413, e.getMessage());
         } catch (java.util.NoSuchElementException e) {
-            json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", String.valueOf(e.getMessage())));
+            error(ex, 404, String.valueOf(e.getMessage()));
         } catch (IllegalArgumentException | java.time.format.DateTimeParseException e) {
-            json(ex, 400, EpisodeJson.JSON.createObjectNode().put("error", String.valueOf(e.getMessage())));
+            error(ex, 400, String.valueOf(e.getMessage()));
         } catch (RuntimeException e) {
-            json(ex, 500, EpisodeJson.JSON.createObjectNode().put("error", e.toString()));
+            LOG.error("request failed method={} path={} status=500 cause={}", oneLine(method), oneLine(path), causes(e));
+            LOG.debug("stack trace of the failed request method={} path={}", oneLine(method), oneLine(path), e);
+            error(ex, 500, "internal error");
         }
+    }
+
+    /** The methods a known path takes, as the Allow header lists them; null for a path the server does not know. */
+    private static String allowed(String path) {
+        return switch (path) {
+            case "/v1/health", "/v1/inventory", "/v1/systems", "/v1/dags", "/v1/episodes" -> "GET";
+            case "/v1/dags/deploy", "/v1/dags/stop", "/v1/patterns/search", "/v1/segments" -> "POST";
+            case "/v1/episodes/similar" -> "GET, POST";
+            default -> {
+                if (path.matches("/v1/systems/[^/]+/(signals|plan|decisions|runs)")) {
+                    yield "GET, POST";
+                } else if (path.matches("/v1/systems/[^/]+/(scenario|runs/.+)") || path.matches("/v1/episodes/[^/]+")) {
+                    yield "GET";
+                } else if (path.matches("/v1/systems/[^/]+/generate")) {
+                    yield "POST";
+                }
+                yield null;
+            }
+        };
+    }
+
+    /** The exception and its causes on one line, for the log. */
+    private static String causes(Throwable t) {
+        StringBuilder s = new StringBuilder();
+        Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Throwable c = t; c != null && seen.add(c); c = c.getCause()) {
+            s.append(s.length() == 0 ? "" : "; caused by ").append(c);
+        }
+        return oneLine(s.toString());
+    }
+
+    private static String oneLine(String s) {
+        return s.replaceAll("\\p{Cntrl}", " ");
     }
 
     // ---- endpoints -------------------------------------------------------------------------------------------------
@@ -226,14 +272,24 @@ public final class RetrievalServer implements AutoCloseable {
     private List<Episode> listEpisodes(Map<String, String> q) {
         EpisodeService.EpisodesQuery eq = select(service.episodes(), q.get("metric"), tags(q), q.get("series"),
                 q.get("from"), q.get("to"));
-        if ("true".equals(q.get("clip"))) {
+        String clip = q.getOrDefault("clip", "false");
+        if (!clip.equals("true") && !clip.equals("false")) {
+            throw notAllowed("clip", clip, "true, false");
+        }
+        if (clip.equals("true")) {
             eq.clip();
         }
         if (q.containsKey("limit")) {
-            eq.limit(Integer.parseInt(q.get("limit")));
+            String limit = q.get("limit");
+            try {
+                eq.limit(Integer.parseInt(limit));
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("limit: \"" + limit + "\" is not an int; expected a whole number from 1 to "
+                        + EpisodeService.MAX_EPISODES, e);
+            }
         }
         if (q.containsKey("resample")) {
-            eq.resample(Duration.parse(q.get("resample")), Resampling.Agg.valueOf(q.getOrDefault("agg", "MEAN")));
+            eq.resample(duration("resample", q.get("resample")), oneOf("agg", q.getOrDefault("agg", "MEAN"), Resampling.Agg.class));
         }
         return eq.fetch();
     }
@@ -275,7 +331,7 @@ public final class RetrievalServer implements AutoCloseable {
         try {
             dag = YAML.readTree(text);
         } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-            throw new IllegalArgumentException("the DAG is no valid YAML: " + e.getOriginalMessage());
+            throw new IllegalArgumentException("the DAG is no valid YAML: " + e.getOriginalMessage(), e);
         }
         return dags.deploy(dag, text, by(ex));
     }
@@ -283,39 +339,49 @@ public final class RetrievalServer implements AutoCloseable {
     private List<PatternMatch> search(JsonNode b) {
         EpisodeService.SubsequenceQuery sq;
         if (b.has("pattern")) {
-            double[] p = new double[b.get("pattern").size()];
+            JsonNode pattern = b.get("pattern");
+            if (!pattern.isArray()) {
+                throw new IllegalArgumentException("pattern: " + shown(pattern) + " is not an array; expected an array of 4 to "
+                        + EpisodeService.MAX_PATTERN_LENGTH + " numbers");
+            }
+            double[] p = new double[pattern.size()];
             for (int i = 0; i < p.length; i++) {
-                p[i] = number(b.get("pattern").path(i), "pattern[" + i + "]");
+                p[i] = number(pattern.path(i), "pattern[" + i + "]");
             }
             sq = service.similarTo(p);
+        } else if (!b.hasNonNull("episodeId")) {
+            throw new IllegalArgumentException("pattern: missing; expected an array of 4 to " + EpisodeService.MAX_PATTERN_LENGTH
+                    + " numbers, or episodeId with offset and length");
         } else {
-            sq = service.similarTo(b.path("episodeId").asText(), integer(b.path("offset"), "offset", 0), integer(b.path("length"), "length", 0));
+            sq = service.similarTo(episodeId(text(b, "episodeId"), "episodeId"), integer(b.path("offset"), "offset", 0),
+                    integer(b.path("length"), "length", 0));
         }
         select(sq, text(b, "metric"), tags(b), text(b, "series"), text(b, "from"), text(b, "to"));
-        return sq.distance(distance(b)).topK(integer(b.path("topK"), "topK", 10)).fetch();
+        return sq.distance(distance(b)).topK(integer(b.path("topK"), "topK", 10, 1, EpisodeService.MAX_TOP_K)).fetch();
     }
 
     private List<PatternMatch> similar(JsonNode b) {
-        EpisodeService.SimilarEpisodesQuery q = service.similarEpisodes(b.path("episodeId").asText());
+        EpisodeService.SimilarEpisodesQuery q = service.similarEpisodes(episodeId(text(b, "episodeId"), "episodeId"));
         select(q, text(b, "metric"), tags(b), text(b, "series"), text(b, "from"), text(b, "to"));
-        return q.distance(distance(b)).topK(integer(b.path("topK"), "topK", 10)).fetch();
+        return q.distance(distance(b)).topK(integer(b.path("topK"), "topK", 10, 1, EpisodeService.MAX_TOP_K)).fetch();
     }
 
     private List<Episode> segments(JsonNode b) {
         JsonNode p = b.path("params");
-        Segmenter s = switch (b.path("strategy").asText()) {
+        String strategy = b.path("strategy").asText();
+        Segmenter s = switch (strategy) {
             case "FIXED_DURATION" -> Segmenter.fixedDuration(dur(p, "duration", null), dur(p, "offset", "PT0S"));
             case "FIXED_COUNT" -> Segmenter.fixedCount(integer(p.path("n"), "params.n", 0), integer(p.path("overlap"), "params.overlap", 0));
-            case "FEATURE_EXTREMUM" -> Segmenter.extremum(Segmenter.Feature.valueOf(p.path("feature").asText("MAX")),
+            case "FEATURE_EXTREMUM" -> Segmenter.extremum(oneOf("params.feature", p.path("feature").asText("MAX"), Segmenter.Feature.class),
                     number(p.path("prominence"), "params.prominence"), dur(p, "window", null), dur(p, "distance", null),
                     dur(p, "pre", "PT0S"), dur(p, "post", "PT0S"));
             case "FEATURE_THRESHOLD" -> {
                 double enter = number(p.path("enter"), "params.enter");
-                yield Segmenter.threshold(Segmenter.Direction.valueOf(p.path("direction").asText("ABOVE")), enter,
+                yield Segmenter.threshold(oneOf("params.direction", p.path("direction").asText("ABOVE"), Segmenter.Direction.class), enter,
                         number(p.path("exit"), "params.exit", enter), dur(p, "pre", "PT0S"), dur(p, "post", "PT0S"),
                         dur(p, "minDuration", "PT0S"), dur(p, "maxDuration", "PT0S"));
             }
-            default -> throw new IllegalArgumentException("unknown strategy " + b.path("strategy").asText());
+            default -> throw notAllowed("strategy", strategy, "FIXED_DURATION, FIXED_COUNT, FEATURE_EXTREMUM, FEATURE_THRESHOLD");
         };
         EpisodeService.SegmentQuery q = service.segments(s);
         select(q, text(b, "metric"), tags(b), text(b, "series"), text(b, "from"), text(b, "to"));
@@ -334,15 +400,70 @@ public final class RetrievalServer implements AutoCloseable {
             sel.series(series.split(","));
         }
         if (from != null || to != null) {
-            sel.between(from == null ? Instant.parse("1970-01-01T00:00:00Z") : Instant.parse(from),
-                    to == null ? Instant.parse("9999-01-01T00:00:00Z") : Instant.parse(to));
+            Instant f = from == null ? Instant.parse("1970-01-01T00:00:00Z") : instant("from", from);
+            Instant t = to == null ? Instant.parse("9999-01-01T00:00:00Z") : instant("to", to);
+            if (!f.isBefore(t)) {
+                throw new IllegalArgumentException(from == null
+                        ? "to: \"" + to + "\" is not after from, which defaults to " + f + "; expected a later to or an earlier from"
+                        : to == null
+                        ? "from: \"" + from + "\" is not before to, which defaults to " + t + "; expected an earlier from or a later to"
+                        : "from: \"" + from + "\" is not before to \"" + to + "\"; expected from earlier than to");
+            }
+            sel.between(f, t);
         }
         return sel;
     }
 
+    private static Instant instant(String field, String v) {
+        try {
+            return Instant.parse(v);
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new IllegalArgumentException(field + ": \"" + v + "\" is not an instant; expected an ISO-8601 instant such as"
+                    + " 2026-01-01T00:00:00Z", e);
+        }
+    }
+
+    private static Duration duration(String field, String v) {
+        try {
+            return Duration.parse(v);
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new IllegalArgumentException(field + ": \"" + v + "\" is not a duration; expected an ISO-8601 duration such as PT1M", e);
+        }
+    }
+
+    private static <E extends Enum<E>> E oneOf(String field, String v, Class<E> type) {
+        for (E c : type.getEnumConstants()) {
+            if (c.name().equals(v)) {
+                return c;
+            }
+        }
+        throw notAllowed(field, v, Arrays.stream(type.getEnumConstants()).map(Enum::name).collect(Collectors.joining(", ")));
+    }
+
+    private static IllegalArgumentException notAllowed(String field, String v, String allowed) {
+        return new IllegalArgumentException(field + ": \"" + v + "\" is not allowed; expected one of " + allowed);
+    }
+
+    /** An episode id from a path or a body: present, and without a slash, which no route takes inside an id. */
+    private static String episodeId(String id, String field) {
+        if (id == null || id.isEmpty()) {
+            throw new IllegalArgumentException(field + ": missing; expected the id of one episode");
+        }
+        if (id.indexOf('/') >= 0) {
+            throw new IllegalArgumentException(field + ": \"" + id + "\" holds a slash; expected the id of one episode");
+        }
+        return id;
+    }
+
     private static Distance distance(JsonNode b) {
-        return "DTW".equalsIgnoreCase(b.path("distance").asText("zED")) ? Distance.dtw(number(b.path("band"), "band", 0.1))
-                : Distance.zNormalizedEuclidean();
+        String d = b.path("distance").asText("zED");
+        if (d.equalsIgnoreCase("DTW")) {
+            return Distance.dtw(number(b.path("band"), "band", 0.1));
+        }
+        if (d.equalsIgnoreCase("zED")) {
+            return Distance.zNormalizedEuclidean();
+        }
+        throw notAllowed("distance", d, "zED, DTW");
     }
 
     private static final String NUMBER = "expected a number without quotes, such as 0.01 or 1e-3";
@@ -365,12 +486,17 @@ public final class RetrievalServer implements AutoCloseable {
     }
 
     private static int integer(JsonNode v, String field, int dflt) {
+        return integer(v, field, dflt, Integer.MIN_VALUE, Integer.MAX_VALUE);
+    }
+
+    /** {@code min} and {@code max} name the range in the message; the service that takes the value checks it. */
+    private static int integer(JsonNode v, String field, int dflt, int min, int max) {
         if (v.isMissingNode() || v.isNull()) {
             return dflt;
         }
         if (!v.isIntegralNumber() || !v.canConvertToInt()) {
-            throw new IllegalArgumentException(field + ": " + shown(v)
-                    + " is not a whole number; expected a whole number from -2147483648 to 2147483647 without quotes");
+            throw new IllegalArgumentException(field + ": " + shown(v) + " is not a whole number; expected a whole number from " + min
+                    + " to " + max + " without quotes");
         }
         return v.asInt();
     }
@@ -382,9 +508,9 @@ public final class RetrievalServer implements AutoCloseable {
     private static Duration dur(JsonNode p, String name, String dflt) {
         String v = p.path(name).asText(dflt);
         if (v == null) {
-            throw new IllegalArgumentException("parameter " + name + " is required");
+            throw new IllegalArgumentException("params." + name + ": missing; expected an ISO-8601 duration such as PT1M");
         }
-        return Duration.parse(v);
+        return duration("params." + name, v);
     }
 
     private static String text(JsonNode b, String f) {
@@ -427,7 +553,19 @@ public final class RetrievalServer implements AutoCloseable {
         if (raw.length > MAX_BODY_BYTES) {
             throw new TooLarge();
         }
-        return raw.length == 0 ? EpisodeJson.JSON.createObjectNode() : EpisodeJson.JSON.readTree(raw);
+        if (raw.length == 0) {
+            return EpisodeJson.JSON.createObjectNode();
+        }
+        JsonNode b;
+        try {
+            b = EpisodeJson.JSON.readTree(raw);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new IllegalArgumentException("the body is not valid JSON: " + e.getOriginalMessage(), e);
+        }
+        if (!b.isObject()) {
+            throw new IllegalArgumentException("the body is not a JSON object; expected {...} with the fields of the route");
+        }
+        return b;
     }
 
     private void episodes(HttpExchange ex, List<Episode> eps) throws IOException {
@@ -457,13 +595,30 @@ public final class RetrievalServer implements AutoCloseable {
         send(ex, status, "application/json", EpisodeJson.JSON.writeValueAsBytes(n));
     }
 
+    /** An error answer: {@code {"error": text, "type": t}}, with the type a client can branch on. */
+    private static void error(HttpExchange ex, int status, String text) throws IOException {
+        json(ex, status, EpisodeJson.JSON.createObjectNode().put("error", text).put("type", type(status)));
+    }
+
+    private static String type(int status) {
+        return switch (status) {
+            case 400 -> "bad_request";
+            case 401 -> "unauthorized";
+            case 404 -> "not_found";
+            case 405 -> "method_not_allowed";
+            case 413 -> "too_large";
+            case 500 -> "internal";
+            default -> throw new IllegalStateException("no error type for status " + status);
+        };
+    }
+
     /**
      * {@code /v1/systems}: the list; {@code /v1/systems/<id>/signals}: every signal of one system with its state;
      * {@code /v1/systems/<id>/plan}: the atoms of its plan with their ports and what feeds each input.
      */
     private void systems(HttpExchange ex, String path) throws IOException {
         if (systems == null) {
-            json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "this server has no system documents (it needs --systems)"));
+            error(ex, 404, "this server has no system documents (it needs --systems)");
             return;
         }
         String[] p = path.substring("/v1/systems".length()).split("/");
@@ -478,7 +633,7 @@ public final class RetrievalServer implements AutoCloseable {
         } else if (p.length >= 3 && (p[2].equals("scenario") || p[2].equals("runs")) && systems.has(p[1])) {
             runs(ex, p);
         } else {
-            json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "no such system or route: " + path));
+            error(ex, 404, "no such system or route: " + path);
         }
     }
 
@@ -490,7 +645,7 @@ public final class RetrievalServer implements AutoCloseable {
     private void runs(HttpExchange ex, String[] p) throws IOException {
         String system = p[1];
         if (!runs.has(system)) {
-            json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "the system " + system + " has no scenario to run"));
+            error(ex, 404, "the system " + system + " has no scenario to run");
         } else if (p.length == 3 && p[2].equals("scenario")) {
             json(ex, 200, runs.scenario(system));
         } else if (p.length == 3) {
@@ -506,7 +661,7 @@ public final class RetrievalServer implements AutoCloseable {
         } else if (p.length == 5 && p[4].equals("compare")) {
             json(ex, 200, runs.compare(system, p[3], query(ex).getOrDefault("base", runs.reference(system))));
         } else {
-            json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "no such route for runs"));
+            error(ex, 404, "no such route for runs");
         }
     }
 
@@ -518,13 +673,13 @@ public final class RetrievalServer implements AutoCloseable {
     private void systemsPost(HttpExchange ex, String path) throws IOException {
         String[] p = path.substring("/v1/systems".length()).split("/");
         if (systems == null || p.length != 3 || !systems.has(p[1])) {
-            json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "no such system or route: " + path));
+            error(ex, 404, "no such system or route: " + path);
             return;
         }
         JsonNode body = body(ex);
         if (p[2].equals("runs")) {
             if (!runs.has(p[1])) {
-                json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "the system " + p[1] + " has no scenario to run"));
+                error(ex, 404, "the system " + p[1] + " has no scenario to run");
             } else {
                 json(ex, 200, runs.run(p[1], body));
             }
@@ -536,15 +691,14 @@ public final class RetrievalServer implements AutoCloseable {
             json(ex, 200, systems.plan(p[1], inventory.get(), Systems.bindings(body)));
         } else if (p[2].equals("generate")) {
             if (signalWriter == null) {
-                json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "this server cannot write generated series (it needs --kafscale and --dag-runs true)"));
+                error(ex, 404, "this server cannot write generated series (it needs --kafscale and --dag-runs true)");
             } else if (!mayRun(ex)) {
-                json(ex, 401, EpisodeJson.JSON.createObjectNode().put("error",
-                        "this server writes for callers with its run token only (header " + RUN_TOKEN_HEADER + ")"));
+                error(ex, 401, "this server writes for callers with its run token only (header " + RUN_TOKEN_HEADER + ")");
             } else {
                 json(ex, 200, systems.generate(p[1], body, syntheticTopic, signalWriter));
             }
         } else {
-            json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "no such route: " + path));
+            error(ex, 404, "no such route: " + path);
         }
     }
 

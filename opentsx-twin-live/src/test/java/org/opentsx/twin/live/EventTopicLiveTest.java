@@ -7,6 +7,8 @@ import org.opentsx.twin.TwinEvent;
 import org.opentsx.twin.studio.Scenarios;
 import org.opentsx.twin.studio.StudioScenario;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -165,6 +167,68 @@ class EventTopicLiveTest {
                     HttpResponse.BodyHandlers.ofString());
             assertEquals(200, health.statusCode());
             assertEquals("https://studio.example", health.headers().firstValue("Access-Control-Allow-Origin").orElse(null));
+        }
+    }
+
+    @Test
+    void bridgeErrorsHaveATypeAndKeepTheBrokerAddressInTheLog() throws Exception {
+        Topics down = new Topics() {
+            @Override
+            public void create(String topic) {
+            }
+
+            @Override
+            public void append(String topic, String key, byte[] value, String schema) {
+            }
+
+            @Override
+            public Cursor open(String topic, long offset) {
+                throw new IllegalStateException("cannot reach the broker at broker.invalid:9092",
+                        new java.util.concurrent.TimeoutException("timed out waiting for a node assignment"));
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+        try (EventBridge bridge = new EventBridge(down, 0, "*", 4)) {
+            HttpClient http = HttpClient.newHttpClient();
+            String base = "http://localhost:" + bridge.port();
+
+            ByteArrayOutputStream err = new ByteArrayOutputStream();
+            PrintStream stderr = System.err;
+            System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+            HttpResponse<String> failed;
+            try {
+                failed = http.send(HttpRequest.newBuilder(URI.create(base + "/v1/topics/twin.demo.run-1.events/events")).build(),
+                        HttpResponse.BodyHandlers.ofString());
+            } finally {
+                System.setErr(stderr);
+            }
+            assertEquals(502, failed.statusCode());
+            assertEquals("{\"error\":\"cannot reach the broker\",\"type\":\"unavailable\"}", failed.body());
+            List<String> lines = err.toString(StandardCharsets.UTF_8).lines().toList();
+            List<String> errors = lines.stream().filter(l -> l.contains(" ERROR ")).toList();
+            assertEquals(1, errors.size(), String.join("\n", lines));
+            assertTrue(errors.get(0).endsWith("request failed method=GET path=/v1/topics/twin.demo.run-1.events/events status=502"
+                    + " cause=java.lang.IllegalStateException: cannot reach the broker at broker.invalid:9092; caused by"
+                    + " java.util.concurrent.TimeoutException: timed out waiting for a node assignment"), errors.get(0));
+            assertFalse(lines.stream().anyMatch(l -> l.startsWith("\tat ")), "the stack trace is logged at DEBUG only");
+
+            HttpResponse<String> post = http.send(HttpRequest.newBuilder(URI.create(base + "/v1/health"))
+                    .POST(HttpRequest.BodyPublishers.noBody()).build(), HttpResponse.BodyHandlers.ofString());
+            assertEquals(405, post.statusCode());
+            assertEquals("GET", post.headers().firstValue("Allow").orElse(null));
+            assertEquals("{\"error\":\"POST: method not allowed; expected GET\",\"type\":\"method_not_allowed\"}", post.body());
+            HttpResponse<String> unknown = http.send(HttpRequest.newBuilder(URI.create(base + "/v1/nothing")).build(),
+                    HttpResponse.BodyHandlers.ofString());
+            assertEquals("{\"error\":\"no such endpoint\",\"type\":\"not_found\"}", unknown.body());
+            for (String[] c : new String[][]{{"GET", "/x"}, {"POST", "/x"}, {"GET", "/v1/topics/events"}}) {
+                HttpResponse<String> r = http.send(HttpRequest.newBuilder(URI.create(base + c[1])).method(c[0], HttpRequest.BodyPublishers.noBody())
+                        .build(), HttpResponse.BodyHandlers.ofString());
+                assertEquals(404, r.statusCode(), c[0] + " " + c[1] + ": " + r.body());
+                assertEquals("{\"error\":\"no such endpoint\",\"type\":\"not_found\"}", r.body());
+            }
         }
     }
 

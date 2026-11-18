@@ -157,6 +157,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   driver for `type=jdbc,uri=jdbc:sqlite:<file>`, and Maven users of `opentsx-store-iceberg` get the SQLite driver.
   `deploy/docker/test-launchers.sh` fails when a classpath with kafka-clients has no zstd-jni or a classpath with
   iceberg-core has no sqlite-jdbc.
+- Every error answer of the retrieval server and the event bridge is `{"error": "<text>", "type": "<type>"}`. The type
+  is one of `bad_request`, `not_found`, `method_not_allowed`, `too_large`, `unauthorized`, `forbidden`, `unavailable`
+  and `internal` (appendix B).
+- The retrieval server answers every known path, `/v1/systems/{id}/...` included, with 405 and an `Allow` header when
+  the method is wrong. Before, `GET /v1/systems/{id}/generate` and `POST /v1/systems/{id}/scenario` answered 404. Any
+  unknown path, also outside `/v1/`, answers a JSON 404 `no such endpoint: <path>` instead of the HTML page of the
+  JDK.
 
 ### Removed
 
@@ -395,6 +402,23 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   prints `resolving the classpath of <module> with Maven`, shows Maven's error output, and reports a missing `mvn`.
 - `bin/000_launch_tsa_workbench.sh` without Maven takes the classpath from `bin/opentsx classpath opentsx-core` and
   exits with 1 before Java starts when that fails, instead of a wildcard classpath that cannot load the workbench.
+- The retrieval server answers a POST body that is not valid JSON with 400 `the body is not valid JSON: <parser
+  message>`, and a body that is not a JSON object with 400. Before, it closed the connection without an answer and
+  curl reported `Empty reply from server`.
+- A fault in the retrieval server answers 500 `{"error":"internal error","type":"internal"}` and logs one ERROR line
+  `request failed method=<method> path=<path> status=500 cause=<causes>`, with the stack trace at DEBUG. The answer no
+  longer names Java exception classes.
+- An unknown episode answers 404 on `POST /v1/episodes/similar` and `POST /v1/patterns/search`, as on `GET
+  /v1/episodes/{id}`; before it was a 400. An episode id that holds `/` answers 400.
+- Malformed parameters of the retrieval server answer 400 naming the parameter and what it takes, instead of raw JDK
+  text. This covers `limit`, `topK`, `agg`, `clip`, `from`, `to`, `resample`, `distance`, `strategy`,
+  `params.feature`, `params.direction` and the segment durations, for example `limit: "abc" is not an int; expected a
+  whole number from 1 to 20000`. A `to` or `from` given alone names the default it was compared with. A search without
+  `pattern` and `episodeId` names `pattern`. Unknown values of `clip` and `distance` are refused instead of ignored.
+- The event bridge answers a method other than GET on its two routes with 405 and `Allow: GET`. Every other path
+  answers a JSON 404 `no such endpoint`, also outside `/v1/`; `GET /v1/topics/events` answered 500 before. A broker
+  failure answers 502 `cannot reach the broker` without the broker address, and the bridge logs the failure once at
+  ERROR with its causes.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
@@ -431,6 +455,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The tracked client profiles and .env files of opentsx-lg and archive/demos/opentsx-clusters hold localhost or
   placeholders instead of private addresses, a personal host name and Confluent Cloud hosts. Unused profiles and the
   IDE files under .idea/ are removed, and .idea/ is git-ignored.
+- The retrieval server caps `topK` at 1000, a search pattern at 100000 values, `limit` at 20000 and the episodes one
+  request selects at 20000 (`EpisodeService.MAX_TOP_K`, `MAX_PATTERN_LENGTH`, `MAX_EPISODES`). Beyond a cap it answers
+  400 naming the cap. A search compares, and an answer carries, at most 20000 episodes.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

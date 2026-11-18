@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -11,8 +13,11 @@ import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -31,6 +36,7 @@ import java.util.concurrent.Semaphore;
  */
 public final class EventBridge implements AutoCloseable {
 
+    private static final Logger LOG = LoggerFactory.getLogger(EventBridge.class);
     private static final Duration POLL = Duration.ofMillis(500);
     private static final long KEEPALIVE_MS = 15_000;
 
@@ -50,7 +56,7 @@ public final class EventBridge implements AutoCloseable {
             t.setDaemon(true);
             return t;
         }));
-        http.createContext("/v1/", this::handle);
+        http.createContext("/", this::handle);
         http.start();
     }
 
@@ -66,35 +72,56 @@ public final class EventBridge implements AutoCloseable {
     }
 
     private void handle(HttpExchange ex) throws IOException {
+        String path = ex.getRequestURI().getPath();
         try {
             ex.getResponseHeaders().set("Access-Control-Allow-Origin", allowOrigin);
-            String path = ex.getRequestURI().getPath();
-            if (!ex.getRequestMethod().equals("GET")) {
-                error(ex, 405, "only GET");
-            } else if (path.equals("/v1/health")) {
+            boolean health = path.equals("/v1/health");
+            if (!health && !path.matches("/v1/topics/[^/]+/events")) {
+                error(ex, 404, "no such endpoint");
+            } else if (!ex.getRequestMethod().equals("GET")) {
+                ex.getResponseHeaders().set("Allow", "GET");
+                error(ex, 405, ex.getRequestMethod() + ": method not allowed; expected GET");
+            } else if (health) {
                 json(ex, 200, EventTopic.JSON.createObjectNode().put("status", "ok"));
-            } else if (path.startsWith("/v1/topics/") && path.endsWith("/events")) {
+            } else {
                 String topic = path.substring("/v1/topics/".length(), path.length() - "/events".length());
                 if (!EventTopic.isEventTopic(topic)) {
                     error(ex, 400, "not an event topic of a twin: " + topic);
                 } else {
                     stream(ex, topic);
                 }
-            } else {
-                error(ex, 404, "no such endpoint");
             }
         } catch (IllegalArgumentException e) {
             error(ex, 400, String.valueOf(e.getMessage()));
         } catch (RuntimeException e) {
-            System.err.println("event bridge: " + ex.getRequestURI() + " failed: " + e);
-            try {
-                error(ex, 502, e.getMessage() == null ? e.toString() : e.getMessage());
-            } catch (IOException alreadyStreaming) {
-                // the stream had started; closing it makes the browser reconnect
-            }
+            // once the stream has started, closing it is the only answer left; the browser then reconnects
+            failed(ex, path, ex.getResponseCode() == -1 ? 500 : ex.getResponseCode(), "internal error", e);
         } finally {
             ex.close();
         }
+    }
+
+    /** Logs the failure once, with its causes; answers it when no answer has started yet. */
+    private static void failed(HttpExchange ex, String path, int status, String text, RuntimeException e) throws IOException {
+        LOG.error("request failed method={} path={} status={} cause={}", oneLine(ex.getRequestMethod()), oneLine(path), status,
+                causes(e));
+        LOG.debug("stack trace of the failed request method={} path={}", oneLine(ex.getRequestMethod()), oneLine(path), e);
+        if (ex.getResponseCode() == -1) {
+            error(ex, status, text);
+        }
+    }
+
+    private static String causes(Throwable t) {
+        StringBuilder s = new StringBuilder();
+        Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Throwable c = t; c != null && seen.add(c); c = c.getCause()) {
+            s.append(s.length() == 0 ? "" : "; caused by ").append(c);
+        }
+        return oneLine(s.toString());
+    }
+
+    private static String oneLine(String s) {
+        return s.replaceAll("\\p{Cntrl}", " ");
     }
 
     private void stream(HttpExchange ex, String topic) throws IOException {
@@ -109,6 +136,9 @@ public final class EventBridge implements AutoCloseable {
                 cursor = topics.open(topic, from);
             } catch (Topics.NoSuchTopicException e) {
                 error(ex, 404, e.getMessage());
+                return;
+            } catch (RuntimeException e) {
+                failed(ex, ex.getRequestURI().getPath(), 502, "cannot reach the broker", e);
                 return;
             }
             try (cursor) {
@@ -194,7 +224,18 @@ public final class EventBridge implements AutoCloseable {
     }
 
     private static void error(HttpExchange ex, int status, String message) throws IOException {
-        json(ex, status, EventTopic.JSON.createObjectNode().put("error", message));
+        json(ex, status, EventTopic.JSON.createObjectNode().put("error", message).put("type", type(status)));
+    }
+
+    private static String type(int status) {
+        return switch (status) {
+            case 400 -> "bad_request";
+            case 404 -> "not_found";
+            case 405 -> "method_not_allowed";
+            case 500 -> "internal";
+            case 502, 503 -> "unavailable";
+            default -> throw new IllegalStateException("no error type for status " + status);
+        };
     }
 
     private static void json(HttpExchange ex, int status, JsonNode body) throws IOException {

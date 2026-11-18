@@ -2314,13 +2314,13 @@ Finds the topK windows of the selected series that look most like a query patter
 
 | Parameter | Type | Default | Range | Description |
 |---|---|---|---|---|
-| `pattern` | list |  |  | Query values, at least 4. Instead of pattern: episodeId, offset and length. |
+| `pattern` | list |  |  | Query values, 4 to 100000 (EpisodeService.MAX_PATTERN_LENGTH). Instead of pattern: episodeId, offset and length. |
 | `episodeId` | string |  |  | Episode that holds the query. |
 | `offset` | integer |  | 0 ..  | First sample of the query in that episode. |
 | `length` | integer |  | 4 ..  | Number of samples of the query. |
 | `distance` | enum: zED, DTW | `zED` |  | z-normalized Euclidean distance or dynamic time warping. |
 | `band` | number | `0.1` | 0 .. 1 | DTW only: width of the Sakoe-Chiba band as a share of m. |
-| `topK` | integer | `10` | 1 ..  | Number of matches. |
+| `topK` | integer | `10` | 1 .. 1000 | Number of matches. |
 
 Semantics: needs one series of input per output value; deterministic.
 
@@ -2377,7 +2377,7 @@ Ranks whole episodes by how much they look like a query episode. Each episode be
 | `episodeId` | string | required |  | The query episode. |
 | `distance` | enum: zED, DTW | `zED` |  | Euclidean distance of the representations or DTW on them. |
 | `band` | number | `0.1` | 0 .. 1 | DTW only: width of the Sakoe-Chiba band as a share of 64. |
-| `topK` | integer | `10` | 1 ..  | Number of matches. |
+| `topK` | integer | `10` | 1 .. 1000 | Number of matches. |
 | `points` | integer | `64` |  | Java only: length of the representation. |
 | `saxLength` | integer | `16` |  | Java only: letters of a SAX word; at most points. |
 | `alphabet` | integer | `8` |  | Java only: size of the SAX alphabet. |

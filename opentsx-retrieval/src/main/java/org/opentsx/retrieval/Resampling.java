@@ -23,7 +23,8 @@ public final class Resampling {
     public static Episode resample(Episode e, Duration every, Agg agg) {
         long d = every.toNanos() / 1000;
         if (d <= 0) {
-            throw new IllegalArgumentException("resampling interval must be positive");
+            throw new IllegalArgumentException("resample: \"" + every + "\" is shorter than one microsecond; expected a positive duration"
+                    + " such as PT1M");
         }
         long first = Math.floorDiv(Micros.of(e.getTStart()), d) * d;
         long last = Math.floorDiv(Micros.of(e.getTEnd()) - 1, d) * d;

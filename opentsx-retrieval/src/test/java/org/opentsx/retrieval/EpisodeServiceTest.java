@@ -4,9 +4,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.opentsx.model.Episodes;
 import org.opentsx.model.Micros;
+import org.opentsx.model.SeriesKeys;
+import org.opentsx.model.Ulid;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.model.v2.PatternMatch;
 import org.opentsx.model.v2.SegmentationStrategy;
+import org.opentsx.model.v2.SeriesKey;
 import org.opentsx.retrieval.pattern.Distance;
 import org.opentsx.retrieval.segment.Segmenter;
 import org.opentsx.store.InMemorySeriesStore;
@@ -20,8 +23,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EpisodeServiceTest {
@@ -104,5 +109,29 @@ class EpisodeServiceTest {
         // writing the same segments again is a no-op (deterministic ids)
         assertEquals(0, derived.write(svc.segments(Segmenter.extremum(Segmenter.Feature.MAX, 2.0, Duration.ofMinutes(4),
                 Duration.ofMinutes(5), Duration.ofSeconds(30), Duration.ofSeconds(60))).metric("wind.met.wind_speed").fetch()).written());
+    }
+
+    @Test
+    void aQueryOverMoreEpisodesThanTheLimitIsRefused() {
+        SeriesKey key = SeriesKeys.of("many", Map.of(), "1");
+        long t0 = Micros.of(START);
+        List<Episode> eps = new ArrayList<>();
+        for (int i = 0; i <= 20_000; i++) {
+            eps.add(Episodes.regular(key, t0 + i * 4_000_000L, 1_000_000L, new double[] {1, 2, 3, 4})
+                    .episodeId(Ulid.deterministic(t0 / 1000, i)).source("test").createdAt(t0).build());
+        }
+        InMemorySeriesStore many = new InMemorySeriesStore();
+        many.write(eps);
+        EpisodeService svc = new EpisodeService(many);
+        String refused = "selection: more than 20000 episodes match; narrow it with metric, tags, series, from or to";
+        assertEquals(refused + ", or set limit",
+                assertThrows(IllegalArgumentException.class, () -> svc.episodes().fetch()).getMessage());
+        assertEquals(20_000, svc.episodes().limit(20_000).fetch().size());
+        assertEquals(refused, assertThrows(IllegalArgumentException.class,
+                () -> svc.similarTo(new double[] {1, 2, 3, 4}).fetch()).getMessage());
+        assertEquals(refused, assertThrows(IllegalArgumentException.class,
+                () -> svc.similarEpisodes(eps.get(0)).fetch()).getMessage());
+        assertEquals(refused, assertThrows(IllegalArgumentException.class,
+                () -> svc.segments(Segmenter.fixedCount(2, 0)).fetch()).getMessage());
     }
 }

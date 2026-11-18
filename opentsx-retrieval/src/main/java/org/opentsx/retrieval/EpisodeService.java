@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 
@@ -42,6 +43,13 @@ import java.util.Set;
  * Reads go to the first store that keeps episodes ({@link Capability#EPISODES}), otherwise the first store.
  */
 public final class EpisodeService {
+
+    /** Most matches one search or similarity query answers. */
+    public static final int MAX_TOP_K = 1000;
+    /** Most values of a search pattern. */
+    public static final int MAX_PATTERN_LENGTH = 100_000;
+    /** Most episodes one query reads: the highest limit, and the most a query without a limit may select. */
+    public static final int MAX_EPISODES = 20_000;
 
     private final List<SeriesStore> stores;
 
@@ -73,12 +81,15 @@ public final class EpisodeService {
 
     /** Subsequence search for a pattern given as values. */
     public SubsequenceQuery similarTo(double[] pattern) {
+        if (pattern.length < 4 || pattern.length > MAX_PATTERN_LENGTH) {
+            throw new IllegalArgumentException("pattern: " + pattern.length + " values; expected 4 to " + MAX_PATTERN_LENGTH + " values");
+        }
         return new SubsequenceQuery(pattern.clone());
     }
 
     /** Subsequence search for a piece of a stored episode. */
     public SubsequenceQuery similarTo(String episodeId, int offset, int length) {
-        Episode e = episode(episodeId).orElseThrow(() -> new IllegalArgumentException("unknown episode " + episodeId));
+        Episode e = episode(episodeId).orElseThrow(() -> new NoSuchElementException("unknown episode " + episodeId));
         double[] v = Episodes.values(e);
         if (offset < 0 || length < 4 || offset + length > v.length) {
             throw new IllegalArgumentException("pattern outside the episode");
@@ -88,7 +99,7 @@ public final class EpisodeService {
 
     /** Whole episodes that look like the given one. */
     public SimilarEpisodesQuery similarEpisodes(String episodeId) {
-        return new SimilarEpisodesQuery(episode(episodeId).orElseThrow(() -> new IllegalArgumentException("unknown episode " + episodeId)));
+        return new SimilarEpisodesQuery(episode(episodeId).orElseThrow(() -> new NoSuchElementException("unknown episode " + episodeId)));
     }
 
     public SimilarEpisodesQuery similarEpisodes(Episode episode) {
@@ -145,11 +156,29 @@ public final class EpisodeService {
             EpisodeQuery q = new EpisodeQuery(selector(), from, to, clip, limit);
             return primary().read(q);
         }
+
+        /** Every selected episode; a selection of more than {@link #MAX_EPISODES} is refused. */
+        List<Episode> readAll(boolean clip, String alternative) {
+            List<Episode> eps = read(clip, MAX_EPISODES + 1);
+            if (eps.size() > MAX_EPISODES) {
+                throw new IllegalArgumentException("selection: more than " + MAX_EPISODES
+                        + " episodes match; narrow it with metric, tags, series, from or to" + alternative);
+            }
+            return eps;
+        }
+    }
+
+    private static int checkedTopK(int k) {
+        if (k < 1 || k > MAX_TOP_K) {
+            throw new IllegalArgumentException("topK: " + k + " is out of range; expected a whole number from 1 to " + MAX_TOP_K);
+        }
+        return k;
     }
 
     public final class EpisodesQuery extends Selection<EpisodesQuery> {
         private boolean clip;
-        private int limit = Integer.MAX_VALUE;
+        /** 0: no limit given. */
+        private int limit;
         private Duration every;
         private Resampling.Agg agg;
 
@@ -160,6 +189,9 @@ public final class EpisodeService {
         }
 
         public EpisodesQuery limit(int n) {
+            if (n < 1 || n > MAX_EPISODES) {
+                throw new IllegalArgumentException("limit: " + n + " is out of range; expected a whole number from 1 to " + MAX_EPISODES);
+            }
             this.limit = n;
             return this;
         }
@@ -171,7 +203,7 @@ public final class EpisodeService {
         }
 
         public List<Episode> fetch() {
-            List<Episode> eps = read(clip, limit);
+            List<Episode> eps = limit > 0 ? read(clip, limit) : readAll(clip, ", or set limit");
             if (every == null) {
                 return eps;
             }
@@ -199,13 +231,13 @@ public final class EpisodeService {
         }
 
         public SubsequenceQuery topK(int k) {
-            this.k = k;
+            this.k = checkedTopK(k);
             return this;
         }
 
         public List<PatternMatch> fetch() {
             PatternSearch s = new PatternSearch(pattern, distance, k);
-            List<PatternMatch> hits = s.search(Run.of(read(false, Integer.MAX_VALUE)));
+            List<PatternMatch> hits = s.search(Run.of(readAll(false, "")));
             stats = s.stats();
             return hits;
         }
@@ -232,7 +264,7 @@ public final class EpisodeService {
         }
 
         public SimilarEpisodesQuery topK(int k) {
-            this.k = k;
+            this.k = checkedTopK(k);
             return this;
         }
 
@@ -243,7 +275,7 @@ public final class EpisodeService {
         }
 
         public List<PatternMatch> fetch() {
-            return similarity.search(query, read(false, Integer.MAX_VALUE), distance, k);
+            return similarity.search(query, readAll(false, ""), distance, k);
         }
     }
 
@@ -262,7 +294,7 @@ public final class EpisodeService {
         }
 
         public List<Episode> fetch() {
-            List<Episode> segments = Segmentations.segment(read(false, Integer.MAX_VALUE), segmenter);
+            List<Episode> segments = Segmentations.segment(readAll(false, ""), segmenter);
             if (target != null && !segments.isEmpty()) {
                 target.write(segments);
             }

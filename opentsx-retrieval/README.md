@@ -108,6 +108,18 @@ Numbers in a POST body are JSON numbers. A string where a number belongs, such a
 `"topK": "10"`, is a 400 that names the field. `params.prominence` of `FEATURE_EXTREMUM` and `params.enter` of `FEATURE_THRESHOLD` are required.
 A JSON body over 262144 bytes (`RetrievalServer.MAX_BODY_BYTES`) is a 413. A `resample` step that gives more than
 100000 points for one episode (`Resampling.MAX_POINTS`) is a 400.
+`topK` takes 1 to 1000 (`EpisodeService.MAX_TOP_K`) and `pattern` 4 to 100000 values
+(`EpisodeService.MAX_PATTERN_LENGTH`). `limit` takes 1 to 20000, and a request selects at most 20000 episodes
+(`EpisodeService.MAX_EPISODES`); beyond a limit the answer is a 400 that names it.
+
+Every error answer is `{"error": "<text>", "type": "<type>"}`. A malformed parameter names itself and what it takes,
+for example `limit: "abc" is not an int; expected a whole number from 1 to 20000`. A body that is not valid JSON is a
+400 `the body is not valid JSON: <parser message>`. An unknown episode is a 404 on `GET /v1/episodes/{id}`,
+`POST /v1/episodes/similar` and `POST /v1/patterns/search`. A known path with a method it does not take is a 405 with
+an `Allow` header; any other path is a 404 `no such endpoint: <path>`. A fault in the server is a 500
+`internal error` and one ERROR line `request failed method=<method> path=<path> status=500 cause=<causes>` in the log;
+the stack trace is logged at DEBUG. The statuses and types are in
+[Appendix B](../docs/user-manual/appendix-b-rest.md).
 
 ### Vector topics
 

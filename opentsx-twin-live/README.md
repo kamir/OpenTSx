@@ -1,7 +1,8 @@
 # opentsx-twin-live
 
 The events of a twin run as records of a topic, and a bridge that hands the topic to a browser. The Smart Topics
-Studio (`docs/prototypes/smart-topics-studio.html`, tab "Ereignis-Topic") follows the topic through the bridge.
+Studio (`docs/prototypes/smart-topics-studio.html`, the event topic tab `#view-topic`) follows the topic through the
+bridge.
 
 ```
 twin run --> EventPublisher --> twin.<id>.<run>.events (KafScale) --> EventBridge (SSE) --> Studio
@@ -38,8 +39,27 @@ bin/opentsx twin-live demo    [--port 8090] [--scenario id] [--duration 120]
   A reconnecting browser sends `Last-Event-ID` and continues behind that offset.
 - `demo` runs both in one process on topics kept in memory. No broker is involved and nothing reaches KafScale.
 
-In the Studio: tab "Ereignis-Topic", source "Live aus dem Topic", address of the bridge, "Verbinden". The address
-can be passed as `?bridge=http://host:8090`.
+In the Studio: the event topic tab (`#view-topic`), the live source button (`#tp-src-live`), the address of the
+bridge (`#tp-url`) and the connect button (`#tp-connect`). The address can be passed as `?bridge=http://host:8090`.
+
+## Errors
+
+An error answer of the bridge is `{"error": "<text>", "type": "<type>"}`, with the types of
+[Appendix B](../docs/user-manual/appendix-b-rest.md).
+
+| Status | `type` | `error` |
+|--------|--------|---------|
+| 400 | `bad_request` | `not an event topic of a twin: <topic>` or `from must be latest, earliest or an offset` |
+| 404 | `not_found` | `no such topic: <topic>`, or `no such endpoint` for any other path, whatever the method |
+| 405 | `method_not_allowed` | `<method>: method not allowed; expected GET` on `/v1/health` and `/v1/topics/{topic}/events`, with the header `Allow: GET` |
+| 500 | `internal` | `internal error` |
+| 502 | `unavailable` | `cannot reach the broker` |
+| 503 | `unavailable` | `too many open streams` (see `--max-streams`) |
+
+A 500 or a 502 writes one line at ERROR to stderr:
+`request failed method=<method> path=<path> status=<status> cause=<causes>`. The causes name the broker address; the
+answer does not. The stack trace is logged at DEBUG. A stream that fails after it started is closed and logged the
+same way; the browser then reconnects.
 
 ## Limits
 
