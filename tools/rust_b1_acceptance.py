@@ -93,7 +93,7 @@ def source_state():
                                 check=True, capture_output=True, text=True).stdout)
     names = {
         ".github/workflows/ci.yml", "tools/rust_b1_acceptance.py", "tools/rust_b1_conformance.py",
-        "tools/build_kafscale_proxy.py", "tools/kafscale_proxy_cluster.go",
+        "tools/build_kafscale_proxy.py", "tools/kafscale_proxy_cluster.go", "tools/kafscale_proxy_cluster_test.go",
         "tools/kafscale_metadata_overlay.py", "tools/kafscale_metadata_test.go",
         "tools/kafscale_proxy_protocol_overlay.py",
         "tools/kafscale_proxy_protocol_test.go", "opentsx-wayang/pom.xml", "pom.xml",

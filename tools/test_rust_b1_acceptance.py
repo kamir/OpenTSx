@@ -294,6 +294,7 @@ class CombinedAcceptanceTest(unittest.TestCase):
                 patch.object(self.module, "digest", return_value="b" * 64):
             state = self.module.source_state()
         self.assertEqual("b" * 64, state["files"]["tools/kafscale_metadata_test.go"])
+        self.assertEqual("b" * 64, state["files"]["tools/kafscale_proxy_cluster_test.go"])
 
     def test_existing_evidence_unsafe_paths_and_missing_classpath_execute_nothing(self):
         self.output.mkdir()
@@ -419,6 +420,8 @@ class WorkflowAcceptanceTest(unittest.TestCase):
             'java-version: "21"', 'go-version: "1.25.2"', "rustup toolchain install 1.99.1",
             "2809a3a20bf40ed8a2b82cd93215cb59396efb0a", "build_kafscale_proxy.transport_overlay",
             "./cmd/proxy ./pkg/metadata -run '^TestOpenTSx(Proxy|Metadata)'",
+            "go test -run '^TestOpenTSxCluster' -count=1 -v",
+            '"$GITHUB_WORKSPACE/tools/kafscale_proxy_cluster.go" "$GITHUB_WORKSPACE/tools/kafscale_proxy_cluster_test.go"',
             '"$RUNNER_TEMP/kafscale-cluster" --listen 127.0.0.1:39092',
             "mvn -B -ntp -pl opentsx-wayang -am -DskipTests install", "bin/opentsx classpath opentsx-wayang",
             "cargo +1.99.1 build --locked --release --examples --bins", "--target-dir target/rust-b1",

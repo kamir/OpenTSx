@@ -139,6 +139,10 @@ def compiler(tool, arguments):
     executable = os.environ.get(prefix + "_" + target.replace("-", "_"))
     if not executable or not Path(executable).is_absolute() or not Path(executable).is_file():
         raise ValueError("cargo-zigbuild did not supply the target compiler wrapper")
+    if target == "armv7-unknown-linux-musleabihf" and tool in ("cc", "cxx") and arguments == ["--version"]:
+        # Compiler-only mode prevents an AEABI source from entering the version probe.
+        # https://github.com/rust-cross/cargo-zigbuild/blob/v0.23.4/src/zig/mod.rs#L183
+        arguments = ["-c", *arguments]
     if (tool in ("cc", "cxx") and "-shared" in arguments
             and any(argument.startswith("-Wl,--version-script=") for argument in arguments)
             and any(left == "-o" and Path(right).name == "librdkafka.so.1"

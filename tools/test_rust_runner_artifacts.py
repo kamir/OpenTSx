@@ -130,6 +130,22 @@ class ElfArtifactTest(unittest.TestCase):
                     HELPER.compiler("cc", ["--version"])
                 execute.assert_not_called()
 
+    def test_arm_compiler_version_probe_cannot_enter_the_linker_shim_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            wrapper = Path(directory) / "target-compiler"
+            wrapper.write_text("fixture")
+            for tool, prefix in (("cc", "CC"), ("cxx", "CXX")):
+                environment = {"TARGET": "armv7-unknown-linux-musleabihf",
+                               prefix + "_armv7_unknown_linux_musleabihf": str(wrapper)}
+                with self.subTest(tool=tool), patch.dict(HELPER.os.environ, environment, clear=True), \
+                        patch.object(HELPER.os, "execv") as execute:
+                    HELPER.compiler(tool, ["--version"])
+                    execute.assert_called_once_with(str(wrapper), [str(wrapper), "-c", "--version"])
+            environment = {"TARGET": "x86_64-unknown-linux-musl", "CC_x86_64_unknown_linux_musl": str(wrapper)}
+            with patch.dict(HELPER.os.environ, environment, clear=True), patch.object(HELPER.os, "execv") as execute:
+                HELPER.compiler("cc", ["--version"])
+                execute.assert_called_once_with(str(wrapper), [str(wrapper), "--version"])
+
     def test_only_the_unused_librdkafka_shared_target_gets_the_version_script_compatibility_flag(self):
         arguments = ["-shared", "-Wl,-soname,librdkafka.so.1", "-Wl,--version-script=librdkafka.lds",
                      "input file.o", "-o", "librdkafka.so.1"]
