@@ -11,6 +11,7 @@ SOURCE = '''package metadata
 
 import (
 	"context"
+	"fmt"
 	"sync/atomic"
 )
 
@@ -45,6 +46,15 @@ func (s *EtcdStore) refreshSnapshot(ctx context.Context) error {
 	if err != nil { return err }
 	s.metadata.Update(response)
 	return nil
+}
+
+func (s *EtcdStore) UpdateOffsets(ctx context.Context, topic string, partition int32, lastOffset int64) error {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	next := lastOffset + 1
+	_, err := s.client.Put(ctx, offsetKey(topic, partition), strconv.FormatInt(next, 10))
+	s.recordEtcdResult(err)
+	return err
 }
 '''
 

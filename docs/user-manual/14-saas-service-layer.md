@@ -35,6 +35,7 @@
     `feature.lag` and `feature.rolling`; vector sinks support `align.vector`.
     Workbench execution and deployment availability are separate. Use the
     [operator lessons](17-learn-operators.md) and the actual runtime contract when choosing an execution surface.
+    Select **Legacy** in the Workbench header, then open **Smart Topic** for the explicit Wayang deployment targets.
     **Run bounded with Wayang** is an explicit separate action for plausible-range checks, unit conversion and an
     optional trailing resample on one to three complete topics. HTTP workers prepare privately before activation and
     checkpoint acknowledged output. Exact retry reuses the frozen plan and receipts; partial activation can expose

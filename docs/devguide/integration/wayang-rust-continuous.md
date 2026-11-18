@@ -7,7 +7,8 @@ Use disposable local data and retain the same worker and publication state acros
 
 ## Advance complete-topic cuts
 
-Select **Continuous Wayang on Rust** under **Deployment target** and use **Run continuously with Wayang**.
+Select **Legacy** in the Workbench header and open **Smart Topic**. Select **Continuous Wayang on Rust**
+under **Deployment target** and use **Run continuously with Wayang**.
 Administrator permission and flow ownership apply. The supported subset remains Avro decode, plausible-range
 checks, unit conversion and an optional trailing resample. There is no wider Rust catalog or numerical Java fallback.
 

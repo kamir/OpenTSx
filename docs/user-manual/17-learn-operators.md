@@ -26,6 +26,7 @@ For Rust execution, use the [bounded local runner guide](../devguide/integration
 It accepts `dq.checks` with `PLAUSIBLE_RANGE`, `convert.unit` and an optional trailing `resample`.
 The [bounded UI rollout guide](../devguide/integration/wayang-rust-compose.md) connects one actual workbench DAG
 to the backend PostgreSQL journal, standalone coordinator, custom Wayang Rust platform and three HTTP workers.
+Select **Legacy** in the Workbench header, then open **Smart Topic** to choose the explicit Wayang deployment target.
 The three UI lessons retain their browser workloads and link the separate Rust vector, state and rollout tests.
 The [continuous guide](../devguide/integration/wayang-rust-continuous.md) adds live-input, predecessor/cursor,
 retained-window and restart cases. Increment manifests reserve cumulative series ownership, including unselected

@@ -92,6 +92,9 @@ try {
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await page.waitForURL('**/dashboard');
   await page.goto(`${options['--base']}/workbench${initial ? `?flow=${initial.flowId}` : ''}`);
+  const legacyMode = page.getByRole('button', { name: 'Legacy', exact: true });
+  await legacyMode.click();
+  if (await legacyMode.getAttribute('aria-pressed') !== 'true') throw new Error('The legacy Workbench mode was not selected.');
   if (phase === 'initial') {
     await page.getByRole('button', { name: 'Load sample bucket', exact: true }).first().click();
     await page.getByRole('tab', { name: 'Filter and conversion', exact: true }).click();

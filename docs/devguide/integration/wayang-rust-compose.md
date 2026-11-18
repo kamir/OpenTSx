@@ -8,7 +8,8 @@ containers without building container images.
 
 ## Preserve the DAG and whole-topic placement
 
-Open **Smart Topic** and select **Bounded Wayang on Rust**. **Run bounded with Wayang** submits the exact
+Select **Legacy** in the Workbench header, open **Smart Topic** and select **Bounded Wayang on Rust**.
+**Run bounded with Wayang** submits the exact
 `opentsx.dag.v2` text to the authenticated backend. PostgreSQL stores the original text, `specHash`, accepted
 clock, physical plan and `planHash`. A standalone coordinator reconciles persisted work under a PostgreSQL
 advisory lock. The Java driver owns the separate private publication ledger that enforces output authority.

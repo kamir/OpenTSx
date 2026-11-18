@@ -35,6 +35,11 @@ requested metadata, so Proxy responses do not wait for an independent watcher to
 A failed durable read returns its error instead of cached success. The source checkout remains unchanged;
 multi-broker metadata coordination is outside this patch.
 
+Committed partition offsets advance monotonically through conditional etcd transactions.
+An older flush callback cannot replace a newer offset. Concurrent revision changes trigger
+another read and comparison. Invalid last offsets, corrupt stored offsets and storage errors
+fail the update. The builder runs these regressions through an in-memory KV client without sockets.
+
 The [Proxy protocol overlay](../tools/kafscale_proxy_protocol_overlay.py) preserves one frame-length prefix when
 re-encoding Produce and Fetch requests and initializes synthetic error responses with their protocol defaults.
 Disjoint partition groups keep a healthy backend eligible for later groups in the same request.

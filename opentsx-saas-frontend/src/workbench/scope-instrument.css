@@ -1,0 +1,96 @@
+.wb .wb-scope.wb-scope-instrument {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.wb-scope-instrument > .wb-screen {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.wb-scope-instrument > .wb-knobs {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.wb-scope-instrument .wb-episode-rail {
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+  padding: 9px 12px;
+  color: #dce7ef;
+  background: #101820;
+  border-top: 1px solid #354653;
+  font-size: 12px;
+}
+
+.wb-scope-instrument .wb-episode-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 7px;
+}
+
+.wb-scope-instrument .wb-episode-heading span,
+.wb-scope-instrument .wb-episode-rail p {
+  color: #afc1ce;
+  margin: 0;
+}
+
+.wb-scope-instrument .wb-episode-items {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 3px;
+}
+
+.wb-scope-instrument .wb-episode-item {
+  display: contents;
+}
+
+.wb .wb-scope-instrument .wb-episode-item button,
+.wb-scope-instrument .wb-episode-gap {
+  display: grid;
+  gap: 4px;
+  flex: 0 0 auto;
+  min-width: 148px;
+  max-width: 260px;
+  padding: 8px 10px;
+  text-align: left;
+  color: #dce7ef;
+  background: #152731;
+  border: 1px solid #4c8292;
+  border-radius: 4px;
+}
+
+.wb-scope-instrument .wb-episode-item strong {
+  max-width: 235px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wb-scope-instrument .wb-episode-item small,
+.wb-scope-instrument .wb-episode-item span {
+  font-size: 11px;
+  color: #bed0dc;
+}
+
+.wb-scope-instrument .wb-episode-gap {
+  color: #f0cb79;
+  background: #30291b;
+  border-style: dashed;
+  border-color: #b69349;
+}
+
+@media (max-width: 850px) {
+  .wb .wb-scope.wb-scope-instrument {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(280px, 1fr) auto auto;
+  }
+
+  .wb .wb-scope.wb-scope-instrument > .wb-knobs {
+    grid-column: 1;
+    grid-row: 3;
+  }
+}

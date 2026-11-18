@@ -8,6 +8,51 @@ processor requires the account backend, an administrator and retrieval access.
 For local statistical Smart Topics, use the separate
 [CP review and deployment workflow](model-smart-topics.md).
 
+## Choose a working mode
+
+Open `/workbench` and choose **Signal Engineer**, **Data Worker** or **Legacy**
+in the persistent header. **Workspace layout** selects the modern layout.
+
+| Mode | Layout | Working surface |
+| :--- | :--- | :--- |
+| Signal Engineer | Instrument Console | Traces, trigger and cursors |
+| Signal Engineer | Diagnostic Bench | Time, FFT amplitude and ACF |
+| Data Worker | Pipeline Studio | DAG and node previews |
+| Data Worker | Recipe Notebook | Capture, prepare, fit, review |
+
+Signal Engineer is the initial mode. Each modern mode remembers its layout in
+the browser. Switching presentation preserves the loaded data, graph, node
+selection, staged operator parameters, scope controls and modelling editor.
+Switching does not fit, publish, register or deploy. Preference storage errors
+appear explicitly; they do not replace working data.
+
+Choose **Legacy** for the classic operation panels, sample CSV/chart export
+and original properties/code views. `/workbench?mode=legacy` opens that
+presentation directly, overriding the saved display choice. The modern modes
+use the same operators and retained workflow. **Smart Topics** opens the
+existing deployment controls separately from finite analysis.
+
+In modern modes, search **Find an operator**, choose an operator, configure its
+inspector and select **Add operator**. Existing nodes use **Apply parameters**
+to commit staged changes. Runtime availability and detailed method notes are
+expandable. Unsupported continuous operations remain labelled unavailable.
+
+**Load thermal demo** supplies deterministic synthetic episodes with separate
+temperature and heater units and an explicit missing-temperature interval.
+It is a local fixture, not a Kafka capture. Use **Load episodes**, a file or
+the inventory to inspect other data.
+
+For **Diagnostic Bench**, select a series and a clean episode, then choose
+**Run diagnostics**. The existing FFT and ACF operators run on at most 2048
+regular finite samples. Missing, flagged and irregular samples are rejected.
+Unknown quality requires explicit acknowledgement. Diagnostics do not modify
+the processing graph or start a processor.
+
+**Pipeline Studio** previews at most 100 actual samples with coordinates,
+units and quality. It preserves heterogeneous clocks rather than inventing
+alignment. **Recipe Notebook** displays the actual graph recipe and opens the
+shared modelling and snapshot views. It is not a Python execution environment.
+
 ## Inspect episodes and quality
 
 Open `/workbench`, load episode JSON or select data in the TS inventory, and
