@@ -128,4 +128,26 @@ class FederationEvaluationTest {
         assertEquals(6, FederationEvaluation.orders(3).size());
         assertEquals(2, FederationEvaluation.orders(10).size());
     }
+
+    @Test void conformanceFailureRetainsActualStatusContextAndCauseWithoutRetry() {
+        for (int status : new int[]{401, 503}) {
+            java.util.concurrent.atomic.AtomicInteger attempts = new java.util.concurrent.atomic.AtomicInteger();
+            var cause = new org.opentsx.wayang.site.TsxPlanService.HttpFailure(status, "plan service refused request");
+            IllegalStateException failure = assertThrows(IllegalStateException.class, () ->
+                    FederationFixture.submitConformance("s5", "job-state", () -> {
+                        attempts.incrementAndGet();
+                        throw cause;
+                    }));
+            assertEquals("conformance request failed: site=s5, route=job-state, HTTP=" + status, failure.getMessage());
+            assertSame(cause, failure.getCause());
+            assertEquals(1, attempts.get());
+        }
+        var accepted = new com.fasterxml.jackson.databind.ObjectMapper().createObjectNode().put("result", "accepted");
+        java.util.concurrent.atomic.AtomicInteger attempts = new java.util.concurrent.atomic.AtomicInteger();
+        assertSame(accepted, FederationFixture.submitConformance("s1", "signal-cluster", () -> {
+            attempts.incrementAndGet();
+            return accepted;
+        }));
+        assertEquals(1, attempts.get());
+    }
 }

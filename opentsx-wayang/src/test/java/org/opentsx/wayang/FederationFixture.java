@@ -156,6 +156,13 @@ final class FederationFixture implements AutoCloseable {
     FederatedWindparkData data() { return data; }
     String specHash() { return ExecutionAssignments.sha256(dagText); }
 
+    static JsonNode submitConformance(String site, String route, java.util.function.Supplier<JsonNode> request) {
+        try { return request.get(); }
+        catch (TsxPlanService.HttpFailure error) {
+            throw new IllegalStateException("conformance request failed: site=" + site + ", route=" + route + ", HTTP=" + error.status(), error);
+        }
+    }
+
     private ObjectNode dag() {
         ObjectNode dag = JSON.createObjectNode().put("schema", "opentsx.dag.v2").put("dag", "w3-stats");
         dag.putObject("source").putArray("topics").add(layout.episodes());
@@ -455,7 +462,10 @@ final class FederationFixture implements AutoCloseable {
             var runtime = new ConformanceHandshake.QualifiedRuntime(site, "node-" + site, version, digest, ABI);
             JsonNode report = SiteConformanceChecks.report(challenge, brokers.bootstrap(site), bindings, ROOT, state.resolve("conformance-" + site), runtime, clock);
             reports.add(report.deepCopy());
-            return clients.get(site).conformance(SignedJws.sign(JSON.writeValueAsBytes(report), siteKeys.get(site).getPrivate()));
+            String signed = SignedJws.sign(JSON.writeValueAsBytes(report), siteKeys.get(site).getPrivate());
+            System.out.println("Conformance request: site=" + site + ", route=" + route
+                    + ", usable_bytes=" + Files.getFileStore(state).getUsableSpace());
+            return submitConformance(site, route, () -> clients.get(site).conformance(signed));
         }
 
         JsonNode poll(String site, Function<RunnerPlan, JsonNode> execution) {
