@@ -32,24 +32,45 @@ bin/opentsx stats --kafscale localhost:9092 --domain wind --checkpoint stats.ckp
 * Input positions and the full engine state are written to the checkpoint file after the outputs are acknowledged.
   After a crash the processor resumes from the checkpoint and is at-least-once.
 * `--once true` processes the backlog, closes all windows, prints the `RunResult` with the counts `records`,
-  `undecodable`, `lostToRetention` and `statsWritten`, and exits.
+  `undecodable`, `invalid`, `lostToRetention` and `statsWritten`, and exits.
 * Because KafScale has no compaction, `SeriesStatsLog.readLatest(...)` reads the whole topic. It keeps one record per
   series, window type and window start: the one with the most values, the later one on a tie.
-* A record that does not decode is counted in `undecodable` and skipped. When the engine fails on a record, the
-  processor stops without writing the checkpoint, so a restart reads that record again. The message names the record:
+* A record that does not decode is counted in `undecodable` and skipped. The first one of each partition is printed
+  on stderr with the message of the decoder. Later ones on that partition are only counted:
+
+  ```text
+  <topic>-<partition> offset <offset>: undecodable record (<reason>); skipped and counted in undecodable, later undecodable records of this partition are only counted
+  ```
+
+* An episode that decodes but fails `Episodes.validate` is counted in `invalid` and skipped, and the checkpoint
+  position moves past it. Examples are a count that differs from the number of values, a `seriesId` that does not
+  match the metric and tags of its key, a REGULAR episode without a positive `intervalMicros`, and an IRREGULAR_DELTA
+  episode without `timeDeltas` or with timestamps that do not increase. The first invalid episode of each partition
+  is printed on stderr. Later ones on that partition are only counted:
+
+  ```text
+  <topic>-<partition> offset <offset>: invalid episode (<reason>); skipped and counted in invalid, later invalid episodes of this partition are only counted
+  ```
+
+* When the engine fails on a record, the processor stops without writing the checkpoint, so a restart reads that
+  record again. The message names the record:
   `<topic>-<partition> offset <offset>: the statistics engine failed on this record; the checkpoint stays before it`.
-  A record that decodes but is not a consistent episode, for example a count that differs from the number of values,
-  is such an engine failure. There is no option to skip a record: the processor stops at it after every restart until
-  retention deletes it.
-* When retention deleted records after the position in the checkpoint, the processor reads on from the log start,
-  counts the deleted records in `lostToRetention` and prints one line per partition on stderr:
+* When retention deleted records before they were read, the processor reads on from the log start, counts the deleted
+  records in `lostToRetention` and prints one line on stderr. This happens when a run starts with a checkpoint
+  position below the log start, and when a poll returns an offset above the position of its partition:
 
   ```text
   <topic>-<partition>: retention deleted <n> records before they were read (position <saved>, log start <start>); reading on from the log start
   ```
 
-  Without a position in the checkpoint, a log start above 0 is not counted. A gap that opens while the processor runs
-  is not counted.
+  Without a position in the checkpoint, a log start above 0 is not counted.
+* A checkpoint file that cannot be read stops the processor with
+  `java.io.UncheckedIOException: cannot read checkpoint <file>`. The cause follows: `java.io.EOFException` for an
+  empty or cut-off file, `checkpoint belongs to domain <d>, not <domain>` for the file of another domain. Pass the
+  checkpoint of the domain, or move a damaged file away: without a file the processor reads the topics from the log
+  start again.
+* When the checkpoint cannot be written, for example because its directory does not exist, the processor stops with
+  `java.io.UncheckedIOException: cannot write checkpoint <file>`. The last checkpoint written stays as it was.
 
 The same statistics run as a Flink job, `StatsJob` in `opentsx-flink-core`. It reads the same topics and writes the
 same records:
@@ -65,9 +86,17 @@ bin/opentsx stats-flink --kafscale localhost:9092 --domain wind \
 * One `StatsEngine` per series lives in Flink keyed state. Input positions are in Flink checkpoints, not in a file.
   The source commits no offsets, because KafScale rejects commits without group membership. The output is at least
   once, as with the processor.
-* An input that does not decode is counted in the Flink metric `undecodable` and dropped. When the engine fails on
-  an input, the task fails and restarts from the last checkpoint. An input that decodes but is not a consistent
-  episode fails the task again after every restart.
+* An input that does not decode is counted in the Flink metric `undecodable` and dropped. An episode that decodes
+  but fails `Episodes.validate` is counted in the Flink metric `invalid` and dropped. Each subtask prints the first
+  input of each kind and partition on stderr and only counts the later ones. A record without a value gives the
+  reason `no value`:
+
+  ```text
+  <topic>-<partition> offset <offset>: undecodable record (<reason>); skipped and counted in undecodable, this subtask only counts later undecodable records of this partition
+  <topic>-<partition> offset <offset>: invalid episode (<reason>); skipped and counted in invalid, this subtask only counts later invalid episodes of this partition
+  ```
+
+  When the engine fails on an input, the task fails and restarts from the last checkpoint.
 * The job rejects `--checkpoint`. It prints this message and the usage line and exits with code 2:
 
   ```text

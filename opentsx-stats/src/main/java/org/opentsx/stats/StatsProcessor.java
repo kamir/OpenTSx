@@ -8,6 +8,7 @@ import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.opentsx.kafka.Patience;
 import org.opentsx.kafka.TopicLayout;
+import org.opentsx.model.Episodes;
 import org.opentsx.model.Micros;
 import org.opentsx.model.OpenTsxAvro;
 import org.opentsx.model.v2.Episode;
@@ -27,8 +28,10 @@ import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -44,15 +47,17 @@ import java.util.function.BooleanSupplier;
  * emit some statistics again (at-least-once); a re-emitted record is identical or newer, and readers keep the latest
  * record per (seriesId, windowType, windowStart), see {@link SeriesStatsLog}.
  *
- * <p>A record that does not decode is counted in {@code undecodable} and skipped. A failure of the engine stops the
- * processor, and the checkpoint stays before that record. Records that retention deleted after the checkpoint position
- * are counted in {@code lostToRetention} and reported on stderr when a run starts; a gap that opens during a run is not
- * counted.
+ * <p>A record that does not decode is counted in {@code undecodable} and skipped. An episode that decodes but fails
+ * {@link Episodes#validate} is counted in {@code invalid} and skipped. The first record of each kind per partition is
+ * reported on stderr. A failure of the engine stops the processor, and the checkpoint stays before that record.
+ * Records that retention deleted before they were read, after the checkpoint position or during a run, are counted in
+ * {@code lostToRetention} and reported on stderr.
  */
 public final class StatsProcessor {
 
     /** Outcome of a bounded run. */
-    public record RunResult(long records, long undecodable, long lostToRetention, long statsWritten, StatsEngine.Metrics metrics) {
+    public record RunResult(long records, long undecodable, long invalid, long lostToRetention, long statsWritten,
+                            StatsEngine.Metrics metrics) {
     }
 
     private static final String MAGIC = "TSXSTATS1";
@@ -66,7 +71,10 @@ public final class StatsProcessor {
     private final OpenTsxAvro avro = new OpenTsxAvro();
     private final Map<TopicPartition, Long> positions = new HashMap<>();
     private final List<Future<?>> pending = new ArrayList<>();
+    private final Set<TopicPartition> undecodableReported = new HashSet<>();
+    private final Set<TopicPartition> invalidReported = new HashSet<>();
     private long undecodable;
+    private long invalid;
     private long lostToRetention;
     private long statsWritten;
     /** KafScale refuses reads for about a minute at a time; the processor waits instead of ending. */
@@ -119,6 +127,11 @@ public final class StatsProcessor {
                 for (ConsumerRecord<byte[], byte[]> r : patience.poll(consumer, Duration.ofMillis(500))) {
                     TopicPartition tp = new TopicPartition(r.topic(), r.partition());
                     if (r.offset() >= end.get(tp)) {
+                        long position = positions.get(tp);
+                        if (position < end.get(tp)) {
+                            lost(tp, position, r.offset());
+                            positions.put(tp, r.offset());
+                        }
                         continue;
                     }
                     handle(r);
@@ -130,7 +143,7 @@ public final class StatsProcessor {
         } finally {
             consumer.assign(List.of());
         }
-        return new RunResult(records, undecodable, lostToRetention, statsWritten, engine.metrics());
+        return new RunResult(records, undecodable, invalid, lostToRetention, statsWritten, engine.metrics());
     }
 
     /** Continuous mode: emits GLOBAL and checkpoints every {@code checkpointEvery} until {@code stop} is true. */
@@ -169,9 +182,7 @@ public final class StatsProcessor {
             long from = begin.get(tp);
             Long saved = positions.get(tp);
             if (saved != null && saved < from) {
-                lostToRetention += from - saved;
-                System.err.println(tp + ": retention deleted " + (from - saved) + " records before they were read (position "
-                        + saved + ", log start " + from + "); reading on from the log start");
+                lost(tp, saved, from);
             } else if (saved != null) {
                 from = saved;
             }
@@ -181,7 +192,18 @@ public final class StatsProcessor {
         return tps;
     }
 
+    private void lost(TopicPartition tp, long position, long logStart) {
+        lostToRetention += logStart - position;
+        System.err.println(tp + ": retention deleted " + (logStart - position) + " records before they were read (position "
+                + position + ", log start " + logStart + "); reading on from the log start");
+    }
+
     private void handle(ConsumerRecord<byte[], byte[]> r) {
+        TopicPartition tp = new TopicPartition(r.topic(), r.partition());
+        long position = positions.get(tp);
+        if (r.offset() > position) {
+            lost(tp, position, r.offset());
+        }
         boolean isEpisode = r.topic().equals(layout.episodes());
         Episode episode = null;
         Observation observation = null;
@@ -193,18 +215,40 @@ public final class StatsProcessor {
             }
         } catch (RuntimeException e) {
             undecodable++;
-            positions.put(new TopicPartition(r.topic(), r.partition()), r.offset() + 1);
+            if (undecodableReported.add(tp)) {
+                System.err.println(tp + " offset " + r.offset() + ": undecodable record (" + e.getMessage() + "); skipped"
+                        + " and counted in undecodable, later undecodable records of this partition are only counted");
+            }
+            positions.put(tp, r.offset() + 1);
             return;
         }
         List<SeriesStats> closed;
         try {
+            if (isEpisode && !consistent(tp, r.offset(), episode)) {
+                positions.put(tp, r.offset() + 1);
+                return;
+            }
             closed = isEpisode ? engine.onEpisode(episode) : engine.onObservation(observation);
         } catch (RuntimeException e) {
-            throw new IllegalStateException(r.topic() + "-" + r.partition() + " offset " + r.offset()
+            throw new IllegalStateException(tp + " offset " + r.offset()
                     + ": the statistics engine failed on this record; the checkpoint stays before it", e);
         }
-        positions.put(new TopicPartition(r.topic(), r.partition()), r.offset() + 1);
+        positions.put(tp, r.offset() + 1);
         send(closed);
+    }
+
+    private boolean consistent(TopicPartition tp, long offset, Episode episode) {
+        try {
+            Episodes.validate(episode);
+            return true;
+        } catch (IllegalArgumentException e) {
+            invalid++;
+            if (invalidReported.add(tp)) {
+                System.err.println(tp + " offset " + offset + ": invalid episode (" + e.getMessage()
+                        + "); skipped and counted in invalid, later invalid episodes of this partition are only counted");
+            }
+            return false;
+        }
     }
 
     private void send(List<SeriesStats> stats) {
@@ -252,7 +296,7 @@ public final class StatsProcessor {
             }
             Files.move(tmp, checkpoint, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw new UncheckedIOException("cannot write checkpoint " + checkpoint, e);
         }
     }
 
@@ -271,7 +315,7 @@ public final class StatsProcessor {
             }
             engine.readState(in);
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw new UncheckedIOException("cannot read checkpoint " + checkpoint, e);
         }
     }
 }

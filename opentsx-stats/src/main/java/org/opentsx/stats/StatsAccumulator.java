@@ -188,11 +188,6 @@ public final class StatsAccumulator {
         return a;
     }
 
-    /** Empty accumulator with a sketch of the same accuracy (or none). */
-    public StatsAccumulator emptyLike() {
-        return new StatsAccumulator(sketch == null ? null : new QuantileSketch(sketch.alpha()));
-    }
-
     /** Writes the full state (for processor checkpoints). */
     public void writeTo(DataOutputStream out) throws IOException {
         out.writeLong(validCount);

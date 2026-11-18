@@ -49,15 +49,21 @@ The processor works within KafScale's limits: manual partition assignment, no co
 * **Checkpoint:** input positions and the complete engine state (open windows, sketches, dedup ids) go into a local
   checkpoint file. The file is written atomically, after the producer has acknowledged all outputs.
 * **Restart:** the processor resumes at the checkpoint and is at-least-once for outputs.
-* **Bad records:** a record that does not decode is counted in `undecodable` and skipped. A failure of the engine
-  stops the processor, and the checkpoint stays before that record. A record that decodes but is not a consistent
-  episode, for example a count that differs from the number of values, is such an engine failure. There is no option
-  to skip a record: the processor stops at it after every restart until retention deletes it.
-* **Retention:** records that retention deleted after the checkpoint position are counted in `lostToRetention`, with
-  one line per partition on stderr. A gap that opens while the processor runs is not counted.
+* **Bad records:** a record that does not decode is counted in `undecodable` and skipped. An episode that decodes
+  but fails `Episodes.validate` is counted in `invalid` and skipped, for example a count that differs from the number
+  of values, a `seriesId` that does not match its key, a REGULAR episode without a positive `intervalMicros`, or an
+  IRREGULAR_DELTA episode without `timeDeltas` or with timestamps that do not increase. The first undecodable record
+  and the first invalid episode per partition are printed on stderr with topic, partition, offset and reason. A
+  failure of the engine stops the processor, and the checkpoint stays before that record.
+* **Retention:** records that retention deleted before they were read are counted in `lostToRetention`, with one line
+  on stderr. The processor counts them when a run starts below the log start and when a poll skips offsets of a
+  partition.
+* **Checkpoint errors:** an unreadable checkpoint stops the processor with `cannot read checkpoint <file>`, a failed
+  write with `cannot write checkpoint <file>`.
 * **Reading the output:** `SeriesStatsLog.readLatest` reads the topic and keeps the latest record per
   `(seriesId, windowType, windowStart)`, because the topic has no compaction.
-* **`--once true`:** processes the backlog, closes all windows and exits. This is for experiments.
+* **`--once true`:** processes the backlog, closes all windows, prints the `RunResult` with the counts `records`,
+  `undecodable`, `invalid`, `lostToRetention` and `statsWritten`, and exits. This is for experiments.
 
 ## Data quality
 
@@ -91,8 +97,13 @@ with quantile columns.
 * Sketch: accuracy, exact merge, canonical bytes, collapsing, and the test vector.
 * Engine: windows equal episode summaries, gaps, duplicates, late values, observations, a window without values,
   refused settings, and checkpoint restore with output identical to an uninterrupted run.
-* Data quality against simulator ground truth.
+* Data quality against simulator ground truth, and FRESHNESS with a given clock.
 * Processor:
   * With `MockConsumer`: checkpoint and resume, every value counted exactly once; an engine failure stops the run
-    without a checkpoint; undecodable records are skipped; records lost to retention are counted and reported.
+    without a checkpoint; undecodable records are counted, reported once per partition and skipped; invalid
+    episodes, among them a REGULAR episode with an `intervalMicros` of 0 or none, are counted, reported once per
+    partition and skipped, also after a restart from the checkpoint; records lost to retention before a run and
+    during a run are counted and reported; a `--once` run ends when retention deletes past the end offset it saw at
+    the start and the next record it reads on that partition lies at or past that offset; checkpoint errors name the
+    file.
   * Against KafScale v1.6.0, when `KAFSCALE_BOOTSTRAP` is set; CI runs this.

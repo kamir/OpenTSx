@@ -151,8 +151,9 @@ None of the OpenTSx processes (stats, retrieval, Jobs, pollers) has a `/metrics`
 
 * consumer lag per partition of the statistics processor (end offset − position), and the checkpoint age as a metric;
 * counters: episodes read, statistics written, **undecodable records** (the processor skips records it cannot decode,
-  e.g. written with a newer schema, and only counts them internally), records lost to retention (`lostToRetention`
-  of the statistics processor, also printed on stderr per partition), DQ rule violations;
+  e.g. written with a newer schema, counts them and prints the first one per partition on stderr), **invalid episodes** (`invalid` of the
+  statistics processor; the first one per partition is printed on stderr), records lost to retention
+  (`lostToRetention` of the statistics processor, also printed on stderr), DQ rule violations;
 * retrieval request latency and error rate;
 * Modbus poller: cycle duration, timeouts, exception responses, counter wraps/resets (today only in the log line
   `window done: …`);

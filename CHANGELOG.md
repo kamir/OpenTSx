@@ -137,6 +137,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `StorageCostTest` asserts each published storage figure (raw 8.40, 8.36 and 10.32 B/value, zstd 2.18, 6.96 and 4.07
   B/value) to two decimals and pins the episode ids and creation times it measures, so the figures do not depend on
   the clock. An encoding change that moves a figure in the README, the user manual or the sizing plan fails the build.
+- `StatsProcessor.RunResult` has the new count `invalid`, and `bin/opentsx stats --once true` prints it. The
+  checkpoint position moves past an invalid episode, so a restart does not count it again.
+- The statistics processor, the Flink job `StatsJob` and `EpisodeIndexer.rebuild` print the first record of each
+  partition that does not decode on stderr with topic, partition, offset and the decoder message; later ones on that
+  partition are only counted.
 
 ### Removed
 
@@ -155,6 +160,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `BucketWriter.payloadBytes()`, `BucketWriter.valueCount()`, `TopicLayout.provisionSmartVectors` and
   `EpisodeIndex.addAll`, which had no callers. Use `provisionTopic(admin, layout.smartVectors(name),
   replicationFactor)` for a vector topic.
+- `StatsAccumulator.emptyLike` and `QuantileSketch.copy`, which had no callers.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -309,6 +315,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `FileEpisodeIndex` errors name the file, and a malformed line also names its line number, for example `<file>:2:
   malformed index line "..."; expected 8 tab-separated fields, see the header line`. A non-numeric field is reported
   the same way and no longer as a bare `NumberFormatException`.
+- The statistics processor (`bin/opentsx stats`) checks every decoded episode with `Episodes.validate`. An episode
+  whose count differs from its values or whose `seriesId` does not match its key no longer produces statistics. It is
+  counted in `invalid` and skipped, and the first one per partition is printed on stderr with topic, partition, offset
+  and reason.
+- Records that retention deletes while the statistics processor runs are counted in `lostToRetention` and reported
+  with the same stderr line as at the start of a run.
+- An unreadable or unwritable statistics checkpoint fails with `cannot read checkpoint <file>` or `cannot write
+  checkpoint <file>`, with the I/O error as cause, instead of a bare `java.io.EOFException`.
+- A `--once` run of the statistics processor ends when retention deleted records up to and past the end offset it saw
+  at the start and the next record it reads on that partition lies at or past that offset. It counts the deleted
+  records in `lostToRetention` instead of waiting until its deadline and failing with `timed out computing
+  statistics`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

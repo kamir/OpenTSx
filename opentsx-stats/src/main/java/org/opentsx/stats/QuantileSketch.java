@@ -110,12 +110,6 @@ public final class QuantileSketch {
         count += other.count;
     }
 
-    public QuantileSketch copy() {
-        QuantileSketch c = new QuantileSketch(alpha, maxBins);
-        c.merge(this);
-        return c;
-    }
-
     /** Quantile {@code q} in [0, 1] (lower quantile, as DDSketch); NaN for an empty sketch. */
     public double quantile(double q) {
         if (q < 0 || q > 1 || Double.isNaN(q)) {
