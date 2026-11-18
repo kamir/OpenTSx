@@ -8,6 +8,7 @@ import subprocess
 import sys
 
 from kafscale_metadata_overlay import metadata_overlay
+from kafscale_proxy_protocol_overlay import protocol_overlay
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,7 +27,9 @@ def identity():
     return {"sourceCommit": SOURCE_COMMIT, "sourceVersion": "v1.6.0", "compilerImage": COMPILER_IMAGE,
             "launcherSha256": digest(ROOT / "tools/kafscale_proxy_cluster.go"),
             "builderSha256": digest(Path(__file__).resolve()),
-            "metadataOverlaySha256": digest(ROOT / "tools/kafscale_metadata_overlay.py")}
+            "metadataOverlaySha256": digest(ROOT / "tools/kafscale_metadata_overlay.py"),
+            "protocolOverlaySha256": digest(ROOT / "tools/kafscale_proxy_protocol_overlay.py"),
+            "protocolTestsSha256": digest(ROOT / "tools/kafscale_proxy_protocol_test.go")}
 
 
 def broker_overlay(source, output, source_root=None, output_root=None):
@@ -49,6 +52,7 @@ def transport_overlay(source, output, source_root=None, output_root=None):
     overlay = broker_overlay(source, output, source_root, output_root)
     value = json.loads(overlay.read_text())
     value["Replace"].update(metadata_overlay(source, output, source_root, output_root))
+    value["Replace"].update(protocol_overlay(source, output, source_root, output_root))
     overlay.write_text(json.dumps(value) + "\n")
     return overlay
 
@@ -93,7 +97,8 @@ def build():
                "--mount", f"type=bind,src={cache},dst=/cache",
                "--workdir", "/source", "--env", "CGO_ENABLED=0", "--env", "GOMAXPROCS=2", "--env", "GOTOOLCHAIN=local",
                "--env", "GOPATH=/cache/modules", "--env", "GOCACHE=/cache/build", COMPILER_IMAGE,
-               "sh", "-ec", "go build -overlay=/artifacts/broker-overlay.json -trimpath -buildvcs=false -ldflags=-buildid= -o /artifacts/kafscale-broker ./cmd/broker; "
+               "sh", "-ec", "go test -overlay=/artifacts/broker-overlay.json -run '^TestOpenTSxProxy' -count=1 -v ./cmd/proxy; "
+               "go build -overlay=/artifacts/broker-overlay.json -trimpath -buildvcs=false -ldflags=-buildid= -o /artifacts/kafscale-broker ./cmd/broker; "
                "go build -overlay=/artifacts/broker-overlay.json -trimpath -buildvcs=false -ldflags=-buildid= -o /artifacts/kafscale-proxy ./cmd/proxy; "
                "go build -overlay=/artifacts/broker-overlay.json -trimpath -buildvcs=false -ldflags=-buildid= -o /artifacts/kafscale-cluster /cluster.go"]
     subprocess.run(command, check=True)

@@ -245,6 +245,7 @@ class FederationMeasurementTest(unittest.TestCase):
                 patch.object(self.measurement.LATENCY, "freeze_classpath", return_value=("/synthetic.jar", [])), \
                 patch.object(self.measurement.LATENCY, "power_assertion", return_value=contextlib.nullcontext(None)), \
                 patch.object(self.measurement.LATENCY.build_kafscale_proxy, "metadata_overlay", return_value={}), \
+                patch.object(self.measurement.LATENCY.build_kafscale_proxy, "protocol_overlay", return_value={}), \
                 patch.object(self.measurement.platform, "system", return_value="Darwin"):
             with self.assertRaisesRegex(RuntimeError, "source changed"):
                 self.measurement.main()

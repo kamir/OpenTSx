@@ -32,6 +32,11 @@ v1.6.0 source. One mutex covers metadata snapshot mutations and complete watcher
 stale refresh from discarding acknowledged topic creation in these single-broker fixtures. The manifest includes
 the overlay hash. The source checkout remains unchanged; multi-broker metadata coordination is outside this patch.
 
+The [Proxy protocol overlay](../tools/kafscale_proxy_protocol_overlay.py) preserves one frame-length prefix when
+re-encoding Produce and Fetch requests and initializes synthetic error responses with their protocol defaults.
+The builder executes three Go regression groups against the actual overlaid Proxy package before compiling it.
+The manifest includes the protocol overlay and wire-test hashes.
+
 ## Start the local Proxy
 
 Export nonempty `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` from your private
