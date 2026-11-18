@@ -289,7 +289,8 @@ deploy/k3s/71-restore.sh DIR --only stats-state --yes
     policyTypes: [Ingress]
   ```
 * **APIs without authentication:** the retrieval server has none; keep its Service cluster-internal or put an
-  authenticating proxy in front (`INGRESS=true` exposes it). The KafScale Proxy in this setup has no client authentication either.
+  authenticating proxy in front (`INGRESS=true` exposes it). The KafScale Proxy in this setup has no client
+  authentication either.
 * **Modbus:** Modbus TCP has no authentication or encryption. Put converter and poller on an isolated network
   segment. The OpenTSx client implements only the read function codes (0x01–0x04), so it cannot write to a meter.
 * **Supply chain:** base images are pinned by tag (`eclipse-temurin:21.0.8_9-jre-noble`,
