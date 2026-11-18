@@ -1,0 +1,10 @@
+route,site,topic,produce_frame_bytes,produce_records,produce_errors,http_body_bytes,http_records,tls_client_bytes,elapsed_ms
+centralized,s1,tsx.wind.episodes.v2,861785,1080,0,,,,85.240833
+centralized,s2,tsx.wind.episodes.v2,894222,1080,0,,,,85.240833
+centralized,s3,tsx.wind.episodes.v2,1124086,1440,0,,,,85.240833
+signal-cluster,s1,tsx.wind.aggregates.v2,63740,420,0,,,,35163.535375
+signal-cluster,s2,tsx.wind.aggregates.v2,62812,420,0,,,,35163.535375
+signal-cluster,s3,tsx.wind.aggregates.v2,63183,420,0,,,,35163.535375
+job-state,s1,tsx.wind.aggregates.v2,,,,593988,420,598977,31898.662167
+job-state,s2,tsx.wind.aggregates.v2,,,,592804,420,597717,31898.662167
+job-state,s3,tsx.wind.aggregates.v2,,,,592700,420,597613,31898.662167

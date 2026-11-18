@@ -2,6 +2,7 @@ package org.opentsx.wayang;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.io.CleanupMode;
 import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.wayang.federation.AggregateRecord;
 
@@ -13,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @EnabledIfEnvironmentVariable(named = "KAFSCALE_BOOTSTRAP", matches = ".+")
 class CompletenessIntegrationTest {
-    @TempDir Path directory;
+    @TempDir(factory = FederationLogDirectory.class, cleanup = CleanupMode.ON_SUCCESS) Path directory;
 
     @Test void stoppedSiteLeavesImmutableIncompleteRecordsThenAppendsFinalRevisionOne() throws Exception {
         try (var fixture = new FederationFixture(directory);

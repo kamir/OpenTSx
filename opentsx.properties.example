@@ -12,9 +12,14 @@ opentsx.retry.attempts=3
 opentsx.log.level=INFO
 
 # --- 2.x tools: ConfigManager (opentsx-core, opentsx-lg, opentsx-connectors) --------------------------------------
-# Defaults live in config/opentsx-default.properties; select another file with OPENTSX_CONFIG_FILE=<path> or
-# OPENTSX_CONFIG_PROFILE=<name> (-> config/opentsx-<name>.properties). JVM system properties and environment
-# variables (literal key or OPENTSX_<KEY>) win over files.
+# Defaults load once from classpath opentsx-default.properties, then working-directory config/opentsx-default.properties.
+# Select a file with opentsx.config.file / OPENTSX_CONFIG_FILE, or a profile with
+# opentsx.config.profile / OPENTSX_CONFIG_PROFILE (config/opentsx-<name>.properties). A selected file wins over a profile.
+# Each canonical selector is resolved before its uppercase alias. Per-key JVM properties, literal environment
+# variables, then mapped environment variables win over files. Mapping uppercases with Locale.ROOT, replaces dots
+# with underscores and adds OPENTSX_ unless already present; it does not depend on the process language.
+# Missing optional defaults are allowed. Unreadable or malformed sources, including any missing selected file or
+# profile, stop initialization. Correct the source and restart; see docs/user-manual/12-operations.md#122-configuration.
 opentsx.demo.output.dir=./data/temp
 opentsx.demo.output.format=csv
 opentsx.number.of.iterations=3

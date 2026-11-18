@@ -12,6 +12,8 @@ import org.apache.kafka.common.requests.RequestHeader;
 import org.apache.kafka.common.requests.ResponseHeader;
 import org.opentsx.model.OpenTsxAvro;
 import org.opentsx.model.v2.Episode;
+import org.opentsx.model.v2.SeriesStats;
+import org.apache.avro.specific.SpecificRecord;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -38,8 +40,11 @@ final class LatencyProtocolObserver implements AutoCloseable {
     record Entry(String topic, int partition, long offset, Episode episode, long requestNanos, long acknowledgedNanos, Instant at,
                  int increment, short error) { }
     record Pending(RequestHeader header, long nanos, Instant at, int increment, ProduceRequest produce) { }
+    record RecordEntry(String topic, int partition, long offset, SpecificRecord record, byte[] payload,
+                       long requestNanos, long acknowledgedNanos, short error) { }
 
     final List<Entry> entries = Collections.synchronizedList(new ArrayList<>());
+    final List<RecordEntry> recordEntries = Collections.synchronizedList(new ArrayList<>());
     final Map<Uuid, String> topics = new ConcurrentHashMap<>();
     final AtomicReference<Throwable> failure = new AtomicReference<>();
     final AtomicLong produceFrameBytes = new AtomicLong();
@@ -55,6 +60,7 @@ final class LatencyProtocolObserver implements AutoCloseable {
     final ServerSocket server;
     final int backend;
     final boolean decodeEpisodes;
+    final Set<String> recordTopics;
     volatile boolean closing;
     volatile int increment = -1;
     volatile String inputTopic;
@@ -65,8 +71,18 @@ final class LatencyProtocolObserver implements AutoCloseable {
     }
 
     LatencyProtocolObserver(int backend, boolean decodeEpisodes) throws IOException {
+        this(backend, decodeEpisodes, null);
+    }
+
+    LatencyProtocolObserver(int backend, Set<String> recordTopics) throws IOException {
+        this(backend, false, Set.copyOf(recordTopics));
+    }
+
+    private LatencyProtocolObserver(int backend, boolean decodeEpisodes, Set<String> recordTopics) throws IOException {
+        if (recordTopics != null && recordTopics.isEmpty()) throw new IllegalArgumentException("record topics must not be empty");
         this.backend = backend;
         this.decodeEpisodes = decodeEpisodes;
+        this.recordTopics = recordTopics;
         server = new ServerSocket(0, 50, InetAddress.getLoopbackAddress());
         threads.submit(() -> {
             while (!closing) {
@@ -117,7 +133,7 @@ final class LatencyProtocolObserver implements AutoCloseable {
                 ByteBuffer buffer = ByteBuffer.wrap(frame);
                 RequestHeader header = RequestHeader.parse(buffer);
                 ProduceRequest produce = header.apiKey() == ApiKeys.PRODUCE ? ProduceRequest.parse(buffer, header.apiVersion()) : null;
-                if (produce != null && !decodeEpisodes) {
+                if (produce != null && !decodeEpisodes && recordTopics == null) {
                     String topic = measurementTopic(produce, produceTopic.get());
                     produceTopic.compareAndSet(null, topic);
                     measurementTopic(produce, produceTopic.get());
@@ -151,7 +167,8 @@ final class LatencyProtocolObserver implements AutoCloseable {
                 if (request.header.apiKey() == ApiKeys.METADATA) {
                     frame = metadata(frame, request.header, server.getLocalPort(), topics);
                 } else if (request.produce != null) {
-                    if (decodeEpisodes) acknowledge(frame, request, System.nanoTime(), entries);
+                    if (recordTopics != null) acknowledgeRecords(frame, request, System.nanoTime(), recordEntries, recordTopics);
+                    else if (decodeEpisodes) acknowledge(frame, request, System.nanoTime(), entries);
                     else produceErrors.addAndGet(acknowledge(frame, request, System.nanoTime(), entries, false));
                 }
                 writeFrame(out, frame);
@@ -229,6 +246,35 @@ final class LatencyProtocolObserver implements AutoCloseable {
             }
         }
         return errors;
+    }
+
+    static void acknowledgeRecords(byte[] frame, Pending request, long acknowledgedNanos,
+                                   List<RecordEntry> entries, Set<String> topics) {
+        ByteBuffer buffer = ByteBuffer.wrap(frame);
+        ResponseHeader.parse(buffer, ApiKeys.PRODUCE.responseHeaderVersion(request.header.apiVersion()));
+        ProduceResponse response = ProduceResponse.parse(buffer, request.header.apiVersion());
+        OpenTsxAvro avro = new OpenTsxAvro();
+        for (var topic : request.produce.data().topicData()) {
+            if (!topics.contains(topic.name())) continue;
+            var result = response.data().responses().stream().filter(t -> t.name().equals(topic.name())).findFirst().orElseThrow();
+            for (var partition : topic.partitionData()) {
+                var ack = result.partitionResponses().stream().filter(p -> p.index() == partition.index()).findFirst().orElseThrow();
+                long index = 0;
+                for (var batch : ((MemoryRecords) partition.records()).batches()) {
+                    for (var value : batch) {
+                        byte[] payload = MessageUtil.byteBufferToArray(value.value());
+                        SpecificRecord decoded = avro.decode(payload);
+                        if (!(decoded instanceof Episode) && !(decoded instanceof SeriesStats)) {
+                            throw new IllegalStateException("evaluation received an unsupported record schema " + decoded.getSchema().getFullName());
+                        }
+                        long offset = ack.errorCode() == 0 ? ack.baseOffset() + index : -1;
+                        entries.add(new RecordEntry(topic.name(), partition.index(), offset, decoded, payload,
+                                request.nanos, acknowledgedNanos, ack.errorCode()));
+                        index++;
+                    }
+                }
+            }
+        }
     }
 
     static byte[] readFrame(DataInputStream in) throws IOException {
