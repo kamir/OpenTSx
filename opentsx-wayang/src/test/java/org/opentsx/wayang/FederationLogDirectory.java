@@ -12,7 +12,7 @@ final class FederationLogDirectory implements TempDirFactory {
     @Override
     public Path createTempDirectory(AnnotatedElementContext elementContext, ExtensionContext extensionContext)
             throws IOException {
-        Path root = Files.createDirectories(Path.of("target", "federation-test-logs"));
+        Path root = Files.createDirectories(Path.of("target", "federation-test-logs").toAbsolutePath());
         return Files.createTempDirectory(root, "junit-");
     }
 }

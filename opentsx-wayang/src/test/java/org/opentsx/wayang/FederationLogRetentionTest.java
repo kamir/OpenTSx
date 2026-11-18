@@ -87,6 +87,7 @@ class FederationLogRetentionTest {
         assertTrue(result.state.bodyRan);
         assertEquals(1, result.state.closeCalls);
         assertNotNull(result.state.directory);
+        assertTrue(result.state.directory.isAbsolute(), "Fixture paths must remain valid in child working directories");
         assertFalse(Files.exists(result.state.directory));
     }
 
@@ -147,6 +148,7 @@ class FederationLogRetentionTest {
         Path directory = result.state.directory;
         assertNotNull(directory);
         assertTrue(Files.isDirectory(directory), "Failed-test logs were deleted");
+        assertTrue(directory.isAbsolute(), "Fixture paths must remain valid in child working directories");
         assertTrue(directory.toAbsolutePath().normalize().startsWith(
                 Path.of("target", "federation-test-logs").toAbsolutePath().normalize()));
         Path brokers = directory.resolve(result.state.nested).resolve("brokers");
