@@ -133,7 +133,7 @@ public final class RustRunnerComposeFixture {
                 ObjectNode request = JSON.createObjectNode().put("schema", "opentsx.local-bounded-run.v1")
                         .put("assignmentText", assignmentText).put("createdAtMicros", Long.toString(CREATED));
                 ObjectNode binding = request.putObject("bindings").putObject("local");
-                binding.put("bootstrap", "kafscale-broker:" + port);
+        binding.put("bootstrap", "kafscale-proxy:" + port);
                 binding.putArray("inputs").add(input(worker));
                 binding.putArray("outputs").add(output(worker));
                 request.putObject("sink").put("name", "signal-" + worker).put("binding", "local")

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure bounded W3 federation traffic with pinned KafScale brokers."""
+"""Measure bounded W3 federation traffic through pinned KafScale Proxies."""
 
 import argparse
 import csv
@@ -23,6 +23,7 @@ ROUTES = ("centralized", "signal-cluster", "job-state")
 FIELDS = ("route", "site", "topic", "produce_frame_bytes", "produce_records", "produce_errors",
           "http_body_bytes", "http_records", "tls_client_bytes", "elapsed_ms")
 SOURCE_FILES = ("tools/wayang_federation_measurement.py", "tools/wayang_increment_latency.py",
+                "tools/kafscale_proxy_cluster.go", "tools/build_kafscale_proxy.py",
                 "opentsx-wayang/src/test/java/org/opentsx/wayang/FederationMeasurement.java",
                 "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedWindparkData.java",
                 "opentsx-wayang/src/test/java/org/opentsx/wayang/LatencyProtocolObserver.java",
@@ -232,8 +233,15 @@ def main():
                 go_env = env | {"GOTOOLCHAIN": "go1.25.2"}
                 metadata["goVersion"] = command(["go", "version"], cwd=source, env=go_env).strip()
                 binary = work / "kafscale-broker"
-                command(["go", "build", "-o", str(binary), "./cmd/broker"], cwd=source, env=go_env, log=log)
+                overlay = LATENCY.build_kafscale_proxy.broker_overlay(source, work)
+                command(["go", "build", "-o", str(binary), f"-overlay={overlay}", "./cmd/broker"], cwd=source, env=go_env, log=log)
+                proxy = work / "kafscale-proxy"
+                command(["go", "build", "-o", str(proxy), "./cmd/proxy"], cwd=source, env=go_env, log=log)
+                cluster = work / "kafscale-cluster"
+                command(["go", "build", "-o", str(cluster), str(ROOT / "tools/kafscale_proxy_cluster.go")], cwd=source, env=go_env, log=log)
                 metadata["brokerBinarySha256"] = LATENCY.sha256(binary)
+                metadata["proxyBinarySha256"] = LATENCY.sha256(proxy)
+                metadata["clusterBinarySha256"] = LATENCY.sha256(cluster)
                 command(["mvn", "--batch-mode", "--no-transfer-progress", "--projects", "opentsx-wayang", "--also-make", "install", "-DskipTests"], cwd=ROOT, env=env, log=log)
                 classpath_file = work / "test.cp"
                 command(["mvn", "--batch-mode", "--no-transfer-progress", "--projects", "opentsx-wayang",
@@ -249,7 +257,8 @@ def main():
             with LATENCY.power_assertion(metadata) as assertion:
                 with (output / "driver.log").open("w") as log:
                     command([java, "-Xms512m", "-Xmx2g", "-cp", classpath, "org.opentsx.wayang.FederationMeasurement", str(output)],
-                            cwd=ROOT / "opentsx-wayang", env=env | {"KAFSCALE_BROKER_BINARY": str(binary)}, log=log)
+                            cwd=ROOT / "opentsx-wayang", env=env | {"KAFSCALE_BROKER_BINARY": str(binary),
+                            "KAFSCALE_PROXY_BINARY": str(proxy), "KAFSCALE_CLUSTER_BINARY": str(cluster)}, log=log)
                 LATENCY.require_power_assertion(assertion)
             require_same_source(ROOT, snapshot, output)
             run, _ = read_results(output)

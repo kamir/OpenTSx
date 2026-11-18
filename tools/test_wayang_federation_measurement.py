@@ -202,7 +202,9 @@ class FederationMeasurementTest(unittest.TestCase):
 
         def command(argv, *, cwd=None, env=None, log=None):
             if argv[:2] == ["git", "clone"]:
-                Path(argv[-1]).mkdir()
+                broker = Path(argv[-1]) / "cmd/broker/main.go"
+                broker.parent.mkdir(parents=True)
+                broker.write_text('package main\nconst brokerVersion        = "dev"\n')
                 return ""
             if argv[0] == "git" and Path(cwd).name == "kafscale":
                 return self.measurement.LATENCY.KAFSCALE_COMMIT if argv[1] == "rev-parse" else ""

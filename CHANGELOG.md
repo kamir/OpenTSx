@@ -8,6 +8,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ## [Unreleased]
 
+### Changed
+
+- Route local KafScale producers and test fixtures through the v1.6.0 Proxy. Build the pinned broker, Proxy and
+  isolated metadata launcher without building an image. Compose exposes the Proxy endpoint; the development
+  MinIO stack requires private `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` environment values.
+- Require a verified Proxy bundle and private MinIO environment before the k3s probe starts local KafScale.
+
 ### Added
 
 - Qualified bounded W3 JVM federation measurement for TASK-020 A4.9. The

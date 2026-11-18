@@ -32,7 +32,7 @@ repository, tag or platform (`OPENTSX_IMAGE_REPO`, `OPENTSX_TAG`, `OPENTSX_PLATF
 | k3s host | k3s | a current release (manifests validated against the Kubernetes 1.31 schemas) | cluster with containerd, local-path storage, Traefik |
 | k3s host | `kubectl` | matching the cluster | `k3s kubectl` works too: `KUBECTL="sudo k3s kubectl"` |
 | both | bash 4+, coreutils, `timeout`, `curl` | | scripts |
-| network | route from the k3s pods to the KafScale broker(s) | | see step 3 |
+| network | route from the k3s pods to KafScale Proxy | | see step 3 |
 | optional | S3 endpoint (MinIO or other) and an Iceberg REST catalog | | lake profile: retrieval on Iceberg |
 | optional | OpenMetadata 2.x with a bot token | | `metadata-publish` |
 
@@ -112,24 +112,26 @@ install; k3s imports it at start). A plain-HTTP registry must be listed in `/etc
 
 ## Step 3: network path to KafScale
 
-This is the step that decides whether everything else works. A Kafka-protocol client (KafScale is one) connects to
-the **bootstrap** address, receives the cluster metadata and then connects to the **advertised** address of each
-broker. Both must be reachable from the pods.
+OpenTSx producers use KafScale Proxy or Apache Kafka Broker. A Kafka client connects to the **bootstrap**
+address and then to the **advertised** address returned in Metadata. Both must be reachable from the pods.
+Before starting local Compose, build the [pinned transport bundle](../../opentsx-kafscale-conformance/README.md#build-the-pinned-transport-bundle)
+and export the private MinIO environment values described in the [Proxy setup](../../opentsx-kafscale-conformance/README.md#start-the-local-proxy).
+The local stack publishes Proxy port `9092`; its broker has no published host port.
 
 | KafScale runs … | Advertised address must be … | `KAFSCALE_NETWORK` | `KAFSCALE_BOOTSTRAP` |
 |-----------------|------------------------------|--------------------|----------------------|
-| on another machine in the LAN | that machine's LAN IP or DNS name | `direct` (default) | `192.168.1.50:9092` |
-| on the k3s host (docker compose), advertising the host's LAN IP | the host's LAN IP (`KAFSCALE_ADVERTISED_HOST=192.168.1.20 docker compose -f docker-compose.kafscale.yml up -d`) | `direct` | `192.168.1.20:9092` |
-| on the k3s host, advertising `localhost` (compose default) | — (only reachable from the host's network namespace) | `hostnetwork` | `localhost:9092` |
+| Proxy on another machine in the LAN | that machine's LAN IP or DNS name | `direct` (default) | `192.168.1.50:9092` |
+| Proxy on the k3s host (docker compose), advertising the host's LAN IP | the host's LAN IP (`KAFSCALE_ADVERTISED_HOST=192.168.1.20 docker compose -f docker-compose.kafscale.yml up -d`) | `direct` | `192.168.1.20:9092` |
+| Proxy on the k3s host, advertising `localhost` (compose default) | — (only reachable from the host's network namespace) | `hostnetwork` | `localhost:9092` |
 | outside, and you want a stable in-cluster name | reachable from the pods anyway | `service` | the external `host:port`; pods use `opentsx-kafscale.<ns>.svc.cluster.local:<port>` |
-| inside the same k3s cluster | the broker's Service DNS name | `direct` | `<svc>.<ns>.svc.cluster.local:9092` |
+| inside the same k3s cluster | the Proxy's Service DNS name | `direct` | `<svc>.<ns>.svc.cluster.local:9092` |
 
 * **`hostnetwork`** puts only the KafScale-facing workloads (stats, kafscale-check, windpark-sim, metadata-publish;
   label `opentsx.org/kafka=true`) into the node's network namespace. Single node, lab use.
 * **`service`** renders a selector-less Service with an EndpointSlice (IP address) or an ExternalName Service (DNS
   name). It gives the bootstrap a cluster-internal name and nothing more; it does not rewrite advertised addresses.
 * Pods reach LAN addresses through the node (flannel masquerades pod traffic); a host firewall (ufw, firewalld) must
-  allow the k3s pod CIDR (default `10.42.0.0/16`) to reach the broker port.
+  allow the k3s pod CIDR (default `10.42.0.0/16`) to reach the Proxy port.
 
 ```bash
 deploy/k3s/20-configure.sh KAFSCALE_BOOTSTRAP=192.168.1.50:9092              # direct

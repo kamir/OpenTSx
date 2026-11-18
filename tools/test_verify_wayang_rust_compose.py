@@ -22,7 +22,7 @@ SPEC.loader.exec_module(HELPER)
 class WayangComposeGuardsTest(unittest.TestCase):
     def test_single_worker_outage_preserves_other_containers_and_appends_before_restart(self):
         events = []
-        live = ["backend", "coordinator", "frontend", "kafscale-broker", "postgres", "runner-1", "runner-3", "wayang"]
+        live = ["backend", "coordinator", "frontend", "kafscale-proxy", "postgres", "runner-1", "runner-3", "wayang"]
         before = "\n".join(f"{name} id-{name} running" for name in [*live, "runner-2"])
         during = "\n".join(f"{name} id-{name} running" for name in live) + "\nrunner-2 id-runner-2 exited"
         def execute(command, *args, **kwargs):
@@ -43,7 +43,7 @@ class WayangComposeGuardsTest(unittest.TestCase):
         self.assertFalse(any(command[1:2] == ["start"] for command in events))
 
     def test_single_worker_outage_rejects_another_restarted_or_stopped_service(self):
-        names = ["backend", "coordinator", "frontend", "kafscale-broker", "postgres", "runner-1", "runner-2", "runner-3", "wayang"]
+        names = ["backend", "coordinator", "frontend", "kafscale-proxy", "postgres", "runner-1", "runner-2", "runner-3", "wayang"]
         before = "\n".join(f"{name} id-{name} running" for name in names)
         with tempfile.TemporaryDirectory() as directory, patch.object(HELPER, "DIRECTORY", Path(directory)):
             for changed in ["runner-1 replaced running", "runner-1 id-runner-1 exited"]:
@@ -68,7 +68,7 @@ class WayangComposeGuardsTest(unittest.TestCase):
             (root / "fixture.json").write_text(json.dumps({"sources": sources}))
             (root / "submitted-dag.txt").write_bytes(graph)
             (root / "worker-outage.json").write_text(json.dumps({"worker": "worker-2", "throughBlocks": 6,
-                "liveServices": ["backend", "coordinator", "frontend", "kafscale-broker", "postgres", "runner-1", "runner-3", "wayang"]}))
+                "liveServices": ["backend", "coordinator", "frontend", "kafscale-proxy", "postgres", "runner-1", "runner-3", "wayang"]}))
             for phase, blocks in HELPER.CONTINUOUS_PHASES:
                 value = {"id": "local-test", "specHash": hashlib.sha256(graph).hexdigest(),
                          "createdAtMicros": "1700000000000000", "profile": "continuous",
@@ -237,7 +237,8 @@ class WayangComposeGuardsTest(unittest.TestCase):
         names = ["pom.xml", "opentsx-wayang/pom.xml", "opentsx-model/pom.xml",
                  "opentsx-saas-frontend/package-lock.json", "opentsx-saas-backend/requirements.txt",
                  "docker-compose.wayang-rust.yml", "deploy/compose/wayang-rust-nginx.conf",
-                 "tools/verify_wayang_rust_compose.py", "bin/opentsx", "opentsx-saas-frontend/package.json",
+                 "tools/verify_wayang_rust_compose.py", "tools/build_kafscale_proxy.py", "tools/kafscale_proxy_cluster.go",
+                 "bin/opentsx", "opentsx-saas-frontend/package.json",
                  "opentsx-saas-frontend/vite.config.ts", "opentsx-saas-frontend/tsconfig.json",
                  "opentsx-saas-frontend/tsconfig.node.json", "opentsx-saas-frontend/postcss.config.js",
                  "opentsx-saas-frontend/tailwind.config.js", "opentsx-saas-frontend/index.html",

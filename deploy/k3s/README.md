@@ -1,5 +1,10 @@
 # deploy/k3s: OpenTSx on k3s against an existing KafScale cluster
 
+OpenTSx producers use Apache Kafka Broker or KafScale Proxy. Set `KAFSCALE_BOOTSTRAP` to a Proxy endpoint,
+never directly to KafScale Broker. Before using `--local-kafscale`, follow the
+[Proxy setup](../../opentsx-kafscale-conformance/README.md#start-the-local-proxy) to build the pinned transport
+bundle and export private MinIO environment values. The probe verifies both before invoking Compose.
+
 The guide is [docs/devops/](../../docs/devops/README.md) (setup plan, sizing plan, demos, troubleshooting, operations).
 
 ```bash
@@ -68,7 +73,7 @@ Who may write:
 * The frontend image answers `/retrieval/v1/dags/` with 403, so the write path of the retrieval server is not
   reachable through the node port. Reading through `/retrieval/` needs no account.
 * Inside the cluster every pod can reach the retrieval Service; the token is what keeps them from deploying. Whoever
-  reaches the broker itself can write the control topic directly; KafScale has no access control here. There is no
+  reaches the Proxy can write the control topic directly; KafScale has no access control here. There is no
   NetworkPolicy.
 
 Limits: at most 20000 episodes in memory (the inventory then says `truncated`), memory limit 2Gi, no

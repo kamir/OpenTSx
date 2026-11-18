@@ -6,9 +6,11 @@
 #   deploy/k3s/60-probe.sh [--local-kafscale [--kafscale-host IP]] [--skip-build] [--online] [--keep-going]
 #                          [--only s1,s2] [--skip s1,s2] [--report FILE] [--verbose] [--dry-run]
 #
-#   --local-kafscale   start KafScale on this host (docker compose -f docker-compose.kafscale.yml up -d) so that it
+#   --local-kafscale   start KafScale Proxy on this host (docker compose -f docker-compose.kafscale.yml up -d) so that it
 #                      ADVERTISES this host's LAN IP (KAFSCALE_ADVERTISED_HOST), and use <ip>:9092 with
 #                      KAFSCALE_NETWORK=direct. Without it the configured KAFSCALE_BOOTSTRAP (deploy/k3s/.env) is used.
+#                      Requires a verified tools/build_kafscale_proxy.py bundle and private MINIO_ROOT_USER /
+#                      MINIO_ROOT_PASSWORD environment values.
 #   --kafscale-host IP the address to advertise and to use (default: source IP of this host's default route)
 #   --skip-build       no Maven/image build and no image import (the images are already in k3s' containerd)
 #   --online           the DWD step fetches live MOSMIX data from opendata.dwd.de (default: the offline fixture in the
@@ -132,26 +134,33 @@ demo() { "$K3S_DIR/40-demo.sh" "$@"; }
 step_kafscale-local() {
   [[ -n "$KS_HOST" ]] || { note "could not detect this host's IP - pass --kafscale-host <ip>"; return 1; }
   if [[ "$KS_HOST" =~ ^(127\.|localhost) ]]; then note "$KS_HOST is loopback: pods cannot reach it"; return 1; fi
+  if [[ -z "${MINIO_ROOT_USER:-}" || -z "${MINIO_ROOT_PASSWORD:-}" ]]; then
+    note "Set private MINIO_ROOT_USER and MINIO_ROOT_PASSWORD environment values before starting local KafScale"
+    return 1
+  fi
+  if ! python3 "$ROOT/tools/build_kafscale_proxy.py" --check >/dev/null; then
+    note "Run python3 tools/build_kafscale_proxy.py before starting local KafScale Proxy"
+    return 1
+  fi
   local -a compose
   read -r -a compose <<< "$(compose_cmd)" || true
   (( ${#compose[@]} )) || { note "docker compose (or docker-compose) not found"; return 1; }
   echo "advertised host: $KS_HOST (detected from the default route; override with --kafscale-host)"
   echo "+ KAFSCALE_ADVERTISED_HOST=$KS_HOST ${compose[*]} -f docker-compose.kafscale.yml up -d"
-  # up -d recreates the broker when KAFSCALE_ADVERTISED_HOST changed (e.g. an earlier start advertising localhost)
   KAFSCALE_ADVERTISED_HOST="$KS_HOST" "${compose[@]}" -f "$ROOT/docker-compose.kafscale.yml" up -d || {
     note "docker compose up failed (docker daemon running? permissions?)"; return 1; }
   "${compose[@]}" -f "$ROOT/docker-compose.kafscale.yml" ps || true
   local i
   for i in $(seq 1 45); do
     if tcp_check "$KS_HOST:9092" 2; then
-      echo "KafScale broker $KS_HOST:9092 reachable after ~$((i * 2)) s"
+      echo "KafScale Proxy $KS_HOST:9092 reachable after ~$((i * 2)) s"
       note "KafScale at $KS_HOST:9092, advertising $KS_HOST"
       return 0
     fi
     sleep 2
   done
-  "${compose[@]}" -f "$ROOT/docker-compose.kafscale.yml" logs --tail 40 kafscale-broker || true
-  note "broker not reachable on $KS_HOST:9092 after 90 s"
+  "${compose[@]}" -f "$ROOT/docker-compose.kafscale.yml" logs --tail 40 kafscale-proxy kafscale-broker || true
+  note "Proxy not reachable on $KS_HOST:9092 after 90 s"
   return 1
 }
 
@@ -309,7 +318,7 @@ hints() {   # step log -> markdown bullet list
   grep -qE 'S3FileIO' "$log" 2>/dev/null && h+=("\`10-build.sh --with-s3\` for the lake profile")
   grep -qE 'is loopback' "$log" 2>/dev/null && h+=("use the host's LAN IP (\`--local-kafscale\` does this) or \`KAFSCALE_NETWORK=hostnetwork\`")
   case "$step" in
-    kafscale-local) h+=("check \`docker compose -f docker-compose.kafscale.yml ps\` and \`... logs kafscale-broker\`; a host firewall must allow the pod CIDR to port 9092") ;;
+    kafscale-local) h+=("check the Proxy bundle, private MinIO environment, \`docker compose -f docker-compose.kafscale.yml ps\` and Proxy/broker logs; a host firewall must allow the pod CIDR to port 9092") ;;
     prereqs) h+=("fix the items marked FAIL in the log; \`--skip-build\` on a node without JDK/Maven") ;;
     build) h+=("\`mvn -q install -DskipTests\` must pass first; a missing image builder or daemon is reported by \`00-prereqs.sh\`") ;;
     deploy) h+=("\`50-status.sh\`, \`kubectl -n $OPENTSX_NS describe pod <pod>\` ([troubleshooting](docs/devops/troubleshooting.md#images-and-pods))") ;;
@@ -397,7 +406,7 @@ write_report() {
 # ---- dry run -------------------------------------------------------------------------------------------------------
 step_command() {   # what a step runs, for the plan
   case "$1" in
-    kafscale-local) echo "KAFSCALE_ADVERTISED_HOST=${KS_HOST:-?} $(compose_cmd 2>/dev/null || echo 'docker compose') -f docker-compose.kafscale.yml up -d; wait for ${KS_HOST:-?}:9092" ;;
+    kafscale-local) echo "verify tools/build_kafscale_proxy.py --check and private MinIO environment; KAFSCALE_ADVERTISED_HOST=${KS_HOST:-?} $(compose_cmd 2>/dev/null || echo 'docker compose') -f docker-compose.kafscale.yml up -d; wait for Proxy ${KS_HOST:-?}:9092" ;;
     prereqs) echo "00-prereqs.sh$($SKIP_BUILD && echo ' --no-build')" ;;
     build) echo "10-build.sh$(is_true "$LAKE" && echo ' --with-s3')" ;;
     import) echo "11-import-images.sh (IMAGE_METHOD=$IMAGE_METHOD)" ;;

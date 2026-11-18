@@ -252,11 +252,14 @@ The bounded W3 numerical qualification uses the approved relative `3e-12`
 mean/M2 criterion in
 [SPEC S4.3](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s43-merge-functions).
 These integration classes use the existing `KAFSCALE_BOOTSTRAP` test switch and
-require `KAFSCALE_BROKER_BINARY` to name the source-built KafScale v1.6.0
-executable. The fixture starts and stops its four disposable brokers.
+require `KAFSCALE_BROKER_BINARY`, `KAFSCALE_PROXY_BINARY` and `KAFSCALE_CLUSTER_BINARY`
+to name the source-built KafScale v1.6.0 broker, Proxy and isolated cluster launcher.
+The fixture starts four independent clusters, each with private etcd metadata, a loopback-only
+broker and a Proxy endpoint. Producers use the Proxy. Read the
+[bundle instructions](../opentsx-kafscale-conformance/README.md#build-the-pinned-transport-bundle).
 
 The bounded integration topology contains three site-agent instances in one JVM
-and four Go broker processes. Execution topology excludes build and transient
+and four Go broker processes, four Proxies and four embedded etcd instances. Execution topology excludes build and transient
 conformance-check subprocesses. The measurement harness records that topology,
 actual per-route elapsed times, Kafka Produce frames, HTTP bodies and encrypted
 TLS client-stream bytes as separate counters. Read its arguments from the

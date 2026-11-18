@@ -137,8 +137,10 @@ with the programmatic `TsxPlanService`, `TsxPlanClient` and `TsxSiteAgent` APIs.
 The signed profile binds a complete immutable cut and one statistics sink;
 the local compiler's 16 catalog bindings remain a separate construction API.
 The integration cases use the existing `KAFSCALE_BOOTSTRAP` test switch and
-require the source-built KafScale v1.6.0 executable in `KAFSCALE_BROKER_BINARY`;
-the fixture owns its four disposable brokers.
+require source-built KafScale v1.6.0 executables in `KAFSCALE_BROKER_BINARY`,
+`KAFSCALE_PROXY_BINARY` and `KAFSCALE_CLUSTER_BINARY`. The fixture owns four
+independent clusters with private etcd metadata. Each producer uses its cluster's Proxy.
+Read the [transport bundle instructions](../../opentsx-kafscale-conformance/README.md#build-the-pinned-transport-bundle).
 
 Keep the original source text, exact assignment and signed wrapper together.
 `SignedJws` verifies the pinned Ed25519 signer. `RunnerPlan` binds the input

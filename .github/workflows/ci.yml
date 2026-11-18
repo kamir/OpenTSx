@@ -194,7 +194,7 @@ jobs:
               assert result["inputRecords"] == "42"
               outage = json.loads((root / "worker-outage.json").read_text())
               assert outage["worker"] == "worker-2" and outage["throughBlocks"] == 6
-              assert outage["liveServices"] == ["backend", "coordinator", "frontend", "kafscale-broker", "postgres", "runner-1", "runner-3", "wayang"]
+              assert outage["liveServices"] == ["backend", "coordinator", "frontend", "kafscale-proxy", "postgres", "runner-1", "runner-3", "wayang"]
           for phase in result["phases"]:
               browser = json.loads((root / f"browser-{phase}.json").read_text())
               parity = json.loads((root / f"verified-{phase}.json").read_text())
@@ -381,20 +381,28 @@ jobs:
         with:
           go-version-file: kafscale/go.mod
           cache-dependency-path: kafscale/go.sum
-      - name: Build KafScale broker
+      - name: Build pinned KafScale broker and Proxy fixtures
         working-directory: kafscale
-        run: go build -o "$RUNNER_TEMP/kafscale-broker" ./cmd/broker
-      - name: Start KafScale broker (in-memory S3 and metadata)
         run: |
-          KAFSCALE_USE_MEMORY_S3=1 KAFSCALE_BROKER_ID=0 \
-          KAFSCALE_BROKER_ADDR=127.0.0.1:39092 KAFSCALE_BROKER_HOST=127.0.0.1 KAFSCALE_BROKER_PORT=39092 \
-            nohup "$RUNNER_TEMP/kafscale-broker" > "$RUNNER_TEMP/kafscale-broker.log" 2>&1 &
+          test "$(git rev-parse HEAD)" = 2809a3a20bf40ed8a2b82cd93215cb59396efb0a
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python3 -c 'import os; from pathlib import Path; import build_kafscale_proxy; build_kafscale_proxy.broker_overlay(Path.cwd(), Path(os.environ["RUNNER_TEMP"]))'
+          CGO_ENABLED=0 go build -overlay="$RUNNER_TEMP/broker-overlay.json" -trimpath -buildvcs=false -ldflags=-buildid= -o "$RUNNER_TEMP/kafscale-broker" ./cmd/broker
+          CGO_ENABLED=0 go build -trimpath -buildvcs=false -ldflags=-buildid= -o "$RUNNER_TEMP/kafscale-proxy" ./cmd/proxy
+          CGO_ENABLED=0 go build -trimpath -buildvcs=false -ldflags=-buildid= -o "$RUNNER_TEMP/kafscale-cluster" "$GITHUB_WORKSPACE/tools/kafscale_proxy_cluster.go"
+      - name: Start isolated KafScale Proxy with private broker and metadata
+        run: |
+          nohup "$RUNNER_TEMP/kafscale-cluster" --listen 127.0.0.1:39092 \
+            --advertised-host 127.0.0.1 --advertised-port 39092 --data-dir "$RUNNER_TEMP/kafscale-metadata" \
+            --broker-binary "$RUNNER_TEMP/kafscale-broker" --proxy-binary "$RUNNER_TEMP/kafscale-proxy" \
+            > "$RUNNER_TEMP/kafscale-broker.log" 2>&1 &
           for i in $(seq 1 60); do (echo > /dev/tcp/127.0.0.1/39092) 2>/dev/null && exit 0; sleep 1; done
           cat "$RUNNER_TEMP/kafscale-broker.log"; exit 1
       - name: Run conformance suite, episode-log, wire round-trip, wind-farm, statistics, event-topic and streaming integration tests
         env:
           KAFSCALE_BOOTSTRAP: 127.0.0.1:39092
           KAFSCALE_BROKER_BINARY: ${{ runner.temp }}/kafscale-broker
+          KAFSCALE_PROXY_BINARY: ${{ runner.temp }}/kafscale-proxy
+          KAFSCALE_CLUSTER_BINARY: ${{ runner.temp }}/kafscale-cluster
         # opentsx-legacy-bridge pulls in opentsx-core, whose Swing tests need a display
         run: xvfb-run --auto-servernum mvn -B -ntp -pl opentsx-kafscale-conformance,opentsx-kafka-v2,opentsx-legacy-bridge,opentsx-windpark,opentsx-stats,opentsx-twin-live,opentsx-retrieval,opentsx-wayang -am test
       - name: Require executed streaming acceptance

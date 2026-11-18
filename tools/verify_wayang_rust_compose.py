@@ -14,6 +14,8 @@ import time
 import urllib.error
 import urllib.request
 
+import build_kafscale_proxy
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DIRECTORY = ROOT / "target/wayang-rust-compose"
@@ -107,7 +109,8 @@ def source_signature():
     for name in ["pom.xml", "opentsx-wayang/pom.xml", "opentsx-model/pom.xml",
                  "opentsx-saas-frontend/package-lock.json", "opentsx-saas-backend/requirements.txt",
                  "docker-compose.wayang-rust.yml", "deploy/compose/wayang-rust-nginx.conf",
-                 "tools/verify_wayang_rust_compose.py", "bin/opentsx", "opentsx-saas-frontend/package.json",
+                 "tools/verify_wayang_rust_compose.py", "tools/build_kafscale_proxy.py", "tools/kafscale_proxy_cluster.go",
+                 "bin/opentsx", "opentsx-saas-frontend/package.json",
                  "opentsx-saas-frontend/vite.config.ts", "opentsx-saas-frontend/tsconfig.json",
                  "opentsx-saas-frontend/tsconfig.node.json", "opentsx-saas-frontend/postcss.config.js",
                  "opentsx-saas-frontend/tailwind.config.js", "opentsx-saas-frontend/index.html"]:
@@ -190,7 +193,7 @@ def interrupt_one_worker(java, bootstrap, compose, environment, blocks):
             snapshot[fields[0]] = fields[1:]
         snapshots.append(snapshot)
     original, current = snapshots
-    live = {"backend", "coordinator", "frontend", "kafscale-broker", "postgres", "runner-1", "runner-3", "wayang"}
+    live = {"backend", "coordinator", "frontend", "kafscale-proxy", "postgres", "runner-1", "runner-3", "wayang"}
     if (set(original) != live | {"runner-2"} or set(current) != set(original)
             or any(state != "running" for _, state in original.values())
             or any(current[name] != original[name] for name in live)
@@ -215,7 +218,7 @@ def java_setup(environment, private, repository, skip_build, fixture=FIXTURE):
         raise RuntimeError("Java dependency classpath is empty")
     driver_classpath = container_classpath(os.pathsep.join([str(classes), dependencies]), repository)
     arguments = ["-cp", driver_classpath, "org.opentsx.wayang.rust.RustRolloutServer", "--listen", "0.0.0.0:8095",
-                 "--bootstrap", f"kafscale-broker:{environment['KAFSCALE_BROKER_PORT']}", "--catalog", "/workspace/systems/processors"]
+                 "--bootstrap", f"kafscale-proxy:{environment['KAFSCALE_BROKER_PORT']}", "--catalog", "/workspace/systems/processors"]
     for number in range(1, 4):
         arguments.extend(["--worker", f"worker-{number}=http://runner-{number}:8090"])
     private_file(private / "driver.args", "\n".join(json.dumps(value) for value in arguments) + "\n")
@@ -262,7 +265,7 @@ def verify_continuous_views():
         raise RuntimeError("the continuous source identity or complete-topic inventory changed")
     outage = json.loads((DIRECTORY / "worker-outage.json").read_text())
     if outage != {"worker": "worker-2", "throughBlocks": 6, "liveServices": ["backend", "coordinator", "frontend",
-            "kafscale-broker", "postgres", "runner-1", "runner-3", "wayang"]}:
+            "kafscale-proxy", "postgres", "runner-1", "runner-3", "wayang"]}:
         raise RuntimeError("the single-worker outage evidence is incomplete")
     placement = {item["inputTopic"]: item["node"] for item in initial["assignments"]}
     previous = None
@@ -403,7 +406,8 @@ def execute(args, environment, broker_port, ui_port):
     private_file(private / "generated.env", "".join(f"{key}={value}\n" for key, value in values.items()))
     private_file(private / "credentials.json", json.dumps({"email": values["FIRST_SUPERUSER_EMAIL"],
                                                           "password": values["FIRST_SUPERUSER_PASSWORD"]}))
-    private_file(private / "hosts", "127.0.0.1 localhost kafscale-broker\n")
+    private_file(private / "hosts", "127.0.0.1 localhost kafscale-proxy\n")
+    (private / "transport").mkdir(mode=0o700)
     for number in range(1, 4):
         (private / f"state/worker-{number}").mkdir(parents=True)
     compose = COMPOSE + ["--env-file", str(private / "generated.env")]
@@ -411,6 +415,10 @@ def execute(args, environment, broker_port, ui_port):
     failure = None
     try:
         run(compose + ["--profile", "build", "config", "--quiet"], environment, "compose-config", timeout=60)
+        if args.skip_build:
+            build_kafscale_proxy.verify()
+        else:
+            run([sys.executable, str(ROOT / "tools/build_kafscale_proxy.py")], environment, "proxy-build", timeout=1800)
         stamp = DIRECTORY / "build-source.sha256"
         signature = source_signature()
         if args.skip_build and (not stamp.is_file() or stamp.read_text().strip() != signature):
@@ -435,7 +443,7 @@ def execute(args, environment, broker_port, ui_port):
         run(compose + ["--profile", "build", "run", "--rm", "--no-deps", "python-deps"],
             environment, "backend-install", timeout=1200)
         verify_build_sources(signature)
-        run(compose + ["up", "--detach", "postgres", "kafscale-broker"], environment, "data-start", timeout=180)
+        run(compose + ["up", "--detach", "postgres", "kafscale-proxy"], environment, "data-start", timeout=180)
         bootstrap = f"127.0.0.1:{broker_port}"
         run(java[:-1] + [FIXTURE, "ready", bootstrap], environment, "broker-ready", timeout=210)
         run(java + ["prepare", bootstrap, str(DIRECTORY)], environment, "fixture-prepare")

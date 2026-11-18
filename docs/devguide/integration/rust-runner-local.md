@@ -136,15 +136,17 @@ across nodes or separate checkpoint paths.
 ## Verify three workers against Java
 
 Run from the repository root. Set `JAVA_HOME` to JDK 21 when it is not your default JDK.
-The [verification helper](../../../tools/verify_rust_runner_compose.py) builds the Java fixture and Linux runner,
-starts its isolated broker project, waits for Kafka metadata, and prepares three independent bounded jobs.
+The [verification helper](../../../tools/verify_rust_runner_compose.py) builds the Java fixture, Linux runner and
+[pinned KafScale transport bundle](../../../opentsx-kafscale-conformance/README.md#build-the-pinned-transport-bundle).
+It starts an isolated Proxy with a loopback-only broker and private embedded etcd metadata, waits for Kafka
+metadata, and prepares three independent bounded jobs. All fixture and worker producers use the Proxy.
 It refuses an existing project or a busy port instead of stopping another service.
 
 ```bash
 python3 tools/verify_rust_runner_compose.py
 ```
 
-The existing `KAFSCALE_BROKER_PORT` setting selects the same internal, advertised and loopback-published port.
+The existing `KAFSCALE_BROKER_PORT` setting selects the Proxy's internal, advertised and loopback-published port.
 It defaults to `39092` and must be a canonical integer from `1` to `65535`.
 If that port is occupied, select a free port explicitly; the helper does not stop its owner or choose a fallback.
 

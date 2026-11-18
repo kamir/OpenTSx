@@ -3,8 +3,9 @@
 > **Two stacks.**
 >
 > * For the v2 modules (KafScale storage, statistics, wind farm, retrieval), use
->   **`docker-compose.kafscale.yml`** (etcd, MinIO, KafScale broker on :9092). It is described in the
->   [user manual, chapter 12](../../user-manual/12-operations.md).
+>   **`docker-compose.kafscale.yml`** (etcd, MinIO, private broker and KafScale Proxy on :9092).
+>   Build the pinned transport bundle and supply private MinIO environment values using the
+>   [Proxy setup](../../../opentsx-kafscale-conformance/README.md#start-the-local-proxy).
 > * The stack documented below (`docker-compose.local.yml`) serves the OpenTSDB store, the 2.x tools and the
 >   experimental SaaS stack. Its `full` profile builds the backend from `opentsx-saas-backend/` and the frontend from
 >   `opentsx-saas-frontend/`.

@@ -8,18 +8,19 @@ x-runner: &runner
   restart: "no"
   read_only: true
   depends_on:
-    kafscale-broker:
+    kafscale-proxy:
       condition: service_started
 
 services:
-  kafscale-broker:
-    image: ghcr.io/kafscale/kafscale-broker:v1.6.0
-    environment:
-      KAFSCALE_USE_MEMORY_S3: "1"
-      KAFSCALE_BROKER_ID: "0"
-      KAFSCALE_BROKER_ADDR: ":${KAFSCALE_BROKER_PORT:-39092}"
-      KAFSCALE_BROKER_HOST: kafscale-broker
-      KAFSCALE_BROKER_PORT: "${KAFSCALE_BROKER_PORT:-39092}"
+  kafscale-proxy:
+    image: python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
+    user: "${RUST_RUNNER_UID:?Set RUST_RUNNER_UID}:${RUST_RUNNER_GID:?Set RUST_RUNNER_GID}"
+    entrypoint: [/transport/kafscale-cluster]
+    command: [--listen, "0.0.0.0:${KAFSCALE_BROKER_PORT:-39092}", --advertised-host, kafscale-proxy, --advertised-port, "${KAFSCALE_BROKER_PORT:-39092}", --data-dir, /state, --broker-binary, /transport/kafscale-broker, --proxy-binary, /transport/kafscale-proxy]
+    read_only: true
+    volumes:
+      - ./target/kafscale-proxy-linux:/transport:ro
+      - ./target/rust-runner-compose/transport:/state
     ports:
       - "127.0.0.1:${KAFSCALE_BROKER_PORT:-39092}:${KAFSCALE_BROKER_PORT:-39092}"
 

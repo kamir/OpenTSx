@@ -68,7 +68,9 @@ reason. The coordinator retries the persisted plan; no new UI deployment request
 The driver returns no new plan on global idle. A new plan preserves placement, partition counts and clock, advances
 the sequence by one and links its `previousPlanHash`. Retention gaps, truncated inputs, changed topic partition
 counts, changed output inventory and incompatible workers fail closed. Topic recreation is not qualified by this
-local profile; the broker remains alive during the acceptance test.
+local profile; the broker remains alive during the acceptance test. Fixture and worker producers use KafScale
+Proxy. The helper builds a pinned Proxy bundle with independent embedded etcd metadata; read the
+[local transport setup](../../../opentsx-kafscale-conformance/README.md#build-the-pinned-transport-bundle).
 
 The worker request `opentsx.local-increment.v1` adds `sequence` and `previousRequestHash` to the six bounded-request
 fields. The inner assignment is a finite bounded cut. The first sequence is `"1"`, has a null predecessor and

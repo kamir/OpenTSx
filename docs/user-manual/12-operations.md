@@ -4,10 +4,12 @@
 
 | File | Starts | Use |
 |------|--------|-----|
-| `docker-compose.kafscale.yml` | etcd, MinIO (S3, :9000/:9001), KafScale broker v1.6.0 (:9092) | **primary development stack** (v2) |
+| `docker-compose.kafscale.yml` | etcd, MinIO (S3, :9000/:9001), private broker and KafScale Proxy v1.6.0 (:9092) | **primary development stack** (v2) |
 | `docker-compose.local.yml` | Postgres, Redis, Confluent Platform (Kafka, Schema Registry), HBase + OpenTSDB; profile `full` adds the SaaS backend and frontend | OpenTSDB store tests, 2.x tools, SaaS stack |
 
 Both stacks bind port 9092, so do not run them at the same time.
+Use the [Proxy setup](../../opentsx-kafscale-conformance/README.md#start-the-local-proxy) to build the pinned
+transport bundle and supply private MinIO credentials. OpenTSx producers use Apache Kafka Broker or KafScale Proxy.
 
 Running the tools as services on Kubernetes (k3s) against an existing KafScale
 cluster is described in the [DevOps guide](../devops/README.md), including images,
@@ -95,8 +97,8 @@ checkout. Stop other builds and benchmarks on the host before measuring.
 output directory.
 
 The [harness](../../tools/wayang_increment_latency.py) builds pinned KafScale
-v1.6.0 source with Go 1.25.2 and starts a disposable in-memory broker for every
-condition. It executes the actual `TsxIncrement` passthrough and `dq.checks`
+v1.6.0 source with Go 1.25.2 and starts a disposable Proxy, loopback-only in-memory broker and independent etcd
+metadata for every condition. Its producers publish through the Proxy. It executes the actual `TsxIncrement` passthrough and `dq.checks`
 plus `resample PT1M` plans, with one partition. Run the default matrix:
 
 ```bash

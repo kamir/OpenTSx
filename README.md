@@ -98,11 +98,12 @@ statistics, prediction and what-if, and the node graph of each system's wiring p
 The Iceberg-backed Retrieval server requires existing `episodes` and `series` tables. The writer in the sequence
 below populates them first; Retrieval loads them without provisioning and rejects writes through its store.
 This does not add HTTP authentication or resource-level authorization.
+For optional KafScale storage, follow the [local Proxy setup](opentsx-kafscale-conformance/README.md#start-the-local-proxy).
+OpenTSx producers connect to Apache Kafka Broker or KafScale Proxy. They never publish directly to KafScale Broker.
 
 ```bash
 mvn -q install -DskipTests                          # JDK 17+
 pip install -e "python-package[iceberg]"            # Python 3.10+
-docker compose -f docker-compose.kafscale.yml up -d # KafScale + MinIO + etcd (optional)
 
 bin/opentsx windpark-sim --scenario opentsx-windpark/scenarios/ostsee-demo.yaml \
     --iceberg type=jdbc,uri=jdbc:sqlite:/tmp/tsx/catalog.db,warehouse=file:/tmp/tsx/warehouse --namespace tsx

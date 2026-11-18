@@ -1,30 +1,17 @@
 # DevOps guide: OpenTSx on k3s against an existing KafScale cluster
 
-> **Kurzfassung (Deutsch).** Dieser Leitfaden zeigt, wie OpenTSx lokal in einem **k3s-Cluster** gegen ein
-> **bestehendes KafScale-Cluster** läuft. Die Skripte liegen in [`deploy/k3s/`](../../deploy/k3s/), die Images in
-> [`deploy/docker/`](../../deploy/docker/). Reihenfolge: `00-prereqs.sh` → `10-build.sh` → `11-import-images.sh` →
-> `20-configure.sh KAFSCALE_BOOTSTRAP=<host:port>` → `30-deploy.sh` → `40-demo.sh all`. Danach laufen
-> Statistik-Prozessor, Retrieval-Server und Smart Topics Studio dauerhaft; Windpark-Simulator, die drei
-> Zwillings-Szenarien (H2-Kette, Haus, Boot), Studio-Export, DWD-Wetter, Modbus-Poller und der OpenMetadata-Export
-> laufen als Jobs; optional kommen ein Modbus-Simulator sowie CronJobs für den täglichen MOSMIX-Abruf und einen
-> synthetischen Check hinzu.
-> Lauffähig ist heute der Java-Stand; der Go-Smart-Topic-Prozessor mit YAML-DAG und MLflow aus Konzept 11 ist geplant
-> und fügt sich später als weiteres Deployment ein ([heute und geplant](today-vs-planned.md)).
-> Der [Sizing-Plan](sizing-plan.md) rechnet Speicher und Ressourcen je Szenario vor (z. B. 50 Anlagen × 100 Kanäle
-> × 1 Hz ≈ 0,94 GB/Tag auf S3 bei gemessenen 2,18 B/Wert). Wichtigste Stolperfalle: Die **advertised address** des
-> KafScale-Brokers muss aus den Pods erreichbar sein – `40-demo.sh kafscale-check` prüft genau das.
-> **Lokal verproben in einem Schritt:** `deploy/k3s/60-probe.sh --local-kafscale` startet KafScale per Docker Compose
-> mit der LAN-IP als advertised address, baut, installiert, führt alle Beispiele aus (inklusive DWD-Wetter offline und
-> Modbus-Simulator mit Poller) und schreibt einen PASS/FAIL-Bericht `probe-report-<Zeit>.md`; `--dry-run` zeigt nur
-> den Plan. Das **[Betriebskonzept](operations.md)** beschreibt Dienstkatalog, Umgebungen, Überwachung, Sicherung
-> (`70-backup.sh`, `71-restore.sh`), Updates, Secrets, Sicherheit, Runbooks, Rollen und SLOs.
+Run the Java services and examples on k3s through an existing KafScale Proxy endpoint.
+Use Apache Kafka Broker or KafScale Proxy for producer connections. Never publish directly to KafScale Broker.
+For local KafScale, build the [pinned transport bundle](../../opentsx-kafscale-conformance/README.md#build-the-pinned-transport-bundle)
+and supply the private MinIO environment values from the [Proxy setup](../../opentsx-kafscale-conformance/README.md#start-the-local-proxy).
+The local probe checks these prerequisites before invoking Compose. Read its report for the result of each executed step.
 
 ## Pages
 
 | Page | Content |
 |------|---------|
 | [Operations](operations.md) | the local probe (`60-probe.sh`), service catalogue, environments, monitoring and alerting, logging, backup and restore, update and rollback, secrets, security, runbooks, roles, SLOs, capacity review |
-| [Anleitung lokale Testinstallation](anleitung-lokale-testinstallation.md) (German, printable) | one Linux machine: local KafScale via docker compose + k3s, step by step with expected output, checklist, troubleshooting, plan B without a cluster |
+| [Local k3s trial](anleitung-lokale-testinstallation.md) | entry point for the maintained Proxy setup, k3s installation and operations guides |
 | [Setup plan](setup-plan.md) | prerequisites, network path to KafScale, step-by-step installation with checks after each step, configuration reference, upgrade, teardown |
 | [Sizing plan](sizing-plan.md) | resources per component, storage formula and worked examples (wind farm, house, boat), what still has to be measured |
 | [Demos](demos.md) | how to run each example on k3s and what output to expect |
@@ -78,7 +65,7 @@ flowchart LR
 | Iceberg REST catalog, MinIO | Deployments (lake profile) | `apache/iceberg-rest-fixture:1.9.2`, `quay.io/minio/minio` | — |
 
 KafScale itself is **not** deployed: the guide assumes an existing cluster (for a local one, see
-`docker-compose.kafscale.yml` and [Getting started](../user-manual/02-getting-started.md)).
+[Proxy setup](../../opentsx-kafscale-conformance/README.md#start-the-local-proxy) and [Getting started](../user-manual/02-getting-started.md)).
 
 ## Quick start
 
@@ -95,7 +82,7 @@ Step by step:
 deploy/k3s/00-prereqs.sh                                   # tools, cluster, KafScale reachable?
 deploy/k3s/10-build.sh                                     # mvn install, stage jars, build opentsx/tools + opentsx/studio
 deploy/k3s/11-import-images.sh                             # docker save | sudo k3s ctr images import -
-deploy/k3s/20-configure.sh KAFSCALE_BOOTSTRAP=192.168.1.50:9092   # your broker, reachable from the pods
+deploy/k3s/20-configure.sh KAFSCALE_BOOTSTRAP=192.168.1.50:9092   # your Proxy, reachable from the pods
 deploy/k3s/30-deploy.sh                                    # kubectl apply -k deploy/k3s/overlays/local
 deploy/k3s/40-demo.sh kafscale-check                       # from inside the cluster, incl. advertised addresses
 deploy/k3s/40-demo.sh all                                  # every example, with output
@@ -133,7 +120,7 @@ Every script has `--help`, is idempotent and stops with a clear message when som
 |----------|--------|-----|
 | Images | one tools image for all Java commands, built from **pre-staged jars** (no Maven in Docker) | one artifact to version and import; the build reuses the local Maven repository and works offline; no `RUN` step, so an arm64 image for a Raspberry Pi needs no emulation |
 | Studio | page generated **during the image build** (multi-stage: StudioExport → `build_studio.py` → nginx) | immutable and versioned with the code; no ReadWriteMany volume between a Job and nginx (k3s' local-path volumes are node-local). The `studio-export` Job proves the export also runs in the cluster |
-| KafScale access | `direct` (default), `hostnetwork` or `service` | KafScale clients connect to the **advertised** broker address after the bootstrap; a Service can only alias the bootstrap. See [setup plan, step 3](setup-plan.md#step-3-network-path-to-kafscale) |
+| KafScale access | `direct` (default), `hostnetwork` or `service` | KafScale clients connect to the **advertised** Proxy address after the bootstrap; a Service can only alias the bootstrap. See [setup plan, step 3](setup-plan.md#step-3-network-path-to-kafscale) |
 | Statistics processor | exactly one replica, `Recreate`, checkpoint on a PVC | manual partition assignment and checkpoint file (KafScale consumer groups are unreliable) |
 | Topic provisioning | `kafscale-check --provision true` or the first `windpark-sim` run (`TopicLayout.provision`) | no separate CLI existed; the helper reuses `TopicLayout` so partitions and configs are identical |
 | Configuration | `KEY=VALUE` → `.env` → rendered kustomize overlay | no secrets in Git; one place to change; the overlay can be inspected with `kubectl kustomize` |
