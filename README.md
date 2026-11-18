@@ -129,9 +129,13 @@ Configure OpenTSx producers with Apache Kafka brokers or a KafScale Proxy
 endpoint. For KafScale, start with the
 [local Proxy setup](opentsx-kafscale-conformance/README.md#start-the-local-proxy),
 then follow the
-[Kafka-native streaming guide](docs/devops/kafka-native-streaming.md). Statistical
-Smart Topics and general processor DAGs have separate execution contracts;
-choose the documented profile for the output you need.
+[Kafka-native streaming guide](docs/devops/kafka-native-streaming.md). The
+pinned local KafScale bundle serializes metadata snapshot changes and
+refreshes durable metadata for Proxy responses. Durable read failures
+return an error. These overlays cover the local single-broker fixture.
+
+Statistical Smart Topics and general processor DAGs have separate execution
+contracts; choose the documented profile for the output you need.
 
 ## Learn, extend and operate
 

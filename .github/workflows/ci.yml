@@ -386,7 +386,7 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = 2809a3a20bf40ed8a2b82cd93215cb59396efb0a
           PYTHONPATH="$GITHUB_WORKSPACE/tools" python3 -c 'import os; from pathlib import Path; import build_kafscale_proxy; build_kafscale_proxy.transport_overlay(Path.cwd(), Path(os.environ["RUNNER_TEMP"]))'
-          CGO_ENABLED=0 go test -overlay="$RUNNER_TEMP/broker-overlay.json" ./cmd/proxy -run '^TestOpenTSxProxy' -count=1 -v
+          CGO_ENABLED=0 go test -overlay="$RUNNER_TEMP/broker-overlay.json" ./cmd/proxy ./pkg/metadata -run '^TestOpenTSx(Proxy|Metadata)' -count=1 -v
           CGO_ENABLED=0 go build -overlay="$RUNNER_TEMP/broker-overlay.json" -trimpath -buildvcs=false -ldflags=-buildid= -o "$RUNNER_TEMP/kafscale-broker" ./cmd/broker
           CGO_ENABLED=0 go build -overlay="$RUNNER_TEMP/broker-overlay.json" -trimpath -buildvcs=false -ldflags=-buildid= -o "$RUNNER_TEMP/kafscale-proxy" ./cmd/proxy
           CGO_ENABLED=0 go build -overlay="$RUNNER_TEMP/broker-overlay.json" -trimpath -buildvcs=false -ldflags=-buildid= -o "$RUNNER_TEMP/kafscale-cluster" "$GITHUB_WORKSPACE/tools/kafscale_proxy_cluster.go"

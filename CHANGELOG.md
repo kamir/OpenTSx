@@ -8,10 +8,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ## [Unreleased]
 
-- Serialize pinned local KafScale metadata snapshots so concurrent watcher refreshes retain acknowledged topic creation.
+- Serialize pinned local KafScale metadata snapshots and refresh durable metadata before public reads. Proxy metadata
+  responses retain acknowledged topic changes without waiting for watchers and propagate durable read failures.
 
 ### Changed
 
+- Keep committed offsets monotonic in the pinned local KafScale metadata overlay.
+  Conditional updates retain newer flush progress and propagate storage failures.
 - Route local KafScale producers and test fixtures through the v1.6.0 Proxy. Build the pinned broker, Proxy and
   isolated metadata launcher without building an image. Compose exposes the Proxy endpoint; the development
   MinIO stack requires private `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` environment values.

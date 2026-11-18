@@ -33,7 +33,7 @@ SOURCES = ("tools/wayang_track_a_evaluation.py",
            "opentsx-wayang/src/test/java/org/opentsx/wayang/FederationEvaluation.java",
            "opentsx-wayang/src/test/java/org/opentsx/wayang/StreamingEvaluation.java")
 TRANSPORT_SOURCES = ("tools/build_kafscale_proxy.py", "tools/kafscale_proxy_cluster.go",
-                     "tools/kafscale_metadata_overlay.py", "tools/kafscale_proxy_protocol_overlay.py",
+                     "tools/kafscale_metadata_overlay.py", "tools/kafscale_metadata_test.go", "tools/kafscale_proxy_protocol_overlay.py",
                      "tools/kafscale_proxy_protocol_test.go")
 ERRORS = {"mean_relative_error": "maxRelativeMeanError", "m2_relative_error": "maxRelativeM2Error",
           "central_native_mean_relative_error": "maxCentralRelativeMeanError",
@@ -477,7 +477,7 @@ def main():
                 go_env = env | {"GOTOOLCHAIN": "go1.25.2"}
                 metadata["goVersion"] = command(["go", "version"], cwd=source, env=go_env).strip()
                 overlay = COMMON.build_kafscale_proxy.transport_overlay(source, work)
-                command(["go", "test", f"-overlay={overlay}", "-run", "^TestOpenTSxProxy", "-count=1", "./cmd/proxy"], cwd=source, env=go_env, log=log)
+                command(["go", "test", f"-overlay={overlay}", "-run", "^TestOpenTSx(Proxy|Metadata)", "-count=1", "./cmd/proxy", "./pkg/metadata"], cwd=source, env=go_env, log=log)
                 binary = work / "kafscale-broker"
                 command(["go", "build", "-o", str(binary), f"-overlay={overlay}", "./cmd/broker"], cwd=source, env=go_env, log=log)
                 proxy = work / "kafscale-proxy"
