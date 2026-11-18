@@ -1672,6 +1672,33 @@ mod tests {
     }
 
     #[test]
+    fn all_shared_time_delta_cases_encode_and_decode_exactly() {
+        let cases: Value = serde_json::from_str(include_str!(
+            "../../../opentsx-model/src/test/resources/testvectors/time-deltas.json"
+        ))
+        .unwrap();
+        let cases = cases.as_array().unwrap();
+        assert_eq!(cases.len(), 5);
+        for case in cases {
+            let times: Vec<_> = case["timestampsUs"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| value.as_i64().unwrap())
+                .collect();
+            let encoded = encode_deltas(&times).unwrap();
+            let hex: String = encoded.iter().map(|byte| format!("{byte:02x}")).collect();
+            assert_eq!(hex, case["deltasHex"].as_str().unwrap());
+            let mut input = raw(vec![1.0; times.len()], times[0], 1);
+            input.time_encoding = TimeEncoding::IrregularDelta;
+            input.interval_micros = None;
+            input.time_deltas = Some(encoded);
+            input.t_end = times.last().unwrap().checked_add(1).unwrap();
+            assert_eq!(input.timestamps().unwrap(), times);
+        }
+    }
+
+    #[test]
     fn resample_epoch_floor_long_gap_and_signed_zero_match_java() {
         let mut pipeline =
             compile(&[json!({"id":"r","op":"resample","params":{"every":0.000003,"agg":"MIN"}})]);

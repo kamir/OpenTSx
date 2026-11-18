@@ -948,7 +948,8 @@
       "surface": "library",
       "objectives": [
         "Inspect the wire envelope and decode the exact record type.",
-        "Separate schema fingerprint compatibility from arbitrary decoding."
+        "Separate schema fingerprint compatibility from arbitrary decoding.",
+        "Compare Java and Rust wire bytes and identity helpers using shared vectors."
       ],
       "prerequisites": [
         "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
@@ -957,7 +958,9 @@
       "tasks": [
         "Build a regular episode with a fixed ID and clock.",
         "Encode and decode it as Episode.",
-        "Compare one existing shared wire-vector hex value and inspect its fingerprint."
+        "Compare one existing shared wire-vector hex value and inspect its fingerprint.",
+        "Run the referenced Rust wire, identity and time-delta vector cases.",
+        "Run the referenced Rust xxHash64 and bucket-checksum vector cases."
       ],
       "starter": {
         "language": "java",
@@ -967,28 +970,47 @@
       "expected": [
         "The decoded episode equals the original, including time axis and provenance.",
         "Shared wire vectors require identical hex, not only equivalent values.",
-        "The default frame begins with bytes c3 01 and its eight-byte schema fingerprint."
+        "The default frame begins with bytes c3 01 and its eight-byte schema fingerprint.",
+        "Rust wire and identity tests read the original shared vector files."
       ],
       "pitfalls": [
         "Unknown writer schemas require explicit registration or a resolver.",
-        "A Confluent frame and an Avro single-object frame have different headers."
+        "A Confluent frame and an Avro single-object frame have different headers.",
+        "Rust wire decoding supports Episode records only.",
+        "Identity helpers do not add a DAG operator or activate a runner."
       ],
       "references": {
         "manual": [
           "docs/user-manual/03-data-model.md#34-wire-format",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/user-manual/17-learn-operators.md#distinguish-signed-runner-admission-from-operator-availability"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#decode-avro-records"
         ],
         "source": [
-          "opentsx-model/src/main/java/org/opentsx/model/OpenTsxAvro.java#L92"
+          "opentsx-model/src/main/java/org/opentsx/model/OpenTsxAvro.java#L92",
+          "opentsx-model/src/main/java/org/opentsx/model/Buckets.java#checksum",
+          "rust/tsx-runner/src/wire.rs#decode",
+          "rust/tsx-runner/src/model.rs#series_id",
+          "rust/tsx-runner/src/model.rs#xxh64_hex",
+          "rust/tsx-runner/src/model.rs#bucket_checksum"
         ],
         "tests": [
-          "opentsx-model/src/test/java/org/opentsx/model/EpisodesAndWireFormatTest.java#L71"
+          "opentsx-model/src/test/java/org/opentsx/model/EpisodesAndWireFormatTest.java#L71",
+          "opentsx-model/src/test/java/org/opentsx/model/SeriesIdentityTest.java#bucketChecksumMatchesSharedVectors",
+          "rust/tsx-runner/src/wire.rs#episode_wire_vectors_round_trip_byte_for_byte_and_preserve_full_fields",
+          "rust/tsx-runner/src/wire.rs#all_series_identity_vectors_match_without_unicode_normalization",
+          "rust/tsx-runner/src/operators.rs#all_shared_time_delta_cases_encode_and_decode_exactly",
+          "rust/tsx-runner/tests/vector_identity.rs#all_shared_xxh64_cases_match_exactly",
+          "rust/tsx-runner/tests/vector_identity.rs#all_shared_bucket_checksum_cases_match_exactly"
         ],
         "vectors": [
-          "opentsx-model/src/test/resources/testvectors/wire-format.json"
+          "opentsx-model/src/test/resources/testvectors/wire-format.json",
+          "opentsx-model/src/test/resources/testvectors/series-id.json",
+          "opentsx-model/src/test/resources/testvectors/xxh64.json",
+          "opentsx-model/src/test/resources/testvectors/time-deltas.json",
+          "opentsx-model/src/test/resources/testvectors/bucket-checksum.json"
         ]
       }
     },
@@ -1233,7 +1255,8 @@
         "Compare the local increment checkpoint with the signed JVM continuation identity and its durable admission outcome.",
         "Stop one site, reload the completeness coordinator, return the site and verify appended final revisions without replacing earlier Kafka records.",
         "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output.",
-        "Lose a retirement reply after a bounded result is acknowledged. Verify that recovery reuses the saved result and the same retirement operation, without another execute call or early topic release."
+        "Lose a retirement reply after a bounded result is acknowledged. Verify that recovery reuses the saved result and the same retirement operation, without another execute call or early topic release.",
+        "Run the Rust worker and checkpoint owner-drop regressions with inherited descriptors retained. Verify exclusion while the owner lives and immediate reacquisition after it closes."
       ],
       "starter": {
         "language": "java",
@@ -1257,7 +1280,8 @@
         "One completed worker head and one uncertain candidate bound history. A stopped deployment does not authorize another chain or an implicit state reset.",
         "Catalog membership does not turn the local checkpoint round-trip into catalog admission, fenced ownership or state-ABI migration.",
         "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
-        "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration."
+        "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration.",
+        "Rust file locks release explicitly in the acquiring process; inherited descriptors cannot postpone restart or authorize a copied owner to unlock its parent. These lock lifetimes do not change the Java starter or make its checkpoint state portable."
       ],
       "references": {
         "manual": [
@@ -1269,7 +1293,8 @@
           "docs/user-manual/17-learn-operators.md#use-frozen-catalog-1",
           "docs/user-manual/17-learn-operators.md#compile-the-exported-workbench-document",
           "docs/user-manual/17-learn-operators.md#follow-the-signed-bounded-jvm-statistics-profile",
-          "opentsx-wayang/README.md#execute-a-signed-bounded-jvm-statistics-stage"
+          "opentsx-wayang/README.md#execute-a-signed-bounded-jvm-statistics-stage",
+          "rust/tsx-runner/README.md#serve-a-trusted-local-worker"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#persist-an-increment-checkpoint",
@@ -1296,7 +1321,8 @@
           "rust/tsx-runner/src/publication.rs",
           "rust/tsx-runner/src/worker.rs#install_publication",
           "opentsx-saas-backend/app/services/wayang_service.py#reconcile_switch",
-          "opentsx-saas-backend/app/services/wayang_service.py#finish_stop"
+          "opentsx-saas-backend/app/services/wayang_service.py#finish_stop",
+          "rust/tsx-runner/src/checkpoint.rs"
         ],
         "tests": [
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointTest.java#aWrittenCheckpointReadsBackAndLeavesNoTemporaryFile",
@@ -1323,7 +1349,9 @@
           "rust/tsx-runner/tests/publication_fencing.rs",
           "opentsx-saas-backend/tests/test_wayang_switch.py",
           "tools/test_kafscale_fenced_topology.py",
-          "opentsx-saas-backend/tests/test_wayang_switch.py#test_bounded_lost_retirement_reply_reuses_durable_result_and_operation"
+          "opentsx-saas-backend/tests/test_wayang_switch.py#test_bounded_lost_retirement_reply_reuses_durable_result_and_operation",
+          "rust/tsx-runner/src/checkpoint.rs#checkpoint_owner_drop_releases_inherited_descriptors_without_unlocking_a_successor",
+          "rust/tsx-runner/src/worker.rs#worker_owner_drop_releases_inherited_descriptors_without_unlocking_a_successor"
         ],
         "vectors": []
       }

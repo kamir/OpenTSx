@@ -81,7 +81,21 @@ pub struct Increment {
 }
 
 pub fn admit(text: &str, artifact_digest: &str) -> Result<Admitted, String> {
-    let value = tsx_contracts::parse_json(text, REQUEST_BYTES).map_err(str::to_string)?;
+    admit_with_caps(text, artifact_digest, REQUEST_BYTES, 64, 100_000)
+}
+
+pub(crate) fn admit_run(text: &str, artifact_digest: &str) -> Result<Admitted, String> {
+    admit_with_caps(text, artifact_digest, 262_144, 1_024, 1_000_000)
+}
+
+fn admit_with_caps(
+    text: &str,
+    artifact_digest: &str,
+    request_bytes: usize,
+    max_series: usize,
+    max_samples: usize,
+) -> Result<Admitted, String> {
+    let value = tsx_contracts::parse_json(text, request_bytes).map_err(str::to_string)?;
     let increment = match value["schema"].as_str() {
         Some("opentsx.local-bounded-run.v1") => {
             if value.get("sequence").is_some() || value.get("previousRequestHash").is_some() {
@@ -129,7 +143,7 @@ pub fn admit(text: &str, artifact_digest: &str) -> Result<Admitted, String> {
     };
     let request: LocalRequest =
         serde_json::from_value(value).map_err(|e| format!("local request fields: {e}"))?;
-    validate_limits(&request.limits)?;
+    validate_limits(&request.limits, max_series, max_samples)?;
     if !tsx_contracts::valid_topic(&request.sink.topic) {
         return Err("invalid output topic name".into());
     }
@@ -267,14 +281,18 @@ pub fn canonical_i64(text: &str, field: &str) -> Result<i64, String> {
     Ok(value)
 }
 
-fn validate_limits(limits: &Limits) -> Result<(), String> {
+pub(crate) fn validate_run_limits(limits: &Limits) -> Result<(), String> {
+    validate_limits(limits, 1_024, 1_000_000)
+}
+
+fn validate_limits(limits: &Limits, max_series: usize, max_samples: usize) -> Result<(), String> {
     for (name, value, ceiling) in [
         ("records", limits.records, 10_000),
         ("payloadBytes", limits.payload_bytes, 1_048_576),
         ("inputBytes", limits.input_bytes, 16_777_216),
-        ("samples", limits.samples, 100_000),
+        ("samples", limits.samples, max_samples),
         ("outputBytes", limits.output_bytes, 16_777_216),
-        ("series", limits.series, 64),
+        ("series", limits.series, max_series),
         ("stateBytes", limits.state_bytes, 1_048_576),
     ] {
         if value == 0 || value > ceiling {

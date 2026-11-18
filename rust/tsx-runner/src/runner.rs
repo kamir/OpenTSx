@@ -1,5 +1,5 @@
 use crate::admission::{Admitted, MAX_EPISODE_SAMPLES};
-use crate::broker::{Broker, OutputRecord};
+use crate::broker::{Broker, InputRecord, OutputRecord};
 use crate::checkpoint::{CompletedPosition, Completion, Receipt, Store};
 use crate::wire;
 use serde::{Deserialize, Serialize};
@@ -83,6 +83,7 @@ pub(crate) fn prepare_continued(
             .samples
             .checked_sub(samples)
             .ok_or("input sample limit exceeded")?;
+        validate_record_schema(run, record)?;
         let episode = wire::decode(
             &record.payload,
             run.request.limits.payload_bytes,
@@ -184,6 +185,34 @@ pub(crate) fn prepare_continued(
         output_series: output_series.into_iter().collect(),
         input_owners: owners,
     })
+}
+
+pub(crate) fn validate_record_schema(run: &Admitted, record: &InputRecord) -> Result<(), String> {
+    let prefix = format!(
+        "record {}/{}@{}",
+        run.cut.topic, record.partition, record.offset
+    );
+    if record.payload.len() < 10 || record.payload[..2] != [0xc3, 0x01] {
+        return Err(format!("{prefix} is not Avro single-object encoded"));
+    }
+    let fingerprint = u64::from_le_bytes(
+        record.payload[2..10]
+            .try_into()
+            .map_err(|_| "invalid single-object fingerprint")?,
+    );
+    let fingerprint = format!("{fingerprint:016x}");
+    if fingerprint != wire::FINGERPRINT {
+        let job = run.assignment["deployment"]
+            .as_str()
+            .ok_or("assignment deployment is missing")?;
+        let version = run.assignment["generation"]
+            .as_str()
+            .ok_or("assignment generation is missing")?;
+        return Err(format!(
+            "{prefix} has schema fingerprint {fingerprint}, not in plan {job} version {version}"
+        ));
+    }
+    Ok(())
 }
 
 pub fn activate(
