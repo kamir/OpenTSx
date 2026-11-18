@@ -27,20 +27,50 @@ global settings.
 | Statistics processor | `--windows`, `--lateness`, `--alpha`, `--checkpoint` |
 | Wind farm | scenario YAML, catalog YAML (`--catalog`) |
 
-The 2.x tools in `opentsx-core`, `opentsx-lg` and `opentsx-connectors` use `ConfigManager`, which resolves a key in
-this order:
+The 2.x tools in `opentsx-core`, `opentsx-lg` and `opentsx-connectors` use `ConfigManager`. It resolves each key in
+this order, from highest to lowest priority:
 
-1. JVM system property,
-2. environment variable (literal, or mapped to `OPENTSX_…`),
-3. profile overrides,
-4. `config/opentsx-default.properties`.
+1. JVM system property with the literal key.
+2. Environment variable with the literal key.
+3. Mapped environment variable: uppercase with `Locale.ROOT`, replace dots with underscores, and add `OPENTSX_`
+   unless the result already starts with that prefix.
+4. Explicit configuration file, or the selected profile when no explicit file is set.
+5. `config/opentsx-default.properties` relative to the working directory.
+6. Classpath resource `opentsx-default.properties`.
+7. The default supplied by the caller.
+
+Select a file with `opentsx.config.file`, or a profile with `opentsx.config.profile`; a profile loads
+`config/opentsx-<name>.properties`, where `<name>` is the selected profile name. Each canonical selector uses the
+JVM, literal environment and mapped environment lookup above before consulting its uppercase alias
+(`OPENTSX_CONFIG_FILE` or `OPENTSX_CONFIG_PROFILE`). A file selector takes precedence over a profile selector.
+Environment mapping is independent of the process language.
+
+Files load once during class initialization. JVM system properties and environment variables are checked for
+each requested key. Missing optional defaults in the working directory or classpath are allowed. A present default
+that cannot be read or parsed, or any I/O or parse failure in an explicitly selected file or profile, stops
+initialization. Each source is loaded into fresh `Properties` and merged only after loading and closing succeed;
+partial properties from a failed source are not merged. Sources use the `Properties.load(InputStream)` format.
+
+Loading failures raise `IllegalStateException` with `Failed to load configuration file: <path>` or
+`Failed to load classpath configuration: <resourcePath>`, identifying the failed source without property values.
+The first singleton initialization failure is wrapped in `ExceptionInInitializerError`. Correct the selected
+source and restart the process; changing a selector after initialization does not reload files.
+
+You need JDK 17 or later and Maven to run the configuration regression tests. From the repository root, run:
+
+```bash
+mvn -B -ntp -pl opentsx-core -am test \
+  -Dtest=ConfigManagerTest \
+  -Dsurefire.failIfNoSpecifiedTests=false
+```
 
 [`opentsx.properties.example`](../../opentsx.properties.example) lists the keys the code reads, including how the v2
 modules are configured (command-line options and environment variables, no properties file). The 2.x Kafka client
 profile is `config/opentsx-local.props` (git-ignored; set `OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME` to use
 another file). Without it, the template [`config/opentsx-local.props.example`](../../config/opentsx-local.props.example)
 (localhost, KafScale-compatible) is used. Profiles with real hosts or credentials belong in `config/private/`
-(git-ignored).
+(git-ignored). This Kafka client file is separate from the `ConfigManager` defaults and profiles above.
+The `ProductionConfig` onboarding demo also loads its own `./opentsx.properties`; it does not use `ConfigManager`.
 
 ## 12.3 State and restarts
 

@@ -1,8 +1,12 @@
 package org.opentsx.core.config;
 
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.util.Locale;
 import java.util.Properties;
 
 public final class ConfigManager {
@@ -66,7 +70,7 @@ public final class ConfigManager {
     }
 
     private String mapEnvKey(String key) {
-        String upper = key.toUpperCase().replace('.', '_');
+        String upper = key.toUpperCase(Locale.ROOT).replace('.', '_');
         if (upper.startsWith("OPENTSX_")) {
             return upper;
         }
@@ -75,7 +79,10 @@ public final class ConfigManager {
 
     private void loadDefaults() {
         loadFromClasspath("opentsx-default.properties");
-        loadFromFile("config/opentsx-default.properties");
+        String defaultFile = "config/opentsx-default.properties";
+        if (!Files.notExists(Path.of(defaultFile), LinkOption.NOFOLLOW_LINKS)) {
+            loadFromFile(defaultFile);
+        }
     }
 
     private void loadProfileOverrides() {
@@ -97,22 +104,26 @@ public final class ConfigManager {
     }
 
     private void loadFromClasspath(String resourcePath) {
-        try (InputStream is = ConfigManager.class.getClassLoader().getResourceAsStream(resourcePath)) {
-            if (is != null) {
-                properties.load(is);
-            }
-        } catch (Exception ignored) {
+        URL resource = ConfigManager.class.getClassLoader().getResource(resourcePath);
+        if (resource == null) {
+            return;
         }
+        Properties loaded = new Properties();
+        try (InputStream is = resource.openStream()) {
+            loaded.load(is);
+        } catch (IOException | IllegalArgumentException failure) {
+            throw new IllegalStateException("Failed to load classpath configuration: " + resourcePath, failure);
+        }
+        properties.putAll(loaded);
     }
 
     private void loadFromFile(String path) {
-        File file = new File(path);
-        if (!file.exists() || !file.canRead()) {
-            return;
+        Properties loaded = new Properties();
+        try (InputStream fis = Files.newInputStream(Path.of(path))) {
+            loaded.load(fis);
+        } catch (IOException | IllegalArgumentException failure) {
+            throw new IllegalStateException("Failed to load configuration file: " + path, failure);
         }
-        try (FileInputStream fis = new FileInputStream(file)) {
-            properties.load(fis);
-        } catch (Exception ignored) {
-        }
+        properties.putAll(loaded);
     }
 }

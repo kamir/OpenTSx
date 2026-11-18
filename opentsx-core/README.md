@@ -22,6 +22,13 @@ This is the original OpenTSx library. It works on `TimeSeriesObject` and TSBucke
   interface.
 * **v2 data:** convert episodes with `opentsx-legacy-bridge`.
 
+## Configure 2.x tools
+
+`ConfigManager` loads defaults and a selected file or profile once, while checking JVM and environment overrides
+for each requested key. Unreadable or malformed sources stop initialization; absent optional defaults are allowed.
+See [configuration loading](../docs/user-manual/12-operations.md#122-configuration) for source precedence,
+locale-independent environment mapping, failure messages and the regression test command.
+
 ## Preview and export a time series
 
 `TimeSeriesObject.toString()` shows up to five coordinate-value pairs and marks truncation only when more
