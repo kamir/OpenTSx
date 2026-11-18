@@ -27,6 +27,11 @@ hashes without Docker or network access. A changed binary, launcher or builder
 rejects reuse and requires rebuilding. The broker version is stamped as `v1.6.0`
 through a Go build overlay; the pinned source checkout remains unchanged.
 
+The local bundle also applies a [guarded metadata overlay](../tools/kafscale_metadata_overlay.py) to the exact
+v1.6.0 source. One mutex covers metadata snapshot mutations and complete watcher refreshes. This prevents a
+stale refresh from discarding acknowledged topic creation in these single-broker fixtures. The manifest includes
+the overlay hash. The source checkout remains unchanged; multi-broker metadata coordination is outside this patch.
+
 ## Start the local Proxy
 
 Export nonempty `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` from your private

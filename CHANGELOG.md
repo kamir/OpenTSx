@@ -8,6 +8,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ## [Unreleased]
 
+- Serialize pinned local KafScale metadata snapshots so concurrent watcher refreshes retain acknowledged topic creation.
+
 ### Changed
 
 - Route local KafScale producers and test fixtures through the v1.6.0 Proxy. Build the pinned broker, Proxy and

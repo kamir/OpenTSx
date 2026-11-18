@@ -7,6 +7,8 @@ import shutil
 import subprocess
 import sys
 
+from kafscale_metadata_overlay import metadata_overlay
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_COMMIT = "2809a3a20bf40ed8a2b82cd93215cb59396efb0a"
@@ -23,7 +25,8 @@ def digest(path):
 def identity():
     return {"sourceCommit": SOURCE_COMMIT, "sourceVersion": "v1.6.0", "compilerImage": COMPILER_IMAGE,
             "launcherSha256": digest(ROOT / "tools/kafscale_proxy_cluster.go"),
-            "builderSha256": digest(Path(__file__).resolve())}
+            "builderSha256": digest(Path(__file__).resolve()),
+            "metadataOverlaySha256": digest(ROOT / "tools/kafscale_metadata_overlay.py")}
 
 
 def broker_overlay(source, output, source_root=None, output_root=None):
@@ -38,6 +41,15 @@ def broker_overlay(source, output, source_root=None, output_root=None):
     overlay.write_text(json.dumps({"Replace": {
         str(Path(source_root or source) / "cmd/broker/main.go"): str(Path(output_root or output) / stamped.name)
     }}) + "\n")
+    return overlay
+
+
+
+def transport_overlay(source, output, source_root=None, output_root=None):
+    overlay = broker_overlay(source, output, source_root, output_root)
+    value = json.loads(overlay.read_text())
+    value["Replace"].update(metadata_overlay(source, output, source_root, output_root))
+    overlay.write_text(json.dumps(value) + "\n")
     return overlay
 
 
@@ -72,7 +84,7 @@ def build():
     if revision != SOURCE_COMMIT:
         raise RuntimeError("KafScale source checkout differs from the pinned v1.6.0 commit")
     subprocess.run(["git", "diff", "--exit-code", "HEAD"], cwd=source, check=True)
-    broker_overlay(source, DIRECTORY, "/source", "/artifacts")
+    transport_overlay(source, DIRECTORY, "/source", "/artifacts")
     (DIRECTORY / "manifest.json").unlink(missing_ok=True)
     command = ["docker", "run", "--rm", "--cpus", "2", "--memory", "3g", "--user", f"{os.getuid()}:{os.getgid()}",
                "--mount", f"type=bind,src={source},dst=/source,readonly",
@@ -82,8 +94,8 @@ def build():
                "--workdir", "/source", "--env", "CGO_ENABLED=0", "--env", "GOMAXPROCS=2", "--env", "GOTOOLCHAIN=local",
                "--env", "GOPATH=/cache/modules", "--env", "GOCACHE=/cache/build", COMPILER_IMAGE,
                "sh", "-ec", "go build -overlay=/artifacts/broker-overlay.json -trimpath -buildvcs=false -ldflags=-buildid= -o /artifacts/kafscale-broker ./cmd/broker; "
-               "go build -trimpath -buildvcs=false -ldflags=-buildid= -o /artifacts/kafscale-proxy ./cmd/proxy; "
-               "go build -trimpath -buildvcs=false -ldflags=-buildid= -o /artifacts/kafscale-cluster /cluster.go"]
+               "go build -overlay=/artifacts/broker-overlay.json -trimpath -buildvcs=false -ldflags=-buildid= -o /artifacts/kafscale-proxy ./cmd/proxy; "
+               "go build -overlay=/artifacts/broker-overlay.json -trimpath -buildvcs=false -ldflags=-buildid= -o /artifacts/kafscale-cluster /cluster.go"]
     subprocess.run(command, check=True)
     manifest = {"identity": identity(), "binaries": {name: digest(DIRECTORY / name) for name in BINARIES}}
     (DIRECTORY / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")

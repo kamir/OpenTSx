@@ -284,12 +284,12 @@ def main():
             go_env = env | {"GOTOOLCHAIN": "go1.25.2"}
             metadata["goVersion"] = command(["go", "version"], cwd=source, env=go_env).strip()
             binary = work / "kafscale-broker"
-            overlay = build_kafscale_proxy.broker_overlay(source, work)
+            overlay = build_kafscale_proxy.transport_overlay(source, work)
             command(["go", "build", "-o", str(binary), f"-overlay={overlay}", "./cmd/broker"], cwd=source, env=go_env, log=log)
             proxy = work / "kafscale-proxy"
-            command(["go", "build", "-o", str(proxy), "./cmd/proxy"], cwd=source, env=go_env, log=log)
+            command(["go", "build", "-o", str(proxy), f"-overlay={overlay}", "./cmd/proxy"], cwd=source, env=go_env, log=log)
             cluster = work / "kafscale-cluster"
-            command(["go", "build", "-o", str(cluster), str(ROOT / "tools/kafscale_proxy_cluster.go")], cwd=source, env=go_env, log=log)
+            command(["go", "build", "-o", str(cluster), f"-overlay={overlay}", str(ROOT / "tools/kafscale_proxy_cluster.go")], cwd=source, env=go_env, log=log)
             command(["mvn", "-B", "-ntp", "-pl", "opentsx-wayang", "-am", "install", "-DskipTests"], env=env, log=log)
             classpath_file = work / "test.cp"
             command(["mvn", "-B", "-ntp", "-pl", "opentsx-wayang", "org.apache.maven.plugins:maven-dependency-plugin:3.7.0:build-classpath",

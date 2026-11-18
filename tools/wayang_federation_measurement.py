@@ -23,7 +23,7 @@ ROUTES = ("centralized", "signal-cluster", "job-state")
 FIELDS = ("route", "site", "topic", "produce_frame_bytes", "produce_records", "produce_errors",
           "http_body_bytes", "http_records", "tls_client_bytes", "elapsed_ms")
 SOURCE_FILES = ("tools/wayang_federation_measurement.py", "tools/wayang_increment_latency.py",
-                "tools/kafscale_proxy_cluster.go", "tools/build_kafscale_proxy.py",
+                "tools/kafscale_proxy_cluster.go", "tools/build_kafscale_proxy.py", "tools/kafscale_metadata_overlay.py",
                 "opentsx-wayang/src/test/java/org/opentsx/wayang/FederationMeasurement.java",
                 "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedWindparkData.java",
                 "opentsx-wayang/src/test/java/org/opentsx/wayang/LatencyProtocolObserver.java",
@@ -233,12 +233,12 @@ def main():
                 go_env = env | {"GOTOOLCHAIN": "go1.25.2"}
                 metadata["goVersion"] = command(["go", "version"], cwd=source, env=go_env).strip()
                 binary = work / "kafscale-broker"
-                overlay = LATENCY.build_kafscale_proxy.broker_overlay(source, work)
+                overlay = LATENCY.build_kafscale_proxy.transport_overlay(source, work)
                 command(["go", "build", "-o", str(binary), f"-overlay={overlay}", "./cmd/broker"], cwd=source, env=go_env, log=log)
                 proxy = work / "kafscale-proxy"
-                command(["go", "build", "-o", str(proxy), "./cmd/proxy"], cwd=source, env=go_env, log=log)
+                command(["go", "build", "-o", str(proxy), f"-overlay={overlay}", "./cmd/proxy"], cwd=source, env=go_env, log=log)
                 cluster = work / "kafscale-cluster"
-                command(["go", "build", "-o", str(cluster), str(ROOT / "tools/kafscale_proxy_cluster.go")], cwd=source, env=go_env, log=log)
+                command(["go", "build", "-o", str(cluster), f"-overlay={overlay}", str(ROOT / "tools/kafscale_proxy_cluster.go")], cwd=source, env=go_env, log=log)
                 metadata["brokerBinarySha256"] = LATENCY.sha256(binary)
                 metadata["proxyBinarySha256"] = LATENCY.sha256(proxy)
                 metadata["clusterBinarySha256"] = LATENCY.sha256(cluster)

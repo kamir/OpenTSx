@@ -385,10 +385,10 @@ jobs:
         working-directory: kafscale
         run: |
           test "$(git rev-parse HEAD)" = 2809a3a20bf40ed8a2b82cd93215cb59396efb0a
-          PYTHONPATH="$GITHUB_WORKSPACE/tools" python3 -c 'import os; from pathlib import Path; import build_kafscale_proxy; build_kafscale_proxy.broker_overlay(Path.cwd(), Path(os.environ["RUNNER_TEMP"]))'
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python3 -c 'import os; from pathlib import Path; import build_kafscale_proxy; build_kafscale_proxy.transport_overlay(Path.cwd(), Path(os.environ["RUNNER_TEMP"]))'
           CGO_ENABLED=0 go build -overlay="$RUNNER_TEMP/broker-overlay.json" -trimpath -buildvcs=false -ldflags=-buildid= -o "$RUNNER_TEMP/kafscale-broker" ./cmd/broker
-          CGO_ENABLED=0 go build -trimpath -buildvcs=false -ldflags=-buildid= -o "$RUNNER_TEMP/kafscale-proxy" ./cmd/proxy
-          CGO_ENABLED=0 go build -trimpath -buildvcs=false -ldflags=-buildid= -o "$RUNNER_TEMP/kafscale-cluster" "$GITHUB_WORKSPACE/tools/kafscale_proxy_cluster.go"
+          CGO_ENABLED=0 go build -overlay="$RUNNER_TEMP/broker-overlay.json" -trimpath -buildvcs=false -ldflags=-buildid= -o "$RUNNER_TEMP/kafscale-proxy" ./cmd/proxy
+          CGO_ENABLED=0 go build -overlay="$RUNNER_TEMP/broker-overlay.json" -trimpath -buildvcs=false -ldflags=-buildid= -o "$RUNNER_TEMP/kafscale-cluster" "$GITHUB_WORKSPACE/tools/kafscale_proxy_cluster.go"
       - name: Start isolated KafScale Proxy with private broker and metadata
         run: |
           nohup "$RUNNER_TEMP/kafscale-cluster" --listen 127.0.0.1:39092 \

@@ -66,6 +66,7 @@ class KafScaleProxyTransportTest(unittest.TestCase):
             (source / "main.go").write_text('package main\nconst brokerVersion        = "dev"\n')
             (root / "tools").mkdir()
             (root / "tools/kafscale_proxy_cluster.go").write_text("pinned launcher")
+            (root / "tools/kafscale_metadata_overlay.py").write_text("pinned metadata overlay")
             directory = root / "target/bundle"
             commands = []
 
@@ -79,7 +80,8 @@ class KafScaleProxyTransportTest(unittest.TestCase):
                 return subprocess.CompletedProcess(command, 0, stdout=BUILD.SOURCE_COMMIT + "\n")
 
             with patch.object(BUILD, "ROOT", root), patch.object(BUILD, "DIRECTORY", directory), \
-                    patch.object(BUILD.shutil, "which", return_value="/tool"), patch.object(BUILD.subprocess, "run", side_effect=execute):
+                    patch.object(BUILD.shutil, "which", return_value="/tool"), patch.object(BUILD.subprocess, "run", side_effect=execute), \
+                    patch.object(BUILD, "metadata_overlay", return_value={}):
                 BUILD.build()
             compiler = next(command for command in commands if command[0] == "docker")
             self.assertEqual("2", compiler[compiler.index("--cpus") + 1])
@@ -94,6 +96,7 @@ class KafScaleProxyTransportTest(unittest.TestCase):
             (root / "tools").mkdir()
             launcher = root / "tools/kafscale_proxy_cluster.go"
             launcher.write_text("pinned launcher")
+            (root / "tools/kafscale_metadata_overlay.py").write_text("pinned metadata overlay")
             with patch.object(BUILD, "ROOT", root), patch.object(BUILD, "DIRECTORY", directory):
                 for name in BUILD.BINARIES:
                     path = directory / name
