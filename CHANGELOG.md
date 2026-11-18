@@ -47,6 +47,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   explicit availability cutoffs, visible context waits and durable context/target cursors.
   Continuous statistical scoring requires whole one-partition input/context topics and rejects topology expansion.
 
+- Selectable Signal Engineer and Data Worker presentations with Instrument
+  Console, Diagnostic Bench, Pipeline Studio and Recipe Notebook layouts.
+  The Legacy mode retains the classic controls. Switching preserves the
+  shared graph, scope and modelling editor. Modern tools provide a searchable
+  operator library, staged settings, bounded FFT/ACF diagnostics and actual
+  sample previews. A deterministic thermal fixture exposes units and gaps.
+
 - Workbench modelling for finite regular targets: ARIMA, SARIMA and SARIMAX, reference forecasts,
   rolling-origin backtests, prediction intervals and JSON result export. Context values carry availability
   times checked at each origin. The local CP Compose profile serves the UI and bounded Python forecasting

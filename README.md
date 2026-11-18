@@ -1,207 +1,179 @@
-# OpenTSx: where complex dependencies become tangible and decidable
+# OpenTSx
+
+**Turn time series into data products.**
 
 [![CI](https://github.com/kamir/OpenTSx/actions/workflows/ci.yml/badge.svg)](https://github.com/kamir/OpenTSx/actions/workflows/ci.yml)
-![Java](https://img.shields.io/badge/Java-17%20%7C%2021-orange.svg)
-![Python](https://img.shields.io/badge/Python-3.10--3.13-blue.svg)
-![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
+[![Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-OpenTSx started as a toolkit for time-series computation. It is becoming more: **the place where the dependencies of
-a real system become visible, testable and decidable.**
+[Workbench](#choose-your-workspace) · [Run locally](#run-the-workbench) ·
+[LASCARIS](#connect-through-scalytics-lascaris) ·
+[Developer guide](docs/devguide/README.md) · [Research](#build-on-research)
 
-Wind farms, electrolyzers, storage, buyers, markets, grid rules, a family house or a sailing boat: in each of them
-many parts react to each other, often with a delay and under constraints that belong to different people. Looking
-at single time series rarely answers the questions that matter:
+OpenTSx is Mirko Kämpf's flagship open-source workbench for mapping, preparing,
+analyzing and publishing time-series data. Bring business events, industrial
+measurements or engineering telemetry into a common episode contract, then
+build inspectable signals, forecasts and Kafka-native data products.
 
-* What depends on what, and how long does the effect take?
-* What do we lose by operating each part on its own, and what would coordination gain?
-* What happens if I decide this, now, before I actually do it?
+The source changes. The time-series workflow stays consistent. OpenTSx is
+designed as the time-series domain module for
+[Scalytics LASCARIS](https://www.scalytics.io/en-gb/lascaris)
+solutions, with source integration
+and decentralized execution connected through explicit data and runtime
+contracts.
 
-OpenTSx answers them in five steps, each building on the one before:
+![Signal Engineer: temperature and heater traces with separate units, episode ranges, a missing-data interval and a processing graph](docs/images/workbench-signal-engineer.png)
 
-| Step | What it gives you | Building blocks |
-|------|-------------------|-----------------|
-| **1. Keep the facts** | every measurement, schedule and decision with time, unit and origin; exact replay | data model v2, KafScale storage and replay, Iceberg / OpenTSDB stores |
-| **2. Understand the signals** | statistics, data quality, episodes, patterns, forecasts | streaming statistics, segmentation and pattern search, Smart Topics |
-| **3. Make dependencies tangible** | which parts influence each other, with which delay, under which constraints; the coordination gap between separate and coordinated operation | P8 "interplay & coordination potential" (statistical dependence is treated as a hypothesis until checked against physics and balances) |
-| **4. Make them decidable** | an executable digital twin in which decisions propagate causally: shadow mode, what-if, forecast | `opentsx-twin` (atoms with model, views, dynamics and an exchangeable policy; wiring plan; bulk-synchronous execution) |
-| **5. Close the loop** | one view on the modelled system, approved commands back to the plant or the lab | Smart Topics Studio, command/feedback topic, edge publishers (e.g. LabVIEW, a Raspberry Pi on board) |
+*Implemented Workbench, showing a labelled synthetic thermal experiment.*
 
-Principles that hold throughout:
+## Build a data product from its source
 
-* **Every number shows its origin:** measured, reported, forecast, estimated or synthetic.
-* **Alternatives are compared fairly.** Each one is measured against the reference operation, with the same
-  information.
-* **Modelled is not proven.** A modelled potential and a proven saving stay separate.
-* **Safety stays local.** Local safety logic always wins over a twin's suggestion.
-* **Open and vendor-neutral.** Apache 2.0; Kafka-protocol logs and open table formats.
+1. **Map observations.** Declare series identity, dimensions, timestamps, units
+   and provenance at the input boundary. Sources enter through adapters,
+   episode files or Kafka-compatible topics.
+2. **Prepare episodes.** Select signals, align clocks, convert units, resample
+   and segment meaningful intervals. Keep missing values and unknown quality
+   explicit.
+3. **Inspect the signals.** Explore distributions, spectra, correlations and
+   event relationships. Record operator parameters and inspect each graph
+   node's actual output.
+4. **Evaluate predictions.** Fit ARIMA, SARIMA or SARIMAX, compare baselines
+   with chronological backtests, and inspect prediction intervals.
+5. **Publish supported processing.** Deploy supported operator graphs as Smart
+   Topics or register reviewed fitted artifacts for continuous scoring. Output
+   topics become reusable inputs for downstream data products.
 
-Read the [workbench analysis guide](docs/devguide/workbench-analysis.md) for pair-result tables, typed result inspection, episode quality, finite snapshots and deployment capability checks.
+The [episode contract](docs/datamodel-2026/04-MODELL-V2-SPEC.md),
+[operator lessons](docs/user-manual/17-learn-operators.md) and
+[reviewed forecast deployment](docs/devguide/model-smart-topics.md) connect
+these steps to their implementations and execution limits.
 
-Use the [local CP workbench](docs/devguide/local-cp-workbench.md) to build and run the browser and Python service
-against an existing Confluent Platform Docker network. The Modelling view fits ARIMA, SARIMA and SARIMAX on a
-finite regular target, compares naive, mean, drift and seasonal naive baselines, and reports chronological
-backtests and conditional Gaussian prediction intervals.
-ARIMA-family fitting uses the Harvey likelihood score with complex-step derivatives
-and rejects optimizer nonconvergence.
-The [model deployment guide](docs/devguide/model-smart-topics.md) covers reviewed MLflow registration,
-prediction from preserved fits and continuous ARIMA/SARIMA scoring into local Kafka Smart Topics. SARIMAX scoring
-joins a verified immutable known-ahead context topic, preserving availability
-cutoffs and both source positions. The local statistical scorer owns whole
-one-partition topics and rejects multipart sources and topology expansion.
+## Apply one workflow across domains
 
-### Three systems, one set of building blocks
+These application patterns use the same mapping, episode and analysis concepts.
+Each deployment supplies its domain's source adapters and operating rules.
 
-The same atoms and modes, wired differently. All three run today on synthetic or simulated data:
+| Domain | Example inputs | Data-product applications |
+| :--- | :--- | :--- |
+| Commerce | Orders, prices, demand | Forecasts and baseline comparisons |
+| Factories | Process and vibration | Cycle comparison and diagnostics |
+| Data centers | Power, temperature, load | Capacity and cooling analysis |
+| IoT | Devices and field sensors | Clock alignment and quality checks |
+| Space technology | Test and telemetry | Thermal and power-cycle analysis |
 
-| System | What it shows | Try it |
-|--------|---------------|--------|
-| **Energy system** (wind farm, electrolyzer, H₂ line, storage, marketing) | the offtake closes a valve. Pressure rises, the electrolyzer shuts down, the schedule breaks, and the marketer must sell more. The what-if and the forecast show the countermeasures. | `bin/opentsx twin` |
-| **Family house** in the Erzgebirge (oil and wood heating) | a reference year; levers such as −1 K, standby or a new freezer; calibration against bills | `bin/opentsx house --simulated` |
-| **Sailing boat** Etap 22 (power station, solar, shore power, Starlink) | autonomy and unmet demand on a two-week trip; panel size, station size and Starlink usage as levers; calibration against logger data | `bin/opentsx boat --simulated` |
+## Choose your workspace
 
-With a history archive ([`opentsx-market`](opentsx-market/README.md)) the same twins run on real years: day-ahead
-prices and wind for the energy system, measured temperatures for the house, measured irradiance for the boat
-(`bin/opentsx twin --history data/history --year 2024`).
+Use the same source, operator graph and modelling editor through three
+presentations. Switching modes preserves the working analysis.
 
-All three appear in the [Smart Topics Studio](docs/prototypes/smart-topics-studio.html) prototype. It shows
-statistics, prediction and what-if, and the node graph of each system's wiring plan.
+| Mode | Choose your layout |
+| :--- | :--- |
+| Signal Engineer | Instrument Console; Diagnostic Bench |
+| Data Worker | Pipeline Studio; Recipe Notebook |
+| Legacy | Classic Workbench controls and inspection tools |
 
-### Foundation
+Signal Engineer puts traces, units, cursors, trigger and diagnostics first.
+Data Worker puts source mapping, DAGs, actual data previews and recipes first.
 
-* **Data model v2.** Series identity is an xxHash64 of a canonical form. **Episodes** are the unit of exchange and
-  storage. Java and Python produce byte-identical Avro records.
-* **Storage and replay on [KafScale](https://kafscale.io).** Episodes are kept in buckets with checksums, and replay
-  is verifiable. The design works within KafScale's limits (no compaction, no idempotent producer, no timestamp seek).
-* **Stores behind one SPI.** Apache Iceberg (SQL, time travel, PyIceberg), OpenTSDB, and in-memory.
-* **Wind-farm domain.** A versioned data-point catalog mapped to IEC 61400-25-2, a normalizer, a simulator with
-  ground truth, and power-curve analysis.
-* **Streaming statistics and data quality.** Mergeable sketches; profiles and DQ results are published to
-  **OpenMetadata**.
-* **Retrieval.** Segmentation, pattern search (MASS, SAX, DTW), a fluent Java API, REST, and a Python client.
-* **Kafka-native Smart Topics.** Supported vector and series projections run through Kafka clients on KafScale,
-  with strict DAG validation, control/status topics and local checkpoints. See the
-  [streaming operating guide](docs/devops/kafka-native-streaming.md).
-* **Bounded Rust replay.** `tsx-runner` 0.1.0 executes one complete Kafka topic with pass-through or range checks,
-  unit conversion and a trailing resample. Explicit resource caps, acknowledged output and a local checkpoint
-  bound each replay. See the [local runner guide](docs/devguide/integration/rust-runner-local.md).
-* **Bounded UI rollout through Wayang.** The workbench submits one v2 DAG to the authenticated backend and
-  PostgreSQL journal. A real custom Wayang Rust platform prepares and activates one to three whole-topic workers.
-  See the [three-worker local guide](docs/devguide/integration/wayang-rust-compose.md).
-* **Continuous Rust execution through Wayang.** The explicit continuous target keeps complete topics on fixed
-  workers, persists successive cuts and resumes acknowledged positions and operator state after service restart.
-  Transient preparation failures retain private candidates for identical retry before activation.
-  See the [continuous Compose guide](docs/devguide/integration/wayang-rust-continuous.md).
-* **Classic analytics.** DFA, MFDFA, event synchronization, return-interval statistics.
+The contextual operator library exposes one configuration at a time. Runtime
+availability stays visible; adding a library algorithm does not imply that
+every processor can execute it. Read the
+[Workbench guide](docs/devguide/workbench-analysis.md) for controls, episode
+quality, diagnostics and finite snapshots.
 
-## Quick start
+![Data Worker: an applied alignment operator, a source-to-output graph, actual UTC sample values and a contextual parameter inspector](docs/images/workbench-data-worker.png)
 
-The Iceberg-backed Retrieval server requires existing `episodes` and `series` tables. The writer in the sequence
-below populates them first; Retrieval loads them without provisioning and rejects writes through its store.
-This does not add HTTP authentication or resource-level authorization.
-For optional KafScale storage, follow the [local Proxy setup](opentsx-kafscale-conformance/README.md#start-the-local-proxy).
-OpenTSx producers connect to Apache Kafka Broker or KafScale Proxy. They never publish directly to KafScale Broker.
-The pinned local bundle serializes metadata snapshot changes and refreshes durable metadata before responding
-through the Proxy. Durable read failures return an error; these overlays cover the local single-broker fixture.
+*Pipeline Studio, showing computed output from the same synthetic source.*
 
-```bash
-mvn -q install -DskipTests                          # JDK 17+
-pip install -e "python-package[iceberg]"            # Python 3.10+
+## Connect through Scalytics LASCARIS
 
-bin/opentsx windpark-sim --scenario opentsx-windpark/scenarios/ostsee-demo.yaml \
-    --iceberg type=jdbc,uri=jdbc:sqlite:/tmp/tsx/catalog.db,warehouse=file:/tmp/tsx/warehouse --namespace tsx
-bin/opentsx retrieval-server --port 8080 \
-    --iceberg type=jdbc,uri=jdbc:sqlite:/tmp/tsx/catalog.db,warehouse=file:/tmp/tsx/warehouse --namespace tsx
-```
+The integration principle is to connect sources through
+[Scalytics LASCARIS](https://www.scalytics.io/en-gb/lascaris) and apply
+time-series processing where data can be handled under the deployment's
+locality constraints.
+OpenTSx supplies the domain layer: source mapping, episode preparation,
+scientific operators, the Workbench and typed signal outputs.
 
-```python
-from opentsx.client import RetrievalClient
-df = RetrievalClient("http://localhost:8080").frame(metric="wind.met.wind_speed", tags={"turbine": "T07"}, limit=6)
-```
+The integration boundaries in this repository are episode contracts,
+Kafka/KafScale topics, library APIs and documented Apache Wayang execution
+profiles. Platform connectors and LASCARIS orchestration connect through those
+boundaries. This repository does not contain a separate LASCARIS connector
+distribution.
 
-The full walk-through, including KafScale, statistics and OpenMetadata, is in
-[Getting started](docs/user-manual/02-getting-started.md).
+For decentralized execution, use the
+[Wayang runtime profiles](docs/devguide/integration/wayang-unified-plan.md):
+bounded and trusted-local continuous Rust processing, and signed bounded JVM
+statistics federation. Operator support, topic ownership, checkpoints and
+publication guarantees are defined per profile.
 
-## Documentation
+The [federation measurement report](docs/datamodel-2026/measurements/wayang-federation-2026-11-17/REPORT.md)
+records executed comparisons and data movement. It distinguishes observed
+results from performance claims.
 
-| Document | Content |
-|----------|---------|
-| [User manual](docs/user-manual/README.md) | concepts, every module, Python, operations, migration, CLI and REST reference |
-| [Operator lessons](docs/user-manual/17-learn-operators.md) | 30 UI/DAG lessons and 25 library/infrastructure lessons, executable expectations and generated student material |
-| [Data model v2 specification](docs/datamodel-2026/04-MODELL-V2-SPEC.md) | normative spec |
-| [Design documents](docs/datamodel-2026/) (German) | analysis, target model, gap analysis, Smart Topics (05), interplay & coordination potential (06), digital twin (07), house (08), Studio & LabVIEW (09), boat (10), Smart Topic processor & DevOps (11), Explorer (12): visual inventory & maintenance |
-| [Plan and progress](EVOLUTION/TASK-011-datamodel-refresher-2026.md) | phases, decisions, progress log |
-| Module READMEs | details per module, e.g. [kafka-v2](opentsx-kafka-v2/README.md), [windpark](opentsx-windpark/README.md), [retrieval](opentsx-retrieval/README.md) |
-| [Developer guide](docs/devguide/README.md) | PDF build, processing-flow descriptor schema, local infrastructure |
-| [DevOps guide](docs/devops/README.md) | run OpenTSx on k3s against an existing KafScale cluster: setup plan, sizing plan, demos, scripts in `deploy/k3s/` |
-| [Business documents](docs/business/README.md) (German) | market research on digital twins that couple live and simulated data (vendor matrix with sources), customers and benefits, marketing campaign |
+## Run the Workbench
 
-## Modules
+You need Docker Compose and an existing Confluent Platform Docker cluster for
+the local CP profile. The profile uses pinned Linux ARM64 images, a React
+Workbench, the Python numerical service, MLflow and persistent lifecycle state.
 
-| Module | Purpose |
-|--------|---------|
-| `opentsx-model` | data model v2 (Avro, series identity, episodes, wire format) |
-| `opentsx-kafka-v2` | episode storage, index and replay on KafScale/Kafka |
-| `opentsx-store-spi`, `-store-iceberg`, `-store-opentsdb-v2` | store SPI and backends |
-| `opentsx-windpark` | IEC 61400-25-2 catalog, normalizer, simulator, power curve |
-| `opentsx-stats` | streaming statistics, data quality |
-| `opentsx-openmetadata` | metadata pool in OpenMetadata 2.0 |
-| `opentsx-retrieval` | segmentation, pattern search, retrieval API, REST |
-| `opentsx-twin-live` | events of a twin run as a KafScale topic (`twin.<id>.<run>.events`) and an SSE bridge for the Studio |
-| `opentsx-twin` | digital twin: atoms, wiring plan, bulk-synchronous runner, shadow / what-if / forecast; scenarios energy system, house, boat; Studio export |
-| `opentsx-dwd` | DWD Open Data collector: MOSMIX forecasts and CDC observations as v2 series/episodes, nearest-station search, weather inputs for the twins |
-| `opentsx-modbus` | Modbus TCP / RTU-over-TCP client (JDK only), register maps in YAML (type, word order, scaling, unit, OBIS, origin), block-merging poller, counter wrap/reset detection → v2 episodes; in-JVM meter simulator |
-| `opentsx-market` | electricity-market collector (SMARD, ENTSO-E, netztransparenz.de, Energy-Charts, partner files), history archive with manifests and quality reports, backfill, twins on real history |
-| `opentsx-legacy-bridge` | 2.x → v2 conversion |
-| `opentsx-kafscale-conformance` | broker capability tests |
-| `opentsx-wayang` | Apache Wayang 1.1.1 catalog compiler with JVM and Rust execution (TASK-020) |
-| `rust/tsx-contracts` | Offline execution-assignment validation shared with Java; [contract guide](docs/devguide/integration/wayang-shared-contracts.md) and [unified Wayang deployment plan](docs/devguide/integration/wayang-unified-plan.md) |
-| [`rust/tsx-runner`](rust/tsx-runner/README.md) | Trusted-local bounded Kafka replay and HTTP workers, Avro episodes, three cleaning operations, private prepare and acknowledged checkpoints |
-| `opentsx-data`, `-core`, `-connectors`, `-lg`, `-flink-core` | 2.x model and classic analysis (legacy, maintained) |
-| `python-package/` | Python library `opentsx` |
-| `opentsx-saas-backend/`, `-frontend/` | experimental web stack (planned personal service layer) |
+Follow the [local CP guide](docs/devguide/local-cp-workbench.md) for the source
+checkout, build, checks, startup and configuration. The Workbench delivery was
+verified on [revision 545a601](https://github.com/kamir/OpenTSx/commit/545a60157026ae3b775117b391efd38dddd6a83c).
 
-The Wayang module supports signed bounded JVM federation, plus bounded and
-trusted-local continuous whole-topic Rust execution.
+On a running local profile, open
+[the Workbench](http://127.0.0.1:18081/workbench), choose **Load thermal demo**,
+and switch between Signal Engineer and Data Worker. The demo is synthetic and
+requires no external source credentials. **Legacy** remains available in the
+header and through [the direct Legacy entry](http://127.0.0.1:18081/workbench?mode=legacy).
 
-The 2025 documentation and old demos are in [`archive/`](archive/). Retired modules were removed from `master`
-(last state: commit `315f01d`, see the [migration chapter](docs/user-manual/13-migration.md)).
+Configure OpenTSx producers with Apache Kafka brokers or a KafScale Proxy
+endpoint. For KafScale, start with the
+[local Proxy setup](opentsx-kafscale-conformance/README.md#start-the-local-proxy),
+then follow the
+[Kafka-native streaming guide](docs/devops/kafka-native-streaming.md). The
+pinned local KafScale bundle serializes metadata snapshot changes and
+refreshes durable metadata for Proxy responses. Durable read failures
+return an error. These overlays cover the local single-broker fixture.
 
-## Status
+Statistical Smart Topics and general processor DAGs have separate execution
+contracts; choose the documented profile for the output you need.
 
-| Phase | Content | Status |
-|-------|---------|--------|
-| P0–P5 | foundation, data model v2, KafScale storage, stores, wind farm, statistics, OpenMetadata, retrieval | **done** |
-| P6 | analytics gaps (alignment, gap filling, change points, spectral analysis) | planned |
-| P7 | Kafka-native vector and series projections; broader Smart Topic design ([11](docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md)) | Java streaming subset implemented; broader design and Studio prototype remain separate |
-| P8 | Interplay & coordination potential of the local energy system: dependencies, constraints, reference vs. coordinated operation. Methods (proposal): system reconstruction from time series (Kämpf 2017 + causal discovery), simulation, optimization (classical; quantum as experiment) | concept ([06](docs/datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md)) |
-| P9 | Digital twin: atoms (MVC + policy), wiring plan, bulk-synchronous execution (variant T), three modes; energy system, house ([08](docs/datamodel-2026/08-HAUS-ZWILLING.md)) and boat ([10](docs/datamodel-2026/10-BOOT-ZWILLING.md)) with calibration on simulated data | **proof of concept** ([07](docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md)); loosely coupled variant L and real data next |
+## Learn, extend and operate
 
-## Related work
+- [User manual](docs/user-manual/README.md): data contracts, analysis and
+  operational concepts.
+- [Developer guide](docs/devguide/README.md): build, tests and integration paths.
+- [Python library](python-package/README.md): public APIs and numerical analysis.
+- [Operator lessons](docs/user-manual/17-learn-operators.md): executable workloads
+  and the distinction between UI, library and deployed support.
+- [Modelling and scoring](docs/devguide/model-smart-topics.md): reviewed fits,
+  registry artifacts, live context and acknowledged predictions.
+- [Bounded execution](docs/devguide/integration/wayang-rust-compose.md) and
+  [continuous execution](docs/devguide/integration/wayang-rust-continuous.md):
+  whole-topic processing, retained state and restart behavior.
+- [Operations guide](docs/devops/README.md): deployment and infrastructure.
+- [Documentation index](docs/README.md): additional module and reference guides.
 
-* *Hadoop.TS*, the initial paper: <https://www.ijcaonline.org/archives/volume74/number17/12974-0233>
-* Kämpf, Tessenow, Kenett, Kantelhardt: *The Detection of Emerging Trends Using Wikipedia Traffic Data and Context
-  Networks*, PLOS ONE (2015): <https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0141892>
-* *Context Sensitive and Time Dependent Relevance of Wikipedia Articles*, DPG 2014:
-  <https://www.slideshare.net/mirkokaempf/dpg-2014-time-05-1>
-* *Comparing the usage of global and local Wikipedias with focus on Swedish Wikipedia*:
-  <https://www.researchgate.net/publication/255704719_Comparing_the_usage_of_global_and_local_Wikipedias_with_focus_on_Swedish_Wikipedia>
-* Old wiki: <https://github.com/kamir/Hadoop.TS.NG/wiki>
+## Build on research
 
-## History
+Created by [Mirko Kämpf](https://github.com/kamir), OpenTSx carries forward
+Hadoop.TS research and years of work with Java, Kafka and complex time-series
+systems. The maintained classic libraries, data conversion bridge and Legacy
+Workbench preserve that experience alongside the modern workspace.
 
-| Years | Phase |
-|-------|-------|
-| 2013–2018 | Hadoop.TS: Hadoop, HBase/OpenTSDB, Spark; research on Wikipedia and financial time series |
-| 2018–2020 | renamed to OpenTSx; Kafka, Kafka Streams |
-| 2020–2025 | Confluent Platform/Cloud, ksqlDB, multi-region demos, SaaS prototype |
-| 2026 | refresh: Java 17, data model v2, KafScale, Iceberg, OpenMetadata, wind-farm domain, retrieval, Python parity; digital twin and Studio: from time series to decisions |
+Research foundations include
+[Hadoop.TS](https://www.ijcaonline.org/archives/volume74/number17/12974-0233) and
+[the detection of emerging trends using traffic data and context networks](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0141892).
+The focus remains connecting methods to explicit data, inspectable parameters
+and reproducible experiments.
 
-## Contributing
+## Contribute
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) (build, tests, CI, pull requests), the [Code of Conduct](CODE_OF_CONDUCT.md),
-the [security policy](SECURITY.md) and the [changelog](CHANGELOG.md).
+Read [CONTRIBUTING.md](CONTRIBUTING.md), the
+[Code of Conduct](CODE_OF_CONDUCT.md), the [security policy](SECURITY.md) and the
+[changelog](CHANGELOG.md). Changes to operators include their applicable
+contracts, tests, documentation and learning material.
 
 ## License
 
-[Apache License 2.0](LICENSE) (as declared in the build and the Python package). Copyright 2013–2026 the OpenTSx
-contributors; see [NOTICE](NOTICE).
+OpenTSx is licensed under [Apache 2.0](LICENSE). See [NOTICE](NOTICE) for
+copyright and attribution of the maintained research foundations.
