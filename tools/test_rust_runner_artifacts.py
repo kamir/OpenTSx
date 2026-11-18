@@ -271,6 +271,33 @@ class RustTestEvidenceTest(unittest.TestCase):
 
 
 class RustCiEvidenceTest(unittest.TestCase):
+    def test_compiler_paths_are_exported_from_a_running_step(self):
+        text = WORKFLOW.read_text()
+        cross = re.search(r"^  rust-runner-static:\n(.*?)(?=^  \S|\Z)", text, re.M | re.S)
+        self.assertIsNotNone(cross)
+        environment = re.search(r"^    env:\n(.*?)(?=^    steps:)", cross.group(1), re.M | re.S)
+        self.assertIsNotNone(environment)
+        self.assertNotRegex(environment.group(1), r"\$\{\{\s*runner\.")
+        script = re.search(r'^          mkdir -p "\$RUNNER_TEMP/rust-target-tools"\n.*?(?=^          curl )',
+                           cross.group(1), re.M | re.S)
+        self.assertIsNotNone(script)
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory) / "runner temp $literal"
+            temporary.mkdir()
+            exported = Path(directory) / "github.env"
+            subprocess.run(["bash", "-c", textwrap.dedent(script.group())], check=True,
+                           capture_output=True, text=True,
+                           env={"PATH": HELPER.os.environ["PATH"], "RUNNER_TEMP": str(temporary),
+                                "GITHUB_WORKSPACE": str(HELPER.ROOT), "GITHUB_ENV": str(exported)})
+            entries = [line.split("=", 1) for line in exported.read_text().splitlines()]
+            self.assertEqual(4, len(entries))
+            self.assertEqual({"CC", "CXX", "AR", "RANLIB"}, {entry[0] for entry in entries})
+            for variable, path in entries:
+                self.assertTrue(Path(path).is_absolute(), variable)
+                self.assertTrue(Path(path).is_file(), variable)
+                self.assertTrue(HELPER.os.access(path, HELPER.os.X_OK), variable)
+                self.assertEqual(temporary / "rust-target-tools" / variable.lower(), Path(path))
+
     def assert_workflow(self, text):
         def job(name):
             match = re.search(r"^  " + name + r":\s*\n(.*?)(?=^  \S|\Z)", text, re.M | re.S)

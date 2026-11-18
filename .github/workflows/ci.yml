@@ -114,10 +114,6 @@ jobs:
     env:
       RUSTUP_TOOLCHAIN: "1.99.1"
       RUSTFLAGS: "-C relocation-model=static -C target-feature=+crt-static"
-      CC: "${{ runner.temp }}/rust-target-tools/cc"
-      CXX: "${{ runner.temp }}/rust-target-tools/cxx"
-      AR: "${{ runner.temp }}/rust-target-tools/ar"
-      RANLIB: "${{ runner.temp }}/rust-target-tools/ranlib"
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -134,6 +130,8 @@ jobs:
             printf '#!/bin/sh\nexec python3 "%s" compiler "%s" "$@"\n' "$GITHUB_WORKSPACE/tools/rust_runner_artifacts.py" "$tool" > "$RUNNER_TEMP/rust-target-tools/$tool"
             chmod +x "$RUNNER_TEMP/rust-target-tools/$tool"
           done
+          printf 'CC=%s/rust-target-tools/cc\nCXX=%s/rust-target-tools/cxx\nAR=%s/rust-target-tools/ar\nRANLIB=%s/rust-target-tools/ranlib\n' \
+            "$RUNNER_TEMP" "$RUNNER_TEMP" "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
           curl --fail --location --retry 5 --retry-all-errors --retry-delay 5 --output "$RUNNER_TEMP/zig.tar.xz" https://ziglang.org/download/0.15.2/zig-x86_64-linux-0.15.2.tar.xz
           printf '%s  %s\n' '02aa270f183da276e5b5920b1dac44a63f1a49e55050ebde3aecc9eb82f93239' "$RUNNER_TEMP/zig.tar.xz" | sha256sum --check
           mkdir -p "$RUNNER_TEMP/zig" "$RUNNER_TEMP/cargo-zigbuild"
