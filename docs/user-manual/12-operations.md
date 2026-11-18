@@ -97,6 +97,15 @@ GitHub Actions runs these jobs:
 * the cross-language job: Java writes Iceberg and PyIceberg must read identical bytes; the Python client queries the
   Java retrieval server.
 
+For a failed bounded JVM federation test, download `kafscale-capabilities` from the KafScale conformance job.
+It includes `opentsx-wayang/target/surefire-reports/` and retained
+`opentsx-wayang/target/federation-test-logs/**/brokers/*.log`. Fixtures retain their directories when construction,
+test execution or broker shutdown fails; successful tests remove them. Only broker `.log` files are uploaded
+from the fixture directories.
+
+The separate `kafscale-broker-log` artifact contains `$RUNNER_TEMP/kafscale-broker.log`, the primary broker's
+output. Both artifact upload steps use `if: always()`, so they run after test failures.
+
 ## 12.5 Security notes
 
 * Never commit credentials. `config/private/` is in `.gitignore`.

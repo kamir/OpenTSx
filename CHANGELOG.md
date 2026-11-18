@@ -263,6 +263,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- Failed bounded JVM federation tests retain disposable-broker logs for CI diagnostics. KafScale CI artifacts
+  include Wayang test reports, retained fixture broker logs and the primary broker log.
+
 - `ConfigManager` rejects unreadable or malformed configuration sources and missing selected files or profiles.
   Each source merges only after loading and closing succeed. Optional absent defaults remain allowed, source
   precedence and live JVM/environment overrides are preserved, and environment mapping is locale-independent.

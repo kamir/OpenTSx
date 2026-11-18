@@ -2,6 +2,7 @@ package org.opentsx.wayang;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.io.CleanupMode;
 import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.model.Micros;
 import org.opentsx.model.OpenTsxAvro;
@@ -20,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @EnabledIfEnvironmentVariable(named = "KAFSCALE_BOOTSTRAP", matches = ".+")
 class FederatedStatsIntegrationTest {
-    @TempDir Path directory;
+    @TempDir(factory = FederationLogDirectory.class, cleanup = CleanupMode.ON_SUCCESS) Path directory;
 
     @Test void everyActualW3WindowMatchesCentralizedAndAllSixMergeOrders() throws Exception {
         try (var fixture = new FederationFixture(directory)) {
