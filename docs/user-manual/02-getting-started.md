@@ -19,15 +19,16 @@ mvn verify                          # with tests (a few minutes)
 pip install -e "python-package[iceberg]"   # Python package, optionally with PyIceberg
 ```
 
-Tests that need a running KafScale broker are skipped unless `KAFSCALE_BOOTSTRAP` is set.
+Tests that need a running KafScale Proxy are skipped unless `KAFSCALE_BOOTSTRAP` is set.
 
 ## 2.3 Start KafScale locally
 
-```bash
-docker compose -f docker-compose.kafscale.yml up -d     # etcd, MinIO (S3), KafScale broker on localhost:9092
-```
+Use the [local Proxy setup](../../opentsx-kafscale-conformance/README.md#start-the-local-proxy).
+You need Docker Compose, the pinned transport bundle and private `MINIO_ROOT_USER` /
+`MINIO_ROOT_PASSWORD` environment values. The stack exposes KafScale Proxy on `localhost:9092`.
+The broker has no published host port. OpenTSx producers use Apache Kafka Broker or KafScale Proxy.
 
-To run the conformance suite against the broker:
+To run the conformance suite through the Proxy:
 
 ```bash
 KAFSCALE_BOOTSTRAP=localhost:9092 mvn -pl opentsx-kafscale-conformance -am test

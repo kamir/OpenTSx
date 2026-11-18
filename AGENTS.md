@@ -69,6 +69,9 @@ Hard rules. No exceptions. If a rule blocks you, stop and ask. Do not work aroun
 - NEVER print env values that hold secrets.
 - Validate external input at the boundary. No path traversal, no injection.
 - Security, funds and production changes need explicit approval.
+- OpenTSx producers publish only to Apache Kafka brokers or the KafScale Proxy. Never write directly to a
+  KafScale broker.
+- Apply the same producer endpoint rule to runtime code, tests, fixtures, demos and acceptance setups.
 
 ## 10. Builds and versions
 - Builds are deterministic and reproducible. Pin tool and dependency versions.

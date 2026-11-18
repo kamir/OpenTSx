@@ -254,8 +254,11 @@ The bounded W3 numerical qualification uses the approved relative `3e-12`
 mean/M2 criterion in
 [SPEC S4.3](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s43-merge-functions).
 These integration classes use the existing `KAFSCALE_BOOTSTRAP` test switch and
-require `KAFSCALE_BROKER_BINARY` to name the source-built KafScale v1.6.0
-executable. The fixture starts and stops its four disposable brokers.
+require `KAFSCALE_BROKER_BINARY`, `KAFSCALE_PROXY_BINARY` and `KAFSCALE_CLUSTER_BINARY`
+to name the source-built KafScale v1.6.0 broker, Proxy and isolated cluster launcher.
+The fixture starts four independent clusters, each with private etcd metadata, a loopback-only
+broker and a Proxy endpoint. Producers use the Proxy. Read the
+[bundle instructions](../opentsx-kafscale-conformance/README.md#build-the-pinned-transport-bundle).
 
 The JUnit fixtures use unique directories under `opentsx-wayang/target/federation-test-logs/` with
 `ON_SUCCESS` cleanup. A fixture-construction, test or broker-shutdown failure retains the directory;
@@ -264,7 +267,7 @@ include retained broker logs and Wayang test reports. The measurement harness ke
 `<result-directory>/execution/brokers/`.
 
 The bounded integration topology contains three site-agent instances in one JVM
-and four Go broker processes. Execution topology excludes build and transient
+and four Go broker processes, four Proxies and four embedded etcd instances. Execution topology excludes build and transient
 conformance-check subprocesses. The measurement harness records that topology,
 actual per-route elapsed times, Kafka Produce frames, HTTP bodies and encrypted
 TLS client-stream bytes as separate counters. Read its arguments from the
@@ -297,6 +300,12 @@ one-, three- and ten-site federation and both runtimes for every combination
 of three chains and one, four and twelve partitions. The 63 conditions run
 sequentially in fresh execution JVMs and disposable in-memory brokers.
 
+Every Kafka client uses a KafScale Proxy. The harness builds the broker,
+Proxy and isolated cluster launcher through the shared guarded metadata
+and protocol overlays. Each cluster has private etcd metadata. Its source
+and binary hashes are recorded in `metadata.json`. This is the local
+single-broker fixture, without an unmodified-upstream or multi-broker claim.
+
 Federation executes centralized statistics on the actual received raw records
 and compares them with the signed site results. Every turbine remains on one
 site. The execution topology has one JVM and one broker per site plus the
@@ -323,6 +332,8 @@ conditions and all 54 streaming conditions passed their received-record,
 reference, checkpoint and clock checks. Federation retains 3,780 window
 comparisons, 17,640 partials and 126 site/route byte rows. This qualification
 covers the documented local bounded profile.
+Use that report's recorded source and transport scope when interpreting its
+samples. The current Proxy harness does not establish new performance results.
 
 ## Compute window statistics
 

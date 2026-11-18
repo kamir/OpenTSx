@@ -1,9 +1,12 @@
 import csv
+from contextlib import ExitStack, nullcontext, redirect_stdout
 import importlib.util
+import io
 import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import Mock, patch
 
 
 class TrackAEvaluationTest(unittest.TestCase):
@@ -108,6 +111,92 @@ class TrackAEvaluationTest(unittest.TestCase):
                                                (1, 11, "broker", 4000, 2), (1, 13, "subprocess", 9999, 2))]
         self.csv("resources.csv", rows)
         self.assertEqual((2048, 5000, 1), self.tool.resource_result(self.root))
+
+    def test_measurement_builds_guarded_transport_and_uses_only_proxy_endpoints(self):
+        output = self.root / "results"
+        transport_sources = ("tools/build_kafscale_proxy.py", "tools/kafscale_proxy_cluster.go",
+                             "tools/kafscale_metadata_overlay.py", "tools/kafscale_proxy_protocol_overlay.py",
+                             "tools/kafscale_proxy_protocol_test.go")
+        snapshot = {"commit": "a" * 40, "files": {name: "b" * 64 for name in (*self.tool.SOURCES, *transport_sources)}}
+        commands, measured = [], []
+
+        def execute(command, **kwargs):
+            commands.append(command)
+            if command[0] == "git" and command[1] == "clone":
+                Path(command[-1]).mkdir()
+            elif command[:3] == ["git", "rev-parse", "HEAD"]:
+                return self.tool.COMMON.KAFSCALE_COMMIT
+            elif command[0] == "go" and command[1] == "version":
+                return "go version go1.25.2 synthetic"
+            elif command[0] == "go" and command[1] == "build":
+                Path(command[3]).write_bytes(Path(command[3]).name.encode())
+            elif command[-1] == "-version":
+                return 'openjdk version "21.0.8"'
+            elif command[0] == "mvn":
+                for option in command:
+                    if option.startswith("-Dmdep.outputFile="):
+                        Path(option.split("=", 1)[1]).write_text("dependency.jar")
+            return "synthetic"
+
+        def measure(command, directory, env, roots, record):
+            measured.append((command, env, roots))
+            record(command)
+            names = ("bytes.csv", "windows.csv", "run.json", "resources.csv") if "org.opentsx.wayang.FederationEvaluation" in command else \
+                ("case.json", "measurement.csv", "records.csv", "produce-attempts.csv", "resources.csv")
+            for name in names:
+                (directory / name).write_text("synthetic")
+
+        process = Mock(pid=101)
+        process.poll.return_value = None
+        overlay = self.root / "transport-overlay.json"
+        argv = ["wayang_track_a_evaluation.py", "--output", str(output), "--java-home", str(self.root / "jdk"),
+                "--pilot", "--repetitions", "1", "--sites", "1", "--partitions", "1", "--chains", "clean", "--runtimes", "java"]
+        with ExitStack() as stack:
+            stack.enter_context(patch.object(self.tool.sys, "argv", argv))
+            stack.enter_context(patch.object(self.tool.platform, "system", return_value="Darwin"))
+            stack.enter_context(patch.object(self.tool.platform, "platform", return_value="synthetic"))
+            stack.enter_context(patch.object(self.tool.FEDERATION, "source_snapshot", return_value=snapshot))
+            stack.enter_context(patch.object(self.tool.FEDERATION, "require_same_source"))
+            stack.enter_context(patch.object(self.tool.COMMON, "run", side_effect=execute))
+            transport_overlay = stack.enter_context(patch.object(self.tool.COMMON.build_kafscale_proxy, "transport_overlay", return_value=overlay))
+            stack.enter_context(patch.object(self.tool.COMMON, "freeze_classpath", return_value=("frozen-classpath", [])))
+            stack.enter_context(patch.object(self.tool.COMMON, "power_assertion", return_value=nullcontext(None)))
+            stack.enter_context(patch.object(self.tool.COMMON, "require_power_assertion"))
+            stack.enter_context(patch.object(self.tool.COMMON, "free_port", return_value=39092))
+            stack.enter_context(patch.object(self.tool, "measured_command", side_effect=measure))
+            stack.enter_context(patch.object(self.tool, "federation_result"))
+            stack.enter_context(patch.object(self.tool, "streaming_result"))
+            stack.enter_context(patch.object(self.tool, "report"))
+            launch = stack.enter_context(patch.object(self.tool.subprocess, "Popen", return_value=process))
+            stack.enter_context(patch.object(self.tool.socket, "create_connection", return_value=nullcontext(None)))
+            stop = stack.enter_context(patch.object(self.tool, "stop_group"))
+            with redirect_stdout(io.StringIO()):
+                self.tool.main()
+
+        transport_overlay.assert_called_once()
+        builds = [command for command in commands if command[:2] == ["go", "build"]]
+        self.assertEqual({"kafscale-broker", "kafscale-proxy", "kafscale-cluster"}, {Path(command[3]).name for command in builds})
+        self.assertTrue(all(f"-overlay={overlay}" in command for command in builds))
+        self.assertIn(["go", "test", f"-overlay={overlay}", "-run", "^TestOpenTSxProxy", "-count=1", "./cmd/proxy"], commands)
+        self.assertEqual(2, len(measured))
+        for name in ("BROKER", "PROXY", "CLUSTER"):
+            self.assertEqual(f"kafscale-{name.lower()}", Path(measured[0][1][f"KAFSCALE_{name}_BINARY"]).name)
+        launched = launch.call_args.args[0]
+        self.assertEqual("kafscale-cluster", Path(launched[0]).name)
+        self.assertEqual("127.0.0.1:39092", launched[launched.index("--listen") + 1])
+        self.assertEqual("39092", launched[launched.index("--advertised-port") + 1])
+        self.assertEqual("kafscale-proxy", Path(launched[launched.index("--proxy-binary") + 1]).name)
+        self.assertEqual(str(output.resolve() / "streaming/clean-p1-java-r1/metadata"), launched[launched.index("--data-dir") + 1])
+        self.assertNotIn("KAFSCALE_BROKER_ADDR", launch.call_args.kwargs["env"])
+        self.assertEqual({101: "subprocess"}, measured[1][2])
+        stop.assert_called_once_with(process)
+        metadata = json.loads((output / "metadata.json").read_text())
+        self.assertEqual("complete", metadata["status"])
+        self.assertEqual("kafscale-proxy", metadata["transport"])
+        self.assertEqual({name: "b" * 64 for name in transport_sources}, metadata["transportSourcesSha256"])
+        for name in ("broker", "proxy", "cluster"):
+            self.assertEqual(64, len(metadata[f"{name}BinarySha256"]))
+            self.assertEqual(len(f"kafscale-{name}"), metadata[f"{name}BinaryBytes"])
 
     def test_federation_reads_all_three_site_counts(self):
         for sites in (1, 3, 10):
@@ -225,6 +314,7 @@ class TrackAEvaluationTest(unittest.TestCase):
         metadata = {"openTsxCommit": "a" * 40, "startedAt": "2026-11-18T00:00:00Z", "profile": "synthetic test",
                     "hardware": "synthetic", "platform": "synthetic", "javaVersion": 'version "21.0.8"',
                     "goVersion": "go1.25.2", "runtimeBytes": 100, "brokerBinaryBytes": 100,
+                    "transport": "kafscale-proxy",
                     "matrix": [(".", "federation", 1, 1), (".", "streaming", ("clean", "java", 4), 1)]}
         self.tool.report(self.root, metadata)
         text = (self.root / "REPORT.md").read_text()
@@ -232,6 +322,8 @@ class TrackAEvaluationTest(unittest.TestCase):
         self.assertIn("not a speed comparison", text)
         self.assertIn("C4J-r1", text)
         self.assertIn("Kafka event/envelope timestamps are not latency clocks", text)
+        self.assertIn("Every Kafka client uses a KafScale Proxy", text)
+        self.assertIn("outside the broker RSS column", text)
 
 
 if __name__ == "__main__":

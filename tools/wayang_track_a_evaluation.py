@@ -32,6 +32,9 @@ RESOURCES = ("elapsed_ms", "pid", "ppid", "role", "rss_bytes", "cpu_seconds")
 SOURCES = ("tools/wayang_track_a_evaluation.py",
            "opentsx-wayang/src/test/java/org/opentsx/wayang/FederationEvaluation.java",
            "opentsx-wayang/src/test/java/org/opentsx/wayang/StreamingEvaluation.java")
+TRANSPORT_SOURCES = ("tools/build_kafscale_proxy.py", "tools/kafscale_proxy_cluster.go",
+                     "tools/kafscale_metadata_overlay.py", "tools/kafscale_proxy_protocol_overlay.py",
+                     "tools/kafscale_proxy_protocol_test.go")
 ERRORS = {"mean_relative_error": "maxRelativeMeanError", "m2_relative_error": "maxRelativeM2Error",
           "central_native_mean_relative_error": "maxCentralRelativeMeanError",
           "central_native_m2_relative_error": "maxCentralRelativeM2Error",
@@ -354,6 +357,8 @@ def report(output, metadata):
     paragraph("Activation wall time covers runtime construction, planning or deployment, input processing, acknowledged output and checkpoint persistence. Independent checkpoint inspection, output scans and reference validation are excluded. Rates count input episodes and values. Per-core rates divide by the recorded available logical processors and do not infer single-core speed. Job process CPU time includes the in-JVM observer and harness; it excludes Go broker CPU.")
     paragraph("Latency subtracts successful input Produce ingress from successful output Produce ingress at the loopback observer. Aggregate outputs use their latest contributing input; records.csv retains all contributing ids and both acknowledgement clocks. Kafka event/envelope timestamps are not latency clocks. Clean equivalence checks ids, keys, event times and values, without requiring createdAt or Kafka envelope timestamp equality.")
     paragraph("resources.csv samples RSS and cumulative CPU for the driver, owned brokers and observed subprocesses once per second across setup, execution and independent validation. Short-lived processes between samples can be missed. Sampled driver CPU is the largest observed cumulative process CPU time, not the exact CPU-at-exit total. JVM process start, main entry, activation and I/O timings are distinct. The host is shared; no CPU reservation or remote-network result is claimed.")
+    if metadata.get("transport") == "kafscale-proxy":
+        paragraph("Every Kafka client uses a KafScale Proxy. Each isolated cluster has one private broker and one launcher with embedded etcd. The pinned v1.6.0 source uses the guarded metadata and Proxy protocol overlays. Proxy and launcher resources are subprocess rows, outside the broker RSS column. metadata.json records transport source and binary hashes; these samples do not establish performance for an unmodified upstream broker or a multi-broker deployment.")
     paragraph(f"Frozen test-runtime classpath size: {metadata['runtimeBytes']} bytes, including dependencies and harness classes. Broker binary size: {metadata['brokerBinaryBytes']} bytes. These are measured file sizes, not a minimal deployment package. Their hashes are in metadata.json.")
     federation_rows, route_rows, error_rows, central_rows = [], [], [], []
     streaming_rows, latency_rows, activation_rows, footprint_rows = [], [], [], []
@@ -427,7 +432,7 @@ def main():
         parser.error("an A5 run needs three repetitions and the complete site/partition/chain/runtime matrix")
     output = args.output.resolve()
     snapshot = FEDERATION.source_snapshot(ROOT, output)
-    if not set(SOURCES).issubset(snapshot["files"]):
+    if not set((*SOURCES, *TRANSPORT_SOURCES)).issubset(snapshot["files"]):
         raise RuntimeError("evaluation harness sources must be tracked")
     output.mkdir(parents=True, exist_ok=False)
     env = os.environ.copy()
@@ -443,6 +448,7 @@ def main():
                 "startedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "openTsxCommit": snapshot["commit"],
                 "sourceSnapshot": snapshot, "platform": platform.platform(), "hardware": " / ".join(hardware.splitlines()),
                 "javaVersion": java_version, "cpuCount": os.cpu_count(), "kafScaleCommit": COMMON.KAFSCALE_COMMIT,
+                "transport": "kafscale-proxy", "transportSourcesSha256": {name: snapshot["files"][name] for name in TRANSPORT_SOURCES},
                 "invocation": {"cwd": str(Path.cwd()), "argv": sys.argv, "python": sys.executable},
                 "matrix": matrix, "commands": [], "completed": []}
 
@@ -470,10 +476,20 @@ def main():
                     raise RuntimeError("KafScale source differs from its pinned commit")
                 go_env = env | {"GOTOOLCHAIN": "go1.25.2"}
                 metadata["goVersion"] = command(["go", "version"], cwd=source, env=go_env).strip()
+                overlay = COMMON.build_kafscale_proxy.transport_overlay(source, work)
+                command(["go", "test", f"-overlay={overlay}", "-run", "^TestOpenTSxProxy", "-count=1", "./cmd/proxy"], cwd=source, env=go_env, log=log)
                 binary = work / "kafscale-broker"
-                command(["go", "build", "-o", str(binary), "./cmd/broker"], cwd=source, env=go_env, log=log)
+                command(["go", "build", "-o", str(binary), f"-overlay={overlay}", "./cmd/broker"], cwd=source, env=go_env, log=log)
+                proxy = work / "kafscale-proxy"
+                command(["go", "build", "-o", str(proxy), f"-overlay={overlay}", "./cmd/proxy"], cwd=source, env=go_env, log=log)
+                cluster = work / "kafscale-cluster"
+                command(["go", "build", "-o", str(cluster), f"-overlay={overlay}", str(ROOT / "tools/kafscale_proxy_cluster.go")], cwd=source, env=go_env, log=log)
                 metadata["brokerBinarySha256"] = COMMON.sha256(binary)
                 metadata["brokerBinaryBytes"] = binary.stat().st_size
+                metadata["proxyBinarySha256"] = COMMON.sha256(proxy)
+                metadata["proxyBinaryBytes"] = proxy.stat().st_size
+                metadata["clusterBinarySha256"] = COMMON.sha256(cluster)
+                metadata["clusterBinaryBytes"] = cluster.stat().st_size
                 command(["mvn", "--batch-mode", "--no-transfer-progress", "--projects", "opentsx-wayang", "--also-make", "install", "-DskipTests"], cwd=ROOT, env=env, log=log)
                 cp = work / "test.cp"
                 command(["mvn", "--batch-mode", "--no-transfer-progress", "--projects", "opentsx-wayang",
@@ -493,33 +509,37 @@ def main():
                     launch = [java, "-Xms512m", "-Xmx2g", "-cp", classpath]
                     if kind == "federation":
                         measured_command([*launch, "org.opentsx.wayang.FederationEvaluation", str(directory), str(settings)],
-                                         directory, env | {"KAFSCALE_BROKER_BINARY": str(binary)}, {}, record)
+                                         directory, env | {"KAFSCALE_BROKER_BINARY": str(binary),
+                                                           "KAFSCALE_PROXY_BINARY": str(proxy), "KAFSCALE_CLUSTER_BINARY": str(cluster)}, {}, record)
                         federation_result(directory, settings)
                     else:
                         port = COMMON.free_port()
-                        broker_env = {k: v for k, v in env.items() if not k.startswith("KAFSCALE_")}
-                        broker_env.update({"KAFSCALE_USE_MEMORY_S3": "1", "KAFSCALE_BROKER_ID": "0",
-                                           "KAFSCALE_BROKER_ADDR": f"127.0.0.1:{port}", "KAFSCALE_METRICS_ADDR": "127.0.0.1:0", "KAFSCALE_CONTROL_ADDR": "127.0.0.1:0"})
+                        transport_env = {k: v for k, v in env.items() if not k.startswith("KAFSCALE_")}
+                        transport_command = [str(cluster), "--listen", f"127.0.0.1:{port}",
+                                             "--advertised-host", "127.0.0.1", "--advertised-port", str(port),
+                                             "--data-dir", str(directory / "metadata"), "--broker-binary", str(binary),
+                                             "--proxy-binary", str(proxy)]
+                        record(transport_command)
                         with (directory / "broker.log").open("w") as log:
-                            broker = subprocess.Popen([str(binary)], env=broker_env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+                            transport = subprocess.Popen(transport_command, env=transport_env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
                             try:
                                 deadline = time.monotonic() + 30
                                 while True:
-                                    if broker.poll() is not None:
-                                        raise RuntimeError(f"broker exited with code {broker.returncode}")
+                                    if transport.poll() is not None:
+                                        raise RuntimeError(f"Proxy cluster exited with code {transport.returncode}")
                                     try:
                                         with socket.create_connection(("127.0.0.1", port), timeout=0.2):
                                             break
                                     except (ConnectionRefusedError, TimeoutError):
                                         if time.monotonic() >= deadline:
-                                            raise TimeoutError("broker startup exceeded 30 seconds")
+                                            raise TimeoutError("Proxy startup exceeded 30 seconds")
                                         time.sleep(0.1)
                                 chain, runtime, partition = settings
                                 measured_command([*launch, "org.opentsx.wayang.StreamingEvaluation", str(port), str(directory), chain, runtime, str(partition)],
-                                                 directory, env, {broker.pid: "broker"}, record)
+                                                 directory, env, {transport.pid: "subprocess"}, record)
                                 streaming_result(directory, settings)
                             finally:
-                                stop_group(broker)
+                                stop_group(transport)
                     COMMON.require_power_assertion(assertion)
                     metadata["completed"].append(name)
                     save()

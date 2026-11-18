@@ -11,6 +11,8 @@ import socket
 import subprocess
 import sys
 
+import build_kafscale_proxy
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DIRECTORY = ROOT / "target/rust-runner-compose"
@@ -53,7 +55,7 @@ def checkpoint_paths():
 
 def prepare_directories():
     for path in [DIRECTORY / "requests", DIRECTORY / "state", DIRECTORY / "checkpoints-initial",
-                 ROOT / "target/rust-runner-linux"]:
+                 DIRECTORY / "transport", ROOT / "target/rust-runner-linux"]:
         if path.is_symlink():
             raise RuntimeError(f"fixture directory must not be a symbolic link: {path}")
     DIRECTORY.mkdir(parents=True, exist_ok=True)
@@ -79,7 +81,11 @@ def prepare_directories():
                 if existing != lock_path:
                     existing.unlink()
     (ROOT / "target/rust-runner-linux").mkdir(exist_ok=True)
-    (DIRECTORY / "hosts").write_text("127.0.0.1 localhost kafscale-broker\n", encoding="utf-8")
+    transport = DIRECTORY / "transport"
+    if transport.exists():
+        shutil.rmtree(transport)
+    transport.mkdir(mode=0o700)
+    (DIRECTORY / "hosts").write_text("127.0.0.1 localhost kafscale-proxy\n", encoding="utf-8")
 
 
 def fixture_classpath(environment, skip_build):
@@ -219,6 +225,10 @@ def main():
     owned_project = False
     failure = None
     try:
+        if args.skip_build:
+            build_kafscale_proxy.verify()
+        else:
+            run([sys.executable, str(ROOT / "tools/build_kafscale_proxy.py")], environment, "proxy-build", timeout=1800)
         classpath = fixture_classpath(environment, args.skip_build)
         java = java_command(environment, classpath)
         if not args.skip_build:
@@ -230,8 +240,8 @@ def main():
         artifact = "sha256:" + hashlib.sha256(BINARY.read_bytes()).hexdigest()
         (DIRECTORY / "artifact-digest.txt").write_text(artifact + "\n", encoding="utf-8")
         owned_project = True
-        run(COMPOSE + ["up", "--detach", "--wait", "--wait-timeout", "180", "kafscale-broker"],
-            environment, "broker-start", timeout=210)
+        run(COMPOSE + ["up", "--detach", "--wait", "--wait-timeout", "180", "kafscale-proxy"],
+            environment, "proxy-start", timeout=210)
         run(java + ["ready", bootstrap], environment, "broker-ready", timeout=210)
         run(java + ["prepare", bootstrap, str(DIRECTORY), artifact], environment, "fixture-prepare")
         run_workers(environment, "initial")

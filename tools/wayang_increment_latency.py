@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure isolated single-partition Wayang increments on a disposable KafScale broker."""
+"""Measure isolated single-partition Wayang increments through a disposable KafScale Proxy."""
 
 import argparse
 import contextlib
@@ -18,6 +18,8 @@ import sys
 import tempfile
 import textwrap
 import time
+
+import build_kafscale_proxy
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -282,7 +284,12 @@ def main():
             go_env = env | {"GOTOOLCHAIN": "go1.25.2"}
             metadata["goVersion"] = command(["go", "version"], cwd=source, env=go_env).strip()
             binary = work / "kafscale-broker"
-            command(["go", "build", "-o", str(binary), "./cmd/broker"], cwd=source, env=go_env, log=log)
+            overlay = build_kafscale_proxy.transport_overlay(source, work)
+            command(["go", "build", "-o", str(binary), f"-overlay={overlay}", "./cmd/broker"], cwd=source, env=go_env, log=log)
+            proxy = work / "kafscale-proxy"
+            command(["go", "build", "-o", str(proxy), f"-overlay={overlay}", "./cmd/proxy"], cwd=source, env=go_env, log=log)
+            cluster = work / "kafscale-cluster"
+            command(["go", "build", "-o", str(cluster), f"-overlay={overlay}", str(ROOT / "tools/kafscale_proxy_cluster.go")], cwd=source, env=go_env, log=log)
             command(["mvn", "-B", "-ntp", "-pl", "opentsx-wayang", "-am", "install", "-DskipTests"], env=env, log=log)
             classpath_file = work / "test.cp"
             command(["mvn", "-B", "-ntp", "-pl", "opentsx-wayang", "org.apache.maven.plugins:maven-dependency-plugin:3.7.0:build-classpath",
@@ -303,12 +310,13 @@ def main():
                             case.mkdir()
                             port = free_port()
                             broker_env = {k: v for k, v in env.items() if not k.startswith("KAFSCALE_")}
-                            broker_env.update({"KAFSCALE_USE_MEMORY_S3": "1", "KAFSCALE_BROKER_ID": "0",
-                                               "KAFSCALE_BROKER_ADDR": f"127.0.0.1:{port}",
-                                               "KAFSCALE_METRICS_ADDR": "127.0.0.1:0", "KAFSCALE_CONTROL_ADDR": "127.0.0.1:0"})
-                            metadata.setdefault("brokerConfigurations", []).append({k: v for k, v in broker_env.items() if k.startswith("KAFSCALE_")})
+                            transport_command = [str(cluster), "--listen", f"127.0.0.1:{port}",
+                                                 "--advertised-host", "127.0.0.1", "--advertised-port", str(port),
+                                                 "--data-dir", str(case / "metadata"), "--broker-binary", str(binary),
+                                                 "--proxy-binary", str(proxy)]
+                            metadata.setdefault("brokerConfigurations", []).append({"transport": "kafscale-proxy", "command": transport_command})
                             with (case / "broker.log").open("w") as log:
-                                broker = subprocess.Popen([str(binary)], env=broker_env, stdout=log, stderr=subprocess.STDOUT)
+                                broker = subprocess.Popen(transport_command, env=broker_env, stdout=log, stderr=subprocess.STDOUT)
                                 try:
                                     deadline = time.monotonic() + 30
                                     while True:

@@ -102,9 +102,12 @@ this profile.
 ## Run the isolated acceptance helper
 
 The helper uses project `opentsx-wayang-rust` and refuses occupied ports or an existing project. It starts PostgreSQL,
-a KafScale v1.6.0 broker with its existing in-memory S3 test backend, the application, driver and three workers.
-The broker stays alive during worker/coordinator restart. This test supplies no S3 durability or broker-restart proof.
-Only the frontend and Kafka listener are published on loopback. Driver, worker and PostgreSQL ports stay internal.
+a KafScale v1.6.0 Proxy with a loopback-only broker, private embedded etcd metadata and the in-memory S3 test
+backend, plus the application, driver and three workers. The helper builds the
+[pinned transport bundle](../../../opentsx-kafscale-conformance/README.md#build-the-pinned-transport-bundle)
+without building a container image. The broker stays alive during worker/coordinator restart.
+This test supplies no S3 durability or broker-restart proof. Fixture and worker producers use the Proxy.
+Only the frontend and Proxy listener are published on loopback. Driver, worker and PostgreSQL ports stay internal.
 The generated administrator uses normal login and role checks; `TEST_LOGIN` remains false.
 
 The Compose profile requires nonempty `POSTGRES_PASSWORD`, `SECRET_KEY` and

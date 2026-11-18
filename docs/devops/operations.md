@@ -1,25 +1,17 @@
 # Operations concept
 
-> **Kurzfassung (Deutsch).** Dieses Betriebskonzept beschreibt, wie OpenTSx auf k3s gegen ein bestehendes
-> KafScale-Cluster betrieben wird – vom **lokalen Probelauf** bis zu einer produktionsnahen Laborumgebung.
-> **Lokal verproben:** `deploy/k3s/60-probe.sh --local-kafscale` startet KafScale per Docker Compose (mit der
-> LAN-IP als *advertised address*), baut und installiert alles, führt jedes Beispiel aus (Windpark → KafScale,
-> Statistik, Retrieval, Studio, Zwillinge, DWD offline, Modbus-Simulator + Poller) und schreibt einen Bericht
-> `probe-report-<Zeit>.md` mit PASS/FAIL je Schritt, Dauer und Hinweisen. `--dry-run` zeigt nur den Plan.
-> Das Konzept enthält: Dienstkatalog mit Kritikalität, drei Umgebungen, Überwachung (heute `kubectl`-basiert plus
-> optionaler synthetischer Check; Vorschlag kube-state-metrics + VictoriaMetrics/Prometheus + Grafana, Alarmregeln
-> nur auf Metriken, die es wirklich gibt – **OpenTSx selbst exportiert noch keine Metriken**), Logging, Sicherung und
-> Wiederherstellung (`70-backup.sh`, `71-restore.sh`), Update und Rollback, Secrets, Sicherheit, acht Runbooks,
-> Rollen, einfache SLOs und die Kapazitätsprüfung. Geprüft wurde hier ohne Docker-Daemon und ohne k3s (siehe
-> [Validierung](#what-was-validated-here)); der erste echte Probelauf steht noch aus.
-
 This page is the operating model for OpenTSx on k3s as described in this guide: what runs, how to watch it, how to
 back it up, update it and react to incidents. It covers today's Java components (see
 [today vs. planned](today-vs-planned.md)); the planned Go processor will add its own metrics and runbooks.
 
 ## Try it locally first: the probe
 
-One command installs everything on a local k3s and runs every example:
+You need an existing k3s cluster and the tools listed in the [setup plan](setup-plan.md). Before using
+`--local-kafscale`, follow the [Proxy setup](../../opentsx-kafscale-conformance/README.md#start-the-local-proxy)
+to build and verify the pinned transport bundle and export private MinIO credentials. The probe rejects an
+unverified bundle or missing credentials before invoking Compose.
+
+Run the probe to install OpenTSx and execute the examples:
 
 ```bash
 deploy/k3s/60-probe.sh --local-kafscale            # KafScale via docker compose on this host, then all steps
@@ -30,7 +22,7 @@ deploy/k3s/60-probe.sh --skip-build --only modbus,dwd   # repeat single steps
 
 | Step | What it does | PASS when |
 |------|--------------|-----------|
-| `kafscale-local` | (only `--local-kafscale`) `KAFSCALE_ADVERTISED_HOST=<LAN IP> docker compose -f docker-compose.kafscale.yml up -d` | the broker answers on `<LAN IP>:9092` within 90 s |
+| `kafscale-local` | (only `--local-kafscale`) `KAFSCALE_ADVERTISED_HOST=<LAN IP> docker compose -f docker-compose.kafscale.yml up -d` | the Proxy answers on `<LAN IP>:9092` within 90 s |
 | `prereqs` | `00-prereqs.sh` (`--no-build` with `--skip-build`) | no FAIL item |
 | `build`, `import` | `10-build.sh` (`--with-s3` when `LAKE=true`), `11-import-images.sh` | exit 0 |
 | `configure` | `20-configure.sh MODBUS_SIM=true` (+ `KAFSCALE_BOOTSTRAP=<ip>:9092 KAFSCALE_NETWORK=direct`) | renders |
@@ -53,15 +45,14 @@ All step logs are kept in `./probe-logs-<UTC time>/`. The exit code is 1 if any 
 `--keep-going` is given. The probe writes `MODBUS_SIM=true` (and with `--local-kafscale` the KafScale address) into
 `deploy/k3s/.env`, like any `20-configure.sh` call.
 
-**The advertised-address pitfall.** A Kafka-protocol client connects to the bootstrap address, then to the address
-the broker *advertises*. `docker-compose.kafscale.yml` advertises `KAFSCALE_ADVERTISED_HOST` (default `localhost`),
-which is only valid on the docker host itself; inside a pod `localhost` is the pod. `--local-kafscale` therefore
-starts the broker with the host's LAN IP (source address of the default route, override with `--kafscale-host`) and
-points OpenTSx at `<ip>:9092`. Compose recreates the broker container when the advertised host changes. If the
-broker was started by hand with `KAFSCALE_BROKER_ADDR=<host>:<port>`, note that a host in `KAFSCALE_BROKER_ADDR`
-takes precedence over `KAFSCALE_BROKER_HOST` (KafScale's `buildBrokerInfo`). A host firewall must allow the k3s pod
-CIDR (`10.42.0.0/16`) to reach port 9092. The alternative for a single host is `KAFSCALE_NETWORK=hostnetwork` with
-the broker advertising `localhost`.
+**Configure the advertised Proxy address.** A Kafka client connects to the bootstrap address, then to the
+address returned in Metadata. OpenTSx producers use KafScale Proxy or Apache Kafka Broker only.
+`docker-compose.kafscale.yml` exposes the Proxy on port `9092` and keeps the broker private.
+`KAFSCALE_ADVERTISED_HOST` sets the Proxy's advertised host and defaults to `localhost`, which is valid only
+on the Docker host. `--local-kafscale` supplies the host's LAN IP, detected from its default route; use
+`--kafscale-host` to select it explicitly. Compose recreates the Proxy when that advertised host changes.
+A host firewall must allow the k3s pod CIDR (`10.42.0.0/16`) to reach Proxy port `9092`. The single-host
+`KAFSCALE_NETWORK=hostnetwork` alternative uses the Proxy's `localhost` address.
 
 ## Service catalogue
 
@@ -286,7 +277,7 @@ deploy/k3s/71-restore.sh DIR --only stats-state --yes
 * **Network policies (proposal, not shipped or tested):** k3s enforces NetworkPolicies out of the box (embedded
   controller). A sensible start: deny all ingress in `opentsx`, then allow the ingress controller (Traefik in
   `kube-system`) to reach `opentsx-studio` and `opentsx-retrieval`, `opentsx-modbus-poll` → `opentsx-modbus-sim:1502`,
-  the lake components among themselves. Egress: DNS, the KafScale broker address(es), S3, `opendata.dwd.de:443` for
+  the lake components among themselves. Egress: DNS, the KafScale Proxy address(es), S3, `opendata.dwd.de:443` for
   the DWD CronJob, the Modbus converter. `kubectl port-forward` is not affected by NetworkPolicies.
 
   ```yaml
@@ -298,7 +289,8 @@ deploy/k3s/71-restore.sh DIR --only stats-state --yes
     policyTypes: [Ingress]
   ```
 * **APIs without authentication:** the retrieval server has none; keep its Service cluster-internal or put an
-  authenticating proxy in front (`INGRESS=true` exposes it). The KafScale broker in this setup has none either.
+  authenticating proxy in front (`INGRESS=true` exposes it). The KafScale Proxy in this setup has no client
+  authentication either.
 * **Modbus:** Modbus TCP has no authentication or encryption. Put converter and poller on an isolated network
   segment. The OpenTSx client implements only the read function codes (0x01–0x04), so it cannot write to a meter.
 * **Supply chain:** base images are pinned by tag (`eclipse-temurin:21.0.8_9-jre-noble`,
@@ -315,13 +307,12 @@ Each runbook: symptom → check → cause → fix → verify. Start every invest
   synthetic check fails.
 * **Check:** `deploy/k3s/40-demo.sh kafscale-check` (from inside the cluster). Read both lines: `bootstrap …` and
   `advertised …`. From the node: `nc -vz <host> <port>`.
-* **Cause:** bootstrap unreachable (routing, firewall for `10.42.0.0/16`, wrong port), or the broker advertises an
+* **Cause:** bootstrap unreachable (routing, firewall for `10.42.0.0/16`, wrong port), or the Proxy advertises an
   address only valid on its own host (`localhost`, a docker-internal IP).
-* **Fix:** local compose: `deploy/k3s/60-probe.sh --local-kafscale --only kafscale-local,configure,deploy,kafscale-check`
-  (restarts the broker advertising the LAN IP), or by hand
-  `KAFSCALE_ADVERTISED_HOST=<LAN IP> docker compose -f docker-compose.kafscale.yml up -d`. Other KafScale: set
-  `KAFSCALE_BROKER_HOST` (and no host in `KAFSCALE_BROKER_ADDR`) to a reachable address. Single host without that
-  option: `20-configure.sh KAFSCALE_BOOTSTRAP=localhost:9092 KAFSCALE_NETWORK=hostnetwork`, `30-deploy.sh`.
+* **Fix:** verify the [Proxy bundle and private environment](../../opentsx-kafscale-conformance/README.md#start-the-local-proxy),
+  then repeat the probe's `kafscale-local`, `configure`, `deploy` and `kafscale-check` steps with the correct
+  `--kafscale-host`. For an external cluster, obtain a reachable Proxy bootstrap and advertised address from its
+  operator. `KAFSCALE_NETWORK=direct` selects routing; it does not permit direct publication to KafScale Broker.
 * **Verify:** `kafscale-check` ends with `OK`; then `kubectl -n opentsx rollout restart deploy/opentsx-stats`.
 
 ### R2: Statistics processor stuck or crash-looping

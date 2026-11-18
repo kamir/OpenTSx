@@ -202,7 +202,9 @@ class FederationMeasurementTest(unittest.TestCase):
 
         def command(argv, *, cwd=None, env=None, log=None):
             if argv[:2] == ["git", "clone"]:
-                Path(argv[-1]).mkdir()
+                broker = Path(argv[-1]) / "cmd/broker/main.go"
+                broker.parent.mkdir(parents=True)
+                broker.write_text('package main\nconst brokerVersion        = "dev"\n')
                 return ""
             if argv[0] == "git" and Path(cwd).name == "kafscale":
                 return self.measurement.LATENCY.KAFSCALE_COMMIT if argv[1] == "rev-parse" else ""
@@ -242,6 +244,8 @@ class FederationMeasurementTest(unittest.TestCase):
                 patch.object(self.measurement.LATENCY, "run", side_effect=command), \
                 patch.object(self.measurement.LATENCY, "freeze_classpath", return_value=("/synthetic.jar", [])), \
                 patch.object(self.measurement.LATENCY, "power_assertion", return_value=contextlib.nullcontext(None)), \
+                patch.object(self.measurement.LATENCY.build_kafscale_proxy, "metadata_overlay", return_value={}), \
+                patch.object(self.measurement.LATENCY.build_kafscale_proxy, "protocol_overlay", return_value={}), \
                 patch.object(self.measurement.platform, "system", return_value="Darwin"):
             with self.assertRaisesRegex(RuntimeError, "source changed"):
                 self.measurement.main()

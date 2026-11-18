@@ -8,6 +8,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ## [Unreleased]
 
+- Serialize pinned local KafScale metadata snapshots so concurrent watcher refreshes retain acknowledged topic creation.
+
+### Changed
+
+- Route local KafScale producers and test fixtures through the v1.6.0 Proxy. Build the pinned broker, Proxy and
+  isolated metadata launcher without building an image. Compose exposes the Proxy endpoint; the development
+  MinIO stack requires private `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` environment values.
+- Route Track A evaluation clients through the same guarded Proxy bundle and record its transport provenance.
+  Archived measurement samples retain their recorded source and runtime hashes.
+- Require a verified Proxy bundle and private MinIO environment before the k3s probe starts local KafScale.
+
 ### Added
 
 - A rerunnable TASK-020 A5 evaluation harness for bounded centralized and

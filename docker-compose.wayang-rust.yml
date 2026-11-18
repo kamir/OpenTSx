@@ -26,17 +26,18 @@ x-runner: &runner
   entrypoint: [/runner/release/tsx-runner]
   read_only: true
   restart: "no"
-  depends_on: [kafscale-broker]
+  depends_on: [kafscale-proxy]
 
 services:
-  kafscale-broker:
-    image: ghcr.io/kafscale/kafscale-broker:v1.6.0@sha256:2de20814b731131fcce7fc4e95d9e903cf6d35d9bed84be839b44a0613e57adf
-    environment:
-      KAFSCALE_USE_MEMORY_S3: "1"
-      KAFSCALE_BROKER_ID: "0"
-      KAFSCALE_BROKER_ADDR: ":${KAFSCALE_BROKER_PORT:-39093}"
-      KAFSCALE_BROKER_HOST: kafscale-broker
-      KAFSCALE_BROKER_PORT: "${KAFSCALE_BROKER_PORT:-39093}"
+  kafscale-proxy:
+    image: python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
+    user: "${WAYANG_UID:?Set WAYANG_UID}:${WAYANG_GID:?Set WAYANG_GID}"
+    entrypoint: [/transport/kafscale-cluster]
+    command: [--listen, "0.0.0.0:${KAFSCALE_BROKER_PORT:-39093}", --advertised-host, kafscale-proxy, --advertised-port, "${KAFSCALE_BROKER_PORT:-39093}", --data-dir, /state, --broker-binary, /transport/kafscale-broker, --proxy-binary, /transport/kafscale-proxy]
+    read_only: true
+    volumes:
+      - ./target/kafscale-proxy-linux:/transport:ro
+      - ${WAYANG_PRIVATE_DIR:?Set WAYANG_PRIVATE_DIR}/transport:/state
     ports:
       - "127.0.0.1:${KAFSCALE_BROKER_PORT:-39093}:${KAFSCALE_BROKER_PORT:-39093}"
 
@@ -75,21 +76,21 @@ services:
 
   runner-1:
     <<: *runner
-    command: [serve, --listen, "0.0.0.0:8090", --node, worker-1, --site, compose, --bootstrap, "kafscale-broker:${KAFSCALE_BROKER_PORT:-39093}", --state, /state]
+    command: [serve, --listen, "0.0.0.0:8090", --node, worker-1, --site, compose, --bootstrap, "kafscale-proxy:${KAFSCALE_BROKER_PORT:-39093}", --state, /state]
     volumes:
       - ./target/wayang-rust-linux:/runner:ro
       - ${WAYANG_PRIVATE_DIR:?Set WAYANG_PRIVATE_DIR}/state/worker-1:/state
 
   runner-2:
     <<: *runner
-    command: [serve, --listen, "0.0.0.0:8090", --node, worker-2, --site, compose, --bootstrap, "kafscale-broker:${KAFSCALE_BROKER_PORT:-39093}", --state, /state]
+    command: [serve, --listen, "0.0.0.0:8090", --node, worker-2, --site, compose, --bootstrap, "kafscale-proxy:${KAFSCALE_BROKER_PORT:-39093}", --state, /state]
     volumes:
       - ./target/wayang-rust-linux:/runner:ro
       - ${WAYANG_PRIVATE_DIR:?Set WAYANG_PRIVATE_DIR}/state/worker-2:/state
 
   runner-3:
     <<: *runner
-    command: [serve, --listen, "0.0.0.0:8090", --node, worker-3, --site, compose, --bootstrap, "kafscale-broker:${KAFSCALE_BROKER_PORT:-39093}", --state, /state]
+    command: [serve, --listen, "0.0.0.0:8090", --node, worker-3, --site, compose, --bootstrap, "kafscale-proxy:${KAFSCALE_BROKER_PORT:-39093}", --state, /state]
     volumes:
       - ./target/wayang-rust-linux:/runner:ro
       - ${WAYANG_PRIVATE_DIR:?Set WAYANG_PRIVATE_DIR}/state/worker-3:/state

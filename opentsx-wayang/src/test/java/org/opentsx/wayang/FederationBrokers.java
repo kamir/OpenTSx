@@ -27,10 +27,9 @@ final class FederationBrokers implements AutoCloseable {
                 || !cluster.matches("[a-z0-9][a-z0-9-]{0,62}")) || new java.util.HashSet<>(clusters).size() != clusters.size()) {
             throw new IllegalArgumentException("disposable cluster names must be unique valid identifiers");
         }
-        String configured = System.getenv("KAFSCALE_BROKER_BINARY");
-        if (configured == null || configured.isBlank()) throw new IllegalStateException("KAFSCALE_BROKER_BINARY must name the source-built KafScale v1.6.0 broker");
-        Path binary = Path.of(configured).toRealPath();
-        if (!Files.isRegularFile(binary) || !Files.isExecutable(binary)) throw new IllegalStateException("KafScale broker binary is not executable");
+        Path binary = executable("KAFSCALE_CLUSTER_BINARY");
+        Path broker = executable("KAFSCALE_BROKER_BINARY");
+        Path proxy = executable("KAFSCALE_PROXY_BINARY");
         Files.createDirectories(directory);
         try {
             for (String cluster : clusters) {
@@ -38,12 +37,11 @@ final class FederationBrokers implements AutoCloseable {
                 try (ServerSocket reserved = new ServerSocket(0, 50, InetAddress.getLoopbackAddress())) {
                     port = reserved.getLocalPort();
                 }
-                ProcessBuilder builder = new ProcessBuilder(binary.toString());
+                ProcessBuilder builder = new ProcessBuilder(binary.toString(), "--listen", "127.0.0.1:" + port,
+                        "--advertised-host", "127.0.0.1", "--advertised-port", Integer.toString(port),
+                        "--data-dir", directory.resolve(cluster + "-state").toAbsolutePath().toString(),
+                        "--broker-binary", broker.toString(), "--proxy-binary", proxy.toString());
                 builder.environment().clear();
-                builder.environment().putAll(Map.of("KAFSCALE_USE_MEMORY_S3", "1", "KAFSCALE_BROKER_ID", "0",
-                        "KAFSCALE_BROKER_ADDR", "127.0.0.1:" + port, "KAFSCALE_BROKER_HOST", "127.0.0.1",
-                        "KAFSCALE_BROKER_PORT", Integer.toString(port), "KAFSCALE_METRICS_ADDR", "127.0.0.1:0",
-                        "KAFSCALE_CONTROL_ADDR", "127.0.0.1:0"));
                 builder.redirectErrorStream(true).redirectOutput(directory.resolve(cluster + ".log").toFile());
                 Process process = builder.start();
                 processes.add(process);
@@ -66,6 +64,14 @@ final class FederationBrokers implements AutoCloseable {
             try { close(); } catch (RuntimeException cleanup) { error.addSuppressed(cleanup); }
             throw error;
         }
+    }
+
+    private static Path executable(String name) throws IOException {
+        String configured = System.getenv(name);
+        if (configured == null || configured.isBlank()) throw new IllegalStateException(name + " must name a source-built KafScale v1.6.0 executable");
+        Path binary = Path.of(configured).toRealPath();
+        if (!Files.isRegularFile(binary) || !Files.isExecutable(binary)) throw new IllegalStateException(name + " is not executable");
+        return binary;
     }
 
     int port(String cluster) {
