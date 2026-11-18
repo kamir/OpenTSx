@@ -13,6 +13,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Exclude the public Proxy port and already selected private ports from isolated KafScale fixture allocation.
+  The pinned build runs deterministic launcher regressions and records their source hash.
 - Keep committed offsets monotonic in the pinned local KafScale metadata overlay.
   Conditional updates retain newer flush progress and propagate storage failures.
 - Route local KafScale producers and test fixtures through the v1.6.0 Proxy. Build the pinned broker, Proxy and

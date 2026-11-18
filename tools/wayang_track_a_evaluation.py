@@ -32,7 +32,7 @@ RESOURCES = ("elapsed_ms", "pid", "ppid", "role", "rss_bytes", "cpu_seconds")
 SOURCES = ("tools/wayang_track_a_evaluation.py",
            "opentsx-wayang/src/test/java/org/opentsx/wayang/FederationEvaluation.java",
            "opentsx-wayang/src/test/java/org/opentsx/wayang/StreamingEvaluation.java")
-TRANSPORT_SOURCES = ("tools/build_kafscale_proxy.py", "tools/kafscale_proxy_cluster.go",
+TRANSPORT_SOURCES = ("tools/build_kafscale_proxy.py", "tools/kafscale_proxy_cluster.go", "tools/kafscale_proxy_cluster_test.go",
                      "tools/kafscale_metadata_overlay.py", "tools/kafscale_metadata_test.go", "tools/kafscale_proxy_protocol_overlay.py",
                      "tools/kafscale_proxy_protocol_test.go")
 ERRORS = {"mean_relative_error": "maxRelativeMeanError", "m2_relative_error": "maxRelativeM2Error",

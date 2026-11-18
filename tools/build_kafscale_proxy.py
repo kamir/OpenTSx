@@ -26,6 +26,7 @@ def digest(path):
 def identity():
     return {"sourceCommit": SOURCE_COMMIT, "sourceVersion": "v1.6.0", "compilerImage": COMPILER_IMAGE,
             "launcherSha256": digest(ROOT / "tools/kafscale_proxy_cluster.go"),
+            "launcherTestsSha256": digest(ROOT / "tools/kafscale_proxy_cluster_test.go"),
             "builderSha256": digest(Path(__file__).resolve()),
             "metadataOverlaySha256": digest(ROOT / "tools/kafscale_metadata_overlay.py"),
             "metadataTestsSha256": digest(ROOT / "tools/kafscale_metadata_test.go"),
@@ -94,11 +95,13 @@ def build():
     command = ["docker", "run", "--rm", "--cpus", "2", "--memory", "3g", "--user", f"{os.getuid()}:{os.getgid()}",
                "--mount", f"type=bind,src={source},dst=/source,readonly",
                "--mount", f"type=bind,src={ROOT / 'tools/kafscale_proxy_cluster.go'},dst=/cluster.go,readonly",
+               "--mount", f"type=bind,src={ROOT / 'tools/kafscale_proxy_cluster_test.go'},dst=/cluster_test.go,readonly",
                "--mount", f"type=bind,src={DIRECTORY},dst=/artifacts",
                "--mount", f"type=bind,src={cache},dst=/cache",
                "--workdir", "/source", "--env", "CGO_ENABLED=0", "--env", "GOMAXPROCS=2", "--env", "GOTOOLCHAIN=local",
                "--env", "GOPATH=/cache/modules", "--env", "GOCACHE=/cache/build", COMPILER_IMAGE,
                "sh", "-ec", "go test -overlay=/artifacts/broker-overlay.json -run '^TestOpenTSx(Proxy|Metadata)' -count=1 -v ./cmd/proxy ./pkg/metadata; "
+               "go test -run '^TestOpenTSxCluster' -count=1 -v /cluster.go /cluster_test.go; "
                "go build -overlay=/artifacts/broker-overlay.json -trimpath -buildvcs=false -ldflags=-buildid= -o /artifacts/kafscale-broker ./cmd/broker; "
                "go build -overlay=/artifacts/broker-overlay.json -trimpath -buildvcs=false -ldflags=-buildid= -o /artifacts/kafscale-proxy ./cmd/proxy; "
                "go build -overlay=/artifacts/broker-overlay.json -trimpath -buildvcs=false -ldflags=-buildid= -o /artifacts/kafscale-cluster /cluster.go"]
