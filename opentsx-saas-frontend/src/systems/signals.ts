@@ -611,6 +611,24 @@ export function presetGenerator(processor: string, e: Expect): Record<string, nu
     : { mean, sigma: Number((spread / 3).toPrecision(2)), reversion: 0.1 };
 }
 
+/** The generator parameters as the server takes them; an empty field is left out so the server default applies. */
+export function generatorParams(processor: string, e: Expect, params: Record<string, number | string>): Record<string, number | string> {
+  const preset = presetGenerator(processor, e);
+  const out: Record<string, number | string> = {};
+  for (const [k, v] of Object.entries(params)) {
+    if (typeof v === 'number' || typeof preset[k] !== 'number') {
+      out[k] = v;
+      continue;
+    }
+    const t = v.trim();
+    if (t === '') continue;
+    const n = Number(t);
+    if (!Number.isFinite(n)) throw new Error(`${k}: "${t}" is not a number; expected a number such as 0.1`);
+    out[k] = n;
+  }
+  return out;
+}
+
 /** The period the system has data for, so a generated series lies next to the measured ones; null when it has none. */
 export function dataExtent(status: SystemStatus): { from: string; to: string } | null {
   const all = status.signals.flatMap((s) => Object.values(s.grades).map((g) => g?.data)).filter((d): d is GradeData => !!d && !!d.from && !!d.to);

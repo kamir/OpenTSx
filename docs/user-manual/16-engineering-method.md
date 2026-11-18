@@ -126,6 +126,8 @@ step you are in. A manually confirmed action closes the loop: nothing here needs
   series by unit and value range and binds one after you confirmed that it is the quantity the signal means.
   "Simulate" binds a signal to a demo generator, `gen.ou` or `gen.sine` ([chapter 17](17-operators.md)), preset
   from its expectation, and "Generate" runs it over a period; the result is marked as generated and as a demo.
+  A parameter field left empty is not sent, so the generator default applies; text that is no number is refused
+  before the binding is written.
   Both go into a working copy of your account that lies over the system document; the place gives you the lines to
   put into the file. **Planned:** a state in several dimensions
   (availability, validity of the measurement, operating state, freshness, preparation) instead of one word; a

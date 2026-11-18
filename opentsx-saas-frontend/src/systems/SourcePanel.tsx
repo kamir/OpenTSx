@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { systemsAPI } from '../services/api';
 import { clock } from '../workbench/inventory';
-import { Candidate, GENERATORS, Signal, SystemStatus, dataExtent, expectText, guessOrigin, presetGenerator, suggestSeries, topicSource } from './signals';
+import { Candidate, GENERATORS, Signal, SystemStatus, dataExtent, expectText, generatorParams, guessOrigin, presetGenerator, suggestSeries, topicSource } from './signals';
 
 const ORIGINS = ['MEASURED', 'REPORTED', 'FORECAST', 'ESTIMATED', 'SYNTHETIC'];
 
@@ -103,7 +103,7 @@ export default function SourcePanel({ mode, status, signal, base, onChanged, onC
       await systemsAPI.bind(status.system, {
         signal: signal.id,
         grade: 'raw',
-        source: { kind: 'generator', processor, seed, params },
+        source: { kind: 'generator', processor, seed, params: generatorParams(processor, signal.expect, params) },
         baseHash: status.hash,
       });
       return `${signal.id} is bound to the demo generator ${processor} in your working copy. Generate it to get data.`;
@@ -193,7 +193,7 @@ export default function SourcePanel({ mode, status, signal, base, onChanged, onC
                 <input
                   type="text"
                   value={v}
-                  onChange={(e) => setParams({ ...params, [k]: typeof v === 'number' && e.target.value.trim() !== '' && !Number.isNaN(Number(e.target.value)) ? Number(e.target.value) : e.target.value })}
+                  onChange={(e) => setParams({ ...params, [k]: e.target.value })}
                 />
               </label>
             ))}

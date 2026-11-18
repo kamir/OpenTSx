@@ -242,6 +242,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Workbench `model.wind-shear`, `model.power-curve` and `feature.lag` refuse the missing and out-of-range parameters
   the processor refuses, with a message such as `alpha: "0.7" is out of range; expected a number from 0 to 0.6`, so a
   flow with these operators that computes in the browser is not refused at deploy for their parameters.
+- The Simulate form on the Signals page bound a generator parameter that was cleared and typed again as text, which
+  the generator now refuses. It binds numbers, leaves an emptied field out so the generator default applies, and
+  refuses text that is no number before binding, for example `sigma: "4,5" is not a number; expected a number such as
+  0.1`.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,
