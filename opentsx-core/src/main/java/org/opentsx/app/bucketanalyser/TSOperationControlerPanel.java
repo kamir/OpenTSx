@@ -43,6 +43,8 @@ import java.util.logging.Logger;
  */
 public class TSOperationControlerPanel extends javax.swing.JPanel {
 
+    private static final long MAX_SHUFFLE_SAMPLE_VISITS = 10_000_000L;
+
     /**
      * Creates new form FileControlerPanel2
      */
@@ -952,23 +954,63 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         String target = operationPrefix + this.label;
 
         try {
+            if (rows == null || rows.isEmpty()) {
+                throw new IllegalArgumentException("Select at least one series for shuffling");
+            }
+            long totalSamples = 0;
+            for (TimeSeriesObject comp : rows) {
+                if (comp == null || comp.getXValues() == null || comp.getYValues() == null
+                        || comp.getXValues().size() != comp.getYValues().size() || comp.getYValues().isEmpty()) {
+                    throw new IllegalArgumentException("Shuffle requires at least one coordinate-value pair");
+                }
+                if (comp.getLabel() == null) {
+                    throw new IllegalArgumentException("Shuffle requires a series label");
+                }
+                totalSamples += comp.getYValues().size();
+            }
 
-            int l = Integer.parseInt(javax.swing.JOptionPane.showInputDialog("Nr fo shuffelings: "));
+            String input = JOptionPane.showInputDialog(this, "Number of shuffle passes:");
+            if (input == null) return;
+            int passes;
+            try {
+                passes = Integer.parseInt(input);
+            } catch (NumberFormatException failure) {
+                throw new IllegalArgumentException("Shuffle pass count must be a positive integer", failure);
+            }
+            if (passes <= 0) {
+                throw new IllegalArgumentException("Shuffle pass count must be a positive integer");
+            }
+            if (passes > MAX_SHUFFLE_SAMPLE_VISITS / totalSamples) {
+                throw new IllegalArgumentException("Shuffle work exceeds the desktop limit of "
+                        + MAX_SHUFFLE_SAMPLE_VISITS + " sample visits");
+            }
+
+            for (TimeSeriesObject comp : rows) {
+                Vector x = comp.getXValues();
+                Vector y = comp.getYValues();
+                for (int index = 0; index < y.size(); index++) {
+                    if (!(x.get(index) instanceof Double coordinate) || !(y.get(index) instanceof Double value)
+                            || !Double.isFinite(coordinate) || !Double.isFinite(value)) {
+                        throw new IllegalArgumentException("Shuffle requires finite coordinates and values");
+                    }
+                }
+            }
 
             Vector<TimeSeriesObject> shuffled = new Vector<TimeSeriesObject>();
-
-            for (TimeSeriesObject comp : this.rows) {
+            for (TimeSeriesObject comp : rows) {
                 TimeSeriesObject m = comp.copy();
-                m.shuffleYValues(l);
+                Vector x = comp.getXValues();
+                for (int index = 0; index < x.size(); index++) m.xValues.set(index, x.get(index));
+                m.shuffleYValues(passes);
                 shuffled.add(m);
             }
 
             MultiChart.open(shuffled, this.jRadioButton1.isSelected(), target);
-            MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel + source));
-
-        } catch (Exception ex) {
-            Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalArgumentException failure) {
+            JOptionPane.showMessageDialog(this, failure.getMessage(), "Shuffle failed", JOptionPane.ERROR_MESSAGE);
+            return;
         }
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel + source));
     }//GEN-LAST:event_jButton18ActionPerformed
 
     private void jButton19ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton19ActionPerformed
