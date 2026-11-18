@@ -94,6 +94,28 @@ class KafScaleConformanceTest {
     }
 
     @Test
+    void retainsEveryAcknowledgedTopicAfterBatchCreation() throws Exception {
+        List<NewTopic> topics = new ArrayList<>();
+        for (int batch = 0; batch < 10; batch++) {
+            for (int partitions = 1; partitions <= 3; partitions++) {
+                topics.add(new NewTopic("tsx-conf-" + run + "-batch-" + batch + "-" + partitions,
+                        partitions, (short) 1));
+            }
+        }
+        admin.createTopics(topics).all().get(15, TimeUnit.SECONDS);
+        List<String> names = topics.stream().map(NewTopic::name).toList();
+        var descriptions = admin.describeTopics(names).allTopicNames().get(15, TimeUnit.SECONDS);
+        assertEquals(Set.copyOf(names), descriptions.keySet());
+        for (NewTopic topic : topics) {
+            var partitions = descriptions.get(topic.name()).partitions();
+            assertEquals(topic.numPartitions(), partitions.size(), topic.name());
+            for (int index = 0; index < partitions.size(); index++) {
+                assertEquals(index, partitions.get(index).partition(), topic.name());
+            }
+        }
+    }
+
+    @Test
     void producesAndConsumesInOrderPerKey() throws Exception {
         String topic = createTopic("order", 3);
         int n = 200;
