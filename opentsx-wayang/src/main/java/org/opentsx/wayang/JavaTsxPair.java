@@ -71,8 +71,11 @@ public final class JavaTsxPair extends TsxPair implements JavaExecutionOperator 
         TsxPairXcorr.PairSettings st = TsxPairXcorr.pairSettings(op.params());
         Held held = restore(op.state().get(op.node()));
         List<SpecificRecord> out = new ArrayList<>();
+        Map<String, Integer> order = new TreeMap<>();
+        for (String series : op.aSeries()) order.put(series, order.size());
         for (TsxTagged t : in) {
             String input = t.input();
+            if (op.within() && !input.equals(A)) throw new IllegalArgumentException("within-input pairing reads input a only");
             Set<String> own = input.equals(A) ? op.aSeries() : input.equals(B) ? op.bSeries() : Set.of();
             Episode e = t.episode();
             String series = e.getSeries().getSeriesId();
@@ -83,11 +86,13 @@ public final class JavaTsxPair extends TsxPair implements JavaExecutionOperator 
             if (p.start() < held.progress(input, series) - TsxPairWindows.TOL) {
                 continue;       // a duplicate, or older than what the series already delivered
             }
-            String other = input.equals(A) ? B : A;
+            String other = op.within() ? A : input.equals(A) ? B : A;
             for (String o : other.equals(A) ? op.aSeries() : op.bSeries()) {
+                if (op.within() && series.equals(o)) continue;
                 for (TsxPairWindows.Piece q : held.of(other, o)) {
-                    TsxPairWindows.Piece a = input.equals(A) ? p : q;
-                    TsxPairWindows.Piece b = input.equals(A) ? q : p;
+                    boolean first = op.within() ? order.get(series) < order.get(o) : input.equals(A);
+                    TsxPairWindows.Piece a = first ? p : q;
+                    TsxPairWindows.Piece b = first ? q : p;
                     TsxPairWindows.Range r = TsxPairWindows.pair(a, b, st.pairing(), st.window());
                     if (r != null) {
                         TsxPairWindows.Result res = TsxPairWindows.run(method, st, r);
@@ -107,6 +112,14 @@ public final class JavaTsxPair extends TsxPair implements JavaExecutionOperator 
 
     /** Drops every episode that all series of the other input have passed: nothing can pair with it any more. */
     private static void prune(TsxPair op, Held held) {
+        if (op.within()) {
+            for (String series : op.aSeries()) {
+                double watermark = op.aSeries().stream().filter(s -> !s.equals(series))
+                        .mapToDouble(s -> held.progress(A, s)).min().orElse(Double.NEGATIVE_INFINITY);
+                held.of(A, series).removeIf(p -> p.end() <= watermark + TsxPairWindows.TOL);
+            }
+            return;
+        }
         for (String input : List.of(A, B)) {
             Set<String> others = input.equals(A) ? op.bSeries() : op.aSeries();
             for (List<TsxPairWindows.Piece> list : held.pieces.getOrDefault(input, Map.of()).values()) {

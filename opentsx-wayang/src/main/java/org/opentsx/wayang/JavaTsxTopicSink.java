@@ -59,7 +59,7 @@ public final class JavaTsxTopicSink extends TsxTopicSink implements JavaExecutio
         return KafScaleClients.producerProps(bootstrap);
     }
 
-    static ProducerRecord<String, byte[]> toRecord(OpenTsxAvro avro, String topic, Object r) {
+    public static ProducerRecord<String, byte[]> toRecord(OpenTsxAvro avro, String topic, Object r) {
         ProducerRecord<String, byte[]> out;
         if (r instanceof JsonNode signal) return signalRecord(topic, signal);
         if (r instanceof Episode e) {

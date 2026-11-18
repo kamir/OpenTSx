@@ -1,0 +1,348 @@
+{
+  "schema" : "opentsx.testvectors.aggregate-transport.v1",
+  "description" : "Synthetic bounded aggregate transport from the Java codec, including an empty window and incomplete/final revisions. These cases qualify transport bytes and metadata only. Regenerate with tools/aggregate_transport_vectors.py.",
+  "inventory" : {
+    "job" : "wind",
+    "planVersion" : 1,
+    "specHash" : "4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0",
+    "assignmentTexts" : [ "{\"schema\":\"opentsx.execution-assignment.v1\",\"deployment\":\"wind\",\"generation\":\"1\",\"assignment\":\"a-s1\",\"attempt\":\"attempt-1\",\"fence\":\"1\",\"fragment\":\"fragment-s1\",\"site\":\"s1\",\"node\":\"node-s1\",\"runtime\":\"java\",\"catalog\":\"tsx-catalog/1\",\"artifactDigest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"specHash\":\"4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0\",\"sourceDagText\":\"{\\\"source\\\":{},\\\"nodes\\\":[{\\\"id\\\":\\\"stats\\\"}],\\\"sinks\\\":[{\\\"input\\\":\\\"stats\\\"}]}\",\"fragmentHash\":\"4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0\",\"fragmentText\":\"{\\\"source\\\":{},\\\"nodes\\\":[{\\\"id\\\":\\\"stats\\\"}],\\\"sinks\\\":[{\\\"input\\\":\\\"stats\\\"}]}\",\"mode\":\"bounded\",\"inputs\":[{\"binding\":\"input-s1\",\"topic\":\"tsx.wind.s1.episodes.v2\",\"partitionCount\":\"1\",\"positions\":[{\"partition\":\"0\",\"from\":\"0\",\"to\":\"10\"}]}]}", "{\"schema\":\"opentsx.execution-assignment.v1\",\"deployment\":\"wind\",\"generation\":\"1\",\"assignment\":\"a-s2\",\"attempt\":\"attempt-1\",\"fence\":\"1\",\"fragment\":\"fragment-s2\",\"site\":\"s2\",\"node\":\"node-s2\",\"runtime\":\"java\",\"catalog\":\"tsx-catalog/1\",\"artifactDigest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"specHash\":\"4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0\",\"sourceDagText\":\"{\\\"source\\\":{},\\\"nodes\\\":[{\\\"id\\\":\\\"stats\\\"}],\\\"sinks\\\":[{\\\"input\\\":\\\"stats\\\"}]}\",\"fragmentHash\":\"4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0\",\"fragmentText\":\"{\\\"source\\\":{},\\\"nodes\\\":[{\\\"id\\\":\\\"stats\\\"}],\\\"sinks\\\":[{\\\"input\\\":\\\"stats\\\"}]}\",\"mode\":\"bounded\",\"inputs\":[{\"binding\":\"input-s2\",\"topic\":\"tsx.wind.s2.episodes.v2\",\"partitionCount\":\"1\",\"positions\":[{\"partition\":\"0\",\"from\":\"0\",\"to\":\"10\"}]}]}", "{\"schema\":\"opentsx.execution-assignment.v1\",\"deployment\":\"wind\",\"generation\":\"1\",\"assignment\":\"a-s3\",\"attempt\":\"attempt-1\",\"fence\":\"1\",\"fragment\":\"fragment-s3\",\"site\":\"s3\",\"node\":\"node-s3\",\"runtime\":\"java\",\"catalog\":\"tsx-catalog/1\",\"artifactDigest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"specHash\":\"4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0\",\"sourceDagText\":\"{\\\"source\\\":{},\\\"nodes\\\":[{\\\"id\\\":\\\"stats\\\"}],\\\"sinks\\\":[{\\\"input\\\":\\\"stats\\\"}]}\",\"fragmentHash\":\"4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0\",\"fragmentText\":\"{\\\"source\\\":{},\\\"nodes\\\":[{\\\"id\\\":\\\"stats\\\"}],\\\"sinks\\\":[{\\\"input\\\":\\\"stats\\\"}]}\",\"mode\":\"bounded\",\"inputs\":[{\"binding\":\"input-s3\",\"topic\":\"tsx.wind.s3.episodes.v2\",\"partitionCount\":\"1\",\"positions\":[{\"partition\":\"0\",\"from\":\"0\",\"to\":\"10\"}]}]}" ],
+    "expectedAssignments" : [ {
+      "assignment" : "a-s1",
+      "site" : "s1",
+      "node" : "node-s1",
+      "generation" : "1",
+      "fence" : "1",
+      "fragmentHash" : "4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0"
+    }, {
+      "assignment" : "a-s2",
+      "site" : "s2",
+      "node" : "node-s2",
+      "generation" : "1",
+      "fence" : "1",
+      "fragmentHash" : "4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0"
+    }, {
+      "assignment" : "a-s3",
+      "site" : "s3",
+      "node" : "node-s3",
+      "generation" : "1",
+      "fence" : "1",
+      "fragmentHash" : "4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0"
+    } ],
+    "scopes" : [ {
+      "groupId" : "0123456789abcdef",
+      "windowType" : "PT10M",
+      "startMicros" : "0",
+      "endMicros" : "600000000"
+    }, {
+      "groupId" : "0123456789abcdef",
+      "windowType" : "PT1H",
+      "startMicros" : "0",
+      "endMicros" : "3600000000"
+    } ]
+  },
+  "cases" : [ {
+    "name" : "populated PT10M site partial",
+    "kind" : "partial",
+    "soeHex" : "c3010666aa8b18481be520303132333435363738396162636465660a505431304d0080989abc04060200000000000000c0000000000000f03f565555555555d5bfabaaaaaaaaaa12400220017b14ae47e17a843f01010001014601000202",
+    "record" : {
+      "key" : "wind|s1|0123456789abcdef|PT10M|0",
+      "value" : "wwEGZqqLGEgb5SAwMTIzNDU2Nzg5YWJjZGVmClBUMTBNAICYmrwEBgIAAAAAAAAAwAAAAAAAAPA/VlVVVVVV1b+rqqqqqqoSQAIgAXsUrkfheoQ/AQEAAQFGAQACAg==",
+      "headers" : {
+        "tsx-assignment" : "a-s1",
+        "tsx-evidence" : "{\"schema\":\"opentsx.aggregate-evidence.v1\",\"kind\":\"bounded-source-cut\",\"job\":\"wind\",\"site\":\"s1\",\"planVersion\":1,\"generation\":\"1\",\"assignment\":\"a-s1\",\"fence\":\"1\",\"specHash\":\"4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0\",\"fragmentHash\":\"4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0\",\"payloadSha256\":\"dbe20bbae3425389f970805b6bd15c32449552cc3ee4126490f43344e87eca2f\",\"inputs\":[{\"binding\":\"input-s1\",\"topic\":\"tsx.wind.s1.episodes.v2\",\"partitionCount\":\"1\",\"positions\":[{\"partition\":\"0\",\"from\":\"0\",\"to\":\"10\"}]}]}",
+        "tsx-fence" : "1",
+        "tsx-fragment-hash" : "4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0",
+        "tsx-generation" : "1",
+        "tsx-job" : "wind",
+        "tsx-plan-version" : "1",
+        "tsx-revision" : "0",
+        "tsx-schema" : "org.opentsx.model.v2.SeriesStats",
+        "tsx-site" : "s1",
+        "tsx-spec-hash" : "4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0"
+      }
+    },
+    "statistics" : {
+      "seriesId" : "0123456789abcdef",
+      "windowType" : "PT10M",
+      "windowStartMicros" : 0,
+      "windowEndMicros" : 600000000,
+      "validCount" : 3,
+      "nanCount" : 1,
+      "gapCount" : 0,
+      "min" : -2.0,
+      "max" : 1.0,
+      "mean" : -0.33333333333333337,
+      "m2" : 4.666666666666667,
+      "sketchHex" : "017b14ae47e17a843f01010001014601",
+      "lastSeenMicros" : 1
+    },
+    "delivery" : {
+      "schema" : "opentsx.aggregate-delivery.v1",
+      "records" : [ {
+        "key" : "wind|s1|0123456789abcdef|PT10M|0",
+        "value" : "wwEGZqqLGEgb5SAwMTIzNDU2Nzg5YWJjZGVmClBUMTBNAICYmrwEBgIAAAAAAAAAwAAAAAAAAPA/VlVVVVVV1b+rqqqqqqoSQAIgAXsUrkfheoQ/AQEAAQFGAQACAg==",
+        "headers" : {
+          "tsx-assignment" : "a-s1",
+          "tsx-evidence" : "{\"schema\":\"opentsx.aggregate-evidence.v1\",\"kind\":\"bounded-source-cut\",\"job\":\"wind\",\"site\":\"s1\",\"planVersion\":1,\"generation\":\"1\",\"assignment\":\"a-s1\",\"fence\":\"1\",\"specHash\":\"4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0\",\"fragmentHash\":\"4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0\",\"payloadSha256\":\"dbe20bbae3425389f970805b6bd15c32449552cc3ee4126490f43344e87eca2f\",\"inputs\":[{\"binding\":\"input-s1\",\"topic\":\"tsx.wind.s1.episodes.v2\",\"partitionCount\":\"1\",\"positions\":[{\"partition\":\"0\",\"from\":\"0\",\"to\":\"10\"}]}]}",
+          "tsx-fence" : "1",
+          "tsx-fragment-hash" : "4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0",
+          "tsx-generation" : "1",
+          "tsx-job" : "wind",
+          "tsx-plan-version" : "1",
+          "tsx-revision" : "0",
+          "tsx-schema" : "org.opentsx.model.v2.SeriesStats",
+          "tsx-site" : "s1",
+          "tsx-spec-hash" : "4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0"
+        }
+      } ]
+    },
+    "evidence" : {
+      "schema" : "opentsx.aggregate-evidence.v1",
+      "kind" : "bounded-source-cut",
+      "job" : "wind",
+      "site" : "s1",
+      "planVersion" : 1,
+      "generation" : "1",
+      "assignment" : "a-s1",
+      "fence" : "1",
+      "specHash" : "4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0",
+      "fragmentHash" : "4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0",
+      "payloadSha256" : "dbe20bbae3425389f970805b6bd15c32449552cc3ee4126490f43344e87eca2f",
+      "inputs" : [ {
+        "binding" : "input-s1",
+        "topic" : "tsx.wind.s1.episodes.v2",
+        "partitionCount" : "1",
+        "positions" : [ {
+          "partition" : "0",
+          "from" : "0",
+          "to" : "10"
+        } ]
+      } ]
+    }
+  }, {
+    "name" : "empty PT1H site partial",
+    "kind" : "partial",
+    "soeHex" : "c3010666aa8b18481be5203031323334353637383961626364656608505431480080909de91a0000000000000000f87f000000000000f87f000000000000f87f000000000000f87f0218017b14ae47e17a843f0000000000",
+    "record" : {
+      "key" : "wind|s1|0123456789abcdef|PT1H|0",
+      "value" : "wwEGZqqLGEgb5SAwMTIzNDU2Nzg5YWJjZGVmCFBUMUgAgJCd6RoAAAAAAAAAAPh/AAAAAAAA+H8AAAAAAAD4fwAAAAAAAPh/AhgBexSuR+F6hD8AAAAAAA==",
+      "headers" : {
+        "tsx-assignment" : "a-s1",
+        "tsx-evidence" : "{\"schema\":\"opentsx.aggregate-evidence.v1\",\"kind\":\"bounded-source-cut\",\"job\":\"wind\",\"site\":\"s1\",\"planVersion\":1,\"generation\":\"1\",\"assignment\":\"a-s1\",\"fence\":\"1\",\"specHash\":\"4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0\",\"fragmentHash\":\"4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0\",\"payloadSha256\":\"c0f34ae526a8d47c44cea5f2a0047a0f661771d995ee6d1ec5095251008bf016\",\"inputs\":[{\"binding\":\"input-s1\",\"topic\":\"tsx.wind.s1.episodes.v2\",\"partitionCount\":\"1\",\"positions\":[{\"partition\":\"0\",\"from\":\"0\",\"to\":\"10\"}]}]}",
+        "tsx-fence" : "1",
+        "tsx-fragment-hash" : "4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0",
+        "tsx-generation" : "1",
+        "tsx-job" : "wind",
+        "tsx-plan-version" : "1",
+        "tsx-revision" : "0",
+        "tsx-schema" : "org.opentsx.model.v2.SeriesStats",
+        "tsx-site" : "s1",
+        "tsx-spec-hash" : "4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0"
+      }
+    },
+    "statistics" : {
+      "seriesId" : "0123456789abcdef",
+      "windowType" : "PT1H",
+      "windowStartMicros" : 0,
+      "windowEndMicros" : 3600000000,
+      "validCount" : 0,
+      "nanCount" : 0,
+      "gapCount" : 0,
+      "min" : "NaN",
+      "max" : "NaN",
+      "mean" : "NaN",
+      "m2" : "NaN",
+      "sketchHex" : "017b14ae47e17a843f000000",
+      "lastSeenMicros" : null
+    },
+    "delivery" : {
+      "schema" : "opentsx.aggregate-delivery.v1",
+      "records" : [ {
+        "key" : "wind|s1|0123456789abcdef|PT1H|0",
+        "value" : "wwEGZqqLGEgb5SAwMTIzNDU2Nzg5YWJjZGVmCFBUMUgAgJCd6RoAAAAAAAAAAPh/AAAAAAAA+H8AAAAAAAD4fwAAAAAAAPh/AhgBexSuR+F6hD8AAAAAAA==",
+        "headers" : {
+          "tsx-assignment" : "a-s1",
+          "tsx-evidence" : "{\"schema\":\"opentsx.aggregate-evidence.v1\",\"kind\":\"bounded-source-cut\",\"job\":\"wind\",\"site\":\"s1\",\"planVersion\":1,\"generation\":\"1\",\"assignment\":\"a-s1\",\"fence\":\"1\",\"specHash\":\"4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0\",\"fragmentHash\":\"4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0\",\"payloadSha256\":\"c0f34ae526a8d47c44cea5f2a0047a0f661771d995ee6d1ec5095251008bf016\",\"inputs\":[{\"binding\":\"input-s1\",\"topic\":\"tsx.wind.s1.episodes.v2\",\"partitionCount\":\"1\",\"positions\":[{\"partition\":\"0\",\"from\":\"0\",\"to\":\"10\"}]}]}",
+          "tsx-fence" : "1",
+          "tsx-fragment-hash" : "4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0",
+          "tsx-generation" : "1",
+          "tsx-job" : "wind",
+          "tsx-plan-version" : "1",
+          "tsx-revision" : "0",
+          "tsx-schema" : "org.opentsx.model.v2.SeriesStats",
+          "tsx-site" : "s1",
+          "tsx-spec-hash" : "4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0"
+        }
+      } ]
+    },
+    "evidence" : {
+      "schema" : "opentsx.aggregate-evidence.v1",
+      "kind" : "bounded-source-cut",
+      "job" : "wind",
+      "site" : "s1",
+      "planVersion" : 1,
+      "generation" : "1",
+      "assignment" : "a-s1",
+      "fence" : "1",
+      "specHash" : "4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0",
+      "fragmentHash" : "4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0",
+      "payloadSha256" : "c0f34ae526a8d47c44cea5f2a0047a0f661771d995ee6d1ec5095251008bf016",
+      "inputs" : [ {
+        "binding" : "input-s1",
+        "topic" : "tsx.wind.s1.episodes.v2",
+        "partitionCount" : "1",
+        "positions" : [ {
+          "partition" : "0",
+          "from" : "0",
+          "to" : "10"
+        } ]
+      } ]
+    }
+  }, {
+    "name" : "incomplete merged revision zero",
+    "kind" : "merged",
+    "soeHex" : "c3010666aa8b18481be520303132333435363738396162636465660a505431304d0080989abc040a0200000000000000c00000000000001440666666666666f63f3233333333333d400228017b14ae47e17a843f010300016e013401014601000202",
+    "record" : {
+      "key" : "wind|0123456789abcdef|PT10M|0",
+      "value" : "wwEGZqqLGEgb5SAwMTIzNDU2Nzg5YWJjZGVmClBUMTBNAICYmrwECgIAAAAAAAAAwAAAAAAAABRAZmZmZmZm9j8yMzMzMzM9QAIoAXsUrkfheoQ/AQMAAW4BNAEBRgEAAgI=",
+      "headers" : {
+        "tsx-final" : "false",
+        "tsx-generation" : "1",
+        "tsx-job" : "wind",
+        "tsx-missing-sites" : "s3",
+        "tsx-plan-version" : "1",
+        "tsx-revision" : "0",
+        "tsx-schema" : "org.opentsx.model.v2.SeriesStats",
+        "tsx-spec-hash" : "4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0"
+      }
+    },
+    "statistics" : {
+      "seriesId" : "0123456789abcdef",
+      "windowType" : "PT10M",
+      "windowStartMicros" : 0,
+      "windowEndMicros" : 600000000,
+      "validCount" : 5,
+      "nanCount" : 1,
+      "gapCount" : 0,
+      "min" : -2.0,
+      "max" : 5.0,
+      "mean" : 1.4,
+      "m2" : 29.199999999999996,
+      "sketchHex" : "017b14ae47e17a843f010300016e013401014601",
+      "lastSeenMicros" : 1
+    }
+  }, {
+    "name" : "final merged revision one",
+    "kind" : "merged",
+    "soeHex" : "c3010666aa8b18481be520303132333435363738396162636465660a505431304d0080989abc040c0200000000000000c00000000000001c40aaaaaaaaaaaa0240aaaaaaaaaaaa4b40022c017b14ae47e17a843f010400016e0134012201014601000202",
+    "record" : {
+      "key" : "wind|0123456789abcdef|PT10M|0",
+      "value" : "wwEGZqqLGEgb5SAwMTIzNDU2Nzg5YWJjZGVmClBUMTBNAICYmrwEDAIAAAAAAAAAwAAAAAAAABxAqqqqqqqqAkCqqqqqqqpLQAIsAXsUrkfheoQ/AQQAAW4BNAEiAQFGAQACAg==",
+      "headers" : {
+        "tsx-final" : "true",
+        "tsx-generation" : "1",
+        "tsx-job" : "wind",
+        "tsx-missing-sites" : "",
+        "tsx-plan-version" : "1",
+        "tsx-revision" : "1",
+        "tsx-schema" : "org.opentsx.model.v2.SeriesStats",
+        "tsx-spec-hash" : "4c4ae96df4e899a2c8a2c676f670d7f9804a1618d948e4692c6ba68c3b9392c0"
+      }
+    },
+    "statistics" : {
+      "seriesId" : "0123456789abcdef",
+      "windowType" : "PT10M",
+      "windowStartMicros" : 0,
+      "windowEndMicros" : 600000000,
+      "validCount" : 6,
+      "nanCount" : 1,
+      "gapCount" : 0,
+      "min" : -2.0,
+      "max" : 7.0,
+      "mean" : 2.333333333333333,
+      "m2" : 55.33333333333333,
+      "sketchHex" : "017b14ae47e17a843f010400016e0134012201014601",
+      "lastSeenMicros" : 1
+    }
+  } ],
+  "rejections" : [ {
+    "name" : "missing site header",
+    "case" : 0,
+    "validation" : "codec",
+    "target" : "headers",
+    "pointer" : "/tsx-site",
+    "remove" : true,
+    "schemaInvalid" : true,
+    "error" : "aggregate header set does not match"
+  }, {
+    "name" : "noncanonical base64",
+    "case" : 0,
+    "validation" : "codec",
+    "target" : "record",
+    "pointer" : "/value",
+    "remove" : false,
+    "schemaInvalid" : false,
+    "value" : "AB==",
+    "error" : "aggregate value must use canonical base64"
+  }, {
+    "name" : "wrong window width key",
+    "case" : 0,
+    "validation" : "codec",
+    "target" : "record",
+    "pointer" : "/key",
+    "remove" : false,
+    "schemaInvalid" : false,
+    "value" : "wind|s1|0123456789abcdef|PT1H|0",
+    "error" : "aggregate key does not match its statistics"
+  }, {
+    "name" : "changed source cut",
+    "case" : 0,
+    "validation" : "inventory",
+    "target" : "evidence",
+    "pointer" : "/inputs/0/positions/0/to",
+    "remove" : false,
+    "schemaInvalid" : false,
+    "value" : "9",
+    "error" : "aggregate evidence cut is incomplete or changed"
+  }, {
+    "name" : "changed payload hash",
+    "case" : 0,
+    "validation" : "inventory",
+    "target" : "evidence",
+    "pointer" : "/payloadSha256",
+    "remove" : false,
+    "schemaInvalid" : false,
+    "value" : "0000000000000000000000000000000000000000000000000000000000000000",
+    "error" : "aggregate evidence payload hash does not match"
+  }, {
+    "name" : "changed fencing token",
+    "case" : 0,
+    "validation" : "inventory",
+    "target" : "headers",
+    "pointer" : "/tsx-fence",
+    "remove" : false,
+    "schemaInvalid" : false,
+    "value" : "2",
+    "error" : "aggregate assignment binding does not match"
+  }, {
+    "name" : "unknown assignment",
+    "case" : 0,
+    "validation" : "inventory",
+    "target" : "headers",
+    "pointer" : "/tsx-assignment",
+    "remove" : false,
+    "schemaInvalid" : false,
+    "value" : "missing",
+    "error" : "aggregate assignment is not admitted"
+  }, {
+    "name" : "extra evidence field",
+    "case" : 0,
+    "validation" : "inventory",
+    "target" : "evidence",
+    "pointer" : "/checkpointPersisted",
+    "remove" : false,
+    "schemaInvalid" : true,
+    "value" : "true",
+    "error" : "aggregate fields do not match"
+  } ]
+}

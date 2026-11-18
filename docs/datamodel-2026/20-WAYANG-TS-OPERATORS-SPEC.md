@@ -38,6 +38,12 @@ The executable [`tsx-runner` 0.1.0 profile](../devguide/integration/rust-runner-
 [S1.11](#s111-continue-complete-topics-on-fixed-rust-workers). These local profiles do not implement the complete
 S5/S7 signed fleet protocol.
 
+The bounded JVM qualification in S2.4 implements signed replicated statistics stages,
+job-bound conformance, authenticated outbound pulls and both aggregate routes.
+Its source cuts are immutable and its expected assignments and group/windows are explicit.
+The qualification uses three site instances in one JVM and four independent disposable brokers.
+General continuous activation, production release qualification and ownership handover remain separate gates.
+
 ### S1.1 Identity
 
 1. An operator is identified by `id` and `version` of an `opentsx.processor.v1` description
@@ -126,8 +132,10 @@ It pins all 16 descriptions to version 1; `dq.plausible-range` supplies the
 state, merge declarations, Wayang availability and repository references.
 `TsxCatalogBindingsTest` checks the compiled logical and Java execution classes.
 
-`A` means an available native Java entry point. It does not expand the
-local compiler of S2.3 or establish fleet admission. `B target` remains intended
+`A` means an available native Java entry point. The local compiler of S2.3 translates
+these entries with explicit runtime, state, output and resource admission context.
+The signed bounded JVM profile admits the statistics boundary of S2.4.
+`B target` remains intended
 membership; use S1.9 for implemented Rust profiles. The statistics,
 segmentation, SAX, and data-quality reference vectors use the existing Java
 implementations by `tools/java_operator_vectors.py`.
@@ -310,15 +318,16 @@ The driver MUST validate in this order and MUST stop at the first error. Steps 1
 
 ### S2.3 Wayang plan
 
-1. Each DAG node MUST become one Wayang logical operator: `UnarySource`, `UnaryToUnaryOperator`,
-   `BinaryToUnaryOperator` or `UnarySink` subclass (package `org.apache.wayang.core.plan.wayangplan`, tag
-   `wayang-1.1.1`), chosen by the number of inputs and outputs of the description.
+1. Each DAG node MUST become its native Wayang logical operator (package
+   `org.apache.wayang.core.plan.wayangplan`, tag `wayang-1.1.1`). Tagged unions adapt the named inputs of the
+   unary `TsxAlignVector` and `TsxPair` operators. A single pair input uses unordered distinct series pairs.
+   Internal tagging, union and output filters preserve the original node identity.
    Exception: a run of consecutive single-input nodes whose operators are all in `CleanChain.OPS`
    (`CleanChain.java:35`) MUST become one operator (`TsxSeriesChain`). These steps share one state per series, and the
    written series gets its key and episode ids once, after the last step (`SeriesStream.java`); separate operators
    would key and label every intermediate series. The state of the run is stored under the id of its last node.
 2. `decode.avro-soe` with the DAG `source` MUST become one `TsxTopicSource` per source topic. Each sink MUST become
-   one `TsxTopicSink`.
+   one typed sink: `TsxVectorSink` for vectors and `TsxTopicSink` for supported Avro and signal records.
 3. The driver MUST NOT use `wayang-api-json`: it compiles Scala source received in the request
    (`SerializableLambda.scala:23-29` at Wayang `main`).
 4. On a single site the plan runs with `TsxJavaPlugin`. The plugin supplies the
@@ -335,23 +344,44 @@ resource/capability admission before activation. Central merge is an explicit do
 
 Preserve `specHash` over the original submitted UI text. Carry exact source text separately from compiler-produced
 fragment text and its `fragmentHash`; placement or slicing MUST NOT redefine the legacy output identity.
-The shared assignment schema implements this offline boundary. The runner-plan wrapper below is still a draft:
-U01 must bind it to the assignment and resolve its output/channel fields before a network runner can accept it.
+The shared assignment schema implements the identity and whole-topic boundary. The bounded JVM wrapper
+embeds that unchanged assignment as exact text. A signature alone is not proof of exclusive live authority.
+This profile has no automatic takeover, rescaling or continuous ownership handover.
 
 The site plan is an `opentsx.runner-plan.v1` document ([schema](schemas/opentsx.runner-plan.v1.schema.json)):
 
 | Field | Rule |
 |---|---|
 | `job` | unique per deployment; `[a-z0-9][a-z0-9-]{0,62}` |
-| `planVersion` | integer ≥ 1, raised by 1 for every change of the job |
+| `planVersion` | integer in `[1, 2147483647]`; equals the assignment's decimal-string `generation` |
 | `issued`, `expires` | RFC 3339 UTC; `expires` after `issued` |
 | `site` | the receiving site id |
 | `catalog` | catalog version, for example `tsx-catalog/1` |
 | `specHash` | as defined above, of the original submitted DAG text; a fragment has its own `fragmentHash` |
-| `dag` | the site stage as a DAG document (JSON form) |
-| `inputs[]`, `outputs[]` | topic, allowed fingerprints (16 lower-case hex each), partitions; outputs name the cluster (`site` or `signal`) |
-| `start` | `earliest`, `latest`, or an offset map |
-| `federation` | `route` (`signal-cluster` or `job-state`), `expectedSites`, `groupBy`, `maxDelay` |
+| `assignmentText` | exact bounded Java assignment text; wrapper identities must match |
+| `inputContracts[]` | one `(binding, topic)` per whole input, with allowed writer fingerprints |
+| `outputs[]` | exactly one SeriesStats output, with its existing DAG sink identity and full writer contract |
+| `federation.route` | `signal-cluster` or `job-state` |
+| `federation.expectedAssignments[]` | exact admitted assignment membership; one aggregate-producing member per site |
+| `federation.scopes[]` | at most 1024 unique admitted windows on the epoch grid |
+| `federation.groupBy`, `federation.maxDelay` | restricted tag names and explicit ISO 8601 duration |
+
+`assignmentText` contains exact `opentsx.execution-assignment.v1` JSON text, with runtime `java` and mode `bounded`.
+Input fingerprints are 16-character lower-case hexadecimal strings. An output names `sink`, `cluster`, `topic`,
+decimal-string `partitionCount` and the actual writer fingerprint. Its `sink` is the existing compiled DAG identity.
+Expected membership binds exact `assignment`, `site`, `node`, `generation`, `fence` and `fragmentHash` values.
+Each scope contains `{groupId, windowType, startMicros, endMicros}`; micros are canonical signed int64 decimal strings.
+
+The fragment's single sink MUST consume `stats.welford-ddsketch`. Local compilation remains a separate API
+for the complete catalog. Source fingerprints and explicit cleaning targets must match the actual input;
+an unbound target is not invented from a Workbench label.
+All declared scopes receive a partial, including known empty scopes. Scope membership is not inferred from samples.
+The wrapper payload is limited to 128 KiB and the compact JWS to 176 KiB.
+Inputs have distinct topic names in this profile; local configuration resolves their binding IDs and the
+`site`/`signal` output aliases. Plans carry no broker addresses, credentials or local paths.
+The assignment input-topic set MUST equal the fragment's nonempty, distinct
+`source.topics` set. Missing or unused sources are refused with `plan.invalid`
+before admission.
 
 The site plan MUST be signed (S7.1).
 
@@ -391,9 +421,9 @@ Messages are plain English and MUST be returned exactly as below, with the place
 ### S3.1 Topics
 
 1. Every topic name MUST be produced by `TopicLayout`: `"tsx." + domain + "." + kind + ".v2"` for Avro kinds
-   (`TopicLayout.java:189-191`) and the JSON kinds `dags.v1`, `dag-status.v1`, `smart.<name>.vectors.v1`
-   (`TopicLayout.java:96-125`).
-2. This specification adds three kinds, to be added to `TopicLayout` with the code:
+   (`TopicLayout.java:204-206`) and the JSON kinds `dags.v1`, `dag-status.v1`, `smart.<name>.vectors.v1`
+   (`TopicLayout.java:111-140`).
+2. `TopicLayout.aggregates()`, `signals()` and `repartition(dag, node)` provide:
    `aggregates` (`tsx.<domain>.aggregates.v2`, Avro `SeriesStats`), `signals` (`tsx.<domain>.signals.v1`, JSON
    `opentsx.signal.v1`), `repartition.<dag>.<node>` (`tsx.<domain>.repartition.<dag>.<node>.v2`, Avro `Episode`).
 3. Clients MUST connect to the KafScale proxy only and MUST use the settings of `KafScaleClients`
@@ -417,8 +447,9 @@ Messages are plain English and MUST be returned exactly as below, with the place
 A site MUST pass the handshake before it receives a site plan, and again after every change of its runtime
 version or catalog.
 
-1. The site runs its conformance checks (Track A: `TsxSiteAgent --conform`; Track B: `tsx-runner conform`) and
-   produces an `opentsx.site-conformance.v1` report ([schema](schemas/opentsx.site-conformance.v1.schema.json)).
+1. The site runs its conformance checks and produces an `opentsx.site-conformance.v1` report
+   ([schema](schemas/opentsx.site-conformance.v1.schema.json)). The bounded JVM qualification executes
+   `SiteConformanceChecks` over the repository vectors and original required KafScale checks.
 2. The report MUST contain one result per check below, each `pass` or `fail` with a detail string.
 3. The site signs the report (S7.1) and sends it (S5.3, `POST /v1/sites/<site>/conformance`).
 4. The driver MUST verify the signature against the site key it has on record, MUST require `pass` for every
@@ -437,6 +468,14 @@ version or catalog.
 | `partitioner.murmur2` | a probe record per partition lands where Java's default partitioner puts its key |
 | `series.disjoint` | the site's `seriesId` set does not intersect another site's set; the site sends the sorted set |
 | `runtime.identity` | runtime version and artifact digest match a signed release |
+
+The bounded JVM report binds `job`, `planVersion`, `generation`, `node`, the admission-contract hash,
+catalog, artifact/state ABI and its validity interval. It requires all ten checks exactly once with details,
+unique series IDs and a matching count. Structured topic rows use `(role, binding, topic)` and actual partition
+counts; the driver compares the exact union of admitted inputs and outputs. Input fingerprints are observed
+on the broker; output fingerprints identify the configured encoder, including an empty target.
+A locally configured qualified digest identifies the laboratory runtime. That pin is not production
+release-signature evidence, and the laboratory acceptance does not claim the production condition above.
 
 ## S4. Federation and merge
 
@@ -459,8 +498,10 @@ A partial or merged aggregate is an Avro `SeriesStats` record, unchanged:
 | `windowStart`, `windowEnd` | the window on the epoch grid |
 | `validCount`, `nanCount`, `gapCount`, `min`, `max`, `mean`, `m2`, `quantileSketch`, `lastSeen` | as `StatsAccumulator` computes them |
 
-Kafka key: `<job>|<site>|<group series id>|<windowStart micros>` for partials, `<job>|<group series id>|<windowStart
-micros>` for merged records. Headers (same convention as `tsx-schema`, `TopicLayout.java:23`):
+Kafka key: `<job>|<site>|<group series id>|<windowType>|<windowStart micros>` for partials,
+`<job>|<group series id>|<windowType>|<windowStart micros>` for merged records.
+The window type distinguishes widths that start at the same instant.
+Headers (same convention as `tsx-schema`, `TopicLayout.java:23`):
 
 | Header | Value |
 |---|---|
@@ -470,6 +511,14 @@ micros>` for merged records. Headers (same convention as `tsx-schema`, `TopicLay
 | `tsx-revision` | decimal revision, 0 first |
 | `tsx-final` | `true` or `false` (merged records only) |
 | `tsx-missing-sites` | comma-separated site ids, empty when final (merged records only) |
+
+Bounded partials also carry `tsx-generation`, `tsx-assignment`, `tsx-fence`, `tsx-spec-hash`,
+`tsx-fragment-hash` and `tsx-evidence`. The last is an
+[`opentsx.aggregate-evidence.v1`](schemas/opentsx.aggregate-evidence.v1.schema.json) JSON document with
+kind `bounded-source-cut`, exact admitted whole-topic cuts and SHA-256 of the raw SOE payload.
+It binds the partial to the signed generation, member and scope inventory.
+It attests completed consumption/computation of that immutable cut, not prior checkpoint persistence.
+Partial and evidence are sent together; output acknowledgements precede the checkpoint.
 
 A site MUST emit a partial for every group and window it covers, also when `validCount` is 0, so that "empty" and
 "missing" differ.
@@ -490,8 +539,8 @@ A site MUST emit a partial for every group and window it covers, also when `vali
 
 Laws:
 
-1. **Identity.** The record with all counts 0, `min` = +∞, `max` = −∞, `mean` = 0, `m2` = 0 and an empty sketch is the
-   identity element.
+1. **Identity.** The zero-count accumulator is the internal identity. Serialized empty windows preserve
+   `StatsAccumulator.toSeriesStats`: NaN extrema and moments, an empty sketch and null `lastSeen`.
 2. **Associativity and commutativity.** Counts, `min`, `max`, `lastSeen` and uncollapsed sketch bin maps are exactly
    associative and commutative within their checked numeric bounds (integer addition, min, max). Bounded-bin
    collapse needs separate qualification. `mean` and `m2` are associative and commutative in real
@@ -501,7 +550,8 @@ Laws:
 4. **Equality with the centralized result.** The merged counts, `min` and `max` MUST equal those of one
    `StatsAccumulator` over all values. Sketch-byte equality requires one runtime and no bin collapse at a site
    or merge; collapsed-tail behavior needs separate acceptance vectors. `mean` and `m2` MUST be within the
-   tolerance of the job (decision D-T2 in TASK-020; proposal: relative 1e-12). Quantiles from the merged sketch MUST
+   tolerance of the job (decision D-T2 in TASK-020: relative 3e-12 for the bounded W3 qualification). This measured
+   qualification does not establish that bound for arbitrary data or mixed runtimes. Quantiles from the merged sketch MUST
    equal those of the centralized sketch in that one-runtime/no-collapse domain. The relative error `alpha`
    comparison with the exact quantile is
    qualified to nonzero magnitudes outside the zero bucket and without bounded-bin collapse; fixtures must
@@ -523,16 +573,23 @@ Laws:
 3. The central merge reads `tsx.<domain>.aggregates.v2` of the signal cluster and writes merged records to
    `tsx.<domain>.series-stats.v2` of the signal cluster (`TopicLayout.seriesStats()`, `TopicLayout.java:58`).
 
-**Job state (route `job-state`).** For bounded jobs only. The site agent sends its partials of the job to the driver
-(S5.3, `POST /v1/sites/<site>/jobs/<job>/aggregates`). The driver merges them with `stats.chan-ddsketch` into the
-Wayang plan's `AggregateChannel` and continues the plan.
+**Job state (route `job-state`).** For bounded jobs only. The site agent sends its partials to the driver
+(S5.3, `POST /v1/sites/<site>/jobs/<job>/aggregates`) as an
+[`opentsx.aggregate-delivery.v1`](schemas/opentsx.aggregate-delivery.v1.schema.json) object.
+Every entry has the same key, complete text-header set and base64-encoded raw SOE bytes as route S.
+The limit is 256 records and 16 MiB per delivery, 1 MiB per record and 128 KiB per evidence document.
+The driver validates the same signed membership, scope, generation and cut proof for both routes.
+It merges with `stats.chan-ddsketch` into the Wayang plan's `AggregateChannel` and continues on Java.
 
 ### S4.5 Completeness
 
-1. `federation.expectedSites` is the list of sites of the job. `federation.maxDelay` is an ISO 8601 duration.
+1. The bounded profile derives expected sites from its signed `federation.expectedAssignments`.
+   The signed scopes declare every group/window, including scopes missing from all sites.
+   `federation.maxDelay` is an explicit ISO 8601 duration.
 2. A merged window is **final** only when every expected assignment supplies admitted closed-window or source-cut
    evidence for the generation. An open-window partial from every site is insufficient. The merge then writes
-   `tsx-final: true`. The evidence envelope and expected membership are U09 delivery gates.
+   `tsx-final: true`. The bounded profile validates the evidence and membership of S4.2.
+   Open continuous snapshots are not closed evidence; their admission remains a separate U09 gate.
 3. When the signal cluster's clock passes `windowEnd + maxDelay` and a site is missing, the merge MUST write the
    window with `tsx-final: false` and `tsx-missing-sites` set.
 4. A partial that arrives later MUST produce a new merged record with `tsx-revision` raised by 1. The merge MUST
@@ -540,6 +597,9 @@ Wayang plan's `AggregateChannel` and continues the plan.
 5. A byte-identical duplicate partial (same key, same revision and generation) MUST be ignored. Conflicting content
    under that identity MUST be refused and surfaced; stale generations MUST be refused.
 6. Removing a site from a job MUST go through a new `planVersion`. Windows before the change keep their sites.
+
+The merge persists its revised records in an outbox before publishing. Acknowledged publication removes an
+outbox entry. Restart replays an unacknowledged entry with identical identity and bytes.
 
 ### S4.6 Signals
 
@@ -562,6 +622,12 @@ cluster collects them. A signal MUST NOT carry raw values beyond the value that 
 5. start the next increment after `increment` (site configuration, ISO 8601 duration);
 6. write status records (S5.4).
 
+The implemented bounded profile uses `TsxSiteAgent.accept`/`pollOnce`, `TsxBoundedSiteExecution` and
+`TsxSitePlatform`/`TsxSiteExecutor`. One accepted immutable cut is a bounded increment.
+The executor checks actual retained partition bounds and uses `auto.offset.reset=none`; it cannot widen a
+signed cut after retention. It commits the bound private checkpoint only after acknowledged publication.
+The general continuous scheduling rules above are separate from this bounded qualification.
+
 ### S5.2 Track B runner
 
 `tsx-runner` MUST offer:
@@ -583,11 +649,29 @@ JSON (`application/json`) unless stated.
 
 | Method and path | Request | Response |
 |---|---|---|
+| `GET /v1/sites/<site>/conformance-challenge?job=<job>` | none | job-bound contract and hash |
 | `POST /v1/sites/<site>/conformance` | compact JWS of an `opentsx.site-conformance.v1` report | `200 {"result":"accepted"}`, or `200 {"result":"refused","check":"<id>","message":"<text>"}` |
-| `GET /v1/sites/<site>/plans?after=<deliverySequence>` | none | Proposed durable per-site delivery cursor, independent of per-job versions; response entries bind sequence, job/version and compact JWS. Exact acknowledgement envelope is a U01/U03 contract gate. |
+| `GET /v1/sites/<site>/plans?after=<deliverySequence>` | none | delivery page below; at most one entry |
+| `POST /v1/sites/<site>/deliveries/<sequence>/ack` | JSON acknowledgement | `204`; idempotent |
 | `POST /v1/sites/<site>/jobs/<job>/status` | an `opentsx.dag-status.v1` record (S5.4) | `204` |
-| `POST /v1/sites/<site>/jobs/<job>/aggregates` | `application/vnd.opentsx.avro-soe-seq`: a sequence of `SeriesStats` records, each prefixed by its length as a 4-byte big-endian integer | `204` |
+| `POST /v1/sites/<site>/jobs/<job>/aggregates` | `opentsx.aggregate-delivery.v1` | `204` after callback |
 | `POST /v1/sites/<site>/jobs/<job>/refusal` | `{"planVersion":<n>,"code":"<code>","message":"<text>"}` | `204` |
+
+The challenge binds the job's input, output, member and scope contract and its hash.
+A delivery page has this shape, where `<n>` is a sequence, `<job>` the job identity and `<compact JWS>` the signed plan:
+
+```json
+{
+  "deliveries": [
+    {"sequence": "<n>", "job": "<job>", "planVersion": 1, "plan": "<compact JWS>"}
+  ],
+  "next": "<n>"
+}
+```
+
+An acknowledgement contains `job`, `planVersion`, SHA-256 `commandHash` and `result` (`accepted` or `refused`).
+Refusals also contain `code` and `message`. An identical acknowledgement is idempotent.
+Aggregate delivery preserves the route-S metadata and SOE bytes; `204` follows aggregate callback acknowledgement.
 
 Errors: `400 {"error":"bad-request","message":"<text>"}`, `401` when the client certificate is not a known site,
 `403` when `<site>` in the path differs from the certificate's site, `404` for an unknown job, `409` when a status or
@@ -595,6 +679,13 @@ aggregate names an older `planVersion` than the current one.
 
 Delivery sequences use canonical int64 decimal strings. A job at version 10 MUST NOT hide another job at version 1.
 Repeated delivery of identical accepted bytes is idempotent; changed bytes under the same command identity reject.
+The service persists deliveries before returning them. The site persists its outcome before acknowledgement
+and advances its cursor after acknowledgement. Before requesting another
+delivery, it retries any retained acknowledgement beyond that cursor and returns
+the saved outcome, even after conformance expires. This recovery covers an
+unsent acknowledgement and a lost response after the service confirmed it. The
+acknowledgement still requires the original site identity and exact command
+hash. New activation requires valid job-bound conformance.
 
 The agent SHOULD poll `GET .../plans` every 30 s and MUST back off to at most once per 5 min while the driver is
 unreachable.
@@ -602,7 +693,7 @@ unreachable.
 ### S5.4 Control and status topics
 
 1. Control stays as today: `opentsx.dag-control.v1` on `tsx.<domain>.dags.v1`, key = DAG name, the latest record
-   counts (`TopicLayout.java:117-121`).
+   counts (`TopicLayout.java:134-140`).
 2. Status stays `opentsx.dag-status.v1` on `tsx.<domain>.dag-status.v1` with its fields (`schema`, `dag`, `state`,
    `specHash`, `records`, `watermark`, `waitingFor`, `skippedBlocks`, `error`, `at`; `VectorProcessor.java:298`,
    `:620`). This specification adds the optional fields `site`, `job`, `planVersion`, `track` (`A` or `B`) and
@@ -675,6 +766,12 @@ deterministic through the `seed` parameter (`Mulberry32`).
 5. An unreadable checkpoint MUST put the task in state `failed`. The runtime MUST NOT start over by itself.
 6. The checkpoint format is private to a runtime; it does not travel between tracks.
 
+The bounded signed JVM profile stores `opentsx.site-checkpoint.v1`: exact continuation identity,
+completed positions, operator state and recorded receipt. Identity includes the compact-command hash,
+catalog/state ABI, artifact, source/fragment hashes, member, generation/fence and immutable cuts.
+The admission intent is durable before execution; a public unsigned parse cannot authorize checkpoint access.
+The earlier local `TsxCheckpoint.load` helper is not an admission boundary for this profile.
+
 ### S6.4 Reading
 
 1. A runtime MUST use manual partition assignment and seek for every partition of each assigned whole topic;
@@ -697,9 +794,18 @@ deterministic through the `seed` parameter (`Mulberry32`).
    Rollback and freeze protection follow
    [TUF](https://theupdateframework.github.io/specification/latest/).
 
+The bounded JVM profile selects the owner-approved Ed25519 algorithm with the exact protected header
+`{"alg":"EdDSA"}`. It rejects padding, noncanonical base64url, extra headers and unsigned algorithms.
+The JWS algorithm binding and signing-input rules follow
+[RFC 8037 section 3.1](https://www.rfc-editor.org/rfc/rfc8037.html#section-3.1).
+Driver and site role keys are pinned separately. It does not implement TUF metadata, key rotation or
+production release enrollment.
+
 ### S7.2 Transport
 
 1. The plan service API (S5.3) MUST use TLS 1.3 with client certificates.
+   The bounded Java service calls `setNeedClientAuth(true)` using the
+   [Java 17 SSLParameters API](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/javax/net/ssl/SSLParameters.html#setNeedClientAuth(boolean)).
 2. KafScale v1.6.0 accepts plain TCP only and has no server-side SASL
    ([concept 20, section 11](20-WAYANG-TS-OPERATORS.md#11-security-model)). A site MUST put a TLS-terminating proxy
    with client certificates in front of the KafScale proxy, and that proxy MUST pass the client identity with the

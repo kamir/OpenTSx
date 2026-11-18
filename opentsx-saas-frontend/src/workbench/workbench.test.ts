@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { resolve } from 'node:path';
 import { OPS, OP_BY_ID, crossings, defaultParams, dfa, fftRadix2, linFit, mulberry32, profileOf, stats } from './ops';
 import { bucketToCsv, generateSineMix, isoMicros, parseBucketText, parseDelimited, parseEpisodes } from './loaders';
 import { episodeSummary, episodesOf } from './episodes';
 import { SOURCE_ID, evaluate, toDagYaml, toDefinition, toJavaCode, toPfdJson, useFlow, validate } from './flow';
-import { Bucket } from './types';
+import { Bucket, FlowNode } from './types';
 
 function bucketOf(...ys: number[][]): Bucket {
   return {
@@ -351,7 +352,7 @@ describe('flow', () => {
     expect(useFlow.getState().nodes.find((n) => n.id === b)!.label).toBe('Profile_B');
   });
 
-  it('writes opentsx.dag.v1 with only the published branches', () => {
+  it('writes opentsx.dag.v1 with only the published branches', async () => {
     const r = useFlow.getState().applyOp('resample', { every: 2, agg: 'MEAN' })!;
     const st = useFlow.getState().applyOp('stats.window', { window: 4, field: 'STD' })!;
     useFlow.getState().select(SOURCE_ID);
@@ -360,11 +361,15 @@ describe('flow', () => {
     const yaml = toDagYaml(useFlow.getState());
     expect(yaml).toContain('dag: lab-exp2-smart');
     expect(yaml).toContain('topics: [tsx.lab.observations.v2]');
-    expect(yaml).toContain(`  - id: ${r}\n    op: resample\n    in: [decode]\n    params: { every: 2, agg: MEAN }`);
+    expect(yaml).toContain(`  - id: ${r}\n    op: resample\n    in: [decode]\n    params: { every: PT2S, agg: MEAN }`);
     expect(yaml).toContain(`op: stats.welford-ddsketch\n    in: [${r}]`);
-    expect(yaml).toContain(`  - { from: ${st}, topic: tsx.lab.smart.vol.metrics.v2 }`);
+    expect(yaml).toContain('params: { windows: [PT4S] }');
+    expect(yaml).not.toContain('field: STD');
+    expect((toDefinition(useFlow.getState()).nodes as FlowNode[]).find((n) => n.id === st)?.params.field).toBe('STD');
+    expect(yaml).toContain(`  - { from: ${st}, topic: tsx.lab.smart.vol.metrics.v2, schema: org.opentsx.model.v2.SeriesStats }`);
     expect(yaml).not.toContain('op: fft');
     expect(validate(useFlow.getState().nodes).filter((f) => f.level !== 'info')).toEqual([]);
+    await expect(yaml).toMatchFileSnapshot(resolve(process.cwd(), '../docs/datamodel-2026/testvectors/workbench-dags/published-stats.yaml'));
   });
 
   it('reports missing sinks, operators outside the catalog and duplicate topics', () => {
@@ -375,6 +380,17 @@ describe('flow', () => {
     const found = validate(useFlow.getState().nodes);
     expect(found.some((f) => f.level === 'warning' && f.text.includes('fft'))).toBe(true);
     expect(found.some((f) => f.level === 'error' && f.text.includes('same topic'))).toBe(true);
+  });
+
+  it('refuses invalid deployed statistics widths and view fields', () => {
+    const id = useFlow.getState().applyOp('stats.window', { window: 4, field: 'STD' })!;
+    useFlow.getState().setSink(id, 'tsx.lab.smart.vol.metrics.v2');
+    for (const window of [0, -1, NaN, Infinity]) {
+      useFlow.getState().updateParams(id, { window });
+      expect(() => toDagYaml(useFlow.getState())).toThrow('A deployed statistics window must be a positive number of seconds.');
+    }
+    useFlow.getState().updateParams(id, { window: 4, field: 'OTHER' });
+    expect(() => toDagYaml(useFlow.getState())).toThrow('A statistics field must be MEAN, STD, MIN or MAX.');
   });
 
   it('exports the branch as Processing Flow Descriptor and as Java code', () => {
@@ -388,13 +404,14 @@ describe('flow', () => {
     expect(java).toContain('TSBucket tsbDFA_Standardized_B = tsbStandardized_B.processBucket( "DFA(2,10)", null );');
   });
 
-  it('restores a stored flow and binds the next bucket as its source', () => {
+  it('restores a stored flow and binds the next bucket as its source', async () => {
     useFlow.getState().applyOp('diff');
     const st = useFlow.getState().applyOp('stats.window', { window: 4, field: 'MAX' })!;
     useFlow.getState().setSink(st, 'tsx.lab.smart.x.metrics.v2');
     const stored = JSON.parse(JSON.stringify(toDefinition(useFlow.getState())));
     expect(stored.kind).toBe('opentsx.workbench.v1');
     expect(stored.dag).toContain('topic: tsx.lab.smart.x.metrics.v2');
+    await expect(stored.dag).toMatchFileSnapshot(resolve(process.cwd(), '../docs/datamodel-2026/testvectors/workbench-dags/noncatalog-diff.yaml'));
 
     useFlow.getState().loadBucket(bucketOf([0]), { kind: 'test', detail: '' });
     expect(useFlow.getState().restore(stored, 7)).toBe(true);

@@ -43,7 +43,7 @@ describe('cleaning operators against the test vectors shared with the processor'
 
 const context: SignalContext = {
   system: 'h2-chain',
-  systemTitle: 'Wasserstoffkette am Windpark',
+  systemTitle: 'Wind park hydrogen chain',
   signal: 'park/T02/WTUR.W',
   grade: 'raw',
   expect: { unit: 'kW', min: -100, max: 10000, interval: 'PT1S' },
@@ -57,7 +57,7 @@ const zscore: FlowNode = { id: 'n3', op: 'norm.zscore', label: 'Norm_power', par
 const doc = { track: 'EXP2', domain: 'wind', sourceTopic: 'tsx.wind.episodes.v2', sourceSeries: ['abc123'], nodes: [source, range, minute], savedId: 23, context };
 
 describe('a flow published as the clean grade of a signal', () => {
-  it('is written as an opentsx.dag.v2 with a series sink that names the signal', () => {
+  it('is written as an opentsx.dag.v2 with a series sink that names the signal', async () => {
     const yaml = toDagYaml(doc);
     expect(yaml).toContain('schema: opentsx.dag.v2');
     expect(yaml).toContain('dag: wind-flow-23');
@@ -67,10 +67,13 @@ describe('a flow published as the clean grade of a signal', () => {
     // the width of a window is seconds in the workbench and a duration in the document
     expect(yaml).toContain('params: { every: PT60S, agg: MEAN }');
     expect(yaml).toContain('- { from: n2, topic: tsx.wind.clean.v2, schema: opentsx.episode.v2, signal: { system: h2-chain, id: park/T02/WTUR.W, grade: clean }, origin: SYNTHETIC }');
+    await expect(yaml).toMatchFileSnapshot(resolve(process.cwd(), '../docs/datamodel-2026/testvectors/workbench-dags/clean-signal.yaml'));
   });
 
-  it('stays an opentsx.dag.v1 without a signal, and for a vector', () => {
-    expect(toDagYaml({ ...doc, context: null })).not.toContain('opentsx.dag.v2');
+  it('stays an opentsx.dag.v1 without a signal, and for a vector', async () => {
+    const yaml = toDagYaml({ ...doc, context: null });
+    expect(yaml).not.toContain('opentsx.dag.v2');
+    await expect(yaml).toMatchFileSnapshot(resolve(process.cwd(), '../docs/datamodel-2026/testvectors/workbench-dags/clean-unbound.yaml'));
     expect(isCleanSink(minute)).toBe(true);
     expect(isCleanSink({ ...minute, sinkTopic: 'tsx.wind.smart.x.vectors.v1' })).toBe(false);
   });
@@ -103,7 +106,7 @@ describe('a flow published as the clean grade of a signal', () => {
     expect('yaml' in plan && plan.yaml).toContain('schema: opentsx.episode.v2');
   });
 
-  it('can be published as another signal: an estimate computed from the clean data of one', () => {
+  it('can be published as another signal: an estimate computed from the clean data of one', async () => {
     const curve: FlowNode = { id: 'n1', op: 'model.power-curve', label: 'Potential_wind', params: { ratedKw: 3000, cutIn: 3, ratedWind: 12.5, cutOut: 25, count: 4 }, input: 'source', sinkTopic: cleanTopic('wind') };
     const fromClean: SignalContext = {
       ...context,
@@ -115,6 +118,7 @@ describe('a flow published as the clean grade of a signal', () => {
     const yaml = toDagYaml(flow);
     expect(yaml).toContain('topics: [tsx.wind.clean.v2]');
     expect(yaml).toContain('op: model.power-curve');
+    await expect(yaml).toMatchFileSnapshot(resolve(process.cwd(), '../docs/datamodel-2026/testvectors/workbench-dags/clean-estimate.yaml'));
     expect(yaml).toContain(
       'signal: { system: h2-chain, id: park.p_avail_kw, grade: clean, metric: h2-chain.park.p_avail_kw }, origin: ESTIMATED, madeOf: "park/T02/WMET.HorWdSpd@clean (SYNTHETIC)" }'
     );

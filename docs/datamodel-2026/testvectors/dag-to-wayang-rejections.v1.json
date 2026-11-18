@@ -1,0 +1,990 @@
+{
+  "schema": "opentsx.dag-rejections.v1",
+  "description": "One original opentsx.dag document for each normative S2.5 rejection. Context fields are test admission inputs, not DAG parameters.",
+  "cases": [
+    {
+      "id": "1",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.wind.clean.v2",
+            "schema": "opentsx.episode.v2",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "the document is no opentsx.dag DAG (no nodes)"
+    },
+    {
+      "id": "2",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.avro-soe"
+          },
+          {
+            "id": "",
+            "op": "feature.lag",
+            "in": [
+              "decode"
+            ],
+            "params": {
+              "steps": 1
+            }
+          }
+        ],
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.wind.clean.v2",
+            "schema": "opentsx.episode.v2",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "every node needs a non-empty string id"
+    },
+    {
+      "id": "3",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.avro-soe"
+          },
+          {
+            "id": "decode",
+            "op": "feature.lag",
+            "in": [
+              "decode"
+            ],
+            "params": {
+              "steps": 1
+            }
+          }
+        ],
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.wind.clean.v2",
+            "schema": "opentsx.episode.v2",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "duplicate node id decode"
+    },
+    {
+      "id": "4",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.json"
+          },
+          {
+            "id": "n1",
+            "op": "feature.lag",
+            "in": [
+              "decode"
+            ],
+            "params": {
+              "steps": 1
+            }
+          }
+        ],
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.wind.clean.v2",
+            "schema": "opentsx.episode.v2",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "node decode: unsupported decoder decode.json"
+    },
+    {
+      "id": "5",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.avro-soe",
+            "in": [
+              "n1"
+            ]
+          },
+          {
+            "id": "n1",
+            "op": "feature.lag",
+            "in": [
+              "decode"
+            ],
+            "params": {
+              "steps": 1
+            }
+          }
+        ],
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.wind.clean.v2",
+            "schema": "opentsx.episode.v2",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "decoder decode must read the source without node inputs"
+    },
+    {
+      "id": "6",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.avro-soe"
+          },
+          {
+            "id": "n1",
+            "op": "feature.lag",
+            "in": [],
+            "params": {
+              "steps": 1
+            }
+          }
+        ],
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.wind.clean.v2",
+            "schema": "opentsx.episode.v2",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "node n1 needs an operator and a non-empty input array"
+    },
+    {
+      "id": "7",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.avro-soe"
+          },
+          {
+            "id": "n1",
+            "op": "feature.lag",
+            "in": [
+              "missing"
+            ],
+            "params": {
+              "steps": 1
+            }
+          }
+        ],
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.wind.clean.v2",
+            "schema": "opentsx.episode.v2",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "node n1: missing input missing"
+    },
+    {
+      "id": "8",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.avro-soe"
+          },
+          {
+            "id": "n1",
+            "op": "feature.lag",
+            "in": [
+              "n1"
+            ],
+            "params": {
+              "steps": 1
+            }
+          }
+        ],
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.wind.clean.v2",
+            "schema": "opentsx.episode.v2",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "the DAG contains a cycle"
+    },
+    {
+      "id": "9",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.avro-soe"
+          },
+          {
+            "id": "n1",
+            "op": "feature.lag",
+            "in": [
+              "decode"
+            ],
+            "params": {
+              "steps": 1
+            }
+          }
+        ],
+        "sinks": []
+      },
+      "message": "sinks must be a non-empty array"
+    },
+    {
+      "id": "10",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.avro-soe"
+          },
+          {
+            "id": "n1",
+            "op": "feature.lag",
+            "in": [
+              "decode"
+            ],
+            "params": {
+              "steps": 1
+            }
+          }
+        ],
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.wind.clean.v2",
+            "schema": "opentsx.episode.v2",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          },
+          {
+            "from": "n1",
+            "topic": "tsx.wind.clean.v2",
+            "schema": "opentsx.episode.v2",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "duplicate sink identity wind"
+    },
+    {
+      "id": "10a",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.avro-soe"
+          },
+          {
+            "id": "n1",
+            "op": "feature.lag",
+            "in": [
+              "decode"
+            ],
+            "params": {
+              "steps": 1
+            }
+          }
+        ],
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.wind.clean.v2",
+            "schema": "other",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "unsupported sink tsx.wind.clean.v2: schema must be opentsx.vector.v1 or opentsx.episode.v2 or org.opentsx.model.v2.SeriesStats or opentsx.signal.v1"
+    },
+    {
+      "id": "10b",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.avro-soe"
+          },
+          {
+            "id": "n1",
+            "op": "feature.lag",
+            "in": [
+              "decode"
+            ],
+            "params": {
+              "steps": 1
+            }
+          }
+        ],
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.wind.clean.v2",
+            "schema": "opentsx.vector.v1",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "unsupported sink tsx.wind.clean.v2: a vector sink must read align.vector"
+    },
+    {
+      "id": "11",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.avro-soe"
+          },
+          {
+            "id": "n1",
+            "op": "missing.operator",
+            "in": [
+              "decode"
+            ],
+            "params": {
+              "steps": 1
+            }
+          }
+        ],
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.wind.clean.v2",
+            "schema": "opentsx.episode.v2",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "node n1: operator missing.operator is not in catalog tsx-catalog/1"
+    },
+    {
+      "id": "12",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.avro-soe"
+          },
+          {
+            "id": "n1",
+            "op": "feature.lag",
+            "in": [
+              "decode"
+            ],
+            "params": {
+              "steps": 1
+            }
+          }
+        ],
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.wind.clean.v2",
+            "schema": "opentsx.episode.v2",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "node n1: operator feature.lag version 1 has no runtime for track B",
+      "runtimeTrack": "B"
+    },
+    {
+      "id": "13",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.avro-soe"
+          },
+          {
+            "id": "n1",
+            "op": "model.wind-shear",
+            "in": [
+              "decode"
+            ],
+            "params": {
+              "toM": 100
+            }
+          }
+        ],
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.wind.clean.v2",
+            "schema": "opentsx.episode.v2",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "node n1: parameter fromM is required"
+    },
+    {
+      "id": "14",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.avro-soe"
+          },
+          {
+            "id": "n1",
+            "op": "feature.lag",
+            "in": [
+              "decode"
+            ],
+            "params": {
+              "steps": "one"
+            }
+          }
+        ],
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.wind.clean.v2",
+            "schema": "opentsx.episode.v2",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "node n1: parameter steps must be a integer"
+    },
+    {
+      "id": "15",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.avro-soe"
+          },
+          {
+            "id": "n1",
+            "op": "feature.lag",
+            "in": [
+              "decode"
+            ],
+            "params": {
+              "steps": 0
+            }
+          }
+        ],
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.wind.clean.v2",
+            "schema": "opentsx.episode.v2",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "node n1: parameter steps must be between 1 and 100000"
+    },
+    {
+      "id": "16",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.avro-soe"
+          },
+          {
+            "id": "n1",
+            "op": "dq.checks",
+            "in": [
+              "decode"
+            ],
+            "params": {
+              "mode": "other",
+              "min": 0,
+              "max": 10
+            }
+          }
+        ],
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.wind.clean.v2",
+            "schema": "opentsx.episode.v2",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "node n1: parameter mode must be one of [gap, clip]"
+    },
+    {
+      "id": "17",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.avro-soe"
+          },
+          {
+            "id": "n1",
+            "op": "feature.lag",
+            "in": [
+              "decode"
+            ],
+            "params": {
+              "steps": 1
+            }
+          }
+        ],
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.other.clean.v2",
+            "schema": "opentsx.episode.v2",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "topic tsx.other.clean.v2 does not follow tsx.<domain>.<kind>.v<n> for domain wind"
+    },
+    {
+      "id": "18",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.avro-soe"
+          },
+          {
+            "id": "n1",
+            "op": "sax.word",
+            "in": [
+              "decode"
+            ],
+            "params": {
+              "w": 4,
+              "a": 4
+            }
+          }
+        ],
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.wind.clean.v2",
+            "schema": "opentsx.episode.v2",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "node n1: operator sax.word is not mergeable and cannot feed the federated sink tsx.wind.clean.v2",
+      "federated": true
+    },
+    {
+      "id": "19",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.avro-soe"
+          },
+          {
+            "id": "n1",
+            "op": "stats.welford-ddsketch",
+            "in": [
+              "decode"
+            ],
+            "params": {
+              "windows": [
+                "PT1M"
+              ],
+              "alpha": 0.01
+            }
+          }
+        ],
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.wind.aggregates.v2",
+            "schema": "org.opentsx.model.v2.SeriesStats",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "node n1: a federated statistic needs a tumbling window, not GLOBAL",
+      "federated": true,
+      "statisticWindow": "GLOBAL"
+    },
+    {
+      "id": "20",
+      "document": {
+        "schema": "opentsx.dag.v2",
+        "dag": "flow",
+        "source": {
+          "topics": [
+            "tsx.wind.episodes.v2"
+          ],
+          "series": [
+            "series-1"
+          ],
+          "start": "earliest"
+        },
+        "nodes": [
+          {
+            "id": "decode",
+            "op": "decode.avro-soe"
+          },
+          {
+            "id": "n1",
+            "op": "pair.xcorr",
+            "in": [
+              "decode"
+            ],
+            "params": {}
+          }
+        ],
+        "sinks": [
+          {
+            "from": "n1",
+            "topic": "tsx.wind.clean.v2",
+            "schema": "opentsx.episode.v2",
+            "signal": {
+              "system": "lab",
+              "id": "wind",
+              "grade": "clean"
+            }
+          }
+        ]
+      },
+      "message": "node n1: pair.xcorr exceeds the limit of this site (100 products per window)",
+      "productsEstimate": 101,
+      "productsLimit": 100
+    }
+  ]
+}

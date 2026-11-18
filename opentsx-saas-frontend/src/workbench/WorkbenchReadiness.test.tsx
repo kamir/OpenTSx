@@ -63,7 +63,7 @@ describe("workbench readiness views", () => {
     expect(
       screen.getByRole("region", { name: "Pair analysis results" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Kernel only")).toBeInTheDocument();
+    expect(screen.getByText("Java API only")).toBeInTheDocument();
   });
   it("replaces the legacy modelling placeholders with an entry to the finite workflow", () => {
     render(
