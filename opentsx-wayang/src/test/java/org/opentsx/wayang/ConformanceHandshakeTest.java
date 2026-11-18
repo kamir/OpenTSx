@@ -61,9 +61,9 @@ class ConformanceHandshakeTest {
             URI endpoint = URI.create("https://localhost:" + server.getAddress().getPort());
             TsxPlanClient authenticated = new TsxPlanClient(endpoint, "s1", tls.clientContext("s1"));
             assertEquals(404, assertThrows(TsxPlanService.HttpFailure.class, () -> authenticated.challenge("missing")).status());
-            IOException failure = assertThrows(IOException.class, () -> {
-                try (SSLSocket socket = (SSLSocket) tls.anonymousClientContext().getSocketFactory()
-                        .createSocket("localhost", server.getAddress().getPort())) {
+            try (SSLSocket socket = (SSLSocket) tls.anonymousClientContext().getSocketFactory()
+                    .createSocket("localhost", server.getAddress().getPort())) {
+                try {
                     SSLParameters parameters = socket.getSSLParameters();
                     parameters.setProtocols(new String[]{"TLSv1.3"});
                     parameters.setEndpointIdentificationAlgorithm("HTTPS");
@@ -71,10 +71,11 @@ class ConformanceHandshakeTest {
                     socket.setSoTimeout(10_000);
                     socket.startHandshake();
                     socket.getOutputStream().write("GET /v1/sites/s1/plans?after=0 HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
-                    socket.getInputStream().read();
+                    assertEquals(-1, socket.getInputStream().read(), "an unauthenticated TLS connection must close without an HTTP response");
+                } catch (IOException failure) {
+                    assertTrue(failure instanceof SSLException || failure instanceof SocketException, failure.getClass().getName());
                 }
-            });
-            assertTrue(failure instanceof SSLException || failure instanceof SocketException, failure.getClass().getName());
+            }
             assertEquals(404, assertThrows(TsxPlanService.HttpFailure.class, () -> authenticated.challenge("missing")).status());
             assertEquals(0, callbacks.get());
         }
