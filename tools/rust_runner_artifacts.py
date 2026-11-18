@@ -139,6 +139,14 @@ def compiler(tool, arguments):
     executable = os.environ.get(prefix + "_" + target.replace("-", "_"))
     if not executable or not Path(executable).is_absolute() or not Path(executable).is_file():
         raise ValueError("cargo-zigbuild did not supply the target compiler wrapper")
+    if (tool in ("cc", "cxx") and "-shared" in arguments
+            and any(argument.startswith("-Wl,--version-script=") for argument in arguments)
+            and any(left == "-o" and Path(right).name == "librdkafka.so.1"
+                    for left, right in zip(arguments, arguments[1:]))
+            and "-Wl,--undefined-version" not in arguments):
+        # The unused shared target exports an absent unit-test symbol.
+        # https://github.com/llvm/llvm-project/blob/main/lld/docs/ld.lld.1
+        arguments = [*arguments, "-Wl,--undefined-version"]
     os.execv(executable, [executable, *arguments])
 
 
@@ -198,6 +206,33 @@ def tests_report(logs, target, mode):
     return result
 
 
+def build_diagnostics(directory, target):
+    if target not in MUSL:
+        raise ValueError("unsupported diagnostic target")
+    root = directory / target / "release/build"
+    configurations = sorted(root.glob("rdkafka-sys-*/out/Makefile.config"))
+    if len(configurations) > 8:
+        raise ValueError("cross-build diagnostic inventory exceeds eight attempts")
+    attempts = []
+    for config in configurations:
+        if config.is_symlink() or config.stat().st_size > 65_536:
+            raise ValueError("cross-build configuration is unsafe or exceeds 65536 bytes")
+        lines = [line for line in config.read_text().splitlines() if re.match(
+            r"^(?:CC|CXX|AR|RANLIB|LD|ARCH|CPU|TARGET|HOST|BUILD|MBITS|CFLAGS|CPPFLAGS|CXXFLAGS|LDFLAGS|LIB_LDFLAGS)\s*[:+?]?=", line)]
+        record = {"build": config.parent.parent.name, "configuration": lines}
+        obj = config.parent / "src/rdkafka.o"
+        record["objectPresent"] = obj.is_file()
+        if obj.is_symlink():
+            raise ValueError("cross-build diagnostic object must not be a symbolic link")
+        if record["objectPresent"]:
+            record["file"] = run(["file", "--brief", "--", str(obj)])
+            record["elfHeader"] = run(["readelf", "--wide", "--file-header", str(obj)])
+        attempts.append(record)
+    return {"schema": "opentsx.rust-build-diagnostics.v1", "target": target,
+            "sourceCommit": source_commit(), "buildDirectoryPresent": root.is_dir(),
+            "qualifiesArtifact": False, "attempts": attempts}
+
+
 def main():
     parser = argparse.ArgumentParser()
     commands = parser.add_subparsers(dest="command", required=True)
@@ -210,6 +245,10 @@ def main():
     tests.add_argument("--target", choices=(*NATIVE, "armv7-unknown-linux-musleabihf"), required=True)
     tests.add_argument("--mode", choices=("native", "emulated"), required=True)
     tests.add_argument("--report", type=Path, required=True)
+    diagnostics = commands.add_parser("diagnostics")
+    diagnostics.add_argument("--directory", type=Path, required=True)
+    diagnostics.add_argument("--target", choices=MUSL, required=True)
+    diagnostics.add_argument("--report", type=Path, required=True)
     dispatch = commands.add_parser("compiler")
     dispatch.add_argument("tool", choices=("cc", "cxx", "ar", "ranlib"))
     dispatch.add_argument("arguments", nargs=argparse.REMAINDER)
@@ -220,8 +259,12 @@ def main():
             return
         if args.report.exists():
             raise ValueError("report already exists")
-        result = artifact_report(args.binary, args.target) if args.command == "inspect" else tests_report(
-            args.log, args.target, args.mode)
+        if args.command == "inspect":
+            result = artifact_report(args.binary, args.target)
+        elif args.command == "diagnostics":
+            result = build_diagnostics(args.directory, args.target)
+        else:
+            result = tests_report(args.log, args.target, args.mode)
         args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text(json.dumps(result, indent=2) + "\n")
         print(json.dumps({"report": str(args.report), "schema": result["schema"]}))

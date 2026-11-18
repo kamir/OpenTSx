@@ -157,6 +157,9 @@ jobs:
           mkdir -p target/rust-static-evidence
           cargo-zigbuild build --locked --release --target ${{ matrix.target }} --manifest-path rust/tsx-runner/Cargo.toml --target-dir target/rust-static 2>&1 | tee target/rust-static-evidence/build.log
           python3 tools/rust_runner_artifacts.py inspect --binary target/rust-static/${{ matrix.target }}/release/tsx-runner --target ${{ matrix.target }} --report target/rust-static-evidence/artifact.json
+      - name: Retain bounded failed cross-build compiler and object diagnostics
+        if: failure()
+        run: python3 tools/rust_runner_artifacts.py diagnostics --directory target/rust-static --target ${{ matrix.target }} --report target/rust-static-evidence/diagnostics.json
       - name: Execute supplementary ARMv7 emulated shared vectors and regressions
         if: matrix.target == 'armv7-unknown-linux-musleabihf'
         shell: bash

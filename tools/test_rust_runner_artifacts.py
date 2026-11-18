@@ -130,6 +130,26 @@ class ElfArtifactTest(unittest.TestCase):
                     HELPER.compiler("cc", ["--version"])
                 execute.assert_not_called()
 
+    def test_only_the_unused_librdkafka_shared_target_gets_the_version_script_compatibility_flag(self):
+        arguments = ["-shared", "-Wl,-soname,librdkafka.so.1", "-Wl,--version-script=librdkafka.lds",
+                     "input file.o", "-o", "librdkafka.so.1"]
+        with tempfile.TemporaryDirectory() as directory:
+            wrapper = Path(directory) / "target-cc"
+            wrapper.write_text("fixture")
+            environment = {"TARGET": "x86_64-unknown-linux-musl", "CC_x86_64_unknown_linux_musl": str(wrapper)}
+            with patch.dict(HELPER.os.environ, environment, clear=True), patch.object(HELPER.os, "execv") as execute:
+                HELPER.compiler("cc", arguments)
+                execute.assert_called_once_with(str(wrapper), [str(wrapper), *arguments, "-Wl,--undefined-version"])
+            for altered in (["-c", "input.c", "-o", "input.o"],
+                            [arg for arg in arguments if arg != "-shared"],
+                            [arg for arg in arguments if not arg.startswith("-Wl,--version-script=")],
+                            [arg.replace("librdkafka.so.1", "other.so") for arg in arguments],
+                            [*arguments, "-Wl,--undefined-version"]):
+                with self.subTest(arguments=altered), patch.dict(HELPER.os.environ, environment, clear=True), \
+                        patch.object(HELPER.os, "execv") as execute:
+                    HELPER.compiler("cc", altered)
+                    execute.assert_called_once_with(str(wrapper), [str(wrapper), *altered])
+
     def test_ci_global_compiler_wrappers_execute_the_exact_target_wrapper(self):
         script = re.search(r'^          mkdir -p "\$RUNNER_TEMP/rust-target-tools"\n.*?^          done\n',
                            WORKFLOW.read_text(), re.M | re.S)
@@ -222,6 +242,29 @@ class ElfArtifactTest(unittest.TestCase):
 
 
 class RustTestEvidenceTest(unittest.TestCase):
+    def test_failed_build_diagnostics_are_bounded_allowlisted_and_cannot_qualify_an_artifact(self):
+        target = "armv7-unknown-linux-musleabihf"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            build = root / target / "release/build/rdkafka-sys-example/out"
+            (build / "src").mkdir(parents=True)
+            config = build / "Makefile.config"
+            config.write_text("CC=/target/wrapper\nARCH=x86_64\nCFLAGS+=-O2\nUNRELATED=not-uploaded\n")
+            obj = build / "src/rdkafka.o"
+            obj.write_bytes(b"synthetic object")
+            with patch.object(HELPER, "source_commit", return_value="a" * 40), \
+                    patch.object(HELPER, "run", side_effect=["ELF x86-64 relocatable", "Machine: X86-64"]) as execute:
+                report = HELPER.build_diagnostics(root, target)
+            self.assertFalse(report["qualifiesArtifact"])
+            self.assertEqual(["CC=/target/wrapper", "ARCH=x86_64", "CFLAGS+=-O2"], report["attempts"][0]["configuration"])
+            self.assertEqual("ELF x86-64 relocatable", report["attempts"][0]["file"])
+            self.assertNotIn("not-uploaded", json.dumps(report))
+            self.assertIn(["readelf", "--wide", "--file-header", str(obj)],
+                          [call.args[0] for call in execute.call_args_list])
+            config.write_bytes(b"x" * 65_537)
+            with self.assertRaisesRegex(ValueError, "65536"):
+                HELPER.build_diagnostics(root, target)
+
     def test_shared_vectors_and_real_positive_summaries_are_required(self):
         result = HELPER.test_counts(logs())
         self.assertEqual(17, result["passed"])
@@ -326,6 +369,8 @@ class RustCiEvidenceTest(unittest.TestCase):
         self.assertIn("CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_RUNNER: qemu-arm", cross)
         self.assertIn("cargo-zigbuild test --locked", cross)
         self.assertIn("rust_runner_artifacts.py inspect", cross)
+        self.assertIn("if: failure()", cross)
+        self.assertIn("rust_runner_artifacts.py diagnostics", cross)
         self.assertIn("02aa270f183da276e5b5920b1dac44a63f1a49e55050ebde3aecc9eb82f93239", cross)
         self.assertIn("9e3cf73485edbd45905c8aadbc0fdf869c7ddc3848f0c898229f2680db52e44b", cross)
         self.assertIn("9655f3e7e50af597e1b845822c47af9231f9f1bcb8c99e586db9da775d70c041", cross)
