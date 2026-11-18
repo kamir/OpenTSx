@@ -100,6 +100,8 @@ below populates them first; Retrieval loads them without provisioning and reject
 This does not add HTTP authentication or resource-level authorization.
 For optional KafScale storage, follow the [local Proxy setup](opentsx-kafscale-conformance/README.md#start-the-local-proxy).
 OpenTSx producers connect to Apache Kafka Broker or KafScale Proxy. They never publish directly to KafScale Broker.
+The pinned local bundle serializes metadata snapshot changes and refreshes durable metadata before responding
+through the Proxy. Durable read failures return an error; these overlays cover the local single-broker fixture.
 
 ```bash
 mvn -q install -DskipTests                          # JDK 17+

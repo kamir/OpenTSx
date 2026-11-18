@@ -8,7 +8,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ## [Unreleased]
 
-- Serialize pinned local KafScale metadata snapshots so concurrent watcher refreshes retain acknowledged topic creation.
+- Serialize pinned local KafScale metadata snapshots and refresh durable metadata before public reads. Proxy metadata
+  responses retain acknowledged topic changes without waiting for watchers and propagate durable read failures.
 
 ### Changed
 

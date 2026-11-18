@@ -18,6 +18,11 @@ type EtcdStore struct {
 	lastError atomic.Value
 }
 
+// Metadata delegates to the snapshot captured at startup (operator keeps it fresh).
+func (s *EtcdStore) Metadata(ctx context.Context, topics []string) (*ClusterMetadata, error) {
+	return s.metadata.Metadata(ctx, topics)
+}
+
 func (s *EtcdStore) CreateTopic(ctx context.Context, spec TopicSpec) (*protocol.MetadataTopic, error) {
 	topic, err := s.metadata.CreateTopic(ctx, spec)
 	if err != nil { return nil, err }
@@ -77,8 +82,19 @@ class KafScaleMetadataOverlayTest(unittest.TestCase):
     def test_generated_mapping_uses_container_roots_without_touching_the_checkout(self):
         with tempfile.TemporaryDirectory() as directory:
             mapping, modified = self.generate(directory, source_root="/source", output_root="/artifacts")
-            self.assertEqual({"/source/pkg/metadata/etcd_store.go": "/artifacts/metadata-etcd-store.go"}, mapping)
+            self.assertEqual({"/source/pkg/metadata/etcd_store.go": "/artifacts/metadata-etcd-store.go",
+                              "/source/pkg/metadata/opentsx_metadata_test.go": "/artifacts/metadata_test.go"}, mapping)
             self.assertNotEqual(SOURCE, modified)
+            regression = Path(directory) / "output/metadata_test.go"
+            self.assertEqual(Path(OVERLAY.__file__).with_name("kafscale_metadata_test.go").read_bytes(), regression.read_bytes())
+            self.assertFalse((Path(directory) / "source/pkg/metadata/opentsx_metadata_test.go").exists())
+
+    def test_public_metadata_refreshes_the_durable_snapshot_before_returning_a_copy(self):
+        with tempfile.TemporaryDirectory() as directory:
+            _, modified = self.generate(directory)
+        body = modified.split("func (s *EtcdStore) Metadata(", 1)[1].split("{\n", 1)[1].split("\n}", 1)[0]
+        self.assertEqual("\tif err := s.refreshSnapshot(ctx); err != nil {\n\t\treturn nil, err\n\t}\n\treturn s.metadata.Metadata(ctx, topics)", body)
+        self.assertNotIn("snapshotMu", body)
 
     def test_unknown_upstream_source_fails_before_writing_an_overlay(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -96,6 +112,7 @@ class KafScaleMetadataOverlayTest(unittest.TestCase):
 
     def test_missing_or_duplicate_patch_anchors_fail_before_writing(self):
         mutations = [SOURCE.replace('\t"sync/atomic"\n', ''), SOURCE.replace('type EtcdStore struct {\n', ''),
+                     SOURCE.replace('func (s *EtcdStore) Metadata(', 'func (s *EtcdStore) CachedMetadata('),
                      SOURCE.replace('func (s *EtcdStore) DeleteTopic(', 'func (s *EtcdStore) RemovedTopic('),
                      SOURCE + SOURCE]
         for text in mutations:
@@ -120,6 +137,18 @@ class KafScaleMetadataOverlayTest(unittest.TestCase):
                     OVERLAY.metadata_overlay(source, output)
                 self.assertEqual("retain this file", sentinel.read_text())
             self.assertEqual(SOURCE, (source / OVERLAY.SOURCE_PATH).read_text())
+
+    def test_regression_filename_collision_fails_before_writing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source, output = Path(directory) / "source", Path(directory) / "output"
+            original = source / OVERLAY.SOURCE_PATH
+            original.parent.mkdir(parents=True)
+            original.write_text(SOURCE)
+            (original.parent / "opentsx_metadata_test.go").write_text("existing source")
+            with patch.object(OVERLAY, "SOURCE_SHA256", hashlib.sha256(SOURCE.encode()).hexdigest()):
+                with self.assertRaisesRegex(RuntimeError, "regression filename already exists"):
+                    OVERLAY.metadata_overlay(source, output)
+            self.assertFalse(output.exists())
 
 
 if __name__ == "__main__":
