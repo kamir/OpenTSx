@@ -24,7 +24,8 @@ const phase = options['--phase'];
 const profile = options['--profile'] ?? 'bounded';
 if (!['bounded', 'continuous'].includes(profile)) throw new Error('Unknown browser profile.');
 const continuous = profile === 'continuous';
-if (!(continuous ? ['initial', 'retry', 'new-data', 'restart', 'after-restart', 'stopped']
+if (!(continuous ? ['initial', 'retry', 'new-data', 'restart', 'after-restart', 'worker-unavailable',
+  'worker-restart', 'after-worker-restart', 'stopped']
   : ['initial', 'retry', 'restart']).includes(phase)) throw new Error('Unknown browser phase.');
 const blocks = continuous ? options['--blocks'] : null;
 if (continuous && (!blocks || !/^[1-9][0-9]*$/.test(blocks) || BigInt(blocks) > 64n)) {
@@ -46,6 +47,7 @@ const completion = new Promise((resolve) => { resolveCompletion = resolve; });
 const expectedState = continuous ? (phase === 'stopped' ? 'stopped' : 'idle') : 'completed';
 const matches = (value) => value.id === awaitedDeployment && value.state === expectedState
   && (!continuous || (value.profile === profile && value.inputRecords === String(inputRecords)
+    && (phase === 'worker-unavailable' ? typeof value.error === 'string' && value.error.length > 0 : value.error === null)
     && value.assignments.length === 3 && value.assignments.every((assignment) => assignment.positions.length === Number(assignment.partitionCount)
       && assignment.positions.every((position, index) => position.partition === String(index) && position.next === blocks))));
 const observe = () => {

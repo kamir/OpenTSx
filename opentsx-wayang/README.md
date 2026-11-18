@@ -97,6 +97,7 @@ The [continuous local profile](../docs/devguide/integration/wayang-rust-continuo
 stages on the same complete-topic bindings. PostgreSQL persists each plan before execution; Rust workers restore
 their own preceding state and verify sequence/hash/cursor continuity. Idle keeps topic ownership. New input and
 service restart continue without redeployment. Durable Stop reconciles dispatched work before releasing ownership.
+Transient preparation failures retain the exact plan and private candidates for retry before any activation.
 This profile retains one immutable chain per worker and does not provide production migration or fencing.
 
 ## Use the plugin

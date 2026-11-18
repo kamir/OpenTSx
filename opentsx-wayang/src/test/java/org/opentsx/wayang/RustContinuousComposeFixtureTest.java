@@ -44,7 +44,7 @@ class RustContinuousComposeFixtureTest {
     @Test
     void eachNewWaveProducesJavaDerivedCanonicalRecordsWithoutFlushingItsTail() throws Exception {
         String source = source(); long clock = RustRunnerComposeFixture.CREATED + 123;
-        for (int blocks : List.of(1, 2, 4, 5)) {
+        for (int blocks : List.of(1, 2, 4, 5, 6, 7)) {
             List<Episode> expected = RustContinuousComposeFixture.expected(source, clock, CATALOG, blocks);
             assertEquals(6 * blocks, expected.size());
             assertEquals(6 * (3 * blocks / 2), expected.stream().mapToInt(Episode::getCount).sum());
@@ -82,6 +82,6 @@ class RustContinuousComposeFixtureTest {
         ObjectNode source = (ObjectNode) JSON.readTree(source());
         ((ObjectNode) source.path("source")).putArray("topics").add(RustContinuousComposeFixture.input(1));
         assertThrows(IllegalStateException.class, () -> RustContinuousComposeFixture.expected(JSON.writeValueAsString(source), 1, CATALOG, 1));
-        for (String count : List.of("0", "6", "01", "-1")) assertThrows(IllegalArgumentException.class, () -> RustContinuousComposeFixture.blocks(count));
+        for (String count : List.of("0", "8", "01", "-1")) assertThrows(IllegalArgumentException.class, () -> RustContinuousComposeFixture.blocks(count));
     }
 }

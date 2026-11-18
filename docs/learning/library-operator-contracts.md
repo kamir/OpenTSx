@@ -40,6 +40,8 @@ fragments run on HTTP workers. Java catalog availability does not expand that Ru
 The [continuous local target](../devguide/integration/wayang-rust-continuous.md) executes successive finite cuts on
 the same whole-topic bindings. Source/sink/checkpoint/assignment lessons also reference its durable predecessor,
 cumulative ownership and restart tests. Their standalone workloads remain unchanged and do not deploy a service.
+Continuous preparation recovery retains private candidates after a transient failure, including a lost response.
+Identical retry still requires every preparation and cross-topic ownership check before activation.
 
 The [signed bounded JVM profile](../user-manual/17-learn-operators.md#follow-the-signed-bounded-jvm-statistics-profile)
 binds an immutable whole-topic assignment to a statistics fragment and one
