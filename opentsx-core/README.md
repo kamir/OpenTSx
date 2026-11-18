@@ -21,6 +21,8 @@ This is the original OpenTSx library. It works on `TimeSeriesObject` and TSBucke
   work, the Python implementations (`opentsx.DFA`, `MFDFA`, `EventSynchronization`, `RIS`) are the recommended
   interface.
 * **v2 data:** convert episodes with `opentsx-legacy-bridge`.
+* **Quality:** see the [native application matrix](../docs/devguide/validation/native-app-quality.md) for action
+  coverage, configuration boundaries and remaining test gaps.
 
 ## Configure 2.x tools
 
