@@ -130,6 +130,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `TimeSeriesObject.add2`; use `replaceZeroWithAverage` and `add`.
 - `RIS.analyze` no longer returns `gamma` and `tau_0` and raises `ValueError` with fewer than 3 events instead of
   returning `Insufficient events`; call `RIS.stretched_exponential_fit(result["return_intervals"])` for the fit.
+- `config/private/ccloud.props` from the index. `config/private/` is git-ignored; the file stays in the history, so
+  the Confluent Cloud key it holds must be rotated.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported

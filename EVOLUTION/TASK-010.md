@@ -72,4 +72,4 @@ The done items of this block (LICENSE, NOTICE, CONTRIBUTING, CODE_OF_CONDUCT, SE
 
 ### Credentials (Owner Decision)
 Moved from TASK-011 (commit 551815a3), line 380.
-- [ ] **Credentials:** Confluent Cloud key in `config/private/ccloud.props` (under version control despite `.gitignore`), previously also in `SECURITY.md` and archived notebook outputs → rotate the key; remove the file from the index and clean up the history if necessary.
+- [ ] **Credentials:** Confluent Cloud key in `config/private/ccloud.props` (under version control despite `.gitignore`), previously also in `SECURITY.md` and archived notebook outputs → rotate the key. The file is no longer tracked; it stays in the history.

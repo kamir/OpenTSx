@@ -66,7 +66,7 @@ Also removed:
 
 | Finding | Status |
 |---------|--------|
-| **Credentials in the repository:** `config/private/ccloud.props` is tracked despite `.gitignore`. The same Confluent Cloud key appeared in `SECURITY.md` and in archived notebook outputs. | Redacted in `SECURITY.md`. **The owner should rotate or delete the key.** Removing the file from the index or rewriting history is the owner's decision. |
+| **Credentials in the repository:** `config/private/ccloud.props` was tracked despite `.gitignore`. The same Confluent Cloud key appeared in `SECURITY.md` and in archived notebook outputs. | Redacted in `SECURITY.md`. The file is no longer tracked; it stays in the history. **The owner should rotate or delete the key.** |
 | Event synchronization (Python) can return Q > 1, because the automatic `tau_max` uses mean inter-event intervals | documented as a known issue (manual chapter 11); fix suggested as a separate task |
 | LICENSE, CONTRIBUTING, CODE_OF_CONDUCT, CHANGELOG are missing | TASK-010 |
 | `sample_data/` and `data/sample_datasets/` overlap (same file names, different content) | to consolidate; code in `opentsx-core` demos references both |
