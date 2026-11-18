@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class RustContinuousComposeFixtureTest {
@@ -83,5 +84,31 @@ class RustContinuousComposeFixtureTest {
         ((ObjectNode) source.path("source")).putArray("topics").add(RustContinuousComposeFixture.input(1));
         assertThrows(IllegalStateException.class, () -> RustContinuousComposeFixture.expected(JSON.writeValueAsString(source), 1, CATALOG, 1));
         for (String count : List.of("0", "8", "01", "-1")) assertThrows(IllegalArgumentException.class, () -> RustContinuousComposeFixture.blocks(count));
+    }
+
+    @Test
+    void fencingRestartUsesChangedDagRawInputFromZeroAndItsOwnFrozenClock() throws Exception {
+        String original = source();
+        ObjectNode changed = (ObjectNode) JSON.readTree(original);
+        ((ObjectNode) changed.path("sinks").get(0)).put("topic", RustFencingComposeFixture.RESTARTED_OUTPUT);
+        ((ObjectNode) changed.path("nodes").get(2).path("params")).put("factor", 0.002);
+        String replacement = JSON.writeValueAsString(changed);
+        assertThrows(IllegalStateException.class, () -> RustContinuousComposeFixture.expected(replacement, 1, CATALOG, 2));
+        long clock = RustRunnerComposeFixture.CREATED + 456;
+        List<Episode> expected = RustContinuousComposeFixture.expected(replacement, clock, CATALOG, 2, RustFencingComposeFixture.RESTARTED_OUTPUT);
+        assertEquals(12, expected.size());
+        assertEquals(List.of(0.01), expected.get(0).getValues());
+        List<Episode> previous = RustContinuousComposeFixture.expected(original, clock, CATALOG, 2);
+        assertNotEquals(previous.get(0).getEpisodeId(), expected.get(0).getEpisodeId());
+        for (Episode episode : expected) {
+            assertEquals(ExecutionAssignments.sha256(replacement), episode.getLabels().get("specHash"));
+            assertEquals(clock, Micros.of(episode.getProvenance().getCreatedAt()));
+        }
+    }
+
+    @Test
+    void fencingFixtureRejectsEveryUnrecognizedExplicitOutputBeforeBrokerAccess() {
+        assertThrows(IllegalArgumentException.class, () -> RustFencingComposeFixture.main(new String[]{
+                "verify", "unreachable-proxy:9092", ".", "deployment.json", "dag.txt", "2", "tsx.other.clean.v2"}));
     }
 }

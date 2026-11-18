@@ -2131,7 +2131,8 @@
       "tasks": [
         "Identify -1 and 11 as outside the inclusive [0,10] band.",
         "Run gap mode and verify both missing values without losing x.",
-        "Run clip mode and explain the difference from the original measurements."
+        "Run clip mode and explain the difference from the original measurements.",
+        "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output."
       ],
       "starter": {
         "bucket": {
@@ -2174,7 +2175,8 @@
         "Clipping changes values and can hide extremes from later analysis.",
         "The browser workload remains local. The explicit bounded Wayang action is a separate authenticated execution path with frozen whole-topic cuts and does not use this zero-based lesson clock for Kafka timestamps.",
         "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
-        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation."
+        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
+        "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration."
       ],
       "parameterKeys": [
         "min",
@@ -2214,14 +2216,19 @@
           "docs/learning/ui-operator-contracts.md#dq-plausible-range",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment"
         ],
         "source": [
           "opentsx-saas-frontend/src/workbench/ops.ts#plausibleRange",
           "rust/tsx-runner/src/operators.rs#compile",
           "opentsx-saas-frontend/src/workbench/wayang.ts#buildWayangDag",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustRollout.java#plan",
-          "rust/tsx-runner/src/worker.rs#prepare"
+          "rust/tsx-runner/src/worker.rs#prepare",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustPublicationGateway.java",
+          "rust/tsx-runner/src/publication.rs",
+          "rust/tsx-runner/src/worker.rs#install_publication",
+          "opentsx-saas-backend/app/services/wayang_service.py#reconcile_switch"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
@@ -2233,7 +2240,11 @@
           "rust/tsx-runner/tests/increments.rs",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustContinuousRolloutTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
-          "opentsx-saas-backend/tests/test_wayang_continuous.py"
+          "opentsx-saas-backend/tests/test_wayang_continuous.py",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPublicationGatewayTest.java",
+          "rust/tsx-runner/tests/publication_fencing.rs",
+          "opentsx-saas-backend/tests/test_wayang_switch.py",
+          "tools/test_kafscale_fenced_topology.py"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"
@@ -2256,7 +2267,8 @@
       "tasks": [
         "Calculate 0*1.8+32 and 100*1.8+32.",
         "Run the conversion and inspect the degF series unit.",
-        "Explain why relabeling a series without the numeric conversion would be wrong."
+        "Explain why relabeling a series without the numeric conversion would be wrong.",
+        "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output."
       ],
       "starter": {
         "bucket": {
@@ -2296,7 +2308,8 @@
         "An empty target unit retains the original unit metadata.",
         "The browser workload remains local. The explicit bounded Wayang action is a separate authenticated execution path with frozen whole-topic cuts and does not use this zero-based lesson clock for Kafka timestamps.",
         "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
-        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation."
+        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
+        "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration."
       ],
       "parameterKeys": [
         "factor",
@@ -2333,14 +2346,19 @@
           "docs/learning/ui-operator-contracts.md#convert-unit",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment"
         ],
         "source": [
           "opentsx-saas-frontend/src/workbench/ops.ts#convertUnit",
           "rust/tsx-runner/src/operators.rs#compile",
           "opentsx-saas-frontend/src/workbench/wayang.ts#buildWayangDag",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustRollout.java#plan",
-          "rust/tsx-runner/src/worker.rs#prepare"
+          "rust/tsx-runner/src/worker.rs#prepare",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustPublicationGateway.java",
+          "rust/tsx-runner/src/publication.rs",
+          "rust/tsx-runner/src/worker.rs#install_publication",
+          "opentsx-saas-backend/app/services/wayang_service.py#reconcile_switch"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
@@ -2352,7 +2370,11 @@
           "rust/tsx-runner/tests/increments.rs",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustContinuousRolloutTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
-          "opentsx-saas-backend/tests/test_wayang_continuous.py"
+          "opentsx-saas-backend/tests/test_wayang_continuous.py",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPublicationGatewayTest.java",
+          "rust/tsx-runner/tests/publication_fencing.rs",
+          "opentsx-saas-backend/tests/test_wayang_switch.py",
+          "tools/test_kafscale_fenced_topology.py"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"
@@ -2375,7 +2397,8 @@
       "tasks": [
         "Partition the starter into [0,2), [2,4) and [4,6).",
         "Predict means 2, 6 and 10.",
-        "Change agg to LAST and inspect which observations survive."
+        "Change agg to LAST and inspect which observations survive.",
+        "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output."
       ],
       "starter": {
         "bucket": {
@@ -2423,7 +2446,8 @@
         "The Rust Kafka cut retains an unfinished trailing window instead of flushing it at batch end.",
         "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
         "An unfinished window spans increments and service restart. Stop does not flush it, and the existing valid-sample ceiling still applies.",
-        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation."
+        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
+        "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration."
       ],
       "parameterKeys": [
         "every",
@@ -2463,7 +2487,8 @@
           "docs/learning/ui-operator-contracts.md#resample",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment"
         ],
         "source": [
           "opentsx-saas-frontend/src/workbench/ops.ts#resample",
@@ -2471,7 +2496,11 @@
           "opentsx-saas-frontend/src/workbench/wayang.ts#buildWayangDag",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustRollout.java#plan",
           "rust/tsx-runner/src/worker.rs#prepare",
-          "opentsx-saas-frontend/src/workbench/flow.ts#toDagYaml"
+          "opentsx-saas-frontend/src/workbench/flow.ts#toDagYaml",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustPublicationGateway.java",
+          "rust/tsx-runner/src/publication.rs",
+          "rust/tsx-runner/src/worker.rs#install_publication",
+          "opentsx-saas-backend/app/services/wayang_service.py#reconcile_switch"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
@@ -2486,7 +2515,11 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
           "opentsx-saas-backend/tests/test_wayang_continuous.py",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangWorkbenchTest.java#actualWorkbenchExportsTranslateOrNameTheNonCatalogNode",
-          "docs/datamodel-2026/testvectors/workbench-dags/published-stats.yaml"
+          "docs/datamodel-2026/testvectors/workbench-dags/published-stats.yaml",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPublicationGatewayTest.java",
+          "rust/tsx-runner/tests/publication_fencing.rs",
+          "opentsx-saas-backend/tests/test_wayang_switch.py",
+          "tools/test_kafscale_fenced_topology.py"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"

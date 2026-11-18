@@ -28,11 +28,11 @@ class RustContinuousRolloutTest {
     private static final String CLOCK = "1790812800000000";
     private static final String ARTIFACT = "sha256:" + "a".repeat(64);
     private static final String OUTPUT = "tsx.continuous.clean.v2";
-    private static final List<RustRollout.Worker> WORKERS = List.of(
+    static final List<RustRollout.Worker> WORKERS = List.of(
             new RustRollout.Worker("worker-1", "http://worker-1:8090"),
             new RustRollout.Worker("worker-2", "http://worker-2:8090"),
             new RustRollout.Worker("worker-3", "http://worker-3:8090"));
-    private static final String SOURCE = """
+    static final String SOURCE = """
             {"schema":"opentsx.dag.v2","dag":"continuous-fixture","source":{"kind":"kafscale-broker",
             "topics":["tsx.continuous.first.v2","tsx.continuous.second.v2","tsx.continuous.third.v2"],
             "series":["1111111111111111","2222222222222222","3333333333333333"]},
@@ -45,7 +45,7 @@ class RustContinuousRolloutTest {
     private static JsonNode request(JsonNode plan, int index) { return RustRollout.json(plan.path("assignments").get(index).path("requestText").asText()); }
     private static JsonNode assignment(JsonNode plan, int index) { return RustRollout.json(request(plan, index).path("assignmentText").asText()); }
 
-    private static final class Fake implements RustWorkerClient, RustRollout.Metadata {
+    static class Fake implements RustWorkerClient, RustRollout.Metadata {
         final Map<String, JsonNode> statuses = new ConcurrentHashMap<>();
         final Map<String, JsonNode> requests = new ConcurrentHashMap<>();
         final List<String> events = new CopyOnWriteArrayList<>();

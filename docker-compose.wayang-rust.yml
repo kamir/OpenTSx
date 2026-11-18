@@ -14,32 +14,126 @@ x-python: &python
     SECRET_KEY: "${SECRET_KEY:?Set SECRET_KEY}"
     FIRST_SUPERUSER_EMAIL: "${FIRST_SUPERUSER_EMAIL:?Set FIRST_SUPERUSER_EMAIL}"
     FIRST_SUPERUSER_PASSWORD: "${FIRST_SUPERUSER_PASSWORD:?Set FIRST_SUPERUSER_PASSWORD}"
+    DAG_RUN_TOKEN: "${DAG_RUN_TOKEN:?Set DAG_RUN_TOKEN}"
     WAYANG_URL: http://wayang:8095
     BACKEND_CORS_ORIGINS: '["http://127.0.0.1:${WAYANG_UI_PORT:-18081}"]'
   volumes:
     - .:/workspace:ro
     - backend-python:/opt/venv:ro
+  networks: [control_net]
 
 x-runner: &runner
   image: rust:1.99.1-bookworm@sha256:e6f2cff35d0f309acf8433b4f05878ed77092602c5065cc81801177da0bb3a9c
   user: "${WAYANG_UID:?Set WAYANG_UID}:${WAYANG_GID:?Set WAYANG_GID}"
   entrypoint: [/runner/release/tsx-runner]
   read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
   restart: "no"
-  depends_on: [kafscale-proxy]
+  depends_on: [kafscale-read]
 
 services:
-  kafscale-proxy:
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.12@sha256:847423221ed040798e47df36450edce5581ed642cd087ccb210532764da38b23
+    user: "${WAYANG_UID:?Set WAYANG_UID}:${WAYANG_GID:?Set WAYANG_GID}"
+    command:
+      - etcd
+      - --name=etcd0
+      - --data-dir=/etcd-data
+      - --advertise-client-urls=http://etcd:2379
+      - --listen-client-urls=http://0.0.0.0:2379
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: [CMD, etcdctl, endpoint, health]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+    volumes:
+      - ${WAYANG_PRIVATE_DIR:?Set WAYANG_PRIVATE_DIR}/transport/etcd:/etcd-data
+    networks:
+      broker_net:
+        ipv4_address: 172.29.73.3
+
+  kafscale-broker:
     image: python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
     user: "${WAYANG_UID:?Set WAYANG_UID}:${WAYANG_GID:?Set WAYANG_GID}"
-    entrypoint: [/transport/kafscale-cluster]
-    command: [--listen, "0.0.0.0:${KAFSCALE_BROKER_PORT:-39093}", --advertised-host, kafscale-proxy, --advertised-port, "${KAFSCALE_BROKER_PORT:-39093}", --data-dir, /state, --broker-binary, /transport/kafscale-broker, --proxy-binary, /transport/kafscale-proxy]
+    entrypoint: [/transport/kafscale-broker]
+    environment:
+      KAFSCALE_USE_MEMORY_S3: "1"
+      KAFSCALE_BROKER_ID: "0"
+      KAFSCALE_BROKER_ADDR: ":19092"
+      KAFSCALE_BROKER_HOST: kafscale-broker
+      KAFSCALE_BROKER_PORT: "19092"
+      KAFSCALE_ETCD_ENDPOINTS: http://etcd:2379
+      KAFSCALE_METRICS_ADDR: "127.0.0.1:0"
+      KAFSCALE_CONTROL_ADDR: "127.0.0.1:0"
+      KAFSCALE_AUTO_CREATE_TOPICS: "false"
+      KAFSCALE_PRINCIPAL_SOURCE: remote_addr
+      KAFSCALE_ACL_ENABLED: "true"
+      KAFSCALE_ACL_FAIL_OPEN: "false"
+      KAFSCALE_ACL_FILE: /settings/publication-acl.json
     read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      etcd: {condition: service_healthy}
     volumes:
       - ./target/kafscale-proxy-linux:/transport:ro
-      - ${WAYANG_PRIVATE_DIR:?Set WAYANG_PRIVATE_DIR}/transport:/state
+      - ${WAYANG_PRIVATE_DIR:?Set WAYANG_PRIVATE_DIR}/publication-acl.json:/settings/publication-acl.json:ro
+    networks:
+      broker_net:
+        ipv4_address: 172.29.73.2
+
+  kafscale-read:
+    image: python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
+    user: "${WAYANG_UID:?Set WAYANG_UID}:${WAYANG_GID:?Set WAYANG_GID}"
+    entrypoint: [/transport/kafscale-proxy]
+    environment:
+      KAFSCALE_PROXY_ADDR: ":${KAFSCALE_BROKER_PORT:-39093}"
+      KAFSCALE_PROXY_HEALTH_ADDR: "127.0.0.1:0"
+      KAFSCALE_PROXY_ADVERTISED_HOST: kafscale-read
+      KAFSCALE_PROXY_ADVERTISED_PORT: "${KAFSCALE_BROKER_PORT:-39093}"
+      KAFSCALE_PROXY_BACKENDS: kafscale-broker:19092
+      KAFSCALE_PROXY_ETCD_ENDPOINTS: http://etcd:2379
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    depends_on: [kafscale-broker]
+    volumes:
+      - ./target/kafscale-proxy-linux:/transport:ro
+    networks:
+      broker_net:
+        ipv4_address: 172.29.73.10
+      worker_net:
+        ipv4_address: 172.29.74.2
+
+  kafscale-write:
+    image: python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
+    user: "${WAYANG_UID:?Set WAYANG_UID}:${WAYANG_GID:?Set WAYANG_GID}"
+    entrypoint: [/transport/kafscale-proxy]
+    environment:
+      KAFSCALE_PROXY_ADDR: ":${KAFSCALE_BROKER_PORT:-39093}"
+      KAFSCALE_PROXY_HEALTH_ADDR: "127.0.0.1:0"
+      KAFSCALE_PROXY_ADVERTISED_HOST: kafscale-write
+      KAFSCALE_PROXY_ADVERTISED_PORT: "${KAFSCALE_BROKER_PORT:-39093}"
+      KAFSCALE_PROXY_BACKENDS: kafscale-broker:19092
+      KAFSCALE_PROXY_ETCD_ENDPOINTS: http://etcd:2379
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    depends_on: [kafscale-broker]
+    volumes:
+      - ./target/kafscale-proxy-linux:/transport:ro
     ports:
       - "127.0.0.1:${KAFSCALE_BROKER_PORT:-39093}:${KAFSCALE_BROKER_PORT:-39093}"
+    networks:
+      broker_net:
+        ipv4_address: 172.29.73.11
+      writer_net:
+        ipv4_address: 172.29.75.2
+      proxy_host_net: {}
 
   postgres:
     image: postgres:15-alpine@sha256:23799e521dee9265a8b388ecf3bc0f1eaa34b95be67f5a76af4f8f6adb44c720
@@ -47,7 +141,8 @@ services:
       POSTGRES_USER: opentsx
       POSTGRES_DB: opentsx
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}"
-    volumes: [postgres-data:/var/lib/postgresql/data]
+    volumes: ["postgres-data:/var/lib/postgresql/data"]
+    networks: [control_net]
     healthcheck:
       test: [CMD-SHELL, "pg_isready -U opentsx -d opentsx"]
       interval: 2s
@@ -76,24 +171,33 @@ services:
 
   runner-1:
     <<: *runner
-    command: [serve, --listen, "0.0.0.0:8090", --node, worker-1, --site, compose, --bootstrap, "kafscale-proxy:${KAFSCALE_BROKER_PORT:-39093}", --state, /state]
+    command: [serve, --listen, "0.0.0.0:8090", --node, worker-1, --site, compose, --bootstrap, "kafscale-read:${KAFSCALE_BROKER_PORT:-39093}", --state, /state, --publisher, "http://wayang-publication:8096", --controller, "172.29.74.10"]
     volumes:
       - ./target/wayang-rust-linux:/runner:ro
       - ${WAYANG_PRIVATE_DIR:?Set WAYANG_PRIVATE_DIR}/state/worker-1:/state
+    networks:
+      worker_net:
+        ipv4_address: 172.29.74.11
 
   runner-2:
     <<: *runner
-    command: [serve, --listen, "0.0.0.0:8090", --node, worker-2, --site, compose, --bootstrap, "kafscale-proxy:${KAFSCALE_BROKER_PORT:-39093}", --state, /state]
+    command: [serve, --listen, "0.0.0.0:8090", --node, worker-2, --site, compose, --bootstrap, "kafscale-read:${KAFSCALE_BROKER_PORT:-39093}", --state, /state, --publisher, "http://wayang-publication:8096", --controller, "172.29.74.10"]
     volumes:
       - ./target/wayang-rust-linux:/runner:ro
       - ${WAYANG_PRIVATE_DIR:?Set WAYANG_PRIVATE_DIR}/state/worker-2:/state
+    networks:
+      worker_net:
+        ipv4_address: 172.29.74.12
 
   runner-3:
     <<: *runner
-    command: [serve, --listen, "0.0.0.0:8090", --node, worker-3, --site, compose, --bootstrap, "kafscale-proxy:${KAFSCALE_BROKER_PORT:-39093}", --state, /state]
+    command: [serve, --listen, "0.0.0.0:8090", --node, worker-3, --site, compose, --bootstrap, "kafscale-read:${KAFSCALE_BROKER_PORT:-39093}", --state, /state, --publisher, "http://wayang-publication:8096", --controller, "172.29.74.10"]
     volumes:
       - ./target/wayang-rust-linux:/runner:ro
       - ${WAYANG_PRIVATE_DIR:?Set WAYANG_PRIVATE_DIR}/state/worker-3:/state
+    networks:
+      worker_net:
+        ipv4_address: 172.29.74.13
 
   wayang:
     image: eclipse-temurin:21-jdk@sha256:db5cc6341a1d7bc40cdb51e1f0d9824f3bb2cc8107d29da421dc4df7d11f05f1
@@ -104,11 +208,21 @@ services:
       - .:/workspace:ro
       - ${WAYANG_M2_REPOSITORY:?Set WAYANG_M2_REPOSITORY}:/m2:ro
       - ${WAYANG_PRIVATE_DIR:?Set WAYANG_PRIVATE_DIR}/driver.args:/settings/driver.args:ro
+      - ${WAYANG_PRIVATE_DIR:?Set WAYANG_PRIVATE_DIR}/run-token:/settings/run-token:ro
+      - ${WAYANG_PRIVATE_DIR:?Set WAYANG_PRIVATE_DIR}/publication:/publication
     depends_on: [runner-1, runner-2, runner-3]
+    networks:
+      worker_net:
+        ipv4_address: 172.29.74.10
+        aliases: [wayang-publication]
+      writer_net:
+        ipv4_address: 172.29.75.10
+      control_net:
+        ipv4_address: 172.29.76.10
 
   backend:
     <<: *python
-    command: [/opt/venv/bin/python, -m, uvicorn, app.main:app, --host, 0.0.0.0, --port, "8000"]
+    command: [/opt/venv/bin/python, -m, uvicorn, "app.main:app", --host, 0.0.0.0, --port, "8000"]
     depends_on:
       postgres: {condition: service_healthy}
     healthcheck:
@@ -132,6 +246,35 @@ services:
       - ./deploy/compose/wayang-rust-nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       backend: {condition: service_healthy}
+    networks:
+      control_net: {}
+      ui_host_net: {}
+
+networks:
+  broker_net:
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.29.73.0/24
+  worker_net:
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.29.74.0/24
+  writer_net:
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.29.75.0/24
+  control_net:
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.29.76.0/24
+  proxy_host_net:
+    internal: false
+  ui_host_net:
+    internal: false
 
 volumes:
   runner-cargo:

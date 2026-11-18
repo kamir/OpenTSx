@@ -27,7 +27,8 @@ There is no `run --plan` or signed fleet activation in this crate.
 The service command is `tsx-runner serve --listen <addr> --node <id> --site <id>`
 followed by `--bootstrap <host:port> --state <directory>`.
 `<addr>` is the HTTP listening address. The node and site identifiers must match admitted assignments.
-`<host:port>` is the fixed permitted broker address list. `<directory>` is the worker-owned state directory.
+`<host:port>` is the fixed permitted Apache Kafka Broker or KafScale Proxy address list. Never publish directly
+to KafScale Broker. `<directory>` is the worker-owned state directory.
 The service holds one exclusive directory lock and accepts one unfinished whole-topic request at a time.
 Keep this unauthenticated HTTP interface inside a trusted local network.
 
@@ -90,9 +91,32 @@ sets `activationRetryable`; restart does not reread input or reset the clock. A 
 its receipt without broker I/O. Older increments become stale after a successor completes.
 Completed output bytes are discarded when their head commits, so history does not grow with increment count.
 
-One worker retains one immutable continuous chain even after Stop. Another chain requires an explicit reset of
-its disposable worker state while the deployment is stopped and no publication is uncertain.
-There is no retirement, worker migration or failover interface in this local profile.
+One worker retains one continuous head after Stop; Stop does not reset the pool for another deployment.
+Fenced mode provides an explicit controller-only grant installation and reset boundary described below; it never
+implicitly resets state. There is no worker migration or automatic failover interface in this local profile.
+
+## Serve behind the local publication gateway
+
+Add both `--publisher <http-origin>` and `--controller <IP>` to `serve`. The publisher is an internal HTTP origin
+with an explicit port. The controller is the actual TCP peer allowed to mutate the worker. Supplying only one
+option rejects startup. Forwarded headers do not authorize a peer. Read through the fetch-only Proxy and isolate
+the worker from broker and write-Proxy networks, as the
+[Compose profile](../../docs/devguide/integration/wayang-rust-compose.md) does.
+
+Fenced mode adds `GET /v1/publication` for public installation status and controller-only `POST /v1/publication`
+with exactly `grant`, `reset` and `expectedHead`. The private grant binds deployment, epoch, node and whole input/output
+topics. It is captured once per prepared journal, never refreshed during activation and omitted from public status.
+The output adapter sends those prepared bytes to the gateway and verifies epoch, request hash, digest and count
+in its publication receipt before committing the worker head.
+
+Same-DAG resume advances the epoch while preserving the completed head, cursors and open windows. Reset requires
+a new deployment/output, matching old completed head and no pending candidate; the controller revokes old grants
+before installing it. Changed-DAG replay starts every partition at zero. Repeating an installed operation is
+idempotent and does not reset newer work. See [SPEC S1.12](../../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment).
+
+A gateway acknowledgement lost only on HTTP return can be recovered without another Kafka send. A genuinely unknown
+broker outcome remains quarantined, blocks retransmission and prevents deployment replacement or retirement.
+The gateway ledger must survive restart. This local cap has no automatic gateway failover or signed fleet enrollment.
 
 ## Keep execution within the admitted subset
 

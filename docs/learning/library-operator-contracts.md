@@ -42,6 +42,13 @@ the same whole-topic bindings. Source/sink/checkpoint/assignment lessons also re
 cumulative ownership and restart tests. Their standalone workloads remain unchanged and do not deploy a service.
 Continuous preparation recovery retains private candidates after a transient failure, including a lost response.
 Identical retry still requires every preparation and cross-topic ownership check before activation.
+The [local publication contract](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment)
+adds explicit same-DAG resume and changed-DAG replay into a fresh output after old authority is revoked.
+Terminal recovery saves verified results and publication epochs before retiring authority. The checkpoint lesson
+traces a lost retirement reply: recovery reuses the saved result and operation without another execute call or
+early topic release. The same persistence boundary applies to Stop during the first continuous cycle.
+These gateway/worker lifecycle checks do not change `TsxCheckpoint.load`, the offline assignment validator or
+any numerical starter, and do not make private Java and Rust state interchangeable.
 
 The [signed bounded JVM profile](../user-manual/17-learn-operators.md#follow-the-signed-bounded-jvm-statistics-profile)
 binds an immutable whole-topic assignment to a statistics fragment and one
@@ -404,8 +411,10 @@ store `SeriesStream.state()` JSON and statistics store Base64 engine state in th
 They do not implement the proposed orchestration state-ABI migration, fenced ownership or deployment grant policy.
 Each assigned whole topic retains all of its internal positions; the checkpoint file is not a partition scheduler.
 The Rust HTTP worker uses its own checksummed completion envelope and retained pipeline state. It commits after all
-output acknowledgements. Saved prepared output supports identical activation retry after an uncertain publication;
-completed retry returns the saved receipt. This does not change `TsxCheckpoint.load` or make its state portable.
+output acknowledgements. The local fenced mode keeps a captured grant in the prepared journal and verifies a
+gateway receipt before commit. A durable gateway acknowledgement supports receipt retry; an unknown broker
+outcome remains quarantined and blocks handover. Completed retry returns the saved receipt. This does not change
+`TsxCheckpoint.load` or make its state portable.
 
 For threshold and extremum segmentation, the per-node map contains Base64
 segmenter state. It includes retained source records, timestamps, raw sample
