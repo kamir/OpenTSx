@@ -6,6 +6,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { errorMessage, fetchJson } from '../services/api';
 import { Ask, CompareDoc, RunDoc, RunListEntry, ScenarioDoc, chartLines, deltaText, eventText, kpiText, runRequest } from './runs';
 
 const W = 560;
@@ -53,16 +54,17 @@ export default function SimulatePlace({ system, base }: { system: string; base: 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const get = useCallback(
-    async (path: string) => {
-      const res = await fetch(`${root}${path}`);
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
-      return json;
-    },
-    [root],
+  const get = useCallback((path: string) => fetchJson(`${root}${path}`), [root]);
+  const list = useCallback(
+    () =>
+      get('/runs')
+        .then((d) => setRuns((d as { runs?: RunListEntry[] }).runs ?? []))
+        .catch((e) => {
+          setRuns([]);
+          setError(`The runs kept by the server could not be read: ${errorMessage(e)}.`);
+        }),
+    [get],
   );
-  const list = useCallback(() => get('/runs').then((d) => setRuns(d.runs ?? [])).catch(() => setRuns([])), [get]);
   const show = useCallback(
     async (id: string) => {
       const doc = (await get(`/runs/${id}`)) as RunDoc;
@@ -73,6 +75,7 @@ export default function SimulatePlace({ system, base }: { system: string; base: 
     },
     [get],
   );
+  const open = (id: string) => show(id).catch((e) => setError(`The run ${id} could not be shown: ${errorMessage(e)}.`));
 
   useEffect(() => {
     let cancelled = false;
@@ -87,7 +90,7 @@ export default function SimulatePlace({ system, base }: { system: string; base: 
         list();
         return show((s as ScenarioDoc).reference);
       })
-      .catch((e) => !cancelled && setError(`The twin of this system cannot be asked: ${e instanceof Error ? e.message : e}.`));
+      .catch((e) => !cancelled && setError(`The twin of this system cannot be asked: ${errorMessage(e)}.`));
     return () => {
       cancelled = true;
     };
@@ -103,13 +106,11 @@ export default function SimulatePlace({ system, base }: { system: string; base: 
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch(`${root}/runs`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(req.body) });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
+      const json = (await fetchJson(`${root}/runs`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(req.body) })) as { run: string };
       await show(json.run);
       await list();
     } catch (e) {
-      setError(`The run was refused: ${e instanceof Error ? e.message : e}.`);
+      setError(`The run was refused: ${errorMessage(e)}.`);
     } finally {
       setBusy(false);
     }
@@ -193,7 +194,7 @@ export default function SimulatePlace({ system, base }: { system: string; base: 
           </label>
           <div className="wb-ask-actions">
             <button className="wb-primary" disabled={busy} onClick={ask}>{busy ? 'Running' : 'Run'}</button>
-            <button disabled={busy} onClick={() => show(scenario.reference)}>Show the reference</button>
+            <button disabled={busy} onClick={() => open(scenario.reference)}>Show the reference</button>
           </div>
           {error && <div className="wb-error" role="alert">{error}</div>}
 
@@ -201,7 +202,7 @@ export default function SimulatePlace({ system, base }: { system: string; base: 
           <ul className="wb-runs" aria-label="Runs kept by the server">
             {runs.map((r) => (
               <li key={r.run} className={r.run === run?.run ? 'here' : ''}>
-                <button onClick={() => show(r.run)} title={r.run}>
+                <button onClick={() => open(r.run)} title={r.run}>
                   <span className={`wb-flow-status ${r.kind === 'reference' ? 'clean' : 'raw-only'}`}>{r.kind}</span> {r.label}
                 </button>
               </li>

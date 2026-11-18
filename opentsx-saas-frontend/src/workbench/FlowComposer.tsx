@@ -5,9 +5,8 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import axios from 'axios';
-import { dagsAPI, flowsAPI } from '../services/api';
-import { DagList, DagState, describeSink, readDeployments, topicConflict } from './deployments';
+import { dagsAPI, errorMessage, flowsAPI } from '../services/api';
+import { DagState, deployFlow, describeSink, readDeployments } from './deployments';
 import { deployChecks } from './flow';
 import { FlowFilter, FlowSummary, NO_FLOW_FILTER, copyName, domainFacets, filterFlows, runPlan, stamp, summarize } from './flows';
 
@@ -26,8 +25,8 @@ interface Props {
   onClose?: () => void;
   /** Shows only the flows of this system: those made for one of its signals, and flows of its domain without a system. */
   system?: { id: string; domain: string; title: string };
-  /** Reports how many flows the list holds, for the rail of the shell. */
-  onCount?: (flows: number, running: number) => void;
+  /** Reports how many flows the list holds, for the rail of the shell; running is null while the deployments cannot be read. */
+  onCount?: (flows: number, running: number | null) => void;
 }
 
 function deployment(d: DagState | undefined): string {
@@ -36,18 +35,11 @@ function deployment(d: DagState | undefined): string {
   return d.sinks.length > 0 && d.sinks.every((s) => s.state === 'running') ? 'running' : d.sinks.some((s) => s.state === 'failed') ? 'failed' : 'starting';
 }
 
-function reasonOf(e: unknown): string {
-  if (axios.isAxiosError(e)) {
-    if (e.response?.status === 401) return 'your session has expired, sign in again';
-    const detail = e.response?.data?.detail;
-    if (typeof detail === 'string') return detail;
-  }
-  return e instanceof Error ? e.message : String(e);
-}
-
 export default function FlowComposer({ base, currentId, replaces, onOpen, onNew, onDeleted, onClose, system, onCount }: Props) {
   const [flows, setFlows] = useState<FlowSummary[] | null>(null);
-  const [dags, setDags] = useState<Map<string, DagState>>(new Map());
+  /** What is deployed; null while it is not known, and then Start, Stop and Delete stay off. */
+  const [dags, setDags] = useState<Map<string, DagState> | null>(null);
+  const [dagsError, setDagsError] = useState<string | null>(null);
   const [access, setAccess] = useState<{ canRun: boolean; reason: string | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; lines: string[] } | null>(null);
@@ -68,27 +60,31 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
       setError(null);
     } catch (e) {
       setFlows(null);
-      setError(`The flows of your account could not be read: ${reasonOf(e)}.`);
+      setError(`The flows of your account could not be read: ${errorMessage(e)}.`);
     }
-    // The deployment column is an extra: without a retrieval server it stays empty.
     try {
-      const res = await fetch(`${root}/v1/dags`, { signal: AbortSignal.timeout(10_000) });
-      if (res.ok) setDags(new Map(((await res.json()) as DagList).dags.map((d) => [d.dag, d])));
-    } catch {
-      // the list works without it
+      setDags(new Map((await readDeployments(`${root}/v1/dags`)).dags.map((d) => [d.dag, d])));
+      setDagsError(null);
+    } catch (e) {
+      setDags(null);
+      setDagsError(errorMessage(e));
     }
   }, [root]);
 
   useEffect(() => {
     refresh();
-    dagsAPI.capabilities().then(setAccess).catch(() => setAccess({ canRun: false, reason: 'The backend does not say whether this account may deploy.' }));
+    dagsAPI
+      .capabilities()
+      .then(setAccess)
+      .catch((e) => setAccess({ canRun: false, reason: `Whether this account may deploy could not be read: ${errorMessage(e)}.` }));
     dialog.current?.focus();
   }, [refresh]);
 
   const domains = useMemo(() => domainFacets(flows ?? []), [flows]);
   const own = useMemo(() => filterFlows(flows ?? [], { ...NO_FLOW_FILTER, system: system ?? null }), [flows, system]);
   const rows = useMemo(() => filterFlows(own, filter), [own, filter]);
-  const running = own.filter((f) => f.dag && dags.get(f.dag)?.desired === 'deployed').length;
+  const running = dags === null ? null : own.filter((f) => f.dag && dags.get(f.dag)?.desired === 'deployed').length;
+  const runningText = running === null ? 'how many run is not known' : `${running} running`;
   useEffect(() => {
     if (flows) onCount?.(own.length, running);
     // the callback is not a dependency: only the numbers are
@@ -100,6 +96,7 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
   const targets = (flows ?? []).filter((f) => (picked.length > 0 ? picked.includes(f.id) : f.id === focus));
   const openable = targets.filter((f) => f.openable);
   const many = targets.length > 1;
+  const unknown = dags === null;
 
   useEffect(() => {
     setDraft({ name: focused?.name ?? '', description: focused?.description ?? '' });
@@ -126,7 +123,7 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
         lines.push(await step(f));
       } catch (e) {
         ok = false;
-        lines.push(`"${f.name}": ${what.toLowerCase()} failed, ${reasonOf(e)}.`);
+        lines.push(`"${f.name}": ${what.toLowerCase()} failed, ${errorMessage(e)}.`);
       }
     }
     // the outcome first: reading the lists again can take a while when the broker is slow
@@ -144,11 +141,7 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
         if ('blocker' in plan) throw new Error(`the processor cannot run this flow yet. ${plan.blocker} Open it in the editor to change that`);
         if (!access?.canRun) throw new Error(access?.reason ?? 'this account may not deploy');
         // read anew: a flow started a moment ago in this run counts too
-        const running = (await readDeployments(`${root}/v1/dags`)).dags;
-        const conflict = topicConflict(running, plan.dag, f.published, (await flowsAPI.list()).map(summarize));
-        if (conflict) throw new Error(conflict);
-        await dagsAPI.deploy(plan.yaml);
-        await flowsAPI.patch(f.id, { status: 'active' });
+        await deployFlow(root, f.id, plan.dag, plan.yaml, f.published);
         return `"${f.name}" is started as ${plan.dag}: the processor takes it up within a few seconds and writes ${f.published.join(', ')}.`;
       },
       list
@@ -159,7 +152,7 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
     forEach(
       'Stop',
       async (f) => {
-        const running = f.dag && dags.get(f.dag)?.desired === 'deployed';
+        const running = f.dag && dags?.get(f.dag)?.desired === 'deployed';
         if (running) {
           if (!access?.canRun) throw new Error(access?.reason ?? 'this account may not stop a deployment');
           await dagsAPI.stop(f.dag);
@@ -183,7 +176,7 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
   const remove = async () => {
     const gone: number[] = [];
     await forEach('Delete', async (f) => {
-      if (f.dag && dags.get(f.dag)?.desired === 'deployed') {
+      if (f.dag && dags?.get(f.dag)?.desired === 'deployed') {
         throw new Error(`it is deployed as ${f.dag}; pause it first`);
       }
       await flowsAPI.delete(f.id);
@@ -203,14 +196,15 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
       await refresh();
       setMessage({ ok: true, lines: [`Flow ${focused.id} is now "${draft.name.trim()}".`] });
     } catch (e) {
-      setMessage({ ok: false, lines: [`The changes could not be saved: ${reasonOf(e)}.`] });
+      setMessage({ ok: false, lines: [`The changes could not be saved: ${errorMessage(e)}.`] });
     }
     setBusy(null);
   };
 
-  const isOn = (f: FlowSummary) => dags.get(f.dag)?.desired === 'deployed';
+  const isOn = (f: FlowSummary) => dags?.get(f.dag)?.desired === 'deployed';
   /** What the Smart Topic of a runnable flow is doing. */
-  const state = (f: FlowSummary) => (isOn(f) ? deployment(dags.get(f.dag)) : dags.get(f.dag) ? 'stopped' : 'not started');
+  const state = (f: FlowSummary) =>
+    dags === null ? 'unknown' : isOn(f) ? deployment(dags.get(f.dag)) : dags.get(f.dag) ? 'stopped' : 'not started';
   const changed = !!focused && (draft.name.trim() !== focused.name || draft.description !== focused.description);
   const plan = focused ? runPlan(focused) : null;
   const none = targets.length === 0;
@@ -230,14 +224,15 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
             {flows === null && !error
               ? 'Reading the flows of your account'
               : system
-                ? `${own.length} of the ${flows?.length ?? 0} flows in your account belong to this system, ${running} running.`
-                : `${flows?.length ?? 0} flows in your account, ${running} running.`}{' '}
+                ? `${own.length} of the ${flows?.length ?? 0} flows in your account belong to this system, ${runningText}.`
+                : `${flows?.length ?? 0} flows in your account, ${runningText}.`}{' '}
             Select a flow, then open it in the editor, copy or delete it, or start and stop its Smart Topic.
           </span>
           <span>
             Start runs a flow as a Smart Topic on the vector processor: it writes the topic and follows new data. Stop ends that.{' '}
             {access && !access.canRun ? `Deploying is not open to this account: ${access.reason ?? 'administrators only'}` : ''}
           </span>
+          {dagsError && <span className="warn">{`Start, Stop and Delete stay off: ${dagsError}.`}</span>}
         </div>
         {error && <div className="wb-error" role="alert">{error}</div>}
         {!error && message && (
@@ -339,7 +334,7 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
                             {isOn(f) ? (
                               <button disabled={!!busy} onClick={(e) => { e.stopPropagation(); stop([f]); }} title="Stops writing the Smart Topic">Stop</button>
                             ) : (
-                              <button disabled={!!busy} onClick={(e) => { e.stopPropagation(); start([f]); }} title="Starts the vector processor on this flow">Start</button>
+                              <button disabled={!!busy || unknown} onClick={(e) => { e.stopPropagation(); start([f]); }} title="Starts the vector processor on this flow">Start</button>
                             )}
                           </>
                         ) : (
@@ -389,7 +384,7 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
                     <dt key="dk">Series</dt>,
                     <dd key="dv">{focused.sourceSeries.length > 0 ? `${focused.sourceSeries.length} from the TS inventory` : 'none: load a bucket after opening'}</dd>,
                   ]}
-                  {focused.dag && dags.get(focused.dag) && [
+                  {focused.dag && dags?.get(focused.dag) && [
                     <dt key="gk">Processor</dt>,
                     <dd key="gv">{focused.dag}, {deployment(dags.get(focused.dag))}</dd>,
                   ]}
@@ -401,11 +396,11 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
                     <p>
                       <span className={`wb-flow-status ${state(focused)}`}>{state(focused)}</span> as {plan.dag}
                     </p>
-                    {(dags.get(focused.dag)?.sinks ?? []).map((sink) => (
+                    {(dags?.get(focused.dag)?.sinks ?? []).map((sink) => (
                       <p key={sink.topic} className="wb-muted">{sink.topic}: {describeSink(sink)}</p>
                     ))}
-                    <button className="wb-primary" disabled={!!busy || isOn(focused)} onClick={() => start([focused])}>Start</button>{' '}
-                    <button disabled={!!busy || !isOn(focused)} onClick={() => stop([focused])}>Stop</button>
+                    <button className="wb-primary" disabled={!!busy || unknown || isOn(focused)} onClick={() => start([focused])}>Start</button>{' '}
+                    <button disabled={!!busy || unknown || !isOn(focused)} onClick={() => stop([focused])}>Stop</button>
                     <p className="wb-muted">
                       Start hands the flow to the vector processor: it computes the topic from the beginning of the source and
                       follows it. Stop ends that; the topic keeps what was written.
@@ -453,17 +448,17 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
               <span className="warn" role="alert">
                 Delete {many ? `${targets.length} flows` : `"${targets[0]?.name}"`} for good? Topics already written stay on the broker.
               </span>
-              <button className="wb-danger" disabled={!!busy} onClick={remove}>Delete</button>
+              <button className="wb-danger" disabled={!!busy || unknown} onClick={remove}>Delete</button>
               <button onClick={() => setConfirmDelete(false)}>Keep</button>
             </>
           ) : (
             <>
               <span className="wb-muted">Smart Topic:</span>
-              <button disabled={none || !!busy} onClick={() => start()} title="Starts the vector processor on the selected flows">Start</button>
-              <button disabled={none || !!busy} onClick={() => stop()} title="Stops writing the Smart Topics of the selected flows">Stop</button>
+              <button disabled={none || !!busy || unknown} onClick={() => start()} title="Starts the vector processor on the selected flows">Start</button>
+              <button disabled={none || !!busy || unknown} onClick={() => stop()} title="Stops writing the Smart Topics of the selected flows">Stop</button>
               <span className="wb-sep" />
               <button disabled={none || !!busy} onClick={duplicate}>Copy</button>
-              <button disabled={none || !!busy} onClick={() => setConfirmDelete(true)}>Delete</button>
+              <button disabled={none || !!busy || unknown} onClick={() => setConfirmDelete(true)}>Delete</button>
             </>
           )}
           <span className="wb-grow" />

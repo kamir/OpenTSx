@@ -5,8 +5,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import axios from 'axios';
-import { systemsAPI } from '../services/api';
+import { errorMessage, fetchJson, systemsAPI } from '../services/api';
 import { clock } from '../workbench/inventory';
 import { Candidate, GENERATORS, Signal, SystemStatus, dataExtent, expectText, generatorParams, guessOrigin, presetGenerator, suggestSeries, topicSource } from './signals';
 
@@ -23,15 +22,6 @@ interface Props {
   onClose: () => void;
 }
 
-function reasonOf(e: unknown): string {
-  if (axios.isAxiosError(e)) {
-    if (e.response?.status === 401) return 'your session has expired, sign in again';
-    const detail = e.response?.data?.detail;
-    if (typeof detail === 'string') return detail;
-  }
-  return e instanceof Error ? e.message : String(e);
-}
-
 export default function SourcePanel({ mode, status, signal, base, onChanged, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -46,13 +36,12 @@ export default function SourcePanel({ mode, status, signal, base, onChanged, onC
   useEffect(() => {
     if (mode !== 'bind') return;
     let cancelled = false;
-    fetch(`${base}/v1/inventory`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
+    fetchJson(`${base}/v1/inventory`)
+      .then((json) => {
+        const doc = json as { source?: { topics?: { episodes?: string } }; series?: Candidate[] };
+        if (!cancelled) setInventory({ topic: doc.source?.topics?.episodes ?? '', series: doc.series ?? [] });
       })
-      .then((doc) => !cancelled && setInventory({ topic: doc.source?.topics?.episodes ?? '', series: doc.series ?? [] }))
-      .catch((e) => !cancelled && setError(`The TS inventory could not be read: ${reasonOf(e)}.`));
+      .catch((e) => !cancelled && setError(`The TS inventory could not be read: ${errorMessage(e)}.`));
     return () => {
       cancelled = true;
     };
@@ -81,7 +70,7 @@ export default function SourcePanel({ mode, status, signal, base, onChanged, onC
     try {
       onChanged(await what());
     } catch (e) {
-      setError(`${reasonOf(e)}.`);
+      setError(`${errorMessage(e)}.`);
       setBusy(false);
     }
   };

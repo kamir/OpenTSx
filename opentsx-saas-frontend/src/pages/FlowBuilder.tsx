@@ -16,7 +16,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useNavigate } from 'react-router-dom';
-import { flowsAPI } from '../services/api';
+import { errorMessage, flowsAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 
 // Initial nodes for demo
@@ -85,7 +85,7 @@ export default function FlowBuilder() {
       navigate('/dashboard');
     } catch (error) {
       console.error('Failed to save flow:', error);
-      alert('Failed to save flow. Please try again.');
+      alert(`The flow could not be saved: ${errorMessage(error)}.`);
     } finally {
       setIsSaving(false);
     }

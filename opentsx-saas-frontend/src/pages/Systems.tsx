@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { RETRIEVAL_BASE, SignalBindingDoc, systemsAPI } from '../services/api';
+import { RETRIEVAL_BASE, SignalBindingDoc, errorMessage, fetchJson, systemsAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import FlowComposer from '../workbench/FlowComposer';
 import { useFlow } from '../workbench/flow';
@@ -45,25 +45,21 @@ export default function Systems() {
   const [error, setError] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
   const [guide, setGuide] = useState(() => remembered('opentsx.guide'));
-  const [flows, setFlows] = useState<{ all: number; running: number } | null>(null);
+  const [flows, setFlows] = useState<{ all: number; running: number | null } | null>(null);
   const [bindings, setBindings] = useState<SignalBindingDoc[]>([]);
   const signedIn = !!localStorage.getItem('access_token');
   const here = (PLACES.find((p) => p.id === place)?.id ?? 'signals') as Place;
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${RETRIEVAL_BASE}/v1/systems`)
-      .then(async (res) => {
-        if (res.status === 404) throw new Error('the retrieval server has no system documents (it needs --systems)');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return (await res.json()).systems as SystemEntry[];
-      })
-      .then((list) => {
+    fetchJson(`${RETRIEVAL_BASE}/v1/systems`)
+      .then((doc) => {
         if (cancelled) return;
+        const list = (doc as { systems: SystemEntry[] }).systems;
         setSystems(list);
         if (!system && list.length > 0) navigate(`/systems/${list[0].system}/signals`, { replace: true });
       })
-      .catch((e) => !cancelled && setError(`The systems could not be read: ${e instanceof Error ? e.message : e}.`));
+      .catch((e) => !cancelled && setError(`The systems could not be read: ${errorMessage(e)}.`));
     return () => {
       cancelled = true;
     };
@@ -72,27 +68,37 @@ export default function Systems() {
   useEffect(() => {
     if (!system) return;
     let cancelled = false;
-    const get = async (what: string) => {
-      const res = await fetch(`${RETRIEVAL_BASE}/v1/systems/${encodeURIComponent(system)}/${what}`);
-      if (!res.ok) throw new Error(res.status === 404 ? `the server knows no system "${system}"` : `HTTP ${res.status}`);
-      return res.json();
-    };
+    const get = (what: string) => fetchJson(`${RETRIEVAL_BASE}/v1/systems/${encodeURIComponent(system)}/${what}`);
+    /** What could not be read while the page goes on without it. */
+    const problems: string[] = [];
     // the working copy of the signed-in user lies over the system document
     const withWorkingCopy = async () => {
-      const mine = signedIn ? await systemsAPI.bindings(system).catch(() => []) : [];
+      let mine: SignalBindingDoc[] = [];
+      if (signedIn) {
+        try {
+          mine = await systemsAPI.bindings(system);
+        } catch (e) {
+          problems.push(`your working copy could not be read (${errorMessage(e)}); showing the system document.`);
+        }
+      }
       if (!cancelled) setBindings(mine);
-      if (mine.length === 0) return Promise.all([get('signals'), get('decisions').catch(() => null), get('plan')]);
-      const post = async (what: string) => {
-        const res = await fetch(`${RETRIEVAL_BASE}/v1/systems/${encodeURIComponent(system)}/${what}`, {
+      const withoutDecisions = (e: unknown) => {
+        problems.push(`the decisions could not be read (${errorMessage(e)}).`);
+        return null;
+      };
+      if (mine.length === 0) return Promise.all([get('signals'), get('decisions').catch(withoutDecisions), get('plan')]);
+      const post = (what: string) =>
+        fetchJson(`${RETRIEVAL_BASE}/v1/systems/${encodeURIComponent(system)}/${what}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ bindings: mine.map((b) => ({ signal: b.signal, grade: b.grade, source: b.source })) }),
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      };
       // the plan with the working copy: a server that cannot lay it over still has the plan of the document
-      return Promise.all([post('signals'), post('decisions').catch(() => null), post('plan').catch(() => get('plan'))]);
+      const plan = post('plan').catch((e) => {
+        problems.push(`the plan with your working copy could not be read (${errorMessage(e)}); showing the plan of the system document.`);
+        return get('plan');
+      });
+      return Promise.all([post('signals'), post('decisions').catch(withoutDecisions), plan]);
     };
     withWorkingCopy()
       .then(([signals, decisionDoc, planDoc]) => {
@@ -100,9 +106,9 @@ export default function Systems() {
         setStatus(parseStatus(signals));
         setDecisions(decisionDoc as DecisionStatus | null);
         setPlan(planDoc as PlanDoc);
-        setError(null);
+        setError(problems.length > 0 ? problems.join(' ') : null);
       })
-      .catch((e) => !cancelled && setError(`The system could not be read: ${e instanceof Error ? e.message : e}.`));
+      .catch((e) => !cancelled && setError(`The system could not be read: ${errorMessage(e)}.`));
     return () => {
       cancelled = true;
     };

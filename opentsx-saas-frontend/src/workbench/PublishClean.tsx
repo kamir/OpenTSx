@@ -5,11 +5,9 @@
  */
 
 import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { dagsAPI, flowsAPI } from '../services/api';
-import { readDeployments, topicConflict } from './deployments';
+import { dagsAPI, errorMessage, fetchJson } from '../services/api';
+import { deployFlow } from './deployments';
 import { chainTo, cleanChecks, cleanTopic, dagName, isCleanSink, toDagYaml, useFlow } from './flow';
-import { summarize } from './flows';
 
 interface Props {
   /** Retrieval server, asked for what is deployed. */
@@ -21,15 +19,6 @@ interface Props {
   onClose: () => void;
 }
 
-function reasonOf(e: unknown): string {
-  if (axios.isAxiosError(e)) {
-    if (e.response?.status === 401) return 'your session has expired, sign in again';
-    const detail = e.response?.data?.detail;
-    if (typeof detail === 'string') return detail;
-  }
-  return e instanceof Error ? e.message : String(e);
-}
-
 export default function PublishClean({ base, onSave, onDone, onClose }: Props) {
   const flow = useFlow();
   const [access, setAccess] = useState<{ canRun: boolean; reason: string | null } | null>(null);
@@ -39,14 +28,20 @@ export default function PublishClean({ base, onSave, onDone, onClose }: Props) {
   const context = flow.context;
   /** The other signals of the system, for a flow that computes one signal from the clean data of another. */
   const [others, setOthers] = useState<{ id: string; title: string; port: boolean; role?: string }[]>([]);
+  const [othersError, setOthersError] = useState<string | null>(null);
   const system = context?.system;
   const signalId = context?.signal;
   useEffect(() => {
     if (!system || context?.grade === 'raw') return;
-    fetch(`${base.replace(/\/$/, '')}/v1/systems/${encodeURIComponent(system)}/signals`)
-      .then((res) => (res.ok ? res.json() : { signals: [] }))
-      .then((doc) => setOthers((doc.signals ?? []).filter((s: { id: string }) => s.id !== signalId)))
-      .catch(() => setOthers([]));
+    fetchJson(`${base.replace(/\/$/, '')}/v1/systems/${encodeURIComponent(system)}/signals`)
+      .then((doc) => {
+        setOthers(((doc as { signals?: typeof others }).signals ?? []).filter((s) => s.id !== signalId));
+        setOthersError(null);
+      })
+      .catch((e) => {
+        setOthers([]);
+        setOthersError(`The other signals of ${system} could not be read: ${errorMessage(e)}.`);
+      });
     // the grade of the context does not change while the panel is open
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [base, system, signalId]);
@@ -54,7 +49,10 @@ export default function PublishClean({ base, onSave, onDone, onClose }: Props) {
 
   useEffect(() => {
     if (!signedIn) return;
-    dagsAPI.capabilities().then(setAccess).catch(() => setAccess({ canRun: false, reason: 'The backend does not say whether this account may deploy.' }));
+    dagsAPI
+      .capabilities()
+      .then(setAccess)
+      .catch((e) => setAccess({ canRun: false, reason: `Whether this account may deploy could not be read: ${errorMessage(e)}.` }));
   }, [signedIn]);
 
   if (!context || !node) return null;
@@ -83,15 +81,11 @@ export default function PublishClean({ base, onSave, onDone, onClose }: Props) {
       if (id === null) throw new Error('the flow could not be saved to your account');
       if (start) {
         const now = useFlow.getState();
-        const { dags } = await readDeployments(`${base.replace(/\/$/, '')}/v1/dags`);
-        const conflict = topicConflict(dags, dagName(now.domain, now.track, id), [topic], (await flowsAPI.list()).map(summarize));
-        if (conflict) throw new Error(conflict);
-        await dagsAPI.deploy(toDagYaml(now));
-        await flowsAPI.patch(id, { status: 'active' });
+        await deployFlow(base, id, dagName(now.domain, now.track, id), toDagYaml(now), [topic]);
       }
       onDone(start);
     } catch (e) {
-      setError(`${start ? 'Publishing' : 'Saving'} failed: ${reasonOf(e)}.`);
+      setError(`${start ? 'Publishing' : 'Saving'} failed: ${errorMessage(e)}.`);
       setBusy(null);
     }
   };
@@ -111,6 +105,7 @@ export default function PublishClean({ base, onSave, onDone, onClose }: Props) {
               {others.map((s) => <option key={s.id} value={s.id}>{s.id}{s.role ? ` (${s.role})` : ''}: {s.title}</option>)}
             </select>
           </label>
+          {othersError && <div className="wb-error" role="alert">{othersError}</div>}
           {context.target && (
             <p className="wb-muted">
               It is written with the origin {context.target.origin.toLowerCase()}

@@ -3,20 +3,28 @@
  * laid over the system document. A signal bound in the working copy has data only in this view.
  */
 
-import { systemsAPI } from '../services/api';
+import { SignalBindingDoc, errorMessage, fetchJson, systemsAPI } from '../services/api';
 
-export async function fetchSignalStatus(base: string, system: string): Promise<unknown> {
+/** The state document, and a note when the working copy could not be read and the system document is shown alone. */
+export async function fetchSignalStatus(base: string, system: string): Promise<{ doc: unknown; note: string | null }> {
   const url = `${base.replace(/\/$/, '')}/v1/systems/${encodeURIComponent(system)}/signals`;
   const signedIn = !!localStorage.getItem('access_token');
-  const mine = signedIn ? await systemsAPI.bindings(system).catch(() => []) : [];
-  const res =
+  let mine: SignalBindingDoc[] = [];
+  let note: string | null = null;
+  if (signedIn) {
+    try {
+      mine = await systemsAPI.bindings(system);
+    } catch (e) {
+      note = `your working copy could not be read (${errorMessage(e)}); showing the system document.`;
+    }
+  }
+  const doc =
     mine.length === 0
-      ? await fetch(url)
-      : await fetch(url, {
+      ? await fetchJson(url)
+      : await fetchJson(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ bindings: mine.map((b) => ({ signal: b.signal, grade: b.grade, source: b.source })) }),
         });
-  if (!res.ok) throw new Error(res.status === 404 ? `the server knows no system "${system}"` : `HTTP ${res.status}`);
-  return res.json();
+  return { doc, note };
 }

@@ -396,6 +396,50 @@ const loadFlows = async () => {
 };
 ```
 
+## Read error messages
+
+Every page shows the reason a server gives. `errorMessage` in `src/services/api.ts` reads it from an answer of the
+backend (axios), and `fetchJson` in the same file reads it from an answer of the retrieval server (fetch).
+
+| The answer | The page shows |
+|------------|----------------|
+| `{"error": "<text>", "type": "<type>"}` from the retrieval server, the event bridge or nginx | `<text>` |
+| `{"detail": "<text>"}` from the backend | `<text>` |
+| `{"detail": [{"loc": ["body", "<field>"], "msg": "<msg>"}]}` from the backend, a refused field | `<field>: <msg>`, several joined with `; ` |
+| 401 from the backend for any request but sign-in and register | `your session has expired, sign in again` |
+| another error answer without such a body, for example the HTML page of a proxy | `HTTP <status> from <url>` |
+| no answer | `the backend at <url> cannot be reached` |
+
+A sign-in or register refused with 401 shows the `detail` of the backend, for example `Incorrect email or password`.
+
+nginx (`nginx.conf`) answers a 502 or 504 that it gives itself as an error body:
+
+| Path | Status | Body | Fix |
+|------|--------|------|-----|
+| `/api/` | 502 | `{"error": "the backend is not reachable", "type": "unavailable"}` | Start the Service `opentsx-saas-backend` on port 8000. |
+| `/api/` | 504 | `{"error": "the backend did not answer in time", "type": "unavailable"}` | Read the log of `opentsx-saas-backend`. The request may still finish there. nginx waits 300 s on `/api/v1/dags/` and `/api/v1/systems/`, 60 s on the rest of `/api/`. |
+| `/retrieval/` | 502 | `{"error": "the retrieval server is not reachable", "type": "unavailable"}` | Start the Service `opentsx-retrieval` on port 8080. |
+| `/retrieval/` | 504 | `{"error": "the retrieval server did not answer in time", "type": "unavailable"}` | Read the log of `opentsx-retrieval`. nginx waits 60 s. |
+
+A page that fails to render shows `This page failed: <message>` and a Reload button.
+
+A part of a page that cannot be read leaves the rest usable, and the page says what is missing:
+
+| Where | Message |
+|-------|---------|
+| Systems page, workbench opening a signal | `your working copy could not be read (<reason>); showing the system document.` |
+| Systems page | `the decisions could not be read (<reason>).` |
+| Systems page | `the plan with your working copy could not be read (<reason>); showing the plan of the system document.` |
+| Simulate | `The runs kept by the server could not be read: <reason>.` |
+| Simulate | `The run <run> could not be shown: <reason>.` |
+| Publish as another signal | `The other signals of <system> could not be read: <reason>.` |
+| Deploy panel, Flow Composer, Publish | `Whether this account may deploy could not be read: <reason>.` |
+| Stop in the deploy panel | `<dag> is stopped. The status of flow <id> stays as it was: <reason>.` |
+| Flow Composer | `Start, Stop and Delete stay off: the deployments could not be read from <url> (<reason>); try again.` |
+| Flow Composer | `<n> flows in your account, how many run is not known.`, on a system `<k> of the <n> flows in your account belong to this system, how many run is not known.` |
+
+The Flow Composer keeps Start, Stop and Delete off until `GET /v1/dags` of the retrieval server answers. Until then it does not count the running flows, and the guide of the Systems page shows the Run step without them.
+
 ## Troubleshooting
 
 ### Port Already in Use

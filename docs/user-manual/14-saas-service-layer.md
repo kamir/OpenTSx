@@ -30,7 +30,9 @@
 * **Frontend:**
   * **OpenTSx Flow Composer** (`/dashboard`, the page after sign-in): the flows of the account. Select a flow, open
     it in the workbench, create, rename, copy and delete flows, and start and stop the Smart Topic of a flow the
-    processor can run.
+    processor can run. Start, Stop and Delete need the list of deployments of the retrieval server (`GET /v1/dags`).
+    While it cannot be read, they stay off, the composer says `Start, Stop and Delete stay off: <reason>.`, where
+    `<reason>` is the error of that request, and its header says `how many run is not known`.
   * **Workbench** (`/workbench`): load series from the TS inventory, a file or a sample, apply time series
     operators, inspect every result on an oscilloscope view (time base, cursors, trigger, measurements,
     ground-truth bands), build the processing flow as a graph, publish a node as a Smart Topic and deploy it. The

@@ -31,13 +31,14 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// A 401 from the sign-in itself is a wrong password, not an expired session: the form reports it.
+const signingIn = (url: string | undefined) => /\/auth\/(login|register)$/.test(url ?? '');
+
 // Response interceptor to handle errors
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    // A 401 from the sign-in itself is a wrong password, not an expired session: the form reports it.
-    const signingIn = /\/auth\/(login|register)$/.test(error.config?.url ?? '');
-    if (error.response?.status === 401 && !signingIn) {
+    if (error.response?.status === 401 && !signingIn(error.config?.url)) {
       // Token expired, clear storage and redirect to login
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
@@ -50,6 +51,47 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+/**
+ * The reason in an error body: `error` of the retrieval server, the event bridge and nginx, `detail` of the backend
+ * as a string or as the field list of a refused request. Null when the body carries none.
+ */
+export function bodyReason(data: unknown): string | null {
+  if (typeof data !== 'object' || data === null) return null;
+  const { error, detail } = data as { error?: unknown; detail?: unknown };
+  if (typeof error === 'string') return error;
+  if (typeof detail === 'string') return detail;
+  if (!Array.isArray(detail)) return null;
+  const fields = detail.flatMap((d) => {
+    if (typeof d?.msg !== 'string') return [];
+    const loc = Array.isArray(d.loc) ? d.loc : [];
+    return [loc.length > 0 ? `${loc[loc.length - 1]}: ${d.msg}` : d.msg];
+  });
+  return fields.length > 0 ? fields.join('; ') : null;
+}
+
+/** What went wrong with a request or anything else, in the words of the server when it sent any. */
+export function errorMessage(e: unknown): string {
+  if (axios.isAxiosError(e)) {
+    const url = axios.getUri({ baseURL: e.config?.baseURL, url: e.config?.url });
+    if (!e.response) return `the backend at ${url} cannot be reached`;
+    if (e.response.status === 401 && !signingIn(e.config?.url)) return 'your session has expired, sign in again';
+    return bodyReason(e.response.data) ?? `HTTP ${e.response.status} from ${url}`;
+  }
+  return e instanceof Error ? e.message : String(e);
+}
+
+/** fetch for JSON: a request without an answer or an answer that is not ok throws an Error with the reason. */
+export async function fetchJson(url: string, init?: RequestInit): Promise<unknown> {
+  let res: Response;
+  try {
+    res = await fetch(url, init);
+  } catch (e) {
+    throw Object.assign(new Error(`the backend at ${url} cannot be reached`), { cause: e });
+  }
+  if (!res.ok) throw new Error(bodyReason(await res.json().catch(() => null)) ?? `HTTP ${res.status} from ${url}`);
+  return res.json();
+}
 
 // ==================== Types ====================
 
@@ -165,14 +207,6 @@ export const authAPI = {
     const response = await apiClient.get('/auth/me');
     return response.data;
   },
-
-  /**
-   * Update current user
-   */
-  updateProfile: async (data: Partial<User>): Promise<User> => {
-    const response = await apiClient.patch('/auth/me', data);
-    return response.data;
-  },
 };
 
 /**
@@ -190,23 +224,23 @@ export interface SignalBindingDoc {
 export const systemsAPI = {
   /** The working copy of the signed-in user for a system. */
   bindings: async (system: string): Promise<SignalBindingDoc[]> => {
-    const response = await apiClient.get(`/systems/${system}/bindings`);
+    const response = await apiClient.get(`/systems/${encodeURIComponent(system)}/bindings`);
     return response.data.bindings;
   },
 
   /** Sets the source of one grade of one signal; an earlier one is replaced. */
   bind: async (system: string, binding: SignalBindingDoc): Promise<void> => {
-    await apiClient.put(`/systems/${system}/bindings`, binding);
+    await apiClient.put(`/systems/${encodeURIComponent(system)}/bindings`, binding);
   },
 
   /** Takes a source out of the working copy; the system document applies again. */
   unbind: async (system: string, signal: string, grade = 'raw'): Promise<void> => {
-    await apiClient.delete(`/systems/${system}/bindings`, { params: { signal, grade } });
+    await apiClient.delete(`/systems/${encodeURIComponent(system)}/bindings`, { params: { signal, grade } });
   },
 
   /** Runs the demo generator a signal is bound to over a period. Administrators only. */
   generate: async (system: string, signal: string, from: string, to: string): Promise<{ samples: number; episodes: number; topic: string }> => {
-    const response = await apiClient.post(`/systems/${system}/generate`, { signal, from, to });
+    const response = await apiClient.post(`/systems/${encodeURIComponent(system)}/generate`, { signal, from, to });
     return response.data;
   },
 };
@@ -296,35 +330,4 @@ export const flowsAPI = {
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/flows/${id}`);
   },
-
-  /**
-   * Execute flow
-   */
-  execute: async (id: number): Promise<unknown> => {
-    const response = await apiClient.post(`/flows/${id}/execute`);
-    return response.data;
-  },
 };
-
-/**
- * Organizations API
- */
-export const organizationsAPI = {
-  /**
-   * List organizations
-   */
-  list: async () => {
-    const response = await apiClient.get('/organizations');
-    return response.data.organizations;
-  },
-
-  /**
-   * Create organization
-   */
-  create: async (data: { name: string; slug: string; description?: string }) => {
-    const response = await apiClient.post('/organizations', data);
-    return response.data.organization;
-  },
-};
-
-export default apiClient;

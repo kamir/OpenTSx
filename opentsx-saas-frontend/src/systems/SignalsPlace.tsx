@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SignalBindingDoc, systemsAPI } from '../services/api';
+import { SignalBindingDoc, errorMessage, systemsAPI } from '../services/api';
 import { useFlow } from '../workbench/flow';
 import SourcePanel from './SourcePanel';
 import {
@@ -69,7 +69,7 @@ export default function SignalsPlace({ status, focusId, published, onReload, bas
       await systemsAPI.unbind(status!.system, signal, grade);
       changed(`${signal}: the source of your working copy is removed; the system document applies again.`);
     } catch (e) {
-      setNote(`The source could not be removed: ${e instanceof Error ? e.message : e}.`);
+      setNote(`The source could not be removed: ${errorMessage(e)}.`);
     }
   };
   const copyYaml = async () => {

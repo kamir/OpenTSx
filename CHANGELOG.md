@@ -118,6 +118,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   the defaults templates are regenerated.
 - Shared configuration vectors `conf.v1.json`: 286 cases. A case with `"registry": "shipped"` runs on the shipped
   registry and checks the log level and the mode keys in both runtimes.
+- CI checks the nginx site of the frontend image with `nginx -t` and checks that an unreachable backend comes back as
+  `{"error": "the backend is not reachable", "type": "unavailable"}`.
 
 ### Changed
 
@@ -230,6 +232,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - SaaS frontend: the unused declarations `VITE_WS_BASE_URL`, `VITE_ENVIRONMENT`, `VITE_ENABLE_ANALYTICS` and
   `VITE_ENABLE_DEBUG` and the placeholder test `src/App.test.tsx`, replaced by the auth store tests in
   `src/store/authStore.test.ts`.
+- SaaS frontend: `organizationsAPI`, `authAPI.updateProfile`, `flowsAPI.execute` and the default export of
+  `src/services/api.ts`; nothing imported them.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -491,6 +495,34 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `opentsx.model` builds its schema cache once, so two threads that encode or decode on first use both succeed.
 - The Python `RetrievalClient` refuses a time finer than a microsecond instead of cutting it. With pandas 2, it names
   the range 1677-09-21T00:12:44Z to 2262-04-11T23:47:16Z for a time outside it.
+- SaaS frontend: every page shows the reason a server sends. `errorMessage` in `src/services/api.ts` reads `error` of
+  the retrieval server, the event bridge and nginx and `detail` of the backend, a field list as `<field>: <msg>`, and
+  otherwise gives `HTTP <status> from <url>` or `the backend at <url> cannot be reached`; `fetchJson` does the same
+  for fetch requests. It replaces four local copies. Before, a field list of a refused registration crashed the page
+  with `Objects are not valid as a React child`, sign-in errors without a `detail` read `Login failed`, and fetch
+  requests showed `HTTP <status>` without the reason.
+- SaaS frontend: a page that fails to render shows `This page failed: <message>` and a Reload button instead of an
+  empty page.
+- Workbench: "Load episodes" and the TS inventory show the reason of the retrieval server without the guesses `Is the
+  retrieval server running?` and `The window may hold no data.`
+- SaaS frontend: a working copy, the decisions, the plan with the working copy, the runs of the twin, the other
+  signals of a system, the deploy permission and the flow status after Stop that cannot be read are named on the page,
+  for example `your working copy could not be read (<reason>); showing the system document.` Before, they became empty
+  values without a message, and "Show the reference" with an unreachable twin was an unhandled rejection.
+- Flow Composer: Start, Stop and Delete stay off while `GET /v1/dags` of the retrieval server cannot be read, with
+  `Start, Stop and Delete stay off: <reason>.`, and the header says `how many run is not known` instead of `0
+  running`; the guide of the Systems page then shows the Run step without a running count. Before, an unreadable list
+  counted as empty: Stop said `was not running` and Delete removed a deployed flow.
+- Workbench: Deploy, Start and "Publish and start" deploy through one `deployFlow` in `src/workbench/deployments.ts`,
+  and `the deployments could not be read from <url> (<reason>); try again` carries the reason the retrieval server
+  sends, for example `this server has no DAGs (it needs --kafscale)` instead of `HTTP 404`.
+- SaaS frontend: the system id is URL-encoded in the working-copy requests `/api/v1/systems/<id>/bindings` and
+  `/api/v1/systems/<id>/generate`.
+- SaaS frontend image: nginx answers a 502 for an unreachable backend or retrieval server with `{"error": "the backend
+  is not reachable", "type": "unavailable"}` or `{"error": "the retrieval server is not reachable", "type":
+  "unavailable"}`, and a 504 for one that does not answer in time with `{"error": "the backend did not answer in
+  time", "type": "unavailable"}` or `{"error": "the retrieval server did not answer in time", "type": "unavailable"}`,
+  instead of its HTML page.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

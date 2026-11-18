@@ -24,6 +24,7 @@ import {
 } from './inventory';
 import { InventoryLoad, fetchBucket, fetchInventory } from './inventoryLoad';
 import { fmt } from './ops';
+import { errorMessage } from '../services/api';
 
 export type { InventoryLoad };
 
@@ -107,7 +108,7 @@ export default function InventoryDialog({ base, onBase, onLoad, onClose }: Props
       .catch((e) => {
         if (cancelled) return;
         setInv(null);
-        setError(`The inventory could not be read from ${root}/v1/inventory: ${e instanceof Error ? e.message : e}.`);
+        setError(`The inventory could not be read from ${root}/v1/inventory: ${errorMessage(e)}.`);
       })
       .finally(() => !cancelled && setBusy(null));
     return () => {
@@ -164,7 +165,7 @@ export default function InventoryDialog({ base, onBase, onLoad, onClose }: Props
     try {
       onLoad(await fetchBucket(root, inv, selection, options));
     } catch (e) {
-      setError(`The series could not be loaded: ${e instanceof Error ? e.message : e}. The window may hold no data.`);
+      setError(`The series could not be loaded: ${errorMessage(e)}.`);
       setBusy(null);
     }
   };

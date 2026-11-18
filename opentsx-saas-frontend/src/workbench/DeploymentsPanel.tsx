@@ -6,9 +6,8 @@
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { dagsAPI, flowsAPI } from '../services/api';
-import { DagList, describeSink, hasProcessor, readDeployments, topicConflict } from './deployments';
-import { summarize } from './flows';
+import { dagsAPI, errorMessage, flowsAPI } from '../services/api';
+import { DagList, deployFlow, describeSink, hasProcessor, readDeployments } from './deployments';
 import { DeployCheck, dagName, flowIdOfDag, toDagYaml, useFlow } from './flow';
 
 interface Props {
@@ -40,7 +39,7 @@ export default function DeploymentsPanel({ base, blocker, checks, onMakeVector, 
     dagsAPI
       .capabilities()
       .then((c) => !cancelled && setAccess(c))
-      .catch(() => !cancelled && setAccess({ canRun: false, reason: 'Your session has expired or the backend cannot be reached. Sign in again.' }));
+      .catch((e) => !cancelled && setAccess({ canRun: false, reason: `Whether this account may deploy could not be read: ${errorMessage(e)}.` }));
     return () => {
       cancelled = true;
     };
@@ -63,21 +62,18 @@ export default function DeploymentsPanel({ base, blocker, checks, onMakeVector, 
     return () => clearInterval(timer);
   }, [refresh]);
 
-  const act = async (what: string, call: () => Promise<{ dag: string }>, done: (dag: string) => string) => {
+  const act = async (what: string, call: () => Promise<{ dag: string; note?: string }>, done: (dag: string) => string) => {
     setBusy(what);
     setMessage(null);
     try {
       const answer = await call();
-      setMessage({ ok: true, text: done(answer.dag) });
+      setMessage({ ok: true, text: `${done(answer.dag)}${answer.note ?? ''}` });
       await refresh();
     } catch (e) {
-      const detail = axios.isAxiosError(e) ? e.response?.data?.detail : null;
       const expired = axios.isAxiosError(e) && e.response?.status === 401;
       setMessage({
         ok: false,
-        text: expired
-          ? 'Your session has expired. Sign in again in a new tab, then try again: the flow stays here.'
-          : `${what} failed: ${typeof detail === 'string' ? detail : e instanceof Error ? e.message : e}`,
+        text: expired ? 'Your session has expired. Sign in again in a new tab, then try again: the flow stays here.' : `${what} failed: ${errorMessage(e)}`,
       });
     } finally {
       setBusy(null);
@@ -90,20 +86,19 @@ export default function DeploymentsPanel({ base, blocker, checks, onMakeVector, 
     if (id === null) throw new Error('the flow could not be saved to your account');
     const now = useFlow.getState();
     const topics = now.nodes.flatMap((n) => (n.sinkTopic ? [n.sinkTopic] : []));
-    const stored = (await flowsAPI.list()).map(summarize);
-    const { dags } = await readDeployments(url);
-    const conflict = topicConflict(dags, dagName(now.domain, now.track, id), topics, stored);
-    if (conflict) throw new Error(conflict);
-    const answer = await dagsAPI.deploy(toDagYaml(now));
-    await flowsAPI.patch(id, { status: 'active' });
-    return answer;
+    return deployFlow(base, id, dagName(now.domain, now.track, id), toDagYaml(now), topics);
   };
   const stop = async (dag: string) => {
     const answer = await dagsAPI.stop(dag);
     const id = flowIdOfDag(dag);
+    if (id === null) return answer;
     // the flow may belong to another account or be deleted: the deployment is stopped either way
-    if (id !== null) await flowsAPI.patch(id, { status: 'paused' }).catch(() => undefined);
-    return answer;
+    try {
+      await flowsAPI.patch(id, { status: 'paused' });
+      return answer;
+    } catch (e) {
+      return { ...answer, note: ` The status of flow ${id} stays as it was: ${errorMessage(e)}.` };
+    }
   };
 
   const flow = useFlow();

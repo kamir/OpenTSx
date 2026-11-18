@@ -15,6 +15,7 @@ import {
 } from './inventory';
 import { parseEpisodes } from './loaders';
 import { Bucket } from './types';
+import { fetchJson } from '../services/api';
 
 export interface InventoryLoad {
   bucket: Bucket;
@@ -27,16 +28,13 @@ export interface InventoryLoad {
 }
 
 export async function fetchInventory(root: string): Promise<Inventory> {
-  const res = await fetch(`${root}/v1/inventory`);
-  if (!res.ok) throw new Error(res.status === 404 ? 'the server has no /v1/inventory (older retrieval server?)' : `HTTP ${res.status}`);
-  return parseInventory(await res.json());
+  return parseInventory(await fetchJson(`${root}/v1/inventory`));
 }
 
 export async function fetchBucket(root: string, inv: Inventory, selection: InventorySeries[], options: LoadOptions): Promise<InventoryLoad> {
-  const res = await fetch(`${root}/v1/episodes?${episodesQuery(selection.map((s) => s.seriesId), options)}`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await fetchJson(`${root}/v1/episodes?${episodesQuery(selection.map((s) => s.seriesId), options)}`);
   const name = bucketName(selection);
-  const parsed = relabel(parseEpisodes(await res.json(), name), selection, name);
+  const parsed = relabel(parseEpisodes(json, name), selection, name);
   const t0Ms = parsed.t0Ms ?? Date.parse(options.from);
   const topic = topicOf(inv, selection);
   return {

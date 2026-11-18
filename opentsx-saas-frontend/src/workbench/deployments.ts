@@ -1,5 +1,8 @@
 /** What the workbench knows about deployed flows: the answer of GET /v1/dags of the retrieval server. */
 
+import { bodyReason, dagsAPI, flowsAPI } from '../services/api';
+import { summarize } from './flows';
+
 /** What the vector processor reports for one sink (opentsx.dag-status.v1). */
 export interface SinkStatus {
   vector: string;
@@ -70,12 +73,25 @@ export async function readDeployments(url: string): Promise<DagList> {
       if (Array.isArray(list?.dags)) return list;
       reason = 'the answer has no list of deployments';
     } else {
-      reason = `HTTP ${res.status}`;
+      reason = bodyReason(await res.json().catch(() => null)) ?? `HTTP ${res.status}`;
     }
   } catch (e) {
     reason = e instanceof Error ? e.message : String(e);
   }
   throw new Error(`the deployments could not be read from ${url} (${reason}); try again`);
+}
+
+/**
+ * Hands a stored flow to the vector processor as the deployment `dag`: reads what is deployed now, refuses a topic
+ * another deployment writes, deploys and marks the flow active. A list that cannot be read is an error.
+ */
+export async function deployFlow(base: string, id: number, dag: string, yaml: string, topics: string[]): Promise<{ dag: string; state: string }> {
+  const { dags } = await readDeployments(`${base.replace(/\/$/, '')}/v1/dags`);
+  const conflict = topicConflict(dags, dag, topics, (await flowsAPI.list()).map(summarize));
+  if (conflict) throw new Error(conflict);
+  const answer = await dagsAPI.deploy(yaml);
+  await flowsAPI.patch(id, { status: 'active' });
+  return answer;
 }
 
 /** Topics several flows write on purpose. */

@@ -38,7 +38,7 @@ import { VECTOR_OP, suggestKey, vectorRecords } from '../workbench/vector';
 import { episodeSummary } from '../workbench/episodes';
 import { bucketToCsv, generateSineMix, parseBucketText, parseEpisodes } from '../workbench/loaders';
 import axios from 'axios';
-import { RETRIEVAL_BASE, flowsAPI } from '../services/api';
+import { RETRIEVAL_BASE, errorMessage, fetchJson, flowsAPI } from '../services/api';
 import { fetchSignalStatus } from '../systems/load';
 import { NOT_PORTED, OPS, OP_BY_ID, defaultParams, fmt, stats } from '../workbench/ops';
 import { Bucket, FlowNode, OpDef, OpGroup, ParamDef, Params, ParamValue } from '../workbench/types';
@@ -597,7 +597,7 @@ export default function Workbench() {
           setError(`The series of flow "${flow.name}" could not be loaded: ${e instanceof Error ? e.message : e}. Load a bucket to run it.`);
         }
       })
-      .catch((e) => !cancelled && setError(`Flow ${id} could not be opened: ${e instanceof Error ? e.message : e}`));
+      .catch((e) => !cancelled && setError(`Flow ${id} could not be opened: ${errorMessage(e)}`));
     return () => {
       cancelled = true;
     };
@@ -613,8 +613,8 @@ export default function Workbench() {
     setStatus(`Opening the signal ${signalParam}`);
     // with the working copy of the account: a signal bound there has its data only in that view
     fetchSignalStatus(root, systemParam)
-      .then((doc) => parseStatus(doc))
-      .then(async (doc) => {
+      .then(async ({ doc: json, note }) => {
+        const doc = parseStatus(json);
         const signal = doc.signals.find((x) => x.id === signalParam);
         const series = signal?.grades[gradeParam as GradeName]?.data?.series ?? [];
         if (!signal) throw new Error(`the system has no signal "${signalParam}"`);
@@ -640,7 +640,7 @@ export default function Workbench() {
           origin: signal.origin,
           synthetic: isSynthetic(signal),
         });
-        setError(null);
+        setError(note);
       })
       .catch((e) => {
         if (cancelled) return;
@@ -709,7 +709,7 @@ export default function Workbench() {
       setError(
         expired
           ? 'Your session has expired. Sign in again (the link opens a new tab), then save: the flow stays here.'
-          : `The flow could not be saved: ${e instanceof Error ? e.message : e}`
+          : `The flow could not be saved: ${errorMessage(e)}`
       );
       return null;
     }
@@ -761,13 +761,11 @@ export default function Workbench() {
     try {
       setError(null);
       setStatus(`Loading ${url}`);
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      loadBucket(parseEpisodes(await res.json(), 'Episodes'), { kind: 'retrieval', detail: url });
+      loadBucket(parseEpisodes(await fetchJson(url), 'Episodes'), { kind: 'retrieval', detail: url });
       setRemote((r) => ({ ...r, open: false }));
     } catch (e) {
       setStatus('Ready');
-      setError(`Episodes could not be loaded from ${url}: ${e instanceof Error ? e.message : e}. Is the retrieval server running?`);
+      setError(`Episodes could not be loaded from ${url}: ${errorMessage(e)}.`);
     }
   };
 

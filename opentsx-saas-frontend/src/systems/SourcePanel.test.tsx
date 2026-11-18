@@ -1,8 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const sent: unknown[] = [];
-vi.mock('../services/api', () => ({
+vi.mock('../services/api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../services/api')>()),
   systemsAPI: { bind: vi.fn(async (_system: string, body: unknown) => { sent.push(body); }) },
 }));
 import SourcePanel from './SourcePanel';
@@ -59,3 +60,17 @@ describe('the Simulate form', () => {
     expect(sent.length).toBe(0);
   });
 });
+
+describe('the Bind form', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('gives the reason the TS inventory could not be read', async () => {
+    localStorage.setItem('access_token', 'x');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: 'internal error', type: 'internal' }), { status: 500 })));
+    render(<SourcePanel mode="bind" status={status as never} signal={signal as never} base="http://r" onChanged={() => {}} onClose={() => {}} />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('The TS inventory could not be read: internal error.');
+  });
+});
+

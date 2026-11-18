@@ -68,7 +68,7 @@ describe('logout', () => {
     await useAuthStore.getState().logout();
     expect(localStorage.getItem('access_token')).toBeNull();
     expect(localStorage.getItem('refresh_token')).toBeNull();
-    expect(useAuthStore.getState().error).toBe('signed out here; the server could not be told: Network Error');
+    expect(useAuthStore.getState().error).toBe(`signed out here; the server could not be told: the backend at ${backend.seen[0].baseURL}/auth/logout cannot be reached`);
   });
 
   it('removes both tokens without an error when the backend confirms', async () => {
@@ -78,6 +78,36 @@ describe('logout', () => {
     expect(localStorage.getItem('access_token')).toBeNull();
     expect(localStorage.getItem('refresh_token')).toBeNull();
     expect(useAuthStore.getState()).toMatchObject({ isAuthenticated: false, error: null });
+  });
+});
+
+describe('the sign-in error', () => {
+  const login = () => useAuthStore.getState().login({ email: 'a@example.com', password: 'wrong' }).catch(() => undefined);
+  const register = () => useAuthStore.getState().register({ email: 'ops@localhost', password: 'password1', full_name: 'Ops' }).catch(() => undefined);
+  const at = (path: string) => `${backend.seen[0].baseURL}${path}`;
+
+  it('is the reason the backend gives', async () => {
+    reply(401, { detail: 'Incorrect email or password' });
+    await login();
+    expect(useAuthStore.getState().error).toBe('Incorrect email or password');
+  });
+
+  it('is text when the backend refuses a field', async () => {
+    reply(422, { detail: [{ type: 'value_error', loc: ['body', 'email'], msg: 'value is not a valid email address: The part after the @-sign is not valid.' }] });
+    await register();
+    expect(useAuthStore.getState().error).toBe('email: value is not a valid email address: The part after the @-sign is not valid.');
+  });
+
+  it('names status and address when a proxy answers with its own page', async () => {
+    reply(502, '<html><body><center><h1>502 Bad Gateway</h1></center></body></html>');
+    await login();
+    expect(useAuthStore.getState().error).toBe(`HTTP 502 from ${at('/auth/login')}`);
+  });
+
+  it('names the address when the backend does not answer', async () => {
+    unreachable();
+    await register();
+    expect(useAuthStore.getState().error).toBe(`the backend at ${at('/auth/register')} cannot be reached`);
   });
 });
 

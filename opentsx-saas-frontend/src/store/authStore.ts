@@ -4,13 +4,7 @@
 
 import axios from 'axios';
 import { create } from 'zustand';
-import { User, authAPI, LoginRequest, RegisterRequest } from '../services/api';
-
-function reasonOf(error: unknown): string {
-  const detail = axios.isAxiosError(error) ? error.response?.data?.detail : undefined;
-  if (typeof detail === 'string') return detail;
-  return error instanceof Error ? error.message : String(error);
-}
+import { User, authAPI, errorMessage, LoginRequest, RegisterRequest } from '../services/api';
 
 interface AuthState {
   user: User | null;
@@ -42,17 +36,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         isLoading: false,
       });
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        set({
-          error: error.response.data?.detail || 'Login failed',
-          isLoading: false,
-        });
-      } else {
-        set({
-          error: 'Login failed',
-          isLoading: false,
-        });
-      }
+      set({ error: errorMessage(error), isLoading: false });
       throw error;
     }
   },
@@ -70,17 +54,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         isLoading: false,
       });
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        set({
-          error: error.response.data?.detail || 'Registration failed',
-          isLoading: false,
-        });
-      } else {
-        set({
-          error: 'Registration failed',
-          isLoading: false
-        });
-      }
+      set({ error: errorMessage(error), isLoading: false });
       throw error;
     }
   },
@@ -93,7 +67,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({
         user: null,
         isAuthenticated: false,
-        error: `signed out here; the server could not be told: ${reasonOf(error)}`,
+        error: `signed out here; the server could not be told: ${errorMessage(error)}`,
       });
     }
   },
@@ -116,7 +90,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         set({ user: null, isAuthenticated: false, isLoading: false });
       } else {
-        set({ isLoading: false, error: `your account could not be read (${reasonOf(error)}); reload the page to try again` });
+        set({ isLoading: false, error: `your account could not be read (${errorMessage(error)}); reload the page to try again` });
       }
     }
   },

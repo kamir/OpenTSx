@@ -4,7 +4,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { authAPI } from '../services/api';
+import { authAPI, errorMessage } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 
 export default function Login() {
@@ -26,8 +26,7 @@ export default function Login() {
       .then((m) => !cancelled && setTestLogin(m.testLogin))
       .catch((e) => {
         if (cancelled) return;
-        const reason = e instanceof Error ? e.message : String(e);
-        setModeError(`the sign-in mode could not be read from the backend (${reason}); reload the page to try again`);
+        setModeError(`the sign-in mode could not be read from the backend (${errorMessage(e)}); reload the page to try again`);
       });
     return () => {
       cancelled = true;
