@@ -50,6 +50,14 @@ class KafScaleProxyTransportTest(unittest.TestCase):
         self.assertIn("KAFSCALE_CLUSTER_BINARY", federation)
         self.assertNotIn('"KAFSCALE_BROKER_ADDR"', federation)
 
+    def test_track_a_measurement_uses_the_guarded_proxy_cluster(self):
+        measurement = (ROOT / "tools/wayang_track_a_evaluation.py").read_text()
+        self.assertIn(".transport_overlay(", measurement)
+        self.assertIn('"KAFSCALE_PROXY_BINARY"', measurement)
+        self.assertIn('"KAFSCALE_CLUSTER_BINARY"', measurement)
+        self.assertIn('"--proxy-binary"', measurement)
+        self.assertNotIn('"KAFSCALE_BROKER_ADDR"', measurement)
+
     def test_wayang_workers_and_host_fixture_use_the_same_proxy(self):
         compose = (ROOT / "docker-compose.wayang-rust.yml").read_text()
         self.assertEqual(3, compose.count('--bootstrap, "kafscale-proxy:'))

@@ -19,12 +19,20 @@ final class FederationBrokers implements AutoCloseable {
     private final Map<String, Integer> ports = new LinkedHashMap<>();
 
     FederationBrokers(Path directory) throws IOException {
+        this(directory, List.of("s1", "s2", "s3", "signal"));
+    }
+
+    FederationBrokers(Path directory, List<String> clusters) throws IOException {
+        if (clusters == null || clusters.isEmpty() || clusters.stream().anyMatch(cluster -> cluster == null
+                || !cluster.matches("[a-z0-9][a-z0-9-]{0,62}")) || new java.util.HashSet<>(clusters).size() != clusters.size()) {
+            throw new IllegalArgumentException("disposable cluster names must be unique valid identifiers");
+        }
         Path binary = executable("KAFSCALE_CLUSTER_BINARY");
         Path broker = executable("KAFSCALE_BROKER_BINARY");
         Path proxy = executable("KAFSCALE_PROXY_BINARY");
         Files.createDirectories(directory);
         try {
-            for (String cluster : List.of("s1", "s2", "s3", "signal")) {
+            for (String cluster : clusters) {
                 int port;
                 try (ServerSocket reserved = new ServerSocket(0, 50, InetAddress.getLoopbackAddress())) {
                     port = reserved.getLocalPort();

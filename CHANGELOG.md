@@ -15,9 +15,19 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Route local KafScale producers and test fixtures through the v1.6.0 Proxy. Build the pinned broker, Proxy and
   isolated metadata launcher without building an image. Compose exposes the Proxy endpoint; the development
   MinIO stack requires private `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` environment values.
+- Route Track A evaluation clients through the same guarded Proxy bundle and record its transport provenance.
+  Archived measurement samples retain their recorded source and runtime hashes.
 - Require a verified Proxy bundle and private MinIO environment before the k3s probe starts local KafScale.
 
 ### Added
+
+- A rerunnable TASK-020 A5 evaluation harness for bounded centralized and
+  federated statistics at 1, 3 and 10 sites, and Java catch-up comparisons
+  at 1, 4 and 12 partitions. It records throughput, Produce-clock latency,
+  RSS, CPU, artifact sizes and source/runtime provenance without thresholds.
+  The [report and raw samples](docs/datamodel-2026/measurements/wayang-track-a-evaluation-2026-11-18/REPORT.md)
+  retain all 63 completed conditions over the complete synthetic W scenario.
+  Paced increment, recovery and Track B measurements remain separate.
 
 - Qualified bounded W3 JVM federation measurement for TASK-020 A4.9. The
   [report and raw samples](docs/datamodel-2026/measurements/wayang-federation-2026-11-17/REPORT.md)
@@ -271,6 +281,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   stays, because the PFD runtime `DynamicTopologyJob` uses it.
 
 ### Fixed
+
+- Failed bounded JVM federation tests retain disposable-broker logs for CI diagnostics. KafScale CI artifacts
+  include Wayang test reports, retained fixture broker logs and the primary broker log.
+
+- `ConfigManager` rejects unreadable or malformed configuration sources and missing selected files or profiles.
+  Each source merges only after loading and closing succeed. Optional absent defaults remain allowed, source
+  precedence and live JVM/environment overrides are preserved, and environment mapping is locale-independent.
 
 - Legacy SequenceFile selection uses 1-based physical record positions for callbacks and in-memory results,
   preserving file order and scan limits independently of stored labels. Explicit null selections clear stored

@@ -1,0 +1,4 @@
+route,site,topic,produce_frame_bytes,produce_records,produce_errors,http_body_bytes,http_records,tls_client_bytes,elapsed_ms
+centralized,s1,tsx.wind.episodes.v2,2903848,3600,0,,,,62.339458
+signal-cluster,s1,tsx.wind.aggregates.v2,69649,420,0,,,,13041.789916
+job-state,s1,tsx.wind.aggregates.v2,,,,604836,420,609825,12218.642542

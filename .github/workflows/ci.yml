@@ -558,6 +558,13 @@ jobs:
             opentsx-stats/target/surefire-reports/
             opentsx-retrieval/target/surefire-reports/
             opentsx-flink-core/target/pfd-acceptance/
+            opentsx-wayang/target/surefire-reports/
+            opentsx-wayang/target/federation-test-logs/**/brokers/*.log
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: kafscale-broker-log
+          path: ${{ runner.temp }}/kafscale-broker.log
 
   cross-language:
     name: Java -> Iceberg -> Python

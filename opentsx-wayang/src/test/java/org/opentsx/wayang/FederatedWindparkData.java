@@ -36,12 +36,20 @@ record FederatedWindparkData(List<Episode> episodes, Map<String, List<Episode>> 
     }
 
     static String site(Episode episode) {
-        return switch (episode.getSeries().getTags().get("turbine")) {
-            case "T01", "T02", "T03" -> "s1";
-            case "T04", "T05", "T06" -> "s2";
-            case "T07", "T08", "T09", "T10" -> "s3";
-            default -> throw new IllegalArgumentException("unexpected W3 turbine");
-        };
+        return site(episode, 3);
+    }
+
+    static List<String> siteNames(int siteCount) {
+        if (!List.of(1, 3, 10).contains(siteCount)) throw new IllegalArgumentException("evaluation requires 1, 3 or 10 sites");
+        return java.util.stream.IntStream.rangeClosed(1, siteCount).mapToObj(index -> "s" + index).toList();
+    }
+
+    static String site(Episode episode, int siteCount) {
+        if (siteCount != 1 && siteCount != 3 && siteCount != 10) throw new IllegalArgumentException("evaluation requires 1, 3 or 10 sites");
+        String turbine = episode.getSeries().getTags().get("turbine");
+        if (turbine == null || !turbine.matches("T(?:0[1-9]|10)")) throw new IllegalArgumentException("unexpected W3 turbine");
+        int number = Integer.parseInt(turbine.substring(1));
+        return "s" + ((number * siteCount + 9) / 10);
     }
 
     static String group(Episode episode) {
@@ -67,15 +75,24 @@ record FederatedWindparkData(List<Episode> episodes, Map<String, List<Episode>> 
     }
 
     static FederatedWindparkData load() {
-        return fromEpisodes(KafScaleFixture.scenarioW());
+        return load(3);
+    }
+
+    static FederatedWindparkData load(int siteCount) {
+        return fromEpisodes(KafScaleFixture.scenarioW(), siteCount);
     }
 
     static FederatedWindparkData fromEpisodes(List<Episode> input) {
+        return fromEpisodes(input, 3);
+    }
+
+    static FederatedWindparkData fromEpisodes(List<Episode> input, int siteCount) {
+        siteNames(siteCount);
         List<Episode> episodes = List.copyOf(input);
         Map<String, List<Episode>> sites = new TreeMap<>();
         Map<String, String> groups = new TreeMap<>();
         for (Episode episode : episodes) {
-            sites.computeIfAbsent(site(episode), key -> new ArrayList<>()).add(episode);
+            sites.computeIfAbsent(site(episode, siteCount), key -> new ArrayList<>()).add(episode);
             String previous = groups.putIfAbsent(episode.getSeries().getSeriesId(), group(episode));
             if (previous != null && !previous.equals(group(episode))) throw new IllegalStateException("W3 series changed group");
         }
@@ -101,7 +118,7 @@ record FederatedWindparkData(List<Episode> episodes, Map<String, List<Episode>> 
         Map<String, Map<Window, QuantileSketch>> siteSketches = new TreeMap<>();
         for (Episode episode : episodes) {
             String group = group(episode);
-            Map<Window, QuantileSketch> localSketches = siteSketches.computeIfAbsent(site(episode), key -> new TreeMap<>());
+            Map<Window, QuantileSketch> localSketches = siteSketches.computeIfAbsent(site(episode, siteCount), key -> new TreeMap<>());
             long[] times = Episodes.timestampsMicros(episode);
             double[] values = Episodes.values(episode);
             for (Duration duration : WINDOWS) {
