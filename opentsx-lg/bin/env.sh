@@ -27,7 +27,5 @@ echo "Working directory : " $WP
 echo "Cluster config    : " $CLUSTER_CONFIG_FILE
 echo "==================================================="
 echo
-cat $CLUSTER_CONFIG_FILE
-echo
 echo
 echo "==================================================="

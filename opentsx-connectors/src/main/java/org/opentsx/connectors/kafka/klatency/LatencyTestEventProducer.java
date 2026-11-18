@@ -6,10 +6,6 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.opentsx.connectors.kafka.OpenTSxClusterLink;
 import org.opentsx.data.model.LatencyTesterEvent;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-
 import java.util.Properties;
 
 
@@ -42,15 +38,7 @@ public class LatencyTestEventProducer {
     public void pushTestEventToCluster( LatencyTesterEvent data ) {
 
         if ( producer == null ) {
-            Properties props = new Properties();
-
-            try {
-                props.load(new FileReader(new File(OpenTSxClusterLink.get_PROPS_FN())));
-                props.list(System.out);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            producer = createProducer(props);
+            producer = createProducer(OpenTSxClusterLink.getClientProperties());
         };
 
         long time0 = System.currentTimeMillis();

@@ -48,7 +48,7 @@ echo
 cd "$PROJECT_ROOT"
 
 # Check if project is built
-if [ ! -f "opentsx-core/target/opentsx-core-2.3-SNAPSHOT.jar" ]; then
+if [ ! -d "opentsx-core/target/classes" ]; then
     echo -e "${YELLOW}⚠ Project not built. Building now...${NC}"
     ./bin/010_build.sh
     echo
@@ -79,10 +79,7 @@ echo "  Log Level: ${OPENTSX_LOG_LEVEL:-default (INFO)}"
 echo
 
 # Build classpath
-CLASSPATH="opentsx-core/target/opentsx-core-2.3-SNAPSHOT.jar"
-for jar in opentsx-core/target/lib/*.jar; do
-    CLASSPATH="$CLASSPATH:$jar"
-done
+CLASSPATH="$(bin/opentsx classpath opentsx-core)"
 
 # Set Java options for production
 JAVA_OPTS="${JAVA_OPTS:--Xmx2g -Xms512m}"

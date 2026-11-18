@@ -11,9 +11,9 @@ echo "*****************************"
 echo "*****************************"
 echo " SETUP TOPICS for DEMO"
 echo "*****************************"
-#java -cp /opentsx-lg/opentsx-lg-3.0.1.jar org.opentsx.util.topicmanager.TopicsDOWN
-java -cp /opentsx-lg/opentsx-lg-3.0.1.jar org.opentsx.util.topicmanager.TopicsUP
-java -cp /opentsx-lg/opentsx-lg-3.0.1.jar org.opentsx.util.topicmanager.TopicsCHECK
+#java -cp /opentsx-lg/opentsx-lg-3.0.1.jar org.opentsx.connectors.kafka.topicmanager.TopicsDOWN
+java -cp /opentsx-lg/opentsx-lg-3.0.1.jar org.opentsx.connectors.kafka.topicmanager.TopicsUP
+java -cp /opentsx-lg/opentsx-lg-3.0.1.jar org.opentsx.connectors.kafka.topicmanager.TopicsCHECK
 
 echo "*****************************"
 echo " RUN DEMO "

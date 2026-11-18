@@ -96,6 +96,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 - The KafScale conformance suite probes `Admin.listOffsets` with `OffsetSpec.earliest()` and `OffsetSpec.latest()`,
   which the Flink Kafka source uses for end offsets and bounded runs. Both answer correctly on KafScale v1.6.0.
+- tools/check_tracked_config.py and a CI step on Python 3.12 fail when a tracked file is under config/private/ or
+  .idea/, when a *.props, *.properties or .env file names a host or address that is not localhost or a placeholder, or
+  when any tracked file names a Confluent Cloud or *.gce.cloudera.com host. The same step runs the tests in tools/.
 
 ### Changed
 
@@ -135,6 +138,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   the Confluent Cloud key it holds must be rotated.
 - The Redis service of both compose files, which no code used and which took its password on the command line, with
   its volume and the backend's `REDIS_*` entries.
+- The commented Confluent Cloud bootstrap hosts in TSOProducer and TSOEventAnalysisProducer, and the commented copy
+  commands with a real host and the unreachable failure branch in bin/010_build.sh.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -266,6 +271,19 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   token, that `./local-test.sh` ends with exit code 0 even after a failed check, and that the `admin@localhost`
   account written by `local-setup.sh` cannot sign in. The backend, frontend, local development and user manual pages
   name the three required secrets and no longer show Redis, `admin123` or `dev_password_123`.
+- TopicsUP, TopicsDOWN and TopicsCHECK wait for each create, delete and list request and stop with the topic and the
+  cause when one fails. An existing topic is kept and a missing topic is skipped when deleting.
+- An OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME that names a file which cannot be read and has no readable
+  <file>.example template, or an OPENTSX_TOPIC_MAP_FILE_NAME that names a file which cannot be read, stops the 2.x
+  tools instead of falling back to the default files. The 2.x tools stop with the path when the client profile cannot
+  be loaded, instead of using empty properties or exiting the JVM from TSOProducer and TSOEventAnalysisProducer.
+- TSOProducer.createProducer, TSOEventAnalysisProducer.createProducer and TopicsManagerTool read the configured client
+  profile and config/topiclist.def instead of fixed absolute paths that exist on no other machine.
+- opentsx-lg/bin/run_KSAPP_01.sh, run_KTAPP_01.sh and the ping tool executor-script.sh start the existing classes
+  org.opentsx.lg.analyser.FWL_TSA_KStreamsApplication, FWL_TSA_KTableApplication and
+  org.opentsx.connectors.kafka.topicmanager.TopicsUP, TopicsDOWN and TopicsCHECK.
+- bin/episode_02, 03, 09 and 10 take their classpath from bin/opentsx classpath opentsx-core instead of a 2.3-SNAPSHOT
+  jar and a lib directory the build does not make.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
@@ -296,6 +314,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   password.
 - The repository `.gitignore` ignores `/.env`, from which docker compose reads `POSTGRES_PASSWORD`, `SECRET_KEY` and
   `FIRST_SUPERUSER_PASSWORD` for `docker-compose.local.yml`.
+- The 2.x Kafka tools in opentsx-connectors no longer print the client profile. getPropsAsString_NO_SECURITY_PROPS
+  also hides every key that contains sasl., ssl., password, secret, token or user.info, and the unused
+  OpenTSxClusterLink.getPropsAsString, which returned the credentials, is removed.
+- The tracked client profiles and .env files of opentsx-lg and archive/demos/opentsx-clusters hold localhost or
+  placeholders instead of private addresses, a personal host name and Confluent Cloud hosts. Unused profiles and the
+  IDE files under .idea/ are removed, and .idea/ is git-ignored.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

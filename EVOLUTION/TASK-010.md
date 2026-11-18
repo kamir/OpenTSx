@@ -65,7 +65,7 @@ Moved from TASK-011 (commit 551815a3) on 2026-10-26 (D90).
 Moved from TASK-011 (commit 551815a3), lines 395 to 402 (open items only).
 - [ ] Publish the Python package on PyPI (the README so far only mentions local installation).
 - [ ] Consolidate `sample_data/` and `data/sample_datasets/` (same file names, different content; referenced by `opentsx-core` demos).
-- [ ] Clean up further profiles with private hosts in `opentsx-lg/src/main/resources/config/` (`cpl.props`, `mdc_c1.props`, `mdc_local_link.props`, referenced in the Docker assembly), `opentsx-lg/src/main/k8s/krake-app/` and hard-coded Schema Registry addresses in `FWL_TSA_*Application.java`.
+- [ ] Clean up the hard-coded private addresses in `opentsx-lg/src/main/k8s/krake-app/lg-demo.yaml` (`hostAliases`, `hostPath`) and the bootstrap and Schema Registry addresses in `FWL_TSA_*Application.java`.
 - [ ] Move `tests/validation/*.java` and `bin/run_all_tests.sh` into a Maven test path or archive them; check the Java examples in `exercises/` against the real 2.x API.
 
 The done items of this block (LICENSE, NOTICE, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY.md and CHANGELOG; `config/cpl*.props` and `config/mdc_c1.props` replaced by `config/opentsx-local.props.example`; `opentsx-app-tools` archived) stay recorded in the progress log of TASK-011.

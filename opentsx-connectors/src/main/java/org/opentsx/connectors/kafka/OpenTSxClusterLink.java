@@ -22,15 +22,12 @@ public class OpenTSxClusterLink {
         System.out.println( ">>> Client properties from file: " + f.getAbsolutePath() + " ("+f.canRead()+")");
 
         Properties properties = new Properties();
-        try {
-            properties.load(new FileReader(new File(OpenTSxClusterLink.get_PROPS_FN() )));
-
-            System.out.println();
-            properties.list( System.out );
-            System.out.println();
+        try (FileReader reader = new FileReader(f)) {
+            properties.load(reader);
         }
         catch (IOException e) {
-            e.printStackTrace();
+            throw new UncheckedIOException(f.getAbsolutePath() + ": cannot read the Kafka client profile ("
+                    + e.getMessage() + "); set OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME to a readable file", e);
         }
 
         return properties;
@@ -43,11 +40,12 @@ public class OpenTSxClusterLink {
 
         System.out.println( "> PROPS_FN Path: " + f.getAbsolutePath() + " -> (r:" + f.canRead()+ ")" );
 
-        if ( f.canRead() || new File(fn + TEMPLATE_SUFFIX).canRead() )
-            PROPS_FN = fn;
-        else {
-            System.out.println("> Attempt to overwrite PROPS_FN in org.opentsx.connectors.kafka.TSOProducer failed.");
+        if ( !f.canRead() && !new File(fn + TEMPLATE_SUFFIX).canRead() ) {
+            throw new IllegalArgumentException("OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME: \"" + fn
+                    + "\" cannot be read (" + f.getAbsolutePath() + "); give a readable Kafka client profile or its "
+                    + TEMPLATE_SUFFIX + " template");
         }
+        PROPS_FN = fn;
         System.out.println("> PROPS_FN = " + PROPS_FN);
     };
 
@@ -106,20 +104,8 @@ public class OpenTSxClusterLink {
 
     }
 
-    public static String getPropsAsString() {
-
-        StringWriter writer = new StringWriter();
-        OpenTSxClusterLink.getClientProperties().list(new PrintWriter(writer));
-
-        return writer.getBuffer().toString();
-
-    }
-
     public static String getPropsAsString_NO_SECURITY_PROPS() {
         Vector<String> keysToSkip = new Vector<>();
-        keysToSkip.add("ssl.endpoint.identification.algorithm");
-        keysToSkip.add("sasl.mechanism");
-        keysToSkip.add("sasl.jaas.config");
         keysToSkip.add("security.protocol");
         keysToSkip.add("key.serializer");
         keysToSkip.add("value.serializer");
@@ -127,12 +113,12 @@ public class OpenTSxClusterLink {
         keysToSkip.add("value.deserializer");
         keysToSkip.add("schema.registry.url");
         keysToSkip.add("basic.auth.credentials.source");
-        keysToSkip.add("schema.registry.basic.auth.user.info");
 
+        Properties properties = OpenTSxClusterLink.getClientProperties();
         Properties propsToShow = new Properties();
-        for( String k : OpenTSxClusterLink.getClientProperties().stringPropertyNames() ) {
-            if ( !keysToSkip.contains( k ) ) {
-                propsToShow.put( k , OpenTSxClusterLink.getClientProperties().getProperty( k ) );
+        for( String k : properties.stringPropertyNames() ) {
+            if ( !keysToSkip.contains( k ) && !isSecurityKey( k ) ) {
+                propsToShow.put( k , properties.getProperty( k ) );
             }
         }
 
@@ -141,5 +127,10 @@ public class OpenTSxClusterLink {
 
         return writer.getBuffer().toString();
 
+    }
+
+    private static boolean isSecurityKey(String k) {
+        return k.contains("sasl.") || k.contains("ssl.") || k.contains("password") || k.contains("secret")
+                || k.contains("token") || k.contains("user.info");
     }
 }

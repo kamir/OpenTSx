@@ -11,7 +11,7 @@ acks=1
 
 ###############################################################################
 
-bootstrap.servers=192.168.0.6:9092
+bootstrap.servers=localhost:9092
 
 key.serializer=org.apache.kafka.common.serialization.StringSerializer
 value.serializer=io.confluent.kafka.serializers.KafkaAvroSerializer
@@ -20,4 +20,4 @@ key.deserializer=org.apache.kafka.common.serialization.StringDeserializer
 value.deserializer=io.confluent.kafka.serializers.KafkaAvroDeserializer
 
 # Schema Registry specific settings
-schema.registry.url=http://192.168.0.6:8081
+schema.registry.url=http://localhost:8081

@@ -59,6 +59,12 @@ jobs:
         if: matrix.python == '3.12'
         working-directory: .
         run: python tools/check_links.py
+      - name: Tracked configuration and launcher scripts
+        if: matrix.python == '3.12'
+        working-directory: .
+        run: |
+          python tools/check_tracked_config.py
+          python -m pytest -q tools
 
   saas-frontend:
     name: SaaS frontend

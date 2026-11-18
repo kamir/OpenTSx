@@ -20,11 +20,11 @@ public class TopicsUP {
     public static void init_TOPICS_DEF_FN(String fn){
         File f = new File(fn);
         System.out.println( "> TOPICS_DEF_FN Path: " + f.getAbsolutePath() );
-        if ( f.canRead() )
-            TOPICS_DEF_FN = fn;
-        else {
-            System.out.println("> Attempt to overwrite TOPICS_DEF_FN in org.opentsx.lg.TopicsUP failed.");
+        if ( !f.canRead() ) {
+            throw new IllegalArgumentException("OPENTSX_TOPIC_MAP_FILE_NAME: \"" + fn + "\" cannot be read ("
+                    + f.getAbsolutePath() + "); give a readable topic list");
         }
+        TOPICS_DEF_FN = fn;
         System.out.println("> TOPICS_DEF_FN=" + TOPICS_DEF_FN);
     };
 

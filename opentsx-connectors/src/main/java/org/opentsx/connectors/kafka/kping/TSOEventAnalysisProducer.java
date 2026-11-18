@@ -10,9 +10,6 @@ import org.opentsx.data.model.Event;
 import org.opentsx.data.model.Observation;
 import org.opentsx.connectors.kafka.OpenTSxClusterLink;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -25,9 +22,6 @@ public class TSOEventAnalysisProducer {
     public final static String TOPIC_for_events = "OpenTSx_Events";
     public final static String TOPIC_for_episodes = "OpenTSx_Episodes";
 
-
-    // private final static String BOOTSTRAP_SERVERS = "localhost:9092";
-    // private final static String BOOTSTRAP_SERVERS = "pkc-43n10.us-central1.gcp.confluent.cloud:9092";
 
     public static void runProducer( int sendMessageCount ) throws Exception {
 
@@ -135,8 +129,6 @@ public class TSOEventAnalysisProducer {
 
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
-        props.list(System.out);
-
         return new KafkaProducer<>(props);
 
     }
@@ -151,15 +143,7 @@ public class TSOEventAnalysisProducer {
      */
     public static Producer<String, String> createProducer() {
 
-        Properties props = new Properties();
-
-        try {
-            props.load(new FileReader( new File( "/Users/mkampf/GITHUB.public/OpenTSx/config.props" ) ));
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-            System.exit(-1);
-        }
+        Properties props = OpenTSxClusterLink.getClientProperties();
 
         //props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "TSOItemProducer");
@@ -187,15 +171,7 @@ public class TSOEventAnalysisProducer {
 
     public void pushTSDataAsEpisodesToKafka_String_Avro(Vector<TSData> data, String URI, String topic_suffix ) {
 
-        Properties props = new Properties();
-
-        try {
-            props.load(new FileReader( new File(OpenTSxClusterLink.get_PROPS_FN() ) ));
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-            System.exit(-1);
-        }
+        Properties props = OpenTSxClusterLink.getClientProperties();
 
         // props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "TSOItemProducer");
@@ -307,15 +283,7 @@ public class TSOEventAnalysisProducer {
      */
     public void pushTSDataAsEventsToKafka_String_Avro(Vector<TSData> data, String URI) {
 
-        Properties props = new Properties();
-
-        try {
-            props.load(new FileReader( new File( OpenTSxClusterLink.get_PROPS_FN() ) ));
-            props.list(System.out);
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
+        Properties props = OpenTSxClusterLink.getClientProperties();
 
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "TSOItemProducer");
 

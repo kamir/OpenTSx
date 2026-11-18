@@ -1,7 +1,7 @@
 ssl.endpoint.identification.algorithm=https
 sasl.mechanism=PLAIN
 request.timeout.ms=20000
-bootstrap.servers=pkc-43n10.us-central1.gcp.confluent.cloud:9092
+bootstrap.servers=<bootstrap-host>:9092
 retry.backoff.ms=500
 sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="user" password="secret";
 security.protocol=SASL_SSL
@@ -13,4 +13,4 @@ value.serializer=io.confluent.kafka.serializers.KafkaAvroSerializer
 # Schema Registry specific settings
 basic.auth.credentials.source=USER_INFO
 schema.registry.basic.auth.user.info=USER:SECRET
-schema.registry.url=https://psrc-4v1qj.eu-central-1.aws.confluent.cloud
+schema.registry.url=https://<schema-registry-host>

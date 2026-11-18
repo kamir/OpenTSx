@@ -142,10 +142,7 @@ Each exercise directory contains:
 
 ```bash
 # From project root
-CLASSPATH="opentsx-core/target/opentsx-core-2.3-SNAPSHOT.jar"
-for jar in opentsx-core/target/lib/*.jar; do
-    CLASSPATH="$CLASSPATH:$jar"
-done
+CLASSPATH="$(bin/opentsx classpath opentsx-core)"
 ```
 
 ### Compile Your Exercise
