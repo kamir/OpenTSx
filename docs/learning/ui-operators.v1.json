@@ -64,7 +64,8 @@
       ],
       "pitfalls": [
         "The browser random sequence is not Java Collections.shuffle.",
-        "Shuffled values no longer have their original event positions."
+        "Shuffled values no longer have their original event positions.",
+        "The native Shuffle action requires labeled nonempty finite matching samples and a positive signed 32-bit pass count within 10000000 requested sample visits across the selection. It preserves coordinates, axis labels and Y multiplicities on copies, cancels quietly, and rejects invalid input before a chart or recorder entry. The desktop action exposes no seed and its validation is separate from the public legacy shuffle API."
       ],
       "parameterKeys": [
         "rounds",
@@ -103,17 +104,21 @@
       "references": {
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "opentsx-core/README.md"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#shuffle"
         ],
         "source": [
-          "opentsx-saas-frontend/src/workbench/ops.ts#shuffle"
+          "opentsx-saas-frontend/src/workbench/ops.ts#shuffle",
+          "opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanel.java#jButton18ActionPerformed",
+          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObject.java#shuffleYValues"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
-          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts",
+          "opentsx-core/src/test/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanelShuffleTest.java"
         ],
         "vectors": []
       }

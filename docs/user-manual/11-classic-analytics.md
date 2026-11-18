@@ -205,6 +205,12 @@ validation message. Window starts follow the first series; every series contribu
 each nominal window, including the final partial window. See the
 [native histogram contract](../../opentsx-core/README.md#compare-native-histogram-slices) for limits and regression checks.
 
+The native `Shuffle` action validates selection shape and labels before prompting for a positive integer pass count.
+Cancellation returns quietly. Requested work is limited to 10000000 sample visits, without an elapsed-time guarantee.
+Finite cells are checked before copying or shuffling. Results preserve coordinates, axis labels and each Y multiset;
+invalid input leaves the selected series and recorder history unchanged. See
+[native shuffling](../../opentsx-core/README.md#shuffle-native-series) for errors and regression checks.
+
 The native `NORM max=1` action requires matching finite coordinate/value pairs and a positive maximum in each
 selected series. It preserves original coordinates and axis labels and rejects zero maxima or nonfinite quotients
 without opening a chart or recording a transformation. See
