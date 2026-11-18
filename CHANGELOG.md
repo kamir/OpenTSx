@@ -262,6 +262,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- `ConfigManager` rejects unreadable or malformed configuration sources and missing selected files or profiles.
+  Each source merges only after loading and closing succeed. Optional absent defaults remain allowed, source
+  precedence and live JVM/environment overrides are preserved, and environment mapping is locale-independent.
+
 - Legacy SequenceFile selection uses 1-based physical record positions for callbacks and in-memory results,
   preserving file order and scan limits independently of stored labels. Explicit null selections clear stored
   `BucketLoader` filters; empty selections process no records.
