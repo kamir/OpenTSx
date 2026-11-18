@@ -403,7 +403,7 @@ class WayangComposeGuardsTest(unittest.TestCase):
                  "opentsx-saas-frontend/package-lock.json", "opentsx-saas-backend/requirements.txt",
                  "docker-compose.wayang-rust.yml", "deploy/compose/wayang-rust-nginx.conf",
                  "tools/verify_wayang_rust_compose.py", "tools/wayang_rust_browser.mjs",
-                 "tools/build_kafscale_proxy.py", "tools/kafscale_proxy_cluster.go",
+                 "tools/build_kafscale_proxy.py", "tools/kafscale_proxy_cluster.go", "tools/kafscale_proxy_cluster_test.go",
                  "tools/kafscale_metadata_overlay.py", "tools/kafscale_metadata_test.go",
                  "tools/kafscale_proxy_protocol_overlay.py", "tools/kafscale_proxy_protocol_test.go",
                  "bin/opentsx", "opentsx-saas-frontend/package.json",

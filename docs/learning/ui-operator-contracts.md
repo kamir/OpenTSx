@@ -69,6 +69,13 @@ Missing values remain missing; a zero maximum is not guarded. No Java streaming 
 
 Source: [ops.ts#normMax](../../opentsx-saas-frontend/src/workbench/ops.ts#normMax). Executable exercise: `ui.norm.max`.
 
+The native `NORM max=1` action has a separate
+[checked maximum-scaling contract](../../opentsx-core/README.md#scale-native-series-by-a-positive-maximum).
+It requires at least one matching finite coordinate/value pair, a positive maximum and finite quotients in every
+selected series. It preserves original coordinates and axis labels and rejects invalid input before opening a chart
+or recording a transformation. Its rejection of zero maxima differs from this browser workload's unguarded division.
+The public legacy `TimeSeriesObject.normalize()` calculation and entropy are separate from these desktop checks.
+
 <a id="norm-zscore"></a>
 
 ## Use sample standard deviation in a z-score

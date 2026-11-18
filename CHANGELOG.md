@@ -13,6 +13,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Exclude the public Proxy port and already selected private ports from isolated KafScale fixture allocation.
+  The pinned build runs deterministic launcher regressions and records their source hash.
 - Keep committed offsets monotonic in the pinned local KafScale metadata overlay.
   Conditional updates retain newer flush progress and propagate storage failures.
 - Route local KafScale producers and test fixtures through the v1.6.0 Proxy. Build the pinned broker, Proxy and
@@ -297,6 +299,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   stays, because the PFD runtime `DynamicTopologyJob` uses it.
 
 ### Fixed
+
+- Native maximum normalization validates finite matching samples, a positive maximum and finite quotients while
+  preserving original coordinates and axis labels. Rejected selections or series produce a visible error without
+  opening a chart or recording a transformation. Public legacy normalization and entropy calculations are retained.
 
 - Failed bounded JVM federation tests retain disposable-broker logs for CI diagnostics. KafScale CI artifacts
   include Wayang test reports, retained fixture broker logs and the primary broker log.

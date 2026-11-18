@@ -28,6 +28,48 @@ func localAddress() (string, error) {
 	return address, listener.Close()
 }
 
+func localAddresses(public string, allocate func() (string, error)) ([3]string, error) {
+	var addresses [3]string
+	_, value, err := net.SplitHostPort(public)
+	if err != nil {
+		return addresses, fmt.Errorf("invalid Proxy listener: %w", err)
+	}
+	publicPort, err := net.LookupPort("tcp", value)
+	if err != nil {
+		return addresses, fmt.Errorf("invalid Proxy listener port: %w", err)
+	}
+	if publicPort == 0 {
+		return addresses, errors.New("Proxy listener port must be nonzero")
+	}
+	used := map[int]bool{publicPort: true}
+	for index := range addresses {
+		for attempt := 0; attempt < 64; attempt++ {
+			address, err := allocate()
+			if err != nil {
+				return [3]string{}, err
+			}
+			_, value, err := net.SplitHostPort(address)
+			if err != nil {
+				return [3]string{}, fmt.Errorf("invalid private listener: %w", err)
+			}
+			port, err := net.LookupPort("tcp", value)
+			if err != nil || port == 0 {
+				return [3]string{}, fmt.Errorf("invalid private listener port %q", value)
+			}
+			if used[port] {
+				continue
+			}
+			used[port] = true
+			addresses[index] = address
+			break
+		}
+		if addresses[index] == "" {
+			return [3]string{}, errors.New("could not allocate distinct private listener ports")
+		}
+	}
+	return addresses, nil
+}
+
 func launch(ctx context.Context, binary string, environment []string) (*exec.Cmd, error) {
 	command := exec.CommandContext(ctx, binary)
 	command.Env = environment
@@ -55,18 +97,11 @@ func run() error {
 	}
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
-	client, err := localAddress()
+	addresses, err := localAddresses(*listen, localAddress)
 	if err != nil {
 		return err
 	}
-	peer, err := localAddress()
-	if err != nil {
-		return err
-	}
-	backend, err := localAddress()
-	if err != nil {
-		return err
-	}
+	client, peer, backend := addresses[0], addresses[1], addresses[2]
 	clientURL, err := url.Parse("http://" + client)
 	if err != nil {
 		return err

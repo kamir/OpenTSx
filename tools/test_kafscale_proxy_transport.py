@@ -80,6 +80,7 @@ class KafScaleProxyTransportTest(unittest.TestCase):
             (source / "main.go").write_text('package main\nconst brokerVersion        = "dev"\n')
             (root / "tools").mkdir()
             (root / "tools/kafscale_proxy_cluster.go").write_text("pinned launcher")
+            (root / "tools/kafscale_proxy_cluster_test.go").write_text("pinned launcher tests")
             (root / "tools/kafscale_metadata_overlay.py").write_text("pinned metadata overlay")
             (root / "tools/kafscale_metadata_test.go").write_text("pinned metadata tests")
             (root / "tools/kafscale_proxy_protocol_overlay.py").write_text("pinned protocol overlay")
@@ -107,6 +108,8 @@ class KafScaleProxyTransportTest(unittest.TestCase):
             program = compiler[-1]
             self.assertIn("./cmd/proxy ./pkg/metadata", program)
             self.assertIn("^TestOpenTSx(Proxy|Metadata)", program)
+            self.assertIn("go test -run '^TestOpenTSxCluster' -count=1 -v /cluster.go /cluster_test.go", program)
+            self.assertTrue(any("dst=/cluster_test.go,readonly" in item for item in compiler))
 
     def test_bundle_verification_rejects_changed_binaries_and_sources(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -116,6 +119,8 @@ class KafScaleProxyTransportTest(unittest.TestCase):
             (root / "tools").mkdir()
             launcher = root / "tools/kafscale_proxy_cluster.go"
             launcher.write_text("pinned launcher")
+            launcher_tests = root / "tools/kafscale_proxy_cluster_test.go"
+            launcher_tests.write_text("pinned launcher tests")
             (root / "tools/kafscale_metadata_overlay.py").write_text("pinned metadata overlay")
             metadata_tests = root / "tools/kafscale_metadata_test.go"
             metadata_tests.write_text("pinned metadata tests")
@@ -129,6 +134,11 @@ class KafScaleProxyTransportTest(unittest.TestCase):
                 manifest = {"identity": BUILD.identity(), "binaries": {name: BUILD.digest(directory / name) for name in BUILD.BINARIES}}
                 (directory / "manifest.json").write_text(json.dumps(manifest))
                 self.assertEqual(manifest, BUILD.verify())
+                self.assertEqual(BUILD.digest(launcher_tests), manifest["identity"]["launcherTestsSha256"])
+                launcher_tests.write_text("changed launcher tests")
+                with self.assertRaisesRegex(RuntimeError, "sources differ"):
+                    BUILD.verify()
+                launcher_tests.write_text("pinned launcher tests")
                 self.assertEqual(BUILD.digest(metadata_tests), manifest["identity"]["metadataTestsSha256"])
                 metadata_tests.write_text("changed metadata tests")
                 with self.assertRaisesRegex(RuntimeError, "sources differ"):

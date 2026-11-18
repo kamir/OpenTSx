@@ -114,7 +114,7 @@ class TrackAEvaluationTest(unittest.TestCase):
 
     def test_measurement_builds_guarded_transport_and_uses_only_proxy_endpoints(self):
         output = self.root / "results"
-        transport_sources = ("tools/build_kafscale_proxy.py", "tools/kafscale_proxy_cluster.go",
+        transport_sources = ("tools/build_kafscale_proxy.py", "tools/kafscale_proxy_cluster.go", "tools/kafscale_proxy_cluster_test.go",
                              "tools/kafscale_metadata_overlay.py", "tools/kafscale_metadata_test.go", "tools/kafscale_proxy_protocol_overlay.py",
                              "tools/kafscale_proxy_protocol_test.go")
         snapshot = {"commit": "a" * 40, "files": {name: "b" * 64 for name in (*self.tool.SOURCES, *transport_sources)}}

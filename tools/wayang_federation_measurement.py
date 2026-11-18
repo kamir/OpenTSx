@@ -23,7 +23,7 @@ ROUTES = ("centralized", "signal-cluster", "job-state")
 FIELDS = ("route", "site", "topic", "produce_frame_bytes", "produce_records", "produce_errors",
           "http_body_bytes", "http_records", "tls_client_bytes", "elapsed_ms")
 SOURCE_FILES = ("tools/wayang_federation_measurement.py", "tools/wayang_increment_latency.py",
-                "tools/kafscale_proxy_cluster.go", "tools/build_kafscale_proxy.py", "tools/kafscale_metadata_overlay.py",
+                "tools/kafscale_proxy_cluster.go", "tools/kafscale_proxy_cluster_test.go", "tools/build_kafscale_proxy.py", "tools/kafscale_metadata_overlay.py",
                 "tools/kafscale_metadata_test.go",
                 "tools/kafscale_proxy_protocol_overlay.py", "tools/kafscale_proxy_protocol_test.go",
                 "opentsx-wayang/src/test/java/org/opentsx/wayang/FederationMeasurement.java",
