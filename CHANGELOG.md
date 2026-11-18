@@ -111,10 +111,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   write it without quotes. A deployed DAG that holds one gets the status `failed` from the vector processor.
 - The `Character` argument of `TimeSeriesObject.writeToFile(file, separator)` is the column separator; it no longer
   replaces commas in the output.
-- `TimeSeriesObject` and `MessreihenLoader` write their labels, comments, messages and diagnostics in English. `shift`
-  throws `shift: offset <offset> exceeds the <n> values; expected an offset from -<n> to <n>`, `split` notes `<n>
-  missing values replaced with mean=<mean>.`, `cutFromStart` labels `( -<n> values )` and `calcAveragOfRows` labels
-  `mean of <n> series`.
+- `TimeSeriesObject` and `MessreihenLoader` write their comments, messages and diagnostics in English. `shift` throws
+  `shift: offset <offset> exceeds the <n> values; expected an offset from -<n> to <n>`, `split` notes `<n> missing
+  values replaced with mean=<mean>.`, `cutFromStart` labels `( -<n> values )` and `calcAveragOfRows` labels `mean of
+  <n> series`. The label suffixes `_Profil` and ` (stdv=1.0;mw=0.0)` and the statistics key `mw__Y` are unchanged,
+  because the workbench copies them.
 - `MFDFA.analyze` returns h(2) as `h_2` instead of h(0.5), and `MFDFA` raises `ValueError` for a `q_range` without 2
   (up to 1e-10); add 2 to custom q ranges. `is_multifractal` compares `delta_h` with the largest `delta_h` of 19
   phase-randomized copies, which keep the power spectrum (new key `delta_h_surrogates`, parameters `surrogates` and
@@ -191,31 +192,37 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   References now resolve against the absolute root.
 - `GET /v1/episodes?resample=` with a step that gives more than 100000 points for one episode allocated memory for
   every point. It now answers 400 naming `resample`. JSON bodies over 262144 bytes to `POST /v1/patterns/search`,
-  `/v1/episodes/similar` and `/v1/segments` now answer 413, like `/v1/systems/{id}/...`.
-- `ConfigManager` stops with `<path>: no such file; give an existing file` when `OPENTSX_CONFIG_FILE`,
-  `opentsx.config.file` or a profile names a missing file, and with `<name>: empty value; set a value or leave the key
-  unset` when one of them is empty. It reports files that do not load, and `getInt` stops on a value that is not a
-  whole number instead of returning the default.
-- Phase-randomized surrogates of `TimeSeriesObjectFFT`, also used by `FFTPhaseRandomizer`, keep the amplitude of every
-  Fourier coefficient of the zero-padded values and the Nyquist coefficient, and open no chart windows.
-  `getModifiedTimeSeries_PhaseRandomized`, `getPhaseRandomizedModifiedFFT_MULTIPLY_RANDOM_INV` and
-  `getPhaseRandomizedModifiedFFT_SHUFFLED_INV` take a `java.util.Random` to repeat a surrogate. `FFTPhaseRandomizer`
-  mode 0 permutes the phases and mode 1 adds random phases.
+  `/v1/episodes/similar` and `/v1/segments` now answer 413, like `/v1/systems/{id}/...`. All four answer 413 with the
+  error `request body: larger than 262144 bytes; send at most 262144 bytes`; `/v1/systems/{id}/...` answered `the
+  request is larger than 262144 bytes` before.
+- `ConfigManager` stops with `<path>: no such file; give an existing file` when `OPENTSX_CONFIG_FILE` or
+  `opentsx.config.file` names a missing file, or, when neither is set, a profile does. It stops with `<name>: empty
+  value; set a value or leave the key unset` when the value it uses is empty. It reports files that do not load, and
+  `getInt` stops on a value that is not a whole number instead of returning the default.
+- Phase-randomized surrogates of `TimeSeriesObjectFFT`, also used by `FFTPhaseRandomizer`, set c_0 of the zero-padded
+  values to 0, keep the amplitude of every other Fourier coefficient and the Nyquist coefficient, and open no chart
+  windows. A surrogate holds the first n values of the inverse transform, so it has mean 0 and the amplitude spectrum
+  of the input without c_0 only when n is a power of two. `getModifiedTimeSeries_PhaseRandomized`,
+  `getPhaseRandomizedModifiedFFT_MULTIPLY_RANDOM_INV` and `getPhaseRandomizedModifiedFFT_SHUFFLED_INV` take a
+  `java.util.Random` to repeat a surrogate. `FFTPhaseRandomizer` mode 0 permutes the phases and mode 1 adds random
+  phases.
 - `Statistical.shapiroWilk` no longer changes when a constant is added to the values, and its Javadoc gives the result
   order W, p.
 - `GrangerCausality.grangerCausalityTest` no longer fails with a singular design matrix or prints to standard output;
   its p value matches the F test of two least-squares models with intercept.
 - `TimeSeriesObject.calcEntropyForWindow` throws `IllegalArgumentException` for a window length below 4 instead of
   looping forever.
-- `TimeSeriesObject.writeToFile` writes every pair with the given separator instead of a header and 5 points, also for
-  `TimeSeriesObjectFFT`. `toString` works for fewer than 5 points, and a failed write throws `UncheckedIOException`
-  naming the file.
+- `TimeSeriesObject.writeToFile` writes three `#` header lines and then every pair with the given separator, instead
+  of the `toString` text with only the first 5 points, also for `TimeSeriesObjectFFT`. `toString` works for fewer than
+  5 points, and a failed write throws `UncheckedIOException` naming the file.
 - `TimeSeriesObject.getAvarage` and `TimeSeriesObjectFFT.getAvarage` compute the mean instead of returning 0.0 until
   `calcAverage` was called.
 - `MessreihenLoader.loadMessreihe_2` reads comma-separated files with decimal points and stops with the file and line
   on a bad value, a short line or a missing file instead of returning an empty or partial series.
-- `TimeSeriesObject.add`, `add(series, length)` and `divide_by` keep the x values, throw for series of different
-  lengths and give NaN for a zero divisor instead of padding with 0.0.
+- `TimeSeriesObject.add`, `add(series, length)` and `divide_by` keep the x values instead of using the index. `add`
+  throws for series of different lengths and `add(series, length)` throws for a series with fewer than `length`
+  values, instead of padding with 0.0. `divide_by` throws for series of different lengths instead of returning an
+  empty or shortened series, and gives NaN for a zero divisor instead of 0.
 - `RNGWrapper.getStdPoisson(lambda)` uses `lambda` instead of 1.0.
 - `DFA`, `MFDFA`, `RIS` and `EventSynchronization` in the Python package raise `ValueError` naming the argument for a
   value that is not finite, a constant series, a series too short for the window sizes, a window size that the trend

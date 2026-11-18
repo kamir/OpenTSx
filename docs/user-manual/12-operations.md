@@ -49,9 +49,9 @@ The 2.x tools in `opentsx-core` and `opentsx-lg` use `ConfigManager`, which reso
 4. `config/opentsx-default.properties`,
 5. the resource `opentsx-default.properties` of `opentsx-core`.
 
-When `OPENTSX_CONFIG_FILE` or `opentsx.config.file` names a file, or `OPENTSX_CONFIG_PROFILE` or
-`opentsx.config.profile` names a profile, the file must exist and load; for a profile the path is
-`config/opentsx-<profile>.properties`. An empty or blank value stops the tool with
+When `OPENTSX_CONFIG_FILE` or `opentsx.config.file` names a file, that file must exist and load. Otherwise, when
+`OPENTSX_CONFIG_PROFILE` or `opentsx.config.profile` names a profile, `config/opentsx-<profile>.properties` must exist
+and load. The system property wins over the variable. An empty or blank value that wins stops the tool with
 `<name>: empty value; set a value or leave the key unset`, where `<name>` is the key or variable that holds it. A
 missing file stops it with `<path>: no such file; give an existing file`. A file that cannot be read or has a
 malformed `\u` escape stops it with a message that starts with `<path>:`. An integer key whose value is not a whole

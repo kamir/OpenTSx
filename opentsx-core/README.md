@@ -168,8 +168,9 @@ not use `showTest`, `runDFA` or `testZaehler`. None of these methods opens a win
 
 `ConfigManager.getInstance()` reads the resource `opentsx-default.properties`, then
 `config/opentsx-default.properties` when that file exists. A file named by `opentsx.config.file` or
-`OPENTSX_CONFIG_FILE` must exist, and so must `config/opentsx-<profile>.properties` for a profile set by
-`opentsx.config.profile` or `OPENTSX_CONFIG_PROFILE`. When one of these four names holds an empty value, or a file is
+`OPENTSX_CONFIG_FILE` must exist. Without such a file, `config/opentsx-<profile>.properties` must exist for a profile
+set by `opentsx.config.profile` or `OPENTSX_CONFIG_PROFILE`; with one, the profile file is not read. The system
+property wins over the variable, and only the value that wins is checked. When that value is empty, or a file is
 missing or does not load, the first call of `getInstance()` fails with `ExceptionInInitializerError` and later calls
 with `NoClassDefFoundError`. The cause names the key, the variable or the file:
 

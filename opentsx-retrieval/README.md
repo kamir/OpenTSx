@@ -159,8 +159,8 @@ opentsx vectors stop   --kafscale host:9092 --domain wind --name <dag name>
 * Numbers in a node of a series sink, such as `factor` of `convert.unit` or `min` of `dq.checks`, are YAML numbers.
   Text there, also a number in quotes such as `"1.5"`, refuses the DAG with the node and the field, for example
   `node n3: factor: "1,5" is not a number; expected a number without quotes, such as 0.01 or 1e-3`.
-  `POST /v1/dags/deploy` answers 400; a DAG from `vectors deploy` or one already in the control topic gets the status
-  `failed` with that error.
+  `POST /v1/dags/deploy` answers 400. `vectors deploy` stops with that error and exit code 1 and writes nothing to the
+  control topic. A DAG already in the control topic gets the status `failed` with that error.
 * An error while the processor applies a deployment or a stop, such as a status record it cannot send, ends the
   processor with that error. Started again, it reads the control topic from the beginning.
 

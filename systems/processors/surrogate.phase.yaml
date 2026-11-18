@@ -22,8 +22,8 @@ runtimes:
     note: >-
       2.x model in opentsx-core: getModifiedTimeSeries_PhaseRandomized(random) on
       TimeSeriesObjectFFT.convertToMessreiheFFT(ts) draws the phases from the java.util.Random it is given; without
-      an argument it uses a new Random. Pads to a power of two with zeros, so for other lengths it keeps the spectrum
-      of the padded series; keeps the real coefficient at the Nyquist frequency; sets c_0 of the padded values to 0, so
+      an argument it uses a new Random. Pads to a power of two with zeros and returns the first n values of the inverse
+      transform, so for other lengths the result does not keep the amplitude spectrum; keeps the real coefficient at the Nyquist frequency; sets c_0 of the padded values to 0, so
       the result has mean 0 only for a length that is a power of two; opens no window.
       LongTermCorrelationSeriesGenerator.getPhaseRandomizedRow(ts, false, false) calls it without a seed.
       FFTPhaseRandomizer.getPhaseRandomizedRow mode 1 adds random phases the same way, mode 0 permutes the phases of

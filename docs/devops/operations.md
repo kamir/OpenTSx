@@ -1,18 +1,5 @@
 # Operations concept
 
-> **Kurzfassung (Deutsch).** Dieses Betriebskonzept beschreibt, wie OpenTSx auf k3s gegen ein bestehendes
-> KafScale-Cluster betrieben wird – vom **lokalen Probelauf** bis zu einer produktionsnahen Laborumgebung.
-> **Lokal verproben:** `deploy/k3s/60-probe.sh --local-kafscale` startet KafScale per Docker Compose (mit der
-> LAN-IP als *advertised address*), baut und installiert alles, führt jedes Beispiel aus (Windpark → KafScale,
-> Statistik, Retrieval, Studio, Zwillinge, DWD offline, Modbus-Simulator + Poller) und schreibt einen Bericht
-> `probe-report-<Zeit>.md` mit PASS/FAIL je Schritt, Dauer und Hinweisen. `--dry-run` zeigt nur den Plan.
-> Das Konzept enthält: Dienstkatalog mit Kritikalität, drei Umgebungen, Überwachung (heute `kubectl`-basiert plus
-> optionaler synthetischer Check; Vorschlag kube-state-metrics + VictoriaMetrics/Prometheus + Grafana, Alarmregeln
-> nur auf Metriken, die es wirklich gibt – **OpenTSx selbst exportiert noch keine Metriken**), Logging, Sicherung und
-> Wiederherstellung (`70-backup.sh`, `71-restore.sh`), Update und Rollback, Secrets, Sicherheit, acht Runbooks,
-> Rollen, einfache SLOs und die Kapazitätsprüfung. Geprüft wurde hier ohne Docker-Daemon und ohne k3s (siehe
-> [Validierung](#what-was-validated-here)); der erste echte Probelauf steht noch aus.
-
 This page is the operating model for OpenTSx on k3s as described in this guide: what runs, how to watch it, how to
 back it up, update it and react to incidents. It covers today's Java components (see
 [today vs. planned](today-vs-planned.md)); the planned Go processor will add its own metrics and runbooks.

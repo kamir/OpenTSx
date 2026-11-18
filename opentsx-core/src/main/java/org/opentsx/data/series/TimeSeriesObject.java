@@ -1497,12 +1497,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         return mr;
     }
     
-    /**
-     * Looks for y in an epsilon neighborhood and takes the first match.
-     * 
-     * @param y
-     * @return 
-     */
     public double getX_for_Y2( double y , double epsilon ) {
         
         double returnValueX = Double.NaN;
