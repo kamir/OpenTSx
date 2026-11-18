@@ -169,8 +169,9 @@
         "The transform scales each series separately."
       ],
       "pitfalls": [
-        "Zero maxima produce nonfinite values.",
-        "Maximum normalization is not z-score normalization."
+        "The browser leaves zero maxima unguarded and can produce nonfinite values.",
+        "Maximum normalization is not z-score normalization.",
+        "The native maximum-normalization action requires nonempty matching finite samples, a positive maximum and finite quotients. It preserves original coordinates and axis labels and rejects invalid input before opening a chart or recording a transformation. These desktop checks are separate from the public legacy normalize calculation and entropy."
       ],
       "parameterKeys": [],
       "expectedOutput": {
@@ -197,17 +198,21 @@
       "references": {
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "opentsx-core/README.md"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#norm-max"
         ],
         "source": [
-          "opentsx-saas-frontend/src/workbench/ops.ts#normMax"
+          "opentsx-saas-frontend/src/workbench/ops.ts#normMax",
+          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObject.java#normalize",
+          "opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanel.java#jButton12ActionPerformed"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
-          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts",
+          "opentsx-core/src/test/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanelMaximumNormalizationTest.java"
         ],
         "vectors": []
       }

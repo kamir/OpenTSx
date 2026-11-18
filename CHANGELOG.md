@@ -294,6 +294,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- Native maximum normalization validates finite matching samples, a positive maximum and finite quotients while
+  preserving original coordinates and axis labels. Rejected selections or series produce a visible error without
+  opening a chart or recording a transformation. Public legacy normalization and entropy calculations are retained.
+
 - Failed bounded JVM federation tests retain disposable-broker logs for CI diagnostics. KafScale CI artifacts
   include Wayang test reports, retained fixture broker logs and the primary broker log.
 

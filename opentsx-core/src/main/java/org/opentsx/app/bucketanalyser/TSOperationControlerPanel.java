@@ -767,20 +767,48 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         String source = this.label;
         String target = operationPrefix + this.label;
 
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
-
         Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
-
-        for (TimeSeriesObject r : this.rows) {
-
-            TimeSeriesObject a = r.copy();
-            a.normalize();
-
-            v.add(a);
-
+        try {
+            if (rows == null || rows.isEmpty()) {
+                throw new IllegalArgumentException("Select at least one series for maximum normalization");
+            }
+            for (TimeSeriesObject r : rows) {
+                if (r == null || r.getXValues() == null || r.getYValues() == null
+                        || r.getXValues().size() != r.getYValues().size() || r.getYValues().isEmpty()) {
+                    throw new IllegalArgumentException("Maximum normalization requires at least one coordinate-value pair");
+                }
+                if (r.getLabel() == null) {
+                    throw new IllegalArgumentException("Maximum normalization requires a series label");
+                }
+                Vector x = r.getXValues();
+                Vector y = r.getYValues();
+                double maximum = Double.NEGATIVE_INFINITY;
+                for (int index = 0; index < y.size(); index++) {
+                    if (!(x.get(index) instanceof Double coordinate) || !(y.get(index) instanceof Double value)
+                            || !Double.isFinite(coordinate) || !Double.isFinite(value)) {
+                        throw new IllegalArgumentException("Maximum normalization requires finite coordinates and values");
+                    }
+                    maximum = Math.max(maximum, value);
+                }
+                if (maximum <= 0.0) {
+                    throw new IllegalArgumentException("Maximum normalization requires a positive maximum");
+                }
+                for (Object value : y) {
+                    if (!Double.isFinite((Double) value / maximum)) {
+                        throw new IllegalArgumentException("Maximum normalization produced a non-finite value");
+                    }
+                }
+                TimeSeriesObject a = r.copy();
+                for (int index = 0; index < x.size(); index++) a.xValues.set(index, x.get(index));
+                a.normalize();
+                v.add(a);
+            }
+            MultiChart.open(v, this.jRadioButton1.isSelected(), "NORM_MAX=1 of " + this.label);
+        } catch (IllegalArgumentException failure) {
+            JOptionPane.showMessageDialog(this, failure.getMessage(), "Normalization failed", JOptionPane.ERROR_MESSAGE);
+            return;
         }
-
-        MultiChart.open(v, this.jRadioButton1.isSelected(), "NORM_MAX=1 of " + this.label);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
     }//GEN-LAST:event_jButton12ActionPerformed
 
