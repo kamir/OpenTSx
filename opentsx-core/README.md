@@ -192,6 +192,41 @@ mvn -B -ntp -pl opentsx-core -am test \
   -Dsurefire.failIfNoSpecifiedTests=false -Djava.awt.headless=false
 ```
 
+## Scale native series by a positive maximum
+
+The native `NORM max=1` action divides each selected series by its own positive maximum. Each series needs a non-null
+label and at least one matching finite `Double` coordinate-value pair. All-zero series, zero maxima and all-negative
+series are rejected.
+Mixed-sign series are accepted when every quotient is finite. Direct division supports positive subnormal maxima;
+finite underflow to zero is accepted.
+
+Results preserve the original coordinates and axis labels, including irregular or fractional coordinates, and use
+the existing `(max=...)` result-label suffix. Input coordinates, values and labels are unchanged. All results are
+prepared before opening a chart and recording the transformation. Invalid input, including a bad later row, displays
+an error titled `Normalization failed` and produces no chart or recorder entry.
+
+| Error | Accepted input |
+| --- | --- |
+| `Select at least one series for maximum normalization` | A nonempty selection |
+| `Maximum normalization requires at least one coordinate-value pair` | Matching X/Y vectors with at least one sample |
+| `Maximum normalization requires a series label` | A non-null series label |
+| `Maximum normalization requires finite coordinates and values` | Finite `Double` entries in both vectors |
+| `Maximum normalization requires a positive maximum` | A maximum greater than zero |
+| `Maximum normalization produced a non-finite value` | Finite quotients for every sample |
+
+These checks apply to the desktop action. The public `TimeSeriesObject.normalize()` method is a separate legacy
+in-place calculation also used by entropy.
+The [browser maximum-scaling lesson](../docs/learning/ui-operator-contracts.md#norm-max)
+allows missing values and leaves zero maxima unguarded.
+
+You need JDK 17 or later, Maven, and a display for the desktop checks. From the repository root, run:
+
+```bash
+mvn -B -ntp -pl opentsx-core -am test \
+  -Dtest=TSOperationControlerPanelMaximumNormalizationTest \
+  -Dsurefire.failIfNoSpecifiedTests=false -Djava.awt.headless=false
+```
+
 ## Normalize finite time series
 
 `TimeSeriesObject.normalizeToStdevIsOne` centers values and divides by their sample standard deviation.

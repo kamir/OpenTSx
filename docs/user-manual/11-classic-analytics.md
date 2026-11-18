@@ -205,6 +205,12 @@ validation message. Window starts follow the first series; every series contribu
 each nominal window, including the final partial window. See the
 [native histogram contract](../../opentsx-core/README.md#compare-native-histogram-slices) for limits and regression checks.
 
+The native `NORM max=1` action requires matching finite coordinate/value pairs and a positive maximum in each
+selected series. It preserves original coordinates and axis labels and rejects zero maxima or nonfinite quotients
+without opening a chart or recording a transformation. See
+[native maximum scaling](../../opentsx-core/README.md#scale-native-series-by-a-positive-maximum)
+for errors and regression checks.
+
 `Histogram per series` validates integer bounds, positive bin counts and nonempty finite matching coordinate/value
 pairs in every selected row. It retains native raw-count binning. The native `NORM std=1, avg=0` action preserves
 original sample coordinates and axis labels while rejecting short, malformed, nonfinite or constant series.

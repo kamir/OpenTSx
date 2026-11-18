@@ -109,7 +109,7 @@ def source_signature():
     for name in ["pom.xml", "opentsx-wayang/pom.xml", "opentsx-model/pom.xml",
                  "opentsx-saas-frontend/package-lock.json", "opentsx-saas-backend/requirements.txt",
                  "docker-compose.wayang-rust.yml", "deploy/compose/wayang-rust-nginx.conf",
-                 "tools/verify_wayang_rust_compose.py", "tools/build_kafscale_proxy.py", "tools/kafscale_proxy_cluster.go",
+                 "tools/verify_wayang_rust_compose.py", "tools/build_kafscale_proxy.py", "tools/kafscale_proxy_cluster.go", "tools/kafscale_proxy_cluster_test.go",
                  "tools/kafscale_metadata_overlay.py", "tools/kafscale_metadata_test.go",
                  "tools/kafscale_proxy_protocol_overlay.py", "tools/kafscale_proxy_protocol_test.go",
                  "bin/opentsx", "opentsx-saas-frontend/package.json",
