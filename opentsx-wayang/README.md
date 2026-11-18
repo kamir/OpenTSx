@@ -280,6 +280,35 @@ merge-order comparisons. Use the
 to rerun the bounded profile. Kafka frames, HTTP bodies and TLS client-stream
 bytes describe different layers; their route clocks cover different work.
 
+## Evaluate the bounded Track A baselines
+
+The [A5 harness](../tools/wayang_track_a_evaluation.py) evaluates the complete
+synthetic W scenario from a clean checkout with pinned KafScale v1.6.0 and a
+frozen Java classpath. Its default matrix contains three repetitions of
+one-, three- and ten-site federation and both runtimes for every combination
+of three chains and one, four and twelve partitions. The 63 conditions run
+sequentially in fresh execution JVMs and disposable in-memory brokers.
+
+Federation executes centralized statistics on the actual received raw records
+and compares them with the signed site results. Every turbine remains on one
+site. The execution topology has one JVM and one broker per site plus the
+central broker. The existing three-site A4 qualification and its separate
+transport counters retain their scope.
+
+Streaming is a bounded backlog/catch-up measurement. Track A runs one
+`TsxIncrement`; native clean runs `VectorProcessor`, statistics runs
+`StatsProcessor`, and decode uses the existing SOE decoder in a plain Java
+Kafka loop with canonical re-encoding and acknowledged writes. Both decode
+paths include publication; this is not a decoder-only CPU benchmark. Native
+decode is not a `VectorProcessor` binding. Every input is acknowledged before
+activation, and no warm-up samples are discarded.
+
+Read the [operations instructions](../docs/user-manual/12-operations.md#128-evaluate-the-bounded-track-a-baselines)
+for prerequisites, commands, raw files and clock definitions. The harness
+applies no performance threshold. Its backlog results remain distinct from
+the [paced A1.7 measurements](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md#141-measure-track-a-increments),
+the 30-kill recovery protocol and the Track B small-device matrix.
+
 ## Compute window statistics
 
 `new TsxStatsWindow(node, config, state)` accepts `Episode` and `Observation`

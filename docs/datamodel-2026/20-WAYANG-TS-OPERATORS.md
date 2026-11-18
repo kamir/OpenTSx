@@ -721,6 +721,64 @@ clocks also include site computation and merge. They do not establish a latency
 or speed comparison. This run qualifies the bounded local profile; it does not
 establish the one/three/ten-site matrix of A5 or remote-network performance.
 
+### 14.4 Evaluate the bounded Track A baselines
+
+The [A5 harness](../../tools/wayang_track_a_evaluation.py) evaluates baselines
+(a) and (b) with the complete synthetic W scenario. Its default matrix has
+three repetitions of federation at 1, 3 and 10 sites and streaming at 1, 4
+and 12 partitions. Streaming runs decode-only, `dq.checks` plus `resample PT1M`
+and `stats.welford-ddsketch` through Track A and the native Java path. The
+resulting 9 federation and 54 streaming conditions run sequentially with
+fresh execution JVMs and disposable in-memory KafScale v1.6.0 brokers.
+
+Federation keeps complete turbines together. One JVM runs the signed site
+instances; each site and the central receiver have their own broker. Build
+and transient conformance subprocesses are additional setup processes. The
+centralized baseline executes a Wayang statistics plan over the received
+raw records. Central raw-transfer and statistics-computation clocks remain
+separate. Counts, extrema, sketch bytes and numerical errors are checked
+against the reference before a condition is accepted. Kafka Produce frames,
+aggregate HTTP bodies and encrypted TLS client-stream bytes retain the
+distinct layer definitions of section 14.3.
+
+Streaming uses a bounded acknowledged backlog and one Track A increment,
+with `intervalSeconds: 0`. Native clean executes `VectorProcessor` and native
+statistics executes `StatsProcessor`. Native decode uses `OpenTsxAvro` in
+a plain Kafka loop because `VectorProcessor` rejects an empty operator chain.
+Both decode paths include canonical re-encoding and acknowledged writes;
+the measurement does not isolate decoder CPU time.
+The native decode result does not establish a `VectorProcessor` decode binding.
+
+Activation wall time includes runtime construction, planning or deployment,
+processing, acknowledged output and checkpoint persistence. Independent
+checkpoint inspection, output scans and reference checks are outside that
+clock. Throughput counts input episodes and values; per-core rates divide
+by the recorded available logical processors, without inferring single-core
+speed. Job CPU time includes the in-JVM observer and harness and excludes
+Go broker CPU.
+
+Latency uses successful output Produce ingress minus the latest contributing
+successful input Produce ingress at the loopback protocol observer. Raw
+samples retain contributor ids and acknowledgement clocks. Kafka event and
+envelope timestamps are not latency clocks. Clean equivalence checks ids,
+series keys, event times and values; it does not require equal `createdAt`
+fields or Kafka envelope timestamps.
+
+Every condition retains once-per-second RSS and cumulative CPU samples for
+the driver, owned brokers and observed subprocesses across setup and
+execution. Short-lived processes between samples can be missed. JVM
+launch-to-exit lifetime, activation-to-first-fetch and activation-to-first-output
+are distinct clocks. Metadata records artifact sizes, hardware, versions,
+heap, commands and source/runtime hashes. No CPU reservation or performance
+threshold is applied.
+
+Use the [operations instructions](../user-manual/12-operations.md#128-evaluate-the-bounded-track-a-baselines)
+to run the harness and inspect its raw evidence. These finite backlog results
+remain separate from the paced A1.7 measurements in section 14.1. They do not
+establish paced statistics or partition coverage, the 30-kill recovery
+protocol, durable-storage or remote-network performance, Track B parity or
+the small-device matrix in section 14.2.
+
 ## 15. When to use which track
 
 | Situation | Track |

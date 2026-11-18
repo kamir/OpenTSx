@@ -14,6 +14,7 @@ import org.apache.wayang.basic.operators.LocalCallbackSink;
 import org.apache.wayang.core.api.Configuration;
 import org.apache.wayang.core.api.WayangContext;
 import org.apache.wayang.core.plan.wayangplan.WayangPlan;
+import org.apache.wayang.core.plan.wayangplan.Operator;
 import org.opentsx.kafka.KafScaleClients;
 import org.opentsx.kafka.LogReader;
 import org.opentsx.kafka.TopicLayout;
@@ -26,6 +27,7 @@ import org.opentsx.wayang.federation.AggregateForwarder;
 import org.opentsx.wayang.federation.AggregateInventory;
 import org.opentsx.wayang.federation.AggregateRecord;
 import org.opentsx.wayang.federation.CompletenessCoordinator;
+import org.opentsx.wayang.federation.SiteStats;
 import org.opentsx.wayang.site.ConformanceHandshake;
 import org.opentsx.wayang.site.EphemeralSiteTlsFixture;
 import org.opentsx.wayang.site.RunnerPlan;
@@ -69,10 +71,12 @@ final class FederationFixture implements AutoCloseable {
     record WindowRow(Map<String, String> columns) { }
     record Result(String route, List<AggregateRecord> partials, List<AggregateRecord> merged, List<SeriesStats> driverOutput,
                   List<ByteRow> bytes, List<WindowRow> windows, long elapsedNanos, List<JsonNode> reports) { }
+    record CentralResult(List<SeriesStats> statistics, long elapsedNanos, long cpuNanos,
+                         long firstFetchNanos, long firstStatisticsNanos) { }
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Path ROOT = Path.of("..").toAbsolutePath().normalize();
-    private static final List<String> SITES = List.of("s1", "s2", "s3");
+    private final List<String> sites;
     private static final String JOB = "w3";
     private static final String ABI = "tsx-java/1";
     private static final Duration TIMEOUT = Duration.ofMinutes(5);
@@ -90,23 +94,29 @@ final class FederationFixture implements AutoCloseable {
     private final Map<String, Result> results = new HashMap<>();
     private int sessions;
 
-    FederationFixture(Path directory) throws Exception { this(directory, Fault.NONE); }
+    FederationFixture(Path directory) throws Exception { this(directory, Fault.NONE, 3); }
 
-    FederationFixture(Path directory, Fault fault) throws Exception {
+    FederationFixture(Path directory, Fault fault) throws Exception { this(directory, fault, 3); }
+
+    FederationFixture(Path directory, int siteCount) throws Exception { this(directory, Fault.NONE, siteCount); }
+
+    private FederationFixture(Path directory, Fault fault, int siteCount) throws Exception {
+        sites = FederatedWindparkData.siteNames(siteCount);
         this.directory = directory;
         Files.createDirectories(directory);
-        FederatedWindparkData generated = FederatedWindparkData.load();
-        brokers = new FederationBrokers(directory.resolve("brokers"));
+        FederatedWindparkData generated = FederatedWindparkData.load(siteCount);
+        List<String> clusters = java.util.stream.Stream.concat(sites.stream(), java.util.stream.Stream.of("signal")).toList();
+        brokers = new FederationBrokers(directory.resolve("brokers"), clusters);
         EphemeralSiteTlsFixture created = null;
         try {
-            created = EphemeralSiteTlsFixture.create("s1", "s2", "s3");
+            created = EphemeralSiteTlsFixture.create(sites.toArray(String[]::new));
             tls = created;
             driver = KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
-            for (String site : SITES) siteKeys.put(site, KeyPairGenerator.getInstance("Ed25519").generateKeyPair());
+            for (String site : sites) siteKeys.put(site, KeyPairGenerator.getInstance("Ed25519").generateKeyPair());
             digest = SiteConformanceChecks.artifactDigest();
             version = SiteConformanceChecks.version(ROOT);
             dagText = dag().toString();
-            for (String cluster : List.of("s1", "s2", "s3", "signal")) {
+            for (String cluster : clusters) {
                 try (Admin admin = KafScaleClients.admin(brokers.bootstrap(cluster))) {
                     layout.provision(admin, 3, (short) 1);
                     layout.provisionTopic(admin, layout.aggregates(), (short) 1);
@@ -114,10 +124,10 @@ final class FederationFixture implements AutoCloseable {
                     if (cluster.equals("signal")) layout.provisionTopic(admin, layout.dagStatus(), (short) 1);
                 }
             }
-            for (String site : SITES) writeInput(site, generated.sites().get(site));
+            for (String site : sites) writeInput(site, generated.sites().get(site));
             if (fault == Fault.WRONG_FINGERPRINT) writeInput("s1", List.of(generated.centralized().values().iterator().next()));
             if (fault == Fault.OVERLAPPING_SERIES) writeInput("s2", List.of(generated.sites().get("s1").get(0)));
-            for (String site : SITES) inputRecords.put(site, readAll(brokers.bootstrap(site), layout.episodes()));
+            for (String site : sites) inputRecords.put(site, readAll(brokers.bootstrap(site), layout.episodes()));
             if (fault == Fault.NONE) {
                 Map<String, Episode> received = new HashMap<>();
                 OpenTsxAvro avro = new OpenTsxAvro();
@@ -134,7 +144,7 @@ final class FederationFixture implements AutoCloseable {
                     ordered.add(actual);
                 }
                 assertTrue(received.isEmpty());
-                data = FederatedWindparkData.fromEpisodes(ordered);
+                data = FederatedWindparkData.fromEpisodes(ordered, siteCount);
             } else data = generated;
         } catch (Exception | AssertionError error) {
             if (created != null) try { created.close(); } catch (Exception cleanup) { error.addSuppressed(cleanup); }
@@ -197,14 +207,14 @@ final class FederationFixture implements AutoCloseable {
         Result previous = results.get(route);
         if (previous != null) return previous;
         try (Session session = session(route)) {
-            for (String site : SITES) assertEquals("accepted", session.conform(site).path("result").asText());
+            for (String site : sites) assertEquals("accepted", session.conform(site).path("result").asText());
             long started = System.nanoTime();
-            session.execute(SITES);
+            session.execute(sites);
             long elapsed = System.nanoTime() - started;
             Result result = session.result(elapsed);
-            assertEquals(420, result.merged().size());
-            assertEquals(1260, result.partials().size());
-            assertEquals(420, result.driverOutput().size());
+            assertEquals(data.centralized().size(), result.merged().size());
+            assertEquals(Math.multiplyExact(data.centralized().size(), sites.size()), result.partials().size());
+            assertEquals(data.centralized().size(), result.driverOutput().size());
             results.put(route, result);
             return result;
         }
@@ -213,7 +223,7 @@ final class FederationFixture implements AutoCloseable {
     List<ByteRow> centralizedTransfer() throws Exception {
         List<ByteRow> rows = new ArrayList<>();
         long started = System.nanoTime();
-        for (String site : SITES) {
+        for (String site : sites) {
             try (LatencyProtocolObserver observer = new LatencyProtocolObserver(brokers.port("signal"), false);
                  var producer = KafScaleClients.producer(observer.bootstrap())) {
                 List<Future<?>> sent = new ArrayList<>();
@@ -249,6 +259,39 @@ final class FederationFixture implements AutoCloseable {
                 r.httpBodyBytes(), r.httpRecords(), r.tlsClientBytes(), elapsed);
     }
 
+    CentralResult centralizedPlan() throws Exception {
+        Map<Integer, long[]> ranges = new TreeMap<>();
+        cuts(brokers.bootstrap("signal"), layout.episodes()).forEach((partition, range) -> ranges.put(partition.partition(), range));
+        assertEquals(data.episodes().size(), ranges.values().stream().mapToLong(range -> range[1] - range[0]).sum());
+        try (LatencyProtocolObserver observer = new LatencyProtocolObserver(brokers.port("signal"), false)) {
+            TsxRead read = new TsxRead(observer.bootstrap(), layout.episodes(), ranges, KafScaleFixture.EPISODE_ONLY, JOB, 1, true);
+            List<SeriesStats> raw = new ArrayList<>();
+            long[] firstStatistics = {-1};
+            observer.begin(layout.episodes(), 0);
+            long started = System.nanoTime();
+            long cpu = ProcessHandle.current().info().totalCpuDuration().orElseThrow().toNanos();
+            TsxCompileContext context = new TsxCompileContext(Map.of(), Map.of(layout.aggregates(),
+                    new TsxCompileContext.Boundary(Set.of("PT10M", "PT1H"), false)), OptionalLong.empty(),
+                    Map.of(), Map.of(), Map.of(), "central", OptionalLong.empty(), true);
+            DagToWayang compiled = DagToWayang.compile(dagText, layout, ROOT.resolve("systems/processors"), context);
+            Operator output = compiled.outputs(Map.of(layout.episodes(), new TsxTopicSource(read)), new TsxState(Map.of())).get("stats");
+            LocalCallbackSink<SpecificRecord> sink = new LocalCallbackSink<>((java.util.function.Consumer<SpecificRecord>) record -> {
+                if (!(record instanceof SeriesStats statistics)) throw new IllegalStateException("central baseline received a non-statistics record");
+                if (firstStatistics[0] < 0) firstStatistics[0] = System.nanoTime();
+                raw.add(statistics);
+            }, SpecificRecord.class);
+            output.connectTo(0, sink, 0);
+            new WayangContext(new Configuration()).with(new TsxJavaPlugin()).execute(new WayangPlan(sink));
+            List<SeriesStats> grouped = SiteStats.group(raw, data.rawGroups(), 0.01);
+            long elapsed = System.nanoTime() - started;
+            long cpuElapsed = ProcessHandle.current().info().totalCpuDuration().orElseThrow().toNanos() - cpu;
+            long firstFetch = observer.end() - started;
+            assertEquals(data.centralized().size(), grouped.size());
+            assertTrue(firstFetch >= 0 && firstStatistics[0] >= started);
+            return new CentralResult(grouped, elapsed, cpuElapsed, firstFetch, firstStatistics[0] - started);
+        }
+    }
+
     Session conformanceSession() throws Exception { return session("signal-cluster"); }
     Session session(String route) throws Exception { return new Session(route, directory.resolve("session-" + sessions++)); }
 
@@ -280,7 +323,7 @@ final class FederationFixture implements AutoCloseable {
             this.state = state;
             Files.createDirectories(state);
             List<String> assignments = new ArrayList<>();
-            for (String site : SITES) assignments.add(assignment(site).toString());
+            for (String site : sites) assignments.add(assignment(site).toString());
             ArrayNode members = JSON.createArrayNode();
             for (String text : assignments) {
                 JsonNode assignment = JSON.readTree(text);
@@ -299,7 +342,7 @@ final class FederationFixture implements AutoCloseable {
             service = new TsxPlanService(driver.getPublic(), publicKeys, tls.certificateSites(), state.resolve("driver"), clock,
                     this::status, (plan, delivery) -> accept(AggregateRecord.fromDelivery(delivery)));
             int index = 0;
-            for (String site : SITES) {
+            for (String site : sites) {
                 ObjectNode document = document(site, assignments.get(index++), members, scopes);
                 String compact = SignedJws.sign(JSON.writeValueAsBytes(document), driver.getPrivate());
                 plans.put(site, RunnerPlan.verify(compact, driver.getPublic()));
@@ -309,7 +352,7 @@ final class FederationFixture implements AutoCloseable {
                 observers.put(site, new LatencyProtocolObserver(brokers.port("signal"), false));
             }
             int port = service.start(new InetSocketAddress("127.0.0.1", 0), tls.serverContext()).getAddress().getPort();
-            for (String site : SITES) {
+            for (String site : sites) {
                 SiteTrafficProxy proxy = new SiteTrafficProxy(port);
                 proxies.put(site, proxy);
                 clients.put(site, new TsxPlanClient(URI.create("https://localhost:" + proxy.port()), site, tls.clientContext(site)));
@@ -421,7 +464,7 @@ final class FederationFixture implements AutoCloseable {
 
         void execute(List<String> sites) {
             for (String site : sites) tlsBefore.putIfAbsent(site, proxies.get(site).clientBytes.get());
-            TsxSiteStage stage = new TsxSiteStage(420, () -> {
+            TsxSiteStage stage = new TsxSiteStage(data.centralized().size(), () -> {
                 for (String site : sites) {
                     TsxSiteAgent agent = agents.get(site);
                     if (agent == null) throw new IllegalStateException("site is stopped");
@@ -518,11 +561,11 @@ final class FederationFixture implements AutoCloseable {
 
         Result result(long elapsed) {
             List<ByteRow> bytes = new ArrayList<>();
-            for (String site : SITES) {
+            for (String site : sites) {
                 if (route.equals("signal-cluster")) {
                     var observer = observers.get(site);
                     observer.check();
-                    assertEquals(420, observer.produceRecords.get());
+                    assertEquals(data.centralized().size(), observer.produceRecords.get());
                     assertEquals(0, observer.produceErrors.get());
                     bytes.add(new ByteRow(route, site, layout.aggregates(), observer.produceFrameBytes.get(), observer.produceRecords.get(),
                             observer.produceErrors.get(), -1, -1, -1, elapsed));
