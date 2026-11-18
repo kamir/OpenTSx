@@ -19,6 +19,11 @@ streaming output latency records. Every manifest hash and the generated
 report are checked by the deterministic committed-results regression.
 Percentiles use nearest rank; the CSV files retain the recorded precision.
 
+Resource CSV files retain their captured CRLF line endings. The repository
+[format declaration](../../../../.gitattributes) prevents conversion and
+keeps the standard whitespace checks, including rejection of real trailing
+spaces. All raw-file hashes remain those of the original run.
+
 Kafka Produce frames, HTTP aggregate bodies and encrypted TLS client-stream
 bytes are distinct protocol layers. Central raw transfer, central plan
 execution and federated route clocks cover different work. The report
