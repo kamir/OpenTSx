@@ -216,6 +216,23 @@ class TrackAEvaluationTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.tool.streaming_result(self.root, ("clean", "java", 1))
 
+    def test_report_keeps_metrics_in_readable_tables_without_clock_claim_changes(self):
+        run, _, _ = self.federation(1)
+        run.update(centralizedFirstFetchNanos=20, centralizedFirstStatisticsNanos=100)
+        (self.root / "run.json").write_text(json.dumps(run))
+        self.streaming()
+        self.csv("resources.csv", [{"elapsed_ms": "0", "pid": "1", "ppid": "0", "role": "driver", "rss_bytes": "1024", "cpu_seconds": "0"}])
+        metadata = {"openTsxCommit": "a" * 40, "startedAt": "2026-11-18T00:00:00Z", "profile": "synthetic test",
+                    "hardware": "synthetic", "platform": "synthetic", "javaVersion": 'version "21.0.8"',
+                    "goVersion": "go1.25.2", "runtimeBytes": 100, "brokerBinaryBytes": 100,
+                    "matrix": [(".", "federation", 1, 1), (".", "streaming", ("clean", "java", 4), 1)]}
+        self.tool.report(self.root, metadata)
+        text = (self.root / "REPORT.md").read_text()
+        self.assertLessEqual(max(map(len, text.splitlines())), 80)
+        self.assertIn("not a speed comparison", text)
+        self.assertIn("C4J-r1", text)
+        self.assertIn("Kafka event/envelope timestamps are not latency clocks", text)
+
 
 if __name__ == "__main__":
     unittest.main()

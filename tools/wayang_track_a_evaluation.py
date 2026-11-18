@@ -355,37 +355,48 @@ def report(output, metadata):
     paragraph("Latency subtracts successful input Produce ingress from successful output Produce ingress at the loopback observer. Aggregate outputs use their latest contributing input; records.csv retains all contributing ids and both acknowledgement clocks. Kafka event/envelope timestamps are not latency clocks. Clean equivalence checks ids, keys, event times and values, without requiring createdAt or Kafka envelope timestamp equality.")
     paragraph("resources.csv samples RSS and cumulative CPU for the driver, owned brokers and observed subprocesses once per second across setup, execution and independent validation. Short-lived processes between samples can be missed. Sampled driver CPU is the largest observed cumulative process CPU time, not the exact CPU-at-exit total. JVM process start, main entry, activation and I/O timings are distinct. The host is shared; no CPU reservation or remote-network result is claimed.")
     paragraph(f"Frozen test-runtime classpath size: {metadata['runtimeBytes']} bytes, including dependencies and harness classes. Broker binary size: {metadata['brokerBinaryBytes']} bytes. These are measured file sizes, not a minimal deployment package. Their hashes are in metadata.json.")
-    federation_rows, central_rows, streaming_rows, activation_rows, footprint_rows = [], [], [], [], []
+    federation_rows, route_rows, error_rows, central_rows = [], [], [], []
+    streaming_rows, latency_rows, activation_rows, footprint_rows = [], [], [], []
+    paragraph("Case labels use D for decode, C for clean and S for statistics, followed by the partition count, W for Wayang or J for native Java, and the repetition. C4J-r2 means streaming/clean-p4-java-r2. F10-r3 means federation/k10-r3. Raw directory names retain the full chain and runtime names.")
     for name, kind, settings, repetition in metadata["matrix"]:
         directory = output / name
         if kind == "federation":
+            label = f"F{settings}-r{repetition}"
             run, byte_rows = federation_result(directory, settings)
+            error_rows.append([label, f"{max(run[name] for name in ERRORS.values() if 'Mean' in name):.17g}",
+                               f"{max(run[name] for name in ERRORS.values() if 'M2' in name):.17g}"])
             central_rows.append([str(settings), str(repetition),
                                  *(f"{run[field] / 1000000:.3f}" for field in ("centralizedTransferElapsedNanos", "centralizedPlanElapsedNanos", "centralizedPlanCpuNanos", "centralizedFirstFetchNanos", "centralizedFirstStatisticsNanos"))])
             for route in FEDERATION.ROUTES:
                 selected = [r for r in byte_rows if r["route"] == route]
                 field = "http_body_bytes" if route == "job-state" else "produce_frame_bytes"
-                federation_rows.append([str(settings), str(repetition), route, str(sum(int(r[field]) for r in selected)),
-                                        f"{float(selected[0]['elapsed_ms']):.3f}", f"{run['maxRelativeM2Error']:.17g}"])
+                federation_rows.append([label, route, str(sum(int(r[field]) for r in selected))])
+                route_rows.append([label, route, f"{float(selected[0]['elapsed_ms']):.3f}"])
         else:
+            label = f"{dict(passthrough='D', clean='C', stats='S')[settings[0]]}{settings[2]}{'W' if settings[1] == 'wayang' else 'J'}-r{repetition}"
             run, records = streaming_result(directory, tuple(settings))
             latency = [float(r["latency_ms"]) for r in records]
             seconds = run["elapsedNanos"] / 1000000000
-            streaming_rows.append([settings[0], str(settings[2]), settings[1], str(repetition),
+            streaming_rows.append([label,
                                    f"{run['inputRecords'] / seconds:.3f}", f"{run['inputValues'] / seconds:.3f}",
-                                   f"{run['inputRecords'] / seconds / run['availableProcessors']:.3f}", f"{run['inputValues'] / seconds / run['availableProcessors']:.3f}",
-                                   *(f"{COMMON.percentile(latency, q):.3f}" for q in (0.5, 0.95, 0.99))])
-            activation_rows.append([settings[0], str(settings[2]), settings[1], str(repetition),
+                                   f"{run['inputRecords'] / seconds / run['availableProcessors']:.3f}", f"{run['inputValues'] / seconds / run['availableProcessors']:.3f}"])
+            latency_rows.append([label, *(f"{COMMON.percentile(latency, q):.3f}" for q in (0.5, 0.95, 0.99))])
+            activation_rows.append([label,
                                     *(f"{run[field] / 1000000:.3f}" for field in ("elapsedNanos", "cpuNanos", "firstFetchNanos", "firstOutputNanos"))])
         rss, brokers, cpu = resource_result(directory)
-        footprint_rows.append([name, f"{rss / 1048576:.3f}", f"{brokers / 1048576:.3f}", f"{cpu:.3f}"])
-    lines.extend(["## Read federation samples", "", *COMMON.table(["Sites", "Rep", "Route", "Layer bytes", "Route ms", "Max M2 error"], federation_rows), ""])
+        footprint_rows.append([label, f"{rss / 1048576:.3f}", f"{brokers / 1048576:.3f}", f"{cpu:.3f}"])
+    lines.extend(["## Read federation samples", "", *COMMON.table(["Case", "Route", "Layer bytes"], federation_rows), ""])
+    lines.extend(COMMON.table(["Case", "Route", "Elapsed ms"], route_rows) + [""])
     paragraph("Layer bytes are Kafka Produce frames for centralized and signal-cluster rows, HTTP bodies for job-state rows. Route milliseconds cover different work and are not a speed comparison. Separate central plan clocks are retained in each run.json; every byte/window sample remains in the case directory.")
-    lines.extend(["## Read central plan clocks", "", *COMMON.table(["Sites", "Rep", "Transfer ms", "Plan ms", "CPU ms", "Fetch ms", "Statistics ms"], central_rows), ""])
+    lines.extend(["## Read numerical errors", "", *COMMON.table(["Case", "Max mean error", "Max M2 error"], error_rows), ""])
+    paragraph("Errors are the largest relative errors among reference-to-federated, reference-to-central and federated-to-central comparisons. All three comparisons retain separate raw fields and the same 3e-12 bound. Exact count, extrema and sketch checks precede reporting.")
+    lines.extend(["## Read central plan clocks", "", *COMMON.table(["Sites", "Rep", "Transfer", "Plan", "CPU", "Fetch", "Statistics"], central_rows), ""])
     paragraph("Fetch and first-statistics durations start at central plan invocation. Statistics is the first native callback before grouping, not an output Produce clock. Plan time includes compilation, native execution and grouping, excluding transfer and independent correctness checks.")
-    lines.extend(["## Read streaming samples", "", *COMMON.table(["Chain", "P", "Runtime", "Rep", "Episodes/s", "Values/s", "Episodes/s/core", "Values/s/core", "p50 ms", "p95 ms", "p99 ms"], streaming_rows), ""])
-    lines.extend(["## Read streaming activation clocks", "", *COMMON.table(["Chain", "P", "Runtime", "Rep", "Wall ms", "CPU ms", "Fetch ms", "Output ms"], activation_rows), ""])
-    lines.extend(["## Read process samples", "", *COMMON.table(["Condition", "Driver MiB", "Brokers MiB", "Driver CPU s"], footprint_rows), ""])
+    lines.extend(["## Read streaming rates", "", *COMMON.table(["Case", "Episodes/s", "Values/s", "Ep/s/core", "Val/s/core"], streaming_rows), ""])
+    lines.extend(["## Read streaming latency", "", *COMMON.table(["Case", "p50 ms", "p95 ms", "p99 ms"], latency_rows), ""])
+    lines.extend(["## Read streaming activation clocks", "", *COMMON.table(["Case", "Wall ms", "CPU ms", "Fetch ms", "Output ms"], activation_rows), ""])
+    paragraph("The central plan and streaming activation clock tables use milliseconds for every duration column.")
+    lines.extend(["## Read process samples", "", *COMMON.table(["Case", "Driver MiB", "Brokers MiB", "Driver CPU s"], footprint_rows), ""])
     paragraph("Driver and broker columns are the largest sampled RSS values. Broker RSS sums simultaneously observed owned brokers. Driver CPU is cumulative since process start, including input setup and reference validation, and remains distinct from activation CPU above.")
     lines.extend(["## Repeat the measurement", ""])
     paragraph("You need a clean source checkout, JDK 17 or 21, Maven 3.9+, Python 3.10+, Git and Go with go1.25.2 available. metadata.json records the exact invocation, commands, heap, classpath and hashes. Use a new output directory.")

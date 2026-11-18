@@ -202,10 +202,10 @@ artifact sizes and source/runtime hashes.
 | Federation `bytes.csv` | Per-site Kafka, HTTP and TLS counters |
 | Federation `windows.csv` | Central and federated reference comparisons |
 | Federation `run.json` | Correctness, topology and separate central clocks |
-| Streaming `measurement.csv` | Activation wall time, throughput and latency percentiles |
-| Streaming `records.csv` | Contributor ids, Produce ingress and acknowledgement clocks |
-| Streaming `produce-attempts.csv` | Attempt partitions, offsets and response codes |
-| Streaming `case.json` | Runtime, counts, CPU, activation I/O clocks and checkpoint verification result |
+| Streaming `measurement.csv` | Wall time, rates and latency percentiles |
+| Streaming `records.csv` | Contributor ids and request/ACK clocks |
+| Streaming `produce-attempts.csv` | Partitions, offsets and response codes |
+| Streaming `case.json` | Runtime, counts, CPU, I/O and checkpoint result |
 | `resources.csv` | Once-per-second RSS and cumulative CPU samples |
 
 The directory placeholders identify the matrix dimensions: sites are 1, 3
