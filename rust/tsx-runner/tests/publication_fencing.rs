@@ -1,3 +1,5 @@
+#[path = "common/runner.rs"]
+mod cli_runner;
 mod common;
 
 use common::{episode, request, ARTIFACT_DIGEST, INPUT_TOPIC, OUTPUT_TOPIC};
@@ -775,7 +777,6 @@ fn bounded_fenced_execution_uses_saved_authority_and_keeps_the_completed_epoch()
 
 #[test]
 fn fenced_cli_requires_paired_options_and_rejects_unsafe_configuration_before_state_creation() {
-    use std::process::Command;
     let directory = Directory::new();
     let state = directory.0.join("never-created");
     let base = [
@@ -813,7 +814,7 @@ fn fenced_cli_requires_paired_options_and_rejects_unsafe_configuration_before_st
             "controller-host",
         ],
     ] {
-        let output = Command::new(env!("CARGO_BIN_EXE_tsx-runner"))
+        let output = cli_runner::runner()
             .args(base)
             .args(extra)
             .output()
@@ -821,10 +822,7 @@ fn fenced_cli_requires_paired_options_and_rejects_unsafe_configuration_before_st
         assert_eq!(output.status.code(), Some(2));
         assert!(!state.exists());
     }
-    let help = Command::new(env!("CARGO_BIN_EXE_tsx-runner"))
-        .arg("--help")
-        .output()
-        .unwrap();
+    let help = cli_runner::runner().arg("--help").output().unwrap();
     assert!(help.status.success());
     let help = String::from_utf8(help.stdout).unwrap();
     assert!(help.contains("--publisher <http-origin> --controller <IP>"));

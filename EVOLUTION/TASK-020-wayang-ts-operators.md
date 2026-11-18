@@ -379,12 +379,30 @@ small-device matrix remain separate qualification work.
 ### B1: Rust runner foundation
 - [ ] `tsx-runner run`: decode, encode, pass-through, checkpoint; cross builds.
 
-The implemented command is `tsx-runner replay`, using the
-[trusted-local bounded profile](../docs/devguide/integration/rust-runner-local.md).
-It provides Avro episode I/O, series identity, explicit caps, retained operator state and a completed receipt
-after all output acknowledgements. The Compose fixture assigns three separate topics with one, two and three
-partitions and compares their output to Java. The fleet command, full cross-target matrix and all B1 criteria
-remain separate qualification work.
+The
+[isolated signed Rust profile](../docs/devguide/integration/rust-runner-b1.md)
+implements continuous whole-topic pass-through with Ed25519 plan verification,
+exact assignment/artifact/local-policy checks, explicit finite-cut caps and
+acknowledgement-before-checkpoint recovery. The
+[trusted-local replay and HTTP profiles](../docs/devguide/integration/rust-runner-local.md)
+retain their separate cleaning operators, state formats and limits. Public fleet
+`agent` and signed `conform` modes are not implemented.
+
+CI defines native x86_64/ARM64 tests, the three required musl artifacts and
+supplementary ARMv7 QEMU tests. Artifact and test reports bind actual run
+results to source, tool versions and executable hashes; their definitions do not
+establish successful builds. Physical ARMv7 hardware is unavailable, so B1.2 and
+the B1 checkbox remain open. The public hosted ARM64 runner is separate from
+ARMv7. An ARMv7 board can be controlled over SSH from a supported runner; an
+ARM32 GitHub Actions runner is not the supported hardware plan. Read the
+[qualification plan](https://github.com/kamir/OpenTSx/issues/294) for the
+hardware and isolation boundary.
+
+The executable acceptance fixtures cover the six required KafScale protocol
+families plus acknowledged batch-topic retention in ten codec-expanded
+executions, actual Java/Rust producer partition metadata for 10,000 keys over 12
+partitions, and signed-run recovery/fingerprint boundaries. These are separate
+from signed S3 site-conformance evidence.
 
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|

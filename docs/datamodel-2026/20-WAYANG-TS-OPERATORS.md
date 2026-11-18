@@ -1,11 +1,14 @@
 # Concept 20: time-series operators on Apache Wayang, a Java track and a Rust edge track
 
-> Status: **concept**, 2026-11-17. The module has its Java platform plugin,
+> Status: **concept**, 2026-11-18. The module has its Java platform plugin,
 > KafScale source and sink, checkpointed increments, and the pure Java
 > `TsxPairXcorr` and `TsxPairEs` kernels. Shared vectors cover statistics,
 > segmentation, SAX, and data-quality results. `tsx-runner` 0.1.0 adds trusted-local bounded Kafka replay and
-> three cleaning operations. The bounded UI rollout uses a custom Wayang Rust stage and HTTP workers; the broader
-> signed continuous fleet design below remains separate. Checked against Apache
+> three cleaning operations. The bounded and continuous UI targets use a custom
+> Wayang Rust stage and HTTP workers.
+> A separate isolated signed `run` profile admits continuous Episode
+> pass-through; production fleet activation and
+> physical ARMv7 qualification remain separate. Checked against Apache
 > Wayang release 1.1.1 (tag `wayang-1.1.1`, commit `61deee43`, 2026-02-09) and `main` at `713faa7d` (2026-11-12).
 > Crate and tool versions are named where they are used. Related: [05](05-SMART-TOPICS.md) (federated global model),
 > [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md) (Go Smart Topic processor, `opentsx.dag.v1`),
@@ -18,6 +21,9 @@ multi-node Rust orchestration. Its [shared-contract implementation](../devguide/
 validates assignment envelopes in Java and Rust; it does not deploy runners.
 The separate [local Rust profile](../devguide/integration/rust-runner-local.md) executes pass-through,
 plausible-range checks, unit conversion and an optional trailing resample on a capped whole-topic cut.
+The [signed Rust profile](../devguide/integration/rust-runner-b1.md) uses its
+own local authority and continuous pass-through loop. It does not expand the
+local cleaning profile or implement a public fleet service.
 
 ## 1. Goal
 
@@ -44,11 +50,15 @@ The separate [bounded UI rollout](../devguide/integration/wayang-rust-compose.md
 through a real custom Wayang Rust platform and one connected execution stage. The authenticated backend journals
 the exact UI text, source cuts, clock and plan in PostgreSQL before its standalone coordinator dispatches the stage.
 Workers own distinct whole topics, prepare privately, then publish after cross-topic series ownership checks.
-This local profile does not establish continuous fleet execution, signed activation or production fencing.
+This local UI profile does not establish signed fleet activation or production
+fencing. The isolated signed
+runner separately verifies one continuous pass-through assignment against local
+policy before broker access.
 
 | Item | State | Evidence |
 |---|---|---|
 | Bounded Rust orchestration | Explicit workbench target, PostgreSQL journal/coordinator, `RustRollout` compiler, custom `RustPlatform`/`RustExecutor`, private HTTP preparation and acknowledged completion | [local guide](../devguide/integration/wayang-rust-compose.md), `opentsx-saas-backend/app/services/wayang_service.py`, `opentsx-wayang/src/main/java/org/opentsx/wayang/rust/`, `rust/tsx-runner/src/worker.rs` |
+| Isolated signed Rust run | Continuous whole-topic pass-through, compact Ed25519 JWS, local bindings/policy, durable activation intent and acknowledged progress checkpoints; full B1 qualification remains open | [signed runner guide](../devguide/integration/rust-runner-b1.md), `rust/tsx-runner/src/run_plan.rs`, [TASK-020 B1](../../EVOLUTION/TASK-020-wayang-ts-operators.md#b1-rust-runner-foundation) |
 | Wayang in OpenTSx | `TsxJavaPlugin` registers the Java platform and KafScale transport; `TsxIncrement` runs checkpointed increments; `TsxPairXcorr` and `TsxPairEs` are pure Java pair kernels. Shared vectors cover statistics, segmentation, SAX, and data-quality results. | `opentsx-wayang/pom.xml`, `TsxJavaPlugin.java`, `TsxIncrement.java`, `TsxPairXcorr.java`, `TsxPairXcorrVectorsTest.java`, `TsxPairEs.java`, `TsxPairEsVectorsTest.java`, `tools/java_operator_vectors.py` |
 | Build | Java release 17 (`pom.xml:39`), CI on Java 17 and 21 ([CONTRIBUTING.md](../../CONTRIBUTING.md)); `kafka.version` 3.9.2, `avro.version` 1.12.1, `hadoop.version` 3.5.0 (`pom.xml:50-55`) | `pom.xml` |
 | Streaming runtime that runs today | Java processor in `opentsx-retrieval`: manual assignment, explicit offsets, checkpoint per runner written after the broker acknowledged the output, control topic `tsx.<domain>.dags.v1`, status topic `tsx.<domain>.dag-status.v1` | [kafka-native-streaming.md](../devops/kafka-native-streaming.md); `VectorProcessor.java:46-59`; `TopicLayout.java:119-125` |
@@ -321,10 +331,25 @@ OpenTSx already has a Flink path (`opentsx-flink-core`).
 
 ## 6. Track B: Rust edge runner
 
-This section describes the fleet target. The implemented interface is `tsx-runner replay`, documented in the
-[local bounded guide](../devguide/integration/rust-runner-local.md), with the subset in
+This section distinguishes the implemented profiles from the fleet target.
+Trusted-local replay and HTTP workers are documented in the
+[local bounded guide](../devguide/integration/rust-runner-local.md), with the
+subset in
 [SPEC S1.9](20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset).
-The fleet commands and broader operator table below are not the executable local profile.
+The [isolated signed profile](../devguide/integration/rust-runner-b1.md)
+verifies a continuous pass-through plan and its original whole-topic assignment,
+artifact, site, node, catalog and local policy before broker access. It uses one
+locally permitted binding, one complete Episode input and one Episode sink. It
+has no cleaning graph, federation egress or public `agent` or `conform` mode.
+The broader fleet operator table below remains a target.
+
+CI defines native x86_64 and ARM64 execution, all three B1 static musl builds,
+ELF/digest/version checks and supplementary ARMv7 QEMU execution. Its reports
+distinguish native execution from emulation; a workflow definition alone is not
+a successful build result. B1.2 still requires physical ARMv7 execution of the
+shared cases. The
+[B1 operating guide](../devguide/integration/rust-runner-b1.md) identifies the
+qualification evidence.
 
 ### 6.1 Scope
 
@@ -332,8 +357,10 @@ The fleet commands and broader operator table below are not the executable local
 same topics, with the same checkpoint rules (C1 to C9). It reads and writes Kafka through the site's KafScale proxy
 and nothing else. Producers set `partitioner=murmur2_random` in addition to C4 (section 3.5).
 
-Modes: `agent` (mTLS REST service, outbound polling by default), `run` (one plan file, for SSH launch and tests),
-`conform` (site checks of section 8, signed report).
+The fleet target has modes `agent` (mTLS REST service, outbound polling by
+default), `run` (one plan file), and `conform` (site checks of section 8, signed
+report). Only the isolated pass-through `run` profile is implemented as a signed
+command. Trusted-local `replay` and `serve` remain separate interfaces.
 
 Inside, one owner executes each assigned whole topic: fetch every partition with `BaseConsumer`
 (manual `assign`, `seek`, no group id),
@@ -439,6 +466,9 @@ offset map; a start by time goes through the episode index (`EpisodeIndex.find`)
 
 A site, JVM or Rust, is admitted to a federated job only when all checks pass. Track A runs them in its site agent,
 Track B in `tsx-runner conform`. The report is signed with the site key.
+The isolated B1 Rust profile does not implement this `conform` command. Its
+disposable-broker protocol harness checks seven families in ten codec-expanded
+executions; that unsigned test report is not signed site admission.
 
 | Check | Pass condition |
 |---|---|

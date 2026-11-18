@@ -53,6 +53,17 @@ pub struct Store {
     pending: PathBuf,
     max_bytes: usize,
     _lock: File,
+    lock_owner_pid: u32,
+}
+
+impl Drop for Store {
+    fn drop(&mut self) {
+        if self.lock_owner_pid == std::process::id() {
+            if let Err(error) = self._lock.unlock() {
+                eprintln!("cannot release checkpoint lock: {error}");
+            }
+        }
+    }
 }
 
 impl Store {
@@ -85,15 +96,17 @@ impl Store {
             .map_err(|_| "cannot make checkpoint lock private")?;
         lock.try_lock()
             .map_err(|e| format!("checkpoint is locked or cannot be locked: {e}"))?;
-        regular_or_absent(path)?;
         let pending = parent.join(format!(".{name}.pending"));
-        regular_or_absent(&pending)?;
-        Ok(Self {
+        let store = Self {
             path: path.to_path_buf(),
             pending,
             max_bytes,
             _lock: lock,
-        })
+            lock_owner_pid: std::process::id(),
+        };
+        regular_or_absent(&store.path)?;
+        regular_or_absent(&store.pending)?;
+        Ok(store)
     }
 
     pub fn load(&self) -> Result<Option<Completion>, String> {
@@ -186,5 +199,83 @@ fn regular_or_absent(path: &Path) -> Result<(), String> {
         Ok(_) => Err("checkpoint paths must be regular files, not links or directories".into()),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
         Err(error) => Err(format!("cannot inspect checkpoint path: {error}")),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    static NEXT: AtomicU64 = AtomicU64::new(0);
+
+    fn directory() -> PathBuf {
+        let path = std::env::temp_dir().canonicalize().unwrap().join(format!(
+            "tsx-checkpoint-owner-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::SeqCst)
+        ));
+        fs::create_dir(&path).unwrap();
+        path
+    }
+
+    #[test]
+    fn checkpoint_owner_drop_releases_inherited_descriptors_without_unlocking_a_successor() {
+        let directory = directory();
+        let path = directory.join("checkpoint.json");
+        let owner = Store::open(&path, 1024).unwrap();
+        let inherited = owner._lock.try_clone().unwrap();
+        assert!(Store::open(&path, 1024).is_err());
+        drop(owner);
+        let successor = Store::open(&path, 1024).unwrap();
+        drop(inherited);
+        assert!(Store::open(&path, 1024).is_err());
+        drop(successor);
+        drop(Store::open(&path, 1024).unwrap());
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn checkpoint_body_errors_release_ownership_with_an_inherited_descriptor_alive() {
+        let directory = directory();
+        let path = directory.join("checkpoint.json");
+        let mut inherited = None;
+        let result: Result<(), String> = (|| {
+            let owner = Store::open(&path, 1024)?;
+            inherited = Some(owner._lock.try_clone().unwrap());
+            Err("rejected checkpoint body".into())
+        })();
+        assert_eq!(result, Err("rejected checkpoint body".into()));
+        let successor = Store::open(&path, 1024).unwrap();
+        drop(inherited);
+        assert!(Store::open(&path, 1024).is_err());
+        drop(successor);
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn checkpoint_validation_errors_release_the_acquired_lock() {
+        let directory = directory();
+        let path = directory.join("checkpoint.json");
+        fs::create_dir(&path).unwrap();
+        assert!(Store::open(&path, 1024).is_err());
+        fs::remove_dir(&path).unwrap();
+        drop(Store::open(&path, 1024).unwrap());
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn checkpoint_drop_respects_the_acquiring_process_identity() {
+        let directory = directory();
+        let path = directory.join("checkpoint.json");
+        let mut owner = Store::open(&path, 1024).unwrap();
+        let inherited = owner._lock.try_clone().unwrap();
+        owner.lock_owner_pid = std::process::id().wrapping_add(1);
+        drop(owner);
+        assert!(Store::open(&path, 1024).is_err());
+        inherited.unlock().unwrap();
+        drop(inherited);
+        drop(Store::open(&path, 1024).unwrap());
+        fs::remove_dir_all(directory).unwrap();
     }
 }
