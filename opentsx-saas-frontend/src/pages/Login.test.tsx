@@ -29,4 +29,12 @@ describe('the login page', () => {
     show();
     expect(await screen.findByText(/sign in with the name admin and the password admin/)).toBeInTheDocument();
   });
+
+  it('says why the sign-in mode could not be read', async () => {
+    mode.mockRejectedValue(new Error('Network Error'));
+    show();
+    expect(
+      await screen.findByText('the sign-in mode could not be read from the backend (Network Error); reload the page to try again')
+    ).toBeInTheDocument();
+  });
 });

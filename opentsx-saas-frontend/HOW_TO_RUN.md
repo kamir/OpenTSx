@@ -9,7 +9,6 @@ The frontend has been renamed to **opentsx-saas-frontend** and is ready to run!
 - ✅ Renamed from `frontend` to `opentsx-saas-frontend`
 - ✅ Fixed TypeScript compilation errors
 - ✅ Installed all dependencies (545 packages)
-- ✅ Created `.env` file from template
 - ✅ Added Vite environment type definitions
 - ✅ Updated package.json with correct name
 - ✅ Verified build works successfully
@@ -96,16 +95,14 @@ npm run preview -- --port 4173
 
 ### Environment Variables
 
-The `.env` file is already created with default values:
+Without a `.env` file, `npm run dev` calls the backend at `http://localhost:8000`. `.env` is git-ignored. To use
+another backend, copy the template and set `VITE_API_BASE_URL` in `.env`:
 
 ```bash
-VITE_API_BASE_URL=http://localhost:8000
+cp .env.example .env
 ```
 
-**To connect to backend:**
-
-1. Ensure backend is running on port 8000
-2. Or update `VITE_API_BASE_URL` in `.env` to match your backend URL
+[README.md, Environment Variables in Production](README.md#environment-variables-in-production) lists the values.
 
 ### Backend Connection
 
@@ -143,7 +140,7 @@ opentsx-saas-frontend/
 │       └── authStore.ts       # Auth state (Zustand)
 ├── public/                     # Static assets
 ├── dist/                       # Build output (after npm run build)
-├── .env                        # Environment variables
+├── .env.example                # Template for .env (.env is git-ignored)
 ├── package.json               # Dependencies & scripts
 ├── vite.config.ts             # Vite configuration
 ├── tailwind.config.js         # Tailwind CSS config

@@ -73,12 +73,17 @@ frontend/
 - Token storage in localStorage
 - Auto-redirect on 401 errors
 - Protected routes
+- Logout removes both tokens from this browser, also when the backend does not answer. The login page then says
+  `signed out here; the server could not be told: <reason>`
+- Only a 401 from `GET /api/v1/auth/me` ends the session. Another failure keeps it, and the Flow Composer, the flow
+  builder and the systems page say `your account could not be read (<reason>); reload the page to try again`
 
 ### Pages
 
 #### Login Page (`/login`)
 - Email/password authentication
-- The test operation hint when the backend runs with `TEST_LOGIN=true` (`GET /api/v1/auth/mode`)
+- The test operation hint when the backend runs with `TEST_LOGIN=true` (`GET /api/v1/auth/mode`). When that
+  request fails, the page says `the sign-in mode could not be read from the backend (<reason>); reload the page to try again`
 - Auto-redirect if already logged in
 
 #### Register Page (`/register`)
@@ -331,17 +336,25 @@ server {
 
 ### Environment Variables in Production
 
-For production, update `VITE_API_BASE_URL` to point to your production backend:
+`VITE_API_BASE_URL` is the address of the SaaS backend as the browser sees it, without `/api/v1`. Vite reads it
+at build time from the environment or from `.env`. `.env` is git-ignored; `.env.example` is the template.
+
+| `VITE_API_BASE_URL` | The page calls |
+|---------------------|----------------|
+| empty | its own origin; nginx (`nginx.conf`) and the dev server (`vite.config.ts`) forward `/api` to the backend |
+| unset | its own origin after `npm run build`, `http://localhost:8000` under `npm run dev` |
+| a URL | that URL; the backend must allow the origin of the page (CORS) |
+
+The image `deploy/docker/saas-frontend.Dockerfile` builds with an empty value. To build for a backend on another
+host, set the URL and rebuild. `<backend-host>` is the host name of the SaaS backend:
 
 ```bash
-VITE_API_BASE_URL=https://api.opentsx.com
+VITE_API_BASE_URL=https://<backend-host> npm run build
 ```
 
-Then rebuild:
-
-```bash
-npm run build
-```
+The retrieval server has no build variable: the page reaches it at `/retrieval` of its own origin. nginx
+(`nginx.conf`) forwards it to `opentsx-retrieval:8080`, the dev server to `OPENTSX_RETRIEVAL_URL` (default
+`http://localhost:8080`).
 
 ## Component Examples
 

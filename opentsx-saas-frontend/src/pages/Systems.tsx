@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { SignalBindingDoc, systemsAPI } from '../services/api';
+import { RETRIEVAL_BASE, SignalBindingDoc, systemsAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import FlowComposer from '../workbench/FlowComposer';
 import { useFlow } from '../workbench/flow';
@@ -17,7 +17,6 @@ import SystemPlace from '../systems/SystemPlace';
 import { DecisionStatus, Place, PlanDoc, SystemEntry, SystemStatus, countsText, guideSteps, parseStatus, railCounts } from '../systems/signals';
 import '../workbench/workbench.css';
 
-const BASE = '/retrieval';
 const PLACES: { id: Place; title: string; hint: string }[] = [
   { id: 'system', title: 'System', hint: 'What the plant is made of' },
   { id: 'signals', title: 'Signals', hint: 'What the system expects, what is there, what to do next' },
@@ -38,7 +37,7 @@ export default function Systems() {
   const { system, place } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user, logout, error: accountError } = useAuthStore();
   const [systems, setSystems] = useState<SystemEntry[] | null>(null);
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [plan, setPlan] = useState<PlanDoc | null>(null);
@@ -53,7 +52,7 @@ export default function Systems() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${BASE}/v1/systems`)
+    fetch(`${RETRIEVAL_BASE}/v1/systems`)
       .then(async (res) => {
         if (res.status === 404) throw new Error('the retrieval server has no system documents (it needs --systems)');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -74,7 +73,7 @@ export default function Systems() {
     if (!system) return;
     let cancelled = false;
     const get = async (what: string) => {
-      const res = await fetch(`${BASE}/v1/systems/${encodeURIComponent(system)}/${what}`);
+      const res = await fetch(`${RETRIEVAL_BASE}/v1/systems/${encodeURIComponent(system)}/${what}`);
       if (!res.ok) throw new Error(res.status === 404 ? `the server knows no system "${system}"` : `HTTP ${res.status}`);
       return res.json();
     };
@@ -84,7 +83,7 @@ export default function Systems() {
       if (!cancelled) setBindings(mine);
       if (mine.length === 0) return Promise.all([get('signals'), get('decisions').catch(() => null), get('plan')]);
       const post = async (what: string) => {
-        const res = await fetch(`${BASE}/v1/systems/${encodeURIComponent(system)}/${what}`, {
+        const res = await fetch(`${RETRIEVAL_BASE}/v1/systems/${encodeURIComponent(system)}/${what}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ bindings: mine.map((b) => ({ signal: b.signal, grade: b.grade, source: b.source })) }),
@@ -164,6 +163,7 @@ export default function Systems() {
           <Link to="/login">Sign in</Link>
         )}
       </header>
+      {signedIn && accountError && <div className="wb-error" role="alert">{accountError}</div>}
 
       {guide && (
         <ol className="wb-guide" aria-label="The seven steps of the engineering method">
@@ -196,11 +196,11 @@ export default function Systems() {
         </nav>
 
         {here === 'system' && <SystemPlace plan={plan} system={system ?? ''} />}
-        {here === 'signals' && <SignalsPlace status={status} focusId={searchParams.get('focus')} published={searchParams.get('published')} onReload={() => setReload((n) => n + 1)} base={BASE} bindings={bindings} />}
+        {here === 'signals' && <SignalsPlace status={status} focusId={searchParams.get('focus')} published={searchParams.get('published')} onReload={() => setReload((n) => n + 1)} base={RETRIEVAL_BASE} bindings={bindings} />}
         {here === 'flows' &&
           (signedIn && status ? (
             <FlowComposer
-              base={BASE}
+              base={RETRIEVAL_BASE}
               currentId={useFlow.getState().savedId}
               replaces={false}
               onOpen={openFlows}
@@ -217,7 +217,7 @@ export default function Systems() {
             </main>
           ))}
         {here === 'models' && <ModelsPlace status={status} decisions={decisions} />}
-        {here === 'simulate' && <SimulatePlace system={system ?? ''} base={BASE} />}
+        {here === 'simulate' && <SimulatePlace system={system ?? ''} base={RETRIEVAL_BASE} />}
       </div>
 
       <footer className="wb-status">

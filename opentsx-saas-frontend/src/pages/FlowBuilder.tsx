@@ -17,6 +17,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { useNavigate } from 'react-router-dom';
 import { flowsAPI } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 
 // Initial nodes for demo
 const initialNodes: Node[] = [
@@ -46,6 +47,7 @@ const initialEdges: Edge[] = [
 
 export default function FlowBuilder() {
   const navigate = useNavigate();
+  const { error } = useAuthStore();
   const [nodes, , onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [flowName, setFlowName] = useState('My New Flow');
@@ -121,6 +123,7 @@ export default function FlowBuilder() {
           </div>
         </div>
       </div>
+      {error && <div className="bg-red-50 p-4 text-sm text-red-800" role="alert">{error}</div>}
 
       {/* Flow Builder Canvas */}
       <div className="flex-1">

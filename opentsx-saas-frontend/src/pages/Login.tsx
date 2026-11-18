@@ -18,12 +18,17 @@ export default function Login() {
 
   // Test operation is a property of the installation: the backend says whether admin/admin is accepted.
   const [testLogin, setTestLogin] = useState(false);
+  const [modeError, setModeError] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
     authAPI
       .mode()
       .then((m) => !cancelled && setTestLogin(m.testLogin))
-      .catch(() => undefined);
+      .catch((e) => {
+        if (cancelled) return;
+        const reason = e instanceof Error ? e.message : String(e);
+        setModeError(`the sign-in mode could not be read from the backend (${reason}); reload the page to try again`);
+      });
     return () => {
       cancelled = true;
     };
@@ -64,6 +69,11 @@ export default function Login() {
           {error && (
             <div className="rounded-md bg-red-50 p-4">
               <div className="text-sm text-red-800">{error}</div>
+            </div>
+          )}
+          {modeError && (
+            <div className="rounded-md bg-red-50 p-4" role="alert">
+              <div className="text-sm text-red-800">{modeError}</div>
             </div>
           )}
 

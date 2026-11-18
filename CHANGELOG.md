@@ -189,6 +189,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   static fields `MessreihenLoader.delim` and `MessreihenLoader.limit`.
 - The `JAVA_OPTS` logger settings of the vector processor manifest and the retrieval-kafscale component. Logger levels
   live in `conf/simplelogger.properties`.
+- SaaS frontend: the unused declarations `VITE_WS_BASE_URL`, `VITE_ENVIRONMENT`, `VITE_ENABLE_ANALYTICS` and
+  `VITE_ENABLE_DEBUG` and the placeholder test `src/App.test.tsx`, replaced by the auth store tests in
+  `src/store/authStore.test.ts`.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -419,6 +422,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   answers a JSON 404 `no such endpoint`, also outside `/v1/`; `GET /v1/topics/events` answered 500 before. A broker
   failure answers 502 `cannot reach the broker` without the broker address, and the bridge logs the failure once at
   ERROR with its causes.
+- SaaS frontend: Logout removes both tokens from the browser also when `POST /api/v1/auth/logout` fails or the backend
+  does not answer, so a reload no longer signs the user in again. The login page then says `signed out here; the
+  server could not be told: <reason>`.
+- SaaS frontend: only a 401 from `GET /api/v1/auth/me` ends the session. Any other failure keeps the user signed in,
+  and the Flow Composer, the flow builder (`/flow-builder`) and the systems page say `your account could not be read
+  (<reason>); reload the page to try again` until the account is read.
+- SaaS frontend: the login page shows `the sign-in mode could not be read from the backend (<reason>); reload the page
+  to try again` when `GET /api/v1/auth/mode` fails instead of dropping the error.
+- SaaS frontend: a production build without `VITE_API_BASE_URL` calls the backend at the page origin;
+  `http://localhost:8000` applies only under `npm run dev`. `.env` is no longer tracked and is git-ignored;
+  `.env.example` holds an empty value. The retrieval path `/retrieval` is one constant `RETRIEVAL_BASE`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

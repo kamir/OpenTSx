@@ -5,6 +5,7 @@
  */
 
 import { Link, useNavigate } from 'react-router-dom';
+import { RETRIEVAL_BASE } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import FlowComposer from '../workbench/FlowComposer';
 import { useFlow } from '../workbench/flow';
@@ -12,7 +13,7 @@ import '../workbench/workbench.css';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user, logout, error } = useAuthStore();
 
   const handleLogout = async () => {
     await logout();
@@ -49,7 +50,8 @@ export default function Dashboard() {
         <Link to="/flow-builder" title="The earlier visual flow builder; its flows cannot be opened in the editor">Flow builder</Link>
         <button onClick={handleLogout}>Logout</button>
       </header>
-      <FlowComposer base="/retrieval" currentId={useFlow.getState().savedId} replaces={false} onOpen={open} onNew={create} onDeleted={forget} />
+      {error && <div className="wb-error" role="alert">{error}</div>}
+      <FlowComposer base={RETRIEVAL_BASE} currentId={useFlow.getState().savedId} replaces={false} onOpen={open} onNew={create} onDeleted={forget} />
     </div>
   );
 }

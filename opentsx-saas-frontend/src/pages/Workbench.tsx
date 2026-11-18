@@ -38,7 +38,7 @@ import { VECTOR_OP, suggestKey, vectorRecords } from '../workbench/vector';
 import { episodeSummary } from '../workbench/episodes';
 import { bucketToCsv, generateSineMix, parseBucketText, parseEpisodes } from '../workbench/loaders';
 import axios from 'axios';
-import { flowsAPI } from '../services/api';
+import { RETRIEVAL_BASE, flowsAPI } from '../services/api';
 import { fetchSignalStatus } from '../systems/load';
 import { NOT_PORTED, OPS, OP_BY_ID, defaultParams, fmt, stats } from '../workbench/ops';
 import { Bucket, FlowNode, OpDef, OpGroup, ParamDef, Params, ParamValue } from '../workbench/types';
@@ -546,7 +546,7 @@ export default function Workbench() {
   const [showLabels, setShowLabels] = useState(true);
   const [status, setStatus] = useState('Ready');
   const [error, setError] = useState<string | null>(null);
-  const [remote, setRemote] = useState({ open: false, base: '/retrieval', query: 'limit=50' });
+  const [remote, setRemote] = useState({ open: false, base: RETRIEVAL_BASE, query: 'limit=50' });
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [flowsOpen, setFlowsOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);

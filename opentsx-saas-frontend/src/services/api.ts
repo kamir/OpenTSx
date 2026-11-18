@@ -4,9 +4,12 @@
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
 
-// An empty VITE_API_BASE_URL means same origin: the nginx image proxies /api to the backend.
-const API_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
+// An empty VITE_API_BASE_URL means same origin: the nginx image and the dev server forward /api to the backend.
+const API_URL = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? 'http://localhost:8000' : '');
 const API_V1 = `${API_URL}/api/v1`;
+
+/** The retrieval server as the page reaches it: the nginx image and the dev server forward /retrieval. */
+export const RETRIEVAL_BASE = '/retrieval';
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
@@ -147,9 +150,12 @@ export const authAPI = {
    * Logout user
    */
   logout: async (): Promise<void> => {
-    await apiClient.post('/auth/logout');
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    try {
+      await apiClient.post('/auth/logout');
+    } finally {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+    }
   },
 
   /**

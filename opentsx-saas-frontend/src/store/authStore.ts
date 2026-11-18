@@ -6,6 +6,12 @@ import axios from 'axios';
 import { create } from 'zustand';
 import { User, authAPI, LoginRequest, RegisterRequest } from '../services/api';
 
+function reasonOf(error: unknown): string {
+  const detail = axios.isAxiosError(error) ? error.response?.data?.detail : undefined;
+  if (typeof detail === 'string') return detail;
+  return error instanceof Error ? error.message : String(error);
+}
+
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
@@ -82,13 +88,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: async () => {
     try {
       await authAPI.logout();
+      set({ user: null, isAuthenticated: false, error: null });
     } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
       set({
         user: null,
         isAuthenticated: false,
-        error: null,
+        error: `signed out here; the server could not be told: ${reasonOf(error)}`,
       });
     }
   },
@@ -105,13 +110,14 @@ export const useAuthStore = create<AuthState>((set) => ({
         user,
         isAuthenticated: true,
         isLoading: false,
+        error: null,
       });
-    } catch {
-      set({
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-      });
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        set({ user: null, isAuthenticated: false, isLoading: false });
+      } else {
+        set({ isLoading: false, error: `your account could not be read (${reasonOf(error)}); reload the page to try again` });
+      }
     }
   },
 
