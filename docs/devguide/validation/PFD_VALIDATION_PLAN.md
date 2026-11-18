@@ -46,13 +46,25 @@ This option controls watermark generation; it does not configure Flink allowed l
 The source and watermark checks build a graph and invoke the generator directly;
 they do not contact Kafka or start a Flink cluster.
 
+## Decode legacy Kafka observations
+
+The PFD source reads raw Avro binary records for `org.opentsx.data.model.Observation`, using its legacy
+`timestamp`, `uri` and `value` schema. Null Kafka values are tombstones and emit no observation.
+Malformed records fail deserialization with `IOException` and the message
+`Failed to deserialize observation from topic <topic> partition <partition> offset <offset>`, where the placeholders
+identify the failing Kafka record. The original decode exception is retained as the cause. The message contains
+record coordinates, without payload contents. Failures from the downstream collector propagate unchanged.
+
+`DynamicTopologyJob` assigns the decoded observation timestamp through its watermark strategy.
+The separate v2 `StatsJob` path uses its own model and `undecodable` metric/drop contract.
+
 ## Run the regressions
 
 From the repository root, run:
 
 ```bash
 mvn -B -ntp -pl opentsx-flink-core -am test \
-  -Dtest=PFDRecorderContractTest,PFDRuntimeContractTest,PFDWindowSizeTest \
+  -Dtest=ObservationSchemaTest,PFDRecorderContractTest,PFDRuntimeContractTest,PFDWindowSizeTest \
   -Dsurefire.failIfNoSpecifiedTests=false
 ```
 
@@ -69,6 +81,11 @@ Both options are checked together in either order. Consumer-group cases inspect 
 configuration for the unchanged default and explicit group names with both descriptor forms. Empty, space,
 tab, newline and Unicode-whitespace values are rejected before graph construction. The tests restore the
 original JVM properties after each case. They never start a Kafka consumer or a Flink cluster.
+
+`ObservationSchemaTest` encodes real raw Avro records and invokes the decoder directly with local `ConsumerRecord`
+and `Collector` fixtures. It covers Unicode fields, timestamp/value preservation, decoder reuse, null tombstones,
+every proper record prefix, malformed encodings, recovery after failure and original collector exception identity.
+No broker, network or Flink cluster is needed for these decoder cases.
 
 The JUnit cases are offline contract and graph tests. The log cases exercise zero, one, two and five points
 through the actual sink mapping function and verify all coordinates and values.

@@ -230,6 +230,8 @@ error messages and regression checks.
 * `PFDRecorder.toJSON()` is a preview. File export and the dynamic runtime accept only Kafka input,
   `NORMALIZE` centering and `LOG` output. Topics and broker addresses require explicit configuration.
   See [PFD validation](../devguide/validation/PFD_VALIDATION_PLAN.md).
+* The PFD Kafka source decodes raw legacy Avro observations and skips null tombstones. Malformed records fail
+  with Kafka record coordinates and the original cause; downstream collector failures propagate unchanged.
 * `pfd.DynamicTopologyJob` builds a Flink topology from a JSON processing-flow descriptor; the schema is in
   [`docs/devguide/schemas`](../devguide/schemas/).
 * `stats.StatsJob` runs the v2 statistics engine (see [chapter 7](07-stats-quality.md), section 7.2).
