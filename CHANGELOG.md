@@ -26,6 +26,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Local publication fencing for three whole-topic Rust workers. A private, single-owner Java gateway serializes
+  publication and epoch rotation, validates captured grants and retains unknown broker outcomes without blind
+  resend. Segregated KafScale proxies, remote-address broker ACL and controller-peer worker checks enforce the path.
+  Explicit resume preserves state/cursors; changed-DAG restart replays complete inputs into a distinct fresh output.
+  The gateway is capped at 64 groups, 64 operation receipts, 256 requests and a 4 MiB ledger; it has no automatic failover.
+
 - A rerunnable TASK-020 A5 evaluation harness for bounded centralized and
   federated statistics at 1, 3 and 10 sites, and Java catch-up comparisons
   at 1, 4 and 12 partitions. It records throughput, Produce-clock latency,
@@ -67,7 +73,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   head/candidate storage and completed cycle history stay bounded. The continuous Compose/browser profile checks
   live input, data arriving during execution-service downtime, stateful restart, an isolated worker outage, later
   input and Stop against Java.
-  Publication remains at least once; one immutable continuous chain is retained per worker. Replacement, automatic
+  Publication remains at least once. Explicit local fenced replacement is specified separately; automatic
   failover, signed fleet activation, broker-restart qualification and durable Iceberg publication remain separate.
 
 - Regression guards for the Wayang/Rust Compose profile's existing required

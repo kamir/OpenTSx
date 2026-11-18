@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
+#[cfg(unix)]
+use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -71,13 +73,16 @@ impl Store {
         }
         let lock_path = parent.join(format!(".{name}.lock"));
         regular_or_absent(&lock_path)?;
-        let lock = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true)
-            .truncate(false)
+        let mut options = OpenOptions::new();
+        options.read(true).write(true).create(true).truncate(false);
+        #[cfg(unix)]
+        options.mode(0o600);
+        let lock = options
             .open(&lock_path)
             .map_err(|e| format!("cannot open checkpoint lock: {e}"))?;
+        #[cfg(unix)]
+        lock.set_permissions(fs::Permissions::from_mode(0o600))
+            .map_err(|_| "cannot make checkpoint lock private")?;
         lock.try_lock()
             .map_err(|e| format!("checkpoint is locked or cannot be locked: {e}"))?;
         regular_or_absent(path)?;
@@ -147,12 +152,16 @@ impl Store {
     pub fn commit(&self, completion: &Completion) -> Result<(), String> {
         let bytes = self.encode(completion)?;
         regular_or_absent(&self.pending)?;
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
+        let mut options = OpenOptions::new();
+        options.write(true).create(true).truncate(true);
+        #[cfg(unix)]
+        options.mode(0o600);
+        let mut file = options
             .open(&self.pending)
             .map_err(|e| format!("cannot open pending checkpoint: {e}"))?;
+        #[cfg(unix)]
+        file.set_permissions(fs::Permissions::from_mode(0o600))
+            .map_err(|_| "cannot make checkpoint private")?;
         file.write_all(&bytes)
             .map_err(|e| format!("cannot write pending checkpoint: {e}"))?;
         file.sync_all()

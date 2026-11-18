@@ -28,6 +28,7 @@ class WayangDeployment(Base):
     created_at = Column(DateTime, nullable=False, default=utc_now)
     updated_at = Column(DateTime, nullable=False, default=utc_now)
     continuous = relationship("WayangContinuous", uselist=False, lazy="joined")
+    publication = relationship("WayangPublication", uselist=False, lazy="joined")
 
 
 class WayangTopicOwner(Base):
@@ -57,6 +58,34 @@ class WayangCycle(Base):
     plan_text = Column(Text, nullable=False)
     state = Column(String(16), nullable=False, default="queued")
     result = Column(JSON, nullable=True)
+    error = Column(Text, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=utc_now)
+    updated_at = Column(DateTime, nullable=False, default=utc_now)
+
+
+class WayangPublication(Base):
+    __tablename__ = "wayang_publication"
+
+    deployment_id = Column(String(63), ForeignKey("wayang_deployments.id"), primary_key=True)
+    epoch = Column(BigInteger, nullable=False, default=0)
+    retired = Column(Boolean, nullable=False, default=False)
+    retire_operation = Column(String(63), nullable=True)
+    operation_id = Column(String(63), ForeignKey("wayang_switches.id"), nullable=True)
+    operation = relationship("WayangSwitch", uselist=False, lazy="joined")
+
+
+class WayangSwitch(Base):
+    __tablename__ = "wayang_switches"
+    __table_args__ = (UniqueConstraint("deployment_id", "expected_epoch", name="uq_wayang_switch_epoch"),)
+
+    id = Column(String(63), primary_key=True)
+    deployment_id = Column(String(63), ForeignKey("wayang_deployments.id"), nullable=False, index=True)
+    expected_epoch = Column(BigInteger, nullable=False)
+    mode = Column(String(7), nullable=False)
+    body_hash = Column(String(64), nullable=False)
+    replacement_id = Column(String(63), ForeignKey("wayang_deployments.id"), nullable=True)
+    publication_epoch = Column(BigInteger, nullable=True)
+    state = Column(String(16), nullable=False, default="pending")
     error = Column(Text, nullable=True)
     created_at = Column(DateTime, nullable=False, default=utc_now)
     updated_at = Column(DateTime, nullable=False, default=utc_now)

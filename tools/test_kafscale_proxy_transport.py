@@ -58,13 +58,19 @@ class KafScaleProxyTransportTest(unittest.TestCase):
         self.assertIn('"--proxy-binary"', measurement)
         self.assertNotIn('"KAFSCALE_BROKER_ADDR"', measurement)
 
-    def test_wayang_workers_and_host_fixture_use_the_same_proxy(self):
+    def test_wayang_workers_read_through_a_different_proxy_from_all_writers(self):
         compose = (ROOT / "docker-compose.wayang-rust.yml").read_text()
-        self.assertEqual(3, compose.count('--bootstrap, "kafscale-proxy:'))
-        self.assertIn("entrypoint: [/transport/kafscale-cluster]", compose)
-        self.assertNotIn("  kafscale-broker:", compose)
+        self.assertEqual(3, compose.count('--bootstrap, "kafscale-read:'))
+        self.assertEqual(2, compose.count("entrypoint: [/transport/kafscale-proxy]"))
+        self.assertEqual(2, compose.count("KAFSCALE_PROXY_BACKENDS: kafscale-broker:19092"))
+        self.assertIn("  kafscale-broker:", compose)
+        self.assertIn("KAFSCALE_PRINCIPAL_SOURCE: remote_addr", compose)
+        self.assertIn('KAFSCALE_ACL_FAIL_OPEN: "false"', compose)
         helper = (ROOT / "tools/verify_wayang_rust_compose.py").read_text()
-        self.assertNotIn("kafscale-broker", helper)
+        self.assertIn('"127.0.0.1 localhost kafscale-write\\n"', helper)
+        self.assertIn('"--bootstrap", f"kafscale-read:', helper)
+        self.assertIn('"--publication-bootstrap", f"kafscale-write:', helper)
+        self.assertNotIn('"--bootstrap", f"kafscale-broker:', helper)
 
     def test_binary_compilation_has_explicit_resource_limits(self):
         with tempfile.TemporaryDirectory() as temporary:

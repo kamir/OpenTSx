@@ -1,7 +1,7 @@
 @startuml
 !pragma layout smetana
 top to bottom direction
-title Target: UI DAG through Wayang to multiple Rust nodes
+title Local three-worker Wayang deployment with publication fencing
 skinparam backgroundColor white
 skinparam shadowing false
 skinparam defaultFontName SansSerif
@@ -13,43 +13,50 @@ skinparam componentBackgroundColor #E8F0F8
 skinparam noteBackgroundColor #FFF5D6
 
 actor User
-component "OpenTSx UI\nexisting DAG editor" as ui
-node "Control plane" {
-  component "SaaS admission\nplanned capability + policy checks" as backend
-  component "Wayang driver / site platform\nplanned fragment placement + fanout" as driver
-  component "ExecutionAssignments\nimplemented Java preflight" as java
-  database "Durable deployment journal\nplanned generations + delivery cursor" as journal
+node "Control network 172.29.76.0/24" {
+  component "Frontend\nui_host_net\nloopback :18081" as ui
+  component "Authenticated backend" as api
+  component "Coordinator\nPostgreSQL advisory lock" as coordinator
+  database "PostgreSQL\nplans, ownership, switch intent" as pg
 }
-node "Site A / Rust node A" {
-  component "tsx-runner\nplanned operator execution + checkpoint" as runnerA
-  component "tsx-contracts\nimplemented Rust preflight" as contractsA
+node "Wayang process" {
+  component "RustPlatform / RustExecutor\nprepare + ownership checks\n\nControl HTTP: 172.29.76.10:8095\nprivate run token\nPublication HTTP: 172.29.74.10:8096\ncaptured per-node grants\nWriter interface: 172.29.75.10" as driver
+  database "Private publication ledger\nprocess lock + atomic fsync\n64 groups / 64 operation slots\nretirement slots reserved\n256 requests / 4 MiB" as ledger
 }
-node "Site B / Rust node B" {
-  component "tsx-runner\nplanned operator execution + checkpoint" as runnerB
-  component "tsx-contracts\nimplemented Rust preflight" as contractsB
+node "Worker network 172.29.74.0/24\nread-only roots, no Linux capabilities" as workers {
+  component "Rust worker 1\nwhole topic A\n1 partition" as r1
+  component "Rust worker 2\nwhole topic B\n2 partitions" as r2
+  component "Rust worker 3\nwhole topic C\n3 partitions" as r3
 }
-database "Approved Kafka channels\nwhole-topic ownership + internal cursors" as topics
+node "Broker network 172.29.73.0/24" {
+  component "Read Proxy\nworker .74.2\nbroker .73.10" as read
+  component "Write Proxy\nwriter .75.2 / broker .73.11\nproxy_host_net\nhost fixture loopback :39093" as write
+  database "KafScale Broker\nACL remote_addr, default deny\nno published host port" as broker
+  database "Private etcd metadata" as etcd
+}
 
 User --> ui
-ui --> backend : original DAG
-backend --> driver : admitted deployment request
-driver --> java : validate assignment set
-driver --> journal : prepare / activate / retire
-driver --> runnerA : fragment + whole topic A
-driver --> runnerB : fragment + whole topic B
-runnerA --> contractsA : validate envelope
-runnerB --> contractsB : validate envelope
-runnerA <--> topics : assigned channels
-runnerB <--> topics : assigned channels
+ui --> api : exact UI DAG / replace
+api --> pg : persist plans and intent
+coordinator --> pg : reconcile control
+coordinator --> driver : authenticated control
+driver --> ledger : serialize publication and rotation
+driver <--> workers : prepare / activate\nreturn captured output to gateway
+workers --> read : read complete topic cuts
+driver --> write : acknowledged publication
+read --> broker : fetch only
+write --> broker : produce / provision
+broker --> etcd : metadata
 
-note bottom of java
-Offline schema, hash, offset and overlap checks exist.
-They do not authorize execution or fence live writers.
+note bottom of workers
+Workers cannot reach broker or writer networks.
+Read-proxy Produce is denied by broker ACL.
+Host port bridges are separate, one service each.
+The host and Docker control plane remain trusted.
 end note
-note bottom of topics
-A topic is the smallest deployment unit.
-Its partitions remain inside one assigned runner.
-Every cross-node edge needs an admitted data channel.
-Raw records do not pass through the driver.
+note left of ledger
+One active gateway process.
+Unknown broker outcome blocks handover.
+No automatic failover or atomic multi-worker write.
 end note
 @enduml

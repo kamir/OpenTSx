@@ -1,53 +1,79 @@
 @startuml
-title Proposed continuous rollout: acceptance is not analytics completion
+title Local publication and whole-topic authority replacement
 skinparam backgroundColor white
 skinparam shadowing false
 skinparam defaultFontName SansSerif
-skinparam defaultFontSize 14
+skinparam defaultFontSize 13
 skinparam ArrowColor #34536F
 skinparam participantBackgroundColor #E8F0F8
 skinparam noteBackgroundColor #FFF5D6
 
 actor User
-participant "UI / backend" as api
-participant "Wayang stage executor" as driver
-database "Durable coordinator" as journal
-participant "Rust node A" as a
-participant "Rust node B" as b
-database "Approved broker channels" as kafka
+participant "Backend / coordinator" as api
+database "PostgreSQL" as pg
+participant "Wayang stage" as stage
+participant "Three Rust workers\none complete topic each" as workers
+participant "Publication gateway" as gateway
+database "Private ledger" as ledger
+participant "Write Proxy / broker" as kafka
 
-User -> api : deploy existing DAG
-api -> driver : normalized, authorized request
-driver -> driver : compile fragments + whole-topic placement
-driver -> driver : validate complete assignment coverage
-note right of driver
-Java/Rust envelope validators exist.
-Compiler, live inventory verification and fleet control are planned.
-end note
-driver -> journal : persist generation and commands
-driver -> a : prepare whole topic A
-driver -> b : prepare whole topic B
-a --> driver : prepared receipt
-b --> driver : prepared receipt
-driver -> journal : activate admitted generation
-driver -> a : activate exact command digest
-driver -> b : activate exact command digest
-note over driver,b
-Partial activation is a recorded failed/degraded outcome.
-There is no atomic start across machines.
-end note
-driver --> api : durable deployment handle
-api --> User : accepted / current node status
-loop continuous execution
-  a -> kafka : read all partitions of topic A / produce
-  kafka --> a : delivery acknowledgement
-  a -> a : persist compatible checkpoint
-  b -> kafka : read all partitions of topic B / produce
-  kafka --> b : delivery acknowledgement
-  b -> b : persist compatible checkpoint
+User -> api : deploy exact DAG
+api -> pg : persist plan, clock and ownership
+api -> stage : reconcile exact admitted plan
+stage -> gateway : admit complete topic group / obtain grants
+gateway -> ledger : persist current epoch and private grants
+stage -> workers : install grants, then prepare
+workers -> workers : read via read Proxy, compute and retain candidate
+workers --> stage : prepared digests and series ownership
+stage -> stage : verify all preparations and disjoint ownership
+stage -> gateway : register exact requests, digests and counts
+stage -> workers : activate exact prepared requests
+workers -> gateway : publish with captured token and epoch
+critical Serialized publication and authority transition
+  gateway -> ledger : fsync publishing intent
+  gateway -> kafka : Produce via write Proxy
+  alt All records acknowledged
+    kafka --> gateway : acknowledgements
+    gateway -> ledger : fsync acknowledged receipt
+    gateway --> workers : verified publication receipt
+    workers -> workers : commit completed checkpoint
+  else Unknown broker outcome
+    break Publication outcome remains unresolved
+      gateway -> ledger : retain publishing / uncertain
+      gateway --> workers : refuse automatic retransmission
+      note over api,gateway
+      Keep topic ownership. No replacement or retirement
+      while this group's write outcome remains unknown.
+      end note
+    end
+  end
 end
-note over a,b
-No automatic takeover while an old owner can emit.
-State migration and stale-output enforcement need qualification.
+workers --> stage : completed receipts
+stage --> api : verified completed boundary
+api -> pg : persist cumulative progress
+
+User -> api : replace(expectedEpoch, resume or restart)
+api -> pg : persist switch intent, drain dispatched work
+api -> stage : operation + verified old plan/result
+opt Restart changed DAG
+  stage -> stage : require same input placement and fresh empty output
+end
+stage -> gateway : rotate whole topic group under publication lock
+gateway -> ledger : atomically revoke old grants and persist larger epoch
+alt Resume identical DAG
+  stage -> workers : install new grants against old completed heads
+  workers -> workers : preserve state, cursors and open windows
+else Restart changed DAG
+  stage -> workers : reset with expected old heads after revocation
+  workers -> workers : new deployment, sequence one, cursors zero
+end
+stage --> api : same recorded operation result
+api -> pg : record active epoch and ownership transfer
+workers -> gateway : restored OLD candidate with captured OLD grant
+gateway --> workers : deny before Kafka I/O
+note over gateway,kafka
+Old-token denial leaves output end offsets unchanged.
+Cached durable acknowledgements are safe HTTP retries.
+There is no atomic publication across workers or gateway HA.
 end note
 @enduml

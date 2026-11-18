@@ -5,7 +5,7 @@ from app.db.base_class import Base  # noqa
 # Import all models so they are registered with SQLAlchemy
 from app.models.user import User, Organization, Team, Invitation  # noqa
 from app.models.flow import Flow, FlowExecution  # noqa
-from app.models.wayang import WayangContinuous, WayangCycle, WayangDeployment, WayangTopicOwner
+from app.models.wayang import WayangContinuous, WayangCycle, WayangDeployment, WayangPublication, WayangSwitch, WayangTopicOwner
 
 __all__ = ["Base", "User", "Organization", "Team", "Invitation", "Flow", "FlowExecution",
-           "WayangDeployment", "WayangTopicOwner", "WayangContinuous", "WayangCycle"]
+           "WayangDeployment", "WayangTopicOwner", "WayangContinuous", "WayangCycle", "WayangPublication", "WayangSwitch"]

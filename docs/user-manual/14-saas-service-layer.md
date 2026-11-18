@@ -13,13 +13,16 @@
   * `POST /api/v1/dags/deploy` and `/stop`: hand a flow to the vector processor or stop it (administrators only
     unless configured otherwise),
   * `/api/v1/dags/wayang-rust`: administrator-only capability, bounded/continuous deployment, status and continuous
-    stop endpoints. PostgreSQL
+    stop and explicit fenced replacement endpoints. PostgreSQL
     stores the exact DAG, accepted clock, source cuts and whole-topic ownership; a standalone coordinator reconciles
-    the saved plan through a custom Wayang Rust platform,
+    the saved plan through a custom Wayang Rust platform. Bounded completion saves its verified result and
+    publication epoch before retirement. A lost retirement reply retries that operation without executing again,
   * **Continuous Wayang on Rust** retains complete-topic ownership between increments, saves confirmed positions
     and cumulative counts, and restores worker state after service restart. Transient preparation failures retain
     private candidates for identical retry. **Stop deployment** reconciles dispatched
-    work before releasing ownership. See the [continuous guide](../devguide/integration/wayang-rust-continuous.md),
+    work and revokes publication authority before releasing ownership. Explicit resume preserves state; changed-DAG
+    restart replays the same whole topics into a fresh output. Stop retains the worker chain; request replacement
+    while the deployment is active. Unknown broker outcomes block the switch. See the [continuous guide](../devguide/integration/wayang-rust-continuous.md),
   * a `FlinkService` that submits processing-flow descriptors as Flink jobs.
 * **Frontend:**
   * **OpenTSx Flow Composer** (`/dashboard`, the page after sign-in): the flows of the account. Select a flow, open
@@ -32,6 +35,7 @@
     `feature.lag` and `feature.rolling`; vector sinks support `align.vector`.
     Workbench execution and deployment availability are separate. Use the
     [operator lessons](17-learn-operators.md) and the actual runtime contract when choosing an execution surface.
+    Select **Legacy** in the Workbench header, then open **Smart Topic** for the explicit Wayang deployment targets.
     **Run bounded with Wayang** is an explicit separate action for plausible-range checks, unit conversion and an
     optional trailing resample on one to three complete topics. HTTP workers prepare privately before activation and
     checkpoint acknowledged output. Exact retry reuses the frozen plan and receipts; partial activation can expose

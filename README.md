@@ -105,6 +105,20 @@ bounded and trusted-local continuous Rust processing, and signed bounded JVM
 statistics federation. Operator support, topic ownership, checkpoints and
 publication guarantees are defined per profile.
 
+For the local three-worker Rust profile, choose **Legacy** in the Workbench
+header, then open **Smart Topic**. The [bounded rollout
+guide](docs/devguide/integration/wayang-rust-compose.md) connects the original
+v2 DAG, authenticated backend and PostgreSQL journal to a custom Wayang Rust
+stage. One to three workers each own complete topics, regardless of their
+partition counts.
+
+The [continuous profile](docs/devguide/integration/wayang-rust-continuous.md)
+retains positions and operator state across increments and service restart.
+Its local publication gateway rejects retired grants. Explicit same-DAG resume
+preserves state; changed-DAG restart replays complete topics into a distinct
+fresh output after revocation. Unknown broker outcomes halt replacement.
+This capped single-owner gateway has no automatic failover.
+
 The [federation measurement report](docs/datamodel-2026/measurements/wayang-federation-2026-11-17/REPORT.md)
 records executed comparisons and data movement. It distinguishes observed
 results from performance claims.

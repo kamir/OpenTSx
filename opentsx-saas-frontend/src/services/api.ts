@@ -231,7 +231,7 @@ export interface WayangDeployment {
   specHash: string;
   planHash: string;
   createdAtMicros: string;
-  state: 'queued' | 'running' | 'completed' | 'failed' | 'idle' | 'stopping' | 'stopped';
+  state: 'queued' | 'running' | 'completed' | 'failed' | 'idle' | 'stopping' | 'stopped' | 'waiting' | 'switching' | 'replaced';
   error: string | null;
   profile?: 'bounded' | 'continuous';
   currentCycle?: string;
@@ -239,6 +239,10 @@ export interface WayangDeployment {
   stopRequested?: boolean;
   inputRecords?: string;
   outputRecords?: string;
+  publicationEpoch?: string;
+  publicationRetired?: boolean;
+  switch?: { operation: string; mode: 'resume' | 'restart'; state: 'pending' | 'active' | 'failed';
+    expectedEpoch: string; deployment: string; publicationEpoch: string | null; error: string | null };
   assignments: { node: string; inputTopic: string; partitionCount: string; outputTopic: string;
     requestHash: string; specHash: string;
     state?: string; receipt?: Record<string, unknown>; error?: string;
@@ -251,6 +255,8 @@ export interface WayangCapabilities {
   reason: string | null;
   profile?: string;
   profiles?: ('bounded' | 'continuous')[];
+  publicationFencing?: boolean;
+  switchModes?: ('resume' | 'restart')[];
   operators?: string[];
   workers?: { node: string; site?: string }[];
 }
@@ -263,6 +269,9 @@ export const wayangAPI = {
   get: async (id: string): Promise<WayangDeployment> => (await apiClient.get(`/dags/wayang-rust/deployments/${encodeURIComponent(id)}`)).data,
   stop: async (id: string): Promise<WayangDeployment> =>
     (await apiClient.post(`/dags/wayang-rust/deployments/${encodeURIComponent(id)}/stop`)).data,
+  replace: async (id: string, body: { expectedEpoch: string; mode: 'resume' | 'restart'; flowId?: number;
+    dagText?: string }): Promise<WayangDeployment> =>
+    (await apiClient.post(`/dags/wayang-rust/deployments/${encodeURIComponent(id)}/replace`, body)).data,
 };
 
 export const flowsAPI = {

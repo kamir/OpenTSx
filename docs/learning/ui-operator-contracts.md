@@ -29,6 +29,12 @@ survive service restart. The three browser workloads retain their original local
 separate increment and Compose regressions establish the continuous runtime behavior.
 Transient preparation failures retain private candidates and the exact plan for retry; activation waits for every
 preparation and ownership check. This recovery rule does not change the three numerical browser workloads.
+The separate [local publication protocol](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment)
+fences captured grants through the gateway and segregated Proxy roles. Same-DAG resume preserves state and open
+windows; changed-DAG restart replays whole inputs into a distinct fresh output. An unknown broker outcome blocks
+replacement rather than permitting blind resend. Those operational checks do not change the operator starters,
+expected values or numerical tolerances, and do not establish gateway high availability.
+
 The workbench aliases `dq.plausible-range` to `dq.checks` and `stats.window` to
 `stats.welford-ddsketch`. Its statistics deployment exporter writes a catalog
 duration and a full statistics sink; the stored flow retains the selected
