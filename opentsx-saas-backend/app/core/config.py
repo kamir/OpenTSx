@@ -2,7 +2,25 @@
 
 from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import validator
+from pydantic import ValidationInfo, field_validator, validator
+
+PASSWORD_MAX_BYTES = 72  # bcrypt reads no further
+PUBLISHED_EXAMPLES = frozenset({
+    "your-secret-key-change-in-production-min-32-chars-long",
+    "your-secret-key-change-this-in-production-use-random-32-chars",
+    "change-this-to-a-secure-random-key-in-production",
+    "your-secret-key-here-change-in-production",
+    "your-secret-key-change-this-in-production",
+    "your-secret-key-change-in-production",
+    "change_this_password",
+    "change_this_redis_password",
+    "dev_password_123",
+    "your_password",
+    "SecurePassword123!",
+    "SecurePass123!",
+    "OldPassword123!",
+    "NewSecurePassword456!",
+})
 
 
 class Settings(BaseSettings):
@@ -18,7 +36,7 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8000"]
 
     # Security
-    SECRET_KEY: str = "your-secret-key-change-in-production-min-32-chars-long"
+    SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -26,7 +44,7 @@ class Settings(BaseSettings):
     # Database
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_USER: str = "opentsx"
-    POSTGRES_PASSWORD: str = "opentsx"
+    POSTGRES_PASSWORD: str
     POSTGRES_DB: str = "opentsx"
     POSTGRES_PORT: int = 5432
 
@@ -50,7 +68,7 @@ class Settings(BaseSettings):
 
     # First superuser
     FIRST_SUPERUSER_EMAIL: str = "admin@opentsx.com"
-    FIRST_SUPERUSER_PASSWORD: str = "admin123"
+    FIRST_SUPERUSER_PASSWORD: str
 
     # DAG runs (app/api/dags.py): the retrieval server that writes vector topics, and who may ask for it
     RETRIEVAL_URL: Optional[str] = None       # e.g. http://opentsx-retrieval:8080; unset: no runs
@@ -65,6 +83,27 @@ class Settings(BaseSettings):
     ENABLE_SIGNUP: bool = True
     ENABLE_INVITATIONS: bool = True
     ENABLE_PAYMENTS: bool = False  # Stub for now
+
+    @field_validator("SECRET_KEY")
+    @classmethod
+    def secret_key_is_strong(cls, value: str) -> str:
+        if value in PUBLISHED_EXAMPLES:
+            raise ValueError("SECRET_KEY: published example value; generate a random key of at least 32 characters")
+        if len(value) < 32:
+            raise ValueError("SECRET_KEY: shorter than 32 characters; set at least 32 random characters")
+        return value
+
+    @field_validator("POSTGRES_PASSWORD", "FIRST_SUPERUSER_PASSWORD")
+    @classmethod
+    def password_is_strong(cls, value: str, info: ValidationInfo) -> str:
+        name = info.field_name
+        if value in PUBLISHED_EXAMPLES:
+            raise ValueError(f"{name}: published example value; set a random password of at least 12 characters")
+        if len(value) < 12:
+            raise ValueError(f"{name}: shorter than 12 characters; set at least 12 characters")
+        if name == "FIRST_SUPERUSER_PASSWORD" and len(value.encode("utf-8")) > PASSWORD_MAX_BYTES:
+            raise ValueError(f"{name}: longer than 72 bytes; set at most 72 bytes in UTF-8")
+        return value
 
     @property
     def database_url(self) -> str:
@@ -84,7 +123,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         case_sensitive=True,
         env_file=".env",
-        extra="ignore"  # Ignore extra environment variables from docker-compose
+        extra="ignore",  # Ignore extra environment variables from docker-compose
+        hide_input_in_errors=True,
     )
 
 

@@ -1,2 +1,3 @@
 # Test tools, on top of requirements.txt:  python -m pytest tests
 pytest==9.1.1
+PyYAML==6.0.3

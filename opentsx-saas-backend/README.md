@@ -26,35 +26,47 @@ API Documentation: **http://localhost:8000/docs**
 
 ## Environment Variables
 
-Create `.env` file in `backend/` directory:
+The backend reads its settings from the environment and from `.env` in the directory it starts in
+(`app/core/config.py`). A variable in the environment wins over the same key in `.env`. Copy `.env.example` to
+`opentsx-saas-backend/.env`, which git ignores, and fill in the three required values.
+
+| Variable | Default | Allowed |
+|----------|---------|---------|
+| `SECRET_KEY` | none, required | at least 32 characters; signs the login tokens |
+| `POSTGRES_PASSWORD` | none, required | at least 12 characters |
+| `FIRST_SUPERUSER_PASSWORD` | none, required | at least 12 characters and at most 72 bytes in UTF-8; used only when the first administrator is created |
+| `POSTGRES_SERVER` | `localhost` | host name |
+| `POSTGRES_PORT` | `5432` | port |
+| `POSTGRES_USER` | `opentsx` | user name |
+| `POSTGRES_DB` | `opentsx` | database name |
+| `FIRST_SUPERUSER_EMAIL` | `admin@opentsx.com` | the first administrator, created at start when no account with this address exists |
+| `ALGORITHM` | `HS256` | JWT signing algorithm |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `30` | minutes |
+| `BACKEND_CORS_ORIGINS` | `["http://localhost:3000","http://localhost:8000"]` | JSON list of origins |
+
+The database URL is built from the `POSTGRES_*` variables. The backend reads no `DATABASE_URL`.
+
+Generate each required value with:
 
 ```bash
-# Application
-PROJECT_NAME=OpenTSx SaaS Platform
-API_V1_STR=/api/v1
-DEBUG=True
-
-# Security (⚠️ CHANGE IN PRODUCTION)
-SECRET_KEY=your-secret-key-change-this-in-production
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-
-# Database
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/opentsx
-
-# First Superuser
-FIRST_SUPERUSER_EMAIL=admin@opentsx.com
-FIRST_SUPERUSER_PASSWORD=admin123
-
-# CORS
-BACKEND_CORS_ORIGINS=["http://localhost:3000"]
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
-## Generate Secret Key
+A required value that is missing, shorter than its minimum, or one of the example values published in this
+repository stops the start. The message names the variable and does not show the value:
 
-```bash
-python -c "import secrets; print(secrets.token_urlsafe(32))"
+```text
+SECRET_KEY
+  Field required [type=missing]
 ```
+
+```text
+SECRET_KEY
+  Value error, SECRET_KEY: shorter than 32 characters; set at least 32 random characters [type=value_error]
+```
+
+`TEST_LOGIN` is the only switch for a lab: it lets `admin` with the password `admin` sign in (see
+[Test operation](#test-operation)). It does not replace the required values.
 
 ## Project Structure
 
@@ -109,10 +121,17 @@ Key dependencies:
 
 ### Authentication
 
-- `POST /api/v1/auth/register` - Register new user
-- `POST /api/v1/auth/login` - Login and get JWT tokens
-- `POST /api/v1/auth/refresh` - Refresh access token
-- `GET /api/v1/auth/me` - Get current user
+| Route | What |
+|-------|------|
+| `POST /api/v1/auth/register` | registers a user; body `email`, `password`, `full_name` |
+| `POST /api/v1/auth/login` | signs in; body `email`, `password`; answers `access_token` and `refresh_token` |
+| `POST /api/v1/auth/logout` | answers success; the tokens stay valid until they expire, so the client discards them |
+| `GET /api/v1/auth/me` | the signed-in user |
+| `PATCH /api/v1/auth/me` | changes `email`, `full_name`, `bio` or `avatar_url` of the signed-in user |
+| `POST /api/v1/auth/change-password` | body `current_password`, `new_password` |
+
+Passwords for register and change-password take 8 characters to 72 bytes in UTF-8, the most bcrypt reads. A longer
+one answers 422 with the message `at most 72 bytes` for the field.
 
 ### Test operation
 
@@ -143,10 +162,12 @@ See full API documentation at: `/docs` (Swagger UI)
 ```bash
 sudo -u postgres psql
 CREATE DATABASE opentsx;
-CREATE USER opentsx_user WITH ENCRYPTED PASSWORD 'your_password';
+CREATE USER opentsx_user WITH ENCRYPTED PASSWORD '<password>';
 GRANT ALL PRIVILEGES ON DATABASE opentsx TO opentsx_user;
 \q
 ```
+
+`<password>` is the `POSTGRES_PASSWORD` of your `.env`, at least 12 characters.
 
 ### Database Migrations (Optional)
 
@@ -213,7 +234,8 @@ docker run -p 8000:8000 --env-file .env opentsx-backend
 
 ### Docker Compose (Full Stack)
 
-This starts the Backend, Frontend, Postgres, and Redis:
+This starts the backend, the frontend and PostgreSQL. Set `SECRET_KEY`, `POSTGRES_PASSWORD` and
+`FIRST_SUPERUSER_PASSWORD` in `.env` first (see [DOCKER-SETUP.md](DOCKER-SETUP.md)):
 
 ```bash
 docker-compose up -d --build
@@ -227,7 +249,7 @@ docker-compose up -d --build
 ```
 Client                    Server
   │                         │
-  │ POST /auth/login        │
+  │ POST /api/v1/auth/login │
   │ {email, password}       │
   ├────────────────────────→│
   │                         │
@@ -240,7 +262,7 @@ Client                    Server
   │                         │
 Store tokens                │
   │                         │
-  │ GET /flows              │
+  │ GET /api/v1/flows       │
   │ Authorization: Bearer   │
   ├────────────────────────→│
   │                         │

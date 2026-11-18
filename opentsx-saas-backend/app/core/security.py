@@ -5,7 +5,7 @@ from typing import Optional, Dict, Any
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-from app.core.config import settings
+from app.core.config import PASSWORD_MAX_BYTES, settings
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -27,9 +27,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     Returns:
         True if password matches, False otherwise
     """
-    # bcrypt has a 72-byte limit, truncate if needed
-    if len(plain_password.encode('utf-8')) > 72:
-        plain_password = plain_password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
+    if len(plain_password.encode("utf-8")) > PASSWORD_MAX_BYTES:
+        return False
     return pwd_context.verify(plain_password, hashed_password)
 
 
@@ -43,13 +42,11 @@ def get_password_hash(password: str) -> str:
     Returns:
         Hashed password
 
-    Note:
-        bcrypt has a 72-byte password limit. Passwords longer than this
-        are truncated to 72 bytes (not characters) to avoid errors.
+    Raises:
+        ValueError: the password is longer than 72 bytes in UTF-8, the most bcrypt reads
     """
-    # bcrypt has a 72-byte limit, truncate if needed
-    if len(password.encode('utf-8')) > 72:
-        password = password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
+    if len(password.encode("utf-8")) > PASSWORD_MAX_BYTES:
+        raise ValueError("password: longer than 72 bytes; use at most 72 bytes in UTF-8")
     return pwd_context.hash(password)
 
 

@@ -2,7 +2,7 @@
 
 ## 🚀 Quick Start
 
-The easiest way to run the entire stack (backend + PostgreSQL + Redis):
+This runs the backend, PostgreSQL and the frontend with Docker Compose.
 
 ```bash
 # 1. Navigate to backend directory
@@ -11,8 +11,9 @@ cd opentsx-saas-backend
 # 2. Create environment file
 cp .env.example .env
 
-# 3. (Optional) Edit .env with your configuration
-# ⚠️  IMPORTANT: Change SECRET_KEY and passwords in production!
+# 3. Set SECRET_KEY, POSTGRES_PASSWORD and FIRST_SUPERUSER_PASSWORD in .env.
+#    Generate each value with:
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
 nano .env
 
 # 4. Start all services
@@ -27,7 +28,8 @@ docker-compose logs -f backend
 
 ## Services
 
-The docker-compose.yml starts three services:
+The docker-compose.yml starts three services: the backend, PostgreSQL and the frontend. The backend and
+PostgreSQL are published on 127.0.0.1 only, so other hosts cannot reach them.
 
 ### 🐍 Backend (FastAPI)
 - **URL**: http://localhost:8000
@@ -35,38 +37,59 @@ The docker-compose.yml starts three services:
 - **Container**: opentsx-backend
 
 ### 🗄️ PostgreSQL Database
-- **Port**: 5432
+- **Port**: 5432 on 127.0.0.1 (`POSTGRES_PORT`)
 - **Database**: opentsx
 - **User**: opentsx_user (configurable in .env)
 - **Container**: opentsx-postgres
 
-### 🔴 Redis Cache
-- **Port**: 6379
-- **Container**: opentsx-redis
+### Frontend
+- **URL**: http://localhost:3000
+- **Container**: opentsx-frontend
 
 ## Configuration
 
 ### Environment Variables (.env)
 
+docker compose reads `.env` in this directory. These three values have no default:
+
+```bash
+SECRET_KEY=<at least 32 random characters>
+POSTGRES_PASSWORD=<at least 12 characters>
+FIRST_SUPERUSER_PASSWORD=<at least 12 characters, at most 72 bytes>
+```
+
+`<...>` stands for the value you generate. The other keys are optional:
+
 ```bash
 # PostgreSQL
 POSTGRES_DB=opentsx
 POSTGRES_USER=opentsx_user
-POSTGRES_PASSWORD=change_this_password
 POSTGRES_PORT=5432
-
-# Redis
-REDIS_PASSWORD=change_this_redis_password
-REDIS_PORT=6379
 
 # Backend
 BACKEND_PORT=8000
-SECRET_KEY=your-secret-key-change-this-in-production
 
 # First Admin User
 FIRST_SUPERUSER_EMAIL=admin@opentsx.com
-FIRST_SUPERUSER_PASSWORD=admin123
 ```
+
+Without one of the three required values, every docker compose command stops and names it:
+
+```text
+error while interpolating services.backend.environment.SECRET_KEY: required variable SECRET_KEY is missing a value: set SECRET_KEY, see DOCKER-SETUP.md
+```
+
+The backend refuses a value that is too short or is an example value published in this repository, and names the
+variable in its log (`docker-compose logs backend`).
+
+PostgreSQL takes `POSTGRES_PASSWORD` only when it creates the volume `opentsx-postgres-data`. An existing volume
+keeps the password it was created with, so set `POSTGRES_PASSWORD` to that password. A volume created with an
+example password such as `change_this_password` has to be deleted with `docker-compose down -v`, which deletes its
+data, or get a new password in PostgreSQL, because the backend refuses that value.
+
+The backend creates the first administrator only when no account with `FIRST_SUPERUSER_EMAIL` exists.
+`FIRST_SUPERUSER_PASSWORD` does not change the password of an existing account. To change it, sign in as that
+account and call `POST /api/v1/auth/change-password`.
 
 ## Docker Commands
 
@@ -92,7 +115,6 @@ docker-compose logs -f
 # Specific service
 docker-compose logs -f backend
 docker-compose logs -f postgres
-docker-compose logs -f redis
 
 # Last 100 lines
 docker-compose logs --tail=100 backend
@@ -129,26 +151,20 @@ docker-compose exec backend bash
 # Access PostgreSQL
 docker-compose exec postgres psql -U opentsx_user -d opentsx
 
-# Access Redis CLI
-docker-compose exec redis redis-cli -a <your-redis-password>
-
 # Run migrations
 docker-compose exec backend alembic upgrade head
 ```
 
 ## Health Checks
 
-All services include health checks:
+The backend and PostgreSQL have health checks in `docker-compose.yml`; the frontend has none:
 
 ```bash
 # Check backend health
-curl http://localhost:8000/api/v1/health
+curl http://localhost:8000/health
 
 # Check PostgreSQL
 docker-compose exec postgres pg_isready -U opentsx_user
-
-# Check Redis
-docker-compose exec redis redis-cli -a <password> ping
 ```
 
 ## Volumes
@@ -156,7 +172,6 @@ docker-compose exec redis redis-cli -a <password> ping
 Persistent data is stored in Docker volumes:
 
 - `opentsx-postgres-data`: PostgreSQL database files
-- `opentsx-redis-data`: Redis persistence files
 
 ### Managing Volumes
 
@@ -184,21 +199,16 @@ docker run --rm \
 
 ### Security Checklist
 
-1. **Change all default passwords:**
+1. **Generate the three required values**, one run each:
    ```bash
-   # Generate secure passwords
-   openssl rand -base64 32  # For POSTGRES_PASSWORD
-   openssl rand -base64 32  # For REDIS_PASSWORD
-   python -c "import secrets; print(secrets.token_urlsafe(32))"  # For SECRET_KEY
+   python3 -c "import secrets; print(secrets.token_urlsafe(32))"
    ```
 
-2. **Update .env:**
+2. **Put them into .env:**
    ```bash
-   DEBUG=False
-   SECRET_KEY=<generated-secret-key>
-   POSTGRES_PASSWORD=<strong-password>
-   REDIS_PASSWORD=<strong-password>
-   FIRST_SUPERUSER_PASSWORD=<strong-password>
+   SECRET_KEY=<generated value>
+   POSTGRES_PASSWORD=<generated value>
+   FIRST_SUPERUSER_PASSWORD=<generated value>
    ```
 
 3. **Configure CORS:**
@@ -243,11 +253,9 @@ If ports are already in use:
 # Option 1: Change ports in .env
 BACKEND_PORT=8001
 POSTGRES_PORT=5433
-REDIS_PORT=6380
 
 # Option 2: Stop conflicting services
 sudo systemctl stop postgresql
-sudo systemctl stop redis
 ```
 
 ### Database Connection Issues
@@ -259,24 +267,11 @@ docker-compose ps postgres
 # Check PostgreSQL logs
 docker-compose logs postgres
 
-# Verify connection string
-docker-compose exec backend env | grep DATABASE_URL
+# Verify the connection settings (the password stays hidden)
+docker-compose exec backend env | grep -E '^POSTGRES_(SERVER|PORT|USER|DB)='
 
 # Test manual connection
 docker-compose exec postgres psql -U opentsx_user -d opentsx -c "SELECT version();"
-```
-
-### Redis Connection Issues
-
-```bash
-# Check Redis is running
-docker-compose ps redis
-
-# Test connection
-docker-compose exec redis redis-cli -a <password> ping
-
-# Check Redis logs
-docker-compose logs redis
 ```
 
 ### Backend Won't Start
@@ -390,13 +385,9 @@ mkdir -p $BACKUP_DIR
 # Backup PostgreSQL
 docker-compose exec -T postgres pg_dump -U opentsx_user opentsx > $BACKUP_DIR/postgres_$DATE.sql
 
-# Backup Redis
-docker-compose exec -T redis redis-cli -a <password> --rdb /data/dump.rdb SAVE
-docker cp opentsx-redis:/data/dump.rdb $BACKUP_DIR/redis_$DATE.rdb
-
 # Compress
 tar czf $BACKUP_DIR/backup_$DATE.tar.gz $BACKUP_DIR/*_$DATE.*
-rm $BACKUP_DIR/*_$DATE.sql $BACKUP_DIR/*_$DATE.rdb
+rm $BACKUP_DIR/*_$DATE.sql
 
 echo "Backup completed: backup_$DATE.tar.gz"
 ```
@@ -406,10 +397,6 @@ echo "Backup completed: backup_$DATE.tar.gz"
 ```bash
 # Restore PostgreSQL
 docker-compose exec -T postgres psql -U opentsx_user opentsx < backup.sql
-
-# Restore Redis
-docker cp backup.rdb opentsx-redis:/data/dump.rdb
-docker-compose restart redis
 ```
 
 ## Additional Resources
@@ -417,4 +404,3 @@ docker-compose restart redis
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [PostgreSQL Docker Image](https://hub.docker.com/_/postgres)
-- [Redis Docker Image](https://hub.docker.com/_/redis)

@@ -17,15 +17,31 @@ This document describes the simplified local development setup for OpenTSx using
 
 The local development environment (`docker-compose.local.yml`) provides a complete infrastructure stack for developing and testing OpenTSx applications:
 
-- **Kafka** (via CP-ALL-IN-ONE) — Stream processing without Zookeeper complexity
-- **PostgreSQL** — Relational database storage
-- **Redis** — Caching and session management
-- **HBase** — Distributed column-oriented storage
-- **OpenTSDB** — Time series database built on HBase
-- **Backend API** (optional) — Application backend
-- **Frontend UI** (optional) — Web interface
+- **Kafka** (via CP-ALL-IN-ONE): stream processing without Zookeeper
+- **PostgreSQL**: relational database storage
+- **HBase**: distributed column-oriented storage
+- **OpenTSDB**: time series database built on HBase
+- **Backend API** (optional): the SaaS backend
+- **Frontend UI** (optional): the SaaS frontend
+
+PostgreSQL (5432) and the backend (8000) are published on 127.0.0.1 only, so other hosts cannot reach them.
 
 ## Quick Start
+
+Every command on `docker-compose.local.yml` needs `POSTGRES_PASSWORD`, `SECRET_KEY` and `FIRST_SUPERUSER_PASSWORD`
+in the environment or in `.env` next to the file, also without the `full` profile. Without one of them, docker
+compose stops and names it:
+
+```text
+error while interpolating services.postgres.environment.POSTGRES_PASSWORD: required variable POSTGRES_PASSWORD is missing a value: set POSTGRES_PASSWORD, see opentsx-saas-backend/DOCKER-SETUP.md
+```
+
+With the `full` profile the backend also refuses a `SECRET_KEY` shorter than 32 characters and a password shorter
+than 12 characters. `.env` in the repository root is git-ignored. Generate each value with:
+
+```bash
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+```
 
 ### Start Core Services Only
 
@@ -37,7 +53,6 @@ docker-compose -f docker-compose.local.yml up -d
 
 This starts:
 - PostgreSQL
-- Redis
 - CP-ALL-IN-ONE (Kafka, Schema Registry, Control Center)
 - HBase
 - OpenTSDB
@@ -74,26 +89,12 @@ docker-compose -f docker-compose.local.yml down -v
 ```java
 String url = "jdbc:postgresql://localhost:5432/opentsx";
 String user = "opentsx";
-String password = "opentsx";
+String password = System.getenv("POSTGRES_PASSWORD");
 ```
 
 **Health Check:**
 ```bash
 docker exec opentsx-postgres pg_isready -U opentsx
-```
-
-### Redis (Port 6379)
-
-**Purpose:** Caching and fast key-value storage
-
-**Connection:**
-```bash
-redis-cli -h localhost -p 6379
-```
-
-**Health Check:**
-```bash
-docker exec opentsx-redis redis-cli ping
 ```
 
 ### CP-ALL-IN-ONE (Ports 9092, 8081, 9021)
@@ -387,7 +388,6 @@ Apache Kudu was evaluated and found to have minimal usage in the codebase:
 | Service       | Memory Usage | Notes                        |
 |---------------|--------------|------------------------------|
 | PostgreSQL    | ~100 MB      | Lightweight                  |
-| Redis         | ~10 MB       | Minimal without data         |
 | CP-ALL-IN-ONE | ~2-3 GB      | Includes entire Kafka stack  |
 | HBase         | ~1-2 GB      | Requires Java heap space     |
 | OpenTSDB      | ~500 MB      | Java-based API server        |

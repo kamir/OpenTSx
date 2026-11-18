@@ -70,8 +70,9 @@ the k3s guide. The component `saas` gives the backend `RETRIEVAL_URL` (`http://o
 
 To run the backend alone, follow `opentsx-saas-backend/LOCAL-DEVELOPMENT.md`.
 
-`docker compose -f docker-compose.local.yml --profile full up` starts the backend on port 8000. It does not give a
-working full stack:
+`docker compose -f docker-compose.local.yml --profile full up` starts the backend on 127.0.0.1:8000. It needs
+`POSTGRES_PASSWORD`, `SECRET_KEY` (at least 32 characters) and `FIRST_SUPERUSER_PASSWORD` (at least 12 characters)
+in the environment or in `.env` next to the file. It does not give a working full stack:
 
 * Its frontend container runs `npm run dev` without `--host 0.0.0.0`. Vite then listens on `localhost` inside the
   container, so port 3000 does not answer from the host.

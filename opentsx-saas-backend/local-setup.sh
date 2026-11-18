@@ -93,14 +93,30 @@ echo ""
 echo "🗄️  Setting up local database..."
 DB_NAME="opentsx_local"
 DB_USER="opentsx_dev"
-DB_PASSWORD="dev_password_123"
+# A rerun keeps the passwords of .env.local: the database user and the first administrator already have them.
+# The backend refuses a password shorter than 12 characters or a published example such as dev_password_123.
+DB_PASSWORD=$(sed -n 's/^POSTGRES_PASSWORD=//p' .env.local 2>/dev/null | tail -n 1)
+ADMIN_PASSWORD=$(sed -n 's/^FIRST_SUPERUSER_PASSWORD=//p' .env.local 2>/dev/null | tail -n 1)
+if [ ${#DB_PASSWORD} -lt 12 ] || [ "$DB_PASSWORD" = dev_password_123 ]; then
+    DB_PASSWORD=$(python3 -c "import secrets; print(secrets.token_urlsafe(24))")
+fi
+if [ ${#ADMIN_PASSWORD} -lt 12 ]; then
+    if [ -n "$ADMIN_PASSWORD" ]; then
+        echo -e "${YELLOW}⚠ FIRST_SUPERUSER_PASSWORD of .env.local was shorter than 12 characters and is replaced; an existing administrator account keeps its password, change it with POST /api/v1/auth/change-password${NC}"
+    fi
+    ADMIN_PASSWORD=$(python3 -c "import secrets; print(secrets.token_urlsafe(24))")
+fi
 
 # Check if database exists
 if psql -h localhost -U $USER -lqt | cut -d \| -f 1 | grep -qw $DB_NAME; then
     echo -e "${YELLOW}⚠ Database '$DB_NAME' already exists${NC}"
+    psql -v ON_ERROR_STOP=1 -h localhost -U $USER postgres > /dev/null <<EOF
+ALTER USER $DB_USER WITH PASSWORD '$DB_PASSWORD';
+EOF
+    echo -e "${GREEN}✓ Password of '$DB_USER' set to POSTGRES_PASSWORD of .env.local${NC}"
 else
     # Create database and user
-    psql -h localhost -U $USER postgres <<EOF
+    psql -v ON_ERROR_STOP=1 -h localhost -U $USER postgres <<EOF
 CREATE DATABASE $DB_NAME;
 CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';
 GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
@@ -111,6 +127,7 @@ fi
 # Create .env.local file
 echo ""
 echo "⚙️  Creating .env.local configuration..."
+umask 077
 cat > .env.local <<EOF
 # Local Development Environment
 # =============================
@@ -157,13 +174,14 @@ STRIPE_WEBHOOK_SECRET=whsec_stub_local
 
 # First Superuser
 FIRST_SUPERUSER_EMAIL=admin@localhost
-FIRST_SUPERUSER_PASSWORD=admin123
+FIRST_SUPERUSER_PASSWORD=$ADMIN_PASSWORD
 
 # Features
 ENABLE_SIGNUP=True
 ENABLE_INVITATIONS=True
 ENABLE_PAYMENTS=False
 EOF
+chmod 600 .env.local
 
 echo -e "${GREEN}✓ .env.local created${NC}"
 
@@ -185,6 +203,10 @@ echo ""
 echo "Database credentials:"
 echo "  Database: $DB_NAME"
 echo "  User: $DB_USER"
-echo "  Password: $DB_PASSWORD"
+echo "  Password: POSTGRES_PASSWORD in .env.local"
 echo "  Host: localhost:5432"
+echo ""
+echo "First administrator:"
+echo "  Email: admin@localhost"
+echo "  Password: FIRST_SUPERUSER_PASSWORD in .env.local"
 echo ""

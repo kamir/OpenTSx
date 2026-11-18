@@ -78,7 +78,7 @@ frontend/
 
 #### Login Page (`/login`)
 - Email/password authentication
-- Demo account info display
+- The test operation hint when the backend runs with `TEST_LOGIN=true` (`GET /api/v1/auth/mode`)
 - Auto-redirect if already logged in
 
 #### Register Page (`/register`)
@@ -253,7 +253,9 @@ docker run -p 3000:3000 opentsx-frontend
 
 ### Integrated Startup (Recommended)
 
-You can run the entire stack (Frontend + Backend + DB) using the backend's docker-compose:
+You can run the entire stack (Frontend + Backend + DB) using the backend's docker-compose. Set `SECRET_KEY`,
+`POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` in `../opentsx-saas-backend/.env` first (see
+[DOCKER-SETUP.md](../opentsx-saas-backend/DOCKER-SETUP.md)):
 
 ```bash
 cd ../opentsx-saas-backend
@@ -448,14 +450,11 @@ npm install -D typescript@latest
 - **Visual Flow Builder Design**: [../WEB-UI-VISUAL-FLOW-BUILDER.md](../WEB-UI-VISUAL-FLOW-BUILDER.md)
 - **API Reference**: [../docs/API-DOCUMENTATION.md](../docs/API-DOCUMENTATION.md)
 
-## Demo Credentials
+## Administrator Account
 
-Default superuser account (created automatically):
-
-- **Email**: `admin@opentsx.com`
-- **Password**: `admin123`
-
-⚠️ **Change this password in production!**
+The backend creates the first administrator at start when no account with `FIRST_SUPERUSER_EMAIL` exists, with the
+password `FIRST_SUPERUSER_PASSWORD`. There is no default password: the backend does not start without one and
+refuses a value shorter than 12 characters.
 
 ## License
 

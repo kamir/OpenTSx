@@ -107,10 +107,12 @@ jobs:
       - uses: actions/checkout@v7
       - name: Shell syntax and shellcheck
         run: |
-          for f in deploy/k3s/*.sh deploy/docker/*.sh; do bash -n "$f"; done
+          for f in deploy/k3s/*.sh deploy/k3s/test/*.sh deploy/docker/*.sh; do bash -n "$f"; done
           command -v shellcheck || { sudo apt-get update -q && sudo apt-get install -y -q shellcheck; }
           shellcheck --version
-          shellcheck -x -P SCRIPTDIR deploy/k3s/*.sh deploy/docker/*.sh
+          shellcheck -x -P SCRIPTDIR deploy/k3s/*.sh deploy/k3s/test/*.sh deploy/docker/*.sh
+      - name: Configure limits (deploy/k3s/test)
+        run: bash deploy/k3s/test/test-20-configure.sh
       - name: Render the kustomize overlays (default, hostnetwork, service, lake, modbus-sim, dwd-forward, monitoring, saas, retrieval-kafscale, event-bridge) and the history archive
         run: |
           kubectl version --client

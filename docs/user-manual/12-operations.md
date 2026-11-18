@@ -7,9 +7,13 @@ Start a local stack, configure the tools, run the tests and secure a deployment 
 | File | Starts | Use |
 |------|--------|-----|
 | `docker-compose.kafscale.yml` | etcd, MinIO (S3, :9000/:9001), KafScale broker v1.6.0 (:9092) | **primary development stack** (v2) |
-| `docker-compose.local.yml` | Postgres, Redis, Confluent Platform (Kafka, Schema Registry), HBase + OpenTSDB; profile `full` adds the SaaS backend and frontend ([chapter 14](14-saas-service-layer.md) says what works in it) | OpenTSDB store tests, 2.x tools, SaaS stack |
+| `docker-compose.local.yml` | Postgres, Confluent Platform (Kafka, Schema Registry), HBase + OpenTSDB; profile `full` adds the SaaS backend and frontend ([chapter 14](14-saas-service-layer.md) says what works in it) | OpenTSDB store tests, 2.x tools, SaaS stack |
 
 Both stacks bind port 9092, so do not run them at the same time.
+
+`docker-compose.local.yml` needs `POSTGRES_PASSWORD`, `SECRET_KEY` and `FIRST_SUPERUSER_PASSWORD` in the environment
+or in `.env` next to the file. Without one of them, docker compose stops and names it, for example
+`required variable SECRET_KEY is missing a value`.
 
 The [DevOps guide](../devops/README.md) describes how to run the tools as services on Kubernetes (k3s) against an
 existing KafScale cluster: images, manifests, setup and sizing plan, demos. The scripts are in

@@ -1,8 +1,20 @@
 """Pydantic schemas for user-related requests and responses."""
 
-from typing import Optional, List
+from typing import Annotated, Optional, List
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import AfterValidator, BaseModel, EmailStr, Field
+from pydantic_core import PydanticCustomError
+
+from app.core.config import PASSWORD_MAX_BYTES
+
+
+def at_most_72_bytes(password: str) -> str:
+    if len(password.encode("utf-8")) > PASSWORD_MAX_BYTES:
+        raise PydanticCustomError("password_too_long", "at most 72 bytes")
+    return password
+
+
+NewPassword = Annotated[str, Field(min_length=8), AfterValidator(at_most_72_bytes)]
 
 
 # ==================== Base Schemas ====================
@@ -18,7 +30,7 @@ class UserBase(BaseModel):
 class UserCreate(BaseModel):
     """Schema for creating a user."""
     email: EmailStr
-    password: str = Field(..., min_length=8)
+    password: NewPassword
     full_name: Optional[str] = None
 
 
@@ -87,14 +99,14 @@ class LoginResponse(BaseModel):
 class RegisterRequest(BaseModel):
     """Registration request schema."""
     email: EmailStr
-    password: str = Field(..., min_length=8)
+    password: NewPassword
     full_name: str
 
 
 class ChangePasswordRequest(BaseModel):
     """Change password request schema."""
     current_password: str
-    new_password: str = Field(..., min_length=8)
+    new_password: NewPassword
 
 
 # ==================== Organization Schemas ====================

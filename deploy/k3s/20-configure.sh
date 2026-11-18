@@ -96,6 +96,8 @@ else
 fi
 
 gen_secret() { LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c "$1" || true; }
+# characters as the SaaS backend counts them (UTF-8 lead bytes), in any locale
+utf8_chars() { printf %s "$1" | LC_ALL=C tr -d '\200-\277' | LC_ALL=C wc -c; }
 if is_true "$RETRIEVAL_DAG_RUNS"; then
   # the retrieval server runs DAGs only for callers that know this token; the SaaS backend is the caller
   [[ -n "$RETRIEVAL_DAG_RUN_TOKEN" ]] || RETRIEVAL_DAG_RUN_TOKEN="$(gen_secret 40)"
@@ -112,8 +114,12 @@ if is_true "$SAAS"; then
   [[ -n "$SAAS_ADMIN_PASSWORD" ]] || SAAS_ADMIN_PASSWORD="$(gen_secret 20)"
   # both end up in a URL (database) and in an env file: keep them to letters and digits
   [[ "$SAAS_DB_PASSWORD" =~ ^[A-Za-z0-9]+$ ]] || die "SAAS_DB_PASSWORD may only hold letters and digits"
-  (( ${#SAAS_SECRET_KEY} >= 32 )) || die "SAAS_SECRET_KEY needs at least 32 characters"
-  (( ${#SAAS_ADMIN_PASSWORD} >= 8 )) || die "SAAS_ADMIN_PASSWORD needs at least 8 characters"
+  (( ${#SAAS_DB_PASSWORD} >= 12 )) || die "SAAS_DB_PASSWORD: shorter than 12 characters; set at least 12 letters and digits"
+  (( $(utf8_chars "$SAAS_SECRET_KEY") >= 32 )) || die "SAAS_SECRET_KEY needs at least 32 characters"
+  # the backend refuses these at start (opentsx-saas-backend/app/core/config.py); bcrypt reads at most 72 bytes
+  (( $(utf8_chars "$SAAS_ADMIN_PASSWORD") >= 12 )) || die "SAAS_ADMIN_PASSWORD: shorter than 12 characters; set at least 12 characters"
+  (( $(printf %s "$SAAS_ADMIN_PASSWORD" | LC_ALL=C wc -c) <= 72 )) \
+    || die "SAAS_ADMIN_PASSWORD: longer than 72 bytes; set at most 72 bytes in UTF-8"
 fi
 
 # ---- .env ----------------------------------------------------------------------------------------------------------

@@ -121,6 +121,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   phase-randomized copies, which keep the power spectrum (new key `delta_h_surrogates`, parameters `surrogates` and
   `seed`), instead of the threshold 0.1. Gaussian series with linear correlations pass in about 1 of 20 cases; values
   with a broad distribution pass.
+- `opentsx-saas-backend/requirements-dev.txt` pins `PyYAML==6.0.3`, which the compose tests import.
 
 ### Removed
 
@@ -132,6 +133,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   returning `Insufficient events`; call `RIS.stretched_exponential_fit(result["return_intervals"])` for the fit.
 - `config/private/ccloud.props` from the index. `config/private/` is git-ignored; the file stays in the history, so
   the Confluent Cloud key it holds must be rotated.
+- The Redis service of both compose files, which no code used and which took its password on the command line, with
+  its volume and the backend's `REDIS_*` entries.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -255,6 +258,44 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   the generator now refuses. It binds numbers, leaves an emptied field out so the generator default applies, and
   refuses text that is no number before binding, for example `sigma: "4,5" is not a number; expected a number such as
   0.1`.
+- SaaS backend docs: `README.md`, `.env.example` and `DOCKER-SETUP.md` document the `POSTGRES_*` variables and the
+  required secrets that `app/core/config.py` reads, not `DATABASE_URL`, which the backend never read, and say that
+  `FIRST_SUPERUSER_PASSWORD` is used only when the first administrator account is created.
+- SaaS docs: `DOCKER-SETUP.md` checks the backend at `/health`, the backend README lists the authentication routes
+  that exist (there is no `/api/v1/auth/refresh`), and `LOCAL-DEVELOPMENT.md` says that `/api/v1/flows` needs a bearer
+  token, that `./local-test.sh` ends with exit code 0 even after a failed check, and that the `admin@localhost`
+  account written by `local-setup.sh` cannot sign in. The backend, frontend, local development and user manual pages
+  name the three required secrets and no longer show Redis, `admin123` or `dev_password_123`.
+
+### Security
+- SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
+  start without them, with a key shorter than 32 characters, a password shorter than 12 characters, a
+  `FIRST_SUPERUSER_PASSWORD` longer than 72 bytes, or one of the example values published in this repository; the
+  message names the variable and does not show the value. `TEST_LOGIN` stays the only lab switch. Upgrade: set the
+  three variables. An existing PostgreSQL volume keeps the password it was created with. An existing administrator
+  account keeps its stored password, which is `admin123` if the account was created with the old default; change it
+  with `POST /api/v1/auth/change-password`.
+- `opentsx-saas-backend/docker-compose.yml` and `docker-compose.local.yml` take the three secrets from the environment
+  or `.env` with `${VAR:?}` and no fallback, so every docker compose command stops and names a missing one (for
+  `docker-compose.local.yml` also without the `full` profile). PostgreSQL and the backend are published on 127.0.0.1
+  only, and the PostgreSQL healthcheck uses the configured `POSTGRES_USER` without a password.
+- SaaS backend: register and change-password refuse a password longer than 72 bytes in UTF-8 with 422 and the message
+  `at most 72 bytes` for the field, instead of cutting it to the 72 bytes bcrypt reads. A sign-in with a longer
+  password fails; an account registered with a longer password signs in with the first 72 bytes that were stored.
+- `opentsx-saas-backend/local-setup.sh` generates the database and first administrator passwords, writes them only to
+  `.env.local` with mode 600 and prints neither. A rerun keeps them, replaces a password the backend refuses (shorter
+  than 12 characters, or `dev_password_123`), sets the database user's password when the database exists, and stops
+  when a SQL statement fails.
+- `deploy/k3s/20-configure.sh` refuses a `SAAS_ADMIN_PASSWORD` or `SAAS_DB_PASSWORD` shorter than 12 characters and a
+  `SAAS_ADMIN_PASSWORD` longer than 72 bytes, the limits the SaaS backend enforces at start, so such a value stops the
+  configuration instead of the backend pod. It counts characters as the backend does in any locale, so a
+  `SAAS_ADMIN_PASSWORD` or `SAAS_SECRET_KEY` of multi-byte characters below the limit is refused as well. Generated
+  values are unaffected.
+- The workbench login page shows no administrator address and password in development mode, and the page the SaaS
+  backend serves at `/` no longer prefills `admin@localhost` and `admin123`. The backend has no default administrator
+  password.
+- The repository `.gitignore` ignores `/.env`, from which docker compose reads `POSTGRES_PASSWORD`, `SECRET_KEY` and
+  `FIRST_SUPERUSER_PASSWORD` for `docker-compose.local.yml`.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

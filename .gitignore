@@ -7,6 +7,7 @@
 
 ### This is a save place for personal configuration files, used with the Conflue
 **/config/private/**
+/.env
 
 ### macOS template
 # General
