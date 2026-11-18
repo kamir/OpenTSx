@@ -39,7 +39,7 @@ beforeEach(() => {
 describe("workbench readiness views", () => {
   it("mounts episode evidence and the reproducible analysis bundle controls", () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={["/workbench?mode=legacy"]}>
         <Workbench />
       </MemoryRouter>,
     );
@@ -55,7 +55,7 @@ describe("workbench readiness views", () => {
   it("mounts pair results and truthful runtime capability beside a pair operator", () => {
     useFlow.getState().applyOp("pair.es");
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={["/workbench?mode=legacy"]}>
         <Workbench />
       </MemoryRouter>,
     );
@@ -63,11 +63,11 @@ describe("workbench readiness views", () => {
     expect(
       screen.getByRole("region", { name: "Pair analysis results" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Java API only")).toBeInTheDocument();
+    expect(within(screen.getByRole("complementary", { name: "Inspector" })).getByText("Java API only")).toBeInTheDocument();
   });
   it("replaces the legacy modelling placeholders with an entry to the finite workflow", () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={["/workbench?mode=legacy"]}>
         <Workbench />
       </MemoryRouter>,
     );
@@ -93,7 +93,7 @@ describe("workbench readiness views", () => {
   });
   it("retains the modelling editor when switching between analysis views", () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={["/workbench?mode=legacy"]}>
         <Workbench />
       </MemoryRouter>,
     );

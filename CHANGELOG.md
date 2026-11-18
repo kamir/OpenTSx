@@ -13,6 +13,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Keep committed offsets monotonic in the pinned local KafScale metadata overlay.
+  Conditional updates retain newer flush progress and propagate storage failures.
 - Route local KafScale producers and test fixtures through the v1.6.0 Proxy. Build the pinned broker, Proxy and
   isolated metadata launcher without building an image. Compose exposes the Proxy endpoint; the development
   MinIO stack requires private `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` environment values.
@@ -42,6 +44,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   SARIMAX supports artifact reuse and continuous scoring with verified immutable known-ahead context,
   explicit availability cutoffs, visible context waits and durable context/target cursors.
   Continuous statistical scoring requires whole one-partition input/context topics and rejects topology expansion.
+
+- Selectable Signal Engineer and Data Worker presentations with Instrument
+  Console, Diagnostic Bench, Pipeline Studio and Recipe Notebook layouts.
+  The Legacy mode retains the classic controls. Switching preserves the
+  shared graph, scope and modelling editor. Modern tools provide a searchable
+  operator library, staged settings, bounded FFT/ACF diagnostics and actual
+  sample previews. A deterministic thermal fixture exposes units and gaps.
 
 - Workbench modelling for finite regular targets: ARIMA, SARIMA and SARIMAX, reference forecasts,
   rolling-origin backtests, prediction intervals and JSON result export. Context values carry availability
