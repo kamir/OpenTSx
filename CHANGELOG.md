@@ -284,6 +284,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   org.opentsx.connectors.kafka.topicmanager.TopicsUP, TopicsDOWN and TopicsCHECK.
 - bin/episode_02, 03, 09 and 10 take their classpath from bin/opentsx classpath opentsx-core instead of a 2.3-SNAPSHOT
   jar and a lib directory the build does not make.
+- `Episodes.validate` refuses a REGULAR episode without a positive `intervalMicros`, an IRREGULAR_DELTA episode
+  without `timeDeltas` and timestamps that do not increase with an `IllegalArgumentException` that names the field.
+  The statistics processor, the Flink job `StatsJob` and `EpisodeIndexer.rebuild` count such episodes in `invalid`
+  instead of stopping on a `NullPointerException` or computing statistics from them.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

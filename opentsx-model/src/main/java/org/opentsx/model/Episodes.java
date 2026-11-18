@@ -73,7 +73,31 @@ public final class Episodes {
         if (e.getValues().size() != n) {
             throw new IllegalArgumentException("count " + n + " != values " + e.getValues().size());
         }
+        String axis;
+        if (e.getTimeEncoding() == TimeEncoding.REGULAR) {
+            axis = "intervalMicros";
+            if (e.getIntervalMicros() == null) {
+                throw new IllegalArgumentException(
+                        "intervalMicros: missing in a REGULAR episode; expected a positive number of microseconds");
+            }
+            if (e.getIntervalMicros() <= 0) {
+                throw new IllegalArgumentException("intervalMicros: \"" + e.getIntervalMicros()
+                        + "\" is not allowed; expected a positive number of microseconds");
+            }
+        } else {
+            axis = "timeDeltas";
+            if (n > 0 && e.getTimeDeltas() == null) {
+                throw new IllegalArgumentException("timeDeltas: missing in an IRREGULAR_DELTA episode of " + n
+                        + " values; expected the encoded deltas of its timestamps");
+            }
+        }
         long[] ts = timestampsMicros(e);
+        for (int i = 1; i < n; i++) {
+            if (ts[i] <= ts[i - 1]) {
+                throw new IllegalArgumentException(axis + ": timestamp " + i + " is not after timestamp " + (i - 1)
+                        + "; expected strictly increasing timestamps");
+            }
+        }
         long tEnd = Micros.of(e.getTEnd());
         if (n > 0 && ts[n - 1] >= tEnd) {
             throw new IllegalArgumentException("last timestamp not before tEnd");

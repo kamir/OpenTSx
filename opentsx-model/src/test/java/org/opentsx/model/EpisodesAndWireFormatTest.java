@@ -59,6 +59,28 @@ class EpisodesAndWireFormatTest {
     }
 
     @Test
+    void validateRefusesAMissingOrNonIncreasingTimeAxis() {
+        Episode regular = Episodes.regular(key, 1_000_000L, 1_000_000L, new double[]{1, 2, 3}).episodeId("r").createdAt(0).build();
+        Episode irregular = Episodes.irregular(key, new long[]{100, 110, 130}, new double[]{1, 2, 3}).episodeId("i").createdAt(0).build();
+        assertEquals("intervalMicros: missing in a REGULAR episode; expected a positive number of microseconds",
+                refusal(Episode.newBuilder(regular).setIntervalMicros(null).build()));
+        assertEquals("intervalMicros: \"0\" is not allowed; expected a positive number of microseconds",
+                refusal(Episode.newBuilder(regular).setIntervalMicros(0L).build()));
+        assertEquals("intervalMicros: \"-1000000\" is not allowed; expected a positive number of microseconds",
+                refusal(Episode.newBuilder(regular).setIntervalMicros(-1_000_000L).build()));
+        assertEquals("timeDeltas: missing in an IRREGULAR_DELTA episode of 3 values; expected the encoded deltas of its timestamps",
+                refusal(Episode.newBuilder(irregular).setTimeDeltas(null).build()));
+        Episode backwards = Episode.newBuilder(irregular).setTimeDeltas(ByteBuffer.wrap(new byte[]{0x14, 0x4F})).build();
+        assertArrayEquals(new long[]{100, 110, 80}, Episodes.timestampsMicros(backwards));
+        assertEquals("timeDeltas: timestamp 2 is not after timestamp 1; expected strictly increasing timestamps",
+                refusal(backwards));
+    }
+
+    private static String refusal(Episode e) {
+        return assertThrows(IllegalArgumentException.class, () -> Episodes.validate(e)).getMessage();
+    }
+
+    @Test
     void fingerprintsMatchPython() {
         JsonNode fps = TestVectors.load("wire-format.json").get("fingerprints");
         for (Class<? extends org.apache.avro.specific.SpecificRecord> type : OpenTsxAvro.TOP_LEVEL_TYPES) {
