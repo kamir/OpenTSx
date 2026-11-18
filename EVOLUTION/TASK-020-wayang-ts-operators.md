@@ -48,8 +48,9 @@ Each operator still requires its reference vectors and admission gate before use
   deployment/receipt and Java parity evidence after initial execution, exact retry and worker/coordinator restart.
 - [x] U03/U04 local continuous control and execution: persist successor plans before dispatch, restore worker-local
   operator state, enforce predecessor/cursor continuity and cumulative ownership, bound history and reconcile Stop.
-- [x] U05 local continuous acceptance: verify live input, downtime backlog, stateful restart, later input and Stop
-  through the actual UI and Wayang on three whole-topic Rust workers, with canonical Java parity evidence.
+  Retain private preparations and the exact plan when a preparation outcome remains unresolved.
+- [x] U05 local continuous acceptance: verify live input, downtime backlog, stateful restart, single-worker outage,
+  later input and Stop through the actual UI and Wayang on three whole-topic Rust workers, with Java parity evidence.
 - [x] U04 trusted-local bounded subset: `tsx-runner` 0.1.0 replays one complete topic with pass-through or
   plausible-range checks, unit conversion and a trailing resample. Shared vectors, local failure/retry tests and
   a standalone three-worker Compose fixture are implemented. The separate UI rollout helper exercises the custom
@@ -76,12 +77,17 @@ results; unit tests alone do not satisfy that acceptance. Activation remains at 
 ### Local continuous UI rollout evidence
 
 The [continuous guide](../docs/devguide/integration/wayang-rust-continuous.md) records the separate acceptance profile.
-The actual Compose run on 2026-11-17 passed initial, retry, live new-data, downtime backlog/restart, later input and
-UI Stop phases. Five acknowledged increments consumed 30 input records and produced 30 distinct output episodes.
-Every final position was five, across topics with one, two and three partitions on their original workers.
+The actual Compose run on 2026-11-18 passed all nine phases, including new input during execution-service downtime,
+later input, an isolated `runner-2` outage and restart, and UI Stop. Seven acknowledged increments consumed
+42 input records and produced 42 distinct output episodes. Every final position was seven, across topics with one,
+two and three partitions on their original workers. While `runner-2` was down, the eight other services stayed
+running and confirmed progress remained at five increments and 30 records; catch-up needed no deployment request.
 `RustContinuousComposeFixture` compares canonical wire records with continuing Java `SeriesStream` state, including
 open resample tails. Exact retry and Stop leave the confirmed output unchanged. Broker restart and production
 stale-writer fencing are not established by this run.
+`RustContinuousRolloutTest` separately injects lost preparation responses, transient HTTP failures and mixed
+unresolved/permanent refusals. It verifies retained candidates and exact retry before activation, while conclusive
+refusals and ownership collisions still reject. The Compose outage starts while the deployment is idle.
 
 ### A0: foundation and decisions
 - [x] Owner decisions D-T1 to D-T12 recorded in the decision table below (2026-11-16: every recommendation accepted).

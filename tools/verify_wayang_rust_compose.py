@@ -23,7 +23,8 @@ COMPOSE = ["docker", "compose", "-p", PROJECT, "-f", "docker-compose.wayang-rust
 FIXTURE = "org.opentsx.wayang.RustRolloutComposeFixture"
 CONTINUOUS_FIXTURE = "org.opentsx.wayang.RustContinuousComposeFixture"
 CONTINUOUS_PHASES = [("initial", 1), ("retry", 1), ("new-data", 2), ("restart", 4),
-                     ("after-restart", 5), ("stopped", 5)]
+                     ("after-restart", 5), ("worker-unavailable", 5), ("worker-restart", 6),
+                     ("after-worker-restart", 7), ("stopped", 7)]
 SECRET_VALUES = []
 
 
@@ -124,7 +125,7 @@ def verify_build_sources(expected):
 
 
 def clear_run_artifacts():
-    names = {"result.json", "fixture.json", "submitted-dag.txt", "verified.json"}
+    names = {"result.json", "fixture.json", "submitted-dag.txt", "verified.json", "worker-outage.json"}
     for phase in {"initial", "retry", "restart", *(name for name, _ in CONTINUOUS_PHASES)}:
         names.update({f"deployment-{phase}.json", f"browser-{phase}.json", f"browser-{phase}.png",
                       f"browser-{phase}-failed.png", f"verified-{phase}.json"})
@@ -171,6 +172,32 @@ def resume_with_backlog(java, bootstrap, compose, environment, blocks):
     run(java + ["append", bootstrap, str(DIRECTORY), str(blocks)], environment, "fixture-backlog")
     run(compose + ["start", *services], environment, "runtime-start-again", timeout=180)
     wait_driver(compose, environment)
+
+
+def interrupt_one_worker(java, bootstrap, compose, environment, blocks):
+    command = compose + ["ps", "--all", "--format", "{{.Service}} {{.ID}} {{.State}}"]
+    before = run(command, environment, "worker-outage-before", timeout=60)
+    run(compose + ["stop", "runner-2"], environment, "worker-outage-stop", timeout=180)
+    run(java + ["append", bootstrap, str(DIRECTORY), str(blocks)], environment, "fixture-worker-outage")
+    after = run(command, environment, "worker-outage-during", timeout=60)
+    snapshots = []
+    for output in (before, after):
+        snapshot = {}
+        for line in output.splitlines():
+            fields = line.split()
+            if len(fields) != 3 or fields[0] in snapshot:
+                raise RuntimeError("single-worker outage inventory is invalid")
+            snapshot[fields[0]] = fields[1:]
+        snapshots.append(snapshot)
+    original, current = snapshots
+    live = {"backend", "coordinator", "frontend", "kafscale-broker", "postgres", "runner-1", "runner-3", "wayang"}
+    if (set(original) != live | {"runner-2"} or set(current) != set(original)
+            or any(state != "running" for _, state in original.values())
+            or any(current[name] != original[name] for name in live)
+            or current["runner-2"] != [original["runner-2"][0], "exited"]):
+        raise RuntimeError("single-worker outage changed another service or did not stop only runner-2")
+    (DIRECTORY / "worker-outage.json").write_text(json.dumps({"worker": "worker-2", "throughBlocks": blocks,
+        "liveServices": sorted(live)}, indent=2) + "\n")
 
 
 def java_setup(environment, private, repository, skip_build, fixture=FIXTURE):
@@ -233,6 +260,10 @@ def verify_continuous_views():
     sources = {source["topic"]: source["partitions"] for source in fixture["sources"]}
     if len(sources) != 3 or initial["specHash"] != source_hash:
         raise RuntimeError("the continuous source identity or complete-topic inventory changed")
+    outage = json.loads((DIRECTORY / "worker-outage.json").read_text())
+    if outage != {"worker": "worker-2", "throughBlocks": 6, "liveServices": ["backend", "coordinator", "frontend",
+            "kafscale-broker", "postgres", "runner-1", "runner-3", "wayang"]}:
+        raise RuntimeError("the single-worker outage evidence is incomplete")
     placement = {item["inputTopic"]: item["node"] for item in initial["assignments"]}
     previous = None
     last_count = 0
@@ -274,9 +305,13 @@ def verify_continuous_views():
             raise RuntimeError("continuous Java parity or cumulative record counts do not match")
         if phase == "retry" and value != initial:
             raise RuntimeError("an exact continuous retry changed its idle outcome")
-        if phase == "stopped" and any(value[key] != previous[key] for key in (
+        if phase == "worker-unavailable" and not isinstance(value.get("error"), str):
+            raise RuntimeError("the unavailable worker was not observed by the coordinator")
+        if phase != "worker-unavailable" and value.get("error") is not None:
+            raise RuntimeError("the continuous deployment retains an unresolved error")
+        if phase in ("worker-unavailable", "stopped") and any(value[key] != previous[key] for key in (
                 "planHash", "currentCycle", "completedCycles", "inputRecords", "outputRecords", "assignments")):
-            raise RuntimeError("stopping the continuous deployment changed its confirmed output")
+            raise RuntimeError("stopping or interrupting the continuous deployment changed its confirmed output")
         previous = value
     return {"schema": "opentsx.wayang-rust-continuous-compose-result.v1", "profile": "continuous",
             "deployment": initial["id"], "specHash": source_hash, "createdAtMicros": initial["createdAtMicros"],
@@ -295,7 +330,12 @@ def verify_continuous(java, browser, compose, bootstrap, environment):
     for phase, blocks in CONTINUOUS_PHASES:
         if phase == "restart":
             resume_with_backlog(java, bootstrap, compose, environment, blocks)
-        elif phase in ("new-data", "after-restart"):
+        elif phase == "worker-unavailable":
+            interrupt_one_worker(java, bootstrap, compose, environment, blocks + 1)
+        elif phase == "worker-restart":
+            run(compose + ["start", "runner-2"], environment, "worker-outage-resume", timeout=180)
+            wait_driver(compose, environment)
+        elif phase in ("new-data", "after-restart", "after-worker-restart"):
             run(java + ["append", bootstrap, str(DIRECTORY), str(blocks)], environment, f"fixture-{phase}")
         run(browser + ["--phase", phase, "--blocks", str(blocks)], environment, f"browser-{phase}", timeout=900)
         run(java + ["verify", bootstrap, str(DIRECTORY), str(DIRECTORY / f"deployment-{phase}.json"),

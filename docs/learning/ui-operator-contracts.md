@@ -27,6 +27,8 @@ The [continuous target](../devguide/integration/wayang-rust-continuous.md) prese
 source hash and accepted clock across acknowledged increments. Worker-local state and cumulative series ownership
 survive service restart. The three browser workloads retain their original local inputs and expected values;
 separate increment and Compose regressions establish the continuous runtime behavior.
+Transient preparation failures retain private candidates and the exact plan for retry; activation waits for every
+preparation and ownership check. This recovery rule does not change the three numerical browser workloads.
 The workbench aliases `dq.plausible-range` to `dq.checks` and `stats.window` to
 `stats.welford-ddsketch`. Its statistics deployment exporter writes a catalog
 duration and a full statistics sink; the stored flow retains the selected

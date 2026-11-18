@@ -272,10 +272,15 @@ Each finite increment includes every internal partition of each topic. No partit
 | Assignment envelope | The shared execution assignment remains `mode: bounded`, since each cut is finite. Assignment, deployment, generation, attempt, fence and fragment identities remain unchanged; only complete partition positions advance. The standalone replay command refuses increment requests. |
 | Worker continuity | Sequence one starts every partition at zero. A successor names the current completed head and starts at its complete receipt positions. State is restored locally; caller state and paths are forbidden. Stale, forked, skipped and changed-context successors fail before reads. |
 | Cumulative ownership | Retain every decoded input identity and its internal partition, including unselected/pass-through input, plus all emitted and pending output identities. Never evict ownership to admit another series. Lifetime series and retained-state caps apply. Every topic prepares before cross-topic checks and activation. |
+| Preparation recovery | A transient prepare failure retains the exact plan and every private candidate for identical retry. This includes a response lost after the worker persisted its preparation. No activation occurs until every preparation and cross-topic ownership check succeeds. Permanent refusals and ownership conflicts retain their failure path. |
 | Worker status | Increment status adds `sequence` and `previousRequestHash`; the first predecessor is JSON null. Existing receipt record counts remain per increment. `activationRetryable` keeps uncertain saved output under reconciliation. |
 | Bounded history | Each worker retains one immutable completed head and at most one candidate in `increments/checkpoint.json`. Latest exact retry returns its receipt. PostgreSQL retains the latest two completed cycle rows plus pending work, with cumulative progress stored separately. Idle creates no increment. |
 | Public progress | Continuous views add `profile`, `currentCycle`, `completedCycles`, `stopRequested`, `inputRecords` and `outputRecords`. Each assignment adds `cumulativeInputRecords`, `cumulativeOutputRecords` and latest completed `positions`. Counters, sequences and offsets are canonical decimal strings. |
 | Stop | The authenticated owner stop route records durable intent. Re-read it after planning and execution RPCs. Cancel undispatched work; reconcile dispatched work before entering `stopped` and releasing topic ownership. Unknown publication retains `stopping` and ownership. Stop does not flush a resample tail. |
+
+Preparation refusals with HTTP status `400`, `409`, `413` or `422` are conclusive. Other preparation exceptions remain
+unresolved. If any preparation remains unresolved, retain all candidates even when another worker has a conclusive
+refusal. Resolve the missing outcome before cleanup; a successful retry still validates every status and series owner.
 
 The worker advertises `incrementalRequestSchema: opentsx.local-increment.v1` and `limits.incrementalChains: 1`.
 One worker retains one immutable continuous chain after Stop; replacement requires explicit reset of disposable
@@ -284,8 +289,10 @@ the existing maximum of 100,000 valid samples. Output is at least once and activ
 
 `RustContinuousRolloutTest`, `tests/increments.rs`, backend continuous tests and the
 [continuous Compose acceptance](../devguide/integration/wayang-rust-continuous.md) cover finite successors,
-cumulative ownership, idle, exact retry, stateful service restart, queued new data and Stop. Broker restart,
-topic-incarnation qualification, distributed stale-writer fencing and the signed S5/S7 fleet contract remain open.
+cumulative ownership, idle, exact retry, stateful service restart, single-worker downtime, queued new data and Stop.
+Planner regressions distinguish lost preparation responses, unresolved/permanent refusal combinations and ownership
+collisions after recovery. Broker restart, topic-incarnation qualification, distributed stale-writer fencing and the
+signed S5/S7 fleet contract remain open.
 The existing cleaning policy skips a block whose first event timestamp precedes the retained series end, increments
 the skipped-block counter and advances its input cursor. Continuous execution does not introduce late-data revisions.
 

@@ -34,7 +34,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   supplies the next complete partition cursors and retained operator state. PostgreSQL persists plans before
   dispatch, retains ownership through idle and uncertain outcomes, and records durable stop requests. Worker
   head/candidate storage and completed cycle history stay bounded. The continuous Compose/browser profile checks
-  live input, data arriving during execution-service downtime, stateful restart, later input and Stop against Java.
+  live input, data arriving during execution-service downtime, stateful restart, an isolated worker outage, later
+  input and Stop against Java.
   Publication remains at least once; one immutable continuous chain is retained per worker. Replacement, automatic
   failover, signed fleet activation, broker-restart qualification and durable Iceberg publication remain separate.
 
@@ -307,6 +308,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   vectors. Sketch bytes are unchanged.
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
   decoders and cycles before publishing control records. Supported sinks are accepted together.
+
+- Continuous Wayang increments retain private preparations after a transient preparation failure, including a lost
+  response after preparation was persisted. Identical retry keeps the admitted plan, clock and whole-topic placement;
+  activation still requires every preparation and the cross-topic ownership checks. Permanent refusals remain failures.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

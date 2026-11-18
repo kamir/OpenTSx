@@ -187,11 +187,14 @@ jobs:
           result = json.loads((root / "result.json").read_text())
           assert result["workers"] == 3
           continuous = os.environ["WAYANG_PROFILE"] == "continuous"
-          phases = ["initial", "retry", "new-data", "restart", "after-restart", "stopped"] if continuous else ["initial", "retry", "restart"]
+          phases = ["initial", "retry", "new-data", "restart", "after-restart", "worker-unavailable", "worker-restart", "after-worker-restart", "stopped"] if continuous else ["initial", "retry", "restart"]
           assert result["phases"] == phases
-          assert result["verifiedRecords"] == result["distinctEpisodes"] == (30 if continuous else 12)
+          assert result["verifiedRecords"] == result["distinctEpisodes"] == (42 if continuous else 12)
           if continuous:
-              assert result["inputRecords"] == "30"
+              assert result["inputRecords"] == "42"
+              outage = json.loads((root / "worker-outage.json").read_text())
+              assert outage["worker"] == "worker-2" and outage["throughBlocks"] == 6
+              assert outage["liveServices"] == ["backend", "coordinator", "frontend", "kafscale-broker", "postgres", "runner-1", "runner-3", "wayang"]
           for phase in result["phases"]:
               browser = json.loads((root / f"browser-{phase}.json").read_text())
               parity = json.loads((root / f"verified-{phase}.json").read_text())
@@ -218,6 +221,8 @@ jobs:
             target/wayang-rust-compose/browser-*.png
             target/wayang-rust-compose/deployment-*.json
             target/wayang-rust-compose/verified-*.json
+            target/wayang-rust-compose/worker-outage*.json
+            target/wayang-rust-compose/worker-outage*.log
             target/wayang-rust-compose/browser-*.log
             target/wayang-rust-compose/parity-*.log
             target/wayang-rust-compose/runtime.log

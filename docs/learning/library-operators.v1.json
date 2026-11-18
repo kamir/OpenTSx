@@ -1032,7 +1032,8 @@
         "The current source materializes an increment in memory; broker integration is a separate disposable-environment check.",
         "The remote Rust source is a separate mapping. Its complete topic is read on the assigned worker, without materializing raw payloads in the Java driver.",
         "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
-        "A frozen source entry neither performs broker reads during construction nor supplies a production admission gate."
+        "A frozen source entry neither performs broker reads during construction nor supplies a production admission gate.",
+        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation."
       ],
       "references": {
         "manual": [
@@ -1137,7 +1138,8 @@
         "The Object channel accepts only supported Avro records or validated opentsx.signal.v1 JSON. It does not turn JSON signals into fake Avro records.",
         "JSON whole-batch validation must not make Avro upstream streams eager.",
         "A shared output topic does not make multi-worker activation atomic. A failed activation can leave an acknowledged output prefix.",
-        "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero."
+        "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
+        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation."
       ],
       "references": {
         "manual": [
@@ -1229,7 +1231,8 @@
         "An uncertain Rust activation retries saved bytes with the same hash while topic ownership remains held; it cannot choose another clock, source cut or worker.",
         "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
         "One immutable worker head and one uncertain candidate bound history. A stopped deployment does not authorize another chain or an implicit state reset.",
-        "Catalog membership does not turn the local checkpoint round-trip into catalog admission, fenced ownership or state-ABI migration."
+        "Catalog membership does not turn the local checkpoint round-trip into catalog admission, fenced ownership or state-ABI migration.",
+        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation."
       ],
       "references": {
         "manual": [
@@ -1332,7 +1335,8 @@
         "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
         "The worker service wraps each finite bounded assignment in opentsx.local-increment.v1 with a sequence and previous request hash. The offline starter does not perform that stateful admission.",
         "An expired conformance report still blocks fresh activation; it does not invalidate an already retained acknowledgement.",
-        "The JVM wrapper source-topic gate does not change the shared offline assignment validator or the Rust contract."
+        "The JVM wrapper source-topic gate does not change the shared offline assignment validator or the Rust contract.",
+        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation."
       ],
       "references": {
         "manual": [

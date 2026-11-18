@@ -161,6 +161,8 @@ For continuous shadow execution, select **Continuous Wayang on Rust** and **Run 
 Successive acknowledged cuts preserve whole-topic placement, original source hash and clock, and worker-local state.
 The [continuous acceptance profile](../devguide/integration/wayang-rust-continuous.md) compares live input and
 restart-spanning resample windows with Java. Inspect cumulative progress; an idle deployment still owns its topics.
+Transient preparation failures keep the same plan and private candidates. Restart the same worker with its retained
+state; its complete topic is not reassigned, and activation waits for every preparation and ownership check.
 Use **Stop deployment** to request a conclusive stop, including reconciliation of any uncertain publication.
 
 * **Goal:** the preparation and the analysis keep up with the data, and you have seen them do so before anyone

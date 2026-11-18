@@ -1,7 +1,7 @@
 # Run continuous input on three Rust workers through Wayang
 
 Run a continuous workbench DAG with Apache Wayang 1.1.1 and `tsx-runner` 0.1.0, verified through the real UI and
-three Compose workers on 2026-11-17.
+three Compose workers on 2026-11-18.
 
 You need the prerequisites of the [three-worker Compose guide](wayang-rust-compose.md): Docker with Compose,
 JDK 21, Maven, npm, Node 24.22.2 and Playwright 1.62.1 with Chromium. Use disposable local data and an unprivileged
@@ -56,6 +56,14 @@ PostgreSQL stores continuous control and cycle rows in the additive `wayang_cont
 The existing coordinator owns one database advisory lock. It persists each exact cycle plan before dispatch,
 retains topic ownership between increments and keeps only the latest two completed cycle rows plus pending work.
 Cumulative counters and the latest completed positions survive that pruning. Leases have no wall-clock expiry.
+
+If a preparation response is lost after the worker saves its private candidate, the driver retains that candidate
+and the admitted plan for identical retry. A transient preparation failure does not cancel the other workers'
+private candidates. No worker activates until every preparation and the cross-topic ownership checks succeed.
+Permanent preparation refusals and ownership collisions still fail closed. A worker outage does not move its topic
+to another worker; restart the same worker with its retained state.
+The driver reports `worker preparation requires identical retry; retain private candidates` as its reconciliation
+reason. The coordinator retries the persisted plan; no new UI deployment request is needed.
 
 The driver returns no new plan on global idle. A new plan preserves placement, partition counts and clock, advances
 the sequence by one and links its `previousPlanHash`. Retention gaps, truncated inputs, changed topic partition
@@ -115,11 +123,17 @@ The real browser creates the DAG through the operation controls. The acceptance 
 4. Stop only the coordinator, Wayang driver and three workers. Keep Kafka, PostgreSQL and the backend alive.
    Append through four episodes per partition while execution is down, then restart the same services and state.
 5. Consume that backlog automatically. Append a fifth episode per partition and consume it without redeployment.
-6. Stop through the actual UI and verify that all confirmed positions and output remain unchanged.
+6. Stop only `runner-2` and append a sixth episode per partition. Verify the visible error and unchanged confirmed
+   progress while Kafka, PostgreSQL, the backend, coordinator, driver and workers one and three keep running.
+7. Start the same `runner-2` with its retained state and consume the sixth episode automatically.
+8. Append a seventh episode per partition and consume it without another deployment request.
+9. Stop through the actual UI and verify that all confirmed positions and output remain unchanged.
 
-The local acceptance on 2026-11-17 completed all six phases. Its five acknowledged increments consumed 30 input
-records and produced 30 distinct output episodes. The one-, two- and three-partition topics retained their original
-workers; every final internal `next` position was `"5"`. Exact retry and Stop produced no additional output.
+The local acceptance on 2026-11-18 completed all nine phases. Its seven acknowledged increments consumed 42 input
+records and produced 42 distinct output episodes. The one-, two- and three-partition topics retained their original
+workers; every final internal `next` position was `"7"`. During the single-worker outage, all eight other services
+kept running and confirmed progress stayed at five increments and 30 records. Restarting that worker consumed the
+backlog automatically. Exact retry and Stop produced no additional output.
 
 `RustContinuousComposeFixture` derives reference output from the actual submitted DAG through continuing Java
 `SeriesStream` state. Its short episodes leave resample windows open across both increment and restart boundaries.
@@ -127,9 +141,13 @@ Verification checks canonical Avro bytes, episode and series identities, values,
 partitioning, schema headers, cumulative counters and all six internal partition watermarks. Only the expected
 runtime producer label and accepted provenance clock are normalized for comparison.
 
-Sanitized evidence is written to `target/wayang-rust-compose/`. The continuous profile records six per-phase browser,
+Sanitized evidence is written to `target/wayang-rust-compose/`. The continuous profile records nine per-phase browser,
 public deployment and Java verification reports plus `result.json`. Credentials and worker state remain private in
 the separate directory documented by the Compose guide. Each new run invalidates old success evidence.
+`worker-outage.json` records the interrupted worker, appended input prefix and the other eight live services.
+
+The single-worker Compose outage starts while the deployment is idle. The separate Java planner regressions inject
+lost preparation responses and verify retained candidates, exact retry and refusal before activation.
 
 ## Inspect the implementation boundary
 

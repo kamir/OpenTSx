@@ -65,14 +65,14 @@ public final class RustContinuousComposeFixture {
 
     static int blocks(String value) {
         int blocks = Integer.parseInt(value);
-        if (!Integer.toString(blocks).equals(value) || blocks < 1 || blocks > 5) throw new IllegalArgumentException("through-block-count must be within 1..5");
+        if (!Integer.toString(blocks).equals(value) || blocks < 1 || blocks > 7) throw new IllegalArgumentException("through-block-count must be within 1..7");
         return blocks;
     }
 
     static String input(int worker) { return "tsx.rust-continuous.worker-" + worker + ".episodes.v2"; }
 
     static Episode raw(int worker, int partition, int block) {
-        if (worker < 1 || worker > 3 || partition < 0 || partition >= worker || block < 0 || block >= 5) {
+        if (worker < 1 || worker > 3 || partition < 0 || partition >= worker || block < 0 || block >= 7) {
             throw new IllegalArgumentException("invalid continuous fixture block");
         }
         double[] values = new double[3];
