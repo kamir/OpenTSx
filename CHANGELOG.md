@@ -263,10 +263,6 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
-- Continuous Wayang increments retain private preparations after a transient preparation failure, including a lost
-  response after preparation was persisted. Identical retry keeps the admitted plan, clock and whole-topic placement;
-  activation still requires every preparation and the cross-topic ownership checks. Permanent refusals remain failures.
-
 - Legacy SequenceFile selection uses 1-based physical record positions for callbacks and in-memory results,
   preserving file order and scan limits independently of stored labels. Explicit null selections clear stored
   `BucketLoader` filters; empty selections process no records.
@@ -308,6 +304,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   vectors. Sketch bytes are unchanged.
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
   decoders and cycles before publishing control records. Supported sinks are accepted together.
+
+- Continuous Wayang increments retain private preparations after a transient preparation failure, including a lost
+  response after preparation was persisted. Identical retry keeps the admitted plan, clock and whole-topic placement;
+  activation still requires every preparation and the cross-topic ownership checks. Permanent refusals remain failures.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,
