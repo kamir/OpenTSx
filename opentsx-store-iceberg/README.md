@@ -9,7 +9,8 @@ Tables in namespace `tsx` (configurable), Parquet + zstd, Iceberg format v2:
 | `episode_index` | episode_id → KafScale topic/partition/offset (durable index for replay) | `day(t_start)` |
 
 * `IcebergSeriesStore.open(props, "tsx")` takes standard Iceberg catalog properties (`type=rest`, `uri`, `warehouse`, …;
-  tests use the JDBC catalog on SQLite and a local warehouse).
+  the SQLite driver `org.xerial:sqlite-jdbc` is a runtime dependency, and the tests use the JDBC catalog on SQLite and a
+  local warehouse).
 * `IcebergSeriesStore.openExisting(props, "tsx")` loads existing `episodes` and `series` tables without creating
   namespaces or tables. Missing objects fail. This instance rejects all `write` calls, including empty batches,
   and `episodesTable()` cannot expose a mutable Iceberg table. The properties overload owns its created catalog

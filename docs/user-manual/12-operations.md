@@ -39,7 +39,7 @@ environment variables. They read no properties file.
 | Component | Settings |
 |-----------|----------|
 | KafScale/Kafka clients | `KafScaleClients.producerProps/consumerProps(bootstrap)` (idempotence off, `max.in.flight.requests.per.connection=1`, zstd, no auto-commit) |
-| Iceberg | catalog properties as Iceberg's `CatalogUtil` reads them (`type`, `uri`, `warehouse`, ...); catalog name `opentsx` unless `name` is set. `type=rest` and `type=hadoop` work. `type=jdbc` needs a JDBC driver: `bin/opentsx windpark-sim`, `retrieval-server` and `market` have the SQLite driver, the container image has none. `type=glue` needs `iceberg-aws`, which only `deploy/docker/stage.sh --with-s3` adds. `type=hive` is not available. See [chapter 5](05-stores.md#52-choose-a-store). |
+| Iceberg | catalog properties as Iceberg's `CatalogUtil` reads them (`type`, `uri`, `warehouse`, ...); catalog name `opentsx` unless `name` is set. `type=rest` and `type=hadoop` work. `type=jdbc` needs a JDBC driver: `bin/opentsx windpark-sim`, `retrieval-server`, `market` and the container image have the SQLite driver. `type=glue` needs `iceberg-aws`, which only `deploy/docker/stage.sh --with-s3` adds. `type=hive` is not available. See [chapter 5](05-stores.md#52-choose-a-store). |
 | OpenMetadata | `--om <url>/api`, token via `--token` or `OPENMETADATA_JWT` |
 | Statistics processor | `--windows`, `--lateness`, `--alpha`, `--checkpoint`; `stats-flink` takes `--checkpoint-every` instead of `--checkpoint` |
 | Wind farm | scenario YAML, catalog YAML (`--catalog`) |

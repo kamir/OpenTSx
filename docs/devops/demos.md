@@ -13,8 +13,8 @@ deploy/k3s/40-demo.sh all     # kafscale-check, windpark-sim, stats, metadata, t
 [operations](operations.md#try-it-locally-first-the-probe)).
 
 The outputs below are real outputs of the same commands (taken from the staged image content on a JDK 21 machine).
-The twin outputs are deterministic, so you should see the same numbers and run hashes. Lines such as
-`Picked up JAVA_TOOL_OPTIONS` and SLF4J logging are left out.
+The twin outputs are deterministic, so you should see the same numbers and run hashes. Log lines (stderr, see
+[operations](operations.md#logging)) are left out.
 
 | Demo | Needs | Typical runtime |
 |------|-------|-----------------|

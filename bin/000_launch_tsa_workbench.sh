@@ -149,13 +149,7 @@ else
     # Option 2: Direct java execution (fallback)
     echo "Launching with java directly..."
 
-    # Build classpath from Maven dependencies
-    if [ -f "$PROJECT_ROOT/opentsx-core/target/classpath.txt" ]; then
-        CLASSPATH=$(cat "$PROJECT_ROOT/opentsx-core/target/classpath.txt")
-    else
-        echo -e "${YELLOW}⚠${NC}  Building classpath..."
-        CLASSPATH="$PROJECT_ROOT/opentsx-core/target/classes:$PROJECT_ROOT/opentsx-core/target/*:$HOME/.m2/repository/*/*/*.jar"
-    fi
+    CLASSPATH="$("$PROJECT_ROOT/bin/opentsx" classpath opentsx-core)" || exit 1
 
     java $JAVA_OPTS \
         -cp "$CLASSPATH" \

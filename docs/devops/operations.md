@@ -169,8 +169,20 @@ signals.
   by the kubelet (default 10 MiB × 5 files per container). `kubectl -n opentsx logs deploy/opentsx-stats`,
   `kubectl -n opentsx logs job/opentsx-<demo>`.
 * Job pods stay 24 h after completion (`ttlSecondsAfterFinished`), CronJob runs keep 1–3 finished Jobs.
-* The JVM line `Picked up JAVA_TOOL_OPTIONS` and the Kafka client's INFO configuration dumps are noise; the scripts
-  filter the first. Lines to search for: `FAIL`, `NOT reachable`, `checkpoint`, `read failed`, `error:`.
+* Log lines go to stderr: time, thread, level, logger and message on one line; an exception logged with the event
+  follows on the next lines as a stack trace. For example
+  `2026-11-18T19:48:33.054Z [kafka-producer-network-thread | producer-1] WARN org.apache.kafka.clients.NetworkClient - [Producer clientId=producer-1] Connection to node -1 (/127.0.0.1:1) could not be established. Node may not be available.`
+  Lines to search for: `FAIL`, `NOT reachable`, `checkpoint`, `read failed`, `error:`, ` WARN `, ` ERROR `.
+* The image and `bin/opentsx` log through slf4j-simple with one file, `conf/simplelogger.properties`: everything at
+  `info`, `org.apache.kafka`, `org.apache.iceberg`, `org.apache.hadoop`, `org.apache.parquet` and `software.amazon` at
+  `warn`. `twin-live` sets the default to `warn` itself. `bin/opentsx stats-flink` logs through log4j2 with
+  `conf/log4j2-stats-flink.properties`.
+* Change one logger's level in `conf/simplelogger.properties`: edit its line, for example
+  `org.slf4j.simpleLogger.log.org.apache.kafka=info`, or add one, for example
+  `org.slf4j.simpleLogger.log.org.opentsx.stats=debug`. The levels are `trace`, `debug`, `info`, `warn`, `error` and
+  `off`. `bin/opentsx` reads the file at the next start; the image gets it with `10-build.sh`,
+  `11-import-images.sh` and `30-deploy.sh --restart`. A JVM system property with the same key wins over the file; in
+  the image, pass it in `JAVA_OPTS`, for example `JAVA_OPTS=-Dorg.slf4j.simpleLogger.log.org.apache.kafka=info`.
 * Central logging is optional: Grafana Loki with Grafana Alloy (or Vector) as a DaemonSet; 14–30 days retention is
   enough for a lab.
 * No script prints secrets; `20-configure.sh` writes them only to `deploy/k3s/.env` (mode 600) and the Secret. Do not

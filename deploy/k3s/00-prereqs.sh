@@ -94,7 +94,7 @@ done
 STAGED="$ROOT/deploy/docker/.stage/opt/opentsx/bin/opentsx"
 if [[ -x "$STAGED" ]] && have java; then
   echo "  kafscale-check from this host (advertised broker addresses, topics of domain $OPENTSX_DOMAIN):"
-  if OPENTSX_HOME="$ROOT/deploy/docker/.stage/opt/opentsx" JAVA_TOOL_OPTIONS="" "$STAGED" kafscale-check \
+  if OPENTSX_HOME="$ROOT/deploy/docker/.stage/opt/opentsx" "$STAGED" kafscale-check \
        --kafscale "$KAFSCALE_BOOTSTRAP" --domain "$OPENTSX_DOMAIN" 2>/dev/null | sed 's/^/    /'; then
     ok "kafscale-check passed (repeat it from inside the cluster: 40-demo.sh kafscale-check)"
   else

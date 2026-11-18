@@ -44,8 +44,6 @@ spec:
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: KAFSCALE_BOOTSTRAP}}
             - name: OPENTSX_DOMAIN
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_DOMAIN}}
-            - name: JAVA_OPTS      # the Kafka clients log every seek at INFO
-              value: -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
           resources:
             requests: {cpu: 100m, memory: 384Mi}
             limits: {cpu: "1", memory: 1Gi}

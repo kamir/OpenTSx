@@ -52,7 +52,7 @@ Both pass the properties to Iceberg's `CatalogUtil`. Check the classpath for you
 | Catalog or warehouse | Needs | Where it is |
 |----------------------|-------|-------------|
 | REST or Hadoop catalog | `iceberg-core` | `opentsx-store-iceberg` depends on it |
-| JDBC catalog | `iceberg-core` and a JDBC driver | The SQLite driver `org.xerial:sqlite-jdbc` is on the classpath of `bin/opentsx windpark-sim`, `bin/opentsx retrieval-server` and `bin/opentsx market`. It is not in a Maven dependency on `opentsx-store-iceberg` (test scope) and not in the container image. |
+| JDBC catalog | `iceberg-core` and a JDBC driver | `opentsx-store-iceberg` depends on the SQLite driver `org.xerial:sqlite-jdbc` in runtime scope. It is on the classpath of `bin/opentsx windpark-sim`, `bin/opentsx retrieval-server` and `bin/opentsx market` and in the container image. |
 | Hive catalog | `iceberg-hive-metastore` | no module and no image |
 | Glue catalog | `iceberg-aws` and the AWS SDK | no module. `deploy/docker/stage.sh --with-s3` adds `iceberg-aws` and `iceberg-aws-bundle` to the image classpath. |
 | `s3://` warehouse | `iceberg-aws` and `iceberg-aws-bundle` (S3FileIO) | no module. `.github/workflows/image.yml` stages the image with `--with-s3`. |

@@ -64,11 +64,13 @@ What happens:
 1. `mvn -q -B install -DskipTests` builds all modules (skip with `--skip-maven`).
 2. [`deploy/docker/stage.sh`](../../deploy/docker/stage.sh) copies every runtime jar of the v2 modules once into
    `deploy/docker/.stage/opt/opentsx/lib/m2/` (Maven repository layout, so no version clashes), writes the exact
-   classpath per module to `cp/<module>.txt` (the same resolution `bin/opentsx` uses), compiles the deployment helper
-   `KafScaleCheck`, and copies the wind-farm scenario, the twin plans and CSV templates, the Modbus register maps and the
-   DWD offline fixture (a MOSMIX KML and a station-catalog excerpt) to `share/`.
-3. `opentsx-tools.Dockerfile` copies that tree onto `eclipse-temurin:21.0.8_9-jre-noble` (non-root user 10001,
-   `JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError`).
+   classpath per module to `cp/<module>.txt` (the same resolution `bin/opentsx` uses), with slf4j-simple where the
+   module has no SLF4J provider and `conf/`, copies `conf/simplelogger.properties` to `conf/`, compiles the deployment
+   helper `KafScaleCheck`, and copies the wind-farm scenario, the twin plans and CSV templates, the Modbus register
+   maps and the DWD offline fixture (a MOSMIX KML and a station-catalog excerpt) to `share/`.
+3. `opentsx-tools.Dockerfile` copies that tree onto `eclipse-temurin:21.0.8_9-jre-noble` (non-root user 10001); the
+   entrypoint starts every command with `java -XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError`, followed by
+   `JAVA_OPTS`.
 4. `studio.Dockerfile` runs `StudioExport` and `tools/build_studio.py` in build stages and puts the page into
    `nginxinc/nginx-unprivileged:1.27.4-alpine`. The page is byte-identical to the committed
    `docs/prototypes/smart-topics-studio.html` when built from the same code.

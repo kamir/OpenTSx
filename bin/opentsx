@@ -26,52 +26,84 @@
 #   version            print the OpenTSx version (also --version)            (org.opentsx.conf.ConfCli)
 #   classpath <module> print the runtime classpath of a module
 #
-# Requires a prior build: mvn -q install -DskipTests   (JDK 17+)
+# Requires a prior build: mvn -q install -DskipTests   (JDK 17+, Maven 3.9+ on PATH)
+# Logging: slf4j-simple with conf/simplelogger.properties; stats-flink: log4j2 with conf/log4j2-stats-flink.properties.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 usage() { sed -n '2,/^set -euo/{/^#/p}' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 
-classpath() {   # module... -> classpath (cached per module in target/classpath.txt)
-  local cp="" m
+classpath() {   # module... -> classpath (Maven's result cached per module and scope in target/classpath-<scope>.txt)
+  local cp="" m f log deps scope scopes=runtime
+  # stats-flink runs on Flink, its clients and the log4j2 binding, which are provided scope in opentsx-flink-core
+  [[ "${1:-}" == opentsx-flink-core ]] && scopes="runtime provided"
   for m in "$@"; do
-    local f="$ROOT/$m/target/classpath.txt"
-    if [[ ! -f "$f" || "$ROOT/$m/pom.xml" -nt "$f" ]]; then
-      (cd "$ROOT" && mvn -q -B -pl "$m" dependency:build-classpath -Dmdep.outputFile=target/classpath.txt >/dev/null)
-    fi
-    [[ -d "$ROOT/$m/target/classes" ]] || { echo "module $m is not built - run: mvn -q install -DskipTests" >&2; exit 1; }
-    cp="$cp:$ROOT/$m/target/classes:$(cat "$f")"
+    [[ -d "$ROOT/$m/target/classes" ]] || { echo "$m: module is not built; run: mvn -q install -DskipTests" >&2; exit 1; }
+    cp="$cp:$ROOT/$m/target/classes"
+    for scope in $scopes; do
+      f="$ROOT/$m/target/classpath-$scope.txt"
+      if [[ ! -f "$f" || "$ROOT/$m/pom.xml" -nt "$f" ]]; then
+        command -v mvn >/dev/null || { echo "mvn: not found on PATH; install Maven 3.9 or later" >&2; exit 1; }
+        echo "resolving the classpath of $m with Maven" >&2
+        if ! log="$(cd "$ROOT" && mvn -q -B -pl "$m" dependency:build-classpath -DincludeScope="$scope" -Dmdep.outputFile="$f" 2>&1)"; then
+          rm -f "$f"
+          printf '%s\n' "$log" >&2
+          echo "$m: Maven could not resolve the classpath; see the Maven output above" >&2
+          exit 1
+        fi
+      fi
+      deps="$(cat "$f")"
+      [[ -z "$deps" ]] || cp="$cp:$deps"
+    done
   done
+  if [[ "$scopes" == runtime ]]; then
+    # slf4j-simple of the slf4j-api version on the classpath, from the same local repository
+    if [[ "$cp:" != *"/slf4j-simple-"* && "$cp" =~ :([^:]*/org/slf4j/)slf4j-api/([^/:]+)/ ]]; then
+      local jar="${BASH_REMATCH[1]}slf4j-simple/${BASH_REMATCH[2]}/slf4j-simple-${BASH_REMATCH[2]}.jar"
+      [[ -f "$jar" ]] || { echo "slf4j-simple: $jar is missing; run: mvn -q dependency:get -Dartifact=org.slf4j:slf4j-simple:${BASH_REMATCH[2]}" >&2; exit 1; }
+      cp="$cp:$jar"
+    fi
+    cp="$cp:$ROOT/conf"
+  fi
   echo "${cp#:}"
+}
+
+run() {   # "module..." main-class args...
+  local modules="$1" main="$2" cp; shift 2
+  # shellcheck disable=SC2086  # a list of modules
+  cp="$(classpath $modules)" || exit 1
+  exec java -cp "$cp" "$main" "$@"
 }
 
 [[ $# -ge 1 ]] || usage 1
 cmd="$1"; shift
 case "$cmd" in
-  windpark-sim)     exec java -cp "$(classpath opentsx-windpark)" org.opentsx.windpark.WindparkSim "$@" ;;
-  stats)            exec java -cp "$(classpath opentsx-stats)" org.opentsx.stats.StatsProcessorApp "$@" ;;
-  stats-flink)      exec java -cp "$(classpath opentsx-flink-core)" org.opentsx.flink.stats.StatsJob "$@" ;;
-  metadata)         exec java -cp "$(classpath opentsx-openmetadata)" org.opentsx.openmetadata.WindparkMetadata "$@" ;;
-  retrieval-server) exec java -cp "$(classpath opentsx-retrieval opentsx-store-iceberg)" org.opentsx.retrieval.server.RetrievalServer "$@" ;;
-  vectors) exec java -cp "$(classpath opentsx-retrieval)" org.opentsx.retrieval.vector.VectorProcessorApp "$@" ;;
+  windpark-sim)     run opentsx-windpark org.opentsx.windpark.WindparkSim "$@" ;;
+  stats)            run opentsx-stats org.opentsx.stats.StatsProcessorApp "$@" ;;
+  stats-flink)
+    cp="$(classpath opentsx-flink-core)" || exit 1
+    exec java -Dlog4j2.configurationFile="$ROOT/conf/log4j2-stats-flink.properties" -cp "$cp" org.opentsx.flink.stats.StatsJob "$@" ;;
+  metadata)         run opentsx-openmetadata org.opentsx.openmetadata.WindparkMetadata "$@" ;;
+  retrieval-server) run "opentsx-retrieval opentsx-store-iceberg" org.opentsx.retrieval.server.RetrievalServer "$@" ;;
+  vectors)          run opentsx-retrieval org.opentsx.retrieval.vector.VectorProcessorApp "$@" ;;
   twin|house|boat)
     # with archived history (--history / --weather-year) the run goes through the history adapter of opentsx-market
     if [[ " $* " == *" --history "* || " $* " == *" --weather-year "* ]]; then
-      exec java -cp "$(classpath opentsx-market)" org.opentsx.market.twin.HistoryTwins "$cmd" "$@"
+      run opentsx-market org.opentsx.market.twin.HistoryTwins "$cmd" "$@"
     fi
     case "$cmd" in
-      twin)  exec java -cp "$(classpath opentsx-twin)" org.opentsx.twin.demo.H2ChainDemo "$@" ;;
-      house) exec java -cp "$(classpath opentsx-twin)" org.opentsx.twin.demo.HouseDemo "$@" ;;
-      boat)  exec java -cp "$(classpath opentsx-twin)" org.opentsx.twin.demo.BoatDemo "$@" ;;
+      twin)  run opentsx-twin org.opentsx.twin.demo.H2ChainDemo "$@" ;;
+      house) run opentsx-twin org.opentsx.twin.demo.HouseDemo "$@" ;;
+      boat)  run opentsx-twin org.opentsx.twin.demo.BoatDemo "$@" ;;
     esac ;;
-  market)           exec java -cp "$(classpath opentsx-market)" org.opentsx.market.MarketCli "$@" ;;
-  dwd)              exec java -cp "$(classpath opentsx-dwd)" org.opentsx.dwd.DwdCli "$@" ;;
-  modbus)           exec java -cp "$(classpath opentsx-modbus)" org.opentsx.modbus.ModbusCli "$@" ;;
-  twin-coupling)    exec java -cp "$(classpath opentsx-twin)" org.opentsx.twin.demo.CouplingStudy "$@" ;;
-  twin-live)        exec java -cp "$(classpath opentsx-twin-live)" org.opentsx.twin.live.TwinLive "$@" ;;
-  twin-schemas)     exec java -cp "$(classpath opentsx-twin)" org.opentsx.twin.schema.AtomSchemas "$@" ;;
-  config|version)   exec java -cp "$(classpath opentsx-conf)" org.opentsx.conf.ConfCli "$cmd" "$@" ;;
-  --version)        exec java -cp "$(classpath opentsx-conf)" org.opentsx.conf.ConfCli --version ;;
+  market)           run opentsx-market org.opentsx.market.MarketCli "$@" ;;
+  dwd)              run opentsx-dwd org.opentsx.dwd.DwdCli "$@" ;;
+  modbus)           run opentsx-modbus org.opentsx.modbus.ModbusCli "$@" ;;
+  twin-coupling)    run opentsx-twin org.opentsx.twin.demo.CouplingStudy "$@" ;;
+  twin-live)        run opentsx-twin-live org.opentsx.twin.live.TwinLive "$@" ;;
+  twin-schemas)     run opentsx-twin org.opentsx.twin.schema.AtomSchemas "$@" ;;
+  config|version)   run opentsx-conf org.opentsx.conf.ConfCli "$cmd" "$@" ;;
+  --version)        run opentsx-conf org.opentsx.conf.ConfCli --version ;;
   classpath)        classpath "$@" ;;
   -h|--help|help)   usage 0 ;;
   *) echo "unknown command: $cmd" >&2; usage 1 ;;

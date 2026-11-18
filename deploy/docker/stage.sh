@@ -6,7 +6,9 @@
 # Needs a prior `mvn install -DskipTests` (JDK 17+, Maven 3.9+). Writes (default DIR = deploy/docker/.stage, git-ignored):
 #   DIR/opt/opentsx/bin/opentsx        entrypoint (deploy/docker/opentsx-entrypoint.sh)
 #   DIR/opt/opentsx/lib/m2/...         every runtime jar once, in Maven repository layout (no version clashes)
-#   DIR/opt/opentsx/cp/<module>.txt    exact runtime classpath per module (as `bin/opentsx classpath` computes it)
+#   DIR/opt/opentsx/cp/<module>.txt    exact runtime classpath per module (as `bin/opentsx classpath` computes it), with
+#                                      slf4j-simple where the module brings no SLF4J provider, and conf/
+#   DIR/opt/opentsx/conf/              conf/simplelogger.properties: the logger settings of every command
 #   DIR/opt/opentsx/share/...          wind-farm scenario, twin plans and CSV templates, Modbus register maps,
 #                                      DWD offline fixtures (MOSMIX KML + station catalog excerpt, for demos without internet)
 #   DIR/studio/...                     tools/build_studio.py + the Studio template (for studio.Dockerfile)
@@ -30,10 +32,14 @@ VERSION="$(cd "$ROOT" && mvn -q -B help:evaluate -Dexpression=project.version -D
 REPO="$(cd "$ROOT" && mvn -q -B help:evaluate -Dexpression=settings.localRepository -DforceStdout 2>/dev/null | tail -1)"
 [[ -n "$VERSION" && -d "$REPO" ]] || { echo "stage.sh: cannot determine project version / local Maven repository" >&2; exit 1; }
 ICEBERG_VERSION="$(cd "$ROOT" && mvn -q -B -pl opentsx-store-iceberg help:evaluate -Dexpression=iceberg.version -DforceStdout 2>/dev/null | tail -1)"
+SLF4J_VERSION="$(cd "$ROOT" && mvn -q -B help:evaluate -Dexpression=slf4j.version -DforceStdout 2>/dev/null | tail -1)"
+SIMPLE_JAR="$REPO/org/slf4j/slf4j-simple/$SLF4J_VERSION/slf4j-simple-$SLF4J_VERSION.jar"
+[[ -f "$SIMPLE_JAR" ]] || (cd "$ROOT" && mvn -q -B dependency:get -Dartifact="org.slf4j:slf4j-simple:$SLF4J_VERSION" -Dtransitive=false)
+[[ -f "$SIMPLE_JAR" ]] || { echo "stage.sh: slf4j-simple $SLF4J_VERSION is not in the local Maven repository ($SIMPLE_JAR)" >&2; exit 1; }
 
 H="$OUT/opt/opentsx"
 rm -rf "$OUT"
-mkdir -p "$H/bin" "$H/lib/m2" "$H/cp" "$H/share/scenarios" "$H/share/windpark" "$H/share/twin" "$H/share/modbus" "$H/share/dwd" "$OUT/studio/tools" "$OUT/studio/docs/prototypes"
+mkdir -p "$H/bin" "$H/lib/m2" "$H/cp" "$H/conf" "$H/share/scenarios" "$H/share/windpark" "$H/share/twin" "$H/share/modbus" "$H/share/dwd" "$OUT/studio/tools" "$OUT/studio/docs/prototypes"
 
 add_jar() {   # absolute jar path -> prints the classpath entry relative to OPENTSX_HOME, copies the jar once
   local jar="$1" rel
@@ -53,13 +59,15 @@ for m in "${MODULES[@]}"; do
   [[ -f "$jar" ]] || { echo "stage.sh: $jar missing - run: mvn -q install -DskipTests" >&2; exit 1; }
   raw="$OUT/$m.cp.raw"
   # runtime scope (no test jars); -pl without -am: sibling modules resolve from the local repository (installed jars)
-  (cd "$ROOT" && mvn -q -B -pl "$m" dependency:build-classpath -Dmdep.includeScope=runtime -Dmdep.outputFile="$raw" >/dev/null)
+  (cd "$ROOT" && mvn -q -B -pl "$m" dependency:build-classpath -DincludeScope=runtime -Dmdep.outputFile="$raw")
   {
     # the module's own jar, placed where `mvn install` puts it
     mkdir -p "$H/lib/m2/org/opentsx/$m/$VERSION"
     cp "$jar" "$H/lib/m2/org/opentsx/$m/$VERSION/"
     echo "lib/m2/org/opentsx/$m/$VERSION/$m-$VERSION.jar"
     tr ':' '\n' < "$raw" | while IFS= read -r dep || [[ -n "$dep" ]]; do [[ -n "$dep" ]] && add_jar "$dep"; done
+    grep -q '/slf4j-simple-[^/:]*\.jar' "$raw" || add_jar "$SIMPLE_JAR"
+    echo "conf"
   } > "$H/cp/$m.txt"
   rm -f "$raw"
 done
@@ -87,6 +95,7 @@ jar --create --file "$H/lib/opentsx-deploy-tools.jar" -C "$tmp/classes" .
 { echo "lib/opentsx-deploy-tools.jar"; cat "$H/cp/opentsx-kafka-v2.txt"; } > "$H/cp/opentsx-deploy-tools.txt"
 
 cp "$ROOT/deploy/docker/opentsx-entrypoint.sh" "$H/bin/opentsx"
+cp "$ROOT/conf/simplelogger.properties" "$H/conf/"
 chmod 0755 "$H/bin/opentsx"
 cp "$ROOT"/opentsx-windpark/scenarios/*.yaml "$H/share/scenarios/"
 # channel catalog as a file: the retrieval server hands it out in the series inventory (--catalog)

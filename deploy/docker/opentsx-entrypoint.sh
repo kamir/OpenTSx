@@ -25,7 +25,9 @@
 # Environment:
 #   OPENTSX_HOME        installation directory (default: the parent of this script's directory)
 #   OPENTSX_EXTRA_ARGS  extra arguments appended to the command (word-split), e.g. "--calibrate /private/bills.csv"
-#   JAVA_OPTS           extra JVM options (JAVA_TOOL_OPTIONS is honoured by the JVM itself)
+#   JAVA_OPTS           extra JVM options, after -XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError (a later option wins)
+#
+# Logging: slf4j-simple with $OPENTSX_HOME/conf/simplelogger.properties (both on every classpath), to stderr.
 set -euo pipefail
 OPENTSX_HOME="${OPENTSX_HOME:-$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)}"
 
@@ -35,7 +37,7 @@ classpath() {   # module... -> classpath from the staged cp/<module>.txt files (
   local cp="" m entry
   for m in "$@"; do
     local f="$OPENTSX_HOME/cp/$m.txt"
-    [[ -f "$f" ]] || { echo "opentsx: no classpath for module $m ($f) - image built incompletely?" >&2; exit 1; }
+    [[ -f "$f" ]] || { echo "opentsx: no classpath for module $m ($f); build the image from a complete stage" >&2; exit 1; }
     while IFS= read -r entry || [[ -n "$entry" ]]; do
       [[ -n "$entry" ]] && cp="$cp:$OPENTSX_HOME/$entry"
     done < "$f"
@@ -44,13 +46,15 @@ classpath() {   # module... -> classpath from the staged cp/<module>.txt files (
 }
 
 run() {   # module-list main-class args...
-  local modules="$1" main="$2"; shift 2
+  local modules="$1" main="$2" cp; shift 2
   local extra=()
   if [[ -n "${OPENTSX_EXTRA_ARGS:-}" ]]; then
     read -r -a extra <<< "$OPENTSX_EXTRA_ARGS"
   fi
+  # shellcheck disable=SC2086  # a list of modules
+  cp="$(classpath $modules)" || exit 1
   # shellcheck disable=SC2086  # JAVA_OPTS is a list of options
-  exec java ${JAVA_OPTS:-} -cp "$(classpath $modules)" "$main" "$@" ${extra[@]+"${extra[@]}"}
+  exec java -XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError ${JAVA_OPTS:-} -cp "$cp" "$main" "$@" ${extra[@]+"${extra[@]}"}
 }
 
 [[ $# -ge 1 ]] || usage 1

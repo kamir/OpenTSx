@@ -30,6 +30,13 @@ jobs:
           cache: maven
       - name: Build and test
         run: xvfb-run --auto-servernum mvn -B -ntp verify
+      - name: Launcher classpaths (bin/opentsx and the staged image, deploy/docker/test-launchers.sh)
+        if: matrix.java == '21'
+        run: |
+          mvn -B -ntp -q install -DskipTests
+          bash deploy/docker/test-launchers.sh --dev
+          deploy/docker/stage.sh --out "$RUNNER_TEMP/stage"
+          bash deploy/docker/test-launchers.sh --staged "$RUNNER_TEMP/stage"
 
   python:
     name: Python ${{ matrix.python }}
@@ -119,6 +126,8 @@ jobs:
           shellcheck -x -P SCRIPTDIR deploy/k3s/*.sh deploy/k3s/test/*.sh deploy/docker/*.sh
       - name: Configure limits (deploy/k3s/test)
         run: bash deploy/k3s/test/test-20-configure.sh
+      - name: Launchers and logger settings (deploy/docker/test-launchers.sh)
+        run: bash deploy/docker/test-launchers.sh
       - name: Render the kustomize overlays (default, hostnetwork, service, lake, modbus-sim, dwd-forward, monitoring, saas, retrieval-kafscale, event-bridge) and the history archive
         run: |
           kubectl version --client

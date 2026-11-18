@@ -1,7 +1,11 @@
 # Appendix A: Command-line tools
 
 Build once (`mvn -q install -DskipTests`), then run `bin/opentsx <command> [options]`. The launcher computes the
-module classpath with Maven (`dependency:build-classpath`) and caches it in `<module>/target/classpath.txt`.
+runtime classpath of a module with Maven (`dependency:build-classpath -DincludeScope=runtime`), caches it in
+`<module>/target/classpath-runtime.txt` and adds `conf/`. When the classpath holds slf4j-api but no slf4j-simple, it
+also adds the slf4j-simple of the same version, so log lines on stderr follow `conf/simplelogger.properties`.
+For `stats-flink` the launcher also caches the provided scope in `opentsx-flink-core/target/classpath-provided.txt`,
+adds neither `conf/` nor slf4j-simple and logs through log4j2 with `conf/log4j2-stats-flink.properties`.
 `bin/opentsx --help` lists the commands.
 
 | Command | Main class | Options |

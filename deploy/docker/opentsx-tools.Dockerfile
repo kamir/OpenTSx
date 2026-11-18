@@ -17,8 +17,7 @@ LABEL org.opencontainers.image.title="opentsx-tools" \
       org.opencontainers.image.licenses="Apache-2.0"
 
 ENV OPENTSX_HOME=/opt/opentsx \
-    PATH=/opt/opentsx/bin:$PATH \
-    JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
+    PATH=/opt/opentsx/bin:$PATH
 
 COPY opt/opentsx /opt/opentsx
 

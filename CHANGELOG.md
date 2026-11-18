@@ -99,6 +99,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - tools/check_tracked_config.py and a CI step on Python 3.12 fail when a tracked file is under config/private/ or
   .idea/, when a *.props, *.properties or .env file names a host or address that is not localhost or a placeholder, or
   when any tracked file names a Confluent Cloud or *.gce.cloudera.com host. The same step runs the tests in tools/.
+- `deploy/docker/test-launchers.sh` runs in CI and tests the launchers' failure paths and the logger settings under
+  `deploy/`. On Java 21 it also checks the classpaths of `bin/opentsx` and of the staged image for no test jars,
+  exactly one SLF4J provider, and zstd-jni wherever kafka-clients is. It also checks that the shaded
+  `opentsx-flink-core` jar holds no `log4j.properties`.
 
 ### Changed
 
@@ -142,6 +146,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The statistics processor, the Flink job `StatsJob` and `EpisodeIndexer.rebuild` print the first record of each
   partition that does not decode on stderr with topic, partition, offset and the decoder message; later ones on that
   partition are only counted.
+- The opentsx-tools image no longer sets `JAVA_TOOL_OPTIONS`, so the JVM no longer prints a `Picked up
+  JAVA_TOOL_OPTIONS` line. The entrypoint passes `-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError` on the java
+  command, followed by `JAVA_OPTS`. The k3s scripts no longer filter that line.
+- `bin/opentsx` caches classpaths in `<module>/target/classpath-runtime.txt` instead of `target/classpath.txt`.
+  `stats-flink` also uses `classpath-provided.txt`.
+- `com.github.luben:zstd-jni` is in runtime scope in `opentsx-stats` and `opentsx-kafka-v2`, and
+  `org.xerial:sqlite-jdbc` is in runtime scope in `opentsx-store-iceberg`, `opentsx-windpark` and `opentsx-market`.
+  The runtime classpaths of `bin/opentsx` and `deploy/docker/stage.sh` therefore keep the zstd codec and the SQLite
+  driver for `type=jdbc,uri=jdbc:sqlite:<file>`, and Maven users of `opentsx-store-iceberg` get the SQLite driver.
+  `deploy/docker/test-launchers.sh` fails when a classpath with kafka-clients has no zstd-jni or a classpath with
+  iceberg-core has no sqlite-jdbc.
 
 ### Removed
 
@@ -165,6 +180,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `TSBucket.flush` (it did nothing), `TSBucket.setSourceDataFolder`, the field `TSBucket.sourcFolder` and the
   constructor `TSBucket(String, String, String)`. The constants `DEFAULT_DELIMITER` and `DEFAULT_LIMIT` replace the
   static fields `MessreihenLoader.delim` and `MessreihenLoader.limit`.
+- The `JAVA_OPTS` logger settings of the vector processor manifest and the retrieval-kafscale component. Logger levels
+  live in `conf/simplelogger.properties`.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -363,6 +380,21 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   filters beta 0 like every other beta and returns a series with variance 1. `main` writes its tables into the
   directory named by its first argument, `./data/` by default, instead of a personal thesis directory. The second
   argument is the seed, 1 by default.
+- The opentsx-tools image no longer carries JUnit jars. `deploy/docker/stage.sh` passed a scope property that the
+  Maven dependency plugin ignores, so it staged the test classpath; it now stages the runtime classpath. `bin/opentsx`
+  also resolves the runtime classpath, and `stats-flink` adds the provided scope for Flink.
+- The image commands and the `bin/opentsx` commands log through slf4j-simple, configured by
+  `conf/simplelogger.properties`, to stderr with ISO time. Kafka, Iceberg, Hadoop, Parquet and the AWS SDK log at
+  warn, so the Kafka client no longer prints its INFO configuration dumps. `stats-flink` logs through log4j2, and
+  `config` and `version` have no logger. The image classpaths of `twin`, `house`, `boat`, `studio-export`, `dwd` and
+  `modbus` had no SLF4J provider and now carry slf4j-simple.
+- `bin/opentsx stats-flink` no longer logs to the SLF4J no-operation logger. `opentsx-flink-core` binds SLF4J 2
+  through `log4j-slf4j2-impl` and reads `conf/log4j2-stats-flink.properties`. The shaded jar no longer contains the
+  log4j 1 `log4j.properties`.
+- `bin/opentsx` and the image entrypoint exit with 1 before Java starts when the classpath step fails. `bin/opentsx`
+  prints `resolving the classpath of <module> with Maven`, shows Maven's error output, and reports a missing `mvn`.
+- `bin/000_launch_tsa_workbench.sh` without Maven takes the classpath from `bin/opentsx classpath opentsx-core` and
+  exits with 1 before Java starts when that fails, instead of a wildcard classpath that cannot load the workbench.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

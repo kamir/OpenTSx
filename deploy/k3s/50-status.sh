@@ -56,7 +56,7 @@ kns get events --field-selector type=Warning --sort-by=.lastTimestamp 2>/dev/nul
 if $LOGS; then
   for d in $(kns get deployment -l app.kubernetes.io/part-of=opentsx -o name); do
     info "logs $d"
-    kns logs "$d" --tail=20 2>/dev/null | grep -v '^Picked up JAVA_TOOL_OPTIONS' || true
+    kns logs "$d" --tail=20 2>/dev/null || true
   done
 fi
 echo

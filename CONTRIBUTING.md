@@ -51,9 +51,9 @@ when a description names code that does not exist or when the chapter is out of 
 
 | Job | What it does |
 |-----|--------------|
-| Java 17, Java 21 | `mvn -B -ntp verify` |
+| Java 17, Java 21 | `mvn -B -ntp verify`; on Java 21 also `mvn install -DskipTests`, `deploy/docker/test-launchers.sh --dev` and `deploy/docker/test-launchers.sh --staged` over `deploy/docker/stage.sh --out` |
 | Python 3.10 to 3.13 | `pip install -e . pytest`, `pytest -q`; on 3.12 also `tools/check_links.py` |
-| k3s scripts and manifests | `bash -n` and `shellcheck` on `deploy/k3s/*.sh` and `deploy/docker/*.sh`; renders the kustomize overlays with `deploy/k3s/20-configure.sh` |
+| k3s scripts and manifests | `bash -n` and `shellcheck` on `deploy/k3s/*.sh` and `deploy/docker/*.sh`; renders the kustomize overlays with `deploy/k3s/20-configure.sh`; runs `deploy/docker/test-launchers.sh` |
 | KafScale conformance | builds the KafScale broker from source (in-memory S3) and runs the conformance suite plus the `opentsx-kafka-v2`, `opentsx-windpark` and `opentsx-stats` tests against it |
 | Java -> Iceberg -> Python | Java writes an Iceberg fixture that PyIceberg must read byte-identically; the Python client queries a Java retrieval server |
 

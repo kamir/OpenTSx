@@ -32,8 +32,6 @@ patches:
             valueFrom: {configMapKeyRef: {name: opentsx-config, key: RETRIEVAL_DAG_RUNS}}
           - name: OPENTSX_DAG_RUN_TOKEN     # set when RETRIEVAL_DAG_RUNS=true: runs need it in X-OpenTSx-Run-Token
             valueFrom: {secretKeyRef: {name: opentsx-secrets, key: DAG_RUN_TOKEN, optional: true}}
-          - name: JAVA_OPTS      # the Kafka client logs every seek of the feed at INFO
-            value: -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
       - op: replace
         path: /spec/template/spec/containers/0/resources
         value:

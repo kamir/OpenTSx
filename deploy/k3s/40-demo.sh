@@ -78,7 +78,7 @@ run_job() {   # name [extra args] [ENV=value ...]
     (( SECONDS - start > 300 )) && die "$job: pod not started after 300 s (phase '${phase:-none}', $reason) - see 50-status.sh"
     sleep 2
   done
-  kns logs -f "job/$job" --all-containers=true | grep -v '^Picked up JAVA_TOOL_OPTIONS' || true
+  kns logs -f "job/$job" --all-containers=true || true
   local cond=""
   while (( SECONDS - start < JOB_TIMEOUT )); do   # Complete or Failed (a retried pod's logs: kubectl logs job/...)
     cond="$(kns get job "$job" -o 'jsonpath={.status.conditions[?(@.status=="True")].type}' 2>/dev/null || true)"
@@ -102,7 +102,7 @@ restart_stats() {
 demo_stats() {
   info "statistics processor"
   kns get deployment/opentsx-stats
-  kns logs deployment/opentsx-stats --tail=20 2>/dev/null | grep -v '^Picked up JAVA_TOOL_OPTIONS' || true
+  kns logs deployment/opentsx-stats --tail=20 2>/dev/null || true
   kns exec deployment/opentsx-stats -- ls -l /state 2>/dev/null || warn "no checkpoint yet (written every 30 s)"
   run_job kafscale-check   # record counts, incl. tsx.<domain>.series-stats.v2
 }
@@ -143,10 +143,10 @@ demo_dwd_forward() {
   kns delete job "$job" --ignore-not-found --wait=true >/dev/null
   kns create job "$job" --from=cronjob/opentsx-dwd-forward >/dev/null
   if kns wait --for=condition=complete "job/$job" --timeout="${JOB_TIMEOUT}s" >/dev/null 2>&1; then
-    kns logs "job/$job" | grep -v '^Picked up JAVA_TOOL_OPTIONS' || true
+    kns logs "job/$job" || true
     ok "$job completed"
   else
-    kns logs "job/$job" 2>/dev/null | grep -v '^Picked up JAVA_TOOL_OPTIONS' || true
+    kns logs "job/$job" 2>/dev/null || true
     fail "$job did not complete - ${KUBECTL} -n $OPENTSX_NS describe job $job"
     return 1
   fi
