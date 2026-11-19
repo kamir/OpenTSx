@@ -13,6 +13,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Select pull request CI jobs from Maven dependencies and shared runtime/test inputs. Keep full validation on
+  `master` and manual runs, run documentation links with learning checks, and require a final result that rejects
+  selection failures and unexpected job skips. Unmapped paths and shared build, contract or manual changes select
+  all jobs. Frontend changes also select the Python launcher checks.
 - Disable the unimplemented native `persist TSB` control with an explanatory tooltip. Both panel constructors
   prevent click dispatch from this control.
 - Prepare PFD JSON before writing and export it as strict UTF-8 through atomic replacement. Failed preparation,

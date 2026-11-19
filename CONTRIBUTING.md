@@ -43,15 +43,46 @@ fixture) and `OPENTSX_RETRIEVAL_URL` (Python client against a running retrieval 
 [`.mvn/maven.config`](.mvn/maven.config) makes Maven retry a download up to five times when the repository answers
 HTTP 429, 500, 502, 503 or 504.
 
-## Continuous integration
+## Check continuous integration
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every pull request
-and on pushes to `master`:
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) starts on every pull request, push to `master` and manual run.
+Pull requests select affected jobs; `master` pushes and manual runs execute all 24 workload jobs plus the selection
+and result checks. The workload commands and matrix dimensions are retained.
+
+The selector verifies the checked-out pull request merge commit and both event parents. A depth-two checkout
+supplies these commits. It compares the base parent with the tested merge tree using NUL-delimited paths and
+disabled rename detection, so renames select both source and destination inputs and deletions remain visible.
+
+[`tools/ci_job_selection.py`](tools/ci_job_selection.py) reads the Maven reactor and follows internal dependencies,
+including test and profile dependencies. Jobs select their transitive module inputs. Shared schemas, vectors,
+learning metadata and referenced files also select their language or integration checks. Build configuration,
+workflow and tooling changes, shared contract changes, user manuals and unmapped paths select the full workflow.
+Invalid event, Git, dependency or selection data fail the selection and final result.
+
+Every selection includes `Operator learning synchronization`, which also checks maintained documentation links.
+Ordinary documentation under `docs/` and root Markdown files need only this job unless a language test reads the
+changed reference. Shared contracts, user manuals and root governance files use full validation; unmapped nested
+Markdown files also select the full workflow. Frontend changes select the Python matrix as well, because the
+local CP launcher checks the frontend entry point and linked assets.
+The combined KafScale job remains selected for core changes because `opentsx-legacy-bridge` depends on core.
+Rust runner and contract changes also select KafScale conformance, which builds and executes the B2 parity harness.
+
+`CI result` validates the GitHub-provided job results, including matrix-job results. Every selected job result
+must be successful; a skipped job is accepted only when selection explicitly excluded it. Selection failure,
+missing results, cancellation and unexpected skips fail the result. Full validation events also require every job
+to be selected. Before merging, check each individual workflow job conclusion as well as `CI result`.
+
+You need Python 3.12 and Git. From the repository root, run the selection and workflow regressions:
+
+```bash
+python3 -B -m unittest discover -s tools -p 'test_ci*selection.py' -v
+```
 
 | Job | What it does |
 |-----|--------------|
+| Select affected jobs | validates the tested merge and selects jobs from module dependencies and shared inputs |
 | Java 17, Java 21 | `mvn -B -ntp verify` |
-| Operator learning synchronization | repository gitlink URL checks, learning synchronization tests, generated student lessons and source-content hashes |
+| Operator learning synchronization | repository gitlink URL checks, learning synchronization tests, generated student lessons, source-content hashes and maintained documentation links |
 | Shared contract vectors and Rust | generated assignment fixture check and the pinned Rust consumer of the shared cases |
 | Rust runner tests and lint | all-target tests, formatting and Clippy |
 | Rust native x86_64 and ARM64 | native vectors and runner regressions |
@@ -61,6 +92,7 @@ and on pushes to `master`:
 | k3s scripts and manifests | `bash -n` and `shellcheck` on `deploy/k3s/*.sh` and `deploy/docker/*.sh`; renders the kustomize overlays with `deploy/k3s/20-configure.sh` |
 | KafScale conformance | source-built KafScale, Proxy I/O and module tests |
 | Java -> Iceberg -> Python | Java writes an Iceberg fixture that PyIceberg must read byte-identically; the Python client queries a Java retrieval server |
+| CI result | requires the selector and every selected job to succeed; verifies explicit exclusions and the complete job inventory |
 
 Pull requests are squash-merged when every required check is green.
 
