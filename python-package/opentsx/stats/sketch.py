@@ -9,6 +9,9 @@ from typing import Dict, Tuple
 DEFAULT_ALPHA = 0.01
 MIN_INDEXABLE = 1e-9
 _FORMAT_V1 = 1
+_LONG_MAX = (1 << 63) - 1
+_INT_MIN = -(1 << 31)
+_INT_MAX = (1 << 31) - 1
 
 
 def _write_varint(out: bytearray, v: int) -> None:
@@ -25,15 +28,28 @@ def _read_varint(buf: bytes, pos: int) -> Tuple[int, int]:
     shift = 0
     while True:
         if pos >= len(buf):
-            raise ValueError(f"sketch bytes: truncated at {len(buf)} of {len(buf)}")
+            raise ValueError(
+                "sketch bytes: input ends inside a varint; expected complete varints")
         b = buf[pos]
         pos += 1
+        if shift == 63 and b & 0x7E:
+            raise ValueError(
+                "sketch bytes: varint exceeds 64 bits; expected at most 64 bits per varint")
         result |= (b & 0x7F) << shift
         if not b & 0x80:
             return result, pos
         shift += 7
         if shift > 63:
-            raise ValueError("varint too long")
+            raise ValueError(
+                "sketch bytes: varint longer than 10 bytes; expected at most 10 bytes per varint")
+
+
+def _read_unsigned(buf: bytes, pos: int) -> Tuple[int, int]:
+    v, pos = _read_varint(buf, pos)
+    if v > _LONG_MAX:
+        raise ValueError(f"sketch bytes: varint exceeds {_LONG_MAX}; "
+                         f"expected a whole number from 0 to {_LONG_MAX}")
+    return v, pos
 
 
 def _zigzag(v: int) -> int:
@@ -140,14 +156,17 @@ class QuantileSketch:
             raise ValueError(f"sketch bytes: truncated at 1 of {len(data)}")
         (alpha,) = struct.unpack_from("<d", data, 1)
         s = cls(alpha)
-        s.zero_count, pos = _read_varint(data, 9)
+        s.zero_count, pos = _read_unsigned(data, 9)
         for store in (s.positive, s.negative):
-            bins, pos = _read_varint(data, pos)
+            bins, pos = _read_unsigned(data, pos)
             prev = 0
             for _ in range(bins):
                 d, pos = _read_varint(data, pos)
-                n, pos = _read_varint(data, pos)
                 prev += _unzigzag(d)
+                if not _INT_MIN <= prev <= _INT_MAX:
+                    raise ValueError(
+                        f"sketch bytes: bin index {prev} out of range; expected an int")
+                n, pos = _read_unsigned(data, pos)
                 store[prev] = n
         if pos != len(data):
             raise ValueError(f"sketch bytes: {len(data) - pos} trailing bytes; expected exactly {pos}")

@@ -29,7 +29,9 @@ to writer schema, for example backed by a schema registry client. Replay, `Bucke
 throws `NullPointerException: Confluent-framed payload but no schema resolver configured` on a Confluent-framed record.
 `OpenTsxAvro` decodes v2 types only. Even with a resolver, a Confluent-framed 2.x record fails with
 `no reader type for org.opentsx.data.model.EpisodesRecord`. Convert a decoded `EpisodesRecord` with
-`LegacyBridge.fromEpisodesRecord`.
+`LegacyBridge.fromEpisodesRecord`. A record without a label needs a `SeriesKey` as the second argument; without one the
+conversion throws
+`label: missing in the EpisodesRecord "<uri>"; expected a label such as "metric k1=v1,k2=v2" or a SeriesKey argument`.
 
 ## 13.2 Find or restore an archived component
 

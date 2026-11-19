@@ -56,14 +56,69 @@ def test_stats_frame_from_avro_records():
     assert str(first["window_start"].tz) == "UTC"
 
 
-@pytest.mark.parametrize(
-    "cut, at",
-    [(0, 0), (1, 1), (5, 1), (9, 9), (12, 12), (len(JAVA_VECTOR) // 2 - 1, len(JAVA_VECTOR) // 2 - 1)],
-)
-def test_a_truncated_sketch_raises_the_java_text(cut, at):
+@pytest.mark.parametrize("cut, at", [(0, 0), (1, 1), (5, 1)])
+def test_a_sketch_cut_in_its_header_raises_the_java_text(cut, at):
     with pytest.raises(ValueError) as e:
         QuantileSketch.from_bytes(bytes.fromhex(JAVA_VECTOR)[:cut])
     assert str(e.value) == f"sketch bytes: truncated at {at} of {cut}"
+
+
+@pytest.mark.parametrize("cut", [9, 12, len(JAVA_VECTOR) // 2 - 1])
+def test_a_sketch_cut_inside_a_varint_raises_the_java_text(cut):
+    with pytest.raises(ValueError) as e:
+        QuantileSketch.from_bytes(bytes.fromhex(JAVA_VECTOR)[:cut])
+    assert str(e.value) == "sketch bytes: input ends inside a varint; expected complete varints"
+
+
+_HEADER = bytes.fromhex(JAVA_VECTOR)[:9]
+
+
+@pytest.mark.parametrize("body, text", [
+    (bytes([0x80]), "sketch bytes: input ends inside a varint; expected complete varints"),
+    (bytes([0xFF] * 9 + [0x01, 0, 0]),
+     "sketch bytes: varint exceeds 9223372036854775807;"
+     " expected a whole number from 0 to 9223372036854775807"),
+    (bytes([0x80] * 9 + [0x02, 0, 0]),
+     "sketch bytes: varint exceeds 64 bits; expected at most 64 bits per varint"),
+    (bytes([0x80] * 9 + [0x81, 0x00, 0, 0]),
+     "sketch bytes: varint longer than 10 bytes; expected at most 10 bytes per varint"),
+])
+def test_the_decoder_refuses_the_varints_of_quantile_sketch_test(body, text):
+    with pytest.raises(ValueError) as e:
+        QuantileSketch.from_bytes(_HEADER + body)
+    assert str(e.value) == text
+
+
+def _zigzag_varint(v: int) -> bytes:
+    z = ((v << 1) ^ (v >> 63)) & 0xFFFFFFFFFFFFFFFF
+    out = bytearray()
+    while z & ~0x7F:
+        out.append((z & 0x7F) | 0x80)
+        z >>= 7
+    out.append(z)
+    return bytes(out)
+
+
+def _bins_at(*deltas: int) -> bytes:
+    bins = b"".join(_zigzag_varint(d) + b"\x01" for d in deltas)
+    return _HEADER + bytes([0, len(deltas)]) + bins + b"\x00"
+
+
+@pytest.mark.parametrize("deltas, index", [
+    ((1 << 40,), 1 << 40),
+    ((2**31 - 1, 1), 2**31),
+    ((-2**31, -1), -2**31 - 1),
+    ((1, 2**63 - 1), 2**63),
+])
+def test_a_bin_index_outside_the_int_range_raises_the_java_text(deltas, index):
+    with pytest.raises(ValueError) as e:
+        QuantileSketch.from_bytes(_bins_at(*deltas))
+    assert str(e.value) == f"sketch bytes: bin index {index} out of range; expected an int"
+
+
+def test_bin_indexes_at_the_ends_of_the_int_range_are_read():
+    s = QuantileSketch.from_bytes(_bins_at(-2**31, 2**32 - 1))
+    assert s.positive == {-2**31: 1, 2**31 - 1: 1}
 
 
 def test_trailing_bytes_after_a_sketch_raise_the_java_text():
@@ -83,7 +138,7 @@ def test_the_decoder_raises_the_texts_of_quantile_sketch_test():
         texts[name] = str(e.value)
     assert texts == {
         "trailing": f"sketch bytes: 2 trailing bytes; expected exactly {len(data)}",
-        "cut": f"sketch bytes: truncated at {len(data) - 1} of {len(data) - 1}",
+        "cut": "sketch bytes: input ends inside a varint; expected complete varints",
         "header": "sketch bytes: truncated at 1 of 5",
         "empty": "sketch bytes: truncated at 0 of 0",
     }

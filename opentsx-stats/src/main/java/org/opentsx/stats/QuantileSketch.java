@@ -1,6 +1,9 @@
 package org.opentsx.stats;
 
+import org.opentsx.model.Varints;
+
 import java.io.ByteArrayOutputStream;
+import java.math.BigInteger;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -33,6 +36,7 @@ public final class QuantileSketch {
     public static final double MIN_INDEXABLE = 1e-9;
     public static final int DEFAULT_MAX_BINS = 4096;
     private static final byte FORMAT_V1 = 1;
+    private static final String SUBJECT = "sketch bytes";
 
     private final double alpha;
     private final double gamma;
@@ -188,7 +192,7 @@ public final class QuantileSketch {
         out.write(FORMAT_V1);
         byte[] a = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putDouble(alpha).array();
         out.write(a, 0, 8);
-        Varints.write(out, zeroCount);
+        Varints.writeUnsigned(out, zeroCount);
         writeStore(out, positive);
         writeStore(out, negative);
         return out.toByteArray();
@@ -209,7 +213,7 @@ public final class QuantileSketch {
                 throw new IllegalArgumentException("unsupported sketch format version " + version);
             }
             s = new QuantileSketch(in.getDouble());
-            s.zeroCount = Varints.read(in);
+            s.zeroCount = Varints.readUnsigned(in, SUBJECT);
             s.count = s.zeroCount;
             s.count += readStore(in, s.positive);
             s.count += readStore(in, s.negative);
@@ -248,23 +252,29 @@ public final class QuantileSketch {
     }
 
     private static void writeStore(ByteArrayOutputStream out, TreeMap<Integer, Long> store) {
-        Varints.write(out, store.size());
+        Varints.writeUnsigned(out, store.size());
         long previous = 0;
         for (Map.Entry<Integer, Long> e : store.entrySet()) {
             Varints.writeZigZag(out, e.getKey() - previous);
-            Varints.write(out, e.getValue());
+            Varints.writeUnsigned(out, e.getValue());
             previous = e.getKey();
         }
     }
 
     private static long readStore(ByteBuffer in, TreeMap<Integer, Long> store) {
-        long bins = Varints.read(in);
+        long bins = Varints.readUnsigned(in, SUBJECT);
         long previous = 0;
         long total = 0;
         for (long i = 0; i < bins; i++) {
-            long index = previous + Varints.readZigZag(in);
-            long n = Varints.read(in);
-            store.put(Math.toIntExact(index), n);
+            long delta = Varints.readZigZag(in, SUBJECT);
+            long index = previous + delta;
+            if (index != (int) index) {
+                // a sum that overflows the long range wraps to a value outside the int range, so it is caught here too
+                throw new IllegalArgumentException(SUBJECT + ": bin index "
+                        + BigInteger.valueOf(previous).add(BigInteger.valueOf(delta)) + " out of range; expected an int");
+            }
+            long n = Varints.readUnsigned(in, SUBJECT);
+            store.put((int) index, n);
             total += n;
             previous = index;
         }

@@ -164,15 +164,31 @@ store = varint binCount, then per bin (ascending index): zig-zag varint index de
 
 The encoding is canonical. Java (`QuantileSketch`) and Python (`opentsx.stats.QuantileSketch`) produce identical bytes,
 checked by a shared test vector. `QuantileSketch.fromBytes` reads exactly one sketch and throws
-`IllegalArgumentException` for bytes after it (`sketch bytes: <n> trailing bytes; expected exactly <m>`) and for bytes
-that end inside it (`sketch bytes: truncated at <k> of <m>`, `<k>` the number of bytes read when the input ran out).
-`opentsx.stats.QuantileSketch.from_bytes` raises `ValueError` with the same messages.
+`IllegalArgumentException` for:
+
+* a version byte other than 1: `unsupported sketch format version <v>`
+* an alpha outside (0, 1): `alpha must be in (0, 1): <alpha>`
+* bytes after it: `sketch bytes: <n> trailing bytes; expected exactly <m>`
+* bytes that end in the version byte or in alpha: `sketch bytes: truncated at <k> of <m>`, `<k>` the number of bytes
+  read when the input ran out
+* bytes that end inside a varint: `sketch bytes: input ends inside a varint; expected complete varints`
+* a varint over 64 bits: `sketch bytes: varint exceeds 64 bits; expected at most 64 bits per varint`
+* a varint longer than 10 bytes: `sketch bytes: varint longer than 10 bytes; expected at most 10 bytes per varint`
+* a count above 9223372036854775807:
+  `sketch bytes: varint exceeds 9223372036854775807; expected a whole number from 0 to 9223372036854775807`
+* a bin index outside the int range: `sketch bytes: bin index <n> out of range; expected an int`
+
+`StatsAccumulator.of`, `StatsAccumulator.readFrom` and `DataQuality.evaluate` throw the same exception for a corrupt
+sketch. `opentsx.stats.QuantileSketch.from_bytes` raises `ValueError` with the same messages, except that `<alpha>`
+is written as each language formats a double: `NaN`, `Infinity` and `1.0E300` in Java, `nan`, `inf` and `1e+300` in
+Python.
 `opentsx.stats.stats_to_frame(records)` turns decoded records into a pandas frame with quantile columns.
 
 ## Tests
 
-* Sketch: accuracy, exact merge, canonical bytes, collapsing, the test vector, and refused trailing and truncated
-  bytes.
+* Sketch: accuracy, exact merge, canonical bytes, collapsing, the test vector, refused trailing and truncated bytes,
+  refused varints, refused bin indexes outside the int range, and the refusal of a corrupt sketch by
+  `StatsAccumulator` and `DataQuality`.
 * Engine: windows equal episode summaries, gaps, duplicates, late values, observations, a window without values,
   refused settings, and checkpoint restore with output identical to an uninterrupted run.
 * Data quality against simulator ground truth, and FRESHNESS with a given clock.

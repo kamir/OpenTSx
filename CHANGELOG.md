@@ -563,6 +563,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   OpenTSDB services and their volumes are removed. The OpenTSDB store tests use their embedded emulator. CI checks
   that the file resolves and that each of its images exists, and fails when `docker compose config --images` fails or
   lists no image.
+- `opentsx-legacy-bridge` stamps the producer `opentsx-legacy-bridge/<version>` of the build instead of the literal
+  `opentsx-legacy-bridge/3.0.1` and picks REGULAR or IRREGULAR_DELTA with `Episodes.of`. An empty series fails with
+  `values: empty; expected at least one value` instead of `cannot convert an empty series`.
 
 ### Removed
 
@@ -1194,6 +1197,20 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `opentsx-saas-backend/local-setup.sh` quotes `$USER` in its `psql` calls and passes shellcheck.
 - `bin/000_validate_environment.sh --fix` finds java with `command -v`, so on a host without `which` it finishes the
   checks and prints the summary instead of stopping with exit code 127.
+- `LegacyBridge.fromEpisodesRecord(record, null)` refuses an `EpisodesRecord` without a label with `label: missing in
+  the EpisodesRecord "<uri>"; expected a label such as "metric k1=v1,k2=v2" or a SeriesKey argument`. Before, every
+  such record got the metric `legacy.episode`, so distinct series merged into one.
+- `QuantileSketch.fromBytes` reads its varints with `org.opentsx.model.Varints`. A count above 9223372036854775807 and
+  a varint over 64 bits are refused instead of read as a negative or truncated number. Bytes that end inside a varint
+  fail with `sketch bytes: input ends inside a varint; expected complete varints`, and `sketch bytes: truncated at <k>
+  of <m>` remains for bytes that end in the version byte or alpha. The copy `org.opentsx.stats.Varints` is deleted.
+- `QuantileSketch.fromBytes` refuses a bin index outside the int range with `IllegalArgumentException: sketch bytes:
+  bin index <n> out of range; expected an int` instead of `ArithmeticException: integer overflow`.
+  `StatsAccumulator.of`, `StatsAccumulator.readFrom` and `DataQuality.evaluate` now fail on a corrupt sketch with the
+  exception their callers treat as bad input. Python `opentsx.stats.QuantileSketch.from_bytes` raises the same texts.
+- `opentsx.stats.QuantileSketch.from_bytes` refuses the malformed sketches that Java refuses, with the same texts:
+  bytes that end inside a varint, a varint over 64 bits or longer than 10 bytes, a count above 9223372036854775807 and
+  a bin index outside the int range.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

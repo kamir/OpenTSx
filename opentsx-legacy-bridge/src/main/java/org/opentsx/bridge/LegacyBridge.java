@@ -25,7 +25,7 @@ import java.util.Vector;
  */
 public final class LegacyBridge {
 
-    public static final String PRODUCER = "opentsx-legacy-bridge/3.0.1";
+    public static final String PRODUCER = Episodes.producer("opentsx-legacy-bridge");
 
     private LegacyBridge() {
     }
@@ -37,7 +37,7 @@ public final class LegacyBridge {
         for (int i = 0; i < ts.length; i++) {
             ts[i] = unit.toMicros(((Number) xs.get(i)).doubleValue());
         }
-        return draft(key, ts, values).source(source).producer(PRODUCER).build();
+        return Episodes.of(key, ts, values).source(source).producer(PRODUCER).build();
     }
 
     /** Same, with the series identity parsed from the TSO label (see {@link #seriesKeyFromLabel}). */
@@ -63,10 +63,15 @@ public final class LegacyBridge {
             ts[i] = Math.multiplyExact(obs.get(i).getTimestamp(), 1_000L);
             values[i] = obs.get(i).getValue();
         }
-        SeriesKey k = key != null ? key
-                : seriesKeyFromLabel(v1.getLabel() == null ? "legacy.episode" : v1.getLabel().toString(), null);
+        if (key == null && v1.getLabel() == null) {
+            String record = v1.getUri() == null ? "an EpisodesRecord without uri"
+                    : "the EpisodesRecord \"" + v1.getUri() + "\"";
+            throw new IllegalArgumentException("label: missing in " + record
+                    + "; expected a label such as \"metric k1=v1,k2=v2\" or a SeriesKey argument");
+        }
+        SeriesKey k = key != null ? key : seriesKeyFromLabel(v1.getLabel().toString(), null);
         String source = v1.getUri() == null ? "legacy:episodes-record" : "legacy:" + v1.getUri();
-        return draft(k, ts, values).source(source).producer(PRODUCER).build();
+        return Episodes.of(k, ts, values).source(source).producer(PRODUCER).build();
     }
 
     /** {@code "metric k1=v1,k2=v2"} -> SeriesKey; a label without tags becomes the metric. */
@@ -105,25 +110,5 @@ public final class LegacyBridge {
             first = false;
         }
         return sb.toString();
-    }
-
-    private static Episodes.Draft draft(SeriesKey key, long[] ts, double[] values) {
-        if (ts.length >= 2) {
-            long step = ts[1] - ts[0];
-            boolean regular = step > 0;
-            for (int i = 2; regular && i < ts.length; i++) {
-                regular = ts[i] - ts[i - 1] == step;
-            }
-            if (regular) {
-                return Episodes.regular(key, ts[0], step, values);
-            }
-        }
-        if (ts.length == 1) {
-            return Episodes.irregular(key, ts, values);
-        }
-        if (ts.length == 0) {
-            throw new IllegalArgumentException("cannot convert an empty series");
-        }
-        return Episodes.irregular(key, ts, values);
     }
 }

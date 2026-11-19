@@ -1,7 +1,15 @@
 package org.opentsx.stats;
 
 import org.junit.jupiter.api.Test;
+import org.opentsx.model.Varints;
+import org.opentsx.model.v2.SeriesStats;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.Random;
@@ -74,13 +82,89 @@ class QuantileSketchTest {
         assertEquals("sketch bytes: 2 trailing bytes; expected exactly " + bytes.length, trailing.getMessage());
         IllegalArgumentException cut = assertThrows(IllegalArgumentException.class,
                 () -> QuantileSketch.fromBytes(Arrays.copyOf(bytes, bytes.length - 1)));
-        assertEquals("sketch bytes: truncated at " + (bytes.length - 1) + " of " + (bytes.length - 1), cut.getMessage());
+        assertEquals("sketch bytes: input ends inside a varint; expected complete varints", cut.getMessage());
         IllegalArgumentException header = assertThrows(IllegalArgumentException.class,
                 () -> QuantileSketch.fromBytes(Arrays.copyOf(bytes, 5)));
         assertEquals("sketch bytes: truncated at 1 of 5", header.getMessage());
         IllegalArgumentException empty = assertThrows(IllegalArgumentException.class, () -> QuantileSketch.fromBytes(new byte[0]));
         assertEquals("sketch bytes: truncated at 0 of 0", empty.getMessage());
         assertEquals(s, QuantileSketch.fromBytes(bytes));
+    }
+
+    private static byte[] sketchBytes(int... body) {
+        byte[] header = Arrays.copyOf(new QuantileSketch(0.01).toBytes(), 9);
+        byte[] out = Arrays.copyOf(header, header.length + body.length);
+        for (int i = 0; i < body.length; i++) {
+            out[header.length + i] = (byte) body[i];
+        }
+        return out;
+    }
+
+    private static String refusal(byte[] bytes) {
+        return assertThrows(IllegalArgumentException.class, () -> QuantileSketch.fromBytes(bytes)).getMessage();
+    }
+
+    @Test
+    void fromBytesRefusesTheVarintsTheModelRefuses() {
+        assertEquals("sketch bytes: input ends inside a varint; expected complete varints", refusal(sketchBytes(0x80)));
+        assertEquals("sketch bytes: varint exceeds 9223372036854775807; expected a whole number from 0 to"
+                        + " 9223372036854775807",
+                refusal(sketchBytes(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x01, 0, 0)));
+        assertEquals("sketch bytes: varint exceeds 64 bits; expected at most 64 bits per varint",
+                refusal(sketchBytes(0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x02, 0, 0)));
+        assertEquals("sketch bytes: varint longer than 10 bytes; expected at most 10 bytes per varint",
+                refusal(sketchBytes(0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x81, 0x00, 0, 0)));
+    }
+
+    private static byte[] oneBinAt(long... deltas) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        out.writeBytes(Arrays.copyOf(new QuantileSketch(0.01).toBytes(), 9));
+        Varints.writeUnsigned(out, 0);
+        Varints.writeUnsigned(out, deltas.length);
+        for (long d : deltas) {
+            Varints.writeZigZag(out, d);
+            Varints.writeUnsigned(out, 1);
+        }
+        Varints.writeUnsigned(out, 0);
+        return out.toByteArray();
+    }
+
+    @Test
+    void fromBytesRefusesABinIndexOutsideTheIntRange() {
+        assertEquals("sketch bytes: bin index 1099511627776 out of range; expected an int",
+                refusal(oneBinAt(1L << 40)));
+        assertEquals("sketch bytes: bin index 2147483648 out of range; expected an int",
+                refusal(oneBinAt(Integer.MAX_VALUE, 1)));
+        assertEquals("sketch bytes: bin index -2147483649 out of range; expected an int",
+                refusal(oneBinAt(Integer.MIN_VALUE, -1)));
+        assertEquals("sketch bytes: bin index 9223372036854775808 out of range; expected an int",
+                refusal(oneBinAt(1, Long.MAX_VALUE)));
+        byte[] extremes = oneBinAt(Integer.MIN_VALUE, (long) Integer.MAX_VALUE - Integer.MIN_VALUE);
+        assertEquals(2, QuantileSketch.fromBytes(extremes).count());
+    }
+
+    @Test
+    void theReadersOfStatisticsRefuseACorruptSketchAsBadInput() throws IOException {
+        byte[] corrupt = oneBinAt(1L << 40);
+        String text = "sketch bytes: bin index 1099511627776 out of range; expected an int";
+        StatsAccumulator a = new StatsAccumulator(0.01);
+        a.add(0, 1.0);
+        SeriesStats stats = SeriesStats.newBuilder(a.toSeriesStats("s1", "PT10M", 0, 600_000_000L))
+                .setQuantileSketch(ByteBuffer.wrap(corrupt)).build();
+        assertEquals(text, assertThrows(IllegalArgumentException.class, () -> StatsAccumulator.of(stats)).getMessage());
+        assertEquals(text, assertThrows(IllegalArgumentException.class,
+                () -> DataQuality.evaluate(stats, DataQuality.Expectation.of(0.0, 10.0, null))).getMessage());
+
+        ByteArrayOutputStream checkpoint = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(checkpoint);
+        for (int i = 0; i < 9; i++) {
+            out.writeLong(0);
+        }
+        out.writeInt(corrupt.length);
+        out.write(corrupt);
+        DataInputStream in = new DataInputStream(new ByteArrayInputStream(checkpoint.toByteArray()));
+        assertEquals(text,
+                assertThrows(IllegalArgumentException.class, () -> StatsAccumulator.readFrom(in)).getMessage());
     }
 
     @Test
