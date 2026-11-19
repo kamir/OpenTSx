@@ -536,7 +536,7 @@ final class ConfParser {
 
     static OpenTsxConfException secretOnCommandLine(String subject, Key e) {
         return new OpenTsxConfException(subject, "secret keys are not accepted on the command line",
-                "set " + Registry.envName(e.key()) + " or put " + e.key() + " in a properties file");
+                "set " + String.join(" or ", e.envNames()) + " or put " + e.key() + " in a properties file");
     }
 
     private static List<String> words(List<String> argv) {

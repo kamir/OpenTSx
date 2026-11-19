@@ -37,7 +37,8 @@ public final class Registry {
     static final Set<String> LAUNCHER_VARIABLES = Set.of("OPENTSX_HOME", "OPENTSX_CONF_DIR", "OPENTSX_EXTRA_ARGS");
     static final List<String> READ_EVERY_KEY = List.of("config get", "config show");
     static final List<String> WITH_OUTPUT = List.of("config list", "config show");
-    static final List<String> LOADS_CONF = List.of("config get", "config list", "config show", "version");
+    static final List<String> LOADS_CONF = List.of("config get", "config list", "config show", "metadata", "stats",
+            "stats-flink", "version", "windpark-sim");
 
     public record Key(String key, String type, String items, List<String> values, String unit, String defaultValue,
                       boolean secret, String flag, List<String> legacyFlags, List<String> env, List<String> commands,

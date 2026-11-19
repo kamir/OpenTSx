@@ -5,13 +5,14 @@ import importlib.util
 import json
 import logging
 import pathlib
+import re
 import sys
 from datetime import timedelta
 
 import pytest
 
 from opentsx.conf import OpenTsxConf, OpenTsxConfError, Registry, readFile
-from opentsx.conf.conf import _parse
+from opentsx.conf.conf import CONF_COMMANDS, _parse
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 VECTORS = json.loads((REPO / "docs/datamodel-2026/testvectors/conf.v1.json").read_text(encoding="utf-8"))
@@ -216,6 +217,12 @@ def test_debug_string(case_id, tmp_path):
 def test_registry_copy_is_identical_to_the_java_resource():
     assert PYTHON_REGISTRY.read_bytes() == JAVA_REGISTRY.read_bytes()
     assert Registry.shipped().text.encode("utf-8") == JAVA_REGISTRY.read_bytes()
+
+
+def test_conf_commands_are_the_loads_conf_of_the_java_registry():
+    source = (REPO / "opentsx-conf/src/main/java/org/opentsx/conf/Registry.java").read_text(encoding="utf-8")
+    declared = re.search(r"LOADS_CONF = List\.of\(([^)]*)\);", source).group(1)
+    assert CONF_COMMANDS == tuple(re.findall(r'"([^"]+)"', declared))
 
 
 def registry_rules(registry):

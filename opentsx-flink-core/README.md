@@ -14,6 +14,30 @@ bin/opentsx stats-flink --kafscale localhost:9092 --domain wind \
     [--global-every PT30S] [--checkpoint-every PT30S] [--once true]
 ```
 
+`bin/opentsx stats-flink` loads its keys with `OpenTsxConf.load` of [`opentsx-conf`](../opentsx-conf/README.md), the
+same way as `bin/opentsx stats`. `bin/opentsx stats-flink --help` prints them with their defaults. The job reads the
+keys of the processor except `opentsx.stats.checkpoint` and `opentsx.log.level`, and two of its own:
+
+```text
+  opentsx.stats.checkpointInterval  duration = PT30S  --checkpoint-every  OPENTSX_STATS_CHECKPOINT_INTERVAL
+  opentsx.stats.globalInterval  duration = PT30S  --global-every  OPENTSX_STATS_GLOBAL_INTERVAL
+```
+
+At start the job logs one INFO line through log4j2 with every value and its source, for example
+`starting stats-flink: opentsx.domain=wind (default), opentsx.kafscale.bootstrap=127.0.0.1:9 (commandLine), ...`.
+Exit codes: 0 success, 1 runtime failure, 2 usage or configuration error. A usage or configuration error prints one
+line `opentsx: <message>` on stderr before the Flink graph is built:
+
+```text
+opentsx: --windows: item "PT10" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m, at most 999999999 days
+opentsx: --checkpoint: an option of stats, not of stats-flink; the Flink job keeps its positions and state in Flink checkpoints (--checkpoint-every)
+opentsx: --windws: unknown option of stats-flink; did you mean --windows?
+opentsx: opentsx.stats.checkpointInterval: "0s" is not allowed; expected a positive duration such as PT30S
+opentsx: sketchAlpha: "5.0" is not allowed; expected a number above 0 and below 1, or 0 or less for no sketch
+```
+
+A failed job prints `opentsx: <message>; caused by <cause>` and exits with 1.
+
 `bin/opentsx stats-flink` runs the job in a local mini cluster. On a Flink cluster, `StatsJob` is the main class of
 the shaded jar:
 
@@ -57,9 +81,9 @@ Built for what KafScale supports (see the [conformance results](../opentsx-kafsc
   ```
 
 * A failure of the engine fails the task.
-* A setting the engine cannot use, for example `--alpha 5`, ends the job before the Flink graph is built: it prints
-  the message and the usage line and exits with code 2. The settings and messages are in
-  [chapter 7](../docs/user-manual/07-stats-quality.md#72-run-the-processor) of the user manual.
+* A setting the engine cannot use, for example `--alpha 5`, ends the job before the Flink graph is built with exit
+  code 2. The settings and messages are in [chapter 7](../docs/user-manual/07-stats-quality.md#72-run-the-processor)
+  of the user manual.
 * The job emits no watermarks. The engine keeps event time per series and closes windows itself.
 
 Operation:
@@ -105,7 +129,9 @@ KAFSCALE_BOOTSTRAP=localhost:9092 mvn -pl opentsx-flink-core -am test    # also 
 * `StatsJobTest`: the job on a mini cluster gives the same `SeriesStats` as one `StatsEngine` over the same
   episodes; a restore from a checkpoint after half the input counts every value once; GLOBAL timers; undecodable
   inputs and invalid episodes are counted and reported once per partition; an engine failure fails the task; an
-  alpha outside the sketch range is refused at start.
+  alpha outside the sketch range is refused at start; unknown options, `--checkpoint`, a zero `--checkpoint-every`
+  and malformed values exit with 2 and one line; `--help` prints the keys on stdout; the start logs one INFO line
+  through log4j2 that names every value and its source.
 * `StatsEngineSerializerTest`: round trip, independent copies, snapshot and compatibility rules.
 * `StatsJobKafScaleTest`: episodes written to KafScale come back as the same `SeriesStats` on the series-stats
   topic. It runs in the KafScale CI job.

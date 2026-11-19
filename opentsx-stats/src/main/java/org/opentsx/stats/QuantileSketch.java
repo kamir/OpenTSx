@@ -1,6 +1,7 @@
 package org.opentsx.stats;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Map;
@@ -197,17 +198,29 @@ public final class QuantileSketch {
         return fromBytes(ByteBuffer.wrap(bytes));
     }
 
+    /** The bytes from the position to the limit must hold exactly one sketch. */
     public static QuantileSketch fromBytes(ByteBuffer buffer) {
         ByteBuffer in = buffer.duplicate().order(ByteOrder.LITTLE_ENDIAN);
-        byte version = in.get();
-        if (version != FORMAT_V1) {
-            throw new IllegalArgumentException("unsupported sketch format version " + version);
+        int start = in.position();
+        QuantileSketch s;
+        try {
+            byte version = in.get();
+            if (version != FORMAT_V1) {
+                throw new IllegalArgumentException("unsupported sketch format version " + version);
+            }
+            s = new QuantileSketch(in.getDouble());
+            s.zeroCount = Varints.read(in);
+            s.count = s.zeroCount;
+            s.count += readStore(in, s.positive);
+            s.count += readStore(in, s.negative);
+        } catch (BufferUnderflowException e) {
+            throw new IllegalArgumentException("sketch bytes: truncated at " + (in.position() - start) + " of "
+                    + (in.limit() - start), e);
         }
-        QuantileSketch s = new QuantileSketch(in.getDouble());
-        s.zeroCount = Varints.read(in);
-        s.count = s.zeroCount;
-        s.count += readStore(in, s.positive);
-        s.count += readStore(in, s.negative);
+        if (in.hasRemaining()) {
+            throw new IllegalArgumentException("sketch bytes: " + in.remaining() + " trailing bytes; expected exactly "
+                    + (in.position() - start));
+        }
         return s;
     }
 

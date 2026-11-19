@@ -42,6 +42,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -110,10 +111,14 @@ class StatsProcessorTest {
     }
 
     private static StatsProcessor.RunResult runCapturingStderr(StatsProcessor p, ByteArrayOutputStream err) {
+        return runCapturingStderr(p, err, Duration.ofSeconds(30));
+    }
+
+    private static StatsProcessor.RunResult runCapturingStderr(StatsProcessor p, ByteArrayOutputStream err, Duration timeout) {
         PrintStream stderr = System.err;
         System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
         try {
-            return p.runUntilCaughtUp(Duration.ofSeconds(30), true);
+            return p.runUntilCaughtUp(timeout, true);
         } finally {
             System.setErr(stderr);
         }
@@ -392,6 +397,93 @@ class StatsProcessorTest {
         assertEquals(tp + ": retention deleted 6 records before they were read (position 0, log start 6); reading on from the"
                 + " log start" + System.lineSeparator(), err.toString(StandardCharsets.UTF_8));
         assertEquals(Map.of(tp, 6L), p.positions(), "the next run reads on from offset 6");
+    }
+
+    @Test
+    void aOnceRunEndsWhenRetentionDeletesEverythingUpToItsEndOffsetAndNothingIsLeft() {
+        TopicLayout layout = new TopicLayout("t" + UUID.randomUUID().toString().substring(0, 8));
+        MockConsumer<byte[], byte[]> c = new MockConsumer<>(OffsetResetStrategy.EARLIEST);
+        Node node = new Node(0, "localhost", 9092);
+        c.updatePartitions(layout.episodes(), List.of(new PartitionInfo(layout.episodes(), 0, node, new Node[]{node}, new Node[]{node})));
+        TopicPartition tp = new TopicPartition(layout.episodes(), 0);
+        c.updateBeginningOffsets(Map.of(tp, 0L));
+        c.updateEndOffsets(Map.of(tp, 3L));
+        c.schedulePollTask(() -> c.updateBeginningOffsets(Map.of(tp, 3L)));
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        StatsProcessor p = new StatsProcessor(c, new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()),
+                layout, new StatsEngine(StatsEngine.Config.defaults()), null, false);
+
+        StatsProcessor.RunResult r = assertTimeoutPreemptively(Duration.ofSeconds(20),
+                () -> runCapturingStderr(p, err, Duration.ofSeconds(5)));
+
+        assertEquals(0, r.records());
+        assertEquals(3, r.lostToRetention(), "offsets 0 to 2 were deleted before they were read");
+        assertEquals(tp + ": retention deleted 3 records before they were read (position 0, log start 3); reading on from the"
+                + " log start" + System.lineSeparator(), err.toString(StandardCharsets.UTF_8));
+        assertEquals(Map.of(tp, 3L), p.positions(), "the next run reads on from offset 3");
+    }
+
+    @Test
+    void aOnceRunEndsWhenRetentionEmptiesOnePartitionWhileAnotherKeepsReceivingRecords() {
+        TopicLayout layout = new TopicLayout("t" + UUID.randomUUID().toString().substring(0, 8));
+        MockConsumer<byte[], byte[]> c = new MockConsumer<>(OffsetResetStrategy.EARLIEST);
+        Node node = new Node(0, "localhost", 9092);
+        String topic = layout.episodes();
+        c.updatePartitions(topic, List.of(new PartitionInfo(topic, 0, node, new Node[]{node}, new Node[]{node}),
+                new PartitionInfo(topic, 1, node, new Node[]{node}, new Node[]{node})));
+        TopicPartition p0 = new TopicPartition(topic, 0);
+        TopicPartition p1 = new TopicPartition(topic, 1);
+        c.updateBeginningOffsets(Map.of(p0, 0L, p1, 0L));
+        c.updateEndOffsets(Map.of(p0, 0L, p1, 3L));
+        c.schedulePollTask(new Runnable() {
+            private long next;
+
+            @Override
+            public void run() {
+                c.updateBeginningOffsets(Map.of(p0, 0L, p1, 3L));
+                c.addRecord(new ConsumerRecord<>(topic, 0, next++, new byte[0], new byte[0]));
+                c.schedulePollTask(this);
+            }
+        });
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        StatsProcessor p = new StatsProcessor(c, new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()),
+                layout, new StatsEngine(StatsEngine.Config.defaults()), null, false);
+
+        StatsProcessor.RunResult r = assertTimeoutPreemptively(Duration.ofSeconds(20),
+                () -> runCapturingStderr(p, err, Duration.ofSeconds(5)));
+
+        assertEquals(0, r.records(), "the records of p0 lie after its end offset 0");
+        assertEquals(3, r.lostToRetention(), "offsets 0 to 2 of p1 were deleted before they were read");
+        assertEquals(3L, p.positions().get(p1));
+    }
+
+    @Test
+    void theLogStartIsAskedForWithinTheDeadlineOfTheRun() {
+        TopicLayout layout = new TopicLayout("t" + UUID.randomUUID().toString().substring(0, 8));
+        List<Duration> asked = new ArrayList<>();
+        MockConsumer<byte[], byte[]> c = new MockConsumer<>(OffsetResetStrategy.EARLIEST) {
+            @Override
+            public synchronized Map<TopicPartition, Long> beginningOffsets(Collection<TopicPartition> partitions,
+                                                                 Duration timeout) {
+                asked.add(timeout);
+                return super.beginningOffsets(partitions, timeout);
+            }
+        };
+        Node node = new Node(0, "localhost", 9092);
+        c.updatePartitions(layout.episodes(), List.of(new PartitionInfo(layout.episodes(), 0, node, new Node[]{node}, new Node[]{node})));
+        TopicPartition tp = new TopicPartition(layout.episodes(), 0);
+        c.updateBeginningOffsets(Map.of(tp, 0L));
+        c.updateEndOffsets(Map.of(tp, 3L));
+        c.schedulePollTask(() -> c.updateBeginningOffsets(Map.of(tp, 3L)));
+        StatsProcessor p = new StatsProcessor(c, new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()),
+                layout, new StatsEngine(StatsEngine.Config.defaults()), null, false);
+
+        assertTimeoutPreemptively(Duration.ofSeconds(20),
+                () -> runCapturingStderr(p, new ByteArrayOutputStream(), Duration.ofSeconds(5)));
+
+        assertEquals(2, asked.size(), "once at the start, once after the empty poll: " + asked);
+        assertTrue(asked.get(1).compareTo(Duration.ofSeconds(5)) < 0,
+                "the check inside the run gets the time left, not the whole run timeout: " + asked.get(1));
     }
 
     @Test

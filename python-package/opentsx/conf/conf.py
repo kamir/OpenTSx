@@ -14,7 +14,16 @@ from typing import Iterable, Mapping, NamedTuple
 MASK = "******"
 OUTPUT_COMMANDS = ("config list", "config show")
 EVERY_KEY_COMMANDS = ("config show", "config get")
-CONF_COMMANDS = ("config get", "config list", "config show", "version")
+CONF_COMMANDS = (
+    "config get",
+    "config list",
+    "config show",
+    "metadata",
+    "stats",
+    "stats-flink",
+    "version",
+    "windpark-sim",
+)
 DEFAULTS_FILES = ("opentsx-defaults.conf", "opentsx-defaults.yaml")
 UTF8_ALLOWED = "pass UTF-8 text in a UTF-8 locale such as LANG=C.UTF-8"
 LINE_ALLOWED = "write key value or key = value"
@@ -220,11 +229,13 @@ def _not_set(entry: dict, with_flag: bool = True) -> OpenTsxConfError:
     return _error(key, "not set", f"set it with {ways}")
 
 
-def _secret_on_command_line(subject: str, key: str) -> OpenTsxConfError:
+def _secret_on_command_line(subject: str, entry: dict) -> OpenTsxConfError:
+    key = entry["key"]
+    variables = " or ".join([Registry.envName(key), *entry.get("env", [])])
     return _error(
         subject,
         "secret keys are not accepted on the command line",
-        f"set {Registry.envName(key)} or put {key} in a properties file",
+        f"set {variables} or put {key} in a properties file",
     )
 
 
@@ -459,7 +470,7 @@ def _command_line(registry: Registry, command: str, rest: list[str]) -> _Argumen
             key, raw = pair.split("=", 1)
             entry = registry.entry(key)
             if entry["secret"]:
-                raise _secret_on_command_line(key, key)
+                raise _secret_on_command_line(key, entry)
             if not registry.reads(command, key):
                 raise _error(key, f"not read by {command}", f"run opentsx {command} --help for its keys")
             if key in given:
@@ -495,7 +506,7 @@ def _command_line(registry: Registry, command: str, rest: list[str]) -> _Argumen
         entry = flags[name]
         key = entry["key"]
         if entry["secret"]:
-            raise _secret_on_command_line(token, key)
+            raise _secret_on_command_line(token, entry)
         if entry["type"] == "boolean":
             follows = i + 1 < len(rest) and rest[i + 1].isascii() and rest[i + 1].lower() in ("true", "false")
             raw, step = (rest[i + 1], 2) if follows else ("true", 1)

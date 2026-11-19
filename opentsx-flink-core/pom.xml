@@ -43,6 +43,12 @@
             <version>${project.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.opentsx</groupId>
+            <artifactId>opentsx-conf</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- JSON Parsing -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

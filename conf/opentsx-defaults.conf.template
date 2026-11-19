@@ -8,7 +8,7 @@
 # opentsx config list, config show, config get, opentsx version, code that calls OpenTsxConf.load and
 # every command whose bin/opentsx <command> --help prints a keys: section read this file; code, the
 # command line, the environment and --properties-file win over it. Every other command of bin/opentsx
-# parses its own flags and does not read it.
+# parses its own flags and does not read it. The commands of bin/opentsx that read it: metadata, stats, stats-flink, windpark-sim.
 
 # Root directory of the history archive.
 # Type: path.

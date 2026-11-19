@@ -25,6 +25,7 @@ spec:
         opentsx.org/kafka: "true"
     spec:
       terminationGracePeriodSeconds: 90   # the shutdown hook waits up to 60 s for the final checkpoint
+      enableServiceLinks: false   # opentsx-retrieval would set OPENTSX_RETRIEVAL_PORT=tcp://..., which stats refuses
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001

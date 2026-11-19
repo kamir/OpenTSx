@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -21,6 +22,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TopicLayoutTest {
 
     private final TopicLayout layout = new TopicLayout("wind");
+
+    @Test
+    void aDomainOutsideTheTopicGrammarIsRefusedWithTheAllowedForm() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new TopicLayout("Wind"));
+        assertEquals("domain: \"Wind\" is not allowed; expected lowercase letters, digits, _ and -, starting with a letter "
+                + "or digit, such as wind", e.getMessage());
+    }
 
     @Test
     void anInterruptedProvisioningThrowsAndKeepsTheInterrupt() {

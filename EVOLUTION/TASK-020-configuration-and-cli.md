@@ -405,7 +405,7 @@ The registry marks 6 keys as secret: `opentsx.openmetadata.token`, `opentsx.retr
   error, through `--conf` and through its flag alike; the message never contains the value:
 
   ```text
-  --token: secret keys are not accepted on the command line; set OPENTSX_OPENMETADATA_TOKEN or put opentsx.openmetadata.token in a properties file
+  --token: secret keys are not accepted on the command line; set OPENTSX_OPENMETADATA_TOKEN or OPENMETADATA_JWT or put opentsx.openmetadata.token in a properties file
   ```
 
 - `toDebugString`, `Loaded.startLine`, `opentsx config show`, `opentsx config get`, the help, every error message and every log line show
@@ -499,7 +499,6 @@ Help (`opentsx stats --help`), generated from the registry; keys sorted; a secre
 ```text
 usage: opentsx stats [options]
 Run the streaming statistics processor on KafScale.
-In the Java runtime, stats parses its own flags and does not read --conf, --properties-file, OPENTSX_CONF_DIR or the canonical OPENTSX_ variables.
 
 keys:
   opentsx.domain  string = wind  --domain  OPENTSX_DOMAIN
@@ -606,7 +605,7 @@ shown between double quotes as it was given after trimming; a secret value as `"
 | unknown key | `<key>: unknown key; did you mean <near>?` or `...; run opentsx config list for the known keys` |
 | key outside `opentsx.` | `<key>: not an OpenTSx key; did you mean <near>?` or `...; expected a key that starts with opentsx.` |
 | key not read by the command | `<key>: not read by <command>; run opentsx <command> --help for its keys` |
-| secret on the command line | `<subject>: secret keys are not accepted on the command line; set <OPENTSX_NAME> or put <key> in a properties file` |
+| secret on the command line | `<subject>: secret keys are not accepted on the command line; set <variables> or put <key> in a properties file`, `<variables>` the canonical and the legacy names of the key joined with ` or ` |
 | set twice on the command line | `<subject>: set twice on the command line (also by <first>); set each key once` |
 | unknown option | `<option>: unknown option of <command>; did you mean --<near>?` or `...; run opentsx <command> --help for the options` |
 | missing value | `<option>: missing value; expected <option> <type>` (`<a\|b>` for an enum, `key=value` for `--conf`) |
@@ -744,9 +743,9 @@ The order matters: the foundation first, then one batch per module, then errors 
 - [x] **Foundation, Python**: `opentsx.conf` with the same API, the copy of the registry as package data, the extra
       `opentsx[yaml]`, the console script `opentsx`; tests: the same as Java. CI installs the extra for one Python
       version and runs the YAML vectors; the others check the message that names the extra.
-- [ ] **Migration `opentsx-stats`** and `stats-flink` (`opentsx-flink-core`): `StatsProcessorApp`, `StatsJob`.
-- [ ] **Migration `opentsx-windpark`**: `WindparkSim`, with the explicit sink key (mode rule).
-- [ ] **Migration `opentsx-openmetadata`**: `WindparkMetadata`; `--token` becomes an error (D7), with the profiles mode key.
+- [x] **Migration `opentsx-stats`** and `stats-flink` (`opentsx-flink-core`): `StatsProcessorApp`, `StatsJob`.
+- [x] **Migration `opentsx-windpark`**: `WindparkSim`, with the explicit sink key (mode rule).
+- [x] **Migration `opentsx-openmetadata`**: `WindparkMetadata`; `--token` becomes an error (D7), with the profiles mode key.
 - [ ] **Migration `opentsx-retrieval`**: `RetrievalServer` (source key, `--dag-run-token` becomes an error, `--demo`
       leaves `deploy/k3s/base/retrieval.yaml`), `VectorProcessorApp`.
 - [ ] **Migration `opentsx-twin`**: `H2ChainDemo`, `HouseDemo`, `BoatDemo`, `CouplingStudy`, `AtomSchemas`,

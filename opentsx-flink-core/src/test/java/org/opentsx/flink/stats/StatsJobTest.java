@@ -25,7 +25,15 @@ import org.apache.flink.streaming.util.KeyedOneInputStreamOperatorTestHarness;
 import org.apache.flink.util.SimpleUserCodeClassLoader;
 import org.apache.flink.util.UserCodeClassLoader;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.appender.WriterAppender;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.junit.jupiter.api.Test;
+import org.opentsx.conf.ConfCli;
+import org.opentsx.conf.OpenTsxConfException;
+import org.opentsx.conf.Registry;
 import org.opentsx.model.Episodes;
 import org.opentsx.model.Micros;
 import org.opentsx.model.OpenTsxAvro;
@@ -35,19 +43,28 @@ import org.opentsx.stats.SeriesStatsLog;
 import org.opentsx.stats.StatsEngine;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class StatsJobTest {
 
@@ -301,26 +318,122 @@ class StatsJobTest {
 
     @Test
     void anAlphaOutsideTheSketchRangeIsRefusedAtStart() {
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> StatsJob.parse(new String[]{"--kafscale", "k:9092", "--alpha", "5"}));
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> parse("--kafscale", "k:9092", "--alpha", "5"));
         assertTrue(e.getMessage().startsWith("sketchAlpha: \"5.0\" is not allowed"), e.getMessage());
+        assertEquals(new Exit(2, "", "opentsx: " + e.getMessage() + "\n"), run("--kafscale", "k:9092", "--alpha", "5"));
     }
 
     @Test
     void optionsMirrorTheProcessor() {
-        StatsJob.Options o = StatsJob.parse(new String[]{"--kafscale", "localhost:9092", "--domain", "solar",
-                "--windows", "PT1H", "--once", "true"});
+        StatsJob.Options o = parse("--kafscale", "localhost:9092", "--domain", "solar", "--windows", "PT1H", "--once", "true");
         assertEquals("tsx.solar.episodes.v2", o.layout().episodes());
         assertEquals(List.of(Duration.ofHours(1)), o.spec().windows());
         assertTrue(o.once());
         assertEquals(Duration.ofSeconds(30), o.globalEvery());
-        assertThrows(IllegalArgumentException.class, () -> StatsJob.parse(new String[]{"--domain", "wind"}));
-        assertThrows(IllegalArgumentException.class,
-                () -> StatsJob.parse(new String[]{"--kafscale", "k:9092", "--checkpoint", "stats.ckpt"}));
-        assertThrows(IllegalArgumentException.class,
-                () -> StatsJob.parse(new String[]{"--kafscale", "k:9092", "--windws", "PT1H"}));
-        assertThrows(IllegalArgumentException.class,
-                () -> StatsJob.parse(new String[]{"--kafscale", "k:9092", "--once"}));
+        assertTrue(parse("--kafscale", "k:9092", "--once").once(), "a bare boolean flag means true");
+        assertEquals("opentsx.kafscale.bootstrap: not set; set it with --kafscale, --conf opentsx.kafscale.bootstrap=<value>"
+                + " or OPENTSX_KAFSCALE_BOOTSTRAP", assertThrows(OpenTsxConfException.class, () -> parse("--domain", "wind")).getMessage());
+        assertEquals("--checkpoint: an option of stats, not of stats-flink; the Flink job keeps its positions and state in Flink"
+                        + " checkpoints (--checkpoint-every)",
+                assertThrows(OpenTsxConfException.class, () -> parse("--kafscale", "k:9092", "--checkpoint", "stats.ckpt")).getMessage());
+        assertEquals("--windws: unknown option of stats-flink; did you mean --windows?",
+                assertThrows(OpenTsxConfException.class, () -> parse("--kafscale", "k:9092", "--windws", "PT1H")).getMessage());
+        assertEquals("--once: set twice on the command line (also by --once); set each key once",
+                assertThrows(OpenTsxConfException.class, () -> parse("--kafscale", "k:9092", "--once", "--once")).getMessage());
+        assertEquals("opentsx.stats.checkpointInterval: \"0s\" is not allowed; expected a positive duration such as PT30S",
+                assertThrows(OpenTsxConfException.class, () -> parse("--kafscale", "k:9092", "--checkpoint-every", "0s")).getMessage());
+    }
+
+    @Test
+    void aMalformedValuePrintsOneLineAndExitsWith2() throws Exception {
+        assertEquals(new Exit(2, "", "opentsx: --windows: item \"PT10\" is not a duration; expected ISO-8601 such as PT10M or a"
+                + " whole number with the unit ms, s, m, min, h or d such as 10m, at most 999999999 days\n"),
+                main("--kafscale", "k:9092", "--windows", "PT10"));
+    }
+
+    @Test
+    void versionPrintsTheVersionOnTheGivenStdoutAndReturnsZero() {
+        assertEquals(new Exit(0, ConfCli.versionLine(), ""), run("--version"));
+    }
+
+    @Test
+    void helpPrintsTheKeysOfStatsFlinkOnStdout() throws Exception {
+        Exit help = main("--help");
+        assertEquals(new Exit(0, Registry.shipped().help("stats-flink"), ""), help);
+        assertTrue(help.out().contains("\n  opentsx.stats.checkpointInterval  duration = PT30S  --checkpoint-every"
+                + "  OPENTSX_STATS_CHECKPOINT_INTERVAL\n"), help.out());
+    }
+
+    @Test
+    void theStartLogsOneLineWithTheKeysOfStatsFlink() {
+        Logger logger = (Logger) LogManager.getLogger(StatsJob.class);
+        StringWriter logged = new StringWriter();
+        WriterAppender appender = WriterAppender.newBuilder().setName("start-line").setTarget(logged)
+                .setLayout(PatternLayout.newBuilder().withPattern("%p %c - %m%n").build()).build();
+        appender.start();
+        Level level = logger.getLevel();
+        logger.addAppender(appender);
+        logger.setLevel(Level.INFO);
+        try {
+            StatsJob.start(StatsJob.load(List.of("--kafscale", "k:9092", "--alpha", "0.02"), Map.of()));
+        } finally {
+            logger.removeAppender(appender);
+            logger.setLevel(level);
+            appender.stop();
+        }
+        List<String> lines = logged.toString().lines().toList();
+        assertEquals(1, lines.size(), logged.toString());
+        String prefix = "INFO " + StatsJob.class.getName() + " - ";
+        assertTrue(lines.get(0).startsWith(prefix), lines.get(0));
+        String line = lines.get(0).substring(prefix.length());
+        assertTrue(line.startsWith("starting stats-flink: opentsx.domain=wind (default), opentsx.kafscale.bootstrap=k:9092"
+                + " (commandLine), "), line);
+        assertTrue(line.contains(", opentsx.stats.checkpointInterval=PT30S (default), "), line);
+        assertTrue(line.contains(", opentsx.stats.sketchAlpha=0.02 (commandLine), "), line);
+        assertTrue(line.endsWith(", opentsx.stats.windows=PT10M,PT1H (default)"), line);
+        assertFalse(line.contains("opentsx.log.level"), "stats-flink logs through log4j2: " + line);
+    }
+
+    private record Exit(int code, String out, String err) {
+    }
+
+    private static StatsJob.Options parse(String... args) {
+        return StatsJob.options(StatsJob.load(List.of(args), Map.of()).conf());
+    }
+
+    private static Exit run(String... args) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        int code = StatsJob.run(List.of(args), Map.of(), new PrintStream(out, true, StandardCharsets.UTF_8),
+                new PrintStream(err, true, StandardCharsets.UTF_8));
+        return new Exit(code, out.toString(StandardCharsets.UTF_8), err.toString(StandardCharsets.UTF_8));
+    }
+
+    /** Runs the main class in a new JVM with an empty environment. */
+    private static Exit main(String... args) throws IOException, InterruptedException {
+        List<String> command = new ArrayList<>(List.of(Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "-cp", System.getProperty("surefire.test.class.path"), StatsJob.class.getName()));
+        command.addAll(List.of(args));
+        Path dir = Files.createTempDirectory("statsjob");
+        try {
+            File out = dir.resolve("out").toFile();
+            File err = dir.resolve("err").toFile();
+            ProcessBuilder pb = new ProcessBuilder(command).redirectOutput(out).redirectError(err);
+            pb.environment().clear();
+            Process p = pb.start();
+            if (!p.waitFor(60, TimeUnit.SECONDS)) {
+                p.destroyForcibly().waitFor();
+                fail("still running after 60 s: " + String.join(" ", args) + "\n" + Files.readString(err.toPath()));
+            }
+            return new Exit(p.exitValue(), Files.readString(out.toPath()), Files.readString(err.toPath()));
+        } finally {
+            try (var files = Files.list(dir)) {
+                for (Path f : files.toList()) {
+                    Files.delete(f);
+                }
+            }
+            Files.delete(dir);
+        }
     }
 
     private static KeyedOneInputStreamOperatorTestHarness<String, StatsInput, StatsRecord> harness() throws Exception {

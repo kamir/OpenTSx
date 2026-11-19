@@ -29,6 +29,34 @@ bin/opentsx stats --kafscale localhost:9092 --domain wind --checkpoint stats.ckp
     [--windows PT10M,PT1H] [--lateness PT0S] [--alpha 0.01] [--observations true] [--once true]
 ```
 
+Every option is a key of the configuration ([chapter 18](18-configuration.md)). `bin/opentsx stats --help` lists the
+keys with their defaults, flags and variables. Only `--kafscale` is required; `--domain` defaults to `wind`, and
+without `--checkpoint` the processor reads the topics from the log start on every start. `--once` and
+`--observations` take `true` or `false`; a bare flag means `true`.
+
+* At start the processor logs one INFO line with every value and its source:
+  `starting stats: opentsx.domain=wind (default), opentsx.kafscale.bootstrap=localhost:9092 (commandLine), ...`.
+* Exit codes: 0 success, 1 runtime failure, 2 usage or configuration error. An error prints one line
+  `opentsx: <message>` on stderr; a runtime failure adds its causes, `; caused by <cause>`.
+* An unknown option, an option without its value or a malformed value ends the command before it connects:
+
+  ```text
+  opentsx: --window: unknown option of stats; did you mean --windows?
+  opentsx: --windows: missing value; expected --windows <list>
+  opentsx: --windows: item "PT10" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m, at most 999999999 days
+  opentsx: yes: unexpected argument; expected opentsx stats
+  ```
+
+* The processor reads the `OPENTSX_` variable of every key of the registry, also of keys it does not use, and a
+  malformed value exits with 2. Kubernetes sets `OPENTSX_RETRIEVAL_PORT=tcp://<ip>:8080` in every pod of a namespace
+  with the Service `opentsx-retrieval`, and the processor refuses it:
+
+  ```text
+  opentsx: OPENTSX_RETRIEVAL_PORT: "tcp://10.43.0.10:8080" is not an int; expected a whole number from -2147483648 to 2147483647
+  ```
+
+  Set `enableServiceLinks: false` in the pod spec, as
+  [`deploy/k3s/base/stats.yaml`](../../deploy/k3s/base/stats.yaml) does.
 * Input positions and the full engine state are written to the checkpoint file after the outputs are acknowledged.
   After a crash the processor resumes from the checkpoint and is at-least-once.
 * `--once true` processes the backlog, closes all windows, prints the `RunResult` with the counts `records`,
@@ -53,24 +81,27 @@ bin/opentsx stats --kafscale localhost:9092 --domain wind --checkpoint stats.ckp
   ```
 
 * When the engine fails on a record, the processor stops without writing the checkpoint, so a restart reads that
-  record again. The message names the record:
-  `<topic>-<partition> offset <offset>: the statistics engine failed on this record; the checkpoint stays before it`.
+  record again. The message names the record and its cause, and the exit code is 1:
+  `opentsx: <topic>-<partition> offset <offset>: the statistics engine failed on this record; the checkpoint stays before it; caused by <cause>`.
 * When retention deleted records before they were read, the processor reads on from the log start, counts the deleted
   records in `lostToRetention` and prints one line on stderr. This happens when a run starts with a checkpoint
-  position below the log start, and when a poll returns an offset above the position of its partition:
+  position below the log start, when a poll returns an offset above the position of its partition, and in a `--once`
+  run when a poll brings no record below the end offsets seen at the start and the log start of a partition lies above
+  its position:
 
   ```text
   <topic>-<partition>: retention deleted <n> records before they were read (position <saved>, log start <start>); reading on from the log start
   ```
 
   Without a position in the checkpoint, a log start above 0 is not counted.
-* A checkpoint file that cannot be read stops the processor with
-  `java.io.UncheckedIOException: cannot read checkpoint <file>`. The cause follows: `java.io.EOFException` for an
-  empty or cut-off file, `checkpoint belongs to domain <d>, not <domain>` for the file of another domain. Pass the
-  checkpoint of the domain, or move a damaged file away: without a file the processor reads the topics from the log
-  start again.
+* A checkpoint file that cannot be read stops the processor with exit code 1 and
+  `opentsx: cannot read checkpoint <file>; caused by <cause>`. The cause is `java.io.EOFException` for an empty or
+  cut-off file and `java.io.IOException: checkpoint belongs to domain <d>, not <domain>` for the file of another
+  domain. Pass the checkpoint of the domain, or move a damaged file away: without a file the processor reads the
+  topics from the log start again.
 * When the checkpoint cannot be written, for example because its directory does not exist, the processor stops with
-  `java.io.UncheckedIOException: cannot write checkpoint <file>`. The last checkpoint written stays as it was.
+  exit code 1 and `opentsx: cannot write checkpoint <file>; caused by <cause>`. The last checkpoint written stays as it
+  was.
 
 The same statistics run as a Flink job, `StatsJob` in `opentsx-flink-core`. It reads the same topics and writes the
 same records:
@@ -81,6 +112,10 @@ bin/opentsx stats-flink --kafscale localhost:9092 --domain wind \
     [--global-every PT30S] [--checkpoint-every PT30S] [--once true]
 ```
 
+* `bin/opentsx stats-flink --help` lists its keys. They are the keys of the processor without
+  `opentsx.stats.checkpoint` (`--checkpoint`) and `opentsx.log.level`, plus `opentsx.stats.globalInterval`
+  (`--global-every`) and `opentsx.stats.checkpointInterval` (`--checkpoint-every`). It logs the same start line,
+  `starting stats-flink: ...`, and has the same exit codes.
 * `bin/opentsx stats-flink` runs the job in a local mini cluster. On a Flink cluster:
   `flink run -c org.opentsx.flink.stats.StatsJob opentsx-flink-core/target/opentsx-flink-core-<version>.jar ...`.
 * One `StatsEngine` per series lives in Flink keyed state. Input positions are in Flink checkpoints, not in a file.
@@ -97,27 +132,28 @@ bin/opentsx stats-flink --kafscale localhost:9092 --domain wind \
   ```
 
   When the engine fails on an input, the task fails and restarts from the last checkpoint.
-* The job rejects `--checkpoint`. It prints this message and the usage line and exits with code 2:
+* The job rejects `--checkpoint` with exit code 2:
 
   ```text
-  --checkpoint is an option of StatsProcessorApp; the Flink job keeps its positions and state in Flink checkpoints (--checkpoint-every)
+  opentsx: --checkpoint: an option of stats, not of stats-flink; the Flink job keeps its positions and state in Flink checkpoints (--checkpoint-every)
   ```
 
-  An option the job does not know ends the same way, with `unknown option --<name>`.
+  An option the job does not know ends the same way, for example
+  `opentsx: --windws: unknown option of stats-flink; did you mean --windows?`. A `--checkpoint-every` of zero ends with
+  `opentsx: opentsx.stats.checkpointInterval: "0s" is not allowed; expected a positive duration such as PT30S`.
 * GLOBAL is emitted every `--global-every` (`PT0S`: only at the end of a bounded run). `--once true` reads up to the
   end offsets seen at start, closes all windows and ends.
 * Stop a running job without `--drain`. Draining sends the final watermark, which closes all open windows.
 * Use the heap state backend: with RocksDB the engine state is written on every record.
 
-Both commands refuse a setting the engine cannot use before they connect. `bin/opentsx stats` ends with the message
-and a stack trace and exit code 1. `bin/opentsx stats-flink` prints the message and the usage line and exits with
-code 2.
+Both commands refuse a setting the engine cannot use before they connect. They print `opentsx: <message>` and exit
+with code 2.
 
 | Option | Allowed | Message for a value that is not allowed |
 |--------|---------|-----------------------------------------|
 | `--alpha` | above 0 and below 1; 0 or less keeps no sketch | `sketchAlpha: "5.0" is not allowed; expected a number above 0 and below 1, or 0 or less for no sketch` |
-| `--lateness` | zero or positive, in whole microseconds | `allowedLateness: "PT-5M" is not allowed; expected zero or a positive whole number of microseconds such as PT0S or PT5M` |
-| `--windows` | positive, in whole microseconds, each length once (`PT10M` and `PT600S` are the same length) | `windows: item "PT10M" is given twice; give each window length once` |
+| `--lateness` | a duration of zero or more | `--lateness: "PT-5M" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m, at most 999999999 days` |
+| `--windows` | positive durations, each length once (`PT10M` and `PT600S` are the same length) | `windows: item "PT10M" is given twice; give each window length once`, `windows: item "PT0S" is not allowed; expected a positive whole number of microseconds such as PT10M` |
 
 In code (any runtime):
 

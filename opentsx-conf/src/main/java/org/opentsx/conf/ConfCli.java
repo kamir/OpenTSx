@@ -132,7 +132,7 @@ public final class ConfCli {
         return sb.toString();
     }
 
-    static String versionLine() {
+    public static String versionLine() {
         return "opentsx " + version() + " (java)\n";
     }
 

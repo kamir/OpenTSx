@@ -2716,7 +2716,7 @@
     "opentsx.test.token=abc"
    ],
    "expect": {
-    "error": "opentsx.test.token: secret keys are not accepted on the command line; set OPENTSX_TEST_TOKEN or put opentsx.test.token in a properties file",
+    "error": "opentsx.test.token: secret keys are not accepted on the command line; set OPENTSX_TEST_TOKEN or TEST_TOKEN or put opentsx.test.token in a properties file",
     "exit": 2
    }
   },
@@ -2730,7 +2730,7 @@
     "abc"
    ],
    "expect": {
-    "error": "--token: secret keys are not accepted on the command line; set OPENTSX_TEST_TOKEN or put opentsx.test.token in a properties file",
+    "error": "--token: secret keys are not accepted on the command line; set OPENTSX_TEST_TOKEN or TEST_TOKEN or put opentsx.test.token in a properties file",
     "exit": 2
    }
   },

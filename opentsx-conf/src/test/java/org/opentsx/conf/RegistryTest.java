@@ -143,7 +143,6 @@ class RegistryTest {
         assertEquals("""
                 usage: opentsx stats [options]
                 Run the streaming statistics processor on KafScale.
-                In the Java runtime, stats parses its own flags and does not read --conf, --properties-file, OPENTSX_CONF_DIR or the canonical OPENTSX_ variables.
 
                 keys:
                   opentsx.domain  string = wind  --domain  OPENTSX_DOMAIN
@@ -177,7 +176,7 @@ class RegistryTest {
     void theLogLevelBelongsToTheCommandsThatLogThroughSlf4jSimple() {
         Registry reg = Registry.shipped();
         List<String> expected = reg.commands().keySet().stream()
-                .filter(c -> !Registry.LOADS_CONF.contains(c) && !c.equals("stats-flink")).sorted().toList();
+                .filter(c -> !c.startsWith("config ") && !c.equals("version") && !c.equals("stats-flink")).sorted().toList();
         List<String> actual = reg.keys().stream().filter(k -> k.key().equals("opentsx.log.level"))
                 .findFirst().orElseThrow().commands();
         assertEquals(expected, actual);

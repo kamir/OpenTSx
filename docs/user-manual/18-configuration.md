@@ -28,12 +28,13 @@ Every setting of an OpenTSx command is a key of the registry `opentsx.config.v1`
 environment variables. These read the registry:
 
 * `opentsx config list`, `opentsx config show`, `opentsx config get` and `opentsx version`, in both runtimes.
-* A command of `bin/opentsx` whose `bin/opentsx <command> --help` prints a `keys:` section.
+* `bin/opentsx metadata`, `bin/opentsx stats`, `bin/opentsx stats-flink` and `bin/opentsx windpark-sim`, which load
+  their configuration with `OpenTsxConf.load`. Their `bin/opentsx <command> --help` prints a `keys:` section.
 * `opentsx <command> --help` of the Python console script, for every command of the registry.
 * Your code, through `OpenTsxConf` in Java (module `opentsx-conf`) and in Python (package `opentsx.conf`).
 
 Any other command of [Appendix A](appendix-a-cli.md), one whose `bin/opentsx <command> --help` prints no `keys:`
-section, parses its own flags, for example `bin/opentsx stats`. It does not read `--conf`, `--properties-file`,
+section, parses its own flags, for example `bin/opentsx twin`. It does not read `--conf`, `--properties-file`,
 `$OPENTSX_CONF_DIR` or the canonical `OPENTSX_` variables. The Python console script runs only `config list`,
 `config show`, `config get` and `version`; `opentsx stats --kafscale localhost:9092` exits with 2 and
 `opentsx: stats: runs only in the Java runtime; use bin/opentsx or the opentsx-tools image`.
@@ -145,7 +146,6 @@ opentsx stats --help
 ```text
 usage: opentsx stats [options]
 Run the streaming statistics processor on KafScale.
-In the Java runtime, stats parses its own flags and does not read --conf, --properties-file, OPENTSX_CONF_DIR or the canonical OPENTSX_ variables.
 
 keys:
   opentsx.domain  string = wind  --domain  OPENTSX_DOMAIN
@@ -174,10 +174,9 @@ common options:
   --version                   print the version and exit
 ```
 
-The third line says what `bin/opentsx stats` reads: the help lists the keys of the command from the registry, but the
-Java command parses its own flags. In the Java runtime, `bin/opentsx config show --help` and the other `config` subcommands print
-their help the same way, without that line. `--help` wins over every other error: `opentsx config --help` prints the
-list of commands.
+`bin/opentsx stats` reads these keys from `--conf`, `--properties-file`, `$OPENTSX_CONF_DIR` and the canonical
+`OPENTSX_` variables. The help of a command that parses its own flags, for example `opentsx twin --help`, has a third
+line that says so. `--help` wins over every other error: `opentsx config --help` prints the list of commands.
 
 ## Set a value
 
@@ -364,7 +363,7 @@ bin/opentsx config show --conf opentsx.openmetadata.token=abc
 ```
 
 ```text
-opentsx: opentsx.openmetadata.token: secret keys are not accepted on the command line; set OPENTSX_OPENMETADATA_TOKEN or put opentsx.openmetadata.token in a properties file
+opentsx: opentsx.openmetadata.token: secret keys are not accepted on the command line; set OPENTSX_OPENMETADATA_TOKEN or OPENMETADATA_JWT or put opentsx.openmetadata.token in a properties file
 ```
 
 Set it in the environment instead. The legacy name works too. `read -rs` reads the token without showing it, and the
@@ -587,7 +586,7 @@ runtime failure exits with 1. Both runtimes print the same messages, except the 
 | `--domain: unknown option of config show; run opentsx config show --help for the options` | a flag the command does not read | use `--conf opentsx.domain=<value>` |
 | `--conf: missing value; expected --conf key=value` | `--conf` at the end of the line | give `<key>=<value>` after it |
 | `--conf: "opentsx.domain" has no "="; expected --conf key=value` | `--conf` without `=` | write `--conf opentsx.domain=solar` |
-| `opentsx.openmetadata.token: secret keys are not accepted on the command line; set OPENTSX_OPENMETADATA_TOKEN or put opentsx.openmetadata.token in a properties file` | a secret on the command line | see [Pass secrets](#pass-secrets) |
+| `opentsx.openmetadata.token: secret keys are not accepted on the command line; set OPENTSX_OPENMETADATA_TOKEN or OPENMETADATA_JWT or put opentsx.openmetadata.token in a properties file` | a secret on the command line | see [Pass secrets](#pass-secrets) |
 | `opentsx.kafscale.bootstrap: not set; set it with --conf opentsx.kafscale.bootstrap=<value> or OPENTSX_KAFSCALE_BOOTSTRAP` | `config get` of a key without value | set the key |
 | `opentsx.domain: value is not valid UTF-8; pass UTF-8 text in a UTF-8 locale such as LANG=C.UTF-8` | Java without a UTF-8 locale and a value with a character outside ASCII, or a byte that is not UTF-8 | run with `LANG=C.UTF-8` |
 | `config/private/latin1.conf: not valid UTF-8; save the file as UTF-8` | a file in another encoding | save it as UTF-8 |

@@ -1,70 +1,136 @@
 package org.opentsx.stats;
 
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.producer.Producer;
+import org.opentsx.conf.ConfCli;
+import org.opentsx.conf.OpenTsxConf;
+import org.opentsx.conf.Registry;
 import org.opentsx.kafka.KafScaleClients;
 import org.opentsx.kafka.TopicLayout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 /**
- * Command line for the statistics processor.
- *
- * <pre>
- * StatsProcessorApp --kafscale localhost:9092 --domain wind --checkpoint stats.ckpt
- *                   [--windows PT10M,PT1H] [--lateness PT0S] [--alpha 0.01] [--observations true]
- *                   [--once true]   (process the backlog, close all windows, exit)
- * </pre>
+ * The command {@code stats}: the statistics processor on KafScale. It reads the keys of {@code stats} in the registry
+ * {@code opentsx.config.v1} through {@link OpenTsxConf#load}; {@code bin/opentsx stats --help} lists them. Exit codes:
+ * 0 success, 1 runtime failure, 2 usage or configuration error.
  */
 public final class StatsProcessorApp {
+
+    static final String COMMAND = "stats";
+    static final String WRITE_FAILED = "stdout: cannot write the output; check that standard output is open and not full";
 
     private StatsProcessorApp() {
     }
 
     public static void main(String[] args) {
-        Map<String, String> a = new HashMap<>();
-        for (int i = 0; i + 1 < args.length; i += 2) {
-            if (!args[i].startsWith("--")) {
-                throw new IllegalArgumentException("expected --option value pairs, got " + args[i]);
+        System.exit(run(List.of(args), System.getenv(), System.out, System.err, KafScaleClients::consumer, KafScaleClients::producer));
+    }
+
+    static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err,
+                   Function<String, Consumer<byte[], byte[]>> consumers, Function<String, Producer<String, byte[]>> producers) {
+        List<String> words = new ArrayList<>(args.size() + 1);
+        words.add(COMMAND);
+        words.addAll(args);
+        OpenTsxConf conf;
+        String bootstrap;
+        TopicLayout layout;
+        StatsEngine engine;
+        Path checkpoint;
+        Logger log;
+        try {
+            OpenTsxConf.Loaded loaded = OpenTsxConf.load(words, env, env.get("OPENTSX_CONF_DIR"));
+            if (loaded.help()) {
+                out.print(Registry.shipped().help(COMMAND));
+                return written(out, err);
             }
-            a.put(args[i].substring(2), args[i + 1]);
-        }
-        if (!a.containsKey("kafscale")) {
-            System.err.println("usage: StatsProcessorApp --kafscale <bootstrap> --domain <d> --checkpoint <file> "
-                    + "[--windows PT10M,PT1H] [--lateness PT0S] [--alpha 0.01] [--observations true] [--once true]");
-            System.exit(2);
-        }
-        StatsEngine.Config config = StatsEngine.Config.defaults()
-                .withWindows(Arrays.stream(a.getOrDefault("windows", "PT10M,PT1H").split(",")).map(Duration::parse).toArray(Duration[]::new))
-                .withAllowedLateness(Duration.parse(a.getOrDefault("lateness", "PT0S")))
-                .withSketchAlpha(Double.parseDouble(a.getOrDefault("alpha", "0.01")));
-        TopicLayout layout = new TopicLayout(a.getOrDefault("domain", "wind"));
-        String bootstrap = a.get("kafscale");
-        try (KafkaConsumer<byte[], byte[]> consumer = KafScaleClients.consumer(bootstrap);
-             KafkaProducer<String, byte[]> producer = KafScaleClients.producer(bootstrap)) {
-            StatsProcessor p = new StatsProcessor(consumer, producer, layout, new StatsEngine(config),
-                    a.containsKey("checkpoint") ? Path.of(a.get("checkpoint")) : null,
-                    Boolean.parseBoolean(a.getOrDefault("observations", "false")));
-            if (Boolean.parseBoolean(a.getOrDefault("once", "false"))) {
-                System.out.println(p.runUntilCaughtUp(Duration.ofHours(1), true));
-            } else {
-                AtomicBoolean stop = new AtomicBoolean();
-                Thread main = Thread.currentThread();
-                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                    stop.set(true);
-                    try {
-                        main.join(60_000);    // let the processor write its final checkpoint
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                }));
-                p.run(Duration.ofSeconds(30), stop::get);
+            if (loaded.version()) {
+                out.print(ConfCli.versionLine());
+                return written(out, err);
             }
+            conf = loaded.conf();
+            bootstrap = conf.get("opentsx.kafscale.bootstrap");
+            layout = new TopicLayout(conf.get("opentsx.domain"));
+            checkpoint = conf.getOption("opentsx.stats.checkpoint").map(Path::of).orElse(null);
+            engine = new StatsEngine(StatsEngine.Config.defaults()
+                    .withWindows(conf.getDurationList("opentsx.stats.windows").toArray(Duration[]::new))
+                    .withAllowedLateness(conf.getDuration("opentsx.stats.allowedLateness"))
+                    .withSketchAlpha(conf.getDouble("opentsx.stats.sketchAlpha")));
+            log = LoggerFactory.getLogger(StatsProcessorApp.class);
+            log.info(loaded.startLine());
+        } catch (IllegalArgumentException e) {
+            // OpenTsxConfException, and a domain, path or engine setting that TopicLayout, Path or StatsEngine refuses
+            err.print("opentsx: " + e.getMessage() + "\n");
+            err.flush();
+            return 2;
+        } catch (RuntimeException e) {
+            err.print("opentsx: " + causes(e) + "\n");
+            err.flush();
+            return 1;
         }
+        CountDownLatch closed = new CountDownLatch(1);
+        try (Consumer<byte[], byte[]> consumer = consumers.apply(bootstrap);
+             Producer<String, byte[]> producer = producers.apply(bootstrap)) {
+            StatsProcessor p = new StatsProcessor(consumer, producer, layout, engine, checkpoint,
+                    conf.getBoolean("opentsx.stats.observations"));
+            if (conf.getBoolean("opentsx.stats.once")) {
+                out.println(p.runUntilCaughtUp(Duration.ofHours(1), true));
+                return written(out, err);
+            }
+            AtomicBoolean stop = new AtomicBoolean();
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                stop.set(true);
+                try {
+                    closed.await(60, TimeUnit.SECONDS);    // let the processor write its final checkpoint
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }));
+            p.run(Duration.ofSeconds(30), stop::get);
+            return 0;
+        } catch (RuntimeException e) {
+            log.debug("stats failed", e);
+            err.print("opentsx: " + causes(e) + "\n");
+            err.flush();
+            return 1;
+        } finally {
+            closed.countDown();
+        }
+    }
+
+    private static int written(PrintStream out, PrintStream err) {
+        out.flush();
+        // PrintStream never throws; without this check a full disk or a closed stdout would exit 0.
+        if (out.checkError()) {
+            err.print("opentsx: " + WRITE_FAILED + "\n");
+            err.flush();
+            return 1;
+        }
+        return 0;
+    }
+
+    /** The message and its causes on one line. */
+    static String causes(Throwable t) {
+        StringBuilder s = new StringBuilder(t.getMessage() == null ? t.toString() : t.getMessage());
+        Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        seen.add(t);
+        for (Throwable c = t.getCause(); c != null && seen.add(c); c = c.getCause()) {
+            s.append("; caused by ").append(c);
+        }
+        return s.toString();
     }
 }

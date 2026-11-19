@@ -124,6 +124,7 @@ public final class StatsProcessor {
                 if (System.nanoTime() > deadline) {
                     throw new IllegalStateException("timed out computing statistics");
                 }
+                long before = records;
                 for (ConsumerRecord<byte[], byte[]> r : patience.poll(consumer, Duration.ofMillis(500))) {
                     TopicPartition tp = new TopicPartition(r.topic(), r.partition());
                     if (r.offset() >= end.get(tp)) {
@@ -136,6 +137,9 @@ public final class StatsProcessor {
                     }
                     handle(r);
                     records++;
+                }
+                if (records == before) {
+                    skipDeleted(tps, end, Duration.ofNanos(Math.max(1, deadline - System.nanoTime())));
                 }
             }
             send(flushAtEnd ? engine.flush() : engine.emitGlobal());
@@ -190,6 +194,20 @@ public final class StatsProcessor {
             consumer.seek(tp, from);
         }
         return tps;
+    }
+
+    /** Retention can delete past a position with no record left to poll; only the log start shows that. */
+    private void skipDeleted(List<TopicPartition> tps, Map<TopicPartition, Long> end, Duration timeout) {
+        List<TopicPartition> behind = tps.stream().filter(tp -> positions.get(tp) < end.get(tp)).toList();
+        Map<TopicPartition, Long> logStart = consumer.beginningOffsets(behind, timeout);
+        for (TopicPartition tp : behind) {
+            long position = positions.get(tp);
+            long start = logStart.get(tp);
+            if (start > position) {
+                lost(tp, position, start);
+                positions.put(tp, start);
+            }
+        }
     }
 
     private void lost(TopicPartition tp, long position, long logStart) {

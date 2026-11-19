@@ -90,8 +90,8 @@ that has a value, secrets as `******`. [Chapter 18](../docs/user-manual/18-confi
 the log level and the line. `toDebugString()` returns every key with a value as `key=value (source)` lines.
 
 A command reads the configuration once its main class calls `load`. `Registry.LOADS_CONF` and `CONF_COMMANDS` in
-`python-package/opentsx/conf/conf.py` list these commands; the help of every other command says that the Java command
-parses its own flags.
+`python-package/opentsx/conf/conf.py` list these commands, and a test of the Python package checks that both lists are
+equal; the help of every other command says that the Java command parses its own flags.
 
 ## Fix a usage error
 
@@ -109,7 +109,7 @@ opentsx: opentsx.domian: unknown key; did you mean opentsx.domain?
 A secret on the command line is an error. Set it in the environment or in a properties file:
 
 ```text
-opentsx: opentsx.openmetadata.token: secret keys are not accepted on the command line; set OPENTSX_OPENMETADATA_TOKEN or put opentsx.openmetadata.token in a properties file
+opentsx: opentsx.openmetadata.token: secret keys are not accepted on the command line; set OPENTSX_OPENMETADATA_TOKEN or OPENMETADATA_JWT or put opentsx.openmetadata.token in a properties file
 ```
 
 ## Regenerate the configuration reference

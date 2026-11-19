@@ -113,11 +113,13 @@ class ConfCliTest {
 
     @Test
     void helpOfACommandOutsideConfigSaysWhatTheJavaCommandReads() {
-        assertTrue(Registry.shipped().help("stats").startsWith("usage: opentsx stats [options]\n"
-                + "Run the streaming statistics processor on KafScale.\n"
-                + "In the Java runtime, stats parses its own flags and does not read --conf, --properties-file, "
+        assertTrue(Registry.shipped().help("twin").startsWith("usage: opentsx twin [options]\n"
+                + "Run twin scenario S1 (H2 chain) in the modes shadow, what-if and forecast.\n"
+                + "In the Java runtime, twin parses its own flags and does not read --conf, --properties-file, "
                 + "OPENTSX_CONF_DIR or the canonical OPENTSX_ variables.\n"));
         assertFalse(Registry.shipped().help("config show").contains("In the Java runtime"));
+        assertFalse(Registry.shipped().help("stats").contains("In the Java runtime"));
+        assertFalse(Registry.shipped().help("stats-flink").contains("In the Java runtime"));
     }
 
     @Test
@@ -142,12 +144,12 @@ class ConfCliTest {
     @Test
     void aSecretOnTheCommandLineIsRejectedWithoutEchoingIt() {
         assertEquals(new Run(2, "", "opentsx: opentsx.openmetadata.token: secret keys are not accepted on the command line; "
-                        + "set OPENTSX_OPENMETADATA_TOKEN or put opentsx.openmetadata.token in a properties file\n"),
+                        + "set OPENTSX_OPENMETADATA_TOKEN or OPENMETADATA_JWT or put opentsx.openmetadata.token in a properties file\n"),
                 run(Map.of(), "config", "show", "-c", TOKEN + "=t0k3n-value"));
         String message = assertThrows(OpenTsxConfException.class,
                 () -> OpenTsxConf.load(List.of("metadata", "--token", "t0k3n-value"), Map.of(), null)).getMessage();
-        assertEquals("--token: secret keys are not accepted on the command line; set OPENTSX_OPENMETADATA_TOKEN or put "
-                + "opentsx.openmetadata.token in a properties file", message);
+        assertEquals("--token: secret keys are not accepted on the command line; set OPENTSX_OPENMETADATA_TOKEN or "
+                + "OPENMETADATA_JWT or put opentsx.openmetadata.token in a properties file", message);
         String malformed = assertThrows(OpenTsxConfException.class,
                 () -> OpenTsxConf.load(List.of("market", "catalog"), Map.of("OPENTSX_DWD_HTTPS_PROXY", "a,\u0001"), null)).getMessage();
         assertEquals("OPENTSX_DWD_HTTPS_PROXY: value contains a control character; remove it", malformed);

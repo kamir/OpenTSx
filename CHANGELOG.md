@@ -204,6 +204,34 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `RetrievalClient.similar()` and `RetrievalClient.segments()` take `series` after `tags`, as `episodes()` and
   `search()` do. `start` and `end` of both methods moved one place to the right; pass them by name. A call in the old
   positional order raises `ValueError` because `series` must be a list.
+- `bin/opentsx stats` and `bin/opentsx stats-flink` load their keys with `OpenTsxConf.load`: flags, `--conf`,
+  `--properties-file`, the `OPENTSX_` variables and `$OPENTSX_CONF_DIR`. An unknown option, an option without its
+  value and a malformed value exit with 2 and one line `opentsx: <message>`, for example `--window: unknown option of
+  stats; did you mean --windows?`. Before, the processor accepted them or printed a stack trace. `--help` prints the
+  keys with their defaults on stdout and exits with 0.
+- `--once` and `--observations` of `stats` and `stats-flink` take only `true` or `false`, and a bare flag means
+  `true`. Before, `--once yes` ran the processor forever and a trailing `--once` was dropped.
+- `bin/opentsx stats` and `bin/opentsx stats-flink` print a runtime failure as one line with its causes and exit with
+  1, for example `opentsx: cannot read checkpoint stats.ckpt; caused by java.io.EOFException`. The stack trace appears
+  only with `opentsx.log.level=debug`. At start both log one INFO line `starting <command>: ...` with every value and
+  its source.
+- `stats-flink --checkpoint` exits with 2 and `--checkpoint: an option of stats, not of stats-flink; the Flink job
+  keeps its positions and state in Flink checkpoints (--checkpoint-every)`. A `--checkpoint-every` of zero exits with
+  2 before the job is built.
+- The k3s Deployment `opentsx-stats` sets `enableServiceLinks: false`. `bin/opentsx stats` reads the `OPENTSX_`
+  variable of every registry key. The variable `OPENTSX_RETRIEVAL_PORT=tcp://...` that Kubernetes sets for the Service
+  `opentsx-retrieval` is not an int and would stop it with exit 2.
+- `bin/opentsx stats` and `stats-flink` are in the list of commands that load the configuration
+  (`Registry.LOADS_CONF`, Python `CONF_COMMANDS`). Their help in both runtimes no longer says that the command parses
+  its own flags. Appendix D and the defaults templates name `metadata`, `stats`, `stats-flink` and `windpark-sim` as
+  the commands that read them. A Python test checks that both lists are equal.
+- `bin/opentsx stats`, `stats-flink`, `metadata` and `windpark-sim` take `--version`, print `opentsx <version> (java)`
+  on stdout and exit with 0.
+- A secret key on the command line names every environment variable of the key in both runtimes, for example `--token:
+  secret keys are not accepted on the command line; set OPENTSX_OPENMETADATA_TOKEN or OPENMETADATA_JWT or put
+  opentsx.openmetadata.token in a properties file`.
+- A domain outside the topic grammar is refused as `domain: "Wind" is not allowed; expected lowercase letters, digits,
+  _ and -, starting with a letter or digit, such as wind`.
 
 ### Removed
 
@@ -523,6 +551,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   "unavailable"}`, and a 504 for one that does not answer in time with `{"error": "the backend did not answer in
   time", "type": "unavailable"}` or `{"error": "the retrieval server did not answer in time", "type": "unavailable"}`,
   instead of its HTML page.
+- A `--once` run of `bin/opentsx stats` now ends when retention deleted every record up to the end offset it saw at
+  the start, also while another partition keeps receiving records. It counts the deleted records in `lostToRetention`
+  and no longer fails with `timed out computing statistics`. The log start check stays within the deadline of the run.
+- `QuantileSketch.fromBytes` refuses trailing bytes and truncated input with an `IllegalArgumentException` (`sketch
+  bytes: <n> trailing bytes; expected exactly <m>`, `sketch bytes: truncated at <k> of <m>`). Before, it accepted
+  trailing bytes and threw `BufferUnderflowException` on truncated input.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

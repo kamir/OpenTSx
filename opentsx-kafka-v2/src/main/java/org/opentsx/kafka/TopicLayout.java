@@ -32,7 +32,8 @@ public final class TopicLayout {
 
     public TopicLayout(String domain) {
         if (!DOMAIN.matcher(domain).matches()) {
-            throw new IllegalArgumentException("domain must match " + DOMAIN + ": " + domain);
+            throw new IllegalArgumentException("domain: \"" + domain + "\" is not allowed; expected lowercase letters, digits, "
+                    + "_ and -, starting with a letter or digit, such as wind");
         }
         this.domain = domain;
     }

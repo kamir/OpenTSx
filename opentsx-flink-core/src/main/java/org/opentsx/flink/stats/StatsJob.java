@@ -12,26 +12,30 @@ import org.apache.flink.connector.kafka.source.KafkaSourceOptions;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.opentsx.conf.ConfCli;
+import org.opentsx.conf.OpenTsxConf;
+import org.opentsx.conf.OpenTsxConfException;
+import org.opentsx.conf.Registry;
 import org.opentsx.kafka.KafScaleClients;
 import org.opentsx.kafka.TopicLayout;
+import org.slf4j.LoggerFactory;
 
+import java.io.PrintStream;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Flink job for the streaming statistics of {@code opentsx-stats}: reads {@code tsx.<domain>.episodes.v2} (and
  * optionally the observations topic), runs a {@code StatsEngine} per series and writes {@code SeriesStats} to
  * {@code tsx.<domain>.series-stats.v2}. The KafScale processor {@code StatsProcessorApp} writes the same records.
  *
- * <pre>
- * StatsJob --kafscale localhost:9092 --domain wind
- *          [--windows PT10M,PT1H] [--lateness PT0S] [--alpha 0.01] [--observations true]
- *          [--global-every PT30S] [--checkpoint-every PT30S]
- *          [--once true]   (process the backlog, close all windows, end)
- * </pre>
+ * <p>The command {@code stats-flink} reads its keys through {@link OpenTsxConf#load}; {@code bin/opentsx stats-flink
+ * --help} lists them. Exit codes: 0 success, 1 runtime failure, 2 usage or configuration error.
  *
  * <p>Built for what KafScale supports: the source commits no offsets (its positions are in Flink checkpoints),
  * the sink writes at least once without idempotence. Readers keep the latest record per
@@ -45,21 +49,60 @@ public final class StatsJob {
                           Duration globalEvery, Duration checkpointEvery) {
     }
 
+    static final String COMMAND = "stats-flink";
+    static final String WRITE_FAILED = "stdout: cannot write the output; check that standard output is open and not full";
+
     private StatsJob() {
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
+        int code = run(List.of(args), System.getenv(), System.out, System.err);
+        // In a Flink application cluster main runs in the JobManager; System.exit(0) would end it with the job.
+        if (code != 0) {
+            System.exit(code);
+        }
+    }
+
+    static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err) {
         Options o;
         try {
-            o = parse(args);
+            OpenTsxConf.Loaded loaded = load(args, env);
+            if (loaded.help() || loaded.version()) {
+                out.print(loaded.help() ? Registry.shipped().help(COMMAND) : ConfCli.versionLine());
+                out.flush();
+                if (out.checkError()) {
+                    err.print("opentsx: " + WRITE_FAILED + "\n");
+                    err.flush();
+                    return 1;
+                }
+                return 0;
+            }
+            o = start(loaded);
         } catch (IllegalArgumentException e) {
-            System.err.println(e.getMessage());
-            System.err.println("usage: StatsJob --kafscale <bootstrap> --domain <d> [--windows PT10M,PT1H] [--lateness PT0S]"
-                    + " [--alpha 0.01] [--observations true] [--global-every PT30S] [--checkpoint-every PT30S] [--once true]");
-            System.exit(2);
-            return;
+            // OpenTsxConfException, and a domain or engine setting that TopicLayout or StatsEngine refuses
+            err.print("opentsx: " + e.getMessage() + "\n");
+            err.flush();
+            return 2;
+        } catch (RuntimeException e) {
+            err.print("opentsx: " + causes(e) + "\n");
+            err.flush();
+            return 1;
         }
-        execute(o);
+        try {
+            execute(o);
+            return 0;
+        } catch (Exception e) {
+            LoggerFactory.getLogger(StatsJob.class).debug("stats-flink failed", e);
+            err.print("opentsx: " + causes(e) + "\n");
+            err.flush();
+            return 1;
+        }
+    }
+
+    static Options start(OpenTsxConf.Loaded loaded) {
+        Options o = options(loaded.conf());
+        LoggerFactory.getLogger(StatsJob.class).info(loaded.startLine());
+        return o;
     }
 
     /** Builds and runs the job in the environment of the caller (a local mini cluster outside a Flink cluster). */
@@ -110,42 +153,46 @@ public final class StatsJob {
                 .build();
     }
 
-    static Options parse(String[] args) {
-        Map<String, String> a = new HashMap<>();
-        for (int i = 0; i < args.length; i += 2) {
-            if (!args[i].startsWith("--") || i + 1 >= args.length) {
-                throw new IllegalArgumentException("expected --option value pairs, got " + args[i]);
+    /** {@code --checkpoint} belongs to {@code stats}; the Flink job refuses it with the reason. */
+    static OpenTsxConf.Loaded load(List<String> args, Map<String, String> env) {
+        List<String> words = new ArrayList<>(args.size() + 1);
+        words.add(COMMAND);
+        words.addAll(args);
+        try {
+            return OpenTsxConf.load(words, env, env.get("OPENTSX_CONF_DIR"));
+        } catch (OpenTsxConfException e) {
+            int dashes = args.indexOf("--");
+            if ((dashes < 0 ? args : args.subList(0, dashes)).contains("--checkpoint")) {
+                OpenTsxConfException checkpoint = new OpenTsxConfException("--checkpoint", "an option of stats, not of stats-flink",
+                        "the Flink job keeps its positions and state in Flink checkpoints (--checkpoint-every)");
+                checkpoint.initCause(e);
+                throw checkpoint;
             }
-            if (a.put(args[i].substring(2), args[i + 1]) != null) {
-                throw new IllegalArgumentException("option given twice: " + args[i]);
-            }
+            throw e;
         }
-        if (a.containsKey("checkpoint")) {
-            throw new IllegalArgumentException("--checkpoint is an option of StatsProcessorApp; the Flink job keeps its"
-                    + " positions and state in Flink checkpoints (--checkpoint-every)");
+    }
+
+    static Options options(OpenTsxConf conf) {
+        Duration checkpointEvery = conf.getDuration("opentsx.stats.checkpointInterval");
+        if (checkpointEvery.isZero()) {
+            throw new OpenTsxConfException("opentsx.stats.checkpointInterval", "\"" + conf.get("opentsx.stats.checkpointInterval")
+                    + "\" is not allowed", "expected a positive duration such as PT30S");
         }
-        List<String> known = List.of("kafscale", "domain", "windows", "lateness", "alpha", "observations", "once",
-                "global-every", "checkpoint-every");
-        for (String k : a.keySet()) {
-            if (!known.contains(k)) {
-                throw new IllegalArgumentException("unknown option --" + k);
-            }
+        EngineSpec spec = new EngineSpec(conf.getDurationList("opentsx.stats.windows"),
+                conf.getDuration("opentsx.stats.allowedLateness"), conf.getDouble("opentsx.stats.sketchAlpha"));
+        return new Options(conf.get("opentsx.kafscale.bootstrap"), new TopicLayout(conf.get("opentsx.domain")), spec,
+                conf.getBoolean("opentsx.stats.observations"), conf.getBoolean("opentsx.stats.once"),
+                conf.getDuration("opentsx.stats.globalInterval"), checkpointEvery);
+    }
+
+    /** The message and its causes on one line. */
+    static String causes(Throwable t) {
+        StringBuilder s = new StringBuilder(t.getMessage() == null ? t.toString() : t.getMessage());
+        Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        seen.add(t);
+        for (Throwable c = t.getCause(); c != null && seen.add(c); c = c.getCause()) {
+            s.append("; caused by ").append(c);
         }
-        String bootstrap = a.get("kafscale");
-        if (bootstrap == null || bootstrap.isBlank()) {
-            throw new IllegalArgumentException("--kafscale <bootstrap> is required");
-        }
-        EngineSpec spec = new EngineSpec(
-                Arrays.stream(a.getOrDefault("windows", "PT10M,PT1H").split(",")).map(Duration::parse).toList(),
-                Duration.parse(a.getOrDefault("lateness", "PT0S")),
-                Double.parseDouble(a.getOrDefault("alpha", "0.01")));
-        Duration globalEvery = Duration.parse(a.getOrDefault("global-every", "PT30S"));
-        Duration checkpointEvery = Duration.parse(a.getOrDefault("checkpoint-every", "PT30S"));
-        if (globalEvery.isNegative() || checkpointEvery.isNegative() || checkpointEvery.isZero()) {
-            throw new IllegalArgumentException("--global-every must not be negative and --checkpoint-every must be positive");
-        }
-        return new Options(bootstrap, new TopicLayout(a.getOrDefault("domain", "wind")), spec,
-                Boolean.parseBoolean(a.getOrDefault("observations", "false")),
-                Boolean.parseBoolean(a.getOrDefault("once", "false")), globalEvery, checkpointEvery);
+        return s.toString();
     }
 }

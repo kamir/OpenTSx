@@ -28,7 +28,8 @@ java -cp "$(bin/opentsx classpath opentsx-conf)" org.opentsx.conf.ConfReference
 The Env column, `--conf`, `--properties-file` and the defaults file reach `opentsx config list`, `config show`,
 `config get`, `opentsx version`, code that calls `OpenTsxConf.load` and every command whose
 `bin/opentsx <command> --help` prints a `keys:` section. Every other command of `bin/opentsx` parses its own flags
-and does not read them; see [chapter 18](18-configuration.md).
+and does not read them; see [chapter 18](18-configuration.md). The commands of `bin/opentsx` that read them:
+`metadata`, `stats`, `stats-flink`, `windpark-sim`.
 
 A key marked **Secret.** comes only from code, the environment or a file. `OpenTsxConf.load` refuses it on the
 command line, so its Alias is none. Every output of `opentsx config` shows its value as `******`. A secret has no

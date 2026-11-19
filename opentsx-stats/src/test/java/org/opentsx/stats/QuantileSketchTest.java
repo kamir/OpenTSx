@@ -63,6 +63,27 @@ class QuantileSketchTest {
     }
 
     @Test
+    void fromBytesRefusesTrailingAndTruncatedBytes() {
+        QuantileSketch s = new QuantileSketch(0.01);
+        for (double v : new double[]{1.0, 2.5, -3.75, 0.0}) {
+            s.add(v);
+        }
+        byte[] bytes = s.toBytes();
+        IllegalArgumentException trailing = assertThrows(IllegalArgumentException.class,
+                () -> QuantileSketch.fromBytes(Arrays.copyOf(bytes, bytes.length + 2)));
+        assertEquals("sketch bytes: 2 trailing bytes; expected exactly " + bytes.length, trailing.getMessage());
+        IllegalArgumentException cut = assertThrows(IllegalArgumentException.class,
+                () -> QuantileSketch.fromBytes(Arrays.copyOf(bytes, bytes.length - 1)));
+        assertEquals("sketch bytes: truncated at " + (bytes.length - 1) + " of " + (bytes.length - 1), cut.getMessage());
+        IllegalArgumentException header = assertThrows(IllegalArgumentException.class,
+                () -> QuantileSketch.fromBytes(Arrays.copyOf(bytes, 5)));
+        assertEquals("sketch bytes: truncated at 1 of 5", header.getMessage());
+        IllegalArgumentException empty = assertThrows(IllegalArgumentException.class, () -> QuantileSketch.fromBytes(new byte[0]));
+        assertEquals("sketch bytes: truncated at 0 of 0", empty.getMessage());
+        assertEquals(s, QuantileSketch.fromBytes(bytes));
+    }
+
+    @Test
     void zerosNaNsAndEmpty() {
         QuantileSketch s = new QuantileSketch();
         assertTrue(Double.isNaN(s.quantile(0.5)));
