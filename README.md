@@ -136,6 +136,18 @@ results from performance claims.
 
 ## Run the Workbench
 
+Start the standalone synthetic thermal demo with Node 24.22.2 and the locked
+frontend dependencies. It needs no account, Python service, Docker or broker:
+
+```bash
+cd opentsx-saas-frontend
+npm ci --no-audit --no-fund
+npm run demo
+```
+
+The [standalone demo guide](docs/devguide/standalone-workbench.md) covers the
+local workflow, fast tests and browser acceptance.
+
 You need Docker Compose and an existing Confluent Platform Docker cluster for
 the local CP profile. The profile uses pinned Linux ARM64 images, a React
 Workbench, the Python numerical service, MLflow and persistent lifecycle state.

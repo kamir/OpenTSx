@@ -43,6 +43,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   restored-state regressions and actual full-windpark Java/Rust parity cover
   the operators. Manual, learning metadata and generated lessons describe the
   qualified scope. Physical ARMv7 hardware acceptance remains open.
+
+- Standalone thermal Workbench entry through `npm run demo`, with deterministic
+  synthetic episodes, local computation and preserved analysis across display
+  modes. Explicit demo links reject competing imports and preserve existing
+  work. A focused local test command and service-free browser acceptance check
+  verify source evidence, exported values and snapshot integrity.
+
 - Isolated signed continuous pass-through in `tsx-runner` 0.1.0: Ed25519 plan
   verification, local site policy, whole-topic authority, explicit cut caps and
   acknowledgement-before-checkpoint recovery. Checkpoint and worker locks

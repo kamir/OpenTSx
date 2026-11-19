@@ -18,11 +18,14 @@
   },
   "scripts": {
     "dev": "vite",
+    "demo": "vite --host 127.0.0.1 --strictPort --open \"/workbench?mode=engineer&demo=thermal\"",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview:test": "vite preview --port 4173",
     "test": "vitest",
+    "test:demo": "vitest run src/workbench/WorkbenchDemo.test.tsx src/workbench/deviceSample.test.ts",
+    "test:demo:browser": "node scripts/demo-smoke.mjs",
     "test:coverage": "vitest run --coverage",
     "format": "prettier --write src/"
   },
