@@ -22,8 +22,8 @@ Where:
 | TASK-017 | [Digital twin of the energy system](TASK-017-digital-twin.md): atoms, wiring plan, layered BSP, three modes, house and boat twins, plant explorer (P9) | in progress | 2026-10-26 |
 | TASK-016 | [Smart Topics](TASK-016-smart-topics.md): derived topics, training outside the stream, processor and DevOps (P7) | in progress | 2026-10-26 |
 | TASK-015 | [Multivariate analysis](TASK-015-multivariate-analysis.md): pair windows, system reconstruction, simulation and optimization (P8) | in progress | 2026-10-26 |
+| TASK-014 | [Engineering flow from scenario to model](TASK-014-engineering-flow.md): system documents, signals and their grades, clean series, demo generators, models, decision cards, the run service and the notebooks for `h2-chain` | in progress | 2026-10-13 |
 | TASK-013 | [Web workbench](TASK-013-web-workbench.md): Swing bucket analyser in the browser, oscilloscope, flow graph, export as `opentsx.dag.v1` | in progress | 2026-10-12 |
-| TASK-012 | [Briefing for the local agent](TASK-012-lokaler-agent.md) (German): repository hygiene, local test installation (k3s, KafScale, images), market history with credentials, private data, Modbus | open | 2026-10-12 |
 | TASK-011 | [Datamodel refresher 2026](TASK-011-datamodel-refresher-2026.md): data model v2, KafScale, stores, wind farm, statistics, OpenMetadata, retrieval, Smart Topics | completed 2026-10-26 ([closing](../docs/datamodel-2026/18-CLOSING-TASK-011.md), section 9); phases 6 to 9 and the backlog continue in TASK-015 to TASK-019 and TASK-010 | 2026-10-09 |
 | TASK-010 | [Open-source readiness](TASK-010.md): LICENSE, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, CHANGELOG, link checker | partly done (CI, README, link check); repository items moved in from TASK-011 | 2025-12 |
 | TASK-005 | [Processing flow descriptor](TASK-005-processing-flow-descriptor.md) (Flink `DynamicTopologyJob`) | concept valid, not continued | 2025-12-21 |
@@ -86,7 +86,7 @@ When creating a new task, use this structure:
 
 - [Main README](../README.md)
 - [User manual](../docs/user-manual/README.md)
-- [Design documents 2026](../docs/datamodel-2026/) (German)
+- [Design documents 2026](../docs/datamodel-2026/) (German; 01, 03, 08, 09, 10, 16, 18 and 19 are English)
 - Archived 2025 material: [onboarding tracks, guides, decisions](../archive/docs/README.md), [archived tasks](archive/)
 
 ## Contributing
@@ -96,63 +96,3 @@ When updating tasks:
 2. Update the status in this README
 3. Add notes with date stamps
 4. Link related tasks
-
-## Metrics
-
-We track:
-- Task completion rate
-- Time to completion
-- Blockers and dependencies
-- Resource allocation
-- Success criteria achievement
-
----
-
-## Recent Achievements (2025-12-21)
-
-### TASK-PYTHON: Python Feature Parity ✅
-
-**Completed**: 2025-12-21
-
-**Major Deliverables:**
-1. **Complete MFDFA Implementation** (396 lines)
-   - Full q-order fluctuation functions
-   - Generalized Hurst exponent h(q)
-   - Mass exponent τ(q)
-   - Singularity spectrum f(α)
-   - 4-panel visualization
-
-2. **Complete Event Synchronization** (362 lines)
-   - Directional synchronization (Q, q_xy, q_yx)
-   - Adaptive τ_max calculation
-   - Lead-lag relationship analysis
-   - Event visualization
-
-3. **Complete RIS Implementation** (389 lines)
-   - Return interval statistics
-   - Risk parameter R = σ/μ
-   - Stretched exponential fitting
-   - Survival function calculation
-   - 4-panel risk visualization
-
-4. **Python Onboarding Path** (comprehensive 8-episode curriculum)
-   - Installation & setup
-   - TimeSeriesObject fundamentals
-   - DFA, MFDFA, Event Sync, RIS tutorials
-   - Java-Python interoperability
-   - Production deployment patterns
-
-5. **Comprehensive Documentation**
-   - Feature Comparison (700 lines)
-   - Interoperability Guide (945 lines)
-   - Implementation Summary
-   - Test suite (all passing ✅)
-
-**Feature Parity Status**: 86% complete (5/7 major features)
-
-**Impact**: Python developers can now perform advanced time series analysis with OpenTSx, achieving near-parity with the Java implementation.
-
----
-
-**Last Updated**: 2025-12-21
-**Maintained By**: OpenTSx Core Team

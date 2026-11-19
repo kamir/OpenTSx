@@ -654,6 +654,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `checked-<signal>.csv`.
 - The Python CI job installs the `viz` extra, so the four notebook tests in `test_notebooks.py` run instead of being
   skipped without matplotlib.
+- `EVOLUTION/TASK-014-engineering-flow.md` is in English and listed in the EVOLUTION index. It and
+  `docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md` no longer name a local tool directory for the role
+  definitions.
+- TASK-019 no longer plans a Plotly or React Router upgrade: the frontend has not depended on Plotly since 2026-11-19,
+  so the `maplibre-gl` audit finding no longer applies, and React Router 7 is already in place.
 
 ### Removed
 
@@ -806,6 +811,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   and `tools/check_tracked_config.py` fails on a tracked file in it.
 - opentsx-lg: the dependencies `log4j-api` and `log4j-core` and `src/main/resources/log4j2.xml`. The tools log through
   SLF4J.
+- The SaaS pages `opentsx-saas-backend/docs/` (release summary, user guide, API documentation, platform guide, flow
+  builder design) and `opentsx-saas-frontend/HOW_TO_RUN.md`. They described a hosted service, routes, plans, settings
+  and an example administrator password that the backend does not have. The backend README points to
+  `/api/v1/openapi.json` and `/docs` for the routes.
+- `docs/DOCUMENTATION-INVENTORY.md`, which listed LICENSE, CONTRIBUTING, CODE_OF_CONDUCT and CHANGELOG as missing, the
+  briefing `EVOLUTION/TASK-012-lokaler-agent.md`, and the metrics and achievements sections of `EVOLUTION/README.md`,
+  whose figures had no source.
+- The `.dockerignore` of the SaaS backend no longer lists the deleted `docs` directory.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -1454,6 +1467,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   closes it, instead of opening a Kafka producer per round that it never closed. An error while the series are created
   stops the run instead of a NullPointerException, and each round prints one line `round done round=<n> series=16
   generateSeconds=<seconds> sendSeconds=<seconds>` on stdout instead of logging its durations at SEVERE.
+- The `docker run` example in the SaaS backend README uses `--network host` and uvicorn on 127.0.0.1, so
+  `POSTGRES_SERVER=localhost` reaches a PostgreSQL on the host. The old example looked for the database inside the
+  container.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

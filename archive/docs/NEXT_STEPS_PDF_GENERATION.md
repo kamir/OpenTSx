@@ -136,7 +136,7 @@ honkit pdf . OpenTSx-Complete-Documentation.pdf
 3. **Documentation**: Updated PDF-GENERATION.md with Honkit instructions
 4. **Organization**: Moved 16 files from root to docs/devguide/guides/
 5. **Unified Onboarding**: Created docs/onboarding/README.md overview
-6. **Committed**: All changes pushed to claude/compare-opentsx-implementations-kmndB
+6. **Committed**: All changes pushed
 
 ## Files Modified in This Session
 

@@ -414,10 +414,20 @@ gunicorn app.main:app \
 `Dockerfile` in this directory builds an image that runs `uvicorn app.main:app` on port 8000 with
 `PYTHONUNBUFFERED=1`, so every log line reaches `docker logs` at once.
 
+The image holds no `.env` (`.dockerignore` leaves it out). `--env-file .env` passes the keys of `.env` as
+environment variables. The run below needs Docker Engine on Linux and a PostgreSQL that listens on the host, such as
+the one `docker-compose up -d postgres` publishes on 127.0.0.1:
+
 ```bash
 docker build -t opentsx-backend .
-docker run -p 8000:8000 --env-file .env opentsx-backend
+docker run --network host --env-file .env opentsx-backend uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
+
+`--network host` puts the container on the network of the host, so `POSTGRES_SERVER=localhost` of `.env` reaches
+that PostgreSQL. Without it, `localhost` is the container itself: the backend logs
+`database not ready db=localhost:5432/opentsx` and stops after 30 attempts. The command replaces the `CMD` of the
+image so that uvicorn listens on 127.0.0.1 only; the `CMD` listens on `0.0.0.0`, which with `--network host` is
+every interface of the host. The backend answers at http://localhost:8000.
 
 ### Docker Compose (Full Stack)
 
@@ -505,8 +515,15 @@ pip install -r requirements.txt
 
 ## Documentation
 
-- **Full SaaS Documentation**: [docs/SAAS-PLATFORM.md](docs/SAAS-PLATFORM.md)
-- **API Reference**: [docs/API-DOCUMENTATION.md](docs/API-DOCUMENTATION.md)
+- **API reference**: the running backend describes every route in `/api/v1/openapi.json`; `/docs` (Swagger UI) and
+  `/redoc` show the same document. With the backend on port 8000:
+
+  ```bash
+  curl http://localhost:8000/api/v1/openapi.json
+  ```
+
+- **Docker Compose**: [DOCKER-SETUP.md](DOCKER-SETUP.md)
+- **Local development without Docker**: [LOCAL-DEVELOPMENT.md](LOCAL-DEVELOPMENT.md)
 
 ## License
 

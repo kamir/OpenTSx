@@ -2,8 +2,8 @@
 
 > **Status: experimental.** `opentsx-saas-backend` (FastAPI, PostgreSQL, JWT) and `opentsx-saas-frontend`
 > (React/Vite) are not part of the Maven build. CI runs their own jobs ("SaaS frontend": types, lint, tests, build;
-> "SaaS backend": pytest). Their own docs are in `opentsx-saas-backend/README.md`, `opentsx-saas-backend/docs/` and
-> `opentsx-saas-frontend/README.md`.
+> "SaaS backend": pytest). Their own docs are in `opentsx-saas-backend/README.md`, `opentsx-saas-backend/DOCKER-SETUP.md`,
+> `opentsx-saas-backend/LOCAL-DEVELOPMENT.md` and `opentsx-saas-frontend/README.md`.
 
 ## 14.1 Use the SaaS stack
 

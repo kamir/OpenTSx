@@ -498,9 +498,12 @@ npm install -D typescript@latest
 
 ## Documentation
 
-- **Full SaaS Documentation**: [../SAAS-PLATFORM.md](../SAAS-PLATFORM.md)
-- **Visual Flow Builder Design**: [../WEB-UI-VISUAL-FLOW-BUILDER.md](../WEB-UI-VISUAL-FLOW-BUILDER.md)
-- **API Reference**: [../docs/API-DOCUMENTATION.md](../docs/API-DOCUMENTATION.md)
+- **Backend**: [../opentsx-saas-backend/README.md](../opentsx-saas-backend/README.md)
+- **API reference**: the running backend serves it at `/api/v1/openapi.json` and `/docs`
+  ([backend README, Documentation](../opentsx-saas-backend/README.md#documentation))
+- **Docker Compose for backend, frontend and PostgreSQL**:
+  [../opentsx-saas-backend/DOCKER-SETUP.md](../opentsx-saas-backend/DOCKER-SETUP.md)
+- **Web workbench and Systems shell**: [chapter 14 of the user manual](../docs/user-manual/14-saas-service-layer.md)
 
 ## Administrator Account
 

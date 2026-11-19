@@ -111,7 +111,7 @@ An agent is as good as its tools. The table is the tool contract and the list of
 
 | Place | For whom | Form | When |
 |---|---|---|---|
-| **at the provider** | the provider's own people, who set up the system for an operator and play through questions beforehand | agent definitions in the repository that use the command line and the interfaces | possible at once, with the tools that are there |
+| **at the provider** | the provider's own people, who set up the system for an operator and play through questions beforehand | role definitions, kept locally by those who use them, that use the command line and the interfaces | possible at once, with the tools that are there |
 | **in the product** | the specialists of the operator | an assistant in the web application next to the system diagram and the decision map; the same roles behind one interface | after section 4, points 1 to 5 |
 
 The first place is the test bench for the second: what the roles at the provider need in tools and rules, the
@@ -160,14 +160,14 @@ Decided by the client on 2026-10-13.
 | No. | Question | Decision | State |
 |---|---|---|---|
 | D70 | What does the demo start with? | **Demo A first:** with what is there | as proposed |
-| D71 | Where are the roles created first? | at the provider, as agent definitions in the repository (`.claude/agents/sim-*.md`) | as proposed |
+| D71 | Where are the roles created first? | at the provider, as role definitions | as proposed |
 | D72 | How many roles? | five: scenario assistant, data checker, model checker, operations strategist, reporter. In the product later one assistant as the face, the checkers behind it | as proposed |
 | D73 | What comes after S1? | **first roll out demo A** and play it through; the next stage is decided after that | **changed** (the proposal was: run service, J1 alongside) |
 | D74 | Where does the language model run, and what may leave the house of the operator? | open; to be settled with the operator before demo B, until then only example data | open |
 
-The five definitions were under `.claude/agents/`; since PR #193 (2026-10-14) the directory for agent tools is no
-longer part of the repository, and the definitions stay locally with those who use them. They work with the command
-line and the interfaces that exist, and they say when a question needs a tool that is missing (section 3.2).
+The five role definitions are not part of the repository; they stay locally with those who use them. They work with
+the command line and the interfaces that exist, and they say when a question needs a tool that is missing
+(section 3.2).
 
 ## 7. First run of demo A
 

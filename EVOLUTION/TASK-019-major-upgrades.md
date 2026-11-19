@@ -11,7 +11,7 @@
 ## Objective
 Carry out the major upgrades deliberately as migrations: Avro 1.12.2+ with `SERIALIZABLE_PACKAGES` and class
 allowlisting, Iceberg 1.11/1.12, JFreeChart 1.5, Confluent 8, JUnit 6, networknt json-schema-validator 3 and the
-frontend (React 19, TypeScript 7, ESLint 10, Tailwind 4, Vite 8, React Router 7, Plotly 4).
+frontend (React 19, TypeScript 7, ESLint 10, Tailwind 4, Vite 8).
 
 ## Major upgrades
 
@@ -22,7 +22,7 @@ Moved from TASK-011 (commit 551815a3), lines 410 to 415.
 - [ ] Iceberg 1.11/1.12: `GenericAppenderFactory` removed → move `IcebergIO` to the new writer API.
 - [ ] JFreeChart 1.5 (legacy charts in `opentsx-core`): `org.jfree.ui` removed → migrate the charts or archive the legacy UI.
 - [ ] Confluent 8 (Kafka 4 clients, check against KafScale), JUnit 6, networknt json-schema-validator 3 (API changes).
-- [ ] Frontend: React 19, TypeScript 7, ESLint 10 (Flat Config), Tailwind 4, Vite 8, React Router 7, Plotly 4: together as one migration (as of 2026-10-12: `npm ci` fails on peer conflicts, `tsc` on outdated options). Open security findings that only go away with the migration (`npm audit`, as of 2026-10-12 after `npm audit fix`: 18): XSS in `maplibre-gl` via Plotly ≤ 4.1 (Plotly 4.1.1+ or Plotly basic bundle without map types), typescript-eslint 8, `postcss-selector-parser`/`micromatch`/`braces` via Tailwind 4, React Router 7.
+- [ ] Frontend: React 19, TypeScript 7, ESLint 10 (Flat Config), Tailwind 4, Vite 8: together as one migration (as of 2026-10-12: `npm ci` fails on peer conflicts, `tsc` on outdated options). Open security findings that only go away with the migration (`npm audit`, as of 2026-10-12 after `npm audit fix`: 18): XSS in `maplibre-gl` via Plotly ≤ 4.1, typescript-eslint 8, `postcss-selector-parser`/`micromatch`/`braces` via Tailwind 4, React Router 7. Since 2026-11-19 the frontend no longer depends on Plotly (`plotly.js` and `react-plotly.js` are removed from `opentsx-saas-frontend/package.json`), so no Plotly upgrade is planned and the `maplibre-gl` finding no longer applies. React Router 7 is in place (`react-router-dom` ^7.18.4 in `opentsx-saas-frontend/package.json`).
 
 ## Errors and quality: Avro
 

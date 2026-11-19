@@ -58,7 +58,7 @@ An explicit, versioned time series data model (v2) with reliable serialization, 
 
 ### Phase 2: Kafka/KafScale persistence and replay (`opentsx-connectors` or rather `opentsx-kafka-v2`)
 - [x] Topic layout `tsx.<domain>.{observations,episodes,series,buckets,series-stats}.v2` + provisioning (`TopicLayout.provision`), client settings for KafScale (`KafScaleClients`).
-- [x] `BucketWriter` (manifest OPEN → episodes → SEALED + checksum), asynchronous, **not** idempotent (KafScale), `max.in.flight=1`, zstd, headers, record timestamp = `tStart`; no SEAL on send errors.
+- [x] `BucketWriter` (manifest OPEN → episodes → SEALED + checksum), asynchronous, **not** idempotent (KafScale), `max.in.flight.requests.per.connection=1`, zstd, headers, record timestamp = `tStart`; no SEAL on send errors.
 - [x] `ReplayService`: by bucket, or by series + time range via the **episode index** (instead of `offsetsForTimes`), manual assignment + seek, event-time order, pacing, dedup, verification against the manifest, bounded memory. `EpisodeIndexer` rebuilds the index from the log, `BucketCatalog` reads manifests. Sink: callback (topic/TSBucket sinks when needed).
 - [x] `LegacyBucketImport`: TSBucket SequenceFile → episodes (→ `BucketWriter`); `EpisodesRecord` v1 → v2 via `LegacyBridge`.
 - [x] Cost measurement: **2.18 B/value** (1 Hz, sensor resolution, regular, zstd), 6.96 B/value at full double precision, 4.07 B/value with time jitter (`opentsx-kafka-v2/README.md`). Records/s against KafScale S3 still open (locally only in-memory S3).
@@ -232,7 +232,7 @@ The backlog moved on 2026-10-26 (D90) to the tasks in this table (line numbers r
 - 2026-10-12: **Twin set as the core of the roadmap**: three modes in both variants (tightly coupled/one process and loosely coupled/Smart Topics, D20); comparison as a research paper (P9.6); wake graph export at low priority.
 - 2026-10-12: **Phase 9 proposed** (digital twin of the energy system, concept `07-DIGITAL-TWIN-BSP.md`: atoms with MVC+P, wiring plan, layered BSP, Smart Topics as embedding, stages A to D); wake ground truth in P8.0 made more precise (simulation reference); points from the project meeting added to the backlog.
 - 2026-10-12: **Phase 8 added** (system reconstruction → simulation → optimization, concept `06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md` from in-depth research with reference to Kämpf 2017); complete backlog of all open items.
-- 2026-10-12: **Docs refresh**: new English user manual (`docs/user-manual/`), inventory (`docs/DOCUMENTATION-INVENTORY.md`), archiving of outdated docs and of modules outside the build (`archive/`), launcher `bin/opentsx`, link check in CI.
+- 2026-10-12: **Docs refresh**: new English user manual (`docs/user-manual/`), an inventory of the refresh (deleted on 2026-11-19), archiving of outdated docs and of modules outside the build (`archive/`), launcher `bin/opentsx`, link check in CI.
 - 2026-10-12: **P5 implemented** (`opentsx-retrieval`): segmentation, pattern engine, retrieval API, REST + Python client, power curve analysis.
 - 2026-10-12: Smart Topics designed (`05-SMART-TOPICS.md`); decisions: Python training first, MLflow, model per series + federated global model (Wayang), implementation as P7 after P6.
 - 2026-10-11: **P4 implemented**: `opentsx-stats` (streaming statistics, quantile sketch, DQ, KafScale processor with checkpoints) and `opentsx-openmetadata` (metadata pool, validated against the OM 2.0.5 schemas); Python `opentsx.stats`.

@@ -1,295 +1,296 @@
-# TASK-014: Engineering-Ablauf vom Szenario zum Modell
+# TASK-014: Engineering flow from scenario to model
 
 ## Task Metadata
 - **Task ID**: TASK-014-engineering-flow
 - **Created**: 2026-10-13
-- **Status**: L1 bis L3 umgesetzt; Plan nach dem Review-Briefing entschieden am 2026-10-13; als Nächstes L4
+- **Status**: L1 to L5, S1, 014.16 and 014.17 implemented; plan decided after the review briefing on 2026-10-13;
+  014.10, 014.11, 014.12, 014.14, 014.15 and 014.18 open
 - **Priority**: High
 - **Epic**: P7e Personal Service Layer / Studio
-- **Delivery-Branch**: `opentsx/2026-task014-notebook-3` (Heft 3, Verproben, 014.18), Worktree
+- **Delivery branch**: `opentsx/2026-task014-notebook-3` (notebook 3, check a file, 014.18), worktree
   `../OpenTSx-worktrees/notebook-3`
-- **Frühere Delivery-Branches** (gemergt): `opentsx/2026-task014-notebooks-2-4` (Hefte 2 und 4, PR #194, als Squash), `opentsx/2026-task014-generator-identity` (D85, Läufe auf den Signalen, PR #192, als Squash), `opentsx/2026-task014-flow-identity` (D84, D78, PR #191), `opentsx/2026-task014-notebook` (N1 und Potenzial aus dem Stationswind, PR #190), `opentsx/2026-task014-dwd-2025` (J1, PR #189), `opentsx/2026-task014-demo-ui` (Demo zeigbar, Lauf-Dienst, PR #188), `opentsx/2026-task014-system-plan` (S1, Demo-Entwurf, Agenten, PR #187), `opentsx/2026-task014-clean-signals` (L3, L4, L5, Neuplanung, PR #186), `opentsx/2026-task014-engineering-flow` (Konzept, Freigabe, L1, PR #182),
+- **Earlier delivery branches** (merged): `opentsx/2026-task014-notebooks-2-4` (notebooks 2 and 4, PR #194, squashed), `opentsx/2026-task014-generator-identity` (D85, runs on the signals, PR #192, squashed), `opentsx/2026-task014-flow-identity` (D84, D78, PR #191), `opentsx/2026-task014-notebook` (N1 and the potential from the station wind, PR #190), `opentsx/2026-task014-dwd-2025` (J1, PR #189), `opentsx/2026-task014-demo-ui` (demo made showable, run service, PR #188), `opentsx/2026-task014-system-plan` (S1, demo draft, PR #187), `opentsx/2026-task014-clean-signals` (L3, L4, L5, replanning, PR #186), `opentsx/2026-task014-engineering-flow` (concept, approval, L1, PR #182),
   `opentsx/2026-task014-shell` (L2, PR #185)
-- **Konzept**: [`docs/datamodel-2026/14-ENGINEERING-FLOW.md`](../docs/datamodel-2026/14-ENGINEERING-FLOW.md)
+- **Concept**: [`docs/datamodel-2026/14-ENGINEERING-FLOW.md`](../docs/datamodel-2026/14-ENGINEERING-FLOW.md)
 
-## Ziel
-Studio (System von oben), Workbench (Reihen von unten) und Flow Composer (Betrieb) werden Orte eines Ablaufs:
-System definieren, Messgrößen erwarten, anbinden oder simulieren, Rohdaten bereinigen, betreiben, modellieren. Am
-Ende steht eine deklarative Darstellung des ganzen Systems (`opentsx.system.v1`) und der Zeitreihen-Prozessoren
-(`opentsx.processor.v1`: Generatoren, Transformatoren, Modelle), verbunden mit Oberfläche und Workbench.
+## Objective
+Studio (the system from above), workbench (series from below) and Flow Composer (operation) become places of one
+flow: define the system, expect measured quantities, connect or simulate, clean raw data, operate, model. At the
+end there is a declarative description of the whole system (`opentsx.system.v1`) and of the time series processors
+(`opentsx.processor.v1`: generators, transformers, models), connected to the user interface and the workbench.
 
-## Vorgehen
-Erst Konzept und Entwurf, dann Review (Engineering, UX), dann Freigabe durch den Auftraggeber, dann Umsetzung in
-den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
+## Approach
+First concept and draft, then review (engineering, UX), then approval by the client, then implementation in the
+delivery stages L1 to L5 of the concept. The approval was given on 2026-10-13.
 
 ## Subtasks
-- [x] 014.1 Konzept und Entwurf (Stand 2026-10-13): Signal als Schlüssel, zwei Schemas, Beispiele für `h2-chain`
-      (System, drei Prozessoren, zwei Flows)
-- [x] 014.2 Review Engineering und UX (Stand 2026-10-13), Befunde eingearbeitet: zweite Fassung des Konzepts
-- [x] 014.2a Methodik-Leitfaden im Benutzerhandbuch (Stand 2026-10-13):
-      [`docs/user-manual/16-engineering-method.md`](../docs/user-manual/16-engineering-method.md), englisch wie das
-      Handbuch. Sieben Schritte, Regeln, Beispiel, Checkliste; je Schritt, was heute geht und was geplant ist.
-      Kapitel 14 dabei auf den Stand gebracht (Flow Composer, Workbench, CI)
-- [x] 014.3 Freigabe der Entscheidungen D40 bis D50 (2026-10-13): neun wie vorgeschlagen; **D43 geändert** auf drei
-      Güten (`raw`, `clean`, `features`); **D50 ergänzt** um einen wahlweisen geführten Modus mit nummerierten
-      Schritten. Folge: D51, ein Topic für Merkmale je Domain (nicht eigens entschieden). Konzept, Schema, Beispiel
-      und Leitfaden sind nachgezogen
-- [x] 014.4 L1 (Stand 2026-10-13)
-      - Systemdokumente liegen unter `systems/` (`h2-chain.system.yaml`, `flows/`, `processors/`), nicht mehr als
-        Beispiele unter `docs/`
-      - `opentsx-retrieval`, Paket `system`: `SystemDoc` lädt das Dokument mit Schaltplan, Katalogen und Inventar
-        und sammelt Fehler (Port fehlt, Einheit weicht ab, Kanal oder Asset unbekannt, Flow schreibt die Güte nicht,
-        Kennung doppelt und weitere); `Systems` berechnet je Signal Quelle, Herkunft, Zustand und nächsten Schritt
-        aus dem TS-Inventar
-      - Routen `GET /v1/systems` und `/v1/systems/<id>/signals` (`opentsx.signal-status.v1`); Schalter `--systems`
-        und `--systems-root`; das Image bringt die Dokumente mit (`deploy/docker/stage.sh`)
-      - Prüfung im Maven-Build: beide JSON-Schemas gegen die Dokumente, 15 gezielte Fehlerfälle, Zustände, Routen
-      - Oberfläche: Seite "Signals" (`/systems`), gruppiert nach Baustein und Asset, mit Filtern und Details;
-        "Prepare" und "Open on scope" öffnen die Workbench mit Kontextzeile und erwartetem Wertebereich auf dem
-        Schirm; Nachfrage, bevor ein ungespeicherter Flow ersetzt wird
-      - Grenzen: Die Zustände "running" und "stale" gibt es noch nicht (nichts läuft); Bind, Simulate, Generate
-        und Start sind sichtbar, aber gesperrt, mit Hinweis auf die Lieferstufe; die Bindung wird von Hand ins
-        Dokument geschrieben; Schreibform der Flows (`opentsx.flow.v1`) ohne Schema
-- [x] 014.5 L2 (Stand 2026-10-13)
-      - Hülle unter `/systems/<id>/<ort>`: Leiste mit den vier Orten und der Workbench als Werkzeug, je Ort eine
-        Zahl; Kopfzeile mit Systemwahl; Statuszeile mit Version und Hash
-      - Geführter Modus (Schalter "Guide", gemerkt je Browser): die sieben Schritte der Methode mit dem Stand des
-        Systems je Schritt, der nächste sinnvolle Schritt hervorgehoben
-      - Ort System: Route `GET /v1/systems/<id>/plan`; je Baustein die Eingänge mit dem, was sie speist. Für
-        `h2-chain` zeigt das einen echten Befund: Von neun Eingängen von außen haben drei kein Signal
+- [x] 014.1 Concept and draft (as of 2026-10-13): the signal as the key, two schemas, examples for `h2-chain`
+      (system, three processors, two flows)
+- [x] 014.2 Review engineering and UX (as of 2026-10-13), findings worked in: second version of the concept
+- [x] 014.2a Method guide in the user manual (as of 2026-10-13):
+      [`docs/user-manual/16-engineering-method.md`](../docs/user-manual/16-engineering-method.md), in English like
+      the manual. Seven steps, rules, example, checklist; per step, what works today and what is planned.
+      Chapter 14 brought up to date along the way (Flow Composer, workbench, CI)
+- [x] 014.3 Approval of the decisions D40 to D50 (2026-10-13): nine as proposed; **D43 changed** to three
+      grades (`raw`, `clean`, `features`); **D50 extended** by an optional guided mode with numbered
+      steps. Consequence: D51, one topic for features per domain (not decided separately). Concept, schema, example
+      and guide are updated to match
+- [x] 014.4 L1 (as of 2026-10-13)
+      - System documents live under `systems/` (`h2-chain.system.yaml`, `flows/`, `processors/`), no longer as
+        examples under `docs/`
+      - `opentsx-retrieval`, package `system`: `SystemDoc` loads the document with wiring plan, catalogs and
+        inventory and collects errors (port missing, unit differs, channel or asset unknown, flow does not write the
+        grade, duplicate id and more); `Systems` computes per signal the source, origin, state and next step from
+        the TS inventory
+      - Routes `GET /v1/systems` and `/v1/systems/<id>/signals` (`opentsx.signal-status.v1`); flags `--systems`
+        and `--systems-root`; the image brings the documents along (`deploy/docker/stage.sh`)
+      - Check in the Maven build: both JSON schemas against the documents, 15 targeted error cases, states, routes
+      - User interface: page "Signals" (`/systems`), grouped by building block and asset, with filters and details;
+        "Prepare" and "Open on scope" open the workbench with a context line and the expected value range on the
+        screen; a question before an unsaved flow is replaced
+      - Limits: the states "running" and "stale" do not exist yet (nothing runs); Bind, Simulate, Generate
+        and Start are visible but locked, with a hint at the delivery stage; the binding is written into the
+        document by hand; write form of the flows (`opentsx.flow.v1`) without a schema
+- [x] 014.5 L2 (as of 2026-10-13)
+      - Shell under `/systems/<id>/<place>`: a rail with the four places and the workbench as a tool, one number per
+        place; header with the choice of system; status line with version and hash
+      - Guided mode (switch "Guide", remembered per browser): the seven steps of the method with the state of the
+        system per step, the next sensible step highlighted
+      - Place System: route `GET /v1/systems/<id>/plan`; per building block the inputs with what feeds them. For
+        `h2-chain` this shows a real finding: of nine inputs from outside, three have no signal
         (`offtake.valve`, `grid.p_self_kw`, `grid.p_grid_meas_kw`)
-      - Ort Flows: der Flow Composer, gefiltert auf das System. Ein Flow, der aus einem Signal heraus gebaut wird,
-        merkt sich System und Signal; Flows ohne System zählen über ihre Domain dazu
-      - Ort Models: Vorschau, welche Signale bereinigt vorliegen und welche fehlen
-      - Beschriftungen: "Workbench" und "Flows" statt "Editor" und "Composer page", "steps" statt "buckets", eine
-        Zustandsspalte im Composer, "Align series to a common clock"
-      - Abweichungen vom Entwurf: Ort System als Tabelle statt eingebettetem Prototyp; "Input bucket" und der
-        Reiter "TS-Model" bleiben (Konzept, Abschnitte 8.4 und 8.5)
-- [x] 014.6 L3 (Stand 2026-10-13)
-      - `TopicLayout`: Topics `clean`, `synthetic`, `features` je Domain
-      - `opentsx-retrieval`, Paket `clean`: `CleanChain` (Plausibilitätsbereich als Lücke oder begrenzt,
-        Einheitenumrechnung, Resampling auf Fenster am Epochen-Raster) und `SeriesStream` (je Rohreihe eine
-        bereinigte Reihe mit den Tags `system` und `signal`, Labels `grade`, `origin`, `flow`, `specHash`;
-        Zustand für den Wiederanlauf)
-      - `opentsx.dag.v2`: Senke für Reihen (`schema: opentsx.episode.v2`, `signal: {system, id, grade}`).
-        `SeriesJob` und `DagPlan` lesen sie; der Prozessor führt Vektor- und Reihen-Senken mit demselben Läufer
-        aus (Checkpoint, Status, eigener Producer je Senke)
-      - Retrieval-Server liest das Topic der bereinigten Reihen mit; `Systems` findet eine bereinigte Reihe an
-        ihren Tags, auch wenn das Systemdokument sie nicht deklariert
-      - Workbench: Kontextzeile mit "Publish as clean signal" (ein Schritt statt drei: prüfen, speichern,
-        starten), Operatoren aus der Erwartung des Signals vorbelegt, Fenster am Epochen-Raster wie im Prozessor;
-        ein gespeicherter Flow bringt sein Signal wieder mit
-      - Gemeinsame Testvektoren `docs/datamodel-2026/testvectors/clean-ops.v1.json` für Java und TypeScript, als
-        Ganzes und als Strom in beliebigen Stücken
-      - **Befund beim Lauf auf master2:** Dem bereinigten Signal fehlte die erste von 36 Episoden. Sehr
-        wahrscheinliche Ursache: Verweigert der Broker eine Partition, wirft der Kafka-Client die Ablehnung aus
-        der Mitte eines Abrufs und verliert dabei die schon geholten Datensätze der anderen Partitionen, deren
-        Lesepositionen bereits weitergerückt sind. Aus dem Quelltext des Clients ist das nicht belegt, nur aus dem
-        Verhalten. Behoben in `Patience`: nach einer Ablehnung zurück auf die Positionen vor dem Abruf; das gilt
-        für Prozessor, Retrieval-Feed und Statistik. Der Nachweis auf master2 steht aus, weil der Broker danach
-        minutenlang Lesen und Schreiben verweigerte
-      - Grenzen: Der Prozessor führt vor einer Reihen-Senke genau drei Operatoren aus; eine Kette, kein
-        Zusammenführen mehrerer Reihen (die Summe über Turbinen läuft also nicht); "Publish" schreibt nichts ins
-        Systemdokument (D42 offen); die Sperre "ein Signal, ein Schreiber" sitzt im Frontend
-- [x] 014.6a Review-Briefing verarbeitet (Stand 2026-10-13): externes Review (Engineering und komplexe Systeme) zum
-      Leitfaden und zum Plan. Ergebnis ist
-      [`docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md`](../docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md): die
-      Entscheidung als zentrale Einheit, das Signal mit Rolle und zwei Wertebereichen, `clean` als Kennzeichnen statt
-      Entfernen, ein Streaming-Vertrag, Modellfreigabe je Zweck, vier Datensätze für den Kreis, ein neuer Plan.
-      Befunde und was aus jedem wurde: unten, Abschnitt "Review-Briefing"
-      - sofort umgesetzt: Korrektur des H2-Beispiels (tatsächliche Erzeugung und verfügbare Leistung sind zwei
-        Signale; Systemdokument Fassung 2 mit zehn Signalen und fünf Flows); `role`, `meaning` und `operating` im
-        Schema, im Server und in den Details eines Signals; Kennung für bereinigte Episoden, damit ein Wiederanlauf
-        nicht doppelt zählt; Schema-Entwürfe `opentsx.decision.v1` und `opentsx.decision-record.v1` mit Beispiel,
-        im Build geprüft; Streaming-Vertrag in 11, Abschnitt 7a, mit "Heute" und "Ziel" je Punkt; Modellfreigabe in
-        05, Abschnitt 5a; Leitfaden (Kapitel 16) auf acht Schritte umgeschrieben
-- [x] 014.7 Entscheidungen D52 bis D63 (2026-10-13): zehn wie vorgeschlagen. **D57 geändert:** `clean` wird in zwei
-      Varianten geschrieben, `marked` und `filtered`, im selben Topic. **D62 geändert:** erst L4 und L5 fertig
-      bauen, dann neu planen und mit E1 bis E3 weitermachen
-- [x] 014.8 L4 (Stand 2026-10-13)
-      - Demo-Generatoren `gen.ou` und `gen.sine` (`opentsx-retrieval`, Paket `generate`): Der Wert eines Zeitpunkts
-        hängt nur von Startwert, Parametern und diesem Zeitpunkt ab; Episoden auf festem Raster mit Kennung, sodass
-        derselbe Zeitraum, noch einmal erzeugt, sich selbst ersetzt. Labels `origin: SYNTHETIC`, `fidelity: demo`
-      - `POST /v1/systems/<id>/generate` im Retrieval-Server (Schreibroute, braucht das Run-Token; schreibt
-        ausschließlich nach `tsx.<domain>.synthetic.v2`); der Feed liest das Topic mit
-      - Arbeitskopie (D42): Tabelle `signal_bindings` im SaaS-Backend, je Konto und System; Routen
-        `GET/PUT/DELETE /api/v1/systems/<id>/bindings` und `POST .../generate` (nur Administratoren, reicht die
-        Arbeitskopie mit). Der Retrieval-Server legt Bindungen aus dem Rumpf über das Dokument
-        (`POST /v1/systems/<id>/signals`) und kennzeichnet sie
-      - Seite Signals: Bind (Vorschläge aus dem TS-Inventar nach Einheit und Wertebereich, Herkunft wählen, Bedeutung
-        bestätigen, D53), Simulate (Generator aus der Erwartung vorbelegt, als Demo benannt, D61), Generate
-        (Zeitraum vorbelegt mit dem Datenzeitraum des Systems); Hinweis auf die Arbeitskopie mit "Copy as YAML"
-      - Reihen, die nach Regel geschrieben werden, tragen jetzt das Tag `grade`
-      - Grenzen: Generatoren laufen einmal über einen Zeitraum, nicht fortlaufend; die Arbeitskopie wird nicht in
-        die Datei geschrieben; die Sperre "Ergebnisse auf Demo-Generatoren taugen nicht für Strategievergleiche"
-        ist als Label da (`fidelity: demo`), geprüft wird sie erst, wenn es Vergleiche gibt (E3); die SQL-Ablage der
-        Arbeitskopie hat keinen eigenen Test (die Routen sind mit einer Ablage im Speicher getestet)
-- [x] 014.9 L5 Models (2026-10-13, mit Grenzen)
-      - Prozessor: Operatoren `model.power-curve` (Leistungskurve als Stützstellen, linear dazwischen),
-        `feature.lag` und `feature.rolling` in der Kette für Reihen; eine Senke darf die bereinigte Reihe eines
-        Signals lesen und in ein anderes Signal schreiben (`signal.metric`, `origin`, `madeOf`), oder Merkmale in
-        `tsx.<domain>.features.v2` (Tag `feature`); gemeinsame Testvektoren für Java und TypeScript (14 Fälle)
-      - Workbench: "Publish as another signal" für einen Kontext mit bereinigter Reihe; die drei Operatoren im
-        Baukasten
-      - Modellfreigabe je Zweck (D59): der Server liest die Entscheidungskarten des Systemdokuments
-        (`decisions:`) und gibt je Analyse `usable`, `restricted` oder `blocked` mit Gründen aus
-        (`GET` und `POST /v1/systems/<id>/decisions`, Schema `opentsx.decision-status.v1`); geprüft werden Stufe,
-        Alter gegen die neuesten Daten des Systems, zugelassene Herkunft, Gültigkeitsbereich und Nachweis
-      - Ort Models: die Karten mit benötigten Signalen, Analysen und Alternativen; Leiste und Guide zählen mit
-      - Ort System: das Systembild als Graph (reactflow) über der Tabelle; Rückführungen gestrichelt
-      - Grenzen: der Vergleich von Alternativen über einen Zeitraum ist nicht gebaut (E3); die Analyse
-        `price-following` ist eine Karte ohne ausführbares Modell dahinter; der Gültigkeitsbereich wird gegen
-        Minimum und Maximum der ganzen Reihe geprüft, nicht je Zeitpunkt; das Alter gegen die neuesten Daten des
-        Systems, nicht gegen die Uhr; die Karte `h2-dispatch` ist ein Beispiel mit erfundenen Nachweisen; eine
-        Karte hat kein Schema im Build, nur ihr Entwurf
-- [ ] 014.10 Neu planen, dann E1 Entscheidungskarte und fachliche Verträge. Neuplanung als Vorschlag in 15,
-      Abschnitt 10.3 (2026-10-13): was L4 und L5 von E1 und E2 schon liefern, sieben Schnitte, drei offene Fragen;
-      die Entscheidung des Auftraggebers steht aus
-      - Entschieden am 2026-10-13 nach einem zweiten Briefing (15, Abschnitt 13; D64 bis D66): der Durchstich
-        bleibt, der Systemplan (S1) und das reale Jahr 2025 als Daten (J1) kommen vor E1; der Optimierer folgt
-        nach E3 als Analyse
-- [x] 014.13 S1 Systemplan `h2-chain` in neuer Fassung (15, Abschnitt 13.4; 2026-10-13, mit Grenzen)
-      - Entschieden: Hochdruckpuffer hinter dem Verdichter als Annahme; Physik einfach und benannt; der bisherige
-        Plan bleibt als Testfall (`opentsx-twin/src/test/resources/twin/h2-chain-1.yaml`)
-      - Zwilling: Bausteine `wind-park` (drei Leistungen, Abregelung je Ursache gezählt), `h2-compressor`,
-        `h2-buffer` (mit Druckregler zur Leitung), `h2-pipeline` (Druck am Anfang und am Ende), `h2-handover`
-        (Regelventil, Mindestlieferdruck, Fehlmenge), `h2-consumer` (Bedarf als Information); Plan mit 12 Bausteinen
-        und 20 Verbindungen; Tests `H2ChainTest` (Ruhezustand, Kausalkette mit analytischer Zeit, Bilanz für Strom
-        und Wasserstoff, Verdichterleistung, Was-wäre-wenn, Fahrweise, Abregelung je Ursache)
-      - Studio: Szenario, Erklärtexte (`h2-chain.guide.yaml`) und Seite neu erzeugt
-      - Systemdokument Fassung 3: 13 Signale, jeder der neun Eingänge von außen hat ein Signal (drei davon offen);
-        `park.p_potential_kw` ersetzt `park.p_avail_kw` als Eingang, dazu `park.dispatch_kw`, `handover.valve`,
-        `grid.p_grid_meas_kw`; Entscheidungskarte Fassung 2 mit den Grenzen an Puffer und Übergabe
-      - Grenzen: ideales Gas ohne Realgasfaktor; Verdichter einstufig ohne Zwischenkühlung und ohne Kennfeld;
-        Druckverlust der Leitung als Quadrat des Durchflusses; die Übergabestation liefert unter dem Mindestdruck
-        nichts; Wasseraufbereitung und weitere Nebenaggregate fehlen; Übergaben zwischen Bausteinen derselben Phase
-        kommen einen Schritt später an (Masse bleibt erhalten); `opentsx-market` rechnet weiter mit seinem eigenen
-        Plan in der ersten Fassung (wird mit J1 umgestellt); die verfügbare Leistung nach Auflagen ist ein Ausgang
-        des Zwillings und kein Signal mehr
-- [ ] 014.14 J1 Das Jahr 2025 als Daten (15, Abschnitt 13.4)
-      - 2026-10-13, erster Schritt: DWD-Beobachtungen 2025 der sechs Stationen der Standorte und der Day-Ahead-Preis
-        2025 im Archiv außerhalb des Repositorys; Abdeckung über 99,6 Prozent, Lücken ausgewiesen; ein Jahreslauf
-        mit dem Zwilling auf Historie läuft (Plan in der ersten Fassung). Stand und fünf offene Punkte in 15,
-        Abschnitt 13.5. Entschieden am selben Tag: Die Sprachen der Oberflächen bleiben, wie sie sind (Web-Anwendung
-        Englisch, Studio Deutsch)
-      - 2026-10-13, zweiter Schritt (D75 bis D77): Szenario auf den 2025-10-01 gelegt; sechs weitere Wettergrößen
-        im Abruf und für die Station des Windparks geladen; `market publish` gebaut und 1463 Episoden in den Broker
-        des Labors geschrieben; Systemdokument Fassung 4 mit Preis aus dem Topic und drei Wettersignalen; Alter
-        einer Entscheidung gegen ihre eigenen Eingänge
-      - offen: der Plan der zweiten Fassung im Viertelstundenschritt über das Jahr (D78); das Potenzial aus dem
-        Wind der Station (Operator für die Höhenübertragung); ein Lauf auf den Reihen der Signale
-      - 2026-10-14 (D84): der Flow gehört zur Identität einer abgeleiteten Reihe; die Ansicht eines Signals zeigt die
-        Reihe des laufenden Flows
-      - 2026-10-14 (D78): Jahreslauf mit der zweiten Fassung des Plans im Viertelstundenschritt; Befund: ein
-        Generator schreibt jeden Lauf in dieselbe Reihe (15, Abschnitt 13.5, Punkt 8)
-      - 2026-10-14 (D85): der Lauf eines Generators gehört zur Identität seiner Reihe
-      - 2026-10-14: Läufe auf den Reihen der Signale (`inputs: "signals"`), mit eigener Referenz auf denselben
-        Eingängen; eine Prognose auf den Signalen fehlt noch
-- [ ] 014.18 Notebook-Arbeitsplatz: Entwurf in [17](../docs/datamodel-2026/17-NOTEBOOK-ARBEITSPLATZ.md)
-      (2026-10-13): drei Tätigkeiten, zwei Wege zu den Daten, vier Hefte, Stufen N1 bis N3; entschieden D80 bis D82
-      - N1 gebaut und im Stack der Demo eingehängt (2026-10-14): Paket mit Inventar, Systemen, Signalen, Läufen
-        und Topic-Leser; Heft 1; Image `opentsx/notebook-content`; Patch und Netzwerkregel unter
-        `deploy/k3s/notebook/`. Offen: Hefte 2 bis 4, Konten am Retrieval-Server, D83
-      - 2026-10-14: Hefte 2 (ein Signal) und 4 (den Zwilling fragen) gebaut, gegen das Laborsystem ausgeführt und
-        im Notebook des Stacks eingehängt (Image `3.0.0-notebook-2`)
-      - 2026-10-14: Heft 3 (Verproben) mit Beispieldatei; Image `3.0.0-notebook-3`. Die Agenten-Definitionen liegen seit
-        PR #193 nicht mehr im Repository (lokal unter `.claude/agents/`, ignoriert)
-      - J1 weiter auf demselben Branch (2026-10-14): Operator `model.wind-shear`; Systemdokument Fassung 5 mit
-        dem Flow `site-wind-clean` und dem Potenzial aus dem Wind der Station; auf dem Laborsystem beide Flows
-        gestartet. Befund: zwei Flows schreiben dieselbe abgeleitete Reihe (15, Abschnitt 13.5, Punkt 7)
-- [ ] 014.15 Demo der Wasserstoffkette und Simulations-Experten als Agenten: Entwurf in
-      [16](../docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md) (2026-10-13): Demo in acht Akten, fünf Rollen,
-      Werkzeugvertrag, 15 Lücken. Entschieden (D70 bis D73): Demo A zuerst, fünf Rollen als Agenten im Repository
-      (`.claude/agents/sim-*.md`, angelegt), nach S1 erst Demo A ausrollen und durchspielen.
-      Erster Durchlauf am 2026-10-13 mit neun Befunden (16, Abschnitt 7); die nächste Baustufe ist danach zu
-      entscheiden
-- [x] 014.16 Demo A zeigbar machen (2026-10-13): Befunde 1, 2, 4, 5, 6, 8 und 9 aus 16, Abschnitt 7
-      - Ort System: Bild in den Phasen eines Zeitschritts, Strom, Wasserstoff und Information in drei Farben,
-        Annahmen des Systemdokuments (`assumptions`), Arbeitskopie im Bild, Verweis ins Studio
-      - Studio unter `/studio/` am Frontend-Image; Szenario mit Auflage (04:00 bis 05:00) und Fahrbefehl
-      - gefunden und behoben: ein Signal aus der Arbeitskopie ließ sich nicht in der Workbench öffnen; eine
-        erzeugte Reihe (Topic `synthetic`) ließ sich nicht bereinigen
-      - Laborsystem vorbereitet: Preis erzeugt, Bedarf bereinigt, Potenzial veröffentlicht, Ereignisse des neuen
-        Laufs im Topic. Beide Analysen stehen weiter auf `blocked`, weil Preis und Bedarf aus Demo-Generatoren
-        stammen und die Entscheidung nur gemeldete Werte oder Prognosen annimmt (D61)
-- [x] 014.17 Lauf-Dienst und Lauf-Register (16, Abschnitt 4, Punkte 1 und 2; 2026-10-13, mit Grenzen)
-      - Server: `Runs` (Szenario lesen, Lauf rechnen, behalten, lesen, vergleichen), Routen unter
-        `/v1/systems/<id>/scenario` und `/runs`; Tests `RunsTest`
-      - Oberfläche: Ort "Simulate" (Frage links, Lauf neben der Referenz rechts, Ereignisse, Herkunft der Zahlen)
-      - Grenzen: ein Lauf rechnet mit den Eingängen des Szenarios, nicht mit den Reihen der Signale, und heißt
-        deshalb immer `restricted`; das Register liegt im Speicher (hundert Läufe, weg nach Neustart); Fahrweisen
-        gibt es nur für den Elektrolyseur; kein Protokolleintrag; die Agenten nutzen den Dienst über die
-        Schnittstelle, ein eigener Werkzeugvertrag mit Rechten fehlt
-- [ ] 014.11 E2 Durchgängiger Streaming- und Replay-Pfad (darin die zwei Varianten von `clean`)
-- [ ] 014.12 E3 Handlungs- und Lernkreis
+      - Place Flows: the Flow Composer, filtered to the system. A flow that is built from a signal remembers
+        system and signal; flows without a system count in through their domain
+      - Place Models: preview of which signals are present in clean form and which are missing
+      - Labels: "Workbench" and "Flows" instead of "Editor" and "Composer page", "steps" instead of "buckets", one
+        state column in the Composer, "Align series to a common clock"
+      - Deviations from the draft: place System as a table instead of an embedded prototype; "Input bucket" and the
+        tab "TS-Model" stay (concept, sections 8.4 and 8.5)
+- [x] 014.6 L3 (as of 2026-10-13)
+      - `TopicLayout`: topics `clean`, `synthetic`, `features` per domain
+      - `opentsx-retrieval`, package `clean`: `CleanChain` (plausibility range as a gap or clamped, unit
+        conversion, resampling to windows on the epoch grid) and `SeriesStream` (per raw series one clean series
+        with the tags `system` and `signal`, labels `grade`, `origin`, `flow`, `specHash`; state for the restart)
+      - `opentsx.dag.v2`: sink for series (`schema: opentsx.episode.v2`, `signal: {system, id, grade}`).
+        `SeriesJob` and `DagPlan` read it; the processor runs vector and series sinks with the same runner
+        (checkpoint, status, own producer per sink)
+      - The retrieval server also reads the topic of the clean series; `Systems` finds a clean series by its tags,
+        even when the system document does not declare it
+      - Workbench: context line with "Publish as clean signal" (one step instead of three: check, save, start),
+        operators prefilled from the expectation of the signal, windows on the epoch grid as in the processor; a
+        saved flow brings its signal back along
+      - Shared test vectors `docs/datamodel-2026/testvectors/clean-ops.v1.json` for Java and TypeScript, as a whole
+        and as a stream in arbitrary pieces
+      - **Finding during the run on master2:** the clean signal lacked the first of 36 episodes. Very likely
+        cause: when the broker refuses a partition, the Kafka client throws the refusal from the middle of a fetch
+        and loses the records already fetched from the other partitions, whose read positions have already moved
+        on. The source code of the client does not prove this; only the behavior does. Fixed in `Patience`: after
+        a refusal, back to the positions before the fetch; this holds for the processor, the retrieval feed and
+        the statistics. The proof on master2 is outstanding, because the broker then refused reading and writing
+        for minutes
+      - Limits: before a series sink the processor runs exactly three operators; one chain, no merging of several
+        series (so the sum over turbines does not run); "Publish" writes nothing into the system document (D42
+        open); the lock "one signal, one writer" sits in the frontend
+- [x] 014.6a Review briefing processed (as of 2026-10-13): external review (engineering and complex systems) of the
+      guide and the plan. The result is
+      [`docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md`](../docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md): the
+      decision as the central unit, the signal with a role and two value ranges, `clean` as marking instead of
+      removing, a streaming contract, model approval per purpose, four records for the loop, a new plan.
+      Findings and what became of each: below, section "Review briefing"
+      - implemented at once: correction of the H2 example (actual generation and available power are two
+        signals; system document version 2 with ten signals and five flows); `role`, `meaning` and `operating` in
+        the schema, in the server and in the details of a signal; an id for clean episodes, so that a restart does
+        not count twice; schema drafts `opentsx.decision.v1` and `opentsx.decision-record.v1` with an example,
+        checked in the build; streaming contract in 11, section 7a, with "Today" and "Target" per point; model
+        approval in 05, section 5a; guide (chapter 16) rewritten to eight steps
+- [x] 014.7 Decisions D52 to D63 (2026-10-13): ten as proposed. **D57 changed:** `clean` is written in two
+      variants, `marked` and `filtered`, in the same topic. **D62 changed:** first finish L4 and L5, then replan
+      and continue with E1 to E3
+- [x] 014.8 L4 (as of 2026-10-13)
+      - Demo generators `gen.ou` and `gen.sine` (`opentsx-retrieval`, package `generate`): the value at a point in
+        time depends only on the start value, the parameters and that point in time; episodes on a fixed grid with
+        an id, so that the same period, generated again, replaces itself. Labels `origin: SYNTHETIC`,
+        `fidelity: demo`
+      - `POST /v1/systems/<id>/generate` in the retrieval server (write route, needs the run token; writes only to
+        `tsx.<domain>.synthetic.v2`); the feed also reads the topic
+      - Working copy (D42): table `signal_bindings` in the SaaS backend, per account and system; routes
+        `GET/PUT/DELETE /api/v1/systems/<id>/bindings` and `POST .../generate` (administrators only, passes the
+        working copy along). The retrieval server lays bindings from the body over the document
+        (`POST /v1/systems/<id>/signals`) and marks them
+      - Page Signals: Bind (proposals from the TS inventory by unit and value range, choose the origin, confirm the
+        meaning, D53), Simulate (generator prefilled from the expectation, named as a demo, D61), Generate (period
+        prefilled with the data period of the system); a hint at the working copy with "Copy as YAML"
+      - Series written by rule now carry the tag `grade`
+      - Limits: generators run once over a period, not continuously; the working copy is not written into the
+        file; the lock "results on demo generators are not fit for strategy comparisons" exists as a label
+        (`fidelity: demo`) and is checked only once there are comparisons (E3); the SQL store of the working copy
+        has no test of its own (the routes are tested with an in-memory store)
+- [x] 014.9 L5 Models (2026-10-13, with limits)
+      - Processor: operators `model.power-curve` (power curve as support points, linear in between),
+        `feature.lag` and `feature.rolling` in the chain for series; a sink may read the clean series of a signal
+        and write into another signal (`signal.metric`, `origin`, `madeOf`), or features into
+        `tsx.<domain>.features.v2` (tag `feature`); shared test vectors for Java and TypeScript (14 cases)
+      - Workbench: "Publish as another signal" for a context with a clean series; the three operators in the
+        toolbox
+      - Model approval per purpose (D59): the server reads the decision cards of the system document
+        (`decisions:`) and returns per analysis `usable`, `restricted` or `blocked` with reasons
+        (`GET` and `POST /v1/systems/<id>/decisions`, schema `opentsx.decision-status.v1`); it checks grade, age
+        against the newest data of the system, admitted origin, range of validity and evidence
+      - Place Models: the cards with the needed signals, analyses and alternatives; rail and guide count along
+      - Place System: the system diagram as a graph (reactflow) above the table; feedback loops dashed
+      - Limits: the comparison of alternatives over a period is not built (E3); the analysis `price-following` is
+        a card without an executable model behind it; the range of validity is checked against minimum and maximum
+        of the whole series, not per point in time; the age against the newest data of the system, not against the
+        clock; the card `h2-dispatch` is an example with invented evidence; a card has no schema in the build, only
+        its draft
+- [ ] 014.10 Replan, then E1 decision card and domain contracts. Replanning as a proposal in 15, section 10.3
+      (2026-10-13): what L4 and L5 already deliver of E1 and E2, seven cuts, three open questions; the decision of
+      the client is outstanding
+      - Decided on 2026-10-13 after a second briefing (15, section 13; D64 to D66): the end-to-end slice stays,
+        the system plan (S1) and the real year 2025 as data (J1) come before E1; the optimizer follows after E3 as
+        an analysis
+- [x] 014.13 S1 System plan `h2-chain` in a new version (15, section 13.4; 2026-10-13, with limits)
+      - Decided: high-pressure buffer behind the compressor as an assumption; physics simple and named; the
+        previous plan stays as a test case (`opentsx-twin/src/test/resources/twin/h2-chain-1.yaml`)
+      - Twin: building blocks `wind-park` (three powers, curtailment counted per cause), `h2-compressor`,
+        `h2-buffer` (with a pressure regulator towards the pipeline), `h2-pipeline` (pressure at the start and at
+        the end), `h2-handover` (control valve, minimum delivery pressure, shortfall), `h2-consumer` (demand as
+        information); plan with 12 building blocks and 20 connections; tests `H2ChainTest` (steady state, causal
+        chain with analytic time, balance for electricity and hydrogen, compressor power, what-if, operating mode,
+        curtailment per cause)
+      - Studio: scenario, explanatory texts (`h2-chain.guide.yaml`) and page generated again
+      - System document version 3: 13 signals, each of the nine inputs from outside has a signal (three of them
+        open); `park.p_potential_kw` replaces `park.p_avail_kw` as an input, plus `park.dispatch_kw`,
+        `handover.valve`, `grid.p_grid_meas_kw`; decision card version 2 with the limits at buffer and handover
+      - Limits: ideal gas without a real-gas factor; single-stage compressor without intercooling and without a
+        performance map; pressure loss of the pipeline as the square of the flow; the handover station delivers
+        nothing below the minimum pressure; water treatment and further auxiliary units are missing; transfers
+        between building blocks of the same phase arrive one step later (mass is conserved); `opentsx-market`
+        still calculates with its own plan in the first version (to be switched with J1); the available power
+        after restrictions is an output of the twin and no longer a signal
+- [ ] 014.14 J1 The year 2025 as data (15, section 13.4)
+      - 2026-10-13, first step: DWD observations 2025 of the six stations of the sites and the day-ahead price 2025
+        in the archive outside the repository; coverage above 99.6 percent, gaps shown; a year run with the twin on
+        history works (plan in the first version). State and five open points in 15, section 13.5. Decided the
+        same day: the languages of the user interfaces stay as they are (web application English, Studio German)
+      - 2026-10-13, second step (D75 to D77): scenario moved to 2025-10-01; six more weather quantities in the
+        fetch and loaded for the station of the wind farm; `market publish` built and 1463 episodes written into
+        the broker of the lab; system document version 4 with the price from the topic and three weather signals;
+        age of a decision against its own inputs
+      - open: the plan of the second version in quarter-hour steps over the year (D78); the potential from the wind
+        of the station (operator for the height transfer); a run on the series of the signals
+      - 2026-10-14 (D84): the flow belongs to the identity of a derived series; the view of a signal shows the
+        series of the running flow
+      - 2026-10-14 (D78): year run with the second version of the plan in quarter-hour steps; finding: a generator
+        writes each run into the same series (15, section 13.5, point 8)
+      - 2026-10-14 (D85): the run of a generator belongs to the identity of its series
+      - 2026-10-14: runs on the series of the signals (`inputs: "signals"`), with their own reference on the same
+        inputs; a forecast on the signals is still missing
+- [ ] 014.18 Notebook workplace: draft in [17](../docs/datamodel-2026/17-NOTEBOOK-ARBEITSPLATZ.md)
+      (2026-10-13): three activities, two ways to the data, four notebooks, stages N1 to N3; decided D80 to D82
+      - N1 built and hooked into the stack of the demo (2026-10-14): package with inventory, systems, signals, runs
+        and topic reader; notebook 1; image `opentsx/notebook-content`; patch and network rule under
+        `deploy/k3s/notebook/`. Open: notebooks 2 to 4, accounts at the retrieval server, D83
+      - 2026-10-14: notebooks 2 (a signal) and 4 (ask the twin) built, run against the lab system and hooked into
+        the notebook of the stack (image `3.0.0-notebook-2`)
+      - 2026-10-14: notebook 3 (check a file) with an example file; image `3.0.0-notebook-3`
+      - J1 continued on the same branch (2026-10-14): operator `model.wind-shear`; system document version 5 with
+        the flow `site-wind-clean` and the potential from the wind of the station; both flows started on the lab
+        system. Finding: two flows write the same derived series (15, section 13.5, point 7)
+- [ ] 014.15 Demo of the hydrogen chain and simulation experts as agents: draft in
+      [16](../docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md) (2026-10-13): demo in eight acts, five roles,
+      tool contract, 15 gaps. Decided (D70 to D73): demo A first, five roles defined at the provider, after S1
+      first roll out demo A and play it through.
+      First run on 2026-10-13 with nine findings (16, section 7); the next stage is to be decided after that
+- [x] 014.16 Make demo A showable (2026-10-13): findings 1, 2, 4, 5, 6, 8 and 9 from 16, section 7
+      - Place System: diagram in the phases of a time step, electricity, hydrogen and information in three colors,
+        assumptions of the system document (`assumptions`), working copy in the diagram, link into the Studio
+      - Studio under `/studio/` in the frontend image; scenario with a restriction (04:00 to 05:00) and a dispatch
+        command
+      - found and fixed: a signal from the working copy could not be opened in the workbench; a generated series
+        (topic `synthetic`) could not be cleaned
+      - Lab system prepared: price generated, demand cleaned, potential published, events of the new run in the
+        topic. Both analyses stay `blocked`, because price and demand come from demo generators and the decision
+        accepts only reported values or forecasts (D61)
+- [x] 014.17 Run service and run register (16, section 4, points 1 and 2; 2026-10-13, with limits)
+      - Server: `Runs` (read the scenario, compute a run, keep, read, compare), routes under
+        `/v1/systems/<id>/scenario` and `/runs`; tests `RunsTest`
+      - User interface: place "Simulate" (question on the left, run next to the reference on the right, events,
+        origin of the numbers)
+      - Limits: a run calculates with the inputs of the scenario, not with the series of the signals, and is
+        therefore always `restricted`; the register lives in memory (a hundred runs, gone after a restart);
+        operating modes exist only for the electrolyser; no record entry; the roles use the service through its
+        interface, a tool contract of their own with rights is missing
+- [ ] 014.11 E2 End-to-end streaming and replay path (including the two variants of `clean`)
+- [ ] 014.12 E3 Action and learning loop
 
-## Review-Briefing (extern, 2026-10-13)
+## Review briefing (external, 2026-10-13)
 
-Ein Review aus Engineering-Sicht und aus Sicht komplexer Systeme, auf Grundlage des Leitfadens, ohne Einsicht in
-den Code. Kernsatz: Die zentrale Einheit sollte eine überprüfbare Entscheidung sein. Die Tabelle steht ausführlich
-in [15](../docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md), Abschnitt 2; hier die Kurzform.
+A review from the point of view of engineering and of complex systems, based on the guide, without access to the
+code. Core statement: the central unit should be a verifiable decision. The full table is in
+[15](../docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md), section 2; here the short form.
 
-| Befund | Einschätzung | Was daraus wurde |
+| Finding | Assessment | What became of it |
 |---|---|---|
-| Der Entscheidungsbezug fehlt; der Einstieg ist das System | stimmt | Entscheidungskarte, neuer erster Schritt (D52, E1) |
-| "Clean meets the expectation" kann Ereignisse wegputzen | stimmt, L3 tut das | `clean` neu definiert, Modus `flag`, zwei Wertebereiche (D54, D57, E2) |
-| Ein exklusiver Signalstatus | stimmt | fünf Dimensionen, Verwendbarkeit je Entscheidung (D55, E1) |
-| "Worst origin" ist keine Rangfolge | stimmt | Ableitungsweg mit Anteilen (D56, E1) |
-| Plausible Einzelwerte ergeben kein plausibles System | stimmt | Demo-Generator und Szenariomodell getrennt (D61, E2) |
-| Streaming-Semantik offen | stimmt teilweise; am selben Tag durch eine verlorene Episode bestätigt | Vertrag mit "Heute" und "Ziel" (D58, E2); Kennung für Episoden sofort |
-| Saubere Eingänge beweisen keine Modellgüte | stimmt | Freigabe je Analyse (D59, E3) |
-| Kein geschlossener Handlungskreis | stimmt | vier Datensätze (D60, E3) |
-| H2-Beispiel: gemessene Leistung ist nicht die verfügbare | stimmt, fachlicher Fehler | sofort korrigiert |
-| "Ein Writer pro Topic" zu grob | schon anders: ein Signal, ein Schreiber | Prüfung gehört in den Server (E2) |
-| Beispiel zeigt Flows, die nicht laufen; Zahlen widersprüchlich | stimmt; die Zahl der Eingänge von außen war falsch (neun, nicht sechs) | Leitfaden nennt je Schritt, was läuft |
+| The reference to a decision is missing; the entry point is the system | correct | decision card, new first step (D52, E1) |
+| "Clean meets the expectation" can wipe out events | correct, L3 does this | `clean` redefined, mode `flag`, two value ranges (D54, D57, E2) |
+| One exclusive signal status | correct | five dimensions, usability per decision (D55, E1) |
+| "Worst origin" is not a ranking | correct | derivation path with shares (D56, E1) |
+| Plausible single values do not make a plausible system | correct | demo generator and scenario model separated (D61, E2) |
+| Streaming semantics open | partly correct; confirmed the same day by a lost episode | contract with "Today" and "Target" (D58, E2); id for episodes at once |
+| Clean inputs prove no model quality | correct | approval per analysis (D59, E3) |
+| No closed action loop | correct | four records (D60, E3) |
+| H2 example: the measured power is not the available power | correct, a domain error | corrected at once |
+| "One writer per topic" too coarse | already different: one signal, one writer | the check belongs in the server (E2) |
+| The example shows flows that do not run; numbers contradict each other | correct; the number of inputs from outside was wrong (nine, not six) | the guide names per step what runs |
 
-Nicht nachgeprüft: die beiden Quellenverweise des Briefings (NIST, Apache Beam).
+Not checked: the two source references of the briefing (NIST, Apache Beam).
 
-## Stand der Prüfung
-* Die Beispieldokumente sind gegen die beiden Schemas geprüft, dazu die Verweise im Systemdokument: Bausteine im
-  Schaltplan, Kanäle im Katalog, Assets im Inventar, Flows in der Liste und mit passendem Ausgang, Generatoren mit
-  Beschreibung und Pflichtparametern. Ergebnis seit der Korrektur des Beispiels: 10 Signale, 2 offen, 3 Prozessoren, 5 Flows, 1 Entscheidungskarte mit 4
-  Datensätzen, kein Fehler.
-* Ein Hinweis bleibt stehen und ist gewollt: Das Inventar nennt für das Asset `h2-chain/park/T02` die Reihe der
-  Windgeschwindigkeit nicht, das Systemdokument bindet sie. Das ist der Fall, den D47 entscheidet.
-* 13 Gegenproben (je eine Änderung, die das Schema ablehnen muss) werden abgelehnt.
-* Seit L1 läuft diese Prüfung im Maven-Build (`SystemDocTest`); das Skript aus der Entwurfsphase ist damit
-  abgelöst. Für `opentsx.flow.v1` gibt es noch kein Schema, nur die drei Flows unter `systems/flows/`.
-* Ports und ihre Einheiten prüft `SystemDoc` seit L1 gegen den Schaltplan (`AtomCatalog`).
+## State of the check
+* The example documents are checked against both schemas, and so are the references in the system document:
+  building blocks in the wiring plan, channels in the catalog, assets in the inventory, flows in the list and with a
+  matching output, generators with a description and required parameters. Result since the correction of the
+  example: 10 signals, 2 open, 3 processors, 5 flows, 1 decision card with 4 records, no error.
+* One note remains and is intended: the inventory does not name the wind speed series for the asset
+  `h2-chain/park/T02`; the system document binds it. This is the case that D47 decides.
+* 13 counter-checks (each one change that the schema must refuse) are refused.
+* Since L1 this check runs in the Maven build (`SystemDocTest`); it replaces the script from the draft phase. For
+  `opentsx.flow.v1` there is no schema yet, only the three flows under `systems/flows/`.
+* Since L1 `SystemDoc` checks ports and their units against the wiring plan (`AtomCatalog`).
 
 ## Review
 
-Zwei unabhängige Reviews der ersten Fassung, beide mit dem Ergebnis "Idee trägt, so nicht freigabereif". Die
-Tatsachenbehauptungen wurden vor dem Einarbeiten am Code nachgeprüft.
+Two independent reviews of the first version, both with the result "the idea holds, not ready for approval as it
+is". The factual claims were checked against the code before they were worked in.
 
 ### Engineering
 
-| Befund | Schwere | Was daraus wurde |
+| Finding | Severity | What became of it |
 |---|---|---|
-| Die Beispiel-Flows kann `VectorJob` nicht lesen: Signalnamen statt Reihen-Ids, Knoten `decode` fehlt, Senken müssen Vektor-Topics sein, nur das Episoden-Topic ist Quelle | Blocker | Abschnitt 6: Schreibform `opentsx.flow.v1` mit Signalen, Übersetzungsschritt zum DAG, drei benannte Erweiterungen als `opentsx.dag.v2` (D49) |
-| Wo die Daten einer Güte liegen, war nicht ausdrückbar; der Zustand ließ sich für Generator und Flow nicht berechnen | Blocker | Regel 6.1: ein Topic `synthetic` und ein Topic `clean` je Domain, Reihe aus Metrik und Tags `system`, `signal` (D48) |
-| `op` ist nicht die Prozessor-Kennung (`dq.plausible-range` wird `dq.checks`); die Beispielbeschreibung widersprach dem Operator | sollte | Feld `dag` in der Beschreibung; Beispiel an `ops.ts` angeglichen |
-| `align.vector`: falsche Werte für `fill`, `names` fehlte, Dauer gegen Sekunden; `ui.group` nicht aus `OpGroup` | sollte | Beispiel korrigiert; Parametertyp `list`, `editAs: seconds`, `ui.group` als Aufzählung |
-| Nicht beschreibbar: Operatoren mit anderer Achse als der Zeit (FFT, Histogramm), Operatoren, die die ganze Reihe brauchen | sollte | Ausgang `xy`; `semantics.needs: point, window, series` |
-| Vokabular: `STATUS` statt `STATE`, `sampling`, Herkunft `SYNTHETIC` für Simulator-Daten in einem Topic, `manual` ist nicht synthetisch, `_` in der Domain | sollte | Schema und Text angeglichen; die Windpark-Daten des Beispiels tragen jetzt `SYNTHETIC` |
-| Zwei Wahrheiten: `id` gegen `port`, Bindung auch im Inventar, Asset T05 nicht im Inventar, Generator als Quelle und als Knoten | sollte | `port` entfällt (die Kennung ist der Port); Beispiel auf T02; Generatoren nur als Quelle; D47 |
-| Lücken im Schema (leere Erwartung, Topic ohne Auswahl, `PT`, Aufzählung ohne Werte) | sollte | geschlossen, mit Gegenproben; Eindeutigkeit und Verweise prüft das Werkzeug |
-| Reihenfolge: alle Operator-Beschreibungen vor jedem Nutzen | sollte | Lieferstufen neu: L1 ist der kleinste Stand von Anfang bis Ende; Beschreibungen stufenweise |
-| Risiken: Hash deckt Verweise nicht, Arbeitskopie ohne Regel, Schreibrecht der Generator-Laufzeit, Smart-Topic-Spezifikation kennt keine Signale | bedenken | Hash über Inhalte der Verweise; Abschnitt 9 nennt die offenen Punkte |
+| `VectorJob` cannot read the example flows: signal names instead of series ids, node `decode` missing, sinks must be vector topics, only the episode topic is a source | blocker | section 6: write form `opentsx.flow.v1` with signals, a translation step to the DAG, three named extensions as `opentsx.dag.v2` (D49) |
+| Where the data of a grade lives could not be expressed; the state could not be computed for generator and flow | blocker | rule 6.1: one topic `synthetic` and one topic `clean` per domain, series from metric and the tags `system`, `signal` (D48) |
+| `op` is not the processor id (`dq.plausible-range` becomes `dq.checks`); the example description contradicted the operator | should | field `dag` in the description; example aligned with `ops.ts` |
+| `align.vector`: wrong values for `fill`, `names` missing, duration against seconds; `ui.group` not from `OpGroup` | should | example corrected; parameter type `list`, `editAs: seconds`, `ui.group` as an enumeration |
+| Not describable: operators with an axis other than time (FFT, histogram), operators that need the whole series | should | output `xy`; `semantics.needs: point, window, series` |
+| Vocabulary: `STATUS` instead of `STATE`, `sampling`, origin `SYNTHETIC` for simulator data in a topic, `manual` is not synthetic, `_` in the domain | should | schema and text aligned; the wind farm data of the example now carry `SYNTHETIC` |
+| Two truths: `id` against `port`, binding also in the inventory, asset T05 not in the inventory, generator as a source and as a node | should | `port` is dropped (the id is the port); example on T02; generators only as a source; D47 |
+| Gaps in the schema (empty expectation, topic without a selection, `PT`, enumeration without values) | should | closed, with counter-checks; the tool checks uniqueness and references |
+| Order: all operator descriptions before any use | should | delivery stages redone: L1 is the smallest state from start to end; descriptions stage by stage |
+| Risks: the hash does not cover references, working copy without a rule, write right of the generator runtime, the Smart Topic specification knows no signals | consider | hash over the contents of the references; section 9 names the open points |
 
 ### UX
 
-| Befund | Schwere | Was daraus wurde |
+| Finding | Severity | What became of it |
 |---|---|---|
-| Sechs nummerierte Stufen sind vier Orte und ein Werkzeug; Nummern behaupten eine Reihenfolge | Blocker | Abschnitt 3.2 und 8.1: System, Signals, Flows, Models, Workbench; Bind und Simulate als Aktionen in Signals (D50) |
-| Die Fortschrittsleiter ist nicht linear, die Zeile sagt nicht, was zu tun ist | Blocker | Abschnitt 4 und 8.2: ein Zustand je Signal und ein nächster Schritt; Gruppierung nach Baustein und Asset |
-| Übergabe in die Workbench: ein globaler Flow wird ersetzt, Veröffentlichen sind heute drei Handgriffe | Blocker | Abschnitt 8.3: Nachfrage bei ungespeicherter Arbeit, Kontextzeile, ein Dialog, Rückweg zur Zeile |
-| Simuliert muss unverwechselbar sein; `manual` sah aus wie Simulation; zweites Herkunftsvokabular | sollte | eine Herkunft (`Origin`), `manual` mit Vorgabe `REPORTED`, Marke und gestrichelte Kurve für `SYNTHETIC`, vererbt |
-| Begriffe: System gegen Szenario, Signal gegen Reihe gegen Kanal, "Run", "Stufe" dreifach | sollte | Abschnitt 2; "Run" heißt "Flows"; Güte, Ort, Lieferstufe |
-| Bestehende Beschriftungen ("Editor", "Composer page", "buckets", "Input bucket", zwei Zustandsspalten, Reiter "TS-Model") | sollte | Abschnitt 8.4, Teil von L2 |
-| Hülle: ein Link auf den deutschen Prototyp wirkt wie ein Wechsel des Produkts | sollte | Abschnitt 8.1 und 8.5: Aufbau des Studios in React, Prototyp eingebettet ohne eigene Leisten |
-| Erste Lieferung zeigt nichts, womit man etwas tun kann | sollte | L1 enthält "Open on scope" mit Kontextzeile und erwartetem Wertebereich |
-| Zahlen im Kopf der Skizze passten nicht zum Beispiel | bedenken | angeglichen |
+| Six numbered stages are four places and a tool; numbers claim an order | blocker | sections 3.2 and 8.1: System, Signals, Flows, Models, Workbench; Bind and Simulate as actions in Signals (D50) |
+| The progress ladder is not linear, the row does not say what to do | blocker | sections 4 and 8.2: one state per signal and one next step; grouping by building block and asset |
+| Handover to the workbench: a global flow is replaced, publishing takes three steps today | blocker | section 8.3: a question on unsaved work, context line, one dialog, the way back to the row |
+| Simulated must be unmistakable; `manual` looked like simulation; a second origin vocabulary | should | one origin (`Origin`), `manual` with the default `REPORTED`, mark and dashed curve for `SYNTHETIC`, inherited |
+| Terms: system against scenario, signal against series against channel, "Run", "stage" three times | should | section 2; "Run" is called "Flows"; grade, place, delivery stage |
+| Existing labels ("Editor", "Composer page", "buckets", "Input bucket", two state columns, tab "TS-Model") | should | section 8.4, part of L2 |
+| Shell: a link to the German prototype looks like a change of product | should | sections 8.1 and 8.5: structure of the Studio in React, prototype embedded without its own rails |
+| The first delivery shows nothing one can act on | should | L1 contains "Open on scope" with a context line and the expected value range |
+| Numbers in the head of the sketch did not match the example | consider | aligned |
 
-Nicht übernommen: ein klickbarer statischer Prototyp des ganzen Wegs **vor** der Freigabe (UX). Er wäre schon
-Umsetzung; die Freigabe soll vorher stehen. L1 liefert den ersten bedienbaren Stand.
+Not adopted: a clickable static prototype of the whole path **before** the approval (UX). It would already be
+implementation; the approval should come first. L1 delivers the first usable state.
