@@ -626,11 +626,35 @@ export default function Workbench() {
   const systemParam = searchParams.get('system');
   const signalParam = searchParams.get('signal');
   const gradeParam = searchParams.get('grade') ?? 'raw';
+  const demoParam = searchParams.get('demo');
+  const demoImportConflict = ['flow', 'system', 'signal'].some((key) => searchParams.has(key));
+  const demoHandled = useRef(false);
+
+  useEffect(() => {
+    if (demoParam === null) return;
+    if (demoParam !== 'thermal') {
+      setError('Unknown demo. Use demo=thermal to open the thermal fixture.');
+      return;
+    }
+    if (demoImportConflict) {
+      setError('A demo cannot be combined with flow, system or signal imports.');
+      return;
+    }
+    if (demoHandled.current) return;
+    demoHandled.current = true;
+    const current = useFlow.getState();
+    if (current.source !== null || current.nodes.length > 0) {
+      setError('The existing workspace was kept. Open the demo in a new browser tab to start a separate analysis.');
+      return;
+    }
+    setError(null);
+    loadBucket(thermalDemo(), { kind: 'generator', detail: 'Thermal bench v1 (synthetic)' });
+  }, [demoParam, demoImportConflict, loadBucket]);
 
   // /workbench?flow=<id> opens a flow stored in the account and loads the series it was built on.
   useEffect(() => {
     const id = Number(flowParam);
-    if (!flowParam || !Number.isInteger(id) || useFlow.getState().savedId === id) return;
+    if (demoParam !== null || !flowParam || !Number.isInteger(id) || useFlow.getState().savedId === id) return;
     let cancelled = false;
     const current = () => !cancelled && useFlow.getState().savedId === id;
     flowsAPI
@@ -666,11 +690,11 @@ export default function Workbench() {
     return () => {
       cancelled = true;
     };
-  }, [flowParam]);
+  }, [flowParam, demoParam]);
 
   // /workbench?system=<id>&signal=<id>&grade=raw opens the series of a signal, with what the system expects of it.
   useEffect(() => {
-    if (!systemParam || !signalParam) return;
+    if (demoParam !== null || !systemParam || !signalParam) return;
     const now = useFlow.getState().context;
     if (now && now.system === systemParam && now.signal === signalParam && now.grade === gradeParam) return;
     let cancelled = false;
@@ -715,7 +739,7 @@ export default function Workbench() {
     return () => {
       cancelled = true;
     };
-  }, [systemParam, signalParam, gradeParam]);
+  }, [systemParam, signalParam, gradeParam, demoParam]);
 
   const openFlows = (ids: number[]) => {
     setFlowsOpen(false);
