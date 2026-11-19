@@ -1,7 +1,7 @@
-# Beispiel zum Verproben (Heft 3). Abgeleitet aus Beobachtungen des Deutschen Wetterdienstes (Station Greifswalder Oie,
-# CC BY 4.0), Oktober 2025, mit absichtlich eingebauten Eigenheiten: Ortszeit ohne Zeitzone, km/h statt m/s,
-# Dezimalkomma, ein Ausreißer, eine Lücke von fünf Stunden. Keine Messung eines Betreibers.
-Datum;Uhrzeit;Wind_kmh
+# Sample for notebook 3 (check a file of your own). Derived from observations of the Deutscher Wetterdienst
+# (station Greifswalder Oie, CC BY 4.0), October 2025, with quirks built in on purpose: local time without a time
+# zone, km/h instead of m/s, decimal comma, one outlier, a gap of five hours. Not a measurement of an operator.
+date;time;wind_kmh
 01.10.2025;02:00;9,4
 01.10.2025;03:00;7,2
 01.10.2025;04:00;10,1

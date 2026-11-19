@@ -645,6 +645,15 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - opentsx-lg: the scripts use the caller's `JAVA_HOME` or the `java` on `PATH` instead of a fixed macOS JDK path.
   `run_demo.sh` prints its KSQL statements and passes `bash -n`. The ping tool `executor-script.sh` runs
   `TSDataSineWaveGenerator` after the topic setup and stops at the first failing step.
+- The four example notebooks in `python-package/notebooks` and their sample file `beispiel-windmessung.csv` are in
+  English. The file names stay the same.
+- The sample file of notebook 3 has the columns `date;time;wind_kmh`. Notebook 3 also reads a file with the German
+  header `Datum;Uhrzeit;Wind_kmh` with the same settings.
+- Notebook 3 stops with `<setting>: the file has no column "<name>"; expected one of <columns>` when `TIME_COLUMNS` or
+  `VALUE` names a column the file does not have, instead of a `KeyError`. It writes its prepared copy as
+  `checked-<signal>.csv`.
+- The Python CI job installs the `viz` extra, so the four notebook tests in `test_notebooks.py` run instead of being
+  skipped without matplotlib.
 
 ### Removed
 

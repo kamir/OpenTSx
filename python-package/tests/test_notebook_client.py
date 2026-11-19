@@ -21,7 +21,7 @@ INVENTORY = {"source": {"kind": "kafscale"}, "series": [
      "to": "2026-01-01T00:00:00Z", "samples": 15390, "missing": 0, "min": -250, "max": 580,
      "tags": {"area": "DE-LU"}, "labels": {"origin": ["REPORTED"]}},
 ]}
-SIGNALS = {"signals": [{"id": "market.price_eur_mwh", "title": "Strompreis", "role": "exogenous", "state": "raw-only",
+SIGNALS = {"signals": [{"id": "market.price_eur_mwh", "title": "Electricity price", "role": "exogenous", "state": "raw-only",
                         "origin": "REPORTED", "via": "topic", "expect": {"unit": "EUR/MWh", "min": -500, "max": 3000},
                         "grades": {"raw": {"data": {"series": ["a"]}}}, "next": ["prepare"]}]}
 
@@ -47,7 +47,7 @@ def server():
             if self.path == "/v1/inventory":
                 self._json(INVENTORY)
             elif self.path == "/v1/systems":
-                self._json({"systems": [{"system": "h2-chain", "title": "Wasserstoffkette"}]})
+                self._json({"systems": [{"system": "h2-chain", "title": "Hydrogen chain"}]})
             elif self.path == "/v1/systems/h2-chain/signals":
                 self._json(SIGNALS)
             elif self.path.startswith("/v1/systems/h2-chain/runs/r1/series"):

@@ -129,12 +129,17 @@ Add the offset, for example `2026-10-01T00:00:00Z`.
 ## Open the example notebooks
 
 The repository has four Jupyter notebooks in [`python-package/notebooks/`](../../python-package/notebooks/).
-Their text is in German. They write nothing to the broker. You need Jupyter, the `viz` extra and a running retrieval
-server ([chapter 9](09-retrieval.md)). Set `OPENTSX_RETRIEVAL` to its URL.
+They write nothing to the broker. You need Jupyter, the `viz` extra and a running retrieval server
+([chapter 9](09-retrieval.md)). Set `OPENTSX_RETRIEVAL` to its URL.
 
 | Notebook | What it does |
 |----------|--------------|
 | `01-zeitreihen-inventar.ipynb` | Shows the inventory of the retrieval server and one series with its coverage per day and its gaps. Without a reachable retrieval server, it reads `tsx.<domain>.episodes.v2` with `TopicReader`: set `KAFKA_BOOTSTRAP`, and `OPENTSX_DOMAIN` for a domain other than `wind`. |
 | `02-ein-signal.ipynb` | Plots one signal of the system `h2-chain`, raw and cleaned, against its plausible range and its operating range. |
-| `03-verproben.ipynb` | Checks a CSV file against a signal: unit, time step, time zone, value range, gaps and duplicate times. The sample file is `beispiel-windmessung.csv`. |
+| `03-verproben.ipynb` | Checks a CSV file against a signal: unit, time step, time zone, value range, gaps and duplicate times. The sample file is `beispiel-windmessung.csv` with the columns `date;time;wind_kmh`. |
 | `04-den-zwilling-fragen.ipynb` | Asks the twin of the system `h2-chain` questions. A run is computed and kept on the server. |
+
+In `03-verproben.ipynb`, set `TIME_COLUMNS` and `VALUE` in the first code cell to the columns of your file. A column
+`date`, `time` or `wind_kmh` is also found under its German name `Datum`, `Uhrzeit` or `Wind_kmh`. A name the file
+does not have stops the cell with `<setting>: the file has no column "<name>"; expected one of <columns>`, where
+`<setting>` is `TIME_COLUMNS` or `VALUE`.
