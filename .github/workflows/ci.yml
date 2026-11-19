@@ -943,6 +943,7 @@ jobs:
         if: always()
         with:
           name: standalone-analysis
+          include-hidden-files: true
           path: |
             target/standalone-analysis/
             deploy/local-cp/.build/bundles/*/manifest.json

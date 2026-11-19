@@ -45,6 +45,8 @@ class StandalonePackageSelectionTests(unittest.TestCase):
         self.assertIn("runs-on: ubuntu-24.04-arm", package)
         self.assertIn("--profile finite", package)
         self.assertIn("finite-smoke.mjs", package)
+        self.assertIn("include-hidden-files: true", package)
+        self.assertIn("deploy/local-cp/.build/bundles/*/manifest.json", package)
         result = workflow.split("\n  ci-result:\n", 1)[1]
         self.assertIn("standalone-analysis", result.split("\n    runs-on:", 1)[0])
 
