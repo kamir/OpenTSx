@@ -67,6 +67,19 @@ no services. Use the existing test watcher while editing:
 npm test -- src/workbench/WorkbenchDemo.test.tsx
 ```
 
+For changed implementation files, pass their frontend-relative paths to the
+local check command:
+
+```bash
+npm run check:local -- src/workbench/presentation.ts
+```
+
+The command checks types and lint across the frontend, then runs tests
+statically related to the supplied files. Each stage must succeed. A selection
+with no tests fails; it does not retry another suite or report an empty pass.
+Use the full checks below for configuration, dependency locks and shared
+fixtures, which the test import graph does not fully describe.
+
 Before pushing frontend changes, run the full frontend checks:
 
 ```bash
@@ -117,6 +130,7 @@ changes. External and service requests fail the check.
 The selected output directory contains `result.json`, a screenshot and the
 downloaded snapshots. Durations are observations, not correctness thresholds.
 The existing frontend CI job runs types, lint, all frontend tests, the build
-and this built-asset browser acceptance. Java, Rust, broker and distributed
-recovery jobs remain separate checks; this change does not filter their
-scheduling.
+and this built-asset browser acceptance. The
+[CI selection rules](../../CONTRIBUTING.md#check-continuous-integration)
+select frontend and related checks from changed inputs and module dependencies.
+Shared and unclassified inputs select the full workflow.

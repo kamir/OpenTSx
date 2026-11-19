@@ -40,6 +40,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Local frontend type, lint and related-test checks through `check:local`.
+  Empty selections and failing stages return an error without a fallback run.
+
 - Isolated local Rust B2 catalog execution with typed SeriesStats, vector and DQ
   output, model and feature chains, segmentation, SAX and bounded XCorr.
   Explicit local context admits the extended resource ceilings; legacy local
