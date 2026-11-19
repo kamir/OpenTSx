@@ -10,6 +10,8 @@ import check_tracked_config as guard
 
 CLOUD_HOST = "pkc-" + "abc12.eu-west-1.aws.confluent" + ".cloud"
 CLOUDERA_HOST = "cc-host-1.gce.cloudera" + ".com"
+PERSON = "somebody"
+MAC_HOMES = "/" + "Users"
 LOCAL_PROFILE = (
     "bootstrap.servers=localhost:9092\n"
     "schema.registry.url=http://localhost:8081\n"
@@ -89,3 +91,38 @@ def test_the_guard_reads_the_git_listing(tmp_path):
     assert 'config/cpl.props:1: bootstrap.servers: "192.168.3.5"' in result.stdout
     assert "untracked.props" not in result.stdout
     assert "checked 2 tracked files, 1 findings" in result.stdout
+
+
+def test_measurement_output_of_the_load_generator_fails_even_when_not_on_disk(tmp_path, capsys):
+    paths = ["opentsx-lg/src/main/docker-compose/output/latency-by-message-1602860282194"]
+    assert guard.main(tmp_path, paths) == 1
+    assert ("opentsx-lg/src/main/docker-compose/output/latency-by-message-1602860282194: measurement output is "
+            "tracked; untrack it, opentsx-lg/src/main/docker-compose/output/ is git-ignored") in capsys.readouterr().out
+
+
+def test_a_personal_home_path_in_any_tracked_text_file_fails(tmp_path, capsys):
+    paths = write(tmp_path, {"bin/demo.sh": f"export CONFLUENT_HOME={MAC_HOMES}/{PERSON}/bin/confluent-7.3.0\n",
+                             "nb/project.xml": f"<definitions>{MAC_HOMES}/Shared/home/{PERSON}/nb.properties</definitions>\n",
+                             "notes.md": f"cd /home/{PERSON}.else/OpenTSx\n",
+                             "run.sh": f"cd /home/{PERSON}\nX=\"{MAC_HOMES}/{PERSON}\" # `/home/{PERSON}`\n"})
+    assert guard.main(tmp_path, paths) == 1
+    out = capsys.readouterr().out
+    rest = "is a personal home path; use $HOME or a placeholder such as <home>"
+    assert f'bin/demo.sh:1: "{MAC_HOMES}/{PERSON}" {rest}' in out
+    assert f'nb/project.xml:1: "/home/{PERSON}" {rest}' in out
+    assert f'notes.md:1: "/home/{PERSON}.else" {rest}' in out
+    assert f'run.sh:1: "/home/{PERSON}" {rest}' in out
+    assert f'run.sh:2: "{MAC_HOMES}/{PERSON}" {rest}' in out
+    assert f'run.sh:2: "/home/{PERSON}" {rest}' in out
+    assert f"{MAC_HOMES}/Shared" not in out
+    assert "checked 4 tracked files, 6 findings" in out
+
+
+def test_home_placeholders_and_service_account_homes_pass(tmp_path, capsys):
+    paths = write(tmp_path, {
+        "bin/demo.sh": f"export CONFLUENT_HOME=$HOME/bin/confluent-7.3.0\ncd {MAC_HOMES}/<name>/OpenTSx\nls /home/${{USER}}/\n",
+        "deploy/notebook.yaml": "mountPath: /home/jovyan/opentsx\n",
+        "archive/update.sh": "scp app.jar ubuntu@localhost:/home/ubuntu/\nls /home/ec2-user/.cache/\n",
+        "HOW_TO_RUN.md": "cd /home/user/OpenTSx\n",
+    })
+    assert guard.main(tmp_path, paths) == 0, capsys.readouterr().out

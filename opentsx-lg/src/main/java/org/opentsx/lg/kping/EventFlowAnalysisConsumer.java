@@ -85,12 +85,8 @@ public class EventFlowAnalysisConsumer {
 
                     tso.addValue( dt );
 
-                    // System.out.printf("delay: %d [ms] : dt2: %d [ms] :: %d :: %d ::- offset = %d, key = %s, value = %s \n", dt, dt2, dt - dt2, tC - tEC, record.offset(), record.key(), record.value());
-
                 });
 
-
-                // consumer.commitAsync();
 
             }
 

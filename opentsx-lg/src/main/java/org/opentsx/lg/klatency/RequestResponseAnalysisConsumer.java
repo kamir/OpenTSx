@@ -22,7 +22,6 @@ public class RequestResponseAnalysisConsumer {
     static Logger log = Logger.getLogger(RequestResponseAnalysisConsumer.class.getName());
 
     private final static String TOPIC = LatencyTestEventConsumer.TOPIC_for_response_events_string;
-    // private final static String TOPIC = LatencyTestEventProducer.TOPIC_for_request_events_string;
 
     static int GIVE_UP = 100;
 
@@ -88,8 +87,6 @@ public class RequestResponseAnalysisConsumer {
                     tso.addValuePair( (double)e.sendTS, (double)e.getEnd2EndLatency() );
 
                     System.out.println( e.getStats() );
-
-                    // System.out.printf("delay: %d [ms] : dt2: %d [ms] :: %d :: %d ::- offset = %d, key = %s, value = %s \n", dt, dt2, dt - dt2, tC - tEC, record.offset(), record.key(), record.value());
 
                 });
 

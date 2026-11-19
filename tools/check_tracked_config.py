@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-"""Fails when tracked files hold private configuration, IDE state or real hosts.
+"""Fails when tracked files hold private configuration, IDE state, measurement output, real hosts or home paths.
 
 Usage: python3 tools/check_tracked_config.py [root]
 Exits 1 and prints one line per finding.
 
 Checks the files `git ls-files` lists under root:
-  * nothing under config/private/ and nothing under .idea/;
+  * nothing under config/private/, nothing under .idea/ and nothing under the measurement output directories
+    (opentsx-lg/src/main/docker-compose/output/);
   * in *.props, *.properties and .env files (.env, .env.<name>, .env-<name>): the hosts in the values of keys that
     end in servers, url, host, hostname, address or addresses (bootstrap.servers, schema.registry.url) and every
     value that is an IPv4 address are localhost, a loopback address or a placeholder (<name>, ${NAME}, $NAME, or a
     host under example.com, example.org, example.net or .example);
-  * in every tracked text file: no Confluent Cloud cluster or registry host and no *.gce.cloudera.com host.
+  * in every tracked text file: no Confluent Cloud cluster or registry host, no *.gce.cloudera.com host and no
+    personal home path, a directory below /Users or /home other than the service account homes Shared, jovyan,
+    ubuntu, ec2-user and user.
 """
 import ipaddress
 import pathlib
@@ -26,6 +29,9 @@ PLACEHOLDER = re.compile(r"^(?:<[^<>]+>|\$\{[^}]+\}|\$[A-Za-z_][A-Za-z0-9_]*)$")
 EXAMPLE_DOMAIN = re.compile(r"(?:^|\.)(?:example\.(?:com|org|net)|example)$", re.I)
 REAL_HOST = re.compile(r"\b(?:(?:pkc|psrc|lkc|lsrc)-(?!x+\b)[a-z0-9]+(?:\.[a-z0-9-]+)*\.confluent\.cloud"
                        r"|[a-z0-9-]+(?:\.[a-z0-9-]+)*\.gce\.cloudera\.com)\b", re.I)
+OUTPUT_DIRS = ("opentsx-lg/src/main/docker-compose/output/",)
+HOME_PATH = re.compile(r"/(?:Users|home)/([A-Za-z0-9._-]+)(?![A-Za-z0-9._-])")
+SERVICE_HOMES = {"Shared", "jovyan", "ubuntu", "ec2-user", "user"}
 
 
 def tracked_files(root: pathlib.Path) -> list[str]:
@@ -93,6 +99,10 @@ def check(root: pathlib.Path, paths: list[str]) -> list[str]:
         if any(parts[i:i + 2] == ("config", "private") for i in range(len(parts) - 1)):
             findings.append(f"{path}: private configuration is tracked; untrack it, config/private/ is git-ignored")
             continue
+        output_dir = next((d for d in OUTPUT_DIRS if path.startswith(d)), None)
+        if output_dir:
+            findings.append(f"{path}: measurement output is tracked; untrack it, {output_dir} is git-ignored")
+            continue
         file = root / path
         if not file.is_file():
             continue
@@ -105,6 +115,10 @@ def check(root: pathlib.Path, paths: list[str]) -> list[str]:
         for number, line in enumerate(text.splitlines(), 1):
             for host in REAL_HOST.findall(line):
                 findings.append(f"{path}:{number}: \"{host}\" is a real host; use localhost or a placeholder")
+            for home in HOME_PATH.finditer(line):
+                if home.group(1) not in SERVICE_HOMES:
+                    findings.append(f"{path}:{number}: \"{home.group(0)}\" is a personal home path; "
+                                    "use $HOME or a placeholder such as <home>")
     return findings
 
 

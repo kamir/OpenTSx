@@ -161,7 +161,6 @@ public class TSDataSineWaveGenerator {
         System.out.println(">>> TSDataSineWaveGenerator (start at : " + new Date(System.currentTimeMillis()) + ")");
         System.out.println(">>> TSBucket is written to : " + baseOut);
 
-        //boolean SKIP_WRITES = true;
         TSBucket tsb = new TSBucket(false);
 
         Vector<TSData> tsbd_a = null;

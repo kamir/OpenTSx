@@ -599,6 +599,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The design documents 01, 03, 08, 09, 10 and 16 in `docs/datamodel-2026` are in English. 08 and 10 name the English
   CSV columns, their German aliases and the span limits, 09 and 16 the English Studio labels, and 01 the schemas of
   `opentsx-data`, the platform versions and the defects that are still open.
+- `TopicsUP` and `TopicsCHECK` run as programs call `TopicsUP.execute()` and `TopicsCHECK.execute()`, so they print
+  the same lines as the methods.
 
 ### Removed
 
@@ -731,6 +733,16 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `else` and `try` blocks it left. No behavior changes.
 - `opentsx-data`: the unused records `Episode`, `Episodes`, `EpisodesNEW`, `EpisodeMetadata` and `EventSeries` and the
   schemas `episode2.avsc`, `episode3.avsc`, `EpisodeMetadata.avsc` and `EventSeries.avsc`. This is a breaking change.
+- `org.opentsx.connectors.kafka.kping.TSOEventAnalysisProducer`, a copy of `org.opentsx.connectors.kafka.TSOProducer`
+  that still sent the label "123", the URI "URI" and growing time gaps. The `opentsx-lg` ping producer
+  `EventFlowAnalysisProducer` now sends through `TSOProducer`. This is a breaking change.
+- The bundled GhostAWT 0.0.3 copy under `opentsx-lg/src/main/docker-compose/bin` (61 third-party files with native
+  libraries) and the commented launch lines that named it. The latency consumer runs headless.
+- The tracked latency measurement file under `opentsx-lg/src/main/docker-compose/output/`. The directory is
+  git-ignored.
+- Commented-out code in `TSOProducer` (`createProducer(Properties)`, `pushTSDataAsEventsToKafka_String_String`,
+  `pushTSOItemsToKafka`), `TSOWriter`, `TSOEventProducer` and `EventFlowStateProducer`, and in the `opentsx-lg`
+  sources and scripts.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -1420,6 +1432,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   letters, digits, `.`, `_` and `-`, and `market mosmix-archive` refuses a MOSMIX station id that is not letters and
   digits, so `market import --name ../x` or `market mosmix-archive --stations ../x` exits with 2 instead of writing
   outside the archive directory.
+- `tools/check_tracked_config.py` fails on a tracked file under `opentsx-lg/src/main/docker-compose/output/` and on a
+  personal home path such as `/Users/<name>` or `/home/<name>` in any tracked text file. The service account homes
+  `Shared`, `jovyan`, `ubuntu`, `ec2-user` and `user` are allowed.
+- Personal home paths in the archive and in the opentsx-lg scripts are replaced with a quoted `"$HOME/..."` or a
+  placeholder. The TSCache NetBeans project files and a Kafka Connect offset file, which only worked on one machine,
+  are deleted.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

@@ -40,7 +40,7 @@ public class SchreiberSchmitzTester {
          * Export location for OriginPro integration 
          */
         OriginProject op = new OriginProject();
-        op.initBaseFolder("/Users/kamir/Documents/THESIS/dissertationFINAL/main/FINAL/LATEX/semanpix/Figure5.8");
+        op.initBaseFolder(System.getProperty("user.home") + "/Documents/THESIS/dissertationFINAL/main/FINAL/LATEX/semanpix/Figure5.8");
         op.initSubFolder( "data" );
        
         TimeSeriesObjectFFT.debug = false;

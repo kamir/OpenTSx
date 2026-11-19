@@ -3,11 +3,7 @@
 #
 
 export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home
-export CONFLUENT_HOME=/Users/mkampf/bin/confluent-5.5.1
-
-#mvn exec:java -Dexec.mainClass="org.opentsx.lg.TopicsDOWN"
-#mvn exec:java -Dexec.mainClass="org.opentsx.lg.TopicsUP"
-#mvn exec:java -Dexec.mainClass="org.opentsx.lg.TopicsCHECK"
+export CONFLUENT_HOME="$HOME/bin/confluent-5.5.1"
 
 #
 # Main class: org.opentsx.lg.TSDataSineWaveGenerator

@@ -1,6 +1,6 @@
 # opentsx-connectors: Kafka tools for the 2.x model (legacy)
 
-* `kafka.TSOProducer`, `TSOEventAnalysisProducer`: produce 2.x `TimeSeriesObject`s and events.
+* `kafka.TSOProducer`: produces 2.x `TimeSeriesObject`s and events.
 * `kafka.topicmanager.TopicsUP` / `TopicsDOWN` / `TopicsCHECK`: manage the 2.x topics listed in
   `config/topiclist.def`.
 * `kping`, `klatency`: latency probes.

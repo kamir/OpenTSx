@@ -81,8 +81,6 @@ public class TSOEventProducer {
 
         final Producer<String, String> producer = createProducer();
 
-        long time = System.currentTimeMillis();
-
         int sendMessageCount = show.size();
 
         try {
@@ -116,13 +114,6 @@ public class TSOEventProducer {
                     metadata = producer.send(record).get();
 
                 }
-
-                long elapsedTime = System.currentTimeMillis() - time;
-
-           /*     System.out.printf("sent record(z=%s ) " +
-                                "meta(partition=%d, offset=%d) time=%d\n",
-                        i, metadata.partition(),
-                        metadata.offset(), elapsedTime);*/
 
             }
         }

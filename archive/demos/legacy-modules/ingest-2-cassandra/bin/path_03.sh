@@ -3,7 +3,7 @@
 #
 
 
-/Users/mkampf/bin/confluent-5.3.0/bin/connect-standalone \
+"$HOME/bin/confluent-5.3.0/bin/connect-standalone" \
 ./../config/path3/connect-standalone.properties \
 ./../config/path3/connect-cassandra-source.properties \
 ./../config/path3/connect-file-sink.properties

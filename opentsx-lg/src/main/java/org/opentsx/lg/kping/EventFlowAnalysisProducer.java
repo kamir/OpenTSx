@@ -11,7 +11,7 @@
 package org.opentsx.lg.kping;
 
 import org.opentsx.connectors.kafka.OpenTSxClusterLink;
-import org.opentsx.connectors.kafka.kping.TSOEventAnalysisProducer;
+import org.opentsx.connectors.kafka.TSOProducer;
 import org.opentsx.connectors.kafka.topicmanager.TopicsCHECK;
 import org.opentsx.connectors.kafka.topicmanager.TopicsUP;
 import org.opentsx.core.TSBucket;
@@ -160,7 +160,6 @@ public class EventFlowAnalysisProducer {
         System.out.println(">>> TSDataSineWaveGenerator (start at : " + new Date(System.currentTimeMillis()) + ")");
         System.out.println(">>> TSBucket is written to : " + baseOut);
 
-        //boolean SKIP_WRITES = true;
         TSBucket tsb = new TSBucket();
 
         Vector<TSData> tsbd_a = null;
@@ -191,7 +190,7 @@ public class EventFlowAnalysisProducer {
 
 
 
-        TSOEventAnalysisProducer prod_A = new TSOEventAnalysisProducer();
+        TSOProducer prod_A = new TSOProducer();
 
         int i = 0;
 

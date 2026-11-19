@@ -15,7 +15,6 @@ import org.opentsx.data.model.*;
 
 import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.connectors.kafka.OpenTSxClusterLink;
-import org.opentsx.connectors.kafka.kping.TSOEventAnalysisProducer;
 import org.opentsx.connectors.kafka.topicmanager.TopicsCHECK;
 import org.opentsx.connectors.kafka.topicmanager.TopicsUP;
 import org.opentsx.core.TSData;

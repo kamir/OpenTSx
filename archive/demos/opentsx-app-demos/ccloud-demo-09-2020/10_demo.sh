@@ -1,13 +1,13 @@
 
 export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home
-export CONFLUENT_HOME=/Users/mkampf/bin/confluent-5.5.1
+export CONFLUENT_HOME="$HOME/bin/confluent-5.5.1"
 
 echo "===================="
 echo "[ in each terminal ]"
 echo "===================="
 echo ""
 echo "export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home"
-echo "export CONFLUENT_HOME=/Users/mkampf/bin/confluent-5.5.1"
+echo "export CONFLUENT_HOME=$HOME/bin/confluent-5.5.1"
 echo " "
 echo " "
 echo " "
@@ -18,7 +18,7 @@ echo "==============="
 echo "(1) Start the KSQLDB-server."
 echo " "
 echo "export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home"
-echo "export CONFLUENT_HOME=/Users/mkampf/bin/confluent-5.5.1"
+echo "export CONFLUENT_HOME=$HOME/bin/confluent-5.5.1"
 #
 # TODO: KSQLDB Integration with CCLOUD
 #
@@ -51,7 +51,7 @@ echo " "
 # TODO: Kafka Streams application integration with CCLOUD
 #
 echo "export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home"
-echo "export CONFLUENT_HOME=/Users/mkampf/bin/confluent-5.5.1"
+echo "export CONFLUENT_HOME=$HOME/bin/confluent-5.5.1"
 echo "cd opentsx-kafka-streams-tsa"
 echo "./bin/run.sh"
 echo " "
@@ -69,7 +69,7 @@ echo " "
 echo "cd .. "
 echo "cd .. "
 echo "export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home"
-echo "export CONFLUENT_HOME=/Users/mkampf/bin/confluent-5.5.1"
+echo "export CONFLUENT_HOME=$HOME/bin/confluent-5.5.1"
 echo "cd opentsx-lg"
 echo "export OPENTSX_TOPIC_MAP_FILE_NAME=./../config/topiclist.def"
 echo "export OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME=./../config/private/ccloud.props"

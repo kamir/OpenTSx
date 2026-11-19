@@ -65,38 +65,6 @@ public class TSOProducer {
         }
     }
 
-    /**
-     * Creates a Producer with custom settings, and in case some cutsom settings are missing,
-     * we use the default settings.
-     *
-     * Minimal required settings are:
-     *
-     *         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
-     *         props.put(ProducerConfig.CLIENT_ID_CONFIG, "TXItemProducer");
-     *         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-     *         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-     *
-     * @return
-     *
-    private static Producer<String, String> createProducer(Properties props) {
-
-        if( props.get( ProducerConfig.BOOTSTRAP_SERVERS_CONFIG ) == null )
-            props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
-
-        if( props.get( ProducerConfig.CLIENT_ID_CONFIG ) == null )
-            props.put(ProducerConfig.CLIENT_ID_CONFIG, "TSOItemProducer");
-
-        if( props.get( ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG ) == null )
-            props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-
-        if( props.get( ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG ) == null )
-            props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-
-        return new KafkaProducer<>(props);
-
-    }
-    */
-
 
     /**
      * Creates a Producer with custom settings, and in case some cutsom settings are missing,
@@ -153,7 +121,6 @@ public class TSOProducer {
 
         Properties props = OpenTSxClusterLink.getClientProperties();
 
-        //props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "TSOItemProducer");
 
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
@@ -181,7 +148,6 @@ public class TSOProducer {
 
         Properties props = OpenTSxClusterLink.getClientProperties();
 
-        // props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "TSOItemProducer");
 
 
@@ -191,8 +157,6 @@ public class TSOProducer {
 
         // NR OF TIME SERIES
         int sendMessageCount = data.size();
-
-        // Gson gson = new Gson();
 
         try {
 
@@ -225,13 +189,6 @@ public class TSOProducer {
                     i++;
                 }
 
-//                double[] yData = new double[mrd.getData().length];
-//                List<Double> yData = new ArrayList<Double>();
-                //               for( double v : mrd.getData() ) {
-//                    yData[i] = v;
-//                    yData.add(v);
-//                    i++;
-//                }
 
                 long t1 = t;
 
@@ -260,10 +217,6 @@ public class TSOProducer {
 
                 long elapsedTime = System.currentTimeMillis() - time;
 
-                /*System.out.printf("sent record(key=%s value=%s) " +
-                                "meta(partition=%d, offset=%d) time=%d\n",
-                        record.key(), record.value(), metadata.partition(),
-                        metadata.offset(), elapsedTime);*/
 
                 producer.flush();
 
@@ -293,7 +246,6 @@ public class TSOProducer {
 
         Properties props = OpenTSxClusterLink.getClientProperties();
 
-        //props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "TSOItemProducer");
 
         final Producer<String, Event> producer = createProducer_Avro( props );
@@ -320,7 +272,7 @@ public class TSOProducer {
 
                     long tP = System.currentTimeMillis();
 
-                    // evenly spaced, 200 ms apart (was t = t + i*200, i.e. quadratically growing gaps)
+                    // evenly spaced, 200 ms apart
                     long t = t0 + ( i * 200 );
 
                     i++;
@@ -359,113 +311,6 @@ public class TSOProducer {
         producer.flush();
 
     }
-
-    /*
-    public void pushTSDataAsEventsToKafka_String_String(Vector<TSData> data) {
-
-        Properties props = new Properties();
-
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
-        props.put(ProducerConfig.CLIENT_ID_CONFIG, "TSOItemProducer");
-
-        final Producer<String, String> producer = createProducer( props );
-
-        long time = System.currentTimeMillis();
-
-        try {
-
-            // the key will be based on current time and than one item per ___ms___.
-            for ( TSData mrd : data ) {
-
-                String dataJSON = gson.toJson(mrd);
-
-                double[] values = mrd.getData();
-
-                String key = mrd.label;
-
-                int i = 0;
-                for( double v : values ) {
-                    i++;
-
-                    String theKey = key.concat( i+"" );
-
-                    String value = ""+v;
-
-                    final ProducerRecord<String, String> record =
-                            new ProducerRecord<>(TOPIC_for_events_string, key, value);
-
-                    RecordMetadata metadata = producer.send(record).get();
-
-                    long elapsedTime = System.currentTimeMillis() - time;
-
-                }
-
-            }
-        }
-        catch (Exception ex) {
-            ex.printStackTrace();
-
-        }
-        finally {
-            producer.flush();
-            producer.close();
-        }
-
-        producer.flush();
-
-    }
-    */
-
-/*
-    public void pushTSOItemsToKafka(Vector<TimeSeriesObject> show) {
-
-
-        final Producer<String, String> producer = createProducer();
-
-        long time = System.currentTimeMillis();
-
-        int sendMessageCount = show.size();
-
-        Gson gson = new Gson();
-
-        try {
-
-            // the key will be based on current time and than one item per ___ms___.
-            for (int index = 0; index < sendMessageCount; index++) {
-
-                TimeSeriesObject mr = show.get(index);
-
-                // TODO: Separate TSData and TSDataWritable ...
-
-                TSData data = TSData.convertMessreihe(mr);
-
-                String dataJSON = gson.toJson(data);
-
-
-                final ProducerRecord<String, String> record =
-                        new ProducerRecord<>(TOPIC_for_episodes, data.label +"",
-                                dataJSON);
-
-                RecordMetadata metadata = producer.send(record).get();
-
-                long elapsedTime = System.currentTimeMillis() - time;
-
-//                System.out.printf("sent record(key=%s value=%s) " +
-//                                "meta(partition=%d, offset=%d) time=%d\n",
-//                        record.key(), record.value(), metadata.partition(),
-//                        metadata.offset(), elapsedTime);
-
-            }
-        }
-        catch (Exception ex) {
-
-        }
-        finally {
-            producer.flush();
-            producer.close();
-        }
-    }
-    */
 
 
 }

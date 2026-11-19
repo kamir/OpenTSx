@@ -2,7 +2,7 @@
 # Prepare environment variables for local CP
 #
 export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home
-export CONFLUENT_HOME=/Users/mkampf/bin/confluent-5.5.1
+export CONFLUENT_HOME="$HOME/bin/confluent-5.5.1"
 
 #
 # clean and start local CP
@@ -21,8 +21,8 @@ confluent local start
 #
 # Clean and build OpenTSx core project library
 #
-rm -rf /Users/mkampf/.m2/repository/org/opentsx
-cd /Users/mkampf/GITHUB.public/OpenTSx
+rm -rf "$HOME/.m2/repository/org/opentsx"
+cd "$HOME/GITHUB.public/OpenTSx"
 mvn clean generate-sources compile package install
 
 cd opentsx-lg
@@ -59,12 +59,12 @@ mvn exec:java -Dexec.mainClass="org.opentsx.util.topicmanager.TopicsUP"
 mvn clean compile exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGenerator"
 
 
-cd /Users/mkampf/GITHUB.public/OpenTSx/opentsx-ksql-udf/demo-udf
+cd "$HOME/GITHUB.public/OpenTSx/opentsx-ksql-udf/demo-udf"
 mvn clean compile package
 
-cp /Users/mkampf/GITHUB.public/OpenTSx/opentsx-ksql-udf/demo-udf/target/demo-udf-3.0.1.jar /Users/mkampf/GITHUB.public/OpenTSx/opentsx-ksql-app/ksql-server-extension/demo-udf-3.0.1.jar
+cp "$HOME/GITHUB.public/OpenTSx/opentsx-ksql-udf/demo-udf/target/demo-udf-3.0.1.jar" "$HOME/GITHUB.public/OpenTSx/opentsx-ksql-app/ksql-server-extension/demo-udf-3.0.1.jar"
 
-cd /Users/mkampf/GITHUB.public/OpenTSx/opentsx-app-demos/meetup-09-2020
+cd "$HOME/GITHUB.public/OpenTSx/opentsx-app-demos/meetup-09-2020"
 
 
 

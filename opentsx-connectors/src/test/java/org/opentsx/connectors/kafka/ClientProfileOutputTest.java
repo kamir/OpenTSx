@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.connectors.kafka.klatency.LatencyTestEventProducer;
-import org.opentsx.connectors.kafka.kping.TSOEventAnalysisProducer;
 import org.opentsx.data.model.LatencyTesterEvent;
 
 import java.io.ByteArrayOutputStream;
@@ -94,8 +93,6 @@ class ClientProfileOutputTest {
         String out = stdout(() -> {
             new TSOProducer().pushTSDataAsEpisodesToKafka_String_Avro(new Vector<>(), "probe", null);
             new TSOProducer().pushTSDataAsEventsToKafka_String_Avro(new Vector<>(), "probe");
-            new TSOEventAnalysisProducer().pushTSDataAsEpisodesToKafka_String_Avro(new Vector<>(), "probe", null);
-            new TSOEventAnalysisProducer().pushTSDataAsEventsToKafka_String_Avro(new Vector<>(), "probe");
             LatencyTestEventProducer latency = new LatencyTestEventProducer();
             latency.pushTestEventToCluster(new LatencyTesterEvent());
             latency.close();
@@ -109,12 +106,9 @@ class ClientProfileOutputTest {
             try (Producer<String, String> producer = TSOProducer.createProducer()) {
                 assertTrue(producer.metrics().size() > 0);
             }
-            try (Producer<String, String> producer = TSOEventAnalysisProducer.createProducer()) {
-                assertTrue(producer.metrics().size() > 0);
-            }
         });
         assertNoCredentials(out);
-        assertEquals(2, out.split("probe.props", -1).length - 1, out);
+        assertEquals(1, out.split("probe.props", -1).length - 1, out);
     }
 
     @Test
@@ -130,7 +124,6 @@ class ClientProfileOutputTest {
         Path missing = dir.resolve("absent.props");
         OpenTSxClusterLink.PROPS_FN = missing.toString();
         assertNamesTheProfile(missing, () -> new TSOProducer().pushTSDataAsEventsToKafka_String_Avro(new Vector<>(), "probe"));
-        assertNamesTheProfile(missing, () -> new TSOEventAnalysisProducer().pushTSDataAsEventsToKafka_String_Avro(new Vector<>(), "probe"));
         assertNamesTheProfile(missing, () -> new LatencyTestEventProducer().pushTestEventToCluster(new LatencyTesterEvent()));
     }
 
@@ -139,7 +132,6 @@ class ClientProfileOutputTest {
         Path missing = dir.resolve("absent.props");
         OpenTSxClusterLink.PROPS_FN = missing.toString();
         assertNamesTheProfile(missing, () -> new TSOProducer().pushTSDataAsEpisodesToKafka_String_Avro(new Vector<>(), "probe", null));
-        assertNamesTheProfile(missing, () -> new TSOEventAnalysisProducer().pushTSDataAsEpisodesToKafka_String_Avro(new Vector<>(), "probe", null));
     }
 
     private static void assertNamesTheProfile(Path profile, Executable action) {

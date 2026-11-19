@@ -45,8 +45,6 @@ public class FWL_TSA_KStreamsApplication {
 
       LOG.info(">>> Shutting down KStreams processing Application now");
 
-      // kafkaStreams.close();
-
       Runtime.getRuntime().addShutdownHook(new Thread(kafkaStreams::close));
 
   }
@@ -57,9 +55,6 @@ public class FWL_TSA_KStreamsApplication {
 
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "TSAExample2");
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "192.168.3.104:9092");
-
-//        props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
-//        props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
 
         props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, GenericAvroSerde.class);

@@ -1,13 +1,7 @@
 export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home
-export CONFLUENT_HOME=/Users/mkampf/bin/confluent-5.5.0
+export CONFLUENT_HOME="$HOME/bin/confluent-5.5.0"
 
 confluent local status
-
-#confluent local stop
-
-#confluent local destroy
-
-#confluent local start
 
 cd src/main/docker-compose/ping-tool-cons
 docker-compose --env-file .env-inhouse up -d

@@ -26,7 +26,6 @@ def create_new_connector(connect_url, name, config):
 
 def main():
 
-    #fn = 'connector_Generator-001_config.json'
     fn = 'cfg.json'
 
     with open( fn, 'r') as f:

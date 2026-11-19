@@ -7,7 +7,7 @@
 export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home
 $JAVA_HOME/bin/java -version
 
-export CONFLUENT_HOME=/Users/kamir/bin/confluent-6.0.0
+export CONFLUENT_HOME="$HOME/bin/confluent-6.0.0"
 
 #
 # clean and start local CP
@@ -29,8 +29,8 @@ $CONFLUENT_HOME/bin/confluent local services status
 #
 # Clean and build OpenTSx core project library
 #
-rm -rf /Users/mkampf/.m2/repository/org/opentsx
-cd /Users/mkampf/GITHUB.public/OpenTSx
+rm -rf "$HOME/.m2/repository/org/opentsx"
+cd "$HOME/GITHUB.public/OpenTSx"
 mvn clean generate-sources compile package install
 
 cd opentsx-lg

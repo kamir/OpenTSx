@@ -243,7 +243,7 @@ cd OpenTSx
 mvn clean install
 
 # Use full absolute path in %jars
-%jars /Users/yourname/workspace/OpenTSx/opentsx-core/target/opentsx-core-3.0.0.jar
+%jars /path/to/OpenTSx/opentsx-core/target/opentsx-core-3.0.0.jar
 
 # Or add to IJava kernel config
 echo "classpath=/path/to/opentsx-core-3.0.0.jar" >> ~/.ijava/kernel.json

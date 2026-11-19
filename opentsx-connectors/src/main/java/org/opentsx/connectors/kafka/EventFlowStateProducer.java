@@ -77,8 +77,6 @@ public class EventFlowStateProducer {
 
         System.out.println( ">>> flow state props : " + stateProps.size() );
 
-        long time = System.currentTimeMillis();
-
         try {
 
                 String dataJSON = gson.toJson(stateProps);
@@ -89,16 +87,7 @@ public class EventFlowStateProducer {
                 final ProducerRecord<String, String> record =
                         new ProducerRecord<>(TOPIC, flowSource, dataJSON);
 
-                RecordMetadata metadata = producer.send(record).get();
-
-                long elapsedTime = System.currentTimeMillis() - time;
-
-                /*System.out.printf("sent record(key=%s value=%s) " +
-                                "meta(partition=%d, offset=%d) time=%d\n",
-                        record.key(), record.value(), metadata.partition(),
-                        metadata.offset(), elapsedTime);*/
-
-
+                producer.send(record).get();
 
         }
         catch (Exception ex) {
