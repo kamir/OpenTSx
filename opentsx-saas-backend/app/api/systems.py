@@ -25,7 +25,7 @@ from app.models.system import SignalBinding
 from app.models.user import User
 
 router = APIRouter(prefix="/systems", tags=["Systems"])
-log = logging.getLogger("uvicorn.error").getChild("systems")
+log = logging.getLogger(__name__)
 
 SYSTEM = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 SIGNAL = re.compile(r"^[a-z0-9][a-z0-9_-]*(\.[a-z0-9_]+|(/[A-Za-z0-9_.-]+)+)$")
@@ -39,7 +39,7 @@ GENERATORS = ("gen.ou", "gen.sine")
 class Binding(BaseModel):
     """One source of a working copy."""
 
-    signal: str
+    signal: str = Field(max_length=200)
     grade: str = "raw"
     source: Dict[str, Any]
     # required for a topic source: the person looked at the data and says it is the quantity the signal means
@@ -174,7 +174,7 @@ def check(binding: Binding) -> None:
         if not isinstance(source.get("params", {}), dict):
             raise HTTPException(bad, f"source.params: {_q(source['params'])} is not an object; "
                                      "expected an object of parameters")
-        if "seed" in source and not isinstance(source["seed"], int):
+        if "seed" in source and (not isinstance(source["seed"], int) or isinstance(source["seed"], bool)):
             raise HTTPException(bad, f"source.seed: {_q(source['seed'])} is not a whole number; "
                                      "expected a whole number such as 7")
     else:

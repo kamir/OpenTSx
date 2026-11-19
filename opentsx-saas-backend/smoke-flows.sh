@@ -47,9 +47,9 @@ login() {   # suffix -> TOKEN
   call POST /auth/login "" "{\"email\":\"$email\",\"password\":\"$PASSWORD\"}"
   check "login $1" 200 "$CODE"
   TOKEN="$(field 'd["access_token"]')"
-  REFRESH="$(field 'd["refresh_token"]')"
+  check "login answers no refresh token" False "$(field '"refresh_token" in d')"
 }
-login a; TOKEN_A="$TOKEN"; REFRESH_A="$REFRESH"
+login a; TOKEN_A="$TOKEN"
 login b; TOKEN_B="$TOKEN"
 
 call GET /flows ""
@@ -57,8 +57,6 @@ call GET /flows ""
 check "list without token is refused" denied "$CODE"
 call GET /flows "not-a-token"
 check "list with a bad token is refused" 401 "$CODE"
-call GET /flows "$REFRESH_A"
-check "a refresh token is not accepted as access token" 401 "$CODE"
 
 DEFINITION='{"kind":"opentsx.workbench.v1","track":"SMOKE","nodes":[{"id":"source","op":"source","params":{},"input":null,"label":"B"},{"id":"n1","op":"resample","params":{"every":2,"agg":"MEAN"},"input":"source","label":"Resample_B","sinkTopic":"tsx.lab.smart.smoke.metrics.v2"}]}'
 call POST /flows "$TOKEN_A" "{\"name\":\"smoke flow\",\"description\":\"created by smoke-flows.sh\",\"definition\":$DEFINITION}"

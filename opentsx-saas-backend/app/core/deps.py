@@ -1,6 +1,6 @@
 """FastAPI dependencies for authentication and database."""
 
-from typing import Optional, AsyncGenerator
+from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession

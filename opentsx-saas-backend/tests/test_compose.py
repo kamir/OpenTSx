@@ -77,6 +77,35 @@ def test_the_compose_files_hold_no_secret_and_publish_on_loopback():
     assert found == []
 
 
+def test_the_backend_gets_only_settings_it_knows():
+    from app.core.config import Settings
+
+    found = [f"{path.name}:{at}: {key} is not a setting of the backend"
+             for path in COMPOSE_FILES
+             for key, _, at in environment(mapping(services(path)["backend"])["environment"])
+             if key not in Settings.model_fields]
+    assert found == []
+
+
+def test_the_backend_waits_only_for_the_database():
+    """The backend reads no Kafka setting, so a Kafka that is not healthy must not hold its start."""
+    found = []
+    for path in COMPOSE_FILES:
+        node = mapping(services(path)["backend"]).get("depends_on", yaml.SequenceNode("", []))
+        names = [key.value for key, _ in node.value] if isinstance(node, yaml.MappingNode) else [
+            item.value for item in node.value]
+        found += [f"{path.name}:{node.start_mark.line + 1}: backend waits for {name}"
+                  for name in names if name != "postgres"]
+    assert found == []
+
+
+def test_the_switches_of_the_backend_reach_the_container():
+    """The container of docker-compose.yml does not read .env; a switch reaches it only through this list."""
+    path = COMPOSE_FILES[0]
+    keys = {key for key, _, _ in environment(mapping(services(path)["backend"])["environment"])}
+    assert sorted({"ENABLE_SIGNUP", "LOG_LEVEL"} - keys) == []
+
+
 def test_the_checks_see_postgres_and_the_backend_in_both_files():
     for path in COMPOSE_FILES:
         assert {"postgres", "backend"} <= services(path).keys()

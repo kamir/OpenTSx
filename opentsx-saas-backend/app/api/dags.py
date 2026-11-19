@@ -14,8 +14,7 @@ from app.core.deps import get_current_user
 from app.models.user import User
 
 router = APIRouter(prefix="/dags", tags=["DAG deployments"])
-# under uvicorn's logger, so the lines reach the container log without extra logging setup: who deployed what
-log = logging.getLogger("uvicorn.error").getChild("dags")
+log = logging.getLogger(__name__)
 
 # A DAG document is small; the retrieval server has the same limit.
 MAX_DAG_BYTES = 256 * 1024

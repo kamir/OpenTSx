@@ -27,7 +27,7 @@ Version: 1.0.0 | Last Updated: January 2025
 
 The OpenTSx SaaS Platform is a complete web-based application for visual time series analysis with:
 
-- **JWT-based authentication** with access and refresh tokens
+- **JWT-based authentication** with access tokens
 - **Password hashing** using bcrypt for secure credential storage
 - **React frontend** with visual flow builder
 - **FastAPI backend** with async SQLAlchemy
@@ -37,7 +37,7 @@ The OpenTSx SaaS Platform is a complete web-based application for visual time se
 ### Key Features
 
 ✅ **Secure Authentication**
-- JWT tokens (access: 30min, refresh: 7 days)
+- JWT access tokens (ACCESS_TOKEN_EXPIRE_MINUTES, default 30 minutes)
 - Password hashing with bcrypt
 - Email verification support
 - Password change functionality
@@ -208,19 +208,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-**requirements.txt:**
-```txt
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-sqlalchemy==2.0.25
-asyncpg==0.29.0
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-python-multipart==0.0.6
-pydantic==2.5.3
-pydantic-settings==2.1.0
-alembic==1.13.1
-```
+The pinned versions are in [requirements.txt](../requirements.txt).
 
 ### 3. Environment Configuration
 
@@ -468,23 +456,7 @@ CREATE TABLE flows (
 );
 ```
 
-### 4. Database Migrations (Optional)
-
-For production, use Alembic for database migrations:
-
-```bash
-# Install Alembic
-pip install alembic
-
-# Initialize Alembic
-alembic init alembic
-
-# Create migration
-alembic revision --autogenerate -m "Initial schema"
-
-# Apply migration
-alembic upgrade head
-```
+The backend creates missing tables at start with create_all of SQLAlchemy; there are no migrations.
 
 ---
 
@@ -503,20 +475,10 @@ alembic upgrade head
 }
 ```
 
-**Refresh Token (7 days):**
-```json
-{
-  "sub": "1",
-  "exp": 1705838367,
-  "type": "refresh"
-}
-```
-
 #### Token Storage
 
 - **Frontend**: Stored in `localStorage`
   - `access_token`: Used for API requests
-  - `refresh_token`: Used to get new access tokens
 
 - **Backend**: Stateless (no token storage)
   - Tokens validated via signature verification
@@ -535,10 +497,11 @@ alembic upgrade head
      │                      Verify credentials
      │                      Hash password check
      │                               │
-     │ {access_token, refresh_token} │
+     │ {access_token, expires_in,    │
+     │  user}                        │
      │←──────────────────────────────┤
      │                               │
-Store tokens                         │
+Store token                          │
      │                               │
      │ GET /api/v1/flows             │
      │ Authorization: Bearer <token> │
@@ -614,7 +577,6 @@ See **[docs/API-DOCUMENTATION.md](docs/API-DOCUMENTATION.md)** for complete API 
 |--------|----------|-------------|
 | POST | `/api/v1/auth/register` | Register new user |
 | POST | `/api/v1/auth/login` | Login and get tokens |
-| POST | `/api/v1/auth/refresh` | Refresh access token |
 | POST | `/api/v1/auth/logout` | Logout |
 | GET | `/api/v1/auth/me` | Get current user |
 
@@ -881,7 +843,6 @@ npm run build
 
 ✅ **JWT Security**
 - Short expiration for access tokens (30min)
-- Longer expiration for refresh tokens (7 days)
 - HTTPS only in production
 
 ✅ **Database Security**

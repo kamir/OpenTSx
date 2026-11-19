@@ -144,6 +144,16 @@ describe('fetchJson', () => {
   });
 });
 
+describe('authAPI.login', () => {
+  it('stores only the access token', async () => {
+    const user = { id: 1, email: 'a@example.com', full_name: 'A', is_verified: true, created_at: '2026-01-01T00:00:00Z' };
+    reply(200, { access_token: 'access', refresh_token: 'refresh', token_type: 'bearer', expires_in: 1800, user });
+    await authAPI.login({ email: 'a@example.com', password: 'a-password-1' });
+    expect(localStorage.getItem('access_token')).toBe('access');
+    expect(localStorage.getItem('refresh_token')).toBeNull();
+  });
+});
+
 describe('systemsAPI', () => {
   it('encodes the system id in every path', async () => {
     reply(200, { bindings: [] });

@@ -16,7 +16,7 @@ from jose import jwt
 from app import main
 from app.core.config import settings
 from app.core.deps import get_current_user
-from app.core.security import create_access_token, create_refresh_token, get_password_hash
+from app.core.security import create_access_token, get_password_hash
 from app.db.session import get_db
 from app.main import app
 from app.models.flow import Flow
@@ -89,17 +89,17 @@ def test_an_unhandled_fault_answers_internal_error_without_its_text(caplog):
 
     client = client_with()
     app.dependency_overrides[get_current_user] = broken
-    with caplog.at_level(logging.DEBUG, logger="uvicorn.error"):
+    with caplog.at_level(logging.DEBUG, logger="app.main"):
         answer = client.get("/api/v1/auth/me")
     assert answer.status_code == 500
     assert answer.json() == {"error": "internal error", "type": "internal"}
     errors = [r for r in caplog.records if r.levelno >= logging.ERROR]
     assert [(r.name, r.getMessage()) for r in errors] == [
-        ("uvicorn.error.errors",
+        ("app.main",
          "request failed method=GET path=/api/v1/auth/me status=500 cause=RuntimeError: the database said hunter2")
     ]
     assert errors[0].exc_info is None
-    traces = [r for r in caplog.records if r.levelno == logging.DEBUG and r.name == "uvicorn.error.errors"]
+    traces = [r for r in caplog.records if r.levelno == logging.DEBUG and r.name == "app.main"]
     assert [type(r.exc_info[1]) for r in traces] == [RuntimeError]
 
 
@@ -124,9 +124,9 @@ def test_a_missing_token_is_unauthorized():
 
 @pytest.mark.parametrize("token", [
     "not-a-token",
-    create_refresh_token(data={"sub": "1"}),
+    jwt.encode({"sub": "1", "type": "refresh", "exp": datetime(2100, 1, 1)}, settings.SECRET_KEY, algorithm=settings.ALGORITHM),
     create_access_token(data={"sub": "admin@example.com"}),
-], ids=["not a JWT", "refresh token", "subject not a user id"])
+], ids=["not a JWT", "refresh token of an earlier version", "subject not a user id"])
 def test_a_token_that_is_not_an_access_token_is_unauthorized(token):
     answer = client_with(row=ADMIN).get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert answer.status_code == 401
@@ -201,7 +201,39 @@ def test_the_real_login_answers_without_the_stub_in_front():
     assert claims["sub"] == "1"
     refused = client.post("/api/v1/auth/login", json={"email": "a@example.com", "password": "not-the-password"})
     assert refused.status_code == 401
-    assert refused.json() == {"error": "Incorrect email or password", "type": "unauthorized"}
+    assert refused.json() == {"error": "email or password: not correct; check both and sign in again", "type": "unauthorized"}
+
+
+def test_the_login_answers_one_access_token_that_expires_as_set(monkeypatch):
+    monkeypatch.setattr(settings, "ACCESS_TOKEN_EXPIRE_MINUTES", 5)
+    user = User(id=1, email="a@example.com", full_name="A", hashed_password=get_password_hash(SECRET),
+                is_active=True, is_superuser=False, is_verified=False, created_at=datetime(2026, 1, 1))
+    answer = client_with(row=user).post("/api/v1/auth/login", json={"email": "a@example.com", "password": SECRET})
+    assert answer.status_code == 200
+    assert "refresh_token" not in answer.json()
+    assert answer.json()["expires_in"] == 300
+    assert answer.json()["token_type"] == "bearer"
+
+
+def test_an_administrator_at_localhost_signs_in_and_reads_the_account():
+    admin = User(id=1, email="admin@localhost", full_name="Admin", hashed_password=get_password_hash(SECRET),
+                 is_active=True, is_superuser=True, is_verified=True, created_at=datetime(2026, 1, 1))
+    client = client_with(row=admin)
+    signed_in = client.post("/api/v1/auth/login", json={"email": "admin@localhost", "password": SECRET})
+    assert signed_in.status_code == 200, signed_in.text
+    assert signed_in.json()["user"]["email"] == "admin@localhost"
+    me = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {signed_in.json()['access_token']}"})
+    assert me.status_code == 200, me.text
+    assert me.json()["email"] == "admin@localhost"
+
+
+def test_a_wrong_current_password_is_named():
+    user = User(id=1, email="a@example.com", hashed_password=get_password_hash(SECRET), is_active=True)
+    answer = client_with(user=user).post("/api/v1/auth/change-password",
+                                         json={"current_password": "not-the-password", "new_password": "a-new-password-1"})
+    assert answer.status_code == 400
+    assert answer.json() == {"error": "current_password: not correct; enter the password you sign in with",
+                             "type": "bad_request"}
 
 
 @pytest.mark.parametrize("method, path, body, status, error", [
@@ -218,11 +250,11 @@ def test_a_refused_flow_request_names_what_is_missing(method, path, body, status
     assert answer.json() == error
 
 
-def test_a_flow_status_that_is_not_one_is_named():
+def test_a_flow_status_that_is_not_one_is_named_without_the_value():
     flow = Flow(id=1, name="f", owner_id=1, definition={"nodes": []})
-    answer = client_with(user=ADMIN, row=flow).put("/api/v1/flows/1", json={"status": "running"})
+    answer = client_with(user=ADMIN, row=flow).put("/api/v1/flows/1", json={"status": "running" * 1000})
     assert answer.status_code == 422
-    assert answer.json() == {"error": 'status: "running" is not allowed; expected one of draft, active, paused, archived',
+    assert answer.json() == {"error": "status: Input should be 'draft', 'active', 'paused' or 'archived'",
                              "type": "bad_request"}
 
 
@@ -232,6 +264,15 @@ def test_flow_execution_is_no_route():
     assert answer.status_code == 404
     assert answer.json()["type"] == "not_found"
     assert not (APP / "services" / "flink_service.py").exists()
+
+
+def test_the_execution_history_is_no_route():
+    flow = Flow(id=1, name="f", owner_id=1, definition={"nodes": []})
+    answer = client_with(user=ADMIN, row=flow).get("/api/v1/flows/1/executions")
+    assert answer.status_code == 404
+    assert answer.json() == {"error": "GET /api/v1/flows/1/executions: no such route; see /docs for the routes",
+                             "type": "not_found"}
+    assert "/api/v1/flows/{flow_id}/executions" not in app.openapi()["paths"]
 
 
 def _http_exception_texts():
@@ -287,11 +328,11 @@ def test_a_status_without_a_type_is_an_internal_error(caplog):
 
     client = client_with()
     app.dependency_overrides[get_current_user] = teapot
-    with caplog.at_level(logging.ERROR, logger="uvicorn.error"):
+    with caplog.at_level(logging.ERROR, logger="app.main"):
         answer = client.get("/api/v1/auth/me")
     assert answer.status_code == 500
     assert answer.json() == {"error": "internal error", "type": "internal"}
-    assert [r.getMessage() for r in caplog.records if r.name == "uvicorn.error.errors"] == [
+    assert [r.getMessage() for r in caplog.records if r.name == "app.main"] == [
         "request failed method=GET path=/api/v1/auth/me status=500 cause=KeyError: 418; caused by HTTPException: 418: short and stout"
     ]
 
@@ -305,9 +346,9 @@ def test_the_log_line_names_the_explicit_causes(caplog):
 
     client = client_with()
     app.dependency_overrides[get_current_user] = broken
-    with caplog.at_level(logging.ERROR, logger="uvicorn.error"):
+    with caplog.at_level(logging.ERROR, logger="app.main"):
         assert client.get("/api/v1/auth/me").status_code == 500
-    assert [r.getMessage() for r in caplog.records if r.name == "uvicorn.error.errors"] == [
+    assert [r.getMessage() for r in caplog.records if r.name == "app.main"] == [
         "request failed method=GET path=/api/v1/auth/me status=500 cause=RuntimeError: the database cannot be reached; "
         "caused by ConnectionRefusedError: [Errno 111] Connection refused"
     ]

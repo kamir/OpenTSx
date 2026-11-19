@@ -66,12 +66,20 @@ POSTGRES_DB=opentsx
 POSTGRES_USER=opentsx_user
 POSTGRES_PORT=5432
 
-# Backend
-BACKEND_PORT=8000
-
 # First Admin User
 FIRST_SUPERUSER_EMAIL=admin@opentsx.com
+
+# Sign-up and logs of the backend
+ENABLE_SIGNUP=true
+LOG_LEVEL=INFO
 ```
+
+docker compose publishes the backend on `127.0.0.1:${BACKEND_PORT:-8000}`. Set `BACKEND_PORT` in the shell, not in
+`.env`: a backend started outside a container in this directory reads the same `.env` and refuses every key that is
+not one of its settings (see [README.md](README.md#environment-variables)). The container does not read `.env`.
+docker compose passes the settings listed under `services.backend.environment` in `docker-compose.yml` as environment
+variables. A setting that is not listed there, such as `RETRIEVAL_URL` or `TEST_LOGIN`, has no effect in the
+container.
 
 Without one of the three required values, every docker compose command stops and names it:
 
@@ -87,9 +95,9 @@ keeps the password it was created with, so set `POSTGRES_PASSWORD` to that passw
 example password such as `change_this_password` has to be deleted with `docker-compose down -v`, which deletes its
 data, or get a new password in PostgreSQL, because the backend refuses that value.
 
-The backend creates the first administrator only when no account with `FIRST_SUPERUSER_EMAIL` exists.
-`FIRST_SUPERUSER_PASSWORD` does not change the password of an existing account. To change it, sign in as that
-account and call `POST /api/v1/auth/change-password`.
+The backend creates the tables and the first administrator at start, the administrator only when no administrator
+exists (see [README.md](README.md#first-administrator)). `FIRST_SUPERUSER_PASSWORD` does not change the password of an
+existing account. To change it, sign in as that account and call `POST /api/v1/auth/change-password`.
 
 ## Docker Commands
 
@@ -150,9 +158,6 @@ docker-compose exec backend bash
 
 # Access PostgreSQL
 docker-compose exec postgres psql -U opentsx_user -d opentsx
-
-# Run migrations
-docker-compose exec backend alembic upgrade head
 ```
 
 ## Health Checks
@@ -249,12 +254,15 @@ sudo certbot --nginx -d api.yourdomain.com
 
 If ports are already in use:
 
-```bash
-# Option 1: Change ports in .env
-BACKEND_PORT=8001
-POSTGRES_PORT=5433
+Publish the backend on another port for one command, and set `POSTGRES_PORT=5433` in `.env` for PostgreSQL:
 
-# Option 2: Stop conflicting services
+```bash
+BACKEND_PORT=8001 docker-compose up -d
+```
+
+Or stop the service that holds the port:
+
+```bash
 sudo systemctl stop postgresql
 ```
 
@@ -324,39 +332,29 @@ logging:
 
 ## Development Workflow
 
-### Hot Reload
+### Code Changes
 
-The backend service mounts the `./app` directory for hot reload:
+The backend service mounts the `./app` directory:
 
 ```yaml
 volumes:
   - ./app:/app/app
 ```
 
-Changes to Python files will automatically reload the server.
+The image runs uvicorn without `--reload`. Restart the service to load a change:
+
+```bash
+docker-compose restart backend
+```
 
 ### Running Tests
 
-```bash
-# Run tests in container
-docker-compose exec backend pytest
+The image holds no test tools. Run the tests on the host as [README.md](README.md#running-tests) describes.
 
-# Run with coverage
-docker-compose exec backend pytest --cov=app tests/
-```
+### Database Schema
 
-### Database Migrations
-
-```bash
-# Create migration
-docker-compose exec backend alembic revision --autogenerate -m "Add new table"
-
-# Apply migrations
-docker-compose exec backend alembic upgrade head
-
-# Rollback
-docker-compose exec backend alembic downgrade -1
-```
+The backend creates missing tables at start with `create_all` of SQLAlchemy. There are no migrations and no Alembic:
+a column added to a model does not reach a table that exists already.
 
 ## Scaling
 

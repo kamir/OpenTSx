@@ -408,7 +408,8 @@ backend (axios), and `fetchJson` in the same file reads it from an answer of the
 | another error answer without such a body, for example the HTML page of a proxy | `HTTP <status> from <url>` |
 | no answer | `the backend at <url> cannot be reached` |
 
-A sign-in or register refused with 401 shows the `error` of the backend, for example `Incorrect email or password`.
+A sign-in refused with 401 shows the `error` of the backend, for example `email or password: not correct; check both and sign in again`.
+A register refused with 403, 409 or 422 shows it too, for example `sign-up is closed; ask an administrator of this installation for an account`.
 
 nginx (`nginx.conf`) answers a 502 or 504 that it gives itself as an error body:
 
@@ -507,7 +508,7 @@ npm install -D typescript@latest
 
 ## Administrator Account
 
-The backend creates the first administrator at start when no account with `FIRST_SUPERUSER_EMAIL` exists, with the
+The backend creates the first administrator at start when no administrator exists, with the address `FIRST_SUPERUSER_EMAIL` and the
 password `FIRST_SUPERUSER_PASSWORD`. There is no default password: the backend does not start without one and
 refuses a value shorter than 12 characters.
 

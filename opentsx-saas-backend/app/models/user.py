@@ -1,7 +1,6 @@
 """User database models."""
 
 from datetime import datetime
-from typing import Optional
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, ForeignKey, Table, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 import enum
@@ -86,8 +85,6 @@ class User(Base):
         foreign_keys="Invitation.inviter_id",
         back_populates="inviter"
     )
-    # Note: invitations_received not included as invitations are sent to emails,
-    # not user IDs. Query by email if needed: Invitation.invitee_email == user.email
 
 
 class Organization(Base):
@@ -107,7 +104,7 @@ class Organization(Base):
     stripe_subscription_id = Column(String, nullable=True)
 
     # Limits based on plan
-    max_flows = Column(Integer, default=5)  # FREE: 5, STARTER: 25, PRO: 100, ENT: unlimited
+    max_flows = Column(Integer, default=5)
     max_executions_per_month = Column(Integer, default=1000)
     max_team_members = Column(Integer, default=3)
 
@@ -187,5 +184,3 @@ class Invitation(Base):
         foreign_keys=[inviter_id],
         back_populates="invitations_sent"
     )
-    # Note: invitee relationship removed because invitations are sent to emails,
-    # not to existing users. Use invitee_email to look up users if needed.

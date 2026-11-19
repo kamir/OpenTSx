@@ -12,7 +12,6 @@ from app.core.deps import get_current_user
 from app.db.session import get_db
 from app.models.flow import Flow, FlowExecution, FlowStatus
 from app.models.user import User, user_organization
-from app.schemas.flow import Execution as ExecutionSchema
 from app.schemas.flow import Flow as FlowSchema
 from app.schemas.flow import FlowCreate, FlowUpdate
 
@@ -123,23 +122,3 @@ async def delete_flow(flow_id: int, current_user: User = Depends(get_current_use
     await db.delete(flow)
     await db.commit()
     return {"message": "Flow deleted successfully"}
-
-
-@router.get("/{flow_id}/executions")
-async def list_flow_executions(
-    flow_id: int,
-    limit: int = 20,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """Execution history of a flow, newest first."""
-    flow = await _own_flow(db, current_user, flow_id)
-    result = await db.execute(
-        select(FlowExecution)
-        .where(FlowExecution.flow_id == flow.id)
-        .order_by(FlowExecution.id.desc())
-        .limit(max(1, min(limit, 200)))
-    )
-    return {
-        "executions": [ExecutionSchema.model_validate(e).model_dump(mode="json") for e in result.scalars().all()]
-    }

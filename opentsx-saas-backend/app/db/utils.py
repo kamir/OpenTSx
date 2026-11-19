@@ -23,24 +23,23 @@ async def wait_for_db(engine: AsyncEngine, max_retries: int = 30, delay: float =
     Returns:
         True if connection successful, raises exception otherwise
     """
+    where = f"{engine.url.host}:{engine.url.port}/{engine.url.database}"
+    logger.info("waiting for the database db=%s", where)
     for attempt in range(max_retries):
         try:
             async with engine.begin() as conn:
-                # Simple query to test connection
                 await conn.execute(text("SELECT 1"))
-            logger.info("✅ Database connection established")
+            logger.info("Database connection established db=%s", where)
             return True
 
         except (OperationalError, ConnectionRefusedError, OSError) as e:
             if attempt < max_retries - 1:
                 wait_time = min(delay * (2 ** attempt), 10)  # Cap at 10 seconds
-                logger.warning(
-                    f"Database not ready (attempt {attempt + 1}/{max_retries}). "
-                    f"Retrying in {wait_time:.1f}s... Error: {str(e)[:100]}"
-                )
+                logger.warning("database not ready db=%s attempt=%s/%s retry_in=%.1fs cause=%s",
+                               where, attempt + 1, max_retries, wait_time, str(e)[:100])
                 await asyncio.sleep(wait_time)
             else:
-                logger.error(f"Failed to connect to database after {max_retries} attempts")
+                logger.error("database not reachable db=%s attempts=%s", where, max_retries)
                 raise
 
     return False

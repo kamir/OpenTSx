@@ -1,8 +1,8 @@
 """Application configuration."""
 
-from typing import Optional
+from typing import Literal, Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import ValidationInfo, field_validator, validator
+from pydantic import AnyHttpUrl, TypeAdapter, ValidationError, ValidationInfo, field_validator, model_validator
 
 PASSWORD_MAX_BYTES = 72  # bcrypt reads no further
 PUBLISHED_EXAMPLES = frozenset({
@@ -21,6 +21,7 @@ PUBLISHED_EXAMPLES = frozenset({
     "OldPassword123!",
     "NewSecurePassword456!",
 })
+HTTP_URL = TypeAdapter(AnyHttpUrl)
 
 
 class Settings(BaseSettings):
@@ -37,9 +38,8 @@ class Settings(BaseSettings):
 
     # Security
     SECRET_KEY: str
-    ALGORITHM: str = "HS256"
+    ALGORITHM: Literal["HS256", "HS384", "HS512"] = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # Database
     POSTGRES_SERVER: str = "localhost"
@@ -48,41 +48,33 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "opentsx"
     POSTGRES_PORT: int = 5432
 
-    # Redis
-    REDIS_HOST: str = "localhost"
-    REDIS_PORT: int = 6379
-    REDIS_DB: int = 0
-
-    # Email (for invitations)
-    SMTP_TLS: bool = True
-    SMTP_PORT: Optional[int] = None
-    SMTP_HOST: Optional[str] = None
-    SMTP_USER: Optional[str] = None
-    SMTP_PASSWORD: Optional[str] = None
-    EMAILS_FROM_EMAIL: str = "noreply@opentsx.com"
-    EMAILS_FROM_NAME: str = "OpenTSx"
-
-    # Stripe (payment stub)
-    STRIPE_SECRET_KEY: str = "sk_test_stub"
-    STRIPE_WEBHOOK_SECRET: str = "whsec_stub"
-
     # First superuser
     FIRST_SUPERUSER_EMAIL: str = "admin@opentsx.com"
     FIRST_SUPERUSER_PASSWORD: str
 
     # DAG runs (app/api/dags.py): the retrieval server that writes vector topics, and who may ask for it
-    RETRIEVAL_URL: Optional[str] = None       # e.g. http://opentsx-retrieval:8080; unset: no runs
+    RETRIEVAL_URL: Optional[str] = None       # e.g. http://opentsx-retrieval:8080; unset or empty: no runs
     DAG_RUN_TOKEN: Optional[str] = None       # sent as X-OpenTSx-Run-Token; must match the server's token
-    DAG_RUN_ROLE: str = "superuser"           # "superuser": administrators only; "user": every signed-in user
+    DAG_RUN_ROLE: Literal["superuser", "user"] = "superuser"  # "superuser": administrators only; "user": every account
 
     # Test operation: "admin" with the password "admin" signs in as the first administrator. For a lab only:
     # whoever reaches the page is an administrator then. The stored password of the account stays as it is.
     TEST_LOGIN: bool = False
 
-    # Features
+    # false: POST /auth/register answers 403
     ENABLE_SIGNUP: bool = True
-    ENABLE_INVITATIONS: bool = True
-    ENABLE_PAYMENTS: bool = False  # Stub for now
+
+    # the level of the root logger; app/logging.conf sets the format and the levels of uvicorn, sqlalchemy and passlib
+    LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+
+    @model_validator(mode="before")
+    @classmethod
+    def only_known_keys(cls, data):
+        unknown = sorted(key for key in data if key not in cls.model_fields) if isinstance(data, dict) else []
+        if unknown:
+            raise ValueError(f"{', '.join(unknown)}: not a setting of the backend; remove it from .env, "
+                             f"the settings are {', '.join(cls.model_fields)}")
+        return data
 
     @field_validator("SECRET_KEY")
     @classmethod
@@ -105,25 +97,40 @@ class Settings(BaseSettings):
             raise ValueError(f"{name}: longer than 72 bytes; set at most 72 bytes in UTF-8")
         return value
 
+    @field_validator("RETRIEVAL_URL")
+    @classmethod
+    def retrieval_url_is_http(cls, value: Optional[str]) -> Optional[str]:
+        if not value:
+            return None
+        try:
+            HTTP_URL.validate_python(value)
+        except ValidationError as e:
+            raise ValueError("RETRIEVAL_URL: not an http or https address; set the address of the retrieval server "
+                             "such as http://opentsx-retrieval:8080") from e
+        return value
+
+    @field_validator("BACKEND_CORS_ORIGINS")
+    @classmethod
+    def no_wildcard_origin(cls, value: list[str]) -> list[str]:
+        if "*" in value:
+            raise ValueError('BACKEND_CORS_ORIGINS: "*" is not allowed, the backend accepts credentials from these '
+                             "origins; list each origin such as http://localhost:3000")
+        return value
+
+    @field_validator("LOG_LEVEL", mode="before")
+    @classmethod
+    def log_level_in_capitals(cls, value):
+        return value.upper() if isinstance(value, str) else value
+
     @property
     def database_url(self) -> str:
         """Get database URL."""
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
-    @property
-    def sync_database_url(self) -> str:
-        """Get synchronous database URL."""
-        return f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
-
-    @property
-    def redis_url(self) -> str:
-        """Get Redis URL."""
-        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
-
     model_config = SettingsConfigDict(
         case_sensitive=True,
         env_file=".env",
-        extra="ignore",  # Ignore extra environment variables from docker-compose
+        extra="forbid",
         hide_input_in_errors=True,
     )
 

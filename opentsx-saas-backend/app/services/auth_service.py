@@ -2,6 +2,7 @@
 
 from datetime import datetime, timedelta
 import hmac
+import logging
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import insert, select
@@ -12,10 +13,30 @@ from app.core.security import (
     verify_password,
     get_password_hash,
     create_access_token,
-    create_refresh_token,
 )
-from app.schemas.user import UserCreate, LoginRequest
+from app.schemas.user import RegisterRequest, LoginRequest
 from app.core.config import settings
+
+log = logging.getLogger(__name__)
+
+# The limits an organization stores per plan; no route enforces them. The first administrator's plan has none.
+NO_LIMIT = 999_999
+PLAN_LIMITS = {
+    PlanTier.FREE: {"max_flows": 5, "max_executions_per_month": 1000, "max_team_members": 3},
+    PlanTier.ENTERPRISE: {"max_flows": NO_LIMIT, "max_executions_per_month": NO_LIMIT, "max_team_members": NO_LIMIT},
+}
+
+
+async def add_organization(db: AsyncSession, owner: User, name: str, slug: str, plan_tier: PlanTier) -> Organization:
+    """An organization of the owner with the limits of its plan, and the owner as its admin member."""
+    organization = Organization(name=name, slug=slug, owner_id=owner.id, plan_tier=plan_tier, **PLAN_LIMITS[plan_tier])
+    db.add(organization)
+    await db.flush()
+    # user.organizations.append() would lazy-load the collection, which fails in the async session (MissingGreenlet)
+    await db.execute(
+        insert(user_organization).values(user_id=owner.id, organization_id=organization.id, role=UserRole.ADMIN)
+    )
+    return organization
 
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> Optional[User]:
@@ -46,7 +67,7 @@ async def authenticate_user(db: AsyncSession, email: str, password: str) -> Opti
     return user
 
 
-async def create_user(db: AsyncSession, user_create: UserCreate) -> User:
+async def create_user(db: AsyncSession, user_create: RegisterRequest) -> User:
     """
     Create new user and default organization.
 
@@ -67,7 +88,7 @@ async def create_user(db: AsyncSession, user_create: UserCreate) -> User:
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Email already registered"
+            detail="email: already registered; sign in or use another address"
         )
 
     # Create user
@@ -82,31 +103,10 @@ async def create_user(db: AsyncSession, user_create: UserCreate) -> User:
     db.add(user)
     await db.flush()  # Flush to get user.id
 
-    # Create default organization
     # The slug is unique per organization; the user id keeps equal local parts of two addresses apart.
     org_slug = f'{user_create.email.split("@")[0].replace(".", "-").replace("_", "-")}-{user.id}'
-    organization = Organization(
-        name=f"{user_create.full_name}'s Organization" if user_create.full_name else f"{org_slug}'s Organization",
-        slug=org_slug,
-        owner_id=user.id,
-        plan_tier=PlanTier.FREE,
-        max_flows=5,
-        max_executions_per_month=1000,
-        max_team_members=3,
-    )
-
-    db.add(organization)
-    await db.flush()  # Flush to get organization.id
-
-    # Add the user as admin member of the organization. user.organizations.append() would lazy-load the
-    # collection, which fails in the async session (MissingGreenlet); insert into the association table instead.
-    await db.execute(
-        insert(user_organization).values(
-            user_id=user.id,
-            organization_id=organization.id,
-            role=UserRole.ADMIN,
-        )
-    )
+    name = f"{user_create.full_name}'s Organization" if user_create.full_name else f"{org_slug}'s Organization"
+    await add_organization(db, user, name, org_slug, PlanTier.FREE)
 
     await db.commit()
     await db.refresh(user)
@@ -118,19 +118,17 @@ TEST_LOGIN_NAME = "admin"
 TEST_LOGIN_PASSWORD = "admin"
 
 
-def admin_test_login(identifier: str, password: str) -> Optional[str]:
+def admin_test_login(identifier: str, password: str) -> bool:
     """
-    The address of the first administrator when test operation is on and the caller signs in with admin/admin
-    (the name or the administrator's address), otherwise None. The stored password is not involved and not changed.
+    True when test operation is on and the caller signs in with admin/admin (the name or FIRST_SUPERUSER_EMAIL).
+    The stored password is not involved and not changed.
     """
     if not settings.TEST_LOGIN:
-        return None
+        return False
     name = identifier.strip().lower()
     if name not in (TEST_LOGIN_NAME, settings.FIRST_SUPERUSER_EMAIL.lower()):
-        return None
-    if not hmac.compare_digest(password.encode(), TEST_LOGIN_PASSWORD.encode()):
-        return None
-    return settings.FIRST_SUPERUSER_EMAIL
+        return False
+    return hmac.compare_digest(password.encode(), TEST_LOGIN_PASSWORD.encode())
 
 
 async def login(db: AsyncSession, login_data: LoginRequest) -> dict:
@@ -147,30 +145,30 @@ async def login(db: AsyncSession, login_data: LoginRequest) -> dict:
     Raises:
         HTTPException: If credentials are invalid
     """
-    test_email = admin_test_login(login_data.email, login_data.password)
-    if test_email is not None:
-        found = await db.execute(select(User).where(User.email == test_email))
+    if admin_test_login(login_data.email, login_data.password):
+        # the administrator init_db keeps, also when FIRST_SUPERUSER_EMAIL names another address
+        found = await db.execute(select(User).where(User.is_superuser.is_(True)).order_by(User.id).limit(1))
         user = found.scalar_one_or_none()
+        log.warning("test login used name=%r account=%s", login_data.email, user.email if user else "none")
     else:
         user = await authenticate_user(db, login_data.email.strip(), login_data.password)
 
     if not user:
+        log.info("sign-in refused email=%r", login_data.email)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="email or password: not correct; check both and sign in again",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Create tokens
+    minutes = settings.ACCESS_TOKEN_EXPIRE_MINUTES
     # python-jose rejects a non-string subject when it decodes the token
-    access_token = create_access_token(data={"sub": str(user.id)})
-    refresh_token = create_refresh_token(data={"sub": str(user.id)})
+    access_token = create_access_token(data={"sub": str(user.id)}, expires_delta=timedelta(minutes=minutes))
 
     return {
         "access_token": access_token,
-        "refresh_token": refresh_token,
         "token_type": "bearer",
-        "expires_in": 1800,  # 30 minutes
+        "expires_in": minutes * 60,
         "user": user,
     }
 
@@ -196,7 +194,7 @@ async def change_password(
     if not verify_password(current_password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect password"
+            detail="current_password: not correct; enter the password you sign in with"
         )
 
     user.hashed_password = get_password_hash(new_password)

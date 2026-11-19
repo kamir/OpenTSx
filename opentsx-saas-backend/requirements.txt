@@ -1,12 +1,9 @@
 # FastAPI and server
 fastapi==0.156.4
 uvicorn[standard]==0.54.0
-python-multipart==0.0.32
 
 # Database
 sqlalchemy==2.1.5
-alembic==1.20.0
-psycopg2-binary==2.9.13
 asyncpg==0.32.0
 greenlet==3.5.6  # Required for SQLAlchemy async operations
 
@@ -16,27 +13,10 @@ passlib[bcrypt]==1.7.4
 bcrypt==4.3.0  # Pin compatible version for passlib
 python-dotenv==1.2.4
 
-# Redis
-redis==5.3.1
-hiredis==2.4.0
-
 # Email
 email-validator==2.3.0
-emails==0.6.0
-
-# WebSocket
-python-socketio==5.17.0
-
-# Time series (use local opentsx package)
-numpy==2.5.4
-pandas==3.0.6
 
 # Utilities
 pydantic==2.14.1
 pydantic-settings==2.16.1
 httpx==0.28.1
-
-# Monitoring
-prometheus-client==0.26.0
-
-greenlet==3.5.6

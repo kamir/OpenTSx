@@ -28,8 +28,11 @@ async def register(
     """
     Register new user.
 
-    Creates a new user account and default organization.
+    Creates a new user account and default organization. With ENABLE_SIGNUP=false it answers 403.
     """
+    if not settings.ENABLE_SIGNUP:
+        raise HTTPException(status.HTTP_403_FORBIDDEN,
+                            "sign-up is closed; ask an administrator of this installation for an account")
     user = await auth_service.create_user(db, user_data)
     return user
 
@@ -43,8 +46,8 @@ async def login(
     Login user and return JWT tokens.
 
     Returns:
-        access_token: JWT access token (30 min)
-        refresh_token: JWT refresh token (7 days)
+        access_token: JWT access token, valid for ACCESS_TOKEN_EXPIRE_MINUTES
+        expires_in: its lifetime in seconds
         user: User information
     """
     result = await auth_service.login(db, login_data)

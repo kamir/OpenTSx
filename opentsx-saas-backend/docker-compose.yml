@@ -52,6 +52,8 @@ services:
 
       # CORS
       BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-["http://localhost:3000","http://localhost:8080"]}
+      ENABLE_SIGNUP: ${ENABLE_SIGNUP:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     ports:
       - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
     networks:
@@ -60,7 +62,7 @@ services:
       postgres:
         condition: service_healthy
     volumes:
-      - ./app:/app/app  # Mount for development hot-reload
+      - ./app:/app/app
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s

@@ -10,10 +10,9 @@ Version: 1.0.0 | Base URL: `https://api.opentsx.com`
 
 1. [Authentication](#authentication)
 2. [Flows](#flows)
-3. [Flow Executions](#flow-executions)
-4. [Error Handling](#error-handling)
-5. [Rate Limits](#rate-limits)
-6. [Webhooks](#webhooks)
+3. [Error Handling](#error-handling)
+4. [Rate Limits](#rate-limits)
+5. [Webhooks](#webhooks)
 
 ---
 
@@ -46,14 +45,15 @@ Register a new user account.
 ```
 
 **Errors**:
-- `400`: Invalid email or weak password
-- `409`: Email already registered
+- `403`: `sign-up is closed; ask an administrator of this installation for an account` while `ENABLE_SIGNUP=false`
+- `409`: `email: already registered; sign in or use another address`
+- `422`: an invalid address or a password shorter than 8 characters or longer than 72 bytes
 
 ---
 
 ### POST /api/v1/auth/login
 
-Login and receive JWT tokens.
+Login and receive a JWT access token. There is no refresh token; sign in again when the access token expires.
 
 **Request Body**:
 ```json
@@ -67,7 +67,6 @@ Login and receive JWT tokens.
 ```json
 {
   "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-  "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
   "token_type": "bearer",
   "expires_in": 1800,
   "user": {
@@ -79,30 +78,7 @@ Login and receive JWT tokens.
 ```
 
 **Errors**:
-- `401`: Invalid credentials
-- `403`: Account not verified
-
----
-
-### POST /api/v1/auth/refresh
-
-Refresh access token using refresh token.
-
-**Request Body**:
-```json
-{
-  "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc..."
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-  "token_type": "bearer",
-  "expires_in": 1800
-}
-```
+- `401`: `email or password: not correct; check both and sign in again`
 
 ---
 
@@ -318,85 +294,6 @@ Delete flow.
 ```json
 {
   "message": "Flow deleted successfully"
-}
-```
-
----
-
-## Flow Executions
-
-### GET /api/v1/flows/{flow_id}/executions
-
-List flow executions.
-
-**Headers**: `Authorization: Bearer {access_token}`
-
-**Path Parameters**:
-- `flow_id` (integer): Flow ID
-
-**Query Parameters**:
-- `status` (string, optional): Filter by status
-- `limit` (integer, optional): Max results
-- `offset` (integer, optional): Pagination offset
-
-**Response** (200 OK):
-```json
-{
-  "executions": [
-    {
-      "id": 1,
-      "flow_id": 1,
-      "status": "completed",
-      "started_at": "2025-01-13T10:30:00Z",
-      "completed_at": "2025-01-13T10:30:45Z",
-      "duration_ms": 45000,
-      "events_processed": 1523,
-      "result": {
-        "alpha": 0.745,
-        "r_squared": 0.982
-      },
-      "node_results": {
-        "dfa_1": {
-          "alpha": 0.745,
-          "interpretation": "Correlated (persistent)"
-        }
-      }
-    }
-  ],
-  "total": 1
-}
-```
-
----
-
-### GET /api/v1/executions/{execution_id}
-
-Get execution details.
-
-**Headers**: `Authorization: Bearer {access_token}`
-
-**Path Parameters**:
-- `execution_id` (integer): Execution ID
-
-**Response** (200 OK):
-```json
-{
-  "id": 1,
-  "flow_id": 1,
-  "status": "completed",
-  "started_at": "2025-01-13T10:30:00Z",
-  "completed_at": "2025-01-13T10:30:45Z",
-  "duration_ms": 45000,
-  "events_processed": 1523,
-  "result": {...},
-  "node_results": {...},
-  "logs": [
-    {
-      "timestamp": "2025-01-13T10:30:05Z",
-      "level": "INFO",
-      "message": "Processing started"
-    }
-  ]
 }
 ```
 

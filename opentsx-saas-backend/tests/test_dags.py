@@ -115,12 +115,12 @@ def test_the_reason_of_a_refused_dag_reaches_the_user(retrieval):
 def test_trouble_of_the_installation_is_not_reported_as_the_users_fault(retrieval, caplog, upstream, expected, kind, text):
     retrieval["status"] = upstream
     retrieval["json"] = {"error": "boom"}
-    with caplog.at_level(logging.WARNING, logger="uvicorn.error.dags"):
+    with caplog.at_level(logging.WARNING, logger="app.api.dags"):
         answer = client_as(ADMIN).post("/api/v1/dags/deploy", content=DAG)
     assert answer.status_code == expected
     assert answer.json() == {"error": text, "type": kind}
     assert "boom" not in answer.text
-    assert [r.getMessage() for r in caplog.records if r.name == "uvicorn.error.dags"] == [
+    assert [r.getMessage() for r in caplog.records if r.name == "app.api.dags"] == [
         f"dag deploy by user 1 refused by the retrieval server: HTTP {upstream} error='boom'"
     ]
 
@@ -132,14 +132,14 @@ def test_trouble_of_the_installation_is_not_reported_as_the_users_fault(retrieva
 def test_an_answer_that_is_not_a_json_object_is_a_bad_gateway(retrieval, caplog, answer_text, content_type):
     retrieval["text"] = answer_text
     retrieval["content_type"] = content_type
-    with caplog.at_level(logging.WARNING, logger="uvicorn.error.dags"):
+    with caplog.at_level(logging.WARNING, logger="app.api.dags"):
         answer = client_as(ADMIN).post("/api/v1/dags/deploy", content=DAG)
     assert answer.status_code == 502
     assert answer.json() == {
         "error": "retrieval server: gave an answer the backend cannot read; check that RETRIEVAL_URL names the retrieval server",
         "type": "unavailable",
     }
-    assert [r.getMessage() for r in caplog.records if r.name == "uvicorn.error.dags"] == [
+    assert [r.getMessage() for r in caplog.records if r.name == "app.api.dags"] == [
         f"dag deploy by user 1: the retrieval server answered HTTP 200 with content type {content_type}, not a JSON object"
     ]
 

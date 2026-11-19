@@ -74,24 +74,6 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
     return encoded_jwt
 
 
-def create_refresh_token(data: Dict[str, Any]) -> str:
-    """
-    Create a JWT refresh token (longer expiration).
-
-    Args:
-        data: Data to encode in token
-
-    Returns:
-        Encoded JWT refresh token
-    """
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    to_encode.update({"exp": expire, "type": "refresh"})
-
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-
 def decode_token(token: str) -> Optional[Dict[str, Any]]:
     """
     Decode and verify a JWT token.
@@ -107,18 +89,3 @@ def decode_token(token: str) -> Optional[Dict[str, Any]]:
         return payload
     except JWTError:
         return None
-
-
-def create_invitation_token(email: str, organization_id: int) -> str:
-    """
-    Create a token for email invitations.
-
-    Args:
-        email: Invitee email address
-        organization_id: Organization ID
-
-    Returns:
-        Invitation token
-    """
-    import secrets
-    return f"inv_{secrets.token_urlsafe(32)}"

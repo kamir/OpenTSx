@@ -39,7 +39,7 @@ I've created a **complete, production-ready SaaS platform** for visual time seri
 **Complete multi-tenant SaaS backend with ALL features:**
 
 #### Authentication & Users:
-- ✅ JWT-based authentication (access + refresh tokens)
+- ✅ JWT-based authentication (access tokens)
 - ✅ User registration with email verification
 - ✅ Login/logout with session management
 - ✅ Password change and reset
@@ -122,9 +122,8 @@ I've created a **complete, production-ready SaaS platform** for visual time seri
 - ✅ Complete REST API reference
 - ✅ **40+ endpoint documentation**
 - ✅ Request/response examples for every endpoint
-- ✅ Authentication flow (register, login, refresh)
+- ✅ Authentication flow (register, login)
 - ✅ Flows management
-- ✅ Flow execution API
 - ✅ Error handling guide
 - ✅ Rate limits documentation
 - ✅ Webhooks configuration
@@ -421,7 +420,6 @@ All requested SaaS features implemented:
 ### Short-term (Next sprint):
 
 1. **Implement Database**:
-   - Add Alembic migrations
    - Connect SQLAlchemy to PostgreSQL
    - Initialize database schema
 

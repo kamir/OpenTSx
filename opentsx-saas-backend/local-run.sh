@@ -38,15 +38,6 @@ else
     exit 1
 fi
 
-# Check if Redis is running (optional warning)
-echo ""
-echo "🔴 Checking Redis..."
-if command -v redis-cli &> /dev/null && redis-cli ping &> /dev/null; then
-    echo -e "${GREEN}✓ Redis is running${NC}"
-else
-    echo -e "${YELLOW}⚠ Redis is not running (some features may be limited)${NC}"
-fi
-
 echo ""
 echo "========================================="
 echo -e "${GREEN}Starting FastAPI server...${NC}"
@@ -59,11 +50,10 @@ echo ""
 echo "Press Ctrl+C to stop the server"
 echo ""
 
-# Run the application with hot reload
-export ENV_FILE=.env.local
+# --env-file puts .env.local into the environment; --log-config formats the lines of the reloader like those of the app
 uvicorn app.main:app \
     --reload \
     --host 0.0.0.0 \
     --port 8000 \
-    --log-level info \
+    --log-config app/logging.conf \
     --env-file .env.local

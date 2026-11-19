@@ -135,8 +135,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      cp-all-in-one:
-        condition: service_healthy
     ports:
       - "127.0.0.1:8000:8000"
     environment:
@@ -144,9 +142,6 @@ services:
       - POSTGRES_USER=opentsx
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD, see opentsx-saas-backend/DOCKER-SETUP.md}
       - POSTGRES_DB=opentsx
-      - KAFKA_BOOTSTRAP_SERVERS=cp-all-in-one:29092
-      - OPENTSDB_HOST=opentsdb
-      - OPENTSDB_PORT=4242
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY, see opentsx-saas-backend/DOCKER-SETUP.md}
       - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD:?set FIRST_SUPERUSER_PASSWORD, see opentsx-saas-backend/DOCKER-SETUP.md}
     volumes:

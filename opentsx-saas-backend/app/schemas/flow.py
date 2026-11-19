@@ -4,6 +4,8 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 from pydantic import BaseModel
 
+from app.models.flow import FlowStatus
+
 
 # ==================== Flow Schemas ====================
 
@@ -29,7 +31,7 @@ class FlowUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     definition: Optional[Dict[str, Any]] = None
-    status: Optional[str] = None
+    status: Optional[FlowStatus] = None
     tags: Optional[List[str]] = None
     category: Optional[str] = None
 
@@ -50,32 +52,6 @@ class Flow(FlowBase):
     last_executed_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-# ==================== Execution Schemas ====================
-
-class ExecutionCreate(BaseModel):
-    """Schema for creating execution."""
-    flow_id: int
-    input_data: Optional[Dict[str, Any]] = None
-
-
-class Execution(BaseModel):
-    """Execution response schema."""
-    id: int
-    flow_id: int
-    status: str
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    duration_ms: Optional[int] = None
-    result: Optional[Dict[str, Any]] = None
-    error_message: Optional[str] = None
-    node_results: Dict[str, Any]
-    events_processed: int
-    created_at: datetime
 
     class Config:
         from_attributes = True

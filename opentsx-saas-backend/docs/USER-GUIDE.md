@@ -340,12 +340,6 @@ Content-Type: application/json
 }
 ```
 
-#### Get Execution Status
-
-```bash
-GET /api/v1/flows/1/executions/1
-```
-
 ---
 
 ## FAQ & Troubleshooting

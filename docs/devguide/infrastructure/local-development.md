@@ -65,6 +65,16 @@ To include backend and frontend services:
 docker-compose -f docker-compose.local.yml --profile full up -d
 ```
 
+The backend container mounts `opentsx-saas-backend/` as `/app` and reads `opentsx-saas-backend/.env` when that file
+exists. A key in that file that is not a setting of the backend stops its start, and the log names the key:
+
+```bash
+docker-compose -f docker-compose.local.yml logs backend
+```
+
+The settings are listed in
+[opentsx-saas-backend/README.md](../../../opentsx-saas-backend/README.md#environment-variables).
+
 ### Stop All Services
 
 ```bash

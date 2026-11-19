@@ -9,9 +9,10 @@
 
 * **Backend:**
   * users with JWT login (`/api/v1/auth/register`, `/login`, `/me`, `/change-password`). Registration creates one
-    organization per user. The backend has no routes for organizations, teams, invitations or billing. It stores
-    accounts with their organization, flows and the working copies of systems; DAG deployments and generator runs go
-    to the retrieval server.
+    organization per user. `ENABLE_SIGNUP=false` closes registration: `POST /api/v1/auth/register` answers 403
+    `sign-up is closed; ask an administrator of this installation for an account`. The backend has no routes for
+    organizations, teams, invitations or billing. It stores accounts with their organization, flows and the working
+    copies of systems; DAG deployments and generator runs go to the retrieval server.
   * flows stored per user (`/api/v1/flows`: create, read, update, delete), each a JSON definition with a status.
   * `POST /api/v1/dags/deploy` (body: a DAG as YAML, at most 256 KiB) and `POST /api/v1/dags/stop?name=<dag>` forward
     to the retrieval server in `RETRIEVAL_URL`, with `DAG_RUN_TOKEN` as run token. `DAG_RUN_ROLE` decides who may
@@ -25,8 +26,9 @@
     through `POST /api/v1/dags/deploy`.
   * every error answers `{"error": "<text>", "type": "<type>"}` with the types of the retrieval server
     ([appendix B](appendix-b-rest.md)); `opentsx-saas-backend/README.md` lists the status codes and texts.
-  * `TEST_LOGIN=true` lets the name `admin` with the password `admin` sign in as the first administrator. Use it on a
-    lab network only: everyone who reaches the page is an administrator then.
+  * `TEST_LOGIN=true` lets the name `admin` with the password `admin` sign in as the first administrator (the
+    administrator with the lowest id). Use it on a lab network only: everyone who reaches the page is an administrator
+    then.
 * **Frontend:**
   * **OpenTSx Flow Composer** (`/dashboard`, the page after sign-in): the flows of the account. Select a flow, open
     it in the workbench, create, rename, copy and delete flows, and start and stop the Smart Topic of a flow the

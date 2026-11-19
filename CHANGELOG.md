@@ -137,6 +137,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `org.opentsx.model.Varints`: one public helper for unsigned and zig-zag LEB128 varints that refuses truncated input
   (`<subject>: input ends inside a varint; expected complete varints`) and a varint above 64 bits (`<subject>: varint
   exceeds 64 bits; expected at most 64 bits per varint`). `TimeAxis` uses it.
+- SaaS backend: ENABLE_SIGNUP=false makes POST /api/v1/auth/register answer 403 "sign-up is closed; ask an
+  administrator of this installation for an account"; the default stays true, and docker-compose.yml passes
+  ENABLE_SIGNUP and LOG_LEVEL to the container.
+- SaaS backend: LOG_LEVEL and app/logging.conf give one text line per event on stdout, a start line with the settings
+  (DAG_RUN_TOKEN only as set or unset), the database host while it waits, refused sign-ins at INFO without the
+  password and each test login at WARNING; the 500 line comes from logger app.main.
 
 ### Changed
 
@@ -398,6 +404,20 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   carries the running sums.
 - `VectorProcessor` measures its timing with an injectable clock, and its tests advance that clock instead of
   sleeping.
+- SaaS backend: a key in .env that is not a setting stops the start and the message lists the settings; delete
+  DATABASE_URL, REDIS_*, SMTP_*, EMAILS_FROM_*, STRIPE_*, ENABLE_INVITATIONS, ENABLE_PAYMENTS,
+  REFRESH_TOKEN_EXPIRE_DAYS, DEBUG and BACKEND_PORT from an existing .env (set BACKEND_PORT in the shell for docker
+  compose).
+- SaaS backend: DAG_RUN_ROLE takes superuser or user, RETRIEVAL_URL an http or https address, ALGORITHM HS256, HS384
+  or HS512, and BACKEND_CORS_ORIGINS refuses "*"; any other value stops the start and names the variable.
+- SaaS backend: the page at / is a plain page that links /docs, the OpenAPI document, /health and the web application;
+  the mock login and flow list are gone.
+- SaaS backend: register with a known address, a wrong sign-in and a wrong current password answer texts in the
+  <subject>: <problem>; <what is allowed> form; a binding signal over 200 characters, an unknown flow status and a
+  boolean generator seed are refused without repeating the value.
+- SaaS backend: the Dockerfile sets PYTHONUNBUFFERED=1 and python -m app.main runs without reload.
+- The DAG and system routes of the SaaS backend log through the loggers `app.api.dags` and `app.api.systems` instead
+  of `uvicorn.error.dags` and `uvicorn.error.systems`.
 
 ### Removed
 
@@ -448,6 +468,15 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `VectorProcessor`. `VectorAligner` and `VectorStream` share one cell aggregate.
 - The answer of `POST /v1/dags/deploy` no longer has the field `skipped`, which was always empty, and `DagPlan` loses
   its `skipped` component.
+- SaaS backend: the login no longer answers a refresh_token, which no route accepted, and expires_in follows
+  ACCESS_TOKEN_EXPIRE_MINUTES; the frontend stores only access_token.
+- SaaS backend: GET /api/v1/flows/{flow_id}/executions, which nothing filled since the execute route was removed; the
+  flow_executions table stays.
+- SaaS backend: the unused Redis, SMTP and Stripe settings, ENABLE_INVITATIONS, ENABLE_PAYMENTS, the sync database
+  engine, unused schemas and token helpers, and the packages redis, hiredis, python-socketio, prometheus-client,
+  emails, alembic, numpy, pandas, python-multipart and psycopg2-binary.
+- The backend in `docker-compose.local.yml` no longer gets `KAFKA_BOOTSTRAP_SERVERS`, `OPENTSDB_HOST` and
+  `OPENTSDB_PORT`, which it does not read, and no longer waits for a healthy `cp-all-in-one` before it starts.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -864,6 +893,20 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Appendix B documents the deploy answer `{dag, state, sinks}`, the electrolyzer condition of the hydrogen caveat of a
   run, and the range messages of segment parameters and episode patterns; the `segment.fixed-duration` descriptor
   states the minimum duration PT0.000001S.
+- SaaS backend: the first administrator with an address such as admin@localhost signs in and reads GET /api/v1/auth/me
+  instead of getting 500.
+- SaaS backend: a changed FIRST_SUPERUSER_EMAIL no longer stops the start on an existing database; the first
+  administrator is created only when no administrator exists, and the unused address is logged.
+- SaaS backend: with TEST_LOGIN=true, admin/admin signs in as the existing first administrator also after
+  FIRST_SUPERUSER_EMAIL changed, and never as an account that is not an administrator.
+- `opentsx-saas-backend/docker-compose.yml` passes `ENABLE_SIGNUP` and `LOG_LEVEL` to the backend;
+  `ENABLE_SIGNUP=false` in `.env` used to leave sign-up open.
+- `opentsx-saas-backend/.env.example` no longer holds `BACKEND_PORT` and the unused SMTP lines; a `.env` copied from
+  it used to stop the backend with `BACKEND_PORT: not a setting of the backend`.
+- `opentsx-saas-backend/smoke-flows.sh` no longer stops after the first login on a missing `refresh_token`; it checks
+  that the login answers none.
+- The SaaS documents no longer describe refresh tokens, Alembic migrations or the removed executions route, and
+  chapter 14 documents `ENABLE_SIGNUP=false` and the administrator `TEST_LOGIN` signs in as.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

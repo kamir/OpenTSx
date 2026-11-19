@@ -62,9 +62,12 @@ This script will:
 - Host: `localhost:5432`
 
 **First administrator:** the script writes `FIRST_SUPERUSER_EMAIL=admin@localhost` and a generated
-`FIRST_SUPERUSER_PASSWORD` into `.env.local` and prints neither password. The backend creates that account at start,
-but `POST /api/v1/auth/login` for it answers `500 Internal Server Error`: the user schema of the response refuses
-an address without a dot after the `@`.
+`FIRST_SUPERUSER_PASSWORD` into `.env.local` and prints neither password. The backend creates that account at start
+when no administrator exists, and you sign in with `POST /api/v1/auth/login` and that address. A database that
+already has an administrator keeps it; the backend then logs that `FIRST_SUPERUSER_EMAIL` is not used.
+
+Every key the script writes into `.env.local` is a setting of the backend. `./local-run.sh` loads the file with
+`uvicorn --env-file`, which puts it into the environment; a variable there that is not a setting is not read.
 
 ### 2. Run the Development Server
 
@@ -152,6 +155,10 @@ source venv/bin/activate
 uvicorn app.main:app --reload --env-file .env.local
 ```
 
+A key in `.env.local` that is not a setting, such as a misspelled one, has no effect: `--env-file` puts the file into
+the environment, and the backend reads only its settings from there. The settings table in
+[README.md](README.md#environment-variables) lists them.
+
 ## Development Workflow
 
 ### Typical Development Session
@@ -184,17 +191,9 @@ source venv/bin/activate
 
 ### Debugging
 
-To enable detailed debugging:
-
-1. Edit `.env.local` and add:
-   ```env
-   LOG_LEVEL=debug
-   ```
-
-2. Or run with explicit log level:
-   ```bash
-   uvicorn app.main:app --reload --log-level debug --env-file .env.local
-   ```
+Set `LOG_LEVEL=DEBUG` in `.env.local` and restart `./local-run.sh`. The backend then also logs the stack trace of a
+request that failed with 500. `uvicorn --log-level` does not change the level of the backend: `app/logging.conf` and
+`LOG_LEVEL` set the levels (see [README.md](README.md#logs)).
 
 ## Troubleshooting
 
@@ -296,7 +295,7 @@ print(response.json())
 | Feature | Local Development | Docker Compose |
 |---------|------------------|----------------|
 | **Setup Time** | ~5 minutes | ~10 minutes (first build) |
-| **Hot Reload** | ✅ Instant | ✅ Via volume mount |
+| **Hot Reload** | ✅ Instant | no: run `docker-compose restart backend` after a change |
 | **Database** | Local PostgreSQL | Containerized |
 | **Isolation** | Shares host resources | Fully isolated |
 | **Debugging** | ✅ Direct access | Requires docker exec |
@@ -321,10 +320,17 @@ print(response.json())
 ### Security Settings
 
 - `SECRET_KEY`: JWT signing key, at least 32 characters; required (generate with `python3 -c "import secrets; print(secrets.token_urlsafe(32))"`)
-- `FIRST_SUPERUSER_EMAIL`: the first administrator, created at start when no account with this address exists
+- `FIRST_SUPERUSER_EMAIL`: the first administrator, created at start when no administrator exists (see [README.md](README.md#first-administrator))
 - `FIRST_SUPERUSER_PASSWORD`: its password, at least 12 characters and at most 72 bytes; required, used only when the account is created
-- `ALGORITHM`: JWT algorithm (default: HS256)
+- `ALGORITHM`: JWT algorithm, `HS256` (default), `HS384` or `HS512`
 - `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration time
+
+### Other Settings
+
+- `ENABLE_SIGNUP`: `false` closes `POST /api/v1/auth/register` (default: `true`)
+- `LOG_LEVEL`: `DEBUG`, `INFO` (default), `WARNING` or `ERROR`
+
+The full list with defaults is the settings table in [README.md](README.md#environment-variables).
 
 ## Next Steps
 

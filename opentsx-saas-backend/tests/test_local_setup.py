@@ -25,7 +25,6 @@ fi
 exit 0
 """,
     "pg_isready": "#!/bin/bash\nexit 0\n",
-    "redis-cli": "#!/bin/bash\nexit 1\n",
     "pip": "#!/bin/bash\nexit 0\n",
     "python3": f"""#!/bin/bash
 if [ "$1" = "-m" ] && [ "$2" = "venv" ]; then mkdir -p "$3/bin" && : > "$3/bin/activate"; exit 0; fi
@@ -117,3 +116,10 @@ def test_a_failed_statement_stops_the_script(workdir, tmp_path, databases, error
     assert f"ERROR:  {error}" in output
     assert "✓ Password of" not in output and "✓ Database 'opentsx_local' created" not in output
     assert not (workdir / ".env.local").exists()
+
+
+def test_every_key_it_writes_is_a_setting_of_the_backend(workdir):
+    from app.core.config import Settings
+
+    run(workdir)
+    assert sorted(set(written(workdir)) - set(Settings.model_fields)) == []

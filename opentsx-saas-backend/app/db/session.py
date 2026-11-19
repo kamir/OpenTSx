@@ -1,8 +1,6 @@
 """Database session management."""
 
-from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
 
@@ -23,21 +21,6 @@ AsyncSessionLocal = async_sessionmaker(
     expire_on_commit=False,
     autocommit=False,
     autoflush=False,
-)
-
-# Sync engine for Alembic migrations
-sync_engine = create_engine(
-    settings.sync_database_url,
-    echo=False,
-    hide_parameters=True,
-    pool_pre_ping=True,
-)
-
-# Sync session factory
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=sync_engine,
 )
 
 

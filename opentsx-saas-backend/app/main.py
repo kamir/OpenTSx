@@ -8,6 +8,7 @@ to the retrieval server, and the working copy of signal bindings per user. Every
 """
 
 import logging
+import logging.config
 from contextlib import asynccontextmanager
 from http import HTTPStatus
 from pathlib import Path
@@ -27,7 +28,17 @@ from app.db.init_db import init_db
 from app.db.session import AsyncSessionLocal, async_engine
 from app.db.utils import wait_for_db
 
-log = logging.getLogger("uvicorn.error").getChild("errors")
+LOG_CONFIG = Path(__file__).resolve().parent / "logging.conf"
+
+
+def configure_logging(level: str) -> None:
+    """Handler, format and the levels of uvicorn, sqlalchemy and passlib from logging.conf; LOG_LEVEL for the root."""
+    logging.config.fileConfig(str(LOG_CONFIG), disable_existing_loggers=False)
+    logging.getLogger().setLevel(level)
+
+
+configure_logging(settings.LOG_LEVEL)
+log = logging.getLogger(__name__)
 
 # the types the retrieval server and the event bridge answer too; a status without a type fails as internal error
 ERROR_TYPES = {
@@ -45,35 +56,31 @@ ERROR_TYPES = {
 }
 
 
-# ==================== Lifespan ====================
+def log_start() -> None:
+    """One line with the settings an operator checks first; a secret only as set or unset."""
+    origins = ",".join(settings.BACKEND_CORS_ORIGINS)
+    log.info("starting backend db=%s:%s/%s retrieval_url=%s dag_run_role=%s dag_run_token=%s signup=%s test_login=%s "
+             "cors_origins=%s log_level=%s",
+             settings.POSTGRES_SERVER, settings.POSTGRES_PORT, settings.POSTGRES_DB, settings.RETRIEVAL_URL or "unset",
+             settings.DAG_RUN_ROLE, "set" if settings.DAG_RUN_TOKEN else "unset", str(settings.ENABLE_SIGNUP).lower(),
+             str(settings.TEST_LOGIN).lower(), origins, settings.LOG_LEVEL)
+    if settings.TEST_LOGIN:
+        log.warning("TEST_LOGIN=true: admin/admin signs in as administrator; do not run this outside a lab network")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Lifespan events for FastAPI application.
-
-    Handles startup and shutdown events.
-    """
-    # Wait for database to be ready
-    print("⏳ Waiting for database connection...")
+    """Waits for the database, creates the missing tables and the first administrator; closes the pool at the end."""
+    log_start()
     await wait_for_db(async_engine)
-
-    # Startup: Create tables and initialize database
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-
     async with AsyncSessionLocal() as session:
         await init_db(session)
-
-    print("✅ Database initialized")
-    if settings.TEST_LOGIN:
-        print("TEST OPERATION: admin/admin signs in as administrator. Do not run this outside a lab network.")
-
+    log.info("backend ready")
     yield
-
-    # Shutdown
     await async_engine.dispose()
-    print("👋 Shutting down")
+    log.info("backend stopped")
 
 
 # Create FastAPI app
@@ -208,10 +215,4 @@ app.include_router(systems.router, prefix=settings.API_V1_STR)
 # ==================== Run Server ====================
 
 if __name__ == "__main__":
-    uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info",
-    )
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, log_config=str(LOG_CONFIG))

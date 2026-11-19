@@ -108,7 +108,6 @@ export interface RegisterRequest {
 
 export interface LoginResponse {
   access_token: string;
-  refresh_token: string;
   token_type: string;
   user: User;
 }
@@ -171,11 +170,7 @@ export const authAPI = {
    */
   login: async (data: LoginRequest): Promise<LoginResponse> => {
     const response = await apiClient.post('/auth/login', data);
-    const { access_token, refresh_token } = response.data;
-
-    // Store tokens
-    localStorage.setItem('access_token', access_token);
-    localStorage.setItem('refresh_token', refresh_token);
+    localStorage.setItem('access_token', response.data.access_token);
 
     return response.data;
   },

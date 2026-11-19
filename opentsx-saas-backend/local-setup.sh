@@ -29,21 +29,6 @@ else
     exit 1
 fi
 
-# Check if Redis is running locally (optional)
-echo ""
-echo "🔴 Checking Redis..."
-if command -v redis-cli &> /dev/null; then
-    if redis-cli ping &> /dev/null; then
-        echo -e "${GREEN}✓ Redis is running${NC}"
-    else
-        echo -e "${YELLOW}⚠ Redis is not running (optional for basic testing)${NC}"
-        echo -e "${YELLOW}  Start Redis with: brew services start redis (macOS)${NC}"
-        echo -e "${YELLOW}  Or: sudo systemctl start redis (Linux)${NC}"
-    fi
-else
-    echo -e "${YELLOW}⚠ Redis is not installed (optional for basic testing)${NC}"
-fi
-
 # Check Python version
 echo ""
 echo "🐍 Checking Python..."
@@ -145,7 +130,6 @@ BACKEND_CORS_ORIGINS=["http://localhost:3000","http://localhost:8000","http://lo
 SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))")
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
-REFRESH_TOKEN_EXPIRE_DAYS=7
 
 # Database - Local PostgreSQL
 POSTGRES_SERVER=localhost
@@ -154,32 +138,15 @@ POSTGRES_PASSWORD=$DB_PASSWORD
 POSTGRES_DB=$DB_NAME
 POSTGRES_PORT=5432
 
-# Redis - Local Redis (optional)
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_DB=0
-
-# Email (stub for local development)
-SMTP_TLS=True
-SMTP_PORT=587
-SMTP_HOST=smtp.gmail.com
-SMTP_USER=noreply@opentsx.com
-SMTP_PASSWORD=stub
-EMAILS_FROM_EMAIL=noreply@opentsx.com
-EMAILS_FROM_NAME=OpenTSx
-
-# Stripe (stub for local development)
-STRIPE_SECRET_KEY=sk_test_stub_local
-STRIPE_WEBHOOK_SECRET=whsec_stub_local
-
 # First Superuser
 FIRST_SUPERUSER_EMAIL=admin@localhost
 FIRST_SUPERUSER_PASSWORD=$ADMIN_PASSWORD
 
-# Features
+# Sign-up: false answers 403 to POST /api/v1/auth/register
 ENABLE_SIGNUP=True
-ENABLE_INVITATIONS=True
-ENABLE_PAYMENTS=False
+
+# DEBUG, INFO, WARNING or ERROR
+LOG_LEVEL=INFO
 EOF
 chmod 600 .env.local
 

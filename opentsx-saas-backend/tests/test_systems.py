@@ -133,6 +133,8 @@ def test_a_series_is_bound_only_after_its_meaning_was_confirmed(store):
      "source.params: [1] is not an object; expected an object of parameters"),
     ({"signal": "a.b", "source": {"kind": "generator", "processor": "gen.ou", "seed": "seven"}},
      'source.seed: "seven" is not a whole number; expected a whole number such as 7'),
+    ({"signal": "a.b", "source": {"kind": "generator", "processor": "gen.ou", "seed": True}},
+     "source.seed: true is not a whole number; expected a whole number such as 7"),
     ({"signal": "a.b", "source": {"kind": "manual"}}, "source.value: null is not a number; a manual source needs a number"),
     ({"signal": "a.b", "source": {"kind": "manual", "value": 1, "origin": "GUESS"}},
      'source.origin: "GUESS" is not allowed; expected one of MEASURED, REPORTED, FORECAST, ESTIMATED, SYNTHETIC'),
@@ -141,6 +143,14 @@ def test_a_binding_that_cannot_be_a_source_is_refused_with_the_reason(store, bin
     answer = client_as(PLAIN, store).put("/api/v1/systems/h2-chain/bindings", json=binding)
     assert answer.status_code == 422
     assert answer.json() == {"error": reason, "type": "bad_request"}
+
+
+def test_a_long_signal_is_refused_without_repeating_it(store):
+    signal = "a" * 10000
+    answer = client_as(PLAIN, store).put("/api/v1/systems/h2-chain/bindings", json={"signal": signal, "source": GENERATOR})
+    assert answer.status_code == 422
+    assert answer.json() == {"error": "signal: String should have at most 200 characters", "type": "bad_request"}
+    assert store.rows == {}
 
 
 def test_a_system_id_that_is_not_one_is_named(store):
@@ -213,13 +223,13 @@ def test_a_generate_answer_that_is_not_json_is_a_bad_gateway(store, retrieval):
 def test_a_generate_route_the_retrieval_server_lacks_is_not_the_users_fault(store, retrieval, caplog):
     retrieval["status"] = 404
     retrieval["json"] = {"error": "no such system or route: /v1/systems/h2-chain/generate"}
-    with caplog.at_level(logging.WARNING, logger="uvicorn.error.dags"):
+    with caplog.at_level(logging.WARNING, logger="app.api.dags"):
         answer = client_as(ADMIN, store).post("/api/v1/systems/h2-chain/generate",
                                               json={"signal": "offtake.demand_kgph", "from": "2026-10-01T00:00:00Z", "to": "2026-10-01T06:00:00Z"})
     assert answer.status_code == 503
     assert answer.json() == {"error": "retrieval server: does not offer this route or system; see the log of the backend",
                              "type": "unavailable"}
-    assert [r.getMessage() for r in caplog.records if r.name == "uvicorn.error.dags"] == [
+    assert [r.getMessage() for r in caplog.records if r.name == "app.api.dags"] == [
         "generate by user 1 refused by the retrieval server: HTTP 404 error='no such system or route: /v1/systems/h2-chain/generate'"
     ]
 
