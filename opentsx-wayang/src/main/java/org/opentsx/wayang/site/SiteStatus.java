@@ -95,7 +95,9 @@ final class SiteStatus {
                 "records", "watermark", "waitingFor", "skippedBlocks", "at")) if (!status.has(name)) throw SiteJson.invalid("missing status field " + name);
         if (!status.path("schema").asText().equals("opentsx.dag-status.v1") || !status.path("dag").asText().equals(plan.job())
                 || !status.path("job").asText().equals(plan.job()) || !status.path("site").asText().equals(plan.site())
-                || !status.path("track").asText().equals("A") || !status.path("specHash").equals(plan.document().path("specHash"))) {
+                || !status.path("track").asText().equals(runtime.track())
+                || !plan.assignment().path("runtime").asText().equals(runtime.runtime())
+                || !status.path("specHash").equals(plan.document().path("specHash"))) {
             throw SiteJson.invalid("status identity differs");
         }
         SiteJson.fields(status.path("artifact"), "version", "digest");

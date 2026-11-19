@@ -56,6 +56,9 @@ public final class TsxBoundedSiteExecution {
     }
 
     public JsonNode run(RunnerPlan plan, TsxCompileContext context) {
+        if (!plan.assignment().path("runtime").asText().equals("java")) {
+            throw new org.opentsx.wayang.site.PlanRefusal("plan.catalog", "the JVM executor does not execute Rust assignments");
+        }
         if (!context.complete() || !context.site().equals(plan.site())) {
             throw new IllegalArgumentException("bounded site execution needs its admitted complete site context");
         }

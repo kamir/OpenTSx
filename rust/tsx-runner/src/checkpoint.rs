@@ -110,6 +110,14 @@ impl Store {
     }
 
     pub fn load(&self) -> Result<Option<Completion>, String> {
+        self.load_document("opentsx.local-checkpoint.v1")?
+            .map(|value| {
+                serde_json::from_value(value).map_err(|_| "invalid checkpoint payload".into())
+            })
+            .transpose()
+    }
+
+    pub fn load_document(&self, schema: &str) -> Result<Option<Value>, String> {
         regular_or_absent(&self.path)?;
         let file = match File::open(&self.path) {
             Ok(file) => file,
@@ -127,7 +135,7 @@ impl Store {
         let parsed = tsx_contracts::parse_json(text, self.max_bytes).map_err(str::to_string)?;
         let envelope: Envelope =
             serde_json::from_value(parsed).map_err(|_| "invalid checkpoint envelope")?;
-        if envelope.schema != "opentsx.local-checkpoint.v1" {
+        if envelope.schema != schema {
             return Err("unsupported checkpoint ABI".into());
         }
         let payload = serde_json::to_vec(&envelope.payload)
@@ -135,9 +143,7 @@ impl Store {
         if tsx_contracts::sha256_bytes(&payload) != envelope.checksum {
             return Err("checkpoint checksum mismatch".into());
         }
-        let completion =
-            serde_json::from_value(envelope.payload).map_err(|_| "invalid checkpoint payload")?;
-        Ok(Some(completion))
+        Ok(Some(envelope.payload))
     }
 
     pub fn validate(&self, completion: &Completion) -> Result<(), String> {
@@ -147,12 +153,16 @@ impl Store {
     fn encode(&self, completion: &Completion) -> Result<Vec<u8>, String> {
         let payload = serde_json::to_value(completion)
             .map_err(|e| format!("cannot encode checkpoint: {e}"))?;
+        self.encode_document("opentsx.local-checkpoint.v1", &payload)
+    }
+
+    fn encode_document(&self, schema: &str, payload: &Value) -> Result<Vec<u8>, String> {
         let canonical =
-            serde_json::to_vec(&payload).map_err(|e| format!("cannot encode checkpoint: {e}"))?;
+            serde_json::to_vec(payload).map_err(|e| format!("cannot encode checkpoint: {e}"))?;
         let envelope = Envelope {
-            schema: "opentsx.local-checkpoint.v1".into(),
+            schema: schema.into(),
             checksum: tsx_contracts::sha256_bytes(&canonical),
-            payload,
+            payload: payload.clone(),
         };
         let bytes =
             serde_json::to_vec(&envelope).map_err(|e| format!("cannot encode checkpoint: {e}"))?;
@@ -164,6 +174,15 @@ impl Store {
 
     pub fn commit(&self, completion: &Completion) -> Result<(), String> {
         let bytes = self.encode(completion)?;
+        self.commit_bytes(&bytes)
+    }
+
+    pub fn commit_document(&self, schema: &str, payload: &Value) -> Result<(), String> {
+        let bytes = self.encode_document(schema, payload)?;
+        self.commit_bytes(&bytes)
+    }
+
+    fn commit_bytes(&self, bytes: &[u8]) -> Result<(), String> {
         regular_or_absent(&self.pending)?;
         let mut options = OpenOptions::new();
         options.write(true).create(true).truncate(true);
@@ -175,7 +194,7 @@ impl Store {
         #[cfg(unix)]
         file.set_permissions(fs::Permissions::from_mode(0o600))
             .map_err(|_| "cannot make checkpoint private")?;
-        file.write_all(&bytes)
+        file.write_all(bytes)
             .map_err(|e| format!("cannot write pending checkpoint: {e}"))?;
         file.sync_all()
             .map_err(|e| format!("cannot synchronize pending checkpoint: {e}"))?;
@@ -276,6 +295,35 @@ mod tests {
         inherited.unlock().unwrap();
         drop(inherited);
         drop(Store::open(&path, 1024).unwrap());
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn document_checkpoints_bind_schema_checksum_and_atomic_byte_limits() {
+        let directory = directory();
+        let path = directory.join("checkpoint.json");
+        let store = Store::open(&path, 1024).unwrap();
+        let payload = serde_json::json!({"cursor":"4","receipt":{"accepted":true}});
+        assert_eq!(store.load_document("test.v1").unwrap(), None);
+        store.commit_document("test.v1", &payload).unwrap();
+        assert_eq!(store.load_document("test.v1").unwrap(), Some(payload));
+        assert_eq!(
+            store.load_document("other.v1").unwrap_err(),
+            "unsupported checkpoint ABI"
+        );
+        let committed = fs::read(&path).unwrap();
+        assert!(store
+            .commit_document("test.v1", &Value::String("x".repeat(1024)))
+            .is_err());
+        assert_eq!(fs::read(&path).unwrap(), committed);
+        let mut corrupt: Value = serde_json::from_slice(&committed).unwrap();
+        corrupt["payload"]["cursor"] = Value::String("5".into());
+        fs::write(&path, corrupt.to_string()).unwrap();
+        assert_eq!(
+            store.load_document("test.v1").unwrap_err(),
+            "checkpoint checksum mismatch"
+        );
+        drop(store);
         fs::remove_dir_all(directory).unwrap();
     }
 }

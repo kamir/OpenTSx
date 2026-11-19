@@ -107,6 +107,26 @@ public final class EphemeralSiteTlsFixture implements AutoCloseable {
     }
     public Map<String, String> certificateSites() { return Map.copyOf(certificateSites); }
 
+    public Map<String, Path> clientPem(String site) throws Exception {
+        if (!clients.containsKey(site)) throw new IllegalArgumentException("test client is unknown");
+        Path output = directory.resolve(site + "-pem");
+        Files.createDirectory(output);
+        Files.setPosixFilePermissions(output, PosixFilePermissions.fromString("rwx------"));
+        KeyStore keys = KeyStore.getInstance("PKCS12");
+        try (var input = Files.newInputStream(directory.resolve(site + ".p12"))) { keys.load(input, password); }
+        Path ca = output.resolve("ca.pem"), certificate = output.resolve("client.pem"), key = output.resolve("client-key.pem");
+        writePem(ca, "CERTIFICATE", Files.readAllBytes(directory.resolve("server.crt")));
+        writePem(certificate, "CERTIFICATE", keys.getCertificate(site).getEncoded());
+        writePem(key, "PRIVATE KEY", keys.getKey(site, password).getEncoded());
+        return Map.of("ca", ca, "certificate", certificate, "privateKey", key);
+    }
+
+    private static void writePem(Path path, String type, byte[] bytes) throws IOException {
+        String encoded = Base64.getMimeEncoder(64, new byte[]{'\n'}).encodeToString(bytes);
+        Files.writeString(path, "-----BEGIN " + type + "-----\n" + encoded + "\n-----END " + type + "-----\n");
+        Files.setPosixFilePermissions(path, PosixFilePermissions.fromString("rw-------"));
+    }
+
     @Override public void close() throws IOException {
         java.util.Arrays.fill(password, '\0');
         try (var paths = Files.walk(directory)) {

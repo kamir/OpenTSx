@@ -669,10 +669,27 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
-      - name: Build the pinned Rust B2 parity harness
+      - name: Qualify and build the pinned Rust B2 and B3 harnesses
+        shell: bash
         run: |
+          set -euo pipefail
           rustup toolchain install 1.99.1 --profile minimal
+          mkdir -p target/rust-b3-evidence
+          cargo +1.99.1 test --locked --all-targets --manifest-path rust/tsx-runner/Cargo.toml -- --nocapture 2>&1 | tee target/rust-b3-evidence/runner.log
+          cargo +1.99.1 test --locked --manifest-path rust/tsx-contracts/Cargo.toml -- --nocapture 2>&1 | tee target/rust-b3-evidence/contracts.log
           cargo +1.99.1 build --locked --examples --bins --manifest-path rust/tsx-runner/Cargo.toml --target-dir target/rust-b2
+      - name: Install system OpenSSH for isolated certificate acceptance
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends openssh-server
+          sudo install -d -m 0755 /run/sshd
+      - name: Verify all eight certificate-forced SSH launch cases
+        run: |
+          python3 tools/rust_ssh_launch.py \
+            --runner target/rust-b2/debug/tsx-runner \
+            --fixture-binary target/rust-b2/debug/examples/b3_ssh \
+            --sshd /usr/sbin/sshd \
+            --output target/rust-b3-evidence/ssh
       - uses: actions/checkout@v7
         with:
           repository: KafScale/platform
@@ -707,7 +724,7 @@ jobs:
           KAFSCALE_PROXY_BINARY: ${{ runner.temp }}/kafscale-proxy
           KAFSCALE_CLUSTER_BINARY: ${{ runner.temp }}/kafscale-cluster
         # opentsx-legacy-bridge pulls in opentsx-core, whose Swing tests need a display
-        run: xvfb-run --auto-servernum mvn -B -ntp -Dopentsx.rust.b2.parity="$GITHUB_WORKSPACE/target/rust-b2/debug/examples/b2_parity" -pl opentsx-kafscale-conformance,opentsx-kafka-v2,opentsx-legacy-bridge,opentsx-windpark,opentsx-stats,opentsx-twin-live,opentsx-retrieval,opentsx-wayang -am test
+        run: xvfb-run --auto-servernum mvn -B -ntp -Dopentsx.rust.b2.parity="$GITHUB_WORKSPACE/target/rust-b2/debug/examples/b2_parity" -Dopentsx.rust.b3.offline="$GITHUB_WORKSPACE/target/rust-b2/debug/examples/b3_offline" -Dopentsx.rust.b3.runner="$GITHUB_WORKSPACE/target/rust-b2/debug/tsx-runner" -Dopentsx.rust.b3.testLog="$GITHUB_WORKSPACE/target/rust-b3-evidence/runner.log" -Dopentsx.rust.b3.contractsLog="$GITHUB_WORKSPACE/target/rust-b3-evidence/contracts.log" -pl opentsx-kafscale-conformance,opentsx-kafka-v2,opentsx-legacy-bridge,opentsx-windpark,opentsx-stats,opentsx-twin-live,opentsx-retrieval,opentsx-wayang -am test
       - name: Require executed streaming acceptance
         if: always()
         run: |
@@ -725,7 +742,7 @@ jobs:
               raise SystemExit("streaming acceptance is missing, skipped or failed")
           print("All three streaming acceptance cases executed successfully")
           PYTHON
-      - name: Require executed Wayang acceptance (TASK-020 A1 to A4)
+      - name: Require executed Wayang acceptance (TASK-020 A1 to B3)
         if: always()
         run: |
           python3 - <<'PYTHON'
@@ -737,6 +754,8 @@ jobs:
               "TsxCleanIncrementsIntegrationTest": 1,
               "TsxCleanParityIntegrationTest": 1,
               "TrackParityIntegrationTest": 1,
+              "RustOfflineCatchupIntegrationTest": 1,
+              "RustAgentDaemonIntegrationTest": 1,
               "TsxStatusIntegrationTest": 2,
               "TsxCleanVectorsTest": 3,
               "TsxStatsVectorsTest": 12,
@@ -762,6 +781,8 @@ jobs:
               "federation.AggregateTransportVectorsTest": 13,
               "site.TsxSiteAgentPlanTest": 14,
               "site.ConformanceHandshakeTest": 13,
+              "site.RustSiteAdmissionTest": 6,
+              "site.TsxPlanServiceStatusReplayTest": 2,
               "site.SiteStatusTest": 5,
               "TsxVectorVectorsTest": 13,
               "TsxVectorIntegrationTest": 1,
@@ -779,6 +800,19 @@ jobs:
               if int(suite.attrib["tests"]) < minimum or any(int(suite.attrib[k]) for k in ("failures", "errors", "skipped")):
                   raise SystemExit(f"{name} is missing, skipped or failed")
               executed = {case.attrib["name"].split("(", 1)[0] for case in suite.findall("testcase")}
+              if name == "site.TsxPlanServiceStatusReplayTest" and (int(suite.attrib["tests"]) != 2 or executed != {
+                  "stoppedRetryAfterConformanceExpiryUsesTheDurableOutcomeOnce",
+                  "failedRetryAfterConformanceExpiryUsesTheDurableOutcomeOnce",
+              }):
+                  raise SystemExit("the terminal status replay cases did not execute exactly once")
+              if name == "RustOfflineCatchupIntegrationTest" and (int(suite.attrib["tests"]) != 1 or executed != {
+                  "fullWindparkCutSurvivesOfflineSignalAndAcknowledgementLossWithoutMissingFinalWindows",
+              }):
+                  raise SystemExit("the complete Rust offline catch-up case did not execute exactly once")
+              if name == "RustAgentDaemonIntegrationTest" and (int(suite.attrib["tests"]) != 1 or executed != {
+                  "realDaemonConformsPullsExecutesAcknowledgesAndStops",
+              }):
+                  raise SystemExit("the real Rust daemon case did not execute exactly once")
               if name == "DagToWayangErrorsTest" and not {
                   "message13RejectsAMissingRequiredParameter",
                   "message14RejectsTheWrongParameterType",
@@ -835,7 +869,7 @@ jobs:
           suite = ET.parse("opentsx-kafka-v2/target/surefire-reports/TEST-org.opentsx.kafka.TopicLayoutFederationTest.xml").getroot()
           if int(suite.attrib["tests"]) < 4 or any(int(suite.attrib[k]) for k in ("failures", "errors", "skipped")):
               raise SystemExit("federated topic names were not validated")
-          print("Signed bounded JVM admission and federation acceptance executed")
+          print("Signed bounded JVM and qualified Rust admission and federation acceptance executed")
           PYTHON
       - name: Verify recorder PFD through Kafka and Flink
         env:
@@ -863,6 +897,16 @@ jobs:
             opentsx-flink-core/target/pfd-acceptance/
             opentsx-wayang/target/surefire-reports/
             opentsx-wayang/target/federation-test-logs/**/brokers/*.log
+            opentsx-wayang/target/rust-b3-daemon/result.json
+            opentsx-wayang/target/rust-b3-offline/result.json
+            opentsx-wayang/target/rust-b3-offline/protocol.json
+            opentsx-wayang/target/rust-b3-offline/placement.json
+            opentsx-wayang/target/rust-b3-offline/qualification.json
+            target/rust-b3-evidence/runner.log
+            target/rust-b3-evidence/contracts.log
+            target/rust-b3-evidence/ssh/report.json
+            target/rust-b3-evidence/ssh/metadata.json
+            target/rust-b3-evidence/ssh/sshd.log
       - uses: actions/upload-artifact@v7
         if: always()
         with:

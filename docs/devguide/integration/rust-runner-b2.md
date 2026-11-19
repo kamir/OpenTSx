@@ -42,6 +42,9 @@ grant and local configuration do not accept B2 context. The Java UI rollout
 continues to validate its own smaller clean-stage subset. Local catalog
 availability does not establish a UI export, signed fleet enrollment or
 production rollout.
+The [B3 signed site profile](rust-runner-b3.md) separately admits bounded
+decode-to-statistics only. Its mandatory owner-local qualification and fresh
+job-bound conformance do not admit the remaining B2 operations.
 
 ## Select the catalog operation
 

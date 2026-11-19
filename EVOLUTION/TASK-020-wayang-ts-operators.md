@@ -464,12 +464,37 @@ annotated input and retained rolling limits. The learning metadata and generated
 student material reference these implementation and regression paths.
 
 ### B3: agent, offline operation, SSH launch
+
+- [x] Qualify the owner-approved bounded Rust B3 profile against all four
+  criteria below. The [B3 operating guide](../docs/devguide/integration/rust-runner-b3.md)
+  records its signed decode-to-statistics scope, local evidence and security
+  boundaries. The pinned Rust executable passes the complete W run, actual
+  CLI and certificate-forced SSH acceptance. Physical ARMv7 B1.2 remains open
+  independently.
+
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
 | B3.1 | The pull protocol follows S5.3 | `agent_api` tests against a test driver | fixtures | each endpoint answers as specified; 401, 403, 404, 409 cases each produced once |
 | B3.2 | Refusal codes are exact | `agent_refusals` test | fixtures | 8 of 8 codes of S5.5 |
 | B3.3 | Offline catch-up loses nothing | `offline_catchup` test: signal cluster unreachable for the whole W run, then reachable | W on two K brokers (site and signal) | every partial reaches the signal cluster; all windows reach `tsx-final: true`; 0 missing, 0 duplicates after deduplication by key and revision |
 | B3.4 | SSH launch exit codes | `ssh_launch` test | fixtures | exit 0 on stop, 2 on refused plan with the refusal message on standard error, 3 on runtime failure |
+
+| Criterion | Qualified scope and evidence |
+| --- | --- |
+| B3.1 | `agent_api`: 4 passing tests; `RustSiteAdmissionTest`: 6; `TsxPlanServiceStatusReplayTest`: 2; `RustAgentDaemonIntegrationTest`: 1. All seven endpoints, HTTP 400/401/403/404/409, exact challenge hashing, cold conformance bootstrap, signed CLI and durable cursor recovery execute. |
+| B3.2 | All 8 exact S5.5 codes execute in `agent_refusals_use_authenticated_envelope_and_exact_codes`; 20 passing `agent` unit tests also cover retained outcomes, lost terminal responses, ACK/cursor recovery, stale versions, unpublished jobs and Stop. |
+| B3.3 | `RustOfflineCatchupIntegrationTest`: 1 passing full-W case, 3,600 Episodes, 2,160,000 values, 36 chunks and 420 partials. After the outage and target-ACK loss, 520 received records deduplicate to 420 final windows, with 0 missing and 0 duplicate windows. |
+| B3.4 | `ssh_launch`: 3 actual process cases and 4 helper tests pass. All 8 actual certificate-forced SSH sessions pass, including strict host verification, fixed configuration, command overrides and exit codes 0/2/3. |
+
+The signed profile admits only bounded `decode.avro-soe` followed by
+`stats.welford-ddsketch`, alpha 0.01 and tumbling windows. It does not
+admit the remaining local B2 operators, mixed continuous fleets or production
+release enrollment. Owner-local qualification binds actual executable,
+endpoint, vectors, executed test/protocol/placement evidence and validity;
+ordinary runtimes receive no broker-admin or arbitrary probe-topic rights.
+Fresh conformance observes the job cut, metadata, fingerprints and complete
+series inventory. ARMv7 QEMU remains supplementary to physical B1.2 hardware
+acceptance.
 
 ### B4: mixed federation and evaluation on small hardware
 | # | Criterion | Proof | Data | Pass |

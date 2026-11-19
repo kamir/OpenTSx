@@ -33,6 +33,11 @@ qualifies immutable whole-topic assignments, job-bound conformance and both aggr
 [S2.4](../../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s24-site-plan). Its integration topology has three site
 instances in one JVM and four independent Proxy/broker clusters. Production Rust fleet activation,
 high-availability ownership handover and bounded Iceberg publication remain separate delivery work.
+The [B3 bounded Rust site profile](rust-runner-b3.md) uses the same Java plan
+service with explicit Rust runtime/artifact/state-ABI qualification. Its signed
+decode-to-statistics plans, complete-cut conformance and site-outbox forwarding
+retain separate local authority. Mixed-runtime and continuous fleet acceptance
+remain separate from that bounded profile.
 
 ## Keep one logical DAG and explicit execution guarantees
 

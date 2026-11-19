@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use tsx_runner::publication::HttpFencedBroker;
 use tsx_runner::{admission, broker::KafkaBroker, run_loop, run_plan, runner, worker};
 
-const HELP: &str = "Usage: tsx-runner run --plan <file>|- --config <file>\n       tsx-runner replay --request <file> --checkpoint <file>\n       tsx-runner serve --listen <addr> --node <id> --site <id> --bootstrap <host:port> --state <directory> [--publisher <http-origin> --controller <IP>]\n       tsx-runner --version\n\nRuns isolated signed continuous pass-through plans and trusted-local bounded assignments. Fenced publication requires both publisher and controller options for serve. Fleet control and conformance signing are separate interfaces.";
+const HELP: &str = "Usage: tsx-runner agent --config <file>\n       tsx-runner conform --config <file> --job <job>\n       tsx-runner run --plan <file>|- --config <file>\n       tsx-runner replay --request <file> --checkpoint <file>\n       tsx-runner serve --listen <addr> --node <id> --site <id> --bootstrap <host:port> --state <directory> [--publisher <http-origin> --controller <IP>]\n       tsx-runner --version\n\nExecutes qualified signed bounded statistics, isolated signed continuous pass-through and trusted-local assignments. Local site configuration fixes control trust, qualified evidence, jobs, bindings and policy. Fenced local publication requires both publisher and controller options for serve.";
 
 fn main() {
     match command() {
@@ -31,6 +31,12 @@ fn command() -> Result<(), (i32, String)> {
     }
     if args.first().is_some_and(|arg| arg == "run") {
         return run(&args[1..]);
+    }
+    if args
+        .first()
+        .is_some_and(|arg| arg == "agent" || arg == "conform")
+    {
+        return site_command(&args[0], &args[1..]);
     }
     if args.len() != 5 || args[0] != "replay" {
         return Err((2, HELP.into()));
@@ -81,6 +87,23 @@ fn run(args: &[String]) -> Result<(), (i32, String)> {
     }
     let plan = plan.ok_or((2, "missing --plan".into()))?;
     let config = config.ok_or((2, "missing --config".into()))?;
+    let schema = run_plan::configuration_schema(Path::new(&config)).map_err(refusal)?;
+    if schema.as_deref() == Some("opentsx.rust-site-config.v1") {
+        let config =
+            tsx_runner::site_plan::SiteConfig::load(Path::new(&config)).map_err(refusal)?;
+        let compact = if plan == "-" {
+            read_stdin_plan()?
+        } else {
+            read_bounded(Path::new(&plan), run_plan::MAX_COMPACT_BYTES).map_err(|e| (2, e))?
+        };
+        let compact =
+            std::str::from_utf8(&compact).map_err(|_| (2, "signed plan is not UTF-8".into()))?;
+        let artifact = executable_digest().map_err(|e| (3, e))?;
+        let guard = run_loop::SignalGuard::install().map_err(|e| (3, e))?;
+        let result =
+            tsx_runner::agent::run_signed(compact, &config, &artifact, &run_loop::StopToken::new());
+        return print_site_result(result, guard.restore());
+    }
     let config = run_plan::RunConfig::load(Path::new(&config))
         .map_err(|error| (2, format!("{}: {}", error.code, error.message)))?;
     let bytes = if plan == "-" {
@@ -131,6 +154,95 @@ fn run(args: &[String]) -> Result<(), (i32, String)> {
         "{}",
         serde_json::to_string(&outcome)
             .map_err(|error| (3, format!("cannot encode the stopped outcome: {error}")))?
+    );
+    Ok(())
+}
+
+fn refusal(error: run_plan::Refusal) -> (i32, String) {
+    (2, format!("{}: {}", error.code, error.message))
+}
+
+fn read_stdin_plan() -> Result<Vec<u8>, (i32, String)> {
+    let mut bytes = Vec::new();
+    std::io::stdin()
+        .lock()
+        .take(run_plan::MAX_COMPACT_BYTES as u64 + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|_| (2, "cannot read the signed plan from standard input".into()))?;
+    if bytes.len() > run_plan::MAX_COMPACT_BYTES {
+        return Err((2, "signed plan exceeds its byte limit".into()));
+    }
+    Ok(bytes)
+}
+
+fn site_command(mode: &str, args: &[String]) -> Result<(), (i32, String)> {
+    if args == ["--help"] || args == ["-h"] {
+        println!("tsx-runner {}\n{HELP}", env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
+    let expected = if mode == "agent" { 2 } else { 4 };
+    if args.len() != expected {
+        return Err((2, HELP.into()));
+    }
+    let mut config = None;
+    let mut job = None;
+    for pair in args.as_chunks::<2>().0 {
+        let slot = match pair[0].as_str() {
+            "--config" => &mut config,
+            "--job" if mode == "conform" => &mut job,
+            _ => return Err((2, format!("unknown {mode} argument: {}", pair[0]))),
+        };
+        if slot.is_some() {
+            return Err((2, format!("duplicate {mode} argument")));
+        }
+        *slot = Some(pair[1].as_str());
+    }
+    let config = tsx_runner::site_plan::SiteConfig::load(Path::new(
+        config.ok_or((2, "missing --config".into()))?,
+    ))
+    .map_err(refusal)?;
+    let artifact = executable_digest().map_err(|e| (3, e))?;
+    if mode == "conform" {
+        let job = job.ok_or((2, "missing --job".into()))?;
+        if !config.allowed_job(job) {
+            return Err((
+                2,
+                "plan.policy: conformance job violates local site policy".into(),
+            ));
+        }
+        let result =
+            tsx_runner::conformance::conform_once(&config, &artifact, job).map_err(|e| (3, e))?;
+        let signed = result["signed"]
+            .as_str()
+            .ok_or((3, "conformance outcome has no signed report".into()))?;
+        println!("{signed}");
+        return Ok(());
+    }
+    let guard = run_loop::SignalGuard::install().map_err(|e| (3, e))?;
+    let result = tsx_runner::agent::run(&config, &artifact, &run_loop::StopToken::new());
+    print_site_result(result, guard.restore())
+}
+
+fn print_site_result(
+    result: Result<serde_json::Value, run_loop::RunError>,
+    restored: Result<(), String>,
+) -> Result<(), (i32, String)> {
+    let outcome = match (result, restored) {
+        (Ok(value), Ok(())) => value,
+        (Err(error), Ok(())) => {
+            let code = if matches!(error, run_loop::RunError::Refused(_)) {
+                2
+            } else {
+                3
+            };
+            return Err((code, error.to_string()));
+        }
+        (Ok(_), Err(error)) => return Err((3, error)),
+        (Err(primary), Err(secondary)) => return Err((3, format!("{primary}; {secondary}"))),
+    };
+    println!(
+        "{}",
+        serde_json::to_string(&outcome).map_err(|_| (3, "cannot encode site outcome".into()))?
     );
     Ok(())
 }

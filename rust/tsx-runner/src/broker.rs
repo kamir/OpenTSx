@@ -34,6 +34,22 @@ pub struct OutputRecord {
     pub payload: Vec<u8>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FederationRecord {
+    pub key: String,
+    pub timestamp: i64,
+    pub payload: Vec<u8>,
+    pub headers: Vec<(String, Vec<u8>)>,
+}
+
+#[derive(Clone, Debug)]
+pub struct FederationInputRecord {
+    pub partition: i32,
+    pub offset: i64,
+    pub record: FederationRecord,
+}
+
 pub trait Broker {
     fn read(&mut self, run: &Admitted) -> Result<Vec<InputRecord>, String>;
     fn publish(&mut self, run: &Admitted, records: &[OutputRecord]) -> Result<(), String>;
@@ -111,6 +127,156 @@ fn producer_config(bootstrap: &str) -> ClientConfig {
         .set("allow.auto.create.topics", "false")
         .set("queue.buffering.max.kbytes", "32768");
     config
+}
+
+pub(crate) fn read_federation_prefix(
+    bootstrap: &str,
+    cut: &Cut,
+    limits: &crate::admission::Limits,
+) -> Result<Vec<FederationInputRecord>, String> {
+    let reader = consumer(bootstrap)?;
+    verify_cut(&reader, cut)?;
+    let topic = LegacyTopic::new(&reader, &cut.topic)?;
+    let deadline = Instant::now() + Duration::from_secs(600);
+    let mut records = Vec::new();
+    let mut bytes = 0usize;
+    for position in &cut.positions {
+        if position.from == position.to {
+            continue;
+        }
+        topic.start(position.partition, position.from)?;
+        let result = (|| {
+            let mut next = position.from;
+            while next < position.to {
+                if records.len() >= limits.records {
+                    return Ok(true);
+                }
+                if Instant::now() >= deadline {
+                    return Err("federation cut read timed out".into());
+                }
+                if let Some(event) = reader.poll(Duration::ZERO) {
+                    let code = match &event {
+                        Err(error) => error.rdkafka_error_code().map(|code| code as i32),
+                        Ok(_) => None,
+                    };
+                    if code.is_some_and(retryable_fetch) {
+                        reset_refused(
+                            next,
+                            || topic.stop(position.partition),
+                            |n| topic.start(position.partition, n),
+                        )?;
+                        continue;
+                    }
+                    return Err(match event {
+                        Err(error) => format!("federation client failed: {error}"),
+                        Ok(_) => {
+                            "federation reader received an unexpected consumer-queue message".into()
+                        }
+                    });
+                }
+                let Some(message) = topic.poll(position.partition)? else {
+                    continue;
+                };
+                let data = message.data();
+                if data.err != native::rd_kafka_resp_err_t::RD_KAFKA_RESP_ERR_NO_ERROR {
+                    if retryable_fetch(data.err as i32) {
+                        drop(message);
+                        reset_refused(
+                            next,
+                            || topic.stop(position.partition),
+                            |n| topic.start(position.partition, n),
+                        )?;
+                        continue;
+                    }
+                    return Err(format!(
+                        "federation fetch failed: {}",
+                        KafkaError::MessageConsumption(data.err.into())
+                    ));
+                }
+                if data.partition != position.partition || data.offset != next {
+                    return Err("federation cut contains missing or reordered offsets".into());
+                }
+                let record = message.federation_record(limits.payload_bytes)?;
+                let next_bytes = bytes
+                    .checked_add(record.payload.len())
+                    .ok_or("federation input byte overflow")?;
+                if next_bytes > limits.input_bytes {
+                    if records.is_empty() {
+                        return Err(
+                            "federation record exceeds the admitted input memory limit".into()
+                        );
+                    }
+                    return Ok(true);
+                }
+                bytes = next_bytes;
+                records.push(FederationInputRecord {
+                    partition: data.partition,
+                    offset: data.offset,
+                    record,
+                });
+                next = next.checked_add(1).ok_or("federation offset overflow")?;
+            }
+            Ok(false)
+        })();
+        let stopped = topic.stop(position.partition);
+        match (result, stopped) {
+            (Err(error), Err(stop)) => return Err(format!("{error}; {stop}")),
+            (Err(error), _) | (_, Err(error)) => return Err(error),
+            (Ok(true), Ok(())) => break,
+            (Ok(false), Ok(())) => {}
+        }
+    }
+    verify_cut(&reader, cut)?;
+    Ok(records)
+}
+
+pub(crate) fn publish_federation_records(
+    bootstrap: &str,
+    topic: &str,
+    partitions: usize,
+    records: &[FederationRecord],
+) -> Result<(), String> {
+    let reader = consumer(bootstrap)?;
+    inventory(&reader, topic, partitions)?;
+    let (sender, receiver) = mpsc::channel();
+    let failed = Arc::new(AtomicBool::new(false));
+    let producer: BaseProducer<DeliveryContext> = producer_config(bootstrap)
+        .create_with_context(DeliveryContext {
+            sender,
+            callback_failed: failed.clone(),
+        })
+        .map_err(|e| format!("cannot create federation writer: {e}"))?;
+    for record in records {
+        let mut headers = OwnedHeaders::new_with_capacity(record.headers.len());
+        for (name, value) in &record.headers {
+            headers = headers.insert(Header {
+                key: name,
+                value: Some(value.as_slice()),
+            });
+        }
+        producer
+            .send(
+                BaseRecord::to(topic)
+                    .key(record.key.as_str())
+                    .payload(record.payload.as_slice())
+                    .timestamp(record.timestamp)
+                    .headers(headers),
+            )
+            .map_err(|(e, _)| format!("federation enqueue failed before checkpoint: {e}"))?;
+    }
+    producer
+        .flush(Duration::from_secs(180))
+        .map_err(|e| format!("federation delivery failed: {e}"))?;
+    if failed.load(Ordering::SeqCst) {
+        return Err("federation delivery callback channel failed".into());
+    }
+    for _ in records {
+        receiver
+            .try_recv()
+            .map_err(|_| "a federation acknowledgement is missing")??;
+    }
+    inventory(&reader, topic, partitions)?;
+    Ok(())
 }
 
 fn inventory(consumer: &BaseConsumer, topic: &str, count: usize) -> Result<(), String> {
@@ -467,6 +633,43 @@ impl LegacyMessage<'_> {
         unsafe { self.pointer.as_ref() }
     }
 
+    fn federation_record(&self, limit: usize) -> Result<FederationRecord, String> {
+        let data = self.data();
+        if data.payload.is_null()
+            || data.key.is_null()
+            || data.len > limit
+            || data.len > isize::MAX as usize
+            || data.key_len == 0
+            || data.key_len > 4096
+        {
+            return Err("federation record key or payload is missing or exceeds its bound".into());
+        }
+        let key = std::str::from_utf8(unsafe {
+            std::slice::from_raw_parts(data.key.cast::<u8>(), data.key_len)
+        })
+        .map_err(|_| "federation record key is not UTF-8")?
+        .to_owned();
+        let timestamp = unsafe {
+            native::rd_kafka_message_timestamp(self.pointer.as_ptr(), std::ptr::null_mut())
+        };
+        if timestamp < 0 {
+            return Err("federation record has no timestamp".into());
+        }
+        let mut headers = std::ptr::null_mut();
+        if unsafe { native::rd_kafka_message_headers(self.pointer.as_ptr(), &mut headers) }
+            != native::rd_kafka_resp_err_t::RD_KAFKA_RESP_ERR_NO_ERROR
+        {
+            return Err("federation record has no headers".into());
+        }
+        Ok(FederationRecord {
+            key,
+            timestamp,
+            payload: unsafe { std::slice::from_raw_parts(data.payload.cast::<u8>(), data.len) }
+                .to_vec(),
+            headers: copy_headers(headers, limit)?,
+        })
+    }
+
     fn record(&self, run: &Admitted) -> Result<InputRecord, String> {
         let data = self.data();
         if data.payload.is_null() {
@@ -502,6 +705,53 @@ impl LegacyMessage<'_> {
         validate_schema_headers(headers)?;
         Ok(record)
     }
+}
+
+fn copy_headers(
+    headers: *mut native::rd_kafka_headers_t,
+    limit: usize,
+) -> Result<Vec<(String, Vec<u8>)>, String> {
+    let headers = NonNull::new(headers).ok_or("federation record has no headers")?;
+    let count = unsafe { native::rd_kafka_header_cnt(headers.as_ptr()) };
+    if count == 0 || count > 64 {
+        return Err("federation header count exceeds its bound".into());
+    }
+    let mut output = Vec::with_capacity(count);
+    let mut bytes = 0usize;
+    for index in 0..count {
+        let mut name = std::ptr::null();
+        let mut value = std::ptr::null();
+        let mut length = 0;
+        if unsafe {
+            native::rd_kafka_header_get_all(
+                headers.as_ptr(),
+                index,
+                &mut name,
+                &mut value,
+                &mut length,
+            )
+        } != native::rd_kafka_resp_err_t::RD_KAFKA_RESP_ERR_NO_ERROR
+            || name.is_null()
+            || value.is_null()
+        {
+            return Err("federation headers must have nonnull names and values".into());
+        }
+        let name = unsafe { CStr::from_ptr(name) }
+            .to_str()
+            .map_err(|_| "federation header name is not UTF-8")?;
+        bytes = bytes
+            .checked_add(name.len())
+            .and_then(|n| n.checked_add(length))
+            .ok_or("federation header byte overflow")?;
+        if bytes > limit || length > isize::MAX as usize {
+            return Err("federation headers exceed their byte limit".into());
+        }
+        output.push((
+            name.to_owned(),
+            unsafe { std::slice::from_raw_parts(value.cast::<u8>(), length) }.to_vec(),
+        ));
+    }
+    Ok(output)
 }
 
 fn validate_schema_headers(headers: *mut native::rd_kafka_headers_t) -> Result<(), String> {
@@ -729,5 +979,41 @@ mod tests {
         assert!(validate_schema_headers(headers.0.as_ptr()).is_ok());
         headers.add(&[0xff], Some(b"invalid"));
         assert!(validate_schema_headers(headers.0.as_ptr()).is_err());
+    }
+
+    #[test]
+    fn native_forward_headers_preserve_exact_values_and_order() {
+        let headers = TestHeaders::new();
+        headers.add(b"tsx-schema", Some(b"org.opentsx.model.v2.SeriesStats"));
+        headers.add(b"tsx-evidence", Some(b"{\"kind\":\"bounded-source-cut\"}"));
+        headers.add(b"trace", Some(&[0, 255]));
+        assert_eq!(
+            copy_headers(headers.0.as_ptr(), 1024).unwrap(),
+            vec![
+                (
+                    "tsx-schema".into(),
+                    b"org.opentsx.model.v2.SeriesStats".to_vec()
+                ),
+                (
+                    "tsx-evidence".into(),
+                    b"{\"kind\":\"bounded-source-cut\"}".to_vec()
+                ),
+                ("trace".into(), vec![0, 255])
+            ]
+        );
+    }
+
+    #[test]
+    fn native_forward_headers_reject_null_invalid_names_and_excess_bytes() {
+        assert!(copy_headers(std::ptr::null_mut(), 1024).is_err());
+        let null = TestHeaders::new();
+        null.add(b"tsx-schema", None);
+        assert!(copy_headers(null.0.as_ptr(), 1024).is_err());
+        let names = TestHeaders::new();
+        names.add(&[255], Some(b"value"));
+        assert!(copy_headers(names.0.as_ptr(), 1024).is_err());
+        let large = TestHeaders::new();
+        large.add(b"name", Some(b"value"));
+        assert!(copy_headers(large.0.as_ptr(), 8).is_err());
     }
 }

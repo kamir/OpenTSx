@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://opentsx.org/schemas/opentsx.runner-plan.v1.schema.json",
   "title": "opentsx.runner-plan.v1",
-  "description": "Signed site wrapper for bounded JVM statistics or isolated continuous Rust pass-through. Semantic validation binds the unchanged assignment, exact source and fragment text, runtime, complete topic inventory and output bindings. The payload is limited to 128 KiB. The JVM branch requires federation and a SeriesStats sink; the Rust branch forbids federation and admits one local Episode sink.",
+  "description": "Signed site wrapper for bounded Java or explicitly qualified bounded Rust statistics, or isolated continuous Rust pass-through. Semantic validation binds the unchanged assignment, exact source and fragment text, runtime, complete topic inventory and output bindings. The payload is limited to 128 KiB. Bounded statistics require federation and a SeriesStats sink. Continuous Rust pass-through forbids federation and admits one local Episode sink.",
   "type": "object",
   "required": [
     "schema",

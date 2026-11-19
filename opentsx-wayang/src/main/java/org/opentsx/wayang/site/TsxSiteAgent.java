@@ -53,6 +53,9 @@ public final class TsxSiteAgent implements AutoCloseable {
                 || !artifactDigest.matches("sha256:[0-9a-f]{64}") || stateAbi == null || stateAbi.isBlank()) {
             throw new IllegalArgumentException("site runtime identity is invalid");
         }
+        if (runtime != null && !runtime.runtime().equals("java")) {
+            throw new IllegalArgumentException("the JVM site executor requires Java runtime qualification");
+        }
         SiteJson.fields(policy, "domains", "inputs", "outputs", "catalogs");
         RunnerPlan.strings(policy.get("domains"), true);
         if (!policy.get("inputs").isObject() || policy.get("inputs").isEmpty()) throw new IllegalArgumentException("site input policy is invalid");
@@ -90,6 +93,7 @@ public final class TsxSiteAgent implements AutoCloseable {
         state.check();
         if (unhealthy) throw new IllegalStateException("site journal requires recovery");
         RunnerPlan plan = RunnerPlan.verify(compact, driverKey);
+        requireJava(plan);
         if (!plan.site().equals(site) || !plan.assignment().path("node").asText().equals(node)) {
             throw new PlanRefusal("plan.site", "plan is assigned to another site or node");
         }
@@ -143,6 +147,12 @@ public final class TsxSiteAgent implements AutoCloseable {
             try { state.save(); }
             catch (RuntimeException persistence) { unhealthy = true; error.addSuppressed(persistence); }
             throw error;
+        }
+    }
+
+    private static void requireJava(RunnerPlan plan) {
+        if (!plan.assignment().path("runtime").asText().equals("java")) {
+            throw new PlanRefusal("plan.catalog", "the JVM executor does not execute Rust assignments");
         }
     }
 
@@ -239,6 +249,7 @@ public final class TsxSiteAgent implements AutoCloseable {
         state.check();
         if (unhealthy) throw new IllegalStateException("site journal requires recovery");
         RunnerPlan plan = RunnerPlan.verify(compact, driverKey);
+        requireJava(plan);
         JsonNode entry = state.value.path("jobs").path(plan.job());
         if (!entry.path("commandHash").asText().equals(plan.commandHash())
                 || !entry.path("continuation").equals(checkpointIdentity(plan))) throw SiteJson.invalid("recovery requires the identical admitted grant");

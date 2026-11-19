@@ -177,6 +177,45 @@ class CiWorkflowSelectionTest(unittest.TestCase):
                 commands = re.findall(r"\bmvn\b[^\n]*", jobs[job].replace("\\\n", " "))
                 self.assert_maven_roots(job, [shlex.split(command) for command in commands])
 
+    def test_kafscale_b3_qualifies_the_final_artifact_and_requires_the_full_offline_case(self):
+        job = job_blocks(WORKFLOW.read_text(encoding="utf-8"))["kafscale-conformance"]
+        self.assertIn("shell: bash\n        run: |\n          set -euo pipefail", job)
+        self.assertIn("cargo +1.99.1 test --locked --all-targets --manifest-path rust/tsx-runner/Cargo.toml -- --nocapture", job)
+        self.assertIn("cargo +1.99.1 test --locked --manifest-path rust/tsx-contracts/Cargo.toml -- --nocapture", job)
+        for path in ("target/rust-b3-evidence/runner.log", "target/rust-b3-evidence/contracts.log"):
+            self.assertIn("tee " + path, job)
+        self.assertIn("cargo +1.99.1 build --locked --examples --bins", job)
+        for property_name, path in {
+            "opentsx.rust.b3.runner": "target/rust-b2/debug/tsx-runner",
+            "opentsx.rust.b3.offline": "target/rust-b2/debug/examples/b3_offline",
+            "opentsx.rust.b3.testLog": "target/rust-b3-evidence/runner.log",
+            "opentsx.rust.b3.contractsLog": "target/rust-b3-evidence/contracts.log",
+        }.items():
+            self.assertIn(f'-D{property_name}="$GITHUB_WORKSPACE/{path}"', job)
+        self.assertIn('"RustAgentDaemonIntegrationTest": 1,', job)
+        self.assertIn("realDaemonConformsPullsExecutesAcknowledgesAndStops", job)
+        self.assertIn("opentsx-wayang/target/rust-b3-daemon/result.json", job)
+        self.assertIn('"RustOfflineCatchupIntegrationTest": 1,', job)
+        self.assertIn('"site.RustSiteAdmissionTest": 6,', job)
+        self.assertIn("fullWindparkCutSurvivesOfflineSignalAndAcknowledgementLossWithoutMissingFinalWindows", job)
+        self.assertIn('for k in ("failures", "errors", "skipped")', job)
+        for filename in ("result.json", "protocol.json", "placement.json", "qualification.json"):
+            self.assertIn("opentsx-wayang/target/rust-b3-offline/" + filename, job)
+
+    def test_kafscale_b3_runs_real_ssh_and_uploads_only_public_ssh_files(self):
+        job = job_blocks(WORKFLOW.read_text(encoding="utf-8"))["kafscale-conformance"]
+        self.assertIn("openssh-server", job)
+        self.assertIn("python3 tools/rust_ssh_launch.py", job)
+        self.assertIn('--runner target/rust-b2/debug/tsx-runner', job)
+        self.assertIn('--fixture-binary target/rust-b2/debug/examples/b3_ssh', job)
+        self.assertIn('--sshd /usr/sbin/sshd', job)
+        self.assertIn('--output target/rust-b3-evidence/ssh', job)
+        for filename in ("report.json", "metadata.json", "sshd.log"):
+            self.assertIn("target/rust-b3-evidence/ssh/" + filename, job)
+        uploads = job[job.index("uses: actions/upload-artifact"):]
+        self.assertNotIn("target/rust-b3-evidence/\n", uploads)
+        self.assertNotIn("*.pem", uploads)
+
     def test_declared_maven_roots_match_compose_helper_commands(self):
         jobs = job_blocks(WORKFLOW.read_text(encoding="utf-8"))
         helpers = {

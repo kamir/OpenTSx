@@ -22,6 +22,7 @@ public final class AggregateInventory {
     private final Map<String, JsonNode> expected = new TreeMap<>();
     private final Map<String, String> texts = new TreeMap<>();
     private final Map<String, JsonNode> admitted = new TreeMap<>();
+    private final Map<String, JsonNode> qualifiedRust = new TreeMap<>();
     private final Map<String, Scope> scopes = new TreeMap<>();
 
     public AggregateInventory(String job, int planVersion, String specHash, JsonNode expectedAssignments, JsonNode declaredScopes) {
@@ -69,21 +70,50 @@ public final class AggregateInventory {
     }
 
     public synchronized void admit(String assignmentText) {
+        admit(assignmentText, null);
+    }
+
+    public void requireContract(String job, int planVersion, String specHash, JsonNode expectedAssignments, JsonNode declaredScopes) {
+        var required = new AggregateInventory(job, planVersion, specHash, expectedAssignments, declaredScopes);
+        if (!this.job.equals(required.job) || this.planVersion != required.planVersion || !this.specHash.equals(required.specHash)
+                || !expected.equals(required.expected) || !scopes.equals(required.scopes)) {
+            throw new IllegalArgumentException("aggregate inventory differs from the signed federation contract");
+        }
+    }
+
+    public synchronized void admitRustBounded(String assignmentText, org.opentsx.wayang.site.ConformanceHandshake.QualifiedRuntime runtime) {
+        if (runtime == null || !runtime.runtime().equals("rust")) throw new IllegalArgumentException("an explicitly qualified Rust runtime is required");
+        admit(assignmentText, runtime);
+    }
+
+    private void admit(String assignmentText, org.opentsx.wayang.site.ConformanceHandshake.QualifiedRuntime runtime) {
         ExecutionAssignments.validate(assignmentText);
         JsonNode assignment = AggregateRecord.parse(assignmentText.getBytes(java.nio.charset.StandardCharsets.UTF_8), 65_536);
         String id = AggregateRecord.text(assignment, "assignment");
         JsonNode member = expected.get(id);
         if (member == null) throw new IllegalArgumentException("unknown aggregate assignment");
         if (!job.equals(assignment.path("deployment").textValue()) || !specHash.equals(assignment.path("specHash").textValue())
-                || !"java".equals(assignment.path("runtime").textValue()) || !"bounded".equals(assignment.path("mode").textValue())) {
+                || !(runtime == null ? "java" : "rust").equals(assignment.path("runtime").textValue())
+                || !"bounded".equals(assignment.path("mode").textValue())) {
             throw new IllegalArgumentException("aggregate assignment context does not match");
+        }
+        JsonNode qualification = null;
+        if (runtime != null) {
+            if (!runtime.site().equals(assignment.path("site").textValue()) || !runtime.node().equals(assignment.path("node").textValue())
+                    || !runtime.digest().equals(assignment.path("artifactDigest").textValue())) {
+                throw new IllegalArgumentException("aggregate Rust runtime is not qualified for this assignment");
+            }
+            qualification = AggregateRecord.JSON.createObjectNode().put("site", runtime.site()).put("node", runtime.node())
+                    .put("version", runtime.version()).put("digest", runtime.digest()).put("stateAbi", runtime.stateAbi()).put("runtime", runtime.runtime());
         }
         for (String field : FIELDS) if (!member.path(field).equals(assignment.path(field))) {
             throw new IllegalArgumentException("aggregate assignment identity does not match: " + field);
         }
         String previous = texts.get(id);
         if (previous != null) {
-            if (!previous.equals(assignmentText)) throw new IllegalArgumentException("aggregate assignment admission conflicts");
+            if (!previous.equals(assignmentText) || !java.util.Objects.equals(qualifiedRust.get(id), qualification)) {
+                throw new IllegalArgumentException("aggregate assignment admission conflicts");
+            }
             return;
         }
         List<String> all = new ArrayList<>(texts.values());
@@ -91,6 +121,7 @@ public final class AggregateInventory {
         ExecutionAssignments.validateSet(all);
         texts.put(id, assignmentText);
         admitted.put(id, assignment.deepCopy());
+        if (qualification != null) qualifiedRust.put(id, qualification);
     }
 
     public String job() { return job; }
@@ -119,6 +150,10 @@ public final class AggregateInventory {
         expected.values().forEach(members::add);
         ObjectNode assignments = value.putObject("assignmentTexts");
         texts.forEach(assignments::put);
+        if (!qualifiedRust.isEmpty()) {
+            ObjectNode runtimes = value.putObject("qualifiedRustRuntimes");
+            qualifiedRust.forEach(runtimes::set);
+        }
         var windows = value.putArray("scopes");
         scopes.values().forEach(s -> windows.addObject().put("groupId", s.groupId()).put("windowType", s.windowType())
                 .put("startMicros", Long.toString(s.startMicros())).put("endMicros", Long.toString(s.endMicros())));

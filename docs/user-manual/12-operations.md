@@ -118,8 +118,10 @@ loop uses explicit finite-cut caps and acknowledged progress checkpoints.
 Rust worker and checkpoint owners explicitly release their file locks when they
 close in the acquiring process, even while inherited descriptors remain open.
 The existing local replay and HTTP cleaning workers keep their own request limits
-and state formats. The disposable KafScale acceptance harness is protocol test
-evidence, not a signed site-conformance report or a public `conform` mode.
+and state formats. The disposable B1 KafScale acceptance harness supplies
+protocol evidence; the separate [B3 site profile](../devguide/integration/rust-runner-b3.md)
+binds that prior evidence to its exact executable and endpoint, performs fresh
+job checks and submits signed site conformance.
 
 For a failed bounded JVM federation test, download `kafscale-capabilities` from the KafScale conformance job.
 It includes `opentsx-wayang/target/surefire-reports/` and retained
@@ -346,3 +348,43 @@ Physical ARMv7 qualification remains open in
 supplementary ARMv7 QEMU tests do not satisfy B1.2. Run the shared Avro and
 identity cases on an actual ARMv7 board and record its hardware, OS, source
 revision and results before closing B1.2 or B1.
+
+## 12.10 Operate signed bounded Rust statistics
+
+Use the [B3 operating guide](../devguide/integration/rust-runner-b3.md) for the
+separate `opentsx.rust-site-config.v1` contract. You need a registered TLS 1.3
+mTLS plan service, separately pinned Ed25519 driver/site roles, locally allowed
+jobs and topic policy, a private state directory, explicit limits and distinct
+site/signal Proxy endpoints. Provision all topics and local qualification
+before starting the ordinary runtime.
+
+The qualification generator consumes actual runner/contract logs, site-broker
+protocol results and Java/Rust producer placement. It binds those checks to
+the executable, catalog, state ABI, endpoint, repository vectors and validity.
+Do not give the ordinary process admin or arbitrary probe-topic rights.
+Fresh `conform` checks the exact authenticated challenge, local policy, live
+metadata, retained cuts, fingerprints and complete series inventory before
+submitting its signed report. The guide identifies prior and fresh evidence.
+
+`agent` receives signed bounded decode-to-statistics plans. It retains outcomes
+before acknowledgement and advances the delivery cursor afterward. Recovery
+retries the original acknowledgement; it does not reactivate the command.
+Current conformance and qualification still gate new activation. Do not
+replace accepted bytes, configuration or private state to bypass a refusal.
+
+Site aggregate publication completes before signal forwarding. The immutable
+site outbox and acknowledged forwarder retain complete SOE records, aggregate
+headers and closed-cut evidence. Keep its retained log available from offset
+zero. A lost target acknowledgement can repeat a key/revision; the receiving
+inventory and completeness coordinator validate and deduplicate those records.
+Earlier incomplete revisions stay immutable when final revisions arrive.
+
+The SSH certificate fixes the executable and local configuration, uses
+`run --plan -`, and accepts only the signed plan on standard input. Pin host
+keys and use the non-root restricted account. The guide links the eight-session
+test and the full-W offline regression.
+
+The signed profile admits only `decode.avro-soe` and
+`stats.welford-ddsketch` with alpha 0.01 and tumbling windows. The local
+B2 operator set, continuous/mixed fleet qualification, production rollout and
+physical ARMv7 B1.2 acceptance remain separate.

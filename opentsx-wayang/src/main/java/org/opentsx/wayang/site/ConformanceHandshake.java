@@ -16,14 +16,21 @@ public final class ConformanceHandshake {
             "kafscale.required", "topics.names", "topics.partitions", "topics.fingerprints", "partitioner.murmur2",
             "series.disjoint", "runtime.identity");
 
-    public record QualifiedRuntime(String site, String node, String version, String digest, String stateAbi) {
+    public record QualifiedRuntime(String site, String node, String version, String digest, String stateAbi, String runtime) {
+        public QualifiedRuntime(String site, String node, String version, String digest, String stateAbi) {
+            this(site, node, version, digest, stateAbi, "java");
+        }
+
         public QualifiedRuntime {
             if (site == null || !site.matches("[a-z0-9][a-z0-9-]{0,62}") || node == null
                     || !node.matches("[a-z0-9][a-z0-9-]{0,62}") || version == null || version.isBlank()
-                    || digest == null || !digest.matches("sha256:[0-9a-f]{64}") || stateAbi == null || stateAbi.isBlank()) {
+                    || digest == null || !digest.matches("sha256:[0-9a-f]{64}") || stateAbi == null || stateAbi.isBlank()
+                    || runtime == null || !Set.of("java", "rust").contains(runtime)) {
                 throw new IllegalArgumentException("qualified runtime pin is invalid");
             }
         }
+
+        public String track() { return runtime.equals("rust") ? "B" : "A"; }
     }
 
     private ConformanceHandshake() { }
@@ -54,7 +61,9 @@ public final class ConformanceHandshake {
         for (String name : List.of("site", "node", "job", "planVersion", "generation", "catalog", "artifact")) {
             if (!report.path(name).equals(contract.path(name))) return refused("runtime.identity", "report runtime or job identity differs");
         }
-        if (!report.path("track").asText().equals("A") || !report.path("admissionHash").asText().equals(challenge.path("contractHash").asText())
+        if (!report.path("track").asText().equals(runtime.track())
+                || !plan.assignment().path("runtime").asText().equals(runtime.runtime())
+                || !report.path("admissionHash").asText().equals(challenge.path("contractHash").asText())
                 || !plan.assignment().path("artifactDigest").asText().equals(runtime.digest())) {
             return refused("runtime.identity", "runtime is not qualified for this admission");
         }
