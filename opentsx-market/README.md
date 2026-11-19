@@ -24,7 +24,23 @@ Checked on 2026-10-12. Re-check the terms before you redistribute an archive.
 
 **Hosts to allow** in a restricted network: `www.smard.de`, `api.energy-charts.info`, `web-api.tp.entsoe.eu`,
 `ds.netztransparenz.de`, `identity.netztransparenz.de`, `opendata.dwd.de`. All of them were reachable from the
-build environment through its proxy. The JVM proxy settings (`https.proxyHost` …) are honoured.
+build environment through its proxy.
+
+**Proxy.** Downloads use the JVM proxy settings (`https.proxyHost`, `https.proxyPort`) when `https.proxyHost` is set.
+Otherwise they use the key `opentsx.https.proxy`, the same key as in [`opentsx-dwd`](../opentsx-dwd/README.md#download-through-a-proxy),
+set as `<host>:<port>` or `http://<host>:<port>`:
+
+```bash
+export OPENTSX_HTTPS_PROXY=<host>:<port>
+```
+
+`<host>:<port>` is the address of your HTTPS proxy. `HTTPS_PROXY` and `https_proxy` are legacy names of the same key.
+The key is a secret: the command line refuses `--conf opentsx.https.proxy=...`. A value without a host stops the
+command with exit code 2 before the first download, also when `https.proxyHost` is set:
+
+```text
+opentsx: opentsx.https.proxy: not a proxy address; expected <host>:<port> or http://<host>:<port>
+```
 
 ## 2. Time, units, origin
 
@@ -64,7 +80,7 @@ keys of the command with their flags, defaults and environment variables. A key 
 `--requality false` and `--force false` switch it off.
 
 `--from`/`--to` take a Berlin market day: a local date (Europe/Berlin, start of day) or an ISO instant. `--to` is
-exclusive. `--from-day` and `--to-day` of `load` and `publish` take a UTC day instead. `--offline` parses a
+exclusive and must be after `--from`. `--from-day` and `--to-day` of `load` and `publish` take a UTC day instead. `--offline` parses a
 downloaded file in the source's format.
 
 `--store` decides whether `prices`, `series`, `rebap` and `marktwert` merge the result into the archive year files:
@@ -73,11 +89,13 @@ from `OPENTSX_ARCHIVE_DIR`, a properties file or a defaults file does not store 
 
 Exit codes: 0 success, 1 runtime failure, 2 usage or configuration error. A failure is one line `opentsx: <message>`
 on stderr; stdout stays empty for a usage or configuration error. Exit code 2 covers an unknown or malformed option,
-a missing input file, and a credential that a fetch needs and that is not set:
+a missing input file, a range whose end is not after its start, and a credential that a fetch needs and that is not
+set:
 
 ```text
 opentsx: --form-year: unknown option of market backfill; did you mean --from-year?
 opentsx: --from: "2024-13-01" is not a date; expected a local date YYYY-MM-DD (Europe/Berlin) or an ISO instant such as 2024-01-01T00:00:00Z
+opentsx: --to: "2025-01-01" is not after --from "2025-02-01"; expected an end after the start
 opentsx: opentsx.market.entsoeToken: not set; set OPENTSX_MARKET_ENTSOE_TOKEN or ENTSOE_TOKEN or put opentsx.market.entsoeToken in a properties file, or parse a download with --offline
 ```
 
@@ -85,14 +103,18 @@ Exit code 1 covers a download that fails after its retries, an HTTP error status
 year that failed and a publish the broker did not confirm. A request that the source answers with an HTTP error
 status prints `opentsx: HTTP <status> for <URL>`, followed by `: <response text, cut at 300 characters>` when the
 response has text. The URL shows the ENTSO-E token as `securityToken=***`. For an ENTSO-E acknowledgement answered
-with HTTP 400, the response text is the code and text of its reasons. A rejected ENTSO-E token (HTTP 401) or
-netztransparenz.de client prints a line that names the credential to check instead.
+with HTTP 400 or HTTP 200, the response text is the code and text of its reasons. A rejected ENTSO-E token (HTTP 401)
+or netztransparenz.de client prints a line that names the keys and variables of the credential to check instead:
+
+```text
+opentsx: opentsx.market.ntpClientId, opentsx.market.ntpClientSecret: rejected by netztransparenz.de (HTTP 401); check the client in OPENTSX_MARKET_NTP_CLIENT_ID and OPENTSX_MARKET_NTP_CLIENT_SECRET, NTP_CLIENT_ID and NTP_CLIENT_SECRET or the properties file
+```
 
 **Partner files** (`import`) have a header and the columns `start` (ISO-8601 with offset or `Z`), optional `end`,
 and `value`. They use `,` or `;` as separator; with `;` a decimal comma is allowed. Without `end`, pass
 `--resolution PT15M`. Local timestamps need `--zone Europe/Berlin` and are rejected inside the doubled hour.
-`--origin` takes `REPORTED` (default) or `FORECAST`; another value exits with 2. Keep real partner data in the
-git-ignored `config/private/`.
+`--origin` takes `REPORTED` (default) or `FORECAST`; another value exits with 2. `--name` follows the name rule of
+the archive (section 4); another name exits with 2. Keep real partner data in the git-ignored `config/private/`.
 
 ## 4. History archive
 
@@ -103,6 +125,16 @@ data/history/                                   (git-ignored)
   netztransparenz/rebap_short/...
   dwd-cdc/03166/air_temperature/2023.csv.gz    weather: station sub-directory (filled by the DWD backfill)
   dwd-mosmix/raw/10579/2026-10-12T090000Z.kmz  raw MOSMIX_L forecasts + raw/index.tsv
+```
+
+**Name rule.** Every source, series name and station id in an archive path consists of letters, digits, `.`, `_` and
+`-`. A series name may have sub-directories separated by `/`; no part is `.` or `..`, and the MOSMIX station ids of
+`mosmix-archive` are letters and digits only, so every path stays below the archive directory. A path that breaks the
+rule is refused with exit code 2 before anything is written:
+
+```text
+opentsx: --name: "../x" is not allowed; expected names of letters, digits, '.', '_' and '-', separated by '/', and none of them '.' or '..'
+opentsx: --stations: item "../x" is not a station id; expected letters and digits such as 10579 or E5411
 ```
 
 Each year file contains `t_utc,dt_s,value` (interval start in UTC, interval length in seconds). The writer goes
@@ -134,13 +166,17 @@ bin/opentsx market load     --archive data/history --iceberg type=jdbc,uri=jdbc:
   fetched again, and so is any year fetched before it settled (3 days after year end, 60 days for netztransparenz,
   whose quality-assured data comes late). A changed or missing file is fetched again.
 * **Politeness:** a minimum pause between requests per host (`--delay-ms`, default 500 ms; ENTSO-E at least 1 s,
-  netztransparenz at least 600 ms), and retries with exponential backoff on network errors, 429 and 5xx, honouring
-  `Retry-After`. A failing year is reported and the run continues; the command ends with exit code 1 and
+  netztransparenz at least 600 ms), and up to 4 retries on network errors, 429 and 5xx, after 2, 4, 8 and 16 s or
+  later when `Retry-After` asks for it. An unknown host and a TLS error are not tried again; the request fails at
+  once with `GET <URL> failed after 1 attempt`: on the FAILED line of the year in a backfill
+  (`UncheckedIOException: GET <URL> failed after 1 attempt`), and as
+  `opentsx: GET <URL> failed after 1 attempt; caused by ...` in `prices`, `series`, `rebap`, `marktwert` and
+  `mosmix-archive`. A failing year is reported and the run continues; the command ends with exit code 1 and
   `opentsx: market backfill: <n> of <m> series-years failed; the lines marked FAILED on stdout say why`.
-* **ENTSO-E without data:** ENTSO-E answers a month without data with HTTP 400 and an acknowledgement that says
-  `No matching data found`. That month counts as empty. Any other HTTP 400 fails the year; for an acknowledgement,
-  the message shows the code and text of its reasons. An acknowledgement that comes with HTTP 200 counts as empty
-  whatever its reason.
+* **ENTSO-E without data:** ENTSO-E answers a month without data with an acknowledgement that says
+  `No matching data found`, with HTTP 400 or HTTP 200. That month counts as empty. Any other acknowledgement and any
+  other HTTP 400 fail the year; for an acknowledgement, the message shows the code and text of its reasons, for
+  example `HTTP 200 for <URL>: 999 The amount of requested data exceeds allowed limit.`
 * **Credentials:** a source without credentials is skipped with the reason. The credentials are secret keys: they
   come from the environment or a properties file, never from the command line. They are never written to the
   manifest, and the start line of the log shows them as `******`. In error messages and the log, the value of every
@@ -157,9 +193,17 @@ bin/opentsx market load     --archive data/history --iceberg type=jdbc,uri=jdbc:
 * **Load:** `load` maps the archive to REGULAR episodes, one per UTC day. Episodes split where the resolution
   changes or data is missing, so a gap is never filled. An episode gets the same identity as in `publish`, so a
   repeated load skips the episodes the table already holds. `--from-day` and `--to-day` limit it as in `publish`.
-  The episodes are written to Iceberg when the command line gives `--iceberg` or
-  `--conf opentsx.iceberg.properties=<list>` (same options as `bin/opentsx windpark-sim`), otherwise to an in-memory
-  store (dry run with counts). A value from `OPENTSX_ICEBERG_PROPERTIES` or a file does not switch to Iceberg.
+  `--store` (key `opentsx.market.load.store`, variable `OPENTSX_MARKET_LOAD_STORE`) decides where the episodes go.
+  `iceberg` writes them to Iceberg with the catalog properties of `opentsx.iceberg.properties` from any source
+  (`--iceberg`, `--conf`, `OPENTSX_ICEBERG_PROPERTIES` or a properties file; same options as
+  `bin/opentsx windpark-sim`). `memory` writes them to an in-memory store (dry run with counts). `auto` (default)
+  writes to Iceberg only when the command line gives `--iceberg` or `--conf opentsx.iceberg.properties=<list>`; a
+  value from `OPENTSX_ICEBERG_PROPERTIES` or a file then does not switch to Iceberg. A Job that takes its keys from a
+  ConfigMap switches to Iceberg with `OPENTSX_MARKET_LOAD_STORE=iceberg`. `iceberg` without catalog properties exits with 2:
+
+  ```text
+  opentsx: opentsx.iceberg.properties: not set; set it with --iceberg, --conf opentsx.iceberg.properties=<value> or OPENTSX_ICEBERG_PROPERTIES
+  ```
 
 The default set `market` is: SMARD price, load, residual load, wind onshore/offshore, solar, and their forecasts
 (plus load forecast); the Energy-Charts price as a cross-check; the ENTSO-E price, load and forecasts; reBAP
@@ -191,7 +235,7 @@ The weather backfill reads the DWD CDC observations of the twin sites' stations
 | `precipitation` | hourly sum `R1` (`hourly/precipitation/...`) | mm, interval start |
 
 The sites file names a station for temperature, wind and radiation; the other six parameters are asked for with
-`--stations <id>:<parameter>,...`.
+`--stations <id>:<parameter>,...`. A station id has 5 digits, in the sites file and in `--stations`.
 
 `--sites <file>` replaces the built-in sites file, here and in `bin/opentsx twin|house|boat --history`. Under
 `sites`, the file maps a site id to these fields:
@@ -199,18 +243,19 @@ The sites file names a station for temperature, wind and radiation; the other si
 | Field | Type | Required | Meaning |
 |-------|------|----------|---------|
 | `latitude`, `longitude` | number | yes | position of the site in degrees |
-| `temperature`, `wind`, `radiation` | string | no | DWD CDC station id, 5 digits (`"03166"`); without it the site has no station for that variable |
+| `temperature`, `wind`, `radiation` | string | no | DWD CDC station id, 5 digits in quotes (`"03166"`; an unquoted `03166` is a YAML number); without it the site has no station for that variable |
 | `anemometerHeightM` | number | no, default 10 | height of the station's wind measurement in m |
 | `hubHeightM` | number | no, default 120 | hub height of the park's turbines in m |
 | `shearExponent` | number | no, default 0.14 | wind shear exponent from the measurement to the hub height |
 
-An unknown or missing field, a value of the wrong type or a number that is not finite stops the command with exit
-code 2 and one line that names the file and the field. A file that is not valid YAML stops the same way and names
+An unknown or missing field, a value of the wrong type, a station id that is not 5 digits or a number that is not
+finite stops the command with exit code 2 and one line that names the file and the field. A file that is not valid YAML stops the same way and names
 the line. A weather backfill that finds no station stops the same way:
 
 ```text
 opentsx: sites.yaml: sites.windpark-ostsee.hubHeight: unknown field; allowed: anemometerHeightM, hubHeightM, latitude, longitude, radiation, shearExponent, temperature, wind
 opentsx: sites.yaml: sites.windpark-ostsee.hubHeightM: not finite; expected a finite decimal number such as 0.01 or 1e-3
+opentsx: sites.yaml: sites.windpark-ostsee.wind: wrong type; expected a station id of 5 digits in quotes such as "03166"
 opentsx: sites.yaml:4: not valid YAML; while parsing a block mapping, expected <block end>, but found '<block mapping start>'
 opentsx: nostation.yaml: sites: no site names a temperature, wind or radiation station; name one, or pass --stations <id>:<parameter>,...
 ```
@@ -271,7 +316,8 @@ assumptions; prices, wind situations, temperatures and irradiance are real.
 `mvn -pl opentsx-market test`, all offline: SMARD (MTU switch, MWh→MW, `null`), Energy-Charts (23-hour DST
 day), ENTSO-E (A03 blocks, two resolutions, acknowledgement, no DOCTYPE/XXE), reBAP (API and download formats
 across the end of DST), market values (local months), partner CSV (doubled hour), OAuth flow and token reuse,
-archive round trip and checksums, quality report (gaps, DST days, implausible values), episode mapping, backfill
+archive round trip, checksums and the name rule, quality report (gaps, DST days, implausible values), episode mapping, backfill
 resume, weather backfill (listing, year filter, recent over historical, resume; every parameter to its CDC
-directory, column, unit and time convention; default stations and years of the daily jobs), MOSMIX raw archive, resampling, the three twins on fixture slices, and the command line (keys, exit codes, messages, the jobs of `deploy/k3s/history`)
+directory, column, unit and time convention; default stations and years of the daily jobs), MOSMIX raw archive, resampling, the three twins on fixture slices, the retries of `Http` against a stub HTTP client,
+the stop of `publish` against a mock producer, and the command line (keys, exit codes, messages, the jobs of `deploy/k3s/history`)
 ([`src/test/resources/market/`](src/test/resources/market/README.md)).

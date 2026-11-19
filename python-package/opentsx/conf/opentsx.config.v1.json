@@ -688,7 +688,16 @@
         "dwd house",
         "dwd mosmix",
         "dwd obs",
-        "dwd stations"
+        "dwd stations",
+        "market backfill",
+        "market forward",
+        "market marktwert",
+        "market mosmix-archive",
+        "market prices",
+        "market rebap",
+        "market series",
+        "market weather-backfill",
+        "market weather-forward"
       ],
       "since": "unreleased",
       "doc": "HTTPS proxy for downloads, used when the JVM property https.proxyHost is not set."
@@ -1085,6 +1094,23 @@
       ],
       "since": "3.0.1",
       "doc": "Time zone of local timestamps in the CSV file."
+    },
+    {
+      "key": "opentsx.market.load.store",
+      "type": "enum",
+      "values": [
+        "auto",
+        "memory",
+        "iceberg"
+      ],
+      "default": "auto",
+      "secret": false,
+      "flag": "store",
+      "commands": [
+        "market load"
+      ],
+      "since": "unreleased",
+      "doc": "Where market load writes the episodes: iceberg to the catalog of opentsx.iceberg.properties from any source, memory to an in-memory store that only counts them, auto to Iceberg only when opentsx.iceberg.properties is set on the command line."
     },
     {
       "key": "opentsx.market.mosmix.stations",

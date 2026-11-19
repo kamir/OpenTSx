@@ -24,7 +24,7 @@ from the repository root. The files of the examples go to `config/private/`, whi
 ## Know what reads the configuration
 
 Every setting of an OpenTSx command is a key of the registry `opentsx.config.v1`, for example
-`opentsx.stats.sketchAlpha`. [Appendix D](appendix-d-configuration.md) lists all 133 keys with type, default, flag and
+`opentsx.stats.sketchAlpha`. [Appendix D](appendix-d-configuration.md) lists all 134 keys with type, default, flag and
 environment variables. These read the registry:
 
 * `opentsx config list`, `opentsx config show`, `opentsx config get` and `opentsx version`, in both runtimes.

@@ -200,6 +200,10 @@
 #       # Time zone of local timestamps in the CSV file.
 #       # Type: string; no default.
 #       zone:
+#     load:
+#       # Where market load writes the episodes: iceberg to the catalog of opentsx.iceberg.properties from any source, memory to an in-memory store that only counts them, auto to Iceberg only when opentsx.iceberg.properties is set on the command line.
+#       # Type: enum, one of auto, memory, iceberg.
+#       store: auto
 #     mosmix:
 #       # MOSMIX station ids to archive.
 #       # Type: list.

@@ -14,6 +14,7 @@ import org.opentsx.market.source.SmardSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.net.ProxySelector;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -112,6 +113,22 @@ class SourcesTest {
                 failed);
     }
 
+    @Test
+    void entsoeHttp200AcknowledgementIsNoDataOnlyForNoMatchingData() {
+        String noData = Fixtures.text("entsoe-ack.xml");
+        String refused = noData.replace("No matching data found for Data item Day-ahead Prices [12.1.D]",
+                "The amount of requested data exceeds allowed limit.");
+        long from = t("2024-01-01T00:00:00Z");
+        long to = t("2024-02-01T00:00:00Z");
+        assertTrue(new EntsoeSource((uri, h) -> noData, "tok").fetch("day_ahead_price", from, to, new ArrayList<>())
+                .isEmpty());
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> new EntsoeSource((uri, h) -> refused, "tok").fetch("day_ahead_price", from, to, new ArrayList<>()));
+        assertEquals("HTTP 200 for " + EntsoeSource.BASE + "?documentType=A44&in_Domain=10Y1001A1001A82H&out_Domain="
+                + "10Y1001A1001A82H&periodStart=202401010000&periodEnd=202402010000&securityToken=***: 999 The amount of "
+                + "requested data exceeds allowed limit.", e.getMessage());
+    }
+
     static Fetcher status400(String body) {
         return (uri, h) -> {
             throw new Http.StatusException(400, uri, body);
@@ -125,8 +142,8 @@ class SourcesTest {
             throw new Http.StatusException(503, uri, "Service Unavailable: GET " + uri);
         };
         // port 0: the connection is refused on the loopback interface, nothing leaves the host
-        Fetcher unreachable = (uri, h) -> new Http(0, 0).get(uri.replace(EntsoeSource.BASE, "http://127.0.0.1:0/api"),
-                h);
+        Fetcher unreachable = (uri, h) -> new Http(0, 0, ProxySelector.getDefault())
+                .get(uri.replace(EntsoeSource.BASE, "http://127.0.0.1:0/api"), h);
         for (String shown : List.of(failedYear(dir, refused, token), failedYear(dir, unreachable, token),
                 failedYear(dir, unreachable, token + "\n"))) {
             assertTrue(shown.contains("securityToken=***"), shown);
@@ -140,7 +157,7 @@ class SourcesTest {
         Fetcher refused = (uri, h) -> {
             throw new Http.StatusException(503, uri, "Service Unavailable: GET " + uri);
         };
-        MarketCliTest.Result r = MarketCliTest.cli((delay, credentials) -> new Collector(null, null, refused, null,
+        MarketCliTest.Result r = MarketCliTest.cli((delay, credentials, proxy) -> new Collector(null, null, refused, null,
                 credentials), Map.of("ENTSOE_TOKEN", token), "prices", "--source", "entsoe", "--from", "2025-10-01", "--to",
                 "2025-10-02");
         assertEquals(1, r.code(), r.toString());
@@ -163,15 +180,31 @@ class SourcesTest {
                 throw new Http.StatusException(401, uri, "invalid_client");
             }
         };
-        MarketCli.Collectors c = (delay, credentials) -> new Collector(null, null, unauthorized, unauthorized, credentials);
+        MarketCli.Collectors c = (delay, credentials, proxy) -> new Collector(null, null, unauthorized, unauthorized,
+                credentials);
         Map<String, String> env = Map.of("ENTSOE_TOKEN", "SECRET-TOKEN-123", "NTP_CLIENT_ID", "client",
                 "NTP_CLIENT_SECRET", "s3cret");
         assertEquals(new MarketCliTest.Result(1, "", "opentsx: opentsx.market.entsoeToken: "
                         + "rejected by ENTSO-E (HTTP 401); check the token in OPENTSX_MARKET_ENTSOE_TOKEN, ENTSOE_TOKEN or the "
                         + "properties file\n"),
                 MarketCliTest.cli(c, env, "prices", "--source", "entsoe", "--from", "2025-10-01", "--to", "2025-10-02"));
-        assertEquals(new MarketCliTest.Result(1, "", "opentsx: netztransparenz.de rejected the client credentials (HTTP 401)\n"),
+        assertEquals(new MarketCliTest.Result(1, "", "opentsx: " + NTP_REJECTED + "\n"),
                 MarketCliTest.cli(c, env, "rebap", "--from", "2025-10-01", "--to", "2025-10-02"));
+    }
+
+    static final String NTP_REJECTED = "opentsx.market.ntpClientId, opentsx.market.ntpClientSecret: rejected by "
+            + "netztransparenz.de (HTTP 401); check the client in OPENTSX_MARKET_NTP_CLIENT_ID and "
+            + "OPENTSX_MARKET_NTP_CLIENT_SECRET, NTP_CLIENT_ID and NTP_CLIENT_SECRET or the properties file";
+
+    @Test
+    void aTokenAnswerWithoutAccessTokenNamesTheKeysAndTheirVariables() {
+        Fixtures.FakeFetcher f = new Fixtures.FakeFetcher();
+        f.tokenResponse = "{\"token_type\":\"Bearer\"}";
+        MissingCredentials e = assertThrows(MissingCredentials.class,
+                () -> new NetztransparenzSource(f, "client", "s3cret").rebap(0, Micro.DAY, new ArrayList<>()));
+        assertEquals("opentsx.market.ntpClientId, opentsx.market.ntpClientSecret: the token response of netztransparenz.de "
+                + "has no access_token; check the client in OPENTSX_MARKET_NTP_CLIENT_ID and OPENTSX_MARKET_NTP_CLIENT_SECRET, "
+                + "NTP_CLIENT_ID and NTP_CLIENT_SECRET or the properties file", e.getMessage());
     }
 
     /** Outcome message and log of a backfill year of the ENTSO-E price whose request fails. */

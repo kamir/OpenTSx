@@ -47,6 +47,12 @@ public final class MosmixRawArchive {
     }
 
     public List<Result> collect(List<String> stations, Instant now) {
+        for (String st : stations) {
+            if (!st.matches("[A-Za-z0-9]{1,10}")) {
+                throw new IllegalArgumentException("stations: item \"" + st + "\" is not a station id;"
+                        + " expected letters and digits such as 10579 or E5411");
+            }
+        }
         List<Result> out = new ArrayList<>();
         for (String st : stations) {
             String url = String.format(URL, st);

@@ -155,10 +155,33 @@ class WeatherJobsTest {
         List<String[]> named = MarketCli.weatherJobs(conf("--stations", "01759:pressure, 01759:wind_gust,01759:pressure"));
         assertEquals(2, named.size());   // duplicates once
         assertArrayEquals(new String[]{"01759", "wind_gust"}, named.get(1));
-        assertEquals("--stations: item \"01759:sunshine\" is not allowed; expected <id>:<parameter> with parameter in "
-                + WeatherBackfill.parameters(), assertThrows(IllegalArgumentException.class,
-                () -> MarketCli.weatherJobs(conf("--stations", "01759:sunshine"))).getMessage());
+        for (String item : List.of("01759:sunshine", "../x:air_temperature", "1759:wind_speed", "0175/:wind_speed")) {
+            assertEquals("--stations: item \"" + item + "\" is not allowed; expected <id>:<parameter> with a station id "
+                    + "of 5 digits and parameter in " + WeatherBackfill.parameters(), assertThrows(
+                    IllegalArgumentException.class, () -> MarketCli.weatherJobs(conf("--stations", item))).getMessage());
+        }
         assertThrows(IllegalArgumentException.class, () -> MarketCli.weatherJobs(conf("--stations", "01759")));
+    }
+
+    @Test
+    void aStationIdOfTheSitesFileIsAStringOfFiveDigits(@TempDir Path dir) throws IOException {
+        String park = "  windpark-ostsee:\n    latitude: 54.45\n    longitude: 13.95\n    wind: \"01759\"\n";
+        String expected = "expected a station id of 5 digits in quotes such as \"03166\"";
+        Map<String, String> wrong = new LinkedHashMap<>();
+        wrong.put(park.replace("\"01759\"", "1759"), "sites.windpark-ostsee.wind: wrong type; " + expected);
+        wrong.put(park.replace("\"01759\"", "03166"), "sites.windpark-ostsee.wind: wrong type; " + expected);
+        wrong.put(park.replace("\"01759\"", "true"), "sites.windpark-ostsee.wind: wrong type; " + expected);
+        wrong.put(park.replace("\"01759\"", "\"1759\""), "sites.windpark-ostsee.wind: \"1759\" is not a station id; "
+                + expected);
+        wrong.put(park.replace("    wind: \"01759\"", "    radiation: \"../x\""), "sites.windpark-ostsee.radiation: "
+                + "\"../x\" is not a station id; " + expected);
+        for (Map.Entry<String, String> w : wrong.entrySet()) {
+            Path file = Files.writeString(dir.resolve("ids.yaml"), "sites:\n" + w.getKey());
+            assertEquals(file + ": " + w.getValue(),
+                    assertThrows(IllegalArgumentException.class, () -> HistorySites.load(file)).getMessage());
+        }
+        Path quoted = Files.writeString(dir.resolve("quoted.yaml"), "sites:\n" + park);
+        assertEquals("01759", HistorySites.load(quoted).get(HistorySites.PARK).wind());
     }
 
     @Test
@@ -212,7 +235,7 @@ class WeatherJobsTest {
         wrong.put("sites:\n" + park.replace("54.45", "[54.45]"), "sites.windpark-ostsee.latitude: wrong type; "
                 + "expected a number");
         wrong.put("sites:\n" + park.replace("\"01759\"", "[\"01759\"]"), "sites.windpark-ostsee.wind: wrong type; "
-                + "expected a station id such as \"03166\"");
+                + "expected a station id of 5 digits in quotes such as \"03166\"");
         wrong.put("sites:\n" + park.replace("54.45", "NaN"), "sites.windpark-ostsee.latitude: not finite; expected a "
                 + "finite decimal number such as 0.01 or 1e-3");
         wrong.put("sites:\n" + park + "    hubHeightM: 1e999\n", "sites.windpark-ostsee.hubHeightM: not finite; "

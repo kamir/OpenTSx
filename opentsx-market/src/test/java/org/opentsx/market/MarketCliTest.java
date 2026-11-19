@@ -16,6 +16,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,6 +35,8 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.opentsx.market.ParsersTest.t;
@@ -40,7 +46,7 @@ class MarketCliTest {
 
     static final Instant NOW = Instant.parse("2026-11-19T00:00:00Z");
     static final String SMARD_PRICE = "smard-4169-hour-1759096800000.json";
-    static final MarketCli.Collectors NO_DOWNLOAD = (delay, credentials) -> {
+    static final MarketCli.Collectors NO_DOWNLOAD = (delay, credentials, proxy) -> {
         throw new AssertionError("this command must not download");
     };
 
@@ -67,7 +73,7 @@ class MarketCliTest {
         Fetcher down = (uri, h) -> {
             throw new UncheckedIOException("GET " + uri + " failed after 5 attempts", new IOException("connection refused"));
         };
-        return (delay, credentials) -> new Collector(down, down, down, down, credentials);
+        return (delay, credentials, proxy) -> new Collector(down, down, down, down, credentials);
     }
 
     private Path smardPrice() throws IOException {
@@ -203,6 +209,105 @@ class MarketCliTest {
     }
 
     @Test
+    void aNameThatLeavesItsArchiveDirectoryIsRefusedWith2AndWritesNothing() throws IOException {
+        Path csv = Files.writeString(dir.resolve("p.csv"), "start,value\n2024-01-01T00:00:00+01:00,1.5\n");
+        Path archive = dir.resolve("history");
+        List<String> partner = List.of("import", "--file", csv.toString(), "--metric", "m", "--unit", "kW", "--resolution",
+                "PT1H", "--archive", archive.toString(), "--name");
+        Result first = cli(Stream.concat(partner.stream(), Stream.of("schedule")).toArray(String[]::new));
+        assertEquals(0, first.code(), first.toString());
+        List<Path> before = filesUnder(dir);
+        for (String name : List.of("../../x", "../x", "a/./b", "a b")) {
+            assertEquals(new Result(2, "", "opentsx: --name: \"" + name + "\" is not allowed; expected names of letters, "
+                            + "digits, '.', '_' and '-', separated by '/', and none of them '.' or '..'\n"),
+                    cli(Stream.concat(partner.stream(), Stream.of(name)).toArray(String[]::new)));
+        }
+        assertEquals(before, filesUnder(dir));
+    }
+
+    @Test
+    void aMosmixStationThatLeavesItsArchiveDirectoryIsRefusedWith2BeforeAnyDownload() throws IOException {
+        String archive = dir.resolve("history").toString();
+        OpenTsxConf conf = OpenTsxConf.load(List.of("market", "mosmix-archive", "--archive", archive, "--stations",
+                "10579,../x"), Map.of(), null).conf();
+        assertEquals("--stations: item \"../x\" is not a station id; expected letters and digits such as 10579 or E5411",
+                assertThrows(IllegalArgumentException.class,
+                        () -> MarketCli.check("market mosmix-archive", conf, NOW, NO_DOWNLOAD)).getMessage());
+        assertEquals(new Result(2, "", "opentsx: opentsx.market.mosmix.stations: item \"a/b\" is not a station id; "
+                        + "expected letters and digits such as 10579 or E5411\n"),
+                cli(NO_DOWNLOAD, Map.of("OPENTSX_MARKET_MOSMIX_STATIONS", "a/b"), "mosmix-archive", "--archive", archive));
+        assertEquals(List.of(), filesUnder(dir));
+    }
+
+    @Test
+    void aFetchWhoseEndIsNotAfterItsStartExitsWith2AndNamesBothOptions() throws IOException {
+        String offline = smardPrice().toString();
+        String refused = "opentsx: --to: \"2025-01-01\" is not after --from \"2025-02-01\"; expected an end after the "
+                + "start\n";
+        assertEquals(new Result(2, "", refused),
+                cli("prices", "--offline", offline, "--from", "2025-02-01", "--to", "2025-01-01"));
+        assertEquals(new Result(2, "", refused), cli("prices", "--from", "2025-02-01", "--to", "2025-01-01"));
+        assertEquals(new Result(2, "", "opentsx: opentsx.market.to: \"2025-02-01\" is not after opentsx.market.from "
+                        + "\"2025-02-01\"; expected an end after the start\n"),
+                cli(NO_DOWNLOAD, Map.of("OPENTSX_MARKET_FROM", "2025-02-01", "OPENTSX_MARKET_TO", "2025-02-01"), "series",
+                        "--name", "smard/load"));
+    }
+
+    @Test
+    void theDownloadCommandsReadTheProxyKeyAndRefuseAMalformedOne() throws IOException {
+        Map<String, String> env = Map.of("OPENTSX_HTTPS_PROXY", "http://user:s3cret@");
+        Result refused = new Result(2, "", "opentsx: opentsx.https.proxy: not a proxy address; expected <host>:<port> or "
+                + "http://<host>:<port>\n");
+        assertEquals(refused, cli(down(), env, "prices", "--from", "2025-10-01", "--to", "2025-10-02"));
+        assertEquals(refused, cli(down(), env, "backfill", "--archive", dir.resolve("history").toString(), "--series",
+                "smard/load", "--from-year", "2024", "--to-year", "2024"));
+        assertEquals(refused, cli(down(), env, "weather-backfill", "--archive", dir.resolve("history").toString(),
+                "--stations", "03166:air_temperature", "--from-year", "2024", "--to-year", "2024"));
+        assertEquals(refused, cli(down(), env, "mosmix-archive", "--archive", dir.resolve("history").toString()));
+        assertEquals(List.of(), filesUnder(dir));
+    }
+
+    @Test
+    void theProxyKeyReachesTheCollectorAndTheJvmProxyWins() {
+        List<ProxySelector> seen = new ArrayList<>();
+        MarketCli.Collectors recording = (delay, credentials, proxy) -> {
+            seen.add(proxy);
+            throw new IllegalStateException("recorded");
+        };
+        Map<String, String> env = Map.of("OPENTSX_HTTPS_PROXY", "proxy.example:3128");
+        String jvm = System.getProperty("https.proxyHost");
+        try {
+            System.clearProperty("https.proxyHost");
+            assertEquals(1, cli(recording, env, "prices", "--from", "2025-10-01", "--to", "2025-10-02").code());
+            System.setProperty("https.proxyHost", "jvm-proxy.example");
+            assertEquals(1, cli(recording, env, "backfill", "--series", "smard/load").code());
+        } finally {
+            if (jvm == null) {
+                System.clearProperty("https.proxyHost");
+            } else {
+                System.setProperty("https.proxyHost", jvm);
+            }
+        }
+        assertEquals(List.of(new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved("proxy.example", 3128))),
+                seen.get(0).select(URI.create("https://www.smard.de/")));
+        assertSame(ProxySelector.getDefault(), seen.get(1));
+    }
+
+    @Test
+    void loadOpensIcebergWhenTheStoreKeySaysSoFromAnySource() {
+        Result environment = cli(NO_DOWNLOAD, Map.of("OPENTSX_MARKET_LOAD_STORE", "iceberg", "OPENTSX_ICEBERG_PROPERTIES",
+                "catalog-impl=org.example.NoSuchCatalog,uri=x"), "load", "--archive", dir.toString());
+        assertEquals(1, environment.code(), environment.toString());
+        assertTrue(environment.err().contains("org.example.NoSuchCatalog"), environment.err());
+        assertEquals(new Result(0, "loaded 0 episodes, 0 values into an in-memory store\n", ""),
+                cli("load", "--archive", dir.toString(), "--store", "memory", "--iceberg",
+                        "catalog-impl=org.example.NoSuchCatalog,uri=x"));
+        assertEquals(new Result(2, "", "opentsx: opentsx.iceberg.properties: not set; set it with --iceberg, --conf "
+                        + "opentsx.iceberg.properties=<value> or OPENTSX_ICEBERG_PROPERTIES\n"),
+                cli("load", "--archive", dir.toString(), "--store", "iceberg"));
+    }
+
+    @Test
     void loadWritesToIcebergOnlyWhenIcebergIsOnTheCommandLine() {
         assertEquals(new Result(0, "loaded 0 episodes, 0 values into an in-memory store\n", ""),
                 cli(NO_DOWNLOAD, Map.of("OPENTSX_ICEBERG_PROPERTIES", "catalog-impl=org.example.NoSuchCatalog,uri=x"),
@@ -314,8 +419,8 @@ class MarketCliTest {
             List<String> args = new ArrayList<>();
             pod.path("containers").get(0).path("args").forEach(a -> args.add(a.asText()));
             OpenTsxConf.Loaded loaded = OpenTsxConf.load(args, env, null);
-            MarketCli.check(loaded.command(), loaded.conf(), NOW, (delay, credentials) -> new Collector(null, null, null,
-                    null, credentials));
+            MarketCli.check(loaded.command(), loaded.conf(), NOW, (delay, credentials, proxy) -> new Collector(null, null,
+                    null, null, credentials));
             assertEquals("/data/history", loaded.conf().get(MarketCli.ARCHIVE), f.toString());
             commands.add(loaded.command());
         }

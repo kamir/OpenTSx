@@ -162,6 +162,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   record the broker refuses is logged at WARN, its recovery at INFO.
 - `stats-flink` logs `submitting the statistics job domain=<domain> topics=<topics> sink=<topic> bootstrap=<address>
   once=<bool> checkpointEvery=<duration> restarts=20 restartDelay=PT15S` before the job runs.
+- The market downloads read the shared proxy key `opentsx.https.proxy` (`OPENTSX_HTTPS_PROXY`, legacy `HTTPS_PROXY`
+  and `https_proxy`), as the DWD downloads do; the JVM property `https.proxyHost` still wins, and a malformed value
+  exits with 2 before the first download.
+- `market load --store auto|memory|iceberg` (key `opentsx.market.load.store`, `OPENTSX_MARKET_LOAD_STORE`) lets a Job
+  switch to Iceberg from its environment; `auto` keeps the rule that only `--iceberg` on the command line selects
+  Iceberg.
 
 ### Changed
 
@@ -494,6 +500,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   so closing the store no longer closes the caller's catalog. open(props, ns) and openExisting(props, ns) own their
   catalog and also close it when opening fails.
 - EpisodeQuery refuses a limit below 1 with 'limit: <n> is out of range; expected a whole number above 0'.
+- Station ids of the history sites file are strings of 5 digits in quotes, and `--stations` of the weather backfill
+  takes 5-digit ids; `wind: 1759` or an unquoted `03166` stops the command with exit code 2 and names the field.
+- A rejected netztransparenz.de client and a token answer without `access_token` name the keys
+  `opentsx.market.ntpClientId` and `opentsx.market.ntpClientSecret` and all their variables.
 
 ### Removed
 
@@ -554,6 +564,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The backend in `docker-compose.local.yml` no longer gets `KAFKA_BOOTSTRAP_SERVERS`, `OPENTSDB_HOST` and
   `OPENTSDB_PORT`, which it does not read, and no longer waits for a healthy `cp-all-in-one` before it starts.
 - The unused IcebergSeriesStore.micros helper.
+- Breaking for code that calls them: the constructor `Http(long, int)` and `Collector.online(long)` of opentsx-market.
+  Use `Http(long, int, ProxySelector)` and `Collector.online(long, Map, ProxySelector)` with the credentials and the
+  proxy from `Http.proxy`, which follows `opentsx.https.proxy`.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -1037,6 +1050,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - OpenTSDB store: two identical reads return equal episodes. The id derives from the series and the first and last
   timestamp, createdAt is the last timestamp, and the producer carries the version of the build (Episodes.producer)
   instead of the literal 3.0.1.
+- Market downloads no longer retry an unknown host or a TLS error; the request fails after one attempt.
+- An ENTSO-E acknowledgement answered with HTTP 200 counts as an empty month only when it says `No matching data
+  found`; any other reason fails the month with `HTTP 200 for <URL>: <reasons>`.
+- A malformed ENTSO-E answer no longer prints the XML parser's `[Fatal Error]` line on stderr next to the real
+  message.
+- `market prices`, `series`, `rebap` and `marktwert` refuse a `--to` that is not after `--from` with exit code 2
+  instead of printing an empty summary.
+- The SHA-256 check of an archive file that cannot be read names the file.
+- `MosmixRawArchive.collect` refuses a station id that is not 1 to 10 letters and digits before the first download
+  (`stations: item "../x" is not a station id; expected letters and digits such as 10579 or E5411`), so a caller other
+  than `bin/opentsx market mosmix-archive` cannot write outside the archive directory.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
@@ -1101,6 +1125,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `retrieval-server --dag-runs true` without a run token in `OPENTSX_DAG_RUN_TOKEN` exits with code 2 instead of
   letting anyone who reaches the port deploy and stop DAGs; `--open-dag-runs` accepts runs without a token and listens
   on 127.0.0.1 only, and `--dag-run-token` on the command line exits with code 2 and names the variables.
+- The history archive refuses a source, series name or station id with a `.` or `..` part or a character other than
+  letters, digits, `.`, `_` and `-`, and `market mosmix-archive` refuses a MOSMIX station id that is not letters and
+  digits, so `market import --name ../x` or `market mosmix-archive --stations ../x` exits with 2 instead of writing
+  outside the archive directory.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

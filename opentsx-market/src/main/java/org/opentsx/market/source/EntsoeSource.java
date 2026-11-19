@@ -72,6 +72,9 @@ public final class EntsoeSource {
                     }
                 }
             } catch (EntsoeXml.NoData e) {
+                if (!e.getMessage().contains("No matching data found")) {
+                    throw new IllegalStateException("HTTP 200 for " + shown + ": " + e.getMessage(), e);
+                }
                 // no data for this month (e.g. not yet published); the quality report shows the gap
             } catch (Http.StatusException e) {
                 if (e.status() == 401) {

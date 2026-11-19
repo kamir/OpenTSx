@@ -31,6 +31,9 @@ public final class NetztransparenzSource {
     public static final String TOKEN_URL = "https://identity.netztransparenz.de/users/connect/token";
     private static final DateTimeFormatter T = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss").withZone(ZoneOffset.UTC);
     private static final ObjectMapper JSON = new ObjectMapper();
+    private static final String KEYS = "opentsx.market.ntpClientId, opentsx.market.ntpClientSecret";
+    private static final String CHECK = "check the client in OPENTSX_MARKET_NTP_CLIENT_ID and "
+            + "OPENTSX_MARKET_NTP_CLIENT_SECRET, NTP_CLIENT_ID and NTP_CLIENT_SECRET or the properties file";
 
     private final Fetcher fetcher;
     private final String clientId;
@@ -101,10 +104,11 @@ public final class NetztransparenzSource {
             } catch (IOException e) {
                 throw new UncheckedIOException("token response is not JSON", e);
             } catch (Http.StatusException e) {
-                throw new MissingCredentials("netztransparenz.de rejected the client credentials (HTTP " + e.status() + ")");
+                throw new MissingCredentials(KEYS + ": rejected by netztransparenz.de (HTTP " + e.status() + "); " + CHECK);
             }
             if (token == null) {
-                throw new MissingCredentials("netztransparenz.de token response without access_token");
+                throw new MissingCredentials(KEYS + ": the token response of netztransparenz.de has no access_token; "
+                        + CHECK);
             }
         }
         return token;

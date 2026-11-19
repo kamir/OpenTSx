@@ -30,6 +30,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.net.ProxySelector;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -74,8 +75,10 @@ public final class MarketCli {
     static final String FORCE = "opentsx.market.force";
     static final String SITES = "opentsx.history.sites";
     static final String WEATHER_STATIONS = "opentsx.market.weather.stations";
+    static final String MOSMIX_STATIONS = "opentsx.market.mosmix.stations";
     static final String ICEBERG = "opentsx.iceberg.properties";
     static final String NAMESPACE = "opentsx.iceberg.namespace";
+    static final String LOAD_STORE = "opentsx.market.load.store";
     static final String ENTSOE_TOKEN = "opentsx.market.entsoeToken";
     static final String NTP_CLIENT_ID = "opentsx.market.ntpClientId";
     static final String NTP_CLIENT_SECRET = "opentsx.market.ntpClientSecret";
@@ -90,9 +93,9 @@ public final class MarketCli {
             "netztransparenz/rebap_long", "netztransparenz/marktwert_epex", "netztransparenz/marktwert_wind_onshore",
             "netztransparenz/marktwert_wind_offshore", "netztransparenz/marktwert_solar");
 
-    /** The collector of the online sources: the pause between two requests to a host, and the credentials. */
+    /** The collector of the online sources: the pause between two requests to a host, the credentials, the proxy. */
     interface Collectors {
-        Collector open(long delayMillis, Map<String, String> credentials);
+        Collector open(long delayMillis, Map<String, String> credentials, ProxySelector proxy);
     }
 
     private MarketCli() {
@@ -166,9 +169,16 @@ public final class MarketCli {
             }
             case "market weather-backfill", "market weather-forward" -> weather(command, conf, archive, now);
             case "market mosmix-archive" -> {
-                List<String> stations = conf.getList("opentsx.market.mosmix.stations");
+                List<String> stations = conf.getList(MOSMIX_STATIONS);
+                for (String s : stations) {
+                    if (!s.matches("[A-Za-z0-9]{1,10}")) {
+                        throw new OpenTsxConfException(named(conf, MOSMIX_STATIONS), "item \"" + s
+                                + "\" is not a station id", "expected letters and digits such as 10579 or E5411");
+                    }
+                }
+                ProxySelector proxy = proxy(conf);
                 yield out -> {
-                    for (MosmixRawArchive.Result r : new MosmixRawArchive(archive.root(), new Http(1000, 4))
+                    for (MosmixRawArchive.Result r : new MosmixRawArchive(archive.root(), new Http(1000, 4, proxy))
                             .collect(stations, now)) {
                         out.printf("mosmix %-6s issue %s  %s%n", r.station(), r.issue(), r.added() ? "added " + r.file()
                                 : "already archived");
@@ -186,6 +196,10 @@ public final class MarketCli {
                                                Collectors collectors) {
         long from = time(conf, FROM);
         long to = time(conf, TO);
+        if (to <= from) {
+            throw new OpenTsxConfException(named(conf, TO), "\"" + conf.get(TO) + "\" is not after " + named(conf, FROM)
+                    + " \"" + conf.get(FROM) + "\"", "expected an end after the start");
+        }
         Optional<String> csv = conf.getOption(OUT);
         if (csv.isPresent() && csv.get().endsWith(".gz")) {
             throw new OpenTsxConfException(named(conf, OUT), "\"" + csv.get() + "\" names a gzip file",
@@ -212,7 +226,7 @@ public final class MarketCli {
             requireCredentials(def, conf);
             parsed = null;
             fileQuery = null;
-            collector = collectors.open(conf.getLong("opentsx.market.fetchDelayMs"), credentials(conf));
+            collector = collectors.open(conf.getLong("opentsx.market.fetchDelayMs"), credentials(conf), proxy(conf));
         }
         return out -> {
             List<MarketSeries> result = new ArrayList<>();
@@ -258,6 +272,11 @@ public final class MarketCli {
                         + " in a properties file, or parse a download with --offline");
             }
         }
+    }
+
+    /** The proxy of the downloads, by the rule of {@link Http#proxy}. */
+    private static ProxySelector proxy(OpenTsxConf conf) {
+        return Http.proxy(System.getProperty("https.proxyHost"), conf.getOption(Http.PROXY));
     }
 
     /** The credentials under the names {@link Collector} and {@link Backfill} read. */
@@ -314,6 +333,11 @@ public final class MarketCli {
         tags.put("partner", conf.get("opentsx.market.import.partner"));
         SeriesDef def = MarketCatalog.partner(conf.get(NAME), conf.get("opentsx.market.import.metric"),
                 conf.get("opentsx.market.import.unit"), conf.get("opentsx.market.import.origin"), tags);
+        try {
+            archive.dir(def);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(named(conf, NAME) + ": " + e.getMessage(), e);
+        }
         Duration resolution = conf.getOption("opentsx.market.import.resolution").isPresent()
                 ? conf.getDuration("opentsx.market.import.resolution") : null;
         ZoneId zone = conf.getOption("opentsx.market.import.zone").map(z -> zone(conf, z)).orElse(null);
@@ -347,7 +371,7 @@ public final class MarketCli {
         List<SeriesDef> defs = series(conf, "opentsx.market.backfill.series", null);
         boolean force = conf.getBoolean(FORCE);
         Map<String, String> credentials = credentials(conf);
-        Collector c = collectors.open(conf.getLong(BACKFILL_DELAY), credentials);
+        Collector c = collectors.open(conf.getLong(BACKFILL_DELAY), credentials, proxy(conf));
         return out -> {
             List<Backfill.Outcome> r = new Backfill(archive, c, credentials, out).run(defs, years[0], years[1], force, now);
             long failed = r.stream().filter(x -> x.status() == Backfill.Status.FAILED).count();
@@ -364,8 +388,9 @@ public final class MarketCli {
         List<String[]> jobs = weatherJobs(conf);
         boolean force = conf.getBoolean(FORCE);
         long delay = conf.getLong(BACKFILL_DELAY);
+        ProxySelector proxy = proxy(conf);
         return out -> {
-            WeatherBackfill w = new WeatherBackfill(archive, new Http(delay, 4), WeatherBackfill.CDC, out);
+            WeatherBackfill w = new WeatherBackfill(archive, new Http(delay, 4, proxy), WeatherBackfill.CDC, out);
             long failed = 0;
             long total = 0;
             for (String[] sp : jobs) {
@@ -437,12 +462,7 @@ public final class MarketCli {
         Instant fromDay = BrokerPublish.day(conf, "opentsx.market.fromDay", Instant.MIN);
         Instant toDay = BrokerPublish.day(conf, "opentsx.market.toDay", Instant.MAX);
         List<SeriesDef> defs = series(conf, SERIES, archive);
-        Map<String, String> iceberg;
-        try {
-            iceberg = "commandLine".equals(conf.source(ICEBERG)) ? props(conf.get(ICEBERG)) : null;
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(named(conf, ICEBERG) + ": " + e.getMessage(), e);
-        }
+        Map<String, String> iceberg = iceberg(conf);
         String namespace = conf.get(NAMESPACE);
         return out -> {
             SeriesStore store = iceberg != null ? IcebergSeriesStore.open(iceberg, namespace) : new InMemorySeriesStore();
@@ -472,6 +492,23 @@ public final class MarketCli {
             out.printf("loaded %d episodes, %d values into %s%n", episodes, values,
                     iceberg != null ? "Iceberg namespace " + namespace : "an in-memory store");
         };
+    }
+
+    /**
+     * The Iceberg catalog properties of {@code market load}, or null for the in-memory store: {@code iceberg} takes
+     * them from any source, {@code auto} only from the command line, {@code memory} never.
+     */
+    private static Map<String, String> iceberg(OpenTsxConf conf) {
+        String store = conf.get(LOAD_STORE);
+        if (store.equals("memory") || store.equals("auto") && !"commandLine".equals(conf.source(ICEBERG))) {
+            return null;
+        }
+        String list = conf.get(ICEBERG);
+        try {
+            return props(list);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(named(conf, ICEBERG) + ": " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -509,9 +546,10 @@ public final class MarketCli {
         List<String[]> out = new ArrayList<>();
         for (String j : jobs) {
             String[] p = j.split(":");
-            if (p.length != 2 || p[0].isEmpty() || !WeatherBackfill.parameters().contains(p[1])) {
+            if (p.length != 2 || !p[0].matches("[0-9]{5}") || !WeatherBackfill.parameters().contains(p[1])) {
                 throw new OpenTsxConfException(named(conf, WEATHER_STATIONS), "item \"" + j + "\" is not allowed",
-                        "expected <id>:<parameter> with parameter in " + WeatherBackfill.parameters());
+                        "expected <id>:<parameter> with a station id of 5 digits and parameter in "
+                                + WeatherBackfill.parameters());
             }
             out.add(p);
         }

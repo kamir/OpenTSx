@@ -7,6 +7,9 @@ import org.opentsx.market.source.Marktwerte;
 import org.opentsx.market.source.PartnerCsv;
 import org.opentsx.market.source.Rebap;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -52,6 +55,23 @@ class ParsersTest {
         assertEquals(41000, load.get(0).value());
         EntsoeXml.NoData e = assertThrows(EntsoeXml.NoData.class, () -> EntsoeXml.parse(Fixtures.text("entsoe-ack.xml")));
         assertTrue(e.getMessage().startsWith("999 No matching data"));
+    }
+
+    @Test
+    void malformedEntsoeXmlFailsWithoutParserOutputOnStderr() {
+        String cut = Fixtures.text("entsoe-ack.xml").replace("</Acknowledgement_MarketDocument>", "");
+        PrintStream saved = System.err;
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+        IllegalArgumentException e;
+        try {
+            e = assertThrows(IllegalArgumentException.class, () -> EntsoeXml.parse(cut));
+        } finally {
+            System.setErr(saved);
+        }
+        assertEquals("not an ENTSO-E XML document: XML document structures must start and end within the same entity.",
+                e.getMessage());
+        assertEquals("", err.toString(StandardCharsets.UTF_8));
     }
 
     @Test

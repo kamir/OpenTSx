@@ -19,11 +19,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -49,6 +52,8 @@ public final class Archive {
     public static final String HEADER = "t_utc,dt_s,value";
     static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
+    private static final Pattern NAME = Pattern.compile("[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*");
+
     private final Path root;
 
     public Archive(Path root) {
@@ -59,8 +64,18 @@ public final class Archive {
         return root;
     }
 
+    /** The directory of a series; a source or name that is not a path of plain names below the root is refused. */
     public Path dir(SeriesDef def) {
-        return root.resolve(def.source()).resolve(def.name());
+        return root.resolve(checked(def.source())).resolve(checked(def.name()));
+    }
+
+    private static String checked(String name) {
+        if (!NAME.matcher(name).matches()
+                || Arrays.stream(name.split("/")).anyMatch(s -> s.equals(".") || s.equals(".."))) {
+            throw new IllegalArgumentException("\"" + name + "\" is not allowed; expected names of letters, digits, '.', '_' "
+                    + "and '-', separated by '/', and none of them '.' or '..'");
+        }
+        return name;
     }
 
     public Path file(SeriesDef def, int year) {
@@ -173,7 +188,9 @@ public final class Archive {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             md.update(Files.readAllBytes(f));
             return HexFormat.of().formatHex(md.digest());
-        } catch (Exception e) {
+        } catch (IOException e) {
+            throw new UncheckedIOException(f + ": cannot read the file", e);
+        } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
         }
     }

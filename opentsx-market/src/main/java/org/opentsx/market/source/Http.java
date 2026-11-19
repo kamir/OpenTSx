@@ -1,27 +1,35 @@
 package org.opentsx.market.source;
 
+import org.opentsx.conf.OpenTsxConfException;
+
+import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.channels.UnresolvedAddressException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Polite HTTP GET/POST for the collectors (JDK HTTP client): a minimum interval between requests per instance,
- * retries with exponential backoff on network errors, 429 and 5xx, honouring {@code Retry-After}. Proxies come from
- * the JVM settings ({@code https.proxyHost} etc.).
+ * retries with exponential backoff on network errors, 429 and 5xx, honouring {@code Retry-After}. An unknown host and
+ * a TLS error fail at once. The proxy comes from {@link #proxy}.
  */
 public class Http implements Fetcher {
 
     public static final String USER_AGENT = "OpenTSx-market/3.0 (+https://github.com/kamir/OpenTSx)";
+    public static final String PROXY = "opentsx.https.proxy";
     private static final Pattern SECRET = Pattern.compile("[?&][^=&#]*(?i:token|secret|key)[^=&#]*=([^&#]+)");
 
     /** A non-retryable HTTP status (4xx other than 429). */
@@ -46,19 +54,52 @@ public class Http implements Fetcher {
         }
     }
 
+    interface Sleeper {
+        void sleep(long millis) throws InterruptedException;
+    }
+
     private final HttpClient client;
     private final long minIntervalMillis;
     private final int retries;
+    private final Sleeper sleeper;
     private long last;
 
-    public Http(long minIntervalMillis, int retries) {
-        this.client = HttpClient.newBuilder()
-                .proxy(ProxySelector.getDefault())
+    public Http(long minIntervalMillis, int retries, ProxySelector proxy) {
+        this(HttpClient.newBuilder()
+                .proxy(proxy)
                 .connectTimeout(Duration.ofSeconds(20))
                 .followRedirects(HttpClient.Redirect.NORMAL)
-                .build();
+                .build(), minIntervalMillis, retries, Thread::sleep);
+    }
+
+    Http(HttpClient client, long minIntervalMillis, int retries, Sleeper sleeper) {
+        this.client = client;
         this.minIntervalMillis = minIntervalMillis;
         this.retries = retries;
+        this.sleeper = sleeper;
+    }
+
+    /**
+     * The proxy of the downloads: the JVM proxy settings win when {@code https.proxyHost} is set; otherwise the key
+     * {@value #PROXY} ({@code <host>:<port>} or {@code http://<host>:<port>}), which is checked in any case.
+     */
+    public static ProxySelector proxy(String jvmProxyHost, Optional<String> configured) {
+        ProxySelector own = configured.map(Http::proxyOf).orElse(null);
+        return jvmProxyHost != null || own == null ? ProxySelector.getDefault() : own;
+    }
+
+    private static ProxySelector proxyOf(String value) {
+        URI u;
+        try {
+            u = new URI(value.contains("://") ? value : "http://" + value);
+        } catch (URISyntaxException e) {
+            // not kept as the cause: its message holds the value, which is a secret
+            u = null;
+        }
+        if (u == null || u.getHost() == null) {
+            throw new OpenTsxConfException(PROXY, "not a proxy address", "expected <host>:<port> or http://<host>:<port>");
+        }
+        return ProxySelector.of(InetSocketAddress.createUnresolved(u.getHost(), u.getPort() > 0 ? u.getPort() : 80));
     }
 
     @Override
@@ -103,9 +144,9 @@ public class Http implements Fetcher {
                 }
                 backoff = Math.max(backoff, r.headers().firstValue("Retry-After").map(Http::seconds).orElse(0L) * 1000);
             } catch (IOException e) {
-                if (attempt >= retries) {
-                    throw new UncheckedIOException("GET " + redact(uri, uri) + " failed after " + (attempt + 1)
-                            + " attempts", e);
+                if (attempt >= retries || !retryable(e)) {
+                    throw new UncheckedIOException(req.method() + " " + redact(uri, uri) + " failed after " + (attempt + 1)
+                            + (attempt == 0 ? " attempt" : " attempts"), e);
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -114,6 +155,19 @@ public class Http implements Fetcher {
             sleep(backoff);
             backoff = Math.min(backoff * 2, 120_000);
         }
+    }
+
+    /** An unknown host or a TLS error does not go away by asking again. */
+    private static boolean retryable(IOException e) {
+        if (e instanceof SSLException) {
+            return false;
+        }
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            if (t instanceof UnknownHostException || t instanceof UnresolvedAddressException) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private synchronized void pace() {
@@ -132,9 +186,9 @@ public class Http implements Fetcher {
         }
     }
 
-    private static void sleep(long ms) {
+    private void sleep(long ms) {
         try {
-            Thread.sleep(ms);
+            sleeper.sleep(ms);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("interrupted", e);

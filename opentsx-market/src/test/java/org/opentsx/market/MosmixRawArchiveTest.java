@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
@@ -17,6 +18,7 @@ import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MosmixRawArchiveTest {
@@ -58,5 +60,32 @@ class MosmixRawArchiveTest {
         List<String> index = Files.readAllLines(dir.resolve("dwd-mosmix/raw/index.tsv"));
         assertEquals(3, index.size());   // header + two issues
         assertTrue(index.get(1).contains("CC BY 4.0"));
+    }
+
+    @Test
+    void refusesAStationIdThatIsAPath(@TempDir Path dir) throws Exception {
+        byte[] kmz = kmz("2026-10-12T09:00:00.000Z");
+        List<String> urls = new ArrayList<>();
+        Fetcher f = new Fetcher() {
+            @Override
+            public String get(String uri, Map<String, String> headers) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public byte[] getBytes(String uri) {
+                urls.add(uri);
+                return kmz;
+            }
+        };
+        Files.createDirectories(dir.resolve("history/dwd-mosmix/raw"));
+        MosmixRawArchive a = new MosmixRawArchive(dir.resolve("history"), f);
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> a.collect(List.of("10579", "../../x"), Instant.parse("2026-10-12T10:00:00Z")));
+        assertEquals("stations: item \"../../x\" is not a station id; expected letters and digits such as 10579 or E5411",
+                e.getMessage());
+        assertEquals(List.of(), urls);
+        assertFalse(Files.exists(dir.resolve("history/dwd-mosmix/raw/10579")));
+        assertFalse(Files.exists(dir.resolve("history/x")));
     }
 }

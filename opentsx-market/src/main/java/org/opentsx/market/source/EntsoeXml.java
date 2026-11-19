@@ -6,9 +6,12 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXParseException;
 
 import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.StringReader;
 import java.time.Duration;
@@ -116,7 +119,23 @@ public final class EntsoeXml {
             f.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             f.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             f.setExpandEntityReferences(false);
-            return f.newDocumentBuilder().parse(new InputSource(new StringReader(xml)));
+            DocumentBuilder b = f.newDocumentBuilder();
+            b.setErrorHandler(new ErrorHandler() {
+                @Override
+                public void warning(SAXParseException e) {
+                }
+
+                @Override
+                public void error(SAXParseException e) throws SAXParseException {
+                    throw e;
+                }
+
+                @Override
+                public void fatalError(SAXParseException e) throws SAXParseException {
+                    throw e;
+                }
+            });
+            return b.parse(new InputSource(new StringReader(xml)));
         } catch (Exception e) {
             throw new IllegalArgumentException("not an ENTSO-E XML document: " + e.getMessage(), e);
         }

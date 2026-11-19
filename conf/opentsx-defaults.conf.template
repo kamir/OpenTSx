@@ -242,6 +242,10 @@
 # Type: string; no default.
 # opentsx.market.import.zone
 
+# Where market load writes the episodes: iceberg to the catalog of opentsx.iceberg.properties from any source, memory to an in-memory store that only counts them, auto to Iceberg only when opentsx.iceberg.properties is set on the command line.
+# Type: enum, one of auto, memory, iceberg.
+# opentsx.market.load.store auto
+
 # MOSMIX station ids to archive.
 # Type: list.
 # opentsx.market.mosmix.stations 10579,10097,10046,E5411

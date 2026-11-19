@@ -252,7 +252,7 @@ class ConfCliTest {
         Run text = run(Map.of(), "config", "list");
         assertEquals(0, text.exit());
         List<String> lines = text.out().lines().toList();
-        assertEquals(134, lines.size());
+        assertEquals(135, lines.size());
         assertTrue(Pattern.matches("KEY +TYPE +DEFAULT +FLAG +ENV", lines.get(0)), lines.get(0));
         assertTrue(Pattern.compile("\nopentsx\\.stats\\.sketchAlpha +double +0\\.01 +--alpha +OPENTSX_STATS_SKETCH_ALPHA\n")
                 .matcher(text.out()).find(), text.out());

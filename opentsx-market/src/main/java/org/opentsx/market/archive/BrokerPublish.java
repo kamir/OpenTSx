@@ -1,6 +1,6 @@
 package org.opentsx.market.archive;
 
-import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.opentsx.conf.OpenTsxConf;
@@ -31,6 +31,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Writes archived series as raw episodes into the episodes topic of a domain, where the retrieval server and the
@@ -54,6 +55,12 @@ public final class BrokerPublish {
      * returns stops with an exception at the first batch the broker does not confirm.
      */
     public static Consumer<PrintStream> check(Archive archive, OpenTsxConf conf) {
+        return check(archive, conf, KafScaleClients::producer);
+    }
+
+    /** {@link #check(Archive, OpenTsxConf)} with the producer for a bootstrap address from {@code producers}. */
+    static Consumer<PrintStream> check(Archive archive, OpenTsxConf conf,
+                                       Function<String, Producer<String, byte[]>> producers) {
         boolean dry = conf.getBoolean("opentsx.market.publish.dryRun");
         List<String> paths = conf.getList("opentsx.market.publish.series");
         if (!conf.contains(DOMAIN)) {
@@ -108,15 +115,16 @@ public final class BrokerPublish {
                 out.printf("dry run: %d episodes would go to %s%n", all.size(), topic);
                 return;
             }
-            send(all, topic, bootstrap, batch, pauseMs, out);
+            send(all, topic, producers.apply(bootstrap), batch, pauseMs, out);
         };
     }
 
-    private static void send(List<Episode> all, String topic, String bootstrap, int batch, long pauseMs, PrintStream out) {
+    private static void send(List<Episode> all, String topic, Producer<String, byte[]> producer, int batch, long pauseMs,
+                             PrintStream out) {
         OpenTsxAvro avro = new OpenTsxAvro();
         int done = 0;
         long started = System.nanoTime();
-        try (KafkaProducer<String, byte[]> producer = KafScaleClients.producer(bootstrap)) {
+        try (producer) {
             while (done < all.size()) {
                 List<Episode> part = all.subList(done, Math.min(all.size(), done + batch));
                 List<Future<RecordMetadata>> sent = new ArrayList<>();

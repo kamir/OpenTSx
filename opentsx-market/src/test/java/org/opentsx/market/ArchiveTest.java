@@ -11,6 +11,7 @@ import org.opentsx.model.v2.Episode;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -20,6 +21,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.opentsx.market.ParsersTest.t;
 
@@ -46,6 +48,31 @@ class ArchiveTest {
         assertEquals(sha, a.write(PRICE, 2024, pts));   // no timestamp in the gzip header
         assertEquals(dir.resolve("smard/day_ahead_price/2024.csv.gz"), a.file(PRICE, 2024));
         assertTrue(Files.list(a.dir(PRICE)).noneMatch(p -> p.toString().endsWith(".tmp")));
+    }
+
+    @Test
+    void aSeriesPathThatLeavesItsDirectoryIsRefusedAndNothingIsWritten(@TempDir Path dir) throws Exception {
+        Archive a = new Archive(dir.resolve("history"));
+        List<Point> one = List.of(new Point(t("2024-01-01T00:00:00Z"), Micro.HOUR, 1));
+        a.write(MarketCatalog.partner("schedule", "m", "kW", "REPORTED", Map.of()), 2024, one);
+        List<Path> before = MarketCliTest.filesUnder(dir);
+        for (String name : List.of("../x", "../../x", "a/../../b", ".", "a//b", "/etc", "a\\b", "")) {
+            SeriesDef def = MarketCatalog.partner(name, "m", "kW", "REPORTED", Map.of());
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> a.write(def, 2024, one), name);
+            assertEquals("\"" + name + "\" is not allowed; expected names of letters, digits, '.', '_' and '-', separated "
+                    + "by '/', and none of them '.' or '..'", e.getMessage());
+        }
+        assertEquals(before, MarketCliTest.filesUnder(dir));
+        assertEquals(dir.resolve("history/dwd-cdc/03166/air_temperature"),
+                a.dir(MarketCatalog.dwd("03166", "air_temperature")));
+        assertEquals(dir.resolve("history/partner/schedule-dm.v2"),
+                a.dir(MarketCatalog.partner("schedule-dm.v2", "m", "kW", "REPORTED", Map.of())));
+    }
+
+    @Test
+    void theChecksumOfAFileThatCannotBeReadNamesTheFile(@TempDir Path dir) {
+        UncheckedIOException e = assertThrows(UncheckedIOException.class, () -> Archive.sha256(dir));
+        assertEquals(dir + ": cannot read the file", e.getMessage());
     }
 
     @Test

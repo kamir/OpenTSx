@@ -54,7 +54,7 @@ class RegistryTest {
     @Test
     void theShippedRegistryLoadsWithItsCounts() throws IOException {
         Registry reg = Registry.shipped();
-        assertEquals(133, reg.keys().size());
+        assertEquals(134, reg.keys().size());
         assertEquals(48, reg.commands().size());
         assertEquals(List.of("opentsx.https.proxy", "opentsx.market.entsoeToken", "opentsx.market.ntpClientId",
                         "opentsx.market.ntpClientSecret", "opentsx.openmetadata.token", "opentsx.retrieval.dagRunToken"),

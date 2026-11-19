@@ -9,6 +9,7 @@ import org.opentsx.market.source.NetztransparenzSource;
 import org.opentsx.market.source.Rebap;
 import org.opentsx.market.source.SmardSource;
 
+import java.net.ProxySelector;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,10 +41,14 @@ public final class Collector {
         this.ntp = new NetztransparenzSource(ntp, env.get("NTP_CLIENT_ID"), env.get("NTP_CLIENT_SECRET"));
     }
 
-    /** Online collector; {@code delayMillis} is the minimum pause between two requests to the same host. */
-    public static Collector online(long delayMillis, Map<String, String> credentials) {
-        return new Collector(new Http(delayMillis, 4), new Http(delayMillis, 4), new Http(Math.max(delayMillis, 1000), 4),
-                new Http(Math.max(delayMillis, 600), 4), credentials);
+    /**
+     * Online collector; {@code delayMillis} is the minimum pause between two requests to the same host. ENTSO-E is asked
+     * at most once a second, netztransparenz.de at most every 600 ms.
+     */
+    public static Collector online(long delayMillis, Map<String, String> credentials, ProxySelector proxy) {
+        return new Collector(new Http(delayMillis, 4, proxy), new Http(delayMillis, 4, proxy),
+                new Http(Math.max(delayMillis, 1000), 4, proxy), new Http(Math.max(delayMillis, 600), 4, proxy),
+                credentials);
     }
 
     /** Whether the source of {@code def} can be used with the configured credentials; otherwise the reason. */
