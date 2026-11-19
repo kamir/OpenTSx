@@ -195,6 +195,10 @@ Exit 0 denotes a stopped run, exit 2 a refused plan with its message on standard
 error, and exit 3 a runtime failure. A transport or certificate rejection is an
 SSH failure, not a successful runner refusal.
 
+An unexpected server termination reports its actual exit status. Inspect that
+status together with `sshd.log` and the client refusal before classifying a
+failed acceptance run.
+
 ## Resolve admission and retained-log failures
 
 | Message | Action |

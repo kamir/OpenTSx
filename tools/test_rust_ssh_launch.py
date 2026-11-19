@@ -74,6 +74,13 @@ class SshLaunchTest(unittest.TestCase):
                 with self.assertRaises(RuntimeError):
                     self.module.check_case(name, process, 255, self.uid, self.uid, self.outcome)
 
+    def test_unexpected_server_exit_preserves_the_actual_status_in_its_error(self):
+        for status in (-15, 1, 254, True, None):
+            with self.subTest(status=status):
+                with self.assertRaisesRegex(RuntimeError, f"server exit {status!r}"):
+                    self.module.check_case("stopped", self.process("stopped"),
+                                           status, self.uid, self.uid, self.outcome)
+
     def test_refusal_and_runtime_stderr_are_exact_and_stdout_is_empty(self):
         for name in ("refused", "runtime-failure"):
             for stdout, suffix in ((b"extra", b""), (b"", b"extra"), (b"", b"\n")):

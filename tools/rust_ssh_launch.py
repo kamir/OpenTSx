@@ -53,7 +53,7 @@ def check_case(name, process, server_exit, expected_uid, runtime_uid, outcome):
     if name not in EXIT_CODES or process.returncode != EXIT_CODES[name]:
         raise RuntimeError(f"SSH case {name} returned the wrong remote exit code")
     if type(server_exit) is not int or server_exit not in (0, 255):
-        raise RuntimeError(f"SSH case {name} had an unexpected server termination")
+        raise RuntimeError(f"SSH case {name} had an unexpected server exit {server_exit!r}")
     stdout, stderr = process.stdout, process.stderr
     if not isinstance(stdout, bytes) or not isinstance(stderr, bytes) or max(len(stdout), len(stderr)) > 65_536:
         raise RuntimeError(f"SSH case {name} output is invalid or too large")

@@ -54,6 +54,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   evidence. Durable delivery outcomes and acknowledged aggregate outboxes
   support offline catch-up with deterministic key/revision deduplication.
   Certificate-forced SSH launch fixes the executable and local configuration.
+  Acceptance failures retain the actual unexpected server exit status.
   The profile admits decode-to-statistics only; broader B2 operators, mixed
   continuous fleets, production release enrollment and physical ARMv7
   acceptance retain separate gates. Documentation, operational and learning references
