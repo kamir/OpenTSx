@@ -21,7 +21,7 @@ JOBS = {
 }
 RUST_RUNNER = {
     "rust-runner", "rust-runner-native", "rust-runner-static", "rust-b1-acceptance",
-    "rust-runner-compose", "wayang-rust-compose",
+    "rust-runner-compose", "wayang-rust-compose", "kafscale-conformance",
 }
 WAYANG = {"java", "kafscale-conformance", "cross-language", "rust-b1-acceptance",
           "rust-runner-compose", "wayang-rust-compose"}
@@ -121,6 +121,13 @@ class JobSelectionTest(unittest.TestCase):
     def test_rust_dependency_direction_does_not_run_contracts_for_runner_only_changes(self):
         self.assert_selected(["rust/tsx-runner/src/fixture.rs"], *RUST_RUNNER)
         self.assert_selected(["rust/tsx-contracts/src/fixture.rs"], *RUST_RUNNER, "execution-contracts")
+
+    def test_b2_parity_harness_inputs_select_the_java_conformance_consumer(self):
+        for path in ("rust/tsx-runner/examples/b2_parity.rs", "rust/tsx-runner/Cargo.toml",
+                     "rust/tsx-runner/src/catalog.rs", "rust/tsx-contracts/Cargo.lock"):
+            with self.subTest(path=path):
+                selected = selection.select_jobs(ROOT, [path])
+                self.assertTrue(selected["kafscale-conformance"])
 
     def test_compose_and_local_launcher_inputs_select_their_consumers(self):
         self.assert_selected(["deploy/local-cp/workbench.py"], "deploy", "python")

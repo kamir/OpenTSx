@@ -25,8 +25,8 @@ Test names alone do not establish an executed result or a coverage percentage.
 The Java CI matrix runs the Maven verification lifecycle under Xvfb on Java 17 and 21:
 [ci.yml:501](../../../.github/workflows/ci.yml#L501).
 Broker integration and recorder-through-Kafka/Flink acceptance use separate configured gates:
-[ci.yml:699](../../../.github/workflows/ci.yml#L699),
-[ci.yml:835](../../../.github/workflows/ci.yml#L835).
+[ci.yml:703](../../../.github/workflows/ci.yml#L703),
+[ci.yml:840](../../../.github/workflows/ci.yml#L840).
 Pull requests select affected jobs from module dependencies and shared inputs. Pushes to `master` and manual runs
 execute the full workflow. The [CI selection contract](../../../CONTRIBUTING.md#check-continuous-integration)
 defines the final result check and the treatment of explicitly excluded jobs.

@@ -176,6 +176,7 @@ def select_jobs(root, paths):
             matched = True
         if path.startswith(("rust/tsx-contracts/", "rust/tsx-runner/")):
             selected.update(RUNNER_JOBS)
+            selected.add("kafscale-conformance")
             if path.startswith("rust/tsx-contracts/"):
                 selected.add("execution-contracts")
             matched = True

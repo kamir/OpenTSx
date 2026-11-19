@@ -65,6 +65,7 @@ changed reference. Shared contracts, user manuals and root governance files use 
 Markdown files also select the full workflow. Frontend changes select the Python matrix as well, because the
 local CP launcher checks the frontend entry point and linked assets.
 The combined KafScale job remains selected for core changes because `opentsx-legacy-bridge` depends on core.
+Rust runner and contract changes also select KafScale conformance, which builds and executes the B2 parity harness.
 
 `CI result` validates the GitHub-provided job results, including matrix-job results. Every selected job result
 must be successful; a skipped job is accepted only when selection explicitly excluded it. Selection failure,
