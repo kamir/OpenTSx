@@ -91,7 +91,7 @@ the log level and the line. `toDebugString()` returns every key with a value as 
 
 A command reads the configuration once its main class calls `load`. `Registry.LOADS_CONF` and `CONF_COMMANDS` in
 `python-package/opentsx/conf/conf.py` list these commands, and a test of the Python package checks that both lists are
-equal; the help of every other command says that the Java command parses its own flags.
+equal.
 
 ## Fix a usage error
 

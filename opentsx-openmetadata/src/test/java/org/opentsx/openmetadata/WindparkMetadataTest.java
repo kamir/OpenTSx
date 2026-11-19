@@ -241,6 +241,17 @@ class WindparkMetadataTest {
     }
 
     @Test
+    void aMissingStatisticsTopicStopsTheCommandBeforeTheFirstRequest() throws IOException {
+        Exit e = run(Map.of(), new StatsTopic(), "--scenario", scenario().toString(), "--domain", "solar",
+                "--kafscale", "ks:9092", "--dry-run", tmp.resolve("a").toString(), "--profiles", "always");
+        assertEquals(1, e.code(), e.err());
+        assertEquals("", e.out());
+        assertTrue(e.err().endsWith("opentsx: metadata: java.lang.IllegalStateException: tsx.solar.series-stats.v2: no such topic;"
+                + " check the domain, or create the topic first\n"), e.err());
+        assertEquals(0, files(tmp.resolve("a"), ""));
+    }
+
+    @Test
     void anEmptyOmNamesTheOption() throws IOException {
         Exit e = run(Map.of(), new StatsTopic(), "--scenario", scenario().toString(), "--om", "");
         assertEquals(new Exit(2, "", "opentsx: --om: empty value; set a value or leave the key unset\n"), e);
@@ -348,7 +359,7 @@ class WindparkMetadataTest {
     void theJobsLoadTheirConfigurationInTheNamespaceOfTheBase() throws IOException {
         for (String file : List.of("metadata.yaml", "metadata-publish.yaml")) {
             Map<String, String> env = podEnv(file);
-            env.computeIfPresent("OM_URL", (k, v) -> "http://openmetadata.invalid:8585/api");
+            env.computeIfPresent("OPENTSX_OPENMETADATA_URL", (k, v) -> "http://openmetadata.invalid:8585/api");
             List<String> argv = new ArrayList<>(List.of("metadata"));
             argv.addAll(jobArgs(file, env));
             assertEquals("/opt/opentsx/share/scenarios/ostsee-demo.yaml",
@@ -358,8 +369,8 @@ class WindparkMetadataTest {
 
     @Test
     void theDryRunJobWritesTheRequestsWithoutProfiles() throws IOException {
-        Map<String, String> env = Map.of("OPENTSX_SCENARIO", scenario().toString(), "OPENTSX_DOMAIN", "wind",
-                "OPENTSX_EXTRA_ARGS", "");
+        Map<String, String> env = podEnv("metadata.yaml");
+        env.put("OPENTSX_WINDPARK_SCENARIO", scenario().toString());
         List<String> args = jobArgs("metadata.yaml", env);
         Path dir = tmp.resolve("om-requests");
         args.set(args.indexOf("--dry-run") + 1, dir.toString());
@@ -374,9 +385,9 @@ class WindparkMetadataTest {
     @Test
     void thePublishJobPublishesTheProfiles() throws IOException {
         try (FakeOpenMetadata om = new FakeOpenMetadata()) {
-            Map<String, String> env = Map.of("OPENTSX_SCENARIO", scenario().toString(), "OPENTSX_DOMAIN", "wind",
-                    "OM_URL", om.uri().toString(), "KAFSCALE_BOOTSTRAP", "ks:9092", "OPENTSX_EXTRA_ARGS", "",
-                    "OPENMETADATA_JWT", "test-token");
+            Map<String, String> env = podEnv("metadata-publish.yaml");
+            env.putAll(Map.of("OPENTSX_WINDPARK_SCENARIO", scenario().toString(), "OPENTSX_OPENMETADATA_URL",
+                    om.uri().toString(), "KAFSCALE_BOOTSTRAP", "ks:9092", "OPENMETADATA_JWT", "test-token"));
             StatsTopic topic = new StatsTopic();
             Exit e = run(env, topic, jobArgs("metadata-publish.yaml", env).toArray(String[]::new));
             assertEquals(0, e.code(), e.err());

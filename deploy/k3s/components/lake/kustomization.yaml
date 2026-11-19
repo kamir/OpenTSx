@@ -12,14 +12,14 @@ patches:
     patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/args
-        value: [retrieval-server, --port, "8080", --iceberg, $(ICEBERG_PROPS), --namespace, $(ICEBERG_NAMESPACE)]
+        value: [retrieval-server, --port, "8080", --source, iceberg]
       - op: add
         path: /spec/template/spec/containers/0/env
         value:
-          - name: ICEBERG_PROPS
+          - name: OPENTSX_ICEBERG_PROPERTIES
             valueFrom: {configMapKeyRef: {name: opentsx-config, key: ICEBERG_PROPS}}
-          - name: ICEBERG_NAMESPACE
-            valueFrom: {configMapKeyRef: {name: opentsx-config, key: ICEBERG_NAMESPACE}}
+          - name: OPENTSX_ICEBERG_NAMESPACE
+            valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_ICEBERG_NAMESPACE}}
       - op: add
         path: /spec/template/spec/containers/0/envFrom
         value:

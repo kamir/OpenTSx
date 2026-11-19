@@ -27,8 +27,8 @@ public final class ConfReference {
 
     static final String READERS = "# opentsx config list, config show, config get, opentsx version, code that calls OpenTsxConf.load and\n"
             + "# every command whose bin/opentsx <command> --help prints a keys: section read this file; code, the\n"
-            + "# command line, the environment and --properties-file win over it. Every other command of bin/opentsx\n"
-            + "# parses its own flags and does not read it. The commands of bin/opentsx that read it: "
+            + "# command line, the environment and --properties-file win over it. The commands that read it\n"
+            + "# (kafscale-check runs in the opentsx-tools image only): "
             + String.join(", ", commands()) + ".\n";
     static final Pattern MARKDOWN_SPECIAL = Pattern.compile("([\\\\`*_\\[\\]<>|])");
     static final Pattern PLAIN_YAML = Pattern.compile("^[A-Za-z0-9./][A-Za-z0-9._/:-]*$");
@@ -105,8 +105,8 @@ public final class ConfReference {
         sb.append("| Since | the first OpenTSx release that reads the setting under any name; `unreleased` means no release reads it yet |\n\n");
         sb.append("The Env column, `--conf`, `--properties-file` and the defaults file reach `opentsx config list`, `config show`,\n")
                 .append("`config get`, `opentsx version`, code that calls `OpenTsxConf.load` and every command whose\n")
-                .append("`bin/opentsx <command> --help` prints a `keys:` section. Every other command of `bin/opentsx` parses its own flags\n")
-                .append("and does not read them; see [chapter 18](18-configuration.md). The commands of `bin/opentsx` that read them:\n")
+                .append("`bin/opentsx <command> --help` prints a `keys:` section; see [chapter 18](18-configuration.md). The commands\n")
+                .append("that read them (`kafscale-check` runs in the opentsx-tools image only):\n")
                 .append(String.join(", ", commands().stream().map(ConfReference::code).toList())).append(".\n\n");
         sb.append("A key marked **Secret.** comes only from code, the environment or a file. `OpenTsxConf.load` refuses it on the\n")
                 .append("command line, so its Alias is none. Every output of `opentsx config` shows its value as `******`. A secret has no\n")

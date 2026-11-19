@@ -32,16 +32,14 @@ environment variables. These read the registry:
   `bin/opentsx market <command>`, `bin/opentsx metadata`, `bin/opentsx modbus check|read|poll|simulate`,
   `bin/opentsx retrieval-server`, `bin/opentsx stats`, `bin/opentsx stats-flink`, `bin/opentsx studio-export`,
   `bin/opentsx twin`, `bin/opentsx twin|house|boat --history <dir>`, `bin/opentsx twin-coupling`,
-  `bin/opentsx twin-live publish|bridge|demo`, `bin/opentsx twin-schemas`, `bin/opentsx vectors run|deploy|stop` and
-  `bin/opentsx windpark-sim`, which load their configuration with `OpenTsxConf.load`. Their
-  `bin/opentsx <command> --help` prints a `keys:` section.
+  `bin/opentsx twin-live publish|bridge|demo`, `bin/opentsx twin-schemas`, `bin/opentsx vectors run|deploy|stop`,
+  `bin/opentsx windpark-sim` and `opentsx kafscale-check` of the opentsx-tools image, which load their configuration
+  with `OpenTsxConf.load`. Their `--help` prints a `keys:` section.
 * `opentsx <command> --help` of the Python console script, for every command of the registry.
 * Your code, through `OpenTsxConf` in Java (module `opentsx-conf`) and in Python (package `opentsx.conf`).
 
-Any other command of [Appendix A](appendix-a-cli.md), one whose `--help` prints no `keys:` section, parses its own
-flags, for example `kafscale-check` of the opentsx-tools image. It does not read `--conf`, `--properties-file`,
-`$OPENTSX_CONF_DIR` or the canonical `OPENTSX_` variables. The Python console script runs only `config list`,
-`config show`, `config get` and `version`; `opentsx stats --kafscale localhost:9092` exits with 2 and
+The Python console script runs only `config list`, `config show`, `config get` and `version`;
+`opentsx stats --kafscale localhost:9092` exits with 2 and
 `opentsx: stats: runs only in the Java runtime; use bin/opentsx or the opentsx-tools image`.
 
 The 2.x tools in `opentsx-core` and `opentsx-lg` use their own `ConfigManager` and `config/opentsx-default.properties`
@@ -178,9 +176,7 @@ common options:
 ```
 
 `bin/opentsx stats` reads these keys from `--conf`, `--properties-file`, `$OPENTSX_CONF_DIR` and the canonical
-`OPENTSX_` variables. The help of a command that parses its own flags, for example `opentsx kafscale-check --help`,
-has a third line that says so. `--help` wins over every other error: `opentsx config --help` prints the list of
-commands.
+`OPENTSX_` variables. `--help` wins over every other error: `opentsx config --help` prints the list of commands.
 
 ## Set a value
 
@@ -433,7 +429,7 @@ opentsx: opentsx.log.level: "verbose" is not allowed; expected one of error, war
 ```
 
 slf4j-simple reads the level once, when the first logger is created, so a main class calls `OpenTsxConf.load` before
-it creates a logger. A command that parses its own flags does not read the key. `stats-flink` logs through log4j2 with
+it creates a logger. `stats-flink` logs through log4j2 with
 [`conf/log4j2-stats-flink.properties`](../../conf/log4j2-stats-flink.properties) and does not read it.
 
 ## Read configuration in Java

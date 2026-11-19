@@ -21,11 +21,12 @@
 #   studio-export      scenario data for the Smart Topics Studio, <out.json>   (org.opentsx.twin.studio.StudioExport)
 #   market             market data: prices, rebap, marktwert, import, backfill, report, load
 #                                                                            (org.opentsx.market.MarketCli)
-#   twin --history d   twin S1 on archived history (year, real prices + wind)  (org.opentsx.market.twin.HistoryTwins)
-#   house --weather-year Y, boat --weather-year Y   same for house and boat (archive: --history data/history)
+#   history-twin       twin|house|boat on the history archive               (org.opentsx.market.twin.HistoryTwins)
+#   twin --history d, house --weather-year Y, boat --weather-year Y   the same as history-twin twin|house|boat
 #   config             config list|show|get: key registry, effective values  (org.opentsx.conf.ConfCli)
 #   version            print the OpenTSx version (also --version)            (org.opentsx.conf.ConfCli)
 #   classpath <module> print the runtime classpath of a module
+# Only in the opentsx-tools image: kafscale-check (deploy/docker/opentsx-entrypoint.sh).
 #
 # Requires a prior build: mvn -q install -DskipTests   (JDK 17+, Maven 3.9+ on PATH)
 # Logging: slf4j-simple with conf/simplelogger.properties; stats-flink: log4j2 with conf/log4j2-stats-flink.properties.
@@ -33,6 +34,17 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 usage() { sed -n '2,/^set -euo/{/^#/p}' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+
+stale() {   # cache module -> 0 when Maven must resolve again: no cache, a newer pom.xml of the module or the reactor,
+            # or an installed OpenTSx jar on the cached classpath that is newer (a sibling module was installed again)
+  local f="$1" m="$2" e entries=()
+  [[ -f "$f" && ! "$ROOT/$m/pom.xml" -nt "$f" && ! "$ROOT/pom.xml" -nt "$f" ]] || return 0
+  IFS=: read -r -a entries < "$f" || true
+  for e in ${entries[@]+"${entries[@]}"}; do
+    [[ "$e" == */org/opentsx/* && "$e" -nt "$f" ]] && return 0
+  done
+  return 1
+}
 
 classpath() {   # module... -> classpath (Maven's result cached per module and scope in target/classpath-<scope>.txt)
   local cp="" m f log deps scope scopes=runtime
@@ -43,7 +55,7 @@ classpath() {   # module... -> classpath (Maven's result cached per module and s
     cp="$cp:$ROOT/$m/target/classes"
     for scope in $scopes; do
       f="$ROOT/$m/target/classpath-$scope.txt"
-      if [[ ! -f "$f" || "$ROOT/$m/pom.xml" -nt "$f" ]]; then
+      if stale "$f" "$m"; then
         command -v mvn >/dev/null || { echo "mvn: not found on PATH; install Maven 3.9 or later" >&2; exit 1; }
         echo "resolving the classpath of $m with Maven" >&2
         if ! log="$(cd "$ROOT" && mvn -q -B -pl "$m" dependency:build-classpath -DincludeScope="$scope" -Dmdep.outputFile="$f" 2>&1)"; then
@@ -52,6 +64,7 @@ classpath() {   # module... -> classpath (Maven's result cached per module and s
           echo "$m: Maven could not resolve the classpath; see the Maven output above" >&2
           exit 1
         fi
+        touch "$f"   # build-classpath leaves an unchanged file untouched, which would keep the cache stale
       fi
       deps="$(cat "$f")"
       [[ -z "$deps" ]] || cp="$cp:$deps"
@@ -97,6 +110,7 @@ case "$cmd" in
       house) run opentsx-twin org.opentsx.twin.demo.HouseDemo "$@" ;;
       boat)  run opentsx-twin org.opentsx.twin.demo.BoatDemo "$@" ;;
     esac ;;
+  history-twin)     run opentsx-market org.opentsx.market.twin.HistoryTwins "$@" ;;
   market)           run opentsx-market org.opentsx.market.MarketCli "$@" ;;
   dwd)              run opentsx-dwd org.opentsx.dwd.DwdCli "$@" ;;
   modbus)           run opentsx-modbus org.opentsx.modbus.ModbusCli "$@" ;;

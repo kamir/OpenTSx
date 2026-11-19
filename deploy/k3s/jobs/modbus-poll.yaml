@@ -35,16 +35,15 @@ spec:
               set -eu
               mkdir -p /data/modbus
               f="/data/modbus/episodes-`date -u +%Y%m%dT%H%M%SZ`.jsonl"
-              opentsx modbus poll --map "$MODBUS_MAP" --host "$MODBUS_HOST" --port "$MODBUS_PORT" \
-                --interval 1s --out episodes --episode PT10S --file "$f"
+              opentsx modbus poll --interval 1s --out episodes --episode PT10S --file "$f"
               echo "wrote $f: `wc -l < "$f"` episodes"
               ls -l /data/modbus | tail -n 5
           env:
-            - name: MODBUS_HOST
+            - name: OPENTSX_MODBUS_HOST
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: MODBUS_HOST}}
-            - name: MODBUS_PORT
+            - name: OPENTSX_MODBUS_PORT
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: MODBUS_PORT}}
-            - name: MODBUS_MAP
+            - name: OPENTSX_MODBUS_MAP
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: MODBUS_MAP}}
             - name: OPENTSX_MODBUS_COUNT     # 30 cycles; 40-demo.sh modbus -- --count <n> overrides it on the command line
               value: "30"

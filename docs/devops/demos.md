@@ -37,9 +37,11 @@ The twin outputs are deterministic, so you should see the same numbers and run h
 deploy/k3s/40-demo.sh kafscale-check
 ```
 
-Runs `opentsx kafscale-check --kafscale $KAFSCALE_BOOTSTRAP --domain wind --provision true --partitions 6` inside
-the cluster: TCP check of the bootstrap, topic provisioning with `TopicLayout.provision` (existing topics stay as they
-are), the **advertised** broker addresses with a TCP check each, and the record count per topic. Expected:
+Runs `opentsx kafscale-check` inside the cluster with `KAFSCALE_BOOTSTRAP`, `OPENTSX_DOMAIN`,
+`OPENTSX_KAFSCALE_PARTITIONS` and `OPENTSX_KAFSCALE_PROVISION=true`
+([deploy/k3s/jobs/kafscale-check.yaml](../../deploy/k3s/jobs/kafscale-check.yaml)): TCP check of the bootstrap,
+topic provisioning with `TopicLayout.provision` (existing topics stay as they are), the **advertised** broker
+addresses with a TCP check each, and the record count per topic. Expected:
 
 ```text
 bootstrap 192.168.1.50:9092

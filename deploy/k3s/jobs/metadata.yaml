@@ -27,15 +27,11 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - metadata
-            - --scenario
-            - $(OPENTSX_SCENARIO)
-            - --domain
-            - $(OPENTSX_DOMAIN)
             - --dry-run
             - /data/om-requests
           env:
-            - name: OPENTSX_SCENARIO
-              valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_SCENARIO}}
+            - name: OPENTSX_WINDPARK_SCENARIO
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_WINDPARK_SCENARIO}}
             - name: OPENTSX_DOMAIN
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_DOMAIN}}
             - name: OPENTSX_EXTRA_ARGS       # set by 40-demo.sh -- <args>

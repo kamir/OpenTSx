@@ -8,23 +8,17 @@ patches:
     patch: |-
       - op: add
         path: /spec/template/spec/containers/0/args/-
-        value: --iceberg
+        value: --sinks
       - op: add
         path: /spec/template/spec/containers/0/args/-
-        value: $(ICEBERG_PROPS)
-      - op: add
-        path: /spec/template/spec/containers/0/args/-
-        value: --namespace
-      - op: add
-        path: /spec/template/spec/containers/0/args/-
-        value: $(ICEBERG_NAMESPACE)
+        value: kafscale,iceberg
       - op: add
         path: /spec/template/spec/containers/0/env/-
         value:
-          name: ICEBERG_PROPS
+          name: OPENTSX_ICEBERG_PROPERTIES
           valueFrom: {configMapKeyRef: {name: opentsx-config, key: ICEBERG_PROPS}}
       - op: add
         path: /spec/template/spec/containers/0/env/-
         value:
-          name: ICEBERG_NAMESPACE
-          valueFrom: {configMapKeyRef: {name: opentsx-config, key: ICEBERG_NAMESPACE}}
+          name: OPENTSX_ICEBERG_NAMESPACE
+          valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_ICEBERG_NAMESPACE}}

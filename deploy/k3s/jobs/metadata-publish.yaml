@@ -29,22 +29,14 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - metadata
-            - --scenario
-            - $(OPENTSX_SCENARIO)
-            - --domain
-            - $(OPENTSX_DOMAIN)
-            - --om
-            - $(OM_URL)
-            - --kafscale
-            - $(KAFSCALE_BOOTSTRAP)
-            - --profiles
-            - always
           env:
-            - name: OPENTSX_SCENARIO
-              valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_SCENARIO}}
+            - name: OPENTSX_OPENMETADATA_PROFILES
+              value: always
+            - name: OPENTSX_WINDPARK_SCENARIO
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_WINDPARK_SCENARIO}}
             - name: OPENTSX_DOMAIN
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_DOMAIN}}
-            - name: OM_URL
+            - name: OPENTSX_OPENMETADATA_URL
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: OM_URL}}
             - name: KAFSCALE_BOOTSTRAP
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: KAFSCALE_BOOTSTRAP}}

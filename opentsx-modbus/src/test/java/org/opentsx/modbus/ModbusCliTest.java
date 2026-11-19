@@ -199,8 +199,7 @@ class ModbusCliTest {
         String script = pod.path("containers").get(0).path("args").get(0).asText().replace("\\\n", " ");
         String line = script.lines().filter(l -> l.contains("opentsx modbus ")).findFirst().orElseThrow();
         String cmd = line.substring(line.indexOf("opentsx modbus ") + "opentsx ".length()).replace("\"", "")
-                .replace("$MODBUS_MAP", env.get("MODBUS_MAP")).replace("$MODBUS_HOST", env.get("MODBUS_HOST"))
-                .replace("$MODBUS_PORT", env.get("MODBUS_PORT")).replace("$f", "/data/modbus/episodes.jsonl");
+                .replace("$f", "/data/modbus/episodes.jsonl");
         List<String> argv = new ArrayList<>(List.of(cmd.strip().split("\\s+")));
         OpenTsxConf conf = OpenTsxConf.load(argv, env, null).conf();
         assertEquals("modbus-poll", pod.path("containers").get(0).path("name").asText());

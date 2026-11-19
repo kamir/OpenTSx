@@ -143,6 +143,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - SaaS backend: LOG_LEVEL and app/logging.conf give one text line per event on stdout, a start line with the settings
   (DAG_RUN_TOKEN only as set or unset), the database host while it waits, refused sign-ins at INFO without the
   password and each test login at WARNING; the 500 line comes from logger app.main.
+- The image entrypoint gets `config`, `version`, `--version`, `twin-coupling` and `twin-schemas`. Its `twin`, `house`
+  and `boat` switch to the history twins on `--history` or `--weather-year`, as `bin/opentsx` does, also when the
+  option comes through `OPENTSX_EXTRA_ARGS`. `bin/opentsx` gets the command `history-twin twin|house|boat`.
+- CI fails when `bin/opentsx` and the image entrypoint differ in a command other than `stats-flink` (bin/opentsx only)
+  and `kafscale-check` (image only), or when a command of `Registry.LOADS_CONF` has no launcher case
+  (`deploy/docker/test-launchers.sh --commands`). The Java 21 job runs the staged `kafscale-check` with a misspelled
+  option, a closed port and a broker double, and reads the output with the patterns of `60-probe.sh`.
 
 ### Changed
 
@@ -418,6 +425,23 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - SaaS backend: the Dockerfile sets PYTHONUNBUFFERED=1 and python -m app.main runs without reload.
 - The DAG and system routes of the SaaS backend log through the loggers `app.api.dags` and `app.api.systems` instead
   of `uvicorn.error.dags` and `uvicorn.error.systems`.
+- `kafscale-check` loads its configuration through the registry. An unknown or misspelled option, a missing or
+  malformed value, or a bootstrap address that is not host:port exits with code 2 and one line before the first
+  connection, for example `opentsx: --kafscle: unknown option of kafscale-check; did you mean --kafscale?`. `--help`
+  prints its keys and exits with 0. It reads `OPENTSX_KAFSCALE_BOOTSTRAP` (legacy `KAFSCALE_BOOTSTRAP`),
+  `OPENTSX_DOMAIN` and the other variables of its keys. The result lines `reachable`, `NOT reachable`, `FAIL:` and the
+  topic table stay on stdout.
+- The k3s manifests pass ConfigMap values to their commands as the registry variables of the keys instead of options,
+  for example `OPENTSX_STATS_WINDOWS`, `OPENTSX_KAFSCALE_PARTITIONS`, `OPENTSX_OPENMETADATA_URL`,
+  `OPENTSX_MODBUS_HOST` and `OPENTSX_ICEBERG_PROPERTIES`. Four ConfigMap keys are renamed: `OPENTSX_SCENARIO`,
+  `STATS_WINDOWS`, `STATS_LATENESS` and `ICEBERG_NAMESPACE` become `OPENTSX_WINDPARK_SCENARIO`,
+  `OPENTSX_STATS_WINDOWS`, `OPENTSX_STATS_ALLOWED_LATENESS` and `OPENTSX_ICEBERG_NAMESPACE`. The keys of
+  `deploy/k3s/.env` keep their names. `windpark-sim` names its sinks and the retrieval server its source explicitly.
+  `40-demo.sh <demo> -- <option>` can override the bootstrap, domain, scenario and partitions, `--provision` of
+  `kafscale-check` and `--profiles` of `metadata-publish`. CI loads every rendered `opentsx/tools` container through
+  `OpenTsxConf`, except the `dwd` Job and the `dwd-forward` CronJob, whose scripts build their options from variables.
+- User manual appendix A lists every command of `bin/opentsx` and the image. It names the two differences between the
+  launchers and has a table of the common configuration errors with the exact message and the fix.
 
 ### Removed
 
@@ -907,6 +931,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   that the login answers none.
 - The SaaS documents no longer describe refresh tokens, Alembic migrations or the removed executions route, and
   chapter 14 documents `ENABLE_SIGNUP=false` and the administrator `TEST_LOGIN` signs in as.
+- The `kafscale-check` Job and the monitoring CronJob set `enableServiceLinks: false`. Without it, `kafscale-check`
+  refuses `OPENTSX_RETRIEVAL_PORT=tcp://...` now that it loads the configuration.
+- `bin/opentsx` resolves a cached classpath again when the root `pom.xml` changes or when an installed OpenTSx jar on
+  the classpath is newer than the cache, for example after a sibling module was installed with a changed dependency
+  scope. It renews the cache after every resolution, because `dependency:build-classpath` leaves an unchanged file
+  untouched.
+- `bin/120_run_demo.sh` runs `mvn -f opentsx-core/pom.xml exec:java` instead of `mvn exec:java` in the reactor root.
+  It prints its usage with `--help` and refuses other arguments with exit code 2.
+- `opentsx kafscale-check --help` no longer says that the command parses its own flags; it loads the configuration
+  registry like every other command, and appendix D and the defaults templates name it.
+- `deploy/k3s/00-prereqs.sh` shows the error line of the staged `kafscale-check`, for example a bootstrap address
+  without a port, instead of only `kafscale-check failed - see above`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

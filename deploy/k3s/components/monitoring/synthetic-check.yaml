@@ -26,6 +26,7 @@ spec:
             opentsx.org/kafka: "true"
         spec:
           restartPolicy: Never
+          enableServiceLinks: false   # opentsx-retrieval would set OPENTSX_RETRIEVAL_PORT=tcp://..., which the loader refuses
           securityContext:
             runAsNonRoot: true
             runAsUser: 10001
@@ -39,7 +40,7 @@ spec:
                 - |
                   rc=0
                   echo "== KafScale (bootstrap, advertised addresses, record counts)"
-                  opentsx kafscale-check --kafscale "$KAFSCALE_BOOTSTRAP" --domain "$OPENTSX_DOMAIN" || rc=1
+                  opentsx kafscale-check || rc=1
                   echo "== statistics checkpoint age (written every 30 s while the processor runs)"
                   if [ -n "`find /state/stats.ckpt -mmin -5 2>/dev/null`" ]; then ls -l /state/stats.ckpt
                   else echo "FAIL: /state/stats.ckpt missing or older than 5 min (processor stuck or down)"; rc=1; fi

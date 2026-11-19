@@ -37,25 +37,17 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - stats
-            - --kafscale
-            - $(KAFSCALE_BOOTSTRAP)
-            - --domain
-            - $(OPENTSX_DOMAIN)
             - --checkpoint
             - /state/stats.ckpt
-            - --windows
-            - $(STATS_WINDOWS)
-            - --lateness
-            - $(STATS_LATENESS)
           env:
             - name: KAFSCALE_BOOTSTRAP
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: KAFSCALE_BOOTSTRAP}}
             - name: OPENTSX_DOMAIN
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_DOMAIN}}
-            - name: STATS_WINDOWS
-              valueFrom: {configMapKeyRef: {name: opentsx-config, key: STATS_WINDOWS}}
-            - name: STATS_LATENESS
-              valueFrom: {configMapKeyRef: {name: opentsx-config, key: STATS_LATENESS}}
+            - name: OPENTSX_STATS_WINDOWS
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_STATS_WINDOWS}}
+            - name: OPENTSX_STATS_ALLOWED_LATENESS
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_STATS_ALLOWED_LATENESS}}
           resources:
             requests: {cpu: 250m, memory: 512Mi}
             limits: {cpu: "1", memory: 1Gi}

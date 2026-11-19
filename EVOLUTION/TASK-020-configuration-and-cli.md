@@ -716,7 +716,7 @@ they become. Format: alias -> key (type = default). "(new)" marks a key without 
 | `history-twin twin` | [HistoryTwins.java:41-183](../opentsx-market/src/main/java/org/opentsx/market/twin/HistoryTwins.java) | `--archive`, `--history` -> `opentsx.archive.dir` (path = `data/history`)<br>`--sites` -> `opentsx.history.sites` (path)<br>`--cf` -> `opentsx.history.twin.capacityFactor` (double = `0.30`)<br>`--days` -> `opentsx.history.twin.days` (int)<br>`--from` -> `opentsx.history.twin.from` (string)<br>`--wind` -> `opentsx.history.twin.wind` (enum = `smard`)<br>`--year` -> `opentsx.history.twin.year` (int = `2024`) |
 | `history-twin house` | same | `--archive`, `--history` -> `opentsx.archive.dir` (path = `data/history`)<br>`--levers` -> `opentsx.history.house.levers` (boolean = `false`)<br>`--weather-year` -> `opentsx.history.house.weatherYear` (string = `2023`)<br>`--radiation-station` -> `opentsx.history.radiationStation` (string)<br>`--sites` -> `opentsx.history.sites` (path)<br>`--station` -> `opentsx.history.station` (string)<br>`--hdd-ref` -> `opentsx.house.hddRef` (double = `4300`) |
 | `history-twin boat` | same | `--archive`, `--history` -> `opentsx.archive.dir` (path = `data/history`)<br>`--days` -> `opentsx.history.boat.days` (int = `14`)<br>`--start` -> `opentsx.history.boat.start` (string)<br>`--weather-year` -> `opentsx.history.boat.weatherYear` (int = `2024`)<br>`--radiation-station` -> `opentsx.history.radiationStation` (string)<br>`--sites` -> `opentsx.history.sites` (path)<br>`--station` -> `opentsx.history.station` (string) |
-| `kafscale-check` | [KafScaleCheck.java:37-63](../deploy/docker/src/org/opentsx/deploy/KafScaleCheck.java) | `--domain` -> `opentsx.domain` (string = `wind`)<br>`--kafscale`, `--bootstrap`, `KAFSCALE_BOOTSTRAP` -> `opentsx.kafscale.bootstrap` (string)<br>`--timeout` -> `opentsx.kafscale.checkTimeout` (duration = `PT20S`)<br>`--partitions` -> `opentsx.kafscale.partitions` (int = `6`)<br>`--provision` -> `opentsx.kafscale.provision` (boolean = `false`) |
+| `kafscale-check` | [KafScaleCheck.java:55-101](../deploy/docker/src/org/opentsx/deploy/KafScaleCheck.java) | `--domain` -> `opentsx.domain` (string = `wind`)<br>`--kafscale`, `--bootstrap`, `KAFSCALE_BOOTSTRAP` -> `opentsx.kafscale.bootstrap` (string)<br>`--timeout` -> `opentsx.kafscale.checkTimeout` (duration = `PT20S`)<br>`--partitions` -> `opentsx.kafscale.partitions` (int = `6`)<br>`--provision` -> `opentsx.kafscale.provision` (boolean = `false`) |
 | `studio-export` | [StudioExport.java:39-45](../opentsx-twin/src/main/java/org/opentsx/twin/studio/StudioExport.java) | positional `<out.json>`; no options |
 | none (developer tool) | [SimulatedLogs.java:214-226](../opentsx-twin/src/main/java/org/opentsx/twin/boat/SimulatedLogs.java) | positional `<out.csv> [seed]` (seed default 20260704); no options, no command |
 | none (developer tool) | [SimulatedBills.java:324-330](../opentsx-twin/src/main/java/org/opentsx/twin/house/SimulatedBills.java) | positional `[dir]` (default `opentsx-twin/src/main/resources`); no options, no command |
@@ -725,22 +725,23 @@ they become. Format: alias -> key (type = default). "(new)" marks a key without 
 
 Launcher variables, not keys: `OPENTSX_HOME`, `OPENTSX_EXTRA_ARGS` and `JAVA_OPTS` in
 [opentsx-entrypoint.sh](../deploy/docker/opentsx-entrypoint.sh); `OPENTSX_CONF_DIR` (new, D4). The k3s manifests pass
-ConfigMap values as flags (for example `--domain $(OPENTSX_DOMAIN)` in
-[stats.yaml](../deploy/k3s/base/stats.yaml)); the canonical names `OPENTSX_DOMAIN` and `OPENTSX_KAFSCALE_PARTITIONS`
-let a later deploy batch drop such arguments. Names the manifests use that differ from the canonical names
-(`KAFSCALE_BOOTSTRAP` aside, which `twin-live` reads): `OPENTSX_PARTITIONS`, `OPENTSX_SCENARIO`, `STATS_WINDOWS`,
-`STATS_LATENESS`, `OM_URL`, `MODBUS_HOST`, `MODBUS_PORT`, `MODBUS_MAP`, `RETRIEVAL_DAG_RUNS`, `ICEBERG_PROPS`,
-`ICEBERG_NAMESPACE`. They are not in `env`, because no main class reads them; the deploy batch decides.
+ConfigMap values as variables, not as flags
+([Pass settings to a command](../deploy/k3s/README.md#pass-settings-to-a-command)). The containers map the ConfigMap
+keys that `deploy/k3s/.env` feeds, `OPENTSX_PARTITIONS`, `OM_URL`, `ICEBERG_PROPS`, `RETRIEVAL_DAG_RUNS` and
+`MODBUS_HOST`, `MODBUS_PORT`, `MODBUS_MAP`, onto `OPENTSX_KAFSCALE_PARTITIONS`, `OPENTSX_OPENMETADATA_URL`,
+`OPENTSX_ICEBERG_PROPERTIES`, `OPENTSX_RETRIEVAL_DAG_RUNS` and `OPENTSX_MODBUS_HOST`, `OPENTSX_MODBUS_PORT`,
+`OPENTSX_MODBUS_MAP`. The base keys are `OPENTSX_WINDPARK_SCENARIO`, `OPENTSX_STATS_WINDOWS`,
+`OPENTSX_STATS_ALLOWED_LATENESS` and `OPENTSX_ICEBERG_NAMESPACE`.
 
 ## Sub-Tasks
 
 The order matters: the foundation first, then one batch per module, then errors and logging.
 
 - [x] Specification, registry with 126 keys and 48 commands, JSON Schema, 272 shared vectors (this change).
-- [ ] **Foundation, Java**: module `opentsx-conf` (package `org.opentsx.conf`): `OpenTsxConf`, `Registry`,
+- [x] **Foundation, Java**: module `opentsx-conf` (package `org.opentsx.conf`): `OpenTsxConf`, `Registry`,
       `OpenTsxConfException`, properties and YAML readers, the loader, `config list|show|get` and `version` on one main
       class; tests: registry rules 1 to 8, byte equality with the Python copy, every vector. `bin/opentsx` and
-      `opentsx-entrypoint.sh` get `config` and `version`. Done except `opentsx-entrypoint.sh`.
+      `opentsx-entrypoint.sh` get `config` and `version`.
 - [x] **Foundation, Python**: `opentsx.conf` with the same API, the copy of the registry as package data, the extra
       `opentsx[yaml]`, the console script `opentsx`; tests: the same as Java. CI installs the extra for one Python
       version and runs the YAML vectors; the others check the message that names the extra.
@@ -757,7 +758,7 @@ The order matters: the foundation first, then one batch per module, then errors 
 - [x] **Migration `opentsx-modbus`**: `ModbusCli`.
 - [x] **Migration `opentsx-market`**: `MarketCli`, `BrokerPublish`, `Collector` (credentials), `HistoryTwins`; exit
       codes 3 and 4 become 1 and 2 (D9), [opentsx-market/README.md](../opentsx-market/README.md) line 117 changes.
-- [ ] **Migration deploy**: `KafScaleCheck`, the k3s manifests and `opentsx-entrypoint.sh` (dispatch of `vectors`,
+- [x] **Migration deploy**: `KafScaleCheck`, the k3s manifests and `opentsx-entrypoint.sh` (dispatch of `vectors`,
       `history-twin`), `docs/user-manual/appendix-a-cli.md`.
 - [ ] **Errors** (audit of the error handling): one `main` per command catches `OpenTsxConfException` (exit 2) and every other
       exception (exit 1); no swallowed exception in the main classes (for example `catch (Exception ignored)` at

@@ -52,7 +52,7 @@ flowchart LR
   OM[("OpenMetadata<br/>optional")]
   JOBS -- "episodes, manifests" --> KS
   STATS -- "reads episodes,<br/>writes series-stats" --> KS
-  JOBS -. "--iceberg" .-> IR
+  JOBS -. "--sinks kafscale,iceberg" .-> IR
   RET -.-> IR
   IR --- MINIO
   JOBS -. "metadata-publish" .-> OM
@@ -62,20 +62,25 @@ flowchart LR
 
 | Component | Kind | Image | Command (inside the image) |
 |-----------|------|-------|---------------------------|
-| statistics processor | Deployment (1 replica, `Recreate`) | `opentsx/tools` | `opentsx stats --kafscale … --checkpoint /state/stats.ckpt` |
-| retrieval server | Deployment + Service | `opentsx/tools` | `opentsx retrieval-server --port 8080 --source demo` (lake: `--iceberg …`; `RETRIEVAL_SOURCE=kafscale`: `--kafscale …`) |
+| statistics processor | Deployment (1 replica, `Recreate`) | `opentsx/tools` | `opentsx stats --checkpoint /state/stats.ckpt` (bootstrap, domain, windows and lateness as variables) |
+| retrieval server | Deployment + Service | `opentsx/tools` | `opentsx retrieval-server --port 8080 --source demo` (lake: `--source iceberg`; `RETRIEVAL_SOURCE=kafscale`: `--source kafscale`) |
 | Smart Topics Studio | Deployment + Service | `opentsx/studio` | nginx serving the page generated during the image build |
-| KafScale check / topic provisioning | Job | `opentsx/tools` | `opentsx kafscale-check --kafscale … --provision true` |
-| wind-farm simulator | Job | `opentsx/tools` | `opentsx windpark-sim --scenario … --kafscale …` |
-| metadata (dry run / publish) | Job | `opentsx/tools` | `opentsx metadata --scenario … --dry-run /data/om-requests` |
+| KafScale check / topic provisioning | Job | `opentsx/tools` | `opentsx kafscale-check` (provisions through `OPENTSX_KAFSCALE_PROVISION=true`) |
+| wind-farm simulator | Job | `opentsx/tools` | `opentsx windpark-sim --index /data/<domain>-index.tsv --ground-truth /data/ground-truth.json` |
+| metadata (dry run / publish) | Job | `opentsx/tools` | `opentsx metadata --dry-run /data/om-requests` |
 | twin, house, boat | Jobs | `opentsx/tools` | `opentsx twin` / `house` / `boat` |
 | Studio export | Job | `opentsx/tools` | `opentsx studio-export /tmp/studio.json` |
 | DWD weather demo | Job | `opentsx/tools` | `opentsx dwd mosmix --offline <fixture>` (or `--station <id>`) + `opentsx dwd house …` |
 | DWD forecast collector (`DWD_FORWARD=true`) | CronJob, daily | `opentsx/tools` | `opentsx dwd mosmix --station <id> --out /data/dwd/…csv` per station in `DWD_STATIONS` |
 | Modbus simulator (`MODBUS_SIM=true`) | Deployment + Service :1502 | `opentsx/tools` | `opentsx modbus simulate --map example --port 1502 --bind 0.0.0.0` |
-| Modbus poller | Job | `opentsx/tools` | `opentsx modbus poll --map … --host … --out episodes --file /data/modbus/…jsonl` |
+| Modbus poller | Job | `opentsx/tools` | `opentsx modbus poll --interval 1s --out episodes --episode PT10S --file /data/modbus/…jsonl` (map, host and port as variables) |
 | synthetic check (`MONITORING=true`) | CronJob, every 10 min | `opentsx/tools` | `kafscale-check`, checkpoint age, disk usage |
 | Iceberg REST catalog, MinIO | Deployments (lake profile) | `apache/iceberg-rest-fixture:1.9.2`, `quay.io/minio/minio` | — |
+
+The commands read the ConfigMap values as variables of the configuration registry, not as flags. The DWD Job and
+the DWD forecast collector are the exception: their scripts build `--station` or `--offline` from `DWD_MODE`,
+`DWD_STATIONS` and `DWD_FIXTURE`. See
+[Pass settings to a command](../../deploy/k3s/README.md#pass-settings-to-a-command).
 
 KafScale itself is **not** deployed: the guide assumes an existing cluster (for a local one, see
 `docker-compose.kafscale.yml` and [Getting started](../user-manual/02-getting-started.md)).

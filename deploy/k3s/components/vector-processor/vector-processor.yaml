@@ -34,10 +34,6 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - vectors
-            - --kafscale
-            - $(KAFSCALE_BOOTSTRAP)
-            - --domain
-            - $(OPENTSX_DOMAIN)
             - --state
             - /state
           env:

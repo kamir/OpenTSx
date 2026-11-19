@@ -64,6 +64,38 @@ keys may hold only letters, digits, `.`, `_`, `~` and `-`. The generated keys do
 `20-configure.sh --print` shows the rendered manifests without the Secrets. Read one value with
 `kubectl -n opentsx get secret opentsx-secrets -o jsonpath='{.data.OPENMETADATA_JWT}' | base64 -d`.
 
+## Pass settings to a command
+
+The containers pass the values of the ConfigMap `opentsx-config` to their command as variables of the
+configuration registry, not as options. `opentsx <command> --help` lists the variables a command reads. The keys
+that `20-configure.sh` writes keep their names from `deploy/k3s/.env`, and the container maps each onto the
+variable of its registry key:
+
+| ConfigMap key | Variable in the container |
+|---------------|---------------------------|
+| `KAFSCALE_BOOTSTRAP` | `KAFSCALE_BOOTSTRAP` (legacy name of `OPENTSX_KAFSCALE_BOOTSTRAP`) |
+| `OPENTSX_DOMAIN` | `OPENTSX_DOMAIN` |
+| `OPENTSX_PARTITIONS` | `OPENTSX_KAFSCALE_PARTITIONS` |
+| `OM_URL` | `OPENTSX_OPENMETADATA_URL` |
+| `ICEBERG_PROPS` | `OPENTSX_ICEBERG_PROPERTIES` |
+| `RETRIEVAL_DAG_RUNS` | `OPENTSX_RETRIEVAL_DAG_RUNS` |
+| `MODBUS_HOST`, `MODBUS_PORT`, `MODBUS_MAP` | `OPENTSX_MODBUS_HOST`, `OPENTSX_MODBUS_PORT`, `OPENTSX_MODBUS_MAP` |
+
+`base/kustomization.yaml` sets `OPENTSX_WINDPARK_SCENARIO`, `OPENTSX_STATS_WINDOWS`,
+`OPENTSX_STATS_ALLOWED_LATENESS` and `OPENTSX_ICEBERG_NAMESPACE` under the names the commands read. A Job sets its
+overridable defaults as variables: `OPENTSX_KAFSCALE_PROVISION=true` (`kafscale-check`),
+`OPENTSX_WINDPARK_SINKS=kafscale` (`windpark-sim`; the component `lake-jobs` adds `--sinks kafscale,iceberg`),
+`OPENTSX_OPENMETADATA_PROFILES=always` (`metadata-publish`) and `OPENTSX_MODBUS_COUNT=30` (`modbus-poll`). An option
+after `40-demo.sh <demo> --` wins over a variable. An option that the Job already sets fails with
+`set twice on the command line`; these are `--index`, `--ground-truth` and with `lake-jobs` `--sinks`
+(`windpark-sim`), `--dry-run` (`metadata`), `--out`, `--daily` and `--offline`, with `dwd-online` `--station`
+(`dwd`), and `--interval`, `--out`, `--episode` and `--file` (`modbus-poll`).
+
+CI renders the overlays and loads every `opentsx/tools` container through the configuration loader with its
+variables, its arguments and `OPENTSX_EXTRA_ARGS`, except the `dwd` Job and the `dwd-forward` CronJob: their shell
+scripts build `--station` or `--offline` from variables, and CI reports them as skip. It fails when a container sets
+a variable that its command does not read, or passes a variable as the value of an option.
+
 ## Retrieval server on the episodes topic
 
 By default the retrieval server serves a synthetic demo store. `20-configure.sh RETRIEVAL_SOURCE=kafscale` adds the

@@ -8,8 +8,9 @@
 #   docker compose -f docker-compose.kafscale.yml up -d                  # KafScale broker on localhost:9092
 #
 # Real cluster profiles (hosts, credentials) belong in config/private/ (git-ignored), never in this file.
-# The v2 modules (windpark-sim, stats, retrieval, twin) do not read this file: they take the bootstrap via
-# --kafscale <host:port> or KAFSCALE_BOOTSTRAP, see docs/user-manual/12-operations.md.
+# The v2 commands of bin/opentsx do not read this file. They take the bootstrap from the key
+# opentsx.kafscale.bootstrap: --kafscale <host:port>, OPENTSX_KAFSCALE_BOOTSTRAP or its legacy name
+# KAFSCALE_BOOTSTRAP, see docs/user-manual/18-configuration.md.
 
 # --- kping / klatency load tools (opentsx-lg) ------------------------------------------------------------------
 kping.producer.ziterations=10

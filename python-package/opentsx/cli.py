@@ -7,7 +7,6 @@ from importlib import metadata
 from typing import Mapping
 
 from opentsx.conf.conf import (
-    CONF_COMMANDS,
     MASK,
     OUTPUT_COMMANDS,
     OpenTsxConf,
@@ -122,11 +121,6 @@ def _help(registry: Registry, command: str | None) -> str:
         entry = registry.commands[command]
         arguments = "".join(f" <{name}>" for name in entry.get("args", []))
         lines = [f"usage: opentsx {command}{arguments} [options]", entry["doc"]]
-        if command not in CONF_COMMANDS:
-            lines.append(
-                f"In the Java runtime, {command} parses its own flags and does not read --conf, "
-                "--properties-file, OPENTSX_CONF_DIR or the canonical OPENTSX_ variables."
-            )
         keys = [registry.entries[key] for key in sorted(registry.entries)]
         read = [key for key in keys if command in key["commands"]]
         if read:

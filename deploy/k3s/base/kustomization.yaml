@@ -13,15 +13,17 @@ resources:
   - retrieval.yaml
   - studio.yaml
 configMapGenerator:
+  # The keys that 20-configure.sh writes keep their names in deploy/k3s/.env; each container maps them onto the
+  # OPENTSX_ variable of the registry key its command reads.
   - name: opentsx-config
     literals:
       - KAFSCALE_BOOTSTRAP=kafscale.invalid:9092
       - OPENTSX_DOMAIN=wind
       - OPENTSX_PARTITIONS=6
-      - OPENTSX_SCENARIO=/opt/opentsx/share/scenarios/ostsee-demo.yaml
-      - STATS_WINDOWS=PT10M,PT1H
-      - STATS_LATENESS=PT0S
-      - ICEBERG_NAMESPACE=tsx
+      - OPENTSX_WINDPARK_SCENARIO=/opt/opentsx/share/scenarios/ostsee-demo.yaml
+      - OPENTSX_STATS_WINDOWS=PT10M,PT1H
+      - OPENTSX_STATS_ALLOWED_LATENESS=PT0S
+      - OPENTSX_ICEBERG_NAMESPACE=tsx
       - ICEBERG_PROPS=
       - OM_URL=
       - S3_ENDPOINT=http://opentsx-minio:9000

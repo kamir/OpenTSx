@@ -27,6 +27,7 @@ CONF_COMMANDS = (
     "history-twin house",
     "history-twin twin",
     "house",
+    "kafscale-check",
     "market backfill",
     "market catalog",
     "market forward",

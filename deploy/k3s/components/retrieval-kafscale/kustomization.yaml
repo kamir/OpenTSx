@@ -15,9 +15,8 @@ patches:
     patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/args
-        value: [retrieval-server, --port, "8080", --kafscale, $(KAFSCALE_BOOTSTRAP), --domain, $(OPENTSX_DOMAIN),
-                --scenario, $(OPENTSX_SCENARIO), --catalog, /opt/opentsx/share/windpark/channel-catalog.yaml,
-                --dag-runs, $(RETRIEVAL_DAG_RUNS),
+        value: [retrieval-server, --port, "8080", --source, kafscale,
+                --catalog, /opt/opentsx/share/windpark/channel-catalog.yaml,
                 --systems, /opt/opentsx/share/repo/systems, --systems-root, /opt/opentsx/share/repo]
       - op: add
         path: /spec/template/spec/containers/0/env
@@ -26,9 +25,9 @@ patches:
             valueFrom: {configMapKeyRef: {name: opentsx-config, key: KAFSCALE_BOOTSTRAP}}
           - name: OPENTSX_DOMAIN
             valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_DOMAIN}}
-          - name: OPENTSX_SCENARIO
-            valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_SCENARIO}}
-          - name: RETRIEVAL_DAG_RUNS
+          - name: OPENTSX_WINDPARK_SCENARIO
+            valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_WINDPARK_SCENARIO}}
+          - name: OPENTSX_RETRIEVAL_DAG_RUNS
             valueFrom: {configMapKeyRef: {name: opentsx-config, key: RETRIEVAL_DAG_RUNS}}
           - name: OPENTSX_DAG_RUN_TOKEN     # set when RETRIEVAL_DAG_RUNS=true: runs need it in X-OpenTSx-Run-Token
             valueFrom: {secretKeyRef: {name: opentsx-secrets, key: DAG_RUN_TOKEN, optional: true}}

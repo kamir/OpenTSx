@@ -112,11 +112,10 @@ class ConfCliTest {
     }
 
     @Test
-    void helpOfACommandOutsideConfigSaysWhatTheJavaCommandReads() {
+    void helpOfEveryCommandListsItsKeys() {
         assertTrue(Registry.shipped().help("kafscale-check").startsWith("usage: opentsx kafscale-check [options]\n"
-                + "Check that a KafScale bootstrap address and its advertised brokers are reachable.\n"
-                + "In the Java runtime, kafscale-check parses its own flags and does not read --conf, --properties-file, "
-                + "OPENTSX_CONF_DIR or the canonical OPENTSX_ variables.\n"));
+                + "Check that a KafScale bootstrap address and its advertised brokers are reachable.\n\nkeys:\n"));
+        assertFalse(Registry.shipped().help("kafscale-check").contains("In the Java runtime"));
         assertFalse(Registry.shipped().help("history-twin twin").contains("In the Java runtime"));
         assertFalse(Registry.shipped().help("market prices").contains("In the Java runtime"));
         assertFalse(Registry.shipped().help("config show").contains("In the Java runtime"));

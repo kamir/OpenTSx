@@ -17,6 +17,7 @@ spec:
         opentsx.org/kafka: "true"
     spec:
       restartPolicy: Never
+      enableServiceLinks: false   # opentsx-retrieval would set OPENTSX_RETRIEVAL_PORT=tcp://..., which the loader refuses
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
@@ -28,20 +29,14 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - kafscale-check
-            - --kafscale
-            - $(KAFSCALE_BOOTSTRAP)
-            - --domain
-            - $(OPENTSX_DOMAIN)
-            - --provision
-            - "true"
-            - --partitions
-            - $(OPENTSX_PARTITIONS)
           env:
+            - name: OPENTSX_KAFSCALE_PROVISION   # 40-demo.sh kafscale-check -- --provision false overrides it
+              value: "true"
             - name: KAFSCALE_BOOTSTRAP
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: KAFSCALE_BOOTSTRAP}}
             - name: OPENTSX_DOMAIN
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_DOMAIN}}
-            - name: OPENTSX_PARTITIONS
+            - name: OPENTSX_KAFSCALE_PARTITIONS
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_PARTITIONS}}
             - name: OPENTSX_EXTRA_ARGS       # set by 40-demo.sh -- <args>
               value: ""

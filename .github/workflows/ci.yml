@@ -30,7 +30,7 @@ jobs:
           cache: maven
       - name: Build and test
         run: xvfb-run --auto-servernum mvn -B -ntp verify
-      - name: Launcher classpaths (bin/opentsx and the staged image, deploy/docker/test-launchers.sh)
+      - name: Launcher classpaths and the staged kafscale-check (bin/opentsx and the staged image, deploy/docker/test-launchers.sh)
         if: matrix.java == '21'
         run: |
           mvn -B -ntp -q install -DskipTests
@@ -135,14 +135,23 @@ jobs:
       - uses: actions/checkout@v7
       - name: Shell syntax and shellcheck
         run: |
-          for f in deploy/k3s/*.sh deploy/k3s/test/*.sh deploy/docker/*.sh; do bash -n "$f"; done
+          for f in deploy/k3s/*.sh deploy/k3s/test/*.sh deploy/docker/*.sh bin/opentsx bin/120_run_demo.sh; do bash -n "$f"; done
           command -v shellcheck || { sudo apt-get update -q && sudo apt-get install -y -q shellcheck; }
           shellcheck --version
-          shellcheck -x -P SCRIPTDIR deploy/k3s/*.sh deploy/k3s/test/*.sh deploy/docker/*.sh
+          shellcheck -x -P SCRIPTDIR deploy/k3s/*.sh deploy/k3s/test/*.sh deploy/docker/*.sh bin/opentsx bin/120_run_demo.sh
+      - name: bin/120_run_demo.sh --help prints its usage and starts nothing
+        run: |
+          bash bin/120_run_demo.sh --help | grep -q '^Starts the 2.x GUI org.opentsx.app.bucketanalyser.MacroRecorder2'
+          rc=0; bash bin/120_run_demo.sh nosuch 2> "$RUNNER_TEMP/demo.err" || rc=$?
+          test "$rc" = 2 && grep -q 'unknown argument nosuch' "$RUNNER_TEMP/demo.err"
       - name: 20-configure.sh, secrets in docs and the MinIO bucket Job (deploy/k3s/test)
         run: bash deploy/k3s/test/test-20-configure.sh
+      - name: 00-prereqs.sh shows the error of the staged kafscale-check (deploy/k3s/test)
+        run: bash deploy/k3s/test/test-00-prereqs.sh
       - name: Launchers and logger settings (deploy/docker/test-launchers.sh)
         run: bash deploy/docker/test-launchers.sh
+      - name: Launcher commands (bin/opentsx, the image entrypoint and Registry.LOADS_CONF)
+        run: bash deploy/docker/test-launchers.sh --commands
       - name: Render the kustomize overlays (default, hostnetwork, service, lake, modbus-sim, dwd-forward, monitoring, saas, retrieval-kafscale, event-bridge) and the history archive
         run: |
           kubectl version --client
@@ -168,6 +177,111 @@ jobs:
             https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
           tar xzf "$RUNNER_TEMP/kubeconform.tar.gz" -C "$RUNNER_TEMP" kubeconform
           "$RUNNER_TEMP/kubeconform" -strict -summary -kubernetes-version 1.31.0 "$RUNNER_TEMP"/rendered/*.yaml
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Load every rendered opentsx/tools container through OpenTsxConf (env, args and OPENTSX_EXTRA_ARGS)
+        run: |
+          python -m pip install -q -e "python-package[yaml]"
+          python - "$RUNNER_TEMP/rendered" <<'PYTHON'
+          import base64, json, pathlib, re, shlex, sys
+          import yaml
+          from opentsx.conf.conf import OpenTsxConf, OpenTsxConfError, Registry
+
+          reg = Registry.shipped()
+          COMMANDS = {c["name"] for c in json.loads(reg.text)["commands"]}
+          LAUNCHER = {"OPENTSX_HOME", "OPENTSX_CONF_DIR", "OPENTSX_EXTRA_ARGS", "JAVA_OPTS"}
+          ARG_REF, SHELL_REF = re.compile(r"\$\(([A-Za-z_]\w*)\)"), re.compile(r"\$\{?([A-Za-z_]\w*)")
+          SHELL_RUN = re.compile(r"(?:^|[;&|(\s])opentsx[ \t]+([^;&|<>\n]*)")
+          problems = []
+
+
+          def command_of(argv):
+              words = [w for w in argv if not w.startswith("-")]
+              return next((" ".join(words[:n]) for n in (3, 2, 1) if " ".join(words[:n]) in COMMANDS), None)
+
+
+          def variables(command):
+              return {n for k, e in reg.entries.items() if command in e["commands"] for n in [Registry.envName(k)] + e.get("env", [])}
+
+
+          def option_from_variable(where, command, flag, name):
+              entry = reg.flags(command).get(flag[2:]) if command else None
+              wanted = " or ".join([Registry.envName(entry["key"])] + entry.get("env", [])) if entry else "the variable of the key"
+              problems.append(f"{where}: {flag} takes ${name}; drop the option and set {wanted} in the container")
+
+
+          def check(path, docs, shared):
+              maps = {d["metadata"]["name"]: d.get("data", {}) for d in shared if d["kind"] == "ConfigMap"}
+              secrets = {d["metadata"]["name"]: {k: base64.b64decode(v).decode() for k, v in d.get("data", {}).items()}
+                         for d in shared if d["kind"] == "Secret"}
+              links = {}
+              for s in (d for d in shared if d["kind"] == "Service"):
+                  name, port = s["metadata"]["name"].upper().replace("-", "_"), s["spec"]["ports"][0]["port"]
+                  links.update({f"{name}_SERVICE_HOST": "10.43.0.10", f"{name}_SERVICE_PORT": str(port), f"{name}_PORT": f"tcp://10.43.0.10:{port}"})
+              for doc in docs:
+                  spec = doc.get("spec", {})
+                  pod = spec.get("jobTemplate", {}).get("spec", spec).get("template", {}).get("spec", {})
+                  for c in pod.get("containers", []):
+                      if "/tools:" not in "/" + c["image"]:
+                          continue
+                      where = f"{path.name} {doc['kind']}/{doc['metadata']['name']}"
+                      env = {} if pod.get("enableServiceLinks", True) is False else dict(links)
+                      for source in c.get("envFrom", []):
+                          env.update(secrets.get(source.get("secretRef", {}).get("name"), {}))
+                      declared = [e["name"] for e in c.get("env", [])]
+                      for e in c.get("env", []):
+                          ref = e.get("valueFrom", {})
+                          cm = ref.get("configMapKeyRef")
+                          env[e["name"]] = maps.get(cm["name"], {}).get(cm["key"], "") if cm else "x" * 40 if "secretKeyRef" in ref else e.get("value", "")
+                      runs, script = [], "\n".join(c.get("args", [])).replace("\\\n", " ") if c.get("command") else None
+                      if script is None:
+                          args = c.get("args", [])
+                          command = command_of(args)
+                          for flag, a in zip(args, args[1:]):
+                              m = ARG_REF.fullmatch(a)
+                              if flag.startswith("--") and m:
+                                  option_from_variable(where, command, flag, m.group(1))
+                          runs.append(([ARG_REF.sub(lambda m: env.get(m.group(1), m.group(0)), a) for a in c.get("args", [])], True))
+                      else:
+                          for m in SHELL_RUN.finditer(script):
+                              tokens, argv, loadable = shlex.split(m.group(1)), [], True
+                              for prev, t in zip([""] + tokens, tokens):
+                                  v = re.fullmatch(r"\$\{?(\w+)\}?", t)
+                                  if prev.startswith("--") and v and v.group(1) in declared:
+                                      option_from_variable(where, command_of(tokens), prev, v.group(1))
+                                  t = SHELL_REF.sub(lambda r: env.get(r.group(1), r.group(0)), t)
+                                  if "$" in t or "`" in t:
+                                      t, loadable = ("x", loadable) if prev.startswith("--") else (t, False)
+                                  argv.append(t)
+                              runs.append((argv, loadable))
+                      commands = [command_of(argv) for argv, _ in runs]
+                      readable = LAUNCHER.union(*(variables(cmd) for cmd in commands if cmd))
+                      for name in declared:
+                          if name not in readable and not (script and name in SHELL_REF.findall(script)):
+                              problems.append(f"{where}: {name} is not a variable of {', '.join(filter(None, commands)) or 'the container'}")
+                      for (argv, loadable), command in zip(runs, commands):
+                          if command is None:
+                              problems.append(f"{where}: {' '.join(argv[:3])} is not a command of the registry")
+                          elif not loadable:
+                              print(f"skip {where}: opentsx {command}: an argument comes from the shell")
+                          else:
+                              try:
+                                  OpenTsxConf.load(argv + shlex.split(env.get("OPENTSX_EXTRA_ARGS", "")), env, env.get("OPENTSX_CONF_DIR"))
+                                  print(f"ok   {where}: opentsx {command}")
+                              except OpenTsxConfError as e:
+                                  problems.append(f"{where}: opentsx {command}: {e}")
+
+
+          files = sorted(pathlib.Path(sys.argv[1]).glob("*.yaml"))
+          loaded = {f: [d for d in yaml.safe_load_all(f.read_text()) if d] for f in files}
+          for f in files:
+              render = [g for g in files if re.sub(r"^(overlay|jobs)-", "", g.name) == re.sub(r"^(overlay|jobs)-", "", f.name)]
+              check(f, loaded[f], [d for g in render for d in loaded[g]])
+          for p in problems:
+              print("FAIL " + p)
+          sys.exit(1 if problems or not files else 0)
+          PYTHON
       - name: Probe plan (60-probe.sh --dry-run, with and without --local-kafscale)
         run: |
           rm -f deploy/k3s/.env
@@ -232,6 +346,7 @@ jobs:
       - name: Verify recorder PFD through Kafka and Flink
         env:
           KAFSCALE_BOOTSTRAP: 127.0.0.1:39092
+          OPENTSX_BOOTSTRAP_SERVERS: 127.0.0.1:39092
         run: xvfb-run --auto-servernum mvn -B -ntp -pl opentsx-flink-core -am verify -Ppfd-acceptance
       - name: Capability report
         if: always()

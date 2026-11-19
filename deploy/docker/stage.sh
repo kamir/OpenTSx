@@ -26,7 +26,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-MODULES=(opentsx-kafka-v2 opentsx-windpark opentsx-stats opentsx-openmetadata opentsx-retrieval opentsx-store-iceberg opentsx-twin opentsx-twin-live opentsx-dwd opentsx-modbus opentsx-market)
+MODULES=(opentsx-conf opentsx-kafka-v2 opentsx-windpark opentsx-stats opentsx-openmetadata opentsx-retrieval opentsx-store-iceberg opentsx-twin opentsx-twin-live opentsx-dwd opentsx-modbus opentsx-market)
 ICEBERG_MODULES=(opentsx-windpark opentsx-retrieval opentsx-store-iceberg opentsx-market)
 VERSION="$(cd "$ROOT" && mvn -q -B help:evaluate -Dexpression=project.version -DforceStdout 2>/dev/null | tail -1)"
 REPO="$(cd "$ROOT" && mvn -q -B help:evaluate -Dexpression=settings.localRepository -DforceStdout 2>/dev/null | tail -1)"
@@ -87,12 +87,13 @@ if $WITH_S3; then
   for m in "${ICEBERG_MODULES[@]}"; do echo "$rel" >> "$H/cp/$m.txt"; done
 fi
 
-# deployment helper (KafScaleCheck), compiled against the kafka-v2 classpath
+# deployment helper (KafScaleCheck), compiled against the kafka-v2 and the opentsx-conf classpath
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-kcp="$(sed "s#^#$H/#" "$H/cp/opentsx-kafka-v2.txt" | paste -sd: -)"
+cat "$H/cp/opentsx-kafka-v2.txt" "$H/cp/opentsx-conf.txt" | awk '!seen[$0]++' > "$tmp/deploy-tools.txt"
+kcp="$(sed "s#^#$H/#" "$tmp/deploy-tools.txt" | paste -sd: -)"
 javac --release 17 -nowarn -d "$tmp/classes" -cp "$kcp" "$ROOT/deploy/docker/src/org/opentsx/deploy/KafScaleCheck.java"
 jar --create --file "$H/lib/opentsx-deploy-tools.jar" -C "$tmp/classes" .
-{ echo "lib/opentsx-deploy-tools.jar"; cat "$H/cp/opentsx-kafka-v2.txt"; } > "$H/cp/opentsx-deploy-tools.txt"
+{ echo "lib/opentsx-deploy-tools.jar"; cat "$tmp/deploy-tools.txt"; } > "$H/cp/opentsx-deploy-tools.txt"
 
 cp "$ROOT/deploy/docker/opentsx-entrypoint.sh" "$H/bin/opentsx"
 cp "$ROOT/conf/simplelogger.properties" "$H/conf/"

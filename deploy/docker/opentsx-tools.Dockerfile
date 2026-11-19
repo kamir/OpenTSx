@@ -1,6 +1,8 @@
 # syntax=docker/dockerfile:1
-# OpenTSx tools image: one JRE image with every v2 command (windpark-sim, stats, metadata, retrieval-server,
-# twin, house, boat, dwd, modbus, studio-export, kafscale-check). Build context = the staged directory:
+# OpenTSx tools image: one JRE image with the commands of bin/opentsx except stats-flink, plus kafscale-check
+# (windpark-sim, stats, metadata, retrieval-server, vectors, twin, house, boat, history-twin, dwd, modbus,
+# twin-coupling, twin-live, twin-schemas, studio-export, market, kafscale-check, config, version, classpath;
+# opentsx help lists them). Build context = the staged directory:
 #
 #   deploy/docker/stage.sh [--with-s3]                                   # after mvn install -DskipTests
 #   docker build -f deploy/docker/opentsx-tools.Dockerfile -t opentsx/tools:3.0.1-local deploy/docker/.stage

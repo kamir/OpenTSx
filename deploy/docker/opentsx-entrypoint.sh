@@ -3,7 +3,7 @@
 #
 #   opentsx <command> [options]
 #
-# Commands (options as in docs/user-manual/appendix-a-cli.md):
+# Commands (options as in docs/user-manual/appendix-a-cli.md; opentsx <command> --help lists the keys of a command):
 #   windpark-sim       wind-farm scenario -> KafScale and/or Iceberg   (org.opentsx.windpark.WindparkSim)
 #   stats              streaming statistics processor on KafScale      (org.opentsx.stats.StatsProcessorApp)
 #   metadata           metadata pool -> OpenMetadata (or --dry-run)    (org.opentsx.openmetadata.WindparkMetadata)
@@ -14,13 +14,19 @@
 #   boat               boat twin (Etap 22)                             (org.opentsx.twin.demo.BoatDemo)
 #   dwd                DWD Open Data collector                         (org.opentsx.dwd.DwdCli)
 #   modbus             Modbus meters: check|read|poll|simulate         (org.opentsx.modbus.ModbusCli; maps in share/modbus)
+#   twin-coupling      variant L vs T: staleness/latency grid          (org.opentsx.twin.demo.CouplingStudy)
 #   twin-live          event topic of a twin: publish|bridge|demo      (org.opentsx.twin.live.TwinLive)
+#   twin-schemas       the twin's Avro topic contract, --out dir       (org.opentsx.twin.schema.AtomSchemas)
 #   studio-export      scenario data for the Smart Topics Studio       (org.opentsx.twin.studio.StudioExport <out.json>)
 #   market             market data, history archive, backfill          (org.opentsx.market.MarketCli)
 #   history-twin       twin|house|boat on the history archive          (org.opentsx.market.twin.HistoryTwins)
+#   twin --history d, house --weather-year Y, boat --weather-year Y   the same as history-twin twin|house|boat
 #   kafscale-check     reachability, advertised brokers, topic counts  (org.opentsx.deploy.KafScaleCheck)
+#   config             config list|show|get: key registry, effective values  (org.opentsx.conf.ConfCli)
+#   version            print the OpenTSx version (also --version)      (org.opentsx.conf.ConfCli)
 #   classpath <module> print the classpath of a module
 #   help               this text
+# Not in the image: stats-flink (bin/opentsx only; the image has no Flink runtime).
 #
 # Environment:
 #   OPENTSX_HOME        installation directory (default: the parent of this script's directory)
@@ -65,16 +71,28 @@ case "$cmd" in
   metadata)         run "opentsx-openmetadata" org.opentsx.openmetadata.WindparkMetadata "$@" ;;
   retrieval-server) run "opentsx-retrieval opentsx-store-iceberg" org.opentsx.retrieval.server.RetrievalServer "$@" ;;
   vectors)          run "opentsx-retrieval" org.opentsx.retrieval.vector.VectorProcessorApp "$@" ;;
-  twin)             run "opentsx-twin" org.opentsx.twin.demo.H2ChainDemo "$@" ;;
-  house)            run "opentsx-twin" org.opentsx.twin.demo.HouseDemo "$@" ;;
-  boat)             run "opentsx-twin" org.opentsx.twin.demo.BoatDemo "$@" ;;
+  twin|house|boat)
+    # with archived history (--history / --weather-year, also in OPENTSX_EXTRA_ARGS) the run goes through the
+    # history adapter of opentsx-market
+    if [[ " $* ${OPENTSX_EXTRA_ARGS:-} " == *" --history "* || " $* ${OPENTSX_EXTRA_ARGS:-} " == *" --weather-year "* ]]; then
+      run "opentsx-market" org.opentsx.market.twin.HistoryTwins "$cmd" "$@"
+    fi
+    case "$cmd" in
+      twin)  run "opentsx-twin" org.opentsx.twin.demo.H2ChainDemo "$@" ;;
+      house) run "opentsx-twin" org.opentsx.twin.demo.HouseDemo "$@" ;;
+      boat)  run "opentsx-twin" org.opentsx.twin.demo.BoatDemo "$@" ;;
+    esac ;;
+  history-twin)     run "opentsx-market" org.opentsx.market.twin.HistoryTwins "$@" ;;
+  market)           run "opentsx-market" org.opentsx.market.MarketCli "$@" ;;
   dwd)              run "opentsx-dwd" org.opentsx.dwd.DwdCli "$@" ;;
   modbus)           run "opentsx-modbus" org.opentsx.modbus.ModbusCli "$@" ;;
+  twin-coupling)    run "opentsx-twin" org.opentsx.twin.demo.CouplingStudy "$@" ;;
   twin-live)        run "opentsx-twin-live" org.opentsx.twin.live.TwinLive "$@" ;;
+  twin-schemas)     run "opentsx-twin" org.opentsx.twin.schema.AtomSchemas "$@" ;;
   studio-export)    run "opentsx-twin" org.opentsx.twin.studio.StudioExport "$@" ;;
-  market)           run "opentsx-market" org.opentsx.market.MarketCli "$@" ;;
-  history-twin)     run "opentsx-market" org.opentsx.market.twin.HistoryTwins "$@" ;;
   kafscale-check)   run "opentsx-deploy-tools" org.opentsx.deploy.KafScaleCheck "$@" ;;
+  config|version)   run "opentsx-conf" org.opentsx.conf.ConfCli "$cmd" "$@" ;;
+  --version)        run "opentsx-conf" org.opentsx.conf.ConfCli --version ;;
   classpath)        classpath "$@" ;;
   -h|--help|help)   usage 0 ;;
   *) echo "opentsx: unknown command: $cmd" >&2; usage 1 ;;
