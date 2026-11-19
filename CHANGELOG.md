@@ -601,6 +601,22 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `opentsx-data`, the platform versions and the defects that are still open.
 - `TopicsUP` and `TopicsCHECK` run as programs call `TopicsUP.execute()` and `TopicsCHECK.execute()`, so they print
   the same lines as the methods.
+- The 2.x library classes of `opentsx-core` in `org.opentsx.data`, `org.opentsx.core` and `org.opentsx.algorithms`,
+  `MFDFAAnalyzer.processMFDFA` among them, write nothing to standard output. They log progress through SLF4J at DEBUG
+  under the class name, one line per event, and throw the failures they used to print. `opentsx-core` declares
+  `slf4j-api`.
+- `TimeSeriesObject.getStatisticData(table)` and `getStatisticData(prefix)` throw `IllegalStateException` for a series
+  without values and propagate the failure of a value that cannot be read, instead of printing a stack trace or
+  returning `!!! NO STATISTICS for time series !!!`. The text of a series without values has no statistics block.
+- `ESCalc2.calcES` throws `IllegalArgumentException` when a series has fewer than 3 events instead of printing an
+  error and returning -2.
+- `ReturnIntervallStatistik2.add` and `TSPropertyTester.add` throw `IllegalArgumentException` for a NaN or infinite
+  probability instead of printing `ERROR 3` and adding it. Their `add` and `addDistData` throw `IllegalStateException`
+  or `IllegalArgumentException` with English messages instead of a plain `Exception`.
+- `ProductionConfig` (episode 10) sets the `java.util.logging` root level from `OPENTSX_LOG_LEVEL`, then from
+  `opentsx.log.level` in `./opentsx.properties`, then `info`, and refuses a value other than `error`, `warn`, `info`,
+  `debug` or `trace`. An empty `OPENTSX_LOG_LEVEL` counts as unset and blanks around a level are ignored.
+  `opentsx.properties.example` sets `info`.
 
 ### Removed
 
@@ -743,6 +759,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Commented-out code in `TSOProducer` (`createProducer(Properties)`, `pushTSDataAsEventsToKafka_String_String`,
   `pushTSOItemsToKafka`), `TSOWriter`, `TSOEventProducer` and `EventFlowStateProducer`, and in the `opentsx-lg`
   sources and scripts.
+- `org.opentsx.pojo.EventTS`, which no code used and whose `createRecord()` returned null. This is a breaking change.
+- `opentsx.log.level=INFO` from `config/opentsx-default.properties` and the `opentsx-default.properties` resource of
+  `opentsx-core`. No code read it; `ProductionConfig` reads the level from `./opentsx.properties` and
+  `OPENTSX_LOG_LEVEL`.
+- `MultiDFATool2.debug`, which nothing read after its lines moved to the SLF4J logger of the class at DEBUG. Set the
+  logger level instead. This is a breaking change.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -1364,6 +1386,29 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `plan <file> cannot be read: <file>: ...`.
 - `bin/opentsx boat --data <file.csv> --calibrate` on data without a state of charge says `--calibrate needs the
   column soc_percent` and names `soc_percent` in the shadow line, the English column name of the CSV.
+- `DFACore.fitn` fits a least-squares polynomial of the given order, so DFA2 and higher detrend the profile. It
+  returned zero coefficients before.
+- `DFACore.initIntervalSlog` refuses fewer than 22 values with `IllegalArgumentException` instead of failing with
+  `ArrayIndexOutOfBoundsException`.
+- `MultiDFATool.runDFA` combines the F(s) of all series at the window sizes of the longest series and writes its files
+  under the new public field `savePath`. It failed with `ArrayIndexOutOfBoundsException` before.
+- `RISTool.add` throws `IllegalStateException` that names the missing `RISTool.projekt`, `logFileNames`, `rqMIN` or
+  `debug1` instead of `NullPointerException`, and a log line of `add` or `addDistData` that cannot be written throws
+  `UncheckedIOException` that names the log instead of a bare `IOException` or nothing.
+- `MeasurementTable.writeToFile` throws `UncheckedIOException` that names the file when the file or its parent
+  directory cannot be written, and accepts a file name without a parent directory.
+- `TSBucket` closes its SequenceFile and CSV writers when a series cannot be written, and `SingleRowTSO`, the
+  `SingleTs...Tool` operations and `SingleTsRISTool.finish` throw the failure of their result writer or chart instead
+  of logging it.
+- `MessreihenLoader._loadLogBinnedMessreihe_DIV_BY_BINWIDTH` throws `IllegalArgumentException` for a file without data
+  lines, and the skipped share of a log-binned load is a percentage.
+- `OriginProject.initBaseFolder` throws `UncheckedIOException` when the folder cannot be created, and
+  `OriginProject.logLine` throws `IllegalStateException` for a log that was not created.
+- `MRT.expand` counts an event in its own field instead of the field before, refuses an end that is not after the
+  start and an event before the start with `IllegalArgumentException`, and leaves out events in a last field shorter
+  than the resolution. An event in the first field failed with `ArrayIndexOutOfBoundsException` before.
+- `bin/episode_10_production_config.sh` shows the level from `opentsx.properties` when `OPENTSX_LOG_LEVEL` is empty or
+  blank, as `ProductionConfig` applies it, instead of the blanks.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

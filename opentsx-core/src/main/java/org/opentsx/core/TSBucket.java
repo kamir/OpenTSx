@@ -37,6 +37,8 @@ import org.opentsx.algorithms.ris.experimental.TSPropertyTester;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.VectorWritable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.text.DecimalFormat;
@@ -47,6 +49,8 @@ import java.util.Vector;
  * @author Mirko Kaempf
  */
 public class TSBucket {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TSBucket.class);
 
     StringBuffer processLog = new StringBuffer();
 
@@ -152,7 +156,7 @@ public class TSBucket {
             loadFromSequenceFile(fn, ids, t);
         }
 
-        System.out.println("**** #### ****" + f.getAbsolutePath() + " created ... ");
+        LOG.debug("processed bucket file={} output={}", fn, f.getAbsolutePath());
     }
 
     /**
@@ -182,10 +186,8 @@ public class TSBucket {
         // write a SequenceFile form a Vector
         try (SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, config)) {
 
-            System.out.println("--> process bucket    : " + fn);
-            System.out.println("--> compression-codes : " + reader.getCompressionCodec());
-            System.out.println("--> key-classename    : " + reader.getKeyClassName());
-            System.out.println("--> value-classname   : " + reader.getValueClassName());
+            LOG.debug("loading bucket file={} codec={} key={} value={}", fn, reader.getCompressionCodec(),
+                    reader.getKeyClassName(), reader.getValueClassName());
 
             TSBucket.setRecordMode("counter");
 
@@ -252,7 +254,7 @@ public class TSBucket {
                 }
 
             }
-            System.out.println("--> nr of records     : " + (i - 1));
+            LOG.debug("loaded bucket file={} records={}", fn, i - 1);
         }
     }
 
@@ -265,7 +267,6 @@ public class TSBucket {
     private Configuration initConfig() {
         
         if (config == null) {
-            System.out.println( ">>> create new Configuration() ..." );
             config = new Configuration();
         }
 
@@ -332,41 +333,34 @@ public class TSBucket {
 
         DecimalFormat df = new DecimalFormat("0.000");
 
-        System.out.println("--> create bucket : LRC with beta=" + df.format(BETA));
-
         FileSystem fs = initFileSystem();
 
         Path path = new Path(s + "_LRC_beta_" + df.format(BETA) + ".tsb.vec.seq");
-        System.out.println("--> create bucket : (" + path.toString() + ") " + fs);
 
         // write a SequenceFile form a Vector
-        SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
+        try (SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class)) {
 
-        System.out.println("--> process bucket : LRC-Generator (" + z + ")");
+            int SAMPLES = 0;
+            for (int i = 0; i < z; i++) {
 
-        int SAMPLES = 0;
-        for (int i = 0; i < z; i++) {
+                boolean showTESTS = true;
 
-            boolean showTESTS = true;
+                TimeSeriesObject mr = LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, EXP), BETA, showTESTS, false);
+                if (SAMPLES < TSPropertyTester.zSAMPLES) {
+                    TSPropertyTester.addSample(mr);
+                }
+                SAMPLES++;
 
-            TimeSeriesObject mr = LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, EXP), BETA, showTESTS, false);
-            if (SAMPLES < TSPropertyTester.zSAMPLES) {
-                TSPropertyTester.addSample(mr);
+                TSData data = TSData.convertMessreihe(mr);
+
+                NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
+                VectorWritable vec = new VectorWritable();
+                vec.set(nv);
+
+                writer.append(new Text(nv.getName()), vec);
             }
-            SAMPLES++;
-
-            TSData data = TSData.convertMessreihe(mr);
-
-            System.out.println("(" + i + ")");
-            NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
-            VectorWritable vec = new VectorWritable();
-            vec.set(nv);
-
-            writer.append(new Text(nv.getName()), vec);
         }
-
-        writer.close();
-        System.out.println("### DONE : " + path.toString());
+        LOG.debug("wrote bucket path={} series={} beta={}", path, z, BETA);
     }
 
     /**
@@ -379,46 +373,33 @@ public class TSBucket {
      */
     public void createBucketWithRandomTS(String s, int EXP, int ANZ) throws IOException {
 
-        DecimalFormat df = new DecimalFormat("0.000");
-
-        System.out.println("--> create bucket : uncorrelated TS alpha=0.5");
-
         Configuration config = initConfig();
         FileSystem fs = initFileSystem();
 
         Path path = new Path(s + "_alpha_0.5_.tsb.vec.seq");
-        System.out.println("--> create bucket : " + path.toString());
 
         // write a SequenceFile form a Vector
-        SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
+        try (SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class)) {
 
-        System.out.println("--> process bucket : Uniform-Random-Generator ( z=" + ANZ + ", l=" + Math.pow(2, EXP) + ", TestA )");
+            int SAMPLES = 0;
+            for (int i = 0; i < ANZ; i++) {
 
-        int SAMPLES = 0;
-        for (int i = 0; i < ANZ; i++) {
+                TSData data = new TSData();
+                data.dataset = rescaleRandomData(data.getRandomData((int) Math.pow(2, EXP)), 24.0);
+                TimeSeriesObject mr = data.getMessreihe();
+                if (SAMPLES < TSPropertyTester.zSAMPLES) {
+                    TSPropertyTester.addSample(mr);
+                }
+                SAMPLES++;
+                // the bucket keeps only the label and the values of each row
+                NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
+                VectorWritable vec = new VectorWritable();
+                vec.set(nv);
 
-            TSData data = new TSData();
-            data.dataset = rescaleRandomData(data.getRandomData((int) Math.pow(2, EXP)), 24.0);
-            TimeSeriesObject mr = data.getMessreihe();
-            if (SAMPLES < TSPropertyTester.zSAMPLES) {
-                TSPropertyTester.addSample(mr);
+                writer.append(new Text(nv.getName()), vec);
             }
-            SAMPLES++;
-            /**
-             *
-             * Here we lose the METADATA of each row!!!
-             *
-             */
-            System.out.print("  (" + i + ")");
-            NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
-            VectorWritable vec = new VectorWritable();
-            vec.set(nv);
-
-            writer.append(new Text(nv.getName()), vec);
         }
-
-        writer.close();
-        System.out.println("### DONE : " + path.toString());
+        LOG.debug("wrote bucket path={} series={} length={}", path, ANZ, (int) Math.pow(2, EXP));
     }
 
     /**
@@ -429,10 +410,6 @@ public class TSBucket {
      */
     public void createBucketFromVectorOfSeries(String track, String label, Vector<TimeSeriesObject> rows) throws IOException {
 
-        DecimalFormat df = new DecimalFormat("0.000");
-
-        System.out.println("--> label bucket : " + label);
-
         Configuration config = initConfig();
         FileSystem fs = initFileSystem();
 
@@ -441,34 +418,20 @@ public class TSBucket {
 
         Path path = new Path(TSBASE.BASE_PATH + "/" + track + "/" + label + ".tsb.vec.seq");
 
-        System.out.println("--> create bucket : " + path.toString());
-
         // write a SequenceFile form a Vector
-        SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
+        try (SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class)) {
+            for (int i = 0; i < rows.size(); i++) {
+                // the bucket keeps only the label and the values of each row
+                TimeSeriesObject m = rows.elementAt(i);
+                NamedVector nv = new NamedVector(new DenseVector(m.getYData()), m.label);
 
-        System.out.println("--> process bucket : Memory dump ... ( z=" + rows.size() + " )");
+                VectorWritable vec = new VectorWritable();
+                vec.set(nv);
 
-        int SAMPLES = 0;
-        for (int i = 0; i < rows.size(); i++) {
-
-            /**
-             *
-             * Here we lose the METADATA of each row!!!
-             *
-             */
-            System.out.println("  (" + i + ")");
-            TimeSeriesObject m = rows.elementAt(i);
-            NamedVector nv = new NamedVector(new DenseVector(m.getYData()), m.label);
-
-            VectorWritable vec = new VectorWritable();
-            vec.set(nv);
-            
-            writer.append(new Text(nv.getName()), vec);
+                writer.append(new Text(nv.getName()), vec);
+            }
         }
-
-        writer.close();
-
-        System.out.println("\n### DONE : " + path.toString() + " ... and the write is closed.");
+        LOG.debug("wrote bucket path={} series={}", path, rows.size());
     }
 
     /**
@@ -485,7 +448,7 @@ public class TSBucket {
             randomData[i] = randomData[i] * factor;
             sum = sum + randomData[i];
         }
-        System.out.println(sum + "\t" + sum / (double) randomData.length);
+        LOG.debug("rescaled random data sum={} mean={}", sum, sum / (double) randomData.length);
         return randomData;
     }
 
@@ -516,84 +479,67 @@ public class TSBucket {
             double fMIN, double fMAX, double aMIN, double aMAX, double SR, double time, String uuid, String unit) throws Exception {
 
         Configuration config = initConfig();
-        FileSystem fs = null;
-        SequenceFile.Writer writer = null;
-        FileWriter csvWriter = null;
         String outputFormat = ConfigManager.getInstance().getString("opentsx.demo.output.format", "csv");
         boolean writeCsv = "csv".equalsIgnoreCase(outputFormat);
         boolean writeSequence = !SKIP_WRITES && !writeCsv;
 
         Path path = new Path(filename_core + ".tsb.vec.seq");
-        System.out.println("--> create bucket with filename : " + path.toString());
 
         Vector<TSData> tsbd = new Vector<TSData>();
 
-        DecimalFormat df = new DecimalFormat("0.000");
-
-        System.out.println("--> create bucket : uncorrelated Time Series with frequency range : f=[ " + fMIN + ", " + fMAX + "]");
-
         // write a SequenceFile form a Vector
-        if ( writeSequence ) {
-            fs = initFileSystem();
-            writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
-        }
-        if ( writeCsv ) {
-            File csvFile = new File(filename_core + ".csv");
-            File parent = csvFile.getParentFile();
-            if (parent != null) {
-                parent.mkdirs();
-            }
-            csvWriter = new FileWriter(csvFile);
-            csvWriter.write("series_id,x,y\n");
-        }
-        System.out.println("--> process bucket : Sinus-Generator ( z=" + ANZ + ", length=" + (time * SR) + ")");
-        System.out.println("--> zDP : " + ( ANZ * (time * SR) ) + " " );
+        try (SequenceFile.Writer writer = writeSequence
+                     ? new SequenceFile.Writer(initFileSystem(), config, path, Text.class, VectorWritable.class) : null;
+             FileWriter csvWriter = writeCsv ? openCsv(filename_core) : null) {
 
-        for (int i = 0; i < ANZ; i++) {
+            for (int i = 0; i < ANZ; i++) {
 
-            double fre = RNGWrapper.getStdRandomUniform(fMIN, fMAX);
-            double ampl = RNGWrapper.getStdRandomUniform(aMIN, aMAX);
+                double fre = RNGWrapper.getStdRandomUniform(fMIN, fMAX);
+                double ampl = RNGWrapper.getStdRandomUniform(aMIN, aMAX);
 
-            TimeSeriesObject mr = TSGenerator.getSinusWave(fre, time, SR, ampl, ""+i, unit );
+                TimeSeriesObject mr = TSGenerator.getSinusWave(fre, time, SR, ampl, ""+i, unit );
 
-            if( i==0 ) {
-                System.out.println( "LENGTH : " + mr.getYValues().size() );
-                System.out.println( "LABEL  : " + mr.getLabel() );
-            }
+                TSData data = TSData.convertMessreihe(mr);
 
-            TSData data = TSData.convertMessreihe(mr);
+                NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
+                VectorWritable vec = new VectorWritable();
+                vec.set(nv);
 
-            NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
-            VectorWritable vec = new VectorWritable();
-            vec.set(nv);
+                tsbd.add( data );
 
-            tsbd.add( data );
-
-            // to speed up the generator, we do not persist the bucket.
-            if ( writeSequence && writer != null ) {
-                writer.append(new Text(nv.getName()), vec);
-            }
-            else if ( writeCsv && csvWriter != null ) {
-                double[][] seriesData = mr.getData();
-                for (int k = 0; k < seriesData[0].length; k++) {
-                    csvWriter.write(i + "," + seriesData[0][k] + "," + seriesData[1][k] + "\n");
+                // to speed up the generator, we do not persist the bucket.
+                if ( writer != null ) {
+                    writer.append(new Text(nv.getName()), vec);
+                }
+                else if ( csvWriter != null ) {
+                    double[][] seriesData = mr.getData();
+                    for (int k = 0; k < seriesData[0].length; k++) {
+                        csvWriter.write(i + "," + seriesData[0][k] + "," + seriesData[1][k] + "\n");
+                    }
                 }
             }
-            else
-                System.out.println("!!! SKIP-WRITE: ["+SKIP_WRITES+"] : no data written to TIME SERIES BUCKET ON disc!" );
-
         }
 
-        if ( writeSequence && writer != null ) {
-            writer.close();
-        }
-        if ( csvWriter != null ) {
-            csvWriter.close();
-        }
-
-        System.out.println("### DONE {SKIP-WRITE:="+SKIP_WRITES+"} : TIME SERIES BUCKET IN PATH: " + path.toString());
+        LOG.debug("generated sine bucket path={} series={} length={} skipWrites={} format={}", path, ANZ, time * SR,
+                SKIP_WRITES, outputFormat);
 
         return tsbd;
+    }
+
+    private static FileWriter openCsv(String filename_core) throws IOException {
+        File csvFile = new File(filename_core + ".csv");
+        File parent = csvFile.getParentFile();
+        if (parent != null) {
+            parent.mkdirs();
+        }
+        FileWriter csvWriter = new FileWriter(csvFile);
+        try {
+            csvWriter.write("series_id,x,y\n");
+        } catch (IOException ex) {
+            csvWriter.close();
+            throw ex;
+        }
+        return csvWriter;
     }
 
 
@@ -652,13 +598,11 @@ public class TSBucket {
     public void _open(File file) throws IOException {
         writerFile = file;
 
-        System.out.println("--> open a time series bucket for write : " + file.getAbsolutePath());
-
         Configuration config = initConfig();
         FileSystem fs = initFileSystem();
 
         Path path = new Path(file.getAbsolutePath());
-        System.out.println("--> bucket path : " + path.toString());
+        LOG.debug("opening bucket for write path={}", path);
 
         // write a SequenceFile form a Vector
         writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
@@ -672,7 +616,7 @@ public class TSBucket {
     public void close() throws IOException {
         if ( writer != null ) {
             writer.close();
-            System.out.println("--> closed the time series bucket writer : " + writerFile.getAbsolutePath());
+            LOG.debug("closed bucket writer file={}", writerFile.getAbsolutePath());
         }
     }
 
@@ -688,19 +632,13 @@ public class TSBucket {
 
         FileSystem fs = FileSystem.getLocal(config);
 
-        System.out.println("--> LIMIT to local FileSystem ");
-
         Path path = new Path(f.getAbsolutePath());
 
         // read NamedVectors from a SequenceFile 
         try (SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, config)) {
 
-            System.out.println("--> process bucket    : " + f.getAbsolutePath());
-            System.out.println("--> compression-codes : " + reader.getCompressionCodec());
-            System.out.println("--> key-classename    : " + reader.getKeyClassName());
-            System.out.println("--> value-classname   : " + reader.getValueClassName());
-            System.out.println("--> LIMIT             : " + LIMIT);
-            System.out.println("--> IN MEM MODE       : " + inMEM);
+            LOG.debug("loading local bucket file={} codec={} key={} value={} limit={} inMemory={}", f.getAbsolutePath(),
+                    reader.getCompressionCodec(), reader.getKeyClassName(), reader.getValueClassName(), LIMIT, inMEM);
 
             int i = 0;
             while (i < LIMIT) {
@@ -720,8 +658,6 @@ public class TSBucket {
                 mr.setDescription(i + " ) " + f.getName() + "_[" + key.toString() + "]");
                 mr.setLabel(i + " " + key.toString());
 
-                System.out.println("-> " + i + " " + key.toString());
-
                 int c = 0;
                 NamedVector vector = (NamedVector) vec.get();
                 while (c < vector.size()) {
@@ -734,7 +670,7 @@ public class TSBucket {
                     bucketData.add(mr);
                 }
             }
-            System.out.println("--> nr of records     : " + i);
+            LOG.debug("loaded local bucket file={} records={}", f.getAbsolutePath(), i);
         }
     }
 
@@ -742,83 +678,38 @@ public class TSBucket {
 
         int ANZ = folder.length;
 
-        DecimalFormat df = new DecimalFormat("0.000");
-
-        System.out.println("--> create bucket : from text by wordlength ");
-
         Configuration config = initConfig();
         FileSystem fs = initFileSystem();
 
         Path path = new Path(s + "/" + experiment + "/bucket_wordLength_.tsb.vec.seq");
 
-        System.out.println("--> create bucket : " + path.toString());
-
         // write a SequenceFile form a Vector
-        SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
+        try (SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class)) {
+            for (int i = 0; i < ANZ; i++) {
 
-        System.out.println("--> process bucket : Word-Length-Series-Generator ( z=" + ANZ + ")");
-
-        for (int i = 0; i < ANZ; i++) {
-
-            TimeSeriesObject mr = TSGenerator.getWordLengthSeries(folder[i]);
-            TSData data = TSData.convertMessreihe(mr);
-
-            System.out.print("   (" + i + ")\t" + data.label + "\n");
-
-            NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
-
-            VectorWritable vec = new VectorWritable();
-            vec.set(nv);
-
-            writer.append(new Text(nv.getName()), vec);
-
-            System.out.print("   (name: " + nv.getName() + ")\n");
-
+                TimeSeriesObject mr = TSGenerator.getWordLengthSeries(folder[i]);
+                append(writer, TSData.convertMessreihe(mr));
+            }
         }
-
-        writer.close();
-        System.out.println("### DONE : " + path.toString());
+        LOG.debug("wrote word length bucket path={} files={}", path, ANZ);
     }
 
     public void createBucketFromGrayImageFile(File imageFile, String s, String experiment) throws IOException {
-        int ANZ = 1;
-
-        DecimalFormat df = new DecimalFormat("0.000");
-
-        System.out.println("--> create bucket : from gray image by wordlength ");
 
         Configuration config = initConfig();
         FileSystem fs = initFileSystem();
 
         Path path = new Path(s + "/" + experiment + "/bucket_grayImage.tsb.vec.seq");
 
-        System.out.println("--> create bucket : " + path.toString());
-
-        // write a SequenceFile form a Vector
-        SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
-
-        System.out.println("--> process bucket : GrayImageLine-Series-Generator ( z=" + ANZ + ")");
-
         TimeSeriesObject[] mrS = TSGenerator.getGrayImageSeries(imageFile);
 
-        for (TimeSeriesObject mr : mrS) {
-
-            TSData data = TSData.convertMessreihe(mr);
-
-            System.out.print(data.label + "\n");
-
-            NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
-
-            VectorWritable vec = new VectorWritable();
-            vec.set(nv);
-
-            writer.append(new Text(nv.getName()), vec);
-
-            System.out.print("   (name: " + nv.getName() + ")\n");
-
+        // write a SequenceFile form a Vector
+        try (SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class)) {
+            for (TimeSeriesObject mr : mrS) {
+                append(writer, TSData.convertMessreihe(mr));
+            }
         }
-        writer.close();
-        System.out.println("### DONE : " + path.toString());
+        LOG.debug("wrote gray image bucket path={} image={} rows={}", path, imageFile, mrS.length);
     }
 
     public void createBucketFromGrayImageFile(File[] folder, String baseOut, String experiment) {
@@ -829,70 +720,35 @@ public class TSBucket {
 
         int ANZ = folder.length;
 
-        DecimalFormat df = new DecimalFormat("0.000");
-
-        System.out.println("--> create bucket : from text by wordlength ");
-
         Configuration config = initConfig();
         FileSystem fs = initFileSystem();
 
         Path path = new Path(s + "/" + experiment + "/bucket_wordLength_.tsb.vec.seq");
 
-        System.out.println("--> create bucket : " + path.toString());
-
         // write a SequenceFile form a Vector
-        SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
+        try (SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class)) {
+            for (int i = 0; i < ANZ; i++) {
 
-        System.out.println("--> process bucket : Word-Length-Series-Generator ( z=" + ANZ + ")");
+                File[] FOLDERS = folder[i].listFiles();
 
-        for (int i = 0; i < ANZ; i++) {
+                for (File f : FOLDERS) {
 
-            File[] FOLDERS = folder[i].listFiles();
-
-            for (File f : FOLDERS) {
-
-                TimeSeriesObject mr = TSGenerator.getWordLengthSeries(f);
-
-                TSData data = TSData.convertMessreihe(mr);
-
-                System.out.print("   (" + i + ")\t" + data.label + "\n");
-
-                NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
-
-                VectorWritable vec = new VectorWritable();
-                vec.set(nv);
-
-                writer.append(new Text(nv.getName()), vec);
-
-                System.out.print("   (name: " + nv.getName() + ")\n");
-
+                    TimeSeriesObject mr = TSGenerator.getWordLengthSeries(f);
+                    append(writer, TSData.convertMessreihe(mr));
+                }
             }
-
         }
-
-        writer.close();
-        System.out.println("### DONE : " + path.toString());
+        LOG.debug("wrote word length bucket path={} folders={}", path, ANZ);
     }
 
     public void createBucketFromFilesViaTFIDFRecursive(File[] folder, String s, String experiment) throws IOException {
 
         int ANZ = folder.length;
 
-        DecimalFormat df = new DecimalFormat("0.000");
-
-        System.out.println("--> create bucket : from text by wordlength ");
-
         Configuration config = initConfig();
         FileSystem fs = initFileSystem();
 
         Path path = new Path(s + "/" + experiment + "/bucket_tfidf_.tsb.vec.seq");
-
-        System.out.println("--> create bucket : " + path.toString());
-
-        // write a SequenceFile form a Vector
-        SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
-
-        System.out.println("--> process bucket : Word-Length-Series-Generator ( z=" + ANZ + ")");
 
         Hashtable<String, Integer> idfs = new Hashtable<String, Integer>();
 
@@ -905,40 +761,32 @@ public class TSBucket {
                 storeIDFCOntribs(f, idfs);
 
             }
-
-            
         }
-        
-        
-        System.out.println(" DONE PART 1" );
 
-        for (int i = 0; i < ANZ; i++) {
+        // write a SequenceFile form a Vector
+        try (SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class)) {
+            for (int i = 0; i < ANZ; i++) {
 
-            File[] FOLDERS = folder[i].listFiles();
+                File[] FOLDERS = folder[i].listFiles();
 
-            for (File f : FOLDERS) {
+                for (File f : FOLDERS) {
 
-                TimeSeriesObject mr = TSGenerator.getTFIDFSeries( f, idfs , getWC(f), getText(f) );
-
-                TSData data = TSData.convertMessreihe(mr);
-
-                System.out.print("   (" + i + ")\t" + data.label + "\n");
-
-                NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
-
-                VectorWritable vec = new VectorWritable();
-                vec.set(nv);
-
-                writer.append(new Text(nv.getName()), vec);
-
-                System.out.print("   (name: " + nv.getName() + ")\n");
-
+                    TimeSeriesObject mr = TSGenerator.getTFIDFSeries( f, idfs , getWC(f), getText(f) );
+                    append(writer, TSData.convertMessreihe(mr));
+                }
             }
-
         }
+        LOG.debug("wrote tf-idf bucket path={} folders={} words={}", path, ANZ, idfs.size());
+    }
 
-        writer.close();
-        System.out.println("### DONE : " + path.toString());
+    private static void append(SequenceFile.Writer writer, TSData data) throws IOException {
+        NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
+
+        VectorWritable vec = new VectorWritable();
+        vec.set(nv);
+
+        writer.append(new Text(nv.getName()), vec);
+        LOG.debug("appended series name={}", nv.getName());
     }
 
     private void storeIDFCOntribs(File f, Hashtable<String, Integer> idfs) throws FileNotFoundException, IOException {
@@ -960,12 +808,12 @@ public class TSBucket {
 
         StringBuffer sb = new StringBuffer();
         
-        BufferedReader br = new BufferedReader(new FileReader(f));
-        while (br.ready()) {
-            String l = br.readLine();
-            sb.append(l + "\n");
+        try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+            while (br.ready()) {
+                String l = br.readLine();
+                sb.append(l + "\n");
+            }
         }
-        br.close();
 
         return sb.toString();
     }
@@ -974,22 +822,22 @@ public class TSBucket {
 
         Hashtable<String, Integer> wc = new Hashtable<String, Integer>();
 
-        BufferedReader br = new BufferedReader(new FileReader(f));
-        while (br.ready()) {
-            String l = br.readLine();
-            String[] ws = l.split( TSGenerator.PATTERN );
-            for (String w : ws) {
-                if (wc.containsKey(w)) {
-                    Integer c = wc.get(w);
-                    c++;
-                    wc.put(w, c);
+        try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+            while (br.ready()) {
+                String l = br.readLine();
+                String[] ws = l.split( TSGenerator.PATTERN );
+                for (String w : ws) {
+                    if (wc.containsKey(w)) {
+                        Integer c = wc.get(w);
+                        c++;
+                        wc.put(w, c);
+                    }
+                    else {
+                        wc.put(w,1);
+                    };
                 }
-                else { 
-                    wc.put(w,1);
-                };
             }
         }
-        br.close();
 
         return wc;
     }

@@ -1,26 +1,24 @@
 package org.opentsx.algorithms.univariate;
 
 /*
- *  wird auf eine einzelne Reihe angewendet ...
- * 
- *  schreibt in eine Datei ...
- * 
+ *  Works on a single series and writes into a file.
  */
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.core.SingleRowTSO;
 import org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.io.Writer;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
  * @author kamir
  */
 public class SingleTsRISTool extends SingleRowTSO {
+
+    private static final Logger LOG = LoggerFactory.getLogger(SingleTsRISTool.class);
     
     int debugViews = 0;
     int maxDebugViews = 0;
@@ -46,7 +44,7 @@ public class SingleTsRISTool extends SingleRowTSO {
             risCollector.showData();
         } 
         catch (Exception ex) {
-            Logger.getLogger(SingleTsRISTool.class.getName()).log(Level.SEVERE, null, ex);
+            throw new IllegalStateException("finish: the RIS of " + risCollector.name + " cannot be shown (" + ex + ")", ex);
         }
     }
     
@@ -85,7 +83,7 @@ public class SingleTsRISTool extends SingleRowTSO {
                
         // calc averag inter-event time
         double vRQ1 = calcAverageOfDist(r.yValues );
-        System.out.println( vRQ1 );
+        LOG.debug("mean interval series={} rq={}", r.getLabel(), vRQ1);
         
         rr1.setRQ(vRQ1);
         
@@ -109,19 +107,10 @@ public class SingleTsRISTool extends SingleRowTSO {
 
 
 
-        /**
-         * Problem: in den einzelnen Reihen kann man nicht sinnvoll den Anstieg
-         * bestimmen !!!
-         *
-         */
+        // a single series is too short to fit the slope of its distribution
 
-        try {
-            fw.write(r.getLabel() + "\t" + line + "\n");
-            fw.flush();
-        } 
-        catch (IOException ex) {
-            Logger.getLogger(SingleTsRISTool.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        fw.write(r.getLabel() + "\t" + line + "\n");
+        fw.flush();
 
         return r;
 

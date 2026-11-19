@@ -1,11 +1,9 @@
 package org.opentsx.algorithms.univariate;
 
 /**
- *  SingleTsFilterTool 
- * 
- *  arbeitet mit einer Zeitreihe und schreibt ggf. in zwei
- *  verschiedene FileWriter.
- *  
+ *  SingleTsPeakFilterTool
+ *
+ *  works on one time series and writes to two writers.
  */
 
 
@@ -13,11 +11,8 @@ import org.opentsx.data.series.MRT;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.core.SingleRowTSO;
 
-import java.io.IOException;
 import java.io.Writer;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -47,13 +42,8 @@ public class SingleTsPeakFilterTool extends SingleRowTSO {
             }
         }
 
-        try {
-            fw.write( reihe.getLabel() + " " + reihe.summeY() + line + "\n" );
-            fw.flush();
-        } 
-        catch (IOException ex) {
-            Logger.getLogger(SingleTsPeakFilterTool.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        fw.write( reihe.getLabel() + " " + reihe.summeY() + line + "\n" );
+        fw.flush();
         
         return reihe;
         

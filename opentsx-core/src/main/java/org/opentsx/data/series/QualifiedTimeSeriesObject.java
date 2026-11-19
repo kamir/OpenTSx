@@ -1,13 +1,13 @@
 /**
  *
- *  Es wird noch nicht in allen Operationen auf die GÜLTIGKEIT 
- *  der Werte geachtet.
- * 
- *  Stand 2.12.2010
+ *  Not every operation respects the validity flag of the values yet.
  *
  **/
 
 package org.opentsx.data.series;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Enumeration;
 import java.util.Vector;
@@ -17,6 +17,8 @@ import java.util.Vector;
  * @author kamir
  */
 public class QualifiedTimeSeriesObject extends TimeSeriesObject {
+
+    private static final Logger LOG = LoggerFactory.getLogger(QualifiedTimeSeriesObject.class);
 
     Vector<Boolean> correct = new Vector<Boolean>();
 
@@ -28,7 +30,7 @@ public class QualifiedTimeSeriesObject extends TimeSeriesObject {
     }
 
     /*
-     * Nur wenn kein "double Wert" vorliegt, wird geprüft.
+     * Checks the value only when it is not a double.
      */
     public void addValue(Object y) {
 
@@ -57,7 +59,7 @@ public class QualifiedTimeSeriesObject extends TimeSeriesObject {
 
 
     /**
-     * In diesem Fall wird implicit von correctem Wert ausgegangen.
+     * The value is taken as correct.
      * @param y
      */
     @Override
@@ -131,13 +133,13 @@ public class QualifiedTimeSeriesObject extends TimeSeriesObject {
         int blocks = elements / bin;
 
 
-        mr.addStatusInfo( "[BINNING] bin=" + bin + "\tRest=" + rest + "\tBlöcke=" + blocks   );
+        mr.addStatusInfo( "[BINNING] bin=" + bin + "\trest=" + rest + "\tblocks=" + blocks   );
 
         int i=0;
         int j=0;
         double v = 0;
 
-        // zählt nur die guten im Block
+        // counts only the good values of the block
         int zBlock = 0;
         boolean isBlockGood = false;
 
@@ -161,7 +163,7 @@ public class QualifiedTimeSeriesObject extends TimeSeriesObject {
                 j++;
             }
             i++;
-            System.out.println( i + " " + isBlockGood + " " + " " + zBlock + " " + v  );
+            LOG.debug("binned value series={} index={} blockGood={} goodInBlock={} sum={}", label, i, isBlockGood, zBlock, v);
 
 
         }
@@ -169,7 +171,7 @@ public class QualifiedTimeSeriesObject extends TimeSeriesObject {
     };
 
 
-    // Kumuliere die Werte einfach
+    // sums the values
     @Override
     public TimeSeriesObject setBinningX_sum(int bin) {
         return super.setBinningX_sum(bin);
@@ -196,7 +198,7 @@ public class QualifiedTimeSeriesObject extends TimeSeriesObject {
     }
 
     /**
-     * Hier wird die Regel für die Gültigkeitsprüfung angewendet ...
+     * Applies the rule of the validity check.
      *
      * @param mrNeu
      */
@@ -211,9 +213,11 @@ public class QualifiedTimeSeriesObject extends TimeSeriesObject {
 
         int size = xValues.size();
 
-        sb.append("#\n# M e s s r e i h e \n# Klasse : " + this.getClass() + " \n# Label  : " + this.label + "\n#\n# Anzahl Wertepaare = " + size + "\n#\n");
+        sb.append("#\n# Time series \n# Class : " + this.getClass() + " \n# Label  : " + this.label + "\n#\n# Number of value pairs = " + size + "\n#\n");
         sb.append("#\n#" + this.addinfo + "\n#\n");
-        sb.append( getStatisticData("# ") );
+        if ( size > 0 ) {
+            sb.append( getStatisticData("# ") );
+        }
         sb.append( getStatusInfo() );
         sb.append("\n");
         for (int i = 0 ; i < size; i++  ) {
@@ -236,7 +240,7 @@ public class QualifiedTimeSeriesObject extends TimeSeriesObject {
             if( en.nextElement() ) z++;
             else y++;
         }        
-        System.out.println( xValues.size() + " " + yValues.size() + " " + correct.size() + " gute:" + z + " schlechte:" +y );
+        LOG.debug("value counts series={} x={} y={} flags={} good={} bad={}", label, xValues.size(), yValues.size(), correct.size(), z, y);
     };
 
 

@@ -1,24 +1,25 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.opentsx.data.exporter;
 
 import org.opentsx.data.series.TimeSeriesObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
  * @author kamir
  */
 public class MeasurementTable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MeasurementTable.class);
 
     String headerNULL = "#\n# unknown parameter set \n#\n";
     
@@ -67,46 +68,26 @@ public class MeasurementTable {
     }
 
     public void createParrentFile(File f) {
-        System.out.println("> MT : file ===> " + f);
         File p = f.getParentFile();
-        System.out.println("> MT : parent => " + p);
-
-        if (p == null || !p.exists()) {
-            p.mkdirs();
-            System.out.println( f.getAbsolutePath() + " was created. " );
-        } else {
-            System.out.println("> MT : Nothing to create. ");
+        if (p == null) {
+            return;
+        }
+        try {
+            Files.createDirectories(p.toPath());
+        } catch (IOException ex) {
+            throw new UncheckedIOException(f + ": cannot create the parent directory (" + ex + ")", ex);
         }
     }
 
-    ;
-
     public void writeToFile(File f) {
-        
-        System.out.println(">>> MWT => writeToFile() ... " + f.getAbsolutePath());
-
         createParrentFile(f);
-
-        FileWriter fw = null;
-        
-        try {
-            
-            fw = new FileWriter(f);
-            
-            String content = this.toString();
-            
-            fw.write( content );
-            fw.close();
-            
+        String content = this.toString();
+        try (Writer w = Files.newBufferedWriter(f.toPath(), StandardCharsets.UTF_8)) {
+            w.write( content );
         } catch (IOException ex) {
-            Logger.getLogger(TimeSeriesObject.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            try {
-                fw.close();
-            } catch (IOException ex) {
-                Logger.getLogger(TimeSeriesObject.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            throw new UncheckedIOException(f + ": cannot write the file (" + ex + ")", ex);
         }
+        LOG.debug("wrote table file={} rows={}", f.getAbsolutePath(), messReihen.size());
     }
     public double fill_UP_VALUE = -5.0;
 
@@ -115,7 +96,7 @@ public class MeasurementTable {
     }
 
     /**
-     * Die Daten zur Ausgabe auf der Konsole ausgeben.
+     * Formats the p values of the rows with a significance symbol per value.
      *
      * @return
      */
@@ -155,17 +136,14 @@ public class MeasurementTable {
             l.add(lab);
         };
 
-        System.out.println(l);
         Collections.sort(l);
-        System.out.println(l);
 
         Iterator it = l.iterator();
         while (it.hasNext()) {
             
             Integer key = (Integer) it.next();
             mr = (TimeSeriesObject) keyedHash.get(key);
-            System.err.println("k=" + key);
-            sb.append("\n# " + mr.getLabel() + " [" + mr.xValues.size() + "," + mr.yValues.size() + "] Werte");
+            sb.append("\n# " + mr.getLabel() + " [" + mr.xValues.size() + "," + mr.yValues.size() + "] values");
             
             if (singleX) {
                 headline = headline.concat(mr.getLabel_Y() + "\t");
@@ -187,19 +165,8 @@ public class MeasurementTable {
             it = l.iterator();
             while (it.hasNext()) {
                 mr = (TimeSeriesObject) keyedHash.get((Integer) it.next());
-                double x = 0.0;
-                double y = 0.0;
-
-                try {
-                    x = (Double) longest.getXValues().elementAt(i);
-                } catch (Exception ex) {
-                }
-
-                try {
-                    y = (Double) mr.getYValues().elementAt(i);
-                } catch (Exception ex) {
-                    y = fill_UP_VALUE;
-                }
+                double x = (Double) longest.getXValues().elementAt(i);
+                double y = i < mr.getYValues().size() ? (Double) mr.getYValues().elementAt(i) : fill_UP_VALUE;
 
                 String linePart;
                 if (singleX && j > 0) {
@@ -220,7 +187,7 @@ public class MeasurementTable {
     ;
     
     /**
-     * Die Daten zur Ausgabe auf der Konsole ausgeben.
+     * Formats the rows as a table with one column per row, filled up with fill_UP_VALUE.
      *
      * @return
      */
@@ -239,7 +206,7 @@ public class MeasurementTable {
 
         int maxLength = 0;
 
-        // max length ermitteln zum auffüllen ...
+        // the longest row sets the number of lines; shorter rows are filled up
         Enumeration<TimeSeriesObject> en1 = this.messReihen.elements();
         while (en1.hasMoreElements()) {
             TimeSeriesObject mr = en1.nextElement();
@@ -252,7 +219,7 @@ public class MeasurementTable {
         StringBuffer sb = new StringBuffer();
         sb.append(this.header);
 
-        sb.append("#\n# M e s s w e r t t a b e l l e  der Reihen:\n#");
+        sb.append("#\n# Table of the rows:\n#");
 
         int size = this.messReihen.size();
         Enumeration<TimeSeriesObject> en = this.messReihen.elements();
@@ -269,9 +236,7 @@ public class MeasurementTable {
             l.add(lab);
         };
 
-        System.out.println(l);
         Collections.sort(l);
-        System.out.println(l);
 
         Iterator it = l.iterator();
         int col = 0;
@@ -282,7 +247,7 @@ public class MeasurementTable {
             }
             
             mr = (TimeSeriesObject) keyedHash.get((Integer) it.next());
-            sb.append("\n# " + mr.getLabel() + " [" + mr.xValues.size() + "," + mr.yValues.size() + "] Werte");
+            sb.append("\n# " + mr.getLabel() + " [" + mr.xValues.size() + "," + mr.yValues.size() + "] values");
 
             if (singleX ) {
                 headline = headline.concat(mr.getLabel_Y() + "\t");
@@ -305,19 +270,8 @@ public class MeasurementTable {
             it = l.iterator();
             while (it.hasNext()) {
                 mr = (TimeSeriesObject) keyedHash.get((Integer) it.next());
-                double x = 0.0;
-                double y = 0.0;
-
-                try {
-                    x = (Double) longest.getXValues().elementAt(i);
-                } catch (Exception ex) {
-                };
-
-                try {
-                    y = (Double) mr.getYValues().elementAt(i);
-                } catch (Exception ex) {
-                    y = fill_UP_VALUE;
-                };
+                double x = (Double) longest.getXValues().elementAt(i);
+                double y = i < mr.getYValues().size() ? (Double) mr.getYValues().elementAt(i) : fill_UP_VALUE;
 
                 String linePart;
                 if (singleX && j > 0) {
@@ -335,7 +289,7 @@ public class MeasurementTable {
         return sb.toString();
     }
 
-    String header = "# MesswertTabelle\n";
+    String header = "# Table\n";
     public void setHeader(String parameterSet) {
         this.header = parameterSet;
     }

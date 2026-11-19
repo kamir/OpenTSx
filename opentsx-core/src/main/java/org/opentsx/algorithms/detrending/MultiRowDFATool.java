@@ -1,14 +1,7 @@
 /*
  *
- *   Das Tool berechnet für jeden
- *
- *      MultiRowContainer
- *
- *   eine FluctuationFunktion, zu der dann
- *   im std.-Fitbereich das alpha berechnet
- *   werden kann.
- *
- *
+ *   Computes a FluctuationFunktion for every MultiRowContainer; alpha can
+ *   then be fitted in the default fit range.
  *
  */
 
@@ -20,6 +13,8 @@ import org.opentsx.data.series.MultiRowContainer;
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.generator.TestDataFactory;
 import org.opentsx.data.series.TimeSeriesObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Vector;
 
@@ -29,6 +24,8 @@ import java.util.Vector;
  */
 public class MultiRowDFATool {
 
+    private static final Logger LOG = LoggerFactory.getLogger(MultiRowDFATool.class);
+
     static FitbereichLogScale defaultFit = new FitbereichLogScale( 1.25, 2.0 );
 
     public static Vector<TimeSeriesObject> convertToMessreihe(Vector<FluctuationFunktion> vFs ) {
@@ -36,7 +33,7 @@ public class MultiRowDFATool {
         for( FluctuationFunktion m : vFs ) {
 
             mr.add( m.getFs() );
-            System.out.println( m.getLabel() +  "   alpha = " + m.calcAlpha(defaultFit) );
+            LOG.debug("fluctuation function label={} alpha={}", m.getLabel(), m.calcAlpha(defaultFit));
 
         };
         return mr;
@@ -51,14 +48,11 @@ public class MultiRowDFATool {
 
         for( String l : cont.getLabels() ) {
 
-            // mit Begrenzung auf N/4
-
-            // ohne Begrenzung auf N/4
+            // without the limit of N/4
             MultiDFATool2 tool = new MultiDFATool2();
-            System.out.println( "Container-Label: [" + l +"]" );
 
             Vector<TimeSeriesObject> r = cont.getRowSets().get(l);
-            System.out.println( "Label des 1. Elements: [" + r.elementAt(0).getLabel() + "] size=" + r.size() );
+            LOG.debug("running DFA container={} first={} series={}", l, r.elementAt(0).getLabel(), r.size());
             tool.runDFA( r, 2 );
 
             FluctuationFunktion fs = new FluctuationFunktion( tool.finalFS, l );

@@ -1,6 +1,8 @@
 package org.opentsx.data.series;
 
 import com.thoughtworks.xstream.XStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Calendar;
 import java.util.Enumeration;
@@ -11,6 +13,8 @@ import java.util.Vector;
  * @author kamir
  */
 public class MRT {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MRT.class);
 
     public static double[] calcPeriodeTrend(TimeSeriesObject mr, int d) {
 
@@ -92,7 +96,7 @@ public class MRT {
     }
     
     /**
-     * ermittelt nur die ansteigende Flanke ...
+     * Returns the index of every value at or above ts.
      * 
      * @param ts
      * @param mr
@@ -112,15 +116,12 @@ public class MRT {
             d++;
             pLAST = p;
         }
-        System.out.println();
 
         return peaksDays;
     }
 
     public static TimeSeriesObject convertDates2Messreihe(Vector<Long> v, String label, String descr) {
 
-
-        System.out.println(">> size => " + v.size());
 
         TimeSeriesObject mr = new TimeSeriesObject();
         mr.setLabel(label);
@@ -129,15 +130,15 @@ public class MRT {
         for (Long l : v) {
             mr.addValuePair(l, 1);
         }
-        System.out.println("> " + mr.getLabel() + " >> " + mr.summeY());
+        LOG.debug("converted dates series={} dates={} sum={}", mr.getLabel(), v.size(), mr.summeY());
         return mr;
     }
 
     public static TimeSeriesObject expand(TimeSeriesObject mr, Calendar start, Calendar end, double sf, boolean MODE_ONE_PER_dt ) {
         
         if( !start.before( end ) ) { 
-            System.err.println( "***** ENDE muss nach ANFANG liegen ... " );
-            
+            throw new IllegalArgumentException( "expand: the end " + end.getTimeInMillis() + " ms is not after the start "
+                    + start.getTimeInMillis() + " ms; expected an end after the start" );
         }
         
         TimeSeriesObject m = new TimeSeriesObject();
@@ -145,16 +146,13 @@ public class MRT {
         m.setIdentifier( mr.getIdentifier() );
         m.setDescription( mr.getDescription() );
         
-        // MILLISEKUNDEN 
+        // milliseconds
         long s=start.getTimeInMillis();
         long e=end.getTimeInMillis();
         long n = e - s;
          
         
-        /** 
-         * ANZAHL Felder ...
-         * nn = n / AUFLÖSUNG
-         */
+        // number of fields: nn = n / resolution
         int nn = (int) (n / (1000 * sf));
         int[] data = new int[nn];
         
@@ -164,18 +162,21 @@ public class MRT {
         
         Enumeration en = mr.xValues.elements();
         while( en.hasMoreElements() ) { 
-           // in Millis ...
+           // in milliseconds
            Double t = (Double)en.nextElement();
            
-           if ( t < e ) {
-                int dt = (int)( (t-s) / (1000 * sf));
-                
-                // pro Auflösungsfeld nur einen Wert oder alle ?
-                if( MODE_ONE_PER_dt ) data[dt-1]=1;
-                else data[dt-1]=data[dt-1]+1;
+           if ( t < s ) {
+               throw new IllegalArgumentException( "expand: the event at " + t + " ms of " + mr.getLabel()
+                       + " is before the start " + s + " ms; expected events at or after the start" );
+           }
+           int dt = (int)( (t-s) / (1000 * sf));
+           if ( t < e && dt < nn ) {
+                // one value per field or all of them
+                if( MODE_ONE_PER_dt ) data[dt]=1;
+                else data[dt]=data[dt]+1;
            }
            else { 
-               System.out.println( "t is out of range ... " + t + " > " + e );
+               LOG.debug("skipped value after the last field series={} t={} end={}", mr.getLabel(), t, e);
            }
         }
         for( int i = 0 ; i < nn; i++ ) { 

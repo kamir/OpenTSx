@@ -9,17 +9,22 @@ import org.opentsx.data.loader.util.ColumnValueCalculator;
 import org.opentsx.data.loader.util.LineFilter;
 import org.opentsx.data.loader.util.TSValueCalculator;
 import org.opentsx.data.series.TimeSeriesObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
 
 public class MessreihenLoader {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MessreihenLoader.class);
 
     public static boolean debug = false;
     public static final String DEFAULT_DELIMITER = ",";
@@ -50,7 +55,7 @@ public class MessreihenLoader {
         int c = 0;
         while( z < maxY ) {
             z = z * factor;
-            System.err.println(c + "\t" + z );
+            LOG.debug("bin border index={} border={}", c, z);
             c++;
         }
         
@@ -77,13 +82,13 @@ public class MessreihenLoader {
             lowerBorder[c] = b;
             
             b = z;
-            System.err.println(c + "\t" + widthOfBin[c] );
+            LOG.debug("bin width index={} width={}", c, widthOfBin[c]);
             c++;
         }
         
         TimeSeriesObject mr = new TimeSeriesObject();
 
-        System.out.println("File: "+fn.getAbsolutePath());
+        LOG.debug("loading log-binned series file={}", fn.getAbsolutePath());
 
         mr.setLabel( fn.getName() );
 
@@ -96,7 +101,7 @@ public class MessreihenLoader {
                     continue;
                 }
                 line = decimalPoints(line, DEFAULT_DELIMITER);
-                if ( debug ) System.out.println( "> line=[" + line + "]" );
+                if ( debug ) LOG.debug("read line file={} line={} text={}", fn, lineNumber, line);
 
                 // columns count from 1
                 String[] data = columns(fn, lineNumber, line, DEFAULT_DELIMITER, Math.max(_spalteX, spalteY));
@@ -125,7 +130,7 @@ public class MessreihenLoader {
                             conuterBin2[zi-1] = conuterBin2[zi-1] + 1; 
                             
                             notCorrectBin = false;
-                            System.out.println( dx + "\t " + dy + "\t" + zi + "\t" + lowerBorder[zi]);
+                            LOG.debug("binned point x={} y={} bin={} border={}", dx, dy, zi, lowerBorder[zi]);
                         }
                     }
                 }
@@ -135,8 +140,7 @@ public class MessreihenLoader {
             throw readFailure(fn, ex);
         }
         if ( logSkipped + logUsed == 0 ) {
-            throw new IllegalArgumentException(fn + ": the file has no data lines; expected at least one line with "
-                    + Math.max(_spalteX, spalteY) + " columns separated by \"" + DEFAULT_DELIMITER + "\"");
+            throw noDataLines(fn, Math.max(_spalteX, spalteY), DEFAULT_DELIMITER);
         }
         
         // summarize
@@ -145,12 +149,12 @@ public class MessreihenLoader {
             double y = conuterBin[j] / widthOfBin[j];  // DEGREE DISTRIBUTION
             double y2 = conuterBin[j] / conuterBin2[j]; // DENSITY OF THE TIME SERIES
             
-            System.out.println(" >>> use: " +  x + " \t " + y2 + "\t --> " + conuterBin[j] + "\t" + conuterBin2[j] );
+            LOG.debug("bin value x={} density={} sum={} count={}", x, y2, conuterBin[j], conuterBin2[j]);
             
             mr.addValuePair(x, y2);
         }
         
-        System.out.println( logSkipped / ( logSkipped + logUsed ) + "% skipped");
+        logSkipped(fn, logUsed, logSkipped);
         return mr;
     };
 
@@ -178,7 +182,7 @@ public class MessreihenLoader {
         int c = 0;
         while( z < maxY ) {
             z = z * factor;
-            System.err.println(c + "\t" + z );
+            LOG.debug("bin border index={} border={}", c, z);
             c++;
         }
         
@@ -205,13 +209,13 @@ public class MessreihenLoader {
             lowerBorder[c] = b;
             
             b = z;
-            System.err.println(c + "\t" + widthOfBin[c] );
+            LOG.debug("bin width index={} width={}", c, widthOfBin[c]);
             c++;
         }
         
         TimeSeriesObject mr = new TimeSeriesObject();
 
-        System.out.println("File: "+fn.getAbsolutePath());
+        LOG.debug("loading log-binned series file={}", fn.getAbsolutePath());
 
         mr.setLabel( fn.getName() );
 
@@ -223,7 +227,7 @@ public class MessreihenLoader {
                 if ( line.startsWith("#") || line.length() == 0 ) {
                     continue;
                 }
-                if ( debug ) System.out.println( "> line=[" + line + "]" );
+                if ( debug ) LOG.debug("read line file={} line={} text={}", fn, lineNumber, line);
 
                 // columns count from 1
                 String[] data = columns(fn, lineNumber, line, DEFAULT_DELIMITER, Math.max(_spalteX, spalteY));
@@ -260,25 +264,21 @@ public class MessreihenLoader {
         catch (IOException ex) {
             throw readFailure(fn, ex);
         }
+        if ( logSkipped + logUsed == 0 ) {
+            throw noDataLines(fn, Math.max(_spalteX, spalteY), DEFAULT_DELIMITER);
+        }
         
         // summarize
         for( int j = 1; j < conuterBin.length ; j++ ) { 
             double x = lowerBorder[j] + widthOfBin[j] * 0.5;
             double y = conuterBin[j] / widthOfBin[j];  // DEGREE DISTRIBUTION
             
-            System.out.println(" >>> use: " +  x + " \t " + y + "\t --> " + conuterBin[j] + "\t" + conuterBin2[j] );
+            LOG.debug("bin value x={} density={} sum={} count={}", x, y, conuterBin[j], conuterBin2[j]);
             
             mr.addValuePair(x, y);
         }
         
-        if ( ( logSkipped + logUsed ) > 0 ) {
-            System.out.println( ( logSkipped + logUsed ) + " counted ... ");
-        
-            System.out.println( logSkipped / ( logSkipped + logUsed ) + "% skipped");
-        }
-        else { 
-            System.out.println( "PROBLEMS in data !");
-        }
+        logSkipped(fn, logUsed, logSkipped);
         return mr;
     };
     
@@ -304,7 +304,7 @@ public class MessreihenLoader {
         int c = 0;
         while( z < maxY ) {
             z = z * factor;
-            if ( debug ) System.err.println(c + "\t" + z );
+            if ( debug ) LOG.debug("bin border index={} border={}", c, z);
             c++;
         }
         
@@ -335,7 +335,7 @@ public class MessreihenLoader {
             lowerBorder[c] = b;
             
             b = z;
-            if ( debug ) System.err.println(c + "\t" + widthOfBin[c] );
+            if ( debug ) LOG.debug("bin width index={} width={}", c, widthOfBin[c]);
             c++;
         }
         
@@ -344,16 +344,13 @@ public class MessreihenLoader {
             int index = getBin(i, lowerBorder, conuterBin );
             widthOfBinCounted[index] = widthOfBinCounted[index] + 1; 
         }
-        System.out.println( ">>> bin widths counted ... ");
-        for( int i = 0; i < widthOfBinCounted.length; i++ ) {
-            System.out.println("("+i+") " + widthOfBinCounted[ i ] );  
-        }
+        LOG.debug("counted bin widths file={} widths={}", fn, Arrays.toString(widthOfBinCounted));
         
        
         
         TimeSeriesObject mr = new TimeSeriesObject();
 
-        System.out.println("File: "+fn.getAbsolutePath());
+        LOG.debug("loading log-binned series file={}", fn.getAbsolutePath());
 
         mr.setLabel( fn.getName() );
 
@@ -368,14 +365,14 @@ public class MessreihenLoader {
                 if ( filter != null ) {
                     line = filter.doFilterLine(line);
                 }
-                if ( debug ) System.out.println( "> line=[" + line + "]" );
+                if ( debug ) LOG.debug("read line file={} line={} text={}", fn, lineNumber, line);
 
                 // columns count from 1
                 String[] data = columns(fn, lineNumber, line, delim, Math.max(spalteX, spalteY));
                 double dx = parseNumber(fn, lineNumber, data[spalteX-1]);
                 double dy = parseNumber(fn, lineNumber, data[spalteY-1]);
 
-                if ( debug ) System.out.println( line + " : " + dx + " " + dy );
+                if ( debug ) LOG.debug("read point file={} line={} x={} y={}", fn, lineNumber, dx, dy);
                 boolean notCorrectBin = true;
                 int zi = 1;
                 
@@ -398,7 +395,7 @@ public class MessreihenLoader {
                             conuterBin2[zi-1] = conuterBin2[zi-1] + 1; 
                             
                             notCorrectBin = false;
-                            if ( debug ) System.out.println( dx + "\t " + dy + "\t" + zi + "\t" + lowerBorder[zi]);
+                            if ( debug ) LOG.debug("binned point x={} y={} bin={} border={}", dx, dy, zi, lowerBorder[zi]);
                         }
                     }
                 }
@@ -406,6 +403,9 @@ public class MessreihenLoader {
         }
         catch (IOException ex) {
             throw readFailure(fn, ex);
+        }
+        if ( logSkipped + logUsed == 0 ) {
+            throw noDataLines(fn, Math.max(spalteX, spalteY), delim);
         }
         
         // summarize
@@ -419,14 +419,7 @@ public class MessreihenLoader {
             mr.addValuePair(x, y2);
         }
         
-        if ( ( logSkipped + logUsed ) > 0 ) {
-            System.out.println( ( logSkipped + logUsed ) + " counted ... ");
-        
-            System.out.println( logSkipped / ( logSkipped + logUsed ) + "% skipped");
-        }
-        else { 
-            System.out.println( "PROBLEMS in data !");
-        }
+        logSkipped(fn, logUsed, logSkipped);
         return mr;
     };
     
@@ -472,7 +465,7 @@ public class MessreihenLoader {
                     continue;
                 }
                 line = decimalPoints(line, delim);
-                if ( debug ) System.out.println( "> line=[" + line + "]" );
+                if ( debug ) LOG.debug("read line file={} line={} text={}", fn, lineNumber, line);
 
                 String[] data = columns(fn, lineNumber, line, delim, columns);
                 mr.addValuePair(parseNumber(fn, lineNumber, data[spalteX - 1]), parseNumber(fn, lineNumber, data[spalteY - 1]));
@@ -515,10 +508,23 @@ public class MessreihenLoader {
         }
         if ( data.length < needed ) {
             throw new IllegalArgumentException(fn + ":" + lineNumber + ": the line has " + data.length
-                    + " columns; expected at least " + needed + " columns separated by "
-                    + (delim == null ? "white space" : "\"" + delim + "\""));
+                    + " columns; expected at least " + needed + " columns separated by " + separator(delim));
         }
         return data;
+    }
+
+    private static String separator(String delim) {
+        return delim == null ? "white space" : "\"" + delim + "\"";
+    }
+
+    private static IllegalArgumentException noDataLines(File fn, int columns, String delim) {
+        return new IllegalArgumentException(fn + ": the file has no data lines; expected at least one line with "
+                + columns + " columns separated by " + separator(delim));
+    }
+
+    private static void logSkipped(File fn, int used, int skipped) {
+        LOG.debug("loaded log-binned series file={} used={} skipped={} skippedPercent={}", fn, used, skipped,
+                100.0 * skipped / (used + skipped));
     }
 
     private static String decimalPoints(String line, String delim) {
@@ -597,7 +603,7 @@ public class MessreihenLoader {
 
         TimeSeriesObject mr = new TimeSeriesObject();
         
-        System.out.println(">>> File: "+fn.getAbsolutePath() + " reading column nr:=" + spalteY );
+        LOG.debug("loading series file={} column={}", fn.getAbsolutePath(), spalteY);
 
         mr.setLabel( fn.getName() );
 
@@ -608,11 +614,11 @@ public class MessreihenLoader {
             while ( (line = br.readLine()) != null ) {
                 lineNumber++;
                 if ( line.startsWith("#") || line.length() == 0 ) {
-                    System.out.println( "> empty: " + line );
+                    LOG.debug("skipped comment or empty line file={} line={}", fn, lineNumber);
                     continue;
                 }
                 line = decimalPoints(line, del);
-                if ( debug ) System.out.println( "> line=[" + line + "]" );
+                if ( debug ) LOG.debug("read line file={} line={} text={}", fn, lineNumber, line);
 
                 // columns count from 1
                 String[] data = columns(fn, lineNumber, line, del, Math.max(1, spalteY));
@@ -640,7 +646,7 @@ public class MessreihenLoader {
 
         TimeSeriesObject mr = new TimeSeriesObject();
         
-        System.out.println(">>> File: "+fn.getAbsolutePath() + " reading column nr:=" + spalteValue );
+        LOG.debug("loading series file={} column={}", fn.getAbsolutePath(), spalteValue);
 
         mr.setLabel( fn.getName() );
 
@@ -651,7 +657,7 @@ public class MessreihenLoader {
             while ( (line = br.readLine()) != null ) {
                 lineNumber++;
                 if ( line.startsWith("#") || line.length() == 0 ) {
-                    System.out.println( "> empty: " + line );
+                    LOG.debug("skipped comment or empty line file={} line={}", fn, lineNumber);
                     continue;
                 }
                 line = decimalPoints(line, del);
@@ -673,7 +679,7 @@ public class MessreihenLoader {
     public TimeSeriesObject loadMessreihe_For_LinkStrength(File fn, int spalteLabel1, int spalteLabel2, ColumnValueCalculator mapper, String del) {
         TimeSeriesObject mr = new TimeSeriesObject();
         
-        System.out.println(">>> File: "+fn.getAbsolutePath() + " reading with mapper:=" + mapper.getName() );
+        LOG.debug("loading series file={} mapper={}", fn.getAbsolutePath(), mapper.getName());
 
         mr.setLabel( fn.getName() );
 
@@ -685,11 +691,11 @@ public class MessreihenLoader {
             while ( (line = br.readLine()) != null ) {
                 lineNumber++;
                 if ( line.startsWith("#") || line.length() == 0 ) {
-                    System.out.println( "> empty: " + line );
+                    LOG.debug("skipped comment or empty line file={} line={}", fn, lineNumber);
                     continue;
                 }
                 line = decimalPoints(line, del);
-                if ( x == 0 ) System.out.println( "> line=[" + line + "]" );
+                if ( x == 0 ) LOG.debug("first line file={} line={} text={}", fn, lineNumber, line);
                 x++;
 
                 // columns count from 1
@@ -720,7 +726,7 @@ public class MessreihenLoader {
 
         mr.dateHash = new Hashtable<Date,Double>();
         
-        System.out.println(">>> File: "+fn.getAbsolutePath() + " reading with mapper:=" + mapper.getName() );
+        LOG.debug("loading series file={} mapper={}", fn.getAbsolutePath(), mapper.getName());
 
         mr.setLabel( fn.getName() );
 
@@ -731,11 +737,11 @@ public class MessreihenLoader {
             while ( (line = br.readLine()) != null ) {
                 lineNumber++;
                 if ( line.startsWith("#") || line.length() == 0 ) {
-                    System.out.println( "> empty: " + line );
+                    LOG.debug("skipped comment or empty line file={} line={}", fn, lineNumber);
                     continue;
                 }
                 line = decimalPoints(line, del);
-                if ( x == 0 ) System.out.println( "[" + line + "]" );
+                if ( x == 0 ) LOG.debug("first line file={} line={} text={}", fn, lineNumber, line);
                 x++;
 
                 String[] data = columns(fn, lineNumber, line, del, 0);

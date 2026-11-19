@@ -29,6 +29,8 @@ import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.data.series.TimeSeriesObjectFFT;
 import org.opentsx.algorithms.detrending.DetrendingMethodFactory;
 import org.opentsx.algorithms.detrending.methods.IDetrendingMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,6 +39,8 @@ import java.util.Random;
 import java.util.Vector;
 
 public class LongTermCorrelationSeriesGenerator {
+
+    private static final Logger LOG = LoggerFactory.getLogger(LongTermCorrelationSeriesGenerator.class);
     
     private static boolean debug = false;
 
@@ -224,7 +228,7 @@ public class LongTermCorrelationSeriesGenerator {
             order = dfa.getPara().getGradeOfPolynom();
             dfa.getPara().setzSValues( nrOfSValues );
 
-            System.out.println( "nrOfSValues="+nrOfSValues );
+            LOG.debug("running DFA series={} windows={}", d4.getLabel(), nrOfSValues);
             // number of values in the series
             dfa.setNrOfValues(N);
 
@@ -258,11 +262,11 @@ public class LongTermCorrelationSeriesGenerator {
                 if ( firstInLoop ) tests.add(mr4);
             }
 
-            System.out.println( " alpha = " + df.format( alpha ) );
+            LOG.debug("fitted alpha series={} alpha={}", d4.getLabel(), alpha);
      
         }
         
-        System.out.println( temp.yValues.size() + " " + temp.getLabel() );
+        LOG.debug("phase randomized series={} values={}", temp.getLabel(), temp.yValues.size());
         return temp;
     }
         
@@ -313,7 +317,7 @@ public class LongTermCorrelationSeriesGenerator {
             order = dfa.getPara().getGradeOfPolynom();
             dfa.getPara().setzSValues( nrOfSValues );
 
-            System.out.println( "nrOfSValues="+nrOfSValues );
+            LOG.debug("running DFA series={} windows={}", d4.getLabel(), nrOfSValues);
             // number of values in the series
             dfa.setNrOfValues(N);
 
@@ -357,13 +361,12 @@ public class LongTermCorrelationSeriesGenerator {
                 }
             }
 
-            System.out.println( " alpha = " + df.format( alpha ) );
-            System.out.println( "  beta = " + df.format( beta ) );
-            System.out.println( "       = " + ( (2 * alpha) - 1.0 ) );
+            LOG.debug("fitted alpha series={} alpha={} beta={} betaFromAlpha={}", d4.getLabel(), alpha, beta,
+                    (2 * alpha) - 1.0);
 
         }
         
-        System.out.println( temp.yValues.size() + " " + temp.getLabel() );
+        LOG.debug("filtered series={} values={} beta={}", temp.getLabel(), temp.yValues.size(), beta);
         return temp;
     }
 
@@ -395,9 +398,7 @@ public class LongTermCorrelationSeriesGenerator {
         
         // has to be of type int
         int N = length;
-        
-        
-        System.out.println( "N=" + N );
+
         /**
          * Precondition:
          *

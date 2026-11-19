@@ -22,7 +22,7 @@
 # Environment Variables (optional):
 #   OPENTSX_THREADS_POOL_SIZE: number of threads for parallel processing
 #   OPENTSX_RETRY_ATTEMPTS: number of retry attempts
-#   OPENTSX_LOG_LEVEL: registry key opentsx.log.level, one of error, warn, info, debug, trace (ProductionConfig does not apply it)
+#   OPENTSX_LOG_LEVEL: one of error, warn, info, debug, trace; wins over opentsx.log.level in opentsx.properties
 ###############################################################################
 
 set -e  # Exit on error
@@ -75,7 +75,12 @@ fi
 echo -e "${BLUE}Environment Configuration:${NC}"
 echo "  Thread Pool Size: ${OPENTSX_THREADS_POOL_SIZE:-default (4)}"
 echo "  Retry Attempts: ${OPENTSX_RETRY_ATTEMPTS:-default (3)}"
-echo "  Log Level: ${OPENTSX_LOG_LEVEL:-default (INFO)}"
+LOG_LEVEL_FROM_FILE="$(sed -n 's/^[[:space:]]*opentsx\.log\.level[[:space:]]*[=:][[:space:]]*//p' opentsx.properties | tail -n 1)"
+LOG_LEVEL_FROM_ENV="${OPENTSX_LOG_LEVEL:-}"
+if [[ "$LOG_LEVEL_FROM_ENV" =~ ^[[:space:]]*$ ]]; then
+    LOG_LEVEL_FROM_ENV=""
+fi
+echo "  Log Level: ${LOG_LEVEL_FROM_ENV:-${LOG_LEVEL_FROM_FILE:-info}}"
 echo
 
 # Build classpath

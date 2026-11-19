@@ -1,8 +1,14 @@
 package org.opentsx.algorithms.detrending.methods;
 
 import org.opentsx.data.series.TimeSeriesObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
 
 public class MFDFA extends DFACore {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MFDFA.class);
 
     @Override
     public void calc() {
@@ -20,11 +26,9 @@ public class MFDFA extends DFACore {
             zS++;
             int valueofS = s[currentS];
 
-            if(debug) System.out.println(">>> zS=" + zS + " # " + valueofS);
+            if(debug) LOG.debug("window index={} s={}", zS, valueofS);
             double FS = 0;
 
-            // dfa caculation ...
-            if(debug) System.out.print("\ts=" + valueofS + "\n");
             int zw = 0;
             
             // move window over profile ...
@@ -35,7 +39,7 @@ public class MFDFA extends DFACore {
                 double FS_sum = 0;
                 zw++;
                 
-                if(debug) System.out.print(pr_pos + ": " + zw + " : ");
+                if(debug) LOG.debug("segment s={} start={} index={}", valueofS, pr_pos, zw);
 
                 double[] fit = null;
                 
@@ -58,7 +62,7 @@ public class MFDFA extends DFACore {
                     mrFitN.setLabel(pr_pos + " - " + (pr_pos + valueofS));
                 }
                 
-                // sum of all (x-schlange)^2 ...
+                // sum of all (x tilde)^2
                 for (int x = pr_pos; x < pr_pos + valueofS; x++) {
 
 //                  calc y value of fit function depending on poly. degree
@@ -73,55 +77,46 @@ public class MFDFA extends DFACore {
                 }
 
                 
-                FS_sum = FS_sum / valueofS; // Zeilen durch Fensterbreite
+                FS_sum = FS_sum / valueofS; // divided by the window size
                 
                 FS_sum = Math.pow(FS_sum, para.q * 0.5 );
-                
-                if(debug) System.out.println(")");
                 
                 F[2][currentS] += FS_sum;
             }
 
-             if(debug) System.out.println("\t");
-
-            // ist es korrekt, hier durch Länge der Profils zu teilen 
-            // oder müsste es die Zahl der summierten Beiträge sein?
+            // the mean over the zw segments of this window size
             FS = F[2][currentS] / zw;  // / anzw:
-            FS = Math.pow( FS, 1.0 / para.q ); // für MFDFA
+            FS = Math.pow( FS, 1.0 / para.q ); // for MFDFA
             
             F[0][currentS] = valueofS; // s
-            F[1][currentS] = zw;       // Zahl Segmente
+            F[1][currentS] = zw;       // number of segments
             F[3][currentS] = FS;       // F(s)
 
-            if(debug) System.out.println(
-                    ">> STORE RESULTS ... " + valueofS + ", " + zw);
+            if(debug) LOG.debug("stored fluctuation s={} segments={} F={}", valueofS, zw, FS);
             zw = 0;
 
-        } // für alle s;
+        }
 
-        System.out.println();
         double t2 = System.currentTimeMillis();
         status.append("]");
-        status.append("\n> Dauer: " + ((t2 - t1) / 1000) + " s. ");
+        status.append("\n> Duration: " + ((t2 - t1) / 1000) + " s. ");
     }
 
 
 
-    // kann erst berechnet werden, wenn das Parameter-Objekt vorliegt
+    // needs the parameter object
     public void initIntervalS_version4() {
 
-        System.out.println(">>> teile die s Werte ein ...");
         int s_start = Math.abs( para.getGradeOfPolynom() ) + 2 ;
         int s_end = para.getN();
 
         para.setzSValues( s_end - s_start);
         s = new int[s_end - s_start];
 
-        // linearen Teil belegen
         for (int i = 0; i < ( s_end-s_start ); i++) {
             s[i] = i+s_start;
-            if ( debug ) System.out.println(s[i]);
         }
+        if ( debug ) LOG.debug("window sizes s={}", Arrays.toString(s));
         initF();
     }
 

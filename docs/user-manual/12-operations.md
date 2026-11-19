@@ -81,9 +81,12 @@ number stops it with `<key>: "<value>" is not an int; expected a whole number fr
 
 [`opentsx.properties.example`](../../opentsx.properties.example) lists the keys the 2.x tools read from
 `./opentsx.properties` and `config/opentsx-default.properties`; the registry does not read these files.
-`opentsx.log.level` in that file belongs to the 2.x `ProductionConfig`, not to the registry. The variable
-`OPENTSX_LOG_LEVEL` belongs to the registry key `opentsx.log.level` and takes `error`, `warn`, `info`, `debug` or
-`trace`. A 2.x level such as `INFO` stops every command that reads the registry with
+`opentsx.log.level` in that file sets the `java.util.logging` root level of the 2.x `ProductionConfig` and takes
+`error`, `warn`, `info`, `debug` or `trace`; an `OPENTSX_LOG_LEVEL` that is not empty or blank wins over it. Neither
+changes the level of the SLF4J lines of the 2.x library classes; raise that with a JVM system property as
+[Read the diagnostics](../../opentsx-core/README.md#read-the-diagnostics) shows. `OPENTSX_LOG_LEVEL` also sets the
+registry key `opentsx.log.level`, which takes the same five values. Both refuse a level in capitals:
+`OPENTSX_LOG_LEVEL=INFO` stops `ProductionConfig` and every command that reads the registry with
 `OPENTSX_LOG_LEVEL: "INFO" is not allowed; expected one of error, warn, info, debug, trace`. The 2.x Kafka client
 profile is `config/opentsx-local.props` (git-ignored; set `OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME` to use
 another file). Without it, the template [`config/opentsx-local.props.example`](../../config/opentsx-local.props.example)

@@ -7,6 +7,9 @@ package org.opentsx.algorithms.statistics;
 
 import org.opentsx.data.generator.RNGWrapper;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Vector;
@@ -16,6 +19,8 @@ import java.util.Vector;
  * @author kamir
  */
 public class DistributionTester {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DistributionTester.class);
     
     boolean debug = false;
    
@@ -61,7 +66,7 @@ public class DistributionTester {
         }
         double[] v = t.test(logData);
         if ( debug ) { 
-            System.out.println(">>> shapiro-test (log): " + v[0] + " " + v[1] );
+            LOG.debug("shapiro wilk test of the logarithms w={} p={}", v[0], v[1]);
         }
         if ( fw!=null ) { 
             fw.write(">>> shapiro-test (log):" + v[0] + " " + v[1] + "\n" );

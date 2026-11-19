@@ -8,8 +8,9 @@
 opentsx.data.directory=/var/lib/opentsx/data
 opentsx.threads.pool.size=4
 opentsx.retry.attempts=3
-# 2.x ProductionConfig keeps this value but does not apply it to logging; not the registry key opentsx.log.level
-opentsx.log.level=INFO
+# Level of the java.util.logging root logger of ProductionConfig: error, warn, info, debug or trace.
+# OPENTSX_LOG_LEVEL wins over this line; another value stops ProductionConfig with an error.
+opentsx.log.level=info
 
 # --- 2.x tools: ConfigManager (opentsx-core, opentsx-lg, opentsx-connectors) --------------------------------------
 # Defaults live in config/opentsx-default.properties; select another file with OPENTSX_CONFIG_FILE=<path> or

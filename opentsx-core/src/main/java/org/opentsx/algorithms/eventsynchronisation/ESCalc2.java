@@ -44,17 +44,14 @@ public class ESCalc2 {
         int M2 = ty.length;
         
         if ( M1 < 3 || M2 < 3 ) {
-            System.err.println(">>> ERROR <<< # of events is to small!   ::   length(tx) = " + M1 + " length(ty) = " + M2 );
-            return data;
+            throw new IllegalArgumentException( "calcES: tx has " + M1 + " events and ty has " + M2
+                    + "; expected at least 3 events in each" );
         }
         
         double synch = 0.0;  // Q
         double delay = 0.0;  // q     
 
         double fNorm = Math.sqrt( M1 * M2 );
-
-        if ( M1 == 0 ) return data;
-        if ( M2 == 0 ) return data;
                 
         double cij = calc_C_ij( tx, ty );
         
@@ -163,7 +160,7 @@ public class ESCalc2 {
     }
     
     /**
-     * Verschiebung der Reihen für Methoden-Tests
+     * Shifts the series for method tests
      * 
      * @param r1
      * @param dt
@@ -223,7 +220,7 @@ public class ESCalc2 {
             et++;
             if (i != 0) { 
                 
-                // wann war der EVENT?
+                // the time of the event
                 rr2.add(et);
             
                 // Here we loose information !!! 
@@ -271,7 +268,7 @@ public class ESCalc2 {
     }
 
     /**
-     *  Erzeuge Messreihen und zeige diese dann an. 
+     *  Creates the series and shows them.
      */
     public static TimeSeriesObject[] checkRowsInverse(int[] r1, int[] r2, String title) {
         
@@ -306,7 +303,7 @@ public class ESCalc2 {
     }
 
         /**
-     *  Erzeuge Messreihen und zeige diese dann an. 
+     *  Creates the series and shows them.
      */
     public static TimeSeriesObject[] checkRows(int[] r1, int[] r2, String title) {
         

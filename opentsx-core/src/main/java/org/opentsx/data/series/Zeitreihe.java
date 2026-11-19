@@ -1,28 +1,31 @@
 
 package org.opentsx.data.series;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Vector;
 
 /**
- * Bei einer Zeitreihe werden die Werte für:
+ * A time series that stores:
  *
- * x:  long (Zeitstempel)
- * y:  beliebige Größe gespeichert.
+ * x:  long (time stamp)
+ * y:  any quantity.
  *
- * Benötigt man nun Werte wie z.B. die Anzahl eines
- * Ereignisses pro Tag oder pro zeitintervall, so sind die Rohdaten zunächst
- * zusammenzufassen.
+ * Values such as the number of events per day or per time interval need the
+ * raw data to be aggregated first.
  *
- * Danach erhält jeder Intervall einen laufenden Index.
- * Die intervallbreite und die absolute Startposition des ersten Intervalls
- * werden ebenfalls festgehalten.
+ * Then every interval gets a running index. The interval width and the
+ * absolute start of the first interval are kept as well.
  *
  * @author kamir
  */
 public class Zeitreihe extends TimeSeriesObject {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Zeitreihe.class);
 
     public static Zeitreihe getTestZeitreihe_X_RANDOM() {
         Zeitreihe zr = new Zeitreihe(); 
@@ -68,12 +71,11 @@ public class Zeitreihe extends TimeSeriesObject {
             }
             j++;
         }    
-        System.out.println( zr.toString() );
+        LOG.debug("created test series values={}", zr.xValues.size());
         return zr;
     }
 
-    // zur Umrechnung der Funktionswerte y(t) in eine Anzahl von
-    // Events pro Intervall
+    // converts the values y(t) into a number of events per interval
     int nrOfInterval;
     long beginOffirstInterval;
 
@@ -127,12 +129,12 @@ public class Zeitreihe extends TimeSeriesObject {
             Calendar cal = Calendar.getInstance();
             cal.setTime(lastDate);
 
-            // den Tages-Wert des ersten Wertepaares ermitteln
+            // the day of the first value pair
             int lastDay = cal.get( Calendar.DAY_OF_YEAR );
 
             for (int i = 1; i < size; i++) {
 
-                // für jeden weiteren tag den Tageswert ermitteln ...
+                // the day of every further value pair
                 Double d1 = (Double) getXValues().elementAt(i);
                 long dd2 = d1.longValue();
                 Date ddd = new Date(dd2);
@@ -154,8 +156,7 @@ public class Zeitreihe extends TimeSeriesObject {
             }
 
 
-            // nun liegen die COUNTS per day vor ... aber ohne der Werte
-            // an denen keine Counts waren ...
+            // the counts per day are known now, without the days that had no count
             for( int i = 0; i < mr.getMaxX() ; i++ ) {
                 mr2.addValuePair(i, mr.getYValueForX(i) );
             }
@@ -169,7 +170,7 @@ public class Zeitreihe extends TimeSeriesObject {
         TimeSeriesObject mr = new TimeSeriesObject();
         int size = xValues.size();
 
-        // relativ zum 1.1.2009 um 0:0
+        // relative to 2009-01-01 00:00
         Calendar cal = Calendar.getInstance();
         cal.set(2009, 0, 1, 0, 0, 0);
 
@@ -187,7 +188,7 @@ public class Zeitreihe extends TimeSeriesObject {
 
            
 
-            // für jeden weiteren tag den Tageswert ermitteln ...
+            // the hour of every value pair
             Double d1 = (Double) getXValues().elementAt(i);
             long dd2 = d1.longValue();
 

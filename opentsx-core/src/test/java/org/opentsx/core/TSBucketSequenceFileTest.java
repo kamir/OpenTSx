@@ -13,8 +13,11 @@ import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.tsbucket.BucketLoader;
 import org.opentsx.tsbucket.folderStore.TSBASE;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Vector;
@@ -121,6 +124,58 @@ class TSBucketSequenceFileTest {
         Path blocker = Files.writeString(directory.resolve("blocker"), "x");
         IOException e = assertThrows(IOException.class, () -> bucket()._open(blocker.resolve("out.tsb.vec.seq").toFile()));
         assertTrue(e.getMessage().contains(blocker.toString()), e.getMessage());
+    }
+
+    @Test
+    void aSeriesThatCannotBeWrittenClosesTheBucketWriter() throws Exception {
+        Vector<TimeSeriesObject> rows = rows();
+        rows.get(1).setLabel(null);
+        assertThrows(IllegalArgumentException.class, () -> bucket().createBucketFromVectorOfSeries("test", "broken", rows));
+
+        TSBucket loaded = bucket();
+        loaded.loadFromSequenceFile(directory.resolve("test").resolve("broken.tsb.vec.seq").toFile());
+
+        assertEquals(1, loaded.bucketData.size());
+    }
+
+    @Test
+    void aResultThatCannotBeWrittenStopsTheOperation() {
+        IOException failure = new IOException("disk full");
+        Writer failing = new Writer() {
+            @Override
+            public void write(char[] buffer, int offset, int length) throws IOException {
+                throw failure;
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+        SingleRowTSO operation = new SingleRowTSO();
+        TimeSeriesObject row = rows().get(0);
+        assertSame(failure, assertThrows(IOException.class, () -> operation.processReihe(failing, row, null)));
+        assertSame(failure, assertThrows(IOException.class, () -> operation.processReihe(failing, row, null, null)));
+        assertSame(failure, assertThrows(IOException.class, () -> operation.processReihe(failing, row)));
+    }
+
+    @Test
+    void savingLoadingAndProcessingWriteNothingToStandardOutput() throws Exception {
+        PrintStream stdout = System.out;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(captured, true, StandardCharsets.UTF_8));
+        try {
+            Path path = save("quiet", rows());
+            load(path, true);
+            load(path, false);
+            bucket()._loadAndProcess(path.toString(), new SingleRowTSO(), null);
+        } finally {
+            System.setOut(stdout);
+        }
+        assertEquals("", captured.toString(StandardCharsets.UTF_8));
     }
 
     @Test

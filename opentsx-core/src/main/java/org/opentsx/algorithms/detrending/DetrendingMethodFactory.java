@@ -9,7 +9,7 @@ import org.opentsx.algorithms.detrending.methods.IDetrendingMethod;
 import org.opentsx.algorithms.detrending.methods.MFDFA;
 
 /**
- * Derzeit nur DFA , aber mit verschiedenen Polynomen.
+ * DFA with polynomials of different order.
  *
  * @author kamir
  */
@@ -29,7 +29,6 @@ public class DetrendingMethodFactory {
         DFAParameter para = (DFAParameter) m.initParameter();
 
         if ( key.equals( MFDFA2 ) ) {
-            System.out.println( ">>> MFDFA");
             MFDFA mfdfa = new MFDFA();
             para.setGradeOfPolynom( 2 );
             
@@ -44,7 +43,7 @@ public class DetrendingMethodFactory {
         else if ( key.equals( DFA2 ) )
             para.setGradeOfPolynom( 2 );
 
-        else { //Grad ist danach festzulegen
+        else { // ask for the order
             String input = javax.swing.JOptionPane.showInputDialog("Grade of Polynomial fit: ");
             int grade = Integer.parseInt( input );
             para.setGradeOfPolynom( grade );

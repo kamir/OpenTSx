@@ -1,14 +1,14 @@
 package org.opentsx.algorithms.ris.experimental;
 
 /**
- * Berechnung der Verteilung der Wiederkehr-Intervalle
- * 
- * - Normierung mit Rq erfolgt mit Aufruf der Methode calcMessreihen() und
- *   sobald die Instanz zu einer ContainerInstanz hinzugefügt wird 
- * - Zusammenfassung verschiedener Auswertungen mehrerer Zeit-(Intervall)-
- *   Reihen in einer ContainerInstanz
- * - Histogramm von Rq-Werten ausgeben wenn es eine ContainerInstanz ist
- * - Anzeige der Daten für einzelne Zeit-Reihen
+ * Computes the distribution of return intervals.
+ *
+ * - The values are scaled with Rq when calcMessreihen() is called and
+ *   when the instance is added to a container instance
+ * - A container instance combines the results of several interval
+ *   series
+ * - A container instance gives a histogram of the Rq values
+ * - Shows the data of single series
  */
 
 import org.opentsx.generators.LongTermCorrelationSeriesGenerator;
@@ -20,6 +20,8 @@ import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.data.series.TimeSeriesObjectFFT;
 import org.opentsx.algorithms.statistics.HaeufigkeitsZaehler;
 import org.opentsx.algorithms.statistics.HaeufigkeitsZaehlerDouble;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -29,32 +31,31 @@ import java.util.Vector;
 
 
 /**
- * 
- * Die Zusammenfassung von einzelnen Return-Intervall-Statistik Resultaten
- * kann nur auf Reihen mit gleichem Rq angewendet werden.
- * 
- * Ist Rq sehr verschieden, dann wird mit Rq skaliert
- * 
- * Die skalierten Werte können zusammegefasst werden.
- * 
- * add( RIS2 )                  => sammeln im Container
- * addData( Vector<Long> ...  ) => Zeitpunkte
- * addDistData( Vector<Double)  => Zeitintervalle sammeln
- * 
- * 
- * 
+ *
+ * Results of single return interval statistics can only be combined
+ * for series with the same Rq.
+ *
+ * When the Rq values differ a lot, the values are scaled with Rq.
+ *
+ * The scaled values can be combined.
+ *
+ * add( RIS2 )                  => collect in the container
+ * addData( Vector<Long> ...  ) => points in time
+ * addDistData( Vector<Double)  => collect time intervals
+ *
  * @author Mirko Kämpf
  */
 
 public class ReturnIntervallStatistik2 {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ReturnIntervallStatistik2.class);
     
     static public int[] grenzen = { 1,8,16,32,64,128,256,512,1024 };
     
     public static HaeufigkeitsZaehlerDouble debug1[] = null;
     
     /** 
-     * wird beim setzen von Daten umgeschaltet und zum Konsistenz-Check 
-     * benutzt.
+     * Marks a container instance; the data methods check it.
      */
     public boolean isContainerInstanz = false;
 
@@ -64,24 +65,24 @@ public class ReturnIntervallStatistik2 {
     public String folder = null;
     
     /*
-     * einfach nur gezählte Werte
+     * plain counts
      */
     public TimeSeriesObject mrHaeufigkeit = new TimeSeriesObject();
     /*
-     * normierte Häufigkeiten, somit ergibt die summe aller Werte 1
+     * normalized frequencies, so the sum of all values is 1
      */
     public TimeSeriesObject mrVerteilung = new TimeSeriesObject();
     public TimeSeriesObject mrVerteilungSkaliert = new TimeSeriesObject();
 
-    public static int binning = 400;   // anzahl der Werte pro Intervall
-    public static int scale = 8;    // größter Wert
+    public static int binning = 400;   // number of values per interval
+    public static int scale = 8;    // largest value
     
 
     private double _Rq = 0.0;
     private int zElements = 0;
     
     /* 
-     * die "gebinnten" Werte, also ein Feld von Zählern 
+     * the binned values, an array of counters
      */
     int data[] = null;
     int dataSKALIERT[] = null;
@@ -93,7 +94,7 @@ public class ReturnIntervallStatistik2 {
     static public boolean debug = false;
     static public boolean verbose = false;
     
-    // ab welchem Wert für r soll es losgehen?
+    // smallest value of r that is used
     public static double offset = 0;
 
     public ReturnIntervallStatistik2(String l, int bin, int s) {
@@ -153,8 +154,8 @@ public class ReturnIntervallStatistik2 {
 
     /** 
      *
-     * Aufsammeln von mehreren RIS aus vielen Zeitreihen einer Gruppe 
-     * wobei die Werte noch nicht normiert (mit Rq) sind.
+     * Collects the RIS of many series of a group whose values are not
+     * scaled with Rq yet.
      * 
      */
     Vector<Double> allRqs = new Vector<Double>();
@@ -163,72 +164,68 @@ public class ReturnIntervallStatistik2 {
     public void add( ReturnIntervallStatistik2 ris ) throws Exception {
         
         if ( !this.isContainerInstanz ) {
-            throw new Exception( "[RIS] Keine ContainerInstanz!");
+            throw new IllegalStateException( "add: " + name + " is not a container; set isContainerInstanz to true before adding results");
         }
         
         if ( ris.data.length != data.length ) {
-            throw new Exception( "[RIS] Unterschiedliches Binning !!!");
+            throw new IllegalArgumentException( "add: " + ris.name + " has " + ris.data.length + " bins and " + name
+                    + " has " + data.length + "; expected the same binning and scale");
         }
         
         if ( debug ) {
-            System.out.println("--> added single RIS to collect. R_q="+ris._Rq );
+            LOG.debug("adding result container={} result={} rq={}", name, ris.name, ris._Rq);
         }
         
         if ( ris.dataRawFILTERED.size() < 1 ) {
             if ( debug ) {
-                System.out.println(">>> " + ris.label + " ist leer ..." + ris._Rq );
+                LOG.debug("skipped empty result container={} result={}", name, ris.name);
             }        
             return;
         } 
-        
 
-        int c = 0;
         for( int i = 0; i < probSKALIERT.length; i++ ) { 
-            
             double prob = ris.probSKALIERT[i];
-            
             if ( Double.isNaN( prob ) || Double.isInfinite( prob ) ) {
-                System.err.println("ERROR 3:");
-                System.err.println( ris.label + "\ti: (" + probSKALIERT.length + ") "+ i + "\t" + prob + " \t" + ris.dataSKALIERT[i] + " #=" + ris.dataRawFILTERED.size() );
+                throw new IllegalArgumentException( "add: probability " + i + " of " + ris.name + " is " + prob
+                        + "; expected a finite probability" );
             }
-            
+        }
+
+        for( int i = 0; i < probSKALIERT.length; i++ ) {
             probSKALIERT[i] = probSKALIERT[i] + ris.probSKALIERT[i];
             dataSKALIERT[i] = dataSKALIERT[i] + 1;
-            c++;
         }
         
         allRqs.add(ris._Rq);
         
         if ( debug ) {
-            System.out.println( "~~~" + ris.dataRawFILTERED.size() + " Werte kommen an ... (c=" + c +") " + probSKALIERT.length);
+            LOG.debug("added result container={} result={} intervals={}", name, ris.name, ris.dataRawFILTERED.size());
         }
         
     }
 
     /** 
-     * Vector<Long> times ==> Zeitpunkte, in geordneter Reihenfolge.
-     *                        keine y-Werte !!! Nur Folge von t ....
+     * Vector<Long> times ==> points in time, in order.
+     *                        No y values, only the sequence of t.
      *  
-     * Ein Vector mit "Zeiten" wird übergeben. 
+     * A vector of times is passed.
      * 
-     * Daraus sind zunächst die "Wiederkehrzeiten" 
-     * zu bestimmen.
+     * The return intervals are computed from it first.
      **/
     public void _addData( Vector<Double> times, double Rq ) throws Exception {
 
 
         if ( debug ) {
-            System.out.println( 
-                    ">>> berechne n=" + (times.size()-1) + " Intervalle." );
+            LOG.debug("computing intervals result={} intervals={}", name, times.size() - 1);
         }
 
         
         int nullDistCounter = 0;
         
-        // Zeitpunkte 
+        // points in time
         Enumeration<Double> en = times.elements();
         
-        // erstes Element (Index: 0)
+        // first element (index 0)
         double vor = en.nextElement(); 
         
         while( en.hasMoreElements() ) {
@@ -245,30 +242,29 @@ public class ReturnIntervallStatistik2 {
     
     
     /**
-     * bleibt über den gesamten Lauf erhalten ...
+     * kept for the whole run
      */
     public static HaeufigkeitsZaehler anzRowRAW = new HaeufigkeitsZaehler("length of rows (raw)");
     public static HaeufigkeitsZaehler anzRowsFILTERED = new HaeufigkeitsZaehler("length of rows (filtered, offset="+ReturnIntervallStatistik2.offset+"h)");
 
     /** 
-     * Ein Vector mit "Wiederkehrzeiten" wird hinzugefügt.
+     * Adds a vector of return intervals.
      * 
-     * Es erfolgt die Einsortierung in das Binning, und eine 
-     * sofortige Normierung mit Rq.
+     * The intervals are sorted into the bins and scaled with Rq
+     * at once.
      * 
-     * Zuvor wird das vorhandene Array geleert.
+     * The existing array is cleared first.
      * 
      **/
     int cutOff = 0;
     public int anzFiltered = 0;
     public void addDistData( Vector dists ) throws Exception {
         if ( this.isContainerInstanz ) {
-            throw new Exception("[RIS] ist eine Container-Instanz!");
+            throw new IllegalStateException("addDistData: " + name + " is a container; add intervals to a result that is not a container");
         }
         
         if ( debug ) {
-            System.out.println( 
-                    ">>> n=" + dists.size() + " Intervalle einfügen ...");
+            LOG.debug("adding intervals result={} intervals={}", name, dists.size());
         }
         
         long anzahlVor = (long)dists.size();
@@ -288,7 +284,7 @@ public class ReturnIntervallStatistik2 {
                 dataRawFILTERED.add( da );
             }
             else {
-                System.out.println("  Filtered: =>  (offset="+offset+") " + da  );
+                LOG.debug("filtered interval result={} interval={} offset={}", name, da, offset);
                 cutOff++;
             }
         }
@@ -305,9 +301,7 @@ public class ReturnIntervallStatistik2 {
         
         
         if ( debug ) {
-            System.out.println( 
-                    ">>> n_cutoff=" + cutOff + 
-                    " Intervalle zu klein (offset:="+offset+")");
+            LOG.debug("filtered intervals result={} cutOff={} offset={}", name, cutOff, offset);
         }
    
         
@@ -318,7 +312,7 @@ public class ReturnIntervallStatistik2 {
         double sumRq_alt = 0.0;
         int anzRq_alt =0;
         
-        // Rq_alt für Daten ermitteln ...
+        // Rq of all intervals
         Enumeration enUM_Rq_alt = dists.elements();
         while( enUM_Rq_alt.hasMoreElements() ) {
             double v = (Double) enUM_Rq_alt.nextElement();
@@ -327,7 +321,7 @@ public class ReturnIntervallStatistik2 {
         }
         double Rq_alt = sumRq_alt /(1.0*anzRq_alt);
         
-        // Rq_neu für die gefilterten Daten ermitteln ...
+        // Rq of the filtered intervals
         double sumRq_filteres = 0.0;
         int anzRq_filterd = 0;
         Enumeration enUM_Rq_filteres = dataRawFILTERED.elements();
@@ -339,16 +333,15 @@ public class ReturnIntervallStatistik2 {
         double Rq_filtered = sumRq_filteres/(1.0*anzRq_filterd);
         zElements = anzRq_filterd;
        
-        if ( debug ) System.out.println("### INFLUENCE of the filter:  R_q_alt=" + Rq_alt + "\tR_q_neu=" + Rq_filtered );
+        if ( debug ) LOG.debug("mean interval result={} rqAll={} rqFiltered={}", name, Rq_alt, Rq_filtered);
         _Rq = Rq_filtered;
 
         
         
         
-        // SKALIERTEN WERT zaehlen ... hier wird mit Rq_neu normiert ... 
-        // es werden die gefilterten Daten benutzt.
+        // count the intervals scaled with Rq
         Enumeration en = dataRawNOT_FILTERED.elements();
-        if ( debug ) System.out.println("### process " + dataRawFILTERED.size() + " : " + dataRawFILTERED.subList(0, 10) );
+        if ( debug ) LOG.debug("counting intervals result={} intervals={}", name, dataRawFILTERED.size());
         
         while( en.hasMoreElements() ) {
              
@@ -361,10 +354,10 @@ public class ReturnIntervallStatistik2 {
              int index = (int)v;
              
              if ( index >= dataSKALIERT.length ) index = dataSKALIERT.length-1;
-             dataSKALIERT[index]++;  // hochzählen ...             
+             dataSKALIERT[index]++;
         }
         
-        // Mittelwert der Wahrscheinlichkeiten berechnen ...
+        // probability of each bin
         for( int i = 0; i < probSKALIERT.length; i++ ) { 
             probSKALIERT[i] = (double)( dataSKALIERT[i] / (double)zElements );
         }              
@@ -373,12 +366,13 @@ public class ReturnIntervallStatistik2 {
     double epsilon = 1e-6; 
     
     public static void logLineToFile( String key, String line ) { 
+        LOG.debug("log line key={} line={}", key, line.strip());
     }
     
     public void calcMessreihen() throws Exception {
         if ( this.isContainerInstanz ) { 
             calcContainerMR();
-            System.out.println( "*** calc rows in RIS ...");
+            LOG.debug("computed distributions container={}", name);
         
         }
         else { 
@@ -395,22 +389,13 @@ public class ReturnIntervallStatistik2 {
             if ( dataSKALIERT[i] != 0 ) {
                 double vx = ((double)i + 0.5) * (double)scale / (double)binning;
                 double vy = probSKALIERT[i] / (double)dataSKALIERT[i];
-                try {
-                    if ( vy != 0.0 ) {
-                        double logVy = vy; // Math.log(vy);
-                        if ( Double.isInfinite( logVy ) || Double.isNaN( logVy ) ) {
-                            System.err.println("ERROR 2:" + vx + "\t" + vy + "\t" );
-                            
-                        }
-                        else {
-                            mrVerteilungSkaliert.addValuePair( vx, logVy );
-                        }
-                    }    
-                    
-                }
-                catch(Exception ex) {
-                    System.err.println("ERROR 1:" + vx + "\t" + vy + "\t" );
-                    
+                if ( vy != 0.0 ) {
+                    if ( Double.isInfinite( vy ) || Double.isNaN( vy ) ) {
+                        LOG.debug("skipped bin without a finite value container={} x={} y={}", name, vx, vy);
+                    }
+                    else {
+                        mrVerteilungSkaliert.addValuePair( vx, vy );
+                    }
                 }
             }
         }
@@ -421,7 +406,7 @@ public class ReturnIntervallStatistik2 {
 
         double summe = 0.0;
         
-        // für jedes BIN i
+        // for every bin i
         for (int i = 0; i < data.length; i++) {
 
             double relAnzahl = 0.0;
@@ -444,7 +429,7 @@ public class ReturnIntervallStatistik2 {
             summe = summe + relAnzahl;
            
             
-        // erste Werte weglassen ....
+        // leave out the first values
         if ( i >= (offset*scale / _Rq) ) { 
                 
           anzahlProSpalte = dataSKALIERT[i];
@@ -455,10 +440,7 @@ public class ReturnIntervallStatistik2 {
         }
         }
         if ( debug ) {
-            System.out.println(
-               "(a) Anzahl Elemente=" + this.zElements);
-            System.out.println(
-               "(b) Rq=" + _Rq + "\t summe=" + summe );    
+            LOG.debug("distribution result={} intervals={} rq={} sum={}", name, this.zElements, _Rq, summe);
         }
     }
     
@@ -483,14 +465,14 @@ public class ReturnIntervallStatistik2 {
     Vector<TimeSeriesObject> v2 = new Vector<TimeSeriesObject>();
     
     private void showVerteilungen() {
-        // Verteilungen
+        // distributions
         if ( !this.isContainerInstanz ) v1.add( this.mrVerteilung);
         v1.add( this.mrVerteilungSkaliert);        
     }
 
 
     private void showRawData() {
-        // Rohdaten (Intervalle)
+        // raw data (intervals)
         TimeSeriesObject mr = new TimeSeriesObject( this.name + " (rawdata) " + dataRawFILTERED.size() );
         for( double y: this.dataRawFILTERED ) {
             mr.addValue(y);
@@ -508,9 +490,9 @@ public class ReturnIntervallStatistik2 {
         sb.append("\n#---------------------\n# " +
                  label + "\n#---------------------\n");
         sb.append("# Rq            =" + _Rq + "\n");
-        sb.append("# Anzahl-Werte  =" + zElements + "\n");
+        sb.append("# Values        =" + zElements + "\n");
         sb.append("# Binning       =" + binning + "\n" );
-        sb.append("# [ --- Häufigkeit --- ]" );
+        sb.append("# [ --- frequency --- ]" );
         mrHaeufigkeit.setLabel(sb.toString());
         return mrHaeufigkeit.toString();
     }
@@ -521,10 +503,10 @@ public class ReturnIntervallStatistik2 {
         sb.append("\n#---------------------\n# " +
                  label + "\n#---------------------\n");
         sb.append("# Rq            =" + _Rq + "\n");
-        sb.append("# Anzahl-Werte  =" + zElements + "\n");
+        sb.append("# Values        =" + zElements + "\n");
         sb.append("# Binning       =" +binning + "\n" );
         sb.append("# Scale         =" +scale + "\n" );
-        sb.append("# [ --- Verteilung --- ]" );
+        sb.append("# [ --- distribution --- ]" );
         mrVerteilung.setLabel(sb.toString());
         return mrVerteilung.toString();
     }
@@ -537,8 +519,7 @@ public class ReturnIntervallStatistik2 {
         fw.close();
 
         if ( verbose ) { 
-            System.out.println(
-               "\n>>> RIS-Data:\n" + mrVerteilung.toString() );
+            LOG.debug("stored distribution result={} file={} bins={}", name, folder + label, mrVerteilung.xValues.size());
         }
     };
 
@@ -561,7 +542,7 @@ public class ReturnIntervallStatistik2 {
     static Vector<TimeSeriesObject> mrv2B = null;
     static Vector<TimeSeriesObject> mrvB = null;
 
-    static int maxB = 5; // anzahl der Input-Files
+    static int maxB = 5; // number of input files
     static int maxROWS = -1; // default -1
     
     public static String logFileNames[] = null;
@@ -692,15 +673,14 @@ public class ReturnIntervallStatistik2 {
         addRowB(m);
         
         Vector<Double> data1 = m.yValues;
-        System.out.println( m.yValues.size() );
+        LOG.debug("adding row series={} values={}", m.label, m.yValues.size());
         
         ReturnIntervallStatistik2 ris1 = new ReturnIntervallStatistik2( 
                m.getLabel() , binning, scale);
                        
         
-        // die Distancen sind nun hinzugefügt ....
         double rq = ris1.calcAverageOfDist(data1);
-        System.out.println( "RQ : " + rq );
+        LOG.debug("mean interval series={} rq={}", m.label, rq);
         
         ris1.addDistData(data1);
         ris1.calcMessreihen();

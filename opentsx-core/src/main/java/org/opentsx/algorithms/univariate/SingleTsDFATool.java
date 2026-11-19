@@ -5,11 +5,8 @@ import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.core.SingleRowTSO;
 import org.opentsx.algorithms.detrending.SingleDFATool;
 
-import java.io.IOException;
 import java.io.Writer;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -35,23 +32,12 @@ public class SingleTsDFATool extends SingleRowTSO {
 
         String line = "\t";
    
-        // NORMALISIEREN
+        // normalize
         TimeSeriesObject normalized1 = MRT.normalizeByPeriodeTrend(reihe, 24*7 );
-        
-        /**
-         * 
-         * Collect in CONTAINER per FLAG steuern ...
-         * 
-         */
         
         Vector<TimeSeriesObject> vmr_raw = new Vector<TimeSeriesObject>();
         Vector<TimeSeriesObject> vmr_norm = new Vector<TimeSeriesObject>();
         
-        //*********
-        // TODO
-        //
-        // DFA orders could be initialized via GLOBAL Parameter ...
-        //
         int[] orders = {2};
         
         vmr_raw.add( reihe );
@@ -59,41 +45,29 @@ public class SingleTsDFATool extends SingleRowTSO {
         
         
         for ( int ord : orders) {
-            try {
-                
-                if ( doDFA_on_normalized_data ) {
-                    SingleDFATool tool1 = new SingleDFATool();
-                    tool1.logLogResults = true;
+            if ( doDFA_on_normalized_data ) {
+                SingleDFATool tool1 = new SingleDFATool();
+                tool1.logLogResults = true;
 
-                    Vector<TimeSeriesObject> mFS = tool1.runDFA(vmr_norm, ord);
-                    String trends1 = tool1.getAlphas();
-                    line = line.concat(  "\t t1 :" + trends1 );
+                tool1.runDFA(vmr_norm, ord);
+                String trends1 = tool1.getAlphas();
+                line = line.concat(  "\t t1 :" + trends1 );
 
-                }
-                
-                if( doDFA_on_raw_data ) {
-                    SingleDFATool tool2 = new SingleDFATool();
-                    tool2.logLogResults = true;
-
-                    Vector<TimeSeriesObject> mFS2 = tool2.runDFA(vmr_raw, ord);
-                    String trends2 = tool2.getAlphas();
-                    
-                    line = line.concat(  "\t t2: " + trends2 );
-                }    
-  
             }
-            catch (Exception ex) {
-               ex.printStackTrace();
+
+            if( doDFA_on_raw_data ) {
+                SingleDFATool tool2 = new SingleDFATool();
+                tool2.logLogResults = true;
+
+                tool2.runDFA(vmr_raw, ord);
+                String trends2 = tool2.getAlphas();
+
+                line = line.concat(  "\t t2: " + trends2 );
             }
         }
 
-        try {
-            fw.write( reihe.getLabel() + " " + reihe.summeY() + line + "\n" );
-            fw.flush();
-        } 
-        catch (IOException ex) {
-            Logger.getLogger(SingleTsDFATool.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        fw.write( reihe.getLabel() + " " + reihe.summeY() + line + "\n" );
+        fw.flush();
         
         return reihe;
         

@@ -10,10 +10,13 @@ import org.opentsx.data.loader.util.LineFilter;
 import org.opentsx.data.loader.util.TSValueCalculator;
 import org.opentsx.data.series.TimeSeriesObject;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
@@ -181,6 +184,44 @@ class MessreihenLoaderTest {
                 e.getMessage());
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"logBinnedByWidth", "logBinnedByWidthFiltered"})
+    void aLogBinnedByWidthFileWithoutDataLinesFailsNamingTheFile(String method) throws IOException {
+        File file = write("comment.csv", "# only a comment\n");
+        MessreihenLoader loader = MessreihenLoader.getLoader();
+        Executable load = method.equals("logBinnedByWidth")
+                ? () -> loader._loadLogBinnedMessreihe_DIV_BY_BINWIDTH(file, 1, 2, 2.0, 10.0)
+                : () -> loader._loadLogBinnedMessreihe_DIV_BY_BINWIDTH(file, 1, 2, 2.0, 10.0, ";", null);
+        String delimiter = method.equals("logBinnedByWidth") ? "," : ";";
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, load);
+        assertEquals(file + ": the file has no data lines; expected at least one line with 2 columns separated by \""
+                + delimiter + "\"", e.getMessage());
+    }
+
+    @Test
+    void theSkippedShareOfALogBinnedLoadIsLoggedAsAPercentage() throws IOException {
+        File file = write("binned.csv", "1.5,1\n2.5,1\n3.5,1\n100,1\n");
+        String err = stderrOf(() -> MessreihenLoader.getLoader()._loadLogBinnedMessreihe(file, 1, 2, 2.0, 10.0));
+        assertTrue(err.contains("used=3 skipped=1 skippedPercent=25.0"), err);
+    }
+
+    @Test
+    void loadingWritesNothingToStandardOutput() throws IOException {
+        File binned = write("binned.csv", "1.5,1\n2.5,1\n100,1\n");
+        File labels = write("labels.csv", "# c\n\na_b,1.5,2\n");
+        MessreihenLoader loader = MessreihenLoader.getLoader();
+        String out = stdoutOf(() -> {
+            loader._loadLogBinnedMessreihe(binned, 1, 2, 2.0, 10.0);
+            loader._loadLogBinnedMessreihe_DIV_BY_BINWIDTH(binned, 1, 2, 2.0, 10.0);
+            loader._loadLogBinnedMessreihe_DIV_BY_BINWIDTH(binned, 1, 2, 2.0, 10.0, ",", null);
+            loader.loadMessreihe_zr_SC(labels, 2, ",");
+            loader.loadMessreihe_For_LinkStrength(labels, 1, 2, 3, ",");
+            loader.loadMessreihe_For_LinkStrength(labels, 1, 2, columnMapper(), ",");
+            loader._loadMessreihe_For_FD(labels, valueMapper(), ",", false);
+        });
+        assertEquals("", out);
+    }
+
     @Test
     void aLoaderReadsAFileOfAnyName() throws IOException {
         File file = write("data.csv", "1 2\n3 4\n");
@@ -251,6 +292,30 @@ class MessreihenLoaderTest {
                 return "test mapper";
             }
         };
+    }
+
+    private static String stdoutOf(Runnable action) {
+        PrintStream original = System.out;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(captured, true, StandardCharsets.UTF_8));
+        try {
+            action.run();
+        } finally {
+            System.setOut(original);
+        }
+        return captured.toString(StandardCharsets.UTF_8);
+    }
+
+    private static String stderrOf(Runnable action) {
+        PrintStream original = System.err;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        System.setErr(new PrintStream(captured, true, StandardCharsets.UTF_8));
+        try {
+            action.run();
+        } finally {
+            System.setErr(original);
+        }
+        return captured.toString(StandardCharsets.UTF_8);
     }
 
     private File write(String name, String text) throws IOException {

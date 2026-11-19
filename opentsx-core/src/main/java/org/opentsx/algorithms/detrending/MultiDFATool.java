@@ -6,28 +6,33 @@ import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.generator.TestDataFactory;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.algorithms.detrending.methods.IDetrendingMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
- * Das MultiDFA-Tool berechnet für eine Menge von Zeitreihen, die z.B. zu
- * einer bestimmten Klasse gehÃ¶ren die DFA einzeln.
+ * Runs the DFA of every series of a group, for example a class of series.
  *
- * Ausserdem wird fÃ¼r jede Fensterbreite s die Summe von (x-schlange)^2
- * und die Anzahl der betrachteten Segmente ermittelt.
- *
- * Am Ende wird fÃ¼r alle s aus allen BeitrÃ¤gen der unterschieliche langen
- * Zeitreihen ein F(s) bestimmt.
+ * For every window size s it also sums (x tilde)^2 and counts the segments,
+ * so the end result is one F(s) for all contributions of the series of
+ * different length.
  *
  * @author kamir
  */
 public class MultiDFATool {
 
+    private static final Logger LOG = LoggerFactory.getLogger(MultiDFATool.class);
+
     TimeSeriesObject finalFS = null;
 
+    double alpha = Double.NaN;
+
+    /**
+     * The folder the F(s) file of every series is written to, ending with a separator.
+     */
+    public String savePath = "/Volumes/MyExternalDrive/CALCULATIONS/data/out/";
 
     public static void main(String[] main) {
 
@@ -44,21 +49,19 @@ public class MultiDFATool {
             TimeSeriesObject mr = TestDataFactory.getDataSeriesRandomValues_RW(length[i]);
             mr.setLabel("R" + i + " [" + length[i] + "]");
             vmr.add(mr);
-        }  // nun liegen verschieden Lange Testreihen vor ...
+        }
 
-        // nun werden die Berechnungen fÃ¼r verschiedene Ordnungen durchgefÃ¼hrt
-
-         tool.runDFA(vmr, 2);
+        tool.runDFA(vmr, 2);
+        System.out.println("alpha=" + tool.alpha);
     }
 
 
     IDetrendingMethod dfa;
-            // Für alle s wird am Ende ein Fluctuationsfunktion Ã¼ber alle Reihen
-        // bestimmt
-        Vector<TimeSeriesObject> Fs = new Vector<TimeSeriesObject>();
-        Vector<Integer> s = new Vector<Integer>();
-        
-    // FÃ¼r eine Klasse von Messreiehn wird die DFA einer Ordnung berechnet.
+    // one fluctuation function over all series for every s
+    Vector<TimeSeriesObject> Fs = new Vector<TimeSeriesObject>();
+    Vector<Integer> s = new Vector<Integer>();
+
+    // the DFA of one order for a class of series
     public void runDFA(TimeSeriesObject[] mr, int order) {
         Vector<TimeSeriesObject> vmr = new Vector<TimeSeriesObject>();
         for( TimeSeriesObject m : mr ) {
@@ -66,51 +69,31 @@ public class MultiDFATool {
         }
         runDFA(vmr, order);
     }    
-    // FÃ¼r eine Klasse von Messreiehn wird die DFA einer Ordnung berechnet.
+    // the DFA of one order for a class of series
     public void runDFA(Vector<TimeSeriesObject> vmr, int order) {
 
         dfa = DetrendingMethodFactory.getDetrendingMethod(order);
 
-        // s bestimmen ...
-        int zahlS = 0;
-        
-        // die laengste ZR bestimmt unsere EInteilung von s ...
+        // the longest series sets the window sizes s
         TimeSeriesObject lang = null;
+        int longest = 0;
         for (int z = 0; z < vmr.size(); z++) {
 
             TimeSeriesObject mr = vmr.elementAt(z);
-            if ( mr.xValues.size() > zahlS ) {
-                zahlS = mr.xValues.size(); 
+            if ( mr.xValues.size() > longest ) {
+                longest = mr.xValues.size();
                 lang = mr;
             }
             
         }
-        System.out.println("> Längste Reihe = " + zahlS );
-        zahlS = calcNrOf_s(lang, order);
-        System.out.println("> Anzahl(s)     = " + zahlS );
+        int zahlS = calcNrOf_s(lang, order);
+        S = dfa.getS().clone();
+        LOG.debug("window sizes series={} longest={} windows={}", vmr.size(), longest, zahlS);
 
-        String savePath = "/Volumes/MyExternalDrive/CALCULATIONS/data/out/";
-        
-
-        double fit_min = 1, fit_max = 2;  // willkürliche Festlegung
-        double alpha_cor_min = 0.0;  // zu klÃ¤ren was hier gemeint ist !!!
-
-        System.out.println("> Berechne DFA für " + vmr.size() + " Messreihen.");
-        StringBuffer info = new StringBuffer("> Infos zur DFA-Rechnung");
-        info.append("\nnr.\t| file\t| save path");
-
-
-
-        // je Zeitreihe wird ein alpha bestimmt ....
-        double[] alpha = new double[vmr.size()];
-
-        // für jedes s wird eine Summe ( xs^2 ) bestimmt und die Anzahl der
-        // Segmente anzw
-        double[] FS_ = new double[ zahlS ];
+        // the sum of xs^2 and the number of segments anzw for every s
         double[] anzw_ = new double[ zahlS ];
         double[] sum_xs_xs_ = new double[ zahlS ];
 
-        // Schleife über alle Zeitreihen dieser Klasse
         for (int z = 0; z < vmr.size(); z++) {
 
             TimeSeriesObject mr = null;
@@ -125,19 +108,18 @@ public class MultiDFATool {
                 // set values for windowsizes (s) ...
                 dfa.initIntervalSlog();
                 
-                if ( mr.equals(lang)) showS();
-                // set input data (zr=zeitreihe)
+                // set input data
                 dfa.setZR(zr);
                 // start dfa calculation
                 dfa.calc();
                 // get results ...
-                dfa_results = dfa.getResults();  // Funktion F(s),
+                dfa_results = dfa.getResults();  // F(s)
 
                 /*
                 F[0][s_pos] = s[s_pos];
                 F[1][s_pos] = anzw;
                 F[2][s_pos] = FS;
-                F[3][s_pos] = FSUM ==> SUMME(xs^2);
+                F[3][s_pos] = FSUM ==> sum of xs^2;
                  */
 
                 TimeSeriesObject res_mr = new TimeSeriesObject();
@@ -146,37 +128,28 @@ public class MultiDFATool {
                 res_mr.setAddinfo(
                         " alpha_fit_min:    " + dfa.getAlphaFitMin()
                         + "\n# alpha_fit_max: " + dfa.getAlphaFitMax()
-                        + "#\n DFA-Ordnung:   " + dfa.getPara().getGradeOfPolynom());
+                        + "#\n DFA order:   " + dfa.getPara().getGradeOfPolynom());
 
-
-                System.out.println( ">>>" + dfa_results[1].length + " Werte in dfa_RESULTS[1] ..." + anzw_.length);
-                
-           
                 for (int i = 0; i < dfa_results[1].length; i++) {
-                    // Ergebnis der einzelnen Reihe erfassen und Speichern ...
+                    // the result of this series
                     res_mr.addValuePair(Math.log10(dfa_results[0][i]), Math.log( dfa_results[2][i] ));
 
-                    // Teilergebnis in den Container übergeben.
-                    anzw_[i] = anzw_[i] + dfa_results[1][i];  // Anzahl
+                    // the contribution to the result of all series
+                    anzw_[i] = anzw_[i] + dfa_results[1][i];
                     sum_xs_xs_[i] = sum_xs_xs_[i] + dfa_results[3][i];
                 }
 
                 String dfaFilesPath = savePath + (z + 1) + "_dfa" + dfa.getPara().getGradeOfPolynom() + ".txt";
                 File dfaFile = new File(dfaFilesPath);
-                res_mr.writeToFile(dfaFile); // TimeSeriesObject schreiben
+                res_mr.writeToFile(dfaFile);
 
-                //save alphas to file
-                info.append("\n-----------------------------------------------------------------------------------");
-                info.append("\n" + (z + 1) + "\t| " + vmr.elementAt(z).getLabel() + "\t| " + dfaFilesPath);
+                LOG.debug("wrote DFA file series={} file={}", labelstr, dfaFilesPath);
                 Fs.add(res_mr);
             }
         }
 
-        
-        
-
-        // und nun sammeln wir die Werte ein und berechnen ein Fs
-        TimeSeriesObject finalFS = new TimeSeriesObject();
+        // collect the values into one F(s)
+        finalFS = new TimeSeriesObject();
         TimeSeriesObject finalZ = new TimeSeriesObject();
         for (int i = 0; i < zahlS; i++) {
             finalFS.addValuePair( Math.log10( S[i] ) , Math.log10( Math.sqrt( sum_xs_xs_[i] / anzw_[i] )));
@@ -191,44 +164,27 @@ public class MultiDFATool {
 
         Vector<TimeSeriesObject> fsF2 = new Vector<TimeSeriesObject>();
         fsF2.add(finalZ);
-        MultiChart.open(fsF2, "Anzahl Segmente je s [order:" + order + "] (all rows)", "s", "z", true, "?", null);
+        MultiChart.open(fsF2, "Segments per s [order:" + order + "] (all rows)", "s", "z", true, "?", null);
 
-        System.out.println(info.toString());
-
-        SimpleRegression reg = null;
+        SimpleRegression reg;
         try {
             reg = finalFS.linFit(1.0, 3.0);
-            System.out.println( "alpha=" + reg.getSlope() );
-        } 
+        }
         catch (Exception ex) {
-            Logger.getLogger(MultiDFATool.class.getName()).log(Level.SEVERE, null, ex);
-            ex.printStackTrace();
-        }        
-
+            throw new IllegalStateException("runDFA: cannot fit alpha to log F(s) for log s from 1 to 3 (" + ex + ")", ex);
+        }
+        alpha = reg.getSlope();
+        LOG.debug("fitted alpha series={} order={} alpha={}", vmr.size(), order, alpha);
     }
 
+    /**
+     * Returns the number of window sizes of the DFA of the series and leaves them in the detrending method.
+     */
     public int calcNrOf_s(TimeSeriesObject mr, int order) {
-        int s_start = Math.abs( order ) + 2 ;
-        int s_end = mr.xValues.size() / 4;
-
-        int lin_steps= dfa.getPara().log_start-s_start;//first steps linear
-        int log_steps=0;
-
-        double tmp=0;
-        for (double i=dfa.getPara().log_start*dfa.getPara().logScaleFactor; Math.round(i) < s_end; i=i*dfa.getPara().logScaleFactor) {//      adding number of steps of log scale
-
-            if(Math.round(i)!=tmp){
-                tmp=Math.round(i);
-                log_steps++;
-            }
-        }
-
-
-        return lin_steps+log_steps;
+        dfa.setNrOfValues(mr.xValues.size());
+        dfa.initIntervalSlog();
+        return dfa.getS().length;
     };
 
     int[] S = null;
-
-    private void showS() {
-    }
 }

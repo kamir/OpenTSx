@@ -1,22 +1,18 @@
 /**
- * Werte der X-Achse werden zwischen min und max in n Bereiche eingeteilt.
- * Alle in diesem Bereich liegenden Werte werden gemittelt und einem
- * P'(x',y') zugeordnet.
- * 
- * Man kann eine Gerade festlegen und dann noch getrennte Kurven ermitteln,
- * für alle Punkte oberhalb und unterhalb der Gerade.
- * 
- * es gibt dann die Messreihen: 
- *  
- *     - Originaldaten-TimeSeriesObject mr
- * (    - X-Errors  )
- * (    - Y-Errors. )
- *  
- * 
- * 
- * 
+ * Splits the x axis between min and max into n ranges. The values in a range
+ * are averaged into one point P'(x',y').
+ *
+ * With a line, separate curves are computed for the points above and below
+ * the line, so there are the series:
+ *
+ *     - the original TimeSeriesObject mr
+ * (    - X errors  )
+ * (    - Y errors  )
  */
 package org.opentsx.data.series;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Enumeration;
 
@@ -25,6 +21,8 @@ import java.util.Enumeration;
  * @author kamir
  */
 public class AveragedMessreihe {
+
+    private static final Logger LOG = LoggerFactory.getLogger(AveragedMessreihe.class);
     
     public TimeSeriesObject mrLAST = null;
     public TimeSeriesObject mrOriginal = null;
@@ -50,7 +48,7 @@ public class AveragedMessreihe {
         
     public AveragedMessreihe( TimeSeriesObject mr ) {
         
-        mrOriginal = mr; // darauf bezieht sich auch immer die TRENNUNG Oben / Unten
+        mrOriginal = mr; // the split above and below always refers to this series
         
         mrBinned = new TimeSeriesObject[3];
         
@@ -91,7 +89,7 @@ public class AveragedMessreihe {
             xc = (Double)toSplit.xValues.elementAt(i);
             yc = (Double)toSplit.yValues.elementAt(i);
             
-            // Container ermitteln ...
+            // the range of the value
             int j = (int)( x / dx );
             
             if ( isOben(x, y) ) {
@@ -100,15 +98,15 @@ public class AveragedMessreihe {
             if ( isUnten(x, y) ) {
                 ouIndex = 2;
             }
-            try {
+            if ( j < 0 || j >= vY.length ) {
+                LOG.debug("skipped value outside the ranges series={} x={} ranges={}", mrOriginal.getLabel(), x, vY.length);
+            }
+            else {
                 vY[j][ouIndex] = vY[j][ouIndex] + yc;            
                 zX[j][ouIndex] = zX[j][ouIndex] + 1;
                 
                 vY[j][0] = vY[j][0] + yc;            
                 zX[j][0] = zX[j][0] + 1;
-            }
-            catch( Exception ex) { 
-                System.out.println( "a" );
             }
             i++;
         }

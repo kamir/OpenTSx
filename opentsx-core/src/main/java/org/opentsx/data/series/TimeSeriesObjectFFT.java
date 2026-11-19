@@ -15,6 +15,8 @@ import org.apache.commons.math3.transform.TransformType;
 import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.generator.RNGWrapper;
 import org.jfree.data.xy.XYSeries;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.DateFormat;
 import java.text.DecimalFormat;
@@ -22,6 +24,8 @@ import java.util.*;
 
 
 public class TimeSeriesObjectFFT extends TimeSeriesObject {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TimeSeriesObjectFFT.class);
     
     public TimeSeriesObjectFFT getPhaseRandomizedModifiedFFT_MULTIPLY_RANDOM_INV( ) {
         return getPhaseRandomizedModifiedFFT_MULTIPLY_RANDOM_INV(new Random());
@@ -184,7 +188,9 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
 
         sb.append("#\n# Time series \n# Class : " + getClass() + " \n# Label  : " + this.label + "\n#\n# Number of value pairs = " + size + "\n#\n");
         sb.append("#\n#" + this.addinfo + "\n#\n");
-        sb.append(getStatisticData("# "));
+        if (size > 0) {
+            sb.append(getStatisticData("# "));
+        }
         sb.append("\n");
         for (int i = 0; i < size; i++) {
             double x = ((Double) getXValues().elementAt(i)).doubleValue();
@@ -426,7 +432,7 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
     }
 
     public TimeSeriesObject diff(TimeSeriesObject mr2) {
-        System.out.println("Difference in value counts: " + (this.yValues.size() - mr2.yValues.size()));
+        LOG.debug("diff series={} other={} valueCountDifference={}", label, mr2.label, this.yValues.size() - mr2.yValues.size());
         double difff = 0.0D;
         TimeSeriesObject mr = new TimeSeriesObject();
 
@@ -719,7 +725,7 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
             double mean = mr.getAvarage();
             if (c > 0) {
                 mr.addComment(c + " missing values replaced with mean=" + mean + ".");
-                System.out.println(mr.getLabel() + " >>> " + c + " missing values replaced with mean=" + mean + ".");
+                LOG.debug("split filled missing values series={} missing={} mean={}", mr.getLabel(), c, mean);
                 for (int d = 0; d < c; d++) {
                     mr.addValue(mean);
                 }
@@ -774,7 +780,7 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
     }
 
     public void checkKonsistenz() {
-        System.out.println(this.xValues.size() + " " + this.yValues.size());
+        LOG.debug("value counts series={} x={} y={}", label, this.xValues.size(), this.yValues.size());
     }
 
     public void show() {
@@ -845,50 +851,13 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         double c0_R = c[0].getReal();
         double c0_I = c[0].getImaginary();
         
-        System.out.println("> L    = " + data2.length + " (time series length)" );
-        System.out.println("> L_exp= " + data.length + " (padded)" );
-        System.out.println("> N    = " + N + " (number of coefficients)" );
-        
-        System.out.println("> SR   = " + samplingRate + " samples/s; // sampling rate" );
-        
-        System.out.println("> t    = " + ( N/samplingRate) + " s");
-        
-        System.out.println("> c[0]= ( " + c0_R + ", i*" + c0_I + ")");
-
-        double c1_R = c[1].getReal();
-        double c1_I = c[1].getImaginary();
-        
-        System.out.println("> c[1]= ( " + c1_R + ", i*" + c1_I + ")");
-
-        double caNN_R = c[((int) (N / 2.0D) - 1)].getReal();
-        double caNN_I = c[((int) (N / 2.0D) - 1)].getImaginary();
-        System.out.println("> c[N/2  -  1]= ( " + caNN_R + ", i*" + caNN_I + ")  ");
-
-        double cNN_R = c[(int) (N / 2.0D)].getReal();
-        double cNN_I = c[(int) (N / 2.0D)].getImaginary();
-        System.out.println("> c[N/2]= ( " + cNN_R + ", i*" + cNN_I + ")  [Nyquist component]");
-
-        double cbNN_R = c[((int) (N / 2.0D) + 1)].getReal();
-        double cbNN_I = c[((int) (N / 2.0D) + 1)].getImaginary();
-        System.out.println("> c[N/2  +  1]= ( " + cbNN_R + ", i*" + cbNN_I + ")  ");
-
-        double cbNNa_R = c[(int) (N - 2.0D)].getReal();
-        double cbNNa_I = c[(int) (N - 2.0D)].getImaginary();
-        System.out.println("> c[N-1]= ( " + cbNNa_R + ", i*" + cbNNa_I + ")  ");
-
-        double cN_R = c[(int) (N - 1.0D)].getReal();
-        double cN_I = c[(int) (N - 1.0D)].getImaginary();
-        System.out.println("> c[N]= ( " + cN_R + ", i*" + cN_I + ")");
-
-        
         double fmin = 0;
         double fmax = 0.5D * samplingRate;
 
         double df = fmax / ( N * 0.5 );
-        
-        System.out.println("N=" + N + "; f_max=" + fmax + "; f_min=" + fmin + "; df=" + df);
 
-        System.out.println("\n>f_max=" + fmax + "; \n>f_min=" + fmin + "; \n>df=" + df);
+        LOG.debug("transformed series={} length={} padded={} coefficients={} samplingRate={} c0={} nyquist={} fMin={} fMax={} df={}",
+                aThis.getLabel(), data2.length, data.length, N, samplingRate, c[0], c[(int) (N / 2.0D)], fmin, fmax, df);
 
         rFFT.addValuePair(0, c0_R );
         
@@ -980,7 +949,7 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         int z_max = (int) Math.pow(2.0D, i * 1.0D);
 
         
-        System.out.println("l=" + i + " z_min=" + z_min + " z_max=" + z_max + " padded with 0.0: " + (z_max - z));
+        LOG.debug("padded to a power of 2 length={} padded={} zeros={}", z, z_max, z_max - z);
         
         double[] back = new double[z_max];
         for (int a = 0; a < z_max; a++) {

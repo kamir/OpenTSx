@@ -22,6 +22,21 @@ This is the original OpenTSx library. It works on `TimeSeriesObject` and TSBucke
   interface.
 * **v2 data:** convert episodes with `opentsx-legacy-bridge`.
 
+## Read the diagnostics
+
+The library classes in `org.opentsx.data`, `org.opentsx.core` and `org.opentsx.algorithms` write nothing to standard
+output. A failing call throws an exception that names the input. Progress and intermediate values go to the SLF4J
+logger named after the class, at DEBUG, as one line per event in the form `<what happened> key=value`. A class with a
+public `debug` flag, such as `RISTool` or `DFACore`, logs some of these lines only while that flag is true.
+`bin/opentsx` puts `slf4j-simple` and `conf/simplelogger.properties` on the class path, so the default level is
+`info`. Raise the level of one class with a JVM system property:
+
+```bash
+java -Dorg.slf4j.simpleLogger.log.org.opentsx.data.loader.MessreihenLoader=debug -cp "$(bin/opentsx classpath opentsx-core)" <main class>
+```
+
+The `main` methods of the demo classes print their results to standard output.
+
 ## Normalize finite time series
 
 `TimeSeriesObject.normalizeToStdevIsOne` centers values and divides by their sample standard deviation.
@@ -79,7 +94,9 @@ opened, every method that uses it throws `IOException` with
 `<default file system URI>: cannot open the file system (<cause>)`. `createBucketWithRandomTS_sinus` writes a
 SequenceFile when `SKIP_WRITES` is false and `opentsx.demo.output.format` is not `csv`; in that case it throws and
 writes no CSV file instead. `_open`, `putMessreihe` and `close` throw the `IOException` of the writer, so opening a
-bucket under a regular file fails with a message that names that file.
+bucket under a regular file fails with a message that names that file. The `createBucket...` methods close their
+SequenceFile or CSV writer when a series cannot be written, so the series written before the failure can be loaded.
+`SingleRowTSO` and the `SingleTs...Tool` operations throw the `IOException` of their result writer.
 
 ## Check bucket workflow support
 
@@ -138,7 +155,11 @@ logarithm is labelled `ln` and records the prefix `LN_`.
 
 `toString()` formats x and y with the patterns of the series, `0.00000` by default. `setDecimalFomrmatX(pattern)` and
 `setDecimalFomrmatY(pattern)` change only the series they are called on. The constants `TimeSeriesObject.dfx`,
-`dfy` and `dfstat` hold the default pattern.
+`dfy` and `dfstat` hold the default pattern. The text of a series without values has no statistics block.
+
+`getStatisticData(table)` and `getStatisticData(prefix)` summarize x and y. A series without values throws
+`IllegalStateException` with `getStatisticData: the series <label> has no values; expected at least 1 value`. A value
+that cannot be read, such as a missing y value, throws the exception of that value.
 
 ## Compute the entropy in sliding windows
 
@@ -172,7 +193,7 @@ delimiter contains a comma. Errors stop the load:
 | column 1 without `_` in `loadMessreihe_zr_SC` | `IllegalArgumentException`: `<file>:<line>: "<token>" has no "_"; expected two labels joined by "_" in column 1` |
 | the mapper throws | `IllegalArgumentException`: `<file>:<line>: <mapper name> cannot read the line (<cause>); expected a line the mapper accepts` |
 | the mapper returns no date in `_loadMessreihe_For_FD` | `IllegalArgumentException`: `<file>:<line>: <mapper name> returned no date; expected a date for every line` |
-| no data line in `_loadLogBinnedMessreihe` | `IllegalArgumentException`: `<file>: the file has no data lines; expected at least one line with <n> columns separated by ","` |
+| no data line in `_loadLogBinnedMessreihe` or `_loadLogBinnedMessreihe_DIV_BY_BINWIDTH` | `IllegalArgumentException`: `<file>: the file has no data lines; expected at least one line with <n> columns separated by "<delimiter>"` |
 | missing or unreadable file | `UncheckedIOException`: `<file>: cannot read the file (<cause>)` |
 
 ## Test for normality and Granger causality
@@ -225,8 +246,8 @@ is not a whole number throws `IllegalArgumentException` with
 ## Collect return intervals
 
 `RISTool.addDistData(intervals)` sorts the intervals into bins scaled with their mean R_q. It opens no window and
-writes nothing to standard output unless `RISTool.debug` is set. `add(result)` adds the probabilities of a single
-result to a container instance. Errors stop the call:
+writes nothing to standard output. `add(result)` adds the probabilities of a single result to a container instance.
+Errors stop the call:
 
 | Problem | Exception and message |
 |---------|-----------------------|
@@ -235,14 +256,83 @@ result to a container instance. Errors stop the call:
 | the binning differs | `IllegalArgumentException`: `add: <name> has <n> bins and <container> has <m>; expected the same binning and scale` |
 | an interval is 0 or negative while `RISTool.offset` is 0 | `IllegalStateException`: `addDistData: <n> intervals are 0 or negative; expected positive intervals while offset is 0` |
 | intervals are added to a container | `IllegalStateException`: `addDistData: <name> is a container; add intervals to a result that is not a container` |
+| `RISTool.projekt` is not set for a result with 2 to 1024 intervals | `IllegalStateException`: `add: RISTool.projekt is not set; set RISTool.projekt and RISTool.logFileNames and call RISTool.initRqMIN() before adding <name>, which has <n> intervals` |
+| `RISTool.logFileNames` holds fewer than 8 names | `IllegalStateException`: `add: RISTool.logFileNames has <n> names; set 8 names, one per interval range, before adding <name>, which has <n> intervals` |
+| `RISTool.initRqMIN()` was not called | `IllegalStateException`: `add: RISTool.rqMIN is not set; call RISTool.initRqMIN() before adding <name>, which has <n> intervals` |
+| `RISTool.initRqCollectors()` was not called while `RISTool.offset` is not 0 | `IllegalStateException`: `add: RISTool.debug1 is not set while RISTool.offset is <offset>; call RISTool.initRqCollectors() before adding <name>, which has <n> intervals` |
+| `RISTool.projekt` has no log of that name | `IllegalStateException`: `logLine: <folder> has no log named <log>; call createLogFile with that name first` |
+| a log line cannot be written | `UncheckedIOException`: `<log>: cannot write the log line (<cause>)` |
 
-`add` checks the container, the binning and the probabilities first, so a rejected result leaves the container
-unchanged and writes no log line. A result without intervals adds nothing. For a result with 2 to 1024 filtered
-intervals, `add` then writes one line per interval through `RISTool.projekt` to the log named in
-`RISTool.logFileNames` and compares each interval with `RISTool.rqMIN`. Set `RISTool.projekt` and
-`RISTool.logFileNames` and call `RISTool.initRqMIN()` first. Without them, `add` throws `NullPointerException`. When
-`RISTool.offset` is not 0, also call `RISTool.initRqCollectors()`: `add` counts an interval below `RISTool.rqMIN` in
-`RISTool.debug1`, which `initRqCollectors()` creates.
+`add` checks the container, the binning, the probabilities and the setup first, so a rejected result leaves the
+container unchanged and writes no log line. A result without intervals adds nothing. For a result with 2 to 1024
+filtered intervals, `add` then writes one line per interval through `RISTool.projekt` to the log named in
+`RISTool.logFileNames` and compares each interval with `RISTool.rqMIN`. A result whose R_q is larger than 7200 hours
+divided by the lower bound of its interval range gets a line in the log `RqTooLarge` as well. Create the logs with
+`OriginProject.createLogFile`. When `RISTool.offset` is not 0, `add` counts an interval below `RISTool.rqMIN` in
+`RISTool.debug1`, which `initRqCollectors()` creates, and `addDistData` writes the number of intervals below the offset
+to the log named by `setLofFileNameKey_1`, which needs `RISTool.projekt` as well. `_addData` writes a series whose
+intervals add up to more than 7200 hours to the log `LENGTH`.
+
+`ReturnIntervallStatistik2` and `TSPropertyTester` refuse a NaN or infinite probability, a receiver that is not a
+container, a different binning and intervals added to a container with the same exceptions and messages as `RISTool`.
+They write no log files. `SingleTsRISTool.finish()` throws `IllegalStateException` with
+`finish: the RIS of <name> cannot be shown (<cause>)` when the collected result cannot be shown.
+
+## Run the DFA
+
+`DetrendingMethodFactory.getDetrendingMethod(order)` returns a DFA of that order. It fits a polynomial of that order to
+the profile in every window by least squares, so a DFA of order n removes a trend of order n − 1 from the series.
+`DFACore.fitn(u, o, n)` returns the coefficients c_0 to c_n of c_0 + c_1 (i − u) + ... + c_n (i − u)^n. Fewer than
+n + 1 points throw `IllegalArgumentException` with
+`fitn: <points> points cannot determine a polynomial of order <n>; expected at least <n + 1> points`.
+
+`initIntervalSlog()` chooses window sizes from order + 2 to the number of values. A series of fewer than 22 values
+throws `IllegalArgumentException` with `initIntervalSlog: <n> values are too few; expected at least 22 values`.
+
+`MultiDFATool.runDFA(series, order)` runs the DFA of every series at the window sizes of the longest one, writes the
+F(s) of every series to `<savePath><index>_dfa<order>.txt`, opens three charts and fits alpha to log F(s) of all series
+from log s 1 to 3. Set the public field `savePath`, which ends with a separator; the default is
+`/Volumes/MyExternalDrive/CALCULATIONS/data/out/`. `SingleDFATool` and `MultiDFATool2` throw
+`IllegalArgumentException` for an empty list (`calcMultiDFA: vmr has no series; expected at least 1 series`) and for a
+missing series (`runDFA: series <index> is null; expected a series at every index`).
+
+## Write a measurement table
+
+`MeasurementTable.writeToFile(file)` creates the missing parent directories and writes one column pair or column per
+series. A shorter series is filled up with `fill_UP_VALUE`, -5.0 by default. A value that cannot be read throws its
+exception. Errors stop the write:
+
+| Problem | Exception and message |
+|---------|-----------------------|
+| the parent directory cannot be created | `UncheckedIOException`: `<file>: cannot create the parent directory (<cause>)` |
+| the file cannot be written | `UncheckedIOException`: `<file>: cannot write the file (<cause>)` |
+
+`OriginProject.initBaseFolder(folder)` creates the folder and throws `UncheckedIOException` with
+`<folder>: cannot create the project folder (<cause>)` when it cannot.
+
+## Expand event times and synchronize events
+
+`MRT.expand(series, start, end, resolution, onePerField)` counts the events per field between start and end. Field k
+holds the events from start + k · resolution up to start + (k + 1) · resolution, and with `onePerField` it holds 1 for
+any number of events. An end that is not after the start throws `IllegalArgumentException` with
+`expand: the end <end> ms is not after the start <start> ms; expected an end after the start`. An event before the
+start throws `IllegalArgumentException` with
+`expand: the event at <t> ms of <label> is before the start <start> ms; expected events at or after the start`. Events
+at or after the end and events in a last field that is shorter than the resolution are left out.
+
+`ESCalc2.calcES(tx, ty)` needs at least 3 events in each series. Fewer throw `IllegalArgumentException` with
+`calcES: tx has <n> events and ty has <m>; expected at least 3 events in each`.
+
+## Set the log level of the production demo
+
+`org.opentsx.demo.onboarding.ProductionConfig` (`bin/episode_10_production_config.sh`) sets the level of the
+`java.util.logging` root logger from `OPENTSX_LOG_LEVEL`, then from `opentsx.log.level` in `./opentsx.properties`, then
+`info`. It maps `error`, `warn`, `info`, `debug` and `trace` to `SEVERE`, `WARNING`, `INFO`, `FINE` and `FINEST`. The
+console shows INFO and above; `opentsx.log` in the working directory gets every line the root level lets through.
+Another value stops the constructor with `IllegalArgumentException`, for example
+`OPENTSX_LOG_LEVEL: "verbose" is not allowed; expected one of error, warn, info, debug, trace`. The names are case
+sensitive, so `INFO` is refused with `opentsx.log.level: "INFO" is not allowed; expected one of error, warn, info, debug, trace`.
+An empty or blank `OPENTSX_LOG_LEVEL` counts as unset, and blanks around a level are ignored.
 
 ## Draw random numbers
 

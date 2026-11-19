@@ -3,8 +3,7 @@ package org.opentsx.data.series;
 import java.util.Vector;
 
 /**
- * In einem Vector werden Marker gespeichert, die dann zur Zerlegung 
- * der Rohdaten genutzt werden können.
+ * Keeps a marker per value, which can be used to split the raw data.
  * 
  * @author kamir
  */
@@ -36,7 +35,7 @@ public class MarkableTimeSeriesObject extends TimeSeriesObject {
     }
 
     /**
-     * Die Daten zur Ausgabe auf der Konsole ausgeben.
+     * Formats the series with the marker of every value.
      *
      * @return
      */
@@ -46,9 +45,11 @@ public class MarkableTimeSeriesObject extends TimeSeriesObject {
 
         int size = xValues.size();
 
-        sb.append("#\n# M e s s r e i h e \n# Klasse : " + this.getClass() + " \n# Label  : " + this.label + "\n#\n# Anzahl Wertepaare = " + size + "\n#\n");
+        sb.append("#\n# Time series \n# Class : " + this.getClass() + " \n# Label  : " + this.label + "\n#\n# Number of value pairs = " + size + "\n#\n");
         sb.append("#\n#" + this.addinfo + "\n#");
-        sb.append( getStatisticData("# ") +"\n" );
+        if ( size > 0 ) {
+            sb.append( getStatisticData("# ") +"\n" );
+        }
         for (int i = 0 ; i < size; i++  ) {
             double x = (Double)getXValues().elementAt(i);
             double y = (Double)getYValues().elementAt(i);
@@ -56,7 +57,6 @@ public class MarkableTimeSeriesObject extends TimeSeriesObject {
             
             sb.append(  decimalFormat_X.format(x) + "\t" + decimalFormat_Y.format(y) + "\t" + z + "\n");
         }
-        System.out.println( sb.toString() );
         sb.append("#\n" + sbComments.toString() );
         return sb.toString();
     };

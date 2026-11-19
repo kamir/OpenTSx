@@ -9,10 +9,14 @@ import org.opentsx.data.exporter.OriginProject;
 import org.opentsx.data.generator.TestDataFactory;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.algorithms.detrending.methods.IDetrendingMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Vector;
 
 public class MFDFAAnalyzer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MFDFAAnalyzer.class);
     
     public static void process(Vector<TimeSeriesObject> rows, String runid ) throws Exception {
         
@@ -40,13 +44,13 @@ public class MFDFAAnalyzer {
             int order = dfa.getPara().getGradeOfPolynom();
             dfa.getPara().setzSValues( 1000 );
 
-            System.out.print( dfa.getClass() );
+            LOG.debug("processing series method={} series={}", dfa.getClass().getSimpleName(), m.getLabel());
 
             int N = (int)m.yValues.size();
 
             dfa.setNrOfValues(N);
 
-            // die Werte für die Fensterbreiten sind zu wählen ...
+            // choose the window sizes
             dfa.initIntervalSlog();
             dfa.showS();
 
@@ -100,7 +104,7 @@ public class MFDFAAnalyzer {
         int N = (int)Math.pow(2.0, 16);
         dfa.setNrOfValues(N);
 
-        // die Werte für die Fensterbreiten sind zu wählen ...
+        // choose the window sizes
         dfa.initIntervalSlog();
         dfa.showS();
 
@@ -159,7 +163,7 @@ public class MFDFAAnalyzer {
         
         for (int i = -5; i <= 5; i = i + di) {
 
-            System.out.println(i + " : " + rBMM1.getLabel()); 
+            LOG.debug("mfdfa order q series={} q={}", rBMM1.getLabel(), i);
             
             double q = i * 1.0;
 
@@ -183,7 +187,7 @@ public class MFDFAAnalyzer {
                 SimpleRegression sr = mr5.linFit(1.0, 1.7);
                 String line = "{alpha} range[1.0 ... 1.7] q=" + q + " : " + sr.getSlope();
 
-                System.out.println(line);
+                LOG.debug("fitted alpha series={} q={} alpha={}", rBMM1.getLabel(), q, sr.getSlope());
                 calcLog.append(line + "\n");
 
                 mr5.setLabel(rBMM1.getLabel() + randNrType + " (q=" + q + ")");
@@ -193,10 +197,9 @@ public class MFDFAAnalyzer {
                 mwtH.addMessreihe(mr_q);
 
 
-                String status = dfa.getStatus();
                 double[][] results = dfa.getResults();
 
-                System.out.println("> DFA-Status: " + "\n" + status + "\n#s=" + results[1].length);
+                LOG.debug("dfa status series={} windows={}", rBMM1.getLabel(), results[1].length);
 
             }
 
@@ -216,7 +219,6 @@ public class MFDFAAnalyzer {
         public static void _test2( Vector<TimeSeriesObject> mr ) {
         MultiDFATool dfaTool = new MultiDFATool();
         dfaTool.runDFA(mr, 2);
-        System.out.println( "done... ");
     };
 
         

@@ -2,16 +2,21 @@ package org.opentsx.algorithms.detrending.methods;
 
 /**
  *
- * DFA Multi bietet eine Möglichkeit, für viele Zeitreihen z.B. einer Phase
- * eine F(s) Kurve zu errechnen und gemäß deren Länge zu gewichten.
+ * DFAmulti computes one F(s) curve for many time series, for example the
+ * series of one phase, weighted by their length.
  *
- * Eine einfache Mittelwertsbildung der einzelnen F(s) Kurven würde nicht
- * genügen, da dabei die kurzen Abschnitte zu hohen Einfluss hätten.
+ * A plain mean of the single F(s) curves would give the short series too
+ * much weight.
  *
  */
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Vector;
 
 public class DFAmulti extends DFACore {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DFAmulti.class);
 
     public double[][] FSMW = null;
 
@@ -30,18 +35,18 @@ public class DFAmulti extends DFACore {
 
         indexMaxS = this.getMaxIndex( this.para.getN() );
 
-        if ( debug ) System.out.println( "N="+this.para.getN() + " zSValues=" + this.para.getzSValues()
-                + " indexMaxS=" + indexMaxS + " s[indexMaxS]=" + s[indexMaxS]);
+        if ( debug ) LOG.debug("window sizes values={} windows={} maxIndex={} maxS={}", this.para.getN(),
+                this.para.getzSValues(), indexMaxS, s[indexMaxS]);
 
         // over all window sizes ...
         for (int currentS = 0; currentS < indexMaxS ; currentS++) {
             zS++;
             int valueofS = s[currentS];
 
-            if(debug) System.out.println(">>> zS=" + zS + "\n>>> valueofS=" + valueofS);
+            if(debug) LOG.debug("window index={} s={}", zS, valueofS);
             double FS = 0;
 
-            // Fensterzähler zurücksetzen ...
+            // reset the segment counter
             int zw = 0;
             
             // move window over profile ...
@@ -51,7 +56,7 @@ public class DFAmulti extends DFACore {
 
                 double FS_sum = 0;
                 zw++;
-                if(debug) System.out.println( "pr_pos="+pr_pos + " zw=" + zw + " : KRIT=" + ( pr.length - valueofS) ); 
+                if(debug) LOG.debug("segment s={} start={} index={} limit={}", valueofS, pr_pos, zw, pr.length - valueofS);
 
                 double[] fit = null;
                 // size of array depends on order of dfa
@@ -69,7 +74,7 @@ public class DFAmulti extends DFACore {
 
                 int z = 0;
 
-                // sum of all (x-schlange)^2 ...
+                // sum of all (x tilde)^2
                 for (int x = pr_pos; x < pr_pos + valueofS; x++) {
 
                     // calc y value of fit function depending on poly. degree
@@ -85,52 +90,42 @@ public class DFAmulti extends DFACore {
 
                 }
 
-                FS_sum = FS_sum / valueofS; // Fensterbreite
+                FS_sum = FS_sum / valueofS; // divided by the window size
 
                 F[2][currentS] = F[2][currentS] + FS_sum;
             }
     
-            // ist es korrekt, hier durch Länge der Profils zu teilen
-            // oder müsste es die Zahl der summierten Beiträge sein?
+            // the mean over the zw segments of this window size
             FS = Math.sqrt(F[2][currentS] / zw);  // / anzw:
 
             F[0][currentS] = valueofS; // s
-            F[1][currentS] = zw;       // Zahl Segmente
+            F[1][currentS] = zw;       // number of segments
             F[3][currentS] = FS;       // F(s)
 
-            FSMW[0][currentS] = F[2][currentS];  // SUMME der xs^2 / s
-            FSMW[1][currentS] = F[1][currentS];  // Zahl segmente
+            FSMW[0][currentS] = F[2][currentS];  // sum of xs^2 / s
+            FSMW[1][currentS] = F[1][currentS];  // number of segments
 
             double a = FSMW[0][currentS];
             double b = FSMW[1][currentS];
 
 
-            if(debug) System.out.println(
-              ">> STORE RESULTS ... valueofS="+valueofS+", zw="+zw+"\n");
+            if(debug) LOG.debug("stored fluctuation s={} segments={}", valueofS, zw);
             
             zw = 0;
-        } // für alle s;
+        }
 
         double t2 = System.currentTimeMillis();
 
     }
 
     /**
-     * Einfache lineare Auswahl von n=steps
-     * Fensterbreiten. Maximal Länge auf N/4 beschränkt, damit auch einzelne
-     * Reihen verwendet werden können.
-     *
-     * Bei vielen Reihen ist das nicht nötig !!!
-     *
-     * mit:   s_max = N/4
-     * und:   s_min = p+2
+     * Chooses the window sizes from s_min to s_max.
      */
     public void initIntervalS_FULL( int s_min, int s_max ) {
 
         rangeS = s_max-s_min;
-        System.out.println("Range:" + rangeS );
+        LOG.debug("linear window sizes min={} max={} count={}", s_min, s_max, rangeS);
 
-        // WICHITIG !!!
         sMax = rangeS;
 
         para.setzSValues(rangeS);
@@ -170,7 +165,7 @@ public class DFAmulti extends DFACore {
         
         rangeS = lin.size() + log.size();
 
-        System.out.println("Range:" + rangeS );
+        LOG.debug("window sizes min={} max={} count={}", s_min, s_max, rangeS);
         
         para.setzSValues(rangeS);
         sMax = rangeS;
@@ -191,14 +186,7 @@ public class DFAmulti extends DFACore {
 
     
         /**
-     * Einfache lineare Auswahl von n=steps
-     * Fensterbreiten. Maximal Länge auf N/4 beschränkt, damit auch einzelne
-     * Reihen verwendet werden können.
-     *
-     * Bei vielen Reihen ist das nicht nötig !!!
-     *
-     * mit:   s_max = N/4
-     * und:   s_min = p+2
+     * Chooses the window sizes from s_min to s_max.
      */
     
     public void initIntervalS_FULL_LOG( int s_min, int s_max ) {

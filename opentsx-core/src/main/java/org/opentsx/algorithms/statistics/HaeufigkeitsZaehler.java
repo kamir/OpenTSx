@@ -4,6 +4,9 @@ package org.opentsx.algorithms.statistics;
 import org.apache.commons.math3.stat.Frequency;
 import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.series.TimeSeriesObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Vector;
@@ -13,6 +16,8 @@ import java.util.Vector;
  * @author kamir
  */
 public class HaeufigkeitsZaehler {
+
+    private static final Logger LOG = LoggerFactory.getLogger(HaeufigkeitsZaehler.class);
 
     public long min = 0;
     public long max = 1000;
@@ -35,7 +40,7 @@ public class HaeufigkeitsZaehler {
     public HaeufigkeitsZaehler() { };
 
     /**
-     * Einfügen eines Wertes in die Haeufigkeitszählung ...
+     * Adds a value to the frequency count.
      * 
      * @param dates
      */
@@ -46,8 +51,8 @@ public class HaeufigkeitsZaehler {
 
 
     /**
-     * Einfügen einer Reihe von Zeitpunkten und
-     * Berechnung aller Abstände aller Zeitpunkte dieser Reihe.
+     * Adds a series of points in time and computes all distances between
+     * the points of this series.
      *
      * @param dates
      */
@@ -84,7 +89,7 @@ public class HaeufigkeitsZaehler {
 
 
 
-    // Zaehler
+    // counter
     public Frequency f = new Frequency();
     
     public void calcWS() {
@@ -103,7 +108,7 @@ public class HaeufigkeitsZaehler {
 
         long delta = (max - min + 1) / st;
 
-        System.out.println("DELTA: " + delta);
+        LOG.debug("histogram bins histogram={} width={}", label, delta);
 
         long vor = 0;
 
@@ -118,7 +123,6 @@ public class HaeufigkeitsZaehler {
             long y = w - vor;
             vor = w;
 
-            System.out.println(x + "\t" + y + "\t" + vor);
             mr.addValuePair(x, y);
 
         }
@@ -130,11 +134,8 @@ public class HaeufigkeitsZaehler {
         long f00 = f.getSumFreq();
 
 
-        System.out.println("\n\n< min: " + (f30));
-        System.out.println(">= min and < max: " + (f20 - f30));
-        System.out.println(">= max  " + (f00 - f20));
-
-        System.out.println("total " + (f00));
+        LOG.debug("histogram counts histogram={} belowMin={} inRange={} atOrAboveMax={} total={}", label, f30,
+                f20 - f30, f00 - f20, f00);
 
 
     }

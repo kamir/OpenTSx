@@ -14,12 +14,14 @@ package org.opentsx.algorithms.ris;
 import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.data.exporter.OriginProject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Enumeration;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.opentsx.algorithms.statistics.HaeufigkeitsZaehler;
 import org.opentsx.algorithms.statistics.HaeufigkeitsZaehlerDouble;
@@ -44,6 +46,8 @@ import org.opentsx.algorithms.statistics.HaeufigkeitsZaehlerDouble;
  */
 
 public class RISTool {
+
+    private static final Logger LOG = LoggerFactory.getLogger(RISTool.class);
     
     static public int[] grenzen = { 1,8,16,32,64,128,256,512,1024 };
     
@@ -150,13 +154,13 @@ public class RISTool {
         }
         
         if ( debug ) {
-            System.out.println("added single RIS to collect. R_q="+ris._Rq );
+            LOG.debug("adding result container={} result={} rq={}", name, ris.name, ris._Rq);
         }
         
         // an empty result has NaN probabilities (0 of 0 intervals) and adds nothing
         if ( ris.dataRawFILTERED.size() < 1 ) {
             if ( debug ) {
-                System.out.println(">>> " + ris.label + " is empty ..." + ris._Rq );
+                LOG.debug("skipped empty result container={} result={}", name, ris.name);
             }        
             return;
         } 
@@ -169,6 +173,8 @@ public class RISTool {
             }
         }
 
+        checkSetup( ris );
+
         _checkRIS( ris );
 
         for( int i = 0; i < probSKALIERT.length; i++ ) { 
@@ -180,9 +186,33 @@ public class RISTool {
         allRqs.add(ris._Rq);
         
         if ( debug ) {
-            System.out.println( ris.dataRawFILTERED.size() + " values arrive ...");
+            LOG.debug("added result container={} result={} intervals={}", name, ris.name, ris.dataRawFILTERED.size());
         }
         
+    }
+
+    private void checkSetup( RISTool ris ) {
+        int n = ris.anzFiltered;
+        if ( n <= grenzen[0] || n > grenzen[grenzen.length - 1] ) {
+            return;
+        }
+        String result = ris.name + ", which has " + n + " intervals";
+        if ( projekt == null ) {
+            throw new IllegalStateException( "add: RISTool.projekt is not set; set RISTool.projekt and RISTool.logFileNames"
+                    + " and call RISTool.initRqMIN() before adding " + result );
+        }
+        if ( logFileNames == null || logFileNames.length < grenzen.length - 1 ) {
+            throw new IllegalStateException( "add: RISTool.logFileNames has "
+                    + ( logFileNames == null ? "no" : String.valueOf( logFileNames.length ) ) + " names; set "
+                    + ( grenzen.length - 1 ) + " names, one per interval range, before adding " + result );
+        }
+        if ( rqMIN == null ) {
+            throw new IllegalStateException( "add: RISTool.rqMIN is not set; call RISTool.initRqMIN() before adding " + result );
+        }
+        if ( offset != 0 && debug1 == null ) {
+            throw new IllegalStateException( "add: RISTool.debug1 is not set while RISTool.offset is " + offset
+                    + "; call RISTool.initRqCollectors() before adding " + result );
+        }
     }
 
     /** 
@@ -200,8 +230,7 @@ public class RISTool {
         }
 
         if ( debug ) {
-            System.out.println( 
-                    ">>> computing n=" + (times.size()-1) + " intervals." );
+            LOG.debug("computing intervals result={} intervals={}", name, times.size() - 1);
         }
 
         
@@ -228,7 +257,7 @@ public class RISTool {
             else {
                 nullDistCounter++;
             }
-            if (debug )System.out.println(dist + " \t now:=" + now + "\t before:=" + vor);
+            if (debug ) LOG.debug("interval result={} interval={} now={} before={}", name, dist, now, vor);
             vor = now;
         } 
 
@@ -268,8 +297,7 @@ public class RISTool {
         }
         
         if ( debug ) {
-            System.out.println( 
-                    ">>> n=" + dists.size() + " intervals to insert ...");
+            LOG.debug("adding intervals result={} intervals={}", name, dists.size());
         }
         
         long anzahlVor = (long)dists.size();
@@ -303,9 +331,7 @@ public class RISTool {
         
         
         if ( debug ) {
-            System.out.println( 
-                    ">>> n_cutoff=" + cutOff + 
-                    " intervals too small (offset:="+offset+")");
+            LOG.debug("filtered intervals result={} cutOff={} offset={}", name, cutOff, offset);
         }
         
         anzFiltered = dataRawFILTERED.size();
@@ -336,7 +362,7 @@ public class RISTool {
         double Rq_filtered = sumRq_filteres/(1.0*anzRq_filterd);
         zElements = anzRq_filterd;
        
-        if ( debug ) System.out.println(">>> R_q of all=" + Rq_alt + "\tR_q filtered=" + Rq_filtered );
+        if ( debug ) LOG.debug("mean interval result={} rqAll={} rqFiltered={}", name, Rq_alt, Rq_filtered);
         _Rq = Rq_filtered;
 
         
@@ -361,11 +387,15 @@ public class RISTool {
     double epsilon = 1e-6; 
     
     public static void logLineToFile( String key, String line ) { 
+        if ( projekt == null ) {
+            throw new IllegalStateException( "logLineToFile: RISTool.projekt is not set; set RISTool.projekt before"
+                    + " writing to the log " + key );
+        }
         try {
             projekt.logLine(key, line);
         } 
         catch (IOException ex) {
-            Logger.getLogger(RISTool.class.getName()).log(Level.SEVERE, null, ex);
+            throw new UncheckedIOException( key + ": cannot write the log line (" + ex + ")", ex );
         }
     }
     
@@ -383,22 +413,14 @@ public class RISTool {
             if ( dataSKALIERT[i] != 0 ) {
                 double vx = ((double)i + 0.5) / scaleSKALIERT;
                 double vy = probSKALIERT[i] / (double)dataSKALIERT[i];
-                try {
-                    if ( vy != 0.0 ) {
-                        double logVy = Math.log(vy);
-                        if ( Double.isInfinite( logVy ) || Double.isNaN( logVy ) ) {
-                            System.err.println("ERROR 2:" + vx + "\t" + vy + "\t" );
-                            
-                        }
-                        else {
-                            mrVerteilungSkaliert.addValuePair( vx, logVy );
-                        }
-                    }    
-                    
-                }
-                catch(Exception ex) {
-                    System.err.println("ERROR 1:" + vx + "\t" + vy + "\t" );
-                    
+                if ( vy != 0.0 ) {
+                    double logVy = Math.log(vy);
+                    if ( Double.isInfinite( logVy ) || Double.isNaN( logVy ) ) {
+                        LOG.debug("skipped bin without a finite logarithm container={} x={} y={}", name, vx, vy);
+                    }
+                    else {
+                        mrVerteilungSkaliert.addValuePair( vx, logVy );
+                    }
                 }
             }
         }
@@ -434,10 +456,7 @@ public class RISTool {
             
         }
         if ( debug ) {
-            System.out.println(
-               "(a) number of elements=" + this.zElements);
-            System.out.println(
-               "(b) Rq=" + _Rq + "\t sum=" + summe );    
+            LOG.debug("distribution result={} intervals={} rq={} sum={}", name, this.zElements, _Rq, summe);
         }
     }
     
@@ -509,8 +528,7 @@ public class RISTool {
         fw.close();
 
         if ( verbose ) { 
-            System.out.println(
-               "\n>>> RIS-Data:\n" + mrVerteilung.toString() );
+            LOG.debug("stored distribution result={} file={} bins={}", name, folder + label, mrVerteilung.xValues.size());
         }
     };
 
@@ -743,11 +761,11 @@ public class RISTool {
              
              rqMIN[i] = RISTool.offset / Rq_max;
              
-             System.out.println( grenzen[i-1] + " ... " + grenzen[i] + "\tRq_max=" + Rq_max + "\t" + rqMIN[i] );
+             LOG.debug("interval range from={} to={} rqMax={} rqMin={}", grenzen[i-1], grenzen[i], Rq_max, rqMIN[i]);
         }
     }    
 
-    private static void _checkRIS(RISTool ris) throws IOException {
+    private static void _checkRIS(RISTool ris) {
         for ( int i = 1; i < grenzen.length ; i++ ) {
             if ( ris.anzFiltered <= grenzen[i] && ris.anzFiltered > grenzen[i-1] ) { 
 
@@ -764,24 +782,21 @@ public class RISTool {
                     String line = "\t\tr=" + v + "\tRq=" + ris._Rq + "\tr/Rq=(" + (v/ris._Rq) + ")\t rq_min=" + rqMIN[i] + "\t sum(r_i)=" + sum;
  
                     if ( ( v / ris._Rq ) < rqMIN[i] ) {
-                        
-                       
-                        
-                        System.out.println( line  );
+                        LOG.debug("interval below the minimum result={} line={}", ris.name, line);
                         debug1[i].addData( v/ris._Rq );
                         line = "* " + line;
                     }
                     
-                    projekt.logLine( logFileNames[i-1] , line +"\n");
+                    logLineToFile( logFileNames[i-1], line + "\n" );
 
                 }
                 
                 if ( sum > 300*24 ) {
-                    System.out.println( "SUM >>> 300*24 " + sum );
+                    LOG.debug("intervals longer than 300 days result={} sum={}", ris.name, sum);
                 }
                 double RQMAX = 300.0 * 24.0 / (1.0 * grenzen[i-1] );
                 if( ris._Rq > RQMAX ) {
-                    projekt.logLine(  "RqTooLarge" , ris._Rq + " " + ris.label );
+                    logLineToFile( "RqTooLarge", ris._Rq + " " + ris.label );
                 }
             }
         }
@@ -798,11 +813,7 @@ public class RISTool {
         }
         if ( sum > (300 * 24) ) { 
             b = false;
-            try {
-                projekt.logLine("LENGTH", sum + " : " + dataRawTIMES +"\n");
-            } catch (IOException ex) {
-                Logger.getLogger(RISTool.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            logLineToFile("LENGTH", sum + " : " + dataRawTIMES +"\n");
         }
         return b;
     }

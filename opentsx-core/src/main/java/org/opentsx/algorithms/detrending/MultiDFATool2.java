@@ -5,27 +5,27 @@ import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.generator.TestDataFactory;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.algorithms.detrending.methods.DFAmulti;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Vector;
 
 /**
- * Hier wird nun die Begrenzung der Segementlänge auf N/4 aufgehoben ...
+ * Runs the DFA of every series of a group, for example a class of series,
+ * with window sizes up to the full length instead of N/4.
  *
- * Das MultiDFA-Tool berechnet für eine Menge von Zeitreihen, die z.B. zu
- * einer bestimmten Klasse gehöen die DFA einzeln.
+ * For every window size s it also sums (x tilde)^2 and counts the segments.
  *
- * Ausserdem wird für jede Fensterbreite s die Summe von (x-schlange)^2
- * und die Anzahl der betrachteten Segmente ermittelt. {FORMEL:II.A.20}
- *
- * Am Ende wird für alle s aus allen Beiträgen der unterschielich langen
- * Zeitreihen ein <F(s)> bestimmt.
+ * The end result is one <F(s)> for all contributions of the series of
+ * different length.
  *
  * @author kamir
  */
 public class MultiDFATool2 {
 
+    private static final Logger LOG = LoggerFactory.getLogger(MultiDFATool2.class);
+
     public static boolean logLogResults = false;
-    public static boolean debug;
 
     public MultiDFATool2() {
         resetPuffer();
@@ -81,11 +81,11 @@ public class MultiDFATool2 {
 
     int[] S = null;
 
-    // Für den Graphen TITEL
+    // for the title of the chart
     int phase = 0;
-    String value = "_";   // Welche Messgröße wird betrachtet?
+    String value = "_";   // the measured quantity
 
-    // Für jede Ordnung / PHASE wird hier eine Kurve erstellt.
+    // one curve for every order or phase
     static public Vector<TimeSeriesObject> kurven = new Vector<TimeSeriesObject>();
 
     public static MultiDFATool2 tool = new MultiDFATool2();
@@ -94,27 +94,23 @@ public class MultiDFATool2 {
 
         tool = new MultiDFATool2();
 
-        kurven = new Vector<TimeSeriesObject>(); // für jede Ordnung eine ...
+        kurven = new Vector<TimeSeriesObject>(); // one per order
 
         doClear = true;
         
         tool.phase = phase;
         tool.value = v;
+
+        if (vmr.isEmpty()) {
+            throw new IllegalArgumentException("calcMultiDFA: vmr has no series; expected at least 1 series");
+        }
         
-        // nun werden die Berechnungen für verschiedene Ordnungen durchgeführt
+        // the DFA for every order
         int[] orders = {2};
         
         for (int i : orders) {
-            if (vmr.size() > 0) {
-
-                tool.runDFA(vmr, i);
-                kurven.add( tool.Fs.elementAt(0) );
-                
-
-            }
-            else {
-                System.out.println("Der Vector<Messreie> vmr ist leer");
-            }
+            tool.runDFA(vmr, i);
+            kurven.add( tool.Fs.elementAt(0) );
             tool.Fs.clear();
         }
     }
@@ -128,7 +124,7 @@ public class MultiDFATool2 {
 
         Vector<TimeSeriesObject> vmr = getTestReihen( 4 );
 
-        // nun werden die Berechnungen für verschiedene Ordnungen durchgeführt
+        // the DFA for every order
         int[] orders = { 2 };
         for (int i : orders) {
             try {
@@ -147,14 +143,14 @@ public class MultiDFATool2 {
 
     DFAmulti dfa;
 
-    // alle Fluktuationsfunktionen...
+    // all fluctuation functions
     public Vector<TimeSeriesObject> Fs = new Vector<TimeSeriesObject>();
     public Vector<TimeSeriesObject> fsFMW = new Vector<TimeSeriesObject>();
 
-    // Für alle s wird eine Mittler Fluctuationsfunktion bestimmt
+    // the mean fluctuation function for every s
     Vector<TimeSeriesObject> Fs_MW = new Vector<TimeSeriesObject>();
 
-    // Die Fensterbreiten
+    // the window sizes
     Vector<Integer> s = new Vector<Integer>();
 
     public static boolean showCharts = false;
@@ -162,10 +158,10 @@ public class MultiDFATool2 {
 
     Vector<TimeSeriesObject> fsF2 = null;
 
-    // Für eine Klasse von Messreiehn wird die DFA einer Ordnung berechnet.
+    // the DFA of one order for a class of series
     public void runDFA(Vector<TimeSeriesObject> vmr, int order)  {
 
-        // s bestimmen ... anhand der längsten Reihe
+        // the longest series sets the window sizes s
         int zahlW = 0;
         int zahlT = 0;
         int zahlS = 0;
@@ -173,11 +169,12 @@ public class MultiDFATool2 {
         TimeSeriesObject laengsteReihe = vmr.elementAt(0);
         
         int max = vmr.size();
-        System.out.println( "zahlW=" + zahlW + " max=" + max + " " + laengsteReihe.getLabel() );
         
         for (int z = 0; z < max ; z++) {
             TimeSeriesObject mr = vmr.elementAt(z);
-            System.out.println( z+ " size x=" + mr.xValues.size() );
+            if (mr == null) {
+                throw new IllegalArgumentException("runDFA: series " + z + " is null; expected a series at every index");
+            }
             
             if (mr.xValues.size() > zahlW) {
                         zahlW = mr.xValues.size();
@@ -188,22 +185,17 @@ public class MultiDFATool2 {
         }
         
         
-        System.out.println(""
-                + "> Ermittle s für längste Reihe mit l=" + zahlW
-                + " Werten. \n> Label der längsten Reihe: " + laengsteReihe.getLabel() );
+        LOG.debug("longest series series={} label={} values={}", max, laengsteReihe.getLabel(), zahlW);
 
-        // ohne Begrenzung auf N/4 !!!
-
-      
-        
+        // without the limit of N/4
         dfa = DetrendingMethodFactory.getDFAmulti(order);
 
         dfa.setZR( laengsteReihe.getData()[1] );
 
-        // Anzahl der Werte in der Zeitreihe
+        // number of values in the series
         dfa.setNrOfValues(laengsteReihe.getXValues().size());
 
-        // die Werte für die Fensterbreiten sind zu wählen ...
+        // choose the window sizes
 
         int s_max = zahlW;
         int s_min = Math.abs( order  + 2 );
@@ -215,34 +207,11 @@ public class MultiDFATool2 {
         
         zahlS = dfa.getS().length;
         
-        if ( debug ) System.out.println(zahlS + " s werden betrachtet.");
-
         initPuffer(zahlS);
 
-        String savePath = "/Volumes/MyExternalDrive/CALCULATIONS/data/out/";
+        LOG.debug("running DFA series={} order={} windows={}", vmr.size(), order, zahlS);
 
-        double fit_min = 1.0, fit_max = 3.0;  // willkürliche Festlegung
-        double alpha_cor_min = 0.0;  // zu klären was hier gemeint ist !!!
-
-        System.out.println(
-                "> Berechne DFA für " + vmr.size() +
-                " Messreihen mit order=" + order + ".");
-
-        StringBuffer info = new StringBuffer("> Infos zur DFA-Rechnung");
-        info.append("\nnr.\t| file\t| save path");
-
-        // je Zeitreihe wird ein alpha bestimmt ....
-        double[] alpha = new double[vmr.size()];
-
-
-        // für jedes s wird eine Summe ( xs^2 ) bestimmt und die Anzahl der
-
-        // Segmente anzw
-
-
-        // Schleife über alle Zeitreihen dieser Klasse
-
-       
+        // for every s the sum of xs^2 and the number of segments
         for (int z = 0; z < vmr.size(); z++) {
 
             double[][] dfa_results = null;
@@ -260,7 +229,6 @@ public class MultiDFATool2 {
 
                 dfa.calc();
 
-                if (debug) System.out.println( "> useLogLogResulst: " + logLogResults );
                 if ( logLogResults ) {
                    Fs.add( dfa.getResultsMRLogLog() );
                 }
@@ -272,7 +240,7 @@ public class MultiDFATool2 {
 
 
                 
-                // Für alle s nun die Beiträge für die MW-Funktion sammeln
+                // the contributions to the mean function for every s
                 for( int d = 0; d < dfa.sMax ; d++ ) {
                     sum_xs_xs_durch_s[d] = dfa.FSMW[0][d];
                     anzSegmente[d] = dfa.FSMW[1][d];
@@ -283,10 +251,7 @@ public class MultiDFATool2 {
                 }
 
             }
-            else {
-                System.out.println( "MR = null !!! ");
 
-            }
         
         }
 
@@ -297,7 +262,7 @@ public class MultiDFATool2 {
 
 
 
-        // und nun sammeln wir die Werte ein und berechnen ein Fs
+        // collect the values into one F(s)
         finalFS = new TimeSeriesObject("<F(s)>");
         
         TimeSeriesObject finalZ = new TimeSeriesObject("#segments");
@@ -326,11 +291,11 @@ public class MultiDFATool2 {
 
         try{
             double TEST_alpha = finalFS.linFit( 1.25, 2.0 ).getSlope();
-            System.out.println( ">>> alpha=" + TEST_alpha );
+            LOG.debug("fitted alpha phase={} order={} alpha={}", phase, order, TEST_alpha);
         }
         catch( Exception ex ) {
-            System.err.println( ex.getCause() );
-        };
+            throw new IllegalStateException("runDFA: cannot fit alpha to <F(s)> for log s from 1.25 to 2 (" + ex + ")", ex);
+        }
 
 
 
@@ -346,10 +311,8 @@ public class MultiDFATool2 {
             MultiChart.open(fsFMW, "<F(s)>", label[0], label[1], true, "?", null);
 
         }
-        else {   // Fs, "[Phase " + phase + "] F(s) [DFA-order:" + order + "] {" + value + "}", "log(s)", "log(F(s))", false, "?");
-            String file= "Phase_" + phase + " DFA-order_"+ order + " v=" + value;
-            System.out.println( file );
-
+        else {
+            LOG.debug("computed mean fluctuation phase={} order={} value={}", phase, order, value);
         }
 
         resetPuffer();
@@ -359,7 +322,7 @@ public class MultiDFATool2 {
     static TimeSeriesObject mw = null;
     
     /**
-     * zurückgeben nur einmal möglich !!!
+     * Returns the mean curve once; a second call returns null.
      * @return 
      */
     static public TimeSeriesObject getMWKurve() {
@@ -386,7 +349,7 @@ public class MultiDFATool2 {
             TimeSeriesObject mr = TestDataFactory.getDataSeriesRandomValues_RW(length[i]);
             mr.setLabel("R" + i + " [" + length[i] + "]");
             vmr.add(mr);
-        }  // nun liegen verschieden Lange Testreihen vor ...
+        }
 
         return vmr;
     }

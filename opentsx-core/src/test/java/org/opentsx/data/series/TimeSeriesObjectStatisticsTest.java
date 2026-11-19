@@ -6,7 +6,11 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.opentsx.algorithms.statistics.DatasetNormalizationTool;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
@@ -161,6 +165,61 @@ class TimeSeriesObjectStatisticsTest {
         assertEquals(0.5, row.getX_for_Y2(3.0, 0.1));
         assertTrue(Double.isNaN(row.getX_for_Y2(5.0, 0.1)));
         assertTrue(Double.isNaN(new TimeSeriesObject().getX_for_Y2(5.0, 0.1)));
+    }
+
+    @Test
+    void statisticsOfASeriesWithoutValuesFailNamingTheSeries() {
+        TimeSeriesObject empty = new TimeSeriesObject();
+        empty.setLabel("empty");
+        String expected = "getStatisticData: the series empty has no values; expected at least 1 value";
+        assertEquals(expected, assertThrows(IllegalStateException.class,
+                () -> empty.getStatisticData(new Hashtable<>())).getMessage());
+        assertEquals(expected, assertThrows(IllegalStateException.class, () -> empty.getStatisticData("# ")).getMessage());
+    }
+
+    @Test
+    void statisticsOfASeriesWithAMissingValuePropagateTheFailure() {
+        TimeSeriesObject row = series();
+        row.yValues.set(1, null);
+        assertThrows(NullPointerException.class, () -> row.getStatisticData(new Hashtable<>()));
+        assertThrows(NullPointerException.class, () -> row.getStatisticData("# "));
+    }
+
+    @Test
+    void theTextOfASeriesWithoutValuesHasNoStatistics() {
+        TimeSeriesObject empty = new TimeSeriesObject();
+        empty.setLabel("empty");
+        String text = empty.toString();
+        assertTrue(text.contains("# Label  : empty"), text);
+        assertFalse(text.contains("STATISTICS"), text);
+    }
+
+    @Test
+    void seriesOperationsWriteNothingToStandardOutputOrError() throws Exception {
+        PrintStream out = System.out;
+        PrintStream err = System.err;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        PrintStream sink = new PrintStream(captured, true, StandardCharsets.UTF_8);
+        System.setOut(sink);
+        System.setErr(sink);
+        try {
+            TimeSeriesObject row = series();
+            row.diff(series());
+            row.addToX(1);
+            row.addToX2(1);
+            row.split(2, 2);
+            row.checkKonsistenz();
+            row.getValuePairs();
+            row.getSeriesWithPercentiles(0);
+            TimeSeriesObject.calcAveragOfRows(new Vector<>(List.of(series(), series())));
+            TimeSeriesObject.calcAVOfRows(new Vector<>(List.of(series())), new Vector<>(List.of(series())), "mean");
+            TimeSeriesObject.calcSumOfRows(new Vector<>(List.of(series())), new Vector<>(List.of(series())), "sum");
+            new MarkableTimeSeriesObject().toString();
+        } finally {
+            System.setOut(out);
+            System.setErr(err);
+        }
+        assertEquals("", captured.toString(StandardCharsets.UTF_8));
     }
 
     private static TimeSeriesObject values(double... y) {

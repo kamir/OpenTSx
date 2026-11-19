@@ -1,8 +1,14 @@
 package org.opentsx.algorithms.detrending.methods;
 
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.QRDecomposition;
 import org.apache.commons.math3.stat.StatUtils;
 import org.opentsx.data.series.TimeSeriesObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.Vector;
 
 /**
@@ -11,29 +17,29 @@ import java.util.Vector;
  */
 abstract public class DFACore implements IDetrendingMethod {
 
+    private static final Logger LOG = LoggerFactory.getLogger(DFACore.class);
+
     public static double S_SCALE_FACTOR = 1.15;
     
-    int[] s = null; // Stellen der Auswertung
+    int[] s = null; // window sizes
     
-    double[] zr = null; // Zeitreihe der ROHDATEN
-    double[] pr = null; // Profilreihe
-    double[][] F = null; // Fluctuationsfunktion
-    double alpha = 0; // Steigung aus loglog Plot der F(s)
+    double[] zr = null; // raw values of the series
+    double[] pr = null; // profile
+    double[][] F = null; // fluctuation function
+    double alpha = 0; // slope of log F(s) over log s
     DFAParameter para = null;
     StringBuffer status = new StringBuffer();
     private double corr_coef = -9;
 
     public static boolean debug = false;
 
-        /**
-     * Einfache lineare Auswahl von n=steps
-     * Fensterbreiten. Maximal Länge auf N/4 beschränkt, damit auch einzelne
-     * Reihen verwendet werden können.
+    /**
+     * Chooses n=steps window sizes on a linear scale. The largest window is
+     * N/4, so a single series gives enough segments per window. Many series
+     * would not need this limit.
      *
-     * Bei vielen Reihen ist das nicht nötig !!!
-     *
-     * mit:   s_max = N/4
-     * und:   s_min = p+2
+     * with:  s_max = N/4
+     * and:   s_min = p+2
      */
     public void initIntervalS() {
 
@@ -53,11 +59,7 @@ abstract public class DFACore implements IDetrendingMethod {
         for ( int i = 1; i < (para.getzSValues()-1); i++ ) {
             s[i] = s_min + step * i;
         }
-        System.out.println("\n  s (" + s_min + ", " + s_max +") ");
-        System.out.println("======");
-        for ( int i = 0; i < s.length; i++ ) {
-            System.out.println( i + " \t " + s[i] );
-        }
+        LOG.debug("linear window sizes min={} max={} s={}", s_min, s_max, Arrays.toString(s));
         initF();
     }
 
@@ -69,16 +71,7 @@ abstract public class DFACore implements IDetrendingMethod {
 
 
     public void showS() {
-        System.out.println("----------");
-
-        System.out.println("#s: " + s.length);
-        System.out.println("----------");
-        int i = 0;
-        while (i < s.length) {
-        System.out.println(i + "\t" + s[i]);
-        i++;
-        }
-        System.out.println("----------");
+        LOG.debug("window sizes count={} s={}", s.length, Arrays.toString(s));
     }
 
     public TimeSeriesObject getResultsMRLogLog() {
@@ -109,7 +102,7 @@ abstract public class DFACore implements IDetrendingMethod {
         TimeSeriesObject mr = new TimeSeriesObject();
         mr.setLabel_X( "t" );
         mr.setLabel_Y( "y(t)" );
-        mr.setLabel( "Zeitreihe" );
+        mr.setLabel( "Time series" );
         for( int i = 0; i < zr.length ; i++ ) {
             mr.addValuePair( i, zr[i]);
         }
@@ -121,7 +114,7 @@ abstract public class DFACore implements IDetrendingMethod {
         TimeSeriesObject mr = new TimeSeriesObject();
         mr.setLabel_X( "t" );
         mr.setLabel_Y( "prof( y(t) )" );
-        mr.setLabel( "Profil" );
+        mr.setLabel( "Profile" );
         for( int i = 0; i < pr.length ; i++ ) {
             mr.addValuePair( i, pr[i]);
         }
@@ -129,8 +122,6 @@ abstract public class DFACore implements IDetrendingMethod {
     };
 
     public void initIntervalSlog() {
-        
-        int steps = para.getzSValues();
 
         int s_start = Math.abs( para.getGradeOfPolynom() ) + 2;
 
@@ -150,6 +141,10 @@ abstract public class DFACore implements IDetrendingMethod {
                 log_steps++;
             }
         }
+        if ( log_steps == 0 ) {
+            throw new IllegalArgumentException( "initIntervalSlog: " + s_end + " values are too few; expected at least "
+                    + ( Math.round( log_start * 1.03 ) + 1 ) + " values" );
+        }
         para.setzSValues(lin_steps+log_steps);
         s = new int[lin_steps+log_steps];
 
@@ -164,25 +159,21 @@ abstract public class DFACore implements IDetrendingMethod {
         }
 
         if ( debug ) {
-            System.out.println("\n  s   ");
-            System.out.println("\n======");
-            for ( int i = 0; i < steps; i++ ) {
-                System.out.println( i + " \t " + s[i] );
-            }
+            LOG.debug("logarithmic window sizes s={}", Arrays.toString(s));
         }
         initF();
     }
 
     /**
-     * Nach Aufruf dieser Methode ist das RESULT-Array definiert.
+     * Allocates the result array F.
      */
     void initF() {
-        if (debug) System.out.println("initF() ... " + para.getzSValues() );
+        if (debug) LOG.debug("allocating results windows={}", para.getzSValues());
         F = new double[4][para.getzSValues()];
     }
 
     /*
-     * Übergibt neues Parameterobjekt
+     * Sets a new parameter object.
      */
     public void setParameter(Object parameter) {
         para = (DFAParameter) parameter;
@@ -193,7 +184,7 @@ abstract public class DFACore implements IDetrendingMethod {
     }
 
     /**
-     * Erzeugt neues Parameter-Object
+     * Creates a new parameter object.
      *
      * @return
      */
@@ -219,8 +210,7 @@ abstract public class DFACore implements IDetrendingMethod {
     }
 
     /**
-     *   Profil berechnen
-     *   ==> entspricht das auch der Zahl der Fenster je s? NEIN
+     *   Computes the profile, the cumulative sum of the values minus their mean.
      */int a,b =0;
     public void calcProfile() {
         
@@ -245,14 +235,14 @@ abstract public class DFACore implements IDetrendingMethod {
     }
 
     /**
-     * Hier wird das Array der Fensterbreiten also s zurückgegeben ...
+     * Returns the window sizes s.
      */
     public int[] getIntervalS(){
         return s;
     }
 
     /**
-     * Hier wird das Array der F(s) zurückgegeben ...
+     * Returns the results F.
      */
     public double[][] getResults() {
         return F;
@@ -296,7 +286,7 @@ abstract public class DFACore implements IDetrendingMethod {
             Sxy = 0;
             Syy = 0;
             for (int i = u; i <= o; i++) {
-                S = x[i] - x[u];         //Subtraktion der unteren Grenze um Zahlen klein zu halten und Differenz hervorzuheben
+                S = x[i] - x[u];         //subtract the lower border to keep the numbers small
                 Sx += S;               //sum of all x values
                 Sxx += S * S;            //sum of all x^2 values
                 Sy += pr[i];           //sum of all y values
@@ -360,17 +350,36 @@ abstract public class DFACore implements IDetrendingMethod {
         return fit;
     }
 
-// fit with polysolve for higher grades than 2
+    /**
+     * Fits a polynomial of order n to the profile from index u to index o by least squares and returns the
+     * coefficients c_0 to c_n of c_0 + c_1 (i - u) + ... + c_n (i - u)^n, the form fx evaluates.
+     */
     public double[] fitn(int u, int o, int n) {
-
-        double[] fit = new double[3];
-        fit[0] = 0.0;
-        fit[1] = 0.0;
-        fit[2] = 0.0;
-
-
-        System.out.println( ">>> no polynomialfit at this time. Please implement it via ACM libs. " + DFACore.class.getCanonicalName() );
-
+        int points = o - u + 1;
+        if ( points < n + 1 ) {
+            throw new IllegalArgumentException( "fitn: " + points + " points cannot determine a polynomial of order " + n
+                    + "; expected at least " + ( n + 1 ) + " points" );
+        }
+        // the powers of (i - u) / width keep the least squares problem well conditioned
+        double width = Math.max( 1, points - 1 );
+        double[][] powers = new double[points][n + 1];
+        double[] values = new double[points];
+        for ( int i = 0; i < points; i++ ) {
+            double t = i / width;
+            double p = 1.0;
+            for ( int k = 0; k <= n; k++ ) {
+                powers[i][k] = p;
+                p = p * t;
+            }
+            values[i] = pr[u + i];
+        }
+        double[] fit = new QRDecomposition( new Array2DRowRealMatrix( powers, false ) ).getSolver()
+                .solve( new ArrayRealVector( values, false ) ).toArray();
+        double scale = 1.0;
+        for ( int k = 0; k <= n; k++ ) {
+            fit[k] = fit[k] / scale;
+            scale = scale * width;
+        }
         return fit;
     }
 

@@ -6,6 +6,8 @@ import org.opentsx.data.loader.MessreihenLoader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,12 +46,16 @@ public class ProductionConfig {
     private static final String THREAD_POOL_SIZE_KEY = "opentsx.threads.pool.size";
     private static final String RETRY_ATTEMPTS_KEY = "opentsx.retry.attempts";
     private static final String LOG_LEVEL_KEY = "opentsx.log.level";
+    private static final String LOG_LEVEL_VARIABLE = "OPENTSX_LOG_LEVEL";
+    private static final Map<String, Level> LOG_LEVELS = Map.of(
+            "error", Level.SEVERE, "warn", Level.WARNING, "info", Level.INFO, "debug", Level.FINE, "trace", Level.FINEST);
+    private static final List<String> LOG_LEVEL_NAMES = List.of("error", "warn", "info", "debug", "trace");
 
     // Default values (used if not configured)
     private static final String DEFAULT_DATA_DIR = "/var/lib/opentsx/data";
     private static final int DEFAULT_THREAD_POOL_SIZE = 4;
     private static final int DEFAULT_RETRY_ATTEMPTS = 3;
-    private static final String DEFAULT_LOG_LEVEL = "INFO";
+    private static final String DEFAULT_LOG_LEVEL = "info";
 
     private final Properties config;
     private final ExecutorService threadPool;
@@ -59,11 +65,9 @@ public class ProductionConfig {
      * Loads from: config file → environment variables → defaults
      */
     public ProductionConfig() throws IOException {
-        // Configure logging first
-        setupLogging();
-
-        // Load configuration
         this.config = loadConfiguration();
+
+        setupLogging();
 
         // Initialize thread pool with configured size
         int poolSize = getIntProperty(THREAD_POOL_SIZE_KEY, DEFAULT_THREAD_POOL_SIZE);
@@ -75,41 +79,43 @@ public class ProductionConfig {
     /**
      * Setup structured logging for production.
      * Logs to both console and file with different levels.
+     * The level of the java.util.logging root logger comes from OPENTSX_LOG_LEVEL, then from opentsx.log.level in
+     * opentsx.properties, then info.
      */
-    private void setupLogging() {
-        try {
-            // Get log level from environment or use default
-            String logLevel = System.getenv(LOG_LEVEL_KEY);
-            if (logLevel == null) {
-                logLevel = DEFAULT_LOG_LEVEL;
-            }
-            Level level = Level.parse(logLevel);
-
-            // Remove default handlers
-            Logger rootLogger = Logger.getLogger("");
-            for (Handler handler : rootLogger.getHandlers()) {
-                rootLogger.removeHandler(handler);
-            }
-
-            // Console handler (INFO and above)
-            ConsoleHandler consoleHandler = new ConsoleHandler();
-            consoleHandler.setLevel(Level.INFO);
-            consoleHandler.setFormatter(new SimpleFormatter());
-            rootLogger.addHandler(consoleHandler);
-
-            // File handler (ALL levels for debugging)
-            FileHandler fileHandler = new FileHandler("opentsx.log", true);
-            fileHandler.setLevel(Level.ALL);
-            fileHandler.setFormatter(new SimpleFormatter());
-            rootLogger.addHandler(fileHandler);
-
-            rootLogger.setLevel(level);
-
-            logger.info("Logging configured with level: " + logLevel);
-
-        } catch (IOException e) {
-            System.err.println("Failed to setup file logging: " + e.getMessage());
+    private void setupLogging() throws IOException {
+        String variable = System.getenv(LOG_LEVEL_VARIABLE);
+        if (variable != null && variable.trim().isEmpty()) {
+            variable = null;
         }
+        String subject = variable != null ? LOG_LEVEL_VARIABLE : LOG_LEVEL_KEY;
+        String logLevel = variable != null ? variable : config.getProperty(LOG_LEVEL_KEY);
+        Level level = LOG_LEVELS.get(logLevel.trim());
+        if (level == null) {
+            throw new IllegalArgumentException(subject + ": \"" + logLevel + "\" is not allowed; expected one of "
+                    + String.join(", ", LOG_LEVEL_NAMES));
+        }
+
+        // Remove default handlers
+        Logger rootLogger = Logger.getLogger("");
+        for (Handler handler : rootLogger.getHandlers()) {
+            rootLogger.removeHandler(handler);
+        }
+
+        // Console handler (INFO and above)
+        ConsoleHandler consoleHandler = new ConsoleHandler();
+        consoleHandler.setLevel(Level.INFO);
+        consoleHandler.setFormatter(new SimpleFormatter());
+        rootLogger.addHandler(consoleHandler);
+
+        // File handler (ALL levels for debugging)
+        FileHandler fileHandler = new FileHandler("opentsx.log", true);
+        fileHandler.setLevel(Level.ALL);
+        fileHandler.setFormatter(new SimpleFormatter());
+        rootLogger.addHandler(fileHandler);
+
+        rootLogger.setLevel(level);
+
+        logger.info("Logging configured with level: " + logLevel);
     }
 
     /**
@@ -136,7 +142,7 @@ public class ProductionConfig {
         // Override with environment variables
         for (String key : props.stringPropertyNames()) {
             String envValue = System.getenv(key.replace('.', '_').toUpperCase());
-            if (envValue != null) {
+            if (envValue != null && !envValue.trim().isEmpty()) {
                 props.setProperty(key, envValue);
                 logger.info("Overriding " + key + " from environment variable");
             }

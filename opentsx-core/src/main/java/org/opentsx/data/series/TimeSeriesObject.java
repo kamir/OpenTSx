@@ -15,6 +15,8 @@ import org.jfree.data.xy.XYSeries;
 import org.opentsx.data.model.EpisodesRecord;
 import org.opentsx.data.model.Event;
 import org.opentsx.data.model.Observation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +33,8 @@ import java.util.*;
 public class TimeSeriesObject implements Serializable {
     
     static final long serialVersionUID = 3519446562958441036L;
+
+    private static final Logger LOG = LoggerFactory.getLogger(TimeSeriesObject.class);
 
     public static TimeSeriesObject sigmaForAll(Vector<TimeSeriesObject> rows) {
         
@@ -448,7 +452,9 @@ public class TimeSeriesObject implements Serializable {
         sb.append("#\n# TimeSeriesObject \n# Class : " + this.getClass() + " \n# Label  : " + this.label + "\n# Nr of data points => " + size );
         sb.append("#\n#" + this.addinfo + "\n#");
         sb.append("#\n" + status.toString() );
-        sb.append( getStatisticData("# ") +"\n" );
+        if ( size > 0 ) {
+            sb.append( getStatisticData("# ") +"\n" );
+        }
 
         int MAX = Math.min(5, size);
 
@@ -578,36 +584,37 @@ public class TimeSeriesObject implements Serializable {
 
     public Hashtable<String, String> getStatisticData( Hashtable<String, String> table ) {
 
-        try {
+        double[][] data = statisticInput();
+        double[] dx = data[0];
+        double[] dy = data[1];
 
-            double[][] data = this.getData();
-            double[] dx = data[0];
-            double[] dy = data[1];
+        StandardDeviation stdev = new StandardDeviation();
+        table.put( "max_T" , decimalFormat_STAT.format(NumberUtils.max( dx ) ) );
+        table.put( "min_T" , decimalFormat_STAT.format(NumberUtils.min( dx ) ) );
+        table.put( "nr_T" ,  dx.length + "" );
 
-            StandardDeviation stdev = new StandardDeviation();
-            table.put( "max_T" , decimalFormat_STAT.format(NumberUtils.max( dx ) ) );
-            table.put( "min_T" , decimalFormat_STAT.format(NumberUtils.min( dx ) ) );
-            table.put( "nr_T" ,  dx.length + "" );
-
-            table.put( "max_Y" , decimalFormat_STAT.format(NumberUtils.max( dy ) ) );
-            table.put( "min_Y" , decimalFormat_STAT.format(NumberUtils.min( dy ) ) );
-            table.put( "mw__Y" , decimalFormat_STAT.format(StatUtils.mean( dy ) ) );
-            table.put( "std_Y" , decimalFormat_STAT.format(stdev.evaluate( dy ) ) );
-            table.put( "var_Y" , decimalFormat_STAT.format(StatUtils.variance( dy ) ) );
-            table.put( "sum_Y" , decimalFormat_STAT.format(StatUtils.sum( dy ) ) );
-            table.put( "nr__Y" , dy.length +"" );
-        }
-        catch(Exception ex) {
-            ex.printStackTrace();
-        }
+        table.put( "max_Y" , decimalFormat_STAT.format(NumberUtils.max( dy ) ) );
+        table.put( "min_Y" , decimalFormat_STAT.format(NumberUtils.min( dy ) ) );
+        table.put( "mw__Y" , decimalFormat_STAT.format(StatUtils.mean( dy ) ) );
+        table.put( "std_Y" , decimalFormat_STAT.format(stdev.evaluate( dy ) ) );
+        table.put( "var_Y" , decimalFormat_STAT.format(StatUtils.variance( dy ) ) );
+        table.put( "sum_Y" , decimalFormat_STAT.format(StatUtils.sum( dy ) ) );
+        table.put( "nr__Y" , dy.length +"" );
 
         return table;
     }
 
+    double[][] statisticInput() {
+        if ( xValues.isEmpty() ) {
+            throw new IllegalStateException( "getStatisticData: the series " + label
+                    + " has no values; expected at least 1 value" );
+        }
+        return getData();
+    }
+
     public String getStatisticData( String pre ) {
         StringBuffer sb = new StringBuffer();
-        try {
-        double[][] data = this.getData();
+        double[][] data = statisticInput();
         double[] dx = data[0];
         double[] dy = data[1];
 
@@ -636,10 +643,6 @@ public class TimeSeriesObject implements Serializable {
         sb.append(pre+"Var    \t var_Y=" + decimalFormat_STAT.format(StatUtils.variance( dy ) )+ "\n" );
         sb.append(pre+"Sum    \t sum_Y=" + decimalFormat_STAT.format(StatUtils.sum( dy ) ) + "\n" );
         sb.append(pre+"Len    \t nr__Y=" + dy.length + "\n#" );
-        }
-        catch(Exception ex) {
-            sb.append(( pre + "!!! NO STATISTICS for time series !!! -> " + ex.getMessage() ));
-        }
 
         return sb.toString();
 
@@ -947,7 +950,7 @@ public class TimeSeriesObject implements Serializable {
     // pointwise difference of the two series
     public TimeSeriesObject diff(TimeSeriesObject mr2 ) {
 
-        System.out.println( "difference of the number of values: " + (this.yValues.size() - mr2.yValues.size()) );
+        LOG.debug("diff series={} other={} valueCountDifference={}", label, mr2.label, this.yValues.size() - mr2.yValues.size());
         double difff = 0.0;
         TimeSeriesObject mr = new TimeSeriesObject();
 
@@ -1159,7 +1162,7 @@ public class TimeSeriesObject implements Serializable {
      */
     public TimeSeriesObject addToX2(int v ) {
         
-        System.out.println( "add v=" + v + " to x ... " );
+        LOG.debug("add to x series={} value={}", label, v);
         
         
 
@@ -1187,7 +1190,7 @@ public class TimeSeriesObject implements Serializable {
      */
     public TimeSeriesObject addToX(int v ) {
         
-        System.out.println( "add v=" + v + " to x ... " );
+        LOG.debug("add to x series={} value={}", label, v);
 
         TimeSeriesObject mr = new TimeSeriesObject();
         mr.setLabel( this.getLabel() );
@@ -1427,7 +1430,7 @@ public class TimeSeriesObject implements Serializable {
             double mean = mr.getAvarage();
             if ( c > 0 ) {
                 mr.addComment(  c + " missing values replaced with mean=" + mean + "." );
-                System.out.println( mr.getLabel() + " >>> " + c + " missing values replaced with mean=" + mean + "." );
+                LOG.debug("split filled missing values series={} missing={} mean={}", mr.getLabel(), c, mean);
                 for( int d = 0 ; d < c ; d++ ){ 
                     mr.addValue( mean );
                 }
@@ -1494,7 +1497,7 @@ public class TimeSeriesObject implements Serializable {
     };
 
     public void checkKonsistenz() {
-        System.out.println( xValues.size() + " " + yValues.size() );
+        LOG.debug("value counts series={} x={} y={}", label, xValues.size(), yValues.size());
 
     };
 
@@ -1601,7 +1604,7 @@ public class TimeSeriesObject implements Serializable {
      * @return
      */
     public static TimeSeriesObject calcAveragOfRows(Vector<TimeSeriesObject> rows ) throws Exception{
-        System.out.println( ">>> AVG: " + rows.size() );
+        LOG.debug("average of rows rows={}", rows.size());
         TimeSeriesObject r = new TimeSeriesObject();
         r.setLabel("mean of " + rows.size() + " series");
         r.setLabel_X( rows.elementAt(0).getLabel_X() );
@@ -1718,7 +1721,6 @@ public class TimeSeriesObject implements Serializable {
 
     public Vector<ValuePair> getValuePairs() {
         double[][] d = this.getData();
-        System.out.println( this.xValues.size() );
         Vector<ValuePair> vps = new Vector<ValuePair>();
         for( int i= 0; i < this.xValues.size(); i++ ) {
             ValuePair vp = new ValuePair();
@@ -2100,7 +2102,7 @@ public class TimeSeriesObject implements Serializable {
         
         r.divide_Y_by(z);
         
-        System.err.println( "> nr of rows added: " + z );
+        LOG.debug("added rows series={} rows={}", l, z);
         r.setLabel( l );
         return r;
     }  
@@ -2118,7 +2120,7 @@ public class TimeSeriesObject implements Serializable {
             r = r.add(mr);
             z++;
         }
-        System.err.println( "> nr of rows added: " + z );
+        LOG.debug("added rows series={} rows={}", l, z);
         r.setLabel( l );
         return r;
     }
@@ -2503,8 +2505,6 @@ public class TimeSeriesObject implements Serializable {
         }
 
         for( int i = 1; i < (this.getYData().length - offset - 1); i++ ) {
-
-            System.out.println( i + " " + offset + " " + (offset + i ) + " " + this.getYData().length + " " + (this.getYData().length - offset - 1) );
 
             p75.setData( values , offset, i );
             p95.setData( values , offset, i );

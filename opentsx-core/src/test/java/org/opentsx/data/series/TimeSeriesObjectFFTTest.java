@@ -10,6 +10,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.awt.EventQueue;
 import java.awt.Window;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -49,6 +52,28 @@ class TimeSeriesObjectFFTTest {
         assertEquals(expected.xValues, actual.xValues);
         assertEquals(expected.yValues, actual.yValues);
         assertEquals(4.0, ((Number) actual.xValues.get(1)).doubleValue());
+    }
+
+    @Test
+    void transformsWriteNothingToStandardOutput() {
+        TimeSeriesObjectFFT input = new TimeSeriesObjectFFT();
+        for (int i = 0; i < 12; i++) {
+            input.addValuePair(i, Math.cos(2.0 * Math.PI * i / 6.0));
+        }
+        PrintStream stdout = System.out;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(captured, true, StandardCharsets.UTF_8));
+        try {
+            TimeSeriesObjectFFT.calcFFT(input, 1.0, TransformType.FORWARD);
+            input.getModifiedTimeSeries_FourierFiltered(0.5);
+            input.getModifiedTimeSeries_PhaseRandomized(new Random(1));
+            input.diff(input);
+            input.checkKonsistenz();
+            input.split(5, 3);
+        } finally {
+            System.setOut(stdout);
+        }
+        assertEquals("", captured.toString(StandardCharsets.UTF_8));
     }
 
     @Test

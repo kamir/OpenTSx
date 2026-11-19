@@ -6,21 +6,25 @@ package org.opentsx.data.exporter;
 import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.chart.simple.MyXYPlot;
 import org.opentsx.data.series.TimeSeriesObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Hashtable;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class OriginProject {
 
+    private static final Logger LOG = LoggerFactory.getLogger(OriginProject.class);
+
     public String folderName = null;
 
-    // default on Mirko's Mac
     String header = "./out/";
 
     public void setHeader(String header) {
@@ -51,11 +55,9 @@ public class OriginProject {
         try {
             createProjectFile();
         } catch (IOException ex) {
-            Logger.getLogger(OriginProject.class.getName()).log(Level.SEVERE, null, ex);
+            throw new UncheckedIOException(folderName + ": cannot create the project folder (" + ex + ")", ex);
         }
-        
-        System.out.println(">>> Origin-Project: " +
-                           "    Folder: " + folderName );
+        LOG.debug("opened project folder={}", folderName);
     }
 
     public void initNewProjectFolder(String f) throws IOException {
@@ -102,7 +104,7 @@ public class OriginProject {
     
      public void addMessreihen(Vector<TimeSeriesObject> mrv2, String prefix, boolean writeTab ) {
          
-        System.err.println( ">>> write to folder: " + folderName + File.separator + "tab_"+prefix+".dat" );
+        LOG.debug("writing rows folder={} prefix={} rows={}", folderName, prefix, mrv2.size());
         if ( writeTab) { 
             MeasurementTable tab = new MeasurementTable();
             tab.singleX = false;
@@ -147,11 +149,7 @@ public class OriginProject {
      * @throws IOException 
      */
     public void createProjectFile() throws IOException {
-        File f = new File(this.folderName);
-        
-        if ( !f.exists() ) {
-            f.mkdirs();
-        }
+        Files.createDirectories(Path.of(this.folderName));
     }
 
     public File getNewFile( String fn ) {
@@ -170,15 +168,18 @@ public class OriginProject {
      * @throws IOException 
      */
     public void logLine( String s, String line ) throws IOException { 
-        FileWriter fw = logger.get(s);
+        FileWriter fw = s == null ? null : logger.get(s);
+        if ( fw == null ) {
+            throw new IllegalStateException( "logLine: " + folderName + " has no log named " + s
+                    + "; call createLogFile with that name first" );
+        }
         fw.write(line + "\n");
     };
 
 
     public void close() throws IOException {
-        System.out.println(">>> Close all writers now: " );
         for( String fn : logger.keySet() ){
-            System.out.println(">>> " + fn  );
+            LOG.debug("closing log folder={} log={}", folderName, fn);
             FileWriter fw = logger.get( fn );
             fw.flush();
             fw.close();
@@ -198,9 +199,7 @@ public class OriginProject {
      * @param mwt
      */
     public void storeMeasurementTable(MeasurementTable mwt) {
-        System.out.println("> store measurement table into folder : " + this.folderName );
         File f = new File(this.folderName + File.separator + mwt.getLabel() );
-        System.out.println("> table filename : " + f.getAbsolutePath() );
         mwt.writeToFile( f );
     }
 

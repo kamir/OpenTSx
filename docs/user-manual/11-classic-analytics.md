@@ -327,6 +327,9 @@ directory of its first argument, `./data/` by default. See
 `RISTool` opens no window, rejects a NaN probability with `IllegalArgumentException` and stops with English messages.
 See [return intervals](../../opentsx-core/README.md#collect-return-intervals).
 
+The library classes in `org.opentsx.data`, `org.opentsx.core` and `org.opentsx.algorithms` print nothing and throw on
+failure; their progress is DEBUG output of SLF4J. See [diagnostics](../../opentsx-core/README.md#read-the-diagnostics).
+
 `TSBucket` throws `IOException` when its file system cannot be opened and writes no CSV file in its place. See
 [write a bucket](../../opentsx-core/README.md#write-a-bucket).
 

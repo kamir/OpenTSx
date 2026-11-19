@@ -75,3 +75,32 @@ def test_build_script_reports_a_successful_build(tmp_path):
     result = run_build_script(tmp_path, 0)
     assert result.returncode == 0, result.stdout + result.stderr
     assert "Build completed successfully" in result.stdout
+
+
+def run_production_config_script(tmp_path: pathlib.Path, level) -> subprocess.CompletedProcess:
+    (tmp_path / "bin").mkdir()
+    shutil.copy(ROOT / "bin" / "episode_10_production_config.sh", tmp_path / "bin")
+    launcher = tmp_path / "bin" / "opentsx"
+    launcher.write_text("#!/bin/bash\necho classes\n", encoding="utf-8")
+    launcher.chmod(0o755)
+    (tmp_path / "opentsx-core" / "target" / "classes").mkdir(parents=True)
+    (tmp_path / "sample_data").mkdir()
+    (tmp_path / "opentsx.properties").write_text("opentsx.log.level=debug\n", encoding="utf-8")
+    fake = tmp_path / "fake"
+    fake.mkdir()
+    java = fake / "java"
+    java.write_text("#!/bin/bash\nexit 0\n", encoding="utf-8")
+    java.chmod(0o755)
+    environment = dict(os.environ, PATH=f"{fake}{os.pathsep}{os.environ['PATH']}")
+    environment.pop("OPENTSX_LOG_LEVEL", None)
+    if level is not None:
+        environment["OPENTSX_LOG_LEVEL"] = level
+    return subprocess.run(["bash", str(tmp_path / "bin" / "episode_10_production_config.sh")], capture_output=True,
+                          text=True, env=environment, check=False)
+
+
+@pytest.mark.parametrize("level, shown", [(None, "debug"), ("", "debug"), ("  \t", "debug"), ("warn", "warn")])
+def test_production_config_script_shows_the_level_that_applies(tmp_path, level, shown):
+    result = run_production_config_script(tmp_path, level)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert f"  Log Level: {shown}\n" in result.stdout, result.stdout

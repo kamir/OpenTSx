@@ -3,17 +3,20 @@ package org.opentsx.algorithms.detrending;
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.algorithms.detrending.methods.DFAmulti;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Vector;
 
 /**
- * Hier wird nun die Begrenzung der Segementlänge auf N/4 aufgehoben ...
- *
- * Das SingleDFA-Tool berechnet für eine Zeitreihe die DFA einzeln.
+ * Computes the DFA of every series on its own, with window sizes up to the
+ * full length instead of N/4.
  *
  * @author kamir
  */
 public class SingleDFATool {
+
+    private static final Logger LOG = LoggerFactory.getLogger(SingleDFATool.class);
 
     public static boolean logLogResults = false;
     public static boolean debug;
@@ -73,9 +76,9 @@ public class SingleDFATool {
     int[] S = null;
 
     
-    String value = "_";   // Welche Messgröße wird betrachtet?
+    String value = "_";   // the measured quantity
 
-    // Für jede Ordnung / PHASE wird hier eine Kurve erstellt.
+    // one curve for every order or phase
     static public Vector<TimeSeriesObject> kurven = new Vector<TimeSeriesObject>();
 
     public static SingleDFATool tool = new SingleDFATool();
@@ -84,26 +87,22 @@ public class SingleDFATool {
 
         tool = new SingleDFATool();
 
-        kurven = new Vector<TimeSeriesObject>(); // für jede Ordnung eine ...
+        kurven = new Vector<TimeSeriesObject>(); // one per order
 
         doClear = true;
         
         tool.value = v;
         
-        // nun werden die Berechnungen für verschiedene Ordnungen durchgeführt
+        if (vmr.isEmpty()) {
+            throw new IllegalArgumentException("calcMultiDFA: vmr has no series; expected at least 1 series");
+        }
+
+        // the DFA for every order
         int[] orders = {2};
         
         for (int i : orders) {
-            if (vmr.size() > 0) {
-
-                tool.runDFA(vmr, i);
-                kurven.add( tool.Fs.elementAt(0) );
-                
-
-            }
-            else {
-                System.out.println("Der Vector<Messreie> vmr ist leer");
-            }
+            tool.runDFA(vmr, i);
+            kurven.add( tool.Fs.elementAt(0) );
             tool.Fs.clear();
         }
     }
@@ -121,7 +120,7 @@ public class SingleDFATool {
         vmr.add( TimeSeriesObject.getGaussianDistribution( 4000 ) );
         vmr.add( TimeSeriesObject.getGaussianDistribution( 4000 ) );
 
-        // nun werden die Berechnungen für verschiedene Ordnungen durchgeführt
+        // the DFA for every order
         int[] orders = { 2 };
         for (int i : orders) {
             try {
@@ -136,14 +135,14 @@ public class SingleDFATool {
 
     DFAmulti dfa;
 
-    // alle Fluktuationsfunktionen...
+    // all fluctuation functions
     public Vector<TimeSeriesObject> Fs = new Vector<TimeSeriesObject>();
     public Vector<TimeSeriesObject> fsFMW = new Vector<TimeSeriesObject>();
 
-    // Für alle s wird eine Mittler Fluctuationsfunktion bestimmt
+    // the mean fluctuation function for every s
     Vector<TimeSeriesObject> Fs_MW = new Vector<TimeSeriesObject>();
 
-    // Die Fensterbreiten
+    // the window sizes
     Vector<Integer> s = new Vector<Integer>();
 
     public static boolean showCharts = false;
@@ -151,10 +150,10 @@ public class SingleDFATool {
 
     Vector<TimeSeriesObject> fsF2 = null;
 
-    // Für eine Klasse von Messreiehn wird die DFA einer Ordnung berechnet.
+    // the DFA of one order for a class of series
     public Vector<TimeSeriesObject> runDFA(Vector<TimeSeriesObject> vmr, int order) throws Exception  {
 
-        // s bestimmen ... anhand der längsten Reihe
+        // the longest series sets the window sizes s
         int zahlW = 0;
         int zahlT = 0;
         int zahlS = 0;
@@ -162,11 +161,12 @@ public class SingleDFATool {
         TimeSeriesObject laengsteReihe = vmr.elementAt(0);
         
         int max = vmr.size();
-        System.out.println( "zahlW=" + zahlW + " max=" + max + " " + laengsteReihe.getLabel() );
         
         for (int z = 0; z < max ; z++) {
             TimeSeriesObject mr = vmr.elementAt(z);
-            System.out.println( z+ " size x=" + mr.xValues.size() );
+            if (mr == null) {
+                throw new IllegalArgumentException("runDFA: series " + z + " is null; expected a series at every index");
+            }
             
             if (mr.xValues.size() > zahlW) {
                         zahlW = mr.xValues.size();
@@ -177,22 +177,17 @@ public class SingleDFATool {
         }
         
         
-        System.out.println(""
-                + "> Ermittle s für längste Reihe mit l=" + zahlW
-                + " Werten. \n> Label der längsten Reihe: " + laengsteReihe.getLabel() );
+        LOG.debug("longest series series={} label={} values={}", max, laengsteReihe.getLabel(), zahlW);
 
-        // ohne Begrenzung auf N/4 !!!
-
-      
-        
+        // without the limit of N/4
         dfa = DetrendingMethodFactory.getDFAmulti(order);
 
         dfa.setZR( laengsteReihe.getData()[1] );
 
-        // Anzahl der Werte in der Zeitreihe
+        // number of values in the series
         dfa.setNrOfValues((int)(laengsteReihe.getXValues().size() / 4));
 
-        // die Werte für die Fensterbreiten sind zu wählen ...
+        // choose the window sizes
 
         int s_max = (int)(zahlW);
         int s_min = Math.abs( order + 2 );
@@ -204,30 +199,11 @@ public class SingleDFATool {
         
         zahlS = dfa.getS().length;
         
-        System.out.println( " <<< " + zahlS + "=s >>> werden betrachtet.");
+        LOG.debug("running DFA series={} order={} windows={}", vmr.size(), order, zahlS);
 
         _initPuffer(zahlS);
 
-        String savePath = "/Volumes/MyExternalDrive/CALCULATIONS/data/out/";
-        
-
-        double fit_min[] = { 0.8, 1.5, 2.2 };
-        double fit_max[] = { 1.3, 2.1, 2.8 };
-                
-
-        System.out.println(
-                "> Berechne DFA für " + vmr.size() +
-                " Messreihen mit order=" + order + ".");
-
-        StringBuffer info = new StringBuffer("> Infos zur DFA-Rechnung");
-        info.append("\nnr.\t| file\t| save path");
-
-
         for (int z = 0; z < vmr.size(); z++) {
-
-            System.out.println(  (z*1.0) / vmr.size() );
-            
-            double[][] dfa_results = null;
 
             TimeSeriesObject mr = vmr.elementAt(z);
             if (mr != null ) {
@@ -248,14 +224,9 @@ public class SingleDFATool {
                    Fs.add( dfa.getResultsMR() );
                 }
 
-                System.out.println( "Reihe=" + z + " d < " + dfa.sMax );
-                System.out.println( (dfa.sMax) + " => maximaler Index für größtes s der längsten Reihe.");
+                LOG.debug("computed DFA series={} maxWindowIndex={}", z, dfa.sMax);
+            }
 
-                
-            }
-            else {
-                System.out.println( "MR = null !!! ");
-            }
         }
         
         return Fs;

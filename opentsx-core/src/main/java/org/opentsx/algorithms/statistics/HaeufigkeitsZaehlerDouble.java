@@ -2,6 +2,9 @@
 package org.opentsx.algorithms.statistics;
 
 import org.opentsx.data.series.TimeSeriesObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Vector;
@@ -12,6 +15,8 @@ import org.apache.commons.math3.stat.Frequency;
  * @author kamir
  */
 public class HaeufigkeitsZaehlerDouble {
+
+    private static final Logger LOG = LoggerFactory.getLogger(HaeufigkeitsZaehlerDouble.class);
 
     public double min = -100.0;
     public double max = 100.0;
@@ -57,7 +62,7 @@ public class HaeufigkeitsZaehlerDouble {
 
 
     /**
-     * Einfügen eines Wertes in die Haeufigkeitszählung ...
+     * Adds a value to the frequency count.
      * 
      * @param dates
      */
@@ -70,8 +75,8 @@ public class HaeufigkeitsZaehlerDouble {
     };
 
     /**
-     * Einfügen einer Reihe von Zeitpunkten und
-     * Berechnung aller Abstände aller Zeitpunkte dieser Reihe.
+     * Adds a series of points in time and computes all distances between
+     * the points of this series.
      *
      * @param dates
      */
@@ -127,7 +132,7 @@ public class HaeufigkeitsZaehlerDouble {
 
         double delta = (max - min + 1) / st;
 
-        if( debug ) System.out.println("DELTA: " + delta);
+        if( debug ) LOG.debug("histogram bins histogram={} width={}", label, delta);
 
         long vor = 0;
 
@@ -142,7 +147,7 @@ public class HaeufigkeitsZaehlerDouble {
             long y = w - vor;
             vor = w;
 
-            if( debug ) System.out.println(x + "\t" + y + "\t" + vor);
+            if( debug ) LOG.debug("histogram bin histogram={} x={} count={} cumulative={}", label, x, y, vor);
 
             mrCUMUL.addValuePair(x,vor);
             
@@ -183,7 +188,7 @@ public class HaeufigkeitsZaehlerDouble {
             Double perc = (Double)mrCUMUL.yValues.elementAt(i) / SUMME;
             if ( perc.isInfinite() ) perc = 1.0;
 
-            System.out.println( (Double)mr.xValues.elementAt(i) +"\t"+ perc);
+            LOG.debug("confidence histogram={} x={} share={}", label, mr.xValues.elementAt(i), perc);
             this.mrCONF.addValuePair( (Double)mr.xValues.elementAt(i) , perc );
         }
         return mrCONF;

@@ -45,7 +45,8 @@ runtimes:
     class: org.opentsx.algorithms.detrending.MFDFAAnalyzer
     note: >-
       2.x model in opentsx-core: MFDFAAnalyzer.process runs the 2.x method MFDFA of order 2 for q = -5 to 5 without 0,
-      writes measurement tables to databuffer/MFDFA and opens charts. No automated test.
+      writes measurement tables to databuffer/MFDFA and opens charts. MFDFAAnalyzerTest runs processMFDFA on one series
+      without charts and checks that it returns 10 series and writes nothing to standard output.
   processor: { status: none }
   go: { status: none }
 docs: docs/user-manual/11-classic-analytics.md#112-multifractal-dfa-mfdfa

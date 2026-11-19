@@ -8,8 +8,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.data.series.TimeSeriesObjectFFT;
 
+import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Random;
@@ -60,6 +62,27 @@ class LongTermCorrelationSeriesGeneratorTest {
                 () -> LongTermCorrelationSeriesGenerator.getRandomRow(1, 0.5, new Random(7), false, false));
         assertEquals("getRandomRow: the filtered series of 1 values has standard deviation 0.0; expected at least 2"
                 + " values that are not all equal", e.getMessage());
+    }
+
+    @Test
+    void generatingAndFilteringWriteNothingToStandardOutput() throws Exception {
+        TimeSeriesObject noise = new TimeSeriesObject();
+        Random random = new Random(3);
+        for (int i = 0; i < 100; i++) {
+            noise.addValuePair(i, random.nextGaussian());
+        }
+        PrintStream stdout = System.out;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(captured, true, StandardCharsets.UTF_8));
+        try {
+            LongTermCorrelationSeriesGenerator.getRandomRow(100, 0.5, new Random(3), false, false);
+            LongTermCorrelationSeriesGenerator.getRandomRow(1024, 0.5, new Random(3), false, true);
+            LongTermCorrelationSeriesGenerator.getPhaseRandomizedRow(noise, false, true);
+            TimeSeriesObjectFFT.convertToMessreiheFFT(noise).getModifiedTimeSeries_FourierFiltered(0.5);
+        } finally {
+            System.setOut(stdout);
+        }
+        assertEquals("", captured.toString(StandardCharsets.UTF_8));
     }
 
     @Test
