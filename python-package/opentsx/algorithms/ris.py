@@ -60,13 +60,11 @@ class RIS:
         """
         data = finite_values(time_series, "time_series")
 
-        # Determine threshold
         if self.threshold is not None:
             threshold_value = self.threshold
         else:
             threshold_value = float(np.percentile(data, self.threshold_percentile))
 
-        # Find events exceeding threshold
         event_indices = np.where(data > threshold_value)[0].astype(np.int32)
 
         return event_indices, threshold_value
@@ -87,7 +85,6 @@ class RIS:
         if len(event_indices) < 2:
             return np.array([], dtype=np.int32)
 
-        # Return intervals are differences between consecutive events
         return_intervals = np.diff(event_indices)
 
         return return_intervals
@@ -211,18 +208,14 @@ class RIS:
         if len(return_intervals) == 0:
             return np.array([]), np.array([])
 
-        # Sort return intervals
         sorted_ri = np.sort(return_intervals)
 
-        # Unique values
         unique_ri = np.unique(sorted_ri)
 
-        # Calculate survival probability for each unique value
         n_total = len(sorted_ri)
         survival_prob = np.zeros(len(unique_ri))
 
         for i, tau in enumerate(unique_ri):
-            # Count intervals >= tau
             n_geq_tau = np.sum(sorted_ri >= tau)
             survival_prob[i] = n_geq_tau / n_total
 
@@ -254,10 +247,8 @@ class RIS:
         Raises:
             ValueError: a value that is not finite, or fewer than 3 events above the threshold
         """
-        # Detect extreme events
         event_indices, threshold_value = self.detect_extreme_events(time_series)
 
-        # Calculate return intervals
         return_intervals = self.calculate_return_intervals(event_indices)
         if len(return_intervals) < 2:
             raise ValueError(
@@ -318,7 +309,6 @@ class RIS:
 
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 
-        # 1. Time series with extreme events
         ax = axes[0, 0]
         ax.plot(timestamps, data, linewidth=1, alpha=0.7)
         ax.axhline(
@@ -328,7 +318,6 @@ class RIS:
             label=f"Threshold ({results['threshold']:.2f})"
         )
 
-        # Mark extreme events
         event_indices = results['event_indices']
         if len(event_indices) > 0:
             ax.scatter(
@@ -347,7 +336,6 @@ class RIS:
         ax.legend()
         ax.grid(True, alpha=0.3)
 
-        # 2. Return interval distribution
         ax = axes[0, 1]
         if len(results['return_intervals']) > 0:
             ax.hist(results['return_intervals'], bins='auto', density=True, alpha=0.7, edgecolor='black')
@@ -372,7 +360,6 @@ class RIS:
         ax.legend()
         ax.grid(True, alpha=0.3)
 
-        # 3. Survival function
         ax = axes[1, 0]
         if len(results['return_intervals']) > 0:
             tau_vals, surv_prob = self.survival_function(results['return_intervals'])
@@ -383,7 +370,6 @@ class RIS:
         ax.set_title('Survival Function (Log Scale)', fontsize=12, fontweight='bold')
         ax.grid(True, alpha=0.3)
 
-        # 4. Risk statistics
         ax = axes[1, 1]
         ax.axis('off')
 
@@ -413,7 +399,6 @@ class RIS:
             bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.3)
         )
 
-        # Overall title
         fig.suptitle(
             f"Return Interval Statistics Analysis\n"
             f"R={results['risk_parameter']:.3f}",

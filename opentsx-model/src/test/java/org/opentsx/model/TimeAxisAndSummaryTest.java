@@ -28,6 +28,14 @@ class TimeAxisAndSummaryTest {
     }
 
     @Test
+    void theLargestStepIsEncodedAndDecoded() {
+        long[] ts = {Long.MIN_VALUE, -1, Long.MAX_VALUE - 1};
+        byte[] encoded = TimeAxis.encodeDeltas(ts);
+        assertEquals("feffffffffffffffff0100", TestVectors.hex(encoded));
+        assertArrayEquals(ts, TimeAxis.decodeDeltas(ts[0], ts.length, ByteBuffer.wrap(encoded)));
+    }
+
+    @Test
     void regularSecondsCostOneBytePerTimestamp() {
         long[] ts = new long[10_000];
         for (int i = 0; i < ts.length; i++) {

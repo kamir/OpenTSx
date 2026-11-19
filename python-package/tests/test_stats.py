@@ -203,6 +203,37 @@ def test_the_refusals_name_the_value_and_what_is_allowed():
     ]
 
 
+# the same texts as QuantileSketch.add and merge (Java) for a total count above Long.MAX_VALUE
+def test_add_and_merge_refuse_a_count_above_the_long_range_and_leave_the_sketch_unchanged():
+    s = QuantileSketch(0.01)
+    s.add(1.0, 2**63 - 2)
+    s.add(-2.0)
+    before = (s.count, s.zero_count, dict(s.positive), dict(s.negative))
+    with pytest.raises(ValueError) as e:
+        s.add(3.0, 1)
+    assert str(e.value) == ("count: 9223372036854775807 plus n 1 is above 9223372036854775807;"
+                            " expected a total count of at most 9223372036854775807")
+    other = QuantileSketch(0.01)
+    other.add(0.0, 5)
+    with pytest.raises(ValueError) as e:
+        s.merge(other)
+    assert str(e.value) == ("count: 9223372036854775807 plus the count 5 of the merged sketch is above"
+                            " 9223372036854775807; expected a total count of at most 9223372036854775807")
+    assert (s.count, s.zero_count, dict(s.positive), dict(s.negative)) == before
+    assert QuantileSketch.from_bytes(s.to_bytes()) == s
+
+
+def test_add_and_merge_reach_the_long_range_exactly():
+    s = QuantileSketch(0.01)
+    s.add(1.0, 2**63 - 7)
+    other = QuantileSketch(0.01)
+    other.add(0.0, 5)
+    s.merge(other)
+    s.add(-1.0)
+    assert s.count == 2**63 - 1
+    assert QuantileSketch.from_bytes(s.to_bytes()).count == 2**63 - 1
+
+
 # Double.toString in Java writes each value as given here
 @pytest.mark.parametrize("value, text", [
     (5, "5.0"), (1.0, "1.0"), (100.0, "100.0"), (9999999.0, "9999999.0"), (1e7, "1.0E7"),

@@ -138,7 +138,6 @@ class DFA:
         mean = np.mean(data)
         cumsum = np.cumsum(data - mean)
 
-        # Calculate fluctuations for each scale
         fluctuations = np.zeros(len(scales))
         rounding = 1e-10 * np.abs(cumsum).max()
 
@@ -181,7 +180,6 @@ class DFA:
         Raises:
             ValueError: fewer than 2 window sizes in the fit, or a fluctuation that is not positive
         """
-        # Select fit range
         if fit_range is not None:
             mask = (scales >= fit_range[0]) & (scales <= fit_range[1])
             scales = scales[mask]
@@ -196,16 +194,13 @@ class DFA:
                 f"fluctuations: F({scales[i]}) is {fluctuations[i]}; expected positive values"
             )
 
-        # Log-log regression
         log_scales = np.log10(scales)
         log_flucts = np.log10(fluctuations)
 
-        # Linear fit
         coeffs = np.polyfit(log_scales, log_flucts, 1)
         alpha = float(coeffs[0])
         intercept = float(coeffs[1])
 
-        # Calculate R²
         fitted = alpha * log_scales + intercept
         ss_res = np.sum((log_flucts - fitted) ** 2)
         ss_tot = np.sum((log_flucts - np.mean(log_flucts)) ** 2)

@@ -173,6 +173,25 @@ def test_without_a_retrieval_server_nothing_runs(retrieval, monkeypatch):
         "canRun": False, "reason": "RETRIEVAL_URL: not set; this installation deploys no DAGs"}
 
 
+def test_a_plain_account_is_refused_before_the_missing_retrieval_server(retrieval, monkeypatch):
+    monkeypatch.setattr(settings, "RETRIEVAL_URL", None)
+    client = client_as(PLAIN)
+    refused = {
+        "error": "this account: not an administrator; only administrators may deploy or stop DAGs on this installation",
+        "type": "forbidden",
+    }
+    for answer in (client.post("/api/v1/dags/deploy", content=DAG),
+                   client.post("/api/v1/dags/stop", params={"name": "wind-exp2-smart"})):
+        assert answer.status_code == 403
+        assert answer.json() == refused
+    assert client.get("/api/v1/dags/capabilities").json() == {"canRun": False, "reason": refused["error"]}
+
+    monkeypatch.setattr(settings, "DAG_RUN_ROLE", "user")
+    answer = client.post("/api/v1/dags/deploy", content=DAG)
+    assert answer.status_code == 503
+    assert answer.json() == {"error": "RETRIEVAL_URL: not set; this installation deploys no DAGs", "type": "unavailable"}
+
+
 def test_stop_forwards_the_name_and_needs_the_same_rights(retrieval):
     retrieval["json"] = {"dag": "wind-exp2-smart", "state": "stopped"}
     answer = client_as(ADMIN).post("/api/v1/dags/stop", params={"name": "wind-exp2-smart"})

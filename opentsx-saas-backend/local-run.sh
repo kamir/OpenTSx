@@ -6,19 +6,19 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo "🚀 Starting OpenTSx SaaS Backend (Local Development)"
+echo "Starting the OpenTSx SaaS backend (local development)"
 echo "===================================================="
 
 # Check if .env.local exists
 if [ ! -f ".env.local" ]; then
-    echo -e "${RED}✗ .env.local not found${NC}"
+    echo -e "${RED}FAIL  .env.local not found${NC}"
     echo -e "${YELLOW}  Run ./local-setup.sh first${NC}"
     exit 1
 fi
 
 # Check if virtual environment exists
 if [ ! -d "venv" ]; then
-    echo -e "${RED}✗ Virtual environment not found${NC}"
+    echo -e "${RED}FAIL  virtual environment not found${NC}"
     echo -e "${YELLOW}  Run ./local-setup.sh first${NC}"
     exit 1
 fi
@@ -28,11 +28,11 @@ source venv/bin/activate
 
 # Check if PostgreSQL is running
 echo ""
-echo "📊 Checking PostgreSQL..."
+echo "Checking PostgreSQL"
 if pg_isready -h localhost -p 5432 &> /dev/null; then
-    echo -e "${GREEN}✓ PostgreSQL is running${NC}"
+    echo -e "${GREEN}ok    PostgreSQL is running${NC}"
 else
-    echo -e "${RED}✗ PostgreSQL is not running${NC}"
+    echo -e "${RED}FAIL  PostgreSQL is not running${NC}"
     echo -e "${YELLOW}  Start with: brew services start postgresql (macOS)${NC}"
     echo -e "${YELLOW}  Or: sudo systemctl start postgresql (Linux)${NC}"
     exit 1
@@ -43,9 +43,9 @@ echo "========================================="
 echo -e "${GREEN}Starting FastAPI server...${NC}"
 echo "========================================="
 echo ""
-echo "📍 API Docs: http://localhost:8000/docs"
-echo "📍 Health: http://localhost:8000/health"
-echo "📍 API: http://localhost:8000/api/v1"
+echo "API docs: http://localhost:8000/docs"
+echo "Health: http://localhost:8000/health"
+echo "API: http://localhost:8000/api/v1"
 echo ""
 echo "Press Ctrl+C to stop the server"
 echo ""

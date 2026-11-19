@@ -249,3 +249,19 @@ def test_without_a_retrieval_server_nothing_is_generated(store, retrieval, monke
                                           json={"signal": "offtake.demand_kgph", "from": "2026-10-01T00:00:00Z", "to": "2026-10-01T06:00:00Z"})
     assert answer.status_code == 503
     assert answer.json() == {"error": "RETRIEVAL_URL: not set; this installation runs no generators", "type": "unavailable"}
+
+
+def test_a_plain_account_is_refused_before_the_missing_retrieval_server(store, retrieval, monkeypatch):
+    monkeypatch.setattr(settings, "RETRIEVAL_URL", None)
+    window = {"signal": "offtake.demand_kgph", "from": "2026-10-01T00:00:00Z", "to": "2026-10-01T06:00:00Z"}
+    answer = client_as(PLAIN, store).post("/api/v1/systems/h2-chain/generate", json=window)
+    assert answer.status_code == 403
+    assert answer.json() == {
+        "error": "this account: not an administrator; only administrators may run generators on this installation",
+        "type": "forbidden",
+    }
+
+    monkeypatch.setattr(settings, "DAG_RUN_ROLE", "user")
+    answer = client_as(PLAIN, store).post("/api/v1/systems/h2-chain/generate", json=window)
+    assert answer.status_code == 503
+    assert answer.json() == {"error": "RETRIEVAL_URL: not set; this installation runs no generators", "type": "unavailable"}

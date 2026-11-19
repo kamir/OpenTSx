@@ -21,7 +21,7 @@ pip install -e "python-package[all]"             # + the extras kafka, iceberg, 
 |------------|-------------------|
 | `opentsx.model` | v2 data model, byte-identical to Java ([chapter 3](03-data-model.md)). Series identity: `canonical`, `series_key`, `series_id`, `verify_series_key`. Episodes: `regular`, `irregular`, `values`. Time axis: `timestamps_us`, `encode_deltas`, `decode_deltas`. Summaries: `summarize`, `merge_summaries`, `variance`. Wire format: `encode`, `decode`, `fingerprint`, `schema`. IDs and hashes: `new_ulid`, `xxh64_hex`, `bucket_checksum`. pandas I/O in `opentsx.model.pandas_io`: `series_to_episode`, `episode_to_series`, `episodes_to_frame`. A refused episode or time axis raises `ValueError` with the message of Java, for example `tEnd: "20" is not after the last timestamp 20; expected a time after the last timestamp`; [`model-refusals.v1.json`](../datamodel-2026/testvectors/model-refusals.v1.json) lists them |
 | `opentsx.store.iceberg` | `load_catalog`, `read_episodes`, `read_frame`: read the Iceberg tables written by Java |
-| `opentsx.stats` | `QuantileSketch` (same format as Java), `stats_to_frame` for `SeriesStats` records. `QuantileSketch.from_bytes` raises `ValueError` with the messages of Java, for example `sketch bytes: truncated at <k> of <m>`, `sketch bytes: input ends inside a varint; expected complete varints`, `sketch bytes: bin index <n> out of range; expected an int` and `sketch bytes: <n> trailing bytes; expected exactly <m>` (full list, and how the alpha in a refusal is written, in the [opentsx-stats README](../../opentsx-stats/README.md#quantile-sketch-format-v1)) |
+| `opentsx.stats` | `QuantileSketch` (same format as Java), `stats_to_frame` for `SeriesStats` records. `QuantileSketch.from_bytes` raises `ValueError` with the messages of Java, for example `sketch bytes: truncated at <k> of <m>`, `sketch bytes: input ends inside a varint; expected complete varints`, `sketch bytes: bin index <n> out of range; expected an int` and `sketch bytes: <n> trailing bytes; expected exactly <m>` (full list, and how the alpha in a refusal is written, in the [opentsx-stats README](../../opentsx-stats/README.md#quantile-sketch-format-v1)). `add` and `merge` raise `ValueError` with the texts of Java when the total count would pass 9223372036854775807 and leave the sketch unchanged |
 | `opentsx.client` | `RetrievalClient` for the REST API (episodes, patterns, segments; the inventory, systems, signals, decisions; the scenario and runs of the twin). Every failed request raises `RetrievalError` with `method`, `url`, `status` (`None` when no answer came) and the server's error `type`. `TopicReader` reads the episodes of a topic directly, once, with a limit, and raises `TopicLimitReached` above it |
 | `opentsx` (top level) | classic algorithms `DFA`, `MFDFA`, `EventSynchronization`, `RIS` (see [chapter 11](11-classic-analytics.md)). `TimeSeriesObject` with `describe`, `normalize`, `detrend`, `diff`, `resample` and `apply`. `TSBucket` with `add`, `apply` and `filter` ([use TimeSeriesObject](#use-timeseriesobject)) |
 
@@ -66,7 +66,9 @@ Localize the index, or pass `assume_utc=True` when the times are UTC.
 `TimeSeriesObject.from_pandas` takes the timestamps of a `DatetimeIndex` as epoch microseconds, with pandas 2 and 3.
 An index without a time zone is read as UTC. `diff(periods=k)` is the lag difference x[i] − x[i − k].
 `normalize` with `zscore`, `minmax` or `robust` raises `ValueError` when the standard deviation, the range or the
-interquartile range is 0. `TSBucket.apply` runs the function on one series after the other.
+interquartile range is 0. `normalize` also refuses a value that is not finite, for example
+`values: 2 of 5 values are not finite, the first at index 2 is nan; expected finite values only, drop or fill the gaps first`.
+`ts[i]` also takes a numpy integer such as `np.int64(1)` as `i`. `TSBucket.apply` runs the function on one series after the other.
 
 ```python
 import pandas as pd
@@ -112,9 +114,10 @@ See the [topic reader limits and error handling](../../python-package/README.md#
 
 You need the `iceberg` extra. `read_episodes(catalog, start=..., end=...)` and `read_frame` take each bound as a
 timezone-aware `datetime`, an ISO 8601 string with an offset that `datetime.fromisoformat` reads, or epoch
-microseconds. Python 3.10 reads only the form that `datetime.isoformat` writes, with `Z` allowed, such as
-`2026-10-01T00:00:00Z` or `2026-10-01T00:00:00.250+02:00`; it refuses `2026-10-01T00:00:00.5Z` as not an ISO 8601
-time. Both functions check both bounds before they load the table. A bound without a time zone fails, for example
+microseconds. On Python 3.10 the string needs dashes, colons and an offset with a colon or `Z`, with any number of
+decimal places, such as `2026-10-01T00:00:00.5Z` or `2026-10-01T00:00:00.250+02:00`; Python 3.10 refuses
+`20261001T000000Z`, `2026-W40-4T00:00:00Z` and `2026-10-01T02:00:00+0200` as not an ISO 8601 time. Both functions
+check both bounds before they load the table. A bound without a time zone fails, for example
 `ValueError: start: 2026-10-01T00:00:00 has no time zone; expected a timezone-aware datetime, an ISO 8601 time with an offset such as 2026-10-01T00:00:00Z, or epoch microseconds`.
 Add the offset, for example `2026-10-01T00:00:00Z`.
 
@@ -134,7 +137,7 @@ They write nothing to the broker. You need Jupyter, the `viz` extra and a runnin
 
 | Notebook | What it does |
 |----------|--------------|
-| `01-zeitreihen-inventar.ipynb` | Shows the inventory of the retrieval server and one series with its coverage per day and its gaps. Without a reachable retrieval server, it reads `tsx.<domain>.episodes.v2` with `TopicReader`: set `KAFKA_BOOTSTRAP`, and `OPENTSX_DOMAIN` for a domain other than `wind`. |
+| `01-zeitreihen-inventar.ipynb` | Shows the inventory of the retrieval server and one series with its coverage per day and its gaps. Without a reachable retrieval server, it reads `tsx.<domain>.episodes.v2` with `TopicReader`: set `KAFKA_BOOTSTRAP`, and `OPENTSX_DOMAIN` for a domain other than `wind`. With neither, the first cell stops with `RuntimeError: OPENTSX_RETRIEVAL: the retrieval server <url> cannot be reached and KAFKA_BOOTSTRAP is not set; start the retrieval server or set KAFKA_BOOTSTRAP to a broker`. |
 | `02-ein-signal.ipynb` | Plots one signal of the system `h2-chain`, raw and cleaned, against its plausible range and its operating range. |
 | `03-verproben.ipynb` | Checks a CSV file against a signal: unit, time step, time zone, value range, gaps and duplicate times. The sample file is `beispiel-windmessung.csv` with the columns `date;time;wind_kmh`. |
 | `04-den-zwilling-fragen.ipynb` | Asks the twin of the system `h2-chain` questions. A run is computed and kept on the server. |

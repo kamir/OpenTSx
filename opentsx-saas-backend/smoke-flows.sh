@@ -110,6 +110,7 @@ check "stopping without token is refused" denied "$CODE"
 call GET /dags/capabilities "$TOKEN_A"
 check "capabilities answer" 200 "$CODE"
 CAN_RUN="$(field 'd["canRun"]')"
+REASON="$(field 'd["reason"]')"
 CODE="$(curl -s -m 30 -o "$OUT" -w '%{http_code}' -X POST -H "Authorization: Bearer $TOKEN_A" -H 'Content-Type: application/yaml' \
   --data-binary 'dag: smoke' "$API/dags/deploy" || true)"
 if [[ "$CAN_RUN" == True ]]; then
@@ -117,6 +118,8 @@ if [[ "$CAN_RUN" == True ]]; then
   # 503 means this installation has no retrieval server that deploys DAGs
   [[ "$CODE" == 400 || "$CODE" == 503 ]] && CODE=refused
   check "a document that is no DAG is refused" refused "$CODE"
+elif [[ "$REASON" == RETRIEVAL_URL:* ]]; then
+  check "without a retrieval server nothing is deployed" 503 "$CODE"
 else
   check "a plain account may not deploy DAGs here" 403 "$CODE"
 fi

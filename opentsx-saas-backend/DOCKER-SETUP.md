@@ -1,6 +1,6 @@
 # Docker Compose Setup for OpenTSx SaaS Backend
 
-## 🚀 Quick Start
+## Quick Start
 
 This runs the backend, PostgreSQL and the frontend with Docker Compose.
 
@@ -17,13 +17,13 @@ python3 -c "import secrets; print(secrets.token_urlsafe(32))"
 nano .env
 
 # 4. Start all services
-docker-compose up -d
+docker compose up -d
 
 # 5. Check status
-docker-compose ps
+docker compose ps
 
 # 6. View logs
-docker-compose logs -f backend
+docker compose logs -f backend
 ```
 
 ## Services
@@ -31,12 +31,12 @@ docker-compose logs -f backend
 The docker-compose.yml starts three services: the backend, PostgreSQL and the frontend. The backend and
 PostgreSQL are published on 127.0.0.1 only, so other hosts cannot reach them.
 
-### 🐍 Backend (FastAPI)
+### Backend (FastAPI)
 - **URL**: http://localhost:8000
 - **API Docs**: http://localhost:8000/docs
 - **Container**: opentsx-backend
 
-### 🗄️ PostgreSQL Database
+### PostgreSQL Database
 - **Port**: 5432 on 127.0.0.1 (`POSTGRES_PORT`)
 - **Database**: opentsx
 - **User**: opentsx_user (configurable in .env)
@@ -88,11 +88,11 @@ error while interpolating services.backend.environment.SECRET_KEY: required vari
 ```
 
 The backend refuses a value that is too short or is an example value published in this repository, and names the
-variable in its log (`docker-compose logs backend`).
+variable in its log (`docker compose logs backend`).
 
 PostgreSQL takes `POSTGRES_PASSWORD` only when it creates the volume `opentsx-postgres-data`. An existing volume
 keeps the password it was created with, so set `POSTGRES_PASSWORD` to that password. A volume created with an
-example password such as `change_this_password` has to be deleted with `docker-compose down -v`, which deletes its
+example password such as `change_this_password` has to be deleted with `docker compose down -v`, which deletes its
 data, or get a new password in PostgreSQL, because the backend refuses that value.
 
 The backend creates the tables and the first administrator at start, the administrator only when no administrator
@@ -105,59 +105,59 @@ existing account. To change it, sign in as that account and call `POST /api/v1/a
 
 ```bash
 # Start in background
-docker-compose up -d
+docker compose up -d
 
 # Start with logs
-docker-compose up
+docker compose up
 
 # Rebuild and start
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 ### Viewing Logs
 
 ```bash
 # All services
-docker-compose logs -f
+docker compose logs -f
 
 # Specific service
-docker-compose logs -f backend
-docker-compose logs -f postgres
+docker compose logs -f backend
+docker compose logs -f postgres
 
 # Last 100 lines
-docker-compose logs --tail=100 backend
+docker compose logs --tail=100 backend
 ```
 
 ### Managing Services
 
 ```bash
 # List running services
-docker-compose ps
+docker compose ps
 
 # Stop services
-docker-compose stop
+docker compose stop
 
 # Start services
-docker-compose start
+docker compose start
 
 # Restart a service
-docker-compose restart backend
+docker compose restart backend
 
 # Stop and remove containers
-docker-compose down
+docker compose down
 
-# Stop and remove containers + volumes (⚠️ deletes data)
-docker-compose down -v
+# Stop and remove containers and volumes; this deletes the data
+docker compose down -v
 ```
 
 ### Executing Commands
 
 ```bash
 # Access backend container
-docker-compose exec backend bash
+docker compose exec backend bash
 
 # Access PostgreSQL
-docker-compose exec postgres psql -U opentsx_user -d opentsx
+docker compose exec postgres psql -U opentsx_user -d opentsx
 ```
 
 ## Health Checks
@@ -169,7 +169,7 @@ The backend and PostgreSQL have health checks in `docker-compose.yml`; the front
 curl http://localhost:8000/health
 
 # Check PostgreSQL
-docker-compose exec postgres pg_isready -U opentsx_user
+docker compose exec postgres pg_isready -U opentsx_user
 ```
 
 ## Volumes
@@ -257,7 +257,7 @@ If ports are already in use:
 Publish the backend on another port for one command, and set `POSTGRES_PORT=5433` in `.env` for PostgreSQL:
 
 ```bash
-BACKEND_PORT=8001 docker-compose up -d
+BACKEND_PORT=8001 docker compose up -d
 ```
 
 Or stop the service that holds the port:
@@ -270,40 +270,40 @@ sudo systemctl stop postgresql
 
 ```bash
 # Check PostgreSQL is running
-docker-compose ps postgres
+docker compose ps postgres
 
 # Check PostgreSQL logs
-docker-compose logs postgres
+docker compose logs postgres
 
 # Verify the connection settings (the password stays hidden)
-docker-compose exec backend env | grep -E '^POSTGRES_(SERVER|PORT|USER|DB)='
+docker compose exec backend env | grep -E '^POSTGRES_(SERVER|PORT|USER|DB)='
 
 # Test manual connection
-docker-compose exec postgres psql -U opentsx_user -d opentsx -c "SELECT version();"
+docker compose exec postgres psql -U opentsx_user -d opentsx -c "SELECT version();"
 ```
 
 ### Backend Won't Start
 
 ```bash
 # Check logs for errors
-docker-compose logs backend
+docker compose logs backend
 
 # Rebuild image
-docker-compose build --no-cache backend
+docker compose build --no-cache backend
 
 # Clean start
-docker-compose down -v
-docker-compose up -d --build
+docker compose down -v
+docker compose up -d --build
 ```
 
 ### Reset Everything
 
 ```bash
 # Stop and remove everything
-docker-compose down -v --rmi all
+docker compose down -v --rmi all
 
 # Start fresh
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 ## Monitoring
@@ -344,7 +344,7 @@ volumes:
 The image runs uvicorn without `--reload`. Restart the service to load a change:
 
 ```bash
-docker-compose restart backend
+docker compose restart backend
 ```
 
 ### Running Tests
@@ -362,7 +362,7 @@ a column added to a model does not reach a table that exists already.
 
 ```bash
 # Scale backend to 3 instances
-docker-compose up -d --scale backend=3
+docker compose up -d --scale backend=3
 ```
 
 Note: You'll need a load balancer (Nginx/Traefik) to distribute traffic.
@@ -381,7 +381,7 @@ BACKUP_DIR="./backups"
 mkdir -p $BACKUP_DIR
 
 # Backup PostgreSQL
-docker-compose exec -T postgres pg_dump -U opentsx_user opentsx > $BACKUP_DIR/postgres_$DATE.sql
+docker compose exec -T postgres pg_dump -U opentsx_user opentsx > $BACKUP_DIR/postgres_$DATE.sql
 
 # Compress
 tar czf $BACKUP_DIR/backup_$DATE.tar.gz $BACKUP_DIR/*_$DATE.*
@@ -394,7 +394,7 @@ echo "Backup completed: backup_$DATE.tar.gz"
 
 ```bash
 # Restore PostgreSQL
-docker-compose exec -T postgres psql -U opentsx_user opentsx < backup.sql
+docker compose exec -T postgres psql -U opentsx_user opentsx < backup.sql
 ```
 
 ## Additional Resources

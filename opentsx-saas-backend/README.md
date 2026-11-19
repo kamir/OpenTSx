@@ -356,7 +356,8 @@ The backend writes one line per event to stdout: time, level, logger and the mes
 `app/main.py` applies `app/logging.conf` when it is imported, also when uvicorn starts without `--log-config`.
 `LOG_LEVEL` sets the level of the root logger, so `LOG_LEVEL=WARNING` drops the start line. `app/logging.conf` keeps
 uvicorn at `INFO`, sqlalchemy at `WARNING` and the bcrypt handler of passlib at `ERROR`; `uvicorn --log-level` does
-not change them. Stack traces appear only at `LOG_LEVEL=DEBUG`.
+not change them. Stack traces appear only at `LOG_LEVEL=DEBUG`, except for a failed start: uvicorn logs its traceback
+at ERROR.
 
 The start of a backend that cannot reach its database (`POSTGRES_SERVER=127.0.0.1`, `POSTGRES_PORT=1`):
 
@@ -367,6 +368,12 @@ The start of a backend that cannot reach its database (`POSTGRES_SERVER=127.0.0.
 2026-11-19T05:23:33+0000 INFO app.db.utils waiting for the database db=127.0.0.1:1/opentsx
 2026-11-19T05:23:33+0000 WARNING app.db.utils database not ready db=127.0.0.1:1/opentsx attempt=1/30 retry_in=1.0s cause=[Errno 111] Connection refused
 ```
+
+A stop signal (SIGTERM or SIGINT) during this wait ends the start at once:
+`stop requested while waiting for the database db=<host>:<port>/<database> attempts=<n>` at WARNING, then uvicorn
+logs the traceback at ERROR, ending in `RuntimeError: database <host>:<port>/<database>: not reachable when the stop
+came; start the backend again once the database answers`, then `Application startup failed. Exiting.`; the process
+exits with code 3.
 
 The start line names the settings an operator checks first; `DAG_RUN_TOKEN` appears only as `set` or `unset`, and
 no password or key appears. With `TEST_LOGIN=true` a WARNING follows:
@@ -416,7 +423,7 @@ gunicorn app.main:app \
 
 The image holds no `.env` (`.dockerignore` leaves it out). `--env-file .env` passes the keys of `.env` as
 environment variables. The run below needs Docker Engine on Linux and a PostgreSQL that listens on the host, such as
-the one `docker-compose up -d postgres` publishes on 127.0.0.1:
+the one `docker compose up -d postgres` publishes on 127.0.0.1:
 
 ```bash
 docker build -t opentsx-backend .
@@ -435,7 +442,7 @@ This starts the backend, the frontend and PostgreSQL. Set `SECRET_KEY`, `POSTGRE
 `FIRST_SUPERUSER_PASSWORD` in `.env` first (see [DOCKER-SETUP.md](DOCKER-SETUP.md)):
 
 ```bash
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 - **Frontend**: http://localhost:3000

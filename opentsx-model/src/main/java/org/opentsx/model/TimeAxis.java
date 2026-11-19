@@ -25,10 +25,15 @@ public final class TimeAxis {
         ByteArrayOutputStream out = new ByteArrayOutputStream(Math.max(1, timestampsMicros.length));
         long previousDelta = 0;
         for (int i = 1; i < timestampsMicros.length; i++) {
-            long delta = Math.subtractExact(timestampsMicros[i], timestampsMicros[i - 1]);
-            if (delta <= 0) {
+            if (timestampsMicros[i] <= timestampsMicros[i - 1]) {
                 throw new IllegalArgumentException("timestamps: timestamp " + i + " is not after timestamp " + (i - 1)
                         + "; expected strictly increasing timestamps");
+            }
+            long delta = timestampsMicros[i] - timestampsMicros[i - 1];
+            if (delta < 0) {
+                throw new IllegalArgumentException("timestamps: timestamp " + i + " is " + Long.toUnsignedString(delta)
+                        + " after timestamp " + (i - 1) + "; expected steps of at most " + Long.MAX_VALUE
+                        + " microseconds");
             }
             Varints.writeZigZag(out, i == 1 ? delta : delta - previousDelta);
             previousDelta = delta;
@@ -46,8 +51,13 @@ public final class TimeAxis {
         long delta = 0;
         for (int i = 1; i < count; i++) {
             long v = Varints.readZigZag(in, "timeDeltas");
-            delta = i == 1 ? v : delta + v;
-            ts[i] = ts[i - 1] + delta;
+            try {
+                delta = i == 1 ? v : Math.addExact(delta, v);
+                ts[i] = Math.addExact(ts[i - 1], delta);
+            } catch (ArithmeticException e) {
+                throw new IllegalArgumentException("timeDeltas: timestamp " + i + " leaves the 64-bit range; expected"
+                        + " timestamps and deltas from " + Long.MIN_VALUE + " to " + Long.MAX_VALUE, e);
+            }
         }
         if (in.hasRemaining()) {
             throw new IllegalArgumentException("timeDeltas: " + in.remaining() + " trailing bytes; expected exactly "

@@ -1,10 +1,6 @@
 """
-OpenTSx - Advanced Time Series Analysis Platform
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-A comprehensive Python library for time series analysis, focusing on
-long-range correlation detection, multifractal analysis, and real-time
-streaming analytics.
+The Python side of OpenTSx: the v2 data model, Iceberg reading, streaming statistics, a client for the retrieval
+server and the classic algorithms DFA, MFDFA, event synchronization and RIS.
 
 Basic usage:
 

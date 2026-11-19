@@ -37,10 +37,10 @@ def may_run(user: User) -> bool:
 
 
 def _allowed(user: User) -> None:
-    if not settings.RETRIEVAL_URL:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, NO_RETRIEVAL)
     if not may_run(user):
         raise HTTPException(status.HTTP_403_FORBIDDEN, ADMINS_ONLY)
+    if not settings.RETRIEVAL_URL:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, NO_RETRIEVAL)
 
 
 async def forward_json(user: User, what: str, path: str, document: dict):
@@ -98,10 +98,10 @@ async def _forward(user: User, what: str, path: str, body: bytes = b"", params: 
 @router.get("/capabilities")
 async def capabilities(user: User = Depends(get_current_user)):
     """Tells the workbench whether deploy and stop can work for this user."""
-    if not settings.RETRIEVAL_URL:
-        return {"canRun": False, "reason": NO_RETRIEVAL}
     if not may_run(user):
         return {"canRun": False, "reason": ADMINS_ONLY}
+    if not settings.RETRIEVAL_URL:
+        return {"canRun": False, "reason": NO_RETRIEVAL}
     return {"canRun": True, "reason": None}
 
 

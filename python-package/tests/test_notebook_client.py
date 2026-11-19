@@ -66,6 +66,7 @@ def server():
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     yield RetrievalClient(f"http://127.0.0.1:{srv.server_port}"), seen
     srv.shutdown()
+    srv.server_close()
 
 
 def test_the_inventory_is_a_table_with_tags_and_origin(server):

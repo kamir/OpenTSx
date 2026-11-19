@@ -98,7 +98,6 @@ class EventSynchronization:
         """
         data = finite_values(time_series, "time_series")
 
-        # Determine threshold
         if threshold is None:
             if method == 'std':
                 threshold = np.mean(data) + 2 * np.std(data)
@@ -114,7 +113,6 @@ class EventSynchronization:
                     f"method: {method!r} is unknown; expected 'std', 'percentile' or 'absolute'"
                 )
 
-        # Find local maxima above threshold
         events = []
         for i in range(1, len(data) - 1):
             if data[i] > threshold and data[i] > data[i-1] and data[i] > data[i+1]:
@@ -207,7 +205,7 @@ class EventSynchronization:
             Mean Q over the shuffled copies; 0 when a series has no events.
         """
         if shuffles < 1:
-            raise ValueError("shuffles must be at least 1")
+            raise ValueError(f"shuffles: {shuffles} is below 1; expected at least 1 shuffled copy")
         y = np.unique(np.asarray(events_y, dtype=np.float64))
         rand = Mulberry32(seed)
         total = 0.0
@@ -346,7 +344,6 @@ class EventSynchronization:
             leader = "None (symmetric)"
             lag_strength = 0.0
 
-        # Fixed cap on the local window (inf = purely local window)
         tau_max_used = np.inf if self.tau_max is None else self.tau_max
 
         results = {
@@ -396,14 +393,11 @@ class EventSynchronization:
         data1, t1, label1 = plot_input(ts1, "Series 1")
         data2, t2, label2 = plot_input(ts2, "Series 2")
 
-        # Create figure
         fig, axes = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
 
-        # Plot series 1 with events
         ax = axes[0]
         ax.plot(t1, data1, linewidth=1, alpha=0.7, label=label1)
 
-        # Mark events
         events_1 = results['events_1']
         if len(events_1) > 0:
             ax.scatter(
@@ -417,11 +411,9 @@ class EventSynchronization:
         ax.legend(loc='upper right')
         ax.grid(True, alpha=0.3)
 
-        # Plot series 2 with events
         ax = axes[1]
         ax.plot(t2, data2, linewidth=1, alpha=0.7, color='green', label=label2)
 
-        # Mark events
         events_2 = results['events_2']
         if len(events_2) > 0:
             ax.scatter(
@@ -436,7 +428,6 @@ class EventSynchronization:
         ax.legend(loc='upper right')
         ax.grid(True, alpha=0.3)
 
-        # Overall title with results
         fig.suptitle(
             f"Event Synchronization Analysis\n"
             f"Q={results['overall_sync']:.3f} | "

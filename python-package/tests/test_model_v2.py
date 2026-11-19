@@ -5,6 +5,7 @@ import json
 import math
 import pathlib
 import threading
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -14,6 +15,7 @@ from opentsx import model as m
 from opentsx.model import serde
 from opentsx.model.pandas_io import episode_to_series, episodes_to_frame, series_to_episode
 from opentsx.model.series_key import sorted_by_utf8
+from opentsx.model.time_axis import to_us
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 VECTORS = REPO / "opentsx-model" / "src" / "test" / "resources" / "testvectors"
@@ -63,6 +65,54 @@ def test_time_delta_rejects_bad_input():
         m.encode_deltas([5, 5])
     with pytest.raises(ValueError):
         m.decode_deltas(0, 2, bytes([2, 2]))
+
+
+def test_a_time_without_a_zone_names_the_field():
+    with pytest.raises(ValueError) as e:
+        m.timestamps_us({"tStart": datetime(2026, 10, 1), "count": 1, "timeEncoding": "REGULAR",
+                         "intervalMicros": 1})
+    assert str(e.value) == ("tStart: 2026-10-01T00:00:00 has no time zone; "
+                            "expected a timezone-aware datetime or epoch microseconds")
+    with pytest.raises(ValueError) as e:
+        to_us(datetime(2026, 10, 1, 12, 30), "createdAt")
+    assert str(e.value) == ("createdAt: 2026-10-01T12:30:00 has no time zone; "
+                            "expected a timezone-aware datetime or epoch microseconds")
+
+
+@pytest.mark.parametrize("t_start, count, deltas, i", [
+    (2**63 - 1, 2, "02", 1),
+    (0, 3, "feffffffffffffffff01" "02", 2),
+    (-2**63, 3, "feffffffffffffffff01" "02", 2),
+    (-2**63, 2, "01", 1),
+])
+def test_a_decoded_timestamp_outside_64_bits_is_refused(t_start, count, deltas, i):
+    with pytest.raises(ValueError) as e:
+        m.decode_deltas(t_start, count, bytes.fromhex(deltas))
+    assert str(e.value) == (f"timeDeltas: timestamp {i} leaves the 64-bit range; expected timestamps and deltas "
+                            "from -9223372036854775808 to 9223372036854775807")
+
+
+def test_timestamps_at_the_ends_of_the_64_bit_range_are_decoded():
+    np.testing.assert_array_equal(m.decode_deltas(2**63 - 2, 2, bytes.fromhex("02")), [2**63 - 2, 2**63 - 1])
+    np.testing.assert_array_equal(m.decode_deltas(-2**63, 2, bytes.fromhex("feffffffffffffffff01")), [-2**63, -1])
+
+
+@pytest.mark.parametrize("timestamps, i, step", [
+    ([-2**63, 2**63 - 1], 1, 2**64 - 1),
+    ([-2, -1, 2**63 - 1], 2, 2**63),
+])
+def test_a_step_outside_64_bits_is_refused_when_encoding(timestamps, i, step):
+    with pytest.raises(ValueError) as e:
+        m.encode_deltas(timestamps)
+    assert str(e.value) == (f"timestamps: timestamp {i} is {step} after timestamp {i - 1}; "
+                            "expected steps of at most 9223372036854775807 microseconds")
+
+
+def test_the_largest_step_is_encoded_and_decoded():
+    timestamps = [-2**63, -1, 2**63 - 2]
+    enc = m.encode_deltas(timestamps)
+    assert enc.hex() == "feffffffffffffffff0100"
+    np.testing.assert_array_equal(m.decode_deltas(timestamps[0], 3, enc), timestamps)
 
 
 REFUSALS = json.loads((REPO / "docs" / "datamodel-2026" / "testvectors" / "model-refusals.v1.json").read_text(

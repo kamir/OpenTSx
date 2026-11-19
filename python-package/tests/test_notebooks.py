@@ -9,6 +9,7 @@ import sys
 import threading
 import types
 import urllib.parse
+import urllib.request
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import numpy as np
@@ -266,6 +267,35 @@ def retrieval(monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
     yield f"http://127.0.0.1:{srv.server_port}"
     srv.shutdown()
+    srv.server_close()
+
+
+def test_notebook_1_stops_in_its_first_cell_without_a_server_or_a_broker(monkeypatch, without_matplotlib):
+    def refused(url, timeout):
+        raise OSError("connection refused")
+
+    monkeypatch.setattr(urllib.request, "urlopen", refused)
+    monkeypatch.setenv("OPENTSX_RETRIEVAL", "http://127.0.0.1:9")
+    monkeypatch.delenv("KAFKA_BOOTSTRAP", raising=False)
+    first = _cells(DIR / "01-zeitreihen-inventar.ipynb")[0]
+    with pytest.raises(RuntimeError) as e:
+        exec(compile(first, "01-zeitreihen-inventar.ipynb[0]", "exec"), {"__name__": "__main__"})
+    assert str(e.value) == ("OPENTSX_RETRIEVAL: the retrieval server http://127.0.0.1:9 cannot be reached and "
+                            "KAFKA_BOOTSTRAP is not set; start the retrieval server or set KAFKA_BOOTSTRAP to a broker")
+
+
+def test_notebook_3_shifts_a_copy_and_leaves_the_series_of_the_file_as_read(retrieval, without_matplotlib):
+    configure, read, signal, checks = _cells(DIR / "03-verproben.ipynb")[:4]
+    ns = {"__name__": "__main__", "display": print}
+    exec(compile(configure, "configure", "exec"), ns)
+    ns.update(FILE_UNIT="mph", TIME_MEANS="end")
+    exec(compile(read, "read", "exec"), ns)
+    exec(compile(signal, "signal", "exec"), ns)
+    as_read = ns["data"].index.copy()
+    exec(compile(checks, "checks", "exec"), ns)
+    assert {"check": "Unit", "verdict": "error", "reason": "no conversion from mph to m/s is known"} in ns["checks"]
+    pd.testing.assert_index_equal(ns["data"].index, as_read)
+    pd.testing.assert_index_equal(ns["converted"].index, as_read - ns["step"])
 
 
 @pytest.mark.filterwarnings("ignore:FigureCanvasAgg is non-interactive")

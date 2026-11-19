@@ -203,18 +203,6 @@ print(f"Interpretation: {results['interpretation']}")
 result: a value that is not finite, a constant series, or too few values or events.
 [Chapter 11](../docs/user-manual/11-classic-analytics.md) of the user manual lists the messages.
 
-## Features
-
-- **DFA**: Detrended Fluctuation Analysis
-- **MFDFA**: Multifractal DFA
-- **Event Synchronization**: Detect synchronized events
-- **NumPy/pandas integration**: Seamless data handling
-- **Avro / Kafka**: v2 episodes via `opentsx.model.encode`, Kafka producer via the `kafka` extra
-
-## Documentation
-
-Full documentation: https://docs.opentsx.com
-
 ## License
 
 Apache License 2.0

@@ -228,13 +228,13 @@ async def generate(
     Runs the demo generator the signal is bound to over a period. The retrieval server writes the series to the topic
     of generated series of the domain; the working copy of the user goes along, so a generator bound here counts.
     """
-    if not settings.RETRIEVAL_URL:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE,
-                            "RETRIEVAL_URL: not set; this installation runs no generators")
     if not dags.may_run(user):
         raise HTTPException(status.HTTP_403_FORBIDDEN,
                             "this account: not an administrator; "
                             "only administrators may run generators on this installation")
+    if not settings.RETRIEVAL_URL:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE,
+                            "RETRIEVAL_URL: not set; this installation runs no generators")
     bindings = [{"signal": b["signal"], "grade": b["grade"], "source": b["source"]} for b in await store.list(user.id, _system(system))]
     body = {"signal": request.signal, "from": request.start, "to": request.end, "bindings": bindings}
     return await dags.forward_json(user, "generate", f"/v1/systems/{system}/generate", body)

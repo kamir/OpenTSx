@@ -78,9 +78,9 @@ Every key the script writes into `.env.local` is a setting of the backend. `./lo
 This starts the FastAPI server with hot-reload enabled. The server will automatically restart when you change code files.
 
 **Available at:**
-- 📍 API Docs: http://localhost:8000/docs
-- 📍 Health Check: http://localhost:8000/health
-- 📍 API Endpoints: http://localhost:8000/api/v1
+- API Docs: http://localhost:8000/docs
+- Health Check: http://localhost:8000/health
+- API Endpoints: http://localhost:8000/api/v1
 
 ### 3. Test Your Setup
 
@@ -294,10 +294,10 @@ print(response.json())
 | Feature | Local Development | Docker Compose |
 |---------|------------------|----------------|
 | **Setup Time** | ~5 minutes | ~10 minutes (first build) |
-| **Hot Reload** | ✅ Instant | no: run `docker-compose restart backend` after a change |
+| **Hot Reload** | yes, instant | no: run `docker compose restart backend` after a change |
 | **Database** | Local PostgreSQL | Containerized |
 | **Isolation** | Shares host resources | Fully isolated |
-| **Debugging** | ✅ Direct access | Requires docker exec |
+| **Debugging** | yes, direct access | Requires docker exec |
 | **Best For** | Active development | Testing, deployment |
 
 ## Environment Variables Reference
@@ -347,5 +347,3 @@ If you encounter issues:
 2. Review server logs in the terminal
 3. Test individual components (PostgreSQL, Python)
 4. Create an issue in the GitHub repository
-
-Happy coding! 🚀

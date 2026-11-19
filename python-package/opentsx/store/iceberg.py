@@ -10,6 +10,7 @@ Episodes come back as v2 dicts (same shape as ``opentsx.model``), so they encode
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 from typing import Iterable, List, Mapping, Optional, Union
 
@@ -31,13 +32,22 @@ def load_catalog(name: str = "opentsx", **properties) -> Catalog:
     return _load_catalog(name, **properties)
 
 
+_FRACTION = re.compile(r"(\d\d:\d\d:\d\d)[.,](\d+)")
+
+
+def _six_places(m: re.Match) -> str:
+    """The fraction of the seconds as six digits, cut after the sixth as Python 3.11 reads it; Python 3.10 reads only
+    three or six digits after a point."""
+    return f"{m.group(1)}.{m.group(2)[:6].ljust(6, '0')}"
+
+
 def _micros(t: Instant, name: str) -> int:
     """Epoch microseconds of a bound; ValueError naming ``name`` for a time without a time zone."""
     expected = ("expected a timezone-aware datetime, an ISO 8601 time with an offset such as "
                 "2026-10-01T00:00:00Z, or epoch microseconds")
     if isinstance(t, str):
         try:
-            parsed = datetime.fromisoformat(t.replace("Z", "+00:00"))
+            parsed = datetime.fromisoformat(_FRACTION.sub(_six_places, t.replace("Z", "+00:00"), count=1))
         except ValueError as e:
             raise ValueError(f"{name}: {t!r} is not an ISO 8601 time; {expected}") from e
         if parsed.tzinfo is None:

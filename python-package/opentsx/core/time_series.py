@@ -1,6 +1,7 @@
 """TimeSeriesObject - Core abstraction for time series data."""
 
 from __future__ import annotations
+from numbers import Integral
 from typing import Optional, Union, List, Dict, Any, Callable
 import numpy as np
 import numpy.typing as npt
@@ -60,8 +61,6 @@ class TimeSeriesObject:
         self.label = label
         self.metadata = metadata or {}
 
-    # ==================== Properties ====================
-
     @property
     def values(self) -> npt.NDArray[np.float64]:
         """Get time series values."""
@@ -92,7 +91,7 @@ class TimeSeriesObject:
 
     def __getitem__(self, key: Union[int, slice]) -> Union[float, TimeSeriesObject]:
         """Index access."""
-        if isinstance(key, int):
+        if isinstance(key, Integral):
             return float(self._values[key])
         elif isinstance(key, slice):
             return TimeSeriesObject(
@@ -103,8 +102,6 @@ class TimeSeriesObject:
             )
         else:
             raise TypeError(f"key: {key!r} has type {type(key).__name__}, not one of int, slice")
-
-    # ==================== Statistical Methods ====================
 
     def mean(self) -> float:
         """Calculate mean value."""
@@ -160,8 +157,6 @@ class TimeSeriesObject:
             'max': self.max(),
         }
 
-    # ==================== Transformation Methods ====================
-
     def normalize(self, method: str = 'zscore') -> TimeSeriesObject:
         """
         Normalize time series.
@@ -173,8 +168,14 @@ class TimeSeriesObject:
             Normalized TimeSeriesObject
 
         Raises:
-            ValueError: an unknown method, or a spread of 0 that the method divides by
+            ValueError: an unknown method, a value that is not finite, or a spread of 0 that the method divides by
         """
+        bad = np.flatnonzero(~np.isfinite(self._values))
+        if len(bad):
+            raise ValueError(
+                f"values: {len(bad)} of {len(self)} values are not finite, the first at index {bad[0]} is "
+                f"{self._values[bad[0]]}; expected finite values only, drop or fill the gaps first"
+            )
         if method == 'zscore':
             center, spread, name = self.mean(), self.std(), "standard deviation"
         elif method == 'minmax':
@@ -297,8 +298,6 @@ class TimeSeriesObject:
             label=f"{self.label}_transformed",
             metadata=self.metadata.copy()
         )
-
-    # ==================== Serialization ====================
 
     def to_dict(self) -> Dict[str, Any]:
         """

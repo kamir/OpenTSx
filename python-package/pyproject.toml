@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "opentsx"
 version = "1.0.0"
-description = "OpenTSx - Advanced Time Series Analysis Platform"
+description = "Python side of OpenTSx: v2 data model, Iceberg reading, streaming statistics, retrieval client, classic algorithms"
 authors = [
     {name = "OpenTSx Contributors", email = "info@opentsx.org"}
 ]
@@ -36,7 +36,6 @@ dependencies = [
 [project.optional-dependencies]
 kafka = [
     "confluent-kafka[avro]>=2.3.0",
-    "fastavro>=1.8.0",
 ]
 iceberg = [
     "pyiceberg[sql-sqlite,pyarrow]>=0.9",
@@ -63,8 +62,8 @@ dev = [
 opentsx = "opentsx.cli:main"
 
 [project.urls]
-Homepage = "https://opentsx.org"
-Documentation = "https://docs.opentsx.org"
+Homepage = "https://github.com/kamir/OpenTSx"
+Documentation = "https://github.com/kamir/OpenTSx/blob/master/docs/user-manual/10-python.md"
 Repository = "https://github.com/kamir/OpenTSx"
 Issues = "https://github.com/kamir/OpenTSx/issues"
 

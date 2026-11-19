@@ -129,6 +129,20 @@ def test_unknown_options_name_the_allowed_values():
     assert str(e.value) == "key: 'a' has type str, not one of int, slice"
 
 
+def test_numpy_integers_index_like_ints():
+    ts = TimeSeriesObject(data=[1.0, 2.0, 3.0])
+    assert ts[np.int64(1)] == 2.0
+    assert ts[np.flatnonzero(ts.values > 2.5)[0]] == 3.0
+
+
+@pytest.mark.parametrize("method", ["zscore", "minmax", "robust"])
+def test_normalize_refuses_values_that_are_not_finite(method):
+    with pytest.raises(ValueError) as e:
+        TimeSeriesObject(data=[1.0, 2.0, np.nan, 4.0, np.nan]).normalize(method)
+    assert str(e.value) == ("values: 2 of 5 values are not finite, the first at index 2 is nan; "
+                            "expected finite values only, drop or fill the gaps first")
+
+
 def test_bucket_apply_takes_no_parallel_flag():
     bucket = TSBucket([TimeSeriesObject(data=[1.0, 2.0])])
     with pytest.raises(TypeError):

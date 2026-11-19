@@ -106,10 +106,11 @@ class QuantileSketch:
         self.positive: Dict[int, int] = {}
         self.negative: Dict[int, int] = {}
         self.zero_count = 0
+        self._count = 0
 
     @property
     def count(self) -> int:
-        return self.zero_count + sum(self.positive.values()) + sum(self.negative.values())
+        return self._count
 
     def _index(self, abs_value: float) -> int:
         return math.ceil(math.log(abs_value) / self._log_gamma)
@@ -120,6 +121,9 @@ class QuantileSketch:
     def add(self, value: float, n: int = 1) -> None:
         if n <= 0 or not math.isfinite(value):
             return
+        if n > _LONG_MAX - self._count:
+            raise ValueError(f"count: {self._count} plus n {n} is above {_LONG_MAX};"
+                             f" expected a total count of at most {_LONG_MAX}")
         a = abs(value)
         if a < MIN_INDEXABLE:
             self.zero_count += n
@@ -127,6 +131,7 @@ class QuantileSketch:
             store = self.positive if value > 0 else self.negative
             i = self._index(a)
             store[i] = store.get(i, 0) + n
+        self._count += n
 
     def update(self, values) -> "QuantileSketch":
         for v in values:
@@ -138,10 +143,14 @@ class QuantileSketch:
             raise ValueError(f"alpha: cannot merge a sketch with alpha {_java_double(other.alpha)}"
                              f" into one with alpha {_java_double(self.alpha)};"
                              " expected the same alpha")
+        if other.count > _LONG_MAX - self._count:
+            raise ValueError(f"count: {self._count} plus the count {other.count} of the merged sketch is above"
+                             f" {_LONG_MAX}; expected a total count of at most {_LONG_MAX}")
         for src, dst in ((other.positive, self.positive), (other.negative, self.negative)):
             for k, v in src.items():
                 dst[k] = dst.get(k, 0) + v
         self.zero_count += other.zero_count
+        self._count += other.count
         return self
 
     def quantile(self, q: float) -> float:
@@ -215,6 +224,7 @@ class QuantileSketch:
                 prev = index
         if pos != len(data):
             raise ValueError(f"sketch bytes: {len(data) - pos} trailing bytes; expected exactly {pos}")
+        s._count = count
         return s
 
     def __eq__(self, other: object) -> bool:

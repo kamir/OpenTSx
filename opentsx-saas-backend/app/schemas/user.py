@@ -17,8 +17,6 @@ def at_most_72_bytes(password: str) -> str:
 NewPassword = Annotated[str, Field(min_length=8), AfterValidator(at_most_72_bytes)]
 
 
-# ==================== Base Schemas ====================
-
 class UserBase(BaseModel):
     """Base user schema. The address as stored: the first administrator may have one EmailStr refuses, such as
     admin@localhost."""
@@ -48,8 +46,6 @@ class User(UserBase):
     class Config:
         from_attributes = True
 
-
-# ==================== Auth Schemas ====================
 
 class LoginRequest(BaseModel):
     """Login request schema. `email` is an address, or the name "admin" where test operation is switched on."""

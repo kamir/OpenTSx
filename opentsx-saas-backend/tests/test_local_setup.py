@@ -68,6 +68,7 @@ def test_the_passwords_are_random_and_not_printed(workdir, tmp_path):
         assert secret not in output
     assert "dev_password_123" not in output
     assert f"CREATE USER opentsx_dev WITH PASSWORD '{db}';" in (tmp_path / "stubs" / "psql.sql").read_text()
+    assert "ok    database 'opentsx_local' created" in output
     assert stat.S_IMODE(os.stat(workdir / ".env.local").st_mode) == 0o600
 
     other = tmp_path / "other"
@@ -87,6 +88,7 @@ def test_a_rerun_keeps_the_passwords_and_gives_them_to_the_database_user(workdir
     assert second["POSTGRES_PASSWORD"] == first["POSTGRES_PASSWORD"]
     assert second["FIRST_SUPERUSER_PASSWORD"] == first["FIRST_SUPERUSER_PASSWORD"]
     assert second["POSTGRES_PASSWORD"] not in output
+    assert "ok    password of 'opentsx_dev' set to POSTGRES_PASSWORD of .env.local" in output
     sql = (tmp_path / "stubs" / "psql.sql").read_text()
     assert sql.endswith(f"ALTER USER opentsx_dev WITH PASSWORD '{first['POSTGRES_PASSWORD']}';\n")
 
@@ -114,7 +116,7 @@ def test_a_failed_statement_stops_the_script(workdir, tmp_path, databases, error
     (tmp_path / "stubs" / "fail").write_text(error)
     output = run(workdir, succeeds=False)
     assert f"ERROR:  {error}" in output
-    assert "✓ Password of" not in output and "✓ Database 'opentsx_local' created" not in output
+    assert "ok    password of" not in output and "ok    database 'opentsx_local' created" not in output
     assert not (workdir / ".env.local").exists()
 
 

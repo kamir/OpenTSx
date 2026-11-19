@@ -60,6 +60,9 @@ jobs:
       - name: Install the YAML extra
         if: matrix.python == '3.12'
         run: python -m pip install -e ".[yaml]"
+      - name: Install the Iceberg extra
+        if: matrix.python == '3.10'
+        run: python -m pip install -e ".[iceberg]"
       - name: Test
         run: python -m pytest -q
       - name: Documentation links

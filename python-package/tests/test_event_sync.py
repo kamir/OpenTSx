@@ -167,8 +167,9 @@ def test_surrogate_sync_is_repeatable_and_bounded():
         q_rand = es.surrogate_sync(x, y, shuffles=5, seed=3)
         assert 0.0 <= q_rand <= 1.0 + 1e-12
         assert q_rand == es.surrogate_sync(x, y, shuffles=5, seed=3)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as e:
         es.surrogate_sync([1, 5], [2, 6], shuffles=0)
+    assert str(e.value) == "shuffles: 0 is below 1; expected at least 1 shuffled copy"
 
 
 def test_coupled_series_lie_above_their_surrogate_baseline():

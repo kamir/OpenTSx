@@ -82,6 +82,17 @@ def test_read_episodes_checks_the_bounds_before_it_loads_the_table(bounds, messa
     assert catalog.loads == 0
 
 
+@pytest.mark.parametrize("text", [
+    "2026-10-01T00:00:00.5Z", "2026-10-01T00:00:00,5Z", "2026-10-01T00:00:00.50Z", "2026-10-01T00:00:00.5000000Z",
+    "2026-10-01T02:00:00.5+02:00", "2026-10-01T00:00:00.500000+00:00",
+])
+def test_a_time_with_any_number_of_decimal_places_is_read_on_every_python(text):
+    pytest.importorskip("pyiceberg")
+    from opentsx.store.iceberg import _micros
+
+    assert _micros(text, "start") == 1_790_812_800_500_000
+
+
 def test_read_episodes_filters_on_the_same_instant_in_every_form():
     pytest.importorskip("pyiceberg")
     from opentsx.store.iceberg import read_episodes

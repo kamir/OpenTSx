@@ -71,6 +71,7 @@ def stub():
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     yield RetrievalClient(f"http://127.0.0.1:{srv.server_port}"), eps, seen
     srv.shutdown()
+    srv.server_close()
 
 
 def test_episodes_roundtrip_and_parameters(stub):

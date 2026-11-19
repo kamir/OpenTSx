@@ -130,8 +130,6 @@ class RetrievalClient:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
 
-    # ---- transport ---------------------------------------------------------------------------------------------
-
     def _request(self, method: str, path: str, body: Optional[dict] = None, accept: str = "application/json",
                  parse: Callable[[bytes], Any] = _object) -> Any:
         url = self.base_url + path
@@ -173,8 +171,6 @@ class RetrievalClient:
         return {"metric": metric, "tags": dict(tags) if tags else None,
                 "series": ",".join(series) if series else None, "from": _iso(start, "start"), "to": _iso(end, "end")}
 
-    # ---- episodes ----------------------------------------------------------------------------------------------
-
     def episodes(self, metric: Optional[str] = None, tags: Optional[Mapping[str, str]] = None,
                  series: Optional[Sequence[str]] = None, start=None, end=None, limit: Optional[int] = None,
                  clip: bool = False, resample: Optional[str] = None, agg: str = "MEAN") -> List[dict]:
@@ -208,8 +204,6 @@ class RetrievalClient:
         """Long DataFrame (series_id, metric, episode_id, ts, value) of :meth:`episodes`."""
         return episodes_to_frame(self.episodes(**kwargs))
 
-    # ---- patterns ----------------------------------------------------------------------------------------------
-
     def search(self, pattern: Optional[Iterable[float]] = None, episode_id: Optional[str] = None,
                offset: Optional[int] = None, length: Optional[int] = None, metric: Optional[str] = None,
                tags: Optional[Mapping[str, str]] = None, series: Optional[Sequence[str]] = None, start=None, end=None,
@@ -235,8 +229,6 @@ class RetrievalClient:
         body = self._selection(metric, tags, series, start, end)
         body.update(strategy=strategy, params=dict(params))
         return self._request("POST", "/v1/segments", body, accept=AVRO_STREAM, parse=decode_stream)
-
-    # ---- what the server knows: inventory, systems, signals, decisions -----------------------------------------
 
     def _json(self, method: str, path: str, body: Optional[dict] = None) -> Any:
         return self._request(method, path, body)
@@ -300,8 +292,6 @@ class RetrievalClient:
     def decisions(self, system: str) -> dict:
         """The decision cards of a system with what each analysis may claim today (``opentsx.decision-status.v1``)."""
         return self._json("GET", f"/v1/systems/{_id(system, 'system')}/decisions")
-
-    # ---- the twin: scenario and runs ---------------------------------------------------------------------------
 
     def scenario(self, system: str) -> dict:
         """What can be asked of the twin of a system: controls, policies, reference decisions, KPIs."""

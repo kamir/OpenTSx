@@ -7,8 +7,6 @@ from pydantic import BaseModel
 from app.models.flow import FlowStatus
 
 
-# ==================== Flow Schemas ====================
-
 class FlowBase(BaseModel):
     """Base flow schema."""
     name: str

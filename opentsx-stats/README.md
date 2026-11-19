@@ -206,8 +206,8 @@ with `ValueError`:
 * a quantile outside [0, 1]: `q: <q> is out of range; expected a number from 0 to 1`
 * in Java, `maxBins` below 16: `maxBins: <n> is out of range; expected a whole number of 16 or more`
 
-In Java, `add(value, n)` and `merge` refuse a total count above 9223372036854775807 with
-`IllegalArgumentException` and leave the sketch as it was:
+`add(value, n)` and `merge` refuse a total count above 9223372036854775807, in Java with `IllegalArgumentException`
+and in Python with `ValueError`, and leave the sketch as it was:
 
 * `add`: `count: <count> plus n <n> is above 9223372036854775807; expected a total count of at most 9223372036854775807`
 * `merge`: `count: <count> plus the count <other> of the merged sketch is above 9223372036854775807; expected a total count of at most 9223372036854775807`

@@ -90,17 +90,14 @@ class MFDFA:
         cumsum = np.cumsum(data - mean)
         rounding = 1e-10 * np.abs(cumsum).max()
 
-        # Calculate Fq for each q and scale
         Fq = np.zeros((len(self.q_range), len(scales)))
 
         for s_idx, scale in enumerate(scales):
-            # Get segment variances for this scale
             variances = _segment_variances(cumsum, scale, self.polynom_order)
             variances = variances[variances > rounding ** 2]
             if len(variances) == 0:
                 raise _exact_fit(scale)
 
-            # Calculate Fq for each q value
             for q_idx, q in enumerate(self.q_range):
                 Fq[q_idx, s_idx] = self._calculate_Fq(variances, q)
 
@@ -108,17 +105,6 @@ class MFDFA:
 
     @staticmethod
     def _calculate_Fq(variances: npt.NDArray[np.float64], q: float) -> float:
-        """
-        Calculate q-order fluctuation function.
-
-        Args:
-            variances: Segment variances
-            q: Order parameter
-
-        Returns:
-            Fq value
-        """
-        # Filter out zero or negative variances
         valid_variances = variances[variances > 0]
 
         if abs(q) < 1e-10:  # q ≈ 0
@@ -251,18 +237,14 @@ class MFDFA:
         data = finite_values(time_series, "time_series")
         scales, q_values, Fq = self.calculate(data, **kwargs)
 
-        # Calculate generalized Hurst exponent h(q)
         h_q = self.generalized_hurst_exponent(scales, Fq)
 
-        # Calculate mass exponent τ(q)
         tau_q = self.mass_exponent(h_q)
 
-        # Calculate singularity spectrum f(α)
         alpha, f_alpha = self.singularity_spectrum(tau_q)
 
-        # Multifractality measures
-        delta_h = float(h_q[0] - h_q[-1])  # Width of h(q)
-        delta_alpha = float(alpha.max() - alpha.min())  # Width of spectrum
+        delta_h = float(h_q[0] - h_q[-1])
+        delta_alpha = float(alpha.max() - alpha.min())
 
         rng = np.random.default_rng(seed)
         coefficients = np.fft.rfft(data)
@@ -296,7 +278,7 @@ class MFDFA:
 
     def plot_results(self, results: Dict[str, Any], show: bool = True) -> Any:
         """
-        Create comprehensive MFDFA visualization.
+        Plot h(q), tau(q), the singularity spectrum and Fq(s) of the results.
 
         Args:
             results: Results dictionary from analyze()
@@ -315,7 +297,6 @@ class MFDFA:
 
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 
-        # 1. Generalized Hurst exponent h(q)
         ax = axes[0, 0]
         ax.plot(results['q_values'], results['h_q'], 'o-', linewidth=2, markersize=6)
         ax.axhline(y=0.5, color='r', linestyle='--', alpha=0.5, label='H=0.5 (white noise)')
@@ -325,7 +306,6 @@ class MFDFA:
         ax.grid(True, alpha=0.3)
         ax.legend()
 
-        # 2. Mass exponent τ(q)
         ax = axes[0, 1]
         ax.plot(results['q_values'], results['tau_q'], 'o-', linewidth=2, markersize=6, color='green')
         ax.set_xlabel('q', fontsize=11)
@@ -333,7 +313,6 @@ class MFDFA:
         ax.set_title('Mass Exponent', fontsize=12, fontweight='bold')
         ax.grid(True, alpha=0.3)
 
-        # 3. Singularity spectrum f(α)
         ax = axes[1, 0]
         ax.plot(results['alpha'], results['f_alpha'], 'o-', linewidth=2, markersize=6, color='orange')
         ax.set_xlabel('α (Hölder exponent)', fontsize=11)
@@ -345,7 +324,6 @@ class MFDFA:
         )
         ax.grid(True, alpha=0.3)
 
-        # 4. Fluctuation functions Fq(s) for selected q values
         ax = axes[1, 1]
         q_indices = [0, len(results['q_values'])//2, len(results['q_values'])-1]
         for idx in q_indices:
@@ -363,7 +341,6 @@ class MFDFA:
         ax.legend()
         ax.grid(True, alpha=0.3)
 
-        # Overall title
         fig.suptitle(
             f"MFDFA Analysis - {'Multifractal' if results['is_multifractal'] else 'Monofractal'} "
             f"(Δh={results['delta_h']:.3f})",

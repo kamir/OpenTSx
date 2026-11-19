@@ -169,7 +169,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   switch to Iceberg from its environment; `auto` keeps the rule that only `--iceberg` on the command line selects
   Iceberg.
 - opentsx-model checks the shared refusal vectors `model-refusals.v1.json` in `ModelRefusalVectorsTest`, so Java and
-  python-package test the same 17 refusal texts.
+  python-package test the same 21 refusal texts.
 - `20-configure.sh` sets the ConfigMap keys `OPENTSX_STATS_WINDOWS`, `OPENTSX_STATS_ALLOWED_LATENESS`,
   `OPENTSX_WINDPARK_SCENARIO`, `OPENTSX_ICEBERG_NAMESPACE` and `DWD_FIXTURE` and checks their form.
 - `RNGWrapper.init(seed)` and `RNGWrapper.DEFAULT_SEED` (1), and `DetrendingMethodFactory.getDFAmulti(order)`.
@@ -702,6 +702,15 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   Modbus TCP server`.
 - opentsx-dwd and opentsx-market read the proxy key `opentsx.https.proxy` through one class,
   `org.opentsx.dwd.HttpsProxy`; the rule and its refusal text are unchanged.
+- Python messages in the D11 form: `EventSynchronization.surrogate_sync` raises `shuffles: 0 is below 1; expected at
+  least 1 shuffled copy`, and `to_us(t, field)` and `timestamps_us` raise `<field>: <time> has no time zone; expected
+  a timezone-aware datetime or epoch microseconds`.
+- SaaS backend scripts `local-setup.sh` and `local-run.sh` print `ok`, `warn` and `FAIL` instead of emoji, and the
+  backend pages use `docker compose` in the README and no emoji.
+- CI: the Python 3.10 job installs the `iceberg` extra, so the Iceberg time parsing tests run on the Python version
+  that needs them.
+- SaaS backend README: a failed start logs its traceback at ERROR, also below `LOG_LEVEL=DEBUG`, and a stop signal
+  while the backend waits for its database ends the process with exit code 3.
 
 ### Removed
 
@@ -863,6 +872,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   whose figures had no source.
 - The `.dockerignore` of the SaaS backend no longer lists the deleted `docs` directory.
 - The opentsx-market README no longer carries the dated status of a private archive and build environment.
+- Python package: the `kafka` extra no longer repeats `fastavro`, a core dependency; the README no longer claims a
+  Kafka producer or a documentation site, and `pyproject.toml` links the repository and user manual chapter 10.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -1637,6 +1648,33 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `MeterNormalizer` of opentsx-modbus refuses an episodeDuration that is not a whole number of microseconds with
   `episodeDuration: <d> is not a whole number of microseconds; set episodeDuration to a whole number of microseconds,
   such as PT1M`, as the wind farm Normalizer does.
+- SaaS backend: SIGTERM or SIGINT while the backend waits for its database ends the start at once with `database
+  <host>:<port>/<db>: not reachable when the stop came; start the backend again once the database answers` (exit code
+  3); the backend used to keep retrying for up to about 4.5 minutes. uvicorn still receives the signal.
+- SaaS backend: `POST /api/v1/dags/deploy`, `POST /api/v1/dags/stop` and `GET /api/v1/dags/capabilities` check the
+  role before `RETRIEVAL_URL`, so an account that may not deploy gets 403 also on an installation without a retrieval
+  server. `smoke-flows.sh` expects 503 when the capabilities name `RETRIEVAL_URL`.
+- Python `opentsx.store.iceberg`: `read_episodes` and `read_frame` read a time with any number of decimal places or a
+  decimal comma, such as `2026-10-01T00:00:00.5Z`, on Python 3.10 as on Python 3.11.
+- Python `decode_deltas` refuses a decoded timestamp or delta outside the 64-bit range with `timeDeltas: timestamp <i>
+  leaves the 64-bit range; expected timestamps and deltas from -9223372036854775808 to 9223372036854775807` instead of
+  raising `OverflowError` or wrapping with a `RuntimeWarning`.
+- Python `encode_deltas` and `irregular` refuse a step above 9223372036854775807 microseconds with `timestamps:
+  timestamp <i> is <step> after timestamp <i - 1>; expected steps of at most 9223372036854775807 microseconds`; they
+  used to write the step wrapped to 64 bits, bytes that `decode_deltas` refuses.
+- Python `QuantileSketch.add` and `merge` refuse a total count above 9223372036854775807 with the texts of Java and
+  leave the sketch unchanged; `count` no longer sums the bins on every call.
+- Python `TimeSeriesObject`: indexing takes numpy integers such as `np.int64`, and `normalize` refuses values that are
+  not finite with `values: <n> of <m> values are not finite, the first at index <i> is <value>; expected finite values
+  only, drop or fill the gaps first` instead of returning only NaN.
+- Notebook 1 stops in its first cell when neither the retrieval server nor a broker can be reached; notebook 3 shifts
+  a copy of the file's series when the file stamps the end of an interval and no unit conversion is known.
+- Java `TimeAxis.encodeDeltas` and `Episodes.irregular` refuse a step above 9223372036854775807 microseconds with
+  IllegalArgumentException and the text of Python instead of ArithmeticException, and `TimeAxis.decodeDeltas` refuses
+  a timestamp or delta outside the 64-bit range instead of wrapping it. A falling step below the long range now says
+  `not after` as Python does. `model-refusals.v1.json` has four more shared cases (21 refusal texts).
+- SaaS backend: `POST /api/v1/systems/<system>/generate` answers 403 to an account that may not run generators before
+  it checks `RETRIEVAL_URL` (503), in the same order as the DAG routes.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

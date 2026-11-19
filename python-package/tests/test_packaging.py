@@ -31,3 +31,9 @@ def test_no_extra_names_a_package_the_code_does_not_use():
     extras = PYPROJECT["project"]["optional-dependencies"]
     assert set(extras) == {"kafka", "iceberg", "yaml", "viz", "all", "dev"}
     assert not {"pytest-asyncio", "sphinx"} & _requirements("dev")
+
+
+def test_no_extra_repeats_a_core_dependency():
+    core = {re.match(r"[A-Za-z0-9_.-]+", r).group(0).lower() for r in PYPROJECT["project"]["dependencies"]}
+    for extra in ("kafka", "iceberg", "yaml", "viz"):
+        assert not core & _requirements(extra), extra

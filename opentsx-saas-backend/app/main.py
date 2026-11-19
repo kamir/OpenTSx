@@ -1,15 +1,17 @@
 """
 OpenTSx SaaS Backend API
-~~~~~~~~~~~~~~~~~~~~~~~~
 
 FastAPI application: accounts with JWT login, flows stored per user, DAG deployments and demo generators forwarded
 to the retrieval server, and the working copy of signal bindings per user. Every error answers
 {"error": text, "type": t}.
 """
 
+import asyncio
 import logging
 import logging.config
-from contextlib import asynccontextmanager
+import signal
+import threading
+from contextlib import asynccontextmanager, contextmanager
 from http import HTTPStatus
 from pathlib import Path
 
@@ -68,11 +70,38 @@ def log_start() -> None:
         log.warning("TEST_LOGIN=true: admin/admin signs in as administrator; do not run this outside a lab network")
 
 
+@contextmanager
+def stop_on_signals(stop: asyncio.Event):
+    """SIGINT and SIGTERM set ``stop``, then reach the handler that was there before: uvicorn checks its own stop only
+    after the start, so without this a stop during a database outage waits for every retry."""
+    if threading.current_thread() is not threading.main_thread():
+        yield
+        return
+    loop = asyncio.get_running_loop()
+    before = {}
+
+    def handle(sig, frame):
+        loop.call_soon_threadsafe(stop.set)
+        if callable(before[sig]):
+            before[sig](sig, frame)
+
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        before[sig] = signal.signal(sig, handle)
+    try:
+        yield
+    finally:
+        for sig, handler in before.items():
+            signal.signal(sig, handler)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Waits for the database, creates the missing tables and the first administrator; closes the pool at the end."""
+    """Waits for the database, creates the missing tables and the first administrator; closes the pool at the end.
+    A stop signal while the database cannot be reached ends the start."""
     log_start()
-    await wait_for_db(async_engine)
+    stop = asyncio.Event()
+    with stop_on_signals(stop):
+        await wait_for_db(async_engine, stop=stop)
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     async with AsyncSessionLocal() as session:
@@ -166,13 +195,9 @@ if static_path.exists():
     app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 
 
-# ==================== Include Routers ====================
-
 # Real authentication routes (with JWT and database)
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 
-
-# ==================== Root Endpoint ====================
 
 @app.get("/")
 async def root():
@@ -200,8 +225,6 @@ async def health_check():
     }
 
 
-# ==================== API Routes ====================
-
 # Flows: stored per user (app/api/flows.py)
 app.include_router(flows.router, prefix=settings.API_V1_STR)
 
@@ -211,8 +234,6 @@ app.include_router(dags.router, prefix=settings.API_V1_STR)
 # Systems: the working copy of signal bindings per user, and demo generators (app/api/systems.py)
 app.include_router(systems.router, prefix=settings.API_V1_STR)
 
-
-# ==================== Run Server ====================
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, log_config=str(LOG_CONFIG))
