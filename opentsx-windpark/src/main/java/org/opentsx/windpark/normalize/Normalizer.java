@@ -62,6 +62,10 @@ public final class Normalizer {
             throw new IllegalArgumentException("episodeDuration: " + episodeDuration
                     + " is shorter than 1 microsecond; set episodeDuration to a positive length, such as PT10M");
         }
+        if (episodeDuration.toNanos() % 1_000L != 0) {
+            throw new IllegalArgumentException("episodeDuration: " + episodeDuration + " is not a whole number of "
+                    + "microseconds; set episodeDuration to a whole number of microseconds, such as PT10M");
+        }
         this.implausibleCode = catalog.qualityCode("IMPLAUSIBLE");
         this.missingCode = catalog.qualityCode("MISSING");
     }

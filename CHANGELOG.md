@@ -683,6 +683,21 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   and `weather is synthetic; for real bills bind daily mean temperatures of a nearby station`.
 - `EpisodeQuery` refuses a window that does not open before it closes with `fromMicros: <from> is not before toMicros
   <to>; expected fromMicros < toMicros` instead of `fromMicros must be before toMicros`.
+- `modbus check`, `read`, `poll` and `simulate` print the problems of an invalid register map on one line, separated
+  by `; `, for example `opentsx: register map bad.yaml is invalid: device: missing (id, host, port, unitId,
+  pollInterval); points: at least one point is required`. `RegisterMapException.getMessage()` returns that one line.
+- `modbus read` and `modbus poll` exit with code 2 when an option has no effect: `--seed` without `--simulate`
+  (`opentsx.modbus.simulator.seed: needs opentsx.modbus.simulate; give --simulate with --seed`), and `--host` or
+  `--port` with `--simulate`, whose meter listens on a free loopback port (`opentsx.modbus.host: cannot be combined
+  with opentsx.modbus.simulate; give --host or --simulate, not both`).
+- `dwd obs --offline` exits with code 2 when `--station`, `--param` or `--hourly` is set, because these options only
+  select a download, for example `opentsx.dwd.station: cannot be combined with opentsx.dwd.obs.offline; give --station
+  or --offline, not both`.
+- `dwd mosmix` and `dwd obs` write the English column names the twins read: `--daily` writes `date,t_mean_c` and
+  `--boat` writes `time,ghi_wm2`. A tool that reads these files by the old names `datum,t_mittel_c` or
+  `zeit,einstrahlung_wm2` must switch to the new ones.
+- `MeterNormalizer` refuses an episode length below 1 microsecond with `episodeDuration: PT0S is shorter than 1
+  microsecond; set episodeDuration to a positive length, such as PT1M`.
 
 ### Removed
 
@@ -1589,6 +1604,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - A `--once` run of the statistics processor ends with `timed out computing statistics` when less than 1 ms is left
   for the log start check, instead of a `NullPointerException`, and with the client's `TimeoutException` as cause when
   the log start check gets no answer in the time left.
+- The wind farm `Normalizer` refuses an `episodeDuration` that is not a whole number of microseconds, such as
+  `PT0.0000015S`, with `episodeDuration: PT0.0000015S is not a whole number of microseconds; set episodeDuration to a
+  whole number of microseconds, such as PT10M`. It used to cut the window to whole microseconds while the episode kept
+  the original length.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

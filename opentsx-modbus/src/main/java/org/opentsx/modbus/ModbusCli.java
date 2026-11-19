@@ -129,6 +129,18 @@ public final class ModbusCli {
             throw new OpenTsxConfException(file, "no such file", "give an existing register map file or example");
         }
         boolean client = !command.equals("modbus simulate");
+        if (command.equals("modbus read") || command.equals("modbus poll")) {
+            boolean simulate = conf.getBoolean(SIMULATE);
+            if (!simulate && conf.contains(SEED)) {
+                throw new OpenTsxConfException(SEED, "needs " + SIMULATE, "give --simulate with --seed");
+            }
+            if (simulate && conf.contains(HOST)) {
+                throw new OpenTsxConfException(HOST, "cannot be combined with " + SIMULATE, "give --host or --simulate, not both");
+            }
+            if (simulate && conf.contains(PORT)) {
+                throw new OpenTsxConfException(PORT, "cannot be combined with " + SIMULATE, "give --port or --simulate, not both");
+            }
+        }
         String host = client ? conf.getOption(HOST).orElse(null) : null;
         Integer port = client ? conf.getOption(PORT).map(v -> range(PORT, conf.getInt(PORT), 1, 65535)).orElse(null) : null;
         Integer unit = conf.getOption(UNIT).map(v -> range(UNIT, conf.getInt(UNIT), 0, 255)).orElse(null);

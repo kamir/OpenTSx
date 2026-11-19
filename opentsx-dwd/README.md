@@ -23,9 +23,11 @@ bin/opentsx dwd house --station 10579                     # house twin over the 
 ```
 
 Every command takes `--offline <file>` in place of the download, for example a saved `MOSMIX_L_LATEST_10578.kmz`, a
-CDC zip or a station list. `obs --offline` takes a comma-separated list of files. Every option is a key of the
-configuration registry, so it can also come from `--conf <key>=<value>`, an `OPENTSX_DWD_...` environment variable or
-`--properties-file <path>`. `bin/opentsx dwd <command> --help` lists the keys of a command with their defaults.
+CDC zip or a station list. `obs --offline` takes a comma-separated list of files and refuses `--station`, `--param`
+and `--hourly`, which only select a download. Every option is a key of the configuration registry, so it can also come
+from `--conf <key>=<value>`, an `OPENTSX_DWD_...` environment variable or `--properties-file <path>`.
+`bin/opentsx dwd <command> --help` lists the keys of a command with their defaults, and `bin/opentsx dwd --help` lists
+the commands. `help` is not a command: `bin/opentsx dwd help` exits with code 2.
 
 | Command | Reads | Prints / writes |
 |---------|-------|-----------------|
@@ -71,6 +73,7 @@ opentsx: --n: "abc" is not an int; expected a whole number from -2147483648 to 2
 opentsx: /nonexistent: no such file; give an existing station list
 opentsx: dwd frob: unknown command; expected one of dwd house, dwd mosmix, dwd obs, dwd stations
 opentsx: --n: set twice on the command line (also by --n); set each key once
+opentsx: opentsx.dwd.station: cannot be combined with opentsx.dwd.obs.offline; give --station or --offline, not both
 ```
 
 An offline path that names a directory gets the same `no such file` line. An offline file whose content cannot be
@@ -83,7 +86,7 @@ the causes, and exits with code 1.
 | Source | Format | Elements / columns → variable (unit) | Origin |
 |--------|--------|--------------------------------------|--------|
 | MOSMIX_L, `weather/local_forecasts/mos/MOSMIX_L/single_stations/<id>/kml/MOSMIX_L_LATEST_<id>.kmz` | KMZ (zip) containing a KML. `dwd:IssueTime`, `dwd:ForecastTimeSteps` (UTC), one `dwd:Forecast` per element with one value per step (`-` = undefined) | `FF` wind speed (m/s), `DD` direction (deg), `TTT` K → °C, `PPPP` Pa → hPa, `N` cloud cover (%), `Rad1h` kJ/m² per hour → mean W/m², `RR1c` kg/m² per hour → mm | FORECAST |
-| CDC 10 minutes, `climate_environment/CDC/observations_germany/climate/10_minutes/{wind,air_temperature,solar,precipitation}/now/` | zip with `produkt_*.txt`: `STATIONS_ID;MESS_DATUM;QN;...;eor`, `MESS_DATUM` = `yyyyMMddHHmm` UTC (MEZ before 2000), `-999` = missing | `FF_10`, `DD_10`, `TT_10`, `RF_10`, `PP_10`, `GS_10`/`DS_10` J/cm² → W/m², `RWS_10` | MEASURED |
+| CDC 10 minutes, `climate_environment/CDC/observations_germany/climate/10_minutes/{wind,air_temperature,solar,precipitation}/now/` | zip with `produkt_*.txt`: `STATIONS_ID;MESS_DATUM;QN;...;eor`, `MESS_DATUM` = `yyyyMMddHHmm` UTC (UTC+1 before 2000), `-999` = missing | `FF_10`, `DD_10`, `TT_10`, `RF_10`, `PP_10`, `GS_10`/`DS_10` J/cm² → W/m², `RWS_10` | MEASURED |
 | CDC hourly, `.../hourly/{air_temperature,wind,extreme_wind,pressure,precipitation}/{historical,recent}/`, `.../hourly/solar/` | the same, `MESS_DATUM` = `yyyyMMddHH`; the solar product measures in true solar time and stamps the UTC moment its hour ends, `yyyyMMddHH:mm` (rounded to the nearest full hour, so up to 30 minutes off) | `TT_TU`, `RF_TU`, `F`, `D`, `FX_911` (gust, max), `P0`; `FG_LBERG`/`FD_LBERG` (solar) J/cm² → W/m², `R1` | MEASURED |
 | MOSMIX station catalog (`mosmix_stationskatalog.cfg`) | fixed-width `ID ICAO NAME LAT LON ELEV`; LAT/LON in **degrees.minutes** (50.26 = 50°26′), converted to decimal degrees | – | – |
 | CDC station list (`*_Beschreibung_Stationen.txt`) | ISO-8859-1, `Stations_id von_datum bis_datum Stationshoehe geoBreite geoLaenge Stationsname Bundesland Abgabe` | – | – |
@@ -129,8 +132,18 @@ The CSV exports match the import formats the twin demos already have:
 | Option | Columns | Read by |
 |--------|---------|---------|
 | `--out` | `time_utc,station,product,origin,reference_time,lead_h,<variable columns>` | any tool; one row per station, run and time |
-| `--daily` | `datum,t_mittel_c` (local days, Europe/Berlin; a day needs 80 % of its samples) | `bin/opentsx house --calibrate bills.csv --weather file.csv` |
-| `--boat` | `zeit,einstrahlung_wm2` | `bin/opentsx boat --data file.csv`. The boat import treats the column as measured, so use observations here |
+| `--daily` | `date,t_mean_c` (local days, Europe/Berlin; a day needs 80 % of its samples) | `bin/opentsx house --calibrate bills.csv --weather file.csv` |
+| `--boat` | `time,ghi_wm2` | `bin/opentsx boat --data file.csv`. The boat import treats the column as measured, so use observations here |
+
+## Collect on a schedule
+
+With `DWD_FORWARD=true`, the k3s installation adds the CronJob `opentsx-dwd-forward`
+([`deploy/k3s/components/dwd-forward`](../deploy/k3s/components/dwd-forward/dwd-forward.yaml)). On the schedule
+`DWD_SCHEDULE` it runs `opentsx dwd mosmix --station <id>` for each station of `DWD_STATIONS`, writes
+`/data/dwd/mosmix-<station>-<UTC time>.csv` and `/data/dwd/daily-<station>-<UTC time>.csv`, and deletes CSV files older
+than 30 days. See [`docs/devops/demos.md`](../docs/devops/demos.md). The CronJobs `opentsx-weather-forward` and
+`opentsx-mosmix-archive` of [`opentsx-market`](../opentsx-market/README.md) archive the CDC observations and the raw
+MOSMIX_L files of the twin sites ([`docs/devops/history-archive.md`](../docs/devops/history-archive.md)).
 
 ## Tests
 
@@ -145,14 +158,9 @@ They cover parsing, unit and time conversion, nearest-station search, series ide
 proxy rule, the retries of `DwdClient` against a stub HTTP client, and the configuration of the CronJob
 `opentsx-dwd-forward` and the Job `opentsx-dwd` in the namespace of `deploy/k3s/base`.
 
-The parsers were also checked against live downloads from opendata.dwd.de in October 2026: MOSMIX_L for 10578 and
-10579 (247 hourly steps), the MOSMIX catalog (5649 stations; it contains one entry whose minutes are 60 or more,
-which is accepted), the CDC 10-minute wind, temperature and solar files and the hourly temperature and wind files
-for 01358, and the CDC station list.
-
 ## Not yet
 
-* A scheduled collector (routine or KafScale producer to `tsx.weather.*` topics) and a Germany-wide archive.
+* A KafScale producer to `tsx.weather.*` topics and a Germany-wide archive.
 * ICON grid forecasts; MOSMIX_S (the parser reads it, but there are no tests for it); ensemble or probability
   elements.
 * A wind power path (wind speed → power curve → `generation.p_avail_kw`); today wind speed is a series only.

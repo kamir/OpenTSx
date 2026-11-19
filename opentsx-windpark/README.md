@@ -177,7 +177,7 @@ The demo scenario has 10 turbines, 6 h at 1 Hz, 9 channels plus state, and 17 gr
 
 * `CatalogAndNormalizerTest` covers the catalog, IEC references, unit conversion, the vendor 10-minute mapping (END timestamp, sign,
   °F), the unmapped/implausible/duplicate reporting and the refusal of an unknown source system and of an
-  `episodeDuration` shorter than 1 microsecond.
+  `episodeDuration` that is shorter than 1 microsecond or not a whole number of microseconds.
 * `SimulatorTest` covers determinism, 10-minute blocks and summaries, the power curve, wakes, operations, sensor faults vs.
   ground truth, the ground truth clipped to the simulated span, the producer of the build, the 30-day Weibull mean,
   the scenario rules, the episodeDuration and start refusals, the catalog's quality codes and the state time at sample

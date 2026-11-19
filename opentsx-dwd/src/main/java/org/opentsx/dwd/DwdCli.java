@@ -257,6 +257,18 @@ public final class DwdCli {
     private static Run obs(OpenTsxConf conf, Optional<String> station, Exports exports) {
         Optional<List<String>> files = conf.getOption(OBS_OFFLINE).map(v -> conf.getList(OBS_OFFLINE));
         if (files.isPresent()) {
+            if (conf.contains(STATION)) {
+                throw new OpenTsxConfException(STATION, "cannot be combined with " + OBS_OFFLINE,
+                        "give --station or --offline, not both");
+            }
+            if (conf.contains(PARAMS)) {
+                throw new OpenTsxConfException(PARAMS, "cannot be combined with " + OBS_OFFLINE,
+                        "give --param or --offline, not both");
+            }
+            if (conf.contains(HOURLY)) {
+                throw new OpenTsxConfException(HOURLY, "cannot be combined with " + OBS_OFFLINE,
+                        "give --hourly or --offline, not both");
+            }
             List<WeatherSeries> series = new ArrayList<>();
             for (String file : files.get()) {
                 series.addAll(offline(file, "CDC observation file", CdcObservations::read));

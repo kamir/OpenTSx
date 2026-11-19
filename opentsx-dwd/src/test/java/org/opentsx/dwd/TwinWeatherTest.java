@@ -76,7 +76,7 @@ class TwinWeatherTest {
         StringWriter w = new StringWriter();
         assertEquals(2, WeatherCsv.writeDailyTemperatures(s, HouseScenario.ZONE, w));
         List<String> lines = w.toString().lines().toList();
-        assertEquals("datum,t_mittel_c", lines.get(1));
+        assertEquals("date,t_mean_c", lines.get(1));
         assertTrue(lines.get(2).startsWith("2026-01-14,-4"), lines.get(2));
         assertTrue(lines.get(3).startsWith("2026-01-15,1"), lines.get(3));
         // bin/opentsx house --calibrate bills.csv --weather <this file>
@@ -90,7 +90,9 @@ class TwinWeatherTest {
         List<WeatherSeries> s = CdcObservations.parse(Fixtures.lines(Fixtures.SOLAR_10MIN));
         StringWriter w = new StringWriter();
         assertEquals(3, WeatherCsv.writeBoatIrradiance(s, w));
-        BoatData d = BoatData.parse(w.toString().lines().toList(), BoatDemo.plan(), ZoneOffset.UTC);
+        List<String> lines = w.toString().lines().toList();
+        assertEquals("time,ghi_wm2", lines.get(1));
+        BoatData d = BoatData.parse(lines, BoatDemo.plan(), ZoneOffset.UTC);
         assertEquals(3, d.rows());
         assertTrue(d.coverage().keySet().stream().anyMatch(k -> k.endsWith(".ghi_wm2")), d.coverage().toString());
         assertTrue(d.ignored().isEmpty(), d.ignored().toString());

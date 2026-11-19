@@ -20,9 +20,9 @@ import java.util.TreeMap;
  * <ul>
  *   <li>{@link #writeWide}: one row per station, product, run and time; one column per variable (canonical units).
  *   Aggregated columns (irradiance, precipitation, 10-minute means) are stamped at the interval start.</li>
- *   <li>{@link #writeDailyTemperatures}: {@code datum,t_mittel_c}, the format of
+ *   <li>{@link #writeDailyTemperatures}: {@code date,t_mean_c}, the format of
  *   {@code bin/opentsx house --calibrate bills.csv --weather file.csv}.</li>
- *   <li>{@link #writeBoatIrradiance}: {@code zeit,einstrahlung_wm2}, a column set of {@code bin/opentsx boat --data};
+ *   <li>{@link #writeBoatIrradiance}: {@code time,ghi_wm2}, a column set of {@code bin/opentsx boat --data};
  *   the boat import treats it as measured, so use observations there (or keep in mind that a forecast is
  *   relabelled).</li>
  * </ul>
@@ -70,7 +70,7 @@ public final class WeatherCsv {
     }
 
     /**
-     * Daily mean air temperature per local day of {@code zone} as {@code datum,t_mittel_c}. A day needs values for at
+     * Daily mean air temperature per local day of {@code zone} as {@code date,t_mean_c}. A day needs values for at
      * least 80 % of its samples, otherwise it is left out (the house twin then uses its synthetic climate).
      */
     public static int writeDailyTemperatures(List<WeatherSeries> series, ZoneId zone, Writer out) throws IOException {
@@ -87,7 +87,7 @@ public final class WeatherCsv {
         }
         out.write("# daily mean air temperature, DWD station " + t.station() + " (" + t.product() + ", " + t.origin()
                 + "), local days " + zone + "\n");
-        out.write("datum,t_mittel_c\n");
+        out.write("date,t_mean_c\n");
         int written = 0;
         for (Map.Entry<LocalDate, double[]> d : days.entrySet()) {
             Instant a = d.getKey().atStartOfDay(zone).toInstant();
@@ -101,13 +101,13 @@ public final class WeatherCsv {
         return written;
     }
 
-    /** Global irradiance as {@code zeit,einstrahlung_wm2} (UTC instants), for {@code bin/opentsx boat --data}. */
+    /** Global irradiance as {@code time,ghi_wm2} (UTC instants), for {@code bin/opentsx boat --data}. */
     public static int writeBoatIrradiance(List<WeatherSeries> series, Writer out) throws IOException {
         WeatherSeries g = series.stream().filter(s -> s.variable() == Variable.GLOBAL_IRRADIANCE).findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("no global irradiance series"));
         out.write("# global irradiance, DWD station " + g.station() + " (" + g.product() + ", " + g.origin()
                 + "); time = interval start, UTC\n");
-        out.write("zeit,einstrahlung_wm2\n");
+        out.write("time,ghi_wm2\n");
         int n = 0;
         for (int i = 0; i < g.size(); i++) {
             if (!Double.isNaN(g.values()[i])) {

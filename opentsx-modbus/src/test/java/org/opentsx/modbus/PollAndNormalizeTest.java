@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PollAndNormalizeTest {
@@ -102,6 +103,14 @@ class PollAndNormalizeTest {
             assertTrue(v[i] >= v[i - 1], "export counter must not decrease");
         }
         assertEquals("MEASURED", new MeterNormalizer(map, Duration.ofMinutes(1)).normalize(all).episodes().get(0).getLabels().get("origin"));
+    }
+
+    @Test
+    void anEpisodeShorterThanOneMicrosecondIsRefused() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> new MeterNormalizer(RegisterMap.exampleGridMeter(), Duration.ZERO));
+        assertEquals("episodeDuration: PT0S is shorter than 1 microsecond; set episodeDuration to a positive length, such as PT1M",
+                e.getMessage());
     }
 
     @Test

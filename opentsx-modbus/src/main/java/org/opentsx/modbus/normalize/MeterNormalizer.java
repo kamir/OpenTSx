@@ -49,7 +49,8 @@ public final class MeterNormalizer {
         this.episodeDuration = episodeDuration;
         this.windowMicros = episodeDuration.toNanos() / 1_000L;
         if (windowMicros <= 0) {
-            throw new IllegalArgumentException("episodeDuration must be positive");
+            throw new IllegalArgumentException("episodeDuration: " + episodeDuration
+                    + " is shorter than 1 microsecond; set episodeDuration to a positive length, such as PT1M");
         }
         if (originOverride != null && !RegisterMap.ORIGINS.contains(originOverride)) {
             throw new IllegalArgumentException("unknown origin " + originOverride);

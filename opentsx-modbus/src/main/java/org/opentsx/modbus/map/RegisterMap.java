@@ -116,8 +116,6 @@ public final class RegisterMap {
         return new RegisterMap(name, version, example, description, d, tags, points);
     }
 
-    // ---------------------------------------------------------------- loading
-
     /** The shipped example grid-meter map (a template until the real register sheets are available). */
     public static RegisterMap exampleGridMeter() {
         return resource("/modbus/example-grid-meter.yaml");
@@ -190,8 +188,6 @@ public final class RegisterMap {
         return sb.length() == 0 ? "" : sb + line + ": ";
     }
 
-    // ---------------------------------------------------------------- file format
-
     record MapFile(String schema, String name, String version, Boolean example, String description, DeviceFile device,
                    Map<String, String> tags, DefaultsFile defaults, List<PointFile> points) {
     }
@@ -232,8 +228,6 @@ public final class RegisterMap {
         }
         throw new IllegalArgumentException("'" + s + "' is not a duration (use PT5S, 500ms, 5s, 1m, 1h)");
     }
-
-    // ---------------------------------------------------------------- validation
 
     private static final class Validator {
         private final String source;

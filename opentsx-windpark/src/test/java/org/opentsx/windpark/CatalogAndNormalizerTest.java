@@ -158,6 +158,19 @@ class CatalogAndNormalizerTest {
     }
 
     @Test
+    void anEpisodeDurationThatIsNotAWholeNumberOfMicrosecondsIsRefused() {
+        assertEquals("episodeDuration: PT0.0000015S is not a whole number of microseconds; "
+                        + "set episodeDuration to a whole number of microseconds, such as PT10M",
+                assertThrows(IllegalArgumentException.class,
+                        () -> new Normalizer(catalog, park, Duration.ofNanos(1500), "opentsx-simulator")).getMessage());
+        Instant t0 = Instant.parse("2026-10-01T00:00:00Z");
+        Episode e = new Normalizer(catalog, park, Duration.ofSeconds(1), "opentsx-simulator")
+                .normalize(List.of(new RawReading("T02", "wind.met.wind_speed", t0, 7.0, null))).episodes().get(0);
+        assertEquals(Micros.of(t0.plusSeconds(1)), Micros.of(e.getTEnd()));
+        assertEquals("PT1S", e.getSegmentation().getParams().get("duration"));
+    }
+
+    @Test
     void theQualityCodesComeFromTheCatalog() {
         ChannelCatalog custom = new ChannelCatalog("custom", "1.0.0", catalog.iecEdition(),
                 Map.of(0, "GOOD", 7, "IMPLAUSIBLE", 9, "MISSING"), catalog.channels(), catalog.sources());

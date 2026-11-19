@@ -316,7 +316,7 @@ origin of weather.t_out_c: FORECAST (FORECAST = bound from DWD; SYNTHETIC = mode
 
 **Daily collection.** `20-configure.sh DWD_FORWARD=true DWD_STATIONS=10578,10579 "DWD_SCHEDULE=17 5 * * *"` adds the
 CronJob `opentsx-dwd-forward`. Every run writes `/data/dwd/mosmix-<station>-<UTC time>.csv` (wide CSV, all elements)
-and `daily-<station>-<UTC time>.csv` (`datum,t_mittel_c` for `house --weather`), and deletes CSV files older than 30
+and `daily-<station>-<UTC time>.csv` (`date,t_mean_c` for `house --weather`), and deletes CSV files older than 30
 days. `40-demo.sh dwd-forward` triggers one run. With `DWD_MODE=offline` it reads the fixture (station 10578 only), for
 tests without internet. The weather data are not yet written to KafScale (`tsx.weather.*` is planned).
 

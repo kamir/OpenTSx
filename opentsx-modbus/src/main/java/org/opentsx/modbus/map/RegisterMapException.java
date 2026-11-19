@@ -8,7 +8,7 @@ public final class RegisterMapException extends IllegalArgumentException {
     private final List<String> problems;
 
     public RegisterMapException(String source, List<String> problems) {
-        super("register map " + source + " is invalid:\n  - " + String.join("\n  - ", problems));
+        super("register map " + source + " is invalid: " + String.join("; ", problems));
         this.problems = List.copyOf(problems);
     }
 

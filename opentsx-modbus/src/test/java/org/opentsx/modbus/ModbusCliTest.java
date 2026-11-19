@@ -86,11 +86,19 @@ class ModbusCliTest {
     @Test
     void anInvalidMapIsAUsageError() throws IOException {
         Path map = Files.writeString(dir.resolve("bad.yaml"), "schema: opentsx.modbus.registermap.v1\nname: t\n");
-        Result r = cli(Map.of(), "check", "--map", map.toString());
-        assertEquals(2, r.code(), r.toString());
-        assertTrue(r.err().startsWith("opentsx: register map " + map + " is invalid:"), r.err());
-        assertEquals(1, r.err().lines().count(), r.err());
-        assertTrue(r.err().contains(" - points: at least one point is required"), r.err());
+        assertEquals(new Result(2, "", "opentsx: register map " + map + " is invalid: device: missing (id, host, port, unitId, "
+                + "pollInterval); points: at least one point is required\n"), cli(Map.of(), "check", "--map", map.toString()));
+    }
+
+    @Test
+    void aSimulatorOptionWithoutSimulateAndAnEndpointWithSimulateAreRefused() {
+        assertEquals(new Result(2, "", "opentsx: opentsx.modbus.simulator.seed: needs opentsx.modbus.simulate; give --simulate "
+                + "with --seed\n"), cli(Map.of(), "read", "--map", "example", "--host", "127.0.0.1", "--port", "1", "--seed", "7"));
+        assertEquals(new Result(2, "", "opentsx: opentsx.modbus.host: cannot be combined with opentsx.modbus.simulate; give "
+                + "--host or --simulate, not both\n"), cli(Map.of(), "read", "--map", "example", "--simulate", "--host", "127.0.0.1"));
+        assertEquals(new Result(2, "", "opentsx: opentsx.modbus.port: cannot be combined with opentsx.modbus.simulate; give "
+                + "--port or --simulate, not both\n"), cli(Map.of(), "poll", "--map", "example", "--simulate", "--count", "1",
+                "--port", "1502"));
     }
 
     @Test
@@ -110,7 +118,6 @@ class ModbusCliTest {
         assertTrue(r.out().contains("  opentsx.modbus.simulator.bind  string = 127.0.0.1  --bind  OPENTSX_MODBUS_SIMULATOR_BIND\n"),
                 r.out());
         assertFalse(r.out().contains("0.0.0.0"), r.out());
-        assertFalse(r.out().contains("parses its own flags"), r.out());
         assertEquals(new Result(0, Registry.shipped().help(), ""), cli(Map.of(), "--help"));
         assertEquals(new Result(0, ConfCli.versionLine(), ""), cli(Map.of(), "poll", "--version"));
     }
@@ -206,6 +213,7 @@ class ModbusCliTest {
         assertEquals(1502, conf.getInt("opentsx.modbus.port"));
         assertEquals(30, conf.getLong("opentsx.modbus.count"));
         assertEquals("episodes", conf.get("opentsx.modbus.out"));
+        ModbusCli.checkedMap("modbus poll", conf);
         argv.addAll(List.of("--count", "300"));
         assertEquals(300, OpenTsxConf.load(argv, env, null).conf().getLong("opentsx.modbus.count"),
                 "40-demo.sh modbus -- --count 300 appends to the command through OPENTSX_EXTRA_ARGS");

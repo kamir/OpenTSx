@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -154,6 +153,17 @@ class DwdCliTest {
     }
 
     @Test
+    void offlineObservationsRefuseTheDownloadOptions() throws IOException {
+        String file = fixture(Fixtures.WIND_10MIN).toString();
+        assertEquals(new Result(2, "", "opentsx: opentsx.dwd.station: cannot be combined with opentsx.dwd.obs.offline; give "
+                + "--station or --offline, not both\n"), cli(Map.of(), "obs", "--offline", file, "--station", "x"));
+        assertEquals(new Result(2, "", "opentsx: opentsx.dwd.params: cannot be combined with opentsx.dwd.obs.offline; give "
+                + "--param or --offline, not both\n"), cli(Map.of(), "obs", "--offline", file, "--param", "wind"));
+        assertEquals(new Result(2, "", "opentsx: opentsx.dwd.hourly: cannot be combined with opentsx.dwd.obs.offline; give "
+                + "--hourly or --offline, not both\n"), cli(Map.of(), "obs", "--offline", file, "--hourly"));
+    }
+
+    @Test
     void hourlyObservationsTakeOnlyTheHourlyParameters() {
         assertEquals(new Result(2, "", "opentsx: opentsx.dwd.params: \"solar\" has no hourly recent product; expected wind or "
                 + "air_temperature with hourly\n"), cli(Map.of(), "obs", "--station", "01358", "--hourly", "--param", "solar"));
@@ -166,7 +176,6 @@ class DwdCliTest {
         assertTrue(help.out().contains("  opentsx.dwd.stationCatalog  enum = mosmix  one of mosmix|cdc  --catalog"), help.out());
         assertTrue(help.out().contains("  opentsx.https.proxy  string  OPENTSX_HTTPS_PROXY, HTTPS_PROXY, https_proxy  secret"),
                 help.out());
-        assertFalse(help.out().contains("parses its own flags"), help.out());
         assertEquals(new Result(0, Registry.shipped().help(), ""), cli(Map.of(), "--help"));
         assertEquals(new Result(0, ConfCli.versionLine(), ""), cli(Map.of(), "mosmix", "--version"));
     }
