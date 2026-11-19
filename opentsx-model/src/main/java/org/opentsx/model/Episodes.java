@@ -6,11 +6,16 @@ import org.opentsx.model.v2.Segmentation;
 import org.opentsx.model.v2.SeriesKey;
 import org.opentsx.model.v2.TimeEncoding;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.regex.Pattern;
 
 /**
  * Builds valid {@link Episode}s (derived fields such as count, tEnd, encoded time axis and summary are computed)
@@ -23,14 +28,49 @@ import java.util.Map;
  */
 public final class Episodes {
 
-    public static final String PRODUCER = "opentsx-model/3.0.1";
+    private static final Pattern MODULE = Pattern.compile("^[a-z][a-z0-9-]*$");
+    private static final Pattern VERSION_FORMAT = Pattern.compile("^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.]+)?$");
+    private static final String VERSION = version();
+
+    /** The producer of episodes built here: {@code opentsx-model/<version>}. */
+    public static final String PRODUCER = producer("opentsx-model");
 
     private Episodes() {
     }
 
+    /** {@code <module>/<version>} with the version of this build, for {@link Draft#producer(String)}. */
+    public static String producer(String module) {
+        if (module == null || !MODULE.matcher(module).matches()) {
+            throw new IllegalArgumentException("module: \"" + module
+                    + "\" is not allowed; expected a Maven artifact id such as opentsx-market");
+        }
+        return module + "/" + VERSION;
+    }
+
+    private static String version() {
+        try (InputStream in = Episodes.class.getResourceAsStream("version.properties")) {
+            if (in == null) {
+                throw new IllegalStateException("org/opentsx/model/version.properties: missing from the class path;"
+                        + " build opentsx-model with Maven");
+            }
+            Properties p = new Properties();
+            p.load(in);
+            String v = p.getProperty("version");
+            if (v == null || !VERSION_FORMAT.matcher(v).matches()) {
+                throw new IllegalStateException("org/opentsx/model/version.properties: version \"" + v
+                        + "\" is not stamped; build opentsx-model with Maven");
+            }
+            return v;
+        } catch (IOException e) {
+            throw new UncheckedIOException(
+                    "org/opentsx/model/version.properties: cannot read; build opentsx-model with Maven", e);
+        }
+    }
+
     public static Draft regular(SeriesKey series, long tStartMicros, long intervalMicros, double[] values) {
         if (intervalMicros <= 0) {
-            throw new IllegalArgumentException("intervalMicros must be > 0");
+            throw new IllegalArgumentException("intervalMicros: \"" + intervalMicros
+                    + "\" is not allowed; expected a positive number of microseconds");
         }
         Draft d = new Draft(series, values);
         d.encoding = TimeEncoding.REGULAR;
@@ -41,16 +81,36 @@ public final class Episodes {
 
     public static Draft irregular(SeriesKey series, long[] timestampsMicros, double[] values) {
         if (timestampsMicros.length != values.length) {
-            throw new IllegalArgumentException("timestamps and values differ in length");
+            throw new IllegalArgumentException("timestamps: length " + timestampsMicros.length + " differs from the length "
+                    + values.length + " of values; expected one timestamp per value");
         }
         if (values.length == 0) {
-            throw new IllegalArgumentException("an irregular episode needs at least one value");
+            throw new IllegalArgumentException("values: empty; expected at least one value");
         }
         Draft d = new Draft(series, values);
         d.encoding = TimeEncoding.IRREGULAR_DELTA;
         d.timestamps = timestampsMicros.clone();
         d.tStart = timestampsMicros[0];
         return d;
+    }
+
+    /**
+     * REGULAR with the common step if there are at least two timestamps with one positive step, IRREGULAR_DELTA
+     * otherwise. Refuses what {@link #irregular} refuses: an empty series, and timestamps and values of different length.
+     */
+    public static Draft of(SeriesKey series, long[] timestampsMicros, double[] values) {
+        int n = timestampsMicros.length;
+        if (n >= 2 && n == values.length) {
+            long step = timestampsMicros[1] - timestampsMicros[0];
+            boolean equal = step > 0;
+            for (int i = 2; equal && i < n; i++) {
+                equal = timestampsMicros[i] - timestampsMicros[i - 1] == step;
+            }
+            if (equal) {
+                return regular(series, timestampsMicros[0], step, values);
+            }
+        }
+        return irregular(series, timestampsMicros, values);
     }
 
     public static double[] values(Episode episode) {
@@ -71,7 +131,8 @@ public final class Episodes {
         SeriesKeys.verify(e.getSeries());
         int n = e.getCount();
         if (e.getValues().size() != n) {
-            throw new IllegalArgumentException("count " + n + " != values " + e.getValues().size());
+            throw new IllegalArgumentException("count: \"" + n + "\" differs from the length " + e.getValues().size()
+                    + " of values; expected the number of values");
         }
         String axis;
         if (e.getTimeEncoding() == TimeEncoding.REGULAR) {
@@ -100,17 +161,28 @@ public final class Episodes {
         }
         long tEnd = Micros.of(e.getTEnd());
         if (n > 0 && ts[n - 1] >= tEnd) {
-            throw new IllegalArgumentException("last timestamp not before tEnd");
+            throw endNotAfterLast(tEnd, ts[n - 1]);
         }
-        if (Micros.of(e.getTStart()) >= tEnd) {
-            throw new IllegalArgumentException("tStart must be before tEnd");
+        long tStart = Micros.of(e.getTStart());
+        if (tStart >= tEnd) {
+            throw new IllegalArgumentException("tEnd: \"" + tEnd + "\" is not after tStart " + tStart
+                    + "; expected a time after tStart");
         }
         if (e.getQuality() != null && e.getQuality().remaining() != n) {
-            throw new IllegalArgumentException("quality must have one byte per value");
+            throw new IllegalArgumentException("quality: length " + e.getQuality().remaining()
+                    + " differs from the count " + n + "; expected one byte per value");
         }
     }
 
-    /** Mutable draft; {@link #build()} derives the remaining fields. */
+    private static IllegalArgumentException endNotAfterLast(long tEnd, long last) {
+        return new IllegalArgumentException("tEnd: \"" + tEnd + "\" is not after the last timestamp " + last
+                + "; expected a time after the last timestamp");
+    }
+
+    /**
+     * Mutable draft; {@link #build()} derives the remaining fields. A draft without {@link #source(String)} builds an
+     * episode with the source {@code unknown}, so every producer sets the source.
+     */
     public static final class Draft {
         private final SeriesKey series;
         private final double[] values;
@@ -148,6 +220,7 @@ public final class Episodes {
             return this;
         }
 
+        /** Where the values come from, for example {@code scada:ost-01}; {@code unknown} when not set. */
         public Draft source(String source) {
             this.source = source;
             return this;
@@ -208,14 +281,14 @@ public final class Episodes {
                 long next = Math.addExact(tStart, Math.multiplyExact(interval, (long) n));
                 end = tEnd != null ? tEnd : (n == 0 ? tStart + interval : next);
                 if (n > 0 && next - interval >= end) {
-                    throw new IllegalArgumentException("tEnd cuts off values");
+                    throw endNotAfterLast(end, next - interval);
                 }
             } else {
                 deltas = ByteBuffer.wrap(TimeAxis.encodeDeltas(timestamps));
                 long last = timestamps[n - 1];
                 end = tEnd != null ? tEnd : last + 1;
                 if (last >= end) {
-                    throw new IllegalArgumentException("tEnd must be after the last timestamp");
+                    throw endNotAfterLast(end, last);
                 }
             }
             List<Double> boxed = new ArrayList<>(n);

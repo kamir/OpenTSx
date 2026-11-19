@@ -1,5 +1,6 @@
 package org.opentsx.model;
 
+import org.apache.avro.AvroRuntimeException;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaNormalization;
 import org.apache.avro.io.BinaryDecoder;
@@ -29,7 +30,7 @@ import java.util.function.IntFunction;
 /**
  * Wire format of the v2 model.
  *
- * <p>Writes Avro single-object encoding (self-describing, no schema registry needed - KafScale has none).
+ * <p>Writes Avro single-object encoding (self-describing, no schema registry needed; KafScale has none).
  * Reads single-object payloads by fingerprint, and Confluent-framed payloads when a schema resolver is given.
  * Writer schemas of older versions can be registered for schema evolution.
  */
@@ -96,7 +97,8 @@ public final class OpenTsxAvro {
             buf.get(out);
             return out;
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw new UncheckedIOException(record.getSchema().getFullName() + ": cannot encode the record;"
+                    + " expected a record that matches this schema", e);
         }
     }
 
@@ -110,8 +112,10 @@ public final class OpenTsxAvro {
                 }
                 try {
                     return decoderFor(type).decode(payload);
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
+                } catch (IOException | AvroRuntimeException e) {
+                    throw new IllegalArgumentException(writerByFingerprint.get(fp).getFullName()
+                            + ": cannot decode a single-object payload of " + payload.length
+                            + " bytes; expected a complete payload written with this schema", e);
                 }
             case CONFLUENT:
                 return decodeConfluent(payload);
@@ -154,8 +158,10 @@ public final class OpenTsxAvro {
         BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(payload, 5, payload.length - 5, null);
         try {
             return datumReader.read(null, decoder);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        } catch (IOException | AvroRuntimeException e) {
+            throw new IllegalArgumentException(writer.getFullName() + ": cannot decode a Confluent payload of "
+                    + payload.length + " bytes with schema id " + id
+                    + "; expected a complete payload written with this schema", e);
         }
     }
 }

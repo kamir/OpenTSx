@@ -148,9 +148,18 @@ public abstract class SeriesStoreContract {
     }
 
     @Test
-    void limitBoundsTheResult() {
-        store.write(fixture());
-        assertTrue(store.read(EpisodeQuery.of(SeriesSelector.all(), T0, T0 + 3600 * SEC).limit(2)).size() <= 2);
+    void limitReturnsTheFirstEpisodesInReadOrder() {
+        List<Episode> fixture = fixture();
+        store.write(fixture);
+        EpisodeQuery all = EpisodeQuery.of(SeriesSelector.all(), T0, T0 + 3600 * SEC);
+        List<Episode> limited = store.read(all.limit(2));
+        assertEquals(2, limited.size());
+        assertEquals(limited.stream().sorted(EpisodeOps.READ_ORDER).toList(), limited);
+        if (store.capabilities().has(Capability.EPISODES)) {
+            assertEquals(fixture.stream().sorted(EpisodeOps.READ_ORDER).limit(2).toList(), limited);
+        } else {
+            assertEquals(points(store.read(all).subList(0, 2)), points(limited));
+        }
     }
 
     // ------------------------------------------------------------------ helpers

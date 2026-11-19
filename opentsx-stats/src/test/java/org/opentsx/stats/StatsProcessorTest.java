@@ -279,7 +279,8 @@ class StatsProcessorTest {
                 .forEach(g -> assertEquals(1200, g.getValidCount() + g.getNanCount(), g.getSeriesId()));
         String later = "; skipped and counted in invalid, later invalid episodes of this partition are only counted";
         String id2 = eps.get(2).getSeries().getSeriesId();
-        assertEquals(List.of(p0 + " offset " + at0 + ": invalid episode (count 3 != values 2)" + later,
+        assertEquals(List.of(p0 + " offset " + at0 + ": invalid episode (count: \"3\" differs from the length 2 of values;"
+                        + " expected the number of values)" + later,
                         p1 + " offset " + at1 + ": invalid episode (seriesId not-" + id2 + " does not match " + id2 + ")" + later),
                 err.toString(StandardCharsets.UTF_8).lines().sorted().toList());
         assertEquals(Map.of(p0, at0 + 2, p1, at1 + 1), p.positions(), "the position moves past an invalid episode");

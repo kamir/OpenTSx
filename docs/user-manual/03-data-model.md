@@ -19,8 +19,9 @@ Normative specification: [04-MODELL-V2-SPEC](../datamodel-2026/04-MODELL-V2-SPEC
 
 All timestamps are `long` with `logicalType: timestamp-micros`.
 
-* Java: the generated records return `Instant`. `Episodes.regular`, `Episodes.irregular` and
-  `Episodes.timestampsMicros` take or return epoch microseconds as `long`.
+* Java: the generated records return `Instant`. `Episodes.regular`, `Episodes.irregular`, `Episodes.of` and
+  `Episodes.timestampsMicros` take or return epoch microseconds as `long`. `Episodes.of` builds REGULAR when at least
+  two timestamps have one positive step, IRREGULAR_DELTA otherwise.
 * Python: `m.regular` and `m.irregular` store epoch microseconds as `int`. `m.decode` returns timezone-aware UTC
   `datetime` values. `m.encode` accepts both.
 

@@ -2,9 +2,12 @@ package org.opentsx.store;
 
 import org.opentsx.model.Episodes;
 import org.opentsx.model.Micros;
+import org.opentsx.model.Ulid;
+import org.opentsx.model.XxHash64;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.model.v2.TimeEncoding;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Comparator;
 
@@ -25,8 +28,9 @@ public final class EpisodeOps {
 
     /**
      * The part of an episode inside [fromMicros, toMicros), or null if no value lies inside.
-     * Returns the episode itself if it lies completely inside; otherwise a new episode (new id,
-     * parentEpisodeId = original) with the window as its bounds.
+     * Returns the episode itself if it lies completely inside; otherwise a new episode with the window as its bounds,
+     * parentEpisodeId = original, the createdAt of the original, and an id derived from the original id and the bounds
+     * of the part, so the same clip of the same episode is equal on every read.
      */
     public static Episode clip(Episode e, long fromMicros, long toMicros) {
         long tStart = Micros.of(e.getTStart());
@@ -49,10 +53,15 @@ public final class EpisodeOps {
         }
         long[] cts = Arrays.copyOfRange(ts, lo, hi);
         double[] cv = Arrays.copyOfRange(v, lo, hi);
+        long clipEnd = Math.min(tEnd, toMicros);
+        long createdAt = Micros.of(e.getProvenance().getCreatedAt());
+        long seed = XxHash64.hash((e.getEpisodeId() + "/" + cts[0] + "/" + clipEnd).getBytes(StandardCharsets.UTF_8));
         Episodes.Draft d = e.getTimeEncoding() == TimeEncoding.REGULAR
                 ? Episodes.regular(e.getSeries(), cts[0], e.getIntervalMicros(), cv)
                 : Episodes.irregular(e.getSeries(), cts, cv);
-        d.tEnd(Math.min(tEnd, toMicros))
+        d.tEnd(clipEnd)
+                .episodeId(Ulid.deterministic(Math.floorMod(Math.floorDiv(createdAt, 1000L), 1L << 48), seed))
+                .createdAt(createdAt)
                 .source(e.getProvenance().getSource())
                 .producer(e.getProvenance().getProducer())
                 .pipeline(e.getProvenance().getPipeline())

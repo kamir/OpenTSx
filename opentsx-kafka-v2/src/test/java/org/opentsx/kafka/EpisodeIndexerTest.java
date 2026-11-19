@@ -99,8 +99,9 @@ class EpisodeIndexerTest {
         assertEquals(new EpisodeIndexer.Result(2, 0, 2), r);
         assertEquals(List.of(written.get(0).getEpisodeId(), written.get(1).getEpisodeId()),
                 index.find(null, Long.MIN_VALUE, Long.MAX_VALUE).stream().map(IndexEntry::episodeId).toList());
-        assertEquals(layout.episodes() + "-0 offset 1: invalid episode (count 3 != values 2); skipped and counted in invalid,"
-                + " later invalid episodes of this partition are only counted" + System.lineSeparator(),
+        assertEquals(layout.episodes() + "-0 offset 1: invalid episode (count: \"3\" differs from the length 2 of values;"
+                + " expected the number of values); skipped and counted in invalid, later invalid episodes of this partition"
+                + " are only counted" + System.lineSeparator(),
                 err.toString(StandardCharsets.UTF_8));
     }
 

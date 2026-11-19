@@ -4,12 +4,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 import org.opentsx.model.v2.EpisodeSummary;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -38,10 +40,83 @@ class TimeAxisAndSummaryTest {
     void rejectsNonIncreasingTimestampsAndCorruptDeltas() {
         assertThrows(IllegalArgumentException.class, () -> TimeAxis.encodeDeltas(new long[]{5, 5}));
         assertThrows(IllegalArgumentException.class, () -> TimeAxis.encodeDeltas(new long[]{5, 4}));
-        assertThrows(IllegalArgumentException.class,
-                () -> TimeAxis.decodeDeltas(0, 3, ByteBuffer.wrap(new byte[]{2})));
-        assertThrows(IllegalArgumentException.class,
-                () -> TimeAxis.decodeDeltas(0, 2, ByteBuffer.wrap(new byte[]{2, 2})));
+        assertEquals("timeDeltas: input ends inside a varint; expected complete varints",
+                assertThrows(IllegalArgumentException.class,
+                        () -> TimeAxis.decodeDeltas(0, 3, ByteBuffer.wrap(new byte[]{2}))).getMessage());
+        assertEquals("timeDeltas: input ends inside a varint; expected complete varints",
+                assertThrows(IllegalArgumentException.class,
+                        () -> TimeAxis.decodeDeltas(0, 2, ByteBuffer.wrap(new byte[]{(byte) 0x82}))).getMessage());
+        assertEquals("timeDeltas: 1 trailing bytes; expected exactly 1 varints for 2 timestamps",
+                assertThrows(IllegalArgumentException.class,
+                        () -> TimeAxis.decodeDeltas(0, 2, ByteBuffer.wrap(new byte[]{2, 2}))).getMessage());
+        byte[] eleven = new byte[11];
+        Arrays.fill(eleven, (byte) 0x80);
+        assertEquals("timeDeltas: varint longer than 10 bytes; expected at most 10 bytes per varint",
+                assertThrows(IllegalArgumentException.class,
+                        () -> TimeAxis.decodeDeltas(0, 2, ByteBuffer.wrap(eleven))).getMessage());
+    }
+
+    @Test
+    void theVarintHelperRefusesTruncatedInputLikeTheTimeAxis() {
+        byte[] truncated = {2, (byte) 0x83};
+        IllegalArgumentException helper = assertThrows(IllegalArgumentException.class, () -> {
+            ByteBuffer in = ByteBuffer.wrap(truncated);
+            Varints.readZigZag(in, "timeDeltas");
+            Varints.readZigZag(in, "timeDeltas");
+        });
+        IllegalArgumentException axis = assertThrows(IllegalArgumentException.class,
+                () -> TimeAxis.decodeDeltas(0, 3, ByteBuffer.wrap(truncated)));
+        assertEquals("timeDeltas: input ends inside a varint; expected complete varints", helper.getMessage());
+        assertEquals(helper.getMessage(), axis.getMessage());
+        assertEquals("sketch bytes: input ends inside a varint; expected complete varints",
+                assertThrows(IllegalArgumentException.class,
+                        () -> Varints.readUnsigned(ByteBuffer.wrap(new byte[]{(byte) 0x80}), "sketch bytes")).getMessage());
+    }
+
+    @Test
+    void varintsRoundTripTheWholeLongRange() {
+        long[] signed = {0, 1, -1, 63, -64, 64, 300, Long.MAX_VALUE, Long.MIN_VALUE};
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        for (long v : signed) {
+            Varints.writeZigZag(out, v);
+        }
+        Varints.writeUnsigned(out, 0);
+        Varints.writeUnsigned(out, 300);
+        Varints.writeUnsigned(out, Long.MAX_VALUE);
+        ByteBuffer in = ByteBuffer.wrap(out.toByteArray());
+        for (long v : signed) {
+            assertEquals(v, Varints.readZigZag(in, "test"));
+        }
+        assertEquals(0, Varints.readUnsigned(in, "test"));
+        assertEquals(300, Varints.readUnsigned(in, "test"));
+        assertEquals(Long.MAX_VALUE, Varints.readUnsigned(in, "test"));
+        assertFalse(in.hasRemaining());
+
+        ByteArrayOutputStream zero = new ByteArrayOutputStream();
+        Varints.writeZigZag(zero, 0);
+        Varints.writeZigZag(zero, -1);
+        Varints.writeZigZag(zero, 1);
+        assertArrayEquals(new byte[]{0, 1, 2}, zero.toByteArray());
+        assertEquals("varint: \"-1\" is not allowed; expected a whole number from 0 to 9223372036854775807",
+                assertThrows(IllegalArgumentException.class, () -> Varints.writeUnsigned(zero, -1)).getMessage());
+        ByteArrayOutputStream top = new ByteArrayOutputStream();
+        Varints.writeZigZag(top, Long.MIN_VALUE);
+        assertEquals("test: varint exceeds 9223372036854775807; expected a whole number from 0 to 9223372036854775807",
+                assertThrows(IllegalArgumentException.class,
+                        () -> Varints.readUnsigned(ByteBuffer.wrap(top.toByteArray()), "test")).getMessage());
+    }
+
+    @Test
+    void varintsRefuseATenthByteAbove64Bits() {
+        byte[] wide = new byte[10];
+        Arrays.fill(wide, (byte) 0xFF);
+        wide[9] = 0x02;
+        assertEquals("test: varint exceeds 64 bits; expected at most 64 bits per varint",
+                assertThrows(IllegalArgumentException.class,
+                        () -> Varints.readUnsigned(ByteBuffer.wrap(wide), "test")).getMessage());
+        assertEquals("timeDeltas: varint exceeds 64 bits; expected at most 64 bits per varint",
+                assertThrows(IllegalArgumentException.class,
+                        () -> TimeAxis.decodeDeltas(0, 2, ByteBuffer.wrap(wide))).getMessage());
     }
 
     @Test

@@ -248,8 +248,9 @@ class StatsJobTest {
         assertEquals(0, ((Counter) metrics.get("undecodable")).getCount());
         assertNotNull(metrics.get("invalid"), "the function registers the metric invalid");
         assertEquals(2, ((Counter) metrics.get("invalid")).getCount());
-        assertEquals("tsx.unit.episodes.v2-2 offset 41: invalid episode (count 3 != values 2); skipped and counted in"
-                + " invalid, this subtask only counts later invalid episodes of this partition" + System.lineSeparator(),
+        assertEquals("tsx.unit.episodes.v2-2 offset 41: invalid episode (count: \"3\" differs from the length 2 of values;"
+                + " expected the number of values); skipped and counted in invalid, this subtask only counts later invalid"
+                + " episodes of this partition" + System.lineSeparator(),
                 err.toString(StandardCharsets.UTF_8));
     }
 

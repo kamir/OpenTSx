@@ -27,9 +27,10 @@ public final class TimeAxis {
         for (int i = 1; i < timestampsMicros.length; i++) {
             long delta = Math.subtractExact(timestampsMicros[i], timestampsMicros[i - 1]);
             if (delta <= 0) {
-                throw new IllegalArgumentException("timestamps must be strictly increasing at index " + i);
+                throw new IllegalArgumentException("timestamps: timestamp " + i + " is not after timestamp " + (i - 1)
+                        + "; expected strictly increasing timestamps");
             }
-            writeZigZag(out, i == 1 ? delta : delta - previousDelta);
+            Varints.writeZigZag(out, i == 1 ? delta : delta - previousDelta);
             previousDelta = delta;
         }
         return out.toByteArray();
@@ -44,12 +45,13 @@ public final class TimeAxis {
         ts[0] = tStartMicros;
         long delta = 0;
         for (int i = 1; i < count; i++) {
-            long v = readZigZag(in);
+            long v = Varints.readZigZag(in, "timeDeltas");
             delta = i == 1 ? v : delta + v;
             ts[i] = ts[i - 1] + delta;
         }
         if (in.hasRemaining()) {
-            throw new IllegalArgumentException("trailing bytes in timeDeltas");
+            throw new IllegalArgumentException("timeDeltas: " + in.remaining() + " trailing bytes; expected exactly "
+                    + (count - 1) + " varints for " + count + " timestamps");
         }
         return ts;
     }
@@ -67,34 +69,5 @@ public final class TimeAxis {
             return ts;
         }
         return decodeDeltas(tStart, n, episode.getTimeDeltas());
-    }
-
-    static void writeZigZag(ByteArrayOutputStream out, long v) {
-        long z = (v << 1) ^ (v >> 63);
-        while ((z & ~0x7FL) != 0) {
-            out.write((int) ((z & 0x7F) | 0x80));
-            z >>>= 7;
-        }
-        out.write((int) z);
-    }
-
-    static long readZigZag(ByteBuffer in) {
-        long z = 0;
-        int shift = 0;
-        while (true) {
-            if (!in.hasRemaining()) {
-                throw new IllegalArgumentException("truncated varint in timeDeltas");
-            }
-            int b = in.get() & 0xFF;
-            z |= (long) (b & 0x7F) << shift;
-            if ((b & 0x80) == 0) {
-                break;
-            }
-            shift += 7;
-            if (shift > 63) {
-                throw new IllegalArgumentException("varint too long in timeDeltas");
-            }
-        }
-        return (z >>> 1) ^ -(z & 1);
     }
 }

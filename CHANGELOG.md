@@ -116,7 +116,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   the command line; `opentsx.retrieval.openDagRuns` (default `false`) and `opentsx.retrieval.bind` (without it every
   interface, or 127.0.0.1 when `opentsx.retrieval.openDagRuns` is true). The registry holds 133 keys; appendix D and
   the defaults templates are regenerated.
-- Shared configuration vectors `conf.v1.json`: 286 cases. A case with `"registry": "shipped"` runs on the shipped
+- Shared configuration vectors `conf.v1.json`: 288 cases. A case with `"registry": "shipped"` runs on the shipped
   registry and checks the log level and the mode keys in both runtimes.
 - CI checks the nginx site of the frontend image with `nginx -t` and checks that an unreachable backend comes back as
   `{"error": "the backend is not reachable", "type": "unavailable"}`.
@@ -128,6 +128,15 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   every interface.
 - `bin/opentsx studio-export <out.json>` writes the scenario data of the Smart Topics Studio, as the image already
   did. `deploy/docker/test-launchers.sh` checks that the launcher starts `org.opentsx.twin.studio.StudioExport`.
+- `Episodes.of(SeriesKey, long[], double[])` builds a REGULAR episode when at least two timestamps have one positive
+  step and an IRREGULAR_DELTA episode otherwise, and refuses an empty series (`values: empty; expected at least one
+  value`).
+- `Episodes.producer(module)` returns `<module>/<version>` with the Maven project version stamped into
+  `org/opentsx/model/version.properties`; `Episodes.PRODUCER` is `producer("opentsx-model")` instead of a typed
+  version.
+- `org.opentsx.model.Varints`: one public helper for unsigned and zig-zag LEB128 varints that refuses truncated input
+  (`<subject>: input ends inside a varint; expected complete varints`) and a varint above 64 bits (`<subject>: varint
+  exceeds 64 bits; expected at most 64 bits per varint`). `TimeAxis` uses it.
 
 ### Changed
 
@@ -354,6 +363,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   instead of forcing `warn`, and logs one `starting twin-live <command>` line at INFO with every value it reads.
 - The k3s component `event-bridge` sets `enableServiceLinks: false`, so the Service variable `OPENTSX_RETRIEVAL_PORT`
   does not stop the bridge from loading its configuration.
+- `Episodes` and `TimeAxis` refuse inconsistent input with messages that name the field, in the form `<field>:
+  <problem>; <what is allowed>`, for example `count: "3" differs from the length 2 of values; expected the number of
+  values` instead of `count 3 != values 2`, and `tEnd: "20" is not after the last timestamp 20; expected a time after
+  the last timestamp` instead of `tEnd cuts off values`.
 
 ### Removed
 
@@ -761,6 +774,16 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - An interrupted topic create or topic lookup in `twin-live` keeps the interrupt flag of the thread.
 - An event bridge stream waits out reads that KafScale refuses, for up to 10 minutes, instead of closing at the first
   refused fetch.
+- `TimeAxis.decodeDeltas` refuses a varint whose tenth byte carries more than 64 bits. Before, the extra bits were
+  dropped and the episode decoded to a wrong timestamp.
+- `OpenTsxAvro.decode` throws `IllegalArgumentException` that names the schema, the framing and the payload size when
+  a payload is cut or malformed, and keeps the cause. Before, a cut single-object payload gave `AvroRuntimeException:
+  Decoding datum failed` and a cut Confluent payload `UncheckedIOException: java.io.EOFException`.
+- `EpisodeOps.clip` derives the id of a clipped part from the original id and the bounds of the part and keeps the
+  original `createdAt`, so the same clipped read of an episode store returns equal episodes. Before, every read minted
+  a random id and the current time.
+- `SeriesStoreContract` requires a read with `limit(2)` to return exactly the first two episodes in read order.
+  Before, it checked only `size() <= 2`, so an adapter that returned nothing passed.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
