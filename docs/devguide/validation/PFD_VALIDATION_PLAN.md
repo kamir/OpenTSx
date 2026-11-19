@@ -15,6 +15,14 @@ DFA, smoothing, filtering, z-score normalization and Kafka output are rejected.
 imply that the runtime can execute them. `saveToFile` checks compatibility before creating or replacing a file.
 A missing topic or unsupported step leaves an existing destination unchanged.
 
+File export prepares the JSON and strictly encodes UTF-8 before writing. It creates missing parent directories,
+writes a sibling temporary file and atomically replaces the destination after closing the file. Relative filenames
+are supported; existing POSIX permissions are retained where supported. Destination symbolic links are rejected.
+Failed preparation, encoding or replacement preserves an existing destination. I/O failures propagate as
+`IOException`, including `CharacterCodingException` for malformed Unicode; serialization failures retain their
+runtime exception. Temporary files are removed on failure, with cleanup errors attached to the original exception.
+Atomic replacement is required; an unsupported move fails explicitly. File export does not alter the recorder.
+
 ## Configure input and brokers
 
 Set `opentsx.pfd.input.topic` through the existing core `ConfigManager` before resetting the recorder.
@@ -64,7 +72,7 @@ From the repository root, run:
 
 ```bash
 mvn -B -ntp -pl opentsx-flink-core -am test \
-  -Dtest=ObservationSchemaTest,PFDRecorderContractTest,PFDRuntimeContractTest,PFDWindowSizeTest \
+  -Dtest=ObservationSchemaTest,PFDRecorderContractTest,PFDRecorderFileTest,PFDRuntimeContractTest,PFDWindowSizeTest \
   -Dsurefire.failIfNoSpecifiedTests=false
 ```
 
@@ -72,6 +80,11 @@ mvn -B -ntp -pl opentsx-flink-core -am test \
 for unsupported operations or methods. `PFDRuntimeContractTest` checks parser rejection, a recorder export parsed
 by the runtime, the configured broker address, watermark advancement and actual centered values with an updated
 cached mean. The tests run in the Java CI matrix.
+
+`PFDRecorderFileTest` checks exact UTF-8 output, relative destinations, missing parent directories and retained
+POSIX permissions where supported. Serialization and malformed-Unicode failures cannot create or truncate an
+export. Symbolic links, blocked parents and failed replacement preserve existing destination bytes, clean temporary
+files and leave the recorder unchanged.
 
 `PFDWindowSizeTest` invokes the actual entry point for file and inline JSON descriptors in an offline graph
 execution environment. It checks the five-minute default, configured windows, exact boundary membership,

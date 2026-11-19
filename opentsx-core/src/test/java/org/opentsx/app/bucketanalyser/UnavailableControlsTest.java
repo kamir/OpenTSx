@@ -4,11 +4,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.opentsx.data.series.TimeSeriesObject;
 
 import javax.swing.*;
 import java.awt.Component;
 import java.awt.Container;
 import java.nio.file.Path;
+import java.util.Vector;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -86,6 +89,35 @@ class UnavailableControlsTest {
                 frame.dispose();
             }
         });
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void persistControlCannotDispatchActions(boolean populated) throws Exception {
+        String original = System.getProperty("user.home");
+        try {
+            System.setProperty("user.home", home.toString());
+            SwingUtilities.invokeAndWait(() -> {
+                TimeSeriesObject series = new TimeSeriesObject();
+                series.addValuePair(3.0, 7.0);
+                Vector<TimeSeriesObject> rows = new Vector<>();
+                rows.add(series);
+                TSOperationControlerPanel panel = populated
+                        ? new TSOperationControlerPanel(rows, null, "fixture", new JTextArea())
+                        : new TSOperationControlerPanel();
+                JButton button = findButton(panel, "persist TSB");
+                AtomicInteger actions = new AtomicInteger();
+                button.addActionListener(event -> actions.incrementAndGet());
+                button.doClick(0);
+                assertAll(
+                        () -> assertFalse(button.isEnabled()),
+                        () -> assertEquals("This operation is not implemented", button.getToolTipText()),
+                        () -> assertEquals(0, actions.get()));
+            });
+        } finally {
+            if (original == null) System.clearProperty("user.home");
+            else System.setProperty("user.home", original);
+        }
     }
 
     private JButton findButton(Container parent, String label) {
