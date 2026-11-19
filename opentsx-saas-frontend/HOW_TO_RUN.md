@@ -160,7 +160,6 @@ opentsx-saas-frontend/
 - **Axios** - HTTP client
 - **React Flow 11** - Visual flow builder
 - **Tailwind CSS 3** - Utility-first CSS
-- **Plotly.js** - Interactive charts
 
 ---
 
@@ -309,10 +308,10 @@ Build artifacts will be in `dist/` directory:
 ```
 dist/
 ├── index.html
-├── assets/
-│   ├── index-[hash].js
-│   └── index-[hash].css
-└── vite.svg
+└── assets/
+    ├── index-[hash].css
+    ├── index-[hash].js
+    └── index-[hash].js.map
 ```
 
 ### 3. Serve

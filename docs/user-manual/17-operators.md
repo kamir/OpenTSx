@@ -385,7 +385,7 @@ Puts series A and B on one clock and gives, for each window of a pair range, the
 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
-| workbench | available | operator `pair.coverage` | Operator "Pair coverage", tab Multi-variate Analysis. At most 200 pairs per run. The defaults above hold for the operator panel and for a call of apply without them. |
+| workbench | available | operator `pair.coverage` | Operator "Pair coverage", tab Multi-variate Analysis. At most 200 pairs per run. The defaults above hold for the operator panel and for a call of apply without them. An emptied, negative or non-numeric every or minCoverage is refused with its name, for example minCoverage: empty value; expected a share from 0 to 1. step is read only when window is a width in seconds and maxAge only when fill is as-of; then such a value is refused too. |
 | java | none |  |  |
 | python | none |  |  |
 | processor | planned |  | TASK-015 phase 3: the pair methods as a stream phase on top of align.vector. |
@@ -610,7 +610,7 @@ Brings several inputs onto one clock: ticks are multiples of every since the epo
 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
-| workbench | available | operator `align.vector` |  |
+| workbench | available | operator `align.vector` | An emptied maxAge with fill as-of is refused in the preview and before the deployment: maxAge: empty value; expected a number of seconds, 0 or more. Without maxAge fill as-of takes values up to one tick old, as in the processor. |
 | java | available | `org.opentsx.retrieval.vector.VectorAligner` | One run over all data. Without maxAge fill as-of takes values up to one tick old. |
 | python | none |  |  |
 | processor | available | `org.opentsx.retrieval.vector.VectorProcessor` | bin/opentsx vectors. lateness applies here only. |
@@ -668,7 +668,7 @@ Cuts the time axis into windows of the width every, aligned to the epoch, and gi
 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
-| workbench | available | operator `resample` | every in units of the x axis, default 0.05; 60 s when the workbench is opened for a signal. Refuses an every of 0 or less, as the processor does. Hands out a window once the data has passed its end: the end of the last episode of the series, or without episodes the last sample plus the median sampling interval. As in the processor, an end more than 10000 windows after the open window hands out no window; unlike the processor, the grid does not start again after 10000 empty windows between two samples. |
+| workbench | available | operator `resample` | every in units of the x axis, default 0.05; 60 s when the workbench is opened for a signal. Refuses an every of 0 or less, as the processor does. Runs the series episode by episode, as the processor runs its blocks, and hands out a window once the end of an episode has passed its end; without episodes the data ends at the last sample plus the median sampling interval. As in the processor, an end more than 10000 windows after the open window hands out no window, and after 10000 empty windows the grid starts again at the next sample. |
 | java | available | `org.opentsx.retrieval.Resampling#resample` | One episode at a time, also GET /v1/episodes?resample=PT1M&agg=MEAN. agg also FIRST, SUM and COUNT; an empty window is NaN, for COUNT 0. A step that gives more than 100000 points for one episode is refused (400). |
 | python | available | `opentsx.core.time_series.TimeSeriesObject#resample` | resample(factor, method) aggregates blocks of factor samples, not time windows; method mean, median, max or min. RetrievalClient.episodes(resample=, agg=) has the server resample. |
 | processor | available | `org.opentsx.retrieval.clean.CleanChain#Resample` | A step of the clean chain before a series sink (bin/opentsx vectors). Hands out a window once the data has passed its end. After 10000 empty windows the grid starts again at the next sample. |
@@ -2037,7 +2037,7 @@ Puts series A and B on one clock and takes, in each window, the local maxima abo
 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
-| workbench | available | operator `pair.es` | Operator "Event synchronisation", tab Multi-variate Analysis. Port of event_sync.py; the 8 shared test vector cases give the same four numbers to 12 decimals. A window without events in A or B gives 0 in every field. Strictly periodic events keep their timing under any shuffle, so there q_rand equals q_total. The defaults above hold for the operator panel and for a call of apply without them. |
+| workbench | available | operator `pair.es` | Operator "Event synchronisation", tab Multi-variate Analysis. Port of event_sync.py; the 8 shared test vector cases give the same four numbers to 12 decimals. A window without events in A or B gives 0 in every field. Strictly periodic events keep their timing under any shuffle, so there q_rand equals q_total. The defaults above hold for the operator panel and for a call of apply without them. An emptied or non-numeric sigma, tauMax, shuffles, seed, every or minCoverage is refused with its name, and so are a negative every, minCoverage or tauMax, a shuffles below 1 and a seed that is not a whole number, for example sigma: empty value; expected a number such as 2. step is read only when window is a width in seconds and maxAge only when fill is as-of; then an emptied, negative or non-numeric value is refused too. |
 | java | planned |  | TASK-015 P8.1 plans event synchronisation with the closed-form Q_rand calibration in a clean-room Java library. The 2.x ESCalc in opentsx-core (operator es) works on whole series. |
 | python | none |  | The Python package computes the same q_total, q_ab, q_ba and q_rand over whole series with EventSynchronization and surrogate_sync (operator es), not per pair window. |
 | processor | planned |  | TASK-015 phase 3: the pair methods as a stream phase on top of align.vector. |
@@ -2105,7 +2105,7 @@ Puts series A and B on one clock and computes in each window CC(k) = Î£ (a[t] âˆ
 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
-| workbench | available | operator `pair.xcorr` | Operator "Cross-correlation", tab Multi-variate Analysis. Port of KreuzKorrelation.calcKRCoeffizient and CCFunction.calcStrength_VERSION_A of kamir/WikiExplorer.NG at 7b56e3d, equal to the original to 12 decimals in the 5 cases of the test vectors. Unlike the original, max and lag belong to the extreme that strength measures, also when it is negative. A window without spread in A or B gives NaN in all three fields. The defaults above hold for the operator panel and for a call of apply without them. |
+| workbench | available | operator `pair.xcorr` | Operator "Cross-correlation", tab Multi-variate Analysis. Port of KreuzKorrelation.calcKRCoeffizient and CCFunction.calcStrength_VERSION_A of kamir/WikiExplorer.NG at 7b56e3d, equal to the original to 12 decimals in the 5 cases of the test vectors. Unlike the original, max and lag belong to the extreme that strength measures, also when it is negative. A window without spread in A or B gives NaN in all three fields. The defaults above hold for the operator panel and for a call of apply without them. An emptied, negative or non-numeric lags, every or minCoverage is refused with its name, for example lags: empty value; expected a whole number of clock ticks, 0 or more. step is read only when window is a width in seconds and maxAge only when fill is as-of; then such a value is refused too. |
 | java | planned |  | No Java cross-correlation exists. TASK-015 P8.1 plans a clean-room Java library for lagged cross-correlation with the link strengths l_adj, l_norm and l_trans; strength here is l_norm. |
 | python | none |  |  |
 | processor | planned |  | TASK-015 phase 3: the pair methods as a stream phase on top of align.vector. |

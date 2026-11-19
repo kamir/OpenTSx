@@ -47,6 +47,23 @@ describe('Load episodes', () => {
   });
 });
 
+describe('persist TSB', () => {
+  it('shows why the selected bucket could not be computed', async () => {
+    const x = Float64Array.from([0, 60, 120]);
+    useFlow.getState().loadBucket(
+      { name: 'raw', xKind: 'time', xLabel: 't [s]', yLabel: 'kW', series: [{ id: 's', label: 's', x, y: Float64Array.from([1, 2, 3]) }] },
+      { kind: 'test', detail: '' }
+    );
+    useFlow.getState().applyOp('feature.rolling', { window: '' });
+    show();
+    fireEvent.click(screen.getByRole('tab', { name: 'TSB' }));
+    fireEvent.click(screen.getByRole('button', { name: 'persist TSB' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'The bucket Roll_raw could not be saved: window: empty value; expected a number above 0.'
+    );
+  });
+});
+
 describe('opening a signal', () => {
   it('says that the working copy could not be read and opens the series of the system document', async () => {
     localStorage.setItem('access_token', 'access');

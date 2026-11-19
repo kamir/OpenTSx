@@ -47,7 +47,10 @@ const nodeTypes = { bucket: BucketNode };
 function layout(nodes: FlowNode[]): Map<string, { x: number; y: number }> {
   const children = new Map<string, FlowNode[]>();
   for (const n of nodes) {
-    if (n.input) children.set(n.input, [...(children.get(n.input) ?? []), n]);
+    if (!n.input) continue;
+    const kids = children.get(n.input);
+    if (kids) kids.push(n);
+    else children.set(n.input, [n]);
   }
   const pos = new Map<string, { x: number; y: number }>();
   let row = 0;

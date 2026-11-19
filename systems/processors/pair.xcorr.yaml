@@ -38,7 +38,10 @@ runtimes:
       CCFunction.calcStrength_VERSION_A of kamir/WikiExplorer.NG at 7b56e3d, equal to the original to 12 decimals in
       the 5 cases of the test vectors. Unlike the original, max and lag belong to the extreme that strength measures,
       also when it is negative. A window without spread in A or B gives NaN in all three fields. The defaults above
-      hold for the operator panel and for a call of apply without them.
+      hold for the operator panel and for a call of apply without them. An emptied, negative or non-numeric lags, every
+      or minCoverage is refused with its name, for example lags: empty value; expected a whole number of clock ticks, 0
+      or more. step is read only when window is a width in seconds and maxAge only when fill is as-of; then such a
+      value is refused too.
   java:
     status: planned
     note: >-

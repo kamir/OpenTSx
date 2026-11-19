@@ -6,7 +6,7 @@
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { dagsAPI, errorMessage, flowsAPI } from '../services/api';
+import { dagsAPI, errorMessage, flowsAPI, hasAccessToken } from '../services/api';
 import { DagList, deployFlow, describeSink, hasProcessor, readDeployments } from './deployments';
 import { DeployCheck, dagName, flowIdOfDag, toDagYaml, useFlow } from './flow';
 
@@ -29,7 +29,7 @@ export default function DeploymentsPanel({ base, blocker, checks, onMakeVector, 
   const [listError, setListError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
-  const signedIn = !!localStorage.getItem('access_token');
+  const signedIn = hasAccessToken();
   const url = `${base.replace(/\/$/, '')}/v1/dags`;
 
   // Deploying needs an account that is allowed to: the backend says whether this one is.

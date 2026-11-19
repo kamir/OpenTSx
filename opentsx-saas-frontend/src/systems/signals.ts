@@ -245,7 +245,9 @@ export function groupSignals(signals: Signal[]): SignalGroup[] {
   const groups = new Map<string, Signal[]>();
   for (const s of signals) {
     const key = s.group ? `${s.atom} / ${s.group}` : s.atom;
-    groups.set(key, [...(groups.get(key) ?? []), s]);
+    const list = groups.get(key);
+    if (list) list.push(s);
+    else groups.set(key, [s]);
   }
   return [...groups.entries()]
     .sort(([a], [b]) => a.split(' / ')[0].localeCompare(b.split(' / ')[0]) || a.length - b.length || a.localeCompare(b))

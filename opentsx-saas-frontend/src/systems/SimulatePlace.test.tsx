@@ -40,6 +40,23 @@ describe('the place Simulate', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('The runs kept by the server could not be read: internal error.');
   });
 
+  it('encodes the run id in the path of the run and of its comparison', async () => {
+    const id = 'night/1?x=2';
+    const encoded = 'night%2F1%3Fx%3D2';
+    const answers: Record<string, unknown> = {
+      [`${ROOT}/scenario`]: { ...SCENARIO, reference: id },
+      [`${ROOT}/runs`]: { runs: [] },
+      [`${ROOT}/runs/${encoded}`]: { ...RUN, run: id },
+      [`${ROOT}/runs/${encoded}/compare`]: COMPARE,
+    };
+    const fetch = vi.fn(async (url: string) => new Response(JSON.stringify(answers[url]), { status: answers[url] ? 200 : 404 }));
+    vi.stubGlobal('fetch', fetch);
+    render(<SimulatePlace system="h2-chain" base="/retrieval" />);
+    expect(await screen.findByText('What happens')).toBeInTheDocument();
+    expect(fetch.mock.calls.map(([url]) => url)).toEqual(expect.arrayContaining([`${ROOT}/runs/${encoded}`, `${ROOT}/runs/${encoded}/compare`]));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('says that a run could not be shown', async () => {
     twin();
     render(<SimulatePlace system="h2-chain" base="/retrieval" />);

@@ -11,6 +11,11 @@ const API_V1 = `${API_URL}/api/v1`;
 /** The retrieval server as the page reaches it: the nginx image and the dev server forward /retrieval. */
 export const RETRIEVAL_BASE = '/retrieval';
 
+/** True when this browser holds an access token, so the account routes of the backend can be called. */
+export function hasAccessToken(): boolean {
+  return !!localStorage.getItem('access_token');
+}
+
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_V1,

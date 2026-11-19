@@ -117,6 +117,24 @@ describe('parameters the processor refuses', () => {
     const week = parseEpisodes([{ seriesId: 'e', tStart: '2026-10-01T00:00:00Z', tEnd: '2026-10-08T00:00:00Z', timestampsMicros: [t0, t0 + 1e6], values: [1, 2] }], 'x');
     expect(Array.from(OP_BY_ID.resample.apply(week, { every: 1, agg: 'MEAN' }).series[0].y)).toEqual([1]);
   });
+
+  it('resample closes the windows at the end of each episode and starts the grid again after a long silence, as the processor does', () => {
+    // CleanChainTest.aLongSilenceStartsANewRunInsteadOfFillingIt: one block per episode, the second 10005 minutes later
+    const t0 = Date.parse('2026-10-01T00:00:00Z') * 1000;
+    const later = t0 + 10_005 * 60e6;
+    const iso = (micros: number) => new Date(micros / 1000).toISOString();
+    const two = parseEpisodes(
+      [
+        { seriesId: 'e', tStart: iso(t0), tEnd: iso(t0 + 120e6), timestampsMicros: [t0, t0 + 30e6, t0 + 60e6, t0 + 90e6], values: [1, 2, 3, 4] },
+        { seriesId: 'e', tStart: iso(later), tEnd: iso(later + 60e6), timestampsMicros: [later], values: [7] },
+      ],
+      'x'
+    );
+    const out = OP_BY_ID.resample.apply(two, { every: 60, agg: 'MEAN' }).series[0];
+    // the end of the first episode closes the minute from 60 s before the silence drops what is open
+    expect(Array.from(out.x)).toEqual([0, 60, 10_005 * 60]);
+    expect(Array.from(out.y)).toEqual([1.5, 3.5, 7]);
+  });
 });
 
 describe('an emptied or null parameter', () => {
@@ -201,6 +219,31 @@ describe('a flow published as the clean grade of a signal', () => {
     expect(cleanChecks(doc.nodes, [], context, 'n2').find((c) => !c.ok)?.text).toMatch(/Load the series/);
     expect(cleanChecks(doc.nodes, ['abc123'], null, 'n2').find((c) => !c.ok)?.text).toMatch(/Open a signal/);
     expect(cleanChecks(doc.nodes, ['abc123'], context, 'source').find((c) => !c.ok)?.text).toMatch(/at least one operator/);
+  });
+
+  it('names a node published beside the clean series that the processor cannot write', () => {
+    const fft: FlowNode = { id: 'n3', op: 'fft', label: 'FFT_power', params: {}, input: 'n2', sinkTopic: 'tsx.wind.smart.fft.metrics.v2' };
+    const nodes = [source, range, minute, fft];
+    const text = 'FFT_power: published, but the processor writes only the clean series and vector topics; take it off "Publish as Smart Topic" to deploy.';
+    expect(cleanChecks(nodes, ['abc123'], context, 'n2').filter((c) => !c.ok).map((c) => c.text)).toEqual([text]);
+    expect(runBlocker(nodes, ['abc123'], context)).toBe(text);
+    expect(deployChecks(nodes, ['abc123'], context).find((c) => !c.ok)?.text).toBe(text);
+    const both = [{ ...source, sinkTopic: 'tsx.wind.raw-copy.v2' }, range, minute, fft];
+    expect(runBlocker(both, ['abc123'], context)).toBe(
+      'power_active_T02, FFT_power: published, but the processor writes only the clean series and vector topics; take them off "Publish as Smart Topic" to deploy.'
+    );
+    // a vector beside the clean series is written with its schema, and the processor runs both
+    const vector: FlowNode = { id: 'n4', op: 'align.vector', label: 'Vector_power', params: defaultParams(OP_BY_ID['align.vector']), input: 'source', inputs: [], sinkTopic: 'tsx.wind.smart.v.vectors.v1' };
+    expect(cleanChecks([source, range, minute, vector], ['abc123'], context, 'n2').every((c) => c.ok)).toBe(true);
+    expect(toDagYaml({ ...doc, nodes: [source, range, minute, vector] })).toContain('topic: tsx.wind.smart.v.vectors.v1, schema: opentsx.vector.v1 }');
+  });
+
+  it('names a second clean sink before the deployment, which publishing the clean series takes off', () => {
+    const twice = [source, { ...range, sinkTopic: cleanTopic('wind') }, minute];
+    const text = 'Resample_Range_power: published, but the processor writes only the clean series and vector topics; take it off "Publish as Smart Topic" to deploy.';
+    expect(runBlocker(twice, ['abc123'], context)).toBe(text);
+    expect(deployChecks(twice, ['abc123'], context).filter((c) => !c.ok).map((c) => c.text)).toEqual([text]);
+    expect(cleanChecks(twice, ['abc123'], context, 'n2').every((c) => c.ok)).toBe(true);
   });
 
   it('names a parameter of a step that the processor refuses', () => {

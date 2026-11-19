@@ -8,8 +8,6 @@
 import { Link } from 'react-router-dom';
 import { AnalysisDoc, DecisionDoc, DecisionStatus, NeedDoc, SystemStatus, dataText, durationText, stateText, usability } from './signals';
 
-const WORD = { usable: 'usable', restricted: 'restricted', blocked: 'blocked' } as const;
-
 function range(min: number | undefined, max: number | undefined): string {
   return min === undefined && max === undefined ? '' : `${min ?? ''}..${max ?? ''}`;
 }
@@ -42,7 +40,7 @@ function Analysis({ a }: { a: AnalysisDoc }) {
   const evidence = a.evidence ?? [];
   return (
     <li className={a.status === 'usable' ? 'ok' : a.status === 'restricted' ? 'warning' : 'error'}>
-      <b>{a.title}</b> <span className={`wb-flow-status ${a.status}`}>{WORD[a.status]}</span>
+      <b>{a.title}</b> <span className={`wb-flow-status ${a.status}`}>{a.status}</span>
       {a.kind && <span className="wb-muted"> {a.kind}</span>}
       {a.reasons.length > 0 && (
         <ul className="wb-reasons">
@@ -105,7 +103,7 @@ function Decision({ d, system }: { d: DecisionDoc; system: string }) {
           <span key={a.id}>
             {i > 0 && ', '}
             {a.title}
-            {a.reference && ' (reference)'} <span className={`wb-flow-status ${a.status}`}>{WORD[a.status]}</span>
+            {a.reference && ' (reference)'} <span className={`wb-flow-status ${a.status}`}>{a.status}</span>
           </span>
         ))}
         . <span className="wb-muted">Comparing them over a period is not built yet.</span>

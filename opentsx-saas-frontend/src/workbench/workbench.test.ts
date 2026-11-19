@@ -377,6 +377,16 @@ describe('flow', () => {
     expect(evaluate(useFlow.getState().source, useFlow.getState().nodes, id)!.series[0].y.length).toBe(2);
   });
 
+  it('keeps the results of two sources apart when the cache is not cleared between them', () => {
+    const id = useFlow.getState().applyOp('diff')!;
+    const nodes = useFlow.getState().nodes;
+    const first = bucketOf([1, 2, 4, 8]);
+    const second = bucketOf([10, 30, 60, 100]);
+    expect(Array.from(evaluate(first, nodes, id)!.series[0].y)).toEqual(Array.from(run('diff', first).series[0].y));
+    expect(Array.from(evaluate(second, nodes, id)!.series[0].y)).toEqual(Array.from(run('diff', second).series[0].y));
+    expect(Array.from(evaluate(first, nodes, id)!.series[0].y)).toEqual(Array.from(run('diff', first).series[0].y));
+  });
+
   it('gives distinct names to repeated operations and removes a node with its downstream', () => {
     const a = useFlow.getState().applyOp('diff')!;
     useFlow.getState().applyOp('fft');

@@ -67,9 +67,10 @@ export default function SimulatePlace({ system, base }: { system: string; base: 
   );
   const show = useCallback(
     async (id: string) => {
-      const doc = (await get(`/runs/${id}`)) as RunDoc;
+      const path = `/runs/${encodeURIComponent(id)}`;
+      const doc = (await get(path)) as RunDoc;
       // a run is compared with its own reference: on the signals, the decisions of the scenario on the same inputs
-      const cmp = await get(`/runs/${id}/compare${doc.baseline ? `?base=${encodeURIComponent(doc.baseline)}` : ''}`);
+      const cmp = await get(`${path}/compare${doc.baseline ? `?base=${encodeURIComponent(doc.baseline)}` : ''}`);
       setRun(doc);
       setCompare(cmp as CompareDoc);
     },

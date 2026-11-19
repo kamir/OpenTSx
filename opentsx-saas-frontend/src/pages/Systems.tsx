@@ -6,9 +6,10 @@
 
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { RETRIEVAL_BASE, SignalBindingDoc, errorMessage, fetchJson, systemsAPI } from '../services/api';
+import { RETRIEVAL_BASE, SignalBindingDoc, errorMessage, fetchJson, hasAccessToken, systemsAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import FlowComposer from '../workbench/FlowComposer';
+import { forgetFlows, newFlow, openFlows } from '../workbench/composerActions';
 import { useFlow } from '../workbench/flow';
 import ModelsPlace from '../systems/ModelsPlace';
 import SimulatePlace from '../systems/SimulatePlace';
@@ -47,7 +48,7 @@ export default function Systems() {
   const [guide, setGuide] = useState(() => remembered('opentsx.guide'));
   const [flows, setFlows] = useState<{ all: number; running: number | null } | null>(null);
   const [bindings, setBindings] = useState<SignalBindingDoc[]>([]);
-  const signedIn = !!localStorage.getItem('access_token');
+  const signedIn = hasAccessToken();
   const here = (PLACES.find((p) => p.id === place)?.id ?? 'signals') as Place;
 
   useEffect(() => {
@@ -125,20 +126,10 @@ export default function Systems() {
     });
   };
 
-  // The first flow opens in the workbench of this tab, the others in tabs of their own.
-  const openFlows = (ids: number[]) => {
-    const [first, ...others] = ids;
-    for (const id of others) window.open(`/workbench?flow=${id}`, '_blank');
-    if (useFlow.getState().savedId === first) useFlow.getState().setSavedId(null);
-    navigate(`/workbench?flow=${first}`);
-  };
-  const newFlow = () => {
-    useFlow.getState().clear();
+  const open = (ids: number[]) => openFlows(ids, (id) => navigate(`/workbench?flow=${id}`));
+  const create = () => {
+    newFlow();
     navigate('/workbench');
-  };
-  const forget = (ids: number[]) => {
-    const id = useFlow.getState().savedId;
-    if (id !== null && ids.includes(id)) useFlow.getState().clear();
   };
 
   const counts = railCounts(status, plan, signedIn ? flows?.all : null, decisions);
@@ -209,9 +200,9 @@ export default function Systems() {
               base={RETRIEVAL_BASE}
               currentId={useFlow.getState().savedId}
               replaces={false}
-              onOpen={openFlows}
-              onNew={newFlow}
-              onDeleted={forget}
+              onOpen={open}
+              onNew={create}
+              onDeleted={(ids) => forgetFlows(ids, false)}
               system={{ id: status.system, domain: status.domain, title: status.title }}
               onCount={(all, running) => setFlows({ all, running })}
             />

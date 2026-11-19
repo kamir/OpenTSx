@@ -8,6 +8,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { RETRIEVAL_BASE } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import FlowComposer from '../workbench/FlowComposer';
+import { forgetFlows, newFlow, openFlows } from '../workbench/composerActions';
 import { useFlow } from '../workbench/flow';
 import '../workbench/workbench.css';
 
@@ -20,23 +21,11 @@ export default function Dashboard() {
     navigate('/login');
   };
 
-  // The first flow opens in the editor of this tab, the others in tabs of their own.
-  const open = (ids: number[]) => {
-    const [here, ...others] = ids;
-    for (const id of others) window.open(`/workbench?flow=${id}`, '_blank');
-    // the stored flow replaces what the editor holds from an earlier visit
-    if (useFlow.getState().savedId === here) useFlow.getState().setSavedId(null);
-    navigate(`/workbench?flow=${here}`);
-  };
+  const open = (ids: number[]) => openFlows(ids, (id) => navigate(`/workbench?flow=${id}`));
 
   const create = () => {
-    useFlow.getState().clear();
+    newFlow();
     navigate('/workbench');
-  };
-
-  const forget = (ids: number[]) => {
-    const id = useFlow.getState().savedId;
-    if (id !== null && ids.includes(id)) useFlow.getState().clear();
   };
 
   return (
@@ -51,7 +40,7 @@ export default function Dashboard() {
         <button onClick={handleLogout}>Logout</button>
       </header>
       {error && <div className="wb-error" role="alert">{error}</div>}
-      <FlowComposer base={RETRIEVAL_BASE} currentId={useFlow.getState().savedId} replaces={false} onOpen={open} onNew={create} onDeleted={forget} />
+      <FlowComposer base={RETRIEVAL_BASE} currentId={useFlow.getState().savedId} replaces={false} onOpen={open} onNew={create} onDeleted={(ids) => forgetFlows(ids, false)} />
     </div>
   );
 }

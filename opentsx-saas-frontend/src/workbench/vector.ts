@@ -13,6 +13,7 @@
  *   not older than `maxAge`.
  */
 
+import { checked } from './params';
 import { Bucket, Params, Series } from './types';
 
 export const VECTOR_OP = 'align.vector';
@@ -121,6 +122,15 @@ function seriesName(s: Series): string {
   return snake(s.metric ? (s.metric.split('.').pop() ?? s.metric) : s.label) || 'value';
 }
 
+/**
+ * The age in seconds of the oldest value fill as-of takes; null when it is not given, and the processor then takes one
+ * tick. An emptied field or anything but a number of 0 or more is refused.
+ */
+export function vectorMaxAge(p: Params): number | null {
+  if (p.maxAge === undefined || p.maxAge === null) return null;
+  return checked(p, 'maxAge', (v) => v >= 0, 'a number of seconds, 0 or more');
+}
+
 /** The operator: `first` is the input of the node, `others` its further inputs. */
 export function alignVector(first: Bucket, p: Params, others: Bucket[] = []): Bucket {
   const inputs = [first, ...others];
@@ -131,7 +141,8 @@ export function alignVector(first: Bucket, p: Params, others: Bucket[] = []): Bu
   }
   const agg = String(p.agg ?? 'MEAN');
   const asOf = String(p.fill ?? 'none') === 'as-of';
-  const maxAgeTicks = Math.floor((Number(p.maxAge) >= 0 ? Number(p.maxAge) : every) / every);
+  const maxAge = asOf ? vectorMaxAge(p) : null;
+  const maxAgeTicks = Math.floor((maxAge ?? every) / every);
   const complete = String(p.emit ?? 'any') === 'complete';
   const keyBy = String(p.key ?? 'series').trim() || 'series';
   const names = componentNames(inputs.map((b) => b.name), String(p.names ?? ''));
@@ -291,7 +302,9 @@ export function vectorRecords(bucket: Bucket, name: string, limit = Infinity): V
   const byKey = new Map<string, Series[]>();
   for (const s of bucket.series) {
     if (s.key === undefined) continue;
-    byKey.set(s.key, [...(byKey.get(s.key) ?? []), s]);
+    const list = byKey.get(s.key);
+    if (list) list.push(s);
+    else byKey.set(s.key, [s]);
   }
   const time = (seconds: number): string | number =>
     bucket.t0Ms === undefined ? seconds : new Date(bucket.t0Ms + seconds * 1000).toISOString();

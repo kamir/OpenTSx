@@ -21,6 +21,7 @@
  */
 
 import { episodesOf } from './episodes';
+import { checked } from './params';
 import { seriesIdOf } from './seriesKeys';
 import { Bucket, EpisodeRange, Params, Series } from './types';
 import { Cell, VECTOR_AGGREGATIONS, addSamples, fillColumn } from './vector';
@@ -83,13 +84,15 @@ export function pairSettings(p: Params, minCoverageDefault: number): PairSetting
   const w = String(p.window ?? 'episode').trim();
   const window = w === 'episode' || w === '' ? null : Number(w);
   if (window !== null && !(window > 0)) throw new Error(`The window "${w}" is neither episode nor a width in seconds greater than 0.`);
-  const step = window === null ? 0 : Number(p.step) > 0 ? Number(p.step) : window;
-  const every = Number(p.every) > 0 ? Number(p.every) : null;
+  const seconds = (key: string, absent: number) => checked(p, key, (v) => v >= 0, 'a number of seconds, 0 or more', absent, NaN);
+  const stepGiven = window === null ? 0 : seconds('step', 0);
+  const step = stepGiven > 0 ? stepGiven : (window ?? 0);
+  const everyGiven = seconds('every', 0);
+  const every = everyGiven > 0 ? everyGiven : null;
   const agg = String(p.agg ?? 'MEAN');
   if (!VECTOR_AGGREGATIONS.includes(agg)) throw new Error(`Aggregate "${agg}" is unknown.`);
-  const maxAge = String(p.fill ?? 'none') === 'as-of' ? Math.max(0, Number(p.maxAge ?? PAIR_MAX_AGE) || 0) : null;
-  const minCoverage = Number.isFinite(Number(p.minCoverage)) ? Number(p.minCoverage) : minCoverageDefault;
-  if (minCoverage < 0 || minCoverage > 1) throw new Error('The minimum coverage is a share between 0 and 1.');
+  const maxAge = String(p.fill ?? 'none') === 'as-of' ? seconds('maxAge', PAIR_MAX_AGE) : null;
+  const minCoverage = checked(p, 'minCoverage', (v) => v >= 0 && v <= 1, 'a share from 0 to 1', minCoverageDefault, NaN);
   return { pairing: pairing as PairSettings['pairing'], window, step, every, agg, maxAge, minCoverage };
 }
 
@@ -101,9 +104,9 @@ function durationTag(seconds: number | null): string {
 /** Median spacing of the x values: the sampling interval of a series. */
 export function samplingInterval(x: ArrayLike<number>): number {
   if (x.length < 2) return 1;
-  const d: number[] = [];
-  for (let i = 1; i < x.length; i++) d.push(x[i] - x[i - 1]);
-  d.sort((p, q) => p - q);
+  const d = new Float64Array(x.length - 1);
+  for (let i = 1; i < x.length; i++) d[i - 1] = x[i] - x[i - 1];
+  d.sort();
   const m = d[Math.floor(d.length / 2)];
   return m > 0 ? m : 1;
 }

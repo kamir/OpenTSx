@@ -29,6 +29,7 @@
  */
 
 import type { PairMethod } from './pairs';
+import { checked } from './params';
 import { Params } from './types';
 
 /** Mean and sample standard deviation over the finite values; the standard deviation is NaN below two values. */
@@ -93,9 +94,7 @@ export function peakOf(cc: ArrayLike<number>): Peak {
 
 /** The lag range in clock ticks. */
 export function lagsOf(p: Params): number {
-  const lags = Number(p.lags ?? 10);
-  if (!Number.isInteger(lags) || lags < 0) throw new Error(`lags "${p.lags}" is not a whole number of clock ticks, 0 or more.`);
-  return lags;
+  return checked(p, 'lags', (v) => Number.isInteger(v) && v >= 0, 'a whole number of clock ticks, 0 or more', 10, NaN);
 }
 
 export const PAIR_XCORR: PairMethod = {

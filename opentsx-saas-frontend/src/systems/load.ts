@@ -3,12 +3,12 @@
  * laid over the system document. A signal bound in the working copy has data only in this view.
  */
 
-import { SignalBindingDoc, errorMessage, fetchJson, systemsAPI } from '../services/api';
+import { SignalBindingDoc, errorMessage, fetchJson, hasAccessToken, systemsAPI } from '../services/api';
 
 /** The state document, and a note when the working copy could not be read and the system document is shown alone. */
 export async function fetchSignalStatus(base: string, system: string): Promise<{ doc: unknown; note: string | null }> {
   const url = `${base.replace(/\/$/, '')}/v1/systems/${encodeURIComponent(system)}/signals`;
-  const signedIn = !!localStorage.getItem('access_token');
+  const signedIn = hasAccessToken();
   let mine: SignalBindingDoc[] = [];
   let note: string | null = null;
   if (signedIn) {

@@ -14,6 +14,7 @@ import FlowComposer from '../workbench/FlowComposer';
 import PublishClean from '../workbench/PublishClean';
 import InventoryDialog, { InventoryLoad } from '../workbench/InventoryDialog';
 import { fetchFlowSeries } from '../workbench/inventoryLoad';
+import { forgetFlows, newFlow, openFlows } from '../workbench/composerActions';
 import { GradeName, expectText, isSynthetic, parseStatus } from '../systems/signals';
 import Scope from '../workbench/Scope';
 import {
@@ -38,7 +39,7 @@ import { VECTOR_OP, suggestKey, vectorRecords } from '../workbench/vector';
 import { episodeSummary } from '../workbench/episodes';
 import { bucketToCsv, generateSineMix, parseBucketText, parseEpisodes } from '../workbench/loaders';
 import axios from 'axios';
-import { RETRIEVAL_BASE, errorMessage, fetchJson, flowsAPI } from '../services/api';
+import { RETRIEVAL_BASE, errorMessage, fetchJson, flowsAPI, hasAccessToken } from '../services/api';
 import { fetchSignalStatus } from '../systems/load';
 import { NOT_PORTED, OPS, OP_BY_ID, defaultParams, fmt, stats } from '../workbench/ops';
 import { Bucket, FlowNode, OpDef, OpGroup, ParamDef, Params, ParamValue } from '../workbench/types';
@@ -142,7 +143,15 @@ const TABS: { id: string; title: string; group?: OpGroup; border?: string }[] = 
   { id: 'stream', title: 'Filter and conversion', group: 'stream', border: 'Stream operators for Smart Topics' },
 ];
 
-function OperationPanel({ showLabels, setShowLabels }: { showLabels: boolean; setShowLabels: (v: boolean) => void }) {
+function OperationPanel({
+  showLabels,
+  setShowLabels,
+  onError,
+}: {
+  showLabels: boolean;
+  setShowLabels: (v: boolean) => void;
+  onError: (text: string) => void;
+}) {
   const [tab, setTab] = useState('transform');
   const [params, setParams] = useState<Record<string, Params>>(() =>
     Object.fromEntries(OPS.map((o) => [o.id, defaultParams(o)]))
@@ -187,8 +196,13 @@ function OperationPanel({ showLabels, setShowLabels }: { showLabels: boolean; se
   );
 
   const persist = () => {
-    const b = selected && evaluate(source, nodes, selected.id);
-    if (b) download(`${b.name}.csv`, bucketToCsv(b), 'text/csv');
+    if (!selected) return;
+    try {
+      const b = evaluate(source, nodes, selected.id);
+      if (b) download(`${b.name}.csv`, bucketToCsv(b), 'text/csv');
+    } catch (e) {
+      onError(`The bucket ${selected.label} could not be saved: ${e instanceof Error ? e.message : e}.`);
+    }
   };
 
   const savePng = () => {
@@ -556,7 +570,7 @@ export default function Workbench() {
   remoteBase.current = remote.base;
   const fileRef = useRef<HTMLInputElement>(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  const signedIn = !!localStorage.getItem('access_token');
+  const signedIn = hasAccessToken();
   const flowParam = searchParams.get('flow');
   const systemParam = searchParams.get('system');
   const signalParam = searchParams.get('signal');
@@ -652,15 +666,9 @@ export default function Workbench() {
     };
   }, [systemParam, signalParam, gradeParam]);
 
-  const openFlows = (ids: number[]) => {
+  const openFromComposer = (ids: number[]) => {
     setFlowsOpen(false);
-    const [here, ...others] = ids;
-    const blocked = others.filter((id) => !window.open(`/workbench?flow=${id}`, '_blank')).length;
-    if (here === useFlow.getState().savedId) {
-      // the stored state replaces what is on the workbench
-      useFlow.getState().setSavedId(null);
-    }
-    setSearchParams({ flow: String(here) });
+    const blocked = openFlows(ids, (id) => setSearchParams({ flow: String(id) }));
     setError(
       blocked > 0
         ? `The browser kept ${blocked} of the flows from opening in tabs of their own. Allow pop-ups for this page, or open them one at a time.`
@@ -668,19 +676,18 @@ export default function Workbench() {
     );
   };
 
-  const newFlow = () => {
+  const newFromComposer = () => {
     setFlowsOpen(false);
-    useFlow.getState().clear();
+    newFlow();
     setSearchParams({}, { replace: true });
     setError(null);
     setStatus('New flow. Load a bucket to begin.');
   };
 
   /** A flow deleted in the composer stays in the editor as an unsaved one. */
-  const forgetFlows = (ids: number[]) => {
-    const id = useFlow.getState().savedId;
-    if (id === null || !ids.includes(id)) return;
-    useFlow.getState().setSavedId(null);
+  const forgetFromComposer = (ids: number[]) => {
+    const id = forgetFlows(ids, true);
+    if (id === null) return;
     setSearchParams({}, { replace: true });
     setStatus(`Flow ${id} is deleted in your account. What you see here is unsaved.`);
   };
@@ -889,9 +896,9 @@ export default function Workbench() {
           base={remote.base}
           currentId={state.savedId}
           replaces={nodes.length > 0}
-          onOpen={openFlows}
-          onNew={newFlow}
-          onDeleted={forgetFlows}
+          onOpen={openFromComposer}
+          onNew={newFromComposer}
+          onDeleted={forgetFromComposer}
           onClose={() => setFlowsOpen(false)}
         />
       )}
@@ -938,7 +945,7 @@ export default function Workbench() {
               </div>
             )}
           </section>
-          <OperationPanel showLabels={showLabels} setShowLabels={setShowLabels} />
+          <OperationPanel showLabels={showLabels} setShowLabels={setShowLabels} onError={setError} />
           <section className="wb-graph" aria-label="Processing flow graph">
             {nodes.length > 0 ? <FlowGraph /> : <p className="wb-muted pad">The processing flow appears here once a bucket is loaded.</p>}
           </section>

@@ -31,7 +31,9 @@ runtimes:
     status: available
     note: >-
       Operator "Pair coverage", tab Multi-variate Analysis. At most 200 pairs per run. The defaults above hold for the
-      operator panel and for a call of apply without them.
+      operator panel and for a call of apply without them. An emptied, negative or non-numeric every or minCoverage is
+      refused with its name, for example minCoverage: empty value; expected a share from 0 to 1. step is read only when
+      window is a width in seconds and maxAge only when fill is as-of; then such a value is refused too.
   processor: { status: planned, note: "TASK-015 phase 3: the pair methods as a stream phase on top of align.vector." }
   java: { status: none }
   python: { status: none }

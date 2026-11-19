@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { errorMessage, fetchJson, systemsAPI } from '../services/api';
+import { errorMessage, fetchJson, hasAccessToken, systemsAPI } from '../services/api';
 import { clock } from '../workbench/inventory';
 import { Candidate, GENERATORS, Signal, SystemStatus, dataExtent, expectText, generatorParams, guessOrigin, presetGenerator, suggestSeries, topicSource } from './signals';
 
@@ -25,7 +25,7 @@ interface Props {
 export default function SourcePanel({ mode, status, signal, base, onChanged, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const signedIn = !!localStorage.getItem('access_token');
+  const signedIn = hasAccessToken();
 
   // ---- bind
   const [inventory, setInventory] = useState<{ topic: string; series: Candidate[] } | null>(null);

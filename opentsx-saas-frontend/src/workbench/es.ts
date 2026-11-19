@@ -19,6 +19,7 @@
  */
 
 import type { PairMethod } from './pairs';
+import { checked } from './params';
 import { mulberry32 } from './random';
 import { Params } from './types';
 
@@ -129,14 +130,10 @@ interface EsSettings {
 }
 
 export function esSettings(p: Params): EsSettings {
-  const sigma = Number(p.sigma ?? 2);
-  if (!Number.isFinite(sigma)) throw new Error(`sigma "${p.sigma}" is not a number.`);
-  const cap = Number(p.tauMax ?? 0);
-  if (!(cap >= 0)) throw new Error(`tauMax "${p.tauMax}" is not a duration in seconds, 0 or more.`);
-  const shuffles = Number(p.shuffles ?? 10);
-  if (!Number.isInteger(shuffles) || shuffles < 1) throw new Error(`shuffles "${p.shuffles}" is not a whole number of 1 or more.`);
-  const seed = Number(p.seed ?? 1);
-  if (!Number.isInteger(seed)) throw new Error(`seed "${p.seed}" is not a whole number.`);
+  const sigma = checked(p, 'sigma', () => true, 'a number such as 2', 2, NaN);
+  const cap = checked(p, 'tauMax', (v) => v >= 0, 'a number of seconds, 0 or more', 0, NaN);
+  const shuffles = checked(p, 'shuffles', (v) => Number.isInteger(v) && v >= 1, 'a whole number of 1 or more', 10, NaN);
+  const seed = checked(p, 'seed', Number.isInteger, 'a whole number such as 1', 1, NaN);
   return { sigma, tauMax: cap > 0 ? cap : null, shuffles, seed };
 }
 

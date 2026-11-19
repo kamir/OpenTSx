@@ -25,7 +25,12 @@ params:
   - { name: lateness, type: duration, default: PT0S, editAs: seconds, description: How long a tick waits for series that lag behind. }
 semantics: { needs: window, deterministic: true, keeps: [unit], origin: INHERIT }
 runtimes:
-  workbench: { status: available }
+  workbench:
+    status: available
+    note: >-
+      An emptied maxAge with fill as-of is refused in the preview and before the deployment: maxAge: empty value;
+      expected a number of seconds, 0 or more. Without maxAge fill as-of takes values up to one tick old, as in the
+      processor.
   java: { status: available, class: org.opentsx.retrieval.vector.VectorAligner, note: "One run over all data. Without maxAge fill as-of takes values up to one tick old." }
   processor: { status: available, class: org.opentsx.retrieval.vector.VectorProcessor, note: "bin/opentsx vectors. lateness applies here only." }
   python: { status: none }

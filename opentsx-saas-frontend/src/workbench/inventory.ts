@@ -119,9 +119,13 @@ export interface MetricFacet {
 /** The metrics of the inventory with their catalog entry, grouped the way the catalog groups them. */
 export function metricFacets(inv: Inventory): MetricFacet[] {
   const channels = new Map(inv.channels.map((c) => [c.metric, c]));
-  const count = new Map<string, InventorySeries[]>();
-  for (const s of inv.series) count.set(s.metric, [...(count.get(s.metric) ?? []), s]);
-  return [...count]
+  const byMetric = new Map<string, InventorySeries[]>();
+  for (const s of inv.series) {
+    const list = byMetric.get(s.metric);
+    if (list) list.push(s);
+    else byMetric.set(s.metric, [s]);
+  }
+  return [...byMetric]
     .map(([metric, series]) => {
       const c = channels.get(metric);
       return {

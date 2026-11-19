@@ -311,12 +311,8 @@ yarn install
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.0",
     "reactflow": "^11.10.4",
-    "plotly.js": "^2.28.0",
-    "react-plotly.js": "^2.6.0",
     "zustand": "^4.4.7",
-    "axios": "^1.6.5",
-    "socket.io-client": "^4.6.1",
-    "@tanstack/react-query": "^5.17.9"
+    "axios": "^1.6.5"
   },
   "devDependencies": {
     "@types/react": "^18.2.47",

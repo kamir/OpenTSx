@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { dagsAPI, errorMessage, fetchJson } from '../services/api';
+import { dagsAPI, errorMessage, fetchJson, hasAccessToken } from '../services/api';
 import { deployFlow } from './deployments';
 import { chainTo, cleanChecks, cleanTopic, dagName, isCleanSink, toDagYaml, useFlow } from './flow';
 
@@ -24,7 +24,7 @@ export default function PublishClean({ base, onSave, onDone, onClose }: Props) {
   const [access, setAccess] = useState<{ canRun: boolean; reason: string | null } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const signedIn = !!localStorage.getItem('access_token');
+  const signedIn = hasAccessToken();
   const context = flow.context;
   /** The other signals of the system, for a flow that computes one signal from the clean data of another. */
   const [others, setOthers] = useState<{ id: string; title: string; port: boolean; role?: string }[]>([]);

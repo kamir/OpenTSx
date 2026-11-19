@@ -30,8 +30,6 @@ VITE_API_BASE_URL=http://localhost:8000
 
 ```
 frontend/
-├── public/
-│   └── vite.svg
 ├── src/
 │   ├── App.tsx                 # Main app with routing
 │   ├── main.tsx                # Entry point
@@ -63,7 +61,6 @@ frontend/
 - **Axios** - HTTP client
 - **React Flow** - Visual flow builder
 - **Tailwind CSS** - Utility-first CSS
-- **Plotly.js** - Interactive charts
 
 ## Key Features
 
@@ -126,9 +123,9 @@ frontend/
   `--dag-runs true`, and a running vector processor. Deploy, Start (Flow Composer) and "Publish and start" read
   `GET /v1/dags` first and refuse a flow whose topic another deployment writes. While that list is read or cannot be
   read, Deploy stays off and the panel says why. Deploy, Start and "Publish and start" fail with
-  `the deployments could not be read from <url> (<reason>); try again` when the list cannot be read. Without a
-  clean signal, a node published beside the vector keeps the flow from deploying, and the list names it: the processor
-  writes vector topics only.
+  `the deployments could not be read from <url> (<reason>); try again` when the list cannot be read. Every node a
+  flow publishes is the clean signal or an "Align to vector" node: any other published node keeps the flow from
+  deploying, and the list names it, because the processor writes only the clean series and vector topics.
 - Time series operations as buttons, recorded as a processing flow graph
 - Export: `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor, Java code
 - Code in `src/workbench/`; limits in `../EVOLUTION/TASK-013-web-workbench.md`
@@ -277,9 +274,6 @@ npm install -D @testing-library/react @testing-library/jest-dom @testing-library
 
 # Run tests
 npm test
-
-# Run tests with coverage
-npm run test:coverage
 ```
 
 ## Code Style

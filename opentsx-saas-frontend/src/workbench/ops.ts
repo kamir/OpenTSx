@@ -7,7 +7,8 @@
  * deviates from the Java code, the operator hint says so.
  */
 
-import { PAIRINGS, PAIR_COVERAGE, PAIR_MAX_AGE, PairMethod, pairWindows } from './pairs';
+import { PAIRINGS, PAIR_COVERAGE, PAIR_MAX_AGE, PairMethod, pairWindows, samplingInterval } from './pairs';
+import { checked } from './params';
 import { mulberry32 } from './random';
 import { PAIR_XCORR } from './xcorr';
 import { PAIR_ES } from './es';
@@ -55,18 +56,6 @@ function num(p: Params, key: string, fallback: number): number {
   return Number.isFinite(v) ? v : fallback;
 }
 
-/**
- * A number parameter checked as the processor checks it (CleanChain): an absent one takes `absent` and is refused
- * when that is NaN, and anything but a finite number for which `ok` holds is refused.
- */
-function checked(p: Params, key: string, ok: (v: number) => boolean, allowed: string, absent = NaN): number {
-  const raw = p[key];
-  const v = raw === undefined || raw === null || String(raw).trim() === '' ? absent : raw;
-  if (typeof v === 'number' && Number.isFinite(v) && ok(v)) return v;
-  const problem = raw === undefined || raw === null ? 'missing' : String(raw).trim() === '' ? 'empty value' : typeof raw === 'number' ? `"${raw}" is out of range` : `"${raw.trim()}" is not a number`;
-  throw new Error(`${key}: ${problem}; expected ${allowed}`);
-}
-
 /** The largest lag the processor keeps (CleanChain.MAX_WINDOW_VALUES). */
 const MAX_LAG = 100_000;
 
@@ -90,17 +79,6 @@ function mapY(b: Bucket, name: string, fn: (s: Series) => { y: Float64Array; lab
       return { ...s, y: r.y, label: r.label };
     }),
   };
-}
-
-/** Median spacing of the x axis. Used as sampling interval. */
-export function sampleInterval(x: ArrayLike<number>): number {
-  if (x.length < 2) return 1;
-  const d: number[] = [];
-  const step = Math.max(1, Math.floor(x.length / 512));
-  for (let i = step; i < x.length; i += step) d.push((x[i] - x[i - step]) / step);
-  d.sort((a, b) => a - b);
-  const m = d[Math.floor(d.length / 2)];
-  return m > 0 ? m : 1;
 }
 
 /** Slope and intercept of the least squares line through (x, y). */
@@ -269,7 +247,7 @@ function fft(b: Bucket): Bucket {
       const im = new Float64Array(size);
       for (let i = 0; i < n; i++) re[i] = Number.isFinite(s.y[i]) ? s.y[i] - mean : 0;
       fftRadix2(re, im);
-      const rate = 1 / sampleInterval(s.x);
+      const rate = 1 / samplingInterval(s.x);
       const half = size / 2;
       const x = new Float64Array(half);
       const y = new Float64Array(half);
@@ -595,18 +573,22 @@ function aggregate(values: number[], agg: string): number {
 }
 
 /**
- * The end of the data of a series: the end of its last episode when the bucket carries its episodes, otherwise the last
- * sample plus the sampling interval, as the v2 model ends a regular episode.
+ * The ends of the blocks the processor reads a series in: the end of each episode of the series, and the last sample
+ * plus the sampling interval for samples after the last episode or for a series without episodes, as the v2 model ends
+ * a regular episode.
  */
-function dataEnd(b: Bucket, s: Series): number {
-  let end = -Infinity;
-  for (const e of b.episodes ?? []) if (e.seriesId === s.id && e.end > end) end = e.end;
-  return end > -Infinity ? end : s.x[s.x.length - 1] + sampleInterval(s.x);
+function blockEnds(b: Bucket, s: Series): number[] {
+  const ends = (b.episodes ?? []).filter((e) => e.seriesId === s.id).map((e) => e.end).sort((p, q) => p - q);
+  const last = s.x[s.x.length - 1];
+  if (ends.length === 0 || last >= ends[ends.length - 1]) ends.push(last + samplingInterval(s.x));
+  return ends;
 }
 
 /**
- * Buckets x into windows of the given width and aggregates y per window. With `closedOnly` a window is handed out once
- * the data has passed its end, as the processor does; otherwise the last window is handed out open.
+ * Buckets x into windows of the given width and aggregates y per window. With `closedOnly` the series runs as the
+ * processor runs it (CleanChain): block by block, a window is handed out once the end of a block has passed its end,
+ * and after more than MAX_EMPTY_WINDOWS empty windows the grid starts again at the next sample. Otherwise the last
+ * window is handed out open.
  */
 function windowed(b: Bucket, every: number, agg: string, name: string, closedOnly = false): Bucket {
   return {
@@ -620,26 +602,28 @@ function windowed(b: Bucket, every: number, agg: string, name: string, closedOnl
       // On a time axis with a known start the windows follow the epoch, as in the processor: 00:01:00 is a
       // boundary of a minute whatever the first sample is. x is in seconds from t0.
       const origin = b.xKind === 'time' && b.t0Ms !== undefined ? b.t0Ms / 1000 : 0;
-      let start = Math.floor((s.x[0] + origin) / every) * every - origin;
+      const gridAt = (x: number) => Math.floor((x + origin) / every) * every - origin;
+      let start = gridAt(s.x[0]);
       let pool: number[] = [];
-      for (let i = 0; i < s.x.length; i++) {
-        while (s.x[i] >= start + every) {
-          xs.push(start);
-          ys.push(aggregate(pool, agg));
-          pool = [];
-          start += every;
+      const handOut = () => {
+        xs.push(start);
+        ys.push(aggregate(pool, agg));
+        pool = [];
+        start += every;
+      };
+      let i = 0;
+      for (const end of closedOnly ? blockEnds(b, s) : [Infinity]) {
+        for (; i < s.x.length && s.x[i] < end; i++) {
+          if (closedOnly && s.x[i] - start > MAX_EMPTY_WINDOWS * every) {
+            start = gridAt(s.x[i]);
+            pool = [];
+          }
+          while (s.x[i] >= start + every) handOut();
+          if (Number.isFinite(s.y[i])) pool.push(s.y[i]);
         }
-        if (Number.isFinite(s.y[i])) pool.push(s.y[i]);
+        if (closedOnly) while (start + every <= end && end - start <= MAX_EMPTY_WINDOWS * every) handOut();
       }
-      if (closedOnly) {
-        const end = dataEnd(b, s);
-        while (start + every <= end && end - start <= MAX_EMPTY_WINDOWS * every) {
-          xs.push(start);
-          ys.push(aggregate(pool, agg));
-          pool = [];
-          start += every;
-        }
-      } else {
+      if (!closedOnly) {
         xs.push(start);
         ys.push(aggregate(pool, agg));
       }
@@ -772,7 +756,7 @@ function segmentThreshold(b: Bucket, p: Params): Bucket {
   let inside = 0;
   const marks = b.xKind === 'time' ? (b.marks ?? []) : [];
   for (const s of b.series) {
-    const dt = sampleInterval(s.x);
+    const dt = samplingInterval(s.x);
     for (const i of crossings(s.y, level, rising)) {
       events++;
       if (marks.some((m) => s.x[i] >= m.from && s.x[i] < m.to)) inside++;

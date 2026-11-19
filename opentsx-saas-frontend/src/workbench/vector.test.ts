@@ -88,6 +88,8 @@ describe('align.vector', () => {
     expect([...align(a, [b], { every: 60 }).series[1].y]).toEqual([10, NaN, NaN, NaN, 50]);
     expect([...align(a, [b], { every: 60, fill: 'as-of', maxAge: 120 }).series[1].y]).toEqual([10, 10, 10, NaN, 50]);
     expect([...align(a, [b], { every: 60, fill: 'as-of', maxAge: 30 }).series[1].y]).toEqual([10, NaN, NaN, NaN, 50]);
+    expect(() => align(a, [b], { every: 60, fill: 'as-of', maxAge: '' })).toThrow(new Error('maxAge: empty value; expected a number of seconds, 0 or more'));
+    expect([...align(a, [b], { every: 60, maxAge: '' }).series[1].y]).toEqual([10, NaN, NaN, NaN, 50]);
     const complete = align(a, [b], { every: 60, emit: 'complete' });
     expect([...complete.series[0].x]).toEqual([0, 240]);
     expect([...complete.series[0].y]).toEqual([1, 5]);
@@ -297,6 +299,20 @@ describe('flow with a vector node', () => {
     expect(validate(state().nodes).filter((f) => f.level === 'error')).toEqual([]);
   });
 
+  it('refuses an emptied maxAge of an as-of vector in the preview and before the deployment', () => {
+    state().setSink(v, 'tsx.wind.smart.turbine-state.vectors.v1');
+    state().updateParams(v, { fill: 'as-of', maxAge: '' });
+    const text = 'The processor refuses a parameter of Vector_ws_T05: maxAge: empty value; expected a number of seconds, 0 or more';
+    expect(() => evaluate(state().source, state().nodes, v)).toThrow(new Error('maxAge: empty value; expected a number of seconds, 0 or more'));
+    expect(toDagYaml(state())).toContain('agg: MEAN, fill: as-of, emit: any');
+    expect(toDagYaml(state())).not.toContain('PTS');
+    expect(runBlocker(state().nodes, ['a'])).toBe(text);
+    expect(deployChecks(state().nodes, ['a']).filter((c) => !c.ok).map((c) => c.text)).toEqual([text]);
+    state().updateParams(v, { maxAge: 120 });
+    expect(runBlocker(state().nodes, ['a'])).toBeNull();
+    expect(deployChecks(state().nodes, ['a']).every((c) => c.ok)).toBe(true);
+  });
+
   it('names the source series in the DAG and says whether the retrieval server can run it', () => {
     expect(runBlocker(state().nodes)).toMatch(/Publish an "Align to vector" node first/);
     state().setSink(v, 'tsx.wind.smart.turbine-state.vectors.v1');
@@ -328,17 +344,17 @@ describe('flow with a vector node', () => {
 
   it('lists what a deployment needs, step by step', () => {
     const marks = (series: string[]) => deployChecks(state().nodes, series).map((c) => (c.ok ? 'ok' : 'missing'));
-    expect(marks([])).toEqual(['missing', 'missing', 'missing', 'missing']);
-    expect(marks(['a'])).toEqual(['ok', 'missing', 'missing', 'missing']);
+    expect(marks([])).toEqual(['missing', 'missing', 'missing', 'missing', 'ok']);
+    expect(marks(['a'])).toEqual(['ok', 'missing', 'missing', 'missing', 'ok']);
     state().setSink(v, 'tsx.wind.smart.turbine-state.vectors.v1');
-    expect(marks(['a'])).toEqual(['ok', 'ok', 'ok', 'ok']);
+    expect(marks(['a'])).toEqual(['ok', 'ok', 'ok', 'ok', 'ok']);
     expect(runBlocker(state().nodes, ['a'])).toBeNull();
     state().setSink(v, 'tsx.wind.smart.Turbine_State.vectors.v1');
-    expect(marks(['a'])).toEqual(['ok', 'ok', 'ok', 'missing']);
+    expect(marks(['a'])).toEqual(['ok', 'ok', 'ok', 'missing', 'ok']);
     state().setSink(v, 'tsx.wind.smart.turbine-state.vectors.v1');
     state().addInput(v, z);
     const checks = deployChecks(state().nodes, ['a']);
-    expect(checks.map((c) => c.ok)).toEqual([true, true, false, true]);
+    expect(checks.map((c) => c.ok)).toEqual([true, true, false, true, true]);
     expect(checks[2].text).toMatch(/Operators before it .* run in the workbench only/);
     // a published operator alone is not a vector
     state().removeInput(v, z);

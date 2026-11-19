@@ -7,7 +7,7 @@
 import { create } from 'zustand';
 import { OP_BY_ID, defaultParams } from './ops';
 import { Bucket, FlowNode, Params, SignalContext, SourceInfo } from './types';
-import { VECTOR_OP, VECTOR_SCHEMA, componentNames } from './vector';
+import { VECTOR_OP, VECTOR_SCHEMA, componentNames, vectorMaxAge } from './vector';
 
 export const SOURCE_ID = 'source';
 /** `kind` of a flow definition stored in the backend by the workbench. */
@@ -165,7 +165,6 @@ export const useFlow = create<FlowState>((set, get) => ({
   setSourceSeries: (sourceSeries) => set({ sourceSeries }),
 
   loadBucket: (bucket, info) => {
-    cache.clear();
     const s = get();
     // A flow restored from the backend waits for its data: the bucket becomes its source.
     if (s.source === null && s.nodes.length > 1) {
@@ -268,14 +267,12 @@ export const useFlow = create<FlowState>((set, get) => ({
   setContext: (context) => set({ context }),
 
   clear: () => {
-    cache.clear();
     set({ source: null, sourceInfo: null, sourceSeries: [], nodes: [], selectedId: null, counter: 0, savedId: null, context: null });
   },
 
   restore: (definition, savedId) => {
     const nodes = parseNodes(definition.nodes);
     if (definition.kind !== WORKBENCH_KIND || !nodes) return false;
-    cache.clear();
     const numbers = nodes.map((n) => Number(/^n(\d+)$/.exec(n.id)?.[1] ?? 0));
     set({
       track: typeof definition.track === 'string' ? definition.track : get().track,
@@ -397,7 +394,8 @@ export function toDefinition(s: FlowDoc): Record<string, unknown> {
 
 // ---------------------------------------------------------------- evaluation
 
-const cache = new Map<string, Bucket>();
+const cache = new WeakMap<Bucket, Map<string, Bucket>>();
+const MAX_CACHED_RESULTS = 200;
 
 /**
  * Quality bytes (`Series.quality`) belong to the x values they were computed for. An operator that keeps the x array of
@@ -415,13 +413,19 @@ export function keepQuality(out: Bucket, inputs: Bucket[]): Bucket {
 }
 
 /**
- * Runs the flow from the source down to the node. Results are cached per operator tree: the key of a node is its
- * operator, its parameters and the keys of its inputs.
+ * Runs the flow from the source down to the node. Results are cached per source bucket and operator tree: the key of
+ * a node is its operator, its parameters and the keys of its inputs. A source that is no longer referenced takes its
+ * results with it.
  */
 export function evaluate(source: Bucket | null, nodes: FlowNode[], id: string): Bucket | null {
   if (!source) return null;
   const order = upstream(nodes, id);
   if (order.length === 0 || !order.some((n) => n.op === 'source')) return null;
+  let cached = cache.get(source);
+  if (!cached) {
+    cached = new Map<string, Bucket>();
+    cache.set(source, cached);
+  }
   const keys = new Map<string, string>();
   const results = new Map<string, Bucket>();
   for (const n of order) {
@@ -435,14 +439,14 @@ export function evaluate(source: Bucket | null, nodes: FlowNode[], id: string): 
     if (!op || ins.length === 0 || ins.some((i) => !results.has(i))) return null;
     const multi = op.multiInput ? `|${ins.map((i) => nodes.find((m) => m.id === i)?.label).join(',')}` : '';
     const key = `${n.op}(${JSON.stringify(n.params)}${multi})[${ins.map((i) => keys.get(i)).join(';')}]`;
-    let next = cache.get(key);
+    let next = cached.get(key);
     if (!next) {
       // A multi-input operator names its components after the buckets, so it gets them under their track names.
       const named = (i: string): Bucket => ({ ...results.get(i)!, name: nodes.find((m) => m.id === i)?.label ?? i });
       next = op.multiInput ? op.apply(named(ins[0]), n.params, ins.slice(1).map(named)) : op.apply(results.get(ins[0])!, n.params);
       next = keepQuality(next, ins.map((i) => results.get(i)!));
-      if (cache.size > 200) cache.clear();
-      cache.set(key, next);
+      if (cached.size >= MAX_CACHED_RESULTS) cached.clear();
+      cached.set(key, next);
     }
     keys.set(n.id, key);
     results.set(n.id, next);
@@ -487,7 +491,10 @@ function dagParams(nodes: FlowNode[], node: FlowNode, seconds = false): Params |
   }
   if (node.op === VECTOR_OP) {
     const p = node.params;
-    const fill = (p.fill === 'as-of' ? `, fill: as-of, maxAge: PT${p.maxAge}S` : '') + (Number(p.lateness) > 0 ? `, lateness: PT${p.lateness}S` : '');
+    const maxAge = present({ maxAge: p.maxAge }).maxAge;
+    const fill =
+      (p.fill === 'as-of' ? `, fill: as-of${maxAge === undefined ? '' : `, maxAge: PT${maxAge}S`}` : '') +
+      (Number(p.lateness) > 0 ? `, lateness: PT${p.lateness}S` : '');
     const key = String(p.key ?? '').trim();
     return `{ every: PT${p.every}S${key ? `, key: ${yamlScalar(key)}` : ''}, agg: ${p.agg}${fill}, emit: ${p.emit}, names: [${vectorComponents(nodes, node).join(', ')}] }`;
   }
@@ -539,7 +546,13 @@ export function chainTo(nodes: FlowNode[], id: string): FlowNode[] | null {
  * What the processor needs to keep the clean grade of a signal up to date from this node, step by step. The node
  * is the one that is, or would be, published as the clean signal.
  */
-export function cleanChecks(nodes: FlowNode[], sourceSeries: string[], context: SignalContext | null | undefined, nodeId: string): DeployCheck[] {
+export function cleanChecks(
+  nodes: FlowNode[],
+  sourceSeries: string[],
+  context: SignalContext | null | undefined,
+  nodeId: string,
+  cleanSinksReplaced = true
+): DeployCheck[] {
   const node = nodes.find((n) => n.id === nodeId);
   const chain = node ? chainTo(nodes, nodeId) : null;
   const foreign = (chain ?? []).filter((n) => !CLEAN_OPS.includes(n.op));
@@ -551,6 +564,9 @@ export function cleanChecks(nodes: FlowNode[], sourceSeries: string[], context: 
       return [`${n.label}: ${e instanceof Error ? e.message : String(e)}`];
     }
   });
+  refused.push(...vectorRefusals(nodes));
+  // publishing this node as the clean series takes another clean sink off; a deployment keeps it
+  const beside = nodes.filter((n) => n.sinkTopic && n.id !== nodeId && n.op !== VECTOR_OP && !(cleanSinksReplaced && isCleanSink(n)));
   const fromInventory = sourceSeries.length > 0;
   return [
     {
@@ -589,7 +605,28 @@ export function cleanChecks(nodes: FlowNode[], sourceSeries: string[], context: 
       ok: refused.length === 0,
       text: refused.length === 0 ? 'The processor takes the parameters of every step.' : `The processor refuses a parameter of ${refused.join('; ')}`,
     },
+    {
+      ok: beside.length === 0,
+      text:
+        beside.length === 0
+          ? 'Besides the clean series, the flow publishes vectors only.'
+          : `${beside.map((n) => n.label).join(', ')}: published, but the processor writes only the clean series and vector topics; take ${beside.length === 1 ? 'it' : 'them'} off "Publish as Smart Topic" to deploy.`,
+    },
   ];
+}
+
+/** `<node>: <reason>` for each published as-of vector whose maxAge the preview refuses. */
+function vectorRefusals(nodes: FlowNode[]): string[] {
+  return nodes
+    .filter((n) => n.sinkTopic && n.op === VECTOR_OP && n.params.fill === 'as-of')
+    .flatMap((n) => {
+      try {
+        vectorMaxAge(n.params);
+        return [];
+      } catch (e) {
+        return [`${n.label}: ${e instanceof Error ? e.message : String(e)}`];
+      }
+    });
 }
 
 /**
@@ -598,7 +635,7 @@ export function cleanChecks(nodes: FlowNode[], sourceSeries: string[], context: 
  */
 export function runBlocker(nodes: FlowNode[], sourceSeries?: string[], context?: SignalContext | null): string | null {
   const clean = nodes.find(isCleanSink);
-  if (clean) return cleanChecks(nodes, sourceSeries ?? [], context, clean.id).find((c) => !c.ok)?.text ?? null;
+  if (clean) return cleanChecks(nodes, sourceSeries ?? [], context, clean.id, false).find((c) => !c.ok)?.text ?? null;
   const vectors = nodes.filter((n) => n.sinkTopic && n.op === VECTOR_OP);
   if (vectors.length === 0) return 'Publish an "Align to vector" node first: the processor writes vector topics only.';
   const others = workbenchSinks(nodes);
@@ -616,7 +653,8 @@ export function runBlocker(nodes: FlowNode[], sourceSeries?: string[], context?:
       return `Topic ${v.sinkTopic} must have the form tsx.<domain>.smart.<name>.vectors.v1.`;
     }
   }
-  return null;
+  const refused = vectorRefusals(nodes);
+  return refused.length === 0 ? null : `The processor refuses a parameter of ${refused.join('; ')}`;
 }
 
 /** Why the published nodes beside the vectors keep a flow from the processor, or null when there are none. */
@@ -640,12 +678,13 @@ export interface DeployCheck {
 export function deployChecks(nodes: FlowNode[], sourceSeries: string[], context?: SignalContext | null): DeployCheck[] {
   // a flow published as the clean grade of a signal has its own list
   const clean = nodes.find(isCleanSink);
-  if (clean) return cleanChecks(nodes, sourceSeries, context, clean.id);
+  if (clean) return cleanChecks(nodes, sourceSeries, context, clean.id, false);
   const vectors = nodes.filter((n) => n.sinkTopic && n.op === VECTOR_OP);
   const others = workbenchSinks(nodes);
   const fromInventory = sourceSeries.length > 0;
   const onSource = vectors.length > 0 && vectors.every((v) => inputsOf(v).every((i) => i === SOURCE_ID));
   const topicsOk = vectors.length > 0 && vectors.every((v) => /^tsx\.[a-z0-9_-]+\.smart\.[a-z0-9][a-z0-9-]*\.vectors\.v1$/.test(v.sinkTopic ?? ''));
+  const refused = vectorRefusals(nodes);
   return [
     {
       ok: fromInventory,
@@ -672,6 +711,10 @@ export function deployChecks(nodes: FlowNode[], sourceSeries: string[], context?
       text: topicsOk
         ? `It writes ${vectors.map((v) => v.sinkTopic).join(', ')}.`
         : 'The topic must have the form tsx.<domain>.smart.<name>.vectors.v1 (lower-case letters, digits and hyphens in the name).',
+    },
+    {
+      ok: refused.length === 0,
+      text: refused.length === 0 ? 'The processor takes the parameters of every vector.' : `The processor refuses a parameter of ${refused.join('; ')}`,
     },
   ];
 }

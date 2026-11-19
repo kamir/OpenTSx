@@ -189,6 +189,18 @@ describe('alignment and coverage', () => {
     expect(out.note).toMatch(/clock 10 s/);
   });
 
+  it('takes the same sampling interval as the FFT on an irregular series', () => {
+    // 2048 samples whose spacings repeat 1, 1, 1, 9 s: the median spacing is 1 s
+    const x = new Float64Array(2048);
+    for (let i = 1; i < x.length; i++) x[i] = x[i - 1] + (i % 4 === 0 ? 9 : 1);
+    const irregular = (id: string): Series => ({ id, label: id, x, y: Float64Array.from(x, Math.sin) });
+    const b: Bucket = { ...park(), series: [irregular('A'), irregular('B')], episodes: undefined };
+    const spectrum = OP_BY_ID.fft.apply(b, defaultParams(OP_BY_ID.fft)).series[0];
+    const fftInterval = 1 / (spectrum.x[1] * 2048);
+    expect(fftInterval).toBeCloseTo(1, 12);
+    expect(coverage(b).note).toMatch(new RegExp(`clock ${fftInterval} s\\n`));
+  });
+
   it('prints the clock without the noise of the sample spacing', () => {
     const fast = (id: string) => series(id, 0.001, 1, Math.sin);
     const b: Bucket = { ...park(), series: [fast('A'), fast('B')], episodes: undefined };
@@ -238,6 +250,24 @@ describe('pairs of the inputs', () => {
     expect(() => coverage({ ...park(), xKind: 'frequency' })).toThrow(/time axis/);
     expect(() => coverage(park(), { window: 'ten' })).toThrow(/neither episode nor a width/);
     expect(() => coverage(park(), {}, [park(), park()])).toThrow(/two inputs at most/);
+  });
+
+  it('refuses an emptied or non-numeric number field with its name', () => {
+    expect(() => coverage(park(), { minCoverage: '' })).toThrow(new Error('minCoverage: empty value; expected a share from 0 to 1'));
+    expect(() => coverage(park(), { minCoverage: 1.5 })).toThrow(new Error('minCoverage: "1.5" is out of range; expected a share from 0 to 1'));
+    expect(() => coverage(park(), { window: 120, step: '' })).toThrow(new Error('step: empty value; expected a number of seconds, 0 or more'));
+    expect(() => coverage(park(), { every: '' })).toThrow(new Error('every: empty value; expected a number of seconds, 0 or more'));
+    expect(() => coverage(park(), { fill: 'as-of', maxAge: '' })).toThrow(new Error('maxAge: empty value; expected a number of seconds, 0 or more'));
+    expect(() => coverage(park(), { fill: 'as-of', maxAge: 'old' })).toThrow(new Error('maxAge: "old" is not a number; expected a number of seconds, 0 or more'));
+  });
+
+  it('reads step only with a window width and maxAge only with fill as-of', () => {
+    expect(() => coverage(park(), { window: 'episode', step: '' })).not.toThrow();
+    expect(() => coverage(park(), { window: 'episode', step: -5 })).not.toThrow();
+    expect(() => coverage(park(), { window: 120, step: -5 })).toThrow(new Error('step: "-5" is out of range; expected a number of seconds, 0 or more'));
+    expect(() => coverage(park(), { fill: 'none', maxAge: '' })).not.toThrow();
+    expect(() => coverage(park(), { fill: 'none', maxAge: -1 })).not.toThrow();
+    expect(() => coverage(park(), { fill: 'as-of', maxAge: -1 })).toThrow(new Error('maxAge: "-1" is out of range; expected a number of seconds, 0 or more'));
   });
 
   it('says which pair ranges were too short for the window', () => {

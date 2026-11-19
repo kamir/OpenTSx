@@ -650,6 +650,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   and `000_launch_tsa_workbench.sh` point to `bin/episode_02_create_timeseries.sh` and the user manual.
 - `Normalizer.zone()` of `opentsx-windpark`, which had no caller. The normalizer picks REGULAR or IRREGULAR_DELTA
   through `Episodes.of`.
+- SaaS frontend: the dependencies `@tanstack/react-query`, `plotly.js`, `react-plotly.js` and `socket.io-client`,
+  which no code imported, the unused `@/` path alias and Tailwind `primary` palette, the npm scripts `preview:test`
+  and `test:coverage` (its coverage provider was never installed), and the favicon link to the missing `/vite.svg`.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -839,8 +842,6 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   without `.txt` or `.dat`.
 - `TSBucket` throws `IOException` that names the default file system when that file system cannot be opened. Before,
   it wrote a CSV file in its place. `putMessreihe`, `_open` and `close` throw instead of logging.
-  `createBucketFromLocalFilesInDirectory(sourceFolder, groupFolder, limit)` takes the source folder from the caller
-  instead of a personal default path.
 - `RISTool` opens no window and prints no value during the computation, and it stops with English
   `IllegalStateException` and `IllegalArgumentException` messages. `add` rejects a NaN or infinite probability with a
   message that names its index, before it writes a log line or changes the container.
@@ -1226,6 +1227,35 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   2262. A start of `2026-10-01T00:00:00.000000500Z` is refused, and a start of `2300-01-01T00:00:00Z` is accepted.
 - Episodes from `windpark-sim`, `market load` and `market publish` carry the producer `<module>/<version of the
   build>` from `Episodes.producer` instead of a hard-coded `3.0.1`.
+- Workbench: the evaluation cache keeps the results of each source bucket apart, so a second bucket no longer gets the
+  results of the first when the cache was not cleared.
+- Workbench: the FFT, segments and the end of a series without episodes take the exact median spacing of x as the
+  sampling interval, the same one the pair methods take; on an irregular series of 1024 samples or more the FFT
+  frequency axis was off.
+- The nginx site of the frontend image answers its two 403 refusals with `"type": "forbidden"`, and CI checks both
+  bodies.
+- Simulate: a run id with `/` or `?` is encoded in the paths of the run and of its comparison.
+- Workbench: a flow that publishes a clean signal and any other node but an "Align to vector" node, a second clean
+  series included, is refused before the deployment, and the deploy list names that node; the processor refused its
+  DAG at deploy.
+- Workbench: an emptied `maxAge` of an as-of vector is refused in the preview and before the deployment with `maxAge:
+  empty value; expected a number of seconds, 0 or more`, instead of previewing as 0 ticks and writing `maxAge: PTS`
+  into the DAG.
+- Workbench: an emptied or non-numeric number field of a pair method (`step`, `every`, `maxAge`, `minCoverage`), of
+  event synchronisation (`sigma`, `tauMax`, `shuffles`, `seed`) or of cross-correlation (`lags`) is refused with its
+  name, for example `lags: empty value; expected a whole number of clock ticks, 0 or more`, and so is a negative
+  `step`, `every`, `maxAge`, `minCoverage`, `tauMax` or `lags`; most of them silently took 0 or a default before.
+  `step` is read only when `window` is a width in seconds and `maxAge` only when `fill` is as-of.
+- Workbench: "persist TSB" on a bucket that cannot be computed shows `The bucket <name> could not be saved: <reason>.`
+  instead of throwing in the click handler.
+- Workbench: resample runs a series episode by episode as the processor does, closes the windows at the end of each
+  episode and starts the grid again after 10000 empty windows, so the preview equals the processor across long gaps.
+- The workbench notes of `pair.coverage`, `pair.xcorr` and `pair.es` name the number fields that are refused when
+  emptied, negative or not a number, and say that `step` is read only with a window width and `maxAge` only with fill
+  as-of.
+- The workbench README and HOW_TO_RUN no longer name `public/vite.svg`, `npm run test:coverage` or Plotly.js,
+  HOW_TO_RUN lists the source map the build writes, and the SaaS platform document and release summary no longer list
+  the four removed frontend packages.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

@@ -183,4 +183,10 @@ describe('gaps and edge cases', () => {
     expect(() => xcorr(bucket(c.a, c.b), { lags: 2.5 })).toThrow(/whole number of clock ticks/);
     expect(() => xcorr(bucket(c.a, c.b), { lags: -1 })).toThrow(/whole number of clock ticks/);
   });
+
+  it('refuses an emptied or non-numeric field with its name', () => {
+    expect(() => xcorr(bucket(c.a, c.b), { lags: '' })).toThrow(new Error('lags: empty value; expected a whole number of clock ticks, 0 or more'));
+    expect(() => xcorr(bucket(c.a, c.b), { lags: 'ten' })).toThrow(new Error('lags: "ten" is not a number; expected a whole number of clock ticks, 0 or more'));
+    expect(() => xcorr(bucket(c.a, c.b), { minCoverage: '' })).toThrow(new Error('minCoverage: empty value; expected a share from 0 to 1'));
+  });
 });

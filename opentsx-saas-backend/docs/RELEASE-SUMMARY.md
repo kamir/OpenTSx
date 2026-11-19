@@ -94,10 +94,7 @@ I've created a **complete, production-ready SaaS platform** for visual time seri
 #### Dependencies Configured:
 - ✅ React 18 + TypeScript + Vite
 - ✅ React Flow (visual flow builder)
-- ✅ Plotly.js (interactive charts)
 - ✅ Zustand (state management)
-- ✅ TanStack Query (data fetching)
-- ✅ Socket.IO (WebSocket)
 - ✅ Tailwind CSS (styling)
 - ✅ Complete `package.json`
 
@@ -373,7 +370,6 @@ All requested SaaS features implemented:
 
 1. **Frontend UI Components**:
    - React Flow canvas implementation
-   - Plotly chart components
    - Authentication pages (login, signup)
    - Dashboard UI
    - Organization/team management UI

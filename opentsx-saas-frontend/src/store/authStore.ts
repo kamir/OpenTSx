@@ -4,7 +4,7 @@
 
 import axios from 'axios';
 import { create } from 'zustand';
-import { User, authAPI, errorMessage, LoginRequest, RegisterRequest } from '../services/api';
+import { User, authAPI, errorMessage, hasAccessToken, LoginRequest, RegisterRequest } from '../services/api';
 
 interface AuthState {
   user: User | null;
@@ -22,7 +22,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  isAuthenticated: !!localStorage.getItem('access_token'),
+  isAuthenticated: hasAccessToken(),
   isLoading: false,
   error: null,
 
@@ -73,7 +73,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   fetchCurrentUser: async () => {
-    if (!localStorage.getItem('access_token')) {
+    if (!hasAccessToken()) {
       return;
     }
 

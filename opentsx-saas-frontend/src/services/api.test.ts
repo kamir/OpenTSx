@@ -17,7 +17,7 @@ vi.mock('axios', async (importOriginal) => {
   return { ...real };
 });
 
-import { authAPI, errorMessage, fetchJson, systemsAPI } from './api';
+import { authAPI, errorMessage, fetchJson, hasAccessToken, systemsAPI } from './api';
 
 function reply(status: number, data: unknown) {
   backend.answer = async (config) => {
@@ -95,8 +95,8 @@ describe('errorMessage', () => {
   });
 
   it('keeps the reason of a refused sign-in', async () => {
-    reply(401, { error: 'Incorrect email or password', type: 'unauthorized' });
-    expect(errorMessage(await failure(() => authAPI.login({ email: 'a@example.com', password: 'wrong' })))).toBe('Incorrect email or password');
+    reply(401, { error: 'email or password: not correct; check both and sign in again', type: 'unauthorized' });
+    expect(errorMessage(await failure(() => authAPI.login({ email: 'a@example.com', password: 'wrong' })))).toBe('email or password: not correct; check both and sign in again');
   });
 
   it('gives the message of a plain Error and the text of anything else', () => {
@@ -148,9 +148,11 @@ describe('authAPI.login', () => {
   it('stores only the access token', async () => {
     const user = { id: 1, email: 'a@example.com', full_name: 'A', is_verified: true, created_at: '2026-01-01T00:00:00Z' };
     reply(200, { access_token: 'access', refresh_token: 'refresh', token_type: 'bearer', expires_in: 1800, user });
+    expect(hasAccessToken()).toBe(false);
     await authAPI.login({ email: 'a@example.com', password: 'a-password-1' });
     expect(localStorage.getItem('access_token')).toBe('access');
     expect(localStorage.getItem('refresh_token')).toBeNull();
+    expect(hasAccessToken()).toBe(true);
   });
 });
 
@@ -193,6 +195,18 @@ describe('the nginx site of the frontend image', () => {
     await expect(fetchJson('/retrieval/v1/inventory')).rejects.toThrow(new Error(text));
     reply(status, JSON.parse(body!));
     expect(errorMessage(await failure(register))).toBe(text);
+  });
+
+  it.each([
+    ['/retrieval/v1/dags/', 'deploying and stopping DAGs goes through /api/v1/dags/'],
+    ['^/retrieval/v1/systems/[^/]+/generate$', 'generating a signal goes through /api/v1/systems/'],
+  ])('refuses %s with 403 in the error body the helper reads', async (path, text) => {
+    const named = locations.get(path) ?? '';
+    expect(named).toContain('default_type application/json;');
+    const body = /return\s+403\s+'([^']*)';/.exec(named)?.[1];
+    expect(JSON.parse(body ?? 'null')).toEqual({ error: text, type: 'forbidden' });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(body, { status: 403 })));
+    await expect(fetchJson('/retrieval/v1/dags/deploy')).rejects.toThrow(new Error(text));
   });
 });
 

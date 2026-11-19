@@ -87,9 +87,9 @@ describe('the sign-in error', () => {
   const at = (path: string) => `${backend.seen[0].baseURL}${path}`;
 
   it('is the reason the backend gives', async () => {
-    reply(401, { error: 'Incorrect email or password', type: 'unauthorized' });
+    reply(401, { error: 'email or password: not correct; check both and sign in again', type: 'unauthorized' });
     await login();
-    expect(useAuthStore.getState().error).toBe('Incorrect email or password');
+    expect(useAuthStore.getState().error).toBe('email or password: not correct; check both and sign in again');
   });
 
   it('is text when the backend refuses a field', async () => {

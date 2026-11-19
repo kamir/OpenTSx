@@ -118,6 +118,16 @@ describe('pair.es over pair windows', () => {
     expect(() => es(bucket(c.a!, c.b!), { seed: 1.5 })).toThrow(/seed/);
     expect(() => es(bucket(c.a!, c.b!), { tauMax: -1 })).toThrow(/tauMax/);
   });
+
+  it('refuses an emptied or non-numeric field with its name', () => {
+    const b = bucket(byName('independent series').a!, byName('independent series').b!);
+    expect(() => es(b, { sigma: '' })).toThrow(new Error('sigma: empty value; expected a number such as 2'));
+    expect(() => es(b, { sigma: 'two' })).toThrow(new Error('sigma: "two" is not a number; expected a number such as 2'));
+    expect(() => es(b, { seed: '' })).toThrow(new Error('seed: empty value; expected a whole number such as 1'));
+    expect(() => es(b, { shuffles: '' })).toThrow(new Error('shuffles: empty value; expected a whole number of 1 or more'));
+    expect(() => es(b, { tauMax: '' })).toThrow(new Error('tauMax: empty value; expected a number of seconds, 0 or more'));
+    expect(() => es(b, { minCoverage: '' })).toThrow(new Error('minCoverage: empty value; expected a share from 0 to 1'));
+  });
 });
 
 describe('events and surrogates', () => {

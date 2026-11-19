@@ -41,7 +41,11 @@ runtimes:
       Operator "Event synchronisation", tab Multi-variate Analysis. Port of event_sync.py; the 8 shared test vector
       cases give the same four numbers to 12 decimals. A window without events in A or B gives 0 in every field.
       Strictly periodic events keep their timing under any shuffle, so there q_rand equals q_total. The defaults above
-      hold for the operator panel and for a call of apply without them.
+      hold for the operator panel and for a call of apply without them. An emptied or non-numeric sigma, tauMax,
+      shuffles, seed, every or minCoverage is refused with its name, and so are a negative every, minCoverage or tauMax,
+      a shuffles below 1 and a seed that is not a whole number, for example sigma: empty value; expected a number such
+      as 2. step is read only when window is a width in seconds and maxAge only when fill is as-of; then an emptied,
+      negative or non-numeric value is refused too.
   python:
     status: none
     note: >-

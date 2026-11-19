@@ -102,12 +102,16 @@ jobs:
           --add-host opentsx-saas-backend:127.0.0.1
           -v "$PWD/nginx.conf:/etc/nginx/conf.d/default.conf:ro"
           nginxinc/nginx-unprivileged:1.27.4-alpine nginx -t
-      - name: nginx answers an unreachable backend as JSON
+      - name: nginx answers an unreachable backend and a refused route as JSON
         run: |
           docker run -d --name fe-nginx -p 8080:8080 --add-host opentsx-retrieval:127.0.0.1 --add-host opentsx-studio:127.0.0.1 --add-host opentsx-saas-backend:127.0.0.1 -v "$PWD/nginx.conf:/etc/nginx/conf.d/default.conf:ro" nginxinc/nginx-unprivileged:1.27.4-alpine
           curl -sf --retry 10 --retry-all-errors --retry-delay 1 -o /dev/null http://127.0.0.1:8080/
           test "$(curl -s -o "$RUNNER_TEMP/body.json" -w '%{http_code}' http://127.0.0.1:8080/api/v1/auth/mode)" = 502
           test "$(cat "$RUNNER_TEMP/body.json")" = '{"error":"the backend is not reachable","type":"unavailable"}'
+          test "$(curl -s -o "$RUNNER_TEMP/body.json" -w '%{http_code}' -X POST http://127.0.0.1:8080/retrieval/v1/dags/deploy)" = 403
+          test "$(cat "$RUNNER_TEMP/body.json")" = '{"error":"deploying and stopping DAGs goes through /api/v1/dags/","type":"forbidden"}'
+          test "$(curl -s -o "$RUNNER_TEMP/body.json" -w '%{http_code}' -X POST http://127.0.0.1:8080/retrieval/v1/systems/h2-chain/generate)" = 403
+          test "$(cat "$RUNNER_TEMP/body.json")" = '{"error":"generating a signal goes through /api/v1/systems/","type":"forbidden"}'
           docker rm -f fe-nginx
 
   saas-backend:

@@ -43,9 +43,11 @@
     * The processor runs two kinds of sink. A vector sink runs `align.vector` on source series. A series sink runs a
       single-input chain of `dq.plausible-range` (the DAG node `dq.checks` with the check `PLAUSIBLE_RANGE` only),
       `convert.unit`, `resample`, `model.wind-shear`, `model.power-curve`, `feature.lag` and `feature.rolling`.
-      Every other operator computes in the workbench only. A flow that publishes no clean signal and publishes any other
-      node beside a vector is not deployed, and the deploy list names it. Publishing a clean signal checks the
-      parameters of every step as the processor does and names the step and the parameter it refuses.
+      Every other operator computes in the workbench only. Every node a flow publishes is the clean signal or an
+      `align.vector` node; a flow that publishes any other node is not deployed, and the deploy list names it.
+      Publishing a clean signal checks the parameters of every step as the processor does and names the step and the
+      parameter it refuses. An emptied `maxAge` of an `align.vector` node with fill `as-of` is refused in the preview
+      and before the deployment.
       [Chapter 17](17-operators.md) lists where each operator runs;
       [Kafka native streaming](../devops/kafka-native-streaming.md) describes the processor.
   * **Systems** (`/systems`): a shell around one system with five places. The data comes from the retrieval server
