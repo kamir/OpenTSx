@@ -141,6 +141,9 @@ npm run demo
 
 The [standalone demo guide](docs/devguide/standalone-workbench.md) covers the
 local workflow, fast tests and browser acceptance.
+During an edit, `npm run check:local -- src/workbench/presentation.ts` checks
+frontend types, lint and related tests. The guide also lists the full checks
+required before pushing.
 
 You need Docker Compose and an existing Confluent Platform Docker cluster for
 the local CP profile. The profile uses pinned Linux ARM64 images, a React

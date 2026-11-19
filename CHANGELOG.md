@@ -36,6 +36,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Conservative CI selection for the exact standalone demo file allowlist.
+  Shared, unknown or untrusted changes require the full suite. An always-run
+  completion gate rejects missing, failed or unexpectedly skipped checks.
+- Local frontend type, lint and related-test checks through `check:local`.
+  Empty selections and failing stages return an error without a fallback run.
+
 - Standalone thermal Workbench entry through `npm run demo`, with deterministic
   synthetic episodes, local computation and preserved analysis across display
   modes. Explicit demo links reject competing imports and preserve existing

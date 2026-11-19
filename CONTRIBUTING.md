@@ -43,6 +43,12 @@ fixture) and `OPENTSX_RETRIEVAL_URL` (Python client against a running retrieval 
 [`.mvn/maven.config`](.mvn/maven.config) makes Maven retry a download up to five times when the repository answers
 HTTP 429, 500, 502, 503 or 504.
 
+Use the [standalone demo guide](docs/devguide/standalone-workbench.md) for
+frontend edits. Its local command checks frontend types and lint before running
+tests related to explicit source paths. An empty test selection fails. Run the
+full frontend checks before pushing; related tests do not cover every shared
+fixture or build input.
+
 ## Continuous integration
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every pull request
@@ -50,6 +56,9 @@ and on pushes to `master`:
 
 | Job | What it does |
 |-----|--------------|
+| CI change selection | Classifies the immutable pull request diff |
+| Documentation links | Checks maintained relative Markdown links |
+| SaaS frontend | Types, lint, Vitest, build and standalone browser checks |
 | Java 17, Java 21 | `mvn -B -ntp verify` |
 | Operator learning synchronization | repository gitlink URL checks, learning synchronization tests, generated student lessons and source-content hashes |
 | Shared contract vectors and Rust | generated assignment fixture check and the pinned Rust consumer of the shared cases |
@@ -57,10 +66,38 @@ and on pushes to `master`:
 | Rust native x86_64 and ARM64 | native vectors and runner regressions |
 | Rust static musl targets | three static artifacts and ARMv7 QEMU tests |
 | Rust B1 Proxy acceptance | protocol, producer placement and signed recovery |
-| Python 3.10 to 3.13 | `pip install -e ".[forecasting,kafka]" pytest`, `pytest -q`; on 3.12 also local CP launcher tests and `tools/check_links.py` |
+| Python 3.10 to 3.13 | Package tests; on 3.12 also local CP launcher tests |
 | k3s scripts and manifests | `bash -n` and `shellcheck` on `deploy/k3s/*.sh` and `deploy/docker/*.sh`; renders the kustomize overlays with `deploy/k3s/20-configure.sh` |
 | KafScale conformance | source-built KafScale, Proxy I/O and module tests |
 | Java -> Iceberg -> Python | Java writes an Iceberg fixture that PyIceberg must read byte-identically; the Python client queries a Java retrieval server |
+| CI complete | Requires success from every selected job |
+
+Pull requests use the `demo` scope only when every changed path belongs to this
+exact allowlist:
+
+* `README.md`
+* `CHANGELOG.md`
+* `docs/devguide/standalone-workbench.md`
+* `opentsx-saas-frontend/src/workbench/deviceSample.ts`
+* `opentsx-saas-frontend/src/workbench/deviceSample.test.ts`
+* `opentsx-saas-frontend/src/workbench/WorkbenchDemo.test.tsx`
+* `opentsx-saas-frontend/scripts/demo-smoke.mjs`
+
+The `demo` scope runs metadata and learning synchronization, documentation links
+and the full frontend job, including browser acceptance. Every other changed
+path selects `full`. General Workbench code, operator definitions, dependency
+locks, workflows and shared vectors therefore require the full suite. Pushes to
+`master` and manual runs also use `full`.
+
+The [selector](tools/ci_scope.py) validates immutable base and head commits and
+reads a NUL-delimited Git diff from their merge base. Rename detection is
+disabled so both removed and added paths are checked. Allowlisted files must
+have regular, non-executable file modes. Empty diffs, unavailable history and
+untrusted change metadata select `full` with an explicit reason.
+
+`CI complete` validates the selection manifest and every workload result.
+Selected jobs must succeed; missing results, unexpected skips, cancellation
+and failures cannot pass the gate. Unselected jobs remain visibly skipped.
 
 Pull requests are squash-merged when every required check is green.
 

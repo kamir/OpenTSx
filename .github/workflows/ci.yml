@@ -14,8 +14,48 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  ci-selection:
+    name: CI change selection
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      scope: ${{ steps.scope.outputs.scope }}
+      selection: ${{ steps.scope.outputs.selection }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Test CI selection and workflow contracts
+        run: python3 -m unittest discover -s tools -p 'test_ci_*.py' -v
+      - name: Select checks from immutable pull request commits
+        id: scope
+        env:
+          CI_EVENT: ${{ github.event_name }}
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CI_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 tools/ci_scope.py select --event "$CI_EVENT" --base "$CI_BASE_SHA" --head "$CI_HEAD_SHA" --github-output "$GITHUB_OUTPUT"
+
+  documentation:
+    name: Documentation links
+    needs: ci-selection
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: python3 tools/check_links.py
+
   operator-learning:
     name: Operator learning synchronization
+    needs: ci-selection
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -32,6 +72,8 @@ jobs:
 
   execution-contracts:
     name: Shared contract vectors and Rust
+    needs: ci-selection
+    if: ${{ !cancelled() && (needs.ci-selection.result != 'success' || needs.ci-selection.outputs.scope != 'demo') }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -51,6 +93,8 @@ jobs:
 
   rust-runner:
     name: Rust runner tests and lint
+    needs: ci-selection
+    if: ${{ !cancelled() && (needs.ci-selection.result != 'success' || needs.ci-selection.outputs.scope != 'demo') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     container: rust:1.99.1-bookworm
@@ -67,6 +111,8 @@ jobs:
 
   rust-runner-native:
     name: Rust native ${{ matrix.target }}
+    needs: ci-selection
+    if: ${{ !cancelled() && (needs.ci-selection.result != 'success' || needs.ci-selection.outputs.scope != 'demo') }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     strategy:
@@ -102,6 +148,8 @@ jobs:
 
   rust-runner-static:
     name: Rust static ${{ matrix.target }}
+    needs: ci-selection
+    if: ${{ !cancelled() && (needs.ci-selection.result != 'success' || needs.ci-selection.outputs.scope != 'demo') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     strategy:
@@ -181,6 +229,8 @@ jobs:
           retention-days: 7
 
   rust-b1-acceptance:
+    needs: ci-selection
+    if: ${{ !cancelled() && (needs.ci-selection.result != 'success' || needs.ci-selection.outputs.scope != 'demo') }}
     name: Rust B1 Proxy acceptance
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -285,6 +335,8 @@ jobs:
           retention-days: 7
 
   rust-runner-compose:
+    needs: ci-selection
+    if: ${{ !cancelled() && (needs.ci-selection.result != 'success' || needs.ci-selection.outputs.scope != 'demo') }}
     name: Rust runner three-worker Compose acceptance
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -345,6 +397,8 @@ jobs:
 
   wayang-rust-compose:
     name: ${{ matrix.name }}
+    needs: ci-selection
+    if: ${{ !cancelled() && (needs.ci-selection.result != 'success' || needs.ci-selection.outputs.scope != 'demo') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     strategy:
@@ -466,6 +520,8 @@ jobs:
 
   java:
     name: Java ${{ matrix.java }}
+    needs: ci-selection
+    if: ${{ !cancelled() && (needs.ci-selection.result != 'success' || needs.ci-selection.outputs.scope != 'demo') }}
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -485,6 +541,8 @@ jobs:
 
   python:
     name: Python ${{ matrix.python }}
+    needs: ci-selection
+    if: ${{ !cancelled() && (needs.ci-selection.result != 'success' || needs.ci-selection.outputs.scope != 'demo') }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -508,13 +566,11 @@ jobs:
         if: matrix.python == '3.12'
         working-directory: .
         run: python -m unittest discover -s deploy/local-cp -p test_workbench.py -v
-      - name: Documentation links
-        if: matrix.python == '3.12'
-        working-directory: .
-        run: python tools/check_links.py
 
   saas-frontend:
     name: SaaS frontend
+    needs: ci-selection
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -551,6 +607,8 @@ jobs:
 
   saas-backend:
     name: SaaS backend
+    needs: ci-selection
+    if: ${{ !cancelled() && (needs.ci-selection.result != 'success' || needs.ci-selection.outputs.scope != 'demo') }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -568,6 +626,8 @@ jobs:
         run: python -m pytest -q tests
 
   deploy:
+    needs: ci-selection
+    if: ${{ !cancelled() && (needs.ci-selection.result != 'success' || needs.ci-selection.outputs.scope != 'demo') }}
     name: k3s scripts and manifests
     runs-on: ubuntu-latest
     steps:
@@ -612,6 +672,8 @@ jobs:
           cat "$RUNNER_TEMP/probe-plan-local.md" >> "$GITHUB_STEP_SUMMARY"
 
   kafscale-conformance:
+    needs: ci-selection
+    if: ${{ !cancelled() && (needs.ci-selection.result != 'success' || needs.ci-selection.outputs.scope != 'demo') }}
     name: KafScale conformance
     runs-on: ubuntu-latest
     env:
@@ -820,6 +882,8 @@ jobs:
 
   cross-language:
     name: Java -> Iceberg -> Python
+    needs: ci-selection
+    if: ${{ !cancelled() && (needs.ci-selection.result != 'success' || needs.ci-selection.outputs.scope != 'demo') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -852,3 +916,36 @@ jobs:
             org.opentsx.retrieval.server.RetrievalServer --port 18080 --demo true > retrieval-server.log 2>&1 &
           for i in $(seq 1 60); do curl -sf localhost:18080/v1/health && break; sleep 1; done
           cd python-package && OPENTSX_RETRIEVAL_URL=http://127.0.0.1:18080 python -m pytest -q tests/test_retrieval_client.py
+
+  ci-complete:
+    name: CI complete
+    if: always()
+    needs:
+      - ci-selection
+      - documentation
+      - operator-learning
+      - execution-contracts
+      - rust-runner
+      - rust-runner-native
+      - rust-runner-static
+      - rust-b1-acceptance
+      - rust-runner-compose
+      - wayang-rust-compose
+      - java
+      - python
+      - saas-frontend
+      - saas-backend
+      - deploy
+      - kafscale-conformance
+      - cross-language
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Require every selected check to succeed
+        env:
+          CI_NEEDS_JSON: ${{ toJSON(needs) }}
+        run: python3 tools/ci_scope.py gate
