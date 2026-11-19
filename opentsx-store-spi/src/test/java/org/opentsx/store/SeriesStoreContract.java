@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public abstract class SeriesStoreContract {
 
-    /** 2026-09-21T00:00:00Z, millisecond aligned so point stores with ms precision can hold every timestamp. */
+    /** 2026-09-21T14:13:20Z, millisecond aligned so point stores with ms precision can hold every timestamp. */
     protected static final long T0 = 1_790_000_000_000_000L;
     protected static final long SEC = 1_000_000L;
 

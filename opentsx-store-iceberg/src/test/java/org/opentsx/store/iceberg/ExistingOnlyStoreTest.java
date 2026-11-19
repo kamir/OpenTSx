@@ -18,6 +18,7 @@ import org.opentsx.store.SeriesSelector;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.nio.file.Path;
@@ -80,6 +81,21 @@ class ExistingOnlyStoreTest {
     }
 
     @Test
+    void failedOwnedWriterInitializationClosesItsCatalog() {
+        assertThrows(AssertionError.class, () -> IcebergSeriesStore.open(props(), "tsx"));
+        assertEquals(List.of("close"), TrackingCatalog.calls);
+    }
+
+    @Test
+    void aFailingCloseNamesTheCatalog() throws Exception {
+        IcebergSeriesStore store = existing(Map.class, props());
+        TrackingCatalog.closeFails = true;
+        UncheckedIOException failure = assertThrows(UncheckedIOException.class, store::close);
+        assertEquals("cannot close catalog tracking", failure.getMessage());
+        assertEquals("close failed", failure.getCause().getMessage());
+    }
+
+    @Test
     void readOnlyRejectsEmptyAndNonemptyWritesAndMutableTableAccessBeforeTouch() throws Exception {
         try (IcebergSeriesStore store = existing(Catalog.class, new TrackingCatalog())) {
             TrackingCatalog.calls.clear();
@@ -125,6 +141,9 @@ class ExistingOnlyStoreTest {
         static boolean closeFails;
 
         public TrackingCatalog() { }
+
+        @Override
+        public String name() { return "tracking"; }
 
         @Override
         public Table loadTable(TableIdentifier id) {

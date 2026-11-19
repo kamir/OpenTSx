@@ -8,6 +8,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.exceptions.CleanableFailure;
 import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.io.PartitionedFanoutWriter;
 import org.apache.iceberg.io.UnpartitionedWriter;
@@ -51,6 +52,7 @@ final class IcebergIO {
                 }
             };
         }
+        boolean committing = false;
         try {
             for (Record r : records) {
                 writer.write(r);
@@ -59,14 +61,21 @@ final class IcebergIO {
             for (DataFile f : writer.complete().dataFiles()) {
                 append.appendFile(f);
             }
+            committing = true;
             append.commit();
-        } catch (IOException e) {
+        } catch (IOException | RuntimeException e) {
+            RuntimeException failure = e instanceof RuntimeException r ? r
+                    : new UncheckedIOException("cannot write table " + table.name(), (IOException) e);
+            if (committing && !(e instanceof CleanableFailure)) {
+                // Iceberg cleans up only after a CleanableFailure: any other commit failure may have committed the files
+                throw failure;
+            }
             try {
                 writer.abort();
-            } catch (IOException ignored) {
-                // best effort cleanup of orphan files
+            } catch (IOException | RuntimeException abortFailure) {
+                failure.addSuppressed(abortFailure);
             }
-            throw new UncheckedIOException(e);
+            throw failure;
         }
     }
 

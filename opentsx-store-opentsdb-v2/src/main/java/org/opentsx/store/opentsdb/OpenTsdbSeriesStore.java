@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.opentsx.model.Episodes;
 import org.opentsx.model.Micros;
 import org.opentsx.model.SeriesKeys;
+import org.opentsx.model.Ulid;
+import org.opentsx.model.XxHash64;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.model.v2.SeriesKey;
 import org.opentsx.store.Capability;
@@ -20,7 +22,6 @@ import org.opentsx.store.WriteResult;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -42,13 +43,19 @@ import java.util.TreeMap;
  *   and no NaN: timestamps are truncated to ms, NaN points are dropped and counted. The unit travels as tag
  *   {@code _unit}.</li>
  *   <li>Read: {@code POST /api/query} with aggregator {@code none} and ms resolution, one reconstructed episode per
- *   series and query (REGULAR if equally spaced). Episode ids, labels and provenance are not stored.</li>
- *   <li>Selectors without a metric enumerate metrics via {@code /api/suggest}.</li>
+ *   series and query (REGULAR if equally spaced). Episode ids, labels and provenance are not stored: the id of a
+ *   reconstructed episode derives from its series and its first and last timestamp, and createdAt is its last
+ *   timestamp, so the same points read the same episode. A 400 answer reads as an unknown metric only when its body
+ *   says {@code No such name}; every other error answer fails the call.</li>
+ *   <li>Selectors without a metric enumerate metrics via {@code /api/suggest}; an answer of 10000 metrics,
+ *   the most one call returns, fails the call because the list may be incomplete.</li>
  * </ul>
  */
 public final class OpenTsdbSeriesStore implements SeriesStore {
 
+    private static final int SUGGEST_LIMIT = 10_000;
     private static final int PUT_BATCH = 50;
+    private static final String PRODUCER = Episodes.producer("opentsx-store-opentsdb-v2");
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private final URI base;
@@ -127,7 +134,7 @@ public final class OpenTsdbSeriesStore implements SeriesStore {
             s.tags().forEach(tags::put);
             JsonNode result = post("/api/query", body, true);
             if (result == null) {
-                continue; // OpenTSDB answers 400 "No such name" for unknown metrics
+                continue;
             }
             for (JsonNode series : result) {
                 Episode e = toEpisode(series, q.fromMicros(), q.toMicros());
@@ -177,12 +184,15 @@ public final class OpenTsdbSeriesStore implements SeriesStore {
         }
         long[] ts = points.keySet().stream().mapToLong(Long::longValue).toArray();
         double[] v = points.values().stream().mapToDouble(Double::doubleValue).toArray();
-        boolean regular = ts.length >= 2;
-        for (int i = 2; regular && i < ts.length; i++) {
-            regular = ts[i] - ts[i - 1] == ts[1] - ts[0];
-        }
-        Episodes.Draft d = regular ? Episodes.regular(key, ts[0], ts[1] - ts[0], v) : Episodes.irregular(key, ts, v);
-        return d.source("opentsdb:" + base.getHost()).producer("opentsx-store-opentsdb-v2/3.0.1").build();
+        long first = ts[0];
+        long last = ts[ts.length - 1];
+        long seed = XxHash64.hash((key.getSeriesId() + "|" + first + "|" + last).getBytes(StandardCharsets.UTF_8));
+        return Episodes.of(key, ts, v)
+                .episodeId(Ulid.deterministic(Math.floorMod(Math.floorDiv(first, 1000L), 1L << 48), seed))
+                .createdAt(last)
+                .source("opentsdb:" + base.getHost())
+                .producer(PRODUCER)
+                .build();
     }
 
     private static SeriesKey key(String metric, JsonNode tagsNode) {
@@ -206,9 +216,13 @@ public final class OpenTsdbSeriesStore implements SeriesStore {
     }
 
     private List<String> metrics() {
-        JsonNode r = get("/api/suggest?type=metrics&max=10000&q=" + URLEncoder.encode("", StandardCharsets.UTF_8));
+        JsonNode r = get("/api/suggest?type=metrics&max=" + SUGGEST_LIMIT + "&q=");
         List<String> out = new ArrayList<>();
         r.forEach(n -> out.add(n.asText()));
+        if (out.size() >= SUGGEST_LIMIT) {
+            throw new IllegalStateException("metrics: /api/suggest returned " + out.size() + " metrics, its limit, so the list"
+                    + " may be incomplete; select a metric in the SeriesSelector");
+        }
         return out;
     }
 
@@ -223,31 +237,33 @@ public final class OpenTsdbSeriesStore implements SeriesStore {
         return send(HttpRequest.newBuilder(base.resolve(path)).timeout(timeout).GET().build(), false);
     }
 
-    private JsonNode post(String path, JsonNode body, boolean nullOn400) {
+    private JsonNode post(String path, JsonNode body, boolean nullOnUnknownMetric) {
         try {
             return send(HttpRequest.newBuilder(base.resolve(path)).timeout(timeout)
                     .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(JSON.writeValueAsString(body))).build(), nullOn400);
+                    .POST(HttpRequest.BodyPublishers.ofString(JSON.writeValueAsString(body))).build(), nullOnUnknownMetric);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    private JsonNode send(HttpRequest request, boolean nullOn400) {
+    /** {@code nullOnUnknownMetric}: a 400 whose body says {@code No such name} answers null. */
+    private JsonNode send(HttpRequest request, boolean nullOnUnknownMetric) {
+        String call = "OpenTSDB " + request.method() + " " + request.uri();
         try {
             HttpResponse<String> r = http.send(request, HttpResponse.BodyHandlers.ofString());
-            if (r.statusCode() == 400 && nullOn400) {
+            if (nullOnUnknownMetric && r.statusCode() == 400 && r.body() != null && r.body().contains("No such name")) {
                 return null;
             }
             if (r.statusCode() / 100 != 2) {
-                throw new IllegalStateException("OpenTSDB " + request.uri().getPath() + " returned " + r.statusCode() + ": " + r.body());
+                throw new IllegalStateException(call + " returned " + r.statusCode() + ": " + r.body());
             }
             return r.body() == null || r.body().isBlank() ? null : JSON.readTree(r.body());
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw new UncheckedIOException(call + " failed", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("interrupted", e);
+            throw new IllegalStateException(call + " was interrupted", e);
         }
     }
 }

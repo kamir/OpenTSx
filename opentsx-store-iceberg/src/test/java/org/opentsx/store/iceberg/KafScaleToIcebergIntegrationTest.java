@@ -58,15 +58,23 @@ class KafScaleToIcebergIntegrationTest {
         }
         Map<String, String> props = IcebergSeriesStoreTest.catalogProps(dir);
         var catalog = IcebergSeriesStore.catalog(props);
-        BucketManifest sealed;
-        try (KafkaProducer<String, byte[]> producer = KafScaleClients.producer(bootstrap);
-             IcebergEpisodeIndex index = new IcebergEpisodeIndex(catalog, org.apache.iceberg.catalog.Namespace.of("tsx"))) {
-            try (BucketWriter w = BucketWriter.open(producer, layout, index, "ice-run", Map.of())) {
-                episodes.forEach(w::append);
-                sealed = w.seal();
+        try {
+            BucketManifest sealed;
+            try (KafkaProducer<String, byte[]> producer = KafScaleClients.producer(bootstrap);
+                 IcebergEpisodeIndex index = new IcebergEpisodeIndex(catalog, org.apache.iceberg.catalog.Namespace.of("tsx"))) {
+                try (BucketWriter w = BucketWriter.open(producer, layout, index, "ice-run", Map.of())) {
+                    episodes.forEach(w::append);
+                    sealed = w.seal();
+                }
             }
+            syncAndReplay(bootstrap, layout, catalog, episodes, sealed, t0);
+        } finally {
+            ((AutoCloseable) catalog).close();
         }
+    }
 
+    private static void syncAndReplay(String bootstrap, TopicLayout layout, org.apache.iceberg.catalog.Catalog catalog,
+                                      List<Episode> episodes, BucketManifest sealed, long t0) {
         try (KafkaConsumer<byte[], byte[]> consumer = KafScaleClients.consumer(bootstrap);
              IcebergSeriesStore store = new IcebergSeriesStore(catalog, org.apache.iceberg.catalog.Namespace.of("tsx"))) {
             EpisodeLogSync.Result first = EpisodeLogSync.sync(consumer, layout, store, Map.of(), 4, Duration.ofSeconds(60));
@@ -89,8 +97,6 @@ class KafScaleToIcebergIntegrationTest {
                     .replay(ReplayRequest.bucket(sealed.getBucketId()), replayed::add);
             assertTrue(r.verified(), r.toString());
             assertEquals(episodes.size(), replayed.size());
-        } finally {
-            ((AutoCloseable) catalog).close();
         }
     }
 }

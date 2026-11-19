@@ -114,7 +114,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `opentsx.windpark.sinks` (list of `auto`, `iceberg`, `kafscale`), `opentsx.openmetadata.profiles` and
   `opentsx.market.store` (`auto`, `always`, `never`), each with the default `auto`, which follows only values set on
   the command line; `opentsx.retrieval.openDagRuns` (default `false`) and `opentsx.retrieval.bind` (without it every
-  interface, or 127.0.0.1 when `opentsx.retrieval.openDagRuns` is true). The registry holds 133 keys; appendix D and
+  interface, or 127.0.0.1 when `opentsx.retrieval.openDagRuns` is true). The registry holds 134 keys; appendix D and
   the defaults templates are regenerated.
 - Shared configuration vectors `conf.v1.json`: 288 cases. A case with `"registry": "shipped"` runs on the shipped
   registry and checks the log level and the mode keys in both runtimes.
@@ -490,6 +490,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `pfd-acceptance` profile reads `OPENTSX_BOOTSTRAP_SERVERS` instead of `KAFSCALE_BOOTSTRAP`.
 - The source of the Flink statistics job (`StatsInputDeserializer`) logs the first undecodable record of a partition
   at WARN with topic, partition and offset instead of printing it on stderr.
+- Iceberg store: new IcebergSeriesStore(catalog, namespace) borrows the catalog like openExisting(catalog, namespace),
+  so closing the store no longer closes the caller's catalog. open(props, ns) and openExisting(props, ns) own their
+  catalog and also close it when opening fails.
+- EpisodeQuery refuses a limit below 1 with 'limit: <n> is out of range; expected a whole number above 0'.
 
 ### Removed
 
@@ -549,6 +553,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   emails, alembic, numpy, pandas, python-multipart and psycopg2-binary.
 - The backend in `docker-compose.local.yml` no longer gets `KAFKA_BOOTSTRAP_SERVERS`, `OPENTSDB_HOST` and
   `OPENTSDB_PORT`, which it does not read, and no longer waits for a healthy `cp-all-in-one` before it starts.
+- The unused IcebergSeriesStore.micros helper.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -1015,6 +1020,23 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   without a URI as `unknown`.
 - `TimeSeriesObjectSerializer` refuses a null value with its index, for example `yValues[1]: null; expected a number,
   NaN for a missing value`, instead of writing 0.0, and its wire-format documentation lists what it writes.
+- Iceberg store: a write that fails before its commit, or whose commit fails with an Iceberg CleanableFailure such as
+  CommitFailedException, now aborts the writer and removes the data files it wrote, and a failing cleanup is kept as a
+  suppressed exception. Any other commit failure, CommitStateUnknownException and a lost JDBC catalog answer among
+  them, keeps the files, because the snapshot may exist.
+- Iceberg store: a scan or a catalog that fails to close names the table or the catalog ('cannot read table
+  <catalog>.<ns>.<table>', 'cannot close catalog <name>'), and a data file write that fails with an I/O error reads
+  'cannot write table <name>', instead of a bare UncheckedIOException.
+- EpisodeLogSync waits out a refused fetch through Patience within the timeout, fails on a missing episodes topic with
+  '<topic>: no such topic; check the domain, or create the topic first', and counts records that retention deleted
+  after a given position in the new Result field lostToRetention, with one WARN line per partition.
+- OpenTSDB store: only a 400 whose body says 'No such name' reads as an unknown metric. Every other error answer fails
+  with 'OpenTSDB <method> <url> returned <status>: <body>', and connection failures name the URL.
+- OpenTSDB store: a selector without a metric fails when /api/suggest returns 10000 metrics, its limit, instead of
+  cutting the list silently.
+- OpenTSDB store: two identical reads return equal episodes. The id derives from the series and the first and last
+  timestamp, createdAt is the last timestamp, and the producer carries the version of the build (Episodes.producer)
+  instead of the literal 3.0.1.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

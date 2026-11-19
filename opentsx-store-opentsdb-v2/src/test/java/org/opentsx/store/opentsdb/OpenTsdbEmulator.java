@@ -19,12 +19,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Minimal OpenTSDB 2.x HTTP emulator for tests: /api/put (rejects NaN, ms timestamps), /api/query with
- * aggregator "none" and exact tag filters, /api/suggest?type=metrics, /api/search/lookup.
- * Unknown metrics answer 400 like OpenTSDB ("No such name for 'metrics'").
+ * aggregator "none" and exact tag filters, /api/suggest?type=metrics with {@code max}, /api/search/lookup.
+ * Unknown metrics answer 400 like OpenTSDB ("No such name for 'metrics'"). A tag filter value with a character outside
+ * letters, digits and -_./ answers 400 "Invalid tag value", a bad request that is not an unknown metric.
  */
 final class OpenTsdbEmulator implements AutoCloseable {
 
     private static final ObjectMapper JSON = new ObjectMapper();
+    private static final java.util.regex.Pattern ILLEGAL_TAG_CHARACTER = java.util.regex.Pattern.compile("[^\\p{L}\\p{N}\\-_./]");
 
     /** series ("metric{sorted tags}") -> (ms -> value) */
     private final Map<String, TreeMap<Long, Double>> data = new ConcurrentHashMap<>();
@@ -32,6 +34,8 @@ final class OpenTsdbEmulator implements AutoCloseable {
     private final Map<String, String> metricOf = new ConcurrentHashMap<>();
     private final HttpServer server;
     int putRequests;
+    /** Metrics that /api/suggest lists in addition to the written ones. */
+    final java.util.List<String> suggestOnly = new java.util.ArrayList<>();
 
     OpenTsdbEmulator() throws IOException {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -87,8 +91,17 @@ final class OpenTsdbEmulator implements AutoCloseable {
         for (JsonNode q : body.path("queries")) {
             String metric = q.path("metric").asText();
             if (!metricOf.containsValue(metric)) {
-                respond(ex, 400, JSON.createObjectNode().put("error", "No such name for 'metrics': '" + metric + "'"));
+                respond(ex, 400, error("No such name for 'metrics': '" + metric + "'"));
                 return;
+            }
+            Iterator<Map.Entry<String, JsonNode>> filters = q.path("tags").fields();
+            while (filters.hasNext()) {
+                String value = filters.next().getValue().asText();
+                java.util.regex.Matcher bad = ILLEGAL_TAG_CHARACTER.matcher(value);
+                if (bad.find()) {
+                    respond(ex, 400, error("Invalid tag value (\"" + value + "\"): illegal character: " + bad.group()));
+                    return;
+                }
             }
             for (Map.Entry<String, TreeMap<Long, Double>> s : data.entrySet()) {
                 if (!metric.equals(metricOf.get(s.getKey())) || !matches(tagsOf.get(s.getKey()), q.path("tags"))) {
@@ -107,9 +120,23 @@ final class OpenTsdbEmulator implements AutoCloseable {
     }
 
     private synchronized void suggest(HttpExchange ex) throws IOException {
+        int max = 25;
+        for (String param : ex.getRequestURI().getQuery().split("&")) {
+            if (param.startsWith("max=")) {
+                max = Integer.parseInt(param.substring(4));
+            }
+        }
+        java.util.TreeSet<String> metrics = new java.util.TreeSet<>(metricOf.values());
+        metrics.addAll(suggestOnly);
         ArrayNode out = JSON.createArrayNode();
-        new java.util.TreeSet<>(metricOf.values()).forEach(out::add);
+        metrics.stream().limit(max).forEach(out::add);
         respond(ex, 200, out);
+    }
+
+    private static ObjectNode error(String message) {
+        ObjectNode r = JSON.createObjectNode();
+        r.putObject("error").put("code", 400).put("message", message);
+        return r;
     }
 
     private synchronized void lookup(HttpExchange ex) throws IOException {

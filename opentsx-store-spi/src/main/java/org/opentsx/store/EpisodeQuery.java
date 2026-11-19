@@ -13,7 +13,7 @@ public record EpisodeQuery(SeriesSelector selector, long fromMicros, long toMicr
             throw new IllegalArgumentException("fromMicros must be before toMicros");
         }
         if (limit <= 0) {
-            throw new IllegalArgumentException("limit must be > 0");
+            throw new IllegalArgumentException("limit: " + limit + " is out of range; expected a whole number above 0");
         }
     }
 

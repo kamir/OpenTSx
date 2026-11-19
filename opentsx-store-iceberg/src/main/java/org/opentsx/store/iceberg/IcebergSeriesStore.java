@@ -12,7 +12,6 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
-import org.opentsx.model.Micros;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.model.v2.SeriesKey;
 import org.opentsx.store.Capability;
@@ -53,8 +52,9 @@ public final class IcebergSeriesStore implements SeriesStore {
     private final boolean readOnly;
     private final boolean ownsCatalog;
 
+    /** Borrows the catalog: closing the store leaves it open, and the caller closes it. */
     public IcebergSeriesStore(Catalog catalog, Namespace namespace) {
-        this(catalog, namespace, false, true);
+        this(catalog, namespace, false, false);
     }
 
     private IcebergSeriesStore(Catalog catalog, Namespace namespace, boolean readOnly, boolean ownsCatalog) {
@@ -80,21 +80,27 @@ public final class IcebergSeriesStore implements SeriesStore {
                 .create());
     }
 
-    /** Opens a catalog from Iceberg catalog properties, e.g. {@code type=rest, uri=..., warehouse=...}. */
+    /**
+     * Opens a catalog from Iceberg catalog properties, e.g. {@code type=rest, uri=..., warehouse=...}. The store owns
+     * that catalog: closing the store closes it, and so does a failure to open the store.
+     */
     public static IcebergSeriesStore open(Map<String, String> catalogProperties, String namespace) {
-        return new IcebergSeriesStore(catalog(catalogProperties), Namespace.of(namespace));
+        return owning(catalog(catalogProperties), Namespace.of(namespace), false);
     }
 
-    /** Borrows a catalog; the caller retains ownership on success and failure. */
+    /** Borrows the catalog: closing the store leaves it open, and the caller closes it. */
     public static IcebergSeriesStore openExisting(Catalog catalog, Namespace namespace) {
         return new IcebergSeriesStore(catalog, namespace, true, false);
     }
 
-    /** Owns the created catalog and closes it if loading the existing tables fails. */
+    /** Owns the catalog it opens from the properties, like {@link #open(Map, String)}. */
     public static IcebergSeriesStore openExisting(Map<String, String> catalogProperties, String namespace) {
-        Catalog catalog = catalog(catalogProperties);
+        return owning(catalog(catalogProperties), Namespace.of(namespace), true);
+    }
+
+    private static IcebergSeriesStore owning(Catalog catalog, Namespace namespace, boolean readOnly) {
         try {
-            return new IcebergSeriesStore(catalog, Namespace.of(namespace), true, true);
+            return new IcebergSeriesStore(catalog, namespace, readOnly, true);
         } catch (RuntimeException | Error failure) {
             try {
                 closeCatalog(catalog);
@@ -222,7 +228,7 @@ public final class IcebergSeriesStore implements SeriesStore {
             try {
                 c.close();
             } catch (IOException e) {
-                throw new UncheckedIOException(e);
+                throw new UncheckedIOException("cannot close catalog " + catalog.name(), e);
             }
         }
     }
@@ -237,7 +243,7 @@ public final class IcebergSeriesStore implements SeriesStore {
                 .select("episode_id").where(Expressions.in("episode_id", ids.toArray())).build()) {
             rows.forEach(r -> out.add((String) r.getField("episode_id")));
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw new UncheckedIOException("cannot read table " + episodes.name(), e);
         }
         return out;
     }
@@ -246,7 +252,7 @@ public final class IcebergSeriesStore implements SeriesStore {
         try (CloseableIterable<Record> rows = IcebergGenerics.read(table).where(filter).build()) {
             rows.forEach(sink);
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw new UncheckedIOException("cannot read table " + table.name(), e);
         }
     }
 
@@ -269,9 +275,5 @@ public final class IcebergSeriesStore implements SeriesStore {
         } catch (org.apache.iceberg.exceptions.AlreadyExistsException e) {
             return catalog.loadTable(id);
         }
-    }
-
-    static long micros(java.time.Instant i) {
-        return Micros.of(i);
     }
 }

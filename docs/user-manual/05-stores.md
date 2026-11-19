@@ -65,12 +65,17 @@ the same message, caused by `[SQLITE_CANTOPEN] Unable to open the database file`
 ## 5.3 Copy episodes from KafScale to Iceberg
 
 `EpisodeLogSync.sync(consumer, layout, store, fromPositions, batchSize, timeout)` copies episodes from the episodes
-topic up to the end offsets at call time. It returns a `Result` with `written`, `skipped`, `undecodable` and
-`nextPositions`. Persist `nextPositions`. Writes are idempotent, so at-least-once is safe.
+topic up to the end offsets at call time. It returns a `Result` with `written`, `skipped`, `undecodable`,
+`lostToRetention` and `nextPositions`. Persist `nextPositions`. Writes are idempotent, so at-least-once is safe.
 
 Records that do not decode are counted in `undecodable` and skipped, and `nextPositions` moves past them. A
 Confluent-framed record is one of them ([chapter 13](13-migration.md)). Check `undecodable` before you persist the
 positions. The call throws `IllegalStateException` ("timed out syncing <topic>") when `timeout` passes first.
+
+A refused fetch is waited out within `timeout`. A missing episodes topic fails with `IllegalStateException`
+("<topic>: no such topic; check the domain, or create the topic first"). When the log start of a partition lies after
+the position you pass, retention deleted the records in between: `sync` reads on from the log start, counts them in
+`lostToRetention` and logs one WARN line with topic, partition, position, log start and count.
 
 ## 5.4 Read the tables from Python
 

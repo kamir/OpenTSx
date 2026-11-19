@@ -23,4 +23,6 @@ first `n` episodes in read order (`EpisodeOps.READ_ORDER`).
 A clipped read (`.clipped()`) cuts episodes at the query window with `EpisodeOps.clip`. An episode that lies inside the
 window is returned unchanged. A part of an episode gets `parentEpisodeId` set to the original id, the `createdAt` of
 the original, and an id derived from the original id and the bounds of the part. In a store with `EPISODES`, the same
-clipped read returns equal episodes every time.
+clipped read returns equal episodes every time. `OpenTsdbSeriesStore` (`RAW_POINTS`) rebuilds each episode from points.
+It derives the id from the series and the first and last timestamp and sets `createdAt` to the last timestamp, so the
+same read returns equal episodes there too.
