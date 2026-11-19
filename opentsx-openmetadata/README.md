@@ -1,4 +1,4 @@
-# opentsx-openmetadata — wind-farm metadata pool in OpenMetadata
+# opentsx-openmetadata: wind-farm metadata pool in OpenMetadata
 
 This module publishes the wind-farm inventory, data-point catalog, data assets, lineage, profiles and data-quality
 results to [OpenMetadata](https://open-metadata.org) **2.0.x**. It was validated against the 2.0.5 API.
@@ -28,20 +28,42 @@ dozens to hundreds of writes per hour. The per-turbine detail stays in `series-s
 
 ```bash
 # 1. statistics (opentsx-stats) over the simulated episodes
-StatsProcessorApp --kafscale localhost:9092 --domain wind --checkpoint stats.ckpt --once true
+bin/opentsx stats --kafscale localhost:9092 --domain wind --checkpoint stats.ckpt --once true
 # 2. the bot token, read without echo and kept out of the shell history
 read -rs OPENMETADATA_JWT && export OPENMETADATA_JWT
 # 3. publish everything, including profiles (hourly) and data-quality results (10 min)
-WindparkMetadata --scenario opentsx-windpark/scenarios/ostsee-demo.yaml \
+bin/opentsx metadata --scenario opentsx-windpark/scenarios/ostsee-demo.yaml \
   --om http://localhost:8585/api \
   --kafscale localhost:9092 --domain wind --profile-window PT1H --dq-window PT10M
 # without a server: write every request as JSON for review
-WindparkMetadata --scenario opentsx-windpark/scenarios/ostsee-demo.yaml --dry-run om-requests/
+bin/opentsx metadata --scenario opentsx-windpark/scenarios/ostsee-demo.yaml --dry-run om-requests/
 ```
 
-All writes are create-or-update, so publishing again is idempotent. Use a bot token. The client reads it from
-`OPENMETADATA_JWT`; `--token <jwt>` wins over it, but the process list and the shell history then show the token.
-The client retries on 429 and 5xx.
+`bin/opentsx metadata --help` lists the keys. The command reads them through `OpenTsxConf.load`: from the command
+line, the environment, `--properties-file` and the defaults file in `OPENTSX_CONF_DIR`. It checks every value and,
+with profiles on, reads the statistics before the first request, so a bad KafScale bootstrap leaves no request behind.
+It logs one line `starting metadata: key=value (source), ...` with the token as `******`. It exits with 0 on success,
+1 on a runtime failure and 2 on a usage or configuration error.
+
+* `--om` takes the API root, an `http` or `https` URL. `--dry-run <dir>` writes every request to `<dir>` instead.
+  Set exactly one of them.
+* `--profiles` decides whether the latest statistics are read from `tsx.<domain>.series-stats.v2` and published as
+  table profiles and data-quality results: `always`, `never`, or `auto` (the default), which publishes them when
+  `--kafscale` is on the command line. A bootstrap from `OPENTSX_KAFSCALE_BOOTSTRAP`, `KAFSCALE_BOOTSTRAP` or a file
+  does not switch them on.
+* `--profile-window` and `--dq-window` are durations such as `PT1H`, `PT60M` or `60m`. They select the statistics
+  windows of the same length, so `PT60M` finds the windows the statistics processor writes as `PT1H`.
+
+All writes are create-or-update, so publishing again is idempotent. Use a bot token. The command reads it from
+`OPENMETADATA_JWT`, `OPENTSX_OPENMETADATA_TOKEN` or `opentsx.openmetadata.token` in a properties file. The token is
+secret, so the command line refuses it:
+
+```text
+opentsx: --token: secret keys are not accepted on the command line; set OPENTSX_OPENMETADATA_TOKEN or OPENMETADATA_JWT or put opentsx.openmetadata.token in a properties file
+```
+
+The client retries the statuses 429, 502, 503 and 504 and I/O errors, up to 5 attempts. It waits 1, 2, 4 and 8 s,
+or the seconds of a `Retry-After` header, at most 30 s each time.
 
 The client is plain JDK HTTP plus Jackson. The official Java client `openmetadata-java-client:2.0.5` is compiled for
 Java 21, and OpenTSx targets Java 17.

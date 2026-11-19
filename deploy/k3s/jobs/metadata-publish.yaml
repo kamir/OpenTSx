@@ -17,6 +17,7 @@ spec:
         opentsx.org/kafka: "true"
     spec:
       restartPolicy: Never
+      enableServiceLinks: false   # opentsx-retrieval would set OPENTSX_RETRIEVAL_PORT=tcp://..., which the loader refuses
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
@@ -36,6 +37,8 @@ spec:
             - $(OM_URL)
             - --kafscale
             - $(KAFSCALE_BOOTSTRAP)
+            - --profiles
+            - always
           env:
             - name: OPENTSX_SCENARIO
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_SCENARIO}}

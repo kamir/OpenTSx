@@ -37,8 +37,8 @@ class OpenMetadataSmokeTest {
         SimulatedPark sim = SimulatedPark.simulate();
         WindparkMetadataPublisher p = sim.publisher(api);
         p.publishAll();
-        assertEquals(3, p.publishProfiles(sim.stats, "PT1H"), "one profile per hour of the simulation");
-        assertTrue(p.publishDataQuality(sim.stats, "PT10M", WindparkExpectations.of(SimulatedPark.CATALOG)) > 0);
+        assertEquals(3, p.publishProfiles(sim.stats, Duration.ofHours(1)), "one profile per hour of the simulation");
+        assertTrue(p.publishDataQuality(sim.stats, Duration.ofMinutes(10), WindparkExpectations.of(SimulatedPark.CATALOG)) > 0);
 
         TopicLayout layout = new TopicLayout("wind");
         String episodesTopic = p.topicFqn(layout.episodes());

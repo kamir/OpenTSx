@@ -11,19 +11,30 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
- * OpenMetadata REST client (JDK HTTP client + Jackson; no generated SDK, so it runs on Java 17 - the official
- * Java client 2.0.5 is compiled for Java 21). Authenticates with a bot JWT; retries 429 and 5xx with backoff.
+ * OpenMetadata REST client (JDK HTTP client + Jackson; no generated SDK, so it runs on Java 17, while the official
+ * Java client 2.0.5 is compiled for Java 21). Authenticates with a bot JWT. Retries the statuses 429, 502, 503 and 504
+ * and I/O errors, waiting 1, 2, 4, 8 s and so on between the attempts, or the seconds of a {@code Retry-After} header,
+ * at most 30 s each time.
  */
 public final class HttpOmApi implements OmApi {
 
+    /** Waits between two attempts; {@link Thread#sleep(long)} outside of tests. */
+    interface Sleeper {
+        void sleep(long millis) throws InterruptedException;
+    }
+
+    private static final long MAX_WAIT_MS = 30_000L;
     private static final ObjectMapper JSON = new ObjectMapper();
+    private static final Pattern SECONDS = Pattern.compile("^[0-9]{1,9}$");
 
     private final URI base;
     private final String token;
     private final HttpClient http;
     private final int maxAttempts;
+    private final Sleeper sleeper;
 
     /** @param base server API root, e.g. {@code http://localhost:8585/api}; @param token bot JWT or null */
     public HttpOmApi(URI base, String token) {
@@ -31,11 +42,16 @@ public final class HttpOmApi implements OmApi {
     }
 
     public HttpOmApi(URI base, String token, int maxAttempts) {
+        this(base, token, maxAttempts, HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build(), Thread::sleep);
+    }
+
+    HttpOmApi(URI base, String token, int maxAttempts, HttpClient http, Sleeper sleeper) {
         String b = base.toString();
         this.base = URI.create(b.endsWith("/") ? b.substring(0, b.length() - 1) : b);
         this.token = token;
         this.maxAttempts = maxAttempts;
-        this.http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+        this.http = http;
+        this.sleeper = sleeper;
     }
 
     @Override
@@ -69,7 +85,16 @@ public final class HttpOmApi implements OmApi {
             }
             HttpRequest request = rb.build();
             for (int attempt = 1; ; attempt++) {
-                HttpResponse<String> r = http.send(request, HttpResponse.BodyHandlers.ofString());
+                HttpResponse<String> r;
+                try {
+                    r = http.send(request, HttpResponse.BodyHandlers.ofString());
+                } catch (IOException e) {
+                    if (attempt >= maxAttempts) {
+                        throw new UncheckedIOException(method + " " + path + ": no answer after " + attempt + " attempts", e);
+                    }
+                    sleeper.sleep(backoff(attempt));
+                    continue;
+                }
                 int status = r.statusCode();
                 if (status >= 200 && status < 300) {
                     String text = r.body();
@@ -82,7 +107,7 @@ public final class HttpOmApi implements OmApi {
                 if (!retry || attempt >= maxAttempts) {
                     throw new OmException(method, path, status, r.body() == null ? "" : r.body());
                 }
-                Thread.sleep(Math.min(30_000L, 500L << attempt));
+                sleeper.sleep(wait(r, attempt));
             }
         } catch (IOException e) {
             throw new UncheckedIOException(method + " " + path, e);
@@ -90,5 +115,15 @@ public final class HttpOmApi implements OmApi {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("interrupted", e);
         }
+    }
+
+    /** The seconds of a {@code Retry-After} header, else the backoff; at most 30 s. */
+    private static long wait(HttpResponse<?> r, int attempt) {
+        String after = r.headers().firstValue("Retry-After").orElse("");
+        return SECONDS.matcher(after).matches() ? Math.min(MAX_WAIT_MS, Long.parseLong(after) * 1000) : backoff(attempt);
+    }
+
+    private static long backoff(int attempt) {
+        return Math.min(MAX_WAIT_MS, 500L << Math.min(attempt, 16));
     }
 }

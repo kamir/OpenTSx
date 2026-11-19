@@ -15,6 +15,7 @@ import org.opentsx.model.v2.SeriesStats;
 import org.opentsx.stats.DataQuality;
 import org.opentsx.stats.QuantileSketch;
 import org.opentsx.stats.StatsAccumulator;
+import org.opentsx.stats.StatsEngine;
 import org.opentsx.store.iceberg.Tables;
 import org.opentsx.windpark.catalog.ChannelCatalog;
 import org.opentsx.windpark.catalog.ChannelDef;
@@ -26,6 +27,8 @@ import org.opentsx.windpark.catalog.Turbine;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -523,12 +526,12 @@ public final class WindparkMetadataPublisher {
     // ---- 5. profiles -----------------------------------------------------------------------------------------------
 
     /**
-     * Publishes one table profile of the signals view per window of the given type: per channel, the statistics of
+     * Publishes one table profile of the signals view per window of the given length: per channel, the statistics of
      * all turbines merged (exact moments, merged quantile sketches). Returns the number of profiles.
      */
-    public int publishProfiles(List<SeriesStats> stats, String windowType) {
+    public int publishProfiles(List<SeriesStats> stats, Duration window) {
         String tableId = requireEntity(signalsTableFqn()).path("id").asText();
-        Map<Long, Map<ChannelDef, StatsAccumulator>> byWindow = mergeByChannel(stats, windowType);
+        Map<Long, Map<ChannelDef, StatsAccumulator>> byWindow = mergeByChannel(stats, window);
         for (Map.Entry<Long, Map<ChannelDef, StatsAccumulator>> w : byWindow.entrySet()) {
             long tsMillis = w.getKey() / 1000;
             ObjectNode body = JSON.createObjectNode();
@@ -573,10 +576,10 @@ public final class WindparkMetadataPublisher {
         return byWindow.size();
     }
 
-    private Map<Long, Map<ChannelDef, StatsAccumulator>> mergeByChannel(List<SeriesStats> stats, String windowType) {
+    private Map<Long, Map<ChannelDef, StatsAccumulator>> mergeByChannel(List<SeriesStats> stats, Duration window) {
         Map<Long, Map<ChannelDef, StatsAccumulator>> byWindow = new TreeMap<>();
         for (SeriesStats s : stats) {
-            if (!s.getWindowType().toString().equals(windowType)) {
+            if (!isWindow(s, window)) {
                 continue;
             }
             SeriesKey key = inventory.get(s.getSeriesId().toString());
@@ -594,6 +597,20 @@ public final class WindparkMetadataPublisher {
         return byWindow;
     }
 
+    /** True for the statistics of a tumbling window of this length, so that PT60M finds the windows of type PT1H. */
+    static boolean isWindow(SeriesStats s, Duration window) {
+        String type = s.getWindowType().toString();
+        if (StatsEngine.GLOBAL.equals(type)) {
+            return false;
+        }
+        try {
+            return Duration.parse(type).equals(window);
+        } catch (DateTimeParseException e) {
+            throw new IllegalStateException("statistics of " + s.getSeriesId() + ": window type \"" + type
+                    + "\" is neither GLOBAL nor an ISO-8601 duration", e);
+        }
+    }
+
     // ---- 6. data quality -------------------------------------------------------------------------------------------
 
     /**
@@ -601,7 +618,7 @@ public final class WindparkMetadataPublisher {
      * posts one result per window: Failed if any turbine fails, with the failing turbines in the message.
      * Returns the number of results posted.
      */
-    public int publishDataQuality(List<SeriesStats> stats, String windowType, Map<String, DataQuality.Expectation> byMetric) {
+    public int publishDataQuality(List<SeriesStats> stats, Duration window, Map<String, DataQuality.Expectation> byMetric) {
         String tableFqn = signalsTableFqn();
         requireEntity(tableFqn);
         for (DataQuality.Check check : DataQuality.Check.values()) {
@@ -622,7 +639,7 @@ public final class WindparkMetadataPublisher {
         List<SeriesStats> sorted = new ArrayList<>(stats);
         sorted.sort(java.util.Comparator.comparing((SeriesStats s) -> s.getWindowEnd()).thenComparing(s -> s.getSeriesId().toString()));
         for (SeriesStats s : sorted) {
-            if (!s.getWindowType().toString().equals(windowType)) {
+            if (!isWindow(s, window)) {
                 continue;
             }
             SeriesKey key = inventory.get(s.getSeriesId().toString());

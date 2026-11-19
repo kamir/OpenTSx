@@ -46,7 +46,6 @@ as a command-line option: a value there shows in `ps`, the shell history and the
 
 | Variable | Read by |
 |----------|---------|
-| `OPENMETADATA_JWT` | `metadata`: the OpenMetadata token |
 | `OPENTSX_DAG_RUN_TOKEN` | `retrieval-server`: the run token of the DAG runs (`--dag-runs true`) |
 | `KAFSCALE_BOOTSTRAP` | `twin-live`, when `--bootstrap` is not given; the KafScale tests ([12.4](#124-run-the-tests)) |
 | `EVENT_BRIDGE_ALLOW_ORIGIN` | `twin-live bridge`, when `--allow-origin` is not given (default `*`) |

@@ -120,6 +120,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   registry and checks the log level and the mode keys in both runtimes.
 - CI checks the nginx site of the frontend image with `nginx -t` and checks that an unreachable backend comes back as
   `{"error": "the backend is not reachable", "type": "unavailable"}`.
+- `bin/opentsx metadata --profiles auto|always|never` (`opentsx.openmetadata.profiles`) switches the profiles and
+  data-quality results. The default `auto` publishes them when `--kafscale` is on the command line, so a KafScale
+  bootstrap from the environment or a file does not switch them on. `always` exits with 2 when no bootstrap is set.
+  The k3s Job `metadata-publish` passes `--profiles always`.
 
 ### Changed
 
@@ -249,6 +253,16 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The descriptor `gen.windpark` states the scenario rules the simulator enforces: positive durations, required `rows`
   and `columns`, spacing and wake decay of 0 or more, the required parameters of each operation and sensor fault, and
   `--sinks`.
+- `bin/opentsx metadata` reads its keys through `OpenTsxConf.load`. An unknown or misspelled option such as
+  `--namspace` exits with code 2 and "did you mean --namespace?" instead of writing request files. A flag without a
+  value and a malformed value also exit with 2, and `--help` prints the keys on stdout with exit 0. Every value is
+  checked before the first request. With profiles on, the statistics are also read before the first request, so a bad
+  KafScale bootstrap leaves no request on the server or in the `--dry-run` directory. A runtime failure prints one
+  line and exits with 1. The command logs one line `starting metadata: key=value (source), ...` with the token as
+  `******`.
+- The k3s Jobs `windpark-sim`, `metadata` and `metadata-publish` set `enableServiceLinks: false`. Kubernetes derives
+  `OPENTSX_RETRIEVAL_PORT=tcp://<ip>:8080` from the Service `opentsx-retrieval`, and the configuration loader accepts
+  only an int for that variable.
 
 ### Removed
 
@@ -598,6 +612,16 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   its bin into NaN.
 - `Scenario.load` and `ChannelCatalog.load` report a missing file as `<file>: no such file; give an existing file` and
   a rule violation with the file name, so `windpark-sim` exits with 2 for them.
+- `bin/opentsx metadata` checks `--om`: an empty value or a URL without `http` or `https` exits with code 2 and names
+  the key, instead of a stack trace with `URI with undefined scheme`. Setting both `--om` and `--dry-run` exits with
+  2.
+- `--profile-window` and `--dq-window` select the statistics windows by duration, so `PT60M` or `60m` publishes the
+  hourly profiles instead of reporting 0 profiles. A zero window exits with code 2. A statistics record whose window
+  type is neither GLOBAL nor a duration fails the run with its series id. `WindparkMetadataPublisher.publishProfiles`
+  and `publishDataQuality` take a `java.time.Duration`.
+- The OpenMetadata client `HttpOmApi` retries I/O errors with the same backoff as the statuses 429, 502, 503 and 504.
+  It waits the seconds of a `Retry-After` header, at most 30 s per wait. After the last attempt it fails with
+  `<method> <path>: no answer after <n> attempts` and keeps the cause.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
@@ -651,6 +675,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   configuration chapter reads `OPENMETADATA_JWT` with `read -rs`. The secrets check of
   `deploy/k3s/test/test-20-configure.sh` now covers `docs/`, the top-level and module READMEs and the READMEs under
   `deploy/k3s/`.
+- `bin/opentsx metadata --token` exits with code 2 instead of sending the token, so the bot token no longer shows in
+  the process list or the shell history. Set it in `OPENMETADATA_JWT`, `OPENTSX_OPENMETADATA_TOKEN` or a properties
+  file.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

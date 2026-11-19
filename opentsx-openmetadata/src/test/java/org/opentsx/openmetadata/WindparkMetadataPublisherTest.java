@@ -12,6 +12,7 @@ import org.opentsx.windpark.catalog.ChannelCatalog;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,8 +45,8 @@ class WindparkMetadataPublisherTest {
         try (FakeOpenMetadata om = new FakeOpenMetadata()) {
             WindparkMetadataPublisher p = publisher(new HttpOmApi(om.uri(), "test-token"));
             p.publishAll();
-            int profiles = p.publishProfiles(stats, "PT1H");
-            int results = p.publishDataQuality(stats, "PT10M", WindparkExpectations.of(CATALOG));
+            int profiles = p.publishProfiles(stats, Duration.ofHours(1));
+            int results = p.publishDataQuality(stats, Duration.ofMinutes(10), WindparkExpectations.of(CATALOG));
             assertEquals(List.of(), om.violations);
 
             // vocabulary
@@ -145,11 +146,25 @@ class WindparkMetadataPublisherTest {
     }
 
     @Test
+    void windowsAreComparedAsDurations(@TempDir Path dir) {
+        WindparkMetadataPublisher p = publisher(new DryRunOmApi(dir));
+        p.publishAll();
+        assertEquals(3, p.publishProfiles(stats, Duration.parse("PT60M")));
+        assertEquals(p.publishDataQuality(stats, Duration.ofMinutes(10), WindparkExpectations.of(CATALOG)),
+                p.publishDataQuality(stats, Duration.ofSeconds(600), WindparkExpectations.of(CATALOG)));
+        List<SeriesStats> malformed = List.of(SeriesStats.newBuilder(stats.get(0)).setWindowType("PT10").build());
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> p.publishProfiles(malformed, Duration.ofMinutes(10)));
+        assertEquals("statistics of " + stats.get(0).getSeriesId() + ": window type \"PT10\" is neither GLOBAL nor an "
+                + "ISO-8601 duration", e.getMessage());
+    }
+
+    @Test
     void dryRunWritesEveryRequest(@TempDir Path dir) throws IOException {
         DryRunOmApi api = new DryRunOmApi(dir);
         WindparkMetadataPublisher p = publisher(api);
         p.publishAll();
-        p.publishDataQuality(stats, "PT10M", WindparkExpectations.of(CATALOG));
+        p.publishDataQuality(stats, Duration.ofMinutes(10), WindparkExpectations.of(CATALOG));
         try (Stream<Path> files = Files.list(dir)) {
             assertEquals(api.requests(), files.count());
         }
