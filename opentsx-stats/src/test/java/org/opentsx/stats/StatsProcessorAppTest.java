@@ -6,6 +6,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.apache.kafka.clients.consumer.MockConsumer;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.clients.producer.MockProducer;
+import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
@@ -29,11 +30,16 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -80,7 +86,8 @@ class StatsProcessorAppTest {
         try {
             int code = assertTimeoutPreemptively(Duration.ofSeconds(30), () -> StatsProcessorApp.run(List.of(args), env,
                     new PrintStream(stdout, true, StandardCharsets.UTF_8), errStream, bootstrap -> emptyTopic("wind"),
-                    bootstrap -> new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer())));
+                    bootstrap -> new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()), hook -> { },
+                    hook -> { }));
             String out = stdout instanceof ByteArrayOutputStream b ? b.toString(StandardCharsets.UTF_8) : "";
             return new Exit(code, out, err.toString(StandardCharsets.UTF_8));
         } finally {
@@ -203,6 +210,19 @@ class StatsProcessorAppTest {
     }
 
     @Test
+    void aContinuousRunWithoutTheInputTopicsExitsWith2AndNamesThem() {
+        Exit e = run("--kafscale", "mock:9092", "--domain", "solar");
+        assertEquals(2, e.code(), e.err());
+        assertEquals("opentsx: tsx.solar.episodes.v2: the input topics do not exist or have no partitions; check"
+                + " opentsx.domain (--domain, OPENTSX_DOMAIN), or create the topics first",
+                e.err().lines().reduce((a, b) -> b).orElse(""), e.err());
+        assertEquals("", e.out());
+        Exit once = run("--kafscale", "mock:9092", "--domain", "solar", "--once");
+        assertEquals(0, once.code(), "a --once run without them processes nothing: " + once.err());
+        assertTrue(once.out().startsWith("RunResult[records=0, "), once.out());
+    }
+
+    @Test
     void aResultThatCannotBeWrittenIsARuntimeFailure() {
         OutputStream closed = new OutputStream() {
             @Override
@@ -251,6 +271,68 @@ class StatsProcessorAppTest {
                         "INFO " + app + "stopping; waiting for the final checkpoint wait=PT0S",
                         "WARN " + app + "the processor did not stop in time; the final checkpoint may be missing wait=PT0S"),
                 err.toString(StandardCharsets.UTF_8).lines().map(l -> l.substring(l.indexOf("] ") + 2)).toList());
+    }
+
+    /** The episode topic of domain wind with one partition, whose polls fail: a continuous run on it ends with 1. */
+    private static MockConsumer<byte[], byte[]> failingPolls() {
+        MockConsumer<byte[], byte[]> c = emptyTopic("wind");
+        c.setPollException(new KafkaException("poll failed"));
+        return c;
+    }
+
+    @Test
+    void aContinuousRunRemovesItsShutdownHookWhenItEnds() {
+        List<Thread> registered = new ArrayList<>();
+        Set<Thread> hooks = new HashSet<>();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        PrintStream errStream = new PrintStream(err, true, StandardCharsets.UTF_8);
+        PrintStream stderr = System.err;
+        System.setErr(errStream);
+        try {
+            for (int i = 0; i < 2; i++) {
+                int code = assertTimeoutPreemptively(Duration.ofSeconds(30), () -> StatsProcessorApp.run(
+                        List.of("--kafscale", "mock:9092"), Map.of(), new PrintStream(new ByteArrayOutputStream()), errStream,
+                        bootstrap -> failingPolls(), bootstrap -> new MockProducer<>(true, new StringSerializer(),
+                                new ByteArraySerializer()), hook -> {
+                            registered.add(hook);
+                            hooks.add(hook);
+                        }, hooks::remove));
+                assertEquals(1, code, err.toString(StandardCharsets.UTF_8));
+            }
+        } finally {
+            System.setErr(stderr);
+        }
+
+        assertEquals(2, registered.size(), "each continuous run registers a shutdown hook");
+        assertEquals(Set.of(), hooks, "and removes it when it ends");
+    }
+
+    @Test
+    void aRunThatItsShutdownHookStopsEndsWith0WhileTheJvmRefusesToRemoveTheHook() throws InterruptedException {
+        BlockingQueue<Thread> hooks = new LinkedBlockingQueue<>();
+        AtomicInteger code = new AtomicInteger(-1);
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        PrintStream errStream = new PrintStream(err, true, StandardCharsets.UTF_8);
+        PrintStream stderr = System.err;
+        System.setErr(errStream);
+        try {
+            Thread processor = new Thread(() -> code.set(StatsProcessorApp.run(List.of("--kafscale", "mock:9092"), Map.of(),
+                    new PrintStream(new ByteArrayOutputStream()), errStream, bootstrap -> emptyTopic("wind"),
+                    bootstrap -> new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()), hooks::add,
+                    hook -> {
+                        throw new IllegalStateException("Shutdown in progress");
+                    })));
+            processor.start();
+            Thread hook = hooks.poll(30, TimeUnit.SECONDS);
+            assertNotNull(hook, "the continuous run registers a shutdown hook");
+            hook.run();
+            processor.join(30_000);
+            assertFalse(processor.isAlive(), err.toString(StandardCharsets.UTF_8));
+        } finally {
+            System.setErr(stderr);
+        }
+
+        assertEquals(0, code.get(), err.toString(StandardCharsets.UTF_8));
     }
 
     @Test

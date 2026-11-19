@@ -76,9 +76,9 @@ class EpisodeIndexerTest {
             System.setErr(stderr);
         }
         assertEquals(new EpisodeIndexer.Result(1, 2, 0), r);
-        assertEquals(layout.episodes() + "-0 offset 1: undecodable record (unrecognised payload framing); skipped and counted"
-                + " in skipped, later undecodable records of this partition are only counted" + System.lineSeparator(),
-                err.toString(StandardCharsets.UTF_8));
+        assertEquals(List.of("WARN org.opentsx.kafka.EpisodeIndexer - undecodable record skipped and counted in skipped;"
+                        + " later ones of this partition are only counted topic=" + layout.episodes()
+                        + " partition=0 offset=1 cause=unrecognised payload framing"), logLines(err));
     }
 
     @Test
@@ -99,10 +99,8 @@ class EpisodeIndexerTest {
         assertEquals(new EpisodeIndexer.Result(2, 0, 2), r);
         assertEquals(List.of(written.get(0).getEpisodeId(), written.get(1).getEpisodeId()),
                 index.find(null, Long.MIN_VALUE, Long.MAX_VALUE).stream().map(IndexEntry::episodeId).toList());
-        assertEquals(layout.episodes() + "-0 offset 1: invalid episode (count: \"3\" differs from the length 2 of values;"
-                + " expected the number of values); skipped and counted in invalid, later invalid episodes of this partition"
-                + " are only counted" + System.lineSeparator(),
-                err.toString(StandardCharsets.UTF_8));
+        assertEquals(List.of(invalid("count: \"3\" differs from the length 2 of values; expected the number of values")),
+                logLines(err));
     }
 
     @Test
@@ -121,9 +119,19 @@ class EpisodeIndexerTest {
             System.setErr(stderr);
         }
         assertEquals(new EpisodeIndexer.Result(1, 0, 1), r);
-        assertEquals(layout.episodes() + "-0 offset 1: invalid episode (intervalMicros: missing in a REGULAR episode; expected"
-                + " a positive number of microseconds); skipped and counted in invalid, later invalid episodes of this"
-                + " partition are only counted" + System.lineSeparator(), err.toString(StandardCharsets.UTF_8));
+        assertEquals(List.of(invalid("intervalMicros: missing in a REGULAR episode; expected a positive number of"
+                + " microseconds")), logLines(err));
+    }
+
+    /** The lines slf4j-simple wrote, from the level on, without the thread name in front. */
+    private static List<String> logLines(ByteArrayOutputStream err) {
+        return err.toString(StandardCharsets.UTF_8).lines().map(l -> l.substring(l.indexOf("] ") + 2)).toList();
+    }
+
+    /** The WARN line of the first invalid episode, at offset 1 of partition 0. */
+    private String invalid(String cause) {
+        return "WARN org.opentsx.kafka.EpisodeIndexer - invalid episode skipped and counted in invalid; later ones of this"
+                + " partition are only counted topic=" + layout.episodes() + " partition=0 offset=1 cause=" + cause;
     }
 
     private static Episode countMismatch(Episode e, String episodeId) {

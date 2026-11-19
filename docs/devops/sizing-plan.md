@@ -110,7 +110,7 @@ What the repository supports and what it does not tell you:
 | Item | OpenTSx default / behaviour | What to decide or measure |
 |------|-----------------------------|---------------------------|
 | partitions | data topics `OPENTSX_PARTITIONS` (default 6), `buckets` and `series` 1 (`TopicLayout.provision`, replication factor 1) | episodes are keyed by `seriesId`; more partitions parallelize the planned Go processor (one lease per partition) but not the single Java stats processor |
-| producer | zstd, batch 512 KB, linger 50 ms, `max.in.flight=1`, no idempotence, `acks=all` (`KafScaleClients`) | throughput against S3-backed KafScale: **open** (the conformance CI uses in-memory S3) |
+| producer | zstd, batch 512 KB, linger 50 ms, `max.in.flight.requests.per.connection=1`, no idempotence, `acks=all` (`KafScaleClients`) | throughput against S3-backed KafScale: **open** (the conformance CI uses in-memory S3) |
 | consumer | manual assignment, no groups, fetch up to 8 MB/partition, 32 MB/request | — |
 | segment size, flush interval, S3 part size | KafScale broker settings, not set by OpenTSx | **measure**: latency of the planned segment-reading Go processor depends on how fast segments close |
 | retention | not set by OpenTSx | decide per topic (episodes = system of record?) |

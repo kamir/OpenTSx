@@ -7,19 +7,39 @@ Designed for [KafScale](https://kafscale.io), so it relies only on what KafScale
 | KafScale limitation | How this module copes |
 |---------------------|-----------------------|
 | no timestamp seek (`offsetsForTimes`) | **episode index** (episodeId → partition/offset); replay = index lookup + `seek` |
-| no idempotent producer | `enable.idempotence=false`, `max.in.flight=1`; duplicates are dropped by `episodeId` |
+| no idempotent producer | `enable.idempotence=false`, `max.in.flight.requests.per.connection=1`; duplicates are dropped by `episodeId` |
 | no log compaction | all topics are append-only; manifests are resolved by scanning (`SEALED` wins) |
 | consumer-group rejoin / standalone commits broken | no consumer groups at all: manual assignment, positions kept by OpenTSx |
 
 ## Topics (`TopicLayout`)
 
-`tsx.<domain>.{episodes,buckets,series,observations,series-stats}.v2`, zstd, delete policy.
+`TopicLayout` names the topics of a domain:
+
+| Topic | Method |
+|-------|--------|
+| `tsx.<domain>.episodes.v2` | `episodes()` |
+| `tsx.<domain>.buckets.v2` | `buckets()` |
+| `tsx.<domain>.series.v2` | `series()` |
+| `tsx.<domain>.observations.v2` | `observations()` |
+| `tsx.<domain>.series-stats.v2` | `seriesStats()` |
+| `tsx.<domain>.clean.v2` | `clean()` |
+| `tsx.<domain>.synthetic.v2` | `synthetic()` |
+| `tsx.<domain>.features.v2` | `features()` |
+| `tsx.<domain>.dags.v1` | `dags()` |
+| `tsx.<domain>.dag-status.v1` | `dagStatus()` |
+| `tsx.<domain>.smart.<name>.vectors.v1` | `smartVectors(<name>)` |
+| `twin.<id>.<run>.events` | `twinEvents(<id>, <run>)` (static) |
+
+`provision` creates the first five, the topics of `all()`: buckets and series with one partition, the other three with
+the number of partitions it is given. `provisionDagTopics` creates `dags` and `dag-status`, `provisionTopic` any other
+topic of the domain, and `provisionTwinEvents` the event topic of a twin run, each with one partition. Every topic is
+created with zstd and the delete policy.
+
 Episode records: key = `seriesId`, record timestamp = `tStart`, headers `tsx-schema`, `tsx-bucket`,
 value = Avro single-object encoding.
 
-`TopicLayout.twinEvents(<id>, <run>)` (static) names the event topic of a twin run, `twin.<id>.<run>.events`, and
-`isTwinEvents` checks a name. `provisionTwinEvents` creates it with one partition, zstd and the delete policy.
-`twinEvents` and `provisionTwinEvents` throw `IllegalArgumentException` for any other name.
+`isTwinEvents` checks the name of a twin event topic. `twinEvents` and `provisionTwinEvents` throw
+`IllegalArgumentException` for any other name.
 
 `provision`, `provisionDagTopics`, `provisionTopic` and `provisionTwinEvents` create the missing topics. They throw
 `IllegalStateException` when the broker does not answer within 30 s, when it refuses a creation, or when the thread is
@@ -69,19 +89,20 @@ and `BucketCatalog.load(...)` lists all buckets with their current manifest. Bot
 `tsx.wind.buckets.v2: no such topic; check the domain, or create the topic first`. The rebuild returns
 `Result(indexed, skipped, invalid)`:
 
-* A record that does not decode as an episode is counted in `skipped`. The first one per partition is printed on
-  stderr with the message of the decoder; later ones on that partition are only counted:
+* A record that does not decode as an episode is counted in `skipped`. The first one per partition is logged at
+  WARN with the message of the decoder, logger `org.opentsx.kafka.EpisodeIndexer`; later ones on that partition are
+  only counted:
 
   ```text
-  <topic>-<partition> offset <offset>: undecodable record (<reason>); skipped and counted in skipped, later undecodable records of this partition are only counted
+  undecodable record skipped and counted in skipped; later ones of this partition are only counted topic=<topic> partition=<partition> offset=<offset> cause=<reason>
   ```
 
 * An episode that decodes but fails `Episodes.validate`, for example a count that differs from the number of values,
-  is counted in `invalid` and not indexed. The first one per partition is printed on stderr; later ones on that
-  partition are only counted:
+  is counted in `invalid` and not indexed. The first one per partition is logged at WARN, logger
+  `org.opentsx.kafka.EpisodeIndexer`; later ones on that partition are only counted:
 
   ```text
-  <topic>-<partition> offset <offset>: invalid episode (<reason>); skipped and counted in invalid, later invalid episodes of this partition are only counted
+  invalid episode skipped and counted in invalid; later ones of this partition are only counted topic=<topic> partition=<partition> offset=<offset> cause=<reason>
   ```
 
 * A failure of the index stops the rebuild.
@@ -136,8 +157,8 @@ While KafScale rates its object store as degraded, it refuses every fetch for ab
 `IllegalStateException: Unexpected error code 7 while fetching ...`. `Patience.poll(consumer, timeout)` returns no
 records instead, puts every partition back to its position before the poll and pauses. `Patience.standard()` pauses
 5 s and gives up after 10 minutes of refusals in a row with `IllegalStateException`
-`the broker has refused reads for more than 600 s`. `LogReader`, `LogTail`, `EpisodeLogTail`, the statistics
-processor and the retrieval feed poll through it.
+`the broker has refused reads for more than PT10M`, the limit written as an ISO-8601 duration. `LogReader`, `LogTail`,
+`EpisodeLogTail`, the statistics processor and the retrieval feed poll through it.
 
 The first refusal of a row is logged at WARN and the next answer at INFO, logger `org.opentsx.kafka.Patience`:
 
@@ -168,6 +189,4 @@ Episodes of 10 min at 1 Hz, Avro single-object records batched to ~512 KB and co
 | full-precision doubles, regular | 8.36 B/value | 6.96 B/value |
 | sensor resolution with ≤ 2 ms timestamp jitter, `IRREGULAR_DELTA` | 10.32 B/value | 4.07 B/value |
 
-Values at sensor resolution compress well; full-precision derived values barely compress. A quantized integer
-value encoding (scale + zig-zag deltas) would bring regular sensor data well below 1 B/value. It is a candidate for a
-future schema version if storage cost demands it.
+Values at sensor resolution compress well; full-precision derived values barely compress.

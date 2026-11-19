@@ -272,8 +272,6 @@ public final class StatsEngine {
         return out;
     }
 
-    // ---- checkpointing -------------------------------------------------------------------------------------------
-
     /** Writes the complete engine state (open windows, GLOBAL, gap tracking, recent episode ids, counters). */
     public void writeState(DataOutputStream out) throws IOException {
         out.writeInt(STATE_VERSION);

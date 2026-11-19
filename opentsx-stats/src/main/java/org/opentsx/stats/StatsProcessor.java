@@ -6,6 +6,7 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.opentsx.conf.OpenTsxConfException;
 import org.opentsx.kafka.Patience;
 import org.opentsx.kafka.TopicLayout;
 import org.opentsx.model.Episodes;
@@ -163,9 +164,16 @@ public final class StatsProcessor {
         return new RunResult(records, undecodable, invalid, lostToRetention, statsWritten, engine.metrics());
     }
 
-    /** Continuous mode: emits GLOBAL and checkpoints every {@code checkpointEvery} until {@code stop} is true. */
+    /**
+     * Continuous mode: emits GLOBAL and checkpoints every {@code checkpointEvery} until {@code stop} is true.
+     *
+     * @throws OpenTsxConfException when none of the input topics has a partition
+     */
     public void run(Duration checkpointEvery, BooleanSupplier stop) {
-        assign(Duration.ofSeconds(30));
+        if (assign(Duration.ofSeconds(30)).isEmpty()) {
+            throw new OpenTsxConfException(String.join(",", inputTopics()), "the input topics do not exist or have no"
+                    + " partitions", "check opentsx.domain (--domain, OPENTSX_DOMAIN), or create the topics first");
+        }
         long records = 0;
         long next = System.nanoTime() + checkpointEvery.toNanos();
         try {
@@ -196,8 +204,12 @@ public final class StatsProcessor {
         }
     }
 
+    private List<String> inputTopics() {
+        return observations ? List.of(layout.episodes(), layout.observations()) : List.of(layout.episodes());
+    }
+
     private List<TopicPartition> assign(Duration timeout) {
-        List<String> topics = observations ? List.of(layout.episodes(), layout.observations()) : List.of(layout.episodes());
+        List<String> topics = inputTopics();
         List<TopicPartition> tps = new ArrayList<>();
         for (String topic : topics) {
             for (PartitionInfo p : consumer.partitionsFor(topic, timeout)) {

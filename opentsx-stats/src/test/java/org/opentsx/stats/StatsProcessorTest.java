@@ -16,9 +16,11 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.api.io.TempDir;
+import org.opentsx.conf.OpenTsxConfException;
 import org.opentsx.kafka.BucketWriter;
 import org.opentsx.kafka.InMemoryEpisodeIndex;
 import org.opentsx.kafka.KafScaleClients;
+import org.opentsx.kafka.Patience;
 import org.opentsx.kafka.TopicLayout;
 import org.opentsx.model.Episodes;
 import org.opentsx.model.Micros;
@@ -174,9 +176,15 @@ class StatsProcessorTest {
         MockProducer<String, byte[]> out = new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer());
         StatsProcessor p = new StatsProcessor(fill(refusing, layout, eps), out, layout,
                 new StatsEngine(StatsEngine.Config.defaults()), null, false);
-        p.patience(new org.opentsx.kafka.Patience(Duration.ofSeconds(30), Duration.ofMillis(5)));
+        long[] nanos = {0};
+        List<Long> pauses = new ArrayList<>();
+        p.patience(new Patience(Duration.ofSeconds(30), Duration.ofMillis(5), () -> nanos[0], millis -> {
+            pauses.add(millis);
+            nanos[0] += millis * 1_000_000L;
+        }));
         StatsProcessor.RunResult r = p.runUntilCaughtUp(Duration.ofSeconds(30), true);
         assertEquals(eps.size(), r.records(), "every record is read once the broker answers again");
+        assertEquals(List.of(5L, 5L, 5L), pauses, "one pause per refusal, on the test clock");
     }
 
     @Test
@@ -593,6 +601,20 @@ class StatsProcessorTest {
                         "WARN org.opentsx.stats.StatsProcessor - no partitions assigned; the input topics do not exist or have"
                                 + " no partitions topics=" + layout.episodes() + "," + layout.observations()),
                 logLines(err));
+    }
+
+    @Test
+    void aContinuousRunWithoutPartitionsIsRefusedAndNamesTheTopics() {
+        TopicLayout layout = new TopicLayout("t" + UUID.randomUUID().toString().substring(0, 8));
+        StatsProcessor p = new StatsProcessor(new MockConsumer<>(OffsetResetStrategy.EARLIEST),
+                new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()), layout,
+                new StatsEngine(StatsEngine.Config.defaults()), null, true);
+
+        OpenTsxConfException e = assertTimeoutPreemptively(Duration.ofSeconds(30),
+                () -> assertThrows(OpenTsxConfException.class, () -> p.run(Duration.ZERO, () -> false)));
+
+        assertEquals(layout.episodes() + "," + layout.observations() + ": the input topics do not exist or have no"
+                + " partitions; check opentsx.domain (--domain, OPENTSX_DOMAIN), or create the topics first", e.getMessage());
     }
 
     @Test

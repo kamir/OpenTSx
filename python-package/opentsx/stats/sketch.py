@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import struct
+from decimal import ROUND_HALF_EVEN, Context, Decimal
 from typing import Dict, Tuple
 
 DEFAULT_ALPHA = 0.01
@@ -12,6 +13,37 @@ _FORMAT_V1 = 1
 _LONG_MAX = (1 << 63) - 1
 _INT_MIN = -(1 << 31)
 _INT_MAX = (1 << 31) - 1
+_COUNT_ABOVE_LONG = (f"sketch bytes: zeroCount and the bin counts add up to more than {_LONG_MAX};"
+                     f" expected a total count of at most {_LONG_MAX}")
+
+
+def _java_double(x: float) -> str:
+    """``x`` as Java's ``Double.toString`` writes it, so both languages raise the same texts."""
+    try:
+        x = float(x)
+    except OverflowError:
+        return str(x)
+    if math.isnan(x):
+        return "NaN"
+    if math.isinf(x):
+        return "Infinity" if x > 0 else "-Infinity"
+    sign = "-" if math.copysign(1.0, x) < 0 else ""
+    if x == 0:
+        return sign + "0.0"
+    shortest = Decimal(repr(abs(x)))
+    if len(shortest.normalize().as_tuple().digits) == 1:
+        # Java picks the closest decimal of one or two digits: 4.9E-324 where repr gives 5e-324
+        two = Context(prec=2, rounding=ROUND_HALF_EVEN).plus(Decimal(abs(x)))
+        if float(two) == abs(x):
+            shortest = two
+    _, digits, exponent = shortest.normalize().as_tuple()
+    text = "".join(map(str, digits))
+    point = len(text) + exponent
+    if -2 <= point <= 7:
+        if point <= 0:
+            return sign + "0." + "0" * -point + text
+        return sign + text[:point].ljust(point, "0") + "." + (text[point:] or "0")
+    return sign + text[0] + "." + (text[1:] or "0") + "E" + str(point - 1)
 
 
 def _write_varint(out: bytearray, v: int) -> None:
@@ -66,7 +98,8 @@ class QuantileSketch:
 
     def __init__(self, alpha: float = DEFAULT_ALPHA):
         if not 0 < alpha < 1:
-            raise ValueError(f"alpha must be in (0, 1): {alpha}")
+            raise ValueError(f"alpha: {_java_double(alpha)} is out of range;"
+                             " expected a number above 0 and below 1")
         self.alpha = alpha
         self._gamma = (1 + alpha) / (1 - alpha)
         self._log_gamma = math.log(self._gamma)
@@ -102,7 +135,9 @@ class QuantileSketch:
 
     def merge(self, other: "QuantileSketch") -> "QuantileSketch":
         if other.alpha != self.alpha:
-            raise ValueError("cannot merge sketches with different alpha")
+            raise ValueError(f"alpha: cannot merge a sketch with alpha {_java_double(other.alpha)}"
+                             f" into one with alpha {_java_double(self.alpha)};"
+                             " expected the same alpha")
         for src, dst in ((other.positive, self.positive), (other.negative, self.negative)):
             for k, v in src.items():
                 dst[k] = dst.get(k, 0) + v
@@ -111,7 +146,7 @@ class QuantileSketch:
 
     def quantile(self, q: float) -> float:
         if not 0 <= q <= 1:
-            raise ValueError(f"q must be in [0, 1]: {q}")
+            raise ValueError(f"q: {_java_double(q)} is out of range; expected a number from 0 to 1")
         n = self.count
         if n == 0:
             return math.nan
@@ -151,23 +186,33 @@ class QuantileSketch:
             raise ValueError("sketch bytes: truncated at 0 of 0")
         (version,) = struct.unpack_from("<b", data)
         if version != _FORMAT_V1:
-            raise ValueError(f"unsupported sketch format version {version}")
+            raise ValueError(f"sketch bytes: format version {version} is not supported;"
+                             f" expected {_FORMAT_V1}")
         if len(data) < 9:
             raise ValueError(f"sketch bytes: truncated at 1 of {len(data)}")
         (alpha,) = struct.unpack_from("<d", data, 1)
         s = cls(alpha)
         s.zero_count, pos = _read_unsigned(data, 9)
+        count = s.zero_count
         for store in (s.positive, s.negative):
             bins, pos = _read_unsigned(data, pos)
             prev = 0
-            for _ in range(bins):
+            for i in range(bins):
                 d, pos = _read_varint(data, pos)
-                prev += _unzigzag(d)
-                if not _INT_MIN <= prev <= _INT_MAX:
+                delta = _unzigzag(d)
+                index = prev + delta
+                if not _INT_MIN <= index <= _INT_MAX:
                     raise ValueError(
-                        f"sketch bytes: bin index {prev} out of range; expected an int")
+                        f"sketch bytes: bin index {index} out of range; expected an int")
+                if i > 0 and delta <= 0:
+                    raise ValueError(f"sketch bytes: bin index {index} is not above the previous"
+                                     f" index {prev}; expected bins in ascending index order")
                 n, pos = _read_unsigned(data, pos)
-                store[prev] = n
+                count += n
+                if count > _LONG_MAX:
+                    raise ValueError(_COUNT_ABOVE_LONG)
+                store[index] = n
+                prev = index
         if pos != len(data):
             raise ValueError(f"sketch bytes: {len(data) - pos} trailing bytes; expected exactly {pos}")
         return s

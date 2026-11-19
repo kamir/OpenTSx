@@ -37,6 +37,8 @@ public final class QuantileSketch {
     public static final int DEFAULT_MAX_BINS = 4096;
     private static final byte FORMAT_V1 = 1;
     private static final String SUBJECT = "sketch bytes";
+    private static final String COUNT_ABOVE_LONG = SUBJECT + ": zeroCount and the bin counts add up to more than "
+            + Long.MAX_VALUE + "; expected a total count of at most " + Long.MAX_VALUE;
 
     private final double alpha;
     private final double gamma;
@@ -61,10 +63,10 @@ public final class QuantileSketch {
      */
     public QuantileSketch(double alpha, int maxBins) {
         if (!(alpha > 0 && alpha < 1)) {
-            throw new IllegalArgumentException("alpha must be in (0, 1): " + alpha);
+            throw new IllegalArgumentException("alpha: " + alpha + " is out of range; expected a number above 0 and below 1");
         }
         if (maxBins < 16) {
-            throw new IllegalArgumentException("maxBins must be >= 16");
+            throw new IllegalArgumentException("maxBins: " + maxBins + " is out of range; expected a whole number of 16 or more");
         }
         this.alpha = alpha;
         this.gamma = (1 + alpha) / (1 - alpha);
@@ -105,7 +107,8 @@ public final class QuantileSketch {
 
     public void merge(QuantileSketch other) {
         if (Double.compare(other.alpha, alpha) != 0) {
-            throw new IllegalArgumentException("cannot merge sketches with different alpha: " + alpha + " vs " + other.alpha);
+            throw new IllegalArgumentException("alpha: cannot merge a sketch with alpha " + other.alpha + " into one with alpha "
+                    + alpha + "; expected the same alpha");
         }
         other.positive.forEach((k, v) -> positive.merge(k, v, Long::sum));
         other.negative.forEach((k, v) -> negative.merge(k, v, Long::sum));
@@ -118,7 +121,7 @@ public final class QuantileSketch {
     /** Quantile {@code q} in [0, 1] (lower quantile, as DDSketch); NaN for an empty sketch. */
     public double quantile(double q) {
         if (q < 0 || q > 1 || Double.isNaN(q)) {
-            throw new IllegalArgumentException("q must be in [0, 1]: " + q);
+            throw new IllegalArgumentException("q: " + q + " is out of range; expected a number from 0 to 1");
         }
         if (count == 0) {
             return Double.NaN;
@@ -210,13 +213,13 @@ public final class QuantileSketch {
         try {
             byte version = in.get();
             if (version != FORMAT_V1) {
-                throw new IllegalArgumentException("unsupported sketch format version " + version);
+                throw new IllegalArgumentException(SUBJECT + ": format version " + version + " is not supported; expected "
+                        + FORMAT_V1);
             }
             s = new QuantileSketch(in.getDouble());
             s.zeroCount = Varints.readUnsigned(in, SUBJECT);
-            s.count = s.zeroCount;
-            s.count += readStore(in, s.positive);
-            s.count += readStore(in, s.negative);
+            s.count = readStore(in, s.positive, s.zeroCount);
+            s.count = readStore(in, s.negative, s.count);
         } catch (BufferUnderflowException e) {
             throw new IllegalArgumentException("sketch bytes: truncated at " + (in.position() - start) + " of "
                     + (in.limit() - start), e);
@@ -261,10 +264,10 @@ public final class QuantileSketch {
         }
     }
 
-    private static long readStore(ByteBuffer in, TreeMap<Integer, Long> store) {
+    /** Reads the bins into {@code store}; returns {@code count} plus their counts. */
+    private static long readStore(ByteBuffer in, TreeMap<Integer, Long> store, long count) {
         long bins = Varints.readUnsigned(in, SUBJECT);
         long previous = 0;
-        long total = 0;
         for (long i = 0; i < bins; i++) {
             long delta = Varints.readZigZag(in, SUBJECT);
             long index = previous + delta;
@@ -273,12 +276,20 @@ public final class QuantileSketch {
                 throw new IllegalArgumentException(SUBJECT + ": bin index "
                         + BigInteger.valueOf(previous).add(BigInteger.valueOf(delta)) + " out of range; expected an int");
             }
+            if (i > 0 && delta <= 0) {
+                throw new IllegalArgumentException(SUBJECT + ": bin index " + index + " is not above the previous index "
+                        + previous + "; expected bins in ascending index order");
+            }
             long n = Varints.readUnsigned(in, SUBJECT);
+            try {
+                count = Math.addExact(count, n);
+            } catch (ArithmeticException e) {
+                throw new IllegalArgumentException(COUNT_ABOVE_LONG, e);
+            }
             store.put((int) index, n);
-            total += n;
             previous = index;
         }
-        return total;
+        return count;
     }
 
     @Override

@@ -6,6 +6,8 @@ import org.opentsx.model.Episodes;
 import org.opentsx.model.Micros;
 import org.opentsx.model.OpenTsxAvro;
 import org.opentsx.model.v2.Episode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.HashSet;
@@ -15,10 +17,12 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Rebuilds an episode index by scanning the episodes topic: the index is derived state, the log is the truth. A record
  * that does not decode as an episode is counted in {@code skipped}. An episode that fails {@link Episodes#validate} is
- * counted in {@code invalid} and not indexed. The first record of each kind per partition is reported on stderr. A
- * failure of the index stops the rebuild.
+ * counted in {@code invalid} and not indexed. The first record of each kind per partition is logged at WARN with
+ * topic, partition and offset. A failure of the index stops the rebuild.
  */
 public final class EpisodeIndexer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(EpisodeIndexer.class);
 
     private EpisodeIndexer() {
     }
@@ -41,8 +45,9 @@ public final class EpisodeIndexer {
             } catch (RuntimeException ex) {
                 skipped.incrementAndGet();
                 if (undecodableReported.add(tp)) {
-                    System.err.println(tp + " offset " + r.offset() + ": undecodable record (" + ex.getMessage() + ");"
-                            + " skipped and counted in skipped, later undecodable records of this partition are only counted");
+                    LOG.warn("undecodable record skipped and counted in skipped; later ones of this partition are only"
+                            + " counted topic={} partition={} offset={} cause={}", r.topic(), r.partition(), r.offset(),
+                            LogReader.causes(ex));
                 }
                 return;
             }
@@ -51,8 +56,9 @@ public final class EpisodeIndexer {
             } catch (IllegalArgumentException ex) {
                 invalid.incrementAndGet();
                 if (invalidReported.add(tp)) {
-                    System.err.println(tp + " offset " + r.offset() + ": invalid episode (" + ex.getMessage()
-                            + "); skipped and counted in invalid, later invalid episodes of this partition are only counted");
+                    LOG.warn("invalid episode skipped and counted in invalid; later ones of this partition are only counted"
+                            + " topic={} partition={} offset={} cause={}", r.topic(), r.partition(), r.offset(),
+                            LogReader.causes(ex));
                 }
                 return;
             }

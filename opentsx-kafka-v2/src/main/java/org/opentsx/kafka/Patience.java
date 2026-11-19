@@ -45,8 +45,11 @@ public final class Patience {
         this(limit, pause, System::nanoTime, Patience::sleep);
     }
 
-    /** With the clock and the pause given, for tests: {@code sleeper} receives milliseconds. */
-    Patience(Duration limit, Duration pause, LongSupplier nanoClock, LongConsumer sleeper) {
+    /**
+     * With the clock and the pause given, for tests that move a clock instead of sleeping: {@code nanoClock} is read
+     * like {@link System#nanoTime}, {@code sleeper} receives the pause in milliseconds.
+     */
+    public Patience(Duration limit, Duration pause, LongSupplier nanoClock, LongConsumer sleeper) {
         this.limitNanos = limit.toNanos();
         this.pauseMillis = Math.max(1, pause.toMillis());
         this.nanoClock = nanoClock;
@@ -93,7 +96,7 @@ public final class Patience {
     }
 
     /**
-     * Polls. A refusal gives no records after a pause; the caller's loop simply comes round again. The consumer then
+     * Polls. A refusal gives no records after a pause, and the caller's loop comes round again. The consumer then
      * stands where it stood before the poll, so no record is skipped.
      *
      * @throws IllegalStateException when the broker has refused for longer than the limit, with the refusal as cause
@@ -129,7 +132,7 @@ public final class Patience {
                         Duration.ofNanos(limitNanos), LogReader.causes(e));
             } else if (now - refusedSince > limitNanos) {
                 throw new IllegalStateException("the broker has refused reads for more than "
-                        + Duration.ofNanos(limitNanos).toSeconds() + " s", e);
+                        + Duration.ofNanos(limitNanos), e);
             }
             sleeper.accept(pauseMillis);
             return ConsumerRecords.empty();

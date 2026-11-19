@@ -4,6 +4,7 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.producer.Producer;
 import org.opentsx.conf.ConfCli;
 import org.opentsx.conf.OpenTsxConf;
+import org.opentsx.conf.OpenTsxConfException;
 import org.opentsx.conf.Registry;
 import org.opentsx.kafka.KafScaleClients;
 import org.opentsx.kafka.TopicLayout;
@@ -38,11 +39,15 @@ public final class StatsProcessorApp {
     }
 
     public static void main(String[] args) {
-        System.exit(run(List.of(args), System.getenv(), System.out, System.err, KafScaleClients::consumer, KafScaleClients::producer));
+        Runtime runtime = Runtime.getRuntime();
+        System.exit(run(List.of(args), System.getenv(), System.out, System.err, KafScaleClients::consumer, KafScaleClients::producer,
+                runtime::addShutdownHook, runtime::removeShutdownHook));
     }
 
+    /** {@code addHook} and {@code removeHook} register and remove the shutdown hook of a continuous run. */
     static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err,
-                   Function<String, Consumer<byte[], byte[]>> consumers, Function<String, Producer<String, byte[]>> producers) {
+                   Function<String, Consumer<byte[], byte[]>> consumers, Function<String, Producer<String, byte[]>> producers,
+                   java.util.function.Consumer<Thread> addHook, java.util.function.Consumer<Thread> removeHook) {
         List<String> words = new ArrayList<>(args.size() + 1);
         words.add(COMMAND);
         words.addAll(args);
@@ -83,6 +88,7 @@ public final class StatsProcessorApp {
             return 1;
         }
         CountDownLatch closed = new CountDownLatch(1);
+        Thread hook = null;
         try (Consumer<byte[], byte[]> consumer = consumers.apply(bootstrap);
              Producer<String, byte[]> producer = producers.apply(bootstrap)) {
             StatsProcessor p = new StatsProcessor(consumer, producer, layout, engine, checkpoint,
@@ -92,9 +98,14 @@ public final class StatsProcessorApp {
                 return written(out, err);
             }
             AtomicBoolean stop = new AtomicBoolean();
-            Runtime.getRuntime().addShutdownHook(new Thread(stopHook(stop, closed, Duration.ofSeconds(60), log)));
+            hook = new Thread(stopHook(stop, closed, Duration.ofSeconds(60), log));
+            addHook.accept(hook);
             p.run(Duration.ofSeconds(30), stop::get);
             return 0;
+        } catch (OpenTsxConfException e) {
+            err.print("opentsx: " + e.getMessage() + "\n");
+            err.flush();
+            return 2;
         } catch (RuntimeException e) {
             log.debug("stats failed", e);
             err.print("opentsx: " + causes(e) + "\n");
@@ -102,12 +113,19 @@ public final class StatsProcessorApp {
             return 1;
         } finally {
             closed.countDown();
+            if (hook != null) {
+                try {
+                    removeHook.accept(hook);
+                } catch (IllegalStateException shuttingDown) {
+                    // the JVM refuses removals while it shuts down, and it is running this hook already
+                }
+            }
         }
     }
 
     /**
-     * Tells the processor to stop and waits up to {@code wait} for its final checkpoint. The JVM runs the hook at every
-     * exit, also after a failure; once the run has ended it does nothing.
+     * Tells the processor to stop and waits up to {@code wait} for its final checkpoint. The run removes the hook when it
+     * ends; a hook that starts after the end does nothing.
      */
     static Runnable stopHook(AtomicBoolean stop, CountDownLatch closed, Duration wait, Logger log) {
         return () -> {

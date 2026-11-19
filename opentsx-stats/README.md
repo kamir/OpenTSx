@@ -77,6 +77,15 @@ the log start on every start. `--once` and `--observations` take `true` or `fals
   opentsx: sketchAlpha: "5.0" is not allowed; expected a number above 0 and below 1, or 0 or less for no sketch
   ```
 
+  Without `--once` the processor also exits with 2 when none of its input topics has a partition, after it has
+  connected and logged the WARN line `no partitions assigned`:
+
+  ```text
+  opentsx: tsx.wind.episodes.v2: the input topics do not exist or have no partitions; check opentsx.domain (--domain, OPENTSX_DOMAIN), or create the topics first
+  ```
+
+  With `--observations` the line names both input topics, separated by a comma. With `--once` the processor logs the
+  WARN line, processes nothing and exits with 0.
 * **Variables of other keys:** the processor reads the `OPENTSX_` variable of every key of the registry, also of keys
   it does not use, and a malformed value exits with 2. Kubernetes sets `OPENTSX_RETRIEVAL_PORT=tcp://<ip>:8080` in
   every pod of a namespace with the Service `opentsx-retrieval`, and the processor refuses it:
@@ -108,9 +117,10 @@ The processor works within KafScale's limits: manual partition assignment, no co
 * **Checkpoint errors:** an unreadable checkpoint stops the processor with `cannot read checkpoint <file>`, a failed
   write with `cannot write checkpoint <file>`, each followed by its cause.
 * **Reading the output:** `SeriesStatsLog.readLatest` reads the topic with `LogReader.readAll` of
-  [`opentsx-kafka-v2`](../opentsx-kafka-v2/README.md) and keeps the latest record per
-  `(seriesId, windowType, windowStart)`, because the topic has no compaction. A topic that does not exist throws
-  `IllegalStateException` with `tsx.<domain>.series-stats.v2: no such topic; check the domain, or create the topic first`.
+  [`opentsx-kafka-v2`](../opentsx-kafka-v2/README.md) and keeps one record per
+  `(seriesId, windowType, windowStart)`, for GLOBAL per `(seriesId, windowType)`, because the topic has no
+  compaction: the one with the most values, and of records with as many values the one read last. A topic that does
+  not exist throws `IllegalStateException` with `tsx.<domain>.series-stats.v2: no such topic; check the domain, or create the topic first`.
 * **`--once true`:** processes the backlog, closes all windows, prints the `RunResult` with the counts `records`,
   `undecodable`, `invalid`, `lostToRetention` and `statsWritten`, and exits. This is for experiments.
 
@@ -125,7 +135,7 @@ stderr, after the time, the thread and the level. `opentsx.log.level` (`--conf o
 | INFO | `checkpoint restored path=<file> domain=<domain> positions=<topic>-<partition>:<offset>,...` | at start, with a checkpoint file |
 | INFO | `no checkpoint; reading the topics from the log start path=<file>` | at start, without a checkpoint file; `path=none` without `--checkpoint` |
 | INFO | `partitions assigned count=<n> start=<topic>-<partition>:<offset>,...` | after the assignment, with the offset each partition starts at |
-| WARN | `no partitions assigned; the input topics do not exist or have no partitions topics=<topic>,...` | the episode topic (and with `--observations` the observation topic) does not exist yet |
+| WARN | `no partitions assigned; the input topics do not exist or have no partitions topics=<topic>,...` | the episode topic (and with `--observations` the observation topic) does not exist yet; without `--once` the processor then exits with 2 |
 | INFO | `progress records=<n> undecodable=<n> invalid=<n> lostToRetention=<n> statsWritten=<n> duplicates=<n> lateValues=<n>` | continuous mode, after every checkpoint (every 30 s) |
 | INFO | `stopping; waiting for the final checkpoint wait=PT1M` | continuous mode, when the JVM shuts down while the processor runs, for example on SIGTERM; not after a failed run |
 | INFO | `final checkpoint written path=<file> positions=<topic>-<partition>:<offset>,...` | after the last checkpoint of a continuous run; without a file `stopped without a checkpoint file positions=...` |
@@ -166,8 +176,8 @@ The encoding is canonical. Java (`QuantileSketch`) and Python (`opentsx.stats.Qu
 checked by a shared test vector. `QuantileSketch.fromBytes` reads exactly one sketch and throws
 `IllegalArgumentException` for:
 
-* a version byte other than 1: `unsupported sketch format version <v>`
-* an alpha outside (0, 1): `alpha must be in (0, 1): <alpha>`
+* a version byte other than 1: `sketch bytes: format version <v> is not supported; expected 1`
+* an alpha outside (0, 1): `alpha: <alpha> is out of range; expected a number above 0 and below 1`
 * bytes after it: `sketch bytes: <n> trailing bytes; expected exactly <m>`
 * bytes that end in the version byte or in alpha: `sketch bytes: truncated at <k> of <m>`, `<k>` the number of bytes
   read when the input ran out
@@ -177,18 +187,33 @@ checked by a shared test vector. `QuantileSketch.fromBytes` reads exactly one sk
 * a count above 9223372036854775807:
   `sketch bytes: varint exceeds 9223372036854775807; expected a whole number from 0 to 9223372036854775807`
 * a bin index outside the int range: `sketch bytes: bin index <n> out of range; expected an int`
+* a bin after the first one whose index delta is 0 or negative:
+  `sketch bytes: bin index <n> is not above the previous index <p>; expected bins in ascending index order`
+* bin counts that, with `zeroCount`, add up to more than 9223372036854775807:
+  `sketch bytes: zeroCount and the bin counts add up to more than 9223372036854775807; expected a total count of at most 9223372036854775807`
 
 `StatsAccumulator.of`, `StatsAccumulator.readFrom` and `DataQuality.evaluate` throw the same exception for a corrupt
-sketch. `opentsx.stats.QuantileSketch.from_bytes` raises `ValueError` with the same messages, except that `<alpha>`
-is written as each language formats a double: `NaN`, `Infinity` and `1.0E300` in Java, `nan`, `inf` and `1e+300` in
-Python.
+sketch. `opentsx.stats.QuantileSketch.from_bytes` raises `ValueError` with the same messages. Java writes
+`<alpha>` with `Double.toString`, and Python as `Double.toString` of Java 21 does, for example `NaN`, `Infinity`,
+`1.0E300` and `-1.0E-5`.
+
+The constructors and `quantile` refuse a value in the same form, in Java with `IllegalArgumentException` and in Python
+with `ValueError`:
+
+* an alpha outside (0, 1): `alpha: <alpha> is out of range; expected a number above 0 and below 1`
+* a merge of sketches with different alphas:
+  `alpha: cannot merge a sketch with alpha <other> into one with alpha <alpha>; expected the same alpha`
+* a quantile outside [0, 1]: `q: <q> is out of range; expected a number from 0 to 1`
+* in Java, `maxBins` below 16: `maxBins: <n> is out of range; expected a whole number of 16 or more`
+
 `opentsx.stats.stats_to_frame(records)` turns decoded records into a pandas frame with quantile columns.
 
 ## Tests
 
 * Sketch: accuracy, exact merge, canonical bytes, collapsing, the test vector, refused trailing and truncated bytes,
-  refused varints, refused bin indexes outside the int range, and the refusal of a corrupt sketch by
-  `StatsAccumulator` and `DataQuality`.
+  refused varints, refused bin indexes outside the int range, refused bins out of ascending order, a refused total
+  count above the long range, the refusal of a corrupt sketch by `StatsAccumulator` and `DataQuality`, and the same
+  refusal texts for the same bytes in `QuantileSketchTest` and `python-package/tests/test_stats.py`.
 * Engine: windows equal episode summaries, gaps, duplicates, late values, observations, a window without values,
   refused settings, and checkpoint restore with output identical to an uninterrupted run.
 * Data quality against simulator ground truth, and FRESHNESS with a given clock.
@@ -200,11 +225,14 @@ Python.
     partition and skipped, also after a restart from the checkpoint; records lost to retention before a run and
     during a run are counted and reported; a `--once` run ends when retention deletes past the end offset it saw at
     the start, both when the next record it reads lies at or past that offset and when no record is left, also while
-    another partition keeps receiving records; checkpoint errors name the file.
+    another partition keeps receiving records; a continuous run without partitions is refused with the input topics;
+    a refused read is waited out on a test clock; checkpoint errors name the file.
   * `StatsProcessorAppTest`: unknown options, missing values, malformed values and settings the engine refuses exit
     with 2 and one line; `--help` and `--version` print on stdout; a runtime failure prints its cause chain and exits
-    with 1; the start line names every value and its source; the shutdown hook logs `stopping`, warns when the run
-    does not end in time and logs nothing once the run has ended; the pod of `deploy/k3s/base/stats.yaml` loads its arguments, with the Service variables
+    with 1; a continuous run without input topics exits with 2 and names them; the start line names every value and
+    its source; the shutdown hook logs `stopping`, warns when the run does not end in time and logs nothing once the
+    run has ended; a continuous run removes its shutdown hook when it ends, also while the JVM refuses the removal
+    because it shuts down; the pod of `deploy/k3s/base/stats.yaml` loads its arguments, with the Service variables
     Kubernetes adds when `enableServiceLinks` is not `false`.
-  * `SeriesStatsLogTest`: the latest record per key across partitions, and a missing topic is an error that names it.
+  * `SeriesStatsLogTest`: the record with the most values per key across partitions, and a missing topic is an error that names it.
   * Against KafScale v1.6.0, when `KAFSCALE_BOOTSTRAP` is set; CI runs this.

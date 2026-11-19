@@ -173,6 +173,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `20-configure.sh` sets the ConfigMap keys `OPENTSX_STATS_WINDOWS`, `OPENTSX_STATS_ALLOWED_LATENESS`,
   `OPENTSX_WINDPARK_SCENARIO`, `OPENTSX_ICEBERG_NAMESPACE` and `DWD_FIXTURE` and checks their form.
 - `RNGWrapper.init(seed)` and `RNGWrapper.DEFAULT_SEED` (1), and `DetrendingMethodFactory.getDFAmulti(order)`.
+- `Patience` has a public constructor that takes the clock and the sleeper, so tests wait out refused reads on a test
+  clock instead of sleeping.
 
 ### Changed
 
@@ -659,6 +661,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   definitions.
 - TASK-019 no longer plans a Plotly or React Router upgrade: the frontend has not depended on Plotly since 2026-11-19,
   so the `maplibre-gl` audit finding no longer applies, and React Router 7 is already in place.
+- The `QuantileSketch` refusals in Java and Python follow the form `<subject>: <problem>; <what is allowed>`, for
+  example `alpha: 5.0 is out of range; expected a number above 0 and below 1` and `sketch bytes: format version -1 is
+  not supported; expected 1`. Python writes alpha and q as Java's `Double.toString` does, for example `NaN`,
+  `Infinity`, `1.0E300` and `-4.9E-324`.
 
 ### Removed
 
@@ -1470,6 +1476,24 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The `docker run` example in the SaaS backend README uses `--network host` and uvicorn on 127.0.0.1, so
   `POSTGRES_SERVER=localhost` reaches a PostgreSQL on the host. The old example looked for the database inside the
   container.
+- `EpisodeIndexer.rebuild` logs the first undecodable record and the first invalid episode of each partition at WARN
+  through SLF4J, logger `org.opentsx.kafka.EpisodeIndexer`, with topic, partition, offset and cause. Before, it
+  printed them with `System.err.println`, which `opentsx.log.level` did not control.
+- `Patience` gives up with `the broker has refused reads for more than <limit>`, with the limit as an ISO-8601
+  duration such as `PT10M`. A limit below one second no longer reads `0 s`.
+- `opentsx stats` without `--once` exits with 2 when none of its input topics has a partition, with `<topics>: the
+  input topics do not exist or have no partitions; check opentsx.domain (--domain, OPENTSX_DOMAIN), or create the
+  topics first`. Before, it failed with a kafka-clients message and exit code 1.
+- A continuous `opentsx stats` run removes its JVM shutdown hook when it ends.
+- The sketch decoders in Java (`QuantileSketch.fromBytes`) and Python (`QuantileSketch.from_bytes`) refuse bins whose
+  index does not rise after the first bin. They also refuse bin counts that add up with zeroCount to more than
+  9223372036854775807. Both give the same text for the same bytes.
+- The opentsx-kafka-v2 README lists every topic of `TopicLayout` and names `max.in.flight.requests.per.connection`.
+  The opentsx-stats README describes which record `SeriesStatsLog.readLatest` keeps: the one with the most values per
+  key.
+- The troubleshooting guide, the statistics chapter and the sizing plan quote the current texts: exit code 2 and the
+  refusal that names the input topics when a continuous statistics processor finds no partitions, `the broker has
+  refused reads for more than PT10M` and `max.in.flight.requests.per.connection=1`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

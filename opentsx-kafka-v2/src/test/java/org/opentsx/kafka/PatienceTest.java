@@ -165,6 +165,17 @@ class PatienceTest {
     }
 
     @Test
+    void theGiveUpMessageNamesTheLimitAsADuration() {
+        Refusing consumer = new Refusing(refusal(), refusal());
+        Time time = new Time();
+        Patience patience = time.patience(Duration.ofMillis(500), Duration.ofMillis(1));
+        assertEquals(0, patience.poll(consumer, Duration.ofMillis(1)).count());
+        time.nanos += Duration.ofSeconds(1).toNanos();
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> patience.poll(consumer, Duration.ofMillis(1)));
+        assertEquals("the broker has refused reads for more than PT0.5S", e.getMessage());
+    }
+
+    @Test
     void aRefusalWindowLogsOneWarningAndOneRecovery() {
         TopicPartition tp = new TopicPartition("t", 0);
         Refusing consumer = new Refusing(refusal(), new TimeoutException("again"));

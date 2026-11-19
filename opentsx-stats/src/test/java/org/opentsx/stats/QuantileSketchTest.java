@@ -143,6 +143,58 @@ class QuantileSketchTest {
         assertEquals(2, QuantileSketch.fromBytes(extremes).count());
     }
 
+    /** The same bytes and texts as test_stats.py. */
+    @Test
+    void fromBytesRefusesACountAboveTheLongRange() {
+        String text = "sketch bytes: zeroCount and the bin counts add up to more than 9223372036854775807; expected a total"
+                + " count of at most 9223372036854775807";
+        assertEquals(text, refusal(HexFormat.of().parseHex("017b14ae47e17a843fffffffffffffffff7f01020100")));
+        assertEquals(text, refusal(HexFormat.of().parseHex("017b14ae47e17a843f000202ffffffffffffffff7f020100")));
+    }
+
+    /** The same bytes and texts as test_stats.py. */
+    @Test
+    void fromBytesRefusesBinsThatAreNotInAscendingIndexOrder() {
+        String allowed = "; expected bins in ascending index order";
+        assertEquals("sketch bytes: bin index 5 is not above the previous index 5" + allowed,
+                refusal(HexFormat.of().parseHex("017b14ae47e17a843f00020a01000100")));
+        assertEquals("sketch bytes: bin index 3 is not above the previous index 5" + allowed,
+                refusal(HexFormat.of().parseHex("017b14ae47e17a843f00020a01030100")));
+        assertEquals("sketch bytes: bin index -4 is not above the previous index -4" + allowed,
+                refusal(HexFormat.of().parseHex("017b14ae47e17a843f00000207010001")));
+        assertEquals(1, QuantileSketch.fromBytes(oneBinAt(0)).count(), "the first bin may sit at index 0");
+        assertEquals(1, QuantileSketch.fromBytes(oneBinAt(-3)).count(), "and below");
+    }
+
+    /** The same bytes and texts as test_stats.py. */
+    @Test
+    void fromBytesNamesAnAlphaOutOfRangeAsJavaWritesADouble() {
+        String allowed = " is out of range; expected a number above 0 and below 1";
+        assertEquals("alpha: NaN" + allowed, refusal(HexFormat.of().parseHex("01000000000000f87f000000")));
+        assertEquals("alpha: Infinity" + allowed, refusal(HexFormat.of().parseHex("01000000000000f07f000000")));
+        assertEquals("alpha: 1.0E300" + allowed, refusal(HexFormat.of().parseHex("019c7500883ce4377e000000")));
+        assertEquals("alpha: -1.0E-5" + allowed, refusal(HexFormat.of().parseHex("01f168e388b5f8e4be000000")));
+        assertEquals("alpha: -4.9E-324" + allowed, refusal(HexFormat.of().parseHex("010100000000000080000000")));
+    }
+
+    private static String refused(Runnable action) {
+        return assertThrows(IllegalArgumentException.class, action::run).getMessage();
+    }
+
+    /** The same texts as test_stats.py. */
+    @Test
+    void theRefusalsNameTheValueAndWhatIsAllowed() {
+        assertEquals("alpha: 5.0 is out of range; expected a number above 0 and below 1", refused(() -> new QuantileSketch(5.0)));
+        assertEquals("maxBins: 15 is out of range; expected a whole number of 16 or more",
+                refused(() -> new QuantileSketch(0.01, 15)));
+        assertEquals("alpha: cannot merge a sketch with alpha 0.02 into one with alpha 0.01; expected the same alpha",
+                refused(() -> new QuantileSketch(0.01).merge(new QuantileSketch(0.02))));
+        assertEquals("q: 1.5 is out of range; expected a number from 0 to 1", refused(() -> new QuantileSketch().quantile(1.5)));
+        assertEquals("q: NaN is out of range; expected a number from 0 to 1",
+                refused(() -> new QuantileSketch().quantile(Double.NaN)));
+        assertEquals("sketch bytes: format version -1 is not supported; expected 1", refusal(new byte[]{(byte) 0xFF, 0}));
+    }
+
     @Test
     void theReadersOfStatisticsRefuseACorruptSketchAsBadInput() throws IOException {
         byte[] corrupt = oneBinAt(1L << 40);
@@ -208,7 +260,7 @@ class QuantileSketchTest {
 
     /**
      * Fixed test vector: the Python implementation (opentsx.stats.sketch) must produce the same bytes.
-     * If this changes, the binary format changed - bump the format version instead.
+     * If this changes, the binary format changed: bump the format version instead.
      */
     @Test
     void testVector() {

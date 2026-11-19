@@ -73,6 +73,9 @@ without `--checkpoint` the processor reads the topics from the log start on ever
   ```
 
   Without `--checkpoint` the second line ends with `path=none`.
+  Without `--once`, after the WARN line `no partitions assigned` the processor exits with 2 and prints
+  `opentsx: tsx.<domain>.episodes.v2: the input topics do not exist or have no partitions; check opentsx.domain (--domain, OPENTSX_DOMAIN), or create the topics first`.
+  With `--observations` it names both topics, separated by a comma.
 * Without `--once` the processor writes a checkpoint every 30 s and then logs one INFO progress line.
   `records`, `undecodable`, `invalid`, `lostToRetention` and `statsWritten` count since the process started;
   `duplicates` and `lateValues` are counters of the engine and come back from the checkpoint:

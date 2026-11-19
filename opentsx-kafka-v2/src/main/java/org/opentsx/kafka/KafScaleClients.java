@@ -20,7 +20,7 @@ import java.util.Properties;
  *   true), {@code acks=all}, zstd, batching for cheap S3 segments. Duplicates are removed by episodeId.
  *   No fixed number of retries: KafScale refuses every produce for about a minute while it rates its object
  *   store as degraded, so a send retries with pauses until the delivery timeout of three minutes.</li>
- *   <li>Consumer: no group id - readers use manual assignment and seek (KafScale cannot seek by time, rejects
+ *   <li>Consumer: no group id: readers use manual assignment and seek (KafScale cannot seek by time, rejects
  *   commits without membership and does not let restarted group members rejoin, see kamir/kafscale#16-#18).
  *   Read with {@link Patience#poll}: a refused fetch otherwise ends the reader with an exception.</li>
  * </ul>

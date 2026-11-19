@@ -148,4 +148,76 @@ def test_the_decoder_raises_the_texts_of_quantile_sketch_test():
 def test_an_unknown_version_byte_is_read_signed_as_in_java():
     with pytest.raises(ValueError) as e:
         QuantileSketch.from_bytes(bytes([0xFF, 0]))
-    assert str(e.value) == "unsupported sketch format version -1"
+    assert str(e.value) == "sketch bytes: format version -1 is not supported; expected 1"
+
+
+_COUNT_ABOVE_LONG = ("sketch bytes: zeroCount and the bin counts add up to more than"
+                     " 9223372036854775807; expected a total count of at most 9223372036854775807")
+_NOT_ASCENDING = "; expected bins in ascending index order"
+_ALPHA_ALLOWED = " is out of range; expected a number above 0 and below 1"
+
+
+# the same bytes and texts as QuantileSketchTest (Java)
+@pytest.mark.parametrize("data, text", [
+    ("017b14ae47e17a843fffffffffffffffff7f01020100", _COUNT_ABOVE_LONG),
+    ("017b14ae47e17a843f000202ffffffffffffffff7f020100", _COUNT_ABOVE_LONG),
+    ("017b14ae47e17a843f00020a01000100",
+     "sketch bytes: bin index 5 is not above the previous index 5" + _NOT_ASCENDING),
+    ("017b14ae47e17a843f00020a01030100",
+     "sketch bytes: bin index 3 is not above the previous index 5" + _NOT_ASCENDING),
+    ("017b14ae47e17a843f00000207010001",
+     "sketch bytes: bin index -4 is not above the previous index -4" + _NOT_ASCENDING),
+    ("01000000000000f87f000000", "alpha: NaN" + _ALPHA_ALLOWED),
+    ("01000000000000f07f000000", "alpha: Infinity" + _ALPHA_ALLOWED),
+    ("019c7500883ce4377e000000", "alpha: 1.0E300" + _ALPHA_ALLOWED),
+    ("01f168e388b5f8e4be000000", "alpha: -1.0E-5" + _ALPHA_ALLOWED),
+    ("010100000000000080000000", "alpha: -4.9E-324" + _ALPHA_ALLOWED),
+])
+def test_the_decoder_raises_the_java_text_for_the_same_bytes(data, text):
+    with pytest.raises(ValueError) as e:
+        QuantileSketch.from_bytes(bytes.fromhex(data))
+    assert str(e.value) == text
+
+
+def test_the_first_bin_may_sit_at_index_0_and_below():
+    assert QuantileSketch.from_bytes(_bins_at(0)).positive == {0: 1}
+    assert QuantileSketch.from_bytes(_bins_at(-3)).positive == {-3: 1}
+
+
+# the same texts as QuantileSketchTest.theRefusalsNameTheValueAndWhatIsAllowed (Java)
+def test_the_refusals_name_the_value_and_what_is_allowed():
+    texts = []
+    for action in (lambda: QuantileSketch(5.0),
+                   lambda: QuantileSketch(0.01).merge(QuantileSketch(0.02)),
+                   lambda: QuantileSketch().quantile(1.5),
+                   lambda: QuantileSketch().quantile(math.nan)):
+        with pytest.raises(ValueError) as e:
+            action()
+        texts.append(str(e.value))
+    assert texts == [
+        "alpha: 5.0 is out of range; expected a number above 0 and below 1",
+        "alpha: cannot merge a sketch with alpha 0.02 into one with alpha 0.01;"
+        " expected the same alpha",
+        "q: 1.5 is out of range; expected a number from 0 to 1",
+        "q: NaN is out of range; expected a number from 0 to 1",
+    ]
+
+
+# Double.toString in Java writes each value as given here
+@pytest.mark.parametrize("value, text", [
+    (5, "5.0"), (1.0, "1.0"), (100.0, "100.0"), (9999999.0, "9999999.0"), (1e7, "1.0E7"),
+    (12345678.9, "1.23456789E7"), (-0.5, "-0.5"), (-0.001, "-0.001"), (-1e-4, "-1.0E-4"),
+    (-1e-5, "-1.0E-5"), (0.0, "0.0"), (-0.0, "-0.0"),
+    (1e300, "1.0E300"), (math.inf, "Infinity"), (-math.inf, "-Infinity"), (math.nan, "NaN"),
+    (-5e-324, "-4.9E-324"), (-1e-323, "-9.9E-324"),
+])
+def test_an_alpha_out_of_range_is_written_as_java_writes_a_double(value, text):
+    with pytest.raises(ValueError) as e:
+        QuantileSketch(value)
+    assert str(e.value) == "alpha: " + text + _ALPHA_ALLOWED
+
+
+def test_an_alpha_beyond_the_double_range_raises_value_error_and_names_it():
+    with pytest.raises(ValueError) as e:
+        QuantileSketch(10 ** 400)
+    assert str(e.value) == "alpha: 1" + "0" * 400 + _ALPHA_ALLOWED

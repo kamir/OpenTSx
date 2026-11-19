@@ -17,8 +17,8 @@ import java.util.Map;
 
 /**
  * Reads the statistics topic. KafScale has no compaction, so a key can occur several times (GLOBAL updates,
- * re-emission after a restart); this keeps the latest record per (seriesId, windowType, windowStart) - for GLOBAL the
- * one with the most values.
+ * re-emission after a restart). This keeps one record per (seriesId, windowType, windowStart), for GLOBAL per
+ * (seriesId, windowType): the one with the most values, and of records with as many values the one read last.
  */
 public final class SeriesStatsLog {
 
@@ -26,7 +26,8 @@ public final class SeriesStatsLog {
     }
 
     /**
-     * Reads the whole statistics topic of the domain with {@link LogReader#readAll} and keeps the latest records.
+     * Reads the whole statistics topic of the domain with {@link LogReader#readAll} and keeps one record per key, as
+     * {@link #latest} does.
      *
      * @throws IllegalStateException when the topic does not exist or the read takes longer than {@code timeout}
      */
@@ -37,7 +38,10 @@ public final class SeriesStatsLog {
         return latest(all);
     }
 
-    /** Keeps the latest record per (seriesId, windowType, windowStart), sorted by series, window type and start. */
+    /**
+     * Keeps the record with the most values per (seriesId, windowType, windowStart), for GLOBAL per
+     * (seriesId, windowType), and of records with as many values the later one; sorted by series, window type and start.
+     */
     public static List<SeriesStats> latest(Collection<SeriesStats> records) {
         Map<String, SeriesStats> latest = new HashMap<>();
         for (SeriesStats s : records) {

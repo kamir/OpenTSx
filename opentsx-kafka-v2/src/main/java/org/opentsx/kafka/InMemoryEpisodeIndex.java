@@ -7,7 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/** Simple index for tests, tools and small catalogs; P3 adds an Iceberg-backed implementation. */
+/**
+ * Index in memory, for tests, tools and small catalogs. {@link FileEpisodeIndex} keeps the entries in a file,
+ * {@code IcebergEpisodeIndex} of opentsx-store-iceberg in an Iceberg table.
+ */
 public class InMemoryEpisodeIndex implements EpisodeIndex {
 
     private static final Comparator<IndexEntry> BY_TIME =
