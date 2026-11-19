@@ -18,15 +18,15 @@ outputs:
 params:
   - { name: seed, type: integer, description: Seed of all random numbers. }
   - { name: start, type: string, required: true, description: "Start instant, aligned to episodeDuration, for example 2026-10-01T00:00:00Z." }
-  - { name: duration, type: duration, required: true, description: Simulated time. }
-  - { name: sampleInterval, type: duration, default: PT1S, description: Time step and sampling interval. }
-  - { name: episodeDuration, type: duration, default: PT10M, description: Length of one episode. A multiple of sampleInterval. }
+  - { name: duration, type: duration, required: true, description: "Simulated time, positive." }
+  - { name: sampleInterval, type: duration, default: PT1S, description: "Time step and sampling interval, positive." }
+  - { name: episodeDuration, type: duration, default: PT10M, description: "Length of one episode, positive. A multiple of sampleInterval." }
   - { name: turbineModel, type: enum, values: [GENERIC-3MW, GENERIC-8MW], default: GENERIC-3MW, description: Turbine type of the park (park.turbineModel). }
-  - { name: rows, type: integer, default: 1, min: 1, description: Rows of the turbine grid (park.rows). }
-  - { name: columns, type: integer, default: 1, min: 1, description: Turbines per row (park.columns). }
-  - { name: spacingRotorDiameters, type: number, default: 5, description: Spacing within a row in rotor diameters. }
-  - { name: rowSpacingRotorDiameters, type: number, default: 7, description: Spacing between rows in rotor diameters. }
-  - { name: wakeDecay, type: number, default: 0.05, description: Wake decay constant of the Jensen model. }
+  - { name: rows, type: integer, required: true, min: 1, description: Rows of the turbine grid (park.rows). }
+  - { name: columns, type: integer, required: true, min: 1, description: Turbines per row (park.columns). }
+  - { name: spacingRotorDiameters, type: number, default: 5, min: 0, description: Spacing within a row in rotor diameters. 0 or a missing value takes the default. }
+  - { name: rowSpacingRotorDiameters, type: number, default: 7, min: 0, description: Spacing between rows in rotor diameters. 0 or a missing value takes the default. }
+  - { name: wakeDecay, type: number, default: 0.05, min: 0, description: Wake decay constant of the Jensen model. 0 or a missing value takes the default. }
   - { name: weibullK, type: number, default: 2.0, description: Shape of the Weibull distribution of hourly mean wind (wind.weibullK). }
   - { name: weibullC, type: number, default: 9.0, unit: m/s, description: Scale of the Weibull distribution of hourly mean wind. }
   - { name: turbulenceIntensity, type: number, default: 0.10, description: Standard deviation of the wind relative to its mean. }
@@ -34,11 +34,11 @@ params:
   - { name: directionStdDeg, type: number, default: 15, unit: degree, description: Standard deviation of the wind direction. }
   - { name: diurnalAmplitude, type: number, default: 0.1, description: Relative day and night change of the mean wind. }
   - { name: meanTemperatureC, type: number, default: 10, unit: degree Celsius, description: Mean ambient temperature. }
-  - { name: operations, type: list, description: "CURTAILMENT (limitKw), FAULT or MAINTENANCE, each with turbines (empty or * for all), offset and duration." }
-  - { name: sensorFaults, type: list, description: "STUCK, DRIFT (ratePerHour), OFFSET (magnitude), SPIKES (magnitude, probability) or GAP, each with turbine, channel, offset and duration." }
+  - { name: operations, type: list, description: "CURTAILMENT (limitKw, required, 0 or more), FAULT or MAINTENANCE, each with turbines of the park (empty or * for all), offset and a positive duration." }
+  - { name: sensorFaults, type: list, description: "STUCK, DRIFT (ratePerHour, required), OFFSET (magnitude, required), SPIKES (magnitude and probability above 0 and at most 1, required) or GAP, each with turbine, a channel metric of the catalog, offset and a positive duration; a parameter of another type is refused." }
 semantics: { deterministic: true, origin: SYNTHETIC }
 runtimes:
-  java: { status: available, class: "org.opentsx.windpark.sim.WindparkSimulator#run", note: "bin/opentsx windpark-sim --scenario <file.yaml> runs a scenario once and writes the episodes to KafScale as one sealed bucket (--kafscale), to Iceberg (--iceberg) or to both; --ground-truth <file.json> writes the ground truth. The wind defaults apply when the scenario has no wind block." }
+  java: { status: available, class: "org.opentsx.windpark.sim.WindparkSimulator#run", note: "bin/opentsx windpark-sim --scenario <file.yaml> runs a scenario once and writes the episodes to KafScale as one sealed bucket (--kafscale), to Iceberg (--iceberg) or to both; --ground-truth <file.json> writes the ground truth. --sinks auto|kafscale|iceberg chooses the sinks; auto follows --kafscale and --iceberg on the command line. The wind defaults apply when the scenario has no wind block." }
   processor: { status: none, note: "A run covers the duration of the scenario and ends; nothing writes continuously." }
   workbench: { status: none }
   python: { status: none }

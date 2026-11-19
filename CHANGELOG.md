@@ -232,6 +232,23 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   opentsx.openmetadata.token in a properties file`.
 - A domain outside the topic grammar is refused as `domain: "Wind" is not allowed; expected lowercase letters, digits,
   _ and -, starting with a letter or digit, such as wind`.
+- `bin/opentsx windpark-sim` loads its configuration with `OpenTsxConf.load`: `--conf`, `--properties-file`,
+  `$OPENTSX_CONF_DIR` and the `OPENTSX_` variables work, `--help` prints the keys on stdout with exit 0, and an
+  unknown or malformed option, such as `--partitons 12`, exits with 2 and one line (`did you mean --partitions?`)
+  before any topic is created. A runtime failure exits with 1 and prints one line `opentsx: windpark-sim: <failure>;
+  caused by <cause>` instead of a stack trace; `opentsx.log.level=debug` logs the trace, also for a failure while the
+  scenario or catalog loads. The command logs one `starting windpark-sim` line with every value and its source.
+- `windpark-sim` reads `opentsx.windpark.sinks` (`--sinks`, default `auto`, or a list of `kafscale` and `iceberg`).
+  With `auto` a sink is on only when `--kafscale` or `--iceberg`, or `--conf` with its key, sets it on the command
+  line, so `KAFSCALE_BOOTSTRAP` or `OPENTSX_ICEBERG_PROPERTIES` in the environment adds no sink.
+- `windpark-sim` checks the keys, the scenario, the catalog, the Iceberg properties (`warehouse` and exactly one of
+  `type` and `catalog-impl`) and the `--ground-truth` path before it opens the index, the admin client or the
+  producer; `--kafscale ks:9092 --iceberg type=rest,uri=x` exits with 2 and creates no topic.
+- `SimulationReport.stateSeconds` holds seconds as `Double`, and the `windpark-sim` summary prints them as `states
+  {1=21310.0, 2=1.0, 3=289.0}`.
+- The descriptor `gen.windpark` states the scenario rules the simulator enforces: positive durations, required `rows`
+  and `columns`, spacing and wake decay of 0 or more, the required parameters of each operation and sensor fault, and
+  `--sinks`.
 
 ### Removed
 
@@ -557,6 +574,30 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `QuantileSketch.fromBytes` refuses trailing bytes and truncated input with an `IllegalArgumentException` (`sketch
   bytes: <n> trailing bytes; expected exactly <m>`, `sketch bytes: truncated at <k> of <m>`). Before, it accepted
   trailing bytes and threw `BufferUnderflowException` on truncated input.
+- `windpark-sim --ground-truth` with a directory or a file in a directory that does not exist exits with 2 before it
+  opens a client; it wrote every sink, sealed the bucket and then failed with 1.
+- A `CURTAILMENT` without `limitKw` no longer curtails to 0 kW: loading the scenario fails with `<file>: CURTAILMENT
+  operation at PT1H: limitKw missing; set limitKw to the power limit in kW, 0 or more`. `DRIFT` needs `ratePerHour`,
+  `OFFSET` needs `magnitude`, `SPIKES` needs `magnitude` and `probability`, operations and sensor faults need `offset`
+  and a positive `duration`, a parameter of another type is refused, and `park.rows` or `park.columns` below 1 is
+  refused instead of becoming 1.
+- A scenario with a negative or non-finite `park.spacingRotorDiameters`, `park.rowSpacingRotorDiameters` or
+  `park.wakeDecay` is refused instead of taking the default; 0 or a missing value still takes 5, 7 and 0.05.
+- A scenario whose `duration`, `sampleInterval` or `episodeDuration` is zero or negative is refused with `<name>
+  <value> is not positive`; a negative `duration` ran 0 episodes with exit 0, a negative `sampleInterval` failed with
+  `NegativeArraySizeException` and a zero one with `/ by zero`.
+- `WindparkSimulator` refuses an operation or sensor fault on a turbine that is not in the park and a sensor-fault
+  channel that is not a metric of the catalog when it is built; an unknown operation turbine was ignored before.
+- The normalizer and the simulator take the quality codes `MISSING` and `IMPLAUSIBLE` from the catalog instead of the
+  literals 2 and 1 and refuse a catalog without exactly one code from 1 to 255 for each.
+  `Normalizer.QUALITY_IMPLAUSIBLE` and `Normalizer.QUALITY_MISSING` are removed; `ChannelCatalog.qualityCode(name)`
+  returns the code.
+- The state seconds of the simulator sum to the simulated span at every sample interval; at `PT0.2S` they summed to 0
+  and at `PT1.5S` to 4/3 of the span.
+- `PowerCurveAnalysis` skips infinite values like NaN, so one infinite wind sample no longer turns the mean wind of
+  its bin into NaN.
+- `Scenario.load` and `ChannelCatalog.load` report a missing file as `<file>: no such file; give an existing file` and
+  a rule violation with the file name, so `windpark-sim` exits with 2 for them.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

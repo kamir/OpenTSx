@@ -76,20 +76,21 @@ five sensor faults. Then it restarts `opentsx-stats` so the processor assigns th
 ```text
 bucket 01M4QZS8J3CT5Q37CH8B2X56VE sealed: 3600 episodes, checksum 848ac31ffbf595a0
 scenario ostsee-demo: 3,600 episodes, 2,160,000 values, 17 ground-truth events
-  T01    4538.4 kWh  mean wind  7.51 m/s  states {1=21310, 2=1, 3=289}
-  T02    2927.4 kWh  mean wind  6.50 m/s  states {1=21503, 2=97}
-  T03    2707.9 kWh  mean wind  6.40 m/s  states {1=19656, 2=144, 4=1800}
-  T04    2917.8 kWh  mean wind  6.49 m/s  states {1=21531, 2=69}
-  T05    2781.0 kWh  mean wind  6.38 m/s  states {1=21526, 2=74}
-  T06    4498.2 kWh  mean wind  7.48 m/s  states {1=21345, 2=3, 3=252}
-  T07    2948.2 kWh  mean wind  6.50 m/s  states {1=21512, 2=88}
-  T08    2289.8 kWh  mean wind  6.38 m/s  states {1=17925, 2=75, 5=3600}
-  T09    2978.3 kWh  mean wind  6.53 m/s  states {1=21508, 2=92}
-  T10    2756.4 kWh  mean wind  6.35 m/s  states {1=21495, 2=105}
+  T01    4538.4 kWh  mean wind  7.51 m/s  states {1=21310.0, 2=1.0, 3=289.0}
+  T02    2927.4 kWh  mean wind  6.50 m/s  states {1=21503.0, 2=97.0}
+  T03    2707.9 kWh  mean wind  6.40 m/s  states {1=19656.0, 2=144.0, 4=1800.0}
+  T04    2917.8 kWh  mean wind  6.49 m/s  states {1=21531.0, 2=69.0}
+  T05    2781.0 kWh  mean wind  6.38 m/s  states {1=21526.0, 2=74.0}
+  T06    4498.2 kWh  mean wind  7.48 m/s  states {1=21345.0, 2=3.0, 3=252.0}
+  T07    2948.2 kWh  mean wind  6.50 m/s  states {1=21512.0, 2=88.0}
+  T08    2289.8 kWh  mean wind  6.38 m/s  states {1=17925.0, 2=75.0, 5=3600.0}
+  T09    2978.3 kWh  mean wind  6.53 m/s  states {1=21508.0, 2=92.0}
+  T10    2756.4 kWh  mean wind  6.35 m/s  states {1=21495.0, 2=105.0}
 ```
 
-Captured against the live KafScale broker mentioned above (the per-turbine numbers are identical to the earlier
-capture with the Iceberg sink). A rerun writes the same episodes again; readers drop the duplicates by `episodeId`.
+The bucket line was captured against the live KafScale broker mentioned above. The turbine lines do not depend on the
+sinks; they are the output of `bin/opentsx windpark-sim --scenario opentsx-windpark/scenarios/ostsee-demo.yaml
+--ground-truth ground-truth.json`, which writes to no sink. A rerun writes the same episodes again; readers drop the duplicates by `episodeId`.
 Afterwards `kafscale-check` shows `tsx.wind.episodes.v2 … 3,600 records` (plus 3,600 per further run) and
 `tsx.wind.buckets.v2 … 2 records` (OPEN and SEALED manifest).
 

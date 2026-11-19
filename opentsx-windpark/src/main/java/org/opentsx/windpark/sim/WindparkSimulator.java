@@ -46,13 +46,41 @@ public final class WindparkSimulator {
     private final Scenario scenario;
     private final ChannelCatalog catalog;
     private final Park park;
+    private final byte implausibleCode;
+    private final byte missingCode;
 
+    /** Checks that every turbine and channel the scenario names exists and that the catalog has the quality codes. */
     public WindparkSimulator(Scenario scenario, ChannelCatalog catalog) {
         this.scenario = scenario;
         this.catalog = catalog;
         Scenario.ParkSpec p = scenario.park();
         this.park = Park.grid(p.id(), p.name(), p.latitude(), p.longitude(), TurbineType.byModel(p.turbineModel()),
                 p.rows(), p.columns(), p.spacingRotorDiameters(), p.rowSpacingRotorDiameters());
+        for (Scenario.Operation op : scenario.operations()) {
+            for (String t : op.turbines()) {
+                if (!t.equals("*")) {
+                    requireTurbine(t, op.type() + " operation at " + op.offset());
+                }
+            }
+        }
+        for (Scenario.SensorFault f : scenario.sensorFaults()) {
+            String subject = f.type() + " sensor fault of " + f.turbine() + " " + f.channel() + " at " + f.offset();
+            requireTurbine(f.turbine(), subject);
+            if (catalog.channels().stream().noneMatch(c -> c.metric().equals(f.channel()))) {
+                throw new IllegalArgumentException(subject + ": unknown channel " + f.channel() + "; expected a metric of catalog "
+                        + catalog.name() + " such as wind.met.wind_speed");
+            }
+        }
+        this.implausibleCode = catalog.qualityCode("IMPLAUSIBLE");
+        this.missingCode = catalog.qualityCode("MISSING");
+    }
+
+    private void requireTurbine(String id, String subject) {
+        List<Turbine> all = park.turbines();
+        if (all.stream().noneMatch(t -> t.id().equals(id))) {
+            throw new IllegalArgumentException(subject + ": unknown turbine " + id + "; expected a turbine of park " + park.id()
+                    + ", " + all.get(0).id() + " to " + all.get(all.size() - 1).id());
+        }
     }
 
     public Park park() {
@@ -72,8 +100,6 @@ public final class WindparkSimulator {
             }
         }
         for (Scenario.SensorFault f : scenario.sensorFaults()) {
-            park.turbine(f.turbine());
-            catalog.channel(f.channel());
             Map<String, String> params = new LinkedHashMap<>();
             if (f.ratePerHour() != null) {
                 params.put("ratePerHour", f.ratePerHour().toString());
@@ -131,11 +157,11 @@ public final class WindparkSimulator {
         double[] energy = new double[n];
         double[] windSum = new double[n];
         long[] samples = new long[n];
-        List<Map<Integer, Long>> stateSecs = new ArrayList<>();
+        List<Map<Integer, Long>> stateMicros = new ArrayList<>();
         for (int i = 0; i < n; i++) {
             yaw[i] = w.meanDirectionDeg();
             genTemp[i] = w.meanTemperatureC() + 10;
-            stateSecs.add(new TreeMap<>());
+            stateMicros.add(new TreeMap<>());
         }
         Map<String, Double> stuck = new LinkedHashMap<>(); // fault key -> frozen value
 
@@ -178,7 +204,7 @@ public final class WindparkSimulator {
                     for (GroundTruth g : truth) {
                         if (g.channel() == null && g.turbine().equals(tb.id()) && t >= g.fromMicros() && t < g.toMicros()) {
                             switch (g.type()) {
-                                case "CURTAILMENT" -> limit = Math.min(limit, Double.parseDouble(g.params().getOrDefault("limitKw", "0")));
+                                case "CURTAILMENT" -> limit = Math.min(limit, Double.parseDouble(g.params().get("limitKw")));
                                 case "FAULT" -> fault = true;
                                 case "MAINTENANCE" -> maint = true;
                                 default -> { }
@@ -238,7 +264,7 @@ public final class WindparkSimulator {
                     energy[i] += power[i] * dt / 3600;
                     windSum[i] += v;
                     samples[i]++;
-                    stateSecs.get(i).merge(st, (long) Math.round(dt), Long::sum);
+                    stateMicros.get(i).merge(st, stepMicros, Long::sum);
 
                     for (int c = 0; c < channels.size(); c++) {
                         ChannelDef ch = channels.get(c);
@@ -294,12 +320,14 @@ public final class WindparkSimulator {
 
         Map<String, Double> energyKwh = new LinkedHashMap<>();
         Map<String, Double> meanWind = new LinkedHashMap<>();
-        Map<String, Map<Integer, Long>> states = new LinkedHashMap<>();
+        Map<String, Map<Integer, Double>> states = new LinkedHashMap<>();
         for (int i = 0; i < n; i++) {
             String id = turbines.get(i).id();
             energyKwh.put(id, energy[i]);
             meanWind.put(id, samples[i] == 0 ? 0 : windSum[i] / samples[i]);
-            states.put(id, stateSecs.get(i));
+            Map<Integer, Double> seconds = new TreeMap<>();
+            stateMicros.get(i).forEach((st, us) -> seconds.put(st, us / 1e6));
+            states.put(id, seconds);
         }
         return new SimulationReport(scenario.name(), episodes, values, truth, energyKwh, meanWind, states);
     }
@@ -318,11 +346,11 @@ public final class WindparkSimulator {
                     // frozen at the value measured when the fault started
                     value = stuck.computeIfAbsent(turbine + "|" + ch.metric() + "|" + g.fromMicros(), k -> current);
                 }
-                case "DRIFT" -> value += Double.parseDouble(p.getOrDefault("ratePerHour", "1")) * (t - g.fromMicros()) / 3.6e9;
-                case "OFFSET" -> value += Double.parseDouble(p.getOrDefault("magnitude", "1"));
+                case "DRIFT" -> value += Double.parseDouble(p.get("ratePerHour")) * (t - g.fromMicros()) / 3.6e9;
+                case "OFFSET" -> value += Double.parseDouble(p.get("magnitude"));
                 case "SPIKES" -> {
-                    if (rnd.nextDouble() < Double.parseDouble(p.getOrDefault("probability", "0.01"))) {
-                        value += (rnd.nextBoolean() ? 1 : -1) * Double.parseDouble(p.getOrDefault("magnitude", "5"));
+                    if (rnd.nextDouble() < Double.parseDouble(p.get("probability"))) {
+                        value += (rnd.nextBoolean() ? 1 : -1) * Double.parseDouble(p.get("magnitude"));
                     }
                 }
                 case "GAP" -> value = Double.NaN;
@@ -354,11 +382,11 @@ public final class WindparkSimulator {
         }
     }
 
-    /** Catalog quality codes: 2 = MISSING (NaN), 1 = IMPLAUSIBLE; null if every value is good. */
-    private static byte[] qualityOf(double[] values, ChannelDef ch) {
+    /** The catalog's MISSING code for NaN and its IMPLAUSIBLE code outside the plausible range; null if all are good. */
+    private byte[] qualityOf(double[] values, ChannelDef ch) {
         byte[] q = null;
         for (int k = 0; k < values.length; k++) {
-            byte code = Double.isNaN(values[k]) ? (byte) 2 : ch.plausible(values[k]) ? 0 : (byte) 1;
+            byte code = Double.isNaN(values[k]) ? missingCode : ch.plausible(values[k]) ? 0 : implausibleCode;
             if (code != 0) {
                 if (q == null) {
                     q = new byte[values.length];
@@ -404,6 +432,6 @@ public final class WindparkSimulator {
     }
 
     private static long micros(java.time.Duration d) {
-        return d == null ? 0 : d.toNanos() / 1_000L;
+        return d.toNanos() / 1_000L;
     }
 }

@@ -1,5 +1,6 @@
 package org.opentsx.windpark.catalog;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -9,15 +10,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 
 /**
- * Versioned data-point catalog ("Kanal-Katalog") mapped to IEC 61400-25-2, with source-system mappings,
+ * Versioned data-point catalog mapped to IEC 61400-25-2, with source-system mappings,
  * units, time reference, aggregation and quality codes. The default ships as
  * {@code windpark/channel-catalog.yaml}; projects maintain their own and load it with {@link #load(Path)}.
  */
@@ -64,11 +67,22 @@ public final class ChannelCatalog {
         }
     }
 
+    /**
+     * A missing file or a catalog that breaks a rule fails with an {@link IllegalArgumentException}
+     * {@code <file>: <problem>}; a file that cannot be read fails with an {@link UncheckedIOException}.
+     */
     public static ChannelCatalog load(Path yaml) {
         try (InputStream in = Files.newInputStream(yaml)) {
             return load(in);
+        } catch (NoSuchFileException e) {
+            throw new IllegalArgumentException(yaml + ": no such file; give an existing file", e);
+        } catch (JsonProcessingException e) {
+            String problem = e.getCause() instanceof IllegalArgumentException rule ? rule.getMessage() : e.getOriginalMessage();
+            throw new IllegalArgumentException(yaml + ": " + problem.replaceAll("\\s+", " "), e);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(yaml + ": " + e.getMessage(), e);
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw new UncheckedIOException(yaml + ": cannot read the catalog", e);
         }
     }
 
@@ -94,6 +108,25 @@ public final class ChannelCatalog {
 
     public Map<Integer, String> qualityCodes() {
         return qualityCodes;
+    }
+
+    /** The code of a quality name such as {@code MISSING}: exactly one, from 1 to 255, since 0 means good in v2 episodes. */
+    public byte qualityCode(String quality) {
+        Integer code = null;
+        for (Map.Entry<Integer, String> e : new TreeMap<>(qualityCodes).entrySet()) {
+            if (e.getValue().equals(quality)) {
+                if (code != null) {
+                    throw new IllegalArgumentException("catalog " + name + ": qualityCodes has " + quality + " under " + code
+                            + " and " + e.getKey() + "; keep one code for " + quality);
+                }
+                code = e.getKey();
+            }
+        }
+        if (code == null || code < 1 || code > 255) {
+            throw new IllegalArgumentException("catalog " + name + ": qualityCodes has "
+                    + (code == null ? "no " + quality : quality + " under " + code) + "; add a code from 1 to 255 for " + quality);
+        }
+        return (byte) (int) code;
     }
 
     public List<ChannelDef> channels() {

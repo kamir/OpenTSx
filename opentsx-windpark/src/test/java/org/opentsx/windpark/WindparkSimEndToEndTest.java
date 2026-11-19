@@ -6,6 +6,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.api.io.TempDir;
+import org.opentsx.conf.OpenTsxConf;
 import org.opentsx.kafka.BucketCatalog;
 import org.opentsx.kafka.FileEpisodeIndex;
 import org.opentsx.kafka.KafScaleClients;
@@ -17,9 +18,12 @@ import org.opentsx.model.v2.BucketManifest;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.windpark.sim.SimulationReport;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,18 +50,31 @@ class WindparkSimEndToEndTest {
         return p;
     }
 
+    /** A checked run of the command line {@code args}, without environment. */
+    private static WindparkSim.Run checked(String... args) {
+        List<String> argv = new ArrayList<>(List.of(WindparkSim.COMMAND));
+        argv.addAll(List.of(args));
+        return WindparkSim.check(OpenTsxConf.load(argv, Map.of(), null).conf());
+    }
+
     @Test
     void cliWritesIcebergAndGroundTruth() throws Exception {
         Path gt = dir.resolve("gt.json");
         String iceberg = "catalog-impl=org.apache.iceberg.jdbc.JdbcCatalog,uri=jdbc:sqlite:" + dir.resolve("c.db")
                 + ",jdbc.schema-version=V1,warehouse=" + dir.resolve("wh").toUri();
-        SimulationReport r = WindparkSim.run(Map.of("scenario", shortScenario().toString(), "iceberg", iceberg,
-                "ground-truth", gt.toString()));
-        assertEquals(10 * 10 * 2, r.episodes());
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        int code = WindparkSim.run(List.of("--scenario", shortScenario().toString(), "--iceberg", iceberg, "--ground-truth",
+                gt.toString()), Map.of(), new PrintStream(out, true, StandardCharsets.UTF_8),
+                new PrintStream(err, true, StandardCharsets.UTF_8), KafScaleClients::admin, KafScaleClients::producer);
+        assertEquals(0, code, err.toString(StandardCharsets.UTF_8));
+        String summary = out.toString(StandardCharsets.UTF_8);
+        assertTrue(summary.startsWith("scenario ostsee-demo: 200 episodes, "), summary);
+        assertTrue(summary.contains("T10"), summary);
         JsonNode truth = new ObjectMapper().readTree(gt.toFile());
         assertEquals(17, truth.size());
-        assertTrue(WindparkSim.summary(r).contains("T10"));
-        try (var store = org.opentsx.store.iceberg.IcebergSeriesStore.open(WindparkSim.props(iceberg), "tsx")) {
+        try (var store = org.opentsx.store.iceberg.IcebergSeriesStore.open(
+                WindparkSim.icebergProperties(List.of(iceberg.split(","))), "tsx")) {
             assertEquals(100, store.listSeries(org.opentsx.store.SeriesSelector.all()).size()); // 10 turbines x 10 channels
         }
     }
@@ -78,19 +95,23 @@ class WindparkSimEndToEndTest {
 
     @Test
     void failedFinalIcebergWriteFailsTheRun() throws Exception {
-        Map<String, String> args = Map.of("scenario", shortScenario().toString(), "iceberg", icebergWithUnwritableData());
-        Exception e = assertThrows(Exception.class, () -> WindparkSim.run(args));
+        WindparkSim.Run run = checked("--scenario", shortScenario().toString(), "--iceberg", icebergWithUnwritableData());
+        Exception e = assertThrows(Exception.class,
+                () -> WindparkSim.simulate(run, KafScaleClients::admin, KafScaleClients::producer, System.out));
         assertTrue(trace(e).contains("wh/tsx/episodes/data"), trace(e));
     }
 
     @Test
     void failedFinalIcebergWriteIsSuppressedOnTheFirstFailure() throws Exception {
-        Map<String, String> args = Map.of("scenario", shortScenario().toString(), "iceberg", icebergWithUnwritableData(),
-                "ground-truth", dir.toString());
-        Exception e = assertThrows(Exception.class, () -> WindparkSim.run(args));
+        WindparkSim.Run ok = checked("--scenario", shortScenario().toString(), "--iceberg", icebergWithUnwritableData());
+        WindparkSim.Run run = new WindparkSim.Run(ok.simulator(), ok.scenario(), ok.catalog(), ok.bootstrap(), ok.layout(),
+                ok.partitions(), ok.index(), ok.iceberg(), ok.namespace(), dir);
+        Exception e = assertThrows(Exception.class,
+                () -> WindparkSim.simulate(run, KafScaleClients::admin, KafScaleClients::producer, System.out));
         assertTrue(e instanceof FileSystemException, e.toString());
         assertEquals(1, e.getSuppressed().length, trace(e));
         assertTrue(trace(e.getSuppressed()[0]).contains("wh/tsx/episodes/data"));
+        assertTrue(WindparkSim.causes(e).startsWith(e + "; suppressed "), WindparkSim.causes(e));
     }
 
     @Test
@@ -118,8 +139,9 @@ class WindparkSimEndToEndTest {
         String bootstrap = System.getenv("KAFSCALE_BOOTSTRAP");
         String domain = "wp-" + UUID.randomUUID().toString().substring(0, 8);
         Path index = dir.resolve("index.tsv");
-        SimulationReport r = WindparkSim.run(Map.of("scenario", shortScenario().toString(), "kafscale", bootstrap,
-                "domain", domain, "index", index.toString(), "partitions", "2"));
+        SimulationReport r = WindparkSim.simulate(checked("--scenario", shortScenario().toString(), "--kafscale", bootstrap,
+                "--domain", domain, "--index", index.toString(), "--partitions", "2"), KafScaleClients::admin,
+                KafScaleClients::producer, System.out);
 
         TopicLayout layout = new TopicLayout(domain);
         try (KafkaConsumer<byte[], byte[]> consumer = KafScaleClients.consumer(bootstrap);

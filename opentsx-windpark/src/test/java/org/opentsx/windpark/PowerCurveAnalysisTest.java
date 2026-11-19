@@ -87,6 +87,31 @@ class PowerCurveAnalysisTest {
         assertEquals(800.0, r.bins().get(0).meanPowerKw(), 1e-9, "mean of 600 (the only value) and 1000");
     }
 
+    @Test
+    void anInfiniteValueIsSkippedLikeNaN() {
+        double[] wind = new double[10];
+        double[] power = new double[10];
+        Arrays.fill(wind, 8.0);
+        Arrays.fill(power, 1000.0);
+        wind[3] = Double.POSITIVE_INFINITY;
+        power[5] = Double.NEGATIVE_INFINITY;
+        long t0 = Micros.of(START);
+        long minute = 60_000_000L;
+        Episode w = Episodes.regular(SeriesKeys.of("wind.met.wind_speed", Map.of("turbine", "T01"), "m/s"), t0, minute, wind)
+                .source("test").build();
+        Episode p = Episodes.regular(SeriesKeys.of("wind.turbine.power_active", Map.of("turbine", "T01"), "kW"), t0, minute, power)
+                .source("test").build();
+
+        PowerCurveAnalysis.Result r = PowerCurveAnalysis.analyze(v -> 1000.0, 3000, List.of(w), List.of(p),
+                PowerCurveAnalysis.Settings.defaults());
+
+        assertEquals(1, r.bins().size());
+        PowerCurveAnalysis.Bin b = r.bins().get(0);
+        assertEquals(8.0, b.meanWindMs(), 1e-9);
+        assertEquals(8.0, b.windFromMs(), 1e-9);
+        assertEquals(1000.0, b.meanPowerKw(), 1e-9);
+    }
+
     private static PowerCurveAnalysis.Result analyze(List<Episode> all, String turbine, TurbineType type) {
         List<Episode> wind = all.stream().filter(e -> e.getSeries().getMetric().equals("wind.met.wind_speed")
                 && e.getSeries().getTags().get("turbine").equals(turbine)).toList();

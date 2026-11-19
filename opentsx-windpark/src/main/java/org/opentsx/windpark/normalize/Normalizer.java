@@ -41,14 +41,14 @@ import java.util.TreeSet;
 public final class Normalizer {
 
     public static final byte QUALITY_GOOD = 0;
-    public static final byte QUALITY_IMPLAUSIBLE = 1;
-    public static final byte QUALITY_MISSING = 2;
 
     private final ChannelCatalog catalog;
     private final Park park;
     private final SourceSystem source;
     private final long windowMicros;
     private final Duration episodeDuration;
+    private final byte implausibleCode;
+    private final byte missingCode;
 
     public Normalizer(ChannelCatalog catalog, Park park, Duration episodeDuration, String sourceSystem) {
         this.catalog = catalog;
@@ -60,6 +60,8 @@ public final class Normalizer {
         if (windowMicros <= 0) {
             throw new IllegalArgumentException("episodeDuration must be positive");
         }
+        this.implausibleCode = catalog.qualityCode("IMPLAUSIBLE");
+        this.missingCode = catalog.qualityCode("MISSING");
     }
 
     /** Time zone of the source system's local timestamps (from the catalog). */
@@ -146,10 +148,10 @@ public final class Normalizer {
             value = c.quantize(value);
             byte q = QUALITY_GOOD;
             if (Double.isNaN(value)) {
-                q = QUALITY_MISSING;
+                q = missingCode;
                 missing++;
             } else if (!c.plausible(value)) {
-                q = QUALITY_IMPLAUSIBLE;
+                q = implausibleCode;
                 implausible++;
             }
             SeriesKey key = park.seriesKey(c, r.turbineId(), aggTag);

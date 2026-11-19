@@ -10,5 +10,5 @@ import java.util.Map;
  */
 public record SimulationReport(String scenario, long episodes, long values, List<GroundTruth> groundTruth,
                                Map<String, Double> energyKwh, Map<String, Double> meanWindMs,
-                               Map<String, Map<Integer, Long>> stateSeconds) {
+                               Map<String, Map<Integer, Double>> stateSeconds) {
 }

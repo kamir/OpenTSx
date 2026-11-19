@@ -251,7 +251,7 @@ Simulates a wind park from a scenario: free wind from hourly Weibull means with 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | none |  |  |
-| java | available | `org.opentsx.windpark.sim.WindparkSimulator#run` | bin/opentsx windpark-sim --scenario <file.yaml> runs a scenario once and writes the episodes to KafScale as one sealed bucket (--kafscale), to Iceberg (--iceberg) or to both; --ground-truth <file.json> writes the ground truth. The wind defaults apply when the scenario has no wind block. |
+| java | available | `org.opentsx.windpark.sim.WindparkSimulator#run` | bin/opentsx windpark-sim --scenario <file.yaml> runs a scenario once and writes the episodes to KafScale as one sealed bucket (--kafscale), to Iceberg (--iceberg) or to both; --ground-truth <file.json> writes the ground truth. --sinks auto\|kafscale\|iceberg chooses the sinks; auto follows --kafscale and --iceberg on the command line. The wind defaults apply when the scenario has no wind block. |
 | python | none |  |  |
 | processor | none |  | A run covers the duration of the scenario and ends; nothing writes continuously. |
 | go | none |  |  |
@@ -265,15 +265,15 @@ Simulates a wind park from a scenario: free wind from hourly Weibull means with 
 |---|---|---|---|---|
 | `seed` | integer |  |  | Seed of all random numbers. |
 | `start` | string | required |  | Start instant, aligned to episodeDuration, for example 2026-10-01T00:00:00Z. |
-| `duration` | duration | required |  | Simulated time. |
-| `sampleInterval` | duration | `PT1S` |  | Time step and sampling interval. |
-| `episodeDuration` | duration | `PT10M` |  | Length of one episode. A multiple of sampleInterval. |
+| `duration` | duration | required |  | Simulated time, positive. |
+| `sampleInterval` | duration | `PT1S` |  | Time step and sampling interval, positive. |
+| `episodeDuration` | duration | `PT10M` |  | Length of one episode, positive. A multiple of sampleInterval. |
 | `turbineModel` | enum: GENERIC-3MW, GENERIC-8MW | `GENERIC-3MW` |  | Turbine type of the park (park.turbineModel). |
-| `rows` | integer | `1` | 1 ..  | Rows of the turbine grid (park.rows). |
-| `columns` | integer | `1` | 1 ..  | Turbines per row (park.columns). |
-| `spacingRotorDiameters` | number | `5` |  | Spacing within a row in rotor diameters. |
-| `rowSpacingRotorDiameters` | number | `7` |  | Spacing between rows in rotor diameters. |
-| `wakeDecay` | number | `0.05` |  | Wake decay constant of the Jensen model. |
+| `rows` | integer | required | 1 ..  | Rows of the turbine grid (park.rows). |
+| `columns` | integer | required | 1 ..  | Turbines per row (park.columns). |
+| `spacingRotorDiameters` | number | `5` | 0 ..  | Spacing within a row in rotor diameters. 0 or a missing value takes the default. |
+| `rowSpacingRotorDiameters` | number | `7` | 0 ..  | Spacing between rows in rotor diameters. 0 or a missing value takes the default. |
+| `wakeDecay` | number | `0.05` | 0 ..  | Wake decay constant of the Jensen model. 0 or a missing value takes the default. |
 | `weibullK` | number | `2.0` |  | Shape of the Weibull distribution of hourly mean wind (wind.weibullK). |
 | `weibullC` | number | `9.0` |  | Scale of the Weibull distribution of hourly mean wind. Unit: m/s. |
 | `turbulenceIntensity` | number | `0.1` |  | Standard deviation of the wind relative to its mean. |
@@ -281,8 +281,8 @@ Simulates a wind park from a scenario: free wind from hourly Weibull means with 
 | `directionStdDeg` | number | `15` |  | Standard deviation of the wind direction. Unit: degree. |
 | `diurnalAmplitude` | number | `0.1` |  | Relative day and night change of the mean wind. |
 | `meanTemperatureC` | number | `10` |  | Mean ambient temperature. Unit: degree Celsius. |
-| `operations` | list |  |  | CURTAILMENT (limitKw), FAULT or MAINTENANCE, each with turbines (empty or * for all), offset and duration. |
-| `sensorFaults` | list |  |  | STUCK, DRIFT (ratePerHour), OFFSET (magnitude), SPIKES (magnitude, probability) or GAP, each with turbine, channel, offset and duration. |
+| `operations` | list |  |  | CURTAILMENT (limitKw, required, 0 or more), FAULT or MAINTENANCE, each with turbines of the park (empty or * for all), offset and a positive duration. |
+| `sensorFaults` | list |  |  | STUCK, DRIFT (ratePerHour, required), OFFSET (magnitude, required), SPIKES (magnitude and probability above 0 and at most 1, required) or GAP, each with turbine, a channel metric of the catalog, offset and a positive duration; a parameter of another type is refused. |
 
 Semantics: deterministic; origin SYNTHETIC.
 

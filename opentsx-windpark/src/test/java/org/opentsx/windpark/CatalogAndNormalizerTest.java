@@ -141,13 +141,39 @@ class CatalogAndNormalizerTest {
         assertEquals(Micros.of(Instant.parse("2026-10-01T00:10:00Z")), Micros.of(first.getTEnd()));
         byte[] q = new byte[2];
         first.getQuality().duplicate().get(q);
-        assertArrayEquals(new byte[]{Normalizer.QUALITY_GOOD, Normalizer.QUALITY_IMPLAUSIBLE}, q);
+        assertArrayEquals(new byte[]{Normalizer.QUALITY_GOOD, 1}, q);
         Episode second = r.episodes().get(1);
         assertEquals(10.0, Episodes.values(second)[1]);
         assertEquals(1, r.report().duplicates());
         assertEquals(1, r.report().missing());
         assertEquals("CANONICAL", second.getLabels().get("mapping.status"));
         assertThrows(IllegalArgumentException.class, () -> new Normalizer(catalog, park, Duration.ofMinutes(10), "nope"));
+    }
+
+    @Test
+    void theQualityCodesComeFromTheCatalog() {
+        ChannelCatalog custom = new ChannelCatalog("custom", "1.0.0", catalog.iecEdition(),
+                Map.of(0, "GOOD", 7, "IMPLAUSIBLE", 9, "MISSING"), catalog.channels(), catalog.sources());
+        Normalizer n = new Normalizer(custom, park, Duration.ofMinutes(10), "opentsx-simulator");
+        Instant t0 = Instant.parse("2026-10-01T00:00:00Z");
+        Episode e = n.normalize(List.of(
+                new RawReading("T02", "wind.met.wind_speed", t0, 7.0, null),
+                new RawReading("T02", "wind.met.wind_speed", t0.plusSeconds(1), 80.0, null),
+                new RawReading("T02", "wind.met.wind_speed", t0.plusSeconds(2), Double.NaN, null))).episodes().get(0);
+        byte[] q = new byte[3];
+        e.getQuality().duplicate().get(q);
+        assertArrayEquals(new byte[]{0, 7, 9}, q);
+
+        ChannelCatalog noMissing = new ChannelCatalog("partial", "1.0.0", catalog.iecEdition(),
+                Map.of(0, "GOOD", 1, "IMPLAUSIBLE"), catalog.channels(), catalog.sources());
+        assertEquals("catalog partial: qualityCodes has no MISSING; add a code from 1 to 255 for MISSING",
+                assertThrows(IllegalArgumentException.class,
+                        () -> new Normalizer(noMissing, park, Duration.ofMinutes(10), "opentsx-simulator")).getMessage());
+        ChannelCatalog twice = new ChannelCatalog("twice", "1.0.0", catalog.iecEdition(),
+                Map.of(0, "GOOD", 1, "IMPLAUSIBLE", 2, "MISSING", 5, "MISSING"), catalog.channels(), catalog.sources());
+        assertEquals("catalog twice: qualityCodes has MISSING under 2 and 5; keep one code for MISSING",
+                assertThrows(IllegalArgumentException.class,
+                        () -> new Normalizer(twice, park, Duration.ofMinutes(10), "opentsx-simulator")).getMessage());
     }
 
     private Episode find(List<Episode> episodes, String metric, String aggregation) {

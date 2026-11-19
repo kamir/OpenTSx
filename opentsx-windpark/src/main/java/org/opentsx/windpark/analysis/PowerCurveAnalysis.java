@@ -16,9 +16,9 @@ import java.util.function.DoubleUnaryOperator;
  * Power-curve analysis of one turbine, following the method of bins of IEC 61400-12-1 (simplified: nacelle
  * anemometer, no air-density or site calibration):
  * <ol>
- *   <li>wind speed and active power are averaged over aligned intervals (default 10 minutes), skipping NaN values;
- *       an interval is dropped only when it has no wind or no power value, so a partly covered interval counts with
- *       the mean of the values it has;</li>
+ *   <li>wind speed and active power are averaged over aligned intervals (default 10 minutes), skipping NaN and
+ *       infinite values; an interval is dropped only when it has no wind or no power value, so a partly covered
+ *       interval counts with the mean of the values it has;</li>
  *   <li>the means are binned by wind speed (default 0.5 m/s); per bin: count, mean wind, mean power, standard
  *       deviation and the reference power;</li>
  *   <li>the <b>performance index</b> is produced energy / expected energy over all intervals in which the reference
@@ -137,14 +137,14 @@ public final class PowerCurveAnalysis {
         return new Result(out, intervals, expected == 0 ? Double.NaN : produced / expected, produced, expected, periods);
     }
 
-    /** Mean of the non-NaN values per aligned interval: interval start -> {mean, count}. */
+    /** Mean of the finite values per aligned interval: interval start -> {mean, count}. */
     private static TreeMap<Long, double[]> means(Collection<Episode> episodes, long d) {
         TreeMap<Long, double[]> acc = new TreeMap<>();
         for (Episode e : episodes) {
             long[] ts = Episodes.timestampsMicros(e);
             double[] vs = Episodes.values(e);
             for (int i = 0; i < ts.length; i++) {
-                if (Double.isNaN(vs[i])) {
+                if (!Double.isFinite(vs[i])) {
                     continue;
                 }
                 double[] a = acc.computeIfAbsent(Math.floorDiv(ts[i], d) * d, k -> new double[2]);

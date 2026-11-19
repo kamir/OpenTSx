@@ -1,4 +1,4 @@
-# opentsx-windpark — data-point catalog, normalizer and wind-farm simulator
+# opentsx-windpark: data-point catalog, normalizer and wind-farm simulator
 
 This module captures wind-farm time series, inventories them, normalizes them and stores them as v2 episodes
 ([`opentsx-model`](../opentsx-model)). It also generates reproducible simulated data with known ground truth for
@@ -84,7 +84,10 @@ r.report();                                    // accepted / unmapped / unit err
 * **Values.** The steps run in this order: `scale`/`offset`, then sign inversion, then unit conversion, then quantization to `resolution`.
 * **Time.** Local timestamps are converted to UTC in the source timezone (`n.local(...)`). `END` timestamps are moved to the
   interval start. Aggregates become their own series, tagged `aggregation=mean.PT10M`.
-* **Quality.** Missing values (NaN) get code 2 and implausible values get code 1. The value itself is kept.
+* **Quality.** Missing values (NaN) get the catalog's `MISSING` code and implausible values its `IMPLAUSIBLE` code, 2
+  and 1 in the standard catalog. The value itself is kept. A catalog needs exactly one code from 1 to 255 for each of
+  the two; otherwise the normalizer and the simulator refuse it, for example with
+  `catalog <name>: qualityCodes has no MISSING; add a code from 1 to 255 for MISSING`.
 * **Labels.** Episodes carry the labels `catalog`, `iec`, `source.channel` and `mapping.status`, so a `PROVISIONAL` mapping stays visible downstream.
 
 ## 4. Simulator
@@ -106,23 +109,65 @@ r.report();                                    // accepted / unmapped / unit err
 * **SCADA statistics.** Episodes are 10-minute blocks, and an episode's summary *is* the classic 10-minute SCADA statistic
   (mean/min/max/std).
 
+### Scenario rules
+
+Loading a scenario checks these rules and names the file and the entry that breaks one:
+
+* `duration`, `sampleInterval` and `episodeDuration` are positive.
+* `park.rows` and `park.columns` are 1 or more. `park.spacingRotorDiameters`, `park.rowSpacingRotorDiameters` and
+  `park.wakeDecay` are 0 or more; 0 or a missing value takes the default of 5, 7 and 0.05.
+* Every operation has `type`, `offset` (`PT0S` or later) and a positive `duration`. `CURTAILMENT` needs `limitKw`
+  (0 or more); `FAULT` and `MAINTENANCE` refuse it.
+* Every sensor fault has `type`, `turbine`, `channel`, `offset` and a positive `duration`. `DRIFT` needs `ratePerHour`,
+  `OFFSET` needs `magnitude`, `SPIKES` needs `magnitude` and `probability` (above 0, at most 1). A parameter of
+  another type is refused.
+* Every turbine an operation or sensor fault names exists in the park, and every sensor-fault `channel` is a metric of
+  the catalog. `WindparkSimulator` checks this when it is built.
+
+```text
+opentsx: no-limit.yaml: CURTAILMENT operation at PT1H: limitKw missing; set limitKw to the power limit in kW, 0 or more
+```
+
 ### CLI
+
+Build the module, then run the demo scenario from the repository root. Without a sink the run writes no topic and no
+table:
 
 ```bash
 mvn -q -pl opentsx-windpark -am install -DskipTests
-mvn -q -pl opentsx-windpark exec:java -Dexec.mainClass=org.opentsx.windpark.WindparkSim -Dexec.args="\
-  --scenario opentsx-windpark/scenarios/ostsee-demo.yaml \
-  --kafscale localhost:9092 --domain wind --index wind-index.tsv \
-  --iceberg type=rest,uri=http://localhost:8181,warehouse=s3://lake/ --namespace tsx \
-  --ground-truth ground-truth.json"
+bin/opentsx windpark-sim --scenario opentsx-windpark/scenarios/ostsee-demo.yaml --ground-truth ground-truth.json
 ```
 
-* `--kafscale` writes one sealed bucket (`<scenario>/<start>`, descriptor with seed, park and catalog version) to `tsx.<domain>.*.v2`. Replay it with
-  `ReplayService` and verify it against the manifest checksum.
-* `--iceberg` writes to the `episodes` and `series` tables of `<namespace>`. Any Iceberg catalog properties work (`type=jdbc`, `type=rest`, …).
-* `--catalog` uses your own data-point catalog. `--ground-truth` writes the injected events as JSON.
-* The last Iceberg batch is written when the run closes its clients. A failure of that write or of a close fails the
-  run with exit code 1. When the run has already failed, the close failures appear as `Suppressed:` in its stack trace.
+`bin/opentsx windpark-sim --help` prints every key of the command with its flag and environment variables. The command
+loads its configuration with `OpenTsxConf.load`, so `--conf`, `--properties-file`, `$OPENTSX_CONF_DIR` and the
+`OPENTSX_` variables work ([chapter 18](../docs/user-manual/18-configuration.md)). It logs one line
+`starting windpark-sim: <key>=<value> (<source>), ...` on stderr before it opens a client.
+
+* `--kafscale <bootstrap>` writes one sealed bucket (`<scenario>/<start>`, descriptor with seed, park and catalog
+  version) to `tsx.<domain>.*.v2`. It creates the missing topics with `--partitions` data partitions (default 6).
+  Replay the bucket with `ReplayService` and verify it against the manifest checksum.
+* `--iceberg <props>` writes to the `episodes` and `series` tables of `<namespace>`. The properties need `warehouse`
+  and exactly one of `type` and `catalog-impl`, for example `type=jdbc` or `type=rest`.
+* `--sinks` (key `opentsx.windpark.sinks`) chooses the sinks: `auto` (the default), `kafscale`, `iceberg` or
+  `kafscale,iceberg`. With `auto` a sink is on when `--kafscale` or `--iceberg`, or `--conf` with its key, sets it on
+  the command line. `KAFSCALE_BOOTSTRAP` or `OPENTSX_ICEBERG_PROPERTIES` in the environment adds no sink; name the
+  sink, for example `--sinks kafscale`, to write with a value from the environment or a file.
+* `--catalog` uses your own data-point catalog. `--ground-truth` writes the injected events as JSON after the sinks;
+  a directory, or a file in a directory that does not exist, is refused before a client opens.
+
+Exit codes: 0 success, 1 runtime failure, 2 usage or configuration error. The keys, the required Iceberg properties,
+the ground-truth path, the scenario and the catalog are checked before the command opens a client; Iceberg checks its other catalog
+properties when the store opens. A usage or configuration error prints one line on stderr and creates no topic:
+
+```text
+opentsx: --partitons: unknown option of windpark-sim; did you mean --partitions?
+opentsx: opentsx.iceberg.properties: "type=rest,uri=x" sets no warehouse; add warehouse=<location>, such as warehouse=s3://lake/
+```
+
+The last Iceberg batch is written when the run closes its clients. A failure of that write or of a close fails the run.
+A runtime failure prints one line `opentsx: windpark-sim: <failure>; caused by <cause>` on stderr; when the run has
+already failed, the close failures follow as `; suppressed <failure>`. `--conf opentsx.log.level=debug` also logs the
+stack trace.
 
 The demo scenario has 10 turbines, 6 h at 1 Hz, 9 channels plus state, and 17 ground-truth events. It produces about 3,600 episodes and 2.2 M values.
 
@@ -131,9 +176,13 @@ The demo scenario has 10 turbines, 6 h at 1 Hz, 9 channels plus state, and 17 gr
 * `CatalogAndNormalizerTest` covers the catalog, IEC references, unit conversion, the vendor 10-minute mapping (END timestamp, sign,
   °F) and the unmapped/implausible/duplicate reporting.
 * `SimulatorTest` covers determinism, 10-minute blocks and summaries, the power curve, wakes, operations, sensor faults vs.
-  ground truth, and the 30-day Weibull mean.
+  ground truth, the 30-day Weibull mean, the scenario rules, the catalog's quality codes and the state time at sample
+  intervals of PT0.2S and PT1.5S.
+* `WindparkSimCliTest` runs the command with a mock admin client and producer: an unknown option, a malformed value
+  and a contradiction exit with 2 before any admin call, `--help` prints the generated help, the sinks key decides
+  which clients open, and a runtime failure exits with 1.
 * `WindparkSimEndToEndTest` runs the CLI into Iceberg (JDBC/SQLite catalog), and, when `KAFSCALE_BOOTSTRAP` is set, the CLI into
   KafScale with a verified bucket replay. A last Iceberg batch that cannot be written fails the run, also as a
   suppressed failure on an earlier one. Every client is closed when one close fails.
 * `PowerCurveAnalysisTest` covers the performance index and underperformance against ground truth, and which
-  intervals are left out for missing values.
+  intervals are left out for missing or infinite values.
