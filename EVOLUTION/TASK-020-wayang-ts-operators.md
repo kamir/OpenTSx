@@ -481,7 +481,7 @@ student material reference these implementation and regression paths.
 
 | Criterion | Qualified scope and evidence |
 | --- | --- |
-| B3.1 | `agent_api`: 4 passing tests; `RustSiteAdmissionTest`: 6; `TsxPlanServiceStatusReplayTest`: 2; `RustAgentDaemonIntegrationTest`: 1. All seven endpoints, HTTP 400/401/403/404/409, exact challenge hashing, cold conformance bootstrap, signed CLI and durable cursor recovery execute. |
+| B3.1 | `agent_api`: 4 passing tests; `RustSiteAdmissionTest`: 6; `TsxPlanServiceStatusReplayTest`: 2; `TsxPlanServiceRetirementTest`: 2; `RustAgentDaemonIntegrationTest`: 1. All seven endpoints, HTTP 400/401/403/404/409, exact challenge hashing, cold conformance bootstrap, signed CLI and durable cursor recovery execute. |
 | B3.2 | All 8 exact S5.5 codes execute in `agent_refusals_use_authenticated_envelope_and_exact_codes`; 20 passing `agent` unit tests also cover retained outcomes, lost terminal responses, ACK/cursor recovery, stale versions, unpublished jobs and Stop. |
 | B3.3 | `RustOfflineCatchupIntegrationTest`: 1 passing full-W case, 3,600 Episodes, 2,160,000 values, 36 chunks and 420 partials. After the outage and target-ACK loss, 520 received records deduplicate to 420 final windows, with 0 missing and 0 duplicate windows. |
 | B3.4 | `ssh_launch`: 3 actual process cases and 4 helper tests pass. All 8 actual certificate-forced SSH sessions pass, including strict host verification, fixed configuration, command overrides and exit codes 0/2/3. |

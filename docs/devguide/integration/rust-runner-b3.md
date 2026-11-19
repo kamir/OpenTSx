@@ -150,6 +150,12 @@ An exact already stored terminal status for the current job/version is also
 idempotent after admission expires; changed status bodies still require current
 admission. Current version, qualified identity and certificate-site checks
 remain mandatory, and the retained retry does not repeat the callback.
+Replacement waits for both the previous site's durable `stopped` status and
+its accepted delivery acknowledgement, across every previous site in the job.
+A stopped status alone does not retire the delivery. This keeps the old
+version current while a lost terminal-status response is retried. Once the
+delivery acknowledgement is durable, its exact retry remains valid after a
+later generation is published; stale status requests still receive 409.
 
 The [seven service endpoints and response codes](../../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s53-plan-service-api)
 are shared with the Java plan service. A trusted but unregistered client
@@ -224,6 +230,7 @@ and [cleanup path](https://github.com/openssh/openssh-portable/blob/V_10_2_P1/ss
 | TLS, seven endpoints and 401/403/404/409 | [`agent_api`](../../../rust/tsx-runner/tests/agent_api.rs), [`RustSiteAdmissionTest`](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/site/RustSiteAdmissionTest.java) |
 | Actual CLI cold start, mTLS, cursor, SIGTERM and signed file/stdin replay | [`RustAgentDaemonIntegrationTest`](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java) |
 | Durable exact stopped/failed retries after admission expiry | [`TsxPlanServiceStatusReplayTest`](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceStatusReplayTest.java) |
+| Replacement waits for every previous delivery acknowledgement | [`TsxPlanServiceRetirementTest`](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceRetirementTest.java) |
 | Exact challenge hash, prior evidence and fresh cuts | [`conformance` tests](../../../rust/tsx-runner/src/conformance.rs) |
 | Full W while signal delivery is unavailable, then catch-up and deduplication | [`RustOfflineCatchupIntegrationTest`](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/RustOfflineCatchupIntegrationTest.java) |
 | Forced-command and credential isolation | [`ssh_launch`](../../../rust/tsx-runner/tests/ssh_launch.rs), [`SSH helper regressions`](../../../tools/test_rust_ssh_launch.py) |

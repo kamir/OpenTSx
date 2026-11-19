@@ -369,6 +369,8 @@ submitting its signed report. The guide identifies prior and fresh evidence.
 `agent` receives signed bounded decode-to-statistics plans. It retains outcomes
 before acknowledgement and advances the delivery cursor afterward. Recovery
 retries the original acknowledgement; it does not reactivate the command.
+The driver permits a later job generation only after every previous site
+has a durable stopped status and an accepted delivery acknowledgement.
 Current conformance and qualification still gate new activation. Do not
 replace accepted bytes, configuration or private state to bypass a refusal.
 

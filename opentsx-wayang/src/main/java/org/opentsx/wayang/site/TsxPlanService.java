@@ -106,6 +106,7 @@ public final class TsxPlanService implements AutoCloseable {
         ObjectNode site = state.value.with("sites").with(plan.site());
         ObjectNode deliveries = site.with("deliveries");
         RunnerPlan previousPlan = null;
+        JsonNode previousDelivery = null;
         for (JsonNode item : deliveries) {
             if (item.path("job").asText().equals(plan.job()) && item.path("planVersion").asInt() == plan.planVersion()) {
                 if (!item.path("commandHash").asText().equals(plan.commandHash())) throw new HttpFailure(409, "published command identity conflicts");
@@ -113,14 +114,16 @@ public final class TsxPlanService implements AutoCloseable {
             }
             if (item.path("job").asText().equals(plan.job()) && (previousPlan == null || item.path("planVersion").asInt() > previousPlan.planVersion())) {
                 previousPlan = RunnerPlan.verify(item.path("plan").asText(), driverKey);
+                previousDelivery = item;
             }
         }
         if (previousPlan != null) {
             JsonNode stopped = state.value.path("statuses").path(plan.site()).path(plan.job());
             if (plan.planVersion() < previousPlan.planVersion() || inFlight.containsKey(callbackKey(plan))
                     || !stopped.path("state").asText().equals("stopped")
-                    || stopped.path("planVersion").asInt() != previousPlan.planVersion()) {
-                throw new HttpFailure(409, "plan.busy: the previous assignment has not stopped");
+                    || stopped.path("planVersion").asInt() != previousPlan.planVersion()
+                    || !previousDelivery.path("ack").path("result").asText().equals("accepted")) {
+                throw new HttpFailure(409, "plan.busy: the previous assignment has not retired");
             }
         }
         for (var sites = state.value.path("sites").fields(); sites.hasNext();) {
@@ -132,8 +135,9 @@ public final class TsxPlanService implements AutoCloseable {
             if (previous == null || previous.path("planVersion").asInt() == plan.planVersion()) continue;
             JsonNode stopped = state.value.path("statuses").path(otherSite.getKey()).path(plan.job());
             if (previous.path("planVersion").asInt() > plan.planVersion() || inFlight.containsKey(otherSite.getKey() + "|" + plan.job())
-                    || !stopped.path("state").asText().equals("stopped") || !stopped.path("planVersion").equals(previous.path("planVersion"))) {
-                throw new HttpFailure(409, "plan.busy: the previous job generation has not stopped");
+                    || !stopped.path("state").asText().equals("stopped") || !stopped.path("planVersion").equals(previous.path("planVersion"))
+                    || !previous.path("ack").path("result").asText().equals("accepted")) {
+                throw new HttpFailure(409, "plan.busy: the previous job generation has not retired");
             }
         }
         long previous = SiteJson.decimal(site.path("sequence").asText("0"), false);

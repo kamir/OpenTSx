@@ -56,6 +56,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   binds actual executable, vector, broker-protocol and producer-placement
   evidence. Durable delivery outcomes and acknowledged aggregate outboxes
   support offline catch-up with deterministic key/revision deduplication.
+  Later job generations wait for every previous site's durable stopped status
+  and accepted delivery acknowledgement, preserving recovery after lost responses.
   Certificate-forced SSH launch fixes the executable and local configuration.
   Acceptance failures retain the actual unexpected server exit status.
   OpenSSH authentication-attempt exit 5 is accepted only for verified certificate denials.

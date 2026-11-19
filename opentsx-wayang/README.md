@@ -99,6 +99,8 @@ same Java plan service with explicitly qualified bounded Rust statistics.
 conformance selects track B. `admitAggregateInventory` requires current
 conformance and the exact signed membership/scopes before admitting Rust
 partials. The JVM site executor refuses Rust assignments.
+The service publishes a later job generation only after every previous site
+has a durable stopped status and an accepted delivery acknowledgement.
 The Rust process retains local authority, TLS paths, permitted jobs and
 owner-local qualification. It executes decode-to-statistics only, retains the
 site outbox during signal outages and forwards complete SOE records and

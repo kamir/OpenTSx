@@ -77,6 +77,10 @@ ARMv7 vector execution is still required by
 
 ## Trace qualified bounded Rust site operation
 
+Use the [retirement acknowledgement regression](../../opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceRetirementTest.java)
+to distinguish a stopped status from a retired delivery. A later generation
+requires every previous site's accepted delivery acknowledgement as well.
+
 Use the [B3 guide](../devguide/integration/rust-runner-b3.md) with the existing
 source, sink, checkpoint, execution-assignment and statistics lessons. Keep
 their Java starters, numerical expected values and processor defaults intact.

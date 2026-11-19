@@ -1372,7 +1372,8 @@
         "Run the Rust worker and checkpoint owner-drop regressions with inherited descriptors retained. Verify exclusion while the owner lives and immediate reacquisition after it closes.",
         "Trace the B3 durable outcome before acknowledgement and delivery cursor after acknowledgement; retry retained acknowledgements after conformance expiry without another activation.",
         "Inspect the B3 private outbox and forwarder state after target-acknowledgement loss and require the same command, qualified runtime and immutable cut on restart.",
-        "Trace the actual main-command daemon cold start without manual conformance, verify the acknowledged delivery cursor and SIGTERM exit, then replay the retained outcome through signed file and standard-input commands."
+        "Trace the actual main-command daemon cold start without manual conformance, verify the acknowledged delivery cursor and SIGTERM exit, then replay the retained outcome through signed file and standard-input commands.",
+        "Lose a terminal-status response, keep the job generation current until its delivery acknowledgement is durable, then replay that acknowledgement after a driver restart."
       ],
       "starter": {
         "language": "java",
@@ -1398,7 +1399,8 @@
         "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
         "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration.",
         "Rust file locks release explicitly in the acquiring process; inherited descriptors cannot postpone restart or authorize a copied owner to unlock its parent. These lock lifetimes do not change the Java starter or make its checkpoint state portable.",
-        "A retained B3 acknowledgement can recover after conformance expires, while fresh activation still needs current qualification and job-bound conformance. Its private state ABI is separate from the Java starter checkpoint and local B2 catalog state."
+        "A retained B3 acknowledgement can recover after conformance expires, while fresh activation still needs current qualification and job-bound conformance. Its private state ABI is separate from the Java starter checkpoint and local B2 catalog state.",
+        "A stopped status alone does not retire a delivery; every previous site also needs a durable accepted acknowledgement before the next job generation."
       ],
       "references": {
         "manual": [
@@ -1480,7 +1482,8 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustOfflineCatchupIntegrationTest.java",
           "rust/tsx-runner/src/forwarder.rs",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceStatusReplayTest.java"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceStatusReplayTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceRetirementTest.java"
         ],
         "vectors": []
       }
@@ -1510,7 +1513,8 @@
         "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output.",
         "Bind the B3 signed bounded assignment to its exact runtime, artifact, catalog/state ABI, local jobs, complete cuts, membership and scopes; reject a JVM execution attempt for that Rust assignment.",
         "Compare all eight S5.5 refusals with TLS endpoint errors, then inspect certificate-forced SSH stop, refusal and runtime-failure exits under the fixed local configuration.",
-        "Trace the actual main-command daemon cold start without manual conformance, verify the acknowledged delivery cursor and SIGTERM exit, then replay the retained outcome through signed file and standard-input commands."
+        "Trace the actual main-command daemon cold start without manual conformance, verify the acknowledged delivery cursor and SIGTERM exit, then replay the retained outcome through signed file and standard-input commands.",
+        "Stop a prior version without acknowledging its delivery and observe plan.busy; acknowledge every previous site before publishing the next job generation."
       ],
       "starter": {
         "language": "java",
@@ -1535,7 +1539,8 @@
         "The JVM wrapper source-topic gate does not change the shared offline assignment validator or the Rust contract.",
         "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
         "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration.",
-        "Passing the offline assignment validator does not qualify signed B3 execution. The driver cannot supply broker addresses, role keys, policy or state paths; signed B3 admits only bounded decode-to-statistics."
+        "Passing the offline assignment validator does not qualify signed B3 execution. The driver cannot supply broker addresses, role keys, policy or state paths; signed B3 admits only bounded decode-to-statistics.",
+        "An accepted delivery acknowledgement and a stopped status form the replacement boundary; losing a response must not make the previous generation unreachable."
       ],
       "references": {
         "manual": [
@@ -1607,7 +1612,8 @@
           "tools/test_rust_ssh_launch.py",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/RustSiteAdmissionTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceStatusReplayTest.java"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceStatusReplayTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceRetirementTest.java"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/execution-contracts.v1.json"

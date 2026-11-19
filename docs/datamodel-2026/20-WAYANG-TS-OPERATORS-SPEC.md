@@ -946,6 +946,17 @@ unsent acknowledgement and a lost response after the service confirmed it. The
 acknowledgement still requires the original site identity and exact command
 hash. New activation requires valid job-bound conformance.
 
+A later job generation MUST NOT be published until every previous site has a
+durable `stopped` status and an accepted acknowledgement for its previous
+delivery. An active callback still blocks replacement. A stopped status alone
+does not retire that delivery: its HTTP response can be lost while the runtime
+retains the terminal status for retry. Keeping that version current lets the
+runtime finish the exact status retry before acknowledging the delivery.
+After the accepted acknowledgement is durable, its identical retry MUST remain
+idempotent even when the response was lost and a later generation is published.
+The retry retains the original site, sequence and command identity. Stale status
+requests still receive `409`.
+
 The agent SHOULD poll `GET .../plans` every 30 s and MUST back off to at most once per 5 min while the driver is
 unreachable.
 

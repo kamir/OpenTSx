@@ -33,6 +33,8 @@ defines `agent --config <file>`, `conform --config <file> --job <job>` and
 Its signed fragment admits only `decode.avro-soe` followed by
 `stats.welford-ddsketch`, alpha 0.01 and tumbling windows. A Java
 executor cannot execute a Rust assignment.
+Before publishing a later generation, the driver requires every previous
+site's durable stopped status and accepted delivery acknowledgement.
 
 Local configuration supplies separate plan/report role keys, TLS paths,
 permitted jobs, site/signal bindings, topic policy, a private state directory,

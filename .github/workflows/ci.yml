@@ -811,6 +811,7 @@ jobs:
               "site.ConformanceHandshakeTest": 13,
               "site.RustSiteAdmissionTest": 6,
               "site.TsxPlanServiceStatusReplayTest": 2,
+              "site.TsxPlanServiceRetirementTest": 2,
               "site.SiteStatusTest": 5,
               "TsxVectorVectorsTest": 13,
               "TsxVectorIntegrationTest": 1,
@@ -828,6 +829,11 @@ jobs:
               if int(suite.attrib["tests"]) < minimum or any(int(suite.attrib[k]) for k in ("failures", "errors", "skipped")):
                   raise SystemExit(f"{name} is missing, skipped or failed")
               executed = {case.attrib["name"].split("(", 1)[0] for case in suite.findall("testcase")}
+              if name == "site.TsxPlanServiceRetirementTest" and (int(suite.attrib["tests"]) != 2 or executed != {
+                  "replacementWaitsForTheDurableDeliveryAckAndLostRepliesRemainRecoverable",
+                  "aNewGenerationWaitsForEveryPreviousSitesDeliveryAcknowledgement",
+              }):
+                  raise SystemExit("the delivery retirement cases did not execute exactly once")
               if name == "site.TsxPlanServiceStatusReplayTest" and (int(suite.attrib["tests"]) != 2 or executed != {
                   "stoppedRetryAfterConformanceExpiryUsesTheDurableOutcomeOnce",
                   "failedRetryAfterConformanceExpiryUsesTheDurableOutcomeOnce",
