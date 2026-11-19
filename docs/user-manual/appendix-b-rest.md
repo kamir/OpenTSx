@@ -21,10 +21,10 @@ Base URL: `http://<host>:<port>`. Times are ISO-8601 instants (UTC).
 | `GET /v1/systems/{id}/runs/{run}/series` | `keys=atom.port,...`; any other parameter is a 400 | the series of a run, one value per step, with the origin of each |
 | `GET /v1/systems/{id}/runs/{run}/compare` | `base=<run>` (default: the reference); any other parameter is a 400 | two runs next to each other: the KPIs of the scenario with difference and verdict, what is left in the stores at the end, and the series the scenario compares over the whole horizon |
 | `POST /v1/systems/{id}/signals` | JSON `{bindings: [{signal, grade, source}]}` | as the GET, with the sources of a working copy laid over the system document; such a source is marked `workingCopy`. Reads only |
-| `POST /v1/systems/{id}/generate` | JSON `{signal, from, to, bindings?}`; header `X-OpenTSx-Run-Token` when the server has a run token | runs the demo generator the signal is bound to over the period and writes the series to `tsx.<domain>.synthetic.v2`, nowhere else. Needs `--kafscale` and `--dag-runs true` |
+| `POST /v1/systems/{id}/generate` | JSON `{signal, from, to, bindings?}`; header `X-OpenTSx-Run-Token` when the server has a run token | runs the demo generator the signal is bound to over the period and writes the series to `tsx.<domain>.synthetic.v2`, nowhere else. Needs `--kafscale` and `--dag-runs true`; 503 when the broker does not take the series |
 | `GET /v1/dags` | none | the DAGs of the domain: what was deployed or stopped (`tsx.<domain>.dags.v1`) and what the vector processor reports per sink (`tsx.<domain>.dag-status.v1`); `writes` says whether this server deploys and stops DAGs. 404 unless the server runs with `--kafscale` |
-| `POST /v1/dags/deploy` | body: the DAG as YAML (`opentsx.dag.v1`; `opentsx.dag.v2` when it has series sinks), at most 262144 bytes; optional header `X-OpenTSx-By` | writes the DAG to the control topic `tsx.<domain>.dags.v1` and answers `{dag, state, sinks}`; 404 unless the server runs with `--kafscale` and `--dag-runs true`; 401 without the run token when the server has one (header `X-OpenTSx-Run-Token`); 400 `the DAG is not valid YAML: <parser message>`, or 400 with the reason when the DAG cannot be run; 413 over 262144 bytes |
-| `POST /v1/dags/stop?name=<dag>` | `name`; any other parameter is a 400 | `{dag, state}` with `state` `stopped`; 404 and 401 as for deploy |
+| `POST /v1/dags/deploy` | body: the DAG as YAML (`opentsx.dag.v1`; `opentsx.dag.v2` when it has series sinks), at most 262144 bytes; optional header `X-OpenTSx-By` | writes the DAG to the control topic `tsx.<domain>.dags.v1` and answers `{dag, state, sinks}`; 404 unless the server runs with `--kafscale` and `--dag-runs true`; 401 without the run token when the server has one (header `X-OpenTSx-Run-Token`); 400 `the DAG is not valid YAML: <parser message>`, or 400 with the reason when the DAG cannot be run; 413 over 262144 bytes; 503 when the broker does not take the record |
+| `POST /v1/dags/stop?name=<dag>` | `name`; any other parameter is a 400 | `{dag, state}` with `state` `stopped`; 404, 401 and 503 as for deploy |
 | `POST /v1/segments` | `strategy` (`FIXED_DURATION`, `FIXED_COUNT`, `FEATURE_EXTREMUM`, `FEATURE_THRESHOLD`), `params` (see below); `metric`, `tags`, `series`, `from`, `to` | episodes |
 
 `series` is a comma-separated list of series ids in every endpoint that takes it.
@@ -135,8 +135,8 @@ offset: 595 is out of range; expected a whole number from 0 to 590, so that 10 v
 
 `error` is the reason in words. `type` is one of `bad_request`, `not_found`, `method_not_allowed`, `too_large`,
 `unauthorized`, `forbidden`, `unavailable` and `internal`. Branch on `type`, not on the text. The retrieval server
-answers the six types in the table below, never `forbidden` or `unavailable`. The event bridge of `opentsx-twin-live`
-uses the same body and also answers `unavailable`.
+answers the seven types in the table below, never `forbidden`. The event bridge of `opentsx-twin-live` uses the same
+body and answers `unavailable` too.
 
 | Status | `type` | When |
 |--------|--------|------|
@@ -146,6 +146,7 @@ uses the same body and also answers `unavailable`.
 | `405` | `method_not_allowed` | a known path with a method it does not take; the `Allow` header lists the methods it takes |
 | `413` | `too_large` | a `POST /v1/patterns/search`, `/v1/episodes/similar`, `/v1/segments` or `/v1/systems/{id}/...` request with a body over 262144 bytes |
 | `500` | `internal` | a fault in the server; the body is always `{"error":"internal error","type":"internal"}` |
+| `503` | `unavailable` | the broker did not take the write of `POST /v1/dags/deploy`, `POST /v1/dags/stop` or `POST /v1/systems/{id}/generate`; the body is always `{"error":"cannot reach the broker; try again","type":"unavailable"}` and names no broker address. Send the request again |
 
 A POST body that is not valid JSON is a 400 with the parser message, for example the body `{"pattern":[1,2`:
 
@@ -165,9 +166,10 @@ Allow: GET
 {"error":"DELETE /v1/episodes: method not allowed; expected GET","type":"method_not_allowed"}
 ```
 
-A 500 writes one line at ERROR to the log of the server (stderr), with the method, the path and the exception with
-its causes. The stack trace is logged at DEBUG only:
+A 500 or a 503 writes one line at ERROR to the log of the server (stderr), with the method, the path and the
+exception with its causes. For a 503 the causes name the topic and the error of the Kafka client. The stack trace is
+logged at DEBUG only:
 
 ```text
-request failed method=<method> path=<path> status=500 cause=<exception>; caused by <exception>
+request failed method=<method> path=<path> status=<500 or 503> cause=<exception>; caused by <exception>
 ```

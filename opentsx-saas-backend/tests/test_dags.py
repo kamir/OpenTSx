@@ -111,6 +111,7 @@ def test_the_reason_of_a_refused_dag_reaches_the_user(retrieval):
                               "DAG_RUN_TOKEN must equal OPENTSX_DAG_RUN_TOKEN of the retrieval server"),
     (404, 503, "unavailable", "retrieval server: does not deploy DAGs; it needs --kafscale and --dag-runs true"),
     (500, 502, "unavailable", "retrieval server: answered HTTP 500; see the log of the backend"),
+    (503, 503, "unavailable", "retrieval server: cannot reach the broker; try again"),
 ])
 def test_trouble_of_the_installation_is_not_reported_as_the_users_fault(retrieval, caplog, upstream, expected, kind, text):
     retrieval["status"] = upstream

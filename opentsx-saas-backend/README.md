@@ -315,6 +315,7 @@ The texts towards the retrieval server:
 | `503` | `retrieval server: refused the run token of this installation; DAG_RUN_TOKEN must equal OPENTSX_DAG_RUN_TOKEN of the retrieval server` |
 | `503` | `retrieval server: does not deploy DAGs; it needs --kafscale and --dag-runs true` |
 | `503` | `retrieval server: does not offer this route or system; see the log of the backend` |
+| `503` | `retrieval server: cannot reach the broker; try again` (the retrieval server answered 503: the broker did not take a deploy, a stop or a generate) |
 | `503` | `RETRIEVAL_URL: not set; this installation deploys no DAGs` |
 | `503` | `RETRIEVAL_URL: not set; this installation runs no generators` |
 

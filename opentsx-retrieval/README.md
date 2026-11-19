@@ -124,8 +124,10 @@ for example `limit: "abc" is not an int; expected a whole number from 1 to 20000
 `POST /v1/episodes/similar` and `POST /v1/patterns/search`. A known path with a method it does not take is a 405 with
 an `Allow` header; any other path is a 404 `no such endpoint: <path>`. A fault in the server is a 500
 `internal error` and one ERROR line `request failed method=<method> path=<path> status=500 cause=<causes>` in the log;
-the stack trace is logged at DEBUG. The statuses and types are in
-[Appendix B](../docs/user-manual/appendix-b-rest.md).
+the stack trace is logged at DEBUG. A write the broker does not take (`POST /v1/dags/deploy`, `POST /v1/dags/stop`,
+`POST /v1/systems/{id}/generate`) is a 503 `cannot reach the broker; try again` with type `unavailable`; the answer
+names no broker address, and the ERROR line `request failed ... status=503 cause=<causes>` names the topic and the
+error of the Kafka client. The statuses and types are in [Appendix B](../docs/user-manual/appendix-b-rest.md).
 
 ### Vector topics
 
@@ -195,6 +197,25 @@ or a DAG the processor would refuse exits with code 2 and writes nothing. A runt
   expected an ISO-8601 duration from PT0.000001S to PT2562047H47M16.854775807S, such as PT60S`.
 * An error while the processor applies a deployment or a stop, such as a status record it cannot send, ends the
   processor with that error. Started again, it reads the control topic from the beginning.
+* A sink whose checkpoint lies before the log start (the processor was down longer than retention) reads on from the
+  log start. The status of the sink counts the records it lost in `lostToRetention`, which the checkpoint keeps, and
+  the log has one WARN line per partition:
+  `retention deleted records before the sink read them; reading on from the log start dag=<dag> sink=<vector> topic=<topic> partition=<n> saved=<offset> logStart=<offset> lost=<n>`.
+* A record on the control topic that is no `opentsx.dag-control.v1` record with a `dag`, a record without a value
+  included, is ignored and counted in `ignoredControlRecords` of the status of every sink. The first one is logged
+  at WARN with topic, partition and offset.
+* The processor logs one line per event: `sink deployed`, `dag stopped` and `final checkpoint written` at INFO;
+  `dag refused`, `control topic cannot be read now` (and `control topic readable again` at INFO) and
+  `status record not sent` (and `status records are sent again` at INFO) at WARN. When a stopped or replaced DAG
+  leaves its checkpoint behind, the WARN line `checkpoint not removed; delete it by hand file=<path> cause=<causes>`
+  names the file to delete. A failed sink logs
+  `sink failed; the next try is in <duration> dag=<dag> sink=<vector> cause=<causes>` at ERROR for every failed try;
+  with `OPENTSX_LOG_LEVEL=debug` the stack trace follows once per distinct failure.
+* On SIGTERM the processor logs `stopping; waiting for the final checkpoints wait=PT1M`, one
+  `final checkpoint written dag=<dag> sink=<vector> records=<n> positions=<topic>-<partition>:<offset>,...` per sink
+  with unsaved progress, and `stopped`. When it has not ended after 60 s, the WARN line
+  `the processor did not stop in time; the final checkpoints may be missing wait=PT1M` follows, and the next start
+  repeats what was read since the last checkpoint.
 
 Limits: one processor per domain, no idle timeout for a series that falls silent, vectors on source series only.
 The rules are in `docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md`, section 5b.
@@ -205,7 +226,7 @@ The rules are in `docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md`, secti
 
 | Part | Content |
 |------|---------|
-| `source` | `kind` (`kafscale`, `iceberg`, `demo`), `domain`, topic names by role, `truncated` when the store holds only a part |
+| `source` | `kind` (`kafscale`, `iceberg`, `demo`), `domain`, topic names by role, `truncated` when the store holds only a part. With `--kafscale` also `dagRuns`, `dagRunAuth`, `vectorTopics`, `unreadableVectorTopics` (vector topics the last read could not get), the counts of skipped records `undecodable`, `lostToRetention`, `droppedVectorRows`, `droppedControlRecords` and `droppedStatusRecords`, and `refreshFailures` (refreshes that failed since the last one that worked) |
 | `totals` | series, episodes, samples, time range, scenario names found in the labels |
 | `series[]` | `seriesId`, `metric`, `tags`, `unit`, episodes, samples, `from`, `to`, `intervalMicros`, `min`, `mean`, `max`, `missing`, `labels` (distinct values per episode label, at most 8), `marks` |
 | `scenario`, `channels` | the files given with `--scenario` and `--catalog`, unchanged |
@@ -246,10 +267,23 @@ problems, so it generates nothing) are checked before a store,
 a client or the port opens. A usage or configuration error exits with code 2 and one line on stderr, for example
 `opentsx: --prot: unknown option of retrieval-server; did you mean --port?`; a failure while the store opens or the
 port is bound exits with code 1. The log starts with one `starting retrieval-server: <key>=<value> (<source>), ...`
-line, the run token as `******`, and one `listening on <address>:<port>, source <source>` line.
+line, the run token as `******`, and ends the start with one `listening on <address>:<port>, source <source>` line.
+With `--systems` it logs one `system loaded system=<id> signals=<n> problems=<n>` line per document and, when a
+document has problems, one WARN line
+`system documents have problems; GET /v1/systems/<id>/signals lists them systems=<id>,... problems=<n>`; the problems
+themselves are logged at DEBUG. On SIGTERM the server logs `stopping port=<port>`, closes the port and the KafScale
+feed, and logs `stopped`.
 
 With `--kafscale` the server reads `tsx.<domain>.episodes.v2` into memory and follows the topic. It uses manual
-assignment without a consumer group and writes nothing. Loading stops at `--max-episodes`. `--scenario <file>` and
+assignment without a consumer group and writes nothing. Loading stops at `--max-episodes`. The first read logs
+`feed loaded topic=<topic> episodes=<n> truncated=<true|false> vectorTopics=<topic>,... <counts>`, and a refresh that
+added episodes or changed a count logs `feed refreshed episodes=<n> <counts>`, where `<counts>` is
+`undecodable=<n> lostToRetention=<n> droppedVectorRows=<n> droppedControlRecords=<n> droppedStatusRecords=<n>`. The
+first dropped vector row, control record or status record of a partition is logged at WARN
+(`record dropped and counted in <counter>; ...` with topic, partition and offset). A topic that cannot be read is
+logged at WARN when the failure starts and at INFO when it ends; a refresh that fails is logged
+(`feed refresh failed`, ERROR when the cause is an Error) and counted in `refreshFailures`, and the next refresh tries
+again. `--scenario <file>` and
 `--catalog <file>` (YAML) work with every source and are handed out in the inventory.
 
 Use it from Python:

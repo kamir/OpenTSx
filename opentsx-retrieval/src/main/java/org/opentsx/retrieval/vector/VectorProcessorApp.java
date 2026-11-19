@@ -26,6 +26,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -211,21 +212,41 @@ public final class VectorProcessorApp {
         });
         AtomicBoolean stop = new AtomicBoolean();
         CountDownLatch ended = new CountDownLatch(1);
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            stop.set(true);
-            try {
-                // wait for the final checkpoints, not for the main thread: after a failed run its System.exit waits for this hook
-                ended.await(60, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }));
-        log.info("vector processor for domain {}, state in {}", layout.domain(), state.toAbsolutePath());
+        Runtime.getRuntime().addShutdownHook(new Thread(stopping(() -> stop.set(true), ended, HOOK_WAIT, log)));
+        log.info("vector processor started domain={} state={}", layout.domain(), state.toAbsolutePath());
         try {
             p.run(stop::get);
         } finally {
             ended.countDown();
         }
+    }
+
+    /** How long the shutdown hook waits for the final checkpoints. */
+    static final Duration HOOK_WAIT = Duration.ofSeconds(60);
+
+    /**
+     * The shutdown hook: asks the processor to stop and waits at most {@code wait} for it to end. The processor logs
+     * the final checkpoint of every sink; the hook logs {@code stopped}, or a WARN when the wait ran out. After a run
+     * that already ended, on a failure that exits, there is nothing to stop and it logs nothing.
+     */
+    static Runnable stopping(Runnable stop, CountDownLatch ended, Duration wait, Logger log) {
+        return () -> {
+            if (ended.getCount() == 0) {
+                return;
+            }
+            log.info("stopping; waiting for the final checkpoints wait={}", wait);
+            stop.run();
+            try {
+                // wait for the final checkpoints, not for the main thread: after a failed run its System.exit waits for this hook
+                if (ended.await(wait.toMillis(), TimeUnit.MILLISECONDS)) {
+                    log.info("stopped");
+                } else {
+                    log.warn("the processor did not stop in time; the final checkpoints may be missing wait={}", wait);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        };
     }
 
     private static int written(PrintStream out, PrintStream err) {

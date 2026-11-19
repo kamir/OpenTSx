@@ -21,6 +21,8 @@ import org.opentsx.model.Micros;
 import org.opentsx.model.OpenTsxAvro;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.retrieval.clean.SeriesStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -31,15 +33,19 @@ import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HexFormat;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
@@ -61,6 +67,9 @@ import java.util.regex.Pattern;
  *   the last checkpoint; readers take the later record per key and tick, and the values are the same. A checkpoint
  *   that cannot be read fails the runner and stays as it is.</li>
  *   <li><b>Status</b> per runner goes to {@link TopicLayout#dagStatus()}.</li>
+ *   <li><b>Log</b>: deployments and stops at INFO, a refused DAG and a control topic that cannot be read at WARN, a
+ *   failed sink at ERROR with the cause chain; the stack trace of a failure at DEBUG, once per distinct failure of a
+ *   sink.</li>
  * </ul>
  *
  * <p>Exactly one processor per domain: the runners assign all partitions themselves, there is no consumer group.
@@ -71,6 +80,8 @@ public final class VectorProcessor implements AutoCloseable {
     public static final String STATUS_SCHEMA = "opentsx.dag-status.v1";
     /** Name of a DAG: the {@code dag:} of its document and the key of its control records. */
     public static final Pattern DAG_NAME = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]*");
+
+    private static final Logger LOG = LoggerFactory.getLogger(VectorProcessor.class);
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory());
@@ -90,6 +101,12 @@ public final class VectorProcessor implements AutoCloseable {
     /** Producer of the status records. Replaced when a send fails, so reporting survives a producer that got stuck. */
     private Producer<String, byte[]> statusProducer;
     private volatile boolean statusBroken;
+    /** Whether the last status record the broker answered for was refused; set and read on the producer thread. */
+    private final AtomicBoolean statusFailing = new AtomicBoolean();
+    /** Records on the control topic that are no control record; reported in the status of every sink. */
+    private long ignoredControlRecords;
+    /** The cause chain of the failure under way while the control topic cannot be read; null while it can. */
+    private String controlFailure;
     private final TopicLayout layout;
     private final Path stateDir;
     private final Timing timing;
@@ -198,6 +215,12 @@ public final class VectorProcessor implements AutoCloseable {
         statusProducer.send(new ProducerRecord<>(layout.dagStatus(), key, value), (meta, error) -> {
             if (error != null) {
                 statusBroken = true;
+                if (statusFailing.compareAndSet(false, true)) {
+                    LOG.warn("status record not sent; the next one goes through a new producer topic={} key={} cause={}",
+                            layout.dagStatus(), key, causes(error));
+                }
+            } else if (statusFailing.compareAndSet(true, false)) {
+                LOG.info("status records are sent again topic={}", layout.dagStatus());
             }
         });
     }
@@ -250,21 +273,34 @@ public final class VectorProcessor implements AutoCloseable {
                 control = new LogTail(controlConsumer, layout.dags(), Duration.ofSeconds(30));
             }
             control.poll(r -> {
+                JsonNode n = null;
                 try {
-                    JsonNode n = JSON.readTree(r.value());
-                    if (CONTROL_SCHEMA.equals(n.path("schema").asText()) && n.hasNonNull("dag")) {
-                        latest.put(n.path("dag").asText(), n);
-                    }
+                    n = r.value() == null ? null : JSON.readTree(r.value());
                 } catch (IOException e) {
-                    // not a control record: ignore
+                    // no JSON: counted below
+                }
+                if (n != null && CONTROL_SCHEMA.equals(n.path("schema").asText()) && n.hasNonNull("dag")) {
+                    latest.put(n.path("dag").asText(), n);
+                } else if (++ignoredControlRecords == 1) {
+                    LOG.warn("control record ignored and counted in ignoredControlRecords; later ones are only counted"
+                            + " topic={} partition={} offset={}", r.topic(), r.partition(), r.offset());
                 }
             });
+            if (controlFailure != null) {
+                controlFailure = null;
+                LOG.info("control topic readable again topic={}", layout.dags());
+            }
         } catch (RuntimeException e) {
             // a refusal, or the time-out of the read, which LogTail reports as IllegalStateException
             if (!Patience.isRefusal(e) && !(e instanceof IllegalStateException)) {
                 throw e;
             }
-            System.err.println("vector processor: the control topic cannot be read now: " + e.getMessage());
+            String cause = causes(e);
+            if (!cause.equals(controlFailure)) {
+                controlFailure = cause;
+                LOG.warn("control topic cannot be read now; the sinks that run go on topic={} cause={}", layout.dags(), cause);
+                LOG.debug("stack trace of the failure topic={}", layout.dags(), e);
+            }
         }
         latest.forEach(this::apply);
     }
@@ -288,7 +324,7 @@ public final class VectorProcessor implements AutoCloseable {
         });
         deployed.put(dag, hash);
         if (!deploy) {
-            System.out.println("vector processor: " + dag + " stopped");
+            LOG.info("dag stopped dag={}", dag);
             return;
         }
         try {
@@ -298,12 +334,12 @@ public final class VectorProcessor implements AutoCloseable {
             plan.series().forEach(job -> sinks.add(new SeriesSink(job, avro)));
             for (Sink sink : sinks) {
                 runners.put(dag + "/" + sink.name(), new Runner(sink, hash));
-                System.out.println("vector processor: " + dag + "/" + sink.name() + " deployed, writes " + sink.topic());
+                LOG.info("sink deployed dag={} sink={} kind={} topic={}", dag, sink.name(), sink.kind(), sink.topic());
             }
         } catch (IllegalArgumentException | IOException e) {
             deployed.put(dag, "");
             reportRefusal(dag, hash, e.getMessage());
-            System.err.println("vector processor: " + dag + " refused: " + e.getMessage());
+            LOG.warn("dag refused dag={} cause={}", dag, causes(e));
         }
     }
 
@@ -505,6 +541,10 @@ public final class VectorProcessor implements AutoCloseable {
         Work stream;
         long records;
         long undecodable;
+        /** Records that retention deleted between the checkpoint and the start of this runner; kept in the checkpoint. */
+        long lostToRetention;
+        /** The cause chain of the last failure whose stack trace was logged. */
+        String traced;
         long lastCheckpoint = nanoTime.getAsLong();
         long lastStatus;
         long retryAt;
@@ -577,10 +617,18 @@ public final class VectorProcessor implements AutoCloseable {
             Map<TopicPartition, Long> end = job.fromStart() ? Map.of() : consumer.endOffsets(tps, Duration.ofSeconds(30));
             consumer.assign(tps);
             records = saved == null ? 0 : saved.path("records").asLong();
+            lostToRetention = saved == null ? 0 : saved.path("lostToRetention").asLong();
             for (TopicPartition tp : tps) {
                 long from;
                 if (saved != null) {
-                    from = Math.max(begin.get(tp), saved.path("positions").path(tp.topic() + "|" + tp.partition()).asLong(0));
+                    long position = saved.path("positions").path(tp.topic() + "|" + tp.partition()).asLong(0);
+                    from = Math.max(begin.get(tp), position);
+                    if (from > position) {
+                        lostToRetention += from - position;
+                        LOG.warn("retention deleted records before the sink read them; reading on from the log start dag={}"
+                                        + " sink={} topic={} partition={} saved={} logStart={} lost={}", job.dag(), job.name(),
+                                tp.topic(), tp.partition(), position, from, from - position);
+                    }
                 } else {
                     from = job.fromStart() ? begin.get(tp) : end.get(tp);
                 }
@@ -619,7 +667,8 @@ public final class VectorProcessor implements AutoCloseable {
          */
         void snapshot() {
             ObjectNode n = JSON.createObjectNode();
-            n.put("dag", job.dag()).put("vector", job.name()).put("specHash", hash).put("records", records);
+            n.put("dag", job.dag()).put("vector", job.name()).put("specHash", hash).put("records", records)
+                    .put("lostToRetention", lostToRetention);
             ObjectNode pos = n.putObject("positions");
             new TreeMap<>(positionsByName()).forEach(pos::put);
             n.set("stream", stream.state());
@@ -705,8 +754,12 @@ public final class VectorProcessor implements AutoCloseable {
             state = "failed";
             error = e.getMessage() == null ? e.toString() : e.getMessage();
             retryAt = nanoTime.getAsLong() + timing.retryAfter().toNanos();
-            System.err.println("vector processor: " + job.dag() + "/" + job.name() + " failed, next try in "
-                    + timing.retryAfter().toSeconds() + " s: " + error);
+            String cause = causes(e);
+            LOG.error("sink failed; the next try is in {} dag={} sink={} cause={}", timing.retryAfter(), job.dag(), job.name(), cause);
+            if (!cause.equals(traced)) {
+                traced = cause;
+                LOG.debug("stack trace of the sink failure dag={} sink={}", job.dag(), job.name(), e);
+            }
             release();
             try {
                 report();
@@ -746,8 +799,11 @@ public final class VectorProcessor implements AutoCloseable {
                     }
                     awaitConfirmation();
                     save();
+                    LOG.info("final checkpoint written dag={} sink={} records={} positions={}", job.dag(), job.name(), records,
+                            String.join(",", positions.entrySet().stream().map(p -> p.getKey() + ":" + p.getValue()).sorted().toList()));
                 } catch (RuntimeException e) {
-                    System.err.println("vector processor: " + job.dag() + "/" + job.name() + ": no final checkpoint: " + e.getMessage());
+                    LOG.warn("no final checkpoint; a restart repeats what was read since the last one dag={} sink={} cause={}",
+                            job.dag(), job.name(), causes(e));
                 }
             }
             release();
@@ -771,7 +827,7 @@ public final class VectorProcessor implements AutoCloseable {
             try {
                 Files.deleteIfExists(file);
             } catch (IOException e) {
-                System.err.println("vector processor: " + file + " could not be removed: " + e.getMessage());
+                LOG.warn("checkpoint not removed; delete it by hand file={} cause={}", file, causes(e));
             }
         }
 
@@ -792,6 +848,12 @@ public final class VectorProcessor implements AutoCloseable {
             if (undecodable > 0) {
                 n.put("undecodable", undecodable);
             }
+            if (lostToRetention > 0) {
+                n.put("lostToRetention", lostToRetention);
+            }
+            if (ignoredControlRecords > 0) {
+                n.put("ignoredControlRecords", ignoredControlRecords);
+            }
             if (error != null) {
                 n.put("error", error);
             }
@@ -808,6 +870,16 @@ public final class VectorProcessor implements AutoCloseable {
     }
 
     // ---- helpers ---------------------------------------------------------------------------------------------------
+
+    /** The exception and its causes on one line, for a log line. */
+    static String causes(Throwable t) {
+        StringBuilder s = new StringBuilder();
+        Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Throwable c = t; c != null && seen.add(c); c = c.getCause()) {
+            s.append(s.length() == 0 ? "" : "; caused by ").append(c);
+        }
+        return s.toString().replaceAll("\\p{Cntrl}", " ");
+    }
 
     static String sha256(String text) {
         try {

@@ -1,6 +1,11 @@
 package org.opentsx.retrieval.server;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.kafka.clients.admin.MockAdminClient;
+import org.apache.kafka.clients.producer.MockProducer;
+import org.apache.kafka.common.Node;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -273,6 +278,85 @@ class RetrievalServerTest {
         assertFalse(lines.stream().anyMatch(l -> l.startsWith("\tat ")), "the stack trace is logged at DEBUG only");
         assertError(400, "bad_request", "pattern: \"{\"x\":1}\" is not an array; expected an array of 4 to 100000 numbers",
                 send("/v1/patterns/search", "{\"pattern\":{\"x\":1}}"));
+    }
+
+    /** A server whose DAG and generate routes write through this feed. */
+    static RetrievalServer writing(KafScaleFeed feed, InMemorySeriesStore store) throws Exception {
+        java.nio.file.Path root = java.nio.file.Path.of("..").toAbsolutePath().normalize();
+        RetrievalServer.Dags dags = new RetrievalServer.Dags() {
+            @Override
+            public JsonNode deploy(JsonNode dag, String text, String by) {
+                return feed.deploy(dag, text, by);
+            }
+
+            @Override
+            public JsonNode stop(String name, String by) {
+                return feed.stop(name, by);
+            }
+
+            @Override
+            public JsonNode list() {
+                return feed.dags();
+            }
+        };
+        RetrievalServer s = new RetrievalServer(new EpisodeService(store), 0, new SeriesInventory(store,
+                SeriesInventory.Source.of("kafscale"), null, null, Duration.ofMinutes(1)), dags, true, null,
+                Systems.load(root.resolve("systems"), root));
+        s.generatedSeries("tsx.wind.synthetic.v2", feed::writeGenerated);
+        return s;
+    }
+
+    @Test
+    void brokerFailuresOnTheWriteRoutesAnswer503UnavailableWithoutTheBrokerAddress() throws Exception {
+        Node node = new Node(0, "broker.example", 9092);
+        String dag = org.opentsx.retrieval.vector.VectorProcessorTest.goodDag();
+        String generate = "{\"signal\":\"offtake.demand_kgph\",\"from\":\"2026-10-01T00:00:00Z\",\"to\":\"2026-10-01T06:00:00Z\"}";
+        // first the Admin does not answer, then the Admin answers and the producer cannot send
+        for (boolean adminFails : new boolean[]{true, false}) {
+            InMemorySeriesStore store = new InMemorySeriesStore();
+            KafScaleFeed feed = new KafScaleFeed("broker.example:9092", "wind",
+                    new org.opentsx.retrieval.vector.VectorProcessorTest.FakeBroker().consumer(),
+                    b -> {
+                        MockAdminClient admin = new MockAdminClient(List.of(node), node);
+                        if (adminFails) {
+                            admin.timeoutNextRequest(1);
+                        }
+                        return admin;
+                    }, b -> {
+                        MockProducer<String, byte[]> producer = new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer());
+                        producer.sendException = new org.apache.kafka.common.errors.TimeoutException(
+                                "Topic tsx.wind.dags.v1 not present in metadata after 60000 ms.");
+                        return producer;
+                    }, store, 100, () -> { });
+            ByteArrayOutputStream err = new ByteArrayOutputStream();
+            PrintStream stderr = System.err;
+            List<HttpResponse<byte[]>> answers = new ArrayList<>();
+            try (feed; RetrievalServer s = writing(feed, store)) {
+                System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+                try {
+                    answers.add(call(s, "POST", "/v1/dags/deploy", dag));
+                    answers.add(call(s, "POST", "/v1/dags/stop?name=wind-exp2-smart", null));
+                    answers.add(call(s, "POST", "/v1/systems/h2-chain/generate", generate));
+                } finally {
+                    System.setErr(stderr);
+                }
+            }
+            for (HttpResponse<byte[]> r : answers) {
+                assertError(503, "unavailable", "cannot reach the broker; try again", r);
+                assertFalse(new String(r.body(), StandardCharsets.UTF_8).contains("broker.example"), "no broker address in the answer");
+            }
+            List<String> lines = err.toString(StandardCharsets.UTF_8).lines().toList();
+            List<String> errors = lines.stream().filter(l -> l.contains(" ERROR ")).toList();
+            assertEquals(3, errors.size(), String.join("\n", lines));
+            for (int i = 0; i < 3; i++) {
+                String path = List.of("/v1/dags/deploy", "/v1/dags/stop", "/v1/systems/h2-chain/generate").get(i);
+                assertTrue(errors.get(i).contains(" - request failed method=POST path=" + path + " status=503 cause="
+                        + RetrievalServer.Unavailable.class.getName() + ": cannot reach the broker; try again; caused by "), errors.get(i));
+                assertTrue(errors.get(i).contains(adminFails ? "org.apache.kafka.common.errors.TimeoutException"
+                        : "not present in metadata after 60000 ms."), errors.get(i));
+            }
+            assertFalse(lines.stream().anyMatch(l -> l.startsWith("\tat ")), "the stack trace is logged at DEBUG only");
+        }
     }
 
     @Test

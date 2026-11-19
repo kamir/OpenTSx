@@ -17,12 +17,15 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -162,6 +165,29 @@ class VectorProcessorAppTest {
         assertEquals(1, p.exitValue(), Files.readString(err));
         assertEquals("opentsx: consumer factory failed", Files.readString(err).lines().reduce((a, b) -> b).orElse(""));
         assertEquals("", Files.readString(out));
+    }
+
+    @Test
+    void theShutdownHookLogsStoppingAndWarnsWhenTheProcessorDoesNotEndInTime() {
+        org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(VectorProcessorApp.class);
+        String prefix = " " + VectorProcessorApp.class.getName() + " - ";
+        AtomicBoolean stop = new AtomicBoolean();
+        CountDownLatch ended = new CountDownLatch(1);
+        List<String> late = VectorProcessorTest.logged(VectorProcessorApp.stopping(() -> stop.set(true), ended, Duration.ZERO, log));
+        assertTrue(stop.get(), "the hook asks the processor to stop");
+        assertEquals(List.of("INFO" + prefix + "stopping; waiting for the final checkpoints wait=PT0S",
+                "WARN" + prefix + "the processor did not stop in time; the final checkpoints may be missing wait=PT0S"),
+                late.stream().map(l -> l.substring(l.indexOf("] ") + 2)).toList());
+
+        // a processor that ends once it is asked to
+        CountDownLatch done = new CountDownLatch(1);
+        List<String> inTime = VectorProcessorTest.logged(VectorProcessorApp.stopping(done::countDown, done, Duration.ofSeconds(60), log));
+        assertEquals(List.of("INFO" + prefix + "stopping; waiting for the final checkpoints wait=PT1M", "INFO" + prefix + "stopped"),
+                inTime.stream().map(l -> l.substring(l.indexOf("] ") + 2)).toList());
+
+        // after a run that ended on its own failure there is nothing to stop
+        assertEquals(List.of(), VectorProcessorTest.logged(VectorProcessorApp.stopping(() -> fail("nothing to stop"), done,
+                Duration.ofSeconds(60), log)));
     }
 
     @Test

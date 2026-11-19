@@ -145,15 +145,23 @@ kubelet_volume_stats_used_bytes{namespace="opentsx"} / kubelet_volume_stats_capa
 The rules were checked for YAML structure and metric names against kube-state-metrics v2.x; they were **not** loaded
 into a running Prometheus here.
 
-### What OpenTSx does not export (yet)
+### What OpenTSx does not export
 
 None of the OpenTSx processes (stats, retrieval, Jobs, pollers) has a `/metrics` endpoint. Missing in particular:
 
 * consumer lag per partition of the statistics processor (end offset − position), and the checkpoint age as a metric;
-* counters: episodes read, statistics written, **undecodable records** (the processor skips records it cannot decode,
-  e.g. written with a newer schema, counts them and prints the first one per partition on stderr), **invalid episodes** (`invalid` of the
-  statistics processor; the first one per partition is printed on stderr), records lost to retention
-  (`lostToRetention` of the statistics processor, also printed on stderr), DQ rule violations;
+* counters as metrics: episodes read, statistics written, **undecodable records** (records that do not decode, for
+  example written with a newer schema), **invalid episodes** (`invalid` of the statistics processor), records lost to
+  retention (`lostToRetention`), DQ rule violations. Today the counts are in log lines and records only. The
+  statistics processor in continuous mode logs them in one INFO line after every checkpoint,
+  `progress records=<n> undecodable=<n> invalid=<n> lostToRetention=<n> statsWritten=<n> duplicates=<n> lateValues=<n>`,
+  and logs the first undecodable record and the first invalid episode per partition and every retention gap at WARN
+  ([troubleshooting](troubleshooting.md#log-lines-of-the-statistics-processor-and-the-readers)). The vector processor
+  reports `undecodable`, `lostToRetention` and `ignoredControlRecords` in its status records
+  (`tsx.<domain>.dag-status.v1`) and logs the first ignored control record. The retrieval server with `--kafscale`
+  logs `undecodable`, `lostToRetention`, `droppedVectorRows`, `droppedControlRecords` and `droppedStatusRecords` in
+  its `feed loaded` and `feed refreshed` lines, shows them under `source` in `GET /v1/inventory`, and logs the first
+  skipped record of a partition at WARN with topic, partition and offset;
 * retrieval request latency and error rate;
 * Modbus poller: cycle duration, timeouts, exception responses, counter wraps/resets (today only in the log line
   `window done: …`);
@@ -172,7 +180,20 @@ signals.
 * Log lines go to stderr: time, thread, level, logger and message on one line; an exception logged with the event
   follows on the next lines as a stack trace. For example
   `2026-11-18T19:48:33.054Z [kafka-producer-network-thread | producer-1] WARN org.apache.kafka.clients.NetworkClient - [Producer clientId=producer-1] Connection to node -1 (/127.0.0.1:1) could not be established. Node may not be available.`
-  Lines to search for: `FAIL`, `NOT reachable`, `checkpoint`, `read failed`, `error:`, ` WARN `, ` ERROR `.
+  Lines to search for: `FAIL`, `NOT reachable`, `checkpoint`, `read failed`, `error:`, `refuses reads`,
+  `cannot be read`, `sink failed`, `refused`, `retention deleted`, `record dropped`, ` WARN `, ` ERROR `.
+* The retrieval server (`kubectl -n opentsx logs deploy/opentsx-retrieval`) and the vector processor
+  (`kubectl -n opentsx logs deploy/opentsx-vectors`) log one line per event, `<what happened> key=value ...`. A WARN
+  or ERROR line carries the cause chain in `cause=`; the stack trace is logged at DEBUG only, for a failing sink once
+  per distinct failure. A failure that goes on is logged when it starts and when its cause changes, and its end at
+  INFO (`feed refresh works again`, `topic readable again`, `vector topic readable again`, `control topic readable again`,
+  `status records are sent again`). The levels:
+
+  | Level | Retrieval server | Vector processor |
+  |-------|------------------|------------------|
+  | INFO | `starting retrieval-server`, `system loaded`, `feed loaded`, `feed refreshed` (when episodes arrived or a count changed), `feed refresh works again`, `topic readable again`, `vector topic readable again`, `listening on`, `stopping`, `stopped` | `starting vectors`, `vector processor started`, `sink deployed`, `dag stopped`, `final checkpoint written`, `control topic readable again`, `status records are sent again`, `stopping`, `stopped` |
+  | WARN | `dag deployments: OPEN ...`, `system documents have problems`, `feed refresh failed`, `topic cannot be read now`, `vector topic cannot be read`, `record dropped` | `dag refused`, `control topic cannot be read now`, `control record ignored`, `retention deleted records before the sink read them`, `status record not sent`, `no final checkpoint`, `checkpoint not removed` (delete the file named in `file=` by hand), `the processor did not stop in time` |
+  | ERROR | `request failed ... status=500` or `status=503`; `feed refresh failed` when the cause is an Error, such as an `AssertionError` | `sink failed` |
 * The image and `bin/opentsx` log through slf4j-simple with one file, `conf/simplelogger.properties`: everything at
   `info`, `org.apache.kafka`, `org.apache.iceberg`, `org.apache.hadoop`, `org.apache.parquet` and `software.amazon` at
   `warn`. `bin/opentsx stats-flink` logs through log4j2 with `conf/log4j2-stats-flink.properties`.

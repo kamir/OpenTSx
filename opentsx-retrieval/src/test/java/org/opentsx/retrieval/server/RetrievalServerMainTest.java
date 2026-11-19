@@ -10,9 +10,12 @@ import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.conf.OpenTsxConf;
 import org.opentsx.conf.Registry;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -236,6 +240,70 @@ class RetrievalServerMainTest {
     }
 
     @Test
+    void theProblemsOfTheSystemDocumentsAreOneWarnSummaryWithTheDetailsAtDebug() throws Exception {
+        Path root = Path.of("..").toAbsolutePath().normalize();
+        Path dir = Files.createDirectory(tmp.resolve("systems"));
+        Path doc = Files.writeString(dir.resolve("h2-chain.system.yaml"), Files.readString(root.resolve("systems/h2-chain.system.yaml"))
+                .replace("id: offtake.demand_kgph", "id: offtake.demand_tons").replace("role: estimate", "role: guess"));
+        List<String> problems = org.opentsx.retrieval.system.SystemDoc.load(doc, root).problems();
+        assertTrue(problems.size() >= 2, problems.toString());
+        PrintStream stderr = System.err;
+        ByteArrayOutputStream log = new ByteArrayOutputStream();
+        Exit exit;
+        System.setErr(new PrintStream(log, true, StandardCharsets.UTF_8));
+        try {
+            exit = run(Map.of(), RetrievalServer::close, "--port", "0", "--source", "demo", "--systems", dir.toString(),
+                    "--systems-root", root.toString());
+        } finally {
+            System.setErr(stderr);
+        }
+        assertEquals(0, exit.code(), exit.err());
+        List<String> lines = log.toString(StandardCharsets.UTF_8).lines().toList();
+        List<String> warns = lines.stream().filter(l -> l.contains(" WARN ")).toList();
+        assertEquals(List.of(" WARN org.opentsx.retrieval.server.RetrievalServer - system documents have problems;"
+                        + " GET /v1/systems/<id>/signals lists them systems=h2-chain problems=" + problems.size()),
+                warns.stream().map(l -> l.substring(l.indexOf(" WARN "))).toList(), String.join("\n", lines));
+        for (String problem : problems) {
+            assertFalse(lines.stream().anyMatch(l -> l.contains(problem)), "the problem itself is logged at DEBUG only: " + problem);
+        }
+        assertEquals("", exit.out());
+    }
+
+    @Test
+    void sigtermClosesTheServerAndLogsStopped() throws Exception {
+        ProcessBuilder pb = new ProcessBuilder(Path.of(System.getProperty("java.home"), "bin", "java").toString(), "-cp",
+                System.getProperty("surefire.test.class.path"), RetrievalServer.class.getName(), "--port", "0", "--source", "demo")
+                .redirectOutput(tmp.resolve("out.txt").toFile());
+        pb.environment().clear();
+        Process p = pb.start();
+        List<String> lines = java.util.Collections.synchronizedList(new ArrayList<>());
+        CompletableFuture<Void> read = CompletableFuture.runAsync(() -> {
+            try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getErrorStream(), StandardCharsets.UTF_8))) {
+                for (String l = r.readLine(); l != null; l = r.readLine()) {
+                    lines.add(l);
+                    if (l.contains(" - listening on ")) {
+                        p.toHandle().destroy();     // SIGTERM, as the kubelet sends it; Process.destroy would close this stream
+                    }
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
+        try {
+            read.get(60, TimeUnit.SECONDS);
+        } catch (java.util.concurrent.TimeoutException e) {
+            p.destroyForcibly().waitFor();
+            fail("the server did not end within 60 s:\n" + String.join("\n", lines));
+        }
+        assertTrue(p.waitFor(30, TimeUnit.SECONDS));
+        assertEquals(143, p.exitValue(), String.join("\n", lines));
+        List<String> end = lines.subList(lines.size() - 2, lines.size()).stream().map(l -> l.substring(l.indexOf("] ") + 2)).toList();
+        assertTrue(end.get(0).startsWith("INFO org.opentsx.retrieval.server.RetrievalServer - stopping port="), String.join("\n", lines));
+        assertEquals("INFO org.opentsx.retrieval.server.RetrievalServer - stopped", end.get(1), String.join("\n", lines));
+        assertEquals("", Files.readString(tmp.resolve("out.txt")));
+    }
+
+    @Test
     void theArgumentsOfTheK3sManifestsLoad() throws IOException {
         ObjectMapper yaml = new ObjectMapper(new YAMLFactory());
         Path k3s = Path.of("..", "deploy", "k3s");
@@ -265,14 +333,16 @@ class RetrievalServerMainTest {
 
         OpenTsxConf kafscale = load(patched(yaml, retrieval, k3s.resolve("components/retrieval-kafscale/kustomization.yaml")),
                 config, links);
+        assertEquals("kafscale", kafscale.get("opentsx.retrieval.source"));
         assertEquals("kafscale.invalid:9092", kafscale.get("opentsx.kafscale.bootstrap"));
-        assertEquals("commandLine", kafscale.source("opentsx.kafscale.bootstrap"));
+        assertEquals("environment", kafscale.source("opentsx.kafscale.bootstrap"));
         assertTrue(kafscale.getBoolean("opentsx.retrieval.dagRuns"));
         assertTrue(kafscale.contains("opentsx.retrieval.dagRunToken"));
         assertEquals("/opt/opentsx/share/repo", kafscale.get("opentsx.retrieval.systemsRoot"));
 
         OpenTsxConf lake = load(patched(yaml, retrieval, k3s.resolve("components/lake/kustomization.yaml")), config, links);
-        assertEquals("commandLine", lake.source("opentsx.iceberg.properties"));
+        assertEquals("iceberg", lake.get("opentsx.retrieval.source"));
+        assertEquals("environment", lake.source("opentsx.iceberg.properties"));
         assertEquals("tsx", lake.get("opentsx.iceberg.namespace"));
 
         OpenTsxConf run = load(vectors, config, links);

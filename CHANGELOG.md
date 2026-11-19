@@ -150,6 +150,16 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   and `kafscale-check` (image only), or when a command of `Registry.LOADS_CONF` has no launcher case
   (`deploy/docker/test-launchers.sh --commands`). The Java 21 job runs the staged `kafscale-check` with a misspelled
   option, a closed port and a broker double, and reads the output with the patterns of `60-probe.sh`.
+- Retrieval server: SIGTERM closes the port and the KafScale feed through a shutdown hook and logs stopping
+  port=<port> and stopped. The hook is in place before the listening on line.
+- Retrieval server with --kafscale: undecodable episodes, records lost to retention and dropped vector, control and
+  status records are counted. The counts are in the feed loaded and feed refreshed log lines and in the source of GET
+  /v1/inventory (undecodable, lostToRetention, droppedVectorRows, droppedControlRecords, droppedStatusRecords,
+  refreshFailures). The first dropped record of a partition is logged at WARN with topic, partition and offset.
+- Vector processor: a sink whose checkpoint lies before the log start reports the records it lost in lostToRetention
+  of its status, and logs one WARN per partition with saved offset, log start and count. Records on the control topic
+  that are not control records are counted in ignoredControlRecords, and the first one is logged. The first status
+  record the broker refuses is logged at WARN, its recovery at INFO.
 
 ### Changed
 
@@ -460,6 +470,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `IllegalStateException` with `<topic>: no such topic; check the domain, or create the topic first`, instead of an
   empty result. `bin/opentsx metadata` with profiles on therefore exits with 1 before the first request when the
   statistics topic does not exist, instead of publishing 0 profiles.
+- Retrieval server and vector processor log through slf4j, one line per event in the form <what happened> key=value,
+  so opentsx.log.level controls them. Nothing goes to stdout any more. A failed sink is one ERROR line with the cause
+  chain, with the stack trace at DEBUG once per distinct failure. The problems of the system documents are one WARN
+  summary, with each problem at DEBUG. On SIGTERM the vector processor logs stopping, final checkpoint written per
+  sink and stopped, or a WARN when the 60 s wait runs out.
+- The SaaS backend answers 503 `retrieval server: cannot reach the broker; try again` when the retrieval server
+  answers 503 to a DAG deploy, a DAG stop or a generate, instead of 502.
 
 ### Removed
 
@@ -964,6 +981,15 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `PatienceTest`, the new `ReplayServiceTest` and the pacing case of `EpisodeLogIntegrationTest` run on a test clock
   and assert the pauses and sleeps that `Patience` and the replay pacing ask for, instead of sleeping and asserting
   wall time within 0.25 s.
+- Retrieval server: a write the broker does not take (POST /v1/dags/deploy, /v1/dags/stop, /v1/systems/{id}/generate)
+  answers 503 {"error":"cannot reach the broker; try again","type":"unavailable"} instead of 500 internal. The answer
+  names no broker address, and one ERROR line request failed ... status=503 logs the causes.
+- Retrieval server: the KafScale feed task catches every Throwable. An Error no longer cancels the refresh for good:
+  the failed refresh is logged and counted in refreshFailures of GET /v1/inventory, and the next refresh tries again.
+- Vector processor: a record without a value on the control topic tsx.<domain>.dags.v1 is counted in
+  ignoredControlRecords and logged once instead of ending the processor with argument "content" is null, which every
+  restart read again. The retrieval server with --kafscale counts such a record on the control or status topic in
+  droppedControlRecords or droppedStatusRecords instead of reporting the DAG topics as unreadable for that refresh.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

@@ -23,6 +23,9 @@ import org.opentsx.model.OpenTsxAvro;
 import org.opentsx.model.SeriesKeys;
 import org.opentsx.model.v2.SeriesKey;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -32,41 +35,59 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
-class VectorProcessorTest {
+public class VectorProcessorTest {
 
     static final ObjectMapper JSON = new ObjectMapper();
-    static final long T0 = 1_790_812_800_000_000L;      // 2026-10-01T00:00:00Z
-    static final long SECOND = 1_000_000L;
-    static final TopicLayout LAYOUT = new TopicLayout("wind");
-    static final SeriesKey SPEED = SeriesKeys.of("wind.met.wind_speed", Map.of("park", "p", "turbine", "T01"), "m/s");
-    static final SeriesKey POWER = SeriesKeys.of("wind.turbine.power_active", Map.of("park", "p", "turbine", "T01"), "kW");
-    static final VectorProcessor.Timing FAST = new VectorProcessor.Timing(Duration.ZERO, Duration.ofHours(1), Duration.ZERO,
+    public static final long T0 = 1_790_812_800_000_000L;      // 2026-10-01T00:00:00Z
+    public static final long SECOND = 1_000_000L;
+    public static final TopicLayout LAYOUT = new TopicLayout("wind");
+    public static final SeriesKey SPEED = SeriesKeys.of("wind.met.wind_speed", Map.of("park", "p", "turbine", "T01"), "m/s");
+    public static final SeriesKey POWER = SeriesKeys.of("wind.turbine.power_active", Map.of("park", "p", "turbine", "T01"), "kW");
+    public static final VectorProcessor.Timing FAST = new VectorProcessor.Timing(Duration.ZERO, Duration.ofHours(1), Duration.ZERO,
             Duration.ZERO, Duration.ofMillis(1), Duration.ofSeconds(30));
 
     /** Topics in memory. Every consumer it hands out sees what is appended, also after it was created. */
-    static final class FakeBroker {
-        final Map<TopicPartition, List<byte[]>> log = new TreeMap<>((a, b) -> a.topic().equals(b.topic())
+    public static final class FakeBroker {
+        public final Map<TopicPartition, List<byte[]>> log = new TreeMap<>((a, b) -> a.topic().equals(b.topic())
                 ? Integer.compare(a.partition(), b.partition()) : a.topic().compareTo(b.topic()));
+        /** The first offset retention kept, per partition; 0 when not set. Consumers created later see it. */
+        public final Map<TopicPartition, Long> logStart = new HashMap<>();
+        /** Topics whose metadata cannot be read: asking for their partitions throws this, a RuntimeException or an Error. */
+        public final Map<String, Throwable> unreadable = new HashMap<>();
 
-        FakeBroker() {
+        public FakeBroker() {
             log.put(new TopicPartition(LAYOUT.dags(), 0), new ArrayList<>());
             log.put(new TopicPartition(LAYOUT.episodes(), 0), new ArrayList<>());
             log.put(new TopicPartition(LAYOUT.episodes(), 1), new ArrayList<>());
         }
 
-        void append(String topic, int partition, byte[] value) {
+        public void append(String topic, int partition, byte[] value) {
             log.get(new TopicPartition(topic, partition)).add(value);
         }
 
-        Consumer<byte[], byte[]> consumer() {
+        public Consumer<byte[], byte[]> consumer() {
             Map<TopicPartition, Integer> handed = new HashMap<>();
             MockConsumer<byte[], byte[]> c = new MockConsumer<>(OffsetResetStrategy.EARLIEST) {
+                @Override
+                public synchronized List<PartitionInfo> partitionsFor(String topic, Duration timeout) {
+                    Throwable t = unreadable.get(topic);
+                    if (t instanceof Error e) {
+                        throw e;
+                    }
+                    if (t != null) {
+                        throw (RuntimeException) t;
+                    }
+                    return super.partitionsFor(topic, timeout);
+                }
+
                 private void sync() {
                     Map<TopicPartition, Long> end = new HashMap<>();
                     log.forEach((tp, records) -> end.put(tp, (long) records.size()));
@@ -102,7 +123,7 @@ class VectorProcessorTest {
             Map<TopicPartition, Long> begin = new HashMap<>();
             Map<String, List<PartitionInfo>> infos = new HashMap<>();
             for (TopicPartition tp : log.keySet()) {
-                begin.put(tp, 0L);
+                begin.put(tp, logStart.getOrDefault(tp, 0L));
                 infos.computeIfAbsent(tp.topic(), t -> new ArrayList<>())
                         .add(new PartitionInfo(tp.topic(), tp.partition(), node, new Node[]{node}, new Node[]{node}));
             }
@@ -145,7 +166,7 @@ class VectorProcessorTest {
         broker.append(LAYOUT.episodes(), 1, avro.encode(Episodes.regular(POWER, start, SECOND, power).source("t").createdAt(T0).build()));
     }
 
-    static String dag(String series, String extraNode, String in) {
+    public static String dag(String series, String extraNode, String in) {
         return """
                 dag: wind-exp2-smart
                 version: 1
@@ -165,7 +186,7 @@ class VectorProcessorTest {
                 """.formatted(series, extraNode, in);
     }
 
-    static String goodDag() {
+    public static String goodDag() {
         return dag("\"" + SPEED.getSeriesId() + "\", \"" + POWER.getSeriesId() + "\"", "", "decode");
     }
 
@@ -222,6 +243,174 @@ class VectorProcessorTest {
 
     JsonNode lastStatus() throws Exception {
         return lastStatus("wind-exp2-smart/turbine-state");
+    }
+
+    /** The lines the loggers write while {@code action} runs; slf4j-simple writes to System.err. */
+    static List<String> logged(Runnable action) {
+        PrintStream stderr = System.err;
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+        try {
+            action.run();
+        } finally {
+            System.setErr(stderr);
+        }
+        return err.toString(StandardCharsets.UTF_8).lines().toList();
+    }
+
+    /** The messages the processor logged at this level, without thread, level and logger. */
+    static List<String> messages(List<String> lines, String level) {
+        String prefix = " " + level + " " + VectorProcessor.class.getName() + " - ";
+        return lines.stream().filter(l -> l.contains(prefix)).map(l -> l.substring(l.indexOf(prefix) + prefix.length())).toList();
+    }
+
+    static final String NPE = "Cannot invoke \"String.length()\" because \"topic\" is null";
+
+    @Test
+    void aSinkThatThrowsLogsOneErrorWithTheCauseChainAndNoStackTrace(@TempDir Path state) throws Exception {
+        appendBlock(0);
+        deploy(goodDag());
+        long[] now = {0};
+        VectorProcessor.Timing timing = new VectorProcessor.Timing(Duration.ZERO, Duration.ofHours(1), Duration.ZERO,
+                Duration.ofSeconds(60), Duration.ofMillis(1), Duration.ofSeconds(30));
+        try (VectorProcessor p = new VectorProcessor(broker::consumer, this::newProducer, LAYOUT, state, timing, () -> now[0])) {
+            p.sinkProvisioner(topic -> {
+                throw new NullPointerException(NPE);
+            });
+            List<String> lines = logged(() -> steps(p, 3));
+            assertEquals(List.of("sink failed; the next try is in PT1M dag=wind-exp2-smart sink=turbine-state"
+                    + " cause=java.lang.NullPointerException: " + NPE), messages(lines, "ERROR"), String.join("\n", lines));
+            assertFalse(lines.stream().anyMatch(l -> l.startsWith("\tat ")), "the stack trace is logged at DEBUG only");
+            assertEquals("failed", lastStatus().path("state").asText());
+            assertEquals(NPE, lastStatus().path("error").asText());
+
+            now[0] += Duration.ofSeconds(60).toNanos();
+            assertEquals(1, messages(logged(() -> steps(p, 1)), "ERROR").size(), "every failed try is one line");
+        }
+    }
+
+    @Test
+    void atLevelDebugTheStackTraceOfASinkFailureIsLoggedOncePerDistinctFailure(@TempDir Path dir) throws Exception {
+        Path out = dir.resolve("out.txt");
+        Path err = dir.resolve("err.txt");
+        ProcessBuilder pb = new ProcessBuilder(Path.of(System.getProperty("java.home"), "bin", "java").toString(), "-cp",
+                System.getProperty("surefire.test.class.path"), FailingSinkMain.class.getName(), dir.resolve("state").toString())
+                .redirectOutput(out.toFile()).redirectError(err.toFile());
+        pb.environment().clear();
+        pb.environment().put("OPENTSX_LOG_LEVEL", "debug");
+        Process p = pb.start();
+        if (!p.waitFor(60, TimeUnit.SECONDS)) {
+            p.destroyForcibly().waitFor();
+            fail("still running after 60 s\nstderr: " + Files.readString(err));
+        }
+        assertEquals(0, p.exitValue(), Files.readString(err));
+        List<String> lines = Files.readAllLines(err);
+        assertEquals(3, messages(lines, "ERROR").size(), String.join("\n", lines));
+        assertEquals(1, lines.stream().filter(l -> l.equals("java.lang.NullPointerException: " + NPE)).count(),
+                "one stack trace for three failures that are the same:\n" + String.join("\n", lines));
+        assertTrue(lines.stream().anyMatch(l -> l.startsWith("\tat ")), String.join("\n", lines));
+    }
+
+    @Test
+    void aCheckpointBehindTheLogStartCountsTheGapAndLogsItPerPartition(@TempDir Path state) throws Exception {
+        appendBlock(0);
+        deploy(goodDag());
+        try (VectorProcessor p = processor(state)) {
+            steps(p, 5);
+        }
+        assertEquals(0, lastStatus().path("lostToRetention").asLong());
+        // the processor was down: three blocks arrived, and retention deleted the first two of them
+        appendBlock(1);
+        appendBlock(2);
+        appendBlock(3);
+        broker.logStart.put(new TopicPartition(LAYOUT.episodes(), 0), 3L);
+        broker.logStart.put(new TopicPartition(LAYOUT.episodes(), 1), 3L);
+        List<String> lines;
+        try (VectorProcessor p = processor(state)) {
+            lines = logged(() -> steps(p, 5));
+        }
+        assertEquals(4, lastStatus().path("lostToRetention").asLong(), lastStatus().toString());
+        assertEquals(List.of(
+                "retention deleted records before the sink read them; reading on from the log start dag=wind-exp2-smart"
+                        + " sink=turbine-state topic=tsx.wind.episodes.v2 partition=0 saved=1 logStart=3 lost=2",
+                "retention deleted records before the sink read them; reading on from the log start dag=wind-exp2-smart"
+                        + " sink=turbine-state topic=tsx.wind.episodes.v2 partition=1 saved=1 logStart=3 lost=2"),
+                messages(lines, "WARN"), String.join("\n", lines));
+
+        // the count is kept in the checkpoint, so a later restart still reports it
+        try (VectorProcessor p = processor(state)) {
+            steps(p, 3);
+        }
+        assertEquals(4, lastStatus().path("lostToRetention").asLong());
+    }
+
+    @Test
+    void recordsOfAnotherSchemaOnTheControlTopicAreCountedInTheStatusAndTheFirstIsLogged(@TempDir Path state) throws Exception {
+        appendBlock(0);
+        broker.append(LAYOUT.dags(), 0, "{\"schema\":\"opentsx.dag.v1\",\"dag\":\"wind-exp2-smart\"}".getBytes(StandardCharsets.UTF_8));
+        broker.append(LAYOUT.dags(), 0, "not json".getBytes(StandardCharsets.UTF_8));
+        deploy(goodDag());
+        List<String> lines;
+        try (VectorProcessor p = processor(state)) {
+            lines = logged(() -> steps(p, 5));
+            assertEquals(Map.of("wind-exp2-smart/turbine-state", "running"), p.states());
+        }
+        assertEquals(2, lastStatus().path("ignoredControlRecords").asLong(), lastStatus().toString());
+        assertEquals(List.of("control record ignored and counted in ignoredControlRecords; later ones are only counted"
+                + " topic=tsx.wind.dags.v1 partition=0 offset=0"), messages(lines, "WARN"), String.join("\n", lines));
+    }
+
+    @Test
+    void aRecordWithoutAValueOnTheControlTopicIsCountedAndTheProcessorGoesOn(@TempDir Path state) throws Exception {
+        appendBlock(0);
+        broker.append(LAYOUT.dags(), 0, null);
+        deploy(goodDag());
+        List<String> lines;
+        try (VectorProcessor p = processor(state)) {
+            lines = logged(() -> steps(p, 5));
+            assertEquals(Map.of("wind-exp2-smart/turbine-state", "running"), p.states());
+        }
+        assertEquals(1, lastStatus().path("ignoredControlRecords").asLong(), lastStatus().toString());
+        assertEquals(List.of("control record ignored and counted in ignoredControlRecords; later ones are only counted"
+                + " topic=tsx.wind.dags.v1 partition=0 offset=0"), messages(lines, "WARN"), String.join("\n", lines));
+    }
+
+    @Test
+    void theFirstStatusRecordThatIsNotSentIsLoggedAndSoIsTheRecovery(@TempDir Path state) throws Exception {
+        // a refused DAG is reported at once through the first producer the processor asks for, which does not confirm
+        silentProducers = 1;
+        String refused = dag("\"" + SPEED.getSeriesId() + "\"", "  - id: n0\n    op: norm.zscore\n    in: [decode]\n", "n0");
+        deploy(refused);
+        try (VectorProcessor p = processor(state)) {
+            steps(p, 1);
+            List<String> failed = logged(() -> producers.get(0).errorNext(new org.apache.kafka.common.errors.TimeoutException(
+                    "Expiring 1 record(s) for tsx.wind.dag-status.v1-0")));
+            assertEquals(List.of("status record not sent; the next one goes through a new producer topic=tsx.wind.dag-status.v1"
+                    + " key=wind-exp2-smart cause=org.apache.kafka.common.errors.TimeoutException: Expiring 1 record(s) for"
+                    + " tsx.wind.dag-status.v1-0"), messages(failed, "WARN"), String.join("\n", failed));
+
+            deploy(refused.replace("dag: wind-exp2-smart", "dag: wind-other"));
+            List<String> recovered = logged(() -> steps(p, 1));
+            assertEquals(List.of("status records are sent again topic=tsx.wind.dag-status.v1"), messages(recovered, "INFO"),
+                    String.join("\n", recovered));
+            assertTrue(producers.get(0).closed(), "the producer whose send failed is given up");
+        }
+    }
+
+    @Test
+    void closingWritesTheFinalCheckpointOfASinkAndLogsIt(@TempDir Path state) throws Exception {
+        appendBlock(0);
+        deploy(goodDag());
+        VectorProcessor.Timing seldom = new VectorProcessor.Timing(Duration.ofHours(1), Duration.ofHours(1), Duration.ZERO,
+                Duration.ZERO, Duration.ofMillis(1), Duration.ofSeconds(30));
+        VectorProcessor p = processor(state, seldom);
+        steps(p, 5);
+        assertFalse(Files.exists(state.resolve("wind-exp2-smart--turbine-state.json")), "no checkpoint before the end");
+        List<String> lines = logged(p::close);
+        assertEquals(List.of("final checkpoint written dag=wind-exp2-smart sink=turbine-state records=10"
+                        + " positions=tsx.wind.episodes.v2-0:1,tsx.wind.episodes.v2-1:1"), messages(lines, "INFO"),
+                String.join("\n", lines));
+        assertTrue(Files.exists(state.resolve("wind-exp2-smart--turbine-state.json")));
     }
 
     @Test

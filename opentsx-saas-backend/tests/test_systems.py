@@ -234,6 +234,15 @@ def test_a_generate_route_the_retrieval_server_lacks_is_not_the_users_fault(stor
     ]
 
 
+def test_a_broker_the_retrieval_server_cannot_reach_is_a_retryable_503(store, retrieval):
+    retrieval["status"] = 503
+    retrieval["json"] = {"error": "cannot reach the broker; try again", "type": "unavailable"}
+    answer = client_as(ADMIN, store).post("/api/v1/systems/h2-chain/generate",
+                                          json={"signal": "offtake.demand_kgph", "from": "2026-10-01T00:00:00Z", "to": "2026-10-01T06:00:00Z"})
+    assert answer.status_code == 503
+    assert answer.json() == {"error": "retrieval server: cannot reach the broker; try again", "type": "unavailable"}
+
+
 def test_without_a_retrieval_server_nothing_is_generated(store, retrieval, monkeypatch):
     monkeypatch.setattr(settings, "RETRIEVAL_URL", None)
     answer = client_as(ADMIN, store).post("/api/v1/systems/h2-chain/generate",

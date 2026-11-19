@@ -111,6 +111,13 @@ public final class RetrievalServer implements AutoCloseable {
         JsonNode list();
     }
 
+    /** A service the server depends on, such as the broker, cannot be reached; answered 503 {@code unavailable}. */
+    public static final class Unavailable extends RuntimeException {
+        public Unavailable(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
     /** Header a caller of the DAG write routes proves itself with when the server has a run token. */
     public static final String RUN_TOKEN_HEADER = "X-OpenTSx-Run-Token";
     /** Header that names who asked for a deployment or a stop; kept in the control record. */
@@ -182,10 +189,32 @@ public final class RetrievalServer implements AutoCloseable {
         return http.getAddress();
     }
 
+    /** Closes the port, then the KafScale feed when the server has one. */
     @Override
     public void close() {
         http.stop(0);
         ((java.util.concurrent.ExecutorService) http.getExecutor()).shutdownNow();
+        KafScaleFeed f = feed;
+        if (f != null) {
+            f.close();
+        }
+    }
+
+    private volatile KafScaleFeed feed;
+
+    /** The feed the server reads from; {@link #close()} closes it. */
+    void closes(KafScaleFeed feed) {
+        this.feed = feed;
+    }
+
+    /** The shutdown hook of {@link #main}: closes the server, so the port and the feed end in order, and logs it. */
+    static Thread shutdownHook(RetrievalServer server) {
+        return new Thread(() -> {
+            Logger log = LoggerFactory.getLogger(RetrievalServer.class);
+            log.info("stopping port={}", server.port());
+            server.close();
+            log.info("stopped");
+        }, "retrieval-server-stop");
     }
 
     private void handle(HttpExchange ex) throws IOException {
@@ -243,6 +272,10 @@ public final class RetrievalServer implements AutoCloseable {
             }
         } catch (TooLarge e) {
             error(ex, 413, e.getMessage());
+        } catch (Unavailable e) {
+            log.error("request failed method={} path={} status=503 cause={}", oneLine(method), oneLine(path), causes(e));
+            log.debug("stack trace of the failed request method={} path={}", oneLine(method), oneLine(path), e);
+            error(ex, 503, e.getMessage());
         } catch (java.util.NoSuchElementException e) {
             error(ex, 404, String.valueOf(e.getMessage()));
         } catch (IllegalArgumentException | java.time.format.DateTimeParseException e) {
@@ -274,7 +307,7 @@ public final class RetrievalServer implements AutoCloseable {
     }
 
     /** The exception and its causes on one line, for the log. */
-    private static String causes(Throwable t) {
+    static String causes(Throwable t) {
         StringBuilder s = new StringBuilder();
         Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
         for (Throwable c = t; c != null && seen.add(c); c = c.getCause()) {
@@ -641,6 +674,7 @@ public final class RetrievalServer implements AutoCloseable {
             case 405 -> "method_not_allowed";
             case 413 -> "too_large";
             case 500 -> "internal";
+            case 503 -> "unavailable";
             default -> throw new IllegalStateException("no error type for status " + status);
         };
     }
@@ -797,7 +831,8 @@ public final class RetrievalServer implements AutoCloseable {
     public static void main(String[] args) {
         PrintStream out = new PrintStream(new FileOutputStream(FileDescriptor.out), true, StandardCharsets.UTF_8);
         PrintStream err = new PrintStream(new FileOutputStream(FileDescriptor.err), true, StandardCharsets.UTF_8);
-        int code = run(List.of(args), System.getenv(), out, err, server -> { });
+        int code = run(List.of(args), System.getenv(), out, err,
+                server -> Runtime.getRuntime().addShutdownHook(shutdownHook(server)));
         if (code != 0) {
             System.exit(code);
         }
@@ -836,8 +871,11 @@ public final class RetrievalServer implements AutoCloseable {
         log.info(loaded.startLine());
         try {
             RetrievalServer server = start(plan, log);
-            log.info("listening on {}:{}, source {}", server.address().getAddress().getHostAddress(), server.port(), plan.source());
+            String host = server.address().getAddress().getHostAddress();
+            int port = server.port();
+            // main adds the shutdown hook here, so a SIGTERM after the line below always finds it
             started.accept(server);
+            log.info("listening on {}:{}, source {}", host, port, plan.source());
             return 0;
         } catch (IOException | RuntimeException e) {
             log.debug("stack trace of the failed start", e);
@@ -950,9 +988,19 @@ public final class RetrievalServer implements AutoCloseable {
     /** Opens the store of a checked plan and starts the server on it. */
     private static RetrievalServer start(Plan plan, Logger log) throws IOException {
         if (plan.systems() != null) {
+            List<String> withProblems = new ArrayList<>();
+            int problems = 0;
             for (org.opentsx.retrieval.system.SystemDoc d : plan.systems().docs()) {
-                log.info("system {}: {} signals, {} problems", d.system(), d.signals().size(), d.problems().size());
-                d.problems().forEach(pr -> log.warn("system {}: problem: {}", d.system(), pr));
+                log.info("system loaded system={} signals={} problems={}", d.system(), d.signals().size(), d.problems().size());
+                d.problems().forEach(pr -> log.debug("system problem system={} problem={}", d.system(), pr));
+                if (!d.problems().isEmpty()) {
+                    withProblems.add(d.system());
+                    problems += d.problems().size();
+                }
+            }
+            if (problems > 0) {
+                log.warn("system documents have problems; GET /v1/systems/<id>/signals lists them systems={} problems={}",
+                        String.join(",", withProblems), problems);
             }
         }
         SeriesStore store;
@@ -960,6 +1008,7 @@ public final class RetrievalServer implements AutoCloseable {
         Dags dags = null;
         String[] generated = {null};
         Systems.Writer[] writer = {null};
+        KafScaleFeed[] opened = {null};
         if (plan.source().equals("kafscale")) {
             String domain = plan.domain();
             boolean dagRuns = plan.dagRuns();
@@ -968,6 +1017,7 @@ public final class RetrievalServer implements AutoCloseable {
             Runnable[] invalidate = {() -> { }};
             KafScaleFeed feed = KafScaleFeed.start(plan.bootstrap(), domain, plan.refresh(), episodes, plan.maxEpisodes(),
                     () -> invalidate[0].run());
+            opened[0] = feed;
             // episodes of the domain plus the components of its vector topics
             store = new CompositeSeriesStore(episodes, feed::vectorStore);
             // the feed invalidates the inventory whenever something was appended, so the cache may live long
@@ -980,12 +1030,7 @@ public final class RetrievalServer implements AutoCloseable {
                 if (dagRuns) {
                     src.put("dagRunAuth", runToken == null ? "none" : "token");
                 }
-                ArrayNode vt = src.putArray("vectorTopics");
-                feed.vectorTopics().forEach(vt::add);
-                if (!feed.unreadableVectorTopics().isEmpty()) {
-                    ArrayNode bad = src.putArray("unreadableVectorTopics");
-                    feed.unreadableVectorTopics().forEach(bad::add);
-                }
+                feed.details(src);
             });
             dags = new Dags() {
                 @Override
@@ -1022,6 +1067,9 @@ public final class RetrievalServer implements AutoCloseable {
         }
         if (writer[0] != null) {
             s.generatedSeries(generated[0], writer[0]);
+        }
+        if (opened[0] != null) {
+            s.closes(opened[0]);
         }
         if (plan.dagRuns() && plan.runToken() == null) {
             log.warn("dag deployments: OPEN on {}:{}, any process that reaches this address can deploy and stop DAGs"

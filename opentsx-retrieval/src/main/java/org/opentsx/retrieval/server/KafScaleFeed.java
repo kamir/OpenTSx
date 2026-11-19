@@ -4,31 +4,41 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.kafka.clients.admin.Admin;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.TopicPartition;
 import org.opentsx.kafka.EpisodeLogTail;
 import org.opentsx.kafka.KafScaleClients;
 import org.opentsx.kafka.LogTail;
 import org.opentsx.kafka.TopicLayout;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.retrieval.vector.DagPlan;
+import org.opentsx.retrieval.vector.VectorJob;
 import org.opentsx.retrieval.vector.VectorJson;
 import org.opentsx.retrieval.vector.VectorProcessor;
 import org.opentsx.retrieval.vector.VectorStoreBridge;
 import org.opentsx.store.InMemorySeriesStore;
 import org.opentsx.store.SeriesStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 /**
  * The KafScale side of the retrieval server for one domain.
@@ -44,8 +54,18 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>The stores live in the heap. Loading episodes stops at {@code maxEpisodes}; {@link #truncated()} then says
  * that the store does not hold the whole topic.
+ *
+ * <p>Records it cannot use are skipped and counted: episodes that do not decode ({@code undecodable}), records that
+ * retention deleted before they were read ({@code lostToRetention}), vector rows that are no {@code opentsx.vector.v1}
+ * record ({@code droppedVectorRows}), and records of the control and status topics of another kind
+ * ({@code droppedControlRecords}, {@code droppedStatusRecords}). The counts go to the refresh line of the log and to
+ * the inventory ({@link #details}).
  */
 final class KafScaleFeed implements AutoCloseable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(KafScaleFeed.class);
+    /** The answer to a write the broker did not take; the cause, with the broker address, goes to the log only. */
+    static final String BROKER_UNAVAILABLE = "cannot reach the broker; try again";
 
     /** How long reading one vector topic may take, and how long a topic that failed is left alone. */
     private static final Duration VECTOR_READ_TIMEOUT = Duration.ofSeconds(30);
@@ -53,7 +73,9 @@ final class KafScaleFeed implements AutoCloseable {
 
     private final String bootstrap;
     private final TopicLayout layout;
-    private final KafkaConsumer<byte[], byte[]> consumer;
+    private final Consumer<byte[], byte[]> consumer;
+    private final Function<String, Admin> admins;
+    private final Function<String, Producer<String, byte[]>> producers;
     private final EpisodeLogTail tail;
     private final InMemorySeriesStore store;
     private final int maxEpisodes;
@@ -73,15 +95,37 @@ final class KafScaleFeed implements AutoCloseable {
         t.setDaemon(true);
         return t;
     });
+    private long droppedVectorRows;
+    private long droppedControlRecords;
+    private long droppedStatusRecords;
+    /** Partitions whose first dropped record was logged; later ones are only counted. */
+    private final Set<TopicPartition> dropLogged = new HashSet<>();
+    /** The counts as of the end of the last read, for readers that must not wait for one under way. */
+    private volatile Map<String, Long> counts = Map.of();
+    /** The counts in the last refresh line. */
+    private Map<String, Long> countsLogged = Map.of();
+    /** Per source of trouble, the cause chain of the failure under way. */
+    private final Map<String, String> failing = new ConcurrentHashMap<>();
+    /** Refreshes that failed since the last one that worked. */
+    private volatile int refreshFailures;
     private int loaded;
     private volatile boolean truncated;
     private volatile SeriesStore vectors = new InMemorySeriesStore();
     private volatile List<String> vectorTopics = List.of();
 
-    private KafScaleFeed(String bootstrap, String domain, InMemorySeriesStore store, int maxEpisodes, Runnable onChange) {
+    /**
+     * @param consumer  reads every topic of the domain; the feed closes it
+     * @param admins    give an Admin for the bootstrap address, one per write
+     * @param producers give a producer for the bootstrap address, one per write
+     */
+    KafScaleFeed(String bootstrap, String domain, Consumer<byte[], byte[]> consumer, Function<String, Admin> admins,
+                 Function<String, Producer<String, byte[]>> producers, InMemorySeriesStore store, int maxEpisodes,
+                 Runnable onChange) {
         this.bootstrap = bootstrap;
         this.layout = new TopicLayout(domain);
-        this.consumer = KafScaleClients.consumer(bootstrap);
+        this.consumer = consumer;
+        this.admins = admins;
+        this.producers = producers;
         this.tail = new EpisodeLogTail(consumer, layout, Duration.ofMinutes(2));
         this.store = store;
         this.maxEpisodes = maxEpisodes;
@@ -91,23 +135,85 @@ final class KafScaleFeed implements AutoCloseable {
     /** Reads the logs once (blocking; fails when the broker cannot be reached), then follows them in the background. */
     static KafScaleFeed start(String bootstrap, String domain, Duration refresh, InMemorySeriesStore store,
                               int maxEpisodes, Runnable onChange) {
-        KafScaleFeed feed = new KafScaleFeed(bootstrap, domain, store, maxEpisodes, onChange);
-        int n = feed.pull();
-        System.out.println("kafscale feed: " + n + " episodes from " + feed.tail.topic()
-                + (feed.truncated ? " (stopped at --max-episodes " + maxEpisodes + ")" : "")
-                + ", vector topics " + feed.vectorTopics);
+        KafScaleFeed feed = new KafScaleFeed(bootstrap, domain, KafScaleClients.consumer(bootstrap), KafScaleClients::admin,
+                KafScaleClients::producer, store, maxEpisodes, onChange);
+        feed.load();
         long ms = Math.max(1000, refresh.toMillis());
-        feed.timer.scheduleWithFixedDelay(() -> {
-            try {
-                int added = feed.pull();
-                if (added > 0) {
-                    System.out.println("kafscale feed: +" + added + " episodes");
-                }
-            } catch (RuntimeException e) {
-                System.err.println("kafscale feed: " + e);     // keep following; the next round retries
-            }
-        }, ms, ms, TimeUnit.MILLISECONDS);
+        feed.timer.scheduleWithFixedDelay(feed::refresh, ms, ms, TimeUnit.MILLISECONDS);
         return feed;
+    }
+
+    /** The first read of the logs; fails when the broker cannot be reached. */
+    void load() {
+        int n = pull();
+        Map<String, Long> c = counts;
+        LOG.info("feed loaded topic={} episodes={} truncated={} vectorTopics={} {}", tail.topic(), n, truncated,
+                String.join(",", vectorTopics), text(c));
+        countsLogged = c;
+    }
+
+    /**
+     * One round of the schedule: reads what was appended since the round before. It never throws, because an
+     * exception, an Error included, would cancel the schedule for good. A round that fails is logged and counted in
+     * {@code refreshFailures} of the inventory; the next round tries again.
+     */
+    void refresh() {
+        try {
+            int added = pull();
+            if (refreshFailures > 0) {
+                refreshFailures = 0;
+                onChange.run();
+            }
+            recovered("refresh", "feed refresh works again");
+            Map<String, Long> c = counts;
+            if (added > 0 || !c.equals(countsLogged)) {
+                LOG.info("feed refreshed episodes={} {}", added, text(c));
+                countsLogged = c;
+            }
+        } catch (Throwable t) {
+            refreshFailures++;
+            failed("refresh", "feed refresh failed; the next refresh tries again", t);
+            onChange.run();
+        }
+    }
+
+    /** {@code key=value} pairs of the counts, for a log line. */
+    private static String text(Map<String, Long> counts) {
+        StringBuilder s = new StringBuilder();
+        counts.forEach((k, v) -> s.append(s.length() == 0 ? "" : " ").append(k).append('=').append(v));
+        return s.toString();
+    }
+
+    /**
+     * Logs a failure of one source when it starts or its cause changes: WARN, ERROR for an Error, with the cause chain;
+     * the stack trace at DEBUG. The same failure in the next round is not logged again.
+     */
+    private void failed(String source, String event, Throwable t) {
+        String cause = RetrievalServer.causes(t);
+        if (cause.equals(failing.put(source, cause))) {
+            return;
+        }
+        if (t instanceof Error) {
+            LOG.error("{} source={} cause={}", event, source, cause);
+        } else {
+            LOG.warn("{} source={} cause={}", event, source, cause);
+        }
+        LOG.debug("stack trace of the failure source={}", source, t);
+    }
+
+    /** Logs at INFO that a source works again after a failure. */
+    private void recovered(String source, String event) {
+        if (failing.remove(source) != null) {
+            LOG.info("{} source={}", event, source);
+        }
+    }
+
+    /** Counts a record that was read and not used; the first one of its partition is logged. */
+    private void dropped(ConsumerRecord<byte[], byte[]> r, String counter, String reason) {
+        if (dropLogged.add(new TopicPartition(r.topic(), r.partition()))) {
+            LOG.warn("record dropped and counted in {}; later ones of this partition are only counted topic={} partition={}"
+                    + " offset={} reason={}", counter, r.topic(), r.partition(), r.offset(), reason);
+        }
     }
 
     private synchronized int pull() {
@@ -126,20 +232,52 @@ final class KafScaleFeed implements AutoCloseable {
         for (String topic : List.of(layout.clean(), layout.synthetic())) {
             try {
                 written += pullSignals(topic);
+                recovered(topic, "topic readable again");
             } catch (RuntimeException e) {
-                System.err.println("kafscale feed: " + topic + " cannot be read now: " + e.getMessage());
+                failed(topic, "topic cannot be read now; the next refresh tries again", e);
             }
         }
         boolean vectorsChanged = pullVectors();
         try {
             pullDags();
+            recovered(dagTopics(), "topic readable again");
         } catch (RuntimeException e) {
-            System.err.println("kafscale feed: the DAG topics cannot be read now: " + e.getMessage());
+            failed(dagTopics(), "topic cannot be read now; the next refresh tries again", e);
         }
-        if (written > 0 || vectorsChanged) {
+        Map<String, Long> before = counts;
+        counts = count();
+        if (written > 0 || vectorsChanged || !counts.equals(before)) {
             onChange.run();
         }
         return written;
+    }
+
+    /** The control and the status topic, as the source of a failure in the log. */
+    private String dagTopics() {
+        return layout.dags() + "," + layout.dagStatus();
+    }
+
+    /** What was skipped so far, summed over every topic the feed reads. */
+    private Map<String, Long> count() {
+        long undecodable = tail.undecodable();
+        long lost = tail.lostToRetention();
+        for (EpisodeLogTail t : signalTails.values()) {
+            undecodable += t.undecodable();
+            lost += t.lostToRetention();
+        }
+        for (LogTail t : vectorTails.values()) {
+            lost += t.lostToRetention();
+        }
+        if (controlTail != null) {
+            lost += controlTail.lostToRetention() + statusTail.lostToRetention();
+        }
+        Map<String, Long> c = new LinkedHashMap<>();
+        c.put("undecodable", undecodable);
+        c.put("lostToRetention", lost);
+        c.put("droppedVectorRows", droppedVectorRows);
+        c.put("droppedControlRecords", droppedControlRecords);
+        c.put("droppedStatusRecords", droppedStatusRecords);
+        return c;
     }
 
     /**
@@ -164,16 +302,16 @@ final class KafScaleFeed implements AutoCloseable {
      * Writes generated episodes to the topic of the generated series of the domain and to nowhere else: a generator
      * must never write among measurements.
      *
-     * @throws IllegalArgumentException when asked to write to another topic
-     * @throws IllegalStateException    when the broker does not confirm
+     * @throws IllegalArgumentException   when asked to write to another topic
+     * @throws RetrievalServer.Unavailable when the broker does not take the episodes
      */
     synchronized void writeGenerated(String topic, List<Episode> episodes) {
         if (!topic.equals(layout.synthetic())) {
             throw new IllegalArgumentException("generated series go to " + layout.synthetic() + ", not to " + topic);
         }
         org.opentsx.model.OpenTsxAvro avro = new org.opentsx.model.OpenTsxAvro();
-        try (Admin admin = KafScaleClients.admin(bootstrap);
-             KafkaProducer<String, byte[]> producer = KafScaleClients.producer(bootstrap)) {
+        try (Admin admin = admins.apply(bootstrap);
+             Producer<String, byte[]> producer = producers.apply(bootstrap)) {
             layout.provisionTopic(admin, topic, (short) 1);
             List<java.util.concurrent.Future<org.apache.kafka.clients.producer.RecordMetadata>> sent = new ArrayList<>();
             for (Episode e : episodes) {
@@ -185,10 +323,11 @@ final class KafScaleFeed implements AutoCloseable {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("interrupted while writing to " + topic, e);
-        } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
-            Throwable cause = e.getCause() == null ? e : e.getCause();
-            throw new IllegalStateException("the broker did not confirm every generated episode for " + topic + " ("
-                    + cause.getClass().getSimpleName() + ": " + cause.getMessage() + "); try again", cause);
+        } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException | KafkaException
+                 | IllegalStateException e) {
+            Throwable cause = e instanceof java.util.concurrent.ExecutionException && e.getCause() != null ? e.getCause() : e;
+            throw new RetrievalServer.Unavailable(BROKER_UNAVAILABLE,
+                    new IllegalStateException("the broker did not take every generated episode for " + topic, cause));
         }
         // so the caller sees the series at once
         store.write(episodes);
@@ -213,14 +352,18 @@ final class KafScaleFeed implements AutoCloseable {
                     VectorJson.Row row = VectorJson.parse(r.value());
                     if (row != null) {
                         rows.put(VectorJson.keyText(row.key()) + "@" + row.fromMicros(), row);
+                    } else {
+                        droppedVectorRows++;
+                        dropped(r, "droppedVectorRows", "not an " + VectorJob.SCHEMA + " record");
                     }
                 });
                 changed |= n > 0;
                 changed |= unreadable.remove(topic) != null;
+                recovered(topic, "vector topic readable again");
             } catch (RuntimeException e) {
                 // one topic the broker does not hand out must not keep the others, or the episodes, from being read
                 changed |= unreadable.put(topic, now + VECTOR_RETRY.toNanos()) == null;
-                System.err.println("kafscale feed: " + topic + " cannot be read, next try in " + VECTOR_RETRY + ": " + e.getMessage());
+                failed(topic, "vector topic cannot be read; the next try is in " + VECTOR_RETRY, e);
             }
         }
         if (changed) {
@@ -265,24 +408,27 @@ final class KafScaleFeed implements AutoCloseable {
         return EpisodeJson.JSON.createObjectNode().put("dag", name).put("state", "stopped");
     }
 
+    /** @throws RetrievalServer.Unavailable when the broker does not take the record */
     private void control(String name, byte[] record) {
-        try (Admin admin = KafScaleClients.admin(bootstrap);
-             KafkaProducer<String, byte[]> producer = KafScaleClients.producer(bootstrap)) {
+        try (Admin admin = admins.apply(bootstrap);
+             Producer<String, byte[]> producer = producers.apply(bootstrap)) {
             layout.provisionDagTopics(admin, (short) 1);
             producer.send(new ProducerRecord<>(layout.dags(), name, record))
                     .get(KafScaleClients.DELIVERY_TIMEOUT.toSeconds() + 30, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("interrupted while writing to " + layout.dags(), e);
-        } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
-            Throwable cause = e.getCause() == null ? e : e.getCause();
-            throw new IllegalStateException("the broker did not confirm the record for " + layout.dags() + " ("
-                    + cause.getClass().getSimpleName() + ": " + cause.getMessage() + "); try again", cause);
+        } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException | KafkaException
+                 | IllegalStateException e) {
+            Throwable cause = e instanceof java.util.concurrent.ExecutionException && e.getCause() != null ? e.getCause() : e;
+            throw new RetrievalServer.Unavailable(BROKER_UNAVAILABLE,
+                    new IllegalStateException("the broker did not take the record for " + layout.dags(), cause));
         }
         try {
             pullDags();     // so the caller sees its own record at once
         } catch (RuntimeException e) {
             // the record is written; the next round reads it
+            failed(dagTopics(), "topic cannot be read now; the next refresh tries again", e);
         }
     }
 
@@ -298,17 +444,27 @@ final class KafScaleFeed implements AutoCloseable {
                 ObjectNode slim = ((ObjectNode) n).deepCopy();
                 slim.remove("spec");        // the document can be large and is not needed to show the state
                 deployments.put(n.path("dag").asText(), slim);
+            } else {
+                droppedControlRecords++;
+                dropped(r, "droppedControlRecords", "not an " + VectorProcessor.CONTROL_SCHEMA + " record with a dag");
             }
         });
         statusTail.poll(r -> {
             JsonNode n = json(r.value());
             if (n != null && VectorProcessor.STATUS_SCHEMA.equals(n.path("schema").asText()) && r.key() != null) {
                 statuses.put(new String(r.key(), StandardCharsets.UTF_8), n);
+            } else {
+                droppedStatusRecords++;
+                dropped(r, "droppedStatusRecords", "not an " + VectorProcessor.STATUS_SCHEMA + " record with a key");
             }
         });
     }
 
+    /** The record as JSON; null when it is empty or no JSON. */
     private static JsonNode json(byte[] value) {
+        if (value == null) {
+            return null;
+        }
         try {
             return EpisodeJson.JSON.readTree(value);
         } catch (java.io.IOException e) {
@@ -376,6 +532,21 @@ final class KafScaleFeed implements AutoCloseable {
     /** Vector topics the broker did not hand out at the last try; their series may be out of date. */
     List<String> unreadableVectorTopics() {
         return unreadable.keySet().stream().sorted().toList();
+    }
+
+    /**
+     * What the feed adds to the {@code source} object of the inventory: the vector topics, those that could not be
+     * read, the counts of skipped records and {@code refreshFailures}. It does not wait for a read under way.
+     */
+    void details(ObjectNode src) {
+        ArrayNode vt = src.putArray("vectorTopics");
+        vectorTopics().forEach(vt::add);
+        if (!unreadableVectorTopics().isEmpty()) {
+            ArrayNode bad = src.putArray("unreadableVectorTopics");
+            unreadableVectorTopics().forEach(bad::add);
+        }
+        counts.forEach(src::put);
+        src.put("refreshFailures", refreshFailures);
     }
 
     /** Topic names by role, as shown in the inventory. */
