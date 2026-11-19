@@ -45,6 +45,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   no tool compiles the Python operators to FPGA logic; a bounded streaming subset can be reimplemented as FPGA kernels
   behind the Rust runner, with Wayang planning and signing on the ground. Covers toolchains, space-grade hardware,
   in-orbit platform services, onboard logs, space-ground transport, pre-flight test environments and a roadmap.
+- Study on earth-plus-orbit data product architecture
+  ([`docs/research/03-EARTH-ORBIT-DATA-PRODUCT-ARCHITECTURE.md`](docs/research/03-EARTH-ORBIT-DATA-PRODUCT-ARCHITECTURE.md)):
+  ground service APIs (SQL, graphs, key-value, Flink or Spark, Kubernetes, S3) are not a cross-tier standard for orbit;
+  standardize a contract-first boundary of sealed, signed log segments and signed plans, and allow small embedded
+  engines inside the payload partition. Includes a two-sided debate with fact checks, six options and a decision guide.
 - Standalone finite numerical service through `serve-finite`, with optional
   built Workbench assets and no broker or model-registry clients at startup.
   API requests retain bounded numerical execution and explicit errors;
