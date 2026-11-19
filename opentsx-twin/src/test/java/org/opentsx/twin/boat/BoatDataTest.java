@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -34,14 +35,14 @@ class BoatDataTest {
     void csvIsResampledAndBoundWithOrigins() {
         List<String> csv = List.of(
                 "# example, invented",
-                "zeit;modus;landstrom;soc_prozent;solar_w;last_w;starlink_w;kuehlbox_w;notiz",
+                "zeit;modus;landstrom;soc_prozent;solar_w;last_w;starlink_w;coolbox_w;notiz",
                 "2026-07-04T10:00;hafen;1;80;100,5;40;30;5;arrived; windy",
                 "2026-07-04T10:05;hafen;1;82;;40;;5;",
                 "2026-07-04T11:00;segeln;0;81;150;45;32;5;",
                 "2026-07-04T13:00;anker;0;;;;;;");
         BoatData d = BoatData.parse(csv, BoatDemo.plan(), BERLIN);
         assertEquals(4, d.rows());
-        assertEquals(List.of("kuehlbox_w"), d.ignored());
+        assertEquals(List.of("coolbox_w"), d.ignored());
         long t0 = Micros.of(Instant.parse("2026-07-04T08:00:00Z"));
         assertEquals(t0, d.plan().startMicros());
         assertEquals(13, d.plan().steps());
@@ -74,11 +75,83 @@ class BoatDataTest {
     }
 
     @Test
+    void englishColumnsAndModesBindLikeTheGermanNames() {
+        BoatData english = BoatData.parse(List.of(
+                "time,mode,shore,starlink_on,soc_percent,solar_w,load_w,ghi_wm2,starlink_w,note",
+                "2026-07-04T10:00,harbour,1,1,80,100,40,500,30,arrived",
+                "2026-07-04T11:00,sailing,0,0,81,150,45,600,0,",
+                "2026-07-04T12:00,anchor,0,1,79,120,41,550,31,",
+                "2026-07-04T13:00,away,0,0,78,90,6,400,0,"), BoatDemo.plan(), BERLIN);
+        BoatData german = BoatData.parse(List.of(
+                "zeit,modus,landstrom,starlink_an,soc_prozent,solar_w,last_w,einstrahlung_wm2,starlink_w,notiz",
+                "2026-07-04T10:00,hafen,1,1,80,100,40,500,30,arrived",
+                "2026-07-04T11:00,segeln,0,0,81,150,45,600,0,",
+                "2026-07-04T12:00,anker,0,1,79,120,41,550,31,",
+                "2026-07-04T13:00,unbemannt,0,0,78,90,6,400,0,"), BoatDemo.plan(), BERLIN);
+        assertEquals(List.of(), english.ignored());
+        assertEquals(List.of("boat.mode_obs", "shore.available", "starlink.on", "station.soc_meas", "solar.p_meas_w",
+                "station.p_load_meas_w", "solar.ghi_wm2", "starlink.p_meas_w"),
+                List.copyOf(english.coverage().keySet()));
+        assertEquals(german.coverage(), english.coverage());
+        english.series().forEach((port, v) -> assertArrayEquals(german.series().get(port), v, port));
+        assertEquals(BoatClock.AWAY, english.measured("boat.mode_obs")[12]);
+
+        IllegalArgumentException noTime = assertThrows(IllegalArgumentException.class,
+                () -> BoatData.parse(List.of("mode,soc_percent", "harbour,80"), BoatDemo.plan(), BERLIN));
+        assertEquals("missing column time; expected a header with time and any of mode, shore, soc_percent, solar_w, "
+                + "load_w, ghi_wm2, <device>_on, <device>_w, note", noTime.getMessage());
+        IllegalArgumentException far = assertThrows(IllegalArgumentException.class,
+                () -> BoatData.parse(List.of("time,mode", "+300000-01-01T00:00Z,harbour"), BoatDemo.plan(), BERLIN));
+        assertEquals("line 2: time \"+300000-01-01T00:00Z\" is not a time; expected 2026-07-04T10:00+02:00, "
+                + "2026-07-04T08:00:00Z or 2026-07-04 10:00", far.getMessage());
+        IllegalArgumentException mode = assertThrows(IllegalArgumentException.class,
+                () -> BoatData.parse(List.of("time,mode", "2026-07-04T10:00Z,cruise"), BoatDemo.plan(), BERLIN));
+        assertEquals("line 2: mode \"cruise\" is not a mode; expected harbour, sailing, anchor or away",
+                mode.getMessage());
+    }
+
+    @Test
+    void aColumnNamedTwiceIsRefused() {
+        for (Map.Entry<String, String> c : Map.of(
+                "time,zeit,soc_percent", "zeit: names the column time a second time; expected each column once",
+                "time,timestamp", "timestamp: names the column time a second time; expected each column once",
+                "time,mode,modus", "modus: names the column mode a second time; expected each column once",
+                "time,starlink_on,starlink_an",
+                "starlink_an: names the column starlink_on a second time; expected each column once",
+                "time,note,notiz", "notiz: names the column note a second time; expected each column once").entrySet()) {
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> BoatData.parse(
+                    List.of(c.getKey(), "2026-07-04T10:00Z,1,1"), BoatDemo.plan(), BERLIN), c.getKey());
+            assertEquals(c.getValue(), e.getMessage());
+        }
+    }
+
+    @Test
+    void theRowsSpanAtMost3653DaysAndAtMostMaxStepsOfThePlan() {
+        TwinPlan full = BoatDemo.plan();
+        TwinPlan daily = new TwinPlan(full.twin(), full.start(), java.time.Duration.ofDays(1), full.steps(),
+                full.atoms(), full.wiring());
+        assertEquals(3654, BoatData.parse(List.of("time,soc_percent", "2020-01-01T00:00Z,80", "2030-01-01T00:00Z,81"),
+                daily, BERLIN).plan().steps());
+        IllegalArgumentException days = assertThrows(IllegalArgumentException.class, () -> BoatData.parse(
+                List.of("time,soc_percent", "2020-01-01T00:00Z,80", "2030-01-01T00:00:01Z,81"), daily, BERLIN));
+        assertEquals("line 3: time \"2030-01-01T00:00:01Z\" lies more than 3653 days after the earliest row (line 2); "
+                + "expected rows that span at most 3653 days (10 years)", days.getMessage());
+
+        assertEquals(35136, BoatData.parse(List.of("time,soc_percent", "2026-01-01T00:00Z,80",
+                "2027-01-01T23:45Z,81"), full, BERLIN).plan().steps());
+        IllegalArgumentException steps = assertThrows(IllegalArgumentException.class, () -> BoatData.parse(
+                List.of("time,soc_percent", "2027-01-02T00:00Z,81", "2026-01-01T00:00Z,80"), full, BERLIN));
+        assertEquals("line 2: time \"2027-01-02T00:00Z\" needs 35137 plan steps of PT15M from the earliest row "
+                + "(line 3); expected at most 35136 plan steps, from a longer baseStep or rows that span less time",
+                steps.getMessage());
+    }
+
+    @Test
     void csvErrorsAreExplained() {
         assertThrows(IllegalArgumentException.class,
                 () -> BoatData.parse(List.of("modus,soc_prozent", "hafen,80"), BoatDemo.plan(), BERLIN));
         assertThrows(IllegalArgumentException.class,
-                () -> BoatData.parse(List.of("zeit,modus", "2026-07-04T10:00Z,kreuzfahrt"), BoatDemo.plan(), BERLIN));
+                () -> BoatData.parse(List.of("zeit,modus", "2026-07-04T10:00Z,cruise"), BoatDemo.plan(), BERLIN));
     }
 
     @Test

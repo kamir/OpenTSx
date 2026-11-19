@@ -84,9 +84,11 @@ public final class SimulatedBills {
         Weather climate = new Weather(weatherId, new Params(plan.atoms().stream()
                 .filter(a -> a.id().equals(weatherId)).findFirst().orElseThrow().params()));
         List<String> temps = new ArrayList<>();
-        temps.add("# SIMULIERT - keine Messwerte. Tagesmitteltemperatur eines fiktiven Standorts im Erzgebirge (~650 m),");
-        temps.add("# erzeugt von org.opentsx.twin.house.SimulatedBills (Seed " + seed + "), Winter 2022/23 mild, 2024/25 kalt.");
-        temps.add("datum,t_mittel_c");
+        temps.add("# SIMULATED: not measured. Daily mean temperature of a fictitious site in the Erzgebirge "
+                + "(~650 m),");
+        temps.add("# written by org.opentsx.twin.house.SimulatedBills (seed " + seed + "), winter 2022/23 mild, "
+                + "2024/25 cold.");
+        temps.add("date,t_mean_c");
         for (int d = 0; d < days; d++) {
             LocalDate day = FROM.plusDays(d);
             long t0 = Micros.of(day.atStartOfDay(HouseScenario.ZONE).toInstant());
@@ -128,15 +130,15 @@ public final class SimulatedBills {
             double kwh = sum(el, a, b);
             String note;
             if (i == 1) {
-                rows.add(row(a, b, "", "", "", "", "", "", "SIMULIERT: Stromabrechnung 2023/24 nicht auffindbar"));
+                rows.add(row(a, b, "", "", "", "", "", "", "SIMULATED: electricity bill 2023/24 not found"));
                 continue;
             } else if (i == 2) {
                 kwh *= 1.04;
-                note = "SIMULIERT: Stromabrechnung, Zaehlerstand vom Versorger geschaetzt";
+                note = "SIMULATED: electricity bill, meter reading estimated by the supplier";
             } else if (i == 3) {
-                note = "SIMULIERT: Zwischenablesung (Zaehlerfoto) zum Jahresende";
+                note = "SIMULATED: interim reading (photo of the meter) at the end of the year";
             } else {
-                note = "SIMULIERT: Stromjahresabrechnung";
+                note = "SIMULATED: annual electricity bill";
             }
             double days1 = ChronoUnit.DAYS.between(a, b) + 1;
             double cost = Math.round(kwh) * price[i] + 130 * days1 / 365;
@@ -182,12 +184,12 @@ public final class SimulatedBills {
             String cost = fmt2(deliveries.get(i)[1] * oilPrice);
             if (a.getYear() < 2024) {
                 rows.add(row(a, b, "", litres, "", "", "", cost,
-                        "SIMULIERT: Heizoel-Lieferung, Tankstand nicht notiert"));
+                        "SIMULATED: heating oil delivery, tank level not noted"));
             } else {
                 int endDay = (int) ChronoUnit.DAYS.between(FROM, b) + 1;
                 rows.add(row(a, b, "", litres, reading(level[d0], rnd), reading(level[endDay], rnd), "", cost,
-                        "SIMULIERT: Heizoel-Lieferung, Tankstand vor Befuellung laut Fahrer"
-                                + (b.plusDays(1).equals(monthly) ? "; Ende = Peilstab 01.01.2025" : "")));
+                        "SIMULATED: heating oil delivery, tank level before filling as read by the driver"
+                                + (b.plusDays(1).equals(monthly) ? "; end = dipstick reading 2025-01-01" : "")));
             }
         }
         // monthly gauge readings 2025, August reading missing (holiday)
@@ -212,8 +214,8 @@ public final class SimulatedBills {
             String s0 = startReading != null ? startReading : reading(level[da], rnd);
             String s1 = reading(level[Math.min(db, days)], rnd);
             rows.add(row(m, next.minusDays(1), "", fmt0(delivered), s0, s1, "", cost > 0 ? fmt2(cost) : "",
-                    "SIMULIERT: Peilstab am Monatsersten" + (delivered > 0 ? " + Lieferung" : "")
-                            + (skipped ? "; Ablesung 01.08. fehlt (Urlaub)" : "")));
+                    "SIMULATED: dipstick reading on the first of the month" + (delivered > 0 ? " + delivery" : "")
+                            + (skipped ? "; reading of 2025-08-01 missing (holiday)" : "")));
             startReading = s1;
             m = next;
         }
@@ -229,15 +231,15 @@ public final class SimulatedBills {
             double ster = Math.round(sum(wood, w[0], w[1]) * 2) / 2.0;
             double woodPrice = 80 + 5 * (w[0].getYear() - 2022);
             rows.add(row(w[0], w[1], "", "", "", "", fmt1(ster), fmt2(ster * woodPrice),
-                    "SIMULIERT: Holz verbrannt (Fichte; geschaetzt aus Stapel, auf 0,5 Ster gerundet)"));
+                    "SIMULATED: wood burned (spruce; estimated from the stack, rounded to 0.5 Ster)"));
         }
 
         rows.sort((x, y) -> x[0].compareTo(y[0]) != 0 ? x[0].compareTo(y[0]) : x[1].compareTo(y[1]));
         List<String> bills = new ArrayList<>();
-        bills.add("# SIMULIERT - erfundene Abrechnungen eines fiktiven Hauses, KEINE echten Daten.");
-        bills.add("# Erzeugt von org.opentsx.twin.house.SimulatedBills (Seed " + seed + ") mit verdeckten Parametern "
+        bills.add("# SIMULATED: invented bills of a fictitious house, NOT real data.");
+        bills.add("# Written by org.opentsx.twin.house.SimulatedBills (seed " + seed + ") with hidden parameters "
                 + truth() + ".");
-        bills.add("# Kalibrierung: bin/opentsx house --simulated");
+        bills.add("# Calibration: bin/opentsx house --simulated");
         bills.add(String.join(",", BillCalibration.COLUMNS));
         for (String[] row : rows) {
             bills.add(String.join(",", row));

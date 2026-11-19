@@ -1,5 +1,6 @@
 package org.opentsx.twin.boat;
 
+import org.opentsx.twin.GermanText;
 import org.opentsx.twin.RunResult;
 import org.opentsx.twin.Twin;
 import org.opentsx.twin.demo.BoatDemo;
@@ -27,13 +28,23 @@ class SimulatedLogsTest {
     void bundledLogsAreTheGeneratorOutputAndMarked() {
         List<String> generated = SimulatedLogs.csv(BoatDemo.plan(), SimulatedLogs.SEED);
         assertEquals(generated, BoatDemo.simulatedLogs(), "regenerate with SimulatedLogs.main after model changes");
-        assertTrue(generated.get(0).startsWith("# SIMULIERT"));
+        assertTrue(generated.get(0).startsWith("# SIMULATED"));
         assertTrue(generated.contains(SimulatedLogs.HEADER));
         assertNotEquals(generated, SimulatedLogs.csv(BoatDemo.plan(), SimulatedLogs.SEED + 1), "the seed matters");
         // one day with Starlink off in the logbook, some rows without app data, local time without offset
         assertTrue(generated.stream().anyMatch(l -> l.startsWith("2026-07-08 12:00,") && l.split(",")[3].equals("0")));
         assertTrue(generated.stream().anyMatch(l -> l.startsWith("2026-07-09 12:00,") && l.split(",")[3].equals("1")));
         assertTrue(generated.stream().anyMatch(l -> l.matches("^2026-07-1\\d \\d\\d:\\d\\d,[a-z]+,[01],[01],,,,.*")));
+    }
+
+    @Test
+    void theGeneratedLogsAreEnglish() {
+        List<String> generated = SimulatedLogs.csv(BoatDemo.plan(), SimulatedLogs.SEED);
+        assertEquals("time,mode,shore,starlink_on,soc_percent,solar_w,load_w,ghi_wm2,note", SimulatedLogs.HEADER);
+        assertEquals(List.of(), GermanText.hits(String.join("\n", generated)));
+        assertTrue(generated.stream().filter(l -> !l.startsWith("#") && !l.equals(SimulatedLogs.HEADER))
+                .map(l -> l.split(",", 9)[8]).filter(n -> !n.isEmpty()).allMatch(n -> n.startsWith("SIMULATED")));
+        assertTrue(generated.stream().anyMatch(l -> l.contains(",away,")), "modes are written in English");
     }
 
     @Test

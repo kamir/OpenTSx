@@ -67,3 +67,10 @@ def test_the_page_holds_the_data(tmp_path):
     page = (tmp_path / PAGE).read_text(encoding="utf-8")
     assert 'const DATA = {"scenarios": []};' in page
     assert "/*DATA*/" not in page
+
+
+def test_the_page_is_english(tmp_path):
+    result = run(tmp_path, TEMPLATE_TEXT, data(tmp_path, '{"scenarios": []}'))
+    assert result.returncode == 0, result.stdout + result.stderr
+    page = (tmp_path / PAGE).read_text(encoding="utf-8")
+    assert page.startswith('<!doctype html>\n<html lang="en">\n'), page[:60]

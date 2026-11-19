@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Scenario S1 (H2 chain) in all three modes: the handover station closes its valve after one hour, the pipeline
@@ -39,6 +40,9 @@ public final class H2ChainDemo {
     public static final double KWH_PER_KG = 55;
     public static final double OFFTAKE_KGPH = ELY_KW / KWH_PER_KG;
     static final String COMMAND = "twin";
+    /** The atoms the runs of the command bind, intervene on or report. */
+    static final Set<String> ATOMS = Set.of("park", "ely", "offtake", "marketer", "battery", "market", "handover",
+            "buffer");
 
     private H2ChainDemo() {
     }
@@ -97,7 +101,14 @@ public final class H2ChainDemo {
     /** {@code args} without the command word, as bin/opentsx passes them. */
     static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err) {
         return TwinCli.run(COMMAND, args, env, out, err, (conf, positional) -> {
-            Twin twin = new Twin(TwinCli.plan(conf, "twin/h2-chain.yaml", H2ChainDemo::plan));
+            TwinPlan plan = TwinCli.plan(conf, "twin/h2-chain.yaml", H2ChainDemo::plan);
+            List<String> missing = plan.missingAtoms(plan(), ATOMS);
+            if (!missing.isEmpty()) {
+                throw new IllegalArgumentException(conf.get(TwinCli.PLAN, "twin/h2-chain.yaml") + ": plan "
+                        + plan.twin() + " has no atom " + String.join(", ", missing) + "; expected an H2 chain plan "
+                        + "such as opentsx-twin/src/main/resources/twin/h2-chain.yaml");
+            }
+            Twin twin = new Twin(plan);
             return o -> print(o, twin);
         });
     }

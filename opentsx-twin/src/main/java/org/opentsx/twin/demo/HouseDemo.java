@@ -1,5 +1,6 @@
 package org.opentsx.twin.demo;
 
+import org.opentsx.conf.OpenTsxConfException;
 import org.opentsx.model.Micros;
 import org.opentsx.twin.Intervention;
 import org.opentsx.twin.Mode;
@@ -110,28 +111,42 @@ public final class HouseDemo {
                         + "; expected a house plan such as opentsx-twin/src/main/resources/" + HouseScenario.PLAN);
             }
             double hddRef = conf.getDouble(HDD_REF_KEY);
-            if (conf.getBoolean(TwinCli.SIMULATED)) {
-                return o -> simulated(o, plan, hddRef);
-            }
             Path bills = conf.getOption(BILLS).map(Path::of).orElse(null);
+            if (conf.getOption(WEATHER).isPresent() && bills == null) {
+                throw new OpenTsxConfException(WEATHER, "needs " + BILLS,
+                        "give --calibrate <bills.csv> with --weather");
+            }
+            if (conf.getBoolean(TwinCli.SIMULATED)) {
+                if (bills != null) {
+                    throw new OpenTsxConfException(TwinCli.SIMULATED, "cannot be combined with " + BILLS,
+                            "give --calibrate <bills.csv> or --simulated, not both");
+                }
+                List<BillCalibration.Bill> bundled = BillCalibration.parse(SimulatedBills.bundledBills());
+                try {
+                    BillCalibration.checkSteps(bundled, plan);
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException(SimulatedBills.BILLS + ": " + e.getMessage(), e);
+                }
+                return o -> simulated(o, plan, bundled, hddRef);
+            }
             List<BillCalibration.Bill> rows = bills == null ? null
-                    : TwinCli.csv(bills, "bills file", BillCalibration::parse);
+                    : TwinCli.csv(bills, "bills file", lines -> BillCalibration.checkSteps(BillCalibration.parse(lines),
+                            plan));
             Path temperatures = conf.getOption(WEATHER).map(Path::of).orElse(null);
             String weatherAtom = HouseScenario.id(plan, "weather");
-            SeriesInputs weather = bills == null || temperatures == null ? new SeriesInputs()
+            SeriesInputs weather = temperatures == null ? new SeriesInputs()
                     : TwinCli.csv(temperatures, "temperatures file",
                             lines -> BillCalibration.dailyTemperatures(lines, weatherAtom, 5.0));
             return o -> print(o, plan, bills, rows, weather, hddRef);
         });
     }
 
-    private static void simulated(PrintStream out, TwinPlan plan, double hddRef) {
+    private static void simulated(PrintStream out, TwinPlan plan, List<BillCalibration.Bill> bills, double hddRef) {
         out.println("House twin '" + plan.twin() + "' calibrated on SIMULATED bills (" + SimulatedBills.BILLS
                 + ", " + SimulatedBills.TEMPERATURES + ") - no real data");
         SeriesInputs weather = BillCalibration.dailyTemperatures(SimulatedBills.bundledTemperatures(),
                 HouseScenario.id(plan, "weather"), 5.0);
-        BillCalibration.Result c = new BillCalibration(plan, weather)
-                .fit(BillCalibration.parse(SimulatedBills.bundledBills()));
+        BillCalibration.Result c = new BillCalibration(plan, weather).fit(bills);
         report(out, c);
         out.println("   hidden true parameters of the simulation (unknown to the fit): " + SimulatedBills.truth());
         out.println("   (boiler.eta is fixed at the plan's assumption in the fit, so H and the hot-water scale "

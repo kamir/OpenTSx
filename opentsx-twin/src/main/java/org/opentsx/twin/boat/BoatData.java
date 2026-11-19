@@ -23,23 +23,27 @@ import java.util.stream.IntStream;
  * Real operating data of a boat from a CSV file (power-station app export, Starlink statistics, USB-C meter, logbook),
  * resampled to the plan step and bound to the input ports of a boat plan.
  * <p>
- * Columns (header row, any order, all but {@code zeit} optional; empty cell = no value; lines starting with
- * {@code #} are comments; separator {@code ,} or {@code ;}, with {@code ;} a decimal comma is allowed):
+ * Columns (header row, any order, all but {@code time} optional; empty cell = no value; lines starting with
+ * {@code #} are comments; separator {@code ,} or {@code ;}, with {@code ;} a decimal comma is allowed). The German
+ * column names ({@code zeit}, {@code modus}, {@code landstrom}, {@code soc_prozent}, {@code last_w},
+ * {@code einstrahlung_wm2}, {@code <device>_an}, {@code notiz}) and modes ({@code hafen}, {@code segeln},
+ * {@code anker}, {@code unbemannt}) are accepted as aliases; a column named twice is refused:
  * <table>
  *   <tr><th>column</th><th>meaning</th><th>bound to</th><th>origin</th></tr>
- *   <tr><td>{@code zeit}</td><td>ISO time, with offset/Z or local ({@code zone})</td><td>-</td><td>-</td></tr>
- *   <tr><td>{@code modus}</td><td>hafen | segeln | anker | unbemannt (logbook)</td><td>{@code <boat-mode>.mode_obs}</td><td>REPORTED</td></tr>
- *   <tr><td>{@code landstrom}</td><td>shore power plugged in, 0/1 (logbook)</td><td>{@code <shore-power>.available}</td><td>REPORTED</td></tr>
- *   <tr><td>{@code soc_prozent}</td><td>power station state of charge, %</td><td>{@code <power-station>.soc_meas}</td><td>MEASURED</td></tr>
+ *   <tr><td>{@code time}</td><td>ISO time, with offset/Z or local ({@code zone})</td><td>-</td><td>-</td></tr>
+ *   <tr><td>{@code mode}</td><td>harbour | sailing | anchor | away (logbook)</td><td>{@code <boat-mode>.mode_obs}</td><td>REPORTED</td></tr>
+ *   <tr><td>{@code shore}</td><td>shore power plugged in, 0/1 (logbook)</td><td>{@code <shore-power>.available}</td><td>REPORTED</td></tr>
+ *   <tr><td>{@code soc_percent}</td><td>power station state of charge, %</td><td>{@code <power-station>.soc_meas}</td><td>MEASURED</td></tr>
  *   <tr><td>{@code solar_w}</td><td>solar input power at the station, W</td><td>{@code <solar>.p_meas_w}</td><td>MEASURED</td></tr>
- *   <tr><td>{@code last_w}</td><td>total output power of the station, W</td><td>{@code <power-station>.p_load_meas_w}</td><td>MEASURED</td></tr>
- *   <tr><td>{@code einstrahlung_wm2}</td><td>global horizontal irradiance, W/m² (e.g. nearby DWD station)</td><td>{@code <solar>.ghi_wm2}</td><td>MEASURED</td></tr>
- *   <tr><td>{@code <device>_an}</td><td>device switched on that day, 0/1 (logbook, e.g. {@code starlink_an})</td><td>{@code <device>.on}</td><td>REPORTED</td></tr>
+ *   <tr><td>{@code load_w}</td><td>total output power of the station, W</td><td>{@code <power-station>.p_load_meas_w}</td><td>MEASURED</td></tr>
+ *   <tr><td>{@code ghi_wm2}</td><td>global horizontal irradiance, W/m² (e.g. nearby DWD station)</td><td>{@code <solar>.ghi_wm2}</td><td>MEASURED</td></tr>
+ *   <tr><td>{@code <device>_on}</td><td>device switched on that day, 0/1 (logbook, e.g. {@code starlink_on})</td><td>{@code <device>.on}</td><td>REPORTED</td></tr>
  *   <tr><td>{@code <device>_w}</td><td>power of one device at the device, W (e.g. {@code starlink_w})</td><td>{@code <device>.p_meas_w}</td><td>MEASURED</td></tr>
- *   <tr><td>{@code notiz}</td><td>free text, ignored</td><td>-</td><td>-</td></tr>
+ *   <tr><td>{@code note}</td><td>free text, ignored</td><td>-</td><td>-</td></tr>
  * </table>
  * Rows inside one plan step are averaged (mode: last value, shore power: maximum). A step without rows holds the
- * previous value for up to one hour, after that the value is missing and the model fills in (origin SYNTHETIC).
+ * previous value for up to one hour, after that the value is missing and the model fills in (origin SYNTHETIC). The
+ * rows span at most {@link #MAX_SPAN_DAYS} days and at most {@link #MAX_STEPS} steps of the plan.
  *
  * @param plan     the template plan moved to the data period (start floored to the step, steps to cover all rows)
  * @param inputs   bindings for the twin
@@ -52,6 +56,19 @@ import java.util.stream.IntStream;
  */
 public record BoatData(TwinPlan plan, SeriesInputs inputs, double[] socMeas, Map<String, Integer> coverage,
                        List<String> ignored, int rows, Map<String, double[]> series, Map<String, Origin> origins) {
+
+    /** The longest span of the rows: 10 years, leap days included. */
+    public static final int MAX_SPAN_DAYS = 3653;
+
+    /**
+     * The most plan steps the rows may span: 366 days of the 15-minute steps of {@code twin/boot-etap22.yaml}. A
+     * calibrated boat run over 35040 steps needs about 2.4 GB of Java heap.
+     */
+    public static final long MAX_STEPS = 366 * 96;
+
+    private static final Map<String, String> GERMAN_COLUMNS = Map.of("zeit", "time", "modus", "mode",
+            "landstrom", "shore", "soc_prozent", "soc_percent", "last_w", "load_w", "einstrahlung_wm2", "ghi_wm2",
+            "notiz", "note");
 
     /** The bindings without the given ports, e.g. without measured solar power to calibrate the solar model. */
     public SeriesInputs inputs(java.util.Set<String> exclude) {
@@ -103,35 +120,44 @@ public record BoatData(TwinPlan plan, SeriesInputs inputs, double[] socMeas, Map
         int timeCol = -1;
         List<Column> cols = new ArrayList<>();
         List<String> ignored = new ArrayList<>();
+        java.util.Set<String> named = new java.util.HashSet<>();
         for (int i = 0; i < header.length; i++) {
             String h = header[i].trim().toLowerCase(Locale.ROOT);
+            String name = h.endsWith("_an") ? h.substring(0, h.length() - 3) + "_on"
+                    : h.equals("timestamp") ? "time" : GERMAN_COLUMNS.getOrDefault(h, h);
             Column c = null;
-            switch (h) {
-                case "zeit", "time", "timestamp" -> timeCol = i;
-                case "modus", "mode" -> c = col(i, boat, "mode_obs", Origin.REPORTED, 1, Agg.LAST);
-                case "landstrom", "shore" -> c = col(i, shore, "available", Origin.REPORTED, 1, Agg.MAX);
-                case "soc_prozent", "soc_percent" -> c = col(i, station, "soc_meas", Origin.MEASURED, 0.01, Agg.MEAN);
+            switch (name) {
+                case "time" -> timeCol = i;
+                case "mode" -> c = col(i, boat, "mode_obs", Origin.REPORTED, 1, Agg.LAST);
+                case "shore" -> c = col(i, shore, "available", Origin.REPORTED, 1, Agg.MAX);
+                case "soc_percent" -> c = col(i, station, "soc_meas", Origin.MEASURED, 0.01, Agg.MEAN);
                 case "solar_w" -> c = col(i, solar, "p_meas_w", Origin.MEASURED, 1, Agg.MEAN);
-                case "last_w", "load_w" -> c = col(i, station, "p_load_meas_w", Origin.MEASURED, 1, Agg.MEAN);
-                case "einstrahlung_wm2", "ghi_wm2" -> c = col(i, solar, "ghi_wm2", Origin.MEASURED, 1, Agg.MEAN);
-                case "notiz", "note", "" -> {
+                case "load_w" -> c = col(i, station, "p_load_meas_w", Origin.MEASURED, 1, Agg.MEAN);
+                case "ghi_wm2" -> c = col(i, solar, "ghi_wm2", Origin.MEASURED, 1, Agg.MEAN);
+                case "note", "" -> {
                 }
                 default -> {
-                    if (h.endsWith("_w") && devices.contains(h.substring(0, h.length() - 2))) {
-                        c = col(i, h.substring(0, h.length() - 2), "p_meas_w", Origin.MEASURED, 1, Agg.MEAN);
-                    } else if (h.endsWith("_an") && devices.contains(h.substring(0, h.length() - 3))) {
-                        c = col(i, h.substring(0, h.length() - 3), "on", Origin.REPORTED, 1, Agg.LAST);
+                    if (name.endsWith("_w") && devices.contains(name.substring(0, name.length() - 2))) {
+                        c = col(i, name.substring(0, name.length() - 2), "p_meas_w", Origin.MEASURED, 1, Agg.MEAN);
+                    } else if (name.endsWith("_on") && devices.contains(name.substring(0, name.length() - 3))) {
+                        c = col(i, name.substring(0, name.length() - 3), "on", Origin.REPORTED, 1, Agg.LAST);
                     }
                 }
             }
+            boolean known = c != null || timeCol == i || name.equals("note");
+            if (known && !named.add(name)) {
+                throw new IllegalArgumentException(header[i].trim() + ": names the column " + name
+                        + " a second time; expected each column once");
+            }
             if (c != null) {
                 cols.add(c);
-            } else if (timeCol != i && !h.isEmpty() && !h.equals("notiz") && !h.equals("note")) {
+            } else if (!known && !h.isEmpty()) {
                 ignored.add(header[i].trim());
             }
         }
         if (timeCol < 0) {
-            throw new IllegalArgumentException("CSV needs a column 'zeit'");
+            throw new IllegalArgumentException("missing column time; expected a header with time and any of mode, "
+                    + "shore, soc_percent, solar_w, load_w, ghi_wm2, <device>_on, <device>_w, note");
         }
 
         List<long[]> times = new ArrayList<>();
@@ -145,7 +171,7 @@ public record BoatData(TwinPlan plan, SeriesInputs inputs, double[] socMeas, Map
             String t = f[timeCol].trim();
             try {
                 times.add(new long[]{time(t, zone)});
-            } catch (DateTimeException e) {
+            } catch (DateTimeException | ArithmeticException e) {
                 throw new IllegalArgumentException("line " + numbers.get(r) + ": " + header[timeCol].trim() + " \"" + t
                         + "\" is not a time; expected 2026-07-04T10:00+02:00, 2026-07-04T08:00:00Z or 2026-07-04 10:00",
                         e);
@@ -156,11 +182,39 @@ public record BoatData(TwinPlan plan, SeriesInputs inputs, double[] socMeas, Map
         if (rows.isEmpty()) {
             throw new IllegalArgumentException("CSV has no data rows");
         }
+        int earliest = 0;
+        for (int r = 1; r < times.size(); r++) {
+            if (times.get(r)[0] < times.get(earliest)[0]) {
+                earliest = r;
+            }
+        }
+        long first = times.get(earliest)[0];
+        long limit = first + MAX_SPAN_DAYS * 86_400_000_000L;
+        for (int r = 0; r < times.size(); r++) {
+            if (times.get(r)[0] > limit) {
+                throw new IllegalArgumentException("line " + rowLines.get(r) + ": " + header[timeCol].trim() + " \""
+                        + rows.get(r)[timeCol].trim() + "\" lies more than " + MAX_SPAN_DAYS + " days after the "
+                        + "earliest row (line " + rowLines.get(earliest) + "); expected rows that span at most "
+                        + MAX_SPAN_DAYS + " days (10 years)");
+            }
+        }
+        int latest = 0;
+        for (int r = 1; r < times.size(); r++) {
+            if (times.get(r)[0] > times.get(latest)[0]) {
+                latest = r;
+            }
+        }
         long step = template.baseStepMicros();
-        long first = times.stream().mapToLong(t -> t[0]).min().getAsLong();
-        long last = times.stream().mapToLong(t -> t[0]).max().getAsLong();
+        long last = times.get(latest)[0];
         long start = Math.floorDiv(first, step) * step;
-        int n = (int) ((last - start) / step) + 1;
+        long steps = (last - start) / step + 1;
+        if (steps > MAX_STEPS) {
+            throw new IllegalArgumentException("line " + rowLines.get(latest) + ": " + header[timeCol].trim() + " \""
+                    + rows.get(latest)[timeCol].trim() + "\" needs " + steps + " plan steps of " + template.baseStep()
+                    + " from the earliest row (line " + rowLines.get(earliest) + "); expected at most " + MAX_STEPS
+                    + " plan steps, from a longer baseStep or rows that span less time");
+        }
+        int n = (int) steps;
         int maxHold = (int) Math.max(1, BoatClock.HOUR / step);
 
         SeriesInputs inputs = new SeriesInputs();
@@ -257,7 +311,8 @@ public record BoatData(TwinPlan plan, SeriesInputs inputs, double[] socMeas, Map
         if (port.endsWith(".mode_obs")) {
             int m = BoatClock.mode(v);
             if (m < 0) {
-                throw new IllegalArgumentException("unknown mode '" + v + "', use hafen, segeln, anker, unbemannt");
+                throw new IllegalArgumentException("mode \"" + v + "\" is not a mode; expected harbour, sailing, "
+                        + "anchor or away");
             }
             return m;
         }

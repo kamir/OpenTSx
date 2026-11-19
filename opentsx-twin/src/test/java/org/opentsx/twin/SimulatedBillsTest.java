@@ -22,16 +22,25 @@ class SimulatedBillsTest {
         SimulatedBills.Data d = SimulatedBills.generate();
         assertEquals(SimulatedBills.bundledBills(), d.bills(), "regenerate with SimulatedBills.main");
         assertEquals(SimulatedBills.bundledTemperatures(), d.temperatures());
-        assertTrue(d.bills().get(0).contains("SIMULIERT") && d.temperatures().get(0).contains("SIMULIERT"));
+        assertTrue(d.bills().get(0).contains("SIMULATED") && d.temperatures().get(0).contains("SIMULATED"));
 
         List<Bill> bills = BillCalibration.parse(d.bills());
-        assertTrue(bills.stream().allMatch(b -> b.note().startsWith("SIMULIERT")));
+        assertTrue(bills.stream().allMatch(b -> b.note().startsWith("SIMULATED")));
         // the imperfections are there: a missing bill, deliveries without tank levels, round litres, wood in 0.5 Ster
         assertTrue(bills.stream().anyMatch(b -> !b.hasElectricity() && !b.hasOil() && Double.isNaN(b.woodSter())));
         assertTrue(bills.stream().anyMatch(b -> b.hasOil() && !b.oilFromLevels()));
         assertTrue(bills.stream().filter(b -> b.oilDeliveredL() > 0).allMatch(b -> b.oilDeliveredL() % 500 == 0));
         assertTrue(bills.stream().filter(b -> !Double.isNaN(b.woodSter())).allMatch(b -> b.woodSter() * 2 % 1 == 0));
         assertTrue(bills.stream().filter(Bill::hasOil).allMatch(b -> b.oilConsumedL() > 0));
+    }
+
+    @Test
+    void theGeneratedBillsAndTemperaturesAreEnglish() {
+        SimulatedBills.Data d = SimulatedBills.generate();
+        assertEquals(List.of(), GermanText.hits(String.join("\n", d.bills())));
+        assertEquals(List.of(), GermanText.hits(String.join("\n", d.temperatures())));
+        assertTrue(BillCalibration.parse(d.bills()).stream().allMatch(b -> b.note().startsWith("SIMULATED")));
+        assertTrue(d.temperatures().contains("date,t_mean_c"));
     }
 
     /**
@@ -63,6 +72,6 @@ class SimulatedBillsTest {
         assertFalse(r.identifiable());
         assertTrue(r.warnings().stream().anyMatch(w -> w.contains("poorly determined") && w.contains("dhw.scale")),
                 r.warnings().toString());
-        assertTrue(r.cvRmse().get("strom_kwh") < 0.05);
+        assertTrue(r.cvRmse().get("electricity_kwh") < 0.05);
     }
 }

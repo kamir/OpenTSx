@@ -41,16 +41,65 @@ class BillCalibrationTest {
 
         List<Bill> de = BillCalibration.parse(List.of(
                 "zeitraum_von;zeitraum_bis;strom_kwh;heizoel_liter;notiz",
-                "01.01.2024;31.12.2024;2.880,5;1.800;\"Lieferung; ohne Tankstand\""));
+                "01.01.2024;31.12.2024;2.880,5;1.800;\"delivery; no tank level\""));
         assertEquals(2880.5, de.get(0).electricityKwh(), 1e-9);
         assertEquals(1800, de.get(0).oilConsumedL(), 1e-9);         // delivery as proxy
         assertFalse(de.get(0).oilFromLevels());
-        assertEquals("Lieferung; ohne Tankstand", de.get(0).note());
+        assertEquals("delivery; no tank level", de.get(0).note());
 
         assertThrows(IllegalArgumentException.class, () -> BillCalibration.parse(List.of(
                 "zeitraum_von,zeitraum_bis,gas_kwh", "2024-01-01,2024-12-31,1")));
         assertThrows(IllegalArgumentException.class, () -> BillCalibration.parse(List.of(
                 "zeitraum_von,zeitraum_bis", "2024-12-31,2024-01-01")));
+    }
+
+    @Test
+    void readsEnglishColumnsAndTheGermanNamesAsAliases() {
+        List<Bill> english = BillCalibration.parse(List.of(
+                "period_from,period_to,electricity_kwh,heating_oil_l,tank_start_l,tank_end_l,wood_ster,cost_eur,note",
+                "2024-01-01,2024-12-31,2880,1800,520,1390,2,1890,delivery in September"));
+        List<Bill> german = BillCalibration.parse(List.of(
+                "zeitraum_von,zeitraum_bis,strom_kwh,heizoel_liter,tank_start_liter,tank_ende_liter,holz_ster,kosten_eur,notiz",
+                "2024-01-01,2024-12-31,2880,1800,520,1390,2,1890,delivery in September"));
+        assertEquals(new Bill(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31), 2880, 1800, 520, 1390, 2, 1890,
+                "delivery in September"), english.get(0));
+        assertEquals(english, german);
+        assertEquals(List.of("period_from", "period_to", "electricity_kwh", "heating_oil_l", "tank_start_l",
+                "tank_end_l", "wood_ster", "cost_eur", "note"), BillCalibration.COLUMNS);
+
+        IllegalArgumentException twice = assertThrows(IllegalArgumentException.class, () -> BillCalibration.parse(
+                List.of("period_from,period_to,electricity_kwh,strom_kwh", "2024-01-01,2024-12-31,1,2")));
+        assertEquals("strom_kwh: names the column electricity_kwh a second time; expected each column once",
+                twice.getMessage());
+        IllegalArgumentException missing = assertThrows(IllegalArgumentException.class, () -> BillCalibration.parse(
+                List.of("von,bis", "2024-01-01,2024-12-31")));
+        assertEquals("missing column period_from; expected [period_from, period_to, electricity_kwh, heating_oil_l, "
+                + "tank_start_l, tank_end_l, wood_ster, cost_eur, note]", missing.getMessage());
+    }
+
+    @Test
+    void billsAndTemperaturesSpanAtMost3653DaysAndARunAtMostMaxSteps() {
+        assertEquals(3653, BillCalibration.parse(List.of("period_from,period_to", "2020-01-01,2029-12-31")).get(0).days());
+        IllegalArgumentException bills = assertThrows(IllegalArgumentException.class, () -> BillCalibration.parse(
+                List.of("period_from,period_to", "2020-01-01,2030-01-01")));
+        assertEquals("line 2: period_to 2030-01-01 lies 3653 days or more after the earliest period_from (line 2); "
+                + "expected bills that span at most 3653 days (10 years)", bills.getMessage());
+
+        BillCalibration.dailyTemperatures(List.of("date,t_mean_c", "2020-01-01,3.5", "2029-12-31,4.5"), "weather", 5);
+        IllegalArgumentException temps = assertThrows(IllegalArgumentException.class, () -> BillCalibration
+                .dailyTemperatures(List.of("date,t_mean_c", "2020-01-01,3.5", "2030-01-01,4.5"), "weather", 5));
+        assertEquals("line 3: date 2030-01-01 lies 3653 days or more after the earliest date (line 2); expected "
+                + "temperatures that span at most 3653 days (10 years)", temps.getMessage());
+
+        TwinPlan plan = HouseDemo.plan();
+        TwinPlan seconds = new TwinPlan(plan.twin(), plan.start(), java.time.Duration.ofSeconds(1), plan.steps(),
+                plan.atoms(), plan.wiring());
+        List<Bill> year = BillCalibration.parse(List.of("period_from,period_to,electricity_kwh",
+                "2024-01-01,2024-12-31,3000"));
+        IllegalArgumentException steps = assertThrows(IllegalArgumentException.class,
+                () -> new BillCalibration(seconds).fit(year));
+        assertEquals("period_from 2024-01-01 to period_to 2024-12-31 needs 31622400 plan steps of PT1S; expected at "
+                + "most 87672 plan steps, from a longer baseStep or bills that span less time", steps.getMessage());
     }
 
     /**
@@ -76,7 +125,8 @@ class BillCalibrationTest {
         BillCalibration.Result r = cal.fit(bills);
         truth.forEach((k, v) -> assertEquals(v, r.parameters().get(k), 0.02 * v, k + " in " + r.parameters()));
         assertTrue(r.identifiable(), "cond " + r.conditionNumber() + " corr " + r.maxCorrelation());
-        assertTrue(r.cvRmse().get("strom_kwh") < 0.01 && r.cvRmse().get("heizoel_liter") < 0.02, r.cvRmse().toString());
+        assertTrue(r.cvRmse().get("electricity_kwh") < 0.01 && r.cvRmse().get("heating_oil_l") < 0.02,
+                r.cvRmse().toString());
         assertEquals(12, r.periods().size());
         assertEquals(7, r.runs(), 3);
         assertEquals(165.0, ((Number) r.calibratedPlan().atoms().stream().filter(a -> a.id().equals("building"))

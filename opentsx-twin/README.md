@@ -52,18 +52,38 @@ opentsx: --plna: unknown option of twin; did you mean --plan?
 opentsx: my-site.yaml: no such file; give an existing plan file
 opentsx: opentsx.boat.zone: "Europe/Berln" is not a time zone; give a region id such as Europe/Berlin or an offset such as +02:00
 opentsx: opentsx.boat.calibrate: needs opentsx.boat.data; give --data <file.csv> with --calibrate
+opentsx: opentsx.boat.zone: needs opentsx.boat.data; give --data <file.csv> with --zone
+opentsx: opentsx.house.weather: needs opentsx.house.bills; give --calibrate <bills.csv> with --weather
+opentsx: opentsx.twin.simulated: cannot be combined with opentsx.house.bills; give --calibrate <bills.csv> or --simulated, not both
 opentsx: opentsx.twin.scenario: "nosuch" is not a scenario; expected one of h2-chain, haus, boot
-opentsx: bad.csv: missing column zeitraum_von; expected [zeitraum_von, zeitraum_bis, strom_kwh, heizoel_liter, tank_start_liter, tank_ende_liter, holz_ster, kosten_eur, notiz]
+opentsx: bad.csv: missing column period_from; expected [period_from, period_to, electricity_kwh, heating_oil_l, tank_start_l, tank_end_l, wood_ster, cost_eur, note]
 ```
 
+An option that has no effect is refused: `--zone` without `--data`, `--weather` without `--calibrate`, and
+`--simulated` together with `--calibrate`.
+
 A plan with an unknown field, a wire to an unknown atom or fewer than 1 step is a usage error as well, and the line
-names the file. So is a `house` plan without the house atoms, a bills file without rows, and a row that a bills,
-temperatures or boat data file cannot use; the line names the file and the row's line number in it, comment lines
-included:
+names the file. So is a plan that lacks the atoms the command runs on: `house` checks the atom types, `twin` and
+`boat` check the ids and types of the atoms they bind, change or report. So are a bills file without rows, a row
+that a bills, temperatures or boat data file cannot use, and data that span more than 3653 days (10 years); the line
+names the file and the row's line number in it, comment lines included:
 
 ```text
 opentsx: h2.yaml: plan h2-chain has no atom of type building, weather, oil-boiler, oil-tank, wood-stove, wood-store, dhw, appliances, meter; expected a house plan such as opentsx-twin/src/main/resources/twin/haus-erzgebirge.yaml
-opentsx: boat.csv: line 4: zeit "x" is not a time; expected 2026-07-04T10:00+02:00, 2026-07-04T08:00:00Z or 2026-07-04 10:00
+opentsx: haus.yaml: plan haus-erzgebirge has no atom boat (boat-mode), solar (solar), shore (shore-power), laptop1 (device), laptop2 (device), starlink (device), station (power-station); expected a boat plan such as opentsx-twin/src/main/resources/twin/boot-etap22.yaml
+opentsx: boat.csv: line 3: time "x" is not a time; expected 2026-07-04T10:00+02:00, 2026-07-04T08:00:00Z or 2026-07-04 10:00
+opentsx: long.csv: line 3: time "9999-12-31T00:00Z" lies more than 3653 days after the earliest row (line 2); expected rows that span at most 3653 days (10 years)
+```
+
+Data that need more steps of the plan than one run can hold are a usage error too. Boat data span at most 35136
+steps of the plan (366 days of the 15-minute steps of `twin/boot-etap22.yaml`), and bills at most 87672 steps
+(3653 days of hourly steps). `--simulated` checks the bundled data the same way. A calibrated boat run over a year of
+15-minute steps needs about 2.4 GB of Java heap, and a house calibration over 10 years of hourly steps needs more
+than 2 GB. Use a plan with a longer `baseStep` or data that span less time:
+
+```text
+opentsx: season.csv: line 3: time "2026-08-31T10:00Z" needs 83521 plan steps of PT1M from the earliest row (line 2); expected at most 35136 plan steps, from a longer baseStep or rows that span less time
+opentsx: bills10.csv: period_from 2016-01-01 to period_to 2025-12-31 needs 5260320 plan steps of PT1M; expected at most 87672 plan steps, from a longer baseStep or bills that span less time
 ```
 
 A file that exists but cannot be read is a runtime failure:
@@ -195,11 +215,16 @@ scale, and it reports hot water as not determined (concept §7.6).
   ([`twin/abrechnungen-vorlage.csv`](src/main/resources/twin/abrechnungen-vorlage.csv), fake rows only) and fits
   H, the hot-water scale and the appliance scale by deterministic least squares (Levenberg–Marquardt with Broyden
   updates). It reports residuals per period, CV(RMSE)/NMBE, the condition number and the parameter correlation.
+* Bill columns: `period_from`, `period_to`, `electricity_kwh`, `heating_oil_l`, `tank_start_l`, `tank_end_l`,
+  `wood_ster`, `cost_eur`, `note`. The German column names are accepted as aliases: `zeitraum_von`,
+  `zeitraum_bis`, `strom_kwh`, `heizoel_liter`, `tank_start_liter`, `tank_ende_liter`, `holz_ster`, `kosten_eur`,
+  `notiz`. A column named twice, also once in English and once in German, is refused. `--weather` reads
+  `date,t_mean_c`; the header row is not checked, so `datum,t_mittel_c` works too.
 * Real bills belong in `config/private/`, which is git-ignored.
 * `demo.HouseDemo` also exposes the scenario to generic views: `plan()`, `winterWeekPlan()` (168 steps),
   `observed()`, `reference()`, `alternatives()` and `smartMetrics()`.
 
-## Scenario "Boot": Etap 22 as an island energy system
+## Scenario boot: Etap 22 as an island energy system
 
 Concept (German): [`10-BOOT-ZWILLING.md`](../docs/datamodel-2026/10-BOOT-ZWILLING.md). A small sailing yacht with a
 portable power station (~1 kWh LiFePO4), 2 × 100 Wp solar and shore power, feeding two laptops, a phone, Starlink,
@@ -229,7 +254,11 @@ the usage, and a wrong argument exits with 2.
 | `power-station` | BALANCE | stock and balance node: direct supply solar → shore → battery, charging, SoC limits, unmet demand by priority, autonomy, residuals against measured SoC/load |
 
 Real data come as CSV ([template](src/main/resources/twin/bootsdaten-vorlage.csv), invented example rows) and are bound
-by `BoatData` with origin MEASURED (station app, Starlink, USB-C meter) or REPORTED (logbook). `Calibration` fits
+by `BoatData` with origin MEASURED (station app, Starlink, USB-C meter) or REPORTED (logbook). The columns are `time`,
+`mode` (`harbour`, `sailing`, `anchor`, `away`), `shore`, `soc_percent`, `solar_w`, `load_w`, `ghi_wm2`,
+`<device>_on`, `<device>_w` and `note`. The German column names and modes are accepted as aliases: `zeit`, `modus`
+(`hafen`, `segeln`, `anker`, `unbemannt`), `landstrom`, `soc_prozent`, `last_w`, `einstrahlung_wm2`, `<device>_an`
+and `notiz`. A column named twice, also once in English and once in German, is refused. `Calibration` fits
 model parameters such as `solar.derate` and usage scales by bounded Levenberg-Marquardt least squares against the
 measured SoC, the measured output power and (with irradiance) the measured solar power. Model parameters
 (`scale`, `derate`) are kept apart from system levers for what-ifs (`wp`, `power_factor`, `on`, `max_on_h`, ...); only
@@ -257,7 +286,8 @@ the levers act on measured values. For front ends, `BoatDemo` exposes `plan()`, 
   * an empty tank stops the boiler
   * measured weather is used and labelled
 * **`BillCalibrationTest`**
-  * the CSV format, including German spreadsheet exports
+  * the CSV format, including German spreadsheet exports and the German column names
+  * the limits of 3653 days and of 87672 run steps
   * known parameters recovered from synthetic monthly bills
   * annual totals flagged as not identifiable
   * one solver (`Gauss`) for the house and the boat calibration, NaN for a singular system
@@ -276,8 +306,10 @@ the levers act on measured values. For front ends, `BoatDemo` exposes `plan()`, 
   * determinism, forecast from a snapshot, origins
   * what-ifs (+100 Wp, Starlink 3 h/day, shore power every third day) and the scenario API
   * CSV import (resampling, holding, origins) and calibration that recovers known parameters
+  * a column named twice, the limits of 3653 days and of 35136 plan steps
 * **`boat.SimulatedLogsTest`**: the bundled simulated logs equal the generator output; calibration on them recovers
   the hidden parameters, and unmet demand and autonomy on the logs match the hidden true run
+* **`studio.EnglishTextsTest`**: the scenario texts, the guides, the bundled READMEs, templates and plans are English
 
 ## Not yet
 

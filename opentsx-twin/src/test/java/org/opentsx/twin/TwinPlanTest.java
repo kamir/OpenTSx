@@ -2,9 +2,14 @@ package org.opentsx.twin;
 
 import org.junit.jupiter.api.Test;
 
+import org.junit.jupiter.api.io.TempDir;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -16,6 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Wiring plan validation and the operating-rules atom. */
 class TwinPlanTest {
+
+    @TempDir
+    Path tmp;
 
     private static TwinPlan plan(List<String> wiring) {
         return new TwinPlan("t", Instant.parse("2026-10-01T00:00:00Z"), Duration.ofMinutes(1), 10, List.of(
@@ -113,5 +121,28 @@ class TwinPlanTest {
         assertEquals(1.0, r.kpis().get("rules.restricted_h"), 1e-9);
         assertEquals("bat curtailment", r.firstEvent("restriction_start").orElseThrow().attrs().get("reason"));
         assertEquals(Origin.REPORTED, r.origin("park.p_gen_kw"));   // a rule is reported, not measured
+    }
+
+    @Test
+    void aPlanFileThatCannotBeLoadedIsNamedInTheMessage() throws IOException {
+        Path missing = tmp.resolve("missing.yaml");
+        UncheckedIOException none = assertThrows(UncheckedIOException.class, () -> TwinPlan.load(missing));
+        assertEquals(missing + ": no such file; give an existing plan file", none.getMessage());
+
+        Path broken = Files.writeString(tmp.resolve("broken.yaml"), "twin: t\nstart: 2025-10-01T00:00:00Z\n"
+                + "baseStep: PT1M\nsteps: 10\natoms: [{id: m, type: market}]\nwiring: []\ncolour: red\n");
+        UncheckedIOException bad = assertThrows(UncheckedIOException.class, () -> TwinPlan.load(broken));
+        assertTrue(bad.getMessage().startsWith(broken + ": Unrecognized field \"colour\""), bad.getMessage());
+        assertTrue(bad.getMessage().endsWith("; expected a twin plan in YAML") && !bad.getMessage().contains("\n"),
+                bad.getMessage());
+
+        Path incomplete = Files.writeString(tmp.resolve("incomplete.yaml"), "twin: t\n");
+        assertEquals(incomplete + ": plan needs twin, start and atoms; expected a twin plan in YAML",
+                assertThrows(UncheckedIOException.class, () -> TwinPlan.load(incomplete)).getMessage());
+
+        Path noSteps = Files.writeString(tmp.resolve("steps.yaml"), "twin: t\nstart: 2025-10-01T00:00:00Z\n"
+                + "baseStep: PT1M\nsteps: 0\natoms: [{id: m, type: market}]\nwiring: []\n");
+        assertEquals(noSteps + ": steps: 0 is not allowed; expected a whole number of at least 1",
+                assertThrows(UncheckedIOException.class, () -> TwinPlan.load(noSteps)).getMessage());
     }
 }

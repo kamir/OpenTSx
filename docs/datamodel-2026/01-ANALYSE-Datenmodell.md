@@ -1,147 +1,142 @@
-# OpenTSx Datenmodell – Analyse & Reflexion (Stand 2026-10)
+# OpenTSx data model: analysis and reflection (as of 2026-10)
 
-> Branch: `opentsx/2026-datamodel-refresher` · Begleitdokument zu
+> Branch: `opentsx/2026-datamodel-refresher`. Companion document to
 > [`EVOLUTION/TASK-011-datamodel-refresher-2026.md`](../../EVOLUTION/TASK-011-datamodel-refresher-2026.md)
-> (Plan) und [`02-ZIELMODELL.md`](02-ZIELMODELL.md) (Entwurf des Zielmodells).
+> (plan) and [`02-ZIELMODELL.md`](02-ZIELMODELL.md) (draft of the target model).
+>
+> The page records the analysis of 2026-10. Sections 1.2 and 1.8 describe the module `opentsx-data` and the platform
+> as they are now, and section 3 lists the defects that are still open.
 
-## 1. Überblick: Was heute existiert
+## 1. Overview: what exists
 
-OpenTSx hat **zwei voneinander getrennte Modellwelten**, die nur über punktuelle Konverter verbunden sind:
+OpenTSx has **two separate model worlds**, connected only by a few converters:
 
-| Welt | Ort | Zweck | Serialisierung |
-|------|-----|-------|----------------|
-| **A – In-Memory-Analysemodell** | `opentsx-core/.../data/series`, `.../core` | Algorithmen (FFT, DFA, RIS, Event-Sync …) | Java-Serializable, Hadoop SequenceFile (Mahout `VectorWritable`), Gson-JSON |
-| **B – Avro-Transportmodell** | `opentsx-data/src/main/avro` → `org.opentsx.data.model` | Kafka, ksqlDB, Kafka Streams, Flink | Avro 1.8.2 (Confluent Schema Registry *oder* rohes Avro-Binär) |
+| World | Location | Purpose | Serialization |
+|-------|----------|---------|---------------|
+| **A: in-memory analysis model** | `opentsx-core/.../data/series`, `.../core` | Algorithms (FFT, DFA, RIS, event synchronization ...) | Java Serializable, Hadoop SequenceFile (Mahout `VectorWritable`), Gson JSON |
+| **B: Avro transport model** | `opentsx-data/src/main/avro` → `org.opentsx.data.model` | Kafka, ksqlDB, Kafka Streams, Flink | Avro 1.12.1 (Confluent Schema Registry *or* raw Avro binary) |
 
-Dazu kommen die Store-Adapter (OpenTSDB, Cassandra, Hive-UDF) und das Python-Paket, die jeweils ein **eigenes implizites Mapping** mitbringen.
+On top of these come the store adapters (OpenTSDB, Cassandra, Hive UDF) and the Python package, each with its **own implicit mapping**.
 
-### 1.1 Welt A – Analysemodell
+### 1.1 World A: analysis model
 
-| Klasse | Rolle | Beobachtungen |
-|--------|-------|---------------|
-| `ITimeSeriesObject` / `TimeSeriesObject` (2907 Zeilen) | Zentrale Zeitreihe: `label`, `Vector xValues`, `Vector yValues` | God-Class: Datenhaltung + Statistik + Transformationen + I/O + Charting + Generatoren. Rohe `Vector` → Boxing (`Double`), ~4–6× Speicher, synchronisiert. Zeit ist `double` (kein Epoch-Typ, keine Einheit, keine Zeitzone). |
-| `MarkableTimeSeriesObject` | TSO + `Vector<String> marker` pro Punkt | Proto-Annotation/Segmentierung – konzeptionell der Vorläufer von „Episoden“. |
-| `QualifiedTimeSeriesObject` | TSO mit Qualitätsinformation | Qualität nicht im Transportmodell vorhanden. |
-| `TimeSeriesObjectFFT`, `AveragedMessreihe`, `CombinedMessreihe`, `ScaledDataRow`, `Zeitreihe`, `MRT` | Spezialisierungen / Altlasten | Teilweise deutsch benannt, überlappend. |
-| `core/TSData` (Hadoop `Writable`) | Kompaktform: `label, t0, tE, dt, double[] dataset` | **`convertMessreihe()` verwirft die Zeitstempel** („Timing metadata is ignored“) – nur Werte + Label überleben. |
-| `core/TSBucket` (1222 Zeilen) | Container für viele TSOs; Persistenz als SequenceFile `Text → VectorWritable(NamedVector)` | Bucket = *physische Datei*. Key = Label (optional mit Präfix `###`). Zeitachse, Einheit, Metadaten gehen verloren. Hart verdrahtete Pfade (`/media/esata/...`). |
-| `tsbucket/TSBucketStore`, `TSOReaderInterface`, `TSOWriterInterface` | Gedachte Store-Abstraktion | **Leere Stubs** – die SPI existiert nur dem Namen nach. |
-| `tsbucket/metadata/ExperimentDescriptor`, `annotatedvectors/PropertiesVector` | Metadaten | Annotation-Interface ohne Runtime-Nutzung; Metadaten sind nicht an Buckets/Episoden gebunden. |
+| Class | Role | Observations |
+|-------|------|--------------|
+| `TimeSeriesObject` (2907 lines) | Central time series: `label`, `Vector xValues`, `Vector yValues` | God class: data, statistics, transformations, I/O, charting and generators. Raw `Vector` means boxing (`Double`), about 4 to 6 times the memory, synchronized. Time is a `double` (no epoch type, no unit, no time zone). |
+| `MarkableTimeSeriesObject` | TSO plus `Vector<String> marker` per point | Proto annotation and segmentation; conceptually the forerunner of "episodes". |
+| `QualifiedTimeSeriesObject` | TSO with quality information | The transport model has no quality. |
+| `TimeSeriesObjectFFT`, `AveragedMessreihe`, `CombinedMessreihe`, `ScaledDataRow`, `Zeitreihe`, `MRT` | Specializations and legacy | Partly German names, overlapping. |
+| `core/TSData` (Hadoop `Writable`) | Compact form: `label, t0, tE, dt, double[] dataset` | **`convertMessreihe()` drops the timestamps** ("Timing metadata is ignored"); only values and label survive. |
+| `core/TSBucket` (1222 lines) | Container for many TSOs; persisted as SequenceFile `Text → VectorWritable(NamedVector)` | Bucket = *physical file*. Key = label (optionally with the prefix `###`). Time axis, unit and metadata are lost. Hard-wired paths (`/media/esata/...`). |
+| `tsbucket/TSBucketStore`, `TSOReaderInterface`, `TSOWriterInterface` | Intended store abstraction | **Empty stubs**: the SPI exists in name only. |
+| `tsbucket/metadata/ExperimentDescriptor`, `annotatedvectors/PropertiesVector` | Metadata | Annotation interface without runtime use; metadata is not bound to buckets or episodes. |
 
-### 1.2 Welt B – Avro-Transportmodell (`opentsx-data`)
+### 1.2 World B: Avro transport model (`opentsx-data`)
 
-| Schema-Datei | Record | Felder (Kurzform) | Nutzung |
-|--------------|--------|-------------------|---------|
-| `event.avsc` | `Event` | `timestamp, uri, value, producer_timestamp, consumer_timestamp` | 8 Dateien (Producer, Kafka-Streams, `EventTS`) |
-| `episode.avsc` | `EpisodesRecord` mit inline `Observation{timestamp, uri, value}` | `observationArray[], label?, tStart?, tEnd?, zObservations?, increment?, uri?` | 5 Dateien (Producer, TSA-Examples 10/11, `TimeSeriesObject.getFromEpisode`) |
-| `episode2.avsc` | `EpisodesNEW` | `observationValues: double[]` + Header | **ungenutzt** |
-| `episode3.avsc` | `Episodes` | nur Header (`taglabel, tStart, tEnd, …`) | **ungenutzt** |
-| `EpisodeMetadata.avsc` | `EpisodeMetadata` | identisch zu `Episodes` | **ungenutzt** |
-| `EventSeries.avsc`, `event-series.avsc` | `EventSeries`, `EventSeriesRecord` mit inline `Event{timestamp, uri, value}` | `eventArray[], labels, tStart, tEnd` | 1 Datei |
-| – (kein .avsc) | `Episode`, `LatencyTesterEvent` | generierter Code ohne Quelle | Latency-Tooling |
+| Schema file | Record | Fields (short form) | Use |
+|-------------|--------|---------------------|-----|
+| `event.avsc` | `Event` | `timestamp, uri, value, producer_timestamp, consumer_timestamp` | `TSOProducer`, `TimeSeriesObject`, `EventTS` |
+| `episode.avsc` | `EpisodesRecord` with inline `Observation{timestamp, uri, value}` | `observationArray[], label?, tStart?, tEnd?, zObservations?, increment?, uri?` | `TSOProducer`, `TimeSeriesObject.getFromEpisode`, `LegacyBridge`; `Observation` in `opentsx-flink-core` (`ObservationSchema`, `TimeSeriesAggregateFunction`, `DynamicTopologyJob`) |
+| `event-series.avsc` | `EventSeriesRecord` with items of type `Event` from `event.avsc` | `eventArray[], labels, tStart, tEnd` | `EventTS` |
+| none (no .avsc) | `LatencyTesterEvent` | hand-written class without a schema | Latency tools |
 
-Beobachtungen:
+Observations:
 
-1. **Namenskollision `org.opentsx.data.model.Event`** – dreimal mit unterschiedlicher Struktur definiert (5 Felder in `event.avsc`, 3 Felder inline in beiden EventSeries-Schemas). Generiertes `Event.java` hat 5 Felder, das eingebettete `SCHEMA$` von `EventSeries*` beschreibt 3. Gleicher Full-Name, inkompatible Schemas → Schema-Registry-/Deserialisierungsfehler sind vorprogrammiert.
-2. **Vier Varianten von „Episode“** (`EpisodesRecord`, `EpisodesNEW`, `Episodes`, `EpisodeMetadata`), nur eine wird benutzt.
-3. **Redundanz in `EpisodesRecord`**: jede Observation trägt `timestamp` *und* der Header trägt `tStart/increment` → zwei Wahrheiten über die Zeitachse. Zudem `uri` als String **pro Messpunkt** – teuerstes Feld, wiederholt in jedem Punkt.
-4. **Keine Identität einer Serie**: Identität steckt im freien String `label` (bzw. `uri`, `taglabel`). Für OpenTSDB wird erwartet, dass das Label die Form `"metric k1=v1,k2=v2"` hat (`OpenTSDBConnector.java:635-670`) – ein implizites, nicht validiertes Format.
-5. **Keine Einheit, keine Qualität, keine Schema-Version, keine Provenienz/Lineage**, keine logischen Avro-Typen (`timestamp-millis`), Zeitstempel-Präzision undokumentiert.
-6. **Generierter Code in `src/main/java`** eingecheckt (`opentsx-data/pom.xml`, `outputDirectory`), Avro 1.8.2 (2017).
-7. Felder ohne Defaults (`producer_timestamp`, `consumer_timestamp`) → nicht rückwärtskompatibel evolvierbar.
+1. **`org.opentsx.data.model.Event` has one definition**, in `event.avsc`. `event-series.avsc` refers to it by name, and the build imports `event.avsc` first (`opentsx-data/pom.xml`).
+2. **One episode schema**: `EpisodesRecord` in `episode.avsc`.
+3. **Redundancy in `EpisodesRecord`**: each observation carries `timestamp` *and* the header carries `tStart/increment`, so there are two truths about the time axis. `uri` is a string **per data point**: the most expensive field, repeated in every point.
+4. **No identity of a series**: the identity sits in the free string `label` (or `uri`, `taglabel`). For OpenTSDB the label is expected to have the form `"metric k1=v1,k2=v2"` (`OpenTSDBConnector.java:635-670`), an implicit format that nothing validates.
+5. **No unit, no quality, no schema version, no provenance or lineage**, no logical Avro types (`timestamp-millis`), timestamp precision undocumented.
+6. **Generated code**: the build generates the records into `target/generated-sources/avro` with Avro 1.12.1. `src/main/java` holds only `LatencyTesterEvent`.
+7. Fields without defaults (`producer_timestamp`, `consumer_timestamp`) cannot evolve backward compatibly.
 
-### 1.3 Serialisierung & Kafka-Pfade (`opentsx-connectors`)
+### 1.3 Serialization and Kafka paths (`opentsx-connectors`)
 
-| Pfad | Topic | Key | Value | Probleme |
+| Path | Topic | Key | Value | Problems |
 |------|-------|-----|-------|----------|
-| `TSOProducer.pushTSDataAsEpisodesToKafka_String_Avro` | `OpenTSx_Episodes[_suffix]` | Serien-Label | Avro `EpisodesRecord` (SR) | **Label hart `"123"`**, uri `"URI"` (`TSOProducer.java:262`), synthetische Zeit `now + i·200ms`, Record-Objekt wiederverwendet |
-| `pushTSDataAsEventsToKafka_String_Avro` | `OpenTSx_Events` | Label | Avro `Event` (SR) | **Zeitstempel wachsen quadratisch** (`t = t + i*200`, `TSOProducer.java:356`), `send().get()` pro Nachricht |
-| `pushTSOItemsToKafka` | `OpenTSx_Episodes` | Label | **Gson-JSON** von `TSData` | gleiches Topic wie Avro-Pfad → gemischte Formate in einem Topic |
-| `TSOEventProducer` | `refds_events_topic_<TAG>` | `label_<x>` | JSON `{ts,value}` | Key enthält x → Serie über Partitionen verstreut |
-| `EventFlowStateProducer` | `OpenTSx_Event_Flow_State` | flowSource | Properties als JSON | – |
-| `TSOConsumer` | `refds_small_bucket_topic_<TAG>` | – | – | zufällige `group.id` + `earliest` = implizites Voll-Replay bei jedem Start; keine gezielte Replay-Logik |
-| `TSOWriter.persistBucket_Kafka` | – | – | – | **Stub („NOT YET DONE“)** |
+| `TSOProducer.pushTSDataAsEpisodesToKafka_String_Avro` | `OpenTSx_Episodes[_suffix]` | Series label | Avro `EpisodesRecord` (SR) | **Label hard-coded `"123"`**, uri `"URI"` (`TSOProducer.java:262`), synthetic time `now + i·200ms`, record object reused |
+| `pushTSDataAsEventsToKafka_String_Avro` | `OpenTSx_Events` | Label | Avro `Event` (SR) | **Timestamps grow quadratically** (`t = t + i*200`, `TSOProducer.java:356`), `send().get()` per message |
+| `pushTSOItemsToKafka` | `OpenTSx_Episodes` | Label | **Gson JSON** of `TSData` | Same topic as the Avro path, so one topic holds mixed formats |
+| `TSOEventProducer` | `refds_events_topic_<TAG>` | `label_<x>` | JSON `{ts,value}` | The key contains x, so a series is scattered over partitions |
+| `EventFlowStateProducer` | `OpenTSx_Event_Flow_State` | flowSource | Properties as JSON | none |
+| `TSOConsumer` | `refds_small_bucket_topic_<TAG>` | none | none | Random `group.id` plus `earliest` means an implicit full replay at every start; no targeted replay logic |
+| `TSOWriter.persistBucket_Kafka` | none | none | none | **Stub ("NOT YET DONE")** |
 
-Querschnitt: Kafka-Record-Timestamps werden nie gesetzt (Ereigniszeit nur im Payload → `offsetsForTimes` unbrauchbar), keine Header, `localhost:9092` hart kodiert, kein Bucket-Begriff auf Kafka-Ebene.
+Across all paths: Kafka record timestamps are never set (event time only in the payload, so `offsetsForTimes` is useless), no headers, `localhost:9092` hard-coded, no notion of a bucket at the Kafka level.
 
-**Wire-Format-Bruch:** Flink `ObservationSchema` (`opentsx-flink-core`) dekodiert **rohes** Avro-Binär, die Producer schreiben im **Confluent-Wire-Format** (Magic-Byte + Schema-ID). Beide Seiten sind nicht kompatibel.
+**Wire format break:** Flink `ObservationSchema` (`opentsx-flink-core`) decodes **raw** Avro binary, while the producers write the **Confluent wire format** (magic byte plus schema id). The two sides are not compatible.
 
 ### 1.4 Stores
 
-* **OpenTSDB** (`opentsx-store-opentsdb`): `OpenTSDBEvent{metric, timestamp, value, tags}` als Strings; Schreiben über Telnet-Socket (`put`), Lesen über `/api/query`. Mapping Label → `metric` + Tags per String-Split. `OpenTSDBSeries` ist ein leerer Platzhalter. Keine Downsampling-/Aggregator-Abstraktion, keine Tag-Validierung (OpenTSDB: erlaubte Zeichen, Tag-Limit).
-* **Cassandra** (`opentsx-store-cassandra`): `refds_small_bucket_table(id text PK, tsdata text)` – ein ganzer TSO als JSON-Blob, CQL per String-Konkatenation.
-* **Hive-UDF**: schreibt nach OpenTSDB, kein eigenes Tabellenmodell.
-* **Iceberg / Parquet**: nur in Doku erwähnt, kein Code. **OpenMetadata**, **KafScale**: nicht vorhanden.
+* **OpenTSDB** (`opentsx-store-opentsdb`): `OpenTSDBEvent{metric, timestamp, value, tags}` as strings; writes over a Telnet socket (`put`), reads over `/api/query`. Label is mapped to `metric` and tags by a string split. `OpenTSDBSeries` is an empty placeholder. No downsampling or aggregator abstraction, no tag validation (OpenTSDB: allowed characters, tag limit).
+* **Cassandra** (`opentsx-store-cassandra`): `refds_small_bucket_table(id text PK, tsdata text)`, a whole TSO as a JSON blob, CQL by string concatenation.
+* **Hive UDF**: writes to OpenTSDB, no table model of its own.
+* **Iceberg / Parquet**: only mentioned in the docs, no code. **OpenMetadata**, **KafScale**: not present.
 
-### 1.5 Streaming-Statistik
+### 1.5 Streaming statistics
 
-* Flink `TimeSeriesAnalysisJob`: Topic `observations`, Event-Time-Watermarks, 5-min-Tumbling-Windows, `TimeSeriesAggregateFunction` **sammelt nur** Observations in ein TSO (keine laufende Statistik, O(n) Speicher je Fenster).
-* Kafka Streams `TSAExample10/11`: zustandslose `mapValues` über Episoden (Stats/FFT als JSON).
-* ksqlDB: `SummaryStatsUdaf` (laufender Mittelwert), `EpisodesProcessor`-UDF; Module `opentsx-ksql` und `opentsx-ksql-udf` duplizieren sich.
-* `opentsx-processors`: nur `pom.xml`.
+* Flink `TimeSeriesAnalysisJob`: topic `observations`, event-time watermarks, 5-minute tumbling windows; `TimeSeriesAggregateFunction` **only collects** observations into a TSO (no running statistics, O(n) memory per window).
+* Kafka Streams `TSAExample10/11`: stateless `mapValues` over episodes (stats and FFT as JSON).
+* ksqlDB: `SummaryStatsUdaf` (running mean), `EpisodesProcessor` UDF; the modules `opentsx-ksql` and `opentsx-ksql-udf` duplicate each other.
+* `opentsx-processors`: only a `pom.xml`.
 
-### 1.6 Pattern Matching
+### 1.6 Pattern matching
 
-Kein Code für Similarity-Search, Motif-Discovery, SAX/PAA, DTW oder Matrix Profile vorhanden. Wiederverwendbare Bausteine: FFT (`TimeSeriesObjectFFT`), Normalisierung, Event-Synchronisation, RIS, Detrending.
+No code for similarity search, motif discovery, SAX/PAA, DTW or matrix profile. Reusable building blocks: FFT (`TimeSeriesObjectFFT`), normalization, event synchronization, RIS, detrending.
 
 ### 1.7 Python
 
-`python-package/opentsx/core/time_series.py`: numpy-basiertes `TimeSeriesObject(values, timestamps, label, metadata)` und `TSBucket` (Liste). Kein Avro/Episode-Modell, obwohl `fastavro`/`confluent-kafka[avro]` als Extra deklariert sind – eine **gemeinsame Schema-Quelle** würde Python sofort anschlussfähig machen.
+`python-package/opentsx/core/time_series.py`: a numpy-based `TimeSeriesObject(values, timestamps, label, metadata)` and `TSBucket` (a list). No Avro or episode model, although `fastavro` and `confluent-kafka[avro]` are declared as extras. A **shared schema source** would connect Python at once.
 
-### 1.8 Plattform
+### 1.8 Platform
 
-Java 8 (Root-POM), Flink 1.18 (braucht ≥ 11), Kafka-Clients 2.3 vs. Confluent 7.3, Avro 1.8.2, Gson 2.2.4. Für Iceberg 1.x (Java ≥ 11) und aktuelle Kafka-/OpenMetadata-Clients ist ein Toolchain-Update zwingend.
+Java 17 (root `pom.xml`, `maven.compiler.release`), Flink 1.20.5 (`opentsx-flink-core/pom.xml`), Kafka clients 3.9.2 with the Confluent serializers 7.9.10, Avro 1.12.1 and Gson 2.14.0 (root `pom.xml`).
 
 ---
 
-## 2. Reflexion: Was das Modell eigentlich ausdrücken will
+## 2. Reflection: what the model is meant to express
 
-Liest man Code, Schemas und Doku zusammen, steckt ein recht klares fachliches Modell darin – es ist nur nie explizit gemacht worden:
+Read together, the code, the schemas and the docs contain a fairly clear domain model; it was just never made explicit:
 
 ```
-Serie (Identität: Metrik + Tags + Einheit)
-  └── Observation / Event      (ein Punkt: Zeit, Wert, [Qualität])
-  └── Episode                  (zusammenhängender, unveränderlicher Abschnitt EINER Serie
-                                 mit Zeitbereich, Sampling-Art, Werten, Zusammenfassung)
-Bucket                         (benannte Sammlung von Episoden vieler Serien –
-                                 Experiment, Datensatz, Snapshot; mit Manifest + Metadaten)
-Abgeleitet: SerienStatistik, Annotation/Marker, PatternMatch (Episode-Ref + Offset + Score)
+Series (identity: metric + tags + unit)
+  └── Observation / Event      (one point: time, value, [quality])
+  └── Episode                  (contiguous, immutable section of ONE series
+                                 with time range, sampling kind, values, summary)
+Bucket                         (named collection of episodes of many series:
+                                 experiment, data set, snapshot; with manifest and metadata)
+Derived: SeriesStatistics, Annotation/Marker, PatternMatch (episode ref + offset + score)
 ```
 
-Die heutigen Schwächen sind fast alle Folgen davon, dass diese Ebenen vermischt sind:
+Almost all weaknesses found in 2026-10 follow from these levels being mixed:
 
-| Konzept | Heute | Konsequenz |
-|---------|-------|------------|
-| **Serien-Identität** | freier String `label` | Keine stabilen Kafka-Keys, kein sauberes OpenTSDB-/Iceberg-Mapping, keine Joins mit Metadaten. |
-| **Episode** | 4 Schemas, Redundanz Zeitachse, `uri` pro Punkt | Teuer, mehrdeutig, nicht evolvierbar. |
-| **Bucket** | physische SequenceFile, Label → Vektor | Zeitachse geht verloren; Bucket ist nicht replaybar, nicht katalogisierbar. |
-| **Metadaten** | Annotation-Interface, `PropertiesVector`, `EpisodeMetadata` ungenutzt | Kein Pfad nach OpenMetadata, keine Lineage. |
-| **Zeit** | `double` in TSO, `long` ohne Einheit in Avro, `dt` hart 200 ms | Präzision/Einheit nicht vertraglich festgelegt. |
-| **Format** | SR-Avro, rohes Avro, JSON gemischt | Consumer müssen raten; Flink bricht. |
+| Concept | In 2026-10 | Consequence |
+|---------|------------|-------------|
+| **Series identity** | free string `label` | No stable Kafka keys, no clean OpenTSDB or Iceberg mapping, no joins with metadata. |
+| **Episode** | 4 schemas, redundant time axis, `uri` per point | Expensive, ambiguous, cannot evolve. |
+| **Bucket** | physical SequenceFile, label → vector | The time axis is lost; a bucket cannot be replayed or cataloged. |
+| **Metadata** | annotation interface, `PropertiesVector`, `EpisodeMetadata` unused | No path to OpenMetadata, no lineage. |
+| **Time** | `double` in the TSO, `long` without unit in Avro, `dt` hard-coded to 200 ms | Precision and unit are not fixed by contract. |
+| **Format** | SR Avro, raw Avro and JSON mixed | Consumers have to guess; Flink breaks. |
 
-**Kernaussage:** Der wertvollste Schritt ist nicht ein neues Speicherformat, sondern ein **expliziter, versionierter Modellvertrag** mit **SeriesKey** als zentraler Identität und **Episode** als Austausch- und Speichereinheit. Alle Zielsysteme (KafScale, OpenTSDB, Iceberg, OpenMetadata, Retrieval/Pattern-Index) werden dann zu *Projektionen* dieses Vertrags.
+**Core statement:** the most valuable step is not a new storage format but an **explicit, versioned model contract** with **SeriesKey** as the central identity and **Episode** as the unit of exchange and storage. All target systems (KafScale, OpenTSDB, Iceberg, OpenMetadata, retrieval and pattern index) then become *projections* of that contract.
 
-### 2.1 Was erhaltenswert ist
+### 2.1 What is worth keeping
 
-* Die Idee **Episode als Array-Payload** (spaltenartig, ein Record pro Abschnitt) ist für günstige Kafka-Ablage genau richtig – deutlich billiger als ein Record pro Punkt.
-* `TSData` (`t0, dt, double[]`) ist bereits die effiziente Form für **regelmäßig abgetastete** Reihen – sie muss nur die Zeitachse behalten.
-* `MarkableTimeSeriesObject` (Marker pro Punkt) ist der natürliche Einstieg für Annotationen und Pattern-Treffer.
-* Die Algorithmen-Bibliothek in Welt A bleibt unangetastet; sie braucht nur verlustfreie Konverter `Episode ⇄ TimeSeriesObject`.
+* The idea of the **episode as an array payload** (column-like, one record per section) is right for cheap Kafka storage: much cheaper than one record per point.
+* `TSData` (`t0, dt, double[]`) is already the efficient form for **regularly sampled** series; it only has to keep the time axis.
+* `MarkableTimeSeriesObject` (a marker per point) is the natural entry point for annotations and pattern hits.
+* The algorithm library of world A stays untouched; it only needs lossless converters `Episode ⇄ TimeSeriesObject`.
 
-### 2.2 Was ersetzt/abgelöst werden sollte
+### 2.2 What should be replaced
 
-* `Episodes`, `EpisodesNEW`, `EpisodeMetadata`, `EventSeries*`, `Episode` (orphan) → deprecaten, durch v2 ersetzen.
-* Mehrdeutiges `Event` → v2 trennt `Observation` (Punkt) und Transport-/Latenz-Metadaten (Kafka-Header oder eigenes `LatencyProbe`-Schema).
-* `TSBucket`-SequenceFile-Persistenz → Bucket als logisches Konstrukt (Manifest + Episoden) über austauschbare Stores.
-* Leere `TSBucketStore`/`TSO*Interface`-Stubs → echte Store-SPI.
+* The ambiguous `Event` → v2 separates `Observation` (a point) from transport and latency metadata (Kafka headers or a `LatencyProbe` schema of its own).
+* `TSBucket` SequenceFile persistence → a bucket as a logical construct (manifest plus episodes) over exchangeable stores.
+* Empty `TSBucketStore` and `TSO*Interface` stubs → a real store SPI.
 
-## 3. Konkrete Defekte, die unabhängig vom Refresh behoben werden sollten
+## 3. Concrete defects to fix independently of the refresh
 
-1. `TSOProducer.java:262` – Episoden-Label hart `"123"`, `uri` hart `"URI"`.
-2. `TSOProducer.java:356` – quadratisch wachsende Zeitstempel (`t = t + i*200`).
-3. `OpenTSx_Episodes` wird sowohl mit Avro als auch mit JSON beschrieben.
-4. Flink `ObservationSchema` vs. Confluent-Wire-Format.
-5. Avro-Full-Name `org.opentsx.data.model.Event` mehrfach mit unterschiedlichen Feldern.
-6. `TSData.convertMessreihe` verwirft Zeitstempel → `TSBucket`-Dateien sind nicht zeittreu.
-7. `CassandraConnector` – CQL per String-Konkatenation.
-8. Hart kodierte Hosts/Pfade (`localhost:9092`, `/Users/mkampf/...`, `/media/esata/...`).
+1. Flink `ObservationSchema` against the Confluent wire format.
+2. `TSData.convertMessreihe` drops timestamps, so `TSBucket` files do not keep the time.
+3. Hard-coded hosts and paths (`localhost:9092` in `TSOConsumer.java:25` and `TSOEventProducer.java:17`, figure folders
+   below the home directory in `ESMain.java:28` and `SigmaFilter.java:59`).

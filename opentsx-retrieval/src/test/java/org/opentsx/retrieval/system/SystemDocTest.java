@@ -121,6 +121,22 @@ class SystemDocTest {
     }
 
     @Test
+    void aPlanThatCannotBeLoadedIsNamedOnce(@TempDir Path dir) throws IOException {
+        Path plan = Files.writeString(dir.resolve("plan.yaml"), "twin: t\nstart: 2025-10-01T00:00:00Z\n"
+                + "baseStep: PT1M\nsteps: 0\natoms: [{id: m, type: market}]\nwiring: []\n");
+        Path doc = Files.writeString(dir.resolve("probe.system.yaml"), """
+                schema: opentsx.system.v1
+                system: probe
+                domain: wind
+                version: 1
+                plan: { ref: plan.yaml }
+                """);
+        List<String> problems = SystemDoc.load(doc, dir).problems();
+        assertEquals(List.of(plan.toAbsolutePath().normalize() + ": steps: 0 is not allowed; expected a whole number of at least 1"),
+                problems.stream().filter(p -> p.contains("plan.yaml")).toList());
+    }
+
+    @Test
     void aRootGivenAsTheWorkingDirectoryResolvesTheReferences(@TempDir Path dir) throws IOException {
         // "." is the default of --systems-root; the tests run in the module directory, so the flow lies below it
         Path below = Files.createTempDirectory(Files.createDirectories(Path.of("target")), "systems-root");

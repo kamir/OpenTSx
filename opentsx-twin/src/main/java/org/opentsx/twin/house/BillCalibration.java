@@ -49,8 +49,23 @@ import java.util.stream.IntStream;
 public final class BillCalibration {
 
     /** Columns of the bill CSV, in this order (header required; separator ',' or ';'). */
-    public static final List<String> COLUMNS = List.of("zeitraum_von", "zeitraum_bis", "strom_kwh", "heizoel_liter",
-            "tank_start_liter", "tank_ende_liter", "holz_ster", "kosten_eur", "notiz");
+    public static final List<String> COLUMNS = List.of("period_from", "period_to", "electricity_kwh", "heating_oil_l",
+            "tank_start_l", "tank_end_l", "wood_ster", "cost_eur", "note");
+
+    /** The German column names, accepted as aliases of the column they stand for. */
+    public static final Map<String, String> GERMAN_COLUMNS = Map.of("zeitraum_von", "period_from",
+            "zeitraum_bis", "period_to", "strom_kwh", "electricity_kwh", "heizoel_liter", "heating_oil_l",
+            "tank_start_liter", "tank_start_l", "tank_ende_liter", "tank_end_l", "holz_ster", "wood_ster",
+            "kosten_eur", "cost_eur", "notiz", "note");
+
+    /** The longest span of the bills and of the temperatures: 10 years, leap days included. */
+    public static final int MAX_SPAN_DAYS = 3653;
+
+    /**
+     * The most steps of a calibration run: {@link #MAX_SPAN_DAYS} days of the hourly steps of
+     * {@code twin/haus-erzgebirge.yaml}. A calibration over that many steps needs more than 2 GB of Java heap.
+     */
+    public static final long MAX_STEPS = MAX_SPAN_DAYS * 24L;
 
     /**
      * One bill row. Dates are local calendar days, both inclusive. Unknown values are NaN.
@@ -64,7 +79,7 @@ public final class BillCalibration {
 
         public Bill {
             if (from == null || to == null || to.isBefore(from)) {
-                throw new IllegalArgumentException("bill needs zeitraum_von <= zeitraum_bis: " + from + " " + to);
+                throw new IllegalArgumentException("bill needs period_from <= period_to: " + from + " " + to);
             }
             note = note == null ? "" : note;
         }
@@ -177,7 +192,8 @@ public final class BillCalibration {
     // ------------------------------------------------------------------------------------------------ CSV
 
     /**
-     * Parses bill rows. Header with the {@link #COLUMNS} names (any order, missing optional columns allowed).
+     * Parses bill rows. Header with the {@link #COLUMNS} names or their {@link #GERMAN_COLUMNS} aliases (any order,
+     * missing optional columns allowed). The bills span at most {@link #MAX_SPAN_DAYS} days.
      * Separator ',' (decimal point) or ';' (decimal comma allowed, as exported by German spreadsheets). Dates as
      * {@code 2024-01-31} or {@code 31.01.2024}. Empty cells are unknown. Lines starting with '#' are skipped.
      */
@@ -188,16 +204,21 @@ public final class BillCalibration {
             throw new IllegalArgumentException("no header");
         }
         char sep = rows.get(0).contains(";") ? ';' : ',';
-        List<String> header = split(rows.get(0).replace("﻿", ""), sep).stream()
+        List<String> names = split(rows.get(0).replace("﻿", ""), sep).stream()
                 .map(s -> s.strip().toLowerCase(Locale.ROOT)).toList();
-        for (String required : List.of("zeitraum_von", "zeitraum_bis")) {
+        List<String> header = names.stream().map(h -> GERMAN_COLUMNS.getOrDefault(h, h)).toList();
+        for (String required : List.of("period_from", "period_to")) {
             if (!header.contains(required)) {
                 throw new IllegalArgumentException("missing column " + required + "; expected " + COLUMNS);
             }
         }
-        for (String h : header) {
-            if (!COLUMNS.contains(h)) {
-                throw new IllegalArgumentException("unknown column '" + h + "'; expected " + COLUMNS);
+        for (int c = 0; c < header.size(); c++) {
+            if (!COLUMNS.contains(header.get(c))) {
+                throw new IllegalArgumentException("unknown column '" + names.get(c) + "'; expected " + COLUMNS);
+            }
+            if (header.indexOf(header.get(c)) < c) {
+                throw new IllegalArgumentException(names.get(c) + ": names the column " + header.get(c)
+                        + " a second time; expected each column once");
             }
         }
         List<Bill> out = new ArrayList<>();
@@ -208,10 +229,10 @@ public final class BillCalibration {
                 m.put(header.get(c), c < cells.size() ? cells.get(c).strip() : "");
             }
             try {
-                out.add(new Bill(date(m.get("zeitraum_von")), date(m.get("zeitraum_bis")),
-                        num(m.get("strom_kwh"), sep), num(m.get("heizoel_liter"), sep),
-                        num(m.get("tank_start_liter"), sep), num(m.get("tank_ende_liter"), sep),
-                        num(m.get("holz_ster"), sep), num(m.get("kosten_eur"), sep), m.getOrDefault("notiz", "")));
+                out.add(new Bill(date(m.get("period_from")), date(m.get("period_to")),
+                        num(m.get("electricity_kwh"), sep), num(m.get("heating_oil_l"), sep),
+                        num(m.get("tank_start_l"), sep), num(m.get("tank_end_l"), sep),
+                        num(m.get("wood_ster"), sep), num(m.get("cost_eur"), sep), m.getOrDefault("note", "")));
             } catch (RuntimeException e) {
                 throw new IllegalArgumentException("line " + numbers.get(i) + ": " + e.getMessage(), e);
             }
@@ -219,7 +240,39 @@ public final class BillCalibration {
         if (out.isEmpty()) {
             throw new IllegalArgumentException("no bill rows; expected a header and at least one row");
         }
+        int first = 0;
+        for (int i = 1; i < out.size(); i++) {
+            if (out.get(i).from().isBefore(out.get(first).from())) {
+                first = i;
+            }
+        }
+        LocalDate last = out.get(first).from().plusDays(MAX_SPAN_DAYS - 1);
+        for (int i = 0; i < out.size(); i++) {
+            if (out.get(i).to().isAfter(last)) {
+                throw new IllegalArgumentException("line " + numbers.get(i + 1) + ": period_to " + out.get(i).to()
+                        + " lies " + MAX_SPAN_DAYS + " days or more after the earliest period_from (line "
+                        + numbers.get(first + 1) + "); expected bills that span at most " + MAX_SPAN_DAYS
+                        + " days (10 years)");
+            }
+        }
         return out;
+    }
+
+    /**
+     * The bills, refused when a run over their days on {@code plan} takes more than {@link #MAX_STEPS} steps of its
+     * base step.
+     */
+    public static List<Bill> checkSteps(List<Bill> bills, TwinPlan plan) {
+        LocalDate from = bills.stream().map(Bill::from).min(LocalDate::compareTo).orElseThrow();
+        LocalDate to = bills.stream().map(Bill::to).max(LocalDate::compareTo).orElseThrow();
+        long micros = (ChronoUnit.DAYS.between(from, to) + 1) * 86_400_000_000L;
+        long steps = -Math.floorDiv(-micros, plan.baseStepMicros());
+        if (steps > MAX_STEPS) {
+            throw new IllegalArgumentException("period_from " + from + " to period_to " + to + " needs " + steps
+                    + " plan steps of " + plan.baseStep() + "; expected at most " + MAX_STEPS
+                    + " plan steps, from a longer baseStep or bills that span less time");
+        }
+        return bills;
     }
 
     /** The 1-based numbers of the lines that are neither blank nor a '#' comment. */
@@ -269,36 +322,44 @@ public final class BillCalibration {
     // ------------------------------------------------------------------------------------------------ weather
 
     /**
-     * Daily mean temperatures from the lines of a CSV {@code datum,t_mittel_c} (header first; '#' lines skipped; e.g.
-     * DWD climate data, column TMK) as an hourly binding of {@code <weatherAtom>.t_out_meas_c} (MEASURED), with a
+     * Daily mean temperatures from the lines of a CSV {@code date,t_mean_c} (header first, any names; '#' lines
+     * skipped; e.g. DWD climate data, column TMK) as an hourly binding of {@code <weatherAtom>.t_out_meas_c} (MEASURED), with a
      * synthetic daily cycle of {@code dailyAmpC} around each daily mean (minimum about 04:00). Days without a value
      * fall back to the synthetic climate.
      */
     public static SeriesInputs dailyTemperatures(List<String> lines, String weatherAtom, double dailyAmpC) {
         List<Integer> numbers = contentLines(lines);
         List<String> rows = numbers.stream().map(n -> lines.get(n - 1).strip()).toList();
-        Map<LocalDate, Double> days = new TreeMap<>();
+        TreeMap<LocalDate, Double> days = new TreeMap<>();
+        Map<LocalDate, Integer> lineOf = new LinkedHashMap<>();
         char sep = rows.isEmpty() || !rows.get(0).contains(";") ? ',' : ';';
         for (int i = 1; i < rows.size(); i++) {
             List<String> c = split(rows.get(i), sep);
             if (c.size() < 2) {
                 throw new IllegalArgumentException("line " + numbers.get(i)
-                        + ": no temperature; expected datum,t_mittel_c");
+                        + ": no temperature; expected date,t_mean_c");
             }
             try {
                 double v = num(c.get(1).strip(), sep);
                 if (!Double.isNaN(v) && v > -90) {   // DWD marks missing values with -999
-                    days.put(date(c.get(0).strip()), v);
+                    LocalDate day = date(c.get(0).strip());
+                    days.put(day, v);
+                    lineOf.put(day, numbers.get(i));
                 }
             } catch (RuntimeException e) {
                 throw new IllegalArgumentException("line " + numbers.get(i) + ": " + e.getMessage(), e);
             }
         }
         if (days.isEmpty()) {
-            throw new IllegalArgumentException("no temperatures (expected header datum,t_mittel_c and rows)");
+            throw new IllegalArgumentException("no temperatures (expected header date,t_mean_c and rows)");
         }
-        LocalDate first = days.keySet().iterator().next();
-        LocalDate last = ((TreeMap<LocalDate, Double>) days).lastKey();
+        LocalDate first = days.firstKey();
+        LocalDate last = days.lastKey();
+        if (last.isAfter(first.plusDays(MAX_SPAN_DAYS - 1))) {
+            throw new IllegalArgumentException("line " + lineOf.get(last) + ": date " + last + " lies "
+                    + MAX_SPAN_DAYS + " days or more after the earliest date (line " + lineOf.get(first) + "); expected "
+                    + "temperatures that span at most " + MAX_SPAN_DAYS + " days (10 years)");
+        }
         Instant t0 = first.atStartOfDay(HouseScenario.ZONE).toInstant();
         int hours = (int) Duration.between(t0, last.plusDays(1).atStartOfDay(HouseScenario.ZONE).toInstant()).toHours();
         double[] v = new double[hours];
@@ -315,6 +376,7 @@ public final class BillCalibration {
 
     /** Modelled values per bill row: {@code [electricity kWh, oil litres consumed]} with the given parameters. */
     public double[][] model(List<Bill> bills, Map<String, Double> params) {
+        checkSteps(bills, base);
         Instant start = bills.stream().map(Bill::from).min(LocalDate::compareTo).orElseThrow()
                 .atStartOfDay(HouseScenario.ZONE).toInstant();
         Instant end = bills.stream().map(Bill::to).max(LocalDate::compareTo).orElseThrow().plusDays(1)
@@ -548,10 +610,10 @@ public final class BillCalibration {
         for (int i = 0; i < bills.size(); i++) {
             Bill b = bills.get(i);
             if (b.hasElectricity()) {
-                periods.add(new Period(b, "strom_kwh", b.electricityKwh(), m[i][0], false));
+                periods.add(new Period(b, "electricity_kwh", b.electricityKwh(), m[i][0], false));
             }
             if (b.hasOil()) {
-                periods.add(new Period(b, "heizoel_liter", b.oilConsumedL(), m[i][1], !b.oilFromLevels()));
+                periods.add(new Period(b, "heating_oil_l", b.oilConsumedL(), m[i][1], !b.oilFromLevels()));
                 if (!b.oilFromLevels()) {
                     warnings.add("oil " + b.from() + ".." + b.to() + ": delivery used as consumption (tank levels "
                             + "missing), weighted " + PROXY_WEIGHT + " - merge several years or add gauge readings");
@@ -560,7 +622,7 @@ public final class BillCalibration {
         }
         Map<String, Double> cv = new LinkedHashMap<>();
         Map<String, Double> nmbe = new LinkedHashMap<>();
-        for (String q : List.of("strom_kwh", "heizoel_liter")) {
+        for (String q : List.of("electricity_kwh", "heating_oil_l")) {
             List<Period> ps = periods.stream().filter(x -> x.quantity().equals(q)).toList();
             if (ps.isEmpty()) {
                 continue;

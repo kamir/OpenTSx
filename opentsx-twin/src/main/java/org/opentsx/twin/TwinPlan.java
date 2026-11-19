@@ -1,6 +1,7 @@
 package org.opentsx.twin;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -14,6 +15,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -25,7 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The wiring plan ("Schaltplan") of a twin: atoms from the catalog, their parameters and policies, and wires
+ * The wiring plan of a twin: atoms from the catalog, their parameters and policies, and wires
  * {@code "fromAtom.port -> toAtom.port"}. Standard parts, individual wiring per site.
  */
 public record TwinPlan(String twin, Instant start, Duration baseStep, int steps, List<AtomSpec> atoms,
@@ -128,12 +130,32 @@ public record TwinPlan(String twin, Instant start, Duration baseStep, int steps,
         }
     }
 
+    /** Loads a plan file; a refusal names the file. */
     public static TwinPlan load(Path yaml) {
         try (InputStream in = Files.newInputStream(yaml)) {
             return load(in);
+        } catch (NoSuchFileException e) {
+            throw new UncheckedIOException(yaml + ": no such file; give an existing plan file", e);
+        } catch (JsonProcessingException e) {
+            String problem = e.getCause() instanceof IllegalArgumentException rule ? rule.getMessage()
+                    : e.getOriginalMessage();
+            String line = yaml + ": " + String.valueOf(problem).replaceAll("\\s+", " ").strip();
+            throw new UncheckedIOException(line.contains("; expected ") ? line : line + "; expected a twin plan in YAML",
+                    e);
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw new UncheckedIOException(yaml + ": cannot read the plan file", e);
         }
+    }
+
+    /**
+     * The atoms of {@code template} with one of {@code ids} that this plan does not have with the same id and type,
+     * as {@code id (type)} in the order of the template.
+     */
+    public List<String> missingAtoms(TwinPlan template, Set<String> ids) {
+        Map<String, String> types = new HashMap<>();
+        atoms.forEach(a -> types.put(a.id(), a.type()));
+        return template.atoms.stream().filter(a -> ids.contains(a.id()) && !a.type().equals(types.get(a.id())))
+                .map(a -> a.id() + " (" + a.type() + ")").toList();
     }
 
     public static TwinPlan load(InputStream yaml) throws IOException {

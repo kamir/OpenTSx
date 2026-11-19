@@ -165,13 +165,13 @@ class TwinCliTest {
         Path bills = Files.writeString(tmp.resolve("bills.csv"), "von,bis\n2024-01-01,2024-01-31\n");
         Result house = run(HouseDemo::run, "--calibrate", bills.toString());
         assertEquals(2, house.exit());
-        assertTrue(house.err().startsWith("opentsx: " + bills + ": missing column zeitraum_von; expected "), house.err());
+        assertTrue(house.err().startsWith("opentsx: " + bills + ": missing column period_from; expected "), house.err());
         assertEquals("", house.out());
 
         Path good = Files.write(tmp.resolve("good.csv"), getClass().getClassLoader()
                 .getResourceAsStream("twin/beispiel/haus-abrechnungen-simuliert.csv").readAllBytes());
         Path oneColumn = Files.writeString(tmp.resolve("t1.csv"), "datum,t_mittel_c\n2024-01-01\n");
-        assertEquals(new Result(2, "", "opentsx: " + oneColumn + ": line 2: no temperature; expected datum,t_mittel_c\n"),
+        assertEquals(new Result(2, "", "opentsx: " + oneColumn + ": line 2: no temperature; expected date,t_mean_c\n"),
                 run(HouseDemo::run, "--calibrate", good.toString(), "--weather", oneColumn.toString()));
         Path badDate = Files.writeString(tmp.resolve("t2.csv"), "datum,t_mittel_c\n2024-13-01,3.5\n");
         Result date = run(HouseDemo::run, "--calibrate", good.toString(), "--weather", badDate.toString());
@@ -233,9 +233,9 @@ class TwinCliTest {
                 + "2026-07-04T10:00+02:00, 2026-07-04T08:00:00Z or 2026-07-04 10:00\n"),
                 run(BoatDemo::run, "--data", badTime.toString()));
         Path badMode = Files.writeString(tmp.resolve("mode.csv"), "# logbook\nzeit,modus\n2026-07-04T10:00Z,hafen\n"
-                + "2026-07-04T10:05Z,kreuzfahrt\n");
-        assertEquals(new Result(2, "", "opentsx: " + badMode + ": line 4: unknown mode 'kreuzfahrt', use hafen, segeln, "
-                + "anker, unbemannt\n"), run(BoatDemo::run, "--data", badMode.toString()));
+                + "2026-07-04T10:05Z,cruise\n");
+        assertEquals(new Result(2, "", "opentsx: " + badMode + ": line 4: mode \"cruise\" is not a mode; expected "
+                + "harbour, sailing, anchor or away\n"), run(BoatDemo::run, "--data", badMode.toString()));
     }
 
     @Test
@@ -245,8 +245,87 @@ class TwinCliTest {
                 run(HouseDemo::run, "--calibrate", bills.toString()));
         Path good = Files.write(tmp.resolve("good.csv"), resource("twin/beispiel/haus-abrechnungen-simuliert.csv"));
         Path temps = Files.writeString(tmp.resolve("temps.csv"), "# temperatures\ndatum,t_mittel_c\n2024-01-01\n");
-        assertEquals(new Result(2, "", "opentsx: " + temps + ": line 3: no temperature; expected datum,t_mittel_c\n"),
+        assertEquals(new Result(2, "", "opentsx: " + temps + ": line 3: no temperature; expected date,t_mean_c\n"),
                 run(HouseDemo::run, "--calibrate", good.toString(), "--weather", temps.toString()));
+    }
+
+    @Test
+    void aPlanOfAnotherScenarioIsAUsageErrorOfTwinAndBoat() throws IOException {
+        Path house = Files.write(tmp.resolve("haus.yaml"), resource("twin/haus-erzgebirge.yaml"));
+        assertEquals(new Result(2, "", "opentsx: " + house + ": plan haus-erzgebirge has no atom market (market), "
+                + "offtake (h2-consumer), park (wind-park), ely (electrolyzer), handover (h2-handover), "
+                + "battery (battery), buffer (h2-buffer), marketer (direct-marketer); expected an H2 chain plan such "
+                + "as opentsx-twin/src/main/resources/twin/h2-chain.yaml\n"),
+                run(H2ChainDemo::run, "--plan", house.toString()));
+        assertEquals(new Result(2, "", "opentsx: " + house + ": plan haus-erzgebirge has no atom boat (boat-mode), "
+                + "solar (solar), shore (shore-power), laptop1 (device), laptop2 (device), starlink (device), "
+                + "station (power-station); expected a boat plan such as opentsx-twin/src/main/resources/twin/"
+                + "boot-etap22.yaml\n"), run(BoatDemo::run, "--plan", house.toString()));
+    }
+
+    @Test
+    void dataThatSpansMoreThanTenYearsIsAUsageError() throws IOException {
+        Path boat = Files.writeString(tmp.resolve("boat.csv"), "time,soc_percent\n0001-01-01T00:00Z,80\n"
+                + "9999-12-31T00:00Z,81\n");
+        assertEquals(new Result(2, "", "opentsx: " + boat + ": line 3: time \"9999-12-31T00:00Z\" lies more than "
+                + "3653 days after the earliest row (line 2); expected rows that span at most 3653 days (10 years)\n"),
+                run(BoatDemo::run, "--data", boat.toString()));
+
+        Path bills = Files.writeString(tmp.resolve("bills.csv"), "period_from,period_to,electricity_kwh\n"
+                + "0001-01-01,0001-12-31,3000\n9999-01-01,9999-12-31,3000\n");
+        assertEquals(new Result(2, "", "opentsx: " + bills + ": line 3: period_to 9999-12-31 lies 3653 days or more "
+                + "after the earliest period_from (line 2); expected bills that span at most 3653 days (10 years)\n"),
+                run(HouseDemo::run, "--calibrate", bills.toString()));
+
+        Path good = Files.write(tmp.resolve("good.csv"), resource("twin/beispiel/haus-abrechnungen-simuliert.csv"));
+        Path temps = Files.writeString(tmp.resolve("temps.csv"), "date,t_mean_c\n0001-01-01,3.5\n9999-12-31,4.5\n");
+        assertEquals(new Result(2, "", "opentsx: " + temps + ": line 3: date 9999-12-31 lies 3653 days or more "
+                + "after the earliest date (line 2); expected temperatures that span at most 3653 days (10 years)\n"),
+                run(HouseDemo::run, "--calibrate", good.toString(), "--weather", temps.toString()));
+    }
+
+    @Test
+    void dataThatNeedTooManyStepsOfThePlanAreAUsageError() throws IOException {
+        Path boatPlan = Files.writeString(tmp.resolve("boat-1s.yaml"), new String(resource("twin/boot-etap22.yaml"),
+                StandardCharsets.UTF_8).replaceFirst("(?m)^baseStep: .*$", "baseStep: PT1S"));
+        Path boat = Files.writeString(tmp.resolve("ten.csv"), "time,soc_percent\n2026-01-01T00:00Z,80\n"
+                + "2035-12-30T00:00Z,81\n");
+        assertEquals(new Result(2, "", "opentsx: " + boat + ": line 3: time \"2035-12-30T00:00Z\" needs 315360001 "
+                + "plan steps of PT1S from the earliest row (line 2); expected at most 35136 plan steps, from a longer "
+                + "baseStep or rows that span less time\n"),
+                run(BoatDemo::run, "--plan", boatPlan.toString(), "--data", boat.toString()));
+        assertEquals(new Result(2, "", "opentsx: twin/beispiel/boot-logs-simuliert.csv: line 4037: time \"2026-07-17 "
+                + "23:55\" needs 1209301 plan steps of PT1S from the earliest row (line 6); expected at most 35136 plan "
+                + "steps, from a longer baseStep or rows that span less time\n"),
+                run(BoatDemo::run, "--plan", boatPlan.toString(), "--simulated"));
+
+        Path housePlan = Files.writeString(tmp.resolve("house-1s.yaml"), new String(resource("twin/haus-erzgebirge.yaml"),
+                StandardCharsets.UTF_8).replaceFirst("(?m)^baseStep: .*$", "baseStep: PT1S"));
+        Path bills = Files.writeString(tmp.resolve("bills.csv"), "period_from,period_to,electricity_kwh\n"
+                + "2016-01-01,2020-12-31,15000\n2021-01-01,2025-12-31,15000\n");
+        assertEquals(new Result(2, "", "opentsx: " + bills + ": period_from 2016-01-01 to period_to 2025-12-31 needs "
+                + "315619200 plan steps of PT1S; expected at most 87672 plan steps, from a longer baseStep or bills "
+                + "that span less time\n"),
+                run(HouseDemo::run, "--plan", housePlan.toString(), "--calibrate", bills.toString()));
+        assertEquals(new Result(2, "", "opentsx: twin/beispiel/haus-abrechnungen-simuliert.csv: period_from "
+                + "2022-01-01 to period_to 2025-12-31 needs 126230400 plan steps of PT1S; expected at most 87672 plan "
+                + "steps, from a longer baseStep or bills that span less time\n"),
+                run(HouseDemo::run, "--plan", housePlan.toString(), "--simulated"));
+    }
+
+    @Test
+    void anOptionWithoutEffectIsAUsageError() {
+        String weatherNeedsBills = "opentsx: opentsx.house.weather: needs opentsx.house.bills; give --calibrate "
+                + "<bills.csv> with --weather\n";
+        assertEquals(new Result(2, "", weatherNeedsBills), run(HouseDemo::run, "--simulated", "--weather", "t.csv"));
+        assertEquals(new Result(2, "", weatherNeedsBills), run(HouseDemo::run, "--weather", "t.csv"));
+        assertEquals(new Result(2, "", "opentsx: opentsx.twin.simulated: cannot be combined with opentsx.house.bills; "
+                + "give --calibrate <bills.csv> or --simulated, not both\n"),
+                run(HouseDemo::run, "--simulated", "--calibrate", "b.csv"));
+        assertEquals(new Result(2, "", "opentsx: opentsx.boat.zone: needs opentsx.boat.data; give --data <file.csv> "
+                + "with --zone\n"), run(BoatDemo::run, "--zone", "UTC"));
+        assertEquals(new Result(2, "", "opentsx: opentsx.boat.zone: needs opentsx.boat.data; give --data <file.csv> "
+                + "with --zone\n"), run(BoatDemo::run, "--simulated", "--zone", "UTC"));
     }
 
     private byte[] resource(String name) throws IOException {
@@ -299,5 +378,14 @@ class TwinCliTest {
             OpenTsxConf.Loaded loaded = OpenTsxConf.load(argv, env, null);
             assertEquals(job, loaded.command(), job);
         }
+    }
+
+    @Test
+    void boatCalibrationWithoutStateOfChargeNamesTheEnglishColumn() throws IOException {
+        Path data = Files.writeString(tmp.resolve("no-soc.csv"), "time,solar_w\n2026-07-04T10:00+02:00,50\n");
+        Result r = run(BoatDemo::run, "--data", data.toString(), "--calibrate");
+        assertEquals(0, r.exit(), r.err());
+        assertTrue(r.out().contains("SoC RMSE model vs. measured n/a (no soc_percent)"), r.out());
+        assertTrue(r.out().contains("   --calibrate needs the column soc_percent\n"), r.out());
     }
 }

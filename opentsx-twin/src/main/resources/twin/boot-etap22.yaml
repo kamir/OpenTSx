@@ -1,4 +1,4 @@
-# Scenario "Boot": Etap 22 (6.7 m sailing yacht) as an island energy system.
+# Scenario boot: Etap 22 (6.7 m sailing yacht) as an island energy system.
 # Power station (portable LiFePO4, ~1 kWh) with solar (2 x 100 Wp flexible) and shore power (230 V, harbour only);
 # consumers: 2 laptops, phone (Pixel 10), Starlink Mini, Raspberry Pi, VHF radio.
 # ALL NUMBERS ARE ASSUMPTIONS (concept: docs/datamodel-2026/10-BOOT-ZWILLING.md) until replaced by real data.

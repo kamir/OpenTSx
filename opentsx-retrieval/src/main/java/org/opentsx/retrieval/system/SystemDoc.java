@@ -286,7 +286,7 @@ public final class SystemDoc {
                         a.outputs().stream().map(p -> new Port(p.name(), p.unit(), p.kind().name(), null, false)).toList()));
             }
         } catch (RuntimeException e) {
-            problems.add("plan " + file + " cannot be read: " + e.getMessage());
+            problems.add(e instanceof UncheckedIOException ? e.getMessage() : "plan " + file + " cannot be read: " + e.getMessage());
         }
         return out;
     }

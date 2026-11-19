@@ -14,7 +14,7 @@ systems:
     plans:
       - id: park
         kind: geo                                   # WGS84
-        basemap: { source: "Orthofoto DOP20 Mecklenburg-Vorpommern", licence: "dl-de/by-2-0 (zu prüfen)" }
+        basemap: { source: "Orthophoto DOP20 Mecklenburg-Vorpommern", licence: "dl-de/by-2-0 (to be checked)" }
       - id: wea-schema
         kind: image                                 # image coordinates 0..1 on the turbine schematic
         scale: none
@@ -22,29 +22,29 @@ systems:
       - id: h2-chain/park
         atom: park
         type: wind-park
-        name: Windpark (aggregiert 12 MW)
+        name: Wind farm (aggregated 12 MW)
         location: { plan: park, lat: 54.4519, lon: 13.9470 }
         infinimesh: { namespace: windpark-ost }
       - id: h2-chain/park/T02
         atom: park
         parent: h2-chain/park
         type: wind-turbine
-        name: WEA T02
+        name: Wind turbine T02
         location: { plan: park, lat: 54.4515, lon: 13.9430 }
-        nameplate: { manufacturer: "(Beispiel)", model: GENERIC-3MW, serial: EX-0000-T02, ratedKw: 3000, commissioned: 2014-06-30 }
+        nameplate: { manufacturer: "(example)", model: GENERIC-3MW, serial: EX-0000-T02, ratedKw: 3000, commissioned: 2014-06-30 }
         refDesignation:
           rdsPp: "=G002"                            # example; codes to be checked against the RDS-PP application guideline
           iec61400_25: { logicalDevice: T02, logicalNodes: [WTUR, WGEN, WNAC, WROT, WCNV, WTRF] }
-        iso14224: { equipmentClass: "wind turbine (zu prüfen)" }
+        iso14224: { equipmentClass: "wind turbine (to be checked)" }
         media:
           - { id: m-t02-illu, kind: illustration, reality: illustration, uri: "inline:prototype", licence: "-" }
           - { id: m-t02-drohne, kind: drone, reality: real, uri: "s3://opentsx-inventory/h2-chain/park/T02/drohne-2026-05.jpg",
-              sha256: "0000000000000000000000000000000000000000000000000000000000000000", takenAt: 2026-05-14, author: Eigentümer,
-              licence: intern, status: planned }
+              sha256: "0000000000000000000000000000000000000000000000000000000000000000", takenAt: 2026-05-14, author: owner,
+              licence: internal, status: planned }
         documents:
-          - { id: d-t02-datenblatt, kind: datasheet, title: "Datenblatt GENERIC-3MW",
+          - { id: d-t02-datenblatt, kind: datasheet, title: "Datasheet GENERIC-3MW",
               uri: "s3://opentsx-inventory/docs/generic-3mw-datenblatt.pdf", sha256: "0000000000000000000000000000000000000000000000000000000000000000" }
-          - { id: d-t02-wkp-2025, kind: protocol, title: "Wiederkehrende Prüfung 2025",
+          - { id: d-t02-wkp-2025, kind: protocol, title: "Periodic inspection 2025",
               uri: "s3://opentsx-inventory/h2-chain/park/T02/wkp-2025.pdf", sha256: "0000000000000000000000000000000000000000000000000000000000000000" }
         series:
           - { metric: wind.turbine.power_active, tags: { turbine: T02 } }
@@ -62,30 +62,30 @@ systems:
         atom: park
         parent: h2-chain/park/T02
         type: component
-        name: Getriebe T02
+        name: Gearbox T02
         location: { plan: wea-schema, x: 0.54, y: 0.30 }
-        nameplate: { manufacturer: "(Beispiel)", serial: EX-T02-GET-01 }
+        nameplate: { manufacturer: "(example)", serial: EX-T02-GET-01 }
         refDesignation: { iec61400_25: { logicalDevice: T02, logicalNodes: [WTRM] } }
       - id: h2-chain/grid
         atom: grid
         type: grid-connection
-        name: Übergabestation / NVP
+        name: Grid connection point and substation
         location: { plan: park, lat: 54.4470, lon: 13.9660 }
         infinimesh: { namespace: windpark-ost, device: nvp-zaehler-gw }
         access: { visibility: partner, owner: parkbetreiber }   # critical infrastructure: no public site plans
       - id: h2-chain/ely
         atom: ely
         type: electrolyzer
-        name: Elektrolyseur
+        name: Electrolyzer
         location: { plan: park, lat: 54.4440, lon: 13.9760 }
-        nameplate: { ratedKw: 5000, technology: "PEM (Annahme)" }
+        nameplate: { ratedKw: 5000, technology: "PEM (assumption)" }
         commandable: false                          # protective curtailment stays local logic
         infinimesh: { namespace: h2-ely, device: ely-sps-gw }
         access: { visibility: partner, owner: elektrolyseurbetreiber }
       - id: h2-chain/line
         atom: line
         type: h2-pipeline
-        name: H2-Leitung (Druckmessstelle)
+        name: H2 pipeline (pressure measuring point)
         location: { plan: park, lat: 54.4410, lon: 13.9930 }
         series: [ { metric: line.p_in_bar } ]
         maintenance:
@@ -93,25 +93,25 @@ systems:
       - id: h2-chain/market                        # atoms without a location appear in the tray below the map
         atom: market
         type: market
-        name: Markt
+        name: Market
 
   # ------------------------------------------------------------------ house (haus-erzgebirge.yaml)
   - system: haus-erzgebirge
     plans:
-      - { id: kg, kind: floor, label: Keller, unit: m, origin: [0, 0], size: [10, 8] }
-      - { id: eg, kind: floor, label: Erdgeschoss, unit: m, origin: [0, 0], size: [10, 8] }
-      - { id: og, kind: floor, label: Obergeschoss, unit: m, origin: [0, 0], size: [10, 8] }
+      - { id: kg, kind: floor, label: Cellar, unit: m, origin: [0, 0], size: [10, 8] }
+      - { id: eg, kind: floor, label: Ground floor, unit: m, origin: [0, 0], size: [10, 8] }
+      - { id: og, kind: floor, label: Upper floor, unit: m, origin: [0, 0], size: [10, 8] }
     assets:
       - id: haus-erzgebirge/boiler
         atom: boiler
         type: oil-boiler
-        name: Ölkessel
+        name: Oil boiler
         location: { plan: kg, x: 1.2, y: 1.4 }
-        nameplate: { manufacturer: "(Beispiel)", ratedKw: 18, burner: "einstufig, 120 W" }
+        nameplate: { manufacturer: "(example)", ratedKw: 18, burner: "single-stage, 120 W" }
         documents:
-          - { id: d-kessel-anleitung, kind: manual, title: "Bedienungsanleitung Kessel", uri: "file:config/private/inventar/kessel-anleitung.pdf",
+          - { id: d-kessel-anleitung, kind: manual, title: "Boiler operating manual", uri: "file:config/private/inventar/kessel-anleitung.pdf",
               sha256: "0000000000000000000000000000000000000000000000000000000000000000" }
-          - { id: d-abgas-2025, kind: protocol, title: "Abgasmessung 2025", uri: "file:config/private/inventar/abgas-2025.pdf",
+          - { id: d-abgas-2025, kind: protocol, title: "Flue gas measurement 2025", uri: "file:config/private/inventar/abgas-2025.pdf",
               sha256: "0000000000000000000000000000000000000000000000000000000000000000" }
         maintenance:
           intervals:
@@ -123,15 +123,15 @@ systems:
       - id: haus-erzgebirge/tank
         atom: tank
         type: oil-tank
-        name: Öltank 2 × 2.000 l
+        name: Oil tank 2 × 2,000 l
         location: { plan: kg, x: 7.3, y: 1.2 }
-        nameplate: { capacityL: 4000, construction: "Batterietank, Kunststoff" }
+        nameplate: { capacityL: 4000, construction: "battery tank, plastic" }
         series: [ { metric: tank.level_l, origin: SYNTHETIC } ]   # no level sensor yet: modelled
         access: { visibility: private, owner: hauseigentuemer }
       - id: haus-erzgebirge/meter
         atom: meter
         type: meter
-        name: Stromzähler
+        name: Electricity meter
         location: { plan: kg, x: 8.6, y: 6.8 }
         refDesignation: { obis: ["1.8.0", "16.7.0"] }
         infinimesh: { namespace: haus-erzgebirge, device: zaehler-ir-lesekopf }
@@ -139,7 +139,7 @@ systems:
       - id: haus-erzgebirge/stove
         atom: stove
         type: wood-stove
-        name: Kaminofen
+        name: Wood stove
         location: { plan: eg, x: 0.9, y: 1.1 }
         maintenance:
           intervals: [ { id: kehren, kind: time, every: P1Y, last: 2025-10-09 } ]
@@ -148,25 +148,25 @@ systems:
         atom: appliances                           # entry "gefriertruhe" in appliances.inventory
         parent: haus-erzgebirge/appliances
         type: appliance
-        name: Gefriertruhe (alt)
+        name: Freezer (old)
         location: { plan: kg, x: 1.5, y: 6.4 }
-        nameplate: { avgW: 45, built: "≈ 2005 (Annahme)" }
+        nameplate: { avgW: 45, built: "about 2005 (assumption)" }
         access: { visibility: private, owner: hauseigentuemer }
 
   # ------------------------------------------------------------------ boat (boot-etap22.yaml)
   - system: boot-etap22
     plans:
-      - { id: deck, kind: deck, label: Deck, unit: m, origin: "Heckspiegel / Mittschiffslinie", size: [6.6, 2.5] }
-      - { id: kajuete, kind: deck, label: Kajüte, unit: m, origin: "Heckspiegel / Mittschiffslinie", size: [6.6, 2.5] }
+      - { id: deck, kind: deck, label: Deck, unit: m, origin: "transom / centreline", size: [6.6, 2.5] }
+      - { id: kajuete, kind: deck, label: Cabin, unit: m, origin: "transom / centreline", size: [6.6, 2.5] }
     assets:
       - id: boot-etap22/station
         atom: station
         type: power-station
-        name: Powerstation 1 kWh
+        name: Power station 1 kWh
         location: { plan: kajuete, x: 2.15, y: 0.05 }
-        nameplate: { manufacturer: "(Beispiel)", capacityWh: 1024, chemistry: LiFePO4 }
+        nameplate: { manufacturer: "(example)", capacityWh: 1024, chemistry: LiFePO4 }
         documents:
-          - { id: d-station-garantie, kind: warranty, title: "Garantie bis 2029-05", uri: "file:config/private/inventar/station-garantie.pdf",
+          - { id: d-station-garantie, kind: warranty, title: "Warranty until 2029-05", uri: "file:config/private/inventar/station-garantie.pdf",
               sha256: "0000000000000000000000000000000000000000000000000000000000000000", validUntil: 2029-05-31 }
         series: [ { metric: boat.station.soc, tags: { boat: etap22, device: station } } ]
         infinimesh: { namespace: boot-etap22, device: raspi-boatlog }      # the Pi reports for several assets
@@ -188,19 +188,19 @@ systems:
       - id: boot-etap22/vhf
         atom: vhf
         type: device
-        name: UKW-Funkgerät
+        name: VHF radio
         location: { plan: kajuete, x: 2.45, y: 0.55 }
         commandable: false                         # safety: never switched remotely
       - id: boot-etap22/vhf/antenne
         atom: vhf
         parent: boot-etap22/vhf
         type: antenna
-        name: UKW-Antenne (Masttopp)
+        name: VHF antenna (masthead)
         location: { plan: deck, x: 4.0, y: 0 }
       - id: boot-etap22/shore
         atom: shore
         type: shore-power
-        name: Landstrom-Einspeisung
+        name: Shore power inlet
         location: { plan: deck, x: 1.6, y: -0.95 }
         maintenance:
           intervals: [ { id: kabel-fi, kind: time, every: P1Y, last: 2025-09-20 } ]

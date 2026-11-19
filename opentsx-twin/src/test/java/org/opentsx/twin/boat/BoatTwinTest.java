@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Scenario "Boot" (Etap 22): plan, energy balance, limits, what-ifs, determinism. */
+/** Scenario {@code boot} (Etap 22): plan, energy balance, limits, what-ifs, determinism. */
 class BoatTwinTest {
 
     private final TwinPlan plan = BoatDemo.plan();

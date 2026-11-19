@@ -326,27 +326,27 @@ dialog.drawer::backdrop { background: rgba(10, 8, 59, 0.35); }
 
 <header class="titlebar">
   <div class="brand"><span class="mark"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17l5-7 4 4 7-9"/><circle cx="9" cy="10" r="1.6" fill="currentColor"/><circle cx="13" cy="14" r="1.6" fill="currentColor"/></svg></span><b>Smart Topics Studio</b></div>
-  <nav class="menubar" id="menubar" aria-label="Menü"></nav>
+  <nav class="menubar" id="menubar" aria-label="Menu"></nav>
   <span class="tb-space"></span>
-  <button class="tb-btn" id="tech" aria-pressed="false" title="Kennungen, Lauf-Ids und Rohwerte ein- oder ausblenden"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6l-5 6 5 6M16 6l5 6-5 6M13.5 4l-3 16"/></svg><span>Technische Details</span></button>
-  <button class="tb-btn" id="theme" title="Hell oder dunkel" aria-label="Zwischen hellem und dunklem Erscheinungsbild wechseln"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" stroke="none"/></svg></button>
+  <button class="tb-btn" id="tech" aria-pressed="false" title="Show or hide ids, run ids and raw values"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6l-5 6 5 6M16 6l5 6-5 6M13.5 4l-3 16"/></svg><span>Technical details</span></button>
+  <button class="tb-btn" id="theme" title="Light or dark" aria-label="Switch between light and dark appearance"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" stroke="none"/></svg></button>
 </header>
 
 <div class="work" id="work">
-  <nav class="rail" id="rail" aria-label="Ansichten und Werkzeuge">
-    <div class="tabs" role="tablist" aria-orientation="vertical" aria-label="Ansichten">
-      <button role="tab" id="tab-overview" aria-controls="view-overview" title="Überblick"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="10" rx="1.5"/><rect x="13" y="3" width="8" height="6" rx="1.5"/><rect x="13" y="11" width="8" height="10" rx="1.5"/><rect x="3" y="15" width="8" height="6" rx="1.5"/></svg><span>Überblick</span></button>
-      <button role="tab" id="tab-sim" aria-controls="view-sim" title="Vergleich"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 20V4M7 4L4 7M7 4l3 3M17 4v16M17 20l-3-3M17 20l3-3"/></svg><span>Vergleich</span></button>
-      <button role="tab" id="tab-graph" aria-controls="view-graph" title="Systembild"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="6" height="6" rx="1.5"/><rect x="15" y="4" width="6" height="6" rx="1.5"/><rect x="9" y="15" width="6" height="6" rx="1.5"/><path d="M9 7h6M6 10v6a2 2 0 0 0 2 2h1M18 10v6a2 2 0 0 1-2 2h-1"/></svg><span>Systembild</span></button>
-      <button role="tab" id="tab-stats" aria-controls="view-stats" title="Messreihen"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><span>Messreihen</span></button>
+  <nav class="rail" id="rail" aria-label="Views and tools">
+    <div class="tabs" role="tablist" aria-orientation="vertical" aria-label="Views">
+      <button role="tab" id="tab-overview" aria-controls="view-overview" title="Overview"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="10" rx="1.5"/><rect x="13" y="3" width="8" height="6" rx="1.5"/><rect x="13" y="11" width="8" height="10" rx="1.5"/><rect x="3" y="15" width="8" height="6" rx="1.5"/></svg><span>Overview</span></button>
+      <button role="tab" id="tab-sim" aria-controls="view-sim" title="Compare"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 20V4M7 4L4 7M7 4l3 3M17 4v16M17 20l-3-3M17 20l3-3"/></svg><span>Compare</span></button>
+      <button role="tab" id="tab-graph" aria-controls="view-graph" title="System diagram"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="6" height="6" rx="1.5"/><rect x="15" y="4" width="6" height="6" rx="1.5"/><rect x="9" y="15" width="6" height="6" rx="1.5"/><path d="M9 7h6M6 10v6a2 2 0 0 0 2 2h1M18 10v6a2 2 0 0 1-2 2h-1"/></svg><span>System diagram</span></button>
+      <button role="tab" id="tab-stats" aria-controls="view-stats" title="Series"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><span>Series</span></button>
     </div>
     <div class="grow"></div>
-    <button id="open-guide" title="Erläuterung zum Szenario"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c-2-1.5-5-2-8-2v14c3 0 6 .5 8 2 2-1.5 5-2 8-2V4c-3 0-6 .5-8 2zM12 6v14"/></svg><span>Erläuterung</span></button>
-    <button id="rail-toggle" aria-expanded="false" title="Seitenleiste aus- oder einklappen"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16M14 10l2 2-2 2"/></svg><span>Einklappen</span></button>
+    <button id="open-guide" title="Guide to the scenario"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c-2-1.5-5-2-8-2v14c3 0 6 .5 8 2 2-1.5 5-2 8-2V4c-3 0-6 .5-8 2zM12 6v14"/></svg><span>Guide</span></button>
+    <button id="rail-toggle" aria-expanded="false" title="Collapse or expand the sidebar"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16M14 10l2 2-2 2"/></svg><span>Collapse</span></button>
   </nav>
 
   <div class="center">
-    <div class="doctabs" id="doctabs" role="group" aria-label="Bereiche des Szenarios"></div>
+    <div class="doctabs" id="doctabs" role="group" aria-label="Parts of the scenario"></div>
     <div class="crumbs"><h1><span id="cr-sc"></span><span aria-hidden="true">›</span><b id="cr-view"></b></h1></div>
     <div class="scrollarea" id="scroll">
 <main class="app">
@@ -358,23 +358,23 @@ dialog.drawer::backdrop { background: rgba(10, 8, 59, 0.35); }
         <p class="decision" id="sc-decision" hidden></p>
       </div>
       <div class="sec">
-        <h3 id="sc-kpi-title">Kennzahlen des Referenzlaufs</h3>
+        <h3 id="sc-kpi-title">KPIs of the reference run</h3>
         <div class="tiles" id="sc-tiles"></div>
       </div>
     </section>
     <div class="two">
       <div class="card">
-        <h2>Was hier passiert</h2>
+        <h2>What happens here</h2>
         <div id="ov-text"></div>
         <div class="btnrow">
-          <button class="btn primary" data-go="sim">Alternativen vergleichen</button>
-          <button class="btn" data-go="graph">Systembild öffnen</button>
+          <button class="btn primary" data-go="sim">Compare alternatives</button>
+          <button class="btn" data-go="graph">Open the system diagram</button>
         </div>
       </div>
       <div class="card">
-        <h2>Ablauf im Referenzlauf</h2>
+        <h2>Course of the reference run</h2>
         <div class="flow" id="ov-flow"></div>
-        <p class="note">Ein Klick auf ein Ereignis zeigt das Systembild zu diesem Zeitpunkt.</p>
+        <p class="note">Click an event to see the system diagram at that time.</p>
       </div>
     </div>
     <div class="stack" id="ov-charts"></div>
@@ -382,28 +382,28 @@ dialog.drawer::backdrop { background: rgba(10, 8, 59, 0.35); }
 
   <section id="view-sim" role="tabpanel" aria-labelledby="tab-sim" class="pane" hidden>
     <div class="card">
-      <div class="seg" role="group" aria-label="Art des Vergleichs">
-        <button id="m-whatif" aria-pressed="true">Was wäre, wenn</button>
-        <button id="m-forecast" aria-pressed="false">Prognose</button>
+      <div class="seg" role="group" aria-label="Kind of comparison">
+        <button id="m-whatif" aria-pressed="true">What if</button>
+        <button id="m-forecast" aria-pressed="false">Forecast</button>
       </div>
       <div id="whatif-ctl" class="sec">
         <label class="ctl" for="alt">Alternative
           <select id="alt"></select>
         </label>
-        <p class="note">Verglichen wird mit dem Referenzlauf, bei denselben Eingangsdaten. Die Alternative ist eine Simulation.</p>
+        <p class="note">The comparison is with the reference run, on the same input data. The alternative is a simulation.</p>
       </div>
       <div id="forecast-ctl" class="sec" hidden>
-        <label class="ctl" for="fc">Prognose
+        <label class="ctl" for="fc">Forecast
           <select id="fc"></select>
         </label>
-        <p class="note">Der Zwilling setzt am Zustand „jetzt“ des Referenzlaufs an und rechnet mit Prognosen weiter. Eingriffe, die bis dahin gelten, bleiben in Kraft.</p>
+        <p class="note">The twin starts from the state "now" of the reference run and continues with forecasts. Interventions in force up to then stay in force.</p>
       </div>
       <div class="legend" id="simlegend"></div>
     </div>
     <div class="stack">
-      <div class="card"><h2>Kennzahlen</h2><div class="scroll"><table id="kpis"></table></div><p class="note" id="kpinote"></p></div>
+      <div class="card"><h2>KPIs</h2><div class="scroll"><table id="kpis"></table></div><p class="note" id="kpinote"></p></div>
       <div class="stack" id="simcharts"></div>
-      <div class="card"><h2>Ereignisse</h2><div class="events" id="sim-events"></div></div>
+      <div class="card"><h2>Events</h2><div class="events" id="sim-events"></div></div>
     </div>
   </section>
 
@@ -412,20 +412,20 @@ dialog.drawer::backdrop { background: rgba(10, 8, 59, 0.35); }
       <div class="toolbar">
         <span class="timepill" id="scrubt"></span>
         <div>
-          <label class="ctl" for="scrub" style="position:absolute;left:-9999px">Zeitpunkt</label>
+          <label class="ctl" for="scrub" style="position:absolute;left:-9999px">Point in time</label>
           <input type="range" id="scrub" min="0" max="359" value="150">
           <div class="ticks" id="scrubticks"></div>
         </div>
       </div>
       <div class="legend" id="graphlegend"></div>
     </div>
-    <div class="graphwrap"><svg class="graph" id="graph" role="group" aria-label="Systembild des Zwillings"></svg></div>
-    <p class="note">Ein Klick auf einen Baustein oder eine Verbindung blendet rechts die Details ein.</p>
+    <div class="graphwrap"><svg class="graph" id="graph" role="group" aria-label="System diagram of the twin"></svg></div>
+    <p class="note">Click a block or a connection to show its details on the right.</p>
   </section>
 
   <section id="view-stats" role="tabpanel" aria-labelledby="tab-stats" class="pane" hidden>
     <div class="card">
-      <h2>Messgrößen</h2>
+      <h2>Quantities</h2>
       <div class="list" id="serieslist"></div>
     </div>
     <div class="stack">
@@ -435,53 +435,53 @@ dialog.drawer::backdrop { background: rgba(10, 8, 59, 0.35); }
         <div class="inline-stats" id="st-inline"></div>
       </div>
       <div class="card">
-        <h2>Verlauf mit Ereignissen <span class="chip" id="st-unit"></span></h2>
+        <h2>Course with events <span class="chip" id="st-unit"></span></h2>
         <div class="chart" id="st-line"></div>
       </div>
       <div class="card">
-        <h2>Verteilung der Werte</h2>
+        <h2>Distribution of the values</h2>
         <div class="chart" id="st-hist"></div>
         <p class="note" id="st-histnote"></p>
       </div>
     </div>
   </section>
-  <section id="view-topic" role="tabpanel" aria-label="Ereignis-Topic" class="stack" hidden>
+  <section id="view-topic" role="tabpanel" aria-label="Event topic" class="stack" hidden>
     <div class="card">
-      <h2>Ereignis-Topic <span class="chip" id="tp-name"></span></h2>
-      <p class="prose">Ein Datensatz je Ereignis des Zwillings, in der Reihenfolge des Laufs. Der Schlüssel ist der Baustein, der Wert beschreibt das Ereignis.</p>
-      <div class="seg" role="group" aria-label="Quelle der Datensätze">
-        <button id="tp-src-live" aria-pressed="false">Live aus dem Topic</button>
-        <button id="tp-src-replay" aria-pressed="true">Wiedergabe ohne Broker</button>
+      <h2>Event topic <span class="chip" id="tp-name"></span></h2>
+      <p class="prose">One record per event of the twin, in the order of the run. The key is the block, the value describes the event.</p>
+      <div class="seg" role="group" aria-label="Source of the records">
+        <button id="tp-src-live" aria-pressed="false">Live from the topic</button>
+        <button id="tp-src-replay" aria-pressed="true">Replay without a broker</button>
       </div>
       <div class="sec" id="tp-live" hidden>
         <div class="btnrow">
-          <label class="ctl inline" for="tp-url">Adresse der Brücke
+          <label class="ctl inline" for="tp-url">Bridge address
             <input type="text" id="tp-url" style="width:24ch" spellcheck="false" autocomplete="off">
           </label>
-          <label class="ctl inline" for="tp-from">Lesen
-            <select id="tp-from"><option value="earliest">von Anfang an</option><option value="latest">ab jetzt</option></select>
+          <label class="ctl inline" for="tp-from">Read
+            <select id="tp-from"><option value="earliest">from the start</option><option value="latest">from now</option></select>
           </label>
-          <button class="btn primary" id="tp-connect">Verbinden</button>
-          <span class="chip org" id="tp-state">nicht verbunden</span>
+          <button class="btn primary" id="tp-connect">Connect</button>
+          <span class="chip org" id="tp-state">not connected</span>
         </div>
         <p class="note" id="tp-hint" role="status"></p>
-        <p class="note">Die Brücke liest das Topic aus KafScale und gibt es an den Browser weiter. Starten: <span class="mono">bin/opentsx twin-live bridge --bootstrap host:9092</span>. Ereignisse schreibt <span class="mono">bin/opentsx twin-live publish --bootstrap host:9092 --duration 120</span> in das Topic. Ohne Broker startet <span class="mono">bin/opentsx twin-live demo</span> beides mit Topics im Speicher.</p>
+        <p class="note">The bridge reads the topic from KafScale and passes it on to the browser. Start it with <span class="mono">bin/opentsx twin-live bridge --kafscale host:9092</span>. <span class="mono">bin/opentsx twin-live publish --kafscale host:9092 --duration 120</span> writes the events into the topic. Without a broker, <span class="mono">bin/opentsx twin-live demo</span> starts both with topics kept in memory.</p>
       </div>
       <div class="sec" id="tp-replay">
         <div class="btnrow">
-          <button class="btn primary" id="tp-play">Wiedergabe starten</button>
-          <button class="btn" id="tp-reset">Von vorn</button>
-          <label class="ctl inline" for="tp-speed">Dauer des Durchlaufs
-            <select id="tp-speed"><option value="30">30 Sekunden</option><option value="120">2 Minuten</option><option value="600">10 Minuten</option></select>
+          <button class="btn primary" id="tp-play">Start replay</button>
+          <button class="btn" id="tp-reset">Restart</button>
+          <label class="ctl inline" for="tp-speed">Duration of the replay
+            <select id="tp-speed"><option value="30">30 seconds</option><option value="120">2 minutes</option><option value="600">10 minutes</option></select>
           </label>
           <span class="timepill" id="tp-clock"></span>
         </div>
         <div class="progress" aria-hidden="true"><div id="tp-bar"></div></div>
-        <p class="note">Spielt den gerechneten Referenzlauf im Browser ab. Dabei wird nichts aus KafScale gelesen.</p>
+        <p class="note">Plays the computed reference run in the browser. Nothing is read from KafScale.</p>
       </div>
     </div>
     <div class="card">
-      <h2>Datensätze, neueste zuerst <span class="note" id="tp-count" role="status"></span></h2>
+      <h2>Records, newest first <span class="note" id="tp-count" role="status"></span></h2>
       <div class="scroll"><table id="tp-rows"></table></div>
       <p class="note" id="tp-empty"></p>
     </div>
@@ -491,14 +491,14 @@ dialog.drawer::backdrop { background: rgba(10, 8, 59, 0.35); }
   </div>
 
   <aside class="detail" id="detail" aria-labelledby="detail-kind" hidden>
-    <div class="detail-head"><span id="detail-kind">Baustein</span><button class="icon-btn" id="close-detail" aria-label="Details schließen" title="Schließen (Esc)"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="detail-head"><span id="detail-kind">Block</span><button class="icon-btn" id="close-detail" aria-label="Close details" title="Close (Esc)"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="detail-body" id="nodepanel"></div>
   </aside>
 </div>
 
 <footer class="status">
-  <span class="sample">Beispieldaten</span>
-  <span class="grow" role="note">Synthetische Eingangsreihen und Modellannahmen, keine Messwerte. Nicht für Abrechnung oder Angebot.</span>
+  <span class="sample">Example data</span>
+  <span class="grow" role="note">Synthetic input series and model assumptions, no measurements. Not for billing or quotes.</span>
   <span id="flash" role="status"></span>
   <span class="meta" id="sc-meta"></span>
 </footer>
@@ -506,7 +506,7 @@ dialog.drawer::backdrop { background: rgba(10, 8, 59, 0.35); }
 
 <dialog class="drawer" id="guide" aria-labelledby="guidetitle">
   <div class="drawer-in">
-    <div class="drawer-head"><h2 id="guidetitle">Erläuterung</h2><button class="btn" id="close-guide">Schließen</button></div>
+    <div class="drawer-head"><h2 id="guidetitle">Guide</h2><button class="btn" id="close-guide">Close</button></div>
     <div class="stack" id="guidebody"></div>
   </div>
 </dialog>
@@ -520,12 +520,12 @@ const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).
 const svgEl = (tag, attrs, parent) => { const e = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
-// numbers: about three significant digits, German notation; larger units from a threshold on (kW -> MW, ...)
+// numbers: about three significant digits, English notation; larger units from a threshold on (kW -> MW, ...)
 const NA = "n/a";
 function num(v, digits) {
   if (v == null || Number.isNaN(v)) return NA;
   const a = Math.abs(v), d = digits != null ? digits : a === 0 || a >= 100 ? 0 : a >= 10 ? 1 : a >= 1 ? 2 : 3;
-  return Number(v).toLocaleString("de-DE", { maximumFractionDigits: d, minimumFractionDigits: digits == null && !Number.isInteger(+(+v).toFixed(6)) ? d : 0 });
+  return Number(v).toLocaleString("en-GB", { maximumFractionDigits: d, minimumFractionDigits: digits == null && !Number.isInteger(+(+v).toFixed(6)) ? d : 0 });
 }
 const UP = { kW: [1000, 1000, "MW"], kWh: [10000, 1000, "MWh"], Wh: [10000, 1000, "kWh"], W: [10000, 1000, "kW"], kg: [1000, 1000, "t"] };
 // unit and divisor for values up to maxAbs, so that one table row or one chart uses one unit
@@ -536,9 +536,9 @@ function val(v, unit, digits) { if (v == null || Number.isNaN(v)) return NA; con
 const tAt = i => new Date(Date.parse(SC.t0) + i * SC.stepMinutes * 60000);
 const spanH = () => N * SC.stepMinutes / 60;
 const pad = n => String(n).padStart(2, "0");
-const MONTH = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 function tLabel(i, long) {
-  const d = tAt(i), hm = pad(d.getUTCHours()) + ":" + pad(d.getUTCMinutes()), dm = pad(d.getUTCDate()) + "." + pad(d.getUTCMonth() + 1) + ".";
+  const d = tAt(i), hm = pad(d.getUTCHours()) + ":" + pad(d.getUTCMinutes()), dm = d.getUTCDate() + " " + MONTH[d.getUTCMonth()];
   if (spanH() <= 24) return hm;
   if (spanH() <= 24 * 45 || long) return dm + " " + hm;
   return MONTH[new Date(d.getTime() + 12 * 3600e3).getUTCMonth()];
@@ -554,8 +554,8 @@ function xTicks() {
 let units = {};
 const unitOf = k => units[k] || (k.endsWith("_kwh") ? "kWh" : k.endsWith("_kg") ? "kg" : "");
 const label = k => (SC.labels && SC.labels[k]) || k;
-const ORIGIN_DE = { MEASURED: "gemessen", REPORTED: "gemeldet", FORECAST: "Prognose", ESTIMATED: "geschätzt", SYNTHETIC: "synthetisch" };
-const originChip = o => o ? `<span class="chip org ${o}">${ORIGIN_DE[o] || o.toLowerCase()}</span>` : "";
+const ORIGIN_LABEL = { MEASURED: "measured", REPORTED: "reported", FORECAST: "forecast", ESTIMATED: "estimated", SYNTHETIC: "synthetic" };
+const originChip = o => o ? `<span class="chip org ${o}">${ORIGIN_LABEL[o] || o.toLowerCase()}</span>` : "";
 
 function stats(arr) {
   const v = arr.filter(x => x != null && !Number.isNaN(x)).sort((a, b) => a - b);
@@ -588,7 +588,7 @@ function lineChart(el, opts) {
       for (let q = j; q < Math.min(s.data.length, j + bucket); q++) { const v = s.data[q]; if (v != null) { sum += v; n++; lo = Math.min(lo, v); hi = Math.max(hi, v); } }
       pts.push(n ? { i: off + j + (Math.min(s.data.length, j + bucket) - j - 1) / 2, v: sum / n / sc.f, lo: lo / sc.f, hi: hi / sc.f } : null); }
     return Object.assign({}, s, { pts, off }); });
-  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": opts.aria || "Liniendiagramm" }, el);
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": opts.aria || "Line chart" }, el);
   let lo = Infinity, hi = -Infinity;
   series.forEach((s, k) => s.pts.forEach(p => { if (p) { lo = Math.min(lo, bucket > 1 && k === 0 ? p.lo : p.v); hi = Math.max(hi, bucket > 1 && k === 0 ? p.hi : p.v); } }));
   (opts.limits || []).forEach(l => { lo = Math.min(lo, l.value / sc.f); hi = Math.max(hi, l.value / sc.f); });
@@ -614,7 +614,7 @@ function lineChart(el, opts) {
     svgEl("path", { d, fill: "none", stroke: s.color, "stroke-width": 2, "stroke-dasharray": s.dash || "", "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
   });
   evs.forEach((e, i) => { const g = svgEl("g", { class: "ev" }, svg), xi = x(e.i); svgEl("line", { x1: xi, x2: xi, y1: m.t - 6, y2: H - m.b }, g); pill(g, xi, 11 + (i % 2) * 16, e.label, xi > W * 0.66); });
-  if (opts.now != null) { const g = svgEl("g", { class: "now" }, svg); svgEl("line", { x1: x(opts.now), x2: x(opts.now), y1: m.t, y2: H - m.b }, g); pill(g, x(opts.now), H - m.b - 10, "jetzt", false); }
+  if (opts.now != null) { const g = svgEl("g", { class: "now" }, svg); svgEl("line", { x1: x(opts.now), x2: x(opts.now), y1: m.t, y2: H - m.b }, g); pill(g, x(opts.now), H - m.b - 10, "now", false); }
   const cross = svgEl("line", { y1: m.t, y2: H - m.b, stroke: css("--ink-3"), "stroke-width": 1, visibility: "hidden" }, svg);
   const dots = series.map(s => svgEl("circle", { r: 4, fill: s.color, stroke: css("--surface"), "stroke-width": 2, visibility: "hidden" }, svg));
   const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; el.appendChild(tip);
@@ -638,7 +638,7 @@ function histogram(el, arr, unit) {
   el.innerHTML = "";
   const v = arr.filter(x => x != null);
   const W = Math.max(280, el.clientWidth), H = 170, m = { l: 56, r: 14, t: 18, b: 24 };
-  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": "Histogramm" }, el);
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": "Histogram" }, el);
   if (!v.length) return;
   let lo = Math.min(...v), hi = Math.max(...v); if (lo === hi) { lo -= 0.5; hi += 0.5; }
   const sc = unitFor(unit, Math.max(Math.abs(lo), Math.abs(hi)));
@@ -652,7 +652,7 @@ function histogram(el, arr, unit) {
     const h = Math.max(0, y(0) - y(c)), bx = m.l + i * bw + 1;
     const r = svgEl("rect", { x: bx, y: y(c), width: Math.max(1, bw - 2), height: h, rx: Math.min(3, h / 2), fill: css("--s1"), opacity: 0.85 }, svg);
     const hitr = svgEl("rect", { x: m.l + i * bw, y: m.t, width: bw, height: H - m.t - m.b, fill: "transparent" }, svg);
-    hitr.addEventListener("pointerenter", () => { tip.hidden = false; tip.innerHTML = `<div class="row">${num((lo + i * w) / sc.f)} bis ${num((lo + (i + 1) * w) / sc.f)} ${esc(sc.u)}</div><div class="row">${c} Werte (${num(100 * c / v.length, 1)} %)</div>`;
+    hitr.addEventListener("pointerenter", () => { tip.hidden = false; tip.innerHTML = `<div class="row">${num((lo + i * w) / sc.f)} to ${num((lo + (i + 1) * w) / sc.f)} ${esc(sc.u)}</div><div class="row">${c} values (${num(100 * c / v.length, 1)} %)</div>`;
       const rr = svg.getBoundingClientRect(); tip.style.left = Math.max(4, Math.min((bx / W) * rr.width + 10, rr.width - tip.offsetWidth - 4)) + "px"; tip.style.top = "4px"; r.setAttribute("opacity", 1); });
     hitr.addEventListener("pointerleave", () => { tip.hidden = true; r.setAttribute("opacity", 0.85); });
   });
@@ -677,35 +677,35 @@ function controlDoc(id, name) {
 const nodeOf = id => SC.graph.nodes.find(n => n.id === id);
 const nodeTitle = id => atomDoc(id).title || id;
 
-// events in plain language; the raw attributes stay available under "Technische Details"
-const REASON = { "valve closed": "Übergabestation schließt das Ventil", "valve reopened": "Übergabestation öffnet das Ventil wieder", "dispatch reduced": "Betriebsführung regelt den Park ab", "dispatch released": "Betriebsführung gibt den Park wieder frei" };
+// events in plain language; the raw attributes stay available under "Technical details"
+const REASON = { "valve closed": "Handover station closes the valve", "valve reopened": "Handover station opens the valve again", "dispatch reduced": "Operations management curtails the farm", "dispatch released": "Operations management releases the farm" };
 const CRIT = ["pressure_limit", "protective_shutdown", "tank_empty", "fuel_out", "supply_short", "schedule_deviation"];
 function evText(e) {
   const a = e.attrs || {}, n = x => num(parseFloat(x));
   switch (e.type) {
-    case "intervention": return REASON[a.reason] || `${nodeTitle(e.atom)}: ${a.control} auf ${n(a.value)} gesetzt`;
-    case "time_to_limit_warning": return `Warnung: Druckgrenze in ${n(a.ttl_min)} Minuten erreicht (${n(a.p_bar)} bar)`;
-    case "pressure_limit": return `Leitung erreicht den Höchstdruck von ${n(a.p_max_bar)} bar`;
-    case "pressure_low": return `Leitungsdruck unter dem Mindestdruck (${n(a.p_bar)} bar)`;
-    case "protective_shutdown": return `Elektrolyseur fährt druckbedingt ab (${n(a.p_bar)} bar)`;
-    case "protection_released": return `Elektrolyseur darf wieder anfahren (${n(a.p_bar)} bar)`;
-    case "schedule_deviation": return "Einspeisung weicht vom Fahrplan ab";
-    case "schedule_back": return "Fahrplan wieder eingehalten";
-    case "restriction_start": return `Leistungsgrenze ${val(parseFloat(a.limit_kw), "kW")}${a.reason ? ": " + a.reason : ""}`;
-    case "restriction_end": return "Leistungsgrenze aufgehoben";
-    case "delivery": return a.litres ? `Öllieferung ${n(a.litres)} l` : a.ster ? `Holzlieferung ${n(a.ster)} Ster` : "Lieferung";
-    case "reorder_warning": return `Öltank unter der Bestellschwelle (${n(a.level_l)} l)`;
-    case "tank_empty": return "Öltank leer";
-    case "overfill": return `Tank überfüllt (${n(a.litres)} l zu viel)`;
-    case "fuel_out": return "Kessel ohne Brennstoff";
-    case "fuel_restored": return "Kessel hat wieder Brennstoff";
-    case "wood_low": return `Holzvorrat niedrig (${n(a.stock_ster)} Ster)`;
-    case "mode_change": return `Betriebsart wechselt von ${a.from} auf ${a.to}`;
-    case "shore_connected": return "Landstrom angeschlossen";
-    case "shore_disconnected": return "Landstrom getrennt";
-    case "soc_low": return `Ladezustand niedrig (${num(100 * parseFloat(a.soc))} %)`;
-    case "supply_short": return `Versorgung reicht nicht (${n(a.unmet_w)} W fehlen)`;
-    case "supply_restored": return "Versorgung wieder ausreichend";
+    case "intervention": return REASON[a.reason] || `${nodeTitle(e.atom)}: ${a.control} set to ${n(a.value)}`;
+    case "time_to_limit_warning": return `Warning: pressure limit reached in ${n(a.ttl_min)} minutes (${n(a.p_bar)} bar)`;
+    case "pressure_limit": return `Maximum pressure of ${n(a.p_max_bar)} bar reached`;
+    case "pressure_low": return `Pipeline pressure below the minimum pressure (${n(a.p_bar)} bar)`;
+    case "protective_shutdown": return `Electrolyzer shuts down because of the pressure (${n(a.p_bar)} bar)`;
+    case "protection_released": return `Electrolyzer may start again (${n(a.p_bar)} bar)`;
+    case "schedule_deviation": return "Feed-in deviates from the schedule";
+    case "schedule_back": return "Schedule met again";
+    case "restriction_start": return `Power limit ${val(parseFloat(a.limit_kw), "kW")}${a.reason ? ": " + a.reason : ""}`;
+    case "restriction_end": return "Power limit lifted";
+    case "delivery": return a.litres ? `Oil delivery ${n(a.litres)} l` : a.ster ? `Wood delivery ${n(a.ster)} Ster` : "Delivery";
+    case "reorder_warning": return `Oil tank below the reorder threshold (${n(a.level_l)} l)`;
+    case "tank_empty": return "Oil tank empty";
+    case "overfill": return `Tank overfilled (${n(a.litres)} l too much)`;
+    case "fuel_out": return "Boiler out of fuel";
+    case "fuel_restored": return "Boiler has fuel again";
+    case "wood_low": return `Wood stock low (${n(a.stock_ster)} Ster)`;
+    case "mode_change": return `Operating mode changes from ${a.from} to ${a.to}`;
+    case "shore_connected": return "Shore power connected";
+    case "shore_disconnected": return "Shore power disconnected";
+    case "soc_low": return `State of charge low (${num(100 * parseFloat(a.soc))} %)`;
+    case "supply_short": return `Supply short (${n(a.unmet_w)} W missing)`;
+    case "supply_restored": return "Supply sufficient again";
     default: return e.type.replace(/_/g, " ");
   }
 }
@@ -715,19 +715,19 @@ const evShort = e => { const t = evText(e); return t.length > 30 ? t.slice(0, 29
 const chartEvents = evs => shownEvents(evs).filter(e => (SC.markerEvents || []).includes(e.type)).slice(0, 8).map(e => ({ i: evIndex(e.t), label: evShort(e) }));
 function eventRows(el, evs, total, limit) {
   const list = shownEvents(evs);
-  el.innerHTML = list.length ? "" : '<p class="note">Keine Ereignisse.</p>';
+  el.innerHTML = list.length ? "" : '<p class="note">No events.</p>';
   list.slice(0, limit).forEach(e => { const b = document.createElement("button"); b.className = "ev-row" + (CRIT.includes(e.type) ? " crit" : "");
     const raw = Object.entries(e.attrs).map(([k, v]) => `${k}=${v}`).join(", ");
     b.innerHTML = `<span class="t">${tLabel(Math.round(evIndex(e.t)), true)}</span><span class="w">${esc(evText(e))}<small>${esc(nodeTitle(e.atom))}<span class="tech mono"> · ${esc(e.atom)}.${esc(e.type)} ${esc(raw)}</span></small></span>`;
     b.addEventListener("click", () => { $("scrub").value = Math.max(0, Math.min(N - 1, Math.round(evIndex(e.t)))); selNode = nodeOf(e.atom) ? e.atom : selNode; selWire = null; show("graph"); });
     el.appendChild(b); });
-  if (total > limit) { const d = document.createElement("p"); d.className = "note"; d.textContent = `und ${total - limit} weitere Ereignisse`; el.appendChild(d); }
+  if (total > limit) { const d = document.createElement("p"); d.className = "note"; d.textContent = `and ${total - limit} more events`; el.appendChild(d); }
 }
 
 // views
 const TABS = ["overview", "sim", "graph", "stats"];
 const VIEWS = TABS.concat(["topic"]);
-const TAB_DE = { overview: "Überblick", sim: "Vergleich", graph: "Systembild", stats: "Messreihen", topic: "Ereignis-Topic" };
+const TAB_LABEL = { overview: "Overview", sim: "Compare", graph: "System diagram", stats: "Series", topic: "Event topic" };
 let lastTab = "overview";
 let currentTab = "overview";
 function show(name) {
@@ -736,7 +736,7 @@ function show(name) {
   TABS.forEach(k => { const b = $("tab-" + k); b.setAttribute("aria-selected", k === name); b.tabIndex = k === lastTab ? 0 : -1; });
   VIEWS.forEach(k => $("view-" + k).hidden = k !== name);
   $("dt-scenario").setAttribute("aria-pressed", name !== "topic"); $("dt-topic").setAttribute("aria-pressed", name === "topic");
-  $("cr-sc").textContent = SC.title.split(" (")[0]; $("cr-view").textContent = TAB_DE[name];
+  $("cr-sc").textContent = SC.title.split(" (")[0]; $("cr-view").textContent = TAB_LABEL[name];
   try { history.replaceState(null, "", "#" + SC.id + "-" + name); } catch (e) {}
   if (name !== "graph") setDetail(false);
   if (changed) $("scroll").scrollTop = 0;
@@ -756,10 +756,10 @@ function kpiTile(k, v) { const s = unitFor(k.unit, Math.abs(v || 0)); return `<d
 function renderSummary() {
   $("sc-title").textContent = SC.title;
   $("sc-story").textContent = SC.description;
-  $("sc-decision").hidden = !SC.decision; $("sc-decision").innerHTML = SC.decision ? `<span>Die Frage dahinter</span>${esc(SC.decision)}` : "";
+  $("sc-decision").hidden = !SC.decision; $("sc-decision").innerHTML = SC.decision ? `<span>The question behind it</span>${esc(SC.decision)}` : "";
   const h = spanH(), base = SC.stepMinutes / SC.stride;
-  $("sc-meta").innerHTML = [`Zeitraum ${h <= 72 ? num(h) + " h" : num(h / 24) + " Tage"}`, `Zeitschritt ${base >= 60 ? num(base / 60) + " h" : num(base) + " min"}`, `${SC.graph.nodes.length} Bausteine`, "Zeiten in UTC"]
-    .concat([`<span class="tech mono">Plan ${esc(SC.graph.planHash)}</span>`, `<span class="tech mono">Lauf ${esc(SC.reference.runId)}</span>`]).map(t => t.startsWith("<") ? t : `<span>${t}</span>`).join("");
+  $("sc-meta").innerHTML = [`Period ${h <= 72 ? num(h) + " h" : num(h / 24) + " days"}`, `Time step ${base >= 60 ? num(base / 60) + " h" : num(base) + " min"}`, `${SC.graph.nodes.length} blocks`, "Times in UTC"]
+    .concat([`<span class="tech mono">Plan ${esc(SC.graph.planHash)}</span>`, `<span class="tech mono">Run ${esc(SC.reference.runId)}</span>`]).map(t => t.startsWith("<") ? t : `<span>${t}</span>`).join("");
   $("sc-tiles").innerHTML = (SC.headline || []).map(key => SC.kpis.find(k => k.key === key)).filter(Boolean).map(k => kpiTile(k, SC.reference.kpis[k.key])).join("");
 }
 
@@ -780,7 +780,7 @@ function buildList() {
   const list = $("serieslist"); list.innerHTML = "";
   const keys = Object.keys(SC.reference.series);
   const smart = (SC.smartMetrics || []).filter(k => keys.includes(k));
-  const groups = [["Wichtigste Größen", smart]];
+  const groups = [["Key quantities", smart]];
   const byAtom = {};
   keys.filter(k => !smart.includes(k)).forEach(k => { const a = k.split(".")[0]; (byAtom[a] = byAtom[a] || []).push(k); });
   Object.entries(byAtom).forEach(([a, ks]) => groups.push([nodeTitle(a), ks]));
@@ -798,17 +798,17 @@ function renderStats() {
   const sc = unitFor(u, Math.max(Math.abs(s.min || 0), Math.abs(s.max || 0)));
   $("st-title").textContent = label(selected);
   $("st-origin").innerHTML = `<span class="chip tech">${esc(selected)}</span>` + originChip(SC.reference.origin[selected]);
-  $("st-unit").textContent = sc.u || "ohne Einheit";
-  $("st-tiles").innerHTML = [["Mittelwert", s.mean], ["Median", s.p50], ["Minimum", s.min], ["Maximum", s.max]]
+  $("st-unit").textContent = sc.u || "no unit";
+  $("st-tiles").innerHTML = [["Mean", s.mean], ["Median", s.p50], ["Minimum", s.min], ["Maximum", s.max]]
     .map(([l, v]) => `<div class="tile"><span class="l">${l}</span><span class="v">${v == null ? NA : num(v / sc.f)}<small>${esc(sc.u)}</small></span></div>`).join("");
-  $("st-inline").innerHTML = [["Anzahl Werte", num(s.n, 0)], ["ohne Wert", num(s.nan, 0)], ["Standardabweichung", s.sd == null ? NA : num(s.sd / sc.f)], ["5 %-Wert", s.p5 == null ? NA : num(s.p5 / sc.f)], ["95 %-Wert", s.p95 == null ? NA : num(s.p95 / sc.f)]]
+  $("st-inline").innerHTML = [["Number of values", num(s.n, 0)], ["without value", num(s.nan, 0)], ["Standard deviation", s.sd == null ? NA : num(s.sd / sc.f)], ["5 % value", s.p5 == null ? NA : num(s.p5 / sc.f)], ["95 % value", s.p95 == null ? NA : num(s.p95 / sc.f)]]
     .map(([l, v]) => `<span>${l} <b>${v}</b></span>`).join("");
   const bucket = lineChart($("st-line"), { series: [{ name: label(selected), data: arr, color: css("--s1") }], unit: u, limits: (SC.limits || {})[selected], events: chartEvents(SC.reference.events), aria: label(selected) });
   histogram($("st-hist"), arr, u);
   const per = SC.stepMinutes * bucket / 60;
-  $("st-histnote").textContent = (s.nan ? `${s.nan} Zeitpunkte ohne Wert sind nicht enthalten. ` : "")
-    + (SC.stride > 1 ? `Die Werte sind Mittel über ${num(SC.stepMinutes / 60)} Stunden. ` : "")
-    + (bucket > 1 ? `Der Verlauf zeigt Mittelwerte über ${per >= 48 ? num(per / 24) + " Tage" : per >= 1 ? num(per) + " Stunden" : num(per * 60) + " Minuten"}, das Band die Spanne der Werte darin.` : "");
+  $("st-histnote").textContent = (s.nan ? `${s.nan} points in time without a value are left out. ` : "")
+    + (SC.stride > 1 ? `The values are means over ${num(SC.stepMinutes / 60)} hours. ` : "")
+    + (bucket > 1 ? `The course shows means over ${per >= 48 ? num(per / 24) + " days" : per >= 1 ? num(per) + " hours" : num(per * 60) + " minutes"}, the band the range of the values in them.` : "");
 }
 
 // comparison
@@ -822,13 +822,13 @@ function setSimMode(m) {
 ["alt", "fc"].forEach(id => $(id).addEventListener("change", renderSim));
 function kpiTable(cols) {
   const two = cols.length === 2;
-  const head = `<tr class="h"><th scope="col">Kennzahl</th>${cols.map(c => `<th scope="col" class="n">${esc(c.name)}</th>`).join("")}${two ? '<th scope="col" class="n">Differenz</th>' : ""}</tr>`;
+  const head = `<tr class="h"><th scope="col">KPI</th>${cols.map(c => `<th scope="col" class="n">${esc(c.name)}</th>`).join("")}${two ? '<th scope="col" class="n">Difference</th>' : ""}</tr>`;
   const rows = SC.kpis.map(k => { const v = cols.map(c => c.kpis[k.key]);
     const s = unitFor(k.unit, Math.max(...v.map(x => Math.abs(x || 0)))), dec = k.decimals && s.f === 1 ? k.decimals : undefined;
     let delta = "";
     if (two) { const dv = v[1] - v[0], same = Math.abs(dv) < 1e-9, judged = !same && k.better;
       const good = judged && dv * k.better > 0, pct = Math.abs(v[0]) > 1e-9 && k.unit !== "°C" ? ` (${dv > 0 ? "+" : "−"}${num(Math.abs(100 * dv / v[0]), 1)} %)` : "";
-      delta = `<td class="n delta ${judged ? (good ? "pos" : "neg") : ""}">${same ? "unverändert" : `${dv > 0 ? "+" : "−"}${num(Math.abs(dv) / s.f, dec)}${s.u ? " " + esc(s.u) : ""}${pct}`}${judged ? `<small>${good ? "▲ besser" : "▼ schlechter"}</small>` : ""}</td>`; }
+      delta = `<td class="n delta ${judged ? (good ? "pos" : "neg") : ""}">${same ? "unchanged" : `${dv > 0 ? "+" : "−"}${num(Math.abs(dv) / s.f, dec)}${s.u ? " " + esc(s.u) : ""}${pct}`}${judged ? `<small>${good ? "▲ better" : "▼ worse"}</small>` : ""}</td>`; }
     return `<tr><th scope="row">${esc(k.label)}<span class="tech mono note"> ${esc(k.key)}</span></th>${v.map(x => `<td class="n">${x == null ? NA : num(x / s.f, dec)}${s.u ? " " + esc(s.u) : ""}</td>`).join("")}${delta}</tr>`; }).join("");
   $("kpis").innerHTML = head + rows;
 }
@@ -840,29 +840,28 @@ function renderSim() {
   const c1 = css("--s1"), c2 = css("--s2"), els = simCharts(), lim = SC.limits || {};
   if (simMode === "whatif") {
     const alt = SC.alternatives.find(a => a.id === $("alt").value) || SC.alternatives[0];
-    if (!alt) { $("simlegend").innerHTML = '<span class="note">Für dieses System sind keine Alternativen hinterlegt.</span>'; return; }
-    $("simlegend").innerHTML = `<span><span class="sw" style="background:${c1}"></span>Referenz</span><span><span class="sw" style="background:${c2}"></span>Alternative (Simulation)</span><span class="tech mono note">Lauf ${esc(alt.runId)}</span>`;
-    SC.compareKeys.forEach((k, i) => lineChart(els[i], { series: [{ name: "Referenz", data: SC.reference.series[k], color: c1 }, { name: "Alternative", data: alt.series[k], color: c2 }], unit: unitOf(k), limits: lim[k], events: i === 0 ? chartEvents(alt.events) : [] }));
-    kpiTable([{ name: "Referenz", kpis: SC.reference.kpis }, { name: "Alternative", kpis: alt.kpis }]);
-    $("kpinote").textContent = "Grün und rot bewerten nur Kennzahlen mit eindeutiger Richtung. Alle Werte sind modelliert, nicht gemessen.";
+    if (!alt) { $("simlegend").innerHTML = '<span class="note">No alternatives are stored for this system.</span>'; return; }
+    $("simlegend").innerHTML = `<span><span class="sw" style="background:${c1}"></span>Reference</span><span><span class="sw" style="background:${c2}"></span>Alternative (simulation)</span><span class="tech mono note">Run ${esc(alt.runId)}</span>`;
+    SC.compareKeys.forEach((k, i) => lineChart(els[i], { series: [{ name: "Reference", data: SC.reference.series[k], color: c1 }, { name: "Alternative", data: alt.series[k], color: c2 }], unit: unitOf(k), limits: lim[k], events: i === 0 ? chartEvents(alt.events) : [] }));
+    kpiTable([{ name: "Reference", kpis: SC.reference.kpis }, { name: "Alternative", kpis: alt.kpis }]);
+    $("kpinote").textContent = "Green and red rate only KPIs with a clear direction. All values are modelled, not measured.";
     eventRows($("sim-events"), alt.events, alt.eventCount, 40);
   } else {
     const fc = SC.forecasts.find(f => f.id === $("fc").value) || SC.forecasts[0];
     const now = fc.offset;
-    $("simlegend").innerHTML = `<span><span class="sw" style="background:${c1}"></span>Referenz bis jetzt</span><span><span class="sw" style="background:${c2}"></span>Prognose</span><span class="tech mono note">Lauf ${esc(fc.runId)}</span>`;
-    SC.compareKeys.forEach((k, i) => lineChart(els[i], { series: [{ name: "Referenz", data: SC.reference.series[k].slice(0, now), color: c1 }, { name: "Prognose", data: fc.series[k], color: c2, offset: now, dash: "6 4" }], unit: unitOf(k), limits: lim[k], now,
+    $("simlegend").innerHTML = `<span><span class="sw" style="background:${c1}"></span>Reference up to now</span><span><span class="sw" style="background:${c2}"></span>Forecast</span><span class="tech mono note">Run ${esc(fc.runId)}</span>`;
+    SC.compareKeys.forEach((k, i) => lineChart(els[i], { series: [{ name: "Reference", data: SC.reference.series[k].slice(0, now), color: c1 }, { name: "Forecast", data: fc.series[k], color: c2, offset: now, dash: "6 4" }], unit: unitOf(k), limits: lim[k], now,
       events: i === 0 ? chartEvents(SC.reference.events.filter(e => evIndex(e.t) < now).concat(fc.events)) : [] }));
-    kpiTable([{ name: "Prognose bis Ende", kpis: fc.kpis }]);
-    $("kpinote").textContent = "Prognosewerte aus dem Modell ab dem Zustand „jetzt“.";
+    kpiTable([{ name: "Forecast to the end", kpis: fc.kpis }]);
+    $("kpinote").textContent = "Forecast values from the model from the state \"now\".";
     eventRows($("sim-events"), fc.events, fc.eventCount, 40);
   }
 }
 
 // system diagram
 const PHASES = ["SOURCES", "POLICY", "ASSETS", "BALANCE", "FLOWS", "VIEWS"];
-const PHASE_DE = { SOURCES: "Randbedingungen", POLICY: "Fahrweise", ASSETS: "Anlagen", BALANCE: "Bilanz", FLOWS: "Speicher und Abrechnung", VIEWS: "Sichten" };
-const KIND_DE = { FLOW: "Fluss", SIGNAL: "Signal" };
-const CARRIER_DE = { power: "Strom", h2: "Wasserstoff", heat: "Wärme", fuel: "Brennstoff", flow: "Fluss", info: "Signal" };
+const PHASE_LABEL = { SOURCES: "Boundary conditions", POLICY: "Operating policy", ASSETS: "Assets", BALANCE: "Balance", FLOWS: "Stores and accounts", VIEWS: "Views" };
+const CARRIER_LABEL = { power: "Electricity", h2: "Hydrogen", heat: "Heat", fuel: "Fuel", flow: "Flow", info: "Signal" };
 // what a port carries, from kind, unit and the naming convention of the atoms (p_ electrical, q_ thermal)
 function carrier(p) {
   if (!p || p.kind !== "FLOW") return "info";
@@ -876,11 +875,11 @@ const wireKey = w => `${w.from}.${w.fromPort} -> ${w.to}.${w.toPort}`;
 function wireText(w, kind, unit) {
   const t = (guide().wires || {})[wireKey(w)];
   if (t) return t;
-  return `${w.from} gibt über den Ausgang ${w.fromPort} ${kind === "FLOW" ? "einen Fluss" : "ein Signal"}${unit ? " in " + unit : ""} an den Eingang ${w.toPort} von ${w.to}. `
-    + (kind === "FLOW" ? "Flüsse gehen in die Bilanz des Empfängers ein. " : "Signale sind Informationen und verändern keine Bilanz. ")
-    + (w.delayed ? "Der Wert entsteht am Ende eines Zeitschritts und wirkt erst im nächsten (Rückkopplung)." : "Der Wert wirkt im selben Zeitschritt.");
+  return `${w.from} passes ${kind === "FLOW" ? "a flow" : "a signal"}${unit ? " in " + unit : ""} from its output ${w.fromPort} to the input ${w.toPort} of ${w.to}. `
+    + (kind === "FLOW" ? "Flows enter the balance of the receiver. " : "Signals are information and change no balance. ")
+    + (w.delayed ? "The value arises at the end of a time step and acts only in the next one (feedback)." : "The value acts in the same time step.");
 }
-const meanNote = () => SC.stride > 1 ? ` <span class="note">(Mittel über ${num(SC.stepMinutes / 60)} h)</span>` : "";
+const meanNote = () => SC.stride > 1 ? ` <span class="note">(mean over ${num(SC.stepMinutes / 60)} h)</span>` : "";
 function refLinks(ids) {
   const refs = (guide().references || []).filter(r => (ids || []).includes(r.id));
   return refs.length ? `<span class="refs">${refs.map(r => `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a>`).join(", ")}</span>` : "";
@@ -888,8 +887,8 @@ function refLinks(ids) {
 function wireHead(w, k) {
   const op = nodeOf(w.from).outputs.find(o => o.name === w.fromPort) || {}, s = SC.reference.series[w.from + "." + w.fromPort], v = s ? s[k] : null;
   return { kind: op.kind, unit: op.unit, car: carrier(op),
-    chips: `<div class="chips"><span class="chip">${CARRIER_DE[carrier(op)]}</span>${op.unit ? `<span class="chip">${esc(op.unit)}</span>` : ""}<span class="chip">${w.delayed ? "wirkt im nächsten Zeitschritt" : "wirkt im selben Zeitschritt"}</span></div>`,
-    now: `<div>Wert um ${tLabel(k, true)}: <strong class="mono">${val(v, op.unit)}</strong>${v == null ? "" : meanNote()}</div>`,
+    chips: `<div class="chips"><span class="chip">${CARRIER_LABEL[carrier(op)]}</span>${op.unit ? `<span class="chip">${esc(op.unit)}</span>` : ""}<span class="chip">${w.delayed ? "acts in the next time step" : "acts in the same time step"}</span></div>`,
+    now: `<div>Value at ${tLabel(k, true)}: <strong class="mono">${val(v, op.unit)}</strong>${v == null ? "" : meanNote()}</div>`,
     title: `${esc(nodeTitle(w.from))} → ${esc(nodeTitle(w.to))}`, ids: `${esc(w.from)}.${esc(w.fromPort)} → ${esc(w.to)}.${esc(w.toPort)}` };
 }
 
@@ -914,7 +913,7 @@ function hoverTip(el, html) {
 }
 
 // own details per atom (nameplate, own parameter values); kept in this browser only
-const OWN_FIELDS = [["manufacturer", "Hersteller"], ["model", "Typ / Modell"], ["serial", "Seriennummer"], ["commissioned", "Baujahr / Inbetriebnahme"]];
+const OWN_FIELDS = [["manufacturer", "Manufacturer"], ["model", "Type / model"], ["serial", "Serial number"], ["commissioned", "Year of construction / commissioning"]];
 let OWN = {};
 const ownKey = () => "opentsx.studio.own." + SC.id;
 function loadOwn() { OWN = {}; try { OWN = JSON.parse(localStorage.getItem(ownKey()) || "{}") || {}; } catch (e) {} }
@@ -937,8 +936,8 @@ function ownParams(n) {
 }
 const q = t => JSON.stringify(String(t));
 function inventoryYaml() {
-  const twin = SC.plan.twin, L = ["# Eigene Angaben aus dem Smart Topics Studio, Schema opentsx.inventory.v1 (Entwurf).",
-    "# Enthält persönliche Daten wie Seriennummern. Ablage: config/private/, nicht im Repository.",
+  const twin = SC.plan.twin, L = ["# Your data from the Smart Topics Studio, schema opentsx.inventory.v1 (draft).",
+    "# Contains personal data such as serial numbers. Keep it in config/private/, not in the repository.",
     `# Plan ${SC.graph.planHash}`, "schema: opentsx.inventory.v1", "systems:", `  - system: ${twin}`, "    assets:"];
   SC.graph.nodes.filter(n => hasOwn(n.id)).forEach(n => {
     const o = ownOf(n.id), np = OWN_FIELDS.filter(([f]) => o[f]).map(([f]) => `${f}: ${q(o[f])}`);
@@ -950,8 +949,8 @@ function inventoryYaml() {
   return L.join("\n") + "\n";
 }
 function planYaml() {
-  const L = ["# Eigenes Anlagenmodell aus dem Smart Topics Studio: der Beispielplan mit den eigenen Parameterwerten.",
-    "# Ablage: config/private/. Die Werte sind eigene Angaben und nicht geprüft.", `# Abgeleitet von Plan ${SC.graph.planHash}`,
+  const L = ["# Your own plant model from the Smart Topics Studio: the example plan with your own parameter values.",
+    "# Keep it in config/private/. The values are your own and not checked.", `# Derived from plan ${SC.graph.planHash}`,
     `twin: ${SC.plan.twin}`, `start: ${SC.plan.start}`, `baseStep: ${SC.plan.baseStep}`, `steps: ${SC.plan.steps}`, "atoms:"];
   SC.graph.nodes.forEach(n => {
     L.push(`  - id: ${n.id}`, `    type: ${n.type}`);
@@ -966,15 +965,15 @@ function flash(text) { $("flash").textContent = text; clearTimeout(flashTimer); 
 function download(name, text, type) {
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: type || "text/yaml" })); a.download = name;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  flash("Exportiert: " + name);
+  flash("Exported: " + name);
 }
-const exportPlan = () => download(`${SC.plan.twin}-eigen.yaml`, planYaml());
-const exportInventory = () => download(`inventar-${SC.plan.twin}.yaml`, inventoryYaml());
-const exportBackup = () => download(`studio-angaben-${SC.id}.json`, JSON.stringify(OWN, null, 2), "application/json");
+const exportPlan = () => download(`${SC.plan.twin}-own.yaml`, planYaml());
+const exportInventory = () => download(`inventory-${SC.plan.twin}.yaml`, inventoryYaml());
+const exportBackup = () => download(`studio-own-data-${SC.id}.json`, JSON.stringify(OWN, null, 2), "application/json");
 function importBackup(file, fail) {
   if (!file) return;
-  file.text().then(t => { try { const v = JSON.parse(t); if (!v || typeof v !== "object" || Array.isArray(v)) throw 0; OWN = v; saveOwn(); render(); flash("Sicherung importiert"); }
-    catch (e) { fail("Die Datei ist keine Sicherung aus dem Studio."); } });
+  file.text().then(t => { try { const v = JSON.parse(t); if (!v || typeof v !== "object" || Array.isArray(v)) throw 0; OWN = v; saveOwn(); render(); flash("Backup imported"); }
+    catch (e) { fail("The file is not a backup from the Studio."); } });
 }
 $("imp-file").addEventListener("change", ev => { importBackup(ev.target.files[0], flash); ev.target.value = ""; });
 
@@ -1007,8 +1006,8 @@ function renderGraph() {
   const zoom = Math.min(1, Math.max(0.8, (svg.parentNode.clientWidth - 2) / L.W));
   svg.setAttribute("viewBox", `0 0 ${L.W} ${L.H}`); svg.setAttribute("width", L.W * zoom); svg.setAttribute("height", L.H * zoom);
   const defs = svgEl("defs", {}, svg);
-  Object.keys(CARRIER_DE).forEach(c => { const mk = svgEl("marker", { id: "arr-" + c, viewBox: "0 0 8 8", refX: 7, refY: 4, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse", markerUnits: "userSpaceOnUse" }, defs); svgEl("path", { d: "M0,0.6 L8,4 L0,7.4 Z", class: c }, mk); });
-  L.cols.forEach((p, ci) => { const g = svgEl("g", { class: "phase" }, svg); svgEl("rect", { x: X0 + ci * PW - 12, y: 10, width: NW + 24, height: L.bottom + 4, rx: 12 }, g); const t = svgEl("text", { x: X0 + ci * PW, y: 32 }, g); t.textContent = PHASE_DE[p].toUpperCase(); });
+  Object.keys(CARRIER_LABEL).forEach(c => { const mk = svgEl("marker", { id: "arr-" + c, viewBox: "0 0 8 8", refX: 7, refY: 4, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse", markerUnits: "userSpaceOnUse" }, defs); svgEl("path", { d: "M0,0.6 L8,4 L0,7.4 Z", class: c }, mk); });
+  L.cols.forEach((p, ci) => { const g = svgEl("g", { class: "phase" }, svg); svgEl("rect", { x: X0 + ci * PW - 12, y: 10, width: NW + 24, height: L.bottom + 4, rx: 12 }, g); const t = svgEl("text", { x: X0 + ci * PW, y: 32 }, g); t.textContent = PHASE_LABEL[p].toUpperCase(); });
   const wg = svgEl("g", {}, svg), used = new Set();
   const outSlot = {}, inSlot = {}; let lane = 0;
   SC.graph.wires.forEach((w, wi) => {
@@ -1025,7 +1024,7 @@ function renderGraph() {
     const dim = selWire != null ? !isSel : false;
     if (isSel) svgEl("path", { d, class: "wirehalo" }, wg);
     const line = svgEl("path", { d, class: `wire ${head.car} ${w.delayed ? "delayed" : ""} ${selWire == null && hl ? "hl" : ""} ${isSel ? "sel" : ""} ${dim ? "dim" : ""}`, "marker-end": `url(#arr-${head.car})` }, wg);
-    const hit = svgEl("path", { d, class: "wirehit", tabindex: 0, role: "button", "aria-label": `Verbindung ${nodeTitle(w.from)} ${w.fromPort} nach ${nodeTitle(w.to)} ${w.toPort}` }, wg);
+    const hit = svgEl("path", { d, class: "wirehit", tabindex: 0, role: "button", "aria-label": `Connection ${nodeTitle(w.from)} ${w.fromPort} to ${nodeTitle(w.to)} ${w.toPort}` }, wg);
     const tip = () => `<div class="t">${head.title}</div><div class="mono note">${head.ids}</div>${head.chips}${head.now}<p>${esc(wireText(w, head.kind, head.unit))}</p>`;
     hit.addEventListener("pointerenter", ev => { line.classList.add("hov"); showTip(tip(), ev); });
     hit.addEventListener("pointermove", moveTip);
@@ -1037,7 +1036,7 @@ function renderGraph() {
   });
   const bound = new Set(SC.graph.bindings);
   const portTip = (n, port, side) => () => `<div class="t">${esc(n.id)}.${esc(port.name)}</div>
-    <div class="chips"><span class="chip">${side}</span><span class="chip">${CARRIER_DE[carrier(port)]}</span>${port.unit ? `<span class="chip">${esc(port.unit)}</span>` : ""}</div>
+    <div class="chips"><span class="chip">${side}</span><span class="chip">${CARRIER_LABEL[carrier(port)]}</span>${port.unit ? `<span class="chip">${esc(port.unit)}</span>` : ""}</div>
     ${portDoc(n.id, port.name) ? `<p>${esc(portDoc(n.id, port.name))}</p>` : ""}`;
   SC.graph.nodes.forEach(n => {
     const p = L.pos[n.id]; const g = svgEl("g", { class: "node" + (selWire == null && n.id === selNode ? " sel" : ""), tabindex: 0, role: "button", "aria-label": `${nodeTitle(n.id)} (${n.id}, ${n.type})` }, svg);
@@ -1050,17 +1049,17 @@ function renderGraph() {
     const ty = svgEl("text", { x: p.x + p.w - 12, y: p.y + 19, "text-anchor": "end", class: "type" }, g); ty.textContent = idText;
     if (atomDoc(n.id).text) hoverTip(t, () => `<div class="t">${esc(nodeTitle(n.id))}</div><div class="mono note">${esc(n.id)} · ${esc(n.type)}</div><p>${esc(atomDoc(n.id).text)}</p>`);
     n.inputs.forEach((ip, i) => { const yy = portY(p, i); svgEl("circle", { cx: p.x, cy: yy, r: 4.5, class: "port " + carrier(ip) }, g);
-      const tx = svgEl("text", { x: p.x + 12, y: yy + 3.5, class: "porttext" }, g); tx.textContent = ip.name; hoverTip(tx, portTip(n, ip, "Eingang"));
+      const tx = svgEl("text", { x: p.x + 12, y: yy + 3.5, class: "porttext" }, g); tx.textContent = ip.name; hoverTip(tx, portTip(n, ip, "Input"));
       if (bound.has(n.id + "." + ip.name)) { const bt = svgEl("text", { x: p.x - 9, y: yy + 3, "text-anchor": "end", class: "bind" }, g); bt.textContent = "◆"; } });
     n.outputs.forEach((op, i) => { const yy = portY(p, n.inputs.length + i); svgEl("circle", { cx: p.x + p.w, cy: yy, r: 4.5, class: "port " + carrier(op) }, g);
       const s = SC.reference.series[n.id + "." + op.name]; const v = s ? s[k] : null;
       const tx = svgEl("text", { x: p.x + p.w - 12, y: yy + 3.5, "text-anchor": "end", class: "porttext" }, g);
-      tx.innerHTML = `${esc(op.name)} <tspan class="val">${v == null ? NA : val(v, op.unit)}</tspan>`; hoverTip(tx, portTip(n, op, "Ausgang")); });
+      tx.innerHTML = `${esc(op.name)} <tspan class="val">${v == null ? NA : val(v, op.unit)}</tspan>`; hoverTip(tx, portTip(n, op, "Output")); });
     const pick = () => { selNode = n.id; selWire = null; renderGraph(); };
     g.addEventListener("click", pick); g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
   });
-  $("graphlegend").innerHTML = Object.keys(CARRIER_DE).filter(c => used.has(c)).map(c => `<span><span class="sw" style="background:var(--c-${c})"></span>${CARRIER_DE[c]}</span>`).join("")
-    + `<span><span class="sw dash"></span>wirkt erst im nächsten Zeitschritt</span><span><span style="color:var(--accent)">◆</span>Zeitreihe von außen gebunden</span><span><span style="color:var(--accent)">●</span>eigene Angaben erfasst</span>`;
+  $("graphlegend").innerHTML = Object.keys(CARRIER_LABEL).filter(c => used.has(c)).map(c => `<span><span class="sw" style="background:var(--c-${c})"></span>${CARRIER_LABEL[c]}</span>`).join("")
+    + `<span><span class="sw dash"></span>acts only in the next time step</span><span><span style="color:var(--accent)">◆</span>time series bound from outside</span><span><span style="color:var(--accent)">●</span>your own data entered</span>`;
   const ticks = $("scrubticks"); ticks.innerHTML = "";
   shownEvents(SC.reference.events).filter(e => (SC.markerEvents || []).includes(e.type)).slice(0, 24).forEach(e => { const i = Math.max(0, Math.min(N - 1, Math.round(evIndex(e.t)))), b = document.createElement("button");
     b.style.left = (100 * i / Math.max(1, N - 1)) + "%"; b.title = `${tLabel(i, true)}: ${evText(e)}`; b.setAttribute("aria-label", b.title);
@@ -1070,60 +1069,60 @@ function renderGraph() {
 function renderWirePanel(w, k) {
   const head = wireHead(w, k), end = (id, port, side) => `<div class="sec"><h3>${side}</h3><div><button class="btn" data-node="${esc(id)}">${esc(nodeTitle(id))}</button></div>
     <p class="note"><span class="mono">${esc(port)}</span>${portDoc(id, port) ? ": " + esc(portDoc(id, port)) : ""}</p></div>`;
-  const el = $("nodepanel"); $("detail-kind").textContent = "Verbindung";
+  const el = $("nodepanel"); $("detail-kind").textContent = "Connection";
   el.innerHTML = `<h2>${head.title}</h2><div class="mono note">${head.ids}</div>${head.chips}${head.now}
     <p class="prose">${esc(wireText(w, head.kind, head.unit))}</p>
-    ${end(w.from, w.fromPort, "Von (Ausgang)")}${end(w.to, w.toPort, "Nach (Eingang)")}`;
+    ${end(w.from, w.fromPort, "From (output)")}${end(w.to, w.toPort, "To (input)")}`;
   el.querySelectorAll("[data-node]").forEach(b => b.addEventListener("click", () => { selNode = b.dataset.node; selWire = null; renderGraph(); }));
 }
-const POLICY_DE = { follow: "folgt der Vorgabe", hold: "hält die Ausgangswerte", "pressure-aware": "drosselt bei steigendem Druck" };
+const POLICY_LABEL = { follow: "follows the setpoint", hold: "holds the output values", "pressure-aware": "throttles as the pressure rises" };
 function renderNodePanel(k) {
-  const n = nodeOf(selNode), el = $("nodepanel"), doc = atomDoc(n.id), own = ownOf(n.id); $("detail-kind").textContent = "Baustein";
+  const n = nodeOf(selNode), el = $("nodepanel"), doc = atomDoc(n.id), own = ownOf(n.id); $("detail-kind").textContent = "Block";
   const th = cols => `<tr class="h">${cols.filter(Boolean).map(c => `<th scope="col">${c}</th>`).join("")}</tr>`;
   const outs = n.outputs.map(o => { const key = n.id + "." + o.name, s = SC.reference.series[key];
-    const to = SC.graph.wires.filter(x => x.from === n.id && x.fromPort === o.name).map(x => `${esc(nodeTitle(x.to))}${x.delayed ? " (nächster Zeitschritt)" : ""}`).join(", ");
-    return `<tr><td class="k">${esc(o.name)}<div>${originChip(SC.reference.origin[key])}</div></td><td class="n">${val(s ? s[k] : null, o.unit)}</td><td class="doc">${esc(portDoc(n.id, o.name))}<div class="note">${to ? "geht an " + to : "Ergebnis, nicht weiterverbunden"}</div></td></tr>`; }).join("");
+    const to = SC.graph.wires.filter(x => x.from === n.id && x.fromPort === o.name).map(x => `${esc(nodeTitle(x.to))}${x.delayed ? " (next time step)" : ""}`).join(", ");
+    return `<tr><td class="k">${esc(o.name)}<div>${originChip(SC.reference.origin[key])}</div></td><td class="n">${val(s ? s[k] : null, o.unit)}</td><td class="doc">${esc(portDoc(n.id, o.name))}<div class="note">${to ? "goes to " + to : "result, not connected further"}</div></td></tr>`; }).join("");
   const ins = n.inputs.map(i => { const w = SC.graph.wires.find(x => x.to === n.id && x.toPort === i.name); const b = SC.graph.bindings.includes(n.id + "." + i.name);
-    return `<tr><td class="k">${esc(i.name)}<div class="note">${esc(i.unit)}</div></td><td class="doc">${esc(portDoc(n.id, i.name))}<div class="note">${w ? `kommt von ${esc(nodeTitle(w.from))}${w.delayed ? " (nächster Zeitschritt)" : ""}<span class="tech mono"> ${esc(w.from)}.${esc(w.fromPort)}</span>` : b ? "◆ Zeitreihe von außen gebunden" : "nicht verbunden: Standardwert oder Stellgröße"}</div></td></tr>`; }).join("");
+    return `<tr><td class="k">${esc(i.name)}<div class="note">${esc(i.unit)}</div></td><td class="doc">${esc(portDoc(n.id, i.name))}<div class="note">${w ? `comes from ${esc(nodeTitle(w.from))}${w.delayed ? " (next time step)" : ""}<span class="tech mono"> ${esc(w.from)}.${esc(w.fromPort)}</span>` : b ? "◆ time series bound from outside" : "not connected: default value or control"}</div></td></tr>`; }).join("");
   const ctl = Object.entries(n.controls).map(([a, b]) => `<tr><td class="k">${esc(a)}</td><td class="n">${num(b)}</td><td class="doc">${esc(controlDoc(n.id, a))}</td></tr>`).join("");
   const show = v => typeof v === "object" ? JSON.stringify(v) : String(v);
   const params = Object.entries(n.params).map(([name, v]) => { const d = paramDoc(n.id, name), mine = (own.params || {})[name] || "", bad = parseOwn(mine, v) === null;
     const field = typeof v === "object"
-      ? `<textarea data-param="${esc(name)}" aria-label="Eigener Wert für ${esc(name)}" aria-invalid="${bad}" placeholder="Eigener Wert als JSON, wie im Beispiel">${esc(mine)}</textarea>`
-      : `<input type="text" data-param="${esc(name)}" aria-label="Eigener Wert für ${esc(name)}" aria-invalid="${bad}" value="${esc(mine)}" placeholder="Eigener Wert">`;
-    return `<div class="prow"><div class="top"><span class="name">${esc(name)}</span><span class="ex">Beispiel: ${esc(fit(show(v), 90))}</span></div>
+      ? `<textarea data-param="${esc(name)}" aria-label="Your value for ${esc(name)}" aria-invalid="${bad}" placeholder="Your value as JSON, like the example">${esc(mine)}</textarea>`
+      : `<input type="text" data-param="${esc(name)}" aria-label="Your value for ${esc(name)}" aria-invalid="${bad}" value="${esc(mine)}" placeholder="Your value">`;
+    return `<div class="prow"><div class="top"><span class="name">${esc(name)}</span><span class="ex">Example: ${esc(fit(show(v), 90))}</span></div>
       ${d.text ? `<div>${esc(d.text)}</div>` : ""}${field}
-      ${d.source || d.compare ? `<dl>${d.source ? `<dt>Woher kommt der Wert?</dt><dd>${esc(d.source)}</dd>` : ""}${d.compare ? `<dt>Zum Vergleich</dt><dd>${esc(d.compare)}${refLinks(d.refs)}</dd>` : ""}</dl>` : ""}</div>`; }).join("");
+      ${d.source || d.compare ? `<dl>${d.source ? `<dt>Where does the value come from?</dt><dd>${esc(d.source)}</dd>` : ""}${d.compare ? `<dt>For comparison</dt><dd>${esc(d.compare)}${refLinks(d.refs)}</dd>` : ""}</dl>` : ""}</div>`; }).join("");
   const nParams = Object.keys(n.params).length;
-  const tabs = [["overview", "Übersicht"], ["ports", "Anschlüsse"], ["params", `Parameter${nParams ? " (" + nParams + ")" : ""}`], ["own", "Eigene Daten"]];
+  const tabs = [["overview", "Summary"], ["ports", "Ports"], ["params", `Parameters${nParams ? " (" + nParams + ")" : ""}`], ["own", "Your data"]];
   const body = {
     overview: `${doc.text ? `<p class="prose">${esc(doc.text)}</p>` : ""}
-      <div class="kv"><span class="k">Phase im Zeitschritt</span><span class="v">${PHASE_DE[n.phase]}${n.every > 1 ? `, rechnet in jedem ${n.every}. Schritt` : ""}</span>
-        <span class="k">Fahrweise</span><span class="v">${esc(POLICY_DE[n.policy] || n.policy)}<span class="tech"> (${esc(n.policy)})</span></span>
-        <span class="k tech">Typ</span><span class="v tech">${esc(n.type)}</span>
-        <span class="k tech">Zustand</span><span class="v tech">${esc(n.state.join(", "))}</span></div>
-      <div><a href="anlagen-explorer.html?sys=${encodeURIComponent(SC.plan.twin)}&amp;open=${encodeURIComponent(SC.plan.twin + "/" + n.id)}" target="_blank" rel="noopener">In den Anlagendetails zeigen</a></div>
-      <div class="sec"><h3>Ausgänge um ${tLabel(k, true)} UTC${SC.stride > 1 ? `, Mittel über ${num(SC.stepMinutes / 60)} h` : ""}</h3>${outs ? `<div class="scroll"><table>${th(["Ausgang", "Wert", "Bedeutung"])}${outs}</table></div>` : '<p class="note">Keine Ausgänge.</p>'}</div>`,
-    ports: `<div class="sec"><h3>Eingänge</h3>${ins ? `<div class="scroll"><table>${th(["Eingang", "Bedeutung und Quelle"])}${ins}</table></div>` : '<p class="note">Keine Eingänge.</p>'}</div>
-      <div class="sec"><h3>Ausgänge</h3>${outs ? `<div class="scroll"><table>${th(["Ausgang", "Wert", "Bedeutung"])}${outs}</table></div>` : '<p class="note">Keine Ausgänge.</p>'}</div>
-      ${ctl ? `<div class="sec"><h3>Stellgrößen und Sollwerte (im Betrieb verstellbar)</h3><div class="scroll"><table>${th(["Name", "Ausgangswert", "Bedeutung"])}${ctl}</table></div></div>` : ""}`,
-    params: params ? `<p class="note">Feste Eigenschaften im Anlagenmodell. Trage neben dem Beispielwert deinen eigenen ein; der Export unter „Eigene Daten“ oder im Menü „Datei“ schreibt daraus ein eigenes Anlagenmodell.</p><div class="plist">${params}</div>` : '<p class="note">Dieser Baustein hat im Beispiel keine Parameter.</p>',
+      <div class="kv"><span class="k">Phase in the time step</span><span class="v">${PHASE_LABEL[n.phase]}${n.every > 1 ? `, computes once every ${n.every} steps` : ""}</span>
+        <span class="k">Operating policy</span><span class="v">${esc(POLICY_LABEL[n.policy] || n.policy)}<span class="tech"> (${esc(n.policy)})</span></span>
+        <span class="k tech">Type</span><span class="v tech">${esc(n.type)}</span>
+        <span class="k tech">State</span><span class="v tech">${esc(n.state.join(", "))}</span></div>
+      <div><a href="anlagen-explorer.html?sys=${encodeURIComponent(SC.plan.twin)}&amp;open=${encodeURIComponent(SC.plan.twin + "/" + n.id)}" target="_blank" rel="noopener">Show in the asset details</a></div>
+      <div class="sec"><h3>Outputs at ${tLabel(k, true)} UTC${SC.stride > 1 ? `, mean over ${num(SC.stepMinutes / 60)} h` : ""}</h3>${outs ? `<div class="scroll"><table>${th(["Output", "Value", "Meaning"])}${outs}</table></div>` : '<p class="note">No outputs.</p>'}</div>`,
+    ports: `<div class="sec"><h3>Inputs</h3>${ins ? `<div class="scroll"><table>${th(["Input", "Meaning and source"])}${ins}</table></div>` : '<p class="note">No inputs.</p>'}</div>
+      <div class="sec"><h3>Outputs</h3>${outs ? `<div class="scroll"><table>${th(["Output", "Value", "Meaning"])}${outs}</table></div>` : '<p class="note">No outputs.</p>'}</div>
+      ${ctl ? `<div class="sec"><h3>Controls and setpoints (adjustable in operation)</h3><div class="scroll"><table>${th(["Name", "Initial value", "Meaning"])}${ctl}</table></div></div>` : ""}`,
+    params: params ? `<p class="note">Fixed properties in the plant model. Enter your own value next to the example value; the export under &quot;Your data&quot; or in the menu &quot;File&quot; writes your own plant model from it.</p><div class="plist">${params}</div>` : '<p class="note">This block has no parameters in the example.</p>',
     own: `${doc.capture ? `<p class="note">${esc(doc.capture)}</p>` : ""}
       <div class="own-form">
         ${OWN_FIELDS.map(([f, l]) => `<label class="ctl">${l}<input type="text" data-own="${f}" value="${esc(own[f] || "")}" autocomplete="off"></label>`).join("")}
-        <label class="ctl wide">Notiz (Einstellungen, Wartung, Ablesungen)<textarea data-own="note">${esc(own.note || "")}</textarea></label>
+        <label class="ctl wide">Note (settings, maintenance, readings)<textarea data-own="note">${esc(own.note || "")}</textarea></label>
       </div>
       <div class="btnrow">
-        <button class="btn primary" id="exp-plan">Anlagenmodell exportieren</button>
-        <button class="btn" id="exp-inv">Inventar exportieren</button>
-        <button class="btn link" id="exp-json">Sicherung speichern</button>
-        <label class="btn link">Sicherung importieren<input type="file" id="imp-json" accept="application/json,.json" hidden></label>
+        <button class="btn primary" id="exp-plan">Export plant model</button>
+        <button class="btn" id="exp-inv">Export inventory</button>
+        <button class="btn link" id="exp-json">Save backup</button>
+        <label class="btn link">Import backup<input type="file" id="imp-json" accept="application/json,.json" hidden></label>
       </div>
-      <p class="note" id="own-note">Die Angaben bleiben in diesem Browser und verlassen ihn nur über den Export. Exportierte Dateien enthalten persönliche Daten wie Seriennummern.</p>
-      <p class="note tech">Formate: Anlagenmodell und Inventar als YAML (<span class="mono">opentsx.inventory.v1</span>), Sicherung als JSON. Ablage unter <span class="mono">config/private/</span>. ${esc((guide().intro || {}).own || "")}</p>`
+      <p class="note" id="own-note">The data stay in this browser and leave it only through the export. Exported files contain personal data such as serial numbers.</p>
+      <p class="note tech">Formats: plant model and inventory as YAML (<span class="mono">opentsx.inventory.v1</span>), backup as JSON. Keep them under <span class="mono">config/private/</span>. ${esc((guide().intro || {}).own || "")}</p>`
   };
   el.innerHTML = `<h2>${esc(doc.title || n.id)} <small>${esc(n.id)}</small></h2>
-    <div class="seg" role="tablist" aria-label="Bereiche des Bausteins">${tabs.map(([id, l]) => `<button role="tab" data-insp="${id}" aria-selected="${id === inspTab}">${l}</button>`).join("")}</div>
+    <div class="seg" role="tablist" aria-label="Parts of the block">${tabs.map(([id, l]) => `<button role="tab" data-insp="${id}" aria-selected="${id === inspTab}">${l}</button>`).join("")}</div>
     ${body[inspTab]}`;
   el.querySelectorAll("[data-insp]").forEach(b => b.addEventListener("click", () => { inspTab = b.dataset.insp; renderNodePanel(k); el.querySelector(`[data-insp="${inspTab}"]`).focus(); }));
   const mark = () => { const dot = $("graph").querySelector(`[data-own-dot="${n.id}"]`); if (dot) dot.setAttribute("visibility", hasOwn(n.id) ? "visible" : "hidden"); };
@@ -1139,15 +1138,15 @@ function renderNodePanel(k) {
 $("scrub").addEventListener("input", renderGraph);
 
 // guide drawer
-const READ_DEFAULT = ["Die Spalten sind die Phasen eines Zeitschritts, von links nach rechts. Jeder Kasten ist ein Baustein mit eigenem Zustand, jede Linie trägt genau eine Größe von einem Ausgang zu einem Eingang.",
-  "Die Farbe einer Linie zeigt, was sie trägt: Strom, Wasserstoff, Wärme, Brennstoff oder ein Signal. Ein Pfeil zeigt die Richtung.",
-  "Eine gestrichelte Linie ist eine Rückkopplung: Der Wert entsteht am Ende des Zeitschritts und wirkt erst im nächsten.",
-  "Fahre mit der Maus über eine Linie oder einen Anschluss, um die Erläuterung zu lesen. Ein Klick blendet die Details rechts ein. Mit der Tabulatortaste erreichst du jede Linie auch ohne Maus."];
+const READ_DEFAULT = ["The columns are the phases of a time step, from left to right. Each box is a block with its own state; each line carries exactly one quantity from an output to an input.",
+  "The colour of a line shows what it carries: electricity, hydrogen, heat, fuel or a signal. An arrow shows the direction.",
+  "A dashed line is feedback: the value arises at the end of the time step and acts only in the next one.",
+  "Move the mouse over a line or a port to read the explanation. A click shows the details on the right. With the Tab key you reach every line without a mouse."];
 function renderGuide() {
   const g = guide(), intro = g.intro || {}, refs = g.references || [];
-  $("guidebody").innerHTML = `<div class="sec"><h3>So liest du das Systembild</h3><ul>${(intro.read || READ_DEFAULT).map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>
-    ${(intro.change || []).length ? `<div class="sec"><h3>Was du ändern kannst</h3><dl>${intro.change.map(c => `<div><dt>${esc(c.title)}</dt><dd>${esc(c.text)}</dd></div>`).join("")}</dl></div>` : ""}
-    ${refs.length ? `<div class="sec"><h3>Quellen zum Vergleich (${refs.length})</h3><div class="reflist">${refs.map(r => `<div><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a><span>${esc(r.note)}</span></div>`).join("")}</div></div>` : ""}`;
+  $("guidebody").innerHTML = `<div class="sec"><h3>How to read the system diagram</h3><ul>${(intro.read || READ_DEFAULT).map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>
+    ${(intro.change || []).length ? `<div class="sec"><h3>What you can change</h3><dl>${intro.change.map(c => `<div><dt>${esc(c.title)}</dt><dd>${esc(c.text)}</dd></div>`).join("")}</dl></div>` : ""}
+    ${refs.length ? `<div class="sec"><h3>Sources for comparison (${refs.length})</h3><div class="reflist">${refs.map(r => `<div><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a><span>${esc(r.note)}</span></div>`).join("")}</div></div>` : ""}`;
 }
 $("open-guide").addEventListener("click", () => $("guide").showModal());
 $("close-guide").addEventListener("click", () => $("guide").close());
@@ -1177,7 +1176,7 @@ function tpPlay() {
 }
 function tpConnect() {
   tpDisconnect(); tp.rows = []; tp.shown = -1; $("tp-hint").textContent = "";
-  let base; try { base = new URL($("tp-url").value.trim()); if (!/^https?:$/.test(base.protocol)) throw 0; } catch (e) { $("tp-hint").textContent = "Die Adresse muss mit http:// oder https:// beginnen."; renderTopic(true); return; }
+  let base; try { base = new URL($("tp-url").value.trim()); if (!/^https?:$/.test(base.protocol)) throw 0; } catch (e) { $("tp-hint").textContent = "The address must start with http:// or https://."; renderTopic(true); return; }
   try { localStorage.setItem("opentsx.studio.bridge", base.href); } catch (e) {}
   const es = tp.es = new EventSource(base.href.replace(/\/+$/, "") + "/v1/topics/" + encodeURIComponent(tpTopic()) + "/events?from=" + $("tp-from").value);
   tp.state = "connecting";
@@ -1185,43 +1184,43 @@ function tpConnect() {
   es.onmessage = m => { if (tp.es !== es) return; let d; try { d = JSON.parse(m.data); } catch (e) { return; }
     const v = d.value && typeof d.value === "object" ? d.value : {};
     tp.rows.push({ offset: d.offset, received: d.timestamp, json: JSON.stringify(d.value),
-      e: { t: (Date.parse(v.t) - Date.parse(SC.t0)) / 60000, atom: String(v.atom || d.key || ""), type: String(v.type || "unbekannt"), attrs: v.attrs || {} } });
+      e: { t: (Date.parse(v.t) - Date.parse(SC.t0)) / 60000, atom: String(v.atom || d.key || ""), type: String(v.type || "unknown"), attrs: v.attrs || {} } });
     if (tp.rows.length > 500) tp.rows.shift();
     renderTopic(); };
   es.onerror = () => { if (tp.es !== es) return;
-    if (es.readyState === 2) { tp.es = null; tp.state = "failed"; $("tp-hint").textContent = "Keine Verbindung. Läuft die Brücke unter dieser Adresse, und hat schon jemand in dieses Topic geschrieben?"; }
-    else { tp.state = "connecting"; $("tp-hint").textContent = "Die Brücke antwortet nicht; der Browser versucht es weiter."; }
+    if (es.readyState === 2) { tp.es = null; tp.state = "failed"; $("tp-hint").textContent = "No connection. Is the bridge running at this address, and has anything been written to this topic yet?"; }
+    else { tp.state = "connecting"; $("tp-hint").textContent = "The bridge does not answer; the browser keeps trying."; }
     renderTopic(true); };
   renderTopic(true);
 }
 function tpMode(m) { tp.mode = m; tpStop(); tp.shown = -1; renderTopic(true); }
-const TP_STATE = { idle: ["nicht verbunden", ""], connecting: ["verbinde …", "FORECAST"], open: ["verbunden", "MEASURED"], failed: ["keine Verbindung", ""] };
+const TP_STATE = { idle: ["not connected", ""], connecting: ["connecting …", "FORECAST"], open: ["connected", "MEASURED"], failed: ["no connection", ""] };
 function renderTopic(force) {
   const live = tp.mode === "live", evs = SC.reference.events;
   $("tp-name").textContent = tpTopic();
   $("tp-src-live").setAttribute("aria-pressed", live); $("tp-src-replay").setAttribute("aria-pressed", !live);
   $("tp-live").hidden = !live; $("tp-replay").hidden = live;
   $("tp-state").textContent = TP_STATE[tp.state][0]; $("tp-state").className = "chip org " + TP_STATE[tp.state][1];
-  $("tp-connect").textContent = tp.es ? "Trennen" : "Verbinden";
+  $("tp-connect").textContent = tp.es ? "Disconnect" : "Connect";
   const done = tp.pos >= tpTotal();
-  $("tp-play").textContent = tp.timer ? "Anhalten" : done ? "Noch einmal abspielen" : tp.pos > 0 ? "Fortsetzen" : "Wiedergabe starten";
+  $("tp-play").textContent = tp.timer ? "Pause" : done ? "Play again" : tp.pos > 0 ? "Resume" : "Start replay";
   $("tp-clock").textContent = tLabel(Math.min(N - 1, Math.floor(tp.pos / SC.stepMinutes)), true) + " UTC";
   $("tp-bar").style.width = (100 * tp.pos / tpTotal()) + "%";
   const recs = live ? tp.rows : evs.filter(e => e.t <= tp.pos).map((e, i) => ({ offset: i, e, json: JSON.stringify({ t: tAt(evIndex(e.t)).toISOString(), atom: e.atom, type: e.type, attrs: e.attrs }) }));
   const n = recs.length;
   if (n === tp.shown && !force) return;
   const fresh = n > tp.shown && tp.shown >= 0 ? n - tp.shown : 0; tp.shown = n;
-  $("tp-count").textContent = live ? `${n} empfangen` : `${n} von ${evs.length}` + (SC.reference.eventCount > evs.length ? ` (der Lauf hat ${SC.reference.eventCount})` : "");
+  $("tp-count").textContent = live ? `${n} received` : `${n} of ${evs.length}` + (SC.reference.eventCount > evs.length ? ` (the run has ${SC.reference.eventCount})` : "");
   $("tp-empty").hidden = n > 0;
-  $("tp-empty").textContent = live ? (tp.state === "open" ? "Verbunden. Noch kein Datensatz im Topic angekommen." : "Noch kein Datensatz. Verbinde dich mit der Brücke.") : "Noch kein Datensatz. Starte die Wiedergabe.";
+  $("tp-empty").textContent = live ? (tp.state === "open" ? "Connected. No record has arrived in the topic yet." : "No record yet. Connect to the bridge.") : "No record yet. Start the replay.";
   const clock = ms => { const d = new Date(ms); return pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds()); };
   const when = t => Number.isFinite(t) ? tLabel(Math.max(0, Math.min(N - 1, Math.round(evIndex(t)))), true) : NA;
-  $("tp-rows").innerHTML = n ? `<tr class="h"><th scope="col" class="n">Offset</th><th scope="col">Zeit im Lauf (UTC)</th><th scope="col">Schlüssel</th><th scope="col">Ereignis</th><th scope="col"></th></tr>`
+  $("tp-rows").innerHTML = n ? `<tr class="h"><th scope="col" class="n">Offset</th><th scope="col">Time in the run (UTC)</th><th scope="col">Key</th><th scope="col">Event</th><th scope="col"></th></tr>`
     + recs.map((r, i) => ({ r, i })).reverse().map(({ r, i }, row) => `<tr class="${row < fresh ? "new" : ""}"><td class="n">${r.offset}</td>
-      <td class="k">${when(r.e.t)}${r.received ? `<div class="note" style="font-family:var(--font-body)">empfangen ${clock(r.received)}</div>` : ""}</td>
+      <td class="k">${when(r.e.t)}${r.received ? `<div class="note" style="font-family:var(--font-body)">received ${clock(r.received)}</div>` : ""}</td>
       <td class="k">${esc(r.e.atom)}<div class="note" style="font-family:var(--font-body)">${esc(nodeTitle(r.e.atom))}</div></td>
       <td class="doc">${esc(evText(r.e))}<div class="v tech">${esc(r.json)}</div></td>
-      <td>${Number.isFinite(r.e.t) ? `<button class="btn link" data-ev="${i}">Im Systembild zeigen</button>` : ""}</td></tr>`).join("") : "";
+      <td>${Number.isFinite(r.e.t) ? `<button class="btn link" data-ev="${i}">Show in the system diagram</button>` : ""}</td></tr>`).join("") : "";
   $("tp-rows").querySelectorAll("[data-ev]").forEach(b => b.addEventListener("click", () => { const e = recs[+b.dataset.ev].e;
     $("scrub").value = Math.max(0, Math.min(N - 1, Math.round(evIndex(e.t)))); selNode = nodeOf(e.atom) ? e.atom : selNode; selWire = null; show("graph"); }));
 }
@@ -1237,7 +1236,7 @@ if (new URLSearchParams(location.search).get("bridge")) tp.mode = "live";
 
 // rail: icons only or with labels; the diagram is measured again once the width has settled
 function setRail(open) { if (open) document.documentElement.dataset.rail = "open"; else delete document.documentElement.dataset.rail;
-  $("rail-toggle").setAttribute("aria-expanded", open); $("rail-toggle").querySelector("span").textContent = open ? "Einklappen" : "Ausklappen";
+  $("rail-toggle").setAttribute("aria-expanded", open); $("rail-toggle").querySelector("span").textContent = open ? "Collapse" : "Expand";
   try { localStorage.setItem("opentsx.studio.rail", open ? "1" : "0"); } catch (e) {} if (SC) setTimeout(render, 220); }
 const railOpen = () => document.documentElement.dataset.rail === "open";
 $("rail-toggle").addEventListener("click", () => setRail(!railOpen()));
@@ -1252,19 +1251,19 @@ $("theme").addEventListener("click", () => setTheme(themeNow() === "dark" ? "lig
 try { const t = localStorage.getItem("opentsx.studio.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}
 
 // menu bar; the entries are built when a menu opens, so that check marks show the current state
-const MOD = /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Strg+";
+const MOD = /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl+";
 const MENUS = [
-  ["Datei", () => [
-    { l: "Anlagenmodell exportieren (YAML)", run: exportPlan }, { l: "Inventar exportieren (YAML)", run: exportInventory }, null,
-    { l: "Sicherung speichern (JSON)", run: exportBackup }, { l: "Sicherung importieren …", run: () => $("imp-file").click() }]],
-  ["Ansicht", () => VIEWS.map((t, i) => ({ l: TAB_DE[t], k: "Alt+" + (i + 1), on: currentTab === t, run: () => show(t) })).concat([null,
-    { l: "Seitenleiste mit Beschriftung", k: MOD + "B", on: railOpen(), run: () => setRail(!railOpen()) },
-    { l: "Technische Details", on: !!document.documentElement.dataset.tech, run: () => setTech(!document.documentElement.dataset.tech) }, null,
-    { l: "Hell", on: document.documentElement.dataset.theme === "light", run: () => setTheme("light") },
-    { l: "Dunkel", on: document.documentElement.dataset.theme === "dark", run: () => setTheme("dark") },
-    { l: "Wie das System", on: !document.documentElement.dataset.theme, run: () => setTheme(null) }])],
-  ["Szenario", () => ALL.scenarios.map(sc => ({ l: sc.title.split(" (")[0], on: sc.id === SC.id, run: () => { useScenario(sc.id); show(currentTab); } }))],
-  ["Hilfe", () => [{ l: "Erläuterung zum Szenario", run: () => $("guide").showModal() }]]];
+  ["File", () => [
+    { l: "Export plant model (YAML)", run: exportPlan }, { l: "Export inventory (YAML)", run: exportInventory }, null,
+    { l: "Save backup (JSON)", run: exportBackup }, { l: "Import backup …", run: () => $("imp-file").click() }]],
+  ["View", () => VIEWS.map((t, i) => ({ l: TAB_LABEL[t], k: "Alt+" + (i + 1), on: currentTab === t, run: () => show(t) })).concat([null,
+    { l: "Sidebar with labels", k: MOD + "B", on: railOpen(), run: () => setRail(!railOpen()) },
+    { l: "Technical details", on: !!document.documentElement.dataset.tech, run: () => setTech(!document.documentElement.dataset.tech) }, null,
+    { l: "Light", on: document.documentElement.dataset.theme === "light", run: () => setTheme("light") },
+    { l: "Dark", on: document.documentElement.dataset.theme === "dark", run: () => setTheme("dark") },
+    { l: "Like the system", on: !document.documentElement.dataset.theme, run: () => setTheme(null) }])],
+  ["Scenario", () => ALL.scenarios.map(sc => ({ l: sc.title.split(" (")[0], on: sc.id === SC.id, run: () => { useScenario(sc.id); show(currentTab); } }))],
+  ["Help", () => [{ l: "Guide to the scenario", run: () => $("guide").showModal() }]]];
 let openMenu = -1;
 $("menubar").innerHTML = MENUS.map(([name], i) => `<div class="menu"><button class="menu-btn" data-menu="${i}" aria-haspopup="menu" aria-expanded="false">${name}</button><div class="menu-pop" role="menu" aria-label="${name}" hidden></div></div>`).join("");
 const menuBtn = i => document.querySelector(`[data-menu="${i}"]`);
@@ -1302,8 +1301,8 @@ function useScenario(id) {
   units = {}; SC.graph.nodes.forEach(n => n.outputs.forEach(p => units[n.id + "." + p.name] = p.unit));
   const twin = encodeURIComponent(SC.plan.twin);
   $("doctabs").innerHTML = `<button id="dt-scenario" title="${esc(SC.title)}">${esc(SC.title.split(" (")[0])}</button>
-    <a href="anlagen-explorer.html?sys=${twin}" target="_blank" rel="noopener" title="Anlagen-Explorer in neuem Tab: Typenschilder, Orte, Dokumente und Wartung">Anlagendetails<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M11 7H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-4"/></svg></a>
-    <button id="dt-topic" title="Ereignisse des Zwillings als Datensätze eines Topics verfolgen">Ereignis-Topic<span class="tag">KafScale</span></button>`;
+    <a href="anlagen-explorer.html?sys=${twin}" target="_blank" rel="noopener" title="Asset explorer in a new tab: nameplates, locations, documents and maintenance">Asset details<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M11 7H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-4"/></svg></a>
+    <button id="dt-topic" title="Follow the events of the twin as records of a topic">Event topic<span class="tag">KafScale</span></button>`;
   $("dt-scenario").addEventListener("click", () => show(lastTab)); $("dt-topic").addEventListener("click", () => show("topic"));
   tpReset();
   selected = (SC.smartMetrics || []).find(k => SC.reference.series[k]) || Object.keys(SC.reference.series)[0];

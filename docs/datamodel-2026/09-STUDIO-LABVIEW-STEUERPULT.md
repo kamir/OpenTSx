@@ -1,205 +1,204 @@
-# OpenTSx – Smart Topics Studio, LabVIEW-Analogie und Steuerpult (Konzept)
+# OpenTSx: Smart Topics Studio, the LabVIEW analogy and the control desk (concept)
 
-> Status: **Konzept und Prototyp**, 2026-10-12. Gehört zu P7e (Personal Service Layer) und P9 (Digitaler Zwilling).
-> Prototyp: [`docs/prototypes/smart-topics-studio.html`](../prototypes/smart-topics-studio.html) (statische Seite,
-> Daten aus `opentsx-twin`, Szenario S1). Bezüge: [05-SMART-TOPICS](05-SMART-TOPICS.md),
+> Status: **concept and prototype**, 2026-10-12. Belongs to P7e (Personal Service Layer) and P9 (digital twin).
+> Prototype: [`docs/prototypes/smart-topics-studio.html`](../prototypes/smart-topics-studio.html) (a static page,
+> data from `opentsx-twin`, scenario S1). References: [05-SMART-TOPICS](05-SMART-TOPICS.md),
 > [07-DIGITAL-TWIN-BSP](07-DIGITAL-TWIN-BSP.md).
 
 ---
 
-## 1. Kurzfassung
+## 1. Summary
 
-* **Studio:** Smart Topics bekommen eine Oberfläche mit drei Ansichten. Die **Statistik** zeigt die Zahlen, die
-  **Prognose & Was-wäre-wenn** die möglichen Abläufe, der **Node-Graph** die Struktur.
-* **Node-Graph:** Er ist der Schaltplan des Zwillings, gezeichnet als Blockdiagramm. Das kennt man aus Node-RED,
-  NiFi und LabVIEW.
-* **LabVIEW:** Die Analogie trägt weit. Der Unterschied liegt in der Rolle: LabVIEW regelt deterministisch am
-  Prüfstand, OpenTSx überwacht, vergleicht und plant **über** vielen Prüfständen.
-* **Der Kreis schließt sich.** LabVIEW berechnet am Gerät Smart Metrics und veröffentlicht sie (MQTT → infinimesh →
-  KafScale). OpenTSx verdichtet, modelliert und schlägt Fahrweisen vor. Freigegebene Sollwerte gehen über den
-  `desired`-Zustand von infinimesh zurück an LabVIEW. Dort entscheidet weiterhin die lokale Sicherheitslogik.
-* **Voraussetzungen:** Es gibt keinen reifen Kafka-Client für LabVIEW und kein Avro. Am Rand spricht man deshalb
-  JSON über MQTT, und OpenTSx normalisiert in das v2-Modell. Der Rückweg braucht eine Freigabe.
+* **Studio:** Smart Topics get a user interface with three views. **Statistics** shows the numbers, **forecast and
+  what-if** the possible courses, the **node graph** the structure.
+* **Node graph:** it is the wiring plan of the twin, drawn as a block diagram. This is familiar from Node-RED, NiFi
+  and LabVIEW.
+* **LabVIEW:** the analogy goes far. The difference lies in the role: LabVIEW controls deterministically at the test
+  rig, OpenTSx monitors, compares and plans **across** many test rigs.
+* **The loop closes.** LabVIEW calculates smart metrics at the device and publishes them (MQTT → infinimesh →
+  KafScale). OpenTSx condenses, models and proposes operating modes. Approved setpoints go back to LabVIEW through
+  the `desired` state of infinimesh. There the local safety logic still decides.
+* **Prerequisites:** there is no mature Kafka client for LabVIEW and no Avro. At the edge the devices therefore
+  speak JSON over MQTT, and OpenTSx normalizes into the v2 model. The way back needs an approval.
 
 ---
 
-## 2. Die drei Ansichten des Studios
+## 2. The three views of the Studio
 
-| Ansicht | Zeigt | Datenquelle | Prototyp |
-|---------|-------|-------------|----------|
-| **Statistik** („mathematische Variante“) | Reihenliste mit Herkunft (gemessen/gemeldet/Prognose/…), Kennwerte n, fehlend, Mittel, Std.-Abw., Min, P5, Median, P95, Max, Verlauf mit Ereignissen, Verteilung | Laufende Statistik (P4: Welford, Quantil-Sketch, DQ) bzw. Zwillingsreihen (`RunResult`) | ja |
-| **Prognose & Was-wäre-wenn** | Vergleich Beobachtet ↔ Alternative mit Kennzahlen und Δ; Prognose ab „jetzt“ (Snapshot) mit austauschbarer Fahrweise; Ereignisliste | `Twin.whatIf`, `Twin.forecast`; später Prediction-API der Smart Topics (P7) | ja (vorberechnetes Raster) |
-| **Node-Graph** | Bausteine als Knoten, Ports, Drähte; Spalten = Phasen eines Takts; durchgezogen = selber Takt, gestrichelt = nächster Takt; ◆ = extern gebundener Eingang; Zeitregler zeigt Werte an den Ports; Inspektor je Knoten | `TwinPlan` (Schaltplan), Schattenlauf | ja (nur ansehen) |
+| View | Shows | Data source | Prototype |
+|------|-------|-------------|-----------|
+| **Statistics** ("mathematical variant") | list of series with origin (measured, reported, forecast, ...), figures n, missing, mean, std. dev., min, P5, median, P95, max, course with events, distribution | running statistics (P4: Welford, quantile sketch, DQ) or twin series (`RunResult`) | yes |
+| **Forecast and what-if** | comparison observed ↔ alternative with key figures and Δ; forecast from "now" (snapshot) with an exchangeable operating mode; list of events | `Twin.whatIf`, `Twin.forecast`; later the prediction API of the Smart Topics (P7) | yes (precomputed grid) |
+| **Node graph** | building blocks as nodes, ports, wires; columns = phases of a time step; solid = same step, dashed = next step; ◆ = input bound from outside; a time slider shows the values at the ports; an inspector per node | `TwinPlan` (wiring plan), shadow run | yes (view only) |
 
-Seit der Überarbeitung als Produktoberfläche heißen die Ansichten **Überblick** (neu: Geschichte des Szenarios,
-Ablauf der Ereignisse, wichtigste Verläufe), **Vergleich** (bisher Prognose & Was-wäre-wenn), **Systembild** (bisher
-Node-Graph) und **Messreihen** (bisher Statistik). Über allen Ansichten steht eine Zusammenfassung mit vier
-Kennzahlen (`StudioScenario.headline()`) und der Frage, die das Szenario beantwortet (`decision()`). Im Systembild
-zeigt die Farbe einer Verbindung den Energieträger (Strom, Wasserstoff, Wärme, Brennstoff, Signal); Verbindungen
-über mehrere Spalten laufen in eigenen Spuren unter den Blöcken. Der Schalter „Technische Details“ blendet
-Kennungen, Lauf-Ids und Rohwerte ein. Grenzwerte aus `limits()` erscheinen als Linien in den Diagrammen.
+Since the rework as a product interface the views are called **Overview** (new: the story of the scenario, the
+sequence of events, the most important courses), **Compare** (formerly forecast and what-if), **System diagram**
+(formerly node graph) and **Series** (formerly statistics). Above all views stands a summary with four key figures
+(`StudioScenario.headline()`) and the question the scenario answers (`decision()`). In the system diagram the color of
+a connection shows the energy carrier (electricity, hydrogen, heat, fuel, signal); connections across several
+columns run in lanes of their own below the blocks. The switch "Technical details" shows ids, run ids and raw values.
+Limits from `limits()` appear as lines in the charts.
 
-Die Hülle folgt dem Aufbau einer Entwicklungsumgebung: oben eine Titelleiste mit Menüs (Datei, Ansicht, Szenario,
-Hilfe), links eine Icon-Leiste für die vier Ansichten, die sich aus- und einklappen lässt, darunter die Szenarien als
-Dokument-Reiter. Details zu einem Baustein oder einer Verbindung werden von rechts eingeblendet und mit Esc
-geschlossen. Die Statusleiste unten trägt den Hinweis „Beispieldaten“, Zeitraum und Zeitschritt. Die Zusammenfassung
-steht seitdem nur noch im Überblick. Tastatur: Alt+1 bis Alt+4 für die Ansichten, Strg+B für die Icon-Leiste.
+The shell follows the layout of a development environment: at the top a title bar with menus (File, View, Scenario,
+Help), on the left an icon bar for the views that can be collapsed and expanded, below it the scenarios as document
+tabs. Details of a building block or a connection slide in from the right and close with Esc. The status bar at the
+bottom carries the note "Example data", the period and the time step. The summary stands only in the overview.
+Keyboard: Alt+1 to Alt+5 for the views (Alt+5 is the event topic), Ctrl+B for the icon bar.
 
-Die Dokument-Reiter gehören zum gewählten Szenario; gewechselt wird es im Menü „Szenario“. Neben dem Szenario selbst
-stehen dort ein Link auf seine Seite im Anlagen-Explorer (`anlagen-explorer.html?sys=<twin>`, aus einem Baustein
-heraus mit `&open=<twin>/<atom>`) und die Ansicht **Ereignis-Topic**. Sie zeigt die Datensätze des Topics
-`twin.<id>.<run>.events` (Schlüssel: Baustein, Wert: JSON `twin.event.v1`) aus zwei Quellen. **Live:** über die
-Brücke aus `opentsx-twin-live`, die das Topic aus KafScale liest und als Server-Sent Events an den Browser gibt
-(`bin/opentsx twin-live bridge`); geschrieben wird das Topic von `bin/opentsx twin-live publish`, auf Wunsch im
-Zeitraffer. **Wiedergabe:** der gerechnete Referenzlauf im Browser, ohne Broker. Der Zwilling rechnet einen Lauf
-weiterhin als Ganzes; ein Zwilling, der während des Rechnens veröffentlicht, ist eine spätere Stufe. Details:
-[`opentsx-twin-live/README.md`](../../opentsx-twin-live/README.md).
+The document tabs belong to the chosen scenario; it is changed in the menu "Scenario". Next to the scenario itself
+the Studio has a link to its page in the asset explorer (`anlagen-explorer.html?sys=<twin>`, from a building block
+with `&open=<twin>/<atom>`) and the view **Event topic**. It shows the records of the topic
+`twin.<id>.<run>.events` (key: building block, value: JSON `twin.event.v1`) from two sources. **Live from the
+topic:** through the bridge from `opentsx-twin-live`, which reads the topic from KafScale and passes it to the
+browser as server-sent events (`bin/opentsx twin-live bridge`); the topic is written by
+`bin/opentsx twin-live publish`, on request in time lapse. **Replay without a broker:** the calculated reference run
+in the browser. The twin still calculates a run as a whole; a twin that publishes while it calculates is a later
+stage. Details: [`opentsx-twin-live/README.md`](../../opentsx-twin-live/README.md).
 
-Regeln, die der Prototyp schon umsetzt:
+Rules that the prototype already implements:
 
-* **Herkunft:** Jede Reihe zeigt, wie sie entstanden ist. Modellierte Werte sehen nie aus wie Messungen.
-* **Kennzeichnung:** Was-wäre-wenn und Prognose heißen in der Oberfläche auch so und stehen mit ihrer Lauf-Id da.
-* **Gleiche Basis:** Alternativen werden gegen dieselbe Ausgangslage verglichen (Referenz minus Alternative, wie in
+* **Origin:** each series shows how it came about. Modeled values never look like measurements.
+* **Labeling:** what-if and forecast are called so in the user interface too and stand there with their run id.
+* **Same basis:** alternatives are compared against the same starting point (reference minus alternative, as in
   P8).
 
-**Das Studio ist eine Sicht auf jedes modellierte System.** Ein System beschreibt sich über die Schnittstelle
+**The Studio is a view of every modeled system.** A system describes itself through the interface
 `org.opentsx.twin.studio.StudioScenario`:
 
-* Schaltplan
-* Eingänge und Eingriffe des Referenzlaufs
-* benannte Alternativen (Eingriffe, Fahrweisen, andere Annahmen)
-* Prognosen ab Snapshots
-* Smart Metrics, Vergleichsgrößen, Kennzahlen und Beschriftungen
-* optional ein Leitfaden (`StudioGuide`, Datei `twin/<plan>.guide.yaml` neben dem Schaltplan): worum es geht, was
-  jeder Baustein, Port, Parameter, jede Stellgröße und jeder Draht bedeutet, woher der Wert kommen soll und welche
-  Quellen zum Vergleich taugen. Ein Test prüft Leitfaden und Schaltplan gegeneinander: Nichts bleibt unerklärt,
-  nichts Unbekanntes wird erklärt. Umgesetzt für die Wasserstoffkette und das Haus; ohne Leitfaden erzeugt die Oberfläche je Draht einen
-  allgemeinen Satz aus Art, Einheit und Takt.
+* wiring plan
+* inputs and interventions of the reference run
+* named alternatives (interventions, operating modes, other assumptions)
+* forecasts from snapshots
+* smart metrics, comparison quantities, key figures and labels
+* optionally a guide (`StudioGuide`, file `twin/<plan>.guide.yaml` next to the wiring plan): what it is about, what
+  each building block, port, parameter, setpoint and wire means, where the value should come from and which sources
+  are fit for comparison. A test checks guide and wiring plan against each other: nothing stays unexplained, nothing
+  unknown is explained. Implemented for the hydrogen chain and the house; without a guide the user interface
+  generates a general sentence per wire from kind, unit and time step.
 
-Im Node-Graph zeigt ein Hover über Draht oder Port die Erläuterung mit dem Wert zum gewählten Zeitpunkt, ein Klick
-hält sie fest. Je Baustein lassen sich **eigene Angaben** erfassen: Hersteller, Typ, Seriennummer, Baujahr, Notiz
-und eigene Parameterwerte. Sie bleiben im Browser (lokaler Speicher) und lassen sich exportieren: als Inventar
-(`opentsx.inventory.v1`, siehe [12](12-EXPLORATIVES-UI-INVENTAR.md)) und als eigener Schaltplan, den
-`bin/opentsx house --plan` beziehungsweise `bin/opentsx twin --plan` rechnet. Beide Dateien gehören nach `config/private/`.
+In the node graph, hovering over a wire or port shows the explanation with the value at the chosen time, and a click
+holds it. Per building block, **own details** can be entered: manufacturer, type, serial number, year of
+construction, note and own parameter values. They stay in the browser (local storage) and can be exported: as an
+inventory (`opentsx.inventory.v1`, see [12](12-EXPLORATIVES-UI-INVENTAR.md)) and as an own wiring plan that
+`bin/opentsx house --plan` or `bin/opentsx twin --plan` calculates. Both files belong in `config/private/`.
 
-`StudioExport` rechnet alle registrierten Szenarien und schreibt eine JSON-Datei. Die Oberfläche hat keine
-Sonderfälle. Lange Läufe, etwa ein Jahr im Stundentakt, werden für die Anzeige auf höchstens 2000 Punkte je Reihe
-gemittelt.
+`StudioExport` calculates all registered scenarios and writes one JSON file. The user interface has no special
+cases. Long runs, for example one year at hourly steps, are averaged to at most 2000 points per series for display.
 
-Szenarien:
+Scenarios:
 
-* die Wasserstoffkette (umgesetzt)
-* das Einfamilienhaus im Erzgebirge ([08](08-HAUS-ZWILLING.md); ein Jahr, für die Anzeige auf 5-h-Mittel verdichtet)
-* das Boot Etap 22 ([10](10-BOOT-ZWILLING.md); 14 Tage im 15-Minuten-Takt)
+* the hydrogen chain (implemented)
+* the single-family house in the Ore Mountains ([08](08-HAUS-ZWILLING.md); one year, condensed to 5-hour means for
+  display)
+* the boat Etap 22 ([10](10-BOOT-ZWILLING.md); 14 days at 15-minute steps)
 
-Als **vierte Ansicht** ist **„Anlage erkunden“** vorgesehen: ein visuelles Inventar auf Karte, Grundriss oder
-Decksplan, mit Hover-Karte, Datenblatt, Dokumenten und Wartung am selben Atom-Anker
-([12-EXPLORATIVES-UI-INVENTAR](12-EXPLORATIVES-UI-INVENTAR.md), Prototyp
+A **fourth view**, **"Explore the plant"**, is planned: a visual inventory on a map, floor plan or deck plan, with a
+hover card, data sheet, documents and maintenance on the same atom anchor
+([12-EXPLORATIVES-UI-INVENTAR](12-EXPLORATIVES-UI-INVENTAR.md), prototype
 [`anlagen-explorer.html`](../prototypes/anlagen-explorer.html)).
 
-Für den Ausbau vorgesehen:
+Planned for later:
 
-* Den Node-Graph **bearbeiten**: Das Ziehen von Drähten ändert das Schaltplan-YAML, und die Plan-Validierung prüft
-  sofort.
-* **Live-Betrieb** über KafScale statt vorberechneter Läufe.
-* Eingriffe mit **Freigabe-Workflow**: Bediener, Begründung, Grenzwertprüfung.
-* **Sub-Graphen** (zusammengesetzte Bausteine, analog SubVI).
-* Was-wäre-wenn-Läufe direkt aus der Oberfläche starten.
+* **Editing** the node graph: dragging wires changes the wiring plan YAML, and the plan validation checks at once.
+* **Live operation** over KafScale instead of precomputed runs.
+* Interventions with an **approval workflow**: operator, reason, limit check.
+* **Sub-graphs** (composite building blocks, like a SubVI).
+* Starting what-if runs directly from the user interface.
 
-Der Prototyp lässt sich reproduzieren:
+The prototype can be reproduced:
 
 ```bash
 java -cp "$(bin/opentsx classpath opentsx-twin)" org.opentsx.twin.studio.StudioExport /tmp/studio.json
-python3 tools/build_studio.py /tmp/studio.json      # schreibt docs/prototypes/smart-topics-studio.html
+python3 tools/build_studio.py /tmp/studio.json      # writes docs/prototypes/smart-topics-studio.html
 ```
 
 ---
 
-## 3. Analogie: LabVIEW, Node-RED, NiFi und OpenTSx
+## 3. Analogy: LabVIEW, Node-RED, NiFi and OpenTSx
 
 | LabVIEW | OpenTSx | Node-RED | NiFi |
 |---------|---------|----------|------|
-| Blockdiagramm | Schaltplan (`TwinPlan`), im Studio als Node-Graph | Flow | Process Group |
-| Frontpanel | Studio-Ansichten Statistik / Prognose | Dashboard | UI |
-| VI / SubVI | Baustein (Atom) / künftig zusammengesetzter Baustein | Node / Subflow | Processor |
-| Draht (Datenfluss) | Port-Verbindung; im Betrieb ein Topic | Wire, `msg` | Connection, FlowFile |
-| Knoten führt aus, wenn alle Eingänge anliegen | Phase im Takt (geschichtetes BSP); alle Eingänge eines Bausteins stehen vor seinem Schritt fest | pro Nachricht | Scheduler je Processor |
-| Schieberegister / Feedback-Knoten | Zustand des Bausteins und Rückkopplungsdraht in den nächsten Takt | Context | State Manager |
-| Queue, Channel Wire | KafScale-Topic | Wire | Queue mit Backpressure |
-| Shared Variable / Tag | letzter Wert eines Smart Topics | – | – |
-| Timed Loop, Real-Time, FPGA | **nicht** Aufgabe von OpenTSx; Takt 1 min, überwachend | – | – |
-| – | Herkunft und Lineage je Wert | – | Provenance |
+| Block diagram | wiring plan (`TwinPlan`), in the Studio as the node graph | Flow | Process Group |
+| Front panel | Studio views statistics / forecast | Dashboard | UI |
+| VI / SubVI | building block (atom) / later a composite building block | Node / Subflow | Processor |
+| Wire (data flow) | port connection; in operation a topic | Wire, `msg` | Connection, FlowFile |
+| A node executes when all inputs are present | phase in the time step (layered BSP); all inputs of a building block are fixed before its step | per message | scheduler per processor |
+| Shift register / feedback node | state of the building block and a feedback wire into the next time step | Context | State Manager |
+| Queue, channel wire | KafScale topic | Wire | Queue with backpressure |
+| Shared variable / tag | last value of a Smart Topic | none | none |
+| Timed loop, real time, FPGA | **not** a task of OpenTSx; time step 1 min, monitoring | none | none |
+| none | origin and lineage per value | none | Provenance |
 
-Quellen zur Semantik:
+Sources on the semantics:
 
-* LabVIEW: [Datenfluss](https://www.ni.com/docs/en-IN/bundle/labview/page/block-diagram-data-flow.html), [Feedback Node](https://www.ni.com/docs/en-US/bundle/labview-api-ref/page/functions/feedback-node.html), [Channel Wires](https://www.ni.com/en/support/documentation/supplemental/16/channel-wires.html)
+* LabVIEW: [data flow](https://www.ni.com/docs/en-IN/bundle/labview/page/block-diagram-data-flow.html), [Feedback Node](https://www.ni.com/docs/en-US/bundle/labview-api-ref/page/functions/feedback-node.html), [Channel Wires](https://www.ni.com/en/support/documentation/supplemental/16/channel-wires.html)
 * Node-RED: [Concepts](https://nodered.org/docs/user-guide/concepts)
 * NiFi: [Overview](https://nifi.apache.org/docs/nifi-docs/html/overview.html)
 
-**Kernunterschied.** In LabVIEW ist der Datenfluss die **Ausführung am Gerät**, mit harten Zeitgarantien auf RT oder
-FPGA. In OpenTSx ist der Datenfluss ein **Modell des Systems**. Es läuft im Schatten mit, lässt sich zurückspulen,
-verzweigen (Was-wäre-wenn) und vorausrechnen (Prognose). Beides ergänzt sich: LabVIEW ist die lokale Hand, OpenTSx das
-gemeinsame Gedächtnis und der Planungstisch.
+**Core difference.** In LabVIEW the data flow is the **execution at the device**, with hard timing guarantees on RT
+or FPGA. In OpenTSx the data flow is a **model of the system**. It runs along in the shadow and can be rewound,
+branched (what-if) and calculated ahead (forecast). The two complement each other: LabVIEW is the local hand, OpenTSx
+the shared memory and the planning table.
 
 ---
 
-## 4. Steuerpult für die LabVIEW-Gemeinde: schließt sich der Kreis?
+## 4. A control desk for the LabVIEW community: does the loop close?
 
 ```mermaid
 flowchart LR
-  S["Sensoren am Prüfstand"] --> LV["LabVIEW<br/>DAQmx, lokale Regelung,<br/>Edge Smart Metrics"]
-  LV -- "MQTT, JSON<br/>(reported)" --> IM["infinimesh<br/>Geräteidentität, Shadow"]
-  IM -- "Kafka-Addon" --> KS["KafScale<br/>günstig speichern, Replay"]
-  LV -. "optional: Kafka direkt<br/>(librdkafka-Wrapper)" .-> KS
-  KS --> OT["OpenTSx<br/>Normalizer → v2, Statistik,<br/>Smart Topics, Zwilling"]
-  OT --> ST["Studio<br/>Statistik · Was-wäre-wenn · Node-Graph"]
-  ST -- "freigegebener Sollwert" --> IM
+  S["Sensors at the test rig"] --> LV["LabVIEW<br/>DAQmx, local control,<br/>edge smart metrics"]
+  LV -- "MQTT, JSON<br/>(reported)" --> IM["infinimesh<br/>device identity, shadow"]
+  IM -- "Kafka add-on" --> KS["KafScale<br/>cheap storage, replay"]
+  LV -. "optional: Kafka directly<br/>(librdkafka wrapper)" .-> KS
+  KS --> OT["OpenTSx<br/>normalizer → v2, statistics,<br/>Smart Topics, twin"]
+  OT --> ST["Studio<br/>statistics · what-if · node graph"]
+  ST -- "approved setpoint" --> IM
   IM -- "MQTT desired" --> LV
-  LV --> A["Aktoren<br/>(lokale Grenzen gelten)"]
+  LV --> A["Actuators<br/>(local limits apply)"]
 ```
 
-**Ja, der Kreis schließt sich, mit einer klaren Rollenteilung:**
+**Yes, the loop closes, with a clear division of roles:**
 
-1. **LabVIEW** führt die Sensoren am Gerät zusammen. Es berechnet dort, was nur lokal sinnvoll geht: Effektivwert,
-   Spitzen, Spektren je Messlauf, Zustände. Diese Werte veröffentlicht es als **Edge Smart Metrics** mit Herkunft
-   `MEASURED` und der berechnenden VI als Provenienz.
-2. **KafScale** nimmt alles günstig auf und kann es exakt wieder abspielen.
-3. **OpenTSx** normalisiert in das v2-Modell und rechnet über viele Prüfstände hinweg:
-   * Statistik und Datenqualität
-   * Smart Topics mit Prognosen
-   * Zwilling für Was-wäre-wenn
-   * Koordinationspotenzial (P8)
-4. **Das Studio** ist das Steuerpult. Dort sieht man, vergleicht, simuliert und gibt frei.
-5. **Der Rückweg** läuft über den `desired`-Zustand von infinimesh. LabVIEW übernimmt einen Sollwert nur innerhalb
-   seiner lokalen Grenzen. Echtzeit und Sicherheit bleiben am Gerät.
+1. **LabVIEW** brings the sensors together at the device. It calculates there what only makes sense locally: RMS
+   value, peaks, spectra per measurement run, states. It publishes these values as **edge smart metrics** with the
+   origin `MEASURED` and the calculating VI as provenance.
+2. **KafScale** takes in everything cheaply and can replay it exactly.
+3. **OpenTSx** normalizes into the v2 model and calculates across many test rigs:
+   * statistics and data quality
+   * Smart Topics with forecasts
+   * twin for what-if
+   * coordination potential (P8)
+4. **The Studio** is the control desk. There one sees, compares, simulates and approves.
+5. **The way back** runs through the `desired` state of infinimesh. LabVIEW takes over a setpoint only within its
+   local limits. Real time and safety stay at the device.
 
-### Faktenlage (Stand Oktober 2026)
+### Facts (as of October 2026)
 
-| Thema | Befund | Folge |
-|-------|--------|-------|
-| Kafka aus LabVIEW | Kein reifer Client. Es gibt das Community-Projekt [LVKafka](https://github.com/sundeepChandhoke/LVKafka) (librdkafka-Wrapper, wenige Sterne, keine Releases, Lizenz nicht angegeben). Auf VIPM gibt es keine Treffer ([vipm.io](https://www.vipm.io/search/?q=kafka)). | Direktweg nur als Option |
-| Avro in LabVIEW | Keine Bibliothek gefunden. Single-Object-Encoding (`C3 01`, 8 Byte Fingerprint, Avro-Binärdaten) wäre für ein flaches Schema in reinem G machbar; das ist eine Einschätzung, nicht erprobt. | Am Rand JSON, OpenTSx normalisiert |
-| MQTT aus LabVIEW | Open-Source-Client des LabVIEW Open Source Project mit TLS-Erweiterung ([VIPM](https://www.vipm.io/package/labview_open_source_project_lib_mqtt_securedtcp_connection/), 0-BSD). Kommerziell gibt es WireQueue-MQTT ([NI Tools Network](https://www.ni.com/it-it/support/downloads/tools-network/download.wirequeue-mqtt-driver.html)). | Bevorzugter Weg |
-| Client-Zertifikat-TLS | infinimesh verlangt auf 8883 ein Client-Zertifikat. Ein Forenbericht beschreibt Probleme mit Client-Zertifikaten in LabVIEW-TLS ([NI-Forum](https://ni.lithium.com/t5/LabVIEW/TLS-with-Client-Certificate/m-p/4244369)). | **vor Festlegung testen** |
-| infinimesh → KafScale | Das Kafka-Addon schreibt JSON, Schlüssel ist die Geräte-Id ([infinimesh/addons](https://github.com/infinimesh/addons)). Es ist ausdrücklich auch für KafScale gedacht. | Brücke existiert |
-| Bestandsdaten | TDMS-Dateien lassen sich mit npTDMS lesen ([PyPI](https://pypi.org/project/npTDMS/)). | TDMS-Import als schneller Nutzen |
-| Lizenzen | Die LabVIEW Community Edition ist nur für private, nicht-kommerzielle Nutzung ([NI](https://ni.com/en/support/documentation/supplemental/20/labview-community-edition-usage-details.html)). Seit 2025 gibt es wieder Dauerlizenzen ([Emerson](https://www.emerson.com/en-us/news/2025/03-emerson-streamlines-embedded-software-test-for-hardware-in-the-loop-engineers)). | Publisher-Paket unter BSD/MIT über VIPM verteilen |
-| NI-eigene Angebote | SystemLink (auch Kubernetes-basiert, [NI](https://ni.com/en-us/about-ni/newsroom/news-releases/ni-s-systemlink-enterprise-brings-competitive-edge-with-new-clou.html)); Emerson baut KI-Assistenz in LabVIEW aus ([automation.com](https://www.automation.com/article/emerson-reaches-milestone-ai-flagship-test-measurement-software-platform)) | OpenTSx positioniert sich offen und herstellerneutral daneben, nicht dagegen |
+| Topic | Finding | Consequence |
+|-------|---------|-------------|
+| Kafka from LabVIEW | No mature client. There is the community project [LVKafka](https://github.com/sundeepChandhoke/LVKafka) (a librdkafka wrapper, few stars, no releases, no license stated). VIPM has no hits ([vipm.io](https://www.vipm.io/search/?q=kafka)). | the direct way only as an option |
+| Avro in LabVIEW | No library found. Single-object encoding (`C3 01`, 8-byte fingerprint, Avro binary data) would be feasible for a flat schema in pure G; this is an estimate, not tried. | JSON at the edge, OpenTSx normalizes |
+| MQTT from LabVIEW | Open source client of the LabVIEW Open Source Project with a TLS extension ([VIPM](https://www.vipm.io/package/labview_open_source_project_lib_mqtt_securedtcp_connection/), 0-BSD). Commercially there is WireQueue-MQTT ([NI Tools Network](https://www.ni.com/it-it/support/downloads/tools-network/download.wirequeue-mqtt-driver.html)). | preferred way |
+| Client certificate TLS | infinimesh requires a client certificate on 8883. A forum report describes problems with client certificates in LabVIEW TLS ([NI forum](https://ni.lithium.com/t5/LabVIEW/TLS-with-Client-Certificate/m-p/4244369)). | **test before deciding** |
+| infinimesh → KafScale | The Kafka add-on writes JSON, the key is the device id ([infinimesh/addons](https://github.com/infinimesh/addons)). It is explicitly meant for KafScale too. | the bridge exists |
+| Existing data | TDMS files can be read with npTDMS ([PyPI](https://pypi.org/project/npTDMS/)). | TDMS import as a quick benefit |
+| Licenses | The LabVIEW Community Edition is only for private, non-commercial use ([NI](https://ni.com/en/support/documentation/supplemental/20/labview-community-edition-usage-details.html)). Since 2025 there are perpetual licenses again ([Emerson](https://www.emerson.com/en-us/news/2025/03-emerson-streamlines-embedded-software-test-for-hardware-in-the-loop-engineers)). | distribute the publisher package under BSD/MIT through VIPM |
+| NI's own offerings | SystemLink (also Kubernetes based, [NI](https://ni.com/en-us/about-ni/newsroom/news-releases/ni-s-systemlink-enterprise-brings-competitive-edge-with-new-clou.html)); Emerson extends AI assistance in LabVIEW ([automation.com](https://www.automation.com/article/emerson-reaches-milestone-ai-flagship-test-measurement-software-platform)) | OpenTSx positions itself next to them, open and vendor neutral, not against them |
 
-### Integrationswege (Rangfolge)
+### Integration paths (ranking)
 
-| Rang | Weg | Aufwand | Bemerkung |
-|------|-----|---------|-----------|
-| 1 | **LabVIEW → MQTT (JSON) → infinimesh → Kafka-Addon → KafScale → Normalizer** | niedrig–mittel | reifer MQTT-Client, keine DLL, Rückweg über `desired` inklusive; offen: Client-Zertifikat-TLS |
-| 2 | **TDMS-Import** (npTDMS → Observations/Episoden) | niedrig | zurückgestellt (keine Bestände, 4a); Option für spätere Anwender |
-| 3 | **OpenTSx-Publisher-Paket für LabVIEW** (VIs „DAQmx-Task → SmartMetric veröffentlichen“, JSON-Vertrag unten, später optional Avro) | mittel | macht die Brücke für LabVIEW-Nutzer greifbar; Pflege nötig |
-| 4 | Kafka direkt (LVKafka/librdkafka, JSON) | mittel–hoch | unreif, native Bibliotheken je Plattform; KafScale: `enable.idempotence=false` |
-| 5 | OPC UA / Sparkplug B | mittel | sinnvoll, wenn ein OPC-UA-Server ohnehin existiert ([LabVIEW OPC UA Toolkit](https://www.ni.com/en-us/shop/product/labview-opc-ua-toolkit.html)) |
+| Rank | Path | Effort | Remark |
+|------|------|--------|--------|
+| 1 | **LabVIEW → MQTT (JSON) → infinimesh → Kafka add-on → KafScale → normalizer** | low to medium | mature MQTT client, no DLL, the way back through `desired` included; open: client certificate TLS |
+| 2 | **TDMS import** (npTDMS → observations and episodes) | low | deferred (no existing data, 4a); an option for later users |
+| 3 | **OpenTSx publisher package for LabVIEW** (VIs "DAQmx task → publish SmartMetric", the JSON contract below, later optionally Avro) | medium | makes the bridge tangible for LabVIEW users; needs maintenance |
+| 4 | Kafka directly (LVKafka/librdkafka, JSON) | medium to high | immature, native libraries per platform; KafScale: `enable.idempotence=false` |
+| 5 | OPC UA / Sparkplug B | medium | useful when an OPC UA server exists anyway ([LabVIEW OPC UA Toolkit](https://www.ni.com/en-us/shop/product/labview-opc-ua-toolkit.html)) |
 
-### Vertrag für Edge Smart Metrics (Entwurf `opentsx.smartmetric.v1`, JSON)
+### Contract for edge smart metrics (draft `opentsx.smartmetric.v1`, JSON)
 
-Diese Form ist für LabVIEW einfach zu erzeugen (Cluster → JSON). Der OpenTSx-Normalizer bildet sie auf
-`SeriesKey`/`Observation` bzw. `Episode` ab.
+This form is easy to produce in LabVIEW (cluster → JSON). The OpenTSx normalizer maps it onto
+`SeriesKey`/`Observation` or `Episode`.
 
 ```json
 {
@@ -215,50 +214,50 @@ Diese Form ist für LabVIEW einfach zu erzeugen (Cluster → JSON). Der OpenTSx-
 }
 ```
 
-Für Blöcke gilt dieselbe Form mit `"t0"`, `"interval_us"` und `"values": [...]` statt `ts`/`value`; sie wird
-als `Episode` (REGULAR) abgebildet. Die Payload kommt über MQTT unter `reported` oder als Wert im Kafka-Topic.
-Zeiten sind UTC mit Mikrosekunden.
+Blocks use the same form with `"t0"`, `"interval_us"` and `"values": [...]` instead of `ts`/`value`; they are mapped
+as an `Episode` (REGULAR). The payload arrives over MQTT under `reported` or as a value in the Kafka topic. Times are
+UTC with microseconds.
 
-### Was OpenTSx für LabVIEW-Nutzer attraktiv macht
+### What makes OpenTSx attractive for LabVIEW users
 
-* Ein **VIPM-Paket mit Beispiel-VIs** veröffentlicht Smart Metrics in wenigen Minuten.
-* Der **TDMS-Import** macht Bestandsdaten sofort vergleichbar.
-* Studio, Smart Topics und Zwilling gibt es **ohne zusätzliche Lizenzkosten**. Alles ist offen und herstellerneutral.
-* **Was-wäre-wenn und Prognose** lassen sich über mehrere Prüfstände rechnen, mit Herkunft jeder Zahl.
-* Ein **klarer Rückweg mit Freigabe**. Die Echtzeit bleibt bei LabVIEW.
+* A **VIPM package with example VIs** publishes smart metrics within minutes.
+* The **TDMS import** makes existing data comparable at once.
+* Studio, Smart Topics and twin come **without additional license costs**. Everything is open and vendor neutral.
+* **What-if and forecast** can be calculated across several test rigs, with the origin of every number.
+* A **clear way back with approval**. Real time stays with LabVIEW.
 
-### Risiken
+### Risks
 
-* **Pflege:** infinimesh wurde frisch neu aufgesetzt, die APIs sind beta. Deshalb nur lose über den Vertrag koppeln.
-* **TLS mit Client-Zertifikat** aus LabVIEW ist ungeklärt.
-* **Sicherheit des Rückwegs:** Sollwerte nur mit Freigabe, Grenzprüfung in LabVIEW und Rechten nach dem Prinzip der
-  geringsten Rechte.
-* **Erwartung:** OpenTSx ist keine Echtzeitregelung. Das muss klar kommuniziert werden.
+* **Maintenance:** infinimesh was set up anew recently, the APIs are beta. Therefore couple only loosely through the
+  contract.
+* **TLS with a client certificate** from LabVIEW is unresolved.
+* **Safety of the way back:** setpoints only with approval, a limit check in LabVIEW and rights on the principle of
+  least privilege.
+* **Expectation:** OpenTSx is no real-time control. This has to be communicated clearly.
 
 ---
 
-## 4a. Entscheidungen vom 2026-10-12
+## 4a. Decisions of 2026-10-12
 
-* **Kein LabVIEW-Pilot vorerst.** Die Überlegung stammt aus der Laborpraxis. Der Aufhänger bleibt: LabVIEW-Anwender
-  haben selten ein Datenmanagement. Hier setzt OpenTSx an, indem ein Smart Topic **direkt auf Sensoren abgebildet**
-  wird.
-* **Der Rückweg wird von Anfang an mitgedacht.** Steuerkommandos laufen in einem **Feedback-Topic** auf und werden
-  dort auf LabVIEW-Aktoren abgebildet.
-* **Keine TDMS-Bestände.** Der TDMS-Import fällt in der Rangfolge zurück und bleibt eine Option für spätere Anwender.
+* **No LabVIEW pilot for now.** The idea comes from lab practice. The hook stays: LabVIEW users rarely have data
+  management. OpenTSx starts here by **mapping a Smart Topic directly onto sensors**.
+* **The way back is designed in from the start.** Control commands arrive in a **feedback topic** and are mapped
+  there onto LabVIEW actuators.
+* **No existing TDMS data.** The TDMS import drops in the ranking and stays an option for later users.
 
-### Abbildung Sensor ↔ Smart Topic ↔ Aktor
+### Mapping sensor ↔ Smart Topic ↔ actuator
 
-Je Apparatur gibt es eine versionierte Abbildungsdatei, analog zur Registerkarte beim Modbus-Modul:
+Each apparatus has a versioned mapping file, like the register map of the Modbus module:
 
 ```yaml
-apparatus: pruefstand-3
-sensors:                                  # physischer Kanal -> Serie
-  - channel: cDAQ1Mod1/ai0                # DAQmx-Kanal
+apparatus: test-rig-3
+sensors:                                  # physical channel -> series
+  - channel: cDAQ1Mod1/ai0                # DAQmx channel
     metric: rig.motor.vibration_rms
     tags: { rig: P3, sensor: acc1 }
     unit: m/s^2
     smartMetric: { window: PT1S, function: rms }
-actuators:                                # Kommando-Ziel -> Ausgang an der Apparatur
+actuators:                                # command target -> output at the apparatus
   - target: rig.motor.speed_setpoint
     channel: cDAQ1Mod2/ao0
     unit: rpm
@@ -266,28 +265,28 @@ actuators:                                # Kommando-Ziel -> Ausgang an der Appa
     requiresApproval: true
 ```
 
-Das Smart Topic eines Sensors hat damit einen festen Namen, eine Einheit und eine Herkunft (`MEASURED`, VI und
-Version als Provenienz). Die Datenhaltung übernimmt OpenTSx: KafScale, Iceberg, Statistik und Metadaten.
+The Smart Topic of a sensor thereby has a fixed name, a unit and an origin (`MEASURED`, VI and version as
+provenance). OpenTSx takes over the data management: KafScale, Iceberg, statistics and metadata.
 
-### Feedback-Topic: Kommandos und Quittungen (Entwurf)
+### Feedback topic: commands and acknowledgements (draft)
 
-* **Kommandos:** `tsx.<domain>.commands.v1` (Schlüssel = Apparatur). Für Geräte hinter infinimesh wird dasselbe
-  Kommando in den `desired`-Zustand gespiegelt.
-* **Quittungen:** `tsx.<domain>.command-acks.v1`.
+* **Commands:** `tsx.<domain>.commands.v1` (key = apparatus). For devices behind infinimesh the same command is
+  mirrored into the `desired` state.
+* **Acknowledgements:** `tsx.<domain>.command-acks.v1`.
 
 ```json
 {
   "schema": "opentsx.command.v1",
   "commandId": "01JA0Q3K8Z0000000000000000",
-  "target": { "apparatus": "pruefstand-3", "actuator": "rig.motor.speed_setpoint" },
+  "target": { "apparatus": "test-rig-3", "actuator": "rig.motor.speed_setpoint" },
   "action": "set",
   "value": 1200,
   "unit": "rpm",
   "validFrom": "2026-10-12T10:00:00Z",
   "validUntil": "2026-10-12T10:15:00Z",
-  "issuedBy": "twin:pruefstand-3@run-…",
+  "issuedBy": "twin:test-rig-3@run-…",
   "approvedBy": "operator:mk",
-  "reason": "Was-wäre-wenn W3 freigegeben"
+  "reason": "what-if W3 approved"
 }
 ```
 
@@ -296,28 +295,27 @@ Version als Provenienz). Die Datenhaltung übernimmt OpenTSx: KafScale, Iceberg,
   "status": "applied", "appliedValue": 1200, "ts": "2026-10-12T10:00:00.250Z", "detail": "" }
 ```
 
-Regeln:
+Rules:
 
-1. **Lokale Verriegelungen haben immer Vorrang.** LabVIEW prüft Grenzen, Schrittweite und Gültigkeit. Ein
-   abgelaufenes Kommando wird nicht ausgeführt und mit `expired` quittiert, eines außerhalb der Grenzen mit
-   `rejected`.
-2. **Jedes Kommando bekommt eine Quittung:** `accepted`, `applied`, `rejected` oder `expired`.
-3. **Herkunft im Zwilling:** Quittungen fließen als Ereignisse zurück. Ein angewendeter Sollwert wird im Zwilling zum
-   `Intervention`-Eintrag mit Herkunft `REPORTED`. Damit sind Modell und Wirklichkeit vergleichbar.
-4. **Idempotenz:** Weil KafScale keinen idempotenten Producer hat, ist die `commandId` deterministisch. Doppelte
-   Zustellungen ignoriert die Apparatur.
-5. **Freigabe:** Kommandos aus Optimierer oder Zwilling brauchen eine Freigabe im Studio, wenn `requiresApproval`
-   gesetzt ist.
+1. **Local interlocks always take precedence.** LabVIEW checks limits, step size and validity. An expired command
+   is not executed and is acknowledged with `expired`, one outside the limits with `rejected`.
+2. **Each command gets an acknowledgement:** `accepted`, `applied`, `rejected` or `expired`.
+3. **Origin in the twin:** acknowledgements flow back as events. An applied setpoint becomes an `Intervention` entry
+   with the origin `REPORTED` in the twin. This makes model and reality comparable.
+4. **Idempotency:** because KafScale has no idempotent producer, the `commandId` is deterministic. The apparatus
+   ignores duplicate deliveries.
+5. **Approval:** commands from the optimizer or the twin need an approval in the Studio when `requiresApproval` is
+   set.
 
-## 5. Roadmap-Einträge
+## 5. Roadmap entries
 
-* **P7e Studio:** die drei Ansichten produktiv (Live-Daten über KafScale, Statistik aus P4, Prediction-API aus P7),
-  den Node-Graph bearbeitbar (Schaltplan-YAML mit Validierung) und Eingriffe mit Freigabe-Workflow.
-* **LabVIEW-Brücke:**
-  * JSON-Vertrag `opentsx.smartmetric.v1` als JSON-Schema mit Normalizer und Tests
-  * TDMS-Import
-  * Publisher-Paket (VIPM, BSD/MIT)
-  * Test der Client-Zertifikat-TLS gegen infinimesh
-* **infinimesh-Connector** (schon vorgemerkt) und der Rückweg `desired` mit Freigabe.
+* **P7e Studio:** the three views in production (live data over KafScale, statistics from P4, prediction API from
+  P7), the node graph editable (wiring plan YAML with validation) and interventions with an approval workflow.
+* **LabVIEW bridge:**
+  * the JSON contract `opentsx.smartmetric.v1` as a JSON schema with normalizer and tests
+  * TDMS import
+  * publisher package (VIPM, BSD/MIT)
+  * a test of client certificate TLS against infinimesh
+* **infinimesh connector** (already planned) and the way back `desired` with approval.
 
-Die offenen Fragen von 2026-10-12 sind in §4a beantwortet.
+The open questions of 2026-10-12 are answered in section 4a.

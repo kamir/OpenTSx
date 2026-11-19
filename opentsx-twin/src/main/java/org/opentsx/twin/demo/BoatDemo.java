@@ -27,9 +27,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
- * Scenario "Boot": an Etap 22 as an island energy system (power station, solar, shore power; laptops, phone,
+ * Scenario {@code boot}: an Etap 22 as an island energy system (power station, solar, shore power; laptops, phone,
  * Starlink, Raspberry Pi, VHF). Prints
  * <ol>
  *   <li>the shadow run of a synthetic two-week summer trip (logbook bound, everything else modelled), per day;</li>
@@ -61,6 +62,8 @@ public final class BoatDemo {
     static final String DATA = "opentsx.boat.data";
     static final String ZONE = "opentsx.boat.zone";
     static final String CALIBRATE = "opentsx.boat.calibrate";
+    /** The atoms the runs of the command bind, change or report. */
+    static final Set<String> ATOMS = Set.of("boat", "solar", "shore", "laptop1", "laptop2", "starlink", "station");
 
     /** Output series worth showing first, {@code atom.port}. */
     public static final List<String> KEY_SERIES = List.of("station.soc", "station.p_unmet_w", "solar.p_avail_w",
@@ -191,6 +194,12 @@ public final class BoatDemo {
     static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err) {
         return TwinCli.run(COMMAND, args, env, out, err, (conf, positional) -> {
             TwinPlan plan = TwinCli.plan(conf, "twin/boot-etap22.yaml", BoatDemo::plan);
+            List<String> missing = plan.missingAtoms(plan(), ATOMS);
+            if (!missing.isEmpty()) {
+                throw new IllegalArgumentException(conf.get(TwinCli.PLAN, "twin/boot-etap22.yaml") + ": plan "
+                        + plan.twin() + " has no atom " + String.join(", ", missing) + "; expected a boat plan such as "
+                        + "opentsx-twin/src/main/resources/twin/boot-etap22.yaml");
+            }
             String zoneId = conf.get(ZONE);
             ZoneId zone;
             try {
@@ -209,8 +218,17 @@ public final class BoatDemo {
                 throw new OpenTsxConfException(TwinCli.SIMULATED, "cannot be combined with " + DATA,
                         "give --data <file.csv> or --simulated, not both");
             }
+            if (conf.contains(ZONE) && data == null) {
+                throw new OpenTsxConfException(ZONE, "needs " + DATA, "give --data <file.csv> with --zone");
+            }
             if (simulated) {
-                return o -> simulated(o, plan);
+                BoatData logs;
+                try {
+                    logs = BoatData.parse(simulatedLogs(), plan, SimulatedLogs.ZONE);
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException(SimulatedLogs.RESOURCE + ": " + e.getMessage(), e);
+                }
+                return o -> simulated(o, plan, logs);
             }
             if (data == null) {
                 return o -> synthetic(o, plan);
@@ -220,9 +238,8 @@ public final class BoatDemo {
         });
     }
 
-    private static void simulated(PrintStream out, TwinPlan plan) {
+    private static void simulated(PrintStream out, TwinPlan plan, BoatData d) {
         out.println("SIMULATED operating data (" + SimulatedLogs.RESOURCE + "), not measurements: import + calibration demo.");
-        BoatData d = BoatData.parse(simulatedLogs(), plan, SimulatedLogs.ZONE);
         Calibration.Fit fit = real(out, plan, d, true);
         out.println();
         out.println("3. Hidden true parameters of the simulation vs. calibrated");
@@ -325,10 +342,10 @@ public final class BoatDemo {
         RunResult shadow = new Twin(plan).shadow(d.inputs(), base);
         double rmse = Calibration.rmse(shadow.series("station.soc"), d.socMeas());
         out.printf(Locale.ROOT, "%n1. Shadow on the data: run %s, SoC RMSE model vs. measured %s%n", shadow.runId(),
-                Double.isNaN(rmse) ? "n/a (no soc_prozent)" : String.format(Locale.ROOT, "%.1f %%-points", 100 * rmse));
+                Double.isNaN(rmse) ? "n/a (no soc_percent)" : String.format(Locale.ROOT, "%.1f %%-points", 100 * rmse));
         if (calibrate) {
             if (Double.isNaN(rmse)) {
-                out.println("   --calibrate needs the column soc_prozent");
+                out.println("   --calibrate needs the column soc_percent");
             } else {
                 fit = calibrate(d);
                 out.println("   calibrated " + fit.values().keySet() + " in " + fit.evaluations()

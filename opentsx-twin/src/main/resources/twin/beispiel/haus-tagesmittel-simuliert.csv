@@ -1,6 +1,6 @@
-# SIMULIERT - keine Messwerte. Tagesmitteltemperatur eines fiktiven Standorts im Erzgebirge (~650 m),
-# erzeugt von org.opentsx.twin.house.SimulatedBills (Seed 2026), Winter 2022/23 mild, 2024/25 kalt.
-datum,t_mittel_c
+# SIMULATED: not measured. Daily mean temperature of a fictitious site in the Erzgebirge (~650 m),
+# written by org.opentsx.twin.house.SimulatedBills (seed 2026), winter 2022/23 mild, 2024/25 cold.
+date,t_mean_c
 2022-01-01,-4.8
 2022-01-02,-2.0
 2022-01-03,1.1

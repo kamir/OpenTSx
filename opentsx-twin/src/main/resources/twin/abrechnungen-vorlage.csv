@@ -1,17 +1,18 @@
-# VORLAGE - alle Werte sind ERFUNDENE BEISPIELE. Echte Daten NICHT hier eintragen, sondern in
-# config/private/abrechnungen.csv (per .gitignore vom Commit ausgeschlossen) und dann:
+# TEMPLATE: all values are INVENTED EXAMPLES. Do NOT enter real data here; put it into
+# config/private/abrechnungen.csv (excluded from commits by .gitignore) and then run:
 #   bin/opentsx house --calibrate config/private/abrechnungen.csv [--weather config/private/tagesmittel.csv]
-# Eine Zeile = ein Zeitraum (Datum von/bis jeweils einschliesslich). Leere Zellen = unbekannt.
-#   strom_kwh         Verbrauch laut Stromabrechnung oder Zaehlerablesung im Zeitraum
-#   heizoel_liter     im Zeitraum GELIEFERTE Liter (0, wenn nur der Tank abgelesen wurde)
-#   tank_start_liter  Tankstand am Anfang des Zeitraums (Peilstab/Anzeige), wenn bekannt
-#   tank_ende_liter   Tankstand am Ende des Zeitraums, wenn bekannt -> Verbrauch = Lieferung + Start - Ende
-#   holz_ster         im Zeitraum VERBRANNTES Holz in Ster (Raummeter); Holzart bitte in notiz
-#   kosten_eur        optional, wird nur angezeigt
-# Trennzeichen ',' mit Dezimalpunkt oder ';' mit Dezimalkomma (Excel-Export); Datum 2024-01-31 oder 31.01.2024.
-zeitraum_von,zeitraum_bis,strom_kwh,heizoel_liter,tank_start_liter,tank_ende_liter,holz_ster,kosten_eur,notiz
-2023-01-01,2023-12-31,2950,,,,,1062,BEISPIEL erfunden: Stromjahresabrechnung 2023
-2024-01-01,2024-12-31,2880,,,,,1037,BEISPIEL erfunden: Stromjahresabrechnung 2024
-2023-01-01,2023-12-31,,2200,1500,1650,5,2550,BEISPIEL erfunden: Heizoel 2023 (eine Lieferung) + Tankstand Jahresanfang/-ende; Fichte
-2024-01-01,2024-06-30,,0,1650,520,3,,BEISPIEL erfunden: nur Tank abgelesen (Halbjahr); Holz Winter
-2024-07-01,2024-12-31,,1800,520,1390,2,1890,BEISPIEL erfunden: Lieferung im September + Tankstand Jahresende
+# One row = one period (dates from and to, both inclusive). Empty cells = unknown.
+#   electricity_kwh  consumption from the electricity bill or the meter readings in the period
+#   heating_oil_l    litres DELIVERED in the period (0 if only the tank was read)
+#   tank_start_l     tank level at the start of the period (dipstick or gauge), if known
+#   tank_end_l       tank level at the end of the period, if known -> consumption = delivery + start - end
+#   wood_ster        wood BURNED in the period in Ster (stacked cubic metres); put the wood species into note
+#   cost_eur         optional, only displayed
+# Separator ',' with a decimal point or ';' with a decimal comma (spreadsheet export); date 2024-01-31 or 31.01.2024.
+# The German column names are accepted as aliases (see opentsx-twin/README.md).
+period_from,period_to,electricity_kwh,heating_oil_l,tank_start_l,tank_end_l,wood_ster,cost_eur,note
+2023-01-01,2023-12-31,2950,,,,,1062,EXAMPLE invented: annual electricity bill 2023
+2024-01-01,2024-12-31,2880,,,,,1037,EXAMPLE invented: annual electricity bill 2024
+2023-01-01,2023-12-31,,2200,1500,1650,5,2550,EXAMPLE invented: heating oil 2023 (one delivery) + tank level at start and end of year; spruce
+2024-01-01,2024-06-30,,0,1650,520,3,,EXAMPLE invented: tank read only (half year); wood in winter
+2024-07-01,2024-12-31,,1800,520,1390,2,1890,EXAMPLE invented: delivery in September + tank level at end of year

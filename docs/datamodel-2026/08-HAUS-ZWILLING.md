@@ -1,210 +1,210 @@
-# OpenTSx – Haus-Zwilling: Betriebsführung und Effizienzmessung für Hauseigentümer (Konzept, P9.7)
+# OpenTSx house twin: operations management and efficiency measurement for homeowners (concept, P9.7)
 
-> Status: **Vorschlag mit lauffähigem Beispiel**, 2026-10-12. Überträgt die Methode des Energieverbund-Zwillings
-> ([07-DIGITAL-TWIN-BSP](07-DIGITAL-TWIN-BSP.md)) und das Bewertungsprinzip aus P8 („Zusammenspiel &
-> Koordinationspotenzial“, [TASK-011](../../EVOLUTION/TASK-011-datamodel-refresher-2026.md)) auf ein
-> Einfamilienhaus. Umsetzung im Modul [`opentsx-twin`](../../opentsx-twin/README.md), Befehl `bin/opentsx house`.
+> Status: **proposal with a runnable example**, 2026-10-12. Carries the method of the energy system twin
+> ([07-DIGITAL-TWIN-BSP](07-DIGITAL-TWIN-BSP.md)) and the assessment principle of P8 ("interplay and coordination
+> potential", [TASK-011](../../EVOLUTION/TASK-011-datamodel-refresher-2026.md)) over to a single-family house.
+> Implemented in the module [`opentsx-twin`](../../opentsx-twin/README.md), command `bin/opentsx house`.
 >
-> **Alle Zahlen zum Haus sind erfundene Beispielannahmen.** Sie gelten nur so lange, bis sie durch echte
-> Abrechnungen ersetzt und kalibriert sind (§7). Einsparungen aus dem Zwilling sind **modelliert**, nicht
-> nachgewiesen (§8).
+> **All numbers about the house are invented example assumptions.** They hold only until real bills replace them and
+> the plan is calibrated (section 7). Savings from the twin are **modeled**, not proven (section 8).
 
 ---
 
-## 1. Kurzfassung
+## 1. Summary
 
-Der Terawatt-Fall fragt: *Was verlieren wir durch getrennte Betriebsführung, und was gewinnen wir durch
-abgestimmtes Handeln?* Im Haus lautet dieselbe Frage: *Was kostet die heutige Fahrweise von Heizung, Warmwasser und
-Geräten, und was bringt eine andere, unter demselben Wetter und denselben Komfortgrenzen?*
+The Terawatt case asks: *what do we lose through separate operations management, and what do we gain through
+coordinated action?* In the house the same question reads: *what does the current way of running heating, hot water
+and appliances cost, and what does another way bring, under the same weather and the same comfort limits?*
 
-Vorschlag in fünf Sätzen:
+The proposal in five sentences:
 
-1. **Derselbe Zwilling, andere Bauteile.** Das Haus ist ein Schaltplan aus Atomen (Wetter, Gebäude, Ölkessel,
-   Kaminofen, Warmwasser, Geräte, Zähler, Öltank, Holzlager) mit demselben Atomvertrag MVC+P, demselben Runner und
-   denselben drei Betriebsarten wie die H2-Kette.
-2. **Abrechnungen sind die Messung.** Jahres- und Teilabrechnungen (Strom, Heizöl, Holz) sind die einzigen
-   verlässlichen Daten. Sie werden als `REPORTED` geführt; alles Stündliche dazwischen ist Modell.
-3. **Kalibrieren statt schätzen.** Wenige Parameter (Wärmeverlustkoeffizient H, Warmwasser- und Geräteskala) werden
-   deterministisch nach kleinsten Quadraten an die Abrechnungszeiträume angepasst. Was sich aus den Daten nicht
-   trennen lässt, wird ausgewiesen statt verschwiegen.
-4. **Jeder Hebel ist eine Alternative zur Referenz.** −1 K, Nachtabsenkung, ungenutzte Räume, mehr Holz,
-   Warmwassertemperatur, Pumpe, Gefriertruhe, Standby, Fernsehzeit: jeweils Alternative minus Referenz, gleiches
-   Wetter, gleicher Informationsstand.
-5. **Modelliert ≠ nachgewiesen.** Eine Einsparung gilt erst als nachgewiesen, wenn gemessene Zeiträume vor und nach
-   der Änderung witterungsbereinigt verglichen sind.
-
----
-
-## 2. Übertragung der Methode
-
-| Baustein der Methode | Terawatt-Fall (07) | Haus (dieses Dokument) |
-|----------------------|--------------------|------------------------|
-| Atomvertrag MVC+P | WEA, Elektrolyseur, H2-Leitung, Batterie, Markt … | Wetter, Gebäude, Ölkessel, Kaminofen, Warmwasser, Geräte, Zähler, Öltank, Holzlager |
-| Schaltplan | `twin/h2-chain.yaml` | [`twin/haus-erzgebirge.yaml`](../../opentsx-twin/src/main/resources/twin/haus-erzgebirge.yaml) |
-| Basistakt | 1 min | 1 h (Gebäude reagiert in Stunden bis Tagen; ein Jahr = 8760 Superschritte) |
-| Phasen | SOURCES → POLICY → ASSETS → BALANCE → FLOWS → VIEWS | dieselben: Wetter/Geräte/Warmwasser → (Policy) → Kessel/Ofen → Stromzähler → Gebäude/Tank/Holzlager |
-| Rückkopplung | Leitungsdruck → Elektrolyseur (ein Schritt verzögert) | Thermostat-Anforderung und Tankstand → Kessel (ein Schritt verzögert) |
-| Shadow | Live-Messung treibt den Zwilling | Abrechnungen, optional Zählerfotos, Peilstab, DWD-Temperaturen |
-| What-if | anderes Eingriffslog auf derselben Historie | Stellhebel als Eingriffe auf dasselbe Referenzjahr |
-| Prognose | ab Snapshot mit Prognosen, Policy austauschbar | ab heutigem Zustand (Tankstand, Holzvorrat): „Reicht das Öl bis März?“ |
-| Herkunftsleiter | `MEASURED > REPORTED > FORECAST > ESTIMATED > SYNTHETIC` | dieselbe; Abrechnung = REPORTED, Stationstemperatur = MEASURED, Stundenaufteilung = SYNTHETIC bzw. nach Kalibrierung ESTIMATED |
-| Stufen A–D | Daten & Potenzial → Shadow → Kausalketten → Optimierung | siehe unten |
-| Bewertungsprinzip | koordinierte Alternative − Referenzbetrieb | Hebel-Alternative − heutige Fahrweise, gleiches Wetter |
-
-**Stufen mit Wertschranke für den Hauseigentümer:**
-
-| Stufe | Inhalt | Aufwand | Schranke (weiter nur, wenn …) |
-|-------|--------|---------|-------------------------------|
-| **A – Abrechnungen & Kennzahlen** | Abrechnungen erfassen, kWh/m²a, witterungsbereinigter Verbrauch, Vergleich mit Kennwerten | 1–2 h, keine Simulation | Verbrauch auffällig hoch oder Entscheidung ansteht (Kesseltausch, Dämmung) |
-| **B – Kalibrierter Shadow** | Zwilling an Abrechnungen anpassen, Residuen je Zeitraum, Identifizierbarkeit prüfen | Kalibrierlauf, ggf. DWD-Tagesmittel | Fit-Güte ausreichend (Richtwert CV(RMSE) ≤ 15 %, NMBE ≤ ±5 % bei Monatsdaten) |
-| **C – Hebel & Kausalketten** | What-ifs je Hebel, Kette z. B. Absenkung → Aufheizspitze → Kessel taktet → Verluste | Rechenzeit, keine Investition | modelliertes Potenzial lohnt die Maßnahme |
-| **D – Betriebsführung** | Fahrplan (Heizzeiten, Holz/Öl-Aufteilung, Bestellzeitpunkt Öl) als Policy, Prognose ab Tankstand | Kalender, Peilstab | Nachweis im Folgejahr: gemessene, witterungsbereinigte Einsparung |
+1. **The same twin, other parts.** The house is a wiring plan of atoms (weather, building, oil boiler, wood stove,
+   hot water, appliances, meter, oil tank, wood store) with the same atom contract MVC+P, the same runner and the
+   same three operating modes as the H2 chain.
+2. **The bills are the measurement.** Annual and partial bills (electricity, heating oil, wood) are the only reliable
+   data. They are kept as `REPORTED`; everything hourly in between is model.
+3. **Calibrate instead of estimate.** A few parameters (heat loss coefficient H, hot water and appliance scale) are
+   fitted deterministically by least squares to the billing periods. What the data cannot separate is reported
+   instead of hidden.
+4. **Each lever is an alternative to the reference.** −1 K, night setback, unused rooms, more wood, hot water
+   temperature, pump, chest freezer, standby, TV time: each is alternative minus reference, same weather, same state
+   of information.
+5. **Modeled ≠ proven.** A saving counts as proven only when measured periods before and after the change are
+   compared with weather correction.
 
 ---
 
-## 3. Das Beispielhaus (Annahmen)
+## 2. Carrying over the method
 
-**Standort (fiktiv):** mittleres Erzgebirge, etwa **650 m ü. NN**, 50,6° N / 13,0° O.
+| Part of the method | Terawatt case (07) | House (this document) |
+|--------------------|--------------------|-----------------------|
+| Atom contract MVC+P | turbine, electrolyzer, H2 pipeline, battery, market ... | weather, building, oil boiler, wood stove, hot water, appliances, meter, oil tank, wood store |
+| Wiring plan | `twin/h2-chain.yaml` | [`twin/haus-erzgebirge.yaml`](../../opentsx-twin/src/main/resources/twin/haus-erzgebirge.yaml) |
+| Base step | 1 min | 1 h (the building reacts in hours to days; one year = 8760 supersteps) |
+| Phases | SOURCES → POLICY → ASSETS → BALANCE → FLOWS → VIEWS | the same: weather, appliances, hot water → (policy) → boiler, stove → electricity meter → building, tank, wood store |
+| Feedback | pipeline pressure → electrolyzer (one step delayed) | thermostat demand and tank level → boiler (one step delayed) |
+| Shadow | live measurement drives the twin | bills, optionally meter photos, dipstick, DWD temperatures |
+| What-if | another intervention log on the same history | levers as interventions on the same reference year |
+| Forecast | from a snapshot with forecasts, policy exchangeable | from today's state (tank level, wood stock): "Does the oil last until March?" |
+| Origin ladder | `MEASURED > REPORTED > FORECAST > ESTIMATED > SYNTHETIC` | the same; bill = REPORTED, station temperature = MEASURED, hourly split = SYNTHETIC, or ESTIMATED after calibration |
+| Stages A to D | data and potential → shadow → causal chains → optimization | see below |
+| Assessment principle | coordinated alternative − reference operation | lever alternative − today's way of running, same weather |
 
-| Größe | Annahme | Bemerkung |
-|-------|---------|-----------|
-| Jahresmitteltemperatur | ≈ 7,0 °C | synthetisches Klima des Wetter-Atoms (Jahresgang, Tagesgang, Wetterlagen aus festen Sinus + Zufall mit Seed) |
-| Kältester Abschnitt | Mitte Januar, Tagesmittel ≈ −2 °C, Minimum im Beispieljahr ≈ −11 °C | |
-| Norm-Außentemperatur | **≈ −14 °C** | Auslegungswert, Annahme; für die Heizlastberechnung, nicht für die Simulation |
-| Gradtagzahl G20/15 | Referenz **4.300 Kd** (langjährig, Annahme); synthetisches Beispieljahr 4.567 Kd | für echte Bewertung DWD-/IWU-Klimadaten der nächsten Station |
-| Heiztage | ≈ 300 pro Jahr (Heizgrenze 15 °C, 24-h-Mittel) | |
-| Globalstrahlung | ≈ 900–1.000 kWh/m²a | synthetisch |
+**Stages with a value threshold for the homeowner:**
 
-**Gebäude:** Einfamilienhaus, Baujahr 1978, Massivbau, zwei Vollgeschosse, unbeheizter Keller und Dachboden.
-Teilsaniert: Fenster 2005 (Zweifach-Wärmeschutzglas), oberste Geschossdecke 2012 gedämmt, Außenwände ungedämmt.
-
-| Raum | Fläche | beheizt | Nutzung |
-|------|-------:|---------|---------|
-| Wohnzimmer (EG) mit Kaminofen | 35 m² | ja | täglich abends, am Wochenende ganztags |
-| Küche (EG) | 15 m² | ja | Kochen, Radio, kleiner Fernseher |
-| Flur/Diele/Treppe (EG) | 14 m² | ja | |
-| WC/Hauswirtschaft (EG) | 5 m² | ja | Waschmaschine |
-| Schlafzimmer (OG) | 17 m² | ja | Fernseher |
-| Bad (OG) | 9 m² | ja | |
-| Arbeitszimmer (OG) | 13 m² | ja | gelegentlich |
-| Gästezimmer, ehem. Kinderzimmer (OG) | 13 m² | ja | selten |
-| Flur (OG) | 9 m² | ja | |
-| **Wohnfläche beheizt** | **130 m²** | | davon 20 % selten genutzt (Arbeits- und Gästezimmer) |
-| Keller: Heizraum, Tankraum, Vorratskeller, Werkstatt | ≈ 65 m² | nein | Kessel, 150-l-Speicher, 2 × 2.000 l Batterietank, Gefriertruhe |
-| Dachboden | ≈ 60 m² | nein | oberste Geschossdecke gedämmt |
-
-**Thermische Kennwerte (Annahmen, werden kalibriert):** Wärmeverlustkoeffizient **H = 200 W/K** (Transmission +
-Lüftung; ≈ 6,8 kW Heizlast bei −14 °C ohne Gewinne), wirksame Wärmekapazität **14 kWh/K** (schwere Bauweise,
-Zeitkonstante C/H ≈ 70 h), solare Apertur 4 m² (Fensterfläche × g-Wert × Verschattung).
-
-**Bewohner und Tagesablauf (2 Personen):**
-
-| | werktags | Wochenende |
-|---|----------|------------|
-| aufstehen / Warmwasser | 6–7 Uhr | 8–10 Uhr |
-| außer Haus | 7–16 Uhr | – |
-| kochen (E-Herd) | 18–19 Uhr | 12–13 Uhr |
-| Fernsehen Wohnzimmer | 19–23 Uhr | 15–23 Uhr |
-| Kaminofen | 18–22 Uhr in der Heizperiode | ebenso |
-| Waschen | – | Samstag/Sonntag 10–11 Uhr |
-| Raumtemperatur | 21 °C von 6 bis 22 Uhr, nachts 3 K Absenkung | ebenso |
-
-Das Modell ist **eine** thermische Zone. Räume gehen über ihre Fläche ein (z. B. der Anteil selten genutzter Räume);
-Raumtemperaturen einzelner Zimmer bildet es nicht ab.
+| Stage | Content | Effort | Threshold (go on only if ...) |
+|-------|---------|--------|-------------------------------|
+| **A: bills and key figures** | record the bills, kWh/m²a, weather-corrected consumption, comparison with benchmarks | 1 to 2 h, no simulation | consumption is conspicuously high or a decision is due (boiler replacement, insulation) |
+| **B: calibrated shadow** | fit the twin to the bills, residuals per period, check identifiability | a calibration run, DWD daily means if needed | good enough fit (guide value CV(RMSE) ≤ 15 %, NMBE ≤ ±5 % for monthly data) |
+| **C: levers and causal chains** | what-ifs per lever, a chain such as setback → heat-up peak → boiler cycles → losses | computing time, no investment | the modeled potential is worth the measure |
+| **D: operations management** | schedule (heating times, wood and oil split, time to order oil) as a policy, forecast from the tank level | calendar, dipstick | proof in the following year: measured, weather-corrected saving |
 
 ---
 
-## 4. Inventar und Heizung
+## 3. The example house (assumptions)
 
-### 4.1 Geräte (Leistungen sind typische Werte, Annahmen)
+**Location (fictitious):** central Ore Mountains (Erzgebirge), about **650 m above sea level**, 50.6° N / 13.0° E.
 
-| Gerät | Modell im Zwilling | Annahme | Ergebnis Beispieljahr |
-|-------|--------------------|---------|----------------------:|
-| Kühlschrank (Küche) | Dauerleistung (Kompressor-Mittel) | 25 W | 219 kWh |
-| Gefriertruhe (Keller, älter) | Dauerleistung, außerhalb der Hülle | 45 W | 394 kWh |
-| E-Herd mit Backofen | 1,3 kW im Kochfenster | s. Tagesablauf | 475 kWh |
-| Fernseher Wohnzimmer (LED, 55″) | 100 W, Standby 0,5 W | | 191 kWh |
-| Fernseher Schlafzimmer (älter) | 70 W, Standby 3 W | | 58 kWh |
-| Fernseher Küche (klein) | 40 W, Standby 2 W | | 45 kWh |
-| Radio (Küche) | 6 W, Standby 2 W | | 21 kWh |
-| Beleuchtung (gemischt LED/Halogen) | 140 W in den Abendstunden, im Winter +60 % | | 372 kWh |
-| Waschmaschine | 0,9 kWh je Wochenendtag | *ergänzt* | 94 kWh |
-| Kleingeräte (Kaffee, PC, Ladegeräte) | 150 W in Nutzungszeiten, Standby 12 W | *ergänzt* | 350 kWh |
-| Router | 10 W Dauer | *ergänzt* | 88 kWh |
-| **Haushaltsstrom** | | | **2.306 kWh** |
-| Heizungsumwälzpumpe (ungeregelt) | 65 W in der Heizperiode | | 490 kWh |
-| Ölbrenner (Gebläse, Ölpumpe) | 120 W beim Brennen | | 211 kWh |
-| **Strom gesamt** | | | **≈ 3.000 kWh** |
+| Quantity | Assumption | Remark |
+|----------|------------|--------|
+| Annual mean temperature | ≈ 7.0 °C | synthetic climate of the weather atom (annual cycle, daily cycle, weather situations from fixed sines plus seeded randomness) |
+| Coldest stretch | mid January, daily mean ≈ −2 °C, minimum in the example year ≈ −11 °C | |
+| Design outdoor temperature | **≈ −14 °C** | design value, assumption; for the heating load calculation, not for the simulation |
+| Heating degree days G20/15 | reference **4,300 Kd** (long-term, assumption); synthetic example year 4,567 Kd | for a real assessment, DWD or IWU climate data of the nearest station |
+| Heating days | ≈ 300 per year (heating limit 15 °C, 24 h mean) | |
+| Global radiation | ≈ 900 to 1,000 kWh/m²a | synthetic |
 
-*Ergänzt* = nicht in der Vorgabe genannt, aber in jedem Haushalt vorhanden; bei echten Daten anpassen oder
-streichen. Elektrische Geräte innerhalb der Hülle zählen als innere Wärmegewinne, ebenso 2 × 80 W je anwesender
-Person.
+**Building:** single-family house, built in 1978, solid construction, two full storeys, unheated cellar and attic.
+Partly renovated: windows 2005 (double thermal insulation glazing), top floor ceiling insulated in 2012, outer walls
+not insulated.
 
-### 4.2 Heizung: gewählte Konfiguration
+| Room | Area | Heated | Use |
+|------|-----:|--------|-----|
+| Living room (ground floor) with wood stove | 35 m² | yes | every evening, all day at weekends |
+| Kitchen (ground floor) | 15 m² | yes | cooking, radio, small TV |
+| Hall and stairs (ground floor) | 14 m² | yes | |
+| WC and utility room (ground floor) | 5 m² | yes | washing machine |
+| Bedroom (upper floor) | 17 m² | yes | TV |
+| Bathroom (upper floor) | 9 m² | yes | |
+| Study (upper floor) | 13 m² | yes | now and then |
+| Guest room, former children's room (upper floor) | 13 m² | yes | rarely |
+| Hall (upper floor) | 9 m² | yes | |
+| **Heated living area** | **130 m²** | | of which 20 % rarely used (study and guest room) |
+| Cellar: boiler room, tank room, store room, workshop | ≈ 65 m² | no | boiler, 150 l storage tank, 2 × 2,000 l battery tank, chest freezer |
+| Attic | ≈ 60 m² | no | top floor ceiling insulated |
 
-**Ölkessel + Kaminofen im Wohnzimmer** (keine Kombination mit Pufferspeicher). Begründung: Das ist im Erzgebirge
-die häufigste „Öl-Holz-Heizung“ im Bestand. Der Ölkessel (Niedertemperaturkessel der 1990er, 18 kW,
-einstufiger Brenner) versorgt Heizkörper und den 150-l-Warmwasserspeicher. Der Kaminofen (Scheitholz, Fichte)
-heizt abends das Wohnzimmer direkt; seine Wärme senkt die Anforderung an den Kessel. Ein wasserführender Ofen oder
-ein Holzvergaserkessel mit Puffer wäre ein eigenes Atom (Pufferspeicher als Bestand) und ist als Variante vorgesehen.
+**Thermal figures (assumptions, calibrated):** heat loss coefficient **H = 200 W/K** (transmission plus ventilation;
+≈ 6.8 kW heating load at −14 °C without gains), effective heat capacity **14 kWh/K** (heavy construction, time
+constant C/H ≈ 70 h), solar aperture 4 m² (window area × g value × shading).
 
-| Annahme | Wert |
-|---------|------|
-| Kessel: Nennleistung / Wirkungsgrad | 18 kW / 0,90 (oberhalb Mindestlast) |
-| Mindestlast, Taktverlust | 35 % der Nennleistung; darunter sinkt der Wirkungsgrad linear um bis zu 15 % |
-| Bereitschaftsverlust | 0,2 kW, ganzjährig (Kessel wird warm gehalten) |
-| Heizöl EL | 10 kWh/l (Heizwert), 1,00 €/l |
-| Kaminofen | 6 kW Brennstoffleistung, Wirkungsgrad 0,70, 4 h je Abend in der Heizperiode |
-| Holz | Fichte lufttrocken ≈ 1.500 kWh/Ster (Buche ≈ 2.000 kWh/Ster), 90 €/Ster |
-| Warmwasser | 2 × 40 l/Tag bei 45 °C (Kaltwasser 10 °C), Speicher 60 °C, Speicherverlust 60 W |
-| Öltank | 4.000 l, Bestellschwelle 600 l |
-| Strompreis | 0,36 €/kWh |
+**Residents and daily routine (2 persons):**
 
-Keine PV, keine Wärmepumpe: Die Atome dafür fehlen bewusst; sie wären spätere Varianten (Erzeugung am Zähler wie
-im Energieverbund, Wärmepumpe als Konverter mit COP).
+| | weekdays | weekend |
+|---|----------|---------|
+| get up / hot water | 6 to 7 h | 8 to 10 h |
+| away from home | 7 to 16 h | none |
+| cooking (electric stove) | 18 to 19 h | 12 to 13 h |
+| TV in the living room | 19 to 23 h | 15 to 23 h |
+| wood stove | 18 to 22 h in the heating season | the same |
+| washing | none | Saturday and Sunday 10 to 11 h |
+| room temperature | 21 °C from 6 to 22 h, at night 3 K setback | the same |
 
----
-
-## 5. Effizienzmessung
-
-### 5.1 Kennzahlen
-
-| Kennzahl | Definition | Beispieljahr (synthetisch) |
-|----------|------------|---------------------------:|
-| Strom | kWh/a am Zähler | 3.007 kWh |
-| davon Heizungsstrom | Pumpe + Brenner | 701 kWh |
-| Grundlast | mittlere Leistung 2–5 Uhr | 156 W |
-| Standby-Anteil | abschaltbarer Standby / Strom | 4,8 % |
-| Spitze | höchster Stundenmittelwert | 2,0 kW |
-| Heizöl | Liter/a (Verbrauch, nicht Lieferung) | 1.916 l |
-| Holz | Ster/a | 4,9 Ster |
-| Endenergie Wärme | Öl-l × 10 kWh/l + Ster × kWh/Ster | 26.575 kWh |
-| spezifisch | Endenergie Wärme / beheizte Fläche | 204 kWh/m²a |
-| witterungsbereinigt | Heizanteil × G_ref / G + Warmwasser + Bereitschaft | 25.248 kWh (auf 4.300 Kd) |
-| Nutzwärme | Kessel- + Ofenwärme | 20.127 kWh |
-| Kesselverluste / Jahresnutzungsgrad | Brennstoff − Wärme / Wärme ÷ Brennstoff | 4.225 kWh / 0,78 |
-| Komfort | Stunden > 0,5 K unter Sollwert in der Heizperiode | 138 h (Aufheizen nach der Nachtabsenkung) |
-| Kosten, CO2 | Tarife; GEG-Anlage-9-Faktoren (Öl 310, Strom 560, Holz 20 g/kWh) | 3.444 €/a, 7,8 t/a |
-
-Die Witterungsbereinigung skaliert nur den wetterabhängigen Teil (Raumwärme). Warmwasser und Bereitschaftsverlust
-bleiben unverändert. Das ist genauer als die übliche Bereinigung des Gesamtverbrauchs.
-
-### 5.2 Günstige Messmöglichkeiten (vom billigsten zum aufwendigsten)
-
-| Messung | Kosten | liefert | Herkunft |
-|---------|--------|---------|----------|
-| Abrechnungen der letzten Jahre | 0 € | Jahres-/Teilsummen Strom, Öllieferungen | REPORTED |
-| Zählerfoto Strom am Monatsersten | 0 € | Monatswerte → trennt Grundlast und saisonale Anteile | MEASURED |
-| Peilstab/Tankanzeige ablesen, bei jeder Lieferung und monatlich | 0 € | Ölverbrauch statt Lieferung | MEASURED |
-| Holzbuch (Körbe je Woche → Ster) | 0 € | Holzanteil je Zeitraum | REPORTED |
-| DWD-Tagesmitteltemperatur der nächsten Station (frei) | 0 € | echtes Wetter statt synthetisch | MEASURED |
-| Zwischenstecker mit Messung (Gefriertruhe, TV-Ecke) | 10–20 € je Stück | Geräteleistung und Standby | MEASURED |
-| Brennerstundenzähler (oft im Kessel vorhanden) | 0–30 € | Brennerlaufzeit × Düsendurchsatz = Öl | MEASURED |
-| Funk-Thermometer im Wohnzimmer | 15 € | Innentemperatur → prüft das Thermostat-Modell | MEASURED |
+The model is **one** thermal zone. Rooms enter through their area (for example the share of rarely used rooms); it
+does not model the temperatures of single rooms.
 
 ---
 
-## 6. Schaltplan des Haus-Zwillings
+## 4. Inventory and heating
+
+### 4.1 Appliances (powers are typical values, assumptions)
+
+| Appliance | Model in the twin | Assumption | Result in the example year |
+|-----------|-------------------|------------|---------------------------:|
+| Fridge (kitchen) | continuous power (compressor mean) | 25 W | 219 kWh |
+| Chest freezer (cellar, older) | continuous power, outside the envelope | 45 W | 394 kWh |
+| Electric stove with oven | 1.3 kW in the cooking window | see daily routine | 475 kWh |
+| TV living room (LED, 55″) | 100 W, standby 0.5 W | | 191 kWh |
+| TV bedroom (older) | 70 W, standby 3 W | | 58 kWh |
+| TV kitchen (small) | 40 W, standby 2 W | | 45 kWh |
+| Radio (kitchen) | 6 W, standby 2 W | | 21 kWh |
+| Lighting (mixed LED and halogen) | 140 W in the evening hours, +60 % in winter | | 372 kWh |
+| Washing machine | 0.9 kWh per weekend day | *added* | 94 kWh |
+| Small appliances (coffee, PC, chargers) | 150 W in times of use, standby 12 W | *added* | 350 kWh |
+| Router | 10 W continuous | *added* | 88 kWh |
+| **Household electricity** | | | **2,306 kWh** |
+| Heating circulation pump (unregulated) | 65 W in the heating season | | 490 kWh |
+| Oil burner (fan, oil pump) | 120 W while burning | | 211 kWh |
+| **Electricity in total** | | | **≈ 3,000 kWh** |
+
+*Added* = not named in the brief, but present in every household; adjust or delete with real data. Electrical
+appliances inside the envelope count as internal heat gains, and so do 2 × 80 W per person at home.
+
+### 4.2 Heating: the chosen configuration
+
+**Oil boiler plus wood stove in the living room** (no combination with a buffer tank). Reason: in the Ore Mountains
+this is the most common "oil and wood heating" in existing houses. The oil boiler (low-temperature boiler of the
+1990s, 18 kW, single-stage burner) supplies the radiators and the 150 l hot water tank. The wood stove (split logs,
+spruce) heats the living room directly in the evening; its heat lowers the demand on the boiler. A stove with a water
+jacket or a wood gasification boiler with a buffer would be an atom of its own (buffer tank as a stock) and is
+planned as a variant.
+
+| Assumption | Value |
+|------------|-------|
+| Boiler: rated power / efficiency | 18 kW / 0.90 (above minimum load) |
+| Minimum load, cycling loss | 35 % of rated power; below that the efficiency falls linearly by up to 15 % |
+| Standby loss | 0.2 kW, all year (the boiler is kept warm) |
+| Heating oil EL | 10 kWh/l (calorific value), 1.00 €/l |
+| Wood stove | 6 kW fuel power, efficiency 0.70, 4 h per evening in the heating season |
+| Wood | spruce air dried ≈ 1,500 kWh/Ster (beech ≈ 2,000 kWh/Ster), 90 €/Ster |
+| Hot water | 2 × 40 l per day at 45 °C (cold water 10 °C), tank 60 °C, tank loss 60 W |
+| Oil tank | 4,000 l, order threshold 600 l |
+| Electricity price | 0.36 €/kWh |
+
+No PV, no heat pump: the atoms for them are left out on purpose; they would be later variants (generation at the
+meter as in the energy system, heat pump as a converter with a COP).
+
+---
+
+## 5. Efficiency measurement
+
+### 5.1 Key figures
+
+| Key figure | Definition | Example year (synthetic) |
+|------------|------------|-------------------------:|
+| Electricity | kWh/a at the meter | 3,007 kWh |
+| of which heating electricity | pump + burner | 701 kWh |
+| Base load | mean power 2 to 5 h | 156 W |
+| Standby share | switchable standby / electricity | 4.8 % |
+| Peak | highest hourly mean | 2.0 kW |
+| Heating oil | litres per year (consumption, not delivery) | 1,916 l |
+| Wood | Ster per year | 4.9 Ster |
+| Final energy heat | oil litres × 10 kWh/l + Ster × kWh/Ster | 26,575 kWh |
+| Specific | final energy heat / heated area | 204 kWh/m²a |
+| Weather corrected | heating share × G_ref / G + hot water + standby | 25,248 kWh (on 4,300 Kd) |
+| Useful heat | boiler heat + stove heat | 20,127 kWh |
+| Boiler losses / annual efficiency | fuel − heat / heat ÷ fuel | 4,225 kWh / 0.78 |
+| Comfort | hours more than 0.5 K below the setpoint in the heating season | 138 h (heating up after the night setback) |
+| Cost, CO2 | tariffs; GEG annex 9 factors (oil 310, electricity 560, wood 20 g/kWh) | 3,444 € per year, 7.8 t per year |
+
+The weather correction scales only the weather-dependent part (space heating). Hot water and standby loss stay
+unchanged. This is more accurate than the usual correction of the total consumption.
+
+### 5.2 Cheap ways to measure (from the cheapest to the most expensive)
+
+| Measurement | Cost | Gives | Origin |
+|-------------|------|-------|--------|
+| Bills of the last years | 0 € | annual and partial totals of electricity, oil deliveries | REPORTED |
+| Photo of the electricity meter on the first of the month | 0 € | monthly values → separates base load and seasonal shares | MEASURED |
+| Read the dipstick or tank gauge at each delivery and monthly | 0 € | oil consumption instead of delivery | MEASURED |
+| Wood log (baskets per week → Ster) | 0 € | wood share per period | REPORTED |
+| DWD daily mean temperature of the nearest station (free) | 0 € | real weather instead of synthetic | MEASURED |
+| Plug-in meter (chest freezer, TV corner) | 10 to 20 € each | appliance power and standby | MEASURED |
+| Burner hour counter (often present in the boiler) | 0 to 30 € | burner run time × nozzle throughput = oil | MEASURED |
+| Radio thermometer in the living room | 15 € | indoor temperature → checks the thermostat model | MEASURED |
+
+---
+
+## 6. Wiring plan of the house twin
 
 ```
 SOURCES   weather ──t_out,ghi──────────────────────────────┐
@@ -212,7 +212,7 @@ SOURCES   weather ──t_out,ghi───────────────�
           appliances ──┼─q_gain───────────────────────┐    │
                        │  └─p_el──────────┐           │    │
 ASSETS    stove ───────┼─q_heat───────────┼───────────┤    │
-          boiler ◄─────┘ (q_req, season, tank_level: ein Schritt verzögert)
+          boiler ◄─────┘ (q_req, season, tank_level: one step delayed)
              ├─q_space────────────────────┼───────────┤    │
              ├─p_el───────────────────────┤           │    │
              └─fuel_lph──────┐            │           │    │
@@ -220,232 +220,236 @@ BALANCE   meter ◄────────────┼───────�
 FLOWS     tank ◄─────────────┘   building ◄───────────┴────┘   woodstore ◄── stove.wood_ster_ph
 ```
 
-| Atom | Typ | Phase | Kernverhalten |
-|------|-----|-------|---------------|
-| `weather` | `weather` | SOURCES | synthetisches Klima oder gebundene Messung; Gradtagzahl G20/15 im Zustand |
-| `dhw` | `dhw` | SOURCES | Zapfprofil werktags/Wochenende + Speicherverlust; Stellgröße `t_store_c` |
-| `appliances` | `appliances` | SOURCES | Inventar mit Leistung, Standby, Zeitfenstern; Stellgrößen `standby_off`, `factor.<gerät>` |
-| `stove` | `wood-stove` | ASSETS | Abbrand je Abend; oder die Holzmenge aus der Abrechnung (`wood_kwh_per_day`) |
-| `boiler` | `oil-boiler` | ASSETS | Warmwasser-Vorrang, Nennleistung, Mindestlast/Takten, Bereitschaft, Pumpe; Leerlauf bei leerem Tank |
-| `meter` | `meter` | BALANCE | Strombilanz, Kosten, Grundlast, Spitze; Residuum gegen Zählerwert |
-| `building` | `building` | FLOWS | 1R1C-Wärmebilanz, Thermostat mit Tag/Nacht-Sollwert, Heizgrenze; Stellgrößen `setpoint_c`, `setback_k`, `unused_setback_k` |
-| `tank` | `oil-tank` | FLOWS | Bestand in Litern, Lieferung als Eingriff, Bestellwarnung, „Tank leer“ |
-| `woodstore` | `wood-store` | FLOWS | Holzvorrat in Ster, Lieferung als Eingriff |
+| Atom | Type | Phase | Core behavior |
+|------|------|-------|---------------|
+| `weather` | `weather` | SOURCES | synthetic climate or a bound measurement; heating degree days G20/15 in the state |
+| `dhw` | `dhw` | SOURCES | draw profile for weekdays and weekends plus tank loss; setpoint `t_store_c` |
+| `appliances` | `appliances` | SOURCES | inventory with power, standby, time windows; setpoints `standby_off`, `factor.<appliance>` |
+| `stove` | `wood-stove` | ASSETS | burning per evening; or the amount of wood from the bill (`wood_kwh_per_day`) |
+| `boiler` | `oil-boiler` | ASSETS | hot water priority, rated power, minimum load and cycling, standby, pump; idle with an empty tank |
+| `meter` | `meter` | BALANCE | electricity balance, cost, base load, peak; residual against the meter value |
+| `building` | `building` | FLOWS | 1R1C heat balance, thermostat with day and night setpoint, heating limit; setpoints `setpoint_c`, `setback_k`, `unused_setback_k` |
+| `tank` | `oil-tank` | FLOWS | stock in litres, delivery as an intervention, order warning, "tank empty" |
+| `woodstore` | `wood-store` | FLOWS | wood stock in Ster, delivery as an intervention |
 
-Geprüfte Invarianten (Tests): Wärmebilanz des Gebäudes geschlossen, Öl-, Holz- und Strombilanz geschlossen,
-bitgleiche Wiederholung, Fortsetzung ab Snapshot exakt, −1 K senkt den Wärmebedarf, leerer Tank stoppt den Kessel.
+Invariants checked by the tests: the heat balance of the building is closed, the oil, wood and electricity balances
+are closed, a repeated run is bit-identical, continuing from a snapshot is exact, −1 K lowers the heat demand, an
+empty tank stops the boiler.
 
 ---
 
-## 7. Kalibrierung mit Abrechnungen
+## 7. Calibration with bills
 
-### 7.1 Eingaben
+### 7.1 Inputs
 
-Eine CSV-Zeile je Zeitraum, Vorlage:
-[`twin/abrechnungen-vorlage.csv`](../../opentsx-twin/src/main/resources/twin/abrechnungen-vorlage.csv) (nur
-erfundene Beispielzeilen).
+One CSV row per period, template:
+[`twin/abrechnungen-vorlage.csv`](../../opentsx-twin/src/main/resources/twin/abrechnungen-vorlage.csv) (only invented
+example rows).
 
-| Spalte | Inhalt | Pflicht |
-|--------|--------|---------|
-| `zeitraum_von`, `zeitraum_bis` | Datum, beide einschließlich (`2024-01-31` oder `31.01.2024`) | ja |
-| `strom_kwh` | Verbrauch laut Abrechnung oder Zählerablesung | nein |
-| `heizoel_liter` | im Zeitraum **gelieferte** Liter (0, wenn nur abgelesen) | nein |
-| `tank_start_liter`, `tank_ende_liter` | Tankstand am Anfang/Ende; dann Verbrauch = Lieferung + Start − Ende | nein |
-| `holz_ster` | im Zeitraum **verbranntes** Holz | nein |
-| `kosten_eur`, `notiz` | nur zur Anzeige | nein |
+| Column | Content | Required |
+|--------|---------|----------|
+| `period_from`, `period_to` | date, both inclusive (`2024-01-31` or `31.01.2024`) | yes |
+| `electricity_kwh` | consumption from the bill or the meter reading | no |
+| `heating_oil_l` | litres **delivered** in the period (0 if only read) | no |
+| `tank_start_l`, `tank_end_l` | tank level at the start and the end; then consumption = delivery + start − end | no |
+| `wood_ster` | wood **burned** in the period | no |
+| `cost_eur`, `note` | only for display | no |
 
-Zeilen dürfen sich überlappen. Typisch sind Stromjahresabrechnungen mit eigenem Stichtag und daneben
-Öl-Zeiträume von Ablesung zu Ablesung. Trennzeichen `,` oder `;` (Excel-Export mit Dezimalkomma).
+The German column names `zeitraum_von`, `zeitraum_bis`, `strom_kwh`, `heizoel_liter`, `tank_start_liter`,
+`tank_ende_liter`, `holz_ster`, `kosten_eur` and `notiz` are accepted as aliases. The bills may span at most 3653
+days, and a calibration run over them may take at most 87672 steps of the plan (3653 days of the hourly steps of the
+bundled plan).
 
-### 7.2 Verfahren
+Rows may overlap. Typical are annual electricity bills with their own reference date next to oil periods from one
+reading to the next. Separator `,` or `;` (spreadsheet export with a decimal comma).
 
-1. Der Zwilling läuft stündlich über den gesamten Abrechnungszeitraum. Wetter: synthetisch oder die
-   Tagesmitteltemperaturen einer DWD-Station (`--weather datum,t_mittel_c`, Tagesgang wird ergänzt). Holz: die
-   Ster aus den Zeilen, gleichmäßig verteilt auf die Heiztage (Tagesmittel < 15 °C) des Zeitraums (REPORTED). Das Modell muss also nur das Öl *zusätzlich* zum
-   tatsächlich verbrannten Holz erklären.
-2. Je Zeile werden modellierter Strom (kWh) und Ölverbrauch (l) summiert. Öl-Zeilen ohne Tankstand (Lieferung
-   als Verbrauch) gehen nur mit Gewicht 0,2 ein.
-3. Angepasst werden **H** (Wärmeverlustkoeffizient), **Warmwasserskala** und **Geräteskala**, mit
-   Levenberg–Marquardt auf den normierten Residuen der Zeiträume: Jacobi-Matrix einmal per Vorwärtsdifferenz, danach
-   Broyden-Updates, deterministisch, ohne neue Abhängigkeiten. Typisch 10–25 Zwillingsläufe. Grenzen: H 40–1500
-   W/K, Skalen 0,3–3.
-4. Ausgabe: Parameter mit relativem Standardfehler, Residuum je Zeitraum, CV(RMSE) und NMBE je Größe,
-   Konditionszahl und größte Parameterkorrelation, Warnungen, kalibrierter Schaltplan. Ein Parameter mit
-   relativem Standardfehler über 25 % gilt als „poorly determined“; dann meldet der Fit „identifiable false“. Mit diesem werden die Hebel
-   (§8) neu gerechnet.
+### 7.2 Method
 
-Fest bleiben (Annahmen, nicht angepasst): Kesselwirkungsgrad, Bereitschaftsverlust, kWh je Ster, 10 kWh/l.
+1. The twin runs hourly over the whole billing period. Weather: synthetic or the daily mean temperatures of a DWD
+   station (`--weather` with a file `date,t_mean_c`, the daily cycle is added). Wood: the Ster from the rows, spread
+   evenly over the heating days (daily mean < 15 °C) of the period (REPORTED). The model therefore only has to
+   explain the oil *in addition* to the wood actually burned.
+2. Per row, modeled electricity (kWh) and oil consumption (l) are summed. Oil rows without a tank level (delivery as
+   consumption) enter only with a weight of 0.2.
+3. Fitted are **H** (heat loss coefficient), the **hot water scale** and the **appliance scale**, with
+   Levenberg-Marquardt on the normalized residuals of the periods: the Jacobian once by forward differences, then
+   Broyden updates, deterministic, without new dependencies. Typically 10 to 25 twin runs. Bounds: H 40 to 1500 W/K,
+   scales 0.3 to 3.
+4. Output: parameters with relative standard error, residual per period, CV(RMSE) and NMBE per quantity, condition
+   number and largest parameter correlation, warnings, calibrated wiring plan. A parameter with a relative standard
+   error above 25 % counts as "poorly determined"; then the fit reports "identifiable false". The levers (section 8)
+   are recalculated with the calibrated plan.
 
-### 7.3 Ehrliche Grenzen der Identifizierbarkeit
+Fixed (assumptions, not fitted): boiler efficiency, standby loss, kWh per Ster, 10 kWh/l.
 
-* **Nur Jahressummen trennen fast nichts.** Eine Strom- und eine Ölsumme je Jahr sind zwei Zahlen für drei
-  Parameter. Der Fit meldet „not identifiable“ (Test `flagsAnnualTotalsAsNotIdentifiable`). Mit der Vorlage
-  (zwei Jahre, ein Halbjahr mit Tankablesung) bleibt die Warmwasserskala unbestimmt: relativer Standardfehler
-  ≈ 100 %, Korrelation mit H 0,996.
-* **Sommer trennt Warmwasser vom Gebäude.** Monatliche Tankablesungen von Juli bis Dezember stellen bekannte
-  Parameter auf besser als 2 % wieder her (Test `recoversKnownParametersFromMonthlySyntheticBills`). Nur Wintermonate
-  lassen H und Warmwasser zu ≈ 0,99 korreliert.
-* **Lieferung ≠ Verbrauch.** Ohne Tankstände wird die Lieferung als Verbrauch genommen, und die Zeile wird
-  markiert. Abhilfe: mehrere Jahre in eine Zeile zusammenfassen (der Tankstandfehler verteilt sich) oder den
-  Peilstab ablesen.
-* **Nur H/η ist bestimmt.** Ein schlechterer Kessel und ein schlechteres Gebäude sehen in Summen gleich aus. Erst
-  ein Brennerstundenzähler oder eine Abgasmessung (Schornsteinfeger-Protokoll) trennt sie.
-* **Synthetisches Wetter verzerrt H.** Ein milder oder kalter Winter landet sonst im Gebäudeparameter. Für echte
-  Abrechnungen deshalb DWD-Tagesmittel binden.
+### 7.3 Limits of identifiability
 
-### 7.4 Herkunft
+* **Annual totals alone separate almost nothing.** One electricity and one oil total per year are two numbers for
+  three parameters. The fit reports "not identifiable" (test `flagsAnnualTotalsAsNotIdentifiable`). With the template
+  (two years, one half year with tank readings) the hot water scale stays undetermined: relative standard error
+  ≈ 100 %, correlation with H 0.996.
+* **Summer separates hot water from the building.** Monthly tank readings from July to December recover known
+  parameters to better than 2 % (test `recoversKnownParametersFromMonthlySyntheticBills`). Winter months alone leave H
+  and hot water correlated at ≈ 0.99.
+* **Delivery ≠ consumption.** Without tank levels the delivery is taken as consumption, and the row is marked.
+  Remedy: combine several years into one row (the tank level error spreads) or read the dipstick.
+* **Only H/η is determined.** A worse boiler and a worse building look the same in totals. Only a burner hour counter
+  or a flue gas measurement (chimney sweep protocol) separates them.
+* **Synthetic weather distorts H.** A mild or cold winter otherwise ends up in the building parameter. For real bills,
+  therefore bind DWD daily means.
 
-| Größe | Herkunft |
-|-------|----------|
-| Abrechnungssummen, Holzmengen | REPORTED |
-| Zählerfoto, Peilstab, DWD-Temperatur | MEASURED |
-| stündliche Aufteilung (Geräte, Raumwärme, Warmwasser) | SYNTHETIC; nach Kalibrierung ESTIMATED (Modell an Daten angepasst) |
-| Hebel-Ergebnisse | modelliert (What-if), nie MEASURED |
+### 7.4 Origin
 
-### 7.5 Ablauf mit echten Daten
+| Quantity | Origin |
+|----------|--------|
+| Bill totals, amounts of wood | REPORTED |
+| Meter photo, dipstick, DWD temperature | MEASURED |
+| Hourly split (appliances, space heating, hot water) | SYNTHETIC; ESTIMATED after calibration (model fitted to data) |
+| Lever results | modeled (what-if), never MEASURED |
+
+### 7.5 Steps with real data
 
 ```bash
-mkdir -p config/private                                  # per .gitignore vom Commit ausgeschlossen
+mkdir -p config/private                                  # excluded from commits by .gitignore
 cp opentsx-twin/src/main/resources/twin/abrechnungen-vorlage.csv config/private/abrechnungen.csv
-# Beispielzeilen löschen, eigene Abrechnungen eintragen; optional DWD-Tagesmittel als datum,t_mittel_c
+# delete the example rows, enter your own bills; optionally DWD daily means as date,t_mean_c
 bin/opentsx house --calibrate config/private/abrechnungen.csv [--weather config/private/tagesmittel.csv]
 ```
 
-### 7.6 Simulierte Beispieldaten (bis die echten Abrechnungen vorliegen)
+### 7.6 Simulated example data (until the real bills are there)
 
-Damit die Kette Abrechnung → Kalibrierung → Hebel schon jetzt durchläuft, liegen **simulierte** Abrechnungen bei:
-[`twin/beispiel/`](../../opentsx-twin/src/main/resources/twin/beispiel/README.md). Jede Datei und jede Zeile ist
-als `SIMULIERT` markiert.
+So that the chain bill → calibration → levers runs already, **simulated** bills are bundled:
+[`twin/beispiel/`](../../opentsx-twin/src/main/resources/twin/beispiel/README.md). Every file and every row is marked
+as `SIMULATED`.
 
-**Erzeugung** (`SimulatedBills`, Seed 2026, deterministisch):
-- Das Hausmodell läuft 2022–2025 mit **verdeckten wahren Parametern**: H = 230 W/K (+15 %), Warmwasser 0,8×,
-  Geräte 1,1×, Kesselwirkungsgrad 0,86 statt der angenommenen 0,90.
-- Wetter: synthetisches Erzgebirgsklima mit Jahresunterschieden (Winter 2022/23 mild, 2024/25 kalt), Tagesmittel
-  auf 0,1 °C gerundet.
+**Generation** (`SimulatedBills`, seed 2026, deterministic):
+- The house model runs 2022 to 2025 with **hidden true parameters**: H = 230 W/K (+15 %), hot water 0.8×,
+  appliances 1.1×, boiler efficiency 0.86 instead of the assumed 0.90.
+- Weather: synthetic Ore Mountains climate with differences between the years (winter 2022/23 mild, 2024/25 cold),
+  daily means rounded to 0.1 °C.
 
-**Eingebaute Unvollkommenheiten:**
-- Stromjahresabrechnungen mit wandernden Ablesedaten; die Abrechnung 2023/24 fehlt; ein Zählerstand ist vom
-  Versorger geschätzt (+4 %).
-- Öllieferungen zu unregelmäßigen Terminen (1.500/2.000/2.500 l). Tankstände sind bis 2023 nicht notiert, 2024 vom
-  Fahrer abgelesen und 2025 monatlich per Peilstab (±25 l, auf 10 l gerundet). Die Ablesung am 01.08. fehlt.
-- Holz je Winter auf 0,5 Ster gerundet; Preise mit Energiepreiskrise 2022.
+**Built-in imperfections:**
+- Annual electricity bills with moving reading dates; the bill 2023/24 is missing; one meter reading is estimated by
+  the supplier (+4 %).
+- Oil deliveries at irregular dates (1,500, 2,000 and 2,500 l). Tank levels are not noted until 2023, read by the
+  driver in 2024 and read monthly with the dipstick in 2025 (±25 l, rounded to 10 l). The reading on 1 August is
+  missing.
+- Wood per winter rounded to 0.5 Ster; prices with the energy price crisis of 2022.
 
-`bin/opentsx house --simulated` kalibriert auf allen Zeilen (22 Zwillingsläufe, ≈ 40 s):
+`bin/opentsx house --simulated` calibrates on all rows (22 twin runs, ≈ 40 s):
 
-| Parameter | wahr (verdeckt) | erwartbar bei η = 0,90 angenommen | kalibriert | rel. Standardfehler |
-|-----------|----------------:|----------------------------------:|-----------:|--------------------:|
-| H (W/K) | 230 | ≈ 241 (H·0,90/0,86) | 248 | 4,6 % |
-| Geräteskala | 1,10 | 1,10 (+ geschätzter Zählerstand) | 1,12 | 3,3 % |
-| Warmwasserskala | 0,80 | ≈ 0,84 | 0,30 (untere Grenze) | 191 % → **nicht bestimmt** |
+| Parameter | true (hidden) | expected with η = 0.90 assumed | calibrated | rel. standard error |
+|-----------|--------------:|-------------------------------:|-----------:|--------------------:|
+| H (W/K) | 230 | ≈ 241 (H·0.90/0.86) | 248 | 4.6 % |
+| Appliance scale | 1.10 | 1.10 (+ estimated meter reading) | 1.12 | 3.3 % |
+| Hot water scale | 0.80 | ≈ 0.84 | 0.30 (lower bound) | 191 % → **not determined** |
 
-**Fit-Güte:**
-- Strom: CV(RMSE) 1,9 %, NMBE −0,2 %.
-- Heizöl: CV(RMSE) 19 %, NMBE +0,3 %; die Monatswerte im Sommer streuen stark.
+**Goodness of fit:**
+- Electricity: CV(RMSE) 1.9 %, NMBE −0.2 %.
+- Heating oil: CV(RMSE) 19 %, NMBE +0.3 %; the monthly values in summer scatter a lot.
 
-**Was sich daran zeigt:**
-- **H und Geräte sind bestimmbar**, aber H nur als H/η. Mit dem richtigen η (0,86, z. B. aus dem
-  Schornsteinfeger-Protokoll) ergibt sich H = 240 W/K statt 230. Der Rest ist der Ausgleich für das
-  unbestimmte Warmwasser.
-- **Warmwasser ist mit Peilstab-Ablesungen nicht bestimmbar.** Der Ablesefehler (±25 l je Ablesung) ist größer als
-  das Warmwassersignal eines Sommermonats (≈ 8 l Unterschied zwischen 0,3× und 0,8×). Abhilfe: Brennerstundenzähler
-  im Sommer oder ein Warmwasserzähler.
-- **Lieferungen ohne Tankstand** (2022/23) weichen um 10–15 % ab und werden nur gering gewichtet.
+**What this shows:**
+- **H and appliances can be determined**, but H only as H/η. With the right η (0.86, for example from the chimney
+  sweep protocol) H comes out as 240 W/K instead of 230. The rest compensates for the undetermined hot water.
+- **Hot water cannot be determined with dipstick readings.** The reading error (±25 l per reading) is larger than
+  the hot water signal of a summer month (≈ 8 l difference between 0.3× and 0.8×). Remedy: a burner hour counter in
+  summer or a hot water meter.
+- **Deliveries without a tank level** (2022/23) deviate by 10 to 15 % and are weighted only lightly.
 
-Der Test `SimulatedBillsTest` prüft:
-- dass die Dateien reproduzierbar erzeugt werden und markiert sind;
-- dass die Kalibrierung auf den Zeilen mit Tankständen (04/2024–12/2025) H/η auf 6 % und die Geräteskala auf
-  0,05 wiederfindet;
-- dass Warmwasser als nicht bestimmt gemeldet wird.
-
----
-
-## 8. Stellhebel (What-if)
-
-Jeder Hebel ist ein Satz Eingriffe auf dasselbe Referenzjahr (gleiches Wetter, gleiche Lieferungen). Ergebnis =
-**Alternative − Referenz**. Beispielhaus, **nicht kalibriert, modelliert**:
-
-| Hebel | Eingriff | Öl | Holz | Strom | Endenergie | Kosten | CO2 |
-|-------|----------|---:|-----:|------:|-----------:|-------:|----:|
-| −1 K Raumtemperatur | `building.setpoint_c` 21 → 20 | −151 l | 0 | −16 kWh | −1.513 kWh | −157 € | −478 kg |
-| tiefere Nachtabsenkung | `setback_k` 3 → 5 K | ≈ 0 | 0 | ≈ 0 | ≈ 0 | ≈ 0 | ≈ 0 |
-| selten genutzte Räume kühler | `unused_setback_k` 4 K auf 20 % der Fläche | −123 l | 0 | −13 kWh | −1.229 kWh | −128 € | −388 kg |
-| mehr Holz | Ofen 4 → 7 h je Abend | −355 l | +3,8 Ster | −46 kWh | +2.104 kWh | −32 € | −1.013 kg |
-| Warmwasser 50 °C | `dhw.t_store_c` 60 → 50 | −16 l | 0 | −2 kWh | −162 kWh | −17 € | −52 kg |
-| Hocheffizienzpumpe | `boiler.pump_w` 65 → 8 W | 0 | 0 | −430 kWh | 0 | −155 € | −241 kg |
-| neue Gefriertruhe | `factor.gefriertruhe` 0,4 | 0 | 0 | −237 kWh | 0 | −85 € | −132 kg |
-| Standby abschalten | `standby_off` | +13 l | 0 | −142 kWh | +133 kWh | −38 € | −39 kg |
-| weniger Fernsehen | TV-Zeit −30 % | +8 l | 0 | −88 kWh | +77 kWh | −24 € | −25 kg |
-| alle außer „mehr Holz“ | Kombination | −261 l | 0 | −914 kWh | −2.608 kWh | −590 € | −1,3 t |
-
-Was der Zwilling dabei sichtbar macht, das eine Einzelbetrachtung übersieht:
-
-* **Die Nachtabsenkung wirkt im schweren Haus kaum.** Bei einer Zeitkonstante von ≈ 70 h kühlt das Haus in acht
-  Stunden nur um 1–2 K aus, und der Ofen heizt bis 22 Uhr nach. Die tiefere Absenkung wird also gar nicht erreicht.
-  Das gilt für das Ein-Zonen-Modell; einzelne Räume mit Heizkörpern kühlen schneller aus.
-* **Strom sparen heißt im Winter ein wenig mehr Öl.** Standby und Fernseher heizen innen mit (Gewinne). Der
-  Kostenvorteil bleibt, aber die Endenergie steigt leicht. Diese Kopplung ist das Haus-Gegenstück zum
-  „Zusammenspiel“ in P8.
-* **Mehr Holz senkt Kosten und CO2, aber nicht die Endenergie.** Der Ofen hat einen schlechteren Wirkungsgrad als
-  der Kessel. Je nach Ziel (Kosten, CO2, kWh) ist dieselbe Maßnahme gut oder schlecht. Darum weist der Bericht alle
-  Größen getrennt aus.
-* **Der Kessel ist überdimensioniert** (18 kW bei ≈ 7 kW Heizlast). Bereitschafts- und Taktverluste machen ≈ 4.200
-  kWh/a aus (Jahresnutzungsgrad 0,78). Das ist ein Argument für den Kesseltausch oder eine Brennerdrossel,
-  zu prüfen in Stufe C.
-
-**Modelliert vs. nachgewiesen.** Die Tabelle ist modelliertes Potenzial. Nachgewiesen ist eine Einsparung erst,
-wenn gemessene Zeiträume (Zähler, Peilstab) vor und nach der Änderung witterungsbereinigt verglichen sind und die
-Differenz größer ist als die Kalibrierunsicherheit. Ein Vergleich mit perfekter Kenntnis des Wetters ist höchstens
-eine gekennzeichnete Obergrenze.
+The test `SimulatedBillsTest` checks:
+- that the files are generated reproducibly and are marked;
+- that the calibration on the rows with tank levels (04/2024 to 12/2025) recovers H/η to 6 % and the appliance scale
+  to 0.05;
+- that hot water is reported as not determined.
 
 ---
 
-## 9. Abbildung Haus ↔ Terawatt-Fall
+## 8. Levers (what-if)
 
-| Haus | Terawatt-Fall | Gemeinsames Muster |
-|------|---------------|--------------------|
-| Ölkessel (η, Nennleistung, Mindestlast, Takten) | Elektrolyseur (kWh/kg, Nennleistung, Mindestlast, Rampe) | Konverter mit Wirkungsgrad und Betriebsgrenzen |
-| Kaminofen | Batterie/zweite Quelle | zweiter, anders effizienter Weg zum selben Bedarf |
-| Öltank, Holzlager, Speichermasse des Hauses | H2-Leitung (Linepack), Batterie-SoC | Bestand mit Zeit-bis-Grenze und Warnung |
-| „Tank leer“ → Kessel aus | Leitungsdruck → Schutzabregelung | Rückkopplung über die Schrittgrenze |
-| Komfortgrenze (Sollwert − 0,5 K) | Betriebsgrenzen (Druck, Fahrplantoleranz) | Nebenbedingung, Verletzung als Kennzahl |
-| Heizgrenze, Sommerbetrieb | Betriebsvorgaben (Netzrestriktion, Fledermaus) | Kalender-/Regelquelle |
-| Strom- und Öltarif | Marktpreis | Bewertung in € |
-| Hauseigentümer | Betreiber, Vermarkter | entscheidet, trägt Kosten, Eingriffe im Log |
-| Heizplan (Sollwerte, Ofenzeiten, Bestellzeitpunkt) | Fahrplan | Policy, austauschbar |
-| Abrechnung | Zählerdaten/Partnerdaten | REPORTED in der Herkunftsleiter |
-| Lieferung von Öl/Holz | H2-Abnahme, Belieferung | Eingriff auf einen Bestand |
-| Hebel-Alternative − Referenzjahr | koordinierte Alternative − Referenzbetrieb | Koordinationspotenzial, gleiche Randbedingungen |
+Each lever is a set of interventions on the same reference year (same weather, same deliveries). Result =
+**alternative − reference**. Example house, **not calibrated, modeled**:
+
+| Lever | Intervention | Oil | Wood | Electricity | Final energy | Cost | CO2 |
+|-------|--------------|----:|-----:|------------:|-------------:|-----:|----:|
+| −1 K room temperature | `building.setpoint_c` 21 → 20 | −151 l | 0 | −16 kWh | −1,513 kWh | −157 € | −478 kg |
+| deeper night setback | `setback_k` 3 → 5 K | ≈ 0 | 0 | ≈ 0 | ≈ 0 | ≈ 0 | ≈ 0 |
+| rarely used rooms cooler | `unused_setback_k` 4 K on 20 % of the area | −123 l | 0 | −13 kWh | −1,229 kWh | −128 € | −388 kg |
+| more wood | stove 4 → 7 h per evening | −355 l | +3.8 Ster | −46 kWh | +2,104 kWh | −32 € | −1,013 kg |
+| hot water 50 °C | `dhw.t_store_c` 60 → 50 | −16 l | 0 | −2 kWh | −162 kWh | −17 € | −52 kg |
+| high-efficiency pump | `boiler.pump_w` 65 → 8 W | 0 | 0 | −430 kWh | 0 | −155 € | −241 kg |
+| new chest freezer | `factor.gefriertruhe` 0.4 | 0 | 0 | −237 kWh | 0 | −85 € | −132 kg |
+| switch off standby | `standby_off` | +13 l | 0 | −142 kWh | +133 kWh | −38 € | −39 kg |
+| less TV | TV time −30 % | +8 l | 0 | −88 kWh | +77 kWh | −24 € | −25 kg |
+| all except "more wood" | combination | −261 l | 0 | −914 kWh | −2,608 kWh | −590 € | −1.3 t |
+
+What the twin makes visible here that a look at single measures misses:
+
+* **The night setback hardly acts in the heavy house.** With a time constant of ≈ 70 h the house cools by only 1 to
+  2 K in eight hours, and the stove keeps heating until 22 h. The deeper setback is therefore never reached. This
+  holds for the one-zone model; single rooms with radiators cool faster.
+* **Saving electricity means a little more oil in winter.** Standby and TVs heat the inside too (gains). The cost
+  advantage stays, but the final energy rises slightly. This coupling is the house counterpart of the "interplay" in
+  P8.
+* **More wood lowers cost and CO2, but not the final energy.** The stove has a worse efficiency than the boiler.
+  Depending on the goal (cost, CO2, kWh) the same measure is good or bad. This is why the report shows all quantities
+  separately.
+* **The boiler is oversized** (18 kW at ≈ 7 kW heating load). Standby and cycling losses amount to ≈ 4,200 kWh per
+  year (annual efficiency 0.78). This is an argument for replacing the boiler or throttling the burner, to be checked
+  in stage C.
+
+**Modeled vs. proven.** The table is modeled potential. A saving is proven only when measured periods (meter,
+dipstick) before and after the change are compared with weather correction and the difference is larger than the
+calibration uncertainty. A comparison with perfect knowledge of the weather is at most a labeled upper bound.
 
 ---
 
-## 10. Datenschutz
+## 9. Mapping house ↔ Terawatt case
 
-* Echte Abrechnungen bleiben **lokal**: `config/private/` ist per `.gitignore` (`**/config/private/**`) vom
-  Commit ausgeschlossen, ebenso Wetter- oder Zählerdateien dort.
-* Im Repository liegen nur die Vorlage mit erfundenen Zeilen und das Beispielhaus.
-* Ergebnisse (kalibrierte Parameter, Kennzahlen) enthalten keine Rohdaten. Ein Vergleich mehrerer Häuser über
-  generische Kenngrößen folgt dem Föderationsgedanken aus P9.5.
+| House | Terawatt case | Shared pattern |
+|-------|---------------|----------------|
+| Oil boiler (η, rated power, minimum load, cycling) | electrolyzer (kWh/kg, rated power, minimum load, ramp) | converter with efficiency and operating limits |
+| Wood stove | battery or second source | a second, differently efficient way to the same demand |
+| Oil tank, wood store, thermal mass of the house | H2 pipeline (linepack), battery SoC | stock with time to limit and a warning |
+| "Tank empty" → boiler off | pipeline pressure → protective curtailment | feedback across the step boundary |
+| Comfort limit (setpoint − 0.5 K) | operating limits (pressure, schedule tolerance) | constraint, violation as a key figure |
+| Heating limit, summer operation | operating rules (grid restriction, bats) | calendar or rule source |
+| Electricity and oil tariff | market price | assessment in € |
+| Homeowner | operator, marketer | decides, bears the costs, interventions in the log |
+| Heating plan (setpoints, stove times, time to order) | schedule | policy, exchangeable |
+| Bill | meter data, partner data | REPORTED on the origin ladder |
+| Delivery of oil or wood | H2 offtake, delivery | intervention on a stock |
+| Lever alternative − reference year | coordinated alternative − reference operation | coordination potential, same boundary conditions |
 
 ---
 
-## 11. Umsetzungsstand und offene Fragen
+## 10. Data protection
 
-**Umgesetzt (PoC):** Atome `weather`, `building`, `oil-boiler`, `wood-stove`, `dhw`, `appliances`, `meter`,
-`oil-tank`, `wood-store` im Standardkatalog. Dazu der Schaltplan `twin/haus-erzgebirge.yaml`, `HouseScenario`
-(Referenz, Hebel), `HouseKpis`, `BillCalibration` (CSV, DWD-Tagesmittel, LM/Broyden, Identifizierbarkeit) und
-die Demo `bin/opentsx house` mit `--calibrate` und `--simulated` (simulierte Beispielabrechnungen, §7.6). Tests: Bilanzen, Determinismus, Snapshot, −1 K, leerer Tank,
-Identifizierbarkeit.
+* Real bills stay **local**: `.gitignore` (`**/config/private/**`) excludes `config/private/` from commits, and the
+  weather or meter files there too.
+* The repository holds only the template with invented rows and the example house.
+* Results (calibrated parameters, key figures) contain no raw data. A comparison of several houses over generic
+  figures follows the federation idea of P9.5.
 
-**Offen:** Pufferspeicher und wasserführender Ofen als Variante; Mehrzonenmodell (Raum je Atom); Prognose „Reicht
-das Öl bis zum Frühjahr?“ als fertiges Szenario; Optimierer als Policy (Bestellzeitpunkt nach Ölpreis, Holz/Öl-
-Aufteilung); DWD-Abruf statt CSV.
+---
 
-**Fragen an den Hauseigentümer (für die Kalibrierung):**
+## 11. State of implementation and open questions
 
-1. Welche Jahre liegen als Abrechnungen vor (Strom mit Stichtagen, Öllieferungen mit Datum und Litern)?
-2. Sind Tankstände bekannt (Peilstab, Anzeige, Notizen bei Lieferungen)? Wenn nicht: ab jetzt monatlich ablesen.
-3. Wie viel Holz wird pro Winter verbrannt (Ster), welche Holzart, eigener Einschlag oder gekauft?
-4. Wohnfläche, Baujahr, bereits durchgeführte Sanierungen (Fenster, Dach, Fassade, Kessel)?
-5. Kesseldaten: Hersteller, Baujahr, Nennleistung, Schornsteinfeger-Protokoll (Abgasverlust)?
-6. Raumtemperaturen und Heizzeiten tatsächlich (Thermostat-Einstellungen, Nachtabsenkung)?
-7. Nächstgelegener Ort oder DWD-Station für die Temperaturreihe?
+**Implemented (PoC):** the atoms `weather`, `building`, `oil-boiler`, `wood-stove`, `dhw`, `appliances`, `meter`,
+`oil-tank`, `wood-store` in the standard catalog. Also the wiring plan `twin/haus-erzgebirge.yaml`, `HouseScenario`
+(reference, levers), `HouseKpis`, `BillCalibration` (CSV, DWD daily means, LM/Broyden, identifiability) and the demo
+`bin/opentsx house` with `--calibrate` and `--simulated` (simulated example bills, section 7.6). Tests: balances,
+determinism, snapshot, −1 K, empty tank, identifiability.
+
+**Open:** buffer tank and a stove with a water jacket as a variant; a multi-zone model (one room per atom); the
+forecast "Does the oil last until spring?" as a finished scenario; an optimizer as a policy (time to order by oil
+price, wood and oil split); fetching from DWD instead of a CSV.
+
+**Questions to the homeowner (for the calibration):**
+
+1. Which years are there as bills (electricity with reference dates, oil deliveries with date and litres)?
+2. Are tank levels known (dipstick, gauge, notes at deliveries)? If not: read them monthly from now on.
+3. How much wood is burned per winter (Ster), which species, own felling or bought?
+4. Living area, year of construction, renovations already done (windows, roof, facade, boiler)?
+5. Boiler data: manufacturer, year, rated power, chimney sweep protocol (flue gas loss)?
+6. Actual room temperatures and heating times (thermostat settings, night setback)?
+7. Nearest town or DWD station for the temperature series?

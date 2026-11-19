@@ -587,6 +587,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   an `Observation` cannot hold a null. This is a breaking change.
 - `ESMain` and the Swing sigma filter of `opentsx-core` write their figures below the home directory of the user
   (`user.home`) instead of a fixed personal path.
+- The twin scenarios, the Studio guides, the CSV templates, the bundled example READMEs and the Smart Topics Studio
+  page are in English, and the page sets lang="en". File names stay as they are.
+- The bills CSV of `house --calibrate` uses the columns period_from, period_to, electricity_kwh, heating_oil_l,
+  tank_start_l, tank_end_l, wood_ster, cost_eur and note, and the boat data CSV uses time, mode (harbour, sailing,
+  anchor, away), shore, soc_percent, load_w, ghi_wm2, <device>_on and note. The German column names are accepted as
+  aliases; a column named twice, also once in English and once in German, is refused in both files.
+  `BillCalibration.COLUMNS` and the quantities in the calibration report use the English names.
+- The bundled simulated bills, daily temperatures and boat logs have English headers, modes and notes and are marked
+  SIMULATED; their numbers are unchanged.
+- The design documents 01, 03, 08, 09, 10 and 16 in `docs/datamodel-2026` are in English. 08 and 10 name the English
+  CSV columns, their German aliases and the span limits, 09 and 16 the English Studio labels, and 01 the schemas of
+  `opentsx-data`, the platform versions and the defects that are still open.
 
 ### Removed
 
@@ -1325,6 +1337,21 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `RNGWrapper` and the generators that use it, such as `TimeSeriesObject.getGaussianDistribution`, draw numbers
   without `RNGWrapper.init()`. Before, the first draw threw `NullPointerException`. The same seed gives the same
   numbers; for a given seed they differ from those of 3.0.1.
+- `twin` and `boat` refuse a plan that lacks the atoms they run on with exit 2 and one line that names them, instead
+  of failing with exit 1 and `binding to unknown input port`.
+- `house` and `boat` refuse data that would run out of memory with exit 2 and one line: bills, daily temperatures or
+  boat data that span more than 3653 days (10 years), boat data that span more than 35136 steps of the plan and bills
+  that span more than 87672 steps. `--simulated` checks the bundled data against the plan the same way, and
+  `BillCalibration.fit` refuses such bills as well.
+- `house` refuses `--weather` without `--calibrate` and `--simulated` together with `--calibrate`, and `boat` refuses
+  `--zone` without `--data`, with exit 2 instead of ignoring the option.
+- `TwinPlan.load(Path)` names the plan file when the file is missing, unreadable or not a valid plan, with one
+  'expected' clause.
+- The Studio's event topic view names the existing flag `--kafscale` for `twin-live bridge` and `twin-live publish`.
+- `SystemDoc` reports a plan file that cannot be loaded once, as `<file>: <problem>; <what is expected>`, instead of
+  `plan <file> cannot be read: <file>: ...`.
+- `bin/opentsx boat --data <file.csv> --calibrate` on data without a state of charge says `--calibrate needs the
+  column soc_percent` and names `soc_percent` in the shadow line, the English column name of the CSV.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
