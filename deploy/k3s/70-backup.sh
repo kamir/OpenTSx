@@ -11,7 +11,7 @@
 #   --no-data    leave out the PVC opentsx-data (episode index, ground truth, metadata dry run, DWD CSV, Modbus episodes)
 #
 # Writes DIR/:
-#   env                       deploy/k3s/.env - the configuration INCLUDING secrets (S3 keys, OpenMetadata token):
+#   env                       deploy/k3s/.env: the configuration INCLUDING secrets (S3 keys, OpenMetadata token):
 #                             keep the backup private, never commit it
 #   opentsx-config.yaml       the ConfigMap as deployed
 #   stats-state.tar.gz        PVC opentsx-stats-state: the statistics checkpoint (positions + engine state)
@@ -21,9 +21,15 @@
 #   MANIFEST                  date, namespace, image tag, git revision, size and sha256 of every file
 # How: a short-lived helper pod (tools image, root WITHOUT privileges: only CHOWN, DAC_OVERRIDE, FOWNER) mounts the
 # PVCs read-only and streams `tar czf -` through kubectl exec. On a multi-node cluster all PVCs must be on one node.
-# NOT backed up: the KafScale topics (they live in KafScale's own S3 bucket - back that up on the KafScale side), an
+# NOT backed up: the KafScale topics (they live in KafScale's own S3 bucket; back that up on the KafScale side), an
 # external S3 warehouse (LAKE_MINIO=false: use your S3 tooling), the images (rebuild from Git with the same tag).
 # Restore: deploy/k3s/71-restore.sh DIR
+#
+# Exit codes:
+#   0  backup written
+#   1  the backup failed, for example a writer still ran 150 s after --quiesce scaled it to 0
+#   2  usage error: an unknown option, an option without its value, or a line of deploy/k3s/.env that is not a
+#      comment or KEY=VALUE with a known key
 set -euo pipefail
 # shellcheck source=deploy/k3s/lib.sh
 source "$(dirname "$0")/lib.sh"
@@ -31,15 +37,15 @@ source "$(dirname "$0")/lib.sh"
 OUT=""; QUIESCE=false; DATA=true
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --out) OUT="${2:?--out needs a directory}"; shift 2 ;;
+    --out) [[ -n "${2:-}" ]] || usage_error "--out: missing value; expected a directory"; OUT="$2"; shift 2 ;;
     --quiesce) QUIESCE=true; shift ;;
     --no-data) DATA=false; shift ;;
     -h|--help) usage 0 ;;
-    *) die "unknown option $1 (see --help)" ;;
+    *) usage_error "$1: unknown option; expected --out DIR, --quiesce, --no-data or --help" ;;
   esac
 done
 load_env
-kc get namespace "$OPENTSX_NS" >/dev/null 2>&1 || die "namespace $OPENTSX_NS not found - nothing to back up"
+kc get namespace "$OPENTSX_NS" >/dev/null 2>&1 || die "namespace $OPENTSX_NS not found; nothing to back up"
 OUT="${OUT:-$PWD/opentsx-backup-$(date -u +%Y%m%dT%H%M%SZ)}"
 [[ ! -e "$OUT" || -z "$(ls -A "$OUT" 2>/dev/null)" ]] || die "$OUT exists and is not empty"
 umask 077
@@ -70,8 +76,8 @@ kns delete pod "$HELPER" --ignore-not-found --wait=true >/dev/null
 helper_pod "$HELPER" ro "${PVCS[@]}"
 
 info "configuration"
-if [[ -f "$ENV_FILE" ]]; then cp "$ENV_FILE" "$OUT/env"; ok "env (contains secrets - keep $OUT private)"
-else warn "$ENV_FILE not found - configuration not backed up"; fi
+if [[ -f "$ENV_FILE" ]]; then cp "$ENV_FILE" "$OUT/env"; ok "env (contains secrets; keep $OUT private)"
+else warn "$ENV_FILE not found; configuration not backed up"; fi
 kns get configmap opentsx-config -o yaml > "$OUT/opentsx-config.yaml" && ok "opentsx-config.yaml"
 
 info "volumes"
@@ -85,7 +91,7 @@ for p in "${PVCS[@]}"; do
 done
 
 {
-  echo "# OpenTSx backup - deploy/k3s/71-restore.sh $OUT"
+  echo "# OpenTSx backup, restore with deploy/k3s/71-restore.sh $OUT"
   echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "namespace=$OPENTSX_NS"
   echo "domain=$OPENTSX_DOMAIN"

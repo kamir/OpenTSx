@@ -70,16 +70,16 @@ flowchart LR
 | metadata (dry run / publish) | Job | `opentsx/tools` | `opentsx metadata --dry-run /data/om-requests` |
 | twin, house, boat | Jobs | `opentsx/tools` | `opentsx twin` / `house` / `boat` |
 | Studio export | Job | `opentsx/tools` | `opentsx studio-export /tmp/studio.json` |
-| DWD weather demo | Job | `opentsx/tools` | `opentsx dwd mosmix --offline <fixture>` (or `--station <id>`) + `opentsx dwd house …` |
+| DWD weather demo | Job | `opentsx/tools` | `opentsx dwd mosmix` + `opentsx dwd house` with `OPENTSX_DWD_OFFLINE=<fixture>` (`dwd-online`: `OPENTSX_DWD_STATION=<id>`) |
 | DWD forecast collector (`DWD_FORWARD=true`) | CronJob, daily | `opentsx/tools` | `opentsx dwd mosmix --station <id> --out /data/dwd/…csv` per station in `DWD_STATIONS` |
 | Modbus simulator (`MODBUS_SIM=true`) | Deployment + Service :1502 | `opentsx/tools` | `opentsx modbus simulate --map example --port 1502 --bind 0.0.0.0` |
-| Modbus poller | Job | `opentsx/tools` | `opentsx modbus poll --interval 1s --out episodes --episode PT10S --file /data/modbus/…jsonl` (map, host and port as variables) |
+| Modbus poller | Job | `opentsx/tools` | `opentsx modbus poll --file /data/modbus/…jsonl` (map, host, port, count, interval, output and episode length as variables) |
 | synthetic check (`MONITORING=true`) | CronJob, every 10 min | `opentsx/tools` | `kafscale-check`, checkpoint age, disk usage |
 | Iceberg REST catalog, MinIO | Deployments (lake profile) | `apache/iceberg-rest-fixture:1.9.2`, `quay.io/minio/minio` | — |
 
-The commands read the ConfigMap values as variables of the configuration registry, not as flags. The DWD Job and
-the DWD forecast collector are the exception: their scripts build `--station` or `--offline` from `DWD_MODE`,
-`DWD_STATIONS` and `DWD_FIXTURE`. See
+The commands read the ConfigMap values as variables of the configuration registry, not as flags. The DWD forecast
+collector is the exception: the registry has no key for a list of stations, so its script runs
+`opentsx dwd mosmix --station <id>` once for each station of `DWD_STATIONS`. See
 [Pass settings to a command](../../deploy/k3s/README.md#pass-settings-to-a-command).
 
 KafScale itself is **not** deployed: the guide assumes an existing cluster (for a local one, see
@@ -128,7 +128,7 @@ Every script has `--help`, is idempotent and stops with a clear message when som
 | `deploy/k3s/overlays/local/` | rendered by `20-configure.sh`, git-ignored (namespace, config, Secret, images, components) |
 | `deploy/docker/opentsx-tools.Dockerfile` | one JRE image with all v2 commands (`eclipse-temurin:21.0.8_9-jre-noble`) |
 | `deploy/docker/studio.Dockerfile` | Studio page generated in the build, served by `nginxinc/nginx-unprivileged:1.27.4-alpine` |
-| `deploy/docker/stage.sh` | stages the image context: every runtime jar once (Maven layout) + exact classpath per module |
+| `deploy/docker/stage.sh` | stages the image context: every runtime jar once (Maven layout) + exact classpath per module; `--out DIR` refuses a directory that is not empty and has no `.opentsx-stage` marker (exit 2), a failed Maven step shows Maven's output and exits 1 |
 | `deploy/docker/opentsx-entrypoint.sh` | the image's `opentsx` command (counterpart of `bin/opentsx`) |
 | `deploy/docker/src/…/KafScaleCheck.java` | deployment helper: bootstrap + advertised brokers + topic record counts, optional provisioning |
 

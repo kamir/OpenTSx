@@ -148,6 +148,12 @@ jobs:
         run: bash deploy/k3s/test/test-20-configure.sh
       - name: 00-prereqs.sh shows the error of the staged kafscale-check (deploy/k3s/test)
         run: bash deploy/k3s/test/test-00-prereqs.sh
+      - name: 40-demo.sh, 60-probe.sh, 70-backup.sh and 90-teardown.sh (deploy/k3s/test)
+        run: |
+          bash deploy/k3s/test/test-40-demo.sh
+          bash deploy/k3s/test/test-60-probe.sh
+          bash deploy/k3s/test/test-70-backup.sh
+          bash deploy/k3s/test/test-90-teardown.sh
       - name: Launchers and logger settings (deploy/docker/test-launchers.sh)
         run: bash deploy/docker/test-launchers.sh
       - name: Launcher commands (bin/opentsx, the image entrypoint and Registry.LOADS_CONF)
@@ -264,7 +270,7 @@ jobs:
                           if command is None:
                               problems.append(f"{where}: {' '.join(argv[:3])} is not a command of the registry")
                           elif not loadable:
-                              print(f"skip {where}: opentsx {command}: an argument comes from the shell")
+                              problems.append(f"{where}: opentsx {command}: an argument comes from the shell; pass the value as the variable of its key")
                           else:
                               try:
                                   OpenTsxConf.load(argv + shlex.split(env.get("OPENTSX_EXTRA_ARGS", "")), env, env.get("OPENTSX_CONF_DIR"))

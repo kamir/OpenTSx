@@ -11,7 +11,13 @@
 #   tools (kubectl or k3s, bash >= 4, JDK 17+, Maven 3.9+, Python 3.10+, docker|podman|nerdctl|buildah),
 #   k3s reachable, node architectures, default StorageClass, KafScale bootstrap reachable from this host
 #   (TCP, plus advertised broker addresses via kafscale-check when the image context is staged), optional S3.
-# Exit code 0 when nothing failed (warnings allowed), 1 otherwise. Changes nothing.
+# Changes nothing.
+#
+# Exit codes:
+#   0  nothing failed (warnings allowed)
+#   1  a check failed
+#   2  usage error: an unknown option, or a line of deploy/k3s/.env that is not a comment or KEY=VALUE with a
+#      known key
 set -euo pipefail
 # shellcheck source=deploy/k3s/lib.sh
 source "$(dirname "$0")/lib.sh"
@@ -22,7 +28,7 @@ while [[ $# -gt 0 ]]; do
     --no-build) BUILD=false; shift ;;
     --no-cluster) CLUSTER=false; shift ;;
     -h|--help) usage 0 ;;
-    *) die "unknown option $1 (see --help)" ;;
+    *) usage_error "$1: unknown option; expected --no-build, --no-cluster or --help" ;;
   esac
 done
 load_env
@@ -82,7 +88,7 @@ fi
 
 info "KafScale (existing cluster)"
 if [[ -z "$KAFSCALE_BOOTSTRAP" || "$KAFSCALE_BOOTSTRAP" == "192.168.1.50:9092" ]]; then
-  warn "KAFSCALE_BOOTSTRAP is the example value - set it: deploy/k3s/20-configure.sh KAFSCALE_BOOTSTRAP=<host:port>"
+  warn "KAFSCALE_BOOTSTRAP is the example value; set it: deploy/k3s/20-configure.sh KAFSCALE_BOOTSTRAP=<host:port>"
 fi
 IFS=',' read -r -a boots <<< "$KAFSCALE_BOOTSTRAP"
 for b in "${boots[@]}"; do
@@ -98,7 +104,7 @@ if [[ -x "$STAGED" ]] && have java; then
        --kafscale "$KAFSCALE_BOOTSTRAP" --domain "$OPENTSX_DOMAIN" 2>&1 | sed 's/^/    /'; then
     ok "kafscale-check passed (repeat it from inside the cluster: 40-demo.sh kafscale-check)"
   else
-    bad "kafscale-check failed - see above (most common: the broker advertises an address the clients cannot reach)"
+    bad "kafscale-check failed; see above (most common: the broker advertises an address the clients cannot reach)"
   fi
 else
   warn "advertised broker addresses not checked (run 10-build.sh first, then repeat; or later: 40-demo.sh kafscale-check)"

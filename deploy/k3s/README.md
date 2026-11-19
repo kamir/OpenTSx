@@ -25,11 +25,37 @@ deploy/k3s/71-restore.sh ./opentsx-backup-<time>                  # back into th
 | `components/` | `hostnetwork`, `lake`, `lake-minio`, `lake-jobs`, `ingress`, `modbus-sim`, `dwd-forward`, `monitoring`, `saas`, `event-bridge` |
 | `overlays/local/` | rendered by `20-configure.sh` (not in Git) |
 | `lib.sh` | shared shell helpers |
+| `test/` | shell tests of the scripts, run without a cluster |
 | `../docker/` | Dockerfiles, staging script, image entrypoint, deployment helper |
 
-`20-configure.sh` exits with 0 when it wrote the configuration, 1 when a value failed its check or writing or
-rendering failed, and 2 on a usage error: an unknown key, an argument that is not `KEY=VALUE` or an option, or a
-secret key as an argument. `bash deploy/k3s/test/test-20-configure.sh` tests it without a cluster.
+## Read the exit codes
+
+`00-prereqs.sh`, `20-configure.sh`, `40-demo.sh`, `60-probe.sh`, `70-backup.sh` and `90-teardown.sh` exit with 0
+when they did their work, 1 when a check, a step or a request failed, and 2 on a usage error; `--help` lists the
+cases of each. Usage errors are an unknown option, an option without its value, an unknown demo of `40-demo.sh` or
+extra arguments for one of its demos that take none, and for `20-configure.sh` an unknown key, an argument that is
+not `KEY=VALUE` or an option, or a secret key as an argument. `10-build.sh`, `11-import-images.sh`, `30-deploy.sh`,
+`50-status.sh` and `71-restore.sh` exit with 1 on an unknown option. The tests in `deploy/k3s/test/` run the
+scripts without a cluster, for example `bash deploy/k3s/test/test-40-demo.sh`.
+
+```text
+error: nosuch: unknown demo; expected one of kafscale-check windpark-sim stats metadata metadata-publish twin house boat studio-export retrieval studio dwd dwd-online dwd-forward modbus modbus-poll all
+```
+
+Every script reads `deploy/k3s/.env` and refuses a line that is not empty, a comment or `KEY=VALUE` with a key of
+`env.example` when it loads the configuration, with exit 2. `.env` stays as it is:
+
+```text
+error: deploy/k3s/.env:8: unknown key SAAS_ADMIN_PASWORD; use a key of deploy/k3s/env.example
+```
+
+`20-configure.sh` refuses a value with a line break or another control character before it writes, because each
+value ends up in a YAML or env file line. It also checks the form of the values that become names, image references,
+URLs, durations, paths or the cron schedule in the rendered files. A refused value exits with 1:
+
+```text
+error: OPENTSX_STATS_WINDOWS: item "PT5" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m
+```
 
 ## Set secrets
 
@@ -80,21 +106,39 @@ variable of its registry key:
 | `ICEBERG_PROPS` | `OPENTSX_ICEBERG_PROPERTIES` |
 | `RETRIEVAL_DAG_RUNS` | `OPENTSX_RETRIEVAL_DAG_RUNS` |
 | `MODBUS_HOST`, `MODBUS_PORT`, `MODBUS_MAP` | `OPENTSX_MODBUS_HOST`, `OPENTSX_MODBUS_PORT`, `OPENTSX_MODBUS_MAP` |
+| `DWD_FIXTURE` | `OPENTSX_DWD_OFFLINE` (Job `dwd`; CronJob `dwd-forward` with `DWD_MODE=offline`) |
+| `DWD_STATIONS` | `OPENTSX_DWD_STATION`, the first station (`40-demo.sh dwd-online`); `dwd-forward` runs `dwd mosmix --station <id>` for each station in turn |
 
-`base/kustomization.yaml` sets `OPENTSX_WINDPARK_SCENARIO`, `OPENTSX_STATS_WINDOWS`,
-`OPENTSX_STATS_ALLOWED_LATENESS` and `OPENTSX_ICEBERG_NAMESPACE` under the names the commands read. A Job sets its
-overridable defaults as variables: `OPENTSX_KAFSCALE_PROVISION=true` (`kafscale-check`),
-`OPENTSX_WINDPARK_SINKS=kafscale` (`windpark-sim`; the component `lake-jobs` adds `--sinks kafscale,iceberg`),
-`OPENTSX_OPENMETADATA_PROFILES=always` (`metadata-publish`) and `OPENTSX_MODBUS_COUNT=30` (`modbus-poll`). An option
-after `40-demo.sh <demo> --` wins over a variable. An option that the Job already sets fails with
-`set twice on the command line`; these are `--index`, `--ground-truth` and with `lake-jobs` `--sinks`
-(`windpark-sim`), `--dry-run` (`metadata`), `--out`, `--daily` and `--offline`, with `dwd-online` `--station`
-(`dwd`), and `--interval`, `--out`, `--episode` and `--file` (`modbus-poll`).
+`base/kustomization.yaml` holds the defaults of `OPENTSX_WINDPARK_SCENARIO`, `OPENTSX_STATS_WINDOWS`,
+`OPENTSX_STATS_ALLOWED_LATENESS` and `OPENTSX_ICEBERG_NAMESPACE` under the names the commands read. `20-configure.sh`
+sets them like any other key:
+
+```bash
+deploy/k3s/20-configure.sh OPENTSX_STATS_WINDOWS=PT5M,PT1H
+deploy/k3s/30-deploy.sh --restart
+```
+
+A Job sets its overridable defaults as variables:
+
+| Job | Variables |
+|-----|-----------|
+| `kafscale-check` | `OPENTSX_KAFSCALE_PROVISION=true` |
+| `windpark-sim` | `OPENTSX_WINDPARK_SINKS=kafscale` (the component `lake-jobs` adds `--sinks kafscale,iceberg`) |
+| `metadata-publish` | `OPENTSX_OPENMETADATA_PROFILES=always` |
+| `dwd` | `OPENTSX_DWD_OFFLINE`, `OPENTSX_DWD_OUT=/data/dwd/demo-mosmix.csv`, `OPENTSX_DWD_DAILY=/data/dwd/demo-daily.csv`; `40-demo.sh dwd-online` removes `OPENTSX_DWD_OFFLINE` and sets `OPENTSX_DWD_STATION` |
+| `modbus-poll` | `OPENTSX_MODBUS_COUNT=30`, `OPENTSX_MODBUS_INTERVAL=1s`, `OPENTSX_MODBUS_OUT=episodes`, `OPENTSX_MODBUS_EPISODE_LENGTH=PT10S` |
+
+An option after `40-demo.sh <demo> --` wins over a variable, for example
+`deploy/k3s/40-demo.sh modbus -- --interval PT2S`. In the `dwd` Job the extra arguments go to `dwd mosmix` only.
+`stats`, `retrieval`, `studio`, `dwd-forward` and `all` take no extra arguments and exit with 2 when given some. An
+option that the Job command itself names fails with `set twice on the command line`; these are `--index`,
+`--ground-truth` and with `lake-jobs` `--sinks` (`windpark-sim`), `--dry-run` (`metadata`) and `--file`
+(`modbus-poll`, which names the file by its start time).
 
 CI renders the overlays and loads every `opentsx/tools` container through the configuration loader with its
-variables, its arguments and `OPENTSX_EXTRA_ARGS`, except the `dwd` Job and the `dwd-forward` CronJob: their shell
-scripts build `--station` or `--offline` from variables, and CI reports them as skip. It fails when a container sets
-a variable that its command does not read, or passes a variable as the value of an option.
+variables, its arguments and `OPENTSX_EXTRA_ARGS`. It fails when a container sets a variable that its command does
+not read, passes a variable as the value of an option, or gives an `opentsx` command in its shell script an argument
+from the shell that is not the value of an option.
 
 ## Retrieval server on the episodes topic
 

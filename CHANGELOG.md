@@ -170,6 +170,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   Iceberg.
 - opentsx-model checks the shared refusal vectors `model-refusals.v1.json` in `ModelRefusalVectorsTest`, so Java and
   python-package test the same 17 refusal texts.
+- `20-configure.sh` sets the ConfigMap keys `OPENTSX_STATS_WINDOWS`, `OPENTSX_STATS_ALLOWED_LATENESS`,
+  `OPENTSX_WINDPARK_SCENARIO`, `OPENTSX_ICEBERG_NAMESPACE` and `DWD_FIXTURE` and checks their form.
 
 ### Changed
 
@@ -495,7 +497,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `DynamicTopologyJob` without a broker, or with an empty one, fails with `bootstrap.servers: not set or empty; set
   the variable OPENTSX_BOOTSTRAP_SERVERS to <host:port>, the JVM option -Dbootstrap.servers=<host:port>, or the key
   bootstrap.servers in config/opentsx-default.properties or in the file that OPENTSX_CONFIG_FILE names`; the
-  `pfd-acceptance` profile reads `OPENTSX_BOOTSTRAP_SERVERS` instead of `KAFSCALE_BOOTSTRAP`.
+  `pfd-acceptance` profile reads `KAFSCALE_BOOTSTRAP`, as the other broker-backed tests do, and passes it to the job
+  as `OPENTSX_BOOTSTRAP_SERVERS`.
 - The source of the Flink statistics job (`StatsInputDeserializer`) logs the first undecodable record of a partition
   at WARN with topic, partition and offset instead of printing it on stderr.
 - Iceberg store: new IcebergSeriesStore(catalog, namespace) borrows the catalog like openExisting(catalog, namespace),
@@ -530,6 +533,25 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `method: 'x' is not one of zscore, minmax, robust`.
 - Python: `read_episodes` and `read_frame` check `start` and `end` before they load the table and name the bound that
   has no time zone or is not an ISO 8601 time.
+- `deploy/k3s/00-prereqs.sh`, `40-demo.sh`, `60-probe.sh`, `70-backup.sh` and `90-teardown.sh` exit with 2 on a usage
+  error, such as an unknown option, an option without its value, an unknown demo or extra arguments for a demo that
+  takes none, and their `--help` lists the exit codes 0, 1 and 2. `40-demo.sh` checks the demo name and the extra
+  arguments before it reads the overlay.
+- Every k3s script refuses a line of `deploy/k3s/.env` that is not a comment or `KEY=VALUE` with a key of
+  `env.example` with exit code 2, for example `deploy/k3s/.env:8: unknown key SAAS_ADMIN_PASWORD; use a key of
+  deploy/k3s/env.example`, instead of running the line or ignoring a misspelled key that `20-configure.sh` then
+  dropped.
+- The `modbus-poll` and `dwd` demo Jobs set their defaults as registry variables (`OPENTSX_MODBUS_INTERVAL`,
+  `OPENTSX_MODBUS_OUT`, `OPENTSX_MODBUS_EPISODE_LENGTH`, `OPENTSX_DWD_OFFLINE`, `OPENTSX_DWD_OUT`,
+  `OPENTSX_DWD_DAILY`), so an option after `40-demo.sh <demo> --` replaces the default instead of failing with `set
+  twice on the command line`. `40-demo.sh dwd-online` sets `OPENTSX_DWD_STATION`, and the `dwd-forward` CronJob passes
+  the fixture as `OPENTSX_DWD_OFFLINE`.
+- The CI manifest check loads every `opentsx/tools` container through the configuration loader, the DWD Job and
+  CronJob included, and fails on a command argument that comes from the shell instead of skipping it.
+- CI runs the shell tests of `40-demo.sh`, `60-probe.sh`, `70-backup.sh` and `90-teardown.sh` and runs shellcheck on
+  `bin/000_validate_environment.sh`, `bin/run_all_tests.sh` and `opentsx-saas-backend/local-setup.sh`.
+  `deploy/docker/test-launchers.sh` tests `deploy/docker/stage.sh` with a fake Maven and checks one module's classpath
+  with `--classpath MODULE`.
 
 ### Removed
 
@@ -566,7 +588,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - SaaS backend: POST /api/v1/flows/{flow_id}/execute and services/flink_service.py; the route always answered 502
   because no stack starts Flink and the JAR it uploaded does not exist. A flow runs when its DAG is deployed through
   POST /api/v1/dags/deploy.
-- The SaaS backend documents and `local-test.sh` no longer describe or call the removed routes for organizations,
+- The SaaS backend documents no longer describe the removed routes for organizations,
   teams, invitations, node types, billing and subscription plans, `GET /api/v1/flows/demo` and `POST
   /api/v1/flows/{id}/execute`.
 - The unused file readers `BillCalibration.read(Path)`, `BillCalibration.dailyTemperatures(Path, String, double)` and
@@ -729,7 +751,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `FIRST_SUPERUSER_PASSWORD` is used only when the first administrator account is created.
 - SaaS docs: `DOCKER-SETUP.md` checks the backend at `/health`, the backend README lists the authentication routes
   that exist (there is no `/api/v1/auth/refresh`), and `LOCAL-DEVELOPMENT.md` says that `/api/v1/flows` needs a bearer
-  token, that `./local-test.sh` ends with exit code 0 even after a failed check, and that the `admin@localhost`
+  token and that the `admin@localhost`
   account written by `local-setup.sh` cannot sign in. The backend, frontend, local development and user manual pages
   name the three required secrets and no longer show Redis, `admin123` or `dev_password_123`.
 - TopicsUP, TopicsDOWN and TopicsCHECK wait for each create, delete and list request and stop with the topic and the
@@ -1037,8 +1059,6 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   the classpath is newer than the cache, for example after a sibling module was installed with a changed dependency
   scope. It renews the cache after every resolution, because `dependency:build-classpath` leaves an unchanged file
   untouched.
-- `bin/120_run_demo.sh` runs `mvn -f opentsx-core/pom.xml exec:java` instead of `mvn exec:java` in the reactor root.
-  It prints its usage with `--help` and refuses other arguments with exit code 2.
 - `opentsx kafscale-check --help` no longer says that the command parses its own flags; it loads the configuration
   registry like every other command, and appendix D and the defaults templates name it.
 - `deploy/k3s/00-prereqs.sh` shows the error line of the staged `kafscale-check`, for example a bootstrap address
@@ -1124,6 +1144,23 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Python: `TimeSeriesObject.normalize` raises `ValueError` for a series whose values are all equal or whose standard
   deviation, range or interquartile range is 0, instead of returning NaN with a warning or, for `zscore`, values of ±1
   from rounding. This is a breaking change.
+- `40-demo.sh` refuses a demo name that is not exactly one of its demos, such as `"dwd dwd-online"`, which before ran
+  nothing and exited with 0, and refuses arguments after `--` for `stats`, `retrieval`, `studio`, `dwd-forward` and
+  `all` instead of dropping them.
+- `20-configure.sh` refuses a value with a line break or another control character, and checks the form of
+  `STORAGE_CLASS`, `OPENTSX_IMAGE_REPO`, `OPENTSX_TAG`, `OM_URL`, `S3_ENDPOINT`, `S3_BUCKET`, `S3_REGION`,
+  `EVENT_BRIDGE_ALLOW_ORIGIN` and the characters of `DWD_SCHEDULE`, so a value can no longer add keys to the rendered
+  YAML or the Iceberg properties.
+- `70-backup.sh --quiesce` stops with exit code 1 and scales the writers back when their pods have not ended 150 s
+  after scaling to 0 or a Deployment cannot be read, instead of writing a backup that records `quiesced=true`. Ended
+  pods, such as evicted ones, do not count.
+- `40-demo.sh retrieval` ends its port-forward when the script ends, also after a failure, and a failed request prints
+  a FAIL line with the URL and the curl exit code or the HTTP status.
+- `40-demo.sh metadata-publish` names a missing `OPENMETADATA_JWT` before it starts the Job.
+- `90-teardown.sh --images` reports an image that k3s' containerd could not remove with a warn line naming it and
+  exits with 1.
+- `deploy/k3s/60-probe.sh` ends the kubectl port-forward of the retrieval and studio steps when the step ends; a step
+  that gave up left kubectl running.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

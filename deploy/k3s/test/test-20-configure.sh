@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Tests deploy/k3s/20-configure.sh: exit codes 0, 1 and 2, secret keys refused as arguments, --print without Secrets,
-# the generated secrets, and the limits and published example values the SaaS backend refuses
-# (opentsx-saas-backend/app/core/config.py). Also checks that docs/, the READMEs and the deploy/k3s scripts put no
-# secret on a command line, and runs the script of the MinIO bucket Job (components/lake-minio/minio.yaml) with a
-# stand-in mc. Writes only into a temporary directory and needs no kubectl and no cluster: a stand-in kubectl renders
+# the generated secrets, the limits and published example values the SaaS backend refuses
+# (opentsx-saas-backend/app/core/config.py), the ConfigMap keys and the form of each value, and a deploy/k3s/.env
+# with an unknown key or a line that is not KEY=VALUE. Also checks that the scripts use no spaced hyphen as a dash,
+# that docs/, the READMEs and the deploy/k3s scripts put no secret on a command line, and runs the script of the
+# MinIO bucket Job (components/lake-minio/minio.yaml) with a stand-in mc. Writes only into a temporary directory and needs no kubectl and no cluster: a stand-in kubectl renders
 # the Secret for --print. Needs python3 to read the published example values.
 #
 #   bash deploy/k3s/test/test-20-configure.sh
@@ -162,6 +163,88 @@ for value in "${examples[@]}"; do
   n=$((n + 1))
   expect "admin-published-example-$n" 1 "SAAS_ADMIN_PASSWORD: published example value" SAAS_ADMIN_PASSWORD="$value"
 done
+
+# the ConfigMap keys of base/kustomization.yaml: set like any other key, written into the overlay's config.env
+if configure configmap-keys -- OPENTSX_STATS_WINDOWS=PT5M,1h OPENTSX_STATS_ALLOWED_LATENESS=30s \
+  OPENTSX_WINDPARK_SCENARIO=/private/park.yaml OPENTSX_ICEBERG_NAMESPACE=lab DWD_FIXTURE=/private/mosmix.kml; then
+  before=$failures
+  for line in OPENTSX_STATS_WINDOWS=PT5M,1h OPENTSX_STATS_ALLOWED_LATENESS=30s OPENTSX_WINDPARK_SCENARIO=/private/park.yaml \
+    OPENTSX_ICEBERG_NAMESPACE=lab DWD_FIXTURE=/private/mosmix.kml; do
+    grep -qxF "$line" "$WORK/configmap-keys/overlays/local/config.env" || failed "configmap-keys: $line is not in config.env"
+    grep -qxF "${line%%=*}=$(printf %q "${line#*=}")" "$WORK/configmap-keys.env" || failed "configmap-keys: $line is not in .env"
+  done
+  (( failures > before )) || echo "ok   configmap-keys"
+else
+  failed "configmap-keys: refused"; sed 's/^/    /' "$WORK/configmap-keys.out"
+fi
+duration='expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m'
+expect windows-not-durations 1 "error: OPENTSX_STATS_WINDOWS: item \"PT5\" is not a duration; $duration" \
+  -- OPENTSX_STATS_WINDOWS=PT10M,PT5
+expect lateness-negative 1 "error: OPENTSX_STATS_ALLOWED_LATENESS: \"-PT1S\" is not a duration; $duration" \
+  -- OPENTSX_STATS_ALLOWED_LATENESS=-PT1S
+expect scenario-relative 1 "error: OPENTSX_WINDPARK_SCENARIO: \"park.yaml\" is not an absolute path; expected a file in the image or on a mounted volume, such as /opt/opentsx/share/scenarios/ostsee-demo.yaml" \
+  -- OPENTSX_WINDPARK_SCENARIO=park.yaml
+expect fixture-relative 1 "error: DWD_FIXTURE: \"mosmix.kml\" is not an absolute path; expected a file in the image or on a mounted volume, such as /opt/opentsx/share/dwd/MOSMIX_L_2026101209_10578.kml" \
+  -- DWD_FIXTURE=mosmix.kml
+expect namespace-dotted 1 "error: OPENTSX_ICEBERG_NAMESPACE: \"a.b\" is not an Iceberg namespace; expected letters, digits and _, starting with a letter or _, such as tsx" \
+  -- OPENTSX_ICEBERG_NAMESPACE=a.b
+
+# a value goes into YAML and env files: one line, and the form each key needs
+expect tag-line-break 1 "error: OPENTSX_TAG: the value holds a control character such as a line break; write it on one line" \
+  -- OPENTSX_TAG=$'1\nx: y'
+if [[ -e "$WORK/tag-line-break/overlays/local/kustomization.yaml" ]]; then
+  failed "tag-line-break: kustomization.yaml written"; grep -n 'x: y' "$WORK/tag-line-break/overlays/local/kustomization.yaml" | sed 's/^/    /'
+fi
+expect map-line-break 1 "error: MODBUS_MAP: the value holds a control character such as a line break; write it on one line" \
+  MODBUS_MAP=$'example\nOPENTSX_DOMAIN=other'
+expect tag 1 "error: OPENTSX_TAG: \"1:2\" is not an image tag; expected up to 128 letters, digits, _, . and -, starting with a letter, digit or _" \
+  -- OPENTSX_TAG=1:2
+expect storage-class 1 "error: STORAGE_CLASS: \"Fast SSD\" is not a StorageClass name; expected lower-case letters, digits, - and ., or empty for the default class" \
+  -- 'STORAGE_CLASS=Fast SSD'
+expect image-repo 1 "error: OPENTSX_IMAGE_REPO: \"Registry/OpenTSx\" is not an image repository; expected [host[:port]/]path in lower case, such as opentsx or registry.local:5000/opentsx" \
+  -- OPENTSX_IMAGE_REPO=Registry/OpenTSx
+expect om-url 1 "error: OM_URL: \"om.example:8585/api\" is not an http(s) URL; expected http://<host>:<port>/api, or empty without OpenMetadata" \
+  -- OM_URL=om.example:8585/api
+expect s3-endpoint 1 "error: S3_ENDPOINT: \"http://minio:9000,s3.path-style-access=false\" is not an http(s) URL; expected http://<host>:<port> without spaces, commas or quotes" \
+  S3_ACCESS_KEY=access S3_SECRET_KEY=secret -- LAKE=true LAKE_MINIO=false S3_ENDPOINT=http://minio:9000,s3.path-style-access=false
+expect s3-bucket 1 "error: S3_BUCKET: \"lake,x=y\" is not a bucket name; expected 3 to 63 lower-case letters, digits, . and -, such as lake" \
+  -- S3_BUCKET=lake,x=y
+expect s3-region 1 "error: S3_REGION: \"us east\" is not a region; expected letters, digits, - and _, such as us-east-1" \
+  -- 'S3_REGION=us east'
+expect schedule-quote 1 "error: DWD_SCHEDULE: \"17 5 * * \"\" holds a character that is not part of a cron field; expected digits, letters and * / , ? -, such as 17 5 * * *" \
+  -- 'DWD_SCHEDULE=17 5 * * "'
+expect schedule-semicolon 1 "error: DWD_SCHEDULE: \"17;5 * * * *\" holds a character that is not part of a cron field; expected digits, letters and * / , ? -, such as 17 5 * * *" \
+  -- 'DWD_SCHEDULE=17;5 * * * *'
+expect schedule-four-fields 1 "error: DWD_SCHEDULE='17 5 * *': expected 5 cron fields, e.g. '17 5 * * *'" \
+  -- 'DWD_SCHEDULE=17 5 * *'
+expect allow-origin 1 "error: EVENT_BRIDGE_ALLOW_ORIGIN: \"http://studio.local:8088/\" is not an origin; expected * or <scheme>://<host>[:<port>] such as http://studio.local:8088" \
+  -- EVENT_BRIDGE_ALLOW_ORIGIN=http://studio.local:8088/
+if configure values-accepted -- STORAGE_CLASS=local-path OPENTSX_IMAGE_REPO=registry.local:5000/opentsx OPENTSX_TAG=3.0.1_rc.1 \
+  OM_URL=http://om.example:8585/api EVENT_BRIDGE_ALLOW_ORIGIN=http://studio.local:8088; then
+  if grep -qxF '    newName: registry.local:5000/opentsx/tools' "$WORK/values-accepted/overlays/local/kustomization.yaml" \
+    && grep -qxF 'OM_URL=http://om.example:8585/api' "$WORK/values-accepted/overlays/local/config.env"; then
+    echo "ok   values-accepted"
+  else
+    failed "values-accepted: a value is missing in the overlay"
+  fi
+else
+  failed "values-accepted: refused"; sed 's/^/    /' "$WORK/values-accepted.out"
+fi
+
+# deploy/k3s/.env: an unknown key or a line that is not KEY=VALUE is refused, and the file stays as it is
+printf '# hand-edited\nSAAS_ADMIN_PASWORD=x\n' > "$WORK/env-typo.env"
+cp "$WORK/env-typo.env" "$WORK/env-typo.before"
+expect env-typo 2 "error: $WORK/env-typo.env:2: unknown key SAAS_ADMIN_PASWORD; use a key of deploy/k3s/env.example"
+cmp -s "$WORK/env-typo.env" "$WORK/env-typo.before" || failed "env-typo: .env changed"
+printf 'OPENTSX_NS=opentsx\ntouch %q\n' "$WORK/env-command-ran" > "$WORK/env-command.env"
+expect env-command 2 "error: $WORK/env-command.env:2: not a KEY=VALUE line; write KEY=VALUE, a comment or an empty line"
+[[ ! -e "$WORK/env-command-ran" ]] || failed "env-command: the line of .env was run"
+
+# no spaced hyphen as a dash in the messages and comments of the scripts (arithmetic and "-f -" are not dashes)
+dashes="$(cd "$K3S_DIR"; grep -nE "[[:alnum:])'?.] - [[:alnum:](]" lib.sh 00-prereqs.sh 20-configure.sh 40-demo.sh \
+  70-backup.sh 90-teardown.sh env.example base/kustomization.yaml | grep -vE '\(\(.* - .*\)\)' || (( $? == 1 )))"
+if [[ -n "$dashes" ]]; then failed "dashes: a spaced hyphen used as a dash"; printf '%s\n' "$dashes" | sed 's/^/    /'
+else echo "ok   dashes"; fi
 
 # no page teaches a secret on a command line
 secret_pattern="20-configure\.sh.*\<($(IFS='|'; echo "${SECRET_KEYS[*]}"))=|--(token|dag-run-token)[= ]\"?\\$"

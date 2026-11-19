@@ -260,9 +260,10 @@ class DwdCliTest {
         assertEquals("10578", conf.get(DwdCli.STATION));
         DwdCli.check("dwd mosmix", conf);
 
-        List<List<String>> offline = dwdCommands(pod, Map.of("src", "--offline " + env.get("DWD_FIXTURE") + " --station 10578",
-                "s", "10578", "ts", "20261119T000000Z"));
-        assertEquals(env.get("DWD_FIXTURE"), OpenTsxConf.load(offline.get(0), env, null).conf().get(DwdCli.OFFLINE));
+        assertTrue(pod.path("containers").get(0).path("args").get(0).asText().contains("export OPENTSX_DWD_OFFLINE=\"$DWD_FIXTURE\""));
+        Map<String, String> offline = new HashMap<>(env);
+        offline.put("OPENTSX_DWD_OFFLINE", env.get("DWD_FIXTURE"));
+        assertEquals(env.get("DWD_FIXTURE"), OpenTsxConf.load(online.get(0), offline, null).conf().get(DwdCli.OFFLINE));
     }
 
     @Test
@@ -270,11 +271,19 @@ class DwdCliTest {
         JsonNode pod = new ObjectMapper(new YAMLFactory()).readTree(Path.of("../deploy/k3s/jobs/dwd.yaml").toFile())
                 .path("spec").path("template").path("spec");
         Map<String, String> env = podEnv(pod);
-        List<List<String>> commands = dwdCommands(pod, Map.of("src", "--offline " + env.get("DWD_FIXTURE")));
-        assertEquals(List.of("dwd mosmix", "dwd house"), commands.stream().map(c -> c.get(0) + " " + c.get(1)).toList());
+        List<List<String>> commands = dwdCommands(pod, Map.of());
+        assertEquals(List.of(List.of("dwd", "mosmix"), List.of("dwd", "house")), commands);
         for (List<String> argv : commands) {
-            assertEquals(env.get("DWD_FIXTURE"), OpenTsxConf.load(argv, env, null).conf().get(DwdCli.OFFLINE), argv.toString());
+            assertEquals("/opt/opentsx/share/dwd/MOSMIX_L_2026101209_10578.kml",
+                    OpenTsxConf.load(argv, env, null).conf().get(DwdCli.OFFLINE), argv.toString());
         }
+        assertEquals("/data/dwd/demo-mosmix.csv", OpenTsxConf.load(commands.get(0), env, null).conf().get(DwdCli.OUT));
+        Map<String, String> online = new HashMap<>(env);
+        online.remove("OPENTSX_DWD_OFFLINE");
+        online.put("OPENTSX_DWD_STATION", "10578");
+        OpenTsxConf conf = OpenTsxConf.load(commands.get(0), online, null).conf();
+        assertEquals("10578", conf.get(DwdCli.STATION));
+        DwdCli.check("dwd mosmix", conf);
     }
 
     @Test

@@ -290,12 +290,13 @@ deploy/k3s/40-demo.sh dwd           # offline: the MOSMIX fixture that ships in 
 deploy/k3s/40-demo.sh dwd-online    # live: first station of DWD_STATIONS from opendata.dwd.de
 ```
 
-The Job runs `opentsx dwd mosmix --offline /opt/opentsx/share/dwd/MOSMIX_L_2026101209_10578.kml --out
-/data/dwd/demo-mosmix.csv --daily /data/dwd/demo-daily.csv` and then `opentsx dwd house` over the forecast horizon
+The Job runs `opentsx dwd mosmix` and then `opentsx dwd house` with
+`OPENTSX_DWD_OFFLINE=/opt/opentsx/share/dwd/MOSMIX_L_2026101209_10578.kml`, `OPENTSX_DWD_OUT=/data/dwd/demo-mosmix.csv`
+and `OPENTSX_DWD_DAILY=/data/dwd/demo-daily.csv` in its environment; `dwd-online` removes `OPENTSX_DWD_OFFLINE` and sets
+`OPENTSX_DWD_STATION` to the first station of `DWD_STATIONS`. `dwd house` runs over the forecast horizon
 (module [opentsx-dwd](../../opentsx-dwd/README.md)). Offline output (the fixture has 6 hourly steps; taken through the image entrypoint on the staged image tree):
 
 ```text
-dwd demo: mode offline (--offline /opt/opentsx/share/dwd/MOSMIX_L_2026101209_10578.kml)
 MOSMIX mosmix-l station 10578 FICHTELBERG (50.430, 12.950, 1213 m), issued 2026-10-12T09:00:00Z, 6 time steps 2026-10-12T10:00:00Z .. 2026-10-12T15:00:00Z
 models: ICON@2026-10-12T00:00:00Z, ECMWF/IFS@2026-10-12T00:00:00Z
 metric                       aggregation  unit   source origin         n valid  seriesId          first value
@@ -329,9 +330,10 @@ deploy/k3s/40-demo.sh modbus -- --count 300                             # longer
 
 The simulator serves the **example** register map (`registermap.example=true`, made-up addresses) with
 `opentsx modbus simulate --map example --port 1502 --bind 0.0.0.0`. The Job polls it with
-`opentsx modbus poll --map example --host opentsx-modbus-sim --port 1502 --interval 1s --out episodes
---episode PT10S --file /data/modbus/episodes-<UTC time>.jsonl` with `OPENTSX_MODBUS_COUNT=30` in its environment,
-which `40-demo.sh modbus -- --count <n>` overrides (module [opentsx-modbus](../../opentsx-modbus/README.md)):
+`opentsx modbus poll --file /data/modbus/episodes-<UTC time>.jsonl` and `OPENTSX_MODBUS_COUNT=30`,
+`OPENTSX_MODBUS_INTERVAL=1s`, `OPENTSX_MODBUS_OUT=episodes` and `OPENTSX_MODBUS_EPISODE_LENGTH=PT10S` in its
+environment (map, host and port from the ConfigMap); an option after `40-demo.sh modbus --`, such as `--count <n>` or
+`--interval PT2S`, overrides a variable (module [opentsx-modbus](../../opentsx-modbus/README.md)):
 
 ```text
 note: register map 'example-grid-meter' is an EXAMPLE, not a real register sheet

@@ -35,7 +35,7 @@ spec:
               set -eu
               mkdir -p /data/modbus
               f="/data/modbus/episodes-`date -u +%Y%m%dT%H%M%SZ`.jsonl"
-              opentsx modbus poll --interval 1s --out episodes --episode PT10S --file "$f"
+              opentsx modbus poll --file "$f"
               echo "wrote $f: `wc -l < "$f"` episodes"
               ls -l /data/modbus | tail -n 5
           env:
@@ -47,6 +47,12 @@ spec:
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: MODBUS_MAP}}
             - name: OPENTSX_MODBUS_COUNT     # 30 cycles; 40-demo.sh modbus -- --count <n> overrides it on the command line
               value: "30"
+            - name: OPENTSX_MODBUS_INTERVAL  # 40-demo.sh modbus -- --interval <duration> overrides it
+              value: 1s
+            - name: OPENTSX_MODBUS_OUT
+              value: episodes
+            - name: OPENTSX_MODBUS_EPISODE_LENGTH   # 40-demo.sh modbus -- --episode <duration> overrides it
+              value: PT10S
             - name: OPENTSX_EXTRA_ARGS       # set by 40-demo.sh -- <args>, e.g. -- --count 300
               value: ""
           resources:

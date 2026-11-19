@@ -38,8 +38,14 @@
 #   modbus          simulator opentsx-modbus-sim + 40-demo.sh modbus (poller -> episodes file on the data PVC)
 #   status          50-status.sh, for the report (never fails)
 #
-# Exit code 0 when no step failed, 1 otherwise. Idempotent: every step can be repeated (Jobs are recreated, compose
-# and kubectl apply converge). Teardown is separate: 90-teardown.sh (and docker compose ... down for KafScale).
+# Idempotent: every step can be repeated (Jobs are recreated, compose and kubectl apply converge). Teardown is
+# separate: 90-teardown.sh (and docker compose ... down for KafScale).
+#
+# Exit codes:
+#   0  no step failed (with --dry-run: the configuration is valid and the manifests render)
+#   1  a step failed
+#   2  usage error: an unknown option or step, an option without its value, --kafscale-host without --local-kafscale,
+#      or a line of deploy/k3s/.env that is not a comment or KEY=VALUE with a known key
 set -euo pipefail
 # shellcheck source=deploy/k3s/lib.sh
 source "$(dirname "$0")/lib.sh"
@@ -53,24 +59,32 @@ LOCAL_KS=false; KS_HOST=""; SKIP_BUILD=false; ONLINE=false; KEEP_GOING=false; VE
 ONLY=""; SKIPLIST=""; REPORT=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --kafscale-host|--only|--skip|--report)
+      [[ -n "${2:-}" ]] || usage_error "$1: missing value; see 60-probe.sh --help" ;;
+  esac
+  case "$1" in
     --local-kafscale) LOCAL_KS=true; shift ;;
-    --kafscale-host) KS_HOST="${2:?--kafscale-host needs an IP address}"; shift 2 ;;
+    --kafscale-host) KS_HOST="$2"; shift 2 ;;
     --skip-build) SKIP_BUILD=true; shift ;;
     --online) ONLINE=true; shift ;;
     --keep-going) KEEP_GOING=true; shift ;;
-    --only) ONLY="${2:?--only needs step names}"; shift 2 ;;
-    --skip) SKIPLIST="${2:?--skip needs step names}"; shift 2 ;;
-    --report) REPORT="${2:?--report needs a file name}"; shift 2 ;;
+    --only) ONLY="$2"; shift 2 ;;
+    --skip) SKIPLIST="$2"; shift 2 ;;
+    --report) REPORT="$2"; shift 2 ;;
     -v|--verbose) VERBOSE=true; shift ;;
     --dry-run) DRY=true; shift ;;
     -h|--help) usage 0 ;;
-    *) die "unknown option $1 (see --help)" ;;
+    *) usage_error "$1: unknown option; see 60-probe.sh --help" ;;
   esac
 done
-for s in ${ONLY//,/ } ${SKIPLIST//,/ }; do
-  [[ " ${ALL_STEPS[*]} " == *" $s "* ]] || die "unknown step '$s' (steps: ${ALL_STEPS[*]})"
+for s in ${ONLY//,/ }; do
+  [[ " ${ALL_STEPS[*]} " == *" $s "* ]] || usage_error "--only: unknown step $s; expected steps from: ${ALL_STEPS[*]}"
 done
-[[ -z "$KS_HOST" ]] || $LOCAL_KS || die "--kafscale-host only makes sense with --local-kafscale"
+for s in ${SKIPLIST//,/ }; do
+  [[ " ${ALL_STEPS[*]} " == *" $s "* ]] || usage_error "--skip: unknown step $s; expected steps from: ${ALL_STEPS[*]}"
+done
+[[ -z "$KS_HOST" ]] || $LOCAL_KS \
+  || usage_error "--kafscale-host: only with --local-kafscale; add --local-kafscale or drop --kafscale-host"
 
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 REPORT="${REPORT:-$PWD/probe-report-$STAMP.md}"
@@ -213,7 +227,7 @@ step_studio-export() { demo studio-export; }
 
 port_forward() {   # svc local-port remote-port url -> 0 when url answers within 30 s
   local svc="$1" lp="$2" rp="$3" url="$4" pid
-  kns port-forward "svc/$svc" "$lp:$rp" > "$LOGDIR/.pf-$svc" 2>&1 & pid=$!
+  kns_background port-forward "svc/$svc" "$lp:$rp" > "$LOGDIR/.pf-$svc" 2>&1; pid=$!
   PF_PIDS+=("$pid")
   for _ in $(seq 1 30); do
     curl -s -o /dev/null --max-time 3 "$url" && return 0

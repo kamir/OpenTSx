@@ -11,6 +11,12 @@
 #
 # NOT touched: the KafScale cluster and its topics tsx.<domain>.*.v2 (delete them with your KafScale tooling if
 # wanted), deploy/k3s/.env and overlays/local (delete them by hand to forget the configuration).
+#
+# Exit codes:
+#   0  removed
+#   1  a deletion failed, an image could not be removed from k3s' containerd, or the question was not answered with y
+#   2  usage error: an unknown option, or a line of deploy/k3s/.env that is not a comment or KEY=VALUE with a
+#      known key
 set -euo pipefail
 # shellcheck source=deploy/k3s/lib.sh
 source "$(dirname "$0")/lib.sh"
@@ -22,7 +28,7 @@ while [[ $# -gt 0 ]]; do
     --images) IMAGES=true; shift ;;
     --yes|-y) YES=true; shift ;;
     -h|--help) usage 0 ;;
-    *) die "unknown option $1 (see --help)" ;;
+    *) usage_error "$1: unknown option; expected --keep-data, --images, --yes or --help" ;;
   esac
 done
 load_env
@@ -46,14 +52,19 @@ if kc get namespace "$OPENTSX_NS" >/dev/null 2>&1; then
     kc delete -k "$OVERLAY" --ignore-not-found --wait=true
   fi
 else
-  info "namespace $OPENTSX_NS does not exist - nothing to delete in the cluster"
+  info "namespace $OPENTSX_NS does not exist; nothing to delete in the cluster"
 fi
 
 if $IMAGES; then
   have k3s || die "--images needs k3s on this host"
   info "removing images from k3s containerd"
+  kept=0
   for img in "$TOOLS_IMAGE" "$STUDIO_IMAGE" "$SAAS_FRONTEND_IMAGE" "$SAAS_BACKEND_IMAGE"; do
-    as_root k3s ctr images rm "docker.io/$img" "$img" 2>/dev/null || true
+    if ! err="$(as_root k3s ctr images rm "docker.io/$img" "$img" 2>&1 >/dev/null)"; then
+      warn "$img: not removed from k3s containerd: ${err//$'\n'/ }"
+      kept=$((kept + 1))
+    fi
   done
+  (( kept == 0 )) || die "$kept image(s) not removed from k3s containerd; see the warn lines above"
 fi
 info "done (KafScale topics are untouched)"

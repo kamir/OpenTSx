@@ -42,13 +42,15 @@ spec:
                   ts=`date -u +%Y%m%dT%H%M%SZ`
                   failed=0
                   stations="$DWD_STATIONS"
-                  if [ "$DWD_MODE" != online ]; then stations=10578; echo "offline mode: the fixture holds station 10578 only"; fi
+                  if [ "$DWD_MODE" != online ]; then
+                    export OPENTSX_DWD_OFFLINE="$DWD_FIXTURE"
+                    stations=10578; echo "offline mode: the fixture holds station 10578 only"
+                  fi
                   IFS=,
                   for s in $stations; do
-                    if [ "$DWD_MODE" = online ]; then src="--station $s"; else src="--offline $DWD_FIXTURE --station $s"; fi
                     echo "== station $s ($DWD_MODE)"
                     IFS=' '
-                    opentsx dwd mosmix $src --out "/data/dwd/mosmix-$s-$ts.csv" --daily "/data/dwd/daily-$s-$ts.csv" \
+                    opentsx dwd mosmix --station "$s" --out "/data/dwd/mosmix-$s-$ts.csv" --daily "/data/dwd/daily-$s-$ts.csv" \
                       || { echo "station $s FAILED"; failed=$((failed + 1)); }
                     IFS=,
                   done

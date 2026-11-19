@@ -98,9 +98,24 @@ lines only.
 
 ## Scripts
 
+`00-prereqs.sh`, `20-configure.sh`, `40-demo.sh`, `60-probe.sh`, `70-backup.sh` and `90-teardown.sh` exit with 2 on a
+usage error and with 1 when a check or a step failed; the other scripts exit with 1 in both cases
+([exit codes](../../deploy/k3s/README.md#read-the-exit-codes)).
+
 | Symptom | Fix |
 |---------|-----|
-| `no rendered overlay` | `20-configure.sh KAFSCALE_BOOTSTRAP=<host:port>` |
+| `no rendered overlay in deploy/k3s/overlays/local; run deploy/k3s/20-configure.sh first` | `20-configure.sh KAFSCALE_BOOTSTRAP=<host:port>` |
 | `cluster not reachable` | `export KUBECONFIG=/etc/rancher/k3s/k3s.yaml` (readable by you) or `20-configure.sh KUBECTL="sudo k3s kubectl"` |
 | `bash >= 4 required` (macOS) | run the scripts on the Linux host, or install a current bash |
 | `20-configure.sh`: `… is loopback` | pods cannot reach `localhost` of the host: use the LAN IP or `KAFSCALE_NETWORK=hostnetwork` |
+| any script: `deploy/k3s/.env:<n>: unknown key <KEY>; use a key of deploy/k3s/env.example` (exit code 2) | a misspelled key in `.env`: change it to the key of `env.example` or delete the line; the script left `.env` as it is |
+| any script: `deploy/k3s/.env:<n>: not a KEY=VALUE line; write KEY=VALUE, a comment or an empty line` (exit code 2) | the scripts would run that line as a shell command: write it as `KEY=VALUE` or delete it |
+| `20-configure.sh`: `<KEY>: "<value>" …; expected …` or `<KEY>: the value holds a control character such as a line break; write it on one line` (exit code 1) | set the value in the form named after `expected`; the script wrote nothing |
+| `40-demo.sh`: `<demo>: unknown demo; expected one of …` (exit code 2) | `40-demo.sh --help` describes the demos |
+| `40-demo.sh <demo> -- …`: `<demo>: takes no extra arguments; drop the arguments after --` (exit code 2) | `stats`, `retrieval`, `studio`, `dwd-forward` and `all` run without arguments: drop `--` and what follows |
+| `40-demo.sh <demo> -- …`: the Job fails with `opentsx: --<option>: set twice on the command line (also by --<option>); set each key once` | the Job command names that option itself; [Pass settings to a command](../../deploy/k3s/README.md#pass-settings-to-a-command) lists the options it names |
+| `40-demo.sh metadata-publish`: `OPENMETADATA_JWT: not set; …` (exit code 1, no Job started) | `read -rs OPENMETADATA_JWT && export OPENMETADATA_JWT`, then `20-configure.sh` and `30-deploy.sh` |
+| `40-demo.sh retrieval`: `FAIL  GET http://localhost:18080/…: no answer (curl exit <n>); …` or `…: HTTP <status>; …` (exit code 1) | `50-status.sh` and `kubectl -n opentsx logs deploy/opentsx-retrieval`; the port-forward ends with the script |
+| `70-backup.sh --quiesce`: `<deployment>: pods still run 150 s after scaling to 0 (<pods>); stop them, then run 70-backup.sh again` (exit code 1, no backup written) | the script scaled the writers back; `kubectl -n opentsx describe pod <pod>` shows why the pod does not end |
+| `70-backup.sh --quiesce`: `<deployment>: cannot read the Deployment; check the cluster with …` (exit code 1) | the cluster did not answer: see `cluster not reachable` |
+| `90-teardown.sh --images`: `warn  <image>: not removed from k3s containerd: <reason>`, then exit code 1 | run it as a user who may run `sudo k3s ctr`, or remove the image by hand: `sudo k3s ctr images rm <image>` |

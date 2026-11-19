@@ -1,6 +1,7 @@
 # DWD weather demo: MOSMIX forecast -> v2 series + CSV on the data PVC (/data/dwd), then the house twin over the
-# forecast horizon. DWD_MODE=offline (default of this Job via 40-demo.sh dwd) reads the MOSMIX fixture that ships in
-# the image - no internet needed; 40-demo.sh dwd-online fetches the first station of DWD_STATIONS from opendata.dwd.de.
+# forecast horizon. As shipped (40-demo.sh dwd) both commands read the MOSMIX fixture DWD_FIXTURE that ships in the
+# image through OPENTSX_DWD_OFFLINE, so no internet is needed. 40-demo.sh dwd-online removes OPENTSX_DWD_OFFLINE and
+# sets OPENTSX_DWD_STATION to the first station of DWD_STATIONS, which is then fetched from opendata.dwd.de.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -32,19 +33,16 @@ spec:
             - |
               set -eu
               mkdir -p /data/dwd
-              station="${DWD_STATIONS%%,*}"
-              if [ "$DWD_MODE" = online ]; then src="--station $station"; else src="--offline $DWD_FIXTURE"; fi
-              echo "dwd demo: mode $DWD_MODE ($src)"
-              opentsx dwd mosmix $src --out /data/dwd/demo-mosmix.csv --daily /data/dwd/demo-daily.csv
-              OPENTSX_EXTRA_ARGS= opentsx dwd house $src
+              opentsx dwd mosmix
+              OPENTSX_EXTRA_ARGS= opentsx dwd house
               ls -l /data/dwd
           env:
-            - name: DWD_MODE                 # 40-demo.sh sets offline (dwd) or online (dwd-online)
-              value: offline
-            - name: DWD_STATIONS
-              valueFrom: {configMapKeyRef: {name: opentsx-config, key: DWD_STATIONS}}
-            - name: DWD_FIXTURE
+            - name: OPENTSX_DWD_OFFLINE      # 40-demo.sh dwd-online removes it and sets OPENTSX_DWD_STATION
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: DWD_FIXTURE}}
+            - name: OPENTSX_DWD_OUT          # read by dwd mosmix only, like OPENTSX_DWD_DAILY
+              value: /data/dwd/demo-mosmix.csv
+            - name: OPENTSX_DWD_DAILY
+              value: /data/dwd/demo-daily.csv
             - name: OPENTSX_EXTRA_ARGS       # set by 40-demo.sh -- <args> (appended to the mosmix command)
               value: ""
           resources:

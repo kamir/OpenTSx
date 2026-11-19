@@ -20,7 +20,7 @@
 #   deploy/k3s/overlays/local/               kustomization (namespace, config, Secret, images, components)
 #   deploy/k3s/overlays/local/jobs/          kustomization for the demo Jobs (used by 40-demo.sh)
 # KAFSCALE_NETWORK:
-#   direct       pods use KAFSCALE_BOOTSTRAP as is (an IP/DNS name reachable from the pod network) - default
+#   direct       pods use KAFSCALE_BOOTSTRAP as is (an IP/DNS name reachable from the pod network); the default
 #   hostnetwork  KafScale-facing pods share the node's network (KafScale on the same host, advertising localhost)
 #   service      an in-cluster name opentsx-kafscale.<ns>.svc for the bootstrap (selector-less Service +
 #                EndpointSlice for an IP, ExternalName for a DNS name). Only the bootstrap goes through it: the
@@ -30,7 +30,8 @@
 # Exit codes:
 #   0  configuration written
 #   1  a value failed its check, or writing or rendering failed
-#   2  usage error: an unknown key, an argument that is not KEY=VALUE or an option, a secret key as an argument
+#   2  usage error: an unknown key, an argument that is not KEY=VALUE or an option, a secret key as an argument, or
+#      a line of deploy/k3s/.env that is not a comment or KEY=VALUE with a known key
 set -euo pipefail
 # shellcheck source=deploy/k3s/lib.sh
 source "$(dirname "$0")/lib.sh"
@@ -56,6 +57,10 @@ load_env
 for key in "${!SET[@]}"; do printf -v "$key" '%s' "${SET[$key]}"; done
 
 # ---- validate -----------------------------------------------------------------------------------------------------
+# every value ends up in a YAML or env file line
+for key in "${CONFIG_KEYS[@]}"; do
+  [[ "${!key}" != *[[:cntrl:]]* ]] || die "$key: the value holds a control character such as a line break; write it on one line"
+done
 [[ "$OPENTSX_NS" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]] || die "OPENTSX_NS=$OPENTSX_NS is not a valid namespace name"
 [[ "$OPENTSX_DOMAIN" =~ ^[a-z0-9][a-z0-9_-]*$ ]] || die "OPENTSX_DOMAIN=$OPENTSX_DOMAIN: use lower-case letters, digits, - or _"
 [[ "$OPENTSX_PARTITIONS" =~ ^[1-9][0-9]*$ ]] || die "OPENTSX_PARTITIONS must be a positive number"
@@ -82,8 +87,53 @@ fi
 [[ "$DWD_STATIONS" =~ ^[A-Za-z0-9]+(,[A-Za-z0-9]+)*$ ]] || die "DWD_STATIONS=$DWD_STATIONS: expected MOSMIX ids like 10578,10579"
 read -r -a cron_fields <<< "$DWD_SCHEDULE"
 (( ${#cron_fields[@]} == 5 )) || die "DWD_SCHEDULE='$DWD_SCHEDULE': expected 5 cron fields, e.g. '17 5 * * *'"
+cron_chars='^[0-9A-Za-z*/,? -]+$'
+[[ "$DWD_SCHEDULE" =~ $cron_chars ]] \
+  || die "DWD_SCHEDULE: \"$DWD_SCHEDULE\" holds a character that is not part of a cron field; expected digits, letters and * / , ? -, such as 17 5 * * *"
 if ! [[ "$MODBUS_PORT" =~ ^[0-9]+$ ]] || (( MODBUS_PORT < 1 || MODBUS_PORT > 65535 )); then die "MODBUS_PORT must be a TCP port"; fi
 [[ -n "$MODBUS_HOST" && -n "$MODBUS_MAP" ]] || die "MODBUS_HOST and MODBUS_MAP must not be empty"
+# the duration form of the configuration registry (python-package/opentsx/conf/conf.py, _ISO and _UNIT)
+is_duration() {
+  local n='(0|[1-9][0-9]{0,19})' iso unit
+  iso="^P(${n}D)?(T(${n}H)?(${n}M)?(${n}([.][0-9]{1,3})?S)?)?\$"; unit="^${n}(ms|s|min|m|h|d)\$"
+  [[ "$1" =~ $iso && "$1" =~ [0-9] && "$1" != *T ]] || [[ "$1" =~ $unit ]]
+}
+duration_expected='expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m'
+[[ -n "$OPENTSX_STATS_WINDOWS" ]] || die "OPENTSX_STATS_WINDOWS: empty value; set durations such as PT10M,PT1H"
+rest="$OPENTSX_STATS_WINDOWS,"
+while [[ -n "$rest" ]]; do
+  w="${rest%%,*}"; rest="${rest#*,}"
+  is_duration "$w" || die "OPENTSX_STATS_WINDOWS: item \"$w\" is not a duration; $duration_expected"
+done
+is_duration "$OPENTSX_STATS_ALLOWED_LATENESS" \
+  || die "OPENTSX_STATS_ALLOWED_LATENESS: \"$OPENTSX_STATS_ALLOWED_LATENESS\" is not a duration; $duration_expected"
+image_path='^/[A-Za-z0-9._/-]+$'
+[[ "$OPENTSX_WINDPARK_SCENARIO" =~ $image_path ]] \
+  || die "OPENTSX_WINDPARK_SCENARIO: \"$OPENTSX_WINDPARK_SCENARIO\" is not an absolute path; expected a file in the image or on a mounted volume, such as /opt/opentsx/share/scenarios/ostsee-demo.yaml"
+[[ "$DWD_FIXTURE" =~ $image_path ]] \
+  || die "DWD_FIXTURE: \"$DWD_FIXTURE\" is not an absolute path; expected a file in the image or on a mounted volume, such as /opt/opentsx/share/dwd/MOSMIX_L_2026101209_10578.kml"
+[[ "$OPENTSX_ICEBERG_NAMESPACE" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] \
+  || die "OPENTSX_ICEBERG_NAMESPACE: \"$OPENTSX_ICEBERG_NAMESPACE\" is not an Iceberg namespace; expected letters, digits and _, starting with a letter or _, such as tsx"
+[[ "$STORAGE_CLASS" =~ ^([a-z0-9]([-a-z0-9.]*[a-z0-9])?)?$ ]] \
+  || die "STORAGE_CLASS: \"$STORAGE_CLASS\" is not a StorageClass name; expected lower-case letters, digits, - and ., or empty for the default class"
+image_repo='^([A-Za-z0-9.-]+(:[0-9]+)?/)?[a-z0-9]+([._-]+[a-z0-9]+)*(/[a-z0-9]+([._-]+[a-z0-9]+)*)*$'
+[[ "$OPENTSX_IMAGE_REPO" =~ $image_repo ]] \
+  || die "OPENTSX_IMAGE_REPO: \"$OPENTSX_IMAGE_REPO\" is not an image repository; expected [host[:port]/]path in lower case, such as opentsx or registry.local:5000/opentsx"
+[[ "$OPENTSX_TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]] \
+  || die "OPENTSX_TAG: \"$OPENTSX_TAG\" is not an image tag; expected up to 128 letters, digits, _, . and -, starting with a letter, digit or _"
+host='([A-Za-z0-9.-]+|\[[0-9A-Fa-f:.]+\])(:[0-9]{1,5})?'
+http_url="^https?://$host(/[^[:space:]\"'\\,]*)?\$"
+[[ -z "$OM_URL" || "$OM_URL" =~ $http_url ]] \
+  || die "OM_URL: \"$OM_URL\" is not an http(s) URL; expected http://<host>:<port>/api, or empty without OpenMetadata"
+[[ -z "$S3_ENDPOINT" || "$S3_ENDPOINT" =~ $http_url ]] \
+  || die "S3_ENDPOINT: \"$S3_ENDPOINT\" is not an http(s) URL; expected http://<host>:<port> without spaces, commas or quotes"
+[[ "$S3_BUCKET" =~ ^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$ ]] \
+  || die "S3_BUCKET: \"$S3_BUCKET\" is not a bucket name; expected 3 to 63 lower-case letters, digits, . and -, such as lake"
+[[ "$S3_REGION" =~ ^[A-Za-z0-9_-]+$ ]] \
+  || die "S3_REGION: \"$S3_REGION\" is not a region; expected letters, digits, - and _, such as us-east-1"
+origin="^([*]|https?://$host)\$"
+[[ "$EVENT_BRIDGE_ALLOW_ORIGIN" =~ $origin ]] \
+  || die "EVENT_BRIDGE_ALLOW_ORIGIN: \"$EVENT_BRIDGE_ALLOW_ORIGIN\" is not an origin; expected * or <scheme>://<host>[:<port>] such as http://studio.local:8088"
 
 # ---- derived values -----------------------------------------------------------------------------------------------
 POD_BOOTSTRAP="$KAFSCALE_BOOTSTRAP"
@@ -161,7 +211,7 @@ fi
 # ---- .env ----------------------------------------------------------------------------------------------------------
 umask 077
 {
-  echo "# written by deploy/k3s/20-configure.sh on $(date -u +%Y-%m-%dT%H:%M:%SZ) - contains secrets, never commit"
+  echo "# written by deploy/k3s/20-configure.sh on $(date -u +%Y-%m-%dT%H:%M:%SZ); contains secrets, never commit"
   for key in "${CONFIG_KEYS[@]}"; do printf '%s=%q\n' "$key" "${!key}"; done
 } > "$ENV_FILE"
 chmod 600 "$ENV_FILE"
@@ -193,6 +243,11 @@ MODBUS_HOST=$MODBUS_HOST
 MODBUS_PORT=$MODBUS_PORT
 MODBUS_MAP=$MODBUS_MAP
 EVENT_BRIDGE_ALLOW_ORIGIN=$EVENT_BRIDGE_ALLOW_ORIGIN
+OPENTSX_WINDPARK_SCENARIO=$OPENTSX_WINDPARK_SCENARIO
+OPENTSX_STATS_WINDOWS=$OPENTSX_STATS_WINDOWS
+OPENTSX_STATS_ALLOWED_LATENESS=$OPENTSX_STATS_ALLOWED_LATENESS
+OPENTSX_ICEBERG_NAMESPACE=$OPENTSX_ICEBERG_NAMESPACE
+DWD_FIXTURE=$DWD_FIXTURE
 RETRIEVAL_DAG_RUNS=$(is_true "$RETRIEVAL_DAG_RUNS" && echo true || echo false)
 SAAS_DAG_RUN_ROLE=$SAAS_DAG_RUN_ROLE
 SAAS_TEST_LOGIN=$(is_true "$SAAS_TEST_LOGIN" && echo true || echo false)
@@ -307,7 +362,7 @@ EOF
 }
 
 {
-  echo "# rendered by deploy/k3s/20-configure.sh - do not edit, re-run the script"
+  echo "# rendered by deploy/k3s/20-configure.sh; do not edit, run the script again"
   echo "apiVersion: kustomize.config.k8s.io/v1beta1"
   echo "kind: Kustomization"
   echo "namespace: $OPENTSX_NS"
@@ -345,7 +400,7 @@ EOF
 } > "$OVERLAY/kustomization.yaml"
 
 {
-  echo "# rendered by deploy/k3s/20-configure.sh - demo Jobs, used by 40-demo.sh"
+  echo "# rendered by deploy/k3s/20-configure.sh: demo Jobs, used by 40-demo.sh"
   echo "apiVersion: kustomize.config.k8s.io/v1beta1"
   echo "kind: Kustomization"
   echo "namespace: $OPENTSX_NS"
@@ -375,6 +430,6 @@ if kc version --client >/dev/null 2>&1; then
     { doc = doc $0 "\n" }
     END { flush() }'
 else
-  warn "kubectl not available - rendering not checked"
+  warn "kubectl not available; rendering not checked"
 fi
 echo "next: deploy/k3s/30-deploy.sh   (already deployed? 30-deploy.sh --restart applies a changed configuration)"

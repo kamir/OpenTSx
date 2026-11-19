@@ -411,8 +411,9 @@ Each runbook: symptom → check → cause → fix → verify. Start every invest
   the legacy `HTTPS_PROXY` when the JVM property `https.proxyHost` is not set), a wrong station id (MOSMIX ids such as
   `10578` differ from CDC ids such as `01358`), a DWD outage or file layout change.
 * **Fix:** allow egress to `opendata.dwd.de:443` (or set `OPENTSX_HTTPS_PROXY` in the CronJob), correct `DWD_STATIONS`
-  (`bin/opentsx dwd stations --near LAT,LON`), retry later. The offline mode (`40-demo.sh dwd`, `DWD_MODE=offline`)
-  separates OpenTSx problems from network problems: if it passes, the image and PVC are fine.
+  (`bin/opentsx dwd stations --near LAT,LON`), retry later. The offline mode (`40-demo.sh dwd`, which reads the
+  fixture through `OPENTSX_DWD_OFFLINE`, or the CronJob with `DWD_MODE=offline`) separates OpenTSx problems from
+  network problems: if it passes, the image and PVC are fine.
 * **Verify:** `40-demo.sh dwd-forward` completes; new `mosmix-<station>-<time>.csv` files on the data PVC.
 
 ### R7: Modbus timeouts or exception responses
