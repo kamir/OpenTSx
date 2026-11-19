@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -150,6 +151,28 @@ class WindparkSimCliTest {
         assertEquals(List.of(), admins);
         assertEquals(List.of(), producers);
         assertTrue(out().startsWith("scenario ostsee-demo: 200 episodes, "), out());
+    }
+
+    @Test
+    void theSummaryReadsTheSameInAGermanLocale() throws Exception {
+        String scenario = shortScenario();
+        Locale before = Locale.getDefault();
+        Locale format = Locale.getDefault(Locale.Category.FORMAT);
+        Locale.setDefault(Locale.GERMANY);
+        int code;
+        try {
+            code = run(Map.of(), "--scenario", scenario);
+        } finally {
+            Locale.setDefault(before);
+            Locale.setDefault(Locale.Category.FORMAT, format);
+        }
+        assertEquals(0, code, err());
+        List<String> lines = out().lines().toList();
+        assertTrue(lines.get(0).startsWith("scenario ostsee-demo: 200 episodes, 120,000 values, "), out());
+        assertEquals(11, lines.size(), out());
+        for (String turbine : lines.subList(1, lines.size())) {
+            assertTrue(turbine.matches("  T\\d\\d +\\d+\\.\\d kWh  mean wind +\\d+\\.\\d\\d m/s  states \\{.*}"), turbine);
+        }
     }
 
     @Test

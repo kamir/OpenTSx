@@ -566,6 +566,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `opentsx-legacy-bridge` stamps the producer `opentsx-legacy-bridge/<version>` of the build instead of the literal
   `opentsx-legacy-bridge/3.0.1` and picks REGULAR or IRREGULAR_DELTA with `Episodes.of`. An empty series fails with
   `values: empty; expected at least one value` instead of `cannot convert an empty series`.
+- `windpark-sim` and `WindparkSimulator.groundTruth()` list only the operations and sensor faults that overlap the
+  simulated span, from the scenario start to the end of the last episode, with each event's end clipped to that span.
+  A 20-minute run of `ostsee-demo.yaml` lists no event instead of all 17. The full 6-hour run still lists 17.
+- A wind-farm scenario is refused when its `episodeDuration` is not a multiple of `sampleInterval` or its `start` is
+  off the `episodeDuration` grid. The refusal names the field, both values and what is allowed, for example `start:
+  2026-10-01T00:05:00Z is not aligned to episodeDuration PT10M; set start to a whole multiple of episodeDuration since
+  1970-01-01T00:00:00Z, such as 2026-10-01T00:00:00Z`.
 
 ### Removed
 
@@ -641,6 +648,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   backend and exits 1 on a failed check.
 - `bin/120_run_demo.sh`, which started the same GUI as `bin/000_launch_tsa_workbench.sh`. The menus of `010_build.sh`
   and `000_launch_tsa_workbench.sh` point to `bin/episode_02_create_timeseries.sh` and the user manual.
+- `Normalizer.zone()` of `opentsx-windpark`, which had no caller. The normalizer picks REGULAR or IRREGULAR_DELTA
+  through `Episodes.of`.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -1211,6 +1220,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `opentsx.stats.QuantileSketch.from_bytes` refuses the malformed sketches that Java refuses, with the same texts:
   bytes that end inside a varint, a varint over 64 bits or longer than 10 bytes, a count above 9223372036854775807 and
   a bin index outside the int range.
+- `windpark-sim` prints its summary with a comma as the thousands separator and a dot as the decimal point in every
+  locale, for example `3,600 episodes` and `4538.4 kWh`, also under a German locale.
+- A wind-farm scenario `start` is checked against the `episodeDuration` grid to the nanosecond and after the year
+  2262. A start of `2026-10-01T00:00:00.000000500Z` is refused, and a start of `2300-01-01T00:00:00Z` is accepted.
+- Episodes from `windpark-sim`, `market load` and `market publish` carry the producer `<module>/<version of the
+  build>` from `Episodes.producer` instead of a hard-coded `3.0.1`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

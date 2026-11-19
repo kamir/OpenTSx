@@ -14,6 +14,7 @@ import org.opentsx.windpark.sim.SimulationReport;
 import org.opentsx.windpark.sim.WindparkSimulator;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -22,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -68,9 +71,37 @@ class SimulatorTest {
         List<Episode> b = run(new WindparkSimulator(s, catalog), r);
         assertEquals(10 * 10 * 2, a.size()); // turbines x channels x windows
         assertEquals(a, b);
+        List<GroundTruth> truth = new WindparkSimulator(full, catalog).groundTruth();
         // curtailment of all 10 turbines + 1 fault + 1 maintenance
-        assertEquals(12, r.get(0).groundTruth().stream().filter(g -> g.category().equals("operation")).count());
-        assertEquals(5, r.get(0).groundTruth().stream().filter(g -> g.category().equals("sensor-fault")).count());
+        assertEquals(12, truth.stream().filter(g -> g.category().equals("operation")).count());
+        assertEquals(5, truth.stream().filter(g -> g.category().equals("sensor-fault")).count());
+        // the first event starts at PT1H, after the 20 minutes of the shortened copy
+        assertEquals(List.of(), r.get(0).groundTruth());
+    }
+
+    @Test
+    void theGroundTruthListsOnlyEventsInsideTheSimulatedSpanClippedToIt() {
+        // PT25M of PT10M episodes runs three whole episodes, so the span ends at PT30M
+        List<Scenario.Operation> ops = List.of(
+                new Scenario.Operation(Scenario.OperationType.FAULT, List.of("T01"), Duration.ofMinutes(5), Duration.ofMinutes(10), null),
+                new Scenario.Operation(Scenario.OperationType.MAINTENANCE, List.of("T02"), Duration.ofMinutes(20), Duration.ofHours(1), null),
+                new Scenario.Operation(Scenario.OperationType.CURTAILMENT, List.of("*"), Duration.ofMinutes(30), Duration.ofMinutes(10), 500.0));
+        List<Scenario.SensorFault> faults = List.of(
+                new Scenario.SensorFault(Scenario.SensorFaultType.GAP, "T01", "wind.turbine.power_active", Duration.ofMinutes(25),
+                        Duration.ofMinutes(20), null, null, null),
+                new Scenario.SensorFault(Scenario.SensorFaultType.STUCK, "T02", "wind.met.wind_speed", Duration.ofHours(2),
+                        Duration.ofMinutes(10), null, null, null));
+        WindparkSimulator sim = new WindparkSimulator(scenario("span", Duration.ofMinutes(25), row(2), Scenario.WindSpec.DEFAULT,
+                ops, faults, Duration.ofSeconds(5)), catalog);
+        long t0 = Micros.of(START);
+        List<String> listed = sim.groundTruth().stream().map(g -> g.category() + " " + g.type() + " " + g.turbine() + " "
+                + g.channel() + " " + (g.fromMicros() - t0) / 60_000_000L + "-" + (g.toMicros() - t0) / 60_000_000L).toList();
+        assertEquals(List.of("operation FAULT T01 null 5-15", "operation MAINTENANCE T02 null 20-30",
+                "sensor-fault GAP T01 wind.turbine.power_active 25-30"), listed);
+        List<SimulationReport> r = new ArrayList<>();
+        List<Episode> eps = run(sim, r);
+        assertEquals(sim.groundTruth(), r.get(0).groundTruth());
+        assertEquals(60, of(eps, "wind.turbine.power_active", "T01").get(2).getSummary().getNanCount());
     }
 
     @Test
@@ -283,6 +314,24 @@ class SimulatorTest {
     }
 
     @Test
+    void aScenarioRefusesAnEpisodeDurationOffTheSampleGridAndAStartOffTheEpisodeGrid() {
+        assertEquals("episodeDuration: PT10M is not a multiple of sampleInterval PT7S; "
+                        + "set episodeDuration to a whole multiple of sampleInterval",
+                assertThrows(IllegalArgumentException.class, () -> new Scenario("s", 1, START, Duration.ofHours(1),
+                        Duration.ofSeconds(7), null, row(1), null, null, null)).getMessage());
+        assertEquals("start: 2026-10-01T00:05:00Z is not aligned to episodeDuration PT10M; "
+                        + "set start to a whole multiple of episodeDuration since 1970-01-01T00:00:00Z, such as 2026-10-01T00:00:00Z",
+                assertThrows(IllegalArgumentException.class, () -> new Scenario("s", 1, START.plusSeconds(300),
+                        Duration.ofHours(1), null, null, row(1), null, null, null)).getMessage());
+        assertEquals("start: 2026-10-01T00:00:00.000000500Z is not aligned to episodeDuration PT10M; "
+                        + "set start to a whole multiple of episodeDuration since 1970-01-01T00:00:00Z, such as 2026-10-01T00:00:00Z",
+                assertThrows(IllegalArgumentException.class, () -> new Scenario("s", 1, START.plusNanos(500),
+                        Duration.ofHours(1), null, null, row(1), null, null, null)).getMessage());
+        assertEquals(Instant.parse("2300-01-01T00:00:00Z"), new Scenario("s", 1, Instant.parse("2300-01-01T00:00:00Z"),
+                Duration.ofHours(1), null, null, row(1), null, null, null).start());
+    }
+
+    @Test
     void aSensorFaultOrOperationOnAnUnknownTurbineFailsWhenTheSimulatorIsBuilt() {
         Duration at = Duration.ofMinutes(10);
         Scenario fault = scenario("refs", Duration.ofMinutes(30), row(2), Scenario.WindSpec.DEFAULT, List.of(),
@@ -339,6 +388,33 @@ class SimulatorTest {
                 new Scenario.WindSpec(k, c, 0.1, 270, 5, 0, 10), List.of(), List.of(), Duration.ofSeconds(60)), catalog), r);
         double expected = c * gamma(1 + 1 / k); // 7.98 m/s
         assertEquals(expected, r.get(0).meanWindMs().get("T01"), 0.15 * expected);
+    }
+
+    @Test
+    void episodesCarryTheProducerOfThisBuild() {
+        List<Episode> eps = run(new WindparkSimulator(scenario("producer", Duration.ofMinutes(10), row(1),
+                Scenario.WindSpec.DEFAULT, List.of(), List.of(), Duration.ofSeconds(10)), catalog), new ArrayList<>());
+        assertEquals(Episodes.producer("opentsx-windpark"), eps.get(0).getProvenance().getProducer());
+    }
+
+    @Test
+    void noSourceFileCarriesALiteralProducerVersion() throws IOException {
+        Pattern literal = Pattern.compile("opentsx-[a-z0-9-]+/[0-9]+\\.[0-9]+");
+        List<Path> scanned;
+        try (Stream<Path> files = Files.walk(Path.of("src/main/java"))) {
+            scanned = files.filter(f -> f.toString().endsWith(".java")).sorted().toList();
+        }
+        assertTrue(scanned.contains(Path.of("src/main/java/org/opentsx/windpark/sim/WindparkSimulator.java")), scanned.toString());
+        List<String> hits = new ArrayList<>();
+        for (Path f : scanned) {
+            List<String> lines = Files.readAllLines(f, StandardCharsets.UTF_8);
+            for (int i = 0; i < lines.size(); i++) {
+                if (literal.matcher(lines.get(i)).find()) {
+                    hits.add(f + ":" + (i + 1));
+                }
+            }
+        }
+        assertEquals(List.of(), hits);
     }
 
     private static double binMean(double[] x, double[] y, double lo, double hi) {

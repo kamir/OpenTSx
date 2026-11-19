@@ -19,6 +19,7 @@ import org.opentsx.market.source.PartnerCsv;
 import org.opentsx.market.source.Rebap;
 import org.opentsx.market.source.SmardJson;
 import org.opentsx.market.twin.HistorySites;
+import org.opentsx.model.Episodes;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.store.InMemorySeriesStore;
 import org.opentsx.store.SeriesStore;
@@ -477,7 +478,7 @@ public final class MarketCli {
                             continue;
                         }
                         List<Episode> eps = EpisodeMapper.episodes(new MarketSeries(d, archive.read(d, year)),
-                                        "opentsx-market/3.0.1").stream()
+                                        Episodes.producer("opentsx-market")).stream()
                                 .filter(e -> !e.getTStart().isBefore(fromDay) && e.getTStart().isBefore(toDay))
                                 .map(BrokerPublish::identified).toList();
                         store.write(eps);

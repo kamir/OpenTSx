@@ -83,13 +83,14 @@ The simulator models:
 * wind: Ornstein-Uhlenbeck turbulence with exact discretization, plus wakes (Jensen model),
 * the turbine: power curve, rotor and generator speed, pitch, yaw and temperatures, and the operating state.
 
-Output is deterministic, including episode ids. Every injected event is returned as **ground truth**, which makes the
-data a benchmark for data quality, pattern search and forecasting. The operator catalog lists the scenario parameters
+Output is deterministic, including episode ids. Every event that overlaps the simulated span is returned as
+**ground truth**, with its end clipped to the end of the last episode, which makes the data a benchmark for data
+quality, pattern search and forecasting. The operator catalog lists the scenario parameters
 under `gen.windpark` ([chapter 17](17-operators.md)).
 
 Run the shipped scenario from the repository root. Without a sink the run writes no topic and no table. With the
 default `--sinks auto`, a sink is on only when `--kafscale` or `--iceberg`, or `--conf` with its key, is on the command
-line. `--ground-truth` writes the injected events to `ground-truth.json` in the current directory.
+line. `--ground-truth` writes the ground truth to `ground-truth.json` in the current directory.
 
 ```bash
 bin/opentsx windpark-sim --scenario opentsx-windpark/scenarios/ostsee-demo.yaml --ground-truth ground-truth.json
@@ -118,7 +119,7 @@ as in [chapter 18](18-configuration.md):
 | `--namespace <ns>` | Iceberg namespace, default `tsx`. Used with the Iceberg sink. |
 | `--sinks <list>` | `auto` (default), `kafscale`, `iceberg` or `kafscale,iceberg`. With `auto` a sink is on when its flag, or `--conf` with its key, is on the command line; a value from the environment, for example `KAFSCALE_BOOTSTRAP`, or from a file adds no sink. |
 | `--catalog <file>` | channel catalog YAML. Default: the built-in catalog. |
-| `--ground-truth <file>` | writes the injected events as JSON after the sinks. A directory, or a file in a directory that does not exist, is refused before a client opens. |
+| `--ground-truth <file>` | writes the events that overlap the simulated span as JSON after the sinks. A directory, or a file in a directory that does not exist, is refused before a client opens. |
 
 The command checks the keys, the required Iceberg properties, the ground-truth path, the scenario and the catalog
 before it opens a client. A usage or configuration error prints one line on stderr, creates no topic and exits with

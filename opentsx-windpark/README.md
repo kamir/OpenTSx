@@ -102,7 +102,8 @@ r.report();                                    // accepted / unmapped / unit err
   The operating state uses codes 1–6.
 * **Operations.** `CURTAILMENT`, `FAULT` and `MAINTENANCE`.
 * **Sensor faults.** `STUCK`, `DRIFT`, `OFFSET`, `SPIKES` and `GAP`.
-* **Ground truth.** Every injected operation and fault is returned as `GroundTruth`. Episodes are also labelled with
+* **Ground truth.** Every operation and sensor fault that overlaps the simulated span is returned as `GroundTruth`,
+  with its end clipped to the end of the last episode. Episodes are also labelled with
   `gt.operation` and `gt.sensor_fault`, which makes the data a benchmark for anomaly and pattern detection.
 * **Determinism.** The same scenario and seed give byte-identical episodes, including episode ids
   (`Ulid.deterministic`). Re-running a scenario therefore deduplicates instead of duplicating.
@@ -152,7 +153,7 @@ loads its configuration with `OpenTsxConf.load`, so `--conf`, `--properties-file
   `kafscale,iceberg`. With `auto` a sink is on when `--kafscale` or `--iceberg`, or `--conf` with its key, sets it on
   the command line. `KAFSCALE_BOOTSTRAP` or `OPENTSX_ICEBERG_PROPERTIES` in the environment adds no sink; name the
   sink, for example `--sinks kafscale`, to write with a value from the environment or a file.
-* `--catalog` uses your own data-point catalog. `--ground-truth` writes the injected events as JSON after the sinks;
+* `--catalog` uses your own data-point catalog. `--ground-truth` writes the events that overlap the simulated span as JSON after the sinks;
   a directory, or a file in a directory that does not exist, is refused before a client opens.
 
 Exit codes: 0 success, 1 runtime failure, 2 usage or configuration error. The keys, the required Iceberg properties,
@@ -176,12 +177,13 @@ The demo scenario has 10 turbines, 6 h at 1 Hz, 9 channels plus state, and 17 gr
 * `CatalogAndNormalizerTest` covers the catalog, IEC references, unit conversion, the vendor 10-minute mapping (END timestamp, sign,
   °F) and the unmapped/implausible/duplicate reporting.
 * `SimulatorTest` covers determinism, 10-minute blocks and summaries, the power curve, wakes, operations, sensor faults vs.
-  ground truth, the 30-day Weibull mean, the scenario rules, the catalog's quality codes and the state time at sample
+  ground truth, the ground truth clipped to the simulated span, the producer of the build, the 30-day Weibull mean,
+  the scenario rules, the episodeDuration and start refusals, the catalog's quality codes and the state time at sample
   intervals of PT0.2S and PT1.5S.
 * `WindparkSimCliTest` runs the command with a mock admin client and producer: an unknown option, a malformed value
   and a contradiction exit with 2 before any admin call, `--help` prints the generated help, the sinks key decides
-  which clients open, and a runtime failure exits with 1.
-* `WindparkSimEndToEndTest` runs the CLI into Iceberg (JDBC/SQLite catalog), and, when `KAFSCALE_BOOTSTRAP` is set, the CLI into
+  which clients open, the summary reads the same in a German locale, and a runtime failure exits with 1.
+* `WindparkSimEndToEndTest` runs the CLI into Iceberg (JDBC/SQLite catalog) and checks the clipped ground-truth file, and, when `KAFSCALE_BOOTSTRAP` is set, the CLI into
   KafScale with a verified bucket replay. A last Iceberg batch that cannot be written fails the run, also as a
   suppressed failure on an earlier one. Every client is closed when one close fails.
 * `PowerCurveAnalysisTest` covers the performance index and underperformance against ground truth, and which

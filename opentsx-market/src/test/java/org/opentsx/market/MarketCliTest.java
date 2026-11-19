@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -426,5 +427,26 @@ class MarketCliTest {
         }
         assertEquals(List.of("market backfill", "market forward", "market mosmix-archive", "market weather-backfill",
                 "market weather-forward"), commands);
+    }
+
+    @Test
+    void noSourceFileCarriesALiteralProducerVersion() throws IOException {
+        Pattern literal = Pattern.compile("opentsx-[a-z0-9-]+/[0-9]+\\.[0-9]+");
+        List<Path> scanned;
+        try (Stream<Path> files = Files.walk(Path.of("src/main/java"))) {
+            scanned = files.filter(f -> f.toString().endsWith(".java")).sorted().toList();
+        }
+        assertTrue(scanned.containsAll(List.of(Path.of("src/main/java/org/opentsx/market/MarketCli.java"),
+                Path.of("src/main/java/org/opentsx/market/archive/BrokerPublish.java"))), scanned.toString());
+        List<String> hits = new ArrayList<>();
+        for (Path f : scanned) {
+            List<String> lines = Files.readAllLines(f, StandardCharsets.UTF_8);
+            for (int i = 0; i < lines.size(); i++) {
+                if (literal.matcher(lines.get(i)).find()) {
+                    hits.add(f + ":" + (i + 1));
+                }
+            }
+        }
+        assertEquals(List.of(), hits);
     }
 }

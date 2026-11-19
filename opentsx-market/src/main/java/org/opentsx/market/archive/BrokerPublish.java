@@ -11,6 +11,7 @@ import org.opentsx.market.EpisodeMapper;
 import org.opentsx.market.MarketCli;
 import org.opentsx.market.MarketSeries;
 import org.opentsx.market.SeriesDef;
+import org.opentsx.model.Episodes;
 import org.opentsx.model.OpenTsxAvro;
 import org.opentsx.model.v2.Episode;
 
@@ -100,7 +101,8 @@ public final class BrokerPublish {
                     if (year < y0 || year > y1) {
                         continue;
                     }
-                    for (Episode e : EpisodeMapper.episodes(new MarketSeries(def, archive.read(def, year)), "opentsx-market/3.0.1")) {
+                    for (Episode e : EpisodeMapper.episodes(new MarketSeries(def, archive.read(def, year)),
+                            Episodes.producer("opentsx-market"))) {
                         if (e.getTStart().isBefore(fromDay) || !e.getTStart().isBefore(toDay)) {
                             continue;
                         }

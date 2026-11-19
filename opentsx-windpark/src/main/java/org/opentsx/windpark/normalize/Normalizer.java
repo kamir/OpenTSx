@@ -15,7 +15,6 @@ import org.opentsx.windpark.catalog.Units;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -62,11 +61,6 @@ public final class Normalizer {
         }
         this.implausibleCode = catalog.qualityCode("IMPLAUSIBLE");
         this.missingCode = catalog.qualityCode("MISSING");
-    }
-
-    /** Time zone of the source system's local timestamps (from the catalog). */
-    public ZoneId zone() {
-        return source.timezone();
     }
 
     /** A reading stamped in the source system's local time. */
@@ -189,13 +183,7 @@ public final class Normalizer {
             anyFlag |= q[i] != QUALITY_GOOD;
             i++;
         }
-        boolean regular = size >= 2;
-        for (int k = 2; regular && k < size; k++) {
-            regular = ts[k] - ts[k - 1] == ts[1] - ts[0];
-        }
-        Episodes.Draft d = regular
-                ? Episodes.regular(target.key(), ts[0], ts[1] - ts[0], v)
-                : Episodes.irregular(target.key(), ts, v);
+        Episodes.Draft d = Episodes.of(target.key(), ts, v);
         d.tEnd(windowStart + windowMicros)
                 .source(source.system())
                 .pipeline("windpark-normalizer")

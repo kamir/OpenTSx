@@ -14,6 +14,9 @@ import org.opentsx.market.MarketSeries;
 import org.opentsx.market.Micro;
 import org.opentsx.market.Point;
 import org.opentsx.market.SeriesDef;
+import org.opentsx.model.Episodes;
+import org.opentsx.model.OpenTsxAvro;
+import org.opentsx.model.v2.Episode;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -83,6 +86,8 @@ class BrokerPublishSendTest {
         assertSame(broker.expired, e.getCause());
         assertEquals(List.of("broker.example:9092"), bootstraps);
         assertEquals(3, broker.history().size());
+        assertEquals(Episodes.producer("opentsx-market"), new OpenTsxAvro().decode(broker.history().get(0).value(),
+                Episode.class).getProvenance().getProducer());
         assertTrue(broker.closed());
         String printed = out.toString(StandardCharsets.UTF_8);
         assertTrue(printed.contains("    2 of 3 confirmed (batch in "), printed);

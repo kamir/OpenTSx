@@ -64,15 +64,28 @@ class WindparkSimEndToEndTest {
                 + ",jdbc.schema-version=V1,warehouse=" + dir.resolve("wh").toUri();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteArrayOutputStream err = new ByteArrayOutputStream();
-        int code = WindparkSim.run(List.of("--scenario", shortScenario().toString(), "--iceberg", iceberg, "--ground-truth",
+        Path scenario = shortScenario();
+        Files.writeString(scenario, Files.readString(scenario)
+                .replace("offset: PT1H, duration: PT40M", "offset: PT10M, duration: PT40M"));
+        int code = WindparkSim.run(List.of("--scenario", scenario.toString(), "--iceberg", iceberg, "--ground-truth",
                 gt.toString()), Map.of(), new PrintStream(out, true, StandardCharsets.UTF_8),
                 new PrintStream(err, true, StandardCharsets.UTF_8), KafScaleClients::admin, KafScaleClients::producer);
         assertEquals(0, code, err.toString(StandardCharsets.UTF_8));
         String summary = out.toString(StandardCharsets.UTF_8);
         assertTrue(summary.startsWith("scenario ostsee-demo: 200 episodes, "), summary);
         assertTrue(summary.contains("T10"), summary);
+        assertTrue(summary.contains(" 10 ground-truth events"), summary);
         JsonNode truth = new ObjectMapper().readTree(gt.toFile());
-        assertEquals(17, truth.size());
+        // the curtailment of all 10 turbines, moved to PT10M, would end at PT50M and is clipped to the 20 minutes of this
+        // copy; the other events of the demo start at PT1H30M or later and are left out
+        assertEquals(10, truth.size(), truth.toString());
+        for (int i = 0; i < 10; i++) {
+            JsonNode e = truth.get(i);
+            assertEquals("CURTAILMENT", e.get("type").asText(), e.toString());
+            assertEquals(String.format("T%02d", i + 1), e.get("turbine").asText(), e.toString());
+            assertEquals(1_790_813_400_000_000L, e.get("fromMicros").asLong(), e.toString());
+            assertEquals(1_790_814_000_000_000L, e.get("toMicros").asLong(), e.toString());
+        }
         try (var store = org.opentsx.store.iceberg.IcebergSeriesStore.open(
                 WindparkSim.icebergProperties(List.of(iceberg.split(","))), "tsx")) {
             assertEquals(100, store.listSeries(org.opentsx.store.SeriesSelector.all()).size()); // 10 turbines x 10 channels

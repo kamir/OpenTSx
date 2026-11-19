@@ -42,6 +42,7 @@ import java.util.function.Consumer;
 public final class WindparkSimulator {
 
     private static final int RUNNING = 1, IDLE = 2, CURTAILED = 3, FAULT = 4, MAINTENANCE = 5, STORM = 6;
+    private static final String PRODUCER = Episodes.producer("opentsx-windpark");
 
     private final Scenario scenario;
     private final ChannelCatalog catalog;
@@ -87,19 +88,34 @@ public final class WindparkSimulator {
         return park;
     }
 
+    /**
+     * The operations and sensor faults that overlap the simulated span, with their end clipped to it. The span runs from
+     * start to the end of the last episode. No event starts before start, because {@link Scenario} refuses a negative
+     * offset.
+     */
     public List<GroundTruth> groundTruth() {
         long t0 = Micros.of(scenario.start());
+        long window = micros(scenario.episodeDuration());
+        long end = t0 + (micros(scenario.duration()) + window - 1) / window * window;
         List<GroundTruth> out = new ArrayList<>();
         for (Scenario.Operation op : scenario.operations()) {
+            long from = t0 + micros(op.offset());
+            if (from >= end) {
+                continue;
+            }
             for (Turbine t : park.turbines()) {
                 if (op.applies(t.id())) {
                     Map<String, String> params = op.limitKw() == null ? Map.of() : Map.of("limitKw", op.limitKw().toString());
                     out.add(new GroundTruth("operation", op.type().name(), t.id(), null,
-                            t0 + micros(op.offset()), t0 + micros(op.offset()) + micros(op.duration()), params));
+                            from, Math.min(from + micros(op.duration()), end), params));
                 }
             }
         }
         for (Scenario.SensorFault f : scenario.sensorFaults()) {
+            long from = t0 + micros(f.offset());
+            if (from >= end) {
+                continue;
+            }
             Map<String, String> params = new LinkedHashMap<>();
             if (f.ratePerHour() != null) {
                 params.put("ratePerHour", f.ratePerHour().toString());
@@ -111,7 +127,7 @@ public final class WindparkSimulator {
                 params.put("probability", f.probability().toString());
             }
             out.add(new GroundTruth("sensor-fault", f.type().name(), f.turbine(), f.channel(),
-                    t0 + micros(f.offset()), t0 + micros(f.offset()) + micros(f.duration()), params));
+                    from, Math.min(from + micros(f.duration()), end), params));
         }
         return out;
     }
@@ -296,7 +312,7 @@ public final class WindparkSimulator {
                             .episodeId(Ulid.deterministic(windowStart / 1000, idSeed(key, windowStart)))
                             .createdAt(wEnd)
                             .source("simulator:" + scenario.name())
-                            .producer("opentsx-windpark/3.0.1")
+                            .producer(PRODUCER)
                             .pipeline("windpark-sim")
                             .label("scenario", scenario.name())
                             .label("seed", Long.toString(scenario.seed()))

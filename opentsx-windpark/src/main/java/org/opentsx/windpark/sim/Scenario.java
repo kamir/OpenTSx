@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -39,10 +40,15 @@ public record Scenario(String name, long seed, Instant start, Duration duration,
         positive("episodeDuration", episodeDuration, "PT10M");
         long ep = episodeDuration.toNanos();
         if (ep % sampleInterval.toNanos() != 0) {
-            throw new IllegalArgumentException("episodeDuration must be a multiple of sampleInterval");
+            throw new IllegalArgumentException("episodeDuration: " + episodeDuration + " is not a multiple of sampleInterval "
+                    + sampleInterval + "; set episodeDuration to a whole multiple of sampleInterval");
         }
-        if (Math.floorMod(start.toEpochMilli() * 1_000_000L, ep) != 0) {
-            throw new IllegalArgumentException("start must be aligned to episodeDuration (e.g. a full 10 minutes)");
+        long offGrid = BigInteger.valueOf(start.getEpochSecond()).multiply(BigInteger.valueOf(1_000_000_000L))
+                .add(BigInteger.valueOf(start.getNano())).mod(BigInteger.valueOf(ep)).longValue();
+        if (offGrid != 0) {
+            throw new IllegalArgumentException("start: " + start + " is not aligned to episodeDuration " + episodeDuration
+                    + "; set start to a whole multiple of episodeDuration since 1970-01-01T00:00:00Z, such as "
+                    + start.minusNanos(offGrid));
         }
     }
 

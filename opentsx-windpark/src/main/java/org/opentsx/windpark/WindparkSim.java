@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -308,9 +309,9 @@ public final class WindparkSim {
 
     static String summary(SimulationReport r) {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("scenario %s: %,d episodes, %,d values, %d ground-truth events%n",
+        sb.append(String.format(Locale.ROOT, "scenario %s: %,d episodes, %,d values, %d ground-truth events%n",
                 r.scenario(), r.episodes(), r.values(), r.groundTruth().size()));
-        r.energyKwh().forEach((t, e) -> sb.append(String.format("  %s  %8.1f kWh  mean wind %5.2f m/s  states %s%n",
+        r.energyKwh().forEach((t, e) -> sb.append(String.format(Locale.ROOT, "  %s  %8.1f kWh  mean wind %5.2f m/s  states %s%n",
                 t, e, r.meanWindMs().get(t), r.stateSeconds().get(t))));
         return sb.toString();
     }

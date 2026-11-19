@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.market.archive.Archive;
 import org.opentsx.market.archive.Backfill;
+import org.opentsx.model.Episodes;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.store.EpisodeQuery;
 import org.opentsx.store.SeriesSelector;
@@ -49,6 +50,7 @@ class LoadTest {
             List<Episode> eps = store.read(EpisodeQuery.of(SeriesSelector.metric("market.price.day_ahead"), 0, Long.MAX_VALUE));
             assertEquals(2, eps.size());
             assertEquals("REPORTED", eps.get(0).getLabels().get("origin"));
+            assertEquals(Episodes.producer("opentsx-market"), eps.get(0).getProvenance().getProducer());
             assertEquals(50.0, eps.get(0).getValues().get(0));
             List<Episode> w = store.read(EpisodeQuery.of(SeriesSelector.metric("weather.air_temperature"), 0, Long.MAX_VALUE));
             assertEquals("MEASURED", w.get(0).getLabels().get("origin"));
