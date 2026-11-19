@@ -32,11 +32,18 @@ bindings, rather than guessed identities.
 executes those bindings and checks replica/state admission, product budgets and
 separate local versus federated statistics edges. Explicit compiler context
 does not grant remote execution rights. The separate
-[`tsx-runner` bounded profile](../devguide/integration/rust-runner-local.md) executes pass-through, plausible-range
-checks, unit conversion and a trailing resample. The separate
+[`tsx-runner` no-context profile](../devguide/integration/rust-runner-local.md)
+executes pass-through, plausible-range checks, unit conversion and a trailing
+resample. The [B2 catalog context](../devguide/integration/rust-runner-b2.md)
+adds wind models, lag/rolling features, typed statistics, segmentation, SAX,
+alignment, bounded cross-correlation
+and DQ findings through admitted local execution. Shared Rust regressions
+exercise the same committed vectors alongside the Java proofs. Private state
+formats remain distinct. The separate
 [local UI rollout](../devguide/integration/wayang-rust-compose.md) uses `RustRollout` with `DagToWayang.parameters`
 and a custom Rust platform. Its logical sources, union, fused clean chain and sink form one Wayang stage; complete
-fragments run on HTTP workers. Java catalog availability does not expand that Rust profile.
+fragments run on HTTP workers. The UI rollout continues to admit its own
+smaller clean subset; B2 availability does not expand that UI admission.
 The [continuous local target](../devguide/integration/wayang-rust-continuous.md) executes successive finite cuts on
 the same whole-topic bindings. Source/sink/checkpoint/assignment lessons also reference its durable predecessor,
 cumulative ownership and restart tests. Their standalone workloads remain unchanged and do not deploy a service.

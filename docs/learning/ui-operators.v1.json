@@ -1546,7 +1546,8 @@
         "Run a one-tick lag search and verify peak 1 at lag 0.",
         "Delay B and inspect the positive lag convention that means B follows A.",
         "Resolve pair.xcorr version 1 in the frozen inventory and compare the referenced native Wayang regression with the browser workload.",
-        "Inspect the window text field and YAML exporter; keep catalog window values as text while recognizing numeric seconds in direct pair APIs."
+        "Inspect the window text field and YAML exporter; keep catalog window values as text while recognizing numeric seconds in direct pair APIs.",
+        "Run the shared Rust alignment or cross-correlation cases with restored state; for pair.xcorr also check the configured product budget and exact refusal message."
       ],
       "starter": {
         "bucket": {
@@ -1625,7 +1626,9 @@
       "pitfalls": [
         "An anticorrelated extreme can be the selected peak with a negative sign.",
         "A single searched lag has undefined strength because there is no spread.",
-        "A local Java catalog plan remains separate from deployment through an admitted runtime profile."
+        "A local Java catalog plan remains separate from deployment through an admitted runtime profile.",
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights.",
+        "Track B admits only cross-correlation windows within the explicit site product budget. It does not offer pair.es."
       ],
       "parameterKeys": [
         "pairing",
@@ -1678,10 +1681,12 @@
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
           "docs/user-manual/17-learn-operators.md",
-          "docs/user-manual/17-learn-operators.md#use-frozen-catalog-1"
+          "docs/user-manual/17-learn-operators.md#use-frozen-catalog-1",
+          "docs/devguide/integration/rust-runner-b2.md"
         ],
         "spec": [
-          "docs/learning/ui-operator-contracts.md#pair-xcorr"
+          "docs/learning/ui-operator-contracts.md#pair-xcorr",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
         ],
         "source": [
           "opentsx-saas-frontend/src/workbench/xcorr.ts#PAIR_XCORR",
@@ -1689,14 +1694,18 @@
           "systems/processors/pair.xcorr.yaml",
           "opentsx-saas-frontend/src/pages/Workbench.tsx#ParamInput",
           "opentsx-saas-frontend/src/workbench/flow.ts#yamlScalar",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxPair.java#method"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxPair.java#method",
+          "rust/tsx-runner/src/pairs.rs",
+          "rust/tsx-runner/src/catalog.rs"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
           "opentsx-saas-frontend/src/workbench/xcorr.test.ts",
           "opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java#catalogOneMatchesSpecAndProcessorDescriptions",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairVectorsTest.java#everySharedCaseMatchesThroughAWayangPlan",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders",
+          "rust/tsx-runner/tests/pair_vector_vectors.rs",
+          "rust/tsx-runner/tests/catalog_flow.rs"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/pair-xcorr.v1.json"
@@ -2137,7 +2146,9 @@
         "Identify -1 and 11 as outside the inclusive [0,10] band.",
         "Run gap mode and verify both missing values without losing x.",
         "Run clip mode and explain the difference from the original measurements.",
-        "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output."
+        "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output.",
+        "Run all fifteen shared cleaning cases through the Rust tests, then restore state between chunks and compare the same logical samples with Java.",
+        "Compare B2 annotated input with the no-context profile: Java-compatible B2 cleaning accepts quality and revision metadata but writes newly derived Episodes without copying those fields."
       ],
       "starter": {
         "bucket": {
@@ -2181,7 +2192,8 @@
         "The browser workload remains local. The explicit bounded Wayang action is a separate authenticated execution path with frozen whole-topic cuts and does not use this zero-based lesson clock for Kafka timestamps.",
         "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
         "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
-        "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration."
+        "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration.",
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights."
       ],
       "parameterKeys": [
         "min",
@@ -2215,14 +2227,16 @@
           "docs/user-manual/17-learn-operators.md",
           "docs/devguide/integration/rust-runner-local.md",
           "docs/devguide/integration/wayang-rust-compose.md",
-          "docs/devguide/integration/wayang-rust-continuous.md"
+          "docs/devguide/integration/wayang-rust-continuous.md",
+          "docs/devguide/integration/rust-runner-b2.md"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#dq-plausible-range",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
         ],
         "source": [
           "opentsx-saas-frontend/src/workbench/ops.ts#plausibleRange",
@@ -2233,12 +2247,15 @@
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustPublicationGateway.java",
           "rust/tsx-runner/src/publication.rs",
           "rust/tsx-runner/src/worker.rs#install_publication",
-          "opentsx-saas-backend/app/services/wayang_service.py#reconcile_switch"
+          "opentsx-saas-backend/app/services/wayang_service.py#reconcile_switch",
+          "rust/tsx-runner/src/operators.rs",
+          "rust/tsx-runner/src/catalog.rs",
+          "systems/processors/dq.plausible-range.yaml"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
           "opentsx-saas-frontend/src/workbench/clean.test.ts",
-          "rust/tsx-runner/src/operators.rs#eight_shared_clean_cases_match_whole_and_every_checkpointed_split",
+          "rust/tsx-runner/src/operators.rs#all_fifteen_shared_clean_cases_match_whole_and_every_checkpointed_split",
           "opentsx-saas-frontend/src/workbench/wayang.test.ts",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustRolloutComposeFixtureTest.java#expectedWireRecordsUseTheSubmittedUiTargetHashAndAcceptedClock",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustRolloutTest.java#realWayangStagePreparesEveryWholeTopicBeforeAnyActivation",
@@ -2249,7 +2266,9 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPublicationGatewayTest.java",
           "rust/tsx-runner/tests/publication_fencing.rs",
           "opentsx-saas-backend/tests/test_wayang_switch.py",
-          "tools/test_kafscale_fenced_topology.py"
+          "tools/test_kafscale_fenced_topology.py",
+          "rust/tsx-runner/tests/catalog_flow.rs",
+          "rust/tsx-runner/tests/clean_catalog.rs"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"
@@ -2273,7 +2292,8 @@
         "Calculate 0*1.8+32 and 100*1.8+32.",
         "Run the conversion and inspect the degF series unit.",
         "Explain why relabeling a series without the numeric conversion would be wrong.",
-        "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output."
+        "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output.",
+        "Run all fifteen shared cleaning cases through the Rust tests, then restore state between chunks and compare the same logical samples with Java."
       ],
       "starter": {
         "bucket": {
@@ -2314,7 +2334,8 @@
         "The browser workload remains local. The explicit bounded Wayang action is a separate authenticated execution path with frozen whole-topic cuts and does not use this zero-based lesson clock for Kafka timestamps.",
         "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
         "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
-        "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration."
+        "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration.",
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights."
       ],
       "parameterKeys": [
         "factor",
@@ -2345,14 +2366,16 @@
           "docs/user-manual/17-learn-operators.md",
           "docs/devguide/integration/rust-runner-local.md",
           "docs/devguide/integration/wayang-rust-compose.md",
-          "docs/devguide/integration/wayang-rust-continuous.md"
+          "docs/devguide/integration/wayang-rust-continuous.md",
+          "docs/devguide/integration/rust-runner-b2.md"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#convert-unit",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
         ],
         "source": [
           "opentsx-saas-frontend/src/workbench/ops.ts#convertUnit",
@@ -2363,12 +2386,15 @@
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustPublicationGateway.java",
           "rust/tsx-runner/src/publication.rs",
           "rust/tsx-runner/src/worker.rs#install_publication",
-          "opentsx-saas-backend/app/services/wayang_service.py#reconcile_switch"
+          "opentsx-saas-backend/app/services/wayang_service.py#reconcile_switch",
+          "rust/tsx-runner/src/operators.rs",
+          "rust/tsx-runner/src/catalog.rs",
+          "systems/processors/convert.unit.yaml"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
           "opentsx-saas-frontend/src/workbench/clean.test.ts",
-          "rust/tsx-runner/src/operators.rs#eight_shared_clean_cases_match_whole_and_every_checkpointed_split",
+          "rust/tsx-runner/src/operators.rs#all_fifteen_shared_clean_cases_match_whole_and_every_checkpointed_split",
           "opentsx-saas-frontend/src/workbench/wayang.test.ts",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustRolloutComposeFixtureTest.java#expectedWireRecordsUseTheSubmittedUiTargetHashAndAcceptedClock",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustRolloutTest.java#realWayangStagePreparesEveryWholeTopicBeforeAnyActivation",
@@ -2379,7 +2405,9 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPublicationGatewayTest.java",
           "rust/tsx-runner/tests/publication_fencing.rs",
           "opentsx-saas-backend/tests/test_wayang_switch.py",
-          "tools/test_kafscale_fenced_topology.py"
+          "tools/test_kafscale_fenced_topology.py",
+          "rust/tsx-runner/tests/catalog_flow.rs",
+          "rust/tsx-runner/tests/clean_catalog.rs"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"
@@ -2403,7 +2431,9 @@
         "Partition the starter into [0,2), [2,4) and [4,6).",
         "Predict means 2, 6 and 10.",
         "Change agg to LAST and inspect which observations survive.",
-        "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output."
+        "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output.",
+        "Run all fifteen shared cleaning cases through the Rust tests, then restore state between chunks and compare the same logical samples with Java.",
+        "Run the B2 chain with two resample steps around a conversion, restore after each chunk and verify separate retained windows and the final output interval."
       ],
       "starter": {
         "bucket": {
@@ -2452,7 +2482,8 @@
         "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
         "An unfinished window spans increments and service restart. Stop does not flush it, and the existing valid-sample ceiling still applies.",
         "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
-        "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration."
+        "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration.",
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights."
       ],
       "parameterKeys": [
         "every",
@@ -2486,14 +2517,16 @@
           "docs/devguide/integration/wayang-rust-compose.md",
           "docs/devguide/integration/wayang-rust-continuous.md",
           "docs/user-manual/17-learn-operators.md#compile-the-exported-workbench-document",
-          "opentsx-wayang/README.md#compile-a-catalog-dag"
+          "opentsx-wayang/README.md#compile-a-catalog-dag",
+          "docs/devguide/integration/rust-runner-b2.md"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#resample",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
         ],
         "source": [
           "opentsx-saas-frontend/src/workbench/ops.ts#resample",
@@ -2505,12 +2538,15 @@
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustPublicationGateway.java",
           "rust/tsx-runner/src/publication.rs",
           "rust/tsx-runner/src/worker.rs#install_publication",
-          "opentsx-saas-backend/app/services/wayang_service.py#reconcile_switch"
+          "opentsx-saas-backend/app/services/wayang_service.py#reconcile_switch",
+          "rust/tsx-runner/src/operators.rs",
+          "rust/tsx-runner/src/catalog.rs",
+          "systems/processors/resample.yaml"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
           "opentsx-saas-frontend/src/workbench/clean.test.ts",
-          "rust/tsx-runner/src/operators.rs#eight_shared_clean_cases_match_whole_and_every_checkpointed_split",
+          "rust/tsx-runner/src/operators.rs#all_fifteen_shared_clean_cases_match_whole_and_every_checkpointed_split",
           "rust/tsx-runner/src/operators.rs#open_resample_tail_survives_restore_and_is_not_flushed_at_batch_end",
           "opentsx-saas-frontend/src/workbench/wayang.test.ts",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustRolloutComposeFixtureTest.java#expectedWireRecordsUseTheSubmittedUiTargetHashAndAcceptedClock",
@@ -2524,7 +2560,9 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPublicationGatewayTest.java",
           "rust/tsx-runner/tests/publication_fencing.rs",
           "opentsx-saas-backend/tests/test_wayang_switch.py",
-          "tools/test_kafscale_fenced_topology.py"
+          "tools/test_kafscale_fenced_topology.py",
+          "rust/tsx-runner/tests/catalog_flow.rs",
+          "rust/tsx-runner/tests/clean_catalog.rs"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"
@@ -2547,7 +2585,8 @@
       "tasks": [
         "Compute (40/10)^0.5 = 2.",
         "Predict the three doubled wind speeds.",
-        "Discuss why changing alpha changes an assumption, not the observed source."
+        "Discuss why changing alpha changes an assumption, not the observed source.",
+        "Run all fifteen shared cleaning cases through the Rust tests, then restore state between chunks and compare the same logical samples with Java."
       ],
       "starter": {
         "bucket": {
@@ -2586,7 +2625,8 @@
       ],
       "pitfalls": [
         "The model uses one exponent for all samples.",
-        "An estimate at hub height is not a measured hub-height signal."
+        "An estimate at hub height is not a measured hub-height signal.",
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights."
       ],
       "parameterKeys": [
         "fromM",
@@ -2616,17 +2656,25 @@
       "references": {
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/devguide/integration/rust-runner-b2.md"
         ],
         "spec": [
-          "docs/learning/ui-operator-contracts.md#model-wind-shear"
+          "docs/learning/ui-operator-contracts.md#model-wind-shear",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
         ],
         "source": [
-          "opentsx-saas-frontend/src/workbench/ops.ts#windShear"
+          "opentsx-saas-frontend/src/workbench/ops.ts#windShear",
+          "rust/tsx-runner/src/operators.rs",
+          "rust/tsx-runner/src/catalog.rs",
+          "systems/processors/model.wind-shear.yaml"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
-          "opentsx-saas-frontend/src/workbench/clean.test.ts"
+          "opentsx-saas-frontend/src/workbench/clean.test.ts",
+          "rust/tsx-runner/src/operators.rs#all_fifteen_shared_clean_cases_match_whole_and_every_checkpointed_split",
+          "rust/tsx-runner/tests/catalog_flow.rs",
+          "rust/tsx-runner/tests/clean_catalog.rs"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"
@@ -2649,7 +2697,8 @@
       "tasks": [
         "Predict zero below cut-in and at the ramp start.",
         "Compute 4.75 kW at wind 1.5 and 14 kW at rated wind.",
-        "Check that wind equal to cut-out still yields rated output but a larger value yields zero."
+        "Check that wind equal to cut-out still yields rated output but a larger value yields zero.",
+        "Run all fifteen shared cleaning cases through the Rust tests, then restore state between chunks and compare the same logical samples with Java."
       ],
       "starter": {
         "bucket": {
@@ -2698,7 +2747,8 @@
       ],
       "pitfalls": [
         "Equality at cut-out uses rated power in this implementation.",
-        "The curve estimates potential power and does not model curtailment or measured production."
+        "The curve estimates potential power and does not model curtailment or measured production.",
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights."
       ],
       "parameterKeys": [
         "ratedKw",
@@ -2738,17 +2788,25 @@
       "references": {
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/devguide/integration/rust-runner-b2.md"
         ],
         "spec": [
-          "docs/learning/ui-operator-contracts.md#model-power-curve"
+          "docs/learning/ui-operator-contracts.md#model-power-curve",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
         ],
         "source": [
-          "opentsx-saas-frontend/src/workbench/ops.ts#powerCurve"
+          "opentsx-saas-frontend/src/workbench/ops.ts#powerCurve",
+          "rust/tsx-runner/src/operators.rs",
+          "rust/tsx-runner/src/catalog.rs",
+          "systems/processors/model.power-curve.yaml"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
-          "opentsx-saas-frontend/src/workbench/clean.test.ts"
+          "opentsx-saas-frontend/src/workbench/clean.test.ts",
+          "rust/tsx-runner/src/operators.rs#all_fifteen_shared_clean_cases_match_whole_and_every_checkpointed_split",
+          "rust/tsx-runner/tests/catalog_flow.rs",
+          "rust/tsx-runner/tests/clean_catalog.rs"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"
@@ -2771,7 +2829,9 @@
       "tasks": [
         "Shift the values forward by two array positions.",
         "Predict two initial gaps followed by 10 and 20.",
-        "Repeat with uneven x spacing and explain why steps still counts samples."
+        "Repeat with uneven x spacing and explain why steps still counts samples.",
+        "Run all fifteen shared cleaning cases through the Rust tests, then restore state between chunks and compare the same logical samples with Java.",
+        "Inspect the B2 features-grade target: the derived series keeps the final clean node ID in its feature tag across checkpoint restoration."
       ],
       "starter": {
         "bucket": {
@@ -2809,7 +2869,8 @@
       ],
       "pitfalls": [
         "The first steps positions have no earlier history.",
-        "A batch invocation starts empty; streaming state can retain history across episode boundaries."
+        "A batch invocation starts empty; streaming state can retain history across episode boundaries.",
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights."
       ],
       "parameterKeys": [
         "steps"
@@ -2838,17 +2899,25 @@
       "references": {
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/devguide/integration/rust-runner-b2.md"
         ],
         "spec": [
-          "docs/learning/ui-operator-contracts.md#feature-lag"
+          "docs/learning/ui-operator-contracts.md#feature-lag",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
         ],
         "source": [
-          "opentsx-saas-frontend/src/workbench/ops.ts#featureLag"
+          "opentsx-saas-frontend/src/workbench/ops.ts#featureLag",
+          "rust/tsx-runner/src/operators.rs",
+          "rust/tsx-runner/src/catalog.rs",
+          "systems/processors/feature.lag.yaml"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
-          "opentsx-saas-frontend/src/workbench/clean.test.ts"
+          "opentsx-saas-frontend/src/workbench/clean.test.ts",
+          "rust/tsx-runner/src/operators.rs#all_fifteen_shared_clean_cases_match_whole_and_every_checkpointed_split",
+          "rust/tsx-runner/tests/catalog_flow.rs",
+          "rust/tsx-runner/tests/clean_catalog.rs"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"
@@ -2871,7 +2940,8 @@
       "tasks": [
         "At t=2, exclude the value exactly at t-window=0.",
         "Predict means 1, 2, 4 and 6.",
-        "Use uneven coordinates to see that membership follows x rather than a fixed count."
+        "Use uneven coordinates to see that membership follows x rather than a fixed count.",
+        "Run all fifteen shared cleaning cases through the Rust tests, then restore state between chunks and compare the same logical samples with Java."
       ],
       "starter": {
         "bucket": {
@@ -2910,7 +2980,8 @@
       ],
       "pitfalls": [
         "STD uses population variance in this rolling feature.",
-        "A point exactly one window behind is excluded."
+        "A point exactly one window behind is excluded.",
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights."
       ],
       "parameterKeys": [
         "window",
@@ -2940,17 +3011,25 @@
       "references": {
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/devguide/integration/rust-runner-b2.md"
         ],
         "spec": [
-          "docs/learning/ui-operator-contracts.md#feature-rolling"
+          "docs/learning/ui-operator-contracts.md#feature-rolling",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
         ],
         "source": [
-          "opentsx-saas-frontend/src/workbench/ops.ts#featureRolling"
+          "opentsx-saas-frontend/src/workbench/ops.ts#featureRolling",
+          "rust/tsx-runner/src/operators.rs",
+          "rust/tsx-runner/src/catalog.rs",
+          "systems/processors/feature.rolling.yaml"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
-          "opentsx-saas-frontend/src/workbench/clean.test.ts"
+          "opentsx-saas-frontend/src/workbench/clean.test.ts",
+          "rust/tsx-runner/src/operators.rs#all_fifteen_shared_clean_cases_match_whole_and_every_checkpointed_split",
+          "rust/tsx-runner/tests/catalog_flow.rs",
+          "rust/tsx-runner/tests/clean_catalog.rs"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"
@@ -3071,7 +3150,8 @@
       "tasks": [
         "Group the samples into [0,2) and [2,4).",
         "Predict sample standard deviation sqrt(2) for each pair.",
-        "Inspect the actual DAG export: compare its explicit catalog window duration and full SeriesStats sink with the selected browser field retained in the saved flow."
+        "Inspect the actual DAG export: compare its explicit catalog window duration and full SeriesStats sink with the selected browser field retained in the saved flow.",
+        "Compare Rust statistics and data-quality results with the shared Java vectors, including exact sketch bytes, non-finite values and explicitly clocked findings."
       ],
       "starter": {
         "bucket": {
@@ -3110,7 +3190,8 @@
       ],
       "pitfalls": [
         "The browser uses window and field; deployment writes windows and uses the processor description's alpha default, while field remains a saved view.",
-        "A workbench statistic series is not a complete SeriesStats record."
+        "A workbench statistic series is not a complete SeriesStats record.",
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights."
       ],
       "parameterKeys": [
         "window",
@@ -3139,22 +3220,31 @@
           "docs/user-manual/07-stats-quality.md",
           "docs/user-manual/17-learn-operators.md",
           "docs/user-manual/17-learn-operators.md#compile-the-exported-workbench-document",
-          "opentsx-wayang/README.md#compile-a-catalog-dag"
+          "opentsx-wayang/README.md#compile-a-catalog-dag",
+          "docs/devguide/integration/rust-runner-b2.md"
         ],
         "spec": [
-          "docs/learning/ui-operator-contracts.md#stats-window"
+          "docs/learning/ui-operator-contracts.md#stats-window",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
         ],
         "source": [
           "opentsx-saas-frontend/src/workbench/ops.ts#windowStats",
-          "opentsx-saas-frontend/src/workbench/flow.ts#toDagYaml"
+          "opentsx-saas-frontend/src/workbench/flow.ts#toDagYaml",
+          "rust/tsx-runner/src/stats.rs",
+          "rust/tsx-runner/src/catalog.rs",
+          "systems/processors/stats.welford-ddsketch.yaml"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
           "opentsx-saas-frontend/src/workbench/workbench.test.ts",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangWorkbenchTest.java#actualWorkbenchExportsTranslateOrNameTheNonCatalogNode",
-          "docs/datamodel-2026/testvectors/workbench-dags/published-stats.yaml"
+          "docs/datamodel-2026/testvectors/workbench-dags/published-stats.yaml",
+          "rust/tsx-runner/tests/stats_vectors.rs",
+          "rust/tsx-runner/tests/catalog_flow.rs"
         ],
-        "vectors": []
+        "vectors": [
+          "docs/datamodel-2026/testvectors/stats-window.v1.json"
+        ]
       }
     },
     {
@@ -3173,7 +3263,8 @@
       "tasks": [
         "Locate rising crossings at original samples 2 and 6.",
         "Keep one preceding sample and the crossing plus one following sample.",
-        "Compare with Java hysteresis segmentation and list its additional parameters."
+        "Compare with Java hysteresis segmentation and list its additional parameters.",
+        "Replay the applicable shared Rust retrieval vectors in chunks of one, seven and all inputs, in both series orders; retain complete episodes as atomic SAX inputs."
       ],
       "starter": {
         "bucket": {
@@ -3224,7 +3315,9 @@
       ],
       "pitfalls": [
         "pre and post count samples in this UI operator.",
-        "This is not the richer Java enter/exit/minDuration/maxDuration segment contract."
+        "This is not the richer Java enter/exit/minDuration/maxDuration segment contract.",
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights.",
+        "The Rust catalog port follows Java enter/exit hysteresis and duration parameters, not this browser operator's sample-count context."
       ],
       "parameterKeys": [
         "enter",
@@ -3268,17 +3361,24 @@
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
           "docs/user-manual/09-retrieval.md",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/devguide/integration/rust-runner-b2.md"
         ],
         "spec": [
-          "docs/learning/ui-operator-contracts.md#segment-threshold"
+          "docs/learning/ui-operator-contracts.md#segment-threshold",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
         ],
         "source": [
-          "opentsx-saas-frontend/src/workbench/ops.ts#segmentThreshold"
+          "opentsx-saas-frontend/src/workbench/ops.ts#segmentThreshold",
+          "rust/tsx-runner/src/retrieval.rs",
+          "rust/tsx-runner/src/catalog.rs",
+          "systems/processors/segment.threshold.yaml"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
-          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts",
+          "rust/tsx-runner/tests/retrieval_vectors.rs",
+          "rust/tsx-runner/tests/catalog_flow.rs"
         ],
         "vectors": []
       }
@@ -3299,7 +3399,8 @@
       "tasks": [
         "Connect the wind and power buckets with the same series ID.",
         "Predict three one-second ticks and a missing power value at t=1.",
-        "Change emit to complete, then try as-of with maxAge 1 and explain the two different policies."
+        "Change emit to complete, then try as-of with maxAge 1 and explain the two different policies.",
+        "Run the shared Rust alignment or cross-correlation cases with restored state; for pair.xcorr also check the configured product budget and exact refusal message."
       ],
       "starter": {
         "bucket": {
@@ -3367,7 +3468,8 @@
       ],
       "pitfalls": [
         "Both inputs must carry a time axis.",
-        "Lateness configures the running processor and does not delay this batch apply call."
+        "Lateness configures the running processor and does not delay this batch apply call.",
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights."
       ],
       "parameterKeys": [
         "every",
@@ -3424,17 +3526,24 @@
       "references": {
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/devguide/integration/rust-runner-b2.md"
         ],
         "spec": [
-          "docs/learning/ui-operator-contracts.md#align-vector"
+          "docs/learning/ui-operator-contracts.md#align-vector",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
         ],
         "source": [
-          "opentsx-saas-frontend/src/workbench/vector.ts#alignVector"
+          "opentsx-saas-frontend/src/workbench/vector.ts#alignVector",
+          "rust/tsx-runner/src/pairs.rs",
+          "rust/tsx-runner/src/catalog.rs",
+          "systems/processors/align.vector.yaml"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
-          "opentsx-saas-frontend/src/workbench/vector.test.ts"
+          "opentsx-saas-frontend/src/workbench/vector.test.ts",
+          "rust/tsx-runner/tests/pair_vector_vectors.rs",
+          "rust/tsx-runner/tests/catalog_flow.rs"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/align-vector.v1.json"

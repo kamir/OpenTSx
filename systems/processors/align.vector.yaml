@@ -23,7 +23,7 @@ runtimes:
   java: { status: available, class: org.opentsx.retrieval.vector.VectorAligner }
   processor: { status: available, class: org.opentsx.retrieval.vector.VectorProcessor }
   wayang: { status: available, class: org.opentsx.wayang.TsxAlignVector }
-  rust: { status: planned, note: "TASK-020, phase B2" }
+  rust: { status: available, class: tsx_runner::catalog::Pipeline, note: "tsx-runner 0.1.0 isolated local B2 context. Explicit input-series inventories; opentsx.vector.v1 JSON output. No fleet qualification." }
 ui: { group: stream, label: Align to vector }
 state: { kind: windowed, key: series }
 merge: { class: none }

@@ -609,6 +609,10 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
+      - name: Build the pinned Rust B2 parity harness
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal
+          cargo +1.99.1 build --locked --examples --bins --manifest-path rust/tsx-runner/Cargo.toml --target-dir target/rust-b2
       - uses: actions/checkout@v7
         with:
           repository: KafScale/platform
@@ -643,7 +647,7 @@ jobs:
           KAFSCALE_PROXY_BINARY: ${{ runner.temp }}/kafscale-proxy
           KAFSCALE_CLUSTER_BINARY: ${{ runner.temp }}/kafscale-cluster
         # opentsx-legacy-bridge pulls in opentsx-core, whose Swing tests need a display
-        run: xvfb-run --auto-servernum mvn -B -ntp -pl opentsx-kafscale-conformance,opentsx-kafka-v2,opentsx-legacy-bridge,opentsx-windpark,opentsx-stats,opentsx-twin-live,opentsx-retrieval,opentsx-wayang -am test
+        run: xvfb-run --auto-servernum mvn -B -ntp -Dopentsx.rust.b2.parity="$GITHUB_WORKSPACE/target/rust-b2/debug/examples/b2_parity" -pl opentsx-kafscale-conformance,opentsx-kafka-v2,opentsx-legacy-bridge,opentsx-windpark,opentsx-stats,opentsx-twin-live,opentsx-retrieval,opentsx-wayang -am test
       - name: Require executed streaming acceptance
         if: always()
         run: |
@@ -672,6 +676,7 @@ jobs:
               "TsxFingerprintIntegrationTest": 1,
               "TsxCleanIncrementsIntegrationTest": 1,
               "TsxCleanParityIntegrationTest": 1,
+              "TrackParityIntegrationTest": 1,
               "TsxStatusIntegrationTest": 2,
               "TsxCleanVectorsTest": 3,
               "TsxStatsVectorsTest": 12,

@@ -415,16 +415,53 @@ from signed S3 site-conformance evidence.
 
 ### B2: edge operators
 
-The executable local subset is `dq.checks` with `PLAUSIBLE_RANGE`, `convert.unit` and optional trailing `resample`.
-The operator tests consume the eight supported `clean-ops.v1.json` cases and refuse the seven unsupported cases.
-They check all chunk sizes and state restores, including exclusive derived-series ownership.
-The broader B2 acceptance table is not a claim that the remaining target operators execute in Rust.
+- [x] The isolated local Rust B2 catalog executes all fourteen S1.7 entries
+  marked `B target: yes` plus bounded `pair.xcorr`. The qualification excludes
+  `pair.es`, signed fleet activation and production rollout.
+
+The [B2 operating guide](../docs/devguide/integration/rust-runner-b2.md) and
+SPEC S1.13 define explicit local context, typed output, resource ceilings,
+whole-topic ownership and retained state. The no-context local profile retains
+its three clean operations. Signed B1 admission remains pass-through-only.
+Physical ARMv7 acceptance remains open under B1.2 and issue 294.
 
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
 | B2.1 | Operator vectors pass | `cargo test` | V: every file for the operators with B = yes in S1.7 | the thresholds of A2.1 to A3.5 |
 | B2.2 | Track B equals Track A | `TrackParityIntegrationTest` runs one DAG on both tracks | W on K | identical episode ids and values; DDSketch bin differences only for values listed by the test as boundary values (S4.3, law 5) |
 | B2.3 | The `pair.xcorr` limit is exact | test with a limit of 1,000 products | fixture | message 20 of S2.5 character for character |
+
+Qualification on 2026-11-19 uses the shared repository files and source-built
+KafScale v1.6.0 through its Proxy:
+
+| # | Result |
+| --- | --- |
+| B2.1 | met: all 57 shared numerical cases, plus Avro and identity vectors |
+| B2.2 | met: full W through actual Java Wayang and Rust worker increments |
+| B2.3 | met: exact 1,000-product refusal through admission and preparation |
+
+The numerical cases cover 15 clean, five statistics, six alignment, twelve
+segment, seven SAX, seven DQ and five XCorr cases. Chunk/order regressions
+preserve the A2/A3 tolerances, exact sketch bytes, deterministic identities
+and serialized state.
+
+`TrackParityIntegrationTest` executes the same seven-node DAG on both tracks.
+It compares 3,600 episode identities and 2,160,000 values exactly, including
+gaps, with zero differences. Rust executes 36 increments, 72 restarts and
+36 completed retries without additional broker I/O.
+
+The `catalog_admission` test
+`cross_correlation_executes_and_enforces_the_exact_product_limit` checks the
+1,000-product refusal through actual admission and preparation.
+`pair_vector_vectors::xcorr_lag_validation_and_site_product_limit_are_exact`
+also checks the exact budget boundary.
+
+`catalog_flow` covers acknowledged statistics and JSON signal publication,
+lost acknowledgements and completed replay. `catalog_admission` checks all
+remaining typed operator paths, corrupt state/output and the signed B1 boundary.
+`clean_catalog` checks multiple independent resample states, feature identities,
+annotated input and retained rolling limits. The learning metadata and generated
+student material reference these implementation and regression paths.
 
 ### B3: agent, offline operation, SSH launch
 | # | Criterion | Proof | Data | Pass |

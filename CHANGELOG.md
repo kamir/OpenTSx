@@ -36,6 +36,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Isolated local Rust B2 catalog execution with typed SeriesStats, vector and DQ
+  output, model and feature chains, segmentation, SAX and bounded XCorr.
+  Explicit local context admits the extended resource ceilings; legacy local
+  and signed B1 profiles retain their separate contracts. Shared vectors,
+  restored-state regressions and actual full-windpark Java/Rust parity cover
+  the operators. Manual, learning metadata and generated lessons describe the
+  qualified scope. Physical ARMv7 hardware acceptance remains open.
 - Isolated signed continuous pass-through in `tsx-runner` 0.1.0: Ed25519 plan
   verification, local site policy, whole-topic authority, explicit cut caps and
   acknowledgement-before-checkpoint recovery. Checkpoint and worker locks

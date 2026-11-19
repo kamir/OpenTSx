@@ -2,7 +2,7 @@
 
 > Status: **fleet specification draft 0.1; Catalog 1 frozen**, 2026-11-17.
 > All 16 native Java entries in S1.7 are available. Implemented Rust profiles
-> are qualified separately in S1.9, S1.10, local continuous profile S1.11 and local publication fencing S1.12.
+> are qualified separately in S1.9 to S1.13, including the isolated local B2 catalog.
 > Signed continuous fleet requirements remain separate contracts. Concept and research:
 > [20-WAYANG-TS-OPERATORS.md](20-WAYANG-TS-OPERATORS.md). Tasks and acceptance criteria:
 > [TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.md). Catalog checks use
@@ -135,8 +135,8 @@ state, merge declarations, Wayang availability and repository references.
 `A` means an available native Java entry point. The local compiler of S2.3 translates
 these entries with explicit runtime, state, output and resource admission context.
 The signed bounded JVM profile admits the statistics boundary of S2.4.
-`B target` remains intended
-membership; use S1.9 for implemented Rust profiles. The statistics,
+`B target` describes intended membership; S1.13 qualifies the isolated local B2
+catalog, while S1.9 to S1.12 retain their separate execution profiles. The statistics,
 segmentation, SAX, and data-quality reference vectors use the existing Java
 implementations by `tools/java_operator_vectors.py`.
 
@@ -354,6 +354,71 @@ publication denial and compare actual output end offsets before/after. A complet
 Also exercise read-Proxy Produce with forged client identity and direct broker, write-Proxy and host-gateway bypasses.
 This local cap does not establish signed fleet enrollment, gateway high availability, automatic failover,
 backup/restore reconciliation, cross-runtime state migration, topic-incarnation handling or durable Iceberg publication.
+
+### S1.13 Execute the isolated local Rust B2 catalog
+
+`tsx-runner` 0.1.0 admits the B2 operator catalog through the existing trusted-local
+`opentsx.local-bounded-run.v1` and `opentsx.local-increment.v1` requests when they
+include a `context` object. The assignment still owns one complete Episode input
+topic and one distinct output topic on the same permitted binding. Internal
+partition cuts never split topic ownership.
+
+The profile executes all fourteen S1.7 entries marked `B target: yes` and bounded
+`pair.xcorr`. It MUST reject `pair.es`. Availability in this profile does not
+extend signed B1 pass-through admission, the smaller Java UI rollout profile,
+fleet enrollment or production qualification.
+
+| Context field | Type and rule |
+| --- | --- |
+| `seriesByNode` | Optional object mapping executed series-output node IDs to arrays of unique canonical series IDs |
+| `cleanTargets` | Optional object mapping clean-stage node IDs to sink signal metadata |
+| `xcorrProductLimit` | Optional positive integer; required for `pair.xcorr` |
+
+Clean target metadata contains `system`, `id`, optional `grade` and `metric`.
+An empty context is valid. Every resource limit remains explicit in the request.
+With context, `limits.series` is at most 1,024 and `limits.samples` at most
+1,000,000. Other local request ceilings remain unchanged. Without context, the
+legacy profile retains its 64-series and 100,000-sample ceilings, three clean
+operations and trailing-resample restriction. Neither profile silently widens
+the caller's declared limits.
+
+Parameters, defaults and output semantics follow the existing processor
+descriptions. The adapter validates graph shape, typed edges, bound inventories,
+clean targets and the sink schema before broker reads. Pairing and alignment
+require an explicit output inventory when the input decoder does not supply it.
+Within-input pairing preserves the declared series order. S1.8 bounds the actual
+pair window before correlation allocation.
+
+Clean B2 chains execute all seven Java clean operations. Each resample step has
+its own retained window; the last resample defines the output interval. Lag and
+rolling state remains keyed per series and within the declared sample/state
+bounds. B2 cleaning follows Java's numeric values when raw quality or revisions
+are present; derived episodes do not copy those raw annotations. The no-context
+clean profile retains its annotation refusal. Clean and feature targets retain
+their existing deterministic series and episode identity rules.
+
+Statistics output uses SeriesStats Avro single-object encoding with fingerprint
+`e51b48188baa6606`. Vector output uses `opentsx.vector.v1` JSON and its sorted
+`k=v` Kafka key. DQ output uses `opentsx.signal.v1` JSON, the source series key,
+window-end event time and the check/window-qualified identity of S6.2.
+DQ uses the catalog expectation fields; it does not invent a freshness clock.
+Publication headers describe the actual output schema.
+
+Incremental execution preserves open statistics, segment, alignment and clean
+windows. Bounded completion flushes statistics, segmentation and alignment.
+An unfinished resample tail remains open, following `SeriesStream`. SAX and
+pair inputs remain complete episodes. Private state binds the exact fragment,
+context, site and fixed clock, validates retained identities against graph
+inputs and rejects corrupt or over-budget state transactionally. Java and Rust
+checkpoint formats are not interchangeable.
+
+All prepared output and retained state are validated before publication.
+Output acknowledgements precede progress. An interrupted publication can repeat
+identical records; completed retries return the saved receipt without broker I/O.
+The [operating guide](../devguide/integration/rust-runner-b2.md) documents the
+profile. Shared Rust vectors and `TrackParityIntegrationTest` provide its
+numerical and actual Java/Rust transport proof. Physical ARMv7 acceptance remains
+open under TASK-020 B1.2.
 
 ## S2. Plan translation
 

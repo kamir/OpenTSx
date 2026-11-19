@@ -270,7 +270,7 @@ impl Broker for KafkaBroker {
         for record in records {
             let headers = OwnedHeaders::new_with_capacity(1).insert(Header {
                 key: "tsx-schema",
-                value: Some(wire::SCHEMA_NAME),
+                value: Some(run.pipeline.schema_name()),
             });
             producer
                 .send(

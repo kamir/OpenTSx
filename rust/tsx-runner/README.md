@@ -24,6 +24,22 @@ The executable verifies its own artifact digest before reading the broker.
 The separate signed `run` profile admits continuous pass-through only. It does
 not activate the trusted-local cleaning chain or supply a fleet service.
 
+## Execute the local catalog profile
+
+The [B2 guide](../../docs/devguide/integration/rust-runner-b2.md) defines the
+optional local request `context`, explicit input-series inventories and
+cross-correlation product budget. The catalog adapter executes clean stages,
+statistics, segmentation, SAX, vector alignment, bounded cross-correlation and
+data-quality signals through the existing replay and HTTP-worker paths.
+Each assignment still owns one complete topic and one typed output.
+`pair.es` remains excluded. This local profile does not expand the signed B1
+grant or the Java UI rollout's separate operator admission.
+
+Without `context`, local requests retain their 64-series and 100,000-sample
+ceilings. B2 requests with `context` allow at most 1,024 series and 1,000,000
+samples, subject to every declared byte and state bound. Numerical kernels,
+admitted local execution and fleet deployment are separate capabilities.
+
 ## Qualify signed continuous pass-through
 
 Read the
@@ -151,13 +167,22 @@ The gateway ledger must survive restart. This local cap has no automatic gateway
 ## Keep execution within the admitted subset
 
 One assignment owns one complete topic, including every internal partition.
-The pipeline accepts pass-through or one linear chain of `dq.checks` (`PLAUSIBLE_RANGE`), `convert.unit`
-and an optional trailing `resample` (`MEAN`, `MIN`, `MAX`, `LAST`).
+Without B2 context, the pipeline accepts pass-through or a linear chain of
+`dq.checks` (`PLAUSIBLE_RANGE`), `convert.unit` and an optional trailing
+`resample` (`MEAN`, `MIN`, `MAX`, `LAST`). B2 context also admits
+`model.wind-shear`, `model.power-curve`, `feature.lag` and `feature.rolling`.
+It keeps an independent window for each resample step and uses the final
+step's interval. The B2 catalog adapter additionally accepts
+typed statistics, retrieval, vector, pair and DQ stages with their declared
+output schemas and state bounds.
 Source selection, payload decoding, memory bounds and every output payload are checked before publication.
 Kafka output timestamps must be positive epoch milliseconds.
 
-Cleaning rejects revisions, quality bytes, infinite input values, source metadata changes and multiple sources
-collapsing to one derived series. NaN remains a gap. An unfinished resample window remains in state at the cut.
+No-context cleaning rejects revisions and quality bytes. B2 clean execution
+accepts those inputs like Java `SeriesStream` and writes newly derived Episodes
+without copying the flags or revision. Both profiles reject infinite values,
+source metadata changes and multiple sources collapsing to one derived series.
+NaN remains a gap. An unfinished resample window remains in state at the cut.
 All output acknowledgements precede durable local checkpoint publication. A crash before checkpoint completion
 can duplicate records with deterministic identities and the fixed request clock; delivery is at least once.
 An identical completed retry returns its saved receipt without broker I/O.
@@ -168,8 +193,11 @@ An identical completed retry returns its saved receipt without broker I/O.
 cargo +1.99.1 test --locked --all-targets --manifest-path rust/tsx-runner/Cargo.toml
 ```
 
-Tests consume shared Avro, identity and cleaning vectors. They check typed admission, all chunk sizes of the
-supported cleaning cases, state restoration, immutable derived ownership, acknowledgement failures and retry.
+Tests consume shared Avro, identity, all fifteen cleaning cases, statistics,
+segment, SAX, alignment, cross-correlation and DQ vectors. They check typed
+admission, chunked state restoration, immutable derived ownership,
+acknowledgement failures and retry. Retrieval and pair tests preserve complete
+Episode inputs where their semantics require them.
 Lifecycle tests also exercise private preparation, activation, abort, restart, manifests and HTTP framing.
 Increment tests cover predecessor validation, cumulative ownership, pending windows, fixed-size history and
 saved-byte retries after acknowledgement or checkpoint failures.
