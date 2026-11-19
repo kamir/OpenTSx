@@ -112,6 +112,21 @@ class EpisodeServiceTest {
     }
 
     @Test
+    void aPieceOfAnEpisodeLongerThanAPatternMayBeIsRefused() {
+        SeriesKey key = SeriesKeys.of("long", Map.of(), "1");
+        long t0 = Micros.of(START);
+        double[] values = new double[EpisodeService.MAX_PATTERN_LENGTH + 10];
+        Arrays.fill(values, 1);
+        Episode e = Episodes.regular(key, t0, 1_000_000L, values).source("test").createdAt(t0).build();
+        InMemorySeriesStore one = new InMemorySeriesStore();
+        one.write(List.of(e));
+        EpisodeService svc = new EpisodeService(one);
+        assertEquals("length: 100001 is out of range; expected a whole number from 4 to 100000, the most values of a pattern",
+                assertThrows(IllegalArgumentException.class, () -> svc.similarTo(e.getEpisodeId(), 0, 100_001)).getMessage());
+        svc.similarTo(e.getEpisodeId(), 10, 100_000);
+    }
+
+    @Test
     void aQueryOverMoreEpisodesThanTheLimitIsRefused() {
         SeriesKey key = SeriesKeys.of("many", Map.of(), "1");
         long t0 = Micros.of(START);

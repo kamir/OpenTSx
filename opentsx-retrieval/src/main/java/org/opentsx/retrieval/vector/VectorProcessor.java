@@ -35,6 +35,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
@@ -67,9 +68,9 @@ import java.util.regex.Pattern;
  *   the last checkpoint; readers take the later record per key and tick, and the values are the same. A checkpoint
  *   that cannot be read fails the runner and stays as it is.</li>
  *   <li><b>Status</b> per runner goes to {@link TopicLayout#dagStatus()}.</li>
- *   <li><b>Log</b>: deployments and stops at INFO, a refused DAG and a control topic that cannot be read at WARN, a
- *   failed sink at ERROR with the cause chain; the stack trace of a failure at DEBUG, once per distinct failure of a
- *   sink.</li>
+ *   <li><b>Log</b>: deployments and stops at INFO, a refused DAG, a control topic that cannot be read and the first
+ *   undecodable record of each partition of a sink at WARN, a failed sink at ERROR with the cause chain; the stack
+ *   trace of a failure at DEBUG, once per distinct failure of a sink.</li>
  * </ul>
  *
  * <p>Exactly one processor per domain: the runners assign all partitions themselves, there is no consumer group.
@@ -234,8 +235,6 @@ public final class VectorProcessor implements AutoCloseable {
         }
     }
 
-    // ---- control ---------------------------------------------------------------------------------------------------
-
     /** A control record: deploy the DAG document under its name. */
     public static byte[] deployRecord(String dag, String spec, String by) {
         ObjectNode n = JSON.createObjectNode();
@@ -350,8 +349,6 @@ public final class VectorProcessor implements AutoCloseable {
         status(dag, bytes(n));
     }
 
-    // ---- what a runner computes ------------------------------------------------------------------------------------
-
     /** One sink of a deployed DAG: what it reads, where it writes, and the stream that computes it. */
     private interface Sink {
         String dag();
@@ -372,17 +369,14 @@ public final class VectorProcessor implements AutoCloseable {
         Work open(JsonNode saved);
     }
 
-    /** The stream of one sink: takes the episodes of the source and hands out the records to write. */
-    private interface Work {
-        void add(Episode e, java.util.function.BiConsumer<String, byte[]> out);
-
-        JsonNode state();
-
-        long watermark();
-
-        List<String> waitingFor();
-
-        long skippedBlocks();
+    /**
+     * The stream of one sink: takes the episodes of the source and hands out the records to write.
+     *
+     * @param add takes one episode and hands every record it gives, with its key, to the consumer
+     */
+    private record Work(java.util.function.BiConsumer<Episode, java.util.function.BiConsumer<String, byte[]>> add,
+                        Supplier<JsonNode> state, LongSupplier watermark, Supplier<List<String>> waitingFor,
+                        LongSupplier skippedBlocks) {
     }
 
     /** {@code align.vector} on the series of the source: measuring points as JSON ({@code opentsx.vector.v1}). */
@@ -423,37 +417,14 @@ public final class VectorProcessor implements AutoCloseable {
             VectorStream stream = saved == null
                     ? new VectorStream(job.inputNames(), job.params(), new LinkedHashSet<>(job.seriesIds()), lateness)
                     : VectorStream.restore(job.inputNames(), job.params(), new LinkedHashSet<>(job.seriesIds()), lateness, saved);
-            return new Work() {
-                @Override
-                public void add(Episode e, java.util.function.BiConsumer<String, byte[]> out) {
-                    Map<String, String> tags = new TreeMap<>();
-                    e.getSeries().getTags().forEach((k, v) -> tags.put(k.toString(), v.toString()));
-                    for (VectorAligner.Point p : stream.add(e.getSeries().getSeriesId(), e.getSeries().getMetric(), tags,
-                            Episodes.timestampsMicros(e), Episodes.values(e), Micros.of(e.getTEnd()))) {
-                        out.accept(VectorJson.keyText(p.key()), VectorJson.bytes(VectorJson.record(job.name(), p, job.dag(), hash)));
-                    }
+            return new Work((e, out) -> {
+                Map<String, String> tags = new TreeMap<>();
+                e.getSeries().getTags().forEach((k, v) -> tags.put(k.toString(), v.toString()));
+                for (VectorAligner.Point p : stream.add(e.getSeries().getSeriesId(), e.getSeries().getMetric(), tags,
+                        Episodes.timestampsMicros(e), Episodes.values(e), Micros.of(e.getTEnd()))) {
+                    out.accept(VectorJson.keyText(p.key()), VectorJson.bytes(VectorJson.record(job.name(), p, job.dag(), hash)));
                 }
-
-                @Override
-                public JsonNode state() {
-                    return stream.state();
-                }
-
-                @Override
-                public long watermark() {
-                    return stream.watermark();
-                }
-
-                @Override
-                public List<String> waitingFor() {
-                    return stream.waitingFor();
-                }
-
-                @Override
-                public long skippedBlocks() {
-                    return stream.skippedBlocks();
-                }
-            };
+            }, stream::state, stream::watermark, stream::waitingFor, stream::skippedBlocks);
         }
     }
 
@@ -494,38 +465,13 @@ public final class VectorProcessor implements AutoCloseable {
             SeriesStream stream = saved == null
                     ? new SeriesStream(job.chain(), job.target(), job.seriesIds())
                     : SeriesStream.restore(job.chain(), job.target(), job.seriesIds(), saved);
-            return new Work() {
-                @Override
-                public void add(Episode e, java.util.function.BiConsumer<String, byte[]> out) {
-                    for (Episode clean : stream.add(e)) {
-                        out.accept(clean.getSeries().getSeriesId().toString(), avro.encode(clean));
-                    }
+            return new Work((e, out) -> {
+                for (Episode clean : stream.add(e)) {
+                    out.accept(clean.getSeries().getSeriesId().toString(), avro.encode(clean));
                 }
-
-                @Override
-                public JsonNode state() {
-                    return stream.state();
-                }
-
-                @Override
-                public long watermark() {
-                    return stream.watermark();
-                }
-
-                @Override
-                public List<String> waitingFor() {
-                    return stream.waitingFor();
-                }
-
-                @Override
-                public long skippedBlocks() {
-                    return stream.skippedBlocks();
-                }
-            };
+            }, stream::state, stream::watermark, stream::waitingFor, stream::skippedBlocks);
         }
     }
-
-    // ---- one sink --------------------------------------------------------------------------------------------------
 
     private final class Runner {
         final Sink job;
@@ -541,6 +487,8 @@ public final class VectorProcessor implements AutoCloseable {
         Work stream;
         long records;
         long undecodable;
+        /** The partitions whose first undecodable record was logged; later ones are only counted. */
+        final Set<TopicPartition> undecodableReported = new HashSet<>();
         /** Records that retention deleted between the checkpoint and the start of this runner; kept in the checkpoint. */
         long lostToRetention;
         /** The cause chain of the last failure whose stack trace was logged. */
@@ -574,7 +522,7 @@ public final class VectorProcessor implements AutoCloseable {
                 for (ConsumerRecord<byte[], byte[]> r : patience.poll(consumer, timing.poll())) {
                     handle(r);
                 }
-                state = stream.waitingFor().isEmpty() ? "running" : "waiting";
+                state = stream.waitingFor().get().isEmpty() ? "running" : "waiting";
                 error = null;
                 long now = nanoTime.getAsLong();
                 boolean saved = false;
@@ -640,13 +588,19 @@ public final class VectorProcessor implements AutoCloseable {
         }
 
         private void handle(ConsumerRecord<byte[], byte[]> r) {
-            positions.put(new TopicPartition(r.topic(), r.partition()), r.offset() + 1);
+            TopicPartition tp = new TopicPartition(r.topic(), r.partition());
+            positions.put(tp, r.offset() + 1);
             dirty = true;
             Episode e;
             try {
                 e = avro.decode(r.value(), Episode.class);
             } catch (RuntimeException ex) {
                 undecodable++;
+                if (undecodableReported.add(tp)) {
+                    LOG.warn("undecodable record skipped and counted in undecodable; later ones of this partition are only counted"
+                                    + " dag={} sink={} topic={} partition={} offset={} cause={}", job.dag(), job.name(), r.topic(),
+                            r.partition(), r.offset(), causes(ex));
+                }
                 return;
             }
             // episodes cut out of other episodes repeat their samples
@@ -654,7 +608,7 @@ public final class VectorProcessor implements AutoCloseable {
                     || (e.getSegmentation() != null && e.getSegmentation().getSourceEpisodeId() != null)) {
                 return;
             }
-            stream.add(e, (key, value) -> {
+            stream.add().accept(e, (key, value) -> {
                 pending.add(producer.send(new ProducerRecord<>(job.topic(), key, value)));
                 records++;
             });
@@ -671,7 +625,7 @@ public final class VectorProcessor implements AutoCloseable {
                     .put("lostToRetention", lostToRetention);
             ObjectNode pos = n.putObject("positions");
             new TreeMap<>(positionsByName()).forEach(pos::put);
-            n.set("stream", stream.state());
+            n.set("stream", stream.state().get());
             waiting = new Snapshot(n, new ArrayList<>(pending), nanoTime.getAsLong());
             pending.clear();
             dirty = false;
@@ -836,14 +790,15 @@ public final class VectorProcessor implements AutoCloseable {
             n.put("schema", STATUS_SCHEMA).put("dag", job.dag()).put("vector", job.name()).put("kind", job.kind()).put("topic", job.topic())
                     .put("state", state).put("specHash", hash).put("records", records);
             if (stream != null) {
-                n.put("skippedBlocks", stream.skippedBlocks());
-                long w = stream.watermark();
+                n.put("skippedBlocks", stream.skippedBlocks().getAsLong());
+                long w = stream.watermark().getAsLong();
                 if (w != Long.MIN_VALUE) {
                     n.put("watermark", Micros.toInstant(w).toString());
                 }
+                List<String> waitingFor = stream.waitingFor().get();
                 ArrayNode waiting = n.putArray("waitingFor");
-                stream.waitingFor().stream().limit(10).forEach(waiting::add);
-                n.put("waitingForCount", stream.waitingFor().size());
+                waitingFor.stream().limit(10).forEach(waiting::add);
+                n.put("waitingForCount", waitingFor.size());
             }
             if (undecodable > 0) {
                 n.put("undecodable", undecodable);
@@ -868,8 +823,6 @@ public final class VectorProcessor implements AutoCloseable {
     /** Positions and state of a runner at one moment, and the sends that must be confirmed before it may be written. */
     private record Snapshot(ObjectNode document, List<Future<RecordMetadata>> confirmations, long since) {
     }
-
-    // ---- helpers ---------------------------------------------------------------------------------------------------
 
     /** The exception and its causes on one line, for a log line. */
     static String causes(Throwable t) {

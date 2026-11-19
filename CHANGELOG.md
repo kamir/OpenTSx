@@ -672,6 +672,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   missing; ...`, `start: missing; ...`, `duration: missing; ...` and `park: missing; ...` (the first missing field),
   `sourceSystem: <name> is not in catalog <catalog>; use one of its sources: ...` and `episodeDuration: <value> is
   shorter than 1 microsecond; ...`.
+- `opentsx-retrieval/README.md` lists every route of the retrieval server with a link to Appendix B, describes
+  `--systems` and `--systems-root`, and says when the server writes: with `--dag-runs true` only, to the DAG control
+  and status topics and to `tsx.<domain>.synthetic.v2`. It also says that no writer stores the SAX word in
+  `EpisodeSummary.sax` and that DTW z-normalizes every window on its own.
 
 ### Removed
 
@@ -1512,6 +1516,30 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The OpenMetadata manual and module README say that the client reads `Retry-After` as seconds or as an HTTP date in
   the IMF-fixdate form such as `Thu, 19 Nov 2026 12:00:12 GMT`; a date in the obsolete RFC 850 or asctime form is not
   read, and the waits of 1, 2, 4 and 8 s apply.
+- `align.vector` in a DAG refuses an unknown `agg` with `node <id>: agg: "<value>" is not allowed; expected one of
+  MEAN, LAST, FIRST, MIN, MAX, SUM, COUNT`, so `vectors deploy` exits with code 2 and `POST /v1/dags/deploy` answers
+  400 with that text instead of the JDK text `No enum constant
+  org.opentsx.retrieval.vector.VectorAligner.Agg.<value>`.
+- `EpisodeService.similarTo(episodeId, offset, length)` and `POST /v1/patterns/search` with `episodeId` refuse a
+  `length` above 100000 (`EpisodeService.MAX_PATTERN_LENGTH`) with `length: <n> is out of range; expected a whole
+  number from 4 to 100000, the most values of a pattern`, as a `pattern` of values does.
+- The vector processor (`opentsx vectors`) logs the first undecodable record of each partition of a sink at WARN:
+  `undecodable record skipped and counted in undecodable; later ones of this partition are only counted dag=<dag>
+  sink=<vector> topic=<topic> partition=<n> offset=<offset> cause=<causes>`. Before, it only counted it in
+  `undecodable` of the status.
+- `feature.rolling` in a series sink adds up the whole window when a value whose square is no finite number (above
+  about 1.3e154 in magnitude) leaves it, instead of at every step while such a value is in the window: 30000 samples
+  with a 10000-value window and one such value take 20 ms instead of 203 ms. It still adds up at every step while the
+  values of the window or their squares add up beyond about 1.8e308. MEAN of such windows can differ in the last
+  digits.
+- The descriptor of `pattern.search` gives `length` the range 4 to 100000 (`EpisodeService.MAX_PATTERN_LENGTH`), and
+  appendix B of the user manual lists the limit with its 400 answer.
+- The java note of `pattern.similar-episodes` says that no writer stores the SAX word, so the search computes it for
+  every candidate. The processor note of `feature.rolling` says when a step adds up the window again, when STD is
+  infinite or NaN, and that MEAN is infinite while the values of the window add up beyond about 1.8e308, even when
+  their mean is a finite number.
+- The operations and troubleshooting guides list the WARN line `undecodable record skipped` that the vector processor
+  logs once per partition of a sink.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

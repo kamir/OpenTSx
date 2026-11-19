@@ -257,8 +257,6 @@ public final class SystemDoc {
         return s;
     }
 
-    // ------------------------------------------------------------------ referenced documents
-
     private Map<String, Map<String, PortSpec>> ports(JsonNode doc, Path root) {
         Map<String, Map<String, PortSpec>> out = new TreeMap<>();
         Path file = ref(doc.path("plan"), root, "plan");
@@ -370,8 +368,6 @@ public final class SystemDoc {
         hashed.append('\n').append(ref).append('\n').append(text(file));
         return file;
     }
-
-    // ------------------------------------------------------------------ signals
 
     private Signal signal(JsonNode n, Map<String, Map<String, JsonNode>> catalogs) {
         String id = n.path("id").asText("");
@@ -583,8 +579,6 @@ public final class SystemDoc {
             }
         }
     }
-
-    // ------------------------------------------------------------------ helpers
 
     private static String first(JsonNode a, JsonNode b) {
         if (a != null && !a.isMissingNode() && !a.isNull()) {

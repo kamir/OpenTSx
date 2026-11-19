@@ -33,9 +33,12 @@ import java.util.TreeMap;
  * person (interventions on controls, a policy for an atom), and gives back a run with an identity: its events, its
  * KPIs and its series can be read again by that identity, and two runs can be compared.
  *
- * <p>What a run is not: it does not read the signals of the system. The inputs are those of the scenario, which are
- * invented; every run says so in {@code inputs} and {@code status}. Binding a run to the series of the signals is a
- * later stage.
+ * <p>The inputs of a run come from one of two places ({@code inputs} of the request). {@code "scenario"}, the default,
+ * takes the inputs of the scenario, which are invented. {@code "signals"} takes them from the series of the signals of
+ * the system through {@link SignalInputs} ({@link #signals} names where they are read): the clean grade when it has
+ * data, else the raw grade, and a constant of the system document as a constant; such a run is compared with the
+ * decisions of the scenario on the same inputs. Every run says where its inputs came from in {@code inputsFrom},
+ * {@code inputs} and {@code status}.
  *
  * <p>The register lives in memory and keeps the last {@value #KEEP} runs per system. A run id follows from plan,
  * inputs and decisions, so asking the same question again gives the same run.
@@ -145,9 +148,10 @@ public final class Runs {
     /**
      * Computes a run and keeps it.
      *
-     * @param body {@code {label?, base?: "reference"|"empty", interventions?: [{at, atom, control, value|"release", reason?}],
-     *             policies?: {atom: policy}, from?: minute}}. With {@code from} the run is a forecast that continues the
-     *             reference run from that minute; without it the whole horizon is computed.
+     * @param body {@code {label?, inputs?: "scenario"|"signals", bindings?, base?: "reference"|"empty", interventions?: [{at,
+     *             atom, control, value|"release", reason?}], policies?: {atom: policy}, from?: minute}}. With {@code from}
+     *             the run is a forecast that continues the reference run from that minute; without it the whole horizon
+     *             is computed. {@code bindings} lays a working copy over the system document for {@code inputs: "signals"}.
      * @throws IllegalArgumentException with a message for the person who asked
      */
     public synchronized JsonNode run(String system, JsonNode body) {

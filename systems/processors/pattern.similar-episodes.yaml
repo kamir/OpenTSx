@@ -30,8 +30,9 @@ runtimes:
     class: org.opentsx.retrieval.pattern.EpisodeSimilarity
     note: >-
       EpisodeService.similarEpisodes(episodeId).topK(k).fetch(); representation(points, saxLength, alphabet) changes
-      64, 16 and 8. EpisodeSimilarity.annotate stores the SAX word in EpisodeSummary.sax when episodes are written,
-      otherwise it is computed per search. The SAX bound skips candidates for zED only. The retrieval server offers it
+      64, 16 and 8. EpisodeSimilarity.annotate stores the SAX word in EpisodeSummary.sax; no writer in this
+      repository calls it, so the search computes the word of every candidate that carries none with the same
+      parameters. The SAX bound skips candidates for zED only. The retrieval server offers it
       as POST /v1/episodes/similar.
   python:
     status: available

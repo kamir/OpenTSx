@@ -121,7 +121,6 @@ class RetrievalServerMainTest {
                 + "  OPENTSX_RETRIEVAL_SOURCE\n      Store the retrieval server serves; auto takes iceberg when"
                 + " opentsx.iceberg.properties is set on the command line, kafscale when opentsx.kafscale.bootstrap is, else demo;"
                 + " both on the command line is an error.\n"), help.out());
-        assertFalse(help.out().contains("parses its own flags"), help.out());
         assertEquals(help, main("--port", "0", "--help"));
         Exit version = main("--port", "0", "--version");
         assertEquals(0, version.code(), version.err());

@@ -245,8 +245,6 @@ public final class VectorStream {
         return s.lastTick < tick ? s.lastValue : null;
     }
 
-    // ---- state -----------------------------------------------------------------------------------------------------
-
     /** Everything a restart needs: progress and open ticks per series, and how far each key was handed out. */
     public ObjectNode state() {
         ObjectNode n = JSON.createObjectNode();

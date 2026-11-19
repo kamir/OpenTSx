@@ -4,7 +4,7 @@ import java.util.List;
 
 /**
  * Incremental segment detector over one series. It sees every sample once, in time order, and reports a cut only
- * when no later sample can change it - so feeding a whole series at once (batch) and feeding it episode by episode
+ * when no later sample can change it, so feeding a whole series at once (batch) and feeding it episode by episode
  * (streaming) gives the same cuts by construction.
  */
 interface Detector {

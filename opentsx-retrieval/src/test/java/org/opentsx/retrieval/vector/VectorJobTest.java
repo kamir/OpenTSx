@@ -106,6 +106,14 @@ class VectorJobTest {
         assertEquals("node n1: maxAge: \"5min\" is not a duration; expected an ISO-8601 duration such as PT60S", e.getMessage());
     }
 
+    @Test
+    void anAggThatIsNoAggregateIsRefusedWithTheAllowedValues() throws Exception {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> plan(dag(VECTOR_NODE.replace("agg: MEAN", "agg: medain"), VECTOR_SINK)));
+        assertEquals("node n1: agg: \"medain\" is not allowed; expected one of MEAN, LAST, FIRST, MIN, MAX, SUM, COUNT",
+                e.getMessage());
+    }
+
     /** Below the microsecond of the time axis the clock does not move; beyond what a long holds in nanoseconds it overflows. */
     @Test
     void aDurationTheClockCannotCountIsRefusedWithItsRange() throws Exception {

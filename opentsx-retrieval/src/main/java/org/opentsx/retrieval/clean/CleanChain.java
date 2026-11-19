@@ -503,8 +503,10 @@ public final class CleanChain {
 
     /**
      * What a rolling step knows of the values in its window that are no gap: the sums of the finite ones, the number
-     * of infinite ones, how many of the latest values are equal, and for MIN and MAX the samples that can still
-     * become the extreme. Each sample enters and leaves once, so a step costs the same for any window.
+     * of infinite ones and of finite ones whose square is no finite number, how many of the latest values are equal,
+     * and for MIN and MAX the samples that can still become the extreme. Each sample enters and leaves once, so a step
+     * costs the same for any window. A step adds up the window afresh when a value whose square is no finite number
+     * leaves it, and while the finite values or their squares add up beyond the range of a double.
      */
     static final class Window {
         double sum;
@@ -518,6 +520,8 @@ public final class CleanChain {
         int n;
         int positiveInfinite;
         int negativeInfinite;
+        /** Finite values whose square is no finite number: sq leaves them out, and the sum of the squares is infinite. */
+        int infiniteSquares;
         /** Finite values taken out since the sums were added up afresh; bounds the rounding error of the subtractions. */
         int removed;
         /** The latest value and how many values in a row up to it were equal: a window of equal values has no spread. */
@@ -538,8 +542,11 @@ public final class CleanChain {
                 positiveInfinite++;
             } else if (x == Double.NEGATIVE_INFINITY) {
                 negativeInfinite++;
-            } else {
+            } else if (Double.isFinite(x * x)) {
                 add(x, x * x);
+            } else {
+                add(x, 0);
+                infiniteSquares++;
             }
             if (fn == Fn.MIN || fn == Fn.MAX) {
                 while (!extremes.isEmpty() && (fn == Fn.MIN ? extremes.peekLast()[1] > x : extremes.peekLast()[1] < x)) {
@@ -560,7 +567,12 @@ public final class CleanChain {
             } else if (x == Double.NEGATIVE_INFINITY) {
                 negativeInfinite--;
             } else {
-                add(-x, -(x * x));
+                if (Double.isFinite(x * x)) {
+                    add(-x, -(x * x));
+                } else {
+                    add(-x, 0);
+                    infiniteSquares--;
+                }
                 removed++;
             }
             if (extremes.peekFirst() == sample) {
@@ -593,7 +605,7 @@ public final class CleanChain {
             clear();
             for (double[] tv : kept) {
                 if (Double.isFinite(tv[1])) {
-                    add(tv[1], tv[1] * tv[1]);
+                    add(tv[1], Double.isFinite(tv[1] * tv[1]) ? tv[1] * tv[1] : 0);
                 }
             }
         }
@@ -609,7 +621,8 @@ public final class CleanChain {
                 case MEAN -> positiveInfinite + negativeInfinite == 0 || same ? mean : negativeInfinite == 0 ? Double.POSITIVE_INFINITY
                         : positiveInfinite == 0 ? Double.NEGATIVE_INFINITY : Double.NaN;
                 // of the values in the window, as a population: no value, no spread
-                case STD -> positiveInfinite + negativeInfinite > 0 ? Double.NaN : same ? 0 : Math.sqrt(Math.max(0, (sq + sqLost) / n - mean * mean));
+                case STD -> positiveInfinite + negativeInfinite > 0 ? Double.NaN : same ? 0
+                        : Math.sqrt(Math.max(0, (infiniteSquares > 0 ? Double.POSITIVE_INFINITY : sq + sqLost) / n - mean * mean));
             };
         }
     }
@@ -623,6 +636,7 @@ public final class CleanChain {
             double[] sample = {t, in.values()[k]};
             kept.addLast(sample);
             w.enter(sample, r.fn());
+            int infiniteSquares = w.infiniteSquares;
             // the window reaches back windowMicros from this sample, this sample included
             while ((long) kept.peekFirst()[0] <= t - r.windowMicros()) {
                 w.leave(kept.removeFirst());
@@ -633,8 +647,10 @@ public final class CleanChain {
             }
             if (w.n == w.positiveInfinite + w.negativeInfinite) {
                 w.clear();
-            } else if (w.removed > kept.size() || !Double.isFinite(w.sq)) {
-                // a square that is no finite number stays so when it leaves; only adding up afresh brings the sums back
+            } else if (w.removed > kept.size() || w.infiniteSquares < infiniteSquares || !Double.isFinite(w.sum)
+                    || !Double.isFinite(w.sq)) {
+                // a value whose square is no finite number leaves rounding of its size in the sums when it goes, and a
+                // sum that is no finite number stays so: only adding up afresh brings the sums back
                 w.addUp(kept);
             }
             v[k] = w.value(r.fn());

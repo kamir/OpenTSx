@@ -373,7 +373,48 @@ class CleanChainTest {
         }
     }
 
-    // ---------------------------------------------------------------- the stream that writes a clean signal
+    /**
+     * While a finite value whose square is no finite number is in the window, a step does not add up the whole window
+     * again: the running sums go on, and the checkpoint counts the values that left since they were last added up.
+     */
+    @Test
+    void aValueWhoseSquareIsNoFiniteNumberDoesNotMakeEveryStepAddUpTheWindow() throws Exception {
+        int n = 13;
+        long[] t = new long[n];
+        double[] v = new double[n];
+        for (int i = 0; i < n; i++) {
+            t[i] = T0 + i * SECOND;
+            v[i] = i == 5 ? 1e200 : i;
+        }
+        for (String fn : List.of("MEAN", "STD")) {
+            CleanChain chain = CleanChain.of(List.of(JSON.readTree("{\"id\":\"r\",\"op\":\"feature.rolling\",\"params\":{\"window\":"
+                    + "\"PT10S\",\"fn\":\"" + fn + "\"}}")));
+            CleanChain.State st = chain.newState();
+            double[] got = chain.apply(st, new CleanChain.Block(t, v), t[n - 1] + 1).values();
+            double[] expected = rollingByHand(t, v, 10 * SECOND, fn);
+            for (int i = 0; i < n; i++) {
+                if (Double.isNaN(expected[i]) || Double.isInfinite(expected[i])) {
+                    assertEquals(expected[i], got[i], fn + " at " + i);
+                } else {
+                    assertEquals(expected[i], got[i], 1e-9 * Math.max(1, Math.abs(expected[i])), fn + " at " + i);
+                }
+            }
+            assertEquals(3, st.json().path("rolling").get(0).path("removed").asInt(),
+                    fn + ": samples 0, 1 and 2 left the window, which still holds 1e200: " + st.json());
+        }
+    }
+
+    /** The sum of 1e308 and 1.5e308 is no finite number, so their mean is; two equal values are their own mean. */
+    @Test
+    void theMeanOfAWindowWhoseSumIsNoFiniteNumberIsInfiniteUntilAValueLeaves() throws Exception {
+        long[] t = {T0, T0 + SECOND, T0 + 2 * SECOND, T0 + 3 * SECOND};
+        CleanChain chain = CleanChain.of(List.of(JSON.readTree(
+                "{\"id\":\"r\",\"op\":\"feature.rolling\",\"params\":{\"window\":\"PT2S\",\"fn\":\"MEAN\"}}")));
+        assertArrayEquals(new double[]{1e308, Double.POSITIVE_INFINITY, 7.5e307, 1},
+                chain.apply(chain.newState(), new CleanChain.Block(t, new double[]{1e308, 1.5e308, 1, 1}), t[3] + 1).values());
+        assertArrayEquals(new double[]{1e308, 1e308, 5e307, 1},
+                chain.apply(chain.newState(), new CleanChain.Block(t, new double[]{1e308, 1e308, 1, 1}), t[3] + 1).values());
+    }
 
     static final long T0 = Instant.parse("2026-10-01T00:00:00Z").toEpochMilli() * 1000;
     static final SeriesKey POWER = SeriesKeys.of("wind.turbine.power_active", Map.of("park", "ost-01", "turbine", "T02"), "kW");

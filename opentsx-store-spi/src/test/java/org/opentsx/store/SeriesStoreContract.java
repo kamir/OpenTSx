@@ -162,8 +162,6 @@ public abstract class SeriesStoreContract {
         }
     }
 
-    // ------------------------------------------------------------------ helpers
-
     /** Points of the episodes inside [from, to), as the store can hold them (NaN dropped, ms precision). */
     protected Map<String, TreeMap<Long, Double>> expectedPoints(List<Episode> episodes, long from, long to) {
         Map<String, TreeMap<Long, Double>> out = points(episodes);

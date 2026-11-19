@@ -28,7 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * The simple retrieval API over one or more {@link SeriesStore}s.
+ * The retrieval API over one or more {@link SeriesStore}s.
  *
  * <pre>
  * EpisodeService svc = new EpisodeService(icebergStore);
@@ -95,9 +95,10 @@ public final class EpisodeService {
             throw new IllegalArgumentException("episodeId: episode " + episodeId + " has " + v.length + " values; expected an episode"
                     + " with at least 4");
         }
-        if (length < 4 || length > v.length) {
-            throw new IllegalArgumentException("length: " + length + " is out of range; expected a whole number from 4 to " + v.length
-                    + ", the values of episode " + episodeId);
+        if (length < 4 || length > Math.min(v.length, MAX_PATTERN_LENGTH)) {
+            throw new IllegalArgumentException("length: " + length + " is out of range; expected a whole number from 4 to "
+                    + (v.length > MAX_PATTERN_LENGTH ? MAX_PATTERN_LENGTH + ", the most values of a pattern"
+                    : v.length + ", the values of episode " + episodeId));
         }
         if (offset < 0 || offset > v.length - length) {
             throw new IllegalArgumentException("offset: " + offset + " is out of range; expected a whole number from 0 to "

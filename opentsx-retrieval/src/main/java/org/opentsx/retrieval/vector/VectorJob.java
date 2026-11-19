@@ -4,11 +4,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * One vector sink of an {@code opentsx.dag.v1} document, as far as this runtime executes it: an
@@ -110,8 +112,12 @@ public record VectorJob(String dag, String topic, String name, List<String> seri
         // the clock counts whole microseconds
         Duration every = duration(node, "every", p.path("every").asText(""), "PT60S", Duration.ofNanos(1000));
         Duration maxAge = p.hasNonNull("maxAge") ? duration(node, "maxAge", p.path("maxAge").asText(), "PT60S", null) : null;
+        String agg = p.path("agg").asText("MEAN");
+        VectorAligner.Agg aggregate = Arrays.stream(VectorAligner.Agg.values()).filter(a -> a.name().equals(agg)).findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("node " + node + ": agg: \"" + agg + "\" is not allowed; expected one of "
+                        + Arrays.stream(VectorAligner.Agg.values()).map(Enum::name).collect(Collectors.joining(", "))));
         try {
-            return new VectorAligner.Params(every, p.path("key").asText("series"), VectorAligner.Agg.valueOf(p.path("agg").asText("MEAN")),
+            return new VectorAligner.Params(every, p.path("key").asText("series"), aggregate,
                     "as-of".equals(p.path("fill").asText()), maxAge, "complete".equals(p.path("emit").asText()));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("node " + node + ": " + e.getMessage(), e);

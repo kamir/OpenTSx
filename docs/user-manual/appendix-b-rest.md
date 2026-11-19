@@ -7,7 +7,7 @@ Base URL: `http://<host>:<port>`. Times are ISO-8601 instants (UTC).
 | `GET /v1/health` | none | `{"status":"ok"}` |
 | `GET /v1/episodes` | `metric`, `tag.<key>=<value>` (repeatable), `series=id,id`, `from`, `to`, `limit` (1 to 20000), `clip=true\|false` (default `false`), `resample=PT1M`, `agg=MEAN\|MIN\|MAX\|FIRST\|LAST\|SUM\|COUNT` (default `MEAN`, only with `resample`); any other parameter is a 400 | episodes |
 | `GET /v1/episodes/{id}` | none | episodes: an array with the one episode; 404 for an unknown id; 400 for an id that holds `/` |
-| `POST /v1/patterns/search` | `pattern` (array of 4 to 100000 finite values) **or** `episodeId`+`offset`+`length`; `metric`, `tags` (object), `series`, `from`, `to`, `distance` (`zED`\|`DTW`, in any case), `band` (DTW, default 0.1), `topK` (1 to 1000, default 10) | matches; 404 for an unknown `episodeId` |
+| `POST /v1/patterns/search` | `pattern` (array of 4 to 100000 finite values) **or** `episodeId`+`offset`+`length` (`length` 4 to 100000 and at most the values of the episode); `metric`, `tags` (object), `series`, `from`, `to`, `distance` (`zED`\|`DTW`, in any case), `band` (DTW, default 0.1), `topK` (1 to 1000, default 10) | matches; 404 for an unknown `episodeId` |
 | `POST /v1/episodes/similar` | `episodeId`; `metric` (default: the metric of the episode), `tags`, `series`, `from`, `to`, `distance`, `band`, `topK` | matches; 404 for an unknown `episodeId` |
 | `GET /v1/inventory` | none | `opentsx.ts-inventory.v1`: every series with extent, value range, labels and ground-truth marks (see `opentsx-retrieval/README.md`) |
 | `GET /v1/systems` | none | the systems the server knows (`--systems`), each with the number of signals by source and by state |
@@ -38,6 +38,7 @@ Base URL: `http://<host>:<port>`. Times are ISO-8601 instants (UTC).
 | points of one episode after `resample` | 100000 | `Resampling.MAX_POINTS` | 400, for example `resample: "PT0.005S" gives 120000 points for one episode; expected a longer step that gives at most 100000` |
 | `topK` of `POST /v1/patterns/search` and `/v1/episodes/similar` | 1 to 1000 | `EpisodeService.MAX_TOP_K` | 400 `topK: 1000000 is out of range; expected a whole number from 1 to 1000` |
 | values of `pattern` | 4 to 100000 | `EpisodeService.MAX_PATTERN_LENGTH` | 400 `pattern: 100001 values; expected 4 to 100000 values` |
+| `length` of a piece of an episode in `POST /v1/patterns/search` | 4 to 100000 | `EpisodeService.MAX_PATTERN_LENGTH` | 400 `length: 100001 is out of range; expected a whole number from 4 to 100000, the most values of a pattern` |
 | `limit` of `GET /v1/episodes` | 1 to 20000 | `EpisodeService.MAX_EPISODES` | 400 `limit: 20001 is out of range; expected a whole number from 1 to 20000` |
 | episodes one request selects: `GET /v1/episodes` without `limit`, `POST /v1/patterns/search`, `/v1/episodes/similar` and `/v1/segments` | 20000 | `EpisodeService.MAX_EPISODES` | 400 `selection: more than 20000 episodes match; narrow it with metric, tags, series, from or to`; `GET /v1/episodes` adds `, or set limit` |
 

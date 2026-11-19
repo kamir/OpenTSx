@@ -158,8 +158,9 @@ None of the OpenTSx processes (stats, retrieval, Jobs, pollers) has a `/metrics`
   and logs the first undecodable record and the first invalid episode per partition and every retention gap at WARN
   ([troubleshooting](troubleshooting.md#log-lines-of-the-statistics-processor-and-the-readers)). The vector processor
   reports `undecodable`, `lostToRetention` and `ignoredControlRecords` in its status records
-  (`tsx.<domain>.dag-status.v1`) and logs the first ignored control record. The retrieval server with `--kafscale`
-  logs `undecodable`, `lostToRetention`, `droppedVectorRows`, `droppedControlRecords` and `droppedStatusRecords` in
+  (`tsx.<domain>.dag-status.v1`) and logs the first ignored control record and the first undecodable record of each
+  partition of a sink at WARN with topic, partition and offset. The retrieval server with `--kafscale` logs
+  `undecodable`, `lostToRetention`, `droppedVectorRows`, `droppedControlRecords` and `droppedStatusRecords` in
   its `feed loaded` and `feed refreshed` lines, shows them under `source` in `GET /v1/inventory`, and logs the first
   skipped record of a partition at WARN with topic, partition and offset;
 * retrieval request latency and error rate;
@@ -192,7 +193,7 @@ signals.
   | Level | Retrieval server | Vector processor |
   |-------|------------------|------------------|
   | INFO | `starting retrieval-server`, `system loaded`, `feed loaded`, `feed refreshed` (when episodes arrived or a count changed), `feed refresh works again`, `topic readable again`, `vector topic readable again`, `listening on`, `stopping`, `stopped` | `starting vectors`, `vector processor started`, `sink deployed`, `dag stopped`, `final checkpoint written`, `control topic readable again`, `status records are sent again`, `stopping`, `stopped` |
-  | WARN | `dag deployments: OPEN ...`, `system documents have problems`, `feed refresh failed`, `topic cannot be read now`, `vector topic cannot be read`, `record dropped` | `dag refused`, `control topic cannot be read now`, `control record ignored`, `retention deleted records before the sink read them`, `status record not sent`, `no final checkpoint`, `checkpoint not removed` (delete the file named in `file=` by hand), `the processor did not stop in time` |
+  | WARN | `dag deployments: OPEN ...`, `system documents have problems`, `feed refresh failed`, `topic cannot be read now`, `vector topic cannot be read`, `record dropped` | `dag refused`, `control topic cannot be read now`, `control record ignored`, `undecodable record skipped`, `retention deleted records before the sink read them`, `status record not sent`, `no final checkpoint`, `checkpoint not removed` (delete the file named in `file=` by hand), `the processor did not stop in time` |
   | ERROR | `request failed ... status=500` or `status=503`; `feed refresh failed` when the cause is an Error, such as an `AssertionError` | `sink failed` |
 * The image and `bin/opentsx` log through slf4j-simple with one file, `conf/simplelogger.properties`: everything at
   `info`, `org.apache.kafka`, `org.apache.iceberg`, `org.apache.hadoop`, `org.apache.parquet` and `software.amazon` at

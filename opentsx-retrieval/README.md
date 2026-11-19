@@ -61,9 +61,9 @@ The pattern engine provides these building blocks:
 | Building block | Purpose |
 |----------------|---------|
 | `Mass` | z-normalized Euclidean distance to every subsequence, O(n log n) via FFT |
-| `Paa`, `Sax` | Symbolic representation. `Sax.mindist` is a lower bound of the Euclidean distance, used as an exact prefilter. The word is stored in `EpisodeSummary.sax` as `"16x8:abcd…"`. |
+| `Paa`, `Sax` | Symbolic representation. `Sax.mindist` is a lower bound of the Euclidean distance, used as an exact prefilter. A word has the form `"16x8:abcd…"`. `EpisodeSimilarity.annotate` stores it in `EpisodeSummary.sax`, and the search takes a stored word with the same parameters; no writer in this repository calls `annotate`, so the search computes the word of every candidate. |
 | `Dtw` | DTW with a Sakoe-Chiba band, early abandoning, LB_Kim and LB_Keogh (the UCR-suite cascade) |
-| `PatternSearch` | Exact top-k search for **non-overlapping** subsequences over `Run`s (series assembled across episode boundaries, split at gaps) |
+| `PatternSearch` | Exact top-k search for **non-overlapping** subsequences over `Run`s (series assembled across episode boundaries, split at gaps). With DTW every window is z-normalized on its own before the cascade. |
 | `EpisodeSimilarity` | Whole episodes. The representation is a z-normalized PAA (64 points). Exact best-first search with SAX bounds verifies only a fraction of the candidates. |
 
 Windows that contain NaN are skipped. A constant window has distance 0 to a constant query and √m to any other
@@ -85,14 +85,16 @@ Setup: 4 turbines × 8 h at 1 Hz (115,200 samples). A 90 s gust shape is planted
 
 Reading the table:
 * **Time warping.** DTW handles it; zED does not.
-* **Noise.** zED is more robust. A wide DTW band also bends turbulent wind into false matches.
+* **Noise.** zED holds up better. A wide DTW band also bends turbulent wind into false matches.
 * **Recommendation.** Use zED by default. Use DTW with a narrow band (0.05–0.1) when time warping is expected.
 
 ## REST and Python
 
-`RetrievalServer` is a thin JDK HTTP server with these endpoints:
+`RetrievalServer` is a thin JDK HTTP server with these endpoints. [Appendix B](../docs/user-manual/appendix-b-rest.md)
+lists the parameters, bodies and answers of each.
 
 ```text
+GET  /v1/health            {"status":"ok"}
 GET  /v1/episodes?metric=&tag.turbine=T07&from=ISO&to=ISO&limit=&clip=true&resample=PT1M&agg=MEAN
 GET  /v1/episodes/{id}
 POST /v1/patterns/search   {"pattern":[…] | "episodeId","offset","length", "metric","tags","from","to","distance","band","topK"}
@@ -102,6 +104,12 @@ GET  /v1/inventory         every series of the store with its metadata
 GET  /v1/dags              the DAGs of the domain: what was deployed or stopped, what the processor reports
 POST /v1/dags/deploy       opentsx.dag.v1 (YAML): hands the DAG to the vector processor
 POST /v1/dags/stop?name=   stops the DAG of that name
+GET  /v1/systems           the systems of --systems, each with the number of its signals by source and by state
+GET  /v1/systems/{id}/signals, /plan, /decisions, /scenario
+POST /v1/systems/{id}/signals, /plan, /decisions   the same with {"bindings":[…]} laid over the document
+POST /v1/systems/{id}/runs                computes a run of the twin and keeps it in memory
+GET  /v1/systems/{id}/runs, /runs/{run}, /runs/{run}/series?keys=, /runs/{run}/compare?base=
+POST /v1/systems/{id}/generate            writes the series of a demo generator to tsx.<domain>.synthetic.v2
 ```
 
 Numbers in a POST body are JSON numbers. A string where a number belongs, such as `"topK": "ten"` or
@@ -110,7 +118,7 @@ A JSON body over 262144 bytes (`RetrievalServer.MAX_BODY_BYTES`) and a DAG over 
 (`RetrievalServer.MAX_DAG_BYTES`) are a 413. A `resample` step that gives more than
 100000 points for one episode (`Resampling.MAX_POINTS`) is a 400. A query parameter the route does not take, such as
 the typo `metrc=`, is a 400 that names it, and so is `agg` without `resample`.
-`topK` takes 1 to 1000 (`EpisodeService.MAX_TOP_K`) and `pattern` 4 to 100000 values
+`topK` takes 1 to 1000 (`EpisodeService.MAX_TOP_K`), and `pattern` and `length` take 4 to 100000 values
 (`EpisodeService.MAX_PATTERN_LENGTH`). `limit` takes 1 to 20000, and a request selects at most 20000 episodes
 (`EpisodeService.MAX_EPISODES`); beyond a limit the answer is a 400 that names it. A segment parameter or a piece of
 an episode out of range is a 400 that names the field and the range, for example
@@ -177,6 +185,9 @@ or a DAG the processor would refuse exits with code 2 and writes nothing. A runt
 * A tick is written when every series named in `source.series` has passed its end, plus `lateness` of the node.
   Until every named series was seen once, the sink waits; the status says for which.
 * Per series, episodes must arrive in time order. One that does not continue its series is skipped and counted.
+* A record of the source topic that does not decode is skipped and counted in `undecodable` of the status of the sink.
+  The first one of each partition is logged at WARN:
+  `undecodable record skipped and counted in undecodable; later ones of this partition are only counted dag=<dag> sink=<vector> topic=<topic> partition=<n> offset=<offset> cause=<causes>`.
 * A checkpoint per sink in `--state` holds positions and state. It is written after the broker confirmed the
   records, so a crash repeats at most the records since the last checkpoint, with the same values.
 * A checkpoint that cannot be read, or holds no JSON object, fails the sink: the status says `failed` and names the
@@ -260,9 +271,12 @@ bin/opentsx retrieval-server --port 8080 --kafscale host:9092 --domain wind \
 `bin/opentsx retrieval-server --help` lists every key. `--source` (`opentsx.retrieval.source`) chooses the store; the
 default `auto` takes `iceberg` when `--iceberg` is on the command line, `kafscale` when `--kafscale` is, else `demo`, so
 `KAFSCALE_BOOTSTRAP` in the environment does not switch it. `--iceberg` together with `--kafscale` is an error. The
-server listens on every interface; `--bind <address>` chooses one. Every value, the scenario, the catalog and the
+server listens on every interface; `--bind <address>` chooses one. `--systems <directory>` serves the system documents
+of that directory under `/v1/systems`; the files the documents refer to are relative to `--systems-root <directory>`
+(default `.`, the working directory). Every value, the scenario, the catalog and the
 system documents (`--systems` must name a directory with at least one `*.system.yaml`; when two documents declare one
-system id, the first in file-name order keeps it and lists `duplicate system id <id>: <file> declares it too` among its
+system id, the first in file-name order keeps it and lists
+`duplicate system id <id>: <file> declares it too; give every system document its own id` among its
 problems, so it generates nothing) are checked before a store,
 a client or the port opens. A usage or configuration error exits with code 2 and one line on stderr, for example
 `opentsx: --prot: unknown option of retrieval-server; did you mean --port?`; a failure while the store opens or the
@@ -275,7 +289,11 @@ themselves are logged at DEBUG. On SIGTERM the server logs `stopping port=<port>
 feed, and logs `stopped`.
 
 With `--kafscale` the server reads `tsx.<domain>.episodes.v2` into memory and follows the topic. It uses manual
-assignment without a consumer group and writes nothing. Loading stops at `--max-episodes`. The first read logs
+assignment without a consumer group. Without `--dag-runs true` it writes nothing. With `--dag-runs true` it writes on
+request only: `POST /v1/dags/deploy` and `POST /v1/dags/stop` create the control topic `tsx.<domain>.dags.v1` and the
+status topic `tsx.<domain>.dag-status.v1` when they are missing and append one record to the control topic;
+`POST /v1/systems/{id}/generate` creates `tsx.<domain>.synthetic.v2` when it is missing and appends the generated
+episodes to it. Loading stops at `--max-episodes`. The first read logs
 `feed loaded topic=<topic> episodes=<n> truncated=<true|false> vectorTopics=<topic>,... <counts>`, and a refresh that
 added episodes or changed a count logs `feed refreshed episodes=<n> <counts>`, where `<counts>` is
 `undecodable=<n> lostToRetention=<n> droppedVectorRows=<n> droppedControlRecords=<n> droppedStatusRecords=<n>`. The

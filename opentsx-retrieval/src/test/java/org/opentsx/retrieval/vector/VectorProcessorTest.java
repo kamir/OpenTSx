@@ -376,6 +376,25 @@ public class VectorProcessorTest {
     }
 
     @Test
+    void theFirstUndecodableEpisodeOfAPartitionIsLoggedAndTheNextOnlyCounted(@TempDir Path state) throws Exception {
+        broker.append(LAYOUT.episodes(), 0, "not avro".getBytes(StandardCharsets.UTF_8));
+        appendBlock(0);
+        broker.append(LAYOUT.episodes(), 0, "not avro either".getBytes(StandardCharsets.UTF_8));
+        deploy(goodDag());
+        List<String> lines;
+        try (VectorProcessor p = processor(state)) {
+            lines = logged(() -> steps(p, 5));
+            assertEquals(Map.of("wind-exp2-smart/turbine-state", "running"), p.states());
+        }
+        assertEquals(2, lastStatus().path("undecodable").asLong(), lastStatus().toString());
+        List<String> warned = messages(lines, "WARN");
+        assertEquals(1, warned.size(), String.join("\n", lines));
+        assertTrue(warned.get(0).startsWith("undecodable record skipped and counted in undecodable; later ones of this partition"
+                + " are only counted dag=wind-exp2-smart sink=turbine-state topic=tsx.wind.episodes.v2 partition=0 offset=0"
+                + " cause="), warned.get(0));
+    }
+
+    @Test
     void theFirstStatusRecordThatIsNotSentIsLoggedAndSoIsTheRecovery(@TempDir Path state) throws Exception {
         // a refused DAG is reported at once through the first producer the processor asks for, which does not confirm
         silentProducers = 1;
@@ -627,8 +646,6 @@ public class VectorProcessorTest {
             assertEquals(0, vectors().size());
         }
     }
-
-    // ---------------------------------------------------------------- series sinks: the clean grade of a signal
 
     static final String CLEAN_SINK = "wind-flow-7/park-T01-WTUR.W";
 

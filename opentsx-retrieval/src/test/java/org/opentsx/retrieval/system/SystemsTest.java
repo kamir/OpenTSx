@@ -295,8 +295,6 @@ class SystemsTest {
         assertEquals("clean-not-running", speed.path("state").asText());
     }
 
-    // ---------------------------------------------------------------- working copy and demo generators (stage L4)
-
     static JsonNode body(String json) throws Exception {
         return JSON.readTree(json);
     }

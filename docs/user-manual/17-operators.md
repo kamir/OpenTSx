@@ -2318,7 +2318,7 @@ Finds the topK windows of the selected series that look most like a query patter
 | `pattern` | list |  |  | Query values, 4 to 100000 (EpisodeService.MAX_PATTERN_LENGTH). Instead of pattern: episodeId, offset and length. |
 | `episodeId` | string |  |  | Episode that holds the query. |
 | `offset` | integer |  | 0 ..  | First sample of the query in that episode. |
-| `length` | integer |  | 4 ..  | Number of samples of the query. |
+| `length` | integer |  | 4 .. 100000 | Number of samples of the query, 4 to 100000 (EpisodeService.MAX_PATTERN_LENGTH) and at most the values of the episode. |
 | `distance` | enum: zED, DTW | `zED` |  | z-normalized Euclidean distance or dynamic time warping. |
 | `band` | number | `0.1` | 0 .. 1 | DTW only: width of the Sakoe-Chiba band as a share of m. |
 | `topK` | integer | `10` | 1 .. 1000 | Number of matches. |
@@ -2363,7 +2363,7 @@ Ranks whole episodes by how much they look like a query episode. Each episode be
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | none |  |  |
-| java | available | `org.opentsx.retrieval.pattern.EpisodeSimilarity` | EpisodeService.similarEpisodes(episodeId).topK(k).fetch(); representation(points, saxLength, alphabet) changes 64, 16 and 8. EpisodeSimilarity.annotate stores the SAX word in EpisodeSummary.sax when episodes are written, otherwise it is computed per search. The SAX bound skips candidates for zED only. The retrieval server offers it as POST /v1/episodes/similar. |
+| java | available | `org.opentsx.retrieval.pattern.EpisodeSimilarity` | EpisodeService.similarEpisodes(episodeId).topK(k).fetch(); representation(points, saxLength, alphabet) changes 64, 16 and 8. EpisodeSimilarity.annotate stores the SAX word in EpisodeSummary.sax; no writer in this repository calls it, so the search computes the word of every candidate that carries none with the same parameters. The SAX bound skips candidates for zED only. The retrieval server offers it as POST /v1/episodes/similar. |
 | python | available | `opentsx.client.retrieval.RetrievalClient#similar` | similar(episode_id, series=[...], top_k=10) calls POST /v1/episodes/similar of the retrieval server and returns a DataFrame; Python computes nothing. python-package/tests/test_retrieval_client.py checks the request body and the frame against a stub server; the endpoint is tested in RetrievalServerTest. |
 | processor | none |  |  |
 | go | none |  |  |
@@ -2472,7 +2472,7 @@ Gives every sample an aggregate of the values of the last window, the current sa
 | workbench | available | operator `feature.rolling` | window in units of the x axis, default 3600. Refuses a window of 0 or less, as the processor does. |
 | java | none |  |  |
 | python | none |  |  |
-| processor | available | `org.opentsx.retrieval.clean.CleanChain#Rolling` | A step of the clean chain before a series sink (bin/opentsx vectors). Each sample enters and leaves the running sums and the extremes once, so a step costs the same for any window. After a resample step the window may span at most 100000 of its intervals; a longer one refuses the DAG with an error that names the node, POST /v1/dags/deploy answers 400 and vectors deploy exits with code 2. Without a resample step before it, a window that holds more than 100000 values fails the sink with an error that names the node. Give a shorter window or resample the series first. |
+| processor | available | `org.opentsx.retrieval.clean.CleanChain#Rolling` | A step of the clean chain before a series sink (bin/opentsx vectors). Each sample enters and leaves the running sums and the extremes once, so a step costs the same for any window. A step adds up the window afresh when a finite value whose square is no finite number (above about 1.3e154 in magnitude) leaves it, and at every step while the values of the window or their squares add up beyond about 1.8e308. While such a value is in the window or the squares of the window add up beyond about 1.8e308, and the values of the window are finite and not all equal, STD is infinite, or NaN when MEAN is above about 1.3e154 in magnitude or infinite. While the values of the window are finite, add up beyond about 1.8e308 and are not all equal, MEAN is infinite even when their mean is a finite number: 1e308 and 1.5e308 give Infinity, not 1.25e308. While a finite value whose square is no finite number is in the window, MEAN can differ in the last digits from the mean of the window added up afresh. After a resample step the window may span at most 100000 of its intervals; a longer one refuses the DAG with an error that names the node, POST /v1/dags/deploy answers 400 and vectors deploy exits with code 2. Without a resample step before it, a window that holds more than 100000 values fails the sink with an error that names the node. Give a shorter window or resample the series first. |
 | go | none |  |  |
 
 | Port | Direction | Type | Description |

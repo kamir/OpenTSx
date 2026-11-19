@@ -13,8 +13,8 @@ import java.util.List;
  *
  * <ul>
  *   <li>z-normalized Euclidean: MASS distance profile per run, O(n log n).</li>
- *   <li>DTW: UCR-suite cascade per window - running z-normalization, LB_Kim, LB_Keogh, early-abandoning DTW against
- *       the current k-th best distance.</li>
+ *   <li>DTW: the lower-bound cascade of the UCR suite per window: the window is z-normalized on its own, then LB_Kim,
+ *       LB_Keogh and early-abandoning DTW against the current k-th best distance.</li>
  * </ul>
  * Matches of one series may not overlap by more than half the query length (exclusion zone); a better match
  * replaces overlapping worse ones. Windows containing NaN are skipped.

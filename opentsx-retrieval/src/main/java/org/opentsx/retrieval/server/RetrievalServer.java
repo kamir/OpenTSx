@@ -74,7 +74,7 @@ import java.util.stream.Collectors;
  * GET  /v1/health
  * </pre>
  * Episode responses are JSON by default; with {@code Accept: application/x-opentsx-avro-stream} they are a stream of
- * {@code [uint32 big-endian length][Avro single-object encoded Episode]} - what the Python client uses.
+ * {@code [uint32 big-endian length][Avro single-object encoded Episode]}, which the Python client reads.
  */
 public final class RetrievalServer implements AutoCloseable {
 
@@ -320,8 +320,6 @@ public final class RetrievalServer implements AutoCloseable {
         return s.replaceAll("\\p{Cntrl}", " ");
     }
 
-    // ---- endpoints -------------------------------------------------------------------------------------------------
-
     private List<Episode> listEpisodes(Map<String, String> q) {
         EpisodeService.EpisodesQuery eq = select(service.episodes(), q.get("metric"), tags(q), q.get("series"),
                 q.get("from"), q.get("to"));
@@ -443,8 +441,6 @@ public final class RetrievalServer implements AutoCloseable {
         select(q, text(b, "metric"), tags(b), text(b, "series"), text(b, "from"), text(b, "to"));
         return q.fetch();
     }
-
-    // ---- helpers ---------------------------------------------------------------------------------------------------
 
     private static <T extends EpisodeService.Selection<T>> T select(T sel, String metric, Map<String, String> tags,
                                                                     String series, String from, String to) {
@@ -784,8 +780,6 @@ public final class RetrievalServer implements AutoCloseable {
         ex.getResponseBody().write(body);
         ex.close();
     }
-
-    // ---- main ------------------------------------------------------------------------------------------------------
 
     static final String COMMAND = "retrieval-server";
     static final String SOURCE = "opentsx.retrieval.source";
