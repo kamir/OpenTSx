@@ -40,6 +40,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Study on running OpenTSx operators in orbit
+  ([`docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md`](docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md)):
+  no tool compiles the Python operators to FPGA logic; a bounded streaming subset can be reimplemented as FPGA kernels
+  behind the Rust runner, with Wayang planning and signing on the ground. Covers toolchains, space-grade hardware,
+  in-orbit platform services, onboard logs, space-ground transport, pre-flight test environments and a roadmap.
 - Standalone finite numerical service through `serve-finite`, with optional
   built Workbench assets and no broker or model-registry clients at startup.
   API requests retain bounded numerical execution and explicit errors;
