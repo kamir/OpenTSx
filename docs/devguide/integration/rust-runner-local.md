@@ -7,6 +7,8 @@ for the Java fixture checks.
 Use a disposable local broker and trusted request files. This profile does not implement signed fleet activation,
 the remote Wayang executor, automatic failover or production access controls.
 For the separate workbench-to-Wayang-to-HTTP-worker path, use the [bounded rollout guide](wayang-rust-compose.md).
+The [B2 catalog guide](rust-runner-b2.md) defines optional `context` admission
+for typed catalog stages and its separate resource ceilings.
 
 ## Preserve the assignment boundary
 
@@ -20,12 +22,14 @@ It does not resolve a schema registry or decode arbitrary Avro record types; see
 [codec](../../../rust/tsx-runner/src/wire.rs).
 
 The [pipeline](../../../rust/tsx-runner/src/operators.rs) accepts pass-through or one linear cleaning chain:
-`dq.checks` with `PLAUSIBLE_RANGE`, `convert.unit`, and an optional trailing `resample`.
-Other operators, cycles, missing inputs and unused graph nodes reject.
+`dq.checks` with `PLAUSIBLE_RANGE`, `convert.unit` and an optional trailing
+`resample`. Other operators, cycles, missing inputs and unused graph nodes reject.
 Cleaning rejects nonzero revisions, per-value quality and infinite input values; NaN remains a gap.
 One derived series has exactly one source-series owner, including nonoverlapping episodes and pending resample
 windows. A changed source unit under the same identity rejects, even when conversion supplies a fixed output unit.
-The bounded profile does not execute statistics, joins, vectors, segmentation or the remaining Java catalog.
+The model and feature operations and typed statistics, retrieval, vector,
+pair and DQ stages require the explicit B2 catalog context. The Java UI
+rollout retains its own smaller admission.
 
 Every partition belongs to the same worker. Internal partition positions describe its finite read, never separate
 placement units. The three-worker demonstration runs three independent bounded deployments, `rust-compose-1`,
@@ -55,6 +59,7 @@ The request has the following fields. Unknown fields reject.
 | `sink.partitionCount` | Canonical decimal string from `1` to `128`, describing the complete output partition inventory. |
 | `createdAtMicros` | Canonical signed 64-bit decimal string. Fixed provenance clock reused on retry. |
 | `limits` | Required positive integer resource limits below. |
+| `context` | Optional B2 catalog context; fields and changed ceilings are defined in the B2 guide. |
 
 Do not place another DAG, source start policy or replacement input cut in the local configuration.
 The assignment remains authoritative for those values. Binding aliases do not establish distinct sources;
@@ -70,6 +75,8 @@ prepare the request with one authoritative binding for each broker/topic identit
 | `series` | `64` | Number of distinct input series and their keyed states. |
 | `stateBytes` | `1048576` | Serialized retained operator state. |
 
+These are the no-context profile ceilings. B2 context admits up to 1,024
+series and 1,000,000 samples with the other byte and record ceilings unchanged.
 There is no unlimited batch mode. Resource limits are explicit request fields, not deployment defaults.
 The local request has at most 65,536 UTF-8 bytes. Input topics have at most 128 internal partitions,
 and each input episode has at most 25,000 samples, further restricted by `samples`.

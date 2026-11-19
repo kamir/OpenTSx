@@ -1,10 +1,11 @@
 # Concept 20: time-series operators on Apache Wayang, a Java track and a Rust edge track
 
-> Status: **concept**, 2026-11-18. The module has its Java platform plugin,
+> Status: **concept**, 2026-11-19. The module has its Java platform plugin,
 > KafScale source and sink, checkpointed increments, and the pure Java
 > `TsxPairXcorr` and `TsxPairEs` kernels. Shared vectors cover statistics,
-> segmentation, SAX, and data-quality results. `tsx-runner` 0.1.0 adds trusted-local bounded Kafka replay and
-> three cleaning operations. The bounded and continuous UI targets use a custom
+> segmentation, SAX, and data-quality results. `tsx-runner` 0.1.0 executes
+> the isolated local B2 catalog through explicit context. Its legacy local
+> profile retains three cleaning operations. The bounded and continuous UI targets use a custom
 > Wayang Rust stage and HTTP workers.
 > A separate isolated signed `run` profile admits continuous Episode
 > pass-through; production fleet activation and
@@ -21,6 +22,9 @@ multi-node Rust orchestration. Its [shared-contract implementation](../devguide/
 validates assignment envelopes in Java and Rust; it does not deploy runners.
 The separate [local Rust profile](../devguide/integration/rust-runner-local.md) executes pass-through,
 plausible-range checks, unit conversion and an optional trailing resample on a capped whole-topic cut.
+The separate [B2 catalog profile](../devguide/integration/rust-runner-b2.md)
+uses explicit local context to execute fourteen Track B target entries and
+bounded `pair.xcorr`, with typed output and retained operator state.
 The [signed Rust profile](../devguide/integration/rust-runner-b1.md) uses its
 own local authority and continuous pass-through loop. It does not expand the
 local cleaning profile or implement a public fleet service.
@@ -54,6 +58,15 @@ This local UI profile does not establish signed fleet activation or production
 fencing. The isolated signed
 runner separately verifies one continuous pass-through assignment against local
 policy before broker access.
+
+The isolated B2 catalog passes all 57 shared numerical cases. Actual Java
+Wayang/Rust parity covers the complete W scenario: 3,600 episode identities
+and 2,160,000 values across 36 increments, 72 restarts and 36 completed retries,
+with zero differences. The
+[B2 operating guide](../devguide/integration/rust-runner-b2.md) identifies the
+profile boundaries; [TASK-020 B2](../../EVOLUTION/TASK-020-wayang-ts-operators.md#b2-edge-operators)
+records the three acceptance results. This qualification does not extend the
+legacy Java UI admission or signed B1 pass-through profile.
 
 | Item | State | Evidence |
 |---|---|---|
@@ -336,6 +349,13 @@ Trusted-local replay and HTTP workers are documented in the
 [local bounded guide](../devguide/integration/rust-runner-local.md), with the
 subset in
 [SPEC S1.9](20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset).
+Explicit local context selects the separate B2 catalog profile in
+[SPEC S1.13](20-WAYANG-TS-OPERATORS-SPEC.md#s113-execute-the-isolated-local-rust-b2-catalog).
+It preserves whole-topic ownership, explicit resource ceilings and
+acknowledgement-before-checkpoint recovery. Its typed outputs include
+SeriesStats, vectors and DQ signals. The worker reports its fifteen operations
+under `catalogExecution.operators`; the legacy `operators` list retains four
+entries for Java UI admission.
 The [isolated signed profile](../devguide/integration/rust-runner-b1.md)
 verifies a continuous pass-through plan and its original whole-topic assignment,
 artifact, site, node, catalog and local policy before broker access. It uses one

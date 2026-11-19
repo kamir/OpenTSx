@@ -14,6 +14,7 @@ params:
 semantics: { needs: window, deterministic: true, keeps: [time, unit, count, series], origin: INHERIT }
 runtimes:
   wayang: { status: available, class: org.opentsx.wayang.TsxSaxWord }
+  rust: { status: available, class: tsx_runner::catalog::Pipeline, note: "tsx-runner 0.1.0 isolated local B2 context. Complete Episode input; fills EpisodeSummary.sax without changing samples. No fleet qualification." }
 state: { kind: none }
 merge: { class: none }
 testvectors: docs/datamodel-2026/testvectors/sax-word.v1.json

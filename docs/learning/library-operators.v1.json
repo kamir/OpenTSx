@@ -240,7 +240,8 @@
       "tasks": [
         "Normalize [1,2,3,NaN].",
         "Normalize a constant [7,7] array.",
-        "Compare this population scale with the sample scale of the UI normalization lesson."
+        "Compare this population scale with the sample scale of the UI normalization lesson.",
+        "Replay the applicable shared Rust retrieval vectors in chunks of one, seven and all inputs, in both series orders; retain complete episodes as atomic SAX inputs."
       ],
       "starter": {
         "language": "java",
@@ -252,23 +253,33 @@
         "Constant input becomes [0,0]."
       ],
       "pitfalls": [
-        "A NaN becomes zero in this normalized representation; do not infer that raw missing data was observed as zero."
+        "A NaN becomes zero in this normalized representation; do not infer that raw missing data was observed as zero.",
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights."
       ],
       "references": {
         "manual": [
           "docs/user-manual/09-retrieval.md#93-pattern-search",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/devguide/integration/rust-runner-b2.md"
         ],
         "spec": [
-          "docs/learning/library-operator-contracts.md#normalize-retrieval-inputs"
+          "docs/learning/library-operator-contracts.md#normalize-retrieval-inputs",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
         ],
         "source": [
-          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/pattern/ZNorm.java#L11"
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/pattern/ZNorm.java#L11",
+          "rust/tsx-runner/src/retrieval.rs",
+          "rust/tsx-runner/src/catalog.rs",
+          "systems/processors/sax.word.yaml"
         ],
         "tests": [
-          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L36"
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L36",
+          "rust/tsx-runner/tests/retrieval_vectors.rs",
+          "rust/tsx-runner/tests/catalog_flow.rs"
         ],
-        "vectors": []
+        "vectors": [
+          "docs/datamodel-2026/testvectors/sax-word.v1.json"
+        ]
       }
     },
     {
@@ -287,7 +298,8 @@
       "tasks": [
         "Reduce [0,2,4,6,8] to width two.",
         "Explain the half-weight of the middle value in each segment.",
-        "Try an empty input and identify the boundary rejection."
+        "Try an empty input and identify the boundary rejection.",
+        "Replay the applicable shared Rust retrieval vectors in chunks of one, seven and all inputs, in both series orders; retain complete episodes as atomic SAX inputs."
       ],
       "starter": {
         "language": "java",
@@ -300,23 +312,33 @@
       ],
       "pitfalls": [
         "Skipping NaNs changes each segment's effective weight.",
-        "Choose width no larger than the input for this reduction exercise."
+        "Choose width no larger than the input for this reduction exercise.",
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights."
       ],
       "references": {
         "manual": [
           "docs/user-manual/09-retrieval.md#93-pattern-search",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/devguide/integration/rust-runner-b2.md"
         ],
         "spec": [
-          "docs/learning/library-operator-contracts.md#approximate-with-paa"
+          "docs/learning/library-operator-contracts.md#approximate-with-paa",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
         ],
         "source": [
-          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/pattern/Paa.java#L9"
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/pattern/Paa.java#L9",
+          "rust/tsx-runner/src/retrieval.rs",
+          "rust/tsx-runner/src/catalog.rs",
+          "systems/processors/sax.word.yaml"
         ],
         "tests": [
-          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L43"
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L43",
+          "rust/tsx-runner/tests/retrieval_vectors.rs",
+          "rust/tsx-runner/tests/catalog_flow.rs"
         ],
-        "vectors": []
+        "vectors": [
+          "docs/datamodel-2026/testvectors/sax-word.v1.json"
+        ]
       }
     },
     {
@@ -338,7 +360,8 @@
         "Repeat after an affine value transformation.",
         "Measure the same word against itself and reject alphabet one.",
         "Replay all seven SAX vector cases through TsxSaxWord and TsxJavaPlugin, choosing normalized(...) only for cases whose input is already normalized.",
-        "Check that the output fills EpisodeSummary.sax while preserving raw samples and timestamps and recording the parent episode."
+        "Check that the output fills EpisodeSummary.sax while preserving raw samples and timestamps and recording the parent episode.",
+        "Replay the applicable shared Rust retrieval vectors in chunks of one, seven and all inputs, in both series orders; retain complete episodes as atomic SAX inputs."
       ],
       "starter": {
         "language": "java",
@@ -355,30 +378,38 @@
         "Sax.word expects already normalized values.",
         "A pruning lower bound is not an exact final similarity score.",
         "TsxSaxWord normalizes by default; normalized(...) is an explicit Java API mode that skips normalization. Neither mode changes the stored sample values.",
-        "An episode is the atomic SAX input. Splitting its values into separate episodes changes the workload rather than proving stream/batch parity."
+        "An episode is the atomic SAX input. Splitting its values into separate episodes changes the workload rather than proving stream/batch parity.",
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights."
       ],
       "references": {
         "manual": [
           "docs/user-manual/09-retrieval.md#93-pattern-search",
           "docs/user-manual/17-learn-operators.md",
           "docs/user-manual/09-retrieval.md#96-run-retrieval-operators-on-wayang",
-          "opentsx-wayang/README.md#segment-episodes-and-annotate-sax-words"
+          "opentsx-wayang/README.md#segment-episodes-and-annotate-sax-words",
+          "docs/devguide/integration/rust-runner-b2.md"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#encode-sax-words",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s62-deterministic-ids"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s62-deterministic-ids",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
         ],
         "source": [
           "opentsx-retrieval/src/main/java/org/opentsx/retrieval/pattern/Sax.java#L28",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxSaxWord.java#normalized",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxSaxWord.java#word",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxRetrievalMappings.java#TsxSaxWord"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxRetrievalMappings.java#TsxSaxWord",
+          "rust/tsx-runner/src/retrieval.rs",
+          "rust/tsx-runner/src/catalog.rs",
+          "systems/processors/sax.word.yaml"
         ],
         "tests": [
           "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L49",
           "opentsx-retrieval/src/test/java/org/opentsx/retrieval/SaxWordVectorsTest.java#sharedVectors",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxSaxVectorsTest.java#allSharedWordsMatchThroughWayang",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders",
+          "rust/tsx-runner/tests/retrieval_vectors.rs",
+          "rust/tsx-runner/tests/catalog_flow.rs"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/sax-word.v1.json"
@@ -646,7 +677,8 @@
         "Inspect the three-sample output and anchor.",
         "Explain why a streaming detector needs lookahead.",
         "Replay the applicable shared vector cases through TsxSegment using TsxJavaPlugin, then compare chunks of one, seven and all samples in both series orders.",
-        "Restore the segmentation checkpoint between chunks and inspect the retained source, quality and detector state."
+        "Restore the segmentation checkpoint between chunks and inspect the retained source, quality and detector state.",
+        "Replay the applicable shared Rust retrieval vectors in chunks of one, seven and all inputs, in both series orders; retain complete episodes as atomic SAX inputs."
       ],
       "starter": {
         "language": "java",
@@ -662,19 +694,22 @@
         "A high current sample is not a finalized local maximum.",
         "Prominence is measured against surrounding minima, not the global series mean.",
         "Segmenter construction alone does not execute a Wayang plan. TsxIncrement supplies TsxState to its plan callback; do not invent a second state store.",
-        "Checkpoint support covers threshold and extremum strategies; it does not establish fixed-count or fixed-duration Wayang mappings."
+        "Checkpoint support covers threshold and extremum strategies; it does not establish fixed-count or fixed-duration Wayang mappings.",
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights."
       ],
       "references": {
         "manual": [
           "docs/user-manual/09-retrieval.md#92-segmentation",
           "docs/user-manual/17-learn-operators.md",
           "docs/user-manual/09-retrieval.md#96-run-retrieval-operators-on-wayang",
-          "opentsx-wayang/README.md#segment-episodes-and-annotate-sax-words"
+          "opentsx-wayang/README.md#segment-episodes-and-annotate-sax-words",
+          "docs/devguide/integration/rust-runner-b2.md"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#segment-around-extrema",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s14-state",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s63-checkpoints"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s63-checkpoints",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
         ],
         "source": [
           "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/Segmenter.java#L69",
@@ -682,14 +717,19 @@
           "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxSegment.java#run",
           "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/StreamingSegmenter.java#writeState",
           "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/StreamingSegmenter.java#readState",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxRetrievalMappings.java#TsxSegment"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxRetrievalMappings.java#TsxSegment",
+          "rust/tsx-runner/src/retrieval.rs",
+          "rust/tsx-runner/src/catalog.rs",
+          "systems/processors/segment.extremum.yaml"
         ],
         "tests": [
           "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L113",
           "opentsx-retrieval/src/test/java/org/opentsx/retrieval/SegmentExtremumVectorsTest.java#sharedVectors",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxSegmentVectorsTest.java#sharedVectorsThroughRealWayangPlans",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders",
-          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/StreamingSegmenterStateTest.java#preservesQualityAndSourceMetadataAcrossAnActiveThreshold"
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/StreamingSegmenterStateTest.java#preservesQualityAndSourceMetadataAcrossAnActiveThreshold",
+          "rust/tsx-runner/tests/retrieval_vectors.rs",
+          "rust/tsx-runner/tests/catalog_flow.rs"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/segment-extremum.v1.json"
@@ -715,7 +755,8 @@
         "Use ABOVE, enter four, exit three, pre/post one second and zero duration limits.",
         "Compare StreamingSegmenter output plus flush with Segmentations.segment.",
         "Replay the applicable shared vector cases through TsxSegment using TsxJavaPlugin, then compare chunks of one, seven and all samples in both series orders.",
-        "Restore the segmentation checkpoint between chunks and inspect the retained source, quality and detector state."
+        "Restore the segmentation checkpoint between chunks and inspect the retained source, quality and detector state.",
+        "Replay the applicable shared Rust retrieval vectors in chunks of one, seven and all inputs, in both series orders; retain complete episodes as atomic SAX inputs."
       ],
       "starter": {
         "language": "java",
@@ -731,19 +772,22 @@
         "For ABOVE, exit cannot exceed enter.",
         "Zero maxDuration means unlimited, not zero-length output.",
         "Segmenter construction alone does not execute a Wayang plan. TsxIncrement supplies TsxState to its plan callback; do not invent a second state store.",
-        "Checkpoint support covers threshold and extremum strategies; it does not establish fixed-count or fixed-duration Wayang mappings."
+        "Checkpoint support covers threshold and extremum strategies; it does not establish fixed-count or fixed-duration Wayang mappings.",
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights."
       ],
       "references": {
         "manual": [
           "docs/user-manual/09-retrieval.md#92-segmentation",
           "docs/user-manual/17-learn-operators.md",
           "docs/user-manual/09-retrieval.md#96-run-retrieval-operators-on-wayang",
-          "opentsx-wayang/README.md#segment-episodes-and-annotate-sax-words"
+          "opentsx-wayang/README.md#segment-episodes-and-annotate-sax-words",
+          "docs/devguide/integration/rust-runner-b2.md"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#segment-threshold-phases",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s14-state",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s63-checkpoints"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s63-checkpoints",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
         ],
         "source": [
           "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/Segmenter.java#L92",
@@ -751,14 +795,19 @@
           "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxSegment.java#run",
           "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/StreamingSegmenter.java#writeState",
           "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/StreamingSegmenter.java#readState",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxRetrievalMappings.java#TsxSegment"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxRetrievalMappings.java#TsxSegment",
+          "rust/tsx-runner/src/retrieval.rs",
+          "rust/tsx-runner/src/catalog.rs",
+          "systems/processors/segment.threshold.yaml"
         ],
         "tests": [
           "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L123",
           "opentsx-retrieval/src/test/java/org/opentsx/retrieval/SegmentThresholdVectorsTest.java#sharedVectors",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxSegmentVectorsTest.java#sharedVectorsThroughRealWayangPlans",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders",
-          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/StreamingSegmenterStateTest.java#preservesQualityAndSourceMetadataAcrossAnActiveThreshold"
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/StreamingSegmenterStateTest.java#preservesQualityAndSourceMetadataAcrossAnActiveThreshold",
+          "rust/tsx-runner/tests/retrieval_vectors.rs",
+          "rust/tsx-runner/tests/catalog_flow.rs"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/segment-threshold.v1.json"
@@ -786,7 +835,8 @@
         "Inspect the actual workbench statistics export: retain field as a saved browser view and compare the deployed full SeriesStats representation.",
         "Execute the complete W3 federation fixture, compare all six merge orders on received partials and preserve complete SOE records across signal-cluster and authenticated job-state delivery.",
         "Read the approved bounded W3 mean/M2 criterion in SPEC S4.3 and distinguish that observed numerical qualification from unrestricted floating-point associativity.",
-        "Keep Kafka Produce frames, HTTP body bytes, encrypted TLS client-stream bytes and route elapsed time as separate measured quantities."
+        "Keep Kafka Produce frames, HTTP body bytes, encrypted TLS client-stream bytes and route elapsed time as separate measured quantities.",
+        "Compare Rust statistics and data-quality results with the shared Java vectors, including exact sketch bytes, non-finite values and explicitly clocked findings."
       ],
       "starter": {
         "language": "java",
@@ -806,7 +856,8 @@
         "A federated statistics edge excludes GLOBAL without removing the same node's local global output.",
         "Workbench field projection and deployed full SeriesStats records are different representations. Legacy window/field parameters are rejected by the catalog compiler.",
         "The bounded signed JVM statistics profile admits one SeriesStats sink; local catalog compilation has a broader graph API.",
-        "The integration topology contains three site-agent instances in one JVM and four Go brokers; transient build and conformance-check subprocesses are excluded from that execution count."
+        "The integration topology contains three site-agent instances in one JVM and four Go brokers; transient build and conformance-check subprocesses are excluded from that execution count.",
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights."
       ],
       "references": {
         "manual": [
@@ -815,13 +866,15 @@
           "docs/user-manual/17-learn-operators.md#compile-the-exported-workbench-document",
           "opentsx-wayang/README.md#compile-a-catalog-dag",
           "docs/user-manual/17-learn-operators.md#follow-the-signed-bounded-jvm-statistics-profile",
-          "opentsx-wayang/README.md#execute-a-signed-bounded-jvm-statistics-stage"
+          "opentsx-wayang/README.md#execute-a-signed-bounded-jvm-statistics-stage",
+          "docs/devguide/integration/rust-runner-b2.md"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#compute-window-statistics",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s43-merge-functions",
           "docs/datamodel-2026/schemas/opentsx.aggregate-delivery.v1.schema.json",
-          "docs/datamodel-2026/schemas/opentsx.aggregate-evidence.v1.schema.json"
+          "docs/datamodel-2026/schemas/opentsx.aggregate-evidence.v1.schema.json",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
         ],
         "source": [
           "opentsx-stats/src/main/java/org/opentsx/stats/StatsEngine.java#L132",
@@ -838,7 +891,10 @@
           "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/AggregateForwarder.java#copy",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/CompletenessCoordinator.java#accept",
           "tools/wayang_federation_measurement.py#read_results",
-          "tools/wayang_federation_measurement.py#report"
+          "tools/wayang_federation_measurement.py#report",
+          "rust/tsx-runner/src/stats.rs",
+          "rust/tsx-runner/src/catalog.rs",
+          "systems/processors/stats.welford-ddsketch.yaml"
         ],
         "tests": [
           "opentsx-stats/src/test/java/org/opentsx/stats/StatsEngineTest.java#L54",
@@ -855,7 +911,10 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/JobStateRouteIntegrationTest.java#authenticatedJobStateAndSignalClusterRoutesKeepIdenticalFullRecords",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/CompletenessIntegrationTest.java#stoppedSiteLeavesImmutableIncompleteRecordsThenAppendsFinalRevisionOne",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/FederationMeasurement.java#main",
-          "tools/test_wayang_federation_measurement.py#test_inapplicable_transport_metrics_stay_blank_and_measured_fields_are_required"
+          "tools/test_wayang_federation_measurement.py#test_inapplicable_transport_metrics_stay_blank_and_measured_fields_are_required",
+          "rust/tsx-runner/tests/stats_vectors.rs",
+          "rust/tsx-runner/tests/catalog_flow.rs",
+          "rust/tsx-runner/tests/clean_catalog.rs"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/stats-window.v1.json"
@@ -883,7 +942,8 @@
         "Replay all seven quality vector cases through TsxDqResult and TsxJavaPlugin with the fixture clock and selected checks.",
         "Compare finding identities for different checks and window widths at one event time, then replay the same input.",
         "Run the German-default-locale regression without changing the expected punctuation or numerical values.",
-        "Compile the statistics-to-DQ catalog fixture and compare local findings with findings crossing an admitted signal-collector boundary."
+        "Compile the statistics-to-DQ catalog fixture and compare local findings with findings crossing an admitted signal-collector boundary.",
+        "Compare Rust statistics and data-quality results with the shared Java vectors, including exact sketch bytes, non-finite values and explicitly clocked findings."
       ],
       "starter": {
         "language": "java",
@@ -904,7 +964,8 @@
         "DataQuality.evaluate returns library results. TsxDqResult is a registered Wayang mapping; its JSON output is not an Avro SpecificRecord.",
         "A SeriesStats record is the atomic DQ input. Keep the fixture clock fixed and preserve its window metadata.",
         "The catalog compiler supports a DQ signal sink; a compiled graph does not grant remote execution rights.",
-        "The signed bounded JVM statistics profile publishes SeriesStats partials; direct local DQ compilation and signal collection remain separate execution boundaries."
+        "The signed bounded JVM statistics profile publishes SeriesStats partials; direct local DQ compilation and signal collection remain separate execution boundaries.",
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights."
       ],
       "references": {
         "manual": [
@@ -914,18 +975,23 @@
           "docs/user-manual/09-retrieval.md#96-run-retrieval-operators-on-wayang",
           "docs/user-manual/17-learn-operators.md#compile-the-exported-workbench-document",
           "docs/user-manual/17-learn-operators.md#follow-the-signed-bounded-jvm-statistics-profile",
-          "opentsx-wayang/README.md#execute-a-signed-bounded-jvm-statistics-stage"
+          "opentsx-wayang/README.md#execute-a-signed-bounded-jvm-statistics-stage",
+          "docs/devguide/integration/rust-runner-b2.md"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#evaluate-data-quality",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s62-deterministic-ids",
-          "docs/datamodel-2026/schemas/opentsx.signal.v1.schema.json"
+          "docs/datamodel-2026/schemas/opentsx.signal.v1.schema.json",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
         ],
         "source": [
           "opentsx-stats/src/main/java/org/opentsx/stats/DataQuality.java#evaluate",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxDqResult.java#TsxDqResult",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxDqResult.java#results",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxRetrievalMappings.java#TsxDqResult"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxRetrievalMappings.java#TsxDqResult",
+          "rust/tsx-runner/src/stats.rs",
+          "rust/tsx-runner/src/catalog.rs",
+          "systems/processors/dq.result.yaml"
         ],
         "tests": [
           "opentsx-stats/src/test/java/org/opentsx/stats/WindparkDataQualityTest.java#L30",
@@ -934,7 +1000,10 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxDqVectorsTest.java#differentChecksAndWindowWidthsHaveDifferentIdsAndReplayIdentically",
           "opentsx-stats/src/test/java/org/opentsx/stats/DataQualityLocaleTest.java#messagesMatchTheSharedReferenceUnderAGermanDefaultLocale",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangCatalogTest.java#aSignalCollectorPreservesLocalDqFindingsWithoutMergingUpstreamStatistics"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangCatalogTest.java#aSignalCollectorPreservesLocalDqFindingsWithoutMergingUpstreamStatistics",
+          "rust/tsx-runner/tests/stats_vectors.rs",
+          "rust/tsx-runner/tests/catalog_flow.rs",
+          "rust/tsx-runner/tests/clean_catalog.rs"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/dq-result.v1.json"

@@ -281,7 +281,7 @@ pub(crate) fn write_long(value: i64, bytes: &mut Vec<u8>) {
     bytes.push(zigzag as u8);
 }
 
-mod float_bits {
+pub(crate) mod float_bits {
     use serde::{Deserialize, Deserializer, Serializer};
 
     pub fn serialize<S: Serializer>(value: &f64, serializer: S) -> Result<S::Ok, S::Error> {
@@ -307,7 +307,7 @@ mod float_bits {
     }
 }
 
-mod float_vector_bits {
+pub(crate) mod float_vector_bits {
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
     pub fn serialize<S: Serializer>(values: &[f64], serializer: S) -> Result<S::Ok, S::Error> {

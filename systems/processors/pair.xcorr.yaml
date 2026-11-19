@@ -25,6 +25,7 @@ params:
 semantics: { needs: window, deterministic: true, origin: INHERIT }
 runtimes:
   wayang: { status: available, class: org.opentsx.wayang.TsxPair }
+  rust: { status: available, class: tsx_runner::catalog::Pipeline, note: "tsx-runner 0.1.0 isolated local B2 context. Short windows within the explicit xcorrProductLimit; pair.es is excluded. No fleet qualification." }
 state: { kind: windowed, key: series }
 merge: { class: none }
 testvectors: docs/datamodel-2026/testvectors/pair-xcorr.v1.json
