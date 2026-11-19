@@ -10,7 +10,7 @@ EXISTING_JOBS = {
     "operator-learning", "execution-contracts", "rust-runner", "rust-runner-native",
     "rust-runner-static", "rust-b1-acceptance", "rust-runner-compose", "wayang-rust-compose",
     "java", "python", "saas-frontend", "saas-backend", "deploy", "kafscale-conformance",
-    "cross-language",
+    "cross-language", "standalone-analysis",
 }
 
 

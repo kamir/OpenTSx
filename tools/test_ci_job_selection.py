@@ -18,6 +18,7 @@ JOBS = {
     "operator-learning", "execution-contracts", "rust-runner", "rust-runner-native",
     "rust-runner-static", "rust-b1-acceptance", "rust-runner-compose", "wayang-rust-compose",
     "java", "python", "saas-frontend", "saas-backend", "deploy", "kafscale-conformance", "cross-language",
+    "standalone-analysis",
 }
 RUST_RUNNER = {
     "rust-runner", "rust-runner-native", "rust-runner-static", "rust-b1-acceptance",
@@ -50,8 +51,8 @@ class JobSelectionTest(unittest.TestCase):
 
     def test_learning_references_select_their_actual_language_consumers(self):
         cases = {
-            "docs/devguide/integration/wayang-shared-contracts.md": {"python"},
-            "docs/devguide/integration/wayang-rust-compose.md": {"python", "saas-frontend"},
+            "docs/devguide/integration/wayang-shared-contracts.md": {"python", "standalone-analysis"},
+            "docs/devguide/integration/wayang-rust-compose.md": {"python", "saas-frontend", "standalone-analysis"},
         }
         for path, enabled in cases.items():
             with self.subTest(path=path):
@@ -71,7 +72,7 @@ class JobSelectionTest(unittest.TestCase):
     def test_ui_reference_is_combined_with_its_native_module_dependencies(self):
         self.assert_selected([
             "opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanel.java"
-        ], "java", "kafscale-conformance", "saas-frontend")
+        ], "java", "kafscale-conformance", "saas-frontend", "standalone-analysis")
 
     def test_unrelated_java_modules_do_not_start_transport_acceptance(self):
         for module in ("opentsx-modbus", "opentsx-connectors", "opentsx-lg", "opentsx-store-opentsdb-v2"):
@@ -99,24 +100,24 @@ class JobSelectionTest(unittest.TestCase):
                      "opentsx-model/src/test/resources/testvectors/fixture.json"):
             with self.subTest(path=path):
                 self.assert_selected([path], *WAYANG, *RUST_RUNNER, "execution-contracts", "python",
-                                     "saas-frontend")
+                                     "saas-frontend", "standalone-analysis")
 
     def test_twin_avro_resources_also_reach_python_schema_checks(self):
         self.assert_selected(["opentsx-twin/src/main/resources/twin/avro/fixture.avsc"],
-                             *WAYANG, "python")
+                             *WAYANG, "python", "standalone-analysis")
 
     def test_python_package_selects_its_java_interoperability_job(self):
-        self.assert_selected(["python-package/opentsx/client/fixture.py"], "python", "cross-language")
+        self.assert_selected(["python-package/opentsx/client/fixture.py"], "python", "cross-language", "standalone-analysis")
 
     def test_frontend_and_backend_changes_select_the_combined_real_ui_profile(self):
         self.assert_selected(["opentsx-saas-frontend/src/fixture.ts"],
-                             "saas-frontend", "wayang-rust-compose", "python")
+                             "saas-frontend", "wayang-rust-compose", "python", "standalone-analysis")
         self.assert_selected(["opentsx-saas-backend/app/fixture.py"], "saas-backend", "wayang-rust-compose")
 
     def test_local_launcher_frontend_asset_checks_are_selected_with_the_assets(self):
         for path in ("opentsx-saas-frontend/index.html", "opentsx-saas-frontend/src/main.tsx"):
             with self.subTest(path=path):
-                self.assert_selected([path], "saas-frontend", "wayang-rust-compose", "python")
+                self.assert_selected([path], "saas-frontend", "wayang-rust-compose", "python", "standalone-analysis")
 
     def test_rust_dependency_direction_does_not_run_contracts_for_runner_only_changes(self):
         self.assert_selected(["rust/tsx-runner/src/fixture.rs"], *RUST_RUNNER)
@@ -130,7 +131,7 @@ class JobSelectionTest(unittest.TestCase):
                 self.assertTrue(selected["kafscale-conformance"])
 
     def test_compose_and_local_launcher_inputs_select_their_consumers(self):
-        self.assert_selected(["deploy/local-cp/workbench.py"], "deploy", "python")
+        self.assert_selected(["deploy/local-cp/workbench.py"], "deploy", "python", "standalone-analysis")
         self.assert_selected(["deploy/compose/wayang-rust-nginx.conf"],
                              "deploy", "rust-runner-compose", "wayang-rust-compose")
         self.assert_selected(["docker-compose.rust-runner.yml"], "rust-runner-compose")

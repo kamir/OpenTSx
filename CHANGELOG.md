@@ -40,6 +40,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Standalone analysis package through the existing launcher with
+  `--profile finite`, its own Compose project, network and runtime volume.
+  Locked artifacts serve the Workbench and finite numerical API without CP
+  or MLflow. Browser acceptance fits and exports a checked synthetic result.
+
 - Standalone finite numerical service through `serve-finite`, with optional
   built Workbench assets and no broker or model-registry clients at startup.
   API requests retain bounded numerical execution and explicit errors;

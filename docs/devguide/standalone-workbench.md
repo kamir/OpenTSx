@@ -47,6 +47,8 @@ fresh page reproduces the input. See the
 limits and import behavior.
 
 Forecast fitting uses the separate Python numerical service. Use the
+[standalone analysis package](standalone-analysis.md) for the combined UI and
+finite service, or the
 [standalone numerical workflow](standalone-numerics.md) for finite API requests
 or fitting through explicitly built Workbench assets. Inventory access, saved
 account flows and streaming deployment need their documented services. The

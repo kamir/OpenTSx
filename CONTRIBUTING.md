@@ -46,8 +46,9 @@ HTTP 429, 500, 502, 503 or 504.
 ## Check continuous integration
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) starts on every pull request, push to `master` and manual run.
-Pull requests select affected jobs; `master` pushes and manual runs execute all 24 workload jobs plus the selection
-and result checks. The workload commands and matrix dimensions are retained.
+Pull requests select affected jobs. Pushes to `master` and manual runs execute
+every workload job plus the selection and result checks. The existing workload
+commands and matrix dimensions are retained.
 
 The selector verifies the checked-out pull request merge commit and both event parents. A depth-two checkout
 supplies these commits. It compares the base parent with the tested merge tree using NUL-delimited paths and
@@ -66,6 +67,11 @@ Markdown files also select the full workflow. Frontend changes select the Python
 local CP launcher checks the frontend entry point and linked assets.
 The combined KafScale job remains selected for core changes because `opentsx-legacy-bridge` depends on core.
 Rust runner and contract changes also select KafScale conformance, which builds and executes the B2 parity harness.
+
+The standalone analysis job builds and starts the finite Compose package on an
+ARM64 runner, fits through the real Workbench controls and checks downloaded
+results. It needs no CP cluster. Python and frontend consumers, including the
+local launcher, select this job; shared and unknown inputs retain full checks.
 
 `CI result` validates the GitHub-provided job results, including matrix-job results. Every selected job result
 must be successful; a skipped job is accepted only when selection explicitly excluded it. Selection failure,
@@ -93,6 +99,7 @@ python3 -B -m unittest discover -s tools -p 'test_ci*selection.py' -v
 | KafScale conformance | source-built KafScale, Proxy I/O and module tests |
 | Java -> Iceberg -> Python | Java writes an Iceberg fixture that PyIceberg must read byte-identically; the Python client queries a Java retrieval server |
 | CI result | requires the selector and every selected job to succeed; verifies explicit exclusions and the complete job inventory |
+| Standalone analysis package | isolated bundle and browser fit/export |
 
 Pull requests are squash-merged when every required check is green.
 

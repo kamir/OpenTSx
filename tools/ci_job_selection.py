@@ -14,6 +14,7 @@ JOBS = (
     "operator-learning", "execution-contracts", "rust-runner", "rust-runner-native",
     "rust-runner-static", "rust-b1-acceptance", "rust-runner-compose", "wayang-rust-compose",
     "java", "python", "saas-frontend", "saas-backend", "deploy", "kafscale-conformance", "cross-language",
+    "standalone-analysis",
 )
 MAVEN_ROOTS = {
     "rust-b1-acceptance": ("opentsx-wayang",),
@@ -198,6 +199,8 @@ def select_jobs(root, paths):
             matched = True
         if not matched:
             return dict.fromkeys(JOBS, True)
+    if selected.intersection({"python", "saas-frontend"}):
+        selected.add("standalone-analysis")
     return {job: job in selected for job in JOBS}
 
 
