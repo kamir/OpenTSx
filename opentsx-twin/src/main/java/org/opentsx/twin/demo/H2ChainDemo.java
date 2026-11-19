@@ -39,6 +39,11 @@ public final class H2ChainDemo {
     public static final double ELY_KW = 5000;
     public static final double KWH_PER_KG = 55;
     public static final double OFFTAKE_KGPH = ELY_KW / KWH_PER_KG;
+    /**
+     * The most steps of a plan of the command: a run of the H2 chain over 35136 steps fits 2 GB of Java heap, the
+     * default on a host with 8 GB of memory, a run over 87673 steps does not.
+     */
+    public static final int MAX_STEPS = 366 * 96;
     static final String COMMAND = "twin";
     /** The atoms the runs of the command bind, intervene on or report. */
     static final Set<String> ATOMS = Set.of("park", "ely", "offtake", "marketer", "battery", "market", "handover",
@@ -101,7 +106,7 @@ public final class H2ChainDemo {
     /** {@code args} without the command word, as bin/opentsx passes them. */
     static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err) {
         return TwinCli.run(COMMAND, args, env, out, err, (conf, positional) -> {
-            TwinPlan plan = TwinCli.plan(conf, "twin/h2-chain.yaml", H2ChainDemo::plan);
+            TwinPlan plan = TwinCli.plan(conf, "twin/h2-chain.yaml", H2ChainDemo::plan, MAX_STEPS);
             List<String> missing = plan.missingAtoms(plan(), ATOMS);
             if (!missing.isEmpty()) {
                 throw new IllegalArgumentException(conf.get(TwinCli.PLAN, "twin/h2-chain.yaml") + ": plan "

@@ -193,7 +193,7 @@ public final class BoatDemo {
     /** {@code args} without the command word, as bin/opentsx passes them. */
     static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err) {
         return TwinCli.run(COMMAND, args, env, out, err, (conf, positional) -> {
-            TwinPlan plan = TwinCli.plan(conf, "twin/boot-etap22.yaml", BoatDemo::plan);
+            TwinPlan plan = TwinCli.plan(conf, "twin/boot-etap22.yaml", BoatDemo::plan, BoatData.MAX_STEPS);
             List<String> missing = plan.missingAtoms(plan(), ATOMS);
             if (!missing.isEmpty()) {
                 throw new IllegalArgumentException(conf.get(TwinCli.PLAN, "twin/boot-etap22.yaml") + ": plan "

@@ -62,10 +62,11 @@ public final class BillCalibration {
     public static final int MAX_SPAN_DAYS = 3653;
 
     /**
-     * The most steps of a calibration run: {@link #MAX_SPAN_DAYS} days of the hourly steps of
-     * {@code twin/haus-erzgebirge.yaml}. A calibration over that many steps needs more than 2 GB of Java heap.
+     * The most steps of a calibration run, {@link TwinPlan#MAX_STEPS}: {@link #MAX_SPAN_DAYS} days of the hourly steps
+     * of {@code twin/haus-erzgebirge.yaml} between local midnights, with one more clock change in autumn than in
+     * spring. A calibration over that many steps needs more than 2 GB of Java heap.
      */
-    public static final long MAX_STEPS = MAX_SPAN_DAYS * 24L;
+    public static final long MAX_STEPS = TwinPlan.MAX_STEPS;
 
     /**
      * One bill row. Dates are local calendar days, both inclusive. Unknown values are NaN.
@@ -189,8 +190,6 @@ public final class BillCalibration {
                 new Parameter(a + ".scale", HouseScenario.param(plan, a, "scale", 1), 0.3, 3));
     }
 
-    // ------------------------------------------------------------------------------------------------ CSV
-
     /**
      * Parses bill rows. Header with the {@link #COLUMNS} names or their {@link #GERMAN_COLUMNS} aliases (any order,
      * missing optional columns allowed). The bills span at most {@link #MAX_SPAN_DAYS} days.
@@ -259,13 +258,14 @@ public final class BillCalibration {
     }
 
     /**
-     * The bills, refused when a run over their days on {@code plan} takes more than {@link #MAX_STEPS} steps of its
-     * base step.
+     * The bills, refused when a run over their days on {@code plan}, from local midnight to local midnight in
+     * {@link HouseScenario#ZONE}, takes more than {@link #MAX_STEPS} steps of its base step.
      */
     public static List<Bill> checkSteps(List<Bill> bills, TwinPlan plan) {
         LocalDate from = bills.stream().map(Bill::from).min(LocalDate::compareTo).orElseThrow();
         LocalDate to = bills.stream().map(Bill::to).max(LocalDate::compareTo).orElseThrow();
-        long micros = (ChronoUnit.DAYS.between(from, to) + 1) * 86_400_000_000L;
+        long micros = Micros.of(to.plusDays(1).atStartOfDay(HouseScenario.ZONE).toInstant())
+                - Micros.of(from.atStartOfDay(HouseScenario.ZONE).toInstant());
         long steps = -Math.floorDiv(-micros, plan.baseStepMicros());
         if (steps > MAX_STEPS) {
             throw new IllegalArgumentException("period_from " + from + " to period_to " + to + " needs " + steps
@@ -319,8 +319,6 @@ public final class BillCalibration {
         return Double.parseDouble(t);
     }
 
-    // ------------------------------------------------------------------------------------------------ weather
-
     /**
      * Daily mean temperatures from the lines of a CSV {@code date,t_mean_c} (header first, any names; '#' lines
      * skipped; e.g. DWD climate data, column TMK) as an hourly binding of {@code <weatherAtom>.t_out_meas_c} (MEASURED), with a
@@ -371,8 +369,6 @@ public final class BillCalibration {
         }
         return new SeriesInputs().bind(weatherAtom + ".t_out_meas_c", Micros.of(t0), 3_600_000_000L, v, Origin.MEASURED);
     }
-
-    // ------------------------------------------------------------------------------------------------ model
 
     /** Modelled values per bill row: {@code [electricity kWh, oil litres consumed]} with the given parameters. */
     public double[][] model(List<Bill> bills, Map<String, Double> params) {
@@ -479,8 +475,6 @@ public final class BillCalibration {
         }
         return out;
     }
-
-    // ------------------------------------------------------------------------------------------------ fit
 
     /** Fits the default parameters. */
     public Result fit(List<Bill> bills) {
@@ -616,7 +610,7 @@ public final class BillCalibration {
                 periods.add(new Period(b, "heating_oil_l", b.oilConsumedL(), m[i][1], !b.oilFromLevels()));
                 if (!b.oilFromLevels()) {
                     warnings.add("oil " + b.from() + ".." + b.to() + ": delivery used as consumption (tank levels "
-                            + "missing), weighted " + PROXY_WEIGHT + " - merge several years or add gauge readings");
+                            + "missing), weighted " + PROXY_WEIGHT + "; merge several years or add gauge readings");
                 }
             }
         }
@@ -636,26 +630,26 @@ public final class BillCalibration {
 
         if (n <= p) {
             warnings.add(n + " observed period totals for " + p + " parameters: not identifiable, the fit is one of "
-                    + "many equally good solutions - add monthly meter or tank readings");
+                    + "many equally good solutions; add monthly meter or tank readings");
         } else if (!undetermined.isEmpty() && cond < 1e6 && maxCorr < 0.98) {
             warnings.add("poorly determined by these bills (relative standard error > " + (int) (100 * MAX_REL_STD_ERR)
-                    + " %): " + undetermined + " - the value is hardly better than the assumption");
+                    + " %): " + undetermined + "; the value is hardly better than the assumption");
         } else if (!identifiable) {
             warnings.add(String.format(Locale.ROOT, "parameters hardly separable (condition %.2g, max correlation "
-                    + "%.3f) - periods with different weather (winter vs. summer readings) help", cond, maxCorr));
+                    + "%.3f); periods with different weather (winter vs. summer readings) help", cond, maxCorr));
         }
         if (weather.ports().isEmpty()) {
-            warnings.add("weather is synthetic - for real bills bind daily mean temperatures of a nearby station "
+            warnings.add("weather is synthetic; for real bills bind daily mean temperatures of a nearby station "
                     + "(--weather), otherwise H absorbs the weather difference of the years");
         }
         for (int a = 0; a < p; a++) {
             Parameter fp = free.get(a);
             if (theta[a] <= fp.min() * 1.0001 || theta[a] >= fp.max() * 0.9999) {
-                warnings.add(fp.key() + " at its bound " + theta[a] + " - check the data or the fixed assumptions");
+                warnings.add(fp.key() + " at its bound " + theta[a] + "; check the data or the fixed assumptions");
             }
         }
         warnings.add("fixed assumptions (not fitted): boiler efficiency, standby loss, wood energy per Ster, heating "
-                + "oil 10 kWh/l - from period totals only H/eta is identified");
+                + "oil 10 kWh/l; from period totals only H/eta is identified");
 
         TwinPlan calibrated = HouseScenario.withParams(base, params);
         return new Result(params, relErr, periods, cv, nmbe, cond, maxCorr, identifiable, runs.get(), warnings, calibrated);
@@ -710,8 +704,6 @@ public final class BillCalibration {
         });
         return j;
     }
-
-    // ------------------------------------------------------------------------------------------------ small linear algebra
 
     private static double mean(double[] v) {
         return v.length == 0 ? 1 : Math.max(1e-9, Arrays.stream(v).map(Math::abs).average().orElse(1));

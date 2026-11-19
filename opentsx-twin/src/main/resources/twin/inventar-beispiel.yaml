@@ -4,12 +4,12 @@
 # ALL VALUES ARE INVENTED EXAMPLES: serial numbers, documents, checksums, coordinates, maintenance dates.
 # Asset id = <twin>/<atom>[/<sub-asset>...]; "atom" must exist in the wiring plan of the same twin (twin/*.yaml).
 # Real inventories (photos of the house or boat, serial numbers, berths) belong in config/private/, not in the repo.
-# Not read by code yet (stage E1: JSON schema, validation against the plan, Studio export).
+# SystemDoc (opentsx-retrieval) reads the assets of a system through the inventory ref of systems/h2-chain.system.yaml
+# and checks every sensor channel of the system document against them.
 schema: opentsx.inventory.v1
 example: true
 systems:
 
-  # ------------------------------------------------------------------ wind park, electrolyzer, H2 line (h2-chain.yaml)
   - system: h2-chain
     plans:
       - id: park
@@ -95,7 +95,6 @@ systems:
         type: market
         name: Market
 
-  # ------------------------------------------------------------------ house (haus-erzgebirge.yaml)
   - system: haus-erzgebirge
     plans:
       - { id: kg, kind: floor, label: Cellar, unit: m, origin: [0, 0], size: [10, 8] }
@@ -153,7 +152,6 @@ systems:
         nameplate: { avgW: 45, built: "about 2005 (assumption)" }
         access: { visibility: private, owner: hauseigentuemer }
 
-  # ------------------------------------------------------------------ boat (boot-etap22.yaml)
   - system: boot-etap22
     plans:
       - { id: deck, kind: deck, label: Deck, unit: m, origin: "transom / centreline", size: [6.6, 2.5] }

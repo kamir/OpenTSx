@@ -290,6 +290,65 @@ class EventTopicLiveTest {
                 + " disk gone"), errors.get(0));
     }
 
+    @Test
+    void aRecordThatCannotBeWrittenAsJsonIsSkippedWithAWarningAndTheStreamGoesOn() throws Exception {
+        String topic = "twin.demo.run-1.events";
+        byte[] tooDeep = ("[".repeat(1000) + "]".repeat(1000)).getBytes(StandardCharsets.UTF_8);
+        byte[] value = "{\"type\":\"a\"}".getBytes(StandardCharsets.UTF_8);
+        Topics breaking = new Topics() {
+            @Override
+            public void create(String t) {
+            }
+
+            @Override
+            public void append(String t, String key, byte[] v, String schema) {
+            }
+
+            @Override
+            public Cursor open(String t, long offset) {
+                return new Cursor() {
+                    private boolean first = true;
+
+                    @Override
+                    public List<Rec> poll(Duration timeout) {
+                        if (first) {
+                            first = false;
+                            return List.of(new Rec(0, 1_000L, "line", tooDeep), new Rec(1, 2_000L, "line", value));
+                        }
+                        throw new IllegalStateException("the log broke");
+                    }
+
+                    @Override
+                    public void close() {
+                    }
+                };
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        PrintStream stderr = System.err;
+        HttpResponse<String> res;
+        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+        try (EventBridge bridge = new EventBridge(breaking, 0, "*", 4)) {
+            res = HttpClient.newHttpClient().send(HttpRequest.newBuilder(URI.create("http://localhost:" + bridge.port()
+                    + "/v1/topics/" + topic + "/events?from=earliest")).build(), HttpResponse.BodyHandlers.ofString());
+        } finally {
+            System.setErr(stderr);
+        }
+        assertEquals(200, res.statusCode());
+        assertEquals("retry: 3000\n: connected to " + topic + "\n\nid: 1\ndata: {\"topic\":\"" + topic + "\",\"offset\":1,"
+                + "\"timestamp\":2000,\"key\":\"line\",\"value\":{\"type\":\"a\"}}\n\n", res.body());
+        List<String> warnings = err.toString(StandardCharsets.UTF_8).lines().filter(l -> l.contains(" WARN ")).toList();
+        assertEquals(1, warnings.size(), err.toString(StandardCharsets.UTF_8));
+        assertTrue(warnings.get(0).endsWith(" WARN org.opentsx.twin.live.EventBridge - record skipped, it cannot be "
+                + "written as JSON topic=" + topic + " offset=0 cause=com.fasterxml.jackson.core.exc."
+                + "StreamConstraintsException: Document nesting depth (1001) exceeds the maximum allowed (1000, from "
+                + "`StreamWriteConstraints.getMaxNestingDepth()`)"), warnings.get(0));
+    }
+
     private static int status(HttpClient http, String url) throws Exception {
         return http.send(HttpRequest.newBuilder(URI.create(url)).build(), HttpResponse.BodyHandlers.ofString()).statusCode();
     }

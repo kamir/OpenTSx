@@ -132,7 +132,7 @@ class SystemDocTest {
                 plan: { ref: plan.yaml }
                 """);
         List<String> problems = SystemDoc.load(doc, dir).problems();
-        assertEquals(List.of(plan.toAbsolutePath().normalize() + ": steps: 0 is not allowed; expected a whole number of at least 1"),
+        assertEquals(List.of(plan.toAbsolutePath().normalize() + ": steps: 0 is not allowed; expected a whole number from 1 to 87673"),
                 problems.stream().filter(p -> p.contains("plan.yaml")).toList());
     }
 

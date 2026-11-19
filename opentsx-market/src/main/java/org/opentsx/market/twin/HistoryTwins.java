@@ -13,7 +13,9 @@ import org.opentsx.twin.Mode;
 import org.opentsx.twin.RunResult;
 import org.opentsx.twin.Twin;
 import org.opentsx.twin.TwinPlan;
+import org.opentsx.twin.boat.BoatData;
 import org.opentsx.twin.demo.BoatDemo;
+import org.opentsx.twin.demo.H2ChainDemo;
 import org.opentsx.twin.house.HouseKpis;
 import org.slf4j.LoggerFactory;
 
@@ -129,7 +131,8 @@ public final class HistoryTwins {
         int year = conf.getInt("opentsx.history.twin.year");
         LocalDate first = day(conf, "opentsx.history.twin.from", LocalDate.of(year, 1, 1));
         long t0 = Micro.of(first.atStartOfDay(ZoneOffset.UTC).toInstant());
-        int days = conf.getOption("opentsx.history.twin.days").isPresent() ? days(conf, "opentsx.history.twin.days")
+        int days = conf.getOption("opentsx.history.twin.days").isPresent()
+                ? days(conf, "opentsx.history.twin.days", H2ChainDemo.MAX_STEPS)
                 : (int) ((Micro.utcYear(year + 1) - t0) / Micro.DAY);
         String wind = conf.get("opentsx.history.twin.wind");
         double cf = conf.getDouble("opentsx.history.twin.capacityFactor");
@@ -212,7 +215,7 @@ public final class HistoryTwins {
     static void boat(HistoryInputs h, HistorySites.Site site, OpenTsxConf conf, PrintStream out) {
         int year = conf.getInt("opentsx.history.boat.weatherYear");
         LocalDate first = day(conf, "opentsx.history.boat.start", BoatHistory.defaultStart(year));
-        int days = days(conf, "opentsx.history.boat.days");
+        int days = days(conf, "opentsx.history.boat.days", BoatData.MAX_STEPS);
         require(h.archive(), MarketCatalog.dwd(site.radiation(), "global_radiation").path(),
                 Micro.of(first.atStartOfDay(ZoneOffset.UTC).toInstant()));
         BoatHistory.Trip trip = new BoatHistory(h, site).trip(first, days);
@@ -245,10 +248,12 @@ public final class HistoryTwins {
         }
     }
 
-    private static int days(OpenTsxConf conf, String key) {
+    /** The days of {@code key}: 1 to the days of 15-minute steps in {@code maxSteps}, the most steps a run holds. */
+    private static int days(OpenTsxConf conf, String key, long maxSteps) {
         int days = conf.getInt(key);
-        if (days < 1) {
-            throw new OpenTsxConfException(MarketCli.named(conf, key), "\"" + days + "\" is not allowed", "expected 1 or more");
+        long max = maxSteps / 96;
+        if (days < 1 || days > max) {
+            throw new OpenTsxConfException(MarketCli.named(conf, key), "\"" + days + "\" is not allowed", "expected 1 to " + max);
         }
         return days;
     }

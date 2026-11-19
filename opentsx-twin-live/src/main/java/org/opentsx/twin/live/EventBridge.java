@@ -1,5 +1,6 @@
 package org.opentsx.twin.live;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpExchange;
@@ -173,8 +174,15 @@ public final class EventBridge implements AutoCloseable {
                 while (!closed) {
                     var recs = cursor.poll(POLL);
                     for (Topics.Rec r : recs) {
-                        bytes += write(out, "id: " + r.offset() + "\ndata: " + EventTopic.JSON.writeValueAsString(data(topic, r))
-                                + "\n\n");
+                        String json;
+                        try {
+                            json = EventTopic.JSON.writeValueAsString(data(topic, r));
+                        } catch (JsonProcessingException e) {
+                            LOG.warn("record skipped, it cannot be written as JSON topic={} offset={} cause={}",
+                                    oneLine(topic), r.offset(), causes(e));
+                            continue;
+                        }
+                        bytes += write(out, "id: " + r.offset() + "\ndata: " + json + "\n\n");
                     }
                     if (!recs.isEmpty()) {
                         lastWrite = System.currentTimeMillis();

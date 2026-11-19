@@ -142,7 +142,25 @@ class TwinPlanTest {
 
         Path noSteps = Files.writeString(tmp.resolve("steps.yaml"), "twin: t\nstart: 2025-10-01T00:00:00Z\n"
                 + "baseStep: PT1M\nsteps: 0\natoms: [{id: m, type: market}]\nwiring: []\n");
-        assertEquals(noSteps + ": steps: 0 is not allowed; expected a whole number of at least 1",
+        assertEquals(noSteps + ": steps: 0 is not allowed; expected a whole number from 1 to 87673",
                 assertThrows(UncheckedIOException.class, () -> TwinPlan.load(noSteps)).getMessage());
+    }
+
+    @Test
+    void aLoadWithALowerStepBoundNamesThatBoundForEveryStepCountOutside() throws IOException {
+        String plan = "twin: t\nstart: 2025-10-01T00:00:00Z\nbaseStep: PT1M\n%satoms: [{id: m, type: market}]\n";
+        for (String steps : List.of("-5", "0", "35137", "87673", "87674", "50000000")) {
+            assertEquals("steps: " + steps + " is not allowed; expected a whole number from 1 to 35136", assertThrows(
+                    IllegalArgumentException.class, () -> TwinPlan.load(new ByteArrayInputStream(plan.formatted(
+                            "steps: " + steps + "\n").getBytes(StandardCharsets.UTF_8)), 35136)).getMessage());
+        }
+        assertEquals("steps: 0 is not allowed; expected a whole number from 1 to 35136", assertThrows(
+                IllegalArgumentException.class, () -> TwinPlan.load(new ByteArrayInputStream(plan.formatted("")
+                        .getBytes(StandardCharsets.UTF_8)), 35136)).getMessage());
+        assertEquals(35136, TwinPlan.load(new ByteArrayInputStream(plan.formatted("steps: 35136\n")
+                .getBytes(StandardCharsets.UTF_8)), 35136).steps());
+        assertEquals("steps: 87674 is not allowed; expected a whole number from 1 to 87673", assertThrows(
+                IllegalArgumentException.class, () -> TwinPlan.load(new ByteArrayInputStream(plan.formatted(
+                        "steps: 87674\n").getBytes(StandardCharsets.UTF_8)), Long.MAX_VALUE)).getMessage());
     }
 }

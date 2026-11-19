@@ -33,6 +33,13 @@ import java.util.Set;
 public record TwinPlan(String twin, Instant start, Duration baseStep, int steps, List<AtomSpec> atoms,
                        List<String> wiring) {
 
+    /**
+     * The most steps of a plan: 3653 days (10 years) of hourly steps and the hour that one more clock change in autumn
+     * than in spring adds. A house run over that many steps fits 2 GB of Java heap, a run of the H2 chain or the boat
+     * needs up to 2.5 GB.
+     */
+    public static final int MAX_STEPS = 3653 * 24 + 1;
+
     public TwinPlan {
         if (twin == null || start == null || atoms == null || atoms.isEmpty()) {
             throw new IllegalArgumentException("plan needs twin, start and atoms");
@@ -41,9 +48,8 @@ public record TwinPlan(String twin, Instant start, Duration baseStep, int steps,
         if (baseStep.isZero() || baseStep.isNegative() || baseStep.toNanos() % 1000 != 0) {
             throw new IllegalArgumentException("baseStep must be a positive whole number of microseconds");
         }
-        if (steps < 1) {
-            throw new IllegalArgumentException("steps: " + steps
-                    + " is not allowed; expected a whole number of at least 1");
+        if (steps < 1 || steps > MAX_STEPS) {
+            throw new StepsRefused(steps, MAX_STEPS);
         }
         atoms = List.copyOf(atoms);
         wiring = wiring == null ? List.of() : List.copyOf(wiring);
@@ -165,6 +171,27 @@ public record TwinPlan(String twin, Instant start, Duration baseStep, int steps,
         return m.readValue(yaml, TwinPlan.class);
     }
 
+    /**
+     * Loads a plan for a run that holds at most {@code maxSteps} steps ({@link #MAX_STEPS} at most); a step count
+     * outside 1 to that bound is refused with the bound.
+     */
+    public static TwinPlan load(InputStream yaml, long maxSteps) throws IOException {
+        long max = Math.min(maxSteps, MAX_STEPS);
+        TwinPlan plan;
+        try {
+            plan = load(yaml);
+        } catch (JsonProcessingException e) {
+            if (e.getCause() instanceof StepsRefused refused) {
+                throw new StepsRefused(refused.steps, max);
+            }
+            throw e;
+        }
+        if (plan.steps() > max) {
+            throw new StepsRefused(plan.steps(), max);
+        }
+        return plan;
+    }
+
     /** Loads a plan from the classpath, e.g. {@code twin/h2-chain.yaml}. */
     public static TwinPlan resource(String name) {
         try (InputStream in = TwinPlan.class.getClassLoader().getResourceAsStream(name)) {
@@ -174,6 +201,15 @@ public record TwinPlan(String twin, Instant start, Duration baseStep, int steps,
             return load(in);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    private static final class StepsRefused extends IllegalArgumentException {
+        private final int steps;
+
+        StepsRefused(int steps, long max) {
+            super("steps: " + steps + " is not allowed; expected a whole number from 1 to " + max);
+            this.steps = steps;
         }
     }
 

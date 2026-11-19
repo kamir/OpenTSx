@@ -257,8 +257,8 @@ example rows).
 
 The German column names `zeitraum_von`, `zeitraum_bis`, `strom_kwh`, `heizoel_liter`, `tank_start_liter`,
 `tank_ende_liter`, `holz_ster`, `kosten_eur` and `notiz` are accepted as aliases. The bills may span at most 3653
-days, and a calibration run over them may take at most 87672 steps of the plan (3653 days of the hourly steps of the
-bundled plan).
+days, and a calibration run over them may take at most 87673 steps of the plan (3653 days of the hourly steps of the
+bundled plan, counted from local midnight to local midnight, with one more clock change in autumn than in spring).
 
 Rows may overlap. Typical are annual electricity bills with their own reference date next to oil periods from one
 reading to the next. Separator `,` or `;` (spreadsheet export with a decimal comma).

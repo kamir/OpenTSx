@@ -102,7 +102,7 @@ public final class HouseDemo {
     /** {@code args} without the command word, as bin/opentsx passes them. */
     static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err) {
         return TwinCli.run(COMMAND, args, env, out, err, (conf, positional) -> {
-            TwinPlan plan = TwinCli.plan(conf, HouseScenario.PLAN, HouseDemo::plan);
+            TwinPlan plan = TwinCli.plan(conf, HouseScenario.PLAN, HouseDemo::plan, TwinPlan.MAX_STEPS);
             List<String> missing = ATOM_TYPES.stream()
                     .filter(type -> plan.atoms().stream().noneMatch(a -> a.type().equals(type))).toList();
             if (!missing.isEmpty()) {
@@ -143,7 +143,7 @@ public final class HouseDemo {
 
     private static void simulated(PrintStream out, TwinPlan plan, List<BillCalibration.Bill> bills, double hddRef) {
         out.println("House twin '" + plan.twin() + "' calibrated on SIMULATED bills (" + SimulatedBills.BILLS
-                + ", " + SimulatedBills.TEMPERATURES + ") - no real data");
+                + ", " + SimulatedBills.TEMPERATURES + "); no real data");
         SeriesInputs weather = BillCalibration.dailyTemperatures(SimulatedBills.bundledTemperatures(),
                 HouseScenario.id(plan, "weather"), 5.0);
         BillCalibration.Result c = new BillCalibration(plan, weather).fit(bills);
@@ -156,7 +156,7 @@ public final class HouseDemo {
 
     private static void print(PrintStream out, TwinPlan plan, Path bills, List<BillCalibration.Bill> rows,
                               SeriesInputs weather, double hddRef) {
-        out.println("House twin '" + plan.twin() + "' - ALL NUMBERS ARE INVENTED EXAMPLE ASSUMPTIONS"
+        out.println("House twin '" + plan.twin() + "': ALL NUMBERS ARE INVENTED EXAMPLE ASSUMPTIONS"
                 + (bills == null ? " (not calibrated)" : " (calibrated on " + bills + ")"));
         TwinPlan evaluated = plan;
         if (bills != null) {
@@ -198,7 +198,7 @@ public final class HouseDemo {
         out.printf(Locale.ROOT, "   cost %.0f EUR/a, CO2 %.0f kg/a%n", k.costEur(), k.co2Kg());
 
         out.println();
-        out.println("2. What-if: MODELLED potential per lever = alternative - reference (same weather, same plan)");
+        out.println("2. What-if: MODELLED potential per lever = alternative minus reference (same weather, same plan)");
         out.printf(Locale.ROOT, "   %-18s %9s %9s %9s %10s %8s %8s %8s  %s%n", "lever", "oil l", "wood St",
                 "el kWh", "final kWh", "EUR", "CO2 kg", "under h", "change");
         for (Map.Entry<String, Alternative> e : alternativesFor(plan).entrySet()) {

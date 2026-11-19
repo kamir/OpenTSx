@@ -62,7 +62,8 @@ public record BoatData(TwinPlan plan, SeriesInputs inputs, double[] socMeas, Map
 
     /**
      * The most plan steps the rows may span: 366 days of the 15-minute steps of {@code twin/boot-etap22.yaml}. A
-     * calibrated boat run over 35040 steps needs about 2.4 GB of Java heap.
+     * calibrated boat run over 35040 steps needs about 2.4 GB of Java heap. The plan of the boat command has at most
+     * this many steps as well; a synthetic run over them fits 2 GB.
      */
     public static final long MAX_STEPS = 366 * 96;
 

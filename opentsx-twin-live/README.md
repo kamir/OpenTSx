@@ -4,7 +4,7 @@ The events of a twin run as records of a topic, and a bridge that hands the topi
 Studio (`docs/prototypes/smart-topics-studio.html`, the event topic tab `#view-topic`) follows the topic through the
 bridge.
 
-```
+```text
 twin run --> EventPublisher --> twin.<id>.<run>.events (KafScale) --> EventBridge (SSE) --> Studio
 ```
 
@@ -22,8 +22,7 @@ the atom. Value: JSON, schema `twin.event.v1` (header `tsx-schema`):
 ```
 
 `t` is the time of the event in the run and may lie inside a time step; `k` is the step that detected it. The record
-timestamp is the time of publishing. The value is JSON, not Avro, because the reader is a browser; an Avro variant
-in the style of the other twin topics is open.
+timestamp is the time of publishing. The value is JSON, not Avro, because the reader is a browser.
 
 ## Commands
 
@@ -144,12 +143,14 @@ it is closed and logged at ERROR with the bytes it wrote, and the browser then r
 
 ## Limits
 
-- The twin itself still computes a run as a whole; "live" means the publisher plays that run into the topic. A twin
-  that publishes while it steps is a later stage (`MessageSink`).
+- The twin computes a run as a whole; "live" means the publisher plays that run into the topic.
 - The bridge is read-only and serves only topics that match `twin.<id>.<run>.events`. It has no authentication and
   answers every origin unless `--allow-origin` narrows that. Run it inside the trusted network.
 - Every open stream holds one reader on the log (no consumer group, see `KafScaleClients`); `--max-streams` limits
   their number.
+- A message nests at most 1000 levels. A record whose value is JSON nested 1000 levels deep would nest deeper, so the
+  stream skips it, goes on with the next record and logs one line at WARN:
+  `record skipped, it cannot be written as JSON topic=<topic> offset=<offset> cause=<causes>`.
 - On k3s the bridge is the component `event-bridge` (`deploy/k3s/20-configure.sh EVENT_BRIDGE=true`, NodePort 30312).
 
 ## Tests

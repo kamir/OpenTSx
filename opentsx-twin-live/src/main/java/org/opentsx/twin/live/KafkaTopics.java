@@ -35,6 +35,7 @@ public final class KafkaTopics implements Topics {
     private final Supplier<Patience> patience;
     private final Set<String> known = ConcurrentHashMap.newKeySet();
     private Producer<String, byte[]> producer;
+    private boolean closed;
 
     public KafkaTopics(String bootstrap) {
         this(bootstrap, KafScaleClients::admin, KafScaleClients::producer, KafScaleClients::consumer, Patience::standard);
@@ -52,6 +53,9 @@ public final class KafkaTopics implements Topics {
 
     @Override
     public synchronized void append(String topic, String key, byte[] value, String schema) {
+        if (closed) {
+            throw new IllegalStateException("topics: closed; create a new KafkaTopics to append again");
+        }
         if (producer == null) {
             producer = producers.apply(bootstrap);
         }
@@ -126,6 +130,7 @@ public final class KafkaTopics implements Topics {
 
     @Override
     public synchronized void close() {
+        closed = true;
         if (producer != null) {
             producer.close(Duration.ofSeconds(5));
             producer = null;

@@ -25,6 +25,7 @@ import org.opentsx.kafka.Patience;
 import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -93,8 +94,14 @@ class KafkaTopicsTest {
     }
 
     private static KafkaTopics topics(Admin admin, MockProducer<String, byte[]> producer, MockConsumer<byte[], byte[]> consumer) {
+        return topics(admin, producer, consumer, new ArrayList<>());
+    }
+
+    /** The cursors wait out refusals with a sleeper that records each pause in {@code pauses} instead of sleeping. */
+    private static KafkaTopics topics(Admin admin, MockProducer<String, byte[]> producer, MockConsumer<byte[], byte[]> consumer,
+                                      List<Long> pauses) {
         return new KafkaTopics("mock:9092", b -> admin, b -> producer, b -> consumer,
-                () -> new Patience(Duration.ofMinutes(10), Duration.ofMillis(1)));
+                () -> new Patience(Duration.ofMinutes(10), Duration.ofSeconds(5), () -> 0L, pauses::add));
     }
 
     @Test
@@ -120,6 +127,26 @@ class KafkaTopicsTest {
     }
 
     @Test
+    void anAppendAfterCloseIsRefusedAndOpensNoProducer() {
+        MockAdminClient admin = new MockAdminClient(List.of(BROKER), BROKER);
+        List<MockProducer<String, byte[]>> made = new ArrayList<>();
+        KafkaTopics topics = new KafkaTopics("mock:9092", b -> admin, b -> {
+            MockProducer<String, byte[]> p = producer();
+            made.add(p);
+            return p;
+        }, b -> null, () -> new Patience(Duration.ofMinutes(10), Duration.ofSeconds(5), () -> 0L, pause -> {
+        }));
+        topics.append(TOPIC, "line", new byte[]{1}, EventTopic.SCHEMA);
+        topics.close();
+        IllegalStateException closed = assertThrows(IllegalStateException.class,
+                () -> topics.append(TOPIC, "line", new byte[]{2}, EventTopic.SCHEMA));
+        assertEquals("topics: closed; create a new KafkaTopics to append again", closed.getMessage());
+        assertEquals(1, made.size(), "no producer is opened after close");
+        assertTrue(made.get(0).closed());
+        assertEquals(1, made.get(0).history().size());
+    }
+
+    @Test
     void anInterruptedCreateOrOpenThrowsAndKeepsTheInterrupt() {
         try (KafkaTopics topics = topics(new NeverAnswers(), producer(), null)) {
             Thread.currentThread().interrupt();
@@ -138,25 +165,28 @@ class KafkaTopicsTest {
     void aRefusedPollOfTheCursorGivesNoRecordsAndTheNextPollReads() throws Exception {
         MockAdminClient admin = new MockAdminClient(List.of(BROKER), BROKER);
         admin.createTopics(List.of(new NewTopic(TOPIC, 1, (short) 1))).all().get();
-        boolean[] refused = {false};
+        int[] polls = {0};
         MockConsumer<byte[], byte[]> consumer = new MockConsumer<>(OffsetResetStrategy.EARLIEST) {
             @Override
             public synchronized ConsumerRecords<byte[], byte[]> poll(Duration timeout) {
-                if (!refused[0]) {
-                    refused[0] = true;
+                if (++polls[0] == 1) {
                     throw new IllegalStateException("Unexpected error code 7 while fetching at offset 0 from topic-partition "
                             + TOPIC + "-0");
                 }
                 return super.poll(timeout);
             }
         };
-        try (KafkaTopics topics = topics(admin, producer(), consumer);
+        List<Long> pauses = new ArrayList<>();
+        try (KafkaTopics topics = topics(admin, producer(), consumer, pauses);
              Topics.Cursor cursor = topics.open(TOPIC, 0)) {
             consumer.addRecord(new ConsumerRecord<>(TOPIC, 0, 0L, "line".getBytes(StandardCharsets.UTF_8),
                     "{\"type\":\"a\"}".getBytes(StandardCharsets.UTF_8)));
 
             assertEquals(List.of(), cursor.poll(Duration.ofMillis(10)), "a refused fetch gives no records");
+            assertEquals(List.of(5000L), pauses, "the refusal pauses once, for the pause of the Patience");
             List<Topics.Rec> recs = cursor.poll(Duration.ofMillis(10));
+            assertEquals(2, polls[0], "one refused and one answered poll");
+            assertEquals(List.of(5000L), pauses, "an answered poll does not pause");
             assertEquals(1, recs.size());
             assertEquals(0, recs.get(0).offset());
             assertEquals("line", recs.get(0).key());

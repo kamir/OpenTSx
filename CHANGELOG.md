@@ -175,6 +175,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `RNGWrapper.init(seed)` and `RNGWrapper.DEFAULT_SEED` (1), and `DetrendingMethodFactory.getDFAmulti(order)`.
 - `Patience` has a public constructor that takes the clock and the sleeper, so tests wait out refused reads on a test
   clock instead of sleeping.
+- `TwinPlan.load(InputStream, long maxSteps)` loads a plan for a run that holds at most `maxSteps` steps and names
+  that bound in the refusal of every step count outside it.
 
 ### Changed
 
@@ -676,6 +678,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `--systems` and `--systems-root`, and says when the server writes: with `--dag-runs true` only, to the DAG control
   and status topics and to `tsx.<domain>.synthetic.v2`. It also says that no writer stores the SAX word in
   `EpisodeSummary.sax` and that DTW z-normalizes every window on its own.
+- The `house` output and its calibration warnings use a colon, a semicolon or the word minus where they had a spaced
+  hyphen, for example `House twin 'haus-erzgebirge': ALL NUMBERS ARE INVENTED EXAMPLE ASSUMPTIONS (not calibrated)`
+  and `weather is synthetic; for real bills bind daily mean temperatures of a nearby station`.
 
 ### Removed
 
@@ -1446,7 +1451,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   of failing with exit 1 and `binding to unknown input port`.
 - `house` and `boat` refuse data that would run out of memory with exit 2 and one line: bills, daily temperatures or
   boat data that span more than 3653 days (10 years), boat data that span more than 35136 steps of the plan and bills
-  that span more than 87672 steps. `--simulated` checks the bundled data against the plan the same way, and
+  that span more than 87673 steps. `--simulated` checks the bundled data against the plan the same way, and
   `BillCalibration.fit` refuses such bills as well.
 - `house` refuses `--weather` without `--calibrate` and `--simulated` together with `--calibrate`, and `boat` refuses
   `--zone` without `--data`, with exit 2 instead of ignoring the option.
@@ -1540,6 +1545,22 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   their mean is a finite number.
 - The operations and troubleshooting guides list the WARN line `undecodable record skipped` that the vector processor
   logs once per partition of a sink.
+- `twin` and `boat` refuse a plan with more than 35136 steps (366 days of 15-minute steps) and `house` a plan with
+  more than 87673 steps (3653 days of hourly steps) with exit code 2 and `<plan>: steps: <n> is not allowed; expected
+  a whole number from 1 to <bound>`, instead of running out of memory after about a minute. A plan with fewer than 1
+  step gets the same text. A `twin` or `boat` run over 35136 steps and a `house` run over 87673 steps fit 2 GB of Java
+  heap.
+- The step limit of `house --calibrate` and `house --simulated` counts the steps the run takes, from local midnight to
+  local midnight in Europe/Berlin, so a span with one more clock change in autumn than in spring reports its true step
+  count. The limit is 87673 steps, which still allows 3653 days of hourly steps.
+- `history-twin twin` and `history-twin boat` (also `twin --history` and `boat --weather-year`) refuse `--days` above
+  366 and `--days 0` with exit code 2 and `--days: "<n>" is not allowed; expected 1 to 366`, instead of running out of
+  heap, refusing with the plan's `steps` or overflowing the step count.
+- The twin-live event bridge skips a record whose message cannot be written as JSON and keeps the stream open. It logs
+  `record skipped, it cannot be written as JSON topic=<topic> offset=<offset> cause=<causes>` at WARN. It used to end
+  the stream without a log line, as if the browser had left.
+- `KafkaTopics.append` after `close` throws `IllegalStateException: topics: closed; create a new KafkaTopics to append
+  again` instead of opening a new producer.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

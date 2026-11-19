@@ -193,7 +193,7 @@ deploy/k3s/40-demo.sh house
 ```
 
 ```text
-House twin 'haus-erzgebirge' - ALL NUMBERS ARE INVENTED EXAMPLE ASSUMPTIONS (not calibrated)
+House twin 'haus-erzgebirge': ALL NUMBERS ARE INVENTED EXAMPLE ASSUMPTIONS (not calibrated)
 
 1. Shadow: reference year 2024-12-31T23:00:00Z + 8760 x PT1H
    run haus-erzgebirge-e0b53b1a33881fa8  hash b9e4011a7f20ce3a  origin SYNTHETIC
@@ -206,7 +206,7 @@ House twin 'haus-erzgebirge' - ALL NUMBERS ARE INVENTED EXAMPLE ASSUMPTIONS (not
    ...
    cost 3444 EUR/a, CO2 7773 kg/a
 
-2. What-if: MODELLED potential per lever = alternative - reference (same weather, same plan)
+2. What-if: MODELLED potential per lever = alternative minus reference (same weather, same plan)
    lever                  oil l   wood St    el kWh  final kWh      EUR   CO2 kg  under h  change
    minus-1K                -151     +0.00       -16      -1513     -157     -478      -23  room set-point 21 -> 20 C
    ...
@@ -220,14 +220,14 @@ deploy/k3s/40-demo.sh house -- --calibrate /opt/opentsx/share/twin/abrechnungen-
 ```
 
 ```text
-0. Calibration against bills (9 twin runs)
-   building.lossWPerK          212.704   (rel. std. error 7.2 %)
-   dhw.scale                     0.935   (rel. std. error 100.4 %)
-   appliances.scale              0.950   (rel. std. error 1.4 %)
-   identifiable false (condition 2.77e+04, max correlation 0.996)
+0. Calibration against bills (7 twin runs)
+   building.lossWPerK          209.351   (rel. std. error 7.9 %)
+   dhw.scale                     1.114   (rel. std. error 89.1 %)
+   appliances.scale              0.952   (rel. std. error 1.4 %)
+   identifiable false (condition 1.98e+04, max correlation 0.997)
    ...
-   strom_kwh      CV(RMSE) 1.4 %, NMBE +0.0 %
-   heizoel_liter  CV(RMSE) 0.4 %, NMBE -0.1 %
+   electricity_kwh CV(RMSE) 1.4 %, NMBE +0.0 %
+   heating_oil_l  CV(RMSE) 0.4 %, NMBE -0.1 %
 ```
 
 With **your** bills (never commit them; locally they belong in `config/private/`):

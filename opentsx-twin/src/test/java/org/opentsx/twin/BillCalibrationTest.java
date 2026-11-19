@@ -99,7 +99,30 @@ class BillCalibrationTest {
         IllegalArgumentException steps = assertThrows(IllegalArgumentException.class,
                 () -> new BillCalibration(seconds).fit(year));
         assertEquals("period_from 2024-01-01 to period_to 2024-12-31 needs 31622400 plan steps of PT1S; expected at "
-                + "most 87672 plan steps, from a longer baseStep or bills that span less time", steps.getMessage());
+                + "most 87673 plan steps, from a longer baseStep or bills that span less time", steps.getMessage());
+    }
+
+    /**
+     * A run steps from local midnight to local midnight in Europe/Berlin: the end of October 2024 has one hour more,
+     * and ten years with one more autumn than spring clock change take 87673 hourly steps.
+     */
+    @Test
+    void theStepLimitCountsTheStepsBetweenLocalMidnights() {
+        TwinPlan plan = HouseDemo.plan();
+        TwinPlan seconds = new TwinPlan(plan.twin(), plan.start(), java.time.Duration.ofSeconds(1), plan.steps(),
+                plan.atoms(), plan.wiring());
+        List<Bill> autumn = BillCalibration.parse(List.of("period_from,period_to,electricity_kwh",
+                "2024-10-01,2024-12-31,800"));
+        IllegalArgumentException steps = assertThrows(IllegalArgumentException.class,
+                () -> BillCalibration.checkSteps(autumn, seconds));
+        assertEquals("period_from 2024-10-01 to period_to 2024-12-31 needs 7952400 plan steps of PT1S; expected at "
+                + "most 87673 plan steps, from a longer baseStep or bills that span less time", steps.getMessage());
+
+        List<Bill> tenYears = BillCalibration.parse(List.of("period_from,period_to,electricity_kwh",
+                "2016-10-30,2026-10-30,30000"));
+        assertEquals(3653, tenYears.get(0).days());
+        assertEquals(tenYears, BillCalibration.checkSteps(tenYears, plan));
+        assertEquals(87673, BillCalibration.MAX_STEPS);
     }
 
     /**
@@ -144,9 +167,43 @@ class BillCalibrationTest {
                         Double.NaN, 4, Double.NaN, "delivery only"));
         BillCalibration.Result r = new BillCalibration(plan).fit(bills);
         assertFalse(r.identifiable());
-        assertTrue(r.warnings().stream().anyMatch(w -> w.contains("not identifiable")), r.warnings().toString());
-        assertTrue(r.warnings().stream().anyMatch(w -> w.contains("delivery used as consumption")));
+        assertEquals(List.of("oil 2025-10-01..2026-03-31: delivery used as consumption (tank levels missing), weighted "
+                        + "0.2; merge several years or add gauge readings",
+                "2 observed period totals for 3 parameters: not identifiable, the fit is one of many equally good "
+                        + "solutions; add monthly meter or tank readings",
+                "weather is synthetic; for real bills bind daily mean temperatures of a nearby station (--weather), "
+                        + "otherwise H absorbs the weather difference of the years",
+                "fixed assumptions (not fitted): boiler efficiency, standby loss, wood energy per Ster, heating oil 10 "
+                        + "kWh/l; from period totals only H/eta is identified"), r.warnings());
         assertTrue(r.periods().get(1).proxy());
+    }
+
+    /**
+     * Monthly electricity and two months of tank readings cannot separate the heat loss from the hot water, and a hot
+     * water use below the lower bound of its scale ends the fit at that bound; the fit says both.
+     */
+    @Test
+    void flagsHardlySeparableParametersAndAParameterAtItsBound() {
+        TwinPlan plan = HouseDemo.plan();
+        BillCalibration cal = new BillCalibration(plan);
+        List<Bill> template = new ArrayList<>();
+        for (int m = 0; m < 6; m++) {
+            LocalDate from = LocalDate.of(2025, 7, 1).plusMonths(m);
+            boolean tank = m >= 4;
+            template.add(new Bill(from, from.plusMonths(1).minusDays(1), 1, tank ? 0 : Double.NaN,
+                    tank ? 1 : Double.NaN, tank ? 1 : Double.NaN, Double.NaN, Double.NaN, ""));
+        }
+        List<Bill> bills = cal.synthesize(template, Map.of("building.lossWPerK", 165.0, "dhw.scale", 0.2,
+                "appliances.scale", 0.85));
+
+        BillCalibration.Result r = cal.fit(bills);
+        assertEquals(List.of("parameters hardly separable (condition 2.5e+05, max correlation 0.994); periods with "
+                        + "different weather (winter vs. summer readings) help",
+                "weather is synthetic; for real bills bind daily mean temperatures of a nearby station (--weather), "
+                        + "otherwise H absorbs the weather difference of the years",
+                "dhw.scale at its bound 0.3; check the data or the fixed assumptions",
+                "fixed assumptions (not fitted): boiler efficiency, standby loss, wood energy per Ster, heating oil 10 "
+                        + "kWh/l; from period totals only H/eta is identified"), r.warnings());
     }
 
     /** The house and the boat calibration solve with one solver, which gives NaN for a singular system. */

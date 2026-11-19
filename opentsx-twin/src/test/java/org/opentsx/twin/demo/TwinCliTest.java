@@ -8,6 +8,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.conf.ConfCli;
 import org.opentsx.conf.OpenTsxConf;
 import org.opentsx.conf.Registry;
+import org.opentsx.twin.TwinPlan;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -21,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TwinCliTest {
@@ -128,7 +131,6 @@ class TwinCliTest {
         }
         String help = run(HouseDemo::run, "--help").out();
         assertTrue(help.contains("  opentsx.house.hddRef  double = 4300  unit Kd  --hdd-ref  OPENTSX_HOUSE_HDD_REF\n"), help);
-        assertTrue(!help.contains("parses its own flags"), help);
     }
 
     @Test
@@ -200,11 +202,63 @@ class TwinCliTest {
     void aPlanWithoutStepsIsAUsageError() throws IOException {
         String plan = new String(resource("twin/h2-chain.yaml"), StandardCharsets.UTF_8);
         Path negative = Files.writeString(tmp.resolve("negative.yaml"), plan.replaceFirst("(?m)^steps: .*$", "steps: -5"));
-        assertEquals(new Result(2, "", "opentsx: " + negative + ": steps: -5 is not allowed; expected a whole number of "
-                + "at least 1\n"), run(H2ChainDemo::run, "--plan", negative.toString()));
+        assertEquals(new Result(2, "", "opentsx: " + negative + ": steps: -5 is not allowed; expected a whole number from "
+                + "1 to 35136\n"), run(H2ChainDemo::run, "--plan", negative.toString()));
         Path none = Files.writeString(tmp.resolve("none.yaml"), plan.replaceFirst("(?m)^steps: .*\n", ""));
-        assertEquals(new Result(2, "", "opentsx: " + none + ": steps: 0 is not allowed; expected a whole number of "
-                + "at least 1\n"), run(H2ChainDemo::run, "--plan", none.toString()));
+        assertEquals(new Result(2, "", "opentsx: " + none + ": steps: 0 is not allowed; expected a whole number from "
+                + "1 to 35136\n"), run(H2ChainDemo::run, "--plan", none.toString()));
+    }
+
+    @Test
+    void aPlanWithMoreStepsThanARunCanHoldIsAUsageErrorOfEveryCommand() throws IOException {
+        record Limit(String plan, Main command, int steps) {
+        }
+        for (Limit c : List.of(new Limit("twin/h2-chain.yaml", H2ChainDemo::run, 35136),
+                new Limit("twin/boot-etap22.yaml", BoatDemo::run, 35136),
+                new Limit("twin/haus-erzgebirge.yaml", HouseDemo::run, 87673))) {
+            for (int steps : new int[] {0, c.steps() + 1, 50000000}) {
+                Path plan = Files.writeString(tmp.resolve(steps + "-" + c.plan().substring(5)), new String(
+                        resource(c.plan()), StandardCharsets.UTF_8).replaceFirst("(?m)^steps: .*$", "steps: " + steps));
+                assertEquals(new Result(2, "", "opentsx: " + plan + ": steps: " + steps + " is not allowed; expected a "
+                        + "whole number from 1 to " + c.steps() + "\n"), run(c.command(), "--plan", plan.toString()));
+            }
+        }
+        TwinPlan p = HouseDemo.plan();
+        assertEquals(87673, new TwinPlan(p.twin(), p.start(), p.baseStep(), 87673, p.atoms(), p.wiring()).steps());
+        assertEquals("steps: 87674 is not allowed; expected a whole number from 1 to 87673", assertThrows(
+                IllegalArgumentException.class, () -> new TwinPlan(p.twin(), p.start(), p.baseStep(), 87674, p.atoms(),
+                        p.wiring())).getMessage());
+    }
+
+    @Test
+    void theHouseOutputSaysWhatIsInventedOrSimulatedWithoutDashes() throws IOException {
+        Path days = Files.writeString(tmp.resolve("house-4-days.yaml"), new String(resource("twin/haus-erzgebirge.yaml"),
+                StandardCharsets.UTF_8).replaceFirst("(?m)^baseStep: .*$", "baseStep: PT24H")
+                .replaceFirst("(?m)^steps: .*$", "steps: 4"));
+        Result reference = run(HouseDemo::run, "--plan", days.toString());
+        assertEquals(0, reference.exit(), reference.err());
+        assertTrue(reference.out().startsWith("House twin 'haus-erzgebirge': ALL NUMBERS ARE INVENTED EXAMPLE "
+                + "ASSUMPTIONS (not calibrated)\n"), reference.out());
+        assertTrue(reference.out().contains("\n2. What-if: MODELLED potential per lever = alternative minus reference "
+                + "(same weather, same plan)\n"), reference.out());
+        assertFalse(reference.out().contains(" - "), reference.out());
+
+        Result simulated = run(HouseDemo::run, "--plan", days.toString(), "--simulated");
+        assertEquals(0, simulated.exit(), simulated.err());
+        assertTrue(simulated.out().startsWith("House twin 'haus-erzgebirge' calibrated on SIMULATED bills "
+                + "(twin/beispiel/haus-abrechnungen-simuliert.csv, twin/beispiel/haus-tagesmittel-simuliert.csv); no real "
+                + "data\n"), simulated.out());
+        assertTrue(simulated.out().contains("\n"
+                + "   ! oil 2022-04-20..2023-11-04: delivery used as consumption (tank levels missing), weighted 0.2; merge "
+                + "several years or add gauge readings\n"
+                + "   ! oil 2023-11-05..2024-04-20: delivery used as consumption (tank levels missing), weighted 0.2; merge "
+                + "several years or add gauge readings\n"
+                + "   ! poorly determined by these bills (relative standard error > 25 %): [dhw.scale]; the value is hardly "
+                + "better than the assumption\n"
+                + "   ! dhw.scale at its bound 3.0; check the data or the fixed assumptions\n"
+                + "   ! fixed assumptions (not fitted): boiler efficiency, standby loss, wood energy per Ster, heating oil "
+                + "10 kWh/l; from period totals only H/eta is identified\n"), simulated.out());
+        assertFalse(simulated.out().contains(" - "), simulated.out());
     }
 
     @Test
@@ -304,11 +358,11 @@ class TwinCliTest {
         Path bills = Files.writeString(tmp.resolve("bills.csv"), "period_from,period_to,electricity_kwh\n"
                 + "2016-01-01,2020-12-31,15000\n2021-01-01,2025-12-31,15000\n");
         assertEquals(new Result(2, "", "opentsx: " + bills + ": period_from 2016-01-01 to period_to 2025-12-31 needs "
-                + "315619200 plan steps of PT1S; expected at most 87672 plan steps, from a longer baseStep or bills "
+                + "315619200 plan steps of PT1S; expected at most 87673 plan steps, from a longer baseStep or bills "
                 + "that span less time\n"),
                 run(HouseDemo::run, "--plan", housePlan.toString(), "--calibrate", bills.toString()));
         assertEquals(new Result(2, "", "opentsx: twin/beispiel/haus-abrechnungen-simuliert.csv: period_from "
-                + "2022-01-01 to period_to 2025-12-31 needs 126230400 plan steps of PT1S; expected at most 87672 plan "
+                + "2022-01-01 to period_to 2025-12-31 needs 126230400 plan steps of PT1S; expected at most 87673 plan "
                 + "steps, from a longer baseStep or bills that span less time\n"),
                 run(HouseDemo::run, "--plan", housePlan.toString(), "--simulated"));
     }

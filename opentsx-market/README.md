@@ -287,7 +287,9 @@ every 6 hours; MOSMIX_L is issued at 03, 09, 15 and 21 UTC. Parsing into series 
 `bin/opentsx` dispatches to `org.opentsx.market.twin.HistoryTwins` only when `--history` or `--weather-year` is
 given. Without them the demos of `opentsx-twin` run unchanged on synthetic data. The adapter reads its keys as the
 commands `history-twin twin`, `history-twin house` and `history-twin boat`; `bin/opentsx twin --history data/history
---help` lists them. `--wind` takes `smard` or `dwd`, and `--levers false` prints no levers. A missing archive or a
+--help` lists them. `--wind` takes `smard` or `dwd`, and `--levers false` prints no levers. `--days` of `twin` and
+`boat` takes 1 to 366, the days of 15-minute steps that one run holds; another value exits with 2:
+`opentsx: --days: "400" is not allowed; expected 1 to 366`. A missing archive or a
 year without archived data stops the command with exit code 2 and a line that says which backfill fills it. The
 adapter (`HistoryInputs`) resamples archive series to the plan's base step as a time-weighted mean: finer data is
 averaged, coarser data (hourly prices, monthly values) is held. A step less than half covered becomes NaN, so the twin falls

@@ -206,8 +206,19 @@ class HistoryTwinsTest {
                 + "YYYY or YYYY-YYYY such as 2022-2025\n"), twins("house", "--history", dir, "--weather-year", "2025-2022"));
         assertEquals(new Result(2, "", "opentsx: --start: \"2024-07-32\" is not a day; expected a UTC day YYYY-MM-DD\n"),
                 twins("boat", "--history", dir, "--weather-year", "2024", "--start", "2024-07-32"));
-        assertEquals(new Result(2, "", "opentsx: --days: \"0\" is not allowed; expected 1 or more\n"),
+        assertEquals(new Result(2, "", "opentsx: --days: \"0\" is not allowed; expected 1 to 366\n"),
                 twins("boat", "--history", dir, "--weather-year", "2024", "--days", "0"));
+    }
+
+    @Test
+    void moreDaysThanARunOfTheTwinOrTheBoatHoldsAreRefusedWithTheOption() throws Exception {
+        String dir = archiveDir().toString();
+        for (String days : List.of("367", "22369622")) {
+            assertEquals(new Result(2, "", "opentsx: --days: \"" + days + "\" is not allowed; expected 1 to 366\n"),
+                    twins("twin", "--history", dir, "--year", "2024", "--from", "2024-03-30", "--days", days));
+            assertEquals(new Result(2, "", "opentsx: --days: \"" + days + "\" is not allowed; expected 1 to 366\n"),
+                    twins("boat", "--history", dir, "--weather-year", "2024", "--days", days));
+        }
     }
 
     @Test

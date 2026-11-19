@@ -84,10 +84,11 @@ public final class TwinCli {
     }
 
     /**
-     * The plan of {@code opentsx.twin.plan}, else the built-in plan; atoms, wires and policies are checked. A refusal
-     * that does not say what is allowed names {@code example}, the resource of the built-in plan.
+     * The plan of {@code opentsx.twin.plan}, else the built-in plan; atoms, wires, policies and at most
+     * {@code maxSteps} steps are checked. A refusal that does not say what is allowed names {@code example}, the
+     * resource of the built-in plan.
      */
-    static TwinPlan plan(OpenTsxConf conf, String example, Supplier<TwinPlan> builtIn) {
+    static TwinPlan plan(OpenTsxConf conf, String example, Supplier<TwinPlan> builtIn, long maxSteps) {
         Optional<String> file = conf.getOption(PLAN);
         if (file.isEmpty()) {
             return builtIn.get();
@@ -95,7 +96,7 @@ public final class TwinCli {
         Path path = Path.of(file.get());
         byte[] yaml = read(path, "plan file", Files::readAllBytes);
         try {
-            TwinPlan plan = TwinPlan.load(new ByteArrayInputStream(yaml));
+            TwinPlan plan = TwinPlan.load(new ByteArrayInputStream(yaml), maxSteps);
             new TwinRunner(plan);
             return plan;
         } catch (IOException e) {

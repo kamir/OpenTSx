@@ -4,8 +4,8 @@ A twin built from **atoms** (standard parts) and a **wiring plan** (per site). I
 decision changes every downstream number the way it would in the plant. Concept:
 [`07-DIGITAL-TWIN-BSP.md`](../docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md) (German).
 
-This module contains the tightly coupled execution variant **T** (one process). The loosely coupled variant **L**
-(atoms as Smart Topics) is planned and will use the same atom code and the same message contract.
+`TwinRunner` runs a plan tightly coupled in one process (variant **T**). `LooseRunner` runs the same plan, atoms and
+message contract as loosely coupled processors (variant **L**).
 
 ## Try it
 
@@ -62,11 +62,12 @@ opentsx: bad.csv: missing column period_from; expected [period_from, period_to, 
 An option that has no effect is refused: `--zone` without `--data`, `--weather` without `--calibrate`, and
 `--simulated` together with `--calibrate`.
 
-A plan with an unknown field, a wire to an unknown atom or fewer than 1 step is a usage error as well, and the line
-names the file. So is a plan that lacks the atoms the command runs on: `house` checks the atom types, `twin` and
-`boat` check the ids and types of the atoms they bind, change or report. So are a bills file without rows, a row
-that a bills, temperatures or boat data file cannot use, and data that span more than 3653 days (10 years); the line
-names the file and the row's line number in it, comment lines included:
+A plan with an unknown field, a wire to an unknown atom, fewer than 1 step, more than 35136 steps for `twin` and
+`boat` or more than 87673 steps for `house` is a usage error as well, and the line names the file. So is a plan that
+lacks the atoms the command runs on: `house` checks the atom types, `twin` and `boat` check the ids and types of the
+atoms they bind, change or report. So are a bills file without rows, a row that a bills, temperatures or boat data
+file cannot use, and data that span more than 3653 days (10 years); the line names the file and the row's line number
+in it, comment lines included:
 
 ```text
 opentsx: h2.yaml: plan h2-chain has no atom of type building, weather, oil-boiler, oil-tank, wood-stove, wood-store, dhw, appliances, meter; expected a house plan such as opentsx-twin/src/main/resources/twin/haus-erzgebirge.yaml
@@ -76,14 +77,17 @@ opentsx: long.csv: line 3: time "9999-12-31T00:00Z" lies more than 3653 days aft
 ```
 
 Data that need more steps of the plan than one run can hold are a usage error too. Boat data span at most 35136
-steps of the plan (366 days of the 15-minute steps of `twin/boot-etap22.yaml`), and bills at most 87672 steps
-(3653 days of hourly steps). `--simulated` checks the bundled data the same way. A calibrated boat run over a year of
-15-minute steps needs about 2.4 GB of Java heap, and a house calibration over 10 years of hourly steps needs more
-than 2 GB. Use a plan with a longer `baseStep` or data that span less time:
+steps of the plan (366 days of the 15-minute steps of `twin/boot-etap22.yaml`), and bills at most 87673 steps (3653
+days of hourly steps from local midnight to local midnight in Europe/Berlin, with one more clock change in autumn
+than in spring). `--simulated` checks the bundled data the same way. A `twin` or `boat` run over 35136 steps and a
+`house` run over 87673 steps fit 2 GB of Java heap, the default on a host with 8 GB of memory. A calibrated boat run
+over a year of 15-minute steps needs about 2.4 GB, and a house calibration over 10 years of hourly steps more than
+2 GB. Use a plan with a longer `baseStep` or data that span less time:
 
 ```text
 opentsx: season.csv: line 3: time "2026-08-31T10:00Z" needs 83521 plan steps of PT1M from the earliest row (line 2); expected at most 35136 plan steps, from a longer baseStep or rows that span less time
-opentsx: bills10.csv: period_from 2016-01-01 to period_to 2025-12-31 needs 5260320 plan steps of PT1M; expected at most 87672 plan steps, from a longer baseStep or bills that span less time
+opentsx: my-site.yaml: steps: 50000000 is not allowed; expected a whole number from 1 to 87673
+opentsx: bills10.csv: period_from 2016-01-01 to period_to 2025-12-31 needs 5260320 plan steps of PT1M; expected at most 87673 plan steps, from a longer baseStep or bills that span less time
 ```
 
 A file that exists but cannot be read is a runtime failure:
@@ -169,10 +173,16 @@ languages and for snapshots in Iceberg.
 | `operating-rules` | operating constraints (A16) | SOURCES | time windows with a power limit (grid restrictions, field work, bat curtailment) |
 | `market` | market (A12) | SOURCES | price, every 15 steps |
 | `h2-offtake` | H2 offtake (A11) | SOURCES | demand × valve |
+| `h2-consumer` | H2 customer (A21) | SOURCES | passes its demand on as a request; counts the hydrogen it receives, one step late |
+| `wind-park` | wind farm (A22) | ASSETS | available power after `limit_kw`, generated power after `dispatch_kw`; energy not generated per cause |
+| `h2-compressor` | H2 compressor (A17) | ASSETS | passes the flow on and draws the power of one adiabatic stage; `throughput_limit` event |
+| `h2-handover` | handover station (A20) | ASSETS | delivers the request while the valve is open and the pressure is at least `pMinBar`; shortfall; `delivery_interrupted` and `delivery_resumed` events |
 | `electrolyzer` | electrolyzer (A9) | ASSETS | setpoint, minimum load, ramp, kWh/kg, protective shutdown and release by line pressure |
 | `battery` | battery (A8) | ASSETS | charge/discharge within power and SoC limits, efficiencies |
 | `balance` | balance node (A6) | BALANCE | `p_grid = gen − loads`; direct supply by priority; residual against a bound meter |
 | `h2-line` | H2 line / linepack (A10) | FLOWS | ideal gas; pressure, time to limit, headroom; warning and limit events |
+| `h2-buffer` | high-pressure buffer with regulator (A18) | FLOWS | ideal gas; the regulator feeds the pipeline towards `lineSetBar`; time to limit, headroom; `time_to_limit_warning`, `pressure_limit` and `buffer_low` events |
+| `h2-pipeline` | H2 pipeline / linepack (A19) | FLOWS | ideal gas; pressure at both ends, the far end lower by a loss that grows with the square of the flow; `pressure_limit` and `pressure_low` events |
 | `direct-marketer` | direct marketer (A13) | FLOWS | deviation from the schedule, extra/short energy, revenue |
 
 The example plan is [`twin/h2-chain.yaml`](src/main/resources/twin/h2-chain.yaml).
@@ -240,8 +250,9 @@ bin/opentsx boat --simulated                                 # the same on bundl
 Until real exports exist, [`twin/beispiel/boot-logs-simuliert.csv`](src/main/resources/twin/beispiel/boot-logs-simuliert.csv)
 holds SIMULATED logs ([README](src/main/resources/twin/beispiel/README-boot.md)): `SimulatedLogs` runs the model with
 hidden parameters (derate 0.62, Starlink ×1.25, laptops ×1.3), a cloudy spell and a day without Starlink, and writes
-a 5-minute app export with logbook, irradiance, whole-percent SoC, noise and gaps. `--simulated` calibrates on it
-and recovers the hidden values within about 1 %. `java -cp "$(bin/opentsx classpath opentsx-twin)"
+a 5-minute app export with logbook, irradiance, whole-percent SoC, noise and gaps. `--simulated` calibrates on it;
+`SimulatedLogsTest` checks that the fit recovers the derate within 0.02, the Starlink scale within 0.03 and the laptop
+scale within 0.06 (2.4 to 4.6 % of the hidden values). `java -cp "$(bin/opentsx classpath opentsx-twin)"
 org.opentsx.twin.boat.SimulatedLogs <out.csv> [seed]` writes them again (seed 20260704 by default); `--help` prints
 the usage, and a wrong argument exits with 2.
 
@@ -287,18 +298,21 @@ the levers act on measured values. For front ends, `BoatDemo` exposes `plan()`, 
   * measured weather is used and labelled
 * **`BillCalibrationTest`**
   * the CSV format, including German spreadsheet exports and the German column names
-  * the limits of 3653 days and of 87672 run steps
+  * the limits of 3653 days and of 87673 run steps, counted between local midnights across clock changes
   * known parameters recovered from synthetic monthly bills
-  * annual totals flagged as not identifiable
+  * annual totals flagged as not identifiable, hardly separable parameters, a parameter at its bound
   * one solver (`Gauss`) for the house and the boat calibration, NaN for a singular system
 * **`demo.TwinCliTest`**, **`studio.StudioExportTest`**, **`schema.AtomSchemasTest`**, **`boat.SimulatedLogsTest`**
   * exit codes 0, 1 and 2 and the one-line messages of every command
+  * a plan with more than 35136 steps is a usage error of `twin` and `boat`, one with more than 87673 steps of `house`
+  * the header lines of `house` and the calibration warnings it prints, word for word
   * `--help` prints the keys or the usage and writes no file
   * the k3s Jobs `twin`, `house`, `boat` and `studio-export` load their configuration in the namespace of the base
 * **`TwinPlanTest`**
   * rejected wirings, bindings, policies and interventions
   * feedback delay
   * YAML loading
+  * 1 to 87673 steps, or a lower bound the load is given, named in the refusal
   * operating rules
 * **`boat.BoatTwinTest`**, **`boat.BoatDataTest`**
   * plan validation and port type checks
@@ -310,12 +324,3 @@ the levers act on measured values. For front ends, `BoatDemo` exposes `plan()`, 
 * **`boat.SimulatedLogsTest`**: the bundled simulated logs equal the generator output; calibration on them recovers
   the hidden parameters, and unmet demand and autonomy on the logs match the hidden true run
 * **`studio.EnglishTextsTest`**: the scenario texts, the guides, the bundled READMEs, templates and plans are English
-
-## Not yet
-
-* Variant L (Smart Topics, watermarks, bounded staleness) and the conformance test L(0) = T.
-* Avro schemas per atom type.
-* Binding the message contract to KafScale.
-* Atoms for turbine and wake (weather and meter exist for the house twin).
-* An optimizer as policy (P8.4).
-* Real plant data.
