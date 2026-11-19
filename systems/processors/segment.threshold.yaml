@@ -43,7 +43,8 @@ runtimes:
     note: >-
       A different cut with the same id: one window per crossing of enter in the given direction, pre samples before and
       post samples after it (defaults level 0, pre 20, post 80), aligned on the crossing. No exit level, no hysteresis,
-      no minimum or maximum duration. It draws the first 24 windows and counts all.
+      no minimum or maximum duration. It draws the first 24 windows and counts all. A flow that publishes it beside a
+      vector is not deployed; no DAG runtime runs it.
   processor: { status: none, note: "The workbench lists it in the stream catalog, but CleanChain refuses it before a series sink." }
   go: { status: planned, note: "Concept 11, section 6, lists segment.threshold, incremental, for the Go core." }
 plan: { file: EVOLUTION/TASK-016-smart-topics.md, item: P7f }

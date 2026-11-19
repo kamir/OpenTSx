@@ -273,6 +273,13 @@ describe('binding and simulating a signal', () => {
         '- id: offtake.demand_kgph\n  raw:\n    source: { kind: generator, processor: gen.sine, seed: 1, params: { mean: 60, period: P1D } }\n'
     );
   });
+
+  it('quotes a text that YAML would read as a boolean or a number', () => {
+    expect(bindingsYaml([{ signal: 'on', grade: 'raw', source: { kind: 'manual', value: '1e3', unit: 'no', note: null } }])).toBe(
+      '# Working copy: put each source under the grade of its signal in the system document.\n' +
+        '- id: "on"\n  raw:\n    source: { kind: manual, value: "1e3", unit: "no", note: null }\n'
+    );
+  });
 });
 
 describe('a grade written by several flows', () => {

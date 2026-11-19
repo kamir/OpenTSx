@@ -452,7 +452,7 @@ export function evaluate(source: Bucket | null, nodes: FlowNode[], id: string): 
 
 // ---------------------------------------------------------------- exports
 
-function yamlScalar(v: unknown): string {
+export function yamlScalar(v: unknown): string {
   if (typeof v === 'number') return String(v);
   const s = String(v);
   return /^[A-Za-z0-9_./-]+$/.test(s) && !/^(true|false|null|yes|no|on|off|~)$/i.test(s) && !/^[0-9.-]/.test(s)
@@ -463,6 +463,11 @@ function yamlScalar(v: unknown): string {
 function yamlParams(params: Params): string {
   const parts = Object.entries(params).map(([k, v]) => `${k}: ${yamlScalar(v)}`);
   return `{ ${parts.join(', ')} }`;
+}
+
+/** The parameters that are set: null and an emptied field are absent, so the processor takes its default as the preview does. */
+function present(params: Params): Params {
+  return Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== null && String(v).trim() !== ''));
 }
 
 /** Names of the inputs of a vector node, from their bucket names. An input with one series per key is one component. */
@@ -477,14 +482,16 @@ function dagParams(nodes: FlowNode[], node: FlowNode, seconds = false): Params |
   if (node.op === 'resample' && seconds) return `{ every: PT${node.params.every}S, agg: ${node.params.agg} }`;
   if (node.op === 'feature.rolling' && seconds) return `{ window: PT${node.params.window}S, fn: ${node.params.fn} }`;
   if (node.op === 'dq.plausible-range') {
-    return `{ checks: [PLAUSIBLE_RANGE], min: ${node.params.min}, max: ${node.params.max}, mode: ${node.params.mode} }`;
+    const range = Object.entries(present({ min: node.params.min, max: node.params.max, mode: node.params.mode }));
+    return `{ checks: [PLAUSIBLE_RANGE]${range.map(([k, v]) => `, ${k}: ${yamlScalar(v)}`).join('')} }`;
   }
   if (node.op === VECTOR_OP) {
     const p = node.params;
     const fill = (p.fill === 'as-of' ? `, fill: as-of, maxAge: PT${p.maxAge}S` : '') + (Number(p.lateness) > 0 ? `, lateness: PT${p.lateness}S` : '');
-    return `{ every: PT${p.every}S, key: ${p.key}, agg: ${p.agg}${fill}, emit: ${p.emit}, names: [${vectorComponents(nodes, node).join(', ')}] }`;
+    const key = String(p.key ?? '').trim();
+    return `{ every: PT${p.every}S${key ? `, key: ${yamlScalar(key)}` : ''}, agg: ${p.agg}${fill}, emit: ${p.emit}, names: [${vectorComponents(nodes, node).join(', ')}] }`;
   }
-  return node.params;
+  return present(node.params);
 }
 
 export interface Finding {
@@ -493,6 +500,9 @@ export interface Finding {
 }
 
 // ---------------------------------------------------------------- clean signals (docs/datamodel-2026/14, section 6)
+
+/** An empty bucket: an operator applied to it checks its parameters and computes nothing. */
+const NO_DATA: Bucket = { name: '', xKind: 'time', xLabel: '', yLabel: '', series: [] };
 
 /** Operators the processor runs before a series sink; everything else computes in the workbench only. */
 export const CLEAN_OPS = ['dq.plausible-range', 'convert.unit', 'resample', 'model.wind-shear', 'model.power-curve', 'feature.lag', 'feature.rolling'];
@@ -533,6 +543,14 @@ export function cleanChecks(nodes: FlowNode[], sourceSeries: string[], context: 
   const node = nodes.find((n) => n.id === nodeId);
   const chain = node ? chainTo(nodes, nodeId) : null;
   const foreign = (chain ?? []).filter((n) => !CLEAN_OPS.includes(n.op));
+  const refused = (chain ?? []).filter((n) => !foreign.includes(n)).flatMap((n) => {
+    try {
+      OP_BY_ID[n.op].apply(NO_DATA, n.params);
+      return [];
+    } catch (e) {
+      return [`${n.label}: ${e instanceof Error ? e.message : String(e)}`];
+    }
+  });
   const fromInventory = sourceSeries.length > 0;
   return [
     {
@@ -567,6 +585,10 @@ export function cleanChecks(nodes: FlowNode[], sourceSeries: string[], context: 
           ? 'Every step runs on the processor.'
           : `These steps run in the workbench only: ${foreign.map((n) => OP_BY_ID[n.op]?.label ?? n.op).join(', ') || 'unknown'}. The processor runs plausible range, unit conversion, resampling, the power curve, lag and rolling.`,
     },
+    {
+      ok: refused.length === 0,
+      text: refused.length === 0 ? 'The processor takes the parameters of every step.' : `The processor refuses a parameter of ${refused.join('; ')}`,
+    },
   ];
 }
 
@@ -579,6 +601,8 @@ export function runBlocker(nodes: FlowNode[], sourceSeries?: string[], context?:
   if (clean) return cleanChecks(nodes, sourceSeries ?? [], context, clean.id).find((c) => !c.ok)?.text ?? null;
   const vectors = nodes.filter((n) => n.sinkTopic && n.op === VECTOR_OP);
   if (vectors.length === 0) return 'Publish an "Align to vector" node first: the processor writes vector topics only.';
+  const others = workbenchSinks(nodes);
+  if (others) return others;
   if (sourceSeries && sourceSeries.length === 0) {
     return 'Load the series from the TS inventory: a vector that keeps running has to name the series it is made of.';
   }
@@ -593,6 +617,14 @@ export function runBlocker(nodes: FlowNode[], sourceSeries?: string[], context?:
     }
   }
   return null;
+}
+
+/** Why the published nodes beside the vectors keep a flow from the processor, or null when there are none. */
+function workbenchSinks(nodes: FlowNode[]): string | null {
+  const others = nodes.filter((n) => n.sinkTopic && n.op !== VECTOR_OP);
+  if (others.length === 0) return null;
+  const one = others.length === 1;
+  return `${others.map((n) => n.label).join(', ')} ${one ? 'runs' : 'run'} in the workbench only: the processor writes vector topics. Take ${one ? 'it' : 'them'} off "Publish as Smart Topic" to deploy.`;
 }
 
 export interface DeployCheck {
@@ -610,6 +642,7 @@ export function deployChecks(nodes: FlowNode[], sourceSeries: string[], context?
   const clean = nodes.find(isCleanSink);
   if (clean) return cleanChecks(nodes, sourceSeries, context, clean.id);
   const vectors = nodes.filter((n) => n.sinkTopic && n.op === VECTOR_OP);
+  const others = workbenchSinks(nodes);
   const fromInventory = sourceSeries.length > 0;
   const onSource = vectors.length > 0 && vectors.every((v) => inputsOf(v).every((i) => i === SOURCE_ID));
   const topicsOk = vectors.length > 0 && vectors.every((v) => /^tsx\.[a-z0-9_-]+\.smart\.[a-z0-9][a-z0-9-]*\.vectors\.v1$/.test(v.sinkTopic ?? ''));
@@ -621,10 +654,10 @@ export function deployChecks(nodes: FlowNode[], sourceSeries: string[], context?
         : 'Load the series from the TS inventory. A sample bucket or a file has no topic the processor could follow.',
     },
     {
-      ok: vectors.length > 0,
-      text: vectors.length > 0
-        ? `An "Align to vector" node is published: ${vectors.map((v) => v.label).join(', ')}.`
-        : 'Publish an "Align to vector" node. The processor writes vector topics; other published nodes are export only.',
+      ok: vectors.length > 0 && !others,
+      text: vectors.length === 0
+        ? 'Publish an "Align to vector" node. The processor writes vector topics only; other published nodes are export only: take them off "Publish as Smart Topic" to deploy.'
+        : (others ?? `An "Align to vector" node is published: ${vectors.map((v) => v.label).join(', ')}.`),
     },
     {
       ok: onSource,

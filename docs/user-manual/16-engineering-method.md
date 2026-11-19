@@ -174,7 +174,8 @@ step you are in. A manually confirmed action closes the loop: nothing here needs
   `feature.rolling`. It writes the clean series, and the place "Signals" shows the signal as clean. On a clean
   series, "Publish as another signal" writes a signal the flow computes, for example the potential of the park.
   The processor also runs `align.vector`, which joins several series into one vector topic. Publishing refuses a
-  chain with any other operator; those run in the workbench only. No runtime adds several series into one
+  chain with any other operator, or with a parameter the processor refuses, and names the step; the other operators
+  run in the workbench only. No runtime adds several series into one
   (`agg.sum`, the sum over turbines). The Flow Composer and the place "Flows" start and stop flows. A piece
   computed again after a restart carries the same identity, so a reader counts it once. **Planned:** results
   marked as provisional, final or revised; late data as a revision instead of a skipped block; a new version in

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { chainTo, cleanChecks, cleanTopic, contextOf, deployChecks, isCleanSink, runBlocker, toDagYaml, toDefinition } from './flow';
 import { topicConflict } from './deployments';
 import { summarize, runPlan } from './flows';
+import { parseEpisodes } from './loaders';
 import { OP_BY_ID, defaultParams } from './ops';
 import { Bucket, FlowNode, Params, SignalContext } from './types';
 
@@ -72,20 +73,82 @@ describe('parameters the processor refuses', () => {
       ['model.power-curve', { ...curve, ratedWind: 3 }, 'ratedWind: "3" is out of range; expected a number above cutIn 3'],
       ['model.power-curve', { ...curve, cutOut: 12 }, 'cutOut: "12" is out of range; expected a number of at least ratedWind 12.5'],
       ['model.power-curve', { ...curve, count: 0 }, 'count: "0" is out of range; expected a number above 0'],
-      ['model.power-curve', { ...curve, count: '' }, 'count: empty value; expected a number above 0'],
       ['feature.lag', {}, 'steps: missing; expected a whole number from 1 to 100000'],
       ['feature.lag', { steps: 0 }, 'steps: "0" is out of range; expected a whole number from 1 to 100000'],
       ['feature.lag', { steps: 2.5 }, 'steps: "2.5" is out of range; expected a whole number from 1 to 100000'],
       ['feature.lag', { steps: 100001 }, 'steps: "100001" is out of range; expected a whole number from 1 to 100000'],
+      ['resample', { every: 0, agg: 'MEAN' }, 'every: "0" is out of range; expected a number above 0'],
+      ['resample', { every: -60, agg: 'MEAN' }, 'every: "-60" is out of range; expected a number above 0'],
+      ['resample', { every: '', agg: 'MEAN' }, 'every: empty value; expected a number above 0'],
+      ['feature.rolling', { window: 0, fn: 'MEAN' }, 'window: "0" is out of range; expected a number above 0'],
+      ['feature.rolling', { fn: 'MEAN' }, 'window: missing; expected a number above 0'],
+      ['dq.plausible-range', { min: 5, max: 1, mode: 'gap' }, 'max: "1" is out of range; expected a number of at least min 5'],
     ];
     for (const [op, params, message] of refused) expect(apply(op, params), `${op} ${JSON.stringify(params)}`).toThrow(message);
   });
 
   it('take what the processor takes', () => {
-    for (const op of ['model.wind-shear', 'model.power-curve', 'feature.lag']) expect(apply(op, defaultParams(OP_BY_ID[op]))).not.toThrow();
+    for (const op of ['model.wind-shear', 'model.power-curve', 'feature.lag', 'resample', 'feature.rolling', 'dq.plausible-range']) {
+      expect(apply(op, defaultParams(OP_BY_ID[op]))).not.toThrow();
+    }
+    expect(apply('dq.plausible-range', { min: 5, max: 5, mode: 'gap' })).not.toThrow();
     expect(Array.from(OP_BY_ID['model.wind-shear'].apply(wind, { fromM: 10, toM: 10, alpha: 0.6 }).series[0].y)).toEqual([4, 8, 13]);
     expect(Array.from(OP_BY_ID['model.power-curve'].apply(wind, curve).series[0].y)).toEqual(Array.from(OP_BY_ID['model.power-curve'].apply(wind, { ...curve, count: 1 }).series[0].y));
+    expect(Array.from(OP_BY_ID['model.power-curve'].apply(wind, { ...curve, count: '' }).series[0].y)).toEqual(Array.from(OP_BY_ID['model.power-curve'].apply(wind, { ...curve, count: 1 }).series[0].y));
     expect(Array.from(OP_BY_ID['feature.lag'].apply(wind, { steps: 100000 }).series[0].y)).toEqual([NaN, NaN, NaN]);
+  });
+
+  it('resample hands out a window once the data has passed its end, as the processor does', () => {
+    // 90 s of 10 s samples: the minute from 60 s is still open when the data ends at 90 s
+    const ninety: Bucket = { ...wind, series: [{ id: 's', label: 's', x: Float64Array.from({ length: 9 }, (_, i) => i * 10), y: Float64Array.from({ length: 9 }, (_, i) => i) }] };
+    const out = OP_BY_ID.resample.apply(ninety, { every: 60, agg: 'MEAN' }).series[0];
+    expect(Array.from(out.x)).toEqual([0]);
+    expect(Array.from(out.y)).toEqual([2.5]);
+    // a window between the last sample and the end of the data is a gap, as in the processor
+    const halves = OP_BY_ID.resample.apply(ninety, { every: 5, agg: 'MEAN' }).series[0];
+    expect(Array.from(halves.x).slice(-2)).toEqual([80, 85]);
+    expect(Array.from(halves.y).slice(-2)).toEqual([8, NaN]);
+    // an episode ends where it says: 2 s after its last sample here, so the minute from 60 s stays open
+    const t0 = Date.parse('2026-10-01T00:00:00Z') * 1000;
+    const episode = parseEpisodes([{ seriesId: 'e', tStart: '2026-10-01T00:00:00Z', tEnd: '2026-10-01T00:01:12Z', timestampsMicros: [t0, t0 + 50e6, t0 + 70e6], values: [1, 2, 3] }], 'x');
+    expect(Array.from(OP_BY_ID.resample.apply(episode, { every: 60, agg: 'MEAN' }).series[0].x)).toEqual([0]);
+    expect(Array.from(OP_BY_ID.resample.apply(episode, { every: 36, agg: 'MEAN' }).series[0].x)).toEqual([0, 36]);
+    // an end more than 10000 windows after the open window closes nothing (CleanChain.MAX_EMPTY_WINDOWS)
+    const week = parseEpisodes([{ seriesId: 'e', tStart: '2026-10-01T00:00:00Z', tEnd: '2026-10-08T00:00:00Z', timestampsMicros: [t0, t0 + 1e6], values: [1, 2] }], 'x');
+    expect(Array.from(OP_BY_ID.resample.apply(week, { every: 1, agg: 'MEAN' }).series[0].y)).toEqual([1]);
+  });
+});
+
+describe('an emptied or null parameter', () => {
+  const raw: Bucket = {
+    name: 'raw',
+    xKind: 'time',
+    xLabel: 't [s]',
+    yLabel: 'kW',
+    series: [{ id: 's', label: 's', unit: 'kW', x: Float64Array.from([0, 60, 120]), y: Float64Array.from([-5, 3, 12]) }],
+  };
+  const src: FlowNode = { id: 'source', op: 'source', label: 'raw', params: {}, input: null };
+  const dagOf = (node: FlowNode) => toDagYaml({ track: 'EXP2', domain: 'lab', sourceTopic: 'tsx.lab.observations.v2', nodes: [src, { ...node, sinkTopic: 'tsx.lab.smart.x.metrics.v2' }] });
+
+  it('takes the default in the preview and is left out of the DAG, so the processor takes its default too', () => {
+    const convert: FlowNode = { id: 'n1', op: 'convert.unit', label: 'Convert_raw', params: { factor: '', offset: 32, unit: 'degF' }, input: 'source' };
+    expect(Array.from(OP_BY_ID['convert.unit'].apply(raw, convert.params).series[0].y)).toEqual([27, 35, 44]);
+    expect(dagOf(convert)).toContain('    params: { offset: 32, unit: degF }\n');
+    expect(dagOf(convert)).not.toContain('factor');
+  });
+
+  it('gives a plausible range without that bound', () => {
+    const range: FlowNode = { id: 'n1', op: 'dq.plausible-range', label: 'Range_raw', params: { min: '', max: 10, mode: 'gap' }, input: 'source' };
+    expect(Array.from(OP_BY_ID['dq.plausible-range'].apply(raw, range.params).series[0].y)).toEqual([-5, 3, NaN]);
+    expect(Array.from(OP_BY_ID['dq.plausible-range'].apply(raw, { ...range.params, max: ' ' }).series[0].y)).toEqual([-5, 3, 12]);
+    expect(dagOf(range)).toContain('    params: { checks: [PLAUSIBLE_RANGE], max: 10, mode: gap }\n');
+    expect(dagOf({ ...range, params: { min: -1, max: 1e4, mode: 'clip' } })).toContain('    params: { checks: [PLAUSIBLE_RANGE], min: -1, max: 10000, mode: clip }\n');
+  });
+
+  it('null is left out of the DAG instead of written as the text "null"', () => {
+    const curve: FlowNode = { id: 'n1', op: 'model.power-curve', label: 'Potential_raw', params: { ratedKw: 3000, cutIn: 3, ratedWind: 12.5, cutOut: 25, count: null } as unknown as Params, input: 'source' };
+    expect(dagOf(curve)).toContain('    params: { ratedKw: 3000, cutIn: 3, ratedWind: 12.5, cutOut: 25 }\n');
+    expect(dagOf(curve)).not.toContain('count');
   });
 });
 
@@ -138,6 +201,26 @@ describe('a flow published as the clean grade of a signal', () => {
     expect(cleanChecks(doc.nodes, [], context, 'n2').find((c) => !c.ok)?.text).toMatch(/Load the series/);
     expect(cleanChecks(doc.nodes, ['abc123'], null, 'n2').find((c) => !c.ok)?.text).toMatch(/Open a signal/);
     expect(cleanChecks(doc.nodes, ['abc123'], context, 'source').find((c) => !c.ok)?.text).toMatch(/at least one operator/);
+  });
+
+  it('names a parameter of a step that the processor refuses', () => {
+    const shear: FlowNode = { id: 'n1', op: 'model.wind-shear', label: 'Hub_wind', params: { fromM: 10, toM: 120, alpha: 0.7 }, input: 'source', sinkTopic: cleanTopic('wind') };
+    const nodes = [source, shear];
+    expect(cleanChecks(nodes, ['abc123'], context, 'n1').filter((c) => !c.ok).map((c) => c.text)).toEqual([
+      'The processor refuses a parameter of Hub_wind: alpha: "0.7" is out of range; expected a number from 0 to 0.6',
+    ]);
+    expect(runBlocker(nodes, ['abc123'], context)).toBe('The processor refuses a parameter of Hub_wind: alpha: "0.7" is out of range; expected a number from 0 to 0.6');
+    expect(cleanChecks([source, { ...shear, params: { fromM: 10, toM: 120, alpha: 0.6 } }], ['abc123'], context, 'n1').every((c) => c.ok)).toBe(true);
+    const wide = [source, { ...range, params: { min: 10, max: -10, mode: 'gap' } }, minute];
+    expect(cleanChecks(wide, ['abc123'], context, 'n2').find((c) => !c.ok)?.text).toBe(
+      'The processor refuses a parameter of Range_power: max: "-10" is out of range; expected a number of at least min 10'
+    );
+  });
+
+  it('takes an emptied parameter that the processor gives a default', () => {
+    const potential: FlowNode = { id: 'n1', op: 'model.power-curve', label: 'Potential_wind', params: { ratedKw: 3000, cutIn: 3, ratedWind: 12.5, cutOut: 25, count: '' }, input: 'source', sinkTopic: cleanTopic('wind') };
+    expect(cleanChecks([source, potential], ['abc123'], context, 'n1').filter((c) => !c.ok)).toEqual([]);
+    expect(toDagYaml({ ...doc, nodes: [source, potential] })).toContain('params: { ratedKw: 3000, cutIn: 3, ratedWind: 12.5, cutOut: 25 }\n');
   });
 
   it('comes back from the account with its signal, and can be started from the composer', () => {

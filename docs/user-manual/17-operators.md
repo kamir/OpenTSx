@@ -500,7 +500,7 @@ Checks every value against the band [min, max]. A value below min or above max b
 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
-| workbench | available | operator `dq.plausible-range` | The form presets min -10 and max 10, or the expected range of the signal it was opened for. Any mode other than clip gives gaps. |
+| workbench | available | operator `dq.plausible-range` | The form presets min -10 and max 10, or the expected range of the signal it was opened for. An emptied min or max is no bound and is left out of the DAG. Refuses min above max, as the processor does. Any mode other than clip gives gaps. |
 | java | none |  |  |
 | python | none |  |  |
 | processor | available | `org.opentsx.retrieval.clean.CleanChain#Range` | DAG op dq.checks with checks [PLAUSIBLE_RANGE], a step of the clean chain before a series sink (bin/opentsx vectors). Refuses min above max, a min or max that is no number and a mode other than gap or clip. |
@@ -668,7 +668,7 @@ Cuts the time axis into windows of the width every, aligned to the epoch, and gi
 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
-| workbench | available | operator `resample` | every in units of the x axis, default 0.05; 60 s when the workbench is opened for a signal. Hands out the last window before the data has passed its end. |
+| workbench | available | operator `resample` | every in units of the x axis, default 0.05; 60 s when the workbench is opened for a signal. Refuses an every of 0 or less, as the processor does. Hands out a window once the data has passed its end: the end of the last episode of the series, or without episodes the last sample plus the median sampling interval. As in the processor, an end more than 10000 windows after the open window hands out no window; unlike the processor, the grid does not start again after 10000 empty windows between two samples. |
 | java | available | `org.opentsx.retrieval.Resampling#resample` | One episode at a time, also GET /v1/episodes?resample=PT1M&agg=MEAN. agg also FIRST, SUM and COUNT; an empty window is NaN, for COUNT 0. A step that gives more than 100000 points for one episode is refused (400). |
 | python | available | `opentsx.core.time_series.TimeSeriesObject#resample` | resample(factor, method) aggregates blocks of factor samples, not time windows; method mean, median, max or min. RetrievalClient.episodes(resample=, agg=) has the server resample. |
 | processor | available | `org.opentsx.retrieval.clean.CleanChain#Resample` | A step of the clean chain before a series sink (bin/opentsx vectors). Hands out a window once the data has passed its end. After 10000 empty windows the grid starts again at the next sample. |
@@ -870,7 +870,7 @@ Cuts one segment per phase in which the series reaches enter and stays until it 
 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
-| workbench | available | operator `segment.threshold` | A different cut with the same id: one window per crossing of enter in the given direction, pre samples before and post samples after it (defaults level 0, pre 20, post 80), aligned on the crossing. No exit level, no hysteresis, no minimum or maximum duration. It draws the first 24 windows and counts all. |
+| workbench | available | operator `segment.threshold` | A different cut with the same id: one window per crossing of enter in the given direction, pre samples before and post samples after it (defaults level 0, pre 20, post 80), aligned on the crossing. No exit level, no hysteresis, no minimum or maximum duration. It draws the first 24 windows and counts all. A flow that publishes it beside a vector is not deployed; no DAG runtime runs it. |
 | java | available | `org.opentsx.retrieval.segment.Segmenter#threshold` | Segmenter.threshold takes all seven parameters. EpisodeService.segments(...).fetch() and StreamingSegmenter give the same segments. The retrieval server offers it as POST /v1/segments with strategy FEATURE_THRESHOLD and answers 400 when enter is missing or no number. |
 | python | available | `opentsx.client.retrieval.RetrievalClient#segments` | segments("FEATURE_THRESHOLD", {"enter": 20, "exit": 18}) calls POST /v1/segments of the retrieval server; Python computes nothing. |
 | processor | none |  | The workbench lists it in the stream catalog, but CleanChain refuses it before a series sink. |
@@ -1017,7 +1017,7 @@ Keeps per series and per epoch-aligned tumbling window, and in GLOBAL since the 
 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
-| workbench | available | operator `stats.window` | Written into the DAG as stats.welford-ddsketch, but no DAG runtime runs it: the clean chain of the processor refuses it. One field per node, MEAN, STD (sample, the default), MIN or MAX, over windows of window units of the x axis (default 0.25). No quantiles, no gaps. |
+| workbench | available | operator `stats.window` | Written into the DAG as stats.welford-ddsketch, but no DAG runtime runs it: the clean chain of the processor refuses it, and a flow that publishes it beside a vector is not deployed. One field per node, MEAN, STD (sample, the default; NaN for a window with one value), MIN or MAX, over windows of window units of the x axis (default 0.25). No quantiles, no gaps. |
 | java | available | `org.opentsx.stats.StatsEngine` | onEpisode and onObservation return the windows they close, emitGlobal the GLOBAL records of changed series, flush closes all windows. The engine keeps at most 100000 recent episode ids for deduplication and at most 4096 sketch bins per sign. |
 | python | available | `opentsx.stats.sketch.QuantileSketch` | Builds, merges and reads the DDSketch with the same bytes as Java; it has no bin limit. stats_to_frame turns SeriesStats records into a pandas frame with std and the quantiles q05 to q95. No windows and no Welford moments of its own: summarize and merge_summaries (stats.summary) give those. |
 | processor | available | `org.opentsx.stats.StatsProcessor` | bin/opentsx stats: its own processor on the episode topic, not a DAG node. Writes tsx.<domain>.series-stats.v2 and keeps positions and engine state in a checkpoint file. A record that does not decode is counted as undecodable and skipped, and the first one per partition is logged at WARN with topic, partition and offset. An episode that fails Episodes.validate, for example a count that differs from the number of values or a REGULAR episode without a positive intervalMicros, is counted as invalid and skipped, and the first one per partition is logged at WARN with topic, partition and offset. A failure of the engine stops the processor, and the checkpoint stays before that record. Records that retention deleted before they were read, at the start of a run or during it, are counted in lostToRetention and logged at WARN. In continuous mode it logs one INFO progress line with its counters after every checkpoint. The same engine runs as the Flink job StatsJob of opentsx-flink-core (bin/opentsx stats-flink). |
@@ -1035,7 +1035,7 @@ Keeps per series and per epoch-aligned tumbling window, and in GLOBAL since the 
 | `lateness` | duration | `PT0S` |  | Zero or a positive whole number of microseconds. A window closes when its series reaches the window end plus lateness. Later values count in GLOBAL only. |
 | `gapFactor` | number | `1.5` | 1 ..  | A step between timestamps of more than gapFactor times the expected interval is a gap. Above 1. Java API only. |
 | `expectedInterval` | duration |  |  | Expected sampling interval per series. Without it the interval of the last REGULAR episode is used. Java API only (withExpectedInterval). Preset from `expect.interval`. |
-| `observations` | boolean | `false` |  | Also read the observations topic. bin/opentsx stats only. |
+| `observations` | boolean | `false` |  | Also read the observations topic. bin/opentsx stats and bin/opentsx stats-flink. |
 
 Semantics: needs one window of input per output value; deterministic; keeps series.
 
@@ -2468,7 +2468,7 @@ Gives every sample an aggregate of the values of the last window, the current sa
 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
-| workbench | available | operator `feature.rolling` | window in units of the x axis, default 3600. |
+| workbench | available | operator `feature.rolling` | window in units of the x axis, default 3600. Refuses a window of 0 or less, as the processor does. |
 | java | none |  |  |
 | python | none |  |  |
 | processor | available | `org.opentsx.retrieval.clean.CleanChain#Rolling` | A step of the clean chain before a series sink (bin/opentsx vectors). Each sample enters and leaves the running sums and the extremes once, so a step costs the same for any window. After a resample step the window may span at most 100000 of its intervals; a longer one refuses the DAG with an error that names the node, POST /v1/dags/deploy answers 400 and vectors deploy exits with code 2. Without a resample step before it, a window that holds more than 100000 values fails the sink with an error that names the node. Give a shorter window or resample the series first. |

@@ -5,6 +5,8 @@
  * Concept: docs/datamodel-2026/14-ENGINEERING-FLOW.md.
  */
 
+import { yamlScalar } from '../workbench/flow';
+
 export interface Expect {
   unit?: string;
   min?: number;
@@ -637,10 +639,9 @@ export function dataExtent(status: SystemStatus): { from: string; to: string } |
 }
 
 function yamlValue(v: unknown): string {
-  if (typeof v === 'number' || typeof v === 'boolean') return String(v);
-  if (v && typeof v === 'object') return `{ ${Object.entries(v as Record<string, unknown>).map(([k, x]) => `${k}: ${yamlValue(x)}`).join(', ')} }`;
-  const t = String(v);
-  return /^[A-Za-z0-9_./-]+$/.test(t) ? t : JSON.stringify(t);
+  if (v === null || typeof v === 'number' || typeof v === 'boolean') return String(v);
+  if (typeof v === 'object') return `{ ${Object.entries(v as Record<string, unknown>).map(([k, x]) => `${k}: ${yamlValue(x)}`).join(', ')} }`;
+  return yamlScalar(v);
 }
 
 /**

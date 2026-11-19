@@ -504,6 +504,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   takes 5-digit ids; `wind: 1759` or an unquoted `03166` stops the command with exit code 2 and names the field.
 - A rejected netztransparenz.de client and a token answer without `access_token` name the keys
   `opentsx.market.ntpClientId` and `opentsx.market.ntpClientSecret` and all their variables.
+- Workbench: "Publish as clean signal" and the deploy list check the parameters of every step as the processor does
+  and name the step and the parameter, for example `The processor refuses a parameter of Hub_wind: alpha: "0.7" is out
+  of range; expected a number from 0 to 0.6`.
 
 ### Removed
 
@@ -1061,6 +1064,30 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `MosmixRawArchive.collect` refuses a station id that is not 1 to 10 letters and digits before the first download
   (`stations: item "../x" is not a station id; expected letters and digits such as 10579 or E5411`), so a caller other
   than `bin/opentsx market mosmix-archive` cannot write outside the archive directory.
+- Workbench: an emptied number field or a null parameter takes the default in the preview and is left out of the DAG,
+  so the processor takes its default too, for example `count` 1 of `model.power-curve` and `window` 0.25 of
+  `stats.window`. The preview computed with 0, and the DAG held `factor: ""`, `min: ,` or `count: "null"`, which the
+  processor refused or read as no bound.
+- Workbench: `dq.plausible-range` refuses min above max with `max: "<max>" is out of range; expected a number of at
+  least min <min>`, and `resample` and `feature.rolling` refuse an `every` or `window` of 0 or less with `every: "0"
+  is out of range; expected a number above 0`, as the processor does, instead of giving empty or gap-only results.
+- Workbench: `resample` hands out a window once the data has passed its end (the end of the last episode of the
+  series, or the last sample plus the sampling interval), as the processor does, instead of handing out the open last
+  window. As in the processor, an end more than 10000 windows after the open window hands out no window.
+- Workbench: the standard deviation of a single value is NaN, as in Java, instead of 0, in "Window statistics" and the
+  statistics table of a bucket.
+- Workbench: a `select` pattern that is no regular expression fails with `select: pattern "<pattern>" is not a regular
+  expression: <reason>; expected a regular expression such as temp.*` instead of selecting nothing.
+- Workbench: episodes and resample windows with more than about 100000 values load and aggregate instead of failing
+  with `RangeError: Maximum call stack size exceeded`.
+- Workbench: the vector key in the DAG and the text values of the working copy on the page "Signals" are quoted where
+  YAML would read them as something else, for example `on`, `no`, `1e3` or `a: b`. An emptied vector key is left out,
+  so the processor builds one vector per series as the preview does.
+- Workbench: a flow that publishes another node beside an "Align to vector" node, for example `segment.threshold` or
+  `stats.window`, no longer passes the deploy list and then fails at deploy. The list names the node and says to take
+  it off "Publish as Smart Topic", because the processor writes vector topics only.
+- Operator catalog: the `observations` parameter of `stats.welford-ddsketch` names both `bin/opentsx stats` and
+  `bin/opentsx stats-flink`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

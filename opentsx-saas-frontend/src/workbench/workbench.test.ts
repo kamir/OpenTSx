@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { OPS, OP_BY_ID, crossings, defaultParams, dfa, fftRadix2, linFit, mulberry32, profileOf, stats } from './ops';
 import { bucketToCsv, generateSineMix, isoMicros, parseBucketText, parseDelimited, parseEpisodes } from './loaders';
 import { episodeSummary, episodesOf } from './episodes';
-import { SOURCE_ID, evaluate, toDagYaml, toDefinition, toJavaCode, toPfdJson, useFlow, validate } from './flow';
+import { SOURCE_ID, deployChecks, evaluate, runBlocker, toDagYaml, toDefinition, toJavaCode, toPfdJson, useFlow, validate } from './flow';
 import { Bucket } from './types';
 
 function bucketOf(...ys: number[][]): Bucket {
@@ -31,6 +31,23 @@ describe('operators', () => {
     expect(s.mean).toBeCloseTo(5);
     expect(s.std).toBeCloseTo(Math.sqrt(32 / 7));
     expect([s.min, s.max, s.n]).toEqual([2, 9, 8]);
+  });
+
+  it('gives one value no standard deviation, as Java does', () => {
+    expect(stats([5])).toEqual({ n: 1, mean: 5, std: NaN, min: 5, max: 5 });
+    expect(Array.from(run('stats.window', bucketOf([1, 2, 3, 4]), { window: 1, field: 'STD' }).series[0].y)).toEqual([NaN, NaN, NaN, NaN]);
+  });
+
+  it('gives one series a sigma band of width 0, as TimeSeriesObject.sigmaForAll does', () => {
+    const band = run('sigma.band', bucketOf([4, 8, 13])).series;
+    expect(band.map((s) => Array.from(s.y))).toEqual([[4, 8, 13], [4, 8, 13], [4, 8, 13]]);
+  });
+
+  it('takes the preset window of 0.25 for an emptied window of stats.window', () => {
+    const b = bucketOf([1, 2, 3, 4]);
+    const emptied = run('stats.window', b, { window: '', field: 'MEAN' }).series[0];
+    const preset = run('stats.window', b, { window: 0.25, field: 'MEAN' }).series[0];
+    expect([Array.from(emptied.x), Array.from(emptied.y)]).toEqual([Array.from(preset.x), Array.from(preset.y)]);
   });
 
   it('matches TimeSeriesObject for diffs, profile and log returns', () => {
@@ -148,6 +165,18 @@ describe('operators', () => {
     expect(Array.from(c.series[0].y)).toEqual([32, 212]);
     expect(c.series[0].unit).toBe('degF');
     expect(run('select', bucketOf([1], [2]), { pattern: 's1' }).series.map((s) => s.id)).toEqual(['s1']);
+  });
+
+  it('refuses a select pattern that is no regular expression', () => {
+    expect(() => run('select', bucketOf([1], [2]), { pattern: 'temp(' })).toThrow(
+      'select: pattern "temp(" is not a regular expression: Invalid regular expression: /temp(/i: Unterminated group; expected a regular expression such as temp.*'
+    );
+  });
+
+  it('aggregates a window of more values than a call takes as arguments', () => {
+    const y = Array.from({ length: 200_000 }, (_, i) => i % 1000);
+    expect(Array.from(run('resample', bucketOf(y), { every: 200_000, agg: 'MAX' }).series[0].y)).toEqual([999]);
+    expect(Array.from(run('resample', bucketOf(y), { every: 200_000, agg: 'MIN' }).series[0].y)).toEqual([0]);
   });
 
   it('cuts episodes at rising level crossings, aligned on the crossing', () => {
@@ -305,6 +334,13 @@ describe('loaders', () => {
     expect(episodeSummary(bucketOf([1, 2]))).toBeNull();
   });
 
+  it('reads an episode of 200000 samples', () => {
+    const t = Array.from({ length: 200_000 }, (_, i) => i * 1e6);
+    const b = parseEpisodes([{ seriesId: 'long', intervalMicros: 1e6, timestampsMicros: t, values: t.map(() => 1) }], 'x');
+    expect(b.series[0].x.length).toBe(200_000);
+    expect(b.episodes?.[0]).toMatchObject({ start: 0, end: 200_000 });
+  });
+
   it('rejects files without usable data', () => {
     expect(() => parseDelimited('a,b\n', 'x')).toThrow();
     expect(() => parseDelimited('name,v\nfoo,1\n', 'x')).toThrow(/timestamps or numbers/);
@@ -375,6 +411,46 @@ describe('flow', () => {
     expect(yaml).toContain(`  - { from: ${st}, topic: tsx.lab.smart.vol.metrics.v2 }`);
     expect(yaml).not.toContain('op: fft');
     expect(validate(useFlow.getState().nodes).filter((f) => f.level !== 'info')).toEqual([]);
+  });
+
+  it('keeps a flow that publishes segment.threshold or stats.window beside a vector from deploying: no DAG runtime runs them', () => {
+    const seg = useFlow.getState().applyOp('segment.threshold', { enter: 4 })!;
+    useFlow.getState().setSink(seg, 'tsx.lab.smart.seg.metrics.v2');
+    useFlow.getState().select(SOURCE_ID);
+    const st = useFlow.getState().applyOp('stats.window', { window: 4, field: 'STD' })!;
+    useFlow.getState().setSink(st, 'tsx.lab.smart.vol.metrics.v2');
+    expect(deployChecks(useFlow.getState().nodes, ['a'])[1]).toEqual({
+      ok: false,
+      text: 'Publish an "Align to vector" node. The processor writes vector topics only; other published nodes are export only: take them off "Publish as Smart Topic" to deploy.',
+    });
+    useFlow.getState().select(SOURCE_ID);
+    const v = useFlow.getState().applyOp('align.vector')!;
+    useFlow.getState().setSink(v, 'tsx.lab.smart.v.vectors.v1');
+    const blocked = 'Segments_B, Stats_B run in the workbench only: the processor writes vector topics. Take them off "Publish as Smart Topic" to deploy.';
+    expect(deployChecks(useFlow.getState().nodes, ['a'])[1]).toEqual({ ok: false, text: blocked });
+    expect(runBlocker(useFlow.getState().nodes, ['a'])).toBe(blocked);
+    useFlow.getState().setSink(st, null);
+    expect(deployChecks(useFlow.getState().nodes, ['a'])[1].text).toBe(
+      'Segments_B runs in the workbench only: the processor writes vector topics. Take it off "Publish as Smart Topic" to deploy.'
+    );
+    useFlow.getState().setSink(seg, null);
+    expect(deployChecks(useFlow.getState().nodes, ['a']).every((c) => c.ok)).toBe(true);
+  });
+
+  it('leaves an emptied vector key out of the DAG, so the processor takes series as the preview does', () => {
+    const v = useFlow.getState().applyOp('align.vector', { key: '' })!;
+    useFlow.getState().setSink(v, 'tsx.lab.smart.v.vectors.v1');
+    expect(toDagYaml(useFlow.getState())).toContain('params: { every: PT60S, agg: MEAN, emit: any, names: [b] }');
+    useFlow.getState().updateParams(v, { key: '  ' });
+    expect(toDagYaml(useFlow.getState())).toContain('params: { every: PT60S, agg: MEAN, emit: any, names: [b] }');
+  });
+
+  it('quotes a vector key that YAML would read otherwise', () => {
+    const v = useFlow.getState().applyOp('align.vector', { key: 'a: b' })!;
+    useFlow.getState().setSink(v, 'tsx.lab.smart.v.vectors.v1');
+    expect(toDagYaml(useFlow.getState())).toContain('params: { every: PT60S, key: "a: b", agg: MEAN, emit: any, names: [b] }');
+    useFlow.getState().updateParams(v, { key: 'turbine' });
+    expect(toDagYaml(useFlow.getState())).toContain('params: { every: PT60S, key: turbine, agg: MEAN, emit: any, names: [b] }');
   });
 
   it('reports missing sinks, operators outside the catalog and duplicate topics', () => {

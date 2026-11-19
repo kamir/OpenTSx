@@ -18,7 +18,7 @@ params:
   - { name: fn, type: enum, values: [MEAN, STD, MIN, MAX], default: MEAN, description: Aggregate of the values in the window. }
 semantics: { needs: window, deterministic: true, keeps: [time, unit, series], origin: INHERIT }
 runtimes:
-  workbench: { status: available, note: "window in units of the x axis, default 3600." }
+  workbench: { status: available, note: "window in units of the x axis, default 3600. Refuses a window of 0 or less, as the processor does." }
   processor: { status: available, class: "org.opentsx.retrieval.clean.CleanChain#Rolling", note: "A step of the clean chain before a series sink (bin/opentsx vectors). Each sample enters and leaves the running sums and the extremes once, so a step costs the same for any window. After a resample step the window may span at most 100000 of its intervals; a longer one refuses the DAG with an error that names the node, POST /v1/dags/deploy answers 400 and vectors deploy exits with code 2. Without a resample step before it, a window that holds more than 100000 values fails the sink with an error that names the node. Give a shorter window or resample the series first." }
   java: { status: none }
   python: { status: none }

@@ -44,11 +44,14 @@ export function stats(y: ArrayLike<number>): Stats {
     if (v > max) max = v;
   }
   if (n === 0) return { n: 0, mean: NaN, std: NaN, min: NaN, max: NaN };
-  return { n, mean, std: n > 1 ? Math.sqrt(m2 / (n - 1)) : 0, min, max };
+  return { n, mean, std: n > 1 ? Math.sqrt(m2 / (n - 1)) : NaN, min, max };
 }
 
+/** A number parameter; an absent one, null or an emptied field takes `fallback`, as the processor takes its default. */
 function num(p: Params, key: string, fallback: number): number {
-  const v = Number(p[key]);
+  const raw = p[key];
+  if (raw === undefined || raw === null || String(raw).trim() === '') return fallback;
+  const v = Number(raw);
   return Number.isFinite(v) ? v : fallback;
 }
 
@@ -58,7 +61,7 @@ function num(p: Params, key: string, fallback: number): number {
  */
 function checked(p: Params, key: string, ok: (v: number) => boolean, allowed: string, absent = NaN): number {
   const raw = p[key];
-  const v = raw ?? absent;
+  const v = raw === undefined || raw === null || String(raw).trim() === '' ? absent : raw;
   if (typeof v === 'number' && Number.isFinite(v) && ok(v)) return v;
   const problem = raw === undefined || raw === null ? 'missing' : String(raw).trim() === '' ? 'empty value' : typeof raw === 'number' ? `"${raw}" is out of range` : `"${raw.trim()}" is not a number`;
   throw new Error(`${key}: ${problem}; expected ${allowed}`);
@@ -66,6 +69,9 @@ function checked(p: Params, key: string, ok: (v: number) => boolean, allowed: st
 
 /** The largest lag the processor keeps (CleanChain.MAX_WINDOW_VALUES). */
 const MAX_LAG = 100_000;
+
+/** Empty windows after which the processor starts the grid again (CleanChain.MAX_EMPTY_WINDOWS). */
+const MAX_EMPTY_WINDOWS = 10_000;
 
 function indexAxis(n: number): Float64Array {
   const x = new Float64Array(n);
@@ -510,9 +516,10 @@ function sigmaBand(b: Bucket): Bucket {
   for (let i = 0; i < n; i++) {
     for (let k = 0; k < b.series.length; k++) column[k] = b.series[k].y[i];
     const st = stats(column);
+    const sd = st.n === 1 ? 0 : st.std;
     mean[i] = st.mean;
-    up[i] = st.mean + st.std;
-    down[i] = st.mean - st.std;
+    up[i] = st.mean + sd;
+    down[i] = st.mean - sd;
   }
   const x = b.series[0].x.slice(0, n);
   const unit = b.series[0].unit;
@@ -536,8 +543,9 @@ function selectSeries(b: Bucket, p: Params): Bucket {
   let re: RegExp;
   try {
     re = new RegExp(pattern, 'i');
-  } catch {
-    re = /$^/;
+  } catch (e) {
+    const why = e instanceof Error ? e.message : String(e);
+    throw Object.assign(new Error(`select: pattern "${pattern}" is not a regular expression: ${why}; expected a regular expression such as temp.*`), { cause: e });
   }
   return { ...b, name: `Select_${b.name}`, note: undefined, series: b.series.filter((s) => re.test(s.label) || re.test(s.id)) };
 }
@@ -545,6 +553,7 @@ function selectSeries(b: Bucket, p: Params): Bucket {
 function plausibleRange(b: Bucket, p: Params): Bucket {
   const min = num(p, 'min', -Infinity);
   const max = num(p, 'max', Infinity);
+  if (min > max) throw new Error(`max: "${max}" is out of range; expected a number of at least min ${min}`);
   const clip = p.mode === 'clip';
   return mapY(b, `Range_${b.name}`, (s) => ({
     label: s.label,
@@ -573,9 +582,9 @@ function aggregate(values: number[], agg: string): number {
   if (values.length === 0) return NaN;
   switch (agg) {
     case 'MIN':
-      return Math.min(...values);
+      return values.reduce((a, v) => (v < a ? v : a), Infinity);
     case 'MAX':
-      return Math.max(...values);
+      return values.reduce((a, v) => (v > a ? v : a), -Infinity);
     case 'LAST':
       return values[values.length - 1];
     case 'STD':
@@ -585,8 +594,21 @@ function aggregate(values: number[], agg: string): number {
   }
 }
 
-/** Buckets x into windows of the given width and aggregates y per window. */
-function windowed(b: Bucket, every: number, agg: string, name: string): Bucket {
+/**
+ * The end of the data of a series: the end of its last episode when the bucket carries its episodes, otherwise the last
+ * sample plus the sampling interval, as the v2 model ends a regular episode.
+ */
+function dataEnd(b: Bucket, s: Series): number {
+  let end = -Infinity;
+  for (const e of b.episodes ?? []) if (e.seriesId === s.id && e.end > end) end = e.end;
+  return end > -Infinity ? end : s.x[s.x.length - 1] + sampleInterval(s.x);
+}
+
+/**
+ * Buckets x into windows of the given width and aggregates y per window. With `closedOnly` a window is handed out once
+ * the data has passed its end, as the processor does; otherwise the last window is handed out open.
+ */
+function windowed(b: Bucket, every: number, agg: string, name: string, closedOnly = false): Bucket {
   return {
     ...b,
     name,
@@ -609,8 +631,18 @@ function windowed(b: Bucket, every: number, agg: string, name: string): Bucket {
         }
         if (Number.isFinite(s.y[i])) pool.push(s.y[i]);
       }
-      xs.push(start);
-      ys.push(aggregate(pool, agg));
+      if (closedOnly) {
+        const end = dataEnd(b, s);
+        while (start + every <= end && end - start <= MAX_EMPTY_WINDOWS * every) {
+          xs.push(start);
+          ys.push(aggregate(pool, agg));
+          pool = [];
+          start += every;
+        }
+      } else {
+        xs.push(start);
+        ys.push(aggregate(pool, agg));
+      }
       return { ...s, x: Float64Array.from(xs), y: Float64Array.from(ys) };
     }),
   };
@@ -659,7 +691,7 @@ function featureLag(b: Bucket, p: Params): Bucket {
 
 /** Aggregate of the values of the last `window` (in units of the x axis), the current one included; gaps are left out. */
 function featureRolling(b: Bucket, p: Params): Bucket {
-  const window = num(p, 'window', 60);
+  const window = checked(p, 'window', (v) => v > 0, 'a number above 0');
   const fn = String(p.fn ?? 'MEAN');
   return mapY(b, `Roll${fn}_${b.name}`, (s) => {
     const y = new Float64Array(s.y.length);
@@ -688,12 +720,13 @@ function featureRolling(b: Bucket, p: Params): Bucket {
 }
 
 function resample(b: Bucket, p: Params): Bucket {
-  return windowed(b, num(p, 'every', 1), String(p.agg ?? 'MEAN'), `Resample_${b.name}`);
+  const every = checked(p, 'every', (v) => v > 0, 'a number above 0');
+  return windowed(b, every, String(p.agg ?? 'MEAN'), `Resample_${b.name}`, true);
 }
 
 function windowStats(b: Bucket, p: Params): Bucket {
   const field = String(p.field ?? 'MEAN');
-  const out = windowed(b, num(p, 'window', 1), field, `Stats_${field}_${b.name}`);
+  const out = windowed(b, num(p, 'window', 0.25), field, `Stats_${field}_${b.name}`);
   return { ...out, series: out.series.map((s) => ({ ...s, label: `${field.toLowerCase()}(${s.label})` })) };
 }
 

@@ -135,8 +135,12 @@ export function isoMicros(iso: string): number {
  * model defines them (end = last sample + interval for a regular episode, + 1 microsecond for an irregular one).
  */
 function rangeMicros(e: EpisodeJson, t: number[]): [number, number] {
-  const first = Math.min(...t);
-  const last = Math.max(...t);
+  let first = Infinity;
+  let last = -Infinity;
+  for (const v of t) {
+    if (v < first) first = v;
+    if (v > last) last = v;
+  }
   const start = e.tStart ? isoMicros(e.tStart) : NaN;
   const end = e.tEnd ? isoMicros(e.tEnd) : NaN;
   return [Number.isFinite(start) ? start : first, Number.isFinite(end) ? end : last + (e.intervalMicros ?? 1)];
