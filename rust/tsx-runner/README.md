@@ -193,6 +193,11 @@ An identical completed retry returns its saved receipt without broker I/O.
 cargo +1.99.1 test --locked --all-targets --manifest-path rust/tsx-runner/Cargo.toml
 ```
 
+The [CLI prefix fixture](tests/common/runner.rs) pipes its program into `/bin/sh` without creating temporary files.
+It checks prefix ordering and argument boundaries, including paths containing spaces.
+A regression reruns that exact test with `TMPDIR` pointing to the test executable, a regular file.
+The child retains the configured ARMv7 runner prefix and must report one matching test passed.
+
 Tests consume shared Avro, identity, all fifteen cleaning cases, statistics,
 segment, SAX, alignment, cross-correlation and DQ vectors. They check typed
 admission, chunked state restoration, immutable derived ownership,
