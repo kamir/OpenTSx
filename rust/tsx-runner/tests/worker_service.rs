@@ -12,6 +12,32 @@ use tsx_runner::worker::{Config, Worker};
 
 static NEXT: AtomicU64 = AtomicU64::new(0);
 
+#[test]
+fn capability_discovery_preserves_legacy_admission_and_reports_b2_separately() {
+    let directory = Directory::new();
+    let worker = Worker::open(directory.config()).unwrap();
+    let capabilities = worker.capabilities();
+    assert_eq!(
+        capabilities["operators"],
+        json!(["decode.avro-soe", "dq.checks", "convert.unit", "resample"])
+    );
+    let mut catalog = vec!["decode.avro-soe"];
+    catalog.extend_from_slice(tsx_runner::operators::SUPPORTED_OPS);
+    catalog.extend_from_slice(tsx_runner::catalog::CATALOG_OPS);
+    assert_eq!(catalog.len(), 15);
+    assert_eq!(
+        capabilities["catalogExecution"]["operators"],
+        json!(catalog)
+    );
+    assert_eq!(capabilities["limits"]["series"], 64);
+    assert_eq!(capabilities["catalogExecution"]["limits"]["series"], 1024);
+    assert_eq!(capabilities["stateAbi"], "opentsx.rust.clean-state.v1");
+    assert_eq!(
+        capabilities["catalogExecution"]["stateAbi"],
+        "opentsx.rust.catalog-state.v1"
+    );
+}
+
 struct Directory(PathBuf);
 
 impl Directory {

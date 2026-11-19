@@ -108,12 +108,14 @@ pub(crate) fn prepare_continued(
     if next.iter().zip(&run.cut.positions).any(|(n, p)| *n != p.to) {
         return Err("input records omit part of the whole-topic cut".into());
     }
-    let output = run.pipeline.process(&episodes)?;
+    let output = run
+        .pipeline
+        .process_records(&episodes, run.increment.is_none())?;
     let mut prepared = Vec::with_capacity(output.len());
     let mut output_bytes = 0usize;
     let mut digest_bytes = Vec::new();
-    for episode in &output {
-        let payload = wire::encode(episode)?;
+    for record in output {
+        let payload = &record.payload;
         output_bytes = output_bytes
             .checked_add(payload.len())
             .ok_or("output byte count overflow")?;
@@ -122,21 +124,17 @@ pub(crate) fn prepare_continued(
         {
             return Err("output byte limit exceeded before publication".into());
         }
-        let timestamp = episode.t_start.div_euclid(1_000);
+        let timestamp = record.timestamp;
         if timestamp <= 0 {
             return Err("local Kafka replay requires positive millisecond timestamps".into());
         }
-        let key = episode.series.series_id.clone();
+        let key = &record.key;
         digest_bytes.extend_from_slice(&(key.len() as u64).to_be_bytes());
         digest_bytes.extend_from_slice(key.as_bytes());
         digest_bytes.extend_from_slice(&timestamp.to_be_bytes());
         digest_bytes.extend_from_slice(&(payload.len() as u64).to_be_bytes());
-        digest_bytes.extend_from_slice(&payload);
-        prepared.push(OutputRecord {
-            key,
-            timestamp,
-            payload,
-        });
+        digest_bytes.extend_from_slice(payload);
+        prepared.push(record);
     }
     let state = run.pipeline.snapshot()?;
     let state_bytes =
@@ -162,7 +160,13 @@ pub(crate) fn prepare_continued(
         receipt: receipt.clone(),
         state,
     };
-    let mut output_series: BTreeSet<_> = prepared.iter().map(|r| r.key.clone()).collect();
+    let mut output_series: BTreeSet<_> = prepared
+        .iter()
+        .map(|r| {
+            run.pipeline
+                .validate_output(r, run.request.limits.payload_bytes, MAX_EPISODE_SAMPLES)
+        })
+        .collect::<Result<_, _>>()?;
     if let Some(pending) = completion.state["outputOwners"].as_object() {
         output_series.extend(pending.keys().cloned());
     }
@@ -271,18 +275,11 @@ pub fn validate_prepared(run: &Admitted, prepared: &Prepared) -> Result<(), Stri
         if bytes > run.request.limits.output_bytes {
             return Err("prepared output exceeds byte limit".into());
         }
-        let episode = wire::decode(
-            &record.payload,
+        output_series.insert(run.pipeline.validate_output(
+            record,
             run.request.limits.payload_bytes,
             MAX_EPISODE_SAMPLES,
-        )?;
-        if record.key != episode.series.series_id
-            || record.timestamp <= 0
-            || record.timestamp != episode.t_start.div_euclid(1_000)
-        {
-            return Err("prepared output identity or timestamp mismatch".into());
-        }
-        output_series.insert(record.key.clone());
+        )?);
         framed.extend_from_slice(&(record.key.len() as u64).to_be_bytes());
         framed.extend_from_slice(record.key.as_bytes());
         framed.extend_from_slice(&record.timestamp.to_be_bytes());

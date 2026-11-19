@@ -17,6 +17,7 @@ params:
 semantics: { needs: point, deterministic: true, keeps: [time, count], origin: INHERIT }
 runtimes:
   wayang: { status: available, class: org.opentsx.wayang.TsxSeriesChain }
+  rust: { status: available, class: tsx_runner::catalog::Pipeline, note: "tsx-runner 0.1.0 isolated local B2 context. The processor curve parameters and output-unit rules apply. No fleet qualification." }
 state: { kind: none }
 merge: { class: none }
 testvectors: docs/datamodel-2026/testvectors/clean-ops.v1.json

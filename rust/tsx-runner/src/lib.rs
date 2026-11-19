@@ -1,12 +1,16 @@
 pub mod admission;
 pub mod broker;
+pub mod catalog;
 pub mod checkpoint;
 pub mod model;
 pub mod operators;
+pub mod pairs;
 pub mod publication;
+pub mod retrieval;
 pub mod run_loop;
 pub mod run_plan;
 mod run_reservation;
 pub mod runner;
+pub mod stats;
 pub mod wire;
 pub mod worker;

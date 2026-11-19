@@ -1,4 +1,5 @@
-use crate::operators::{Limits as OperatorLimits, Pipeline};
+use crate::catalog::{Context, Pipeline};
+use crate::operators::Limits as OperatorLimits;
 use serde::Deserialize;
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -47,6 +48,7 @@ pub struct LocalRequest {
     pub limits: Limits,
     pub sequence: Option<String>,
     pub previous_request_hash: Option<String>,
+    pub context: Option<Context>,
 }
 
 #[derive(Clone, Debug)]
@@ -143,6 +145,11 @@ fn admit_with_caps(
     };
     let request: LocalRequest =
         serde_json::from_value(value).map_err(|e| format!("local request fields: {e}"))?;
+    let (max_series, max_samples) = if request.context.is_some() {
+        (1_024, 1_000_000)
+    } else {
+        (max_series, max_samples)
+    };
     validate_limits(&request.limits, max_series, max_samples)?;
     if !tsx_contracts::valid_topic(&request.sink.topic) {
         return Err("invalid output topic name".into());
@@ -199,6 +206,10 @@ fn admit_with_caps(
             max_output_samples: request.limits.samples,
             max_state_bytes: request.limits.state_bytes,
         },
+        request.context.as_ref(),
+        assignment["site"]
+            .as_str()
+            .ok_or("assignment site missing")?,
     )?;
     if pipeline.source_topic() != topic
         || pipeline.sink_name() != request.sink.name

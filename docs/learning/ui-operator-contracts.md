@@ -18,8 +18,14 @@ All entries below execute in the browser workbench. Deployment is a separate cap
 [`CleanChain`](../../opentsx-retrieval/src/main/java/org/opentsx/retrieval/clean/CleanChain.java#L35) operators and
 [`align.vector`](../../systems/processors/align.vector.yaml) have existing Java processor implementations. A pure Java
 pair kernel does not establish a Wayang execution mapping. The separate
-[Rust bounded profile](../devguide/integration/rust-runner-local.md) accepts `dq.checks`, `convert.unit` and a trailing
-`resample`. The explicit [bounded Wayang UI target](../devguide/integration/wayang-rust-compose.md) compiles those
+[Rust no-context profile](../devguide/integration/rust-runner-local.md) accepts
+plausible-range checks, conversion and a trailing resample.
+The [B2 catalog context](../devguide/integration/rust-runner-b2.md) separately
+admits all seven clean operations and typed statistics, retrieval, vector, bounded cross-correlation and DQ
+stages. Those runtime parameters follow the processor descriptions; browser
+operator names alone do not establish semantic equivalence. The explicit
+[bounded Wayang UI target](../devguide/integration/wayang-rust-compose.md)
+compiles `dq.checks`, `convert.unit` and trailing `resample`
 operations into one connected custom Rust stage and complete per-topic fragments for one to three workers.
 Its journal, private prepare, collision checks, activation and receipts are separate from the browser lesson workload.
 The browser lessons' zero-based coordinates do not prove Kafka timestamp validity.

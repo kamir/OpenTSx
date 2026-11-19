@@ -14,7 +14,7 @@ params:
 semantics: { needs: window, deterministic: true, keeps: [unit], origin: INHERIT }
 runtimes:
   wayang: { status: available, class: org.opentsx.wayang.TsxSeriesChain }
-  rust: { status: available, note: "tsx-runner 0.1.0 trusted-local bounded replay and continuous increments; trailing operator only." }
+  rust: { status: available, class: tsx_runner::catalog::Pipeline, note: "tsx-runner 0.1.0 isolated local B2 context. Independent state for each resample step; the last resample sets the output interval. No fleet qualification." }
 state: { kind: windowed, key: series }
 merge: { class: none }
 testvectors: docs/datamodel-2026/testvectors/clean-ops.v1.json

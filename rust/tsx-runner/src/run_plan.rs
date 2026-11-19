@@ -405,6 +405,15 @@ impl SignedPlan {
             let dag = tsx_contracts::parse_json(text_field(&assignment, field)?, 32_768)
                 .map_err(|_| Refusal::invalid("DAG JSON is invalid"))?;
             validate_dag_fields(&dag)?;
+            if dag["nodes"]
+                .as_array()
+                .is_some_and(|nodes| nodes.iter().any(|node| node["op"] != "decode.avro-soe"))
+            {
+                return Err(Refusal::new(
+                    "plan.catalog",
+                    "signed run supports pass-through only",
+                ));
+            }
             let pipeline = Pipeline::compile(
                 &dag,
                 &document.spec_hash,
