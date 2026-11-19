@@ -26,6 +26,19 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Isolated signed continuous pass-through in `tsx-runner` 0.1.0: Ed25519 plan
+  verification, local site policy, whole-topic authority, explicit cut caps and
+  acknowledgement-before-checkpoint recovery. Checkpoint and worker locks
+  release in their acquiring process even with inherited descriptors open.
+  Trusted-local replay and HTTP
+  cleaning workers retain their separate contracts. Production fleet activation
+  remains outside this profile.
+- Rust shared-vector coverage for xxHash64, bucket checksums and time deltas,
+  plus native x86_64/ARM64 and three-target static
+  musl CI gates with ELF and test-report validation. ARMv7 QEMU execution is
+  supplementary; physical ARMv7 qualification and full TASK-020 B1 closure
+  remain open.
+
 - Local publication fencing for three whole-topic Rust workers. A private, single-owner Java gateway serializes
   publication and epoch rotation, validates captured grants and retains unknown broker outcomes without blind
   resend. Segregated KafScale proxies, remote-address broker ACL and controller-peer worker checks enforce the path.

@@ -207,6 +207,13 @@ pub fn xxh64_hex(bytes: &[u8]) -> String {
     format!("{:016x}", xxhash_rust::xxh64::xxh64(bytes, 0))
 }
 
+pub fn bucket_checksum(episode_ids: &[String]) -> String {
+    let mut ids: Vec<_> = episode_ids.iter().map(String::as_str).collect();
+    ids.sort_unstable();
+    ids.dedup();
+    xxh64_hex(ids.join("\n").as_bytes())
+}
+
 pub fn summary(values: &[f64]) -> Summary {
     let mut out = Summary {
         valid_count: 0,

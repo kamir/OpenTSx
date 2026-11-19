@@ -42,6 +42,12 @@ the same whole-topic bindings. Source/sink/checkpoint/assignment lessons also re
 cumulative ownership and restart tests. Their standalone workloads remain unchanged and do not deploy a service.
 Continuous preparation recovery retains private candidates after a transient failure, including a lost response.
 Identical retry still requires every preparation and cross-topic ownership check before activation.
+The [isolated signed Rust run](../devguide/integration/rust-runner-b1.md) is
+another admission profile: continuous Episode pass-through only, with a pinned
+Ed25519 driver key and local bindings/policy. It does not expand the cleaning
+lessons or the available Rust operators. Physical ARMv7 qualification remains
+open.
+
 The [local publication contract](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment)
 adds explicit same-DAG resume and changed-DAG replay into a fresh output after old authority is revoked.
 Terminal recovery saves verified results and publication epochs before retiring authority. The checkpoint lesson
@@ -371,6 +377,16 @@ The default wire frame is Avro single-object encoding, including its schema fing
 Shared wire vectors check bytes, not only decoded values. Register or resolve an older writer schema explicitly;
 an unknown fingerprint is not permission to decode with an arbitrary current schema.
 
+The separate Rust `wire` module encodes and decodes Episode SOE records only.
+Its shared wire cases require byte equality and preserve the complete Episode
+fields. `model::series_id`, `xxh64_hex` and `bucket_checksum` consume the same
+identity vectors as Java; time-axis tests cover the repository's shared delta
+cases. `bucket_checksum` sorts unique episode IDs, joins them with a newline,
+and hashes the UTF-8 bytes with xxHash64 seed zero, matching Java
+`Buckets.checksum`. These are public identity helpers, not additional DAG
+operators. The lesson's Java starter does not execute or authorize a signed Rust
+runner.
+
 ## Construct a whole-topic source
 
 `TsxTopicSource(new TsxRead(...))` represents one topic and its internal bounded offset ranges.
@@ -400,6 +416,14 @@ identically. `TsxTopicSinkStreamingTest` checks both behaviors without a broker;
 with zero writes on a disposable broker. JSON signals are not Avro records.
 
 ## Persist an increment checkpoint
+
+Rust worker and checkpoint owners explicitly unlock when they close in the
+acquiring process, including error returns. An inherited descriptor cannot
+postpone reacquisition, and a copied owner in another process cannot unlock its
+parent. The deterministic owner-drop regressions retain duplicated descriptors
+while checking live-owner exclusion, restart and successor exclusion. These
+Rust lock lifetimes do not change the Java checkpoint starter or its state
+format.
 
 `TsxCheckpoint(job, planVersion, specHash, topic, next, state).write(path)` persists next offsets and per-node
 operator state to a temporary file,
