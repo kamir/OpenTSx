@@ -1,7 +1,7 @@
 # Today vs. planned
 
 What this guide deploys exists and runs today (Java 17/21 CLIs and services). That includes the declarative DAG
-`opentsx.dag.v1` of [concept 11](../datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md) (German) and its extension
+`opentsx.dag.v1` of [concept 11](../datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md) and its extension
 `opentsx.dag.v2` with series sinks ([concept 14](../datamodel-2026/14-ENGINEERING-FLOW.md), German, section 6.3): the
 vector processor runs their vector and series sinks. The rest of concept 11, a Go Smart Topic processor and training
 via MLflow, is a **proposal** and not implemented. This page separates the two and shows where the planned parts fit

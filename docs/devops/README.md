@@ -23,7 +23,7 @@
 | Page | Content |
 |------|---------|
 | [Operations](operations.md) | the local probe (`60-probe.sh`), service catalogue, environments, monitoring and alerting, logging, backup and restore, update and rollback, secrets, security, runbooks, roles, SLOs, capacity review |
-| [Anleitung lokale Testinstallation](anleitung-lokale-testinstallation.md) (German, printable) | one Linux machine: local KafScale via docker compose + k3s, step by step with expected output, checklist, troubleshooting, plan B without a cluster |
+| [Local test installation](anleitung-lokale-testinstallation.md) (printable) | one Linux machine: local KafScale via docker compose + k3s, step by step with expected output, checklist, troubleshooting, plan B without a cluster |
 | [Setup plan](setup-plan.md) | prerequisites, network path to KafScale, step-by-step installation with checks after each step, configuration reference, upgrade, teardown |
 | [Sizing plan](sizing-plan.md) | resources per component, storage formula and worked examples (wind farm, house, boat), what still has to be measured |
 | [Demos](demos.md) | how to run each example on k3s and what output to expect |
@@ -41,7 +41,7 @@ flowchart LR
     RET["opentsx-retrieval<br/>Deployment + Service :8080<br/>demo store or Iceberg"]
     STU["opentsx-studio<br/>Deployment + Service :80<br/>nginx, static page"]
     JOBS["Jobs (40-demo.sh)<br/>kafscale-check · windpark-sim · metadata<br/>twin · house · boat · studio-export<br/>dwd · modbus-poll"]
-    OPT["optional: modbus-sim (Deployment),<br/>dwd-forward + synthetic-check (CronJobs)"]
+    OPT["optional: modbus-sim, vector processor, event bridge,<br/>SaaS module (Deployments), ingress,<br/>dwd-forward + synthetic-check (CronJobs)"]
     subgraph LAKE["optional: lake profile"]
       IR["opentsx-iceberg-rest :8181"]
       MINIO["opentsx-minio :9000<br/>(or external S3)"]
@@ -74,6 +74,10 @@ flowchart LR
 | Modbus simulator (`MODBUS_SIM=true`) | Deployment + Service :1502 | `opentsx/tools` | `opentsx modbus simulate --map example --port 1502 --bind 0.0.0.0` |
 | Modbus poller | Job | `opentsx/tools` | `opentsx modbus poll --file /data/modbus/…jsonl` (map, host, port, count, interval, output and episode length as variables) |
 | synthetic check (`MONITORING=true`) | CronJob, every 10 min | `opentsx/tools` | `kafscale-check`, checkpoint age, disk usage |
+| vector processor (`VECTOR_PROCESSOR=true`) | Deployment (1 replica, `Recreate`), state PVC | `opentsx/tools` | `opentsx vectors --state /state` (bootstrap and domain as variables) |
+| event bridge (`EVENT_BRIDGE=true`) | Deployment + NodePort Service :30312 | `opentsx/tools` | `opentsx twin-live bridge --port 8090` |
+| SaaS module (`SAAS=true`) | Deployments frontend, backend and database; frontend NodePort Service :30311 | `opentsx/saas-frontend`, `opentsx/saas-backend`, `postgres:15.12-alpine` | nginx with the web workbench at `/workbench`; `uvicorn app.main:app --host 0.0.0.0 --port 8000` |
+| ingress (`INGRESS=true`) | Ingress (k3s Traefik) | none | Studio at `/`, the retrieval API at `/v1` |
 | Iceberg REST catalog, MinIO | Deployments (lake profile) | `apache/iceberg-rest-fixture:1.9.2`, `quay.io/minio/minio` | the command of the image; MinIO with `server /data --console-address :9001` |
 
 The commands read the ConfigMap values as variables of the configuration registry, not as flags. The DWD forecast
@@ -123,10 +127,13 @@ Every script has `--help`, is idempotent and stops with a clear message when som
 | `deploy/k3s/env.example` | every configuration key with its default; `20-configure.sh` writes the git-ignored `deploy/k3s/.env` |
 | `deploy/k3s/base/` | kustomize base: ConfigMap, PVCs, stats, retrieval, studio |
 | `deploy/k3s/jobs/` | the demo Jobs (rendered and started by `40-demo.sh`) |
-| `deploy/k3s/components/` | optional parts: `hostnetwork`, `lake`, `lake-minio`, `lake-jobs`, `ingress`, `modbus-sim`, `dwd-forward`, `monitoring` |
+| `deploy/k3s/components/` | optional parts, each switched on by a key of `20-configure.sh`: `hostnetwork` (`KAFSCALE_NETWORK=hostnetwork`), `lake` and `lake-jobs` (`LAKE=true`), `lake-minio` (`LAKE=true` with `LAKE_MINIO=true`), `retrieval-kafscale` (`RETRIEVAL_SOURCE=kafscale`), `modbus-sim` (`MODBUS_SIM=true`), `dwd-forward` (`DWD_FORWARD=true`), `monitoring` (`MONITORING=true`), `saas` (`SAAS=true`), `event-bridge` (`EVENT_BRIDGE=true`), `vector-processor` (`VECTOR_PROCESSOR=true`), `ingress` (`INGRESS=true`) |
 | `deploy/k3s/overlays/local/` | rendered by `20-configure.sh`, git-ignored (namespace, config, Secret, images, components) |
 | `deploy/docker/opentsx-tools.Dockerfile` | one JRE image with all v2 commands (`eclipse-temurin:21.0.8_9-jre-noble`) |
 | `deploy/docker/studio.Dockerfile` | Studio page generated in the build, served by `nginxinc/nginx-unprivileged:1.27.4-alpine` |
+| `deploy/docker/saas-backend.Dockerfile` | SaaS backend (FastAPI) on `python:3.12.9-slim-bookworm`, port 8000; `10-build.sh` builds it with `SAAS=true` |
+| `deploy/docker/saas-frontend.Dockerfile` | SaaS frontend with the web workbench, built on `node:22.14.0-alpine3.21` and served by `nginxinc/nginx-unprivileged:1.27.4-alpine`, port 8080; `10-build.sh` builds it with `SAAS=true` |
+| `deploy/docker/notebook-content.Dockerfile` | the Python package `opentsx` and the notebooks for a Jupyter notebook; it runs nothing, an init container copies its files ([`deploy/k3s/notebook/`](../../deploy/k3s/notebook/README.md)); built with `docker build`, not by `10-build.sh` |
 | `deploy/docker/stage.sh` | stages the image context: every runtime jar once (Maven layout) + exact classpath per module; `--out DIR` refuses a directory that is not empty and has no `.opentsx-stage` marker (exit 2), a failed Maven step shows Maven's output and exits 1 |
 | `deploy/docker/opentsx-entrypoint.sh` | the image's `opentsx` command (counterpart of `bin/opentsx`) |
 | `deploy/docker/src/…/KafScaleCheck.java` | deployment helper: bootstrap + advertised brokers + topic record counts, optional provisioning |
@@ -146,5 +153,5 @@ Every script has `--help`, is idempotent and stops with a clear message when som
 
 * [Operations](../user-manual/12-operations.md) (configuration, state and restarts, security notes),
   [Appendix A: CLI](../user-manual/appendix-a-cli.md), [Appendix B: REST](../user-manual/appendix-b-rest.md).
-* [Concept 11: Smart Topic processor and DevOps](../datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md) (German).
+* [Concept 11: Smart Topic processor and DevOps](../datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md).
 * [KafScale constraints](../../opentsx-kafka-v2/README.md) and the measured storage cost.

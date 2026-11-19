@@ -751,6 +751,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   stood under Fixed under Added.
 - The frontend README now lists its packages in a table. For a taken port 3000 it shows how to find the process and
   how to start the dev server on another port. Before, it said to kill whatever held the port.
+- The local test installation guide (`docs/devops/anleitung-lokale-testinstallation.md`) and the Smart Topic processor
+  concept (`docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md`) are in English. The concept's status line says
+  what runs today (the Java vector processor with `opentsx.dag.v1` and `opentsx.dag.v2`) and what is still a design
+  (the Go processor, the sidecar, MLflow training, and running other operators as DAG nodes). Its
+  `opentsx.dag-status.v1` row lists every field the processor writes.
+- `docs/devops/history-archive.md` has no German summary. `docs/devops/README.md` lists all 12 k3s components with the
+  key that turns each one on, and all 5 Dockerfiles. Its diagram and its table of deployed parts include the vector
+  processor, the event bridge, the SaaS module and the ingress.
 
 ### Removed
 

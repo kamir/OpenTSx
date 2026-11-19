@@ -1,132 +1,138 @@
-# OpenTSx – Smart-Topic-Prozessor und DevOps-Konzept
+# OpenTSx: Smart Topic processor and DevOps concept
 
-> Status: **Vorschlag**, 2026-10-12. Beantwortet die Frage: *Wie rechnen Smart Topics im Strom, schlank und mit
-> unseren TSA-Algorithmen, ohne den Overhead von Flink oder Kafka Streams?* Bezüge:
-> [05-SMART-TOPICS](05-SMART-TOPICS.md) (Smart Topics, Training, Prediction-API),
-> [07-DIGITAL-TWIN-BSP](07-DIGITAL-TWIN-BSP.md) (Varianten T/L, Herkunft),
-> [09-STUDIO-LABVIEW-STEUERPULT](09-STUDIO-LABVIEW-STEUERPULT.md) (Edge-Metriken, Kommandos).
+> Status: **partly running**. What runs today is the Java vector processor (`opentsx-retrieval`,
+> `bin/opentsx vectors`, k3s component `vector-processor` with `VECTOR_PROCESSOR=true`). It runs the DAGs
+> `opentsx.dag.v1` (vector sinks of `align.vector`, sections 5a and 5b) and `opentsx.dag.v2` (series sinks of the
+> cleaning operators `dq.checks`, `convert.unit`, `resample`, `model.wind-shear`, `model.power-curve`, `feature.lag`
+> and `feature.rolling`, [14](14-ENGINEERING-FLOW.md), section 6), both behind `decode.avro-soe`, and the workbench
+> deploys them. Still a design: the Go processor, the sidecar, training with MLflow, and running any other operator
+> of section 6 as a node of a DAG. The page answers the question: *How do Smart Topics compute in the stream, lean
+> and with our TSA algorithms, without the overhead of Flink or Kafka Streams?* References:
+> [05-SMART-TOPICS](05-SMART-TOPICS.md) (Smart Topics, training, prediction API),
+> [07-DIGITAL-TWIN-BSP](07-DIGITAL-TWIN-BSP.md) (variants T/L, origin),
+> [09-STUDIO-LABVIEW-STEUERPULT](09-STUDIO-LABVIEW-STEUERPULT.md) (edge metrics, commands).
 
 ---
 
-## 1. Kurzfassung
+## 1. Summary
 
-1. **Ein Go-Prozessor in KafScale ist selbst der Rechner.** KafScale-Processors sind eigenständige Go-Programme. Sie
-   lesen abgeschlossene Segmente direkt aus S3 und laufen neben dem Broker, nicht in ihm. Die Operatoren des DAG sind
-   Go-Funktionen im selben Prozess. Es braucht weder Flink noch Kafka Streams.
-2. **Kafka Streams scheidet unter KafScale aus.** Es braucht Compaction für die Changelogs seiner State Stores und
-   Transaktionen für exactly-once. KafScale bietet beides nicht. Flink ginge (manuelle Zuweisung, eigene
-   Checkpoints), ist aber für einen schlanken DAG zu schwer.
-3. **Nicht alles nach Go portieren, sondern einen Stream-Kern.** Go bekommt die kleinen, deterministischen
-   Operatoren, die im Strom laufen müssen:
-   * Dekodieren und Normalisieren
-   * Episoden bilden
-   * Statistik und Sketches
-   * Datenqualität
-   * inkrementelle Segmentierung
-   * Resampling
-   * Scoring exportierter Modelle
-   * Smart Metrics schreiben
+1. **A Go processor in KafScale is the compute engine itself.** KafScale processors are standalone Go programs. They
+   read closed segments directly from S3 and run next to the broker, not inside it. The operators of the DAG are Go
+   functions in the same process. Neither Flink nor Kafka Streams is needed.
+2. **Kafka Streams is ruled out under KafScale.** It needs compaction for the changelogs of its state stores and
+   transactions for exactly-once. KafScale offers neither. Flink would work (manual assignment, own checkpoints), but
+   it is too heavy for a lean DAG.
+3. **Do not port everything to Go, only a stream core.** Go gets the small, deterministic operators that must run in
+   the stream:
+   * decoding and normalizing
+   * forming episodes
+   * statistics and sketches
+   * data quality
+   * incremental segmentation
+   * resampling
+   * scoring of exported models
+   * writing Smart Metrics
 
-   Die Parität sichern **gemeinsame Testvektoren**, wie bisher bei Sketch, SeriesId und Avro zwischen Java und
+   **Shared test vectors** secure the parity, as they already do for the sketch, SeriesId and Avro between Java and
    Python.
-4. **Training läuft nie im Strom.** Ein `train`-Knoten im DAG stößt nur an: Er schreibt eine Trainingsanfrage.
-   Python trainiert im Batch, registriert das Modell in MLflow und meldet es. Der `score`-Knoten tauscht den
-   Champion im laufenden Betrieb aus.
-5. **Was es nur in Java oder Python gibt, läuft über einen Sidecar.** Das gilt für Mustersuche, Zwilling und
-   Kausalanalyse. Der Go-Prozessor reicht ganze Episoden lokal per gRPC weiter. Weil eine Episode schon ein
-   Mikro-Batch ist, bleibt der Aufruf billig.
-6. **Ein deklarativer DAG (YAML), zwei Laufzeiten.** Go ist schlank, liest direkt aus S3 und läuft auch am Rand: auf
-   dem Raspberry Pi an Bord oder dem Labor-PC. Java ist der bestehende Prozessor (`StatsProcessor`), verallgemeinert.
-   Beide lesen dieselbe Spezifikation. Ein Konformitätstest prüft je Operator, dass die Ausgaben bytegleich sind.
+4. **Training never runs in the stream.** A `train` node in the DAG only triggers: it writes a training request.
+   Python trains in batch, registers the model in MLflow and reports it. The `score` node swaps the champion while
+   running.
+5. **What exists only in Java or Python runs through a sidecar.** This applies to pattern search, the twin and causal
+   analysis. The Go processor hands whole episodes to it locally through gRPC. Because an episode is already a micro
+   batch, the call stays cheap.
+6. **One declarative DAG (YAML), two runtimes.** Go is lean, reads directly from S3 and also runs at the edge: on the
+   Raspberry Pi on board or on the lab PC. Java is the existing processor (`StatsProcessor`), generalized. Both read
+   the same specification. A conformance test checks per operator that the outputs are byte-identical.
 
 ---
 
-## 2. Faktenlage: KafScale-Processors
+## 2. Facts: KafScale processors
 
-Quelle ist das Repository [KafScale/platform](https://github.com/KafScale/platform), `addons/processors/`
-(Stand 2026-10-12):
+The source is the repository [KafScale/platform](https://github.com/KafScale/platform), `addons/processors/`
+(as of 2026-10-12):
 
-| Eigenschaft | Befund |
-|-------------|--------|
-| Art | eigenständige Go-Programme („storage-native“). Sie lesen abgeschlossene `.kfs`- und `.index`-Segmente aus S3 und sind weder Broker noch Kafka-Client. |
-| Vorlagen | `skeleton` (Vorlage), `iceberg-processor` (Topics → Iceberg), `sql-processor` (Ad-hoc-SQL über Postgres-Wire, ohne kontinuierliche Abfragen) |
-| Bausteine | Segmentsuche, Decoder nach `kafscale-spec.md`, YAML-Mapping, Sink-Interface (`Write(ctx, []Record)`), Lease je Partition mit Offset-Checkpoint (Backend etcd), Helm-Chart, Dockerfile |
-| Semantik | at-least-once. Offsets rücken erst nach bestätigtem Schreiben vor. Skaliert je Partition; eine Partition wird nie auf mehrere Worker verteilt. |
-| Latenz | Sekunden bis Minuten, weil nur abgeschlossene Segmente gelesen werden. Dafür ist der Betrieb einfacher und günstiger. |
+| Property | Finding |
+|----------|---------|
+| Kind | standalone Go programs ("storage-native"). They read closed `.kfs` and `.index` segments from S3 and are neither broker nor Kafka client. |
+| Templates | `skeleton` (template), `iceberg-processor` (topics to Iceberg), `sql-processor` (ad-hoc SQL over the Postgres wire protocol, without continuous queries) |
+| Building blocks | segment lookup, decoder after `kafscale-spec.md`, YAML mapping, sink interface (`Write(ctx, []Record)`), lease per partition with offset checkpoint (backend etcd), Helm chart, Dockerfile |
+| Semantics | at-least-once. Offsets advance only after a confirmed write. Scales per partition; a partition is never split across several workers. |
+| Latency | seconds to minutes, because only closed segments are read. In return, operation is simpler and cheaper. |
 
-**Folge für OpenTSx:** Ein TSx-Prozessor in Go folgt genau diesem Muster. Er ersetzt die Sink-Stufe durch einen
-Operator-DAG. Der Neubau einer Stream-Engine entfällt; Lease, Checkpoint und Segmentdekodierung kommen aus der Vorlage.
-Für Latenzen im Sekundenbereich gibt es den zweiten Eingang: Kafka-Protokoll über den Broker mit manueller Zuweisung,
-wie heute im Java-`StatsProcessor`.
-
----
-
-## 3. Optionen im Vergleich
-
-| Option | Algorithmen | Betrieb | Passt zu KafScale | Rand (Pi, Labor-PC) | Bewertung |
-|--------|-------------|---------|-------------------|---------------------|-----------|
-| **Kafka Streams** | Java, direkt nutzbar | leicht | **nein:** State-Store-Changelogs brauchen Compaction, exactly-once braucht Transaktionen | mäßig | ausgeschlossen |
-| **Flink** | Java, nutzbar | schwer (JobManager, TaskManager, State Backend) | ja, mit manueller Zuweisung und eigenen Checkpoints | nein | für große Joins und Fenster über viele Topics, nicht für den schlanken DAG |
-| **Java-Prozessor** (wie `StatsProcessor`) | alle Java-Algorithmen direkt | mittel (JVM, ca. 150–300 MB) | ja (Kafka-Protokoll; Segmente aus S3 möglich, wenn ein Java-Decoder gebaut wird) | eingeschränkt | gut für Operatoren, die es nur in Java gibt (Mustersuche, Zwilling) |
-| **Go-Prozessor (TSx-Kern)** | Stream-Kern neu in Go, Rest per Sidecar | sehr leicht (eine Binärdatei, ca. 20 MB Image) | **nativ**, auf Basis der Processor-Vorlage | **ja** | **Empfehlung** für die Datenebene |
-| Alles nach Go portieren | alles neu | leicht | ja | ja | nein: großer Aufwand, Gefahr auseinanderlaufender Ergebnisse. Mustersuche, Zwilling und Kausalanalyse gehören nicht in den Strom. |
-| WASM-Plugins (z. B. wazero) | Nutzerfunktionen portabel | leicht | ja | ja | später, für eigene Operatoren der Nutzer; numerisch noch unreif |
+**Consequence for OpenTSx:** a TSx processor in Go follows exactly this pattern. It replaces the sink stage with an
+operator DAG. Building a new stream engine is not needed; lease, checkpoint and segment decoding come from the
+template. For latencies in the range of seconds there is the second input: the Kafka protocol through the broker with
+manual assignment, as in the Java `StatsProcessor` today.
 
 ---
 
-## 4. Architektur: drei Ebenen
+## 3. Options compared
+
+| Option | Algorithms | Operation | Fits KafScale | Edge (Pi, lab PC) | Assessment |
+|--------|------------|-----------|---------------|-------------------|------------|
+| **Kafka Streams** | Java, usable directly | light | **no:** state store changelogs need compaction, exactly-once needs transactions | moderate | ruled out |
+| **Flink** | Java, usable | heavy (JobManager, TaskManager, state backend) | yes, with manual assignment and own checkpoints | no | for large joins and windows over many topics, not for the lean DAG |
+| **Java processor** (like `StatsProcessor`) | all Java algorithms directly | medium (JVM, about 150 to 300 MB) | yes (Kafka protocol; segments from S3 possible once a Java decoder is built) | limited | good for operators that exist only in Java (pattern search, twin) |
+| **Go processor (TSx core)** | stream core new in Go, the rest through a sidecar | very light (one binary, image of about 20 MB) | **native**, based on the processor template | **yes** | **recommendation** for the data plane |
+| Port everything to Go | everything new | light | yes | yes | no: large effort, risk of results that drift apart. Pattern search, twin and causal analysis do not belong in the stream. |
+| WASM plugins (for example wazero) | portable user functions | light | yes | yes | later, for operators of the users; numerically not mature yet |
+
+---
+
+## 4. Architecture: three planes
 
 ```mermaid
 flowchart LR
-  subgraph DP["Datenebene (Strom)"]
-    S3[("KafScale-Segmente<br/>in S3")] --> GO["TSx-Prozessor (Go)<br/>YAML-DAG"]
-    BR["KafScale-Broker<br/>Kafka-Protokoll"] -. "Sekundenlatenz" .-> GO
+  subgraph DP["Data plane (stream)"]
+    S3[("KafScale segments<br/>in S3")] --> GO["TSx processor (Go)<br/>YAML DAG"]
+    BR["KafScale broker<br/>Kafka protocol"] -. "latency in seconds" .-> GO
     GO --> OUT["Smart Topics<br/>stats · episodes · metrics · predictions"]
-    GO <-- "Episoden-Batches, gRPC (lokal)" --> SC["Sidecar Java/Python<br/>Mustersuche, Zwilling, Kausalanalyse"]
+    GO <-- "episode batches, gRPC (local)" --> SC["Sidecar Java/Python<br/>pattern search, twin, causal analysis"]
   end
-  subgraph LP["Lernebene (Batch)"]
-    REQ["training-requests"] --> TR["Python-Trainer<br/>(Job)"]
-    TR --> ML[("MLflow<br/>Champion-Alias")]
+  subgraph LP["Learning plane (batch)"]
+    REQ["training-requests"] --> TR["Python trainer<br/>(Job)"]
+    TR --> ML[("MLflow<br/>champion alias")]
     TR --> EV["model-events"]
   end
-  subgraph CP["Steuerebene"]
-    GIT["Git: DAG-YAML,<br/>Modell-Specs"] --> CI["CI: Validierung,<br/>Replay-Tests, Images"]
-    CI --> DEP["Deploy (Helm / Edge)"]
+  subgraph CP["Control plane"]
+    GIT["Git: DAG YAML,<br/>model specs"] --> CI["CI: validation,<br/>replay tests, images"]
+    CI --> DEP["Deploy (Helm / edge)"]
     ST["Studio / Service Layer"] --> GIT
-    OM[("OpenMetadata<br/>Lineage")]
+    OM[("OpenMetadata<br/>lineage")]
   end
-  GO -- "train-Knoten" --> REQ
+  GO -- "train node" --> REQ
   EV --> GO
   DEP --> GO
   GO --> OM
 ```
 
-* **Datenebene:** Der Prozessor liest aus S3 oder vom Broker, führt den DAG aus und schreibt Smart Topics. Er braucht
-  nichts außer S3, etcd (oder Checkpoint-Dateien am Rand) und optional einen Sidecar.
-* **Lernebene:** Training ist ein Batch-Job. Er wird über ein Topic angestoßen und quittiert. Die Daten wählt er
-  über die Episoden-Abfrage (Iceberg oder Replay) und ist damit reproduzierbar.
-* **Steuerebene:**
-  * DAG und Modell-Spezifikationen sind versioniert in Git (GitOps).
-  * CI validiert und testet gegen aufgezeichnete Segmente.
-  * Das Deployment läuft per Helm oder am Rand per Binärdatei mit Konfigurationsdatei.
-  * Das Studio bearbeitet den DAG.
-  * OpenMetadata zeigt die Lineage, mit dem Spezifikations-Hash als Pipeline-Version.
+* **Data plane:** the processor reads from S3 or from the broker, runs the DAG and writes Smart Topics. It needs
+  nothing but S3, etcd (or checkpoint files at the edge) and optionally a sidecar.
+* **Learning plane:** training is a batch Job. It is triggered through a topic and acknowledged. It selects its data
+  through the episode query (Iceberg or replay) and is therefore reproducible.
+* **Control plane:**
+  * DAG and model specifications are versioned in Git (GitOps).
+  * CI validates and tests against recorded segments.
+  * Deployment runs through Helm, or at the edge as a binary with a configuration file.
+  * The Studio edits the DAG.
+  * OpenMetadata shows the lineage, with the specification hash as the pipeline version.
 
 ---
 
-## 5. Der deklarative Processor-DAG (Entwurf `opentsx.dag.v1`)
+## 5. The declarative processor DAG (draft `opentsx.dag.v1`)
 
 ```yaml
 dag: windpark-ostsee-smart
 version: 3
 source:
-  kind: kafscale-s3              # oder kafscale-broker (Sekundenlatenz)
+  kind: kafscale-s3              # or kafscale-broker (latency in seconds)
   s3: { bucket: kafscale-data, namespace: production }
   topics: [tsx.windpark.observations.v2]
-checkpoint: { backend: etcd }    # am Rand: file
+checkpoint: { backend: etcd }    # at the edge: file
 nodes:
   - id: decode
-    op: decode.avro-soe          # v2 Single-Object-Encoding; JSON (opentsx.smartmetric.v1) ebenfalls
+    op: decode.avro-soe          # v2 single-object encoding; JSON (opentsx.smartmetric.v1) as well
   - id: norm
     op: normalize
     in: [decode]
@@ -152,11 +158,11 @@ nodes:
     in: [ep, stats]
     params: { model: "models:/windpark-power/champion", context: [weather] }
   - id: retrain
-    op: train.trigger            # rechnet nicht, stößt an
+    op: train.trigger            # computes nothing, only triggers
     in: [stats]
     params: { when: "drift(psi) > 0.2 or every P7D", spec: models/windpark-power.yaml }
   - id: similar
-    op: sidecar.call             # nur bei Bedarf: Java-Mustersuche
+    op: sidecar.call             # only when needed: Java pattern search
     in: [gusts]
     params: { endpoint: "localhost:7071", method: PatternSearch.topK, k: 5 }
 sinks:
@@ -167,29 +173,28 @@ sinks:
   - { from: retrain,  topic: tsx.windpark.training-requests.v1 }
 ```
 
-Regeln:
+Rules:
 
-* **Prüfung vor dem Start.** Die CI und der Prozessor prüfen den DAG vor dem Start: Operatoren müssen in der
-  Laufzeit vorhanden sein, Typen passen (Observation, Episode, Stats, Prediction), es gibt keine Zyklen. Zustand gibt
-  es nur in zustandsbehafteten Operatoren, mit Checkpoint.
-* **Hash:** Der Spezifikations-Hash geht in die Provenienz jedes Ausgabesatzes ein, wie der Plan-Hash beim Zwilling.
-* **Studio:** Der Node-Graph im Studio ist dieselbe Darstellung wie beim Zwilling. Ein Prozessor-DAG ist ein
-  Schaltplan aus Stream-Operatoren.
+* **Check before the start.** CI and the processor check the DAG before it starts: the operators must exist in the
+  runtime, the types must match (Observation, Episode, Stats, Prediction), and there are no cycles. Only stateful
+  operators have state, with a checkpoint.
+* **Hash:** the specification hash goes into the provenance of every output record, like the plan hash of the twin.
+* **Studio:** the node graph in the Studio is the same representation as for the twin. A processor DAG is a circuit
+  diagram of stream operators.
 
 ---
 
-## 5a. Vektor-Messpunkte: `align.vector` und `opentsx.vector.v1` (Entwurf)
+## 5a. Vector measuring points: `align.vector` and `opentsx.vector.v1`
 
-> Stand: Entwurf vom 2026-10-13. Den Operator gibt es zweimal: in der Web-Workbench (`opentsx-saas-frontend`,
-> `src/workbench/vector.ts`) und in Java (`opentsx-retrieval`, `VectorAligner`). Beide bestehen dieselben
-> Testvektoren ([`testvectors/align-vector.v1.json`](testvectors/align-vector.v1.json)). Ausgeführt werden
-> Vektor-Sinks vom Vektor-Prozessor (Abschnitt 5b). Das Nachrichtenformat ist JSON; eine Avro-Fassung ist offen.
+> Status: runs today. The operator exists twice: in the web workbench (`opentsx-saas-frontend`,
+> `src/workbench/vector.ts`) and in Java (`opentsx-retrieval`, `VectorAligner`). Both pass the same test vectors
+> ([`testvectors/align-vector.v1.json`](testvectors/align-vector.v1.json)). The vector processor (section 5b) runs
+> vector sinks. The message format is JSON; an Avro form is open.
 
-**Wozu.** Ein Sink schreibt bisher das Ergebnis genau eines Knotens, und jede Nachricht trägt einen Wert einer
-Reihe. Wer "alle Werte zum Zeitpunkt t" braucht (Modell-Eingang, Zustandsvektor einer Anlage, Vergleich von Roh- und
-abgeleitetem Wert), muss mehrere Topics selbst über die Zeit zusammenführen. `align.vector` macht das im DAG: Es
-bringt die Ergebnisse mehrerer Knoten auf einen gemeinsamen Takt und schreibt je Takt und Schlüssel **einen
-Messpunkt mit einem Wert je Komponente**.
+**Purpose.** Without it, a sink writes the result of exactly one node, and every message carries one value of one
+series. Whoever needs "all values at time t" (model input, state vector of a plant, comparison of a raw and a derived
+value) has to join several topics over time themselves. `align.vector` does that in the DAG: it brings the results of
+several nodes onto a common clock and writes, per tick and key, **one measuring point with one value per component**.
 
 ```yaml
 nodes:
@@ -198,25 +203,25 @@ nodes:
     in: [decode]
   - id: vec
     op: align.vector
-    in: [decode, zscore]                 # Reihenfolge = Reihenfolge der Komponenten
+    in: [decode, zscore]                 # order = order of the components
     params: { every: PT60S, key: turbine, agg: MEAN, fill: as-of, maxAge: PT120S, emit: any, names: [raw, standardized] }
 sinks:
   - { from: vec, topic: tsx.wind.smart.turbine-state.vectors.v1, schema: opentsx.vector.v1 }
 ```
 
-**Regeln.**
+**Rules.**
 
-| Begriff | Regel |
-|---------|-------|
-| **Takt** (`every`) | Ticks sind Vielfache von `every` seit 1970-01-01T00:00:00Z. Tick *k* deckt das halboffene Intervall [k · every, (k + 1) · every). Der Takt hängt damit nicht vom ersten Messwert ab; zwei Läufe und zwei Laufzeiten schneiden gleich. |
-| **Komponente** | Jeder Eingang (`in`) ist eine Komponente, benannt über `names`. Ihr Wert im Tick ist das Aggregat (`agg`: `MEAN`, `LAST`, `FIRST`, `MIN`, `MAX`, `SUM`, `COUNT`) der Werte des Eingangs im Tick; NaN zählt nicht. Trägt ein Eingang je Schlüssel mehrere Reihen, entsteht je Reihe eine Komponente `<name>.<metrik>` (bei nur einem Eingang ohne Präfix), in Namensordnung. Die Reihenfolge hängt so nicht davon ab, in welcher Folge die Reihen eintreffen. |
-| **Schlüssel** (`key`) | Was zusammen einen Vektor bildet. `series`: dieselbe Reihe (seriesId) in allen Eingängen. Ein Tag-Name wie `turbine`: alle Reihen mit demselben Wert dieses Tags, also verschiedene Kanäle einer Anlage. `all`: alles in einem Vektor. |
-| **Fehlende Werte** | Eine Komponente ohne Wert im Tick ist `null`. Mit `fill: as-of` übernimmt sie den letzten Wert, wenn er nicht älter als `maxAge` ist (dieselbe Regel wie die Kontext-Joins in 05). |
-| **Ausgabe** (`emit`) | `any`: ein Messpunkt, sobald mindestens eine Komponente einen Wert hat. `complete`: nur Ticks, in denen alle Komponenten einen Wert haben. |
-| **Zeitstempel** | `ts` ist das Ende des Ticks, also der Zeitpunkt, ab dem der Vektor vollständig ist. `window` nennt Anfang und Ende. |
-| **Achsen** | Nur Eingänge mit Zeitachse. Spektren, Histogramme und Skalenfunktionen (FFT, PDF, DFA) sind keine Komponenten eines Zeitvektors. |
+| Term | Rule |
+|------|------|
+| **Clock** (`every`) | Ticks are multiples of `every` since 1970-01-01T00:00:00Z. Tick *k* covers the half-open interval [k · every, (k + 1) · every). The clock therefore does not depend on the first value; two runs and two runtimes cut the same way. |
+| **Component** | Every input (`in`) is a component, named through `names`. Its value in the tick is the aggregate (`agg`: `MEAN`, `LAST`, `FIRST`, `MIN`, `MAX`, `SUM`, `COUNT`) of the values of the input in the tick; NaN does not count. When an input carries several series per key, each series gives a component `<name>.<metric>` (without the prefix when there is only one input), in name order. The order thus does not depend on the order in which the series arrive. |
+| **Key** (`key`) | What forms one vector together. `series`: the same series (seriesId) in all inputs. A tag name such as `turbine`: all series with the same value of this tag, that is, different channels of one plant. `all`: everything in one vector. |
+| **Missing values** | A component without a value in the tick is `null`. With `fill: as-of` it takes the last value, if that is not older than `maxAge` (the same rule as the context joins in 05). |
+| **Output** (`emit`) | `any`: a measuring point as soon as at least one component has a value. `complete`: only ticks in which all components have a value. |
+| **Timestamp** | `ts` is the end of the tick, that is, the time from which the vector is complete. `window` names start and end. |
+| **Axes** | Only inputs with a time axis. Spectra, histograms and scaling functions (FFT, PDF, DFA) are not components of a time vector. |
 
-**Nachricht** (JSON-Schema: [`schemas/opentsx.vector.v1.schema.json`](schemas/opentsx.vector.v1.schema.json)):
+**Message** (JSON schema: [`schemas/opentsx.vector.v1.schema.json`](schemas/opentsx.vector.v1.schema.json)):
 
 ```json
 {
@@ -232,205 +237,207 @@ sinks:
 }
 ```
 
-Die Werte stehen als Liste in der Reihenfolge von `components`, nicht als Abbildung Name → Wert: Ein Vektor hat
-eine feste Ordnung, und ein Modell liest ihn ohne Namensauflösung. Die Liste `components` steht trotzdem in jeder
-Nachricht, damit ein Leser ohne DAG auskommt. Der Kafka-Schlüssel der Nachricht ist der kanonische Text von `key`,
-damit alle Messpunkte einer Anlage in einer Partition und in Zeitordnung liegen.
+The values are a list in the order of `components`, not a map from name to value: a vector has a fixed order, and a
+model reads it without resolving names. The list `components` is in every message all the same, so that a reader
+needs no DAG. The Kafka key of the message is the canonical text of `key`, so that all measuring points of a plant lie
+in one partition and in time order.
 
-**Zurück ins Inventar.** Der Retrieval-Server liest die Vektor-Topics der Domäne: Jede Komponente erscheint im
-TS-Inventar als Reihe `smart.<name>.<komponente>` mit dem Tag `vector=<name>` und lässt sich wie jede andere Reihe
-laden. Je Schlüssel und Tick gilt der spätere Messpunkt; Messpunkte mit anderem Takt oder anderen Komponenten als der
-jüngste zählen nicht zur Reihe.
+**Back into the inventory.** The retrieval server reads the vector topics of the domain: every component appears in
+the TS inventory as a series `smart.<name>.<component>` with the tag `vector=<name>` and can be loaded like any other
+series. Per key and tick the later measuring point wins; measuring points with another clock or other components than
+the newest one do not count towards the series.
 
-**Was ausgeführt wird.**
+**What runs.**
 
-| Punkt | Regel |
-|-------|-------|
-| Was läuft | `align.vector`, dessen Eingänge alle direkt die Quelle sind (`in: [decode]`). Steht ein anderer Operator davor, wird der DAG abgelehnt und der Knoten genannt. |
-| Welche Reihen | `source.series` nennt die Reihen (seriesId) des Quell-Topics. Die Workbench schreibt die im Inventar gewählten Reihen hinein. |
-| Sink | nur `tsx.<domain>.smart.<name>.vectors.v1` der Domäne; das Topic wird bei Bedarf angelegt (eine Partition, Kafka-Schlüssel = `key`, Provenienz mit DAG-Name und Hash des Dokuments). |
+| Point | Rule |
+|-------|------|
+| What runs | `align.vector` whose inputs are all the source directly (`in: [decode]`). When another operator comes before it, the DAG is refused and the node is named. |
+| Which series | `source.series` names the series (seriesId) of the source topic. The workbench writes the series chosen in the inventory into it. |
+| Sink | only `tsx.<domain>.smart.<name>.vectors.v1` of the domain; the topic is created when needed (one partition, Kafka key = `key`, provenance with the DAG name and the hash of the document). |
 
-Einen Einmal-Lauf im Retrieval-Server (`POST /v1/dags/run`) gab es als ersten Schritt; er ist mit dem
-Vektor-Prozessor entfallen.
+The retrieval server runs no DAG itself; the vector processor (section 5b) runs the vector sinks.
 
-**Für eine Stream-Laufzeit folgt aus den Regeln:**
+**For a stream runtime, the rules imply:**
 
-* **Zustand:** je Schlüssel und Komponente das Aggregat des offenen Ticks und der letzte Wert mit Zeit (für
-  `as-of`). Das ist beschränkt und kommt in den Checkpoint wie bei `stats.welford-ddsketch`.
-* **Abschluss eines Ticks:** nach Ereigniszeit, mit erlaubter Verspätung (`lateness`, Abschnitt 7). Kommt ein Wert
-  später, entsteht eine neue Revision des Messpunkts; die Id eines Messpunkts ist deterministisch aus Vektor,
-  Schlüssel und Tick.
-* **Mehrere Eingänge:** Die Eingänge stammen aus demselben Quell-Topic, liegen also je Partition in derselben
-  Ordnung vor. Vektoren über mehrere Topics hinweg brauchen einen Join über Partitionen; das ist Flink-Gebiet (D25)
-  und hier nicht abgedeckt.
+* **State:** per key and component, the aggregate of the open tick and the last value with its time (for `as-of`).
+  It is bounded and goes into the checkpoint, as for `stats.welford-ddsketch`.
+* **Closing a tick:** by event time, with allowed lateness (`lateness`, section 7). When a value comes later, a new
+  revision of the measuring point is created; the id of a measuring point is deterministic from vector, key and
+  tick.
+* **Several inputs:** the inputs come from the same source topic, so they are in the same order per partition.
+  Vectors across several topics need a join across partitions; that is Flink territory (D25) and not covered here.
 
 ---
 
-## 5b. Fortlaufender Betrieb der Vektor-Sinks (Vektor-Prozessor)
+## 5b. Continuous operation of the vector sinks (vector processor)
 
-> Stand: 2026-10-13. Umgesetzt in `opentsx-retrieval` (`VectorStream`, `VectorProcessor`, `VectorProcessorApp`,
-> Kommando `opentsx vectors`), als k3s-Komponente `vector-processor` (`VECTOR_PROCESSOR=true`) und in der Workbench
-> (Reiter "Smart Topic": Deploy, Stop, Zustand).
+> Status: runs today. Implemented in `opentsx-retrieval` (`VectorStream`, `VectorProcessor`, `VectorProcessorApp`,
+> command `opentsx vectors`), as the k3s component `vector-processor` (`VECTOR_PROCESSOR=true`) and in the workbench
+> (tab "Smart Topic": Deploy, Stop, state).
 
-Der Einmal-Lauf aus 5a rechnet, was gerade da ist. Der Vektor-Prozessor hält einen Vektor-Sink dauerhaft aktuell: Er
-folgt `tsx.<domain>.episodes.v2` und hängt die Messpunkte an, sobald sie endgültig sind.
+`VectorAligner` (section 5a) aligns, in one pass, the data it is given. The vector processor keeps a vector sink up to
+date: it follows `tsx.<domain>.episodes.v2` and appends the measuring points as soon as they are final.
 
-**Steuerung über Topics.**
+**Control through topics.**
 
-| Topic | Inhalt | Regel |
-|-------|--------|-------|
-| `tsx.<domain>.dags.v1` | `opentsx.dag-control.v1`: `dag`, `state` (`deployed` oder `stopped`), `spec` (das DAG-Dokument), `by` (wer es verlangt hat), `at` | Schlüssel ist der DAG-Name; je Name gilt der letzte Eintrag. Ein Deployment überlebt damit jeden Neustart des Prozessors. |
-| `tsx.<domain>.dag-status.v1` | `opentsx.dag-status.v1`: `dag`, `vector`, `topic`, `state` (`waiting`, `running`, `failed`, `stopped`), `records`, `watermark`, `waitingFor`, `skippedBlocks`, `error`, `at` | Schlüssel `<dag>/<vector>`; der letzte Eintrag gilt. Bei Zustandswechsel und alle 30 s. |
+| Topic | Content | Rule |
+|-------|---------|------|
+| `tsx.<domain>.dags.v1` | `opentsx.dag-control.v1`: `dag`, `state` (`deployed` or `stopped`), `spec` (the DAG document), `by` (who asked for it), `at` | The key is the DAG name; per name the last record wins. A deployment therefore survives every restart of the processor. |
+| `tsx.<domain>.dag-status.v1` | `opentsx.dag-status.v1`: `dag`, `vector`, `kind` (`vector` or `series`), `topic`, `state` (`starting`, `waiting`, `running`, `failed`, `stopped`), `specHash`, `records`, `watermark`, `waitingFor` (at most 10 series), `waitingForCount`, `skippedBlocks`, `undecodable`, `lostToRetention` and `ignoredControlRecords` (these three only when not 0), `error`, `at`. A refused DAG gets a record with `dag`, `state` `failed`, `specHash`, `error` and `at` only. | Key `<dag>/<vector>`, or `<dag>` for a DAG the processor refused; the last record wins. On every change of state, after every checkpoint that adds records, and otherwise every 30 s. |
 
-**Semantik.**
+**Semantics.**
 
-| Punkt | Regel |
-|-------|-------|
-| Läufer | Je Vektor-Sink ein Läufer mit eigenem Consumer, eigenen Lesepositionen und eigenem Zustand. Ein neuer oder geänderter DAG beginnt am Anfang des Quell-Topics (`source.start: earliest`, Voreinstellung) oder mit dem, was ab jetzt kommt (`latest`), ohne die anderen zu berühren. |
-| Reihen | `source.series` ist Pflicht. Solange eine genannte Reihe noch nie gesehen wurde, wird nichts geschrieben (`waiting`): Erst dann steht fest, welche Reihen einen Vektor bilden und wie die Komponenten heißen. |
-| Abschluss eines Ticks | Ein Tick ist endgültig, wenn **jede** genannte Reihe sein Ende erreicht hat, plus `lateness` (Parameter des Knotens, Voreinstellung keine). Maßgeblich ist das Ende der Episode (`tEnd`), nicht der letzte Messwert. Bei Episoden von 10 Minuten und 60 s Takt erscheinen also je Schlüssel zehn Messpunkte auf einmal. |
-| Reihenfolge je Reihe | Eine Episode muss dort beginnen, wo die vorige derselben Reihe endete, oder später. Sonst wird sie übersprungen und gezählt (`skippedBlocks`): ein Duplikat nach einem wiederholten Schreibversuch oder Daten außer der Reihe. `lateness` gleicht also den Versatz **zwischen** Reihen aus, nicht verspätete Episoden einer Reihe. |
-| Checkpoint | Je Läufer eine Datei im Zustandsverzeichnis: Lesepositionen und Zustand (offene Ticks, letzter Wert je Reihe für `as-of`, Fortschritt). Geschrieben wird sie erst, wenn der Broker alle Messpunkte bestätigt hat. Nach einem Absturz wiederholt der Läufer höchstens, was er seit dem letzten Checkpoint geschrieben hat; die Werte sind dieselben, und Leser nehmen den späteren Messpunkt. |
-| Broker-Fenster | Lesen wartet (`Patience`), Schreiben wiederholt bis zum Delivery-Timeout. Bestätigt der Broker nicht alles, geht der Läufer in `failed` und setzt nach einer Minute am letzten Checkpoint neu an, mit einem neuen Producer. |
-| Ein Producer je Läufer | Jeder Läufer schreibt mit eigenem Producer nur in sein Sink-Topic; die Statusmeldungen haben einen weiteren. Das Warten auf die Bestätigung blockiert die Schleife nicht. Grund: Der KafScale-Proxy beantwortet eine Produce-Anfrage, die ein Topic mit und eines ohne Besitzer mischt (ein neues Sink-Topic vor dem ersten Schreiben), mit einer Antwort, die der Kafka-Client nicht lesen kann; der Producer verstummt danach ganz (KOI-2026-10-13-02). Mit einem Producer für alles hielt ein neues Sink-Topic den ganzen Prozessor an. |
-| Gleichheit mit dem Einmal-Lauf | Mit allen Daten gefüttert liefert `VectorStream` dieselben Messpunkte wie `VectorAligner`, unabhängig davon, in welcher Folge die Reihen eintreffen (Test `VectorStreamTest`). |
+| Point | Rule |
+|-------|------|
+| Runner | One runner per vector sink, with its own consumer, its own read positions and its own state. A new or changed DAG starts at the beginning of the source topic (`source.start: earliest`, the default) or with what arrives from now on (`latest`), without touching the others. |
+| Series | `source.series` is required. As long as a named series has never been seen, nothing is written (`waiting`): only then is it known which series form a vector and what the components are called. |
+| Closing a tick | A tick is final when **every** named series has reached its end, plus `lateness` (a parameter of the node, default none). What counts is the end of the episode (`tEnd`), not the last value. With episodes of 10 minutes and a 60 s clock, ten measuring points per key therefore appear at once. |
+| Order per series | An episode must begin where the previous one of the same series ended, or later. Otherwise it is skipped and counted (`skippedBlocks`): a duplicate after a repeated write, or data out of order. `lateness` therefore evens out the offset **between** series, not late episodes of one series. |
+| Checkpoint | One file per runner in the state directory: read positions and state (open ticks, last value per series for `as-of`, progress). It is written only once the broker has confirmed all measuring points. After a crash the runner repeats at most what it wrote since the last checkpoint; the values are the same, and readers take the later measuring point. |
+| Broker window | Reading waits (`Patience`), writing retries up to the delivery timeout. When the broker does not confirm everything, the runner goes to `failed` and starts again after one minute from the last checkpoint, with a new producer. |
+| One producer per runner | Every runner writes with its own producer, only to its sink topic; the status records have another one. Waiting for the confirmation does not block the loop. Reason: the KafScale proxy answers a produce request that mixes a topic with an owner and one without (a new sink topic before its first write) with a response that the Kafka client cannot read; the producer then goes silent completely (KOI-2026-10-13-02). With one producer for everything, a new sink topic stopped the whole processor. |
+| Equality with the batch run | Fed with all data, `VectorStream` gives the same measuring points as `VectorAligner`, whatever the order in which the series arrive (test `VectorStreamTest`). |
 
-**Bedienung.** Deployen und Stoppen sind Einträge im Steuer-Topic. Es gibt drei Wege dorthin:
+**Operation.** Deploying and stopping are records in the control topic. There are three ways to get there:
 
-| Weg | Wer |
+| Way | Who |
 |-----|-----|
-| Workbench, Reiter "Smart Topic": Deploy, Stop | angemeldete Administratoren; das SaaS-Backend prüft das Konto (`POST /api/v1/dags/deploy`, `/stop`) und reicht mit dem Lauf-Token an den Retrieval-Server weiter |
-| Retrieval-Server `POST /v1/dags/deploy`, `/stop?name=` | wer das Lauf-Token kennt (`X-OpenTSx-Run-Token`); der Server prüft den DAG und schreibt den Eintrag |
-| `opentsx vectors deploy --dag`, `stop --name` | wer den Broker erreicht |
+| Workbench, tab "Smart Topic": Deploy, Stop | signed-in administrators; the SaaS backend checks the account (`POST /api/v1/dags/deploy`, `/stop`) and forwards with the run token to the retrieval server |
+| Retrieval server `POST /v1/dags/deploy`, `/stop?name=` | whoever knows the run token (`X-OpenTSx-Run-Token`); the server checks the DAG and writes the record |
+| `opentsx vectors deploy --dag`, `stop --name` | whoever reaches the broker |
 
-Den Zustand liefert `GET /v1/dags` des Retrieval-Servers ohne Anmeldung: je DAG, was verlangt ist (von wem, wann),
-und was der Prozessor je Sink meldet. Ein deployter DAG, für den seit zwei Minuten niemand meldet, hat keinen
-Prozessor hinter sich; die Workbench sagt das.
+`GET /v1/dags` of the retrieval server gives the state without sign-in: per DAG, what was asked for (by whom, when),
+and what the processor reports per sink. A deployed DAG for which nobody has reported for two minutes has no processor
+behind it; the workbench says so.
 
-**Grenzen.** Genau ein Prozessor je Domäne (kein Lease, keine Gruppe). Eine Reihe, die verstummt, hält ihren
-Vektor an: Es gibt keinen Leerlauf-Timeout, der Status zeigt aber, worauf gewartet wird. Vektoren wie in 5a nur
-direkt auf den Reihen der Quelle. Der Zustand eines Läufers liegt im Arbeitsspeicher und im Checkpoint; bei sehr
-vielen Reihen mit großem Versatz wächst er mit der Zahl offener Ticks.
-
----
-
-## 6. Operator-Katalog und Laufzeiten
-
-| Operator | Go (Kern) | Java | Python | Parität |
-|----------|-----------|------|--------|---------|
-| `decode.avro-soe`, `decode.json-smartmetric` | ja | ja (vorhanden) | ja (vorhanden) | Testvektoren vorhanden (Avro SOE) |
-| `normalize` (Katalog/Mapping) | ja | ja (Windpark-Normalizer) | – | Golden Files |
-| `episodes.fixed-duration`, `episodes.fixed-count` | ja | ja | – | Episoden-Ids deterministisch |
-| `stats.welford-ddsketch` | ja | ja (`opentsx-stats`) | ja (`opentsx.stats`) | **Sketch-Testvektor vorhanden** |
-| `dq.checks` | ja | ja | – | Golden Files |
-| `segment.threshold`, `segment.extremum` (inkrementell) | ja | ja (`opentsx-retrieval`) | – | Streaming = Batch, Testsuite vorhanden |
-| `resample` | ja | ja | – | Golden Files |
-| `align.vector` (Abschnitte 5a, 5b) | geplant | ja: Einmal-Lauf (`VectorAligner`) und fortlaufend (`VectorProcessor`), beide in `opentsx-retrieval` | n/a | **gemeinsame Testvektoren vorhanden** (Java und TypeScript, `testvectors/align-vector.v1.json`) |
-| `score.onnx` | ja (onnxruntime über cgo) **oder** reine Go-Modelle (linear, ES, konforme Intervalle) | ja (ONNX Runtime) | Training | Toleranz statt Bytegleichheit (Fließkomma) |
-| `train.trigger` | ja | ja | – | – |
-| `twin.step` (Zwilling) | später, für Variante L | ja (`opentsx-twin`) | – | L(0) = T |
-| `pattern.search` (MASS/DTW) | nein, `sidecar.call` | ja | – | – |
-| Kausalanalyse (PCMCI, mTE) | nein | nein | ja (Batch, P8.2) | – |
-
-**Grenze des Go-Kerns:** In Go kommt, was im Strom pro Partition mit beschränktem Zustand laufen muss. Was über
-Historie sucht, optimiert oder lernt, bleibt in Java oder Python und wird angestoßen oder abgefragt.
+**Limits.** Exactly one processor per domain (no lease, no group). A series that goes silent holds up its vector:
+there is no idle timeout, but the status shows what it waits for. Vectors, as in 5a, only directly on the series of
+the source. The state of a runner is in memory and in the checkpoint; with very many series and a large offset it
+grows with the number of open ticks.
 
 ---
 
-## 7. Semantik
+## 6. Operator catalog and runtimes
 
-* **Lieferung:** at-least-once, wie bei den KafScale-Processors. Weil Episoden-Ids, Stats-Schlüssel und
-  Kommando-Ids **deterministisch** sind, verwerfen die Leser Duplikate. Iceberg schreibt idempotent über den
-  Schlüssel. Das ergibt **effektiv genau einmal**, ohne Transaktionen.
-* **Ordnung und Zeit:** Die Ordnung gilt je Partition. Zeit ist Ereigniszeit mit erlaubter Verspätung (`lateness`)
-  wie in P4. Verspätete Daten erzeugen eine neue Revision der Episode (`revision`) statt eines stillen Verlusts.
-* **Zustand:** Zustand haben nur Statistik, Segmentierer, Episodenbildung und Scoring (Modellversion). Er wird mit
-  dem Offset in den Checkpoint geschrieben. Ein Neustart setzt bitgleich fort; das gleiche Prinzip wie die Snapshots
-  beim Zwilling.
-* **Backfill:** Weil der Prozessor aus S3 liest, ist Backfill nur ein Lauf derselben Version über alte Segmente,
-  ohne Sonderpfad.
+The table is the design: "yes" means that the operator belongs in that runtime. Code exists today where an entry
+says "available" or names a module (`opentsx-stats`, `opentsx-retrieval`, `opentsx-twin`, `opentsx.stats`, the wind
+farm Normalizer). The vector processor runs only the operators named in the status line at the top.
 
-Dieser Abschnitt beschreibt das Ziel. Was davon der Vektor-Prozessor heute hält, steht in 7a, Punkt für Punkt.
+| Operator | Go (core) | Java | Python | Parity |
+|----------|-----------|------|--------|--------|
+| `decode.avro-soe`, `decode.json-smartmetric` | yes | yes (available) | yes (available) | test vectors available (Avro SOE) |
+| `normalize` (catalog/mapping) | yes | yes (wind farm Normalizer) | no | golden files |
+| `episodes.fixed-duration`, `episodes.fixed-count` | yes | yes | no | episode ids deterministic |
+| `stats.welford-ddsketch` | yes | yes (`opentsx-stats`) | yes (`opentsx.stats`) | **sketch test vector available** |
+| `dq.checks` | yes | yes | no | golden files |
+| `segment.threshold`, `segment.extremum` (incremental) | yes | yes (`opentsx-retrieval`) | no | streaming = batch, test suite available |
+| `resample` | yes | yes | no | golden files |
+| `align.vector` (sections 5a, 5b) | planned | yes: batch (`VectorAligner`) and continuous (`VectorProcessor`), both in `opentsx-retrieval` | n/a | **shared test vectors available** (Java and TypeScript, `testvectors/align-vector.v1.json`) |
+| `score.onnx` | yes (onnxruntime through cgo) **or** pure Go models (linear, ES, conformal intervals) | yes (ONNX Runtime) | training | tolerance instead of byte equality (floating point) |
+| `train.trigger` | yes | yes | no | none |
+| `twin.step` (twin) | later, for variant L | yes (`opentsx-twin`) | no | L(0) = T |
+| `pattern.search` (MASS/DTW) | no, `sidecar.call` | yes | no | none |
+| causal analysis (PCMCI, mTE) | no | no | yes (batch, P8.2) | none |
 
----
-
-## 7a. Streaming-Vertrag: Zeit, Endgültigkeit, Identität, Wiederanlauf, Revision (Entwurf)
-
-> Stand: 2026-10-13. Ausgelöst durch das Review-Briefing in
-> [15](15-ENTSCHEIDUNGSKREIS.md), Abschnitt 6. Die Spalte "Heute" gilt für den Vektor-Prozessor mit seinen beiden
-> Senken, Vektoren (`opentsx.vector.v1`) und bereinigte Reihen (`opentsx.episode.v2` im Topic `clean`). "Ziel" ist
-> zur Freigabe vorgeschlagen (D58) und nicht umgesetzt, wo es von "Heute" abweicht.
-
-| Punkt | Heute | Ziel |
-|-------|-------|------|
-| **Ereigniszeit** | Jede Episode und jeder Messpunkt trägt die Zeit, zu der es war (`tStart`, `tEnd`, `ts`). Fenster und Ticks liegen auf dem Raster seit der Epoche, nicht am ersten Wert | bleibt |
-| **Eingangszeit** | Nur `createdAt` der Episode: wann sie gebaut wurde. Wann ein Rohwert ankam, steht nirgends | Jede Ausgabe nennt, bis zu welcher Eingangszeit Daten berücksichtigt sind (`asOf`). Erst damit lässt sich sagen, was zu einem früheren Zeitpunkt bekannt war |
-| **Prognosen** | keine | Erstellungszeit und Zielzeit getrennt; eine Prognose ist eine Reihe über die Zielzeit mit der Erstellungszeit als zweiter Achse |
-| **Abschluss** | Vektor: ein Tick ist endgültig, wenn jede genannte Reihe sein Ende erreicht hat, plus `lateness`. Reihe: ein Fenster ist endgültig, wenn die Daten seiner Reihe sein Ende überschritten haben. Geschrieben wird nur Endgültiges | bleibt; dazu ein Kennzeichen `final` in der Ausgabe, damit eine Senke auch Vorläufiges schreiben darf, wo ein Zweck es braucht |
-| **Verspätete Daten** | Eine Episode, die vor dem Ende der vorigen ihrer Reihe beginnt, wird übersprungen und gezählt (`skippedBlocks`). Sie geht in kein Ergebnis ein | Sie erzeugt eine **Revision** des betroffenen Ergebnisses mit Verweis auf das frühere (`revision`, `revises`). Nichts wird still überschrieben und nichts still verworfen |
-| **Identität** | Bereinigte Episoden: Kennung aus Reihe, Zeitraum und Hash des DAG-Dokuments; dasselbe Stück, noch einmal gerechnet, hat dieselbe Kennung, und ein Leser, der je Kennung eine Episode hält, zählt es einmal. Vektoren: keine Kennung; Leser nehmen je Schlüssel und Tick den späteren Satz | Jede Ausgabe hat eine Kennung aus dem, was sie logisch ist (Signal, Güte, Zeitraum, Fassung). Vektoren ziehen nach |
-| **Doppelte in der Quelle** | Dieselbe Rohepisode zweimal im Topic fällt unter "verspätet" und wird übersprungen. Zwei verschiedene Episoden über denselben Zeitraum (eine Korrektur der Quelle) ebenso: die zweite verliert | Die Quelle sagt mit `revision`, welche gilt; der Prozessor nimmt die höhere und revidiert sein Ergebnis |
-| **Wiederanlauf** | Checkpoint je Senke: Lesepositionen und Zustand, geschrieben erst, wenn der Broker alles davor bestätigt hat. Nach einem Absturz wird ab dem Checkpoint wiederholt; was danach schon geschrieben war, steht doppelt im Topic (bei Reihen mit gleicher Kennung) | bleibt; das ist "mindestens einmal" mit Kennung, also für Leser genau einmal |
-| **Verweigerter Abruf** | Der Kafka-Client verliert bei einer verweigerten Partition, was er im selben Abruf von anderen schon geholt hatte (beobachtet am 2026-10-13: einer bereinigten Reihe fehlte eine Episode; aus dem Verhalten erschlossen, nicht aus dem Quelltext). `Patience` setzt den Consumer nach einer Ablehnung auf die Positionen vor dem Abruf zurück. Nachweis auf dem Labor-Broker steht aus | Ein Test, der genau das gegen einen Broker einspielt, nicht nur gegen einen nachgebauten Consumer |
-| **Zuständigkeit** | Im Topic `clean` schreibt ein Flow je Signal; in ein Vektor-Topic ein Flow. Geprüft wird das in der Oberfläche, nicht im Server | Der Server lehnt einen Start ab, wenn ein anderer laufender Flow dasselbe logische Ergebnis schreibt. "Ein Schreiber je Topic" ist nicht die Regel; die Regel gilt je Signal und Güte |
-| **Replay** | Ein neuer oder geänderter DAG beginnt am Anfang des Quell-Topics (oder mit `source.start: latest` am Ende). Die Ausgabe nennt den Hash des Dokuments | Ein Lauf ist beschrieben durch Eingangsdaten mit Offsets, Anfangszustand, Parameter, Fassung von Flow und System und den Informationsstand (`asOf`). Damit lässt er sich wiederholen |
-| **Neue Fassung** | Ein geändertes Dokument ersetzt das laufende sofort und beginnt von vorn; die alte Ausgabe bleibt im Topic, mit anderem Hash | Die neue Fassung schreibt zuerst in den Schatten, wird gegen die laufende verglichen und dann umgeschaltet; der Rückweg bleibt |
-| **Gleichheit von Vorschau und Betrieb** | Für `align.vector` und für Plausibilitätsbereich, Einheit und Resampling durch gemeinsame Testvektoren von Java und TypeScript belegt, als Ganzes und als Strom in beliebigen Stücken. Für alle anderen Operatoren der Workbench gibt es keine zweite Laufzeit | bleibt die Bedingung dafür, dass ein Operator in den Prozessor kommt |
-| **Qualität je Wert** | Das Qualitätsbyte der v2-Episode wird gelesen und nicht weitergegeben. Der Plausibilitätsbereich macht Werte zur Lücke oder begrenzt sie | Modus `flag` als Vorgabe: der Wert bleibt, das Byte sagt `IMPLAUSIBLE`; Resampling gibt den Anteil fraglicher Werte je Fenster weiter ([15](15-ENTSCHEIDUNGSKREIS.md), Abschnitt 5.1) |
-| **Art der Größe** | Der Prozessor mittelt, was man ihm gibt | Die Art des Signals (`ANALOG`, `STATUS`, `COUNTER`) bestimmt die erlaubte Aggregation; ein Mittel über einen Zähler wird abgelehnt |
+**Limit of the Go core:** Go gets what has to run in the stream per partition with bounded state. What searches,
+optimizes or learns over history stays in Java or Python and is triggered or queried.
 
 ---
 
-## 8. DevOps-Lebenszyklus
+## 7. Semantics
 
-| Schritt | Wie |
-|---------|-----|
-| **Entwickeln** | DAG-YAML im Repo; lokal `tsx-processor run --dag x.yaml --source file:segments/` gegen aufgezeichnete Segmente |
-| **Validieren (CI)** | Schema- und Typprüfung des DAG, Verfügbarkeit der Operatoren je Laufzeit, **Operator-Konformität Go ↔ Java** (gemeinsame Testvektoren), **Replay-Test:** aufgezeichnete Segmente → erwartete Ausgaben (Hash) |
-| **Bauen** | eine Go-Binärdatei je Architektur (amd64, arm64 für den Pi), Distroless-Image, signiert; Java-Sidecar als eigenes Image |
-| **Ausrollen** | Kubernetes per Helm (Vorlage aus KafScale), je Partition eine Lease; am Rand per systemd-Unit mit Checkpoint-Datei |
-| **Schattenbetrieb** | Die neue DAG-Version läuft parallel und schreibt in `…shadow`-Topics. Ein Vergleichsjob prüft die Abweichungen (Statistik, Vorhersagegüte) und gibt erst dann frei. |
-| **Umschalten / Zurückrollen** | Konfiguration wechseln; Offsets bleiben je Version getrennt; Rücksprung ist ein Konfigurationswechsel |
-| **Modell-Lebenszyklus** | `train.trigger` → Trainingsanfrage → Python-Job → MLflow (`challenger`) → Schattenbewertung → Alias `champion` → `model-events` → `score` lädt neu, ohne Neustart |
-| **Beobachten** | Prometheus-Metriken: Rückstand je Partition, Verarbeitungszeit je Operator, verspätete Daten, DQ-Quoten; Lineage und Version in OpenMetadata |
-| **Mandanten** | im Personal Service Layer ein Namespace je Nutzer und System (Haus, Boot, Labor), gleiche Binärdatei, eigener DAG |
+* **Delivery:** at-least-once, as for the KafScale processors. Because episode ids, stats keys and command ids are
+  **deterministic**, the readers drop duplicates. Iceberg writes idempotently through the key. That gives
+  **effectively exactly once**, without transactions.
+* **Order and time:** order holds per partition. Time is event time with allowed lateness (`lateness`) as in P4. Late
+  data creates a new revision of the episode (`revision`) instead of a silent loss.
+* **State:** only statistics, segmenters, episode forming and scoring (model version) have state. It is written into
+  the checkpoint together with the offset. A restart continues bit for bit; the same principle as the snapshots of
+  the twin.
+* **Backfill:** because the processor reads from S3, a backfill is only a run of the same version over old segments,
+  without a special path.
 
----
-
-## 9. Was das für die drei Szenarien heißt
-
-| Szenario | Laufzeit | DAG (Kurzform) |
-|----------|----------|----------------|
-| Energieverbund (Windpark, Elektrolyse) | Go im Cluster + Java-Sidecar (Zwilling) | Messwerte → Episoden → Statistik/DQ → Prognose → Zwilling-Schritt → Kennzahlen |
-| Haus (Erzgebirge) | Go auf einem kleinen Rechner im Haus oder zentral | Zähler/Smart Plugs/Tankstand → Episoden (1 h) → Statistik → Heizgradtage → Abgleich mit dem Hausmodell |
-| Boot (Etap 22) | **Go auf dem Raspberry Pi an Bord**, Checkpoint-Datei, lädt hoch, wenn Starlink oder Hafen-WLAN da ist | Powerstation/USB-Messer/Starlink → Episoden (5 min) → Ladezustand/Autarkie → Prognose aus Solar und Nutzungsmuster |
+This section describes the target. What of it the vector processor keeps today is in 7a, point by point.
 
 ---
 
-## 10. Entscheidungen (Vorschläge)
+## 7a. Streaming contract: time, finality, identity, restart, revision (draft)
 
-| Nr. | Thema | Vorschlag |
-|-----|-------|-----------|
-| D25 | Stream-Laufzeit | Go-TSx-Prozessor auf Basis der KafScale-Processor-Vorlage für die Datenebene; kein Kafka Streams; Flink nur für große Joins und Fenster über viele Topics |
-| D26 | Algorithmen in Go | nur der Stream-Kern (Abschnitt 6) mit gemeinsamen Testvektoren; Mustersuche, Zwilling und Kausalanalyse bleiben in Java/Python (Sidecar oder Batch) |
-| D27 | DAG-Spezifikation | `opentsx.dag.v1` (YAML), sprachneutral, gehasht, von Go und Java gelesen; Studio bearbeitet sie |
-| D28 | Training | nie im Strom; `train.trigger` → Trainingsanfrage → Python/MLflow → `model-events` → Austausch im laufenden Betrieb |
-| D29 | Semantik | at-least-once + deterministische Ids = effektiv genau einmal; Ereigniszeit mit Revisionen statt Verwerfen |
-| D37 | Vektor-Messpunkte | `align.vector` als Operator mit mehreren Eingängen, Nachricht `opentsx.vector.v1`, Takt an der Epoche ausgerichtet, Werte als geordnete Liste (Abschnitt 5a) |
-| D39 | Fortlaufender Betrieb | eigener Vektor-Prozessor nach dem Muster des Stats-Prozessors; Deployments über das Steuer-Topic `tsx.<domain>.dags.v1`, Status über `tsx.<domain>.dag-status.v1`; ein Läufer je Sink mit Checkpoint-Datei (Abschnitt 5b) |
-| D38 | Erste Ausführung | Vektor-Sinks liefen zuerst als Einmal-Lauf im Retrieval-Server (Java); abgelöst durch D39. Die Parität über gemeinsame Testvektoren bleibt (Abschnitt 5a) |
+> As of 2026-10-13. Prompted by the review briefing in [15](15-ENTSCHEIDUNGSKREIS.md), section 6. The column
+> "Today" holds for the vector processor with its two sinks, vectors (`opentsx.vector.v1`) and cleaned series
+> (`opentsx.episode.v2` in the topic `clean`). "Target" is proposed for approval (D58) and not implemented where it
+> differs from "Today".
 
-## 11. Offene Punkte
+| Point | Today | Target |
+|-------|-------|--------|
+| **Event time** | Every episode and every measuring point carries the time it refers to (`tStart`, `tEnd`, `ts`). Windows and ticks lie on the grid since the epoch, not at the first value | stays |
+| **Arrival time** | Only `createdAt` of the episode: when it was built. When a raw value arrived is recorded nowhere | Every output names up to which arrival time data is included (`asOf`). Only then can one say what was known at an earlier time |
+| **Forecasts** | none | Creation time and target time kept apart; a forecast is a series over the target time with the creation time as a second axis |
+| **Closing** | Vector: a tick is final when every named series has reached its end, plus `lateness`. Series: a window is final when the data of its series has passed its end. Only final results are written | stays; in addition a flag `final` in the output, so that a sink may also write preliminary results where a purpose needs it |
+| **Late data** | An episode that begins before the end of the previous one of its series is skipped and counted (`skippedBlocks`). It goes into no result | It creates a **revision** of the affected result with a reference to the earlier one (`revision`, `revises`). Nothing is overwritten silently and nothing is dropped silently |
+| **Identity** | Cleaned episodes: an id from series, time span and the hash of the DAG document; the same piece, computed again, has the same id, and a reader that keeps one episode per id counts it once. Vectors: no id; readers take the later record per key and tick | Every output has an id from what it logically is (signal, grade, time span, version). Vectors follow |
+| **Duplicates in the source** | The same raw episode twice in the topic counts as "late" and is skipped. Two different episodes over the same time span (a correction by the source) as well: the second one loses | The source says with `revision` which one holds; the processor takes the higher one and revises its result |
+| **Restart** | Checkpoint per sink: read positions and state, written only once the broker has confirmed everything before it. After a crash the processor repeats from the checkpoint; what was already written after it is in the topic twice (for series with the same id) | stays; that is "at least once" with an id, so exactly once for readers |
+| **Refused fetch** | On a refused partition the Kafka client loses what it had already fetched from other partitions in the same fetch (observed on 2026-10-13: a cleaned series lacked one episode; inferred from the behavior, not from the source code). After a refusal `Patience` resets the consumer to the positions before the fetch. Proof on the lab broker is pending | A test that replays exactly that against a broker, not only against a simulated consumer |
+| **Ownership** | In the topic `clean` one flow writes per signal; into a vector topic one flow. This is checked in the user interface, not in the server | The server refuses a start when another running flow writes the same logical result. "One writer per topic" is not the rule; the rule holds per signal and grade |
+| **Replay** | A new or changed DAG starts at the beginning of the source topic (or, with `source.start: latest`, at the end). The output names the hash of the document | A run is described by input data with offsets, initial state, parameters, the version of flow and system, and the information state (`asOf`). That makes it repeatable |
+| **New version** | A changed document replaces the running one at once and starts from the beginning; the old output stays in the topic, with another hash | The new version first writes into the shadow, is compared against the running one and then switched over; the way back stays |
+| **Equality of preview and operation** | For `align.vector` and for plausibility range, unit and resampling proven by shared test vectors of Java and TypeScript, as a whole and as a stream in arbitrary pieces. For all other operators of the workbench there is no second runtime | stays the condition for an operator to enter the processor |
+| **Quality per value** | The quality byte of the v2 episode is read and not passed on. The plausibility range turns values into gaps or clips them | Mode `flag` as the default: the value stays, the byte says `IMPLAUSIBLE`; resampling passes on the share of questionable values per window ([15](15-ENTSCHEIDUNGSKREIS.md), section 5.1) |
+| **Kind of quantity** | The processor averages whatever it is given | The kind of the signal (`ANALOG`, `STATUS`, `COUNTER`) determines the allowed aggregation; a mean over a counter is refused |
 
-* **Vektor-Messpunkte (5a):** Avro-Fassung von `opentsx.vector.v1` und ihr Platz im Modell v2; Qualitätsbyte je
-  Komponente statt nur `null`; Einheiten der Komponenten (heute nur in der Workbench bekannt); die Testvektoren
-  auch für Go; Vektoren über mehrere Quell-Topics; im fortlaufenden Betrieb (5b) ein Leerlauf-Timeout für
-  verstummte Reihen und ein Lease, das eine zweite Instanz verhindert.
-* **Latenz:** Reichen Sekunden bis Minuten (nur abgeschlossene Segmente)? Sonst ist der Broker-Eingang (Kafka-Protokoll)
-  für den Go-Prozessor der Standard.
-* **ONNX in Go:** onnxruntime über cgo (größere Images, plattformabhängig) oder zunächst nur reine Go-Modelle
-  (lineare, ES, Quantilregression)? Vorschlag: zuerst reine Go-Modelle; ONNX, wenn ein Modell es braucht.
-* **Leases ohne etcd:** Am Rand (Pi, Labor-PC) gibt es kein etcd. Dort reichen eine Checkpoint-Datei und eine
-  einzige Instanz.
-* **Repository:** Lebt der Go-Prozessor in OpenTSx (`opentsx-processor-go/`) oder als Addon im KafScale-Repo?
-  Vorschlag: in OpenTSx, mit der KafScale-Vorlage als Abhängigkeit.
+---
+
+## 8. DevOps lifecycle
+
+| Step | How |
+|------|-----|
+| **Develop** | DAG YAML in the repository; locally `tsx-processor run --dag x.yaml --source file:segments/` against recorded segments |
+| **Validate (CI)** | schema and type check of the DAG, availability of the operators per runtime, **operator conformance Go ↔ Java** (shared test vectors), **replay test:** recorded segments → expected outputs (hash) |
+| **Build** | one Go binary per architecture (amd64, arm64 for the Pi), distroless image, signed; Java sidecar as its own image |
+| **Deploy** | Kubernetes through Helm (template from KafScale), one lease per partition; at the edge as a systemd unit with a checkpoint file |
+| **Shadow operation** | The new DAG version runs in parallel and writes into `…shadow` topics. A comparison job checks the deviations (statistics, forecast quality) and only then releases it. |
+| **Switch over / roll back** | change the configuration; offsets stay separate per version; going back is a change of configuration |
+| **Model lifecycle** | `train.trigger` → training request → Python Job → MLflow (`challenger`) → shadow evaluation → alias `champion` → `model-events` → `score` reloads without a restart |
+| **Observe** | Prometheus metrics: lag per partition, processing time per operator, late data, DQ rates; lineage and version in OpenMetadata |
+| **Tenants** | in the Personal Service Layer one namespace per user and system (house, boat, lab), the same binary, an own DAG |
+
+---
+
+## 9. What this means for the three scenarios
+
+| Scenario | Runtime | DAG (short form) |
+|----------|---------|------------------|
+| Energy system (wind farm, electrolysis) | Go in the cluster + Java sidecar (twin) | measurements → episodes → statistics/DQ → forecast → twin step → KPIs |
+| House (Erzgebirge) | Go on a small computer in the house, or central | meters/smart plugs/tank level → episodes (1 h) → statistics → heating degree days → comparison with the house model |
+| Boat (Etap 22) | **Go on the Raspberry Pi on board**, checkpoint file, uploads when Starlink or harbor Wi-Fi is there | power station/USB meter/Starlink → episodes (5 min) → state of charge/autonomy → forecast from solar and usage pattern |
+
+---
+
+## 10. Decisions (proposals)
+
+| No. | Topic | Proposal |
+|-----|-------|----------|
+| D25 | Stream runtime | Go TSx processor based on the KafScale processor template for the data plane; no Kafka Streams; Flink only for large joins and windows over many topics |
+| D26 | Algorithms in Go | only the stream core (section 6) with shared test vectors; pattern search, twin and causal analysis stay in Java/Python (sidecar or batch) |
+| D27 | DAG specification | `opentsx.dag.v1` (YAML), language-neutral, hashed, read by Go and Java; the Studio edits it |
+| D28 | Training | never in the stream; `train.trigger` → training request → Python/MLflow → `model-events` → swap while running |
+| D29 | Semantics | at-least-once + deterministic ids = effectively exactly once; event time with revisions instead of dropping |
+| D37 | Vector measuring points | `align.vector` as an operator with several inputs, message `opentsx.vector.v1`, clock aligned to the epoch, values as an ordered list (section 5a) |
+| D39 | Continuous operation | an own vector processor after the pattern of the stats processor; deployments through the control topic `tsx.<domain>.dags.v1`, status through `tsx.<domain>.dag-status.v1`; one runner per sink with a checkpoint file (section 5b) |
+| D38 | First execution | replaced by D39; the parity through shared test vectors stays (section 5a) |
+
+## 11. Open points
+
+* **Vector measuring points (5a):** an Avro form of `opentsx.vector.v1` and its place in model v2; a quality byte per
+  component instead of only `null`; units of the components (today known only in the workbench); the test vectors
+  for Go as well; vectors across several source topics; in continuous operation (5b) an idle timeout for series that
+  went silent and a lease that prevents a second instance.
+* **Latency:** are seconds to minutes enough (only closed segments)? Otherwise the broker input (Kafka protocol) is
+  the default for the Go processor.
+* **ONNX in Go:** onnxruntime through cgo (larger images, platform-dependent) or at first only pure Go models
+  (linear, ES, quantile regression)? Proposal: pure Go models first; ONNX when a model needs it.
+* **Leases without etcd:** at the edge (Pi, lab PC) there is no etcd. A checkpoint file and a single instance are
+  enough there.
+* **Repository:** does the Go processor live in OpenTSx (`opentsx-processor-go/`) or as an addon in the KafScale
+  repository? Proposal: in OpenTSx, with the KafScale template as a dependency.

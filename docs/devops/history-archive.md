@@ -1,20 +1,13 @@
 # History archive on k3s: backfill and forward archiving
 
-> **Kurzfassung (Deutsch).** Die Historie (Marktdaten, später Wetter) liegt im Archivformat von
-> [`opentsx-market`](../../opentsx-market/README.md) auf einem eigenen PVC `opentsx-history`. Einmalig füllt der Job
-> `backfill-job.yaml` die Marktreihen 2019 bis heute, `weather-backfill-job.yaml` die DWD-Stationsmessungen der
-> Zwillingsstandorte (fortsetzbar, abgeschlossene Jahre werden übersprungen). Danach halten drei CronJobs das Archiv
-> aktuell: `opentsx-market-forward` täglich um 13:41 UTC (laufendes und Vorjahr, nach Veröffentlichung der
-> Day-Ahead-Ergebnisse), `opentsx-weather-forward` täglich um 06:23 UTC und `opentsx-mosmix-archive` alle 6 Stunden
-> (rohe MOSMIX_L-Dateien der Zwillingsstandorte). **Der DWD hält keine historischen MOSMIX-Prognosen vor**: Prognosehistorie entsteht nur
-> ab dem Tag, an dem der CronJob läuft. Zugangsdaten (`ENTSOE_TOKEN`, `NTP_CLIENT_ID`, `NTP_CLIENT_SECRET`) kommen
-> aus dem optionalen Secret `opentsx-market`; ohne sie werden ENTSO-E und netztransparenz.de übersprungen.
+The market and weather history lives in the archive format of [`opentsx-market`](../../opentsx-market/README.md) on
+the PVC `opentsx-history`: two Jobs fill it once, three CronJobs keep it current.
 
 ## What runs
 
 | Object | Schedule | Command (image `opentsx/tools`) |
 |--------|----------|----------------------------------|
-| PVC `opentsx-history` | — | 2 Gi, mounted at `/data/history` |
+| PVC `opentsx-history` | n/a | 2 Gi, mounted at `/data/history` |
 | Job `opentsx-history-backfill` ([`backfill-job.yaml`](../../deploy/k3s/history/backfill-job.yaml)) | once | `opentsx market backfill --archive /data/history --series market --from-year 2019` |
 | Job `opentsx-weather-backfill` ([`weather-backfill-job.yaml`](../../deploy/k3s/history/weather-backfill-job.yaml)) | once | `opentsx market weather-backfill --archive /data/history --from-year 2019` (hourly temperature and wind, 10-minute radiation of the site stations) |
 | CronJob `opentsx-market-forward` ([`market-forward.yaml`](../../deploy/k3s/history/market-forward.yaml)) | `41 13 * * *` UTC | `opentsx market forward --archive /data/history --series market` (running and previous year; complete years are skipped) |
@@ -24,6 +17,8 @@
 Day-ahead results for the next day are published around 12:45 CET/CEST, and SMARD updates its files shortly after.
 13:41 UTC is after that in both summer and winter. MOSMIX_L is issued at 03, 09, 15 and 21 UTC and is on the server
 about 1 h later.
+The DWD does not keep historical MOSMIX forecasts on opendata.dwd.de, only the latest runs: forecast history exists
+only from the day `opentsx-mosmix-archive` first runs.
 
 ## Steps
 
@@ -37,6 +32,9 @@ kubectl -n opentsx apply -f deploy/k3s/history/weather-backfill-job.yaml   # one
 kubectl -n opentsx logs -f job/opentsx-history-backfill
 kubectl -n opentsx create job --from=cronjob/opentsx-mosmix-archive mosmix-now   # first MOSMIX run right away
 ```
+
+Without the Secret `opentsx-market`, `opentsx-history-backfill` and `opentsx-market-forward` skip ENTSO-E and
+netztransparenz.de and log the reason.
 
 Check the archive: `kubectl -n opentsx exec` into any pod that mounts the PVC, or run a Job with
 `opentsx market report --archive /data/history`. It lists every series and year with rows, quality summary and
@@ -53,7 +51,7 @@ repeated bursts.
 
 Measured on 2026-10-12: the SMARD series of the default market set for 2019 to 2026 take 13 MB gzip'ed
 (quarter-hourly series about 0.2 MB per year each), and the Energy-Charts price 0.5 MB.
-Raw MOSMIX is about 19 kB per station and issue, so about 30 MB per year for four stations and four runs a day. The
+Raw MOSMIX is about 19 kB per station and issue, so about 30 MB per year for four stations and four runs a day.
 The DWD observations of the nine station parameters for 2019 to 2026 add 6.3 MB. The 2 Gi PVC leaves plenty of room.
 
 ## Manifest

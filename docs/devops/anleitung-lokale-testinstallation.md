@@ -1,47 +1,49 @@
-# OpenTSx lokal ausprobieren: Testinstallation mit k3s und KafScale
+# Try OpenTSx locally: a test installation with k3s and KafScale
 
-*Anleitung zum Ausdrucken · Stand 12.10.2026 (Version 2, mit Probelauf) · gilt für `master` ab diesem Datum*
+*Printable guide for `master`.*
 
-> **Worum es geht.** Auf **einem** Linux-Rechner laufen danach: ein lokales KafScale (Log-Speicher, Kafka-Protokoll,
-> per docker compose), ein k3s-Cluster mit dem Statistik-Prozessor, dem Retrieval-Server und dem Smart Topics Studio,
-> dazu als Jobs der Windpark-Simulator und die drei Zwillinge (H2-Kette, Haus, Boot).
+> **What you get.** One Linux machine runs a local KafScale (log storage, Kafka protocol, through docker compose) and
+> a k3s cluster with the statistics processor, the retrieval server and Smart Topics Studio. The wind farm simulator
+> and the three twins (H2 chain, house, boat) run as Jobs.
 >
-> **Zeitbedarf:** 60–90 Minuten, davon 10–20 Minuten Bauzeit. **Rechner:** 4 CPU-Kerne, 8 GB RAM (16 GB angenehmer),
-> 20 GB freier Speicher, Ubuntu 24.04 LTS (andere Linux-Systeme gehen sinngemäß), Internetzugang für die Downloads.
+> **Time:** 60 to 90 minutes, of which 10 to 20 minutes are build time. **Machine:** 4 CPU cores, 8 GB RAM (16 GB is
+> more comfortable), 20 GB free disk, Ubuntu 24.04 LTS (other Linux systems work in the same way), internet access for
+> the downloads.
 >
-> **Ehrlicher Stand:** Skripte und Manifeste sind geprüft (Syntax, Manifeste gegen die Kubernetes-Schemas, alle
-> Befehle im Image). Ein vollständiger Lauf auf einem echten k3s mit KafScale steht noch aus. **Ihr Lauf ist der
-> erste.** Bitte die Prüfliste (Teil E) ausfüllen und Auffälligkeiten notieren.
+> **What is verified:** CI runs shellcheck and the shell tests on the scripts, validates the rendered manifests against
+> the Kubernetes 1.31 schemas, checks that the image offers the commands of `bin/opentsx` and loads the configuration
+> of every rendered `opentsx/tools` container. CI does not run a complete installation on a real k3s with KafScale
+> ([What CI checks](today-vs-planned.md#what-ci-checks)). Fill in the checklist (part E) and note anything unexpected.
 
-| Notizen | |
+| Notes | |
 |---|---|
-| Datum | &nbsp; |
-| Rechner / Betriebssystem | &nbsp; |
-| LAN-IP des Rechners (`HOST_IP`, Schritt A5) | &nbsp; |
-| Ergebnis (alles grün / Abbruch bei Schritt …) | &nbsp; |
+| Date | &nbsp; |
+| Machine / operating system | &nbsp; |
+| LAN IP of the machine (`HOST_IP`, step A5) | &nbsp; |
+| Result (all green / stopped at step ...) | &nbsp; |
 
-## Überblick
+## See what runs where
 
 ```text
-+---------------------- ein Linux-Rechner -----------------------+
++---------------------- one Linux machine ----------------------+
 |                                                                |
-|  docker compose (Teil B)            k3s (Teil C)               |
+|  docker compose (part B)            k3s (part C)               |
 |  +----------------------+  9092    +------------------------+  |
-|  | KafScale-Broker      |<-------->| Namespace opentsx      |  |
-|  | etcd, MinIO (S3)     | HOST_IP  | Statistik, Retrieval,  |  |
-|  +----------------------+          | Studio, Demo-Jobs      |  |
+|  | KafScale broker      |<-------->| namespace opentsx      |  |
+|  | etcd, MinIO (S3)     | HOST_IP  | statistics, retrieval, |  |
+|  +----------------------+          | Studio, demo Jobs      |  |
 |                                    +------------------------+  |
 |                                                                |
 +----------------------------------------------------------------+
 ```
 
-Wichtigster Punkt: KafScale muss sich mit der **LAN-IP** des Rechners melden (nicht mit `localhost`). Die Pods in k3s
-verbinden sich zuerst mit der Bootstrap-Adresse und danach mit der Adresse, die der Broker „ankündigt“. Beide müssen
-aus den Pods erreichbar sein.
+The most important point: KafScale must announce itself with the **LAN IP** of the machine (not with `localhost`).
+The pods in k3s first connect to the bootstrap address and then to the address that the broker advertises. Both must
+be reachable from the pods.
 
-## Teil A: Vorbereitung (einmalig)
+## Part A: Prepare the machine (once)
 
-**A1 – Grundpakete** (Java 21, Python, Docker mit compose):
+**A1: Base packages** (Java 21, Python, Docker with compose):
 
 ```bash
 sudo apt-get update
@@ -49,9 +51,9 @@ sudo apt-get install -y git curl netcat-openbsd openjdk-21-jdk python3 docker.io
 sudo usermod -aG docker "$USER"
 ```
 
-Danach **ab- und wieder anmelden**, damit die Gruppe `docker` wirkt. Prüfen: `docker run --rm hello-world`.
+Then **log out and log in again**, so that the group `docker` takes effect. Check: `docker run --rm hello-world`.
 
-**A2 – Maven 3.9** (Ubuntu liefert 3.8, gebraucht wird 3.9 oder neuer):
+**A2: Maven 3.9** (Ubuntu ships 3.8; `deploy/k3s/00-prereqs.sh` expects 3.9 or newer):
 
 ```bash
 MVN=3.9.9
@@ -59,10 +61,10 @@ URL=https://archive.apache.org/dist/maven/maven-3/$MVN/binaries
 curl -fsSL $URL/apache-maven-$MVN-bin.tar.gz | sudo tar -xz -C /opt
 echo "export PATH=/opt/apache-maven-$MVN/bin:\$PATH" >> ~/.bashrc
 source ~/.bashrc
-mvn -v            # erwartet: Apache Maven 3.9.9, Java version: 21
+mvn -v            # expected: Apache Maven 3.9.9, Java version: 21
 ```
 
-**A3 – k3s** (Kubernetes für einen Rechner):
+**A3: k3s** (Kubernetes for one machine):
 
 ```bash
 curl -sfL https://get.k3s.io | sh -
@@ -71,77 +73,77 @@ sudo k3s kubectl config view --raw > ~/.kube/config
 chmod 600 ~/.kube/config
 echo 'export KUBECONFIG=$HOME/.kube/config' >> ~/.bashrc
 source ~/.bashrc
-kubectl get nodes   # erwartet: eine Zeile mit STATUS Ready
+kubectl get nodes   # expected: one line with STATUS Ready
 ```
 
-**A4 – OpenTSx holen:**
+**A4: Get OpenTSx:**
 
 ```bash
 git clone https://github.com/kamir/OpenTSx.git
 cd OpenTSx
 ```
 
-Alle weiteren Befehle laufen in diesem Verzeichnis.
+Run all further commands in this directory.
 
-**A5 – LAN-IP ermitteln** und oben in die Notizen eintragen:
+**A5: Find the LAN IP** and write it into the notes above:
 
 ```bash
 HOST_IP=$(hostname -I | awk '{print $1}')
-echo "$HOST_IP"     # z. B. 192.168.1.20 – nicht 127.0.0.1 und nicht 172.17.x.x (Docker)
+echo "$HOST_IP"     # for example 192.168.1.20; not 127.0.0.1 and not 172.17.x.x (Docker)
 ```
 
-Wenn die erste Adresse nicht die LAN-Adresse ist: `ip -4 addr` ansehen und `HOST_IP=…` von Hand setzen. In jedem
-neuen Terminal muss `HOST_IP` erneut gesetzt werden.
+If the first address is not the LAN address, look at `ip -4 addr` and set `HOST_IP=<address>` by hand. Set
+`HOST_IP` again in every new terminal.
 
-## Schnellweg: Teil B bis E mit einem Befehl
+## Shortcut: parts B to E with one command
 
-Nach Teil A kann ein einziges Skript den Rest erledigen: KafScale lokal starten (mit der LAN-IP als angekündigter
-Adresse), bauen, importieren, konfigurieren, ausrollen, alle Demos ausführen und jede Station prüfen. Am Ende steht
-ein Prüfprotokoll mit BESTANDEN/FEHLER je Schritt und Hinweisen zur Abhilfe.
+After part A, one script does the rest: it starts KafScale locally (with the LAN IP as advertised address), builds,
+imports, configures, deploys, runs all demos and checks every step. At the end it writes a report with PASS, FAIL or
+SKIP per step and hints for each failure.
 
 ```bash
-deploy/k3s/60-probe.sh --dry-run --local-kafscale   # nur den Plan zeigen
-deploy/k3s/60-probe.sh --local-kafscale             # Probelauf, 30–60 min
+deploy/k3s/60-probe.sh --dry-run --local-kafscale   # show the plan only
+deploy/k3s/60-probe.sh --local-kafscale             # trial run, 30 to 60 minutes
 ```
 
-| Option | Wirkung |
+| Option | Effect |
 |---|---|
-| `--skip-build` | Bauen und Import überspringen (Images schon in k3s) |
-| `--online` | DWD-Schritt holt echte Vorhersagen (sonst Beispieldatei, kein Internet nötig) |
-| `--keep-going` | nach einem Fehler in Vorbereitung/Bau/Ausrollen trotzdem weitermachen |
-| `--only kafscale-check,twin` | nur bestimmte Schritte |
-| `--kafscale-host 192.168.1.20` | IP selbst vorgeben, falls die automatische Wahl nicht passt |
+| `--skip-build` | skip the build and the image import (the images are already in k3s) |
+| `--online` | the DWD step fetches live forecasts (default: the fixture file in the image, no internet needed) |
+| `--keep-going` | continue after a failed `kafscale-local`, `prereqs`, `build`, `import`, `configure` or `deploy` step |
+| `--only kafscale-check,twin` | run only these steps |
+| `--kafscale-host 192.168.1.20` | with `--local-kafscale`: the IP to advertise and use, when the automatic choice is wrong |
 
-Ergebnis: `probe-report-<Zeit>.md` (Übersicht) und `probe-logs-<Zeit>/` (Ausgabe je Schritt). Exit-Code 0 heißt:
-alles bestanden. Wer lieber Schritt für Schritt vorgeht oder einen Fehler eingrenzen will, folgt Teil B bis E.
+Result: `probe-report-<UTC time>.md` (summary) and `probe-logs-<UTC time>/` (output per step). Exit code 0 means
+that no step failed. To go step by step or to narrow down a failure, follow parts B to E.
 
-## Teil B: Lokales KafScale starten
+## Part B: Start a local KafScale
 
 ```bash
 KAFSCALE_ADVERTISED_HOST=$HOST_IP docker compose -f docker-compose.kafscale.yml up -d
-docker compose -f docker-compose.kafscale.yml ps   # broker, etcd, minio laufen
-nc -vz "$HOST_IP" 9092                              # erwartet: succeeded / open
+docker compose -f docker-compose.kafscale.yml ps   # kafscale-broker, etcd and minio are running
+nc -vz "$HOST_IP" 9092                              # expected: succeeded / open
 ```
 
-Nur wenn eine Firewall (ufw) aktiv ist, den Pods den Weg zum Broker freigeben:
+Only when a firewall (ufw) is active, allow the pods to reach the broker:
 
 ```bash
 sudo ufw allow from 10.42.0.0/16 to any port 9092 proto tcp
 ```
 
-## Teil C: OpenTSx in k3s installieren
+## Part C: Install OpenTSx in k3s
 
-| Schritt | Befehl | Erwartet |
+| Step | Command | Expected |
 |---|---|---|
-| C1 Voraussetzungen prüfen | `KAFSCALE_BOOTSTRAP=$HOST_IP:9092 deploy/k3s/00-prereqs.sh` | Ende: `all required checks passed` (Warnungen erlaubt) |
-| C2 Bauen (10–20 min) | `deploy/k3s/10-build.sh` | zwei Images `opentsx/tools` und `opentsx/studio` |
-| C3 Images an k3s geben | `deploy/k3s/11-import-images.sh` | fragt nach dem sudo-Passwort, importiert beide Images |
-| C4 Konfigurieren | `deploy/k3s/20-configure.sh KAFSCALE_BOOTSTRAP=$HOST_IP:9092` | schreibt `deploy/k3s/.env` |
-| C5 Ausrollen | `deploy/k3s/30-deploy.sh` | Namespace `opentsx`, drei Deployments |
-| C6 Zustand ansehen | `deploy/k3s/50-status.sh` | alle Pods `Running`, keine Fehler |
-| C7 Verbindung prüfen | `deploy/k3s/40-demo.sh kafscale-check` | siehe unten |
+| C1 check the prerequisites | `KAFSCALE_BOOTSTRAP=$HOST_IP:9092 deploy/k3s/00-prereqs.sh` | last line: `all required checks passed` (warnings are allowed) |
+| C2 build (10 to 20 minutes) | `deploy/k3s/10-build.sh` | two images `opentsx/tools` and `opentsx/studio` |
+| C3 give the images to k3s | `deploy/k3s/11-import-images.sh` | asks for the sudo password, imports both images |
+| C4 configure | `deploy/k3s/20-configure.sh KAFSCALE_BOOTSTRAP=$HOST_IP:9092` | writes `deploy/k3s/.env` |
+| C5 deploy | `deploy/k3s/30-deploy.sh` | namespace `opentsx`, three Deployments |
+| C6 look at the state | `deploy/k3s/50-status.sh` | all pods `Running`, no errors |
+| C7 check the connection | `deploy/k3s/40-demo.sh kafscale-check` | see below |
 
-Erwartete Ausgabe von C7 (gekürzt):
+Expected output of C7 (trimmed):
 
 ```text
 bootstrap 192.168.1.20:9092
@@ -154,86 +156,86 @@ domain wind:
 OK
 ```
 
-Steht dort `advertised localhost:9092: NOT reachable`, kündigt KafScale die falsche Adresse an: Teil B mit
-gesetztem `KAFSCALE_ADVERTISED_HOST` wiederholen (`docker compose … down`, dann `up -d`).
+If it shows `advertised localhost:9092: NOT reachable`, KafScale advertises the wrong address: repeat part B with
+`KAFSCALE_ADVERTISED_HOST` set (`docker compose -f docker-compose.kafscale.yml down`, then `up -d`).
 
-## Teil D: Demos
+## Part D: Run the demos
 
-Alles in einem Durchgang (etwa 5 Minuten):
+All in one pass (about 5 minutes):
 
 ```bash
 deploy/k3s/40-demo.sh all
 ```
 
-Oder einzeln:
+Or one at a time:
 
-| Befehl | Was passiert | Woran man Erfolg erkennt |
+| Command | What happens | How you see that it worked |
 |---|---|---|
-| `deploy/k3s/40-demo.sh windpark-sim` | Windpark-Simulator schreibt Episoden nach KafScale | Job `Complete`; `kafscale-check` zeigt danach Records in `tsx.wind.episodes.v2` |
-| `deploy/k3s/40-demo.sh stats` | Statistik-Prozessor fasst die Episoden zusammen | Records in `tsx.wind.series-stats.v2` |
-| `deploy/k3s/40-demo.sh twin` | H2-Kette: Schatten, Was-wäre-wenn, Prognose | Ereignisse wie `protective_shutdown`, je Lauf eine Lauf-Id und ein Hash |
-| `deploy/k3s/40-demo.sh house` | Einfamilienhaus: Referenzjahr und Stellhebel | Kennzahlen (Öl, Holz, Strom) und Differenzen je Hebel |
-| `deploy/k3s/40-demo.sh boat` | Etap 22: zwei Wochen Törn, Hebel Solar/Speicher/Starlink | Autonomie und ungedeckter Bedarf je Variante |
-| `deploy/k3s/40-demo.sh retrieval` | Retrieval-API antwortet | `/v1/health` und eine Episode als JSON |
-| `deploy/k3s/40-demo.sh studio` | Studio im Browser | **http://localhost:8088** zeigt H2-Kette, Haus und Boot in drei Ansichten (Ctrl-C beendet) |
+| `deploy/k3s/40-demo.sh windpark-sim` | the wind farm simulator writes episodes to KafScale | Job `Complete`; `kafscale-check` then shows records in `tsx.wind.episodes.v2` |
+| `deploy/k3s/40-demo.sh stats` | the statistics processor summarizes the episodes | records in `tsx.wind.series-stats.v2` |
+| `deploy/k3s/40-demo.sh twin` | H2 chain: shadow, what-if, forecast | events such as `protective_shutdown`, a run id and a hash per run |
+| `deploy/k3s/40-demo.sh house` | single-family house: reference year and levers | KPIs (heating oil, firewood, electricity) and the differences per lever |
+| `deploy/k3s/40-demo.sh boat` | Etap 22: a two-week trip, levers solar, storage and Starlink | autonomy and unmet demand per variant |
+| `deploy/k3s/40-demo.sh retrieval` | the retrieval API answers | `/v1/health` and an episode as JSON |
+| `deploy/k3s/40-demo.sh studio` | the Studio in the browser | **http://localhost:8088** shows the H2 chain, the house and the boat in three views (Ctrl-C stops it) |
 
-Die Ergebnisse sind reproduzierbar: Gleicher Code und gleiche Eingaben ergeben dieselbe Lauf-Id und denselben Hash.
+The results are reproducible: the same code and the same inputs give the same run id and the same hash.
 
-## Teil E: Prüfliste zum Abhaken
+## Part E: Tick off the checklist
 
-| ✓ | Prüfpunkt | Notiz |
+| Done | Check | Note |
 |---|---|---|
-| ☐ | A: `mvn -v` zeigt Maven 3.9 und Java 21 | |
-| ☐ | A: `kubectl get nodes` zeigt `Ready` | |
-| ☐ | B: `nc -vz $HOST_IP 9092` erfolgreich | |
-| ☐ | C1: `all required checks passed` | |
-| ☐ | C2/C3: beide Images gebaut und importiert | |
-| ☐ | C6: alle Pods `Running` | |
-| ☐ | C7: bootstrap **und** advertised `reachable`, `OK` | |
-| ☐ | D: Windpark-Episoden und Statistik in KafScale | |
-| ☐ | D: Zwilling, Haus, Boot laufen durch | |
-| ☐ | D: Retrieval antwortet, Studio im Browser sichtbar | |
-| ☐ | Schnellweg: `60-probe.sh` ohne FEHLER, Prüfprotokoll beigelegt | |
+| [ ] | A: `mvn -v` shows Maven 3.9 and Java 21 | |
+| [ ] | A: `kubectl get nodes` shows `Ready` | |
+| [ ] | B: `nc -vz $HOST_IP 9092` succeeds | |
+| [ ] | C1: `all required checks passed` | |
+| [ ] | C2 and C3: both images built and imported | |
+| [ ] | C6: all pods `Running` | |
+| [ ] | C7: bootstrap **and** advertised `reachable`, `OK` | |
+| [ ] | D: wind farm episodes and statistics in KafScale | |
+| [ ] | D: twin, house and boat run to the end | |
+| [ ] | D: retrieval answers, Studio visible in the browser | |
+| [ ] | Shortcut: `60-probe.sh` without FAIL, report attached | |
 
-## Teil F: Wenn etwas hakt
+## Part F: Fix common problems
 
-| Symptom | Ursache | Abhilfe |
+| Symptom | Cause | Fix |
 |---|---|---|
-| `ErrImageNeverPull` / `ImagePullBackOff` | Images nicht in k3s (Docker-Images sieht k3s nicht) | `deploy/k3s/11-import-images.sh`, danach `deploy/k3s/30-deploy.sh --restart` |
-| `bootstrap … NOT reachable` | Firewall oder falsche IP | `nc -vz $HOST_IP 9092`; ufw-Regel aus Teil B; IP in C4 prüfen |
-| `advertised localhost:9092: NOT reachable` | KafScale kündigt `localhost` an | Teil B mit `KAFSCALE_ADVERTISED_HOST=$HOST_IP` neu starten |
-| Statistik bleibt bei 0 Records | Prozessor startete vor den Topics | `kubectl -n opentsx rollout restart deploy/opentsx-stats` |
-| Pod `OOMKilled` | zu wenig Speicher | andere Programme schließen; Grenzen siehe `docs/devops/sizing-plan.md` |
-| `port-forward`: Adresse belegt | Port 8088 schon benutzt | `kubectl -n opentsx port-forward svc/opentsx-studio 9099:80` → http://localhost:9099 |
-| alter Stand nach Neubau | gleiches Image-Tag | `deploy/k3s/30-deploy.sh --restart` |
+| `ErrImagePull` / `ImagePullBackOff` | the images are not in k3s (k3s does not see Docker's images) | `deploy/k3s/11-import-images.sh`, then `deploy/k3s/30-deploy.sh --restart` |
+| `bootstrap ... NOT reachable` | firewall or wrong IP | `nc -vz $HOST_IP 9092`; the ufw rule from part B; check the IP in C4 |
+| `advertised localhost:9092: NOT reachable` | KafScale advertises `localhost` | restart part B with `KAFSCALE_ADVERTISED_HOST=$HOST_IP` |
+| statistics stay at 0 records | the processor started before the topics existed | `kubectl -n opentsx rollout restart deploy/opentsx-stats` |
+| pod `OOMKilled` | not enough memory | close other programs; limits in `docs/devops/sizing-plan.md` |
+| `port-forward`: address already in use | port 8088 is taken | `kubectl -n opentsx port-forward svc/opentsx-studio 9099:80`, then open http://localhost:9099 |
+| old version after a rebuild | same image tag | `deploy/k3s/30-deploy.sh --restart` |
 
-Mehr: `docs/devops/troubleshooting.md`. Zustand und Logs auf einen Blick: `deploy/k3s/50-status.sh --logs`.
+More: `docs/devops/troubleshooting.md`. State and logs at a glance: `deploy/k3s/50-status.sh --logs`.
 
-## Teil G: Aufräumen
+## Part G: Clean up
 
 ```bash
-deploy/k3s/90-teardown.sh                              # OpenTSx aus k3s entfernen (fragt nach)
-docker compose -f docker-compose.kafscale.yml down -v  # lokales KafScale samt Daten entfernen
-/usr/local/bin/k3s-uninstall.sh                        # nur wenn k3s ganz weg soll
+deploy/k3s/90-teardown.sh                              # remove OpenTSx from k3s (asks first)
+docker compose -f docker-compose.kafscale.yml down -v  # remove the local KafScale and its data
+/usr/local/bin/k3s-uninstall.sh                        # only if k3s should go completely
 ```
 
-## Plan B: ohne Cluster, nur die Zwillinge
+## Plan B: run only the twins, without a cluster
 
-Wer nur die Modelle sehen will, braucht weder Docker noch k3s (nur Teil A1, A2, A4):
+To see only the models, you need neither Docker nor k3s (only parts A1, A2 and A4):
 
 ```bash
 mvn -q install -DskipTests
-bin/opentsx twin                 # H2-Kette in drei Betriebsarten
-bin/opentsx house --simulated    # Haus mit simulierten Abrechnungen und Kalibrierung
-bin/opentsx boat --simulated     # Boot mit simulierten Logger-Daten
+bin/opentsx twin                 # H2 chain in three modes
+bin/opentsx house --simulated    # house with simulated bills and calibration
+bin/opentsx boat --simulated     # boat with simulated logger data
 ```
 
-Das Studio lässt sich direkt im Browser öffnen: `docs/prototypes/smart-topics-studio.html`.
+Open the Studio directly in the browser: `docs/prototypes/smart-topics-studio.html`.
 
-## Betrieb nach dem Test
+## Operate it after the test
 
-Das Betriebskonzept ([operations.md](operations.md)) beschreibt Überwachung, Sicherung, Updates und
-Störungsabläufe. Sicherung und Wiederherstellung: `deploy/k3s/70-backup.sh` und `deploy/k3s/71-restore.sh`.
+The [operations concept](operations.md) describes monitoring, backup, updates and incident procedures. Backup and
+restore: `deploy/k3s/70-backup.sh` and `deploy/k3s/71-restore.sh`.
 
-*Weiterführend:* [DevOps-Leitfaden](README.md) · [Betriebskonzept](operations.md) · [Setup-Plan](setup-plan.md) · [Sizing-Plan](sizing-plan.md) ·
-[Demos](demos.md) · [Fehlersuche](troubleshooting.md)
+*Further reading:* [DevOps guide](README.md) · [Operations](operations.md) · [Setup plan](setup-plan.md) ·
+[Sizing plan](sizing-plan.md) · [Demos](demos.md) · [Troubleshooting](troubleshooting.md)
