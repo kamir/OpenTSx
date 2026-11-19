@@ -20,21 +20,21 @@ version: '3'
       KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
       KSQL_KSQL_CONNECT_URL: "http://connect-west-1:8083"
     extra_hosts:
-      - "zookeeper-east:192.168.0.6"
-      - "zookeeper-central:192.168.0.6"
-      - "zookeeper-west:192.168.0.6"
-      - "broker-east-4:192.168.0.6"
-      - "broker-east-3:192.168.0.6"
-      - "broker-west-1:192.168.0.6"
-      - "broker-west-2:192.168.0.6"
-      - "broker-west-5:192.168.0.9"
-      - "broker-west-6:192.168.0.9"
-      - "broker-west-7:192.168.0.9"
-      - "broker-east-8:192.169.0.11"
-      - "broker-east-9:192.169.0.11"
-      - "broker-east-10:192.169.0.11"
-      - "connect-west-1:192.168.0.6"
-      - "control-center:192.168.0.6"
+      - "zookeeper-east:${MDC2}"
+      - "zookeeper-central:${MDC2}"
+      - "zookeeper-west:${MDC2}"
+      - "broker-east-4:${MDC2}"
+      - "broker-east-3:${MDC2}"
+      - "broker-west-1:${MDC2}"
+      - "broker-west-2:${MDC2}"
+      - "broker-west-5:${MDC1}"
+      - "broker-west-6:${MDC1}"
+      - "broker-west-7:${MDC1}"
+      - "broker-east-8:${MDC3}"
+      - "broker-east-9:${MDC3}"
+      - "broker-east-10:${MDC3}"
+      - "connect-west-1:${MDC2}"
+      - "control-center:${MDC2}"
 
   ksqldb-cli:
     image: ${REPOSITORY}/cp-ksqldb-cli:${CONFLUENT_DOCKER_TAG}
@@ -44,21 +44,21 @@ version: '3'
     entrypoint: /bin/sh
     tty: true
     extra_hosts:
-      - "zookeeper-east:192.168.0.6"
-      - "zookeeper-central:192.168.0.6"
-      - "zookeeper-west:192.168.0.6"
-      - "broker-east-4:192.168.0.6"
-      - "broker-east-3:192.168.0.6"
-      - "broker-west-1:192.168.0.6"
-      - "broker-west-2:192.168.0.6"
-      - "broker-west-5:192.168.0.9"
-      - "broker-west-6:192.168.0.9"
-      - "broker-west-7:192.168.0.9"
-      - "broker-east-8:192.169.0.11"
-      - "broker-east-9:192.169.0.11"
-      - "broker-east-10:192.169.0.11"
-      - "connect-west-1:192.168.0.6"
-      - "control-center:192.168.0.6"
+      - "zookeeper-east:${MDC2}"
+      - "zookeeper-central:${MDC2}"
+      - "zookeeper-west:${MDC2}"
+      - "broker-east-4:${MDC2}"
+      - "broker-east-3:${MDC2}"
+      - "broker-west-1:${MDC2}"
+      - "broker-west-2:${MDC2}"
+      - "broker-west-5:${MDC1}"
+      - "broker-west-6:${MDC1}"
+      - "broker-west-7:${MDC1}"
+      - "broker-east-8:${MDC3}"
+      - "broker-east-9:${MDC3}"
+      - "broker-east-10:${MDC3}"
+      - "connect-west-1:${MDC2}"
+      - "control-center:${MDC2}"
 
   prometheus:
     image: prom/prometheus:v2.11.1
@@ -70,19 +70,19 @@ version: '3'
     networks:
       - n1
     extra_hosts:
-      - "broker-west-5:192.168.0.9"
-      - "broker-west-6:192.168.0.9"
-      - "broker-west-7:192.168.0.9"
-      - "broker-west-1:192.168.0.6"
-      - "broker-west-2:192.168.0.6"
-      - "broker-east-3:192.168.0.6"
-      - "broker-east-4:192.168.0.6"
-      - "zookeeper-central:192.168.0.6"
-      - "zookeeper-east:192.168.0.6"
-      - "zookeeper-west:192.168.0.6"
-      - "broker-east-8:192.169.0.11"
-      - "broker-east-9:192.169.0.11"
-      - "broker-east-10:192.169.0.11"
+      - "broker-west-5:${MDC1}"
+      - "broker-west-6:${MDC1}"
+      - "broker-west-7:${MDC1}"
+      - "broker-west-1:${MDC2}"
+      - "broker-west-2:${MDC2}"
+      - "broker-east-3:${MDC2}"
+      - "broker-east-4:${MDC2}"
+      - "zookeeper-central:${MDC2}"
+      - "zookeeper-east:${MDC2}"
+      - "zookeeper-west:${MDC2}"
+      - "broker-east-8:${MDC3}"
+      - "broker-east-9:${MDC3}"
+      - "broker-east-10:${MDC3}"
 
   grafana:
     image: grafana/grafana:6.6.2
@@ -93,7 +93,7 @@ version: '3'
     volumes:
       - ./grafana/provisioning/:/etc/grafana/provisioning/
     extra_hosts:
-      - "prometheus-mdc-1:192.168.0.9"
+      - "prometheus-mdc-1:${MDC1}"
 
 networks:
   n1:

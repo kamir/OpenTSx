@@ -3,6 +3,8 @@ package org.opentsx.connectors.kafka;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
@@ -10,16 +12,24 @@ import java.util.concurrent.ExecutionException;
 
 public class TopicsManagerTool {
 
+    private static final Logger LOG = LoggerFactory.getLogger(TopicsManagerTool.class);
+
     /**
      * This is the default TOPIC-DEFINITION-File
      */
     public static String TOPICS_DEF_FN = "config/topiclist.def";
 
     public static Vector<String> getTopicList() throws InterruptedException {
+        try (AdminClient adminClient = AdminClient.create(OpenTSxClusterLink.getClientProperties())) {
+            return getTopicList(adminClient);
+        }
+    }
+
+    public static Vector<String> getTopicList(Admin adminClient) throws InterruptedException {
 
         Vector<String> liste = new Vector<>();
 
-        try (AdminClient adminClient = AdminClient.create(OpenTSxClusterLink.getClientProperties())) {
+        try {
             for ( TopicListing tl : adminClient.listTopics().listings().get() ) {
                 if ( !tl.isInternal() )
                     if ( !tl.name().startsWith("_") )
@@ -31,22 +41,13 @@ public class TopicsManagerTool {
                     + e.getCause().getMessage(), e.getCause());
         }
 
-        for( String tn : liste ) {
-            System.out.println("TOPIC: --> " + tn);
-        }
+        LOG.debug("topics listed count={} topics={}", liste.size(), liste);
 
         return liste;
     }
 
     public static Vector<String> listTopics() throws InterruptedException {
-
-        Vector<String> l = getTopicList();
-
-        for( String n : l )
-            System.out.println( "> TOPIC --> {" + n + "}" );
-
-        return l;
-
+        return getTopicList();
     }
 
     public static void createTopic(String tn, int partitions, int repl, int min_isr) throws InterruptedException {
@@ -60,23 +61,16 @@ public class TopicsManagerTool {
     }
 
     public static void createTopics(List<NewTopic> newTopics) throws InterruptedException {
-
-        System.out.println("*********> CREATE TOPICS : " + newTopics.size());
-
         try (AdminClient adminClient = AdminClient.create(OpenTSxClusterLink.getClientProperties())) {
             createTopics(adminClient, newTopics);
         }
-
-        System.out.println("*********> List topics ...");
-
-        TopicsManagerTool.listTopics();
-
     }
 
     /** Creates each topic that does not exist yet; an existing topic is kept as it is. */
     public static void createTopics(Admin adminClient, List<NewTopic> newTopics) throws InterruptedException {
         for( NewTopic nt : newTopics ) {
-            System.out.println("--->>>" + nt.toString() );
+            LOG.debug("creating the topic topic={} partitions={} replication={}", nt.name(), nt.numPartitions(),
+                    nt.replicationFactor());
             try {
                 adminClient.createTopics(List.of(nt)).all().get();
             }
@@ -85,7 +79,7 @@ public class TopicsManagerTool {
                     throw new IllegalStateException(nt.name() + ": could not create the topic; "
                             + e.getCause().getMessage(), e.getCause());
                 }
-                System.out.println("> topic exists: " + nt.name());
+                LOG.debug("topic exists, kept topic={}", nt.name());
             }
         }
     }
@@ -101,70 +95,39 @@ public class TopicsManagerTool {
         for( String tn : names ) {
             try {
                 adminClient.deleteTopics(List.of(tn)).all().get();
-                System.out.println("*** DELETE TOPIC: *** [" + tn + "] deleted");
+                LOG.debug("topic deleted topic={}", tn);
             }
             catch (ExecutionException e) {
                 if (!(e.getCause() instanceof UnknownTopicOrPartitionException)) {
                     throw new IllegalStateException(tn + ": could not delete the topic; "
                             + e.getCause().getMessage(), e.getCause());
                 }
-                System.out.println("*** DELETE TOPIC: *** [" + tn + "] does not exist");
+                LOG.debug("topic does not exist, skipped topic={}", tn);
             }
         }
     }
 
     public static Vector<String> getTopicNames() throws IOException {
-        File f = new File(TOPICS_DEF_FN);
-        FileReader fr = new FileReader( f );
-        BufferedReader br = new BufferedReader( fr );
-
-        // we skip line 0
-        String lin0 = br.readLine();
-        System.out.println( TOPICS_DEF_FN + " => (R: " + f.canRead() +")" );
-        System.out.println( "[HEADER] ");
-
         Vector<String> topicNames = new Vector<String>();
-        boolean go = true;
-        while( go ) {
-
-            String line = br.readLine();
-
-            if (!(line==null) ) {
-
-                String name = line.split(",")[0];
-                topicNames.add(name);
-
+        try (BufferedReader br = new BufferedReader( new FileReader( TOPICS_DEF_FN ) )) {
+            // we skip line 0
+            br.readLine();
+            String line;
+            while( (line = br.readLine()) != null ) {
+                topicNames.add(line.split(",")[0]);
             }
-            else {
-
-                go = false;
-
-            }
-
         }
+        LOG.debug("topic list read path={} topics={}", TOPICS_DEF_FN, topicNames);
         return topicNames;
     }
 
     public static Vector<NewTopic> getTopicDefs() throws IOException {
-        File f = new File(TOPICS_DEF_FN);
-        FileReader fr = new FileReader( f );
-        BufferedReader br = new BufferedReader( fr );
-
-        // we skip line 0
-        String line0 = br.readLine();
-        System.out.println( "[TOPIC DEFINITION FILE] ");
-        System.out.println( TOPICS_DEF_FN + "(r: " + f.canRead() +")" );
-        System.out.println( "[HEADER] ");
-        System.out.println( line0 );
-
-        System.out.println( "[CONTENT] ");
         Vector<NewTopic> topics = new Vector<NewTopic>();
-        boolean go = true;
-        while( go ) {
-            String line = br.readLine();
-            if (!(line==null) ) {
-                System.out.println(line);
-
+        try (BufferedReader br = new BufferedReader( new FileReader( TOPICS_DEF_FN ) )) {
+            // we skip line 0
+            br.readLine();
+            String line;
+            while( (line = br.readLine()) != null ) {
                 String[] FIELDS = line.split(",");
                 String name = FIELDS[0];
                 Integer partitions = Integer.parseInt(FIELDS[1]);
@@ -172,21 +135,15 @@ public class TopicsManagerTool {
                 NewTopic nt = new NewTopic(name, partitions, (short) repl.intValue());
                 topics.add(nt);
             }
-            else go = false;
         }
-        System.out.println( "{NUMBER OF TOPICS: " + topics.size() + "}");
-
-
+        LOG.debug("topic definitions read path={} count={}", TOPICS_DEF_FN, topics.size());
         return topics;
     }
 
     public static Vector<String> initTopicDefinitions(String topicsDefFn) {
 
-        System.out.println( ">>> Overwrite topicsDefFN ... ");
-        System.out.println( ">>> OLD: " + TOPICS_DEF_FN );
         TOPICS_DEF_FN = topicsDefFn;
-        System.out.println( ">>> NEW: " + TOPICS_DEF_FN );
-        System.out.println( " " );
+        LOG.debug("topic list path={}", TOPICS_DEF_FN);
 
         return getExpectedTopicList();
 
@@ -216,25 +173,28 @@ public class TopicsManagerTool {
 
 
     public static boolean checkAllTopicsAvailable() throws IOException, InterruptedException {
+        try (AdminClient adminClient = AdminClient.create(OpenTSxClusterLink.getClientProperties())) {
+            return checkAllTopicsAvailable(adminClient);
+        }
+    }
 
-        Vector<String> listOfKnownTopics = TopicsManagerTool.getTopicList();
-        Vector<String> listOfExpectedTopics = TopicsManagerTool.getTopicNames();
+    public static boolean checkAllTopicsAvailable(Admin adminClient) throws IOException, InterruptedException {
+        return getMissingTopics(adminClient).isEmpty();
+    }
+
+    /** The topics of the topic list that the cluster does not have, in the order of the list. */
+    public static Vector<String> getMissingTopics(Admin adminClient) throws IOException, InterruptedException {
+
+        Vector<String> listOfKnownTopics = TopicsManagerTool.getTopicList(adminClient);
 
         Vector<String> missingTopics = new Vector<String>();
 
-        for( String expectedName : listOfExpectedTopics ) {
-            boolean isAvailable = listOfKnownTopics.contains( expectedName );
-            System.out.println( "TOPIC : " + expectedName + " => " + isAvailable );
-            listOfKnownTopics.remove( expectedName );
-            if ( !isAvailable )
+        for( String expectedName : TopicsManagerTool.getTopicNames() ) {
+            if ( !listOfKnownTopics.contains( expectedName ) ) {
                 missingTopics.add( expectedName );
+            }
         }
 
-        System.out.println( "[MISSING TOPICS]: => " + missingTopics.size() );
-        for( String m : missingTopics ) {
-            System.out.println  ( "  - " + m );
-        }
-
-        return missingTopics.size() == 0;
+        return missingTopics;
     }
 }

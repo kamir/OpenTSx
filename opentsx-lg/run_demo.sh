@@ -1,7 +1,6 @@
 #
 # Prepare environment variables for local CP
 #
-export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home
 export CONFLUENT_HOME="$HOME/bin/confluent-5.5.1"
 
 #
@@ -66,19 +65,12 @@ $CONFLUENT_HOME/bin/kafka-topics --bootstrap-server 127.0.0.1:9092 --describe | 
 $CONFLUENT_HOME/bin/kafka-topics --bootstrap-server 127.0.0.1:9092 --describe | grep 'Offline: .+'
 
 #
-# FROM HERE WE HAVE KSQL CODE !!!
+# The KSQL statements of the demo. Paste them into the ksql CLI; the SELECT statements block and print results.
+# The query ids in the terminate statements differ per server: look them up with SHOW QUERIES.
 #
-
-#
-# TODO WRITE INTO FILE AND RUN VIA KSQL-CLI
-# Be aware of some limitations!
-#
-
+cat <<'KSQL'
 set 'ksql.schema.registry.url'='http://localhost:8081';
 
-#
-# It would be better to use the latest KSQDB version and the Java client.
-#
 CREATE STREAM OpenTSx_Event_Flow_State_stream (
   persistEvents VARCHAR,
   persistEpisodes VARCHAR,
@@ -92,7 +84,6 @@ CREATE STREAM OpenTSx_Event_Flow_State_stream (
   generateDuration DOUBLE
 ) WITH (KAFKA_TOPIC = 'OpenTSx_Event_Flow_State', VALUE_FORMAT='JSON');
 
-
 CREATE STREAM OpenTSx_Episodes_A_stream WITH (KAFKA_TOPIC = 'OpenTSx_Episodes_A', VALUE_FORMAT='AVRO');
 
 CREATE STREAM OpenTSx_Episodes_B_stream WITH (KAFKA_TOPIC = 'OpenTSx_Episodes_B', VALUE_FORMAT='AVRO');
@@ -102,12 +93,9 @@ CREATE STREAM OpenTSx_Events_stream WITH (KAFKA_TOPIC = 'OpenTSx_Events', VALUE_
 CREATE STREAM OpenTSx_Events_stream_materialized
 AS SELECT * FROM OpenTSx_Events_stream EMIT CHANGES;
 
-
 SELECT LABEL, TSTART, TEND, ZOBSERVATIONS, INCREMENT, URI FROM OPENTSX_EPISODES_A_STREAM EMIT CHANGES;
-# BLOCKS and prints results
 
 SELECT LABEL, TSTART, TEND, ZOBSERVATIONS, INCREMENT, URI FROM OPENTSX_EPISODES_B_STREAM EMIT CHANGES;
-# BLOCKS and prints results
 
 Create stream OPENTSX_EPISODES_A_MD_STREAM
 AS SELECT LABEL, TSTART, TEND, ZOBSERVATIONS, INCREMENT, URI
@@ -125,23 +113,13 @@ EMIT CHANGES;
 
 select * from OPENTSX_EVENTS_TAB4 emit changes;
 
-
 CREATE stream OpenTSx_Episodes_A_stats AS SELECT * FROM OpenTSx_Episodes_A_stream emit changes;
-#
-# track the id of the querey, so that we can close it before we drop the stream
-#
 terminate CSAS_OPENTSX_EPISODES_A_STATS_39;
 Drop stream OpenTSx_Episodes_A_stats;
-
-
-
 
 CREATE stream OpenTSx_Episodes_B_stats AS SELECT episodes_md(tstart, tend), label FROM OpenTSx_Episodes_B_stream emit changes;
 SELECT * from OpenTSx_Episodes_B_stats emit changes;
 
-#
-# track the id of the querey, so that we can close it before we drop the stream
-#
 terminate CSAS_OPENTSX_EPISODES_B_STATS_37;
 Drop stream OpenTSx_Episodes_B_stats;
-
+KSQL

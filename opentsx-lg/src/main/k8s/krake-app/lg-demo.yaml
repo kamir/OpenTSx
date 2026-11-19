@@ -12,27 +12,6 @@ spec:
       labels:
         app: tsa-generator
     spec:
-      hostAliases:
-        - ip: "192.168.0.6"
-          hostnames:
-            - "broker-west-1"
-            - "broker-west-2"
-            - "broker-east-3"
-            - "broker-east-4"
-            - "zookeeper-central"
-            - "zookeeper-east"
-            - "zookeeper-west"
-            - "schema-registry-west-1"
-        - ip: "192.168.0.9"
-          hostnames:
-            - "broker-west-5"
-            - "broker-west-6"
-            - "broker-west-7"
-        - ip: "192.169.0.11"
-          hostnames:
-            - "broker-east-8"
-            - "broker-east-9"
-            - "broker-east-10"
       containers:
       - name: tsa-generator
         image: opentsx/time-series-generator:3.0.0
@@ -51,11 +30,8 @@ spec:
 
       volumes:
       - name: configdir
-        hostPath:
-          # directory location on host
-          path: /home/ubuntu/OpenTSx/opentsx-lg/src/main/krake-app/config
-          # this field is optional
-          type: Directory 
+        configMap:
+          name: opentsx-lg-demo-config
 
 ---
 apiVersion: v1

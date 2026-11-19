@@ -12,12 +12,15 @@ import org.opentsx.core.TSData;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.VectorWritable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.text.DecimalFormat;
 import java.util.Vector;
 
 public class TSOWriter{
+
+    private static final Logger LOG = LoggerFactory.getLogger(TSOWriter.class);
 
     public static void persistBucket_CSV(Vector<TimeSeriesObject> mrs, String title, String tx, String ty, String fn, String csv) {
         MultiChart.store(mrs, title, tx, ty, false, ReferenceDataset.FILE_PATH, fn, "no comment");
@@ -25,17 +28,12 @@ public class TSOWriter{
 
     public static void persistBucket_SequenceFile(Vector<TimeSeriesObject> show, String title, String fn, String seq) throws Exception {
 
-        DecimalFormat df = new DecimalFormat("0.000");
-
         int ANZ = show.size();
-
-        System.out.println("--> create bucket : TSBucket -> " + title);
 
         Configuration config = initConfig();
         FileSystem fs = initFileSystem();
 
         Path path = new Path(ReferenceDataset.FILE_PATH + fn + ".tsb.vec." + seq);
-        System.out.println("--> create bucket : " + path.toString());
 
         // write a SequenceFile form a Vector
         SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
@@ -46,8 +44,6 @@ public class TSOWriter{
 
             TSData data = TSData.convertMessreihe(mr);
 
-            System.out.print("   (" + i + ")\t");
-
             NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
             VectorWritable vec = new VectorWritable();
             vec.set(nv);
@@ -56,26 +52,21 @@ public class TSOWriter{
         }
 
         writer.close();
-        System.out.println("### DONE : " + path.toString());
+        LOG.debug("bucket written title={} path={} series={}", title, path, ANZ);
 
     }
 
 
 
     /**
-     * Never implemented (it only logs). Use the v2 path instead: {@code org.opentsx.bridge.LegacyBridge}
+     * Never implemented; it stores nothing and throws. Use the v2 path instead: {@code org.opentsx.bridge.LegacyBridge}
      * (or {@code LegacyBucketImport} for TSBucket files) to create episodes and
      * {@code org.opentsx.kafka.BucketWriter} to store them.
      */
     @Deprecated
     public static void persistBucket_Kafka(Vector<TimeSeriesObject> show, String title, String topicname) {
-
-        int ANZ = show.size();
-
-        System.out.println("--> populate Kafka TSO topic : TSBucket -> " + topicname);
-
-        System.out.println("### !!! NOT YET DONE: Pushed " + show.size() + " TSOs to topic: ????" );
-
+        throw new UnsupportedOperationException(topicname + ": persistBucket_Kafka stores nothing; use"
+                + " org.opentsx.bridge.LegacyBridge and org.opentsx.kafka.BucketWriter");
     }
 
 
@@ -89,7 +80,6 @@ public class TSOWriter{
     private static Configuration initConfig() {
 
         if (config == null) {
-            System.out.println(">>> create new Configuration() ...");
             config = new Configuration();
         }
 
@@ -104,40 +94,16 @@ public class TSOWriter{
     }
 
     private static FileSystem initFileSystem() throws IOException {
-
-        FileSystem fs = null;
-
-        try {
-
-            fs = FileSystem.get(initConfig());
-
-            if (initConfig() == null) {
-                System.err.println("!!! ERROR !!! ");
-            }
-
-            if (fs == null) {
-                System.err.println("!!! ERROR !!! ");
-            }
-
-            System.out.println(fs);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-
-        return fs;
+        return FileSystem.get(initConfig());
     }
 
     public void persistEvents_Kafka(Vector<TimeSeriesObject> tsos, String title, String topicname) {
-
-        int ANZ = tsos.size();
-
-        System.out.println("--> populate Kafka events topic : TSBucket -> " + topicname);
 
         TSOEventProducer tsop = new TSOEventProducer();
 
         tsop.pushTSOItemsToKafka(tsos);
 
-        System.out.println("### DONE: Pushed " + tsos.size() + " TSO-events to topic: " + tsop.TOPIC + " ###");
+        LOG.debug("events sent topic={} series={}", TSOEventProducer.TOPIC, tsos.size());
 
     }
 }

@@ -4,6 +4,8 @@ import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.opentsx.core.TSBucket;
 import org.opentsx.tsa.rng.ReferenceDataset;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -14,6 +16,8 @@ import java.util.*;
  */
 public class TSOConsumer {
 
+    private static final Logger LOG = LoggerFactory.getLogger(TSOConsumer.class);
+
     Consumer c = null;
 
     public TSOConsumer(String tn) {
@@ -22,8 +26,6 @@ public class TSOConsumer {
 
     private static String TOPIC = ReferenceDataset.topicname;
 
-    private final static String BOOTSTRAP_SERVERS = "localhost:9092";
-
     /*
 
            We create a simple consumer which can consume String messages.
@@ -31,10 +33,8 @@ public class TSOConsumer {
      */
     private static Consumer<String, String> createConsumer(String TOPIC_NAME) {
 
-        final Properties props = new Properties();
+        final Properties props = OpenTSxClusterLink.getClientProperties();
 
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-                BOOTSTRAP_SERVERS);
         props.put(ConsumerConfig.GROUP_ID_CONFIG,
                 "TSOConsumer_" + System.currentTimeMillis() );
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
@@ -55,7 +55,7 @@ public class TSOConsumer {
         return consumer;
     }
 
-    public void runConsumer(TSBucket tsb, int z, String tn) throws InterruptedException {
+    public void runConsumer(TSBucket tsb, int z, String tn) {
 
         final Consumer<String, String> consumer = createConsumer(tn);
 
@@ -63,30 +63,32 @@ public class TSOConsumer {
 
         int noRecordsCount = 0;
 
-        while (noRecordsCount < giveUp) {
+        try {
+            while (noRecordsCount < giveUp) {
 
-            final ConsumerRecords<String, String> consumerRecords = consumer.poll(1000);
+                final ConsumerRecords<String, String> consumerRecords = consumer.poll(1000);
 
-            Iterator<ConsumerRecord<String, String>> it = consumerRecords.iterator();
+                Iterator<ConsumerRecord<String, String>> it = consumerRecords.iterator();
 
-            while( it.hasNext() ) {
+                while( it.hasNext() ) {
 
-                noRecordsCount++;
+                    noRecordsCount++;
 
-                ConsumerRecord record = it.next();
+                    ConsumerRecord record = it.next();
 
-                tsb.processKVToTSO( (String)record.key() , (String)record.value(), TOPIC );
+                    tsb.processKVToTSO( (String)record.key() , (String)record.value(), TOPIC );
 
-                System.out.printf( noRecordsCount + " -> " + giveUp + " # Consumer Record:(%s, %s, %s, %s)\n",
-                        record.key(), record.value(),
-                        record.partition(), record.offset());
+                    LOG.debug("record read count={} of={} partition={} offset={}",
+                            noRecordsCount, giveUp, record.partition(), record.offset());
 
-            };
+                };
 
-            consumer.commitAsync();
+                consumer.commitAsync();
+            }
         }
-        consumer.close();
-        System.out.println("DONE");
+        finally {
+            consumer.close();
+        }
     }
 
 }

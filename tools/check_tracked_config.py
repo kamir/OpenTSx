@@ -6,7 +6,7 @@ Exits 1 and prints one line per finding.
 
 Checks the files `git ls-files` lists under root:
   * nothing under config/private/, nothing under .idea/ and nothing under the measurement output directories
-    (opentsx-lg/src/main/docker-compose/output/);
+    (opentsx-lg/src/main/docker-compose/output/, opentsx-lg/opentsx/plots/);
   * in *.props, *.properties and .env files (.env, .env.<name>, .env-<name>): the hosts in the values of keys that
     end in servers, url, host, hostname, address or addresses (bootstrap.servers, schema.registry.url) and every
     value that is an IPv4 address are localhost, a loopback address or a placeholder (<name>, ${NAME}, $NAME, or a
@@ -29,7 +29,7 @@ PLACEHOLDER = re.compile(r"^(?:<[^<>]+>|\$\{[^}]+\}|\$[A-Za-z_][A-Za-z0-9_]*)$")
 EXAMPLE_DOMAIN = re.compile(r"(?:^|\.)(?:example\.(?:com|org|net)|example)$", re.I)
 REAL_HOST = re.compile(r"\b(?:(?:pkc|psrc|lkc|lsrc)-(?!x+\b)[a-z0-9]+(?:\.[a-z0-9-]+)*\.confluent\.cloud"
                        r"|[a-z0-9-]+(?:\.[a-z0-9-]+)*\.gce\.cloudera\.com)\b", re.I)
-OUTPUT_DIRS = ("opentsx-lg/src/main/docker-compose/output/",)
+OUTPUT_DIRS = ("opentsx-lg/src/main/docker-compose/output/", "opentsx-lg/opentsx/plots/")
 HOME_PATH = re.compile(r"/(?:Users|home)/([A-Za-z0-9._-]+)(?![A-Za-z0-9._-])")
 SERVICE_HOMES = {"Shared", "jovyan", "ubuntu", "ec2-user", "user"}
 

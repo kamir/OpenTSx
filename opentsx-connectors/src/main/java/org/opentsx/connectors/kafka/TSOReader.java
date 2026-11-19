@@ -3,13 +3,14 @@ package org.opentsx.connectors.kafka;
 
 import org.opentsx.connectors.kafka.topicmanager.TSBucket4Kafka;
 import org.opentsx.core.TSBucket;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TSOReader {
 
+    private static final Logger LOG = LoggerFactory.getLogger(TSOReader.class);
 
     public TSBucket loadBucket_Kafka(String topicname, int z) {
-
-        System.out.println("--> read time series bucket from Kafka topic : {TSBucket topic -> " + topicname + "}");
 
         TSBucket4Kafka tsb4k = TSBucket4Kafka.createEmptyBucket();
 
@@ -22,8 +23,7 @@ public class TSOReader {
 
         kc.close();
 
-        System.out.println( tsb4k.getBucketData().size() + " time series in MEM.");
-        System.out.println("### DONE ###");
+        LOG.debug("bucket read topic={} series={}", topicname, tsb4k.getBucketData().size());
 
         return tsb4k;
 

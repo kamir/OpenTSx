@@ -1,12 +1,21 @@
 package org.opentsx.connectors.kafka;
 
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.KafkaException;
 import org.opentsx.connectors.kafka.topicmanager.TopicsUP;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.Properties;
 import java.util.Vector;
+import java.util.concurrent.ExecutionException;
 
 public class OpenTSxClusterLink {
+
+    private static final Logger LOG = LoggerFactory.getLogger(OpenTSxClusterLink.class);
 
     public static String OPENTSX_TOPIC_MAP_FILE_NAME = "./config/topiclist.def";;
     /** Local client profile (git-ignored); template: config/opentsx-local.props.example. */
@@ -19,7 +28,7 @@ public class OpenTSxClusterLink {
 
         File f = new File( OpenTSxClusterLink.get_PROPS_FN() );
 
-        System.out.println( ">>> Client properties from file: " + f.getAbsolutePath() + " ("+f.canRead()+")");
+        LOG.debug("reading the client profile path={}", f.getAbsolutePath());
 
         Properties properties = new Properties();
         try (FileReader reader = new FileReader(f)) {
@@ -38,15 +47,12 @@ public class OpenTSxClusterLink {
 
         File f = new File(fn);
 
-        System.out.println( "> PROPS_FN Path: " + f.getAbsolutePath() + " -> (r:" + f.canRead()+ ")" );
-
         if ( !f.canRead() && !new File(fn + TEMPLATE_SUFFIX).canRead() ) {
             throw new IllegalArgumentException("OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME: \"" + fn
                     + "\" cannot be read (" + f.getAbsolutePath() + "); give a readable Kafka client profile or its "
                     + TEMPLATE_SUFFIX + " template");
         }
         PROPS_FN = fn;
-        System.out.println("> PROPS_FN = " + PROPS_FN);
     };
 
     public static String PROPS_FN = DEFAULT_CLIENT_CFG_FILE_NAME;
@@ -64,44 +70,35 @@ public class OpenTSxClusterLink {
 
     public static void init() {
 
-        File f = new File( "." );
-        System.out.println( "WP: " + f.getAbsolutePath() );
-
-        /**
-         * The ENV VARIABLE OPENTSX_TOPIC_MAP CONTAINS A FILENAME OF A FILE WITH ALL REQUIRED TOPICS.
-         */
         OPENTSX_TOPIC_MAP_FILE_NAME = System.getenv("OPENTSX_TOPIC_MAP_FILE_NAME");
-
-        System.out.println("--- ***** => " + OPENTSX_TOPIC_MAP_FILE_NAME );
-
-        System.out.println(">>> OPENTSX_TOPIC_MAP_FILE_NAME=" + OPENTSX_TOPIC_MAP_FILE_NAME);
-
         if( OPENTSX_TOPIC_MAP_FILE_NAME != null ) {
-
             TopicsUP.init_TOPICS_DEF_FN( OPENTSX_TOPIC_MAP_FILE_NAME );
-
-            System.out.println("--- OPENTSX_TOPIC_MAP_FILE_NAME => " + OPENTSX_TOPIC_MAP_FILE_NAME );
-
         }
-        else {
+        LOG.debug("topic list path={}", TopicsUP.get_TOPICS_DEF_FN());
 
-            System.out.println("--- OPENTSX_TOPIC_MAP_FILE_NAME => [NULL] " + TopicsUP.get_TOPICS_DEF_FN() );
-
-        }
-
-        /**
-         * The ENV VARIABLE OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG CONTAINS A FILENAME OF A FILE WITH
-         * ALL REQUIRED CFGs to access the primary cluster.
-         */
         OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME = System.getenv("OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME");
-        System.out.println(">>> OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME=" + OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME);
         if( OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME != null ) {
             init_PROPS_FN( OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME );
         }
-        else {
-            System.out.println("--- OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME=" + get_PROPS_FN() );
-        }
+        LOG.debug("client profile path={}", get_PROPS_FN());
 
+    }
+
+    public static <K, V> RecordMetadata send(Producer<K, V> producer, ProducerRecord<K, V> record) {
+        try {
+            return producer.send(record).get();
+        }
+        catch (ExecutionException e) {
+            throw new IllegalStateException(record.topic() + ": could not send the record; " + e.getCause().getMessage(),
+                    e.getCause());
+        }
+        catch (KafkaException e) {
+            throw new IllegalStateException(record.topic() + ": could not send the record; " + e.getMessage(), e);
+        }
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(record.topic() + ": sending the record was interrupted; the record may not be stored", e);
+        }
     }
 
     public static String getPropsAsString_NO_SECURITY_PROPS() {

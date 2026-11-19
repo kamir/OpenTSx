@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 Xvfb :99 -screen 0 640x480x8 -nolisten tcp &
 
@@ -17,6 +18,7 @@ java -cp /opentsx-lg/opentsx-lg-3.0.1.jar org.opentsx.connectors.kafka.topicmana
 echo "*****************************"
 echo " RUN DEMO "
 echo "*****************************"
+java -cp /opentsx-lg/opentsx-lg-3.0.1.jar org.opentsx.lg.TSDataSineWaveGenerator
 
 echo "*****************************"
 echo " DEMO COMPLETED!"

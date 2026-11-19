@@ -10,13 +10,15 @@ import org.opentsx.data.exporter.MeasurementTable;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.chart.simple.MultiChart;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.util.Vector;
-import java.util.logging.Logger;
 
 public class EventFlowAnalysisConsumer {
 
-    static Logger log = Logger.getLogger(EventFlowAnalysisConsumer.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(EventFlowAnalysisConsumer.class);
 
     private final static String TOPIC = "OpenTSx_Events";
 
@@ -25,7 +27,7 @@ public class EventFlowAnalysisConsumer {
 
     public static void main(String[] args) throws InterruptedException {
 
-        log.info( "Start EventFlowAnalysisConsumer ..." );
+        LOG.info("starting EventFlowAnalysisConsumer");
 
         /**
          * Read environment variables to configure the tool ...
@@ -91,12 +93,10 @@ public class EventFlowAnalysisConsumer {
             }
 
             consumer.commitAsync();
-            consumer.close();
-
 
         }
-        catch (Exception ex) {
-            ex.printStackTrace();
+        finally {
+            consumer.close();
         }
 
         Vector<TimeSeriesObject> vtso = new Vector<TimeSeriesObject>();

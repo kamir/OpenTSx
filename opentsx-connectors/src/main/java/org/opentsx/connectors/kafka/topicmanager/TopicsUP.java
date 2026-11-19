@@ -2,6 +2,8 @@ package org.opentsx.connectors.kafka.topicmanager;
 
 import org.opentsx.connectors.kafka.OpenTSxClusterLink;
 import org.opentsx.connectors.kafka.TopicsManagerTool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 
@@ -16,15 +18,16 @@ import java.io.File;
 
 public class TopicsUP {
 
+    private static final Logger LOG = LoggerFactory.getLogger(TopicsUP.class);
+
     public static void init_TOPICS_DEF_FN(String fn){
         File f = new File(fn);
-        System.out.println( "> TOPICS_DEF_FN Path: " + f.getAbsolutePath() );
         if ( !f.canRead() ) {
             throw new IllegalArgumentException("OPENTSX_TOPIC_MAP_FILE_NAME: \"" + fn + "\" cannot be read ("
                     + f.getAbsolutePath() + "); give a readable topic list");
         }
         TOPICS_DEF_FN = fn;
-        System.out.println("> TOPICS_DEF_FN=" + TOPICS_DEF_FN);
+        LOG.debug("topic list path={}", f.getAbsolutePath());
     };
 
     private static String TOPICS_DEF_FN = "config/topiclist.def";
@@ -47,9 +50,7 @@ public class TopicsUP {
 
         TopicsManagerTool.createTopics();
 
-        System.out.println("> Read topic list ! ");
-
-        TopicsManagerTool.listTopics();
+        System.out.println("> Topics on the cluster: " + TopicsManagerTool.listTopics());
 
         System.out.println("> All relevant topics created ! ");
 

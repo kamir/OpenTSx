@@ -35,9 +35,9 @@ On top of these come the store adapters (OpenTSDB, Cassandra, Hive UDF) and the 
 
 | Schema file | Record | Fields (short form) | Use |
 |-------------|--------|---------------------|-----|
-| `event.avsc` | `Event` | `timestamp, uri, value, producer_timestamp, consumer_timestamp` | `TSOProducer`, `TimeSeriesObject`, `EventTS` |
+| `event.avsc` | `Event` | `timestamp, uri, value, producer_timestamp, consumer_timestamp` | `TSOProducer`, `TimeSeriesObject` |
 | `episode.avsc` | `EpisodesRecord` with inline `Observation{timestamp, uri, value}` | `observationArray[], label?, tStart?, tEnd?, zObservations?, increment?, uri?` | `TSOProducer`, `TimeSeriesObject.getFromEpisode`, `LegacyBridge`; `Observation` in `opentsx-flink-core` (`ObservationSchema`, `TimeSeriesAggregateFunction`, `DynamicTopologyJob`) |
-| `event-series.avsc` | `EventSeriesRecord` with items of type `Event` from `event.avsc` | `eventArray[], labels, tStart, tEnd` | `EventTS` |
+| `event-series.avsc` | `EventSeriesRecord` with items of type `Event` from `event.avsc` | `eventArray[], labels, tStart, tEnd` | none |
 | none (no .avsc) | `LatencyTesterEvent` | hand-written class without a schema | Latency tools |
 
 Observations:
@@ -60,9 +60,9 @@ Observations:
 | `TSOEventProducer` | `refds_events_topic_<TAG>` | `label_<x>` | JSON `{ts,value}` | The key contains x, so a series is scattered over partitions |
 | `EventFlowStateProducer` | `OpenTSx_Event_Flow_State` | flowSource | Properties as JSON | none |
 | `TSOConsumer` | `refds_small_bucket_topic_<TAG>` | none | none | Random `group.id` plus `earliest` means an implicit full replay at every start; no targeted replay logic |
-| `TSOWriter.persistBucket_Kafka` | none | none | none | **Stub ("NOT YET DONE")** |
+| `TSOWriter.persistBucket_Kafka` | none | none | none | **Stub; stores nothing and throws `UnsupportedOperationException`** |
 
-Across all paths: Kafka record timestamps are never set (event time only in the payload, so `offsetsForTimes` is useless), no headers, `localhost:9092` hard-coded, no notion of a bucket at the Kafka level.
+Across all paths: Kafka record timestamps are never set (event time only in the payload, so `offsetsForTimes` is useless), no headers, no notion of a bucket at the Kafka level.
 
 **Wire format break:** Flink `ObservationSchema` (`opentsx-flink-core`) decodes **raw** Avro binary, while the producers write the **Confluent wire format** (magic byte plus schema id). The two sides are not compatible.
 
@@ -138,5 +138,4 @@ Almost all weaknesses found in 2026-10 follow from these levels being mixed:
 
 1. Flink `ObservationSchema` against the Confluent wire format.
 2. `TSData.convertMessreihe` drops timestamps, so `TSBucket` files do not keep the time.
-3. Hard-coded hosts and paths (`localhost:9092` in `TSOConsumer.java:25` and `TSOEventProducer.java:17`, figure folders
-   below the home directory in `ESMain.java:28` and `SigmaFilter.java:59`).
+3. Hard-coded paths (figure folders below the home directory in `ESMain.java:28` and `SigmaFilter.java:59`).

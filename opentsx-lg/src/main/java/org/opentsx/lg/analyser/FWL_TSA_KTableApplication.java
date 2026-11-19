@@ -9,6 +9,7 @@ import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Printed;
+import org.opentsx.connectors.kafka.OpenTSxClusterLink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,6 +20,8 @@ public class FWL_TSA_KTableApplication {
     private static final Logger LOG = LoggerFactory.getLogger(FWL_TSA_KTableApplication.class);
 
     public static void main(String[] args) throws Exception {
+
+      OpenTSxClusterLink.init();
 
       StreamsConfig streamsConfig = new StreamsConfig(getProperties());
 
@@ -46,15 +49,12 @@ public class FWL_TSA_KTableApplication {
 
     public static Properties getProperties() {
 
-        Properties props = new Properties();
+        Properties props = OpenTSxClusterLink.getClientProperties();
 
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "TSAExample1");
-        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "192.168.3.104:9092");
 
         props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, GenericAvroSerde.class);
-
-        props.put("schema.registry.url", "http://192.168.3.104:8081");
 
         return props;
 

@@ -1,13 +1,3 @@
-/**
- * An HDFS client to create a SequenceFile with time series.
- *
- * KEY = LongWriteable VALUE = MessreiheData
- *
- * We do no load data, but we use a GENERATOR here ...
- *
- *
- *
- */
 package org.opentsx.lg.kping;
 
 import org.opentsx.connectors.kafka.OpenTSxClusterLink;
@@ -23,45 +13,23 @@ import org.opentsx.lg.metrics.TSGMBean;
 
 import org.opentsx.chart.simple.MultiChart;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.management.JMException;
 import javax.management.MBeanServer;
-import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
-import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.Date;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
- * This application generates a set of sine-waves.
- *
- * The set of time series episode is stored in a TSBucket on local disc.
- * The path is defined by:
- *
- *    baseOut = "./test-opentsx-lg/"
- *
- * A single TSBucket represents the data of one particular time slice.
- * This is related to a window in stream processing.
- *
- * The demo application writes the raw time series data to Kafka.
- *
- * We have two data models, one holds the data series as episodes,
- * and another is per event.
- *
- * Flow state data is sent to a third topic, named:
- *
- *     opentsx_event_flow_state
- *
- * using the class EventFlowStateProducer.
- *
- *
- *
- * @author kamir
+ * Generates one sine-wave series per round and sends its values as events to the topic OpenTSx_Events. The rounds come
+ * from kping.producer.ziterations in the client profile (default 10). A failed send stops the rounds.
  */
 public class EventFlowAnalysisProducer {
 
-    static Logger log = Logger.getLogger(EventFlowAnalysisProducer.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(EventFlowAnalysisProducer.class);
 
     private static MBeanServer mbs = null;
 
@@ -70,9 +38,9 @@ public class EventFlowAnalysisProducer {
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException {
+    public static void main(String[] args) throws Exception {
 
-        log.info( "Start EventFlowAnalysisProducer ..." );
+        LOG.info("starting EventFlowAnalysisProducer");
 
 
         /**
@@ -81,30 +49,18 @@ public class EventFlowAnalysisProducer {
         OpenTSxClusterLink.OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME = "./config/opentsx-local.props";
         OpenTSxClusterLink.init();
 
-        try {
+        if ( !TopicsCHECK.execute() ) {
 
-            if ( !TopicsCHECK.execute() ) {
+            TopicsUP.execute();
 
-                TopicsUP.execute();
-
-                if (!TopicsCHECK.execute()) {
-                    System.exit(-1);
-                }
+            if (!TopicsCHECK.execute()) {
+                System.exit(1);
             }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
         }
 
         boolean showChart = true;
 
-        try {
-            registerMBean();
-        }
-        catch (NotCompliantMBeanException e) {
-            e.printStackTrace();
-            System.exit( -1 );
-        }
+        registerMBean();
 
         /**
          * the argument "off" turns off the GUI.
@@ -207,19 +163,10 @@ public class EventFlowAnalysisProducer {
             /**
              * Step 1: creation of the series ...
              */
-            try {
-
-                tsbd_a = tsb.createBucketWithRandomTS_sinus(baseOut + filename, ANZ, fMIN, fMAX, aMIN, aMAX, SR, time, null, "°C" );
-
-            }
-            catch (Exception ex) {
-                Logger.getLogger(EventFlowAnalysisProducer.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            tsbd_a = tsb.createBucketWithRandomTS_sinus(baseOut + filename, ANZ, fMIN, fMAX, aMIN, aMAX, SR, time, null, "°C" );
 
             long t1 = System.currentTimeMillis();
 
-            Logger.getLogger(EventFlowAnalysisProducer.class.getName()).log(Level.SEVERE, "DURATION 1 : " + ((t1 - t0)/1000.0));
-            System.out.println( "DURATION 1 : " + ((t1 - t0)/1000.0) );
             double generateDuration = ((t1 - t0)/1000.0);
 
             ((TSGBeanImpl)tsgBean).trackRoundDuration( generateDuration );
@@ -253,7 +200,7 @@ public class EventFlowAnalysisProducer {
 
             }
 
-            Logger.getLogger(EventFlowAnalysisProducer.class.getName()).log(Level.SEVERE, "DURATION 2 : (store events) " + ((t2 - t1)/1000.0));
+            LOG.info("round done round={} generateSeconds={} episodeSeconds={}", i, generateDuration, (t2 - t1) / 1000.0);
 
             /**
              * Step 5: Convert raw data into "TimeSeriesObject" and show a chart (only in 1-st iteration if not turned off).
@@ -286,26 +233,18 @@ public class EventFlowAnalysisProducer {
 
     }
 
-    private static void registerMBean() throws NotCompliantMBeanException {
+    private static void registerMBean() throws JMException {
 
         // Get the platform MBeanServer
         mbs = ManagementFactory.getPlatformMBeanServer();
 
         // Unique identification of MBeans
-        tsgBean = (TSGMBean)new TSGBeanImpl();
+        tsgBean = new TSGBeanImpl();
 
-        ObjectName beanName = null;
-
-        try {
-            // Uniquely identify the MBeans and register them with the platform MBeanServer
-            beanName = new ObjectName("org.opentsx.lg.TSGMBean:name=TSGMBean");
-            mbs.registerMBean(tsgBean, beanName);
-            System.out.println( "### Register MBean: " + beanName );
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-            System.exit(-1);
-        }
+        // Uniquely identify the MBeans and register them with the platform MBeanServer
+        ObjectName beanName = new ObjectName("org.opentsx.lg.TSGMBean:name=TSGMBean");
+        mbs.registerMBean(tsgBean, beanName);
+        LOG.debug("MBean registered name={}", beanName);
     }
 
 }

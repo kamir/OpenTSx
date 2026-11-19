@@ -3,14 +3,13 @@ package org.opentsx.lg.kping;
 import org.opentsx.connectors.kafka.OpenTSxClusterLink;
 import org.opentsx.connectors.kafka.topicmanager.*;
 
-import java.io.IOException;
-import java.util.logging.Logger;
-
+/**
+ * Creates the kping topics when one is missing. Exit status: 0 when the topics exist, 1 when they cannot be created
+ * or the check fails.
+ */
 public class EventFlowAnalysisPrecheck {
 
-    static Logger log = Logger.getLogger(EventFlowAnalysisPrecheck.class.getName());
-
-    public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException {
+    public static void main(String[] args) throws Exception {
 
         /*
          * Define some basic configuration.
@@ -21,23 +20,16 @@ public class EventFlowAnalysisPrecheck {
          */
         OpenTSxClusterLink.init();
 
-        try {
+        if (!TopicsCHECK.execute()) {
+
+            System.out.println( "ANALYSIS TOPICS NOT AVAILABLE >>> Try to create them.");
+
+            TopicsUP.execute();
 
             if (!TopicsCHECK.execute()) {
-
-                System.out.println( "ANALYSIS TOPICS NOT AVAILABLE >>> Try to create them.");
-
-                TopicsUP.execute();
-
-                if (!TopicsCHECK.execute()) {
-                    System.out.println( "A LATENCY ANALYSIS IS NOT POSSIBLE !!! => Check permissions!");
-                    System.exit(-1);
-                }
+                System.out.println( "A LATENCY ANALYSIS IS NOT POSSIBLE !!! => Check permissions!");
+                System.exit(1);
             }
-
-        }
-        catch (Exception e) {
-            e.printStackTrace();
         }
 
     }

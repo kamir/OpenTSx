@@ -24,7 +24,9 @@ Set `OPENTSX_TOPIC_MAP_FILE_NAME` to read another topic list. When it cannot be 
 
 A profile that cannot be loaded stops each tool listed above with
 `<absolute path>: cannot read the Kafka client profile (<cause>); set OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME to a readable file`.
-The tools print the path of the profile, not its properties.
+The tools log the path of the profile at DEBUG, not its properties.
+Every producer and consumer of this module, `TSOConsumer` and `TSOEventProducer` included, takes `bootstrap.servers`
+and the other client settings from this profile.
 `OpenTSxClusterLink.getPropsAsString_NO_SECURITY_PROPS()` lists the profile without `security.protocol`, the
 serializers and deserializers, `schema.registry.url`, `basic.auth.credentials.source` and every key that contains
 `sasl.`, `ssl.`, `password`, `secret`, `token` or `user.info`.
@@ -35,3 +37,22 @@ serializers and deserializers, `schema.registry.url`, `basic.auth.credentials.so
 listed topic and skips the ones that do not exist. Both stop at the first topic the cluster refuses or does not
 answer for, with `<topic>: could not create the topic; <cause>` or `<topic>: could not delete the topic; <cause>`.
 `TopicsUP` and `TopicsCHECK` stop with `<profile>: could not list the topics; <cause>` when the topics cannot be listed.
+
+## Handle errors
+
+The helpers stop at the first failure and throw.
+
+* A record that cannot be sent, because the producer refuses it or the cluster does not acknowledge it, stops
+  `TSOProducer.pushTSDataAsEpisodesToKafka_String_Avro`,
+  `TSOProducer.pushTSDataAsEventsToKafka_String_Avro`, `TSOEventProducer.pushTSOItemsToKafka`,
+  `EventFlowStateProducer.pushFlowState` and `LatencyTestEventProducer.pushTestEventToCluster` with
+  `<topic>: could not send the record; <cause>`. The `TSOProducer` and `TSOEventProducer` methods close their producer;
+  `EventFlowStateProducer` and `LatencyTestEventProducer` keep theirs until `close()`.
+* `TSOWriter.persistBucket_Kafka` stores nothing and throws
+  `<topic>: persistBucket_Kafka stores nothing; use org.opentsx.bridge.LegacyBridge and org.opentsx.kafka.BucketWriter`.
+* `TopicsCHECK` prints its verdict on stdout and exits with status 0 when every listed topic exists and 1 when a topic
+  is missing or the topics cannot be listed. The verdict names the topic list and the missing topics:
+  `<topic list>: topics missing on the cluster [<topic>, ...]; create them with TopicsUP`.
+
+The helpers log through SLF4J under the logger names `org.opentsx.connectors.kafka.*`, one line per event at DEBUG.
+`TopicsUP`, `TopicsDOWN` and `TopicsCHECK` print their results on stdout.

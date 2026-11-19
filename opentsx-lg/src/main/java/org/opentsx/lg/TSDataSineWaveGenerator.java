@@ -1,16 +1,5 @@
-/**
- * An HDFS client to create a SequenceFile with time series.
- *
- * KEY = LongWriteable VALUE = MessreiheData
- *
- * We do no load data, but we use a GENERATOR here ...
- *
- *
- *
- */
 package org.opentsx.lg;
 
-import org.apache.logging.log4j.LogManager;
 import org.opentsx.connectors.kafka.EventFlowStateProducer;
 import org.opentsx.connectors.kafka.OpenTSxClusterLink;
 import org.opentsx.connectors.kafka.TSOProducer;
@@ -18,74 +7,50 @@ import org.opentsx.core.TSBucket;
 import org.opentsx.core.TSData;
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.series.TimeSeriesObject;
-import org.opentsx.lg.kping.EventFlowAnalysisSetup;
 import org.opentsx.lg.metrics.TSGBeanImpl;
-import org.opentsx.lg.metrics.TSGMBean;
 import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.core.config.ConfigManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Date;
 import java.util.Properties;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.function.Supplier;
 
 import javax.management.*;
 import java.lang.management.*;
 
 /**
- * This application generates a set of sine-waves.
+ * Generates sine-wave series in rounds.
  *
- * The set of time series episode is stored in a TSBucket on local disc.
- * The path is defined by:
+ * Each round creates two buckets of 8 series (4 machines with 2 sensors) with 100 values each and writes them to
+ * sine-waves.csv in opentsx.demo.output.dir (OPENTSX_DEMO_OUTPUT_DIR), or to the SequenceFile sine-waves.tsb.vec.seq
+ * when opentsx.demo.output.format (OPENTSX_DEMO_OUTPUT_FORMAT) is not csv; the second bucket of a round overwrites the
+ * first. Each round prints one line on stdout: round done round=<n> series=16 generateSeconds=<s> sendSeconds=<s>.
+ * opentsx.number.of.iterations (OPENTSX_NUMBER_OF_ITERATIONS) sets the number of rounds. opentsx.show.gui
+ * (OPENTSX_SHOW_GUI) decides whether the first round opens a chart; without the key, the argument off turns it off.
+ * opentsx-default.properties sets ./data/temp, 3 rounds, no chart and no Kafka.
  *
- *    baseOut = "./test-opentsx-lg/"
- *
- * A single TSBucket represents the data of one particular time slice.
- * This is related to a window in stream processing.
- *
- * The demo application writes the raw time series data to Kafka.
- *
- * We have two data models, one holds the data series as episodes,
- * and another is per event.
- *
- * Flow state data is sent to a third topic, named:
- *
- *     opentsx_event_flow_state
- *
- * using the class EventFlowStateProducer.
- *
- *
- *
- * @author kamir
+ * With opentsx.use.kafka=true (OPENTSX_USE_KAFKA) each round also sends the series as episodes to OpenTSx_Episodes_A and
+ * OpenTSx_Episodes_B, as events to OpenTSx_Events, and one flow-state record to OpenTSx_Event_Flow_State. All rounds
+ * share one EventFlowStateProducer, which is closed when the rounds end. A failed send stops the rounds.
  */
 public class TSDataSineWaveGenerator {
 
-    static final org.apache.logging.log4j.Logger logger = LogManager.getLogger(TSDataSineWaveGenerator.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(TSDataSineWaveGenerator.class);
 
     private static MBeanServer mbs = null;
-
-    private static TSGMBean tsgBean = null;
-
-    private static Boolean useKafka = false;
 
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException {
+    public static void main(String[] args) throws Exception {
 
         boolean showChart = true;
-        logger.info( "showChart = true");
 
-        try {
-            registerMBean();
-        }
-        catch (NotCompliantMBeanException e) {
-            e.printStackTrace();
-            System.exit( -1 );
-        }
+        TSGBeanImpl tsgBean = registerMBean();
 
         /**
          * the argument "off" turns off the GUI.
@@ -105,33 +70,23 @@ public class TSDataSineWaveGenerator {
         String gui_prop = cfg.getString("opentsx.show.gui", System.getenv("OPENTSX_SHOW_GUI"));
         String kafka_prop = cfg.getString("opentsx.use.kafka", System.getenv("OPENTSX_USE_KAFKA"));
 
-        System.out.println("*** " + kafka_prop + " ***");
-
-
-        useKafka = Boolean.parseBoolean( kafka_prop );
+        boolean useKafka = Boolean.parseBoolean( kafka_prop );
         /*
          *  by default we use 1000 iterations for episode generation.
          */
         int zIterations = 1000;
 
         String zIterations_tmp = cfg.getString("opentsx.number.of.iterations", System.getenv("OPENTSX_NUMBER_OF_ITERATIONS"));
-        System.out.println( "*** USE CUSTOM NR OF ITERATIONS *** (" + zIterations_tmp + ")");
 
         if( zIterations_tmp != null ) {
             zIterations = Integer.parseInt( zIterations_tmp );
-            System.out.println( "["+zIterations+"]");
         }
 
-        System.out.println(">>> OPENTSX_NUMBER_OF_ITERATIONS = " + zIterations );
-        System.out.println(">>> OPENTSX_SHOW_GUI             = " + gui_prop);
         if( gui_prop != null ) {
-            if (gui_prop.equals("false")) {
-                System.out.println("*** turn the GUI off. ");
-                showChart = false;
-            }
-            else
-                showChart = true;
+            showChart = !gui_prop.equals("false");
         }
+        System.out.println(">>> OPENTSX_USE_KAFKA            = " + useKafka);
+        System.out.println(">>> OPENTSX_NUMBER_OF_ITERATIONS = " + zIterations );
         System.out.println(">>> showChart=" + showChart );
 
         /**
@@ -139,10 +94,6 @@ public class TSDataSineWaveGenerator {
          */
         OpenTSxClusterLink.OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME = "./config/opentsx-local.props";
         OpenTSxClusterLink.init();
-
-        // which aspect should be demonstrated ?
-        boolean persistEpisodes = true;
-        boolean persistEvents = true;
 
         // RNG needs to be initialized ...
         RNGWrapper.init();
@@ -156,15 +107,28 @@ public class TSDataSineWaveGenerator {
             baseOut = baseOut + "/";
         }
         new File(baseOut).mkdirs();
-        String filename = "sine-waves";
 
         System.out.println(">>> TSDataSineWaveGenerator (start at : " + new Date(System.currentTimeMillis()) + ")");
         System.out.println(">>> TSBucket is written to : " + baseOut);
 
+        generate(zIterations, showChart, baseOut, useKafka ? new TSOProducer() : null, EventFlowStateProducer::new, tsgBean);
+
+    }
+
+    /**
+     * Runs the rounds. Without a producer for the series ({@code series} is null) nothing is sent and
+     * {@code flowStates} is not called.
+     */
+    static void generate(int zIterations, boolean showChart, String baseOut, TSOProducer series,
+            Supplier<EventFlowStateProducer> flowStates, TSGBeanImpl tsgBean) throws Exception {
+
+        String filename = "sine-waves";
+
         TSBucket tsb = new TSBucket(false);
 
-        Vector<TSData> tsbd_a = null;
-        Vector<TSData> tsbd_b = null;
+        // which aspect should be demonstrated ?
+        boolean persistEpisodes = true;
+        boolean persistEvents = true;
 
         //
         // SIMULATE SOME MEASURED DATA from a set of machines  ...
@@ -177,7 +141,7 @@ public class TSDataSineWaveGenerator {
         int ANZ = zMachines * zSensorsPerMachine;
 
         // Frequency range to select one from per series
-        double fMIN = 1.0; 
+        double fMIN = 1.0;
         double fMAX = 10.0;
 
         // Amplitude range to select one from per series
@@ -190,114 +154,77 @@ public class TSDataSineWaveGenerator {
         // length of each episode
         double time = 1.0;           // episode length in seconds
 
+        String URI_A = "http://www.w3.org/TR/2004/metrics-owl-20200210/deviceID#0815a";
+        String URI_B = "http://www.w3.org/TR/2004/metrics-owl-20200210/deviceID#17u4";
 
+        EventFlowStateProducer efsp = series == null ? null : flowStates.get();
 
-        TSOProducer prod_A = null;
-        TSOProducer prod_B = null;
+        try {
+            for (int i = 1; i <= zIterations; i++) {
 
-        if ( useKafka ) {
-            prod_A = new TSOProducer();
-            prod_B = new TSOProducer();
-        }
+                long t0 = System.currentTimeMillis();
 
-        int i = 0;
+                /**
+                 * Step 1: creation of the series ...
+                 */
+                Vector<TSData> tsbd_a = tsb.createBucketWithRandomTS_sinus(baseOut + filename, ANZ, fMIN, fMAX, aMIN, aMAX, SR, time, null, "°C" );
+                Vector<TSData> tsbd_b = tsb.createBucketWithRandomTS_sinus(baseOut + filename, ANZ, fMIN, fMAX, aMIN, aMAX, SR, time, null, "°C" );
 
-        long tS = System.currentTimeMillis();
+                long t1 = System.currentTimeMillis();
 
-        while( i < zIterations ) {
+                double generateDuration = ((t1 - t0)/1000.0);
 
-            long t0 = System.currentTimeMillis();
+                tsgBean.trackRoundDuration( generateDuration );
 
-            i++;
+                /**
+                 * Step 2: persist data in Kafka ... as pre-aggregated full episodes.
+                 */
+                if( persistEpisodes && series != null) {
+                    series.pushTSDataAsEpisodesToKafka_String_Avro(tsbd_a, URI_A, "A");
+                    series.pushTSDataAsEpisodesToKafka_String_Avro(tsbd_b, URI_B, "B");
 
-            String URI_A = "http://www.w3.org/TR/2004/metrics-owl-20200210/deviceID#0815a";
-            String URI_B = "http://www.w3.org/TR/2004/metrics-owl-20200210/deviceID#17u4";
+                    tsgBean.trackNumberOfTS( tsbd_a.size() + tsbd_b.size() );
+                }
 
-            /**
-             * Step 1: creation of the series ...
-             */
-            try {
+                /**
+                 * Step 3: persist data in Kafka ... as full single events.
+                 */
+                if( persistEvents && series != null) {
+                    series.pushTSDataAsEventsToKafka_String_Avro(tsbd_a, URI_A );
+                    series.pushTSDataAsEventsToKafka_String_Avro(tsbd_b, URI_B );
+                }
 
-                tsbd_a = tsb.createBucketWithRandomTS_sinus(baseOut + filename, ANZ, fMIN, fMAX, aMIN, aMAX, SR, time, null, "°C" );
-                tsbd_b = tsb.createBucketWithRandomTS_sinus(baseOut + filename, ANZ, fMIN, fMAX, aMIN, aMAX, SR, time, null, "°C" );
+                /**
+                 * Step 4: persist flow metadata in Kafka ... as events.
+                 */
+                long t2 = System.currentTimeMillis();
+                double sendDuration = ((t2 - t1)/1000.0);
 
-            }
-            catch (Exception ex) {
-                Logger.getLogger(TSDataSineWaveGenerator.class.getName()).log(Level.SEVERE, null, ex);
-            }
+                if ( efsp != null ) {
+                    Properties stateProps = new Properties();
+                    stateProps.put( "generateDuration" , generateDuration );
+                    stateProps.put( "sendDuration" , sendDuration );
+                    stateProps.put( "generator" , "TSDataSineWaveGenerator" );
+                    stateProps.put( "persistEpisodes" , persistEpisodes );
+                    stateProps.put( "persistEvents" , persistEvents );
 
-            long t1 = System.currentTimeMillis();
+                    stateProps.put( "l" , time * SR );
+                    stateProps.put( "z" , ANZ );
+                    stateProps.put( "t0" , t0 );
+                    stateProps.put( "t1" , t1 );
+                    stateProps.put( "t2" , t2 );
 
-            Logger.getLogger(TSDataSineWaveGenerator.class.getName()).log(Level.SEVERE, "DURATION 1 : " + ((t1 - t0)/1000.0));
-            System.out.println( "DURATION 1 : " + ((t1 - t0)/1000.0) );
-            double generateDuration = ((t1 - t0)/1000.0);
+                    efsp.pushFlowState(stateProps, "TSDataSineWaveGenerator_" + t0);
+                }
 
-            ((TSGBeanImpl)tsgBean).trackRoundDuration( generateDuration );
+                System.out.println("round done round=" + i + " series=" + (tsbd_a.size() + tsbd_b.size())
+                        + " generateSeconds=" + generateDuration + " sendSeconds=" + sendDuration);
 
-            /**
-             * Step 2: persist data in Kafka ... as pre-aggregated full episodes.
-             */
-            if( persistEpisodes && useKafka) {
-                prod_A.pushTSDataAsEpisodesToKafka_String_Avro(tsbd_a, URI_A, "A");
-                System.out.println("[pushTSDataAsEpisodesToKafka_String_Avro] {A}");
-                System.out.println(">>> [t: " + i + "] -> size:" + tsbd_a.size());
+                /**
+                 * Step 5: Convert raw data into "TimeSeriesObject" and show a chart (only in 1-st iteration if not turned off).
+                 */
+                if ( showChart && i == 1 ) {
 
-                prod_B.pushTSDataAsEpisodesToKafka_String_Avro(tsbd_b, URI_B, "B");
-                System.out.println("[pushTSDataAsEpisodesToKafka_String_Avro] {B}");
-                System.out.println(">>> [t: " + i + "] -> size:" + tsbd_b.size());
-
-
-                ((TSGBeanImpl)tsgBean).trackNumberOfTS( tsbd_a.size() + tsbd_b.size() );
-
-            }
-
-            /**
-             * Step 3: persist data in Kafka ... as full single events.
-             */
-            if( persistEvents && useKafka) {
-                prod_A.pushTSDataAsEventsToKafka_String_Avro(tsbd_a, URI_A );
-                System.out.println("[pushTSDataAsEventsToKafka_String_Avro] {A}");
-                System.out.println(">>> [t: " + i + "] -> size:" + tsbd_a.size());
-
-                prod_B.pushTSDataAsEventsToKafka_String_Avro(tsbd_b, URI_B );
-                System.out.println("[pushTSDataAsEventsToKafka_String_Avro] {B}");
-                System.out.println(">>> [t: " + i + "] -> size:" + tsbd_b.size());
-            }
-
-            /**
-             * Step 4: persist flow metadata in Kafka ... as events.
-             */
-            long t2 = System.currentTimeMillis();
-            double sendDuration = ((t2 - t1)/1000.0);
-            Properties stateProps = new Properties();
-            stateProps.put( "generateDuration" , generateDuration );
-            stateProps.put( "sendDuration" , sendDuration );
-            stateProps.put( "generator" , "TSDataSineWaveGenerator" );
-            stateProps.put( "persistEpisodes" , persistEpisodes );
-            stateProps.put( "persistEvents" , persistEvents );
-
-            stateProps.put( "l" , time * SR );
-            stateProps.put( "z" , ANZ );
-            stateProps.put( "t0" , t0 );
-            stateProps.put( "t1" , t1 );
-            stateProps.put( "t2" , t2 );
-
-            if ( useKafka ) {
-                EventFlowStateProducer efsp = new EventFlowStateProducer();
-                efsp.pushFlowState(stateProps, "TSDataSineWaveGenerator_" + t0);
-            }
-            Logger.getLogger(TSDataSineWaveGenerator.class.getName()).log(Level.SEVERE, "DURATION 2 : " + ((t2 - t1)/1000.0));
-
-
-
-            /**
-             * Step 5: Convert raw data into "TimeSeriesObject" and show a chart (only in 1-st iteration if not turned off).
-             */
-            if ( showChart ) {
-
-                if (i == 1) {
-
-                    int j = 0;
                     Vector<TimeSeriesObject> tsos = new Vector<TimeSeriesObject>();
                     for (TSData tsd : tsbd_a) {
                         TimeSeriesObject tso = tsd.getMessreihe();
@@ -307,41 +234,31 @@ public class TSDataSineWaveGenerator {
 
                     MultiChart.open(tsos, "DEMO1", "time [s]", "temperature [°C]", true, "no comment", null);
 
-                    System.out.println(">>> READY." );
-
                 }
 
             }
-
-            System.out.println(">>> Round : " + i + " DONE." );
-
-            tsbd_a = null;
-            tsbd_b = null;
-
+        }
+        finally {
+            if ( efsp != null ) {
+                efsp.close();
+            }
         }
 
     }
 
-    private static void registerMBean() throws NotCompliantMBeanException {
+    private static TSGBeanImpl registerMBean() throws JMException {
 
         // Get the platform MBeanServer
         mbs = ManagementFactory.getPlatformMBeanServer();
 
-        // Unique identification of MBeans
-        tsgBean = (TSGMBean)new TSGBeanImpl();
+        TSGBeanImpl tsgBean = new TSGBeanImpl();
 
-        ObjectName beanName = null;
+        // Uniquely identify the MBeans and register them with the platform MBeanServer
+        ObjectName beanName = new ObjectName("org.opentsx.lg.TSGMBean:name=TSGMBean");
+        mbs.registerMBean(tsgBean, beanName);
+        LOG.debug("MBean registered name={}", beanName);
 
-        try {
-            // Uniquely identify the MBeans and register them with the platform MBeanServer
-            beanName = new ObjectName("org.opentsx.lg.TSGMBean:name=TSGMBean");
-            mbs.registerMBean(tsgBean, beanName);
-            System.out.println( "### Register MBean: " + beanName );
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-            System.exit(-1);
-        }
+        return tsgBean;
     }
 
 }

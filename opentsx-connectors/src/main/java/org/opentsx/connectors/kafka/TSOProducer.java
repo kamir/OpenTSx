@@ -1,6 +1,5 @@
 package org.opentsx.connectors.kafka;
 
-import com.google.gson.Gson;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.opentsx.data.model.EpisodesRecord;
 import org.opentsx.data.model.Event;
@@ -153,11 +152,6 @@ public class TSOProducer {
 
         final Producer<String, EpisodesRecord> producer = createProducer_Avro_Episodes( props );
 
-        long time = System.currentTimeMillis();
-
-        // NR OF TIME SERIES
-        int sendMessageCount = data.size();
-
         try {
 
             // the key will be based on current time and than one item per ___ms___.
@@ -213,18 +207,9 @@ public class TSOProducer {
                         new ProducerRecord<>(tn, mrd.label,
                                 er);
 
-                RecordMetadata metadata = producer.send(record).get();
-
-                long elapsedTime = System.currentTimeMillis() - time;
-
-
-                producer.flush();
+                OpenTSxClusterLink.send(producer, record);
 
             }
-        }
-        catch (Exception ex) {
-            ex.printStackTrace();
-
         }
         finally {
             producer.flush();
@@ -232,9 +217,6 @@ public class TSOProducer {
         }
 
     }
-
-    Gson gson = new Gson();
-
 
     /**
      * We take a time series and create a set of events which are shipped in sequence.
@@ -250,16 +232,12 @@ public class TSOProducer {
 
         final Producer<String, Event> producer = createProducer_Avro( props );
 
-        long time0 = System.currentTimeMillis();
-
         try {
 
             // the key will be based on current time and than one item per ___ms___.
             for ( TSData mrd : data ) {
 
                 Event e = new Event();
-
-                String dataJSON = gson.toJson(mrd);
 
                 double[] values = mrd.getData();
 
@@ -293,22 +271,16 @@ public class TSOProducer {
                     final ProducerRecord<String, Event> record =
                             new ProducerRecord<>(TOPIC_for_events, key, e );
 
-                    RecordMetadata metadata = producer.send(record).get();
+                    OpenTSxClusterLink.send(producer, record);
 
                 }
 
             }
         }
-        catch (Exception ex) {
-            ex.printStackTrace();
-
-        }
         finally {
             producer.flush();
             producer.close();
         }
-
-        producer.flush();
 
     }
 

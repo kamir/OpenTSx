@@ -58,7 +58,7 @@ Recommendation: **do not rebuild the existing code; build a lean "OpenTSx Platfo
 * `TimeSeriesObject` as a 2900-line god class; Swing/AWT in 48 core files (GUI in the library core).
 * Uncontrolled logging: 2186 times `System.out`, 182 times `printStackTrace`, JUL, slf4j, log4j2.
 * Serialization bugs (label `"123"`, quadratic timestamps, Avro and JSON on the same topic, Flink wire format break): see 01-ANALYSE section 3.
-* `TSBucketStore`/`TSO*Interface` empty stubs; `TSOWriter.persistBucket_Kafka` "NOT YET DONE".
+* `TSBucketStore`/`TSO*Interface` empty stubs; `TSOWriter.persistBucket_Kafka` stores nothing and throws.
 * Python `from_pandas` loses the time zone, and the time unit depends on the pandas version; `TSBucket.apply(parallel=True)` is sequential.
 
 ### 3.4 Repository hygiene and docs

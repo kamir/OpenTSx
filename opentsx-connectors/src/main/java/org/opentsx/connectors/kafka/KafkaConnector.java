@@ -21,12 +21,7 @@ public class KafkaConnector {
 
     public void processTopic(TSBucket tsb, int z) {
 
-        try {
-            consumer.runConsumer( tsb, z, topicName );
-        }
-        catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        consumer.runConsumer( tsb, z, topicName );
 
     }
 

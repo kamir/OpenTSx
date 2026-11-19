@@ -617,6 +617,34 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `opentsx.log.level` in `./opentsx.properties`, then `info`, and refuses a value other than `error`, `warn`, `info`,
   `debug` or `trace`. An empty `OPENTSX_LOG_LEVEL` counts as unset and blanks around a level are ignored.
   `opentsx.properties.example` sets `info`.
+- opentsx-connectors: `TSOProducer.pushTSDataAsEpisodesToKafka_String_Avro` and
+  `pushTSDataAsEventsToKafka_String_Avro`, `TSOEventProducer.pushTSOItemsToKafka`,
+  `EventFlowStateProducer.pushFlowState` and `LatencyTestEventProducer.pushTestEventToCluster` wait for each record
+  and throw `<topic>: could not send the record; <cause>` when the producer refuses the record or the cluster does not
+  acknowledge it, instead of printing the stack trace and going on. `TSOWriter.persistBucket_SequenceFile` passes on a
+  file system error instead of failing later with a NullPointerException.
+- opentsx-connectors: `TSOConsumer` and `TSOEventProducer` take `bootstrap.servers` from the Kafka client profile
+  instead of the fixed `localhost:9092`.
+- opentsx-connectors: the helpers log through SLF4J, one line per event at DEBUG, instead of printing traces on
+  stdout. The module declares `slf4j-api`.
+- `TopicsCHECK` exits with status 1 instead of 255 when a listed topic is missing, and its verdict on stdout names the
+  topic list and the missing topics: `<topic list>: topics missing on the cluster [<topic>, ...]; create them with
+  TopicsUP`.
+- `TSOWriter.persistBucket_Kafka`, deprecated and never implemented, throws `UnsupportedOperationException` instead of
+  printing that it stored nothing.
+- opentsx-connectors: `TSOConsumer.runConsumer` no longer declares `InterruptedException`, which it never threw. Code
+  that catches `InterruptedException` around the call no longer compiles. This is a breaking change.
+- opentsx-lg: `TSDataSineWaveGenerator`, `EventFlowAnalysisProducer`, `EventFlowAnalysisConsumer`,
+  `EventFlowAnalysisPrecheck`, `EventFlowAnalysisSetup`, `RequestResponseAnalysisProducer` and
+  `RequestResponseAnalysisConsumer` stop with status 1 at the first failed send, poll or topic setup instead of
+  printing it and going on. `EventFlowAnalysisSetup` no longer exits with 0 after a failure.
+- opentsx-lg: `FWL_TSA_KStreamsApplication` and `FWL_TSA_KTableApplication` take `bootstrap.servers` and
+  `schema.registry.url` from the Kafka client profile instead of fixed private addresses. `lg-demo.yaml` mounts the
+  ConfigMap `opentsx-lg-demo-config` instead of a host path and has no host aliases, and the krake-metrics-provider
+  compose files take the host addresses from `MDC1`, `MDC2` and `MDC3`.
+- opentsx-lg: the scripts use the caller's `JAVA_HOME` or the `java` on `PATH` instead of a fixed macOS JDK path.
+  `run_demo.sh` prints its KSQL statements and passes `bash -n`. The ping tool `executor-script.sh` runs
+  `TSDataSineWaveGenerator` after the topic setup and stops at the first failing step.
 
 ### Removed
 
@@ -765,6 +793,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `OPENTSX_LOG_LEVEL`.
 - `MultiDFATool2.debug`, which nothing read after its lines moved to the SLF4J logger of the class at DEBUG. Set the
   logger level instead. This is a breaking change.
+- opentsx-lg: the tracked latency measurement output under `opentsx-lg/opentsx/plots/`. The directory is git-ignored
+  and `tools/check_tracked_config.py` fails on a tracked file in it.
+- opentsx-lg: the dependencies `log4j-api` and `log4j-core` and `src/main/resources/log4j2.xml`. The tools log through
+  SLF4J.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -1409,6 +1441,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   than the resolution. An event in the first field failed with `ArrayIndexOutOfBoundsException` before.
 - `bin/episode_10_production_config.sh` shows the level from `opentsx.properties` when `OPENTSX_LOG_LEVEL` is empty or
   blank, as `ProductionConfig` applies it, instead of the blanks.
+- opentsx-lg: `TSDataSineWaveGenerator` sends the flow state of all rounds through one `EventFlowStateProducer` and
+  closes it, instead of opening a Kafka producer per round that it never closed. An error while the series are created
+  stops the run instead of a NullPointerException, and each round prints one line `round done round=<n> series=16
+  generateSeconds=<seconds> sendSeconds=<seconds>` on stdout instead of logging its durations at SEVERE.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

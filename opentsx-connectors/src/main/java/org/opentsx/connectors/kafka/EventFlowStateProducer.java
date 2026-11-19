@@ -3,54 +3,16 @@ package org.opentsx.connectors.kafka;
 import com.google.gson.Gson;
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.Properties;
 
 public class EventFlowStateProducer {
 
+    private static final Logger LOG = LoggerFactory.getLogger(EventFlowStateProducer.class);
+
     public final static String TOPIC = "OpenTSx_Event_Flow_State";
-
-    /**
-     * Creates a Producer with custom settings, and in case some cutsom settings are missing,
-     * we use the default settings.
-     *
-     * Minimal required settings are:
-     *
-     *         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
-     *         props.put(ProducerConfig.CLIENT_ID_CONFIG, "TXItemProducer");
-     *         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-     *         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-     *
-     * @return
-     */
-    private static Producer<String, String> createProducer(Properties props) {
-
-        try {
-            props.load(new FileReader( new File( OpenTSxClusterLink.get_PROPS_FN() ) ));
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-            System.exit(-1);
-        }
-
-
-        if( props.get( ProducerConfig.CLIENT_ID_CONFIG ) == null )
-            props.put(ProducerConfig.CLIENT_ID_CONFIG, "EventFlowStateProducer");
-
-        if( props.get( ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG ) == null )
-            props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-
-
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-
-        return new KafkaProducer<>(props);
-
-    }
-
-
 
     /**
      * Creates a Producer with default settings.
@@ -71,32 +33,21 @@ public class EventFlowStateProducer {
 
     static Gson gson = new Gson();
 
-    final Producer<String, String> producer = createProducer();
+    final Producer<String, String> producer;
+
+    public EventFlowStateProducer() {
+        this(createProducer());
+    }
+
+    public EventFlowStateProducer(Producer<String, String> producer) {
+        this.producer = producer;
+    }
 
     public void pushFlowState(Properties stateProps, String flowSource) {
 
-        System.out.println( ">>> flow state props : " + stateProps.size() );
+        LOG.debug("sending the flow state source={} properties={}", flowSource, stateProps.size());
 
-        try {
-
-                String dataJSON = gson.toJson(stateProps);
-
-                /**
-                 *  Create RECORD ...
-                 */
-                final ProducerRecord<String, String> record =
-                        new ProducerRecord<>(TOPIC, flowSource, dataJSON);
-
-                producer.send(record).get();
-
-        }
-        catch (Exception ex) {
-            ex.printStackTrace();
-
-        }
-        finally {
-            producer.flush();
-        }
+        OpenTSxClusterLink.send(producer, new ProducerRecord<>(TOPIC, flowSource, gson.toJson(stateProps)));
 
     }
 

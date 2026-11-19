@@ -100,6 +100,15 @@ def test_measurement_output_of_the_load_generator_fails_even_when_not_on_disk(tm
             "tracked; untrack it, opentsx-lg/src/main/docker-compose/output/ is git-ignored") in capsys.readouterr().out
 
 
+def test_latency_plots_of_the_load_generator_fail_even_when_not_on_disk(tmp_path, capsys):
+    paths = ["opentsx-lg/opentsx/plots/latency-by-message-1615480579887.mwt.data",
+             "opentsx-lg/opentsx/plots/latency-by-message-1615480579887.png"]
+    assert guard.main(tmp_path, paths) == 1
+    out = capsys.readouterr().out
+    for path in paths:
+        assert (f"{path}: measurement output is tracked; untrack it, opentsx-lg/opentsx/plots/ is git-ignored") in out
+
+
 def test_a_personal_home_path_in_any_tracked_text_file_fails(tmp_path, capsys):
     paths = write(tmp_path, {"bin/demo.sh": f"export CONFLUENT_HOME={MAC_HOMES}/{PERSON}/bin/confluent-7.3.0\n",
                              "nb/project.xml": f"<definitions>{MAC_HOMES}/Shared/home/{PERSON}/nb.properties</definitions>\n",

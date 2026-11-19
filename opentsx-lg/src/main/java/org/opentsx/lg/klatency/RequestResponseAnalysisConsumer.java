@@ -13,13 +13,15 @@ import org.opentsx.data.exporter.MeasurementTable;
 import org.opentsx.data.model.LatencyTesterEvent;
 import org.opentsx.data.series.TimeSeriesObject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.util.Vector;
-import java.util.logging.Logger;
 
 public class RequestResponseAnalysisConsumer {
 
-    static Logger log = Logger.getLogger(RequestResponseAnalysisConsumer.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(RequestResponseAnalysisConsumer.class);
 
     private final static String TOPIC = LatencyTestEventConsumer.TOPIC_for_response_events_string;
 
@@ -29,7 +31,7 @@ public class RequestResponseAnalysisConsumer {
 
     public static void main(String[] args) throws InterruptedException {
 
-        log.info( "Start RequestResponseAnalysisConsumer ..." );
+        LOG.info("starting RequestResponseAnalysisConsumer");
 
         /**
          * Read environment variables to configure the tool ...
@@ -96,12 +98,10 @@ public class RequestResponseAnalysisConsumer {
             }
 
             consumer.commitAsync();
-            consumer.close();
-
 
         }
-        catch (Exception ex) {
-            ex.printStackTrace();
+        finally {
+            consumer.close();
         }
 
         Vector<TimeSeriesObject> vtso = new Vector<TimeSeriesObject>();

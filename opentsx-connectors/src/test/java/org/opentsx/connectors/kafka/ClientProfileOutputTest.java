@@ -85,7 +85,7 @@ class ClientProfileOutputTest {
     @Test
     void theProfileIsReadOnceForTheListWithoutSecurityProperties() {
         String out = stdout(OpenTSxClusterLink::getPropsAsString_NO_SECURITY_PROPS);
-        assertEquals(1, out.split("Client properties from file", -1).length - 1, out);
+        assertEquals(1, out.split("reading the client profile path=", -1).length - 1, out);
     }
 
     @Test
@@ -94,8 +94,10 @@ class ClientProfileOutputTest {
             new TSOProducer().pushTSDataAsEpisodesToKafka_String_Avro(new Vector<>(), "probe", null);
             new TSOProducer().pushTSDataAsEventsToKafka_String_Avro(new Vector<>(), "probe");
             LatencyTestEventProducer latency = new LatencyTestEventProducer();
-            latency.pushTestEventToCluster(new LatencyTesterEvent());
+            IllegalStateException e = assertThrows(IllegalStateException.class,
+                    () -> latency.pushTestEventToCluster(new LatencyTesterEvent()));
             latency.close();
+            assertNoCredentials(e.getMessage());
         });
         assertNoCredentials(out);
     }

@@ -41,36 +41,22 @@ public class LatencyTestEventProducer {
             producer = createProducer(OpenTSxClusterLink.getClientProperties());
         };
 
-        long time0 = System.currentTimeMillis();
+        String key = data.targetAgentDC;
 
-        try {
+        data.trackSendTS();
 
-            String key = data.targetAgentDC;
+        String dataJSON = LatencyTesterEvent.asJson( data );
 
-            data.trackSendTS();
-
-            String dataJSON = LatencyTesterEvent.asJson( data );
-
-            final ProducerRecord<String, String> record =
-               new ProducerRecord<>(TOPIC_for_request_events_string, key, dataJSON );
-                    RecordMetadata metadata = producer.send(record).get();
-
-
-        }
-        catch (Exception ex) {
-            ex.printStackTrace();
-
-        }
-        finally {
-            producer.flush();
-
-        }
+        final ProducerRecord<String, String> record =
+           new ProducerRecord<>(TOPIC_for_request_events_string, key, dataJSON );
+        OpenTSxClusterLink.send(producer, record);
 
     }
 
     public void close() {
-        producer.flush();
-        producer.close();
+        if ( producer != null ) {
+            producer.close();
+        }
     }
 
 }

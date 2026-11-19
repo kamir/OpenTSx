@@ -1,67 +1,28 @@
-/**
- * An HDFS client to create a SequenceFile with time series.
- *
- * KEY = LongWriteable VALUE = MessreiheData
- *
- * We do no load data, but we use a GENERATOR here ...
- *
- *
- *
- */
 package org.opentsx.lg.klatency;
 
 import org.opentsx.connectors.kafka.klatency.LatencyTestEventProducer;
 import org.opentsx.data.model.*;
 
-import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.connectors.kafka.OpenTSxClusterLink;
 import org.opentsx.connectors.kafka.topicmanager.TopicsCHECK;
 import org.opentsx.connectors.kafka.topicmanager.TopicsUP;
-import org.opentsx.core.TSData;
-import org.opentsx.data.generator.RNGWrapper;
-import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.lg.metrics.TSGBeanImpl;
 import org.opentsx.lg.metrics.TSGMBean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.management.JMException;
 import javax.management.MBeanServer;
-import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
-import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.util.Date;
-import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
- * This application generates a set of sine-waves.
- *
- * The set of time series episode is stored in a TSBucket on local disc.
- * The path is defined by:
- *
- *    baseOut = "./test-opentsx-lg/"
- *
- * A single TSBucket represents the data of one particular time slice.
- * This is related to a window in stream processing.
- *
- * The demo application writes the raw time series data to Kafka.
- *
- * We have two data models, one holds the data series as episodes,
- * and another is per event.
- *
- * Flow state data is sent to a third topic, named:
- *
- *     opentsx_event_flow_state
- *
- * using the class EventFlowStateProducer.
- *
- *
- *
- * @author kamir
+ * Sends latency test events to the topic latency_benchmark_request, one per round. The rounds come from
+ * klatency.producer.ziterations in the client profile (default 100). A failed send stops the rounds.
  */
 public class RequestResponseAnalysisProducer {
 
-    static Logger log = Logger.getLogger(RequestResponseAnalysisProducer.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(RequestResponseAnalysisProducer.class);
 
     private static MBeanServer mbs = null;
 
@@ -70,9 +31,9 @@ public class RequestResponseAnalysisProducer {
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException {
+    public static void main(String[] args) throws Exception {
 
-        log.info( "Start RequestResponseAnalysisProducer ..." );
+        LOG.info("starting RequestResponseAnalysisProducer");
 
         /**
          * Read environment variables to configure the tool ...
@@ -80,45 +41,16 @@ public class RequestResponseAnalysisProducer {
         OpenTSxClusterLink.OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME = "./config/opentsx-local.props";
         OpenTSxClusterLink.init();
 
-        try {
+        if ( !TopicsCHECK.execute() ) {
 
-            if ( !TopicsCHECK.execute() ) {
+            TopicsUP.execute();
 
-                TopicsUP.execute();
-
-                if (!TopicsCHECK.execute()) {
-                    System.exit(-1);
-                }
-            }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        boolean showChart = true;
-
-        try {
-            registerMBean();
-        }
-        catch (NotCompliantMBeanException e) {
-            e.printStackTrace();
-            System.exit( -1 );
-        }
-
-        /**
-         * the argument "off" turns off the GUI.
-         */
-        if ( args != null ) {
-            if ( args.length > 0 ) {
-                if( args[0].equals( "off") )
-                    showChart = false;
+            if (!TopicsCHECK.execute()) {
+                System.exit(1);
             }
         }
 
-        /**
-         * the ENV VARIABLE OPENTSX_SHOW_GUI can turn off the GUI.
-         */
-        String gui_prop = System.getenv("OPENTSX_SHOW_GUI");
+        registerMBean();
 
         /*
          *  by default we use 100 iterations for event generation.
@@ -130,65 +62,43 @@ public class RequestResponseAnalysisProducer {
             zIterations = Integer.parseInt( zs );
         }
 
-        String zIterations_tmp = System.getenv("OPENTSX_NUMBER_OF_ITERATIONS");
-        System.out.println( "*** USE CUSTOM NR OF ITERATIONS *** (" + zIterations_tmp + ")");
+        System.out.println(">>> klatency.producer.ziterations = " + zIterations );
 
-        System.out.println(">>> OPENTSX_NUMBER_OF_ITERATIONS = " + zIterations );
+        sendTestEvents(new LatencyTestEventProducer(), zIterations);
 
-        int i = 0;
+    }
 
-        long tS = System.currentTimeMillis();
+    static void sendTestEvents(LatencyTestEventProducer prod, int zIterations) {
 
-        LatencyTestEventProducer prod = new LatencyTestEventProducer();
-
-
-
-        while( i < zIterations ) {
-
-            i++;
-
-            /**
-             * Step 1: creation of the series ...
-             */
-            try {
+        try {
+            for (int i = 1; i <= zIterations; i++) {
 
                 LatencyTesterEvent e = LatencyTesterEvent.getTestEvent( "DC2", "agent1", 900  );
 
                 prod.pushTestEventToCluster( e );
 
-            }
-            catch (Exception ex) {
-                Logger.getLogger(RequestResponseAnalysisProducer.class.getName()).log(Level.SEVERE, null, ex);
-            }
+                System.out.println(">>> Round : " + i + " DONE." );
 
-            System.out.println(">>> Round : " + i + " DONE." );
-
+            }
         }
-
-        prod.close();
+        finally {
+            prod.close();
+        }
 
     }
 
-    private static void registerMBean() throws NotCompliantMBeanException {
+    private static void registerMBean() throws JMException {
 
         // Get the platform MBeanServer
         mbs = ManagementFactory.getPlatformMBeanServer();
 
         // Unique identification of MBeans
-        tsgBean = (TSGMBean)new TSGBeanImpl();
+        tsgBean = new TSGBeanImpl();
 
-        ObjectName beanName = null;
-
-        try {
-            // Uniquely identify the MBeans and register them with the platform MBeanServer
-            beanName = new ObjectName("org.opentsx.lg.TSGMBean:name=TSGMBean");
-            mbs.registerMBean(tsgBean, beanName);
-            System.out.println( "### Register MBean: " + beanName );
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-            System.exit(-1);
-        }
+        // Uniquely identify the MBeans and register them with the platform MBeanServer
+        ObjectName beanName = new ObjectName("org.opentsx.lg.TSGMBean:name=TSGMBean");
+        mbs.registerMBean(tsgBean, beanName);
+        LOG.debug("MBean registered name={}", beanName);
     }
 
 }
