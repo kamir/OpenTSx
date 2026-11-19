@@ -22,10 +22,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.io.Writer;
-import java.net.InetSocketAddress;
-import java.net.ProxySelector;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -64,7 +60,7 @@ public final class DwdCli {
     static final String OUT = "opentsx.dwd.out";
     static final String DAILY = "opentsx.dwd.daily";
     static final String BOAT = "opentsx.dwd.boat";
-    static final String PROXY = "opentsx.https.proxy";
+    static final String PROXY = HttpsProxy.KEY;
     static final Pattern STATION_ID = Pattern.compile("[A-Za-z0-9]{1,10}");
     static final List<String> HOURLY_PARAMS = List.of("wind", "air_temperature");
     static final String WRITE_FAILED = "stdout: cannot write the output; check that standard output is open and not full";
@@ -139,28 +135,8 @@ public final class DwdCli {
         };
     }
 
-    /** The proxy of the downloads: the JVM proxy settings win; a set {@code opentsx.https.proxy} is checked in any case. */
-    static ProxySelector proxy(String jvmProxyHost, Optional<String> configured) {
-        ProxySelector own = configured.map(DwdCli::proxyOf).orElse(null);
-        return jvmProxyHost != null || own == null ? ProxySelector.getDefault() : own;
-    }
-
-    private static ProxySelector proxyOf(String value) {
-        URI u;
-        try {
-            u = new URI(value.contains("://") ? value : "http://" + value);
-        } catch (URISyntaxException e) {
-            // not kept as the cause: its message holds the value, which is a secret
-            u = null;
-        }
-        if (u == null || u.getHost() == null) {
-            throw new OpenTsxConfException(PROXY, "not a proxy address", "expected <host>:<port> or http://<host>:<port>");
-        }
-        return ProxySelector.of(InetSocketAddress.createUnresolved(u.getHost(), u.getPort() > 0 ? u.getPort() : 80));
-    }
-
     private static DwdClient client(OpenTsxConf conf) {
-        return new DwdClient(proxy(System.getProperty("https.proxyHost"), conf.getOption(PROXY)));
+        return new DwdClient(HttpsProxy.selector(System.getProperty("https.proxyHost"), conf.getOption(PROXY)));
     }
 
     private interface Forecast {

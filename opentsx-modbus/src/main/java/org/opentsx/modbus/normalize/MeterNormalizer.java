@@ -52,6 +52,10 @@ public final class MeterNormalizer {
             throw new IllegalArgumentException("episodeDuration: " + episodeDuration
                     + " is shorter than 1 microsecond; set episodeDuration to a positive length, such as PT1M");
         }
+        if (episodeDuration.toNanos() % 1_000L != 0) {
+            throw new IllegalArgumentException("episodeDuration: " + episodeDuration + " is not a whole number of "
+                    + "microseconds; set episodeDuration to a whole number of microseconds, such as PT1M");
+        }
         if (originOverride != null && !RegisterMap.ORIGINS.contains(originOverride)) {
             throw new IllegalArgumentException("unknown origin " + originOverride);
         }

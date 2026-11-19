@@ -116,7 +116,7 @@ public final class RegisterMap {
         return new RegisterMap(name, version, example, description, d, tags, points);
     }
 
-    /** The shipped example grid-meter map (a template until the real register sheets are available). */
+    /** The shipped example grid-meter map, a template with made-up addresses, not a real register sheet. */
     public static RegisterMap exampleGridMeter() {
         return resource("/modbus/example-grid-meter.yaml");
     }

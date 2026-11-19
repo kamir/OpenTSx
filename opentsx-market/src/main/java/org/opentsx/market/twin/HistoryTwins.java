@@ -28,6 +28,7 @@ import java.nio.file.Path;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -122,9 +123,19 @@ public final class HistoryTwins {
     }
 
     private static HistorySites.Site station(HistorySites.Site s, OpenTsxConf conf) {
-        return new HistorySites.Site(s.id(), s.latitude(), s.longitude(), conf.get("opentsx.history.station",
-                s.temperature()), s.wind(), conf.get("opentsx.history.radiationStation", s.radiation()),
+        return new HistorySites.Site(s.id(), s.latitude(), s.longitude(), stationId(conf, "opentsx.history.station",
+                s.temperature()), s.wind(), stationId(conf, "opentsx.history.radiationStation", s.radiation()),
                 s.anemometerHeightM(), s.hubHeightM(), s.shearExponent());
+    }
+
+    /** The station id of {@code key}, 5 digits as in the sites file, or {@code absent}. */
+    private static String stationId(OpenTsxConf conf, String key, String absent) {
+        Optional<String> v = conf.getOption(key);
+        if (v.isPresent() && !v.get().matches("[0-9]{5}")) {
+            throw new OpenTsxConfException(MarketCli.named(conf, key), "\"" + v.get() + "\" is not a station id",
+                    "expected a station id of 5 digits such as 03166");
+        }
+        return v.orElse(absent);
     }
 
     static void h2(HistoryInputs h, HistorySites.Site park, OpenTsxConf conf, PrintStream out) {
@@ -133,7 +144,7 @@ public final class HistoryTwins {
         long t0 = Micro.of(first.atStartOfDay(ZoneOffset.UTC).toInstant());
         int days = conf.getOption("opentsx.history.twin.days").isPresent()
                 ? days(conf, "opentsx.history.twin.days", H2ChainDemo.MAX_STEPS)
-                : (int) ((Micro.utcYear(year + 1) - t0) / Micro.DAY);
+                : toEndOfYear(conf, year, first);
         String wind = conf.get("opentsx.history.twin.wind");
         double cf = conf.getDouble("opentsx.history.twin.capacityFactor");
         require(h.archive(), "smard/day_ahead_price", t0);
@@ -246,6 +257,21 @@ public final class HistoryTwins {
             throw new OpenTsxConfException(MarketCli.named(conf, key), "\"" + v.get() + "\" is not a day",
                     "expected a UTC day YYYY-MM-DD");
         }
+    }
+
+    /** The days from {@code first} to the end of {@code year}: 1 to the days of 15-minute steps an H2 chain run holds. */
+    private static int toEndOfYear(OpenTsxConf conf, int year, LocalDate first) {
+        LocalDate end = LocalDate.of(year + 1, 1, 1);
+        long max = H2ChainDemo.MAX_STEPS / 96;
+        long days = ChronoUnit.DAYS.between(first, end);
+        if (days < 1 || days > max) {
+            String from = "opentsx.history.twin.from";
+            throw new OpenTsxConfException(MarketCli.named(conf, from), "\"" + conf.get(from) + "\" is not allowed",
+                    "expected a UTC day from " + end.minusDays(max) + " to " + end.minusDays(1) + ", so that the run to "
+                            + "the end of " + MarketCli.named(conf, "opentsx.history.twin.year") + " " + year + " has 1 to "
+                            + max + " days");
+        }
+        return (int) days;
     }
 
     /** The days of {@code key}: 1 to the days of 15-minute steps in {@code maxSteps}, the most steps a run holds. */

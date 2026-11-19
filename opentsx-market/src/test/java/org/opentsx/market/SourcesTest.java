@@ -207,6 +207,34 @@ class SourcesTest {
                 + "NTP_CLIENT_ID and NTP_CLIENT_SECRET or the properties file", e.getMessage());
     }
 
+    @Test
+    void aFailingTokenEndpointFailsTheYearWithoutTheResponseAndTheNextYearIsTried(@TempDir Path dir) {
+        List<String> posts = new ArrayList<>();
+        Fetcher failing = new Fetcher() {
+            @Override
+            public String get(String uri, Map<String, String> headers) {
+                throw new UnsupportedOperationException(uri);
+            }
+
+            @Override
+            public String postForm(String uri, String form, Map<String, String> headers) {
+                posts.add(uri);
+                throw new Http.StatusException(503, uri, "Service Unavailable: " + form);
+            }
+        };
+        Map<String, String> env = Map.of("NTP_CLIENT_ID", "client", "NTP_CLIENT_SECRET", "s3cret");
+        ByteArrayOutputStream log = new ByteArrayOutputStream();
+        Backfill b = new Backfill(new Archive(dir), new Collector(null, null, null, failing, env), env,
+                new PrintStream(log, true, StandardCharsets.UTF_8));
+        List<Backfill.Outcome> r = b.run(List.of(MarketCatalog.require("netztransparenz/rebap_short")), 2023, 2024,
+                false, Instant.parse("2026-01-10T00:00:00Z"));
+        assertEquals(List.of(Backfill.Status.FAILED, Backfill.Status.FAILED), r.stream().map(Backfill.Outcome::status).toList());
+        assertEquals("IllegalStateException: netztransparenz token: HTTP 503 from " + NetztransparenzSource.TOKEN_URL
+                + "; the service failed, try again later", r.get(0).message());
+        assertEquals(2, posts.size());
+        assertFalse(log.toString(StandardCharsets.UTF_8).contains("s3cret"), log.toString(StandardCharsets.UTF_8));
+    }
+
     /** Outcome message and log of a backfill year of the ENTSO-E price whose request fails. */
     static String failedYear(Path dir, Fetcher entsoe, String token) {
         Map<String, String> env = Map.of("ENTSOE_TOKEN", token);

@@ -31,7 +31,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 /**
- * The local history archive ("Datenpakete"), outside git (default {@code data/history/}):
+ * The local history archive, outside git (default {@code data/history/}):
  * <pre>
  * data/history/
  *   smard/day_ahead_price/2024.csv.gz          one file per series and UTC year

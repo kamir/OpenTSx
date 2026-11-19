@@ -23,8 +23,7 @@ Checked on 2026-10-12. Re-check the terms before you redistribute an archive.
 | **DWD** Climate Data Center and MOSMIX, `opendata.dwd.de` | station observations (hourly / 10-min) and MOSMIX_L forecasts | no registration | **CC BY 4.0** (DWD terms, May 2024), "Deutscher Wetterdienst" |
 
 **Hosts to allow** in a restricted network: `www.smard.de`, `api.energy-charts.info`, `web-api.tp.entsoe.eu`,
-`ds.netztransparenz.de`, `identity.netztransparenz.de`, `opendata.dwd.de`. All of them were reachable from the
-build environment through its proxy.
+`ds.netztransparenz.de`, `identity.netztransparenz.de`, `opendata.dwd.de`.
 
 **Proxy.** Downloads use the JVM proxy settings (`https.proxyHost`, `https.proxyPort`) when `https.proxyHost` is set.
 Otherwise they use the key `opentsx.https.proxy`, the same key as in [`opentsx-dwd`](../opentsx-dwd/README.md#download-through-a-proxy),
@@ -110,6 +109,14 @@ or netztransparenz.de client prints a line that names the keys and variables of 
 opentsx: opentsx.market.ntpClientId, opentsx.market.ntpClientSecret: rejected by netztransparenz.de (HTTP 401); check the client in OPENTSX_MARKET_NTP_CLIENT_ID and OPENTSX_MARKET_NTP_CLIENT_SECRET, NTP_CLIENT_ID and NTP_CLIENT_SECRET or the properties file
 ```
 
+The token endpoint of netztransparenz.de counts as rejecting the client only with HTTP 400 or 401. Any other error
+status, such as a 503 after the retries, prints a line without the response text, which could repeat the client
+secret. In a backfill that year fails and the next year is tried:
+
+```text
+opentsx: netztransparenz token: HTTP 503 from https://identity.netztransparenz.de/users/connect/token; the service failed, try again later
+```
+
 **Partner files** (`import`) have a header and the columns `start` (ISO-8601 with offset or `Z`), optional `end`,
 and `value`. They use `,` or `;` as separator; with `;` a decimal comma is allowed. Without `end`, pass
 `--resolution PT15M`. Local timestamps need `--zone Europe/Berlin` and are rejected inside the doubled hour.
@@ -167,7 +174,9 @@ bin/opentsx market load     --archive data/history --iceberg type=jdbc,uri=jdbc:
   whose quality-assured data comes late). A changed or missing file is fetched again.
 * **Politeness:** a minimum pause between requests per host (`--delay-ms`, default 500 ms; ENTSO-E at least 1 s,
   netztransparenz at least 600 ms), and up to 4 retries on network errors, 429 and 5xx, after 2, 4, 8 and 16 s or
-  later when `Retry-After` asks for it. An unknown host and a TLS error are not tried again; the request fails at
+  later when a `Retry-After` in seconds asks for it, at most 60 s. A longer `Retry-After` waits 60 s and logs a WARN
+  line `Retry-After capped at 60 s url=<URL> status=<status> retryAfterSeconds=<seconds>`; a `Retry-After` date is
+  not read. An unknown host and a TLS error are not tried again; the request fails at
   once with `GET <URL> failed after 1 attempt`: on the FAILED line of the year in a backfill
   (`UncheckedIOException: GET <URL> failed after 1 attempt`), and as
   `opentsx: GET <URL> failed after 1 attempt; caused by ...` in `prices`, `series`, `rebap`, `marktwert` and
@@ -289,7 +298,11 @@ given. Without them the demos of `opentsx-twin` run unchanged on synthetic data.
 commands `history-twin twin`, `history-twin house` and `history-twin boat`; `bin/opentsx twin --history data/history
 --help` lists them. `--wind` takes `smard` or `dwd`, and `--levers false` prints no levers. `--days` of `twin` and
 `boat` takes 1 to 366, the days of 15-minute steps that one run holds; another value exits with 2:
-`opentsx: --days: "400" is not allowed; expected 1 to 366`. A missing archive or a
+`opentsx: --days: "400" is not allowed; expected 1 to 366`. Without `--days`, `twin` runs from `--from` to the end of
+`--year`, so `--from` must leave 1 to 366 days; another day exits with 2:
+`opentsx: --from: "2025-01-01" is not allowed; expected a UTC day from 2024-01-01 to 2024-12-31, so that the run to the end of --year 2024 has 1 to 366 days`.
+`--station` and `--radiation-station` take a station id of 5 digits, as the sites file does; another value exits with 2:
+`opentsx: --station: "12ab" is not a station id; expected a station id of 5 digits such as 03166`. A missing archive or a
 year without archived data stops the command with exit code 2 and a line that says which backfill fills it. The
 adapter (`HistoryInputs`) resamples archive series to the plan's base step as a time-weighted mean: finer data is
 averaged, coarser data (hourly prices, monthly values) is held. A step less than half covered becomes NaN, so the twin falls
@@ -299,21 +312,7 @@ not changed; the adapter only builds `SeriesInputs` and plan variants.
 Results are **modelled, not proven**. The dispatch rule, the park scaling and the house and boat parameters are
 assumptions; prices, wind situations, temperatures and irradiance are real.
 
-## 6. Status (2026-10-12)
-
-* Collected into the local archive (not in git), 2019 to 2026-10-12, 20 MB in all (`bin/opentsx market report`
-  lists every package): SMARD day-ahead price DE-LU (hourly, quarter-hourly from 2025-10-01), load, residual load,
-  wind onshore and offshore, solar, and the forecasts of wind onshore and offshore, solar and load (quarter-hourly):
-  10 series, 13 MB. The Energy-Charts price, identical to SMARD in every interval: 0.5 MB. DWD observations of the
-  site stations (air temperature and wind 03166, 01759, 02564; radiation 01358, 00183, 06163): 6.3 MB. All
-  packages have both DST days fully covered and no implausible values. Gaps are only in the station data (mostly
-  below 1 %; wind at Greifswalder Oie 2021–2023 about 4 %).
-* Blocked: ENTSO-E (no `ENTSOE_TOKEN` in the build environment) and netztransparenz reBAP/market values (no OAuth
-  client). Both clients are implemented and tested against fixtures; with credentials, `backfill` fills them, and
-  without them the CSV downloads can be imported with `--offline`.
-* MOSMIX: the raw forward archive runs from 2026-10-12. Earlier forecasts cannot be recovered from the DWD.
-
-## 7. Tests
+## 6. Tests
 
 `mvn -pl opentsx-market test`, all offline: SMARD (MTU switch, MWh→MW, `null`), Energy-Charts (23-hour DST
 day), ENTSO-E (A03 blocks, two resolutions, acknowledgement, no DOCTYPE/XXE), reBAP (API and download formats

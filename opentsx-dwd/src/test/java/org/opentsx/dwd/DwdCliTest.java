@@ -12,10 +12,6 @@ import org.opentsx.conf.Registry;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.ProxySelector;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,10 +20,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** {@code bin/opentsx dwd ...} with {@code --offline} files (no network). */
@@ -178,25 +172,6 @@ class DwdCliTest {
                 help.out());
         assertEquals(new Result(0, Registry.shipped().help(), ""), cli(Map.of(), "--help"));
         assertEquals(new Result(0, ConfCli.versionLine(), ""), cli(Map.of(), "mosmix", "--version"));
-    }
-
-    @Test
-    void theJvmProxySettingsWinOverTheProxyKey() {
-        assertSame(ProxySelector.getDefault(), DwdCli.proxy("jvm-proxy.example", Optional.of("proxy.example:3128")));
-        assertSame(ProxySelector.getDefault(), DwdCli.proxy(null, Optional.empty()));
-    }
-
-    @Test
-    void theProxyKeyComesFromOpentsxHttpsProxyWithoutJvmSettings() {
-        OpenTsxConf conf = OpenTsxConf.load(List.of("dwd", "stations", "--near", "50.6,13.0"),
-                Map.of("OPENTSX_HTTPS_PROXY", "proxy.example:3128", "HTTPS_PROXY", "legacy.example:8080"), null).conf();
-        ProxySelector p = DwdCli.proxy(null, conf.getOption("opentsx.https.proxy"));
-        assertEquals(List.of(new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved("proxy.example", 3128))),
-                p.select(URI.create("https://opendata.dwd.de/")));
-        OpenTsxConf legacy = OpenTsxConf.load(List.of("dwd", "obs", "--station", "01358"),
-                Map.of("HTTPS_PROXY", "http://legacy.example:8080"), null).conf();
-        assertEquals(List.of(new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved("legacy.example", 8080))),
-                DwdCli.proxy(null, legacy.getOption("opentsx.https.proxy")).select(URI.create("https://opendata.dwd.de/")));
     }
 
     @Test

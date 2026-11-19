@@ -70,9 +70,11 @@ opentsx: --token: secret keys are not accepted on the command line; set OPENTSX_
 
 The client retries a `PUT` or a `GET` after an I/O error or the status 429, 502, 503 or 504, up to 5 attempts. It
 waits 1, 2, 4 and 8 s, or as long as a `Retry-After` header asks, at most 30 s each time. The header gives seconds or
-an HTTP date in the IMF-fixdate form such as `Thu, 19 Nov 2026 12:00:12 GMT`; a date counts from the `Date` header of
-the answer, or from the local clock when the answer has none. A date in the obsolete RFC 850 or asctime form is not
-read; the waits of 1, 2, 4 and 8 s apply.
+an HTTP date in one of the three forms of RFC 9110: IMF-fixdate such as `Thu, 19 Nov 2026 12:00:12 GMT`, RFC 850 such
+as `Thursday, 19-Nov-26 12:00:12 GMT` or asctime such as `Thu Nov 19 12:00:12 2026`. The two-digit year of RFC 850 is
+the latest year with those digits that is at most 50 years ahead. A date counts from the `Date` header of the answer,
+or from the local clock when the answer has none. A header that is neither seconds nor such a date, a wrong day name
+included, gets the waits of 1, 2, 4 and 8 s.
 
 A data-quality result is a `POST`, and the client repeats it only after a failed connection, with the same waits.
 After any other I/O error or any error status the command stops with exit code 1 and names the request, where `<fqn>`

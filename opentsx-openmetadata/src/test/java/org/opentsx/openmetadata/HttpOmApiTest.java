@@ -196,15 +196,22 @@ class HttpOmApiTest {
     }
 
     @Test
-    void retryAfterAsAnObsoleteHttpDateIsNotReadAndTheBackoffApplies() {
+    void retryAfterInTheObsoleteRfc850AndAsctimeFormsWaitsUntilThatTimeAtMostThirtySeconds() {
+        String now = "Thu, 19 Nov 2026 12:00:00 GMT";
         ScriptedClient http = new ScriptedClient(
-                status(503, Map.of("Retry-After", List.of("Thursday, 19-Nov-26 12:00:12 GMT"))),
-                status(503, Map.of("Retry-After", List.of("Thu Nov 19 12:00:12 2026"))),
+                status(503, Map.of("Date", List.of(now), "Retry-After", List.of("Thursday, 19-Nov-26 12:00:12 GMT"))),
+                status(503, Map.of("Date", List.of(now), "Retry-After", List.of("Thu Nov 19 12:00:12 2026"))),
+                status(503, Map.of("Date", List.of(now), "Retry-After", List.of("Wednesday, 19-Nov-26 12:00:12 GMT"))),
+                status(503, Map.of("Date", List.of("Thu, 05 Nov 2026 12:00:00 GMT"),
+                        "Retry-After", List.of("Thu Nov  5 12:00:20 2026"))),
+                status(503, Map.of("Date", List.of(now), "Retry-After", List.of("Thursday, 19-Nov-76 12:00:00 GMT"))),
+                status(503, Map.of("Date", List.of(now), "Retry-After", List.of("Saturday, 19-Nov-77 12:00:00 GMT"))),
                 status(200, Map.of()));
         List<Long> waits = new ArrayList<>();
-        HttpOmApi api = new HttpOmApi(URI.create("http://om.invalid/api"), "t", 5, http, waits::add);
+        HttpOmApi api = new HttpOmApi(URI.create("http://om.invalid/api"), "t", 7, http, waits::add);
         api.put("/v1/tags", new ObjectMapper().createObjectNode());
-        assertEquals(List.of(1000L, 2000L), waits);
+        // a wrong day name is not a date: the backoff of the third attempt; 76 is 2076, 77 is 1977
+        assertEquals(List.of(12000L, 12000L, 4000L, 20000L, 30000L, 0L), waits);
     }
 
     @Test

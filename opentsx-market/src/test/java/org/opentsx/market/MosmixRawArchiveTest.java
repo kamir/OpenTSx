@@ -59,7 +59,8 @@ class MosmixRawArchiveTest {
         assertTrue(a.collect(List.of("10579"), now).get(0).added());
         List<String> index = Files.readAllLines(dir.resolve("dwd-mosmix/raw/index.tsv"));
         assertEquals(3, index.size());   // header + two issues
-        assertTrue(index.get(1).contains("CC BY 4.0"));
+        assertEquals("CC BY 4.0; Source: Deutscher Wetterdienst (DWD), Climate Data Center",
+                index.get(1).substring(index.get(1).lastIndexOf('\t') + 1));
     }
 
     @Test

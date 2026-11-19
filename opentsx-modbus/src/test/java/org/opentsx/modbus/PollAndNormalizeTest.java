@@ -114,6 +114,14 @@ class PollAndNormalizeTest {
     }
 
     @Test
+    void anEpisodeThatIsNotAWholeNumberOfMicrosecondsIsRefused() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> new MeterNormalizer(RegisterMap.exampleGridMeter(), Duration.ofMinutes(1).plusNanos(500)));
+        assertEquals("episodeDuration: PT1M0.0000005S is not a whole number of microseconds; set episodeDuration to a "
+                + "whole number of microseconds, such as PT1M", e.getMessage());
+    }
+
+    @Test
     void counterWrapResetAndMissingAreFlagged() throws Exception {
         RegisterMap map = RegisterMap.exampleGridMeter();
         RegisterPoint imp = map.point("energy_import");

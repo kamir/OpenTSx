@@ -1,11 +1,12 @@
 package org.opentsx.market.source;
 
-import org.opentsx.conf.OpenTsxConfException;
+import org.opentsx.dwd.HttpsProxy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -23,14 +24,16 @@ import java.util.regex.Pattern;
 
 /**
  * Polite HTTP GET/POST for the collectors (JDK HTTP client): a minimum interval between requests per instance,
- * retries with exponential backoff on network errors, 429 and 5xx, honouring {@code Retry-After}. An unknown host and
- * a TLS error fail at once. The proxy comes from {@link #proxy}.
+ * retries with exponential backoff on network errors, 429 and 5xx, honouring a {@code Retry-After} in seconds up to
+ * 60 s. An unknown host and a TLS error fail at once. The proxy comes from {@link #proxy}.
  */
 public class Http implements Fetcher {
 
     public static final String USER_AGENT = "OpenTSx-market/3.0 (+https://github.com/kamir/OpenTSx)";
-    public static final String PROXY = "opentsx.https.proxy";
+    public static final String PROXY = HttpsProxy.KEY;
     private static final Pattern SECRET = Pattern.compile("[?&][^=&#]*(?i:token|secret|key)[^=&#]*=([^&#]+)");
+    private static final long MAX_RETRY_AFTER_SECONDS = 60;
+    private static final Logger LOG = LoggerFactory.getLogger(Http.class);
 
     /** A non-retryable HTTP status (4xx other than 429). */
     public static final class StatusException extends RuntimeException {
@@ -79,27 +82,9 @@ public class Http implements Fetcher {
         this.sleeper = sleeper;
     }
 
-    /**
-     * The proxy of the downloads: the JVM proxy settings win when {@code https.proxyHost} is set; otherwise the key
-     * {@value #PROXY} ({@code <host>:<port>} or {@code http://<host>:<port>}), which is checked in any case.
-     */
+    /** The proxy of the downloads, by the rule of {@link HttpsProxy#selector}, which opentsx-dwd follows too. */
     public static ProxySelector proxy(String jvmProxyHost, Optional<String> configured) {
-        ProxySelector own = configured.map(Http::proxyOf).orElse(null);
-        return jvmProxyHost != null || own == null ? ProxySelector.getDefault() : own;
-    }
-
-    private static ProxySelector proxyOf(String value) {
-        URI u;
-        try {
-            u = new URI(value.contains("://") ? value : "http://" + value);
-        } catch (URISyntaxException e) {
-            // not kept as the cause: its message holds the value, which is a secret
-            u = null;
-        }
-        if (u == null || u.getHost() == null) {
-            throw new OpenTsxConfException(PROXY, "not a proxy address", "expected <host>:<port> or http://<host>:<port>");
-        }
-        return ProxySelector.of(InetSocketAddress.createUnresolved(u.getHost(), u.getPort() > 0 ? u.getPort() : 80));
+        return HttpsProxy.selector(jvmProxyHost, configured);
     }
 
     @Override
@@ -133,6 +118,7 @@ public class Http implements Fetcher {
         long backoff = 2_000;
         for (int attempt = 0; ; attempt++) {
             pace();
+            long wait = backoff;
             try {
                 HttpResponse<T> r = client.send(req, handler);
                 int s = r.statusCode();
@@ -142,7 +128,12 @@ public class Http implements Fetcher {
                 if (s != 429 && s / 100 != 5 || attempt >= retries) {
                     throw new StatusException(s, uri, r.body() instanceof String t ? t : "");
                 }
-                backoff = Math.max(backoff, r.headers().firstValue("Retry-After").map(Http::seconds).orElse(0L) * 1000);
+                long asked = r.headers().firstValue("Retry-After").map(Http::seconds).orElse(0L);
+                if (asked > MAX_RETRY_AFTER_SECONDS) {
+                    LOG.warn("Retry-After capped at {} s url={} status={} retryAfterSeconds={}", MAX_RETRY_AFTER_SECONDS,
+                            redact(uri, uri), s, asked);
+                }
+                wait = Math.max(backoff, Math.min(asked, MAX_RETRY_AFTER_SECONDS) * 1000);
             } catch (IOException e) {
                 if (attempt >= retries || !retryable(e)) {
                     throw new UncheckedIOException(req.method() + " " + redact(uri, uri) + " failed after " + (attempt + 1)
@@ -152,7 +143,7 @@ public class Http implements Fetcher {
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException("interrupted", e);
             }
-            sleep(backoff);
+            sleep(wait);
             backoff = Math.min(backoff * 2, 120_000);
         }
     }

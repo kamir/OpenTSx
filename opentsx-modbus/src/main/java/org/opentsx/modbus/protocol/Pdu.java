@@ -85,8 +85,6 @@ public final class Pdu {
         return out;
     }
 
-    // ---- server side ----
-
     public static ReadRequest parseReadRequest(byte[] pdu) throws ModbusProtocolException {
         if (pdu.length != 5) {
             throw new ModbusProtocolException("read request PDU must have 5 bytes, got " + pdu.length);

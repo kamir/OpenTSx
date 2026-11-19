@@ -148,7 +148,7 @@ class ArchiveTest {
         assertEquals(Archive.sha256(a.file(PRICE, 2025)), e.sha256());
         assertEquals(4, e.queryCount());
         assertEquals("REPORTED", m.origin);
-        assertTrue(m.licence.contains("CC BY 4.0"));
+        assertEquals("CC BY 4.0; Source: Bundesnetzagentur | SMARD.de", m.licence);
         assertTrue(e.quality().gapCount() > 0);   // the fixture covers six hours of the year
 
         int requests = smard.requests.size();

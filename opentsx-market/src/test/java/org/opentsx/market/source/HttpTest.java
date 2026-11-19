@@ -7,7 +7,9 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.net.Authenticator;
 import java.net.ConnectException;
@@ -22,6 +24,7 @@ import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.channels.UnresolvedAddressException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -35,6 +38,7 @@ import java.util.concurrent.Executor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** {@link Http} against a stub {@link HttpClient}: which failures are tried again; and the proxy rule. */
 class HttpTest {
@@ -58,7 +62,10 @@ class HttpTest {
             if (a instanceof IOException e) {
                 throw e;
             }
-            return (HttpResponse<T>) new Response(request, (Integer) a);
+            if (a instanceof Response r) {
+                return (HttpResponse<T>) new Response(request, r.statusCode(), r.headerMap());
+            }
+            return (HttpResponse<T>) new Response(request, (Integer) a, Map.of());
         }
 
         @Override
@@ -118,10 +125,11 @@ class HttpTest {
         }
     }
 
-    record Response(HttpRequest request, int statusCode) implements HttpResponse<String> {
+    record Response(HttpRequest request, int statusCode, Map<String, List<String>> headerMap)
+            implements HttpResponse<String> {
         @Override
         public HttpHeaders headers() {
-            return HttpHeaders.of(Map.of(), (k, v) -> true);
+            return HttpHeaders.of(headerMap, (k, v) -> true);
         }
 
         @Override
@@ -184,6 +192,29 @@ class HttpTest {
         StubHttp once = new StubHttp(refused, 200);
         assertEquals("body 200", http(once).get(URL));
         assertEquals(2, once.calls);
+    }
+
+    @Test
+    void aLongRetryAfterIsCappedAtSixtySecondsAndLogged() {
+        Response r3600 = new Response(null, 503, Map.of("Retry-After", List.of("3600")));
+        StubHttp stub = new StubHttp(r3600, r3600, 200);
+        String log = stderrOf(() -> assertEquals("body 200", http(stub).get(URL)));
+        assertEquals(List.of(60_000L, 60_000L), pauses);
+        assertTrue(log.contains("WARN " + Http.class.getName() + " - Retry-After capped at 60 s url=" + URL
+                + " status=503 retryAfterSeconds=3600"), log);
+    }
+
+    /** What {@code action} wrote to stderr, where slf4j-simple writes its lines. */
+    static String stderrOf(Runnable action) {
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        PrintStream stderr = System.err;
+        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+        try {
+            action.run();
+        } finally {
+            System.setErr(stderr);
+        }
+        return err.toString(StandardCharsets.UTF_8);
     }
 
     @Test

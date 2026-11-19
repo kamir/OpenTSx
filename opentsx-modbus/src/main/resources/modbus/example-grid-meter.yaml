@@ -1,10 +1,8 @@
-# ============================================================================================================
-#  EXAMPLE register map - NOT a real register sheet.
-#  A typical grid-connection meter (medium voltage, wind farm + electrolyzer site) read over Modbus TCP behind
-#  the converter at the fibre termination. Addresses, types and word orders are made up to show every feature;
-#  replace them with the meter vendor's register sheet once it is available, and set `example: false`.
-#  Episodes from this map carry the label registermap.example=true.
-# ============================================================================================================
+# Example register map, not a real register sheet.
+# A typical grid-connection meter (medium voltage, wind farm + electrolyzer site) read over Modbus TCP behind
+# the converter at the fibre termination. Addresses, types and word orders are made up to show every feature;
+# replace them with the register sheet of the meter vendor and set `example: false`.
+# Episodes from this map carry the label registermap.example=true.
 schema: opentsx.modbus.registermap.v1
 name: example-grid-meter
 version: 0.1.0
@@ -15,7 +13,7 @@ description: >
 
 device:
   id: grid-meter-01
-  host: 192.0.2.10              # documentation address (RFC 5737) - set the converter's address
+  host: 192.0.2.10              # documentation address (RFC 5737); set the converter's address
   port: 502
   unitId: 1
   framing: tcp                  # tcp (MBAP) | rtu-over-tcp (serial device server in transparent mode)
@@ -39,7 +37,7 @@ defaults:
 
 # `sim:` blocks drive the in-JVM simulator only (bin/opentsx modbus simulate); the poller ignores them.
 points:
-  # ---- input registers 0..15: instantaneous values, float32 ----
+  # Input registers 0..15: instantaneous values, float32.
   - { name: voltage_l1, address: 0, type: float32, unit: V, obis: "1-0:32.7.0", min: 10392, max: 12702,
       description: "phase voltage L1-N (primary side)", sim: { profile: sine, mean: 11547, amplitude: 60, period: PT7M, noise: 4 } }
   - { name: voltage_l2, address: 2, type: float32, unit: V, obis: "1-0:52.7.0", min: 10392, max: 12702,
@@ -57,13 +55,13 @@ points:
   - { name: power_factor, address: 14, type: float32, unit: "1", obis: "1-0:13.7.0", min: -1, max: 1,
       sim: { profile: constant, value: 0.98, noise: 0.003, max: 1 } }
 
-  # ---- input registers 20..23: active power per direction, float32, kW ----
+  # Input registers 20..23: active power per direction, float32, kW.
   - { name: active_power_import, address: 20, type: float32, unit: kW, obis: "1-0:1.7.0", min: 0, max: 30000,
       description: "active power drawn from the grid", sim: { profile: clamp, source: active_power_net, sign: positive } }
   - { name: active_power_export, address: 22, type: float32, unit: kW, obis: "1-0:2.7.0", min: 0, max: 30000,
       description: "active power fed into the grid", sim: { profile: clamp, source: active_power_net, sign: negative } }
 
-  # ---- holding register 100: signed net power, int32 in W, low word first (shows scale and word order) ----
+  # Holding register 100: signed net power, int32 in W, low word first (shows scale and word order).
   - name: active_power_net
     function: holding
     address: 100
@@ -76,7 +74,7 @@ points:
     max: 30000
     sim: { profile: sine, mean: -3500, amplitude: 6000, period: PT30M, noise: 50 }
 
-  # ---- holding registers 200..203: energy registers, uint32 in 0.1 kWh, monotonic counters ----
+  # Holding registers 200..203: energy registers, uint32 in 0.1 kWh, monotonic counters.
   - name: energy_import
     function: holding
     address: 200
@@ -96,5 +94,5 @@ points:
     kind: counter
     sim: { profile: integrate, source: active_power_export, factor: 0.000277777777777778, start: 98765432.1 }
 
-  # ---- discrete input 0: meter alarm flag ----
+  # Discrete input 0: meter alarm flag.
   - { name: meter_alarm, function: discrete, address: 0, type: bool, unit: "1", sim: { profile: constant, value: 0 } }

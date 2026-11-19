@@ -74,8 +74,9 @@ class ProtocolTest {
 
     @Test
     void malformedFramesAreProtocolErrors() {
-        assertThrows(ModbusProtocolException.class,
-                () -> new Framing.Mbap().readResponse(new ByteArrayInputStream(hex("00 01 00 05 00 03 01 03 00"))));
+        assertEquals("MBAP protocol id: 5 is not 0; the peer is not a Modbus TCP server",
+                assertThrows(ModbusProtocolException.class, () -> new Framing.Mbap()
+                        .readResponse(new ByteArrayInputStream(hex("00 01 00 05 00 03 01 03 00")))).getMessage());
         assertThrows(ModbusProtocolException.class,
                 () -> new Framing.Mbap().readResponse(new ByteArrayInputStream(hex("00 01 00 00 01 00 01 03"))));
         assertThrows(EOFException.class,

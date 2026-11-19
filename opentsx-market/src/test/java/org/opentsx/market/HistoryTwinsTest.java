@@ -222,6 +222,32 @@ class HistoryTwinsTest {
     }
 
     @Test
+    void aFromThatLeavesNoRunOrMoreThan366DaysToTheEndOfTheYearIsRefusedWithTheOption() throws Exception {
+        String dir = archiveDir().toString();
+        for (String from : List.of("2023-12-31", "2025-01-01", "2026-03-01")) {
+            assertEquals(new Result(2, "", "opentsx: --from: \"" + from + "\" is not allowed; expected a UTC day from "
+                            + "2024-01-01 to 2024-12-31, so that the run to the end of --year 2024 has 1 to 366 days\n"),
+                    twins("twin", "--history", dir, "--year", "2024", "--from", from));
+        }
+        assertEquals(new Result(2, "", "opentsx: --from: \"2022-12-30\" is not allowed; expected a UTC day from "
+                        + "2022-12-31 to 2023-12-31, so that the run to the end of --year 2023 has 1 to 366 days\n"),
+                twins("twin", "--history", dir, "--year", "2023", "--from", "2022-12-30"));
+    }
+
+    @Test
+    void aStationIdThatIsNotFiveDigitsIsRefusedWithItsOption() throws Exception {
+        String dir = archiveDir().toString();
+        assertEquals(new Result(2, "", "opentsx: --station: \"12ab\" is not a station id; expected a station id of 5 "
+                + "digits such as 03166\n"), twins("house", "--history", dir, "--weather-year", "2024", "--station", "12ab"));
+        assertEquals(new Result(2, "", "opentsx: --radiation-station: \"../x\" is not a station id; expected a station id "
+                + "of 5 digits such as 03166\n"), twins("boat", "--history", dir, "--weather-year", "2024",
+                "--radiation-station", "../x"));
+        assertEquals(new Result(2, "", "opentsx: --radiation-station: \"1358\" is not a station id; expected a station id "
+                + "of 5 digits such as 03166\n"), twins("house", "--history", dir, "--weather-year", "2024",
+                "--radiation-station", "1358"));
+    }
+
+    @Test
     void theHelpOfAHistoryTwinComesFromTheRegistry() throws Exception {
         assertEquals(new Result(0, org.opentsx.conf.Registry.shipped().help("history-twin twin"), ""),
                 twins("twin", "--history", archiveDir().toString(), "--help"));

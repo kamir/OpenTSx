@@ -698,6 +698,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `zeit,einstrahlung_wm2` must switch to the new ones.
 - `MeterNormalizer` refuses an episode length below 1 microsecond with `episodeDuration: PT0S is shorter than 1
   microsecond; set episodeDuration to a positive length, such as PT1M`.
+- A Modbus TCP answer with a protocol id other than 0 fails with `MBAP protocol id: <n> is not 0; the peer is not a
+  Modbus TCP server`.
+- opentsx-dwd and opentsx-market read the proxy key `opentsx.https.proxy` through one class,
+  `org.opentsx.dwd.HttpsProxy`; the rule and its refusal text are unchanged.
 
 ### Removed
 
@@ -858,6 +862,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   briefing `EVOLUTION/TASK-012-lokaler-agent.md`, and the metrics and achievements sections of `EVOLUTION/README.md`,
   whose figures had no source.
 - The `.dockerignore` of the SaaS backend no longer lists the deleted `docs` directory.
+- The opentsx-market README no longer carries the dated status of a private archive and build environment.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -1535,9 +1540,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   <path>: no answer after the request was sent, so it is not repeated (the server may have stored it); check the
   connection to OpenMetadata, then run the command again`; after a 429, 502, 503 or 504 it stops with `POST <path> ->
   HTTP <status>: <body>`. PUT and GET requests are retried as before.
-- The OpenMetadata manual and module README say that the client reads `Retry-After` as seconds or as an HTTP date in
-  the IMF-fixdate form such as `Thu, 19 Nov 2026 12:00:12 GMT`; a date in the obsolete RFC 850 or asctime form is not
-  read, and the waits of 1, 2, 4 and 8 s apply.
+- `bin/opentsx metadata` reads a `Retry-After` HTTP date in all three forms of RFC 9110: IMF-fixdate such as `Thu, 19
+  Nov 2026 12:00:12 GMT`, RFC 850 (`Thursday, 19-Nov-26 12:00:12 GMT`, a two-digit year is the latest year with those
+  digits at most 50 years ahead) and asctime (`Thu Nov 19 12:00:12 2026`). Before, a date in the RFC 850 or asctime
+  form was not read, and the waits of 1, 2, 4 and 8 s applied.
 - `align.vector` in a DAG refuses an unknown `agg` with `node <id>: agg: "<value>" is not allowed; expected one of
   MEAN, LAST, FIRST, MIN, MAX, SUM, COUNT`, so `vectors deploy` exits with code 2 and `POST /v1/dags/deploy` answers
   400 with that text instead of the JDK text `No enum constant
@@ -1613,6 +1619,24 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   the user manual and the `opentsx-core` README instead of 20 pages that do not exist.
 - `tools/check_links.py` exits 2 when its root is not a directory or holds no `.md` file to check, instead of passing
   on 0 files, and answers `--help` with its usage.
+- The market licence texts written into manifests, episode labels and the MOSMIX index are English: `CC BY 4.0;
+  Source: Bundesnetzagentur | SMARD.de` and the same `Source:` form for Energy-Charts, netztransparenz.de and the DWD.
+  The history manifest example in `docs/devops/` shows the same form.
+- A netztransparenz.de token endpoint that answers with a status other than 400 or 401, such as a 503 after the
+  retries, no longer counts as a rejected client. The command prints `netztransparenz token: HTTP <status> from <url>;
+  the service failed, try again later` without the response text, and a backfill marks that year FAILED and tries the
+  next year instead of skipping the source.
+- Each retry of the market downloads waits at most 60 s for a `Retry-After` header and logs `Retry-After capped at 60
+  s url=<URL> status=<status> retryAfterSeconds=<seconds>` at WARN; a `Retry-After` lengthens only its own pause, and
+  the backoff of the next retry stays 2, 4, 8 or 16 s. Before, `Retry-After: 3600` waited an hour.
+- `bin/opentsx house` and `boat` with `--history` refuse a `--station` or `--radiation-station` that is not 5 digits
+  with exit code 2 and `--station: "<id>" is not a station id; expected a station id of 5 digits such as 03166`.
+- `bin/opentsx twin --history` without `--days` refuses a `--from` that leaves no day or more than 366 days to the end
+  of `--year` with exit code 2 and `--from: "<day>" is not allowed; expected a UTC day from <first> to <last>, so that
+  the run to the end of --year <year> has 1 to 366 days`. Before, the refusal named the plan steps.
+- `MeterNormalizer` of opentsx-modbus refuses an episodeDuration that is not a whole number of microseconds with
+  `episodeDuration: <d> is not a whole number of microseconds; set episodeDuration to a whole number of microseconds,
+  such as PT1M`, as the wind farm Normalizer does.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

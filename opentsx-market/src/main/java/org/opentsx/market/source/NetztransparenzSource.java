@@ -104,7 +104,13 @@ public final class NetztransparenzSource {
             } catch (IOException e) {
                 throw new UncheckedIOException("token response is not JSON", e);
             } catch (Http.StatusException e) {
-                throw new MissingCredentials(KEYS + ": rejected by netztransparenz.de (HTTP " + e.status() + "); " + CHECK);
+                if (e.status() == 400 || e.status() == 401) {
+                    throw new MissingCredentials(KEYS + ": rejected by netztransparenz.de (HTTP " + e.status() + "); "
+                            + CHECK);
+                }
+                // not kept as the cause: the response can repeat the form with the client secret
+                throw new IllegalStateException("netztransparenz token: HTTP " + e.status() + " from " + tokenUrl
+                        + "; the service failed, try again later");
             }
             if (token == null) {
                 throw new MissingCredentials(KEYS + ": the token response of netztransparenz.de has no access_token; "

@@ -8,7 +8,7 @@
   },
   "unit": "EUR/MWh",
   "origin": "REPORTED",
-  "licence": "CC BY 4.0; Quelle: Bundesnetzagentur | SMARD.de",
+  "licence": "CC BY 4.0; Source: Bundesnetzagentur | SMARD.de",
   "timeConvention": "interval start in UTC, interval length dt_s in seconds; year files are UTC years",
   "years": {
     "2024": {

@@ -11,11 +11,13 @@ import java.net.http.HttpClient;
 import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.Optional;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -34,6 +36,10 @@ public final class HttpOmApi implements OmApi {
     private static final long MAX_WAIT_MS = 30_000L;
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Pattern SECONDS = Pattern.compile("^[0-9]{1,9}$");
+    private static final Pattern RFC_850 = Pattern.compile("^(Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day, ([0-9]{2})-"
+            + "([A-Z][a-z]{2})-([0-9]{2}) ([0-9]{2}:[0-9]{2}:[0-9]{2}) GMT$");
+    private static final Pattern ASCTIME = Pattern.compile("^([A-Z][a-z]{2}) ([A-Z][a-z]{2}) ([ 0-9][0-9]) "
+            + "([0-9]{2}:[0-9]{2}:[0-9]{2}) ([0-9]{4})$");
 
     private final URI base;
     private final String token;
@@ -139,19 +145,41 @@ public final class HttpOmApi implements OmApi {
         if (SECONDS.matcher(after).matches()) {
             return Math.min(MAX_WAIT_MS, Long.parseLong(after) * 1000);
         }
-        Optional<Instant> until = httpDate(after);
+        Instant clock = Instant.now();
+        Instant now = r.headers().firstValue("Date").flatMap(d -> httpDate(d, clock)).orElse(clock);
+        Optional<Instant> until = httpDate(after, now);
         if (until.isEmpty()) {
             return backoff(attempt);
         }
-        Instant now = r.headers().firstValue("Date").flatMap(HttpOmApi::httpDate).orElseGet(Instant::now);
         return Math.max(0, Math.min(MAX_WAIT_MS, Duration.between(now, until.get()).toMillis()));
     }
 
-    /** An IMF-fixdate such as {@code Thu, 19 Nov 2026 12:00:00 GMT}. */
-    private static Optional<Instant> httpDate(String text) {
+    /**
+     * An HTTP date in one of the three forms of RFC 9110 section 5.6.7: IMF-fixdate {@code Thu, 19 Nov 2026 12:00:12 GMT},
+     * RFC 850 {@code Thursday, 19-Nov-26 12:00:12 GMT} and asctime {@code Thu Nov 19 12:00:12 2026}. The two-digit year
+     * of RFC 850 is the latest year with those digits that is at most 50 years after the year of {@code now}.
+     */
+    private static Optional<Instant> httpDate(String text, Instant now) {
+        String imf = text;
+        Matcher m = RFC_850.matcher(text);
+        if (m.matches()) {
+            int today = now.atZone(ZoneOffset.UTC).getYear();
+            int year = today - Math.floorMod(today, 100) + Integer.parseInt(m.group(4));
+            if (year > today + 50) {
+                year -= 100;
+            } else if (year + 100 <= today + 50) {
+                year += 100;
+            }
+            imf = m.group(1).substring(0, 3) + ", " + m.group(2) + " " + m.group(3) + " " + year + " " + m.group(5) + " GMT";
+        }
+        m = ASCTIME.matcher(text);
+        if (m.matches()) {
+            imf = m.group(1) + ", " + m.group(3).replace(' ', '0') + " " + m.group(2) + " " + m.group(5) + " " + m.group(4)
+                    + " GMT";
+        }
         try {
-            return Optional.of(Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(text)));
-        } catch (DateTimeParseException e) {
+            return Optional.of(Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(imf)));
+        } catch (DateTimeException e) {
             return Optional.empty();
         }
     }

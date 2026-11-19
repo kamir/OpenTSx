@@ -95,7 +95,8 @@ public interface Framing {
             int pid = ((h[2] & 0xFF) << 8) | (h[3] & 0xFF);
             int len = ((h[4] & 0xFF) << 8) | (h[5] & 0xFF);
             if (pid != 0) {
-                throw new ModbusProtocolException("MBAP protocol id " + pid + " (expected 0) - not a Modbus TCP peer?");
+                throw new ModbusProtocolException("MBAP protocol id: " + pid
+                        + " is not 0; the peer is not a Modbus TCP server");
             }
             if (len < 2 || len > MAX_PDU + 1) {
                 throw new ModbusProtocolException("MBAP length " + len + " outside 2.." + (MAX_PDU + 1));

@@ -47,8 +47,9 @@ bin/opentsx metadata --scenario opentsx-windpark/scenarios/ostsee-demo.yaml \
 * All entity writes are create-or-update, so publishing the pool again is idempotent.
 * The client retries a `PUT` or a `GET` after a network error or a 429, 502, 503 or 504 response, up to 5 attempts,
   with pauses of 1, 2, 4 and 8 s, or as long as a `Retry-After` header asks (seconds or an HTTP date in the
-  IMF-fixdate form such as `Thu, 19 Nov 2026 12:00:12 GMT`), at most 30 s each. A date in the obsolete RFC 850 or
-  asctime form is not read; the pauses of 1, 2, 4 and 8 s apply. Any other error status, 500 included, fails at once.
+  IMF-fixdate form such as `Thu, 19 Nov 2026 12:00:12 GMT`, the RFC 850 form such as
+  `Thursday, 19-Nov-26 12:00:12 GMT` or the asctime form such as `Thu Nov 19 12:00:12 2026`), at most 30 s each.
+  Any other error status, 500 included, fails at once.
   A `GET` that gets 404 reads as a missing entity.
 * A data-quality result is a `POST`. The client repeats it only after a failed connection. After any other network
   error the run stops with exit code 1 and `POST <path>: no answer after the request was sent, so it is not repeated
