@@ -122,6 +122,8 @@ Every operator whose output may leave a site (S4) MUST declare `merge.class`:
 | `sax-word.v1.json` | exact normalized values, PAA, breakpoints, letters, and word | `SaxWordVectorsTest` |
 | `dq-result.v1.json` | exact check records, including status and messages with a fixed clock and `Locale.ROOT` | `DqResultVectorsTest` |
 
+<a id="s17-catalog-1"></a>
+
 ### S1.7 Catalog 1
 
 The immutable identity/version inventory is
