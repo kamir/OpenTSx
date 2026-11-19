@@ -214,7 +214,9 @@ describe('a flow published as the clean grade of a signal', () => {
   it('says which step keeps it in the workbench', () => {
     const nodes = [source, range, { ...minute, sinkTopic: undefined }, { ...zscore, sinkTopic: cleanTopic('wind') }];
     const checks = cleanChecks(nodes, ['abc123'], context, 'n3');
-    expect(checks.filter((c) => !c.ok).map((c) => c.text)).toEqual([expect.stringMatching(/workbench only: NORM std=1, avg=0/)]);
+    expect(checks.filter((c) => !c.ok).map((c) => c.text)).toEqual([
+      'These steps run in the workbench only: NORM std=1, avg=0. The processor runs plausible range, unit conversion, resampling, wind shear, the power curve, lag and rolling.',
+    ]);
     expect(runBlocker(nodes, ['abc123'], context)).toMatch(/workbench only/);
     expect(cleanChecks(doc.nodes, [], context, 'n2').find((c) => !c.ok)?.text).toMatch(/Load the series/);
     expect(cleanChecks(doc.nodes, ['abc123'], null, 'n2').find((c) => !c.ok)?.text).toMatch(/Open a signal/);

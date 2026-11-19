@@ -47,8 +47,8 @@
       Every other operator computes in the workbench only. Every node a flow publishes is the clean signal or an
       `align.vector` node; a flow that publishes any other node is not deployed, and the deploy list names it.
       Publishing a clean signal checks the parameters of every step as the processor does and names the step and the
-      parameter it refuses. An emptied `maxAge` of an `align.vector` node with fill `as-of` is refused in the preview
-      and before the deployment.
+      parameter it refuses. An emptied or missing `every` of an `align.vector` node, and an emptied `maxAge` with fill
+      `as-of`, are refused in the preview and before the deployment.
       [Chapter 17](17-operators.md) lists where each operator runs;
       [Kafka native streaming](../devops/kafka-native-streaming.md) describes the processor.
   * **Systems** (`/systems`): a shell around one system with five places. The data comes from the retrieval server

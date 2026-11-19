@@ -4,6 +4,7 @@
  * Smart Topic of a flow.
  */
 
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { RETRIEVAL_BASE } from '../services/api';
 import { useAuthStore } from '../store/authStore';
@@ -15,13 +16,24 @@ import '../workbench/workbench.css';
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user, logout, error } = useAuthStore();
+  const [notice, setNotice] = useState<string | null>(null);
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
 
-  const open = (ids: number[]) => openFlows(ids, (id) => navigate(`/workbench?flow=${id}`));
+  // when the browser kept a tab from opening, the page stays to say so and the workbench keeps the flow it holds
+  const open = (ids: number[]) => {
+    const held = useFlow.getState().savedId;
+    const blocked = openFlows(ids, () => undefined);
+    if (blocked === 0) {
+      navigate(`/workbench?flow=${ids[0]}`);
+      return;
+    }
+    useFlow.getState().setSavedId(held);
+    setNotice(`The browser kept ${blocked} of the flows from opening in tabs of their own, so this page stayed and did not open the first one either. Allow pop-ups for this page, or open them one at a time.`);
+  };
 
   const create = () => {
     newFlow();
@@ -40,6 +52,7 @@ export default function Dashboard() {
         <button onClick={handleLogout}>Logout</button>
       </header>
       {error && <div className="wb-error" role="alert">{error}</div>}
+      {notice && <div className="wb-error" role="alert">{notice}</div>}
       <FlowComposer base={RETRIEVAL_BASE} currentId={useFlow.getState().savedId} replaces={false} onOpen={open} onNew={create} onDeleted={(ids) => forgetFlows(ids, false)} />
     </div>
   );

@@ -36,14 +36,17 @@ npm run dev
 
 ## Tech Stack
 
-- **React 18** - UI library
-- **TypeScript** - Type safety
-- **Vite** - Build tool & dev server
-- **React Router** - Client-side routing
-- **Zustand** - Lightweight state management
-- **Axios** - HTTP client
-- **React Flow** - Visual flow builder
-- **Tailwind CSS** - Utility-first CSS
+| Package | What it does here |
+|---------|-------------------|
+| React 18 (`react`, `react-dom`) | the pages |
+| TypeScript (`typescript`) | type checks, `npx tsc --noEmit` |
+| Vite (`vite`) | the development server and the build |
+| React Router (`react-router-dom`) | the routes in `src/App.tsx` |
+| Zustand (`zustand`) | the sign-in state in `src/store/authStore.ts` and the flow of the workbench in `src/workbench/flow.ts` |
+| Axios (`axios`) | the requests to the backend in `src/services/api.ts` |
+| React Flow (`reactflow`) | the canvas of the flow builder, the processing flow graph of the workbench and the plan picture of the Systems page |
+| Tailwind CSS (`tailwindcss`) | the classes of the Login, Register and Flow Builder pages, of the loading screen in `src/App.tsx` and of `This page failed` |
+| Vitest (`vitest`) | the tests, `npx vitest run` |
 
 ## Sign in
 
@@ -75,7 +78,9 @@ npm run dev
 - Lists the flows of the account and how many of them run. The filters are the domain, "Flows with a Smart Topic",
   "Flows built on inventory series" and a text filter on name, track, operator and topic
 - "New flow" opens the workbench with an empty flow; "Open in the editor" opens the selected flows in the workbench,
-  the first in this tab and each other one in a tab of its own
+  the first in this tab and each other one in a tab of its own. When the browser keeps one of those tabs from opening,
+  the page stays, opens none of them here and says `The browser kept <n> of the flows from opening in tabs of their own, so this page stayed and did not open the first one either. Allow pop-ups for this page, or open them one at a time.`
+  The place Flows of the Systems page does the same; its notice goes when another place or system opens
 - Changes the name and description of a flow, copies and deletes the selected flows
 - Starts and stops the Smart Topic of a flow on the vector processor
 - Links to the Systems page, the workbench and the flow builder
@@ -267,11 +272,16 @@ The Flow Composer keeps Start, Stop and Delete off until `GET /v1/dags` of the r
 
 ### Port Already in Use
 
-```bash
-# Kill process on port 3000
-lsof -ti:3000 | xargs kill -9
+When port 3000 is taken, `npm run dev` prints `Port 3000 is in use, trying another one...` and serves the page on
+the next free port; the line `Local:` names it. Show the process that holds port 3000:
 
-# Or use different port
+```bash
+lsof -i :3000
+```
+
+Stop that process only if it is yours. To choose the port of the dev server yourself:
+
+```bash
 npm run dev -- --port 3001
 ```
 

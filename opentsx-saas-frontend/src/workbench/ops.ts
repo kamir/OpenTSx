@@ -585,10 +585,10 @@ function blockEnds(b: Bucket, s: Series): number[] {
 }
 
 /**
- * Buckets x into windows of the given width and aggregates y per window. With `closedOnly` the series runs as the
- * processor runs it (CleanChain): block by block, a window is handed out once the end of a block has passed its end,
- * and after more than MAX_EMPTY_WINDOWS empty windows the grid starts again at the next sample. Otherwise the last
- * window is handed out open.
+ * Buckets x into windows of the given width and aggregates y per window. After more than MAX_EMPTY_WINDOWS empty
+ * windows the grid starts again at the next sample. With `closedOnly` the series runs as the processor runs it
+ * (CleanChain): block by block, a window is handed out once the end of a block has passed its end, and a restart drops
+ * the open window. Otherwise the window before a restart and the last window are handed out open.
  */
 function windowed(b: Bucket, every: number, agg: string, name: string, closedOnly = false): Bucket {
   return {
@@ -614,7 +614,8 @@ function windowed(b: Bucket, every: number, agg: string, name: string, closedOnl
       let i = 0;
       for (const end of closedOnly ? blockEnds(b, s) : [Infinity]) {
         for (; i < s.x.length && s.x[i] < end; i++) {
-          if (closedOnly && s.x[i] - start > MAX_EMPTY_WINDOWS * every) {
+          if (s.x[i] - start > MAX_EMPTY_WINDOWS * every) {
+            if (!closedOnly) handOut();
             start = gridAt(s.x[i]);
             pool = [];
           }

@@ -4,7 +4,7 @@ import { NO_FLOW_FILTER, StoredFlow, copyName, domainFacets, filterFlows, runPla
 import { InventorySeries, MANY_POINTS, estimatePoints, wholeRange } from './inventory';
 
 const source = { id: 'source', op: 'source', label: 'T01', params: {}, input: null, position: { x: 0, y: 0 } };
-const vector = { id: 'n1', op: 'align.vector', label: 'Vector_T01', params: {}, input: 'source', position: { x: 0, y: 0 }, sinkTopic: 'tsx.wind.smart.t01.vectors.v1' };
+const vector = { id: 'n1', op: 'align.vector', label: 'Vector_T01', params: { every: 60 }, input: 'source', position: { x: 0, y: 0 }, sinkTopic: 'tsx.wind.smart.t01.vectors.v1' };
 const log = { id: 'n1', op: 'log', label: 'LOG_T01', params: {}, input: 'source', position: { x: 0, y: 0 } };
 
 function stored(id: number, name: string, definition: object | null): StoredFlow {

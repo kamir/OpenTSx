@@ -111,8 +111,6 @@
   flex: 1;
 }
 
-/* ---------------------------------------------------------------- toolbar */
-
 .wb-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -155,8 +153,6 @@
   color: #6b140b;
 }
 
-/* ---------------------------------------------------------------- layout */
-
 .wb-main {
   grid-row: 6;
   display: grid;
@@ -186,8 +182,6 @@
   color: var(--ink-2);
   background: var(--panel-2);
 }
-
-/* ---------------------------------------------------------------- track tree */
 
 .wb-main.wb-side-wide {
   grid-template-columns: 390px minmax(0, 1fr) 390px;
@@ -261,8 +255,6 @@
 .wb-dot.wb-g-univariate { background: var(--g-univariate); }
 .wb-dot.wb-g-group { background: var(--g-group); }
 .wb-dot.wb-g-stream { background: var(--g-stream); }
-
-/* ---------------------------------------------------------------- scope */
 
 .wb-scopewrap {
   min-height: 0;
@@ -424,8 +416,6 @@
   margin: 0 0 10px;
 }
 
-/* ---------------------------------------------------------------- tabs */
-
 .wb-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -478,8 +468,6 @@
   width: 320px;
   max-width: 100%;
 }
-
-/* ---------------------------------------------------------------- graph */
 
 .wb-graph {
   border: 1px solid var(--line);
@@ -538,8 +526,6 @@
   padding: 4px;
   border-radius: 0;
 }
-
-/* ---------------------------------------------------------------- inspector */
 
 .wb-inspector {
   display: grid;
@@ -759,8 +745,6 @@
   flex: none;
   margin: 0;
 }
-
-/* ---------------------------------------------------------------- TS inventory dialog */
 
 .wb-inv-backdrop {
   position: fixed;
@@ -1123,7 +1107,6 @@
   resize: vertical;
 }
 
-/* the Flow Composer as a page of its own */
 .wb.wb-page {
   grid-template-rows: auto minmax(0, 1fr);
 }
@@ -1165,7 +1148,6 @@
   margin: 0;
 }
 
-/* Signals of a system */
 .wb-signals tbody tr.group th {
   text-align: left;
   padding: 3px 7px;
@@ -1220,7 +1202,6 @@
   font-weight: 600;
 }
 
-/* ---------------------------------------------------------------- shell around a system */
 .wb.wb-shell {
   /* toolbar, guide, error, body, status */
   grid-template-rows: auto auto auto minmax(0, 1fr) auto;
@@ -1425,7 +1406,6 @@
   padding: 2px 10px;
 }
 
-/* binding and simulating a signal */
 .wb-source-panel {
   border: 1px solid var(--line);
   background: var(--panel-2);
@@ -1468,7 +1448,6 @@
   margin: 6px;
 }
 
-/* ---- the plan of a system as a picture, and the decisions on the place "Models" ---- */
 .wb-plan {
   display: grid;
   grid-template-rows: minmax(220px, 38%) minmax(0, 1fr);
@@ -1561,7 +1540,6 @@
   overflow: visible;
 }
 
-/* ---- the plan in phases: columns, carriers, assumptions ---- */
 .wb-plan {
   grid-template-rows: minmax(330px, 46%) minmax(0, 1fr);
 }
@@ -1626,7 +1604,6 @@
   padding-left: 18px;
 }
 
-/* ---- the place "Simulate": a question on the left, the run next to the reference on the right ---- */
 .wb-simulate {
   display: grid;
   grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);

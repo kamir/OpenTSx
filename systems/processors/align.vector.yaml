@@ -28,9 +28,10 @@ runtimes:
   workbench:
     status: available
     note: >-
-      An emptied maxAge with fill as-of is refused in the preview and before the deployment: maxAge: empty value;
-      expected a number of seconds, 0 or more. Without maxAge fill as-of takes values up to one tick old, as in the
-      processor.
+      An emptied every is refused in the preview and before the deployment: every: empty value; expected a number of
+      seconds above 0, and the DAG leaves it out. An emptied maxAge with fill as-of is refused the same way: maxAge:
+      empty value; expected a number of seconds, 0 or more. Without maxAge fill as-of takes values up to one tick old,
+      as in the processor.
   java: { status: available, class: org.opentsx.retrieval.vector.VectorAligner, note: "One run over all data. Without maxAge fill as-of takes values up to one tick old." }
   processor: { status: available, class: org.opentsx.retrieval.vector.VectorProcessor, note: "bin/opentsx vectors. lateness applies here only." }
   python: { status: none }

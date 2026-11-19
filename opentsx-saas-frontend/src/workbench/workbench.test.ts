@@ -50,6 +50,16 @@ describe('operators', () => {
     expect([Array.from(emptied.x), Array.from(emptied.y)]).toEqual([Array.from(preset.x), Array.from(preset.y)]);
   });
 
+  it('starts the grid of stats.window again after more than 10000 empty windows, as resample does', () => {
+    const sparse = (...x: number[]): Bucket => ({ ...bucketOf([]), series: [{ id: 's0', label: 's0', x: Float64Array.from(x), y: Float64Array.from(x, (_, i) => i + 1) }] });
+    const out = run('stats.window', sparse(0, 0.5, 10_000.5, 10_002), { window: 1, field: 'MEAN' }).series[0];
+    expect(Array.from(out.x)).toEqual([0, 10_000, 10_001, 10_002]);
+    expect(Array.from(out.y)).toEqual([1.5, 3, NaN, 4]);
+    const kept = run('stats.window', sparse(0, 10_000), { window: 1, field: 'MEAN' }).series[0];
+    expect(kept.x.length).toBe(10_001);
+    expect([kept.y[0], kept.y[1], kept.y[10_000]]).toEqual([1, NaN, 2]);
+  });
+
   it('matches TimeSeriesObject for diffs, profile and log returns', () => {
     const b = bucketOf([1, 2, 4, 8]);
     expect(Array.from(run('diff', b).series[0].y)).toEqual([0, 1, 2, 4]);
@@ -461,6 +471,24 @@ describe('flow', () => {
     expect(toDagYaml(useFlow.getState())).toContain('params: { every: PT60S, key: "a: b", agg: MEAN, emit: any, names: [b] }');
     useFlow.getState().updateParams(v, { key: 'turbine' });
     expect(toDagYaml(useFlow.getState())).toContain('params: { every: PT60S, key: turbine, agg: MEAN, emit: any, names: [b] }');
+  });
+
+  it('refuses an emptied or missing vector clock before the deployment and leaves it out of the DAG', () => {
+    const v = useFlow.getState().applyOp('align.vector')!;
+    useFlow.getState().setSink(v, 'tsx.lab.smart.v.vectors.v1');
+    const label = useFlow.getState().nodes.find((n) => n.id === v)!.label;
+    useFlow.getState().updateParams(v, { every: '' });
+    const emptied = `The processor refuses a parameter of ${label}: every: empty value; expected a number of seconds above 0`;
+    expect(toDagYaml(useFlow.getState())).toContain('params: { key: series, agg: MEAN, emit: any, names: [b] }');
+    expect(runBlocker(useFlow.getState().nodes, ['a'])).toBe(emptied);
+    expect(deployChecks(useFlow.getState().nodes, ['a']).filter((c) => !c.ok).map((c) => c.text)).toEqual([emptied]);
+    const missing = useFlow.getState().nodes.map((n) => (n.id === v ? { ...n, params: Object.fromEntries(Object.entries(n.params).filter(([k]) => k !== 'every')) } : n));
+    expect(toDagYaml({ ...useFlow.getState(), nodes: missing })).toContain('params: { key: series, agg: MEAN, emit: any, names: [b] }');
+    expect(runBlocker(missing, ['a'])).toBe(`The processor refuses a parameter of ${label}: every: missing; expected a number of seconds above 0`);
+    useFlow.getState().updateParams(v, { every: 60 });
+    expect(toDagYaml(useFlow.getState())).toContain('params: { every: PT60S, key: series, agg: MEAN, emit: any, names: [b] }');
+    expect(runBlocker(useFlow.getState().nodes, ['a'])).toBeNull();
+    expect(deployChecks(useFlow.getState().nodes, ['a']).every((c) => c.ok)).toBe(true);
   });
 
   it('reports missing sinks, operators outside the catalog and duplicate topics', () => {

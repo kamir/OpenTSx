@@ -6,6 +6,7 @@
 
 import { create } from 'zustand';
 import { OP_BY_ID, defaultParams } from './ops';
+import { checked } from './params';
 import { Bucket, FlowNode, Params, SignalContext, SourceInfo } from './types';
 import { VECTOR_OP, VECTOR_SCHEMA, componentNames, vectorMaxAge } from './vector';
 
@@ -495,8 +496,9 @@ function dagParams(nodes: FlowNode[], node: FlowNode, seconds = false): Params |
     const fill =
       (p.fill === 'as-of' ? `, fill: as-of${maxAge === undefined ? '' : `, maxAge: PT${maxAge}S`}` : '') +
       (Number(p.lateness) > 0 ? `, lateness: PT${p.lateness}S` : '');
+    const every = present({ every: p.every }).every;
     const key = String(p.key ?? '').trim();
-    return `{ every: PT${p.every}S${key ? `, key: ${yamlScalar(key)}` : ''}, agg: ${p.agg}${fill}, emit: ${p.emit}, names: [${vectorComponents(nodes, node).join(', ')}] }`;
+    return `{ ${every === undefined ? '' : `every: PT${every}S, `}${key ? `key: ${yamlScalar(key)}, ` : ''}agg: ${p.agg}${fill}, emit: ${p.emit}, names: [${vectorComponents(nodes, node).join(', ')}] }`;
   }
   return present(node.params);
 }
@@ -599,7 +601,7 @@ export function cleanChecks(
       text:
         chain && foreign.length === 0
           ? 'Every step runs on the processor.'
-          : `These steps run in the workbench only: ${foreign.map((n) => OP_BY_ID[n.op]?.label ?? n.op).join(', ') || 'unknown'}. The processor runs plausible range, unit conversion, resampling, the power curve, lag and rolling.`,
+          : `These steps run in the workbench only: ${foreign.map((n) => OP_BY_ID[n.op]?.label ?? n.op).join(', ') || 'unknown'}. The processor runs plausible range, unit conversion, resampling, wind shear, the power curve, lag and rolling.`,
     },
     {
       ok: refused.length === 0,
@@ -615,13 +617,14 @@ export function cleanChecks(
   ];
 }
 
-/** `<node>: <reason>` for each published as-of vector whose maxAge the preview refuses. */
+/** `<node>: <reason>` for each published vector whose clock, or maxAge with fill as-of, the processor refuses. */
 function vectorRefusals(nodes: FlowNode[]): string[] {
   return nodes
-    .filter((n) => n.sinkTopic && n.op === VECTOR_OP && n.params.fill === 'as-of')
+    .filter((n) => n.sinkTopic && n.op === VECTOR_OP)
     .flatMap((n) => {
       try {
-        vectorMaxAge(n.params);
+        checked(n.params, 'every', (v) => v > 0, 'a number of seconds above 0');
+        if (n.params.fill === 'as-of') vectorMaxAge(n.params);
         return [];
       } catch (e) {
         return [`${n.label}: ${e instanceof Error ? e.message : String(e)}`];

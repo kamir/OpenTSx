@@ -1,8 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
+vi.mock('../workbench/FlowComposer', () => ({
+  default: ({ onOpen }: { onOpen: (ids: number[]) => void }) => <button onClick={() => onOpen([3, 4, 5])}>Open in the editor</button>,
+}));
 import Systems from './Systems';
 import { systemsAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
@@ -104,6 +107,34 @@ describe('the systems page', () => {
     retrieval({ [`GET ${ROOT}/h2-chain/signals`]: new Response(JSON.stringify({ error: 'the retrieval server is not reachable', type: 'unavailable' }), { status: 502 }) });
     show();
     expect(await screen.findByText('The system could not be read: the retrieval server is not reachable.')).toHaveAttribute('role', 'alert');
+  });
+
+  it('says how many flows the browser kept from opening in tabs of their own', async () => {
+    localStorage.setItem('access_token', 'access');
+    vi.spyOn(systemsAPI, 'bindings').mockResolvedValue([]);
+    vi.spyOn(window, 'open').mockReturnValueOnce({} as Window).mockReturnValueOnce(null);
+    retrieval();
+    show('/systems/h2-chain/flows');
+    fireEvent.click(await screen.findByText('Open in the editor'));
+    expect(
+      await screen.findByText(
+        'The browser kept 1 of the flows from opening in tabs of their own, so this page stayed and did not open the first one either. Allow pop-ups for this page, or open them one at a time.'
+      )
+    ).toHaveAttribute('role', 'alert');
+    expect(screen.getByText('Open in the editor')).toBeInTheDocument();
+  });
+
+  it('lets go of the notice about kept flows when another place opens', async () => {
+    localStorage.setItem('access_token', 'access');
+    vi.spyOn(systemsAPI, 'bindings').mockResolvedValue([]);
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    retrieval();
+    show('/systems/h2-chain/flows');
+    fireEvent.click(await screen.findByText('Open in the editor'));
+    expect(await screen.findByText(/The browser kept 2 of the flows/)).toHaveAttribute('role', 'alert');
+    fireEvent.click(screen.getAllByText('Signals')[0]);
+    expect(screen.queryByText('Open in the editor')).toBeNull();
+    expect(screen.queryByText(/The browser kept/)).toBeNull();
   });
 
   it('gives the reason of the systems list', async () => {

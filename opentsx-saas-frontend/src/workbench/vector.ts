@@ -134,8 +134,7 @@ export function vectorMaxAge(p: Params): number | null {
 /** The operator: `first` is the input of the node, `others` its further inputs. */
 export function alignVector(first: Bucket, p: Params, others: Bucket[] = []): Bucket {
   const inputs = [first, ...others];
-  const every = Number(p.every);
-  if (!(every > 0)) throw new Error('The clock "every" must be greater than 0 seconds.');
+  const every = checked(p, 'every', (v) => v > 0, 'a number of seconds above 0');
   for (const b of inputs) {
     if (b.xKind !== 'time') throw new Error(`${b.name} has a ${b.xKind} axis. A vector needs inputs with a time axis.`);
   }

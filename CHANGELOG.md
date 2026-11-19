@@ -749,6 +749,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `CONTRIBUTING.md` links the task list in `EVOLUTION/README.md` instead of naming the completed TASK-011 as the plan.
 - The changelog lists the entries of the unreleased version under one heading per section, and the 3.0.0 features that
   stood under Fixed under Added.
+- The frontend README now lists its packages in a table. For a taken port 3000 it shows how to find the process and
+  how to start the dev server on another port. Before, it said to kill whatever held the port.
 
 ### Removed
 
@@ -1759,6 +1761,20 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `SECURITY.md` said there are no tagged releases. It lists 3.0.x (`v3.0.0`, `v3.0.1`) and `master` as supported.
 - `CONTRIBUTING.md` named a CI trigger (`opentsx/**`) and job descriptions that were out of date. It describes the
   triggers and jobs of `ci.yml`, `image.yml` and `openmetadata-smoke.yml`.
+- The Flow Composer page and the place Flows of the Systems page now say when the browser kept flows from opening in
+  tabs of their own, and stay on the page: `The browser kept <n> of the flows from opening in tabs of their own, so
+  this page stayed and did not open the first one either. Allow pop-ups for this page, or open them one at a time.` On
+  the Systems page the notice goes when another place or system opens. Before, both pages went to the workbench
+  without a word.
+- The workbench now refuses an emptied or missing clock `every` of a published "Align to vector" node before the
+  deployment, with `every: empty value; expected a number of seconds above 0` (`every: missing; ...` when the key is
+  absent), and leaves it out of the DAG. Before, it wrote `every: PTS` or `every: PTundefinedS`.
+- Window statistics in the workbench now start the window grid again after more than 10000 empty windows, as resample
+  does. Before, they handed out every empty window of a long gap.
+- The clean signal checks of the workbench now name wind shear among the steps the processor runs.
+- The workbench preview of an "Align to vector" node refuses an emptied clock with `every: empty value; expected a
+  number of seconds above 0` and a missing one with `every: missing; expected a number of seconds above 0`, the same
+  texts as the deploy checks.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

@@ -1,7 +1,3 @@
-/**
- * API client for OpenTSx backend
- */
-
 import axios, { AxiosInstance, AxiosError } from 'axios';
 
 // An empty VITE_API_BASE_URL means same origin: the nginx image and the dev server forward /api to the backend.
@@ -16,7 +12,6 @@ export function hasAccessToken(): boolean {
   return !!localStorage.getItem('access_token');
 }
 
-// Create axios instance
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_V1,
   headers: {
@@ -24,7 +19,6 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
-// Request interceptor to add auth token
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token');
@@ -39,12 +33,10 @@ apiClient.interceptors.request.use(
 // A 401 from the sign-in itself is a wrong password, not an expired session: the form reports it.
 const signingIn = (url: string | undefined) => /\/auth\/(login|register)$/.test(url ?? '');
 
-// Response interceptor to handle errors
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     if (error.response?.status === 401 && !signingIn(error.config?.url)) {
-      // Token expired, clear storage and redirect to login
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       // The workbench keeps its flow in memory: it reports the expired session instead of leaving the page.
@@ -89,8 +81,6 @@ export async function fetchJson(url: string, init?: RequestInit): Promise<unknow
   if (!res.ok) throw new Error(bodyReason(await res.json().catch(() => null)) ?? `HTTP ${res.status} from ${url}`);
   return res.json();
 }
-
-// ==================== Types ====================
 
 export interface User {
   id: number;
@@ -148,31 +138,18 @@ export interface Edge {
   target: string;
 }
 
-// ==================== API Functions ====================
-
-/**
- * Auth API
- */
 export const authAPI = {
-  /**
-   * Whether the installation runs in test operation (sign in with admin/admin)
-   */
+  /** Whether the installation runs in test operation (sign in with admin/admin). */
   mode: async (): Promise<{ testLogin: boolean }> => {
     const response = await apiClient.get('/auth/mode');
     return response.data;
   },
 
-  /**
-   * Register new user
-   */
   register: async (data: RegisterRequest): Promise<User> => {
     const response = await apiClient.post('/auth/register', data);
     return response.data;
   },
 
-  /**
-   * Login user
-   */
   login: async (data: LoginRequest): Promise<LoginResponse> => {
     const response = await apiClient.post('/auth/login', data);
     localStorage.setItem('access_token', response.data.access_token);
@@ -180,9 +157,6 @@ export const authAPI = {
     return response.data;
   },
 
-  /**
-   * Logout user
-   */
   logout: async (): Promise<void> => {
     try {
       await apiClient.post('/auth/logout');
@@ -192,18 +166,12 @@ export const authAPI = {
     }
   },
 
-  /**
-   * Get current user
-   */
   getCurrentUser: async (): Promise<User> => {
     const response = await apiClient.get('/auth/me');
     return response.data;
   },
 };
 
-/**
- * Flows API
- */
 /** One source of the working copy of a system document, as the backend keeps it per user. */
 export interface SignalBindingDoc {
   signal: string;
@@ -250,7 +218,6 @@ export const dagsAPI = {
     return response.data;
   },
 
-  /** Stops the DAG of this name. */
   stop: async (name: string): Promise<{ dag: string; state: string }> => {
     const response = await apiClient.post('/dags/stop', null, { params: { name } });
     return response.data;
@@ -258,41 +225,26 @@ export const dagsAPI = {
 };
 
 export const flowsAPI = {
-  /**
-   * List all flows
-   */
   list: async (): Promise<Flow[]> => {
     const response = await apiClient.get('/flows');
     return response.data.flows;
   },
 
-  /**
-   * Get flow by ID
-   */
   get: async (id: number): Promise<Flow> => {
     const response = await apiClient.get(`/flows/${id}`);
     return response.data;
   },
 
-  /**
-   * Create new flow
-   */
   create: async (data: Partial<Flow>): Promise<Flow> => {
     const response = await apiClient.post('/flows', data);
     return response.data.flow;
   },
 
-  /**
-   * Update flow
-   */
   update: async (id: number, data: Partial<Flow>): Promise<Flow> => {
     const response = await apiClient.put(`/flows/${id}`, data);
     return response.data.flow;
   },
 
-  /**
-   * Create or update a flow with a free-form definition (used by the workbench)
-   */
   save: async (
     id: number | null,
     data: { name?: string; description?: string; definition: Record<string, unknown> }
@@ -301,24 +253,16 @@ export const flowsAPI = {
     return response.data.flow;
   },
 
-  /**
-   * Get the raw definition of a flow
-   */
   getDefinition: async (id: number): Promise<{ id: number; name: string; definition: Record<string, unknown> }> => {
     const response = await apiClient.get(`/flows/${id}`);
     return response.data;
   },
 
-  /**
-   * Change name, description or status (draft, active, paused, archived) of a flow
-   */
+  /** Changes name, description or status (draft, active, paused, archived) of a flow. */
   patch: async (id: number, data: { name?: string; description?: string; status?: string }): Promise<void> => {
     await apiClient.put(`/flows/${id}`, data);
   },
 
-  /**
-   * Delete flow
-   */
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/flows/${id}`);
   },

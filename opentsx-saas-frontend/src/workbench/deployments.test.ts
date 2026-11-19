@@ -73,7 +73,7 @@ describe('an unknown list of deployments', () => {
       sourceSeries: ['a', 'b'],
       nodes: [
         { id: 'source', op: 'source', label: 'T01', params: {}, input: null },
-        { id: 'n1', op: 'align.vector', label: 'Vector_T01', params: {}, input: 'source', sinkTopic: topic },
+        { id: 'n1', op: 'align.vector', label: 'Vector_T01', params: { every: 60 }, input: 'source', sinkTopic: topic },
       ],
     }),
   };

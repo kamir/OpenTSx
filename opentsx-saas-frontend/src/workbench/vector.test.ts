@@ -90,6 +90,8 @@ describe('align.vector', () => {
     expect([...align(a, [b], { every: 60, fill: 'as-of', maxAge: 30 }).series[1].y]).toEqual([10, NaN, NaN, NaN, 50]);
     expect(() => align(a, [b], { every: 60, fill: 'as-of', maxAge: '' })).toThrow(new Error('maxAge: empty value; expected a number of seconds, 0 or more'));
     expect([...align(a, [b], { every: 60, maxAge: '' }).series[1].y]).toEqual([10, NaN, NaN, NaN, 50]);
+    expect(() => align(a, [b], { every: '' })).toThrow(new Error('every: empty value; expected a number of seconds above 0'));
+    expect(() => align(a, [b], { every: undefined })).toThrow(new Error('every: missing; expected a number of seconds above 0'));
     const complete = align(a, [b], { every: 60, emit: 'complete' });
     expect([...complete.series[0].x]).toEqual([0, 240]);
     expect([...complete.series[0].y]).toEqual([1, 5]);
@@ -183,7 +185,7 @@ describe('align.vector', () => {
     const a = timeBucket('a', [series('s', [0], [1])]);
     const spectrum: Bucket = { ...timeBucket('FFT_a', [series('s', [0], [1])]), xKind: 'frequency' };
     expect(() => align(a, [spectrum])).toThrow(/FFT_a has a frequency axis/);
-    expect(() => align(a, [], { every: 0 })).toThrow(/greater than 0/);
+    expect(() => align(a, [], { every: 0 })).toThrow(new Error('every: "0" is out of range; expected a number of seconds above 0'));
   });
 });
 

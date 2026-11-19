@@ -1,6 +1,6 @@
 /**
- * The shell around a system: a rail with its four places (System, Signals, Flows, Models) and the workbench as the
- * tool, a line that says where the system stands, and, when switched on, the guide with the seven steps of the
+ * The shell around a system: a rail with its five places (System, Signals, Flows, Models, Simulate) and the workbench
+ * as the tool, a line that says where the system stands, and, when switched on, the guide with the seven steps of the
  * engineering method. Concept: docs/datamodel-2026/14-ENGINEERING-FLOW.md, sections 3.2 and 8.
  */
 
@@ -44,12 +44,15 @@ export default function Systems() {
   const [plan, setPlan] = useState<PlanDoc | null>(null);
   const [decisions, setDecisions] = useState<DecisionStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
   const [guide, setGuide] = useState(() => remembered('opentsx.guide'));
   const [flows, setFlows] = useState<{ all: number; running: number | null } | null>(null);
   const [bindings, setBindings] = useState<SignalBindingDoc[]>([]);
   const signedIn = hasAccessToken();
   const here = (PLACES.find((p) => p.id === place)?.id ?? 'signals') as Place;
+
+  useEffect(() => setNotice(null), [system, here]);
 
   useEffect(() => {
     let cancelled = false;
@@ -126,7 +129,17 @@ export default function Systems() {
     });
   };
 
-  const open = (ids: number[]) => openFlows(ids, (id) => navigate(`/workbench?flow=${id}`));
+  // when the browser kept a tab from opening, the page stays to say so and the workbench keeps the flow it holds
+  const open = (ids: number[]) => {
+    const held = useFlow.getState().savedId;
+    const blocked = openFlows(ids, () => undefined);
+    if (blocked === 0) {
+      navigate(`/workbench?flow=${ids[0]}`);
+      return;
+    }
+    useFlow.getState().setSavedId(held);
+    setNotice(`The browser kept ${blocked} of the flows from opening in tabs of their own, so this page stayed and did not open the first one either. Allow pop-ups for this page, or open them one at a time.`);
+  };
   const create = () => {
     newFlow();
     navigate('/workbench');
@@ -176,6 +189,7 @@ export default function Systems() {
         </ol>
       )}
       {error && <div className="wb-error" role="alert">{error}</div>}
+      {notice && <div className="wb-error" role="alert">{notice}</div>}
 
       <div className="wb-shell-body">
         <nav className="wb-rail" aria-label="Places of the system">
