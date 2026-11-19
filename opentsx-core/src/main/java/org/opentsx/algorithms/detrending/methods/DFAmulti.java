@@ -69,15 +69,6 @@ public class DFAmulti extends DFACore {
 
                 int z = 0;
 
-                int sCheck = 5; // für welches s soll denn die Fitkurve
-                                // gezeigt werden?
-
-//                TimeSeriesObject mrFitN = null;
-//                if (currentS == sCheck) {
-//                    mrFitN = new TimeSeriesObject();
-//                    mrFitN.setLabel(pr_pos + " [" + (pr_pos +","+ valueofS)+"]");
-//                }
-
                 // sum of all (x-schlange)^2 ...
                 for (int x = pr_pos; x < pr_pos + valueofS; x++) {
 
@@ -87,18 +78,12 @@ public class DFAmulti extends DFACore {
                     if ( Double.isNaN( pr[x] ) )
                         z = 1;
 
-//                    if (currentS == sCheck) {
-//                        mrFitN.addValuePair( x, fit_y);
-//                    }
                     double x_s = (pr[x] - fit_y);  //x~ = pr_value - fit_val
 
 
                     FS_sum += x_s * x_s; // x~^2;
 
                 }
-//                if (currentS == sCheck) {
-//                    fitMR.add(mrFitN);
-//                }
 
                 FS_sum = FS_sum / valueofS; // Fensterbreite
 
@@ -119,9 +104,6 @@ public class DFAmulti extends DFACore {
             double a = FSMW[0][currentS];
             double b = FSMW[1][currentS];
 
-//            if ( Double.isNaN(a) || Double.isNaN(b)  ) {
-//                System.out.println( a );
-//            }
 
             if(debug) System.out.println(
               ">> STORE RESULTS ... valueofS="+valueofS+", zw="+zw+"\n");
@@ -198,13 +180,11 @@ public class DFAmulti extends DFACore {
         int i = 0;
         for( double svec : lin ) {
             s[i] = (int)svec;
-            //System.err.println("i=" + i + " " + s[i] );
             i++;
         }
         
         for( double svec : log ) {
             s[i] = (int)svec;
-            //System.err.println("i=" + i + " " + s[i] );
             i++;
         }
     }
@@ -270,7 +250,6 @@ public class DFAmulti extends DFACore {
     private int getMaxIndex(int laenge) {
         int max_ind = 0;
         for ( int vs = 0; vs < s.length; vs++ )  {
-            //System.out.println( s[vs]);
             if ( s[vs] < laenge ) max_ind = vs;
             else break;
         }

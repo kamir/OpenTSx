@@ -172,6 +172,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   python-package test the same 17 refusal texts.
 - `20-configure.sh` sets the ConfigMap keys `OPENTSX_STATS_WINDOWS`, `OPENTSX_STATS_ALLOWED_LATENESS`,
   `OPENTSX_WINDPARK_SCENARIO`, `OPENTSX_ICEBERG_NAMESPACE` and `DWD_FIXTURE` and checks their form.
+- `RNGWrapper.init(seed)` and `RNGWrapper.DEFAULT_SEED` (1), and `DetrendingMethodFactory.getDFAmulti(order)`.
 
 ### Changed
 
@@ -573,6 +574,19 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   off the `episodeDuration` grid. The refusal names the field, both values and what is allowed, for example `start:
   2026-10-01T00:05:00Z is not aligned to episodeDuration PT10M; set start to a whole multiple of episodeDuration since
   1970-01-01T00:00:00Z, such as 2026-10-01T00:00:00Z`.
+- `opentsx-data` generates its Avro classes into `target/generated-sources/avro` with the Avro 1.12.1 plugin of the
+  parent POM; `src/main/java` holds only `LatencyTesterEvent`. Getters and setters of fields that cannot be null use
+  primitive types, for example `long Observation.getTimestamp()`, `double Observation.getValue()` and `long
+  Event.getProducerTimestamp()` instead of `Long` and `Double`. This is a breaking change.
+- `opentsx-data`: `event-series.avsc` refers to the `Event` record of `event.avsc`, so `org.opentsx.data.model.Event`
+  has one definition with 5 fields and the generated classes no longer depend on the order in which the schemas are
+  read. The schema of `EventSeriesRecord` now holds the 5-field `Event`. This is a breaking change.
+- `Observation` of `opentsx-data` returns `long` from `getTimestamp()` and `double` from `getValue()`, as Avro 1.12.1
+  generates it; code that overrides these getters with `Long` or `Double` or calls `longValue()` on them no longer
+  compiles. `TimeSeriesAggregateFunction` of `opentsx-flink-core` adds every observation without a null check, because
+  an `Observation` cannot hold a null. This is a breaking change.
+- `ESMain` and the Swing sigma filter of `opentsx-core` write their figures below the home directory of the user
+  (`user.home`) instead of a fixed personal path.
 
 ### Removed
 
@@ -653,6 +667,58 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - SaaS frontend: the dependencies `@tanstack/react-query`, `plotly.js`, `react-plotly.js` and `socket.io-client`,
   which no code imported, the unused `@/` path alias and Tailwind `primary` palette, the npm scripts `preview:test`
   and `test:coverage` (its coverage provider was never installed), and the favicon link to the missing `/vite.svg`.
+- `opentsx-core`: 105 classes that no code, script, launcher or document used, with their NetBeans `.form` files: in
+  `org.opentsx`, `algorithms.analysis` (`SingleTSToolPeakDetector`, `SingleTSToolSum`),
+  `algorithms.dataqualitytest.InfluenceOfSinglePeakTester`, `algorithms.detrending` (`DFATester`, `MultiDFA4Buckets`,
+  `MultiDFATool3`, `MultiDFATool4`, `methods.FitTool`), `algorithms.eventsynchronisation.experiments`
+  (`ESMainCreateSketchData73`, `ESPropertiesChart1Tool`, `ESPropertiesChart1Tool1b`, `ESPropertiesChart2Tool`),
+  `algorithms.ris.experimental.agh` (`RISAnalyse`, `RISAnalyse3`, `ReturnIntervallStatistik`, `StatistikTest`),
+  `algorithms.statistics.experiments.PeaksAndShapiroWilkTest`, `algorithms.statistics.logbinning`
+  (`LogBinnedLoaderTest`, `LogBinningToolv2`), `algorithms.univariate` (`SingleTsIntervallCutDetrendetTool2`,
+  `SingleTsIntervallCutTool`, `SingleTsMFDFATool`, `SingleTsPeakEntropyTool`, `SingleTsTrendCalculatorTool`,
+  `TSCutTool4Buckets`, `TSCutToolDetrendet4Buckets`, `TSGlobalTrendTool4Buckets2`), `analysistools` (`HZDouble`,
+  `LogBinningTool`, `MultiSeriesSurface`), `app.agentbasedsimulation.analyser` (`SimResultLoader`,
+  `TestResultAvailability`), `app.bucketanalyser.MacroRecorder3`, `app.gui` (`Histogramm2D`, `ScreenUtils`,
+  `SixTileChartFrame`), `chart.dynamic` (`DynamicSingleSeriesPlot`, `FloatLineProcessor`, `LineProcessor`,
+  `NetCatSingleValueCollector`), `chart.gnuplot.GnuPlotChart`, `chart.panels` (`ChartPanel3`, `MessreihePanel`,
+  `MessreiheWindow3Frame`), `chart.simple` (`FileControlerPanel`, `MultiChartDistComp`, `MultiChartManager`,
+  `MultiChartTwoAxis`, `MultiPointsChart`), `chart.statistic` (`HistogramChart`, `MyHistogramm2D`),
+  `data.exporter.SemanpixProject`, `data.generator.SampleDataGenerator`, `data.loader` (`DataFileTool`,
+  `LoadCorpusData`, `LoadImageAsTimeSeriesData`, `LoadStockIndexDataFromGoogleTrendsCSVFiles`,
+  `LoadStockIndexDataFromYahoo`, `MSExcelMessreihenLoader`, `TSScanner`, `util.IsNotZeroLineSelector`,
+  `util.WochengangFilter`), `data.series.MessIntervall`, `demo` (`Demo1`, `Demo_01_OriginProject`,
+  `ExampleBucketCreator`, `ExampleBucketLoader`, `ExampleBucketViewer`, `MessreiheTestApp`, `SampleBucketViewer`,
+  `brainwave.BrainSignalCorrelator`, `brainwave.ModelTesterCortanaDBS`), `dsp` (`DSProjectHelper`, `ProjectContext`),
+  `experimental` (`DFABucketTool`, `EventGenerationExperiment`, `LongTermCorrelationSeries2`, `SimpleBucketTool`,
+  `TSInspection`), `math` (`FunctionFitTest`, `PolyFit`), `pojo.ContEquidistTS`, `report.HTMLReport`, `tsa.dfa`
+  (`DFAExperiments`, `DFAModule`, `DFAModuleHTSA1`), `tsa.rng` (`RNGExperiments`, `RNGExperiments2`,
+  `RNGExperiments3`, `RNGModule`, `RNGModuleACMR`, `RNGModuleACMS`, `RNGModuleJUR`, `RNGReferenceDSCreator`,
+  `RNGRefernceDSLoader`), `tsbucket.BucketCreator2` (it read and wrote under a personal absolute path),
+  `tsbucket.folderStore.TSBucketStoreFolderLocations`, `tsbucket.generator` (`TSBucketCreator_FFMLRC`,
+  `TSBucketCreator_GrayImageColor`, `TSBucketCreator_Sinus`, `TSBucketCreator_TFIDFRecursive`,
+  `TSBucketCreator_Uncorrelated`, `TSBucketCreator_WordLength`, `TSBucketCreator_WordLengthRecursive`) and
+  `tsbucket.metadata.annotatedvectors.TestPropertiesVector`. This is a breaking change.
+- `opentsx-core`: the package `stdlib` (21 classes, among them `StdRandom`, `StdStats`, `StdOut`, `In`, `Out` and
+  `Draw`), copied from Sedgewick and Wayne's Introduction to Programming in Java without a license notice.
+  `RNGWrapper` draws from `java.util.Random` instead; call `RNGWrapper.init(seed)` where
+  `stdlib.StdRandom.initRandomGen(seed)` was called. This is a breaking change.
+- `opentsx-core`: the interface `ITimeSeriesObject`, which no code used as a type, the package-private interface
+  `TSProcessor`, whose only implementer was `AbstractTSProcessor`, and the methods `getRunID`, `storeResultset` and
+  `initMetaDataStore` of `AbstractTSProcessor`, which did nothing. This is a breaking change.
+- `opentsx-core`: `TimeSeriesObject.getTopFrequencies` (it sorted the values of the series in place),
+  `TimeSeriesObject.get_Y_StatisticsData_Line` (it passed a String to `DecimalFormat.format`, so every line ended
+  after `avg_Y` with `!!! NO STATISTICS for time series !!!`) and `TimeSeriesObject.getStatisticData()` (on any error
+  it returned zeros for the values it had not computed). This is a breaking change.
+- `opentsx-core`: `TSBucket.createBucketFromLocalFilesInDirectory`. Its file reader never stored the values it read,
+  so the bucket held one value 0 per file. This is a breaking change.
+- `opentsx-core`: `DetrendingMethodFactory2`. Call `DetrendingMethodFactory.getDFAmulti(order)` where
+  `DetrendingMethodFactory2.getDetrendingMethod(int)` was called; it creates the same `DFAmulti`. Call
+  `DetrendingMethodFactory.getDetrendingMethod(String)` where `DetrendingMethodFactory2.getDetrendingMethod(String)`
+  was called. This is a breaking change.
+- `opentsx-core`: 1939 lines of commented-out code, 30 comment lines that belonged only to it, and the empty `if`,
+  `else` and `try` blocks it left. No behavior changes.
+- `opentsx-data`: the unused records `Episode`, `Episodes`, `EpisodesNEW`, `EpisodeMetadata` and `EventSeries` and the
+  schemas `episode2.avsc`, `episode3.avsc`, `EpisodeMetadata.avsc` and `EventSeries.avsc`. This is a breaking change.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -1256,6 +1322,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The workbench README and HOW_TO_RUN no longer name `public/vite.svg`, `npm run test:coverage` or Plotly.js,
   HOW_TO_RUN lists the source map the build writes, and the SaaS platform document and release summary no longer list
   the four removed frontend packages.
+- `RNGWrapper` and the generators that use it, such as `TimeSeriesObject.getGaussianDistribution`, draw numbers
+  without `RNGWrapper.init()`. Before, the first draw threw `NullPointerException`. The same seed gives the same
+  numbers; for a given seed they differ from those of 3.0.1.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

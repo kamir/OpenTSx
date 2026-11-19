@@ -92,44 +92,21 @@ in Sekunden dividiert durch n. Die Wellenlänge ist dann c durch die
 Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
              **/
             
-//            TimeSeriesObject mrFFT = new TimeSeriesObject();
-//            TimeSeriesObjectFFT mrFFT2 = new TimeSeriesObjectFFT();
-//
-//            mrFFT2.calcFFT( mr, samplingRate, TransformType.FORWARD);
-//            
-//            testsB.add( mrFFT );
 
 
             
         }
         
         boolean showLegend = true;
-//        MultiChart.open(testsA, "raw data", 
-//                        "t [s]", "y(t)", showLegend, log.toString() );
         
-//        MultiChart.open(testsB, "FFT tests", 
-//                        "f [Hz]", "c", showLegend, log.toString() );
     
         
         
- //       KreuzKorrelation k1 = new KreuzKorrelation();
         
         
         
                 // simple randomisation
-//        int N = (int)Math.pow(2,16);
-//        
-//        TimeSeriesObject m22 = FFTPhaseRandomizer.getRandomRow( N );
-// 
-//        // phase manipulation
-//        //TimeSeriesObject mA = FFTPhaseRandomizer.getPhaseRandomizedRow(m22.copy(), false, false, 0, FFTPhaseRandomizer.MODE_shuffle_phase);
-//        TimeSeriesObject mB = FFTPhaseRandomizer.getPhaseRandomizedRow(m22.copy(), false, false, 0, FFTPhaseRandomizer.MODE_multiply_phase_with_random_value );
-//        
-//
-//        //testsC.add( mA );
-//        testsC.add( mB );
         
-        // MultiChart.open(testsC, "Phase Randomization Tests", "t", "y", showLegend, log.toString(), null );
         MultiChart.setSmallFont();
         MultiChart.open(testsA, "RAW SERIES ", "t", "y", showLegend, log.toString(), null );
         
@@ -236,9 +213,6 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
      * TODO: PRIO 1
      * CLEAN
      */
-     //    static TimeSeriesObject getSinusWave(TimeSeriesObject mr, TimeSeriesObject mr0, TimeSeriesObject mr1, TimeSeriesObject mr2) {
-//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//    }
 
 
     /**
@@ -275,7 +249,6 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
                
                 double v = red+green+blue;
                 mr.addValuePair(1.0 * t, v );
-                //System.out.println( "zeile(" + z +") " + t + " => " +v );
 
             }
             vmr.add(mr);
@@ -296,7 +269,6 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
 
             double tf = wc.get(s);
             
-            /// System.out.println( "{" + s + "} " + tf );
             
             double idf = idfs.get(s);
             

@@ -81,19 +81,6 @@ public class EventTS extends AbstractTS {
 		return rec;
 	}
 	
-//	public static org.apache.crunch.types.PType getWritablePType() {
-//		 return Writables.derived(
-//			      EventTS.class,
-//			      new MapFn<EventTSWritable, EventTS>() {
-//					private static final long serialVersionUID = 1L;
-//					public EventTS map(EventTSWritable etsw) { return etsw.get(); }
-//			      },
-//			      new MapFn<EventTS, EventTSWritable>() {
-//   				private static final long serialVersionUID = 1L;
-//			        public EventTSWritable map(EventTS ets) { return new EventTSWritable(ets); }
-//			      },
-//			      Writables.writables(EventTSWritable.class));		
-//   }
 
 }
 

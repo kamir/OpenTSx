@@ -81,9 +81,6 @@ public class SingleDFATool {
     public static SingleDFATool tool = new SingleDFATool();
             
     public static void calcMultiDFA(Vector<TimeSeriesObject> vmr , int phase, String v) throws Exception {
-//
-//        System.out.println( vmr.size() + " Reihen in Phase: " + phase );
-//        MultiChart.open(vmr, "Messwerte - [Phase " + phase + "] (all rows)", "t", "y(s)", false, "?");
 
         tool = new SingleDFATool();
 
@@ -102,7 +99,6 @@ public class SingleDFATool {
                 tool.runDFA(vmr, i);
                 kurven.add( tool.Fs.elementAt(0) );
                 
-                // System.out.println( tool.getMWKurve() );
 
             }
             else {
@@ -165,7 +161,6 @@ public class SingleDFATool {
 
         TimeSeriesObject laengsteReihe = vmr.elementAt(0);
         
-//        int max = 10;
         int max = vmr.size();
         System.out.println( "zahlW=" + zahlW + " max=" + max + " " + laengsteReihe.getLabel() );
         
@@ -190,7 +185,7 @@ public class SingleDFATool {
 
       
         
-        dfa = (DFAmulti)DetrendingMethodFactory2.getDetrendingMethod(order);
+        dfa = DetrendingMethodFactory.getDFAmulti(order);
 
         dfa.setZR( laengsteReihe.getData()[1] );
 
@@ -202,7 +197,6 @@ public class SingleDFATool {
         int s_max = (int)(zahlW);
         int s_min = Math.abs( order + 2 );
 
-//        dfa.initIntervalS_FULL_LOG( s_min , s_max );
         dfa.initIntervalS_FULL2( s_min , s_max );
         
         S=dfa.getS();
@@ -220,7 +214,6 @@ public class SingleDFATool {
         double fit_min[] = { 0.8, 1.5, 2.2 };
         double fit_max[] = { 1.3, 2.1, 2.8 };
                 
-//        double alpha_cor_min = 0.0;  // zu klären was hier gemeint ist !!!
 
         System.out.println(
                 "> Berechne DFA für " + vmr.size() +
@@ -248,7 +241,6 @@ public class SingleDFATool {
 
                 dfa.calc();
 
-                // System.out.println( "> useLogLogResulst: " + logLogResults );
                 if ( logLogResults ) {
                    Fs.add( dfa.getResultsMRLogLog() );
                 }
@@ -259,15 +251,6 @@ public class SingleDFATool {
                 System.out.println( "Reihe=" + z + " d < " + dfa.sMax );
                 System.out.println( (dfa.sMax) + " => maximaler Index für größtes s der längsten Reihe.");
 
-                
-                // Für alle s nun die Beiträge für die MW-Funktion sammeln
-//                for( int d = 0; d < dfa.sMax ; d++ ) {
-//                    sum_xs_xs_durch_s[d] = dfa.FSMW[0][d];
-//                    anzSegmente[d] = dfa.FSMW[1][d];
-//                   
-//                    sum_xs_xs_durch_s_ALL[d] = sum_xs_xs_durch_s_ALL[d] + dfa.FSMW[0][d];
-//                    anzSegmente_ALL[d] = anzSegmente_ALL[d]+ dfa.FSMW[1][d];
-//                }
                 
             }
             else {

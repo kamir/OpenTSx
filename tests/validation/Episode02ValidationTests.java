@@ -210,7 +210,7 @@ public class Episode02ValidationTests {
             TimeSeriesObject combined = new TimeSeriesObject();
             combined.setLabel("trend_seasonal_noise");
 
-            stdlib.StdRandom.initRandomGen(42);  // Fixed seed for reproducibility
+            RNGWrapper.init(42);  // Fixed seed for reproducibility
 
             TimeSeriesObject signal = new TimeSeriesObject();
             for (int t = 0; t < numPoints; t++) {

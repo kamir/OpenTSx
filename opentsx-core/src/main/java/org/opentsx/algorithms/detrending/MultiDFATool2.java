@@ -91,9 +91,6 @@ public class MultiDFATool2 {
     public static MultiDFATool2 tool = new MultiDFATool2();
             
     public static void calcMultiDFA(Vector<TimeSeriesObject> vmr , int phase, String v) {
-//
-//        System.out.println( vmr.size() + " Reihen in Phase: " + phase );
-//        MultiChart.open(vmr, "Messwerte - [Phase " + phase + "] (all rows)", "t", "y(s)", false, "?");
 
         tool = new MultiDFATool2();
 
@@ -113,7 +110,6 @@ public class MultiDFATool2 {
                 tool.runDFA(vmr, i);
                 kurven.add( tool.Fs.elementAt(0) );
                 
-                // System.out.println( tool.getMWKurve() );
 
             }
             else {
@@ -176,7 +172,6 @@ public class MultiDFATool2 {
 
         TimeSeriesObject laengsteReihe = vmr.elementAt(0);
         
-//        int max = 10;
         int max = vmr.size();
         System.out.println( "zahlW=" + zahlW + " max=" + max + " " + laengsteReihe.getLabel() );
         
@@ -201,7 +196,7 @@ public class MultiDFATool2 {
 
       
         
-        dfa = (DFAmulti)DetrendingMethodFactory2.getDetrendingMethod(order);
+        dfa = DetrendingMethodFactory.getDFAmulti(order);
 
         dfa.setZR( laengsteReihe.getData()[1] );
 
@@ -239,18 +234,13 @@ public class MultiDFATool2 {
         // je Zeitreihe wird ein alpha bestimmt ....
         double[] alpha = new double[vmr.size()];
 
-        //double[] FS_ = new double[zahlS];
 
         // für jedes s wird eine Summe ( xs^2 ) bestimmt und die Anzahl der
 
         // Segmente anzw
 
 
-//
-//        double[] FS_MW_gewichtet = new double[zahlS];
-//
         // Schleife über alle Zeitreihen dieser Klasse
-//        System.out.println("Anzahl von Reihen: " + vmr.size() );
 
        
         for (int z = 0; z < vmr.size(); z++) {
@@ -280,8 +270,6 @@ public class MultiDFATool2 {
 
                 
 
-//                System.out.println( "Reihe=" + z + " d < " + dfa.sMax );
-//                System.out.println( (dfa.sMax) + " => maximaler Index für größtes s der längsten Reihe.");
 
                 
                 // Für alle s nun die Beiträge für die MW-Funktion sammeln
@@ -292,27 +280,8 @@ public class MultiDFATool2 {
                     sum_xs_xs_durch_s_ALL[d] = sum_xs_xs_durch_s_ALL[d] + dfa.FSMW[0][d];
                     anzSegmente_ALL[d] = anzSegmente_ALL[d]+ dfa.FSMW[1][d];
 
-                    // System.out.println( "d: " + d + "\t " + sum_xs_xs_durch_s[d] + "  "+sum_xs_xs_durch_s_ALL[d] + "  " + anzSegmente[d] + "  " + anzSegmente_ALL[d]);
                 }
 
-                //save result data to file
-//                for (int i = 0; i < dfa.FSMW[1].length; i++) {
-//                    // Ergebnis der einzelnen Reihe erfassen und Speichern ...
-//                    res_mr.addValuePair(Math.log10(dfa_results[0][i]), Math.log10( Math.sqrt( dfa.FSMW[1][i] / dfa.FSMW[2][i] ) )) ;
-//                    // Teilergebnis in den Container übergeben.
-//                    anzw_[i] = anzw_[i] + dfa_results[1][i];  // Anzahl
-//                    sum_xs_xs_[i] = sum_xs_xs_[i] + dfa_results[3][i];
-//                }
-                // double tmp_alpha2 = res_mr.linFit(fit_min, fit_max).getSlope();
-
-//                String dfaFilesPath = savePath + (z + 1) + "_dfa" + dfa.getPara().getGradeOfPolynom() + ".txt";
-//                File dfaFile = new File(dfaFilesPath);
-////                res_mr.writeToFile(dfaFile); // TimeSeriesObject schreiben
-//
-//                //save alphas to file
-//                info.append("\n-----------------------------------------------------------------------------------");
-//                info.append("\n" + (z + 1) + "\t| " + vmr.elementAt(z).getLabel() + "\t| " + dfaFilesPath + "\t| " + tmp_alpha2);
-//}
             }
             else {
                 System.out.println( "MR = null !!! ");
@@ -323,32 +292,8 @@ public class MultiDFATool2 {
 
 
                  
-          // MultiChart.open(dfa.getMRFit(), "fit", "s", "F(s)", false, "?");
 
 
-//        for (int i = 0;
-//                i < act_Alpha.length;
-//                i++) {
-//            alpha_mr.addValuePair(i, act_Alpha[i]);
-//        }
-//        alpha_mr.setLabel(
-//                "alphas");
-//        alpha_mr.addComment(
-//                "alpha_fit_min: " + dfa.getAlphaFitMin());
-//        alpha_mr.addComment(
-//                "alpha_fit_max: " + dfa.getAlphaFitMax());
-//        alpha_mr.addComment(
-//                "DFA-Ordnung:   " + dfa.getPara().getGradeOfPolynom());
-//        String alphaFilePath = savePath + "/alphas_dfa" + dfa.getPara().getGradeOfPolynom() + ".txt";
-//
-//        alpha_mr.addComment("Pfad:          "
-//                + alphaFilePath);
-//        File alphaFile = new File(alphaFilePath);
-//        alpha_mr.writeToFile(alphaFile);
-//        info.append(
-//                "\n\n" + alphaFilePath);
-//
-//        alpha_mr.show();
 
 
 
@@ -385,14 +330,10 @@ public class MultiDFATool2 {
         }
         catch( Exception ex ) {
             System.err.println( ex.getCause() );
-            //ex.printStackTrace();
         };
 
 
-//      System.out.println(info.toString());
 
-//      SimpleRegression reg = finalFS.linFit(fit_min, fit_max);
-//      System.out.println("alpha=" + (reg.getSlope()));
 
         String[] normal_Lable = {"s", "F(s)" };
         String[] logLog_Lable = {"log(s)" , "log( F(s) )" };
@@ -402,8 +343,6 @@ public class MultiDFATool2 {
         if ( logLogResults ) label = logLog_Lable;
         
         if (showCharts) {
-//            MultiChart.open(Fs, "[Phase " + phase + "] F(s) [DFA-order:" + order + "] {" + value + "}", label[0], label[1], true, "?");
-//            MultiChart.open(fsF2, "Anzahl Segmente je s [order:" + order + "] (all rows)", "s", "z", true, "?");
             MultiChart.open(fsFMW, "<F(s)>", label[0], label[1], true, "?", null);
 
         }
@@ -411,10 +350,6 @@ public class MultiDFATool2 {
             String file= "Phase_" + phase + " DFA-order_"+ order + " v=" + value;
             System.out.println( file );
 
-//            MultiChart.openAndStore( Fs, "F(s) - [Phase " + phase + "] [DFA-order:" + order + "] {" + value + "}",  "log(s)", "log(F(s))", true, "data/dfa", file, "?");
-//            MultiChart.open(Fs, "F(s)", "s", "F(s)", false, "?");
-//            MultiChart.open(fsFMW, "<F(s)> - [Phase " + phase + "] F(s) [order:" + order + "] (all rows)", "log(s)", "log(<F(s)>)", false, "?");
-//            MultiChart.open(fsF2, "Anzahl Segmente je s - [Phase " + phase + "]  [order:" + order + "] (all rows)", "s", "#Segmente", false, "?");
         }
 
         resetPuffer();

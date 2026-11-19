@@ -131,10 +131,8 @@ public class ESCalc {
         for (int i : r) {
             mem = mem + i;
             r1[p] = mem - 1;
-            // System.out.println( (mem-1) + " " + i );
             p++; 
         }
-        // System.out.println(  );
         return r1;
     }
 

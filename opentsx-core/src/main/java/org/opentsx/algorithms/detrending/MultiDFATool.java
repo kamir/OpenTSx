@@ -47,10 +47,6 @@ public class MultiDFATool {
         }  // nun liegen verschieden Lange Testreihen vor ...
 
         // nun werden die Berechnungen fÃ¼r verschiedene Ordnungen durchgefÃ¼hrt
-//        int[] orders = {1, 2, 3};
-//        for (int i : orders) {
-//            tool.runDFA(vmr, i);
-//        }
 
          tool.runDFA(vmr, 2);
     }
@@ -144,9 +140,6 @@ public class MultiDFATool {
                 F[3][s_pos] = FSUM ==> SUMME(xs^2);
                  */
 
-//                // get alpha
-//                double tmp_alpha = dfa.getAlpha(fit_min, fit_max);
-
                 TimeSeriesObject res_mr = new TimeSeriesObject();
                 String labelstr = mr.getLabel();
                 res_mr.setLabel(labelstr);
@@ -155,11 +148,6 @@ public class MultiDFATool {
                         + "\n# alpha_fit_max: " + dfa.getAlphaFitMax()
                         + "#\n DFA-Ordnung:   " + dfa.getPara().getGradeOfPolynom());
 
-//                double cor_coef=dfa.getCorr_coef();
-//                System.out.println(cor_coef + " : " + alpha_cor_min);
-//
-//                if (cor_coef > alpha_cor_min) {
-//                    act_Alpha[z] = tmp_alpha;
 
                 System.out.println( ">>>" + dfa_results[1].length + " Werte in dfa_RESULTS[1] ..." + anzw_.length);
                 
@@ -180,34 +168,10 @@ public class MultiDFATool {
                 //save alphas to file
                 info.append("\n-----------------------------------------------------------------------------------");
                 info.append("\n" + (z + 1) + "\t| " + vmr.elementAt(z).getLabel() + "\t| " + dfaFilesPath);
-//}
                 Fs.add(res_mr);
             }
         }
 
-//        for (int i = 0;
-//                i < act_Alpha.length;
-//                i++) {
-//            alpha_mr.addValuePair(i, act_Alpha[i]);
-//        }
-//        alpha_mr.setLabel(
-//                "alphas");
-//        alpha_mr.addComment(
-//                "alpha_fit_min: " + dfa.getAlphaFitMin());
-//        alpha_mr.addComment(
-//                "alpha_fit_max: " + dfa.getAlphaFitMax());
-//        alpha_mr.addComment(
-//                "DFA-Ordnung:   " + dfa.getPara().getGradeOfPolynom());
-//        String alphaFilePath = savePath + "/alphas_dfa" + dfa.getPara().getGradeOfPolynom() + ".txt";
-//
-//        alpha_mr.addComment("Pfad:          "
-//                + alphaFilePath);
-//        File alphaFile = new File(alphaFilePath);
-//        alpha_mr.writeToFile(alphaFile);
-//        info.append(
-//                "\n\n" + alphaFilePath);
-//
-//        alpha_mr.show();
         
         
 
@@ -266,12 +230,5 @@ public class MultiDFATool {
     int[] S = null;
 
     private void showS() {
-//        S = dfa.getS();
-//        int i = 0;
-//        while( i < S.length ) {
-//            System.out.print( S[i] + ", ");
-//            i++;
-//        }
-        //System.out.println();
     }
 }

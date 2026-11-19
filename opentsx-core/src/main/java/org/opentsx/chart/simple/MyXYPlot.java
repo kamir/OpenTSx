@@ -85,7 +85,6 @@ public class MyXYPlot extends javax.swing.JDialog {
         pl.setVisible(true);
         pl.setAlwaysOnTop(true);
         
-        // pl.store( pl, folder, filename );
 
         
     }
@@ -114,10 +113,6 @@ public class MyXYPlot extends javax.swing.JDialog {
         if (doStoreChart) {
 
 
-//            File folder = LogFile.folderFile;
-//            String fn = folder.getAbsolutePath() + File.separator + "images/Distribution_";
-//            File file = null;
-//            fn = fn + GeneralResultRecorder.currentSimulationLabel;
 
 
             String fn = filename;
@@ -139,31 +134,6 @@ public class MyXYPlot extends javax.swing.JDialog {
             catch (Exception e) {
                 e.printStackTrace();
             }
-
-
-
-//                File file = new File(folder.getAbsolutePath() + File.separator + fn + ".svg");
-//                System.out.println(">>> Save as SVG Image - Filename: " + file.getAbsolutePath()
-//                        + "; CP: "+ cp);
-//
-//
-//                // Get a DOMImplementation and create an XML document
-//                DOMImplementation domImpl =
-//                        GenericDOMImplementation.getDOMImplementation();
-//                Document document = domImpl.createDocument(null, "svg", null);
-//
-//                // Create an instance of the SVG Generator
-//                SVGGraphics2D svgGenerator = new SVGGraphics2D(document);
-//
-//                // draw the chart in the SVG generator
-//                cp.draw(svgGenerator, new Rectangle(800, 600));
-//
-//                // Write svg file
-//                OutputStream outputStream = new FileOutputStream(file);
-//                Writer out = new OutputStreamWriter(outputStream, "UTF-8");
-//                svgGenerator.stream(out, true /* use css */);
-//                outputStream.flush();
-//                outputStream.close();
             }
             catch (Exception e) {
                 e.printStackTrace();
@@ -331,7 +301,6 @@ public class MyXYPlot extends javax.swing.JDialog {
 
     public JFreeChart createMyXYChart() {
        
-        // addDataSerie(mr);
         //         Generate the graph
         JFreeChart chart = ChartFactory.createScatterPlot(title, // Title
                 xlabel, // x-axis Label
@@ -416,72 +385,10 @@ DecimalFormat df2 = new DecimalFormat("0.00");
         plot.setRenderer(renderer);
 
 
-//        try {
-//            ChartUtilities.saveChartAsJPEG(
-//                    new File( path ), chart, 500, 300);
-//            System.out.println( path + " plot stored ... " );
-//        }
-//        catch (IOException e) {
-//            System.err.println("Problem occurred creating chart.");
-//        }
 
         return chart;
     }
 
-//    public void store(JFreeChart cp, File folder, String filename) {
-//
-//
-//
-////            File folder = LogFile.folderFile;
-////            String fn = folder.getAbsolutePath() + File.separator + "images/Distribution_";
-////            File file = null;
-////            fn = fn + GeneralResultRecorder.currentSimulationLabel;
-//
-//
-//            String fn = filename;
-//            try {
-//
-//                final File file1 = new File(folder.getAbsolutePath() + File.separator + fn + ".png");
-//                System.out.println(">>> Save PNG Image\n> Filename: " + file1.getAbsolutePath());
-//                try {
-//
-//                   
-//
-//                    final ChartRenderingInfo info = new ChartRenderingInfo
-//                            (new StandardEntityCollection());
-//                    // ChartUtilities.saveChartAsPNG(file1, chart, 600, 400, info);
-//                }
-//                catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-
-//                File file = new File(folder.getAbsolutePath() + File.separator + fn + ".svg");
-//                System.out.println(">>> Save as SVG Image - Filename: " + file.getAbsolutePath()
-//                        + "; CP: "+ cp);
-//
-//
-//                // Get a DOMImplementation and create an XML document
-//                DOMImplementation domImpl =
-//                        GenericDOMImplementation.getDOMImplementation();
-//                Document document = domImpl.createDocument(null, "svg", null);
-//
-//                // Create an instance of the SVG Generator
-//                SVGGraphics2D svgGenerator = new SVGGraphics2D(document);
-//
-//                // draw the chart in the SVG generator
-//                cp.draw(svgGenerator, new Rectangle(800, 600));
-//
-//                // Write svg file
-//                OutputStream outputStream = new FileOutputStream(file);
-//                Writer out = new OutputStreamWriter(outputStream, "UTF-8");
-//                svgGenerator.stream(out, true /* use css */);
-//                outputStream.flush();
-//                outputStream.close();
-//            }
-//            catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//        }
 
     private void setYIntervall(int i, int i0) {
         ValueAxis ax = this.chart.getXYPlot().getRangeAxis();

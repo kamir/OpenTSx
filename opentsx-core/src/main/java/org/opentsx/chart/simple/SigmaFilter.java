@@ -56,7 +56,7 @@ public class SigmaFilter extends TimeSeriesObject {
          *
          */
          OriginProject op = new OriginProject();
-         op.initBaseFolder("/Users/kamir/Documents/THESIS/dissertationFINAL/main/FINAL/LATEX/semanpix/ContinuousAndEventTimeSeries");
+         op.initBaseFolder(System.getProperty("user.home") + "/Documents/THESIS/dissertationFINAL/main/FINAL/LATEX/semanpix/ContinuousAndEventTimeSeries");
          op.initSubFolder( "data2" );
 
          /**
@@ -79,7 +79,6 @@ public class SigmaFilter extends TimeSeriesObject {
             // one year with one point per hour ...  
             mr = TimeSeriesObject.getGaussianDistribution(sf.scale * 365, 10.0, 1.0);
 
-            // TimeSeriesObject mr = TimeSeriesObject.getExpDistribution( sf.scale * 365, 5.0 );
             sf.addCollect(mr, false);
 
          }
@@ -159,25 +158,6 @@ public class SigmaFilter extends TimeSeriesObject {
         
     }
 
-//    private void plotASOszi() {
-//        
-//        Vector<TimeSeriesObject> plotRows = new Vector();
-//        
-//        plotRows.add(mwBINNED.setBinningX_sum( scale2 ));
-//        
-//        TimeSeriesObject upper = mwBINNED.add( sigmaBINNED.scaleY_2( upperTS ));
-//        TimeSeriesObject lower = mwBINNED.add( sigmaBINNED.scaleY_2( lowerTS ));
-//         
-//        plotRows.add( upper.setBinningX_sum( scale2 ) );
-//        plotRows.add( lower.setBinningX_sum( scale2 ) );
-//        plotRows.add( sigmaBINNED );
-//        
-////        MultiChart.yRangDEFAULT_MAX = 100;
-////        MultiChart.yRangDEFAULT_MIN = -100;
-////        MultiChart.setDefaultRange = true;
-//                
-//        MultiChart.open(plotRows, label, "t", "y(t) , sigma(t)", legend);
-//    }
     TimeSeriesObject compareWithBand = null;
 
     static Vector<TimeSeriesObject> plotRows = new Vector();
@@ -332,23 +312,4 @@ public class SigmaFilter extends TimeSeriesObject {
         return r;
         
     }
-//
-//    private TimeSeriesObject getPosExtremeEvents(TimeSeriesObject c, TimeSeriesObject upper) {
-//        TimeSeriesObject mrE = new TimeSeriesObject( );
-//        mrE.setLabel( c.label + "_POS_EXTR");
-//        for( int i = 0; i < upper.yValues.size(); i++ ) {
-//        
-//            double v=0.0;
-//            double v1 = (Double)c.yValues.elementAt(i);
-//            double v2 = (Double)upper.yValues.elementAt(i);
-//            
-//            if ( v1 >= v2 ) v = 1.0;
-//            
-//            mrE.addValuePair( i , v);
-//
-//            
-//        }
-//        
-//        return mrE;
-//    }
 }

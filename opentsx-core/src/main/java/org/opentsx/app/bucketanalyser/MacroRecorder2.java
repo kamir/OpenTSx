@@ -79,12 +79,10 @@ public class MacroRecorder2 {
         //
         // To build a time series with N components we need a container to hold
         // components.
-        // int N = f.length;
         Vector<TimeSeriesObject> components = new Vector<TimeSeriesObject>();
 
         // DAX2, IPC, MDAX, SDAX, TECDAX
         String market = "DAX2";
-        // components = loadStockDataFromBucket( market );
 
         components = TSGeneratorFINAL.getSampleA();
 
@@ -128,22 +126,6 @@ public class MacroRecorder2 {
         MacroTrackerFrame.addTransformation(
                 TSBucketTransformation.getTransformation("Components", "Shuffled", "shuffleYValues(" + shuffles + ")"));
 
-        // MultiChart.open(slidingWindowResults, true, "H for sliding window
-        // ("+windowSize+")");
-        // MacroTrackerFrame.addTransformation(
-        // TSBucketTransformation.getTransformation("Components", "Entropy", "H for
-        // sliding window ("+windowSize+")"));
-        //
-        // DFA ...
-        // applyDFA(components, "RAW components ");
-        // MacroTrackerFrame.addTransformation(
-        // TSBucketTransformation.getTransformation("Components", "DFA_Components",
-        // "DFA_2"));
-        //
-        // applyDFA(shuffledComponents, "SHUFFLED components ");
-        // MacroTrackerFrame.addTransformation(
-        // TSBucketTransformation.getTransformation("Shuffled",
-        // "DFA_Shuffled_Components", "DFA_2"));
 
     }
 
@@ -183,7 +165,6 @@ public class MacroRecorder2 {
             dfa.setNrOfValues(N);
 
             // die Werte für die Fensterbreiten sind zu wählen ...
-            // dfa.initIntervalS();
             dfa.initIntervalSlog();
 
             dfa.showS();
@@ -211,57 +192,8 @@ public class MacroRecorder2 {
             MultiChart.open(v, label + " fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", true,
                     "???", null);
 
-            // System.out.println(" alpha = " + df.format(alpha));
-            // System.out.println(" = " + ((2 * alpha) - 1.0));
         }
     }
-
-    // private static void calcTEandMI(TimeSeriesObject mr1, TimeSeriesObject mr2,
-    // int dig) throws Exception {
-    //
-    // /**
-    // * CALCULATE INFORMATION THEORETICAL MEASURES
-    // *
-    // */
-    // String line = dig + "\t" + calcTransferEntropy( mr1 , mr2, dig ) + "\t" +
-    // JavaMI.Entropy.calculateEntropy(mr1.getYData()) + "\t" +
-    // JavaMI.Entropy.calculateEntropy(mr2.getYData()) + "\t" +
-    // calcMI_JIDT( mr1.getYData() , mr2.getYData() ) + "\t" +
-    // JavaMI.MutualInformation.calculateMutualInformation( mr1.getYData() ,
-    // mr2.getYData() );
-    //
-    // /**
-    // * CALCULATE CROSSCORRELATION ...
-    // */
-    // PearsonsCorrelation pc = new PearsonsCorrelation();
-    // double cc = pc.correlation( mr1.getYData(), mr2.getYData() ); // no timelag
-    // line = line.concat("\t" + cc);
-    //
-    //
-    // if ( SCATTERPLOT ) {
-    //
-    // /**
-    // * SHOW A SCATERPLOT
-    // */
-    // Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
-    // v.add( mr1.zip( mr2 ) );
-    //
-    // // SET SCALES to MIN and MAX from TimeSeriesObject ...
-    // MyXYPlot.setXRange( mr1 );
-    // MyXYPlot.setYRange( mr2 );
-    //
-    // MyXYPlot plot = MyXYPlot.openAndGet( v, mr1.getLabel() + "_vs_" +
-    // mr2.getLabel() ,mr1.getLabel(), mr2.getLabel(), true);
-    //
-    // if ( SCATTERPLOT_AUTO_SAVE ) {
-    //// plot.fileControlerPanel.save();
-    // }
-    // }
-    //
-    // // CLEAN RESULTLINE
-    // System.out.println( line.replace('.', ',') );
-    //
-    // }
 
     private static Vector<TimeSeriesObject> loadStockDataFromBucket(String market) throws IOException {
 

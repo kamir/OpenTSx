@@ -18,7 +18,7 @@ import java.util.Vector;
  * 
  * @author kamir
  */
-abstract public class ScaledDataRow implements ITimeSeriesObject {
+abstract public class ScaledDataRow {
 
     public String label = null;
 

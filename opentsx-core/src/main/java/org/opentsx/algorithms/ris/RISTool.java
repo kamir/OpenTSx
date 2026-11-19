@@ -93,7 +93,6 @@ public class RISTool {
     static public boolean verbose = false;
     
     // smallest value of r that is used
-//    public static final double offset = 24*1;
     public static double offset = 0;
 
     public RISTool(String l, int bin, int s) {
@@ -152,7 +151,6 @@ public class RISTool {
         
         if ( debug ) {
             System.out.println("added single RIS to collect. R_q="+ris._Rq );
-            // ris.showData();
         }
         
         // an empty result has NaN probabilities (0 of 0 intervals) and adds nothing
@@ -242,7 +240,6 @@ public class RISTool {
         }
         
         
-        // System.out.println( "#>>> nullDistCounter=" + nullDistCounter + ";");
     }
     
     public static int errosLENGTH = 0;
@@ -322,7 +319,6 @@ public class RISTool {
         Enumeration enUM_Rq_alt = dists.elements();
         while( enUM_Rq_alt.hasMoreElements() ) {
             double v = (Double) enUM_Rq_alt.nextElement();
-             // System.out.println( v);
              sumRq_alt = sumRq_alt + v;
              anzRq_alt++;
         }
@@ -334,7 +330,6 @@ public class RISTool {
         Enumeration enUM_Rq_filteres = dataRawFILTERED.elements();
         while( enUM_Rq_filteres.hasMoreElements() ) {
             double v = (Double) enUM_Rq_filteres.nextElement();
-             // System.out.println( v);
              sumRq_filteres = sumRq_filteres + v;
              anzRq_filterd++;
         }
@@ -377,9 +372,6 @@ public class RISTool {
     public void calcMessreihen() throws Exception {
         if ( this.isContainerInstanz ) { 
             calcContainerMR();
-        }
-        else { 
-            // calcSingleMR();
         }
     }
     
@@ -436,26 +428,11 @@ public class RISTool {
             mrVerteilungSkaliert.addValuePair(
                         (double)i  / ( (double)scale * _Rq), relAnzahl * _Rq);
                 
-                // System.out.println( i+ "\t"+anzahlProSpalte + "\t" + 
-                // Rq+ "\t" + relAnzahl );
                 
             summe = summe + relAnzahl;
            
             
-//        // leave out the first values
-//        if ( i >= (offset*scale / Rq) ) { 
-//                
-//          anzahlProSpalte = dataSKALIERT[i];
-//                                
-//          relAnzahl = dataSKALIERT[i] / this.zElements;
-// 
-//          mrVerteilungSkaliert.addValuePair( i / ( scale ), relAnzahl);
-//        }
         }
-        // mrVerteilungSkaliert = mrVerteilungSkaliert.scaleY_2(1.0/summe);
-        // if ( summe-1.0 > epsilon ) 
-        //   throw new Exception(
-        //     "Norm. Sum wrong! \n(epsilon="+epsilon+", sum="+summe+")");
         if ( debug ) {
             System.out.println(
                "(a) number of elements=" + this.zElements);
@@ -495,7 +472,6 @@ public class RISTool {
 
     @Override
     public String toString() {
-        //return toString_Haeufigkeit();
         return toString_Verteilung();
     }
 
@@ -665,21 +641,6 @@ public class RISTool {
             data3.add( 3.0 );
         }
 
-//        for( int i = 1; i <= 25; i++  ) {            
-//            
-//            double z = new Double( i );
-//            double z2 = new Double( 1 );
-//            
-//            data1.add( z );
-//            data1.add( z2 );            
-//        
-//            double zz = new Double(i+5);
-//            double zz2 = new Double(1);
-//            
-//            data2.add( zz );
-//            data2.add( zz2 );            
-//        
-//        }    
         
         RISTool ris1 = new RISTool( 
                 "ris1", _binning, _scale);
@@ -722,14 +683,7 @@ public class RISTool {
         ris5.add(ris1);
         ris5.calcMessreihen();
         
-//        System.out.print(ris1.toString_Haeufigkeit());
-//        System.out.print(ris1.toString_Verteilung());
         
-//        ris1.add(ris2);
-//        ris1.calcMessreihen();
-//        
-//        ris3.add(ris2);
-//        ris3.calcMessreihen();
         
         Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
         
@@ -744,29 +698,11 @@ public class RISTool {
         ris3.toString_Verteilung();
         ris4.toString_Verteilung();
         ris5.toString_Verteilung();
-//        
-//        
-//        mrv.add( ris1.mrHaeufigkeit );
-//        mrv.add( ris2.mrHaeufigkeit);
-//        mrv.add( ris3.mrHaeufigkeit);
-//        
-//        mrv.add( ris4.mrHaeufigkeit);
-//        mrv.add( ris5.mrHaeufigkeit);
-        
-//        mrv.add(ris1.mrVerteilungSkaliert);
-//        mrv.add(ris2.mrVerteilungSkaliert);
-//        mrv.add(ris3.mrVerteilungSkaliert);
         
         
-//        System.out.print(ris1.toString_Haeufigkeit());
-//        System.out.print(ris2.toString_Haeufigkeit());
-//        System.out.print(ris3.toString_Haeufigkeit());
-//        System.out.print(ris4.toString_Haeufigkeit());
-//        System.out.print(ris5.toString_Haeufigkeit());
         
-//        System.out.print(ris1.toString_Verteilung());
+        
     
-//        MultiChart.open(mrv, true);
         
         ris1.showData();
         ris2.showData();
@@ -809,7 +745,6 @@ public class RISTool {
              
              System.out.println( grenzen[i-1] + " ... " + grenzen[i] + "\tRq_max=" + Rq_max + "\t" + rqMIN[i] );
         }
-//        javax.swing.JOptionPane.showMessageDialog(null, "go");
     }    
 
     private static void _checkRIS(RISTool ris) throws IOException {
@@ -827,13 +762,11 @@ public class RISTool {
                
                                   
                     String line = "\t\tr=" + v + "\tRq=" + ris._Rq + "\tr/Rq=(" + (v/ris._Rq) + ")\t rq_min=" + rqMIN[i] + "\t sum(r_i)=" + sum;
-                    // String line = "\t\tr=" + v + "\tRq=" + ris._Rq + "\tr/Rq=(" + (v/ris._Rq) + ")\t sum(r_i)=" + sum;
  
                     if ( ( v / ris._Rq ) < rqMIN[i] ) {
                         
                        
                         
-                        // javax.swing.JOptionPane.showMessageDialog(null,"r=" + v + "\nRq=" + ris.Rq + "\n" + (v/ris.Rq) +"\n"+ Topic2.rqMIN[i]  );
                         System.out.println( line  );
                         debug1[i].addData( v/ris._Rq );
                         line = "* " + line;

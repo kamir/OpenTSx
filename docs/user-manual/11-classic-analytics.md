@@ -327,8 +327,8 @@ directory of its first argument, `./data/` by default. See
 `RISTool` opens no window, rejects a NaN probability with `IllegalArgumentException` and stops with English messages.
 See [return intervals](../../opentsx-core/README.md#collect-return-intervals).
 
-`TSBucket` throws `IOException` when its file system cannot be opened, writes no CSV file in its place and takes the
-folder of local input files from the caller. See [write a bucket](../../opentsx-core/README.md#write-a-bucket).
+`TSBucket` throws `IOException` when its file system cannot be opened and writes no CSV file in its place. See
+[write a bucket](../../opentsx-core/README.md#write-a-bucket).
 
 ### Run the Flink jobs (`opentsx-flink-core`, Flink 1.20.5)
 

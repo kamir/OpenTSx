@@ -116,8 +116,6 @@ public class LongTermCorrelationSeriesGenerator {
                 
         log.append("fit range: [" + fitMIN + ", ..., " + fitMAX + " ]\n" );
         
-//        int Z = 15;
-//        double STRETCH = 4;   // the product must be 60
 
         int Z = 15;                                                         //  <--------
         double STRETCH = 6;                                                 //  <--------
@@ -127,7 +125,6 @@ public class LongTermCorrelationSeriesGenerator {
         alphas = new double[Z][LOOPS];
         betas = new double[Z]; 
 
-        // double[] alphas = { 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3 };  
 
         for( int i = 0; i < Z; i++ ) {
             
@@ -154,8 +151,6 @@ public class LongTermCorrelationSeriesGenerator {
         
         alphasCALC.setLabel("CALC");
         alphasTHEO.setLabel("theory");
-        // check.add( alphasCALC );
-       // check.add( alphasTHEO );
         
         _calcErrorChart( alphas, numberOfBeta, numberOfLoop, 100.0 );
 
@@ -234,7 +229,6 @@ public class LongTermCorrelationSeriesGenerator {
             dfa.setNrOfValues(N);
 
             // choose the values of the window sizes
-//            dfa.initIntervalS();
             dfa.initIntervalSlog();
             
             
@@ -261,7 +255,6 @@ public class LongTermCorrelationSeriesGenerator {
             if ( log != null ) log.append( "PR:" + "\t" + df.format( alpha ) + "\n" );
 
             if ( showTest ) {
-//                MultiChart.open(v, "fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", true, "alpha=" + alpha );
                 if ( firstInLoop ) tests.add(mr4);
             }
 
@@ -325,7 +318,6 @@ public class LongTermCorrelationSeriesGenerator {
             dfa.setNrOfValues(N);
 
             // choose the values of the window sizes
-//            dfa.initIntervalS();
             dfa.initIntervalSlog();
             
             
@@ -354,7 +346,6 @@ public class LongTermCorrelationSeriesGenerator {
             if ( log != null ) log.append( df.format( beta ) + "\t" + df.format( alpha ) + "\n" );
 
             if ( showTest ) {
-//                MultiChart.open(v, "fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", true, "alpha=" + alpha );
                 if ( firstInLoop ) tests.add(mr4);
 
                 try{
@@ -403,7 +394,6 @@ public class LongTermCorrelationSeriesGenerator {
     public static TimeSeriesObject getRandomRow(int length, double beta, Random random, boolean showTest, boolean runDFA ) throws Exception {
         
         // has to be of type int
-        // N = length; by a multiple of 4 !!!
         int N = length;
         
         

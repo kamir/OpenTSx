@@ -340,7 +340,6 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
             Object node = ((DefaultMutableTreeNode) e.nextElement()).getUserObject();
 
             boolean t = node instanceof ProcessComponent;
-            // System.out.println(node + " is of type {ProcessComponent} " + t);
 
             if (t) {
 
@@ -356,15 +355,6 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(selection, selection);
 
-        // e = rootNode.postorderEnumeration();
-        // while (e.hasMoreElements()) {
-        // System.out.println(e.nextElement());
-        // }
-        //
-        // e = rootNode.depthFirstEnumeration();
-        // while (e.hasMoreElements()) {
-        // System.out.println(e.nextElement());
-        // }
 
     }// GEN-LAST:event_jButton2ActionPerformed
 
@@ -382,7 +372,6 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
             Object node = ((DefaultMutableTreeNode) e.nextElement()).getUserObject();
 
             boolean t = node instanceof ProcessComponent;
-            // System.out.println(node + " is of type {ProcessComponent} " + t);
 
             if (t) {
 
@@ -436,11 +425,7 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
         // </editor-fold>
         //
         // /* Create and display the form */
-        // java.awt.EventQueue.invokeLater(new Runnable() {
-        // public void run() {
         new MacroTrackerFrame().setVisible(true);
-        // }
-        // });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -574,11 +559,6 @@ class Track {
         trackNode = new DefaultMutableTreeNode("Track: " + label);
         top.add(trackNode);
 
-        // source = new DefaultMutableTreeNode(new SourceTSB(this, "TRACK",
-        // "Collection"));
-        // trackNode.add(source);
-        //
-        // nodes.put("Collection", source);
     }
 
     void addSource(TSBucketSource t) {

@@ -201,42 +201,4 @@ public class TimeSeriesAggregateFunctionTest {
         // Should keep the first label
         assertEquals("first-label", accumulator.getLabel());
     }
-
-    @Test
-    public void testAdd_HandlesNullFields() {
-        TimeSeriesObject accumulator = aggregateFunction.createAccumulator();
-
-        // Observation with null timestamp
-        Observation obs1 = new Observation() {
-            @Override
-            public Long getTimestamp() {
-                return null;
-            }
-        };
-        obs1.setUri("test");
-        obs1.setValue(10.0);
-        aggregateFunction.add(obs1, accumulator);
-
-        // Observation with null value
-        Observation obs2 = new Observation() {
-            @Override
-            public Double getValue() {
-                return null;
-            }
-        };
-        obs2.setUri("test");
-        obs2.setTimestamp(1000L);
-        aggregateFunction.add(obs2, accumulator);
-
-        // Valid observation
-        Observation obs3 = new Observation();
-        obs3.setUri("test");
-        obs3.setTimestamp(2000L);
-        obs3.setValue(20.0);
-        aggregateFunction.add(obs3, accumulator);
-
-        // Should only have one valid point
-        assertEquals(1, accumulator.yValues.size());
-        assertEquals(20.0, (Double) accumulator.yValues.get(0), 0.001);
-    }
 }

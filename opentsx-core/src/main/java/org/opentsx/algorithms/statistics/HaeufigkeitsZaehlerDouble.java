@@ -101,7 +101,6 @@ public class HaeufigkeitsZaehlerDouble {
                     min = dist;
                 }
 
-                // System.out.println( dist );
             }
         }
 
@@ -122,16 +121,6 @@ public class HaeufigkeitsZaehlerDouble {
             f.addValue(Double.valueOf(dists.elementAt(i)));
         }
 
-//        long a = min - 1;
-//        long b = max + 1;
-//
-//        f.addValue(Double.valueOf( a ));
-//        f.addValue(Double.valueOf( a ));
-//        f.addValue(Double.valueOf( a ));
-//        f.addValue(Double.valueOf( b ));
-//        f.addValue(Double.valueOf( b ));
-//        f.addValue(Double.valueOf( b ));
-//        f.addValue(Double.valueOf( b ));
 
 
         min--;
@@ -175,11 +164,6 @@ public class HaeufigkeitsZaehlerDouble {
         long f00 = f.getSumFreq();
 
 
-//        System.out.println("\n\n< min: " + (f30));
-//        System.out.println(">= min and < max: " + (f20 - f30));
-//        System.out.println(">= max  " + (f00 - f20));
-//
-//        System.out.println("total " + (f00));
 
 
     }

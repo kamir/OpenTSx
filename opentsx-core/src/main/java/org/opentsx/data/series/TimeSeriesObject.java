@@ -28,34 +28,9 @@ import java.text.DecimalFormat;
 import java.util.*;
 
 
-public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
+public class TimeSeriesObject implements Serializable {
     
     static final long serialVersionUID = 3519446562958441036L;
-
-    public Hashtable getTopFrequencies(int i) {
-
-        Hashtable f = new Hashtable();
-
-        Vector<Double> y = this.getYValues();
-
-        Collections.sort(y, Collections.reverseOrder());
-        double threshold = y.elementAt( i-1 );
-
-        System.out.println( " *** THRESHOLD *** {" + threshold + "}" );
-        for( int t = 0; t < y.size(); t++ ) {
-
-            if ( this.getData()[1][t] >= threshold ) {
-
-                System.out.println( " +++ collect frequency +++  {" +  this.getData()[0][t] + " : " + this.getData()[1][t] + "}" );
-
-                f.put( "topFrequency" , this.getData()[0][t] );
-                f.put( "topFrequency_real" , this.getData()[1][t] );
-
-            }
-
-        }
-        return f;
-    }
 
     public static TimeSeriesObject sigmaForAll(Vector<TimeSeriesObject> rows) {
         
@@ -168,7 +143,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         
         for( int i = 0; i < z; i++ ) {
             int c = i % d;
-            //System.out.println( c + " " + i );
             double t = data[0][i];
             double v = data[1][i] / mr2.trend[c];
             mr2.addValuePair(t, v);
@@ -191,7 +165,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
 
             Observation obs = episode.getObservationArray().get(i);
 
-//            double t = t0 + ( i  * episode.setIncrement() );
             double t = obs.getTimestamp();
 
             double v = obs.getValue();
@@ -603,70 +576,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         return StatUtils.sum( dy );
     };
 
-    public String get_Y_StatisticsData_Line() {
-
-        StringBuffer sb = new StringBuffer();
-
-        try {
-        double[][] data = this.getData();
-        double[] dx = data[0];
-        double[] dy = data[1];
-
-        StandardDeviation stdev = new StandardDeviation();
-
-        sb.append("max_Y=" + decimalFormat_STAT.format(NumberUtils.max( dy ) )  + "\t" );
-        sb.append("min_Y=" + decimalFormat_STAT.format(NumberUtils.min( dy ) )  + "\t" );
-        sb.append("avg_Y=" + decimalFormat_STAT.format(StatUtils.mean( dy ) )  + "\t" );
-        sb.append("std_Y=" + decimalFormat_STAT.format(            stdev.evaluate( dy ) + "\t" ) );
-        sb.append("var_Y=" + decimalFormat_STAT.format(StatUtils.variance( dy ) )+ "\t" );
-        sb.append("sum_Y=" + decimalFormat_STAT.format(StatUtils.sum( dy ) ) + "\t" );
-        sb.append("len_Y=" + dy.length + "\t" );
-        }
-        catch(Exception ex) {
-            sb.append(( "!!! NO STATISTICS for time series !!! -> \n " + ex.getMessage() ));
-        }
-
-        return sb.toString();
-    };
-
-    public double[] getStatisticData() {
-
-        double[] r = new double[14];
-
-        try {
-
-            double[][] data = this.getData();
-            double[] dx = data[0];
-            double[] dy = data[1];
-
-            StandardDeviation stdev = new StandardDeviation();
-
-            r[0] = NumberUtils.max( dx );
-            r[1] = NumberUtils.min( dx );
-            r[2] = StatUtils.mean( dx );
-            r[3] = stdev.evaluate( dx );
-            r[4] = StatUtils.variance( dx );
-            r[5] = StatUtils.sum( dx );
-            r[6] = dx.length;
-
-            r[7] = NumberUtils.max( dy );
-            r[8] = NumberUtils.min( dy );
-            r[9] = StatUtils.mean( dy );
-            r[10] = stdev.evaluate( dy );
-            r[11] = StatUtils.variance( dy );
-            r[12] = StatUtils.sum( dy );
-            r[13] = dy.length;
-
-        }
-        catch(Exception ex) {
-            ex.printStackTrace();
-        }
-
-        return r;
-
-    };
-
-
     public Hashtable<String, String> getStatisticData( Hashtable<String, String> table ) {
 
         try {
@@ -679,12 +588,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
             table.put( "max_T" , decimalFormat_STAT.format(NumberUtils.max( dx ) ) );
             table.put( "min_T" , decimalFormat_STAT.format(NumberUtils.min( dx ) ) );
             table.put( "nr_T" ,  dx.length + "" );
-            /*
-            table.put( "avg_X" , decimalFormat_STAT.format(StatUtils.mean( dx ) ) );
-            table.put( "std_X" , decimalFormat_STAT.format(stdev.evaluate( dx ) ) );
-            table.put( "var_X" , decimalFormat_STAT.format(StatUtils.variance( dx ) ) );
-            table.put( "sum_X" , decimalFormat_STAT.format(StatUtils.sum( dx ) ) ) ;
-            */
 
             table.put( "max_Y" , decimalFormat_STAT.format(NumberUtils.max( dy ) ) );
             table.put( "min_Y" , decimalFormat_STAT.format(NumberUtils.min( dy ) ) );
@@ -987,7 +890,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
             
             if ( z == (bin-1) ) {
                double wert = summe/(double)bin;
-               //System.out.println( c+"#"+bin+"-"+ summe+"---" + wert);
                resultat.addValuePair( c , wert );
                summe = 0.0;
                z=-1;
@@ -1214,17 +1116,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
             mr.addValuePair( (double)i , (Double)yValues.elementAt(i) );
         }
         
-//        Set s = this.hashedValues.keySet();
-//        if ( s != null ) {
-//            Iterator it = s.iterator();
-//            for( int i = 0; i < limit; i++ ) {
-//                
-//                String key = (String)it.next();
-//                Double value = (Double)this.hashedValues.get(key);
-//                
-//                mr.hashedValues.put( key , value );
-//            }
-//        }
         return mr;
     }
         
@@ -1369,7 +1260,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         public TimeSeriesObject scaleX_2(double f) {
 
         TimeSeriesObject mr = new TimeSeriesObject();
-        //mr.setLabel( "x"+f );
         mr.binning = this.binning;
         mr.decimalFormat_STAT = this.decimalFormat_STAT;
         mr.decimalFormat_X = this.decimalFormat_X;
@@ -1412,14 +1302,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         this.label_X = xL;
     }
 
-//    public TimeSeriesObject add( TimeSeriesObject mr2 ) {
-//
-//        TimeSeriesObject mr = new TimeSeriesObject();
-//
-//        return mr;
-//
-//
-//    };
 
     /**
      * Averages the series pointwise over the length of the shortest series and keeps the x values of the first
@@ -1494,7 +1376,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         
         SimpleRegression regression = new SimpleRegression();
 
-        //System.out.println("[ " + x_min + ", " + x_max +" ] " );
         Vector<Double> x = new Vector<Double>();
         Vector<Double> y = new Vector<Double>();
         double m = 0.0;
@@ -1510,15 +1391,10 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
                double ax = x1;
                double ay = ((Double)yValues.elementAt(counter)).doubleValue();
                regression.addData( ax,ay) ;
-               //System.out.println(ax + " , " + ay );
            }
            counter++;
         }
 
-//
-//        System.out.println(regression.getIntercept());
-//        System.out.println(regression.getSlope());
-//        System.out.println(regression.getSlopeStdErr());
 
         return regression;
     }
@@ -1545,7 +1421,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
                     last = puffer;
                 }
                 catch( NoSuchElementException e ) { 
-  //                  mr.addValue(last);
                     c++;
                 }
             }
@@ -1850,7 +1725,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
             vp.x = d[0][i];
             vp.y = d[1][i];
             vps.add(vp);
-            // System.out.println( vp );
         }
         return vps;
     };
@@ -1878,7 +1752,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
      */
     public void shuffleYValues() {
         Collections.shuffle( this.yValues );
-        // System.out.println( "shuffeld ...");
         
     }
     
@@ -1910,7 +1783,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
            }
        }
 
-//       System.out.println( r.xValues.size() );
        return r;
     }
 
@@ -2012,7 +1884,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         while( it.hasNext() ) { 
             Date d = (Date)it.next();
             double v = dateHash.get( d );
-            //System.out.println( d + " ==> " + v );
             this.addValue( v );
         };
         
@@ -2026,7 +1897,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
             if ( now.after(begin) && now.before(end) ) l.add( now );
         };
         Collections.sort(l);
-        // System.out.println( l.size() );
         return l;
     }
 
@@ -2037,7 +1907,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
             l.add(s.nextElement());
         };
         Collections.sort(l);
-        // System.out.println( l.size() );
         return l;
     }
 
@@ -2047,7 +1916,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         for( Object o : yValues ) { 
             Double v = (Double)o;
             this.hashValueByDate( fd.getTime(), v);
-            // System.out.println( "DATE-MAPPER: " + fd.getTime().toString() + " ~~~~ >>> " + v );
             fd.add( Calendar.DAY_OF_MONTH, 1);        
         }
     }
@@ -2059,7 +1927,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
      * @param liste 
      */
     public void filterAndMapBack(List<Date> liste) {
-        // System.out.println( l );
         this.yValues = new Vector<Double>();
         this.xValues = new Vector<Double>();
         
@@ -2490,13 +2357,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         
         Hashtable rankTableRefValues = r2Ranked[1].getHashedByRank( r2Ranked[0] );
         
-//        // the resultseries
-//        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
-//        v.add( r2Ranked[0] );
-//        v.add( ranked );
-//        
-//        MultiChart.open(v, "RANK", 
-//                        "RANK(t)", "t", true, "");
         
         TimeSeriesObject rb = new TimeSeriesObject();
         rb.setLabel( "ReRanked_" + this.getLabel() + " with ampl. from " + refSeries.getLabel() );
@@ -2512,7 +2372,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
             // current value has rank ....
             double rankOfValueOriginal = (double)it.next();
             
-            // System.out.println( rankOfValueOriginal );
             
             // take value Y1 from referenz series with the same rank
             Double Y1 = (Double)rankTableRefValues.get( rankOfValueOriginal );
@@ -2533,7 +2392,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         while( l.get(i) < z ) {
             i++;
         }
-        // System.out.println( i + ": " + z );
         return i;
     }
     
@@ -2554,7 +2412,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         int i = 0;
         Iterator it = this.yValues.iterator();
         while( it.hasNext() ) { 
-           // System.out.print( i + " # " );
 
             double v = (double)it.next();
             r.addValuePair( i, getRank( l, v ));
@@ -2574,7 +2431,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     // for each value we store the value hashed by rank
     public Hashtable getHashedByRank( TimeSeriesObject values) {
         
-//        TimeSeriesObject check = new TimeSeriesObject();
         
         Hashtable t = new Hashtable();
         
@@ -2588,19 +2444,12 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
             
             double rank = (double)values.yValues.elementAt(i);
             
-//            check.addValuePair(val,rank);
             
             t.put( rank , val );
-            // System.out.println("R:" + rank + "\tV:" + val );
             i++;
             
         };
         
-//        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
-//        v.add( check );
-//        
-//        MultiChart.open(v, "RANK", 
-//                        "RANK", "VALUE_@_RANK", true, "");
         
         return t;
     }

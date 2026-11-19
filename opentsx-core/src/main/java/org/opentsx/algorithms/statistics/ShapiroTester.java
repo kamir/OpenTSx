@@ -22,7 +22,6 @@ public class ShapiroTester {
         
         double[] pV = Statistical.shapiroWilk(data); 
         
-        // pValues.add( pV[0] );
         return pV;
     }
     

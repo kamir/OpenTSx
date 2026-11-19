@@ -46,7 +46,6 @@ public interface IDetrendingMethod {
     public void initIntervalSlog();
     public void initIntervalS_FULL();
     
-//    public void initIntervalS_version3();
     public void initIntervalS_version4();
 
     /**

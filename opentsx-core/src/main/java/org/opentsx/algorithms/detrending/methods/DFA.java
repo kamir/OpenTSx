@@ -43,7 +43,6 @@ public class DFA extends DFACore {
                 if (para.getGradeOfPolynom() == 2) {
                     fit = fitn(pr_pos, pr_pos + valueofS-1,
                             para.getGradeOfPolynom());
-                    //fit = fit2(pr_pos,pr_pos+s[currentS]-1);
                 }
                 if (para.getGradeOfPolynom() > 2) {
                     fit = fitn(pr_pos, pr_pos + valueofS-1,
@@ -55,7 +54,6 @@ public class DFA extends DFACore {
                     mrFitN = new TimeSeriesObject();
                     mrFitN.setLabel(pr_pos + " - " + (pr_pos + valueofS));
                 }
-                //  System.out.print("\t\t(" + fit[0] + " " + fit[1] );
                 // sum of all (x-schlange)^2 ...
                 for (int x = pr_pos; x < pr_pos + valueofS; x++) {
 
@@ -64,15 +62,10 @@ public class DFA extends DFACore {
                     if (currentS == 8) {
                         mrFitN.addValuePair( x, fit_y);
                     }
-                    //System.out.print(x+", ");
                     double x_s = (pr[x] - fit_y);  //x~ = pr_value - fit_val
 
                     FS_sum += x_s * x_s; // x~^2;
                 }
-                if (currentS == 8) {
-                   // fitMR.add(mrFitN);
-                }
-
 
                 FS_sum = FS_sum / valueofS; // Zeilen durch Fensterbreite
 

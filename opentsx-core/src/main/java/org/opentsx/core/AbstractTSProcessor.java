@@ -12,7 +12,7 @@ import java.io.IOException;
  *
  * @author kamir
  */
-public abstract class AbstractTSProcessor implements TSProcessor {
+public abstract class AbstractTSProcessor {
     
     TSOperation operation = null;
 
@@ -38,25 +38,5 @@ public abstract class AbstractTSProcessor implements TSProcessor {
     abstract public void setFilter( String fn ) throws IOException;
     abstract public void initFilter() throws IOException;
     
-        /**
-     * Get an unique analysis run id from the 
-     * Metadatastore.
-     * 
-     * @return 
-     */
-    public String getRunID() { 
-        return null;
-    };
-
-    /**
-     * Store a link to the result set.
-     */
-    public void storeResultset( String resultSet ) { 
-    
-    };
-    
-    public void initMetaDataStore() { 
-    
-    };
     
 }

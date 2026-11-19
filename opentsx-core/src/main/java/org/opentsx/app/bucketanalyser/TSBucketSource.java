@@ -17,8 +17,6 @@ public class TSBucketSource {
     Properties parameters = new Properties();
     
     public TSBucketSource() {
-//        parameters.put("p1", "v1");
-//        parameters.put("p2", "v2");
     }
     
     public static TSBucketSource getSourceStockData( String s )  {

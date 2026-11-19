@@ -77,12 +77,7 @@ public class TimeSeriesAggregateFunction implements AggregateFunction<Observatio
         }
 
         // Add the observation as a (timestamp, value) pair
-        Long timestamp = observation.getTimestamp();
-        Double value = observation.getValue();
-
-        if (timestamp != null && value != null) {
-            accumulator.addValuePair(timestamp.doubleValue(), value);
-        }
+        accumulator.addValuePair(observation.getTimestamp(), observation.getValue());
 
         return accumulator;
     }

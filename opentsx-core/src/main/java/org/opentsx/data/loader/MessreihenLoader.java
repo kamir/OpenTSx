@@ -340,7 +340,6 @@ public class MessreihenLoader {
         }
         
         
-        //     private static void initBinWidth(double maxY) {
         for( int i = 0; i < maxY; i++ ) {
             int index = getBin(i, lowerBorder, conuterBin );
             widthOfBinCounted[index] = widthOfBinCounted[index] + 1; 
@@ -416,7 +415,6 @@ public class MessreihenLoader {
             double y = conuterBin[j] / widthOfBin[j];  // DEGREE DISTRIBUTION
             double y2 = conuterBin[j] / widthOfBinCounted[j]; // DENSITY OF THE TIME SERIES
             
-            // System.out.println(" >>> use: " +  x + " \t " + y + "\t --> " + conuterBin[j] + "\t" + conuterBin2[j] );
             
             mr.addValuePair(x, y2);
         }
@@ -434,7 +432,6 @@ public class MessreihenLoader {
     
         
     private static int getBin(double d, double[] lowerBorder, double[] conuterBin ) {
-        //System.out.print( "--- d=" + d );
         
         boolean notCorrectBin = true;
         
@@ -448,7 +445,6 @@ public class MessreihenLoader {
             }    
             z++;      
         }
-        //System.out.print( "bin=>" + b );
         
         return b;
     }

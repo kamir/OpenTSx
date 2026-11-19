@@ -299,7 +299,6 @@ public class ESCalc2 {
         String xLabel = "time";
         String yLabel = "event index";
         
-//        MultiChart.open(r , title , "time", "events" , true);
         op.storeChart(r, true, title, title + "_", xLabel, yLabel );
         op.storeChart(r, false, "", title, xLabel, yLabel );
 
@@ -337,7 +336,6 @@ public class ESCalc2 {
         String xLabel = "time";
         String yLabel = "nr of events";
         
-//        MultiChart.open(r , title , xLabel, yLabel , true);
         op.storeChart(r, true, title, title + "_", xLabel, yLabel );
         op.storeChart(r, false, "", title, xLabel, yLabel );
        
@@ -375,7 +373,6 @@ public class ESCalc2 {
             double tau = Collections.min( temp );
             tau = tau * 0.5;
             
-//            System.err.println( a + " " + b + " " + c + " " + d + " " + " --- " + tau );
             
             // here we need the event times ... not the distances
             

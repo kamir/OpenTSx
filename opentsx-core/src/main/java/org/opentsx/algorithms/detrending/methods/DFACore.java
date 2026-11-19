@@ -38,7 +38,6 @@ abstract public class DFACore implements IDetrendingMethod {
     public void initIntervalS() {
 
         int s_max = para.getN() / 4;
-//        int s_max = para.getN() ;
 
         int s_min = Math.abs( para.getGradeOfPolynom()) + 2;
 
@@ -243,7 +242,6 @@ abstract public class DFACore implements IDetrendingMethod {
             a = i;            
         }
         
-        //System.out.println();
     }
 
     /**
@@ -320,10 +318,6 @@ abstract public class DFACore implements IDetrendingMethod {
             double cov_xx = 1 / (N - 1) * (Sxx - Sx * Sx / N);
             double cov_yy = 1 / (N - 1) * (Syy - Sy * Sy / N);
             corr_coef = cov_xy / Math.sqrt(cov_xx * cov_yy); // calculation of corcoef from matlab
-//           System.out.println("alpha fit = " + fit[1] + " Corr = " + corr_coef);
-        } else {
-            // sb.append("min 3 values for linear fit");
-            // System.out.println(".");
         }
         return fit;
     }
@@ -363,13 +357,6 @@ abstract public class DFACore implements IDetrendingMethod {
         } else {
             status.append("min 4 values for quadratic fit");
         }
-//        if ( Double.isNaN( fit[0] ) ||  Double.isNaN( fit[1] ) ||  Double.isNaN( fit[2]  ) ) {
-//            System.out.println( delta + "\t" + S  + "\t" + Sx + "\t" + Sxx + "\t" + Sxxx + "\t" + Sxxxx + "\t" + Sy + "\t" + Sxy + "\t" + Sxxy + "\t" + Syy );
-//            fit[0] = 0;
-//            fit[1] = 5;
-//            fit[2] = 4;
-//
-//        }
         return fit;
     }
 
@@ -381,28 +368,6 @@ abstract public class DFACore implements IDetrendingMethod {
         fit[1] = 0.0;
         fit[2] = 0.0;
 
-//        polysolve.MatrixFunctions mfunct = new polysolve.MatrixFunctions();
-//
-//        int N = (o - u) + 1;  //# of fitable values
-//
-//        polysolve.Pair[] pData = new polysolve.Pair[N];
-//
-//        for (int i = 0; i < N; i++) {
-//            Pair paar = new polysolve.Pair();
-//            paar.x = i;
-//            paar.y = pr[u + i];
-//            pData[i] = paar;
-//        }
-//        double[] fit = mfunct.polyregress(pData, n);
-////
-////
-////         if ( Double.isNaN( fit[0] ) ||  Double.isNaN( fit[1] ) ||  Double.isNaN( fit[2]  ) ) {
-////            //System.out.println( delta + "\t" + S  + "\t" + Sx + "\t" + Sxx + "\t" + Sxxx + "\t" + Sxxxx + "\t" + Sy + "\t" + Sxy + "\t" + Sxxy + "\t" + Syy );
-////            fit[0] = 0;
-////            fit[1] = 5;
-////            fit[2] = 4;
-////
-////        }
 
         System.out.println( ">>> no polynomialfit at this time. Please implement it via ACM libs. " + DFACore.class.getCanonicalName() );
 
@@ -439,7 +404,6 @@ abstract public class DFACore implements IDetrendingMethod {
         double[] fit = instance.fit1(result[0], min, max);
         corr_coef = instance.getCorr_coef();
         alpha = fit[1];
-//        System.out.println(F[0][min] + " " + F[0][max]);
         alphaFitMin = F[0][min];
         alphaFitMax = F[0][max];
     }
@@ -448,9 +412,7 @@ abstract public class DFACore implements IDetrendingMethod {
         double a = 0;
         for ( int i = 0; i < terms.length ; i++) {
             a += terms[ i ] * Math.pow(posX, i);
-            //System.out.println( "posX=" + posX +"; i=" + i + ", a=" + "  " + a + "\t" );
         }
-//        if(debug) System.out.println("\ta=" + a );
         return a;
     }
 
@@ -483,51 +445,4 @@ abstract public class DFACore implements IDetrendingMethod {
 
 
 
-//
-//
-//        // kann erst berechnet werden, wenn das Parameter-Objekt vorliegt
-//    public void initIntervalS_version3() {
-//
-//        int s_start = Math.abs( para.getGradeOfPolynom() ) + 2 ;
-//        int s_end = para.getN();
-//
-//        //System.out.println( log_start > s_end );
-//        int lin_steps=para.log_start-s_start;//first steps linear
-//        int log_steps=0;
-//
-//        double tmp=0;
-//        for (double i=para.log_start*para.logScaleFactor; Math.round(i) < s_end; i=i*para.logScaleFactor) {//      adding number of steps of log scale
-//
-//            if(Math.round(i)!=tmp){
-//                tmp=Math.round(i);
-//                log_steps++;
-//            }
-//        }
-//        para.setzSValues(lin_steps+log_steps);
-//        s = new int[lin_steps+log_steps];
-//
-////        if ( s_end < log_start ) {
-////            log-s_start = s_end
-////        }
-//// else {
-//        // linearen Teil belegen
-//        for (int i =s_start; i<=para.log_start;i++) {
-//            s[i-s_start] = i;
-//        }
-//
-//        s[lin_steps]=para.log_start;
-//
-//        // log-Teil belegen
-//        double newS=s[lin_steps];
-//        for ( int step = 1; step < log_steps;) {
-//             newS=Double.parseDouble(String.valueOf(newS))*para.logScaleFactor;
-//             s[lin_steps+step] = Integer.parseInt(String.valueOf(Math.round(newS)));
-//             if(s[lin_steps+step] != s[lin_steps+step-1]) step++;
-//        }
-////
-////        for ( int i = 0; i < lin_steps+log_steps; i++ ) {
-////            System.out.println( "* " + i + " \t " + s[i] );
-////        }
-//        initF();
-//    }
 }

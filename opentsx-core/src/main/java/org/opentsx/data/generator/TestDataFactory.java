@@ -85,10 +85,6 @@ double  *x, a;
         for (s=anz; s>1; s/=2) {
            for (i=0; i<anz/s; i++) {
                
-//              itoz = (itoz+1) % 250;
-//              mz[itoz] = Math.pow( mz[itoz], mz[(itoz+103) % 250] );
-//              double d = mz[itoz]*dimax;
-//              boolean crit = d < 0.5;
 
               boolean crit = RNGWrapper.getStdRandomBernoulli();
               
@@ -169,10 +165,7 @@ double  *x, a;
     };
 
     /**
-     * Gleichverteilt
-     *
-     * StdRandom.uniform();
-     *
+     * Uniformly distributed values from RNGWrapper.getStdRandomUniform(-1, 1).
      */
     public static TimeSeriesObject getDataSeriesRandomValues2(int z ) {
         TimeSeriesObject mr = new TimeSeriesObject();
@@ -188,10 +181,7 @@ double  *x, a;
    
     
     /**
-     * Gaussverteilt
-     *
-     * StdRandom.gaussian();
-     *
+     * Gaussian values from RNGWrapper.getStdRandomGaussian(0.0, 2).
      */
     public static TimeSeriesObject getDataSeriesRandomValues3(int z ) {
         TimeSeriesObject mr = new TimeSeriesObject();
@@ -205,10 +195,7 @@ double  *x, a;
     };
 
     /**
-     * Java-Standard Zufallszahlen ...
-     *
-     * StdRandom.gaussian();
-     *
+     * Values from a new java.util.Random.
      */
     public static TimeSeriesObject getDataSeriesRandomValues_JAVA_CORE(int z ) {
         Random rand = new Random();

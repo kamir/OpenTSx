@@ -27,9 +27,6 @@ public class BucketAnalyserTool extends SimpleFilteredBucketTool {
     /**
      * containers are accessed directly ...
      */
-//    public static Vector<TimeSeriesObject> cont_PEAKS = new Vector<TimeSeriesObject>();
-//    public static Vector<TimeSeriesObject> cont_FS_NORMALIZED = new Vector<TimeSeriesObject>();
-//    public static Vector<TimeSeriesObject> cont_FS_RAW = new Vector<TimeSeriesObject>();
     
     
     public static final int mode_PEAKS = 0;
@@ -54,14 +51,12 @@ public class BucketAnalyserTool extends SimpleFilteredBucketTool {
             throw new IllegalArgumentException("Input folder does not exist or is not a directory: " + args[0]);
         }
 
-//       int mode = mode_RIS;
         int mode = mode_DFA;
         
         int proc_mode = procm_RECORD_STREAM ;
         
         TSBucket.useHDFS = false;
         
-//        int LIMIT = Integer.MAX_VALUE;
         int LIMIT = org.opentsx.tsbucket.BucketLoader.default_LIMIT;
         if (args.length == 6) {
             try {
@@ -76,7 +71,6 @@ public class BucketAnalyserTool extends SimpleFilteredBucketTool {
         
         TSBucketFileFilter tsbf = new TSBucketFileFilter();
         String filter = args.length >= 5 ? args[4] : "";
-//        String filter = "alpha_0.5";   
         
         tsbf.setFilter(filter);
 
@@ -115,9 +109,6 @@ public class BucketAnalyserTool extends SimpleFilteredBucketTool {
             }
                 
             case mode_MFDFA : { 
-                //        //  (c) - ??? JUST WORKS WITH DFA, not MFDFA
-                //        TSBucket.FN_EXT = "(MFDFA)";
-                //        tool = new BucketAnalyserTool( new tstool.simple.SingleTsMFDFATool( args ) );
                 
 
                 break;
@@ -184,9 +175,6 @@ public class BucketAnalyserTool extends SimpleFilteredBucketTool {
         }  
     
         
-//        MultiChart.open(cont_PEAKS, true, "Peaks");
-//        MultiChart.open(cont_FS_RAW, false, "FS raw");
-//        MultiChart.open(cont_FS_NORMALIZED, false, "FS normalized");
         
         
     }

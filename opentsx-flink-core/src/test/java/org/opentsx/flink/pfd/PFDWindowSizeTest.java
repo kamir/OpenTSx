@@ -168,7 +168,7 @@ class PFDWindowSizeTest {
         assertEquals(Long.MIN_VALUE, watermark.get());
         Observation observation = new Observation(boundary + tolerance, "fixture", 2.0);
         long timestamp = assigner.extractTimestamp(observation, -1);
-        assertEquals(observation.getTimestamp().longValue(), timestamp);
+        assertEquals(observation.getTimestamp(), timestamp);
         generator.onEvent(observation, timestamp, output);
         generator.onPeriodicEmit(output);
         assertEquals(boundary - 1, watermark.get());

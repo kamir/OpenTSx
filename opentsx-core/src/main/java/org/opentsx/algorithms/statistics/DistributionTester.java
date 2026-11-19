@@ -41,9 +41,6 @@ public class DistributionTester {
     
     public double[] testDataset( double[] data ) throws IOException { 
         double[] v = t.test(data);
-//        if ( debug ) { 
-//            System.out.println(">>> shapiro-test: " + v[0] + " " + v[1] );
-//        }
         if ( fw!=null ) { 
             fw.write(">>> shapiro-test: " + v[0] + " " + v[1] + "\n" );
         }

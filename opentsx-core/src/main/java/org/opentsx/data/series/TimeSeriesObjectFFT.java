@@ -790,55 +790,6 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
     
     }
 
-//    public void calcFFT(TimeSeriesObjectFFT aThis, TimeSeriesObject rFFT) {
-//        
-//        double[] data = aThis.getYData();
-//        data = extendToPowerOf2(data);
-//        
-//        
-//        FastFourierTransformer fft = new FastFourierTransformer();
-//
-//        Complex[] c = fft.transform(data);
-//
-//        double N = c.length;
-//
-//        double c0_R = c[0].getReal();
-//        double c0_I = c[0].getImaginary();
-//        System.out.println("c[0]= ( " + c0_R + ", i*" + c0_I + ")");
-//
-//        double cN1_R = c[1].getReal();
-//        double cN1_I = c[1].getImaginary();
-//        System.out.println("c[1]= ( " + cN1_R + ", i*" + cN1_I + ")");
-//
-//        double cN_R = c[(int) (N - 1.0D)].getReal();
-//        double cN_I = c[(int) (N - 1.0D)].getImaginary();
-//        System.out.println("c[N-1]= ( " + cN_R + ", i*" + cN_I + ")");
-//
-//        double caNN_R = c[((int) (N / 2.0D) - 1)].getReal();
-//        double caNN_I = c[((int) (N / 2.0D) - 1)].getImaginary();
-//        System.out.println("c[N/2  -  1]= ( " + caNN_R + ", i*" + caNN_I + ")  ");
-//
-//        double cNN_R = c[(int) (N / 2.0D)].getReal();
-//        double cNN_I = c[(int) (N / 2.0D)].getImaginary();
-//        System.out.println("c[N/2]= ( " + cNN_R + ", i*" + cNN_I + ")  [Nyquist component]");
-//
-//        double cbNN_R = c[((int) (N / 2.0D) + 1)].getReal();
-//        double cbNN_I = c[((int) (N / 2.0D) + 1)].getImaginary();
-//        System.out.println("c[N/2  +  1]= ( " + cbNN_R + ", i*" + cbNN_I + ")  ");
-//
-//        double fmax = c0_R;
-//        double fmin = 0.5D;
-//
-//        double df = N / 6283.1853071795858D;
-//
-//        System.out.println("> N=" + N + "; \n>f_max=" + fmax + "; \n>f_min=" + fmin + "; \n>df=" + df);
-//
-//        for (int i = 1; i < (int) N / 2; i++) {
-//            double omega = c0_R / 1000.0D * (i * df);
-//
-//            rFFT.addValuePair(i * df, c[i].getReal());
-//        }
-//    }
     
     static public void debugComplexSeries( Complex[] c, String label ) {
         
@@ -890,7 +841,6 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         
         double N = c.length;
         
-        // debugComplexSeries( c , "initial transform" );
  
         double c0_R = c[0].getReal();
         double c0_I = c[0].getImaginary();
@@ -964,7 +914,6 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
      */
     private void calc_modified_FF(TimeSeriesObjectFFT aThis, TimeSeriesObject rFFT, double beta, double samplingRate) {
         
-//        debug = true;
         
         double[] data = aThis.getYData();
         
@@ -1008,11 +957,6 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         for (int i = 0; i < N_Original; i++) {
             rFFT.addValuePair(i, modData[i].getReal());
         }
-//        
-//        if( debug ) {
-//            TimeSeriesObjectFFT.debugComplexSeries(modCOMPLEX, beta + " : modified complex coefficients" );
-//            TimeSeriesObjectFFT.debugComplexSeries(modData, beta + " : transformed values" );
-//        }
     }
 
     public static boolean debug = false;
@@ -1035,7 +979,6 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         i++;
         int z_max = (int) Math.pow(2.0D, i * 1.0D);
 
-        //if ( debug ) 
         
         System.out.println("l=" + i + " z_min=" + z_min + " z_max=" + z_max + " padded with 0.0: " + (z_max - z));
         
@@ -1081,56 +1024,5 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         return rFFT;
         
     }
-
-
-
-//    /**
-//     * Introduces a slope change in the spectrum.
-//     * 
-//     * @param aThis
-//     * @param rFFT
-//     * @param beta 
-//     */
-//    private void calc_modified_FFT2(TimeSeriesObjectFFT aThis, TimeSeriesObject rFFT, double beta) {
-//        double[] data = aThis.getYData();
-//        data = extendToPowerOf2(data);
-//        FastFourierTransformer fft = new FastFourierTransformer( DftNormalization.STANDARD );
-//
-//        Complex[] c = fft.transform(data, TransformType.FORWARD );
-//        Complex[] mod = new Complex[c.length];
-//
-//        double N = c.length;
-//
-//        double c0_R = c[0].getReal();
-//        double c0_I = c[0].getImaginary();
-//
-//        double cf_R = c[(data.length - 1)].getReal();
-//        double cf_I = c[(data.length - 1)].getImaginary();
-//
-//        double f0 = c0_R;
-//        double df = N / 6283.1853071795858D;
-//
-//        System.out.println( "Number of coefficients: " +  c.length ) ;
-//        
-//        
-//        for (int i = 1; i < c.length; i++) {
-//            double f = i * df;
-//            double factor = Math.pow(f, -0.5D * beta);
-//            
-//            if ( i < 4000 ) 
-//                mod[i] = c[i].multiply(factor);
-//            else 
-//                mod[i] = c[i];
-//        }
-//
-//        mod[0] = new Complex(0.0D, 0.0D);
-//
-//        FastFourierTransformer fft2 = new FastFourierTransformer( DftNormalization.STANDARD );
-//        Complex[] modData = fft2.transform(mod, TransformType.INVERSE);
-//
-//        for (int i = 0; i < c.length; i++) {
-//            rFFT.addValuePair(i, modData[i].getReal());
-//        }
-//    }
 
 }

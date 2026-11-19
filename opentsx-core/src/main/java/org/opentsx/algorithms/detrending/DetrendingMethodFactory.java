@@ -4,6 +4,7 @@ package org.opentsx.algorithms.detrending;
 
 import org.opentsx.algorithms.detrending.methods.DFA;
 import org.opentsx.algorithms.detrending.methods.DFAParameter;
+import org.opentsx.algorithms.detrending.methods.DFAmulti;
 import org.opentsx.algorithms.detrending.methods.IDetrendingMethod;
 import org.opentsx.algorithms.detrending.methods.MFDFA;
 
@@ -59,4 +60,12 @@ public class DetrendingMethodFactory {
         m.setPara(para);
         return (IDetrendingMethod)m;
     };
+
+    public static DFAmulti getDFAmulti( int grad ) {
+        DFAmulti m = new DFAmulti();
+        DFAParameter para = (DFAParameter) m.initParameter();
+        para.setGradeOfPolynom( grad );
+        m.setPara(para);
+        return m;
+    }
 }

@@ -42,8 +42,6 @@ import java.io.*;
 import java.text.DecimalFormat;
 import java.util.Hashtable;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Mirko Kaempf
@@ -158,60 +156,6 @@ public class TSBucket {
     }
 
     /**
-     * Writes the files of the folder groupFolder in sourceFolder into the bucket groupFolder.tsb.vec.seq without
-     * retaining it in memory.
-     *
-     * @param sourceFolder
-     * @param groupFolder
-     * @param limit
-     *
-     */
-    public void createBucketFromLocalFilesInDirectory(String sourceFolder, String groupFolder, int limit) throws IOException {
-
-        LIMIT = limit;
-        String s = groupFolder;
-
-        File f = new File(sourceFolder, s);
-
-        System.out.println("--> load data from ($source/$group) : " + f.getAbsolutePath());
-
-        File[] files = f.listFiles();
-        if (files == null) {
-            throw new IOException(f + ": cannot list the files; expected a readable folder");
-        }
-
-        Configuration config = initConfig();
-        FileSystem fs = initFileSystem();
-
-        Path path = new Path(s + ".tsb.vec.seq");
-        System.out.println("--> create bucket : " + path.toUri().toString());
-
-        // write a SequenceFile form a Vector
-        SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
-
-        System.out.println(files.length);
-        System.out.println("--> process bucket : " + f.getAbsolutePath() + " (" + files.length + ")");
-
-        int c = 0;
-        for (File file : files) {
-            c++;
-            if (c < LIMIT) {
-                TSData data = new TSData(file);
-                System.out.println("(" + c + ")");
-                NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
-                VectorWritable vec = new VectorWritable();
-                vec.set(nv);
-
-                writer.append(new Text(nv.getName()), vec);
-            }
-            if (c % 10000 == 0) {
-                System.out.println(c);
-            }
-        }
-        writer.close();
-    }
-
-    /**
      * Reload a TSBucket from a Sequence-File and do an implicit processing, if
      * the TSOperation object is not null.
      *
@@ -243,7 +187,6 @@ public class TSBucket {
             System.out.println("--> key-classename    : " + reader.getKeyClassName());
             System.out.println("--> value-classname   : " + reader.getValueClassName());
 
-            // TSBucket.setRecordMode( "page-id" );
             TSBucket.setRecordMode("counter");
 
             int i = 1;
@@ -284,7 +227,6 @@ public class TSBucket {
                 while (c < vector.size()) {
 
                     double value = vector.get(c);
-                    //System.out.println( c + "\t" + value  );
 
                     mr.addValue(value);
 
@@ -309,7 +251,6 @@ public class TSBucket {
                     bucketData.add(mr);
                 }
 
-                //System.out.println( code + "\t" + mr.getLabel() + "\t" + mr.xValues.size() + "\t" + mr.summeY() );
             }
             System.out.println("--> nr of records     : " + (i - 1));
         }
@@ -328,16 +269,6 @@ public class TSBucket {
             config = new Configuration();
         }
 
-        /*
-
-        config.set("fs.hdfs.impl",
-                org.apache.hadoop.hdfs.DistributedFileSystem.class.getName()
-        );
-        config.set("fs.file.impl",
-                org.apache.hadoop.fs.LocalFileSystem.class.getName()
-        );
-
-        */
 
         return config;
     }
@@ -377,7 +308,6 @@ public class TSBucket {
                 int i2 = a.indexOf(".nrv.h.dat");
 
                 String b = a.substring(0, i2);
-                // System.out.append( b + " " + t );
                 return Integer.parseInt(b);
 
             } else {
@@ -621,8 +551,8 @@ public class TSBucket {
 
         for (int i = 0; i < ANZ; i++) {
 
-            double fre = RNGWrapper.getStdRandomUniform(fMIN, fMAX);  // stdlib.StdRandom.uniform(fMIN, fMAX);
-            double ampl = RNGWrapper.getStdRandomUniform(aMIN, aMAX); // stdlib.StdRandom.uniform(aMIN, aMAX);
+            double fre = RNGWrapper.getStdRandomUniform(fMIN, fMAX);
+            double ampl = RNGWrapper.getStdRandomUniform(aMIN, aMAX);
 
             TimeSeriesObject mr = TSGenerator.getSinusWave(fre, time, SR, ampl, ""+i, unit );
 
@@ -979,8 +909,6 @@ public class TSBucket {
             
         }
         
-//        for( String w : idfs.keySet() )
-//            System.out.println( "[" + w + "] " + " => " + idfs.get(w) );
         
         System.out.println(" DONE PART 1" );
 
@@ -1108,21 +1036,6 @@ public class TSBucket {
             mr.addValue(value);
 
             c++;
-        }
-        try {
-
-                /*
-
-                TimeSeriesObject m = null;
-                if (tst != null) {
-                    m = tst.processReihe(fw, mr, fwe);
-                }
-
-                 */
-
-        }
-        catch (Exception ex) {
-            Logger.getLogger(TSBucket.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         if (inMEM) {

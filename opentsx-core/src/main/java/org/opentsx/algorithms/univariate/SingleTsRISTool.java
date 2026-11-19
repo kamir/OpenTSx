@@ -27,7 +27,6 @@ public class SingleTsRISTool extends SingleRowTSO {
 
     public void init() {
          
-//         ReturnIntervallStatistik2.initRqMIN();
          ReturnIntervallStatistik2.initRqCollectors();
          
          risCollector = new ReturnIntervallStatistik2("RISdata");
@@ -93,7 +92,6 @@ public class SingleTsRISTool extends SingleRowTSO {
         // create interevent time series ... on the way ...
         // set data
         rr1._addData( r.yValues, vRQ1 );        
-//        rr1.calcMessreihen();
         
         if ( debugViews < maxDebugViews ) {
             rr1.showData();
@@ -105,16 +103,6 @@ public class SingleTsRISTool extends SingleRowTSO {
 
 
 
-//        if (scaleRQ) {
-//            linFitMIN = linFit_MIN * vRQ;
-//            linFitMAX = linFit_MAX * vRQ;
-//            //System.out.println( "( " + linFit_MIN + ", " + linFit_MAX + ") ");
-//
-//        } else {
-//            linFitMIN = linFit_MIN;
-//            linFitMAX = linFit_MAX;
-//            //System.out.println( "( " + linFitMIN + ", " + linFitMAX + ") ");
-//        };
  
 
         line = line + "\t" + vRQ1 + "\t"; //  + vRQ2 + "\t" + vRQ3;
@@ -126,27 +114,6 @@ public class SingleTsRISTool extends SingleRowTSO {
          * bestimmen !!!
          *
          */
-//        TimeSeriesObject toFit = rr.mrHaeufigkeit.shrinkX(linFit_MIN, linFit_MAX);
-//
-//        SimpleRegression reg;
-//        try {
-//            reg = toFit.linFit(linFit_MIN, linFit_MAX);
-//
-//            double slope = reg.getSlope();
-//            double RR = reg.getRSquare();
-//
-//            System.out.println("m=" + slope + " \tRR=" + RR);
-//
-//
-//
-////            tTEST_DATA[i][j][1] = slope;
-////            tTEST_DATA[i][j][2] = RR;
-////            all.add(toFit);
-//
-//            ris.add(rr);
-//        } catch (Exception ex) {
-//            Logger.getLogger(RISAnalyse3.class.getName()).log(Level.SEVERE, null, ex);
-//        }
 
         try {
             fw.write(r.getLabel() + "\t" + line + "\n");

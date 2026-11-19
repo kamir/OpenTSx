@@ -16,7 +16,6 @@ public class MFDFAAnalyzer {
     
     public static void process(Vector<TimeSeriesObject> rows, String runid ) throws Exception {
         
-        // MultiChart.open(rows, true );
         
         String folder = runid;
         
@@ -37,10 +36,6 @@ public class MFDFAAnalyzer {
         for( TimeSeriesObject m : rows ) {
 
             z++;
-//            
-//            // faster for tests;
-//            if ( z > 1 ) 
-//                return;
                     
             int order = dfa.getPara().getGradeOfPolynom();
             dfa.getPara().setzSValues( 1000 );
@@ -114,10 +109,7 @@ public class MFDFAAnalyzer {
         /**
          * We have lots of them ...
          */
-        // String randNrType = "StdCauchy";
         String randNrType = "RandomWalk";
-//        String randNrType = "Uniform";
-//        
         TimeSeriesObject rBMM1 = getTestDataToWorkWith( randNrType, N );
  
         boolean showLines = false;
@@ -200,8 +192,6 @@ public class MFDFAAnalyzer {
                 mwt.addMessreihe(mr5);
                 mwtH.addMessreihe(mr_q);
 
-                //        k.add(dfa.getZeitreiheMR());
-                //        k.add(dfa.getProfilMR());
 
                 String status = dfa.getStatus();
                 double[][] results = dfa.getResults();
@@ -218,7 +208,6 @@ public class MFDFAAnalyzer {
         if ( showPlot )
             MultiChart.open(v, rBMM1.getLabel() + " " + "F(s,q) " + randNrType, "log(s)", "log(F(s))", true, calcLog.toString(), null);
         
-        //MultiChart.open(k, "Kontrolldaten", "t", "y(t)", false, "?");
 
         // --- END od processing ---
         return v;
@@ -235,12 +224,7 @@ public class MFDFAAnalyzer {
  
             // (a) - monofractal series of random numbers
             TimeSeriesObject rBMM1 = (TimeSeriesObject) TestDataFactory.getDataSeriesRandomValues_RW( N );   // RANDOM WALK
-//            TimeSeriesObject rBMM1 = (TimeSeriesObject) TestDataFactory.getDataSeriesRandomValues2( N );     // Gleichverteil
 
-            
-            // (b) - multifractal series of random numbers
-//            TimeSeriesObject rBMM1 = (TimeSeriesObject) TestDataFactory.getDataSeriesBinomialMultifractalValues( N , 0.75 );
-//            TimeSeriesObject rBMM1 = (TimeSeriesObject) TestDataFactory.getDataSeriesRandomValues_Cauchy( N ); // Cacuhy Verteilung
             
             return rBMM1;
             

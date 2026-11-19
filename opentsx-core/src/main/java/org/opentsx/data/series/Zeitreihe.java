@@ -48,7 +48,6 @@ public class Zeitreihe extends TimeSeriesObject {
             
             i = i+1;
         }
-        //System.out.println( zr.toString() );
         return zr;
                 
     }
@@ -198,7 +197,6 @@ public class Zeitreihe extends TimeSeriesObject {
 
             if ( hour > lastHour ) {
 
-               //  mr.addValuePair(1.0 * lastHour, 1.0*counter);
 
                 lastHour = hour;
                 counter = 1;
@@ -208,15 +206,8 @@ public class Zeitreihe extends TimeSeriesObject {
             }
         }
 
-//        TimeSeriesObject mr2 = new TimeSeriesObject();
-//        // nun liegen die COUNTS per day vor ... aber ohne der Werte
-//        // an denen keine Counts waren ...
-//        for( int i = 0; i < mr.getMaxX() ; i++ ) {
-//            mr2.addValuePair(i, mr.getYValueForX(i) );
-//        };
 
         this.countedEvents_h = mr;
-      //  this.nrOfEvents_over_t_h = mr2;
     }
 
 

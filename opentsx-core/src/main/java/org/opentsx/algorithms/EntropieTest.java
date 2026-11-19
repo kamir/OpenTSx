@@ -98,15 +98,6 @@ public class EntropieTest {
         ContextRecorder.recordParameters("noise", noise);
         ContextRecorder.resetSubLabel();
 
-//        // EXP 2
-//        label_of_EXPERIMENT = "EXP2";
-//        double[] f = {2, 2, 2, 6, 12, 24};  // frequency
-//        double[] a = {5, 3, 8, 2, 1, 5};                  // amplitude 
-//        double[] phase = {0.0, 0.5, 0.25, 0.0, 0.0, 0.0};   // phase
-//        double[] noise = {1.0, 0.5, 20.0, 0.0, 0.0, 0.0};  // noise level
-//        // EXP 3
-//        label_of_EXPERIMENT = "EXP3";
-//        samplingRate = 1.0 / (24 * 3600);
         doDFA = false;
         SCATTERPLOT = true;
         SCATTERPLOT_AUTO_SAVE = false;
@@ -118,7 +109,6 @@ public class EntropieTest {
         //
         // To build a time series with N components we need a container to hold 
         // components.
-        //       int N = f.length;
         Vector<TimeSeriesObject> components = new Vector<TimeSeriesObject>();
 
         // final series - additive superposition of components
@@ -156,22 +146,6 @@ public class EntropieTest {
         int windowSize = 20;
         int shuffles = 1;
 
-//        // Here we calculate the Entropy for a sliding Window ...
-//        // in unshuffled data
-//        Vector<TimeSeriesObject> slidingWindowResults = new Vector<TimeSeriesObject>();
-//        for (TimeSeriesObject comp : components) {
-//
-//            TimeSeriesObject mm = comp.copy();
-//
-//            mm.shuffleYValues(shuffles);
-//            mm.labelWithEntropy();
-//
-//            shuffledComponents.add(mm);
-//
-//            slidingWindowResults.add(comp.calcEntropyForWindow(windowSize));
-//        }
-//        MultiChart.open(shuffledComponents, true, "Shuffeled (N=" + shuffles + ")");
-//        MultiChart.open(slidingWindowResults, true, "H for sliding window ("+windowSize+")");
         // DFA ...
         applyDFA(components, "RAW components  ");
         applyDFA(shuffledComponents, "SHUFFLED components   ");
@@ -180,9 +154,6 @@ public class EntropieTest {
 
         // Analyse the Transfer Entropy and Mutual Information
         System.out.println("BINS;JIDT.TE (mr1,mr2,5);JavaMI.Entropy(mr1);JavaMI.Entropy(mr2);JIDT.MI(mr1,mr2);JavaMI.MI(mr1,mr2),ACM3.cc(mr1,mr2)");
-//        calcTEandMI(components.elementAt(0) , mix , dig);
-//        calcTEandMI(components.elementAt(1) , mix , dig);
-//        calcTEandMI(components.elementAt(2) , mix , dig);
 
         TimeSeriesObject mrPROBE1 = new TimeSeriesObject();
         TimeSeriesObject mrPROBE2 = new TimeSeriesObject();
@@ -198,7 +169,6 @@ public class EntropieTest {
 
             Vector<TimeSeriesObject> comp = new Vector<TimeSeriesObject>();
 
-//            for (TimeSeriesObject m : components) {
             TimeSeriesObject mm = components.elementAt(0).cutOut(0, i);
             TimeSeriesObject mmm = components.elementAt(1).cutOut(0, i);
 
@@ -209,8 +179,6 @@ public class EntropieTest {
             comp.add(mm);
             comp.add(mmm);
 
-//                System.out.println( ">>> chop ... " + i );
-//            }
             if (i == samplingRate) {
                 SCATTERPLOT = true;
             } else {
@@ -218,46 +186,11 @@ public class EntropieTest {
             }
 
             calcTEandMI(comp.elementAt(0), comp.elementAt(1), dig, "r0", "r1", mrPROBE1, mrPROBE2, i);
-//            calcTEandMI(comp.elementAt(1), comp.elementAt(0), dig, "r1", "r0");
-//            calcTEandMI(comp.elementAt(1), comp.elementAt(1), dig, "r1", "r1");
-//            calcTEandMI(comp.elementAt(0), comp.elementAt(0), dig, "r0", "r0");
 
         }
-//        
-//        for (int i = 1000; i < 6000; i = i + 100) {
-//
-//            System.out.print( i + "\t" );
-//
-//            Vector<TimeSeriesObject> comp = new Vector<TimeSeriesObject>();
-//
-//            
-////            for (TimeSeriesObject m : components) {
-//
-//                TimeSeriesObject mm = components.elementAt(0).cutFromStart(i);
-//                TimeSeriesObject mmm = components.elementAt(1).cutFromStart(i);
-//
-//                comp.add(mm);
-//                comp.add(mmm);
-//                
-////                System.out.println( ">>> chop ... " + i );
-//
-////            }
-//            calcTEandMI(comp.elementAt(0), comp.elementAt(1), dig, "r0", "r1", mrPROBE1, mrPROBE2, i );
-////            calcTEandMI(comp.elementAt(1), comp.elementAt(0), dig, "r1", "r0");
-////            calcTEandMI(comp.elementAt(1), comp.elementAt(1), dig, "r1", "r1");
-////            calcTEandMI(comp.elementAt(0), comp.elementAt(0), dig, "r0", "r0");
-//            
-//            if ( SCATTERPLOT == true ) SCATTERPLOT = false;
-//
-//
-//        }
 
         MultiChart.open(prob, subLabel, "length", "MI and CC", true, ContextRecorder.sb.toString(), null);
 
-//        calcTEandMI(components.elementAt(3) , mix , dig);
-//        calcTEandMI(components.elementAt(4) , mix , dig);
-//        calcTEandMI(components.elementAt(5) , mix , dig);
-//        calcTEandMI(mix , mix , dig);
         /**
          * SECTION 2
          */
@@ -278,8 +211,6 @@ public class EntropieTest {
         mrv3.add(mrTE_i_PHASE_RANDOMISATION);
 
         int i = 1;
-//        for( int i = 0; i < 1000; i = i + 1 ) {
-//          
 
         // simple randomisation
         TimeSeriesObject m2 = mix.copy();
@@ -302,44 +233,11 @@ public class EntropieTest {
         mrv2.add(m3);
         mrv2.add(m4);
 
-//            MultiChart.open(mrv2, true);
         applyDFA(mrv2, "<<< RAW, Shuffled, PHRand.MULTIPLY, PHRand.SHUFFLE >>> ");
 
         System.out.println();
         System.out.println("mr and m2");
 
-//            calcTEandMI(mix , m2 , dig);
-//            calcTEandMI(m2 , mix , dig);
-//            calcTEandMI( m2 , m2 , dig);
-//            calcTEandMI(mix , mix , dig);
-//            calcTEandMI(mix , m3 , dig);
-//            calcTEandMI(m3 , mix , dig);
-//            calcTEandMI( m3 , m3 , dig);
-//            
-//            calcTEandMI(mix , m4 , dig);
-//            calcTEandMI(m4 , mix , dig);
-//            calcTEandMI( m4 , m4 , dig);
-//            // VARIATION OF LENGTH ...
-//            for ( i = 1; i < 5; i++ ) {
-//
-//                System.out.println("\n\n"+(i*1000)+"\n");
-//    
-//                TimeSeriesObject mA = mrv.elementAt(0).cutFromStart( i * 1000 );
-//                TimeSeriesObject mB = mrv.elementAt(1).cutFromStart( i * 1000 );
-//                TimeSeriesObject mC = mrv.elementAt(2).cutFromStart( i * 1000 );
-//                TimeSeriesObject mD = mrv.elementAt(3).cutFromStart( i * 1000 );
-//                TimeSeriesObject mE = mrv.elementAt(4).cutFromStart( i * 1000 );
-//                TimeSeriesObject mF = mrv.elementAt(5).cutFromStart( i * 1000 );
-//                TimeSeriesObject mG = mr.cutFromStart( i * 1000 );
-//
-//                calcTEandMI( mA , mB , dig);
-//                calcTEandMI( mA , mC , dig);
-//                calcTEandMI( mA , mD , dig);
-//                calcTEandMI( mA , mE , dig);
-//                calcTEandMI( mA , mF , dig);
-//                calcTEandMI( mA , mG , dig);
-//                
-//            }
     }
 
     static boolean doDFA = false;
@@ -379,7 +277,6 @@ public class EntropieTest {
             dfa.setNrOfValues(N);
 
             // die Werte für die Fensterbreiten sind zu wählen ...
-            //dfa.initIntervalS();
             dfa.initIntervalSlog();
 
             dfa.showS();
@@ -406,8 +303,6 @@ public class EntropieTest {
             DecimalFormat df = new DecimalFormat("0.000");
             MultiChart.open(v, label + " fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", true, "???", null);
 
-//                System.out.println(" alpha = " + df.format(alpha));
-//                System.out.println("       = " + ((2 * alpha) - 1.0));
         }
     }
 
@@ -429,7 +324,6 @@ public class EntropieTest {
             singleDebug = false;
         }
 
-        // double v1 = JavaMI.MutualInformation.calculateMutualInformation(mr1.getYData(), mr2.getYData());
         double v1 = 0.0;
 
         /**
@@ -466,10 +360,6 @@ public class EntropieTest {
             MyXYPlot.setYRange(mr2);
 
             MyXYPlot plot = MyXYPlot.openAndGet(v, l1 + "_vs_" + l2, mr1.getLabel(), mr2.getLabel(), true);
-
-            if (SCATTERPLOT_AUTO_SAVE) {
-//                plot.fileControlerPanel.save();
-            }
         }
 
         // CLEAN RESULTLINE

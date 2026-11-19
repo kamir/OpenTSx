@@ -147,8 +147,6 @@ public class MeasurementTable {
         String headline = "#X" + "\t";
 
         TimeSeriesObject mr = en.nextElement();
-        // sb.append("\n# " + mr.getLabel() + " [" + mr.xValues.size() +","+ mr.yValues.size() +"] Werte" );
-        //headline = headline.concat( mr.getLabel_X() +"\t" + mr.getLabel_Y() +"\t" );
 
 
         Set<Integer> s = keyedHash.keySet();
@@ -176,13 +174,11 @@ public class MeasurementTable {
                 headline = headline.concat(mr.getLabel_X() + "\t" + mr.getLabel_Y() + "\t");
             }
 
-            // size = mr.yValues.size();
         }
 
         sb.append("\n#\n#\n");
         sb.append(headline + "***\n");
 
-        // DecimalFormat df = new DecimalFormat("0.00000E00");
         DecimalFormat df = new DecimalFormat("0,00");
 
         TimeSeriesObject longest = getLogestRow(this.messReihen);
@@ -197,7 +193,6 @@ public class MeasurementTable {
                 try {
                     x = (Double) longest.getXValues().elementAt(i);
                 } catch (Exception ex) {
-                    // x = 0.0;
                 }
 
                 try {
@@ -267,8 +262,6 @@ public class MeasurementTable {
         String headline = "";
 
         TimeSeriesObject mr = en.nextElement();
-        //sb.append("\n# " + mr.getLabel() + " [" + mr.xValues.size() +","+ mr.yValues.size() +"] Werte" );
-        //headline = headline.concat( mr.getLabel_X() +"\t" + mr.getLabel_Y() +"\t" );
 
         Set<Integer> s = keyedHash.keySet();
         List l = new ArrayList();
@@ -297,7 +290,6 @@ public class MeasurementTable {
                 headline = headline.concat(mr.getLabel_X() + "\t" + mr.getLabel_Y() + "\t");
             }
             col++;
-            // size = mr.yValues.size();
         };
 
         sb.append("\n#\n#\n#");
@@ -319,7 +311,6 @@ public class MeasurementTable {
                 try {
                     x = (Double) longest.getXValues().elementAt(i);
                 } catch (Exception ex) {
-                    // x = 0.0;
                 };
 
                 try {
@@ -391,9 +382,6 @@ public class MeasurementTable {
         return s;
     }
 
-//    public String[] getHeaders() {
-//        throw new UnsupportedOperationException("Not yet implemented");
-//    }
 
     public double[][] getDataArray() {
         return null;
@@ -409,13 +397,6 @@ public class MeasurementTable {
 
     private Integer calcKey(TimeSeriesObject m, int lastKey) {
         Integer key = lastKey;
-//        try {
-//            Integer i = new Integer( m.getLabel() );
-//            key = i;
-//        } 
-//        catch(Exception ex) { 
-//        
-//        }    
         return key;
     }
 

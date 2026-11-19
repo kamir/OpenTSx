@@ -93,7 +93,6 @@ public class FFTPhaseRandomizer {
         
         boolean showTest = true;
 
-        // initilize the stdlib.StdRandom-Generator
         RNGWrapper.init();
 
         // prepare some data structures
@@ -110,7 +109,6 @@ public class FFTPhaseRandomizer {
         alphas = new double[Z][LOOPS];
         betas = new double[Z]; 
 
-        // double[] alphas = { 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3 };  
 
         int c = 0;
         for( int i=0; i < Z; i++ ) {
@@ -148,7 +146,6 @@ public class FFTPhaseRandomizer {
         
         alphasCALC.setLabel("CALC");
         alphasTHEO.setLabel("Theorie");
-        // check.add( alphasCALC );
         check.add( alphasTHEO );
         
         calcErrorChart( alphas, numberOfBeta, numberOfLoop, 100.0 );
@@ -182,7 +179,7 @@ public class FFTPhaseRandomizer {
      * A random time series of length N with a Gaissian distribution
      * is generated.
      * 
-     * see also:   stdlib.StdRandom.gaussian()
+     * see also:   RNGWrapper.getStdRandomGaussian()
      *
      * 
      * @return time series
@@ -264,84 +261,10 @@ public class FFTPhaseRandomizer {
             
         };
         
-        // debugRows(runDFA, ts, N, temp, testZaehler, showTest, df);
 
-        // System.out.println( temp.yValues.size() + " " + temp.getLabel() );
         return temp;
     }
     
-//    /**
-//     * The procedure creates a surrogate data with the same correlation properties as the original signal. Following the procedure, one performs a Fourier transform on the original time series, preserving the Fourier amplitudes but randomizing the Fourier phases. Finally, one performs an inverse Fourier transform to create surrogate data.
-//     * 
-//     * A more detailed explanation from Podobnik, B., Fu, D. F., Stanley, H. E., & Ivanov, P. C. (2007). Power-law autocorrelated stochastic processes with long-range cross-correlations. The European Physical Journal B, 56(1), 47-52.:
-//     * 
-//     * So, the original paper that describes the method is the following: Theiler, J., Eubank, S., Longtin, A., Galdrikian, B., & Doyne Farmer, J. (1992). Testing for nonlinearity in time series: the method of surrogate data. Physica D: Nonlinear Phenomena, 58(1), 77-94. As the title suggests, it is a test of nonlinearity in time series. As the abstract of the paper explains:
-//     *
-//     * The method first specifies some linear process as a null hypothesis, then generates surrogate data sets which are consistent with this null hypothesis, and finally computes a discriminating statistic for the original and for each of the surrogate data sets. If the value computed for the original data is significantly different than the ensemble of values computed for the surrogate data, then the null hypothesis is rejected and nonlinearity is detected.
-//     * 
-//     * @param row
-//     * @param showTest
-//     * @param runDFA
-//     * @param testZaehler
-//     * @return
-//     * @throws Exception 
-//     */
-//    public static TimeSeriesObject getPhaseRandomizedRow_SHUFFLE_PHASE(
-//            TimeSeriesObject row, boolean showTest, boolean runDFA, int testZaehler ) throws Exception {
-//
-//        DecimalFormat df = new DecimalFormat("0.000");
-//        
-//        int N = row.yValues.size();
-//
-//        double[] zr = new double[N];
-//
-//        TimeSeriesObjectFFT fftROW = TimeSeriesObjectFFT.convertToMessreiheFFT(row);
-//        
-//        //
-//        // The manipulation is done here ...
-//        //
-//        TimeSeriesObjectFFT temp = fftROW.getPhaseRandomizedModifiedFFT_SHUFFLED_INV();
-//
-//        debugRows(runDFA, row, N, temp, testZaehler, showTest, df);
-//        
-//        // System.out.println( temp.yValues.size() + " " + temp.getLabel() );
-//        return temp;
-//    }
-
-//    /**
-//     * The procedure creates a surrogate data with the same correlation properties as the original signal. Following the procedure, one performs a Fourier transform on the original time series, preserving the Fourier amplitudes but randomizing the Fourier phases. Finally, one performs an inverse Fourier transform to create surrogate data.
-//     * 
-//     * A more detailed explanation from Podobnik, B., Fu, D. F., Stanley, H. E., & Ivanov, P. C. (2007). Power-law autocorrelated stochastic processes with long-range cross-correlations. The European Physical Journal B, 56(1), 47-52.:
-//     * 
-//     * So, the original paper that describes the method is the following: Theiler, J., Eubank, S., Longtin, A., Galdrikian, B., & Doyne Farmer, J. (1992). Testing for nonlinearity in time series: the method of surrogate data. Physica D: Nonlinear Phenomena, 58(1), 77-94. As the title suggests, it is a test of nonlinearity in time series. As the abstract of the paper explains:
-//
-//The method first specifies some linear process as a null hypothesis, then generates surrogate data sets which are consistent with this null hypothesis, and finally computes a discriminating statistic for the original and for each of the surrogate data sets. If the value computed for the original data is significantly different than the ensemble of values computed for the surrogate data, then the null hypothesis is rejected and nonlinearity is detected.
-//     * 
-//     * @param row
-//     * @param showTest
-//     * @param runDFA
-//     * @param testZaehler
-//     * @return
-//     * @throws Exception 
-//     */
-//    public static TimeSeriesObject getPhaseRandomizedRow_MULTIPLY_PHASE_WITH_RANDOM(
-//            TimeSeriesObject row, boolean showTest, boolean runDFA, int testZaehler ) throws Exception {
-//
-//        DecimalFormat df = new DecimalFormat("0.000");
-//        
-//        int N = row.yValues.size();
-//
-//        double[] zr = new double[N];
-//
-//        TimeSeriesObjectFFT fftROW = TimeSeriesObjectFFT.convertToMessreiheFFT(row);
-//        
-//        TimeSeriesObjectFFT temp = fftROW.getPhaseRandomizedModifiedFFT_MULTIPLY_RANDOM_INV();
-//
-//        debugRows(runDFA, row, N, temp, testZaehler, showTest, df);
-//        
-//        return temp;
-//    }
-
     /**
      * inspection of results ...
      * 
@@ -372,7 +295,6 @@ public class FFTPhaseRandomizer {
             dfa.setNrOfValues(N);
 
             // die Werte für die Fensterbreiten sind zu wählen ...
-            //dfa.initIntervalS();
             dfa.initIntervalSlog();
             if ( debug ) dfa.showS();
             

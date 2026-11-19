@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Vector;
 
-//import panels.MessreiheWindow3Frame;
 
 
 /**
@@ -77,9 +76,6 @@ public class ReturnIntervallStatistik2 {
     public static int binning = 400;   // anzahl der Werte pro Intervall
     public static int scale = 8;    // größter Wert
     
-//    // DEFAULT, wird nicht im Konstruktor definiert!!!
-//    private static int binningSKALIERT = 8;   // anzahl der Werte pro Intervall
-//    private static int scaleSKALIERT = 5;    // größter Wert
 
     private double _Rq = 0.0;
     private int zElements = 0;
@@ -98,7 +94,6 @@ public class ReturnIntervallStatistik2 {
     static public boolean verbose = false;
     
     // ab welchem Wert für r soll es losgehen?
-//    public static final double offset = 24*1;
     public static double offset = 0;
 
     public ReturnIntervallStatistik2(String l, int bin, int s) {
@@ -166,9 +161,6 @@ public class ReturnIntervallStatistik2 {
     TimeSeriesObject test = new TimeSeriesObject();
     
     public void add( ReturnIntervallStatistik2 ris ) throws Exception {
-//        if (!_checkRIS( ris ) ) { 
-//            throw new Exception( "[RIS] ist ungültig!");
-//        }
         
         if ( !this.isContainerInstanz ) {
             throw new Exception( "[RIS] Keine ContainerInstanz!");
@@ -180,7 +172,6 @@ public class ReturnIntervallStatistik2 {
         
         if ( debug ) {
             System.out.println("--> added single RIS to collect. R_q="+ris._Rq );
-            // ris.showData();
         }
         
         if ( ris.dataRawFILTERED.size() < 1 ) {
@@ -190,7 +181,6 @@ public class ReturnIntervallStatistik2 {
             return;
         } 
         
-        // _addData( ris._dataRawFILTERED, ris._Rq );
 
         int c = 0;
         for( int i = 0; i < probSKALIERT.length; i++ ) { 
@@ -226,9 +216,6 @@ public class ReturnIntervallStatistik2 {
      **/
     public void _addData( Vector<Double> times, double Rq ) throws Exception {
 
-//        if ( this.isContainerInstanz ) {
-//            throw new Exception("[RIS] ist eine Container-Instanz!");
-//        }
 
         if ( debug ) {
             System.out.println( 
@@ -236,9 +223,6 @@ public class ReturnIntervallStatistik2 {
         }
 
         
-        // Container neu erstellen ...
-        // dataRaw_InterEventTIMES = new Vector<Double>();
-
         int nullDistCounter = 0;
         
         // Zeitpunkte 
@@ -250,13 +234,11 @@ public class ReturnIntervallStatistik2 {
         while( en.hasMoreElements() ) {
             Double now = en.nextElement();
             Double dist = now - vor;
-            //dataRaw_InterEventTIMES.add( Math.abs( dist ) );
             vor = now;
         } 
 
         addDistData(dataRaw_InterEventTIMES);
         
-        // System.out.println( "#>>> nullDistCounter=" + nullDistCounter + ";");
     }
     
     public static int errosLENGTH = 0;
@@ -313,7 +295,6 @@ public class ReturnIntervallStatistik2 {
         
         long anzahlNach = (long)dataRawFILTERED.size(); 
         
-//        anzRowsFILTERED.addData( anzahlNach );
         
         long delta = (anzahlVor-anzahlNach);
         
@@ -329,16 +310,8 @@ public class ReturnIntervallStatistik2 {
                     " Intervalle zu klein (offset:="+offset+")");
         }
    
-//        if ( cutOff != 0 && offset == 0 ) throw new Exception( 
-//                "SCHWEERER FEHLER" );
         
         anzFiltered = dataRawFILTERED.size();
-        
-        if ( dataRawFILTERED.size() >= 512 ) {
-//            MessreiheWindow3Frame f = new MessreiheWindow3Frame();
-//            f.show( dataRawTIMES , dataRawFILTERED, dataRawNOT_FILTERED );
-//            System.out.println( "***>  " + dataRawFILTERED.size() );
-        }
         
         clear();
         
@@ -349,7 +322,6 @@ public class ReturnIntervallStatistik2 {
         Enumeration enUM_Rq_alt = dists.elements();
         while( enUM_Rq_alt.hasMoreElements() ) {
             double v = (Double) enUM_Rq_alt.nextElement();
-             // System.out.println( v);
              sumRq_alt = sumRq_alt + v;
              anzRq_alt++;
         }
@@ -361,7 +333,6 @@ public class ReturnIntervallStatistik2 {
         Enumeration enUM_Rq_filteres = dataRawFILTERED.elements();
         while( enUM_Rq_filteres.hasMoreElements() ) {
             double v = (Double) enUM_Rq_filteres.nextElement();
-             // System.out.println( v);
              sumRq_filteres = sumRq_filteres + v;
              anzRq_filterd++;
         }
@@ -389,7 +360,6 @@ public class ReturnIntervallStatistik2 {
              
              int index = (int)v;
              
-//             System.out.println( "v="+ v + "\tindex=" + index + "\t dist=" + dist1 + "\tRq_neu=" + Rq_filtered );
              if ( index >= dataSKALIERT.length ) index = dataSKALIERT.length-1;
              dataSKALIERT[index]++;  // hochzählen ...             
         }
@@ -403,12 +373,6 @@ public class ReturnIntervallStatistik2 {
     double epsilon = 1e-6; 
     
     public static void logLineToFile( String key, String line ) { 
-//        try {
-//            // projekt.logLine(key, line);
-//        } 
-//        catch (IOException ex) {
-//            Logger.getLogger(ReturnIntervallStatistik2.class.getName()).log(Level.SEVERE, null, ex);
-//        }
     }
     
     public void calcMessreihen() throws Exception {
@@ -476,8 +440,6 @@ public class ReturnIntervallStatistik2 {
             mrVerteilungSkaliert.addValuePair(
                         (double)i  / ( (double)scale * _Rq), relAnzahl * _Rq);
                 
-                // System.out.println( i+ "\t"+anzahlProSpalte + "\t" + 
-                // Rq+ "\t" + relAnzahl );
                 
             summe = summe + relAnzahl;
            
@@ -492,10 +454,6 @@ public class ReturnIntervallStatistik2 {
           mrVerteilungSkaliert.addValuePair( i / ( scale ), relAnzahl);
         }
         }
-        // mrVerteilungSkaliert = mrVerteilungSkaliert.scaleY_2(1.0/summe);
-        // if ( summe-1.0 > epsilon ) 
-        //   throw new Exception(
-        //     "Norm. Sum wrong! \n(epsilon="+epsilon+", summe="+summe+")");
         if ( debug ) {
             System.out.println(
                "(a) Anzahl Elemente=" + this.zElements);
@@ -542,7 +500,6 @@ public class ReturnIntervallStatistik2 {
 
     @Override
     public String toString() {
-        //return toString_Haeufigkeit();
         return toString_Verteilung();
     }
 
@@ -594,35 +551,6 @@ public class ReturnIntervallStatistik2 {
         return _Rq;
     }
 
-    /**
-     * auf dem rawDataVector rechnen ...
-     * @param offset 
-//     */
-//    int zahl = 0;
-//    int verlust = 0;
-//    private void calcRq(double offset) throws Exception {
-//        if ( this.isContainerInstanz ) {
-//            throw new Exception( "[RIS] R_q ist für Containerinstanz" + 
-//                                 " nicht berechnbar!" );
-//        }
-//        zahl = 0;
-//        verlust = 0;
-//        double summe = 0.0;
-//        Enumeration<Double> en = this._dataRawFILTERED.elements();
-//        while( en.hasMoreElements() ) {
-//            Double v = en.nextElement();
-//            if ( v > offset ) {
-//                summe = summe + v;
-//                zahl = zahl + 1;
-//            }
-//            else { 
-//                verlust = verlust + 1;
-//            }
-//        }
-//        setRQ( summe / zahl );
-//    }
-        
-    
     private static boolean storeSingleDistributions = false;
     
     static FileWriter fw;
@@ -639,7 +567,6 @@ public class ReturnIntervallStatistik2 {
     public static String logFileNames[] = null;
     public static OriginProject projekt = null;
     
-//    static int anzNullEdits[] = null;
 
     static HaeufigkeitsZaehlerDouble hzANZ = new HaeufigkeitsZaehlerDouble();
     static HaeufigkeitsZaehlerDouble[] mrRQ = null;
@@ -647,7 +574,6 @@ public class ReturnIntervallStatistik2 {
     
     public static void initRqCollectors() {
         
-//        anzNullEdits = new int[maxB];
         
         ReturnIntervallStatistik2.debug1 = new HaeufigkeitsZaehlerDouble[grenzen.length];
                 
@@ -677,7 +603,6 @@ public class ReturnIntervallStatistik2 {
         binning = 200;
         scale = 4;   
         
-//        initRqMIN();
         initRqCollectors();
         
         mrv = new Vector<TimeSeriesObject>();
@@ -702,16 +627,6 @@ public class ReturnIntervallStatistik2 {
         TimeSeriesObject mrx = TimeSeriesObject.getUniformDistribution( (int)Math.pow(2, 20), 0.0, 5.0);
         addRow( mrx );
         
-//        int ex = 20;
-//        for( int i = 0; i < 12; i++ ) {
-//            // V2
-//            double beta = 0.1 + ( (double)i / 5.0 );
-//            if ( i > 6 ) ex = 22;
-//            TimeSeriesObjectFFT mr2 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, ex), beta, false, false);
-//            min = mr2.getMinY();
-//            mr2.add_value_to_Y( -1.0 * min);
-//            addRow( mr2 );
-//        }  
         // V3
         TimeSeriesObjectFFT mr3 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, 20), 1.4, false, false);
         min = mr3.getMinY();
@@ -751,11 +666,6 @@ public class ReturnIntervallStatistik2 {
         ReturnIntervallStatistik2 ris1 = new ReturnIntervallStatistik2( 
                m.getLabel() , binning, scale);
 
-//        double min = m.getMinY();
-//        m.add_value_to_Y(-1.0 * min);
-//        
-//        m.normalize(); 
-//        m.scaleY_2(1000);
           
         Vector<Double> p = MRT.getPeaksDaysOverTSdouble( 0.5 , m );
  
@@ -789,13 +699,11 @@ public class ReturnIntervallStatistik2 {
                        
         
         // die Distancen sind nun hinzugefügt ....
-        // data1 = ReturnIntervallStatistik2.initTestData( 100, 10, 3);
         double rq = ris1.calcAverageOfDist(data1);
         System.out.println( "RQ : " + rq );
         
         ris1.addDistData(data1);
         ris1.calcMessreihen();
-//        ris1.showData();
 
         ReturnIntervallStatistik2 ris4 = new ReturnIntervallStatistik2( 
                 m.getLabel(), binning, scale);
@@ -831,71 +739,9 @@ public class ReturnIntervallStatistik2 {
     
     public static int ZZZ = 0;
         
-//    public static double rqMIN[] = null;
-    
-//    public static void initRqMIN() { 
-//        
-//        rqMIN = new double[grenzen.length];
-//        
-//        for( int i = 1; i < grenzen.length; i++ ) {
-//             double Rq_max = 1.0/ (double) grenzen[i-1];
-//             
-//             rqMIN[i] = ReturnIntervallStatistik2.offset / Rq_max;
-//             
-//             System.out.println( grenzen[i-1] + " ... " + grenzen[i] + "\tRq_max=" + Rq_max + "\t" + rqMIN[i] );
-//        }
-////        javax.swing.JOptionPane.showMessageDialog(null, "go");
-//    }    
 
-    
-//    private static boolean _checkRIS(ReturnIntervallStatistik2 ris) throws IOException {
-//        boolean b = true;
-//        
-//        if ( ris._dataRawFILTERED == null ) return false;
-//        
-//        if ( ris == null ) return false;
-//        
-//        for ( int i = 1; i < grenzen.length ; i++ ) {
-//            if ( ris.anzFiltered <= grenzen[i] && ris.anzFiltered > grenzen[i-1] ) { 
-//
-//                // ist die Summe aller r größer als die gesamte Zeitreihe?
-//                double sum = 0.0;
-//                for( double v3 : ris._dataRawFILTERED ) {
-//                    sum = sum + v3;
-//                }
-//                
-//                
-//                for( double v : ris._dataRawFILTERED ) {
-//               
-//                                  
-//                    String line = "\t\tr=" + v + "\tRq=" + ris._Rq + "\tr/Rq=(" + (v/ris._Rq) + ")\t rq_min=" + rqMIN[i] + "\t summe(r_i)=" + sum;
-//                    // String line = "\t\tr=" + v + "\tRq=" + ris._Rq + "\tr/Rq=(" + (v/ris._Rq) + ")\t summe(r_i)=" + sum;
-// 
-//                    if ( ( v / ris._Rq ) < rqMIN[i] ) {
-//                        
-//                       
-//                        
-//                        // javax.swing.JOptionPane.showMessageDialog(null,"r=" + v + "\nRq=" + ris.Rq + "\n" + (v/ris.Rq) +"\n"+ Topic2.rqMIN[i]  );
-//                        System.out.println( line  );
-//                        debug1[i].addData( v/ris._Rq );
-//                        line = "* " + line;
-//                    }
-//                    
-//                    projekt.logLine( logFileNames[i-1] , line +"\n");
-//
-//                }
-//                
-//                if ( sum > 300*24 ) {
-//                    System.out.println( "SUMME >>> 300*24 " + sum );
-//                }
-//                double RQMAX = 300.0 * 24.0 / (1.0 * grenzen[i-1] );
-//                if( ris._Rq > RQMAX ) {
-//                    projekt.logLine(  "RzuGROS" , ris._Rq + " " + ris.label );
-//                }
-//            }
-//        }     
-//        return b;
-//    }
+
+
 
 
   

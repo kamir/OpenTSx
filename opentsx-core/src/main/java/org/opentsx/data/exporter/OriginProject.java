@@ -43,7 +43,6 @@ public class OriginProject {
             jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             int i = jfc.showOpenDialog(null);
             File f = jfc.getSelectedFile();  
-            //File p = f.getParentFile();
             folderName = f.getAbsolutePath();
         }
         else { 

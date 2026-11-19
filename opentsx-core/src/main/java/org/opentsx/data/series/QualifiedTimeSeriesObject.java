@@ -54,25 +54,6 @@ public class QualifiedTimeSeriesObject extends TimeSeriesObject {
         addValue(vy,b);
     }
 
-//    private void addQualifiedValue( double y ) {
-//        int x = this.getXValues().size() + 1;
-//        this.addQualifiedValuePair( 1.0 * x , y );
-//    };
-//
-//    private void addUnqualifiedValue( double y ) {
-//        int x = this.getXValues().size() + 1;
-//        this.addUnqualifiedValuePair( 1.0 * x , y );
-//    };
-//
-//    public void addUnqualifiedValuePair(double x, double y) {
-//        super.addValuePair(x, y);
-//        correct.add(Boolean.FALSE);
-//    }
-//
-//    public void addQualifiedValuePair(double x, double y) {
-//        addValuePair(x, y);
-//        correct.add(Boolean.TRUE);
-//    }
 
 
     /**
@@ -149,9 +130,7 @@ public class QualifiedTimeSeriesObject extends TimeSeriesObject {
         int elements = anzahl - rest;
         int blocks = elements / bin;
 
-        // double summeA = this.summeY();
 
-        // System.out.println( "[BINNING] bin=" + bin + "\tRest=" + rest + "\tBlöcke=" + blocks  );
         mr.addStatusInfo( "[BINNING] bin=" + bin + "\tRest=" + rest + "\tBlöcke=" + blocks   );
 
         int i=0;
@@ -225,9 +204,6 @@ public class QualifiedTimeSeriesObject extends TimeSeriesObject {
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
-//    private boolean checkCorrectnessOfValue(Object y) {
-//
-//    }
 
     @Override
     public String toString() {

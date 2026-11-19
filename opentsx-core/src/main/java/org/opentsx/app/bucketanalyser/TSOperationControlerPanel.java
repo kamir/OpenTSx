@@ -544,7 +544,6 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
                 dfa.setNrOfValues(N);
 
                 dfa.initIntervalS();
-//                dfa.initIntervalSlog();
 
                 dfa.showS();
 
@@ -786,15 +785,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         try {
             
-            // ICorrelator c = (ICorrelator) Class.forName(correlatorClass).newInstance();
              
             MultiChart.openWithCorrelator(v, this.jRadioButton1.isSelected(), "NORM_STD=1, AVG=0 of " + this.label, null );
 
-        // }
-        // catch (ClassNotFoundException ex) {
-        //    Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
-        // } catch (InstantiationException ex) {
-        //     Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
         }
         catch (Exception ex) {
             Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
@@ -1114,29 +1107,6 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
-//                File file = new File(folder.getAbsolutePath() + File.separator + fn + ".svg");
-//                System.out.println(">>> Save as SVG Image - Filename: " + file.getAbsolutePath()
-//                        + "; CP: "+ cp);
-//
-//
-//                // Get a DOMImplementation and create an XML document
-//                DOMImplementation domImpl =
-//                        GenericDOMImplementation.getDOMImplementation();
-//                Document document = domImpl.createDocument(null, "svg", null);
-//
-//                // Create an instance of the SVG Generator
-//                SVGGraphics2D svgGenerator = new SVGGraphics2D(document);
-//
-//                // draw the chart in the SVG generator
-//                cp.draw(svgGenerator, new Rectangle(800, 600));
-//
-//                // Write svg file
-//                OutputStream outputStream = new FileOutputStream(file);
-//                Writer out = new OutputStreamWriter(outputStream, "UTF-8");
-//                svgGenerator.stream(out, true /* use css */);
-//                outputStream.flush();
-//                outputStream.close();
         } catch (Exception e) {
             e.printStackTrace();
         }

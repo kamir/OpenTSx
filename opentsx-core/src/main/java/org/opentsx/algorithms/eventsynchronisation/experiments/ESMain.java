@@ -5,7 +5,6 @@
  ***/
 package org.opentsx.algorithms.eventsynchronisation.experiments;
 
-//import hadoopts.analysis.eventsynchronisation.ESCalc;
 import org.opentsx.data.exporter.MeasurementTable;
 import org.opentsx.data.exporter.OriginProject;
 import org.opentsx.data.series.TimeSeriesObject;
@@ -26,7 +25,7 @@ public class ESMain {
     public static void main(String[] args) throws IOException {
         
         OriginProject op = new OriginProject();
-        op.initBaseFolder("/Users/kamir/Documents/Cloudera/github/dissertation/main/FINAL/LATEX/semanpix/ESIllustration");
+        op.initBaseFolder(System.getProperty("user.home") + "/Documents/Cloudera/github/dissertation/main/FINAL/LATEX/semanpix/ESIllustration");
         op.initSubFolder( "data" );
         
         Vector<TimeSeriesObject> topRow = new Vector<TimeSeriesObject>();

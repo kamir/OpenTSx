@@ -57,7 +57,6 @@ public class SingleTsDFATool extends SingleRowTSO {
         vmr_raw.add( reihe );
         vmr_norm.add( normalized1 );
         
-//        MyBucketTool.cont_PEAKS.add( normalized1 ); 
         
         for ( int ord : orders) {
             try {
@@ -68,7 +67,6 @@ public class SingleTsDFATool extends SingleRowTSO {
 
                     Vector<TimeSeriesObject> mFS = tool1.runDFA(vmr_norm, ord);
                     String trends1 = tool1.getAlphas();
-//                    MyBucketTool.cont_FS_NORMALIZED.add(mFS.elementAt(0));
                     line = line.concat(  "\t t1 :" + trends1 );
 
                 }
@@ -79,7 +77,6 @@ public class SingleTsDFATool extends SingleRowTSO {
 
                     Vector<TimeSeriesObject> mFS2 = tool2.runDFA(vmr_raw, ord);
                     String trends2 = tool2.getAlphas();
-//                    MyBucketTool.cont_FS_RAW.add(mFS2.elementAt(0));
                     
                     line = line.concat(  "\t t2: " + trends2 );
                 }    

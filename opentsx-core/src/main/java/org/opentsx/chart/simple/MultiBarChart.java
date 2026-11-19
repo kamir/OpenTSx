@@ -30,8 +30,6 @@ import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 
 import org.jfree.chart.ChartUtilities;
-//import simulation.datarecorder.GeneralResultRecorder;
-//import util.LogFile;
 
 public class MultiBarChart extends javax.swing.JDialog {
 
@@ -121,25 +119,6 @@ public class MultiBarChart extends javax.swing.JDialog {
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         this.setVisible(false);
     }
-
-//    /**
-//     * @param args the command line arguments
-//     */
-//    public static void save(final TimeSeriesObject mr) {
-//        java.awt.EventQueue.invokeLater(new Runnable() {
-//
-//            public void run() {
-//                final MultiChart dialog = new MultiChart(new javax.swing.JFrame(), false);
-//                dialog.addWindowListener(new java.awt.event.WindowAdapter() {
-//
-//                    public void windowClosing(java.awt.event.WindowEvent e) {
-//                        dialog.setVisible(false);
-//                    }
-//                });
-//                dialog.initMessreihe(mr);
-//            }
-//        });
-//    }
 
     public static void open(TimeSeriesObject[] mrs ) {
         Vector<TimeSeriesObject> mr = new Vector<TimeSeriesObject>();
@@ -254,7 +233,6 @@ public class MultiBarChart extends javax.swing.JDialog {
 
                 file = new File(fn + ".svg");
                 System.out.println(">>> Save as SVG Image - Filename: " + file.getAbsolutePath());
-                //        ImageIO.write(rendImage, "png", file );
 
 
                 // Get a DOMImplementation and create an XML document
@@ -298,7 +276,6 @@ public class MultiBarChart extends javax.swing.JDialog {
                 useLegende, // legende
                 true,
                 true);
-        // System.out.println(  chart.getXYPlot().getPlotType() );
         ChartPanel chartPanel = new ChartPanel(chart);
         chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
         return chartPanel;
@@ -308,10 +285,6 @@ public class MultiBarChart extends javax.swing.JDialog {
         if (doStoreChart) {
 
 
-//            File folder = LogFile.folderFile;
-//            String fn = folder.getAbsolutePath() + File.separator + "images/Distribution_";
-//            File file = null;
-//            fn = fn + GeneralResultRecorder.currentSimulationLabel;
 
 
             String fn = filename;
@@ -333,31 +306,6 @@ public class MultiBarChart extends javax.swing.JDialog {
             catch (Exception e) {
                 e.printStackTrace();
             }
-
-
-
-//                File file = new File(folder.getAbsolutePath() + File.separator + fn + ".svg");
-//                System.out.println(">>> Save as SVG Image - Filename: " + file.getAbsolutePath()
-//                        + "; CP: "+ cp);
-//
-//
-//                // Get a DOMImplementation and create an XML document
-//                DOMImplementation domImpl =
-//                        GenericDOMImplementation.getDOMImplementation();
-//                Document document = domImpl.createDocument(null, "svg", null);
-//
-//                // Create an instance of the SVG Generator
-//                SVGGraphics2D svgGenerator = new SVGGraphics2D(document);
-//
-//                // draw the chart in the SVG generator
-//                cp.draw(svgGenerator, new Rectangle(800, 600));
-//
-//                // Write svg file
-//                OutputStream outputStream = new FileOutputStream(file);
-//                Writer out = new OutputStreamWriter(outputStream, "UTF-8");
-//                svgGenerator.stream(out, true /* use css */);
-//                outputStream.flush();
-//                outputStream.close();
             }
             catch (Exception e) {
                 e.printStackTrace();
@@ -385,7 +333,6 @@ public class MultiBarChart extends javax.swing.JDialog {
                 while (en.hasMoreElements()) {
                     TimeSeriesObject mr = en.nextElement();
                     dialog.initMessreihe( mr );
-                    //System.out.println( mr.getStatisticData("> ") );
                 }
                 dialog.chartTitle = string;
                 dialog.xLabel = x;

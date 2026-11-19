@@ -105,11 +105,7 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
         }
         
         boolean showLegend = true;
-//        MultiChart.open(testsA, "raw data", 
-//                        "t [s]", "y(t)", showLegend, log.toString() );
         
-//        MultiChart.open(testsB, "FFT tests", 
-//                        "f [Hz]", "c", showLegend, log.toString() );
     
         
         
@@ -123,11 +119,9 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
         TimeSeriesObject m22 = FFTPhaseRandomizer.getRandomRow( N );
  
         // phase manipulation
-        //TimeSeriesObject mA = FFTPhaseRandomizer.getPhaseRandomizedRow(m22.copy(), false, false, 0, FFTPhaseRandomizer.MODE_shuffle_phase);
         TimeSeriesObject mB = FFTPhaseRandomizer.getPhaseRandomizedRow(m22.copy(), false, false, 0, FFTPhaseRandomizer.MODE_multiply_phase_with_random_value );
         
 
-        //testsC.add( mA );
         testsC.add( mB );
         
         MultiChart.open(testsC, "Phase Randomization Tests", "t", "y", showLegend, log.toString(), null );
@@ -252,7 +246,6 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
                
                 double v = red+green+blue;
                 mr.addValuePair(1.0 * t, v );
-                //System.out.println( "zeile(" + z +") " + t + " => " +v );
 
             }
             vmr.add(mr);
@@ -273,7 +266,6 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
 
             double tf = wc.get(s);
             
-            /// System.out.println( "{" + s + "} " + tf );
             
             double idf = idfs.get(s);
             

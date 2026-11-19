@@ -91,7 +91,6 @@ public class BucketLoader {
         bucket.isProcessed = true;
         
         // WE SKIP THE HISTORY HERE
-        // bucket.isProcessedBy = tst.getClass();
 
         bucket._loadAndProcess( fn, tst, ids );
         

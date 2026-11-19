@@ -32,8 +32,6 @@ import java.text.DecimalFormat;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Vector;
-//import simulation.datarecorder.GeneralResultRecorder;
-//import util.LogFile;
 
 public class MultiChart extends javax.swing.JDialog {
     
@@ -43,8 +41,6 @@ public class MultiChart extends javax.swing.JDialog {
      *
      **/
     
-//    public static Color bgCOLOR = Color.BLACK;
-//    public static Color bgCOLOR = Color.LIGHT_GRAY;
     public static Color bgCOLOR = Color.WHITE;
     
     public static boolean autoscale = true;
@@ -174,7 +170,6 @@ public class MultiChart extends javax.swing.JDialog {
     public static void persistPixNode() throws IOException {
         
         fcp.save();
-//        fcp.persistTSB();
     
     }
     
@@ -242,24 +237,6 @@ public class MultiChart extends javax.swing.JDialog {
         this.setVisible(false);
     }
 
-//    /**
-//     * @param args the command line arguments
-//     */
-//    public static void save(final TimeSeriesObject mr) {
-//        java.awt.EventQueue.invokeLater(new Runnable() {
-//
-//            public void run() {
-//                final MultiChart dialog = new MultiChart(new javax.swing.JFrame(), false);
-//                dialog.addWindowListener(new java.awt.event.WindowAdapter() {
-//
-//                    public void windowClosing(java.awt.event.WindowEvent e) {
-//                        dialog.setVisible(false);
-//                    }
-//                });
-//                dialog.initMessreihe(mr);
-//            }
-//        });
-//    }
     public static void open(TimeSeriesObject[] mrs, final String title, final String x, final String y, final boolean b) {
         Vector<TimeSeriesObject> mr = new Vector<TimeSeriesObject>();
         for (int i = 0; i < mrs.length; i++) {
@@ -308,7 +285,6 @@ public class MultiChart extends javax.swing.JDialog {
         while (en.hasMoreElements()) {
             TimeSeriesObject mr = en.nextElement();
             dialog.initMessreihe(mr);
-            //System.out.println( mr.getStatisticData("> ") );
         }
         dialog.chartTitle = string;
         dialog.rows = mrs;
@@ -319,8 +295,6 @@ public class MultiChart extends javax.swing.JDialog {
         dialog.initChart();
         dialog.setTitle(string);
         dialog.setVisible(true);
-//            }
-//        });
         
         
         fcp = new TSOperationControlerPanel( mrs, dialog.chart , string, dialog.statisticTextField );
@@ -343,9 +317,6 @@ public class MultiChart extends javax.swing.JDialog {
     
     Vector<TimeSeriesObject> rows = null;
     public static MultiChart open(final Vector<TimeSeriesObject> mrs, final String string, final String x, final String y, final boolean b, final String comment, ICorrelator c) {
-//        java.awt.EventQueue.invokeLater(new Runnable() {
-//
-//            public void run() {
         final MultiChart dialog = new MultiChart(new javax.swing.JFrame(string), false);
         dialog.addWindowListener(new java.awt.event.WindowAdapter() {
 
@@ -357,7 +328,6 @@ public class MultiChart extends javax.swing.JDialog {
         while (en.hasMoreElements()) {
             TimeSeriesObject mr = en.nextElement();
             dialog.initMessreihe(mr);
-            //System.out.println( mr.getStatisticData("> ") );
         }
         dialog.chartTitle = string;
         dialog.rows = mrs;
@@ -368,8 +338,6 @@ public class MultiChart extends javax.swing.JDialog {
         dialog.initChart();
         dialog.setTitle(string);
         dialog.setVisible(true);
-//            }
-//        });
         
         
         fcp = new TSOperationControlerPanel( mrs, dialog.chart , string, dialog.statisticTextField );
@@ -391,9 +359,6 @@ public class MultiChart extends javax.swing.JDialog {
     }
     
     public static JFreeChart createChart(final Vector<TimeSeriesObject> mrs, final String string, final String x, final String y, final boolean b, final String comment) {
-//        java.awt.EventQueue.invokeLater(new Runnable() {
-//
-//            public void run() {
         final MultiChart dialog = new MultiChart(new javax.swing.JFrame(string), false);
         dialog.addWindowListener(new java.awt.event.WindowAdapter() {
 
@@ -405,7 +370,6 @@ public class MultiChart extends javax.swing.JDialog {
         while (en.hasMoreElements()) {
             TimeSeriesObject mr = en.nextElement();
             dialog.initMessreihe(mr);
-            //System.out.println( mr.getStatisticData("> ") );
         }
         dialog.chartTitle = string;
         dialog.rows = mrs;
@@ -420,8 +384,6 @@ public class MultiChart extends javax.swing.JDialog {
         fcp.registerPanelHolder(dialog);
 
 
-//        if (c != null)
-//            c.setTSOperationControlerPanel(fcp);
 
         MacroTrackerFrame._registerDialogToNode( string, dialog );
 
@@ -436,9 +398,6 @@ public class MultiChart extends javax.swing.JDialog {
     }
 
     public static MultiChart open2(final Vector<TimeSeriesObject> mrs, final String string, final String x, final String y, final boolean b, final String comment) {
-//        java.awt.EventQueue.invokeLater(new Runnable() {
-//
-//            public void run() {
         final MultiChart dialog = new MultiChart(new javax.swing.JFrame(string), false);
         dialog.addWindowListener(new java.awt.event.WindowAdapter() {
 
@@ -450,7 +409,6 @@ public class MultiChart extends javax.swing.JDialog {
         while (en.hasMoreElements()) {
             TimeSeriesObject mr = en.nextElement();
             dialog.initMessreihe(mr);
-            //System.out.println( mr.getStatisticData("> ") );
         }
         dialog.chartTitle = string;
         dialog.xLabel = x;
@@ -461,8 +419,6 @@ public class MultiChart extends javax.swing.JDialog {
         dialog.setTitle(string);
         dialog.setVisible(true);
         dialog.setSize( 1024, 768);
-//            }
-//        });
         return dialog;
     }
 
@@ -482,7 +438,6 @@ public class MultiChart extends javax.swing.JDialog {
         while (en.hasMoreElements()) {
             TimeSeriesObject mr = en.nextElement();
             dialog.initMessreihe(mr);
-            //System.out.println( mr.getStatisticData("> ") );
         }
         dialog.chartTitle = string;
         dialog.xLabel = x;
@@ -521,7 +476,6 @@ public class MultiChart extends javax.swing.JDialog {
         while (en.hasMoreElements()) {
             TimeSeriesObject mr = en.nextElement();
             dialog.initMessreihe(mr);
-            //System.out.println( mr.getStatisticData("> ") );
         }
         dialog.chartTitle = string;
         dialog.xLabel = x;
@@ -565,7 +519,6 @@ public class MultiChart extends javax.swing.JDialog {
                     TimeSeriesObject mr = en.nextElement();
                     mr.normalize();
                     dialog.initMessreihe(mr);
-                    //System.out.println( mr.getStatisticData("> ") );
                 }
                 dialog.chartTitle = string;
                 dialog.xLabel = x;
@@ -599,7 +552,6 @@ public class MultiChart extends javax.swing.JDialog {
 
     public void initMessreihe(TimeSeriesObject mr) {
 
-        // if ( this.normalizeY ) mr.normalizeY();
         if (mr == null) {
             return;
         }
@@ -617,7 +569,6 @@ public class MultiChart extends javax.swing.JDialog {
 
         statisticTextField.setText( mr.getDescription() );
 
-        // System.out.println(series.getKey());
         this.addSerie(series);
 
     }
@@ -627,12 +578,7 @@ public class MultiChart extends javax.swing.JDialog {
     }
 
     public void store(JFreeChart cp, File folder, String filename) {
-//        if (doStoreChart) {
 
-//            File folder = LogFile.folderFile;
-//            String fn = folder.getAbsolutePath() + File.separator + "images/Distribution_";
-//            File file = null;
-//            fn = fn + GeneralResultRecorder.currentSimulationLabel;
         String fn = filename;
         try {
 
@@ -650,33 +596,9 @@ public class MultiChart extends javax.swing.JDialog {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
-//                File file = new File(folder.getAbsolutePath() + File.separator + fn + ".svg");
-//                System.out.println(">>> Save as SVG Image - Filename: " + file.getAbsolutePath()
-//                        + "; CP: "+ cp);
-//
-//
-//                // Get a DOMImplementation and create an XML document
-//                DOMImplementation domImpl =
-//                        GenericDOMImplementation.getDOMImplementation();
-//                Document document = domImpl.createDocument(null, "svg", null);
-//
-//                // Create an instance of the SVG Generator
-//                SVGGraphics2D svgGenerator = new SVGGraphics2D(document);
-//
-//                // draw the chart in the SVG generator
-//                cp.draw(svgGenerator, new Rectangle(800, 600));
-//
-//                // Write svg file
-//                OutputStream outputStream = new FileOutputStream(file);
-//                Writer out = new OutputStreamWriter(outputStream, "UTF-8");
-//                svgGenerator.stream(out, true /* use css */);
-//                outputStream.flush();
-//                outputStream.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
-////        }
     }
 
 
@@ -747,11 +669,6 @@ public class MultiChart extends javax.swing.JDialog {
             plot.getRenderer().setSeriesPaint(3, Color.RED);
             plot.getRenderer().setSeriesPaint(4, Color.gray);
 
-//            plot.getRenderer().setSeriesPaint(5, Color.BLACK);
-//            plot.getRenderer().setSeriesPaint(6, Color.blue);
-//            plot.getRenderer().setSeriesPaint(7, Color.orange);
-//            plot.getRenderer().setSeriesPaint(8, Color.RED);
-//            plot.getRenderer().setSeriesPaint(9, Color.gray);
 
             plot.getRenderer().setSeriesPaint(5, Color.GREEN);
             plot.getRenderer().setSeriesPaint(6, Color.PINK);
@@ -776,11 +693,7 @@ public class MultiChart extends javax.swing.JDialog {
                 1.9f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND,
                 0.0f);
 
-//        renderer.setSeriesStroke( 0, s1 );
-//        renderer.setSeriesStroke( 1, s );
         renderer.setSeriesStroke(8, s1);
-//        renderer.setSeriesStroke( 3, s );
-//        renderer.setSeriesStroke( 4, s );
 
         if (useMyStroke) {
             initStrokes(renderer);
@@ -830,7 +743,6 @@ public class MultiChart extends javax.swing.JDialog {
                 while (en.hasMoreElements()) {
                     TimeSeriesObject mr = en.nextElement();
                     dialog.initMessreihe(mr);
-                    //System.out.println( mr.getStatisticData("> ") );
                 }
                 dialog.chartTitle = string;
                 dialog.xLabel = x;
@@ -875,7 +787,6 @@ public class MultiChart extends javax.swing.JDialog {
         while (en.hasMoreElements()) {
             TimeSeriesObject mr = en.nextElement();
             dialog.initMessreihe(mr);
-            // System.out.println( "... init reihe="+i );
             i++;
         }
         dialog.chartTitle = title;
@@ -887,7 +798,6 @@ public class MultiChart extends javax.swing.JDialog {
 
         dialog.initChart();
         dialog.setTitle(title);
-        //dialog.setVisible(true);
         File f2 = new File(folder);
 
         dialog.store(dialog.chart, f2, filename);

@@ -52,7 +52,6 @@ public class MultiRowDFATool {
         for( String l : cont.getLabels() ) {
 
             // mit Begrenzung auf N/4
-//            MultiDFATool tool = new MultiDFATool();
 
             // ohne Begrenzung auf N/4
             MultiDFATool2 tool = new MultiDFATool2();
@@ -106,9 +105,7 @@ public class MultiRowDFATool {
         rmc.addNewRows(mr4, "Sorte 4");
 
 
-        // Vector<FluctuationFunktion> vFs = MultiRowDFATool.calcMultiRowsDFA(rmc, 2);
         
-        // MultiChart.open( MultiRowDFATool.convertToMessreihe( vFs ) , true, "F(s)");
 
     };
 

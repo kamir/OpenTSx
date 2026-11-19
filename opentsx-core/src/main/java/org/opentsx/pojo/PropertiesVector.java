@@ -13,6 +13,7 @@ import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorWritable;
 import org.opentsx.core.TSData;
+import org.opentsx.data.generator.RNGWrapper;
 
 /**
  *
@@ -58,7 +59,7 @@ public class PropertiesVector {
 
     public static void main(String[] args) {
 
-        stdlib.StdRandom.initRandomGen(1);
+        RNGWrapper.init();
         TSData data = new TSData();
         data.setDataset( data.getRandomData((int) Math.pow(2, 10)) );
 

@@ -77,7 +77,6 @@ public class HaeufigkeitsZaehler {
                     min = dist;
                 }
 
-                // System.out.println( dist );
             }
         }
 

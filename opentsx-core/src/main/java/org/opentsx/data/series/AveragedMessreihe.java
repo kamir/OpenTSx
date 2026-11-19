@@ -62,8 +62,6 @@ public class AveragedMessreihe {
     
     public void initSegements( int anz , TimeSeriesObject toSplit ) {
                         
-//        this.xMin = 0; // mrOriginal.getMinX();
-//        this.xMax = 200; // mrOriginal.getMaxX();
         
         this.steps = anz - 1;
         
@@ -102,22 +100,16 @@ public class AveragedMessreihe {
             if ( isUnten(x, y) ) {
                 ouIndex = 2;
             }
-//            
-//            if ( j < vX.length ) {
             try {
-                // vX[j][ouIndex] = vX[j][ouIndex] + x;
                 vY[j][ouIndex] = vY[j][ouIndex] + yc;            
                 zX[j][ouIndex] = zX[j][ouIndex] + 1;
                 
-                // vX[j][0] = vX[j][0] + x;
                 vY[j][0] = vY[j][0] + yc;            
                 zX[j][0] = zX[j][0] + 1;
             }
             catch( Exception ex) { 
                 System.out.println( "a" );
-                //ex.printStackTrace();
             }
-//            }
             i++;
         }
         double y = 0;
@@ -139,179 +131,6 @@ public class AveragedMessreihe {
     
     
 
-//    public void ___initSegementsO(int anz) {
-//        
-////        this.xMin = mrOriginal.getMinX();
-////        this.xMax = mrOriginal.getMaxX();
-//        
-//        this.steps = anz - 1;
-//        
-//        vX = new double[ steps ][3];        
-//        vY = new double[ steps ];
-//        
-//        zX = new double[ steps ]; 
-//        dx = xMax / steps;    
-//        
-//        double offset = dx / 2.0; 
-//        
-//        int i = 0;
-//        Enumeration en = mrOriginal.xValues.elements();
-//        while( en.hasMoreElements() ) { 
-//            double x = (Double)en.nextElement();
-//            double y = (Double)mrOriginal.yValues.get(i);
-//            
-//            if ( isOben( x,y ) ) {
-//                // Container ermitteln ...
-//                int j = (int)( x / dx );
-//
-//                if ( j < vX.length ) {
-//                    vX[j] = vX[j] + x;
-//                    vY[j] = vY[j] + y;
-//
-//                    zX[j] = zX[j] + 1;
-//
-//                    i++;
-//                };    
-//            }
-//        }
-//        for( int k = 0; k < steps;k++ ) { 
-////            mrBinned.addValuePair( offset + vX[k] / zX[k], (vY[k] / zX[k])   );        
-//            mrBinned.addValuePair( (k + 0.5) * dx , (vY[k] / zX[k])   );        
-//        }
-//         
-//    }
-//    
-//    public void ___initSegementsO(int anz, TimeSeriesObject flowDens ) {
-//        
-////        this.xMin = mrOriginal.getMinX();
-////        this.xMax = mrOriginal.getMaxX();
-//        
-//        this.steps = anz - 1;
-//        
-//        vX = new double[ steps ];        
-//        vY = new double[ steps ];
-//        
-//        zX = new double[ steps ]; 
-//        dx = xMax / steps;    
-//        
-//        double offset = dx / 2.0; 
-//        
-//        int i = 0;
-//        Enumeration en = mrOriginal.xValues.elements();
-//        while( en.hasMoreElements() ) { 
-//            double x = (Double)en.nextElement();
-//            double y = (Double)mrOriginal.yValues.get(i);
-//
-//            double checkY = (Double)flowDens.yValues.get(i);
-//            
-//            if ( isOben( x,checkY ) ) {
-//                // Container ermitteln ...
-//                int j = (int)( x / dx );
-//
-//                if ( j < vX.length ) {
-//                    vX[j] = vX[j] + x;
-//                    vY[j] = vY[j] + y;
-//
-//                    zX[j] = zX[j] + 1;
-//
-//                    i++;
-//                };    
-//            }
-//        }
-//        for( int k = 0; k < steps;k++ ) { 
-//            
-//            // mrBinned.addValuePair( offset + vX[k] / zX[k], (vY[k] / zX[k])   );        
-//            mrBinned.addValuePair( (k + 0.5) * dx , (vY[k] / zX[k])   );        
-//        
-//        }
-//         
-//    }
-//
-//    public void ___initSegementsU(int anz) {
-//        
-////        this.xMin = mrOriginal.getMinX();
-////        this.xMax = mrOriginal.getMaxX();
-//        this.steps = anz - 1;
-//        
-//        vX = new double[ steps ];        
-//        vY = new double[ steps ];
-//        
-//        zX = new double[ steps ]; 
-//        dx = xMax / steps; 
-//        
-//        double offset = dx / 2.0; 
-//        
-//        int i = 0;
-//        Enumeration en = mrOriginal.xValues.elements();
-//        while( en.hasMoreElements() ) { 
-//            double x = (Double)en.nextElement();
-//            double y = (Double)mrOriginal.yValues.get(i);
-//            
-//            if ( isUnten( x,y ) ) {
-//
-//                // Container ermitteln ...
-//                int j = (int)( x / dx );
-//
-//                if ( j < vX.length ) {
-//                    vX[j] = vX[j] + x;
-//                    vY[j] = vY[j] + y;
-//
-//                    zX[j] = zX[j] + 1;
-//
-//                    i++;
-//                }
-//            }     
-//        }
-//        for( int k = 0; k < steps;k++ ) { 
-////            mrBinned.addValuePair( offset + vX[k] / zX[k] , (vY[k] / zX[k])   );     
-//            mrBinned.addValuePair( (k + 0.5) * dx , (vY[k] / zX[k])   );        
-//        }
-//         
-//    }
-//    
-//    public void ___initSegementsU(int anz, TimeSeriesObject flowDens ) {
-//        
-////        this.xMin = mrOriginal.getMinX();
-////        this.xMax = mrOriginal.getMaxX();
-//        
-//        this.steps = anz - 1;
-//        
-//        vX = new double[ steps ];        
-//        vY = new double[ steps ];
-//        
-//        zX = new double[ steps ]; 
-//        dx = xMax / steps;    
-//        
-//        double offset = dx / 2.0; 
-//        
-//        int i = 0;
-//        Enumeration en = mrOriginal.xValues.elements();
-//        while( en.hasMoreElements() ) { 
-//            double x = (Double)en.nextElement();
-//            double y = (Double)mrOriginal.yValues.get(i);
-//
-//            double checkY = (Double)flowDens.yValues.get(i);
-//            
-//            if ( isUnten( x,checkY ) ) {
-//                // Container ermitteln ...
-//                int j = (int)( x / dx );
-//
-//                if ( j < vX.length ) {
-//                    vX[j] = vX[j] + x;
-//                    vY[j] = vY[j] + y;
-//
-//                    zX[j] = zX[j] + 1;
-//
-//                    i++;
-//                };    
-//            }
-//        }
-//        for( int k = 0; k < steps;k++ ) { 
-////            mrBinned.addValuePair( offset + vX[k] / zX[k], (vY[k] / zX[k])   );        
-//            mrBinned.addValuePair( (k + 0.5) * dx , (vY[k] / zX[k])   );        
-//        }
-//         
-//    }
 
     private boolean isUnten(double x, double y) {
         double ySoll = yX_double( (double)x );

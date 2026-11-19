@@ -81,11 +81,6 @@ SequenceFile when `SKIP_WRITES` is false and `opentsx.demo.output.format` is not
 writes no CSV file instead. `_open`, `putMessreihe` and `close` throw the `IOException` of the writer, so opening a
 bucket under a regular file fails with a message that names that file.
 
-`createBucketFromLocalFilesInDirectory(sourceFolder, groupFolder, limit)` reads the files in
-`<sourceFolder>/<groupFolder>`. There is no default source folder. A folder that cannot be listed throws
-`IOException` with `<sourceFolder>/<groupFolder>: cannot list the files; expected a readable folder` before the
-bucket file is created.
-
 ## Check bucket workflow support
 
 `TSBucket.loadViaContext` throws `UnsupportedOperationException` with
@@ -249,10 +244,13 @@ intervals, `add` then writes one line per interval through `RISTool.projekt` to 
 `RISTool.offset` is not 0, also call `RISTool.initRqCollectors()`: `add` counts an interval below `RISTool.rqMIN` in
 `RISTool.debug1`, which `initRqCollectors()` creates.
 
-## Draw Poisson numbers
+## Draw random numbers
 
-`RNGWrapper.getStdPoisson(lambda)` draws a Poisson number with mean `lambda`. Seed the generator first with
-`RNGWrapper.init()` (seed 1) or `stdlib.StdRandom.initRandomGen(seed)`.
+`RNGWrapper` draws from one `java.util.Random` with the seed `RNGWrapper.DEFAULT_SEED` (1), so a program gets the
+same numbers in the same order on every run. It needs no init call. `RNGWrapper.init(seed)` starts the sequence again
+with that seed, and `RNGWrapper.init()` with seed 1. `TimeSeriesObject.getGaussianDistribution(n, mean, sd)` and the
+other random series of `TimeSeriesObject` draw from it. `RNGWrapper.getStdPoisson(lambda)` draws a Poisson number with
+mean `lambda`.
 
 ## Configure the 2.x tools
 

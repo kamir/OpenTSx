@@ -1,35 +1,26 @@
-
-   {
-    "type"      : "record",
-    "namespace" : "org.opentsx.data.model",
-    "name"      : "EventSeriesRecord",
-    "fields": [
-         {
-   	      "name": "eventArray",
-   		  "type": {
-   		    "type": "array",
-   		    "items": {
-   		      "name": "Event",
-   		      "type": "record",
-   		      "fields": [
-   	              {"name": "timestamp", "type": "long"},
-   	              {"name": "uri", "type": "string"},
-   	              {"name": "value", "type": "double"}
-   	          ]
-   	        }
-             }
-         },
-         {
-   	      "name" : "labels",
-   	      "type" : "string"
-   	  },
-   	  {
-   	      "name" : "tStart",
-   	      "type" : "long"
-   	  },
-   	  {
-   	      "name" : "tEnd",
-   	      "type" : "long"
-   	  }
-    ]
-   }
+{
+  "type": "record",
+  "namespace": "org.opentsx.data.model",
+  "name": "EventSeriesRecord",
+  "fields": [
+    {
+      "name": "eventArray",
+      "type": {
+        "type": "array",
+        "items": "Event"
+      }
+    },
+    {
+      "name": "labels",
+      "type": "string"
+    },
+    {
+      "name": "tStart",
+      "type": "long"
+    },
+    {
+      "name": "tEnd",
+      "type": "long"
+    }
+  ]
+}

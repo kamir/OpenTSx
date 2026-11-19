@@ -47,7 +47,6 @@ public class MRT {
 
         for (int i = 0; i < z; i++) {
             int c = i % d;
-            //System.out.println( c + " " + i );
             double t = data[0][i];
             double v = data[1][i] / trend[c];
             mr2.addValuePair(t, v);
@@ -109,7 +108,6 @@ public class MRT {
                 
                 peaksDays.add(d);
                 
-                // System.out.print( p+ ", " + d + ", " );
             }
             d++;
             pLAST = p;
@@ -158,9 +156,6 @@ public class MRT {
          * nn = n / AUFLÖSUNG
          */
         int nn = (int) (n / (1000 * sf));
-//        System.out.println( "n=" + n );
-//        System.out.println( "e=" + e + " s="+s );
-//        System.out.println( "nn=" + nn + " sf="+sf );
         int[] data = new int[nn];
         
         for( int i = 0 ; i < nn; i++ ) { 
@@ -174,7 +169,6 @@ public class MRT {
            
            if ( t < e ) {
                 int dt = (int)( (t-s) / (1000 * sf));
-//                System.out.println( dt + " t= " + t );
                 
                 // pro Auflösungsfeld nur einen Wert oder alle ?
                 if( MODE_ONE_PER_dt ) data[dt-1]=1;
@@ -186,7 +180,6 @@ public class MRT {
         }
         for( int i = 0 ; i < nn; i++ ) { 
             m.addValuePair((double)i, (double)data[i]);
-//            System.out.println( i + " data " + data[i] );
         };
         return m;
     }
@@ -201,14 +194,11 @@ public class MRT {
 
     public static final int STRING_convMode = 0;
     public static final int String_convMode_XSTREAM = 0;
-    // public static final int String_convMode_JSON = 1;
     
     public static TimeSeriesObject deserializeFromXMLString(String m) {
         XStream xstream = new XStream();
-        // System.out.println(">>> mr.toString() ... " + m );
         Object o = xstream.fromXML( m ); 
         TimeSeriesObject d = (TimeSeriesObject)o;
-        // System.out.println( d.getStatisticData( ">>> " ));
         return d;
     }
     
