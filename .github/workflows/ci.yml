@@ -235,6 +235,8 @@ jobs:
           printf '%s  %s\n' '7d171def9b85846bf757a2cec94b7529371068a0670df14682447224e57983528e97a6d1b850327e4ca02b139abaab7fcb93c4315119e6f0ffb3f0cbc0d0b9a2' "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" | sha512sum --check
           tar xzf "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" -C "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
+      - name: Verify Maven download retries
+        run: python3 tools/check_maven_downloads.py
       - name: Install the pinned Rust toolchain
         run: rustup toolchain install 1.99.1 --profile minimal
       - uses: actions/checkout@v7
@@ -340,6 +342,8 @@ jobs:
           printf '%s  %s\n' '7d171def9b85846bf757a2cec94b7529371068a0670df14682447224e57983528e97a6d1b850327e4ca02b139abaab7fcb93c4315119e6f0ffb3f0cbc0d0b9a2' "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" | sha512sum --check
           tar xzf "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" -C "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
+      - name: Verify Maven download retries
+        run: python3 tools/check_maven_downloads.py
       - name: Check helper syntax and CLI
         run: |
           python3 -m py_compile tools/verify_rust_runner_compose.py
@@ -421,6 +425,8 @@ jobs:
           printf '%s  %s\n' '7d171def9b85846bf757a2cec94b7529371068a0670df14682447224e57983528e97a6d1b850327e4ca02b139abaab7fcb93c4315119e6f0ffb3f0cbc0d0b9a2' "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" | sha512sum --check
           tar xzf "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" -C "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
+      - name: Verify Maven download retries
+        run: python3 tools/check_maven_downloads.py
       - name: Install the pinned browser runtime
         run: |
           npm install --prefix "$RUNNER_TEMP/wayang-browser" --no-audit --no-fund --ignore-scripts playwright@1.62.1
@@ -481,6 +487,8 @@ jobs:
         with:
           name: ${{ matrix.artifact }}
           path: |
+            target/wayang-rust-compose/java-build.log
+            target/wayang-rust-compose/java-classpath.log
             target/wayang-rust-compose/result.json
             target/wayang-rust-compose/fixture.json
             target/wayang-rust-compose/submitted-dag.txt
@@ -514,6 +522,16 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
           cache: maven
+      - name: Install Maven 3.9.8
+        run: |
+          curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 \
+            -o "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" \
+            https://archive.apache.org/dist/maven/maven-3/3.9.8/binaries/apache-maven-3.9.8-bin.tar.gz
+          printf '%s  %s\n' '7d171def9b85846bf757a2cec94b7529371068a0670df14682447224e57983528e97a6d1b850327e4ca02b139abaab7fcb93c4315119e6f0ffb3f0cbc0d0b9a2' "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" | sha512sum --check
+          tar xzf "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
+      - name: Verify Maven download retries
+        run: python3 tools/check_maven_downloads.py
       - name: Build and test
         run: xvfb-run --auto-servernum mvn -B -ntp verify
       - name: Check shared aggregate transport bytes
@@ -669,6 +687,16 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
+      - name: Install Maven 3.9.8
+        run: |
+          curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 \
+            -o "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" \
+            https://archive.apache.org/dist/maven/maven-3/3.9.8/binaries/apache-maven-3.9.8-bin.tar.gz
+          printf '%s  %s\n' '7d171def9b85846bf757a2cec94b7529371068a0670df14682447224e57983528e97a6d1b850327e4ca02b139abaab7fcb93c4315119e6f0ffb3f0cbc0d0b9a2' "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" | sha512sum --check
+          tar xzf "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
+      - name: Verify Maven download retries
+        run: python3 tools/check_maven_downloads.py
       - name: Qualify and build the pinned Rust B2 and B3 harnesses
         shell: bash
         run: |
@@ -925,6 +953,16 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
+      - name: Install Maven 3.9.8
+        run: |
+          curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 \
+            -o "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" \
+            https://archive.apache.org/dist/maven/maven-3/3.9.8/binaries/apache-maven-3.9.8-bin.tar.gz
+          printf '%s  %s\n' '7d171def9b85846bf757a2cec94b7529371068a0670df14682447224e57983528e97a6d1b850327e4ca02b139abaab7fcb93c4315119e6f0ffb3f0cbc0d0b9a2' "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" | sha512sum --check
+          tar xzf "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
+      - name: Verify Maven download retries
+        run: python3 tools/check_maven_downloads.py
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
