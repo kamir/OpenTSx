@@ -711,6 +711,16 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   that needs them.
 - SaaS backend README: a failed start logs its traceback at ERROR, also below `LOG_LEVEL=DEBUG`, and a stop signal
   while the backend waits for its database ends the process with exit code 3.
+- SaaS frontend: the development image `opentsx-saas-frontend/Dockerfile` uses `node:22.14.0-alpine3.21` instead of
+  the floating `node:22-alpine` and installs with `npm ci`.
+- SaaS frontend: the page title is `OpenTSx`, and the page description names what the application has, without MFDFA
+  and real-time streaming. The workbench says that Deploy hands the DAG to the vector processor and points to the
+  place Models of the Systems page instead of an MLflow training. The flow builder no longer shows the emoji node
+  legend or the paragraph that promised 15 node types.
+- SaaS frontend README: the routes come from `src/App.tsx`, the 401 handling from `src/services/api.ts`, the page
+  sections from the pages, and the nginx section from `nginx.conf` with `<host>` placeholders. Installs use `npm ci`
+  and the full stack starts with `docker compose up -d --build`. The code copies and the sections on project
+  structure, performance and browser support are deleted.
 
 ### Removed
 
@@ -874,6 +884,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The opentsx-market README no longer carries the dated status of a private archive and build environment.
 - Python package: the `kafka` extra no longer repeats `fastavro`, a core dependency; the README no longer claims a
   Kafka producer or a documentation site, and `pyproject.toml` links the repository and user manual chapter 10.
+- SaaS frontend: the route `/flow-builder/:flowId` and the Flow Composer link "Open in the flow builder". The route
+  never read the id: it showed three demo nodes, and its save created a new flow. `/flow-builder` creates a new flow
+  as before, and any other path opens `/dashboard`.
+- SaaS frontend: the npm script `format`, which ran Prettier over the whole `src/` tree.
+- SaaS frontend: the unused devDependency `prettier`.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported

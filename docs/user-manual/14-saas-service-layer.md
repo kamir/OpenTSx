@@ -16,8 +16,9 @@
   * flows stored per user (`/api/v1/flows`: create, read, update, delete), each a JSON definition with a status.
   * `POST /api/v1/dags/deploy` (body: a DAG as YAML, at most 256 KiB) and `POST /api/v1/dags/stop?name=<dag>` forward
     to the retrieval server in `RETRIEVAL_URL`, with `DAG_RUN_TOKEN` as run token. `DAG_RUN_ROLE` decides who may
-    call them: `superuser` (default, administrators only) or `user` (every signed-in account). Without
-    `RETRIEVAL_URL` both answer 503 `RETRIEVAL_URL: not set; this installation deploys no DAGs`.
+    call them: `superuser` (default, administrators only) or `user` (every signed-in account). An account that
+    may not call them gets 403 first; without `RETRIEVAL_URL` they answer 503
+    `RETRIEVAL_URL: not set; this installation deploys no DAGs` to an account that may.
     `GET /api/v1/dags/capabilities` tells the workbench whether the account may deploy.
   * the working copy of the signal bindings of a system per account (`/api/v1/systems/<system>/bindings`: read,
     replace, delete). `POST /api/v1/systems/<system>/generate` runs the demo generator of a signal through the
@@ -66,8 +67,8 @@
       says how far it may be trusted.
     * The switch "Guide" shows seven steps (System, Signals, Stock, Bind, Prepare, Run, Model) with the state of the
       system in each. They are not the eight steps of [chapter 16](16-engineering-method.md).
-  * the visual flow builder (`/flow-builder`). The workbench cannot open its flows; the Flow Composer links them to
-    `/flow-builder/<id>`.
+  * the visual flow builder (`/flow-builder`). It stores a new flow and cannot open a stored one. The workbench
+    cannot open its flows either; the Flow Composer lists them as `flow builder`.
 * [Chapter 16](16-engineering-method.md) describes the method that uses these pieces together.
 
 ## 14.2 Run the SaaS stack

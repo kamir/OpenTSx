@@ -81,7 +81,7 @@ export default function FlowBuilder() {
       };
 
       await flowsAPI.create(flowData);
-      alert('Flow saved successfully!');
+      alert('The flow is saved.');
       navigate('/dashboard');
     } catch (error) {
       console.error('Failed to save flow:', error);
@@ -147,32 +147,7 @@ export default function FlowBuilder() {
               </p>
             </div>
           </Panel>
-
-          <Panel position="top-right" className="bg-white p-4 rounded shadow">
-            <div className="text-sm space-y-2">
-              <div>
-                <div className="font-medium mb-1">Node Types:</div>
-                <div className="space-y-1 text-xs text-gray-600">
-                  <div>📥 Data Generator - Create synthetic data</div>
-                  <div>📊 DFA Analysis - Analyze correlations</div>
-                  <div>📈 Chart - Visualize results</div>
-                </div>
-              </div>
-            </div>
-          </Panel>
         </ReactFlow>
-      </div>
-
-      {/* Instructions Panel */}
-      <div className="bg-gray-50 border-t p-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-sm text-gray-600">
-            <strong>Getting Started:</strong> This is a basic flow builder.
-            Connect nodes to create your analysis pipeline. In production,
-            you'll have access to 15+ node types including Kafka sources, DFA,
-            MFDFA, and more. Click "Save Flow" when ready.
-          </div>
-        </div>
       </div>
     </div>
   );

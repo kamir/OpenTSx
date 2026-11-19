@@ -1,55 +1,38 @@
 # OpenTSx Frontend
 
-React + TypeScript frontend with visual flow builder, authentication, and real-time data visualization.
+The React and TypeScript web application of OpenTSx: sign-in, the Flow Composer, the Systems pages, the web
+workbench and the visual flow builder. This page takes you from a checkout to a development server and a static
+build. It was checked with Node 22 and the package versions in `package-lock.json`.
 
-## Quick Start
+## Run the development server
+
+You need Node 22 with npm, and the SaaS backend on `http://localhost:8000`
+([backend README](../opentsx-saas-backend/README.md)).
 
 ```bash
-# Install dependencies
-npm install
-
-# Create .env file
+npm ci
 cp .env.example .env
-# Edit .env with backend URL
-
-# Run development server
 npm run dev
 ```
 
-Frontend will be available at: **http://localhost:3000**
+`npm ci` installs the versions that `package-lock.json` pins. The page is at `http://localhost:3000`. The dev server
+([`vite.config.ts`](vite.config.ts)) forwards `/api` to `http://localhost:8000` and `/retrieval` to
+`OPENTSX_RETRIEVAL_URL` (default `http://localhost:8080`). `.env` sets the address of the backend, see
+[Set the backend address](#set-the-backend-address).
 
-## Environment Variables
+## Find the code
 
-Create `.env` file in `frontend/` directory:
-
-```bash
-VITE_API_BASE_URL=http://localhost:8000
-```
-
-## Project Structure
-
-```
-frontend/
-├── src/
-│   ├── App.tsx                 # Main app with routing
-│   ├── main.tsx                # Entry point
-│   ├── index.css               # Global styles
-│   ├── pages/
-│   │   ├── Login.tsx           # Login page
-│   │   ├── Register.tsx        # Registration page
-│   │   ├── Dashboard.tsx       # OpenTSx Flow Composer: the flows of the account
-│   │   └── FlowBuilder.tsx     # Visual flow builder
-│   ├── services/
-│   │   └── api.ts              # Axios API client
-│   └── store/
-│       └── authStore.ts        # Zustand auth state
-├── index.html
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-├── tailwind.config.js
-└── postcss.config.js
-```
+| Path | What it holds |
+|------|---------------|
+| [`src/App.tsx`](src/App.tsx) | the routes, see [Routes](#routes) |
+| [`src/main.tsx`](src/main.tsx) | the entry point and the page `This page failed: <message>` |
+| [`src/pages/`](src/pages) | one component per page |
+| [`src/services/api.ts`](src/services/api.ts) | the clients of the backend and the retrieval server, and how an error answer is read |
+| [`src/store/authStore.ts`](src/store/authStore.ts) | the sign-in state |
+| [`src/workbench/`](src/workbench) | the web workbench and the Flow Composer |
+| [`src/systems/`](src/systems) | the places of the Systems page |
+| [`nginx.conf`](nginx.conf) | the nginx site of the static image |
+| [`Dockerfile`](Dockerfile) | the image of the development server for Docker Compose |
 
 ## Tech Stack
 
@@ -62,45 +45,55 @@ frontend/
 - **React Flow** - Visual flow builder
 - **Tailwind CSS** - Utility-first CSS
 
-## Key Features
+## Sign in
 
-### Authentication
-
-- JWT-based authentication
-- Token storage in localStorage
-- Auto-redirect on 401 errors
-- Protected routes
+- Sign-in (`POST /api/v1/auth/login`) keeps the access token as `access_token` in `localStorage` of the browser.
+  Every request to the backend carries it as `Authorization: Bearer <token>`.
+- A 401 from the backend removes `access_token` and `refresh_token` and opens `/login`. On `/workbench` and `/login`
+  the page stays: the workbench keeps its flow in memory and says `your session has expired, sign in again`. A 401
+  of `/auth/login` or `/auth/register` is a refused sign-in, not an expired session: the form shows the reason. Both interceptors are in [`src/services/api.ts`](src/services/api.ts).
+- `/dashboard` and `/flow-builder` need a token and open `/login` without one. `/login` and `/register` open
+  `/dashboard` when the browser holds a token.
 - Logout removes both tokens from this browser, also when the backend does not answer. The login page then says
   `signed out here; the server could not be told: <reason>`
-- Only a 401 from `GET /api/v1/auth/me` ends the session. Another failure keeps it, and the Flow Composer, the flow
+- When `GET /api/v1/auth/me` fails with another status than 401, the session stays, and the Flow Composer, the flow
   builder and the systems page say `your account could not be read (<reason>); reload the page to try again`
 
-### Pages
+## Pages
 
-#### Login Page (`/login`)
-- Email/password authentication
+### Login (`/login`)
+- Email and password
 - The test operation hint when the backend runs with `TEST_LOGIN=true` (`GET /api/v1/auth/mode`). When that
   request fails, the page says `the sign-in mode could not be read from the backend (<reason>); reload the page to try again`
-- Auto-redirect if already logged in
+- Opens `/dashboard` after the sign-in
 
-#### Register Page (`/register`)
-- User registration form
-- Email validation
-- Password requirements
+### Register (`/register`)
+- Full name, email address and a password of at least 8 characters
+- Signs in with the new account and opens `/dashboard`
 
-#### OpenTSx Flow Composer (`/dashboard`)
-- Flows list with stats
-- Create new flow button
-- Organization overview
-- Quick actions
+### OpenTSx Flow Composer (`/dashboard`)
+- Lists the flows of the account and how many of them run. The filters are the domain, "Flows with a Smart Topic",
+  "Flows built on inventory series" and a text filter on name, track, operator and topic
+- "New flow" opens the workbench with an empty flow; "Open in the editor" opens the selected flows in the workbench,
+  the first in this tab and each other one in a tab of its own
+- Changes the name and description of a flow, copies and deletes the selected flows
+- Starts and stops the Smart Topic of a flow on the vector processor
+- Links to the Systems page, the workbench and the flow builder
 
-#### Flow Builder (`/flow-builder` and `/flow-builder/:flowId`)
-- Visual flow editor with React Flow
-- Drag-and-drop nodes
-- Node connections
-- Save flow to backend
+### Flow Builder (`/flow-builder`)
+- A React Flow canvas that starts with three nodes: Data Generator, DFA Analysis and Chart
+- Drag nodes and connect them
+- "Save Flow" stores a new flow of the account (`POST /api/v1/flows`) and opens the Flow Composer
+- It cannot open a stored flow. The workbench cannot open its flows either: the Flow Composer lists them as
+  `flow builder`
 
-#### Workbench (`/workbench`)
+### Systems (`/systems`)
+- Reads the systems of the retrieval server (`GET /v1/systems`) and opens the first one at `/systems/<system>/signals`
+- The places System, Signals, Flows, Models and Simulate of a system; see
+  [chapter 14 of the user manual](../docs/user-manual/14-saas-service-layer.md)
+- Needs no account; the place Flows lists flows only after the sign-in
+
+### Workbench (`/workbench`)
 - The Swing bucket analyser in the browser; computes locally and needs no account
 - Load a bucket: sample, CSV/TSV file, episode JSON, or episodes from the retrieval server
   (dev proxy `/retrieval`, target `OPENTSX_RETRIEVAL_URL`, default `http://localhost:8080`)
@@ -130,207 +123,82 @@ frontend/
 - Export: `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor, Java code
 - Code in `src/workbench/`; limits in `../EVOLUTION/TASK-013-web-workbench.md`
 
-### State Management
+## Routes
 
-**Auth Store (Zustand):**
+The routes are in [`src/App.tsx`](src/App.tsx).
 
-```typescript
-interface AuthState {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
+| Path | Page | Account |
+|------|------|---------|
+| `/` | opens `/dashboard` | |
+| `/login` | Login | opens `/dashboard` when the browser holds a token |
+| `/register` | Register | opens `/dashboard` when the browser holds a token |
+| `/dashboard` | OpenTSx Flow Composer | needed; opens `/login` without a token |
+| `/flow-builder` | Flow Builder | needed; opens `/login` without a token |
+| `/workbench` | Workbench | not needed |
+| `/systems` | Systems, the first system | not needed |
+| `/systems/<system>/<place>` | Systems, one place of one system | not needed |
+| any other path | opens `/dashboard` | |
 
-  login: (data: LoginRequest) => Promise<void>;
-  register: (data: RegisterRequest) => Promise<void>;
-  logout: () => Promise<void>;
-  fetchCurrentUser: () => Promise<void>;
-}
-```
+## Check a change
 
-### API Client
-
-Axios client with interceptors:
-
-```typescript
-// Automatically attach auth token
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Handle 401 errors
-apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('access_token');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
-```
-
-## Routing
-
-**Route Structure:**
-
-```typescript
-/                     → Redirect to /dashboard
-/login                → Login page (public)
-/register             → Register page (public)
-/dashboard            → OpenTSx Flow Composer (protected)
-/systems/:system/:place → Shell around a system: system, signals, flows, models (public except flows)
-/flow-builder         → Create new flow (protected)
-/flow-builder/:flowId → Edit existing flow (protected)
-```
-
-**Protected Routes:**
-
-Routes that require authentication will automatically redirect to `/login` if user is not authenticated.
-
-**Public Routes:**
-
-Login and Register pages will automatically redirect to `/dashboard` if user is already authenticated.
-
-## Development
+The CI job `SaaS frontend` (`.github/workflows/ci.yml`) runs these commands after `npm ci`:
 
 ```bash
-# Install dependencies
-npm install
-
-# Run dev server with hot reload
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-
-# Lint code
+npx tsc --noEmit
 npm run lint
-```
-
-## Building for Production
-
-```bash
-# Build optimized bundle
+npx vitest run
 npm run build
-
-# Output in dist/ directory
-ls dist/
 ```
 
-The build creates optimized static files that can be served by any web server (Nginx, Apache, etc.).
+`npm test` runs vitest in watch mode. `npm run build` writes the static files to `dist/`. `npm run preview` serves
+`dist/` at `http://localhost:4173`.
 
-## Docker
+## Run in Docker
 
-**Dockerfile:**
+[`Dockerfile`](Dockerfile) runs the development server (`npm run dev`) on port 3000 in `node:22.14.0-alpine3.21`
+and installs with `npm ci`.
 
-```dockerfile
-FROM node:22-alpine
+The static image is [`deploy/docker/saas-frontend.Dockerfile`](../deploy/docker/saas-frontend.Dockerfile): it runs
+`npm run build` and serves `dist/` with nginx and [`nginx.conf`](nginx.conf) on port 8080.
+`deploy/k3s/10-build.sh` builds it for k3s.
 
-WORKDIR /app
+### Run frontend, backend and PostgreSQL with Docker Compose
 
-COPY package*.json ./
-RUN npm install
-
-COPY . .
-
-CMD ["npm", "run", "dev", "--", "--host"]
-```
-
-**Build and Run:**
-
-```bash
-# Build
-docker build -t opentsx-frontend .
-
-# Run
-docker run -p 3000:3000 opentsx-frontend
-```
-
-### Integrated Startup (Recommended)
-
-You can run the entire stack (Frontend + Backend + DB) using the backend's docker-compose. Set `SECRET_KEY`,
+[`../opentsx-saas-backend/docker-compose.yml`](../opentsx-saas-backend/docker-compose.yml) builds this `Dockerfile` as the
+service `frontend` and starts it next to the backend and PostgreSQL. Set `SECRET_KEY`,
 `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` in `../opentsx-saas-backend/.env` first (see
 [DOCKER-SETUP.md](../opentsx-saas-backend/DOCKER-SETUP.md)):
 
 ```bash
 cd ../opentsx-saas-backend
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
-## Testing
+## Serve the static build with nginx
 
-```bash
-# Install testing libraries
-npm install -D @testing-library/react @testing-library/jest-dom @testing-library/user-event vitest
+[`nginx.conf`](nginx.conf) is the site of the static image:
 
-# Run tests
-npm test
-```
+| Location | What nginx does |
+|----------|-----------------|
+| `/assets/` | serves the hashed build output with `Cache-Control: public, max-age=31536000, immutable` |
+| `/retrieval/v1/dags/` | answers 403 `{"error":"deploying and stopping DAGs goes through /api/v1/dags/","type":"forbidden"}` |
+| `/retrieval/v1/systems/<id>/generate` | answers 403 `{"error":"generating a signal goes through /api/v1/systems/","type":"forbidden"}` |
+| `/retrieval/` | forwards to `http://opentsx-retrieval:8080/`, waits 60 s |
+| `/studio/` | forwards to `http://opentsx-studio:80/`, waits 60 s; `/studio` opens `/studio/` |
+| `/api/v1/dags/`, `/api/v1/systems/` | forward to `http://opentsx-saas-backend:8000`, wait 300 s |
+| `/api/` | forwards to `http://opentsx-saas-backend:8000`, waits 60 s |
+| `/` | serves `index.html` for every path without a file, with `Cache-Control: no-cache` |
 
-## Code Style
+nginx answers a 502 or 504 of `/api/` and `/retrieval/` with a JSON error body; see
+[Read error messages](#read-error-messages). nginx does not start when one of the host names
+`opentsx-retrieval`, `opentsx-studio` or `opentsx-saas-backend` cannot be resolved. Reading the retrieval server
+needs no account: expose the image only on a trusted network.
 
-**Format with Prettier:**
+To serve the build from another nginx, copy `nginx.conf` and replace `opentsx-retrieval:8080`,
+`opentsx-studio:80` and `opentsx-saas-backend:8000` with `<host>:<port>` of each service, where `<host>` is the host
+name and `<port>` the port that service listens on.
 
-```bash
-# Install prettier
-npm install -D prettier
-
-# Format code
-npx prettier --write src/
-```
-
-**Lint with ESLint:**
-
-```bash
-# Already configured with Vite
-
-# Run linter
-npm run lint
-```
-
-## Deployment
-
-### Production Build
-
-```bash
-# Build
-npm run build
-
-# Serve with Nginx
-sudo cp -r dist/* /var/www/html/opentsx/
-```
-
-### Nginx Configuration
-
-```nginx
-server {
-    listen 80;
-    server_name opentsx.com;
-    root /var/www/html/opentsx;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    location /api {
-        proxy_pass http://localhost:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-```
-
-### Environment Variables in Production
+## Set the backend address
 
 `VITE_API_BASE_URL` is the address of the SaaS backend as the browser sees it, without `/api/v1`. Vite reads it
 at build time from the environment or from `.env`. `.env` is git-ignored; `.env.example` is the template.
@@ -351,46 +219,6 @@ VITE_API_BASE_URL=https://<backend-host> npm run build
 The retrieval server has no build variable: the page reaches it at `/retrieval` of its own origin. nginx
 (`nginx.conf`) forwards it to `opentsx-retrieval:8080`, the dev server to `OPENTSX_RETRIEVAL_URL` (default
 `http://localhost:8080`).
-
-## Component Examples
-
-### Protected Route
-
-```typescript
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuthStore();
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <>{children}</>;
-}
-```
-
-### API Call Example
-
-```typescript
-// Login
-const handleLogin = async () => {
-  try {
-    await login({ email, password });
-    navigate('/dashboard');
-  } catch (error) {
-    console.error('Login failed:', error);
-  }
-};
-
-// Fetch flows
-const loadFlows = async () => {
-  const flows = await flowsAPI.list();
-  setFlows(flows);
-};
-```
 
 ## Read error messages
 
@@ -449,52 +277,24 @@ npm run dev -- --port 3001
 
 ### CORS Errors
 
-Ensure backend CORS is configured to allow `http://localhost:3000`:
-
-```python
-# In backend main.py
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-```
+The backend accepts requests from another origin only when `BACKEND_CORS_ORIGINS` lists it; the
+[backend README](../opentsx-saas-backend/README.md#environment-variables) gives its default. With an empty
+`VITE_API_BASE_URL` the page calls its own origin and needs no entry there.
 
 ### Build Errors
 
 ```bash
-# Clear cache
-rm -rf node_modules package-lock.json
-npm install
-
-# Clear Vite cache
-rm -rf node_modules/.vite
+rm -rf node_modules
+npm ci
 ```
 
 ### TypeScript Errors
 
 ```bash
-# Check TypeScript configuration
 npx tsc --noEmit
-
-# Update TypeScript
-npm install -D typescript@latest
 ```
 
-## Browser Support
-
-- Chrome/Edge: Last 2 versions
-- Firefox: Last 2 versions
-- Safari: Last 2 versions
-
-## Performance
-
-- Code splitting enabled via Vite
-- Lazy loading for routes
-- Asset optimization in production build
-- Tree-shaking to remove unused code
+`npm ci` installs the TypeScript version that `package-lock.json` pins.
 
 ## Documentation
 

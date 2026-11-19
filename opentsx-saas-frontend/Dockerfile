@@ -1,13 +1,13 @@
-FROM node:22-alpine
+FROM node:22.14.0-alpine3.21
 
 # Set working directory
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm ci --no-audit --no-fund
 
 # Copy application code
 COPY . .

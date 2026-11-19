@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "private": true,
-  "description": "OpenTSx SaaS Platform - React Frontend with Visual Flow Builder",
+  "description": "OpenTSx web application: Flow Composer, Systems pages, web workbench and visual flow builder",
   "dependencies": {
     "axios": "^1.20.0",
     "react": "^18.2.0",
@@ -17,8 +17,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "test": "vitest",
-    "format": "prettier --write src/"
+    "test": "vitest"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.2.0",
@@ -35,7 +34,6 @@
     "eslint-plugin-react-refresh": "^0.4.5",
     "jsdom": "^23.1.0",
     "postcss": "^8.5.31",
-    "prettier": "^3.9.10",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3",
     "vite": "^7.3.7",

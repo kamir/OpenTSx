@@ -95,14 +95,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/flow-builder/:flowId"
-          element={
-            <ProtectedRoute>
-              <FlowBuilder />
-            </ProtectedRoute>
-          }
-        />
 
         {/* The workbench computes in the browser and needs no account */}
         <Route path="/workbench" element={<Workbench />} />

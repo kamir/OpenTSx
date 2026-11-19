@@ -250,7 +250,7 @@ function OperationPanel({
                 </span>
               ))}
             </div>
-            {tab === 'model' && <p className="wb-muted">These buttons have no action in the Swing workbench either. Models belong to the Smart Topic training (Python, MLflow).</p>}
+            {tab === 'model' && <p className="wb-muted">These buttons have no action in the Swing workbench either. The models of a system are in its place Models on the Systems page (/systems).</p>}
           </fieldset>
         )}
         {!ready && <p className="wb-muted">Load a bucket first, then every operation applies to the bucket selected in the track.</p>}
@@ -477,8 +477,8 @@ function SmartTopic({ node, base, onSave }: { node: FlowNode; base: string; onSa
         Download Smart Topic definition
       </button>
       <p className="wb-muted">
-        The definition is an opentsx.dag.v1 file for the processor described in docs/datamodel-2026/11. That processor is
-        a proposal; the download hands the file over and does not deploy.
+        The definition is an opentsx.dag.v1 file for the vector processor (docs/datamodel-2026/11). The download only
+        saves the file; Deploy below hands the DAG to the processor.
       </p>
       <DeploymentsPanel
         base={base}

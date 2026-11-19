@@ -373,7 +373,7 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
                 </div>
                 {focused.reason && (
                   <p className="warn">
-                    {focused.reason} The editor cannot open it. <a href={`/flow-builder/${focused.id}`}>Open in the flow builder</a>
+                    {focused.reason} The editor cannot open it.
                   </p>
                 )}
                 <dl className="wb-readout wide">
