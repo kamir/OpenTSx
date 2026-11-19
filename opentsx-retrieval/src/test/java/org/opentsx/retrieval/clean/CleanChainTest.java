@@ -161,7 +161,7 @@ class CleanChainTest {
         assertTrue(e.getMessage().contains("node n4 (norm.zscore) is not available"), e.getMessage());
         e = assertThrows(IllegalArgumentException.class,
                 () -> CleanChain.of(List.of(JSON.readTree("{\"id\":\"n1\",\"op\":\"resample\",\"params\":{\"every\":\"one minute\"}}"))));
-        assertTrue(e.getMessage().contains("every must be a duration"), e.getMessage());
+        assertTrue(e.getMessage().contains("every: \"one minute\" is not a duration"), e.getMessage());
         e = assertThrows(IllegalArgumentException.class,
                 () -> CleanChain.of(List.of(JSON.readTree("{\"id\":\"n1\",\"op\":\"dq.checks\",\"params\":{\"checks\":[\"FLATLINE\"]}}"))));
         assertTrue(e.getMessage().contains("PLAUSIBLE_RANGE only"), e.getMessage());
@@ -203,10 +203,27 @@ class CleanChainTest {
 
     @Test
     void aRollingWindowThatIsNoDurationIsRefusedAsWindow() throws Exception {
-        assertEquals("node r: window must be a duration like PT1M", refusal("{\"id\":\"r\",\"op\":\"feature.rolling\",\"params\":{\"window\":\"an hour\"}}"));
+        assertEquals("node r: window: \"an hour\" is not a duration; expected an ISO-8601 duration such as PT1M, or a number of seconds",
+                refusal("{\"id\":\"r\",\"op\":\"feature.rolling\",\"params\":{\"window\":\"an hour\"}}"));
+        assertEquals("node n1: every: \"10min\" is not a duration; expected an ISO-8601 duration such as PT1M, or a number of seconds",
+                refusal("{\"id\":\"n1\",\"op\":\"resample\",\"params\":{\"every\":\"10min\"}}"));
         assertInstanceOf(java.time.format.DateTimeParseException.class, assertThrows(IllegalArgumentException.class,
                 () -> CleanChain.of(List.of(JSON.readTree("{\"id\":\"r\",\"op\":\"feature.rolling\",\"params\":{\"window\":\"an hour\"}}")))).getCause());
-        assertEquals("node r: window must be above zero", refusal("{\"id\":\"r\",\"op\":\"feature.rolling\",\"params\":{\"window\":\"PT0S\"}}"));
+        assertEquals("node r: window: \"PT0S\" is not above zero; expected a duration above zero, such as PT1M",
+                refusal("{\"id\":\"r\",\"op\":\"feature.rolling\",\"params\":{\"window\":\"PT0S\"}}"));
+        assertEquals("node n1: every: \"-60\" is not above zero; expected a duration above zero, such as PT1M",
+                refusal("{\"id\":\"n1\",\"op\":\"resample\",\"params\":{\"every\":-60}}"));
+    }
+
+    @Test
+    void aDurationTheTimeAxisCannotHoldIsRefusedWithItsRange() throws Exception {
+        String range = " is out of range; expected a duration from PT0.000001S to PT2562047H47M16.854775807S, such as PT1M";
+        assertEquals("node r: window: \"P200000D\"" + range,
+                refusal("{\"id\":\"r\",\"op\":\"feature.rolling\",\"params\":{\"window\":\"P200000D\"}}"));
+        assertEquals("node r: window: \"PT0.0000001S\"" + range,
+                refusal("{\"id\":\"r\",\"op\":\"feature.rolling\",\"params\":{\"window\":\"PT0.0000001S\"}}"));
+        assertEquals("node n1: every: \"1.0E20\"" + range, refusal("{\"id\":\"n1\",\"op\":\"resample\",\"params\":{\"every\":1e20}}"));
+        assertEquals("node n1: every: \"1.0E-9\"" + range, refusal("{\"id\":\"n1\",\"op\":\"resample\",\"params\":{\"every\":1e-9}}"));
     }
 
     @Test
@@ -222,6 +239,138 @@ class CleanChainTest {
         IllegalStateException e = assertThrows(IllegalStateException.class,
                 () -> chain.apply(st, new CleanChain.Block(new long[]{t}, new double[]{1}), t + 1));
         assertEquals("node r: window PT10M holds more than 100000 values; give a shorter window or resample the series first", e.getMessage());
+    }
+
+    @Test
+    void aRollingWindowOverMoreValuesThanItMayHoldIsRefusedWhenTheChainKnowsTheInterval() throws Exception {
+        JsonNode tenMs = JSON.readTree("{\"id\":\"n1\",\"op\":\"resample\",\"params\":{\"every\":\"PT0.01S\"}}");
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> CleanChain.of(List.of(tenMs,
+                JSON.readTree("{\"id\":\"r\",\"op\":\"feature.rolling\",\"params\":{\"window\":\"PT2H\"}}"))));
+        assertEquals("node r: window: PT2H holds 720000 values at the interval PT0.01S of its input; expected a window of at most"
+                + " PT16M40S (100000 values) or a longer resample interval before it", e.getMessage());
+        // the most a window may hold is fine, also with a lag in between
+        assertEquals(3, CleanChain.of(List.of(tenMs, JSON.readTree("{\"id\":\"l\",\"op\":\"feature.lag\",\"params\":{\"steps\":2}}"),
+                JSON.readTree("{\"id\":\"r\",\"op\":\"feature.rolling\",\"params\":{\"window\":\"PT16M40S\"}}"))).size());
+    }
+
+    /** A rolling aggregate the long way: every value of (t - window, t] that is no gap, added up for each sample. */
+    static double[] rollingByHand(long[] t, double[] v, long window, String fn) {
+        double[] out = new double[t.length];
+        for (int i = 0; i < t.length; i++) {
+            double sum = 0;
+            double sq = 0;
+            double min = Double.POSITIVE_INFINITY;
+            double max = Double.NEGATIVE_INFINITY;
+            int n = 0;
+            for (int k = 0; k <= i; k++) {
+                if (t[k] > t[i] - window && !Double.isNaN(v[k])) {
+                    sum += v[k];
+                    sq += v[k] * v[k];
+                    min = Math.min(min, v[k]);
+                    max = Math.max(max, v[k]);
+                    n++;
+                }
+            }
+            double mean = sum / n;
+            out[i] = n == 0 ? Double.NaN : switch (fn) {
+                case "MIN" -> min;
+                case "MAX" -> max;
+                case "STD" -> Math.sqrt(Math.max(0, sq / n - mean * mean));
+                default -> mean;
+            };
+        }
+        return out;
+    }
+
+    @Test
+    void aRollingFeatureEqualsTheAggregateOfItsWindowAlsoInPiecesAndAfterARestart() throws Exception {
+        java.util.SplittableRandom random = new java.util.SplittableRandom(7);
+        int n = 3000;
+        long[] t = new long[n];
+        double[] v = new double[n];
+        long time = T0;
+        for (int i = 0; i < n; i++) {
+            // 0 to 1.5 s apart, sometimes twice the same time; one value in twenty is a gap, one in a thousand infinite
+            time += random.nextInt(4) * SECOND / 2;
+            t[i] = time;
+            int kind = random.nextInt(1000);
+            v[i] = kind < 50 ? Double.NaN : kind == 50 ? Double.POSITIVE_INFINITY : 100 + 10 * random.nextGaussian();
+        }
+        for (String fn : List.of("MEAN", "STD", "MIN", "MAX")) {
+            for (String window : List.of("PT0.5S", "PT30S", "PT10M")) {
+                CleanChain chain = CleanChain.of(List.of(JSON.readTree("{\"id\":\"r\",\"op\":\"feature.rolling\",\"params\":{\"window\":\""
+                        + window + "\",\"fn\":\"" + fn + "\"}}")));
+                double[] expected = rollingByHand(t, v, java.time.Duration.parse(window).toNanos() / 1000, fn);
+                CleanChain.State st = chain.newState();
+                double[] got = new double[n];
+                for (int from = 0; from < n; ) {
+                    int to = Math.min(n, from + 1 + random.nextInt(200));
+                    st = chain.restore(JSON.readTree(st.json().toString()));
+                    CleanChain.Block out = chain.apply(st, new CleanChain.Block(Arrays.copyOfRange(t, from, to),
+                            Arrays.copyOfRange(v, from, to)), t[to - 1] + 1);
+                    System.arraycopy(out.values(), 0, got, from, out.size());
+                    from = to;
+                }
+                // the same block by block, without a restart in between
+                CleanChain.State kept = chain.newState();
+                double[] again = new double[n];
+                for (int from = 0; from < n; from += 100) {
+                    int to = Math.min(n, from + 100);
+                    CleanChain.Block out = chain.apply(kept, new CleanChain.Block(Arrays.copyOfRange(t, from, to),
+                            Arrays.copyOfRange(v, from, to)), t[to - 1] + 1);
+                    System.arraycopy(out.values(), 0, again, from, out.size());
+                }
+                assertArrayEquals(again, got, "a restart goes on with the same running sums: " + fn + " over " + window);
+                for (double[] actual : List.of(got, again)) {
+                    assertEquals(expected.length, actual.length);
+                    for (int i = 0; i < n; i++) {
+                        if (Double.isNaN(expected[i]) || Double.isInfinite(expected[i])) {
+                            assertEquals(expected[i], actual[i], fn + " over " + window + " at " + i);
+                        } else {
+                            assertEquals(expected[i], actual[i], 1e-9 * Math.max(1, Math.abs(expected[i])), fn + " over " + window + " at " + i);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * A value that has left the window leaves nothing behind in the running sums: not the rounding of a level that
+     * fell by orders of magnitude, nor the overflow of a square. From the first sample whose window holds none of it,
+     * the feature equals the aggregate of its window.
+     */
+    @Test
+    void aValueThatLeftTheWindowLeavesNoRoundingBehind() throws Exception {
+        java.util.SplittableRandom random = new java.util.SplittableRandom(11);
+        int n = 4000;
+        long[] t = new long[n];
+        double[] fall = new double[n];
+        double[] stop = new double[n];
+        double[] huge = new double[n];
+        for (int i = 0; i < n; i++) {
+            t[i] = T0 + i * SECOND;
+            // a level of a million with a spread of 1 that falls to 1 with a spread of 0.01
+            fall[i] = i < 2500 ? 1e6 + random.nextGaussian() : 1 + 0.01 * random.nextGaussian();
+            // a turbine in W that stops
+            stop[i] = i < 2500 ? 2e6 + 1e4 * random.nextGaussian() : 5 * random.nextGaussian();
+            // one finite value whose square is no finite number
+            huge[i] = i == 100 ? 1e200 : 1 + 0.01 * random.nextGaussian();
+        }
+        record Series(String name, double[] values, String window, int clean) {
+        }
+        for (Series s : List.of(new Series("fall", fall, "PT1000S", 3499), new Series("stop", stop, "PT10M", 3099),
+                new Series("huge", huge, "PT1000S", 1100))) {
+            for (String fn : List.of("MEAN", "STD")) {
+                CleanChain chain = CleanChain.of(List.of(JSON.readTree("{\"id\":\"r\",\"op\":\"feature.rolling\",\"params\":{\"window\":\""
+                        + s.window() + "\",\"fn\":\"" + fn + "\"}}")));
+                double[] expected = rollingByHand(t, s.values(), java.time.Duration.parse(s.window()).toNanos() / 1000, fn);
+                double[] got = chain.apply(chain.newState(), new CleanChain.Block(t, s.values()), t[n - 1] + 1).values();
+                for (int i = s.clean(); i < n; i++) {
+                    assertEquals(expected[i], got[i], 1e-9 * Math.max(1e-3, Math.abs(expected[i])), fn + " of " + s.name() + " at " + i);
+                }
+            }
+        }
     }
 
     // ---------------------------------------------------------------- the stream that writes a clean signal

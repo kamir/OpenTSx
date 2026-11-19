@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -111,6 +112,8 @@ public final class CleanChain {
      */
     public static CleanChain of(List<JsonNode> nodes) {
         List<Step> steps = new ArrayList<>();
+        // the interval of the samples a step reads; 0 until a resample step sets it
+        long interval = 0;
         for (JsonNode n : nodes) {
             String id = n.path("id").asText();
             JsonNode p = n.path("params");
@@ -142,6 +145,7 @@ public final class CleanChain {
                         throw new IllegalArgumentException("node " + id + ": agg must be one of " + List.of(Agg.values()));
                     }
                     steps.add(new Resample(every, agg));
+                    interval = every;
                 }
                 case "model.wind-shear" -> {
                     double from = number(id, p, "fromM", Double.NaN);
@@ -176,7 +180,14 @@ public final class CleanChain {
                     } catch (IllegalArgumentException e) {
                         throw new IllegalArgumentException("node " + id + ": fn must be one of " + List.of(Fn.values()));
                     }
-                    steps.add(new Rolling(id, micros(id, p, "window"), fn));
+                    long window = micros(id, p, "window");
+                    if (interval > 0 && Math.floorDiv(window - 1, interval) + 1 > MAX_WINDOW_VALUES) {
+                        throw new IllegalArgumentException("node " + id + ": window: " + Duration.of(window, ChronoUnit.MICROS) + " holds "
+                                + (Math.floorDiv(window - 1, interval) + 1) + " values at the interval " + Duration.of(interval, ChronoUnit.MICROS)
+                                + " of its input; expected a window of at most " + Duration.of(MAX_WINDOW_VALUES * interval, ChronoUnit.MICROS)
+                                + " (" + MAX_WINDOW_VALUES + " values) or a longer resample interval before it");
+                    }
+                    steps.add(new Rolling(id, window, fn));
                 }
                 default -> throw new IllegalArgumentException("node " + id + " (" + n.path("op").asText() + ") is not available in this"
                         + " runtime before a series sink: it runs " + OPS + ". Keep other operators for the workbench.");
@@ -213,17 +224,27 @@ public final class CleanChain {
         return "\"" + (v.isTextual() ? v.asText().trim() : v.toString()) + "\"";
     }
 
+    /** The longest duration of a step: a window in nanoseconds still fits a long. */
+    static final Duration LONGEST = Duration.ofNanos(Long.MAX_VALUE);
+
     /** A duration like PT1M, or a number of seconds as the workbench writes it for other axes. */
     private static long micros(String node, JsonNode params, String field) {
         JsonNode v = params.path(field);
-        long micros;
+        Duration d;
         try {
-            micros = v.isNumber() ? Math.round(v.asDouble() * 1e6) : Duration.parse(v.asText("")).toNanos() / 1000;
+            d = v.isNumber() ? null : Duration.parse(v.asText(""));
         } catch (java.time.format.DateTimeParseException e) {
-            throw new IllegalArgumentException("node " + node + ": " + field + " must be a duration like PT1M", e);
+            throw new IllegalArgumentException("node " + node + ": " + field + ": " + shown(v)
+                    + " is not a duration; expected an ISO-8601 duration such as PT1M, or a number of seconds", e);
         }
-        if (micros <= 0) {
-            throw new IllegalArgumentException("node " + node + ": " + field + " must be above zero");
+        if (d == null ? !(v.asDouble() > 0) : d.isNegative() || d.isZero()) {
+            throw new IllegalArgumentException("node " + node + ": " + field + ": " + shown(v)
+                    + " is not above zero; expected a duration above zero, such as PT1M");
+        }
+        long micros = d == null ? Math.round(v.asDouble() * 1e6) : d.compareTo(LONGEST) <= 0 ? d.toNanos() / 1000 : Long.MAX_VALUE;
+        if (micros <= 0 || micros > LONGEST.toNanos() / 1000) {
+            throw new IllegalArgumentException("node " + node + ": " + field + ": " + shown(v) + " is out of range; expected a duration from"
+                    + " PT0.000001S to " + LONGEST + ", such as PT1M");
         }
         return micros;
     }
@@ -270,6 +291,8 @@ public final class CleanChain {
         final double[] min;
         final double[] max;
         final double[] last;
+        /** Per rolling step the aggregates of its kept samples; null for the other steps. */
+        final Window[] rolling;
 
         State(int steps) {
             start = new long[steps];
@@ -278,6 +301,7 @@ public final class CleanChain {
             min = new double[steps];
             max = new double[steps];
             last = new double[steps];
+            rolling = new Window[steps];
             java.util.Arrays.fill(start, Long.MIN_VALUE);
             for (int i = 0; i < steps; i++) {
                 kept.add(new java.util.ArrayDeque<>());
@@ -308,6 +332,14 @@ public final class CleanChain {
                     kept.get(i).forEach(tv -> samples.addArray().add((long) tv[0]).add(text(tv[1])));
                 }
             }
+            // the running sums as they are, so a restart goes on with the same rounding as a run without one
+            ArrayNode r = o.putArray("rolling");
+            for (int i = 0; i < rolling.length; i++) {
+                if (rolling[i] != null) {
+                    r.addObject().put("step", i).put("sum", text(rolling[i].sum)).put("sq", text(rolling[i].sq))
+                            .put("sumLost", text(rolling[i].sumLost)).put("sqLost", text(rolling[i].sqLost)).put("removed", rolling[i].removed);
+                }
+            }
             return o;
         }
 
@@ -320,6 +352,9 @@ public final class CleanChain {
         State st = new State(steps.size());
         for (int i = 0; i < steps.size(); i++) {
             st.reset(i);
+            if (steps.get(i) instanceof Rolling) {
+                st.rolling[i] = new Window();
+            }
         }
         return st;
     }
@@ -341,6 +376,23 @@ public final class CleanChain {
             int i = k.path("step").asInt(-1);
             if (i >= 0 && i < steps.size()) {
                 k.path("samples").forEach(tv -> st.kept.get(i).add(new double[]{tv.get(0).asLong(), Double.parseDouble(tv.get(1).asText("NaN"))}));
+            }
+        }
+        for (int i = 0; i < steps.size(); i++) {
+            if (steps.get(i) instanceof Rolling r) {
+                for (double[] tv : st.kept.get(i)) {
+                    st.rolling[i].enter(tv, r.fn());
+                }
+            }
+        }
+        for (JsonNode w : json.path("rolling")) {
+            int i = w.path("step").asInt(-1);
+            if (i >= 0 && i < steps.size() && st.rolling[i] != null) {
+                st.rolling[i].sum = Double.parseDouble(w.path("sum").asText("0"));
+                st.rolling[i].sq = Double.parseDouble(w.path("sq").asText("0"));
+                st.rolling[i].sumLost = Double.parseDouble(w.path("sumLost").asText("0"));
+                st.rolling[i].sqLost = Double.parseDouble(w.path("sqLost").asText("0"));
+                st.rolling[i].removed = w.path("removed").asInt();
             }
         }
         return st;
@@ -386,7 +438,7 @@ public final class CleanChain {
             } else if (s instanceof Lag l) {
                 b = lag(st.kept.get(i), l, b);
             } else if (s instanceof Rolling r) {
-                b = rolling(st.kept.get(i), r, b);
+                b = rolling(st, i, r, b);
             }
         }
         return b;
@@ -449,41 +501,143 @@ public final class CleanChain {
         return new Block(in.times(), v);
     }
 
-    private static Block rolling(java.util.ArrayDeque<double[]> kept, Rolling r, Block in) {
+    /**
+     * What a rolling step knows of the values in its window that are no gap: the sums of the finite ones, the number
+     * of infinite ones, how many of the latest values are equal, and for MIN and MAX the samples that can still
+     * become the extreme. Each sample enters and leaves once, so a step costs the same for any window.
+     */
+    static final class Window {
+        double sum;
+        double sq;
+        /**
+         * What the additions to sum and sq rounded away (Neumaier): a value that leaves takes its share with it, so a
+         * level that falls by orders of magnitude leaves no rounding behind in the window after it.
+         */
+        double sumLost;
+        double sqLost;
+        int n;
+        int positiveInfinite;
+        int negativeInfinite;
+        /** Finite values taken out since the sums were added up afresh; bounds the rounding error of the subtractions. */
+        int removed;
+        /** The latest value and how many values in a row up to it were equal: a window of equal values has no spread. */
+        double latest = Double.NaN;
+        long equal;
+        /** MIN (MAX): samples in time order whose values rise (fall), so the first is the extreme of the window. */
+        final java.util.ArrayDeque<double[]> extremes = new java.util.ArrayDeque<>();
+
+        void enter(double[] sample, Fn fn) {
+            double x = sample[1];
+            if (Double.isNaN(x)) {
+                return;
+            }
+            n++;
+            equal = x == latest ? equal + 1 : 1;
+            latest = x;
+            if (x == Double.POSITIVE_INFINITY) {
+                positiveInfinite++;
+            } else if (x == Double.NEGATIVE_INFINITY) {
+                negativeInfinite++;
+            } else {
+                add(x, x * x);
+            }
+            if (fn == Fn.MIN || fn == Fn.MAX) {
+                while (!extremes.isEmpty() && (fn == Fn.MIN ? extremes.peekLast()[1] > x : extremes.peekLast()[1] < x)) {
+                    extremes.removeLast();
+                }
+                extremes.addLast(sample);
+            }
+        }
+
+        void leave(double[] sample) {
+            double x = sample[1];
+            if (Double.isNaN(x)) {
+                return;
+            }
+            n--;
+            if (x == Double.POSITIVE_INFINITY) {
+                positiveInfinite--;
+            } else if (x == Double.NEGATIVE_INFINITY) {
+                negativeInfinite--;
+            } else {
+                add(-x, -(x * x));
+                removed++;
+            }
+            if (extremes.peekFirst() == sample) {
+                extremes.removeFirst();
+            }
+        }
+
+        private void add(double x, double xx) {
+            double s = sum + x;
+            if (Double.isFinite(s)) {
+                sumLost += Math.abs(sum) >= Math.abs(x) ? (sum - s) + x : (x - s) + sum;
+            }
+            sum = s;
+            double q = sq + xx;
+            if (Double.isFinite(q)) {
+                sqLost += Math.abs(sq) >= Math.abs(xx) ? (sq - q) + xx : (xx - q) + sq;
+            }
+            sq = q;
+        }
+
+        void clear() {
+            sum = 0;
+            sq = 0;
+            sumLost = 0;
+            sqLost = 0;
+            removed = 0;
+        }
+
+        void addUp(java.util.ArrayDeque<double[]> kept) {
+            clear();
+            for (double[] tv : kept) {
+                if (Double.isFinite(tv[1])) {
+                    add(tv[1], tv[1] * tv[1]);
+                }
+            }
+        }
+
+        double value(Fn fn) {
+            if (n == 0) {
+                return Double.NaN;
+            }
+            boolean same = n <= equal;
+            double mean = same ? latest : (sum + sumLost) / n;
+            return switch (fn) {
+                case MIN, MAX -> extremes.peekFirst()[1];
+                case MEAN -> positiveInfinite + negativeInfinite == 0 || same ? mean : negativeInfinite == 0 ? Double.POSITIVE_INFINITY
+                        : positiveInfinite == 0 ? Double.NEGATIVE_INFINITY : Double.NaN;
+                // of the values in the window, as a population: no value, no spread
+                case STD -> positiveInfinite + negativeInfinite > 0 ? Double.NaN : same ? 0 : Math.sqrt(Math.max(0, (sq + sqLost) / n - mean * mean));
+            };
+        }
+    }
+
+    private static Block rolling(State st, int i, Rolling r, Block in) {
+        java.util.ArrayDeque<double[]> kept = st.kept.get(i);
+        Window w = st.rolling[i];
         double[] v = new double[in.size()];
         for (int k = 0; k < v.length; k++) {
             long t = in.times()[k];
-            kept.addLast(new double[]{t, in.values()[k]});
+            double[] sample = {t, in.values()[k]};
+            kept.addLast(sample);
+            w.enter(sample, r.fn());
             // the window reaches back windowMicros from this sample, this sample included
-            while (!kept.isEmpty() && (long) kept.peekFirst()[0] <= t - r.windowMicros()) {
-                kept.removeFirst();
+            while ((long) kept.peekFirst()[0] <= t - r.windowMicros()) {
+                w.leave(kept.removeFirst());
             }
             if (kept.size() > MAX_WINDOW_VALUES) {
                 throw new IllegalStateException("node " + r.node() + ": window " + Duration.ofNanos(r.windowMicros() * 1000)
                         + " holds more than " + MAX_WINDOW_VALUES + " values; give a shorter window or resample the series first");
             }
-            double sum = 0;
-            double sq = 0;
-            double min = Double.POSITIVE_INFINITY;
-            double max = Double.NEGATIVE_INFINITY;
-            int n = 0;
-            for (double[] tv : kept) {
-                if (!Double.isNaN(tv[1])) {
-                    sum += tv[1];
-                    sq += tv[1] * tv[1];
-                    min = Math.min(min, tv[1]);
-                    max = Math.max(max, tv[1]);
-                    n++;
-                }
+            if (w.n == w.positiveInfinite + w.negativeInfinite) {
+                w.clear();
+            } else if (w.removed > kept.size() || !Double.isFinite(w.sq)) {
+                // a square that is no finite number stays so when it leaves; only adding up afresh brings the sums back
+                w.addUp(kept);
             }
-            double mean = n == 0 ? Double.NaN : sum / n;
-            v[k] = n == 0 ? Double.NaN : switch (r.fn()) {
-                case MEAN -> mean;
-                case MIN -> min;
-                case MAX -> max;
-                // of the values in the window, as a population: no value, no spread
-                case STD -> Math.sqrt(Math.max(0, sq / n - mean * mean));
-            };
+            v[k] = w.value(r.fn());
         }
         return new Block(in.times(), v);
     }

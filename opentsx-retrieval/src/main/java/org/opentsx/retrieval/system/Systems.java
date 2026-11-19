@@ -38,6 +38,8 @@ public final class Systems {
     private final Map<String, SystemDoc> docs = new LinkedHashMap<>();
     /** Where each document was read from, so it can be read again with a working copy laid over it. */
     private final Map<String, Path> files = new LinkedHashMap<>();
+    /** Per system id the later documents that declare it too, as problems of the first one, which keeps the id. */
+    private final Map<String, List<String>> duplicates = new LinkedHashMap<>();
     private Path root;
 
     public Systems(List<SystemDoc> docs) {
@@ -50,7 +52,8 @@ public final class Systems {
     }
 
     /**
-     * Reads every {@code *.system.yaml} of a directory.
+     * Reads every {@code *.system.yaml} of a directory. When two documents declare one system id, the first in
+     * file-name order keeps it, and the duplicate is one of its problems.
      *
      * @param root directory the references in the documents are relative to
      * @throws IllegalArgumentException when {@code dir} does not exist, is not a directory or holds no system document
@@ -61,11 +64,18 @@ public final class Systems {
             if (paths.isEmpty()) {
                 throw new IllegalArgumentException(dir + ": holds no *.system.yaml file; give a directory of system documents");
             }
-            Systems s = new Systems(paths.stream().map(f -> SystemDoc.load(f, root)).toList());
+            Systems s = new Systems(List.of());
             s.root = root;
-            int i = 0;
-            for (SystemDoc d : s.docs()) {
-                s.files.put(d.system(), paths.get(i++));
+            for (Path f : paths) {
+                SystemDoc d = SystemDoc.load(f, root);
+                if (s.files.putIfAbsent(d.system(), f) == null) {
+                    s.docs.put(d.system(), d);
+                } else {
+                    String problem = "duplicate system id " + d.system() + ": " + f.getFileName() + " declares it too; give every"
+                            + " system document its own id";
+                    s.duplicates.computeIfAbsent(d.system(), k -> new ArrayList<>()).add(problem);
+                    s.docs.get(d.system()).problems().add(problem);
+                }
             }
             return s;
         } catch (java.nio.file.NoSuchFileException e) {
@@ -105,7 +115,9 @@ public final class Systems {
         if (overlay.isEmpty() || !files.containsKey(system)) {
             return docs.get(system);
         }
-        return SystemDoc.load(files.get(system), root, overlay);
+        SystemDoc d = SystemDoc.load(files.get(system), root, overlay);
+        d.problems().addAll(duplicates.getOrDefault(system, List.of()));
+        return d;
     }
 
     /** The bindings in the body of a request: {@code {bindings: [{signal, grade, source}]}}. */
@@ -138,14 +150,8 @@ public final class Systems {
         if (s.expect().interval() == null) {
             throw new IllegalArgumentException(id + " needs a sampling interval to be generated (expect.interval)");
         }
-        long from;
-        long to;
-        try {
-            from = Micros.of(Instant.parse(body.path("from").asText("")));
-            to = Micros.of(Instant.parse(body.path("to").asText("")));
-        } catch (java.time.format.DateTimeParseException e) {
-            throw new IllegalArgumentException("from and to must be instants like 2026-10-01T00:00:00Z");
-        }
+        long from = instant(body, "from");
+        long to = instant(body, "to");
         long interval = java.time.Duration.parse(s.expect().interval()).toNanos() / 1000;
         Generators.Target target = new Generators.Target(d.system(), s.id(), metric(d, s), s.expect().unit(), s.raw().processor(),
                 s.raw().seed() == null ? 0 : s.raw().seed(), s.expect().min(), s.expect().max(), d.hash());
@@ -161,6 +167,16 @@ public final class Systems {
             out.put("run", episodes.get(0).getSeries().getTags().get("run").toString());
         }
         return out;
+    }
+
+    private static long instant(JsonNode body, String field) {
+        String text = body.path(field).asText("");
+        try {
+            return Micros.of(Instant.parse(text));
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new IllegalArgumentException(field + ": \"" + text + "\" is not an instant; expected an ISO-8601 instant such as"
+                    + " 2026-10-01T00:00:00Z", e);
+        }
     }
 
     /** When a generated series was written; empty for a series that does not say. */

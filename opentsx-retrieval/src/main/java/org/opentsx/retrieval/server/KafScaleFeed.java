@@ -253,8 +253,6 @@ final class KafScaleFeed implements AutoCloseable {
         plan.vectors().forEach(j -> sinks.addObject().put("vector", j.name()).put("kind", "vector").put("topic", j.topic()).put("series", j.seriesIds().size()));
         plan.series().forEach(j -> sinks.addObject().put("vector", j.name()).put("kind", "series").put("topic", j.topic())
                 .put("signal", j.target().signal()).put("series", j.seriesIds().size()));
-        ArrayNode skipped = out.putArray("skipped");
-        plan.skipped().forEach(skipped::add);
         return out;
     }
 

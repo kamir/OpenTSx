@@ -15,7 +15,7 @@ inputs:
 outputs:
   - { name: segments, type: series, cardinality: many, description: "Derived episodes, one per window that holds samples, with segmentation FIXED_DURATION" }
 params:
-  - { name: duration, type: duration, required: true, description: Length of a window. Must be above zero. }
+  - { name: duration, type: duration, required: true, description: "Length of a window, at least PT0.000001S (the microsecond of the time axis)." }
   - { name: offset, type: duration, default: PT0S, description: Shift of the windows against the epoch. }
 semantics: { needs: window, deterministic: true, keeps: [time, unit, series], origin: INHERIT }
 runtimes:

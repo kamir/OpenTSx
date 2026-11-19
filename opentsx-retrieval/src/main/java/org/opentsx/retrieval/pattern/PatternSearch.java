@@ -57,10 +57,6 @@ public final class PatternSearch {
         this.queryId = XxHash64.hex(XxHash64.hash(b.array()));
     }
 
-    public String queryId() {
-        return queryId;
-    }
-
     public List<PatternMatch> search(List<Run> runs) {
         for (Run r : runs) {
             if (r.length() < query.length) {

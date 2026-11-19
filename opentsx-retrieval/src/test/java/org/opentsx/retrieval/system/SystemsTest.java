@@ -356,8 +356,12 @@ class SystemsTest {
         assertTrue(org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> SYSTEMS.generate("h2-chain",
                 body("{\"signal\":\"ely.setpoint_kw\",\"from\":\"2026-10-01T00:00:00Z\",\"to\":\"2026-10-01T06:00:00Z\"}"), "t", writer))
                 .getMessage().contains("is not bound to a generator"));
-        assertTrue(org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> SYSTEMS.generate("h2-chain",
-                body("{\"signal\":\"offtake.demand_kgph\"}"), "t", writer)).getMessage().contains("from and to must be instants"));
+        assertEquals("from: \"\" is not an instant; expected an ISO-8601 instant such as 2026-10-01T00:00:00Z",
+                assertThrows(IllegalArgumentException.class, () -> SYSTEMS.generate("h2-chain",
+                        body("{\"signal\":\"offtake.demand_kgph\"}"), "t", writer)).getMessage());
+        assertEquals("to: \"tomorrow\" is not an instant; expected an ISO-8601 instant such as 2026-10-01T00:00:00Z",
+                assertThrows(IllegalArgumentException.class, () -> SYSTEMS.generate("h2-chain",
+                        body("{\"signal\":\"offtake.demand_kgph\",\"from\":\"2026-10-01T00:00:00Z\",\"to\":\"tomorrow\"}"), "t", writer)).getMessage());
         // a signal bound to a generator in the working copy can be generated too
         JsonNode viaOverlay = SYSTEMS.generate("h2-chain", body("""
                 {"signal":"marketer.schedule_kw","from":"2026-10-01T00:00:00Z","to":"2026-10-01T01:00:00Z",
@@ -448,5 +452,27 @@ class SystemsTest {
         Path file = Files.writeString(dir.resolve("h2-chain.system.yaml"), "system: h2-chain\n");
         IllegalArgumentException notDir = assertThrows(IllegalArgumentException.class, () -> Systems.load(file, dir));
         assertEquals(file + ": not a directory; give a directory of system documents", notDir.getMessage());
+    }
+
+    @Test
+    void twoDocumentsWithOneSystemIdAreAProblemAndEveryDocumentKeepsItsFile(@TempDir Path dir) throws Exception {
+        String h2 = Files.readString(SystemDocTest.H2);
+        Files.writeString(dir.resolve("a.system.yaml"), h2.replace("title: Wasserstoffkette am Windpark", "title: first"));
+        Files.writeString(dir.resolve("b.system.yaml"), h2.replace("title: Wasserstoffkette am Windpark", "title: second"));
+        Files.writeString(dir.resolve("c.system.yaml"), h2.replace("system: h2-chain", "system: other-chain"));
+        Systems systems = Systems.load(dir, SystemDocTest.ROOT);
+        ObjectNode inv = windFarm();
+        List<SystemDoc.Binding> overlay = Systems.bindings(body(
+                "{\"bindings\":[{\"signal\":\"offtake.demand_kgph\",\"grade\":\"raw\",\"source\":{\"kind\":\"manual\",\"value\":40,\"origin\":\"REPORTED\"}}]}"));
+        String duplicate = "duplicate system id h2-chain: b.system.yaml declares it too; give every system document its own id";
+        // the first document in file-name order keeps the id, also when a working copy reads it again
+        assertEquals(List.of("h2-chain", "other-chain"), systems.docs().stream().map(SystemDoc::system).toList());
+        assertEquals("first", systems.signals("h2-chain", inv).path("title").asText());
+        assertTrue(texts(systems.signals("h2-chain", inv).path("problems")).contains(duplicate),
+                systems.signals("h2-chain", inv).path("problems").toString());
+        JsonNode kept = systems.signals("h2-chain", inv, overlay);
+        assertEquals("first", kept.path("title").asText());
+        assertTrue(texts(kept.path("problems")).contains(duplicate), kept.path("problems").toString());
+        assertEquals("other-chain", systems.signals("other-chain", inv, overlay).path("system").asText());
     }
 }

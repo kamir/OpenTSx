@@ -33,7 +33,6 @@ class DagPlanTest {
         DagPlan mixed = plan(VectorJobTest.dag(VectorJobTest.VECTOR_NODE + clean, VectorJobTest.VECTOR_SINK + sink));
         assertEquals(1, mixed.vectors().size());
         assertEquals(1, mixed.series().size());
-        assertEquals(0, mixed.skipped().size());
         assertEquals(1, plan(VectorProcessorTest.cleanDag("dq.checks", "")).series().size());
     }
 

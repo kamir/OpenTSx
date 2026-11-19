@@ -392,6 +392,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The credential messages of the ENTSO-E and netztransparenz.de sources name the key and every variable that sets it,
   for example `opentsx.market.entsoeToken: rejected by ENTSO-E (HTTP 401); check the token in
   OPENTSX_MARKET_ENTSOE_TOKEN, ENTSOE_TOKEN or the properties file`.
+- `feature.rolling` in the vector processor keeps compensated running sums and monotonic deques, so every sample
+  enters and leaves its window once and a value that has left the window leaves no rounding behind. 300000 samples
+  with a 6000-value window take 20 to 73 ms per aggregate instead of 4.3 to 5.0 s. The checkpoint of a series sink
+  carries the running sums.
+- `VectorProcessor` measures its timing with an injectable clock, and its tests advance that clock instead of
+  sleeping.
 
 ### Removed
 
@@ -437,6 +443,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `SerialRtuTransport`, a placeholder that ignored its parameters and was used only by a test. Serial Modbus RTU is
   still not supported; use a converter with `rtu-over-tcp` or Modbus TCP.
 - `MosmixRawArchive.DEFAULT_STATIONS`, which nothing used; the stations come from `opentsx.market.mosmix.stations`.
+- Unused members of opentsx-retrieval: the six-argument `VectorJob` constructor, `FixedDurationDetector.windowEnd`,
+  `PatternSearch.queryId()`, `EpisodeService.similarEpisodes(Episode)` and the series ids of the sinks in
+  `VectorProcessor`. `VectorAligner` and `VectorStream` share one cell aggregate.
+- The answer of `POST /v1/dags/deploy` no longer has the field `skipped`, which was always empty, and `DagPlan` loses
+  its `skipped` component.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -824,6 +835,35 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   templates are regenerated.
 - Chapter 18 no longer names `bin/opentsx kafscale-check`, which the launcher does not have, and no longer says that a
   mode key waits for a command to be migrated.
+- Retrieval server: when two system documents declare one system id, later systems keep their own files. The first
+  document in file-name order keeps the id and lists `duplicate system id <id>: <file> declares it too` among its
+  problems, so it generates nothing.
+- `feature.rolling` after a `resample` step refuses a window over more than 100000 resample intervals when the DAG is
+  checked. `POST /v1/dags/deploy` answers 400 and `vectors deploy` exits with code 2. Before, the sink failed only
+  while running.
+- A DAG refuses `every` of `resample` and `align.vector` and `window` of `feature.rolling` outside PT0.000001S to
+  PT2562047H47M16.854775807S, and a `maxAge` or `lateness` beyond that, when it is checked, for example `node n1:
+  every: "PT0.0000001S" is out of range; expected an ISO-8601 duration from PT0.000001S to PT2562047H47M16.854775807S,
+  such as PT60S`. Before, a clock below one microsecond passed the check and then failed the sink with `/ by zero`,
+  and a duration over 292 years answered 500.
+- `gen.ou` refuses a `reversion` below 0.00007, where the start of a run did not fade within the warm-up, with
+  `gen.ou: reversion: <value> is out of range; expected a number from 0.00007 to 1`. The descriptor states the same
+  range, and a negative `sigma` is refused with its value.
+- `gen.sine` refuses `period` and `sigma` with the field and its value, for example `gen.sine: period: "PT0S" is out
+  of range; expected an ISO-8601 duration from PT0.000001S to PT2562047H47M16.854775807S, such as P1D`. A period over
+  292 years answers 400 instead of 500.
+- Twin runs add the caveat about the sizes, pressures and order on the hydrogen side only for a scenario with an
+  electrolyzer, not for the house and the boat.
+- Duration errors of a DAG name the node, the field and the value, for example `node n1: every: "10min" is not a
+  duration; expected an ISO-8601 duration such as PT60S`. `POST /v1/systems/<id>/generate` names `from` or `to` with
+  its value.
+- `POST /v1/segments` and `POST /v1/patterns/search` answer a value out of range with a 400 that names
+  `params.<field>`, `offset` or `length` and the allowed range, for example `params.overlap: 10 is out of range;
+  expected a whole number from 0 to 9, below params.n`. They also refuse an `offset` near the largest int, a
+  `params.duration` below PT0.000001S, and a segment duration over about 292000 years, which answered 500 before.
+- Appendix B documents the deploy answer `{dag, state, sinks}`, the electrolyzer condition of the hydrogen caveat of a
+  run, and the range messages of segment parameters and episode patterns; the `segment.fixed-duration` descriptor
+  states the minimum duration PT0.000001S.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

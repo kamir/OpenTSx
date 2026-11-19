@@ -30,14 +30,9 @@ import java.util.regex.Pattern;
 public record VectorJob(String dag, String topic, String name, List<String> seriesIds, List<String> inputNames,
                         VectorAligner.Params params, Duration lateness, boolean fromStart) {
 
-    /** A job as a single run needs it: no lateness, the whole topic. */
-    public VectorJob(String dag, String topic, String name, List<String> seriesIds, List<String> inputNames,
-                     VectorAligner.Params params) {
-        this(dag, topic, name, seriesIds, inputNames, params, Duration.ZERO, true);
-    }
-
     public static final String SCHEMA = "opentsx.vector.v1";
     public static final String OP = "align.vector";
+    private static final Duration LONGEST = Duration.ofNanos(Long.MAX_VALUE);
 
     /** What {@link #of} found in a DAG. */
     public record Plan(List<VectorJob> jobs, List<String> skipped) {
@@ -96,12 +91,7 @@ public record VectorJob(String dag, String topic, String name, List<String> seri
             if (names.isEmpty()) {
                 throw new IllegalArgumentException("node " + from + " has no input");
             }
-            Duration lateness;
-            try {
-                lateness = Duration.parse(node.path("params").path("lateness").asText("PT0S"));
-            } catch (java.time.format.DateTimeParseException e) {
-                throw new IllegalArgumentException("node " + from + ": lateness must be a duration like PT2M");
-            }
+            Duration lateness = duration(from, "lateness", node.path("params").path("lateness").asText("PT0S"), "PT2M", null);
             String start = dag.path("source").path("start").asText("earliest");
             if (!start.equals("earliest") && !start.equals("latest")) {
                 throw new IllegalArgumentException("source.start must be earliest or latest, not " + start);
@@ -117,15 +107,30 @@ public record VectorJob(String dag, String topic, String name, List<String> seri
     }
 
     private static VectorAligner.Params params(String node, JsonNode p) {
+        // the clock counts whole microseconds
+        Duration every = duration(node, "every", p.path("every").asText(""), "PT60S", Duration.ofNanos(1000));
+        Duration maxAge = p.hasNonNull("maxAge") ? duration(node, "maxAge", p.path("maxAge").asText(), "PT60S", null) : null;
         try {
-            return new VectorAligner.Params(Duration.parse(p.path("every").asText("")), p.path("key").asText("series"),
-                    VectorAligner.Agg.valueOf(p.path("agg").asText("MEAN")), "as-of".equals(p.path("fill").asText()),
-                    p.hasNonNull("maxAge") ? Duration.parse(p.path("maxAge").asText()) : null,
-                    "complete".equals(p.path("emit").asText()));
-        } catch (java.time.format.DateTimeParseException e) {
-            throw new IllegalArgumentException("node " + node + ": every and maxAge must be durations like PT60S");
+            return new VectorAligner.Params(every, p.path("key").asText("series"), VectorAligner.Agg.valueOf(p.path("agg").asText("MEAN")),
+                    "as-of".equals(p.path("fill").asText()), maxAge, "complete".equals(p.path("emit").asText()));
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("node " + node + ": " + e.getMessage());
+            throw new IllegalArgumentException("node " + node + ": " + e.getMessage(), e);
         }
+    }
+
+    /** A duration whose nanoseconds fit a long, and at least {@code least} when that is given. */
+    private static Duration duration(String node, String field, String text, String example, Duration least) {
+        Duration d;
+        try {
+            d = Duration.parse(text);
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new IllegalArgumentException("node " + node + ": " + field + ": \"" + text + "\" is not a duration; expected an"
+                    + " ISO-8601 duration such as " + example, e);
+        }
+        if (d.compareTo(LONGEST) > 0 || d.compareTo(LONGEST.negated()) < 0 || least != null && d.compareTo(least) < 0) {
+            throw new IllegalArgumentException("node " + node + ": " + field + ": \"" + text + "\" is out of range; expected an ISO-8601"
+                    + " duration " + (least == null ? "of at most " : "from " + least + " to ") + LONGEST + ", such as " + example);
+        }
+        return d;
     }
 }

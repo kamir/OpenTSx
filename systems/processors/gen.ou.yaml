@@ -16,7 +16,7 @@ outputs:
   - { name: out, type: series }
 params:
   - { name: mean, type: number, required: true, description: Level the values return to }
-  - { name: reversion, type: number, default: 0.1, min: 0, max: 1, description: Share of the distance to the mean taken back per step; above 0 }
+  - { name: reversion, type: number, default: 0.1, min: 0.00007, max: 1, description: Share of the distance to the mean taken back per step. Below 0.00007 the start of a run would not fade within the warm-up and the request is refused. }
   - { name: sigma, type: number, required: true, min: 0, description: Standard deviation of one step }
   - { name: min, type: number, from: expect.min }
   - { name: max, type: number, from: expect.max }
@@ -32,7 +32,7 @@ runtimes:
       where the run began: the recursion starts early enough that earlier steps fade below a thousandth.
       Generators.episodes(target, params, interval, from, to) cuts the run into episodes of 600 samples; POST
       /v1/systems/<id>/generate writes them to tsx.<domain>.synthetic.v2. A parameter that is no number is refused
-      with its name.
+      with its name, and so is a reversion outside 0.00007 to 1.
   workbench: { status: none, note: "The page Signals presets the parameters from the expectation of the signal and asks the server to generate." }
   python: { status: none }
   processor: { status: planned, note: "A generator that keeps writing is part of step E2 of the decision circle." }

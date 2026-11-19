@@ -52,7 +52,8 @@ public final class VectorAligner {
         }
     }
 
-    private static final class Cell {
+    /** Running aggregate of the samples of one series in one tick; {@link VectorStream} keeps the same. */
+    static final class Cell {
         long n;
         double sum;
         double min;
@@ -70,6 +71,30 @@ public final class VectorAligner {
                 case COUNT -> n;
                 case MEAN -> sum / n;
             };
+        }
+
+        /** Adds the finite values of a series, in time order, to the cells of their ticks. */
+        static void addAll(TreeMap<Long, Cell> cells, long[] timesMicros, double[] values, long every) {
+            for (int i = 0; i < values.length; i++) {
+                double v = values[i];
+                if (Double.isNaN(v) || Double.isInfinite(v)) {
+                    continue;
+                }
+                long tick = Math.floorDiv(timesMicros[i], every);
+                Cell cell = cells.get(tick);
+                if (cell == null) {
+                    cell = new Cell();
+                    cell.n = 1;
+                    cell.sum = cell.min = cell.max = cell.first = cell.last = v;
+                    cells.put(tick, cell);
+                } else {
+                    cell.n++;
+                    cell.sum += v;
+                    cell.min = Math.min(cell.min, v);
+                    cell.max = Math.max(cell.max, v);
+                    cell.last = v;
+                }
+            }
         }
     }
 
@@ -125,27 +150,7 @@ public final class VectorAligner {
             for (Series s : in.series()) {
                 String component = componentOf.apply(s);
                 KeyState k = keys.computeIfAbsent(keyText(s, bySeries, all, keyBy), t -> new KeyState(keyOf(s, bySeries, all, keyBy)));
-                TreeMap<Long, Cell> cells = k.cells.computeIfAbsent(component, c -> new TreeMap<>());
-                for (int i = 0; i < s.values().length; i++) {
-                    double v = s.values()[i];
-                    if (Double.isNaN(v) || Double.isInfinite(v)) {
-                        continue;
-                    }
-                    long tick = Math.floorDiv(s.timesMicros()[i], every);
-                    Cell cell = cells.get(tick);
-                    if (cell == null) {
-                        cell = new Cell();
-                        cell.n = 1;
-                        cell.sum = cell.min = cell.max = cell.first = cell.last = v;
-                        cells.put(tick, cell);
-                    } else {
-                        cell.n++;
-                        cell.sum += v;
-                        cell.min = Math.min(cell.min, v);
-                        cell.max = Math.max(cell.max, v);
-                        cell.last = v;
-                    }
-                }
+                Cell.addAll(k.cells.computeIfAbsent(component, c -> new TreeMap<>()), s.timesMicros(), s.values(), every);
             }
         }
 

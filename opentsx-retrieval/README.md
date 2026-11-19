@@ -112,7 +112,10 @@ A JSON body over 262144 bytes (`RetrievalServer.MAX_BODY_BYTES`) and a DAG over 
 the typo `metrc=`, is a 400 that names it, and so is `agg` without `resample`.
 `topK` takes 1 to 1000 (`EpisodeService.MAX_TOP_K`) and `pattern` 4 to 100000 values
 (`EpisodeService.MAX_PATTERN_LENGTH`). `limit` takes 1 to 20000, and a request selects at most 20000 episodes
-(`EpisodeService.MAX_EPISODES`); beyond a limit the answer is a 400 that names it.
+(`EpisodeService.MAX_EPISODES`); beyond a limit the answer is a 400 that names it. A segment parameter or a piece of
+an episode out of range is a 400 that names the field and the range, for example
+`params.overlap: 10 is out of range; expected a whole number from 0 to 9, below params.n` or
+`offset: 595 is out of range; expected a whole number from 0 to 590, so that 10 values fit into the 600 of episode <id>`.
 
 Every error answer is `{"error": "<text>", "type": "<type>"}`. A malformed parameter names itself and what it takes,
 for example `limit: "abc" is not an int; expected a whole number from 1 to 20000`. A body that is not valid JSON is a
@@ -182,6 +185,14 @@ or a DAG the processor would refuse exits with code 2 and writes nothing. A runt
   `node n3: factor: "1,5" is not a number; expected a number without quotes, such as 0.01 or 1e-3`.
   `POST /v1/dags/deploy` answers 400. `vectors deploy` stops with that error, prefixed with the file, and exit code 2
   and writes nothing to the control topic. A DAG already in the control topic gets the status `failed` with that error.
+* A `feature.rolling` window after a `resample` step may span at most 100000 of its intervals. A longer one refuses
+  the DAG the same way, for example `node r: window: PT2H holds 720000 values at the interval PT0.01S of its input;
+  expected a window of at most PT16M40S (100000 values) or a longer resample interval before it`. Without a `resample`
+  step before it, a window that holds more than 100000 values fails the sink with the node in `error`.
+* `every` of `resample` and `align.vector` and `window` of `feature.rolling` take PT0.000001S, the microsecond of the
+  time axis, to PT2562047H47M16.854775807S (about 292 years); `maxAge` and `lateness` take at most as much. A duration
+  outside its range refuses the DAG the same way, for example `node n1: every: "PT0.0000001S" is out of range;
+  expected an ISO-8601 duration from PT0.000001S to PT2562047H47M16.854775807S, such as PT60S`.
 * An error while the processor applies a deployment or a stop, such as a status record it cannot send, ends the
   processor with that error. Started again, it reads the control topic from the beginning.
 
@@ -229,7 +240,9 @@ bin/opentsx retrieval-server --port 8080 --kafscale host:9092 --domain wind \
 default `auto` takes `iceberg` when `--iceberg` is on the command line, `kafscale` when `--kafscale` is, else `demo`, so
 `KAFSCALE_BOOTSTRAP` in the environment does not switch it. `--iceberg` together with `--kafscale` is an error. The
 server listens on every interface; `--bind <address>` chooses one. Every value, the scenario, the catalog and the
-system documents (`--systems` must name a directory with at least one `*.system.yaml`) are checked before a store,
+system documents (`--systems` must name a directory with at least one `*.system.yaml`; when two documents declare one
+system id, the first in file-name order keeps it and lists `duplicate system id <id>: <file> declares it too` among its
+problems, so it generates nothing) are checked before a store,
 a client or the port opens. A usage or configuration error exits with code 2 and one line on stderr, for example
 `opentsx: --prot: unknown option of retrieval-server; did you mean --port?`; a failure while the store opens or the
 port is bound exits with code 1. The log starts with one `starting retrieval-server: <key>=<value> (<source>), ...`

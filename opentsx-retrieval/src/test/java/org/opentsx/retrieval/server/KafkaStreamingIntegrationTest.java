@@ -109,7 +109,7 @@ class KafkaStreamingIntegrationTest {
             var response = DagRunEndpointTest.post(server, "/v1/dags/deploy", text, RetrievalServer.RUN_TOKEN_HEADER, token);
             assertEquals(200, response.statusCode(), response.body());
             JsonNode result = EpisodeJson.JSON.readTree(response.body());
-            assertEquals(0, result.path("skipped").size());
+            assertFalse(result.has("skipped"), result.toString());
             return result;
         }
 

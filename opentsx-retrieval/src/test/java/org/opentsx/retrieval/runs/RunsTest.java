@@ -248,6 +248,20 @@ class RunsTest {
     }
 
     @Test
+    void onlyAScenarioWithAnElectrolyzerHasTheCaveatOfTheHydrogenSide() {
+        Runs runs = Runs.standard();
+        String caveat = "sizes, pressures and the order on the hydrogen side are assumed values of the plan";
+        for (String system : List.of("haus", "boot")) {
+            List<String> reasons = new ArrayList<>();
+            runs.doc(system, runs.reference(system)).path("status").path("reasons").forEach(r -> reasons.add(r.asText()));
+            assertFalse(reasons.contains(caveat), system + ": " + reasons);
+        }
+        List<String> h2 = new ArrayList<>();
+        runs.doc("h2-chain", runs.reference("h2-chain")).path("status").path("reasons").forEach(r -> h2.add(r.asText()));
+        assertTrue(h2.contains(caveat), h2.toString());
+    }
+
+    @Test
     void theServerOffersRunsOfASystem() throws Exception {
         InMemorySeriesStore store = new InMemorySeriesStore();
         SeriesInventory inventory = new SeriesInventory(store, SeriesInventory.Source.of("demo"), null, null, Duration.ofMinutes(1));

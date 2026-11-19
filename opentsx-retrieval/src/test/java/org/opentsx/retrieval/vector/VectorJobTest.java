@@ -93,7 +93,36 @@ class VectorJobTest {
                 () -> plan(late.replace("start: latest", "start: yesterday")));
         assertTrue(e.getMessage().contains("earliest or latest"), e.getMessage());
         e = assertThrows(IllegalArgumentException.class, () -> plan(late.replace("PT2M", "2 minutes")));
-        assertTrue(e.getMessage().contains("lateness must be a duration"), e.getMessage());
+        assertEquals("node n1: lateness: \"2 minutes\" is not a duration; expected an ISO-8601 duration such as PT2M", e.getMessage());
+    }
+
+    @Test
+    void aDurationThatIsNoneIsRefusedWithItsFieldAndItsValue() throws Exception {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> plan(dag(VECTOR_NODE.replace("every: PT60S", "every: 10min"), VECTOR_SINK)));
+        assertEquals("node n1: every: \"10min\" is not a duration; expected an ISO-8601 duration such as PT60S", e.getMessage());
+        e = assertThrows(IllegalArgumentException.class,
+                () -> plan(dag(VECTOR_NODE.replace("emit: any", "emit: any, fill: as-of, maxAge: 5min"), VECTOR_SINK)));
+        assertEquals("node n1: maxAge: \"5min\" is not a duration; expected an ISO-8601 duration such as PT60S", e.getMessage());
+    }
+
+    /** Below the microsecond of the time axis the clock does not move; beyond what a long holds in nanoseconds it overflows. */
+    @Test
+    void aDurationTheClockCannotCountIsRefusedWithItsRange() throws Exception {
+        for (String every : List.of("PT0.0000001S", "PT0S", "P200000D")) {
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                    () -> plan(dag(VECTOR_NODE.replace("every: PT60S", "every: " + every), VECTOR_SINK)));
+            assertEquals("node n1: every: \"" + every + "\" is out of range; expected an ISO-8601 duration from PT0.000001S to"
+                    + " PT2562047H47M16.854775807S, such as PT60S", e.getMessage());
+        }
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> plan(dag(VECTOR_NODE.replace("emit: any", "emit: any, lateness: -P200000D"), VECTOR_SINK)));
+        assertEquals("node n1: lateness: \"-P200000D\" is out of range; expected an ISO-8601 duration of at most"
+                + " PT2562047H47M16.854775807S, such as PT2M", e.getMessage());
+        e = assertThrows(IllegalArgumentException.class,
+                () -> plan(dag(VECTOR_NODE.replace("emit: any", "emit: any, fill: as-of, maxAge: P200000D"), VECTOR_SINK)));
+        assertEquals("node n1: maxAge: \"P200000D\" is out of range; expected an ISO-8601 duration of at most"
+                + " PT2562047H47M16.854775807S, such as PT60S", e.getMessage());
     }
 
     @Test
@@ -119,7 +148,7 @@ class VectorJobTest {
         assertTrue(e.getMessage().contains("must be tsx.wind.smart.<name>.vectors.v1"), e.getMessage());
 
         e = assertThrows(IllegalArgumentException.class, () -> plan(dag(VECTOR_NODE.replace("PT60S", "60"), VECTOR_SINK)));
-        assertTrue(e.getMessage().contains("durations like PT60S"), e.getMessage());
+        assertTrue(e.getMessage().contains("every: \"60\" is not a duration"), e.getMessage());
 
         e = assertThrows(IllegalArgumentException.class, () -> VectorJob.of(
                 YAML.readTree(dag(VECTOR_NODE, VECTOR_SINK)), "wind", "tsx.wind.other.v2"));

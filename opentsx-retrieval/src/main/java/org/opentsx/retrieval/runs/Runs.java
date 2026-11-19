@@ -389,7 +389,9 @@ public final class Runs {
             }
             reasons.add("the inputs are those of the scenario, which are invented: the run shows the mechanism, not an effect");
         }
-        reasons.add("sizes, pressures and the order on the hydrogen side are assumed values of the plan");
+        if (s.plan().atoms().stream().anyMatch(a -> a.type().equals("electrolyzer"))) {
+            reasons.add("sizes, pressures and the order on the hydrogen side are assumed values of the plan");
+        }
         ArrayNode events = o.putArray("events");
         for (TwinEvent e : r.events()) {
             ObjectNode ev = events.addObject();

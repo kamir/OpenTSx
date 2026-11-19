@@ -130,7 +130,7 @@ class EpisodeServiceTest {
         assertEquals(refused, assertThrows(IllegalArgumentException.class,
                 () -> svc.similarTo(new double[] {1, 2, 3, 4}).fetch()).getMessage());
         assertEquals(refused, assertThrows(IllegalArgumentException.class,
-                () -> svc.similarEpisodes(eps.get(0)).fetch()).getMessage());
+                () -> svc.similarEpisodes(eps.get(0).getEpisodeId()).fetch()).getMessage());
         assertEquals(refused, assertThrows(IllegalArgumentException.class,
                 () -> svc.segments(Segmenter.fixedCount(2, 0)).fetch()).getMessage());
     }

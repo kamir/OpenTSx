@@ -33,33 +33,11 @@ public final class VectorStream {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    /** Running aggregate of the samples of one series in one tick. */
-    private static final class Cell {
-        long n;
-        double sum;
-        double min;
-        double max;
-        double first;
-        double last;
-
-        double value(VectorAligner.Agg agg) {
-            return switch (agg) {
-                case LAST -> last;
-                case FIRST -> first;
-                case MIN -> min;
-                case MAX -> max;
-                case SUM -> sum;
-                case COUNT -> n;
-                case MEAN -> sum / n;
-            };
-        }
-    }
-
     private static final class SeriesState {
         String metric;
         Map<String, String> tags = new TreeMap<>();
         long progress = Long.MIN_VALUE;                 // exclusive end of the data seen
-        final TreeMap<Long, Cell> cells = new TreeMap<>();
+        final TreeMap<Long, VectorAligner.Cell> cells = new TreeMap<>();
         // as-of: the last tick this series had a value in, and the value
         long lastTick = Long.MIN_VALUE / 2;
         Double lastValue;
@@ -125,26 +103,7 @@ public final class VectorStream {
             skippedBlocks++;        // a duplicate, or older than what the series already delivered
             return List.of();
         }
-        for (int i = 0; i < values.length; i++) {
-            double v = values[i];
-            if (Double.isNaN(v) || Double.isInfinite(v)) {
-                continue;
-            }
-            long tick = Math.floorDiv(timesMicros[i], every);
-            Cell cell = s.cells.get(tick);
-            if (cell == null) {
-                cell = new Cell();
-                cell.n = 1;
-                cell.sum = cell.min = cell.max = cell.first = cell.last = v;
-                s.cells.put(tick, cell);
-            } else {
-                cell.n++;
-                cell.sum += v;
-                cell.min = Math.min(cell.min, v);
-                cell.max = Math.max(cell.max, v);
-                cell.last = v;
-            }
-        }
+        VectorAligner.Cell.addAll(s.cells, timesMicros, values, every);
         s.progress = Math.max(s.progress, endMicros);
         return emit(false);
     }
@@ -226,7 +185,7 @@ public final class VectorStream {
             long lo = Long.MAX_VALUE;
             long hi = Long.MIN_VALUE;
             for (String id : k.seriesByComponent.values()) {
-                TreeMap<Long, Cell> cells = series.get(id).cells;
+                TreeMap<Long, VectorAligner.Cell> cells = series.get(id).cells;
                 if (!cells.isEmpty()) {
                     lo = Math.min(lo, cells.firstKey());
                     hi = Math.max(hi, cells.lastKey());
@@ -245,7 +204,7 @@ public final class VectorStream {
                     Double v = null;
                     if (id != null) {
                         SeriesState s = series.get(id);
-                        Cell cell = s.cells.get(tick);
+                        VectorAligner.Cell cell = s.cells.get(tick);
                         if (cell != null) {
                             v = cell.value(params.agg());
                         } else if (params.asOf() && s.lastValue != null && lastTickBefore(s, tick) >= tick - maxAgeTicks) {
@@ -264,7 +223,7 @@ public final class VectorStream {
                 // this tick is done for the key: remember the values for as-of, then let the cells go
                 for (String id : new TreeSet<>(k.seriesByComponent.values())) {
                     SeriesState s = series.get(id);
-                    Cell cell = s.cells.remove(tick);
+                    VectorAligner.Cell cell = s.cells.remove(tick);
                     if (cell != null) {
                         s.lastTick = tick;
                         s.lastValue = cell.value(params.agg());
@@ -335,7 +294,7 @@ public final class VectorStream {
                 s.lastValue = e.getValue().path("lastValue").asDouble();
             }
             e.getValue().path("cells").fields().forEachRemaining(c -> {
-                Cell cell = new Cell();
+                VectorAligner.Cell cell = new VectorAligner.Cell();
                 JsonNode a = c.getValue();
                 cell.n = a.get(0).asLong();
                 cell.sum = a.get(1).asDouble();

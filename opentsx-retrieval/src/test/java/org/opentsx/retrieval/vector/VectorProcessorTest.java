@@ -391,7 +391,8 @@ class VectorProcessorTest {
         silentProducers = 1;
         VectorProcessor.Timing impatient = new VectorProcessor.Timing(Duration.ZERO, Duration.ofHours(1), Duration.ZERO,
                 Duration.ZERO, Duration.ofMillis(1), Duration.ofMillis(150));
-        try (VectorProcessor p = processor(state, impatient)) {
+        long[] now = {0};
+        try (VectorProcessor p = new VectorProcessor(broker::consumer, this::newProducer, LAYOUT, state, impatient, () -> now[0])) {
             steps(p, 5);
             // the other sink is written, confirmed and checkpointed although the first one waits
             assertEquals(10, written("tsx.wind.smart.other-state.vectors.v1").size());
@@ -402,7 +403,7 @@ class VectorProcessorTest {
             assertFalse(Files.exists(state.resolve("wind-exp2-smart--turbine-state.json")), "no checkpoint without confirmation");
             assertEquals("running", p.states().get("wind-exp2-smart/turbine-state"));
 
-            Thread.sleep(200);
+            now[0] += Duration.ofMillis(200).toNanos();
             steps(p, 1);
             JsonNode failed = lastStatus("wind-exp2-smart/turbine-state");
             assertEquals("failed", failed.path("state").asText(), "the status still gets out");

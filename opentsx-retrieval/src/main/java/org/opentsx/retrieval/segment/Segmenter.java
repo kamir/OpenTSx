@@ -25,6 +25,9 @@ public final class Segmenter {
 
     public enum Direction { ABOVE, BELOW }
 
+    /** The longest duration the time axis of microseconds can hold. */
+    private static final Duration MAX_DURATION = Duration.of(Long.MAX_VALUE, java.time.temporal.ChronoUnit.MICROS);
+
     private final SegmentationStrategy strategy;
     private final Map<String, String> params;
     private final Supplier<Detector> detector;
@@ -41,19 +44,25 @@ public final class Segmenter {
 
     /** Windows aligned to the epoch shifted by {@code offset}. */
     public static Segmenter fixedDuration(Duration duration, Duration offset) {
-        long d = micros(duration);
+        // the time axis counts microseconds, so a shorter duration would make every window zero long
+        long d = duration.isNegative() ? 0 : micros("params.duration", duration);
         if (d <= 0) {
-            throw new IllegalArgumentException("duration must be positive");
+            throw new IllegalArgumentException("params.duration: " + duration + " is out of range; expected an ISO-8601 duration of at"
+                    + " least PT0.000001S, such as PT10M");
         }
-        long o = micros(offset);
+        long o = micros("params.offset", offset);
         return new Segmenter(SegmentationStrategy.FIXED_DURATION, Map.of("duration", duration.toString(), "offset",
                 offset.toString()), () -> new FixedDurationDetector(d, o));
     }
 
     /** Blocks of {@code n} samples; consecutive blocks share {@code overlap} samples. */
     public static Segmenter fixedCount(int n, int overlap) {
-        if (n < 1 || overlap < 0 || overlap >= n) {
-            throw new IllegalArgumentException("need n >= 1 and 0 <= overlap < n");
+        if (n < 1) {
+            throw new IllegalArgumentException("params.n: " + n + " is out of range; expected a whole number from 1 to " + Integer.MAX_VALUE);
+        }
+        if (overlap < 0 || overlap >= n) {
+            throw new IllegalArgumentException("params.overlap: " + overlap + " is out of range; expected a whole number from 0 to "
+                    + (n - 1) + ", below params.n");
         }
         return new Segmenter(SegmentationStrategy.FIXED_COUNT, Map.of("n", Integer.toString(n), "overlap",
                 Integer.toString(overlap)), () -> new FixedCountDetector(n, overlap));
@@ -69,14 +78,14 @@ public final class Segmenter {
     public static Segmenter extremum(Feature feature, double prominence, Duration window, Duration distance,
                                      Duration pre, Duration post) {
         if (prominence < 0) {
-            throw new IllegalArgumentException("prominence must be >= 0");
+            throw new IllegalArgumentException("params.prominence: " + prominence + " is below zero; expected a number of 0 or more");
         }
         Map<String, String> p = Map.of("feature", feature.name(), "prominence", Double.toString(prominence),
                 "window", window.toString(), "distance", distance.toString(), "pre", pre.toString(), "post", post.toString());
-        long w = micros(window);
-        long d = micros(distance);
-        long a = micros(pre);
-        long b = micros(post);
+        long w = micros("params.window", window);
+        long d = micros("params.distance", distance);
+        long a = micros("params.pre", pre);
+        long b = micros("params.post", post);
         return new Segmenter(SegmentationStrategy.FEATURE_EXTREMUM, p,
                 () -> new ExtremumDetector(feature == Feature.MAX, prominence, w, d, a, b));
     }
@@ -92,15 +101,17 @@ public final class Segmenter {
     public static Segmenter threshold(Direction direction, double enter, double exit, Duration pre, Duration post,
                                       Duration minDuration, Duration maxDuration) {
         if (direction == Direction.ABOVE ? exit > enter : exit < enter) {
-            throw new IllegalArgumentException("hysteresis: exit must not lie beyond enter");
+            throw new IllegalArgumentException("params.exit: " + exit + " is " + (direction == Direction.ABOVE ? "above" : "below")
+                    + " params.enter " + enter + "; expected a number of " + (direction == Direction.ABOVE ? "at most " : "at least ")
+                    + enter + " for direction " + direction);
         }
         Map<String, String> p = Map.of("direction", direction.name(), "enter", Double.toString(enter), "exit",
                 Double.toString(exit), "pre", pre.toString(), "post", post.toString(), "minDuration",
                 minDuration.toString(), "maxDuration", maxDuration.toString());
-        long a = micros(pre);
-        long b = micros(post);
-        long mn = micros(minDuration);
-        long mx = micros(maxDuration);
+        long a = micros("params.pre", pre);
+        long b = micros("params.post", post);
+        long mn = micros("params.minDuration", minDuration);
+        long mx = micros("params.maxDuration", maxDuration);
         return new Segmenter(SegmentationStrategy.FEATURE_THRESHOLD, p,
                 () -> new ThresholdDetector(direction == Direction.ABOVE, enter, exit, a, b, mn, mx));
     }
@@ -118,11 +129,16 @@ public final class Segmenter {
         return detector.get();
     }
 
-    private static long micros(Duration d) {
+    private static long micros(String field, Duration d) {
         if (d.isNegative()) {
-            throw new IllegalArgumentException("negative duration " + d);
+            throw new IllegalArgumentException(field + ": " + d + " is negative; expected an ISO-8601 duration of zero or more, such as PT1M");
         }
-        return Math.multiplyExact(d.getSeconds(), 1_000_000L) + d.getNano() / 1000;
+        try {
+            return Math.addExact(Math.multiplyExact(d.getSeconds(), 1_000_000L), d.getNano() / 1000);
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException(field + ": " + d + " is out of range; expected an ISO-8601 duration of at most "
+                    + MAX_DURATION + ", such as PT1M", e);
+        }
     }
 
     @Override

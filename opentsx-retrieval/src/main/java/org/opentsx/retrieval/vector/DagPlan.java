@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public record DagPlan(List<VectorJob> vectors, List<SeriesJob> series, List<String> skipped) {
+public record DagPlan(List<VectorJob> vectors, List<SeriesJob> series) {
 
     public static DagPlan of(JsonNode dag, TopicLayout layout, String specHash) {
         if (dag == null || !dag.isObject() || !dag.path("nodes").isArray()) {
@@ -58,7 +58,7 @@ public record DagPlan(List<VectorJob> vectors, List<SeriesJob> series, List<Stri
                 throw new IllegalArgumentException("duplicate sink identity " + name);
             }
         }
-        return new DagPlan(jobs, series, List.of());
+        return new DagPlan(jobs, series);
     }
 
     private static Map<String, JsonNode> validateNodes(JsonNode document) {

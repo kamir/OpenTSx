@@ -124,6 +124,36 @@ class GeneratorsTest {
     }
 
     @Test
+    void aReversionTooSmallForTheStartOfARunToFadeIsRefusedByName() throws Exception {
+        assertEquals("gen.ou: reversion: 1.0E-5 is out of range; expected a number from 0.00007 to 1",
+                assertThrows(IllegalArgumentException.class, () -> Generators.values("gen.ou",
+                        params("{\"mean\":1,\"sigma\":1,\"reversion\":1e-5}"), 1, MINUTE, 0, 1, null, null)).getMessage());
+        assertEquals("gen.ou: reversion: 0.0 is out of range; expected a number from 0.00007 to 1",
+                assertThrows(IllegalArgumentException.class, () -> Generators.values("gen.ou",
+                        params("{\"mean\":1,\"sigma\":1,\"reversion\":0}"), 1, MINUTE, 0, 1, null, null)).getMessage());
+        assertEquals("gen.ou: sigma: -1.0 is below zero; expected a number of 0 or more",
+                assertThrows(IllegalArgumentException.class, () -> Generators.values("gen.ou",
+                        params("{\"mean\":1,\"sigma\":-1}"), 1, MINUTE, 0, 1, null, null)).getMessage());
+        assertEquals(1, Generators.values("gen.ou", params("{\"mean\":1,\"sigma\":1,\"reversion\":0.00007}"), 1, MINUTE, 0, 1, null, null).length);
+    }
+
+    @Test
+    void aSinePeriodOrNoiseOutOfRangeIsRefusedWithItsValue() throws Exception {
+        for (String period : List.of("PT0S", "-P1D", "PT0.0000001S", "P200000D")) {
+            assertEquals("gen.sine: period: \"" + period + "\" is out of range; expected an ISO-8601 duration from PT0.000001S to"
+                            + " PT2562047H47M16.854775807S, such as P1D",
+                    assertThrows(IllegalArgumentException.class, () -> Generators.values("gen.sine",
+                            params("{\"mean\":1,\"amplitude\":1,\"period\":\"" + period + "\"}"), 1, MINUTE, 0, 1, null, null)).getMessage());
+        }
+        assertEquals("gen.sine: period: \"a day\" is not a duration; expected an ISO-8601 duration such as P1D",
+                assertThrows(IllegalArgumentException.class, () -> Generators.values("gen.sine",
+                        params("{\"mean\":1,\"amplitude\":1,\"period\":\"a day\"}"), 1, MINUTE, 0, 1, null, null)).getMessage());
+        assertEquals("gen.sine: sigma: -1.0 is below zero; expected a number of 0 or more",
+                assertThrows(IllegalArgumentException.class, () -> Generators.values("gen.sine",
+                        params("{\"mean\":1,\"amplitude\":1,\"sigma\":-1}"), 1, MINUTE, 0, 1, null, null)).getMessage());
+    }
+
+    @Test
     void aRequestThatCannotBeServedSaysWhy() throws Exception {
         JsonNode ok = params("{\"mean\":1,\"sigma\":1}");
         assertTrue(assertThrows(IllegalArgumentException.class, () -> Generators.values("gen.magic", ok, 1, MINUTE, 0, 1, null, null))

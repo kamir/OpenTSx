@@ -41,6 +41,7 @@ import java.util.TreeMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
+import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -92,6 +93,8 @@ public final class VectorProcessor implements AutoCloseable {
     private final TopicLayout layout;
     private final Path stateDir;
     private final Timing timing;
+    /** Nanoseconds as {@link System#nanoTime()} gives them; the times of the {@link Timing} are measured with it. */
+    private final LongSupplier nanoTime;
     private java.util.function.Consumer<String> sinkProvisioner = name -> { };
     private final OpenTsxAvro avro = new OpenTsxAvro();
     private final Map<String, Runner> runners = new TreeMap<>();
@@ -110,11 +113,17 @@ public final class VectorProcessor implements AutoCloseable {
      */
     public VectorProcessor(Supplier<Consumer<byte[], byte[]>> consumers, Supplier<Producer<String, byte[]>> producers,
                            TopicLayout layout, Path stateDir, Timing timing) {
+        this(consumers, producers, layout, stateDir, timing, System::nanoTime);
+    }
+
+    VectorProcessor(Supplier<Consumer<byte[], byte[]>> consumers, Supplier<Producer<String, byte[]>> producers,
+                    TopicLayout layout, Path stateDir, Timing timing, LongSupplier nanoTime) {
         this.consumers = consumers;
         this.producers = producers;
         this.layout = layout;
         this.stateDir = stateDir;
         this.timing = timing;
+        this.nanoTime = nanoTime;
         try {
             Files.createDirectories(stateDir);
         } catch (IOException e) {
@@ -140,10 +149,10 @@ public final class VectorProcessor implements AutoCloseable {
 
     /** One round: take up changes of the control topic, let every runner read and write, report. */
     public void step() {
-        long now = System.nanoTime();
+        long now = nanoTime.getAsLong();
         if (control == null || now - nextControl >= 0) {
             readControl();
-            nextControl = System.nanoTime() + timing.controlEvery().toNanos();
+            nextControl = nanoTime.getAsLong() + timing.controlEvery().toNanos();
         }
         for (Runner r : runners.values()) {
             r.step();
@@ -321,8 +330,6 @@ public final class VectorProcessor implements AutoCloseable {
         /** The topic the sink reads its series from. */
         String sourceTopic();
 
-        List<String> seriesIds();
-
         boolean fromStart();
 
         /** @param saved the stream state of a checkpoint, or null to begin anew */
@@ -367,11 +374,6 @@ public final class VectorProcessor implements AutoCloseable {
         @Override
         public String sourceTopic() {
             return null;    // the episodes topic of the domain
-        }
-
-        @Override
-        public List<String> seriesIds() {
-            return job.seriesIds();
         }
 
         @Override
@@ -447,11 +449,6 @@ public final class VectorProcessor implements AutoCloseable {
         }
 
         @Override
-        public List<String> seriesIds() {
-            return job.seriesIds();
-        }
-
-        @Override
         public boolean fromStart() {
             return job.fromStart();
         }
@@ -508,7 +505,7 @@ public final class VectorProcessor implements AutoCloseable {
         Work stream;
         long records;
         long undecodable;
-        long lastCheckpoint = System.nanoTime();
+        long lastCheckpoint = nanoTime.getAsLong();
         long lastStatus;
         long retryAt;
         boolean dirty;
@@ -525,7 +522,7 @@ public final class VectorProcessor implements AutoCloseable {
 
         void step() {
             if (state.equals("failed")) {
-                if (System.nanoTime() - retryAt < 0) {
+                if (nanoTime.getAsLong() - retryAt < 0) {
                     return;
                 }
                 state = "starting";         // try again from the last checkpoint
@@ -539,7 +536,7 @@ public final class VectorProcessor implements AutoCloseable {
                 }
                 state = stream.waitingFor().isEmpty() ? "running" : "waiting";
                 error = null;
-                long now = System.nanoTime();
+                long now = nanoTime.getAsLong();
                 boolean saved = false;
                 if (waiting == null && dirty && (now - lastCheckpoint >= timing.checkpointEvery().toNanos() || pending.size() >= 5000)) {
                     snapshot();
@@ -591,7 +588,7 @@ public final class VectorProcessor implements AutoCloseable {
                 consumer.seek(tp, from);
             }
             dirty = saved == null;      // a fresh runner writes its first checkpoint soon, so "latest" stays where it began
-            lastCheckpoint = System.nanoTime();
+            lastCheckpoint = nanoTime.getAsLong();
         }
 
         private void handle(ConsumerRecord<byte[], byte[]> r) {
@@ -626,7 +623,7 @@ public final class VectorProcessor implements AutoCloseable {
             ObjectNode pos = n.putObject("positions");
             new TreeMap<>(positionsByName()).forEach(pos::put);
             n.set("stream", stream.state());
-            waiting = new Snapshot(n, new ArrayList<>(pending), System.nanoTime());
+            waiting = new Snapshot(n, new ArrayList<>(pending), nanoTime.getAsLong());
             pending.clear();
             dirty = false;
         }
@@ -639,7 +636,7 @@ public final class VectorProcessor implements AutoCloseable {
         boolean confirmed() {
             for (Future<RecordMetadata> f : waiting.confirmations) {
                 if (!f.isDone()) {
-                    if (System.nanoTime() - waiting.since > timing.confirmWithin().toNanos()) {
+                    if (nanoTime.getAsLong() - waiting.since > timing.confirmWithin().toNanos()) {
                         throw new IllegalStateException("the broker has not confirmed the measuring points for "
                                 + timing.confirmWithin().toSeconds() + " s; continuing from the last checkpoint with a new producer");
                     }
@@ -669,7 +666,7 @@ public final class VectorProcessor implements AutoCloseable {
                 throw new UncheckedIOException(e);
             }
             waiting = null;
-            lastCheckpoint = System.nanoTime();
+            lastCheckpoint = nanoTime.getAsLong();
         }
 
         private Map<String, Long> positionsByName() {
@@ -707,7 +704,7 @@ public final class VectorProcessor implements AutoCloseable {
         private void fail(RuntimeException e) {
             state = "failed";
             error = e.getMessage() == null ? e.toString() : e.getMessage();
-            retryAt = System.nanoTime() + timing.retryAfter().toNanos();
+            retryAt = nanoTime.getAsLong() + timing.retryAfter().toNanos();
             System.err.println("vector processor: " + job.dag() + "/" + job.name() + " failed, next try in "
                     + timing.retryAfter().toSeconds() + " s: " + error);
             release();
@@ -759,6 +756,7 @@ public final class VectorProcessor implements AutoCloseable {
         /** Waits a short while for the broker, as an orderly end allows. */
         private void awaitConfirmation() {
             producer.flush();
+            // this wait sleeps for real, so it ends by the real clock also when the processor runs on another one
             long deadline = System.nanoTime() + Duration.ofSeconds(30).toNanos();
             while (!confirmed()) {
                 if (System.nanoTime() > deadline) {
@@ -801,7 +799,7 @@ public final class VectorProcessor implements AutoCloseable {
             status(job.dag() + "/" + job.name(), bytes(n));
             reported = state;
             reportedRecords = records;
-            lastStatus = System.nanoTime();
+            lastStatus = nanoTime.getAsLong();
         }
     }
 

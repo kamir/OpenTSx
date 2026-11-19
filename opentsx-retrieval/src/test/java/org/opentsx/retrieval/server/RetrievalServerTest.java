@@ -344,6 +344,57 @@ class RetrievalServerTest {
     }
 
     @Test
+    void aSegmentParameterOutOfRangeAnswers400NamingTheFieldAndTheRange() throws Exception {
+        assertError(400, "bad_request", "params.duration: PT0S is out of range; expected an ISO-8601 duration of at least PT0.000001S,"
+                        + " such as PT10M",
+                send("/v1/segments", "{\"strategy\":\"FIXED_DURATION\",\"params\":{\"duration\":\"PT0S\"},\"metric\":\"demo.signal\"}"));
+        // below the microsecond of the time axis, which would make every window zero long
+        assertError(400, "bad_request", "params.duration: PT0.0000001S is out of range; expected an ISO-8601 duration of at least"
+                        + " PT0.000001S, such as PT10M",
+                send("/v1/segments", "{\"strategy\":\"FIXED_DURATION\",\"params\":{\"duration\":\"PT0.0000001S\"},\"metric\":\"demo.signal\"}"));
+        assertError(400, "bad_request", "params.duration: PT23999999976H is out of range; expected an ISO-8601 duration of at most"
+                        + " PT2562047788H54.775807S, such as PT1M",
+                send("/v1/segments", "{\"strategy\":\"FIXED_DURATION\",\"params\":{\"duration\":\"P999999999D\"},\"metric\":\"demo.signal\"}"));
+        assertError(400, "bad_request", "params.post: PT23999999976H is out of range; expected an ISO-8601 duration of at most"
+                        + " PT2562047788H54.775807S, such as PT1M",
+                send("/v1/segments", "{\"strategy\":\"FEATURE_EXTREMUM\",\"params\":{\"prominence\":1,\"window\":\"PT1M\","
+                        + "\"distance\":\"PT1M\",\"post\":\"P999999999D\"},\"metric\":\"demo.signal\"}"));
+        assertError(400, "bad_request", "params.n: 0 is out of range; expected a whole number from 1 to 2147483647",
+                send("/v1/segments", "{\"strategy\":\"FIXED_COUNT\",\"params\":{\"n\":0},\"metric\":\"demo.signal\"}"));
+        assertError(400, "bad_request", "params.overlap: 10 is out of range; expected a whole number from 0 to 9, below params.n",
+                send("/v1/segments", "{\"strategy\":\"FIXED_COUNT\",\"params\":{\"n\":10,\"overlap\":10},\"metric\":\"demo.signal\"}"));
+        assertError(400, "bad_request", "params.prominence: -1.0 is below zero; expected a number of 0 or more",
+                send("/v1/segments", "{\"strategy\":\"FEATURE_EXTREMUM\",\"params\":{\"prominence\":-1,\"window\":\"PT1M\","
+                        + "\"distance\":\"PT1M\"},\"metric\":\"demo.signal\"}"));
+        assertError(400, "bad_request", "params.pre: PT-1S is negative; expected an ISO-8601 duration of zero or more, such as PT1M",
+                send("/v1/segments", "{\"strategy\":\"FEATURE_EXTREMUM\",\"params\":{\"prominence\":1,\"window\":\"PT1M\","
+                        + "\"distance\":\"PT1M\",\"pre\":\"PT-1S\"},\"metric\":\"demo.signal\"}"));
+        assertError(400, "bad_request", "params.exit: 25.0 is above params.enter 20.0; expected a number of at most 20.0 for direction ABOVE",
+                send("/v1/segments", "{\"strategy\":\"FEATURE_THRESHOLD\",\"params\":{\"enter\":20,\"exit\":25},\"metric\":\"demo.signal\"}"));
+    }
+
+    @Test
+    void aPatternOutsideItsEpisodeAnswers400NamingTheFieldAndTheRange() throws Exception {
+        JsonNode episode = EpisodeJson.JSON.readTree(get("/v1/episodes?metric=demo.signal&limit=1", null).body()).get(0);
+        String id = episode.path("episodeId").asText();
+        int n = episode.path("values").size();
+        assertError(400, "bad_request", "offset: " + (n - 5) + " is out of range; expected a whole number from 0 to " + (n - 10)
+                        + ", so that 10 values fit into the " + n + " of episode " + id,
+                send("/v1/patterns/search", "{\"episodeId\":\"" + id + "\",\"offset\":" + (n - 5) + ",\"length\":10}"));
+        assertError(400, "bad_request", "offset: -1 is out of range; expected a whole number from 0 to " + (n - 10)
+                        + ", so that 10 values fit into the " + n + " of episode " + id,
+                send("/v1/patterns/search", "{\"episodeId\":\"" + id + "\",\"offset\":-1,\"length\":10}"));
+        assertError(400, "bad_request", "length: 3 is out of range; expected a whole number from 4 to " + n + ", the values of episode " + id,
+                send("/v1/patterns/search", "{\"episodeId\":\"" + id + "\",\"offset\":0,\"length\":3}"));
+        assertError(400, "bad_request", "length: " + (n + 1) + " is out of range; expected a whole number from 4 to " + n
+                        + ", the values of episode " + id,
+                send("/v1/patterns/search", "{\"episodeId\":\"" + id + "\",\"offset\":0,\"length\":" + (n + 1) + "}"));
+        assertError(400, "bad_request", "offset: 2147483647 is out of range; expected a whole number from 0 to " + (n - 10)
+                        + ", so that 10 values fit into the " + n + " of episode " + id,
+                send("/v1/patterns/search", "{\"episodeId\":\"" + id + "\",\"offset\":2147483647,\"length\":10}"));
+    }
+
+    @Test
     void requestsOverALimitAnswer400NamingTheLimit() throws Exception {
         assertError(400, "bad_request", "topK: 1000000 is out of range; expected a whole number from 1 to 1000",
                 send("/v1/patterns/search", "{\"pattern\":[1,2,3,4,5],\"metric\":\"demo.signal\",\"topK\":1000000}"));

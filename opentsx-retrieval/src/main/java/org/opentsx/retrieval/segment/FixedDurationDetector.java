@@ -47,8 +47,4 @@ final class FixedDurationDetector implements Detector {
     public long earliestNeeded(SampleBuffer buf) {
         return startIdx < 0 ? buf.end() : startIdx;
     }
-
-    long windowEnd() {
-        return windowStart + duration;
-    }
 }

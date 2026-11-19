@@ -146,7 +146,7 @@ Values wander around a mean and are pulled back to it. A stand-in for a price or
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | none |  | The page Signals presets the parameters from the expectation of the signal and asks the server to generate. |
-| java | available | `org.opentsx.retrieval.generate.Generators#values` | One run over a period, started by a person; no continuous operation. The value of a step does not depend on where the run began: the recursion starts early enough that earlier steps fade below a thousandth. Generators.episodes(target, params, interval, from, to) cuts the run into episodes of 600 samples; POST /v1/systems/<id>/generate writes them to tsx.<domain>.synthetic.v2. A parameter that is no number is refused with its name. |
+| java | available | `org.opentsx.retrieval.generate.Generators#values` | One run over a period, started by a person; no continuous operation. The value of a step does not depend on where the run began: the recursion starts early enough that earlier steps fade below a thousandth. Generators.episodes(target, params, interval, from, to) cuts the run into episodes of 600 samples; POST /v1/systems/<id>/generate writes them to tsx.<domain>.synthetic.v2. A parameter that is no number is refused with its name, and so is a reversion outside 0.00007 to 1. |
 | python | none |  |  |
 | processor | planned |  | A generator that keeps writing is part of step E2 of the decision circle. |
 | go | none |  |  |
@@ -158,7 +158,7 @@ Values wander around a mean and are pulled back to it. A stand-in for a price or
 | Parameter | Type | Default | Range | Description |
 |---|---|---|---|---|
 | `mean` | number | required |  | Level the values return to |
-| `reversion` | number | `0.1` | 0 .. 1 | Share of the distance to the mean taken back per step; above 0 |
+| `reversion` | number | `0.1` | 7.0E-5 .. 1 | Share of the distance to the mean taken back per step. Below 0.00007 the start of a run would not fade within the warm-up and the request is refused. |
 | `sigma` | number | required | 0 ..  | Standard deviation of one step |
 | `min` | number |  |  | Preset from `expect.min`. |
 | `max` | number |  |  | Preset from `expect.max`. |
@@ -836,7 +836,7 @@ Cuts each series into windows of the same duration that are aligned to the epoch
 
 | Parameter | Type | Default | Range | Description |
 |---|---|---|---|---|
-| `duration` | duration | required |  | Length of a window. Must be above zero. |
+| `duration` | duration | required |  | Length of a window, at least PT0.000001S (the microsecond of the time axis). |
 | `offset` | duration | `PT0S` |  | Shift of the windows against the epoch. |
 
 Semantics: needs one window of input per output value; deterministic; keeps time, unit, series; origin INHERIT.
@@ -2471,7 +2471,7 @@ Gives every sample an aggregate of the values of the last window, the current sa
 | workbench | available | operator `feature.rolling` | window in units of the x axis, default 3600. |
 | java | none |  |  |
 | python | none |  |  |
-| processor | available | `org.opentsx.retrieval.clean.CleanChain#Rolling` | A step of the clean chain before a series sink (bin/opentsx vectors). A window that holds more than 100000 values fails the sink with an error that names the node; give a shorter window or resample the series first. |
+| processor | available | `org.opentsx.retrieval.clean.CleanChain#Rolling` | A step of the clean chain before a series sink (bin/opentsx vectors). Each sample enters and leaves the running sums and the extremes once, so a step costs the same for any window. After a resample step the window may span at most 100000 of its intervals; a longer one refuses the DAG with an error that names the node, POST /v1/dags/deploy answers 400 and vectors deploy exits with code 2. Without a resample step before it, a window that holds more than 100000 values fails the sink with an error that names the node. Give a shorter window or resample the series first. |
 | go | none |  |  |
 
 | Port | Direction | Type | Description |

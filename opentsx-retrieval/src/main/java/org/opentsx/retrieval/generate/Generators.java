@@ -41,6 +41,12 @@ public final class Generators {
     /** A run may not ask for more than this many samples: a demo generator is no load test. */
     public static final long MAX_SAMPLES = 2_000_000;
 
+    /**
+     * The smallest reversion of {@code gen.ou}. The warm-up that lets the start of the recursion fade below a thousandth
+     * takes 98679 steps there and grows without bound below it, and every piece of a run computes it.
+     */
+    public static final double MIN_REVERSION = 0.00007;
+
     private Generators() {
     }
 
@@ -80,11 +86,15 @@ public final class Generators {
         double mean = required(p, "mean", "gen.ou");
         double sigma = required(p, "sigma", "gen.ou");
         double reversion = number(p, "reversion", "gen.ou", 0.1);
-        if (sigma < 0 || reversion <= 0 || reversion > 1) {
-            throw new IllegalArgumentException("gen.ou: sigma must not be below zero, reversion must be above 0 and at most 1");
+        if (sigma < 0) {
+            throw new IllegalArgumentException("gen.ou: sigma: " + sigma + " is below zero; expected a number of 0 or more");
+        }
+        if (!(reversion >= MIN_REVERSION && reversion <= 1)) {
+            throw new IllegalArgumentException("gen.ou: reversion: " + reversion + " is out of range; expected a number from "
+                    + java.math.BigDecimal.valueOf(MIN_REVERSION).stripTrailingZeros().toPlainString() + " to 1");
         }
         double keep = 1 - reversion;
-        int warm = keep <= 0 ? 0 : (int) Math.min(100_000, Math.ceil(Math.log(1e-3) / Math.log(keep)));
+        int warm = keep <= 0 ? 0 : (int) Math.ceil(Math.log(1e-3) / Math.log(keep));
         double x = 0;
         for (long k = first - warm; k < first; k++) {
             x = keep * x + sigma * noise(seed, k);
@@ -126,14 +136,21 @@ public final class Generators {
         double amplitude = required(p, "amplitude", "gen.sine");
         double sigma = number(p, "sigma", "gen.sine", 0);
         double phase = number(p, "phase", "gen.sine", 0);
-        long period;
+        String text = p.path("period").asText("P1D");
+        java.time.Duration d;
         try {
-            period = java.time.Duration.parse(p.path("period").asText("P1D")).toNanos() / 1000;
+            d = java.time.Duration.parse(text);
         } catch (java.time.format.DateTimeParseException e) {
-            throw new IllegalArgumentException("gen.sine: period must be a duration like P1D");
+            throw new IllegalArgumentException("gen.sine: period: \"" + text + "\" is not a duration; expected an ISO-8601 duration such as P1D", e);
         }
-        if (period <= 0 || sigma < 0) {
-            throw new IllegalArgumentException("gen.sine: period must be above zero and sigma not below it");
+        java.time.Duration longest = java.time.Duration.ofNanos(Long.MAX_VALUE);
+        long period = d.isNegative() || d.compareTo(longest) > 0 ? 0 : d.toNanos() / 1000;
+        if (period <= 0) {
+            throw new IllegalArgumentException("gen.sine: period: \"" + text + "\" is out of range; expected an ISO-8601 duration from"
+                    + " PT0.000001S to " + longest + ", such as P1D");
+        }
+        if (sigma < 0) {
+            throw new IllegalArgumentException("gen.sine: sigma: " + sigma + " is below zero; expected a number of 0 or more");
         }
         double[] out = new double[n];
         for (int i = 0; i < n; i++) {

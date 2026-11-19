@@ -91,8 +91,17 @@ public final class EpisodeService {
     public SubsequenceQuery similarTo(String episodeId, int offset, int length) {
         Episode e = episode(episodeId).orElseThrow(() -> new NoSuchElementException("unknown episode " + episodeId));
         double[] v = Episodes.values(e);
-        if (offset < 0 || length < 4 || offset + length > v.length) {
-            throw new IllegalArgumentException("pattern outside the episode");
+        if (v.length < 4) {
+            throw new IllegalArgumentException("episodeId: episode " + episodeId + " has " + v.length + " values; expected an episode"
+                    + " with at least 4");
+        }
+        if (length < 4 || length > v.length) {
+            throw new IllegalArgumentException("length: " + length + " is out of range; expected a whole number from 4 to " + v.length
+                    + ", the values of episode " + episodeId);
+        }
+        if (offset < 0 || offset > v.length - length) {
+            throw new IllegalArgumentException("offset: " + offset + " is out of range; expected a whole number from 0 to "
+                    + (v.length - length) + ", so that " + length + " values fit into the " + v.length + " of episode " + episodeId);
         }
         return new SubsequenceQuery(Arrays.copyOfRange(v, offset, offset + length));
     }
@@ -100,10 +109,6 @@ public final class EpisodeService {
     /** Whole episodes that look like the given one. */
     public SimilarEpisodesQuery similarEpisodes(String episodeId) {
         return new SimilarEpisodesQuery(episode(episodeId).orElseThrow(() -> new NoSuchElementException("unknown episode " + episodeId)));
-    }
-
-    public SimilarEpisodesQuery similarEpisodes(Episode episode) {
-        return new SimilarEpisodesQuery(episode);
     }
 
     /** Segments (derived episodes) of the selected series. */
