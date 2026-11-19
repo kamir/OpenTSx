@@ -151,6 +151,7 @@ def build(settings, profile="connected"):
     initial_revision = output(["git", "rev-parse", "HEAD"])
     BUILD.mkdir(exist_ok=True)
     stage = Path(tempfile.mkdtemp(prefix="stage-", dir=BUILD))
+    stage.chmod(0o755)
     (stage / "wheels").mkdir()
     (stage / "frontend").mkdir()
     shutil.copy2(LOCAL / "entrypoint.sh", stage / "entrypoint.sh")

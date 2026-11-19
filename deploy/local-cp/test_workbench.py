@@ -237,8 +237,9 @@ class WorkbenchTests(unittest.TestCase):
         (local / "entrypoint.sh").write_text("exit 0\n")
 
         def run(command):
+            stage = next(build_root.glob("stage-*"))
+            self.assertEqual(stage.stat().st_mode & 0o777, 0o755)
             if "/source/deploy/local-cp/build_python.py" in command:
-                stage = next(build_root.glob("stage-*"))
                 (stage / "runtime.lock").write_text("fixture-lock\n")
                 (stage / "python-build.json").write_text("{}")
 
@@ -261,6 +262,7 @@ class WorkbenchTests(unittest.TestCase):
         )
         self.assertEqual(env["OPENTSX_REGISTRY_IMAGE"], "registry-fixture")
         self.assertEqual(env["OPENTSX_REGISTRY_URL"], "http://registry:5000")
+        self.assertEqual(Path(env["OPENTSX_BUNDLE"]).stat().st_mode & 0o777, 0o755)
         manifest = json.loads(
             (Path(env["OPENTSX_BUNDLE"]) / "manifest.json").read_text()
         )
@@ -406,8 +408,9 @@ class WorkbenchTests(unittest.TestCase):
         (local / "entrypoint.sh").write_text("exit 0\n")
 
         def run(command):
+            stage = next(build_root.glob("stage-*"))
+            self.assertEqual(stage.stat().st_mode & 0o777, 0o755)
             if "/source/deploy/local-cp/build_python.py" in command:
-                stage = next(build_root.glob("stage-*"))
                 (stage / "runtime.lock").write_text("fixture-lock\n")
                 (stage / "python-build.json").write_text(
                     '{"wheel_sha256":"wheel-fixture"}'
@@ -437,6 +440,7 @@ class WorkbenchTests(unittest.TestCase):
         self.assertEqual(env["OPENTSX_PYTHON_IMAGE"], "python-fixture")
         self.assertEqual(env["OPENTSX_WORKBENCH_PORT"], "18081")
         self.assertEqual(connected.read_text(), "CONNECTED_SELECTION=preserved\n")
+        self.assertEqual(Path(env["OPENTSX_BUNDLE"]).stat().st_mode & 0o777, 0o755)
         manifest = json.loads(
             (Path(env["OPENTSX_BUNDLE"]) / "manifest.json").read_text()
         )
