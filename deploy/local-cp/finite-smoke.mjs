@@ -148,8 +148,13 @@ export function allowedRequest(method, target, origin) {
   }
   if (url.origin !== origin) return false;
   if (url.pathname === NUMERICAL_PATH) return method === 'POST' && !url.search;
-  if (/^\/(?:analysis|api|retrieval|v1)(?:\/|$)/.test(url.pathname))
+  let pathname;
+  try {
+    pathname = decodeURIComponent(url.pathname);
+  } catch {
     return false;
+  }
+  if (/^\/(?:analysis|api|retrieval|v1)(?:\/|$)/.test(pathname)) return false;
   return method === 'GET';
 }
 
