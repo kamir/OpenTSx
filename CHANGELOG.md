@@ -1608,6 +1608,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `PT0.0000015S`, with `episodeDuration: PT0.0000015S is not a whole number of microseconds; set episodeDuration to a
   whole number of microseconds, such as PT10M`. It used to cut the window to whole microseconds while the episode kept
   the original length.
+- The documentation link check `tools/check_links.py` also covers `opentsx-saas-frontend`, `opentsx-saas-backend`,
+  `exercises`, `tests`, `data` and image links, and skips the `external/` Wayang submodule. The exercise pages link to
+  the user manual and the `opentsx-core` README instead of 20 pages that do not exist.
+- `tools/check_links.py` exits 2 when its root is not a directory or holds no `.md` file to check, instead of passing
+  on 0 files, and answers `--help` with its usage.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

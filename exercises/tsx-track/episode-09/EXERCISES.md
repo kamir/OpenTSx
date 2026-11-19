@@ -402,9 +402,8 @@ public class BonusExercise_SeasonalDecomposition {
 
 ## Resources
 
-- [Statistical Analysis](../../docs/manual/statistical-analysis/README.md)
-- [R/Python Translation Guide](../../docs/manual/appendix/r-python-translation.md)
-- [Advanced Algorithms](../../FEATURES.md)
+- [Classic analytics](../../../docs/user-manual/11-classic-analytics.md)
+- [Python](../../../docs/user-manual/10-python.md)
 
 ---
 

@@ -442,9 +442,9 @@ When deploying to production, ensure:
 
 ## Resources
 
-- [Best Practices](../../docs/manual/best-practices/README.md)
-- [Production Deployment](../../DEPLOYMENT.md)
-- [Local Development Guide](../../docs/devguide/infrastructure/local-development.md)
+- [Set the log level of the production demo](../../../opentsx-core/README.md#set-the-log-level-of-the-production-demo)
+- [Operations](../../../docs/user-manual/12-operations.md)
+- [Local Development Guide](../../../docs/devguide/infrastructure/local-development.md)
 
 ---
 

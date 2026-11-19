@@ -276,9 +276,9 @@ After completing these exercises:
 
 ## Resources
 
-- [Core Concepts Documentation](../../docs/manual/core-concepts/timeseries-object.md)
-- [Data Operations Guide](../../docs/manual/data-operations/creating-timeseries.md)
-- [API Reference](../../docs/manual/appendix/api-reference.md)
+- [opentsx-core, the 2.x library](../../../opentsx-core/README.md)
+- [Export and load a series](../../../opentsx-core/README.md#export-and-load-a-series)
+- [Java tools on 2.x data](../../../docs/user-manual/11-classic-analytics.md#115-run-the-java-tools-on-2x-data)
 
 ---
 

@@ -351,9 +351,8 @@ After completing these exercises:
 
 ## Resources
 
-- [Data Operations Guide](../../docs/manual/data-operations/transformations.md)
-- [Best Practices](../../docs/manual/best-practices/README.md)
-- [API Reference](../../docs/manual/appendix/api-reference.md)
+- [Normalize finite time series](../../../opentsx-core/README.md#normalize-finite-time-series)
+- [opentsx-core, the 2.x library](../../../opentsx-core/README.md)
 
 ---
 

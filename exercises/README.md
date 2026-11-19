@@ -273,9 +273,9 @@ double value = (Double)ts.yValues.elementAt(i);
 ## Getting Help
 
 1. **Check the Documentation:**
-   - [OpenTSx Manual](../docs/manual/README.md)
-   - [API Reference](../docs/manual/appendix/api-reference.md)
-   - [Best Practices](../docs/manual/best-practices/README.md)
+   - [User manual](../docs/user-manual/README.md)
+   - [opentsx-core, the 2.x library](../opentsx-core/README.md)
+   - [Java tools on 2.x data](../docs/user-manual/11-classic-analytics.md#115-run-the-java-tools-on-2x-data)
 
 2. **Review Demo Code:**
    - Each episode has a demo script
@@ -364,9 +364,9 @@ After completing the exercises:
    - Machine Learning Integration
 
 3. **Review Advanced Documentation:**
-   - [Architecture Guide](../ARCHITECTURE.md)
-   - [Features Documentation](../FEATURES.md)
-   - [Deployment Guide](../DEPLOYMENT.md)
+   - [Overview](../docs/user-manual/01-overview.md)
+   - [Classic analytics](../docs/user-manual/11-classic-analytics.md)
+   - [Operations](../docs/user-manual/12-operations.md)
 
 4. **Join the Community:**
    - Share your implementations
@@ -376,9 +376,7 @@ After completing the exercises:
 ## Quick Reference Links
 
 - **Main Documentation:** [README.md](../README.md)
-- **Onboarding Guide:** [Getting Started](../README.md#getting-started--onboarding)
-- **SWE Track Path:** [ONBOARDING-PATH-SWE.md](../ONBOARDING-PATH-SWE.md)
-- **TSx Track Path:** [ONBOARDING-PATH-TSx.md](../ONBOARDING-PATH-TSx.md)
+- **Onboarding Guide:** [Getting started](../docs/user-manual/02-getting-started.md)
 - **Demo Scripts:** [bin/README.md](../bin/README.md)
 - **Local Development:** [docs/devguide/infrastructure/local-development.md](../docs/devguide/infrastructure/local-development.md)
 
