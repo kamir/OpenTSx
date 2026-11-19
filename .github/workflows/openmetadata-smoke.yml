@@ -68,6 +68,17 @@ jobs:
         env:
           OM_URL: http://localhost:8585/api
         run: mvn -B -ntp -pl opentsx-openmetadata -am test -Dtest=OpenMetadataSmokeTest -Dsurefire.failIfNoSpecifiedTests=false
+      - name: Require the executed smoke test
+        run: |
+          python3 - <<'PYTHON'
+          import xml.etree.ElementTree as ET
+          path = "opentsx-openmetadata/target/surefire-reports/TEST-org.opentsx.openmetadata.OpenMetadataSmokeTest.xml"
+          suite = ET.parse(path).getroot()
+          executed = {case.attrib["name"].split("(", 1)[0] for case in suite.findall("testcase") if case.find("skipped") is None}
+          if "publishedMetadataIsReadableFromTheServer" not in executed or any(int(suite.attrib[key]) for key in ("failures", "errors", "skipped")):
+              raise SystemExit("OpenMetadataSmokeTest: missing, skipped or failed; OM_URL and OPENMETADATA_JWT must reach the test")
+          print("OpenMetadataSmokeTest executed successfully")
+          PYTHON
       - name: Server log
         if: failure()
         run: docker compose -f "$RUNNER_TEMP/om-compose.yml" logs --tail 300 openmetadata-server

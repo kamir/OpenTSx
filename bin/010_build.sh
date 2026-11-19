@@ -46,8 +46,8 @@ fi
 
 # Verify Java is available
 if ! command -v java &> /dev/null; then
-    echo "ERROR: Java not found in PATH"
-    echo "Please install Java 17+ and set JAVA_HOME"
+    echo "ERROR: Java not found in PATH" >&2
+    echo "Please install Java 17+ and set JAVA_HOME" >&2
     exit 1
 fi
 
@@ -60,8 +60,8 @@ cd "$PROJECT_ROOT"
 
 # Verify pom.xml exists
 if [ ! -f "pom.xml" ]; then
-    echo "ERROR: pom.xml not found in $PROJECT_ROOT"
-    echo "Are you in the correct directory?"
+    echo "ERROR: pom.xml not found in $PROJECT_ROOT" >&2
+    echo "Are you in the correct directory?" >&2
     exit 1
 fi
 
@@ -80,5 +80,5 @@ echo
 echo "Next steps:"
 echo "  1. Validate environment: ./bin/000_validate_environment.sh"
 echo "  2. Launch GUI: ./bin/000_launch_tsa_workbench.sh"
-echo "  3. Run demos: ./bin/120_run_demo.sh"
+echo "  3. Run a guided demo: ./bin/episode_02_create_timeseries.sh"
 echo

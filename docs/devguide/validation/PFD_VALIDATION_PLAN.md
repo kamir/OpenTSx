@@ -65,7 +65,7 @@ through the actual sink mapping function and verify all coordinates and values.
 
 ## Run the broker-backed acceptance
 
-You need a running broker and `OPENTSX_BOOTSTRAP_SERVERS` set to its host and port; the job reads the same variable.
+You need a running broker and `KAFSCALE_BOOTSTRAP` set to its host and port; the acceptance passes it to the job as `OPENTSX_BOOTSTRAP_SERVERS`.
 The CI KafScale conformance job provides KafScale 1.6.0 with in-memory storage and Flink 1.20.5.
 From the repository root, run:
 
@@ -73,8 +73,8 @@ From the repository root, run:
 mvn -B -ntp -pl opentsx-flink-core -am verify -Ppfd-acceptance
 ```
 
-The profile fails if `OPENTSX_BOOTSTRAP_SERVERS` is missing or empty:
-`OPENTSX_BOOTSTRAP_SERVERS: not set or empty; set it to the host:port of the broker for the PFD acceptance, the job reads the same variable`.
+The profile fails if `KAFSCALE_BOOTSTRAP` is missing or empty:
+`KAFSCALE_BOOTSTRAP: not set or empty; set it to the host:port of the broker for the PFD acceptance, which passes it to the job as OPENTSX_BOOTSTRAP_SERVERS`.
 It creates a unique single-partition topic in the supplied broker, publishes three acknowledged observations and exports the flow through `PFDRecorder.saveToFile`.
 It starts `DynamicTopologyJob` in a separate process and checks its actual JSON output.
 The 90-second deadline bounds failure detection; values and window membership depend only on event timestamps.

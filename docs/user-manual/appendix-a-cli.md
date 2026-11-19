@@ -94,18 +94,18 @@ with 2. The common messages:
 
 ## Other scripts in bin/
 
-* `000_validate_environment.sh`: environment check.
+* `000_validate_environment.sh`: environment check; exits 1 when a check fails (failed checks on stderr; a
+  `java -version`, `mvn -version` or `git --version` that fails is a failed check), 2 on an unknown option.
 * `010_build.sh`: build.
 * `000_launch_tsa_workbench.sh`: the 2.x GUI `org.opentsx.app.bucketanalyser.MacroRecorder2` through
   `mvn -f opentsx-core/pom.xml exec:java`; without Maven on `PATH` with the classpath that `bin/opentsx` cached for
   `opentsx-core`.
 * `005_minimal_no_kafka_demo.sh`: the 2.x sine-wave generator (`org.opentsx.lg.TSDataSineWaveGenerator`) without
   Kafka; it writes CSV files to `data/temp/`.
-* `120_run_demo.sh`: the 2.x GUI `org.opentsx.app.bucketanalyser.MacroRecorder2` through
-  `mvn -f opentsx-core/pom.xml exec:java`; `--help` prints the usage.
 * `episode_*.sh`: 2.x guided demos.
 * `run_all_tests.sh [--quick|--full|--validation-only|--demo-only]`: `--quick` and `--validation-only` run
   `ExerciseValidationTest` of `opentsx-core`; `--demo-only` checks the syntax of the `episode_*.sh` scripts; `--full`
   (the default) does both and checks that five documentation files exist. It writes `test-report.txt` and
-  `test-summary.json` to the repository root.
+  `test-summary.json` to the repository root. It counts the Maven test, the syntax checks and the required files
+  separately.
 * `build_docs_pdfs.sh`: PDF of this manual, via `mvn -Ppdf-manual`.

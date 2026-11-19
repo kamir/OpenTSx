@@ -1,7 +1,6 @@
 
-# Simplified local development environment for OpenTSx
-# Uses CP-ALL-IN-ONE for Kafka (KRaft mode, no Zookeeper)
-# Includes updated OpenTSDB and HBase for time series storage
+# Local development environment for OpenTSx: PostgreSQL, Kafka (KRaft, no ZooKeeper) and Schema Registry.
+# The profile full adds the SaaS backend and frontend.
 
 services:
   # PostgreSQL Database
@@ -24,105 +23,53 @@ services:
     networks:
       - opentsx-network
 
-  # Confluent Platform ALL-IN-ONE (Kafka without Zookeeper)
-  # Includes: Kafka, Schema Registry, Connect, ksqlDB, Control Center
-  # No security configured for local testing
-  cp-all-in-one:
-    image: confluentinc/cp-all-in-one-community:7.6.0
-    container_name: opentsx-cp-all-in-one
-    hostname: cp-all-in-one
+  # Kafka (KRaft, one node that is broker and controller) and Schema Registry of Confluent Platform 7.6.0.
+  # No security configured for local testing.
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: opentsx-kafka
+    hostname: kafka
     ports:
-      - "9092:9092"      # Kafka broker
-      - "8081:8081"      # Schema Registry
-      - "8082:8082"      # Kafka REST Proxy
-      - "8083:8083"      # Kafka Connect
-      - "9021:9021"      # Control Center
+      - "9092:9092"
     environment:
-      # Kafka KRaft Configuration (no Zookeeper)
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
       KAFKA_NODE_ID: 1
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
-      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://cp-all-in-one:29092,PLAINTEXT_HOST://localhost:9092'
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_PROCESS_ROLES: 'broker,controller'
-      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@cp-all-in-one:29093'
-      KAFKA_LISTENERS: 'PLAINTEXT://cp-all-in-one:29092,CONTROLLER://cp-all-in-one:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
       KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
-      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
-      # Schema Registry
-      SCHEMA_REGISTRY_HOST_NAME: cp-all-in-one
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'cp-all-in-one:29092'
-      # Control Center
-      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
-      CONFLUENT_CONTROL_CENTER_REPLICATION_FACTOR: 1
-      CONFLUENT_CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
-      CONFLUENT_CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
-      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: cp-all-in-one:29092
-      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
-      CONFLUENT_METRICS_ENABLE: 'false'
-      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
     volumes:
-      - kafka_data:/tmp/kraft-combined-logs
+      - kafka_data:/var/lib/kafka/data
     healthcheck:
-      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1"]
-      interval: 30s
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 > /dev/null || exit 1"]
+      interval: 10s
       timeout: 10s
-      retries: 5
-      start_period: 60s
+      retries: 10
+      start_period: 30s
     networks:
       - opentsx-network
 
-  # HBase (for OpenTSDB storage)
-  hbase:
-    image: harisekhon/hbase:2.5
-    container_name: opentsx-hbase
-    hostname: hbase
-    ports:
-      - "2181:2181"      # ZooKeeper (HBase internal)
-      - "16000:16000"    # HBase Master
-      - "16010:16010"    # HBase Master Web UI
-      - "16020:16020"    # HBase RegionServer
-      - "16030:16030"    # HBase RegionServer Web UI
-    environment:
-      HBASE_MANAGES_ZK: "true"
-    volumes:
-      - hbase_data:/hbase-data
-    healthcheck:
-      test: ["CMD-SHELL", "echo 'status' | hbase shell -n || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
-    networks:
-      - opentsx-network
-
-  # OpenTSDB (Time Series Database)
-  opentsdb:
-    image: petergrace/opentsdb-docker:latest
-    container_name: opentsx-opentsdb
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.6.0
+    container_name: opentsx-schema-registry
+    hostname: schema-registry
     depends_on:
-      hbase:
+      kafka:
         condition: service_healthy
     ports:
-      - "4242:4242"      # OpenTSDB HTTP API
+      - "8081:8081"
     environment:
-      HBASE_ZOOKEEPER_QUORUM: hbase
-      HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT: 2181
-      TSDB_TABLE: tsdb
-      UID_TABLE: tsdb-uid
-      TREE_TABLE: tsdb-tree
-      META_TABLE: tsdb-meta
-    volumes:
-      - opentsdb_data:/tmp/opentsdb
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:4242/api/version || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'kafka:29092'
+      SCHEMA_REGISTRY_LISTENERS: 'http://0.0.0.0:8081'
     networks:
       - opentsx-network
 
@@ -178,10 +125,6 @@ volumes:
     name: opentsx-postgres-data
   kafka_data:
     name: opentsx-kafka-data
-  hbase_data:
-    name: opentsx-hbase-data
-  opentsdb_data:
-    name: opentsx-opentsdb-data
 
 networks:
   opentsx-network:

@@ -173,8 +173,8 @@ echo
 echo "Next Steps:"
 echo "  • Explore the GUI and time series visualization"
 echo "  • Try loading sample data"
-echo "  • Run analysis demos: ./bin/120_run_demo.sh"
-echo "  • Learn more: see ONBOARDING-PATH-SWE.md or ONBOARDING-PATH-TSx.md"
+echo "  • Run a guided demo: ./bin/episode_02_create_timeseries.sh"
+echo "  • Learn more: docs/user-manual/02-getting-started.md"
 echo
 
 exit $EXIT_CODE

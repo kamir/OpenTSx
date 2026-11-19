@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Store contract against the embedded emulator, or against a real OpenTSDB when OPENTSDB_URL is set
- * (e.g. the opentsdb service of docker-compose.local.yml; use a fresh instance, the contract expects an empty store).
+ * (an OpenTSDB instance you run yourself; docker-compose.local.yml has no OpenTSDB service; use a fresh instance, the contract expects an empty store).
  */
 class OpenTsdbSeriesStoreTest extends SeriesStoreContract {
 

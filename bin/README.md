@@ -3,14 +3,13 @@
 | Script | Purpose |
 |--------|---------|
 | `opentsx` | **Launcher for the current tools.** `bin/opentsx --help` lists the commands; [user manual, appendix A](../docs/user-manual/appendix-a-cli.md) lists every command with its options and the differences to the container image; see also [below](#fix-a-failed-start-of-binopentsx). |
-| `000_validate_environment.sh` | checks the JDK (17+), Maven, memory, ports and Docker |
-| `010_build.sh` | builds all modules (`mvn install`) |
+| `000_validate_environment.sh` | checks the JDK (17+), Maven (3.9+), Git, Docker, memory, disk, CPU, network and the build; failed checks go to stderr, and a `java -version`, `mvn -version` or `git --version` that fails is a failed check. Exit codes: 0 no check failed (warnings allowed), 1 a check failed, 2 unknown option |
+| `010_build.sh` | builds all modules (`mvn install`). Exit codes: 0 built, 1 no Java on `PATH` or no `pom.xml` (message on stderr), otherwise the exit code of Maven |
 | `build_docs_pdfs.sh`, `Dockerfile.docs-pdf` | PDF of the user manual and dev guide (used by `mvn -Ppdf-manual`) |
 | `005_minimal_no_kafka_demo.sh` | 2.x sine-wave generator without Kafka; writes CSV files to `data/temp/` |
 | `000_launch_tsa_workbench.sh` | 2.x GUI (MacroRecorder2) through `mvn -f opentsx-core/pom.xml exec:java`, or without Maven with the classpath that `bin/opentsx` cached |
-| `120_run_demo.sh` | 2.x GUI (MacroRecorder2) through `mvn -f opentsx-core/pom.xml exec:java`; `--help` prints the usage |
 | `episode_02/03/09/10_*.sh` | 2.x guided demos (`org.opentsx.demo.onboarding.*`), used with `exercises/` |
-| `run_all_tests.sh` | runs Maven exercise regressions; full mode also checks demo syntax and required docs |
+| `run_all_tests.sh` | runs Maven exercise regressions; full mode also checks the syntax of the demo scripts (`bash -n`, the demos do not run) and that the required docs exist, and counts tests, syntax checks and required files separately. Exit codes: 0 every selected check passed, 1 a check failed, 2 unknown mode |
 
 Tests for the current modules run with `mvn verify` and `pytest` (see the [user manual, chapter 12](../docs/user-manual/12-operations.md)).
 Obsolete scripts (Kudu, Spark 2, Cloudera deployment) are in `archive/bin/`.

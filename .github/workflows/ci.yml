@@ -135,15 +135,10 @@ jobs:
       - uses: actions/checkout@v7
       - name: Shell syntax and shellcheck
         run: |
-          for f in deploy/k3s/*.sh deploy/k3s/test/*.sh deploy/docker/*.sh bin/opentsx bin/120_run_demo.sh; do bash -n "$f"; done
+          for f in deploy/k3s/*.sh deploy/k3s/test/*.sh deploy/docker/*.sh bin/opentsx bin/000_validate_environment.sh bin/run_all_tests.sh opentsx-saas-backend/local-setup.sh; do bash -n "$f"; done
           command -v shellcheck || { sudo apt-get update -q && sudo apt-get install -y -q shellcheck; }
           shellcheck --version
-          shellcheck -x -P SCRIPTDIR deploy/k3s/*.sh deploy/k3s/test/*.sh deploy/docker/*.sh bin/opentsx bin/120_run_demo.sh
-      - name: bin/120_run_demo.sh --help prints its usage and starts nothing
-        run: |
-          bash bin/120_run_demo.sh --help | grep -q '^Starts the 2.x GUI org.opentsx.app.bucketanalyser.MacroRecorder2'
-          rc=0; bash bin/120_run_demo.sh nosuch 2> "$RUNNER_TEMP/demo.err" || rc=$?
-          test "$rc" = 2 && grep -q 'unknown argument nosuch' "$RUNNER_TEMP/demo.err"
+          shellcheck -x -P SCRIPTDIR deploy/k3s/*.sh deploy/k3s/test/*.sh deploy/docker/*.sh bin/opentsx bin/000_validate_environment.sh bin/run_all_tests.sh opentsx-saas-backend/local-setup.sh
       - name: 20-configure.sh, secrets in docs and the MinIO bucket Job (deploy/k3s/test)
         run: bash deploy/k3s/test/test-20-configure.sh
       - name: 00-prereqs.sh shows the error of the staged kafscale-check (deploy/k3s/test)
@@ -158,6 +153,23 @@ jobs:
         run: bash deploy/docker/test-launchers.sh
       - name: Launcher commands (bin/opentsx, the image entrypoint and Registry.LOADS_CONF)
         run: bash deploy/docker/test-launchers.sh --commands
+      - name: Local compose stack (docker-compose.local.yml) resolves and every image exists
+        env:
+          POSTGRES_PASSWORD: ci-placeholder-0123
+          SECRET_KEY: ci-placeholder-0123456789abcdefghijkl
+          FIRST_SUPERUSER_PASSWORD: ci-placeholder-0123
+        run: |
+          docker compose -f docker-compose.local.yml --profile full config -q
+          images="$(docker compose -f docker-compose.local.yml config --images)"
+          [ -n "$images" ] || { echo "docker-compose.local.yml: docker compose config --images printed no image; expected postgres, cp-kafka and cp-schema-registry" >&2; exit 1; }
+          for image in $images; do
+            for _ in 1 2 3; do
+              docker manifest inspect "$image" > /dev/null && continue 2
+              sleep 5
+            done
+            echo "docker-compose.local.yml: $image: no such image; pin an image tag that exists" >&2
+            exit 1
+          done
       - name: Render the kustomize overlays (default, hostnetwork, service, lake, modbus-sim, dwd-forward, monitoring, saas, retrieval-kafscale, event-bridge) and the history archive
         run: |
           kubectl version --client
@@ -352,7 +364,6 @@ jobs:
       - name: Verify recorder PFD through Kafka and Flink
         env:
           KAFSCALE_BOOTSTRAP: 127.0.0.1:39092
-          OPENTSX_BOOTSTRAP_SERVERS: 127.0.0.1:39092
         run: xvfb-run --auto-servernum mvn -B -ntp -pl opentsx-flink-core -am verify -Ppfd-acceptance
       - name: Capability report
         if: always()
@@ -404,8 +415,8 @@ jobs:
       - name: Java retrieval server (demo store) answers the Python client
         run: |
           mvn -B -ntp -q -pl opentsx-retrieval -am install -DskipTests
-          mvn -B -ntp -q -pl opentsx-retrieval dependency:build-classpath -Dmdep.outputFile=cp.txt
-          nohup java -cp "opentsx-retrieval/target/classes:$(cat opentsx-retrieval/cp.txt)" \
-            org.opentsx.retrieval.server.RetrievalServer --port 18080 --source demo > retrieval-server.log 2>&1 &
+          bash deploy/docker/test-launchers.sh --classpath opentsx-retrieval
+          cp="$(bin/opentsx classpath opentsx-retrieval)"
+          nohup java -cp "$cp" org.opentsx.retrieval.server.RetrievalServer --port 18080 --source demo > retrieval-server.log 2>&1 &
           for i in $(seq 1 60); do curl -sf localhost:18080/v1/health && break; sleep 1; done
           cd python-package && OPENTSX_RETRIEVAL_URL=http://127.0.0.1:18080 python -m pytest -q tests/test_retrieval_client.py

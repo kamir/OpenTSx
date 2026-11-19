@@ -5,9 +5,8 @@
 > * For the v2 modules (KafScale storage, statistics, wind farm, retrieval), use
 >   **`docker-compose.kafscale.yml`** (etcd, MinIO, KafScale broker on :9092). It is described in the
 >   [user manual, chapter 12](../../user-manual/12-operations.md).
-> * The stack documented below (`docker-compose.local.yml`) serves the OpenTSDB store, the 2.x tools and the
->   experimental SaaS stack. Its `full` profile builds the backend from `opentsx-saas-backend/` and the frontend from
->   `opentsx-saas-frontend/`.
+> * The stack documented below (`docker-compose.local.yml`) serves the 2.x tools and the experimental SaaS stack.
+>   Its `full` profile builds the backend from `opentsx-saas-backend/` and the frontend from `opentsx-saas-frontend/`.
 >
 > Both stacks bind port 9092, so do not run them at the same time.
 
@@ -17,12 +16,14 @@ This document describes the simplified local development setup for OpenTSx using
 
 The local development environment (`docker-compose.local.yml`) provides a complete infrastructure stack for developing and testing OpenTSx applications:
 
-- **Kafka** (via CP-ALL-IN-ONE): stream processing without Zookeeper
+- **Kafka** (`confluentinc/cp-kafka:7.6.0`): one broker in KRaft mode, without ZooKeeper
+- **Schema Registry** (`confluentinc/cp-schema-registry:7.6.0`): Avro schema management
 - **PostgreSQL**: relational database storage
-- **HBase**: distributed column-oriented storage
-- **OpenTSDB**: time series database built on HBase
 - **Backend API** (optional): the SaaS backend
 - **Frontend UI** (optional): the SaaS frontend
+
+The tests of the OpenTSDB store do not need this stack: they run against an embedded emulator, and against a real
+OpenTSDB only when `OPENTSDB_URL` is set.
 
 PostgreSQL (5432) and the backend (8000) are published on 127.0.0.1 only, so other hosts cannot reach them.
 
@@ -45,31 +46,30 @@ python3 -c "import secrets; print(secrets.token_urlsafe(32))"
 
 ### Start Core Services Only
 
-For basic time series testing (Kafka + OpenTSDB + databases):
+For PostgreSQL, Kafka and Schema Registry:
 
 ```bash
-docker-compose -f docker-compose.local.yml up -d
+docker compose -f docker-compose.local.yml up -d
 ```
 
 This starts:
 - PostgreSQL
-- CP-ALL-IN-ONE (Kafka, Schema Registry, Control Center)
-- HBase
-- OpenTSDB
+- Kafka
+- Schema Registry
 
 ### Start Full Stack
 
 To include backend and frontend services:
 
 ```bash
-docker-compose -f docker-compose.local.yml --profile full up -d
+docker compose -f docker-compose.local.yml --profile full up -d
 ```
 
 The backend container mounts `opentsx-saas-backend/` as `/app` and reads `opentsx-saas-backend/.env` when that file
 exists. A key in that file that is not a setting of the backend stops its start, and the log names the key:
 
 ```bash
-docker-compose -f docker-compose.local.yml logs backend
+docker compose -f docker-compose.local.yml logs backend
 ```
 
 The settings are listed in
@@ -78,7 +78,7 @@ The settings are listed in
 ### Stop All Services
 
 ```bash
-docker-compose -f docker-compose.local.yml down
+docker compose -f docker-compose.local.yml down
 ```
 
 ### Remove All Data Volumes
@@ -86,7 +86,7 @@ docker-compose -f docker-compose.local.yml down
 **WARNING:** This deletes all data!
 
 ```bash
-docker-compose -f docker-compose.local.yml down -v
+docker compose -f docker-compose.local.yml down -v
 ```
 
 ## Service Details
@@ -107,14 +107,10 @@ String password = System.getenv("POSTGRES_PASSWORD");
 docker exec opentsx-postgres pg_isready -U opentsx
 ```
 
-### CP-ALL-IN-ONE (Ports 9092, 8081, 9021)
+### Kafka (Port 9092)
 
-**Purpose:** Complete Kafka platform without Zookeeper complexity
-
-**Key Components:**
-- **Kafka Broker** (9092) — Message streaming
-- **Schema Registry** (8081) — Avro schema management
-- **Control Center** (9021) — Web UI for monitoring
+**Purpose:** one Kafka broker of Confluent Platform 7.6.0 in KRaft mode, broker and controller in one node.
+Clients on the host connect to `localhost:9092`, containers in `opentsx-network` to `kafka:29092`.
 
 **Kafka Connection:**
 ```java
@@ -124,13 +120,9 @@ props.put("key.serializer", "org.apache.kafka.common.serialization.StringSeriali
 props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 ```
 
-**Control Center UI:**
-- URL: http://localhost:9021
-- No authentication required (local development)
-
 **Create Topic:**
 ```bash
-docker exec opentsx-cp-all-in-one kafka-topics \
+docker exec opentsx-kafka kafka-topics \
   --create \
   --topic opentsx-timeseries \
   --bootstrap-server localhost:9092 \
@@ -140,82 +132,36 @@ docker exec opentsx-cp-all-in-one kafka-topics \
 
 **List Topics:**
 ```bash
-docker exec opentsx-cp-all-in-one kafka-topics \
+docker exec opentsx-kafka kafka-topics \
   --list \
   --bootstrap-server localhost:9092
 ```
 
 **Produce Messages:**
 ```bash
-docker exec -it opentsx-cp-all-in-one kafka-console-producer \
+docker exec -it opentsx-kafka kafka-console-producer \
   --topic opentsx-timeseries \
   --bootstrap-server localhost:9092
 ```
 
 **Consume Messages:**
 ```bash
-docker exec -it opentsx-cp-all-in-one kafka-console-consumer \
+docker exec -it opentsx-kafka kafka-console-consumer \
   --topic opentsx-timeseries \
   --from-beginning \
   --bootstrap-server localhost:9092
 ```
 
-### HBase (Ports 16000, 16010)
+### Schema Registry (Port 8081)
 
-**Purpose:** Distributed column-oriented storage for OpenTSDB
+**Purpose:** Avro schema management. Schema Registry stores the schemas in the Kafka topic `_schemas`.
 
-**Web UI:**
-- Master: http://localhost:16010
-
-**HBase Shell:**
+**Register a schema and list the subjects:**
 ```bash
-docker exec -it opentsx-hbase hbase shell
-```
-
-**Health Check:**
-```bash
-docker exec opentsx-hbase bash -c "echo 'status' | hbase shell -n"
-```
-
-### OpenTSDB (Port 4242)
-
-**Purpose:** Scalable time series database
-
-**Web UI:**
-- URL: http://localhost:4242
-
-**REST API:**
-```bash
-# Check version
-curl http://localhost:4242/api/version
-
-# Write data point
-curl -X POST http://localhost:4242/api/put \
-  -H "Content-Type: application/json" \
-  -d '{
-    "metric": "sensor.temperature",
-    "timestamp": 1700000000,
-    "value": 23.5,
-    "tags": {
-      "location": "warehouse",
-      "sensor_id": "temp_01"
-    }
-  }'
-
-# Query data
-curl "http://localhost:4242/api/query?start=1h-ago&m=avg:sensor.temperature{location=warehouse}"
-```
-
-**Java Connection:**
-```java
-import net.opentsdb.core.TSDB;
-import net.opentsdb.utils.Config;
-
-Config config = new Config(false);
-config.overrideConfig("tsd.storage.hbase.zk_quorum", "localhost:2181");
-config.overrideConfig("tsd.storage.hbase.zk_basedir", "/hbase");
-
-TSDB tsdb = new TSDB(config);
+curl -X POST -H 'Content-Type: application/vnd.schemaregistry.v1+json' \
+  --data '{"schema": "{\"type\": \"string\"}"}' \
+  http://localhost:8081/subjects/opentsx-timeseries-value/versions
+curl http://localhost:8081/subjects
 ```
 
 ## Development Workflow
@@ -224,19 +170,19 @@ TSDB tsdb = new TSDB(config);
 
 ```bash
 # Start all services
-docker-compose -f docker-compose.local.yml up -d
+docker compose -f docker-compose.local.yml up -d
 
 # Wait for services to be healthy
-docker-compose -f docker-compose.local.yml ps
+docker compose -f docker-compose.local.yml ps
 
 # Check logs
-docker-compose -f docker-compose.local.yml logs -f
+docker compose -f docker-compose.local.yml logs -f
 ```
 
 ### 2. Run OpenTSx Demo Scripts
 
 ```bash
-# Validate environment
+# Validate environment: exits 1 when a check fails, failed checks are on stderr
 ./bin/000_validate_environment.sh
 
 # Build project
@@ -266,56 +212,20 @@ producer.send(record);
 producer.close();
 ```
 
-### 4. Monitor with Control Center
-
-1. Open http://localhost:9021
-2. Navigate to "Topics" to see message throughput
-3. Navigate to "Consumers" to monitor consumption lag
-4. Use "Connect" tab for Kafka Connect integration
-
 ## Troubleshooting
 
 ### Kafka Not Starting
 
-**Symptom:** `opentsx-cp-all-in-one` container exits immediately
+**Symptom:** `opentsx-kafka` container exits immediately
 
 **Solution:**
 ```bash
 # Check logs
-docker logs opentsx-cp-all-in-one
+docker logs opentsx-kafka
 
 # Remove volume and restart
-docker-compose -f docker-compose.local.yml down -v
-docker-compose -f docker-compose.local.yml up -d
-```
-
-### HBase Not Responding
-
-**Symptom:** OpenTSDB cannot connect to HBase
-
-**Solution:**
-```bash
-# HBase takes 1-2 minutes to start fully
-docker logs opentsx-hbase
-
-# Wait for "Master has completed initialization"
-# Then restart OpenTSDB
-docker restart opentsx-opentsdb
-```
-
-### OpenTSDB Table Creation Failed
-
-**Symptom:** OpenTSDB API returns errors
-
-**Solution:**
-```bash
-# Manually create OpenTSDB tables
-docker exec -it opentsx-hbase bash
-
-# In container:
-export HBASE_HOME=/opt/hbase
-export COMPRESSION=NONE
-/opt/opentsdb/tools/create_table.sh
+docker compose -f docker-compose.local.yml down -v
+docker compose -f docker-compose.local.yml up -d
 ```
 
 ### Port Already in Use
@@ -327,8 +237,7 @@ export COMPRESSION=NONE
 # Find process using port
 lsof -i :9092
 
-# Kill process or change port in docker-compose.local.yml
-# Example: Change "9092:9092" to "9093:9092"
+# Stop that process, for example the stack of docker-compose.kafscale.yml, which also binds 9092
 ```
 
 ### Out of Memory
@@ -343,40 +252,9 @@ docker stats
 # Increase Docker Desktop memory limit to at least 8GB
 # Settings → Resources → Memory
 
-# Or reduce services by commenting out in docker-compose.local.yml
+# Or start only the services you need
+docker compose -f docker-compose.local.yml up -d kafka
 ```
-
-## Architecture Notes
-
-### Why CP-ALL-IN-ONE Instead of Separate Kafka?
-
-**Benefits:**
-1. **No Zookeeper** — Uses KRaft mode (Kafka 3.0+)
-2. **All-in-one** — Schema Registry, Connect, Control Center included
-3. **Simplified** — Single container for complete Kafka platform
-4. **Local Testing** — Perfect for development, not production
-
-**Trade-offs:**
-- Larger image size (~2GB)
-- More resource usage (minimum 4GB RAM recommended)
-- Not suitable for production deployments
-
-### Why HBase + OpenTSDB?
-
-**Rationale:**
-- **Proven** — Battle-tested for massive time series workloads
-- **Scalable** — Handles billions of data points
-- **Flexible** — Schema-less tag-based queries
-- **Compatible** — Direct integration with existing OpenTSx infrastructure
-
-**Note:** HBase includes its own internal Zookeeper (port 2181) which is separate from the removed Kafka Zookeeper. This is required by HBase and cannot be eliminated.
-
-### Kudu Exclusion
-
-Apache Kudu was evaluated and found to have minimal usage in the codebase:
-- Only used in `opentsx-ext-connectors/src/main/java/kudu/KuduTelemetryDataLoader.java`
-- Not required for core OpenTSx functionality
-- Can be added separately if needed for specific IoT telemetry use cases
 
 ## Resource Requirements
 
@@ -395,19 +273,20 @@ Apache Kudu was evaluated and found to have minimal usage in the codebase:
 
 ### Per-Service Memory Usage
 
-| Service       | Memory Usage | Notes                        |
-|---------------|--------------|------------------------------|
-| PostgreSQL    | ~100 MB      | Lightweight                  |
-| CP-ALL-IN-ONE | ~2-3 GB      | Includes entire Kafka stack  |
-| HBase         | ~1-2 GB      | Requires Java heap space     |
-| OpenTSDB      | ~500 MB      | Java-based API server        |
-| **Total**     | **~4-6 GB**  | Without backend/frontend     |
+Measured with `docker stats --no-stream` after `up -d`, one topic and one schema, on a host with 16 GB:
+
+| Service         | Memory Usage |
+|-----------------|--------------|
+| PostgreSQL      | 30 MiB       |
+| Kafka           | 378 MiB      |
+| Schema Registry | 265 MiB      |
+| **Total**       | **673 MiB**  |
 
 ## Next Steps
 
 1. **Validate Setup:**
    ```bash
-   ./bin/000_validate_environment.sh --strict
+   ./bin/000_validate_environment.sh
    ```
 
 2. **Build Project:**
@@ -424,20 +303,8 @@ Apache Kudu was evaluated and found to have minimal usage in the codebase:
    ./bin/episode_03_basic_operations.sh
    ```
 
-4. **Explore Control Center:**
-   - Open http://localhost:9021
-   - Create a test topic
-   - Produce and consume messages
-
-5. **Test OpenTSDB:**
-   - Open http://localhost:4242
-   - Try the API examples above
-   - Integrate with your OpenTSx code
-
 ## See Also
 
-- [OpenTSx Manual](../../user-manual/README.md) — User manual
-- [Demo Scripts](../../../bin/README.md) — Scripts
+- [OpenTSx Manual](../../user-manual/README.md): user manual
+- [Demo Scripts](../../../bin/README.md): scripts
 - [Confluent Platform Documentation](https://docs.confluent.io/platform/current/overview.html)
-- [OpenTSDB Documentation](http://opentsdb.net/docs/build/html/)
-- [HBase Reference Guide](https://hbase.apache.org/book.html)

@@ -7,7 +7,7 @@ Start a local stack, configure the tools, run the tests and secure a deployment 
 | File | Starts | Use |
 |------|--------|-----|
 | `docker-compose.kafscale.yml` | etcd, MinIO (S3, :9000/:9001), KafScale broker v1.6.0 (:9092) | **primary development stack** (v2) |
-| `docker-compose.local.yml` | Postgres, Confluent Platform (Kafka, Schema Registry), HBase + OpenTSDB; profile `full` adds the SaaS backend and frontend ([chapter 14](14-saas-service-layer.md) says what works in it) | OpenTSDB store tests, 2.x tools, SaaS stack |
+| `docker-compose.local.yml` | Postgres (:5432), Kafka of Confluent Platform 7.6.0 in KRaft mode (:9092), Schema Registry (:8081); profile `full` adds the SaaS backend and frontend ([chapter 14](14-saas-service-layer.md) says what works in it) | 2.x tools, SaaS stack |
 
 Both stacks bind port 9092, so do not run them at the same time.
 

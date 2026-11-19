@@ -139,8 +139,8 @@ Invalid values, duplicate options and unknown arguments fail before the Flink gr
 The Kafka source includes `flink-connector-base` at the same pinned Flink version.
 Each `LOG` record is JSON with `label`, `timestamps` and `values`, including windows with fewer than five points.
 The `pfd-acceptance` Maven profile verifies a recorder-exported flow through a real Kafka-compatible broker and
-Flink in the KafScale CI job. It reads the broker address from `OPENTSX_BOOTSTRAP_SERVERS`, the variable the job
-reads. See the [PFD contract](../docs/devguide/validation/PFD_VALIDATION_PLAN.md) for
+Flink in the KafScale CI job. It reads the broker address from `KAFSCALE_BOOTSTRAP`, as the other broker-backed
+tests do, and passes it to the job as `OPENTSX_BOOTSTRAP_SERVERS`. See the [PFD contract](../docs/devguide/validation/PFD_VALIDATION_PLAN.md) for
 prerequisites, commands and result artifacts, and the [classic analytics manual](../docs/user-manual/11-classic-analytics.md).
 
 Components of the PFD runtime:

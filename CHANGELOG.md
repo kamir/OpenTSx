@@ -552,6 +552,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `bin/000_validate_environment.sh`, `bin/run_all_tests.sh` and `opentsx-saas-backend/local-setup.sh`.
   `deploy/docker/test-launchers.sh` tests `deploy/docker/stage.sh` with a fake Maven and checks one module's classpath
   with `--classpath MODULE`.
+- `bin/000_validate_environment.sh` exits 1 when a check fails and writes failed checks to stderr. It needs Maven 3.9
+  or later and exits 2 on an unknown option. A `java -version`, `mvn -version` or `git --version` that fails, for
+  example under a wrong `JAVA_HOME`, is a failed check that names the first line of its output. A failing `docker
+  --version`, `free` or `df` is a warning. The `--strict` option is removed.
+- `bin/run_all_tests.sh` reports the Maven test, the `bash -n` syntax checks and the required files as separate
+  counts, in `test-report.txt` and in `test-summary.json` (`tests`, `syntax_checks`, `file_checks`).
+- `docker-compose.local.yml` runs Kafka `confluentinc/cp-kafka:7.6.0` in KRaft mode and
+  `confluentinc/cp-schema-registry:7.6.0`, replacing the all-in-one image, which does not exist. The HBase and
+  OpenTSDB services and their volumes are removed. The OpenTSDB store tests use their embedded emulator. CI checks
+  that the file resolves and that each of its images exists, and fails when `docker compose config --images` fails or
+  lists no image.
 
 ### Removed
 
@@ -623,6 +634,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `risk_parameter`. This is a breaking change.
 - Python package: the extras `ml`, `storage` and `performance` and the dev dependencies `pytest-asyncio` and `sphinx`,
   which no code used.
+- `opentsx-saas-backend/local-test.sh`, which reported success after failed checks. `smoke-flows.sh` checks a running
+  backend and exits 1 on a failed check.
+- `bin/120_run_demo.sh`, which started the same GUI as `bin/000_launch_tsa_workbench.sh`. The menus of `010_build.sh`
+  and `000_launch_tsa_workbench.sh` point to `bin/episode_02_create_timeseries.sh` and the user manual.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -1161,6 +1176,24 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   exits with 1.
 - `deploy/k3s/60-probe.sh` ends the kubectl port-forward of the retrieval and studio steps when the step ends; a step
   that gave up left kubectl running.
+- `deploy/docker/stage.sh --out DIR` refuses a directory that is not empty and has no `.opentsx-stage` marker with
+  exit code 2, so `--out .` no longer deletes the checkout. stage.sh writes the marker into every directory it stages.
+- `deploy/docker/stage.sh` shows Maven's output and exits 1 with `stage.sh: <step>: Maven failed; see the Maven output
+  above` when a Maven call fails. Before, it exited without a message. A missing module jar reads `stage.sh: <jar>:
+  missing; run mvn -q install -DskipTests first`.
+- `bin/010_build.sh` writes its errors (no Java on `PATH`, no `pom.xml`) to stderr.
+- The OpenMetadata smoke workflow fails when `OpenMetadataSmokeTest` was skipped, missing or failed. Before, a skipped
+  test passed green.
+- `tools/pair_xcorr_vectors.sh` compiles into a cleared class directory and stops with exit 1 on a compile error.
+  Before, it wrote the vectors from old classes.
+- `tools/build_studio.py` reads its argument with argparse and exits 2 without one. It exits 1 when the template does
+  not hold `/*DATA*/null` exactly once or when the data is not JSON.
+- The cross-language CI job starts the retrieval server on `bin/opentsx classpath opentsx-retrieval`, the classpath
+  users run, and checks it for test jars and for exactly one SLF4J provider. Before, it ran with junit and the
+  test-scope slf4j-simple.
+- `opentsx-saas-backend/local-setup.sh` quotes `$USER` in its `psql` calls and passes shellcheck.
+- `bin/000_validate_environment.sh --fix` finds java with `command -v`, so on a host without `which` it finishes the
+  checks and prints the summary instead of stopping with exit code 127.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

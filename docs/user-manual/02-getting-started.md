@@ -9,7 +9,11 @@
 | Python | 3.10 to 3.13 (for the Python package) |
 | Docker / Compose | for the local KafScale stack (optional) |
 
-`bin/000_validate_environment.sh` checks the basics.
+`bin/000_validate_environment.sh` checks the JDK, Maven 3.9+, Git, Docker and the host resources. It exits 1 when a
+check fails and lists the failed checks on stderr; warnings alone exit 0. A `java`, `mvn` or `git` that does not start
+is a failed check with the first line of its output, for example
+`Maven: mvn -version failed: The JAVA_HOME environment variable is not defined correctly,`. Set `JAVA_HOME` to the
+directory of a JDK 17 or later and run the script again.
 
 ## 2.2 Build
 

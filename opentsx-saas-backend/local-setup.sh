@@ -59,6 +59,7 @@ else
 fi
 
 # Activate virtual environment
+# shellcheck source=/dev/null  # created by python3 -m venv above
 source venv/bin/activate
 
 # Upgrade pip
@@ -93,15 +94,15 @@ if [ ${#ADMIN_PASSWORD} -lt 12 ]; then
 fi
 
 # Check if database exists
-if psql -h localhost -U $USER -lqt | cut -d \| -f 1 | grep -qw $DB_NAME; then
+if psql -h localhost -U "$USER" -lqt | cut -d \| -f 1 | grep -qw $DB_NAME; then
     echo -e "${YELLOW}⚠ Database '$DB_NAME' already exists${NC}"
-    psql -v ON_ERROR_STOP=1 -h localhost -U $USER postgres > /dev/null <<EOF
+    psql -v ON_ERROR_STOP=1 -h localhost -U "$USER" postgres > /dev/null <<EOF
 ALTER USER $DB_USER WITH PASSWORD '$DB_PASSWORD';
 EOF
     echo -e "${GREEN}✓ Password of '$DB_USER' set to POSTGRES_PASSWORD of .env.local${NC}"
 else
     # Create database and user
-    psql -v ON_ERROR_STOP=1 -h localhost -U $USER postgres <<EOF
+    psql -v ON_ERROR_STOP=1 -h localhost -U "$USER" postgres <<EOF
 CREATE DATABASE $DB_NAME;
 CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';
 GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;

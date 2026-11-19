@@ -22,6 +22,6 @@ A 400 whose body says `No such name` is an unknown metric and reads as no data. 
 | no answer (connection, timeout) or a body that is not JSON | `UncheckedIOException`: `OpenTSDB <method> <url> failed` |
 | 10000 metrics from `/api/suggest`, its limit | `IllegalStateException`: `metrics: /api/suggest returned 10000 metrics, its limit, so the list may be incomplete; select a metric in the SeriesSelector` |
 
-Tests run the store contract against an embedded OpenTSDB emulator; set `OPENTSDB_URL` (fresh instance, e.g. the
-`opentsdb` service in `docker-compose.local.yml`) to run them against a real server. The legacy
+Tests run the store contract against an embedded OpenTSDB emulator; set `OPENTSDB_URL` to a fresh OpenTSDB
+instance that you run yourself to run them against a real server; `docker-compose.local.yml` has no OpenTSDB service. The legacy
 `opentsx-store-opentsdb` connector is not part of the build.

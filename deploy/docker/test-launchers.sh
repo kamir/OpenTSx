@@ -3,14 +3,17 @@
 # after a failed classpath step, one logger configuration in conf/, no test jars and exactly one SLF4J provider on every
 # classpath.
 #
-#   bash deploy/docker/test-launchers.sh                 needs no build: the three launchers with fake mvn and java, and
-#                                                        the logger settings under deploy/
+#   bash deploy/docker/test-launchers.sh                 needs no build: the three launchers with fake mvn and java,
+#                                                        deploy/docker/stage.sh with a fake mvn, and the logger
+#                                                        settings under deploy/
 #   bash deploy/docker/test-launchers.sh --commands      needs no build: bin/opentsx and the image entrypoint offer the
 #                                                        same commands apart from stats-flink (bin/opentsx only) and
 #                                                        kafscale-check (image only), and every command of
 #                                                        Registry.LOADS_CONF is a case of a launcher
 #   bash deploy/docker/test-launchers.sh --dev           bin/opentsx classpath of every launcher module, and no log4j 1
 #                                                        log4j.properties in the shaded opentsx-flink-core jar (after mvn install)
+#   bash deploy/docker/test-launchers.sh --classpath M   bin/opentsx classpath M of one module (after mvn install of M and
+#                                                        the modules it needs)
 #   bash deploy/docker/test-launchers.sh --staged DIR    DIR/opt/opentsx/cp/*.txt written by deploy/docker/stage.sh --out DIR,
 #                                                        and the staged kafscale-check (needs a JDK): a misspelled option,
 #                                                        --help, a closed port and a broker double, read with the grep
@@ -101,6 +104,13 @@ dev() {   # every module list that bin/opentsx starts a main class with
     fi
   done
   $shaded || fail "opentsx-flink-core/target: no shaded jar; run: mvn -B -ntp -pl opentsx-flink-core install -DskipTests"
+}
+
+classpath_of() {   # module: the classpath that bin/opentsx starts the module with
+  local cp entries
+  cp="$("$ROOT/bin/opentsx" classpath "$1")" || { fail "bin/opentsx classpath $1: exit $?"; return; }
+  IFS=: read -r -a entries <<< "$cp"
+  check_classpath "bin/opentsx classpath $1" "" "${entries[@]}"
 }
 
 staged() {
@@ -393,6 +403,56 @@ offline() {
   fi
 }
 
+stage_script() {   # deploy/docker/stage.sh in a scratch tree with a fake mvn: what it refuses and what it shows
+  local tree="$WORK/stage-tree" fake="$WORK/stage-fake" staged="$WORK/staged" out rc
+  mkdir -p "$tree/deploy/docker" "$fake" "$WORK/m2/org/slf4j/slf4j-simple/2.0.20"
+  touch "$WORK/m2/org/slf4j/slf4j-simple/2.0.20/slf4j-simple-2.0.20.jar"
+  cp "$ROOT/deploy/docker/stage.sh" "$tree/deploy/docker/stage.sh"
+  echo '<project/>' > "$tree/pom.xml"
+  cat > "$fake/mvn" <<'EOF'
+#!/usr/bin/env bash
+[[ "${FAKE_MVN_FAILS:-false}" == true ]] && { echo "[ERROR] fake resolution failure"; exit 1; }
+for a in "$@"; do
+  case "$a" in
+    -Dexpression=project.version) printf 3.0.1 ;;
+    -Dexpression=settings.localRepository) printf '%s' "$FAKE_REPO" ;;
+    -Dexpression=*.version) printf 2.0.20 ;;
+  esac
+done
+exit 0
+EOF
+  chmod +x "$fake/mvn"
+
+  rc=0; out="$(cd "$tree" && PATH="$fake:$PATH" FAKE_REPO="$WORK/m2" bash deploy/docker/stage.sh --out . 2>&1)" || rc=$?
+  if [[ $rc -ne 2 || ! -f "$tree/pom.xml" ]] || ! grep -qxF "stage.sh: --out: $tree is not empty and has no .opentsx-stage file; expected a new or empty directory or one that stage.sh wrote" <<< "$out"; then
+    fail "stage.sh --out . in a checkout: exit $rc, pom.xml $([[ -f "$tree/pom.xml" ]] && echo kept || echo deleted); expected exit 2 before anything is deleted"
+    printf '%s\n' "$out" | sed 's/^/    /'
+  else
+    ok "stage.sh --out . in a checkout: exit 2, nothing deleted"
+  fi
+
+  mkdir -p "$tree/deploy/docker"
+  cp "$ROOT/deploy/docker/stage.sh" "$tree/deploy/docker/stage.sh"
+  local jar="$tree/opentsx-conf/target/opentsx-conf-3.0.1.jar"
+  rc=0; out="$(PATH="$fake:$PATH" FAKE_REPO="$WORK/m2" bash "$tree/deploy/docker/stage.sh" --out "$staged" 2>&1)" || rc=$?
+  local again=0; PATH="$fake:$PATH" FAKE_REPO="$WORK/m2" bash "$tree/deploy/docker/stage.sh" --out "$staged" > /dev/null 2>&1 || again=$?
+  if [[ $rc -ne 1 || $again -ne 1 || ! -f "$staged/.opentsx-stage" || "$out" != "stage.sh: $jar: missing; run mvn -q install -DskipTests first" ]]; then
+    fail "stage.sh without a built module: exit $rc, again $again; expected 1 twice, the marker and the missing jar"
+    printf '%s\n' "$out" | sed 's/^/    /'
+  else
+    ok "stage.sh without a built module: exit 1 and names the jar; a second run into its own directory is not refused"
+  fi
+
+  rc=0; out="$(PATH="$fake:$PATH" FAKE_MVN_FAILS=true bash "$tree/deploy/docker/stage.sh" --out "$WORK/staged-fails" 2>&1)" || rc=$?
+  if [[ $rc -ne 1 || "$out" != *"[ERROR] fake resolution failure"* ]] \
+      || ! grep -qxF "stage.sh: help:evaluate project.version: Maven failed; see the Maven output above" <<< "$out"; then
+    fail "stage.sh with a failing mvn: exit $rc; expected 1, Maven's [ERROR] line and the step"
+    printf '%s\n' "$out" | sed 's/^/    /'
+  else
+    ok "stage.sh with a failing mvn: exit 1, Maven's [ERROR] line and the step"
+  fi
+}
+
 # Commands that only one launcher has: the image has no Flink runtime, and KafScaleCheck has no Maven module
 # (stage.sh compiles it into the image).
 BIN_ONLY="stats-flink"
@@ -454,14 +514,15 @@ settings() {
 }
 
 case "${1:-}" in
-  "")       WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT; offline; settings ;;
+  "")       WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT; offline; stage_script; settings ;;
   --commands) [[ $# -eq 1 ]] || { echo "test-launchers.sh: --commands takes no argument" >&2; exit 2; }
             WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT; commands ;;
   --dev)    [[ $# -eq 1 ]] || { echo "test-launchers.sh: --dev takes no argument" >&2; exit 2; }; dev ;;
+  --classpath) [[ $# -eq 2 ]] || { echo "test-launchers.sh: --classpath needs one module" >&2; exit 2; }; classpath_of "$2" ;;
   --staged) [[ $# -eq 2 && -d "$2" ]] || { echo "test-launchers.sh: --staged needs the directory of stage.sh --out" >&2; exit 2; }
             WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT; staged "$2" ;;
   -h|--help) sed -n '2,/^set -euo/{/^#/p}' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
-  *)        echo "test-launchers.sh: unknown option $1; expected --commands, --dev or --staged DIR" >&2; exit 2 ;;
+  *)        echo "test-launchers.sh: unknown option $1; expected --commands, --dev, --classpath MODULE or --staged DIR" >&2; exit 2 ;;
 esac
 (( failures == 0 )) || { echo "$failures failed"; exit 1; }
 echo "all passed"

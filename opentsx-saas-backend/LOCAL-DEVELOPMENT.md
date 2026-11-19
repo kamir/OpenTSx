@@ -84,15 +84,14 @@ This starts the FastAPI server with hot-reload enabled. The server will automati
 
 ### 3. Test Your Setup
 
-In a **new terminal**, run the test script:
+In a **new terminal**, run the smoke test of the accounts and the stored flows:
 
 ```bash
-./local-test.sh
+./smoke-flows.sh
 ```
 
-The script calls the backend without a token and prints one line per check. It ends with `All Tests Passed!` and
-exit code 0 even when a check failed, and exits 1 only when `/health` does not answer. `GET /api/v1/flows` needs
-`Authorization: Bearer <access_token>`, so that check prints `✗ Flows endpoint failed`.
+It registers two accounts, stores, reads, changes and deletes a flow, prints one line per check and exits 1 when a
+check fails.
 
 ## Manual Setup (Alternative)
 
@@ -170,8 +169,8 @@ the environment, and the backend reads only its settings from there. The setting
 # Terminal 2: Run tests or interact with API
 curl http://localhost:8000/health
 
-# Or run automated tests
-./local-test.sh
+# Or run the smoke test
+./smoke-flows.sh
 ```
 
 ### Hot Reload

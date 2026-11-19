@@ -14,7 +14,7 @@ COMMIT=7b56e3d1e638d760fe238dfd66d3775404335ff4
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 WORK=${1:-$(mktemp -d)}
 OUT="$ROOT/docs/datamodel-2026/testvectors/pair-xcorr.v1.json"
-mkdir -p "$WORK/src" "$WORK/classes"
+mkdir -p "$WORK/src"
 
 if [ ! -d "$WORK/we/.git" ]; then
   git init -q "$WORK/we"
@@ -175,6 +175,12 @@ EOF
 (cd "$ROOT" && mvn -q -pl opentsx-core -am install -DskipTests >/dev/null \
   && mvn -q -pl opentsx-core dependency:build-classpath -Dmdep.outputFile="$WORK/core.cp" >/dev/null)
 CP="$ROOT/opentsx-core/target/classes:$(cat "$WORK/core.cp")"
-javac -nowarn -encoding UTF-8 -d "$WORK/classes" -cp "$CP" $(find "$WORK/src" -name '*.java') 2>&1 | grep -v '^Note:' || true
+rm -rf "$WORK/classes"
+mkdir -p "$WORK/classes"
+if ! javac -nowarn -encoding UTF-8 -d "$WORK/classes" -cp "$CP" $(find "$WORK/src" -name '*.java') 2>&1 \
+    | { grep -v '^Note:' >&2 || true; }; then
+  echo "pair_xcorr_vectors.sh: javac: the sources in $WORK/src do not compile; fix the errors above, no vectors were written" >&2
+  exit 1
+fi
 java -cp "$WORK/classes:$CP" experiments.crosscorrelation.Vectors "$COMMIT" "$OUT"
 echo "wrote $OUT"

@@ -29,7 +29,8 @@ To check only demo script syntax, run:
 ```
 
 The runner writes console output and check results to `test-report.txt` and a summary to `test-summary.json`.
-The summary counts runner checks, not individual assertions. Maven reports the individual test cases separately.
+The summary counts the Maven test, the `bash -n` syntax checks and the required files separately (`tests`,
+`syntax_checks`, `file_checks`); it does not count individual assertions. Maven reports the individual test cases separately.
 The runner returns zero only when all selected checks pass. Invalid options return status 2.
 
 ## Inspect the regression cases
