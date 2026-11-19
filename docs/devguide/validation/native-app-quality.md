@@ -1,7 +1,7 @@
 # Check native application quality
 
 Use this source and test matrix to distinguish native regressions from remaining gaps.
-Source mapping is verified at `0242e226231a9de9eb05a933487bfbf2919c82b7`.
+Source mapping is verified at `3c2224739cea661b0702e723133189eea783a498`.
 
 You need the source and test files from the verified revision to inspect the evidence.
 This inventory covers `TSOperationControlerPanel`, tracker display/export controls, local bucket and text exports,
@@ -24,10 +24,10 @@ Regressions can belong to more than one category.
 Test names alone do not establish an executed result or a coverage percentage.
 
 The Java CI matrix runs the Maven verification lifecycle under Xvfb on Java 17 and 21:
-[ci.yml:248](../../../.github/workflows/ci.yml#L248).
+[ci.yml:467](../../../.github/workflows/ci.yml#L467).
 Broker integration and recorder-through-Kafka/Flink acceptance use separate configured gates:
-[ci.yml:420](../../../.github/workflows/ci.yml#L420),
-[ci.yml:556](../../../.github/workflows/ci.yml#L556).
+[ci.yml:639](../../../.github/workflows/ci.yml#L639),
+[ci.yml:775](../../../.github/workflows/ci.yml#L775).
 An environment-dependent skip is not a live acceptance pass.
 
 ## Check enabled native actions
