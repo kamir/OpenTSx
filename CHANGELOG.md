@@ -13,6 +13,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Pin all Maven CI jobs to checksum-verified Maven 3.9.8 and check the existing download retry policy against its
+  bundled HTTP transport before builds. Retain Java build and classpath log files in Wayang Compose artifacts
+  after failed builds.
 - Select pull request CI jobs from Maven dependencies and shared runtime/test inputs. Keep full validation on
   `master` and manual runs, run documentation links with learning checks, and require a final result that rejects
   selection failures and unexpected job skips. Unmapped paths and shared build, contract or manual changes select
