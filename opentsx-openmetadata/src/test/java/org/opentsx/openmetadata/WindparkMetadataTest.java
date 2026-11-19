@@ -213,6 +213,23 @@ class WindparkMetadataTest {
     }
 
     @Test
+    void theStatisticsReadIsLoggedWithItsBoundRightAfterTheStartLine() throws IOException {
+        Exit e = run(Map.of(), new StatsTopic(), "--scenario", scenario().toString(), "--dry-run",
+                tmp.resolve("a").toString(), "--kafscale", "localhost:9092");
+        assertEquals(0, e.code(), e.err());
+        List<String> lines = e.err().lines().toList();
+        int start = lines.indexOf(lines.stream().filter(l -> l.contains("starting metadata: ")).findFirst().orElse(""));
+        assertTrue(start >= 0 && start + 1 < lines.size(), e.err());
+        assertTrue(lines.get(start + 1).endsWith(" - reading statistics before the first request "
+                + "topic=tsx.wind.series-stats.v2 timeout=PT5M"), e.err());
+
+        Exit off = run(Map.of(), new StatsTopic(), "--scenario", scenario().toString(), "--dry-run",
+                tmp.resolve("b").toString(), "--kafscale", "localhost:9092", "--profiles", "never");
+        assertEquals(0, off.code(), off.err());
+        assertFalse(off.err().contains("reading statistics"), off.err());
+    }
+
+    @Test
     void aBootstrapFromTheEnvironmentDoesNotSwitchProfilesOn() throws IOException {
         Path dir = tmp.resolve("requests");
         StatsTopic topic = new StatsTopic();
@@ -404,7 +421,6 @@ class WindparkMetadataTest {
         assertEquals("", e.err());
         assertTrue(e.out().startsWith("usage: opentsx metadata [options]\n"), e.out());
         assertTrue(e.out().contains("  opentsx.openmetadata.profiles  enum = auto  one of auto|always|never  --profiles"), e.out());
-        assertFalse(e.out().contains("parses its own flags"), e.out());
     }
 
     @Test

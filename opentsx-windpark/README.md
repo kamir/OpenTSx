@@ -26,7 +26,7 @@ sources:  [...]                         # how a concrete source system DELIVERS 
 | Channel ID / original name | `channels[].id` (canonical, e.g. `WMET.HorWdSpd`); `sources[].mappings[].sourceName` (vendor name, e.g. `WindSpeed_Avg`) |
 | Turbine and component | turbine = tag `turbine` of the series key / IEC logical device; `channels[].component` (e.g. "nacelle anemometer") |
 | Functional description | `channels[].description` |
-| IEC mapping | `channels[].iec`: `logicalDevice`, `logicalNode`, `dataObject`, `dataAttribute`, `cdc`; edition in `iecEdition`. `ChannelDef.iecReference()` returns e.g. `T07/WROT.RotSpd.mag.f` |
+| IEC mapping | `channels[].iec`: `logicalDevice`, `logicalNode`, `dataObject`, `dataAttribute`, `cdc`; edition in `iecEdition`. `ChannelDef.iecReference()` returns `<logicalNode>.<dataObject>`, e.g. `WROT.RotSpd`, which is also the channel id in the standard catalog; `ChannelDef.iec().reference("T07")` returns the full reference, e.g. `T07/WROT.RotSpd.mag.f` |
 | Data type and unit | `dataType`, `unit` (UCUM: `m/s`, `kW`, `Cel`, `deg`, `rpm`) |
 | Scaling and sign convention | per source: `scale`, `offset`, `invertSign`, `sourceUnit` (converted by `Units`) |
 | Time reference | per source: `timezone` (IANA), `timestamp: INSTANT/START/END`, `aggregation {function, interval}`; per channel: `sampling` |
@@ -68,7 +68,7 @@ mappings that point to unknown channels. An aggregated value with `timestamp: IN
 * `TurbineType` holds rated power, rotor diameter, hub height, cut-in/rated/cut-out wind speed, rpm range and gear ratio
   (`GENERIC_3MW`, `GENERIC_8MW`).
 * `Park.grid(...)` builds a park layout. `park.inventory(catalog)` lists every expected series (turbine × channel)
-  as a `SeriesKey`. The inventory is what the metadata pool (OpenMetadata, P4) is filled from.
+  as a `SeriesKey`. [`opentsx-openmetadata`](../opentsx-openmetadata) fills the metadata pool in OpenMetadata from it.
 
 ## 3. Normalizer
 
@@ -114,6 +114,7 @@ r.report();                                    // accepted / unmapped / unit err
 
 Loading a scenario checks these rules and names the file and the entry that breaks one:
 
+* `name`, `start`, `duration` and `park` are set.
 * `duration`, `sampleInterval` and `episodeDuration` are positive.
 * `park.rows` and `park.columns` are 1 or more. `park.spacingRotorDiameters`, `park.rowSpacingRotorDiameters` and
   `park.wakeDecay` are 0 or more; 0 or a missing value takes the default of 5, 7 and 0.05.
@@ -175,7 +176,8 @@ The demo scenario has 10 turbines, 6 h at 1 Hz, 9 channels plus state, and 17 gr
 ## Tests
 
 * `CatalogAndNormalizerTest` covers the catalog, IEC references, unit conversion, the vendor 10-minute mapping (END timestamp, sign,
-  °F) and the unmapped/implausible/duplicate reporting.
+  °F), the unmapped/implausible/duplicate reporting and the refusal of an unknown source system and of an
+  `episodeDuration` shorter than 1 microsecond.
 * `SimulatorTest` covers determinism, 10-minute blocks and summaries, the power curve, wakes, operations, sensor faults vs.
   ground truth, the ground truth clipped to the simulated span, the producer of the build, the 30-day Weibull mean,
   the scenario rules, the episodeDuration and start refusals, the catalog's quality codes and the state time at sample

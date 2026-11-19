@@ -36,6 +36,12 @@ import java.util.regex.Pattern;
  */
 final class FakeOpenMetadata implements AutoCloseable {
 
+    static {
+        // the JDK server writes the headers and the body of a reply in two packets; without TCP_NODELAY the body waits
+        // for the delayed ACK of the client, about 40 ms per request. Read once, before the first HttpServer starts.
+        System.setProperty("sun.net.httpserver.nodelay", "true");
+    }
+
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Map<String, String> SCHEMAS = Map.ofEntries(
             Map.entry("/v1/services/databaseServices", "api/services/createDatabaseService.json"),

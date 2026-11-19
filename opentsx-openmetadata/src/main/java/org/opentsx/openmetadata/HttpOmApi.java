@@ -5,19 +5,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
  * OpenMetadata REST client (JDK HTTP client + Jackson; no generated SDK, so it runs on Java 17, while the official
  * Java client 2.0.5 is compiled for Java 21). Authenticates with a bot JWT. Retries the statuses 429, 502, 503 and 504
- * and I/O errors, waiting 1, 2, 4, 8 s and so on between the attempts, or the seconds of a {@code Retry-After} header,
- * at most 30 s each time.
+ * and I/O errors, waiting 1, 2, 4, 8 s and so on between the attempts, or as long as a {@code Retry-After} header
+ * says (seconds or an HTTP date), at most 30 s each time. A POST is repeated only when the connection failed.
  */
 public final class HttpOmApi implements OmApi {
 
@@ -89,6 +94,12 @@ public final class HttpOmApi implements OmApi {
                 try {
                     r = http.send(request, HttpResponse.BodyHandlers.ofString());
                 } catch (IOException e) {
+                    boolean connected = !(e instanceof ConnectException || e instanceof HttpConnectTimeoutException);
+                    if ("POST".equals(method) && connected) {
+                        throw new UncheckedIOException(method + " " + path + ": no answer after the request was sent, so "
+                                + "it is not repeated (the server may have stored it); check the connection to "
+                                + "OpenMetadata, then run the command again", e);
+                    }
                     if (attempt >= maxAttempts) {
                         throw new UncheckedIOException(method + " " + path + ": no answer after " + attempt + " attempts", e);
                     }
@@ -103,7 +114,8 @@ public final class HttpOmApi implements OmApi {
                 if (status == 404 && "GET".equals(method)) {
                     return Optional.empty();
                 }
-                boolean retry = status == 429 || status == 502 || status == 503 || status == 504;
+                boolean retry = !"POST".equals(method)
+                        && (status == 429 || status == 502 || status == 503 || status == 504);
                 if (!retry || attempt >= maxAttempts) {
                     throw new OmException(method, path, status, r.body() == null ? "" : r.body());
                 }
@@ -117,10 +129,31 @@ public final class HttpOmApi implements OmApi {
         }
     }
 
-    /** The seconds of a {@code Retry-After} header, else the backoff; at most 30 s. */
+    /**
+     * The wait a {@code Retry-After} header asks for, in seconds or as an HTTP date (RFC 9110 section 10.2.3), else the
+     * backoff; at most 30 s. A date counts from the {@code Date} header of the answer, so the clocks of client and
+     * server need not agree, and from the local clock when the answer has none.
+     */
     private static long wait(HttpResponse<?> r, int attempt) {
         String after = r.headers().firstValue("Retry-After").orElse("");
-        return SECONDS.matcher(after).matches() ? Math.min(MAX_WAIT_MS, Long.parseLong(after) * 1000) : backoff(attempt);
+        if (SECONDS.matcher(after).matches()) {
+            return Math.min(MAX_WAIT_MS, Long.parseLong(after) * 1000);
+        }
+        Optional<Instant> until = httpDate(after);
+        if (until.isEmpty()) {
+            return backoff(attempt);
+        }
+        Instant now = r.headers().firstValue("Date").flatMap(HttpOmApi::httpDate).orElseGet(Instant::now);
+        return Math.max(0, Math.min(MAX_WAIT_MS, Duration.between(now, until.get()).toMillis()));
+    }
+
+    /** An IMF-fixdate such as {@code Thu, 19 Nov 2026 12:00:00 GMT}. */
+    private static Optional<Instant> httpDate(String text) {
+        try {
+            return Optional.of(Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(text)));
+        } catch (DateTimeParseException e) {
+            return Optional.empty();
+        }
     }
 
     private static long backoff(int attempt) {

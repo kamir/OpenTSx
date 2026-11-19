@@ -32,8 +32,18 @@ public record Scenario(String name, long seed, Instant start, Duration duration,
         operations = operations == null ? List.of() : List.copyOf(operations);
         sensorFaults = sensorFaults == null ? List.of() : List.copyOf(sensorFaults);
         wind = wind == null ? WindSpec.DEFAULT : wind;
-        if (name == null || start == null || duration == null || park == null) {
-            throw new IllegalArgumentException("scenario needs name, start, duration and park");
+        if (name == null) {
+            throw new IllegalArgumentException("name: missing; set name to the name of the scenario, such as ostsee-demo");
+        }
+        if (start == null) {
+            throw new IllegalArgumentException(
+                    "start: missing; set start to the first instant of the simulation, such as 2026-10-01T00:00:00Z");
+        }
+        if (duration == null) {
+            throw new IllegalArgumentException("duration: missing; set duration to a positive length, such as PT6H");
+        }
+        if (park == null) {
+            throw new IllegalArgumentException("park: missing; set park to the layout of the park with id, rows and columns");
         }
         positive("duration", duration, "PT6H");
         positive("sampleInterval", sampleInterval, "PT1S");
@@ -146,7 +156,7 @@ public record Scenario(String name, long seed, Instant start, Duration duration,
 
     private static void positive(String name, Duration value, String example) {
         if (value.isNegative() || value.isZero()) {
-            throw new IllegalArgumentException(name + " " + value + " is not positive; set " + name
+            throw new IllegalArgumentException(name + ": " + value + " is not positive; set " + name
                     + " to a positive length, such as " + example);
         }
     }

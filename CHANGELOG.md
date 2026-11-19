@@ -665,6 +665,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   example `alpha: 5.0 is out of range; expected a number above 0 and below 1` and `sketch bytes: format version -1 is
   not supported; expected 1`. Python writes alpha and q as Java's `Double.toString` does, for example `NaN`,
   `Infinity`, `1.0E300` and `-4.9E-324`.
+- `bin/opentsx metadata` with profiles on logs `reading statistics before the first request
+  topic=tsx.<domain>.series-stats.v2 timeout=PT5M` right after the start line, so a slow statistics topic no longer
+  looks like a hang.
+- The wind-farm scenario and normalizer refusals name the field first: `duration: PT-1H is not positive; ...`, `name:
+  missing; ...`, `start: missing; ...`, `duration: missing; ...` and `park: missing; ...` (the first missing field),
+  `sourceSystem: <name> is not in catalog <catalog>; use one of its sources: ...` and `episodeDuration: <value> is
+  shorter than 1 microsecond; ...`.
 
 ### Removed
 
@@ -1494,6 +1501,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The troubleshooting guide, the statistics chapter and the sizing plan quote the current texts: exit code 2 and the
   refusal that names the input topics when a continuous statistics processor finds no partitions, `the broker has
   refused reads for more than PT10M` and `max.in.flight.requests.per.connection=1`.
+- `bin/opentsx metadata` reads a `Retry-After` header given as an HTTP date (such as `Thu, 19 Nov 2026 12:00:12 GMT`)
+  and waits until that time, at most 30 s, counted from the `Date` header of the answer. Before, it ignored the date
+  and used its own backoff.
+- `bin/opentsx metadata` repeats the POST of a data-quality result only after a failed connection, because the server
+  may already have stored a result it received. After any other network error the run stops with exit code 1 and `POST
+  <path>: no answer after the request was sent, so it is not repeated (the server may have stored it); check the
+  connection to OpenMetadata, then run the command again`; after a 429, 502, 503 or 504 it stops with `POST <path> ->
+  HTTP <status>: <body>`. PUT and GET requests are retried as before.
+- The OpenMetadata manual and module README say that the client reads `Retry-After` as seconds or as an HTTP date in
+  the IMF-fixdate form such as `Thu, 19 Nov 2026 12:00:12 GMT`; a date in the obsolete RFC 850 or asctime form is not
+  read, and the waits of 1, 2, 4 and 8 s apply.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

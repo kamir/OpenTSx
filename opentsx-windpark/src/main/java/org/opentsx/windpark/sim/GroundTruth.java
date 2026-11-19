@@ -3,7 +3,7 @@ package org.opentsx.windpark.sim;
 import java.util.Map;
 
 /**
- * An event the simulator injected - the reference for evaluating data-quality checks and pattern search.
+ * An event that overlaps the simulated span: the reference for evaluating data-quality checks and pattern search.
  *
  * @param category "operation" or "sensor-fault"
  * @param channel  metric for sensor faults, null for operations (whole turbine)

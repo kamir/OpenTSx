@@ -53,11 +53,14 @@ public final class Normalizer {
         this.catalog = catalog;
         this.park = park;
         this.source = catalog.source(sourceSystem)
-                .orElseThrow(() -> new IllegalArgumentException("source system " + sourceSystem + " is not in catalog " + catalog.name()));
+                .orElseThrow(() -> new IllegalArgumentException("sourceSystem: " + sourceSystem + " is not in catalog "
+                        + catalog.name() + "; use one of its sources: "
+                        + String.join(", ", catalog.sources().stream().map(SourceSystem::system).toList())));
         this.episodeDuration = episodeDuration;
         this.windowMicros = episodeDuration.toNanos() / 1_000L;
         if (windowMicros <= 0) {
-            throw new IllegalArgumentException("episodeDuration must be positive");
+            throw new IllegalArgumentException("episodeDuration: " + episodeDuration
+                    + " is shorter than 1 microsecond; set episodeDuration to a positive length, such as PT10M");
         }
         this.implausibleCode = catalog.qualityCode("IMPLAUSIBLE");
         this.missingCode = catalog.qualityCode("MISSING");

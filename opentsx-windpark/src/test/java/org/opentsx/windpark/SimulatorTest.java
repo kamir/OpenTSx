@@ -299,18 +299,36 @@ class SimulatorTest {
 
     @Test
     void aScenarioRefusesANonPositiveDurationSampleIntervalOrEpisodeDuration() {
-        assertEquals("duration PT-1H is not positive; set duration to a positive length, such as PT6H",
+        assertEquals("duration: PT-1H is not positive; set duration to a positive length, such as PT6H",
                 assertThrows(IllegalArgumentException.class, () -> new Scenario("s", 1, START, Duration.ofHours(-1),
                         null, null, row(1), null, null, null)).getMessage());
-        assertEquals("sampleInterval PT0S is not positive; set sampleInterval to a positive length, such as PT1S",
+        assertEquals("sampleInterval: PT0S is not positive; set sampleInterval to a positive length, such as PT1S",
                 assertThrows(IllegalArgumentException.class, () -> new Scenario("s", 1, START, Duration.ofHours(1),
                         Duration.ZERO, null, row(1), null, null, null)).getMessage());
-        assertEquals("sampleInterval PT-1S is not positive; set sampleInterval to a positive length, such as PT1S",
+        assertEquals("sampleInterval: PT-1S is not positive; set sampleInterval to a positive length, such as PT1S",
                 assertThrows(IllegalArgumentException.class, () -> new Scenario("s", 1, START, Duration.ofHours(1),
                         Duration.ofSeconds(-1), null, row(1), null, null, null)).getMessage());
-        assertEquals("episodeDuration PT0S is not positive; set episodeDuration to a positive length, such as PT10M",
+        assertEquals("episodeDuration: PT0S is not positive; set episodeDuration to a positive length, such as PT10M",
                 assertThrows(IllegalArgumentException.class, () -> new Scenario("s", 1, START, Duration.ofHours(1),
                         null, Duration.ZERO, row(1), null, null, null)).getMessage());
+    }
+
+    @Test
+    void aScenarioNamesTheFirstMissingField(@TempDir Path dir) throws IOException {
+        Duration h = Duration.ofHours(1);
+        assertEquals("name: missing; set name to the name of the scenario, such as ostsee-demo",
+                assertThrows(IllegalArgumentException.class, () -> new Scenario(null, 1, null, null, null, null, null,
+                        null, null, null)).getMessage());
+        assertEquals("start: missing; set start to the first instant of the simulation, such as 2026-10-01T00:00:00Z",
+                assertThrows(IllegalArgumentException.class, () -> new Scenario("s", 1, null, h, null, null, row(1),
+                        null, null, null)).getMessage());
+        assertEquals("duration: missing; set duration to a positive length, such as PT6H",
+                assertThrows(IllegalArgumentException.class, () -> new Scenario("s", 1, START, null, null, null, row(1),
+                        null, null, null)).getMessage());
+        Path file = dir.resolve("no-park.yaml");
+        Files.writeString(file, "name: s\nstart: 2026-10-01T00:00:00Z\nduration: PT1H\n");
+        assertEquals(file + ": park: missing; set park to the layout of the park with id, rows and columns",
+                assertThrows(IllegalArgumentException.class, () -> Scenario.load(file)).getMessage());
     }
 
     @Test

@@ -189,7 +189,6 @@ public final class WindparkSimulator {
             for (int s = 0; s < stepsPerWindow; s++, step++) {
                 long t = windowStart + s * stepMicros;
                 double hour = ((t / 1_000_000L) % 86_400L) / 3600.0;
-                // --- weather
                 if (step % Math.max(1, (long) (3600 / dt)) == 0 && step > 0) {
                     target = weibull(weather, w.weibullK(), w.weibullC());
                 }
@@ -201,7 +200,6 @@ public final class WindparkSimulator {
                 if (step % Math.max(1, (long) (10 / dt)) == 0) {
                     deficit = WakeModel.deficits(turbines, direction, ct, scenario.park().wakeDecay());
                 }
-                // --- turbines
                 for (int i = 0; i < n; i++) {
                     Turbine tb = turbines.get(i);
                     TurbineType type = tb.type();
@@ -302,7 +300,6 @@ public final class WindparkSimulator {
                     }
                 }
             }
-            // --- emit one episode per turbine and channel
             long wEnd = windowStart + windowMicros;
             for (int i = 0; i < n; i++) {
                 for (int c = 0; c < channels.size(); c++) {

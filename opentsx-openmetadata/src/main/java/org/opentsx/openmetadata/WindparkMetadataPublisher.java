@@ -108,8 +108,6 @@ public final class WindparkMetadataPublisher {
         park.inventory(catalog).forEach(k -> inventory.put(k.getSeriesId(), k));
     }
 
-    // ---- names -----------------------------------------------------------------------------------------------------
-
     public String glossaryName() {
         return catalog.name();
     }
@@ -143,16 +141,12 @@ public final class WindparkMetadataPublisher {
         return Map.copyOf(entities);
     }
 
-    // ---- everything ------------------------------------------------------------------------------------------------
-
     public void publishAll() {
         publishVocabulary();
         publishCustomProperties();
         publishAssets();
         publishLineage();
     }
-
-    // ---- 1. vocabulary ---------------------------------------------------------------------------------------------
 
     public void publishVocabulary() {
         ObjectNode iec = JSON.createObjectNode();
@@ -302,8 +296,6 @@ public final class WindparkMetadataPublisher {
         return t;
     }
 
-    // ---- 2. custom properties --------------------------------------------------------------------------------------
-
     public void publishCustomProperties() {
         String stringType = api.get("/v1/metadata/types/name/string")
                 .orElseThrow(() -> new IllegalStateException("OpenMetadata has no 'string' property type")).path("id").asText();
@@ -336,8 +328,6 @@ public final class WindparkMetadataPublisher {
                 .ifPresent(s -> e.put("samplingInterval", s.toString()));
         return e;
     }
-
-    // ---- 3. assets -------------------------------------------------------------------------------------------------
 
     public void publishAssets() {
         ObjectNode ms = JSON.createObjectNode();
@@ -486,8 +476,6 @@ public final class WindparkMetadataPublisher {
         put("/v1/pipelines", p);
     }
 
-    // ---- 4. lineage ------------------------------------------------------------------------------------------------
-
     public void publishLineage() {
         String pipelines = Fqn.quote(settings.pipelineService());
         lineage(ref(Fqn.child(pipelines, "windpark-sim")), ref(topicFqn(layout.episodes())), null, "Manual");
@@ -522,8 +510,6 @@ public final class WindparkMetadataPublisher {
         r.put("type", e.path("_type").asText());
         return r;
     }
-
-    // ---- 5. profiles -----------------------------------------------------------------------------------------------
 
     /**
      * Publishes one table profile of the signals view per window of the given length: per channel, the statistics of
@@ -610,8 +596,6 @@ public final class WindparkMetadataPublisher {
                     + "\" is neither GLOBAL nor an ISO-8601 duration", e);
         }
     }
-
-    // ---- 6. data quality -------------------------------------------------------------------------------------------
 
     /**
      * Registers the OpenTSx test definitions and one column test case per (channel, check) on the signals view, then
@@ -804,8 +788,6 @@ public final class WindparkMetadataPublisher {
             p.put("value", value.toString());
         }
     }
-
-    // ---- plumbing --------------------------------------------------------------------------------------------------
 
     private JsonNode requireEntity(String fqn) {
         JsonNode e = entities.get(fqn);

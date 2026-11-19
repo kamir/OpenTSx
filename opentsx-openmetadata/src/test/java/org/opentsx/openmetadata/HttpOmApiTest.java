@@ -9,10 +9,12 @@ import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.Authenticator;
+import java.net.ConnectException;
 import java.net.CookieHandler;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -174,6 +176,75 @@ class HttpOmApiTest {
         api.put("/v1/tags", new ObjectMapper().createObjectNode());
         assertEquals(5, http.requests);
         assertEquals(List.of(5000L, 2000L, 30000L, 8000L), waits);
+    }
+
+    @Test
+    void retryAfterAsAnHttpDateWaitsUntilThatTimeAtMostThirtySeconds() {
+        String now = "Thu, 19 Nov 2026 12:00:00 GMT";
+        ScriptedClient http = new ScriptedClient(
+                status(503, Map.of("Date", List.of(now), "Retry-After", List.of("Thu, 19 Nov 2026 12:00:12 GMT"))),
+                status(429, Map.of("Date", List.of(now), "Retry-After", List.of("Thu, 19 Nov 2026 12:05:00 GMT"))),
+                status(429, Map.of("Date", List.of(now), "Retry-After", List.of("Thu, 19 Nov 2026 11:59:00 GMT"))),
+                status(503, Map.of("Retry-After", List.of("Fri, 01 Jan 2100 00:00:00 GMT"))),
+                status(503, Map.of("Retry-After", List.of("Fri, 31 Dec 1999 23:59:59 GMT"))),
+                status(200, Map.of()));
+        List<Long> waits = new ArrayList<>();
+        HttpOmApi api = new HttpOmApi(URI.create("http://om.invalid/api"), "t", 6, http, waits::add);
+        api.put("/v1/tags", new ObjectMapper().createObjectNode());
+        assertEquals(6, http.requests);
+        assertEquals(List.of(12000L, 30000L, 0L, 30000L, 0L), waits);
+    }
+
+    @Test
+    void retryAfterAsAnObsoleteHttpDateIsNotReadAndTheBackoffApplies() {
+        ScriptedClient http = new ScriptedClient(
+                status(503, Map.of("Retry-After", List.of("Thursday, 19-Nov-26 12:00:12 GMT"))),
+                status(503, Map.of("Retry-After", List.of("Thu Nov 19 12:00:12 2026"))),
+                status(200, Map.of()));
+        List<Long> waits = new ArrayList<>();
+        HttpOmApi api = new HttpOmApi(URI.create("http://om.invalid/api"), "t", 5, http, waits::add);
+        api.put("/v1/tags", new ObjectMapper().createObjectNode());
+        assertEquals(List.of(1000L, 2000L), waits);
+    }
+
+    @Test
+    void aPostIsNotRepeatedAfterTheConnectionWasMade() {
+        IOException reset = new IOException("connection reset");
+        ScriptedClient http = new ScriptedClient(failure(reset), status(200, Map.of()));
+        List<Long> waits = new ArrayList<>();
+        HttpOmApi api = new HttpOmApi(URI.create("http://om.invalid/api"), "t", 5, http, waits::add);
+        UncheckedIOException e = assertThrows(UncheckedIOException.class,
+                () -> api.post("/v1/dataQuality/testCases/testCaseResults/x", new ObjectMapper().createObjectNode()));
+        assertEquals("POST /v1/dataQuality/testCases/testCaseResults/x: no answer after the request was sent, so it is "
+                + "not repeated (the server may have stored it); check the connection to OpenMetadata, then run the "
+                + "command again", e.getMessage());
+        assertSame(reset, e.getCause());
+        assertEquals(1, http.requests);
+        assertEquals(List.of(), waits);
+    }
+
+    @Test
+    void aPostIsRepeatedOnlyWhenTheConnectionFailed() {
+        ScriptedClient http = new ScriptedClient(failure(new ConnectException("Connection refused")),
+                failure(new HttpConnectTimeoutException("HTTP connect timed out")), status(200, Map.of()));
+        List<Long> waits = new ArrayList<>();
+        HttpOmApi api = new HttpOmApi(URI.create("http://om.invalid/api"), "t", 5, http, waits::add);
+        api.post("/v1/dataQuality/testCases/testCaseResults/x", new ObjectMapper().createObjectNode());
+        assertEquals(3, http.requests);
+        assertEquals(List.of(1000L, 2000L), waits);
+
+        for (int status : new int[]{429, 502, 503, 504}) {
+            ScriptedClient answered = new ScriptedClient(status(status, Map.of("Retry-After", List.of("1"))),
+                    status(200, Map.of()));
+            List<Long> none = new ArrayList<>();
+            HttpOmApi once = new HttpOmApi(URI.create("http://om.invalid/api"), "t", 5, answered, none::add);
+            OmException e = assertThrows(OmException.class,
+                    () -> once.post("/v1/dataQuality/testCases/testCaseResults/x", new ObjectMapper().createObjectNode()));
+            assertEquals(status, e.status());
+            assertEquals("POST /v1/dataQuality/testCases/testCaseResults/x -> HTTP " + status + ": {}", e.getMessage());
+            assertEquals(1, answered.requests);
+            assertEquals(List.of(), none);
+        }
     }
 
     @Test

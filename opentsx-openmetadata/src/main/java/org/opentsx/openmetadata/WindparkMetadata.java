@@ -196,8 +196,11 @@ public final class WindparkMetadata {
     static String publish(Run run, Function<String, Consumer<byte[], byte[]>> consumers) {
         List<SeriesStats> stats = null;
         if (run.profiles()) {
+            Duration timeout = Duration.ofMinutes(5);
+            LoggerFactory.getLogger(WindparkMetadata.class).info(
+                    "reading statistics before the first request topic={} timeout={}", run.layout().seriesStats(), timeout);
             try (Consumer<byte[], byte[]> consumer = consumers.apply(run.bootstrap())) {
-                stats = SeriesStatsLog.readLatest(consumer, run.layout(), Duration.ofMinutes(5));
+                stats = SeriesStatsLog.readLatest(consumer, run.layout(), timeout);
             }
         }
         OmApi api = run.url() == null ? new DryRunOmApi(run.dryRun()) : new HttpOmApi(run.url(), run.token());

@@ -36,7 +36,6 @@ import java.util.TreeSet;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WindparkSimCliTest {
@@ -264,7 +263,6 @@ class WindparkSimCliTest {
         assertEquals(Registry.shipped().help("windpark-sim"), out());
         assertTrue(out().contains("  opentsx.kafscale.partitions  int = 6  --partitions  OPENTSX_KAFSCALE_PARTITIONS\n"), out());
         assertTrue(out().contains("  opentsx.windpark.sinks  list of enum = auto  one of auto|iceberg|kafscale  --sinks"), out());
-        assertFalse(out().contains("parses its own flags"), out());
         assertEquals("", err());
         assertEquals(List.of(), admins);
     }

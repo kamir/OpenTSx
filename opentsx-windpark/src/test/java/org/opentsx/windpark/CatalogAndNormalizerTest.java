@@ -147,7 +147,14 @@ class CatalogAndNormalizerTest {
         assertEquals(1, r.report().duplicates());
         assertEquals(1, r.report().missing());
         assertEquals("CANONICAL", second.getLabels().get("mapping.status"));
-        assertThrows(IllegalArgumentException.class, () -> new Normalizer(catalog, park, Duration.ofMinutes(10), "nope"));
+        assertEquals("sourceSystem: nope is not in catalog opentsx-windpark-datapoints; "
+                        + "use one of its sources: opentsx-simulator, example-vendor-scada-10min",
+                assertThrows(IllegalArgumentException.class,
+                        () -> new Normalizer(catalog, park, Duration.ofMinutes(10), "nope")).getMessage());
+        assertEquals("episodeDuration: PT0S is shorter than 1 microsecond; "
+                        + "set episodeDuration to a positive length, such as PT10M",
+                assertThrows(IllegalArgumentException.class,
+                        () -> new Normalizer(catalog, park, Duration.ZERO, "opentsx-simulator")).getMessage());
     }
 
     @Test

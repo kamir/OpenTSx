@@ -1,4 +1,4 @@
-# OpenTSx wind-farm data-point catalog ("Kanal-Katalog").
+# OpenTSx wind-farm data-point catalog.
 #
 # A versioned dictionary between raw source channels and analysable signals, mapped to the information model of
 # IEC 61400-25-2 (logical device / logical node / data object / data attribute). It documents units, scaling and
