@@ -3,6 +3,7 @@ import importlib.util
 from io import StringIO
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -235,11 +236,16 @@ class WorkbenchTests(unittest.TestCase):
         local = self.root / "local"
         local.mkdir()
         (local / "entrypoint.sh").write_text("exit 0\n")
+        for name in ("workbench.py", "build_python.py", "requirements.lock"):
+            shutil.copy2(api.LOCAL / name, local / name)
 
         def run(command):
             stage = next(build_root.glob("stage-*"))
             self.assertEqual(stage.stat().st_mode & 0o777, 0o755)
+            if "download" in command:
+                (stage / "wheels/dependency.whl").write_bytes(b"fixture-dependency")
             if "/source/deploy/local-cp/build_python.py" in command:
+                (stage / "wheels/opentsx-fixture.whl").write_bytes(b"fixture-wheel")
                 (stage / "runtime.lock").write_text("fixture-lock\n")
                 (stage / "python-build.json").write_text("{}")
 
@@ -273,12 +279,21 @@ class WorkbenchTests(unittest.TestCase):
         bundle = self.root / "bundle"
         bundle.mkdir()
         (bundle / "manifest.json").write_text(
-            json.dumps({"source_sha256": "fixture-source"})
+            json.dumps(
+                {
+                    "source_sha256": "fixture-source",
+                    "build_inputs": dict.fromkeys(
+                        ("deps", "wheel", "frontend"), "a" * 64
+                    ),
+                }
+            )
         )
         (self.root / "compose.env").write_text(f"OPENTSX_BUNDLE={bundle}\n")
         with (
             patch.object(api, "BUILD", self.root),
             patch.object(api, "source_digest", return_value="fixture-source"),
+            patch.object(api, "build_key", return_value="a" * 64),
+            patch.object(api, "output", return_value="123"),
             patch.object(api, "run") as run,
             patch.object(api, "node"),
         ):
@@ -406,11 +421,16 @@ class WorkbenchTests(unittest.TestCase):
         local = self.root / "local"
         local.mkdir()
         (local / "entrypoint.sh").write_text("exit 0\n")
+        for name in ("workbench.py", "build_python.py", "requirements.lock"):
+            shutil.copy2(api.LOCAL / name, local / name)
 
         def run(command):
             stage = next(build_root.glob("stage-*"))
             self.assertEqual(stage.stat().st_mode & 0o777, 0o755)
+            if "download" in command:
+                (stage / "wheels/dependency.whl").write_bytes(b"fixture-dependency")
             if "/source/deploy/local-cp/build_python.py" in command:
+                (stage / "wheels/opentsx-fixture.whl").write_bytes(b"fixture-wheel")
                 (stage / "runtime.lock").write_text("fixture-lock\n")
                 (stage / "python-build.json").write_text(
                     '{"wheel_sha256":"wheel-fixture"}'
@@ -461,7 +481,14 @@ class WorkbenchTests(unittest.TestCase):
         bundle = self.root / "finite-bundle"
         bundle.mkdir()
         (bundle / "manifest.json").write_text(
-            json.dumps({"source_sha256": "fixture-source"})
+            json.dumps(
+                {
+                    "source_sha256": "fixture-source",
+                    "build_inputs": dict.fromkeys(
+                        ("deps", "wheel", "frontend"), "a" * 64
+                    ),
+                }
+            )
         )
         (self.root / "compose.finite.env").write_text(f"OPENTSX_BUNDLE={bundle}\n")
         (self.root / "compose.env").write_text(
@@ -470,6 +497,8 @@ class WorkbenchTests(unittest.TestCase):
         with (
             patch.object(api, "BUILD", self.root),
             patch.object(api, "source_digest", return_value="fixture-source"),
+            patch.object(api, "build_key", return_value="a" * 64),
+            patch.object(api, "output", return_value="123"),
             patch.object(api, "run") as run,
             patch.object(api, "node") as node,
         ):

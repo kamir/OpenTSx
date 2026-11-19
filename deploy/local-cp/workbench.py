@@ -1,6 +1,7 @@
 """Build, test and operate the connected or finite research workbench."""
 
 import argparse
+import fnmatch
 import hashlib
 from html.parser import HTMLParser
 import json
@@ -17,6 +18,8 @@ from email.parser import BytesParser
 ROOT = Path(__file__).resolve().parents[2]
 LOCAL = ROOT / "deploy/local-cp"
 BUILD = LOCAL / ".build"
+PYTHON_EXCLUDES = ("__pycache__", "*.egg-info", "build", "dist", ".pytest_cache")
+FRONTEND_EXCLUDES = ("node_modules", "dist", "coverage", ".vite", "*.tsbuildinfo")
 
 
 def run(command, **kwargs):
@@ -71,6 +74,165 @@ def source_digest():
 
 def docker(settings, *args):
     return ["docker", "run", "--rm", "--platform", settings["platform"], *args]
+
+
+def file_record(path):
+    if path.is_symlink():
+        raise RuntimeError("symbolic links are not valid build inputs or cache files")
+    mode = path.stat().st_mode & 0o777
+    if path.is_dir():
+        return {"kind": "directory", "mode": mode}
+    if not path.is_file():
+        raise RuntimeError("unsupported build input or cache file")
+    return {
+        "kind": "file",
+        "mode": mode,
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+    }
+
+
+def tree_records(root, excludes=(), omit=()):
+    if root.is_symlink() or not root.is_dir():
+        raise RuntimeError("invalid build input or cache directory")
+    records = {}
+    pending = [root]
+    while pending:
+        for path in sorted(pending.pop().iterdir()):
+            relative = path.relative_to(root).as_posix()
+            if relative in omit or any(
+                fnmatch.fnmatchcase(path.name, pattern) for pattern in excludes
+            ):
+                continue
+            record = file_record(path)
+            records[relative] = record
+            if record["kind"] == "directory":
+                pending.append(path)
+    return records
+
+
+def build_key(kind, settings, epoch):
+    inputs = {
+        "platform": settings["platform"],
+        "recipe": file_record(LOCAL / "workbench.py"),
+    }
+    if kind == "deps":
+        inputs.update(
+            image=settings["python_image"],
+            lock=file_record(LOCAL / "requirements.lock"),
+        )
+    elif kind == "wheel":
+        inputs.update(
+            deps=build_key("deps", settings, epoch),
+            epoch=epoch,
+            builder=file_record(LOCAL / "build_python.py"),
+            package=tree_records(ROOT / "python-package", PYTHON_EXCLUDES),
+        )
+    elif kind == "frontend":
+        frontend = ROOT / "opentsx-saas-frontend"
+        generated = tuple(
+            path.name
+            for path in frontend.iterdir()
+            if any(
+                fnmatch.fnmatchcase(path.name, pattern) for pattern in FRONTEND_EXCLUDES
+            )
+        )
+        inputs.update(
+            image=settings["node_image"],
+            source=tree_records(frontend, omit=generated),
+        )
+    else:
+        raise ValueError("unknown build cache kind")
+    return hashlib.sha256(
+        json.dumps(inputs, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+
+
+def cache_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate cache manifest key")
+        result[key] = value
+    return result
+
+
+def validate_cache(path, key):
+    try:
+        if path.is_symlink() or path.stat().st_mode & 0o777 != 0o755:
+            raise ValueError("invalid cache directory mode or type")
+        manifest = path / "manifest.json"
+        if manifest.is_symlink() or manifest.stat().st_mode & 0o777 != 0o644:
+            raise ValueError("invalid cache manifest mode or type")
+        document = json.loads(manifest.read_text(), object_pairs_hook=cache_object)
+        if (
+            not isinstance(document, dict)
+            or set(document) != {"key", "files"}
+            or document["key"] != key
+        ):
+            raise ValueError("invalid cache manifest")
+        records = tree_records(path, omit=("manifest.json",))
+        if records != document["files"] or not any(
+            record["kind"] == "file" for record in records.values()
+        ):
+            raise ValueError("cache files do not match their manifest")
+        return records
+    except (OSError, UnicodeError, ValueError, RuntimeError) as error:
+        raise RuntimeError(f"invalid build cache: {path}") from error
+
+
+def cache_stage(kind, key, stage, produce, paths, check):
+    parent = BUILD / "cache" / kind
+    for ancestor in (BUILD / "cache", parent):
+        if ancestor.is_symlink():
+            raise RuntimeError(f"invalid build cache: {ancestor}")
+    entry = parent / key
+    if entry.exists() or entry.is_symlink():
+        validate_cache(entry, key)
+        for path in entry.iterdir():
+            if path.name == "manifest.json":
+                continue
+            target = stage / path.name
+            if path.is_dir():
+                shutil.copytree(path, target, dirs_exist_ok=True)
+            else:
+                shutil.copy2(path, target)
+        check()
+        print(f"build cache {kind}: hit", flush=True)
+        return
+    produce()
+    check()
+    parent.mkdir(parents=True, exist_ok=True)
+    temporary = Path(tempfile.mkdtemp(prefix="pending-", dir=parent))
+    temporary.chmod(0o755)
+    try:
+        for path in paths():
+            relative = path.relative_to(stage)
+            file_record(path)
+            target = temporary / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if path.is_dir():
+                tree_records(path)
+                shutil.copytree(path, target)
+            else:
+                shutil.copy2(path, target)
+        records = tree_records(temporary)
+        if not any(record["kind"] == "file" for record in records.values()):
+            raise RuntimeError("build cache producer returned no files")
+        manifest = temporary / "manifest.json"
+        manifest.write_text(
+            json.dumps({"key": key, "files": records}, sort_keys=True) + "\n"
+        )
+        manifest.chmod(0o644)
+        check()
+        if entry.exists() or entry.is_symlink():
+            if validate_cache(entry, key) != records:
+                raise RuntimeError("build cache identity collision")
+        else:
+            temporary.rename(entry)
+        print(f"build cache {kind}: miss", flush=True)
+    finally:
+        if temporary.exists():
+            shutil.rmtree(temporary)
 
 
 def lock(settings):
@@ -155,42 +317,82 @@ def build(settings, profile="connected"):
     (stage / "wheels").mkdir()
     (stage / "frontend").mkdir()
     shutil.copy2(LOCAL / "entrypoint.sh", stage / "entrypoint.sh")
-    run(
-        docker(
-            settings,
-            "--mount",
-            f"type=bind,source={ROOT},target=/source,readonly",
-            "--mount",
-            f"type=bind,source={stage},target=/out",
-            settings["python_image"],
-            "python",
-            "-m",
-            "pip",
-            "download",
-            "--only-binary=:all:",
-            "--require-hashes",
-            "--dest",
-            "/out/wheels",
-            "-r",
-            "/source/deploy/local-cp/requirements.lock",
-        )
-    )
     epoch = output(["git", "show", "-s", "--format=%ct", "HEAD"])
-    run(
-        docker(
-            settings,
-            "--env",
-            f"SOURCE_DATE_EPOCH={epoch}",
-            "--mount",
-            f"type=bind,source={ROOT},target=/source,readonly",
-            "--mount",
-            f"type=bind,source={stage},target=/out",
-            settings["python_image"],
-            "python",
-            "/source/deploy/local-cp/build_python.py",
-        )
+    keys = {
+        kind: build_key(kind, settings, epoch) for kind in ("deps", "wheel", "frontend")
+    }
+
+    def check(kind):
+        if (
+            output(["git", "rev-parse", "HEAD"]) != initial_revision
+            or build_key(kind, settings, epoch) != keys[kind]
+        ):
+            raise RuntimeError("source inputs changed during build")
+        if kind == "frontend":
+            validate_frontend(stage / "frontend")
+        if kind == "wheel" and len(list(stage.glob("wheels/opentsx-*.whl"))) != 1:
+            raise RuntimeError("application build must produce exactly one wheel")
+
+    cache_stage(
+        "deps",
+        keys["deps"],
+        stage,
+        lambda: run(
+            docker(
+                settings,
+                "--mount",
+                f"type=bind,source={ROOT},target=/source,readonly",
+                "--mount",
+                f"type=bind,source={stage},target=/out",
+                settings["python_image"],
+                "python",
+                "-m",
+                "pip",
+                "download",
+                "--only-binary=:all:",
+                "--require-hashes",
+                "--dest",
+                "/out/wheels",
+                "-r",
+                "/source/deploy/local-cp/requirements.lock",
+            )
+        ),
+        lambda: [stage / "wheels"],
+        lambda: check("deps"),
     )
-    node(settings, stage / "frontend")
+    cache_stage(
+        "wheel",
+        keys["wheel"],
+        stage,
+        lambda: run(
+            docker(
+                settings,
+                "--env",
+                f"SOURCE_DATE_EPOCH={epoch}",
+                "--mount",
+                f"type=bind,source={ROOT},target=/source,readonly",
+                "--mount",
+                f"type=bind,source={stage},target=/out",
+                settings["python_image"],
+                "python",
+                "/source/deploy/local-cp/build_python.py",
+            )
+        ),
+        lambda: [
+            *stage.glob("wheels/opentsx-*.whl"),
+            stage / "runtime.lock",
+            stage / "python-build.json",
+        ],
+        lambda: check("wheel"),
+    )
+    cache_stage(
+        "frontend",
+        keys["frontend"],
+        stage,
+        lambda: node(settings, stage / "frontend"),
+        lambda: [stage / "frontend"],
+        lambda: check("frontend"),
+    )
     validate_frontend(stage / "frontend")
     if (
         source_digest() != initial_source
@@ -201,6 +403,7 @@ def build(settings, profile="connected"):
     if profile == "connected":
         images["registry"] = settings["registry_image"]
     manifest = {
+        "build_inputs": keys,
         "profile": profile,
         "revision": output(["git", "rev-parse", "HEAD"]),
         "source_sha256": initial_source,
@@ -299,11 +502,18 @@ def main(argv=None):
             parser.error("build the bundle before running tests")
         env = dict(line.split("=", 1) for line in env_file.read_text().splitlines())
         bundle = Path(env["OPENTSX_BUNDLE"])
-        if (
-            json.loads((bundle / "manifest.json").read_text())["source_sha256"]
-            != source_digest()
-        ):
+        manifest = json.loads((bundle / "manifest.json").read_text())
+        if manifest["source_sha256"] != source_digest():
             parser.error("source differs from the built bundle; run build before test")
+        epoch = output(["git", "show", "-s", "--format=%ct", "HEAD"])
+        keys = {
+            kind: build_key(kind, settings, epoch)
+            for kind in ("deps", "wheel", "frontend")
+        }
+        if manifest.get("build_inputs") != keys:
+            parser.error(
+                "build inputs differ from the built bundle; run build before test"
+            )
         run(
             [
                 sys.executable,

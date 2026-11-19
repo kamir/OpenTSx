@@ -20,16 +20,20 @@ python3 deploy/local-cp/workbench.py build
 python3 deploy/local-cp/workbench.py test
 ```
 
-The build downloads hash-locked native Python wheels, builds the OpenTSx wheel
-with the Git commit time as `SOURCE_DATE_EPOCH`, and builds React with `npm ci`
-and the existing package lock. It does not build a Docker image. A source change
-during the build fails the build.
+The build verifies separate caches for locked dependencies, the OpenTSx wheel
+and the frontend. Cache misses download hash-locked native Python wheels,
+build the OpenTSx wheel with the Git commit time as `SOURCE_DATE_EPOCH`, and
+build React with `npm ci` and the existing package lock. It does not build a
+Docker image. A source change during the build fails the build. The
+[artifact cache contract](standalone-analysis.md#reuse-artifacts-between-edits)
+lists inputs, invalidation and failure handling for both profiles.
 
 Generated bundles live in `deploy/local-cp/.build/bundles/`; the generated
 `compose.env` selects one. Do not edit generated bundles. The manifest records
 source revision/digest, dirty state, numerical wheel and runtime-lock hashes,
 frontend hash and pinned image references. A bundle identity is
-content-addressed, and `.build/` is excluded from source hashing and Git.
+content-addressed; `build_inputs` records its artifact cache keys. `.build/`
+is excluded from source hashing and Git.
 
 The test command first runs standard-library launcher checks on the host,
 including a real temporary Git repository for source hashing. It then installs
@@ -38,7 +42,8 @@ pinned Python container, and runs frontend tests and production build in the
 pinned Node container. The frontend receives shared operator fixtures and model
 identity/wire vectors through read-only mounts. External-service skips or
 expected failures remain visible in test output. A successful process exit is
-not evidence that an optional external-service test executed.
+not evidence that an optional external-service test executed. Artifact cache
+hits do not skip tests.
 
 Run the host launcher checks separately without scientific packages or Docker:
 

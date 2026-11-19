@@ -164,6 +164,9 @@ python3 deploy/local-cp/workbench.py build --profile finite
 python3 deploy/local-cp/workbench.py up --profile finite
 ```
 
+Repeated package builds reuse separate verified dependency, wheel and frontend
+artifact caches. The package test command still executes the complete suites.
+
 You need Docker Compose and an existing Confluent Platform Docker cluster for
 the local CP profile. The profile uses pinned Linux ARM64 images, a React
 Workbench, the Python numerical service, MLflow and persistent lifecycle state.
