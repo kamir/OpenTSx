@@ -99,18 +99,45 @@ The processor works within KafScale's limits: manual partition assignment, no co
   but fails `Episodes.validate` is counted in `invalid` and skipped, for example a count that differs from the number
   of values, a `seriesId` that does not match its key, a REGULAR episode without a positive `intervalMicros`, or an
   IRREGULAR_DELTA episode without `timeDeltas` or with timestamps that do not increase. The first undecodable record
-  and the first invalid episode per partition are printed on stderr with topic, partition, offset and reason. A
+  and the first invalid episode per partition are logged at WARN with topic, partition, offset and reason. A
   failure of the engine stops the processor, and the checkpoint stays before that record.
-* **Retention:** records that retention deleted before they were read are counted in `lostToRetention`, with one line
-  on stderr. The processor counts them when a run starts below the log start, when a poll skips offsets of a
+* **Retention:** records that retention deleted before they were read are counted in `lostToRetention`, with one
+  WARN line. The processor counts them when a run starts below the log start, when a poll skips offsets of a
   partition, and in a `--once` run when a poll brings no record below the end offsets seen at the start and the log
   start of a partition lies above its position.
 * **Checkpoint errors:** an unreadable checkpoint stops the processor with `cannot read checkpoint <file>`, a failed
   write with `cannot write checkpoint <file>`, each followed by its cause.
-* **Reading the output:** `SeriesStatsLog.readLatest` reads the topic and keeps the latest record per
-  `(seriesId, windowType, windowStart)`, because the topic has no compaction.
+* **Reading the output:** `SeriesStatsLog.readLatest` reads the topic with `LogReader.readAll` of
+  [`opentsx-kafka-v2`](../opentsx-kafka-v2/README.md) and keeps the latest record per
+  `(seriesId, windowType, windowStart)`, because the topic has no compaction. A topic that does not exist throws
+  `IllegalStateException` with `tsx.<domain>.series-stats.v2: no such topic; check the domain, or create the topic first`.
 * **`--once true`:** processes the backlog, closes all windows, prints the `RunResult` with the counts `records`,
   `undecodable`, `invalid`, `lostToRetention` and `statsWritten`, and exits. This is for experiments.
+
+### Log lines
+
+The processor logs through SLF4J, logger `org.opentsx.stats.StatsProcessor` (the start and shutdown lines:
+`org.opentsx.stats.StatsProcessorApp`), one line per event. `bin/opentsx` and the image write them with slf4j-simple to
+stderr, after the time, the thread and the level. `opentsx.log.level` (`--conf opentsx.log.level=warn`) sets the level.
+
+| Level | Line | When |
+|-------|------|------|
+| INFO | `checkpoint restored path=<file> domain=<domain> positions=<topic>-<partition>:<offset>,...` | at start, with a checkpoint file |
+| INFO | `no checkpoint; reading the topics from the log start path=<file>` | at start, without a checkpoint file; `path=none` without `--checkpoint` |
+| INFO | `partitions assigned count=<n> start=<topic>-<partition>:<offset>,...` | after the assignment, with the offset each partition starts at |
+| WARN | `no partitions assigned; the input topics do not exist or have no partitions topics=<topic>,...` | the episode topic (and with `--observations` the observation topic) does not exist yet |
+| INFO | `progress records=<n> undecodable=<n> invalid=<n> lostToRetention=<n> statsWritten=<n> duplicates=<n> lateValues=<n>` | continuous mode, after every checkpoint (every 30 s) |
+| INFO | `stopping; waiting for the final checkpoint wait=PT1M` | continuous mode, when the JVM shuts down while the processor runs, for example on SIGTERM; not after a failed run |
+| INFO | `final checkpoint written path=<file> positions=<topic>-<partition>:<offset>,...` | after the last checkpoint of a continuous run; without a file `stopped without a checkpoint file positions=...` |
+| WARN | `the processor did not stop in time; the final checkpoint may be missing wait=PT1M` | the run did not end within 60 s after `stopping` |
+| WARN | `undecodable record skipped and counted in undecodable; later ones of this partition are only counted topic=<topic> partition=<partition> offset=<offset> cause=<reason>` | the first undecodable record of a partition |
+| WARN | `invalid episode skipped and counted in invalid; later ones of this partition are only counted topic=<topic> partition=<partition> offset=<offset> cause=<reason>` | the first invalid episode of a partition |
+| WARN | `retention deleted records before they were read; reading on from the log start topic=<topic> partition=<partition> position=<position> logStart=<start> lost=<n>` | records were deleted before they were read |
+
+In the progress line `records`, `undecodable`, `invalid`, `lostToRetention` and `statsWritten` count since the
+process started; `duplicates` and `lateValues` are engine counters and come back from the checkpoint. While KafScale
+refuses reads, `org.opentsx.kafka.Patience` logs `the broker refuses reads; waiting ...` at WARN and
+`the broker answers reads again refusedFor=<duration>` at INFO.
 
 ## Data quality
 
@@ -150,7 +177,8 @@ that end inside it (`sketch bytes: truncated at <k> of <m>`, `<k>` the number of
 * Data quality against simulator ground truth, and FRESHNESS with a given clock.
 * Processor:
   * With `MockConsumer`: checkpoint and resume, every value counted exactly once; an engine failure stops the run
-    without a checkpoint; undecodable records are counted, reported once per partition and skipped; invalid
+    without a checkpoint; a continuous run logs the restored checkpoint, the assignment, one progress line per
+    checkpoint and the final checkpoint; undecodable records are counted, reported once per partition and skipped; invalid
     episodes, among them a REGULAR episode with an `intervalMicros` of 0 or none, are counted, reported once per
     partition and skipped, also after a restart from the checkpoint; records lost to retention before a run and
     during a run are counted and reported; a `--once` run ends when retention deletes past the end offset it saw at
@@ -158,6 +186,8 @@ that end inside it (`sketch bytes: truncated at <k> of <m>`, `<k>` the number of
     another partition keeps receiving records; checkpoint errors name the file.
   * `StatsProcessorAppTest`: unknown options, missing values, malformed values and settings the engine refuses exit
     with 2 and one line; `--help` and `--version` print on stdout; a runtime failure prints its cause chain and exits
-    with 1; the start line names every value and its source; the pod of `deploy/k3s/base/stats.yaml` loads its
-    arguments, with the Service variables Kubernetes adds when `enableServiceLinks` is not `false`.
+    with 1; the start line names every value and its source; the shutdown hook logs `stopping`, warns when the run
+    does not end in time and logs nothing once the run has ended; the pod of `deploy/k3s/base/stats.yaml` loads its arguments, with the Service variables
+    Kubernetes adds when `enableServiceLinks` is not `false`.
+  * `SeriesStatsLogTest`: the latest record per key across partitions, and a missing topic is an error that names it.
   * Against KafScale v1.6.0, when `KAFSCALE_BOOTSTRAP` is set; CI runs this.

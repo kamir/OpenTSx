@@ -4,6 +4,8 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -17,6 +19,8 @@ import java.util.Map;
  * <p>Several tails may share one consumer as long as they are polled one after the other.
  */
 public final class LogTail {
+
+    private static final Logger LOG = LoggerFactory.getLogger(LogTail.class);
 
     private final Consumer<byte[], byte[]> consumer;
     private final String topic;
@@ -34,7 +38,7 @@ public final class LogTail {
         return topic;
     }
 
-    /** Records that retention deleted after an earlier poll and before they were read; reported on stderr. */
+    /** Records that retention deleted after an earlier poll and before they were read; logged at WARN. */
     public synchronized long lostToRetention() {
         return lostToRetention;
     }
@@ -58,8 +62,8 @@ public final class LogTail {
             Long reached = next.get(tp);
             if (reached != null && reached < from) {
                 lostToRetention += from - reached;
-                System.err.println(tp + ": retention deleted " + (from - reached) + " records before they were read"
-                        + " (position " + reached + ", log start " + from + "); reading on from the log start");
+                LOG.warn("retention deleted records before they were read; reading on from the log start topic={}"
+                        + " partition={} position={} logStart={} lost={}", tp.topic(), tp.partition(), reached, from, from - reached);
             } else if (reached != null) {
                 from = reached;
             }

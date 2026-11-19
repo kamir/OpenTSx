@@ -102,7 +102,39 @@ class EpisodeLogTailTest {
         }
         assertEquals(2, tail.lostToRetention());
         assertEquals(List.of(written.get(1).getEpisodeId(), written.get(4).getEpisodeId()), seen);
-        assertEquals(layout.episodes() + "-0: retention deleted 2 records before they were read (position 2, log start 4);"
-                + " reading on from the log start" + System.lineSeparator(), err.toString(StandardCharsets.UTF_8));
+        assertEquals(List.of("WARN org.opentsx.kafka.LogTail - retention deleted records before they were read; reading on"
+                        + " from the log start topic=" + layout.episodes() + " partition=0 position=2 logStart=4 lost=2"),
+                logLines(err));
+    }
+
+    @Test
+    void theFirstUndecodableRecordOfAPartitionIsLoggedWithItsPosition() {
+        List<Episode> written = WindData.episodes(1, List.of("wind_speed"), 3, 30, 9);
+        EpisodeLogTail tail = tail();
+        append(0, avro.encode(written.get(0)), "not avro".getBytes(StandardCharsets.UTF_8));
+        append(1, "also not avro".getBytes(StandardCharsets.UTF_8));
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        PrintStream stderr = System.err;
+        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+        try {
+            assertEquals(1, tail.poll(e -> { }));
+            append(0, "still not avro".getBytes(StandardCharsets.UTF_8), avro.encode(written.get(1)));
+            assertEquals(1, tail.poll(e -> { }));
+        } finally {
+            System.setErr(stderr);
+        }
+        assertEquals(3, tail.undecodable());
+        String later = "undecodable record skipped and counted in undecodable; later ones of this partition are only counted";
+        assertEquals(List.of(
+                        "WARN org.opentsx.kafka.EpisodeLogTail - " + later + " topic=" + layout.episodes()
+                                + " partition=0 offset=1 cause=unrecognised payload framing",
+                        "WARN org.opentsx.kafka.EpisodeLogTail - " + later + " topic=" + layout.episodes()
+                                + " partition=1 offset=0 cause=unrecognised payload framing"),
+                logLines(err).stream().sorted().toList());
+    }
+
+    /** The lines slf4j-simple wrote, without the thread name in front. */
+    private static List<String> logLines(ByteArrayOutputStream err) {
+        return err.toString(StandardCharsets.UTF_8).lines().map(l -> l.substring(l.indexOf("] ") + 2)).toList();
     }
 }

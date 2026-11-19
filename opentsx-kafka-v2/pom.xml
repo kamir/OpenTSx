@@ -26,6 +26,10 @@
             <artifactId>kafka-clients</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
             <version>${kafka.version}</version>
@@ -57,6 +61,7 @@
                 <configuration>
                     <systemPropertyVariables>
                         <org.slf4j.simpleLogger.defaultLogLevel>warn</org.slf4j.simpleLogger.defaultLogLevel>
+                        <org.slf4j.simpleLogger.log.org.opentsx.kafka>info</org.slf4j.simpleLogger.log.org.opentsx.kafka>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

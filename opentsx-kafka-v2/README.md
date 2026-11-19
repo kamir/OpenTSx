@@ -61,8 +61,12 @@ try (KafkaConsumer<byte[], byte[]> consumer = KafScaleClients.consumer(bootstrap
 ```
 
 Episodes arrive in event-time order (`tStart`, `episodeId`); memory is bounded by `maxEpisodesInMemory`.
+With a speed above 0 the replay sleeps until an episode is due: 10 s of event time between two episodes take 1/6 s at
+`withSpeed(60.0)`. An episode that is already due is delivered without sleeping.
 The index is derived state: `EpisodeIndexer.rebuild(consumer, layout, index, timeout)` recreates it from the log,
-and `BucketCatalog.load(...)` lists all buckets with their current manifest. The rebuild returns
+and `BucketCatalog.load(...)` lists all buckets with their current manifest. Both read the whole topic with
+`LogReader.readAll` and throw `IllegalStateException` when it does not exist, for example
+`tsx.wind.buckets.v2: no such topic; check the domain, or create the topic first`. The rebuild returns
 `Result(indexed, skipped, invalid)`:
 
 * A record that does not decode as an episode is counted in `skipped`. The first one per partition is printed on
@@ -97,21 +101,58 @@ or `cannot close episode index <file>`.
 Legacy TSBucket files (`*.tsb.vec.seq`) are converted with `org.opentsx.bridge.LegacyBucketImport` and then written
 with a `BucketWriter`.
 
+## Read a whole topic
+
+`LogReader.readAll(consumer, topic, sink, timeout)` hands every record from the log start to the end offsets at the
+time of the call to the sink, with manual assignment and seek, and unassigns the consumer afterwards. It waits out
+refused fetches (see below) within `timeout`. It throws `IllegalStateException` when the topic does not exist or has
+no partitions, with the message `<topic>: no such topic; check the domain, or create the topic first`, and when the
+read takes longer than `timeout`.
+
 ## Follow a topic
 
 `LogTail` (records) and `EpisodeLogTail` (decoded episodes) read the whole log on the first `poll` and the records
-appended since then on every later one. When retention deleted records after the position of the previous poll, the
-tail reads on from the log start, counts them in `lostToRetention()` and prints one line per partition on stderr:
+appended since then on every later one. A topic that does not exist delivers nothing. When retention deleted records
+after the position of the previous poll, the tail reads on from the log start, counts them in `lostToRetention()` and
+logs one WARN line per partition through SLF4J, logger `org.opentsx.kafka.LogTail`:
 
 ```text
-<topic>-<partition>: retention deleted <n> records before they were read (position <previous>, log start <start>); reading on from the log start
+retention deleted records before they were read; reading on from the log start topic=<topic> partition=<partition> position=<previous> logStart=<start> lost=<n>
 ```
 
 A log start above 0 on the first poll is not counted.
 
+`EpisodeLogTail` counts a record that does not decode as an episode in `undecodable()` and skips it. The first one of
+each partition is logged at WARN, logger `org.opentsx.kafka.EpisodeLogTail`; later ones on that partition are only
+counted:
+
+```text
+undecodable record skipped and counted in undecodable; later ones of this partition are only counted topic=<topic> partition=<partition> offset=<offset> cause=<reason>
+```
+
+## Wait out refused reads
+
+While KafScale rates its object store as degraded, it refuses every fetch for about a minute, and the consumer throws
+`IllegalStateException: Unexpected error code 7 while fetching ...`. `Patience.poll(consumer, timeout)` returns no
+records instead, puts every partition back to its position before the poll and pauses. `Patience.standard()` pauses
+5 s and gives up after 10 minutes of refusals in a row with `IllegalStateException`
+`the broker has refused reads for more than 600 s`. `LogReader`, `LogTail`, `EpisodeLogTail`, the statistics
+processor and the retrieval feed poll through it.
+
+The first refusal of a row is logged at WARN and the next answer at INFO, logger `org.opentsx.kafka.Patience`:
+
+```text
+the broker refuses reads; waiting pause=PT5S limit=PT10M cause=Unexpected error code 7 while fetching at offset <offset> from topic-partition <topic>-<partition>
+the broker answers reads again refusedFor=<duration>
+```
+
+`<duration>` is ISO-8601 with millisecond precision, for example `PT1M4.512S`. `bin/opentsx` and the image write
+these SLF4J lines with slf4j-simple to stderr.
+
 ## Tests
 
-* Unit tests with `MockProducer` and `MockConsumer`, always run.
+* Unit tests with `MockProducer` and `MockConsumer`, always run. `PatienceTest` and `ReplayServiceTest` move a test
+  clock instead of sleeping and assert the pauses and sleeps that were asked for, and the WARN and INFO lines.
 * `EpisodeLogIntegrationTest` (write → verified replay, chunked replay, range replay, index rebuild,
   duplicates, unsealed buckets, pacing) runs when `KAFSCALE_BOOTSTRAP` is set. It is green on KafScale v1.6.0 and
   Apache Kafka 3.9.1; CI runs it against KafScale built from source.

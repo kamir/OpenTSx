@@ -51,6 +51,10 @@ It logs one line `starting metadata: key=value (source), ...` with the token as 
   table profiles and data-quality results: `always`, `never`, or `auto` (the default), which publishes them when
   `--kafscale` is on the command line. A bootstrap from `OPENTSX_KAFSCALE_BOOTSTRAP`, `KAFSCALE_BOOTSTRAP` or a file
   does not switch them on.
+* With profiles on, a statistics topic that does not exist stops the command before the first request with exit
+  code 1:
+  `opentsx: metadata: java.lang.IllegalStateException: tsx.<domain>.series-stats.v2: no such topic; check the domain, or create the topic first`.
+  Check `--domain`, provision the topics with `kafscale-check --provision true`, or set `--profiles never`.
 * `--profile-window` and `--dq-window` are durations such as `PT1H`, `PT60M` or `60m`. They select the statistics
   windows of the same length, so `PT60M` finds the windows the statistics processor writes as `PT1H`.
 

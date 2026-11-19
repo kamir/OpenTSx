@@ -442,6 +442,24 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `OpenTsxConf`, except the `dwd` Job and the `dwd-forward` CronJob, whose scripts build their options from variables.
 - User manual appendix A lists every command of `bin/opentsx` and the image. It names the two differences between the
   launchers and has a table of the common configuration errors with the exact message and the fix.
+- `Patience`, `LogTail` and `EpisodeLogTail` of `opentsx-kafka-v2` and the statistics processor of `opentsx-stats` log
+  through SLF4J instead of printing to stderr, one line per event in the form `<what happened> key=value ...`.
+  `Patience` logs the first refused read of a row at WARN (`the broker refuses reads; waiting pause=PT5S limit=PT10M
+  cause=...`) and the next answer at INFO (`the broker answers reads again refusedFor=<duration>`). `LogTail` logs a
+  retention gap and `EpisodeLogTail` the first undecodable record per partition at WARN with topic, partition and
+  offset.
+- The statistics processor (`bin/opentsx stats`) logs its first undecodable record and first invalid episode per
+  partition and every retention gap at WARN with topic, partition, offset and cause. It logs the restored checkpoint
+  or `no checkpoint`, the assigned partitions with their start offsets (WARN `no partitions assigned` when there are
+  none), one INFO progress line per checkpoint with `records`, `undecodable`, `invalid`, `lostToRetention`,
+  `statsWritten`, `duplicates` and `lateValues`, `stopping` when the JVM shuts down during a continuous run (not after
+  a failed run), `final checkpoint written` with the positions, and a WARN when the run does not end within 60 s after
+  `stopping`.
+- `LogReader.readAll` is public, and `SeriesStatsLog.readLatest` reads through it instead of its own loop. A topic
+  that does not exist is an error for `SeriesStatsLog.readLatest`, `BucketCatalog.load` and `EpisodeIndexer.rebuild`:
+  `IllegalStateException` with `<topic>: no such topic; check the domain, or create the topic first`, instead of an
+  empty result. `bin/opentsx metadata` with profiles on therefore exits with 1 before the first request when the
+  statistics topic does not exist, instead of publishing 0 profiles.
 
 ### Removed
 
@@ -943,6 +961,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   registry like every other command, and appendix D and the defaults templates name it.
 - `deploy/k3s/00-prereqs.sh` shows the error line of the staged `kafscale-check`, for example a bootstrap address
   without a port, instead of only `kafscale-check failed - see above`.
+- `PatienceTest`, the new `ReplayServiceTest` and the pacing case of `EpisodeLogIntegrationTest` run on a test clock
+  and assert the pauses and sleeps that `Patience` and the replay pacing ask for, instead of sleeping and asserting
+  wall time within 0.25 s.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

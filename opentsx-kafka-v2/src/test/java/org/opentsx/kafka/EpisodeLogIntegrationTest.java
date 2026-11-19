@@ -148,15 +148,15 @@ class EpisodeLogIntegrationTest {
         try (BucketWriter w = BucketWriter.open(producer, layout, index, "paced", Map.of())) {
             written.forEach(w::append);
         }
-        List<Long> wall = new ArrayList<>();
+        long[] now = {0};
+        List<Long> sleeps = new ArrayList<>();
         List<Long> event = new ArrayList<>();
-        new ReplayService(consumer, layout, index, TIMEOUT).replay(
-                ReplayRequest.bucket(index.entries().get(0).bucketId()).withSpeed(60.0), e -> {
-                    wall.add(System.nanoTime());
-                    event.add(Micros.of(e.getTStart()));
-                });
-        double eventSeconds = (event.get(3) - event.get(0)) / 1e6;     // 30 s
-        double wallSeconds = (wall.get(3) - wall.get(0)) / 1e9;         // ~0.5 s at 60x
-        assertEquals(eventSeconds / 60.0, wallSeconds, 0.25);
+        new ReplayService(consumer, layout, index, TIMEOUT, () -> now[0], nanos -> {
+            sleeps.add(nanos);
+            now[0] += nanos;
+        }).replay(ReplayRequest.bucket(index.entries().get(0).bucketId()).withSpeed(60.0),
+                e -> event.add(Micros.of(e.getTStart()) - WindData.T0));
+        assertEquals(List.of(0L, 10_000_000L, 20_000_000L, 30_000_000L), event, "in event-time order");
+        assertEquals(List.of(166_666_666L, 166_666_667L, 166_666_667L), sleeps, "10 s of event time at 60x, each");
     }
 }

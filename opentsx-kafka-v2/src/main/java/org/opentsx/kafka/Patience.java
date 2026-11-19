@@ -3,11 +3,16 @@ package org.opentsx.kafka;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.errors.RetriableException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import org.apache.kafka.common.TopicPartition;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.LongConsumer;
+import java.util.function.LongSupplier;
 
 /**
  * Waits out the times KafScale refuses to answer.
@@ -17,14 +22,19 @@ import java.util.Map;
  * {@link KafScaleClients#producerProps}). A consumer does not: its {@code poll} throws
  * {@code IllegalStateException: Unexpected error code 7 while fetching ...}, and a reader that lets the exception
  * through dies although the broker is fine a minute later. {@link #poll} pauses instead and tries again; the
- * position of the consumer is untouched by the refusal.
+ * position of the consumer is untouched by the refusal. The first refusal of a row is logged at WARN, the next answer
+ * at INFO.
  *
  * <p>One instance per reading loop; not thread-safe.
  */
 public final class Patience {
 
+    private static final Logger LOG = LoggerFactory.getLogger(Patience.class);
+
     private final long limitNanos;
     private final long pauseMillis;
+    private final LongSupplier nanoClock;
+    private final LongConsumer sleeper;
     private long refusedSince = -1;
 
     /**
@@ -32,8 +42,24 @@ public final class Patience {
      * @param pause how long to wait after a refusal before the next try
      */
     public Patience(Duration limit, Duration pause) {
+        this(limit, pause, System::nanoTime, Patience::sleep);
+    }
+
+    /** With the clock and the pause given, for tests: {@code sleeper} receives milliseconds. */
+    Patience(Duration limit, Duration pause, LongSupplier nanoClock, LongConsumer sleeper) {
         this.limitNanos = limit.toNanos();
         this.pauseMillis = Math.max(1, pause.toMillis());
+        this.nanoClock = nanoClock;
+        this.sleeper = sleeper;
+    }
+
+    private static void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("interrupted while waiting for the broker", ie);
+        }
     }
 
     /** Ten minutes of refusals, a try every five seconds: for readers that run for good. */
@@ -77,8 +103,8 @@ public final class Patience {
         try {
             ConsumerRecords<K, V> records = consumer.poll(timeout);
             if (refusedSince >= 0) {
-                System.err.println("kafscale: the broker answers again after "
-                        + Duration.ofNanos(System.nanoTime() - refusedSince).toSeconds() + " s");
+                LOG.info("the broker answers reads again refusedFor={}",
+                        Duration.ofNanos(nanoClock.getAsLong() - refusedSince).truncatedTo(ChronoUnit.MILLIS));
                 refusedSince = -1;
             }
             return records;
@@ -96,20 +122,16 @@ public final class Patience {
                     // no longer assigned: nothing to put back
                 }
             });
-            long now = System.nanoTime();
+            long now = nanoClock.getAsLong();
             if (refusedSince < 0) {
                 refusedSince = now;
-                System.err.println("kafscale: the broker refuses reads (" + e.getMessage() + "); waiting");
+                LOG.warn("the broker refuses reads; waiting pause={} limit={} cause={}", Duration.ofMillis(pauseMillis),
+                        Duration.ofNanos(limitNanos), LogReader.causes(e));
             } else if (now - refusedSince > limitNanos) {
                 throw new IllegalStateException("the broker has refused reads for more than "
                         + Duration.ofNanos(limitNanos).toSeconds() + " s", e);
             }
-            try {
-                Thread.sleep(pauseMillis);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-                throw new IllegalStateException("interrupted while waiting for the broker", ie);
-            }
+            sleeper.accept(pauseMillis);
             return ConsumerRecords.empty();
         }
     }

@@ -17,6 +17,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.LongConsumer;
+import java.util.function.LongSupplier;
 
 /**
  * Index-driven replay: looks up log positions in the {@link EpisodeIndex}, reads them with manual assignment and
@@ -31,6 +33,8 @@ public final class ReplayService {
     private final TopicLayout layout;
     private final EpisodeIndex index;
     private final Duration timeout;
+    private final LongSupplier nanoClock;
+    private final LongConsumer sleeper;
     private final OpenTsxAvro avro = new OpenTsxAvro();
 
     public ReplayService(Consumer<byte[], byte[]> consumer, TopicLayout layout, EpisodeIndex index) {
@@ -38,10 +42,27 @@ public final class ReplayService {
     }
 
     public ReplayService(Consumer<byte[], byte[]> consumer, TopicLayout layout, EpisodeIndex index, Duration timeout) {
+        this(consumer, layout, index, timeout, System::nanoTime, ReplayService::sleep);
+    }
+
+    /** With the clock and the pause of the pacing given, for tests: {@code sleeper} receives nanoseconds. */
+    ReplayService(Consumer<byte[], byte[]> consumer, TopicLayout layout, EpisodeIndex index, Duration timeout,
+                  LongSupplier nanoClock, LongConsumer sleeper) {
         this.consumer = consumer;
         this.layout = layout;
         this.index = index;
         this.timeout = timeout;
+        this.nanoClock = nanoClock;
+        this.sleeper = sleeper;
+    }
+
+    private static void sleep(long nanos) {
+        try {
+            Thread.sleep(nanos / 1_000_000L, (int) (nanos % 1_000_000L));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("replay interrupted", e);
+        }
     }
 
     public ReplayResult replay(ReplayRequest request, java.util.function.Consumer<Episode> sink) {
@@ -51,7 +72,7 @@ public final class ReplayService {
 
         List<String> deliveredIds = new ArrayList<>();
         long missing = 0;
-        Pacer pacer = new Pacer(request.speed());
+        Pacer pacer = new Pacer(request.speed(), nanoClock, sleeper);
         int chunk = request.maxEpisodesInMemory();
         for (int start = 0; start < entries.size(); start += chunk) {
             List<IndexEntry> part = entries.subList(start, Math.min(entries.size(), start + chunk));
@@ -104,11 +125,15 @@ public final class ReplayService {
     /** Sleeps so that event time advances {@code speed} times faster than wall-clock time. */
     private static final class Pacer {
         private final double speed;
+        private final LongSupplier nanoClock;
+        private final LongConsumer sleeper;
         private long firstEventMicros = Long.MIN_VALUE;
         private long wallStartNanos;
 
-        Pacer(double speed) {
+        Pacer(double speed, LongSupplier nanoClock, LongConsumer sleeper) {
             this.speed = speed;
+            this.nanoClock = nanoClock;
+            this.sleeper = sleeper;
         }
 
         void await(long eventMicros) {
@@ -117,18 +142,13 @@ public final class ReplayService {
             }
             if (firstEventMicros == Long.MIN_VALUE) {
                 firstEventMicros = eventMicros;
-                wallStartNanos = System.nanoTime();
+                wallStartNanos = nanoClock.getAsLong();
                 return;
             }
             long dueNanos = wallStartNanos + (long) ((eventMicros - firstEventMicros) * 1_000.0 / speed);
-            long sleep = dueNanos - System.nanoTime();
+            long sleep = dueNanos - nanoClock.getAsLong();
             if (sleep > 0) {
-                try {
-                    Thread.sleep(sleep / 1_000_000L, (int) (sleep % 1_000_000L));
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new IllegalStateException("replay interrupted", e);
-                }
+                sleeper.accept(sleep);
             }
         }
     }

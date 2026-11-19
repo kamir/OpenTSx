@@ -92,14 +92,7 @@ public final class StatsProcessorApp {
                 return written(out, err);
             }
             AtomicBoolean stop = new AtomicBoolean();
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                stop.set(true);
-                try {
-                    closed.await(60, TimeUnit.SECONDS);    // let the processor write its final checkpoint
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }));
+            Runtime.getRuntime().addShutdownHook(new Thread(stopHook(stop, closed, Duration.ofSeconds(60), log)));
             p.run(Duration.ofSeconds(30), stop::get);
             return 0;
         } catch (RuntimeException e) {
@@ -110,6 +103,27 @@ public final class StatsProcessorApp {
         } finally {
             closed.countDown();
         }
+    }
+
+    /**
+     * Tells the processor to stop and waits up to {@code wait} for its final checkpoint. The JVM runs the hook at every
+     * exit, also after a failure; once the run has ended it does nothing.
+     */
+    static Runnable stopHook(AtomicBoolean stop, CountDownLatch closed, Duration wait, Logger log) {
+        return () -> {
+            if (closed.getCount() == 0) {
+                return;
+            }
+            log.info("stopping; waiting for the final checkpoint wait={}", wait);
+            stop.set(true);
+            try {
+                if (!closed.await(wait.toNanos(), TimeUnit.NANOSECONDS)) {
+                    log.warn("the processor did not stop in time; the final checkpoint may be missing wait={}", wait);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        };
     }
 
     private static int written(PrintStream out, PrintStream err) {

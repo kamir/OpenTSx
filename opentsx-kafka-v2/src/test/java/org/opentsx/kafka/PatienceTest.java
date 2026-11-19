@@ -11,7 +11,11 @@ import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -27,6 +31,32 @@ class PatienceTest {
     /** What a consumer throws when KafScale refuses the fetch (REQUEST_TIMED_OUT, error code 7). */
     static IllegalStateException refusal() {
         return new IllegalStateException("Unexpected error code 7 while fetching at offset 612 from topic-partition tsx.wind.episodes.v2-3");
+    }
+
+    /** A clock that moves only when {@link Patience} pauses or the test moves it; records every pause. */
+    static final class Time {
+        long nanos;
+        final List<Long> pausesMillis = new ArrayList<>();
+
+        Patience patience(Duration limit, Duration pause) {
+            return new Patience(limit, pause, () -> nanos, millis -> {
+                pausesMillis.add(millis);
+                nanos += millis * 1_000_000L;
+            });
+        }
+    }
+
+    /** Runs {@code action} and returns what it wrote to stderr, where slf4j-simple writes its lines. */
+    static String stderrOf(Runnable action) {
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        PrintStream stderr = System.err;
+        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+        try {
+            action.run();
+        } finally {
+            System.setErr(stderr);
+        }
+        return err.toString(StandardCharsets.UTF_8);
     }
 
     /** A consumer whose next polls fail with the given exceptions before it delivers again. */
@@ -88,7 +118,7 @@ class PatienceTest {
         for (int i = 0; i < 3; i++) {
             c.addRecord(new ConsumerRecord<>(tp.topic(), 0, i, new byte[0], new byte[]{(byte) i}));
         }
-        Patience patience = new Patience(Duration.ofSeconds(30), Duration.ofMillis(1));
+        Patience patience = new Time().patience(Duration.ofSeconds(30), Duration.ofMillis(1));
         assertEquals(0, patience.poll(c, Duration.ofMillis(1)).count(), "the refused poll gives nothing");
         assertEquals(0, c.position(tp), "and the consumer is back where it was");
         // a MockConsumer hands a record out once: what was taken has to be put there again, as a broker would on a fetch
@@ -108,7 +138,8 @@ class PatienceTest {
         consumer.updateBeginningOffsets(Map.of(tp, 0L));
         consumer.seek(tp, 0);
         consumer.addRecord(new ConsumerRecord<>("t", 0, 0, new byte[0], "a".getBytes()));
-        Patience patience = new Patience(Duration.ofSeconds(30), Duration.ofMillis(5));
+        Time time = new Time();
+        Patience patience = time.patience(Duration.ofSeconds(30), Duration.ofMillis(5));
 
         assertEquals(0, patience.poll(consumer, Duration.ofMillis(10)).count(), "first refusal: nothing, no exception");
         assertEquals(0, patience.poll(consumer, Duration.ofMillis(10)).count(), "second refusal");
@@ -116,17 +147,43 @@ class PatienceTest {
         ConsumerRecords<byte[], byte[]> records = patience.poll(consumer, Duration.ofMillis(10));
         assertEquals(1, records.count());
         assertEquals(1, consumer.position(tp));
+        assertEquals(List.of(5L, 5L), time.pausesMillis, "one pause after each refusal, none after the answer");
     }
 
     @Test
-    void givesUpWhenTheBrokerRefusesLongerThanTheLimit() throws Exception {
+    void givesUpWhenTheBrokerRefusesLongerThanTheLimit() {
         Refusing consumer = new Refusing(refusal(), refusal(), refusal());
-        Patience patience = new Patience(Duration.ofMillis(20), Duration.ofMillis(15));
+        Time time = new Time();
+        Patience patience = time.patience(Duration.ofMillis(20), Duration.ofMillis(15));
         assertEquals(0, patience.poll(consumer, Duration.ofMillis(1)).count());
-        Thread.sleep(30);
+        assertEquals(0, patience.poll(consumer, Duration.ofMillis(1)).count(), "15 ms of refusals are within the limit");
+        time.nanos += Duration.ofMillis(30).toNanos();
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> patience.poll(consumer, Duration.ofMillis(1)));
         assertTrue(e.getMessage().contains("refused reads for more than"), e.getMessage());
         assertTrue(Patience.isRefusal(e.getCause()));
+        assertEquals(List.of(15L, 15L), time.pausesMillis, "no pause after giving up");
+    }
+
+    @Test
+    void aRefusalWindowLogsOneWarningAndOneRecovery() {
+        TopicPartition tp = new TopicPartition("t", 0);
+        Refusing consumer = new Refusing(refusal(), new TimeoutException("again"));
+        consumer.assign(List.of(tp));
+        consumer.updateBeginningOffsets(Map.of(tp, 0L));
+        consumer.seek(tp, 0);
+        Patience patience = new Time().patience(Duration.ofSeconds(30), Duration.ofMillis(5));
+
+        String log = stderrOf(() -> {
+            for (int i = 0; i < 4; i++) {
+                patience.poll(consumer, Duration.ofMillis(1));
+            }
+        });
+
+        assertEquals(List.of(
+                "WARN org.opentsx.kafka.Patience - the broker refuses reads; waiting pause=PT0.005S limit=PT30S"
+                        + " cause=Unexpected error code 7 while fetching at offset 612 from topic-partition tsx.wind.episodes.v2-3",
+                "INFO org.opentsx.kafka.Patience - the broker answers reads again refusedFor=PT0.01S"),
+                log.lines().map(l -> l.substring(l.indexOf("] ") + 2)).toList(), log);
     }
 
     @Test

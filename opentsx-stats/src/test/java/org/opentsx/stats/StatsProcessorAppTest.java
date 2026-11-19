@@ -17,6 +17,7 @@ import org.opentsx.conf.ConfCli;
 import org.opentsx.conf.OpenTsxConf;
 import org.opentsx.conf.Registry;
 import org.opentsx.kafka.TopicLayout;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -30,7 +31,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -214,6 +217,43 @@ class StatsProcessorAppTest {
     }
 
     @Test
+    void theShutdownHookLogsStoppingAndWarnsWhenTheProcessorDoesNotStopInTime() throws InterruptedException {
+        AtomicBoolean stop = new AtomicBoolean();
+        CountDownLatch closed = new CountDownLatch(1);
+        Thread processor = new Thread(() -> {
+            while (!stop.get()) {
+                Thread.onSpinWait();
+            }
+            closed.countDown();
+        });
+        processor.setDaemon(true);
+        processor.start();
+        AtomicBoolean stuck = new AtomicBoolean();
+        AtomicBoolean ended = new AtomicBoolean();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        PrintStream stderr = System.err;
+        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+        try {
+            StatsProcessorApp.stopHook(stop, closed, Duration.ofSeconds(60), LoggerFactory.getLogger(StatsProcessorApp.class)).run();
+            StatsProcessorApp.stopHook(stuck, new CountDownLatch(1), Duration.ZERO, LoggerFactory.getLogger(StatsProcessorApp.class)).run();
+            StatsProcessorApp.stopHook(ended, new CountDownLatch(0), Duration.ofSeconds(60), LoggerFactory.getLogger(StatsProcessorApp.class)).run();
+        } finally {
+            System.setErr(stderr);
+        }
+
+        assertTrue(stop.get(), "the hook tells the processor to stop");
+        processor.join();
+        assertTrue(stuck.get());
+        assertFalse(ended.get(), "a hook after the end of the run does nothing");
+        String app = "org.opentsx.stats.StatsProcessorApp - ";
+        assertEquals(List.of(
+                        "INFO " + app + "stopping; waiting for the final checkpoint wait=PT1M",
+                        "INFO " + app + "stopping; waiting for the final checkpoint wait=PT0S",
+                        "WARN " + app + "the processor did not stop in time; the final checkpoint may be missing wait=PT0S"),
+                err.toString(StandardCharsets.UTF_8).lines().map(l -> l.substring(l.indexOf("] ") + 2)).toList());
+    }
+
+    @Test
     void theArgumentsOfTheK3sManifestLoad() throws IOException {
         ObjectMapper yaml = new ObjectMapper(new YAMLFactory());
         Map<String, String> literals = new HashMap<>();
@@ -256,7 +296,7 @@ class StatsProcessorAppTest {
         assertEquals("/state/stats.ckpt", conf.get("opentsx.stats.checkpoint"));
         assertEquals(List.of(Duration.ofMinutes(10), Duration.ofHours(1)), conf.getDurationList("opentsx.stats.windows"));
         assertEquals(Duration.ZERO, conf.getDuration("opentsx.stats.allowedLateness"));
-        assertEquals("commandLine", conf.source("opentsx.stats.windows"));
+        assertEquals("environment", conf.source("opentsx.stats.windows"));
         assertFalse(conf.getBoolean("opentsx.stats.once"));
     }
 

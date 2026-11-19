@@ -70,6 +70,7 @@
                 <configuration>
                     <systemPropertyVariables>
                         <org.slf4j.simpleLogger.defaultLogLevel>warn</org.slf4j.simpleLogger.defaultLogLevel>
+                        <org.slf4j.simpleLogger.log.org.opentsx.stats>info</org.slf4j.simpleLogger.log.org.opentsx.stats>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

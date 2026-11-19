@@ -1,10 +1,7 @@
 package org.opentsx.stats;
 
 import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.common.PartitionInfo;
-import org.apache.kafka.common.TopicPartition;
-import org.opentsx.kafka.Patience;
+import org.opentsx.kafka.LogReader;
 import org.opentsx.kafka.TopicLayout;
 import org.opentsx.model.Micros;
 import org.opentsx.model.OpenTsxAvro;
@@ -28,36 +25,15 @@ public final class SeriesStatsLog {
     private SeriesStatsLog() {
     }
 
+    /**
+     * Reads the whole statistics topic of the domain with {@link LogReader#readAll} and keeps the latest records.
+     *
+     * @throws IllegalStateException when the topic does not exist or the read takes longer than {@code timeout}
+     */
     public static List<SeriesStats> readLatest(Consumer<byte[], byte[]> consumer, TopicLayout layout, Duration timeout) {
-        List<TopicPartition> tps = new ArrayList<>();
-        for (PartitionInfo p : consumer.partitionsFor(layout.seriesStats(), timeout)) {
-            tps.add(new TopicPartition(p.topic(), p.partition()));
-        }
-        Map<TopicPartition, Long> begin = consumer.beginningOffsets(tps, timeout);
-        Map<TopicPartition, Long> end = consumer.endOffsets(tps, timeout);
-        Map<TopicPartition, Long> next = new HashMap<>(begin);
-        consumer.assign(tps);
-        tps.forEach(tp -> consumer.seek(tp, begin.get(tp)));
         OpenTsxAvro avro = new OpenTsxAvro();
         List<SeriesStats> all = new ArrayList<>();
-        long deadline = System.nanoTime() + timeout.toNanos();
-        Patience patience = new Patience(timeout, Duration.ofSeconds(2));
-        try {
-            while (tps.stream().anyMatch(tp -> next.get(tp) < end.get(tp))) {
-                if (System.nanoTime() > deadline) {
-                    throw new IllegalStateException("timed out reading " + layout.seriesStats());
-                }
-                for (ConsumerRecord<byte[], byte[]> r : patience.poll(consumer, Duration.ofMillis(500))) {
-                    TopicPartition tp = new TopicPartition(r.topic(), r.partition());
-                    if (r.offset() < end.get(tp)) {
-                        all.add(avro.decode(r.value(), SeriesStats.class));
-                        next.put(tp, r.offset() + 1);
-                    }
-                }
-            }
-        } finally {
-            consumer.assign(List.of());
-        }
+        LogReader.readAll(consumer, layout.seriesStats(), r -> all.add(avro.decode(r.value(), SeriesStats.class)), timeout);
         return latest(all);
     }
 

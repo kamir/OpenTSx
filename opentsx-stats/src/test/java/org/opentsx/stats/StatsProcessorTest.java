@@ -124,6 +124,21 @@ class StatsProcessorTest {
         }
     }
 
+    /** The WARN lines slf4j-simple wrote, from the level on, without the thread name in front. */
+    private static List<String> warnings(ByteArrayOutputStream err) {
+        return logLines(err).stream().filter(l -> l.startsWith("WARN ")).toList();
+    }
+
+    private static List<String> logLines(ByteArrayOutputStream err) {
+        return err.toString(StandardCharsets.UTF_8).lines().map(l -> l.substring(l.indexOf("] ") + 2)).toList();
+    }
+
+    private static String retention(TopicPartition tp, long position, long logStart) {
+        return "WARN org.opentsx.stats.StatsProcessor - retention deleted records before they were read; reading on from"
+                + " the log start topic=" + tp.topic() + " partition=" + tp.partition() + " position=" + position
+                + " logStart=" + logStart + " lost=" + (logStart - position);
+    }
+
     private static Episode countMismatch(Episode e) {
         Episode two = Episodes.regular(e.getSeries(), Micros.of(START) + 3_600_000_000L, 1_000_000L, new double[]{1, 2})
                 .episodeId("count-mismatch").source("test").build();
@@ -246,9 +261,9 @@ class StatsProcessorTest {
         StatsProcessor.RunResult r = runCapturingStderr(p, err);
 
         assertEquals(2, r.undecodable());
-        assertEquals(p1 + " offset " + at + ": undecodable record (unrecognised payload framing); skipped and counted in"
-                + " undecodable, later undecodable records of this partition are only counted" + System.lineSeparator(),
-                err.toString(StandardCharsets.UTF_8));
+        assertEquals(List.of("WARN org.opentsx.stats.StatsProcessor - undecodable record skipped and counted in undecodable;"
+                + " later ones of this partition are only counted topic=" + p1.topic() + " partition=1 offset=" + at
+                + " cause=unrecognised payload framing"), warnings(err));
         assertEquals(at + 2, p.positions().get(p1));
     }
 
@@ -277,12 +292,13 @@ class StatsProcessorTest {
         assertEquals(valid, stats.stream().map(s -> s.getSeriesId().toString()).collect(Collectors.toSet()));
         stats.stream().filter(s -> s.getWindowType().equals(StatsEngine.GLOBAL))
                 .forEach(g -> assertEquals(1200, g.getValidCount() + g.getNanCount(), g.getSeriesId()));
-        String later = "; skipped and counted in invalid, later invalid episodes of this partition are only counted";
+        String later = "WARN org.opentsx.stats.StatsProcessor - invalid episode skipped and counted in invalid; later ones of"
+                + " this partition are only counted topic=" + layout.episodes();
         String id2 = eps.get(2).getSeries().getSeriesId();
-        assertEquals(List.of(p0 + " offset " + at0 + ": invalid episode (count: \"3\" differs from the length 2 of values;"
-                        + " expected the number of values)" + later,
-                        p1 + " offset " + at1 + ": invalid episode (seriesId not-" + id2 + " does not match " + id2 + ")" + later),
-                err.toString(StandardCharsets.UTF_8).lines().sorted().toList());
+        assertEquals(List.of(later + " partition=0 offset=" + at0 + " cause=count: \"3\" differs from the length 2 of values;"
+                        + " expected the number of values",
+                        later + " partition=1 offset=" + at1 + " cause=seriesId not-" + id2 + " does not match " + id2),
+                warnings(err).stream().sorted().toList());
         assertEquals(Map.of(p0, at0 + 2, p1, at1 + 1), p.positions(), "the position moves past an invalid episode");
     }
 
@@ -307,13 +323,14 @@ class StatsProcessorTest {
         assertEquals(eps.size(), r.metrics().episodes(), "the engine never sees an episode without a positive interval");
         decode(out).stream().filter(s -> s.getWindowType().equals(StatsEngine.GLOBAL))
                 .forEach(g -> assertEquals(1200, g.getValidCount() + g.getNanCount(), g.getSeriesId()));
-        String later = "; skipped and counted in invalid, later invalid episodes of this partition are only counted";
+        String later = "WARN org.opentsx.stats.StatsProcessor - invalid episode skipped and counted in invalid; later ones of"
+                + " this partition are only counted topic=" + layout.episodes();
         assertEquals(List.of(
-                        p0 + " offset " + at0 + ": invalid episode (intervalMicros: \"0\" is not allowed; expected a positive"
-                                + " number of microseconds)" + later,
-                        p1 + " offset " + at1 + ": invalid episode (intervalMicros: missing in a REGULAR episode; expected a"
-                                + " positive number of microseconds)" + later),
-                err.toString(StandardCharsets.UTF_8).lines().sorted().toList());
+                        later + " partition=0 offset=" + at0 + " cause=intervalMicros: \"0\" is not allowed; expected a positive"
+                                + " number of microseconds",
+                        later + " partition=1 offset=" + at1 + " cause=intervalMicros: missing in a REGULAR episode; expected a"
+                                + " positive number of microseconds"),
+                warnings(err).stream().sorted().toList());
         assertEquals(Map.of(p0, at0 + 1, p1, at1 + 1), p.positions());
     }
 
@@ -339,7 +356,7 @@ class StatsProcessorTest {
                 new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()), layout,
                 new StatsEngine(StatsEngine.Config.defaults()), checkpoint, false), err);
         assertTrue(r2.toString().startsWith("RunResult[records=0, undecodable=0, invalid=0, lostToRetention=0, "), r2.toString());
-        assertEquals("", err.toString(StandardCharsets.UTF_8));
+        assertEquals(List.of(), warnings(err));
     }
 
     @Test
@@ -367,8 +384,7 @@ class StatsProcessorTest {
 
         assertEquals(3, r.records());
         assertEquals(3, r.lostToRetention(), "offsets 2, 3 and 4 were deleted while the run read the partition");
-        assertEquals(tp + ": retention deleted 3 records before they were read (position 2, log start 5); reading on from the"
-                + " log start" + System.lineSeparator(), err.toString(StandardCharsets.UTF_8));
+        assertEquals(List.of(retention(tp, 2, 5)), warnings(err));
         assertEquals(Map.of(tp, 6L), p.positions());
     }
 
@@ -395,8 +411,7 @@ class StatsProcessorTest {
 
         assertEquals(0, r.records(), "offsets 6 and 7 lie after the end offset 3 seen at the start");
         assertEquals(6, r.lostToRetention(), "offsets 0 to 5 were deleted before they were read");
-        assertEquals(tp + ": retention deleted 6 records before they were read (position 0, log start 6); reading on from the"
-                + " log start" + System.lineSeparator(), err.toString(StandardCharsets.UTF_8));
+        assertEquals(List.of(retention(tp, 0, 6)), warnings(err));
         assertEquals(Map.of(tp, 6L), p.positions(), "the next run reads on from offset 6");
     }
 
@@ -419,8 +434,7 @@ class StatsProcessorTest {
 
         assertEquals(0, r.records());
         assertEquals(3, r.lostToRetention(), "offsets 0 to 2 were deleted before they were read");
-        assertEquals(tp + ": retention deleted 3 records before they were read (position 0, log start 3); reading on from the"
-                + " log start" + System.lineSeparator(), err.toString(StandardCharsets.UTF_8));
+        assertEquals(List.of(retention(tp, 0, 3)), warnings(err));
         assertEquals(Map.of(tp, 3L), p.positions(), "the next run reads on from offset 3");
     }
 
@@ -487,6 +501,100 @@ class StatsProcessorTest {
                 "the check inside the run gets the time left, not the whole run timeout: " + asked.get(1));
     }
 
+    /** {@code tp:offset} for every partition, sorted by topic and partition, as the processor logs positions. */
+    private static String positions(Map<TopicPartition, Long> positions) {
+        return positions.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey((a, b) -> a.topic().equals(b.topic())
+                        ? Integer.compare(a.partition(), b.partition()) : a.topic().compareTo(b.topic())))
+                .map(e -> e.getKey() + ":" + e.getValue()).collect(Collectors.joining(","));
+    }
+
+    @Test
+    void aContinuousRunLogsOneProgressLinePerCheckpointWithTheCounters() {
+        TopicLayout layout = new TopicLayout("t" + UUID.randomUUID().toString().substring(0, 8));
+        List<Episode> eps = simulate(scenario("progress", Duration.ofMinutes(20), 1));
+        MockConsumer<byte[], byte[]> c = consumerWith(layout, eps);
+        TopicPartition first = new TopicPartition(layout.episodes(), Math.floorMod(eps.get(0).getSeries().getSeriesId().hashCode(), 2));
+        append(c, first, "not avro".getBytes(StandardCharsets.UTF_8), new OpenTsxAvro().encode(eps.get(0)));
+        MockProducer<String, byte[]> out = new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer());
+        StatsProcessor p = new StatsProcessor(c, out, layout, new StatsEngine(StatsEngine.Config.defaults()), null, false);
+        int[] loops = {0};
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        PrintStream stderr = System.err;
+        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+        try {
+            // a checkpoint period of zero ends a period on every loop: the episodes, then the bad record and the
+            // duplicate, then nothing
+            p.run(Duration.ZERO, () -> loops[0]++ == 3);
+        } finally {
+            System.setErr(stderr);
+        }
+
+        String progress = "INFO org.opentsx.stats.StatsProcessor - progress records=";
+        String written = " lostToRetention=0 statsWritten=" + out.history().size();
+        assertEquals(List.of(
+                        progress + eps.size() + " undecodable=0 invalid=0" + written + " duplicates=0 lateValues=0",
+                        progress + (eps.size() + 2) + " undecodable=1 invalid=0" + written + " duplicates=1 lateValues=0",
+                        progress + (eps.size() + 2) + " undecodable=1 invalid=0" + written + " duplicates=1 lateValues=0"),
+                logLines(err).stream().filter(l -> l.startsWith(progress)).toList(), err.toString(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void aContinuousRunLogsTheRestoredCheckpointTheAssignmentAndTheFinalCheckpoint(@TempDir Path dir) {
+        TopicLayout layout = new TopicLayout("t" + UUID.randomUUID().toString().substring(0, 8));
+        List<Episode> eps = simulate(scenario("lifecycle", Duration.ofMinutes(20), 2));
+        Path checkpoint = dir.resolve("stats.ckpt");
+        StatsProcessor before = new StatsProcessor(consumerWith(layout, eps.subList(0, eps.size() / 2)),
+                new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()), layout,
+                new StatsEngine(StatsEngine.Config.defaults()), checkpoint, false);
+        before.runUntilCaughtUp(Duration.ofSeconds(30), false);
+        String saved = positions(before.positions());
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        PrintStream stderr = System.err;
+        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+        StatsProcessor p;
+        try {
+            p = new StatsProcessor(consumerWith(layout, eps), new MockProducer<>(true, new StringSerializer(),
+                    new ByteArraySerializer()), layout, new StatsEngine(StatsEngine.Config.defaults()), checkpoint, false);
+            int[] loops = {0};
+            p.run(Duration.ofHours(1), () -> loops[0]++ == 1);
+        } finally {
+            System.setErr(stderr);
+        }
+
+        assertEquals(2, saved.split(",").length, saved);
+        String info = "INFO org.opentsx.stats.StatsProcessor - ";
+        assertEquals(List.of(
+                        info + "checkpoint restored path=" + checkpoint + " domain=" + layout.domain() + " positions=" + saved,
+                        info + "partitions assigned count=2 start=" + saved,
+                        info + "final checkpoint written path=" + checkpoint + " positions=" + positions(p.positions())),
+                logLines(err));
+        assertEquals(eps.size(), p.positions().values().stream().mapToLong(Long::longValue).sum(), "every record was read");
+    }
+
+    @Test
+    void aRunWithoutACheckpointFileOrPartitionsSaysSo() {
+        TopicLayout layout = new TopicLayout("t" + UUID.randomUUID().toString().substring(0, 8));
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        PrintStream stderr = System.err;
+        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+        StatsProcessor.RunResult r;
+        try {
+            r = new StatsProcessor(new MockConsumer<>(OffsetResetStrategy.EARLIEST),
+                    new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()), layout,
+                    new StatsEngine(StatsEngine.Config.defaults()), null, true).runUntilCaughtUp(Duration.ofSeconds(5), true);
+        } finally {
+            System.setErr(stderr);
+        }
+
+        assertEquals(0, r.records());
+        assertEquals(List.of(
+                        "INFO org.opentsx.stats.StatsProcessor - no checkpoint; reading the topics from the log start path=none",
+                        "WARN org.opentsx.stats.StatsProcessor - no partitions assigned; the input topics do not exist or have"
+                                + " no partitions topics=" + layout.episodes() + "," + layout.observations()),
+                logLines(err));
+    }
+
     @Test
     void anUnreadableOrUnwritableCheckpointNamesTheFile(@TempDir Path dir) throws IOException {
         TopicLayout layout = new TopicLayout("t" + UUID.randomUUID().toString().substring(0, 8));
@@ -549,9 +657,7 @@ class StatsProcessorTest {
             System.setErr(stderr);
         }
         assertEquals(3, r.lostToRetention());
-        assertEquals(layout.episodes() + "-0: retention deleted 3 records before they were read (position " + saved
-                        + ", log start " + (saved + 3) + "); reading on from the log start" + System.lineSeparator(),
-                err.toString(StandardCharsets.UTF_8));
+        assertEquals(List.of(retention(p0, saved, saved + 3)), warnings(err));
 
         MockConsumer<byte[], byte[]> fresh = consumerWith(layout, eps);
         fresh.updateBeginningOffsets(logStart);

@@ -14,6 +14,8 @@ import org.opentsx.model.OpenTsxAvro;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.model.v2.Observation;
 import org.opentsx.model.v2.SeriesStats;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -27,6 +29,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -36,6 +39,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.BooleanSupplier;
+import java.util.stream.Collectors;
 
 /**
  * Runs a {@link StatsEngine} over the KafScale episode (and optionally observation) topic and writes
@@ -49,9 +53,12 @@ import java.util.function.BooleanSupplier;
  *
  * <p>A record that does not decode is counted in {@code undecodable} and skipped. An episode that decodes but fails
  * {@link Episodes#validate} is counted in {@code invalid} and skipped. The first record of each kind per partition is
- * reported on stderr. A failure of the engine stops the processor, and the checkpoint stays before that record.
- * Records that retention deleted before they were read, after the checkpoint position or during a run, are counted in
- * {@code lostToRetention} and reported on stderr.
+ * logged at WARN. A failure of the engine stops the processor, and the checkpoint stays before that record. Records
+ * that retention deleted before they were read, after the checkpoint position or during a run, are counted in
+ * {@code lostToRetention} and logged at WARN.
+ *
+ * <p>At INFO it logs the restored checkpoint, the assigned partitions with their start offsets, in continuous mode one
+ * progress line with the counters per checkpoint, and the final checkpoint.
  */
 public final class StatsProcessor {
 
@@ -61,6 +68,9 @@ public final class StatsProcessor {
     }
 
     private static final String MAGIC = "TSXSTATS1";
+    private static final Logger LOG = LoggerFactory.getLogger(StatsProcessor.class);
+    private static final Comparator<TopicPartition> BY_TOPIC_AND_PARTITION =
+            Comparator.comparing(TopicPartition::topic).thenComparingInt(TopicPartition::partition);
 
     private final Consumer<byte[], byte[]> consumer;
     private final Producer<String, byte[]> producer;
@@ -94,6 +104,9 @@ public final class StatsProcessor {
         this.observations = observations;
         if (checkpoint != null && Files.exists(checkpoint)) {
             restore();
+            LOG.info("checkpoint restored path={} domain={} positions={}", checkpoint, layout.domain(), format(positions));
+        } else {
+            LOG.info("no checkpoint; reading the topics from the log start path={}", checkpoint == null ? "none" : checkpoint);
         }
     }
 
@@ -153,20 +166,31 @@ public final class StatsProcessor {
     /** Continuous mode: emits GLOBAL and checkpoints every {@code checkpointEvery} until {@code stop} is true. */
     public void run(Duration checkpointEvery, BooleanSupplier stop) {
         assign(Duration.ofSeconds(30));
+        long records = 0;
         long next = System.nanoTime() + checkpointEvery.toNanos();
         try {
             while (!stop.getAsBoolean()) {
                 for (ConsumerRecord<byte[], byte[]> r : patience.poll(consumer, Duration.ofMillis(500))) {
                     handle(r);
+                    records++;
                 }
                 if (System.nanoTime() >= next) {
                     send(engine.emitGlobal());
                     checkpoint();
+                    StatsEngine.Metrics m = engine.metrics();
+                    LOG.info("progress records={} undecodable={} invalid={} lostToRetention={} statsWritten={} duplicates={}"
+                                    + " lateValues={}", records, undecodable, invalid, lostToRetention, statsWritten,
+                            m.duplicates(), m.lateValues());
                     next = System.nanoTime() + checkpointEvery.toNanos();
                 }
             }
             send(engine.emitGlobal());
             checkpoint();
+            if (checkpoint == null) {
+                LOG.info("stopped without a checkpoint file positions={}", format(positions));
+            } else {
+                LOG.info("final checkpoint written path={} positions={}", checkpoint, format(positions));
+            }
         } finally {
             consumer.assign(List.of());
         }
@@ -182,6 +206,7 @@ public final class StatsProcessor {
         }
         Map<TopicPartition, Long> begin = consumer.beginningOffsets(tps, timeout);
         consumer.assign(tps);
+        Map<TopicPartition, Long> start = new HashMap<>();
         for (TopicPartition tp : tps) {
             long from = begin.get(tp);
             Long saved = positions.get(tp);
@@ -192,8 +217,24 @@ public final class StatsProcessor {
             }
             positions.put(tp, from);
             consumer.seek(tp, from);
+            start.put(tp, from);
+        }
+        if (tps.isEmpty()) {
+            LOG.warn("no partitions assigned; the input topics do not exist or have no partitions topics={}",
+                    String.join(",", topics));
+        } else {
+            LOG.info("partitions assigned count={} start={}", tps.size(), format(start));
         }
         return tps;
+    }
+
+    /** {@code <topic>-<partition>:<offset>} per partition, sorted by topic and partition, comma-separated. */
+    private static String format(Map<TopicPartition, Long> offsets) {
+        if (offsets.isEmpty()) {
+            return "none";
+        }
+        return offsets.entrySet().stream().sorted(Map.Entry.comparingByKey(BY_TOPIC_AND_PARTITION))
+                .map(e -> e.getKey() + ":" + e.getValue()).collect(Collectors.joining(","));
     }
 
     /** Retention can delete past a position with no record left to poll; only the log start shows that. */
@@ -212,8 +253,8 @@ public final class StatsProcessor {
 
     private void lost(TopicPartition tp, long position, long logStart) {
         lostToRetention += logStart - position;
-        System.err.println(tp + ": retention deleted " + (logStart - position) + " records before they were read (position "
-                + position + ", log start " + logStart + "); reading on from the log start");
+        LOG.warn("retention deleted records before they were read; reading on from the log start topic={} partition={}"
+                + " position={} logStart={} lost={}", tp.topic(), tp.partition(), position, logStart, logStart - position);
     }
 
     private void handle(ConsumerRecord<byte[], byte[]> r) {
@@ -234,8 +275,9 @@ public final class StatsProcessor {
         } catch (RuntimeException e) {
             undecodable++;
             if (undecodableReported.add(tp)) {
-                System.err.println(tp + " offset " + r.offset() + ": undecodable record (" + e.getMessage() + "); skipped"
-                        + " and counted in undecodable, later undecodable records of this partition are only counted");
+                LOG.warn("undecodable record skipped and counted in undecodable; later ones of this partition are only"
+                                + " counted topic={} partition={} offset={} cause={}", tp.topic(), tp.partition(), r.offset(),
+                        StatsProcessorApp.causes(e));
             }
             positions.put(tp, r.offset() + 1);
             return;
@@ -262,8 +304,9 @@ public final class StatsProcessor {
         } catch (IllegalArgumentException e) {
             invalid++;
             if (invalidReported.add(tp)) {
-                System.err.println(tp + " offset " + offset + ": invalid episode (" + e.getMessage()
-                        + "); skipped and counted in invalid, later invalid episodes of this partition are only counted");
+                LOG.warn("invalid episode skipped and counted in invalid; later ones of this partition are only counted"
+                                + " topic={} partition={} offset={} cause={}", tp.topic(), tp.partition(), offset,
+                        StatsProcessorApp.causes(e));
             }
             return false;
         }
@@ -301,8 +344,7 @@ public final class StatsProcessor {
             try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(Files.newOutputStream(tmp)))) {
                 out.writeUTF(MAGIC);
                 out.writeUTF(layout.domain());
-                Map<TopicPartition, Long> sorted = new TreeMap<>((a, b) -> a.topic().equals(b.topic())
-                        ? Integer.compare(a.partition(), b.partition()) : a.topic().compareTo(b.topic()));
+                Map<TopicPartition, Long> sorted = new TreeMap<>(BY_TOPIC_AND_PARTITION);
                 sorted.putAll(positions);
                 out.writeInt(sorted.size());
                 for (Map.Entry<TopicPartition, Long> e : sorted.entrySet()) {
