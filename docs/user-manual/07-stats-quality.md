@@ -61,36 +61,64 @@ without `--checkpoint` the processor reads the topics from the log start on ever
   After a crash the processor resumes from the checkpoint and is at-least-once.
 * `--once true` processes the backlog, closes all windows, prints the `RunResult` with the counts `records`,
   `undecodable`, `invalid`, `lostToRetention` and `statsWritten`, and exits.
-* Because KafScale has no compaction, `SeriesStatsLog.readLatest(...)` reads the whole topic. It keeps one record per
-  series, window type and window start: the one with the most values, the later one on a tie.
-* A record that does not decode is counted in `undecodable` and skipped. The first one of each partition is printed
-  on stderr with the message of the decoder. Later ones on that partition are only counted:
+* The processor logs one line per event on stderr through SLF4J, logger `org.opentsx.stats.StatsProcessor`. At start
+  it logs the restored checkpoint, or that there is none, and the assigned partitions with the offset each starts at.
+  When no partition is assigned because the topics do not exist yet, the line is a WARN:
 
   ```text
-  <topic>-<partition> offset <offset>: undecodable record (<reason>); skipped and counted in undecodable, later undecodable records of this partition are only counted
+  checkpoint restored path=<file> domain=<domain> positions=<topic>-<partition>:<offset>,...
+  no checkpoint; reading the topics from the log start path=<file>
+  partitions assigned count=<n> start=<topic>-<partition>:<offset>,...
+  no partitions assigned; the input topics do not exist or have no partitions topics=<topic>,...
+  ```
+
+  Without `--checkpoint` the second line ends with `path=none`.
+* Without `--once` the processor writes a checkpoint every 30 s and then logs one INFO progress line.
+  `records`, `undecodable`, `invalid`, `lostToRetention` and `statsWritten` count since the process started;
+  `duplicates` and `lateValues` are counters of the engine and come back from the checkpoint:
+
+  ```text
+  progress records=<n> undecodable=<n> invalid=<n> lostToRetention=<n> statsWritten=<n> duplicates=<n> lateValues=<n>
+  ```
+
+* On SIGTERM during a continuous run `org.opentsx.stats.StatsProcessorApp` logs
+  `stopping; waiting for the final checkpoint wait=PT1M`, and the processor logs
+  `final checkpoint written path=<file> positions=<topic>-<partition>:<offset>,...` (without a file
+  `stopped without a checkpoint file positions=...`). When the run has not ended 60 s after `stopping`, the WARN line
+  `the processor did not stop in time; the final checkpoint may be missing wait=PT1M` follows, and the next start reads
+  on from the last checkpoint that was written. A run that failed exits without these lines.
+* Because KafScale has no compaction, `SeriesStatsLog.readLatest(...)` reads the whole topic. It keeps one record per
+  series, window type and window start: the one with the most values, the later one on a tie. When the topic does not
+  exist it throws `IllegalStateException` with
+  `tsx.<domain>.series-stats.v2: no such topic; check the domain, or create the topic first`.
+* A record that does not decode is counted in `undecodable` and skipped. The first one of each partition is logged at
+  WARN with the message of the decoder. Later ones on that partition are only counted:
+
+  ```text
+  undecodable record skipped and counted in undecodable; later ones of this partition are only counted topic=<topic> partition=<partition> offset=<offset> cause=<reason>
   ```
 
 * An episode that decodes but fails `Episodes.validate` is counted in `invalid` and skipped, and the checkpoint
   position moves past it. Examples are a count that differs from the number of values, a `seriesId` that does not
   match the metric and tags of its key, a REGULAR episode without a positive `intervalMicros`, and an IRREGULAR_DELTA
   episode without `timeDeltas` or with timestamps that do not increase. The first invalid episode of each partition
-  is printed on stderr. Later ones on that partition are only counted:
+  is logged at WARN. Later ones on that partition are only counted:
 
   ```text
-  <topic>-<partition> offset <offset>: invalid episode (<reason>); skipped and counted in invalid, later invalid episodes of this partition are only counted
+  invalid episode skipped and counted in invalid; later ones of this partition are only counted topic=<topic> partition=<partition> offset=<offset> cause=<reason>
   ```
 
 * When the engine fails on a record, the processor stops without writing the checkpoint, so a restart reads that
   record again. The message names the record and its cause, and the exit code is 1:
   `opentsx: <topic>-<partition> offset <offset>: the statistics engine failed on this record; the checkpoint stays before it; caused by <cause>`.
 * When retention deleted records before they were read, the processor reads on from the log start, counts the deleted
-  records in `lostToRetention` and prints one line on stderr. This happens when a run starts with a checkpoint
+  records in `lostToRetention` and logs one WARN line. This happens when a run starts with a checkpoint
   position below the log start, when a poll returns an offset above the position of its partition, and in a `--once`
   run when a poll brings no record below the end offsets seen at the start and the log start of a partition lies above
   its position:
 
   ```text
-  <topic>-<partition>: retention deleted <n> records before they were read (position <saved>, log start <start>); reading on from the log start
+  retention deleted records before they were read; reading on from the log start topic=<topic> partition=<partition> position=<saved> logStart=<start> lost=<n>
   ```
 
   Without a position in the checkpoint, a log start above 0 is not counted.
@@ -122,16 +150,24 @@ bin/opentsx stats-flink --kafscale localhost:9092 --domain wind \
   The source commits no offsets, because KafScale rejects commits without group membership. The output is at least
   once, as with the processor.
 * An input that does not decode is counted in the Flink metric `undecodable` and dropped. An episode that decodes
-  but fails `Episodes.validate` is counted in the Flink metric `invalid` and dropped. Each subtask prints the first
-  input of each kind and partition on stderr and only counts the later ones. A record without a value gives the
-  reason `no value`:
+  but fails `Episodes.validate` is counted in the Flink metric `invalid` and dropped. The source
+  (`StatsInputDeserializer`) logs at WARN the first record of each partition that has no value (reason `no value`),
+  or that has no key and a value that does not decode; `StatsFunction` logs the first undecodable input and the first invalid episode of each
+  partition at WARN. Each subtask only counts the later ones:
 
   ```text
-  <topic>-<partition> offset <offset>: undecodable record (<reason>); skipped and counted in undecodable, this subtask only counts later undecodable records of this partition
-  <topic>-<partition> offset <offset>: invalid episode (<reason>); skipped and counted in invalid, this subtask only counts later invalid episodes of this partition
+  WARN org.opentsx.flink.stats.StatsInputDeserializer - undecodable record skipped and counted in undecodable; later ones of this partition are only counted by this subtask topic=<topic> partition=<partition> offset=<offset> cause=<reason>
+  WARN org.opentsx.flink.stats.StatsFunction - undecodable record skipped and counted in undecodable; later ones of this partition are only counted by this subtask topic=<topic> partition=<partition> offset=<offset> cause=<reason>
+  WARN org.opentsx.flink.stats.StatsFunction - invalid episode skipped and counted in invalid; later ones of this partition are only counted by this subtask topic=<topic> partition=<partition> offset=<offset> cause=<reason>
   ```
 
   When the engine fails on an input, the task fails and restarts from the last checkpoint.
+* The job configures no metrics reporter. Each subtask logs
+  `progress subtask=<n> records=<n> undecodable=<n> invalid=<n> statsEmitted=<n>` at INFO with the first GLOBAL timer
+  of every `--global-every`. Every input arms the timer, also one that does not decode or is invalid, so a subtask
+  whose inputs are all bad still logs its counts; an interval without input logs nothing, and `--global-every PT0S`
+  logs none. Before the job runs it logs
+  `submitting the statistics job domain=<domain> topics=<topics> sink=<topic> bootstrap=<address> once=<bool> checkpointEvery=<duration> restarts=20 restartDelay=PT15S`.
 * The job rejects `--checkpoint` with exit code 2:
 
   ```text

@@ -19,6 +19,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.net.ConnectException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,12 +31,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -52,7 +61,7 @@ class TwinLiveTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         int code = TwinLive.run(List.of(args), env, new PrintStream(out, true, StandardCharsets.UTF_8),
-                new PrintStream(err, true, StandardCharsets.UTF_8), brokers);
+                new PrintStream(err, true, StandardCharsets.UTF_8), brokers, hook -> { });
         return new Exit(code, out.toString(StandardCharsets.UTF_8), err.toString(StandardCharsets.UTF_8));
     }
 
@@ -149,6 +158,68 @@ class TwinLiveTest {
         Started warn = start(Map.of("OPENTSX_LOG_LEVEL", "warn"), "bridge", "--bootstrap", "h:9092", "--port", "0");
         assertNotNull(warn.firstLine(), warn.err());
         assertFalse(warn.err().contains(" INFO "), warn.err());
+    }
+
+    @Test
+    @Timeout(120)
+    void aTerminatedDemoStopsTheBridgeAndThePublisherAndLogsBoth() throws Exception {
+        Path err = Files.createTempFile(tmp, "err", ".txt");
+        ProcessBuilder pb = new ProcessBuilder(java("demo", "--port", "0", "--scenario", "h2-chain")).redirectError(err.toFile());
+        pb.environment().clear();
+        Process p = pb.start();
+        String first;
+        try (BufferedReader out = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
+            first = out.readLine();
+            assertNotNull(first, Files.readString(err));
+            p.destroy();
+            assertTrue(p.waitFor(60, TimeUnit.SECONDS), "the demo did not end after SIGTERM: " + Files.readString(err));
+        } finally {
+            p.destroyForcibly().waitFor();
+        }
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("event bridge on http://localhost:(\\d+) ").matcher(first);
+        assertTrue(m.find(), first);
+        List<String> info = Files.readString(err).lines().filter(l -> l.contains(" INFO ")).toList();
+        assertTrue(info.stream().anyMatch(l -> l.endsWith(" INFO org.opentsx.twin.live.TwinLive - publisher started"
+                + " scenarios=h2-chain loop=true duration=PT2M")), String.join("\n", info));
+        assertTrue(info.stream().anyMatch(l -> l.contains(" INFO org.opentsx.twin.live.TwinLive - publisher stopped runs=")),
+                String.join("\n", info));
+        assertTrue(info.stream().anyMatch(l -> l.endsWith(" INFO org.opentsx.twin.live.EventBridge - event bridge stopped port="
+                + m.group(1))), String.join("\n", info));
+    }
+
+    @Test
+    @Timeout(60)
+    void theStopHookOfTheDemoStopsTheBridgeAndEndsTheRun() throws Exception {
+        BlockingQueue<Thread> hooks = new LinkedBlockingQueue<>();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        AtomicInteger code = new AtomicInteger(-1);
+        Thread demo = new Thread(() -> code.set(TwinLive.run(List.of("demo", "--port", "0", "--scenario", "h2-chain"), Map.of(),
+                new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(err, true, StandardCharsets.UTF_8), noBroker(),
+                hooks::add)));
+        demo.setDaemon(true);
+        demo.start();
+        Thread hook = hooks.poll(30, TimeUnit.SECONDS);
+        assertNotNull(hook, "the demo registers a stop hook");
+        String base = null;
+        while (base == null && demo.isAlive()) {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("event bridge on (http://localhost:\\d+) ")
+                    .matcher(out.toString(StandardCharsets.UTF_8));
+            base = m.find() ? m.group(1) : null;
+            Thread.onSpinWait();
+        }
+        assertNotNull(base, err.toString(StandardCharsets.UTF_8));
+        HttpClient http = HttpClient.newHttpClient();
+        URI health = URI.create(base + "/v1/health");
+        assertEquals(200, http.send(HttpRequest.newBuilder(health).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
+
+        hook.run();
+
+        demo.join(TimeUnit.SECONDS.toMillis(30));
+        assertFalse(demo.isAlive(), "the run ends once the hook has run");
+        assertEquals(0, code.get(), err.toString(StandardCharsets.UTF_8));
+        assertThrows(ConnectException.class, () -> http.send(HttpRequest.newBuilder(health).build(),
+                HttpResponse.BodyHandlers.ofString()));
     }
 
     @Test

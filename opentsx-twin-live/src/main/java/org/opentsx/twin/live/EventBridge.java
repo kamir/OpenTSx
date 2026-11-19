@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Hands an event topic to a browser as server-sent events (JDK HTTP server, no framework).
@@ -33,23 +34,27 @@ import java.util.concurrent.Semaphore;
  * A message carries the offset as its id and {@code {"topic","offset","timestamp","key","value"}} as data, where
  * {@code value} is the JSON of the record. A browser that reconnects sends {@code Last-Event-ID}; the stream then
  * continues behind that offset. Only event topics of twins ({@link TopicLayout#isTwinEvents}) are served, read-only.
- * Every stream holds one reader on the log, so their number is limited.
+ * Every stream holds one reader on the log, so their number is limited. {@link #close} stops the server and waits up to
+ * {@link #CLOSE_WAIT} for the open streams to close their readers.
  */
 public final class EventBridge implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(EventBridge.class);
     private static final Duration POLL = Duration.ofMillis(500);
     private static final long KEEPALIVE_MS = 15_000;
+    static final Duration CLOSE_WAIT = Duration.ofSeconds(5);
 
     private final Topics topics;
     private final HttpServer http;
     private final String allowOrigin;
+    private final int maxStreams;
     private final Semaphore streams;
     private volatile boolean closed;
 
     public EventBridge(Topics topics, int port, String allowOrigin, int maxStreams) throws IOException {
         this.topics = topics;
         this.allowOrigin = allowOrigin;
+        this.maxStreams = maxStreams;
         this.streams = new Semaphore(maxStreams);
         this.http = HttpServer.create(new InetSocketAddress(port), 0);
         http.setExecutor(Executors.newCachedThreadPool(r -> {
@@ -67,9 +72,26 @@ public final class EventBridge implements AutoCloseable {
 
     @Override
     public void close() {
+        if (closed) {
+            return;
+        }
         closed = true;
+        int port = port();
         http.stop(0);
         ((ExecutorService) http.getExecutor()).shutdownNow();
+        boolean ended;
+        try {
+            ended = streams.tryAcquire(maxStreams, CLOSE_WAIT.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            ended = false;
+        }
+        if (ended) {
+            LOG.info("event bridge stopped port={}", port);
+        } else {
+            LOG.warn("event bridge stopped with streams still open port={} open={} wait={}", port,
+                    maxStreams - streams.availablePermits(), CLOSE_WAIT);
+        }
     }
 
     private void handle(HttpExchange ex) throws IOException {
@@ -95,21 +117,18 @@ public final class EventBridge implements AutoCloseable {
         } catch (IllegalArgumentException e) {
             error(ex, 400, String.valueOf(e.getMessage()));
         } catch (RuntimeException e) {
-            // once the stream has started, closing it is the only answer left; the browser then reconnects
-            failed(ex, path, ex.getResponseCode() == -1 ? 500 : ex.getResponseCode(), "internal error", e);
+            failed(ex, path, 500, "internal error", e);
         } finally {
             ex.close();
         }
     }
 
-    /** Logs the failure once, with its causes; answers it when no answer has started yet. */
+    /** Logs the failure once, with its causes, and answers it. */
     private static void failed(HttpExchange ex, String path, int status, String text, RuntimeException e) throws IOException {
         LOG.error("request failed method={} path={} status={} cause={}", oneLine(ex.getRequestMethod()), oneLine(path), status,
                 causes(e));
         LOG.debug("stack trace of the failed request method={} path={}", oneLine(ex.getRequestMethod()), oneLine(path), e);
-        if (ex.getResponseCode() == -1) {
-            error(ex, status, text);
-        }
+        error(ex, status, text);
     }
 
     private static String causes(Throwable t) {
@@ -142,28 +161,42 @@ public final class EventBridge implements AutoCloseable {
                 failed(ex, ex.getRequestURI().getPath(), 502, "cannot reach the broker", e);
                 return;
             }
+            long bytes = 0;
             try (cursor) {
                 ex.getResponseHeaders().set("Content-Type", "text/event-stream; charset=utf-8");
                 ex.getResponseHeaders().set("Cache-Control", "no-store");
                 ex.getResponseHeaders().set("X-Accel-Buffering", "no");
                 ex.sendResponseHeaders(200, 0);
                 OutputStream out = ex.getResponseBody();
-                write(out, "retry: 3000\n: connected to " + topic + "\n\n");
+                bytes += write(out, "retry: 3000\n: connected to " + topic + "\n\n");
                 long lastWrite = System.currentTimeMillis();
                 while (!closed) {
                     var recs = cursor.poll(POLL);
                     for (Topics.Rec r : recs) {
-                        write(out, "id: " + r.offset() + "\ndata: " + EventTopic.JSON.writeValueAsString(data(topic, r)) + "\n\n");
+                        bytes += write(out, "id: " + r.offset() + "\ndata: " + EventTopic.JSON.writeValueAsString(data(topic, r))
+                                + "\n\n");
                     }
                     if (!recs.isEmpty()) {
                         lastWrite = System.currentTimeMillis();
                     } else if (System.currentTimeMillis() - lastWrite > KEEPALIVE_MS) {
-                        write(out, ": keepalive\n\n");
+                        bytes += write(out, ": keepalive\n\n");
                         lastWrite = System.currentTimeMillis();
                     }
                 }
             } catch (IOException gone) {
                 // the browser closed the stream
+            } catch (RuntimeException e) {
+                if (ex.getResponseCode() == -1) {
+                    throw e;
+                }
+                // once the stream has started, closing it is the only answer left; the browser then reconnects
+                if (closed) {
+                    LOG.debug("stream ended by the stop of the bridge topic={} bytes={} cause={}", oneLine(topic), bytes,
+                            causes(e));
+                } else {
+                    LOG.error("stream failed topic={} bytes={} cause={}", oneLine(topic), bytes, causes(e));
+                    LOG.debug("stack trace of the failed stream topic={}", oneLine(topic), e);
+                }
             }
         } finally {
             streams.release();
@@ -204,9 +237,12 @@ public final class EventBridge implements AutoCloseable {
         return n;
     }
 
-    private static void write(OutputStream out, String s) throws IOException {
-        out.write(s.getBytes(StandardCharsets.UTF_8));
+    /** Writes and flushes {@code s}; returns the number of bytes written. */
+    private static int write(OutputStream out, String s) throws IOException {
+        byte[] b = s.getBytes(StandardCharsets.UTF_8);
+        out.write(b);
         out.flush();
+        return b.length;
     }
 
     private static Map<String, String> query(HttpExchange ex) {

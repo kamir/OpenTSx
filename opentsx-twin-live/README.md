@@ -43,8 +43,10 @@ bin/opentsx twin-live demo --port 8090
 - `bridge` serves `GET /v1/topics/{topic}/events?from=latest|earliest|<offset>` as `text/event-stream` and
   `GET /v1/health`. A message has the offset as its id and `{"topic","offset","timestamp","key","value"}` as data.
   A reconnecting browser sends `Last-Event-ID` and continues behind that offset. While KafScale refuses reads, a
-  stream waits 5 s and tries again, and stderr shows `kafscale: the broker refuses reads (<error>); waiting`; after
-  10 minutes of refusals the stream is closed.
+  stream waits 5 s and tries again, and logs
+  `WARN org.opentsx.kafka.Patience - the broker refuses reads; waiting pause=PT5S limit=PT10M cause=<causes>` once and
+  `INFO org.opentsx.kafka.Patience - the broker answers reads again refusedFor=<duration>` when reads work again;
+  after 10 minutes of refusals the stream is closed.
 - `demo` runs both in one process on topics kept in memory, plays every run in 120 seconds unless `--duration` says
   otherwise, and loops. No broker is involved and nothing reaches KafScale.
 
@@ -72,6 +74,38 @@ set, the `OPENTSX_` variable wins. Every command also takes `--conf <key>=<value
 `--duration` takes 1 to 9223372036854775 seconds, `--port` 0 to 65535 (0 for any free port), `--max-streams` 1 or
 more. At start the command logs one line at INFO on stderr with every value it reads and where it came from:
 `starting twin-live demo: opentsx.log.level=info (default), opentsx.twin.scenario=h2-chain (commandLine), ...`.
+
+## Read the output
+
+stdout carries the results: one line per scenario with its number of events and its topic
+(`h2-chain: 9 events -> twin.h2-chain.<run>.events`), and the address of the bridge
+(`event bridge on http://localhost:<port>/v1/topics/<topic>/events, broker <host:port>`, or
+`event bridge on http://localhost:<port> with topics in memory (no broker, nothing reaches KafScale)` for `demo`).
+stderr carries the log lines of slf4j-simple, which `bin/opentsx` and the image add with
+`conf/simplelogger.properties`; the module itself brings no SLF4J binding. At INFO:
+
+```text
+starting twin-live demo: opentsx.log.level=info (default), opentsx.twin.scenario=h2-chain (commandLine), ...
+publisher started scenarios=h2-chain loop=true duration=PT2M
+publisher stopped runs=<number of runs published completely>
+event bridge stopped port=<port>
+```
+
+`duration=none` means all events at once. `publish` and `demo` log `publisher stopped` when the runs are written,
+or at a stop; `bridge` and `demo` log `event bridge stopped` when the bridge closes.
+
+## Stop
+
+On SIGTERM a shutdown hook stops the publisher at its next wait, closes the bridge and the topics, and waits up to
+20 s for that. The bridge stops accepting requests and waits up to 5 s for open streams to close their readers. Two
+WARN lines say what did not finish in time:
+
+```text
+event bridge stopped with streams still open port=<port> open=<n> wait=PT5S
+twin-live did not stop in time wait=PT20S
+```
+
+## Open the Studio
 
 In the Studio: the event topic tab (`#view-topic`), the live source button (`#tp-src-live`), the address of the
 bridge (`#tp-url`) and the connect button (`#tp-connect`). The address can be passed as `?bridge=http://host:8090`.
@@ -104,8 +138,9 @@ An error answer of the bridge is `{"error": "<text>", "type": "<type>"}`, with t
 
 A 500 or a 502 writes one line at ERROR to stderr:
 `request failed method=<method> path=<path> status=<status> cause=<causes>`. The causes name the broker address; the
-answer does not. The stack trace is logged at DEBUG. A stream that fails after it started is closed and logged the
-same way; the browser then reconnects.
+answer does not. The stack trace is logged at DEBUG. A stream that fails after it started has answered 200 already;
+it is closed and logged at ERROR with the bytes it wrote, and the browser then reconnects:
+`stream failed topic=<topic> bytes=<bytes written> cause=<causes>`.
 
 ## Limits
 
@@ -119,5 +154,6 @@ same way; the browser then reconnects.
 
 ## Tests
 
-`EventTopicLiveTest`, `KafkaTopicsTest` and `TwinLiveTest` run without a broker. `KafkaTopicsBrokerTest` needs one:
+`EventTopicLiveTest`, `KafkaTopicsTest` and `TwinLiveTest` run without a broker. `TwinLiveTest` also stops a demo
+with SIGTERM and with its shutdown hook. `KafkaTopicsBrokerTest` needs one:
 `KAFSCALE_BOOTSTRAP=host:9092 mvn -pl opentsx-twin-live test` (KafScale in CI; Apache Kafka works too).

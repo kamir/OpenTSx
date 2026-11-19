@@ -160,6 +160,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   of its status, and logs one WARN per partition with saved offset, log start and count. Records on the control topic
   that are not control records are counted in ignoredControlRecords, and the first one is logged. The first status
   record the broker refuses is logged at WARN, its recovery at INFO.
+- `stats-flink` logs `submitting the statistics job domain=<domain> topics=<topics> sink=<topic> bootstrap=<address>
+  once=<bool> checkpointEvery=<duration> restarts=20 restartDelay=PT15S` before the job runs.
 
 ### Changed
 
@@ -477,6 +479,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   sink and stopped, or a WARN when the 60 s wait runs out.
 - The SaaS backend answers 503 `retrieval server: cannot reach the broker; try again` when the retrieval server
   answers 503 to a DAG deploy, a DAG stop or a generate, instead of 502.
+- `opentsx-twin-live` keeps slf4j-simple in test scope only; `bin/opentsx` and the image add the binding with
+  `conf/simplelogger.properties`, as for the other modules.
+- The Flink `StatsFunction` logs its first undecodable record and first invalid episode per partition at WARN instead
+  of printing them on stderr, and logs `progress subtask=<n> records=<n> undecodable=<n> invalid=<n> statsEmitted=<n>`
+  at INFO once per `--global-every`, also in a subtask whose inputs all fail to decode or are invalid.
+- `DynamicTopologyJob` without a broker, or with an empty one, fails with `bootstrap.servers: not set or empty; set
+  the variable OPENTSX_BOOTSTRAP_SERVERS to <host:port>, the JVM option -Dbootstrap.servers=<host:port>, or the key
+  bootstrap.servers in config/opentsx-default.properties or in the file that OPENTSX_CONFIG_FILE names`; the
+  `pfd-acceptance` profile reads `OPENTSX_BOOTSTRAP_SERVERS` instead of `KAFSCALE_BOOTSTRAP`.
+- The source of the Flink statistics job (`StatsInputDeserializer`) logs the first undecodable record of a partition
+  at WARN with topic, partition and offset instead of printing it on stderr.
 
 ### Removed
 
@@ -990,6 +1003,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   ignoredControlRecords and logged once instead of ending the processor with argument "content" is null, which every
   restart read again. The retrieval server with --kafscale counts such a record on the control or status topic in
   droppedControlRecords or droppedStatusRecords instead of reporting the DAG topics as unreadable for that refresh.
+- `twin-live bridge`, `demo` and `publish --loop` stop on SIGTERM: a shutdown hook stops the publisher at its next
+  wait, closes the bridge and the topics, and waits up to 20 s; the publisher logs `publisher started scenarios=<ids>
+  loop=<bool> duration=<duration|none>` and `publisher stopped runs=<n>`, the bridge logs `event bridge stopped
+  port=<port>`.
+- The event bridge logs a stream that fails after its 200 header as `stream failed topic=<topic> bytes=<bytes written>
+  cause=<causes>` instead of `request failed ... status=200`.
+- `ObservationSchema` of the PFD runtime counts undecodable records and records without a value in the Flink metric
+  `undecodable`, rejects observations with an empty `uri` in the metric `invalid`, and logs the first of each kind at
+  WARN and then at most one count line per minute, instead of one stderr line per bad record and keying observations
+  without a URI as `unknown`.
+- `TimeSeriesObjectSerializer` refuses a null value with its index, for example `yValues[1]: null; expected a number,
+  NaN for a missing value`, instead of writing 0.0, and its wire-format documentation lists what it writes.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

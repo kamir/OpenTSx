@@ -25,6 +25,12 @@ keys of the processor except `opentsx.stats.checkpoint` and `opentsx.log.level`,
 
 At start the job logs one INFO line through log4j2 with every value and its source, for example
 `starting stats-flink: opentsx.domain=wind (default), opentsx.kafscale.bootstrap=127.0.0.1:9 (commandLine), ...`.
+Before the job runs it logs a second INFO line with what it reads and writes and how often a failed task restarts:
+
+```text
+submitting the statistics job domain=wind topics=tsx.wind.episodes.v2 sink=tsx.wind.series-stats.v2 bootstrap=k:9092 once=false checkpointEvery=PT30S restarts=20 restartDelay=PT15S
+```
+
 Exit codes: 0 success, 1 runtime failure, 2 usage or configuration error. A usage or configuration error prints one
 line `opentsx: <message>` on stderr before the Flink graph is built:
 
@@ -64,20 +70,37 @@ Built for what KafScale supports (see the [conformance results](../opentsx-kafsc
   `SeriesStatsLog` does.
 * A failed task restarts from the last checkpoint, up to 20 times with 15 s between attempts. KafScale refuses
   reads for about a minute at a time.
-* An input that does not decode is counted in the metric `undecodable` and dropped. Each subtask prints the first
-  one of each partition on stderr and only counts the later ones. A record without a value gives the reason
-  `no value`:
+* An input that does not decode is counted in the metric `undecodable` and dropped. The source
+  (`StatsInputDeserializer`) counts a record without a value (reason `no value`) and a record without a key that does
+  not decode; each source subtask logs the first one of each partition at WARN and only counts the later ones:
 
   ```text
-  <topic>-<partition> offset <offset>: undecodable record (<reason>); skipped and counted in undecodable, this subtask only counts later undecodable records of this partition
+  WARN org.opentsx.flink.stats.StatsInputDeserializer - undecodable record skipped and counted in undecodable; later ones of this partition are only counted by this subtask topic=<topic> partition=<partition> offset=<offset> cause=<reason>
+  ```
+
+  `StatsFunction` counts an input whose value does not decode; each of its subtasks logs the first one of each
+  partition at WARN and only counts the later ones:
+
+  ```text
+  WARN org.opentsx.flink.stats.StatsFunction - undecodable record skipped and counted in undecodable; later ones of this partition are only counted by this subtask topic=<topic> partition=<partition> offset=<offset> cause=<reason>
   ```
 
 * An episode that decodes but fails `Episodes.validate`, for example a count that differs from the number of values,
-  is counted in the metric `invalid` and dropped. Each subtask prints the first invalid episode of each partition on
-  stderr and only counts the later ones:
+  is counted in the metric `invalid` and dropped. Each subtask of `StatsFunction` logs the first invalid episode of
+  each partition at WARN and only counts the later ones:
 
   ```text
-  <topic>-<partition> offset <offset>: invalid episode (<reason>); skipped and counted in invalid, this subtask only counts later invalid episodes of this partition
+  WARN org.opentsx.flink.stats.StatsFunction - invalid episode skipped and counted in invalid; later ones of this partition are only counted by this subtask topic=<topic> partition=<partition> offset=<offset> cause=<reason>
+  ```
+
+* The job configures no metrics reporter. Each subtask of `StatsFunction` logs its counts at INFO with the first
+  GLOBAL timer of every `--global-every`: the inputs it received, the inputs it counted in `undecodable` and
+  `invalid`, and the `SeriesStats` it emitted, all since the task started. Every input arms the timer, also one that
+  does not decode or is invalid, so a subtask whose inputs are all bad still logs its counts. An interval in which the
+  subtask receives no input logs nothing. With `--global-every PT0S` it logs none:
+
+  ```text
+  INFO org.opentsx.flink.stats.StatsFunction - progress subtask=<n> records=<n> undecodable=<n> invalid=<n> statsEmitted=<n>
   ```
 
 * A failure of the engine fails the task.
@@ -96,7 +119,16 @@ Operation:
 
 ## PFD runtime
 
-`pfd.DynamicTopologyJob` requires an explicit input topic and the existing `bootstrap.servers` configuration key.
+`pfd.DynamicTopologyJob` requires an explicit input topic and the broker address in the configuration key
+`bootstrap.servers` of `ConfigManager` (`opentsx-core`). Set it with the variable `OPENTSX_BOOTSTRAP_SERVERS`, the JVM
+option `-Dbootstrap.servers=<host:port>`, or the key `bootstrap.servers` in `config/opentsx-default.properties` or in
+the file that `OPENTSX_CONFIG_FILE` names. Without it, or with an empty value, the job fails before the Flink graph
+runs:
+
+```text
+bootstrap.servers: not set or empty; set the variable OPENTSX_BOOTSTRAP_SERVERS to <host:port>, the JVM option -Dbootstrap.servers=<host:port>, or the key bootstrap.servers in config/opentsx-default.properties or in the file that OPENTSX_CONFIG_FILE names
+```
+
 It defaults to five-minute event-time windows with ten seconds of allowed out-of-order arrival.
 Append `--window-size <milliseconds>` after the descriptor filename or inline JSON to choose a positive integer
 window size. The default is `300000` milliseconds.
@@ -107,7 +139,8 @@ Invalid values, duplicate options and unknown arguments fail before the Flink gr
 The Kafka source includes `flink-connector-base` at the same pinned Flink version.
 Each `LOG` record is JSON with `label`, `timestamps` and `values`, including windows with fewer than five points.
 The `pfd-acceptance` Maven profile verifies a recorder-exported flow through a real Kafka-compatible broker and
-Flink in the KafScale CI job. See the [PFD contract](../docs/devguide/validation/PFD_VALIDATION_PLAN.md) for
+Flink in the KafScale CI job. It reads the broker address from `OPENTSX_BOOTSTRAP_SERVERS`, the variable the job
+reads. See the [PFD contract](../docs/devguide/validation/PFD_VALIDATION_PLAN.md) for
 prerequisites, commands and result artifacts, and the [classic analytics manual](../docs/user-manual/11-classic-analytics.md).
 
 Components of the PFD runtime:
@@ -115,9 +148,22 @@ Components of the PFD runtime:
 * `functions.TimeSeriesAggregateFunction` collects the observations of a window into a `TimeSeriesObject`.
   The aggregation tests exercise nullable getters with local Observation fixtures. Avro timestamp and value
   fields remain required; the generated setters cannot construct null primitive fields.
-* `serdes.ObservationSchema` decodes 2.x Avro `Observation` records from Kafka.
-* `serdes.TimeSeriesObjectSerializer` and `TimeSeriesObjectTypeInfo` serialize `TimeSeriesObject` state
-  (about 16 bytes per data point).
+* `serdes.ObservationSchema` decodes raw Avro binary 2.x `Observation` records (no Confluent framing) from Kafka. A
+  record that does not decode or has no value is counted in the metric `undecodable` and skipped. An observation with
+  an empty or blank `uri` is counted in the metric `invalid` and skipped, because the job keys the series by its
+  `uri`. Each subtask logs the first skipped record of each kind at WARN, and after that at most one line per minute
+  with the number skipped since the last line, the total and the position of the latest one:
+
+  ```text
+  WARN org.opentsx.flink.serdes.ObservationSchema - undecodable observation skipped topic=<topic> partition=<partition> offset=<offset> cause=<causes>
+  WARN org.opentsx.flink.serdes.ObservationSchema - invalid observation skipped topic=<topic> partition=<partition> offset=<offset> cause=uri: empty; expected the URI of the series
+  WARN org.opentsx.flink.serdes.ObservationSchema - undecodable observations skipped count=<n> total=<n> topic=<topic> partition=<partition> offset=<offset>
+  ```
+
+* `serdes.TimeSeriesObjectSerializer` and `TimeSeriesObjectTypeInfo` serialize `TimeSeriesObject` state: a presence
+  flag, the label, the x values and the y values as a count followed by doubles, and three `DecimalFormat` patterns,
+  about 16 bytes per data point. A null value is refused with its index, for example
+  `yValues[1]: null; expected a number, NaN for a missing value`; NaN is written as it is.
 
 ## Tests
 
@@ -128,10 +174,17 @@ KAFSCALE_BOOTSTRAP=localhost:9092 mvn -pl opentsx-flink-core -am test    # also 
 
 * `StatsJobTest`: the job on a mini cluster gives the same `SeriesStats` as one `StatsEngine` over the same
   episodes; a restore from a checkpoint after half the input counts every value once; GLOBAL timers; undecodable
-  inputs and invalid episodes are counted and reported once per partition; an engine failure fails the task; an
-  alpha outside the sketch range is refused at start; unknown options, `--checkpoint`, a zero `--checkpoint-every`
-  and malformed values exit with 2 and one line; `--help` prints the keys on stdout; the start logs one INFO line
-  through log4j2 that names every value and its source.
+  inputs and invalid episodes are counted and reported once per partition; the first GLOBAL timer of an interval
+  logs one progress line, also in a subtask whose inputs are all bad; an engine failure fails the task; an alpha
+  outside the sketch range is refused at start; unknown options, `--checkpoint`, a zero `--checkpoint-every` and
+  malformed values exit with 2 and one line;
+  `--help` prints the keys on stdout; the start logs one INFO line through log4j2 that names every value and its
+  source, and the submission logs one before the cluster answers.
+* `ObservationSchemaTest`: undecodable records, records without a value and observations without a `uri` are
+  counted and skipped; 100 undecodable records give two log lines.
+* `TimeSeriesObjectSerializerTest`: round trips, copies, and a null value refused with its index.
+* `PFDRuntimeContractTest`, `PFDWindowSizeTest`: the PFD runtime contract, including the message for a missing
+  `bootstrap.servers`.
 * `StatsEngineSerializerTest`: round trip, independent copies, snapshot and compatibility rules.
 * `StatsJobKafScaleTest`: episodes written to KafScale come back as the same `SeriesStats` on the series-stats
   topic. It runs in the KafScale CI job.

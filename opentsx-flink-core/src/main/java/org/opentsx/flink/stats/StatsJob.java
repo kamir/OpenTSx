@@ -18,6 +18,7 @@ import org.opentsx.conf.OpenTsxConfException;
 import org.opentsx.conf.Registry;
 import org.opentsx.kafka.KafScaleClients;
 import org.opentsx.kafka.TopicLayout;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintStream;
@@ -49,6 +50,9 @@ public final class StatsJob {
                           Duration globalEvery, Duration checkpointEvery) {
     }
 
+    private static final Logger LOG = LoggerFactory.getLogger(StatsJob.class);
+    private static final int RESTARTS = 20;
+    private static final Duration RESTART_DELAY = Duration.ofSeconds(15);
     static final String COMMAND = "stats-flink";
     static final String WRITE_FAILED = "stdout: cannot write the output; check that standard output is open and not full";
 
@@ -92,7 +96,7 @@ public final class StatsJob {
             execute(o);
             return 0;
         } catch (Exception e) {
-            LoggerFactory.getLogger(StatsJob.class).debug("stats-flink failed", e);
+            LOG.debug("stats-flink failed", e);
             err.print("opentsx: " + causes(e) + "\n");
             err.flush();
             return 1;
@@ -101,7 +105,7 @@ public final class StatsJob {
 
     static Options start(OpenTsxConf.Loaded loaded) {
         Options o = options(loaded.conf());
-        LoggerFactory.getLogger(StatsJob.class).info(loaded.startLine());
+        LOG.info(loaded.startLine());
         return o;
     }
 
@@ -110,13 +114,16 @@ public final class StatsJob {
         Configuration conf = new Configuration();
         // KafScale refuses reads for about a minute at a time; a failed task restarts from the last checkpoint
         conf.set(RestartStrategyOptions.RESTART_STRATEGY, "fixed-delay");
-        conf.set(RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_ATTEMPTS, 20);
-        conf.set(RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_DELAY, Duration.ofSeconds(15));
+        conf.set(RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_ATTEMPTS, RESTARTS);
+        conf.set(RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_DELAY, RESTART_DELAY);
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(conf);
         env.enableCheckpointing(o.checkpointEvery().toMillis());
         DataStream<StatsInput> inputs = env.fromSource(source(o), WatermarkStrategy.noWatermarks(), "series inputs")
                 .uid("series-inputs");
         statistics(inputs, o.spec(), o.globalEvery()).sinkTo(sink(o)).name("series-stats").uid("series-stats");
+        LOG.info("submitting the statistics job domain={} topics={} sink={} bootstrap={} once={} checkpointEvery={} restarts={}"
+                        + " restartDelay={}", o.layout().domain(), String.join(",", topics(o)), o.layout().seriesStats(),
+                o.bootstrap(), o.once(), o.checkpointEvery(), RESTARTS, RESTART_DELAY);
         env.execute("opentsx statistics " + o.layout().domain());
     }
 
@@ -127,9 +134,14 @@ public final class StatsJob {
                 .name("statistics").uid("statistics");
     }
 
+    private static List<String> topics(Options o) {
+        TopicLayout layout = o.layout();
+        return o.observations() ? List.of(layout.episodes(), layout.observations()) : List.of(layout.episodes());
+    }
+
     static KafkaSource<StatsInput> source(Options o) {
         TopicLayout layout = o.layout();
-        List<String> topics = o.observations() ? List.of(layout.episodes(), layout.observations()) : List.of(layout.episodes());
+        List<String> topics = topics(o);
         KafkaSourceBuilder<StatsInput> b = KafkaSource.<StatsInput>builder()
                 .setBootstrapServers(o.bootstrap())
                 .setProperties(KafScaleClients.consumerProps(o.bootstrap()))

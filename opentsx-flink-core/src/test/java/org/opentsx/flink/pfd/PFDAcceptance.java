@@ -28,9 +28,10 @@ import java.util.concurrent.TimeUnit;
 
 public final class PFDAcceptance {
     public static void main(String[] args) throws Exception {
-        String brokers = System.getenv("KAFSCALE_BOOTSTRAP");
+        String brokers = System.getenv("OPENTSX_BOOTSTRAP_SERVERS");
         if (brokers == null || brokers.isBlank()) {
-            throw new IllegalArgumentException("KAFSCALE_BOOTSTRAP is required for PFD acceptance");
+            throw new IllegalArgumentException("OPENTSX_BOOTSTRAP_SERVERS: not set or empty; set it to the host:port of the broker"
+                    + " for the PFD acceptance, the job reads the same variable");
         }
         Path directory = Path.of("target", "pfd-acceptance").toAbsolutePath();
         Files.createDirectories(directory);
@@ -66,8 +67,7 @@ public final class PFDAcceptance {
         recorder.saveToFile(descriptor.toString());
 
         String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();
-        Process process = new ProcessBuilder(java, "-XX:ActiveProcessorCount=1",
-                "-Dbootstrap.servers=" + brokers, "-cp", System.getProperty("java.class.path"),
+        Process process = new ProcessBuilder(java, "-XX:ActiveProcessorCount=1", "-cp", System.getProperty("java.class.path"),
                 DynamicTopologyJob.class.getName(), descriptor.toString()).redirectErrorStream(true).start();
         var reader = Executors.newSingleThreadExecutor();
         try {

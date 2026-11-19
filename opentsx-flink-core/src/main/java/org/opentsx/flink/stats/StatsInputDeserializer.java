@@ -10,6 +10,8 @@ import org.apache.kafka.common.TopicPartition;
 import org.opentsx.model.OpenTsxAvro;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.model.v2.Observation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
@@ -18,11 +20,12 @@ import java.util.Set;
 /**
  * Turns a record of the episodes or observations topic into a {@link StatsInput}. The series id is the record key,
  * as {@code BucketWriter} writes it; a record without key is decoded to find it. Records that cannot be decoded are
- * counted in the metric {@code undecodable} and dropped; the first one per subtask and partition is reported on stderr.
+ * counted in the metric {@code undecodable} and dropped; the first one per subtask and partition is logged at WARN.
  */
 public final class StatsInputDeserializer implements KafkaRecordDeserializationSchema<StatsInput> {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger LOG = LoggerFactory.getLogger(StatsInputDeserializer.class);
 
     private final String episodesTopic;
 
@@ -65,8 +68,9 @@ public final class StatsInputDeserializer implements KafkaRecordDeserializationS
         undecodable.inc();
         TopicPartition tp = new TopicPartition(record.topic(), record.partition());
         if (undecodableReported.add(tp)) {
-            System.err.println(tp + " offset " + record.offset() + ": undecodable record (" + reason + "); skipped and"
-                    + " counted in undecodable, this subtask only counts later undecodable records of this partition");
+            LOG.warn("undecodable record skipped and counted in undecodable; later ones of this partition are only counted"
+                    + " by this subtask topic={} partition={} offset={} cause={}", record.topic(), record.partition(),
+                    record.offset(), reason);
         }
     }
 

@@ -89,7 +89,7 @@ public class DynamicTopologyJob {
 
         // 2. Initial Aggregation (Observation -> TimeSeriesObject)
         DataStream<TimeSeriesObject> timeSeriesStream = sourceStream
-                .keyBy(obs -> obs.getUri() != null ? obs.getUri().toString() : "unknown")
+                .keyBy(obs -> obs.getUri().toString())
                 .window(TumblingEventTimeWindows.of(Time.milliseconds(windowSizeMs)))
                 .aggregate(new TimeSeriesAggregateFunction())
                 .returns(new TimeSeriesObjectTypeInfo());
@@ -142,7 +142,12 @@ public class DynamicTopologyJob {
                                                         long outOfOrdernessMs) {
         if ("KAFKA".equalsIgnoreCase(input.type)) {
             String brokers = ConfigManager.getInstance().getString("bootstrap.servers", null);
-            PFDValidation.requireText(brokers, "bootstrap.servers");
+            if (brokers == null || brokers.isBlank()) {
+                throw new IllegalArgumentException("bootstrap.servers: not set or empty; set the variable"
+                        + " OPENTSX_BOOTSTRAP_SERVERS to <host:port>,"
+                        + " the JVM option -Dbootstrap.servers=<host:port>, or the key bootstrap.servers in"
+                        + " config/opentsx-default.properties or in the file that OPENTSX_CONFIG_FILE names");
+            }
             KafkaSource<Observation> source = KafkaSource.<Observation>builder()
                     .setBootstrapServers(brokers)
                     .setTopics(input.topic)

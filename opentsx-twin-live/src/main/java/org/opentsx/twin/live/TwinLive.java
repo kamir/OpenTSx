@@ -24,6 +24,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -37,6 +41,8 @@ import java.util.function.Function;
  * twin-live bridge    serves event topics to browsers as server-sent events
  * twin-live demo      both in one process on topics kept in memory: no broker, nothing is written to KafScale
  * </pre>
+ * A shutdown hook (SIGTERM) stops the publisher at its next wait, closes the bridge and the topics, and waits up to
+ * {@link #HOOK_WAIT} for that.
  */
 public final class TwinLive {
 
@@ -54,6 +60,7 @@ public final class TwinLive {
     /** The longest duration whose milliseconds fit a long. */
     static final long MAX_SECONDS = Long.MAX_VALUE / 1000;
     static final String WRITE_FAILED = "stdout: cannot write the output; check that standard output is open and not full";
+    static final Duration HOOK_WAIT = Duration.ofSeconds(20);
 
     /** A checked command: no bootstrap for demo, no duration when publish writes a run at once. */
     record Plan(String command, String bootstrap, List<StudioScenario> scenarios, Duration duration, boolean loop, int port,
@@ -66,12 +73,15 @@ public final class TwinLive {
     public static void main(String[] args) {
         PrintStream out = new PrintStream(new FileOutputStream(FileDescriptor.out), true, StandardCharsets.UTF_8);
         PrintStream err = new PrintStream(new FileOutputStream(FileDescriptor.err), true, StandardCharsets.UTF_8);
-        System.exit(run(List.of(args), System.getenv(), out, err, KafkaTopics::new));
+        System.exit(run(List.of(args), System.getenv(), out, err, KafkaTopics::new, Runtime.getRuntime()::addShutdownHook));
     }
 
-    /** {@code args} without the command word, as bin/opentsx passes them; {@code brokers} opens the topics of a broker. */
+    /**
+     * {@code args} without the command word, as bin/opentsx passes them; {@code brokers} opens the topics of a broker;
+     * {@code hooks} registers the shutdown hook.
+     */
     static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err,
-                   Function<String, Topics> brokers) {
+                   Function<String, Topics> brokers, Consumer<Thread> hooks) {
         List<String> argv = new ArrayList<>(args.size() + 1);
         argv.add(COMMAND);
         argv.addAll(args);
@@ -98,26 +108,30 @@ public final class TwinLive {
         }
         Logger log = LoggerFactory.getLogger(TwinLive.class);
         log.info(loaded.startLine());
+        CountDownLatch stop = new CountDownLatch(1);
+        CountDownLatch ended = new CountDownLatch(1);
+        hooks.accept(new Thread(stopHook(stop, ended, HOOK_WAIT, log), "twin-live-stop"));
         try {
             switch (plan.command()) {
                 case PUBLISH -> {
                     try (Topics topics = brokers.apply(plan.bootstrap())) {
-                        publish(topics, plan, out);
+                        publish(topics, plan, out, stop, log);
                     }
                 }
                 case BRIDGE -> {
-                    EventBridge bridge = new EventBridge(brokers.apply(plan.bootstrap()), plan.port(), plan.allowOrigin(),
-                            plan.maxStreams());
-                    out.println("event bridge on http://localhost:" + bridge.port() + "/v1/topics/<topic>/events, broker "
-                            + plan.bootstrap());
-                    Thread.currentThread().join();
+                    try (Topics topics = brokers.apply(plan.bootstrap());
+                         EventBridge bridge = new EventBridge(topics, plan.port(), plan.allowOrigin(), plan.maxStreams())) {
+                        out.println("event bridge on http://localhost:" + bridge.port() + "/v1/topics/<topic>/events, broker "
+                                + plan.bootstrap());
+                        stop.await();
+                    }
                 }
                 default -> {
                     Topics topics = new MemoryTopics();
                     try (EventBridge bridge = new EventBridge(topics, plan.port(), plan.allowOrigin(), plan.maxStreams())) {
                         out.println("event bridge on http://localhost:" + bridge.port()
                                 + " with topics in memory (no broker, nothing reaches KafScale)");
-                        publish(topics, plan, out);
+                        publish(topics, plan, out, stop, log);
                     }
                 }
             }
@@ -126,8 +140,24 @@ public final class TwinLive {
             return failed(e, err);
         } catch (IOException | RuntimeException e) {
             return failed(e, err);
+        } finally {
+            ended.countDown();
         }
         return written(out, err);
+    }
+
+    /** The shutdown hook: asks the command to stop and waits at most {@code wait} for it to close what it opened. */
+    static Runnable stopHook(CountDownLatch stop, CountDownLatch ended, Duration wait, Logger log) {
+        return () -> {
+            stop.countDown();
+            try {
+                if (!ended.await(wait.toMillis(), TimeUnit.MILLISECONDS)) {
+                    log.warn("twin-live did not stop in time wait={}", wait);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        };
     }
 
     /** Checks every value the command reads and selects the scenarios; opens nothing. */
@@ -174,7 +204,9 @@ public final class TwinLive {
         return new Plan(command, bootstrap, scenarios, duration, loop, port, allowOrigin, maxStreams);
     }
 
-    private static void publish(Topics topics, Plan plan, PrintStream out) throws InterruptedException {
+    /** Publishes the runs until they are written, or with a loop until {@code stop} opens; a stop ends every wait. */
+    private static void publish(Topics topics, Plan plan, PrintStream out, CountDownLatch stop, Logger log)
+            throws InterruptedException {
         Map<StudioScenario, RunResult> runs = new LinkedHashMap<>();
         for (StudioScenario s : plan.scenarios()) {
             RunResult run = EventPublisher.referenceRun(s);
@@ -182,13 +214,23 @@ public final class TwinLive {
             out.println(s.id() + ": " + run.events().size() + " events -> "
                     + TopicLayout.twinEvents(s.plan().twin(), run.runId()));
         }
+        log.info("publisher started scenarios={} loop={} duration={}",
+                String.join(",", plan.scenarios().stream().map(StudioScenario::id).toList()), plan.loop(),
+                plan.duration() == null ? "none" : plan.duration());
+        EventPublisher.Sleeper sleeper = millis -> {
+            if (stop.await(millis, TimeUnit.MILLISECONDS)) {
+                throw new InterruptedException("stopping");
+            }
+        };
+        AtomicInteger published = new AtomicInteger();
         do {
             List<Thread> threads = new ArrayList<>();
             List<Throwable> failures = Collections.synchronizedList(new ArrayList<>());
             runs.forEach((s, run) -> {
                 Thread t = new Thread(() -> {
                     try {
-                        new EventPublisher(topics).publish(s.plan(), run, plan.duration());
+                        new EventPublisher(topics, sleeper).publish(s.plan(), run, plan.duration());
+                        published.incrementAndGet();
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     } catch (RuntimeException e) {
@@ -204,10 +246,8 @@ public final class TwinLive {
             if (!failures.isEmpty()) {
                 throw new IllegalStateException("publishing failed", failures.get(0));
             }
-            if (plan.loop() && plan.duration() == null) {
-                Thread.sleep(1000);
-            }
-        } while (plan.loop());
+        } while (plan.loop() && !stop.await(plan.duration() == null ? 1000 : 0, TimeUnit.MILLISECONDS));
+        log.info("publisher stopped runs={}", published.get());
     }
 
     private static int failed(Exception e, PrintStream err) {

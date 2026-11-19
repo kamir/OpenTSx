@@ -11,33 +11,20 @@ import java.io.IOException;
 import java.util.Vector;
 
 /**
- * Efficient serializer for OpenTSx {@link TimeSeriesObject} in Apache Flink.
+ * Serializer of a {@link TimeSeriesObject} for Flink state, network transfer and checkpoints.
  *
- * This serializer handles the conversion of TimeSeriesObject instances to/from
- * binary format
- * for Flink's state backends, network transfers, and checkpointing.
- *
- * <h2>Serialization Format:</h2>
- * 
  * <pre>
- * [label (UTF-8 string)]
- * [description (UTF-8 string or null)]
- * [xValues.size (int)]
- * [xValues data (size * double)]
- * [yValues.size (int)]
- * [yValues data (size * double)]
- * [metadata fields...]
+ * [present (boolean)]                  false: a null series, nothing follows
+ * [has label (boolean)] [label (UTF)]  the label only when present
+ * [xValues size (int)] [size doubles]  0 for null or empty
+ * [yValues size (int)] [size doubles]  0 for null or empty
+ * [x format (UTF)] [y format (UTF)] [stat format (UTF)]   DecimalFormat patterns
  * </pre>
  *
- * <h2>Performance Characteristics:</h2>
- * <ul>
- * <li>Time Complexity: O(n) where n = number of data points</li>
- * <li>Space: ~16 bytes per point (2 doubles) + metadata overhead</li>
- * <li>Works efficiently with RocksDB for large state</li>
- * </ul>
+ * About 16 bytes per point (two doubles) plus the label and the patterns. A null value in {@code xValues} or
+ * {@code yValues} is refused with its index; NaN is written as it is. The stat format is written but not read back.
  *
  * @see TimeSeriesObjectTypeInfo
- * @see TimeSeriesObject
  */
 public class TimeSeriesObjectSerializer extends TypeSerializer<TimeSeriesObject> {
 
@@ -112,25 +99,8 @@ public class TimeSeriesObjectSerializer extends TypeSerializer<TimeSeriesObject>
             target.writeBoolean(false);
         }
 
-        // Serialize xValues
-        if (record.xValues != null) {
-            target.writeInt(record.xValues.size());
-            for (Object val : record.xValues) {
-                target.writeDouble(val != null ? (Double) val : 0.0);
-            }
-        } else {
-            target.writeInt(0);
-        }
-
-        // Serialize yValues
-        if (record.yValues != null) {
-            target.writeInt(record.yValues.size());
-            for (Object val : record.yValues) {
-                target.writeDouble(val != null ? (Double) val : 0.0);
-            }
-        } else {
-            target.writeInt(0);
-        }
+        writeValues(record.xValues, "xValues", target);
+        writeValues(record.yValues, "yValues", target);
 
         // Copy metadata
         // We serialize the patterns of the DecimalFormats
@@ -141,6 +111,21 @@ public class TimeSeriesObjectSerializer extends TypeSerializer<TimeSeriesObject>
         target.writeUTF(dfx);
         target.writeUTF(dfy);
         target.writeUTF(dfstat);
+    }
+
+    private static void writeValues(Vector<?> values, String name, DataOutputView target) throws IOException {
+        if (values == null) {
+            target.writeInt(0);
+            return;
+        }
+        target.writeInt(values.size());
+        for (int i = 0; i < values.size(); i++) {
+            Object value = values.get(i);
+            if (value == null) {
+                throw new IllegalArgumentException(name + "[" + i + "]: null; expected a number, NaN for a missing value");
+            }
+            target.writeDouble((Double) value);
+        }
     }
 
     @Override

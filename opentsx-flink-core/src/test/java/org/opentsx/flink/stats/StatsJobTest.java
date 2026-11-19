@@ -1,5 +1,6 @@
 package org.opentsx.flink.stats;
 
+import org.apache.flink.api.common.JobExecutionResult;
 import org.apache.flink.api.common.functions.util.ListCollector;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
@@ -19,6 +20,7 @@ import org.apache.flink.runtime.state.VoidNamespace;
 import org.apache.flink.runtime.state.VoidNamespaceSerializer;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.graph.StreamGraph;
 import org.apache.flink.streaming.api.operators.KeyedProcessOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.streaming.util.KeyedOneInputStreamOperatorTestHarness;
@@ -156,20 +158,20 @@ class StatsJobTest {
     @Test
     void onlyTheFirstUndecodableInputOfAPartitionIsReported() throws Exception {
         InterceptingOperatorMetricGroup metrics = new InterceptingOperatorMetricGroup();
-        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        List<String> logged = new ArrayList<>();
 
-        List<StatsRecord> out = runCapturingStderr(List.of(new StatsInput("x", true, new byte[]{1, 2, 3}, "tsx.unit.episodes.v2", 1, 4),
-                new StatsInput("x", true, new byte[]{4, 5, 6}, "tsx.unit.episodes.v2", 1, 5)), metrics, err);
+        List<StatsRecord> out = runCapturingLog(List.of(new StatsInput("x", true, new byte[]{1, 2, 3}, "tsx.unit.episodes.v2", 1, 4),
+                new StatsInput("x", true, new byte[]{4, 5, 6}, "tsx.unit.episodes.v2", 1, 5)), metrics, logged);
 
         assertTrue(out.isEmpty());
         assertEquals(2, ((Counter) metrics.get("undecodable")).getCount());
-        assertEquals("tsx.unit.episodes.v2-1 offset 4: undecodable record (unrecognised payload framing); skipped and counted"
-                + " in undecodable, this subtask only counts later undecodable records of this partition"
-                + System.lineSeparator(), err.toString(StandardCharsets.UTF_8));
+        assertEquals(List.of("WARN " + StatsFunction.class.getName() + " - undecodable record skipped and counted in undecodable;"
+                + " later ones of this partition are only counted by this subtask topic=tsx.unit.episodes.v2 partition=1"
+                + " offset=4 cause=unrecognised payload framing"), logged);
     }
 
     @Test
-    void theDeserializerReportsOnlyTheFirstUndecodableRecordOfAPartition() {
+    void theDeserializerLogsOnlyTheFirstUndecodableRecordOfAPartition() throws Exception {
         StatsInputDeserializer deserializer = new StatsInputDeserializer("tsx.unit.episodes.v2");
         InterceptingOperatorMetricGroup metrics = new InterceptingOperatorMetricGroup();
         deserializer.open(new DeserializationSchema.InitializationContext() {
@@ -184,23 +186,18 @@ class StatsJobTest {
             }
         });
         List<StatsInput> inputs = new ArrayList<>();
-        ByteArrayOutputStream err = new ByteArrayOutputStream();
-        PrintStream stderr = System.err;
-        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
-        try {
+        List<String> logged = log(StatsInputDeserializer.class, () -> {
             deserializer.deserialize(record(2, 10, new byte[]{1, 2, 3}), new ListCollector<>(inputs));
             deserializer.deserialize(record(2, 11, null), new ListCollector<>(inputs));
             deserializer.deserialize(record(3, 12, null), new ListCollector<>(inputs));
-        } finally {
-            System.setErr(stderr);
-        }
+        });
 
         assertTrue(inputs.isEmpty());
         assertEquals(3, ((Counter) metrics.get("undecodable")).getCount());
-        String later = "; skipped and counted in undecodable, this subtask only counts later undecodable records of this partition";
-        assertEquals(List.of("tsx.unit.episodes.v2-2 offset 10: undecodable record (unrecognised payload framing)" + later,
-                        "tsx.unit.episodes.v2-3 offset 12: undecodable record (no value)" + later),
-                err.toString(StandardCharsets.UTF_8).lines().toList());
+        String line = "WARN org.opentsx.flink.stats.StatsInputDeserializer - undecodable record skipped and counted in"
+                + " undecodable; later ones of this partition are only counted by this subtask topic=tsx.unit.episodes.v2";
+        assertEquals(List.of(line + " partition=2 offset=10 cause=unrecognised payload framing",
+                line + " partition=3 offset=12 cause=no value"), logged);
     }
 
     @Test
@@ -228,30 +225,17 @@ class StatsJobTest {
         deserializer.deserialize(record(2, 41, avro.encode(countMismatch(other, "bad-1"))), collector);
         deserializer.deserialize(record(2, 42, avro.encode(countMismatch(other, "bad-2"))), collector);
         InterceptingOperatorMetricGroup metrics = new InterceptingOperatorMetricGroup();
-        ByteArrayOutputStream err = new ByteArrayOutputStream();
-        PrintStream stderr = System.err;
-        List<StatsRecord> out;
-        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
-        try (MockEnvironment env = environment(metrics); var h = harness(env)) {
-            h.open();
-            for (StatsInput in : inputs) {
-                h.processElement(new StreamRecord<>(in));
-            }
-            h.processWatermark(Long.MAX_VALUE);
-            out = h.extractOutputValues();
-        } finally {
-            System.setErr(stderr);
-        }
+        List<String> logged = new ArrayList<>();
+        List<StatsRecord> out = runCapturingLog(inputs, metrics, logged);
 
         Set<String> series = StatsData.decode(out).stream().map(s -> s.getSeriesId().toString()).collect(Collectors.toSet());
         assertEquals(Set.of(valid.getSeries().getSeriesId()), series, "the inconsistent episodes produce no statistics");
         assertEquals(0, ((Counter) metrics.get("undecodable")).getCount());
         assertNotNull(metrics.get("invalid"), "the function registers the metric invalid");
         assertEquals(2, ((Counter) metrics.get("invalid")).getCount());
-        assertEquals("tsx.unit.episodes.v2-2 offset 41: invalid episode (count: \"3\" differs from the length 2 of values;"
-                + " expected the number of values); skipped and counted in invalid, this subtask only counts later invalid"
-                + " episodes of this partition" + System.lineSeparator(),
-                err.toString(StandardCharsets.UTF_8));
+        assertEquals(List.of("WARN " + StatsFunction.class.getName() + " - invalid episode skipped and counted in invalid; later"
+                + " ones of this partition are only counted by this subtask topic=tsx.unit.episodes.v2 partition=2 offset=41"
+                + " cause=count: \"3\" differs from the length 2 of values; expected the number of values"), logged);
     }
 
     @Test
@@ -261,32 +245,148 @@ class StatsJobTest {
         OpenTsxAvro avro = new OpenTsxAvro();
         String id = valid.getSeries().getSeriesId();
         InterceptingOperatorMetricGroup metrics = new InterceptingOperatorMetricGroup();
-        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        List<String> logged = new ArrayList<>();
 
-        List<StatsRecord> out = runCapturingStderr(List.of(new StatsInput(id, true, avro.encode(valid), "tsx.unit.episodes.v2", 3, 7),
-                new StatsInput(id, true, avro.encode(missing), "tsx.unit.episodes.v2", 3, 8)), metrics, err);
+        List<StatsRecord> out = runCapturingLog(List.of(new StatsInput(id, true, avro.encode(valid), "tsx.unit.episodes.v2", 3, 7),
+                new StatsInput(id, true, avro.encode(missing), "tsx.unit.episodes.v2", 3, 8)), metrics, logged);
 
         assertEquals(StatsData.direct(List.of(valid), SPEC), StatsData.decode(out));
         assertEquals(1, ((Counter) metrics.get("invalid")).getCount());
-        assertEquals("tsx.unit.episodes.v2-3 offset 8: invalid episode (intervalMicros: missing in a REGULAR episode; expected"
-                + " a positive number of microseconds); skipped and counted in invalid, this subtask only counts later invalid"
-                + " episodes of this partition" + System.lineSeparator(), err.toString(StandardCharsets.UTF_8));
+        assertEquals(List.of("WARN " + StatsFunction.class.getName() + " - invalid episode skipped and counted in invalid; later"
+                + " ones of this partition are only counted by this subtask topic=tsx.unit.episodes.v2 partition=3 offset=8"
+                + " cause=intervalMicros: missing in a REGULAR episode; expected a positive number of microseconds"), logged);
     }
 
-    private static List<StatsRecord> runCapturingStderr(List<StatsInput> inputs, InterceptingOperatorMetricGroup metrics,
-                                                        ByteArrayOutputStream err) throws Exception {
-        PrintStream stderr = System.err;
-        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+    @Test
+    void theGlobalTimerLogsTheRunningCountsOncePerInterval() throws Exception {
+        List<Episode> episodes = StatsData.episodes("progress", Duration.ofMinutes(10), 1);
+        Episode a = episodes.get(0);
+        Episode b = episodes.stream().filter(e -> !e.getSeries().getSeriesId().equals(a.getSeries().getSeriesId()))
+                .findFirst().orElseThrow();
+        OpenTsxAvro avro = new OpenTsxAvro();
+        String topic = "tsx.unit.episodes.v2";
+        InterceptingOperatorMetricGroup metrics = new InterceptingOperatorMetricGroup();
+        List<String> logged;
+        try (MockEnvironment env = environment(metrics); var h = harness(env, 60_000)) {
+            h.open();
+            h.setProcessingTime(0);
+            logged = log(StatsFunction.class, () -> {
+                h.processElement(new StreamRecord<>(new StatsInput(a.getSeries().getSeriesId(), true, avro.encode(a), topic, 0, 1)));
+                h.processElement(new StreamRecord<>(new StatsInput(b.getSeries().getSeriesId(), true, avro.encode(b), topic, 0, 2)));
+                h.processElement(new StreamRecord<>(new StatsInput(b.getSeries().getSeriesId(), true,
+                        avro.encode(countMismatch(b, "bad")), topic, 0, 3)));
+                h.setProcessingTime(60_000);
+            });
+        }
+
+        List<String> progress = logged.stream().filter(l -> l.startsWith("INFO ")).toList();
+        assertEquals(1, progress.size(), "two series fire their GLOBAL timer in the same interval: " + logged);
+        assertTrue(progress.get(0).startsWith("INFO " + StatsFunction.class.getName() + " - progress subtask=0 records=3"
+                + " undecodable=0 invalid=1 statsEmitted="), progress.get(0));
+    }
+
+    @Test
+    void aSubtaskWithOnlyBadInputsStillLogsItsCounts() throws Exception {
+        Episode a = StatsData.episodes("bad-only", Duration.ofMinutes(10), 1).get(0);
+        String series = a.getSeries().getSeriesId();
+        OpenTsxAvro avro = new OpenTsxAvro();
+        String topic = "tsx.unit.episodes.v2";
+        InterceptingOperatorMetricGroup metrics = new InterceptingOperatorMetricGroup();
+        List<String> logged;
+        try (MockEnvironment env = environment(metrics); var h = harness(env, 60_000)) {
+            h.open();
+            h.setProcessingTime(0);
+            logged = log(StatsFunction.class, () -> {
+                h.processElement(new StreamRecord<>(new StatsInput(series, true, avro.encode(countMismatch(a, "bad-1")), topic, 0, 1)));
+                h.processElement(new StreamRecord<>(new StatsInput("x", true, new byte[]{1, 2, 3}, topic, 0, 2)));
+                h.processElement(new StreamRecord<>(new StatsInput(series, true, avro.encode(countMismatch(a, "bad-2")), topic, 0, 3)));
+                h.setProcessingTime(60_000);
+                h.processElement(new StreamRecord<>(new StatsInput("x", true, new byte[]{4, 5, 6}, topic, 0, 4)));
+                h.setProcessingTime(120_000);
+            });
+            assertTrue(h.extractOutputValues().isEmpty());
+        }
+
+        String progress = "INFO " + StatsFunction.class.getName() + " - progress subtask=0";
+        assertEquals(List.of(progress + " records=3 undecodable=1 invalid=2 statsEmitted=0",
+                progress + " records=4 undecodable=2 invalid=2 statsEmitted=0"),
+                logged.stream().filter(l -> l.startsWith("INFO ")).toList(), String.join("\n", logged));
+    }
+
+    @Test
+    void theJobLogsItsStartAndItsSubmissionBeforeTheClusterAnswers() throws Exception {
+        Exit[] exit = new Exit[1];
+        List<String> logged;
+        RefusingEnvironment.setAsContext();
+        try {
+            logged = log(StatsJob.class, () -> exit[0] = run("--kafscale", "k:9092"));
+        } finally {
+            RefusingEnvironment.unsetAsContext();
+        }
+
+        assertEquals(new Exit(1, "", "opentsx: the cluster refuses the job\n"), exit[0]);
+        assertEquals(2, logged.size(), String.join("\n", logged));
+        assertTrue(logged.get(0).startsWith("INFO " + StatsJob.class.getName() + " - starting stats-flink: "), logged.get(0));
+        assertEquals("INFO " + StatsJob.class.getName() + " - submitting the statistics job domain=wind"
+                + " topics=tsx.wind.episodes.v2 sink=tsx.wind.series-stats.v2 bootstrap=k:9092 once=false checkpointEvery=PT30S"
+                + " restarts=20 restartDelay=PT15S", logged.get(1));
+    }
+
+    /** An environment that refuses every job, as a cluster that cannot be reached would. */
+    private static final class RefusingEnvironment extends StreamExecutionEnvironment {
+
+        @Override
+        public JobExecutionResult execute(StreamGraph streamGraph) {
+            throw new IllegalStateException("the cluster refuses the job");
+        }
+
+        static void setAsContext() {
+            initializeContextEnvironment(configuration -> new RefusingEnvironment());
+        }
+
+        static void unsetAsContext() {
+            resetContextEnvironment();
+        }
+    }
+
+    private interface Body {
+        void run() throws Exception;
+    }
+
+    /** The lines that the logger of {@code type} writes while {@code body} runs, as {@code <level> <logger> - <message>}. */
+    private static List<String> log(Class<?> type, Body body) throws Exception {
+        Logger logger = (Logger) LogManager.getLogger(type);
+        StringWriter logged = new StringWriter();
+        WriterAppender appender = WriterAppender.newBuilder().setName("captured").setTarget(logged)
+                .setLayout(PatternLayout.newBuilder().withPattern("%p %c - %m%n").build()).build();
+        appender.start();
+        Level level = logger.getLevel();
+        logger.addAppender(appender);
+        logger.setLevel(Level.INFO);
+        try {
+            body.run();
+        } finally {
+            logger.removeAppender(appender);
+            logger.setLevel(level);
+            appender.stop();
+        }
+        return logged.toString().lines().toList();
+    }
+
+    private static List<StatsRecord> runCapturingLog(List<StatsInput> inputs, InterceptingOperatorMetricGroup metrics,
+                                                     List<String> logged) throws Exception {
+        List<StatsRecord> out = new ArrayList<>();
         try (MockEnvironment env = environment(metrics); var h = harness(env)) {
             h.open();
-            for (StatsInput in : inputs) {
-                h.processElement(new StreamRecord<>(in));
-            }
-            h.processWatermark(Long.MAX_VALUE);
-            return h.extractOutputValues();
-        } finally {
-            System.setErr(stderr);
+            logged.addAll(log(StatsFunction.class, () -> {
+                for (StatsInput in : inputs) {
+                    h.processElement(new StreamRecord<>(in));
+                }
+                h.processWatermark(Long.MAX_VALUE);
+            }));
+            out.addAll(h.extractOutputValues());
         }
+        return out;
     }
 
     private static ConsumerRecord<byte[], byte[]> record(int partition, long offset, byte[] value) {
@@ -452,7 +552,13 @@ class StatsJobTest {
 
     private static KeyedOneInputStreamOperatorTestHarness<String, StatsInput, StatsRecord> harness(MockEnvironment env)
             throws Exception {
-        return new KeyedOneInputStreamOperatorTestHarness<>(new KeyedProcessOperator<>(new StatsFunction(SPEC, 0)),
+        return harness(env, 0);
+    }
+
+    private static KeyedOneInputStreamOperatorTestHarness<String, StatsInput, StatsRecord> harness(MockEnvironment env,
+                                                                                                  long globalEveryMs)
+            throws Exception {
+        return new KeyedOneInputStreamOperatorTestHarness<>(new KeyedProcessOperator<>(new StatsFunction(SPEC, globalEveryMs)),
                 StatsInput::getSeriesId, Types.STRING, env);
     }
 

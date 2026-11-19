@@ -151,6 +151,24 @@ class PFDRuntimeContractTest {
     }
 
     @Test
+    void aMissingOrEmptyBrokerNamesTheVariableAndTheFileThatSetIt() {
+        String original = System.getProperty("bootstrap.servers");
+        try {
+            System.setProperty("bootstrap.servers", " ");
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> invoke("buildSource",
+                    new Class<?>[]{StreamExecutionEnvironment.class, PFDDefinition.PFDInput.class, long.class},
+                    StreamExecutionEnvironment.getExecutionEnvironment(), flow().input, 10000L));
+            assertEquals("bootstrap.servers: not set or empty; set the variable OPENTSX_BOOTSTRAP_SERVERS to <host:port>,"
+                    + " the JVM option"
+                    + " -Dbootstrap.servers=<host:port>, or the key bootstrap.servers in config/opentsx-default.properties"
+                    + " or in the file that OPENTSX_CONFIG_FILE names", e.getMessage());
+        } finally {
+            if (original == null) System.clearProperty("bootstrap.servers");
+            else System.setProperty("bootstrap.servers", original);
+        }
+    }
+
+    @Test
     void eventTimeWatermarksAdvanceFromObservationTimestamps() throws Exception {
         String original = System.getProperty("bootstrap.servers");
         try {

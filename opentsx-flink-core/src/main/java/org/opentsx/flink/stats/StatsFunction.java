@@ -16,6 +16,8 @@ import org.opentsx.model.v2.Episode;
 import org.opentsx.model.v2.Observation;
 import org.opentsx.model.v2.SeriesStats;
 import org.opentsx.stats.StatsEngine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.List;
@@ -28,10 +30,11 @@ import java.util.Set;
  *   <li>Every input goes to {@link StatsEngine#onEpisode} or {@link StatsEngine#onObservation}; the windows it
  *       closes are emitted. An input that does not decode is counted in the metric {@code undecodable} and dropped.
  *       An episode that decodes but fails {@link Episodes#validate} is counted in the metric {@code invalid} and
- *       dropped. The first input of each kind per subtask and partition is reported on stderr. A failure of the
+ *       dropped. The first input of each kind per subtask and partition is logged at WARN. A failure of the
  *       engine fails the task, which restarts from the last checkpoint.</li>
  *   <li>GLOBAL: a processing-time timer emits {@link StatsEngine#emitGlobal()} every {@code globalEveryMs}
- *       (0 = only at the end of a bounded run).</li>
+ *       (0 = only at the end of a bounded run). Every input arms it, also one that does not decode or is invalid, so
+ *       the first timer of each interval logs the counts of the subtask at INFO even when all its inputs are bad.</li>
  *   <li>End of a bounded run: an event-time timer at {@link Long#MAX_VALUE} fires with the final watermark and
  *       calls {@link StatsEngine#flush()}. The job emits no other watermarks, because the engine keeps event time
  *       per series itself.</li>
@@ -40,6 +43,7 @@ import java.util.Set;
 public final class StatsFunction extends KeyedProcessFunction<String, StatsInput, StatsRecord> {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger LOG = LoggerFactory.getLogger(StatsFunction.class);
 
     private final EngineSpec spec;
     private final long globalEveryMs;
@@ -51,6 +55,9 @@ public final class StatsFunction extends KeyedProcessFunction<String, StatsInput
     private transient Counter invalid;
     private transient Set<TopicPartition> undecodableReported;
     private transient Set<TopicPartition> invalidReported;
+    private transient long records;
+    private transient long statsEmitted;
+    private transient long progressDue;
 
     public StatsFunction(EngineSpec spec, long globalEveryMs) {
         if (globalEveryMs < 0) {
@@ -69,10 +76,19 @@ public final class StatsFunction extends KeyedProcessFunction<String, StatsInput
         invalid = getRuntimeContext().getMetricGroup().counter("invalid");
         undecodableReported = new HashSet<>();
         invalidReported = new HashSet<>();
+        records = 0;
+        statsEmitted = 0;
+        progressDue = Long.MIN_VALUE;
     }
 
     @Override
     public void processElement(StatsInput in, Context ctx, Collector<StatsRecord> out) throws Exception {
+        records++;
+        if (globalEveryMs > 0 && nextGlobal.value() == null) {
+            long at = ctx.timerService().currentProcessingTime() + globalEveryMs;
+            ctx.timerService().registerProcessingTimeTimer(at);
+            nextGlobal.update(at);
+        }
         StatsEngine e = engine.value();
         if (e == null) {
             e = spec.newEngine();
@@ -89,8 +105,9 @@ public final class StatsFunction extends KeyedProcessFunction<String, StatsInput
             undecodable.inc();
             TopicPartition tp = new TopicPartition(in.topic, in.partition);
             if (undecodableReported.add(tp)) {
-                System.err.println(tp + " offset " + in.offset + ": undecodable record (" + ex.getMessage() + "); skipped"
-                        + " and counted in undecodable, this subtask only counts later undecodable records of this partition");
+                LOG.warn("undecodable record skipped and counted in undecodable; later ones of this partition are only counted"
+                        + " by this subtask topic={} partition={} offset={} cause={}", in.topic, in.partition, in.offset,
+                        ex.getMessage());
             }
             return;
         }
@@ -101,26 +118,25 @@ public final class StatsFunction extends KeyedProcessFunction<String, StatsInput
         engine.update(e);
         emit(closed, out);
         ctx.timerService().registerEventTimeTimer(Long.MAX_VALUE);
-        if (globalEveryMs > 0 && nextGlobal.value() == null) {
-            long at = ctx.timerService().currentProcessingTime() + globalEveryMs;
-            ctx.timerService().registerProcessingTimeTimer(at);
-            nextGlobal.update(at);
-        }
     }
 
     @Override
     public void onTimer(long timestamp, OnTimerContext ctx, Collector<StatsRecord> out) throws Exception {
+        boolean global = ctx.timeDomain() == TimeDomain.PROCESSING_TIME;
         StatsEngine e = engine.value();
-        if (e == null) {
-            return;
+        if (e != null) {
+            emit(global ? e.emitGlobal() : e.flush(), out);
+            engine.update(e);
         }
-        if (ctx.timeDomain() == TimeDomain.EVENT_TIME) {
-            emit(e.flush(), out);
-        } else {
-            emit(e.emitGlobal(), out);
+        if (global) {
             nextGlobal.clear();    // the next input of this series arms the timer again
+            if (timestamp >= progressDue) {
+                LOG.info("progress subtask={} records={} undecodable={} invalid={} statsEmitted={}",
+                        getRuntimeContext().getTaskInfo().getIndexOfThisSubtask(), records, undecodable.getCount(),
+                        invalid.getCount(), statsEmitted);
+                progressDue = timestamp + globalEveryMs;
+            }
         }
-        engine.update(e);
     }
 
     private boolean consistent(StatsInput in, Episode episode) {
@@ -131,8 +147,8 @@ public final class StatsFunction extends KeyedProcessFunction<String, StatsInput
             invalid.inc();
             TopicPartition tp = new TopicPartition(in.topic, in.partition);
             if (invalidReported.add(tp)) {
-                System.err.println(tp + " offset " + in.offset + ": invalid episode (" + e.getMessage() + "); skipped and"
-                        + " counted in invalid, this subtask only counts later invalid episodes of this partition");
+                LOG.warn("invalid episode skipped and counted in invalid; later ones of this partition are only counted by this"
+                        + " subtask topic={} partition={} offset={} cause={}", in.topic, in.partition, in.offset, e.getMessage());
             }
             return false;
         }
@@ -142,5 +158,6 @@ public final class StatsFunction extends KeyedProcessFunction<String, StatsInput
         for (SeriesStats s : stats) {
             out.collect(new StatsRecord(s.getSeriesId(), Math.floorDiv(Micros.of(s.getWindowEnd()), 1000L), avro.encode(s)));
         }
+        statsEmitted += stats.size();
     }
 }

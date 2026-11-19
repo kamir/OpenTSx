@@ -105,6 +105,26 @@ public class TimeSeriesObjectSerializerTest {
     }
 
     @Test
+    public void aNullValueIsRefusedWithItsIndex() {
+        TimeSeriesObject series = new TimeSeriesObject();
+        series.setLabel("gap");
+        series.addValuePair(1.0, 100.0);
+        series.xValues.add(2.0);
+        series.yValues.add(null);
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> serializer.serialize(series, new DataOutputSerializer(256)));
+        assertEquals("yValues[1]: null; expected a number, NaN for a missing value", e.getMessage());
+
+        TimeSeriesObject x = new TimeSeriesObject();
+        x.xValues.add(null);
+        x.yValues.add(1.0);
+        assertEquals("xValues[0]: null; expected a number, NaN for a missing value",
+                assertThrows(IllegalArgumentException.class, () -> serializer.serialize(x, new DataOutputSerializer(256)))
+                        .getMessage());
+    }
+
+    @Test
     public void testCopy() {
         TimeSeriesObject original = new TimeSeriesObject();
         original.setLabel("copy-test");
