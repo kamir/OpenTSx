@@ -367,6 +367,31 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   <problem>; <what is allowed>`, for example `count: "3" differs from the length 2 of values; expected the number of
   values` instead of `count 3 != values 2`, and `tEnd: "20" is not after the last timestamp 20; expected a time after
   the last timestamp` instead of `tEnd cuts off values`.
+- `bin/opentsx market <command>` and the history twins (`bin/opentsx twin|house|boat --history <dir>`, registry
+  commands `history-twin twin|house|boat`) read their keys through the configuration registry: `--conf`,
+  `--properties-file`, `OPENTSX_CONF_DIR` and the `OPENTSX_` variables work, `<command> --help` lists the keys, and an
+  unknown option exits with 2 and names the nearest one, for example `--form-year` suggests `--from-year`. The
+  hand-written usage of `market` is gone; `market import --help` lists `--partner`.
+- Market exit codes follow 0, 1, 2: a backfill year that failed, a failed download and a publish the broker did not
+  confirm exit with 1 instead of 3 or 2, and a fetch whose credential is not set exits with 2 and names the key
+  instead of 4. Every failure is one line `opentsx: <message>` on stderr instead of `market <command>: <message>`.
+- `market prices|series|rebap|marktwert` store into the archive per `--store`: `always`, `never`, or `auto` (default),
+  which stores only when `--archive` is on the command line. An archive directory from the environment or a file no
+  longer switches storing on. `market load` writes to Iceberg only when `--iceberg` or `--conf
+  opentsx.iceberg.properties=<list>` is on the command line; `OPENTSX_ICEBERG_PROPERTIES` or a file does not switch
+  it.
+- The market credentials `opentsx.market.entsoeToken`, `opentsx.market.ntpClientId` and
+  `opentsx.market.ntpClientSecret` also come from `OPENTSX_MARKET_ENTSOE_TOKEN`, `OPENTSX_MARKET_NTP_CLIENT_ID`,
+  `OPENTSX_MARKET_NTP_CLIENT_SECRET` or a properties file; they are refused on the command line, and the start line of
+  the log shows them as `******`. `market backfill` and `market forward` name the key when they skip a source, for
+  example `skip entsoe/load: opentsx.market.entsoeToken not set`.
+- `market import --origin` takes only `REPORTED` or `FORECAST`; another value exits with 2 (`opentsx: --origin: "x" is
+  not allowed; expected one of REPORTED, FORECAST`).
+- `opentsx vectors depoly` (Java and Python) answers `depoly: unknown subcommand of vectors; did you mean deploy?`
+  instead of `unexpected argument`; a word after a command that has subcommands is checked against them.
+- The credential messages of the ENTSO-E and netztransparenz.de sources name the key and every variable that sets it,
+  for example `opentsx.market.entsoeToken: rejected by ENTSO-E (HTTP 401); check the token in
+  OPENTSX_MARKET_ENTSOE_TOKEN, ENTSOE_TOKEN or the properties file`.
 
 ### Removed
 
@@ -411,6 +436,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   refusal.
 - `SerialRtuTransport`, a placeholder that ignored its parameters and was used only by a test. Serial Modbus RTU is
   still not supported; use a converter with `rtu-over-tcp` or Modbus TCP.
+- `MosmixRawArchive.DEFAULT_STATIONS`, which nothing used; the stations come from `opentsx.market.mosmix.stations`.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -784,6 +810,20 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   a random id and the current time.
 - `SeriesStoreContract` requires a read with `limit(2)` to return exactly the first two episodes in read order.
   Before, it checked only `size() <= 2`, so an adapter that returned nothing passed.
+- `market report --requality false`, `market backfill --force false`, `market publish --dry-run false` and `house
+  --history <dir> --levers false` switch the option off; before, the flag alone switched it on, so `--requality false`
+  rewrote every manifest.
+- `twin --history <dir> --wind` takes only `smard` or `dwd`; `--wind dwdd` exits with 2 instead of running on SMARD.
+- Malformed dates, days, numbers and time zones and missing input files of `market` and the history twins exit with 2
+  and one line that names the option or the missing file, for example `opentsx: --from: "2024-13-01" is not a date;
+  ...`, instead of a stack trace with exit 1.
+- The Jobs and CronJobs of `deploy/k3s/history` set `enableServiceLinks: false`, so `OPENTSX_RETRIEVAL_PORT` of the
+  Service `opentsx-retrieval` no longer stops the configuration loader.
+- The help of `bin/opentsx market <command>` and `history-twin twin|house|boat` no longer says that the command parses
+  its own flags. `Registry.LOADS_CONF` and the Python `CONF_COMMANDS` list them, and appendix D and the defaults
+  templates are regenerated.
+- Chapter 18 no longer names `bin/opentsx kafscale-check`, which the launcher does not have, and no longer says that a
+  mode key waits for a command to be migrated.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

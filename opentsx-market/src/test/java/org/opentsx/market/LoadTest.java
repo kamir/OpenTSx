@@ -11,7 +11,6 @@ import org.opentsx.store.iceberg.IcebergSeriesStore;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -42,10 +41,9 @@ class LoadTest {
 
         String iceberg = "catalog-impl=org.apache.iceberg.jdbc.JdbcCatalog,uri=jdbc:sqlite:" + dir.resolve("c.db")
                 + ",jdbc.schema-version=V1,warehouse=" + dir.resolve("wh").toUri();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        assertEquals(0, MarketCli.run("load", Map.of("archive", a.root().toString(), "iceberg", iceberg), new PrintStream(out,
-                true, StandardCharsets.UTF_8), Map.of(), now));
-        assertTrue(out.toString(StandardCharsets.UTF_8).contains("loaded 3 episodes, 72 values"));
+        MarketCliTest.Result r = MarketCliTest.cli("load", "--archive", a.root().toString(), "--iceberg", iceberg);
+        assertEquals(0, r.code(), r.toString());
+        assertTrue(r.out().contains("loaded 3 episodes, 72 values"), r.out());
         try (var store = IcebergSeriesStore.open(MarketCli.props(iceberg), "tsx")) {
             assertEquals(2, store.listSeries(SeriesSelector.all()).size());
             List<Episode> eps = store.read(EpisodeQuery.of(SeriesSelector.metric("market.price.day_ahead"), 0, Long.MAX_VALUE));
@@ -72,14 +70,11 @@ class LoadTest {
         b.store(p, 2024, new MarketSeries(p, price), List.of("fixture"), now, t("2024-04-01T00:00:00Z"));
         String iceberg = "catalog-impl=org.apache.iceberg.jdbc.JdbcCatalog,uri=jdbc:sqlite:" + dir.resolve("c.db")
                 + ",jdbc.schema-version=V1,warehouse=" + dir.resolve("wh").toUri();
-        PrintStream quiet = new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8);
-        Map<String, String> window = Map.of("archive", a.root().toString(), "iceberg", iceberg,
-                "from-day", "2024-03-30", "to-day", "2024-03-31");
-        assertEquals(0, MarketCli.run("load", window, quiet, Map.of(), now));
+        assertEquals(0, MarketCliTest.cli("load", "--archive", a.root().toString(), "--iceberg", iceberg, "--from-day",
+                "2024-03-30", "--to-day", "2024-03-31").code());
         assertEquals(1, priceEpisodes(iceberg));
-        Map<String, String> all = Map.of("archive", a.root().toString(), "iceberg", iceberg);
-        assertEquals(0, MarketCli.run("load", all, quiet, Map.of(), now));
-        assertEquals(0, MarketCli.run("load", all, quiet, Map.of(), now));
+        assertEquals(0, MarketCliTest.cli("load", "--archive", a.root().toString(), "--iceberg", iceberg).code());
+        assertEquals(0, MarketCliTest.cli("load", "--archive", a.root().toString(), "--iceberg", iceberg).code());
         assertEquals(3, priceEpisodes(iceberg));
     }
 
@@ -94,10 +89,10 @@ class LoadTest {
         }
         SeriesDef d = MarketCatalog.dwd("02878", "wind_speed");
         b.store(d, 2024, new MarketSeries(d, temp), List.of("fixture"), now, t("2024-03-31T00:00:00Z"));
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        assertEquals(0, MarketCli.run("load", Map.of("archive", a.root().toString(), "series", "dwd-cdc/02878/wind_speed"),
-                new PrintStream(out, true, StandardCharsets.UTF_8), Map.of(), now));
-        assertTrue(out.toString(StandardCharsets.UTF_8).contains("loaded 1 episodes, 24 values"), out.toString(StandardCharsets.UTF_8));
+        MarketCliTest.Result r = MarketCliTest.cli("load", "--archive", a.root().toString(), "--series",
+                "dwd-cdc/02878/wind_speed");
+        assertEquals(0, r.code(), r.toString());
+        assertTrue(r.out().contains("loaded 1 episodes, 24 values"), r.out());
     }
 
     static int priceEpisodes(String iceberg) {

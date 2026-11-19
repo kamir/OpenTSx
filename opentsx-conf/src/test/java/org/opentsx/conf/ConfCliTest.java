@@ -113,10 +113,12 @@ class ConfCliTest {
 
     @Test
     void helpOfACommandOutsideConfigSaysWhatTheJavaCommandReads() {
-        assertTrue(Registry.shipped().help("history-twin twin").startsWith("usage: opentsx history-twin twin [options]\n"
-                + "Run twin scenario S1 (H2 chain) on prices and wind from the history archive.\n"
-                + "In the Java runtime, history-twin twin parses its own flags and does not read --conf, --properties-file, "
+        assertTrue(Registry.shipped().help("kafscale-check").startsWith("usage: opentsx kafscale-check [options]\n"
+                + "Check that a KafScale bootstrap address and its advertised brokers are reachable.\n"
+                + "In the Java runtime, kafscale-check parses its own flags and does not read --conf, --properties-file, "
                 + "OPENTSX_CONF_DIR or the canonical OPENTSX_ variables.\n"));
+        assertFalse(Registry.shipped().help("history-twin twin").contains("In the Java runtime"));
+        assertFalse(Registry.shipped().help("market prices").contains("In the Java runtime"));
         assertFalse(Registry.shipped().help("config show").contains("In the Java runtime"));
         assertFalse(Registry.shipped().help("stats").contains("In the Java runtime"));
         assertFalse(Registry.shipped().help("stats-flink").contains("In the Java runtime"));

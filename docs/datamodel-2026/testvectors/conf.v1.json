@@ -2514,6 +2514,36 @@
    }
   },
   {
+   "id": "cli-unknown-subcommand-of-command-near",
+   "kind": "load",
+   "registry": "shipped",
+   "description": "A word after a command that has subcommands is an unknown subcommand, with the near one. Runs on the shipped registry.",
+   "args": [
+    "vectors",
+    "depoly"
+   ],
+   "expect": {
+    "error": "depoly: unknown subcommand of vectors; did you mean deploy?",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-unknown-subcommand-of-command",
+   "kind": "load",
+   "registry": "shipped",
+   "description": "A word after a command that has subcommands, without a near one, lists the subcommands. Runs on the shipped registry.",
+   "args": [
+    "vectors",
+    "frobnicate",
+    "--kafscale",
+    "k:9092"
+   ],
+   "expect": {
+    "error": "frobnicate: unknown subcommand of vectors; expected one of deploy, run, stop",
+    "exit": 2
+   }
+  },
+  {
    "id": "cli-unknown-option-near",
    "kind": "load",
    "description": "Unknown option with a near option.",

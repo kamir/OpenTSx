@@ -1,4 +1,4 @@
-# opentsx-market — market collector, history archive, twins on real history
+# opentsx-market: market collector, history archive, twins on real history
 
 This module collects **electricity-market data** (day-ahead prices DE-LU, load, wind and solar generation and
 forecasts, imbalance price reBAP, monthly market values). It keeps them in a local **history archive** with
@@ -17,8 +17,8 @@ Checked on 2026-10-12. Re-check the terms before you redistribute an archive.
 |--------|------|--------|-----------------------|
 | **SMARD** (Bundesnetzagentur), `www.smard.de/app/chart_data` | day-ahead price DE-LU (filter 4169), grid load (410), residual load (4359), generation wind onshore (4067), wind offshore (1225), solar (4068), forecasts (123, 3791, 125, 411); hourly and quarter-hourly | no registration; JSON index of weekly files + data files | **CC BY 4.0**, "Bundesnetzagentur \| SMARD.de" |
 | **Energy-Charts** (Fraunhofer ISE), `api.energy-charts.info/price` | day-ahead price, used as an alternative and cross-check | no registration | **CC BY 4.0**; the price data itself is SMARD's (the API says so in `license_info`) |
-| **ENTSO-E Transparency Platform**, `web-api.tp.entsoe.eu/api` | day-ahead prices A44 (incl. 15-min MTU), actual load A65/A16, day-ahead wind/solar forecast A69/A01 (`psrType` B19/B18/B16) | personal **security token** (free registration, then request Web API access), env `ENTSOE_TOKEN`; without it the source is skipped with a message | ENTSO-E terms and conditions: reuse with attribution "Source: ENTSO-E Transparency Platform" |
-| **netztransparenz.de** (50Hertz, Amprion, TenneT, TransnetBW), `ds.netztransparenz.de/api/v1/data` | reBAP quality-assured (`NrvSaldo/reBAP/Qualitaetsgesichert`, CSV format 9), monthly market values (`marktpraemie`, format 12: MW-EPEX, wind onshore, wind offshore, solar, controllable) | **OAuth 2.0 client credentials** (API user + client in the OAuth manager of the extranet), env `NTP_CLIENT_ID`, `NTP_CLIENT_SECRET`; token URL `identity.netztransparenz.de/users/connect/token`; at most 2 requests/s per IP (repeated violations block the IP for 2 h). Without credentials: download the CSV from the web page and import it with `--offline` | terms of use of netztransparenz.de; keep the archive local |
+| **ENTSO-E Transparency Platform**, `web-api.tp.entsoe.eu/api` | day-ahead prices A44 (incl. 15-min MTU), actual load A65/A16, day-ahead wind/solar forecast A69/A01 (`psrType` B19/B18/B16) | personal **security token** (free registration, then request Web API access), key `opentsx.market.entsoeToken` (env `OPENTSX_MARKET_ENTSOE_TOKEN` or `ENTSOE_TOKEN`); without it `backfill` and `forward` skip the source with a message | ENTSO-E terms and conditions: reuse with attribution "Source: ENTSO-E Transparency Platform" |
+| **netztransparenz.de** (50Hertz, Amprion, TenneT, TransnetBW), `ds.netztransparenz.de/api/v1/data` | reBAP quality-assured (`NrvSaldo/reBAP/Qualitaetsgesichert`, CSV format 9), monthly market values (`marktpraemie`, format 12: MW-EPEX, wind onshore, wind offshore, solar, controllable) | **OAuth 2.0 client credentials** (API user + client in the OAuth manager of the extranet), keys `opentsx.market.ntpClientId` and `opentsx.market.ntpClientSecret` (env `NTP_CLIENT_ID`, `NTP_CLIENT_SECRET` or their `OPENTSX_MARKET_` names); token URL `identity.netztransparenz.de/users/connect/token`; at most 2 requests/s per IP (repeated violations block the IP for 2 h). Without credentials: download the CSV from the web page and import it with `--offline` | terms of use of netztransparenz.de; keep the archive local |
 | **EPEX SPOT intraday** | intraday prices | **licensed, not collected.** Partner data (direct-marketer schedules, realised prices) comes in through the file import | per contract |
 | **DWD** Climate Data Center and MOSMIX, `opendata.dwd.de` | station observations (hourly / 10-min) and MOSMIX_L forecasts | no registration | **CC BY 4.0** (DWD terms, May 2024), "Deutscher Wetterdienst" |
 
@@ -29,7 +29,7 @@ build environment through its proxy. The JVM proxy settings (`https.proxyHost` �
 ## 2. Time, units, origin
 
 * **UTC internally.** Every value is an interval: start in UTC plus its length. Local times are converted only at
-  the edges: CSV downloads with CET/CEST columns, partner files with offsets, Marktwerte months (local midnight to
+  the edges: CSV downloads with CET/CEST columns, partner files with offsets, market-value months (local midnight to
   local midnight, so March has 31 days minus one hour).
 * **DST days** have 23 or 25 hours. Parsers use fixed offsets per row, so the doubled hour in October is
   unambiguous. A local timestamp without an offset inside that hour is rejected, not guessed. The quality report
@@ -37,7 +37,7 @@ build environment through its proxy. The JVM proxy settings (`https.proxyHost` �
 * **15-minute MTU from delivery day 2025-10-01** (2025-09-30T22:00Z). The archive keeps the price in its native
   resolution: hourly before, quarter-hourly after. Before the switch, SMARD's quarter-hour price file repeats each
   hourly price four times; the collector does not read it for that period.
-* **Units:** prices EUR/MWh (Marktwerte converted from ct/kWh × 10), powers MW. SMARD publishes generation and
+* **Units:** prices EUR/MWh (market values converted from ct/kWh × 10), powers MW. SMARD publishes generation and
   load as **MWh per interval**; the parser converts them to the average MW of the interval.
 * **Origin:** market results and TSO publications are `REPORTED`, published forecasts are `FORECAST`, and station
   measurements are `MEASURED`. The origin goes into the manifest, into each episode's label `origin`, and into the
@@ -53,27 +53,48 @@ bin/opentsx market prices --source entsoe --from 2025-10-01 --to 2025-10-02     
 bin/opentsx market series --name smard/forecast_wind_onshore --from 2024-01-01 --to 2024-02-01
 bin/opentsx market rebap --from 2024-01-01 --to 2024-02-01                         # needs NTP_CLIENT_*
 bin/opentsx market rebap --offline reBAP-download.csv --from 2024-01-01 --to 2025-01-01 --archive data/history
-bin/opentsx market marktwert --offline marktwerte.csv --from 2019-01-01 --to 2026-01-01 --archive data/history
-bin/opentsx market import --file config/private/fahrplan.csv --name schedule-dm --metric market.schedule \
-    --unit kW --origin REPORTED --partner direktvermarkter --archive data/history
+bin/opentsx market marktwert --offline market-values.csv --from 2019-01-01 --to 2026-01-01 --archive data/history
+bin/opentsx market import --file config/private/schedule.csv --name schedule-dm --metric market.schedule \
+    --unit kW --origin REPORTED --partner direct-marketer --archive data/history
 ```
 
-`--from`/`--to` take a local date (Europe/Berlin, start of day) or an ISO instant. `--to` is exclusive. `--offline`
-parses a downloaded file in the source's format. `--archive` merges the result into the archive year files.
+Every command reads its keys through the configuration registry. `bin/opentsx market <command> --help` lists the
+keys of the command with their flags, defaults and environment variables. A key can also come from
+`--conf <key>=<value>`, `--properties-file <file>` or `OPENTSX_CONF_DIR`. A boolean flag alone means `true`;
+`--requality false` and `--force false` switch it off.
 
-In `prices`, `series`, `rebap`, `marktwert` and `mosmix-archive`, a request that the source answers with an HTTP
-error status ends the command with exit code 1 and one line on stderr:
-`market <command>: HTTP <status> for <URL>`, followed by `: <response text, cut at 300 characters>` when the
+`--from`/`--to` take a Berlin market day: a local date (Europe/Berlin, start of day) or an ISO instant. `--to` is
+exclusive. `--from-day` and `--to-day` of `load` and `publish` take a UTC day instead. `--offline` parses a
+downloaded file in the source's format.
+
+`--store` decides whether `prices`, `series`, `rebap` and `marktwert` merge the result into the archive year files:
+`always`, `never`, or `auto` (default), which stores when `--archive` is on the command line. An archive directory
+from `OPENTSX_ARCHIVE_DIR`, a properties file or a defaults file does not store with `auto`.
+
+Exit codes: 0 success, 1 runtime failure, 2 usage or configuration error. A failure is one line `opentsx: <message>`
+on stderr; stdout stays empty for a usage or configuration error. Exit code 2 covers an unknown or malformed option,
+a missing input file, and a credential that a fetch needs and that is not set:
+
+```text
+opentsx: --form-year: unknown option of market backfill; did you mean --from-year?
+opentsx: --from: "2024-13-01" is not a date; expected a local date YYYY-MM-DD (Europe/Berlin) or an ISO instant such as 2024-01-01T00:00:00Z
+opentsx: opentsx.market.entsoeToken: not set; set OPENTSX_MARKET_ENTSOE_TOKEN or ENTSOE_TOKEN or put opentsx.market.entsoeToken in a properties file, or parse a download with --offline
+```
+
+Exit code 1 covers a download that fails after its retries, an HTTP error status, a rejected credential, a backfill
+year that failed and a publish the broker did not confirm. A request that the source answers with an HTTP error
+status prints `opentsx: HTTP <status> for <URL>`, followed by `: <response text, cut at 300 characters>` when the
 response has text. The URL shows the ENTSO-E token as `securityToken=***`. For an ENTSO-E acknowledgement answered
 with HTTP 400, the response text is the code and text of its reasons. A rejected ENTSO-E token (HTTP 401) or
-netztransparenz.de client ends the command the same way, and the line names the credential to check instead.
+netztransparenz.de client prints a line that names the credential to check instead.
 
 **Partner files** (`import`) have a header and the columns `start` (ISO-8601 with offset or `Z`), optional `end`,
 and `value`. They use `,` or `;` as separator; with `;` a decimal comma is allowed. Without `end`, pass
 `--resolution PT15M`. Local timestamps need `--zone Europe/Berlin` and are rejected inside the doubled hour.
-Keep real partner data in the git-ignored `config/private/`.
+`--origin` takes `REPORTED` (default) or `FORECAST`; another value exits with 2. Keep real partner data in the
+git-ignored `config/private/`.
 
-## 4. History archive ("Datenpakete")
+## 4. History archive
 
 ```
 data/history/                                   (git-ignored)
@@ -114,30 +135,35 @@ bin/opentsx market load     --archive data/history --iceberg type=jdbc,uri=jdbc:
   whose quality-assured data comes late). A changed or missing file is fetched again.
 * **Politeness:** a minimum pause between requests per host (`--delay-ms`, default 500 ms; ENTSO-E at least 1 s,
   netztransparenz at least 600 ms), and retries with exponential backoff on network errors, 429 and 5xx, honouring
-  `Retry-After`. A failing year is reported and the run continues (exit code 3 if any year failed).
+  `Retry-After`. A failing year is reported and the run continues; the command ends with exit code 1 and
+  `opentsx: market backfill: <n> of <m> series-years failed; the lines marked FAILED on stdout say why`.
 * **ENTSO-E without data:** ENTSO-E answers a month without data with HTTP 400 and an acknowledgement that says
   `No matching data found`. That month counts as empty. Any other HTTP 400 fails the year; for an acknowledgement,
   the message shows the code and text of its reasons. An acknowledgement that comes with HTTP 200 counts as empty
   whatever its reason.
-* **Credentials:** a source without credentials is skipped with the reason. Tokens come only from the environment
-  and are never written to the manifest. In error messages and the log, the value of every URL query parameter
-  whose name contains `token`, `secret` or `key` in any letter case shows as `***`, also where the response
-  repeats it.
+* **Credentials:** a source without credentials is skipped with the reason. The credentials are secret keys: they
+  come from the environment or a properties file, never from the command line. They are never written to the
+  manifest, and the start line of the log shows them as `******`. In error messages and the log, the value of every
+  URL query parameter whose name contains `token`, `secret` or `key` in any letter case shows as `***`, also where
+  the response repeats it.
 * **Publish:** `publish --series source/name,... --kafscale host:port --domain wind` writes archived series as raw
   episodes into `tsx.<domain>.episodes.v2`, where the retrieval server and the flows of the domain read them. It
   sends a batch (`--batch`, default 100), waits for every confirmation, pauses (`--pause-ms`, default 3000) and
-  stops at the first batch the broker does not confirm. An episode has an identity that follows from its series
-  and the time it begins at, so a repeat writes the same episodes again. `--from-day YYYY-MM-DD` skips episodes
-  that begin before that UTC day, `--to-day YYYY-MM-DD` (exclusive) those that begin on or after it. A daily job
-  with `--to-day` set to the current day writes complete days only. `--dry-run` only counts.
+  stops at the first batch the broker does not confirm, with exit code 1. `opentsx.domain` must be set, with
+  `--domain` or another source; the registry default `wind` does not count. An episode has an identity that follows
+  from its series and the time it begins at, so a repeat writes the same episodes again. `--from-day YYYY-MM-DD`
+  skips episodes that begin before that UTC day, `--to-day YYYY-MM-DD` (exclusive) those that begin on or after it.
+  A daily job with `--to-day` set to the current day writes complete days only. `--dry-run` only counts.
 * **Load:** `load` maps the archive to REGULAR episodes, one per UTC day. Episodes split where the resolution
   changes or data is missing, so a gap is never filled. An episode gets the same identity as in `publish`, so a
-  repeated load skips the episodes the table already holds. `--from-day` and `--to-day` limit it as in `publish`. They are written to Iceberg (same `--iceberg` options as
-  `bin/opentsx windpark-sim`) or to an in-memory store (dry run with counts).
+  repeated load skips the episodes the table already holds. `--from-day` and `--to-day` limit it as in `publish`.
+  The episodes are written to Iceberg when the command line gives `--iceberg` or
+  `--conf opentsx.iceberg.properties=<list>` (same options as `bin/opentsx windpark-sim`), otherwise to an in-memory
+  store (dry run with counts). A value from `OPENTSX_ICEBERG_PROPERTIES` or a file does not switch to Iceberg.
 
 The default set `market` is: SMARD price, load, residual load, wind onshore/offshore, solar, and their forecasts
 (plus load forecast); the Energy-Charts price as a cross-check; the ENTSO-E price, load and forecasts; reBAP
-(both sides); Marktwerte EPEX, wind onshore, wind offshore and solar.
+(both sides); market values EPEX, wind onshore, wind offshore and solar.
 
 ### Weather and forward archiving
 
@@ -183,10 +209,10 @@ code 2 and one line that names the file and the field. A file that is not valid 
 the line. A weather backfill that finds no station stops the same way:
 
 ```text
-market weather-backfill: sites.yaml: sites.windpark-ostsee.hubHeight: unknown field; allowed: anemometerHeightM, hubHeightM, latitude, longitude, radiation, shearExponent, temperature, wind
-market weather-backfill: sites.yaml: sites.windpark-ostsee.hubHeightM: not finite; expected a finite decimal number such as 0.01 or 1e-3
-market weather-backfill: sites.yaml:4: not valid YAML; while parsing a block mapping, expected <block end>, but found '<block mapping start>'
-market weather-backfill: nostation.yaml: sites: no site names a temperature, wind or radiation station; name one, or pass --stations <id>:<parameter>,...
+opentsx: sites.yaml: sites.windpark-ostsee.hubHeight: unknown field; allowed: anemometerHeightM, hubHeightM, latitude, longitude, radiation, shearExponent, temperature, wind
+opentsx: sites.yaml: sites.windpark-ostsee.hubHeightM: not finite; expected a finite decimal number such as 0.01 or 1e-3
+opentsx: sites.yaml:4: not valid YAML; while parsing a block mapping, expected <block end>, but found '<block mapping start>'
+opentsx: nostation.yaml: sites: no site names a temperature, wind or radiation station; name one, or pass --stations <id>:<parameter>,...
 ```
 
 The zips come from the directory listings. A `historical` file name carries its date range, so only the zips
@@ -214,9 +240,12 @@ every 6 hours; MOSMIX_L is issued at 03, 09, 15 and 21 UTC. Parsing into series 
 | `bin/opentsx boat --history data/history --weather-year 2024 [--start 2024-07-06] [--days 14] [--radiation-station 06163]` | the 14-day trip of the example from the first Saturday in July, `solar.ghi_wm2` from the sailing area's station (MEASURED) instead of the synthetic clearness cycle; KPIs with measured vs. synthetic irradiance and the usual what-ifs |
 
 `bin/opentsx` dispatches to `org.opentsx.market.twin.HistoryTwins` only when `--history` or `--weather-year` is
-given. Without them the demos of `opentsx-twin` run unchanged on synthetic data. The adapter
-(`HistoryInputs`) resamples archive series to the plan's base step as a time-weighted mean: finer data is averaged,
-coarser data (hourly prices, monthly values) is held. A step less than half covered becomes NaN, so the twin falls
+given. Without them the demos of `opentsx-twin` run unchanged on synthetic data. The adapter reads its keys as the
+commands `history-twin twin`, `history-twin house` and `history-twin boat`; `bin/opentsx twin --history data/history
+--help` lists them. `--wind` takes `smard` or `dwd`, and `--levers false` prints no levers. A missing archive or a
+year without archived data stops the command with exit code 2 and a line that says which backfill fills it. The
+adapter (`HistoryInputs`) resamples archive series to the plan's base step as a time-weighted mean: finer data is
+averaged, coarser data (hourly prices, monthly values) is held. A step less than half covered becomes NaN, so the twin falls
 back to its default for that step and marks it SYNTHETIC instead of using a guess. The core of `opentsx-twin` is
 not changed; the adapter only builds `SeriesInputs` and plan variants.
 
@@ -232,7 +261,7 @@ assumptions; prices, wind situations, temperatures and irradiance are real.
   site stations (air temperature and wind 03166, 01759, 02564; radiation 01358, 00183, 06163): 6.3 MB. All
   packages have both DST days fully covered and no implausible values. Gaps are only in the station data (mostly
   below 1 %; wind at Greifswalder Oie 2021–2023 about 4 %).
-* Blocked: ENTSO-E (no `ENTSOE_TOKEN` in the build environment) and netztransparenz reBAP/Marktwerte (no OAuth
+* Blocked: ENTSO-E (no `ENTSOE_TOKEN` in the build environment) and netztransparenz reBAP/market values (no OAuth
   client). Both clients are implemented and tested against fixtures; with credentials, `backfill` fills them, and
   without them the CSV downloads can be imported with `--offline`.
 * MOSMIX: the raw forward archive runs from 2026-10-12. Earlier forecasts cannot be recovered from the DWD.
@@ -241,8 +270,8 @@ assumptions; prices, wind situations, temperatures and irradiance are real.
 
 `mvn -pl opentsx-market test`, all offline: SMARD (MTU switch, MWh→MW, `null`), Energy-Charts (23-hour DST
 day), ENTSO-E (A03 blocks, two resolutions, acknowledgement, no DOCTYPE/XXE), reBAP (API and download formats
-across the end of DST), Marktwerte (local months), partner CSV (doubled hour), OAuth flow and token reuse,
+across the end of DST), market values (local months), partner CSV (doubled hour), OAuth flow and token reuse,
 archive round trip and checksums, quality report (gaps, DST days, implausible values), episode mapping, backfill
 resume, weather backfill (listing, year filter, recent over historical, resume; every parameter to its CDC
-directory, column, unit and time convention; default stations and years of the daily jobs), MOSMIX raw archive, resampling, and the three twins on fixture slices
+directory, column, unit and time convention; default stations and years of the daily jobs), MOSMIX raw archive, resampling, the three twins on fixture slices, and the command line (keys, exit codes, messages, the jobs of `deploy/k3s/history`)
 ([`src/test/resources/market/`](src/test/resources/market/README.md)).

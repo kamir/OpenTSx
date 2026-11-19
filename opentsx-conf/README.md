@@ -137,7 +137,7 @@ Commit the registry change and the three files together. Do not edit the files b
 mvn -B -ntp -q -pl opentsx-conf install
 ```
 
-`ConfVectorsTest` runs all 286 shared vectors. `RegistryTest` checks the registry against
+`ConfVectorsTest` runs all 288 shared vectors. `RegistryTest` checks the registry against
 [`opentsx.config.v1.schema.json`](../docs/datamodel-2026/schemas/opentsx.config.v1.schema.json) and the registry
 rules, and that the Python copy is byte-identical. `ConfCliTest` checks output, exit codes, precedence and masking,
 and, in a fresh JVM, that `load` sets the slf4j-simple level.

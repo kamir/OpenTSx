@@ -565,6 +565,14 @@ final class ConfParser {
         String found = longestCommand(reg, words);
         if (found != null) {
             used[0] = found.split(" ").length;
+            List<String> subcommands = reg.commands().keySet().stream().filter(c -> c.startsWith(found + " "))
+                    .map(c -> c.substring(found.length() + 1)).sorted().toList();
+            if (words.size() > used[0] && !subcommands.isEmpty() && reg.commands().get(found).args().isEmpty()) {
+                String word = words.get(used[0]);
+                String n = Registry.near(word, subcommands);
+                throw new OpenTsxConfException(word, "unknown subcommand of " + found,
+                        n != null ? "did you mean " + n + "?" : "expected one of " + String.join(", ", subcommands));
+            }
             return found;
         }
         if (words.isEmpty()) {

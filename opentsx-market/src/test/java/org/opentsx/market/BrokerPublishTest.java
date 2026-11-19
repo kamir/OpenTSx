@@ -3,16 +3,15 @@ package org.opentsx.market;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.market.archive.Archive;
-import org.opentsx.market.archive.BrokerPublish;
 import org.opentsx.market.archive.WeatherBackfill;
 import org.opentsx.market.source.Fetcher;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -53,19 +52,17 @@ class BrokerPublishTest {
     }
 
     static String dryRun(Archive a, String fromDay, String toDay) {
-        Map<String, String> o = new HashMap<>();
-        o.put("series", MarketCatalog.dwd("03166", "air_temperature").path());
-        o.put("domain", "test");
-        o.put("dry-run", "");
+        List<String> args = new ArrayList<>(List.of("publish", "--archive", a.root().toString(), "--series",
+                MarketCatalog.dwd("03166", "air_temperature").path(), "--domain", "test", "--dry-run"));
         if (fromDay != null) {
-            o.put("from-day", fromDay);
+            args.addAll(List.of("--from-day", fromDay));
         }
         if (toDay != null) {
-            o.put("to-day", toDay);
+            args.addAll(List.of("--to-day", toDay));
         }
-        ByteArrayOutputStream b = new ByteArrayOutputStream();
-        assertEquals(0, BrokerPublish.run(a, o, new PrintStream(b, true, StandardCharsets.UTF_8)));
-        return b.toString(StandardCharsets.UTF_8);
+        MarketCliTest.Result r = MarketCliTest.cli(args.toArray(String[]::new));
+        assertEquals(0, r.code(), r.toString());
+        return r.out();
     }
 
     @Test

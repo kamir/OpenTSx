@@ -53,8 +53,9 @@ public final class EntsoeSource {
             throw new IllegalArgumentException("unknown ENTSO-E series " + series + "; known: " + QUERIES.keySet());
         }
         if (token == null || token.isBlank()) {
-            throw new MissingCredentials("ENTSO-E needs a security token: set ENTSOE_TOKEN (register at "
-                    + "https://transparency.entsoe.eu, then request Web API access)");
+            throw new MissingCredentials("opentsx.market.entsoeToken: not set; ENTSO-E needs a security token (register at "
+                    + "https://transparency.entsoe.eu, then request Web API access) in OPENTSX_MARKET_ENTSOE_TOKEN, "
+                    + "ENTSOE_TOKEN or a properties file");
         }
         List<Point> out = new ArrayList<>();
         long t = from;
@@ -74,7 +75,8 @@ public final class EntsoeSource {
                 // no data for this month (e.g. not yet published); the quality report shows the gap
             } catch (Http.StatusException e) {
                 if (e.status() == 401) {
-                    throw new MissingCredentials("ENTSO-E rejected the token (HTTP 401): check ENTSOE_TOKEN");
+                    throw new MissingCredentials("opentsx.market.entsoeToken: rejected by ENTSO-E (HTTP 401); check the "
+                            + "token in OPENTSX_MARKET_ENTSOE_TOKEN, ENTSOE_TOKEN or the properties file");
                 }
                 if (e.status() != 400 || !e.body().contains("Acknowledgement_MarketDocument")) {
                     throw e;

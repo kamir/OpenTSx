@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -150,22 +151,68 @@ class HistoryTwinsTest {
         assertTrue(ghi[13 * 4] > 500);        // 13:00 local on the clear day
     }
 
+    record Result(int code, String out, String err) {
+    }
+
+    /** {@code bin/opentsx twin|house|boat --history ...}: the arguments as bin/opentsx passes them to HistoryTwins. */
+    static Result twins(String... args) throws ReflectiveOperationException {
+        java.lang.reflect.Method run = Class.forName("org.opentsx.market.twin.HistoryTwins")
+                .getDeclaredMethod("run", List.class, Map.class, PrintStream.class, PrintStream.class);
+        run.setAccessible(true);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        int code = (int) run.invoke(null, List.of(args), Map.of(), new PrintStream(out, true, StandardCharsets.UTF_8),
+                new PrintStream(err, true, StandardCharsets.UTF_8));
+        return new Result(code, out.toString(StandardCharsets.UTF_8), err.toString(StandardCharsets.UTF_8));
+    }
+
     @Test
     void commandLineRunsOnTheFixtureArchiveAndExplainsMissingData() throws Exception {
-        ByteArrayOutputStream b = new ByteArrayOutputStream();
-        PrintStream out = new PrintStream(b, true, StandardCharsets.UTF_8);
-        java.lang.reflect.Method run = Class.forName("org.opentsx.market.twin.HistoryTwins")
-                .getDeclaredMethod("run", String.class, Map.class, PrintStream.class);
-        run.setAccessible(true);
         String dir = archiveDir().toString();
-        assertEquals(0, run.invoke(null, "twin", Map.of("history", dir, "year", "2024", "from", "2024-03-30",
-                "days", "2"), out));
-        assertEquals(0, run.invoke(null, "boat", Map.of("history", dir, "weather-year", "2024", "days", "2"), out));
-        String s = b.toString(StandardCharsets.UTF_8);
-        assertTrue(s.contains("power_cost_eur_per_kg"));
-        assertTrue(s.contains("measured irradiance"));
-        Exception e = assertThrows(java.lang.reflect.InvocationTargetException.class,
-                () -> run.invoke(null, "twin", Map.of("history", dir, "year", "2019"), out));
-        assertTrue(e.getCause().getMessage().contains("market backfill"));
+        Result twin = twins("twin", "--history", dir, "--year", "2024", "--from", "2024-03-30", "--days", "2");
+        assertEquals(0, twin.code(), twin.toString());
+        assertTrue(twin.out().contains("power_cost_eur_per_kg"));
+        Result boat = twins("boat", "--history", dir, "--weather-year", "2024", "--days", "2");
+        assertEquals(0, boat.code(), boat.toString());
+        assertTrue(boat.out().contains("measured irradiance"));
+        assertEquals(new Result(2, "", "opentsx: smard/day_ahead_price: no archived data in 2019; run: bin/opentsx market "
+                + "backfill --archive " + dir + " --series smard/day_ahead_price\n"), twins("twin", "--history", dir, "--year", "2019"));
+    }
+
+    @Test
+    void aMisspelledOptionOfAHistoryTwinExitsWith2() throws Exception {
+        assertEquals(new Result(2, "", "opentsx: --yaer: unknown option of history-twin twin; did you mean --year?\n"),
+                twins("twin", "--history", archiveDir().toString(), "--yaer", "2024", "--from", "2024-03-30", "--days", "2"));
+    }
+
+    @Test
+    void anUnknownWindInputExitsWith2AndListsTheInputs() throws Exception {
+        assertEquals(new Result(2, "", "opentsx: --wind: \"dwdd\" is not allowed; expected one of smard, dwd\n"),
+                twins("twin", "--history", archiveDir().toString(), "--year", "2024", "--from", "2024-03-30", "--days",
+                        "2", "--wind", "dwdd"));
+        H2History noArchive = new H2History(new HistoryInputs(null), HistorySites.get(null, HistorySites.PARK), 0.3);
+        assertEquals("wind: \"dwdd\" is not allowed; expected smard or dwd", assertThrows(IllegalArgumentException.class,
+                () -> noArchive.inputs(H2History.plan(Instant.parse("2024-03-30T00:00:00Z"), 96), "dwdd", 1.0))
+                .getMessage());
+    }
+
+    @Test
+    void leversFalsePrintsNoWhatIfAndAMalformedValueNamesItsOption() throws Exception {
+        String dir = archiveDir().toString();
+        Result house = twins("house", "--history", dir, "--weather-year", "2024", "--levers", "false");
+        assertEquals(0, house.code(), house.toString());
+        assertFalse(house.out().contains("What-if"), house.out());
+        assertEquals(new Result(2, "", "opentsx: --weather-year: \"2025-2022\" is not a year or a range of years; expected "
+                + "YYYY or YYYY-YYYY such as 2022-2025\n"), twins("house", "--history", dir, "--weather-year", "2025-2022"));
+        assertEquals(new Result(2, "", "opentsx: --start: \"2024-07-32\" is not a day; expected a UTC day YYYY-MM-DD\n"),
+                twins("boat", "--history", dir, "--weather-year", "2024", "--start", "2024-07-32"));
+        assertEquals(new Result(2, "", "opentsx: --days: \"0\" is not allowed; expected 1 or more\n"),
+                twins("boat", "--history", dir, "--weather-year", "2024", "--days", "0"));
+    }
+
+    @Test
+    void theHelpOfAHistoryTwinComesFromTheRegistry() throws Exception {
+        assertEquals(new Result(0, org.opentsx.conf.Registry.shipped().help("history-twin twin"), ""),
+                twins("twin", "--history", archiveDir().toString(), "--help"));
     }
 }

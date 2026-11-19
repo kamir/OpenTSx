@@ -28,17 +28,18 @@ Every setting of an OpenTSx command is a key of the registry `opentsx.config.v1`
 environment variables. These read the registry:
 
 * `opentsx config list`, `opentsx config show`, `opentsx config get` and `opentsx version`, in both runtimes.
-* `bin/opentsx boat`, `bin/opentsx dwd stations|mosmix|obs|house`, `bin/opentsx house`, `bin/opentsx metadata`,
-  `bin/opentsx modbus check|read|poll|simulate`, `bin/opentsx retrieval-server`, `bin/opentsx stats`,
-  `bin/opentsx stats-flink`, `bin/opentsx studio-export`, `bin/opentsx twin`, `bin/opentsx twin-coupling`,
+* `bin/opentsx boat`, `bin/opentsx dwd stations|mosmix|obs|house`, `bin/opentsx house`,
+  `bin/opentsx market <command>`, `bin/opentsx metadata`, `bin/opentsx modbus check|read|poll|simulate`,
+  `bin/opentsx retrieval-server`, `bin/opentsx stats`, `bin/opentsx stats-flink`, `bin/opentsx studio-export`,
+  `bin/opentsx twin`, `bin/opentsx twin|house|boat --history <dir>`, `bin/opentsx twin-coupling`,
   `bin/opentsx twin-live publish|bridge|demo`, `bin/opentsx twin-schemas`, `bin/opentsx vectors run|deploy|stop` and
   `bin/opentsx windpark-sim`, which load their configuration with `OpenTsxConf.load`. Their
   `bin/opentsx <command> --help` prints a `keys:` section.
 * `opentsx <command> --help` of the Python console script, for every command of the registry.
 * Your code, through `OpenTsxConf` in Java (module `opentsx-conf`) and in Python (package `opentsx.conf`).
 
-Any other command of [Appendix A](appendix-a-cli.md), one whose `bin/opentsx <command> --help` prints no `keys:`
-section, parses its own flags, for example `bin/opentsx market`. It does not read `--conf`, `--properties-file`,
+Any other command of [Appendix A](appendix-a-cli.md), one whose `--help` prints no `keys:` section, parses its own
+flags, for example `kafscale-check` of the opentsx-tools image. It does not read `--conf`, `--properties-file`,
 `$OPENTSX_CONF_DIR` or the canonical `OPENTSX_` variables. The Python console script runs only `config list`,
 `config show`, `config get` and `version`; `opentsx stats --kafscale localhost:9092` exits with 2 and
 `opentsx: stats: runs only in the Java runtime; use bin/opentsx or the opentsx-tools image`.
@@ -82,9 +83,7 @@ opentsx.kafscale.bootstrap           192.0.2.10:9092                            
 opentsx.retrieval.source             auto                                       default
 ```
 
-Set the mode key to choose the mode from any source, for example `--source kafscale`. A command reads these keys once
-its `bin/opentsx <command> --help` prints a `keys:` section; until then its own flags choose the mode as
-[Appendix A](appendix-a-cli.md) describes.
+Set the mode key to choose the mode from any source, for example `--source kafscale`.
 
 ## Show the effective configuration
 
@@ -179,7 +178,7 @@ common options:
 ```
 
 `bin/opentsx stats` reads these keys from `--conf`, `--properties-file`, `$OPENTSX_CONF_DIR` and the canonical
-`OPENTSX_` variables. The help of a command that parses its own flags, for example `opentsx market prices --help`,
+`OPENTSX_` variables. The help of a command that parses its own flags, for example `opentsx kafscale-check --help`,
 has a third line that says so. `--help` wins over every other error: `opentsx config --help` prints the list of
 commands.
 
@@ -605,6 +604,7 @@ runtime failure exits with 1. Both runtimes print the same messages, except the 
 | `config/private/nope: not a directory; set OPENTSX_CONF_DIR to the directory that holds opentsx-defaults.conf or opentsx-defaults.yaml` | `OPENTSX_CONF_DIR` names no directory | fix or unset `OPENTSX_CONF_DIR` |
 | `config/private/both: both opentsx-defaults.conf and opentsx-defaults.yaml exist; keep one` | two defaults files | delete one |
 | `config shwo: unknown command; did you mean config show?` | a misspelled subcommand | use the subcommand the message names |
+| `depoly: unknown subcommand of vectors; did you mean deploy?` | a misspelled subcommand of a command that has subcommands | use the subcommand the message names |
 | `--output: "yaml" is not allowed; expected one of text, json` | an unknown output format | use `text` or `json` |
 
 A result that cannot be written exits with 1 and `opentsx: stdout: cannot write the output; check that standard

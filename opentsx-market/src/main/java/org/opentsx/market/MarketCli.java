@@ -1,7 +1,12 @@
 package org.opentsx.market;
 
+import org.opentsx.conf.ConfCli;
+import org.opentsx.conf.OpenTsxConf;
+import org.opentsx.conf.OpenTsxConfException;
+import org.opentsx.conf.Registry;
 import org.opentsx.market.archive.Archive;
 import org.opentsx.market.archive.Backfill;
+import org.opentsx.market.archive.BrokerPublish;
 import org.opentsx.market.archive.Manifest;
 import org.opentsx.market.archive.MosmixRawArchive;
 import org.opentsx.market.archive.QualityReport;
@@ -10,7 +15,6 @@ import org.opentsx.market.source.EnergyChartsJson;
 import org.opentsx.market.source.EntsoeXml;
 import org.opentsx.market.source.Http;
 import org.opentsx.market.source.Marktwerte;
-import org.opentsx.market.source.MissingCredentials;
 import org.opentsx.market.source.PartnerCsv;
 import org.opentsx.market.source.Rebap;
 import org.opentsx.market.source.SmardJson;
@@ -19,62 +23,63 @@ import org.opentsx.model.v2.Episode;
 import org.opentsx.store.InMemorySeriesStore;
 import org.opentsx.store.SeriesStore;
 import org.opentsx.store.iceberg.IcebergSeriesStore;
+import org.slf4j.LoggerFactory;
 
+import java.io.FileDescriptor;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.function.IntSupplier;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
 
 /**
- * {@code bin/opentsx market <command>}: collect electricity-market data, keep the history archive, load it into a
- * store. Run without arguments for the usage.
+ * The commands {@code market <command>}: collect electricity-market data, keep the history archive, load it into a
+ * store. They read their keys through {@link OpenTsxConf#load}; {@code bin/opentsx market <command> --help} lists them.
+ * Every value, the series and the input files are checked before the first download. Exit codes: 0 success, 1
+ * runtime failure (a failed download or year, a rejected credential, a publish the broker did not confirm), 2 usage
+ * or configuration error (a credential that is not set included).
  */
 public final class MarketCli {
 
-    static final String USAGE = """
-            usage: bin/opentsx market <command> [options]
-
-              prices    --source smard|energy-charts|entsoe --from D --to D [--out f.csv[.gz]] [--offline file]
-              series    --name source/series --from D --to D [--out f.csv[.gz]] [--offline file]
-              rebap     --from D --to D [--out f.csv] [--offline file.csv] [--archive dir]
-              marktwert --from D --to D [--out f.csv] [--offline file.csv] [--archive dir]
-              import    --file f.csv --name partner-series --metric m --unit u [--origin REPORTED|FORECAST]
-                        [--value-column value] [--resolution PT15M] [--zone Europe/Berlin] [--archive dir]
-              backfill  [--archive data/history] [--series market|all|source/series,...] [--from-year 2019]
-                        [--to-year YYYY] [--delay-ms 500] [--force]
-              forward   [--archive data/history] [--series market|...] [--delay-ms 500]   (daily job: running year)
-              report    [--archive data/history] [--series ...] [--requality]   (--requality: recompute the
-                        quality reports from the archived files, e.g. after a rule change; no download)
-              weather-backfill [--archive data/history] [--from-year 2019] [--to-year Y]
-                        [--stations 03166:air_temperature,01358:global_radiation,...] [--sites file.yaml]
-                        (DWD CDC observations of the twin sites; default: all stations of the sites file)
-              weather-forward [--archive data/history] [--stations ...]   (daily job: running and previous year)
-              mosmix-archive [--archive data/history] [--stations 10579,10097,10046,E5411]
-                        (forward archive of raw MOSMIX_L forecasts; run every 6 h)
-              load      [--archive data/history] [--series ...] [--from-year Y --to-year Y] [--from-day D --to-day D]
-                        [--iceberg k=v,... --namespace tsx]
-              publish   --series source/name,... --kafscale host:port --domain wind [--archive data/history]
-                        [--from-year Y --to-year Y] [--from-day D --to-day D] [--batch 100] [--pause-ms 3000] [--dry-run]
-                        (archived series as raw episodes into tsx.<domain>.episodes.v2; stops at the first
-                        refusal of the broker; an episode keeps its identity, so reading tools can tell a repeat)
-              catalog
-
-              D = local date (Europe/Berlin, start of day) or an ISO instant; --to is exclusive.
-              Credentials (never in files under git): ENTSOE_TOKEN, NTP_CLIENT_ID, NTP_CLIENT_SECRET.
-            """;
+    static final String COMMAND = "market";
+    static final String ARCHIVE = "opentsx.archive.dir";
+    static final String STORE = "opentsx.market.store";
+    static final String NAME = "opentsx.market.name";
+    static final String FROM = "opentsx.market.from";
+    static final String TO = "opentsx.market.to";
+    static final String OUT = "opentsx.market.out";
+    static final String OFFLINE = "opentsx.market.offline";
+    static final String SERIES = "opentsx.market.series";
+    static final String BACKFILL_DELAY = "opentsx.market.backfillDelayMs";
+    static final String FORCE = "opentsx.market.force";
+    static final String SITES = "opentsx.history.sites";
+    static final String WEATHER_STATIONS = "opentsx.market.weather.stations";
+    static final String ICEBERG = "opentsx.iceberg.properties";
+    static final String NAMESPACE = "opentsx.iceberg.namespace";
+    static final String ENTSOE_TOKEN = "opentsx.market.entsoeToken";
+    static final String NTP_CLIENT_ID = "opentsx.market.ntpClientId";
+    static final String NTP_CLIENT_SECRET = "opentsx.market.ntpClientSecret";
+    static final String WRITE_FAILED = "stdout: cannot write the output; check that standard output is open and not full";
 
     /** Series of the default market backfill ("market"). */
     public static final List<String> MARKET = List.of("smard/day_ahead_price", "smard/load", "smard/residual_load",
@@ -85,155 +90,183 @@ public final class MarketCli {
             "netztransparenz/rebap_long", "netztransparenz/marktwert_epex", "netztransparenz/marktwert_wind_onshore",
             "netztransparenz/marktwert_wind_offshore", "netztransparenz/marktwert_solar");
 
+    /** The collector of the online sources: the pause between two requests to a host, and the credentials. */
+    interface Collectors {
+        Collector open(long delayMillis, Map<String, String> credentials);
+    }
+
     private MarketCli() {
     }
 
     public static void main(String[] args) {
-        if (args.length == 0 || args[0].equals("-h") || args[0].equals("--help")) {
-            System.out.print(USAGE);
-            System.exit(args.length == 0 ? 1 : 0);
-        }
-        System.exit(exitCode(args[0], System.err, () -> run(args[0], options(args), System.out, System.getenv(),
-                Instant.now())));
+        PrintStream out = new PrintStream(new FileOutputStream(FileDescriptor.out), true, StandardCharsets.UTF_8);
+        PrintStream err = new PrintStream(new FileOutputStream(FileDescriptor.err), true, StandardCharsets.UTF_8);
+        System.exit(run(List.of(args), System.getenv(), out, err, Instant.now(), Collector::online));
     }
 
-    /**
-     * Exit code of a command; a failure is one line on {@code err}: 2 for usage and IO, 1 for an HTTP status or a
-     * missing or rejected credential.
-     */
-    static int exitCode(String cmd, PrintStream err, IntSupplier command) {
+    /** {@code args} without the word {@code market}, as bin/opentsx passes them. */
+    static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err, Instant now,
+                   Collectors collectors) {
+        List<String> argv = new ArrayList<>(args.size() + 1);
+        argv.add(COMMAND);
+        argv.addAll(args);
+        Consumer<PrintStream> run;
         try {
-            return command.getAsInt();
-        } catch (IllegalArgumentException | UncheckedIOException e) {
-            err.println("market " + cmd + ": " + e.getMessage());
+            OpenTsxConf.Loaded loaded = OpenTsxConf.load(argv, env, env.get("OPENTSX_CONF_DIR"));
+            if (loaded.help()) {
+                Registry registry = Registry.shipped();
+                out.print(loaded.command() == null ? registry.help() : registry.help(loaded.command()));
+                return written(out, err);
+            }
+            if (loaded.version()) {
+                out.print(ConfCli.versionLine());
+                return written(out, err);
+            }
+            run = check(loaded.command(), loaded.conf(), now, collectors);
+            LoggerFactory.getLogger(MarketCli.class).info(loaded.startLine());
+        } catch (IllegalArgumentException e) {
+            err.print("opentsx: " + oneLine(e.getMessage() == null ? e.toString() : e.getMessage()) + "\n");
+            err.flush();
             return 2;
-        } catch (Http.StatusException | MissingCredentials e) {
-            err.println("market " + cmd + ": " + e.getMessage());
-            return 1;
+        } catch (RuntimeException e) {
+            return failed(e, err);
         }
+        try {
+            run.accept(out);
+        } catch (RuntimeException e) {
+            return failed(e, err);
+        }
+        return written(out, err);
     }
 
-    static int run(String cmd, Map<String, String> o, PrintStream out, Map<String, String> env, Instant now) {
-        Archive archive = new Archive(Path.of(o.getOrDefault("archive", "data/history")));
-        switch (cmd) {
-            case "catalog" -> MarketCatalog.all().forEach(d -> out.printf(Locale.ROOT, "%-42s %-34s %-8s %-9s %s%n",
-                    d.path(), d.metric(), d.unit(), d.origin(), d.tags()));
-            case "prices" -> {
-                String src = o.getOrDefault("source", "smard");
-                return fetchCommand(MarketCatalog.require(src + "/day_ahead_price"), o, out, env, archive, now);
+    /** Checks every value, the series and the input files; downloads and writes nothing. */
+    static Consumer<PrintStream> check(String command, OpenTsxConf conf, Instant now, Collectors collectors) {
+        Archive archive = new Archive(Path.of(conf.get(ARCHIVE)));
+        return switch (command) {
+            case "market catalog" -> out -> MarketCatalog.all().forEach(d -> out.printf(Locale.ROOT,
+                    "%-42s %-34s %-8s %-9s %s%n", d.path(), d.metric(), d.unit(), d.origin(), d.tags()));
+            case "market prices" -> fetch(MarketCatalog.require(conf.get("opentsx.market.source") + "/day_ahead_price"),
+                    conf, archive, now, collectors);
+            case "market series" -> {
+                String name = conf.get(NAME);
+                SeriesDef def = MarketCatalog.get(name).orElseThrow(() -> new OpenTsxConfException(named(conf, NAME),
+                        "\"" + name + "\" is not a series of the catalog", "run opentsx market catalog for the series"));
+                yield fetch(def, conf, archive, now, collectors);
             }
-            case "series" -> {
-                return fetchCommand(MarketCatalog.require(req(o, "name")), o, out, env, archive, now);
+            case "market rebap" -> fetch(MarketCatalog.require("netztransparenz/rebap_short"), conf, archive, now,
+                    collectors);
+            case "market marktwert" -> fetch(MarketCatalog.require("netztransparenz/marktwert_wind_onshore"), conf,
+                    archive, now, collectors);
+            case "market import" -> importFile(conf, archive, now);
+            case "market backfill", "market forward" -> backfill(command, conf, archive, now, collectors);
+            case "market report" -> {
+                List<SeriesDef> defs = series(conf, SERIES, archive);
+                Instant requality = conf.getBoolean("opentsx.market.requality") ? now : null;
+                yield out -> report(archive, defs, out, requality);
             }
-            case "rebap" -> {
-                return fetchCommand(MarketCatalog.require("netztransparenz/rebap_short"), o, out, env, archive, now);
-            }
-            case "marktwert" -> {
-                return fetchCommand(MarketCatalog.require("netztransparenz/marktwert_wind_onshore"), o, out, env, archive,
-                        now);
-            }
-            case "import" -> {
-                Map<String, String> tags = new LinkedHashMap<>();
-                tags.put("partner", o.getOrDefault("partner", "default"));
-                SeriesDef def = MarketCatalog.partner(req(o, "name"), req(o, "metric"), req(o, "unit"),
-                        o.getOrDefault("origin", "REPORTED"), tags);
-                List<Point> pts = PartnerCsv.parse(lines(Path.of(req(o, "file"))), o.get("value-column"),
-                        o.containsKey("resolution") ? Duration.parse(o.get("resolution")) : null,
-                        o.containsKey("zone") ? ZoneId.of(o.get("zone")) : null);
-                MarketSeries s = new MarketSeries(def, pts);
-                out.println(def.path() + ": " + s.size() + " points");
-                storeYears(archive, s, List.of("file:" + o.get("file")), now, env, out);
-            }
-            case "backfill", "forward" -> {
-                int[] years = years(cmd, o, now);
-                int from = years[0];
-                int to = years[1];
-                Collector c = Collector.online(Long.parseLong(o.getOrDefault("delay-ms", "500")));
-                List<Backfill.Outcome> r = new Backfill(archive, c, env, out).run(select(o.getOrDefault("series", "market")),
-                        from, to, o.containsKey("force"), now);
-                long failed = r.stream().filter(x -> x.status() == Backfill.Status.FAILED).count();
-                out.printf("backfill done: %d series-years, %d fetched, %d skipped (complete), %d failed, archive %s%n",
-                        r.size(), r.stream().filter(x -> x.status() == Backfill.Status.FETCHED).count(),
-                        r.stream().filter(x -> x.status() == Backfill.Status.SKIPPED_COMPLETE).count(), failed,
-                        archive.root().toAbsolutePath());
-                return failed > 0 ? 3 : 0;
-            }
-            case "report" -> report(archive, select(o.getOrDefault("series", "all-archived"), archive), out,
-                    o.containsKey("requality") ? now : null);
-            case "weather-backfill", "weather-forward" -> {
-                int[] years = years(cmd, o, now);
-                int from = years[0];
-                int to = years[1];
-                WeatherBackfill w = new WeatherBackfill(archive, new Http(Long.parseLong(o.getOrDefault("delay-ms", "500")), 4),
-                        WeatherBackfill.CDC, out);
-                long failed = 0;
-                for (String[] sp : weatherJobs(o)) {
-                    for (Backfill.Outcome r : w.run(sp[0], sp[1], from, to, o.containsKey("force"), now)) {
-                        out.printf("%-40s %d  %-16s %8d rows  %s%n", r.def().path(), r.year(), r.status(), r.rows(),
-                                r.message());
-                        failed += r.status() == Backfill.Status.FAILED ? 1 : 0;
+            case "market weather-backfill", "market weather-forward" -> weather(command, conf, archive, now);
+            case "market mosmix-archive" -> {
+                List<String> stations = conf.getList("opentsx.market.mosmix.stations");
+                yield out -> {
+                    for (MosmixRawArchive.Result r : new MosmixRawArchive(archive.root(), new Http(1000, 4))
+                            .collect(stations, now)) {
+                        out.printf("mosmix %-6s issue %s  %s%n", r.station(), r.issue(), r.added() ? "added " + r.file()
+                                : "already archived");
                     }
-                }
-                return failed > 0 ? 3 : 0;
+                };
             }
-            case "mosmix-archive" -> {
-                List<String> st = o.containsKey("stations") ? List.of(o.get("stations").split(","))
-                        : MosmixRawArchive.DEFAULT_STATIONS;
-                for (MosmixRawArchive.Result r : new MosmixRawArchive(archive.root(), new Http(1000, 4)).collect(st, now)) {
-                    out.printf("mosmix %-6s issue %s  %s%n", r.station(), r.issue(), r.added() ? "added " + r.file()
-                            : "already archived");
-                }
-            }
-            case "load" -> {
-                return load(archive, o, out);
-            }
-            case "publish" -> {
-                return org.opentsx.market.archive.BrokerPublish.run(archive, o, out);
-            }
-            default -> throw new IllegalArgumentException("unknown command " + cmd + "\n" + USAGE);
-        }
-        return 0;
+            case "market load" -> load(archive, conf);
+            case "market publish" -> BrokerPublish.check(archive, conf);
+            default -> throw new IllegalStateException(command + ": not a command of " + MarketCli.class.getName());
+        };
     }
 
     /** Fetch (or parse an offline file), summarise, optionally write a CSV and store into the archive. */
-    private static int fetchCommand(SeriesDef def, Map<String, String> o, PrintStream out, Map<String, String> env,
-                                    Archive archive, Instant now) {
-        long from = time(req(o, "from"));
-        long to = time(req(o, "to"));
-        List<MarketSeries> result = new ArrayList<>();
-        List<String> queries = new ArrayList<>();
-        if (o.containsKey("offline")) {
-            Path f = Path.of(o.get("offline"));
-            queries.add("file:" + f.getFileName());
-            result.addAll(offline(def, f));
+    private static Consumer<PrintStream> fetch(SeriesDef def, OpenTsxConf conf, Archive archive, Instant now,
+                                               Collectors collectors) {
+        long from = time(conf, FROM);
+        long to = time(conf, TO);
+        Optional<String> csv = conf.getOption(OUT);
+        if (csv.isPresent() && csv.get().endsWith(".gz")) {
+            throw new OpenTsxConfException(named(conf, OUT), "\"" + csv.get() + "\" names a gzip file",
+                    "expected a plain CSV file; the archive keeps the gzip'ed files");
+        }
+        boolean store = switch (conf.get(STORE)) {
+            case "always" -> true;
+            case "never" -> false;
+            default -> "commandLine".equals(conf.source(ARCHIVE));
+        };
+        List<MarketSeries> parsed;
+        List<String> fileQuery;
+        Collector collector;
+        if (conf.getOption(OFFLINE).isPresent()) {
+            Path f = inputFile(conf, OFFLINE);
+            try {
+                parsed = offline(def, f);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException(f + ": " + e.getMessage(), e);
+            }
+            fileQuery = List.of("file:" + f.getFileName());
+            collector = null;
         } else {
-            String why = Collector.unavailable(def, env);
-            if (why != null) {
-                out.println("skipped " + def.source() + ": " + why + " (use --offline <file> to import a download)");
-                return 4;
+            requireCredentials(def, conf);
+            parsed = null;
+            fileQuery = null;
+            collector = collectors.open(conf.getLong("opentsx.market.fetchDelayMs"), credentials(conf));
+        }
+        return out -> {
+            List<MarketSeries> result = new ArrayList<>();
+            List<String> queries = new ArrayList<>();
+            if (parsed != null) {
+                result.addAll(parsed);
+                queries.addAll(fileQuery);
+            } else {
+                for (SeriesDef d : siblings(def)) {
+                    Collector.Fetched f = collector.fetch(d, from, to);
+                    queries.addAll(f.queries());
+                    result.add(f.series());
+                }
             }
-            Collector c = Collector.online(Long.parseLong(o.getOrDefault("delay-ms", "300")));
-            for (SeriesDef d : siblings(def)) {
-                Collector.Fetched f = c.fetch(d, from, to);
-                queries.addAll(f.queries());
-                result.add(f.series());
+            for (MarketSeries s : result) {
+                MarketSeries sl = s.slice(from, to);
+                out.println(sl.def().path() + " [" + sl.def().unit() + ", " + sl.def().origin() + "]: "
+                        + QualityReport.of(sl, from, to).summary());
+                if (csv.isPresent()) {
+                    Path p = Path.of(result.size() == 1 ? csv.get() : csv.get().replaceFirst("(\\.csv)", "-"
+                            + sl.def().name() + "$1"));
+                    writeCsv(p, sl);
+                    out.println("  written " + p);
+                }
+                if (store) {
+                    storeYears(archive, sl, queries, now, out);
+                }
+            }
+        };
+    }
+
+    /** A credential the source of {@code def} needs and that is not set is a configuration error. */
+    private static void requireCredentials(SeriesDef def, OpenTsxConf conf) {
+        List<String> keys = switch (def.source()) {
+            case "entsoe" -> List.of(ENTSOE_TOKEN);
+            case "netztransparenz" -> List.of(NTP_CLIENT_ID, NTP_CLIENT_SECRET);
+            default -> List.of();
+        };
+        for (String key : keys) {
+            if (conf.getOption(key).isEmpty()) {
+                throw new OpenTsxConfException(key, "not set", "set " + String.join(" or ",
+                        conf.registry().entry(key, key).envNames()) + " or put " + key
+                        + " in a properties file, or parse a download with --offline");
             }
         }
-        for (MarketSeries s : result) {
-            MarketSeries sl = s.slice(from, to);
-            out.println(sl.def().path() + " [" + sl.def().unit() + ", " + sl.def().origin() + "]: "
-                    + QualityReport.of(sl, from, to).summary());
-            if (o.containsKey("out")) {
-                Path p = Path.of(result.size() == 1 ? o.get("out") : o.get("out").replaceFirst("(\\.csv)", "-"
-                        + sl.def().name() + "$1"));
-                writeCsv(p, sl);
-                out.println("  written " + p);
-            }
-            if (o.containsKey("archive") && !sl.isEmpty()) {
-                storeYears(archive, sl, queries, now, env, out);
-            }
-        }
-        return 0;
+    }
+
+    /** The credentials under the names {@link Collector} and {@link Backfill} read. */
+    static Map<String, String> credentials(OpenTsxConf conf) {
+        Map<String, String> out = new HashMap<>();
+        conf.getOption(ENTSOE_TOKEN).ifPresent(v -> out.put("ENTSOE_TOKEN", v));
+        conf.getOption(NTP_CLIENT_ID).ifPresent(v -> out.put("NTP_CLIENT_ID", v));
+        conf.getOption(NTP_CLIENT_SECRET).ifPresent(v -> out.put("NTP_CLIENT_SECRET", v));
+        return out;
     }
 
     /** Series that come in the same response (both reBAP sides, all market-value technologies). */
@@ -275,12 +308,90 @@ public final class MarketCli {
         return out;
     }
 
-    private static void storeYears(Archive archive, MarketSeries s, List<String> queries, Instant now,
-                                   Map<String, String> env, PrintStream out) {
+    private static Consumer<PrintStream> importFile(OpenTsxConf conf, Archive archive, Instant now) {
+        Path file = inputFile(conf, "opentsx.market.import.file");
+        Map<String, String> tags = new LinkedHashMap<>();
+        tags.put("partner", conf.get("opentsx.market.import.partner"));
+        SeriesDef def = MarketCatalog.partner(conf.get(NAME), conf.get("opentsx.market.import.metric"),
+                conf.get("opentsx.market.import.unit"), conf.get("opentsx.market.import.origin"), tags);
+        Duration resolution = conf.getOption("opentsx.market.import.resolution").isPresent()
+                ? conf.getDuration("opentsx.market.import.resolution") : null;
+        ZoneId zone = conf.getOption("opentsx.market.import.zone").map(z -> zone(conf, z)).orElse(null);
+        List<Point> pts;
+        try {
+            pts = PartnerCsv.parse(lines(file), conf.getOption("opentsx.market.import.valueColumn").orElse(null),
+                    resolution, zone);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(file + ": " + e.getMessage(), e);
+        }
+        MarketSeries s = new MarketSeries(def, pts);
+        List<String> queries = List.of("file:" + conf.get("opentsx.market.import.file"));
+        return out -> {
+            out.println(def.path() + ": " + s.size() + " points");
+            storeYears(archive, s, queries, now, out);
+        };
+    }
+
+    private static ZoneId zone(OpenTsxConf conf, String zone) {
+        try {
+            return ZoneId.of(zone);
+        } catch (DateTimeException e) {
+            throw new OpenTsxConfException(named(conf, "opentsx.market.import.zone"), "\"" + zone + "\" is not a time zone",
+                    "give a region id such as Europe/Berlin or an offset such as +02:00");
+        }
+    }
+
+    private static Consumer<PrintStream> backfill(String command, OpenTsxConf conf, Archive archive, Instant now,
+                                                  Collectors collectors) {
+        int[] years = years(command, conf, now);
+        List<SeriesDef> defs = series(conf, "opentsx.market.backfill.series", null);
+        boolean force = conf.getBoolean(FORCE);
+        Map<String, String> credentials = credentials(conf);
+        Collector c = collectors.open(conf.getLong(BACKFILL_DELAY), credentials);
+        return out -> {
+            List<Backfill.Outcome> r = new Backfill(archive, c, credentials, out).run(defs, years[0], years[1], force, now);
+            long failed = r.stream().filter(x -> x.status() == Backfill.Status.FAILED).count();
+            out.printf("backfill done: %d series-years, %d fetched, %d skipped (complete), %d failed, archive %s%n",
+                    r.size(), r.stream().filter(x -> x.status() == Backfill.Status.FETCHED).count(),
+                    r.stream().filter(x -> x.status() == Backfill.Status.SKIPPED_COMPLETE).count(), failed,
+                    archive.root().toAbsolutePath());
+            failedYears(command, failed, r.size());
+        };
+    }
+
+    private static Consumer<PrintStream> weather(String command, OpenTsxConf conf, Archive archive, Instant now) {
+        int[] years = years(command, conf, now);
+        List<String[]> jobs = weatherJobs(conf);
+        boolean force = conf.getBoolean(FORCE);
+        long delay = conf.getLong(BACKFILL_DELAY);
+        return out -> {
+            WeatherBackfill w = new WeatherBackfill(archive, new Http(delay, 4), WeatherBackfill.CDC, out);
+            long failed = 0;
+            long total = 0;
+            for (String[] sp : jobs) {
+                for (Backfill.Outcome r : w.run(sp[0], sp[1], years[0], years[1], force, now)) {
+                    out.printf("%-40s %d  %-16s %8d rows  %s%n", r.def().path(), r.year(), r.status(), r.rows(),
+                            r.message());
+                    failed += r.status() == Backfill.Status.FAILED ? 1 : 0;
+                    total++;
+                }
+            }
+            failedYears(command, failed, total);
+        };
+    }
+
+    private static void failedYears(String command, long failed, long total) {
+        if (failed > 0) {
+            throw new IllegalStateException(command + ": " + failed + " of " + total
+                    + " series-years failed; the lines marked FAILED on stdout say why");
+        }
+    }
+
+    private static void storeYears(Archive archive, MarketSeries s, List<String> queries, Instant now, PrintStream out) {
         if (s.isEmpty()) {
             return;
         }
-        Backfill b = new Backfill(archive, null, env, out);
+        Backfill b = new Backfill(archive, null, Map.of(), out);
         int y0 = Micro.yearOf(s.points().get(0).tMicros());
         int y1 = Micro.yearOf(s.points().get(s.size() - 1).tMicros());
         for (int y = y0; y <= y1; y++) {
@@ -320,40 +431,47 @@ public final class MarketCli {
         }
     }
 
-    private static int load(Archive archive, Map<String, String> o, PrintStream out) {
-        int y0 = Integer.parseInt(o.getOrDefault("from-year", "2000"));
-        int y1 = Integer.parseInt(o.getOrDefault("to-year", "2100"));
-        Instant fromDay = org.opentsx.market.archive.BrokerPublish.day(o, "from-day", Instant.MIN);
-        Instant toDay = org.opentsx.market.archive.BrokerPublish.day(o, "to-day", Instant.MAX);
-        SeriesStore store = o.containsKey("iceberg")
-                ? IcebergSeriesStore.open(props(o.get("iceberg")), o.getOrDefault("namespace", "tsx"))
-                : new InMemorySeriesStore();
-        long episodes = 0;
-        long values = 0;
-        try (store) {
-            for (SeriesDef d : select(o.getOrDefault("series", "all-archived"), archive)) {
-                Manifest m = archive.manifest(d);
-                for (String y : m.years.keySet()) {
-                    int year = Integer.parseInt(y);
-                    if (year < y0 || year > y1) {
-                        continue;
-                    }
-                    List<Episode> eps = EpisodeMapper.episodes(new MarketSeries(d, archive.read(d, year)),
-                                    "opentsx-market/3.0.1").stream()
-                            .filter(e -> !e.getTStart().isBefore(fromDay) && e.getTStart().isBefore(toDay))
-                            .map(org.opentsx.market.archive.BrokerPublish::identified).toList();
-                    store.write(eps);
-                    episodes += eps.size();
-                    values += eps.stream().mapToLong(Episode::getCount).sum();
-                    out.printf("%-40s %s  %6d episodes%n", d.path(), y, eps.size());
-                }
-            }
-        } catch (Exception e) {
-            throw new IllegalStateException("load failed: " + e.getMessage(), e);
+    private static Consumer<PrintStream> load(Archive archive, OpenTsxConf conf) {
+        int y0 = conf.getInt("opentsx.market.fromYear");
+        int y1 = conf.getInt("opentsx.market.toYear");
+        Instant fromDay = BrokerPublish.day(conf, "opentsx.market.fromDay", Instant.MIN);
+        Instant toDay = BrokerPublish.day(conf, "opentsx.market.toDay", Instant.MAX);
+        List<SeriesDef> defs = series(conf, SERIES, archive);
+        Map<String, String> iceberg;
+        try {
+            iceberg = "commandLine".equals(conf.source(ICEBERG)) ? props(conf.get(ICEBERG)) : null;
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(named(conf, ICEBERG) + ": " + e.getMessage(), e);
         }
-        out.printf("loaded %d episodes, %d values into %s%n", episodes, values,
-                o.containsKey("iceberg") ? "Iceberg namespace " + o.getOrDefault("namespace", "tsx") : "an in-memory store");
-        return 0;
+        String namespace = conf.get(NAMESPACE);
+        return out -> {
+            SeriesStore store = iceberg != null ? IcebergSeriesStore.open(iceberg, namespace) : new InMemorySeriesStore();
+            long episodes = 0;
+            long values = 0;
+            try (store) {
+                for (SeriesDef d : defs) {
+                    Manifest m = archive.manifest(d);
+                    for (String y : m.years.keySet()) {
+                        int year = Integer.parseInt(y);
+                        if (year < y0 || year > y1) {
+                            continue;
+                        }
+                        List<Episode> eps = EpisodeMapper.episodes(new MarketSeries(d, archive.read(d, year)),
+                                        "opentsx-market/3.0.1").stream()
+                                .filter(e -> !e.getTStart().isBefore(fromDay) && e.getTStart().isBefore(toDay))
+                                .map(BrokerPublish::identified).toList();
+                        store.write(eps);
+                        episodes += eps.size();
+                        values += eps.stream().mapToLong(Episode::getCount).sum();
+                        out.printf("%-40s %s  %6d episodes%n", d.path(), y, eps.size());
+                    }
+                }
+            } catch (Exception e) {
+                throw new IllegalStateException("load failed: " + e.getMessage(), e);
+            }
+            out.printf("loaded %d episodes, %d values into %s%n", episodes, values,
+                    iceberg != null ? "Iceberg namespace " + namespace : "an in-memory store");
+        };
     }
 
     /**
@@ -361,20 +479,22 @@ public final class MarketCli {
      * previous and the running UTC year, so a year that settles after New Year is fetched once more; the backfills
      * take {@code --from-year} (default 2019) to {@code --to-year} (default the running year).
      */
-    static int[] years(String cmd, Map<String, String> o, Instant now) {
+    static int[] years(String command, OpenTsxConf conf, Instant now) {
         int current = now.atZone(ZoneOffset.UTC).getYear();
-        int from = cmd.endsWith("forward") ? current - 1 : Integer.parseInt(o.getOrDefault("from-year", "2019"));
-        int to = Integer.parseInt(o.getOrDefault("to-year", Integer.toString(current)));
+        int from = command.endsWith("forward") ? current - 1 : conf.getInt("opentsx.market.backfill.fromYear");
+        int to = conf.getOption("opentsx.market.backfill.toYear").isPresent()
+                ? conf.getInt("opentsx.market.backfill.toYear") : current;
         return new int[]{from, to};
     }
 
     /** Station/parameter pairs of the weather backfill: {@code --stations id:param,...} or every station of the sites. */
-    static List<String[]> weatherJobs(Map<String, String> o) {
-        java.util.LinkedHashSet<String> jobs = new java.util.LinkedHashSet<>();
-        if (o.containsKey("stations")) {
-            jobs.addAll(List.of(o.get("stations").split(",")));
+    static List<String[]> weatherJobs(OpenTsxConf conf) {
+        LinkedHashSet<String> jobs = new LinkedHashSet<>();
+        Optional<String> sites = conf.getOption(SITES);
+        if (conf.getOption(WEATHER_STATIONS).isPresent()) {
+            jobs.addAll(conf.getList(WEATHER_STATIONS));
         } else {
-            for (HistorySites.Site s : HistorySites.load(o.containsKey("sites") ? Path.of(o.get("sites")) : null).values()) {
+            for (HistorySites.Site s : HistorySites.load(sites.isPresent() ? inputFile(conf, SITES) : null).values()) {
                 if (s.temperature() != null) {
                     jobs.add(s.temperature() + ":air_temperature");
                 }
@@ -388,25 +508,27 @@ public final class MarketCli {
         }
         List<String[]> out = new ArrayList<>();
         for (String j : jobs) {
-            String[] p = j.trim().split(":");
-            if (p.length != 2 || !WeatherBackfill.parameters().contains(p[1])) {
-                throw new IllegalArgumentException("expected station:parameter with parameter in "
-                        + WeatherBackfill.parameters() + ", got " + j);
+            String[] p = j.split(":");
+            if (p.length != 2 || p[0].isEmpty() || !WeatherBackfill.parameters().contains(p[1])) {
+                throw new OpenTsxConfException(named(conf, WEATHER_STATIONS), "item \"" + j + "\" is not allowed",
+                        "expected <id>:<parameter> with parameter in " + WeatherBackfill.parameters());
             }
             out.add(p);
         }
         if (out.isEmpty()) {
-            throw new IllegalArgumentException(o.containsKey("stations")
-                    ? "--stations \"" + o.get("stations") + "\": no station; expected <id>:<parameter>,... with "
-                    + "parameter in " + WeatherBackfill.parameters()
-                    : o.getOrDefault("sites", "classpath:" + HistorySites.RESOURCE) + ": sites: no site names a "
-                    + "temperature, wind or radiation station; name one, or pass --stations <id>:<parameter>,...");
+            throw new IllegalArgumentException(sites.orElse("classpath:" + HistorySites.RESOURCE) + ": sites: no site "
+                    + "names a temperature, wind or radiation station; name one, or pass --stations <id>:<parameter>,...");
         }
         return out;
     }
 
-    static List<SeriesDef> select(String spec) {
-        return select(spec, null);
+    /** The series a key selects ({@link #select}); an unknown one is refused with the name of the key. */
+    private static List<SeriesDef> series(OpenTsxConf conf, String key, Archive archive) {
+        try {
+            return select(conf.get(key), archive);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(named(conf, key) + ": " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -420,7 +542,7 @@ public final class MarketCli {
             case "all" -> MarketCatalog.all();
             case "all-archived" -> archive == null ? MarketCatalog.all() : archive.archivedSeries();
             default -> {
-                Map<String, SeriesDef> archived = new java.util.HashMap<>();
+                Map<String, SeriesDef> archived = new HashMap<>();
                 if (archive != null) {
                     archive.archivedSeries().forEach(d -> archived.put(d.path(), d));
                 }
@@ -430,17 +552,34 @@ public final class MarketCli {
         };
     }
 
-    static long time(String s) {
-        if (s.length() == 10) {
-            return Micro.berlinDay(LocalDate.parse(s));
+    /** The value of a key as a local date (Europe/Berlin, start of day) or an ISO instant, in microseconds. */
+    static long time(OpenTsxConf conf, String key) {
+        String s = conf.get(key);
+        try {
+            return s.length() == 10 ? Micro.berlinDay(LocalDate.parse(s)) : Micro.of(Instant.parse(s));
+        } catch (DateTimeException | ArithmeticException e) {
+            throw new OpenTsxConfException(named(conf, key), "\"" + s + "\" is not a date",
+                    "expected a local date YYYY-MM-DD (Europe/Berlin) or an ISO instant such as 2024-01-01T00:00:00Z");
         }
-        return Micro.of(Instant.parse(s));
+    }
+
+    /** The name of a key as the user most likely gave it: its flag when the command line set it, else the key. */
+    public static String named(OpenTsxConf conf, String key) {
+        String flag = conf.registry().entry(key, key).flag();
+        return flag != null && "commandLine".equals(conf.source(key)) ? "--" + flag : key;
+    }
+
+    /** The file a key names; a missing file is a usage error. */
+    static Path inputFile(OpenTsxConf conf, String key) {
+        String name = conf.get(key);
+        Path p = Path.of(name);
+        if (!Files.isRegularFile(p)) {
+            throw new OpenTsxConfException(name, "no such file", "give an existing file");
+        }
+        return p;
     }
 
     static void writeCsv(Path p, MarketSeries s) {
-        if (p.toString().endsWith(".gz")) {
-            throw new IllegalArgumentException("--out writes plain CSV; use --archive for the gzip'ed archive");
-        }
         StringBuilder sb = new StringBuilder(Archive.HEADER).append('\n');
         for (Point pt : s.points()) {
             sb.append(Micro.instant(pt.tMicros())).append(',').append(pt.dtMicros() / Micro.SECOND).append(',')
@@ -452,24 +591,8 @@ public final class MarketCli {
             }
             Files.writeString(p, sb, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw new UncheckedIOException(p + ": cannot write the CSV file", e);
         }
-    }
-
-    static Map<String, String> options(String[] args) {
-        Map<String, String> out = new LinkedHashMap<>();
-        for (int i = 1; i < args.length; i++) {
-            if (!args[i].startsWith("--")) {
-                throw new IllegalArgumentException("expected --option, got " + args[i]);
-            }
-            String k = args[i].substring(2);
-            if (i + 1 < args.length && !args[i + 1].startsWith("--")) {
-                out.put(k, args[++i]);
-            } else {
-                out.put(k, "true");
-            }
-        }
-        return out;
     }
 
     static Map<String, String> props(String csv) {
@@ -477,19 +600,11 @@ public final class MarketCli {
         for (String kv : csv.split(",")) {
             int eq = kv.indexOf('=');
             if (eq <= 0) {
-                throw new IllegalArgumentException("expected key=value in " + csv);
+                throw new IllegalArgumentException("item \"" + kv + "\" is not allowed; expected key=value");
             }
             out.put(kv.substring(0, eq).trim(), kv.substring(eq + 1).trim());
         }
         return out;
-    }
-
-    private static String req(Map<String, String> o, String k) {
-        String v = o.get(k);
-        if (v == null) {
-            throw new IllegalArgumentException("missing --" + k);
-        }
-        return v;
     }
 
     static String text(Path f) {
@@ -501,11 +616,44 @@ public final class MarketCli {
             }
             return s.startsWith("﻿") ? s.substring(1) : s;
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw new UncheckedIOException(f + ": cannot read the file", e);
         }
     }
 
     static List<String> lines(Path f) {
         return text(f).lines().toList();
+    }
+
+    private static int failed(Exception e, PrintStream err) {
+        LoggerFactory.getLogger(MarketCli.class).debug("stack trace of the failed run", e);
+        err.print("opentsx: " + causes(e) + "\n");
+        err.flush();
+        return 1;
+    }
+
+    private static int written(PrintStream out, PrintStream err) {
+        out.flush();
+        if (out.checkError()) {
+            err.print("opentsx: " + WRITE_FAILED + "\n");
+            err.flush();
+            return 1;
+        }
+        return 0;
+    }
+
+    /** The message and its causes on one line; a checked exception with its class, its message is often a bare path. */
+    static String causes(Throwable t) {
+        boolean bare = !(t instanceof RuntimeException) || t.getMessage() == null;
+        StringBuilder s = new StringBuilder(bare ? t.toString() : t.getMessage());
+        Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        seen.add(t);
+        for (Throwable c = t.getCause(); c != null && seen.add(c); c = c.getCause()) {
+            s.append("; caused by ").append(c);
+        }
+        return oneLine(s.toString());
+    }
+
+    private static String oneLine(String s) {
+        return String.valueOf(s).replaceAll("[\\s\\p{Cntrl}]+", " ").strip();
     }
 }

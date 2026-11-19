@@ -89,7 +89,7 @@ class VectorProcessorAppTest {
     @Test
     void aMisspelledCommandExitsWith2BeforeProvisioning() throws Exception {
         assertEquals(2, run("depoly", "--kafscale", "ks:9092", "--domain", "wind"));
-        assertEquals("opentsx: depoly: unexpected argument; expected opentsx vectors\n", err());
+        assertEquals("opentsx: depoly: unknown subcommand of vectors; did you mean deploy?\n", err());
         assertEquals(2, run("deploy", "--kafscale", "ks:9092"));
         assertEquals("opentsx: opentsx.vectors.dag: not set; set it with --dag, --conf opentsx.vectors.dag=<value> or"
                 + " OPENTSX_VECTORS_DAG\n", err());

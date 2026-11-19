@@ -14,9 +14,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Fetches any catalog series ({@link MarketCatalog}) for a time range from its source. Credentials come from the
- * environment ({@code ENTSOE_TOKEN}, {@code NTP_CLIENT_ID}, {@code NTP_CLIENT_SECRET}); a source without them
- * raises {@link MissingCredentials} with a message that says what to set.
+ * Fetches any catalog series ({@link MarketCatalog}) for a time range from its source. The credentials come in a map
+ * under the names {@code ENTSOE_TOKEN}, {@code NTP_CLIENT_ID} and {@code NTP_CLIENT_SECRET}; {@code bin/opentsx market}
+ * fills it from the keys {@code opentsx.market.entsoeToken}, {@code opentsx.market.ntpClientId} and
+ * {@code opentsx.market.ntpClientSecret}. A source without them raises {@link MissingCredentials} with a message that
+ * says what to set.
  */
 public final class Collector {
 
@@ -39,17 +41,17 @@ public final class Collector {
     }
 
     /** Online collector; {@code delayMillis} is the minimum pause between two requests to the same host. */
-    public static Collector online(long delayMillis) {
+    public static Collector online(long delayMillis, Map<String, String> credentials) {
         return new Collector(new Http(delayMillis, 4), new Http(delayMillis, 4), new Http(Math.max(delayMillis, 1000), 4),
-                new Http(Math.max(delayMillis, 600), 4), System.getenv());
+                new Http(Math.max(delayMillis, 600), 4), credentials);
     }
 
     /** Whether the source of {@code def} can be used with the configured credentials; otherwise the reason. */
     public static String unavailable(SeriesDef def, Map<String, String> env) {
         return switch (def.source()) {
-            case "entsoe" -> blank(env.get("ENTSOE_TOKEN")) ? "ENTSOE_TOKEN not set" : null;
+            case "entsoe" -> blank(env.get("ENTSOE_TOKEN")) ? "opentsx.market.entsoeToken not set" : null;
             case "netztransparenz" -> blank(env.get("NTP_CLIENT_ID")) || blank(env.get("NTP_CLIENT_SECRET"))
-                    ? "NTP_CLIENT_ID / NTP_CLIENT_SECRET not set" : null;
+                    ? "opentsx.market.ntpClientId or opentsx.market.ntpClientSecret not set" : null;
             default -> null;
         };
     }

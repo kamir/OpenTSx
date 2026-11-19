@@ -87,9 +87,10 @@ public final class NetztransparenzSource {
 
     private String token() {
         if (clientId == null || clientId.isBlank() || clientSecret == null || clientSecret.isBlank()) {
-            throw new MissingCredentials("netztransparenz.de needs an OAuth client: set NTP_CLIENT_ID and "
-                    + "NTP_CLIENT_SECRET (OAuth manager in the netztransparenz.de extranet), or import the CSV "
-                    + "download with --offline");
+            throw new MissingCredentials("opentsx.market.ntpClientId, opentsx.market.ntpClientSecret: not set; "
+                    + "netztransparenz.de needs an OAuth client (OAuth manager in the netztransparenz.de extranet) in "
+                    + "OPENTSX_MARKET_NTP_CLIENT_ID and OPENTSX_MARKET_NTP_CLIENT_SECRET, NTP_CLIENT_ID and "
+                    + "NTP_CLIENT_SECRET or a properties file, or import the CSV download with --offline");
         }
         if (token == null || System.currentTimeMillis() > tokenExpiresMillis - 60_000) {
             String form = "grant_type=client_credentials&client_id=" + enc(clientId) + "&client_secret=" + enc(clientSecret);

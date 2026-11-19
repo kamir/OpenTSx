@@ -56,6 +56,9 @@ public final class H2History {
      * period's prices (1 = always run).
      */
     public Run inputs(TwinPlan plan, String wind, double priceQuantile) {
+        if (!wind.equals("dwd") && !wind.equals("smard")) {
+            throw new IllegalArgumentException("wind: \"" + wind + "\" is not allowed; expected smard or dwd");
+        }
         long t0 = plan.startMicros();
         long step = plan.baseStepMicros();
         int n = plan.steps();

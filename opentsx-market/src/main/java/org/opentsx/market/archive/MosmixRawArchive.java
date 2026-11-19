@@ -32,8 +32,6 @@ public final class MosmixRawArchive {
 
     public static final String URL = "https://opendata.dwd.de/weather/local_forecasts/mos/MOSMIX_L/single_stations/"
             + "%1$s/kml/MOSMIX_L_LATEST_%1$s.kmz";
-    /** MOSMIX ids of the sites (DWD MOSMIX station catalogue): Marienberg, Greifswalder Oie, Kiel-Holtenau, Kieler Bucht. */
-    public static final List<String> DEFAULT_STATIONS = List.of("10579", "10097", "10046", "E5411");
     private static final Pattern ISSUE = Pattern.compile("<dwd:IssueTime>([^<]+)</dwd:IssueTime>");
 
     /** Result per station: issue time, whether it was new, file. */

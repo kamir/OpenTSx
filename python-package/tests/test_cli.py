@@ -223,3 +223,13 @@ def test_help_lists_the_commands_and_marks_secrets(capsys):
     code, out, err = run(capsys, ["config", "show", "--help"])
     assert out.endswith("  --version                   print the version and exit\n"
                         "  --output <text|json>        print a table or one line of JSON\n")
+
+
+def test_only_commands_outside_the_configuration_note_their_own_flags(capsys):
+    code, out, err = run(capsys, ["kafscale-check", "--help"])
+    assert (code, err) == (0, "")
+    assert "\nIn the Java runtime, kafscale-check parses its own flags and does not read --conf," in out
+    for command in (["market", "prices"], ["history-twin", "twin"], ["stats"]):
+        code, out, err = run(capsys, command + ["--help"])
+        assert (code, err) == (0, "")
+        assert "In the Java runtime" not in out, command

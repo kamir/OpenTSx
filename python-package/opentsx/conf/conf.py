@@ -23,7 +23,24 @@ CONF_COMMANDS = (
     "dwd mosmix",
     "dwd obs",
     "dwd stations",
+    "history-twin boat",
+    "history-twin house",
+    "history-twin twin",
     "house",
+    "market backfill",
+    "market catalog",
+    "market forward",
+    "market import",
+    "market load",
+    "market marktwert",
+    "market mosmix-archive",
+    "market prices",
+    "market publish",
+    "market rebap",
+    "market report",
+    "market series",
+    "market weather-backfill",
+    "market weather-forward",
     "metadata",
     "modbus check",
     "modbus poll",
@@ -447,7 +464,15 @@ def _command(registry: Registry, args: list[str]) -> tuple[str, int]:
     words = _words(args)
     found = _longest_command(registry, words)
     if found is not None:
-        return found, len(found.split(" "))
+        used = len(found.split(" "))
+        subcommands = sorted(
+            name[len(found) + 1 :] for name in registry.commands if name.startswith(found + " ")
+        )
+        if len(words) > used and subcommands and not registry.commands[found].get("args"):
+            near = _near(words[used], subcommands)
+            hint = f"did you mean {near}?" if near else "expected one of " + ", ".join(subcommands)
+            raise _error(words[used], f"unknown subcommand of {found}", hint)
+        return found, used
     if not words:
         raise _error("<command>", "missing", "run opentsx --help for the commands")
     group = sorted(name for name in registry.commands if name.split(" ")[0] == words[0])

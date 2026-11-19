@@ -2,6 +2,7 @@ package org.opentsx.market;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.opentsx.conf.OpenTsxConf;
 import org.opentsx.market.archive.Archive;
 import org.opentsx.market.archive.Backfill;
 import org.opentsx.market.archive.Manifest;
@@ -147,15 +148,17 @@ class WeatherJobsTest {
 
     @Test
     void defaultStationsComeFromTheSitesFileAndStationsCanBeNamed() {
-        List<String> jobs = MarketCli.weatherJobs(Map.of()).stream().map(j -> j[0] + ":" + j[1]).toList();
+        List<String> jobs = MarketCli.weatherJobs(conf()).stream().map(j -> j[0] + ":" + j[1]).toList();
         assertEquals(List.of("03166:air_temperature", "03166:wind_speed", "01358:global_radiation",
                 "01759:air_temperature", "01759:wind_speed", "00183:global_radiation",
                 "02564:air_temperature", "02564:wind_speed", "06163:global_radiation"), jobs);
-        List<String[]> named = MarketCli.weatherJobs(Map.of("stations", "01759:pressure, 01759:wind_gust,01759:pressure"));
+        List<String[]> named = MarketCli.weatherJobs(conf("--stations", "01759:pressure, 01759:wind_gust,01759:pressure"));
         assertEquals(2, named.size());   // duplicates once
         assertArrayEquals(new String[]{"01759", "wind_gust"}, named.get(1));
-        assertThrows(IllegalArgumentException.class, () -> MarketCli.weatherJobs(Map.of("stations", "01759:sunshine")));
-        assertThrows(IllegalArgumentException.class, () -> MarketCli.weatherJobs(Map.of("stations", "01759")));
+        assertEquals("--stations: item \"01759:sunshine\" is not allowed; expected <id>:<parameter> with parameter in "
+                + WeatherBackfill.parameters(), assertThrows(IllegalArgumentException.class,
+                () -> MarketCli.weatherJobs(conf("--stations", "01759:sunshine"))).getMessage());
+        assertThrows(IllegalArgumentException.class, () -> MarketCli.weatherJobs(conf("--stations", "01759")));
     }
 
     @Test
@@ -163,18 +166,20 @@ class WeatherJobsTest {
         String park = "  windpark-ostsee:\n    latitude: 54.45\n    longitude: 13.95\n    wind: \"01759\"\n";
         Path rootTypo = Files.writeString(dir.resolve("root.yaml"), "site:\n" + park);
         Path noStation = Files.writeString(dir.resolve("none.yaml"), "sites: {}\n");
-        Map<Map<String, String>, String> cases = new LinkedHashMap<>();
-        cases.put(Map.of("sites", rootTypo.toString()), rootTypo + ": site: unknown field; allowed: sites");
-        cases.put(Map.of("sites", noStation.toString()), noStation + ": sites: no site names a temperature, wind or "
+        Map<List<String>, String> cases = new LinkedHashMap<>();
+        cases.put(List.of("--sites", rootTypo.toString()), rootTypo + ": site: unknown field; allowed: sites");
+        cases.put(List.of("--sites", noStation.toString()), noStation + ": sites: no site names a temperature, wind or "
                 + "radiation station; name one, or pass --stations <id>:<parameter>,...");
-        cases.put(Map.of("stations", ","), "--stations \",\": no station; expected <id>:<parameter>,... with "
-                + "parameter in " + WeatherBackfill.parameters());
+        cases.put(List.of("--stations", ","), "--stations: \",\" has an empty item; expected comma-separated items such "
+                + "as a,b");
+        cases.put(List.of("--sites", dir.resolve("missing.yaml").toString()), dir.resolve("missing.yaml")
+                + ": no such file; give an existing file");
         assertWeatherBackfillStops(cases, dir);
         Path fieldTypo = Files.writeString(dir.resolve("typo.yaml"), "sites:\n" + park + "    hubHeight: 120\n");
         assertEquals(fieldTypo + ": sites.windpark-ostsee.hubHeight: unknown field; allowed: anemometerHeightM, "
                         + "hubHeightM, latitude, longitude, radiation, shearExponent, temperature, wind",
                 assertThrows(IllegalArgumentException.class,
-                        () -> MarketCli.weatherJobs(Map.of("sites", fieldTypo.toString()))).getMessage());
+                        () -> MarketCli.weatherJobs(conf("--sites", fieldTypo.toString()))).getMessage());
         Path noLatitude = Files.writeString(dir.resolve("lat.yaml"),
                 "sites:\n" + park.replace("    latitude: 54.45\n", ""));
         assertEquals(noLatitude + ": sites.windpark-ostsee.latitude: missing; a site needs latitude and longitude in "
@@ -193,12 +198,12 @@ class WeatherJobsTest {
                 "sites:\n" + park.replace("    longitude", "   longitude"));
         Path tab = Files.writeString(dir.resolve("tab.yaml"), "sites:\n\t" + park.strip());
         Path empty = Files.writeString(dir.resolve("empty.yaml"), "");
-        Map<Map<String, String>, String> cases = new LinkedHashMap<>();
-        cases.put(Map.of("sites", broken.toString()), broken + ":4: not valid YAML; while parsing a block mapping, "
+        Map<List<String>, String> cases = new LinkedHashMap<>();
+        cases.put(List.of("--sites", broken.toString()), broken + ":4: not valid YAML; while parsing a block mapping, "
                 + "expected <block end>, but found '<block mapping start>'");
-        cases.put(Map.of("sites", tab.toString()), tab + ":2: not valid YAML; while scanning for the next token, "
+        cases.put(List.of("--sites", tab.toString()), tab + ":2: not valid YAML; while scanning for the next token, "
                 + "found character '\\t(TAB)' that cannot start any token. (Do not use \\t(TAB) for indentation)");
-        cases.put(Map.of("sites", empty.toString()), empty + ": sites: missing; the file needs a map sites with one "
+        cases.put(List.of("--sites", empty.toString()), empty + ": sites: missing; the file needs a map sites with one "
                 + "entry per site");
         assertWeatherBackfillStops(cases, dir);
         Map<String, String> wrong = new LinkedHashMap<>();
@@ -219,27 +224,30 @@ class WeatherJobsTest {
         }
     }
 
-    /** Each options map stops {@code weather-backfill} with exit code 2 and its message as the one line on stderr. */
-    static void assertWeatherBackfillStops(Map<Map<String, String>, String> cases, Path dir) {
-        for (Map.Entry<Map<String, String>, String> c : cases.entrySet()) {
-            Map<String, String> o = new LinkedHashMap<>(c.getKey());
-            o.put("archive", dir.resolve("history").toString());
-            ByteArrayOutputStream err = new ByteArrayOutputStream();
-            int code = MarketCli.exitCode("weather-backfill", new PrintStream(err, true, StandardCharsets.UTF_8),
-                    () -> MarketCli.run("weather-backfill", o, new PrintStream(new ByteArrayOutputStream()), Map.of(),
-                            Instant.parse("2026-10-22T00:00:00Z")));
-            assertEquals(2, code, c.getValue());
-            assertEquals(List.of("market weather-backfill: " + c.getValue()),
-                    err.toString(StandardCharsets.UTF_8).lines().toList());
+    /** Each list of options stops {@code weather-backfill} with exit code 2 and its message as the one line on stderr. */
+    static void assertWeatherBackfillStops(Map<List<String>, String> cases, Path dir) {
+        for (Map.Entry<List<String>, String> c : cases.entrySet()) {
+            List<String> args = new ArrayList<>(List.of("weather-backfill", "--archive", dir.resolve("history").toString()));
+            args.addAll(c.getKey());
+            assertEquals(new MarketCliTest.Result(2, "", "opentsx: " + c.getValue() + "\n"),
+                    MarketCliTest.cli(args.toArray(String[]::new)));
         }
+    }
+
+    /** The configuration of {@code market weather-backfill} with {@code args}. */
+    static OpenTsxConf conf(String... args) {
+        List<String> argv = new ArrayList<>(List.of("market", "weather-backfill"));
+        argv.addAll(List.of(args));
+        return OpenTsxConf.load(argv, Map.of(), null).conf();
     }
 
     @Test
     void dailyJobsTakeThePreviousAndTheRunningYear() {
         Instant now = Instant.parse("2027-01-02T06:23:00Z");
-        assertArrayEquals(new int[]{2026, 2027}, MarketCli.years("weather-forward", Map.of(), now));
-        assertArrayEquals(new int[]{2026, 2027}, MarketCli.years("forward", Map.of(), now));
-        assertArrayEquals(new int[]{2019, 2027}, MarketCli.years("weather-backfill", Map.of(), now));
-        assertArrayEquals(new int[]{2022, 2025}, MarketCli.years("backfill", Map.of("from-year", "2022", "to-year", "2025"), now));
+        assertArrayEquals(new int[]{2026, 2027}, MarketCli.years("market weather-forward", conf(), now));
+        assertArrayEquals(new int[]{2026, 2027}, MarketCli.years("market forward", conf(), now));
+        assertArrayEquals(new int[]{2019, 2027}, MarketCli.years("market weather-backfill", conf(), now));
+        assertArrayEquals(new int[]{2022, 2025}, MarketCli.years("market backfill", conf("--from-year", "2022", "--to-year",
+                "2025"), now));
     }
 }

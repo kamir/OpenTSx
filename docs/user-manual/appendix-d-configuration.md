@@ -29,7 +29,7 @@ The Env column, `--conf`, `--properties-file` and the defaults file reach `opent
 `config get`, `opentsx version`, code that calls `OpenTsxConf.load` and every command whose
 `bin/opentsx <command> --help` prints a `keys:` section. Every other command of `bin/opentsx` parses its own flags
 and does not read them; see [chapter 18](18-configuration.md). The commands of `bin/opentsx` that read them:
-`boat`, `dwd house`, `dwd mosmix`, `dwd obs`, `dwd stations`, `house`, `metadata`, `modbus check`, `modbus poll`, `modbus read`, `modbus simulate`, `retrieval-server`, `stats`, `stats-flink`, `studio-export`, `twin`, `twin-coupling`, `twin-live bridge`, `twin-live demo`, `twin-live publish`, `twin-schemas`, `vectors`, `vectors deploy`, `vectors run`, `vectors stop`, `windpark-sim`.
+`boat`, `dwd house`, `dwd mosmix`, `dwd obs`, `dwd stations`, `history-twin boat`, `history-twin house`, `history-twin twin`, `house`, `market backfill`, `market catalog`, `market forward`, `market import`, `market load`, `market marktwert`, `market mosmix-archive`, `market prices`, `market publish`, `market rebap`, `market report`, `market series`, `market weather-backfill`, `market weather-forward`, `metadata`, `modbus check`, `modbus poll`, `modbus read`, `modbus simulate`, `retrieval-server`, `stats`, `stats-flink`, `studio-export`, `twin`, `twin-coupling`, `twin-live bridge`, `twin-live demo`, `twin-live publish`, `twin-schemas`, `vectors`, `vectors deploy`, `vectors run`, `vectors stop`, `windpark-sim`.
 
 A key marked **Secret.** comes only from code, the environment or a file. `OpenTsxConf.load` refuses it on the
 command line, so its Alias is none. Every output of `opentsx config` shows its value as `******`. A secret has no

@@ -3,9 +3,12 @@ package org.opentsx.market.archive;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.opentsx.conf.OpenTsxConf;
+import org.opentsx.conf.OpenTsxConfException;
 import org.opentsx.kafka.KafScaleClients;
 import org.opentsx.kafka.TopicLayout;
 import org.opentsx.market.EpisodeMapper;
+import org.opentsx.market.MarketCli;
 import org.opentsx.market.MarketSeries;
 import org.opentsx.market.SeriesDef;
 import org.opentsx.model.OpenTsxAvro;
@@ -15,17 +18,19 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 /**
  * Writes archived series as raw episodes into the episodes topic of a domain, where the retrieval server and the
@@ -39,50 +44,75 @@ import java.util.concurrent.TimeoutException;
  */
 public final class BrokerPublish {
 
+    static final String DOMAIN = "opentsx.domain";
+
     private BrokerPublish() {
     }
 
-    public static int run(Archive archive, Map<String, String> o, PrintStream out) {
-        String bootstrap = o.get("kafscale");
-        String domain = o.get("domain");
-        boolean dry = o.containsKey("dry-run");
-        if (o.get("series") == null || domain == null || (bootstrap == null && !dry)) {
-            throw new IllegalArgumentException("publish needs --series source/name,... --domain <domain> and --kafscale host:port (or --dry-run)");
+    /**
+     * Checks the keys of {@code market publish} and the series in the archive; reads and sends nothing. The work it
+     * returns stops with an exception at the first batch the broker does not confirm.
+     */
+    public static Consumer<PrintStream> check(Archive archive, OpenTsxConf conf) {
+        boolean dry = conf.getBoolean("opentsx.market.publish.dryRun");
+        List<String> paths = conf.getList("opentsx.market.publish.series");
+        if (!conf.contains(DOMAIN)) {
+            throw new OpenTsxConfException(DOMAIN, "not set", "set it with --domain, --conf " + DOMAIN
+                    + "=<value> or OPENTSX_DOMAIN");
         }
-        int y0 = Integer.parseInt(o.getOrDefault("from-year", "2000"));
-        int y1 = Integer.parseInt(o.getOrDefault("to-year", "2100"));
-        int batch = Integer.parseInt(o.getOrDefault("batch", "100"));
-        long pauseMs = Long.parseLong(o.getOrDefault("pause-ms", "3000"));
-        Instant fromDay = day(o, "from-day", Instant.MIN);
-        Instant toDay = day(o, "to-day", Instant.MAX);
-        String topic = new TopicLayout(domain).episodes();
-
-        List<Episode> all = new ArrayList<>();
-        for (String path : o.get("series").split(",")) {
-            SeriesDef def = archive.archivedSeries().stream().filter(d -> d.path().equals(path.trim())).findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException("the archive has no series " + path.trim()));
-            int before = all.size();
-            long values = 0;
-            for (String y : archive.manifest(def).years.keySet()) {
-                int year = Integer.parseInt(y);
-                if (year < y0 || year > y1) {
-                    continue;
-                }
-                for (Episode e : EpisodeMapper.episodes(new MarketSeries(def, archive.read(def, year)), "opentsx-market/3.0.1")) {
-                    if (e.getTStart().isBefore(fromDay) || !e.getTStart().isBefore(toDay)) {
+        String topic = new TopicLayout(conf.get(DOMAIN)).episodes();
+        String bootstrap = dry ? null : conf.get("opentsx.kafscale.bootstrap");
+        int y0 = conf.getInt("opentsx.market.fromYear");
+        int y1 = conf.getInt("opentsx.market.toYear");
+        int batch = conf.getInt("opentsx.market.publish.batch");
+        if (batch < 1) {
+            throw new OpenTsxConfException(MarketCli.named(conf, "opentsx.market.publish.batch"), "\"" + batch
+                    + "\" is not allowed", "expected 1 or more");
+        }
+        long pauseMs = conf.getLong("opentsx.market.publish.pauseMs");
+        if (pauseMs < 0) {
+            throw new OpenTsxConfException(MarketCli.named(conf, "opentsx.market.publish.pauseMs"), "\"" + pauseMs
+                    + "\" is not allowed", "expected 0 or more");
+        }
+        Instant fromDay = day(conf, "opentsx.market.fromDay", Instant.MIN);
+        Instant toDay = day(conf, "opentsx.market.toDay", Instant.MAX);
+        List<SeriesDef> defs = new ArrayList<>();
+        for (String path : paths) {
+            defs.add(archive.archivedSeries().stream().filter(d -> d.path().equals(path)).findFirst()
+                    .orElseThrow(() -> new OpenTsxConfException(MarketCli.named(conf, "opentsx.market.publish.series"),
+                            "item \"" + path + "\" is not in the archive " + archive.root(),
+                            "expected an archived series; run opentsx market report for them")));
+        }
+        return out -> {
+            List<Episode> all = new ArrayList<>();
+            for (SeriesDef def : defs) {
+                int before = all.size();
+                long values = 0;
+                for (String y : archive.manifest(def).years.keySet()) {
+                    int year = Integer.parseInt(y);
+                    if (year < y0 || year > y1) {
                         continue;
                     }
-                    all.add(identified(e));
-                    values += e.getCount();
+                    for (Episode e : EpisodeMapper.episodes(new MarketSeries(def, archive.read(def, year)), "opentsx-market/3.0.1")) {
+                        if (e.getTStart().isBefore(fromDay) || !e.getTStart().isBefore(toDay)) {
+                            continue;
+                        }
+                        all.add(identified(e));
+                        values += e.getCount();
+                    }
                 }
+                out.printf("%-40s %6d episodes %8d values  metric %s, origin %s%n", def.path(), all.size() - before, values,
+                        def.key().getMetric(), def.origin());
             }
-            out.printf("%-40s %6d episodes %8d values  metric %s, origin %s%n", def.path(), all.size() - before, values,
-                    def.key().getMetric(), def.origin());
-        }
-        if (dry) {
-            out.printf("dry run: %d episodes would go to %s%n", all.size(), topic);
-            return 0;
-        }
+            if (dry) {
+                out.printf("dry run: %d episodes would go to %s%n", all.size(), topic);
+                return;
+            }
+            send(all, topic, bootstrap, batch, pauseMs, out);
+        };
+    }
+
+    private static void send(List<Episode> all, String topic, String bootstrap, int batch, long pauseMs, PrintStream out) {
         OpenTsxAvro avro = new OpenTsxAvro();
         int done = 0;
         long started = System.nanoTime();
@@ -99,10 +129,8 @@ public final class BrokerPublish {
                         f.get(KafScaleClients.DELIVERY_TIMEOUT.toSeconds() + 30, TimeUnit.SECONDS);
                     }
                 } catch (ExecutionException | TimeoutException e) {
-                    Throwable cause = e.getCause() == null ? e : e.getCause();
-                    out.printf("STOPPED: the broker did not confirm the batch after episode %d of %d (%s: %s). Nothing after it was sent.%n",
-                            done, all.size(), cause.getClass().getSimpleName(), cause.getMessage());
-                    return 3;
+                    throw new IllegalStateException("the broker did not confirm the batch after episode " + done + " of "
+                            + all.size() + "; nothing after it was sent", e.getCause() == null ? e : e.getCause());
                 }
                 done += part.size();
                 out.printf("%5d of %d confirmed (batch in %d ms)%n", done, all.size(), (System.nanoTime() - t) / 1_000_000);
@@ -112,16 +140,23 @@ public final class BrokerPublish {
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            out.printf("STOPPED: interrupted after episode %d of %d%n", done, all.size());
-            return 3;
+            throw new IllegalStateException("interrupted after episode " + done + " of " + all.size(), e);
         }
         out.printf("published %d episodes to %s in %d s%n", done, topic, (System.nanoTime() - started) / 1_000_000_000);
-        return 0;
     }
 
-    /** Start of the UTC day given as option {@code key} (YYYY-MM-DD), or {@code absent}. */
-    public static Instant day(Map<String, String> o, String key, Instant absent) {
-        return o.containsKey(key) ? LocalDate.parse(o.get(key)).atStartOfDay(ZoneOffset.UTC).toInstant() : absent;
+    /** Start of the UTC day a key names (YYYY-MM-DD), or {@code absent} when it is not set. */
+    public static Instant day(OpenTsxConf conf, String key, Instant absent) {
+        Optional<String> v = conf.getOption(key);
+        if (v.isEmpty()) {
+            return absent;
+        }
+        try {
+            return LocalDate.parse(v.get()).atStartOfDay(ZoneOffset.UTC).toInstant();
+        } catch (DateTimeException e) {
+            throw new OpenTsxConfException(MarketCli.named(conf, key), "\"" + v.get() + "\" is not a day",
+                    "expected a UTC day YYYY-MM-DD");
+        }
     }
 
     /** The episode with an identity that follows from its series and the time it begins at. */

@@ -69,7 +69,13 @@ class SourcesTest {
         MissingCredentials e = assertThrows(MissingCredentials.class,
                 () -> s.fetch("day_ahead_price", 0, Micro.DAY, new ArrayList<>()));
         assertTrue(e.getMessage().contains("ENTSOE_TOKEN"));
-        assertEquals("ENTSOE_TOKEN not set", Collector.unavailable(MarketCatalog.require("entsoe/load"), Map.of()));
+        assertEquals("opentsx.market.entsoeToken: not set; ENTSO-E needs a security token (register at "
+                + "https://transparency.entsoe.eu, then request Web API access) in OPENTSX_MARKET_ENTSOE_TOKEN, ENTSOE_TOKEN "
+                + "or a properties file", e.getMessage());
+        assertEquals("opentsx.market.entsoeToken not set",
+                Collector.unavailable(MarketCatalog.require("entsoe/load"), Map.of()));
+        assertEquals("opentsx.market.ntpClientId or opentsx.market.ntpClientSecret not set",
+                Collector.unavailable(MarketCatalog.require("netztransparenz/rebap_short"), Map.of("NTP_CLIENT_ID", "c")));
     }
 
     @Test
@@ -131,20 +137,17 @@ class SourcesTest {
     @Test
     void aRefusedEntsoeRequestEndsTheCommandWithOneLineWithoutTheToken() {
         String token = "SECRET-TOKEN-123";
-        Collector c = new Collector(null, null, (uri, h) -> {
+        Fetcher refused = (uri, h) -> {
             throw new Http.StatusException(503, uri, "Service Unavailable: GET " + uri);
-        }, null, Map.of("ENTSOE_TOKEN", token));
-        ByteArrayOutputStream err = new ByteArrayOutputStream();
-        int code = MarketCli.exitCode("prices", new PrintStream(err, true, StandardCharsets.UTF_8), () -> {
-            c.fetch(MarketCatalog.require("entsoe/day_ahead_price"), t("2025-10-01T00:00:00Z"),
-                    t("2025-10-02T00:00:00Z"));
-            return 0;
-        });
-        String shown = err.toString(StandardCharsets.UTF_8);
-        assertEquals(1, code, shown);
-        assertEquals(1, shown.lines().count(), shown);
-        assertTrue(shown.startsWith("market prices: HTTP 503 for " + EntsoeSource.BASE + "?documentType=A44"), shown);
-        assertFalse(shown.contains(token), shown);
+        };
+        MarketCliTest.Result r = MarketCliTest.cli((delay, credentials) -> new Collector(null, null, refused, null,
+                credentials), Map.of("ENTSOE_TOKEN", token), "prices", "--source", "entsoe", "--from", "2025-10-01", "--to",
+                "2025-10-02");
+        assertEquals(1, r.code(), r.toString());
+        assertEquals("", r.out());
+        assertEquals(1, r.err().lines().count(), r.err());
+        assertTrue(r.err().startsWith("opentsx: HTTP 503 for " + EntsoeSource.BASE + "?documentType=A44"), r.err());
+        assertFalse(r.err().contains(token), r.err());
     }
 
     @Test
@@ -160,23 +163,15 @@ class SourcesTest {
                 throw new Http.StatusException(401, uri, "invalid_client");
             }
         };
-        Collector c = new Collector(null, null, unauthorized, unauthorized, Map.of("ENTSOE_TOKEN", "SECRET-TOKEN-123",
-                "NTP_CLIENT_ID", "client", "NTP_CLIENT_SECRET", "s3cret"));
-        assertOneFailureLine("prices", c, "entsoe/day_ahead_price",
-                "market prices: ENTSO-E rejected the token (HTTP 401): check ENTSOE_TOKEN");
-        assertOneFailureLine("rebap", c, "netztransparenz/rebap_short",
-                "market rebap: netztransparenz.de rejected the client credentials (HTTP 401)");
-    }
-
-    /** Fetching {@code series} in {@code cmd} ends with exit code 1 and {@code line} as the only line on stderr. */
-    static void assertOneFailureLine(String cmd, Collector c, String series, String line) {
-        ByteArrayOutputStream err = new ByteArrayOutputStream();
-        int code = MarketCli.exitCode(cmd, new PrintStream(err, true, StandardCharsets.UTF_8), () -> {
-            c.fetch(MarketCatalog.require(series), t("2025-10-01T00:00:00Z"), t("2025-10-02T00:00:00Z"));
-            return 0;
-        });
-        assertEquals(1, code, line);
-        assertEquals(List.of(line), err.toString(StandardCharsets.UTF_8).lines().toList());
+        MarketCli.Collectors c = (delay, credentials) -> new Collector(null, null, unauthorized, unauthorized, credentials);
+        Map<String, String> env = Map.of("ENTSOE_TOKEN", "SECRET-TOKEN-123", "NTP_CLIENT_ID", "client",
+                "NTP_CLIENT_SECRET", "s3cret");
+        assertEquals(new MarketCliTest.Result(1, "", "opentsx: opentsx.market.entsoeToken: "
+                        + "rejected by ENTSO-E (HTTP 401); check the token in OPENTSX_MARKET_ENTSOE_TOKEN, ENTSOE_TOKEN or the "
+                        + "properties file\n"),
+                MarketCliTest.cli(c, env, "prices", "--source", "entsoe", "--from", "2025-10-01", "--to", "2025-10-02"));
+        assertEquals(new MarketCliTest.Result(1, "", "opentsx: netztransparenz.de rejected the client credentials (HTTP 401)\n"),
+                MarketCliTest.cli(c, env, "rebap", "--from", "2025-10-01", "--to", "2025-10-02"));
     }
 
     /** Outcome message and log of a backfill year of the ENTSO-E price whose request fails. */
@@ -216,7 +211,9 @@ class SourcesTest {
         assertEquals(3, m.get("epex").size());
         NetztransparenzSource none = new NetztransparenzSource(f, null, null);
         MissingCredentials e = assertThrows(MissingCredentials.class, () -> none.rebap(0, Micro.DAY, new ArrayList<>()));
-        assertTrue(e.getMessage().contains("NTP_CLIENT_ID"));
-        assertFalse(e.getMessage().contains("s3cret"));
+        assertEquals("opentsx.market.ntpClientId, opentsx.market.ntpClientSecret: not set; netztransparenz.de needs an "
+                + "OAuth client (OAuth manager in the netztransparenz.de extranet) in OPENTSX_MARKET_NTP_CLIENT_ID and "
+                + "OPENTSX_MARKET_NTP_CLIENT_SECRET, NTP_CLIENT_ID and NTP_CLIENT_SECRET or a properties file, or import the "
+                + "CSV download with --offline", e.getMessage());
     }
 }

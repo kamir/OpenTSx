@@ -1,6 +1,11 @@
 package org.opentsx.market.twin;
 
+import org.opentsx.conf.ConfCli;
+import org.opentsx.conf.OpenTsxConf;
+import org.opentsx.conf.OpenTsxConfException;
+import org.opentsx.conf.Registry;
 import org.opentsx.market.MarketCatalog;
+import org.opentsx.market.MarketCli;
 import org.opentsx.market.Micro;
 import org.opentsx.market.SeriesDef;
 import org.opentsx.market.archive.Archive;
@@ -9,23 +14,36 @@ import org.opentsx.twin.RunResult;
 import org.opentsx.twin.Twin;
 import org.opentsx.twin.TwinPlan;
 import org.opentsx.twin.demo.BoatDemo;
-import org.opentsx.twin.demo.HouseDemo;
 import org.opentsx.twin.house.HouseKpis;
+import org.slf4j.LoggerFactory;
 
+import java.io.FileDescriptor;
+import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The digital twins driven by the history archive ({@code bin/opentsx twin|house|boat --history data/history ...}).
- * Without an archive the default demos of {@code opentsx-twin} stay as they are (synthetic).
+ * Without an archive the default demos of {@code opentsx-twin} stay as they are (synthetic). They read their keys
+ * through {@link OpenTsxConf#load} as the commands {@code history-twin twin|house|boat}; {@code --help} lists them.
+ * Exit codes: 0 success, 1 runtime failure, 2 usage or configuration error, a missing archive or archived series
+ * included.
  * <pre>
  * twin  --history data/history --year 2024 [--from 2024-03-01 --days 31] [--wind smard|dwd] [--cf 0.30]
  * house --history data/history --weather-year 2023 | 2022-2025 [--station 03166] [--hdd-ref 4300] [--levers]
@@ -35,65 +53,95 @@ import java.util.Map;
  */
 public final class HistoryTwins {
 
+    static final String COMMAND = "history-twin";
+    static final Pattern YEARS = Pattern.compile("([0-9]{4})(?:-([0-9]{4}))?");
+
     private HistoryTwins() {
     }
 
     public static void main(String[] args) {
-        if (args.length == 0) {
-            System.err.println("usage: HistoryTwins twin|house|boat --history <dir> ...");
-            System.exit(1);
-        }
-        Map<String, String> o = new LinkedHashMap<>();
-        for (int i = 1; i < args.length; i++) {
-            String k = args[i].replaceFirst("^--", "");
-            boolean flag = i + 1 >= args.length || args[i + 1].startsWith("--");
-            o.put(k, flag ? "true" : args[++i]);
-        }
-        try {
-            System.exit(run(args[0], o, System.out));
-        } catch (IllegalArgumentException e) {
-            System.err.println(args[0] + " --history: " + e.getMessage());
-            System.exit(2);
-        }
+        PrintStream out = new PrintStream(new FileOutputStream(FileDescriptor.out), true, StandardCharsets.UTF_8);
+        PrintStream err = new PrintStream(new FileOutputStream(FileDescriptor.err), true, StandardCharsets.UTF_8);
+        System.exit(run(List.of(args), System.getenv(), out, err));
     }
 
-    static int run(String cmd, Map<String, String> o, PrintStream out) {
-        Archive archive = new Archive(Path.of(o.getOrDefault("history", "data/history")));
+    /** {@code args} start with {@code twin}, {@code house} or {@code boat}, as bin/opentsx passes them. */
+    static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err) {
+        List<String> argv = new ArrayList<>(args.size() + 1);
+        argv.add(COMMAND);
+        argv.addAll(args);
+        try {
+            OpenTsxConf.Loaded loaded = OpenTsxConf.load(argv, env, env.get("OPENTSX_CONF_DIR"));
+            if (loaded.help()) {
+                Registry registry = Registry.shipped();
+                out.print(loaded.command() == null ? registry.help() : registry.help(loaded.command()));
+            } else if (loaded.version()) {
+                out.print(ConfCli.versionLine());
+            } else {
+                run(loaded.command(), loaded.conf(), out);
+            }
+        } catch (IllegalArgumentException e) {
+            err.print("opentsx: " + oneLine(e.getMessage() == null ? e.toString() : e.getMessage()) + "\n");
+            err.flush();
+            return 2;
+        } catch (RuntimeException e) {
+            LoggerFactory.getLogger(HistoryTwins.class).debug("stack trace of the failed run", e);
+            err.print("opentsx: " + causes(e) + "\n");
+            err.flush();
+            return 1;
+        }
+        out.flush();
+        if (out.checkError()) {
+            err.print("opentsx: stdout: cannot write the output; check that standard output is open and not full\n");
+            err.flush();
+            return 1;
+        }
+        return 0;
+    }
+
+    /** A missing archive or archived series is a usage error: the message says how to fill it. */
+    static void run(String command, OpenTsxConf conf, PrintStream out) {
+        Archive archive = new Archive(Path.of(conf.get("opentsx.archive.dir")));
         if (!Files.isDirectory(archive.root())) {
-            throw new IllegalArgumentException("no history archive at " + archive.root() + " - run: bin/opentsx market "
-                    + "backfill --archive " + archive.root() + " (or drop --history for the synthetic demo)");
+            throw new IllegalArgumentException(archive.root() + ": no history archive; run bin/opentsx market backfill "
+                    + "--archive " + archive.root() + ", or drop --history for the synthetic demo");
         }
         HistoryInputs h = new HistoryInputs(archive);
-        Path sites = o.containsKey("sites") ? Path.of(o.get("sites")) : null;
-        return switch (cmd) {
-            case "twin" -> h2(h, HistorySites.get(sites, HistorySites.PARK), o, out);
-            case "house" -> house(h, station(HistorySites.get(sites, HistorySites.HOUSE), o), o, out);
-            case "boat" -> boat(h, station(HistorySites.get(sites, HistorySites.BOAT), o), o, out);
-            default -> throw new IllegalArgumentException("unknown twin " + cmd);
-        };
+        Path sites = conf.getOption("opentsx.history.sites").map(Path::of).orElse(null);
+        if (sites != null && !Files.isRegularFile(sites)) {
+            throw new OpenTsxConfException(sites.toString(), "no such file", "give an existing file");
+        }
+        switch (command) {
+            case "history-twin twin" -> h2(h, HistorySites.get(sites, HistorySites.PARK), conf, out);
+            case "history-twin house" -> house(h, station(HistorySites.get(sites, HistorySites.HOUSE), conf), conf, out);
+            case "history-twin boat" -> boat(h, station(HistorySites.get(sites, HistorySites.BOAT), conf), conf, out);
+            default -> throw new IllegalStateException(command + ": not a command of " + HistoryTwins.class.getName());
+        }
     }
 
-    private static HistorySites.Site station(HistorySites.Site s, Map<String, String> o) {
-        return new HistorySites.Site(s.id(), s.latitude(), s.longitude(), o.getOrDefault("station", s.temperature()),
-                s.wind(), o.getOrDefault("radiation-station", s.radiation()), s.anemometerHeightM(), s.hubHeightM(),
-                s.shearExponent());
+    private static HistorySites.Site station(HistorySites.Site s, OpenTsxConf conf) {
+        return new HistorySites.Site(s.id(), s.latitude(), s.longitude(), conf.get("opentsx.history.station",
+                s.temperature()), s.wind(), conf.get("opentsx.history.radiationStation", s.radiation()),
+                s.anemometerHeightM(), s.hubHeightM(), s.shearExponent());
     }
 
-    static int h2(HistoryInputs h, HistorySites.Site park, Map<String, String> o, PrintStream out) {
-        int year = Integer.parseInt(o.getOrDefault("year", "2024"));
-        LocalDate first = LocalDate.parse(o.getOrDefault("from", year + "-01-01"));
+    static void h2(HistoryInputs h, HistorySites.Site park, OpenTsxConf conf, PrintStream out) {
+        int year = conf.getInt("opentsx.history.twin.year");
+        LocalDate first = day(conf, "opentsx.history.twin.from", LocalDate.of(year, 1, 1));
         long t0 = Micro.of(first.atStartOfDay(ZoneOffset.UTC).toInstant());
-        int days = Integer.parseInt(o.getOrDefault("days",
-                Long.toString((Micro.utcYear(year + 1) - t0) / Micro.DAY)));
-        String wind = o.getOrDefault("wind", "smard");
+        int days = conf.getOption("opentsx.history.twin.days").isPresent() ? days(conf, "opentsx.history.twin.days")
+                : (int) ((Micro.utcYear(year + 1) - t0) / Micro.DAY);
+        String wind = conf.get("opentsx.history.twin.wind");
+        double cf = conf.getDouble("opentsx.history.twin.capacityFactor");
         require(h.archive(), "smard/day_ahead_price", t0);
         require(h.archive(), wind.equals("dwd") ? MarketCatalog.dwd(park.wind(), "wind_speed").path() : "smard/wind_onshore", t0);
         TwinPlan plan = H2History.plan(Micro.instant(t0), days * 96);
-        H2History s = new H2History(h, park, Double.parseDouble(o.getOrDefault("cf", "0.30")));
+        H2History s = new H2History(h, park, cf);
         H2History.Run ref = s.inputs(plan, wind, 1.0);
         out.printf(Locale.ROOT, "H2 chain on history: %s + %d days (UTC), step 15 min, wind %s, coverage %s%n", first,
                 days, wind.equals("dwd") ? "DWD station " + park.wind() + " via power curve" : "SMARD onshore DE scaled to "
-                        + "the park (mean capacity factor " + o.getOrDefault("cf", "0.30") + ")", pct(ref.coverage()));
+                        + "the park (mean capacity factor " + conf.get("opentsx.history.twin.capacityFactor") + ")",
+                pct(ref.coverage()));
         out.println("Origins: price REPORTED, wind ESTIMATED (model on reported/measured data), schedule "
                 + (ref.forecastKw() != null ? "FORECAST" : "ESTIMATED (actual wind, no forecast archived)")
                 + ", electrolyzer dispatch SYNTHETIC (price-limit rule); ely_cost = electrolyzer energy valued at the "
@@ -112,14 +160,18 @@ public final class HistoryTwins {
                 "compressor_mwh", "h2_shortfall_kg"));
         out.println("Modelled, not proven: the dispatch rule and the park scaling are assumptions; prices and the wind "
                 + "situation are real.");
-        return 0;
     }
 
-    static int house(HistoryInputs h, HistorySites.Site site, Map<String, String> o, PrintStream out) {
-        String spec = o.getOrDefault("weather-year", "2023");
-        int a = Integer.parseInt(spec.split("-")[0]);
-        int b = spec.contains("-") ? Integer.parseInt(spec.split("-")[1]) : a;
-        double hddRef = Double.parseDouble(o.getOrDefault("hdd-ref", Double.toString(HouseDemo.HDD_REF)));
+    static void house(HistoryInputs h, HistorySites.Site site, OpenTsxConf conf, PrintStream out) {
+        String spec = conf.get("opentsx.history.house.weatherYear");
+        Matcher years = YEARS.matcher(spec);
+        if (!years.matches() || years.group(2) != null && Integer.parseInt(years.group(2)) < Integer.parseInt(years.group(1))) {
+            throw new OpenTsxConfException(MarketCli.named(conf, "opentsx.history.house.weatherYear"), "\"" + spec
+                    + "\" is not a year or a range of years", "expected YYYY or YYYY-YYYY such as 2022-2025");
+        }
+        int a = Integer.parseInt(years.group(1));
+        int b = years.group(2) != null ? Integer.parseInt(years.group(2)) : a;
+        double hddRef = conf.getDouble("opentsx.house.hddRef");
         HouseHistory hh = new HouseHistory(h, site);
         out.println("House twin on real weather: station " + site.temperature() + " (air temperature)"
                 + (site.radiation() != null ? ", " + site.radiation() + " (global radiation)" : "")
@@ -143,7 +195,7 @@ public final class HistoryTwins {
             row.put("cost_eur", k.costEur());
             row.put("co2_kg", k.co2Kg());
             rows.put(Integer.toString(y), row);
-            if (o.containsKey("levers")) {
+            if (conf.getBoolean("opentsx.history.house.levers")) {
                 out.println();
                 out.println("What-if " + y + " (alternative minus reference, same weather):");
                 HouseHistory.levers(wy, k, hddRef).forEach((name, d) -> out.printf(Locale.ROOT,
@@ -155,13 +207,12 @@ public final class HistoryTwins {
         table(out, rows, List.of("t_coverage_pct", "ghi_coverage_pct", "t_mean_c", "hdd_kd", "oil_l", "wood_ster",
                 "electricity_kwh", "final_heat_kwh", "normalized_kwh", "cost_eur", "co2_kg"));
         out.printf(Locale.ROOT, "normalized_kwh: final heat scaled to the reference G20/15 of %.0f Kd%n", hddRef);
-        return 0;
     }
 
-    static int boat(HistoryInputs h, HistorySites.Site site, Map<String, String> o, PrintStream out) {
-        int year = Integer.parseInt(o.getOrDefault("weather-year", "2024"));
-        LocalDate first = o.containsKey("start") ? LocalDate.parse(o.get("start")) : BoatHistory.defaultStart(year);
-        int days = Integer.parseInt(o.getOrDefault("days", "14"));
+    static void boat(HistoryInputs h, HistorySites.Site site, OpenTsxConf conf, PrintStream out) {
+        int year = conf.getInt("opentsx.history.boat.weatherYear");
+        LocalDate first = day(conf, "opentsx.history.boat.start", BoatHistory.defaultStart(year));
+        int days = days(conf, "opentsx.history.boat.days");
         require(h.archive(), MarketCatalog.dwd(site.radiation(), "global_radiation").path(),
                 Micro.of(first.atStartOfDay(ZoneOffset.UTC).toInstant()));
         BoatHistory.Trip trip = new BoatHistory(h, site).trip(first, days);
@@ -179,7 +230,27 @@ public final class HistoryTwins {
         out.println("run " + real.runId() + "  hash " + real.hash());
         table(out, rows, List.of("solar_yield_wh", "solar_used_wh", "shore_wh", "solar_share_pct", "unmet_wh",
                 "unmet_h", "soc_min_pct", "curtailed_wh"));
-        return 0;
+    }
+
+    private static LocalDate day(OpenTsxConf conf, String key, LocalDate absent) {
+        Optional<String> v = conf.getOption(key);
+        if (v.isEmpty()) {
+            return absent;
+        }
+        try {
+            return LocalDate.parse(v.get());
+        } catch (DateTimeException e) {
+            throw new OpenTsxConfException(MarketCli.named(conf, key), "\"" + v.get() + "\" is not a day",
+                    "expected a UTC day YYYY-MM-DD");
+        }
+    }
+
+    private static int days(OpenTsxConf conf, String key) {
+        int days = conf.getInt(key);
+        if (days < 1) {
+            throw new OpenTsxConfException(MarketCli.named(conf, key), "\"" + days + "\" is not allowed", "expected 1 or more");
+        }
+        return days;
     }
 
     /** Fails with a hint if the archive has no data for the series in the year of {@code t}. */
@@ -191,8 +262,23 @@ public final class HistoryTwins {
             String hint = def.source().equals("dwd-cdc")
                     ? "weather history comes from the DWD backfill (opentsx-dwd); see opentsx-market/README.md"
                     : "run: bin/opentsx market backfill --archive " + a.root() + " --series " + path;
-            throw new IllegalArgumentException("no archived data for " + path + " in " + Micro.yearOf(t) + " - " + hint);
+            throw new IllegalArgumentException(path + ": no archived data in " + Micro.yearOf(t) + "; " + hint);
         }
+    }
+
+    /** The message and its causes on one line. */
+    private static String causes(Throwable t) {
+        StringBuilder s = new StringBuilder(t.getMessage() == null ? t.toString() : t.getMessage());
+        Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        seen.add(t);
+        for (Throwable c = t.getCause(); c != null && seen.add(c); c = c.getCause()) {
+            s.append("; caused by ").append(c);
+        }
+        return oneLine(s.toString());
+    }
+
+    private static String oneLine(String s) {
+        return String.valueOf(s).replaceAll("[\\s\\p{Cntrl}]+", " ").strip();
     }
 
     private static String pct(Map<String, Double> cov) {

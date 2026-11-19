@@ -78,13 +78,13 @@ def test_vector_counts():
         "value": 92,
         "properties": 22,
         "yaml": 33,
-        "load": 103,
+        "load": 105,
         "notSet": 4,
         "show": 7,
         "debugString": 4,
         "api": 1,
     }
-    assert len(VECTORS["cases"]) == 286
+    assert len(VECTORS["cases"]) == 288
 
 
 @pytest.mark.parametrize("case_id", ids("keyGrammar"))

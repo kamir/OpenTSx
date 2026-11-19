@@ -45,7 +45,7 @@ class ConfVectorsTest {
         Registry fixture = Registry.parse(mapper.writeValueAsBytes(doc.get("registry")));
         List<JsonNode> cases = new ArrayList<>();
         doc.get("cases").forEach(cases::add);
-        assertEquals(286, cases.size());
+        assertEquals(288, cases.size());
         return cases.stream().map(c -> DynamicTest.dynamicTest(c.get("id").asText(), () -> {
             Path dir = Files.createDirectory(tmp.resolve(c.get("id").asText()));
             String level = System.getProperty(OpenTsxConf.SLF4J_LEVEL);

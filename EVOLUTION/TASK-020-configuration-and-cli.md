@@ -614,6 +614,7 @@ shown between double quotes as it was given after trimming; a secret value as `"
 | unknown command | `<word>: unknown command; did you mean <near>?` or `...; run opentsx --help for the commands` |
 | group without subcommand | `<word>: missing subcommand; expected one of <commands>` |
 | unknown subcommand | `<word> <word>: unknown command; did you mean <near>?` or `...; expected one of <commands>` |
+| unknown subcommand of a command that has subcommands | `<word>: unknown subcommand of <command>; did you mean <near>?` or `...; expected one of <subcommands>` |
 | no command | `<command>: missing; run opentsx --help for the commands` |
 | unexpected argument | `<token>: unexpected argument; expected opentsx <command> <args>` |
 | missing argument | `<command>: missing argument <<name>>; expected opentsx <command> <args>` |
@@ -640,9 +641,9 @@ exception is a runtime failure: exit 1, and the message on stderr.
 ### Test vectors
 
 [`docs/datamodel-2026/testvectors/conf.v1.json`](../docs/datamodel-2026/testvectors/conf.v1.json),
-`"schema": "opentsx.testvectors.conf.v1"`, holds a fixture registry in the format `opentsx.config.v1` and 286 cases.
+`"schema": "opentsx.testvectors.conf.v1"`, holds a fixture registry in the format `opentsx.config.v1` and 288 cases.
 The vectors are normative data: they change together with this specification, and both runtimes must reproduce every
-case byte for byte. A case with `"registry": "shipped"` runs on the shipped registry and checks its keys (`opentsx.log.level` and the mode keys); the other cases do not depend on it, so a migration batch that adds keys leaves them valid.
+case byte for byte. A case with `"registry": "shipped"` runs on the shipped registry and checks its keys (`opentsx.log.level` and the mode keys) or the subcommands of `vectors`; the other cases do not depend on it, so a migration batch that adds keys leaves them valid.
 
 | Kind | Cases | Input | Expected |
 |------|-------|-------|----------|
@@ -651,7 +652,7 @@ case byte for byte. A case with `"registry": "shipped"` runs on the shipped regi
 | `value` | 92 | `key`, `input`, applied with `set(key, input)` | `text` (stored) and `value` (typed; durations as `{"millis": n}`), or `error` |
 | `properties` | 22 | `file`, `text` or `base64` (bytes that are not UTF-8) | `pairs` in file order, or `error` |
 | `yaml` | 33 | `file`, `text` or `base64` | `pairs` in document order, `error`, or `errorStartsWith` for parser errors |
-| `load` | 103 | `args`, `env`, `files`, `dirs`, `confDir`, `registry`, then `set` and `setIfMissing` | `command`, `positional`, `values` (value and source of the listed keys), `unset`; or `help`/`version`; or `error` with `exit` 2 |
+| `load` | 105 | `args`, `env`, `files`, `dirs`, `confDir`, `registry`, then `set` and `setIfMissing` | `command`, `positional`, `values` (value and source of the listed keys), `unset`; or `help`/`version`; or `error` with `exit` 2 |
 | `notSet` | 4 | `key` on an empty configuration | `error` of `get` |
 | `show` | 7 | `args`, `env` of `config show` and `config get` | `exit`, `stdout` or `stderr` |
 | `debugString` | 4 | `args`, `env` | `text` of `toDebugString`, `line` of `Loaded.startLine` |
@@ -754,7 +755,7 @@ The order matters: the foundation first, then one batch per module, then errors 
 - [x] **Migration `opentsx-dwd`**: `DwdCli`, `DwdClient` (proxy through `opentsx.https.proxy`; JVM proxy properties
       keep winning).
 - [x] **Migration `opentsx-modbus`**: `ModbusCli`.
-- [ ] **Migration `opentsx-market`**: `MarketCli`, `BrokerPublish`, `Collector` (credentials), `HistoryTwins`; exit
+- [x] **Migration `opentsx-market`**: `MarketCli`, `BrokerPublish`, `Collector` (credentials), `HistoryTwins`; exit
       codes 3 and 4 become 1 and 2 (D9), [opentsx-market/README.md](../opentsx-market/README.md) line 117 changes.
 - [ ] **Migration deploy**: `KafScaleCheck`, the k3s manifests and `opentsx-entrypoint.sh` (dispatch of `vectors`,
       `history-twin`), `docs/user-manual/appendix-a-cli.md`.
@@ -777,7 +778,7 @@ The order matters: the foundation first, then one batch per module, then errors 
 
 ## Success Criteria
 
-- Both runtimes pass all 286 vectors and the registry rules 1 to 8; the registry copies are byte-identical.
+- Both runtimes pass all 288 vectors and the registry rules 1 to 8; the registry copies are byte-identical.
 - `opentsx config list`, `config show` and `config get` give the same bytes in Java and Python for the same registry,
   environment and files (the `show` vectors). `version` prints the version of each runtime (see
   [Command line](#command-line-d9)), and the YAML parser detail after `not valid YAML; ` differs.
