@@ -17,13 +17,18 @@ Read the lesson's source, manual, SPEC and test references before choosing its r
 | Java or Python library | A public numerical entry point. A library implementation alone does not supply a DAG binding or a Wayang mapping. |
 | Processor DAG | An operator accepted by the current series/vector processor, with that runtime's parameters and state rules. |
 | Wayang | An implemented mapping or infrastructure entry point, separately identified by the lesson. A pure Java kernel alone does not establish a mapping. |
-| Rust | Offline contracts, local cleaning and isolated signed pass-through. |
+| Rust | Offline contracts, the admitted local B2 catalog and isolated signed pass-through. |
 
 The [UI contracts](../learning/ui-operator-contracts.md) and
 [library contracts](../learning/library-operator-contracts.md) identify the actual algorithm behavior.
 The [unified Wayang plan](../devguide/integration/wayang-unified-plan.md) records deployment work and its gates.
-For Rust execution, use the [bounded local runner guide](../devguide/integration/rust-runner-local.md).
-It accepts `dq.checks` with `PLAUSIBLE_RANGE`, `convert.unit` and an optional trailing `resample`.
+For Rust execution, distinguish the [local request and checkpoint guide](../devguide/integration/rust-runner-local.md)
+from the [B2 catalog guide](../devguide/integration/rust-runner-b2.md).
+The clean-chain tests execute all fifteen shared cases, including model and
+stateful feature operations. The B2 context additionally admits typed
+statistics, retrieval, alignment, bounded cross-correlation and DQ stages.
+Their lessons link the Rust implementation and shared regressions alongside
+the existing Java or browser starter; they do not change those starter values.
 The [bounded UI rollout guide](../devguide/integration/wayang-rust-compose.md) connects one actual workbench DAG
 to the backend PostgreSQL journal, standalone coordinator, custom Wayang Rust platform and three HTTP workers.
 Select **Legacy** in the Workbench header, then open **Smart Topic** to choose the explicit Wayang deployment target.

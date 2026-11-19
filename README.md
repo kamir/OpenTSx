@@ -110,6 +110,12 @@ verifies Ed25519 continuous pass-through plans against local policy and retains
 acknowledged whole-topic checkpoints. Native x86_64/ARM64 and three-target musl
 CI gates are defined. Physical ARMv7 qualification remains open.
 
+The [local Rust B2 catalog](docs/devguide/integration/rust-runner-b2.md)
+adds the remaining Track B operators and bounded cross-correlation through
+explicit local context. It includes typed statistics, vector and DQ output,
+restored operator state and Java/Rust regression proof. Its admission is
+separate from signed B1 and the Java UI rollout profile.
+
 For the local three-worker Rust profile, choose **Legacy** in the Workbench
 header, then open **Smart Topic**. The [bounded rollout
 guide](docs/devguide/integration/wayang-rust-compose.md) connects the original

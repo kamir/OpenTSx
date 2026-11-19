@@ -317,3 +317,32 @@ completed all 63 conditions on 2026-11-18. Its nine federation and 54
 streaming conditions passed the correctness and clock checks. Read the
 report with its case CSV files and metadata; the measured local bounded
 profile does not replace the separate paced, recovery or Track B protocols.
+
+## 12.9 Execute the local Rust catalog profile
+
+Worker capability discovery reports the legacy profile in `operators` and the
+B2 profile in `catalogExecution.operators`. The Java UI driver retains its
+four-operator legacy contract.
+
+Use the [B2 operating guide](../devguide/integration/rust-runner-b2.md) for
+trusted-local catalog assignments. You need Rust 1.99.1, native build tools,
+an existing Apache Kafka or KafScale Proxy endpoint and preprovisioned input
+and output topics. Keep the HTTP worker on an isolated test network.
+
+The optional local request `context` supplies explicit input inventories,
+clean-stage target metadata and a cross-correlation product budget. One
+assignment owns the whole input topic. The catalog adapter executes clean
+operations, window statistics, segmentation, SAX, vector alignment, bounded
+cross-correlation and DQ findings with typed output and retained-state checks.
+Output acknowledgements precede checkpoint advancement. Read the guide for
+the limits and the difference between bounded completion and continuing cuts.
+
+The signed B1 profile remains pass-through only. Java UI deployment has its
+own smaller admitted subset. Catalog kernels and local parity evidence do not
+grant fleet execution or production rollout rights.
+
+Physical ARMv7 qualification remains open in
+[issue 294](https://github.com/kamir/OpenTSx/issues/294). Native ARM64 and
+supplementary ARMv7 QEMU tests do not satisfy B1.2. Run the shared Avro and
+identity cases on an actual ARMv7 board and record its hardware, OS, source
+revision and results before closing B1.2 or B1.

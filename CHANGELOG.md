@@ -13,6 +13,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Select pull request CI jobs from Maven dependencies and shared runtime/test inputs. Keep full validation on
+  `master` and manual runs, run documentation links with learning checks, and require a final result that rejects
+  selection failures and unexpected job skips. Unmapped paths and shared build, contract or manual changes select
+  all jobs. Frontend changes also select the Python launcher checks.
 - Disable the unimplemented native `persist TSB` control with an explanatory tooltip. Both panel constructors
   prevent click dispatch from this control.
 - Prepare PFD JSON before writing and export it as strict UTF-8 through atomic replacement. Failed preparation,
@@ -36,11 +40,16 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
-- Conservative CI selection for the exact standalone demo file allowlist.
-  Shared, unknown or untrusted changes require the full suite. An always-run
-  completion gate rejects missing, failed or unexpectedly skipped checks.
 - Local frontend type, lint and related-test checks through `check:local`.
   Empty selections and failing stages return an error without a fallback run.
+
+- Isolated local Rust B2 catalog execution with typed SeriesStats, vector and DQ
+  output, model and feature chains, segmentation, SAX and bounded XCorr.
+  Explicit local context admits the extended resource ceilings; legacy local
+  and signed B1 profiles retain their separate contracts. Shared vectors,
+  restored-state regressions and actual full-windpark Java/Rust parity cover
+  the operators. Manual, learning metadata and generated lessons describe the
+  qualified scope. Physical ARMv7 hardware acceptance remains open.
 
 - Standalone thermal Workbench entry through `npm run demo`, with deterministic
   synthetic episodes, local computation and preserved analysis across display

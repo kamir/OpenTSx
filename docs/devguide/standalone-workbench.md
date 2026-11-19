@@ -131,6 +131,6 @@ The selected output directory contains `result.json`, a screenshot and the
 downloaded snapshots. Durations are observations, not correctness thresholds.
 The existing frontend CI job runs types, lint, all frontend tests, the build
 and this built-asset browser acceptance. The
-[CI selection rules](../../CONTRIBUTING.md#continuous-integration) run that
-whole job for both scopes. Only the exact standalone demo allowlist reduces
-the other jobs. General frontend changes and shared inputs use the full suite.
+[CI selection rules](../../CONTRIBUTING.md#check-continuous-integration)
+select frontend and related checks from changed inputs and module dependencies.
+Shared and unclassified inputs select the full workflow.

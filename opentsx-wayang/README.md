@@ -86,7 +86,13 @@ Wayang to Java and Rust nodes, plus the bounded storage profile. The implemented
 [shared contract foundation](../docs/devguide/integration/wayang-shared-contracts.md) lives in `opentsx-model`
 and `rust/tsx-contracts`; it validates offline assignments and does not deploy a Rust runtime.
 The separate [`tsx-runner` 0.1.0](../rust/tsx-runner/README.md) executes a capped bounded topic from trusted local
-configuration. It supports pass-through and three cleaning operations. The separate
+configuration. Without local context it supports pass-through and three cleaning operations.
+The [isolated B2 catalog](../docs/devguide/integration/rust-runner-b2.md) admits
+the remaining Track B operators, bounded `pair.xcorr` and typed output through
+explicit local context. `TrackParityIntegrationTest` runs the complete W scenario
+through actual Java Wayang and Rust worker increments, including state restoration
+and completed retries. Signed B1 remains pass-through-only; physical ARMv7
+acceptance remains open. The separate
 [bounded UI rollout](../docs/devguide/integration/wayang-rust-compose.md) uses `RustRollout`, `RustPlugin`,
 `RustPlatform` and `RustExecutor` to map one connected source/union/clean/sink stage to one to three HTTP workers.
 The backend owns the frozen plan and clock in PostgreSQL; the Java driver has no authoritative deployment journal.

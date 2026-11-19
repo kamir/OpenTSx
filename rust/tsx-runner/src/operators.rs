@@ -1,8 +1,16 @@
 use crate::model::{series_id, summary, xxh64_hex, Episode, Provenance, SeriesKey, TimeEncoding};
 use serde_json::{json, Value};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
-pub const SUPPORTED_OPS: &[&str] = &["dq.checks", "convert.unit", "resample"];
+pub const SUPPORTED_OPS: &[&str] = &[
+    "dq.checks",
+    "convert.unit",
+    "resample",
+    "model.wind-shear",
+    "model.power-curve",
+    "feature.lag",
+    "feature.rolling",
+];
 pub const STATE_ABI: &str = "opentsx.rust.clean-state.v1";
 const MAX_EMPTY_WINDOWS: i64 = 10_000;
 
@@ -16,9 +24,44 @@ pub struct Limits {
 
 #[derive(Clone, Debug)]
 enum Step {
-    Range { min: f64, max: f64, clip: bool },
-    Convert { factor: f64, offset: f64 },
-    Resample { every: i64, agg: Agg },
+    Range {
+        min: f64,
+        max: f64,
+        clip: bool,
+    },
+    Convert {
+        factor: f64,
+        offset: f64,
+    },
+    Resample {
+        every: i64,
+        agg: Agg,
+    },
+    WindShear {
+        factor: f64,
+    },
+    PowerCurve {
+        rated: f64,
+        cut_in: f64,
+        rated_wind: f64,
+        cut_out: f64,
+        count: f64,
+    },
+    Lag {
+        steps: usize,
+    },
+    Rolling {
+        window: i64,
+        function: RollingFn,
+    },
+}
+
+#[derive(Clone, Copy, Debug)]
+enum RollingFn {
+    Mean,
+    Std,
+    Min,
+    Max,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -38,6 +81,8 @@ struct Target {
     made_of: Option<String>,
     metric: Option<String>,
     unit: Option<String>,
+    grade: String,
+    feature: Option<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -81,6 +126,8 @@ struct Raw {
     end: i64,
     written: u64,
     window: Option<Window>,
+    windows: BTreeMap<usize, Window>,
+    kept: BTreeMap<usize, VecDeque<(i64, f64)>>,
 }
 
 #[derive(Clone, Debug)]
@@ -98,6 +145,7 @@ pub struct Pipeline {
     series: BTreeMap<String, Raw>,
     output_owners: BTreeMap<String, String>,
     skipped: u64,
+    catalog_profile: bool,
 }
 
 fn object<'a>(value: &'a Value, name: &str) -> Result<&'a serde_json::Map<String, Value>, String> {
@@ -245,6 +293,25 @@ impl Pipeline {
         created_at: i64,
         limits: Limits,
     ) -> Result<Self, String> {
+        Self::compile_inner(fragment, spec_hash, created_at, limits, false)
+    }
+
+    pub fn compile_catalog(
+        fragment: &Value,
+        spec_hash: &str,
+        created_at: i64,
+        limits: Limits,
+    ) -> Result<Self, String> {
+        Self::compile_inner(fragment, spec_hash, created_at, limits, true)
+    }
+
+    fn compile_inner(
+        fragment: &Value,
+        spec_hash: &str,
+        created_at: i64,
+        limits: Limits,
+        catalog_profile: bool,
+    ) -> Result<Self, String> {
         if [
             limits.max_series,
             limits.max_samples,
@@ -367,7 +434,7 @@ impl Pipeline {
         chain.reverse();
         let mut steps = Vec::new();
         let mut unit = None;
-        for (index, node) in chain.iter().enumerate() {
+        for node in &chain {
             let empty = json!({});
             let params = node.get("params").unwrap_or(&empty);
             match node["op"].as_str().ok_or("invalid operator")? {
@@ -417,8 +484,12 @@ impl Pipeline {
                 }
                 "resample" => {
                     allowed_keys(params, &["every", "agg"], "resample parameter")?;
-                    if index + 1 != chain.len() {
-                        return Err("resample is supported only as the trailing operator".into());
+                    if !catalog_profile
+                        && steps
+                            .iter()
+                            .any(|step| matches!(step, Step::Resample { .. }))
+                    {
+                        return Err("a cleaning chain supports one resample step".into());
                     }
                     let every = duration(&params["every"])?;
                     every
@@ -437,6 +508,83 @@ impl Pipeline {
                     };
                     steps.push(Step::Resample { every, agg });
                 }
+                "model.wind-shear" => {
+                    allowed_keys(
+                        params,
+                        &["fromM", "toM", "alpha"],
+                        "model.wind-shear parameter",
+                    )?;
+                    let from = number(params, "fromM", f64::NAN)?;
+                    let to = number(params, "toM", f64::NAN)?;
+                    let alpha = number(params, "alpha", f64::NAN)?;
+                    if from <= 0.0
+                        || to <= 0.0
+                        || !from.is_finite()
+                        || !to.is_finite()
+                        || !(0.0..=0.6).contains(&alpha)
+                    {
+                        return Err("a wind shear needs fromM and toM above zero and alpha between 0 and 0.6".into());
+                    }
+                    let factor = (to / from).powf(alpha);
+                    if !factor.is_finite() {
+                        return Err("wind shear factor overflow".into());
+                    }
+                    steps.push(Step::WindShear { factor });
+                }
+                "model.power-curve" => {
+                    allowed_keys(
+                        params,
+                        &["ratedKw", "cutIn", "ratedWind", "cutOut", "count"],
+                        "model.power-curve parameter",
+                    )?;
+                    let rated = number(params, "ratedKw", f64::NAN)?;
+                    let cut_in = number(params, "cutIn", f64::NAN)?;
+                    let rated_wind = number(params, "ratedWind", f64::NAN)?;
+                    let cut_out = number(params, "cutOut", f64::NAN)?;
+                    let count = number(params, "count", 1.0)?;
+                    if !(rated > 0.0
+                        && cut_in >= 0.0
+                        && rated_wind > cut_in
+                        && cut_out >= rated_wind
+                        && count > 0.0)
+                    {
+                        return Err("a power curve needs ratedKw above zero and cutIn below ratedWind, which is at most cutOut".into());
+                    }
+                    steps.push(Step::PowerCurve {
+                        rated,
+                        cut_in,
+                        rated_wind,
+                        cut_out,
+                        count,
+                    });
+                    unit = Some("kW".into());
+                }
+                "feature.lag" => {
+                    allowed_keys(params, &["steps"], "feature.lag parameter")?;
+                    let lag = params["steps"]
+                        .as_u64()
+                        .filter(|n| (1..=100_000).contains(n))
+                        .ok_or("steps must be between 1 and 100000")?;
+                    steps.push(Step::Lag {
+                        steps: lag as usize,
+                    });
+                }
+                "feature.rolling" => {
+                    allowed_keys(params, &["window", "fn"], "feature.rolling parameter")?;
+                    let window = duration(&params["window"])?;
+                    let function = match optional_text(params, "fn")?
+                        .unwrap_or_else(|| "MEAN".into())
+                        .to_ascii_uppercase()
+                        .as_str()
+                    {
+                        "MEAN" => RollingFn::Mean,
+                        "STD" => RollingFn::Std,
+                        "MIN" => RollingFn::Min,
+                        "MAX" => RollingFn::Max,
+                        _ => return Err("fn must be one of [MEAN, STD, MIN, MAX]".into()),
+                    };
+                    steps.push(Step::Rolling { window, function });
+                }
                 _ => return Err("unsupported operator".into()),
             }
         }
@@ -448,7 +596,8 @@ impl Pipeline {
             }
             let signal = &sink["signal"];
             object(signal, "sink signal")?;
-            if optional_text(signal, "grade")?.unwrap_or_else(|| "clean".into()) != "clean" {
+            let grade = optional_text(signal, "grade")?.unwrap_or_else(|| "clean".into());
+            if grade != "clean" && !(catalog_profile && grade == "features") {
                 return Err("this runtime supports clean grade only".into());
             }
             let metric = optional_text(signal, "metric")?;
@@ -463,6 +612,12 @@ impl Pipeline {
                 made_of: optional_text(sink, "madeOf")?,
                 metric,
                 unit,
+                feature: if grade == "features" {
+                    Some(text(&sink["from"], "sink input")?.into())
+                } else {
+                    None
+                },
+                grade,
             })
         };
         let sink_name = match optional_text(sink, "name")? {
@@ -499,6 +654,7 @@ impl Pipeline {
             series: BTreeMap::new(),
             output_owners: BTreeMap::new(),
             skipped: 0,
+            catalog_profile,
         };
         out.snapshot()?;
         Ok(out)
@@ -561,7 +717,7 @@ impl Pipeline {
                 out.push(episode.clone());
                 continue;
             }
-            if episode.revision != 0 || episode.quality.is_some() {
+            if !self.catalog_profile && (episode.revision != 0 || episode.quality.is_some()) {
                 return Err("cleaning rejects revisions and per-value quality".into());
             }
             let mut times = episode.timestamps()?;
@@ -581,6 +737,8 @@ impl Pipeline {
                     end: i64::MIN,
                     written: 0,
                     window: None,
+                    windows: BTreeMap::new(),
+                    kept: BTreeMap::new(),
                 });
             if raw.key.metric != episode.series.metric
                 || raw.key.tags != episode.series.tags
@@ -606,7 +764,7 @@ impl Pipeline {
             }
             raw.end = episode.t_end;
             let mut values = episode.values.clone();
-            for step in &self.steps {
+            for (index, step) in self.steps.iter().enumerate() {
                 match *step {
                     Step::Range { min, max, clip } => {
                         for value in &mut values {
@@ -626,8 +784,19 @@ impl Pipeline {
                         }
                     }
                     Step::Resample { every, agg } => {
+                        let multiple = self
+                            .steps
+                            .iter()
+                            .filter(|s| matches!(s, Step::Resample { .. }))
+                            .count()
+                            > 1;
+                        let mut window = if multiple {
+                            raw.windows.remove(&index)
+                        } else {
+                            raw.window.take()
+                        };
                         (times, values) = resample(
-                            &mut raw.window,
+                            &mut window,
                             (&times, &values),
                             episode.t_end,
                             every,
@@ -635,8 +804,103 @@ impl Pipeline {
                             self.limits.max_samples,
                             self.limits.max_output_samples.saturating_sub(output_count),
                         )?;
+                        if multiple {
+                            if let Some(window) = window {
+                                raw.windows.insert(index, window);
+                            }
+                        } else {
+                            raw.window = window;
+                        }
+                    }
+                    Step::WindShear { factor } => {
+                        for value in &mut values {
+                            *value *= factor;
+                        }
+                    }
+                    Step::PowerCurve {
+                        rated,
+                        cut_in,
+                        rated_wind,
+                        cut_out,
+                        count,
+                    } => {
+                        let lower = cut_in * cut_in * cut_in;
+                        for value in &mut values {
+                            *value = if value.is_nan() {
+                                f64::NAN
+                            } else if *value < cut_in || *value > cut_out {
+                                0.0
+                            } else if *value >= rated_wind {
+                                rated * count
+                            } else {
+                                count * rated * (*value * *value * *value - lower)
+                                    / (rated_wind * rated_wind * rated_wind - lower)
+                            };
+                        }
+                    }
+                    Step::Lag { steps } => {
+                        let kept = raw.kept.entry(index).or_default();
+                        for (&time, value) in times.iter().zip(&mut values) {
+                            let next = if kept.len() < steps {
+                                f64::NAN
+                            } else {
+                                kept.front().ok_or("missing lag sample")?.1
+                            };
+                            kept.push_back((time, *value));
+                            if kept.len() > steps {
+                                kept.pop_front();
+                            }
+                            *value = next;
+                        }
+                    }
+                    Step::Rolling { window, function } => {
+                        let kept = raw.kept.entry(index).or_default();
+                        for (&time, value) in times.iter().zip(&mut values) {
+                            kept.push_back((time, *value));
+                            let from = time
+                                .checked_sub(window)
+                                .ok_or("rolling window timestamp overflow")?;
+                            while kept.front().is_some_and(|(t, _)| *t <= from)
+                                || kept.len() > 100_000
+                            {
+                                kept.pop_front();
+                            }
+                            let mut n = 0usize;
+                            let (mut sum, mut square, mut min, mut max) =
+                                (0.0, 0.0, f64::INFINITY, f64::NEG_INFINITY);
+                            for (_, v) in kept.iter().filter(|(_, v)| !v.is_nan()) {
+                                sum += v;
+                                square += v * v;
+                                min = java_min(min, *v);
+                                max = java_max(max, *v);
+                                n += 1;
+                            }
+                            let mean = sum / n as f64;
+                            *value = if n == 0 {
+                                f64::NAN
+                            } else {
+                                match function {
+                                    RollingFn::Mean => mean,
+                                    RollingFn::Min => min,
+                                    RollingFn::Max => max,
+                                    RollingFn::Std => {
+                                        (square / n as f64 - mean * mean).max(0.0).sqrt()
+                                    }
+                                }
+                            };
+                        }
                     }
                 }
+                if values.iter().any(|v| v.is_infinite()) {
+                    return Err("cleaning output overflow".into());
+                }
+            }
+            let retained = raw.kept.values().try_fold(0usize, |n, q| {
+                n.checked_add(q.len())
+                    .ok_or("retained feature count overflow")
+            })?;
+            if retained > self.limits.max_samples {
+                return Err("retained feature sample limit exceeded".into());
             }
             output_count = output_count
                 .checked_add(values.len())
@@ -651,7 +915,10 @@ impl Pipeline {
             if values.is_empty() {
                 continue;
             }
-            if let Some(Step::Resample { every, .. }) = self.steps.last() {
+            if let Some(every) = self.steps.iter().rev().find_map(|step| match step {
+                Step::Resample { every, .. } => Some(every),
+                _ => None,
+            }) {
                 let mut from = 0;
                 for to in 1..=times.len() {
                     if to == times.len() || times[to].checked_sub(times[to - 1]) != Some(*every) {
@@ -703,7 +970,38 @@ impl Pipeline {
                 json!({"start":w.start.to_string(),"sum":bits(w.sum),"count":w.count.to_string(),
                 "min":bits(w.min),"max":bits(w.max),"last":bits(w.last)})
             });
-            records.insert(id.clone(), json!({"key":raw.key,"end":raw.end.to_string(),"written":raw.written.to_string(),"window":window}));
+            let mut record = json!({"key":raw.key,"end":raw.end.to_string(),"written":raw.written.to_string(),"window":window});
+            if self
+                .steps
+                .iter()
+                .filter(|s| matches!(s, Step::Resample { .. }))
+                .count()
+                > 1
+            {
+                record["windows"] = json!(raw
+                    .windows
+                    .iter()
+                    .map(|(i, w)| (i.to_string(), window_json(w)))
+                    .collect::<BTreeMap<_, _>>());
+            }
+            if self
+                .steps
+                .iter()
+                .any(|s| matches!(s, Step::Lag { .. } | Step::Rolling { .. }))
+            {
+                record["kept"] = json!(raw
+                    .kept
+                    .iter()
+                    .map(|(i, samples)| (
+                        i.to_string(),
+                        samples
+                            .iter()
+                            .map(|(t, v)| json!([t.to_string(), bits(*v)]))
+                            .collect::<Vec<_>>()
+                    ))
+                    .collect::<BTreeMap<_, _>>());
+            }
+            records.insert(id.clone(), record);
         }
         let state = json!({"schema":STATE_ABI,"specHash":self.spec_hash,"createdAt":self.created_at.to_string(),
             "fragment":self.fragment,"skippedBlocks":self.skipped.to_string(),"series":records,
@@ -742,7 +1040,24 @@ impl Pipeline {
             return Err("invalid operator state series inventory".into());
         }
         for (id, record) in entries {
-            exact_keys(record, &["key", "end", "written", "window"])?;
+            let has_kept = self
+                .steps
+                .iter()
+                .any(|s| matches!(s, Step::Lag { .. } | Step::Rolling { .. }));
+            let multiple = self
+                .steps
+                .iter()
+                .filter(|s| matches!(s, Step::Resample { .. }))
+                .count()
+                > 1;
+            let mut keys = vec!["key", "end", "written", "window"];
+            if has_kept {
+                keys.push("kept");
+            }
+            if multiple {
+                keys.push("windows");
+            }
+            exact_keys(record, &keys)?;
             if !self.expected.contains(id) {
                 return Err("operator state contains an unexpected series".into());
             }
@@ -761,39 +1076,70 @@ impl Pipeline {
             let window = if record["window"].is_null() {
                 None
             } else {
-                let Some(Step::Resample { every, .. }) = self.steps.last() else {
+                if multiple {
+                    return Err("multiple resamples require per-step state".into());
+                }
+                let Some(every) = self.steps.iter().find_map(|s| match s {
+                    Step::Resample { every, .. } => Some(every),
+                    _ => None,
+                }) else {
                     return Err("unexpected resample state".into());
                 };
-                let w = &record["window"];
-                exact_keys(w, &["start", "sum", "count", "min", "max", "last"])?;
-                let start = signed(&w["start"])?;
-                let count = unsigned(&w["count"])?;
-                let window = Window {
-                    start,
-                    sum: float(&w["sum"])?,
-                    count,
-                    min: float(&w["min"])?,
-                    max: float(&w["max"])?,
-                    last: float(&w["last"])?,
-                };
-                if start.rem_euclid(*every) != 0
-                    || count > self.limits.max_samples as u64
-                    || !window.sum.is_finite()
-                    || (count == 0
-                        && (window.sum != 0.0
-                            || window.min != f64::INFINITY
-                            || window.max != f64::NEG_INFINITY
-                            || !window.last.is_nan()))
-                    || (count > 0
-                        && (!window.min.is_finite()
-                            || !window.max.is_finite()
-                            || !window.last.is_finite()
-                            || window.min > window.max))
-                {
-                    return Err("invalid resample state".into());
-                }
-                Some(window)
+                Some(read_window(
+                    &record["window"],
+                    *every,
+                    self.limits.max_samples,
+                )?)
             };
+            let mut windows = BTreeMap::new();
+            if multiple {
+                for (index, value) in object(&record["windows"], "resample windows")? {
+                    let i = index
+                        .parse::<usize>()
+                        .map_err(|_| "invalid resample step")?;
+                    if i.to_string() != *index {
+                        return Err("noncanonical resample step".into());
+                    }
+                    let Some(Step::Resample { every, .. }) = self.steps.get(i) else {
+                        return Err("unexpected resample step".into());
+                    };
+                    windows.insert(i, read_window(value, *every, self.limits.max_samples)?);
+                }
+            }
+            let mut kept = BTreeMap::new();
+            if has_kept {
+                for (index, samples) in object(&record["kept"], "retained features")? {
+                    let i = index.parse::<usize>().map_err(|_| "invalid feature step")?;
+                    if i.to_string() != *index {
+                        return Err("noncanonical feature step".into());
+                    }
+                    let cap = match self.steps.get(i) {
+                        Some(Step::Lag { steps }) => *steps,
+                        Some(Step::Rolling { .. }) => 100_000,
+                        _ => return Err("unexpected retained feature step".into()),
+                    };
+                    let entries = samples
+                        .as_array()
+                        .ok_or("invalid retained feature samples")?;
+                    if entries.len() > cap || entries.len() > self.limits.max_samples {
+                        return Err("retained feature sample limit exceeded".into());
+                    }
+                    let mut queue = VecDeque::new();
+                    for entry in entries {
+                        let fields = entry
+                            .as_array()
+                            .filter(|a| a.len() == 2)
+                            .ok_or("invalid retained feature sample")?;
+                        let time = signed(&fields[0])?;
+                        let value = float(&fields[1])?;
+                        if value.is_infinite() || queue.back().is_some_and(|(t, _)| *t >= time) {
+                            return Err("invalid retained feature chronology".into());
+                        }
+                        queue.push_back((time, value));
+                    }
+                    kept.insert(i, queue);
+                }
+            }
             series.insert(
                 id.clone(),
                 Raw {
@@ -801,6 +1147,8 @@ impl Pipeline {
                     end: signed(&record["end"])?,
                     written: unsigned(&record["written"])?,
                     window,
+                    windows,
+                    kept,
                 },
             );
         }
@@ -817,6 +1165,39 @@ impl Pipeline {
     }
 }
 
+fn window_json(window: &Window) -> Value {
+    json!({"start":window.start.to_string(),"sum":bits(window.sum),"count":window.count.to_string(),"min":bits(window.min),"max":bits(window.max),"last":bits(window.last)})
+}
+
+fn read_window(value: &Value, every: i64, max_samples: usize) -> Result<Window, String> {
+    exact_keys(value, &["start", "sum", "count", "min", "max", "last"])?;
+    let window = Window {
+        start: signed(&value["start"])?,
+        sum: float(&value["sum"])?,
+        count: unsigned(&value["count"])?,
+        min: float(&value["min"])?,
+        max: float(&value["max"])?,
+        last: float(&value["last"])?,
+    };
+    if window.start.rem_euclid(every) != 0
+        || window.count > max_samples as u64
+        || !window.sum.is_finite()
+        || (window.count == 0
+            && (window.sum != 0.0
+                || window.min != f64::INFINITY
+                || window.max != f64::NEG_INFINITY
+                || !window.last.is_nan()))
+        || (window.count > 0
+            && (!window.min.is_finite()
+                || !window.max.is_finite()
+                || !window.last.is_finite()
+                || window.min > window.max))
+    {
+        return Err("invalid resample state".into());
+    }
+    Ok(window)
+}
+
 fn output_key(target: &Target, raw: &SeriesKey) -> Result<SeriesKey, String> {
     let mut tags = if target.metric.is_none() {
         raw.tags.clone()
@@ -825,11 +1206,15 @@ fn output_key(target: &Target, raw: &SeriesKey) -> Result<SeriesKey, String> {
     };
     tags.insert("system".into(), target.system.clone());
     tags.insert("signal".into(), target.signal.clone());
-    tags.insert("grade".into(), "clean".into());
+    tags.insert("grade".into(), target.grade.clone());
     if !java_blank(&target.flow) {
         tags.insert("flow".into(), target.flow.clone());
     }
-    tags.remove("feature");
+    if let Some(feature) = &target.feature {
+        tags.insert("feature".into(), feature.clone());
+    } else {
+        tags.remove("feature");
+    }
     let metric = target.metric.as_ref().unwrap_or(&raw.metric).clone();
     Ok(SeriesKey {
         series_id: series_id(&metric, &tags)?,
@@ -853,7 +1238,7 @@ fn clean_episode(
     values: Vec<f64>,
 ) -> Result<Episode, String> {
     let mut labels = BTreeMap::from([
-        ("grade".into(), "clean".into()),
+        ("grade".into(), target.grade.clone()),
         ("flow".into(), target.flow.clone()),
         ("specHash".into(), spec_hash.into()),
     ]);
@@ -1216,10 +1601,10 @@ mod tests {
     }
 
     #[test]
-    fn eight_shared_clean_cases_match_whole_and_every_checkpointed_split() {
+    fn all_fifteen_shared_clean_cases_match_whole_and_every_checkpointed_split() {
         let vectors = clean_cases();
         let mut admitted = 0;
-        let mut refused = 0;
+        let refused = 0;
         for case in vectors["cases"].as_array().unwrap() {
             let nodes = case["nodes"].as_array().unwrap();
             if nodes
@@ -1227,8 +1612,7 @@ mod tests {
                 .any(|n| !SUPPORTED_OPS.contains(&n["op"].as_str().unwrap()))
             {
                 assert!(Pipeline::compile(&fragment(nodes), &"a".repeat(64), 0, limits()).is_err());
-                refused += 1;
-                continue;
+                panic!("B2 must execute the shared clean case {}", case["name"]);
             }
             admitted += 1;
             let values: Vec<_> = case["values"]
@@ -1283,8 +1667,8 @@ mod tests {
                 }
             }
         }
-        assert_eq!(admitted, 8);
-        assert_eq!(refused, 7);
+        assert_eq!(admitted, 15);
+        assert_eq!(refused, 0);
     }
 
     #[test]
@@ -1599,7 +1983,7 @@ mod tests {
             json!({"id":"n","op":"resample","params":{"every":"PT0S"}}),
             json!({"id":"n","op":"resample","params":{"every":1000000000000i64}}),
             json!({"id":"n","op":"resample","params":{"every":1,"agg":"SUM"}}),
-            json!({"id":"n","op":"feature.lag","params":{"steps":1}}),
+            json!({"id":"n","op":"feature.lag","params":{"steps":0}}),
         ];
         for node in cases {
             assert!(Pipeline::compile(&fragment(&[node]), &"a".repeat(64), 0, limits()).is_err());
@@ -1622,7 +2006,7 @@ mod tests {
             0,
             limits()
         )
-        .is_err());
+        .is_ok());
         let mut graph = fragment(&[json!({"id":"u","op":"convert.unit","params":{}})]);
         graph["sinks"][0]["signal"]["grade"] = json!(4);
         assert!(Pipeline::compile(&graph, &"a".repeat(64), 0, limits()).is_err());
