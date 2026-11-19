@@ -1,6 +1,5 @@
 #!/bin/bash
 
-###############################################################################
 # Episode 9: Statistical Analysis
 #
 # Demonstrates statistical analysis patterns in OpenTSx:
@@ -18,15 +17,12 @@
 #
 # Usage:
 #   ./bin/episode_09_analysis.sh
-###############################################################################
 
-set -e  # Exit on error
+set -e
 
-# Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# Colors for output
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
@@ -39,36 +35,29 @@ echo -e "${BLUE}║     OpenTSx Onboarding - TSx Track                          
 echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}"
 echo
 
-# Navigate to project root
 cd "$PROJECT_ROOT"
 
-# Check if project is built
 if [ ! -d "opentsx-core/target/classes" ]; then
     echo -e "${YELLOW}⚠ Project not built. Building now...${NC}"
     ./bin/010_build.sh
     echo
 fi
 
-# Create output directory
 mkdir -p output
 
-# Build classpath
 CLASSPATH="$(bin/opentsx classpath opentsx-core)"
 
-# Set Java options
 JAVA_OPTS="${JAVA_OPTS:--Xmx1g -Xms256m}"
 
 echo -e "${GREEN}▶ Running Episode 9: Statistical Analysis...${NC}"
 echo
 
-# Run the demo
 java $JAVA_OPTS -cp "$CLASSPATH" org.opentsx.demo.onboarding.TimeSeriesAnalysis
 
 echo
 echo -e "${GREEN}✓ Demo completed${NC}"
 echo
 
-# Show created files
 if ls *_analysis*.csv 1> /dev/null 2>&1; then
     echo -e "${BLUE}Generated Files:${NC}"
     ls -lh *_analysis*.csv | awk '{print "  " $9 " (" $5 ")"}'

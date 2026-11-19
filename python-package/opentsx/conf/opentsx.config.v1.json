@@ -549,7 +549,7 @@
         "history-twin house"
       ],
       "since": "3.0.1",
-      "doc": "Radiation station id; overrides the sites file."
+      "doc": "Radiation station, a DWD station id of 5 digits such as 03166; overrides the sites file."
     },
     {
       "key": "opentsx.history.sites",
@@ -576,7 +576,7 @@
         "history-twin house"
       ],
       "since": "3.0.1",
-      "doc": "Temperature station id; overrides the sites file."
+      "doc": "Temperature station, a DWD station id of 5 digits such as 03166; overrides the sites file."
     },
     {
       "key": "opentsx.history.twin.capacityFactor",

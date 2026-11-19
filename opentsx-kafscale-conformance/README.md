@@ -70,8 +70,8 @@ Tracked in the fork: [kamir/kafscale#16](https://github.com/kamir/kafscale/issue
 * **Group rejoin:** `GroupCoordinator.LeaveGroup` (`pkg/broker/coordinator.go`) reads only `MemberID`, which is
   empty in LeaveGroup v3+ (the member list is in `Members[]`), so a closed consumer stays in the group.
   `JoinGroup` then answers the new member with `REBALANCE_IN_PROGRESS` instead of `MEMBER_ID_REQUIRED`;
-  the Java client drops the assigned member id and rejoins in a tight loop (≈ 22 000 JoinGroup requests in 60 s
-  in our trace), each creating another member, so the group never stabilises.
+  the Java client drops the assigned member id and rejoins in a tight loop (about 22000 JoinGroup requests in 60 s
+  in our trace), each creating another member, so the group never stabilizes.
 * **Standalone commits:** `OffsetCommit` with generation `-1` and no member id is rejected
   (Apache Kafka accepts it for groups without active members).
 

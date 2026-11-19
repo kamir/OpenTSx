@@ -31,7 +31,8 @@ def run(script: pathlib.Path, fake: pathlib.Path, *args: str, **env: str) -> sub
                           cwd=script.parent.parent, check=False)
 
 
-def validate(tmp_path: pathlib.Path, maven: str, *args: str, java_home: str = "", **bodies: str) -> subprocess.CompletedProcess:
+def validate(tmp_path: pathlib.Path, maven: str, *args: str, java_home: str = "", jdk: bool = False,
+             jdk_dir: str = "jdk", **bodies: str) -> subprocess.CompletedProcess:
     script = copy_script(tmp_path, "000_validate_environment.sh")
     (tmp_path / "pom.xml").write_text("<project/>\n", encoding="utf-8")
     (tmp_path / "opentsx-core" / "target").mkdir(parents=True)
@@ -44,6 +45,10 @@ def validate(tmp_path: pathlib.Path, maven: str, *args: str, java_home: str = ""
         "curl": "exit 0",
         **bodies,
     })
+    if jdk:
+        (tmp_path / jdk_dir / "bin").mkdir(parents=True)
+        (fake / "java").rename(tmp_path / jdk_dir / "bin" / "java")
+        (fake / "java").symlink_to(tmp_path / jdk_dir / "bin" / "java")
     return run(script, fake, *args, HOME=str(tmp_path / "home"), JAVA_HOME=java_home or str(tmp_path), DISPLAY=":0")
 
 
@@ -109,6 +114,25 @@ def test_validate_environment_fix_without_which_prints_the_summary(tmp_path):
     assert result.returncode == 0, result.stdout + result.stderr
     assert "JAVA_HOME not set (recommended for Maven)" in result.stdout
     assert "Failed checks: 0" in result.stdout
+
+
+def test_validate_environment_fix_prints_the_java_home_export_to_run(tmp_path):
+    result = validate(tmp_path, "3.9.6", "--fix", java_home=str(tmp_path / "no-jdk"), jdk=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert f"   Run: export JAVA_HOME={os.path.realpath(tmp_path / 'jdk')}" in result.stdout.splitlines()
+    assert "for this session" not in result.stdout
+
+
+def test_validate_environment_fix_quotes_a_java_home_with_a_space(tmp_path):
+    result = validate(tmp_path, "3.9.6", "--fix", java_home=str(tmp_path / "no-jdk"), jdk=True,
+                      jdk_dir="Program Files/jdk-17")
+    assert result.returncode == 0, result.stdout + result.stderr
+    command = [line for line in result.stdout.splitlines() if line.startswith("   Run: export JAVA_HOME=")]
+    assert len(command) == 1, result.stdout
+    shell = subprocess.run(["bash", "-c", command[0].removeprefix("   Run: ") + ' && printf %s "$JAVA_HOME"'],
+                           capture_output=True, text=True, check=False)
+    assert shell.returncode == 0, shell.stderr
+    assert shell.stdout == os.path.realpath(tmp_path / "Program Files" / "jdk-17")
 
 
 def test_validate_environment_refuses_an_unknown_option(tmp_path):

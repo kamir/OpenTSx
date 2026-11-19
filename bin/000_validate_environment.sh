@@ -1,51 +1,29 @@
 #!/usr/bin/env bash
 
-###############################################################################
-# OpenTSx Environment Validation Script
-###############################################################################
+# Checks what an OpenTSx build needs: Java 17+, JAVA_HOME, Maven 3.9+, Git, Docker (optional), memory, disk, CPU,
+# access to Maven Central and GitHub, the project directory and DISPLAY for the GUI.
 #
-# Script: 000_validate_environment.sh
-# Purpose: Validate development environment for OpenTSx onboarding
-# Episode: E01 - Environment Setup & First Run
+# Usage: ./bin/000_validate_environment.sh [--fix]
 #
-# Description:
-#   Checks all prerequisites needed for OpenTSx development:
-#   - Java installation and version
-#   - Maven installation and version
-#   - Docker availability (optional)
-#   - Git configuration
-#   - Disk space
-#   - Memory availability
-#   - Network connectivity
-#
-# Usage:
-#   ./bin/000_validate_environment.sh [--fix]
-#
-# Options:
-#   --fix       Attempt to fix common issues automatically
-#   --help      Show this help message
+#   --fix       when JAVA_HOME is not set, print the export line that sets it from the java in PATH
+#   --help      print this help
 #
 # Exit codes: 0 no check failed (warnings allowed), 1 a check failed, 2 usage error.
 # Failed checks go to stderr.
-#
-###############################################################################
 
 set -euo pipefail
 
-# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Configuration
 FIX_MODE=false
 ERRORS=0
 WARNINGS=0
 CHECKS_PASSED=0
 
-# Parse arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
         --fix)
@@ -70,7 +48,6 @@ echo
 echo "Running environment checks..."
 echo
 
-# Check functions
 check_pass() {
     echo -e "${GREEN}✓${NC} $1"
     CHECKS_PASSED=$((CHECKS_PASSED + 1))
@@ -86,9 +63,6 @@ check_fail() {
     ERRORS=$((ERRORS + 1))
 }
 
-# =====================================================
-# CHECK 1: Java Installation
-# =====================================================
 echo "1. Checking Java installation..."
 
 if ! command -v java &> /dev/null; then
@@ -100,7 +74,7 @@ else
     JAVA_VERSION=$(awk -F'"' '/ version "/ && v == "" {v = $2} END {print v}' <<< "$JAVA_OUT")
     JAVA_MAJOR=$(echo "$JAVA_VERSION" | cut -d'.' -f1)
 
-    # Handle Java 9+ version format
+    # Java 8 and older report 1.<major>
     if [[ "$JAVA_MAJOR" == "1" ]]; then
         JAVA_MAJOR=$(echo "$JAVA_VERSION" | cut -d'.' -f2)
     fi
@@ -114,19 +88,16 @@ else
     fi
 fi
 
-# Check JAVA_HOME
 if [[ -n "${JAVA_HOME:-}" ]] && [[ -d "$JAVA_HOME" ]]; then
     check_pass "JAVA_HOME is set: $JAVA_HOME"
 else
     check_warn "JAVA_HOME not set (recommended for Maven)"
     if [[ "$FIX_MODE" == true ]]; then
-        # Try to set JAVA_HOME
         if command -v java &> /dev/null; then
             JAVA_PATH=$(command -v java)
             JAVA_HOME_CANDIDATE=$(readlink -f "$JAVA_PATH" | sed 's:/bin/java::')
             if [[ -d "$JAVA_HOME_CANDIDATE" ]]; then
-                export JAVA_HOME="$JAVA_HOME_CANDIDATE"
-                echo "   → Set JAVA_HOME=$JAVA_HOME (for this session)"
+                printf '   Run: export JAVA_HOME=%q\n' "$JAVA_HOME_CANDIDATE"
             fi
         fi
     fi
@@ -134,9 +105,6 @@ fi
 
 echo
 
-# =====================================================
-# CHECK 2: Maven Installation
-# =====================================================
 echo "2. Checking Maven installation..."
 
 if ! command -v mvn &> /dev/null; then
@@ -156,7 +124,6 @@ else
     fi
 fi
 
-# Check Maven local repository
 if [[ -d "$HOME/.m2/repository" ]]; then
     REPO_SIZE=$(du -sh "$HOME/.m2/repository" 2>/dev/null | cut -f1 || true)
     check_pass "Maven local repository exists (~$REPO_SIZE)"
@@ -167,9 +134,6 @@ fi
 
 echo
 
-# =====================================================
-# CHECK 3: Git Installation and Configuration
-# =====================================================
 echo "3. Checking Git installation..."
 
 if ! command -v git &> /dev/null; then
@@ -181,7 +145,6 @@ else
     GIT_VERSION=$(awk '{print $3}' <<< "$GIT_OUT")
     check_pass "Git $GIT_VERSION installed"
 
-    # Check Git configuration
     GIT_USER=$(git config --global user.name 2>/dev/null || echo "")
     GIT_EMAIL=$(git config --global user.email 2>/dev/null || echo "")
 
@@ -196,9 +159,6 @@ fi
 
 echo
 
-# =====================================================
-# CHECK 4: Docker (Optional)
-# =====================================================
 echo "4. Checking Docker (optional for storage backends)..."
 
 if ! command -v docker &> /dev/null; then
@@ -210,7 +170,6 @@ else
     DOCKER_VERSION=$(awk '{print $3}' <<< "$DOCKER_OUT" | sed 's/,//')
     check_pass "Docker $DOCKER_VERSION installed"
 
-    # Check if Docker daemon is running
     if docker ps &> /dev/null; then
         check_pass "Docker daemon is running"
     else
@@ -221,15 +180,10 @@ fi
 
 echo
 
-# =====================================================
-# CHECK 5: System Resources
-# =====================================================
 echo "5. Checking system resources..."
 
-# Memory check
 TOTAL_MEM_GB=""
 if [[ "$(uname)" == "Darwin" ]]; then
-    # macOS
     TOTAL_MEM_GB=$(( $(sysctl -n hw.memsize) / 1024 / 1024 / 1024 ))
 elif command -v free &> /dev/null && FREE_OUT=$(free -g 2>/dev/null); then
     TOTAL_MEM_GB=$(awk '/^Mem:/{print $2}' <<< "$FREE_OUT")
@@ -245,12 +199,9 @@ else
     check_warn "Memory: ${TOTAL_MEM_GB}GB (less than recommended 4GB)"
 fi
 
-# Disk space check
 if [[ "$(uname)" == "Darwin" ]]; then
-    # macOS
     FREE_SPACE_GB=$(df -g . | awk 'NR==2 {print $4}') || FREE_SPACE_GB=""
 else
-    # Linux
     FREE_SPACE_GB=$(df -BG . | awk 'NR==2 {gsub(/G/,""); print $4}') || FREE_SPACE_GB=""
 fi
 
@@ -262,7 +213,6 @@ else
     check_warn "Disk space: ${FREE_SPACE_GB}GB free (may need more)"
 fi
 
-# CPU check
 if [[ "$(uname)" == "Darwin" ]]; then
     CPU_CORES=$(sysctl -n hw.ncpu)
 else
@@ -277,19 +227,14 @@ fi
 
 echo
 
-# =====================================================
-# CHECK 6: Network Connectivity
-# =====================================================
 echo "6. Checking network connectivity..."
 
-# Check Maven Central
 if curl -s --connect-timeout 5 https://repo.maven.apache.org/maven2/ > /dev/null; then
     check_pass "Maven Central reachable"
 else
     check_warn "Cannot reach Maven Central (network/proxy issue?)"
 fi
 
-# Check GitHub
 if curl -s --connect-timeout 5 https://github.com > /dev/null; then
     check_pass "GitHub reachable"
 else
@@ -298,9 +243,6 @@ fi
 
 echo
 
-# =====================================================
-# CHECK 7: OpenTSx Project
-# =====================================================
 echo "7. Checking OpenTSx project..."
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -318,7 +260,6 @@ else
     check_fail "opentsx-core module not found"
 fi
 
-# Check if already built
 if [[ -d "$PROJECT_ROOT/opentsx-core/target" ]]; then
     check_pass "Project appears to be built (target/ exists)"
 else
@@ -328,9 +269,6 @@ fi
 
 echo
 
-# =====================================================
-# CHECK 8: Display Settings (for GUI)
-# =====================================================
 echo "8. Checking display settings (for GUI)..."
 
 if [[ -n "${DISPLAY:-}" ]]; then
@@ -343,9 +281,6 @@ fi
 
 echo
 
-# =====================================================
-# Summary
-# =====================================================
 echo -e "${BLUE}==========================================${NC}"
 echo -e "${BLUE}  Validation Summary${NC}"
 echo -e "${BLUE}==========================================${NC}"

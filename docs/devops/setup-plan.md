@@ -14,9 +14,9 @@ backup, updates, runbooks) is described in the [operations concept](operations.m
 | 3 | `20-configure.sh KEY=VALUE…` | `deploy/k3s/.env` and the overlay `deploy/k3s/overlays/local/` |
 | 4 | `30-deploy.sh` | namespace, config, PVCs, stats, retrieval, Studio (+ lake) running |
 | 5 | `40-demo.sh <demo>` | examples run as Jobs, output in the terminal |
-| — | `50-status.sh`, `90-teardown.sh` | state; removal |
-| — | `60-probe.sh` | all of the above plus checks, as one trial run with a report |
-| — | `70-backup.sh`, `71-restore.sh` | backup and restore of PVCs and configuration |
+| n/a | `50-status.sh`, `90-teardown.sh` | state; removal |
+| n/a | `60-probe.sh` | all of the above plus checks, as one trial run with a report |
+| n/a | `70-backup.sh`, `71-restore.sh` | backup and restore of PVCs and configuration |
 
 `20-configure.sh` can run at any time and is idempotent. Run it **before** step 1 when you change the image
 repository, tag or platform (`OPENTSX_IMAGE_REPO`, `OPENTSX_TAG`, `OPENTSX_PLATFORM`), because `10-build.sh` reads them.
@@ -122,7 +122,7 @@ broker. Both must be reachable from the pods.
 |-----------------|------------------------------|--------------------|----------------------|
 | on another machine in the LAN | that machine's LAN IP or DNS name | `direct` (default) | `192.168.1.50:9092` |
 | on the k3s host (docker compose), advertising the host's LAN IP | the host's LAN IP (`KAFSCALE_ADVERTISED_HOST=192.168.1.20 docker compose -f docker-compose.kafscale.yml up -d`) | `direct` | `192.168.1.20:9092` |
-| on the k3s host, advertising `localhost` (compose default) | — (only reachable from the host's network namespace) | `hostnetwork` | `localhost:9092` |
+| on the k3s host, advertising `localhost` (compose default) | `localhost`, reachable only from the host's network namespace | `hostnetwork` | `localhost:9092` |
 | outside, and you want a stable in-cluster name | reachable from the pods anyway | `service` | the external `host:port`; pods use `opentsx-kafscale.<ns>.svc.cluster.local:<port>` |
 | inside the same k3s cluster | the broker's Service DNS name | `direct` | `<svc>.<ns>.svc.cluster.local:9092` |
 
@@ -156,7 +156,7 @@ Secret keys (`S3_ACCESS_KEY`, `S3_SECRET_KEY`, `OPENMETADATA_JWT`, `RETRIEVAL_DA
 | `OPENTSX_NS` | `opentsx` | namespace |
 | `KUBECTL` | `kubectl` | e.g. `sudo k3s kubectl` |
 | `STORAGE_CLASS` | cluster default (`local-path`) | for all PVCs |
-| `KAFSCALE_BOOTSTRAP` | — (**required**) | `host:port[,host:port]` reachable from the pods |
+| `KAFSCALE_BOOTSTRAP` | none (**required**) | `host:port[,host:port]` reachable from the pods |
 | `KAFSCALE_NETWORK` | `direct` | `direct`, `hostnetwork`, `service` |
 | `OPENTSX_DOMAIN` | `wind` | topics `tsx.<domain>.{episodes,buckets,series,observations,series-stats}.v2` |
 | `OPENTSX_PARTITIONS` | `6` | data partitions when OpenTSx creates the topics |
@@ -235,8 +235,9 @@ deploy/k3s/10-build.sh --with-s3 && deploy/k3s/11-import-images.sh && deploy/k3s
   `--iceberg` to `windpark-sim`. The S3 credentials reach the JVMs as `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`.
 * **Why `--with-s3`:** `opentsx-store-iceberg` ships the Hadoop client, but not `S3FileIO`. Without
   `iceberg-aws` and `iceberg-aws-bundle` on the classpath an `s3://` warehouse fails with a class-not-found error.
-  The build adds both jars (~65 MB) only when asked. Verified here: the classpath builds; the S3 path itself is
-  **not yet tested end-to-end** (see [what CI checks](today-vs-planned.md#what-ci-checks)).
+  The build adds both, and `failsafe`, through which `iceberg-aws` reads S3, only when asked:
+  `deploy/docker/stage.sh --with-s3` stages 70 jars (173 MB) instead of 67 (113 MB) on 3.0.1. CI does not run the S3
+  or REST-catalog lake path ([what CI checks](today-vs-planned.md#what-ci-checks)).
 * The REST catalog image is a reference implementation. For anything beyond a lab use a hardened catalog
   (Apache Polaris, Lakekeeper, Nessie); only the `ICEBERG_PROPS` change.
 

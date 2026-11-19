@@ -80,13 +80,13 @@
 #       # Weather year YYYY or range YYYY-YYYY of the house twin.
 #       # Type: string.
 #       weatherYear: 2023
-#     # Radiation station id; overrides the sites file.
+#     # Radiation station, a DWD station id of 5 digits such as 03166; overrides the sites file.
 #     # Type: string; no default.
 #     radiationStation:
 #     # Sites file (YAML) of the twins; without it the built-in sites are used.
 #     # Type: path; no default.
 #     sites:
-#     # Temperature station id; overrides the sites file.
+#     # Temperature station, a DWD station id of 5 digits such as 03166; overrides the sites file.
 #     # Type: string; no default.
 #     station:
 #     twin:

@@ -1,21 +1,14 @@
 #!/usr/bin/env bash
 
-###############################################################################
-# OpenTSx Build Script
-###############################################################################
+# Builds and installs every module with `mvn clean generate-sources compile package install -DskipTests=true`.
+# Needs Java 17 or later and Maven 3.9 or later.
 #
-# Script: 010_build.sh
-# Purpose: Build the OpenTSx project using Maven
-# Episode: E01 - Environment Setup & First Run
+# Usage: ./bin/010_build.sh
 #
-# Usage:
-#   ./bin/010_build.sh [--skip-tests]
-#
-###############################################################################
+# Exit codes: 0 built, 1 Java or pom.xml is missing, otherwise the exit code of mvn (127 when mvn is not on PATH).
 
-set -e  # Exit on error
+set -e
 
-# Determine script directory and project root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
@@ -26,17 +19,17 @@ echo
 echo "Project root: $PROJECT_ROOT"
 echo
 
-# Check if JAVA_HOME is set, if not try to detect it
 if [ -z "$JAVA_HOME" ]; then
     echo "JAVA_HOME not set, attempting to detect..."
 
-    # macOS with Homebrew OpenJDK 21
     if [ -d "/opt/homebrew/Cellar/openjdk@21/21.0.8/libexec/openjdk.jdk/Contents/Home" ]; then
         export JAVA_HOME="/opt/homebrew/Cellar/openjdk@21/21.0.8/libexec/openjdk.jdk/Contents/Home"
         echo "Found JAVA_HOME: $JAVA_HOME"
-    # macOS with other JDK
     elif [ -d "/Library/Java/JavaVirtualMachines" ]; then
-        LATEST_JDK=$(ls -1 /Library/Java/JavaVirtualMachines | grep -E 'jdk|openjdk' | sort -r | head -1)
+        LATEST_JDK=""
+        for jdk in /Library/Java/JavaVirtualMachines/*jdk*; do
+            if [ -d "$jdk" ]; then LATEST_JDK="${jdk##*/}"; fi
+        done
         if [ -n "$LATEST_JDK" ]; then
             export JAVA_HOME="/Library/Java/JavaVirtualMachines/$LATEST_JDK/Contents/Home"
             echo "Found JAVA_HOME: $JAVA_HOME"
@@ -44,7 +37,6 @@ if [ -z "$JAVA_HOME" ]; then
     fi
 fi
 
-# Verify Java is available
 if ! command -v java &> /dev/null; then
     echo "ERROR: Java not found in PATH" >&2
     echo "Please install Java 17+ and set JAVA_HOME" >&2
@@ -55,10 +47,8 @@ echo "Java version:"
 java -version
 echo
 
-# Change to project root directory
 cd "$PROJECT_ROOT"
 
-# Verify pom.xml exists
 if [ ! -f "pom.xml" ]; then
     echo "ERROR: pom.xml not found in $PROJECT_ROOT" >&2
     echo "Are you in the correct directory?" >&2
@@ -69,7 +59,6 @@ echo "Building OpenTSx..."
 echo "Running: mvn clean generate-sources compile package install -DskipTests=true"
 echo
 
-# Run Maven build
 mvn clean generate-sources compile package install -DskipTests=true
 
 echo

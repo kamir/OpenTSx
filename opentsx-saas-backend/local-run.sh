@@ -7,7 +7,6 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 echo "Starting the OpenTSx SaaS backend (local development)"
-echo "===================================================="
 
 # Check if .env.local exists
 if [ ! -f ".env.local" ]; then
@@ -24,6 +23,7 @@ if [ ! -d "venv" ]; then
 fi
 
 # Activate virtual environment
+# shellcheck source=/dev/null  # created by ./local-setup.sh
 source venv/bin/activate
 
 # Check if PostgreSQL is running
@@ -39,9 +39,7 @@ else
 fi
 
 echo ""
-echo "========================================="
 echo -e "${GREEN}Starting FastAPI server...${NC}"
-echo "========================================="
 echo ""
 echo "API docs: http://localhost:8000/docs"
 echo "Health: http://localhost:8000/health"

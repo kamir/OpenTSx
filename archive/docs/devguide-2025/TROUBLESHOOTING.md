@@ -319,7 +319,7 @@ Mean is 49.8 but expected 50.0
 
 #### 1. Set Random Seed
 ```java
-import org.opentsx.tsa.rng.RNGWrapper;
+import org.opentsx.data.generator.RNGWrapper;
 
 // For reproducible results
 RNGWrapper.init(42);  // Fixed seed

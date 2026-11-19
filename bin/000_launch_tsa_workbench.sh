@@ -1,49 +1,25 @@
 #!/usr/bin/env bash
 
-###############################################################################
-# OpenTSx TSA Workbench (GUI) Launcher
-###############################################################################
+# Starts the TSA Workbench, the 2.x GUI org.opentsx.app.bucketanalyser.MacroRecorder2 of opentsx-core, through
+# `mvn -f opentsx-core/pom.xml exec:java`, or without Maven with java and the classpath that bin/opentsx cached.
+# Needs Java 17 or later and a build (./bin/010_build.sh).
 #
-# Script: 000_launch_tsa_workbench.sh
-# Purpose: Launch the Time Series Analysis Workbench (MacroRecorder2) GUI
-# Episode: E01 - Environment Setup & First Run
+# Usage: ./bin/000_launch_tsa_workbench.sh
+#        JAVA_OPTS="-Xmx4g" ./bin/000_launch_tsa_workbench.sh
 #
-# Description:
-#   This script launches the OpenTSx graphical user interface for interactive
-#   time series analysis. The TSA Workbench (MacroRecorder2) provides:
-#   - Visual time series exploration
-#   - Interactive charting
-#   - Statistical analysis tools
-#   - Bucket-based data organization
+# JAVA_OPTS (default -Xmx2g -Xms512m) goes to java only when mvn is not on PATH. exec:java runs in the JVM of
+# Maven, which reads MAVEN_OPTS instead.
 #
-# Prerequisites:
-#   - OpenTSx built successfully (run 010_build.sh first)
-#   - Java 8+ installed and JAVA_HOME set
-#   - Maven dependencies resolved
-#
-# Usage:
-#   ./bin/000_launch_tsa_workbench.sh
-#   # or with custom Java options:
-#   JAVA_OPTS="-Xmx4g" ./bin/000_launch_tsa_workbench.sh
-#
-# Learning Objectives:
-#   - Launch the OpenTSx GUI tool
-#   - Explore time series visually
-#   - Understand the TSA Workbench interface
-#   - Get familiar with interactive analysis
-#
-###############################################################################
+# Exit codes: the exit code of Maven or java; 1 when Java, the build or the classpath is missing.
 
-set -e  # Exit on error
+set -e
 
-# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
@@ -53,41 +29,40 @@ echo -e "${BLUE}  Time Series Analysis GUI Tool${NC}"
 echo -e "${BLUE}==========================================${NC}"
 echo
 
-# Check if Java is installed
 if ! command -v java &> /dev/null; then
     echo -e "${RED}ERROR: Java not found!${NC}"
-    echo "Please install Java 8+ and set JAVA_HOME"
+    echo "Please install Java 17 or later and set JAVA_HOME"
     exit 1
 fi
 
-# Display Java version
 JAVA_VERSION=$(java -version 2>&1 | head -n 1 | cut -d'"' -f2)
 echo -e "${GREEN}✓${NC} Java version: $JAVA_VERSION"
 
-# Set JAVA_HOME if not set (try common locations)
 if [ -z "$JAVA_HOME" ]; then
     echo -e "${YELLOW}⚠${NC}  JAVA_HOME not set, attempting to find it..."
 
-    # macOS
     if [ -d "/Library/Java/JavaVirtualMachines" ]; then
-        # Find latest JDK
-        LATEST_JDK=$(ls -1 /Library/Java/JavaVirtualMachines | grep -E 'jdk|openjdk' | sort -r | head -1)
+        LATEST_JDK=""
+        for jdk in /Library/Java/JavaVirtualMachines/*jdk*; do
+            if [ -d "$jdk" ]; then LATEST_JDK="${jdk##*/}"; fi
+        done
         if [ -n "$LATEST_JDK" ]; then
             export JAVA_HOME="/Library/Java/JavaVirtualMachines/$LATEST_JDK/Contents/Home"
             echo -e "${GREEN}✓${NC} Found JAVA_HOME: $JAVA_HOME"
         fi
     fi
 
-    # Linux (common locations)
     if [ -z "$JAVA_HOME" ] && [ -d "/usr/lib/jvm" ]; then
-        LATEST_JDK=$(ls -1 /usr/lib/jvm | grep -E 'java-.*-openjdk' | sort -r | head -1)
+        LATEST_JDK=""
+        for jdk in /usr/lib/jvm/*java-*-openjdk*; do
+            if [ -d "$jdk" ]; then LATEST_JDK="${jdk##*/}"; fi
+        done
         if [ -n "$LATEST_JDK" ]; then
             export JAVA_HOME="/usr/lib/jvm/$LATEST_JDK"
             echo -e "${GREEN}✓${NC} Found JAVA_HOME: $JAVA_HOME"
         fi
     fi
 
-    # Homebrew on macOS
     if [ -z "$JAVA_HOME" ] && command -v brew &> /dev/null; then
         BREW_JAVA=$(brew --prefix openjdk 2>/dev/null || brew --prefix java 2>/dev/null || echo "")
         if [ -n "$BREW_JAVA" ] && [ -d "$BREW_JAVA" ]; then
@@ -97,9 +72,7 @@ if [ -z "$JAVA_HOME" ]; then
     fi
 fi
 
-# Check if project is built
-JAR_FILE="$PROJECT_ROOT/opentsx-core/target/*.jar"
-if ! ls $JAR_FILE 1> /dev/null 2>&1; then
+if ! compgen -G "$PROJECT_ROOT/opentsx-core/target/*.jar" > /dev/null; then
     echo -e "${RED}ERROR: OpenTSx not built!${NC}"
     echo "Please run: ./bin/010_build.sh first"
     exit 1
@@ -108,7 +81,6 @@ fi
 echo -e "${GREEN}✓${NC} OpenTSx build found"
 echo
 
-# Set default Java options if not provided
 if [ -z "$JAVA_OPTS" ]; then
     JAVA_OPTS="-Xmx2g -Xms512m"
     echo -e "${BLUE}Using default Java options: $JAVA_OPTS${NC}"
@@ -116,7 +88,6 @@ else
     echo -e "${BLUE}Using custom Java options: $JAVA_OPTS${NC}"
 fi
 
-# Set display environment for headless systems (optional)
 if [ -z "$DISPLAY" ]; then
     echo -e "${YELLOW}⚠${NC}  DISPLAY not set (headless system?)"
     echo "   GUI may not work on headless systems without X11 forwarding"
@@ -131,32 +102,28 @@ echo "Main class: org.opentsx.app.bucketanalyser.MacroRecorder2"
 echo "Project: $PROJECT_ROOT"
 echo
 
-# Change to project root
 cd "$PROJECT_ROOT"
 
-# Launch using Maven exec plugin
 echo -e "${GREEN}Starting GUI...${NC}"
 echo
 
-# Option 1: Using maven exec (recommended)
+EXIT_CODE=0
 if command -v mvn &> /dev/null; then
     echo "Launching with Maven..."
     mvn -f opentsx-core/pom.xml exec:java \
         -Dexec.mainClass="org.opentsx.app.bucketanalyser.MacroRecorder2" \
         -Dexec.args="" \
-        -Dexec.cleanupDaemonThreads=false
+        -Dexec.cleanupDaemonThreads=false || EXIT_CODE=$?
 else
-    # Option 2: Direct java execution (fallback)
     echo "Launching with java directly..."
 
     CLASSPATH="$("$PROJECT_ROOT/bin/opentsx" classpath opentsx-core)" || exit 1
 
-    java $JAVA_OPTS \
+    read -r -a JAVA_ARGS <<< "$JAVA_OPTS"
+    java "${JAVA_ARGS[@]}" \
         -cp "$CLASSPATH" \
-        org.opentsx.app.bucketanalyser.MacroRecorder2
+        org.opentsx.app.bucketanalyser.MacroRecorder2 || EXIT_CODE=$?
 fi
-
-EXIT_CODE=$?
 
 echo
 if [ $EXIT_CODE -eq 0 ]; then

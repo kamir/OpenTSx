@@ -172,8 +172,16 @@ public class Vectors {
 }
 EOF
 
-(cd "$ROOT" && mvn -q -pl opentsx-core -am install -DskipTests >/dev/null \
-  && mvn -q -pl opentsx-core dependency:build-classpath -Dmdep.outputFile="$WORK/core.cp" >/dev/null)
+maven() {   # step, Maven arguments: on failure Maven's output on stderr and exit 1
+  local step="$1"; shift
+  if ! (cd "$ROOT" && mvn -q -B "$@") > "$WORK/mvn.out" 2>&1; then
+    cat "$WORK/mvn.out" >&2
+    echo "pair_xcorr_vectors.sh: $step: Maven failed; see the Maven output above" >&2
+    exit 1
+  fi
+}
+maven "mvn install opentsx-core" -pl opentsx-core -am install -DskipTests
+maven "mvn dependency:build-classpath opentsx-core" -pl opentsx-core dependency:build-classpath -Dmdep.outputFile="$WORK/core.cp"
 CP="$ROOT/opentsx-core/target/classes:$(cat "$WORK/core.cp")"
 rm -rf "$WORK/classes"
 mkdir -p "$WORK/classes"

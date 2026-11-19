@@ -142,10 +142,10 @@ jobs:
       - uses: actions/checkout@v7
       - name: Shell syntax and shellcheck
         run: |
-          for f in deploy/k3s/*.sh deploy/k3s/test/*.sh deploy/docker/*.sh bin/opentsx bin/000_validate_environment.sh bin/run_all_tests.sh opentsx-saas-backend/local-setup.sh; do bash -n "$f"; done
+          for f in deploy/k3s/*.sh deploy/k3s/test/*.sh deploy/docker/*.sh bin/opentsx bin/000_validate_environment.sh bin/run_all_tests.sh bin/000_launch_tsa_workbench.sh bin/010_build.sh opentsx-saas-backend/local-setup.sh; do bash -n "$f"; done
           command -v shellcheck || { sudo apt-get update -q && sudo apt-get install -y -q shellcheck; }
           shellcheck --version
-          shellcheck -x -P SCRIPTDIR deploy/k3s/*.sh deploy/k3s/test/*.sh deploy/docker/*.sh bin/opentsx bin/000_validate_environment.sh bin/run_all_tests.sh opentsx-saas-backend/local-setup.sh
+          shellcheck -x -P SCRIPTDIR deploy/k3s/*.sh deploy/k3s/test/*.sh deploy/docker/*.sh bin/opentsx bin/000_validate_environment.sh bin/run_all_tests.sh bin/000_launch_tsa_workbench.sh bin/010_build.sh opentsx-saas-backend/local-setup.sh
       - name: 20-configure.sh, secrets in docs and the MinIO bucket Job (deploy/k3s/test)
         run: bash deploy/k3s/test/test-20-configure.sh
       - name: 00-prereqs.sh shows the error of the staged kafscale-check (deploy/k3s/test)

@@ -213,6 +213,7 @@ EOF
 
 fake_tools() {   # dir: mvn writes $FAKE_CLASSPATH ($FAKE_PROVIDED for provided scope) to -Dmdep.outputFile unless the file
                  # already holds it, as maven-dependency-plugin does, and logs its arguments; java logs its arguments
+                 # and exits with $FAKE_JAVA_EXIT (default 0)
   mkdir -p "$1"
   cat > "$1/mvn" <<'EOF'
 #!/usr/bin/env bash
@@ -229,6 +230,7 @@ EOF
   cat > "$1/java" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$@" > "$FAKE_LOG.java"
+exit "${FAKE_JAVA_EXIT:-0}"
 EOF
   chmod +x "$1/mvn" "$1/java"
 }
@@ -296,6 +298,13 @@ offline() {
     printf '%s\n' "$out" | tail -5 | sed 's/^/    /'; sed 's/^/    java: /' "$work/log.java" 2>/dev/null || true
   else
     ok "000_launch_tsa_workbench.sh without mvn: the classpath that bin/opentsx cached"
+  fi
+  rm -f "$work/log".*
+  rc=0; out="$(PATH="$work/nomvn" JAVA_HOME=/none JAVA_OPTS="" FAKE_JAVA_EXIT=3 "$BASH" "$workbench" 2>&1)" || rc=$?
+  if [[ $rc -ne 3 || "$out" != *"TSA Workbench exited with code: 3"* ]]; then
+    fail "000_launch_tsa_workbench.sh with a failing java: exit $rc"; printf '%s\n' "$out" | tail -5 | sed 's/^/    /'
+  else
+    ok "000_launch_tsa_workbench.sh with a failing java: reports the exit code 3 and exits with it"
   fi
 
   rm -f "$work/log".*

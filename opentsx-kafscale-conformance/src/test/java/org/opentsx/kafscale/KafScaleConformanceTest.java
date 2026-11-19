@@ -137,7 +137,7 @@ class KafScaleConformanceTest {
 
     /**
      * Offsets committed by a group member must be readable after a restart, also by a consumer that only
-     * assigns partitions (OffsetFetch without membership) - this is how a replay resumes.
+     * assigns partitions (OffsetFetch without membership). This is how a replay resumes.
      */
     @Test
     void committedOffsetsAreReadableAfterRestart() throws Exception {

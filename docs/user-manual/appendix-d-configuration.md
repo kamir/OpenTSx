@@ -80,9 +80,9 @@ default.
 | `opentsx.history.boat.weatherYear` | `int` | `2024` | `--weather-year` | `OPENTSX_HISTORY_BOAT_WEATHER_YEAR` | Weather year of the boat trip. | 3.0.1 |
 | `opentsx.history.house.levers` | `boolean` | `false` | `--levers` | `OPENTSX_HISTORY_HOUSE_LEVERS` | Also print every lever as a what-if per year. | 3.0.1 |
 | `opentsx.history.house.weatherYear` | `string` | `2023` | `--weather-year` | `OPENTSX_HISTORY_HOUSE_WEATHER_YEAR` | Weather year YYYY or range YYYY-YYYY of the house twin. | 3.0.1 |
-| `opentsx.history.radiationStation` | `string` | none | `--radiation-station` | `OPENTSX_HISTORY_RADIATION_STATION` | Radiation station id; overrides the sites file. | 3.0.1 |
+| `opentsx.history.radiationStation` | `string` | none | `--radiation-station` | `OPENTSX_HISTORY_RADIATION_STATION` | Radiation station, a DWD station id of 5 digits such as 03166; overrides the sites file. | 3.0.1 |
 | `opentsx.history.sites` | `path` | none | `--sites` | `OPENTSX_HISTORY_SITES` | Sites file (YAML) of the twins; without it the built-in sites are used. | 3.0.1 |
-| `opentsx.history.station` | `string` | none | `--station` | `OPENTSX_HISTORY_STATION` | Temperature station id; overrides the sites file. | 3.0.1 |
+| `opentsx.history.station` | `string` | none | `--station` | `OPENTSX_HISTORY_STATION` | Temperature station, a DWD station id of 5 digits such as 03166; overrides the sites file. | 3.0.1 |
 | `opentsx.history.twin.capacityFactor` | `double` | `0.30` | `--cf` | `OPENTSX_HISTORY_TWIN_CAPACITY_FACTOR` | Mean capacity factor the SMARD wind is scaled to. | 3.0.1 |
 | `opentsx.history.twin.days` | `int` | none | `--days` | `OPENTSX_HISTORY_TWIN_DAYS` | Number of days of the run; without it the rest of the year. | 3.0.1 |
 | `opentsx.history.twin.from` | `string` | none | `--from` | `OPENTSX_HISTORY_TWIN_FROM` | First UTC day (YYYY-MM-DD) of the run; without it January 1 of the year. | 3.0.1 |

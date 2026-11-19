@@ -9,10 +9,10 @@ The Modbus client, framing and simulator use **only the JDK**: sockets, no Modbu
 are Jackson YAML, which the other modules use for their YAML files too, `opentsx-conf` for the command line and the
 SLF4J API.
 
-> **The real register sheets are not available yet.** The shipped map
-> [`example-grid-meter.yaml`](src/main/resources/modbus/example-grid-meter.yaml) is an **example**. It contains
-> typical points with made-up addresses and is marked with `example: true`. Episodes made from it carry the label
-> `registermap.example=true`. Replace it with the vendor's sheet when it arrives.
+> The shipped map [`example-grid-meter.yaml`](src/main/resources/modbus/example-grid-meter.yaml) is an **example**.
+> It contains typical points with made-up addresses and is marked with `example: true`. Episodes made from it carry
+> the label `registermap.example=true`. To read a real device, write a map from its vendor register sheet as
+> described in [Bind a vendor register sheet](#bind-a-vendor-register-sheet).
 
 ## Try it
 
@@ -174,7 +174,7 @@ The episodes are ordinary v2 episodes. Write them to KafScale with `BucketWriter
 ([`opentsx-kafka-v2`](../opentsx-kafka-v2)) or to any `SeriesStore`. The CLI writes them to stdout or a file
 only, so this module stays free of Kafka dependencies.
 
-## When the real register sheets arrive
+## Bind a vendor register sheet
 
 1. Copy the example map. Set `example: false`, the converter's `host`/`port`, the `unitId`, and `framing`. Many
    converters at a fibre termination are serial device servers: use `rtu-over-tcp` if they forward raw RTU frames,

@@ -759,6 +759,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `docs/devops/history-archive.md` has no German summary. `docs/devops/README.md` lists all 12 k3s components with the
   key that turns each one on, and all 5 Dockerfiles. Its diagram and its table of deployed parts include the vector
   processor, the event bridge, the SaaS module and the ingress.
+- The registry doc of `opentsx.history.station` and `opentsx.history.radiationStation` says the value is a DWD station
+  id of 5 digits, such as 03166. Appendix D and the defaults templates are regenerated.
+- Docs: the devops guide, the docs index and the devguide have no em dashes, spaced hyphens, filler or plan wording,
+  and empty table cells read `n/a`. The demo table gives `retrieval` a runtime of seconds and `studio` a runtime of
+  until Ctrl-C. The sizing and setup plans quote the image content measured with `deploy/docker/stage.sh` on 3.0.1: 67
+  jars and 113 MB, or 70 jars and 173 MB with `--with-s3`, which adds iceberg-aws, iceberg-aws-bundle and failsafe.
+  The local development page links to the user manual for writing episodes against the KafScale stack, in place of a
+  Java example that did not compile. CONTRIBUTING shows the CI command `xvfb-run --auto-servernum mvn -B -ntp verify`.
+  The opentsx-modbus README section is now `Bind a vendor register sheet`.
+- CI runs `bash -n` and `shellcheck -x -P SCRIPTDIR` on `bin/000_launch_tsa_workbench.sh` and `bin/010_build.sh` as
+  well.
 
 ### Removed
 
@@ -1783,6 +1794,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The workbench preview of an "Align to vector" node refuses an emptied clock with `every: empty value; expected a
   number of seconds above 0` and a missing one with `every: missing; expected a number of seconds above 0`, the same
   texts as the deploy checks.
+- `bin/000_validate_environment.sh --fix` prints the line to run, `Run: export JAVA_HOME=<path>`, with the path quoted
+  for the shell. Before, it claimed it had set JAVA_HOME for the session, which a script cannot do.
+- `bin/000_launch_tsa_workbench.sh` prints `TSA Workbench exited with code: <n>` and exits with that code when Maven
+  or java fails; before, `set -e` ended the script before the message. Its header names Java 17 and says that
+  JAVA_OPTS reaches java only without Maven, because `exec:java` runs in the Maven JVM, which reads MAVEN_OPTS.
+- `tools/pair_xcorr_vectors.sh` shows Maven's output and names the step when `mvn install` or
+  `dependency:build-classpath` fails; before, it stopped without a message.
+- `deploy/k3s/60-probe.sh` messages and the report result line use a colon or a semicolon instead of a spaced hyphen,
+  for example `| result | **FAIL**: 0 passed, 1 failed, 0 skipped/planned |` and `1 step(s) failed; report: <file>`.
+- `.gitignore` ignores the CSV files that the episode 2 and 3 exercise solutions write into the project root, such as
+  `exercise1_output.csv`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

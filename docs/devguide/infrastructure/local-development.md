@@ -10,11 +10,9 @@
 >
 > Both stacks bind port 9092, so do not run them at the same time.
 
-This document describes the simplified local development setup for OpenTSx using Docker Compose.
+## What runs
 
-## Overview
-
-The local development environment (`docker-compose.local.yml`) provides a complete infrastructure stack for developing and testing OpenTSx applications:
+`docker-compose.local.yml` starts these services:
 
 - **Kafka** (`confluentinc/cp-kafka:7.6.0`): one broker in KRaft mode, without ZooKeeper
 - **Schema Registry** (`confluentinc/cp-schema-registry:7.6.0`): Avro schema management
@@ -83,7 +81,7 @@ docker compose -f docker-compose.local.yml down
 
 ### Remove All Data Volumes
 
-**WARNING:** This deletes all data!
+This deletes the data of every service in the stack.
 
 ```bash
 docker compose -f docker-compose.local.yml down -v
@@ -192,25 +190,12 @@ docker compose -f docker-compose.local.yml logs -f
 ./bin/episode_02_create_timeseries.sh
 ```
 
-### 3. Test Kafka Integration
+### 3. Write episodes to KafScale
 
-```java
-// Producer example
-Properties props = new Properties();
-props.put("bootstrap.servers", "localhost:9092");
-props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-
-KafkaProducer<String, String> producer = new KafkaProducer<>(props);
-
-TimeSeriesObject ts = TimeSeriesObject.getGaussianDistribution(100);
-String json = convertToJson(ts);  // Your serialization logic
-
-ProducerRecord<String, String> record =
-    new ProducerRecord<>("opentsx-timeseries", ts.getLabel(), json);
-producer.send(record);
-producer.close();
-```
+[Chapter 3](../../user-manual/03-data-model.md) of the user manual builds an episode, and
+[section 4.3](../../user-manual/04-kafscale-storage.md#43-write-a-bucket) creates the topics and writes episodes as a
+bucket. That code uses the v2 modules: run it against the KafScale stack of `docker-compose.kafscale.yml` with
+`bootstrap` set to `localhost:9092`, as the note at the top of this page says.
 
 ## Troubleshooting
 
@@ -281,27 +266,6 @@ Measured with `docker stats --no-stream` after `up -d`, one topic and one schema
 | Kafka           | 378 MiB      |
 | Schema Registry | 265 MiB      |
 | **Total**       | **673 MiB**  |
-
-## Next Steps
-
-1. **Validate Setup:**
-   ```bash
-   ./bin/000_validate_environment.sh
-   ```
-
-2. **Build Project:**
-   ```bash
-   ./bin/010_build.sh
-   ```
-
-3. **Run Demo Scripts:**
-   ```bash
-   # Episode 2: Creating Time Series
-   ./bin/episode_02_create_timeseries.sh
-
-   # Episode 3: Basic Operations
-   ./bin/episode_03_basic_operations.sh
-   ```
 
 ## See Also
 

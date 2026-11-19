@@ -20,12 +20,13 @@ The twin outputs are deterministic, so you should see the same numbers and run h
 |------|-------|-----------------|
 | `kafscale-check` | KafScale | seconds |
 | `windpark-sim` | KafScale (+ lake) | ~10–30 s |
-| `stats` | KafScale, `windpark-sim` before | — (continuous) |
+| `stats` | KafScale, `windpark-sim` before | continuous |
 | `metadata` | nothing | ~1 s |
 | `metadata-publish` | KafScale, OpenMetadata | seconds |
 | `twin`, `house`, `boat` | nothing | 1–20 s |
 | `studio-export` | nothing | ~11 s |
-| `retrieval`, `studio` | the Deployments | — |
+| `retrieval` | the Deployments | seconds |
+| `studio` | the Deployments | until Ctrl-C |
 | `dwd` | nothing (fixture in the image) | ~2 s |
 | `dwd-online` | HTTPS from the pods to opendata.dwd.de | ~3 s |
 | `dwd-forward` | `DWD_FORWARD=true`, internet (or `DWD_MODE=offline`) | ~2 s per station |
@@ -61,7 +62,7 @@ OK
 
 `advertised localhost:9092: NOT reachable` means the broker advertises an address the pods cannot use: see
 [setup plan, step 3](setup-plan.md#step-3-network-path-to-kafscale). (The success path was run through the image
-entrypoint against a live KafScale broker built from source with in-memory S3 - from the host, not from a pod; the
+entrypoint against a live KafScale broker built from source with in-memory S3, from the host and not from a pod; the
 failure path was run earlier against an unreachable address.)
 
 ## Wind farm simulator → KafScale
@@ -318,7 +319,7 @@ origin of weather.t_out_c: FORECAST (FORECAST = bound from DWD; SYNTHETIC = mode
 CronJob `opentsx-dwd-forward`. Every run writes `/data/dwd/mosmix-<station>-<UTC time>.csv` (wide CSV, all elements)
 and `daily-<station>-<UTC time>.csv` (`date,t_mean_c` for `house --weather`), and deletes CSV files older than 30
 days. `40-demo.sh dwd-forward` triggers one run. With `DWD_MODE=offline` it reads the fixture (station 10578 only), for
-tests without internet. The weather data are not yet written to KafScale (`tsx.weather.*` is planned).
+tests without internet. The CronJob writes CSV files only; it writes nothing to KafScale.
 
 ## Modbus meter (simulator and poller)
 

@@ -56,7 +56,6 @@ done
 load_env
 for key in "${!SET[@]}"; do printf -v "$key" '%s' "${SET[$key]}"; done
 
-# ---- validate -----------------------------------------------------------------------------------------------------
 # every value ends up in a YAML or env file line
 for key in "${CONFIG_KEYS[@]}"; do
   [[ "${!key}" != *[[:cntrl:]]* ]] || die "$key: the value holds a control character such as a line break; write it on one line"
@@ -135,7 +134,6 @@ origin="^([*]|https?://$host)\$"
 [[ "$EVENT_BRIDGE_ALLOW_ORIGIN" =~ $origin ]] \
   || die "EVENT_BRIDGE_ALLOW_ORIGIN: \"$EVENT_BRIDGE_ALLOW_ORIGIN\" is not an origin; expected * or <scheme>://<host>[:<port>] such as http://studio.local:8088"
 
-# ---- derived values -----------------------------------------------------------------------------------------------
 POD_BOOTSTRAP="$KAFSCALE_BOOTSTRAP"
 if [[ "$KAFSCALE_NETWORK" == "service" ]]; then
   [[ "$KAFSCALE_BOOTSTRAP" != *,* ]] || die "KAFSCALE_NETWORK=service supports one bootstrap address; use direct for a list"
@@ -208,7 +206,6 @@ if is_true "$SAAS"; then
     || die "SAAS_ADMIN_PASSWORD: longer than 72 bytes; set at most 72 bytes in UTF-8"
 fi
 
-# ---- .env ----------------------------------------------------------------------------------------------------------
 umask 077
 {
   echo "# written by deploy/k3s/20-configure.sh on $(date -u +%Y-%m-%dT%H:%M:%SZ); contains secrets, never commit"
@@ -216,7 +213,6 @@ umask 077
 } > "$ENV_FILE"
 chmod 600 "$ENV_FILE"
 
-# ---- overlay -------------------------------------------------------------------------------------------------------
 mkdir -p "$OVERLAY/jobs"
 cat > "$OVERLAY/namespace.yaml" <<EOF
 apiVersion: v1
@@ -414,7 +410,6 @@ images:
 EOF
 } > "$OVERLAY/jobs/kustomization.yaml"
 
-# ---- check the rendering -------------------------------------------------------------------------------------------
 info "configuration written: $ENV_FILE, $OVERLAY/"
 echo "  namespace $OPENTSX_NS | KafScale $KAFSCALE_BOOTSTRAP ($KAFSCALE_NETWORK; pods use $POD_BOOTSTRAP) | domain $OPENTSX_DOMAIN"
 echo "  images $OPENTSX_IMAGE_REPO/{tools,studio}:$OPENTSX_TAG | lake $LAKE (minio $LAKE_MINIO) | retrieval $RETRIEVAL_SOURCE (dag runs $RETRIEVAL_DAG_RUNS) | vector processor $VECTOR_PROCESSOR | ingress $INGRESS | OpenMetadata ${OM_URL:-off}"

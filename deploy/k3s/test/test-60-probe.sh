@@ -84,5 +84,24 @@ else
   echo "ok   retrieval-port-forward"
 fi
 
+report="$(compgen -G "$WORK/run/probe-report-*.md" | head -n 1 || true)"
+if ! grep -qF "1 step(s) failed; report: " "$WORK/retrieval.out"; then
+  failed "retrieval-summary: expected '1 step(s) failed; report: <file>'"; sed 's/^/    /' "$WORK/retrieval.out"
+elif [[ -z "$report" ]] || ! grep -qxF "| result | **FAIL**: 0 passed, 1 failed, 0 skipped/planned |" "$report"; then
+  failed "retrieval-report: expected the result line '| result | **FAIL**: 0 passed, 1 failed, 0 skipped/planned |'"
+  sed 's/^/    /' "${report:-/dev/null}"
+else
+  echo "ok   retrieval-summary and report result line"
+fi
+
+# messages and report lines use a colon or a semicolon, not a spaced hyphen as a dash
+dashes="$(sed -e 's/[$](([^)]*))//g' "$K3S_DIR/60-probe.sh" \
+  | grep -nE '^[^#]*\<(info|ok|warn|fail|note|die|usage_error|echo)\>[^#]*"[^"]* - ' || true)"
+if [[ -n "$dashes" ]]; then
+  failed "message-dashes: spaced hyphens in 60-probe.sh messages"; printf '%s\n' "$dashes" | sed 's/^/    /'
+else
+  echo "ok   message-dashes"
+fi
+
 if (( failures )); then echo "$failures failed"; exit 1; fi
 echo "all passed"

@@ -2,7 +2,7 @@
 
     python opentsx-model/src/test/resources/testvectors/generate.py
 
-Only rerun when the specification changes intentionally - both test suites compare against these files.
+Only rerun when the specification changes intentionally: both test suites compare against these files.
 xxHash64 reference values come from the ``xxhash`` package (independent of both implementations).
 """
 

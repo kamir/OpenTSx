@@ -9,28 +9,29 @@ marked **assumption** are estimates to be replaced by measurements on your hardw
 | Component | CPU request / limit | Memory request / limit | Storage | Basis |
 |-----------|--------------------|------------------------|---------|-------|
 | `opentsx-stats` | 250m / 1 | 512Mi / 1Gi | PVC `opentsx-stats-state` 1Gi (checkpoint) | **assumption** for ≤ 1,000 series; state grows with series × open windows (see §4) |
-| `opentsx-retrieval`, demo store | 100m / 1 | 384Mi / 1Gi | — | demo store: 3 series × 21,600 values in memory |
-| `opentsx-retrieval`, Iceberg | 250m / 2 | 768Mi / 2Gi | — | **assumption**; pattern search scans the selected episodes in memory |
-| `opentsx-studio` (nginx) | 10m / 200m | 16Mi / 64Mi | — | static page, 1.2 MB |
+| `opentsx-retrieval`, demo store | 100m / 1 | 384Mi / 1Gi | n/a | demo store: 3 series × 21,600 values in memory |
+| `opentsx-retrieval`, Iceberg | 250m / 2 | 768Mi / 2Gi | n/a | **assumption**; pattern search scans the selected episodes in memory |
+| `opentsx-studio` (nginx) | 10m / 200m | 16Mi / 64Mi | n/a | static page, 1.2 MB |
 | Job `windpark-sim` (Ostsee demo) | 500m / 2 | 768Mi / 1.5Gi | PVC `opentsx-data` 2Gi (index, ground truth) | **measured** peak RSS 460–560 MB, ~10 s wall, ~18 s CPU (2.16 M values, Iceberg sink) |
-| Job `twin` | 250m / 1 | 256Mi / 512Mi | — | **measured** peak RSS ~120 MB, 1.4 s |
-| Job `house` | 250m / 1 | 512Mi / 1Gi | — | **measured**: `--calibrate` needs > 384 MB heap; RSS ~670 MB at 512 MB heap; 9–19 s |
-| Job `boat` | 250m / 1 | 384Mi / 768Mi | — | **measured** peak RSS 300–410 MB, 2 s |
-| Job `studio-export` | 250m / 1 | 512Mi / 1Gi | — | **measured** peak RSS 400–670 MB, 11 s (all three scenarios) |
-| Job `metadata` | 250m / 1 | 256Mi / 512Mi | — | **measured** peak RSS ~100 MB, 1 s |
-| Job `kafscale-check` | 250m / 1 | 256Mi / 768Mi | — | Kafka client only |
+| Job `twin` | 250m / 1 | 256Mi / 512Mi | n/a | **measured** peak RSS ~120 MB, 1.4 s |
+| Job `house` | 250m / 1 | 512Mi / 1Gi | n/a | **measured**: `--calibrate` needs > 384 MB heap; RSS ~670 MB at 512 MB heap; 9–19 s |
+| Job `boat` | 250m / 1 | 384Mi / 768Mi | n/a | **measured** peak RSS 300–410 MB, 2 s |
+| Job `studio-export` | 250m / 1 | 512Mi / 1Gi | n/a | **measured** peak RSS 400–670 MB, 11 s (all three scenarios) |
+| Job `metadata` | 250m / 1 | 256Mi / 512Mi | n/a | **measured** peak RSS ~100 MB, 1 s |
+| Job `kafscale-check` | 250m / 1 | 256Mi / 768Mi | n/a | Kafka client only |
 | `opentsx-iceberg-rest` (lake) | 100m / 1 | 384Mi / 768Mi | PVC 1Gi (SQLite catalog) | **assumption** |
 | `opentsx-minio` (lake) | 100m / 1 | 256Mi / 1Gi | PVC 20Gi | size from §3 |
 | Job `dwd` | 100m / 1 | 192Mi / 512Mi | PVC `opentsx-data` (a few KB) | **measured** peak RSS ~80 MB, ~1 s (fixture; house twin over 5 h) |
 | CronJob `opentsx-dwd-forward` | 100m / 1 | 192Mi / 512Mi | ~25 KB CSV per station and run (live MOSMIX_L, 247 steps) → ~9 MB per station and year, pruned after 30 days | **measured** CSV size; RSS as `dwd` (**assumption** for 247 steps) |
-| `opentsx-modbus-sim` | 50m / 500m | 128Mi / 384Mi | — | **measured** peak RSS ~80 MB |
+| `opentsx-modbus-sim` | 50m / 500m | 128Mi / 384Mi | n/a | **measured** peak RSS ~80 MB |
 | Job `modbus-poll` | 100m / 500m | 192Mi / 384Mi | ~71 KB JSON per 30 s run (14 points, 10 s episodes) | **measured** peak RSS ~90 MB; a continuous poller at 5 s with 1-min episodes: ~14 points × 1,440 episodes/day ≈ 20,000 lines/day, roughly 25 MB/day as JSON (**assumption**: JSON is ~10× the Avro/zstd size on KafScale) |
-| CronJob `opentsx-synthetic-check` | 100m / 500m | 256Mi / 512Mi | — | Kafka client only, ~10 s per run (**assumption**) |
+| CronJob `opentsx-synthetic-check` | 100m / 500m | 256Mi / 512Mi | n/a | Kafka client only, ~10 s per run (**assumption**) |
 
 The JVMs use `-XX:MaxRAMPercentage=75`, so the heap follows the container limit. The measured RSS values grow with
 the heap the JVM is allowed; they are upper bounds at the given heap, not minimums.
 
-**Images:** `opentsx/tools` ≈ JRE (~200 MB) + 74 jars (123 MB; 185 MB with `--with-s3`); `opentsx/studio` ≈ 50 MB.
+**Images:** `opentsx/tools` ≈ JRE (~200 MB) + 67 jars (113 MB; 70 jars and 173 MB with `--with-s3`, **measured** with
+`deploy/docker/stage.sh --out <dir>` on 3.0.1); `opentsx/studio` ≈ 50 MB.
 Plan ~1 GB of containerd storage per tag on each node.
 
 ## 2. Per scenario
@@ -61,7 +62,7 @@ doubles cost 6.96 B/value, timestamp jitter (`IRREGULAR_DELTA`) 4.07 B/value (al
 
 | Case | N × C × f | values/day | KafScale per day (2.18 B) | per year | raw (8.40 B/value) per day | episodes/s |
 |------|-----------|-----------|---------------------------|----------|----------------------------|-----------|
-| Ostsee demo run (6 h) | 10 × 10 × 1 Hz | 2.16 M per run | 4.7 MB per run | — | 18 MB per run | 3,600 episodes per run |
+| Ostsee demo run (6 h) | 10 × 10 × 1 Hz | 2.16 M per run | 4.7 MB per run | n/a | 18 MB per run | 3,600 episodes per run |
 | small park | 10 × 10 × 1 Hz | 8.64 M | **18.8 MB** | **6.9 GB** | 73 MB | 0.17 |
 | large park | 50 × 100 × 1 Hz | 432 M | **942 MB** | **344 GB** | 3.6 GB | 8.3 |
 | large park, full precision | 50 × 100 × 1 Hz | 432 M | 3.0 GB (6.96 B) | 1.1 TB | 3.6 GB | 8.3 |
@@ -111,7 +112,7 @@ What the repository supports and what it does not tell you:
 |------|-----------------------------|---------------------------|
 | partitions | data topics `OPENTSX_PARTITIONS` (default 6), `buckets` and `series` 1 (`TopicLayout.provision`, replication factor 1) | episodes are keyed by `seriesId`; more partitions parallelize the planned Go processor (one lease per partition) but not the single Java stats processor |
 | producer | zstd, batch 512 KB, linger 50 ms, `max.in.flight.requests.per.connection=1`, no idempotence, `acks=all` (`KafScaleClients`) | throughput against S3-backed KafScale: **open** (the conformance CI uses in-memory S3) |
-| consumer | manual assignment, no groups, fetch up to 8 MB/partition, 32 MB/request | — |
+| consumer | manual assignment, no groups, fetch up to 8 MB/partition, 32 MB/request | n/a |
 | segment size, flush interval, S3 part size | KafScale broker settings, not set by OpenTSx | **measure**: latency of the planned segment-reading Go processor depends on how fast segments close |
 | retention | not set by OpenTSx | decide per topic (episodes = system of record?) |
 | S3 storage | ≈ §3.1 for episodes + stats + manifests | **measure** the real bytes in the bucket after a known run |

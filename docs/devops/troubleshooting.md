@@ -83,7 +83,7 @@ lines only.
 | `dwd-forward`: `station … FAILED` | MOSMIX id wrong (CDC ids differ) | `bin/opentsx dwd stations --near LAT,LON`, `20-configure.sh DWD_STATIONS=…` |
 | `40-demo.sh modbus`: `simulator not deployed` | `MODBUS_SIM=false` and `MODBUS_HOST` is the simulator | `20-configure.sh MODBUS_SIM=true`, `30-deploy.sh` |
 | `modbus-poll` fails: `Connection refused` / timeouts | simulator not ready, converter unreachable from the pod network | `kubectl -n opentsx logs deploy/opentsx-modbus-sim`; real converter: routing from the pod CIDR ([R7](operations.md#r7-modbus-timeouts-or-exception-responses)) |
-| `ILLEGAL_DATA_ADDRESS`, `ILLEGAL_DATA_VALUE` | register map does not match the device | [opentsx-modbus README](../../opentsx-modbus/README.md#when-the-real-register-sheets-arrive) |
+| `ILLEGAL_DATA_ADDRESS`, `ILLEGAL_DATA_VALUE` | register map does not match the device | [opentsx-modbus README](../../opentsx-modbus/README.md#bind-a-vendor-register-sheet) |
 
 ## Probe, backup, restore
 

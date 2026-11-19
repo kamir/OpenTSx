@@ -94,7 +94,7 @@
 # Type: string.
 # opentsx.history.house.weatherYear 2023
 
-# Radiation station id; overrides the sites file.
+# Radiation station, a DWD station id of 5 digits such as 03166; overrides the sites file.
 # Type: string; no default.
 # opentsx.history.radiationStation
 
@@ -102,7 +102,7 @@
 # Type: path; no default.
 # opentsx.history.sites
 
-# Temperature station id; overrides the sites file.
+# Temperature station, a DWD station id of 5 digits such as 03166; overrides the sites file.
 # Type: string; no default.
 # opentsx.history.station
 

@@ -216,6 +216,20 @@ deploy/k3s/overlays/.probe-dryrun-*/
 /opentsx-backup-*/
 deploy/docker/.stage/
 
+### Output of the exercise solutions (exercises/solutions/swe-track), run from the project root
+/exercise1_output.csv
+/exercise2_gaussian.csv
+/exercise2_uniform.csv
+/exercise2_exponential.csv
+/high_temp_readings.csv
+/bonus_combined_pattern.csv
+/bonus_trend_component.csv
+/bonus_seasonal_component.csv
+/bonus_noise_component.csv
+/exercise1_centered.csv
+/exercise1_zscore.csv
+/exercise1_minmax.csv
+
 ### OpenTSx 2.x Kafka client profile (local copy of config/opentsx-local.props.example)
 config/opentsx-local.props
 

@@ -21,10 +21,10 @@ Requirements: JDK 17 or 21, Maven 3.9+, Python 3.10 to 3.13. Docker is optional 
 
 ```bash
 mvn -q install -DskipTests                     # build all modules
-mvn verify                                     # unit and integration tests (KafScale tests are skipped)
+xvfb-run --auto-servernum mvn -B -ntp verify   # unit and integration tests as CI runs them (KafScale tests are skipped)
 
 docker compose -f docker-compose.kafscale.yml up -d
-KAFSCALE_BOOTSTRAP=localhost:9092 mvn verify   # including the KafScale tests
+KAFSCALE_BOOTSTRAP=localhost:9092 xvfb-run --auto-servernum mvn -B -ntp verify   # including the KafScale tests
 
 cd python-package
 python -m pip install -e ".[viz]" pytest       # viz runs the notebook tests; ".[viz,iceberg]" adds the PyIceberg reader
@@ -32,6 +32,10 @@ python -m pytest -q
 
 python3 tools/check_links.py                   # relative links in the maintained Markdown (from the repo root)
 ```
+
+The Swing tests of `opentsx-core` need a display, so every Maven run that tests `opentsx-core` needs one, also
+`-pl opentsx-flink-core -am`. On a machine without a display (a server, a container, CI) run Maven under
+`xvfb-run --auto-servernum` as above; in a desktop session `mvn -B -ntp verify` is enough.
 
 Tests that need an external service run only when its variable is set: `KAFSCALE_BOOTSTRAP` (KafScale/Kafka),
 `OPENTSDB_URL` (real OpenTSDB instead of the embedded emulator), `OPENTSX_EXPORT_DIR` (Java to Iceberg to Python
@@ -56,7 +60,7 @@ started by hand (`workflow_dispatch`). A new run of the same branch or pull requ
 | Python 3.10 to 3.13 | `pip install -e ".[viz]" pytest` and `pytest -q` in `python-package`; on 3.10 also the `iceberg` extra; on 3.12 also the `yaml` extra, `tools/check_links.py`, `tools/check_tracked_config.py` and `pytest -q tools` |
 | SaaS frontend | `npm ci`, `tsc --noEmit`, `npm run lint`, `vitest run` and `npm run build` in `opentsx-saas-frontend`; `nginx -t` on its `nginx.conf`, and a check that nginx answers an unreachable backend and a refused route as JSON |
 | SaaS backend | `pip install -r requirements.txt -r requirements-dev.txt` and `pytest -q tests` in `opentsx-saas-backend` on Python 3.12 |
-| k3s scripts and manifests | `bash -n` and `shellcheck -x -P SCRIPTDIR` on `deploy/k3s/*.sh`, `deploy/k3s/test/*.sh`, `deploy/docker/*.sh`, `bin/opentsx`, `bin/000_validate_environment.sh`, `bin/run_all_tests.sh` and `opentsx-saas-backend/local-setup.sh`; the shell tests in `deploy/k3s/test/`; `deploy/docker/test-launchers.sh` and `deploy/docker/test-launchers.sh --commands`; a check that `docker-compose.local.yml` resolves and that each of its images exists; renders the kustomize overlay and Jobs for four `deploy/k3s/20-configure.sh` configurations and the history archive, validates them with `kubeconform -strict` against the Kubernetes 1.31 schemas and loads every `opentsx/tools` container through `OpenTsxConf`; `deploy/k3s/60-probe.sh --dry-run` with and without `--local-kafscale` |
+| k3s scripts and manifests | `bash -n` and `shellcheck -x -P SCRIPTDIR` on `deploy/k3s/*.sh`, `deploy/k3s/test/*.sh`, `deploy/docker/*.sh`, `bin/opentsx`, `bin/000_validate_environment.sh`, `bin/run_all_tests.sh`, `bin/000_launch_tsa_workbench.sh`, `bin/010_build.sh` and `opentsx-saas-backend/local-setup.sh`; the shell tests in `deploy/k3s/test/`; `deploy/docker/test-launchers.sh` and `deploy/docker/test-launchers.sh --commands`; a check that `docker-compose.local.yml` resolves and that each of its images exists; renders the kustomize overlay and Jobs for four `deploy/k3s/20-configure.sh` configurations and the history archive, validates them with `kubeconform -strict` against the Kubernetes 1.31 schemas and loads every `opentsx/tools` container through `OpenTsxConf`; `deploy/k3s/60-probe.sh --dry-run` with and without `--local-kafscale` |
 | KafScale conformance | builds the KafScale broker v1.6.0 from source (in-memory S3) and runs the tests of `opentsx-kafscale-conformance`, `opentsx-kafka-v2`, `opentsx-legacy-bridge`, `opentsx-windpark`, `opentsx-stats`, `opentsx-twin-live` and `opentsx-retrieval` against it; fails unless the three cases of `KafkaStreamingIntegrationTest` ran and passed; runs the `pfd-acceptance` profile of `opentsx-flink-core` against the broker |
 | Java -> Iceberg -> Python | Java writes an Iceberg fixture that PyIceberg must read byte-identically; `deploy/docker/test-launchers.sh --classpath opentsx-retrieval`, then the Python client queries a Java retrieval server started on `bin/opentsx classpath opentsx-retrieval` |
 

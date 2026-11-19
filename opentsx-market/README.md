@@ -274,9 +274,7 @@ overlapping the requested years are read, and nothing is downloaded when every y
 (about the last 500 days) overrides `historical` where both have a value.
 
 Default stations: house Marienberg 03166 (temperature, wind) and Fichtelberg 01358 (radiation); wind park
-Greifswalder Oie 01759 and Arkona 00183; boat Kiel-Holtenau 02564 and Dörnick 06163. Two nearer candidates were
-checked and dropped: Chemnitz 00853 has no radiation from April 2025 to March 2026, and Leuchtturm Kiel 02961
-measures only sunshine duration.
+Greifswalder Oie 01759 and Arkona 00183; boat Kiel-Holtenau 02564 and Dörnick 06163.
 
 The DWD does **not** keep historical MOSMIX forecasts on opendata.dwd.de, only the latest runs. Forecast history
 therefore exists only from the day collecting starts. `bin/opentsx market mosmix-archive` stores the raw

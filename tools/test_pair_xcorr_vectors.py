@@ -11,7 +11,10 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 VECTORS = "docs/datamodel-2026/testvectors/pair-xcorr.v1.json"
 
 
-def run(tmp_path: pathlib.Path, javac: str) -> subprocess.CompletedProcess:
+MVN = 'for a in "$@"; do case "$a" in -Dmdep.outputFile=*) : > "${a#-Dmdep.outputFile=}" ;; esac; done'
+
+
+def run(tmp_path: pathlib.Path, javac: str, mvn: str = MVN) -> subprocess.CompletedProcess:
     (tmp_path / "tools").mkdir()
     shutil.copy(ROOT / "tools" / "pair_xcorr_vectors.sh", tmp_path / "tools" / "pair_xcorr_vectors.sh")
     (tmp_path / VECTORS).parent.mkdir(parents=True)
@@ -27,7 +30,7 @@ def run(tmp_path: pathlib.Path, javac: str) -> subprocess.CompletedProcess:
     fake = tmp_path / "fake"
     fake.mkdir()
     tools = {
-        "mvn": 'for a in "$@"; do case "$a" in -Dmdep.outputFile=*) : > "${a#-Dmdep.outputFile=}" ;; esac; done',
+        "mvn": mvn,
         "javac": javac,
         "java": 'cp="$2"; [ -f "${cp%%:*}/experiments/crosscorrelation/Vectors.class" ] && echo vectors > "$5"',
     }
@@ -58,3 +61,12 @@ def test_a_compile_with_notes_only_writes_the_vectors(tmp_path):
     assert result.returncode == 0, result.stdout + result.stderr
     assert "Note:" not in result.stdout + result.stderr
     assert (tmp_path / VECTORS).read_text(encoding="utf-8") == "vectors\n"
+
+
+def test_a_failed_maven_step_shows_maven_errors_and_writes_no_vectors(tmp_path):
+    result = run(tmp_path, "exit 0", mvn="echo '[ERROR] Failed to execute goal on project opentsx-core: fake'; exit 1")
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "[ERROR] Failed to execute goal on project opentsx-core: fake" in result.stderr
+    assert ("pair_xcorr_vectors.sh: mvn install opentsx-core: Maven failed; see the Maven output above"
+            in result.stderr)
+    assert not (tmp_path / VECTORS).exists()

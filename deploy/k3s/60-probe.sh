@@ -93,7 +93,6 @@ PF_PIDS=()
 cleanup() { local p; for p in ${PF_PIDS[@]+"${PF_PIDS[@]}"}; do kill "$p" 2>/dev/null || true; done; }
 trap cleanup EXIT
 
-# ---- configuration -------------------------------------------------------------------------------------------------
 detect_host_ip() {   # source address of the default route = the address other machines and the pods use for this host
   local ip=""
   if have ip; then
@@ -139,12 +138,12 @@ selected() {   # step -> 0 if it should run
   return 0
 }
 
-# ---- step implementations (stdout/stderr go to the step log; NOTE file = one-line note for the report) ---------------
+# A step writes its stdout and stderr to the step log; note() writes the one-line note for the report.
 note() { echo "$*" > "$LOGDIR/.note"; }
 demo() { "$K3S_DIR/40-demo.sh" "$@"; }
 
 step_kafscale-local() {
-  [[ -n "$KS_HOST" ]] || { note "could not detect this host's IP - pass --kafscale-host <ip>"; return 1; }
+  [[ -n "$KS_HOST" ]] || { note "could not detect this host's IP; pass --kafscale-host <ip>"; return 1; }
   if [[ "$KS_HOST" =~ ^(127\.|localhost) ]]; then note "$KS_HOST is loopback: pods cannot reach it"; return 1; fi
   local -a compose
   read -r -a compose <<< "$(compose_cmd)" || true
@@ -305,7 +304,6 @@ step_modbus() {
 
 step_status() { "$K3S_DIR/50-status.sh" || true; note "see log"; return 0; }
 
-# ---- hints (troubleshooting.md / operations.md) for a failed step ----------------------------------------------------
 hints() {   # step log -> markdown bullet list
   local step="$1" log="$2"
   local -a h=()
@@ -338,7 +336,6 @@ hints() {   # step log -> markdown bullet list
   local x; for x in "${h[@]}"; do echo "* $x"; done
 }
 
-# ---- report --------------------------------------------------------------------------------------------------------
 declare -a R_NAME=() R_RESULT=() R_SECS=() R_NOTE=()
 fmt_secs() { printf '%d:%02d' $(( $1 / 60 )) $(( $1 % 60 )); }
 md_cell() { local s="${1//|/\\|}"; echo "${s//$'\n'/ }"; }
@@ -357,7 +354,7 @@ write_report() {
     echo
     echo "| | |"
     echo "|---|---|"
-    echo "| result | **$overall** - $passed passed, $failed failed, $skipped skipped/planned |"
+    echo "| result | **$overall**: $passed passed, $failed failed, $skipped skipped/planned |"
     echo "| started | $STAMP |"
     echo "| host | $(hostname 2>/dev/null || echo '?') ($(uname -sm 2>/dev/null || echo '?')) |"
     echo "| code | \`$git_rev\` |"
@@ -408,7 +405,6 @@ write_report() {
   } > "$REPORT"
 }
 
-# ---- dry run -------------------------------------------------------------------------------------------------------
 step_command() {   # what a step runs, for the plan
   case "$1" in
     kafscale-local) echo "KAFSCALE_ADVERTISED_HOST=${KS_HOST:-?} $(compose_cmd 2>/dev/null || echo 'docker compose') -f docker-compose.kafscale.yml up -d; wait for ${KS_HOST:-?}:9092" ;;
@@ -430,14 +426,14 @@ step_command() {   # what a step runs, for the plan
 
 dry_run() {
   local rc=0 tmp
-  info "dry run - plan (report: $REPORT)"
+  info "dry run: plan (report: $REPORT)"
   for s in "${ALL_STEPS[@]}"; do
     if selected "$s"; then printf '  %-15s %s\n' "$s" "$(step_command "$s")"; else printf '  %-15s %s\n' "$s" "(not selected)"; fi
   done
   info "checks"
   if $LOCAL_KS; then
     if [[ -n "$KS_HOST" && ! "$KS_HOST" =~ ^127\. ]]; then ok "host IP for KafScale: $KS_HOST (pods use $KAFSCALE_BOOTSTRAP)"
-    else fail "no usable host IP detected (got '${KS_HOST}') - pass --kafscale-host <LAN IP>"; rc=1; fi
+    else fail "no usable host IP detected (got '${KS_HOST}'); pass --kafscale-host <LAN IP>"; rc=1; fi
     if compose_cmd >/dev/null; then
       local -a compose; read -r -a compose <<< "$(compose_cmd)"
       if KAFSCALE_ADVERTISED_HOST="$KS_HOST" "${compose[@]}" -f "$ROOT/docker-compose.kafscale.yml" config -q 2>/dev/null; then
@@ -483,7 +479,6 @@ dry_run() {
 
 if $DRY; then dry_run; exit $?; fi
 
-# ---- run -----------------------------------------------------------------------------------------------------------
 mkdir -p "$LOGDIR"
 total=0; for s in "${ALL_STEPS[@]}"; do selected "$s" && total=$((total + 1)); done
 info "OpenTSx probe: $total steps, report $REPORT"
@@ -535,7 +530,7 @@ write_report
 echo
 failed=0; for r in "${R_RESULT[@]}"; do [[ "$r" == FAIL ]] && failed=$((failed + 1)); done
 if (( failed )); then
-  fail "$failed step(s) failed - report: $REPORT"
+  fail "$failed step(s) failed; report: $REPORT"
   exit 1
 fi
-info "all steps passed - report: $REPORT"
+info "all steps passed; report: $REPORT"
