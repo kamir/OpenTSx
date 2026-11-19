@@ -1,4 +1,4 @@
-# Retrieval REST server (org.opentsx.retrieval.server.RetrievalServer). Default: --demo true (synthetic in-memory
+# Retrieval REST server (org.opentsx.retrieval.server.RetrievalServer). Default: --source demo (synthetic in-memory
 # store, no infrastructure). The lake component switches it to an Iceberg catalog. No authentication: keep the
 # Service cluster-internal (kubectl port-forward) or put an authenticating gateway in front.
 apiVersion: apps/v1
@@ -17,6 +17,7 @@ spec:
       labels:
         app.kubernetes.io/name: opentsx-retrieval
     spec:
+      enableServiceLinks: false   # this Service would set OPENTSX_RETRIEVAL_PORT=tcp://..., which the loader refuses
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
@@ -25,7 +26,7 @@ spec:
         - name: retrieval
           image: opentsx/tools
           imagePullPolicy: IfNotPresent
-          args: [retrieval-server, --port, "8080", --demo, "true"]
+          args: [retrieval-server, --port, "8080", --source, demo]
           ports:
             - name: http
               containerPort: 8080

@@ -124,6 +124,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   data-quality results. The default `auto` publishes them when `--kafscale` is on the command line, so a KafScale
   bootstrap from the environment or a file does not switch them on. `always` exits with 2 when no bootstrap is set.
   The k3s Job `metadata-publish` passes `--profiles always`.
+- `retrieval-server --bind <address>` chooses the address the server listens on; without it the server listens on
+  every interface.
 
 ### Changed
 
@@ -277,6 +279,30 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   expired; sign in again`.
 - The workbench reads the reason of a failed request only from `error` of the body `{"error": "<text>", "type":
   "<type>"}`; the backend no longer sends `detail`.
+- `retrieval-server` loads its configuration through the key registry: an unknown option such as `--prot` or `--demo`,
+  an option without value and a malformed value exit with code 2 and one line that names the nearest option, `--help`
+  prints the keys and exits 0 without binding a port, and a failing Iceberg catalog prints its own message with exit
+  code 1 instead of an `InvocationTargetException` trace.
+- `retrieval-server --source auto|demo|iceberg|kafscale` chooses the store; `auto` follows only `--iceberg` and
+  `--kafscale` on the command line, so `KAFSCALE_BOOTSTRAP` or `OPENTSX_KAFSCALE_BOOTSTRAP` in the environment does
+  not switch the store, and `--iceberg` together with `--kafscale` exits with code 2 before the catalog opens.
+- `vectors`, `vectors deploy` and `vectors stop` load through the key registry and check the command, `--name`,
+  `--dag` and the DAG file before the first call to the broker: `stop` without `--name` exits with code 2 instead of
+  writing `dag: null` and printing `stopped null`, and a DAG the processor would refuse exits with code 2 instead of
+  1.
+- The retrieval server answers 400 for a query parameter a route does not take, such as `metrc=` or `kyes=`, and for
+  `agg` without `resample`, 413 `too_large` for a DAG over 262144 bytes instead of 400, and `the DAG is not valid
+  YAML: <parser message>` for a broken DAG.
+- `retrieval-server` and `vectors` log one `starting <command>` line with every effective value and its source, the
+  run token as `******`, and `opentsx.log.level` sets their log level; the retrieval server logs `listening on
+  <address>:<port>, source <source>` and its DAG mode instead of printing them on stdout.
+- The k3s retrieval and vector-processor pods set `enableServiceLinks: false`, because the Service `opentsx-retrieval`
+  would set `OPENTSX_RETRIEVAL_PORT=tcp://...`, and `deploy/k3s/base/retrieval.yaml` passes `--source demo` instead of
+  `--demo true`.
+- CI starts the retrieval server with `--source demo`; `--demo` is refused with exit code 2.
+- The operations chapter states that the retrieval server needs a run token in `OPENTSX_DAG_RUN_TOKEN` or
+  `OPENTSX_RETRIEVAL_DAG_RUN_TOKEN` for `--dag-runs true`, that `--bind` chooses the address and that
+  `--open-dag-runs` listens on 127.0.0.1 only.
 
 ### Removed
 
@@ -649,6 +675,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - SaaS backend: an answer of the retrieval server that is 200 but not a JSON object (for example an HTML sign-in page)
   answers 502 `retrieval server: gave an answer the backend cannot read; check that RETRIEVAL_URL names the retrieval
   server` instead of counting as success.
+- `retrieval-server --systems <dir>` exits with code 2 and names the directory when it holds no `*.system.yaml` file,
+  instead of serving no systems, and when it does not exist or is not a directory, instead of a stack trace with exit
+  code 1.
+- `VectorProcessor.dagName` reports `the DAG is not valid YAML: <parser message>` and keeps the parser exception as
+  the cause.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
@@ -710,6 +741,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   generator 503 `retrieval server: does not offer this route or system; see the log of the backend`.
 - The SaaS backend creates its database engines with `hide_parameters=True`, so a database error and the 500 log line
   no longer contain the bound parameters of the statement, such as an email address or a password hash.
+- `retrieval-server --dag-runs true` without a run token in `OPENTSX_DAG_RUN_TOKEN` exits with code 2 instead of
+  letting anyone who reaches the port deploy and stop DAGs; `--open-dag-runs` accepts runs without a token and listens
+  on 127.0.0.1 only, and `--dag-run-token` on the command line exits with code 2 and names the variables.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

@@ -77,9 +77,14 @@ The benchmark below measures how the two compare. It plants gusts in simulated 1
 
 ## 9.4 Query over REST and from Python
 
-Start the server with `bin/opentsx retrieval-server --port 8080 --iceberg …`. Without `--iceberg` and `--kafscale`
-it serves a synthetic demo store: three series `demo.signal` (tags `n=0`, `n=1`, `n=2`), each 6 h at 1 Hz in
-10-minute episodes. The server ignores options it does not know, so `--demo true` changes nothing.
+Start the server with `bin/opentsx retrieval-server --port 8080 --iceberg …`. Without `--iceberg` and `--kafscale`,
+or with `--source demo`, it serves a synthetic demo store: three series `demo.signal` (tags `n=0`, `n=1`, `n=2`), each
+6 h at 1 Hz in 10-minute episodes. `bin/opentsx retrieval-server --help` lists every option. An option the server does
+not know stops the start with exit code 2 and names the nearest option:
+
+```text
+opentsx: --kafscle: unknown option of retrieval-server; did you mean --kafscale?
+```
 
 With `--kafscale <host:port> --domain wind` it reads the topic `tsx.wind.episodes.v2` into memory and follows it:
 

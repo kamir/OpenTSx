@@ -53,10 +53,14 @@ public final class Systems {
      * Reads every {@code *.system.yaml} of a directory.
      *
      * @param root directory the references in the documents are relative to
+     * @throws IllegalArgumentException when {@code dir} does not exist, is not a directory or holds no system document
      */
     public static Systems load(Path dir, Path root) {
         try (Stream<Path> found = Files.list(dir)) {
             List<Path> paths = found.filter(f -> f.getFileName().toString().endsWith(".system.yaml")).sorted().toList();
+            if (paths.isEmpty()) {
+                throw new IllegalArgumentException(dir + ": holds no *.system.yaml file; give a directory of system documents");
+            }
             Systems s = new Systems(paths.stream().map(f -> SystemDoc.load(f, root)).toList());
             s.root = root;
             int i = 0;
@@ -64,6 +68,10 @@ public final class Systems {
                 s.files.put(d.system(), paths.get(i++));
             }
             return s;
+        } catch (java.nio.file.NoSuchFileException e) {
+            throw new IllegalArgumentException(dir + ": no such directory; give a directory of system documents", e);
+        } catch (java.nio.file.NotDirectoryException e) {
+            throw new IllegalArgumentException(dir + ": not a directory; give a directory of system documents", e);
         } catch (IOException e) {
             throw new UncheckedIOException(dir + " cannot be read", e);
         }

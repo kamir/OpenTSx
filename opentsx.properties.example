@@ -28,8 +28,8 @@ opentsx.use.kafka=false
 # --- v2 modules (bin/opentsx ...) ----------------------------------------------------------------------------------
 # bin/opentsx config list|show|get and version read the key registry opentsx.config.v1
 # (docs/user-manual/18-configuration.md, every key in docs/user-manual/appendix-d-configuration.md); so does a command
-# whose bin/opentsx <command> --help prints a keys: section. The other v2 commands take command-line options and a few
-# environment variables:
+# whose bin/opentsx <command> --help prints a keys: section. Common command-line options of the v2 commands and
+# environment variables of the tests:
 #
 #   KafScale / Kafka   --kafscale localhost:9092 --domain wind --partitions 6
 #                      (tests and deploy scripts: KAFSCALE_BOOTSTRAP=localhost:9092)
@@ -37,7 +37,7 @@ opentsx.use.kafka=false
 #                      --namespace tsx      (or type=rest,uri=...,warehouse=...)
 #   OpenTSDB           OPENTSDB_URL=http://localhost:4242   (store contract test against a real OpenTSDB)
 #   OpenMetadata       --om http://localhost:8585/api, token via OPENMETADATA_JWT
-#   Retrieval server   bin/opentsx retrieval-server --port 8080 [--iceberg ... | --demo true]
+#   Retrieval server   bin/opentsx retrieval-server --port 8080 [--source demo | --iceberg ... | --kafscale ...]
 #                      (Python client tests: OPENTSX_RETRIEVAL_URL=http://127.0.0.1:8080)
 #
 # See docs/user-manual/12-operations.md and docs/user-manual/appendix-a-cli.md.

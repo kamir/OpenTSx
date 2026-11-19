@@ -349,6 +349,13 @@ class VectorProcessorTest {
     }
 
     @Test
+    void aDagThatIsNotValidYamlNamesTheParserMessageAndKeepsTheCause() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> VectorProcessor.dagName("dag: [a"));
+        assertTrue(e.getMessage().startsWith("the DAG is not valid YAML: while parsing a flow sequence"), e.getMessage());
+        assertTrue(e.getCause() instanceof com.fasterxml.jackson.core.JsonProcessingException, String.valueOf(e.getCause()));
+    }
+
+    @Test
     void aStoppedDagEndsAndAChangedOneStartsOver(@TempDir Path state) throws Exception {
         appendBlock(0);
         deploy(goodDag());

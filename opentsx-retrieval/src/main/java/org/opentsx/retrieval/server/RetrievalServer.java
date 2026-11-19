@@ -5,6 +5,10 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import org.opentsx.conf.ConfCli;
+import org.opentsx.conf.OpenTsxConf;
+import org.opentsx.conf.OpenTsxConfException;
+import org.opentsx.conf.Registry;
 import org.opentsx.kafka.TopicLayout;
 import org.opentsx.model.Episodes;
 import org.opentsx.model.OpenTsxAvro;
@@ -23,8 +27,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileDescriptor;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -40,6 +49,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -59,7 +69,8 @@ import java.util.stream.Collectors;
  * POST /v1/dags/deploy        opentsx.dag.v1 as YAML: hands the DAG to the vector processor (control topic)
  * POST /v1/dags/stop?name=    stops the DAG of that name
  *                             (both only with {@code --kafscale} and {@code --dag-runs true}, and with the run token
- *                             when the server has one)
+ *                             when the server has one; {@link #main} starts no such server without one unless
+ *                             {@code --open-dag-runs} binds it to 127.0.0.1)
  * GET  /v1/health
  * </pre>
  * Episode responses are JSON by default; with {@code Accept: application/x-opentsx-avro-stream} they are a stream of
@@ -68,8 +79,6 @@ import java.util.stream.Collectors;
 public final class RetrievalServer implements AutoCloseable {
 
     public static final String AVRO_STREAM = "application/x-opentsx-avro-stream";
-
-    private static final Logger LOG = LoggerFactory.getLogger(RetrievalServer.class);
 
     private final EpisodeService service;
     private final SeriesInventory inventory;
@@ -81,6 +90,7 @@ public final class RetrievalServer implements AutoCloseable {
     private final org.opentsx.retrieval.runs.Runs runs = org.opentsx.retrieval.runs.Runs.standard();
     private final HttpServer http;
     private final OpenTsxAvro avro = new OpenTsxAvro();
+    private final Logger log = LoggerFactory.getLogger(RetrievalServer.class);
 
     public RetrievalServer(EpisodeService service, int port) throws IOException {
         this(service, port, new SeriesInventory(service.primary(), SeriesInventory.Source.of("store"), null, null,
@@ -119,6 +129,12 @@ public final class RetrievalServer implements AutoCloseable {
     /** @param systems the system documents behind {@code /v1/systems}; null when the server has none */
     public RetrievalServer(EpisodeService service, int port, SeriesInventory inventory, Dags dags, boolean dagWrites,
                            String dagRunToken, Systems systems) throws IOException {
+        this(service, new InetSocketAddress(port), inventory, dags, dagWrites, dagRunToken, systems);
+    }
+
+    /** @param address where the server listens; the wildcard address is every interface */
+    public RetrievalServer(EpisodeService service, InetSocketAddress address, SeriesInventory inventory, Dags dags,
+                           boolean dagWrites, String dagRunToken, Systems systems) throws IOException {
         this.service = service;
         this.systems = systems;
         this.inventory = inventory;
@@ -152,7 +168,7 @@ public final class RetrievalServer implements AutoCloseable {
             });
         }
         this.dagRunToken = dagRunToken == null || dagRunToken.isBlank() ? null : dagRunToken.getBytes(StandardCharsets.UTF_8);
-        this.http = HttpServer.create(new InetSocketAddress(port), 0);
+        this.http = HttpServer.create(address, 0);
         http.setExecutor(Executors.newFixedThreadPool(4));
         http.createContext("/", this::handle);
         http.start();
@@ -160,6 +176,10 @@ public final class RetrievalServer implements AutoCloseable {
 
     public int port() {
         return http.getAddress().getPort();
+    }
+
+    public InetSocketAddress address() {
+        return http.getAddress();
     }
 
     @Override
@@ -198,12 +218,12 @@ public final class RetrievalServer implements AutoCloseable {
                 } else if (!mayRun(ex)) {
                     error(ex, 401, "this server deploys DAGs for callers with its run token only (header " + RUN_TOKEN_HEADER + ")");
                 } else if (path.equals("/v1/dags/stop")) {
-                    json(ex, 200, dags.stop(query(ex).get("name"), by(ex)));
+                    json(ex, 200, dags.stop(query(ex, "name").get("name"), by(ex)));
                 } else {
                     json(ex, 200, deployDag(ex));
                 }
             } else if (method.equals("GET") && path.equals("/v1/episodes")) {
-                episodes(ex, listEpisodes(query(ex)));
+                episodes(ex, listEpisodes(query(ex, EPISODE_PARAMETERS)));
             } else if (method.equals("GET") && path.startsWith("/v1/episodes/")) {
                 String id = episodeId(path.substring("/v1/episodes/".length()), "episode id");
                 var e = service.episode(id);
@@ -228,8 +248,8 @@ public final class RetrievalServer implements AutoCloseable {
         } catch (IllegalArgumentException | java.time.format.DateTimeParseException e) {
             error(ex, 400, String.valueOf(e.getMessage()));
         } catch (RuntimeException e) {
-            LOG.error("request failed method={} path={} status=500 cause={}", oneLine(method), oneLine(path), causes(e));
-            LOG.debug("stack trace of the failed request method={} path={}", oneLine(method), oneLine(path), e);
+            log.error("request failed method={} path={} status=500 cause={}", oneLine(method), oneLine(path), causes(e));
+            log.debug("stack trace of the failed request method={} path={}", oneLine(method), oneLine(path), e);
             error(ex, 500, "internal error");
         }
     }
@@ -290,6 +310,9 @@ public final class RetrievalServer implements AutoCloseable {
         }
         if (q.containsKey("resample")) {
             eq.resample(duration("resample", q.get("resample")), oneOf("agg", q.getOrDefault("agg", "MEAN"), Resampling.Agg.class));
+        } else if (q.containsKey("agg")) {
+            throw new IllegalArgumentException("agg: \"" + q.get("agg") + "\" needs resample; expected resample with agg, such as"
+                    + " resample=PT1M&agg=MAX");
         }
         return eq.fetch();
     }
@@ -310,8 +333,8 @@ public final class RetrievalServer implements AutoCloseable {
     private static final int MAX_BODY_BYTES = 256 * 1024;
 
     private static final class TooLarge extends RuntimeException {
-        TooLarge() {
-            super("request body: larger than " + MAX_BODY_BYTES + " bytes; send at most " + MAX_BODY_BYTES + " bytes");
+        TooLarge(int max) {
+            super("request body: larger than " + max + " bytes; send at most " + max + " bytes");
         }
     }
 
@@ -324,14 +347,14 @@ public final class RetrievalServer implements AutoCloseable {
     private JsonNode deployDag(HttpExchange ex) throws IOException {
         byte[] body = ex.getRequestBody().readNBytes(MAX_DAG_BYTES + 1);
         if (body.length > MAX_DAG_BYTES) {
-            throw new IllegalArgumentException("the DAG is larger than " + MAX_DAG_BYTES + " bytes");
+            throw new TooLarge(MAX_DAG_BYTES);
         }
         String text = new String(body, StandardCharsets.UTF_8);
         JsonNode dag;
         try {
             dag = YAML.readTree(text);
         } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-            throw new IllegalArgumentException("the DAG is no valid YAML: " + e.getOriginalMessage(), e);
+            throw new IllegalArgumentException("the DAG is not valid YAML: " + e.getOriginalMessage(), e);
         }
         return dags.deploy(dag, text, by(ex));
     }
@@ -533,16 +556,26 @@ public final class RetrievalServer implements AutoCloseable {
         return t;
     }
 
-    private static Map<String, String> query(HttpExchange ex) {
+    /** The query parameters of {@code GET /v1/episodes}; {@code tag.<key>} stands for every parameter with that prefix. */
+    private static final String[] EPISODE_PARAMETERS =
+            {"metric", "tag.<key>", "series", "from", "to", "limit", "clip", "resample", "agg"};
+
+    /** The query parameters; one the route does not take, also one without {@code =}, is a 400 that names it. */
+    private static Map<String, String> query(HttpExchange ex, String... allowed) {
         Map<String, String> q = new LinkedHashMap<>();
         String raw = ex.getRequestURI().getRawQuery();
         if (raw != null) {
             for (String kv : raw.split("&")) {
-                int i = kv.indexOf('=');
-                if (i > 0) {
-                    q.put(URLDecoder.decode(kv.substring(0, i), StandardCharsets.UTF_8),
-                            URLDecoder.decode(kv.substring(i + 1), StandardCharsets.UTF_8));
+                if (kv.isEmpty()) {
+                    continue;
                 }
+                int i = kv.indexOf('=');
+                String name = URLDecoder.decode(i < 0 ? kv : kv.substring(0, i), StandardCharsets.UTF_8);
+                boolean tag = name.startsWith("tag.") && Arrays.asList(allowed).contains("tag.<key>");
+                if (!tag && !Arrays.asList(allowed).contains(name)) {
+                    throw new IllegalArgumentException(name + ": unknown query parameter; expected one of " + String.join(", ", allowed));
+                }
+                q.put(name, i < 0 ? "" : URLDecoder.decode(kv.substring(i + 1), StandardCharsets.UTF_8));
             }
         }
         return q;
@@ -551,7 +584,7 @@ public final class RetrievalServer implements AutoCloseable {
     private static JsonNode body(HttpExchange ex) throws IOException {
         byte[] raw = ex.getRequestBody().readNBytes(MAX_BODY_BYTES + 1);
         if (raw.length > MAX_BODY_BYTES) {
-            throw new TooLarge();
+            throw new TooLarge(MAX_BODY_BYTES);
         }
         if (raw.length == 0) {
             return EpisodeJson.JSON.createObjectNode();
@@ -653,13 +686,13 @@ public final class RetrievalServer implements AutoCloseable {
         } else if (p.length == 4) {
             json(ex, 200, runs.doc(system, p[3]));
         } else if (p.length == 5 && p[4].equals("series")) {
-            String keys = query(ex).getOrDefault("keys", "");
+            String keys = query(ex, "keys").getOrDefault("keys", "");
             if (keys.isBlank()) {
                 throw new IllegalArgumentException("name the series: ?keys=atom.port,atom.port");
             }
             json(ex, 200, runs.series(system, p[3], List.of(keys.split(","))));
         } else if (p.length == 5 && p[4].equals("compare")) {
-            json(ex, 200, runs.compare(system, p[3], query(ex).getOrDefault("base", runs.reference(system))));
+            json(ex, 200, runs.compare(system, p[3], query(ex, "base").getOrDefault("base", runs.reference(system))));
         } else {
             error(ex, 404, "no such route for runs");
         }
@@ -720,70 +753,232 @@ public final class RetrievalServer implements AutoCloseable {
 
     // ---- main ------------------------------------------------------------------------------------------------------
 
+    static final String COMMAND = "retrieval-server";
+    static final String SOURCE = "opentsx.retrieval.source";
+    static final String ICEBERG = "opentsx.iceberg.properties";
+    static final String NAMESPACE = "opentsx.iceberg.namespace";
+    static final String BOOTSTRAP = "opentsx.kafscale.bootstrap";
+    static final String DOMAIN = "opentsx.domain";
+    static final String PORT = "opentsx.retrieval.port";
+    static final String BIND = "opentsx.retrieval.bind";
+    static final String DAG_RUNS = "opentsx.retrieval.dagRuns";
+    static final String OPEN_DAG_RUNS = "opentsx.retrieval.openDagRuns";
+    static final String RUN_TOKEN = "opentsx.retrieval.dagRunToken";
+    static final String REFRESH = "opentsx.retrieval.refreshInterval";
+    static final String MAX_EPISODES = "opentsx.retrieval.maxEpisodes";
+    static final String SYSTEMS = "opentsx.retrieval.systems";
+    static final String SYSTEMS_ROOT = "opentsx.retrieval.systemsRoot";
+    static final String SCENARIO = "opentsx.windpark.scenario";
+    static final String CATALOG = "opentsx.windpark.catalog";
+    static final String WRITE_FAILED = "stdout: cannot write the output; check that standard output is open and not full";
+
     /**
-     * {@code RetrievalServer --port 8080 (--demo true | --iceberg k=v,... [--namespace tsx] | --kafscale host:port
-     * [--domain wind] [--refresh PT30S] [--max-episodes 20000] [--dag-runs true]) [--scenario file.yaml]
-     * [--catalog file.yaml] [--systems dir [--systems-root dir]]}. {@code --systems} names a directory of system documents
-     * ({@code *.system.yaml}, {@code opentsx.system.v1}); their references are relative to {@code --systems-root}.
-     *
-     * <p>The demo store holds three deterministic synthetic series (6 h at 1 Hz, 10-minute episodes) with a planted
-     * pattern; used by the Python client tests in CI. With {@code --kafscale} the server reads the episodes topic
-     * {@code tsx.<domain>.episodes.v2} into memory and follows it, and it reads the vector topics of the domain.
-     * {@code --dag-runs true} offers {@code POST /v1/dags/deploy} and {@code /stop}: they write to the control topic
-     * of the vector processor, which then writes the vector topics. With a run token
-     * ({@code --dag-run-token} or the environment variable {@code OPENTSX_DAG_RUN_TOKEN}) a run needs it in the header
-     * {@code X-OpenTSx-Run-Token}; without one, anyone who reaches the port can write. {@code --scenario} and {@code --catalog} are handed out unchanged in
-     * {@code GET /v1/inventory}.
+     * A checked start: the store, what the inventory hands out and the address to listen on; nothing is open yet.
+     * {@code iceberg} is null unless the source is iceberg, {@code bootstrap} null unless it is kafscale, and
+     * {@code runToken} null when there is none.
      */
-    public static void main(String[] args) throws Exception {
-        Map<String, String> a = new LinkedHashMap<>();
-        for (int i = 0; i + 1 < args.length; i += 2) {
-            a.put(args[i].replaceFirst("^--", ""), args[i + 1]);
+    record Plan(String source, Map<String, String> iceberg, String namespace, String bootstrap, String domain,
+                Duration refresh, int maxEpisodes, boolean dagRuns, String runToken, JsonNode scenario, JsonNode catalog,
+                Systems systems, InetSocketAddress address) {
+    }
+
+    /**
+     * The command {@code retrieval-server}. It reads the keys of {@code retrieval-server} in the registry
+     * {@code opentsx.config.v1} through {@link OpenTsxConf#load}; {@code bin/opentsx retrieval-server --help} lists
+     * them. {@code opentsx.retrieval.source} chooses the store: the demo store holds three deterministic synthetic
+     * series (6 h at 1 Hz, 10-minute episodes) with a planted pattern, used by the Python client tests in CI; with
+     * kafscale the server reads the episodes topic {@code tsx.<domain>.episodes.v2} into memory and follows it, and it
+     * reads the vector topics of the domain. {@code opentsx.retrieval.dagRuns} offers {@code POST /v1/dags/deploy} and
+     * {@code /stop}, which write to the control topic of the vector processor; they need a run token in the header
+     * {@code X-OpenTSx-Run-Token}, or {@code opentsx.retrieval.openDagRuns}, which accepts runs without a token and
+     * listens on 127.0.0.1 only. Exit codes: 0 when the server listens or help was printed, 1 runtime failure, 2 usage
+     * or configuration error.
+     */
+    public static void main(String[] args) {
+        PrintStream out = new PrintStream(new FileOutputStream(FileDescriptor.out), true, StandardCharsets.UTF_8);
+        PrintStream err = new PrintStream(new FileOutputStream(FileDescriptor.err), true, StandardCharsets.UTF_8);
+        int code = run(List.of(args), System.getenv(), out, err, server -> { });
+        if (code != 0) {
+            System.exit(code);
+        }
+    }
+
+    /** {@code args} without the command word, as bin/opentsx passes them; {@code started} gets the listening server. */
+    static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err,
+                   Consumer<RetrievalServer> started) {
+        List<String> argv = new ArrayList<>(args.size() + 1);
+        argv.add(COMMAND);
+        argv.addAll(args);
+        OpenTsxConf.Loaded loaded;
+        Plan plan;
+        try {
+            loaded = OpenTsxConf.load(argv, env, env.get("OPENTSX_CONF_DIR"));
+            if (loaded.help()) {
+                out.print(Registry.shipped().help(COMMAND));
+                return written(out, err);
+            }
+            if (loaded.version()) {
+                out.print(ConfCli.versionLine());
+                return written(out, err);
+            }
+            plan = check(loaded.conf());
+        } catch (IllegalArgumentException e) {
+            err.print("opentsx: " + e.getMessage() + "\n");
+            err.flush();
+            return 2;
+        } catch (RuntimeException e) {
+            LoggerFactory.getLogger(RetrievalServer.class).debug("stack trace of the failed start", e);
+            err.print("opentsx: " + failure(e) + "\n");
+            err.flush();
+            return 1;
+        }
+        Logger log = LoggerFactory.getLogger(RetrievalServer.class);
+        log.info(loaded.startLine());
+        try {
+            RetrievalServer server = start(plan, log);
+            log.info("listening on {}:{}, source {}", server.address().getAddress().getHostAddress(), server.port(), plan.source());
+            started.accept(server);
+            return 0;
+        } catch (IOException | RuntimeException e) {
+            log.debug("stack trace of the failed start", e);
+            err.print("opentsx: " + failure(e) + "\n");
+            err.flush();
+            return 1;
+        }
+    }
+
+    private static int written(PrintStream out, PrintStream err) {
+        out.flush();
+        // PrintStream never throws; without this check a full disk or a closed stdout would exit 0.
+        if (out.checkError()) {
+            err.print("opentsx: " + WRITE_FAILED + "\n");
+            err.flush();
+            return 1;
+        }
+        return 0;
+    }
+
+    /**
+     * Checks every value and reads the scenario, the catalog and the system documents; opens no store, no client and
+     * no port. With {@code auto}, a source is chosen by what is set on the command line, so a value from the
+     * environment or a file does not switch it.
+     */
+    static Plan check(OpenTsxConf conf) {
+        String source = conf.get(SOURCE);
+        if (source.equals("auto")) {
+            boolean iceberg = "commandLine".equals(conf.source(ICEBERG));
+            boolean kafscale = "commandLine".equals(conf.source(BOOTSTRAP));
+            if (iceberg && kafscale) {
+                throw new OpenTsxConfException("--iceberg", "given together with --kafscale",
+                        "give one of them, or choose with --source iceberg or --source kafscale");
+            }
+            source = iceberg ? "iceberg" : kafscale ? "kafscale" : "demo";
+        }
+        Map<String, String> iceberg = source.equals("iceberg") ? icebergProperties(conf) : null;
+        String bootstrap = source.equals("kafscale") ? conf.get(BOOTSTRAP) : null;
+        String domain = conf.get(DOMAIN);
+        if (bootstrap != null) {
+            new TopicLayout(domain);    // refuses a domain that cannot be part of a topic name
+        }
+        int maxEpisodes = conf.getInt(MAX_EPISODES);
+        if (maxEpisodes < 1) {
+            throw new OpenTsxConfException(MAX_EPISODES, "\"" + maxEpisodes + "\" is not allowed", "expected 1 or more");
+        }
+        boolean dagRuns = conf.getBoolean(DAG_RUNS);
+        boolean open = conf.getBoolean(OPEN_DAG_RUNS);
+        String runToken = conf.getOption(RUN_TOKEN).orElse(null);
+        if (dagRuns && bootstrap == null) {
+            throw new OpenTsxConfException(DAG_RUNS, "true needs the kafscale source",
+                    "give --kafscale <host:port> with --source auto or --source kafscale, or leave --dag-runs off");
+        }
+        if (dagRuns && runToken == null && !open) {
+            throw new OpenTsxConfException(DAG_RUNS, "true needs a run token", "set "
+                    + String.join(" or ", conf.registry().entry(RUN_TOKEN, RUN_TOKEN).envNames())
+                    + ", or give --open-dag-runs to accept runs without a token on 127.0.0.1 only");
+        }
+        InetSocketAddress address = address(conf, open);
+        JsonNode scenario = yaml(conf.getOption(SCENARIO).orElse(null));
+        JsonNode catalog = yaml(conf.getOption(CATALOG).orElse(null));
+        Systems systems = conf.getOption(SYSTEMS)
+                .map(dir -> Systems.load(java.nio.file.Path.of(dir), java.nio.file.Path.of(conf.get(SYSTEMS_ROOT))))
+                .orElse(null);
+        return new Plan(source, iceberg, conf.get(NAMESPACE), bootstrap, domain, conf.getDuration(REFRESH), maxEpisodes,
+                dagRuns, runToken, scenario, catalog, systems, address);
+    }
+
+    /** Every interface by default; 127.0.0.1 with open DAG runs, which refuse any address that is not a loopback one. */
+    private static InetSocketAddress address(OpenTsxConf conf, boolean open) {
+        int port = conf.getInt(PORT);
+        if (port < 0 || port > 65535) {
+            throw new OpenTsxConfException(PORT, "\"" + port + "\" is not allowed", "expected 0 to 65535, 0 for any free port");
+        }
+        String bind = conf.getOption(BIND).orElse(null);
+        if (bind == null) {
+            return open ? new InetSocketAddress(InetAddress.getLoopbackAddress(), port) : new InetSocketAddress(port);
+        }
+        InetAddress host;
+        try {
+            host = InetAddress.getByName(bind);
+        } catch (UnknownHostException e) {
+            throw new OpenTsxConfException(BIND, "\"" + bind + "\" is not an address", "expected an address of this host such as 127.0.0.1");
+        }
+        if (open && !host.isLoopbackAddress()) {
+            throw new OpenTsxConfException(BIND, "\"" + bind + "\" is not a loopback address",
+                    "with opentsx.retrieval.openDagRuns the server listens on 127.0.0.1 only; leave --bind unset or give 127.0.0.1");
+        }
+        return new InetSocketAddress(host, port);
+    }
+
+    /** Every item is key=value. */
+    private static Map<String, String> icebergProperties(OpenTsxConf conf) {
+        String subject = "commandLine".equals(conf.source(ICEBERG)) ? "--iceberg" : ICEBERG;
+        Map<String, String> props = new LinkedHashMap<>();
+        for (String item : conf.getList(ICEBERG)) {
+            int eq = item.indexOf('=');
+            if (eq <= 0) {
+                throw new OpenTsxConfException(subject, "item \"" + item + "\" is not key=value",
+                        "expected catalog properties such as type=rest,uri=http://localhost:8181,warehouse=s3://lake/");
+            }
+            String key = item.substring(0, eq).trim();
+            if (props.put(key, item.substring(eq + 1).trim()) != null) {
+                throw new OpenTsxConfException(subject, "sets " + key + " twice", "set each property once");
+            }
+        }
+        return props;
+    }
+
+    /** Opens the store of a checked plan and starts the server on it. */
+    private static RetrievalServer start(Plan plan, Logger log) throws IOException {
+        if (plan.systems() != null) {
+            for (org.opentsx.retrieval.system.SystemDoc d : plan.systems().docs()) {
+                log.info("system {}: {} signals, {} problems", d.system(), d.signals().size(), d.problems().size());
+                d.problems().forEach(pr -> log.warn("system {}: problem: {}", d.system(), pr));
+            }
         }
         SeriesStore store;
-        SeriesInventory.Source source;
-        if (a.containsKey("iceberg")) {
-            Map<String, String> props = new LinkedHashMap<>();
-            for (String kv : a.get("iceberg").split(",")) {
-                int i = kv.indexOf('=');
-                props.put(kv.substring(0, i), kv.substring(i + 1));
-            }
-            store = (SeriesStore) Class.forName("org.opentsx.store.iceberg.IcebergSeriesStore")
-                    .getMethod("openExisting", Map.class, String.class).invoke(null, props, a.getOrDefault("namespace", "tsx"));
-            source = SeriesInventory.Source.of("iceberg");
-        } else if (a.containsKey("kafscale")) {
-            source = null;      // built below, with the topic names of the domain
-            store = new InMemorySeriesStore();
-        } else {
-            store = demoStore();
-            source = SeriesInventory.Source.of("demo");
-        }
-        JsonNode scenario = yaml(a.get("scenario"));
-        JsonNode catalog = yaml(a.get("catalog"));
         SeriesInventory inventory;
+        Dags dags = null;
         String[] generated = {null};
         Systems.Writer[] writer = {null};
-        Dags dags = null;
-        boolean dagWrites = false;
-        String envToken = System.getenv("OPENTSX_DAG_RUN_TOKEN");
-        String runToken = a.getOrDefault("dag-run-token", envToken == null ? "" : envToken);
-        if (a.containsKey("kafscale")) {
-            String domain = a.getOrDefault("domain", "wind");
-            boolean dagRuns = Boolean.parseBoolean(a.getOrDefault("dag-runs", "false"));
+        if (plan.source().equals("kafscale")) {
+            String domain = plan.domain();
+            boolean dagRuns = plan.dagRuns();
+            String runToken = plan.runToken();
+            InMemorySeriesStore episodes = new InMemorySeriesStore();
             Runnable[] invalidate = {() -> { }};
-            KafScaleFeed feed = KafScaleFeed.start(a.get("kafscale"), domain, Duration.parse(a.getOrDefault("refresh", "PT30S")),
-                    (InMemorySeriesStore) store, Integer.parseInt(a.getOrDefault("max-episodes", "20000")), () -> invalidate[0].run());
+            KafScaleFeed feed = KafScaleFeed.start(plan.bootstrap(), domain, plan.refresh(), episodes, plan.maxEpisodes(),
+                    () -> invalidate[0].run());
             // episodes of the domain plus the components of its vector topics
-            store = new CompositeSeriesStore(store, feed::vectorStore);
+            store = new CompositeSeriesStore(episodes, feed::vectorStore);
             // the feed invalidates the inventory whenever something was appended, so the cache may live long
             inventory = new SeriesInventory(store, new SeriesInventory.Source("kafscale", domain, KafScaleFeed.topics(domain)),
-                    scenario, catalog, Duration.ofMinutes(10));
+                    plan.scenario(), plan.catalog(), Duration.ofMinutes(10));
             invalidate[0] = inventory::invalidate;
             inventory.truncatedWhen(feed::truncated);
             inventory.sourceDetails(src -> {
                 src.put("dagRuns", dagRuns);
                 if (dagRuns) {
-                    src.put("dagRunAuth", runToken.isBlank() ? "none" : "token");
+                    src.put("dagRunAuth", runToken == null ? "none" : "token");
                 }
                 ArrayNode vt = src.putArray("vectorTopics");
                 feed.vectorTopics().forEach(vt::add);
@@ -808,43 +1003,82 @@ public final class RetrievalServer implements AutoCloseable {
                     return feed.dags();
                 }
             };
-            dagWrites = dagRuns;
             if (dagRuns) {
                 generated[0] = new TopicLayout(domain).synthetic();
                 writer[0] = feed::writeGenerated;
-                System.out.println(runToken.isBlank()
-                        ? "dag deployments: OPEN, anyone who reaches this port can deploy and stop DAGs (set OPENTSX_DAG_RUN_TOKEN)"
-                        : "dag deployments: for callers with the run token");
             }
         } else {
-            inventory = new SeriesInventory(store, source, scenario, catalog, Duration.ofSeconds(60));
+            store = plan.source().equals("iceberg") ? openIceberg(plan.iceberg(), plan.namespace()) : demoStore();
+            inventory = new SeriesInventory(store, SeriesInventory.Source.of(plan.source()), plan.scenario(), plan.catalog(),
+                    Duration.ofSeconds(60));
         }
-        Systems systems = null;
-        if (a.containsKey("systems")) {
-            java.nio.file.Path dir = java.nio.file.Path.of(a.get("systems"));
-            systems = Systems.load(dir, java.nio.file.Path.of(a.getOrDefault("systems-root", ".")));
-            for (org.opentsx.retrieval.system.SystemDoc d : systems.docs()) {
-                System.out.println("system " + d.system() + ": " + d.signals().size() + " signals, " + d.problems().size() + " problems");
-                d.problems().forEach(pr -> System.out.println("  problem: " + pr));
-            }
+        RetrievalServer s;
+        try {
+            s = new RetrievalServer(new EpisodeService(store), plan.address(), inventory, dags, plan.dagRuns(),
+                    plan.runToken(), plan.systems());
+        } catch (IOException e) {
+            throw new IOException("cannot listen on " + plan.address().getAddress().getHostAddress() + ":"
+                    + plan.address().getPort(), e);
         }
-        RetrievalServer s = new RetrievalServer(new EpisodeService(store), Integer.parseInt(a.getOrDefault("port", "8080")),
-                inventory, dags, dagWrites, runToken, systems);
         if (writer[0] != null) {
             s.generatedSeries(generated[0], writer[0]);
         }
-        System.out.println("opentsx retrieval server on port " + s.port());
+        if (plan.dagRuns() && plan.runToken() == null) {
+            log.warn("dag deployments: OPEN on {}:{}, any process that reaches this address can deploy and stop DAGs"
+                    + " (opentsx.retrieval.openDagRuns); set OPENTSX_DAG_RUN_TOKEN to require a token",
+                    s.address().getAddress().getHostAddress(), s.port());
+        } else if (plan.dagRuns()) {
+            log.info("dag deployments: for callers with the run token");
+        }
+        return s;
+    }
+
+    /** {@code IcebergSeriesStore.openExisting}, called by name: opentsx-store-iceberg is on the class path of the launcher only. */
+    private static SeriesStore openIceberg(Map<String, String> props, String namespace) {
+        java.lang.reflect.Method open;
+        try {
+            open = Class.forName("org.opentsx.store.iceberg.IcebergSeriesStore").getMethod("openExisting", Map.class, String.class);
+        } catch (ClassNotFoundException | NoSuchMethodException e) {
+            throw new IllegalStateException("org.opentsx.store.iceberg.IcebergSeriesStore.openExisting is not on the class path;"
+                    + " start the server with bin/opentsx retrieval-server, which adds opentsx-store-iceberg", e);
+        }
+        try {
+            return (SeriesStore) open.invoke(null, props, namespace);
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            if (e.getCause() instanceof RuntimeException r) {
+                throw r;
+            }
+            throw new IllegalStateException("cannot open the Iceberg catalog: " + e.getCause(), e.getCause());
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException("cannot call " + open, e);
+        }
+    }
+
+    /** The message and its causes on one line, for the command line. */
+    static String failure(Throwable t) {
+        String head = t.getMessage() == null ? t.toString() : t.getMessage();
+        return oneLine(t.getCause() == null ? head : head + "; caused by " + causes(t.getCause()));
     }
 
     private static final com.fasterxml.jackson.databind.ObjectMapper YAML =
             new com.fasterxml.jackson.databind.ObjectMapper(new com.fasterxml.jackson.dataformat.yaml.YAMLFactory());
 
     /** Reads a YAML (or JSON) file as a tree; null when no file is given. */
-    private static JsonNode yaml(String file) throws IOException {
-        if (file == null || file.isBlank()) {
+    private static JsonNode yaml(String file) {
+        if (file == null) {
             return null;
         }
-        return YAML.readTree(java.nio.file.Path.of(file).toFile());
+        java.nio.file.Path p = java.nio.file.Path.of(file);
+        if (!java.nio.file.Files.isRegularFile(p)) {
+            throw new OpenTsxConfException(file, "no such file", "give an existing file");
+        }
+        try {
+            return YAML.readTree(p.toFile());
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new OpenTsxConfException(file, "not valid YAML", String.valueOf(e.getOriginalMessage()).lines().findFirst().orElse(""));
+        } catch (IOException e) {
+            throw new java.io.UncheckedIOException(file + ": cannot read the file", e);
+        }
     }
 
     /** Planted pattern of the demo store: 120 samples starting at sample 5000 of series "demo.signal{n=1}". */

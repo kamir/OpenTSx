@@ -113,13 +113,14 @@ class ConfCliTest {
 
     @Test
     void helpOfACommandOutsideConfigSaysWhatTheJavaCommandReads() {
-        assertTrue(Registry.shipped().help("twin").startsWith("usage: opentsx twin [options]\n"
-                + "Run twin scenario S1 (H2 chain) in the modes shadow, what-if and forecast.\n"
-                + "In the Java runtime, twin parses its own flags and does not read --conf, --properties-file, "
+        assertTrue(Registry.shipped().help("history-twin twin").startsWith("usage: opentsx history-twin twin [options]\n"
+                + "Run twin scenario S1 (H2 chain) on prices and wind from the history archive.\n"
+                + "In the Java runtime, history-twin twin parses its own flags and does not read --conf, --properties-file, "
                 + "OPENTSX_CONF_DIR or the canonical OPENTSX_ variables.\n"));
         assertFalse(Registry.shipped().help("config show").contains("In the Java runtime"));
         assertFalse(Registry.shipped().help("stats").contains("In the Java runtime"));
         assertFalse(Registry.shipped().help("stats-flink").contains("In the Java runtime"));
+        assertFalse(Registry.shipped().help("twin").contains("In the Java runtime"));
     }
 
     @Test
@@ -151,8 +152,8 @@ class ConfCliTest {
         assertEquals("--token: secret keys are not accepted on the command line; set OPENTSX_OPENMETADATA_TOKEN or "
                 + "OPENMETADATA_JWT or put opentsx.openmetadata.token in a properties file", message);
         String malformed = assertThrows(OpenTsxConfException.class,
-                () -> OpenTsxConf.load(List.of("market", "catalog"), Map.of("OPENTSX_DWD_HTTPS_PROXY", "a,\u0001"), null)).getMessage();
-        assertEquals("OPENTSX_DWD_HTTPS_PROXY: value contains a control character; remove it", malformed);
+                () -> OpenTsxConf.load(List.of("market", "catalog"), Map.of("OPENTSX_HTTPS_PROXY", "a,\u0001"), null)).getMessage();
+        assertEquals("OPENTSX_HTTPS_PROXY: value contains a control character; remove it", malformed);
     }
 
     @Test

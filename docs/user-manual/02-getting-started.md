@@ -107,8 +107,8 @@ df = read_frame(cat, "tsx", metric="wind.turbine.power_active")
 These parts run without Docker or a broker:
 
 * The in-memory store `InMemorySeriesStore`.
-* `bin/opentsx retrieval-server --port 8080` without `--iceberg` or `--kafscale`. It serves a synthetic demo store.
-  `--demo true` is accepted and has no effect.
+* `bin/opentsx retrieval-server --port 8080 --source demo`. It serves a synthetic demo store. Without `--source`,
+  `--iceberg` and `--kafscale` it serves the same store.
 * `bin/opentsx windpark-sim` with `--iceberg` and without `--kafscale`. It writes to a local Iceberg warehouse
   (SQLite catalog, as in step 1).
 * `bin/opentsx twin-live demo`. It plays twin events through the SSE bridge on port 8090 with topics in memory

@@ -282,7 +282,7 @@ def test_ids_with_a_slash_are_rejected_before_the_request(monkeypatch, call):
     assert sent == []
 
 
-@pytest.mark.skipif("OPENTSX_RETRIEVAL_URL" not in os.environ, reason="needs a running RetrievalServer --demo")
+@pytest.mark.skipif("OPENTSX_RETRIEVAL_URL" not in os.environ, reason="needs a running RetrievalServer --source demo")
 def test_against_the_java_server():
     c = RetrievalClient(os.environ["OPENTSX_RETRIEVAL_URL"])
     eps = c.episodes(metric="demo.signal", tags={"n": "1"})

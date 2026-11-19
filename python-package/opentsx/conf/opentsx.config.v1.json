@@ -373,23 +373,6 @@
       "doc": "Read the hourly recent observations instead of the 10-minute now observations."
     },
     {
-      "key": "opentsx.dwd.httpsProxy",
-      "type": "string",
-      "secret": true,
-      "env": [
-        "HTTPS_PROXY",
-        "https_proxy"
-      ],
-      "commands": [
-        "dwd house",
-        "dwd mosmix",
-        "dwd obs",
-        "dwd stations"
-      ],
-      "since": "3.0.1",
-      "doc": "HTTPS proxy for downloads from opendata.dwd.de when the JVM has no proxy settings."
-    },
-    {
       "key": "opentsx.dwd.near",
       "type": "list",
       "items": "double",
@@ -692,6 +675,23 @@
       ],
       "since": "3.0.1",
       "doc": "Daily temperatures CSV used with the calibration."
+    },
+    {
+      "key": "opentsx.https.proxy",
+      "type": "string",
+      "secret": true,
+      "env": [
+        "HTTPS_PROXY",
+        "https_proxy"
+      ],
+      "commands": [
+        "dwd house",
+        "dwd mosmix",
+        "dwd obs",
+        "dwd stations"
+      ],
+      "since": "unreleased",
+      "doc": "HTTPS proxy for downloads, used when the JVM property https.proxyHost is not set."
     },
     {
       "key": "opentsx.iceberg.namespace",
@@ -1693,7 +1693,7 @@
         "retrieval-server"
       ],
       "since": "unreleased",
-      "doc": "Store the retrieval server serves; auto takes iceberg when opentsx.iceberg.properties is set on the command line, else kafscale when opentsx.kafscale.bootstrap is, else demo."
+      "doc": "Store the retrieval server serves; auto takes iceberg when opentsx.iceberg.properties is set on the command line, kafscale when opentsx.kafscale.bootstrap is, else demo; both on the command line is an error."
     },
     {
       "key": "opentsx.retrieval.systems",

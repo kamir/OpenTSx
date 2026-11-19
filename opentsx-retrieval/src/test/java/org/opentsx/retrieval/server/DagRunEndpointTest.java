@@ -143,12 +143,35 @@ class DagRunEndpointTest {
             assertTrue(refused.body().contains("norm.zscore"), refused.body());
             assertEquals(400, post(server, "/v1/dags/stop", "").statusCode(), "no name");
 
+        }
+    }
+
+    @Test
+    void aDagOverTheLimitAnswers413AndBrokenYamlNamesTheParserMessage() throws Exception {
+        Recorder dags = new Recorder();
+        try (RetrievalServer server = server(dags, true, null)) {
+            HttpResponse<String> large = post(server, "/v1/dags/deploy", "x: " + "a".repeat(262145 - 4) + "\n");
+            assertEquals(413, large.statusCode(), large.body());
+            assertEquals("{\"error\":\"request body: larger than 262144 bytes; send at most 262144 bytes\",\"type\":\"too_large\"}",
+                    large.body());
+            assertEquals(200, post(server, "/v1/dags/deploy", "dag: " + "a".repeat(262144 - 6) + "\n").statusCode());
+
             HttpResponse<String> broken = post(server, "/v1/dags/deploy", "dag: [unclosed\n");
             assertEquals(400, broken.statusCode());
-            assertTrue(broken.body().contains("no valid YAML"), broken.body());
-            HttpResponse<String> large = post(server, "/v1/dags/deploy", "x: " + "a".repeat(300 * 1024) + "\n");
-            assertEquals(400, large.statusCode());
-            assertTrue(large.body().contains("larger than"), large.body());
+            String error = EpisodeJson.JSON.readTree(broken.body()).path("error").asText();
+            assertTrue(error.startsWith("the DAG is not valid YAML: while parsing a flow sequence"), error);
+            assertEquals(1, dags.calls.size());
+        }
+    }
+
+    @Test
+    void anUnknownQueryParameterOfStopAnswers400() throws Exception {
+        Recorder dags = new Recorder();
+        try (RetrievalServer server = server(dags, true, null)) {
+            HttpResponse<String> r = post(server, "/v1/dags/stop?nmae=wind-exp2-smart", "");
+            assertEquals(400, r.statusCode(), r.body());
+            assertEquals("nmae: unknown query parameter; expected one of name", EpisodeJson.JSON.readTree(r.body()).path("error").asText());
+            assertEquals(List.of(), dags.calls);
         }
     }
 

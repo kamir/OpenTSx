@@ -260,7 +260,7 @@ final class KafScaleFeed implements AutoCloseable {
 
     /** Stops the DAG of this name: appends the record to the control topic. */
     synchronized ObjectNode stop(String name, String by) {
-        if (name == null || !name.matches("[A-Za-z0-9][A-Za-z0-9._-]*")) {
+        if (name == null || !VectorProcessor.DAG_NAME.matcher(name).matches()) {
             throw new IllegalArgumentException("name the DAG to stop (letters, digits, dots, hyphens and underscores)");
         }
         control(name, VectorProcessor.stopRecord(name, by));

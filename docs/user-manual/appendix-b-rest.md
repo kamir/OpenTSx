@@ -5,7 +5,7 @@ Base URL: `http://<host>:<port>`. Times are ISO-8601 instants (UTC).
 | Method and path | Parameters / body | Response |
 |-----------------|-------------------|----------|
 | `GET /v1/health` | none | `{"status":"ok"}` |
-| `GET /v1/episodes` | `metric`, `tag.<key>=<value>` (repeatable), `series=id,id`, `from`, `to`, `limit` (1 to 20000), `clip=true\|false` (default `false`), `resample=PT1M`, `agg=MEAN\|MIN\|MAX\|FIRST\|LAST\|SUM\|COUNT` (default `MEAN`) | episodes |
+| `GET /v1/episodes` | `metric`, `tag.<key>=<value>` (repeatable), `series=id,id`, `from`, `to`, `limit` (1 to 20000), `clip=true\|false` (default `false`), `resample=PT1M`, `agg=MEAN\|MIN\|MAX\|FIRST\|LAST\|SUM\|COUNT` (default `MEAN`, only with `resample`); any other parameter is a 400 | episodes |
 | `GET /v1/episodes/{id}` | none | episodes: an array with the one episode; 404 for an unknown id; 400 for an id that holds `/` |
 | `POST /v1/patterns/search` | `pattern` (array of 4 to 100000 finite values) **or** `episodeId`+`offset`+`length`; `metric`, `tags` (object), `series`, `from`, `to`, `distance` (`zED`\|`DTW`, in any case), `band` (DTW, default 0.1), `topK` (1 to 1000, default 10) | matches; 404 for an unknown `episodeId` |
 | `POST /v1/episodes/similar` | `episodeId`; `metric` (default: the metric of the episode), `tags`, `series`, `from`, `to`, `distance`, `band`, `topK` | matches; 404 for an unknown `episodeId` |
@@ -18,13 +18,13 @@ Base URL: `http://<host>:<port>`. Times are ISO-8601 instants (UTC).
 | `POST /v1/systems/{id}/runs` | JSON `{label?, inputs?: "scenario"\|"signals", bindings?, base?: "reference"\|"empty", interventions?: [{at, atom, control, value\|"release", reason?}], policies?: {atom: policy}, from?: minute}` | computes a run of the twin and keeps it. With `inputs: "signals"` the inputs come from the series of the signals of the system (clean grade if it has data, else raw; a constant of the document as a constant), each with its origin and the share of the run it covers, and the run is compared with the decisions of the scenario on the same inputs; `bindings` lays a working copy over the document. `at` is minutes after the start, `HH:MM` or an instant. With `from` the run is a forecast that continues the reference from that minute. Answer: `opentsx.run.v1` with `run` (the identity), `decisions`, `inputs` with their origin, `inputsFrom` (`scenario` or `signals`), `status`, `events`, `kpis` and the names of the `series`. `status` has `usability`, always `restricted`, and `reasons`: with scenario inputs a reason says that the inputs are invented; with signal inputs a reason names each input that covers less than the whole run, with its share, and one names the inputs that are generated. Every run adds the reason that sizes, pressures and the order on the hydrogen side are assumed values of the plan. Writes to no topic. 400 with a reason for what cannot be asked |
 | `GET /v1/systems/{id}/runs` | none | the runs kept, newest first; the server keeps the last hundred in memory and forgets them when it restarts |
 | `GET /v1/systems/{id}/runs/{run}` | none | one run, as the POST answers it; 404 when it is not kept any more |
-| `GET /v1/systems/{id}/runs/{run}/series` | `keys=atom.port,...` | the series of a run, one value per step, with the origin of each |
-| `GET /v1/systems/{id}/runs/{run}/compare` | `base=<run>` (default: the reference) | two runs next to each other: the KPIs of the scenario with difference and verdict, what is left in the stores at the end, and the series the scenario compares over the whole horizon |
+| `GET /v1/systems/{id}/runs/{run}/series` | `keys=atom.port,...`; any other parameter is a 400 | the series of a run, one value per step, with the origin of each |
+| `GET /v1/systems/{id}/runs/{run}/compare` | `base=<run>` (default: the reference); any other parameter is a 400 | two runs next to each other: the KPIs of the scenario with difference and verdict, what is left in the stores at the end, and the series the scenario compares over the whole horizon |
 | `POST /v1/systems/{id}/signals` | JSON `{bindings: [{signal, grade, source}]}` | as the GET, with the sources of a working copy laid over the system document; such a source is marked `workingCopy`. Reads only |
 | `POST /v1/systems/{id}/generate` | JSON `{signal, from, to, bindings?}`; header `X-OpenTSx-Run-Token` when the server has a run token | runs the demo generator the signal is bound to over the period and writes the series to `tsx.<domain>.synthetic.v2`, nowhere else. Needs `--kafscale` and `--dag-runs true` |
 | `GET /v1/dags` | none | the DAGs of the domain: what was deployed or stopped (`tsx.<domain>.dags.v1`) and what the vector processor reports per sink (`tsx.<domain>.dag-status.v1`); `writes` says whether this server deploys and stops DAGs. 404 unless the server runs with `--kafscale` |
-| `POST /v1/dags/deploy` | body: the DAG as YAML (`opentsx.dag.v1`; `opentsx.dag.v2` when it has series sinks), at most 262144 bytes; optional header `X-OpenTSx-By` | writes the DAG to the control topic `tsx.<domain>.dags.v1` and answers `{dag, state, sinks, skipped}`; 404 unless the server runs with `--kafscale` and `--dag-runs true`; 401 without the run token when the server has one (header `X-OpenTSx-Run-Token`); 400 with the reason when the DAG cannot be run |
-| `POST /v1/dags/stop?name=<dag>` | none | `{dag, state}` with `state` `stopped`; 404 and 401 as for deploy |
+| `POST /v1/dags/deploy` | body: the DAG as YAML (`opentsx.dag.v1`; `opentsx.dag.v2` when it has series sinks), at most 262144 bytes; optional header `X-OpenTSx-By` | writes the DAG to the control topic `tsx.<domain>.dags.v1` and answers `{dag, state, sinks, skipped}`; 404 unless the server runs with `--kafscale` and `--dag-runs true`; 401 without the run token when the server has one (header `X-OpenTSx-Run-Token`); 400 `the DAG is not valid YAML: <parser message>`, or 400 with the reason when the DAG cannot be run; 413 over 262144 bytes |
+| `POST /v1/dags/stop?name=<dag>` | `name`; any other parameter is a 400 | `{dag, state}` with `state` `stopped`; 404 and 401 as for deploy |
 | `POST /v1/segments` | `strategy` (`FIXED_DURATION`, `FIXED_COUNT`, `FEATURE_EXTREMUM`, `FEATURE_THRESHOLD`), `params` (see below); `metric`, `tags`, `series`, `from`, `to` | episodes |
 
 `series` is a comma-separated list of series ids in every endpoint that takes it.
@@ -34,7 +34,7 @@ Base URL: `http://<host>:<port>`. Times are ISO-8601 instants (UTC).
 | Limit | Value | Constant | Answer when exceeded |
 |-------|-------|----------|----------------------|
 | JSON body of `POST /v1/patterns/search`, `/v1/episodes/similar`, `/v1/segments` and `/v1/systems/{id}/...` | 262144 bytes | `RetrievalServer.MAX_BODY_BYTES` | 413 `request body: larger than 262144 bytes; send at most 262144 bytes` |
-| DAG document of `POST /v1/dags/deploy` | 262144 bytes | `RetrievalServer.MAX_DAG_BYTES` | 400 `the DAG is larger than 262144 bytes` |
+| DAG document of `POST /v1/dags/deploy` | 262144 bytes | `RetrievalServer.MAX_DAG_BYTES` | 413 `request body: larger than 262144 bytes; send at most 262144 bytes` |
 | points of one episode after `resample` | 100000 | `Resampling.MAX_POINTS` | 400, for example `resample: "PT0.005S" gives 120000 points for one episode; expected a longer step that gives at most 100000` |
 | `topK` of `POST /v1/patterns/search` and `/v1/episodes/similar` | 1 to 1000 | `EpisodeService.MAX_TOP_K` | 400 `topK: 1000000 is out of range; expected a whole number from 1 to 1000` |
 | values of `pattern` | 4 to 100000 | `EpisodeService.MAX_PATTERN_LENGTH` | 400 `pattern: 100001 values; expected 4 to 100000 values` |
@@ -48,16 +48,16 @@ Set a run token in the environment variable `OPENTSX_DAG_RUN_TOKEN` before you s
 read -rs OPENTSX_DAG_RUN_TOKEN && export OPENTSX_DAG_RUN_TOKEN
 ```
 
-`--dag-run-token <token>` also sets it and wins over the variable, but the process list and the shell history then
-show the token. Callers send the token in the header `X-OpenTSx-Run-Token`. Without a token, anyone who reaches the
-port can deploy and stop DAGs and write generated series. A server with `--kafscale`, `--dag-runs true` and no token
-prints at start:
+Callers send the token in the header `X-OpenTSx-Run-Token`. The command line does not take the token:
+`--dag-run-token` is a usage error. Without a token, `--dag-runs true` stops the start with exit code 2:
 
 ```text
-dag deployments: OPEN, anyone who reaches this port can deploy and stop DAGs (set OPENTSX_DAG_RUN_TOKEN)
+opentsx: opentsx.retrieval.dagRuns: true needs a run token; set OPENTSX_RETRIEVAL_DAG_RUN_TOKEN or OPENTSX_DAG_RUN_TOKEN, or give --open-dag-runs to accept runs without a token on 127.0.0.1 only
 ```
 
-With `--kafscale` and `--dag-runs true`, `GET /v1/inventory` shows `source.dagRunAuth`: `none` or `token`.
+`--open-dag-runs` accepts runs without a token for a local run. The server then listens on 127.0.0.1 only, refuses a
+`--bind` address that is not a loopback address, and logs a WARN line at start that says the DAG deployments are open.
+With `--kafscale` and `--dag-runs true`, `GET /v1/inventory` shows `source.dagRunAuth`: `none` (open) or `token`.
 
 **Operators of a DAG:** the vector processor runs only these operators on the path from the source to a sink.
 
@@ -105,6 +105,8 @@ takes:
 
 ```text
 limit: "abc" is not an int; expected a whole number from 1 to 20000
+metrc: unknown query parameter; expected one of metric, tag.<key>, series, from, to, limit, clip, resample, agg
+agg: "MAX" needs resample; expected resample with agg, such as resample=PT1M&agg=MAX
 agg: "mean" is not allowed; expected one of MEAN, MIN, MAX, FIRST, LAST, SUM, COUNT
 from: "yesterday" is not an instant; expected an ISO-8601 instant such as 2026-01-01T00:00:00Z
 to: "1960-01-01T00:00:00Z" is not after from, which defaults to 1970-01-01T00:00:00Z; expected a later to or an earlier from

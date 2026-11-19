@@ -42,6 +42,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 /**
  * Keeps the vector sinks of deployed DAGs up to date: it follows the episodes topic of a domain and appends the
@@ -67,6 +68,8 @@ public final class VectorProcessor implements AutoCloseable {
 
     public static final String CONTROL_SCHEMA = "opentsx.dag-control.v1";
     public static final String STATUS_SCHEMA = "opentsx.dag-status.v1";
+    /** Name of a DAG: the {@code dag:} of its document and the key of its control records. */
+    public static final Pattern DAG_NAME = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]*");
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory());
@@ -221,12 +224,12 @@ public final class VectorProcessor implements AutoCloseable {
     public static String dagName(String spec) {
         try {
             String name = YAML.readTree(spec).path("dag").asText("");
-            if (!name.matches("[A-Za-z0-9][A-Za-z0-9._-]*")) {
+            if (!DAG_NAME.matcher(name).matches()) {
                 throw new IllegalArgumentException("the DAG needs a name (dag: ...) of letters, digits, dots, hyphens and underscores");
             }
             return name;
         } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-            throw new IllegalArgumentException("the DAG is no valid YAML: " + e.getOriginalMessage());
+            throw new IllegalArgumentException("the DAG is not valid YAML: " + e.getOriginalMessage(), e);
         }
     }
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.retrieval.EpisodeService;
 import org.opentsx.retrieval.server.RetrievalServer;
 import org.opentsx.retrieval.server.SeriesInventory;
@@ -13,11 +14,14 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** The state of the signals of h2-chain against an inventory: what is there, what is missing, what to do next. */
@@ -432,5 +436,17 @@ class SystemsTest {
             String none = "http://localhost:" + without.port() + "/v1/systems";
             assertEquals(404, http.send(HttpRequest.newBuilder(URI.create(none)).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
         }
+    }
+
+    @Test
+    void aDirectoryWithoutSystemDocumentsIsRefusedByName(@TempDir Path dir) throws Exception {
+        IllegalArgumentException empty = assertThrows(IllegalArgumentException.class, () -> Systems.load(dir, dir));
+        assertEquals(dir + ": holds no *.system.yaml file; give a directory of system documents", empty.getMessage());
+        Path none = dir.resolve("none");
+        IllegalArgumentException missing = assertThrows(IllegalArgumentException.class, () -> Systems.load(none, dir));
+        assertEquals(none + ": no such directory; give a directory of system documents", missing.getMessage());
+        Path file = Files.writeString(dir.resolve("h2-chain.system.yaml"), "system: h2-chain\n");
+        IllegalArgumentException notDir = assertThrows(IllegalArgumentException.class, () -> Systems.load(file, dir));
+        assertEquals(file + ": not a directory; give a directory of system documents", notDir.getMessage());
     }
 }

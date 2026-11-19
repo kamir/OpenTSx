@@ -53,7 +53,7 @@ Every key with a value, sorted, with the source of the value. Excerpt of the rea
 KEY                                  VALUE                                      SOURCE
 opentsx.archive.dir                  data/history                               default
 opentsx.domain                       solar                                      commandLine
-opentsx.dwd.httpsProxy               ******                                     environment
+opentsx.https.proxy                  ******                                     environment
 ```
 
 A secret is shown as `******`. `--output json` prints one line

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.opentsx.model.OpenTsxAvro;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.retrieval.EpisodeService;
+import org.opentsx.retrieval.system.Systems;
 import org.opentsx.store.InMemorySeriesStore;
 
 import java.io.ByteArrayOutputStream;
@@ -128,6 +129,42 @@ class RetrievalServerTest {
         HttpResponse<byte[]> under = get("/v1/episodes?metric=demo.signal&limit=1&resample=PT0.01S", null);
         assertEquals(200, under.statusCode());
         assertEquals(60000, EpisodeJson.JSON.readTree(under.body()).get(0).path("count").asInt());
+    }
+
+    @Test
+    void anUnknownQueryParameterAndAggWithoutResampleAnswer400() throws Exception {
+        assertError(400, "bad_request", "metrc: unknown query parameter; expected one of metric, tag.<key>, series, from, to,"
+                + " limit, clip, resample, agg", get("/v1/episodes?metrc=demo.signal&limit=1", null));
+        assertError(400, "bad_request", "Metric: unknown query parameter; expected one of metric, tag.<key>, series, from,"
+                + " to, limit, clip, resample, agg", get("/v1/episodes?Metric=demo.signal&limit=1", null));
+        assertError(400, "bad_request", "metrc: unknown query parameter; expected one of metric, tag.<key>, series, from,"
+                + " to, limit, clip, resample, agg", get("/v1/episodes?limit=1&metrc", null));
+        assertError(400, "bad_request", "agg: \"MAX\" needs resample; expected resample with agg, such as resample=PT1M&agg=MAX",
+                get("/v1/episodes?metric=demo.signal&limit=1&agg=MAX", null));
+        assertEquals(200, get("/v1/episodes?metric=demo.signal&limit=1&tag.n=1&resample=PT1M&agg=MAX", null).statusCode());
+    }
+
+    @Test
+    void theRunRoutesAnswer400ForAQueryParameterTheyDoNotTake() throws Exception {
+        java.nio.file.Path root = java.nio.file.Path.of("..").toAbsolutePath().normalize();
+        InMemorySeriesStore store = new InMemorySeriesStore();
+        SeriesInventory inventory = new SeriesInventory(store, SeriesInventory.Source.of("demo"), null, null, Duration.ofMinutes(1));
+        try (RetrievalServer runs = new RetrievalServer(new EpisodeService(store), 0, inventory, null, false, null,
+                Systems.load(root.resolve("systems"), root))) {
+            String base = "http://127.0.0.1:" + runs.port() + "/v1/systems/h2-chain/runs";
+            HttpResponse<byte[]> made = http.send(HttpRequest.newBuilder(URI.create(base)).POST(HttpRequest.BodyPublishers.ofString(
+                    "{\"interventions\":[{\"at\":\"02:00\",\"atom\":\"handover\",\"control\":\"valve\",\"value\":1}]}")).build(),
+                    HttpResponse.BodyHandlers.ofByteArray());
+            assertEquals(200, made.statusCode(), new String(made.body(), StandardCharsets.UTF_8));
+            String run = base + "/" + EpisodeJson.JSON.readTree(made.body()).path("run").asText();
+            assertError(400, "bad_request", "kyes: unknown query parameter; expected one of keys",
+                    http.send(HttpRequest.newBuilder(URI.create(run + "/series?keys=buffer.p_bar&kyes=x")).build(),
+                            HttpResponse.BodyHandlers.ofByteArray()));
+            assertError(400, "bad_request", "bsae: unknown query parameter; expected one of base",
+                    http.send(HttpRequest.newBuilder(URI.create(run + "/compare?bsae=x")).build(), HttpResponse.BodyHandlers.ofByteArray()));
+            assertEquals(200, http.send(HttpRequest.newBuilder(URI.create(run + "/series?keys=buffer.p_bar")).build(),
+                    HttpResponse.BodyHandlers.ofByteArray()).statusCode());
+        }
     }
 
     @Test

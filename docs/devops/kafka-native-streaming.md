@@ -22,7 +22,7 @@ This integration uses Kafka clients. It does not use a native S3 segment reader.
 | `tsx.<domain>.dags.v1` | Deployment and stop records |
 | `tsx.<domain>.dag-status.v1` | Processor state and progress |
 
-Use the [retrieval module instructions](../../opentsx-retrieval/README.md#vector-processor) for the processor launcher and [the SaaS guide](../user-manual/14-saas-service-layer.md) for the account-based front end. The existing processor entry point is `bin/opentsx vectors`; its deployment and stop commands write control records. The retrieval write routes require `--dag-runs true` and use the configured `OPENTSX_DAG_RUN_TOKEN`. An installation without a configured token permits writes from callers that can reach it. The supported boundary is a trusted installation, not a shared tenant-isolation service.
+Use the [retrieval module instructions](../../opentsx-retrieval/README.md#vector-processor) for the processor launcher and [the SaaS guide](../user-manual/14-saas-service-layer.md) for the account-based front end. The existing processor entry point is `bin/opentsx vectors`; its deployment and stop commands write control records. The retrieval write routes require `--dag-runs true` and the run token in `OPENTSX_DAG_RUN_TOKEN`; callers send it in the header `X-OpenTSx-Run-Token`. Without a token the server does not start with `--dag-runs true`, unless `--open-dag-runs` accepts writes without a token and binds the server to 127.0.0.1. The supported boundary is a trusted installation, not a shared tenant-isolation service.
 
 ## Publish an executable graph
 

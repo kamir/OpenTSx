@@ -106,15 +106,18 @@ POST /v1/dags/stop?name=   stops the DAG of that name
 
 Numbers in a POST body are JSON numbers. A string where a number belongs, such as `"topK": "ten"` or
 `"topK": "10"`, is a 400 that names the field. `params.prominence` of `FEATURE_EXTREMUM` and `params.enter` of `FEATURE_THRESHOLD` are required.
-A JSON body over 262144 bytes (`RetrievalServer.MAX_BODY_BYTES`) is a 413. A `resample` step that gives more than
-100000 points for one episode (`Resampling.MAX_POINTS`) is a 400.
+A JSON body over 262144 bytes (`RetrievalServer.MAX_BODY_BYTES`) and a DAG over 262144 bytes
+(`RetrievalServer.MAX_DAG_BYTES`) are a 413. A `resample` step that gives more than
+100000 points for one episode (`Resampling.MAX_POINTS`) is a 400. A query parameter the route does not take, such as
+the typo `metrc=`, is a 400 that names it, and so is `agg` without `resample`.
 `topK` takes 1 to 1000 (`EpisodeService.MAX_TOP_K`) and `pattern` 4 to 100000 values
 (`EpisodeService.MAX_PATTERN_LENGTH`). `limit` takes 1 to 20000, and a request selects at most 20000 episodes
 (`EpisodeService.MAX_EPISODES`); beyond a limit the answer is a 400 that names it.
 
 Every error answer is `{"error": "<text>", "type": "<type>"}`. A malformed parameter names itself and what it takes,
 for example `limit: "abc" is not an int; expected a whole number from 1 to 20000`. A body that is not valid JSON is a
-400 `the body is not valid JSON: <parser message>`. An unknown episode is a 404 on `GET /v1/episodes/{id}`,
+400 `the body is not valid JSON: <parser message>`, a DAG that is not valid YAML a 400
+`the DAG is not valid YAML: <parser message>`. An unknown episode is a 404 on `GET /v1/episodes/{id}`,
 `POST /v1/episodes/similar` and `POST /v1/patterns/search`. A known path with a method it does not take is a 405 with
 an `Allow` header; any other path is a 404 `no such endpoint: <path>`. A fault in the server is a 500
 `internal error` and one ERROR line `request failed method=<method> path=<path> status=500 cause=<causes>` in the log;
@@ -135,11 +138,11 @@ Vector topics are written by the vector processor (below). The server is its fro
   control topic. `POST /v1/dags/stop?name=<dag>` appends the stop. Both exist only with `--dag-runs true`.
 * The processor runs `align.vector` on the series of the source topic only (`in: [decode]`); any other operator
   before the vector is refused with the id of the node. `source.series` must name the series.
-* **Run token.** With a token in the environment variable `OPENTSX_DAG_RUN_TOKEN`
-  (`read -rs OPENTSX_DAG_RUN_TOKEN && export OPENTSX_DAG_RUN_TOKEN` before the start) the two write routes need the
-  token in the header `X-OpenTSx-Run-Token`; anything else gets 401. `--dag-run-token <token>` also sets it and wins
-  over the variable, but the process list and the shell history then show the token. Without a token, whoever
-  reaches the port can deploy and stop. The SaaS backend holds the token and forwards for its users
+* **Run token.** `--dag-runs true` needs a token in the environment variable `OPENTSX_DAG_RUN_TOKEN`
+  (`read -rs OPENTSX_DAG_RUN_TOKEN && export OPENTSX_DAG_RUN_TOKEN` before the start); without one the server does not
+  start (exit code 2). The two write routes then need the token in the header `X-OpenTSx-Run-Token`; anything else
+  gets 401. The command line refuses `--dag-run-token`. `--open-dag-runs` accepts runs without a token for a local
+  run: the server then listens on 127.0.0.1 only. The SaaS backend holds the token and forwards for its users
   (`POST /api/v1/dags/deploy`, `/stop`); it names the user in `X-OpenTSx-By`, which ends up in the control record.
 
 The operator is `org.opentsx.retrieval.vector.VectorAligner`. It passes the test vectors shared with the web
@@ -160,6 +163,10 @@ opentsx vectors deploy --kafscale host:9092 --domain wind --dag flow.dag.yaml  #
 opentsx vectors stop   --kafscale host:9092 --domain wind --name <dag name>
 ```
 
+`opentsx vectors <run|deploy|stop> --help` lists the keys of each command. The options, the DAG name and the DAG file
+are checked before the first call to the broker: a missing `--name` or `--dag`, an unknown option, a misspelled command
+or a DAG the processor would refuse exits with code 2 and writes nothing. A runtime failure exits with code 1.
+
 * Deployments live in the control topic `tsx.<domain>.dags.v1` (latest record per DAG name), so they survive a
   restart. The processor reports per sink to `tsx.<domain>.dag-status.v1`.
 * A tick is written when every series named in `source.series` has passed its end, plus `lateness` of the node.
@@ -173,8 +180,8 @@ opentsx vectors stop   --kafscale host:9092 --domain wind --name <dag name>
 * Numbers in a node of a series sink, such as `factor` of `convert.unit` or `min` of `dq.checks`, are YAML numbers.
   Text there, also a number in quotes such as `"1.5"`, refuses the DAG with the node and the field, for example
   `node n3: factor: "1,5" is not a number; expected a number without quotes, such as 0.01 or 1e-3`.
-  `POST /v1/dags/deploy` answers 400. `vectors deploy` stops with that error and exit code 1 and writes nothing to the
-  control topic. A DAG already in the control topic gets the status `failed` with that error.
+  `POST /v1/dags/deploy` answers 400. `vectors deploy` stops with that error, prefixed with the file, and exit code 2
+  and writes nothing to the control topic. A DAG already in the control topic gets the status `failed` with that error.
 * An error while the processor applies a deployment or a stop, such as a status record it cannot send, ends the
   processor with that error. Started again, it reads the control topic from the beginning.
 
@@ -212,11 +219,21 @@ identical objects in Java and Python.
 Start the server:
 
 ```bash
-java -cp … org.opentsx.retrieval.server.RetrievalServer --port 8080 --iceberg type=rest,uri=…,warehouse=… [--namespace tsx]
-java -cp … org.opentsx.retrieval.server.RetrievalServer --port 8080 --demo true      # synthetic demo store
-java -cp … org.opentsx.retrieval.server.RetrievalServer --port 8080 --kafscale host:9092 --domain wind \
+bin/opentsx retrieval-server --port 8080 --iceberg type=rest,uri=…,warehouse=… [--namespace tsx]
+bin/opentsx retrieval-server --port 8080 --source demo                               # synthetic demo store
+bin/opentsx retrieval-server --port 8080 --kafscale host:9092 --domain wind \
      [--refresh PT30S] [--max-episodes 20000] [--dag-runs true]                       # episodes topic on KafScale
 ```
+
+`bin/opentsx retrieval-server --help` lists every key. `--source` (`opentsx.retrieval.source`) chooses the store; the
+default `auto` takes `iceberg` when `--iceberg` is on the command line, `kafscale` when `--kafscale` is, else `demo`, so
+`KAFSCALE_BOOTSTRAP` in the environment does not switch it. `--iceberg` together with `--kafscale` is an error. The
+server listens on every interface; `--bind <address>` chooses one. Every value, the scenario, the catalog and the
+system documents (`--systems` must name a directory with at least one `*.system.yaml`) are checked before a store,
+a client or the port opens. A usage or configuration error exits with code 2 and one line on stderr, for example
+`opentsx: --prot: unknown option of retrieval-server; did you mean --port?`; a failure while the store opens or the
+port is bound exits with code 1. The log starts with one `starting retrieval-server: <key>=<value> (<source>), ...`
+line, the run token as `******`, and one `listening on <address>:<port>, source <source>` line.
 
 With `--kafscale` the server reads `tsx.<domain>.episodes.v2` into memory and follows the topic. It uses manual
 assignment without a consumer group and writes nothing. Loading stops at `--max-episodes`. `--scenario <file>` and

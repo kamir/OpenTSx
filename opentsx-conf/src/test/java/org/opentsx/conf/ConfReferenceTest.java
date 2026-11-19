@@ -56,7 +56,7 @@ class ConfReferenceTest {
                 assertEquals("none", cells[3], e.key());
             }
         }
-        assertEquals(18, page.lines().filter(l -> l.startsWith("## opentsx.")).count());
+        assertEquals(19, page.lines().filter(l -> l.startsWith("## opentsx.")).count());
         assertTrue(page.contains("| `opentsx.domain` | `string` | `wind` | `--domain` | `OPENTSX_DOMAIN` | Domain of the topic names "
                 + "tsx.\\<domain\\>.\\<kind\\>.v2. | 3.0.1 |"));
         assertTrue(page.contains("| `opentsx.kafscale.bootstrap` | `string` | none | `--kafscale`, `--bootstrap` | "

@@ -399,7 +399,7 @@ arguments.
 
 The registry marks 6 keys as secret: `opentsx.openmetadata.token`, `opentsx.retrieval.dagRunToken`,
 `opentsx.market.entsoeToken`, `opentsx.market.ntpClientId`, `opentsx.market.ntpClientSecret` and
-`opentsx.dwd.httpsProxy` (a proxy URL can hold a user and a password).
+`opentsx.https.proxy` (a proxy URL can hold a user and a password).
 
 - A secret comes from code, the environment, a properties file or the defaults file. On the command line it is an
   error, through `--conf` and through its flag alike; the message never contains the value:
@@ -690,10 +690,10 @@ they become. Format: alias -> key (type = default). "(new)" marks a key without 
 | `twin-live publish` | [TwinLive.java:33-150](../opentsx-twin-live/src/main/java/org/opentsx/twin/live/TwinLive.java) | `--kafscale`, `--bootstrap`, `KAFSCALE_BOOTSTRAP` -> `opentsx.kafscale.bootstrap` (string)<br>`--scenario` -> `opentsx.twin.scenario` (string)<br>`--duration` -> `opentsx.twinLive.durationSeconds` (long)<br>`--loop` -> `opentsx.twinLive.loop` (boolean = `false`) |
 | `twin-live bridge` | same | `--kafscale`, `--bootstrap`, `KAFSCALE_BOOTSTRAP` -> `opentsx.kafscale.bootstrap` (string)<br>`--allow-origin`, `EVENT_BRIDGE_ALLOW_ORIGIN` -> `opentsx.twinLive.allowOrigin` (string = `*`)<br>`--max-streams` -> `opentsx.twinLive.maxStreams` (int = `16`)<br>`--port` -> `opentsx.twinLive.port` (int = `8090`) |
 | `twin-live demo` | same | `--scenario` -> `opentsx.twin.scenario` (string)<br>`--allow-origin`, `EVENT_BRIDGE_ALLOW_ORIGIN` -> `opentsx.twinLive.allowOrigin` (string = `*`)<br>`--duration` -> `opentsx.twinLive.durationSeconds` (long)<br>`--max-streams` -> `opentsx.twinLive.maxStreams` (int = `16`)<br>`--port` -> `opentsx.twinLive.port` (int = `8090`) |
-| `dwd stations` | [DwdCli.java:74-262](../opentsx-dwd/src/main/java/org/opentsx/dwd/DwdCli.java) | `HTTPS_PROXY`, `https_proxy` -> `opentsx.dwd.httpsProxy` (string secret)<br>`--near` -> `opentsx.dwd.near` (list of double)<br>`--n` -> `opentsx.dwd.nearestCount` (int = `5`)<br>`--offline` -> `opentsx.dwd.offline` (path)<br>`--catalog` -> `opentsx.dwd.stationCatalog` (enum = `mosmix`) |
-| `dwd mosmix` | same | `--boat` -> `opentsx.dwd.boat` (path)<br>`--daily` -> `opentsx.dwd.daily` (path)<br>`HTTPS_PROXY`, `https_proxy` -> `opentsx.dwd.httpsProxy` (string secret)<br>`--offline` -> `opentsx.dwd.offline` (path)<br>`--out` -> `opentsx.dwd.out` (path)<br>`--station` -> `opentsx.dwd.station` (string) |
-| `dwd obs` | same | `--boat` -> `opentsx.dwd.boat` (path)<br>`--daily` -> `opentsx.dwd.daily` (path)<br>`--hourly` -> `opentsx.dwd.hourly` (boolean = `false`)<br>`HTTPS_PROXY`, `https_proxy` -> `opentsx.dwd.httpsProxy` (string secret)<br>`--offline` -> `opentsx.dwd.obs.offline` (list of path)<br>`--out` -> `opentsx.dwd.out` (path)<br>`--param` -> `opentsx.dwd.params` (list of enum)<br>`--station` -> `opentsx.dwd.station` (string) |
-| `dwd house` | same | `HTTPS_PROXY`, `https_proxy` -> `opentsx.dwd.httpsProxy` (string secret)<br>`--offline` -> `opentsx.dwd.offline` (path)<br>`--station` -> `opentsx.dwd.station` (string) |
+| `dwd stations` | [DwdCli.java:74-262](../opentsx-dwd/src/main/java/org/opentsx/dwd/DwdCli.java) | `HTTPS_PROXY`, `https_proxy` -> `opentsx.https.proxy` (string secret)<br>`--near` -> `opentsx.dwd.near` (list of double)<br>`--n` -> `opentsx.dwd.nearestCount` (int = `5`)<br>`--offline` -> `opentsx.dwd.offline` (path)<br>`--catalog` -> `opentsx.dwd.stationCatalog` (enum = `mosmix`) |
+| `dwd mosmix` | same | `--boat` -> `opentsx.dwd.boat` (path)<br>`--daily` -> `opentsx.dwd.daily` (path)<br>`HTTPS_PROXY`, `https_proxy` -> `opentsx.https.proxy` (string secret)<br>`--offline` -> `opentsx.dwd.offline` (path)<br>`--out` -> `opentsx.dwd.out` (path)<br>`--station` -> `opentsx.dwd.station` (string) |
+| `dwd obs` | same | `--boat` -> `opentsx.dwd.boat` (path)<br>`--daily` -> `opentsx.dwd.daily` (path)<br>`--hourly` -> `opentsx.dwd.hourly` (boolean = `false`)<br>`HTTPS_PROXY`, `https_proxy` -> `opentsx.https.proxy` (string secret)<br>`--offline` -> `opentsx.dwd.obs.offline` (list of path)<br>`--out` -> `opentsx.dwd.out` (path)<br>`--param` -> `opentsx.dwd.params` (list of enum)<br>`--station` -> `opentsx.dwd.station` (string) |
+| `dwd house` | same | `HTTPS_PROXY`, `https_proxy` -> `opentsx.https.proxy` (string secret)<br>`--offline` -> `opentsx.dwd.offline` (path)<br>`--station` -> `opentsx.dwd.station` (string) |
 | `modbus check` | [ModbusCli.java:58-279](../opentsx-modbus/src/main/java/org/opentsx/modbus/ModbusCli.java) | `--host` -> `opentsx.modbus.host` (string)<br>`--map` -> `opentsx.modbus.map` (string)<br>`--port` -> `opentsx.modbus.port` (int)<br>`--unit` -> `opentsx.modbus.unitId` (int) |
 | `modbus read` | same | `--host` -> `opentsx.modbus.host` (string)<br>`--map` -> `opentsx.modbus.map` (string)<br>`--port` -> `opentsx.modbus.port` (int)<br>`--simulate` -> `opentsx.modbus.simulate` (boolean = `false`)<br>`--seed` -> `opentsx.modbus.simulator.seed` (long = `42`)<br>`--unit` -> `opentsx.modbus.unitId` (int) |
 | `modbus poll` | same | `--count` -> `opentsx.modbus.count` (long = `0`)<br>`--episode` -> `opentsx.modbus.episodeLength` (duration = `PT1M`)<br>`--file` -> `opentsx.modbus.file` (path)<br>`--host` -> `opentsx.modbus.host` (string)<br>`--interval` -> `opentsx.modbus.interval` (duration)<br>`--map` -> `opentsx.modbus.map` (string)<br>`--out` -> `opentsx.modbus.out` (enum = `csv`)<br>`--port` -> `opentsx.modbus.port` (int)<br>`--simulate` -> `opentsx.modbus.simulate` (boolean = `false`)<br>`--seed` -> `opentsx.modbus.simulator.seed` (long = `42`)<br>`--unit` -> `opentsx.modbus.unitId` (int) |
@@ -746,14 +746,14 @@ The order matters: the foundation first, then one batch per module, then errors 
 - [x] **Migration `opentsx-stats`** and `stats-flink` (`opentsx-flink-core`): `StatsProcessorApp`, `StatsJob`.
 - [x] **Migration `opentsx-windpark`**: `WindparkSim`, with the explicit sink key (mode rule).
 - [x] **Migration `opentsx-openmetadata`**: `WindparkMetadata`; `--token` becomes an error (D7), with the profiles mode key.
-- [ ] **Migration `opentsx-retrieval`**: `RetrievalServer` (source key, `--dag-run-token` becomes an error, `--demo`
+- [x] **Migration `opentsx-retrieval`**: `RetrievalServer` (source key, `--dag-run-token` becomes an error, `--demo`
       leaves `deploy/k3s/base/retrieval.yaml`), `VectorProcessorApp`.
-- [ ] **Migration `opentsx-twin`**: `H2ChainDemo`, `HouseDemo`, `BoatDemo`, `CouplingStudy`, `AtomSchemas`,
+- [x] **Migration `opentsx-twin`**: `H2ChainDemo`, `HouseDemo`, `BoatDemo`, `CouplingStudy`, `AtomSchemas`,
       `StudioExport`.
-- [ ] **Migration `opentsx-twin-live`**: `TwinLive`.
-- [ ] **Migration `opentsx-dwd`**: `DwdCli`, `DwdClient` (proxy through `opentsx.dwd.httpsProxy`; JVM proxy properties
+- [x] **Migration `opentsx-twin-live`**: `TwinLive`.
+- [x] **Migration `opentsx-dwd`**: `DwdCli`, `DwdClient` (proxy through `opentsx.https.proxy`; JVM proxy properties
       keep winning).
-- [ ] **Migration `opentsx-modbus`**: `ModbusCli`.
+- [x] **Migration `opentsx-modbus`**: `ModbusCli`.
 - [ ] **Migration `opentsx-market`**: `MarketCli`, `BrokerPublish`, `Collector` (credentials), `HistoryTwins`; exit
       codes 3 and 4 become 1 and 2 (D9), [opentsx-market/README.md](../opentsx-market/README.md) line 117 changes.
 - [ ] **Migration deploy**: `KafScaleCheck`, the k3s manifests and `opentsx-entrypoint.sh` (dispatch of `vectors`,
@@ -762,9 +762,8 @@ The order matters: the foundation first, then one batch per module, then errors 
       exception (exit 1); no swallowed exception in the main classes (for example `catch (Exception ignored)` at
       [`WindparkSim.java:119`](../opentsx-windpark/src/main/java/org/opentsx/windpark/WindparkSim.java)); regression
       tests per command for exit codes 1 and 2.
-- [ ] **Logging** (audit of the logging): one key for the log level of the v2 commands, replacing the system property set
-      in [`TwinLive.java:37-39`](../opentsx-twin-live/src/main/java/org/opentsx/twin/live/TwinLive.java) and the
-      `JAVA_OPTS` of [retrieval-kafscale](../deploy/k3s/components/retrieval-kafscale/kustomization.yaml); the effective
+- [ ] **Logging** (audit of the logging): one key for the log level of the v2 commands, `opentsx.log.level` (done:
+      `TwinLive` no longer sets the slf4j system property and retrieval-kafscale has no `JAVA_OPTS`); the effective
       configuration logged once at start with secrets masked (Spark's `spark.logConf`).
 - [ ] **Release**: replace `unreleased` in the registry with the release version; the release gate fails while one is
       left.

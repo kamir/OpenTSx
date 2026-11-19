@@ -8,7 +8,7 @@
 # opentsx config list, config show, config get, opentsx version, code that calls OpenTsxConf.load and
 # every command whose bin/opentsx <command> --help prints a keys: section read this file; code, the
 # command line, the environment and --properties-file win over it. Every other command of bin/opentsx
-# parses its own flags and does not read it. The commands of bin/opentsx that read it: metadata, stats, stats-flink, windpark-sim.
+# parses its own flags and does not read it. The commands of bin/opentsx that read it: boat, dwd house, dwd mosmix, dwd obs, dwd stations, house, metadata, modbus check, modbus poll, modbus read, modbus simulate, retrieval-server, stats, stats-flink, studio-export, twin, twin-coupling, twin-live bridge, twin-live demo, twin-live publish, twin-schemas, vectors, vectors deploy, vectors run, vectors stop, windpark-sim.
 
 # Root directory of the history archive.
 # Type: path.
@@ -41,10 +41,6 @@
 # Read the hourly recent observations instead of the 10-minute now observations.
 # Type: boolean.
 # opentsx.dwd.hourly false
-
-# HTTPS proxy for downloads from opendata.dwd.de when the JVM has no proxy settings.
-# Type: string; secret: environment or file only; no default.
-# opentsx.dwd.httpsProxy
 
 # Position LAT,LON the nearest stations are searched for.
 # Type: list of double; no default.
@@ -141,6 +137,10 @@
 # Daily temperatures CSV used with the calibration.
 # Type: path; no default.
 # opentsx.house.weather
+
+# HTTPS proxy for downloads, used when the JVM property https.proxyHost is not set.
+# Type: string; secret: environment or file only; no default.
+# opentsx.https.proxy
 
 # Iceberg namespace of the OpenTSx tables.
 # Type: string.
@@ -422,7 +422,7 @@
 # Type: duration.
 # opentsx.retrieval.refreshInterval PT30S
 
-# Store the retrieval server serves; auto takes iceberg when opentsx.iceberg.properties is set on the command line, else kafscale when opentsx.kafscale.bootstrap is, else demo.
+# Store the retrieval server serves; auto takes iceberg when opentsx.iceberg.properties is set on the command line, kafscale when opentsx.kafscale.bootstrap is, else demo; both on the command line is an error.
 # Type: enum, one of auto, demo, iceberg, kafscale.
 # opentsx.retrieval.source auto
 

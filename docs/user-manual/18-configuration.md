@@ -28,13 +28,17 @@ Every setting of an OpenTSx command is a key of the registry `opentsx.config.v1`
 environment variables. These read the registry:
 
 * `opentsx config list`, `opentsx config show`, `opentsx config get` and `opentsx version`, in both runtimes.
-* `bin/opentsx metadata`, `bin/opentsx stats`, `bin/opentsx stats-flink` and `bin/opentsx windpark-sim`, which load
-  their configuration with `OpenTsxConf.load`. Their `bin/opentsx <command> --help` prints a `keys:` section.
+* `bin/opentsx boat`, `bin/opentsx dwd stations|mosmix|obs|house`, `bin/opentsx house`, `bin/opentsx metadata`,
+  `bin/opentsx modbus check|read|poll|simulate`, `bin/opentsx retrieval-server`, `bin/opentsx stats`,
+  `bin/opentsx stats-flink`, `bin/opentsx studio-export`, `bin/opentsx twin`, `bin/opentsx twin-coupling`,
+  `bin/opentsx twin-live publish|bridge|demo`, `bin/opentsx twin-schemas`, `bin/opentsx vectors run|deploy|stop` and
+  `bin/opentsx windpark-sim`, which load their configuration with `OpenTsxConf.load`. Their
+  `bin/opentsx <command> --help` prints a `keys:` section.
 * `opentsx <command> --help` of the Python console script, for every command of the registry.
 * Your code, through `OpenTsxConf` in Java (module `opentsx-conf`) and in Python (package `opentsx.conf`).
 
 Any other command of [Appendix A](appendix-a-cli.md), one whose `bin/opentsx <command> --help` prints no `keys:`
-section, parses its own flags, for example `bin/opentsx twin`. It does not read `--conf`, `--properties-file`,
+section, parses its own flags, for example `bin/opentsx market`. It does not read `--conf`, `--properties-file`,
 `$OPENTSX_CONF_DIR` or the canonical `OPENTSX_` variables. The Python console script runs only `config list`,
 `config show`, `config get` and `version`; `opentsx stats --kafscale localhost:9092` exits with 2 and
 `opentsx: stats: runs only in the Java runtime; use bin/opentsx or the opentsx-tools image`.
@@ -100,7 +104,7 @@ opentsx.domain                       wind                                       
 ```
 
 The output is trimmed. `opentsx config show` prints the same table. A variable in your shell can set a key without you
-noticing: `HTTPS_PROXY` is a legacy name of `opentsx.dwd.httpsProxy` and shows up as `******` from `environment`.
+noticing: `HTTPS_PROXY` is a legacy name of `opentsx.https.proxy` and shows up as `******` from `environment`.
 
 `--output json` prints one line of JSON with the schema `opentsx.config.show.v1`:
 
@@ -175,8 +179,9 @@ common options:
 ```
 
 `bin/opentsx stats` reads these keys from `--conf`, `--properties-file`, `$OPENTSX_CONF_DIR` and the canonical
-`OPENTSX_` variables. The help of a command that parses its own flags, for example `opentsx twin --help`, has a third
-line that says so. `--help` wins over every other error: `opentsx config --help` prints the list of commands.
+`OPENTSX_` variables. The help of a command that parses its own flags, for example `opentsx market prices --help`,
+has a third line that says so. `--help` wins over every other error: `opentsx config --help` prints the list of
+commands.
 
 ## Set a value
 
@@ -354,7 +359,7 @@ opentsx: config/private/job.yaml: YAML files need the extra opentsx[yaml]; run p
 ## Pass secrets
 
 Six keys are secret: `opentsx.openmetadata.token`, `opentsx.retrieval.dagRunToken`, `opentsx.market.entsoeToken`,
-`opentsx.market.ntpClientId`, `opentsx.market.ntpClientSecret` and `opentsx.dwd.httpsProxy`. A secret comes from the
+`opentsx.market.ntpClientId`, `opentsx.market.ntpClientSecret` and `opentsx.https.proxy`. A secret comes from the
 environment, a properties file, the defaults file or code. The command line refuses it, because a value there shows in
 `ps`, the shell history and the pod spec:
 

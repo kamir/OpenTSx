@@ -37,8 +37,11 @@ public final class Registry {
     static final Set<String> LAUNCHER_VARIABLES = Set.of("OPENTSX_HOME", "OPENTSX_CONF_DIR", "OPENTSX_EXTRA_ARGS");
     static final List<String> READ_EVERY_KEY = List.of("config get", "config show");
     static final List<String> WITH_OUTPUT = List.of("config list", "config show");
-    static final List<String> LOADS_CONF = List.of("config get", "config list", "config show", "metadata", "stats",
-            "stats-flink", "version", "windpark-sim");
+    static final List<String> LOADS_CONF = List.of("boat", "config get", "config list", "config show", "dwd house",
+            "dwd mosmix", "dwd obs", "dwd stations", "house", "metadata", "modbus check", "modbus poll", "modbus read",
+            "modbus simulate", "retrieval-server", "stats", "stats-flink", "studio-export", "twin", "twin-coupling",
+            "twin-live bridge", "twin-live demo", "twin-live publish", "twin-schemas", "vectors", "vectors deploy",
+            "vectors run", "vectors stop", "version", "windpark-sim");
 
     public record Key(String key, String type, String items, List<String> values, String unit, String defaultValue,
                       boolean secret, String flag, List<String> legacyFlags, List<String> env, List<String> commands,

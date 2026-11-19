@@ -46,12 +46,9 @@ as a command-line option: a value there shows in `ps`, the shell history and the
 
 | Variable | Read by |
 |----------|---------|
-| `OPENTSX_DAG_RUN_TOKEN` | `retrieval-server`: the run token of the DAG runs (`--dag-runs true`) |
-| `KAFSCALE_BOOTSTRAP` | `twin-live`, when `--bootstrap` is not given; the KafScale tests ([12.4](#124-run-the-tests)) |
-| `EVENT_BRIDGE_ALLOW_ORIGIN` | `twin-live bridge`, when `--allow-origin` is not given (default `*`) |
+| `KAFSCALE_BOOTSTRAP` | the KafScale tests ([12.4](#124-run-the-tests)); for the commands that load the configuration it is a legacy name of `opentsx.kafscale.bootstrap` ([appendix D](appendix-d-configuration.md)) |
 | `ENTSOE_TOKEN` | `market`, for the source `entsoe` |
 | `NTP_CLIENT_ID`, `NTP_CLIENT_SECRET` | `market`, for the source `netztransparenz` |
-| `HTTPS_PROXY`, `https_proxy` | `dwd`, unless the JVM property `https.proxyHost` is set |
 
 | Component | Settings |
 |-----------|----------|
@@ -137,16 +134,15 @@ must not be a prerelease.
 * Never commit credentials. `config/private/` is in `.gitignore`.
 * Treat any key that was ever committed as compromised and rotate it.
 * Use bot tokens for OpenMetadata.
-* The read routes of the retrieval server have no authentication. The server listens on all interfaces.
-  `bin/opentsx retrieval-server` does not read `opentsx.retrieval.bind` or `opentsx.retrieval.openDagRuns` (marked
-  `unreleased` in [appendix D](appendix-d-configuration.md)), and it ignores an option it does not know, so
-  `--bind 127.0.0.1` does not restrict the address. Restrict the port with a gateway or a firewall.
+* The read routes of the retrieval server have no authentication. The server listens on every interface;
+  `--bind <address>` (`opentsx.retrieval.bind`) chooses one. Restrict the port with a gateway or a firewall.
 * With `--kafscale` and `--dag-runs true`, the retrieval server writes to KafScale on `POST /v1/dags/deploy`,
-  `POST /v1/dags/stop` and `POST /v1/systems/<id>/generate`. Set a run token in the environment variable
-  `OPENTSX_DAG_RUN_TOKEN`, not on the command line, where `ps` and the shell history show it. Callers then send the
-  token in the header `X-OpenTSx-Run-Token`; a call without it gets HTTP 401.
-* Without a run token, anyone who reaches the port can write. The server then prints
-  `dag deployments: OPEN, anyone who reaches this port can deploy and stop DAGs (set OPENTSX_DAG_RUN_TOKEN)`.
+  `POST /v1/dags/stop` and `POST /v1/systems/<id>/generate`. It needs a run token in the environment variable
+  `OPENTSX_DAG_RUN_TOKEN` or `OPENTSX_RETRIEVAL_DAG_RUN_TOKEN`; the command line refuses `--dag-run-token`. Callers
+  send the token in the header `X-OpenTSx-Run-Token`; a call without it gets HTTP 401.
+* Without a run token the server does not start with `--dag-runs true` (exit code 2). `--open-dag-runs` accepts runs
+  without a token for a local run; the server then listens on 127.0.0.1 only and logs
+  `dag deployments: OPEN on 127.0.0.1:<port>, any process that reaches this address can deploy and stop DAGs (opentsx.retrieval.openDagRuns); set OPENTSX_DAG_RUN_TOKEN to require a token`.
 
 ## 12.6 Fix common problems
 

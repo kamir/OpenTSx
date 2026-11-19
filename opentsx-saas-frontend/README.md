@@ -108,7 +108,7 @@ frontend/
 - Load a bucket: sample, CSV/TSV file, episode JSON, or episodes from the retrieval server
   (dev proxy `/retrieval`, target `OPENTSX_RETRIEVAL_URL`, default `http://localhost:8080`)
 - TS Inventory: browse the series of a retrieval server (`GET /v1/inventory`) by tag, channel and scenario event,
-  pick series, window and resolution; needs a retrieval server started with `--kafscale`, `--iceberg` or `--demo`
+  pick series, window and resolution; needs a retrieval server started with `--kafscale`, `--iceberg` or `--source demo`
 - Oscilloscope view: time base, vertical scale, cursors, trigger, measurements
 - Ground truth: the scenario events of series loaded from the inventory are drawn as bands on the time axis
   (yellow: operation, red: sensor fault); the field "Ground truth" jumps to an event
