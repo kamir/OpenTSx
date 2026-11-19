@@ -4,7 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.opentsx.core.config.ConfigManager;
 import org.opentsx.core.pfd.PFDValidation;
-import java.io.FileWriter;
+import org.opentsx.data.exporter.ExportFileWriter;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,9 +66,7 @@ public class PFDRecorder {
         for (Step step : currentFlow.steps) {
             PFDValidation.validateOperation(step.operation, step.params);
         }
-        try (FileWriter writer = new FileWriter(filepath)) {
-            writer.write(toJSON());
-        }
+        ExportFileWriter.write(new File(filepath), toJSON());
     }
 
     public static class ProcessingFlowDescriptor {

@@ -22,7 +22,12 @@ import com.google.gson.Gson;
 import org.opentsx.core.config.ConfigManager;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.LocalFileSystem;
+import org.apache.hadoop.fs.Options;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RawLocalFileSystem;
+import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 
@@ -39,9 +44,13 @@ import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.VectorWritable;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.StandardCopyOption;
 import java.text.DecimalFormat;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.UUID;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -519,47 +528,123 @@ public class TSBucket {
      * @throws IOException
      */
     public void createBucketFromVectorOfSeries(String track, String label, Vector<TimeSeriesObject> rows) throws IOException {
-
-        DecimalFormat df = new DecimalFormat("0.000");
-
         System.out.println("--> label bucket : " + label);
 
         Configuration config = initConfig();
-        FileSystem fs = initFileSystem();
-
-        Path pathFolder = new Path( TSBASE.BASE_PATH + "/" + track);
-        fs.mkdirs(pathFolder);
-
-        Path path = new Path(TSBASE.BASE_PATH + "/" + track + "/" + label + ".tsb.vec.seq");
-
-        System.out.println("--> create bucket : " + path.toString());
-
-        // write a SequenceFile form a Vector
-        SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
-
-        System.out.println("--> process bucket : Memory dump ... ( z=" + rows.size() + " )");
-
-        int SAMPLES = 0;
-        for (int i = 0; i < rows.size(); i++) {
-
-            /**
-             *
-             * Here we lose the METADATA of each row!!!
-             *
-             */
-            System.out.println("  (" + i + ")");
-            TimeSeriesObject m = rows.elementAt(i);
-            NamedVector nv = new NamedVector(new DenseVector(m.getYData()), m.label);
-
-            VectorWritable vec = new VectorWritable();
-            vec.set(nv);
-            
-            writer.append(new Text(nv.getName()), vec);
+        FileSystem fs = FileSystem.get(config);
+        if (!(fs instanceof LocalFileSystem) && !(fs instanceof RawLocalFileSystem)
+                && !(fs instanceof DistributedFileSystem)) {
+            throw new IOException("Atomic bucket replacement is not supported by filesystem: "
+                    + fs.getClass().getName());
         }
-
-        writer.close();
-
+        Path path = new Path(TSBASE.BASE_PATH + "/" + track + "/" + label + ".tsb.vec.seq");
+        Path pathFolder = path.getParent();
+        if (!fs.mkdirs(pathFolder)) {
+            throw new IOException("Failed to create bucket folder: " + pathFolder);
+        }
+        System.out.println("--> create bucket : " + path.toString());
+        Path staging = new Path(pathFolder, ".opentsx-bucket-" + UUID.randomUUID());
+        Path prepared = new Path(staging, path.getName());
+        try {
+            if (!fs.mkdirs(staging)) {
+                throw new IOException("Failed to create bucket staging folder: " + staging);
+            }
+            FSDataOutputStream output = fs.create(prepared, false);
+            SequenceFile.Writer writer = null;
+            Throwable writeFailure = null;
+            try {
+                writer = SequenceFile.createWriter(config, SequenceFile.Writer.stream(output),
+                        SequenceFile.Writer.keyClass(Text.class), SequenceFile.Writer.valueClass(VectorWritable.class),
+                        SequenceFile.Writer.compression(SequenceFile.CompressionType.NONE));
+                System.out.println("--> process bucket : Memory dump ... ( z=" + rows.size() + " )");
+                for (int i = 0; i < rows.size(); i++) {
+                    System.out.println("  (" + i + ")");
+                    TimeSeriesObject row = rows.elementAt(i);
+                    NamedVector vector = new NamedVector(new DenseVector(row.getYData()), row.label);
+                    VectorWritable value = new VectorWritable();
+                    value.set(vector);
+                    writer.append(new Text(vector.getName()), value);
+                }
+            } catch (IOException | RuntimeException | Error failure) {
+                writeFailure = failure;
+                throw failure;
+            } finally {
+                try {
+                    if (writer != null) {
+                        writer.close();
+                    }
+                } catch (IOException | RuntimeException | Error closeFailure) {
+                    if (writeFailure == null) {
+                        writeFailure = closeFailure;
+                        throw closeFailure;
+                    }
+                    if (writeFailure != closeFailure) {
+                        writeFailure.addSuppressed(closeFailure);
+                    }
+                } finally {
+                    try {
+                        output.close();
+                    } catch (IOException | RuntimeException | Error closeFailure) {
+                        if (writeFailure == null) {
+                            throw closeFailure;
+                        }
+                        if (writeFailure != closeFailure) {
+                            writeFailure.addSuppressed(closeFailure);
+                        }
+                    }
+                }
+            }
+            if (fs.exists(path) && fs.getFileStatus(path).isFile()) {
+                fs.setPermission(prepared, fs.getFileStatus(path).getPermission());
+            }
+            publishPreparedBucket(fs, prepared, path);
+            try {
+                if (!fs.delete(staging, true)) {
+                    throw new IOException("Failed to remove bucket staging folder: " + staging);
+                }
+            } catch (IOException | RuntimeException failure) {
+                throw new IOException("Bucket saved to " + path + " but staging cleanup failed: " + staging, failure);
+            }
+        } catch (IOException | RuntimeException | Error failure) {
+            try {
+                if (fs.exists(staging) && !fs.delete(staging, true)) {
+                    throw new IOException("Failed to remove bucket staging folder: " + staging);
+                }
+            } catch (IOException | RuntimeException cleanupFailure) {
+                if (cleanupFailure != failure) {
+                    failure.addSuppressed(cleanupFailure);
+                }
+            }
+            throw failure;
+        }
         System.out.println("\n### DONE : " + path.toString() + " ... and the write is closed.");
+    }
+
+    private void publishPreparedBucket(FileSystem fs, Path prepared, Path target) throws IOException {
+        if (fs instanceof DistributedFileSystem distributed) {
+            distributed.rename(prepared, target, Options.Rename.OVERWRITE);
+            return;
+        }
+        RawLocalFileSystem local = fs instanceof LocalFileSystem checksummed
+                ? (RawLocalFileSystem) checksummed.getRawFileSystem() : (RawLocalFileSystem) fs;
+        java.nio.file.Path preparedFile = local.pathToFile(prepared).toPath();
+        java.nio.file.Path targetFile = local.pathToFile(target).toPath();
+        java.nio.file.Path preparedChecksum = preparedFile.resolveSibling("." + preparedFile.getFileName() + ".crc");
+        java.nio.file.Path targetChecksum = targetFile.resolveSibling("." + targetFile.getFileName() + ".crc");
+        boolean hasChecksum = Files.exists(preparedChecksum, LinkOption.NOFOLLOW_LINKS);
+        if (!hasChecksum && Files.exists(targetChecksum, LinkOption.NOFOLLOW_LINKS)) {
+            throw new IOException("Cannot replace bucket without its existing checksum: " + targetChecksum);
+        }
+        Files.move(preparedFile, targetFile, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        if (hasChecksum) {
+            try {
+                Files.move(preparedChecksum, targetChecksum,
+                        StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException | RuntimeException failure) {
+                throw new IOException("Bucket data saved to " + targetFile
+                        + " but checksum publication failed: " + targetChecksum, failure);
+            }
+        }
     }
 
     /**

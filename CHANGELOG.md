@@ -13,6 +13,16 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Disable the unimplemented native `persist TSB` control with an explanatory tooltip. Both panel constructors
+  prevent click dispatch from this control.
+- Prepare PFD JSON before writing and export it as strict UTF-8 through atomic replacement. Failed preparation,
+  encoding or replacement preserves existing files; destination symbolic links are rejected and temporary files
+  are cleaned up. Relative destinations and missing parent directories are supported; existing POSIX permissions
+  are retained where supported.
+- Stage and close SequenceFile bucket exports before replacement. Preparation failures preserve existing data
+  and checksums; primary failures retain additional close and cleanup errors. Local data and checksum replacement
+  remain separate atomic operations, with explicit diagnostics when checksum publication or staging cleanup fails
+  after data is saved. Unsupported filesystems fail before writing; the label/Y format is retained.
 - Exclude the public Proxy port and already selected private ports from isolated KafScale fixture allocation.
   The pinned build runs deterministic launcher regressions and records their source hash.
 - Keep committed offsets monotonic in the pinned local KafScale metadata overlay.

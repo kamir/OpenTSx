@@ -324,9 +324,16 @@ Missing folders, unreadable directory listings, invalid booleans and invalid lim
 ## Export a supported processing flow
 
 `PFDRecorder.toJSON()` displays a recording preview, which can contain unsupported desktop actions.
-`saveToFile` validates the flow before opening the destination. An invalid flow cannot overwrite an export.
+`saveToFile` validates the flow and prepares its JSON before writing. An invalid flow cannot overwrite an export.
 Set `opentsx.pfd.input.topic` through the existing `ConfigManager` before resetting the recorder.
 The recorder uses that Kafka input topic and `LOG` output; it does not supply placeholder topics.
+
+File export uses strict UTF-8, creates missing parent directories and supports relative filenames. It writes and
+closes a sibling temporary file before atomic replacement, retaining existing POSIX permissions where supported.
+Destination symbolic links are rejected. Preparation, encoding and replacement failures preserve an existing
+destination. I/O failures propagate as `IOException`; malformed Unicode raises `CharacterCodingException`.
+Serialization failures retain their runtime exception. Failed temporary files are removed, with cleanup failures
+attached to the original exception. Atomic replacement is required; unsupported moves fail explicitly.
 
 An executable export supports only `NORMALIZE` with an omitted method or `method: center`.
 Other operations, methods and parameters fail with `IllegalArgumentException`.
@@ -334,7 +341,8 @@ See [PFD validation](../docs/devguide/validation/PFD_VALIDATION_PLAN.md) for the
 
 ## Identify unavailable desktop actions
 
-The AR, MA, ARMA, ARIMA, SARIMA and CARIMA buttons are disabled and show an explanatory tooltip.
+The AR, MA, ARMA, ARIMA, SARIMA, CARIMA and `persist TSB` buttons are disabled and show
+`This operation is not implemented`. The persistence control does not dispatch click actions in either panel constructor.
 The modern tracker disables Java and Scala export. Both trackers use `Show PFD` to display recorded JSON;
 these buttons do not write a file. The modern tracker starts with an empty transformation tree.
 Swing control tests use a display; the Java CI jobs run them under Xvfb on Ubuntu 24.04.
@@ -365,6 +373,46 @@ mvn -B -ntp -pl opentsx-core -am test \
   -Dtest=TSBucketSelectionTest,TSBucketSequenceFileTest,BucketLoaderLimitTest \
   -Dsurefire.failIfNoSpecifiedTests=false
 ```
+
+## Save SequenceFile buckets with atomic replacement
+
+`TSBucket.createBucketFromVectorOfSeries(track, label, rows)` writes
+`<TSBASE.BASE_PATH>/<track>/<label>.tsb.vec.seq`. It creates missing parent directories and keeps the existing
+filesystem meaning of nested track and label paths. The format stores labels and Y values; loading reconstructs
+sequential X values rather than preserving arbitrary coordinates, axes or other metadata.
+
+The method prepares the SequenceFile in a sibling staging directory and closes its writer and output stream
+before publication. Header, row, write, flush and close failures preserve existing data and checksum files.
+The original failure propagates, with additional close or staging-cleanup failures attached as suppressed
+exceptions. Staging files are removed after failed preparation when cleanup succeeds. Existing access permissions
+are copied to the prepared data file before replacement.
+
+Local data and checksum files are each replaced atomically. They are separate replacements, not one transaction.
+A checksum publication error reports `Bucket data saved to <path> but checksum publication failed: <checksum>`;
+the data file is already replaced and its checksum may be unavailable or out of date. A cleanup error after
+successful publication reports `Bucket saved to <path> but staging cleanup failed: <staging>` and retains the
+cleanup cause. Correct the reported problem before retrying. These placeholders identify the saved bucket,
+checksum destination and staging directory. Raw-local replacement refuses an existing checksum when it has no
+replacement checksum, preserving the original files.
+
+Hadoop `LocalFileSystem`, `RawLocalFileSystem` and `DistributedFileSystem` use their supported replacement paths.
+Other filesystem implementations fail before writing with
+`Atomic bucket replacement is not supported by filesystem: <class>`, where `<class>` identifies the implementation.
+HDFS publication uses overwrite rename without deleting the destination first. The regression fixture checks that
+API and failed-rename preservation locally; it does not start an HDFS cluster. Process termination, power loss and
+every filesystem's atomic-move behavior are outside these tests.
+
+You need JDK 17 or later and Maven. From the repository root, run:
+
+```bash
+mvn -B -ntp -pl opentsx-core -am test \
+  -Dtest=TSBucketPublicationTest,TSBucketSequenceFileTest,TSBucketSelectionTest,BucketLoaderLimitTest \
+  -Dsurefire.failIfNoSpecifiedTests=false
+```
+
+The regressions inject header, write, flush, close, serializer-initialization, rename and cleanup failures.
+They check original exception identity, combined flush/close failures, preservation, local readback, permissions,
+post-publication diagnostics and the existing loader selection and limit contracts.
 
 ## Check bucket workflow support
 

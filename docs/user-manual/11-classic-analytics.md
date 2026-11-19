@@ -179,7 +179,8 @@ To use them with v2 data, convert episodes with the legacy bridge ([chapter 13](
 `BucketAnalyserTool` uses the supplied input folder and DFA flags. Optional arguments select a filename
 substring and record limit. See [bucket analysis inputs](../../opentsx-core/README.md#supply-bucket-analysis-inputs).
 
-The desktop AR, MA, ARMA, ARIMA, SARIMA and CARIMA actions are disabled because they have no implementation.
+The desktop AR, MA, ARMA, ARIMA, SARIMA, CARIMA and `persist TSB` actions are disabled because they have no
+implementation. Their tooltip reads `This operation is not implemented`.
 The modern tracker also disables Java and Scala export. Both trackers use `Show PFD` to display JSON in the window.
 The modern tracker starts without sample tree items.
 
@@ -189,6 +190,12 @@ are processed or retained, in file order. An explicit null selection clears a `B
 selection loads none. The scan limit includes excluded records. Processing errors stop the load with their cause
 retained. The format stores labels and Y values;
 loading reconstructs sequential X values. See [local bucket loading](../../opentsx-core/README.md#reload-local-sequencefile-buckets).
+
+`createBucketFromVectorOfSeries` prepares and closes a staged SequenceFile before replacing the destination.
+Preparation failures preserve existing data and checksum files. Local data and checksum publication are separate
+atomic replacements; a later checksum or cleanup error identifies the already saved data and the failed path.
+See [bucket saving](../../opentsx-core/README.md#save-sequencefile-buckets-with-atomic-replacement) for filesystem
+limits, failure handling and regression checks. This does not change the label/Y format or add metadata preservation.
 
 Executing a `MacroRunner` or an exported Java/Scala bucket workflow stops with `UnsupportedOperationException`:
 context-based loading and named bucket processing are not implemented. See
@@ -235,7 +242,8 @@ error messages and regression checks.
 
 * `PFDRecorder.toJSON()` is a preview. File export and the dynamic runtime accept only Kafka input,
   `NORMALIZE` centering and `LOG` output. Topics and broker addresses require explicit configuration.
-  See [PFD validation](../devguide/validation/PFD_VALIDATION_PLAN.md).
+  File export uses strict UTF-8 and atomic replacement; preparation or I/O failures preserve an existing file.
+  See [PFD validation](../devguide/validation/PFD_VALIDATION_PLAN.md) for destination rules and regression checks.
 * The PFD Kafka source decodes raw legacy Avro observations and skips null tombstones. Malformed records fail
   with Kafka record coordinates and the original cause; downstream collector failures propagate unchanged.
 * `pfd.DynamicTopologyJob` builds a Flink topology from a JSON processing-flow descriptor; the schema is in
