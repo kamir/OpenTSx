@@ -15,6 +15,7 @@ spec:
         app.kubernetes.io/name: opentsx-event-bridge
         opentsx.org/kafka: "true"
     spec:
+      enableServiceLinks: false   # opentsx-retrieval would set OPENTSX_RETRIEVAL_PORT=tcp://..., which the loader refuses
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001

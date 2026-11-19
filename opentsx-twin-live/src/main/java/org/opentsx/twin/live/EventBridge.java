@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import org.opentsx.kafka.TopicLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +32,7 @@ import java.util.concurrent.Semaphore;
  * </pre>
  * A message carries the offset as its id and {@code {"topic","offset","timestamp","key","value"}} as data, where
  * {@code value} is the JSON of the record. A browser that reconnects sends {@code Last-Event-ID}; the stream then
- * continues behind that offset. Only event topics of twins ({@link EventTopic#isEventTopic}) are served, read-only.
+ * continues behind that offset. Only event topics of twins ({@link TopicLayout#isTwinEvents}) are served, read-only.
  * Every stream holds one reader on the log, so their number is limited.
  */
 public final class EventBridge implements AutoCloseable {
@@ -85,7 +86,7 @@ public final class EventBridge implements AutoCloseable {
                 json(ex, 200, EventTopic.JSON.createObjectNode().put("status", "ok"));
             } else {
                 String topic = path.substring("/v1/topics/".length(), path.length() - "/events".length());
-                if (!EventTopic.isEventTopic(topic)) {
+                if (!TopicLayout.isTwinEvents(topic)) {
                     error(ex, 400, "not an event topic of a twin: " + topic);
                 } else {
                     stream(ex, topic);

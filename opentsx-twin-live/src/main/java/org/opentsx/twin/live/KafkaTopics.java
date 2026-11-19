@@ -1,45 +1,59 @@
 package org.opentsx.twin.live;
 
 import org.apache.kafka.clients.admin.Admin;
-import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.errors.TopicExistsException;
 import org.opentsx.kafka.KafScaleClients;
+import org.opentsx.kafka.Patience;
 import org.opentsx.kafka.TopicLayout;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Topics on KafScale or Apache Kafka, with the client settings of {@link KafScaleClients}. Event topics have one
  * partition. Readers assign that partition and seek; they use no consumer group, because KafScale neither commits
- * without membership nor lets a restarted member rejoin.
+ * without membership nor lets a restarted member rejoin. A cursor waits out the reads KafScale refuses ({@link Patience}).
  */
 public final class KafkaTopics implements Topics {
 
     private final String bootstrap;
+    private final Function<String, Admin> admins;
+    private final Function<String, Producer<String, byte[]>> producers;
+    private final Function<String, Consumer<byte[], byte[]>> consumers;
+    private final Supplier<Patience> patience;
     private final Set<String> known = ConcurrentHashMap.newKeySet();
-    private KafkaProducer<String, byte[]> producer;
+    private Producer<String, byte[]> producer;
 
     public KafkaTopics(String bootstrap) {
+        this(bootstrap, KafScaleClients::admin, KafScaleClients::producer, KafScaleClients::consumer, Patience::standard);
+    }
+
+    /** {@code patience} gives one {@link Patience} per cursor. */
+    KafkaTopics(String bootstrap, Function<String, Admin> admins, Function<String, Producer<String, byte[]>> producers,
+                Function<String, Consumer<byte[], byte[]>> consumers, Supplier<Patience> patience) {
         this.bootstrap = bootstrap;
+        this.admins = admins;
+        this.producers = producers;
+        this.consumers = consumers;
+        this.patience = patience;
     }
 
     @Override
     public synchronized void append(String topic, String key, byte[] value, String schema) {
         if (producer == null) {
-            producer = KafScaleClients.producer(bootstrap);
+            producer = producers.apply(bootstrap);
         }
         create(topic);
         ProducerRecord<String, byte[]> rec = new ProducerRecord<>(topic, 0, key, value);
@@ -54,37 +68,33 @@ public final class KafkaTopics implements Topics {
         }
     }
 
+    /** A topic counts as known only once it was created, so a failed create is tried again by the next call. */
     @Override
     public void create(String topic) {
-        if (!known.add(topic)) {
+        if (known.contains(topic)) {
             return;
         }
-        try (Admin admin = KafScaleClients.admin(bootstrap)) {
-            if (!admin.listTopics().names().get(30, TimeUnit.SECONDS).contains(topic)) {
-                admin.createTopics(List.of(new NewTopic(topic, 1, (short) 1)
-                        .configs(Map.of("cleanup.policy", "delete")))).all().get(30, TimeUnit.SECONDS);
-            }
-        } catch (ExecutionException e) {
-            if (!(e.getCause() instanceof TopicExistsException)) {
-                throw new IllegalStateException("creating topic " + topic + " failed", e.getCause());
-            }
-        } catch (Exception e) {
-            throw new IllegalStateException("creating topic " + topic + " failed", e);
+        try (Admin admin = admins.apply(bootstrap)) {
+            TopicLayout.provisionTwinEvents(admin, topic, (short) 1);
         }
+        known.add(topic);
     }
 
     @Override
     public Cursor open(String topic, long offset) throws NoSuchTopicException {
-        try (Admin admin = KafScaleClients.admin(bootstrap)) {
+        try (Admin admin = admins.apply(bootstrap)) {
             if (!admin.listTopics().names().get(30, TimeUnit.SECONDS).contains(topic)) {
                 throw new NoSuchTopicException(topic);
             }
         } catch (NoSuchTopicException e) {
             throw e;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("interrupted while looking up " + topic + " at " + bootstrap, e);
         } catch (Exception e) {
             throw new IllegalStateException("cannot reach the broker at " + bootstrap, e);
         }
-        KafkaConsumer<byte[], byte[]> consumer = KafScaleClients.consumer(bootstrap);
+        Consumer<byte[], byte[]> consumer = consumers.apply(bootstrap);
         TopicPartition tp = new TopicPartition(topic, 0);
         consumer.assign(List.of(tp));
         if (offset == EARLIEST) {
@@ -95,11 +105,12 @@ public final class KafkaTopics implements Topics {
         } else {
             consumer.seek(tp, Math.max(0, offset));
         }
+        Patience refusals = patience.get();
         return new Cursor() {
             @Override
             public List<Rec> poll(Duration timeout) {
                 List<Rec> out = new ArrayList<>();
-                for (ConsumerRecord<byte[], byte[]> r : consumer.poll(timeout)) {
+                for (ConsumerRecord<byte[], byte[]> r : refusals.poll(consumer, timeout)) {
                     out.add(new Rec(r.offset(), r.timestamp(),
                             r.key() == null ? null : new String(r.key(), StandardCharsets.UTF_8), r.value()));
                 }

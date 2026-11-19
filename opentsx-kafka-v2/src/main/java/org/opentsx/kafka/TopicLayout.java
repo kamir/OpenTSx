@@ -14,7 +14,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 
 /**
- * Topic names of one OpenTSx domain: {@code tsx.<domain>.<kind>.v2}.
+ * Topic names of one OpenTSx domain: {@code tsx.<domain>.<kind>.v2}, and the event topics of twin runs:
+ * {@code twin.<id>.<run>.events}.
  *
  * <p>All topics are append-only logs (KafScale does not compact). The "latest state" of series, buckets and
  * statistics is derived by reading the log or kept in the catalog / Iceberg.
@@ -26,6 +27,10 @@ public final class TopicLayout {
 
     private static final Pattern DOMAIN = Pattern.compile("[a-z0-9][a-z0-9_-]*");
     private static final Pattern SMART_NAME = Pattern.compile("[a-z0-9][a-z0-9-]*");
+    private static final Pattern TWIN_EVENTS = Pattern.compile("twin\\.[a-z0-9][a-z0-9_-]*\\.[A-Za-z0-9][A-Za-z0-9_-]*\\.events");
+    private static final String TWIN_EVENTS_ALLOWED = "expected twin.<id>.<run>.events with an id of lowercase letters, digits, "
+            + "_ and - and a run of letters, digits, _ and -, each starting with a letter or digit, at most 249 characters, "
+            + "such as twin.h2-chain.run-1.events";
     private static final Map<String, String> CONFIGS = Map.of("compression.type", "zstd", "cleanup.policy", "delete");
 
     private final String domain;
@@ -142,6 +147,31 @@ public final class TopicLayout {
     /** Creates a topic a flow writes when it is missing: one partition, so a scan reads it in order. */
     public void provisionTopic(Admin admin, String topic, short replicationFactor) {
         create(admin, List.of(new NewTopic(topic, 1, replicationFactor)), "could not create " + topic);
+    }
+
+    /**
+     * Event topic of one twin run: {@code twin.<id>.<run>.events}, next to the {@code .msgs}, {@code .barrier} and
+     * {@code .interventions} topics of the Avro contract of opentsx-twin.
+     */
+    public static String twinEvents(String twin, String runId) {
+        return checkedTwinEvents("twin." + twin + "." + runId + ".events");
+    }
+
+    /** Whether {@code topic} is an event topic of a twin run. */
+    public static boolean isTwinEvents(String topic) {
+        return topic != null && topic.length() <= 249 && TWIN_EVENTS.matcher(topic).matches();
+    }
+
+    /** Creates an event topic of a twin run when it is missing: one partition, so the log keeps the order of the run. */
+    public static void provisionTwinEvents(Admin admin, String topic, short replicationFactor) {
+        create(admin, List.of(new NewTopic(checkedTwinEvents(topic), 1, replicationFactor)), "could not create " + topic);
+    }
+
+    private static String checkedTwinEvents(String topic) {
+        if (!isTwinEvents(topic)) {
+            throw new IllegalArgumentException("twin event topic: \"" + topic + "\" is not allowed; " + TWIN_EVENTS_ALLOWED);
+        }
+        return topic;
     }
 
     private static void create(Admin admin, List<NewTopic> topics, String failure) {

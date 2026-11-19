@@ -346,6 +346,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   reach the configuration of their commands.
 - The k3s Job `opentsx-modbus-poll` takes its 30 cycles from `OPENTSX_MODBUS_COUNT`, so `40-demo.sh modbus -- --count
   300` still overrides them on the command line.
+- `twin-live publish`, `twin-live bridge` and `twin-live demo` load their configuration through the key registry. An
+  unknown option, an option without a value or a malformed value prints one line on stderr and exits with code 2.
+  `--help` and `--version` print on stdout and exit with code 0. The commands take `--kafscale`, `--conf` and
+  `--properties-file`, and keep `--bootstrap`, `KAFSCALE_BOOTSTRAP` and `EVENT_BRIDGE_ALLOW_ORIGIN` as legacy names.
+- `twin-live` takes its log level from `opentsx.log.level` (`OPENTSX_LOG_LEVEL`) and `conf/simplelogger.properties`
+  instead of forcing `warn`, and logs one `starting twin-live <command>` line at INFO with every value it reads.
+- The k3s component `event-bridge` sets `enableServiceLinks: false`, so the Service variable `OPENTSX_RETRIEVAL_PORT`
+  does not stop the bridge from loading its configuration.
 
 ### Removed
 
@@ -743,6 +751,16 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   singular system; the boat calibration skipped a singular pivot and returned a number.
 - A register map that cannot be read reports `cannot read register map <file>: NoSuchFileException` instead of naming
   the path twice.
+- `twin-live demo` checks `--scenario`, `--duration`, `--port` and `--max-streams` before the bridge starts, so
+  `--scenario nosuch` exits with code 2 instead of hanging with the bridge open, and `--duration 0` is refused instead
+  of publishing in a tight loop.
+- `twin-live publish --loop false` publishes the runs once; only the presence of `--loop` counted before, so it
+  looped.
+- `TopicLayout` names and creates the event topic `twin.<id>.<run>.events` (one partition, zstd, delete policy). When
+  the topic cannot be created, the next record tries again; before, the topic was marked as known and never created.
+- An interrupted topic create or topic lookup in `twin-live` keeps the interrupt flag of the thread.
+- An event bridge stream waits out reads that KafScale refuses, for up to 10 minutes, instead of closing at the first
+  refused fetch.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

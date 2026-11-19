@@ -1,5 +1,6 @@
 package org.opentsx.twin.live;
 
+import org.opentsx.kafka.TopicLayout;
 import org.opentsx.twin.Mode;
 import org.opentsx.twin.RunResult;
 import org.opentsx.twin.TwinEvent;
@@ -48,7 +49,7 @@ public final class EventPublisher {
      * {@code null} for all at once. Returns the topic.
      */
     public String publish(TwinPlan plan, RunResult run, Duration duration) throws InterruptedException {
-        String topic = EventTopic.name(plan.twin(), run.runId());
+        String topic = TopicLayout.twinEvents(plan.twin(), run.runId());
         topics.create(topic);
         List<TwinEvent> events = run.events().stream().sorted(Comparator.comparingLong(TwinEvent::tMicros)).toList();
         long spanMicros = plan.baseStepMicros() * plan.steps();

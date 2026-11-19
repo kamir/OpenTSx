@@ -17,9 +17,14 @@ Designed for [KafScale](https://kafscale.io), so it relies only on what KafScale
 Episode records: key = `seriesId`, record timestamp = `tStart`, headers `tsx-schema`, `tsx-bucket`,
 value = Avro single-object encoding.
 
-`provision`, `provisionDagTopics` and `provisionTopic` create the missing topics. They throw `IllegalStateException`
-when the broker does not answer within 30 s, when it refuses a creation, or when the thread is interrupted. After an
-interrupt the interrupt flag of the thread stays set. A topic that another client created meanwhile counts as created.
+`TopicLayout.twinEvents(<id>, <run>)` (static) names the event topic of a twin run, `twin.<id>.<run>.events`, and
+`isTwinEvents` checks a name. `provisionTwinEvents` creates it with one partition, zstd and the delete policy.
+`twinEvents` and `provisionTwinEvents` throw `IllegalArgumentException` for any other name.
+
+`provision`, `provisionDagTopics`, `provisionTopic` and `provisionTwinEvents` create the missing topics. They throw
+`IllegalStateException` when the broker does not answer within 30 s, when it refuses a creation, or when the thread is
+interrupted. After an interrupt the interrupt flag of the thread stays set. A topic that another client created
+meanwhile counts as created.
 
 ## Write a bucket
 

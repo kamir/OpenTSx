@@ -11,8 +11,10 @@ twin run --> EventPublisher --> twin.<id>.<run>.events (KafScale) --> EventBridg
 ## Topic contract
 
 Name: `twin.<id>.<run>.events`, next to `.msgs`, `.barrier` and `.interventions` of the Avro contract in
-`opentsx-twin`. One partition, so the log keeps the order of the run. Key: the atom. Value: JSON, schema
-`twin.event.v1` (header `tsx-schema`):
+`opentsx-twin`. `TopicLayout.twinEvents` in `opentsx-kafka-v2` builds the name, and `TopicLayout.provisionTwinEvents`
+creates the topic when it is missing: one partition, so the log keeps the order of the run, `compression.type=zstd`
+and `cleanup.policy=delete` like every OpenTSx topic. A create that fails is tried again before the next record. Key:
+the atom. Value: JSON, schema `twin.event.v1` (header `tsx-schema`):
 
 ```json
 {"run_id":"h2-chain-32d17d33b237bf6b","k":147,"atom":"line","type":"pressure_limit",
@@ -25,24 +27,68 @@ in the style of the other twin topics is open.
 
 ## Commands
 
-```
-bin/opentsx twin-live publish --bootstrap host:9092 [--scenario id] [--duration 120] [--loop]
-bin/opentsx twin-live bridge  --bootstrap host:9092 [--port 8090] [--allow-origin *] [--max-streams 16]
-bin/opentsx twin-live demo    [--port 8090] [--scenario id] [--duration 120]
+`<host:port>` is the bootstrap address of the KafScale proxy.
+
+```bash
+bin/opentsx twin-live publish --kafscale <host:port> --scenario h2-chain --duration 120 --loop
+bin/opentsx twin-live bridge --kafscale <host:port> --port 8090
+bin/opentsx twin-live demo --port 8090
 ```
 
-- `publish` computes the reference run of each Studio scenario and writes its events. With `--duration` the run is
-  played in that many seconds, so a reader sees it unfold; without it all events are written at once. Publishing
-  the same run again appends the same events again.
+- `publish` computes the reference run of each Studio scenario (`h2-chain`, `haus`, `boot`), or of the one
+  `--scenario` names, and writes its events. With `--duration` the run is played in that many seconds, so a reader
+  sees it unfold; without it all events are written at once. `--loop` or `--loop true` publishes the runs again and
+  again; without it, or with `--loop false`, they are published once. Publishing the same run again appends the same
+  events again.
 - `bridge` serves `GET /v1/topics/{topic}/events?from=latest|earliest|<offset>` as `text/event-stream` and
   `GET /v1/health`. A message has the offset as its id and `{"topic","offset","timestamp","key","value"}` as data.
-  A reconnecting browser sends `Last-Event-ID` and continues behind that offset.
-- `demo` runs both in one process on topics kept in memory. No broker is involved and nothing reaches KafScale.
+  A reconnecting browser sends `Last-Event-ID` and continues behind that offset. While KafScale refuses reads, a
+  stream waits 5 s and tries again, and stderr shows `kafscale: the broker refuses reads (<error>); waiting`; after
+  10 minutes of refusals the stream is closed.
+- `demo` runs both in one process on topics kept in memory, plays every run in 120 seconds unless `--duration` says
+  otherwise, and loops. No broker is involved and nothing reaches KafScale.
+
+## Configure
+
+The commands read the keys of the registry `opentsx.config.v1`. Print them with their flags, defaults and variables:
+
+```bash
+bin/opentsx twin-live publish --help
+```
+
+| Key | Flag | Variables | Default | Commands |
+|-----|------|-----------|---------|----------|
+| `opentsx.kafscale.bootstrap` | `--kafscale`, `--bootstrap` | `OPENTSX_KAFSCALE_BOOTSTRAP`, `KAFSCALE_BOOTSTRAP` | none, required | `publish`, `bridge` |
+| `opentsx.twin.scenario` | `--scenario` | `OPENTSX_TWIN_SCENARIO` | every scenario | `publish`, `demo` |
+| `opentsx.twinLive.durationSeconds` | `--duration` | `OPENTSX_TWIN_LIVE_DURATION_SECONDS` | `publish`: at once, `demo`: 120 | `publish`, `demo` |
+| `opentsx.twinLive.loop` | `--loop` | `OPENTSX_TWIN_LIVE_LOOP` | `false` | `publish` |
+| `opentsx.twinLive.port` | `--port` | `OPENTSX_TWIN_LIVE_PORT` | `8090` | `bridge`, `demo` |
+| `opentsx.twinLive.allowOrigin` | `--allow-origin` | `OPENTSX_TWIN_LIVE_ALLOW_ORIGIN`, `EVENT_BRIDGE_ALLOW_ORIGIN` | `*` | `bridge`, `demo` |
+| `opentsx.twinLive.maxStreams` | `--max-streams` | `OPENTSX_TWIN_LIVE_MAX_STREAMS` | `16` | `bridge`, `demo` |
+| `opentsx.log.level` | none | `OPENTSX_LOG_LEVEL` | `info` | all three |
+
+`--bootstrap`, `KAFSCALE_BOOTSTRAP` and `EVENT_BRIDGE_ALLOW_ORIGIN` are legacy names; when both variables of a key are
+set, the `OPENTSX_` variable wins. Every command also takes `--conf <key>=<value>` and `--properties-file <path>`.
+`--duration` takes 1 to 9223372036854775 seconds, `--port` 0 to 65535 (0 for any free port), `--max-streams` 1 or
+more. At start the command logs one line at INFO on stderr with every value it reads and where it came from:
+`starting twin-live demo: opentsx.log.level=info (default), opentsx.twin.scenario=h2-chain (commandLine), ...`.
 
 In the Studio: the event topic tab (`#view-topic`), the live source button (`#tp-src-live`), the address of the
 bridge (`#tp-url`) and the connect button (`#tp-connect`). The address can be passed as `?bridge=http://host:8090`.
 
 ## Errors
+
+The options and the scenario are checked before the bridge starts and before a client connects to the broker. A usage
+or configuration error prints one line on stderr and exits with code 2; a runtime failure prints the message and its
+causes on one line and exits with code 1. Examples:
+
+| Exit | stderr |
+|------|--------|
+| 2 | `opentsx: --prot: unknown option of twin-live demo; did you mean --port?` |
+| 2 | `opentsx: opentsx.twin.scenario: "nosuch" is not a scenario; expected one of h2-chain, haus, boot` |
+| 2 | `opentsx: opentsx.twinLive.durationSeconds: "0" is not allowed; expected 1 to 9223372036854775 seconds` |
+| 2 | `opentsx: opentsx.kafscale.bootstrap: not set; set it with --kafscale, --conf opentsx.kafscale.bootstrap=<value> or OPENTSX_KAFSCALE_BOOTSTRAP` |
+| 1 | `opentsx: publishing failed; caused by java.lang.IllegalStateException: could not create twin.<id>.<run>.events; caused by ...` |
 
 An error answer of the bridge is `{"error": "<text>", "type": "<type>"}`, with the types of
 [Appendix B](../docs/user-manual/appendix-b-rest.md).
@@ -73,5 +119,5 @@ same way; the browser then reconnects.
 
 ## Tests
 
-`EventTopicLiveTest` runs without a broker. `KafkaTopicsBrokerTest` needs one:
+`EventTopicLiveTest`, `KafkaTopicsTest` and `TwinLiveTest` run without a broker. `KafkaTopicsBrokerTest` needs one:
 `KAFSCALE_BOOTSTRAP=host:9092 mvn -pl opentsx-twin-live test` (KafScale in CI; Apache Kafka works too).

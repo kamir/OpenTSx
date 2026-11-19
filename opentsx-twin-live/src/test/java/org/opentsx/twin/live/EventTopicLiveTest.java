@@ -2,6 +2,7 @@ package org.opentsx.twin.live;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
+import org.opentsx.kafka.TopicLayout;
 import org.opentsx.twin.RunResult;
 import org.opentsx.twin.TwinEvent;
 import org.opentsx.twin.studio.Scenarios;
@@ -35,16 +36,13 @@ class EventTopicLiveTest {
     }
 
     @Test
-    void topicNameFollowsTheTwinContractAndIsStable() {
+    void topicNameFollowsTheTwinContractAndIsStable() throws Exception {
         StudioScenario s = h2();
         RunResult a = EventPublisher.referenceRun(s), b = EventPublisher.referenceRun(s);
         assertEquals(a.runId(), b.runId(), "the Studio page and the publisher must arrive at the same topic");
-        String topic = EventTopic.name(s.plan().twin(), a.runId());
+        String topic = TopicLayout.twinEvents(s.plan().twin(), a.runId());
         assertEquals("twin.h2-chain." + a.runId() + ".events", topic);
-        assertTrue(EventTopic.isEventTopic(topic));
-        assertFalse(EventTopic.isEventTopic("tsx.windpark.episodes.v2"));
-        assertFalse(EventTopic.isEventTopic("twin.h2-chain.run.msgs"));
-        assertFalse(EventTopic.isEventTopic("twin.h2-chain.../x.events"));
+        assertEquals(topic, new EventPublisher(new MemoryTopics()).publish(s.plan(), a, null));
     }
 
     @Test
@@ -126,7 +124,7 @@ class EventTopicLiveTest {
         StudioScenario s = h2();
         RunResult run = EventPublisher.referenceRun(s);
         MemoryTopics topics = new MemoryTopics();
-        String topic = EventTopic.name(s.plan().twin(), run.runId());
+        String topic = TopicLayout.twinEvents(s.plan().twin(), run.runId());
         java.util.concurrent.CountDownLatch waiting = new java.util.concurrent.CountDownLatch(1);
         java.util.concurrent.CountDownLatch go = new java.util.concurrent.CountDownLatch(1);
         Thread publisher = new Thread(() -> {

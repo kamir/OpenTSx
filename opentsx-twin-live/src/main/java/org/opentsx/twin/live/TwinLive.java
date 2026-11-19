@@ -1,100 +1,194 @@
 package org.opentsx.twin.live;
 
+import org.opentsx.conf.ConfCli;
+import org.opentsx.conf.OpenTsxConf;
+import org.opentsx.conf.OpenTsxConfException;
+import org.opentsx.conf.Registry;
+import org.opentsx.kafka.TopicLayout;
 import org.opentsx.twin.RunResult;
 import org.opentsx.twin.studio.Scenarios;
 import org.opentsx.twin.studio.StudioScenario;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.FileDescriptor;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 
 /**
- * Command line of the live event topic.
+ * The commands of the live event topic. They read their keys in the registry {@code opentsx.config.v1} through
+ * {@link OpenTsxConf#load}; {@code bin/opentsx twin-live <command> --help} lists them. Every value and the scenario are
+ * checked before the bridge or a client opens. Exit codes: 0 success, 1 runtime failure, 2 usage or configuration error.
  *
  * <pre>
- * twin-live publish --bootstrap host:9092 [--scenario id] [--duration 120] [--loop]
- *     writes the events of the reference run(s) to their event topics; with --duration (seconds) a run is played in
- *     that time, with --loop again and again
- * twin-live bridge  --bootstrap host:9092 [--port 8090] [--allow-origin *] [--max-streams 16]
- *     serves event topics to browsers as server-sent events
- * twin-live demo    [--port 8090] [--scenario id] [--duration 120]
- *     both in one process on topics kept in memory: no broker, nothing is written to KafScale
+ * twin-live publish   writes the events of the reference run(s) to their event topics; with a duration a run is played
+ *                     in that time, with --loop again and again
+ * twin-live bridge    serves event topics to browsers as server-sent events
+ * twin-live demo      both in one process on topics kept in memory: no broker, nothing is written to KafScale
  * </pre>
- * Without {@code --bootstrap} the broker comes from the environment variable {@code KAFSCALE_BOOTSTRAP}; without
- * {@code --allow-origin} the allowed origin comes from {@code EVENT_BRIDGE_ALLOW_ORIGIN} (default {@code *}).
  */
 public final class TwinLive {
+
+    static final String COMMAND = "twin-live";
+    static final String PUBLISH = "twin-live publish";
+    static final String BRIDGE = "twin-live bridge";
+    static final String BOOTSTRAP = "opentsx.kafscale.bootstrap";
+    static final String SCENARIO = "opentsx.twin.scenario";
+    static final String DURATION = "opentsx.twinLive.durationSeconds";
+    static final String LOOP = "opentsx.twinLive.loop";
+    static final String PORT = "opentsx.twinLive.port";
+    static final String ALLOW_ORIGIN = "opentsx.twinLive.allowOrigin";
+    static final String MAX_STREAMS = "opentsx.twinLive.maxStreams";
+    static final long DEMO_SECONDS = 120;
+    /** The longest duration whose milliseconds fit a long. */
+    static final long MAX_SECONDS = Long.MAX_VALUE / 1000;
+    static final String WRITE_FAILED = "stdout: cannot write the output; check that standard output is open and not full";
+
+    /** A checked command: no bootstrap for demo, no duration when publish writes a run at once. */
+    record Plan(String command, String bootstrap, List<StudioScenario> scenarios, Duration duration, boolean loop, int port,
+                String allowOrigin, int maxStreams) {
+    }
 
     private TwinLive() {
     }
 
-    public static void main(String[] args) throws Exception {
-        if (args.length == 0) {
-            usage();
+    public static void main(String[] args) {
+        PrintStream out = new PrintStream(new FileOutputStream(FileDescriptor.out), true, StandardCharsets.UTF_8);
+        PrintStream err = new PrintStream(new FileOutputStream(FileDescriptor.err), true, StandardCharsets.UTF_8);
+        System.exit(run(List.of(args), System.getenv(), out, err, KafkaTopics::new));
+    }
+
+    /** {@code args} without the command word, as bin/opentsx passes them; {@code brokers} opens the topics of a broker. */
+    static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err,
+                   Function<String, Topics> brokers) {
+        List<String> argv = new ArrayList<>(args.size() + 1);
+        argv.add(COMMAND);
+        argv.addAll(args);
+        OpenTsxConf.Loaded loaded;
+        Plan plan;
+        try {
+            loaded = OpenTsxConf.load(argv, env, env.get("OPENTSX_CONF_DIR"));
+            if (loaded.help()) {
+                Registry registry = Registry.shipped();
+                out.print(loaded.command() == null ? registry.help() : registry.help(loaded.command()));
+                return written(out, err);
+            }
+            if (loaded.version()) {
+                out.print(ConfCli.versionLine());
+                return written(out, err);
+            }
+            plan = check(loaded.command(), loaded.conf());
+        } catch (IllegalArgumentException e) {
+            err.print("opentsx: " + e.getMessage() + "\n");
+            err.flush();
+            return 2;
+        } catch (RuntimeException e) {
+            return failed(e, err);
         }
-        if (System.getProperty("org.slf4j.simpleLogger.defaultLogLevel") == null) {
-            System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "warn");
-        }
-        Map<String, String> o = options(args);
-        switch (args[0]) {
-            case "publish" -> {
-                try (Topics topics = new KafkaTopics(required(o, "bootstrap"))) {
-                    publish(topics, o);
+        Logger log = LoggerFactory.getLogger(TwinLive.class);
+        log.info(loaded.startLine());
+        try {
+            switch (plan.command()) {
+                case PUBLISH -> {
+                    try (Topics topics = brokers.apply(plan.bootstrap())) {
+                        publish(topics, plan, out);
+                    }
+                }
+                case BRIDGE -> {
+                    EventBridge bridge = new EventBridge(brokers.apply(plan.bootstrap()), plan.port(), plan.allowOrigin(),
+                            plan.maxStreams());
+                    out.println("event bridge on http://localhost:" + bridge.port() + "/v1/topics/<topic>/events, broker "
+                            + plan.bootstrap());
+                    Thread.currentThread().join();
+                }
+                default -> {
+                    Topics topics = new MemoryTopics();
+                    try (EventBridge bridge = new EventBridge(topics, plan.port(), plan.allowOrigin(), plan.maxStreams())) {
+                        out.println("event bridge on http://localhost:" + bridge.port()
+                                + " with topics in memory (no broker, nothing reaches KafScale)");
+                        publish(topics, plan, out);
+                    }
                 }
             }
-            case "bridge" -> {
-                String bootstrap = required(o, "bootstrap");
-                Topics topics = new KafkaTopics(bootstrap);
-                EventBridge bridge = bridge(topics, o);
-                System.out.println("event bridge on http://localhost:" + bridge.port() + "/v1/topics/<topic>/events, broker "
-                        + bootstrap);
-                Thread.currentThread().join();
-            }
-            case "demo" -> {
-                o.putIfAbsent("duration", "120");
-                o.put("loop", "true");
-                Topics topics = new MemoryTopics();
-                EventBridge bridge = bridge(topics, o);
-                System.out.println("event bridge on http://localhost:" + bridge.port()
-                        + " with topics in memory (no broker, nothing reaches KafScale)");
-                publish(topics, o);
-            }
-            default -> usage();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return failed(e, err);
+        } catch (IOException | RuntimeException e) {
+            return failed(e, err);
         }
+        return written(out, err);
     }
 
-    private static EventBridge bridge(Topics topics, Map<String, String> o) throws java.io.IOException {
-        return new EventBridge(topics, Integer.parseInt(o.getOrDefault("port", "8090")),
-                o.getOrDefault("allow-origin", env("EVENT_BRIDGE_ALLOW_ORIGIN", "*")), Integer.parseInt(o.getOrDefault("max-streams", "16")));
-    }
-
-    private static void publish(Topics topics, Map<String, String> o) throws InterruptedException {
-        List<StudioScenario> scenarios = new ArrayList<>(Scenarios.all());
-        if (o.containsKey("scenario")) {
-            scenarios.removeIf(s -> !s.id().equals(o.get("scenario")));
+    /** Checks every value the command reads and selects the scenarios; opens nothing. */
+    static Plan check(String command, OpenTsxConf conf) {
+        boolean demo = !command.equals(PUBLISH) && !command.equals(BRIDGE);
+        String bootstrap = demo ? null : conf.get(BOOTSTRAP);
+        List<StudioScenario> scenarios = List.of();
+        Duration duration = null;
+        boolean loop = demo;
+        if (!command.equals(BRIDGE)) {
+            List<StudioScenario> all = Scenarios.all();
+            String only = conf.getOption(SCENARIO).orElse(null);
+            scenarios = only == null ? all : all.stream().filter(s -> s.id().equals(only)).toList();
             if (scenarios.isEmpty()) {
-                throw new IllegalArgumentException("unknown scenario " + o.get("scenario") + ", known: "
-                        + Scenarios.all().stream().map(StudioScenario::id).toList());
+                throw new OpenTsxConfException(SCENARIO, "\"" + only + "\" is not a scenario",
+                        "expected one of " + String.join(", ", all.stream().map(StudioScenario::id).toList()));
+            }
+            boolean given = conf.getOption(DURATION).isPresent();
+            if (given || demo) {
+                long seconds = given ? conf.getLong(DURATION) : DEMO_SECONDS;
+                if (seconds < 1 || seconds > MAX_SECONDS) {
+                    throw new OpenTsxConfException(DURATION, "\"" + seconds + "\" is not allowed",
+                            "expected 1 to " + MAX_SECONDS + " seconds");
+                }
+                duration = Duration.ofSeconds(seconds);
+            }
+            loop = demo || conf.getBoolean(LOOP);
+        }
+        int port = 0;
+        String allowOrigin = null;
+        int maxStreams = 0;
+        if (!command.equals(PUBLISH)) {
+            port = conf.getInt(PORT);
+            if (port < 0 || port > 65535) {
+                throw new OpenTsxConfException(PORT, "\"" + port + "\" is not allowed",
+                        "expected 0 to 65535, 0 for any free port");
+            }
+            allowOrigin = conf.get(ALLOW_ORIGIN);
+            maxStreams = conf.getInt(MAX_STREAMS);
+            if (maxStreams < 1) {
+                throw new OpenTsxConfException(MAX_STREAMS, "\"" + maxStreams + "\" is not allowed", "expected 1 or more");
             }
         }
-        Duration duration = o.containsKey("duration") ? Duration.ofSeconds(Long.parseLong(o.get("duration"))) : null;
+        return new Plan(command, bootstrap, scenarios, duration, loop, port, allowOrigin, maxStreams);
+    }
+
+    private static void publish(Topics topics, Plan plan, PrintStream out) throws InterruptedException {
         Map<StudioScenario, RunResult> runs = new LinkedHashMap<>();
-        for (StudioScenario s : scenarios) {
+        for (StudioScenario s : plan.scenarios()) {
             RunResult run = EventPublisher.referenceRun(s);
             runs.put(s, run);
-            System.out.println(s.id() + ": " + run.events().size() + " events -> "
-                    + EventTopic.name(s.plan().twin(), run.runId()));
+            out.println(s.id() + ": " + run.events().size() + " events -> "
+                    + TopicLayout.twinEvents(s.plan().twin(), run.runId()));
         }
-        boolean loop = o.containsKey("loop");
         do {
             List<Thread> threads = new ArrayList<>();
-            List<Throwable> failures = java.util.Collections.synchronizedList(new ArrayList<>());
+            List<Throwable> failures = Collections.synchronizedList(new ArrayList<>());
             runs.forEach((s, run) -> {
                 Thread t = new Thread(() -> {
                     try {
-                        new EventPublisher(topics).publish(s.plan(), run, duration);
+                        new EventPublisher(topics).publish(s.plan(), run, plan.duration());
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     } catch (RuntimeException e) {
@@ -110,50 +204,38 @@ public final class TwinLive {
             if (!failures.isEmpty()) {
                 throw new IllegalStateException("publishing failed", failures.get(0));
             }
-            if (loop && duration == null) {
+            if (plan.loop() && plan.duration() == null) {
                 Thread.sleep(1000);
             }
-        } while (loop);
+        } while (plan.loop());
     }
 
-    private static Map<String, String> options(String[] args) {
-        Map<String, String> o = new LinkedHashMap<>();
-        for (int i = 1; i < args.length; i++) {
-            if (!args[i].startsWith("--")) {
-                usage();
-            }
-            String name = args[i].substring(2);
-            if (i + 1 < args.length && !args[i + 1].startsWith("--")) {
-                o.put(name, args[++i]);
-            } else {
-                o.put(name, "true");
-            }
+    private static int failed(Exception e, PrintStream err) {
+        LoggerFactory.getLogger(TwinLive.class).debug("stack trace of the failed run", e);
+        err.print("opentsx: " + causes(e) + "\n");
+        err.flush();
+        return 1;
+    }
+
+    private static int written(PrintStream out, PrintStream err) {
+        out.flush();
+        if (out.checkError()) {
+            err.print("opentsx: " + WRITE_FAILED + "\n");
+            err.flush();
+            return 1;
         }
-        return o;
+        return 0;
     }
 
-    private static String env(String name, String fallback) {
-        String v = System.getenv(name);
-        return v == null || v.isBlank() ? fallback : v;
-    }
-
-    private static String required(Map<String, String> o, String name) {
-        String v = o.get(name);
-        if (v == null && name.equals("bootstrap")) {
-            v = env("KAFSCALE_BOOTSTRAP", null);
+    /** The message and its causes on one line; a checked exception with its class, its message is often bare. */
+    static String causes(Throwable t) {
+        boolean bare = !(t instanceof RuntimeException) || t.getMessage() == null;
+        StringBuilder s = new StringBuilder(bare ? t.toString() : t.getMessage());
+        Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        seen.add(t);
+        for (Throwable c = t.getCause(); c != null && seen.add(c); c = c.getCause()) {
+            s.append("; caused by ").append(c);
         }
-        if (v == null || v.equals("true")) {
-            System.err.println("missing --" + name);
-            usage();
-        }
-        return v;
-    }
-
-    private static void usage() {
-        System.err.println("""
-                usage: twin-live publish --bootstrap host:9092 [--scenario id] [--duration seconds] [--loop]
-                       twin-live bridge  --bootstrap host:9092 [--port 8090] [--allow-origin *] [--max-streams 16]
-                       twin-live demo    [--port 8090] [--scenario id] [--duration seconds]""");
-        System.exit(1);
+        return s.toString().replaceAll("[\\s\\p{Cntrl}]+", " ").strip();
     }
 }
