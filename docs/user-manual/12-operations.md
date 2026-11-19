@@ -100,7 +100,7 @@ another file). Without it, the template [`config/opentsx-local.props.example`](.
 | `BucketWriter` | none (an unsealed bucket stays OPEN) | write the bucket again; `BucketCatalog` takes the SEALED manifest, and readers drop repeated episodes by `episodeId` |
 | episode index | `FileEpisodeIndex` / `IcebergEpisodeIndex` | `EpisodeIndexer.rebuild` recreates it from the log |
 | statistics processor | checkpoint file (positions + engine state) | resumes; outputs at least once. `SeriesStatsLog.readLatest` keeps one record per series and window ([chapter 7](07-stats-quality.md#72-run-the-processor)) |
-| `EpisodeLogSync` | positions returned to the caller | check `undecodable` and `lostToRetention`, then persist them; writes are idempotent ([chapter 5](05-stores.md#53-copy-episodes-from-kafscale-to-iceberg)) |
+| `EpisodeLogSync` | positions returned to the caller | check `undecodable`, `invalid` and `lostToRetention`, then persist them; writes are idempotent ([chapter 5](05-stores.md#53-copy-episodes-from-kafscale-to-iceberg)) |
 
 ## 12.4 Run the tests
 

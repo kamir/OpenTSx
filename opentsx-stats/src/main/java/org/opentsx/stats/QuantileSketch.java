@@ -90,9 +90,14 @@ public final class QuantileSketch {
         add(value, 1);
     }
 
+    /** @throws IllegalArgumentException when the count would exceed {@link Long#MAX_VALUE} */
     public void add(double value, long n) {
         if (n <= 0 || !Double.isFinite(value)) {
             return;
+        }
+        if (n > Long.MAX_VALUE - count) {
+            throw new IllegalArgumentException("count: " + count + " plus n " + n + " is above " + Long.MAX_VALUE
+                    + "; expected a total count of at most " + Long.MAX_VALUE);
         }
         double abs = Math.abs(value);
         if (abs < MIN_INDEXABLE) {
@@ -105,10 +110,15 @@ public final class QuantileSketch {
         count += n;
     }
 
+    /** @throws IllegalArgumentException when the alphas differ or the count would exceed {@link Long#MAX_VALUE} */
     public void merge(QuantileSketch other) {
         if (Double.compare(other.alpha, alpha) != 0) {
             throw new IllegalArgumentException("alpha: cannot merge a sketch with alpha " + other.alpha + " into one with alpha "
                     + alpha + "; expected the same alpha");
+        }
+        if (other.count > Long.MAX_VALUE - count) {
+            throw new IllegalArgumentException("count: " + count + " plus the count " + other.count + " of the merged sketch"
+                    + " is above " + Long.MAX_VALUE + "; expected a total count of at most " + Long.MAX_VALUE);
         }
         other.positive.forEach((k, v) -> positive.merge(k, v, Long::sum));
         other.negative.forEach((k, v) -> negative.merge(k, v, Long::sum));

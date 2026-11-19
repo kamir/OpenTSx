@@ -126,9 +126,12 @@ with a `BucketWriter`.
 
 `LogReader.readAll(consumer, topic, sink, timeout)` hands every record from the log start to the end offsets at the
 time of the call to the sink, with manual assignment and seek, and unassigns the consumer afterwards. It waits out
-refused fetches (see below) within `timeout`. It throws `IllegalStateException` when the topic does not exist or has
-no partitions, with the message `<topic>: no such topic; check the domain, or create the topic first`, and when the
-read takes longer than `timeout`.
+refused fetches (see below) within `timeout`. The timeout covers the whole call: the partition lookup, the log start
+and end offsets and the read each get what is left of it. It throws `IllegalStateException` when the topic does not
+exist or has no partitions, with the message `<topic>: no such topic; check the domain, or create the topic first`,
+and when the time runs out: with `timed out reading <topic>` when less than a millisecond is left before the read,
+and with `timed out reading [<topic>-<partition>, ...]` during it. A partition lookup or offset request that gets no
+answer within the time left throws the client's `org.apache.kafka.common.errors.TimeoutException`.
 
 ## Follow a topic
 

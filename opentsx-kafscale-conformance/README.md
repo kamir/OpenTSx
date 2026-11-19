@@ -43,18 +43,18 @@ Same suite, same client (kafka-clients 3.9.1); the Apache Kafka column validates
 
 | Capability | KafScale v1.6.0 and main@7aa2a11 (built from source, in-memory S3 + metadata) | Apache Kafka 3.9.1 (KRaft) |
 |------------|------------------------------------------|----------------------------|
-| Required tests | ✅ all pass | ✅ all pass |
-| `record.headers.preserved` | ✅ true | ✅ true |
-| `record.createtime.preserved` | ✅ true | ✅ true |
-| `listoffsets.timestamp.supported` (`offsetsForTimes`) | ❌ false – returns the log end offset | ✅ true |
-| `producer.idempotence.supported` | ❌ false | ✅ true |
-| `offsetcommit.standalone.supported` (commit without group membership, as Flink does) | ❌ false – `CommitFailedException` | ✅ true |
-| `group.rejoin.assigned` (a restarted group member gets partitions again) | ❌ false – no assignment within 20 s | ✅ true (49 ms) |
-| `topic.cleanup.policy.compact.accepted` | accepted, but KafScale does not compact | ✅ true |
-| `admin.listoffsets.earliest.supported` (`Admin.listOffsets`, `OffsetSpec.earliest()`) | true (v1.6.0, 2026-10-26) | not measured |
-| `admin.listoffsets.latest.supported` (`Admin.listOffsets`, `OffsetSpec.latest()`) | true (v1.6.0, 2026-10-26) | not measured |
+| Required tests | yes: all pass | yes: all pass |
+| `record.headers.preserved` | yes | yes |
+| `record.createtime.preserved` | yes | yes |
+| `listoffsets.timestamp.supported` (`offsetsForTimes`) | no: returns the log end offset | yes |
+| `producer.idempotence.supported` | no | yes |
+| `offsetcommit.standalone.supported` (commit without group membership, as Flink does) | no: `CommitFailedException` | yes |
+| `group.rejoin.assigned` (a restarted group member gets partitions again) | no: no assignment within 20 s | yes (49 ms) |
+| `topic.cleanup.policy.compact.accepted` | accepted, but KafScale does not compact | yes |
+| `admin.listoffsets.earliest.supported` (`Admin.listOffsets`, `OffsetSpec.earliest()`) | yes (v1.6.0, 2026-10-26) | not measured |
+| `admin.listoffsets.latest.supported` (`Admin.listOffsets`, `OffsetSpec.latest()`) | yes (v1.6.0, 2026-10-26) | not measured |
 
-The two `admin.listoffsets` rows were added on 2026-10-26 and measured against KafScale v1.6.0 only. The Flink
+The two `admin.listoffsets` rows are measured against KafScale v1.6.0 only. The Flink
 Kafka source (connector 3.4.0-1.20) needs them: it reads partition metadata with `describeTopics`, which
 `createsTopicsViaAdminApi` asserts, and end offsets for `OffsetsInitializer.latest()` and bounded runs with
 `Admin.listOffsets`. `OffsetsInitializer.earliest()` is resolved by its consumer.

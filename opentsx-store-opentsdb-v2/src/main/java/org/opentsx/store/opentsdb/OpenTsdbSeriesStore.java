@@ -1,11 +1,11 @@
 package org.opentsx.store.opentsdb;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.opentsx.model.Episodes;
-import org.opentsx.model.Micros;
 import org.opentsx.model.SeriesKeys;
 import org.opentsx.model.Ulid;
 import org.opentsx.model.XxHash64;
@@ -237,14 +237,17 @@ public final class OpenTsdbSeriesStore implements SeriesStore {
         return send(HttpRequest.newBuilder(base.resolve(path)).timeout(timeout).GET().build(), false);
     }
 
-    private JsonNode post(String path, JsonNode body, boolean nullOnUnknownMetric) {
+    JsonNode post(String path, JsonNode body, boolean nullOnUnknownMetric) {
+        URI uri = base.resolve(path);
+        String json;
         try {
-            return send(HttpRequest.newBuilder(base.resolve(path)).timeout(timeout)
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(JSON.writeValueAsString(body))).build(), nullOnUnknownMetric);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            json = JSON.writeValueAsString(body);
+        } catch (JsonProcessingException e) {
+            throw new UncheckedIOException("OpenTSDB POST " + uri + ": cannot encode the request body as JSON", e);
         }
+        return send(HttpRequest.newBuilder(uri).timeout(timeout)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json)).build(), nullOnUnknownMetric);
     }
 
     /** {@code nullOnUnknownMetric}: a 400 whose body says {@code No such name} answers null. */

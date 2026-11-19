@@ -21,12 +21,10 @@ def write(name, data):
     (HERE / name).write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
-# --- xxHash64 -----------------------------------------------------------------------------------------
 inputs = ["", "a", "abc", "0123456789abcdef0123456789abcdef", "The quick brown fox jumps over the lazy dog",
           "x" * 100, "Windpark Ostsee — Turbine Ü7"]
 write("xxh64.json", [{"input": s, "hex": xxhash.xxh64_hexdigest(s.encode("utf-8"), seed=0)} for s in inputs])
 
-# --- series identity ----------------------------------------------------------------------------------
 cases = [
     ("wind.turbine.power_active", {"park": "ber-01", "turbine": "T07"}),
     ("wind.turbine.power_active", {"turbine": "T07", "park": "ber-01"}),  # order must not matter
@@ -40,7 +38,6 @@ write("series-id.json", [
     for metric, tags in cases
 ])
 
-# --- irregular time axis ------------------------------------------------------------------------------
 axes = [
     [1_700_000_000_000_000],
     [0, 1_000_000],
@@ -50,7 +47,6 @@ axes = [
 ]
 write("time-deltas.json", [{"timestampsUs": ts, "deltasHex": m.encode_deltas(ts).hex()} for ts in axes])
 
-# --- bucket checksum ----------------------------------------------------------------------------------
 bucket_cases = [
     [],
     ["01HF7Z1Y4X0000000000000001"],
@@ -58,7 +54,6 @@ bucket_cases = [
 ]
 write("bucket-checksum.json", [{"episodeIds": ids, "checksum": m.bucket_checksum(ids)} for ids in bucket_cases])
 
-# --- wire format --------------------------------------------------------------------------------------
 power = m.series_key("wind.turbine.power_active", {"turbine": "T07", "park": "ber-01"}, "kW")
 speed = m.series_key("wind.met.wind_speed", {"park": "ber-01", "turbine": "T07"}, "m/s")
 regular_spec = {

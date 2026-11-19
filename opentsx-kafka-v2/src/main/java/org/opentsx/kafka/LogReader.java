@@ -13,6 +13,8 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.function.LongSupplier;
 
 /** Bounded reads with manual assignment (no consumer group), the only reliable way to read KafScale today. */
 public final class LogReader {
@@ -23,6 +25,12 @@ public final class LogReader {
     /** Reads [from, toExclusive) of every given partition, then unassigns. */
     static void read(Consumer<byte[], byte[]> consumer, Map<TopicPartition, long[]> ranges,
                      java.util.function.Consumer<ConsumerRecord<byte[], byte[]>> sink, Duration timeout) {
+        read(consumer, ranges, sink, timeout, System::nanoTime);
+    }
+
+    private static void read(Consumer<byte[], byte[]> consumer, Map<TopicPartition, long[]> ranges,
+                             java.util.function.Consumer<ConsumerRecord<byte[], byte[]>> sink, Duration timeout,
+                             LongSupplier nanoClock) {
         Map<TopicPartition, Long> until = new HashMap<>();
         ranges.forEach((tp, r) -> {
             if (r[1] > r[0]) {
@@ -35,12 +43,12 @@ public final class LogReader {
         Set<TopicPartition> open = new HashSet<>(until.keySet());
         consumer.assign(open);
         open.forEach(tp -> consumer.seek(tp, ranges.get(tp)[0]));
-        long deadline = System.nanoTime() + timeout.toNanos();
+        long deadline = nanoClock.getAsLong() + timeout.toNanos();
         // a refused fetch is waited out; the deadline of this read still holds
         Patience patience = new Patience(timeout, Duration.ofSeconds(2));
         try {
             while (!open.isEmpty()) {
-                if (System.nanoTime() > deadline) {
+                if (nanoClock.getAsLong() > deadline) {
                     throw new IllegalStateException("timed out reading " + open);
                 }
                 for (ConsumerRecord<byte[], byte[]> r : patience.poll(consumer, Duration.ofMillis(500))) {
@@ -60,25 +68,43 @@ public final class LogReader {
 
     /**
      * Reads everything currently in the topic (from log start to the end offsets at call time), then unassigns. A
-     * refused fetch is waited out within {@code timeout}.
+     * refused fetch is waited out within {@code timeout}. The timeout covers the whole call: each metadata request and
+     * the read get what is left of it.
      *
      * @throws IllegalStateException when the topic does not exist or has no partitions, or when the read takes longer
      *                               than {@code timeout}
      */
     public static void readAll(Consumer<byte[], byte[]> consumer, String topic,
                                java.util.function.Consumer<ConsumerRecord<byte[], byte[]>> sink, Duration timeout) {
+        readAll(consumer, topic, sink, timeout, System::nanoTime);
+    }
+
+    /** As {@link #readAll(Consumer, String, java.util.function.Consumer, Duration)}, on the clock {@code nanoClock}. */
+    static void readAll(Consumer<byte[], byte[]> consumer, String topic,
+                        java.util.function.Consumer<ConsumerRecord<byte[], byte[]>> sink, Duration timeout,
+                        LongSupplier nanoClock) {
+        long deadline = nanoClock.getAsLong() + timeout.toNanos();
         List<PartitionInfo> infos = consumer.partitionsFor(topic, timeout);
         if (infos == null || infos.isEmpty()) {
             throw new IllegalStateException(topic + ": no such topic; check the domain, or create the topic first");
         }
         List<TopicPartition> tps = infos.stream().map(i -> new TopicPartition(topic, i.partition())).toList();
-        Map<TopicPartition, Long> begin = consumer.beginningOffsets(tps, timeout);
-        Map<TopicPartition, Long> end = consumer.endOffsets(tps, timeout);
+        Map<TopicPartition, Long> begin = consumer.beginningOffsets(tps, remaining(topic, deadline, nanoClock));
+        Map<TopicPartition, Long> end = consumer.endOffsets(tps, remaining(topic, deadline, nanoClock));
         Map<TopicPartition, long[]> ranges = new HashMap<>();
         for (TopicPartition tp : tps) {
             ranges.put(tp, new long[]{begin.get(tp), end.get(tp)});
         }
-        read(consumer, ranges, sink, timeout);
+        read(consumer, ranges, sink, remaining(topic, deadline, nanoClock), nanoClock);
+    }
+
+    /** Whole milliseconds: with less than one, KafkaConsumer answers an offset request with an empty map. */
+    private static Duration remaining(String topic, long deadline, LongSupplier nanoClock) {
+        long left = TimeUnit.NANOSECONDS.toMillis(deadline - nanoClock.getAsLong());
+        if (left <= 0) {
+            throw new IllegalStateException("timed out reading " + topic);
+        }
+        return Duration.ofMillis(left);
     }
 
     /** The message and its causes on one line, for a log line. */

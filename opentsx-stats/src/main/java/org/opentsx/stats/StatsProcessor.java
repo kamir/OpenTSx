@@ -6,6 +6,7 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.TimeoutException;
 import org.opentsx.conf.OpenTsxConfException;
 import org.opentsx.kafka.Patience;
 import org.opentsx.kafka.TopicLayout;
@@ -39,7 +40,9 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
+import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 
 /**
@@ -129,13 +132,17 @@ public final class StatsProcessor {
      * GLOBAL and writes a checkpoint.
      */
     public RunResult runUntilCaughtUp(Duration timeout, boolean flushAtEnd) {
+        return runUntilCaughtUp(timeout, flushAtEnd, System::nanoTime);
+    }
+
+    RunResult runUntilCaughtUp(Duration timeout, boolean flushAtEnd, LongSupplier nanoClock) {
         List<TopicPartition> tps = assign(timeout);
         Map<TopicPartition, Long> end = consumer.endOffsets(tps, timeout);
         long records = 0;
-        long deadline = System.nanoTime() + timeout.toNanos();
+        long deadline = nanoClock.getAsLong() + timeout.toNanos();
         try {
             while (tps.stream().anyMatch(tp -> positions.get(tp) < end.get(tp))) {
-                if (System.nanoTime() > deadline) {
+                if (nanoClock.getAsLong() > deadline) {
                     throw new IllegalStateException("timed out computing statistics");
                 }
                 long before = records;
@@ -153,7 +160,15 @@ public final class StatsProcessor {
                     records++;
                 }
                 if (records == before) {
-                    skipDeleted(tps, end, Duration.ofNanos(Math.max(1, deadline - System.nanoTime())));
+                    long left = TimeUnit.NANOSECONDS.toMillis(deadline - nanoClock.getAsLong());
+                    if (left <= 0) {
+                        throw new IllegalStateException("timed out computing statistics");
+                    }
+                    try {
+                        skipDeleted(tps, end, Duration.ofMillis(left));
+                    } catch (TimeoutException e) {
+                        throw new IllegalStateException("timed out computing statistics", e);
+                    }
                 }
             }
             send(flushAtEnd ? engine.flush() : engine.emitGlobal());

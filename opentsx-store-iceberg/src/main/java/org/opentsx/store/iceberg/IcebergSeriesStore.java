@@ -9,6 +9,7 @@ import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.IcebergGenerics;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.exceptions.NotFoundException;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
@@ -132,19 +133,21 @@ public final class IcebergSeriesStore implements SeriesStore {
         batch.forEach(e -> unique.putIfAbsent(e.getEpisodeId(), e));
         Set<String> existing = existingEpisodeIds(unique.keySet());
         List<Record> rows = new ArrayList<>();
-        Map<String, SeriesKey> newSeries = new LinkedHashMap<>();
+        Map<String, SeriesKey> batchSeries = new LinkedHashMap<>();
         for (Episode e : unique.values()) {
             if (!existing.contains(e.getEpisodeId())) {
                 rows.add(EpisodeRows.toRow(e));
-                newSeries.putIfAbsent(e.getSeries().getSeriesId(), e.getSeries());
             }
+            batchSeries.putIfAbsent(e.getSeries().getSeriesId(), e.getSeries());
         }
         IcebergIO.append(episodes, rows);
-        if (!newSeries.isEmpty()) {
+        if (!batchSeries.isEmpty()) {
+            // every series of the batch, not only those of new episodes: a retry after a failed series append
+            // finds its episodes written and must still add the series row
             series.refresh();
             Set<String> known = new HashSet<>();
-            scan(series, Expressions.in("series_id", newSeries.keySet().toArray()), r -> known.add((String) r.getField("series_id")));
-            IcebergIO.append(series, newSeries.values().stream()
+            scan(series, Expressions.in("series_id", batchSeries.keySet().toArray()), r -> known.add((String) r.getField("series_id")));
+            IcebergIO.append(series, batchSeries.values().stream()
                     .filter(k -> !known.contains(k.getSeriesId())).map(EpisodeRows::seriesRow).toList());
         }
         return new WriteResult(rows.size(), batch.size() - rows.size(), 0);
@@ -244,6 +247,8 @@ public final class IcebergSeriesStore implements SeriesStore {
             rows.forEach(r -> out.add((String) r.getField("episode_id")));
         } catch (IOException e) {
             throw new UncheckedIOException("cannot read table " + episodes.name(), e);
+        } catch (NotFoundException e) {
+            throw new UncheckedIOException("cannot read table " + episodes.name(), new IOException(e.getMessage(), e));
         }
         return out;
     }
@@ -253,6 +258,8 @@ public final class IcebergSeriesStore implements SeriesStore {
             rows.forEach(sink);
         } catch (IOException e) {
             throw new UncheckedIOException("cannot read table " + table.name(), e);
+        } catch (NotFoundException e) {
+            throw new UncheckedIOException("cannot read table " + table.name(), new IOException(e.getMessage(), e));
         }
     }
 

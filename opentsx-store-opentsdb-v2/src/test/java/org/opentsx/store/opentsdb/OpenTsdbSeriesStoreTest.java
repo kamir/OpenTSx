@@ -1,5 +1,8 @@
 package org.opentsx.store.opentsdb;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.opentsx.model.Episodes;
@@ -24,6 +27,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -104,6 +108,16 @@ class OpenTsdbSeriesStoreTest extends SeriesStoreContract {
         UncheckedIOException e = assertThrows(UncheckedIOException.class,
                 () -> closed.read(EpisodeQuery.of(SeriesSelector.metric(WIND_T01.getMetric()), T0, T0 + SEC)));
         assertEquals("OpenTSDB POST http://127.0.0.1:" + port + "/api/query failed", e.getMessage());
+    }
+
+    @Test
+    void aBodyThatCannotBeEncodedNamesTheMethodAndTheUrl() {
+        OpenTsdbSeriesStore unused = new OpenTsdbSeriesStore(URI.create("http://127.0.0.1:4242/"));
+        ObjectNode body = JsonNodeFactory.instance.objectNode().putPOJO("value", new Object());
+        UncheckedIOException e = assertThrows(UncheckedIOException.class, () -> unused.post("/api/put?summary", body, false));
+        assertEquals("OpenTSDB POST http://127.0.0.1:4242/api/put?summary: cannot encode the request body as JSON",
+                e.getMessage());
+        assertInstanceOf(JsonProcessingException.class, e.getCause());
     }
 
     @Test

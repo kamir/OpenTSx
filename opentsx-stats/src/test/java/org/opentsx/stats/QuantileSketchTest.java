@@ -196,6 +196,26 @@ class QuantileSketchTest {
     }
 
     @Test
+    void addAndMergeRefuseACountAboveTheLongRangeAndKeepTheSketch() {
+        QuantileSketch full = new QuantileSketch();
+        full.add(3.0, Long.MAX_VALUE - 1);
+        assertEquals("count: 9223372036854775806 plus n 2 is above 9223372036854775807; expected a total count of at most"
+                + " 9223372036854775807", refused(() -> full.add(-3.0, 2)));
+        assertEquals("count: 9223372036854775806 plus n 2 is above 9223372036854775807; expected a total count of at most"
+                + " 9223372036854775807", refused(() -> full.add(0.0, 2)));
+        QuantileSketch two = new QuantileSketch();
+        two.add(5.0, 2);
+        assertEquals("count: 9223372036854775806 plus the count 2 of the merged sketch is above 9223372036854775807;"
+                + " expected a total count of at most 9223372036854775807", refused(() -> full.merge(two)));
+        assertEquals(Long.MAX_VALUE - 1, full.count());
+        QuantileSketch expected = new QuantileSketch();
+        expected.add(3.0, Long.MAX_VALUE - 1);
+        assertEquals(expected, full, "a refused add or merge leaves the sketch as it was");
+        full.add(3.0, 1);
+        assertEquals(Long.MAX_VALUE, full.count());
+    }
+
+    @Test
     void theReadersOfStatisticsRefuseACorruptSketchAsBadInput() throws IOException {
         byte[] corrupt = oneBinAt(1L << 40);
         String text = "sketch bytes: bin index 1099511627776 out of range; expected an int";

@@ -83,8 +83,6 @@ class KafScaleConformanceTest {
         Capabilities.write();
     }
 
-    // ---------------------------------------------------------------- REQUIRED
-
     @Test
     void createsTopicsViaAdminApi() throws Exception {
         String topic = createTopic("admin", 3);
@@ -177,8 +175,6 @@ class KafScaleConformanceTest {
             assertEquals("v13", first.value());
         }
     }
-
-    // ---------------------------------------------------------------- OPTIONAL (probed)
 
     @Test
     void probeRecordHeaders() throws Exception {
@@ -344,8 +340,6 @@ class KafScaleConformanceTest {
         // Accepting the config does not mean the broker compacts; KafScale documents that it does not.
         Capabilities.record("topic.cleanup.policy.compact.accepted", accepted);
     }
-
-    // ---------------------------------------------------------------- helpers
 
     private String createTopic(String suffix, int partitions) throws Exception {
         String name = "tsx-conf-" + run + "-" + suffix;

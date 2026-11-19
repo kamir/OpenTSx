@@ -20,6 +20,7 @@ A 400 whose body says `No such name` is an unknown metric and reads as no data. 
 |--------|-------|
 | an answer that is not 2xx | `IllegalStateException`: `OpenTSDB <method> <url> returned <status>: <body>` |
 | no answer (connection, timeout) or a body that is not JSON | `UncheckedIOException`: `OpenTSDB <method> <url> failed` |
+| a request body that cannot be encoded as JSON | `UncheckedIOException`: `OpenTSDB POST <url>: cannot encode the request body as JSON` |
 | 10000 metrics from `/api/suggest`, its limit | `IllegalStateException`: `metrics: /api/suggest returned 10000 metrics, its limit, so the list may be incomplete; select a metric in the SeriesSelector` |
 
 Tests run the store contract against an embedded OpenTSDB emulator; set `OPENTSDB_URL` to a fresh OpenTSDB

@@ -681,6 +681,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The `house` output and its calibration warnings use a colon, a semicolon or the word minus where they had a spaced
   hyphen, for example `House twin 'haus-erzgebirge': ALL NUMBERS ARE INVENTED EXAMPLE ASSUMPTIONS (not calibrated)`
   and `weather is synthetic; for real bills bind daily mean temperatures of a nearby station`.
+- `EpisodeQuery` refuses a window that does not open before it closes with `fromMicros: <from> is not before toMicros
+  <to>; expected fromMicros < toMicros` instead of `fromMicros must be before toMicros`.
 
 ### Removed
 
@@ -1561,6 +1563,32 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   the stream without a log line, as if the browser had left.
 - `KafkaTopics.append` after `close` throws `IllegalStateException: topics: closed; create a new KafkaTopics to append
   again` instead of opening a new producer.
+- `EpisodeLogSync` validates every decoded episode with `Episodes.validate`. An invalid one is counted in the new
+  `Result` field `invalid` and not written. The first undecodable record and the first invalid episode of each
+  partition are logged at WARN with topic, partition, offset and cause. The `Result` constructor takes the new field.
+  This is a breaking change.
+- `EpisodeLogSync` counts records that retention deletes while it reads in `lostToRetention` and reads on from the new
+  log start, instead of waiting until `timed out syncing <topic>` when the remaining records of a partition were
+  deleted. When the time runs out during that log start request, the sync fails with `timed out syncing <topic>`, with
+  the client's `TimeoutException` as cause when there is one.
+- Iceberg store: a write adds the series row of every series in the batch that has none, so a retry after a failed
+  series append writes the row that the first attempt did not commit.
+- Iceberg store: a data file that does not exist fails with `UncheckedIOException` `cannot read table
+  <catalog>.<ns>.<table>` instead of the bare `NotFoundException`, which stays in the cause chain and names the file.
+- OpenTSDB store: a request body that cannot be encoded as JSON fails with `OpenTSDB POST <url>: cannot encode the
+  request body as JSON` instead of a bare `UncheckedIOException`.
+- `LogReader.readAll` computes one deadline: the partition lookup, the log start and end offsets and the read get what
+  is left of the timeout in whole milliseconds, so `SeriesStatsLog.readLatest`, `EpisodeIndexer.rebuild` and
+  `BucketCatalog.load` give up after the timeout they were given instead of after up to four times as long. With less
+  than a millisecond left before the read, `readAll` fails with `timed out reading <topic>`.
+- `QuantileSketch.add(value, n)` and `merge` refuse a total count above 9223372036854775807 with
+  `IllegalArgumentException` and leave the sketch as it was, instead of wrapping the count. `add` says `count: <count>
+  plus n <n> is above 9223372036854775807; expected a total count of at most 9223372036854775807`; `merge` says
+  `count: <count> plus the count <other> of the merged sketch is above 9223372036854775807; expected a total count of
+  at most 9223372036854775807`.
+- A `--once` run of the statistics processor ends with `timed out computing statistics` when less than 1 ms is left
+  for the log start check, instead of a `NullPointerException`, and with the client's `TimeoutException` as cause when
+  the log start check gets no answer in the time left.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

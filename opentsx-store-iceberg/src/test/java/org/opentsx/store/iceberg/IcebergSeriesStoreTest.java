@@ -9,6 +9,8 @@ import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.IcebergGenerics;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.exceptions.CommitFailedException;
+import org.apache.iceberg.exceptions.NotFoundException;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.jdbc.JdbcCatalog;
@@ -20,6 +22,7 @@ import org.opentsx.store.EpisodeQuery;
 import org.opentsx.store.SeriesSelector;
 import org.opentsx.store.SeriesStore;
 import org.opentsx.store.SeriesStoreContract;
+import org.opentsx.store.WriteResult;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -32,8 +35,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -188,5 +195,48 @@ class IcebergSeriesStoreTest extends SeriesStoreContract {
         } finally {
             ((Closeable) catalog).close();
         }
+    }
+
+    @Test
+    void aDeletedDataFileNamesTheTable() throws Exception {
+        List<Episode> written = fixture();
+        store.write(written);
+        List<Path> files;
+        try (Stream<Path> walk = Files.walk(dir.resolve("warehouse").resolve("tsx").resolve("episodes"))) {
+            files = walk.filter(f -> f.toString().endsWith(".parquet")).toList();
+        }
+        for (Path f : files) {
+            Files.delete(f);
+        }
+        UncheckedIOException read = assertThrows(UncheckedIOException.class,
+                () -> store.read(EpisodeQuery.of(SeriesSelector.all(), T0, T0 + 3600 * SEC)));
+        assertEquals("cannot read table opentsx.tsx.episodes", read.getMessage());
+        assertInstanceOf(NotFoundException.class, read.getCause().getCause());
+        assertTrue(files.stream().anyMatch(f -> read.getCause().getMessage().contains(f.getFileName().toString())),
+                read.getCause().getMessage());
+        UncheckedIOException write = assertThrows(UncheckedIOException.class, () -> store.write(written.subList(0, 1)));
+        assertEquals("cannot read table opentsx.tsx.episodes", write.getMessage());
+        assertInstanceOf(NotFoundException.class, write.getCause().getCause());
+    }
+
+    @Test
+    void aRetryAfterAFailedSeriesAppendListsTheSeries() throws Exception {
+        List<Episode> batch = fixture().subList(0, 1);
+        Catalog catalog = IcebergSeriesStore.catalog(catalogProps(dir));
+        CommitFailedException refused = new CommitFailedException("commit refused");
+        Catalog failing = IcebergIOTest.proxy(Catalog.class, catalog, (name, args) -> name.equals("loadTable")
+                && ((TableIdentifier) args[0]).name().equals(Tables.SERIES)
+                ? IcebergIOTest.failingCommit(catalog.loadTable((TableIdentifier) args[0]), refused, null,
+                new CopyOnWriteArrayList<>()) : null);
+        try (IcebergSeriesStore writer = new IcebergSeriesStore(failing, Namespace.of("tsx"))) {
+            assertSame(refused, assertThrows(CommitFailedException.class, () -> writer.write(batch)));
+        } finally {
+            ((Closeable) catalog).close();
+        }
+
+        WriteResult retry = store.write(batch);
+
+        assertEquals(new WriteResult(0, 1, 0), retry);
+        assertEquals(List.of(batch.get(0).getSeries()), store.listSeries(SeriesSelector.all()));
     }
 }

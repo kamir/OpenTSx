@@ -206,13 +206,19 @@ with `ValueError`:
 * a quantile outside [0, 1]: `q: <q> is out of range; expected a number from 0 to 1`
 * in Java, `maxBins` below 16: `maxBins: <n> is out of range; expected a whole number of 16 or more`
 
+In Java, `add(value, n)` and `merge` refuse a total count above 9223372036854775807 with
+`IllegalArgumentException` and leave the sketch as it was:
+
+* `add`: `count: <count> plus n <n> is above 9223372036854775807; expected a total count of at most 9223372036854775807`
+* `merge`: `count: <count> plus the count <other> of the merged sketch is above 9223372036854775807; expected a total count of at most 9223372036854775807`
+
 `opentsx.stats.stats_to_frame(records)` turns decoded records into a pandas frame with quantile columns.
 
 ## Tests
 
 * Sketch: accuracy, exact merge, canonical bytes, collapsing, the test vector, refused trailing and truncated bytes,
   refused varints, refused bin indexes outside the int range, refused bins out of ascending order, a refused total
-  count above the long range, the refusal of a corrupt sketch by `StatsAccumulator` and `DataQuality`, and the same
+  count above the long range in `fromBytes`, `add` and `merge`, the refusal of a corrupt sketch by `StatsAccumulator` and `DataQuality`, and the same
   refusal texts for the same bytes in `QuantileSketchTest` and `python-package/tests/test_stats.py`.
 * Engine: windows equal episode summaries, gaps, duplicates, late values, observations, a window without values,
   refused settings, and checkpoint restore with output identical to an uninterrupted run.
@@ -226,7 +232,9 @@ with `ValueError`:
     during a run are counted and reported; a `--once` run ends when retention deletes past the end offset it saw at
     the start, both when the next record it reads lies at or past that offset and when no record is left, also while
     another partition keeps receiving records; a continuous run without partitions is refused with the input topics;
-    a refused read is waited out on a test clock; checkpoint errors name the file.
+    a refused read is waited out on a test clock; a `--once` run that has less than 1 ms left for the log start
+    check, or gets no answer to it in the time left, ends with `timed out computing statistics`; checkpoint errors
+    name the file.
   * `StatsProcessorAppTest`: unknown options, missing values, malformed values and settings the engine refuses exit
     with 2 and one line; `--help` and `--version` print on stdout; a runtime failure prints its cause chain and exits
     with 1; a continuous run without input topics exits with 2 and names them; the start line names every value and

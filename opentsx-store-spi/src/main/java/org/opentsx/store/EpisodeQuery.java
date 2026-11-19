@@ -10,7 +10,8 @@ public record EpisodeQuery(SeriesSelector selector, long fromMicros, long toMicr
 
     public EpisodeQuery {
         if (fromMicros >= toMicros) {
-            throw new IllegalArgumentException("fromMicros must be before toMicros");
+            throw new IllegalArgumentException("fromMicros: " + fromMicros + " is not before toMicros " + toMicros
+                    + "; expected fromMicros < toMicros");
         }
         if (limit <= 0) {
             throw new IllegalArgumentException("limit: " + limit + " is out of range; expected a whole number above 0");

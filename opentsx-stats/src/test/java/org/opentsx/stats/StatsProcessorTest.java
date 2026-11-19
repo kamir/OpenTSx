@@ -2,6 +2,7 @@ package org.opentsx.stats;
 
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.MockConsumer;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
@@ -11,6 +12,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
@@ -507,6 +509,72 @@ class StatsProcessorTest {
         assertEquals(2, asked.size(), "once at the start, once after the empty poll: " + asked);
         assertTrue(asked.get(1).compareTo(Duration.ofSeconds(5)) < 0,
                 "the check inside the run gets the time left, not the whole run timeout: " + asked.get(1));
+    }
+
+    /** Answers the log start before the first poll only; every poll returns nothing and moves the clock by pollNanos. */
+    static final class Stalled extends MockConsumer<byte[], byte[]> {
+        private final long pollNanos;
+        private boolean polled;
+        long nanos;
+
+        Stalled(TopicLayout layout, long pollNanos) {
+            super(OffsetResetStrategy.EARLIEST);
+            this.pollNanos = pollNanos;
+            Node node = new Node(0, "localhost", 9092);
+            updatePartitions(layout.episodes(), List.of(new PartitionInfo(layout.episodes(), 0, node, new Node[]{node}, new Node[]{node})));
+            TopicPartition tp = new TopicPartition(layout.episodes(), 0);
+            updateBeginningOffsets(Map.of(tp, 0L));
+            updateEndOffsets(Map.of(tp, 3L));
+        }
+
+        @Override
+        public synchronized ConsumerRecords<byte[], byte[]> poll(Duration timeout) {
+            polled = true;
+            nanos += pollNanos;
+            return ConsumerRecords.empty();
+        }
+
+        @Override
+        public synchronized Map<TopicPartition, Long> beginningOffsets(Collection<TopicPartition> partitions, Duration timeout) {
+            if (!polled) {
+                return super.beginningOffsets(partitions, timeout);
+            }
+            if (timeout.toMillis() == 0) {
+                return Map.of();
+            }
+            nanos += timeout.toNanos();
+            throw new TimeoutException("Failed to get offsets by times in " + timeout.toMillis() + "ms");
+        }
+    }
+
+    private static StatsProcessor.RunResult runOn(Stalled c, TopicLayout layout) {
+        Duration timeout = Duration.ofSeconds(30);
+        StatsProcessor p = new StatsProcessor(c, new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()),
+                layout, new StatsEngine(StatsEngine.Config.defaults()), null, false);
+        p.patience(new Patience(timeout, Duration.ofSeconds(2), () -> c.nanos, millis -> { }));
+        return p.runUntilCaughtUp(timeout, true, () -> c.nanos);
+    }
+
+    @Test
+    void lessThanAMillisecondLeftAfterAnEmptyPollIsATimeout() {
+        TopicLayout layout = new TopicLayout("t" + UUID.randomUUID().toString().substring(0, 8));
+        Stalled c = new Stalled(layout, Duration.ofSeconds(30).toNanos() - 500_000);
+
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> runOn(c, layout));
+
+        assertEquals("timed out computing statistics", e.getMessage());
+    }
+
+    @Test
+    void aLogStartRequestThatGetsNoAnswerInTheTimeLeftIsATimeout() {
+        TopicLayout layout = new TopicLayout("t" + UUID.randomUUID().toString().substring(0, 8));
+        Stalled c = new Stalled(layout, Duration.ofMillis(500).toNanos());
+
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> runOn(c, layout));
+
+        assertEquals("timed out computing statistics", e.getMessage());
+        assertInstanceOf(TimeoutException.class, e.getCause());
+        assertEquals("Failed to get offsets by times in 29500ms", e.getCause().getMessage());
     }
 
     /** {@code tp:offset} for every partition, sorted by topic and partition, as the processor logs positions. */
