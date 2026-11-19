@@ -12,8 +12,9 @@ import org.opentsx.twin.Params;
 import org.opentsx.twin.Phase;
 import org.opentsx.twin.PortSpec;
 import org.opentsx.twin.Value;
+import org.opentsx.twin.demo.TwinCli;
 
-import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,6 +30,8 @@ import java.util.Map;
  * checked-in files under {@code twin/avro/} are generated from the atom catalog and kept in sync by a test.
  *
  * <pre>bin/opentsx twin-schemas [--out dir]</pre>
+ * {@code bin/opentsx twin-schemas --help} lists the keys. Exit codes: 0 success, 1 runtime failure, 2 usage or
+ * configuration error.
  */
 public final class AtomSchemas {
 
@@ -36,6 +39,8 @@ public final class AtomSchemas {
     public static final String ATOM_NAMESPACE = NAMESPACE + ".atoms";
     /** Where the generated schemas are checked in (classpath and source tree). */
     public static final String RESOURCE_DIR = "twin/avro";
+    static final String COMMAND = "twin-schemas";
+    static final String OUT = "opentsx.twin.schemas.out";
 
     private AtomSchemas() {
     }
@@ -229,21 +234,24 @@ public final class AtomSchemas {
         return out;
     }
 
-    public static void main(String[] args) throws IOException {
-        Path dir = Path.of("opentsx-twin/src/main/resources/" + RESOURCE_DIR);
-        for (int i = 0; i < args.length; i++) {
-            if (args[i].equals("--out")) {
-                dir = Path.of(args[++i]);
-            } else {
-                throw new IllegalArgumentException("unknown option " + args[i]);
-            }
-        }
-        for (Map.Entry<String, String> e : files(AtomCatalog.standard()).entrySet()) {
-            Path p = dir.resolve(e.getKey());
-            Files.createDirectories(p.getParent());
-            Files.writeString(p, e.getValue(), StandardCharsets.UTF_8);
-        }
-        System.out.println("wrote " + files(AtomCatalog.standard()).size() + " schemas to " + dir);
+    public static void main(String[] args) {
+        System.exit(run(List.of(args), System.getenv(), System.out, System.err));
+    }
+
+    /** {@code args} without the command word, as bin/opentsx passes them. */
+    static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err) {
+        return TwinCli.run(COMMAND, args, env, out, err, (conf, positional) -> {
+            Path dir = Path.of(conf.get(OUT));
+            return o -> {
+                Map<String, String> files = files(AtomCatalog.standard());
+                for (Map.Entry<String, String> e : files.entrySet()) {
+                    Path p = dir.resolve(e.getKey());
+                    Files.createDirectories(p.getParent());
+                    Files.writeString(p, e.getValue(), StandardCharsets.UTF_8);
+                }
+                o.println("wrote " + files.size() + " schemas to " + dir);
+            };
+        });
     }
 
     private static String check(String name) {

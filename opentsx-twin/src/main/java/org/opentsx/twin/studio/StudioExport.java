@@ -13,8 +13,10 @@ import org.opentsx.twin.Snapshot;
 import org.opentsx.twin.TwinEvent;
 import org.opentsx.twin.TwinPlan;
 import org.opentsx.twin.TwinRunner;
+import org.opentsx.twin.demo.TwinCli;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -26,22 +28,29 @@ import java.util.Map;
  * Topics Studio ({@code docs/prototypes}). Long runs are downsampled to at most {@link #MAX_POINTS} points per series
  * (bucket means). The output is deterministic.
  * <p>
- * Usage: {@code java -cp "$(bin/opentsx classpath opentsx-twin)" org.opentsx.twin.studio.StudioExport out.json}
+ * Usage: {@code java -cp "$(bin/opentsx classpath opentsx-twin)" org.opentsx.twin.studio.StudioExport out.json}, in the
+ * image {@code opentsx studio-export out.json}; {@code --help} prints the usage. Exit codes: 0 success, 1 runtime
+ * failure, 2 usage or configuration error.
  */
 public final class StudioExport {
 
     public static final int MAX_POINTS = 2000;
     private static final int MAX_EVENTS = 300;
+    static final String COMMAND = "studio-export";
 
     private StudioExport() {
     }
 
-    public static void main(String[] args) throws IOException {
-        if (args.length != 1) {
-            System.err.println("usage: StudioExport out.json");
-            System.exit(1);
-        }
-        write(Scenarios.all(), Path.of(args[0]));
+    public static void main(String[] args) {
+        System.exit(run(List.of(args), System.getenv(), System.out, System.err));
+    }
+
+    /** {@code args} without the command word, as bin/opentsx passes them. */
+    static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err) {
+        return TwinCli.run(COMMAND, args, env, out, err, (conf, positional) -> {
+            Path file = Path.of(positional.get(0));
+            return o -> write(Scenarios.all(), file);
+        });
     }
 
     public static void write(List<StudioScenario> scenarios, Path out) throws IOException {

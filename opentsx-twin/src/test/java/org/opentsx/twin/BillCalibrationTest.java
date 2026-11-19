@@ -1,6 +1,7 @@
 package org.opentsx.twin;
 
 import org.junit.jupiter.api.Test;
+import org.opentsx.twin.boat.Calibration;
 import org.opentsx.twin.demo.HouseDemo;
 import org.opentsx.twin.house.BillCalibration;
 import org.opentsx.twin.house.BillCalibration.Bill;
@@ -10,9 +11,11 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -94,5 +97,18 @@ class BillCalibrationTest {
         assertTrue(r.warnings().stream().anyMatch(w -> w.contains("not identifiable")), r.warnings().toString());
         assertTrue(r.warnings().stream().anyMatch(w -> w.contains("delivery used as consumption")));
         assertTrue(r.periods().get(1).proxy());
+    }
+
+    /** The house and the boat calibration solve with one solver, which gives NaN for a singular system. */
+    @Test
+    void bothCalibrationsSolveWithOneSolverThatGivesNaNForASingularSystem() {
+        double[][] singular = {{1, 2}, {2, 4}};
+        double[] x = Gauss.solve(singular, new double[]{1, 2});
+        assertTrue(Double.isNaN(x[0]) && Double.isNaN(x[1]), Arrays.toString(x));
+        assertEquals(List.of(1.0, 2.0, 2.0, 4.0), List.of(singular[0][0], singular[0][1], singular[1][0], singular[1][1]));
+        assertArrayEquals(new double[]{1, 1}, Gauss.solve(new double[][]{{2, 1}, {1, 3}}, new double[]{3, 4}), 1e-12);
+        for (Class<?> c : List.of(BillCalibration.class, Calibration.class)) {
+            assertFalse(Arrays.stream(c.getDeclaredMethods()).anyMatch(m -> m.getName().equals("solve")), c.getName());
+        }
     }
 }

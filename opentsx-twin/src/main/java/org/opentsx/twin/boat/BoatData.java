@@ -5,11 +5,7 @@ import org.opentsx.twin.Origin;
 import org.opentsx.twin.SeriesInputs;
 import org.opentsx.twin.TwinPlan;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -21,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 /**
  * Real operating data of a boat from a CSV file (power-station app export, Starlink statistics, USB-C meter, logbook),
@@ -83,17 +80,12 @@ public record BoatData(TwinPlan plan, SeriesInputs inputs, double[] socMeas, Map
     private record Column(int index, String port, Origin origin, double factor, Agg agg) {
     }
 
-    public static BoatData load(Path csv, TwinPlan template, ZoneId zone) {
-        try {
-            return parse(Files.readAllLines(csv, StandardCharsets.UTF_8), template, zone);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
     public static BoatData parse(List<String> lines, TwinPlan template, ZoneId zone) {
-        List<String> content = lines.stream().map(String::strip)
-                .filter(l -> !l.isEmpty() && !l.startsWith("#")).toList();
+        List<Integer> numbers = IntStream.range(0, lines.size()).filter(i -> {
+            String l = lines.get(i).strip();
+            return !l.isEmpty() && !l.startsWith("#");
+        }).mapToObj(i -> i + 1).toList();
+        List<String> content = numbers.stream().map(n -> lines.get(n - 1).strip()).toList();
         if (content.isEmpty()) {
             throw new IllegalArgumentException("no header row");
         }
@@ -144,13 +136,22 @@ public record BoatData(TwinPlan plan, SeriesInputs inputs, double[] socMeas, Map
 
         List<long[]> times = new ArrayList<>();
         List<String[]> rows = new ArrayList<>();
+        List<Integer> rowLines = new ArrayList<>();
         for (int r = 1; r < content.size(); r++) {
             String[] f = content.get(r).split(java.util.regex.Pattern.quote(String.valueOf(sep)), header.length);
             if (f.length <= timeCol || f[timeCol].isBlank()) {
                 continue;
             }
-            times.add(new long[]{time(f[timeCol].trim(), zone)});
+            String t = f[timeCol].trim();
+            try {
+                times.add(new long[]{time(t, zone)});
+            } catch (DateTimeException e) {
+                throw new IllegalArgumentException("line " + numbers.get(r) + ": " + header[timeCol].trim() + " \"" + t
+                        + "\" is not a time; expected 2026-07-04T10:00+02:00, 2026-07-04T08:00:00Z or 2026-07-04 10:00",
+                        e);
+            }
             rows.add(f);
+            rowLines.add(numbers.get(r));
         }
         if (rows.isEmpty()) {
             throw new IllegalArgumentException("CSV has no data rows");
@@ -174,7 +175,12 @@ public record BoatData(TwinPlan plan, SeriesInputs inputs, double[] socMeas, Map
             double[] lastV = new double[n];
             for (int r = 0; r < rows.size(); r++) {
                 String[] f = rows.get(r);
-                double v = c.index() < f.length ? number(f[c.index()], sep, c.port()) : Double.NaN;
+                double v;
+                try {
+                    v = c.index() < f.length ? number(f[c.index()], sep, c.port()) : Double.NaN;
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException("line " + rowLines.get(r) + ": " + e.getMessage(), e);
+                }
                 if (Double.isNaN(v)) {
                     continue;
                 }

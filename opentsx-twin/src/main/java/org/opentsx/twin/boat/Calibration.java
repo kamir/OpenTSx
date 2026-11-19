@@ -1,5 +1,6 @@
 package org.opentsx.twin.boat;
 
+import org.opentsx.twin.Gauss;
 import org.opentsx.twin.Inputs;
 import org.opentsx.twin.Intervention;
 import org.opentsx.twin.Mode;
@@ -185,11 +186,11 @@ public final class Calibration {
                     m[a] = jtj[a].clone();
                     m[a][a] += lambda * Math.max(jtj[a][a], 1e-12);
                 }
-                double[] delta = solve(m, negate(jtr));
+                double[] delta = Gauss.solve(m, negate(jtr));
                 double[] y = new double[n];
                 boolean moved = false;
                 for (int i = 0; i < n; i++) {
-                    y[i] = Math.max(lo[i], Math.min(hi[i], x[i] + delta[i]));
+                    y[i] = Math.max(lo[i], Math.min(hi[i], x[i] + (Double.isNaN(delta[i]) ? 0 : delta[i])));
                     moved |= Math.abs(y[i] - x[i]) > (hi[i] - lo[i]) * 1e-9;
                 }
                 if (!moved) {
@@ -248,43 +249,5 @@ public final class Calibration {
             o[i] = -v[i];
         }
         return o;
-    }
-
-    /** Gaussian elimination with partial pivoting (small systems). */
-    private static double[] solve(double[][] a, double[] b) {
-        int n = b.length;
-        for (int c = 0; c < n; c++) {
-            int p = c;
-            for (int r = c + 1; r < n; r++) {
-                if (Math.abs(a[r][c]) > Math.abs(a[p][c])) {
-                    p = r;
-                }
-            }
-            double[] t = a[c];
-            a[c] = a[p];
-            a[p] = t;
-            double tb = b[c];
-            b[c] = b[p];
-            b[p] = tb;
-            if (Math.abs(a[c][c]) < 1e-300) {
-                continue;
-            }
-            for (int r = c + 1; r < n; r++) {
-                double f = a[r][c] / a[c][c];
-                for (int k = c; k < n; k++) {
-                    a[r][k] -= f * a[c][k];
-                }
-                b[r] -= f * b[c];
-            }
-        }
-        double[] x = new double[n];
-        for (int c = n - 1; c >= 0; c--) {
-            double s = b[c];
-            for (int k = c + 1; k < n; k++) {
-                s -= a[c][k] * x[k];
-            }
-            x[c] = Math.abs(a[c][c]) < 1e-300 ? 0 : s / a[c][c];
-        }
-        return x;
     }
 }

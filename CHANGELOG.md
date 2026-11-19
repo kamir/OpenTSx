@@ -126,6 +126,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   The k3s Job `metadata-publish` passes `--profiles always`.
 - `retrieval-server --bind <address>` chooses the address the server listens on; without it the server listens on
   every interface.
+- `bin/opentsx studio-export <out.json>` writes the scenario data of the Smart Topics Studio, as the image already
+  did. `deploy/docker/test-launchers.sh` checks that the launcher starts `org.opentsx.twin.studio.StudioExport`.
 
 ### Changed
 
@@ -303,6 +305,20 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The operations chapter states that the retrieval server needs a run token in `OPENTSX_DAG_RUN_TOKEN` or
   `OPENTSX_RETRIEVAL_DAG_RUN_TOKEN` for `--dag-runs true`, that `--bind` chooses the address and that
   `--open-dag-runs` listens on 127.0.0.1 only.
+- `twin`, `house`, `boat`, `twin-coupling`, `twin-schemas` and `studio-export` load their keys with
+  `OpenTsxConf.load`. `--help` prints the keys on stdout with exit 0, `--version` prints the version, and `--conf`,
+  `--properties-file`, `$OPENTSX_CONF_DIR` and the `OPENTSX_` variables set the keys. Every command exits with 0, 1 or
+  2: a usage or configuration error is one line such as `opentsx: --hdd-ref: "abc" is not a double; expected a finite
+  decimal number such as 0.01 or 1e-3`, a runtime failure one line with its causes, and `--conf
+  opentsx.log.level=debug` adds the stack trace.
+- A missing or invalid twin plan, bills file, temperatures file or boat data file is a usage error that names the file
+  (exit 2), and a refused row also names its line in the file, comment lines included; a plan that exists but cannot
+  be read exits with 1. `boat --zone` with an unknown zone exits with 2 instead of a `ZoneRulesException` trace.
+- The k3s Jobs `twin`, `house`, `boat` and `studio-export` set `enableServiceLinks: false`. Kubernetes derives
+  `OPENTSX_RETRIEVAL_PORT=tcp://<ip>:8080` from the Service `opentsx-retrieval`, and the configuration loader accepts
+  only an int for that variable.
+- A refused plan of `twin`, `house` or `boat` names the file and, when the rule does not say what is allowed, the
+  example plan of the command: `h2-chain.yaml`, `haus-erzgebirge.yaml` or `boot-etap22.yaml`.
 
 ### Removed
 
@@ -342,6 +358,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The SaaS backend documents and `local-test.sh` no longer describe or call the removed routes for organizations,
   teams, invitations, node types, billing and subscription plans, `GET /api/v1/flows/demo` and `POST
   /api/v1/flows/{id}/execute`.
+- The unused file readers `BillCalibration.read(Path)`, `BillCalibration.dailyTemperatures(Path, String, double)` and
+  `BoatData.load(Path, TwinPlan, ZoneId)`; the twin commands read these files themselves and name the file in every
+  refusal.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -680,6 +699,19 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   code 1.
 - `VectorProcessor.dagName` reports `the DAG is not valid YAML: <parser message>` and keeps the parser exception as
   the cause.
+- `twin-coupling --scenario nosuch` exits with 2 and lists `h2-chain`, `haus` and `boot` instead of printing an empty
+  table with exit 0.
+- `studio-export --help` and `SimulatedLogs --help` print the usage instead of writing a file named `--help`;
+  `SimulatedLogs` refuses a wrong argument or seed with exit 2.
+- `house` refuses a plan without the house atoms before it prints or reads anything, naming the plan file and the
+  missing atom types; it reported the temperatures file as the fault or failed after the title with exit 1.
+- A twin plan with fewer than 1 step, a bills file without rows, and a boat data row with a time that cannot be parsed
+  are refused with exit 2 and a line that names the file; they failed with `Illegal Capacity: -5`, `no bills` or `Text
+  'x' could not be parsed` and exit 1.
+- A daily temperatures CSV with a row that has no temperature or a bad date names the line, for example `line 2: no
+  temperature; expected datum,t_mittel_c`, instead of `Index 1 out of bounds for length 1`.
+- The house and the boat calibration share one linear solver, `org.opentsx.twin.Gauss`, which returns NaN for a
+  singular system; the boat calibration skipped a singular pivot and returned a number.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

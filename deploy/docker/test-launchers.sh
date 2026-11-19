@@ -137,7 +137,7 @@ offline() {
   mkdir -p "$root/bin" "$root/conf" "$(dirname "$api")" "$(dirname "$simple")"
   touch "$api" "$simple"
   cp "$ROOT/bin/opentsx" "$root/bin/opentsx"
-  for m in opentsx-stats opentsx-flink-core; do
+  for m in opentsx-stats opentsx-flink-core opentsx-twin; do
     mkdir -p "$root/$m/target/classes"
     echo '<project/>' > "$root/$m/pom.xml"
   done
@@ -201,6 +201,16 @@ offline() {
     printf '%s\n' "$out" | sed 's/^/    /'; sed 's/^/    mvn: /' "$work/log.mvn" 2>/dev/null; sed 's/^/    java: /' "$work/log.java" 2>/dev/null
   else
     ok "bin/opentsx stats: runtime scope, slf4j-simple of the slf4j-api version, then conf/"
+  fi
+
+  rm -f "$work/log".*
+  rc=0; out="$(PATH="$work/fake:$PATH" bash "$root/bin/opentsx" studio-export out.json 2>&1)" || rc=$?
+  if [[ $rc -ne 0 || "$(cat "$work/log.java" 2>/dev/null)" != "$(printf '%s\n' \
+        -cp "$root/opentsx-twin/target/classes:$api:$simple:$root/conf" org.opentsx.twin.studio.StudioExport out.json)" ]]; then
+    fail "bin/opentsx studio-export: exit $rc"
+    printf '%s\n' "$out" | head -3 | sed 's/^/    /'; sed 's/^/    java: /' "$work/log.java" 2>/dev/null || true
+  else
+    ok "bin/opentsx studio-export: runs org.opentsx.twin.studio.StudioExport"
   fi
 
   rm -f "$work/log".*

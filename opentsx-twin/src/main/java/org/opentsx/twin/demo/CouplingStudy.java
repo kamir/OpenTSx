@@ -1,5 +1,6 @@
 package org.opentsx.twin.demo;
 
+import org.opentsx.conf.OpenTsxConfException;
 import org.opentsx.twin.LooseRunner;
 import org.opentsx.twin.LooseRunner.Coupling;
 import org.opentsx.twin.Mode;
@@ -8,7 +9,6 @@ import org.opentsx.twin.TwinRunner;
 import org.opentsx.twin.studio.Scenarios;
 import org.opentsx.twin.studio.StudioScenario;
 
-import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -26,6 +26,8 @@ import java.util.Map;
  * the scenario's compare series and KPIs from variant T, and how many events (trips, alarms) differ.
  *
  * <pre>bin/opentsx twin-coupling [--csv out.csv] [--scenario id]</pre>
+ * {@code bin/opentsx twin-coupling --help} lists the keys. Exit codes: 0 success, 1 runtime failure, 2 usage or
+ * configuration error.
  */
 public final class CouplingStudy {
 
@@ -35,29 +37,39 @@ public final class CouplingStudy {
                       String worstKpi, int eventDelta) {
     }
 
+    static final String COMMAND = "twin-coupling";
+    static final String CSV = "opentsx.twin.coupling.csv";
+    static final String SCENARIO = "opentsx.twin.scenario";
+
     private CouplingStudy() {
     }
 
-    public static void main(String[] args) throws IOException {
-        Path csv = null;
-        String only = null;
-        for (int i = 0; i < args.length; i++) {
-            switch (args[i]) {
-                case "--csv" -> csv = Path.of(args[++i]);
-                case "--scenario" -> only = args[++i];
-                default -> throw new IllegalArgumentException("unknown option " + args[i]);
+    public static void main(String[] args) {
+        System.exit(run(List.of(args), System.getenv(), System.out, System.err));
+    }
+
+    /** {@code args} without the command word, as bin/opentsx passes them. */
+    static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err) {
+        return TwinCli.run(COMMAND, args, env, out, err, (conf, positional) -> {
+            Path csv = conf.getOption(CSV).map(Path::of).orElse(null);
+            List<StudioScenario> all = Scenarios.all();
+            String only = conf.getOption(SCENARIO).orElse(null);
+            List<StudioScenario> studied = only == null ? all : all.stream().filter(s -> s.id().equals(only)).toList();
+            if (studied.isEmpty()) {
+                throw new OpenTsxConfException(SCENARIO, "\"" + only + "\" is not a scenario",
+                        "expected one of " + String.join(", ", all.stream().map(StudioScenario::id).toList()));
             }
-        }
-        List<Row> rows = new ArrayList<>();
-        for (StudioScenario s : Scenarios.all()) {
-            if (only == null || only.equals(s.id())) {
-                rows.addAll(study(s));
-            }
-        }
-        print(rows, System.out);
-        if (csv != null) {
-            Files.writeString(csv, csv(rows), StandardCharsets.UTF_8);
-        }
+            return o -> {
+                List<Row> rows = new ArrayList<>();
+                for (StudioScenario s : studied) {
+                    rows.addAll(study(s));
+                }
+                print(rows, o);
+                if (csv != null) {
+                    Files.writeString(csv, csv(rows), StandardCharsets.UTF_8);
+                }
+            };
+        });
     }
 
     /** Staleness bounds and latencies of the grid; {@code ASYNC} last. */

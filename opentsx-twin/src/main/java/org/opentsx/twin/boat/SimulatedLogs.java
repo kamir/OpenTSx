@@ -8,7 +8,7 @@ import org.opentsx.twin.Twin;
 import org.opentsx.twin.TwinPlan;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,11 +34,13 @@ import java.util.Random;
  * as hourly means, no app data while nobody is on board, a few nights and short spells without Bluetooth connection.
  * Everything is deterministic for a given seed ({@link java.util.Random} is specified to be reproducible).
  * <p>
- * Usage: {@code java -cp ... org.opentsx.twin.boat.SimulatedLogs <out.csv> [seed]}
+ * Usage: {@code java -cp ... org.opentsx.twin.boat.SimulatedLogs <out.csv> [seed]}; {@code --help} prints the usage.
+ * Exit codes: 0 success, 1 the file cannot be written, 2 usage error.
  */
 public final class SimulatedLogs {
 
     public static final long SEED = 20260704L;
+    static final String USAGE = "usage: SimulatedLogs <out.csv> [seed]";
     /** U away, H harbour, S sail to a harbour, A sail to an anchorage, X stay at anchor (from Sat 2026-07-04). */
     public static final String TRIP = "UHAXSHSAXXSHSU";
     public static final double TRUE_DERATE = 0.62;
@@ -212,17 +214,42 @@ public final class SimulatedLogs {
     }
 
     public static void main(String[] args) {
-        if (args.length < 1) {
-            System.err.println("usage: SimulatedLogs <out.csv> [seed]");
-            System.exit(1);
+        System.exit(run(List.of(args), System.out, System.err));
+    }
+
+    /** Exit codes: 0 success, 1 the file cannot be written, 2 usage error. */
+    static int run(List<String> args, PrintStream out, PrintStream err) {
+        if (args.equals(List.of("--help")) || args.equals(List.of("-h"))) {
+            out.print(USAGE + "\nWrites the SIMULATED boat logs to <out.csv>; the seed defaults to " + SEED + ".\n");
+            return 0;
         }
-        long seed = args.length > 1 ? Long.parseLong(args[1]) : SEED;
+        String problem = null;
+        if (args.isEmpty()) {
+            problem = "SimulatedLogs: missing argument <out.csv>";
+        } else if (args.size() > 2) {
+            problem = args.get(2) + ": unexpected argument";
+        } else if (args.get(0).startsWith("-")) {
+            problem = args.get(0) + ": unknown option";
+        }
+        long seed = SEED;
+        if (problem == null && args.size() == 2) {
+            try {
+                seed = Long.parseLong(args.get(1));
+            } catch (NumberFormatException e) {
+                problem = "seed: \"" + args.get(1) + "\" is not a long";
+            }
+        }
+        if (problem != null) {
+            err.print("opentsx: " + problem + "; expected " + USAGE.substring("usage: ".length()) + "\n");
+            return 2;
+        }
         try {
-            Files.write(Path.of(args[0]), csv(TwinPlan.resource("twin/boot-etap22.yaml"), seed),
-                    StandardCharsets.UTF_8);
+            Files.write(Path.of(args.get(0)), csv(TwinPlan.resource("twin/boot-etap22.yaml"), seed), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            err.print("opentsx: " + args.get(0) + ": cannot write the logs; caused by " + e + "\n");
+            return 1;
         }
-        System.out.println(String.format(Locale.ROOT, "wrote %s (seed %d)", args[0], seed));
+        out.println(String.format(Locale.ROOT, "wrote %s (seed %d)", args.get(0), seed));
+        return 0;
     }
 }

@@ -1,5 +1,6 @@
 package org.opentsx.twin.demo;
 
+import org.opentsx.conf.OpenTsxConfException;
 import org.opentsx.model.Micros;
 import org.opentsx.twin.Intervention;
 import org.opentsx.twin.Mode;
@@ -17,6 +18,7 @@ import org.opentsx.twin.boat.SimulatedLogs;
 
 import java.io.PrintStream;
 import java.nio.file.Path;
+import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -41,7 +43,9 @@ import java.util.Map;
  * For the Studio and other front ends the scenario is exposed as data: {@link #plan()}, {@link #observed()},
  * {@link #reference()}, {@link #alternatives()}, {@link #KEY_SERIES}, {@link #KEY_KPIS} and {@link #kpis(RunResult)}.
  * <p>
- * Usage: {@code bin/opentsx boat [--plan file.yaml] [--data file.csv [--zone Europe/Berlin] [--calibrate] | --simulated]}
+ * Usage: {@code bin/opentsx boat [--plan file.yaml] [--data file.csv [--zone Europe/Berlin] [--calibrate] | --simulated]};
+ * {@code bin/opentsx boat --help} lists the keys. Exit codes: 0 success, 1 runtime failure, 2 usage or configuration
+ * error.
  */
 public final class BoatDemo {
 
@@ -53,6 +57,10 @@ public final class BoatDemo {
     public static final String TRIP = "HAXSHSAXXSHSAS";
     /** The same two weeks as weekend use: sail out Saturday, back Sunday, boat unattended during the week. */
     public static final String WEEKENDS = "ASUUUUUASUUUUU";
+    static final String COMMAND = "boat";
+    static final String DATA = "opentsx.boat.data";
+    static final String ZONE = "opentsx.boat.zone";
+    static final String CALIBRATE = "opentsx.boat.calibrate";
 
     /** Output series worth showing first, {@code atom.port}. */
     public static final List<String> KEY_SERIES = List.of("station.soc", "station.p_unmet_w", "solar.p_avail_w",
@@ -176,45 +184,57 @@ public final class BoatDemo {
     }
 
     public static void main(String[] args) {
-        TwinPlan plan = plan();
-        Path data = null;
-        boolean calibrate = false;
-        boolean simulated = false;
-        ZoneId zone = ZoneId.of("Europe/Berlin");
-        for (int i = 0; i < args.length; i++) {
-            switch (args[i]) {
-                case "--plan" -> plan = TwinPlan.load(Path.of(arg(args, ++i)));
-                case "--data" -> data = Path.of(arg(args, ++i));
-                case "--zone" -> zone = ZoneId.of(arg(args, ++i));
-                case "--calibrate" -> calibrate = true;
-                case "--simulated" -> simulated = true;
-                default -> usage();
+        System.exit(run(List.of(args), System.getenv(), System.out, System.err));
+    }
+
+    /** {@code args} without the command word, as bin/opentsx passes them. */
+    static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err) {
+        return TwinCli.run(COMMAND, args, env, out, err, (conf, positional) -> {
+            TwinPlan plan = TwinCli.plan(conf, "twin/boot-etap22.yaml", BoatDemo::plan);
+            String zoneId = conf.get(ZONE);
+            ZoneId zone;
+            try {
+                zone = ZoneId.of(zoneId);
+            } catch (DateTimeException e) {
+                throw new OpenTsxConfException(ZONE, "\"" + zoneId + "\" is not a time zone",
+                        "give a region id such as Europe/Berlin or an offset such as +02:00");
             }
-        }
-        if (calibrate && data == null || simulated && data != null) {
-            usage();
-        }
-        PrintStream out = System.out;
-        if (simulated) {
-            out.println("SIMULATED operating data (" + SimulatedLogs.RESOURCE + "), not measurements: import + calibration demo.");
-            BoatData d = BoatData.parse(simulatedLogs(), plan, SimulatedLogs.ZONE);
-            Calibration.Fit fit = real(out, plan, d, true);
-            out.println();
-            out.println("3. Hidden true parameters of the simulation vs. calibrated");
-            Map<String, Double> truth = SimulatedLogs.truth();
-            fit.values().forEach((k, v) -> out.printf(Locale.ROOT, "     %-16s true %.3f  calibrated %.3f  (%+.1f %%)%n",
-                    k, truth.get(k), v, 100 * (v / truth.get(k) - 1)));
-            Map<String, Double> t = kpis(SimulatedLogs.truthRun(plan));
-            Map<String, Double> c = kpis(new Twin(d.plan()).shadow(d.inputs(), fit.interventions()));
-            out.println("   KPIs of the hidden true run (5 min) vs. the calibrated twin on the logs (15 min):");
-            for (String k : List.of("unmet_wh", "unmet_h", "soc_min_pct", "solar_used_wh", "shore_wh", "load_wh_per_day",
-                    "starlink_wh_per_day")) {
-                out.printf(Locale.ROOT, "     %-22s true %9.1f  twin %9.1f%n", k, t.get(k), c.get(k));
+            boolean calibrate = conf.getBoolean(CALIBRATE);
+            boolean simulated = conf.getBoolean(TwinCli.SIMULATED);
+            Path data = conf.getOption(DATA).map(Path::of).orElse(null);
+            if (calibrate && data == null) {
+                throw new OpenTsxConfException(CALIBRATE, "needs " + DATA, "give --data <file.csv> with --calibrate");
             }
-        } else if (data == null) {
-            synthetic(out, plan);
-        } else {
-            real(out, plan, BoatData.load(data, plan, zone), calibrate);
+            if (simulated && data != null) {
+                throw new OpenTsxConfException(TwinCli.SIMULATED, "cannot be combined with " + DATA,
+                        "give --data <file.csv> or --simulated, not both");
+            }
+            if (simulated) {
+                return o -> simulated(o, plan);
+            }
+            if (data == null) {
+                return o -> synthetic(o, plan);
+            }
+            BoatData d = TwinCli.csv(data, "operating data file", lines -> BoatData.parse(lines, plan, zone));
+            return o -> real(o, plan, d, calibrate);
+        });
+    }
+
+    private static void simulated(PrintStream out, TwinPlan plan) {
+        out.println("SIMULATED operating data (" + SimulatedLogs.RESOURCE + "), not measurements: import + calibration demo.");
+        BoatData d = BoatData.parse(simulatedLogs(), plan, SimulatedLogs.ZONE);
+        Calibration.Fit fit = real(out, plan, d, true);
+        out.println();
+        out.println("3. Hidden true parameters of the simulation vs. calibrated");
+        Map<String, Double> truth = SimulatedLogs.truth();
+        fit.values().forEach((k, v) -> out.printf(Locale.ROOT, "     %-16s true %.3f  calibrated %.3f  (%+.1f %%)%n",
+                k, truth.get(k), v, 100 * (v / truth.get(k) - 1)));
+        Map<String, Double> t = kpis(SimulatedLogs.truthRun(plan));
+        Map<String, Double> c = kpis(new Twin(d.plan()).shadow(d.inputs(), fit.interventions()));
+        out.println("   KPIs of the hidden true run (5 min) vs. the calibrated twin on the logs (15 min):");
+        for (String k : List.of("unmet_wh", "unmet_h", "soc_min_pct", "solar_used_wh", "shore_wh", "load_wh_per_day",
+                "starlink_wh_per_day")) {
+            out.printf(Locale.ROOT, "     %-22s true %9.1f  twin %9.1f%n", k, t.get(k), c.get(k));
         }
     }
 
@@ -408,17 +428,5 @@ public final class BoatDemo {
 
     private static Intervention set(Instant t, String atom, String control, double v) {
         return Intervention.set(t, atom, control, v, "what-if", control + "=" + v);
-    }
-
-    private static String arg(String[] args, int i) {
-        if (i >= args.length) {
-            usage();
-        }
-        return args[i];
-    }
-
-    private static void usage() {
-        System.err.println("usage: bin/opentsx boat [--plan file.yaml] [--data file.csv [--zone Europe/Berlin] [--calibrate] | --simulated]");
-        System.exit(1);
     }
 }

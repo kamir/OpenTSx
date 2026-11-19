@@ -27,6 +27,53 @@ The what-if reopens the valve at 02:00, which avoids the shutdown. The forecast 
 for the electrolyzer: following its schedule, and `pressure-aware`. The `pressure-aware` policy avoids the shutdown
 and the overpressure, at the cost of an earlier deviation from the schedule.
 
+## Set the options
+
+`twin`, `house`, `boat`, `twin-coupling`, `twin-schemas` and `studio-export` read their keys with
+`OpenTsxConf.load` (module `opentsx-conf`). `bin/opentsx <command> --help` lists the keys of a command with type,
+default, flag and environment variable. `--conf <key>=<value>`, `--properties-file <path>`, `$OPENTSX_CONF_DIR` and
+the `OPENTSX_` variables set them as well ([chapter 18](../docs/user-manual/18-configuration.md)).
+
+| Command | Options |
+|---------|---------|
+| `twin` | `--plan <file.yaml>` |
+| `house` | `--plan <file.yaml>`, `--calibrate <bills.csv>` with `--weather <temps.csv>`, `--simulated`, `--hdd-ref <Kd>` (default 4300) |
+| `boat` | `--plan <file.yaml>`, `--data <file.csv>` with `--zone <zone>` (default `Europe/Berlin`) and `--calibrate`, or `--simulated` |
+| `twin-coupling` | `--csv <file>`, `--scenario h2-chain\|haus\|boot` |
+| `twin-schemas` | `--out <dir>` (default `opentsx-twin/src/main/resources/twin/avro`, relative to the working directory) |
+| `studio-export` | `<out.json>`; the image `opentsx-tools` runs it as `opentsx studio-export <out.json>` |
+
+The exit code is 0 on success, 1 on a runtime failure and 2 on a usage or configuration error. A usage error is one
+line on stderr, and the command writes nothing:
+
+```text
+opentsx: --hdd-ref: "abc" is not a double; expected a finite decimal number such as 0.01 or 1e-3
+opentsx: --plna: unknown option of twin; did you mean --plan?
+opentsx: my-site.yaml: no such file; give an existing plan file
+opentsx: opentsx.boat.zone: "Europe/Berln" is not a time zone; give a region id such as Europe/Berlin or an offset such as +02:00
+opentsx: opentsx.boat.calibrate: needs opentsx.boat.data; give --data <file.csv> with --calibrate
+opentsx: opentsx.twin.scenario: "nosuch" is not a scenario; expected one of h2-chain, haus, boot
+opentsx: bad.csv: missing column zeitraum_von; expected [zeitraum_von, zeitraum_bis, strom_kwh, heizoel_liter, tank_start_liter, tank_ende_liter, holz_ster, kosten_eur, notiz]
+```
+
+A plan with an unknown field, a wire to an unknown atom or fewer than 1 step is a usage error as well, and the line
+names the file. So is a `house` plan without the house atoms, a bills file without rows, and a row that a bills,
+temperatures or boat data file cannot use; the line names the file and the row's line number in it, comment lines
+included:
+
+```text
+opentsx: h2.yaml: plan h2-chain has no atom of type building, weather, oil-boiler, oil-tank, wood-stove, wood-store, dhw, appliances, meter; expected a house plan such as opentsx-twin/src/main/resources/twin/haus-erzgebirge.yaml
+opentsx: boat.csv: line 4: zeit "x" is not a time; expected 2026-07-04T10:00+02:00, 2026-07-04T08:00:00Z or 2026-07-04 10:00
+```
+
+A file that exists but cannot be read is a runtime failure:
+
+```text
+opentsx: dir.yaml: cannot read the plan file; caused by java.io.IOException: Is a directory
+```
+
+`--conf opentsx.log.level=debug` adds the stack trace of a runtime failure on stderr.
+
 ## Concepts
 
 | Concept | Class | Notes |
@@ -67,7 +114,8 @@ feedback cycle of the plan (strongly connected component) in one processor.
   transport; a coupling that can change the result becomes part of the run id.
 * `LooseRun.stats()` reports simulated wall time (ticks), wait and down ticks per atom and the staleness used per
   wire.
-* `bin/opentsx twin-coupling [--csv out.csv] [--scenario id]` runs the RQ1 grid over all scenarios. Results and
+* `bin/opentsx twin-coupling [--csv out.csv] [--scenario id]` runs the RQ1 grid over all scenarios, or over the one
+  scenario `h2-chain`, `haus` or `boot` that `--scenario` names. Results and
   the design rule (cycles in one processor, BSP between processors) are in
   [07 §10a](../docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md).
 
@@ -168,7 +216,9 @@ Until real exports exist, [`twin/beispiel/boot-logs-simuliert.csv`](src/main/res
 holds SIMULATED logs ([README](src/main/resources/twin/beispiel/README-boot.md)): `SimulatedLogs` runs the model with
 hidden parameters (derate 0.62, Starlink ×1.25, laptops ×1.3), a cloudy spell and a day without Starlink, and writes
 a 5-minute app export with logbook, irradiance, whole-percent SoC, noise and gaps. `--simulated` calibrates on it
-and recovers the hidden values within about 1 %.
+and recovers the hidden values within about 1 %. `java -cp "$(bin/opentsx classpath opentsx-twin)"
+org.opentsx.twin.boat.SimulatedLogs <out.csv> [seed]` writes them again (seed 20260704 by default); `--help` prints
+the usage, and a wrong argument exits with 2.
 
 | Type | Phase | Main behaviour |
 |------|-------|----------------|
@@ -210,6 +260,11 @@ the levers act on measured values. For front ends, `BoatDemo` exposes `plan()`, 
   * the CSV format, including German spreadsheet exports
   * known parameters recovered from synthetic monthly bills
   * annual totals flagged as not identifiable
+  * one solver (`Gauss`) for the house and the boat calibration, NaN for a singular system
+* **`demo.TwinCliTest`**, **`studio.StudioExportTest`**, **`schema.AtomSchemasTest`**, **`boat.SimulatedLogsTest`**
+  * exit codes 0, 1 and 2 and the one-line messages of every command
+  * `--help` prints the keys or the usage and writes no file
+  * the k3s Jobs `twin`, `house`, `boat` and `studio-export` load their configuration in the namespace of the base
 * **`TwinPlanTest`**
   * rejected wirings, bindings, policies and interventions
   * feedback delay

@@ -39,6 +39,10 @@ public record TwinPlan(String twin, Instant start, Duration baseStep, int steps,
         if (baseStep.isZero() || baseStep.isNegative() || baseStep.toNanos() % 1000 != 0) {
             throw new IllegalArgumentException("baseStep must be a positive whole number of microseconds");
         }
+        if (steps < 1) {
+            throw new IllegalArgumentException("steps: " + steps
+                    + " is not allowed; expected a whole number of at least 1");
+        }
         atoms = List.copyOf(atoms);
         wiring = wiring == null ? List.of() : List.copyOf(wiring);
     }

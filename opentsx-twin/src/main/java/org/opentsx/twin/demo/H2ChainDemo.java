@@ -11,7 +11,6 @@ import org.opentsx.twin.TwinEvent;
 import org.opentsx.twin.TwinPlan;
 
 import java.io.PrintStream;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,7 +26,8 @@ import java.util.Map;
  *   <li>what-if: the valve reopens after two hours,</li>
  *   <li>forecast from minute 70: schedule-following vs. the {@code pressure-aware} policy.</li>
  * </ol>
- * Usage: {@code bin/opentsx twin [--plan file.yaml]}
+ * Usage: {@code bin/opentsx twin [--plan file.yaml]}; {@code bin/opentsx twin --help} lists the keys. Exit codes:
+ * 0 success, 1 runtime failure, 2 usage or configuration error.
  */
 public final class H2ChainDemo {
 
@@ -38,6 +38,7 @@ public final class H2ChainDemo {
     public static final double ELY_KW = 5000;
     public static final double KWH_PER_KG = 55;
     public static final double OFFTAKE_KGPH = ELY_KW / KWH_PER_KG;
+    static final String COMMAND = "twin";
 
     private H2ChainDemo() {
     }
@@ -90,18 +91,18 @@ public final class H2ChainDemo {
     }
 
     public static void main(String[] args) {
-        TwinPlan plan = plan();
-        for (int i = 0; i < args.length; i++) {
-            if (args[i].equals("--plan") && i + 1 < args.length) {
-                plan = TwinPlan.load(Path.of(args[++i]));
-            } else {
-                System.err.println("usage: bin/opentsx twin [--plan file.yaml]");
-                System.exit(1);
-            }
-        }
-        Twin twin = new Twin(plan);
-        PrintStream out = System.out;
+        System.exit(run(List.of(args), System.getenv(), System.out, System.err));
+    }
 
+    /** {@code args} without the command word, as bin/opentsx passes them. */
+    static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err) {
+        return TwinCli.run(COMMAND, args, env, out, err, (conf, positional) -> {
+            Twin twin = new Twin(TwinCli.plan(conf, "twin/h2-chain.yaml", H2ChainDemo::plan));
+            return o -> print(o, twin);
+        });
+    }
+
+    private static void print(PrintStream out, Twin twin) {
         RunResult shadow = twin.shadow(observed(), reference());
         report(out, "1. Shadow: observed history (valve closed at 01:00)", shadow);
 

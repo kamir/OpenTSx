@@ -1,6 +1,7 @@
 package org.opentsx.twin.house;
 
 import org.opentsx.model.Micros;
+import org.opentsx.twin.Gauss;
 import org.opentsx.twin.Inputs;
 import org.opentsx.twin.Mode;
 import org.opentsx.twin.Origin;
@@ -12,11 +13,6 @@ import org.opentsx.twin.TwinRunner;
 import org.opentsx.twin.Value;
 import org.opentsx.twin.atoms.Weather;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -42,7 +38,7 @@ import java.util.stream.IntStream;
  * period totals.
  * <p>
  * Inputs to the runs: the weather (synthetic unless daily temperatures are bound, see
- * {@link #dailyTemperatures(Path, String, double)}) and the firewood from the bills (REPORTED), so the model has to
+ * {@link #dailyTemperatures(List, String, double)}) and the firewood from the bills (REPORTED), so the model has to
  * explain only the oil on top of the wood actually burned. Fixed (not fitted) parameters stay as in the plan, in
  * particular the boiler efficiency: from totals only {@code H / η} is identified, not both.
  * <p>
@@ -153,7 +149,7 @@ public final class BillCalibration {
         this(base, new SeriesInputs());
     }
 
-    /** Calibration with bound weather, e.g. {@link #dailyTemperatures(Path, String, double)}. */
+    /** Calibration with bound weather, e.g. {@link #dailyTemperatures(List, String, double)}. */
     public BillCalibration(TwinPlan base, SeriesInputs weather) {
         this.base = base;
         this.weather = weather == null ? new SeriesInputs() : weather;
@@ -180,21 +176,14 @@ public final class BillCalibration {
 
     // ------------------------------------------------------------------------------------------------ CSV
 
-    public static List<Bill> read(Path csv) {
-        try {
-            return parse(Files.readAllLines(csv, StandardCharsets.UTF_8));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
     /**
      * Parses bill rows. Header with the {@link #COLUMNS} names (any order, missing optional columns allowed).
      * Separator ',' (decimal point) or ';' (decimal comma allowed, as exported by German spreadsheets). Dates as
      * {@code 2024-01-31} or {@code 31.01.2024}. Empty cells are unknown. Lines starting with '#' are skipped.
      */
     public static List<Bill> parse(List<String> lines) {
-        List<String> rows = lines.stream().map(String::strip).filter(l -> !l.isEmpty() && !l.startsWith("#")).toList();
+        List<Integer> numbers = contentLines(lines);
+        List<String> rows = numbers.stream().map(n -> lines.get(n - 1).strip()).toList();
         if (rows.isEmpty()) {
             throw new IllegalArgumentException("no header");
         }
@@ -224,10 +213,21 @@ public final class BillCalibration {
                         num(m.get("tank_start_liter"), sep), num(m.get("tank_ende_liter"), sep),
                         num(m.get("holz_ster"), sep), num(m.get("kosten_eur"), sep), m.getOrDefault("notiz", "")));
             } catch (RuntimeException e) {
-                throw new IllegalArgumentException("line " + (i + 1) + ": " + e.getMessage(), e);
+                throw new IllegalArgumentException("line " + numbers.get(i) + ": " + e.getMessage(), e);
             }
         }
+        if (out.isEmpty()) {
+            throw new IllegalArgumentException("no bill rows; expected a header and at least one row");
+        }
         return out;
+    }
+
+    /** The 1-based numbers of the lines that are neither blank nor a '#' comment. */
+    private static List<Integer> contentLines(List<String> lines) {
+        return IntStream.range(0, lines.size()).filter(i -> {
+            String l = lines.get(i).strip();
+            return !l.isEmpty() && !l.startsWith("#");
+        }).mapToObj(i -> i + 1).toList();
     }
 
     private static List<String> split(String line, char sep) {
@@ -269,28 +269,29 @@ public final class BillCalibration {
     // ------------------------------------------------------------------------------------------------ weather
 
     /**
-     * Daily mean temperatures from a CSV {@code datum,t_mittel_c} (e.g. DWD climate data, column TMK) as an hourly
-     * binding of {@code <weatherAtom>.t_out_meas_c} (MEASURED), with a synthetic daily cycle of {@code dailyAmpC}
-     * around each daily mean (minimum about 04:00). Days without a value fall back to the synthetic climate.
+     * Daily mean temperatures from the lines of a CSV {@code datum,t_mittel_c} (header first; '#' lines skipped; e.g.
+     * DWD climate data, column TMK) as an hourly binding of {@code <weatherAtom>.t_out_meas_c} (MEASURED), with a
+     * synthetic daily cycle of {@code dailyAmpC} around each daily mean (minimum about 04:00). Days without a value
+     * fall back to the synthetic climate.
      */
-    public static SeriesInputs dailyTemperatures(Path csv, String weatherAtom, double dailyAmpC) {
-        try {
-            return dailyTemperatures(Files.readAllLines(csv, StandardCharsets.UTF_8), weatherAtom, dailyAmpC);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    /** As {@link #dailyTemperatures(Path, String, double)}, from CSV lines (header first; '#' lines skipped). */
     public static SeriesInputs dailyTemperatures(List<String> lines, String weatherAtom, double dailyAmpC) {
-        List<String> rows = lines.stream().map(String::strip).filter(l -> !l.isEmpty() && !l.startsWith("#")).toList();
+        List<Integer> numbers = contentLines(lines);
+        List<String> rows = numbers.stream().map(n -> lines.get(n - 1).strip()).toList();
         Map<LocalDate, Double> days = new TreeMap<>();
         char sep = rows.isEmpty() || !rows.get(0).contains(";") ? ',' : ';';
-        for (String l : rows.subList(Math.min(1, rows.size()), rows.size())) {
-            List<String> c = split(l, sep);
-            double v = num(c.get(1).strip(), sep);
-            if (!Double.isNaN(v) && v > -90) {   // DWD marks missing values with -999
-                days.put(date(c.get(0).strip()), v);
+        for (int i = 1; i < rows.size(); i++) {
+            List<String> c = split(rows.get(i), sep);
+            if (c.size() < 2) {
+                throw new IllegalArgumentException("line " + numbers.get(i)
+                        + ": no temperature; expected datum,t_mittel_c");
+            }
+            try {
+                double v = num(c.get(1).strip(), sep);
+                if (!Double.isNaN(v) && v > -90) {   // DWD marks missing values with -999
+                    days.put(date(c.get(0).strip()), v);
+                }
+            } catch (RuntimeException e) {
+                throw new IllegalArgumentException("line " + numbers.get(i) + ": " + e.getMessage(), e);
             }
         }
         if (days.isEmpty()) {
@@ -465,7 +466,7 @@ public final class BillCalibration {
                 m[a] = jtj[a].clone();
                 m[a][a] += lambda * Math.max(jtj[a][a], 1e-12);
             }
-            double[] step = solve(m, negate(jtr));
+            double[] step = Gauss.solve(m, negate(jtr));
             double[] cand = theta.clone();
             double maxRel = 0;
             for (int a = 0; a < p; a++) {
@@ -666,58 +667,13 @@ public final class BillCalibration {
         return Arrays.stream(v).map(x -> -x).toArray();
     }
 
-    /** Gaussian elimination with partial pivoting; NaN for a singular system. */
-    static double[] solve(double[][] a0, double[] b0) {
-        int n = b0.length;
-        double[][] a = new double[n][];
-        for (int i = 0; i < n; i++) {
-            a[i] = a0[i].clone();
-        }
-        double[] b = b0.clone();
-        for (int c = 0; c < n; c++) {
-            int piv = c;
-            for (int i = c + 1; i < n; i++) {
-                if (Math.abs(a[i][c]) > Math.abs(a[piv][c])) {
-                    piv = i;
-                }
-            }
-            if (Math.abs(a[piv][c]) < 1e-300) {
-                double[] nan = new double[n];
-                Arrays.fill(nan, Double.NaN);
-                return nan;
-            }
-            double[] tr = a[c];
-            a[c] = a[piv];
-            a[piv] = tr;
-            double tb = b[c];
-            b[c] = b[piv];
-            b[piv] = tb;
-            for (int i = c + 1; i < n; i++) {
-                double f = a[i][c] / a[c][c];
-                for (int k = c; k < n; k++) {
-                    a[i][k] -= f * a[c][k];
-                }
-                b[i] -= f * b[c];
-            }
-        }
-        double[] x = new double[n];
-        for (int i = n - 1; i >= 0; i--) {
-            double s = b[i];
-            for (int k = i + 1; k < n; k++) {
-                s -= a[i][k] * x[k];
-            }
-            x[i] = s / a[i][i];
-        }
-        return x;
-    }
-
     static double[][] invert(double[][] m) {
         int n = m.length;
         double[][] inv = new double[n][n];
         for (int c = 0; c < n; c++) {
             double[] e = new double[n];
             e[c] = 1;
-            double[] col = solve(m, e);
+            double[] col = Gauss.solve(m, e);
             for (int i = 0; i < n; i++) {
                 inv[i][c] = col[i];
             }

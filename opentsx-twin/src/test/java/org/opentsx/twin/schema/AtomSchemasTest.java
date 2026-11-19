@@ -8,6 +8,8 @@ import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.EncoderFactory;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.opentsx.conf.Registry;
 import org.opentsx.twin.Atom;
 import org.opentsx.twin.AtomCatalog;
 import org.opentsx.twin.Mode;
@@ -21,7 +23,10 @@ import org.opentsx.twin.studio.StudioScenario;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -98,5 +103,30 @@ class AtomSchemasTest {
         enc.flush();
         return new GenericDatumReader<GenericRecord>(schema)
                 .read(null, DecoderFactory.get().binaryDecoder(bytes.toByteArray(), null));
+    }
+
+    private static List<Object> run(String... args) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        int exit = AtomSchemas.run(List.of(args), Map.of(), new PrintStream(out, true, StandardCharsets.UTF_8),
+                new PrintStream(err, true, StandardCharsets.UTF_8));
+        return List.of(exit, out.toString(StandardCharsets.UTF_8), err.toString(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void theCommandPrintsHelpWritesTheSchemasAndExitsTwoOrOne(@TempDir Path tmp) throws IOException {
+        assertEquals(List.of(0, Registry.shipped().help("twin-schemas"), ""), run("--help"));
+        assertEquals(List.of(2, "", "opentsx: --output: unknown option of twin-schemas; run opentsx twin-schemas --help "
+                + "for the options\n"), run("--output", tmp.toString()));
+
+        Path dir = tmp.resolve("avro");
+        int n = AtomSchemas.files(AtomCatalog.standard()).size();
+        assertEquals(List.of(0, "wrote " + n + " schemas to " + dir + "\n", ""), run("--out", dir.toString()));
+        assertEquals(AtomSchemas.files(AtomCatalog.standard()).get("Barrier.avsc"),
+                Files.readString(dir.resolve("Barrier.avsc"), StandardCharsets.UTF_8));
+
+        Path file = Files.writeString(tmp.resolve("file"), "x");
+        assertEquals(List.of(1, "", "opentsx: java.nio.file.FileAlreadyExistsException: " + file + "\n"),
+                run("--out", file.toString()));
     }
 }

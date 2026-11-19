@@ -32,7 +32,8 @@ import java.util.Map;
  * With {@code --simulated} it calibrates on the bundled simulated bills ({@link SimulatedBills}) instead.
  * <p>
  * Usage: {@code bin/opentsx house [--plan file.yaml] [--calibrate bills.csv [--weather daily-temps.csv]]
- * [--simulated] [--hdd-ref Kd]}
+ * [--simulated] [--hdd-ref Kd]}; {@code bin/opentsx house --help} lists the keys. Exit codes: 0 success, 1 runtime
+ * failure, 2 usage or configuration error.
  * <p>
  * The static methods {@link #plan()}, {@link #observed()}, {@link #reference()}, {@link #alternatives()} and
  * {@link #smartMetrics()} expose the scenario to generic views (e.g. the studio export); the full year has 8760
@@ -42,6 +43,13 @@ public final class HouseDemo {
 
     /** Long-term reference heating degree days G20/15 of the invented site (assumption, Kd). */
     public static final double HDD_REF = 4300;
+    static final String COMMAND = "house";
+    static final String BILLS = "opentsx.house.bills";
+    static final String WEATHER = "opentsx.house.weather";
+    static final String HDD_REF_KEY = "opentsx.house.hddRef";
+    /** The atom types the reference run, the levers, the KPIs and the calibration look up. */
+    static final List<String> ATOM_TYPES = List.of("building", "weather", "oil-boiler", "oil-tank", "wood-stove",
+            "wood-store", "dhw", "appliances", "meter");
 
     /** A what-if: the full intervention log (reference plus lever), policy overrides, optional input overrides. */
     public record Alternative(String description, List<Intervention> interventions, Map<String, String> policyOverrides,
@@ -87,59 +95,61 @@ public final class HouseDemo {
     }
 
     public static void main(String[] args) {
-        TwinPlan plan = plan();
-        Path bills = null;
-        Path weatherCsv = null;
-        boolean simulated = false;
-        double hddRef = HDD_REF;
-        for (int i = 0; i < args.length; i++) {
-            String a = args[i];
-            if (a.equals("--simulated")) {
-                simulated = true;
-                continue;
-            }
-            if (i + 1 >= args.length) {
-                usage();
-            }
-            switch (a) {
-                case "--plan" -> plan = TwinPlan.load(Path.of(args[++i]));
-                case "--calibrate" -> bills = Path.of(args[++i]);
-                case "--weather" -> weatherCsv = Path.of(args[++i]);
-                case "--hdd-ref" -> hddRef = Double.parseDouble(args[++i]);
-                default -> usage();
-            }
-        }
-        PrintStream out = System.out;
-        if (simulated) {
-            out.println("House twin '" + plan.twin() + "' calibrated on SIMULATED bills (" + SimulatedBills.BILLS
-                    + ", " + SimulatedBills.TEMPERATURES + ") - no real data");
-            SeriesInputs weather = BillCalibration.dailyTemperatures(SimulatedBills.bundledTemperatures(),
-                    HouseScenario.id(plan, "weather"), 5.0);
-            BillCalibration.Result c = new BillCalibration(plan, weather)
-                    .fit(BillCalibration.parse(SimulatedBills.bundledBills()));
-            report(out, c);
-            out.println("   hidden true parameters of the simulation (unknown to the fit): " + SimulatedBills.truth());
-            out.println("   (boiler.eta is fixed at the plan's assumption in the fit, so H and the hot-water scale "
-                    + "absorb the eta ratio)");
-            evaluate(out, c.calibratedPlan(), hddRef);
-            return;
-        }
-        out.println("House twin '" + plan.twin() + "' - ALL NUMBERS ARE INVENTED EXAMPLE ASSUMPTIONS"
-                + (bills == null ? " (not calibrated)" : " (calibrated on " + bills + ")"));
-        if (bills != null) {
-            SeriesInputs weather = weatherCsv == null ? new SeriesInputs()
-                    : BillCalibration.dailyTemperatures(weatherCsv, HouseScenario.id(plan, "weather"), 5.0);
-            BillCalibration.Result c = new BillCalibration(plan, weather).fit(BillCalibration.read(bills));
-            report(out, c);
-            plan = c.calibratedPlan();
-        }
-        evaluate(out, plan, hddRef);
+        System.exit(run(List.of(args), System.getenv(), System.out, System.err));
     }
 
-    private static void usage() {
-        System.err.println("usage: bin/opentsx house [--plan file.yaml] [--calibrate bills.csv [--weather temps.csv]] "
-                + "[--simulated] [--hdd-ref Kd]");
-        System.exit(1);
+    /** {@code args} without the command word, as bin/opentsx passes them. */
+    static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err) {
+        return TwinCli.run(COMMAND, args, env, out, err, (conf, positional) -> {
+            TwinPlan plan = TwinCli.plan(conf, HouseScenario.PLAN, HouseDemo::plan);
+            List<String> missing = ATOM_TYPES.stream()
+                    .filter(type -> plan.atoms().stream().noneMatch(a -> a.type().equals(type))).toList();
+            if (!missing.isEmpty()) {
+                throw new IllegalArgumentException(conf.get(TwinCli.PLAN, HouseScenario.PLAN) + ": plan " + plan.twin()
+                        + " has no atom of type " + String.join(", ", missing)
+                        + "; expected a house plan such as opentsx-twin/src/main/resources/" + HouseScenario.PLAN);
+            }
+            double hddRef = conf.getDouble(HDD_REF_KEY);
+            if (conf.getBoolean(TwinCli.SIMULATED)) {
+                return o -> simulated(o, plan, hddRef);
+            }
+            Path bills = conf.getOption(BILLS).map(Path::of).orElse(null);
+            List<BillCalibration.Bill> rows = bills == null ? null
+                    : TwinCli.csv(bills, "bills file", BillCalibration::parse);
+            Path temperatures = conf.getOption(WEATHER).map(Path::of).orElse(null);
+            String weatherAtom = HouseScenario.id(plan, "weather");
+            SeriesInputs weather = bills == null || temperatures == null ? new SeriesInputs()
+                    : TwinCli.csv(temperatures, "temperatures file",
+                            lines -> BillCalibration.dailyTemperatures(lines, weatherAtom, 5.0));
+            return o -> print(o, plan, bills, rows, weather, hddRef);
+        });
+    }
+
+    private static void simulated(PrintStream out, TwinPlan plan, double hddRef) {
+        out.println("House twin '" + plan.twin() + "' calibrated on SIMULATED bills (" + SimulatedBills.BILLS
+                + ", " + SimulatedBills.TEMPERATURES + ") - no real data");
+        SeriesInputs weather = BillCalibration.dailyTemperatures(SimulatedBills.bundledTemperatures(),
+                HouseScenario.id(plan, "weather"), 5.0);
+        BillCalibration.Result c = new BillCalibration(plan, weather)
+                .fit(BillCalibration.parse(SimulatedBills.bundledBills()));
+        report(out, c);
+        out.println("   hidden true parameters of the simulation (unknown to the fit): " + SimulatedBills.truth());
+        out.println("   (boiler.eta is fixed at the plan's assumption in the fit, so H and the hot-water scale "
+                + "absorb the eta ratio)");
+        evaluate(out, c.calibratedPlan(), hddRef);
+    }
+
+    private static void print(PrintStream out, TwinPlan plan, Path bills, List<BillCalibration.Bill> rows,
+                              SeriesInputs weather, double hddRef) {
+        out.println("House twin '" + plan.twin() + "' - ALL NUMBERS ARE INVENTED EXAMPLE ASSUMPTIONS"
+                + (bills == null ? " (not calibrated)" : " (calibrated on " + bills + ")"));
+        TwinPlan evaluated = plan;
+        if (bills != null) {
+            BillCalibration.Result c = new BillCalibration(plan, weather).fit(rows);
+            report(out, c);
+            evaluated = c.calibratedPlan();
+        }
+        evaluate(out, evaluated, hddRef);
     }
 
     /** Shadow run of the reference year plus every lever as alternative minus reference. */

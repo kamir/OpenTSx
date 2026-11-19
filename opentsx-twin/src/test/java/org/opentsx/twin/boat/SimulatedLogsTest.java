@@ -4,11 +4,19 @@ import org.opentsx.twin.RunResult;
 import org.opentsx.twin.Twin;
 import org.opentsx.twin.demo.BoatDemo;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -54,5 +62,40 @@ class SimulatedLogsTest {
         assertEquals(t.get("load_wh_per_day"), k.get("load_wh_per_day"), 0.03 * t.get("load_wh_per_day"));
         assertEquals(5.0, k.get("soc_min_pct"), 1e-6);
         assertTrue(k.get("autonomy_h_mean") > 0 && Double.isFinite(k.get("autonomy_h_mean")));
+    }
+
+    private static List<Object> run(String... args) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        int exit = SimulatedLogs.run(List.of(args), new PrintStream(out, true, StandardCharsets.UTF_8),
+                new PrintStream(err, true, StandardCharsets.UTF_8));
+        return List.of(exit, out.toString(StandardCharsets.UTF_8), err.toString(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void helpPrintsTheUsageAndWritesNoFile() {
+        assertFalse(Files.exists(Path.of("--help")));
+        assertEquals(List.of(0, "usage: SimulatedLogs <out.csv> [seed]\nWrites the SIMULATED boat logs to <out.csv>; the "
+                + "seed defaults to 20260704.\n", ""), run("--help"));
+        assertFalse(Files.exists(Path.of("--help")), "--help must not become the output file");
+    }
+
+    @Test
+    void usageErrorsExitTwoWithOneLine() {
+        String expected = "; expected SimulatedLogs <out.csv> [seed]\n";
+        assertEquals(List.of(2, "", "opentsx: SimulatedLogs: missing argument <out.csv>" + expected), run());
+        assertEquals(List.of(2, "", "opentsx: --seed: unknown option" + expected), run("--seed", "7"));
+        assertEquals(List.of(2, "", "opentsx: seed: \"abc\" is not a long" + expected), run("logs.csv", "abc"));
+        assertEquals(List.of(2, "", "opentsx: x: unexpected argument" + expected), run("logs.csv", "7", "x"));
+    }
+
+    @Test
+    void writesTheLogsOfTheGivenSeed(@TempDir Path tmp) throws IOException {
+        Path file = tmp.resolve("logs.csv");
+        assertEquals(List.of(0, "wrote " + file + " (seed 7)\n", ""), run(file.toString(), "7"));
+        assertEquals(SimulatedLogs.csv(BoatDemo.plan(), 7), Files.readAllLines(file, StandardCharsets.UTF_8));
+        Path dir = Files.createDirectory(tmp.resolve("dir.csv"));
+        assertEquals(List.of(1, "", "opentsx: " + dir + ": cannot write the logs; caused by "
+                + "java.nio.file.FileSystemException: " + dir + ": Is a directory\n"), run(dir.toString()));
     }
 }

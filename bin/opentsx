@@ -18,6 +18,7 @@
 #   twin-coupling      variant L vs T: staleness/latency grid, --csv f        (org.opentsx.twin.demo.CouplingStudy)
 #   twin-live          event topic: publish|bridge|demo (events of a run -> topic -> browser)  (org.opentsx.twin.live.TwinLive)
 #   twin-schemas       regenerate the twin's Avro topic contract, --out dir    (org.opentsx.twin.schema.AtomSchemas)
+#   studio-export      scenario data for the Smart Topics Studio, <out.json>   (org.opentsx.twin.studio.StudioExport)
 #   market             market data: prices, rebap, marktwert, import, backfill, report, load
 #                                                                            (org.opentsx.market.MarketCli)
 #   twin --history d   twin S1 on archived history (year, real prices + wind)  (org.opentsx.market.twin.HistoryTwins)
@@ -102,6 +103,7 @@ case "$cmd" in
   twin-coupling)    run opentsx-twin org.opentsx.twin.demo.CouplingStudy "$@" ;;
   twin-live)        run opentsx-twin-live org.opentsx.twin.live.TwinLive "$@" ;;
   twin-schemas)     run opentsx-twin org.opentsx.twin.schema.AtomSchemas "$@" ;;
+  studio-export)    run opentsx-twin org.opentsx.twin.studio.StudioExport "$@" ;;
   config|version)   run opentsx-conf org.opentsx.conf.ConfCli "$cmd" "$@" ;;
   --version)        run opentsx-conf org.opentsx.conf.ConfCli --version ;;
   classpath)        classpath "$@" ;;
