@@ -40,6 +40,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Standalone finite numerical service through `serve-finite`, with optional
+  built Workbench assets and no broker or model-registry clients at startup.
+  API requests retain bounded numerical execution and explicit errors;
+  unavailable connected functions return HTTP 503.
+
 - Local frontend type, lint and related-test checks through `check:local`.
   Empty selections and failing stages return an error without a fallback run.
 

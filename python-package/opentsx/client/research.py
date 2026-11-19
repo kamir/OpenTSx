@@ -1,4 +1,4 @@
-"""Local research workbench with bounded Kafka analysis and static UI serving."""
+"""Local research service for finite modelling and bounded Kafka analysis."""
 
 import argparse
 import hashlib
@@ -356,6 +356,15 @@ def reject_json_constant(value):
     raise ValueError("nonfinite JSON values are not allowed")
 
 
+def manifest_object(pairs):
+    document = {}
+    for key, value in pairs:
+        if key in document:
+            raise ValueError("duplicate manifest key")
+        document[key] = value
+    return document
+
+
 def lifecycle_get(lifecycle, path, query):
     if lifecycle is None:
         return 503, {"error": "Model lifecycle state is unavailable in this service."}
@@ -459,7 +468,7 @@ def lifecycle_post(lifecycle, path, document):
 
 
 def handler(store, web_root, manifest, lifecycle=None):
-    root = Path(web_root).resolve()
+    root = Path(web_root).resolve() if web_root is not None else None
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, format, *args):
@@ -493,14 +502,24 @@ def handler(store, web_root, manifest, lifecycle=None):
                 if path == "/analysis/v1/operators":
                     return self.respond(200, operator_catalog())
                 if path == "/analysis/v1/topics":
+                    if store is None:
+                        return self.respond(
+                            503, {"error": "Broker access is unavailable in this service."}
+                        )
                     return self.respond(
                         200,
                         {"topics": store.topics(), "output_topic": store.output_topic},
                     )
                 if path == "/analysis/v1/results":
+                    if store is None:
+                        return self.respond(
+                            503, {"error": "Broker access is unavailable in this service."}
+                        )
                     return self.respond(200, store.results())
                 if path.startswith("/analysis/"):
                     return self.respond(404, {"error": "unknown API route"})
+                if root is None:
+                    return self.respond(404, {"error": "Static UI is unavailable in this service."})
                 target = (root / path.lstrip("/")).resolve()
                 if not target.is_relative_to(root):
                     return self.respond(403, {"error": "path outside web root"})
@@ -556,6 +575,10 @@ def handler(store, web_root, manifest, lifecycle=None):
                 if modelling:
                     status, result = lifecycle_post(lifecycle, self.path, document)
                     return self.respond(status, result)
+                if store is None:
+                    return self.respond(
+                        503, {"error": "Broker access is unavailable in this service."}
+                    )
                 result = execute(store, document)
                 self.respond(200, result)
             except (RegistryError, RegistryUnavailable) as error:
@@ -580,6 +603,7 @@ def main(argv=None):
         "command",
         choices=(
             "serve",
+            "serve-finite",
             "seed",
             "demo-seed",
             "demo-append",
@@ -588,7 +612,7 @@ def main(argv=None):
         ),
     )
     parser.add_argument("--scenario", choices=("ar1", "sarimax"), default="ar1")
-    parser.add_argument("--bootstrap", required=True)
+    parser.add_argument("--bootstrap")
     parser.add_argument("--prefix", default="tsx.workbench-demo.")
     parser.add_argument("--web-root")
     parser.add_argument("--manifest")
@@ -596,6 +620,12 @@ def main(argv=None):
     parser.add_argument("--state-dir")
     parser.add_argument("--registry-url")
     args = parser.parse_args(argv)
+    finite = args.command == "serve-finite"
+    if finite:
+        if any(value is not None for value in (args.bootstrap, args.registry_url, args.state_dir)):
+            parser.error("serve-finite does not accept --bootstrap, --registry-url or --state-dir")
+    elif not args.bootstrap:
+        parser.error(f"{args.command} requires --bootstrap")
     if args.command.startswith("demo-"):
         from opentsx.client.scoring_demo import main as scoring_demo
 
@@ -610,47 +640,73 @@ def main(argv=None):
             + (["--scenario", args.scenario] if args.scenario != "ar1" else [])
         )
         return
-    store = KafkaStore(args.bootstrap, args.prefix)
     if args.command == "seed":
+        store = KafkaStore(args.bootstrap, args.prefix)
         print(json.dumps(store.seed()))
         return
-    if not args.web_root or not args.manifest:
-        parser.error("serve requires --web-root and --manifest")
-    if not args.state_dir or not args.registry_url:
-        parser.error("serve requires --state-dir and --registry-url")
-    manifest = json.loads(Path(args.manifest).read_text())
-    if not (Path(args.web_root) / "index.html").is_file():
+    if not finite:
+        if not args.web_root or not args.manifest:
+            parser.error("serve requires --web-root and --manifest")
+        if not args.state_dir or not args.registry_url:
+            parser.error("serve requires --state-dir and --registry-url")
+    if args.web_root is not None and (
+        not args.web_root or not (Path(args.web_root) / "index.html").is_file()
+    ):
         parser.error("web root has no built index.html")
-    from opentsx.client.lifecycle import LifecycleStore
-    from opentsx.client.registry import MLflowRegistry
-    from opentsx.client.smart_topics import SmartTopics
-    from opentsx.client.topic_catalogue import TopicCatalogue
+    manifest = {}
+    if args.manifest is not None:
+        try:
+            manifest = json.loads(
+                Path(args.manifest).read_text(encoding="utf-8"),
+                parse_constant=reject_json_constant,
+                object_pairs_hook=manifest_object,
+            )
+            if not isinstance(manifest, dict):
+                raise ValueError("manifest must be a JSON object")
+            json.dumps(manifest, allow_nan=False)
+        except (OSError, ValueError) as error:
+            parser.error(f"invalid manifest: {error}")
+    store = None
+    lifecycle = None
+    if not finite:
+        from opentsx.client.lifecycle import LifecycleStore
+        from opentsx.client.registry import MLflowRegistry
+        from opentsx.client.smart_topics import SmartTopics
+        from opentsx.client.topic_catalogue import TopicCatalogue
 
-    lifecycle = SmartTopics(
-        LifecycleStore(Path(args.state_dir) / "lifecycle.sqlite"),
-        MLflowRegistry(args.registry_url),
-        TopicCatalogue(args.bootstrap, args.prefix),
-        args.bootstrap,
-        args.prefix,
-    )
-    lifecycle.recover()
-    server = ThreadingHTTPServer(
-        ("0.0.0.0", args.port), handler(store, args.web_root, manifest, lifecycle)
-    )
-    print(
-        json.dumps({"service": "opentsx-research", "version": __version__, **manifest}),
-        flush=True,
-    )
+        store = KafkaStore(args.bootstrap, args.prefix)
+        lifecycle = SmartTopics(
+            LifecycleStore(Path(args.state_dir) / "lifecycle.sqlite"),
+            MLflowRegistry(args.registry_url),
+            TopicCatalogue(args.bootstrap, args.prefix),
+            args.bootstrap,
+            args.prefix,
+        )
 
     def terminate(signum, frame):
         raise SystemExit(0)
 
-    signal.signal(signal.SIGTERM, terminate)
+    server = None
     try:
+        if lifecycle is not None:
+            lifecycle.recover()
+        server = ThreadingHTTPServer(
+            ("127.0.0.1" if finite else "0.0.0.0", args.port),
+            handler(store, args.web_root, manifest, lifecycle),
+        )
+        print(
+            json.dumps({"service": "opentsx-research", "version": __version__, **manifest}),
+            flush=True,
+        )
+        signal.signal(signal.SIGTERM, terminate)
         server.serve_forever()
     finally:
-        lifecycle.close()
-        server.server_close()
+        try:
+            if lifecycle is not None:
+                lifecycle.close()
+        finally:
+            if server is not None:
+                server.server_close()
 
 
 if __name__ == "__main__":
