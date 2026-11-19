@@ -313,6 +313,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- Retrieval POST routes `/v1/patterns/search`, `/v1/episodes/similar` and `/v1/segments` require a single JSON object
+  and report invalid bodies as HTTP 400. Response exchanges close after success or failure while preserving the
+  primary exception and any suppressed close failure.
+
 - The legacy PFD Kafka decoder fails on malformed Avro records with topic, partition and offset context and the
   original cause. Null tombstones emit nothing, and downstream collector failures propagate unchanged.
 

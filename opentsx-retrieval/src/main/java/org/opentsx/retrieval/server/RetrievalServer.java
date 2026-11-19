@@ -1,5 +1,8 @@
 package org.opentsx.retrieval.server;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.StreamReadFeature;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -22,6 +25,7 @@ import org.opentsx.store.SeriesStore;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
@@ -375,7 +379,15 @@ public final class RetrievalServer implements AutoCloseable {
     }
 
     private static JsonNode body(HttpExchange ex) throws IOException {
-        return EpisodeJson.JSON.readTree(ex.getRequestBody());
+        String message = "Request body must be a single JSON object";
+        try (InputStream input = ex.getRequestBody()) {
+            JsonNode result = EpisodeJson.JSON.reader().with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+                    .without(StreamReadFeature.AUTO_CLOSE_SOURCE).readTree(input);
+            if (result == null || !result.isObject()) throw new IllegalArgumentException(message);
+            return result;
+        } catch (JsonProcessingException failure) {
+            throw new IllegalArgumentException(message, failure);
+        }
     }
 
     private void episodes(HttpExchange ex, List<Episode> eps) throws IOException {
@@ -511,10 +523,11 @@ public final class RetrievalServer implements AutoCloseable {
     }
 
     private static void send(HttpExchange ex, int status, String type, byte[] body) throws IOException {
-        ex.getResponseHeaders().add("Content-Type", type);
-        ex.sendResponseHeaders(status, body.length);
-        ex.getResponseBody().write(body);
-        ex.close();
+        try (ex) {
+            ex.getResponseHeaders().add("Content-Type", type);
+            ex.sendResponseHeaders(status, body.length);
+            ex.getResponseBody().write(body);
+        }
     }
 
     // ---- main ------------------------------------------------------------------------------------------------------
