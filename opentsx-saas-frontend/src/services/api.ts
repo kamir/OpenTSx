@@ -53,21 +53,13 @@ apiClient.interceptors.response.use(
 );
 
 /**
- * The reason in an error body: `error` of the retrieval server, the event bridge and nginx, `detail` of the backend
- * as a string or as the field list of a refused request. Null when the body carries none.
+ * The reason in an error body: `error` of the backend, the retrieval server, the event bridge and nginx. Null when the
+ * body carries none.
  */
 export function bodyReason(data: unknown): string | null {
   if (typeof data !== 'object' || data === null) return null;
-  const { error, detail } = data as { error?: unknown; detail?: unknown };
-  if (typeof error === 'string') return error;
-  if (typeof detail === 'string') return detail;
-  if (!Array.isArray(detail)) return null;
-  const fields = detail.flatMap((d) => {
-    if (typeof d?.msg !== 'string') return [];
-    const loc = Array.isArray(d.loc) ? d.loc : [];
-    return [loc.length > 0 ? `${loc[loc.length - 1]}: ${d.msg}` : d.msg];
-  });
-  return fields.length > 0 ? fields.join('; ') : null;
+  const { error } = data as { error?: unknown };
+  return typeof error === 'string' ? error : null;
 }
 
 /** What went wrong with a request or anything else, in the words of the server when it sent any. */

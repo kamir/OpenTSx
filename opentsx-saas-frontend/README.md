@@ -403,14 +403,12 @@ backend (axios), and `fetchJson` in the same file reads it from an answer of the
 
 | The answer | The page shows |
 |------------|----------------|
-| `{"error": "<text>", "type": "<type>"}` from the retrieval server, the event bridge or nginx | `<text>` |
-| `{"detail": "<text>"}` from the backend | `<text>` |
-| `{"detail": [{"loc": ["body", "<field>"], "msg": "<msg>"}]}` from the backend, a refused field | `<field>: <msg>`, several joined with `; ` |
+| `{"error": "<text>", "type": "<type>"}` from the backend, the retrieval server, the event bridge or nginx | `<text>` |
 | 401 from the backend for any request but sign-in and register | `your session has expired, sign in again` |
 | another error answer without such a body, for example the HTML page of a proxy | `HTTP <status> from <url>` |
 | no answer | `the backend at <url> cannot be reached` |
 
-A sign-in or register refused with 401 shows the `detail` of the backend, for example `Incorrect email or password`.
+A sign-in or register refused with 401 shows the `error` of the backend, for example `Incorrect email or password`.
 
 nginx (`nginx.conf`) answers a 502 or 504 that it gives itself as an error body:
 

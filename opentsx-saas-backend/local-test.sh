@@ -46,16 +46,6 @@ fi
 echo ""
 echo "🔌 Testing API v1 endpoints..."
 
-# Test organizations list
-echo ""
-echo "  → GET /api/v1/organizations"
-ORG_RESPONSE=$(curl -s http://localhost:8000/api/v1/organizations)
-if echo "$ORG_RESPONSE" | grep -q "organizations"; then
-    echo -e "    ${GREEN}✓ Organizations endpoint works${NC}"
-else
-    echo -e "    ${RED}✗ Organizations endpoint failed${NC}"
-fi
-
 # Test flows list
 echo ""
 echo "  → GET /api/v1/flows"
@@ -66,28 +56,6 @@ if echo "$FLOWS_RESPONSE" | grep -q "flows"; then
     echo -e "    ${BLUE}Found ${FLOW_COUNT} demo flows${NC}"
 else
     echo -e "    ${RED}✗ Flows endpoint failed${NC}"
-fi
-
-# Test node types (for flow builder)
-echo ""
-echo "  → GET /api/v1/node-types"
-NODES_RESPONSE=$(curl -s http://localhost:8000/api/v1/node-types)
-if echo "$NODES_RESPONSE" | grep -q "node_types"; then
-    echo -e "    ${GREEN}✓ Node types endpoint works${NC}"
-    NODE_COUNT=$(echo $NODES_RESPONSE | jq '.node_types | length')
-    echo -e "    ${BLUE}Found ${NODE_COUNT} node types${NC}"
-else
-    echo -e "    ${RED}✗ Node types endpoint failed${NC}"
-fi
-
-# Test demo flows endpoint
-echo ""
-echo "  → GET /api/v1/flows/demo"
-DEMO_RESPONSE=$(curl -s http://localhost:8000/api/v1/flows/demo)
-if echo "$DEMO_RESPONSE" | grep -q "flows"; then
-    echo -e "    ${GREEN}✓ Demo flows endpoint works${NC}"
-else
-    echo -e "    ${RED}✗ Demo flows endpoint failed${NC}"
 fi
 
 # Test database connection
@@ -123,8 +91,5 @@ echo "  • Start building your frontend!"
 echo ""
 echo "Useful endpoints:"
 echo "  • Health: http://localhost:8000/health"
-echo "  • Organizations: http://localhost:8000/api/v1/organizations"
 echo "  • Flows: http://localhost:8000/api/v1/flows"
-echo "  • Demo Flows: http://localhost:8000/api/v1/flows/demo"
-echo "  • Node Types: http://localhost:8000/api/v1/node-types"
 echo ""

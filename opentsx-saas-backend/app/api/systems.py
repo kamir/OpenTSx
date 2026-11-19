@@ -6,6 +6,7 @@ written into the file by a person (decision D42). Running a demo generator write
 the backend like a DAG deployment: the backend checks who asks and adds the run token.
 """
 
+import json
 import logging
 import re
 from datetime import datetime
@@ -129,9 +130,15 @@ def get_store(db: AsyncSession = Depends(get_db)) -> BindingStore:
     return SqlBindingStore(db)
 
 
+def _q(value: Any) -> str:
+    """A value as the request gave it: a string in double quotes, anything else as JSON."""
+    return json.dumps(value, ensure_ascii=False)
+
+
 def _system(system: str) -> str:
     if not SYSTEM.match(system):
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "The system id may hold lower-case letters, digits and hyphens.")
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            f"system: {_q(system)} is not a system id; expected lower-case letters, digits and hyphens")
     return system
 
 
@@ -139,34 +146,44 @@ def check(binding: Binding) -> None:
     """Refuses a binding that cannot be a source, with a reason for the person who made it."""
     bad = status.HTTP_422_UNPROCESSABLE_ENTITY
     if not SIGNAL.match(binding.signal):
-        raise HTTPException(bad, "The signal id must be <atom>.<port> or <atom>/<asset>/<channel>.")
+        raise HTTPException(bad, f"signal: {_q(binding.signal)} is not a signal id; "
+                                 "expected <atom>.<port> or <atom>/<asset>/<channel>")
     if binding.grade not in GRADES:
-        raise HTTPException(bad, "A binding is for the grade raw or clean.")
+        raise HTTPException(bad, f"grade: {_q(binding.grade)} is not allowed; expected one of {', '.join(GRADES)}")
     source = binding.source
     kind = source.get("kind")
     if kind not in KINDS:
-        raise HTTPException(bad, "A source set here is a topic, a generator or a manual value. A flow becomes a source by publishing it.")
+        raise HTTPException(bad, f"source.kind: {_q(kind)} is not allowed; expected one of {', '.join(KINDS)} "
+                                 "(a flow becomes a source by publishing it)")
     if kind == "topic":
         select_ = source.get("select") or {}
         if not source.get("topic") or not (select_.get("metric") or select_.get("tags") or select_.get("series")):
-            raise HTTPException(bad, "A topic source needs the topic and what to select from it.")
+            raise HTTPException(bad, "source: a topic source needs the topic and what to select from it; "
+                                     "set topic and select.metric, select.tags or select.series")
         if source.get("origin") not in ORIGINS:
-            raise HTTPException(bad, f"A topic source says how its data came to be: one of {', '.join(ORIGINS)}.")
+            raise HTTPException(bad, f"source.origin: {_q(source.get('origin'))} is not allowed; "
+                                     f"expected one of {', '.join(ORIGINS)}")
         if not binding.meaningConfirmed:
             # a matching name and unit are a suggestion, not a proof (decision D53)
-            raise HTTPException(bad, "Confirm that the series is the quantity the signal means before binding it.")
+            raise HTTPException(bad, "meaningConfirmed: false; "
+                                     "confirm that the series is the quantity the signal means before binding it")
     elif kind == "generator":
         if source.get("processor") not in GENERATORS:
-            raise HTTPException(bad, f"The generator must be one of {', '.join(GENERATORS)}.")
+            raise HTTPException(bad, f"source.processor: {_q(source.get('processor'))} is not allowed; "
+                                     f"expected one of {', '.join(GENERATORS)}")
         if not isinstance(source.get("params", {}), dict):
-            raise HTTPException(bad, "The parameters of a generator are an object.")
+            raise HTTPException(bad, f"source.params: {_q(source['params'])} is not an object; "
+                                     "expected an object of parameters")
         if "seed" in source and not isinstance(source["seed"], int):
-            raise HTTPException(bad, "The seed of a generator is a whole number.")
+            raise HTTPException(bad, f"source.seed: {_q(source['seed'])} is not a whole number; "
+                                     "expected a whole number such as 7")
     else:
         if not isinstance(source.get("value"), (int, float)) or isinstance(source.get("value"), bool):
-            raise HTTPException(bad, "A manual source needs a value.")
+            raise HTTPException(bad, f"source.value: {_q(source.get('value'))} is not a number; "
+                                     "a manual source needs a number")
         if source.get("origin", "REPORTED") not in ORIGINS:
-            raise HTTPException(bad, f"The origin must be one of {', '.join(ORIGINS)}.")
+            raise HTTPException(bad, f"source.origin: {_q(source['origin'])} is not allowed; "
+                                     f"expected one of {', '.join(ORIGINS)}")
 
 
 @router.get("/{system}/bindings")
@@ -196,7 +213,7 @@ async def delete_binding(
 ):
     """Takes a source out of the working copy; the system document applies again."""
     if not await store.remove(user.id, _system(system), signal, grade):
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Your working copy has no such binding.")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"{signal}@{grade}: not in your working copy; nothing was removed")
     return {"message": "Binding removed from your working copy"}
 
 
@@ -212,9 +229,12 @@ async def generate(
     of generated series of the domain; the working copy of the user goes along, so a generator bound here counts.
     """
     if not settings.RETRIEVAL_URL:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "This installation has no retrieval server configured.")
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE,
+                            "RETRIEVAL_URL: not set; this installation runs no generators")
     if not dags.may_run(user):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Only administrators may run generators on this installation.")
+        raise HTTPException(status.HTTP_403_FORBIDDEN,
+                            "this account: not an administrator; "
+                            "only administrators may run generators on this installation")
     bindings = [{"signal": b["signal"], "grade": b["grade"], "source": b["source"]} for b in await store.list(user.id, _system(system))]
     body = {"signal": request.signal, "from": request.start, "to": request.end, "bindings": bindings}
     return await dags.forward_json(user, "generate", f"/v1/systems/{system}/generate", body)

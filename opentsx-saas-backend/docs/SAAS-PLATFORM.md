@@ -109,7 +109,6 @@ The OpenTSx SaaS Platform is a complete web-based application for visual time se
 │  - flows (pipeline definitions)                              │
 │  - flow_executions (execution history)                       │
 │  - invitations (team invites)                                │
-│  - subscriptions (billing)                                   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -628,7 +627,6 @@ See **[docs/API-DOCUMENTATION.md](docs/API-DOCUMENTATION.md)** for complete API 
 | GET | `/api/v1/flows/{id}` | Get flow details |
 | PUT | `/api/v1/flows/{id}` | Update flow |
 | DELETE | `/api/v1/flows/{id}` | Delete flow |
-| POST | `/api/v1/flows/{id}/execute` | Execute flow |
 
 ### Example API Calls
 
@@ -947,7 +945,7 @@ CREATE DATABASE opentsx;
 
 #### JWT Token Invalid
 
-**Issue:** `401 Unauthorized - Could not validate credentials`
+**Issue:** `401 {"error": "token: not valid or expired; sign in again", "type": "unauthorized"}`
 
 **Solution:**
 - Check `SECRET_KEY` matches between token creation and validation

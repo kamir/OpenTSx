@@ -9,22 +9,22 @@
 
 * **Backend:**
   * users with JWT login (`/api/v1/auth/register`, `/login`, `/me`, `/change-password`). Registration creates one
-    organization per user. The organization, team, invitation and billing routes in `app/main.py` return fixed
-    sample data and store nothing.
+    organization per user. The backend has no routes for organizations, teams, invitations or billing. It stores
+    accounts with their organization, flows and the working copies of systems; DAG deployments and generator runs go
+    to the retrieval server.
   * flows stored per user (`/api/v1/flows`: create, read, update, delete), each a JSON definition with a status.
   * `POST /api/v1/dags/deploy` (body: a DAG as YAML, at most 256 KiB) and `POST /api/v1/dags/stop?name=<dag>` forward
     to the retrieval server in `RETRIEVAL_URL`, with `DAG_RUN_TOKEN` as run token. `DAG_RUN_ROLE` decides who may
     call them: `superuser` (default, administrators only) or `user` (every signed-in account). Without
-    `RETRIEVAL_URL` both answer 503 "This installation has no retrieval server configured for DAGs."
+    `RETRIEVAL_URL` both answer 503 `RETRIEVAL_URL: not set; this installation deploys no DAGs`.
     `GET /api/v1/dags/capabilities` tells the workbench whether the account may deploy.
   * the working copy of the signal bindings of a system per account (`/api/v1/systems/<system>/bindings`: read,
     replace, delete). `POST /api/v1/systems/<system>/generate` runs the demo generator of a signal through the
     retrieval server, with the same `RETRIEVAL_URL`, run token and `DAG_RUN_ROLE` as a DAG deployment.
-  * `POST /api/v1/flows/{flow_id}/execute` passes the flow definition to a `FlinkService`. It uploads
-    `opentsx-flink-core-3.0.0.jar` to a Flink REST API at `http://localhost:8081` and runs
-    `org.opentsx.flink.pfd.DynamicTopologyJob`. The build writes `opentsx-flink-core-3.0.1.jar` and no stack in this
-    repository starts Flink, so the route answers 502 "Failed to submit Flink job: ...". The backend submission
-    (005.4 in [TASK-005](../../EVOLUTION/TASK-005-processing-flow-descriptor.md)) is not continued.
+  * the backend does not run a flow. A stored flow runs when the workbench or the Flow Composer deploys its DAG
+    through `POST /api/v1/dags/deploy`.
+  * every error answers `{"error": "<text>", "type": "<type>"}` with the types of the retrieval server
+    ([appendix B](appendix-b-rest.md)); `opentsx-saas-backend/README.md` lists the status codes and texts.
   * `TEST_LOGIN=true` lets the name `admin` with the password `admin` sign in as the first administrator. Use it on a
     lab network only: everyone who reaches the page is an administrator then.
 * **Frontend:**
@@ -91,7 +91,6 @@ Iceberg, retrieval REST, MLflow).
 |-------------------|---------------|--------|
 | `Flow` (JSON definition, owner, status) | **smart series specification**: the versioned YAML of a Smart Topic ([design](../datamodel-2026/05-SMART-TOPICS.md), German), owned by a user or team | proposal (P7e) |
 | `FlowExecution` | training runs and deployments (MLflow run ids, champion version, processor status) | proposal (P7e) |
-| `FlinkService` | a general **runner**: statistics processor, Smart Topic scoring processor, Python training job | proposal (P7e) |
 | dashboard | "my series": smart metrics, model quality and drift, data-quality results, prediction with or without context | proposal (P7e) |
 | users / teams | ownership of topic prefixes (`tsx.<domain>`), Iceberg namespaces and OpenMetadata domains | proposal (P7e) |
 

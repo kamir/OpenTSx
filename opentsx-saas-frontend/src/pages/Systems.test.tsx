@@ -75,10 +75,10 @@ describe('the systems page', () => {
 
   it('says that the working copy could not be read and shows the system document', async () => {
     localStorage.setItem('access_token', 'access');
-    vi.spyOn(systemsAPI, 'bindings').mockRejectedValue(failed(500, { detail: 'database unavailable' }));
+    vi.spyOn(systemsAPI, 'bindings').mockRejectedValue(failed(500, { error: 'internal error', type: 'internal' }));
     const fetch = retrieval();
     show();
-    expect(await screen.findByText('your working copy could not be read (database unavailable); showing the system document.')).toHaveAttribute('role', 'alert');
+    expect(await screen.findByText('your working copy could not be read (internal error); showing the system document.')).toHaveAttribute('role', 'alert');
     expect(await screen.findByText('System h2-chain, version 1, hash abcdef01.')).toBeInTheDocument();
     expect(fetch.mock.calls.map(([url]) => url)).toContain(`${ROOT}/h2-chain/signals`);
   });

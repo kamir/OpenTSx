@@ -261,32 +261,11 @@
             </div>
 
             <div class="main-content">
-                <!-- Organizations -->
-                <div class="card">
-                    <h2>🏢 My Organizations</h2>
-                    <div id="organizationsList"></div>
-                    <button class="btn btn-primary" onclick="loadOrganizations()" style="margin-top: 15px;">Refresh</button>
-                </div>
-
                 <!-- Flows -->
                 <div class="card">
                     <h2>📊 My Flows</h2>
                     <div id="flowsList"></div>
                     <button class="btn btn-primary" onclick="loadFlows()" style="margin-top: 15px;">Refresh</button>
-                </div>
-
-                <!-- Demo Flows -->
-                <div class="card" style="grid-column: 1 / -1;">
-                    <h2>🎯 Demo Flows & Templates</h2>
-                    <div id="demoFlowsList"></div>
-                    <button class="btn btn-primary" onclick="loadDemoFlows()" style="margin-top: 15px;">Refresh</button>
-                </div>
-
-                <!-- Node Types -->
-                <div class="card" style="grid-column: 1 / -1;">
-                    <h2>🔧 Available Node Types</h2>
-                    <div id="nodeTypesList"></div>
-                    <button class="btn btn-primary" onclick="loadNodeTypes()" style="margin-top: 15px;">Refresh</button>
                 </div>
             </div>
         </div>
@@ -382,42 +361,7 @@
             `;
 
             // Load all data
-            loadOrganizations();
             loadFlows();
-            loadDemoFlows();
-            loadNodeTypes();
-        }
-
-        async function loadOrganizations() {
-            const container = document.getElementById('organizationsList');
-            container.innerHTML = '<div class="loading">Loading...</div>';
-
-            try {
-                console.log('Fetching organizations from:', `${API_BASE_URL}/api/v1/organizations`);
-                const response = await fetch(`${API_BASE_URL}/api/v1/organizations`);
-                console.log('Organizations response:', response.status, response.statusText);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                const data = await response.json();
-                console.log('Organizations data:', data);
-
-                if (data.organizations && data.organizations.length > 0) {
-                    container.innerHTML = data.organizations.map(org => `
-                        <div class="list-item">
-                            <h3>${org.name}</h3>
-                            <p>Plan: ${org.plan_tier} | Members: ${org.member_count} | Role: ${org.role}</p>
-                        </div>
-                    `).join('');
-                } else {
-                    container.innerHTML = '<p>No organizations found</p>';
-                }
-            } catch (error) {
-                console.error('Error loading organizations:', error);
-                container.innerHTML = `<div class="error">Failed to load organizations: ${error.message}<br><small>Check browser console for details</small></div>`;
-            }
         }
 
         async function loadFlows() {
@@ -441,66 +385,6 @@
                 }
             } catch (error) {
                 container.innerHTML = `<div class="error">Failed to load flows: ${error.message}</div>`;
-            }
-        }
-
-        async function loadDemoFlows() {
-            const container = document.getElementById('demoFlowsList');
-            container.innerHTML = '<div class="loading">Loading...</div>';
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/v1/flows/demo`);
-                const data = await response.json();
-
-                if (data.flows && data.flows.length > 0) {
-                    container.innerHTML = data.flows.map(flow => `
-                        <div class="list-item">
-                            <h3>🎯 ${flow.name}</h3>
-                            <p>${flow.description}</p>
-                            <p><small>Category: ${flow.category || 'General'}</small></p>
-                        </div>
-                    `).join('');
-                } else {
-                    container.innerHTML = '<p>No demo flows available</p>';
-                }
-            } catch (error) {
-                container.innerHTML = `<div class="error">Failed to load demo flows: ${error.message}</div>`;
-            }
-        }
-
-        async function loadNodeTypes() {
-            const container = document.getElementById('nodeTypesList');
-            container.innerHTML = '<div class="loading">Loading...</div>';
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/v1/node-types`);
-                const data = await response.json();
-
-                if (data.node_types && data.node_types.length > 0) {
-                    const categories = {};
-                    data.node_types.forEach(node => {
-                        if (!categories[node.category]) {
-                            categories[node.category] = [];
-                        }
-                        categories[node.category].push(node);
-                    });
-
-                    container.innerHTML = Object.entries(categories).map(([category, nodes]) => `
-                        <div style="margin-bottom: 20px;">
-                            <h3 style="color: #667eea; text-transform: capitalize;">${category.replace('_', ' ')}</h3>
-                            ${nodes.map(node => `
-                                <div class="list-item">
-                                    <h3>${node.icon} ${node.name}</h3>
-                                    <p>${node.description}</p>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `).join('');
-                } else {
-                    container.innerHTML = '<p>No node types available</p>';
-                }
-            } catch (error) {
-                container.innerHTML = `<div class="error">Failed to load node types: ${error.message}</div>`;
             }
         }
 

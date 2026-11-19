@@ -135,7 +135,7 @@ The Smart Topics Studio follows a topic through it: open the page with `?bridge=
 | Workload | What | Reachable |
 |----------|------|-----------|
 | `opentsx-saas-frontend` | React frontend as a static build behind nginx; proxies `/api/` and `/retrieval/` | NodePort 30311 |
-| `opentsx-saas-backend` | FastAPI: accounts, organizations, stored flows | cluster-internal, through `/api/` |
+| `opentsx-saas-backend` | FastAPI: accounts, stored flows, working copies of systems; forwards DAG deployments to the retrieval server | cluster-internal, through `/api/` |
 | `opentsx-saas-db` | PostgreSQL with the PVC `opentsx-saas-db` (1Gi) | cluster-internal |
 
 `10-build.sh` then also builds `<repo>/saas-frontend:<tag>` and `<repo>/saas-backend:<tag>` (both need registry access
@@ -167,4 +167,5 @@ Limits:
   for `/retrieval/`, which reaches the retrieval server without authentication.
 * The database password is fixed once the volume exists; change it in PostgreSQL first, then in `.env`.
 * `70-backup.sh` does not cover the PVC `opentsx-saas-db`.
-* Saving a flow stores its definition. Nothing in this repository executes `opentsx.dag.v1` yet.
+* Saving a flow stores its definition and does not run it. A flow runs when its DAG is deployed (see
+  [Vector Smart Topics](#vector-smart-topics)).

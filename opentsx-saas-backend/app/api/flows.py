@@ -1,5 +1,6 @@
 """Flow API routes: flows are stored per user in the database."""
 
+import json
 from datetime import datetime
 from typing import Optional
 
@@ -9,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user
 from app.db.session import get_db
-from app.models.flow import ExecutionStatus, Flow, FlowExecution, FlowStatus
+from app.models.flow import Flow, FlowExecution, FlowStatus
 from app.models.user import User, user_organization
 from app.schemas.flow import Execution as ExecutionSchema
 from app.schemas.flow import Flow as FlowSchema
@@ -26,8 +27,9 @@ async def _organization_of(db: AsyncSession, user: User, organization_id: Option
     found = (await db.execute(query.order_by(user_organization.c.organization_id))).scalars().first()
     if found is None:
         if organization_id is not None:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, "Not a member of this organization")
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "The user belongs to no organization")
+            raise HTTPException(status.HTTP_403_FORBIDDEN, f"organization_id: {organization_id} is not an organization "
+                                                           "of this account; leave it out to use the first one")
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "this account: belongs to no organization; a flow needs one")
     return found
 
 
@@ -36,7 +38,7 @@ async def _own_flow(db: AsyncSession, user: User, flow_id: int) -> Flow:
     result = await db.execute(select(Flow).where(Flow.id == flow_id, Flow.owner_id == user.id))
     flow = result.scalar_one_or_none()
     if flow is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Flow not found")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"flow {flow_id}: not found; use the id of one of your flows")
     return flow
 
 
@@ -101,7 +103,8 @@ async def update_flow(
             changes["status"] = FlowStatus(changes["status"])
         except ValueError:
             allowed = ", ".join(s.value for s in FlowStatus)
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"status must be one of: {allowed}")
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                                f"status: {json.dumps(changes['status'])} is not allowed; expected one of {allowed}")
     for key, value in changes.items():
         setattr(flow, key, value)
     flow.updated_at = datetime.utcnow()
@@ -120,42 +123,6 @@ async def delete_flow(flow_id: int, current_user: User = Depends(get_current_use
     await db.delete(flow)
     await db.commit()
     return {"message": "Flow deleted successfully"}
-
-
-@router.post("/{flow_id}/execute")
-async def execute_flow(flow_id: int, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    """Submits the flow definition to Flink and records the execution."""
-    from app.services.flink_service import flink_service
-
-    flow = await _own_flow(db, current_user, flow_id)
-    try:
-        flink_job_id = flink_service.submit_job(flow.definition)
-    except Exception as e:
-        raise HTTPException(status.HTTP_502_BAD_GATEWAY, f"Failed to submit Flink job: {e}")
-
-    execution = FlowExecution(
-        flow_id=flow.id,
-        status=ExecutionStatus.RUNNING,
-        started_at=datetime.utcnow(),
-        result={"flink_job_id": flink_job_id},
-        node_results={},
-        events_processed=0,
-    )
-    db.add(execution)
-    flow.execution_count = (flow.execution_count or 0) + 1
-    flow.last_executed_at = datetime.utcnow()
-    await db.commit()
-    await db.refresh(execution)
-    return {
-        "message": "Flow execution started",
-        "execution": {
-            "id": execution.id,
-            "flow_id": flow.id,
-            "status": execution.status,
-            "flink_job_id": flink_job_id,
-            "started_at": execution.started_at,
-        },
-    }
 
 
 @router.get("/{flow_id}/executions")

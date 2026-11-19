@@ -263,6 +263,20 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The k3s Jobs `windpark-sim`, `metadata` and `metadata-publish` set `enableServiceLinks: false`. Kubernetes derives
   `OPENTSX_RETRIEVAL_PORT=tcp://<ip>:8080` from the Service `opentsx-retrieval`, and the configuration loader accepts
   only an int for that variable.
+- SaaS backend: every error answers {"error": "<text>", "type": "<type>"} with the types of the retrieval server
+  (bad_request, not_found, method_not_allowed, too_large, unauthorized, forbidden, unavailable, internal). A refused
+  request names the field and the problem and no longer repeats the input, so a password sent to register does not
+  come back; an unknown path answers 404 `<method> <path>: no such route; see /docs for the routes`, a wrong method
+  405 with the methods the path takes.
+- SaaS backend: a fault answers 500 {"error":"internal error","type":"internal"} with the CORS headers and writes one
+  line at ERROR with method, path and the exception with its causes; the stack trace is logged at DEBUG only.
+- SaaS backend: error texts follow `<subject>: <problem>; <what is allowed>` without a final period. A refused
+  binding, system id, flow id, flow status or organization_id names the value it refuses, for example `grade: "x" is
+  not allowed; expected one of raw, clean`. A request without a bearer token answers `Authorization: no bearer token;
+  sign in and send Authorization: Bearer <access token>`, and a token that is not valid answers `token: not valid or
+  expired; sign in again`.
+- The workbench reads the reason of a failed request only from `error` of the body `{"error": "<text>", "type":
+  "<type>"}`; the backend no longer sends `detail`.
 
 ### Removed
 
@@ -293,6 +307,15 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `src/store/authStore.test.ts`.
 - SaaS frontend: `organizationsAPI`, `authAPI.updateProfile`, `flowsAPI.execute` and the default export of
   `src/services/api.ts`; nothing imported them.
+- SaaS backend: the stub routes that answered fixed sample data without authentication (organizations, teams,
+  invitations, billing, GET and PATCH /api/v1/users/me, GET /api/v1/node-types, GET /api/v1/flows/demo), the shadowed
+  stub register and login, and the blocks of the page at / that called them.
+- SaaS backend: POST /api/v1/flows/{flow_id}/execute and services/flink_service.py; the route always answered 502
+  because no stack starts Flink and the JAR it uploaded does not exist. A flow runs when its DAG is deployed through
+  POST /api/v1/dags/deploy.
+- The SaaS backend documents and `local-test.sh` no longer describe or call the removed routes for organizations,
+  teams, invitations, node types, billing and subscription plans, `GET /api/v1/flows/demo` and `POST
+  /api/v1/flows/{id}/execute`.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -622,6 +645,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The OpenMetadata client `HttpOmApi` retries I/O errors with the same backoff as the statuses 429, 502, 503 and 504.
   It waits the seconds of a `Retry-After` header, at most 30 s per wait. After the last attempt it fails with
   `<method> <path>: no answer after <n> attempts` and keeps the cause.
+- SaaS backend: a token whose account no longer exists answers 401 instead of 404, so the workbench ends the session.
+- SaaS backend: an answer of the retrieval server that is 200 but not a JSON object (for example an HTML sign-in page)
+  answers 502 `retrieval server: gave an answer the backend cannot read; check that RETRIEVAL_URL names the retrieval
+  server` instead of counting as success.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
@@ -678,6 +705,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `bin/opentsx metadata --token` exits with code 2 instead of sending the token, so the bot token no longer shows in
   the process list or the shell history. Set it in `OPENMETADATA_JWT`, `OPENTSX_OPENMETADATA_TOKEN` or a properties
   file.
+- SaaS backend: the text of a retrieval server error other than 400 stays in the backend log and no longer reaches the
+  user; a 5xx answers 502 `retrieval server: answered HTTP <status>; see the log of the backend`, a 404 for a
+  generator 503 `retrieval server: does not offer this route or system; see the log of the backend`.
+- The SaaS backend creates its database engines with `hide_parameters=True`, so a database error and the 500 log line
+  no longer contain the bound parameters of the statement, such as an email address or a password hash.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

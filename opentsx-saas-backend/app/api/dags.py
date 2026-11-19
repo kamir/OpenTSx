@@ -21,6 +21,9 @@ log = logging.getLogger("uvicorn.error").getChild("dags")
 MAX_DAG_BYTES = 256 * 1024
 RUN_TOKEN_HEADER = "X-OpenTSx-Run-Token"
 BY_HEADER = "X-OpenTSx-By"
+NO_RETRIEVAL = "RETRIEVAL_URL: not set; this installation deploys no DAGs"
+ADMINS_ONLY = "this account: not an administrator; only administrators may deploy or stop DAGs on this installation"
+UNREADABLE = "retrieval server: gave an answer the backend cannot read; check that RETRIEVAL_URL names the retrieval server"
 
 
 def http_client() -> httpx.AsyncClient:
@@ -36,9 +39,9 @@ def may_run(user: User) -> bool:
 
 def _allowed(user: User) -> None:
     if not settings.RETRIEVAL_URL:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "This installation has no retrieval server configured for DAGs.")
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, NO_RETRIEVAL)
     if not may_run(user):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Only administrators may deploy or stop DAGs on this installation.")
+        raise HTTPException(status.HTTP_403_FORBIDDEN, ADMINS_ONLY)
 
 
 async def forward_json(user: User, what: str, path: str, document: dict):
@@ -59,38 +62,45 @@ async def _forward(user: User, what: str, path: str, body: bytes = b"", params: 
             answer = await client.post(url, content=body, headers=headers, params=params)
     except httpx.HTTPError as e:
         log.warning("%s by user %s failed: retrieval server unreachable (%s)", what, user.id, type(e).__name__)
-        raise HTTPException(status.HTTP_502_BAD_GATEWAY, "The retrieval server could not be reached.") from e
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, "retrieval server: not reachable; try again later") from e
 
     try:
         payload = answer.json()
     except ValueError:
-        payload = {}
+        payload = None
     if answer.status_code == 200:
-        log.info("%s by user %s: %s", what, user.id,
-                 (payload.get("dag") or payload.get("signal")) if isinstance(payload, dict) else "")
+        if not isinstance(payload, dict):
+            log.warning("%s by user %s: the retrieval server answered HTTP 200 with content type %s, not a JSON object",
+                        what, user.id, answer.headers.get("content-type"))
+            raise HTTPException(status.HTTP_502_BAD_GATEWAY, UNREADABLE)
+        log.info("%s by user %s: %s", what, user.id, payload.get("dag") or payload.get("signal"))
         return payload
-    reason = payload.get("error") if isinstance(payload, dict) else None
-    log.warning("%s by user %s refused by the retrieval server: HTTP %s", what, user.id, answer.status_code)
+    reason = payload.get("error") if isinstance(payload, dict) and isinstance(payload.get("error"), str) else None
+    log.warning("%s by user %s refused by the retrieval server: HTTP %s error=%r", what, user.id, answer.status_code, reason)
     if answer.status_code == 400:
         # the request itself cannot be served; the reason is meant for the person who made it
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, reason or "The retrieval server refused the request.")
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            reason or "retrieval server: refused the request without a reason; check the request")
     if answer.status_code == 401:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE,
-                            "The retrieval server did not accept the run token of this installation.")
+                            "retrieval server: refused the run token of this installation; "
+                            "DAG_RUN_TOKEN must equal OPENTSX_DAG_RUN_TOKEN of the retrieval server")
     if answer.status_code == 404:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE,
-                            "The retrieval server of this installation does not deploy DAGs." if path.startswith("/v1/dags")
-                            else reason or "The retrieval server of this installation does not offer this.")
-    raise HTTPException(status.HTTP_502_BAD_GATEWAY, reason or f"The retrieval server answered HTTP {answer.status_code}.")
+                            "retrieval server: does not deploy DAGs; it needs --kafscale and --dag-runs true"
+                            if path.startswith("/v1/dags")
+                            else "retrieval server: does not offer this route or system; see the log of the backend")
+    raise HTTPException(status.HTTP_502_BAD_GATEWAY,
+                        f"retrieval server: answered HTTP {answer.status_code}; see the log of the backend")
 
 
 @router.get("/capabilities")
 async def capabilities(user: User = Depends(get_current_user)):
     """Tells the workbench whether deploy and stop can work for this user."""
     if not settings.RETRIEVAL_URL:
-        return {"canRun": False, "reason": "This installation has no retrieval server configured for DAGs."}
+        return {"canRun": False, "reason": NO_RETRIEVAL}
     if not may_run(user):
-        return {"canRun": False, "reason": "Only administrators may deploy or stop DAGs on this installation."}
+        return {"canRun": False, "reason": ADMINS_ONLY}
     return {"canRun": True, "reason": None}
 
 
@@ -100,9 +110,9 @@ async def deploy(request: Request, user: User = Depends(get_current_user)):
     _allowed(user)
     body = await request.body()
     if not body:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "The request has no DAG.")
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "body: empty; send an opentsx.dag.v1 document as YAML")
     if len(body) > MAX_DAG_BYTES:
-        raise HTTPException(413, f"The DAG is larger than {MAX_DAG_BYTES} bytes.")
+        raise HTTPException(413, f"body: {len(body)} bytes; a DAG has at most {MAX_DAG_BYTES} bytes")
     return await _forward(user, "dag deploy", "/v1/dags/deploy", body)
 
 

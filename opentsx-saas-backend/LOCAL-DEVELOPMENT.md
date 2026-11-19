@@ -162,7 +162,6 @@ uvicorn app.main:app --reload --env-file .env.local
 
 # Terminal 2: Run tests or interact with API
 curl http://localhost:8000/health
-curl http://localhost:8000/api/v1/flows/demo
 
 # Or run automated tests
 ./local-test.sh
@@ -276,15 +275,6 @@ python3.12 -m venv venv
 ```bash
 # Health check
 curl http://localhost:8000/health
-
-# List organizations
-curl http://localhost:8000/api/v1/organizations
-
-# Get demo flows
-curl http://localhost:8000/api/v1/flows/demo
-
-# Get node types
-curl http://localhost:8000/api/v1/node-types
 ```
 
 `/api/v1/flows` lists the flows of the signed-in user and answers 401 without `Authorization: Bearer <access_token>`.
@@ -299,11 +289,6 @@ import requests
 # Health check
 response = requests.get("http://localhost:8000/health")
 print(response.json())
-
-# List demo flows
-response = requests.get("http://localhost:8000/api/v1/flows/demo")
-flows = response.json()
-print(f"Found {len(flows['flows'])} flows")
 ```
 
 ## Comparing with Docker Setup

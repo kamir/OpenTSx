@@ -3,6 +3,8 @@
 No database, no network.
 """
 
+import logging
+
 import httpx
 import pytest
 from fastapi.testclient import TestClient
@@ -30,6 +32,8 @@ def retrieval(monkeypatch):
         seen["by"] = request.headers.get(dags.BY_HEADER)
         seen["content_type"] = request.headers.get("content-type")
         seen["body"] = request.content
+        if "text" in state:
+            return httpx.Response(state["status"], text=state["text"], headers={"Content-Type": state["content_type"]})
         return httpx.Response(state["status"], json=state["json"])
 
     monkeypatch.setattr(dags, "http_client", lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler)))
@@ -79,11 +83,14 @@ def test_a_plain_user_may_not_run_unless_the_role_says_so(retrieval, monkeypatch
     client = client_as(PLAIN)
     answer = client.post("/api/v1/dags/deploy", content=DAG)
     assert answer.status_code == 403
-    assert "administrators" in answer.json()["detail"]
+    assert answer.json() == {
+        "error": "this account: not an administrator; only administrators may deploy or stop DAGs on this installation",
+        "type": "forbidden",
+    }
     assert "url" not in retrieval["seen"]
     assert client.get("/api/v1/dags/capabilities").json() == {
         "canRun": False,
-        "reason": "Only administrators may deploy or stop DAGs on this installation.",
+        "reason": "this account: not an administrator; only administrators may deploy or stop DAGs on this installation",
     }
 
     monkeypatch.setattr(settings, "DAG_RUN_ROLE", "user")
@@ -96,41 +103,73 @@ def test_the_reason_of_a_refused_dag_reaches_the_user(retrieval):
     retrieval["json"] = {"error": "node n1 (norm.zscore) is not available in this runtime"}
     answer = client_as(ADMIN).post("/api/v1/dags/deploy", content=DAG)
     assert answer.status_code == 400
-    assert answer.json()["detail"] == "node n1 (norm.zscore) is not available in this runtime"
+    assert answer.json() == {"error": "node n1 (norm.zscore) is not available in this runtime", "type": "bad_request"}
 
 
-@pytest.mark.parametrize("upstream, expected, text", [
-    (401, 503, "run token"),
-    (404, 503, "does not deploy DAGs"),
-    (500, 502, "boom"),
+@pytest.mark.parametrize("upstream, expected, kind, text", [
+    (401, 503, "unavailable", "retrieval server: refused the run token of this installation; "
+                              "DAG_RUN_TOKEN must equal OPENTSX_DAG_RUN_TOKEN of the retrieval server"),
+    (404, 503, "unavailable", "retrieval server: does not deploy DAGs; it needs --kafscale and --dag-runs true"),
+    (500, 502, "unavailable", "retrieval server: answered HTTP 500; see the log of the backend"),
 ])
-def test_trouble_of_the_installation_is_not_reported_as_the_users_fault(retrieval, upstream, expected, text):
+def test_trouble_of_the_installation_is_not_reported_as_the_users_fault(retrieval, caplog, upstream, expected, kind, text):
     retrieval["status"] = upstream
     retrieval["json"] = {"error": "boom"}
-    answer = client_as(ADMIN).post("/api/v1/dags/deploy", content=DAG)
+    with caplog.at_level(logging.WARNING, logger="uvicorn.error.dags"):
+        answer = client_as(ADMIN).post("/api/v1/dags/deploy", content=DAG)
     assert answer.status_code == expected
-    assert text in answer.json()["detail"]
+    assert answer.json() == {"error": text, "type": kind}
+    assert "boom" not in answer.text
+    assert [r.getMessage() for r in caplog.records if r.name == "uvicorn.error.dags"] == [
+        f"dag deploy by user 1 refused by the retrieval server: HTTP {upstream} error='boom'"
+    ]
+
+
+@pytest.mark.parametrize("answer_text, content_type", [
+    ("<html><body>Sign in to continue</body></html>", "text/html"),
+    ("[1, 2]", "application/json"),
+])
+def test_an_answer_that_is_not_a_json_object_is_a_bad_gateway(retrieval, caplog, answer_text, content_type):
+    retrieval["text"] = answer_text
+    retrieval["content_type"] = content_type
+    with caplog.at_level(logging.WARNING, logger="uvicorn.error.dags"):
+        answer = client_as(ADMIN).post("/api/v1/dags/deploy", content=DAG)
+    assert answer.status_code == 502
+    assert answer.json() == {
+        "error": "retrieval server: gave an answer the backend cannot read; check that RETRIEVAL_URL names the retrieval server",
+        "type": "unavailable",
+    }
+    assert [r.getMessage() for r in caplog.records if r.name == "uvicorn.error.dags"] == [
+        f"dag deploy by user 1: the retrieval server answered HTTP 200 with content type {content_type}, not a JSON object"
+    ]
 
 
 def test_an_unreachable_retrieval_server_is_a_bad_gateway(retrieval):
     retrieval["down"] = True
     answer = client_as(ADMIN).post("/api/v1/dags/deploy", content=DAG)
     assert answer.status_code == 502
-    assert "could not be reached" in answer.json()["detail"]
+    assert answer.json() == {"error": "retrieval server: not reachable; try again later", "type": "unavailable"}
 
 
 def test_empty_and_oversized_documents_are_refused_before_forwarding(retrieval):
     client = client_as(ADMIN)
-    assert client.post("/api/v1/dags/deploy", content=b"").status_code == 400
-    assert client.post("/api/v1/dags/deploy", content=b"x" * (dags.MAX_DAG_BYTES + 1)).status_code == 413
+    empty = client.post("/api/v1/dags/deploy", content=b"")
+    assert empty.status_code == 400
+    assert empty.json() == {"error": "body: empty; send an opentsx.dag.v1 document as YAML", "type": "bad_request"}
+    large = client.post("/api/v1/dags/deploy", content=b"x" * (dags.MAX_DAG_BYTES + 1))
+    assert large.status_code == 413
+    assert large.json() == {"error": "body: 262145 bytes; a DAG has at most 262144 bytes", "type": "too_large"}
     assert "url" not in retrieval["seen"]
 
 
 def test_without_a_retrieval_server_nothing_runs(retrieval, monkeypatch):
     monkeypatch.setattr(settings, "RETRIEVAL_URL", None)
     client = client_as(ADMIN)
-    assert client.post("/api/v1/dags/deploy", content=DAG).status_code == 503
-    assert client.get("/api/v1/dags/capabilities").json()["canRun"] is False
+    answer = client.post("/api/v1/dags/deploy", content=DAG)
+    assert answer.status_code == 503
+    assert answer.json() == {"error": "RETRIEVAL_URL: not set; this installation deploys no DAGs", "type": "unavailable"}
+    assert client.get("/api/v1/dags/capabilities").json() == {
+        "canRun": False, "reason": "RETRIEVAL_URL: not set; this installation deploys no DAGs"}
 
 
 def test_stop_forwards_the_name_and_needs_the_same_rights(retrieval):

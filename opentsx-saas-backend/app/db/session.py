@@ -10,6 +10,7 @@ from app.core.config import settings
 async_engine = create_async_engine(
     settings.database_url,
     echo=False,
+    hide_parameters=True,
     pool_pre_ping=True,
     pool_size=20,
     max_overflow=40,
@@ -28,6 +29,7 @@ AsyncSessionLocal = async_sessionmaker(
 sync_engine = create_engine(
     settings.sync_database_url,
     echo=False,
+    hide_parameters=True,
     pool_pre_ping=True,
 )
 

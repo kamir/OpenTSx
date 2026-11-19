@@ -153,7 +153,109 @@ Settings: `RETRIEVAL_URL` (the retrieval server; unset means no deployments), `D
 (`superuser`, the default: administrators only; `user`: every account). Sign-up is open, so `user` lets everyone
 who can register deploy and stop.
 
+### Flows
+
+| Route | What |
+|-------|------|
+| `GET /api/v1/flows` | the flows of the signed-in user, most recently changed first |
+| `POST /api/v1/flows` | stores a new flow as draft; body `name`, `definition` and optional fields |
+| `GET /api/v1/flows/{flow_id}` | one flow with its definition |
+| `PUT /api/v1/flows/{flow_id}` | changes the given fields of a flow |
+| `DELETE /api/v1/flows/{flow_id}` | deletes a flow and its execution history |
+| `GET /api/v1/flows/{flow_id}/executions` | the execution history of a flow, newest first |
+
+The backend stores flows and does not run them. A flow runs when its DAG is deployed through
+`POST /api/v1/dags/deploy`.
+
+### Systems
+
+| Route | What |
+|-------|------|
+| `GET /api/v1/systems/{system}/bindings` | the working copy of the signed-in user for this system |
+| `PUT /api/v1/systems/{system}/bindings` | sets the source of one grade of one signal; body `signal`, `grade`, `source`, `meaningConfirmed`, `baseHash` |
+| `DELETE /api/v1/systems/{system}/bindings?signal=<signal>&grade=<grade>` | takes a source out of the working copy |
+| `POST /api/v1/systems/{system}/generate` | runs the demo generator of a signal through the retrieval server; body `signal`, `from`, `to`; same settings and rights as a DAG deployment |
+
 See full API documentation at: `/docs` (Swagger UI)
+
+### Errors
+
+Every error answers a JSON object with two fields, `error` and `type`:
+
+```json
+{"error":"GET /api/v1/nothing: no such route; see /docs for the routes","type":"not_found"}
+```
+
+`error` is the reason in words, in the form `<subject>: <problem>; <what is allowed>`, without a final period.
+`type` is one of the types of the retrieval server: branch on `type`, not on the text.
+
+| Status | `type` | When |
+|--------|--------|------|
+| `400` | `bad_request` | an empty DAG body; `change-password` with a wrong current password; a new flow of an account without organization; a request the retrieval server refused, with its reason |
+| `401` | `unauthorized` | no token, a token that is not valid or has expired, or a token whose account no longer exists; the header `WWW-Authenticate: Bearer` comes along |
+| `403` | `forbidden` | an inactive account; a new flow for an organization the account is not a member of; an account that may not deploy, stop or generate under `DAG_RUN_ROLE` |
+| `404` | `not_found` | a path the backend does not know; a flow of another account or none; a binding the working copy does not hold |
+| `405` | `method_not_allowed` | a known path with a method it does not take; the `Allow` header lists the methods it takes |
+| `409` | `bad_request` | `register` with an address that is already registered |
+| `413` | `too_large` | a DAG over 262144 bytes |
+| `422` | `bad_request` | a field that is missing or malformed, a body that is not valid JSON, a binding that cannot be a source |
+| `500` | `internal` | a fault in the backend; the body is always `{"error":"internal error","type":"internal"}` |
+| `502` | `unavailable` | the retrieval server cannot be reached, answers an error of its own, or answers 200 with something other than a JSON object |
+| `503` | `unavailable` | `RETRIEVAL_URL` is not set; the retrieval server refuses the run token or does not offer the route |
+
+A refused field names the field and the problem; the value of the field is not repeated, so a password does not
+come back:
+
+```json
+{"error":"email: value is not a valid email address: The part after the @-sign is not valid. It should have a period; password: String should have at least 8 characters","type":"bad_request"}
+```
+
+A refused binding names the value it refuses:
+
+```json
+{"error":"grade: \"x\" is not allowed; expected one of raw, clean","type":"bad_request"}
+```
+
+The texts of the token check and of the flow routes:
+
+| Status | `error` |
+|--------|---------|
+| `400` | `this account: belongs to no organization; a flow needs one` |
+| `401` | `Authorization: no bearer token; sign in and send Authorization: Bearer <access token>` |
+| `401` | `token: not valid or expired; sign in again` |
+| `401` | `token: the account no longer exists; sign in with an existing account` |
+| `403` | `this account: deactivated; ask an administrator to activate it` |
+| `403` | `organization_id: <id> is not an organization of this account; leave it out to use the first one` |
+| `404` | `flow <id>: not found; use the id of one of your flows` |
+| `422` | `status: "<status>" is not allowed; expected one of draft, active, paused, archived` |
+
+The texts towards the retrieval server:
+
+| Status | `error` |
+|--------|---------|
+| `400` | the `error` of the retrieval server, or `retrieval server: refused the request without a reason; check the request` |
+| `502` | `retrieval server: not reachable; try again later` |
+| `502` | `retrieval server: answered HTTP <status>; see the log of the backend` |
+| `502` | `retrieval server: gave an answer the backend cannot read; check that RETRIEVAL_URL names the retrieval server` |
+| `503` | `retrieval server: refused the run token of this installation; DAG_RUN_TOKEN must equal OPENTSX_DAG_RUN_TOKEN of the retrieval server` |
+| `503` | `retrieval server: does not deploy DAGs; it needs --kafscale and --dag-runs true` |
+| `503` | `retrieval server: does not offer this route or system; see the log of the backend` |
+| `503` | `RETRIEVAL_URL: not set; this installation deploys no DAGs` |
+| `503` | `RETRIEVAL_URL: not set; this installation runs no generators` |
+
+The text of an upstream error other than 400 stays in the log of the backend (logger `uvicorn.error.dags`, level
+WARNING):
+
+```text
+dag deploy by user 1 refused by the retrieval server: HTTP 500 error='boom'
+```
+
+A 500 writes one line at ERROR (logger `uvicorn.error.errors`) with the method, the path and the exception with its
+causes; the stack trace follows at DEBUG:
+
+```text
+request failed method=<method> path=<path> status=500 cause=<exception>; caused by <exception>
+```
 
 ## Database Setup
 

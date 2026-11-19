@@ -35,7 +35,7 @@ describe('the flow builder page', () => {
 
   it('says why the flow could not be saved', async () => {
     const config = { url: '/flows', baseURL: '/api/v1', headers: {} } as InternalAxiosRequestConfig;
-    const data = { detail: [{ type: 'string_too_long', loc: ['body', 'name'], msg: 'String should have at most 200 characters' }] };
+    const data = { error: 'name: String should have at most 200 characters', type: 'bad_request' };
     vi.spyOn(flowsAPI, 'create').mockRejectedValue(
       new AxiosError('Request failed with status code 422', AxiosError.ERR_BAD_REQUEST, config, null, { data, status: 422, statusText: '', headers: {}, config })
     );

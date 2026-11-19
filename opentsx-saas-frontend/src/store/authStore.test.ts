@@ -53,13 +53,13 @@ afterEach(() => {
 
 describe('logout', () => {
   it('removes both tokens and says so when the backend answers with an error', async () => {
-    reply(500, { detail: 'database unavailable' });
+    reply(500, { error: 'internal error', type: 'internal' });
     await useAuthStore.getState().logout();
     expect(localStorage.getItem('access_token')).toBeNull();
     expect(localStorage.getItem('refresh_token')).toBeNull();
     expect(useAuthStore.getState()).toMatchObject({
       isAuthenticated: false,
-      error: 'signed out here; the server could not be told: database unavailable',
+      error: 'signed out here; the server could not be told: internal error',
     });
   });
 
@@ -87,15 +87,15 @@ describe('the sign-in error', () => {
   const at = (path: string) => `${backend.seen[0].baseURL}${path}`;
 
   it('is the reason the backend gives', async () => {
-    reply(401, { detail: 'Incorrect email or password' });
+    reply(401, { error: 'Incorrect email or password', type: 'unauthorized' });
     await login();
     expect(useAuthStore.getState().error).toBe('Incorrect email or password');
   });
 
   it('is text when the backend refuses a field', async () => {
-    reply(422, { detail: [{ type: 'value_error', loc: ['body', 'email'], msg: 'value is not a valid email address: The part after the @-sign is not valid.' }] });
+    reply(422, { error: 'email: value is not a valid email address: The part after the @-sign is not valid. It should have a period', type: 'bad_request' });
     await register();
-    expect(useAuthStore.getState().error).toBe('email: value is not a valid email address: The part after the @-sign is not valid.');
+    expect(useAuthStore.getState().error).toBe('email: value is not a valid email address: The part after the @-sign is not valid. It should have a period');
   });
 
   it('names status and address when a proxy answers with its own page', async () => {
@@ -113,18 +113,18 @@ describe('the sign-in error', () => {
 
 describe('fetchCurrentUser', () => {
   it('keeps the session and sets the error when /auth/me fails with 500', async () => {
-    reply(500, { detail: 'database unavailable' });
+    reply(500, { error: 'internal error', type: 'internal' });
     await useAuthStore.getState().fetchCurrentUser();
     expect(localStorage.getItem('access_token')).toBe('access');
     expect(useAuthStore.getState()).toMatchObject({
       isAuthenticated: true,
       isLoading: false,
-      error: 'your account could not be read (database unavailable); reload the page to try again',
+      error: 'your account could not be read (internal error); reload the page to try again',
     });
   });
 
   it('signs out when /auth/me answers 401', async () => {
-    reply(401, { detail: 'Could not validate credentials' });
+    reply(401, { error: 'token: not valid or expired; sign in again', type: 'unauthorized' });
     await useAuthStore.getState().fetchCurrentUser();
     expect(localStorage.getItem('access_token')).toBeNull();
     expect(localStorage.getItem('refresh_token')).toBeNull();
@@ -138,7 +138,7 @@ describe('fetchCurrentUser', () => {
   });
 
   it('drops the account error once /auth/me answers', async () => {
-    reply(500, { detail: 'database unavailable' });
+    reply(500, { error: 'internal error', type: 'internal' });
     await useAuthStore.getState().fetchCurrentUser();
     reply(200, user);
     await useAuthStore.getState().fetchCurrentUser();

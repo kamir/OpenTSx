@@ -2,32 +2,47 @@
 OpenTSx SaaS Backend API
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-FastAPI application with complete SaaS features:
-- User authentication (JWT)
-- Organization & team management
-- Payment integration (stub)
-- Flow builder & execution engine
-- Real-time WebSocket updates
+FastAPI application: accounts with JWT login, flows stored per user, DAG deployments and demo generators forwarded
+to the retrieval server, and the working copy of signal bindings per user. Every error answers
+{"error": text, "type": t}.
 """
 
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
+import logging
 from contextlib import asynccontextmanager
-import uvicorn
+from http import HTTPStatus
 from pathlib import Path
 
-from app.core.config import settings
+import uvicorn
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException
+
 from app.api import auth, dags, flows, systems
-from app.db.session import async_engine
+from app.core.config import settings
 from app.db.base import Base  # Import from base.py to ensure all models are loaded
 from app.db.init_db import init_db
-from app.db.session import AsyncSessionLocal
+from app.db.session import AsyncSessionLocal, async_engine
 from app.db.utils import wait_for_db
-from app.db.session import get_db
-from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends
+
+log = logging.getLogger("uvicorn.error").getChild("errors")
+
+# the types the retrieval server and the event bridge answer too; a status without a type fails as internal error
+ERROR_TYPES = {
+    400: "bad_request",
+    401: "unauthorized",
+    403: "forbidden",
+    404: "not_found",
+    405: "method_not_allowed",
+    409: "bad_request",
+    413: "too_large",
+    422: "bad_request",
+    500: "internal",
+    502: "unavailable",
+    503: "unavailable",
+}
 
 
 # ==================== Lifespan ====================
@@ -72,6 +87,32 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
+def error_answer(status_code: int, text: str, headers=None) -> JSONResponse:
+    return JSONResponse({"error": text, "type": ERROR_TYPES[status_code]}, status_code=status_code, headers=headers)
+
+
+def causes(exc: BaseException) -> str:
+    """The exception and its explicit causes (raise ... from); the implicit context holds middleware internals."""
+    seen = []
+    while exc is not None and exc not in seen:
+        seen.append(exc)
+        exc = exc.__cause__
+    return "; caused by ".join(f"{type(e).__name__}: {e}".replace("\n", " ") for e in seen)
+
+
+# A middleware, not an exception handler for Exception: Starlette re-raises after such a handler and uvicorn then logs
+# the stack trace at ERROR. Added before CORS, so the CORS headers reach the 500 answer too.
+@app.middleware("http")
+async def internal_error(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as exc:
+        log.error("request failed method=%s path=%s status=500 cause=%s", request.method, request.url.path, causes(exc))
+        log.debug("stack trace of the failed request", exc_info=exc)
+        return error_answer(500, "internal error")
+
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -80,6 +121,37 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(HTTPException)
+async def http_error(request: Request, exc: HTTPException) -> JSONResponse:
+    text = exc.detail
+    where = f"{request.method} {request.url.path}"
+    if exc.status_code == 404 and text == HTTPStatus.NOT_FOUND.phrase:
+        text = f"{where}: no such route; see /docs for the routes"
+    elif exc.status_code == 405 and text == HTTPStatus.METHOD_NOT_ALLOWED.phrase:
+        allowed = (exc.headers or {}).get("Allow")
+        text = f"{where}: method not allowed; " + (f"expected {allowed}" if allowed else "see /docs for the routes")
+    return error_answer(exc.status_code, text, exc.headers)
+
+
+def validation_text(errors) -> str:
+    """The refused fields as `<field>: <problem>`, joined by "; ". The input is left out: it may hold a password."""
+    parts = []
+    for e in errors:
+        loc = [str(p) for p in e["loc"]]
+        if e["type"] == "json_invalid":
+            parser = e.get("ctx", {}).get("error")
+            parts.append(f"body: not valid JSON at character {loc[-1]} ({parser}); send a JSON object")
+        else:
+            parts.append(f"{'.'.join(loc[1:]) or loc[0]}: {e['msg'].rstrip('.')}")
+    return "; ".join(parts)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
+    return error_answer(422, validation_text(exc.errors()))
+
 
 # Mount static files
 static_path = Path(__file__).parent.parent / "static"
@@ -123,231 +195,6 @@ async def health_check():
 
 # ==================== API Routes ====================
 
-# Auth routes
-@app.post(f"{settings.API_V1_STR}/auth/register")
-async def register(
-    email: str,
-    password: str,
-    full_name: str = ""
-):
-    """
-    Register new user.
-
-    Creates a new user account and default organization.
-    """
-    # Implementation would hash password and create user
-    return {
-        "message": "User registered successfully",
-        "user": {
-            "email": email,
-            "full_name": full_name,
-        }
-    }
-
-
-@app.post(f"{settings.API_V1_STR}/auth/login")
-async def login(email: str, password: str):
-    """
-    Login user and return JWT tokens.
-
-    Returns:
-        access_token: JWT access token (30 min)
-        refresh_token: JWT refresh token (7 days)
-        user: User information
-    """
-    # Implementation would verify credentials and generate JWT
-    return {
-        "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-        "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-        "token_type": "bearer",
-        "user": {
-            "id": 1,
-            "email": email,
-            "full_name": "Demo User",
-        }
-    }
-
-
-# User routes
-@app.get(f"{settings.API_V1_STR}/users/me")
-async def get_current_user():
-    """Get current authenticated user."""
-    return {
-        "id": 1,
-        "email": "user@example.com",
-        "full_name": "Demo User",
-        "is_verified": True,
-        "organizations": [
-            {"id": 1, "name": "My Organization", "role": "admin"}
-        ]
-    }
-
-
-@app.patch(f"{settings.API_V1_STR}/users/me")
-async def update_current_user(full_name: str = None, bio: str = None):
-    """Update current user profile."""
-    return {
-        "message": "Profile updated successfully",
-        "user": {
-            "full_name": full_name,
-            "bio": bio,
-        }
-    }
-
-
-# Organization routes
-@app.get(f"{settings.API_V1_STR}/organizations")
-async def list_organizations():
-    """List organizations user belongs to."""
-    return {
-        "organizations": [
-            {
-                "id": 1,
-                "name": "My Organization",
-                "slug": "my-org",
-                "role": "admin",
-                "plan_tier": "free",
-                "member_count": 3,
-            }
-        ]
-    }
-
-
-@app.post(f"{settings.API_V1_STR}/organizations")
-async def create_organization(name: str, slug: str):
-    """Create new organization."""
-    return {
-        "message": "Organization created successfully",
-        "organization": {
-            "id": 1,
-            "name": name,
-            "slug": slug,
-            "plan_tier": "free",
-        }
-    }
-
-
-@app.get(f"{settings.API_V1_STR}/organizations/{{org_id}}")
-async def get_organization(org_id: int):
-    """Get organization details."""
-    return {
-        "id": org_id,
-        "name": "My Organization",
-        "slug": "my-org",
-        "plan_tier": "free",
-        "max_flows": 5,
-        "max_executions_per_month": 1000,
-        "max_team_members": 3,
-        "current_flows": 2,
-        "current_executions_this_month": 147,
-        "members": [
-            {"id": 1, "email": "user@example.com", "role": "admin"}
-        ]
-    }
-
-
-# Team routes
-@app.get(f"{settings.API_V1_STR}/organizations/{{org_id}}/teams")
-async def list_teams(org_id: int):
-    """List teams in organization."""
-    return {
-        "teams": [
-            {
-                "id": 1,
-                "name": "Engineering",
-                "member_count": 5,
-            },
-            {
-                "id": 2,
-                "name": "Data Science",
-                "member_count": 3,
-            }
-        ]
-    }
-
-
-@app.post(f"{settings.API_V1_STR}/organizations/{{org_id}}/teams")
-async def create_team(org_id: int, name: str, description: str = ""):
-    """Create new team."""
-    return {
-        "message": "Team created successfully",
-        "team": {
-            "id": 1,
-            "name": name,
-            "description": description,
-        }
-    }
-
-
-# Invitation routes
-@app.post(f"{settings.API_V1_STR}/organizations/{{org_id}}/invitations")
-async def create_invitation(
-    org_id: int,
-    email: str,
-    role: str = "user",
-    team_id: int = None
-):
-    """
-    Invite user to organization.
-
-    Sends email invitation with unique token.
-    """
-    return {
-        "message": "Invitation sent successfully",
-        "invitation": {
-            "id": 1,
-            "email": email,
-            "role": role,
-            "token": "inv_abc123xyz",
-            "expires_at": "2025-01-20T12:00:00Z",
-        }
-    }
-
-
-@app.post(f"{settings.API_V1_STR}/invitations/{{token}}/accept")
-async def accept_invitation(token: str):
-    """Accept invitation and join organization."""
-    return {
-        "message": "Invitation accepted successfully",
-        "organization": {
-            "id": 1,
-            "name": "Organization Name",
-        }
-    }
-
-
-# Flow routes
-# Demo flows (must be registered before the flow router, or /flows/{flow_id} takes the path)
-@app.get(f"{settings.API_V1_STR}/flows/demo")
-async def list_demo_flows():
-    """List public demo flows."""
-    return {
-        "flows": [
-            {
-                "id": 101,
-                "name": "Getting Started - Simple DFA",
-                "description": "Learn DFA with synthetic data",
-                "is_template": True,
-                "category": "tutorial",
-            },
-            {
-                "id": 102,
-                "name": "Stock Market Analysis",
-                "description": "Real-time stock price persistence detection",
-                "is_template": True,
-                "category": "finance",
-            },
-            {
-                "id": 103,
-                "name": "Climate Event Sync",
-                "description": "Detect synchronized climate patterns",
-                "is_template": True,
-                "category": "climate",
-            }
-        ]
-    }
-
-
 # Flows: stored per user (app/api/flows.py)
 app.include_router(flows.router, prefix=settings.API_V1_STR)
 
@@ -356,98 +203,6 @@ app.include_router(dags.router, prefix=settings.API_V1_STR)
 
 # Systems: the working copy of signal bindings per user, and demo generators (app/api/systems.py)
 app.include_router(systems.router, prefix=settings.API_V1_STR)
-
-
-# Payment routes (stub)
-@app.post(f"{settings.API_V1_STR}/billing/create-checkout-session")
-async def create_checkout_session(
-    organization_id: int,
-    plan_tier: str
-):
-    """Create Stripe checkout session (stub)."""
-    return {
-        "checkout_url": "https://checkout.stripe.com/test/session_abc123",
-        "session_id": "cs_test_abc123",
-    }
-
-
-@app.post(f"{settings.API_V1_STR}/billing/webhook")
-async def stripe_webhook():
-    """Handle Stripe webhooks (stub)."""
-    return {"received": True}
-
-
-# Node type registry (for flow builder)
-@app.get(f"{settings.API_V1_STR}/node-types")
-async def list_node_types():
-    """List available node types for flow builder."""
-    return {
-        "node_types": [
-            {
-                "id": "data.kafka_consumer",
-                "name": "Kafka Consumer",
-                "category": "data_source",
-                "icon": "📥",
-                "description": "Subscribe to Kafka topic",
-                "config_schema": {
-                    "type": "object",
-                    "properties": {
-                        "topic": {"type": "string", "required": True},
-                        "bootstrap_servers": {"type": "string", "default": "localhost:9092"},
-                    }
-                }
-            },
-            {
-                "id": "analysis.dfa",
-                "name": "DFA Analysis",
-                "category": "analysis",
-                "icon": "📊",
-                "description": "Detrended Fluctuation Analysis",
-                "config_schema": {
-                    "type": "object",
-                    "properties": {
-                        "polynom_order": {"type": "integer", "default": 1, "min": 1, "max": 5},
-                        "min_scale": {"type": "integer", "default": 10},
-                        "max_scale": {"type": "integer", "default": 1000},
-                    }
-                }
-            },
-            {
-                "id": "analysis.mfdfa",
-                "name": "MFDFA Analysis",
-                "category": "analysis",
-                "icon": "📈",
-                "description": "Multifractal DFA",
-            },
-            {
-                "id": "processing.normalize",
-                "name": "Normalize",
-                "category": "processing",
-                "icon": "🔧",
-                "description": "Normalize time series",
-                "config_schema": {
-                    "type": "object",
-                    "properties": {
-                        "method": {"type": "string", "enum": ["zscore", "minmax", "robust"], "default": "zscore"},
-                    }
-                }
-            },
-            {
-                "id": "processing.detrend",
-                "name": "Detrend",
-                "category": "processing",
-                "icon": "📉",
-                "description": "Remove polynomial trend",
-            },
-            {
-                "id": "output.kafka_producer",
-                "name": "Kafka Producer",
-                "category": "output",
-                "icon": "📤",
-                "description": "Send to Kafka topic",
-            },
-        ]
-    }
 
 
 # ==================== Run Server ====================

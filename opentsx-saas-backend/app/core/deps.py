@@ -10,12 +10,13 @@ from app.db.session import get_db
 from app.core.security import decode_token
 from app.models.user import User
 
-# HTTP Bearer token scheme
-security = HTTPBearer()
+# auto_error=False, so a missing token gets the error text of get_current_user, not the one of FastAPI
+security = HTTPBearer(auto_error=False)
+NOT_VALID = "token: not valid or expired; sign in again"
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: AsyncSession = Depends(get_db)
 ) -> User:
     """
@@ -31,6 +32,12 @@ async def get_current_user(
     Raises:
         HTTPException: If token is invalid or user not found
     """
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authorization: no bearer token; sign in and send Authorization: Bearer <access token>",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     token = credentials.credentials
 
     # Decode token
@@ -38,7 +45,7 @@ async def get_current_user(
     if payload is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
+            detail=NOT_VALID,
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -47,7 +54,7 @@ async def get_current_user(
     if user_id is None or payload.get("type") == "refresh" or not str(user_id).isdigit():
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
+            detail=NOT_VALID,
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -57,60 +64,15 @@ async def get_current_user(
 
     if user is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="token: the account no longer exists; sign in with an existing account",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Inactive user"
+            detail="this account: deactivated; ask an administrator to activate it"
         )
 
     return user
-
-
-async def get_current_active_user(
-    current_user: User = Depends(get_current_user)
-) -> User:
-    """
-    Get current active user.
-
-    Args:
-        current_user: Current user from get_current_user
-
-    Returns:
-        User: Active user
-
-    Raises:
-        HTTPException: If user is inactive
-    """
-    if not current_user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Inactive user"
-        )
-    return current_user
-
-
-async def get_current_superuser(
-    current_user: User = Depends(get_current_user)
-) -> User:
-    """
-    Get current superuser.
-
-    Args:
-        current_user: Current user from get_current_user
-
-    Returns:
-        User: Superuser
-
-    Raises:
-        HTTPException: If user is not superuser
-    """
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough privileges"
-        )
-    return current_user

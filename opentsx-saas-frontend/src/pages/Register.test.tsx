@@ -18,7 +18,7 @@ import Register from './Register';
 describe('the register page', () => {
   it('shows the fields the backend refuses', async () => {
     backend.answer = async (config) => {
-      const data = { detail: [{ type: 'value_error', loc: ['body', 'email'], msg: 'value is not a valid email address: The part after the @-sign is not valid.' }] };
+      const data = { error: 'email: value is not a valid email address: The part after the @-sign is not valid. It should have a period', type: 'bad_request' };
       throw new AxiosError('Request failed with status code 422', AxiosError.ERR_BAD_REQUEST, config, null, { data, status: 422, statusText: '', headers: {}, config });
     };
     render(
@@ -30,6 +30,6 @@ describe('the register page', () => {
     fireEvent.change(screen.getByLabelText('Email address'), { target: { value: 'ops@localhost' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password1' } });
     fireEvent.click(screen.getByRole('button', { name: 'Sign up' }));
-    expect(await screen.findByText('email: value is not a valid email address: The part after the @-sign is not valid.')).toBeInTheDocument();
+    expect(await screen.findByText('email: value is not a valid email address: The part after the @-sign is not valid. It should have a period')).toBeInTheDocument();
   });
 });

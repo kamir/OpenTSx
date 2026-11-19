@@ -326,13 +326,13 @@ describe('Stop in the deploy panel', () => {
   it('says when the status of the flow could not be set', async () => {
     const config = { url: '/flows/7', baseURL: '/api/v1', headers: {} } as InternalAxiosRequestConfig;
     vi.spyOn(flowsAPI, 'patch').mockRejectedValue(
-      new AxiosError('Request failed with status code 404', AxiosError.ERR_BAD_REQUEST, config, null, { data: { detail: 'Flow not found' }, status: 404, statusText: '', headers: {}, config })
+      new AxiosError('Request failed with status code 404', AxiosError.ERR_BAD_REQUEST, config, null, { data: { error: 'flow 7: not found; use the id of one of your flows', type: 'not_found' }, status: 404, statusText: '', headers: {}, config })
     );
     render(createElement(MemoryRouter, null, createElement(DeploymentsPanel, { base: 'http://retrieval.test', blocker: null, checks: [], onSave: async () => 7 })));
     const stop = await screen.findByRole('button', { name: 'Stop' });
     await waitFor(() => expect(stop).toBeEnabled());
     fireEvent.click(stop);
-    expect(await screen.findByRole('status')).toHaveTextContent('wind-flow-7 is stopped. The status of flow 7 stays as it was: Flow not found.');
+    expect(await screen.findByRole('status')).toHaveTextContent('wind-flow-7 is stopped. The status of flow 7 stays as it was: flow 7: not found; use the id of one of your flows.');
   });
 });
 

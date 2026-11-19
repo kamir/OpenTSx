@@ -53,7 +53,7 @@ describe('opening a signal', () => {
     const config = { url: '/systems/h2-chain/bindings', baseURL: '/api/v1', headers: {} } as InternalAxiosRequestConfig;
     vi.spyOn(systemsAPI, 'bindings').mockRejectedValue(
       new AxiosError('Request failed with status code 500', AxiosError.ERR_BAD_RESPONSE, config, null, {
-        data: { detail: 'database unavailable' },
+        data: { error: 'internal error', type: 'internal' },
         status: 500,
         statusText: '',
         headers: {},
@@ -79,7 +79,7 @@ describe('opening a signal', () => {
     vi.stubGlobal('fetch', fetch);
     show('/workbench?system=h2-chain&signal=demand.kg_h&grade=raw');
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'your working copy could not be read (database unavailable); showing the system document.'
+      'your working copy could not be read (internal error); showing the system document.'
     );
     expect(fetch.mock.calls.map(([url]) => url)).toContain('/retrieval/v1/systems/h2-chain/signals');
     expect(useFlow.getState().context?.signal).toBe('demand.kg_h');

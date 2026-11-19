@@ -11,13 +11,10 @@ Version 1.0.0 | Last Updated: January 2025
 1. [Introduction](#introduction)
 2. [Getting Started](#getting-started)
 3. [User Authentication](#user-authentication)
-4. [Organizations & Teams](#organizations--teams)
-5. [Visual Flow Builder](#visual-flow-builder)
-6. [Node Types Reference](#node-types-reference)
-7. [Example Flows](#example-flows)
-8. [Subscription Plans](#subscription-plans)
-9. [API Integration](#api-integration)
-10. [FAQ & Troubleshooting](#faq--troubleshooting)
+4. [Visual Flow Builder](#visual-flow-builder)
+5. [Example Flows](#example-flows)
+6. [API Integration](#api-integration)
+7. [FAQ & Troubleshooting](#faq--troubleshooting)
 
 ---
 
@@ -30,7 +27,6 @@ OpenTSx is a powerful, visual platform for time series analysis that makes advan
 - **Build** analysis pipelines visually with drag-and-drop
 - **Analyze** time series data using cutting-edge algorithms (DFA, MFDFA, Event Synchronization)
 - **Visualize** results in real-time with interactive charts
-- **Collaborate** with teams and organizations
 - **Deploy** pipelines to production with one click
 
 ### Key Features
@@ -38,7 +34,6 @@ OpenTSx is a powerful, visual platform for time series analysis that makes advan
 ✅ **No-Code Visual Builder** - Design pipelines like Zapier/N8N
 ✅ **Real-Time Analysis** - Process streaming data from Kafka
 ✅ **Advanced Algorithms** - DFA, MFDFA, Event Synchronization, and more
-✅ **Team Collaboration** - Organizations, teams, and role-based access
 ✅ **Production-Ready** - Deploy to Kafka streams at scale
 ✅ **Interactive Charts** - Oscilloscope-like real-time visualization
 
@@ -57,23 +52,7 @@ Visit `https://app.opentsx.com/signup` and create a free account:
 
 🎉 Your account comes with a free organization and 5 flow slots!
 
-### 2. Create Your First Organization
-
-After signup, you'll be prompted to create an organization:
-
-```
-Organization Name: My Research Lab
-Slug: my-research-lab (used in URLs)
-```
-
-**What's an Organization?**
-An organization is a workspace where you and your team collaborate on flows. Each organization has:
-- **Members**: Team members with different roles
-- **Teams**: Sub-groups within the organization
-- **Flows**: Shared analysis pipelines
-- **Subscription**: Plan tier (Free, Starter, Professional, Enterprise)
-
-### 3. Build Your First Flow
+### 2. Build Your First Flow
 
 Let's create a simple DFA analysis flow:
 
@@ -124,10 +103,6 @@ Email: your@email.com
 Password: ********
 ```
 
-**Two-Factor Authentication** (Enterprise plan):
-- Scan QR code with authenticator app
-- Enter 6-digit code on each login
-
 ### Password Reset
 
 Forgot password?
@@ -146,125 +121,6 @@ Click your avatar → "Profile Settings":
 - **Preferences**: Theme (light/dark), notifications
 - **API Keys**: Generate API keys for programmatic access
 - **Sessions**: View active sessions, revoke access
-
----
-
-## Organizations & Teams
-
-### Organization Management
-
-#### View Organizations
-
-Sidebar → "Organizations" shows all organizations you belong to:
-
-```
-┌─────────────────────────────────┐
-│ My Research Lab          [Admin]│
-│ 📊 5 flows · 3 members          │
-│                                 │
-│ Acme Corp               [Member]│
-│ 📊 12 flows · 25 members        │
-└─────────────────────────────────┘
-```
-
-#### Create Organization
-
-1. Click "+ New Organization"
-2. Fill in details:
-   ```
-   Name: Data Science Team
-   Slug: data-science-team
-   Description: Our analytics workspace
-   ```
-3. Click "Create"
-
-Your new organization starts with **Free Plan**:
-- 5 flows
-- 1,000 executions/month
-- 3 team members
-
-#### Organization Settings
-
-Click organization → "Settings":
-
-- **General**: Name, description, logo
-- **Members**: Manage team members
-- **Teams**: Create sub-teams
-- **Billing**: Upgrade plan, view usage
-- **Danger Zone**: Delete organization
-
-### Team Management
-
-Teams are sub-groups within organizations for better organization.
-
-#### Create Team
-
-Organization → "Teams" → "+ New Team":
-
-```
-Name: Data Engineers
-Description: Backend data pipeline team
-```
-
-#### Assign Members to Team
-
-1. Go to Team page
-2. Click "+ Add Member"
-3. Select member from organization
-4. Choose role (Admin, Member, Viewer)
-5. Click "Add"
-
-#### Team Permissions
-
-- **Admin**: Full control over team flows
-- **Member**: Create and edit team flows
-- **Viewer**: View-only access
-
----
-
-## Invitations
-
-### Invite Team Members
-
-#### 1. Send Invitation
-
-Organization → "Members" → "+ Invite Member":
-
-```
-Email: colleague@company.com
-Role: Member
-Team: Data Engineers (optional)
-```
-
-Click "Send Invitation"
-
-#### 2. Invitee Receives Email
-
-```
-Subject: You've been invited to join [Organization Name] on OpenTSx
-
-Hi there!
-
-[Your Name] has invited you to join [Organization Name] on OpenTSx.
-
-[Accept Invitation Button]
-
-This invitation expires in 7 days.
-```
-
-#### 3. Accept Invitation
-
-Recipient clicks "Accept Invitation":
-- If they have account: Added immediately
-- If new user: Prompted to sign up first
-
-### Manage Invitations
-
-Organization → "Members" → "Pending Invitations":
-
-- **View**: See all pending invitations
-- **Resend**: Send reminder email
-- **Revoke**: Cancel invitation
 
 ---
 
@@ -365,194 +221,6 @@ Fit Range: [10, 500]        (range for alpha fitting)
 
 ---
 
-## Node Types Reference
-
-### Data Source Nodes 📥
-
-#### Kafka Consumer
-
-Subscribe to Kafka topic for real-time data.
-
-**Configuration**:
-```yaml
-Topic: stock_prices
-Bootstrap Servers: localhost:9092
-Group ID: dfa_analysis
-Schema Registry: http://localhost:8081
-```
-
-**Output**: Stream of TimeSeriesObject
-
-#### CSV File Upload
-
-Load time series from CSV file.
-
-**Configuration**:
-```yaml
-File: data.csv
-Timestamp Column: date
-Value Column: close
-Parse Dates: true
-```
-
-**Output**: TimeSeriesObject
-
-#### Data Generator
-
-Generate synthetic time series for testing.
-
-**Configuration**:
-```yaml
-Pattern: random_walk | fbm | sine | noise
-Length: 1000
-Hurst (for fBm): 0.7
-```
-
-**Output**: TimeSeriesObject
-
-### Processing Nodes 🔧
-
-#### Normalize
-
-Normalize time series data.
-
-**Configuration**:
-```yaml
-Method: zscore | minmax | robust
-```
-
-**Formulas**:
-- **Z-Score**: (x - μ) / σ
-- **Min-Max**: (x - min) / (max - min)
-- **Robust**: (x - median) / IQR
-
-#### Detrend
-
-Remove polynomial trend.
-
-**Configuration**:
-```yaml
-Order: 1  # 1=linear, 2=quadratic, etc.
-```
-
-#### Filter
-
-Apply filters to remove noise.
-
-**Configuration**:
-```yaml
-Type: butterworth | gaussian | median
-Order: 4
-Cutoff Frequency: 0.1 Hz
-```
-
-### Analysis Nodes 📊
-
-#### DFA (Detrended Fluctuation Analysis)
-
-Detect long-range correlations.
-
-**Configuration**:
-```yaml
-Polynomial Order: 1
-Min Scale: 10
-Max Scale: 1000
-Number of Scales: 20
-```
-
-**Output**:
-```json
-{
-  "alpha": 0.745,
-  "r_squared": 0.982,
-  "interpretation": "Correlated (persistent)",
-  "scales": [10, 15, 22, ...],
-  "fluctuations": [0.5, 0.8, 1.2, ...]
-}
-```
-
-**Interpretation**:
-- α < 0.5: Anti-correlated (mean-reverting)
-- α = 0.5: Uncorrelated (white noise)
-- α > 0.5: Correlated (persistent)
-- α ≈ 1.0: 1/f noise (pink noise)
-- α > 1.0: Non-stationary
-
-#### MFDFA (Multifractal DFA)
-
-Analyze multifractal properties.
-
-**Configuration**:
-```yaml
-Polynomial Order: 1
-Q Range: [-10, 10]
-```
-
-**Output**:
-```json
-{
-  "h_q": [0.8, 0.75, 0.7, ...],
-  "delta_h": 0.15,
-  "is_multifractal": true,
-  "spectrum_width": 0.25
-}
-```
-
-#### Event Synchronization
-
-Detect synchronized events across multiple series.
-
-**Configuration**:
-```yaml
-Threshold 1: 2.0 (standard deviations)
-Threshold 2: 2.0
-Max Time Lag: 30 (time units)
-```
-
-**Output**:
-```json
-{
-  "overall_sync": 0.65,
-  "sync_1_to_2": 0.45,
-  "sync_2_to_1": 0.20,
-  "leader": "Series 1"
-}
-```
-
-### Output Nodes 📤
-
-#### Kafka Producer
-
-Send results to Kafka topic.
-
-**Configuration**:
-```yaml
-Topic: dfa_results
-Bootstrap Servers: localhost:9092
-```
-
-#### Chart Visualization
-
-Visualize results in real-time.
-
-**Modes**:
-- Time Domain: Classic time series plot
-- Frequency Domain: FFT spectrum
-- DFA Plot: Log-log fluctuation plot
-- Multifractal Spectrum: f(α) plot
-
-#### Database Storage
-
-Store results in database.
-
-**Configuration**:
-```yaml
-Database: PostgreSQL | Cassandra
-Table: analysis_results
-```
-
----
-
 ## Example Flows
 
 ### Example 1: Stock Market Persistence
@@ -620,36 +288,6 @@ Kafka (sensor_data)
 
 ---
 
-## Subscription Plans
-
-### Plan Comparison
-
-| Feature | Free | Starter | Professional | Enterprise |
-|---------|------|---------|--------------|------------|
-| **Price** | $0/mo | $29/mo | $99/mo | Custom |
-| **Flows** | 5 | 25 | 100 | Unlimited |
-| **Executions/mo** | 1K | 50K | 500K | Unlimited |
-| **Team Members** | 3 | 10 | 50 | Unlimited |
-| **Real-time Streams** | 1 | 5 | 25 | Unlimited |
-| **Support** | Community | Email | Priority | Dedicated |
-| **Kafka Integration** | ✓ | ✓ | ✓ | ✓ |
-| **API Access** | ✓ | ✓ | ✓ | ✓ |
-| **Custom Operators** | - | - | ✓ | ✓ |
-| **On-Premise Deploy** | - | - | - | ✓ |
-| **SLA** | - | - | 99.9% | 99.99% |
-
-### Upgrade Your Plan
-
-1. Organization → "Billing"
-2. Click "Upgrade Plan"
-3. Select plan tier
-4. Enter payment details
-5. Confirm upgrade
-
-**Proration**: Charged only for remaining month
-
----
-
 ## API Integration
 
 ### Authentication
@@ -702,54 +340,15 @@ Content-Type: application/json
 }
 ```
 
-#### Execute Flow
-
-```bash
-POST /api/v1/flows/1/execute
-```
-
 #### Get Execution Status
 
 ```bash
 GET /api/v1/flows/1/executions/1
 ```
 
-### Python SDK
-
-```python
-from opentsx_client import OpenTSxClient
-
-# Initialize client
-client = OpenTSxClient(
-    api_key="your-api-key",
-    base_url="https://api.opentsx.com"
-)
-
-# List flows
-flows = client.flows.list(organization_id=1)
-
-# Execute flow
-execution = client.flows.execute(flow_id=1)
-
-# Get results
-results = client.executions.get(execution_id=execution.id)
-print(f"Alpha: {results.node_results['dfa_1']['alpha']}")
-```
-
 ---
 
 ## FAQ & Troubleshooting
-
-### General Questions
-
-**Q: Is OpenTSx free to use?**
-A: Yes! The Free plan includes 5 flows and 1,000 executions per month.
-
-**Q: Can I use OpenTSx for commercial projects?**
-A: Yes, all plans (including Free) allow commercial use.
-
-**Q: Do you offer academic discounts?**
-A: Yes! Email support@opentsx.com with your .edu email for 50% off.
 
 ### Technical Issues
 
@@ -766,25 +365,17 @@ A: Verify:
 - Chart node is connected to data source
 - Data format is correct (TimeSeriesObject)
 
-**Q: Invitation email not received**
-A: Check:
-- Spam/junk folder
-- Email address is correct
-- Invitation hasn't expired (7-day limit)
-
 ### Performance
 
 **Q: Flow is slow**
 A: Optimize:
 - Reduce data size (resample, filter)
 - Use fewer scales in DFA (20 instead of 50)
-- Upgrade to higher plan for more resources
 
 **Q: Real-time lag**
 A: Tips:
 - Check network latency to Kafka brokers
 - Reduce processing complexity
-- Use Professional plan for dedicated resources
 
 ### Support
 

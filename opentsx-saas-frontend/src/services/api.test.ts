@@ -58,21 +58,15 @@ afterEach(() => {
 });
 
 describe('errorMessage', () => {
-  it('gives a string detail of the backend as it is', async () => {
-    reply(400, { detail: 'Email already registered' });
-    expect(errorMessage(await failure(register))).toBe('Email already registered');
+  it('gives the error of the backend', async () => {
+    const error = `email: value is not a valid email address: The part after the @-sign is not valid. It should have a period; password: String should have at least 8 characters`;
+    reply(422, { error, type: 'bad_request' });
+    expect(errorMessage(await failure(register))).toBe(error);
   });
 
-  it('gives a list detail of the backend as field and message', async () => {
-    reply(422, {
-      detail: [
-        { type: 'value_error', loc: ['body', 'email'], msg: 'value is not a valid email address: The part after the @-sign is not valid.', input: 'ops@localhost' },
-        { type: 'string_too_short', loc: ['body', 'password'], msg: 'String should have at least 8 characters' },
-      ],
-    });
-    expect(errorMessage(await failure(register))).toBe(
-      'email: value is not a valid email address: The part after the @-sign is not valid.; password: String should have at least 8 characters'
-    );
+  it('gives no reason for a body without error', async () => {
+    reply(400, { detail: 'Email already registered' });
+    expect(errorMessage(await failure(register))).toBe(`HTTP 400 from ${at('/auth/register')}`);
   });
 
   it('gives the error of the retrieval server, the event bridge and nginx', async () => {
@@ -96,12 +90,12 @@ describe('errorMessage', () => {
   });
 
   it('says the session expired on a 401 outside the sign-in', async () => {
-    reply(401, { detail: 'Could not validate credentials' });
+    reply(401, { error: 'token: not valid or expired; sign in again', type: 'unauthorized' });
     expect(errorMessage(await failure(() => systemsAPI.bindings('h2-chain')))).toBe('your session has expired, sign in again');
   });
 
   it('keeps the reason of a refused sign-in', async () => {
-    reply(401, { detail: 'Incorrect email or password' });
+    reply(401, { error: 'Incorrect email or password', type: 'unauthorized' });
     expect(errorMessage(await failure(() => authAPI.login({ email: 'a@example.com', password: 'wrong' })))).toBe('Incorrect email or password');
   });
 

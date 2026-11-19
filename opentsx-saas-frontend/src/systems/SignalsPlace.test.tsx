@@ -24,7 +24,7 @@ const status = {
 describe('the place Signals', () => {
   it('gives the reason the backend refuses to remove a source', async () => {
     const config = { url: '/systems/h2-chain/bindings', baseURL: '/api/v1', headers: {} } as InternalAxiosRequestConfig;
-    const data = { detail: 'Your working copy has no such binding.' };
+    const data = { error: 'market.price_eur_mwh@raw: not in your working copy; nothing was removed', type: 'not_found' };
     vi.spyOn(systemsAPI, 'unbind').mockRejectedValue(
       new AxiosError('Request failed with status code 404', AxiosError.ERR_BAD_REQUEST, config, null, { data, status: 404, statusText: '', headers: {}, config })
     );
@@ -34,6 +34,6 @@ describe('the place Signals', () => {
       </MemoryRouter>
     );
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
-    expect(await screen.findByText('The source could not be removed: Your working copy has no such binding..')).toBeInTheDocument();
+    expect(await screen.findByText('The source could not be removed: market.price_eur_mwh@raw: not in your working copy; nothing was removed.')).toBeInTheDocument();
   });
 });
