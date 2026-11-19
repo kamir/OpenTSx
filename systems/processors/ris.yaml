@@ -26,7 +26,7 @@ runtimes:
     class: opentsx.algorithms.ris.RIS#analyze
     note: >-
       RIS(threshold_percentile=95).analyze(x). An event is a value strictly above the threshold; a value that is not
-      finite or fewer than 3 events raise ValueError. survival_function(r) gives S(r), the share of intervals of r or
+      finite or fewer than 3 events raise ValueError. analyze returns R as risk_parameter, without a risk label. survival_function(r) gives S(r), the share of intervals of r or
       longer. stretched_exponential_fit(r) is a maximum-likelihood fit of P(r) proportional to
       exp[-(r / tau_0)^gamma] and returns gamma and tau_0; analyze does not call it. gamma is near 1 for uncorrelated
       values (mean 1.08 over 40 series of 8192 values at the 95th percentile, above 1 because the intervals are whole

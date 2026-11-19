@@ -184,3 +184,28 @@ def test_fit_needs_two_positive_fluctuations():
 def test_mfdfa_hurst_exponent_needs_positive_fluctuations():
     with pytest.raises(ValueError, match=r"^Fq: F_q\(s\) is 0.0 at q -10.0 and window size 10; expected positive values"):
         MFDFA().generalized_hurst_exponent(np.array([10, 20]), np.zeros((42, 2)))
+
+
+@pytest.mark.parametrize(
+    "alpha, band",
+    [
+        (0.44, "Anti-correlated (mean-reverting)"),
+        (0.45, "Uncorrelated (white noise)"),
+        (0.47, "Uncorrelated (white noise)"),
+        (0.52, "Uncorrelated (white noise)"),
+        (0.55, "Uncorrelated (white noise)"),
+        (0.56, "Correlated (persistent, trending)"),
+        (0.95, "1/f noise (pink noise)"),
+        (1.05, "1/f noise (pink noise)"),
+        (1.2, "Non-stationary (fractional Brownian motion)"),
+        (1.5, "Non-stationary (fractional Brownian motion)"),
+    ],
+)
+def test_interpretation_bands_are_symmetric_around_0_5_and_1(alpha, band):
+    assert DFA._interpret_alpha(alpha) == band
+
+
+def test_interpretation_refuses_an_alpha_that_is_not_finite():
+    with pytest.raises(ValueError) as e:
+        DFA._interpret_alpha(float("nan"))
+    assert str(e.value) == "alpha: nan is not finite; expected a finite scaling exponent"

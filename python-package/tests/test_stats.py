@@ -56,13 +56,41 @@ def test_stats_frame_from_avro_records():
     assert str(first["window_start"].tz) == "UTC"
 
 
-@pytest.mark.parametrize("cut", [0, 1, 5, 9, 12, len(JAVA_VECTOR) // 2 - 1])
-def test_a_truncated_sketch_raises_value_error(cut):
-    with pytest.raises(ValueError, match=f"^truncated sketch at byte {cut}$"):
+@pytest.mark.parametrize(
+    "cut, at",
+    [(0, 0), (1, 1), (5, 1), (9, 9), (12, 12), (len(JAVA_VECTOR) // 2 - 1, len(JAVA_VECTOR) // 2 - 1)],
+)
+def test_a_truncated_sketch_raises_the_java_text(cut, at):
+    with pytest.raises(ValueError) as e:
         QuantileSketch.from_bytes(bytes.fromhex(JAVA_VECTOR)[:cut])
+    assert str(e.value) == f"sketch bytes: truncated at {at} of {cut}"
 
 
-def test_trailing_bytes_after_a_sketch_are_rejected():
-    data = bytes.fromhex(JAVA_VECTOR) + b"\x00"
-    with pytest.raises(ValueError, match=f"^trailing bytes in sketch at byte {len(data) - 1}$"):
-        QuantileSketch.from_bytes(data)
+def test_trailing_bytes_after_a_sketch_raise_the_java_text():
+    data = bytes.fromhex(JAVA_VECTOR)
+    with pytest.raises(ValueError) as e:
+        QuantileSketch.from_bytes(data + b"\x00\x00")
+    assert str(e.value) == f"sketch bytes: 2 trailing bytes; expected exactly {len(data)}"
+
+
+def test_the_decoder_raises_the_texts_of_quantile_sketch_test():
+    s = QuantileSketch(0.01).update([1.0, 2.5, -3.75, 0.0])
+    data = s.to_bytes()
+    texts = {}
+    for name, cut in (("trailing", data + bytes(2)), ("cut", data[:-1]), ("header", data[:5]), ("empty", b"")):
+        with pytest.raises(ValueError) as e:
+            QuantileSketch.from_bytes(cut)
+        texts[name] = str(e.value)
+    assert texts == {
+        "trailing": f"sketch bytes: 2 trailing bytes; expected exactly {len(data)}",
+        "cut": f"sketch bytes: truncated at {len(data) - 1} of {len(data) - 1}",
+        "header": "sketch bytes: truncated at 1 of 5",
+        "empty": "sketch bytes: truncated at 0 of 0",
+    }
+    assert QuantileSketch.from_bytes(data) == s
+
+
+def test_an_unknown_version_byte_is_read_signed_as_in_java():
+    with pytest.raises(ValueError) as e:
+        QuantileSketch.from_bytes(bytes([0xFF, 0]))
+    assert str(e.value) == "unsupported sketch format version -1"

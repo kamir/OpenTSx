@@ -4,15 +4,15 @@ from typing import Union, Dict, Any, Optional, List, Tuple
 import numpy as np
 import numpy.typing as npt
 
-from opentsx.algorithms._input import finite_values
+from opentsx.algorithms._input import finite_values, plot_input
 
 
 class RIS:
     """
-    Return Interval Statistics for extreme event analysis and risk assessment.
+    Return Interval Statistics of extreme events.
 
-    Analyzes the distribution of time intervals between extreme events
-    to quantify risk, predict future events, and assess tail behavior.
+    Analyzes the distribution of the time intervals between extreme events. The ratio
+    R = std / mean of the intervals measures how the events cluster.
 
     References:
         - Bunde et al. (2005) "Long-term memory: A natural mechanism for the clustering of extreme events"
@@ -100,9 +100,8 @@ class RIS:
         Calculate risk parameter R.
 
         R = σ / μ where σ is std dev and μ is mean of return intervals.
-        R > 1 indicates clustering (higher risk)
-        R < 1 indicates regularity (lower risk)
-        R ≈ 1 indicates random (Poisson process)
+        Geometric intervals of uncorrelated values with exceedance probability p give
+        R = sqrt(1 - p); clustered events give more, regular events less.
 
         Args:
             return_intervals: Array of return intervals
@@ -250,7 +249,7 @@ class RIS:
             - min_ri: Minimum return interval
             - max_ri: Maximum return interval
             - risk_parameter: Risk parameter R (σ/μ)
-            - risk_interpretation: Interpretation of risk parameter
+            - event_indices: Indices of the extreme events
 
         Raises:
             ValueError: a value that is not finite, or fewer than 3 events above the threshold
@@ -275,13 +274,6 @@ class RIS:
 
         R = self.risk_parameter(return_intervals)
 
-        if R < 0.8:
-            risk_interp = "Low risk (regular events)"
-        elif R < 1.2:
-            risk_interp = "Moderate risk (random/Poisson)"
-        else:
-            risk_interp = "High risk (clustered events)"
-
         results = {
             'num_events': len(event_indices),
             'threshold': threshold_value,
@@ -292,7 +284,6 @@ class RIS:
             'min_ri': min_ri,
             'max_ri': max_ri,
             'risk_parameter': R,
-            'risk_interpretation': risk_interp,
             'event_indices': event_indices,
         }
 
@@ -323,15 +314,7 @@ class RIS:
                 "Install with: pip install matplotlib"
             )
 
-        # Extract data
-        if hasattr(time_series, 'values'):
-            data = time_series.values
-            timestamps = time_series.timestamps
-            label = time_series.label or "Time Series"
-        else:
-            data = np.asarray(time_series)
-            timestamps = np.arange(len(data))
-            label = "Time Series"
+        data, timestamps, label = plot_input(time_series, "Time Series")
 
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 
@@ -420,7 +403,6 @@ class RIS:
 
         Risk Parameter R = σ/μ:
         R = {results['risk_parameter']:.3f}
-        {results['risk_interpretation']}
         """
 
         ax.text(
@@ -434,7 +416,7 @@ class RIS:
         # Overall title
         fig.suptitle(
             f"Return Interval Statistics Analysis\n"
-            f"Risk: {results['risk_interpretation']} (R={results['risk_parameter']:.3f})",
+            f"R={results['risk_parameter']:.3f}",
             fontsize=14,
             fontweight='bold'
         )

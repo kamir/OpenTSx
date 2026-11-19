@@ -60,6 +60,18 @@ def _series_and_scales(
     return data, scales
 
 
+def _segment_variances(
+    cumsum: npt.NDArray[np.float64], scale: int, polynom_order: int
+) -> npt.NDArray[np.float64]:
+    """Mean squared residual of the trend polynomial in each whole window of size ``scale``."""
+    num_segments = len(cumsum) // scale
+    segments = cumsum[:num_segments * scale].reshape(num_segments, scale).T
+    x = np.arange(scale)
+    coeffs = np.polyfit(x, segments, polynom_order)
+    trend = np.vander(x, polynom_order + 1) @ coeffs
+    return np.mean((segments - trend) ** 2, axis=0)
+
+
 def _exact_fit(scale: int) -> ValueError:
     return ValueError(
         f"time_series: every window of size {scale} is fitted exactly by the trend polynomial, "
@@ -131,67 +143,12 @@ class DFA:
         rounding = 1e-10 * np.abs(cumsum).max()
 
         for i, scale in enumerate(scales):
-            fluctuations[i] = self._calculate_fluctuation(cumsum, scale)
+            variances = _segment_variances(cumsum, scale, self.polynom_order)
+            fluctuations[i] = np.sqrt(np.mean(variances))
             if fluctuations[i] <= rounding:
                 raise _exact_fit(scale)
 
         return scales, fluctuations
-
-    def _calculate_fluctuation(
-        self,
-        cumsum: npt.NDArray[np.float64],
-        scale: int
-    ) -> float:
-        """
-        Calculate fluctuation function for a given scale.
-
-        Args:
-            cumsum: Cumulative sum of series
-            scale: Window size
-
-        Returns:
-            Root mean square fluctuation
-        """
-        n = len(cumsum)
-        num_segments = n // scale
-
-        # Truncate to fit complete segments
-        truncated_cumsum = cumsum[:num_segments * scale]
-
-        # Reshape into segments
-        segments = truncated_cumsum.reshape(num_segments, scale)
-
-        # Calculate variance for each segment
-        variances = np.zeros(num_segments)
-        for i, segment in enumerate(segments):
-            variances[i] = self._detrend_segment(segment)
-
-        # Return RMS fluctuation
-        fluctuation = np.sqrt(np.mean(variances))
-        return fluctuation
-
-    def _detrend_segment(self, segment: npt.NDArray[np.float64]) -> float:
-        """
-        Detrend a segment using polynomial fit.
-
-        Args:
-            segment: Data segment
-
-        Returns:
-            Variance of detrended segment
-        """
-        n = len(segment)
-        x = np.arange(n)
-
-        # Fit polynomial
-        coeffs = np.polyfit(x, segment, self.polynom_order)
-        trend = np.polyval(coeffs, x)
-
-        # Calculate variance of residuals
-        residuals = segment - trend
-        variance = np.mean(residuals ** 2)
-
-        return variance
 
     @staticmethod
     def _generate_scales(min_scale: int, max_scale: int, num_scales: int) -> npt.NDArray[np.int32]:
@@ -287,14 +244,15 @@ class DFA:
 
     @staticmethod
     def _interpret_alpha(alpha: float) -> str:
-        """Interpret scaling exponent."""
-        if alpha < 0.5:
+        """The band of alpha; 0.45 to 0.55 and 0.95 to 1.05 are the bands around 0.5 and 1."""
+        if not np.isfinite(alpha):
+            raise ValueError(f"alpha: {alpha} is not finite; expected a finite scaling exponent")
+        if alpha < 0.45:
             return "Anti-correlated (mean-reverting)"
-        elif abs(alpha - 0.5) < 0.05:
+        if alpha <= 0.55:
             return "Uncorrelated (white noise)"
-        elif 0.5 < alpha < 1.0:
+        if alpha < 0.95:
             return "Correlated (persistent, trending)"
-        elif abs(alpha - 1.0) < 0.05:
+        if alpha <= 1.05:
             return "1/f noise (pink noise)"
-        else:
-            return "Non-stationary (Brownian motion)"
+        return "Non-stationary (fractional Brownian motion)"

@@ -31,9 +31,20 @@ def load_catalog(name: str = "opentsx", **properties) -> Catalog:
     return _load_catalog(name, **properties)
 
 
-def _micros(t: Instant) -> int:
+def _micros(t: Instant, name: str) -> int:
+    """Epoch microseconds of a bound; ValueError naming ``name`` for a time without a time zone."""
+    expected = ("expected a timezone-aware datetime, an ISO 8601 time with an offset such as "
+                "2026-10-01T00:00:00Z, or epoch microseconds")
     if isinstance(t, str):
-        t = datetime.fromisoformat(t.replace("Z", "+00:00"))
+        try:
+            parsed = datetime.fromisoformat(t.replace("Z", "+00:00"))
+        except ValueError as e:
+            raise ValueError(f"{name}: {t!r} is not an ISO 8601 time; {expected}") from e
+        if parsed.tzinfo is None:
+            raise ValueError(f"{name}: {t!r} has no time zone; {expected}")
+        t = parsed
+    elif isinstance(t, datetime) and t.tzinfo is None:
+        raise ValueError(f"{name}: {t.isoformat()} has no time zone; {expected}")
     return to_us(t)
 
 
@@ -86,6 +97,8 @@ def read_episodes(catalog: Catalog, namespace: str = "tsx", *, metric: Optional[
                   series_ids: Optional[Iterable[str]] = None, tags: Optional[Mapping[str, str]] = None,
                   start: Optional[Instant] = None, end: Optional[Instant] = None) -> List[dict]:
     """Episodes overlapping [start, end), ordered like the Java store (tStart, seriesId, episodeId)."""
+    start_us = None if start is None else _micros(start, "start")
+    end_us = None if end is None else _micros(end, "end")
     table = catalog.load_table(f"{namespace}.episodes")
     expr = None
 
@@ -93,10 +106,10 @@ def read_episodes(catalog: Catalog, namespace: str = "tsx", *, metric: Optional[
         nonlocal expr
         expr = e if expr is None else And(expr, e)
 
-    if end is not None:
-        add(LessThan("t_start", _iso(_micros(end))))
-    if start is not None:
-        add(GreaterThan("t_end", _iso(_micros(start))))
+    if end_us is not None:
+        add(LessThan("t_start", _iso(end_us)))
+    if start_us is not None:
+        add(GreaterThan("t_end", _iso(start_us)))
     if metric is not None:
         add(EqualTo("metric", metric))
     if series_ids is not None:

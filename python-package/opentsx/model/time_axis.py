@@ -38,7 +38,8 @@ def encode_deltas(timestamps_us: Sequence[int]) -> bytes:
     for i in range(1, len(timestamps_us)):
         delta = int(timestamps_us[i]) - int(timestamps_us[i - 1])
         if delta <= 0:
-            raise ValueError(f"timestamps must be strictly increasing at index {i}")
+            raise ValueError(f"timestamps: timestamp {i} is not after timestamp {i - 1}; "
+                             "expected strictly increasing timestamps")
         _write_zigzag(out, delta if i == 1 else delta - prev_delta)
         prev_delta = delta
     return bytes(out)
@@ -56,18 +57,24 @@ def decode_deltas(t_start_us: int, count: int, deltas: bytes) -> np.ndarray:
         shift = 0
         while True:
             if pos >= len(deltas):
-                raise ValueError("truncated varint in timeDeltas")
+                raise ValueError("timeDeltas: input ends inside a varint; expected complete varints")
             b = deltas[pos]
             pos += 1
+            if shift == 63 and b & 0x7E:
+                raise ValueError("timeDeltas: varint exceeds 64 bits; expected at most 64 bits per varint")
             z |= (b & 0x7F) << shift
             if not b & 0x80:
                 break
             shift += 7
+            if shift > 63:
+                raise ValueError(
+                    "timeDeltas: varint longer than 10 bytes; expected at most 10 bytes per varint")
         v = (z >> 1) ^ -(z & 1)
         delta = v if i == 1 else delta + v
         ts[i] = ts[i - 1] + delta
     if pos != len(deltas):
-        raise ValueError("trailing bytes in timeDeltas")
+        raise ValueError(f"timeDeltas: {len(deltas) - pos} trailing bytes; expected exactly {count - 1} "
+                         f"varints for {count} timestamps")
     return ts
 
 

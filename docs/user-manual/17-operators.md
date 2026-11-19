@@ -1743,7 +1743,7 @@ Sums the deviations from the mean into a profile, removes a polynomial trend in 
 |---|---|---|---|
 | workbench | available | operator `dfa` | Defaults order 2, 40 scales. |
 | java | available (2.x) | `org.opentsx.algorithms.detrending.methods.DFA` | 2.x tools DFA, SingleDFATool, MultiDFATool. |
-| python | available | `opentsx.algorithms.dfa.DFA` | DFA(polynom_order=1).analyze(x): alpha, r_squared, scales, fluctuations. Windows from 10 to n/4. Raises ValueError naming the argument for a value that is not finite, a constant series, fewer than 44 values with the default windows, and a window size at which F(s) is 0 up to rounding. |
+| python | available | `opentsx.algorithms.dfa.DFA` | DFA(polynom_order=1).analyze(x): alpha, r_squared, scales, fluctuations and interpretation, the band of alpha: below 0.45 anti-correlated, 0.45 to 0.55 uncorrelated, below 0.95 correlated, 0.95 to 1.05 1/f noise, above 1.05 non-stationary. Windows from 10 to n/4. Raises ValueError naming the argument for a value that is not finite, a constant series, fewer than 44 values with the default windows, and a window size at which F(s) is 0 up to rounding. |
 | processor | none |  |  |
 
 | Port | Direction | Type | Description |
@@ -1846,7 +1846,7 @@ Marks every value above a threshold (by default the 95th percentile) as an extre
 |---|---|---|---|
 | workbench | none |  |  |
 | java | available (2.x) | `org.opentsx.algorithms.ris.RISTool` | 2.x model in opentsx-core: collects return intervals of many series into binned distributions, scaled by the mean interval R_q. It opens no window and stops with English messages. add rejects a NaN or infinite probability with IllegalArgumentException that names its index, before it writes a log line or changes the container. RISToolTest checks these. For results with 2 to 1024 intervals add needs RISTool.projekt, RISTool.logFileNames and initRqMIN(), and initRqCollectors() as well when RISTool.offset is not 0. A clean-room Java library for the univariate stage (DFA, RIS) is planned in TASK-015 P8.1. |
-| python | available | `opentsx.algorithms.ris.RIS#analyze` | RIS(threshold_percentile=95).analyze(x). An event is a value strictly above the threshold; a value that is not finite or fewer than 3 events raise ValueError. survival_function(r) gives S(r), the share of intervals of r or longer. stretched_exponential_fit(r) is a maximum-likelihood fit of P(r) proportional to exp[-(r / tau_0)^gamma] and returns gamma and tau_0; analyze does not call it. gamma is near 1 for uncorrelated values (mean 1.08 over 40 series of 8192 values at the 95th percentile, above 1 because the intervals are whole numbers) and 1 − beta for 1/f^beta noise (Bunde et al. 2005). |
+| python | available | `opentsx.algorithms.ris.RIS#analyze` | RIS(threshold_percentile=95).analyze(x). An event is a value strictly above the threshold; a value that is not finite or fewer than 3 events raise ValueError. analyze returns R as risk_parameter, without a risk label. survival_function(r) gives S(r), the share of intervals of r or longer. stretched_exponential_fit(r) is a maximum-likelihood fit of P(r) proportional to exp[-(r / tau_0)^gamma] and returns gamma and tau_0; analyze does not call it. gamma is near 1 for uncorrelated values (mean 1.08 over 40 series of 8192 values at the 95th percentile, above 1 because the intervals are whole numbers) and 1 − beta for 1/f^beta noise (Bunde et al. 2005). |
 | processor | none |  |  |
 | go | none |  |  |
 
@@ -1952,7 +1952,7 @@ Takes the local maxima above mean + 2 std of two whole series as events and coun
 |---|---|---|---|
 | workbench | none |  | The workbench computes the same Q, q and q_rand per window of a pair with pair.es (es.ts), not over whole series. |
 | java | available (2.x) | `org.opentsx.algorithms.eventsynchronisation.ESCalc#calc` | 2.x model in opentsx-core: ESCalc.calc(ti, tj) on sorted event times returns sync and delay, counts only events with two neighbours and normalizes by sqrt((m_a − 1)(m_b − 1)). No automated test. A clean-room Java library with Q_rand calibration is planned in TASK-015 P8.1. |
-| python | available | `opentsx.algorithms.event_sync.EventSynchronization#analyze` | EventSynchronization().analyze(a, b), then surrogate_sync(events_1, events_2, shuffles=10, seed=1) for q_rand. calculate_synchronization takes event indices directly. leader names a series only when the delay q is above 0.05 in magnitude; in the example, independent pairs of about 110 events pass that in 3 of 8 seeds. analyze raises ValueError for a value that is not finite, for a series without events and for method absolute without threshold1 and threshold2. |
+| python | available | `opentsx.algorithms.event_sync.EventSynchronization#analyze` | EventSynchronization().analyze(a, b), then surrogate_sync(events_1, events_2, shuffles=10, seed=1) for q_rand. calculate_synchronization takes event indices directly. leader names a series only when \|q\| is above delay_surrogates, the largest \|q\| of 19 copies of b with shuffled inter-event intervals (analyze surrogates=19, seed=1); 13 of 200 independent pairs of about 120 events name one. analyze raises ValueError for surrogates below 1, for a value that is not finite, for a series without events and for method absolute without threshold1 and threshold2. |
 | processor | none |  |  |
 | go | none |  |  |
 
@@ -1960,7 +1960,7 @@ Takes the local maxima above mean + 2 std of two whole series as events and coun
 |---|---|---|---|
 | `a` | in | series (one) |  |
 | `b` | in | series (one) |  |
-| `sync` | out | stats | overall_sync (Q), sync_1_to_2, sync_2_to_1, delay (q), leader, lead_lag_strength |
+| `sync` | out | stats | overall_sync (Q), sync_1_to_2, sync_2_to_1, delay (q), delay_surrogates, leader, lead_lag_strength |
 | `q_rand` | out | stats | Chance level from surrogate_sync |
 | `events` | out | events (many) | Event indices of a and of b |
 
@@ -1971,6 +1971,7 @@ Takes the local maxima above mean + 2 std of two whole series as events and coun
 | `threshold2` | number |  |  | Event threshold of b; overrides method |
 | `tau_max` | number |  | 0 ..  | Cap of the local window. No cap by default. Unit: samples. |
 | `shuffles` | integer | `10` | 1 ..  | Number of shuffled copies of b for q_rand |
+| `surrogates` | integer | `19` | 1 ..  | Number of shuffled copies of b that the delay is compared with to name the leader |
 | `seed` | integer | `1` |  | Seed of the Mulberry32 generator that shuffles |
 
 Semantics: needs one series of input per output value; deterministic.

@@ -4,7 +4,7 @@ from typing import Union, Dict, Any, Optional, Tuple
 import numpy as np
 import numpy.typing as npt
 
-from opentsx.algorithms._input import finite_values
+from opentsx.algorithms._input import finite_values, plot_input
 
 
 class Mulberry32:
@@ -274,7 +274,9 @@ class EventSynchronization:
         ts2: Union[npt.NDArray[np.float64], Any],
         threshold1: Optional[float] = None,
         threshold2: Optional[float] = None,
-        method: str = 'std'
+        method: str = 'std',
+        surrogates: int = 19,
+        seed: int = 1
     ) -> Dict[str, Any]:
         """
         Perform complete event synchronization analysis.
@@ -285,6 +287,9 @@ class EventSynchronization:
             threshold1: Event threshold for ts1
             threshold2: Event threshold for ts2
             method: Threshold method ('std', 'percentile', or 'absolute' with both thresholds)
+            surrogates: Number of copies of series 2 with shuffled inter-event intervals
+                (``isi_shuffle``) that the delay is compared with
+            seed: Seed of the ``Mulberry32`` generator that shuffles
 
         Returns:
             Dictionary with synchronization results including:
@@ -295,15 +300,23 @@ class EventSynchronization:
             - num_events_2: Number of events in series 2
             - events_1: Event indices for series 1
             - events_2: Event indices for series 2
-            - leader: Which series leads ('Series 1', 'Series 2', or 'None')
-            - lead_lag_strength: Magnitude of lead-lag relationship
             - delay (q): Quiroga's delay measure q_12 - q_21 in [-1, 1]
               (positive if series 1 leads)
+            - delay_surrogates: Largest |delay| of the shuffled copies of series 2.
+              An independent pair passes it in about 1 of surrogates + 1 cases
+            - leader: 'Series 1' or 'Series 2' when |delay| is above delay_surrogates,
+              the series that the sign of delay names; 'None (symmetric)' otherwise
+            - lead_lag_strength: |delay| when a leader is named, 0 otherwise
             - tau_max: Fixed cap on the local window (inf if none was set)
 
         Raises:
-            ValueError: a value that is not finite, or a series without events
+            ValueError: a value that is not finite, a series without events, or surrogates
+                below 1
         """
+        if surrogates < 1:
+            raise ValueError(
+                f"surrogates: {surrogates} is below 1; expected at least 1 shuffled copy"
+            )
         events = {}
         for name, ts, threshold in (("ts1", ts1, threshold1), ("ts2", ts2, threshold2)):
             events[name] = self.detect_events(
@@ -316,16 +329,19 @@ class EventSynchronization:
                 )
         events1, events2 = events["ts1"], events["ts2"]
 
-        # Calculate synchronization measures
         Q, q_12, q_21 = self.calculate_synchronization(events1, events2)
+        delay = q_12 - q_21
 
-        # Determine lead-lag relationship
-        if q_12 > q_21 + 0.05:  # Threshold to avoid noise
-            leader = "Series 1"
-            lag_strength = q_12 - q_21
-        elif q_21 > q_12 + 0.05:
-            leader = "Series 2"
-            lag_strength = q_21 - q_12
+        rand = Mulberry32(seed)
+        y = np.unique(np.asarray(events2, dtype=np.float64))
+        delay_surrogates = 0.0
+        for _ in range(surrogates):
+            _, s_12, s_21 = self.calculate_synchronization(events1, isi_shuffle(y, rand))
+            delay_surrogates = max(delay_surrogates, abs(s_12 - s_21))
+
+        if abs(delay) > delay_surrogates:
+            leader = "Series 1" if delay > 0 else "Series 2"
+            lag_strength = abs(delay)
         else:
             leader = "None (symmetric)"
             lag_strength = 0.0
@@ -343,7 +359,8 @@ class EventSynchronization:
             'events_2': events2,
             'leader': leader,
             'lead_lag_strength': float(lag_strength),
-            'delay': float(q_12 - q_21),
+            'delay': float(delay),
+            'delay_surrogates': float(delay_surrogates),
             'tau_max': float(tau_max_used),
         }
 
@@ -376,22 +393,8 @@ class EventSynchronization:
                 "Install with: pip install matplotlib"
             )
 
-        # Extract data
-        if hasattr(ts1, 'values'):
-            data1, t1 = ts1.values, ts1.timestamps
-            label1 = ts1.label or "Series 1"
-        else:
-            data1 = np.asarray(ts1)
-            t1 = np.arange(len(data1))
-            label1 = "Series 1"
-
-        if hasattr(ts2, 'values'):
-            data2, t2 = ts2.values, ts2.timestamps
-            label2 = ts2.label or "Series 2"
-        else:
-            data2 = np.asarray(ts2)
-            t2 = np.arange(len(data2))
-            label2 = "Series 2"
+        data1, t1, label1 = plot_input(ts1, "Series 1")
+        data2, t2, label2 = plot_input(ts2, "Series 2")
 
         # Create figure
         fig, axes = plt.subplots(2, 1, figsize=(14, 8), sharex=True)

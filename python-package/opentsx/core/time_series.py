@@ -102,7 +102,7 @@ class TimeSeriesObject:
                 metadata=self.metadata.copy()
             )
         else:
-            raise TypeError(f"Invalid index type: {type(key)}")
+            raise TypeError(f"key: {key!r} has type {type(key).__name__}, not one of int, slice")
 
     # ==================== Statistical Methods ====================
 
@@ -171,21 +171,25 @@ class TimeSeriesObject:
 
         Returns:
             Normalized TimeSeriesObject
+
+        Raises:
+            ValueError: an unknown method, or a spread of 0 that the method divides by
         """
         if method == 'zscore':
-            normalized = (self._values - self.mean()) / self.std()
+            center, spread, name = self.mean(), self.std(), "standard deviation"
         elif method == 'minmax':
-            min_val = self.min()
-            max_val = self.max()
-            normalized = (self._values - min_val) / (max_val - min_val)
+            center, spread, name = self.min(), self.max() - self.min(), "range"
         elif method == 'robust':
-            median = self.median()
-            q75 = self.quantile(0.75)
-            q25 = self.quantile(0.25)
-            iqr = q75 - q25
-            normalized = (self._values - median) / iqr
+            center, spread = self.median(), self.quantile(0.75) - self.quantile(0.25)
+            name = "interquartile range"
         else:
-            raise ValueError(f"Unknown normalization method: {method}")
+            raise ValueError(f"method: {method!r} is not one of zscore, minmax, robust")
+        if spread == 0 or self.max() == self.min():
+            raise ValueError(
+                f"values: the {name} is 0, and method '{method}' divides by it; "
+                f"expected a positive {name}"
+            )
+        normalized = (self._values - center) / spread
 
         return TimeSeriesObject(
             data=normalized,
@@ -218,15 +222,20 @@ class TimeSeriesObject:
 
     def diff(self, periods: int = 1) -> TimeSeriesObject:
         """
-        Calculate differences between consecutive elements.
+        Calculate the lag difference x[i] - x[i - periods].
 
         Args:
-            periods: Number of periods to shift
+            periods: Lag in samples
 
         Returns:
-            Differenced TimeSeriesObject
+            Differenced TimeSeriesObject, with the timestamps of x[i]
+
+        Raises:
+            ValueError: periods below 1
         """
-        differenced = np.diff(self._values, n=periods)
+        if periods < 1:
+            raise ValueError(f"periods: {periods} is below 1; expected a lag of at least 1 sample")
+        differenced = self._values[periods:] - self._values[:-periods]
         timestamps = self._timestamps[periods:]
 
         return TimeSeriesObject(
@@ -259,7 +268,7 @@ class TimeSeriesObject:
         elif method == 'min':
             resampled = np.min(values_reshaped, axis=1)
         else:
-            raise ValueError(f"Unknown method: {method}")
+            raise ValueError(f"method: {method!r} is not one of mean, median, max, min")
 
         timestamps = self._timestamps[::factor][:n_new]
 
@@ -342,6 +351,8 @@ class TimeSeriesObject:
         """
         Create from pandas Series.
 
+        A DatetimeIndex gives epoch microseconds; one without a time zone is read as UTC.
+
         Args:
             series: pandas.Series
             label: Optional label (uses series.name if not provided)
@@ -349,9 +360,18 @@ class TimeSeriesObject:
         Returns:
             TimeSeriesObject instance
         """
+        import pandas as pd
+
+        index = series.index
+        if isinstance(index, pd.DatetimeIndex):
+            if index.tz is not None:
+                index = index.tz_convert(None)
+            timestamps = index.as_unit("us").asi8
+        else:
+            timestamps = index.to_numpy()
         return cls(
             data=series.values,
-            timestamps=series.index.values if hasattr(series.index, 'values') else np.arange(len(series)),
+            timestamps=timestamps,
             label=label or (series.name if series.name else ""),
         )
 

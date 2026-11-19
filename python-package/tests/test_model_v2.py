@@ -65,6 +65,30 @@ def test_time_delta_rejects_bad_input():
         m.decode_deltas(0, 2, bytes([2, 2]))
 
 
+REFUSALS = json.loads((REPO / "docs" / "datamodel-2026" / "testvectors" / "model-refusals.v1.json").read_text(
+    encoding="utf-8"))
+
+
+def _refused_call(case):
+    key = m.series_key("x")
+    quality = bytes.fromhex(case["qualityHex"]) if "qualityHex" in case else None
+    if case["call"] == "encodeDeltas":
+        return lambda: m.encode_deltas(case["timestampsUs"])
+    if case["call"] == "decodeDeltas":
+        return lambda: m.decode_deltas(case["tStartUs"], case["count"], bytes.fromhex(case["deltasHex"]))
+    if case["call"] == "regular":
+        return lambda: m.regular(key, case["tStartUs"], case["intervalUs"], case["values"],
+                                 t_end_us=case.get("tEndUs"), quality=quality)
+    return lambda: m.irregular(key, case["timestampsUs"], case["values"], t_end_us=case.get("tEndUs"))
+
+
+@pytest.mark.parametrize("case", REFUSALS["cases"], ids=lambda c: c["name"])
+def test_refusals_say_what_java_says(case):
+    with pytest.raises(ValueError) as e:
+        _refused_call(case)()
+    assert str(e.value) == case["error"]
+
+
 def test_summary_merge_equals_summary_of_concatenation(rng):
     a, b = rng.normal(size=500), rng.normal(loc=50, size=31)
     merged = m.merge_summaries(m.summarize(a), m.summarize(b))

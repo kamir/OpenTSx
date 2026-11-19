@@ -35,22 +35,17 @@ class TSBucket:
         """Iterate over series."""
         return iter(self._series)
 
-    def apply(self, func: Callable, parallel: bool = False) -> "TSBucket":
+    def apply(self, func: Callable) -> "TSBucket":
         """
-        Apply function to all time series.
+        Apply function to all time series, one after the other.
 
         Args:
             func: Function to apply to each TimeSeriesObject
-            parallel: Whether to use parallel processing
 
         Returns:
             New TSBucket with transformed series
         """
-        if parallel:
-            # Would use multiprocessing/dask in full implementation
-            transformed = [func(ts) for ts in self._series]
-        else:
-            transformed = [func(ts) for ts in self._series]
+        transformed = [func(ts) for ts in self._series]
 
         return TSBucket(time_series=transformed, label=f"{self.label}_transformed")
 

@@ -14,7 +14,7 @@ def _spiky(rng, n, spikes, amplitude=10.0):
 
 
 def test_lagged_spikes_are_synchronized_and_leader_detected(rng):
-    spikes = np.arange(50, 950, 60)
+    spikes = 50 + np.cumsum(rng.integers(30, 90, size=14))
     ts1 = _spiky(rng, 1000, spikes)
     ts2 = _spiky(rng, 1000, spikes + 3)
 
@@ -24,6 +24,15 @@ def test_lagged_spikes_are_synchronized_and_leader_detected(rng):
     assert result["num_events_2"] == len(spikes)
     assert result["overall_sync"] > 0.9
     assert result["leader"] == "Series 1"
+
+
+def test_periodic_spikes_name_no_leader_because_their_shuffled_copies_lag_alike(rng):
+    spikes = np.arange(50, 950, 60)
+    result = EventSynchronization(tau_max=5).analyze(_spiky(rng, 1000, spikes), _spiky(rng, 1000, spikes + 3))
+
+    assert result["delay"] == 1.0
+    assert result["delay_surrogates"] == 1.0
+    assert result["leader"] == "None (symmetric)"
 
 
 def test_independent_spikes_are_not_synchronized(rng):
@@ -41,7 +50,7 @@ def test_ris_on_iid_noise_matches_poisson_expectation(rng):
 
     assert result["num_events"] == pytest.approx(0.05 * n, rel=0.02)
     assert result["mean_ri"] == pytest.approx(20.0, rel=0.1)  # 1 / p
-    assert result["risk_interpretation"].startswith("Moderate")  # R ~ 1 for Poisson
+    assert result["risk_parameter"] == pytest.approx(np.sqrt(0.95), abs=0.05)  # geometric intervals, p = 0.05
 
 
 def test_ris_detects_clustering(rng):
@@ -146,3 +155,11 @@ def test_import_does_not_load_scipy():
     code = "import sys, opentsx; print(sorted(m for m in sys.modules if m.split('.')[0] == 'scipy')[:3])"
     done = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
     assert done.stdout == "[]\n"
+
+
+def test_ris_analyze_reports_r_without_a_risk_label(rng):
+    result = RIS().analyze(rng.normal(size=5000))
+    assert set(result) == {
+        "num_events", "threshold", "return_intervals", "mean_ri", "median_ri", "std_ri", "min_ri", "max_ri",
+        "risk_parameter", "event_indices",
+    }

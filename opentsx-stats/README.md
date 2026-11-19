@@ -166,6 +166,7 @@ The encoding is canonical. Java (`QuantileSketch`) and Python (`opentsx.stats.Qu
 checked by a shared test vector. `QuantileSketch.fromBytes` reads exactly one sketch and throws
 `IllegalArgumentException` for bytes after it (`sketch bytes: <n> trailing bytes; expected exactly <m>`) and for bytes
 that end inside it (`sketch bytes: truncated at <k> of <m>`, `<k>` the number of bytes read when the input ran out).
+`opentsx.stats.QuantileSketch.from_bytes` raises `ValueError` with the same messages.
 `opentsx.stats.stats_to_frame(records)` turns decoded records into a pandas frame with quantile columns.
 
 ## Tests

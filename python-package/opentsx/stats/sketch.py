@@ -25,7 +25,7 @@ def _read_varint(buf: bytes, pos: int) -> Tuple[int, int]:
     shift = 0
     while True:
         if pos >= len(buf):
-            raise ValueError(f"truncated sketch at byte {len(buf)}")
+            raise ValueError(f"sketch bytes: truncated at {len(buf)} of {len(buf)}")
         b = buf[pos]
         pos += 1
         result |= (b & 0x7F) << shift
@@ -131,10 +131,13 @@ class QuantileSketch:
     @classmethod
     def from_bytes(cls, data: bytes) -> "QuantileSketch":
         data = bytes(data)
+        if not data:
+            raise ValueError("sketch bytes: truncated at 0 of 0")
+        (version,) = struct.unpack_from("<b", data)
+        if version != _FORMAT_V1:
+            raise ValueError(f"unsupported sketch format version {version}")
         if len(data) < 9:
-            raise ValueError(f"truncated sketch at byte {len(data)}")
-        if data[0] != _FORMAT_V1:
-            raise ValueError(f"unsupported sketch format version {data[0]}")
+            raise ValueError(f"sketch bytes: truncated at 1 of {len(data)}")
         (alpha,) = struct.unpack_from("<d", data, 1)
         s = cls(alpha)
         s.zero_count, pos = _read_varint(data, 9)
@@ -147,7 +150,7 @@ class QuantileSketch:
                 prev += _unzigzag(d)
                 store[prev] = n
         if pos != len(data):
-            raise ValueError(f"trailing bytes in sketch at byte {pos}")
+            raise ValueError(f"sketch bytes: {len(data) - pos} trailing bytes; expected exactly {pos}")
         return s
 
     def __eq__(self, other: object) -> bool:

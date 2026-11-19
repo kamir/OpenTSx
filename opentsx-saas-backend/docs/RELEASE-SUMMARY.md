@@ -15,7 +15,6 @@ I've created a **complete, production-ready SaaS platform** for visual time seri
 #### Core Features:
 - ✅ `TimeSeriesObject` - Core data abstraction with NumPy/pandas integration
 - ✅ `TSBucket` - Container for multiple time series
-- ✅ `TSProcessor` - Pipeline abstraction with `>>` operator
 - ✅ `DFA` - Detrended Fluctuation Analysis (production-quality)
 - ✅ `MFDFA` - Multifractal DFA
 - ✅ `EventSynchronization` - Synchronized event detection
@@ -298,7 +297,7 @@ curl -X POST http://localhost:8000/api/v1/flows \
 OpenTSx/
 ├── python-package/          ✅ Complete pip-installable package
 │   ├── opentsx/
-│   │   ├── core/           # TimeSeriesObject, TSBucket, TSProcessor
+│   │   ├── core/           # TimeSeriesObject, TSBucket
 │   │   ├── algorithms/     # DFA, MFDFA, EventSync
 │   │   └── __init__.py
 │   └── pyproject.toml       ✅ Ready for PyPI

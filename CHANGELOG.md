@@ -168,6 +168,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `market load --store auto|memory|iceberg` (key `opentsx.market.load.store`, `OPENTSX_MARKET_LOAD_STORE`) lets a Job
   switch to Iceberg from its environment; `auto` keeps the rule that only `--iceberg` on the command line selects
   Iceberg.
+- opentsx-model checks the shared refusal vectors `model-refusals.v1.json` in `ModelRefusalVectorsTest`, so Java and
+  python-package test the same 17 refusal texts.
 
 ### Changed
 
@@ -507,6 +509,27 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Workbench: "Publish as clean signal" and the deploy list check the parameters of every step as the processor does
   and name the step and the parameter, for example `The processor refuses a parameter of Hub_wind: alpha: "0.7" is out
   of range; expected a number from 0 to 0.6`.
+- Python package: the extra `all` installs `kafka`, `iceberg`, `viz` and `yaml`. It installed no PyIceberg and pulled
+  TensorFlow, Numba and Dask.
+- Python: `EventSynchronization.analyze` names a leader only when the magnitude of `delay` is above
+  `delay_surrogates`, the largest one of 19 copies of series 2 with shuffled inter-event intervals (new arguments
+  `surrogates` and `seed`, new result key `delay_surrogates`), instead of above a fixed 0.05. Of 200 independent
+  spike-train pairs 13 name a leader instead of 85.
+- Python: the DFA `interpretation` uses bands of 0.05 on both sides of 0.5 and 1, so 0.47 is uncorrelated and 0.97 is
+  1/f noise, names an alpha above 1.05 `Non-stationary (fractional Brownian motion)` and raises `ValueError` for an
+  alpha that is not finite. This is a breaking change.
+- Python: `TimeSeriesObject.from_pandas` takes a `DatetimeIndex` as epoch microseconds with pandas 2 and 3 (pandas 2
+  gave nanoseconds) and no longer triggers the pandas 3.1 `Pandas4Warning`. This is a breaking change for pandas 2.
+- Python: `encode_deltas`, `decode_deltas`, `regular` and `irregular` raise the messages of Java `opentsx-model` word
+  for word, listed in the shared vectors `docs/datamodel-2026/testvectors/model-refusals.v1.json`. `regular` refuses
+  an empty episode whose `tEnd` is not after `tStart`, and `decode_deltas` refuses a varint above 64 bits with
+  `ValueError` instead of `OverflowError`.
+- Python: `QuantileSketch.from_bytes` raises the messages of Java, `sketch bytes: truncated at <k> of <m>` and `sketch
+  bytes: <n> trailing bytes; expected exactly <m>`.
+- Python: `TimeSeriesObject.normalize`, `resample` and indexing name the value and the allowed values, for example
+  `method: 'x' is not one of zscore, minmax, robust`.
+- Python: `read_episodes` and `read_frame` check `start` and `end` before they load the table and name the bound that
+  has no time zone or is not an ISO 8601 time.
 
 ### Removed
 
@@ -570,6 +593,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Breaking for code that calls them: the constructor `Http(long, int)` and `Collector.online(long)` of opentsx-market.
   Use `Http(long, int, ProxySelector)` and `Collector.online(long, Map, ProxySelector)` with the credentials and the
   proxy from `Http.proxy`, which follows `opentsx.https.proxy`.
+- Python: `TSProcessor`, `ProcessorChain` and `ProcessorConfig` (`opentsx.core.processor`), an abstract base without
+  an implementation. `from opentsx import TSProcessor` raises `ImportError`. This is a breaking change.
+- Python: the `parallel` argument of `TSBucket.apply`, which ran the same sequential code; passing it raises
+  `TypeError`. This is a breaking change.
+- Python: `risk_interpretation` from the result of `RIS.analyze`; its bands 0.8 and 1.2 had no source. Read
+  `risk_parameter`. This is a breaking change.
+- Python package: the extras `ml`, `storage` and `performance` and the dev dependencies `pytest-asyncio` and `sphinx`,
+  which no code used.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -1088,6 +1119,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   it off "Publish as Smart Topic", because the processor writes vector topics only.
 - Operator catalog: the `observations` parameter of `stats.welford-ddsketch` names both `bin/opentsx stats` and
   `bin/opentsx stats-flink`.
+- Python: `TimeSeriesObject.diff(periods=k)` computes the lag difference x[i] - x[i - k]; it computed the k-th order
+  difference. `periods` below 1 raises `ValueError`.
+- Python: `TimeSeriesObject.normalize` raises `ValueError` for a series whose values are all equal or whose standard
+  deviation, range or interquartile range is 0, instead of returning NaN with a warning or, for `zscore`, values of ±1
+  from rounding. This is a breaking change.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

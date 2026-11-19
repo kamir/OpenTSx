@@ -4,7 +4,7 @@ from typing import Optional, Tuple, Union, Dict, Any
 import numpy as np
 import numpy.typing as npt
 from opentsx.algorithms._input import finite_values
-from opentsx.algorithms.dfa import DFA, _exact_fit, _series_and_scales
+from opentsx.algorithms.dfa import _exact_fit, _segment_variances, _series_and_scales
 
 
 class MFDFA:
@@ -43,7 +43,6 @@ class MFDFA:
             ValueError: q_range has no value within 1e-10 of 2
         """
         self.polynom_order = polynom_order
-        self.dfa = DFA(polynom_order=polynom_order)
 
         if q_range is None:
             self.q_range = np.concatenate([
@@ -96,7 +95,7 @@ class MFDFA:
 
         for s_idx, scale in enumerate(scales):
             # Get segment variances for this scale
-            variances = self._calculate_segment_variances(cumsum, scale)
+            variances = _segment_variances(cumsum, scale, self.polynom_order)
             variances = variances[variances > rounding ** 2]
             if len(variances) == 0:
                 raise _exact_fit(scale)
@@ -106,28 +105,6 @@ class MFDFA:
                 Fq[q_idx, s_idx] = self._calculate_Fq(variances, q)
 
         return scales, self.q_range, Fq
-
-    def _calculate_segment_variances(
-        self,
-        cumsum: npt.NDArray[np.float64],
-        scale: int
-    ) -> npt.NDArray[np.float64]:
-        """
-        Calculate variances for all segments at given scale.
-
-        Args:
-            cumsum: Cumulative sum of series
-            scale: Window size
-
-        Returns:
-            Array of segment variances
-        """
-        num_segments = len(cumsum) // scale
-        segments = cumsum[:num_segments * scale].reshape(num_segments, scale).T
-        x = np.arange(scale)
-        coeffs = np.polyfit(x, segments, self.polynom_order)
-        trend = np.vander(x, self.polynom_order + 1) @ coeffs
-        return np.mean((segments - trend) ** 2, axis=0)
 
     @staticmethod
     def _calculate_Fq(variances: npt.NDArray[np.float64], q: float) -> float:

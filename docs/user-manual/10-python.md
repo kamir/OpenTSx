@@ -12,17 +12,18 @@ The package is in `python-package/` (`opentsx`). Run the commands from the repos
 pip install -e python-package                    # core: numpy, pandas, scipy, fastavro, xxhash
 pip install -e "python-package[iceberg]"         # + PyIceberg (SQL catalog, pyarrow)
 pip install -e "python-package[kafka,viz]"       # + confluent-kafka, matplotlib/plotly
+pip install -e "python-package[all]"             # + the extras kafka, iceberg, viz and yaml
 ```
 
 ## Find the right subpackage
 
 | Subpackage | What it gives you |
 |------------|-------------------|
-| `opentsx.model` | v2 data model, byte-identical to Java ([chapter 3](03-data-model.md)). Series identity: `canonical`, `series_key`, `series_id`, `verify_series_key`. Episodes: `regular`, `irregular`, `values`. Time axis: `timestamps_us`, `encode_deltas`, `decode_deltas`. Summaries: `summarize`, `merge_summaries`, `variance`. Wire format: `encode`, `decode`, `fingerprint`, `schema`. IDs and hashes: `new_ulid`, `xxh64_hex`, `bucket_checksum`. pandas I/O in `opentsx.model.pandas_io`: `series_to_episode`, `episode_to_series`, `episodes_to_frame` |
+| `opentsx.model` | v2 data model, byte-identical to Java ([chapter 3](03-data-model.md)). Series identity: `canonical`, `series_key`, `series_id`, `verify_series_key`. Episodes: `regular`, `irregular`, `values`. Time axis: `timestamps_us`, `encode_deltas`, `decode_deltas`. Summaries: `summarize`, `merge_summaries`, `variance`. Wire format: `encode`, `decode`, `fingerprint`, `schema`. IDs and hashes: `new_ulid`, `xxh64_hex`, `bucket_checksum`. pandas I/O in `opentsx.model.pandas_io`: `series_to_episode`, `episode_to_series`, `episodes_to_frame`. A refused episode or time axis raises `ValueError` with the message of Java, for example `tEnd: "20" is not after the last timestamp 20; expected a time after the last timestamp`; [`model-refusals.v1.json`](../datamodel-2026/testvectors/model-refusals.v1.json) lists them |
 | `opentsx.store.iceberg` | `load_catalog`, `read_episodes`, `read_frame`: read the Iceberg tables written by Java |
-| `opentsx.stats` | `QuantileSketch` (same format as Java), `stats_to_frame` for `SeriesStats` records |
+| `opentsx.stats` | `QuantileSketch` (same format as Java), `stats_to_frame` for `SeriesStats` records. `QuantileSketch.from_bytes` raises `ValueError` with the messages of Java: `sketch bytes: truncated at <k> of <m>` and `sketch bytes: <n> trailing bytes; expected exactly <m>` |
 | `opentsx.client` | `RetrievalClient` for the REST API (episodes, patterns, segments; the inventory, systems, signals, decisions; the scenario and runs of the twin). Every failed request raises `RetrievalError` with `method`, `url`, `status` (`None` when no answer came) and the server's error `type`. `TopicReader` reads the episodes of a topic directly, once, with a limit, and raises `TopicLimitReached` above it |
-| `opentsx` (top level) | classic algorithms `DFA`, `MFDFA`, `EventSynchronization`, `RIS` (see [chapter 11](11-classic-analytics.md)). `TimeSeriesObject` with `describe`, `normalize`, `detrend`, `diff`, `resample` and `apply`. `TSBucket` with `add`, `apply` and `filter`. `TSProcessor` and `ProcessorChain`: chain processors with `>>` |
+| `opentsx` (top level) | classic algorithms `DFA`, `MFDFA`, `EventSynchronization`, `RIS` (see [chapter 11](11-classic-analytics.md)). `TimeSeriesObject` with `describe`, `normalize`, `detrend`, `diff`, `resample` and `apply`. `TSBucket` with `add`, `apply` and `filter` ([use TimeSeriesObject](#use-timeseriesobject)) |
 
 ## Build an episode from a pandas series
 
@@ -60,6 +61,32 @@ record key. `episodes_to_frame` gives one row per value, with `ts` in UTC.
 An index without a time zone fails with `ValueError: naive DatetimeIndex; localize it or pass assume_utc=True`.
 Localize the index, or pass `assume_utc=True` when the times are UTC.
 
+## Use TimeSeriesObject
+
+`TimeSeriesObject.from_pandas` takes the timestamps of a `DatetimeIndex` as epoch microseconds, with pandas 2 and 3.
+An index without a time zone is read as UTC. `diff(periods=k)` is the lag difference x[i] − x[i − k].
+`normalize` with `zscore`, `minmax` or `robust` raises `ValueError` when the standard deviation, the range or the
+interquartile range is 0. `TSBucket.apply` runs the function on one series after the other.
+
+```python
+import pandas as pd
+from opentsx import TimeSeriesObject
+
+s = pd.Series([1.0, 2.0, 4.0, 7.0, 11.0], index=pd.date_range("2026-10-01", periods=5, freq="1min", tz="UTC"))
+ts = TimeSeriesObject.from_pandas(s, label="demo")
+print(int(ts.timestamps[0]), int(ts.timestamps[1]))
+print(ts.diff(periods=2).values)
+TimeSeriesObject(data=[3.0, 3.0, 3.0]).normalize("zscore")
+```
+
+Output:
+
+```text
+1790812800000000 1790812860000000
+[3. 5. 7.]
+ValueError: values: the standard deviation is 0, and method 'zscore' divides by it; expected a positive standard deviation
+```
+
 ## Query the retrieval server
 
 You need a running retrieval server ([chapter 9](09-retrieval.md)).
@@ -80,6 +107,16 @@ holds more than `max_records` records (default 20,000). A record that is not a v
 message that starts with `<topic>[<partition>]@<offset>:`. A v2 record of another type is skipped and counted in
 `reader.skipped`.
 See the [topic reader limits and error handling](../../python-package/README.md#read-a-topic).
+
+## Read the Iceberg tables from Python
+
+You need the `iceberg` extra. `read_episodes(catalog, start=..., end=...)` and `read_frame` take each bound as a
+timezone-aware `datetime`, an ISO 8601 string with an offset that `datetime.fromisoformat` reads, or epoch
+microseconds. Python 3.10 reads only the form that `datetime.isoformat` writes, with `Z` allowed, such as
+`2026-10-01T00:00:00Z` or `2026-10-01T00:00:00.250+02:00`; it refuses `2026-10-01T00:00:00.5Z` as not an ISO 8601
+time. Both functions check both bounds before they load the table. A bound without a time zone fails, for example
+`ValueError: start: 2026-10-01T00:00:00 has no time zone; expected a timezone-aware datetime, an ISO 8601 time with an offset such as 2026-10-01T00:00:00Z, or epoch microseconds`.
+Add the offset, for example `2026-10-01T00:00:00Z`.
 
 ## Read the Iceberg tables from Spark
 

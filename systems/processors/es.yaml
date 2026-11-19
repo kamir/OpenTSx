@@ -15,7 +15,7 @@ inputs:
   - { name: a, type: series, cardinality: one }
   - { name: b, type: series, cardinality: one }
 outputs:
-  - { name: sync, type: stats, description: "overall_sync (Q), sync_1_to_2, sync_2_to_1, delay (q), leader, lead_lag_strength" }
+  - { name: sync, type: stats, description: "overall_sync (Q), sync_1_to_2, sync_2_to_1, delay (q), delay_surrogates, leader, lead_lag_strength" }
   - { name: q_rand, type: stats, description: Chance level from surrogate_sync }
   - { name: events, type: events, cardinality: many, description: Event indices of a and of b }
 params:
@@ -24,6 +24,7 @@ params:
   - { name: threshold2, type: number, description: Event threshold of b; overrides method }
   - { name: tau_max, type: number, min: 0, unit: samples, description: "Cap of the local window. No cap by default." }
   - { name: shuffles, type: integer, default: 10, min: 1, description: Number of shuffled copies of b for q_rand }
+  - { name: surrogates, type: integer, default: 19, min: 1, description: Number of shuffled copies of b that the delay is compared with to name the leader }
   - { name: seed, type: integer, default: 1, description: Seed of the Mulberry32 generator that shuffles }
 semantics: { needs: series, deterministic: true }
 testvectors: docs/datamodel-2026/testvectors/pair-es.v1.json
@@ -33,9 +34,10 @@ runtimes:
     class: opentsx.algorithms.event_sync.EventSynchronization#analyze
     note: >-
       EventSynchronization().analyze(a, b), then surrogate_sync(events_1, events_2, shuffles=10, seed=1) for q_rand.
-      calculate_synchronization takes event indices directly. leader names a series only when the delay q is above
-      0.05 in magnitude; in the example, independent pairs of about 110 events pass that in 3 of 8 seeds. analyze
-      raises ValueError for a value that is not finite, for a series without events and for method absolute without
+      calculate_synchronization takes event indices directly. leader names a series only when |q| is above
+      delay_surrogates, the largest |q| of 19 copies of b with shuffled inter-event intervals (analyze surrogates=19,
+      seed=1); 13 of 200 independent pairs of about 120 events name one. analyze raises ValueError for surrogates
+      below 1, for a value that is not finite, for a series without events and for method absolute without
       threshold1 and threshold2.
   workbench:
     status: none

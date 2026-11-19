@@ -25,7 +25,6 @@ __license__ = "Apache-2.0"
 
 from opentsx.core.time_series import TimeSeriesObject
 from opentsx.core.bucket import TSBucket
-from opentsx.core.processor import TSProcessor, ProcessorChain
 
 from opentsx.algorithms.dfa import DFA
 from opentsx.algorithms.mfdfa import MFDFA
@@ -40,8 +39,6 @@ __all__ = [
     # Core classes
     "TimeSeriesObject",
     "TSBucket",
-    "TSProcessor",
-    "ProcessorChain",
     # Algorithms
     "DFA",
     "MFDFA",

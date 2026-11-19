@@ -175,3 +175,38 @@ def test_coupled_series_lie_above_their_surrogate_baseline():
     case = next(c for c in VECTORS["cases"] if c["name"] == "B follows A by 2 ticks")
     assert case["expect"]["q_total"] > case["expect"]["q_rand"] + 0.3
     assert case["expect"]["q_ab"] > case["expect"]["q_ba"]
+
+
+def _spike_train(rng, n=6000):
+    """About 120 spikes of 10 on noise of 0.1, at gaps of 10 plus a geometric number of ticks."""
+    times = np.cumsum(10 + rng.geometric(0.025, size=n // 10))
+    x = rng.normal(scale=0.1, size=n)
+    x[times[times < n - 10]] += 10.0
+    return x
+
+
+def test_independent_pairs_rarely_name_a_leader():
+    leaders = []
+    for seed in range(1, 9):
+        rng = np.random.default_rng(seed)
+        r = EventSynchronization().analyze(_spike_train(rng), _spike_train(rng))
+        assert abs(r["delay"]) <= 1.0
+        leaders.append(r["leader"])
+    assert leaders.count("None (symmetric)") >= 7, leaders
+
+
+def test_a_lagged_pair_names_its_leader_against_the_surrogates():
+    rng = np.random.default_rng(1)
+    a = _spike_train(rng)
+    b = np.roll(a, 3) + 0.3 * rng.normal(size=len(a))
+    r = EventSynchronization().analyze(a, b)
+    assert r["leader"] == "Series 1"
+    assert r["delay"] > r["delay_surrogates"] > 0
+    assert EventSynchronization().analyze(b, a)["leader"] == "Series 2"
+
+
+def test_leader_surrogates_must_be_positive():
+    rng = np.random.default_rng(1)
+    with pytest.raises(ValueError) as e:
+        EventSynchronization().analyze(_spike_train(rng), _spike_train(rng), surrogates=0)
+    assert str(e.value) == "surrogates: 0 is below 1; expected at least 1 shuffled copy"

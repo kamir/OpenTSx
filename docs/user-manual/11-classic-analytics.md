@@ -42,18 +42,19 @@ Output:
 
 `r` also holds `intercept`, `scales` and `fluctuations`.
 
-`r["interpretation"]` does not follow the ≈ rows of the table. It uses one-sided bands:
+`r["interpretation"]` names the band of α. The bands around 0.5 and 1 reach 0.05 to each side:
 
 | α | `interpretation` |
 |---|------------------|
-| below 0.5 | `Anti-correlated (mean-reverting)` |
-| 0.5 to below 0.55 | `Uncorrelated (white noise)` |
-| 0.55 to below 1.0 | `Correlated (persistent, trending)` |
-| 1.0 to below 1.05 | `1/f noise (pink noise)` |
-| from 1.05 | `Non-stationary (Brownian motion)` |
+| below 0.45 | `Anti-correlated (mean-reverting)` |
+| 0.45 to 0.55 | `Uncorrelated (white noise)` |
+| above 0.55 and below 0.95 | `Correlated (persistent, trending)` |
+| 0.95 to 1.05 | `1/f noise (pink noise)` |
+| above 1.05 | `Non-stationary (fractional Brownian motion)` |
 
-White noise with an estimate of 0.48 gets `Anti-correlated (mean-reverting)`. 1/f noise with an estimate of 0.97
-gets `Correlated (persistent, trending)`.
+White noise with an estimate of 0.48 gets `Uncorrelated (white noise)`. 1/f noise with an estimate of 0.97 gets
+`1/f noise (pink noise)`. Above 1, α − 1 is the Hurst exponent of a fractional Brownian motion; a random walk has
+α ≈ 1.5.
 
 Set `polynom_order=2` (DFA2) to remove quadratic trends. `analyze` passes `min_scale` (default 10), `max_scale`
 (default n // 4) and `num_scales` (default 20) to `calculate`. The scales are log-spaced integers without duplicates.
@@ -160,25 +161,32 @@ y = np.roll(x, 3) + 0.3 * rng.standard_normal(8192)
 es = EventSynchronization()
 r = es.analyze(x, y)   # events: local maxima above mean + 2·std (method="percentile": 95th)
 q_rand = es.surrogate_sync(r["events_1"], r["events_2"], shuffles=10, seed=1)
-print(round(r["overall_sync"], 3), round(q_rand, 3), r["leader"], round(r["delay"], 3))
+print(round(r["overall_sync"], 3), round(q_rand, 3), r["leader"], round(r["delay"], 3), round(r["delay_surrogates"], 3))
 ```
 
 Output:
 
 ```text
-0.694 0.307 Series 1 0.538
+0.694 0.307 Series 1 0.538 0.091
 ```
 
 `y` repeats `x` 3 samples later with added noise, so series 1 leads. `r` also holds `sync_1_to_2`, `sync_2_to_1`,
 `lead_lag_strength`, `num_events_1`, `num_events_2` and `tau_max`. `delay` is positive when series 1 leads.
-`leader` is `None (symmetric)` unless `sync_1_to_2` and `sync_2_to_1` differ by more than 0.05.
+
+`analyze` compares `delay` with `surrogates` copies of `y` (default 19) whose intervals between events are shuffled
+by `isi_shuffle` with `Mulberry32(seed)` (default seed 1). `delay_surrogates` is the largest |`delay`| of the
+copies. `leader` names the series that the sign of `delay` points to when |`delay`| is above `delay_surrogates`, and
+is `None (symmetric)` otherwise. `lead_lag_strength` is |`delay`| when `leader` names a series, and 0 otherwise.
+An independent pair names a leader in about 1 of `surrogates` + 1 cases. Of 200 independent pairs of spike trains
+with about 120 spikes each (`_spike_train` in `python-package/tests/test_event_sync.py`, seeds 1 to 200), 13 named a
+leader. Periodic events with equal intervals give copies equal to the original, so they name no leader.
 
 Every event pair gets its own window: half the smallest distance from either event to its neighbouring events (the
 local τ of Quiroga et al.). So `overall_sync` stays in [0, 1]. `EventSynchronization(tau_max=...)` caps that window.
 Without a cap, `r["tau_max"]` is `inf`.
 
-`analyze` raises `ValueError` for a value that is not finite and for a series without events, such as a constant
-series:
+`analyze` raises `ValueError` for `surrogates` below 1, for a value that is not finite and for a series without
+events, such as a constant series:
 
 ```text
 ValueError: ts1: no event, no local maximum lies above the threshold; expected at least one event, lower the threshold or use another method
@@ -211,7 +219,7 @@ from opentsx import RIS
 
 ris = RIS(threshold_percentile=95)
 r = ris.analyze(np.random.default_rng(1).standard_normal(8192))
-print(r["num_events"], round(r["mean_ri"], 2), r["median_ri"], round(r["risk_parameter"], 3), r["risk_interpretation"])
+print(r["num_events"], round(r["mean_ri"], 2), r["median_ri"], round(r["risk_parameter"], 3))
 fit = ris.stretched_exponential_fit(r["return_intervals"])
 print(round(fit["gamma"], 3), round(fit["tau_0"], 3))
 ```
@@ -219,18 +227,15 @@ print(round(fit["gamma"], 3), round(fit["tau_0"], 3))
 Output:
 
 ```text
-410 19.91 15.0 0.907 Moderate risk (random/Poisson)
+410 19.91 15.0 0.907
 1.266 26.23
 ```
 
 `r` also holds `threshold`, `event_indices`, `return_intervals`, `std_ri`, `min_ri` and `max_ri`.
 
-To judge clustering, read `risk_parameter`: the standard deviation of the return intervals divided by their mean.
-`risk_interpretation` is:
-
-* `Low risk (regular events)` below 0.8,
-* `Moderate risk (random/Poisson)` from 0.8 to below 1.2,
-* `High risk (clustered events)` from 1.2.
+To judge clustering, read `risk_parameter` R: the standard deviation of the return intervals divided by their mean.
+Uncorrelated values give geometric intervals with R = sqrt(1 − p) for an exceedance probability p, 0.97 at the 95th
+percentile. Clustered extremes give a larger R. `analyze` returns R without a label.
 
 `analyze` raises `ValueError` for a value that is not finite and with fewer than 3 events, the minimum for 2 return
 intervals:
