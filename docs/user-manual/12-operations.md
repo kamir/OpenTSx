@@ -320,6 +320,10 @@ profile does not replace the separate paced, recovery or Track B protocols.
 
 ## 12.9 Execute the local Rust catalog profile
 
+Worker capability discovery reports the legacy profile in `operators` and the
+B2 profile in `catalogExecution.operators`. The Java UI driver retains its
+four-operator legacy contract.
+
 Use the [B2 operating guide](../devguide/integration/rust-runner-b2.md) for
 trusted-local catalog assignments. You need Rust 1.99.1, native build tools,
 an existing Apache Kafka or KafScale Proxy endpoint and preprovisioned input

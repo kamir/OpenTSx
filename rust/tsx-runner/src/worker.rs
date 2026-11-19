@@ -177,9 +177,10 @@ impl Worker {
     }
 
     pub fn capabilities(&self) -> Value {
-        let mut operators = vec!["decode.avro-soe"];
-        operators.extend_from_slice(SUPPORTED_OPS);
-        operators.extend_from_slice(crate::catalog::CATALOG_OPS);
+        let operators = ["decode.avro-soe", "dq.checks", "convert.unit", "resample"];
+        let mut catalog_operators = vec!["decode.avro-soe"];
+        catalog_operators.extend_from_slice(SUPPORTED_OPS);
+        catalog_operators.extend_from_slice(crate::catalog::CATALOG_OPS);
         let mut capabilities = json!({"schema":"opentsx.local-worker.v1","node":self.config.node,
             "site":self.config.site,"artifactDigest":self.config.artifact_digest,
             "version":env!("CARGO_PKG_VERSION"),"catalog":"tsx-catalog/1",
@@ -195,7 +196,7 @@ impl Worker {
             capabilities["publicationFencing"] = json!(true);
         }
         capabilities["catalogExecution"] = json!({"stateAbi":"opentsx.rust.catalog-state.v1","contextRequiredForExtendedCaps":true,
-            "limits":{"series":1024,"samples":1000000},"signedRunOperators":["decode.avro-soe"]});
+            "operators":catalog_operators,"limits":{"series":1024,"samples":1000000},"signedRunOperators":["decode.avro-soe"]});
         capabilities
     }
 

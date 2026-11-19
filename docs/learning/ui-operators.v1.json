@@ -2335,7 +2335,8 @@
         "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
         "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
         "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration.",
-        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights."
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights.",
+        "Worker capability discovery keeps the four legacy operators in operators; catalogExecution.operators lists B2 operations and does not extend Java UI admission."
       ],
       "parameterKeys": [
         "factor",
@@ -2389,7 +2390,8 @@
           "opentsx-saas-backend/app/services/wayang_service.py#reconcile_switch",
           "rust/tsx-runner/src/operators.rs",
           "rust/tsx-runner/src/catalog.rs",
-          "systems/processors/convert.unit.yaml"
+          "systems/processors/convert.unit.yaml",
+          "rust/tsx-runner/src/worker.rs#capabilities"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
@@ -2407,7 +2409,8 @@
           "opentsx-saas-backend/tests/test_wayang_switch.py",
           "tools/test_kafscale_fenced_topology.py",
           "rust/tsx-runner/tests/catalog_flow.rs",
-          "rust/tsx-runner/tests/clean_catalog.rs"
+          "rust/tsx-runner/tests/clean_catalog.rs",
+          "rust/tsx-runner/tests/worker_service.rs#capability_discovery_preserves_legacy_admission_and_reports_b2_separately"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"

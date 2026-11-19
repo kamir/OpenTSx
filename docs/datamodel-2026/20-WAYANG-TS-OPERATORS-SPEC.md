@@ -377,6 +377,10 @@ fleet enrollment or production qualification.
 | `xcorrProductLimit` | Optional positive integer; required for `pair.xcorr` |
 
 Clean target metadata contains `system`, `id`, optional `grade` and `metric`.
+Worker capability discovery MUST retain the four legacy entries in the
+top-level `operators` array. The separate `catalogExecution.operators` array
+advertises the fifteen B2 entries, its state ABI and extended ceilings. A UI
+driver that validates the legacy profile does not admit B2 from that metadata.
 An empty context is valid. Every resource limit remains explicit in the request.
 With context, `limits.series` is at most 1,024 and `limits.samples` at most
 1,000,000. Other local request ceilings remain unchanged. Without context, the

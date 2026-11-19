@@ -32,6 +32,11 @@ ceiling is 1,024 and its sample ceiling is 1,000,000; a request without
 `context` retains the local profile's 64-series and 100,000-sample ceilings.
 Neither route silently widens a request's declared limits.
 
+Worker `GET /v1/capabilities` keeps the four legacy operators in its top-level
+`operators` array. `catalogExecution.operators` advertises the fifteen B2
+operators with their separate state ABI and extended ceilings. Reading that
+list does not extend the Java UI driver's legacy admission contract.
+
 The [signed B1 run](rust-runner-b1.md) accepts pass-through only. Its signed
 grant and local configuration do not accept B2 context. The Java UI rollout
 continues to validate its own smaller clean-stage subset. Local catalog

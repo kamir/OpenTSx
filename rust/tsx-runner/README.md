@@ -80,8 +80,8 @@ Keep this unauthenticated HTTP interface inside a trusted local network.
 
 Use these HTTP operations:
 
-- `GET /v1/capabilities` returns the executable digest, identities, supported operators, state ABI,
-  Episode fingerprint and resource ceilings.
+- `GET /v1/capabilities` returns the executable digest, identities, legacy operators, state ABI,
+  Episode fingerprint and resource ceilings. `catalogExecution.operators` lists the separate B2 catalog.
 - `POST /v1/prepare` accepts the exact `opentsx.local-bounded-run.v1` request text, up to 65,536 bytes.
   It reads the entire admitted cut, validates all input, computes output, and durably saves private output bytes
   and retained state before returning `prepared`. It publishes no Kafka output.
