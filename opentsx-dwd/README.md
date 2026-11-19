@@ -3,11 +3,12 @@
 This module collects weather data from the Deutscher Wetterdienst (DWD) open data server
 ([opendata.dwd.de](https://opendata.dwd.de)). It reads forecasts (MOSMIX) and station measurements (CDC), converts
 them to v2 series and episodes ([`opentsx-model`](../opentsx-model)) with a unit and an origin, and binds them to
-the weather inputs of the twins ([`opentsx-twin`](../opentsx-twin)): house, boat and energy system. It is the
-"DWD-Sammler" (weather atom A4) from [`07-DIGITAL-TWIN-BSP.md`](../docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md)
+the weather inputs of the twins ([`opentsx-twin`](../opentsx-twin)): house, boat and energy system. It is the DWD
+collector (weather atom A4) from [`07-DIGITAL-TWIN-BSP.md`](../docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md)
 (German).
 
-It uses only the JDK (`java.net.http`, `java.util.zip`, StAX) and has no third-party dependencies.
+The parsers and the downloads use only the JDK (`java.net.http`, `java.util.zip`, StAX). The command line reads its
+options through [`opentsx-conf`](../opentsx-conf), and the download retries log through the SLF4J API.
 
 ## Try it
 
@@ -22,18 +23,60 @@ bin/opentsx dwd house --station 10579                     # house twin over the 
 ```
 
 Every command takes `--offline <file>` in place of the download, for example a saved `MOSMIX_L_LATEST_10578.kmz`, a
-CDC zip or a station list. `obs --offline` takes a comma-separated list of files. Downloads use the JVM proxy
-settings, or `HTTPS_PROXY` if those are not set.
+CDC zip or a station list. `obs --offline` takes a comma-separated list of files. Every option is a key of the
+configuration registry, so it can also come from `--conf <key>=<value>`, an `OPENTSX_DWD_...` environment variable or
+`--properties-file <path>`. `bin/opentsx dwd <command> --help` lists the keys of a command with their defaults.
 
 | Command | Reads | Prints / writes |
 |---------|-------|-----------------|
 | `stations --near LAT,LON [--n 5] [--catalog mosmix\|cdc]` | MOSMIX station catalog, or the CDC 10-minute wind station list | the nearest stations by haversine distance |
 | `mosmix --station ID` | `MOSMIX_L_LATEST_<id>.kmz` | the series (metric, aggregation, unit, origin, seriesId); with `--out`, `--daily` and `--boat`, CSV files |
-| `obs --station CDC_ID [--param ...] [--hourly]` | CDC `10_minutes/<param>/now` zips (default), or `hourly/<param>/recent` zips | as above |
+| `obs --station CDC_ID [--param ...] [--hourly]` | CDC `10_minutes/<param>/now` zips (default) for `wind`, `air_temperature`, `solar`, `precipitation`, or with `--hourly` the `hourly/<param>/recent` zips for `wind` and `air_temperature` | as above |
 | `house --station ID` | MOSMIX | a shadow run of `haus-erzgebirge` over the forecast horizon: daily outdoor temperature, irradiation, heat request and origin |
 
 MOSMIX ids (`10578` Fichtelberg, `10579` Marienberg, `10091` Arkona) are not the same as CDC ids (`01358`
 Fichtelberg, `03166` Marienberg, `00183` Arkona). Look them up with `stations --catalog mosmix|cdc`.
+
+## Download through a proxy
+
+Downloads use the JVM proxy settings (`https.proxyHost`, `https.proxyPort`) when `https.proxyHost` is set. Otherwise
+they use the key `opentsx.https.proxy`, set as `<host>:<port>` or `http://<host>:<port>`:
+
+```bash
+export OPENTSX_HTTPS_PROXY=<host>:<port>
+bin/opentsx dwd mosmix --station 10578
+```
+
+`<host>:<port>` is the address of your HTTPS proxy.
+
+`HTTPS_PROXY` and `https_proxy` are legacy names of the same key; `OPENTSX_HTTPS_PROXY` wins over them. The key is a
+secret, because a proxy address can hold a user and a password: the command line refuses
+`--conf opentsx.https.proxy=...`, and `opentsx config show` prints it as `******`. A value without a host is refused
+with `opentsx: opentsx.https.proxy: not a proxy address; expected <host>:<port> or http://<host>:<port>`, without the
+value.
+
+## Retries and exit codes
+
+A download answered with 429 or a 5xx, or one that times out, is tried again after 2, 4 and 8 seconds, or after the
+`Retry-After` seconds of the answer, at most 60 seconds; 4 tries in all. An unknown host, a TLS error, a refused
+connection and every other answer fail at once. Each retry logs one WARN line of `org.opentsx.dwd.DwdClient` on
+stderr with the message `GET <url>: HTTP 503; try 2 of 4 in 2 s`.
+
+The options and the offline files are checked before the first download. The exit codes are 0 for success, 1 for a
+failed download or another runtime failure, and 2 for a usage or configuration error, which prints one line:
+
+```text
+opentsx: --catalog: "CDC" is not allowed; expected one of mosmix, cdc
+opentsx: --n: "abc" is not an int; expected a whole number from -2147483648 to 2147483647
+opentsx: /nonexistent: no such file; give an existing station list
+opentsx: dwd frob: unknown command; expected one of dwd house, dwd mosmix, dwd obs, dwd stations
+opentsx: --n: set twice on the command line (also by --n); set each key once
+```
+
+An offline path that names a directory gets the same `no such file` line. An offline file whose content cannot be
+parsed also exits with code 2 and names the file. A failed download prints
+`opentsx: java.io.IOException: cannot fetch <url>` or `opentsx: java.io.IOException: HTTP <status> for <url>`, with
+the causes, and exits with code 1.
 
 ## Sources and conversion
 
@@ -98,7 +141,9 @@ Unchanged excerpts of real files (CC BY 4.0, Deutscher Wetterdienst) cover the o
 (`F`, `D`), gusts (`FX_911`), pressure (`P0`) and precipitation (`R1`) of 01759 on 2025-10-01, and global and
 diffuse radiation in true solar time (`FG_LBERG`, `FD_LBERG`) of 00183 on 2025-07-01.
 They cover parsing, unit and time conversion, nearest-station search, series identity, episodes, the twin bindings
-(including a shadow run of the house twin with origin FORECAST) and the CLI.
+(including a shadow run of the house twin with origin FORECAST), the CLI with its options, help and exit codes, the
+proxy rule, the retries of `DwdClient` against a stub HTTP client, and the configuration of the CronJob
+`opentsx-dwd-forward` and the Job `opentsx-dwd` in the namespace of `deploy/k3s/base`.
 
 The parsers were also checked against live downloads from opendata.dwd.de in October 2026: MOSMIX_L for 10578 and
 10579 (247 hourly steps), the MOSMIX catalog (5649 stations; it contains one entry whose minutes are 60 or more,

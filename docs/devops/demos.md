@@ -327,8 +327,9 @@ deploy/k3s/40-demo.sh modbus -- --count 300                             # longer
 
 The simulator serves the **example** register map (`registermap.example=true`, made-up addresses) with
 `opentsx modbus simulate --map example --port 1502 --bind 0.0.0.0`. The Job polls it with
-`opentsx modbus poll --map example --host opentsx-modbus-sim --port 1502 --interval 1s --count 30 --out episodes
---episode PT10S --file /data/modbus/episodes-<UTC time>.jsonl` (module [opentsx-modbus](../../opentsx-modbus/README.md)):
+`opentsx modbus poll --map example --host opentsx-modbus-sim --port 1502 --interval 1s --out episodes
+--episode PT10S --file /data/modbus/episodes-<UTC time>.jsonl` with `OPENTSX_MODBUS_COUNT=30` in its environment,
+which `40-demo.sh modbus -- --count <n>` overrides (module [opentsx-modbus](../../opentsx-modbus/README.md)):
 
 ```text
 note: register map 'example-grid-meter' is an EXAMPLE, not a real register sheet

@@ -143,7 +143,8 @@ public final class RegisterMap {
         try (InputStream in = Files.newInputStream(yaml)) {
             return load(in, yaml.toString());
         } catch (IOException e) {
-            throw new UncheckedIOException("cannot read register map " + yaml + ": " + e.getMessage(), e);
+            String detail = e.getMessage() == null || e.getMessage().equals(yaml.toString()) ? "" : ": " + e.getMessage();
+            throw new UncheckedIOException("cannot read register map " + yaml + ": " + e.getClass().getSimpleName() + detail, e);
         }
     }
 

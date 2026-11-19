@@ -54,8 +54,8 @@ step-by-step runbooks for the common incidents are in [operations](operations.md
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| `40-demo.sh dwd`: `NoSuchFileException …/share/dwd/…kml` | image staged before the DWD fixture was added | `10-build.sh`, re-import, `30-deploy.sh --restart` |
-| `dwd-online` / `dwd-forward`: connect timeout, `UnknownHostException` | no internet or DNS from the pods, proxy required | allow egress to `opendata.dwd.de:443`, or `HTTPS_PROXY` in the Job; offline mode to separate the cases ([R6](operations.md#r6-dwd-fetch-failing)) |
+| `40-demo.sh dwd`: `opentsx: …/share/dwd/…kml: no such file; give an existing MOSMIX file` (exit code 2) | image staged before the DWD fixture was added | `10-build.sh`, re-import, `30-deploy.sh --restart` |
+| `dwd-online` / `dwd-forward`: `opentsx: java.io.IOException: cannot fetch https://opendata.dwd.de/…` with a cause such as `UnresolvedAddressException`, or `cannot fetch … after 4 tries` after timeouts (exit code 1) | no internet or DNS from the pods, proxy required | allow egress to `opendata.dwd.de:443`, or `OPENTSX_HTTPS_PROXY` in the Job; offline mode to separate the cases ([R6](operations.md#r6-dwd-fetch-failing)) |
 | `dwd-forward`: `station … FAILED` | MOSMIX id wrong (CDC ids differ) | `bin/opentsx dwd stations --near LAT,LON`, `20-configure.sh DWD_STATIONS=…` |
 | `40-demo.sh modbus`: `simulator not deployed` | `MODBUS_SIM=false` and `MODBUS_HOST` is the simulator | `20-configure.sh MODBUS_SIM=true`, `30-deploy.sh` |
 | `modbus-poll` fails: `Connection refused` / timeouts | simulator not ready, converter unreachable from the pod network | `kubectl -n opentsx logs deploy/opentsx-modbus-sim`; real converter: routing from the pod CIDR ([R7](operations.md#r7-modbus-timeouts-or-exception-responses)) |

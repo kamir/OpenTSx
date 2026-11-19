@@ -14,7 +14,7 @@
         DWD collector (Deutscher Wetterdienst Open Data): MOSMIX_L point forecasts (KMZ/KML) and CDC station
         observations (10-minute and hourly zip/CSV), station catalogs with nearest-station search, mapping to v2
         series and episodes with unit and origin, CSV export, and bindings for the weather inputs of opentsx-twin.
-        JDK only (java.net.http, java.util.zip, StAX).
+        The parsers and the downloads use the JDK only (java.net.http, java.util.zip, StAX).
     </description>
 
     <dependencies>
@@ -28,10 +28,24 @@
             <artifactId>opentsx-twin</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.opentsx</groupId>
+            <artifactId>opentsx-conf</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

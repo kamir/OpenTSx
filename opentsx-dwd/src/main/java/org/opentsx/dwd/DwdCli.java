@@ -1,5 +1,9 @@
 package org.opentsx.dwd;
 
+import org.opentsx.conf.ConfCli;
+import org.opentsx.conf.OpenTsxConf;
+import org.opentsx.conf.OpenTsxConfException;
+import org.opentsx.conf.Registry;
 import org.opentsx.model.Micros;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.twin.Mode;
@@ -9,187 +13,290 @@ import org.opentsx.twin.SeriesInputs;
 import org.opentsx.twin.TwinPlan;
 import org.opentsx.twin.TwinRunner;
 import org.opentsx.twin.house.HouseScenario;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileDescriptor;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.io.Writer;
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Set;
-import java.util.LinkedHashMap;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 /**
- * {@code bin/opentsx dwd <command>}: DWD Open Data collector.
- * <pre>
- * stations --near LAT,LON [--n 5] [--catalog mosmix|cdc] [--offline FILE]
- * mosmix   --station ID [--offline FILE.kmz] [--out FILE.csv] [--daily FILE.csv] [--boat FILE.csv]
- * obs      --station CDC_ID [--param wind,air_temperature,solar] [--hourly] | --offline FILE[,FILE...]
- *          [--out FILE.csv] [--daily FILE.csv] [--boat FILE.csv]
- * house    --station ID [--offline FILE.kmz]     house twin over the MOSMIX horizon, weather bound from DWD
- * </pre>
- * Without {@code --offline} the files are fetched from opendata.dwd.de.
+ * The commands {@code dwd stations}, {@code dwd mosmix}, {@code dwd obs} and {@code dwd house}: the DWD Open Data
+ * collector. They read their keys through {@link OpenTsxConf#load}; {@code bin/opentsx dwd <command> --help} lists them.
+ * Without an offline file the data is fetched from opendata.dwd.de through {@link DwdClient}. The keys and the offline
+ * files are checked before the first download. Exit codes: 0 success, 1 runtime failure, 2 usage or configuration error.
  */
 public final class DwdCli {
 
-    private static final String USAGE = """
-            usage: bin/opentsx dwd <command> [options]
-              stations --near LAT,LON [--n 5] [--catalog mosmix|cdc] [--offline FILE]
-                       nearest stations (haversine); mosmix = forecast ids, cdc = observation ids
-              mosmix   --station ID [--offline FILE.kmz] [--out FILE.csv] [--daily FILE.csv] [--boat FILE.csv]
-                       MOSMIX_L forecast (origin FORECAST): FF, DD, TTT, PPPP, N, Rad1h, RR1c
-              obs      --station CDC_ID [--param wind,air_temperature,solar] [--hourly]
-                       | --offline FILE[,FILE...]   [--out FILE.csv] [--daily FILE.csv] [--boat FILE.csv]
-                       CDC station observations (origin MEASURED), 10-minute 'now' or hourly 'recent'
-              house    --station ID [--offline FILE.kmz]
-                       house twin (haus-erzgebirge) over the forecast horizon with DWD weather bound
-            --out: wide CSV; --daily: datum,t_mittel_c (bin/opentsx house --weather); --boat: zeit,einstrahlung_wm2
-            examples: stations --near 50.6,13.0      mosmix --station 10578 --out fichtelberg.csv
-                      obs --station 01358 --param wind,air_temperature,solar --out obs.csv""";
+    static final String COMMAND = "dwd";
+    static final String NEAR = "opentsx.dwd.near";
+    static final String NEAREST = "opentsx.dwd.nearestCount";
+    static final String CATALOG = "opentsx.dwd.stationCatalog";
+    static final String OFFLINE = "opentsx.dwd.offline";
+    static final String OBS_OFFLINE = "opentsx.dwd.obs.offline";
+    static final String STATION = "opentsx.dwd.station";
+    static final String PARAMS = "opentsx.dwd.params";
+    static final String HOURLY = "opentsx.dwd.hourly";
+    static final String OUT = "opentsx.dwd.out";
+    static final String DAILY = "opentsx.dwd.daily";
+    static final String BOAT = "opentsx.dwd.boat";
+    static final String PROXY = "opentsx.https.proxy";
+    static final Pattern STATION_ID = Pattern.compile("[A-Za-z0-9]{1,10}");
+    static final List<String> HOURLY_PARAMS = List.of("wind", "air_temperature");
+    static final String WRITE_FAILED = "stdout: cannot write the output; check that standard output is open and not full";
 
-    private final PrintStream out;
-    private final Map<String, String> opts = new LinkedHashMap<>();
-
-    DwdCli(PrintStream out) {
-        this.out = out;
+    /** The checked work of a command; it writes its result to {@code out}. */
+    interface Run {
+        void run(PrintStream out) throws IOException;
     }
 
-    public static void main(String[] args) throws IOException {
-        int rc = new DwdCli(System.out).run(args);
-        if (rc != 0) {
-            System.exit(rc);
-        }
+    private DwdCli() {
     }
 
-    int run(String[] args) throws IOException {
-        if (args.length == 0 || args[0].equals("-h") || args[0].equals("--help") || args[0].equals("help")) {
-            out.println(USAGE);
-            return args.length == 0 ? 1 : 0;
-        }
-        for (int i = 1; i < args.length; i++) {
-            if (!args[i].startsWith("--")) {
-                return usage("unexpected argument: " + args[i]);
+    public static void main(String[] args) {
+        PrintStream out = new PrintStream(new FileOutputStream(FileDescriptor.out), true, StandardCharsets.UTF_8);
+        PrintStream err = new PrintStream(new FileOutputStream(FileDescriptor.err), true, StandardCharsets.UTF_8);
+        System.exit(run(List.of(args), System.getenv(), out, err));
+    }
+
+    /** {@code args} without the word {@code dwd}, as bin/opentsx passes them. */
+    static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err) {
+        List<String> argv = new ArrayList<>(args.size() + 1);
+        argv.add(COMMAND);
+        argv.addAll(args);
+        Run run;
+        try {
+            OpenTsxConf.Loaded loaded = OpenTsxConf.load(argv, env, env.get("OPENTSX_CONF_DIR"));
+            if (loaded.help()) {
+                Registry registry = Registry.shipped();
+                out.print(loaded.command() == null ? registry.help() : registry.help(loaded.command()));
+                return written(out, err);
             }
-            String k = args[i].substring(2);
-            boolean flag = k.equals("hourly");
-            if (!flag && i + 1 >= args.length) {
-                return usage("missing value for --" + k);
+            if (loaded.version()) {
+                out.print(ConfCli.versionLine());
+                return written(out, err);
             }
-            opts.put(k, flag ? "true" : args[++i]);
+            run = check(loaded.command(), loaded.conf());
+        } catch (IllegalArgumentException e) {
+            err.print("opentsx: " + oneLine(e.getMessage() == null ? e.toString() : e.getMessage()) + "\n");
+            err.flush();
+            return 2;
+        } catch (RuntimeException e) {
+            return failed(e, err);
         }
         try {
-            return switch (args[0]) {
-                case "stations" -> stations();
-                case "mosmix" -> mosmix();
-                case "obs" -> obs();
-                case "house" -> house();
-                default -> usage("unknown command: " + args[0]);
-            };
-        } catch (IllegalArgumentException e) {
-            System.err.println("error: " + e.getMessage());
-            return 2;
+            run.run(out);
+        } catch (IOException | RuntimeException e) {
+            return failed(e, err);
         }
+        return written(out, err);
     }
 
-    private int usage(String msg) {
-        System.err.println(msg);
-        System.err.println(USAGE);
-        return 1;
-    }
-
-    private String need(String k) {
-        String v = opts.get(k);
-        if (v == null) {
-            throw new IllegalArgumentException("--" + k + " is required");
+    /** Checks every value and reads the offline files; downloads nothing. */
+    static Run check(String command, OpenTsxConf conf) {
+        Optional<String> station = conf.getOption(STATION);
+        if (!command.equals("dwd stations") && station.isPresent() && !STATION_ID.matcher(station.get()).matches()) {
+            throw new OpenTsxConfException(STATION, "\"" + station.get() + "\" is not a station id",
+                    "expected letters and digits such as 10578 or 01358");
         }
-        return v;
-    }
-
-    // ----------------------------------------------------------------------------------------------- commands
-
-    private int stations() throws IOException {
-        String[] ll = need("near").split(",");
-        if (ll.length != 2) {
-            throw new IllegalArgumentException("--near expects LAT,LON");
-        }
-        double lat = Double.parseDouble(ll[0].strip());
-        double lon = Double.parseDouble(ll[1].strip());
-        int n = Integer.parseInt(opts.getOrDefault("n", "5"));
-        String which = opts.getOrDefault("catalog", "mosmix");
-        StationCatalog cat = opts.containsKey("offline") ? StationCatalog.read(Path.of(opts.get("offline")))
-                : StationCatalog.parse(new DwdClient().get(which.equals("cdc") ? DwdClient.CDC_STATIONS : DwdClient.MOSMIX_STATIONS));
-        out.printf(Locale.ROOT, "%d stations in catalog; nearest to %.4f, %.4f:%n", cat.stations().size(), lat, lon);
-        out.printf(Locale.ROOT, "%-6s %-36s %9s %9s %6s %8s%n", "id", "name", "lat", "lon", "elev", "km");
-        for (StationCatalog.Nearby s : cat.nearest(lat, lon, n)) {
-            Station st = s.station();
-            out.printf(Locale.ROOT, "%-6s %-36s %9.4f %9.4f %6.0f %8.1f%n", st.id(), st.name(), st.latitude(),
-                    st.longitude(), st.elevation(), s.distanceKm());
-        }
-        return 0;
-    }
-
-    private Mosmix.Forecast forecast() throws IOException {
-        String station = opts.get("station");
-        if (opts.containsKey("offline")) {
-            try (InputStream in = Files.newInputStream(Path.of(opts.get("offline")))) {
-                return Mosmix.read(in, station == null ? null : Set.of(station));
+        return switch (command) {
+            case "dwd stations" -> stations(conf);
+            case "dwd mosmix" -> {
+                Forecast f = forecast(conf);
+                Exports exports = exports(conf);
+                yield out -> mosmix(f.get(), station, exports, out);
             }
-        }
-        String id = need("station");
-        return Mosmix.read(new ByteArrayInputStream(new DwdClient().get(Mosmix.latestUrl(id))), Set.of(id));
+            case "dwd obs" -> obs(conf, station, exports(conf));
+            case "dwd house" -> {
+                Forecast f = forecast(conf);
+                yield out -> house(f.get(), station, out);
+            }
+            default -> throw new IllegalStateException(command + ": not a command of " + DwdCli.class.getName());
+        };
     }
 
-    private int mosmix() throws IOException {
-        Mosmix.Forecast f = forecast();
-        Mosmix.Placemark p = opts.containsKey("station") ? f.placemark(opts.get("station")) : f.placemarks().get(0);
+    /** The proxy of the downloads: the JVM proxy settings win; a set {@code opentsx.https.proxy} is checked in any case. */
+    static ProxySelector proxy(String jvmProxyHost, Optional<String> configured) {
+        ProxySelector own = configured.map(DwdCli::proxyOf).orElse(null);
+        return jvmProxyHost != null || own == null ? ProxySelector.getDefault() : own;
+    }
+
+    private static ProxySelector proxyOf(String value) {
+        URI u;
+        try {
+            u = new URI(value.contains("://") ? value : "http://" + value);
+        } catch (URISyntaxException e) {
+            // not kept as the cause: its message holds the value, which is a secret
+            u = null;
+        }
+        if (u == null || u.getHost() == null) {
+            throw new OpenTsxConfException(PROXY, "not a proxy address", "expected <host>:<port> or http://<host>:<port>");
+        }
+        return ProxySelector.of(InetSocketAddress.createUnresolved(u.getHost(), u.getPort() > 0 ? u.getPort() : 80));
+    }
+
+    private static DwdClient client(OpenTsxConf conf) {
+        return new DwdClient(proxy(System.getProperty("https.proxyHost"), conf.getOption(PROXY)));
+    }
+
+    private interface Forecast {
+        Mosmix.Forecast get() throws IOException;
+    }
+
+    private interface Parser<T> {
+        T parse(byte[] bytes) throws IOException;
+    }
+
+    /** The bytes of an offline file a key names, parsed; a refusal of its content names the file. */
+    private static <T> T offline(String file, String what, Parser<T> parser) {
+        Path path = Path.of(file);
+        byte[] bytes;
+        if (Files.isDirectory(path)) {
+            throw new OpenTsxConfException(file, "no such file", "give an existing " + what);
+        }
+        try {
+            bytes = Files.readAllBytes(path);
+        } catch (NoSuchFileException e) {
+            throw new OpenTsxConfException(file, "no such file", "give an existing " + what);
+        } catch (IOException e) {
+            throw new UncheckedIOException(file + ": cannot read the " + what, e);
+        }
+        try {
+            return parser.parse(bytes);
+        } catch (IOException | IllegalArgumentException e) {
+            throw new IllegalArgumentException(file + ": " + (e.getMessage() == null ? e.toString() : e.getMessage()), e);
+        }
+    }
+
+    private static Run stations(OpenTsxConf conf) {
+        List<String> near = conf.getList(NEAR);
+        if (near.size() != 2) {
+            throw new OpenTsxConfException(NEAR, "\"" + String.join(",", near) + "\" has " + near.size() + " items",
+                    "expected LAT,LON such as 50.6,13.0");
+        }
+        double lat = Double.parseDouble(near.get(0));
+        double lon = Double.parseDouble(near.get(1));
+        if (Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+            throw new OpenTsxConfException(NEAR, "\"" + String.join(",", near) + "\" is not a position",
+                    "expected a latitude from -90 to 90 and a longitude from -180 to 180");
+        }
+        int n = conf.getInt(NEAREST);
+        if (n < 1) {
+            throw new OpenTsxConfException(NEAREST, n + " is not allowed", "expected 1 or more");
+        }
+        String url = conf.get(CATALOG).equals("cdc") ? DwdClient.CDC_STATIONS : DwdClient.MOSMIX_STATIONS;
+        Optional<String> file = conf.getOption(OFFLINE);
+        StationCatalog local = file.map(f -> offline(f, "station list", StationCatalog::parse)).orElse(null);
+        DwdClient client = local == null ? client(conf) : null;
+        return out -> {
+            StationCatalog cat = local != null ? local : StationCatalog.parse(client.get(url));
+            out.printf(Locale.ROOT, "%d stations in catalog; nearest to %.4f, %.4f:%n", cat.stations().size(), lat, lon);
+            out.printf(Locale.ROOT, "%-6s %-36s %9s %9s %6s %8s%n", "id", "name", "lat", "lon", "elev", "km");
+            for (StationCatalog.Nearby s : cat.nearest(lat, lon, n)) {
+                Station st = s.station();
+                out.printf(Locale.ROOT, "%-6s %-36s %9.4f %9.4f %6.0f %8.1f%n", st.id(), st.name(), st.latitude(),
+                        st.longitude(), st.elevation(), s.distanceKm());
+            }
+        };
+    }
+
+    /** The MOSMIX forecast of an offline file, checked now, or of the station, downloaded when it is run. */
+    private static Forecast forecast(OpenTsxConf conf) {
+        Optional<String> station = conf.getOption(STATION);
+        Optional<String> file = conf.getOption(OFFLINE);
+        if (file.isPresent()) {
+            Mosmix.Forecast f = offline(file.get(), "MOSMIX file",
+                    b -> Mosmix.read(new ByteArrayInputStream(b), station.map(Set::of).orElse(null)));
+            if (f.placemarks().isEmpty()) {
+                throw new IllegalArgumentException(file.get() + ": no station" + station.map(s -> " " + s).orElse("")
+                        + " in the forecast");
+            }
+            return () -> f;
+        }
+        String id = conf.get(STATION);
+        DwdClient client = client(conf);
+        return () -> Mosmix.read(new ByteArrayInputStream(client.get(Mosmix.latestUrl(id))), Set.of(id));
+    }
+
+    private static void mosmix(Mosmix.Forecast f, Optional<String> station, Exports exports, PrintStream out) throws IOException {
+        Mosmix.Placemark p = station.isPresent() ? f.placemark(station.get()) : f.placemarks().get(0);
         out.printf(Locale.ROOT, "MOSMIX %s station %s %s (%.3f, %.3f, %.0f m), issued %s, %d time steps %s .. %s%n",
                 f.product(), p.id(), p.name(), p.latitude(), p.longitude(), p.elevation(), f.issueTime(),
                 f.timeSteps().length, Micros.toInstant(f.timeSteps()[0]),
                 Micros.toInstant(f.timeSteps()[f.timeSteps().length - 1]));
         out.println("models: " + String.join(", ", f.models()));
         List<WeatherSeries> series = f.series(p.id());
-        report(series);
-        export(series);
-        return 0;
+        report(series, out);
+        exports.write(series, out);
     }
 
-    private int obs() throws IOException {
-        List<WeatherSeries> series = new ArrayList<>();
-        if (opts.containsKey("offline")) {
-            for (String file : opts.get("offline").split(",")) {
-                series.addAll(CdcObservations.read(Path.of(file.strip())));
+    private static Run obs(OpenTsxConf conf, Optional<String> station, Exports exports) {
+        Optional<List<String>> files = conf.getOption(OBS_OFFLINE).map(v -> conf.getList(OBS_OFFLINE));
+        if (files.isPresent()) {
+            List<WeatherSeries> series = new ArrayList<>();
+            for (String file : files.get()) {
+                series.addAll(offline(file, "CDC observation file", CdcObservations::read));
             }
-        } else {
-            String id = need("station");
-            DwdClient c = new DwdClient();
-            boolean hourly = opts.containsKey("hourly");
-            for (String p : opts.getOrDefault("param", hourly ? "wind,air_temperature" : "wind,air_temperature,solar").split(",")) {
-                String url = hourly ? CdcObservations.recentHourlyUrl(p.strip(), id) : CdcObservations.nowUrl(p.strip(), id);
+            if (series.isEmpty()) {
+                throw new IllegalArgumentException(String.join(",", files.get()) + ": no observations found");
+            }
+            return out -> {
+                report(series, out);
+                exports.write(series, out);
+            };
+        }
+        boolean hourly = conf.getBoolean(HOURLY);
+        List<String> params = conf.getOption(PARAMS).map(v -> conf.getList(PARAMS))
+                .orElse(hourly ? HOURLY_PARAMS : List.of("wind", "air_temperature", "solar"));
+        for (String p : params) {
+            if (hourly && !HOURLY_PARAMS.contains(p)) {
+                throw new OpenTsxConfException(PARAMS, "\"" + p + "\" has no hourly recent product",
+                        "expected wind or air_temperature with hourly");
+            }
+        }
+        String id = conf.get(STATION);
+        DwdClient client = client(conf);
+        return out -> {
+            List<WeatherSeries> series = new ArrayList<>();
+            for (String p : params) {
+                String url = hourly ? CdcObservations.recentHourlyUrl(p, id) : CdcObservations.nowUrl(p, id);
                 out.println("fetch " + url);
-                series.addAll(CdcObservations.read(c.get(url)));
+                series.addAll(CdcObservations.read(client.get(url)));
             }
-        }
-        if (series.isEmpty()) {
-            throw new IllegalArgumentException("no observations found");
-        }
-        report(series);
-        export(series);
-        return 0;
+            if (series.isEmpty()) {
+                throw new IllegalStateException("station " + id + ": no observations found");
+            }
+            report(series, out);
+            exports.write(series, out);
+        };
     }
 
-    private int house() throws IOException {
-        Mosmix.Forecast f = forecast();
-        String id = opts.containsKey("station") ? opts.get("station") : f.placemarks().get(0).id();
+    private static void house(Mosmix.Forecast f, Optional<String> station, PrintStream out) {
+        String id = station.orElseGet(() -> f.placemarks().get(0).id());
         List<WeatherSeries> series = f.series(id);
         TwinPlan base = HouseScenario.plan();
         long step = base.baseStep().toNanos() / 1000;
@@ -221,12 +328,9 @@ public final class DwdCli {
                 a[3], a[4] < a[0] ? "  (" + (int) (a[0] - a[4]) + " steps synthetic)" : ""));
         out.println("origin of weather.t_out_c: " + r.origin(weather + ".t_out_c")
                 + " (FORECAST = bound from DWD; SYNTHETIC = model fallback)");
-        return 0;
     }
 
-    // ----------------------------------------------------------------------------------------------- output
-
-    private void report(List<WeatherSeries> series) {
+    private static void report(List<WeatherSeries> series, PrintStream out) {
         out.printf(Locale.ROOT, "%-28s %-12s %-6s %-6s %-10s %5s %5s  %-17s %s%n", "metric", "aggregation", "unit",
                 "source", "origin", "n", "valid", "seriesId", "first value");
         int episodes = 0;
@@ -241,24 +345,65 @@ public final class DwdCli {
         out.println(episodes + " v2 episodes (forecast: one per run; observations: per UTC day)");
     }
 
-    private void export(List<WeatherSeries> series) throws IOException {
-        if (opts.containsKey("out")) {
-            try (Writer w = Files.newBufferedWriter(Path.of(opts.get("out")), StandardCharsets.UTF_8)) {
-                WeatherCsv.writeWide(series, w);
+    private static Exports exports(OpenTsxConf conf) {
+        return new Exports(conf.getOption(OUT).orElse(null), conf.getOption(DAILY).orElse(null), conf.getOption(BOAT).orElse(null));
+    }
+
+    /** The CSV files of {@code --out}, {@code --daily} and {@code --boat}; null for a file not asked for. */
+    private record Exports(String out, String daily, String boat) {
+
+        void write(List<WeatherSeries> series, PrintStream stdout) throws IOException {
+            if (out != null) {
+                try (Writer w = Files.newBufferedWriter(Path.of(out), StandardCharsets.UTF_8)) {
+                    WeatherCsv.writeWide(series, w);
+                }
+                stdout.println("wrote " + out);
             }
-            out.println("wrote " + opts.get("out"));
-        }
-        if (opts.containsKey("daily")) {
-            try (Writer w = Files.newBufferedWriter(Path.of(opts.get("daily")), StandardCharsets.UTF_8)) {
-                int n = WeatherCsv.writeDailyTemperatures(series, HouseScenario.ZONE, w);
-                out.println("wrote " + opts.get("daily") + " (" + n + " complete days)");
+            if (daily != null) {
+                try (Writer w = Files.newBufferedWriter(Path.of(daily), StandardCharsets.UTF_8)) {
+                    int n = WeatherCsv.writeDailyTemperatures(series, HouseScenario.ZONE, w);
+                    stdout.println("wrote " + daily + " (" + n + " complete days)");
+                }
+            }
+            if (boat != null) {
+                try (Writer w = Files.newBufferedWriter(Path.of(boat), StandardCharsets.UTF_8)) {
+                    int n = WeatherCsv.writeBoatIrradiance(series, w);
+                    stdout.println("wrote " + boat + " (" + n + " rows)");
+                }
             }
         }
-        if (opts.containsKey("boat")) {
-            try (Writer w = Files.newBufferedWriter(Path.of(opts.get("boat")), StandardCharsets.UTF_8)) {
-                int n = WeatherCsv.writeBoatIrradiance(series, w);
-                out.println("wrote " + opts.get("boat") + " (" + n + " rows)");
-            }
+    }
+
+    private static int failed(Exception e, PrintStream err) {
+        LoggerFactory.getLogger(DwdCli.class).debug("stack trace of the failed run", e);
+        err.print("opentsx: " + causes(e) + "\n");
+        err.flush();
+        return 1;
+    }
+
+    private static int written(PrintStream out, PrintStream err) {
+        out.flush();
+        if (out.checkError()) {
+            err.print("opentsx: " + WRITE_FAILED + "\n");
+            err.flush();
+            return 1;
         }
+        return 0;
+    }
+
+    /** The message and its causes on one line; a checked exception with its class, its message is often a bare path. */
+    static String causes(Throwable t) {
+        boolean bare = !(t instanceof RuntimeException) || t.getMessage() == null;
+        StringBuilder s = new StringBuilder(bare ? t.toString() : t.getMessage());
+        Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        seen.add(t);
+        for (Throwable c = t.getCause(); c != null && seen.add(c); c = c.getCause()) {
+            s.append("; caused by ").append(c);
+        }
+        return oneLine(s.toString());
+    }
+
+    private static String oneLine(String s) {
+        return String.valueOf(s).replaceAll("[\\s\\p{Cntrl}]+", " ").strip();
     }
 }

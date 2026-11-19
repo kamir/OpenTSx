@@ -175,8 +175,7 @@ signals.
   Lines to search for: `FAIL`, `NOT reachable`, `checkpoint`, `read failed`, `error:`, ` WARN `, ` ERROR `.
 * The image and `bin/opentsx` log through slf4j-simple with one file, `conf/simplelogger.properties`: everything at
   `info`, `org.apache.kafka`, `org.apache.iceberg`, `org.apache.hadoop`, `org.apache.parquet` and `software.amazon` at
-  `warn`. `twin-live` sets the default to `warn` itself. `bin/opentsx stats-flink` logs through log4j2 with
-  `conf/log4j2-stats-flink.properties`.
+  `warn`. `bin/opentsx stats-flink` logs through log4j2 with `conf/log4j2-stats-flink.properties`.
 * Change one logger's level in `conf/simplelogger.properties`: edit its line, for example
   `org.slf4j.simpleLogger.log.org.apache.kafka=info`, or add one, for example
   `org.slf4j.simpleLogger.log.org.opentsx.stats=debug`. The levels are `trace`, `debug`, `info`, `warn`, `error` and
@@ -386,10 +385,11 @@ Each runbook: symptom → check → cause → fix → verify. Start every invest
 * **Symptom:** `opentsx-dwd-forward` Job failed (`station … FAILED`), `OpenTSxDwdForwardStale`, `40-demo.sh
   dwd-online` fails.
 * **Check:** `kubectl -n opentsx logs job/<latest dwd-forward job>`; from a pod:
-  `kubectl -n opentsx run dwdtest --rm -i --image=<tools image> --restart=Never -- dwd stations --near 50.6,13.0`.
-* **Cause:** no internet/DNS from the pods, a required HTTPS proxy (the collector honours `HTTPS_PROXY`), a wrong
-  station id (MOSMIX ids such as `10578` differ from CDC ids such as `01358`), a DWD outage or file layout change.
-* **Fix:** allow egress to `opendata.dwd.de:443` (or set `HTTPS_PROXY` in the CronJob), correct `DWD_STATIONS`
+  `kubectl -n opentsx run dwdtest --rm -i --image=<tools image> --restart=Never --overrides='{"apiVersion":"v1","spec":{"enableServiceLinks":false}}' -- dwd stations --near 50.6,13.0`.
+* **Cause:** no internet/DNS from the pods, a required HTTPS proxy (the collector honours `OPENTSX_HTTPS_PROXY` and
+  the legacy `HTTPS_PROXY` when the JVM property `https.proxyHost` is not set), a wrong station id (MOSMIX ids such as
+  `10578` differ from CDC ids such as `01358`), a DWD outage or file layout change.
+* **Fix:** allow egress to `opendata.dwd.de:443` (or set `OPENTSX_HTTPS_PROXY` in the CronJob), correct `DWD_STATIONS`
   (`bin/opentsx dwd stations --near LAT,LON`), retry later. The offline mode (`40-demo.sh dwd`, `DWD_MODE=offline`)
   separates OpenTSx problems from network problems: if it passes, the image and PVC are fine.
 * **Verify:** `40-demo.sh dwd-forward` completes; new `mosmix-<station>-<time>.csv` files on the data PVC.

@@ -56,7 +56,7 @@ class RegistryTest {
         Registry reg = Registry.shipped();
         assertEquals(133, reg.keys().size());
         assertEquals(48, reg.commands().size());
-        assertEquals(List.of("opentsx.dwd.httpsProxy", "opentsx.market.entsoeToken", "opentsx.market.ntpClientId",
+        assertEquals(List.of("opentsx.https.proxy", "opentsx.market.entsoeToken", "opentsx.market.ntpClientId",
                         "opentsx.market.ntpClientSecret", "opentsx.openmetadata.token", "opentsx.retrieval.dagRunToken"),
                 reg.keys().stream().filter(Registry.Key::secret).map(Registry.Key::key).toList());
         assertArrayEquals(Files.readAllBytes(SOURCE), reg.json());

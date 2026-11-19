@@ -14,6 +14,7 @@ spec:
       labels:
         app.kubernetes.io/name: opentsx-modbus-sim
     spec:
+      enableServiceLinks: false   # opentsx-retrieval would set OPENTSX_RETRIEVAL_PORT=tcp://..., which the loader refuses
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001

@@ -1,6 +1,7 @@
 package org.opentsx.modbus;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.modbus.map.DataType;
 import org.opentsx.modbus.map.RegisterMap;
 import org.opentsx.modbus.map.RegisterMapException;
@@ -9,6 +10,8 @@ import org.opentsx.modbus.map.WordOrder;
 import org.opentsx.modbus.protocol.Framing;
 import org.opentsx.modbus.protocol.FunctionCode;
 
+import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,6 +19,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RegisterMapTest {
+
+    @TempDir
+    Path dir;
 
     static final String HEAD = String.join("\n",
             "schema: opentsx.modbus.registermap.v1",
@@ -146,6 +152,13 @@ class RegisterMapTest {
         RegisterMapException e2 = invalid(HEAD
                 + "  - { name: a, address: 0, type: uint32, sim: { profile: integrate, source: nope } }\n");
         assertProblem(e2, "needs source = an existing point");
+    }
+
+    @Test
+    void aFileThatCannotBeReadNamesThePathOnceAndTheCause() {
+        Path missing = dir.resolve("x.yaml");
+        assertEquals("cannot read register map " + missing + ": NoSuchFileException",
+                assertThrows(UncheckedIOException.class, () -> RegisterMap.load(missing)).getMessage());
     }
 
     @Test

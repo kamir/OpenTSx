@@ -5,8 +5,9 @@ turns them into v2 episodes ([`opentsx-model`](../opentsx-model)). It belongs to
 [TASK-011](../EVOLUTION/TASK-011-datamodel-refresher-2026.md)). The first use case is the grid operator's meters
 at the wind farm / electrolyzer site, which are read through a converter at the fibre termination.
 
-The Modbus client, framing and simulator use **only the JDK**: sockets, no Modbus library. The only extra dependency
-is Jackson YAML, which the other modules use for their YAML files too.
+The Modbus client, framing and simulator use **only the JDK**: sockets, no Modbus library. The extra dependencies
+are Jackson YAML, which the other modules use for their YAML files too, `opentsx-conf` for the command line and the
+SLF4J API.
 
 > **The real register sheets are not available yet.** The shipped map
 > [`example-grid-meter.yaml`](src/main/resources/modbus/example-grid-meter.yaml) is an **example**. It contains
@@ -26,17 +27,48 @@ bin/opentsx modbus poll     --map example --host 127.0.0.1 --port 1502 --out epi
                             --file episodes.jsonl                                                         # v2 episodes
 ```
 
-`--map` takes a file or the word `example`. The CLI options are:
+`--map` takes a file or the word `example`. Every option is a key of the configuration registry, so it can also come
+from `--conf <key>=<value>`, an `OPENTSX_MODBUS_...` environment variable or `--properties-file <path>`.
+`bin/opentsx modbus <command> --help` lists the keys of a command with their defaults. The CLI options are:
 
 | Command | Options |
 |---------|---------|
 | `check` | validates the map, prints the points and the read plan (requests per cycle) |
 | `read` | `[--host h] [--port p] [--unit u] [--simulate]`: one poll cycle as a table with value, unit, OBIS and quality. The exit code is 1 if a block failed |
-| `poll` | `[--count n]` (0 = until Ctrl-C), `[--interval PT5S]`, `[--out csv\|episodes]`, `[--file f]`, `[--episode PT1M]`, `[--simulate]`. CSV columns: `timestamp,device,point,metric,value,unit,obis,origin,quality`. With `episodes`, a summary is printed per closed window, and with `--file` each episode is written as one line of Avro JSON |
-| `simulate` | `[--port 1502] [--bind 127.0.0.1] [--seed 42] [--seconds n]`: serves the map's points with the profiles from their `sim:` blocks |
+| `poll` | `[--count n]` (0 = until Ctrl-C), `[--interval 5s]`, `[--out csv\|episodes]`, `[--file f]`, `[--episode PT1M]`, `[--simulate]`. CSV columns: `timestamp,device,point,metric,value,unit,obis,origin,quality`. With `episodes`, a summary is printed per closed window, and with `--file` each episode is written as one line of Avro JSON. The exit code is 1 if a block failed in any cycle |
+| `simulate` | `[--port 1502] [--bind 127.0.0.1] [--seed 42] [--seconds n]`: serves the map's points with the profiles from their `sim:` blocks. The default `127.0.0.1` serves this host only; `--bind 0.0.0.0` serves every interface |
+
+`--interval` and `--episode` take ISO-8601 (`PT5S`) or a whole number with the unit `ms`, `s`, `m`, `min`, `h` or `d`
+(`500ms`, `5s`); `1.5s` is refused. The `pollInterval` of the register map also takes decimals. `--port` takes 1 to
+65535, `--unit` 0 to 255.
 
 `--simulate` is honest about where the data comes from: the episodes and CSV lines carry `origin=SYNTHETIC`, not
 the map's `MEASURED`.
+
+## Read the errors
+
+The options and the map are checked before the first connection. A usage or configuration error prints one line and
+exits with code 2, for example:
+
+```text
+opentsx: --prot: unknown option of modbus check; did you mean --port?
+opentsx: --port: "abc" is not an int; expected a whole number from -2147483648 to 2147483647
+opentsx: /x.yaml: no such file; give an existing register map file or example
+opentsx: --count: set twice on the command line (also by --count); set each key once
+```
+
+A map with problems prints `opentsx: register map <file> is invalid:` and its problems on the same line, each after
+`- `, also with code 2.
+Any other failure prints `opentsx: <message>` with its causes and exits with code 1.
+
+`poll` prints the first failed read of a block on stderr, then, while reads keep failing, one count per minute, a
+count of the failures not printed yet when it ends, and one line when reads succeed again. A meter that is switched off
+writes one line per minute, not one per block and cycle. Output of 20 cycles against a closed port:
+
+```text
+2026-11-19T02:55:47.500Z read failed: discrete 0..0 (1, 1 points): connection to tcp://127.0.0.1:55051 failed: Connection refused (attempt 2)
+2026-11-19T02:56:08.400Z read failed 99 more times since 2026-11-19T02:55:47.500Z; last: input 20..23 (4, 2 points): connection to tcp://127.0.0.1:55051 failed: Connection refused (attempt 2)
+```
 
 ## Register map (`opentsx.modbus.registermap.v1`)
 
@@ -100,7 +132,7 @@ register map ──► BlockPlanner ──► Poller ──► RawReading ──
 | PDUs | `Pdu`, `FunctionCode` | read functions 0x01–0x04 with their limits (125 registers / 2000 bits); request, response and exception response |
 | Errors | `ModbusExceptionResponse`, `ModbusTimeoutException`, `ModbusProtocolException` (all `ModbusException extends IOException`) | exception codes with name and hint, e.g. `ILLEGAL_DATA_ADDRESS: address range not served (check ... 0- vs. 1-based addresses, gaps in merged blocks)` |
 | Transport | `TcpTransport` | one request in flight; transaction ids 1..65535. Late MBAP answers with older ids are skipped. After a timeout or I/O error the socket is closed, and the next attempt reconnects (`retries`, `reconnectDelay`). An exception response keeps the connection |
-| Serial RTU | `SerialRtuTransport` | **not implemented** (the JDK has no serial API). Use a converter with `rtu-over-tcp` or Modbus TCP. The class documents what an implementation needs |
+| Serial RTU | none | **not supported**: the JDK has no serial API. Use a converter with `rtu-over-tcp` or Modbus TCP |
 | Client | `ModbusClient` | `readHoldingRegisters`, `readInputRegisters`, `readCoils`, `readDiscreteInputs` |
 | Codec | `RegisterCodec`, `DataType`, `WordOrder` | byte swap per word → word order → big-endian decode; `encode` for the simulator |
 | Read plan | `BlockPlanner` | per function, sorted by address. Points are merged while the gap is ≤ `maxGap` and the block is ≤ `maxRegistersPerRequest` (≤ 125). A point is never split. The example map needs 5 requests per cycle |
@@ -160,4 +192,6 @@ only, so this module stays free of Kafka dependencies.
   reconnect, connection refused, stale transaction ids, RTU over TCP
 * end-to-end poll of the example map against the simulator, with the decoded values equal to the simulated ones
 * episodes and labels, counter wrap/reset, implausible and missing values
-* CLI `check`, `read` and `poll`
+* CLI `check`, `read` and `poll`, the options, the help and the failure lines of `poll`
+* the Job `modbus-poll` and the simulator Deployment load their configuration in the namespace of `deploy/k3s/base`,
+  and a `--count` appended to the Job command, as `40-demo.sh modbus -- --count 300` does, overrides its 30 cycles

@@ -1,6 +1,7 @@
 package org.opentsx.modbus;
 
 import org.junit.jupiter.api.Test;
+import org.opentsx.conf.OpenTsxConf;
 import org.opentsx.model.Episodes;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.model.v2.TimeEncoding;
@@ -184,6 +185,13 @@ class PollAndNormalizeTest {
         }
     }
 
+    /** The configuration of {@code modbus <command> --map example <args>}. */
+    static OpenTsxConf conf(String command, String... args) {
+        List<String> argv = new ArrayList<>(List.of("modbus", command, "--map", "example"));
+        argv.addAll(List.of(args));
+        return OpenTsxConf.load(argv, Map.of(), null).conf();
+    }
+
     @Test
     void cliCheckAndRead() throws Exception {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
@@ -193,7 +201,7 @@ class PollAndNormalizeTest {
         assertTrue(out.contains("energy_export"), out);
 
         buf.reset();
-        int rc = ModbusCli.read(RegisterMap.exampleGridMeter(), Map.of("simulate", "true"), new PrintStream(buf, true, StandardCharsets.UTF_8));
+        int rc = ModbusCli.read(RegisterMap.exampleGridMeter(), conf("read", "--simulate"), new PrintStream(buf, true, StandardCharsets.UTF_8));
         out = buf.toString(StandardCharsets.UTF_8);
         assertEquals(0, rc, out);
         assertTrue(out.contains("1-0:16.7.0"), out);
@@ -206,15 +214,16 @@ class PollAndNormalizeTest {
         RegisterMap fast = map.withDevice(new org.opentsx.modbus.map.Device("m", "127.0.0.1", 502, 1,
                 org.opentsx.modbus.protocol.Framing.Kind.TCP, Duration.ofMillis(100), Duration.ofSeconds(1), 0, 125, 0));
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        int rc = ModbusCli.poll(fast, Map.of("simulate", "true", "count", "2"), new PrintStream(buf, true, StandardCharsets.UTF_8));
+        PrintStream err = new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8);
+        int rc = ModbusCli.poll(fast, conf("poll", "--simulate", "--count", "2"), new PrintStream(buf, true, StandardCharsets.UTF_8), err);
         String[] lines = buf.toString(StandardCharsets.UTF_8).split("\n");
         assertEquals(0, rc);
         assertEquals(1 + 2 * 14, lines.length);
         assertTrue(lines[1].contains(",SYNTHETIC,GOOD"), lines[1]);
 
         buf.reset();
-        rc = ModbusCli.poll(fast, Map.of("simulate", "true", "count", "3", "out", "episodes", "episode", "PT1M"),
-                new PrintStream(buf, true, StandardCharsets.UTF_8));
+        rc = ModbusCli.poll(fast, conf("poll", "--simulate", "--count", "3", "--out", "episodes", "--episode", "PT1M"),
+                new PrintStream(buf, true, StandardCharsets.UTF_8), err);
         assertEquals(0, rc);
         assertTrue(buf.toString(StandardCharsets.UTF_8).contains("grid.meter.frequency"), buf.toString(StandardCharsets.UTF_8));
     }

@@ -1,10 +1,13 @@
 package org.opentsx.modbus;
 
+import org.opentsx.conf.ConfCli;
+import org.opentsx.conf.OpenTsxConf;
+import org.opentsx.conf.OpenTsxConfException;
+import org.opentsx.conf.Registry;
 import org.opentsx.model.Micros;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.modbus.map.Device;
 import org.opentsx.modbus.map.RegisterMap;
-import org.opentsx.modbus.map.RegisterMapException;
 import org.opentsx.modbus.map.RegisterPoint;
 import org.opentsx.modbus.normalize.MeterNormalizer;
 import org.opentsx.modbus.normalize.NormalizationReport;
@@ -14,101 +17,160 @@ import org.opentsx.modbus.poll.Poller;
 import org.opentsx.modbus.poll.RawReading;
 import org.opentsx.modbus.poll.ReadBlock;
 import org.opentsx.modbus.sim.MeterSimulator;
+import org.slf4j.LoggerFactory;
 
+import java.io.FileDescriptor;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
- * {@code bin/opentsx modbus <command>}:
- * <pre>
- * modbus check    --map file.yaml|example                         validate the map, print points and read plan
- * modbus read     --map ... [--host h] [--port p] [--unit u] [--simulate]          one poll cycle as a table
- * modbus poll     --map ... [--count n] [--interval PT5S] [--out csv|episodes] [--file f]
- *                 [--episode PT1M] [--simulate]                   poll repeatedly (count 0 = until Ctrl-C)
- * modbus simulate --map ... [--port 1502] [--bind 0.0.0.0] [--seed 42] [--seconds n]  serve a simulated meter
- * </pre>
- * {@code --simulate} starts the simulator in the same JVM and polls it; the data is then labelled
- * {@code origin=SYNTHETIC} regardless of the map.
+ * The commands {@code modbus check}, {@code modbus read}, {@code modbus poll} and {@code modbus simulate}. They read their
+ * keys through {@link OpenTsxConf#load}; {@code bin/opentsx modbus <command> --help} lists them. {@code --simulate}
+ * starts the simulator in the same JVM and polls it; the data is then labelled {@code origin=SYNTHETIC} regardless of
+ * the map. The keys and the register map are checked before the first connection. Exit codes: 0 success, 1 runtime
+ * failure or a failed read, 2 usage or configuration error.
  */
 public final class ModbusCli {
 
-    private static final String USAGE = String.join("\n",
-            "usage: opentsx modbus <check|read|poll|simulate> --map <file.yaml|example> [options]",
-            "  check     validate the register map, print points and the read plan",
-            "  read      one poll cycle, printed as a table          [--host h] [--port p] [--unit u] [--simulate]",
-            "  poll      poll repeatedly                             [--count n (0 = forever)] [--interval PT5S]",
-            "                                                        [--out csv|episodes] [--file f] [--episode PT1M] [--simulate]",
-            "  simulate  serve a simulated meter (Modbus TCP)        [--port 1502] [--bind 0.0.0.0] [--seed 42] [--seconds n]",
-            "  --simulate polls an in-JVM simulator; such data is labelled origin=SYNTHETIC.");
+    static final String COMMAND = "modbus";
+    static final String MAP = "opentsx.modbus.map";
+    static final String HOST = "opentsx.modbus.host";
+    static final String PORT = "opentsx.modbus.port";
+    static final String UNIT = "opentsx.modbus.unitId";
+    static final String INTERVAL = "opentsx.modbus.interval";
+    static final String COUNT = "opentsx.modbus.count";
+    static final String OUT = "opentsx.modbus.out";
+    static final String FILE = "opentsx.modbus.file";
+    static final String EPISODE = "opentsx.modbus.episodeLength";
+    static final String SIMULATE = "opentsx.modbus.simulate";
+    static final String SEED = "opentsx.modbus.simulator.seed";
+    static final String BIND = "opentsx.modbus.simulator.bind";
+    static final String SIM_PORT = "opentsx.modbus.simulator.port";
+    static final String SECONDS = "opentsx.modbus.simulator.seconds";
+    static final String WRITE_FAILED = "stdout: cannot write the output; check that standard output is open and not full";
 
     private ModbusCli() {
     }
 
-    public static void main(String[] args) throws Exception {
-        if (args.length == 0 || args[0].equals("-h") || args[0].equals("--help") || args[0].equals("help")) {
-            System.out.println(USAGE);
-            System.exit(args.length == 0 ? 2 : 0);
-        }
-        String cmd = args[0];
-        Map<String, String> a = parse(args);
-        if (!a.containsKey("map")) {
-            System.err.println("--map is required (a file or 'example')\n" + USAGE);
-            System.exit(2);
-        }
-        RegisterMap map;
-        try {
-            map = RegisterMap.load(a.get("map"));
-        } catch (RegisterMapException e) {
-            System.err.println(e.getMessage());
-            System.exit(1);
-            return;
-        }
-        map = map.withEndpoint(a.get("host"), a.containsKey("port") && !cmd.equals("simulate") ? Integer.valueOf(a.get("port")) : null,
-                a.containsKey("unit") ? Integer.valueOf(a.get("unit")) : null);
-        if (map.example()) {
-            System.err.println("note: register map '" + map.name() + "' is an EXAMPLE, not a real register sheet");
-        }
-        int rc;
-        switch (cmd) {
-            case "check": rc = check(map, System.out); break;
-            case "read": rc = read(map, a, System.out); break;
-            case "poll": rc = poll(map, a, System.out); break;
-            case "simulate": rc = simulate(map, a, System.out); break;
-            default:
-                System.err.println("unknown command: " + cmd + "\n" + USAGE);
-                rc = 2;
-        }
-        System.exit(rc);
+    public static void main(String[] args) {
+        PrintStream out = new PrintStream(new FileOutputStream(FileDescriptor.out), true, StandardCharsets.UTF_8);
+        PrintStream err = new PrintStream(new FileOutputStream(FileDescriptor.err), true, StandardCharsets.UTF_8);
+        System.exit(run(List.of(args), System.getenv(), out, err));
     }
 
-    static Map<String, String> parse(String[] args) {
-        Map<String, String> m = new LinkedHashMap<>();
-        for (int i = 1; i < args.length; i++) {
-            String k = args[i];
-            if (!k.startsWith("--")) {
-                throw new IllegalArgumentException("unexpected argument " + k);
+    /** {@code args} without the word {@code modbus}, as bin/opentsx passes them. */
+    static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err) {
+        List<String> argv = new ArrayList<>(args.size() + 1);
+        argv.add(COMMAND);
+        argv.addAll(args);
+        String command;
+        OpenTsxConf conf;
+        RegisterMap map;
+        try {
+            OpenTsxConf.Loaded loaded = OpenTsxConf.load(argv, env, env.get("OPENTSX_CONF_DIR"));
+            if (loaded.help()) {
+                Registry registry = Registry.shipped();
+                out.print(loaded.command() == null ? registry.help() : registry.help(loaded.command()));
+                return written(out, err);
             }
-            String key = k.substring(2);
-            if (key.equals("simulate")) {
-                m.put(key, "true");
-            } else if (i + 1 < args.length) {
-                m.put(key, args[++i]);
-            } else {
-                throw new IllegalArgumentException("missing value for " + k);
+            if (loaded.version()) {
+                out.print(ConfCli.versionLine());
+                return written(out, err);
+            }
+            command = loaded.command();
+            conf = loaded.conf();
+            map = checkedMap(command, conf);
+        } catch (IllegalArgumentException e) {
+            err.print("opentsx: " + oneLine(e.getMessage() == null ? e.toString() : e.getMessage()) + "\n");
+            err.flush();
+            return 2;
+        } catch (RuntimeException e) {
+            return failed(e, err);
+        }
+        if (map.example()) {
+            err.println("note: register map '" + map.name() + "' is an EXAMPLE, not a real register sheet");
+        }
+        int rc;
+        try {
+            rc = switch (command) {
+                case "modbus check" -> check(map, out);
+                case "modbus read" -> read(map, conf, out);
+                case "modbus poll" -> poll(map, conf, out, err);
+                default -> simulate(map, conf, out);
+            };
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return failed(e, err);
+        } catch (IOException | RuntimeException e) {
+            return failed(e, err);
+        }
+        return written(out, err) == 0 ? rc : 1;
+    }
+
+    /** The register map with the endpoint and interval of the keys; every value is checked, nothing is opened. */
+    static RegisterMap checkedMap(String command, OpenTsxConf conf) {
+        String file = conf.get(MAP);
+        if (!file.equals("example") && !Files.isRegularFile(Path.of(file))) {
+            throw new OpenTsxConfException(file, "no such file", "give an existing register map file or example");
+        }
+        boolean client = !command.equals("modbus simulate");
+        String host = client ? conf.getOption(HOST).orElse(null) : null;
+        Integer port = client ? conf.getOption(PORT).map(v -> range(PORT, conf.getInt(PORT), 1, 65535)).orElse(null) : null;
+        Integer unit = conf.getOption(UNIT).map(v -> range(UNIT, conf.getInt(UNIT), 0, 255)).orElse(null);
+        if (command.equals("modbus poll")) {
+            if (conf.getLong(COUNT) < 0) {
+                throw new OpenTsxConfException(COUNT, conf.get(COUNT) + " is not allowed", "expected 0 (poll until stopped) or more");
+            }
+            positive(conf, INTERVAL);
+            positive(conf, EPISODE);
+        }
+        if (command.equals("modbus simulate")) {
+            range(SIM_PORT, conf.getInt(SIM_PORT), 0, 65535);
+            if (conf.getLong(SECONDS) < 0) {
+                throw new OpenTsxConfException(SECONDS, conf.get(SECONDS) + " is not allowed", "expected 0 (run until stopped) or more");
+            }
+            try {
+                InetAddress.getByName(conf.get(BIND));
+            } catch (UnknownHostException e) {
+                throw new OpenTsxConfException(BIND, "\"" + conf.get(BIND) + "\" is not an address",
+                        "expected an address of this host such as 127.0.0.1, or 0.0.0.0 for every interface");
             }
         }
-        return m;
+        RegisterMap map = RegisterMap.load(file).withEndpoint(host, port, unit);
+        if (command.equals("modbus poll") && conf.getOption(INTERVAL).isPresent()) {
+            Device d = map.device();
+            map = map.withDevice(new Device(d.id(), d.host(), d.port(), d.unitId(), d.framing(), conf.getDuration(INTERVAL),
+                    d.timeout(), d.retries(), d.maxRegistersPerRequest(), d.maxGap()));
+        }
+        return map;
+    }
+
+    private static int range(String key, int value, int min, int max) {
+        if (value < min || value > max) {
+            throw new OpenTsxConfException(key, value + " is not allowed", "expected " + min + " to " + max);
+        }
+        return value;
+    }
+
+    private static void positive(OpenTsxConf conf, String key) {
+        if (conf.getOption(key).isPresent() && conf.getDuration(key).isZero()) {
+            throw new OpenTsxConfException(key, conf.get(key) + " is not allowed", "expected a positive duration such as 5s");
+        }
     }
 
     static int check(RegisterMap map, PrintStream out) {
@@ -132,8 +194,8 @@ public final class ModbusCli {
         return 0;
     }
 
-    static int read(RegisterMap map, Map<String, String> a, PrintStream out) throws IOException {
-        try (Session s = Session.open(map, a)) {
+    static int read(RegisterMap map, OpenTsxConf conf, PrintStream out) throws IOException {
+        try (Session s = Session.open(map, conf)) {
             PollResult r = s.poller.poll();
             MeterNormalizer norm = new MeterNormalizer(s.map, Duration.ofMinutes(1), s.origin);
             out.printf("%s  %s unit %d  %d requests, %d ms%n", r.timestamp(), s.poller.client().transport().endpoint(),
@@ -150,37 +212,26 @@ public final class ModbusCli {
         }
     }
 
-    static int poll(RegisterMap map, Map<String, String> a, PrintStream stdout) throws Exception {
-        if (a.containsKey("interval")) {
-            Device d = map.device();
-            map = map.withDevice(new Device(d.id(), d.host(), d.port(), d.unitId(), d.framing(),
-                    RegisterMap.duration(a.get("interval")), d.timeout(), d.retries(), d.maxRegistersPerRequest(), d.maxGap()));
-        }
-        long count = Long.parseLong(a.getOrDefault("count", "0"));
-        String mode = a.getOrDefault("out", "csv");
-        if (!mode.equals("csv") && !mode.equals("episodes")) {
-            System.err.println("--out must be csv or episodes");
-            return 2;
-        }
-        Duration episode = RegisterMap.duration(a.getOrDefault("episode", "PT1M"));
-        PrintStream file = a.containsKey("file")
-                ? new PrintStream(Files.newOutputStream(Path.of(a.get("file"))), true, StandardCharsets.UTF_8) : null;
+    static int poll(RegisterMap map, OpenTsxConf conf, PrintStream stdout, PrintStream err) throws IOException, InterruptedException {
+        long count = conf.getLong(COUNT);
+        String mode = conf.get(OUT);
+        Duration episode = conf.getDuration(EPISODE);
+        String fileName = conf.getOption(FILE).orElse(null);
+        PrintStream file = fileName != null
+                ? new PrintStream(Files.newOutputStream(Path.of(fileName)), true, StandardCharsets.UTF_8) : null;
         PrintStream out = mode.equals("csv") && file != null ? file : stdout;
-        try (Session s = Session.open(map, a)) {
+        ReadFailures failures = new ReadFailures(err);
+        try (Session s = Session.open(map, conf)) {
             MeterNormalizer norm = new MeterNormalizer(s.map, episode, s.origin);
             long windowMicros = episode.toNanos() / 1_000L;
             List<RawReading> pending = new ArrayList<>();
-            long[] errors = {0};
             if (mode.equals("csv")) {
                 out.println("timestamp,device,point,metric,value,unit,obis,origin,quality");
             } else {
-                stdout.println("episodes of " + episode + (file != null ? " -> " + a.get("file") + " (Avro JSON, one per line)" : ""));
+                stdout.println("episodes of " + episode + (file != null ? " -> " + fileName + " (Avro JSON, one per line)" : ""));
             }
             s.poller.run(count, r -> {
-                errors[0] += r.errors().size();
-                for (PollResult.BlockError e : r.errors()) {
-                    System.err.println(r.timestamp() + " read failed: " + e);
-                }
+                failures.cycle(r);
                 if (mode.equals("csv")) {
                     for (RawReading rr : r.readings()) {
                         MeterNormalizer.Assessed as = norm.assess(rr);
@@ -209,11 +260,74 @@ public final class ModbusCli {
             if (!pending.isEmpty()) {
                 emit(norm.normalize(pending), stdout, file);
             }
-            return errors[0] == 0 ? 0 : 1;
+            return failures.finish() == 0 ? 0 : 1;
         } finally {
             if (file != null) {
                 file.close();
             }
+        }
+    }
+
+    /**
+     * The read failures of a poll on stderr: the first failure in full, then while reads keep failing one count per
+     * minute of cycle time, and one line when reads succeed again. A device that is off writes one line per minute,
+     * not one per block and cycle.
+     */
+    static final class ReadFailures {
+        static final Duration REPORT = Duration.ofMinutes(1);
+
+        private final PrintStream err;
+        private long total;
+        private Instant first;
+        private Instant reported;
+        private Instant latest;
+        private long unreported;
+        private long outage;
+        private PollResult.BlockError last;
+
+        ReadFailures(PrintStream err) {
+            this.err = err;
+        }
+
+        void cycle(PollResult r) {
+            latest = r.timestamp();
+            List<PollResult.BlockError> errors = r.errors();
+            if (errors.isEmpty()) {
+                if (first != null) {
+                    err.println(r.timestamp() + " reads succeed again after " + outage + " failed reads since " + first);
+                    first = null;
+                    unreported = 0;
+                }
+                return;
+            }
+            total += errors.size();
+            outage = first == null ? errors.size() : outage + errors.size();
+            last = errors.get(errors.size() - 1);
+            if (first == null) {
+                first = r.timestamp();
+                reported = r.timestamp();
+                unreported = errors.size() - 1;
+                err.println(r.timestamp() + " read failed: " + errors.get(0));
+                return;
+            }
+            unreported += errors.size();
+            if (!r.timestamp().isBefore(reported.plus(REPORT))) {
+                count(r.timestamp());
+            }
+        }
+
+        /** Prints the failures not counted yet and returns the number of failed reads of the whole poll. */
+        long finish() {
+            if (first != null && unreported > 0) {
+                count(latest);
+            }
+            return total;
+        }
+
+        private void count(Instant at) {
+            err.println(at + " read failed " + unreported + " more times since " + reported + "; last: " + last);
+            reported = at;
+            unreported = 0;
         }
     }
 
@@ -233,18 +347,18 @@ public final class ModbusCli {
                 rep.episodes());
     }
 
-    static int simulate(RegisterMap map, Map<String, String> a, PrintStream out) throws Exception {
-        int port = Integer.parseInt(a.getOrDefault("port", "1502"));
-        InetAddress bind = InetAddress.getByName(a.getOrDefault("bind", "127.0.0.1"));
-        long seed = Long.parseLong(a.getOrDefault("seed", "42"));
-        long seconds = Long.parseLong(a.getOrDefault("seconds", "0"));
+    static int simulate(RegisterMap map, OpenTsxConf conf, PrintStream out) throws IOException, InterruptedException {
+        int port = conf.getInt(SIM_PORT);
+        InetAddress bind = InetAddress.getByName(conf.get(BIND));
+        long seed = conf.getLong(SEED);
+        long seconds = conf.getLong(SECONDS);
         try (MeterSimulator sim = new MeterSimulator(map, port, bind, seed, Instant.now())) {
             Duration tick = map.device().pollInterval().compareTo(Duration.ofSeconds(1)) < 0 ? map.device().pollInterval() : Duration.ofSeconds(1);
             sim.startTicking(tick);
-            out.printf("simulated meter '%s' (%s, %d points) on %s:%d unit %d (%s) - Ctrl-C to stop%n", map.device().id(),
+            out.printf("simulated meter '%s' (%s, %d points) on %s:%d unit %d (%s); stop with Ctrl-C%n", map.device().id(),
                     map.name(), map.points().size(), bind.getHostAddress(), sim.port(), map.device().unitId(),
                     map.device().framing().name().toLowerCase(Locale.ROOT));
-            out.printf("try: bin/opentsx modbus read --map %s --host %s --port %d%n", a.get("map"), bind.getHostAddress(), sim.port());
+            out.printf("try: bin/opentsx modbus read --map %s --host %s --port %d%n", conf.get(MAP), bind.getHostAddress(), sim.port());
             long until = seconds > 0 ? System.currentTimeMillis() + seconds * 1000 : Long.MAX_VALUE;
             while (System.currentTimeMillis() < until) {
                 Thread.sleep(Math.min(1000, Math.max(1, until - System.currentTimeMillis())));
@@ -268,9 +382,9 @@ public final class ModbusCli {
             this.origin = origin;
         }
 
-        static Session open(RegisterMap map, Map<String, String> a) throws IOException {
-            if (a.containsKey("simulate")) {
-                MeterSimulator sim = MeterSimulator.local(map, Long.parseLong(a.getOrDefault("seed", "42")), Instant.now());
+        static Session open(RegisterMap map, OpenTsxConf conf) throws IOException {
+            if (conf.getBoolean(SIMULATE)) {
+                MeterSimulator sim = MeterSimulator.local(map, conf.getLong(SEED), Instant.now());
                 sim.startTicking(Duration.ofMillis(Math.min(1000, map.device().pollInterval().toMillis())));
                 RegisterMap m = sim.clientMap();
                 return new Session(m, Poller.connect(m), sim, "SYNTHETIC");
@@ -285,6 +399,39 @@ public final class ModbusCli {
                 sim.close();
             }
         }
+    }
+
+    private static int failed(Exception e, PrintStream err) {
+        LoggerFactory.getLogger(ModbusCli.class).debug("stack trace of the failed run", e);
+        err.print("opentsx: " + causes(e) + "\n");
+        err.flush();
+        return 1;
+    }
+
+    private static int written(PrintStream out, PrintStream err) {
+        out.flush();
+        if (out.checkError()) {
+            err.print("opentsx: " + WRITE_FAILED + "\n");
+            err.flush();
+            return 1;
+        }
+        return 0;
+    }
+
+    /** The message and its causes on one line; a checked exception with its class, its message is often a bare path. */
+    static String causes(Throwable t) {
+        boolean bare = !(t instanceof RuntimeException) || t.getMessage() == null;
+        StringBuilder s = new StringBuilder(bare ? t.toString() : t.getMessage());
+        Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        seen.add(t);
+        for (Throwable c = t.getCause(); c != null && seen.add(c); c = c.getCause()) {
+            s.append("; caused by ").append(c);
+        }
+        return oneLine(s.toString());
+    }
+
+    private static String oneLine(String s) {
+        return String.valueOf(s).replaceAll("[\\s\\p{Cntrl}]+", " ").strip();
     }
 
     private static String fmt(double v) {

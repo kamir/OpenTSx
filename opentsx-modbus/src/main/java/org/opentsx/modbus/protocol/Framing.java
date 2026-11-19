@@ -6,8 +6,7 @@ import java.util.Locale;
 
 /**
  * How a PDU travels over a byte stream. {@link Mbap} is Modbus TCP; {@link Rtu} is the serial RTU frame (unit id,
- * PDU, CRC-16) - used here as "RTU over TCP" through serial device servers / converters. Serial RTU on a local port
- * would reuse {@link Rtu} on top of a serial stream (not implemented, see {@code SerialRtuTransport}).
+ * PDU, CRC-16), used here as "RTU over TCP" through serial device servers or converters.
  */
 public interface Framing {
 

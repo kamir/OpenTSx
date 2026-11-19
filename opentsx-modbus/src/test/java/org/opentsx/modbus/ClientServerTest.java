@@ -2,7 +2,6 @@ package org.opentsx.modbus;
 
 import org.junit.jupiter.api.Test;
 import org.opentsx.modbus.client.ModbusClient;
-import org.opentsx.modbus.client.SerialRtuTransport;
 import org.opentsx.modbus.client.TcpTransport;
 import org.opentsx.modbus.map.DataType;
 import org.opentsx.modbus.map.RegisterCodec;
@@ -104,7 +103,6 @@ class ClientServerTest {
              ModbusClient c = new ModbusClient(t)) {
             assertEquals(1, c.readHoldingRegisters(1, 0, 1)[0]);
             server.dropConnections();
-            Thread.sleep(50);
             assertEquals(2, c.readHoldingRegisters(1, 1, 1)[0]);
             assertEquals(2, t.counters()[1]);
         }
@@ -165,13 +163,6 @@ class ClientServerTest {
             try (ModbusClient c = new ModbusClient(new TcpTransport(st))) {
                 assertEquals(42, c.readHoldingRegisters(1, 0, 1)[0]);
             }
-        }
-    }
-
-    @Test
-    void serialRtuIsAnExplicitGap() {
-        try (SerialRtuTransport t = new SerialRtuTransport("/dev/ttyUSB0", 9600, 'E', 1)) {
-            assertThrows(UnsupportedOperationException.class, () -> t.exchange(1, new byte[]{3, 0, 0, 0, 1}));
         }
     }
 }

@@ -319,6 +319,33 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   only an int for that variable.
 - A refused plan of `twin`, `house` or `boat` names the file and, when the rule does not say what is allowed, the
   example plan of the command: `h2-chain.yaml`, `haus-erzgebirge.yaml` or `boot-etap22.yaml`.
+- `dwd stations|mosmix|obs|house` read their options through the configuration registry (`OpenTsxConf.load`). An
+  unknown command or option, a malformed value, a missing offline file or a directory in its place, and an offline
+  file whose content cannot be parsed exit with code 2 and one line, for example `opentsx: --n: "abc" is not an int;
+  expected a whole number from -2147483648 to 2147483647`. `--help` prints the keys of the command and `--version` the
+  version, both with exit code 0. `--catalog CDC` is refused with the allowed values `mosmix, cdc` instead of falling
+  back to `mosmix`. An option given twice exits with code 2 (`--n: set twice on the command line`); before, the last
+  value won.
+- The DWD downloads take their proxy from the shared secret key `opentsx.https.proxy` (`OPENTSX_HTTPS_PROXY`, legacy
+  `HTTPS_PROXY` and `https_proxy`), which replaces `opentsx.dwd.httpsProxy`. The JVM property `https.proxyHost` still
+  wins. A value without a host is refused with exit code 2, and the value is not echoed.
+- `DwdClient` tries a download answered with 429 or a 5xx, or one that timed out, up to 4 times. It waits 2, 4 and 8
+  seconds, or the `Retry-After` seconds of the answer, at most 60 seconds, and logs one WARN line per retry. An
+  unknown host, a TLS error and every other answer fail at once.
+- `modbus check|read|poll|simulate` read their options through the configuration registry. `check --map example --prot
+  99` exits with code 2 and `did you mean --port?`. `--port abc`, a port outside 1 to 65535, a unit outside 0 to 255,
+  a missing map file and an invalid map exit with code 2 and one line, without a stack trace. `simulate --help` shows
+  the default `--bind 127.0.0.1`. `--interval` and `--episode` take ISO-8601 or a whole number with a unit (`PT5S`,
+  `5s`, `500ms`), and `1.5s` is refused. An option given twice exits with code 2 (`--count: set twice on the command
+  line`); before, the last value won.
+- `modbus poll` prints the first failed read in full. While reads keep failing it prints one count per minute. When
+  the poll ends it prints the failures not counted yet, and it prints one line when reads succeed again. Before, it
+  printed one line per failed block and cycle.
+- The k3s Jobs `opentsx-modbus-poll` and `opentsx-dwd`, the CronJob `opentsx-dwd-forward` and the Deployment
+  `opentsx-modbus-sim` set `enableServiceLinks: false`, so the Service variable `OPENTSX_RETRIEVAL_PORT` does not
+  reach the configuration of their commands.
+- The k3s Job `opentsx-modbus-poll` takes its 30 cycles from `OPENTSX_MODBUS_COUNT`, so `40-demo.sh modbus -- --count
+  300` still overrides them on the command line.
 
 ### Removed
 
@@ -361,6 +388,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The unused file readers `BillCalibration.read(Path)`, `BillCalibration.dailyTemperatures(Path, String, double)` and
   `BoatData.load(Path, TwinPlan, ZoneId)`; the twin commands read these files themselves and name the file in every
   refusal.
+- `SerialRtuTransport`, a placeholder that ignored its parameters and was used only by a test. Serial Modbus RTU is
+  still not supported; use a converter with `rtu-over-tcp` or Modbus TCP.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -712,6 +741,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   temperature; expected datum,t_mittel_c`, instead of `Index 1 out of bounds for length 1`.
 - The house and the boat calibration share one linear solver, `org.opentsx.twin.Gauss`, which returns NaN for a
   singular system; the boat calibration skipped a singular pivot and returned a number.
+- A register map that cannot be read reports `cannot read register map <file>: NoSuchFileException` instead of naming
+  the path twice.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
