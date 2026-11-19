@@ -46,11 +46,13 @@ fresh page reproduces the input. See the
 [analysis guide](workbench-analysis.md#preserve-a-finite-local-run) for snapshot
 limits and import behavior.
 
-Forecast fitting uses the separate Python numerical service. Inventory access,
-saved account flows and streaming deployment need their documented services.
-The standalone thermal journey does not call those services or emulate their
-results. Use the [local CP workflow](local-cp-workbench.md) for finite model
-fitting and the connected model lifecycle.
+Forecast fitting uses the separate Python numerical service. Use the
+[standalone numerical workflow](standalone-numerics.md) for finite API requests
+or fitting through explicitly built Workbench assets. Inventory access, saved
+account flows and streaming deployment need their documented services. The
+standalone thermal journey does not call those services or emulate their
+results. Use the [local CP workflow](local-cp-workbench.md) for the connected
+model lifecycle.
 
 ## Run the local edit checks
 

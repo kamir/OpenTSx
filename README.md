@@ -151,6 +151,10 @@ During an edit, `npm run check:local -- src/workbench/presentation.ts` checks
 frontend types, lint and related tests. The guide also lists the full checks
 required before pushing.
 
+The [standalone numerical service](docs/devguide/standalone-numerics.md) runs
+finite snapshot analyses without Kafka or MLflow. It accepts API requests and
+can serve an explicitly built Workbench from the same local address.
+
 You need Docker Compose and an existing Confluent Platform Docker cluster for
 the local CP profile. The profile uses pinned Linux ARM64 images, a React
 Workbench, the Python numerical service, MLflow and persistent lifecycle state.
