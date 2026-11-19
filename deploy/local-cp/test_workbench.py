@@ -93,6 +93,36 @@ class WorkbenchTests(unittest.TestCase):
         self.assertIn("npm run build", command[-1])
         self.assertNotIn("tar ", command[-1])
 
+    def test_frontend_prepares_nested_mount_targets_before_docker_on_a_clean_checkout(
+        self,
+    ):
+        api = builder()
+        frontend = self.root / "opentsx-saas-frontend"
+        frontend.mkdir()
+        target = self.root / "output"
+        target.mkdir()
+        self.assertEqual(list(frontend.iterdir()), [])
+
+        def check_mount_targets(command):
+            self.assertTrue((frontend / "node_modules").is_dir())
+            self.assertTrue((frontend / "dist").is_dir())
+            self.assertEqual(list((frontend / "node_modules").iterdir()), [])
+            self.assertEqual(list((frontend / "dist").iterdir()), [])
+            self.assertIn(
+                f"type=bind,source={self.root},target=/source,readonly", command
+            )
+            self.assertIn(
+                "type=volume,target=/source/opentsx-saas-frontend/node_modules,volume-nocopy",
+                command,
+            )
+
+        with (
+            patch.object(api, "ROOT", self.root),
+            patch.object(api, "run", side_effect=check_mount_targets) as run,
+        ):
+            api.node({"platform": "linux/arm64", "node_image": "fixture-image"}, target)
+        run.assert_called_once()
+
     def test_frontend_entrypoint_references_existing_assets(self):
         api = builder()
         api.validate_frontend(api.ROOT / "opentsx-saas-frontend")

@@ -119,6 +119,9 @@ def lock(settings):
 
 
 def node(settings, target, test=False):
+    frontend = ROOT / "opentsx-saas-frontend"
+    (frontend / "node_modules").mkdir(exist_ok=True)
+    (frontend / "dist").mkdir(exist_ok=True)
     command = (
         "npm ci --no-audit --no-fund; "
         + ("npm test -- --run; " if test else "")
