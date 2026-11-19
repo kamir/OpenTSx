@@ -81,6 +81,34 @@ class SshLaunchTest(unittest.TestCase):
                     self.module.check_case("stopped", self.process("stopped"),
                                            status, self.uid, self.uid, self.outcome)
 
+    def test_openssh_authentication_exit_is_valid_only_for_certificate_denials(self):
+        report = self.report()
+        for name in ("wrong-principal", "untrusted-certificate"):
+            row = self.module.check_case(name, self.process(name), 5, self.uid, None, self.outcome)
+            self.assertEqual(5, row["serverExitCode"])
+            report["cases"][self.module.REQUIRED_CASES.index(name)] = row
+        self.module.validate_report(report)
+
+    def test_authentication_exit_cannot_hide_launch_failures_or_host_rejections(self):
+        for name in self.module.REQUIRED_CASES:
+            if name in ("wrong-principal", "untrusted-certificate"):
+                continue
+            with self.subTest(name=name):
+                uid = None if name == "host-key-mismatch" else self.uid
+                with self.assertRaises(RuntimeError):
+                    self.module.check_case(name, self.process(name), 5, self.uid, uid, self.outcome)
+                report = self.report()
+                report["cases"][self.module.REQUIRED_CASES.index(name)]["serverExitCode"] = 5
+                with self.assertRaises(RuntimeError):
+                    self.module.validate_report(report)
+
+    def test_timeouts_crashes_signals_and_configuration_refusals_are_not_authentication_denials(self):
+        for name in ("wrong-principal", "untrusted-certificate"):
+            for status in (-15, -11, -9, 1, 2, 3, 4, 6, 254, True, None):
+                with self.subTest(name=name, status=status):
+                    with self.assertRaises(RuntimeError):
+                        self.module.check_case(name, self.process(name), status, self.uid, None, self.outcome)
+
     def test_refusal_and_runtime_stderr_are_exact_and_stdout_is_empty(self):
         for name in ("refused", "runtime-failure"):
             for stdout, suffix in ((b"extra", b""), (b"", b"extra"), (b"", b"\n")):
@@ -116,9 +144,10 @@ class SshLaunchTest(unittest.TestCase):
 
     def test_rejected_authentication_cannot_execute_the_runtime(self):
         for name in ("wrong-principal", "untrusted-certificate", "host-key-mismatch"):
-            with self.subTest(name=name):
-                with self.assertRaises(RuntimeError):
-                    self.module.check_case(name, self.process(name), 255, self.uid, self.uid, self.outcome)
+            for server_exit in (255, 5):
+                with self.subTest(name=name, server_exit=server_exit):
+                    with self.assertRaises(RuntimeError):
+                        self.module.check_case(name, self.process(name), server_exit, self.uid, self.uid, self.outcome)
 
     def test_runtime_identity_is_bounded_numeric_and_cannot_follow_links(self):
         with tempfile.TemporaryDirectory(prefix="opentsx-ssh-identity-") as name:

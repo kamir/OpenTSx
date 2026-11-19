@@ -199,6 +199,14 @@ An unexpected server termination reports its actual exit status. Inspect that
 status together with `sshd.log` and the client refusal before classifying a
 failed acceptance run.
 
+OpenSSH 10.2 uses server exit 5 for an authentication attempt that ends in
+preauthentication cleanup. The fixture admits it only for wrong principals
+and untrusted certificates, with client exit 255, the required denial text,
+empty standard output and no runtime identity. Other cases reject server
+exit 5; signals, timeouts, child crashes and configuration refusals also fail.
+See the [pinned exit definitions](https://github.com/openssh/openssh-portable/blob/V_10_2_P1/srclimit.h#L29-L32)
+and [cleanup path](https://github.com/openssh/openssh-portable/blob/V_10_2_P1/sshd-session.c#L1310-L1313).
+
 ## Resolve admission and retained-log failures
 
 | Message | Action |

@@ -58,6 +58,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   support offline catch-up with deterministic key/revision deduplication.
   Certificate-forced SSH launch fixes the executable and local configuration.
   Acceptance failures retain the actual unexpected server exit status.
+  OpenSSH authentication-attempt exit 5 is accepted only for verified certificate denials.
   The profile admits decode-to-statistics only; broader B2 operators, mixed
   continuous fleets, production release enrollment and physical ARMv7
   acceptance retain separate gates. Documentation, operational and learning references

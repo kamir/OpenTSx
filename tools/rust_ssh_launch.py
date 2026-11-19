@@ -37,6 +37,14 @@ def positive_uid(value):
     return value
 
 
+def server_exit_allowed(name, value):
+    if type(value) is not int:
+        return False
+    if value in (0, 255):
+        return True
+    return value == 5 and name in ("wrong-principal", "untrusted-certificate")
+
+
 def validate_outcome(value):
     common.require_fields(value, {"schema", "job", "planVersion", "records", "outputRecords", "positions"},
                           "SSH stopped outcome")
@@ -52,7 +60,7 @@ def check_case(name, process, server_exit, expected_uid, runtime_uid, outcome):
     positive_uid(expected_uid)
     if name not in EXIT_CODES or process.returncode != EXIT_CODES[name]:
         raise RuntimeError(f"SSH case {name} returned the wrong remote exit code")
-    if type(server_exit) is not int or server_exit not in (0, 255):
+    if not server_exit_allowed(name, server_exit):
         raise RuntimeError(f"SSH case {name} had an unexpected server exit {server_exit!r}")
     stdout, stderr = process.stdout, process.stderr
     if not isinstance(stdout, bytes) or not isinstance(stderr, bytes) or max(len(stdout), len(stderr)) > 65_536:
@@ -100,7 +108,7 @@ def validate_report(value):
     for name, row in zip(REQUIRED_CASES, rows):
         common.require_fields(row, ROW_FIELDS, "SSH case")
         if (row["name"] != name or type(row["exitCode"]) is not int or row["exitCode"] != EXIT_CODES[name]
-                or type(row["serverExitCode"]) is not int or row["serverExitCode"] not in (0, 255)
+                or not server_exit_allowed(name, row["serverExitCode"])
                 or (row["runtimeUid"] is not None if EXIT_CODES[name] == 255
                     else type(row["runtimeUid"]) is not int or row["runtimeUid"] != uid)
                 or row["message"] != MESSAGES[name]):
