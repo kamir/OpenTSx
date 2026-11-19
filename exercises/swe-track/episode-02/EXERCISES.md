@@ -210,7 +210,7 @@ Save the result and visually inspect it (if you have plotting tools).
 package org.opentsx.exercises.swe;
 
 import org.opentsx.data.series.TimeSeriesObject;
-import org.opentsx.tsa.rng.RNGWrapper;
+import org.opentsx.data.generator.RNGWrapper;
 import java.io.File;
 
 public class BonusExercise_PatternCreation {

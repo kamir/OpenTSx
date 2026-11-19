@@ -301,3 +301,66 @@ values that are marked instead of removed, operators on the processor that combi
 any comparison of strategies outside the twin. The guide in the web application (the switch "Guide") shows seven
 steps: System, Signals, Stock, Bind, Prepare, Run and Model. It has no step for the decision, for comparing the
 options or for judging the effect.
+
+## 16.8 Compare two series in pair windows
+
+The pair operators `pair.coverage`, `pair.xcorr` and `pair.es` compare a series A with a series B window by window
+and give one value per window, stamped at the window centre. They run in the workbench, tab "Multi-variate
+Analysis" ([chapter 14](14-saas-service-layer.md)); [chapter 17](17-operators.md) lists their fields and where else
+they are planned. With one input, every pair of its series is compared; with a second input, each series of the
+first with each series of the second. A run takes at most 200 pairs. Each field is a series of its own with the
+metric `pair.<method>.<field>` and the tags `a`, `b`, `window` and `step`.
+
+### Set the windows
+
+| Parameter | Default | Effect |
+|---|---|---|
+| `pairing` | `same` | `same`: an episode of A with the episode of B that has the same start and end. `intersect`: overlapping episodes on their overlap; an overlap shorter than the window is dropped. A series without episodes is one range from its first sample to its last plus one sampling interval. |
+| `window` | `episode` | `episode`: one window over the whole pair range. A number: the window width W in seconds. |
+| `step` | 0 | Distance S of the window starts in seconds. 0: S = W, the windows lie side by side. Read only with a window width. |
+| `every` | 0 | Clock in seconds; ticks are multiples of `every` since the epoch. 0: the larger sampling interval (median spacing) of A and B. |
+| `agg` | `MEAN` | Aggregate of the samples of one series in one tick, as in `align.vector`. |
+| `fill` | `none` | `as-of`: a tick without a sample takes the last value when it is at most `maxAge` old. The fill does not reach back across the start of the pair range. |
+| `maxAge` | 60 s | Age of the oldest value that `fill: as-of` takes. Read only with `fill: as-of`. |
+| `minCoverage` | 0 for `pair.coverage`, 0.8 for `pair.xcorr` and `pair.es` | Below this coverage a window gives NaN with quality 1. |
+
+The defaults hold for the operator panel and for a call of `apply` without the parameter. A pair range of length L
+from t0 gives `n = floor((L - W) / S) + 1` windows. Window k covers `[t0 + k*S, t0 + k*S + W)` and its value is
+stamped at `t0 + k*S + W/2`. A window that would end after the pair range is not computed.
+
+### Read the coverage
+
+The coverage of a window is the share of its clock ticks in which both A and B have a value. Only ticks that lie
+inside the window count. A window below `minCoverage` keeps its place on the time axis with the value NaN and quality
+1, so the result stays regular. Run `pair.coverage` before the other two methods: it shows the coverage they see.
+
+In the example of `pair.coverage`
+([`pair.coverage.example.test.ts`](../../opentsx-saas-frontend/src/workbench/examples/pair.coverage.example.test.ts)),
+A and B have a value every 10 s for 30 minutes, and B is out from minute 7 to minute 12:
+
+```ts
+const sliding = coverage.apply(pair, { window: 600, step: 60, minCoverage: 0 });
+const whole = coverage.apply(pair, { window: 'episode', minCoverage: 0 });
+```
+
+* `sliding` has 21 windows of 10 minutes with 60 ticks each. The 6 windows that hold the whole outage have the
+  coverage 0.500.
+* `whole` has one window over the pair. Its coverage is 0.833: 150 of 180 ticks.
+
+In the example of `pair.xcorr`
+([`pair.xcorr.example.test.ts`](../../opentsx-saas-frontend/src/workbench/examples/pair.xcorr.example.test.ts)),
+B is A delayed by 40 s plus noise, with a value every 10 s for 60 minutes. The call
+`xcorr.apply(pair, { window: 600, step: 300, lags: 10 })` gives 11 windows of 10 minutes, stamped from minute 5 to
+minute 55, and the lag +40 s in each of them.
+
+### Fix a refused parameter
+
+An emptied, negative or non-numeric number is refused with its name, for example:
+
+* `minCoverage: empty value; expected a share from 0 to 1`
+* `minCoverage: "1.5" is out of range; expected a share from 0 to 1`
+* `maxAge: "-1" is out of range; expected a number of seconds, 0 or more`
+
+`step` is checked only with a window width and `maxAge` only with `fill: as-of`. A window that is neither `episode`
+nor a number above 0 is refused with `The window "<window>" is neither episode nor a width in seconds greater than 0.`
+More than 200 pairs are refused with `<n> pairs, more than 200. Select fewer series first ("Select series").`

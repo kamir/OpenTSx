@@ -2,393 +2,86 @@
 
 # OpenTSx Exercises
 
-Welcome to the OpenTSx hands-on exercises! This directory contains structured exercises designed to help you master the OpenTSx framework through practical, real-world examples.
+Hands-on exercises for the 2.x `TimeSeriesObject` API of `opentsx-core`, ordered by learning track and episode.
 
-## Overview
+1. **SWE track (software engineering):** for developers new to time series analysis.
+2. **TSx track (time series experts):** for data scientists who come from R, Python or MATLAB.
 
-The exercises are organized by **learning track** and **episode**, matching the onboarding paths described in the main README.
+## Find an exercise
 
-### Learning Tracks
-
-1. **SWE Track (Software Engineering)** — For developers new to time series analysis
-2. **TSx Track (Time Series Experts)** — For data scientists from R/Python/MATLAB backgrounds
-
-Each track has exercises tailored to the audience's background and learning objectives.
-
-## Directory Structure
-
-```
+```text
 exercises/
-├── README.md (this file)
-├── swe-track/              # Software Engineering track
-│   ├── episode-02/         # Creating Time Series
-│   ├── episode-03/         # Basic Operations
-│   └── episode-10/         # Production Configuration
-├── tsx-track/              # Time Series Experts track
-│   └── episode-09/         # Statistical Analysis
-└── solutions/              # Solution files (try exercises first!)
-    ├── swe-track/
-    │   ├── episode-02/
-    │   ├── episode-03/
-    │   └── episode-10/
-    └── tsx-track/
-        └── episode-09/
+├── README.md
+├── swe-track/
+│   ├── episode-02/EXERCISES.md    # Creating time series
+│   ├── episode-03/EXERCISES.md    # Basic operations
+│   └── episode-10/EXERCISES.md    # Production configuration
+├── tsx-track/
+│   └── episode-09/EXERCISES.md    # Statistical analysis
+└── solutions/
+    └── swe-track/
+        ├── episode-02/            # Exercise1_ManualCreation, Exercise2_SyntheticData,
+        │                          # Exercise3_LoadAndTransform, BonusExercise_PatternCreation
+        └── episode-03/            # Exercise1_Normalization, Exercise2_MutabilityDemo
 ```
 
-## Getting Started
+Solutions exist for episode 2 and for exercises 1 and 2 of episode 3. Episodes 9 and 10 have none.
 
-### Prerequisites
+| Episode | Track | Topics | Demo |
+|---------|-------|--------|------|
+| [Episode 2: Creating time series](swe-track/episode-02/EXERCISES.md) | SWE | manual construction, synthetic data, loading CSV files, file I/O | `bin/episode_02_create_timeseries.sh` |
+| [Episode 3: Basic operations](swe-track/episode-03/EXERCISES.md) | SWE | normalization, in-place and immutable operations, arithmetic, windows and subsets | `bin/episode_03_basic_operations.sh` |
+| [Episode 9: Statistical analysis](tsx-track/episode-09/EXERCISES.md) | TSx | moving averages (SMA, WMA, EMA), autocorrelation, trends and detrending, anomaly detection by z-score | `bin/episode_09_analysis.sh` |
+| [Episode 10: Production configuration](swe-track/episode-10/EXERCISES.md) | SWE | configuration from several sources, retry with exponential backoff, structured logging, a thread-safe resource pool | `bin/episode_10_production_config.sh` |
 
-1. **Build the project:**
-   ```bash
-   ./bin/010_build.sh
-   ```
+Start with episode 2. On the TSx track, also work through SWE episodes 2 and 3 for the Java patterns of OpenTSx.
+Each `EXERCISES.md` lists its learning objectives, starter code with `TODO` markers and a validation checklist. Run
+the demo of an episode before its exercises; the demo classes are in
+`opentsx-core/src/main/java/org/opentsx/demo/onboarding/`. Try an exercise before you open its solution.
 
-2. **Verify environment:**
-   ```bash
-   ./bin/000_validate_environment.sh
-   ```
+## Build the project
 
-3. **Review the corresponding demo:**
-   - Each episode has a demo script in `bin/episode_XX_*.sh`
-   - Run the demo before attempting exercises
-
-### How to Use These Exercises
-
-1. **Choose Your Track:**
-   - New to time series? → Start with SWE Track
-   - Coming from R/Python? → Start with TSx Track
-   - Want full coverage? → Do both!
-
-2. **Follow the Episode Order:**
-   - Start with Episode 2 (fundamentals)
-   - Progress sequentially through episodes
-   - Each builds on previous knowledge
-
-3. **Try Before Looking:**
-   - Read the exercise description
-   - Attempt the implementation independently
-   - Use starter code as a template
-   - Only check solutions after attempting
-
-4. **Validate Your Work:**
-   - Each exercise has a validation checklist
-   - Compare output with expected results
-   - Review solution files for alternative approaches
-
-## Exercise Tracks
-
-### SWE Track: Software Engineering
-
-**Target Audience:** Developers new to time series analysis
-
-**Episode 2: Creating Time Series** (45 minutes)
-- Manual time series construction
-- Synthetic data generation
-- Loading from CSV files
-- File I/O operations
-
-**Episode 3: Basic Operations** (60 minutes)
-- Normalization techniques
-- In-place vs. immutable operations
-- Time series arithmetic
-- Windowing and subsetting
-
-**Episode 10: Production Configuration** (90 minutes)
-- Multi-source configuration
-- Retry logic with exponential backoff
-- Structured logging
-- Thread-safe resource pooling
-
-**Total SWE Track Time:** ~3.25 hours
-
-### TSx Track: Time Series Experts
-
-**Target Audience:** Data scientists from R/Python/MATLAB
-
-**Episode 9: Statistical Analysis** (75 minutes)
-- Moving averages (SMA, WMA, EMA)
-- Autocorrelation function (ACF)
-- Trend detection and detrending
-- Anomaly detection (Z-score method)
-
-**Total TSx Track Time:** ~1.25 hours
-
-**Note:** TSx track users should also review SWE track Episodes 2-3 for Java/OpenTSx-specific patterns.
-
-## Exercise Format
-
-Each exercise directory contains:
-
-### EXERCISES.md
-- Learning objectives
-- Prerequisites
-- Exercise descriptions with tasks
-- Starter code templates
-- Expected outputs
-- Validation checklists
-- Common pitfalls
-- Resource links
-
-### Solution Files (in `solutions/` directory)
-- Complete, working implementations
-- Detailed comments explaining approach
-- Best practices demonstrated
-- Alternative implementations where applicable
-
-## Compiling and Running Exercises
-
-### Setup Classpath
+You need JDK 17 or 21 and Maven 3.9 or later. Run the commands from the project root.
 
 ```bash
-# From project root
+./bin/010_build.sh
+./bin/000_validate_environment.sh
+```
+
+## Compile and run a solution
+
+```bash
 CLASSPATH="$(bin/opentsx classpath opentsx-core)"
-```
-
-### Compile Your Exercise
-
-```bash
-# Create output directory
 mkdir -p exercises/build
-
-# Compile
-javac -cp "$CLASSPATH" \
-      -d exercises/build \
-      exercises/swe-track/episode-02/Exercise1_ManualCreation.java
+javac -cp "$CLASSPATH" -d exercises/build exercises/solutions/swe-track/episode-02/Exercise1_ManualCreation.java
+java -cp "$CLASSPATH:exercises/build" org.opentsx.exercises.swe.solutions.Exercise1_ManualCreation
 ```
 
-### Run Your Exercise
+`exercises/build/` is git-ignored. The solutions write their CSV files, such as `exercise1_output.csv`, into the
+current directory, and `Exercise3_LoadAndTransform` reads `sample_data/sensor_data.csv`, so run them from the
+project root. Your own exercise compiles the same way with its file path and its package and class name.
 
-```bash
-java -cp "$CLASSPATH:exercises/build" \
-     org.opentsx.exercises.swe.Exercise1_ManualCreation
-```
+## Fix common errors
 
-### Or Use Maven (if you add exercises to opentsx-core)
+**`cannot find symbol`:** build the project with `./bin/010_build.sh`, check that `CLASSPATH` holds the output of
+`bin/opentsx classpath opentsx-core`, and check the imports. The random number helper is
+`org.opentsx.data.generator.RNGWrapper`.
 
-```bash
-# Add exercises to opentsx-core/src/main/java/org/opentsx/exercises/
-# Then:
-mvn clean compile
-mvn exec:java -Dexec.mainClass="org.opentsx.exercises.swe.Exercise1_ManualCreation"
-```
+**`incompatible types` when you read a value:** `yValues` is a raw `Vector`. Cast its elements:
 
-## Recommended Learning Paths
-
-### Path 1: Complete Beginner (SWE Track)
-
-**Total Time:** ~4 hours
-
-1. Episode 2: Creating Time Series (45 min)
-2. Episode 3: Basic Operations (60 min)
-3. Episode 10: Production Config (90 min)
-4. Bonus exercises if time permits
-
-### Path 2: Data Scientist (TSx Track)
-
-**Total Time:** ~3 hours
-
-1. Quick review of SWE Track Episode 2 exercises (30 min)
-2. SWE Track Episode 3 exercises (60 min)
-3. TSx Track Episode 9 exercises (75 min)
-4. Bonus: Seasonal decomposition
-
-### Path 3: Full Mastery (Both Tracks)
-
-**Total Time:** ~6 hours
-
-1. All SWE Track exercises in order
-2. All TSx Track exercises
-3. All bonus exercises
-4. Create your own custom exercise
-
-## Exercise Difficulty Levels
-
-- ⭐ **Beginner** — Basic concepts, guided starter code
-- ⭐⭐ **Intermediate** — Requires understanding of concepts, less scaffolding
-- ⭐⭐⭐ **Advanced** — Minimal starter code, requires independent problem-solving
-
-| Exercise | Track | Difficulty |
-|----------|-------|------------|
-| Episode 2: Creating TS | SWE | ⭐ Beginner |
-| Episode 3: Basic Ops | SWE | ⭐⭐ Intermediate |
-| Episode 9: Statistics | TSx | ⭐⭐ Intermediate |
-| Episode 10: Production | SWE | ⭐⭐⭐ Advanced |
-
-## Tips for Success
-
-### Before You Start
-- [ ] Read the corresponding episode demo code
-- [ ] Run the demo script (`./bin/episode_XX_*.sh`)
-- [ ] Review relevant documentation sections
-- [ ] Understand the learning objectives
-
-### While Working
-- [ ] Read the entire exercise before coding
-- [ ] Use the starter code as a template
-- [ ] Compile frequently to catch errors early
-- [ ] Test with different inputs
-- [ ] Check edge cases
-
-### After Completing
-- [ ] Verify against validation checklist
-- [ ] Compare output with expected results
-- [ ] Review solution files
-- [ ] Note any alternative approaches
-- [ ] Try bonus exercises
-
-## Common Issues
-
-### Compilation Errors
-
-**Issue:** `cannot find symbol` errors
-
-**Solution:**
-- Ensure project is built: `./bin/010_build.sh`
-- Check classpath includes all required JARs
-- Verify import statements
-
-### Type Casting
-
-**Issue:** `incompatible types` when accessing Vector elements
-
-**Solution:**
 ```java
-// Wrong:
-double value = ts.yValues.elementAt(i);
-
-// Correct:
-double value = (Double)ts.yValues.elementAt(i);
+double value = (Double) ts.yValues.elementAt(i);
 ```
 
-### File Not Found
+**A CSV file is not found:** the exercises open paths relative to the project root, such as
+`sample_data/sensor_data.csv`. Run them from there.
 
-**Issue:** CSV files not found when loading
+## Read more
 
-**Solution:**
-- Use relative paths from project root
-- Ensure `sample_data/` directory exists
-- Check file names and extensions
-
-## Getting Help
-
-1. **Check the Documentation:**
-   - [User manual](../docs/user-manual/README.md)
-   - [opentsx-core, the 2.x library](../opentsx-core/README.md)
-   - [Java tools on 2.x data](../docs/user-manual/11-classic-analytics.md#115-run-the-java-tools-on-2x-data)
-
-2. **Review Demo Code:**
-   - Each episode has a demo script
-   - Demos show working examples
-   - Check `opentsx-core/src/main/java/org/opentsx/demo/onboarding/`
-
-3. **Look at Solutions:**
-   - Try independently first!
-   - Solutions show complete implementations
-   - Compare your approach with solutions
-
-4. **Common Pitfalls:**
-   - Each exercise lists common mistakes
-   - Read these before attempting
-
-## Contributing Your Own Exercises
-
-Have an idea for a new exercise? Contributions welcome!
-
-### Exercise Submission Guidelines
-
-1. **Follow the format:**
-   - EXERCISES.md with clear learning objectives
-   - Starter code with TODO comments
-   - Complete solution with comments
-   - Validation checklist
-
-2. **Test thoroughly:**
-   - Ensure starter code compiles
-   - Verify solution works correctly
-   - Check all edge cases
-
-3. **Document well:**
-   - Clear instructions
-   - Expected outputs
-   - Common pitfalls
-
-4. **Submit a PR:**
-   - Add exercise to appropriate track
-   - Update this README
-   - Include test data if needed
-
-## Assessment and Validation
-
-### Self-Assessment Checkpoints
-
-After each episode, you should be able to:
-
-**Episode 2:**
-- [ ] Create TimeSeriesObject manually and programmatically
-- [ ] Generate synthetic time series with different distributions
-- [ ] Load and save time series from/to CSV files
-- [ ] Access and iterate through time series data
-
-**Episode 3:**
-- [ ] Apply different normalization techniques
-- [ ] Understand in-place vs. immutable operations
-- [ ] Perform arithmetic on multiple time series
-- [ ] Extract subsets and windows efficiently
-
-**Episode 9:**
-- [ ] Implement moving averages (SMA, WMA, EMA)
-- [ ] Calculate autocorrelation function
-- [ ] Detect and remove trends
-- [ ] Identify anomalies using statistical methods
-
-**Episode 10:**
-- [ ] Implement multi-source configuration
-- [ ] Create robust retry logic
-- [ ] Set up structured logging
-- [ ] Manage thread-safe resource pools
-
-## Next Steps
-
-After completing the exercises:
-
-1. **Build a Real Project:**
-   - Apply learned concepts to actual data
-   - Integrate with your systems
-   - Deploy to production
-
-2. **Explore Advanced Topics:**
-   - Detrended Fluctuation Analysis (DFA)
-   - Event Synchronization
-   - Multifractal Analysis
-   - Machine Learning Integration
-
-3. **Review Advanced Documentation:**
-   - [Overview](../docs/user-manual/01-overview.md)
-   - [Classic analytics](../docs/user-manual/11-classic-analytics.md)
-   - [Operations](../docs/user-manual/12-operations.md)
-
-4. **Join the Community:**
-   - Share your implementations
-   - Ask questions
-   - Contribute exercises
-
-## Quick Reference Links
-
-- **Main Documentation:** [README.md](../README.md)
-- **Onboarding Guide:** [Getting started](../docs/user-manual/02-getting-started.md)
-- **Demo Scripts:** [bin/README.md](../bin/README.md)
-- **Local Development:** [docs/devguide/infrastructure/local-development.md](../docs/devguide/infrastructure/local-development.md)
-
----
-
-**Happy Learning!**
-
-These exercises are designed to give you practical, hands-on experience with OpenTSx. Take your time, experiment, and don't hesitate to explore beyond the exercises.
-
-**Remember:** The best way to learn is by doing. Try the exercises independently before looking at solutions!
-
----
-
-**Last Updated:** 2025-12-20
-**Maintained By:** OpenTSx Core Team
+- [User manual](../docs/user-manual/README.md) and [Getting started](../docs/user-manual/02-getting-started.md)
+- [opentsx-core, the 2.x library](../opentsx-core/README.md)
+- [Classic analytics](../docs/user-manual/11-classic-analytics.md), with the
+  [Java tools on 2.x data](../docs/user-manual/11-classic-analytics.md#115-run-the-java-tools-on-2x-data)
+- [Operations](../docs/user-manual/12-operations.md)
+- [The scripts in `bin/`](../bin/README.md)
+- [Local development](../docs/devguide/infrastructure/local-development.md)

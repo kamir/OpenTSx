@@ -40,7 +40,7 @@ runtimes:
   go: { status: none }
 plan: { file: EVOLUTION/TASK-015-multivariate-analysis.md, item: "3" }
 ui: { group: multivariate, label: Pair coverage }
-docs: EVOLUTION/TASK-015-multivariate-analysis.md#pair-windows
+docs: docs/user-manual/16-engineering-method.md#168-compare-two-series-in-pair-windows
 example:
   source: opentsx-saas-frontend/src/workbench/examples/pair.coverage.example.test.ts
   chart: docs/user-manual/img/operators/pair.coverage.png

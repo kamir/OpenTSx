@@ -52,7 +52,7 @@ runtimes:
   go: { status: none }
 plan: { file: EVOLUTION/TASK-015-multivariate-analysis.md, item: "3 (processor), P8.1 (java)" }
 ui: { group: multivariate, label: Cross-correlation }
-docs: EVOLUTION/TASK-015-multivariate-analysis.md#pair-windows
+docs: docs/user-manual/16-engineering-method.md#168-compare-two-series-in-pair-windows
 literature:
   - "M. Kämpf, Time-Series-Based Reconstruction and Analysis of Complex Networks: Methods for Quantitative Comparison of Dynamic Processes, dissertation, Martin Luther University Halle-Wittenberg (2017), urn:nbn:de:gbv:3:4-21151"
 example:

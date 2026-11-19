@@ -737,7 +737,7 @@ keys that `deploy/k3s/.env` feeds, `OPENTSX_PARTITIONS`, `OM_URL`, `ICEBERG_PROP
 
 The order matters: the foundation first, then one batch per module, then errors and logging.
 
-- [x] Specification, registry with 126 keys and 48 commands, JSON Schema, 272 shared vectors (this change).
+- [x] Specification, registry, JSON Schema and shared vectors (this change). The counts are in [Registry (D2)](#registry-d2) and [Test vectors](#test-vectors); `RegistryTest` checks the number of keys and commands.
 - [x] **Foundation, Java**: module `opentsx-conf` (package `org.opentsx.conf`): `OpenTsxConf`, `Registry`,
       `OpenTsxConfException`, properties and YAML readers, the loader, `config list|show|get` and `version` on one main
       class; tests: registry rules 1 to 8, byte equality with the Python copy, every vector. `bin/opentsx` and

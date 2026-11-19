@@ -236,7 +236,7 @@ deploy/k3s/10-build.sh --with-s3 && deploy/k3s/11-import-images.sh && deploy/k3s
 * **Why `--with-s3`:** `opentsx-store-iceberg` ships the Hadoop client, but not `S3FileIO`. Without
   `iceberg-aws` and `iceberg-aws-bundle` on the classpath an `s3://` warehouse fails with a class-not-found error.
   The build adds both jars (~65 MB) only when asked. Verified here: the classpath builds; the S3 path itself is
-  **not yet tested end-to-end** (see the [test status](today-vs-planned.md#what-was-tested)).
+  **not yet tested end-to-end** (see [what CI checks](today-vs-planned.md#what-ci-checks)).
 * The REST catalog image is a reference implementation. For anything beyond a lab use a hardened catalog
   (Apache Polaris, Lakekeeper, Nessie); only the `ICEBERG_PROPS` change.
 

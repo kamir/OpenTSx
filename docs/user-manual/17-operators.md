@@ -411,7 +411,7 @@ Puts series A and B on one clock and gives, for each window of a pair range, the
 
 Semantics: needs one window of input per output value; deterministic.
 
-See: [more](../../EVOLUTION/TASK-015-multivariate-analysis.md#pair-windows), [description](../../systems/processors/pair.coverage.yaml), plan: [3](../../EVOLUTION/TASK-015-multivariate-analysis.md).
+See: [more](../../docs/user-manual/16-engineering-method.md#168-compare-two-series-in-pair-windows), [description](../../systems/processors/pair.coverage.yaml), plan: [3](../../EVOLUTION/TASK-015-multivariate-analysis.md).
 
 Example, from [`opentsx-saas-frontend/src/workbench/examples/pair.coverage.example.test.ts`](../../opentsx-saas-frontend/src/workbench/examples/pair.coverage.example.test.ts):
 
@@ -2133,7 +2133,7 @@ Puts series A and B on one clock and computes in each window CC(k) = Σ (a[t] �
 
 Semantics: needs one window of input per output value; deterministic.
 
-See: [more](../../EVOLUTION/TASK-015-multivariate-analysis.md#pair-windows), [test vectors](../../docs/datamodel-2026/testvectors/pair-xcorr.v1.json), [description](../../systems/processors/pair.xcorr.yaml), plan: [3 (processor), P8.1 (java)](../../EVOLUTION/TASK-015-multivariate-analysis.md).
+See: [more](../../docs/user-manual/16-engineering-method.md#168-compare-two-series-in-pair-windows), [test vectors](../../docs/datamodel-2026/testvectors/pair-xcorr.v1.json), [description](../../systems/processors/pair.xcorr.yaml), plan: [3 (processor), P8.1 (java)](../../EVOLUTION/TASK-015-multivariate-analysis.md).
 
 Literature: M. Kämpf, Time-Series-Based Reconstruction and Analysis of Complex Networks: Methods for Quantitative Comparison of Dynamic Processes, dissertation, Martin Luther University Halle-Wittenberg (2017), urn:nbn:de:gbv:3:4-21151.
 

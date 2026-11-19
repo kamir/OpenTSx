@@ -1,7 +1,7 @@
 package org.opentsx.exercises.swe.solutions;
 
 import org.opentsx.data.series.TimeSeriesObject;
-import org.opentsx.tsa.rng.RNGWrapper;
+import org.opentsx.data.generator.RNGWrapper;
 import java.io.File;
 
 /**

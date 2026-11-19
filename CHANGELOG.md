@@ -177,6 +177,22 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   clock instead of sleeping.
 - `TwinPlan.load(InputStream, long maxSteps)` loads a plan for a run that holds at most `maxSteps` steps and names
   that bound in the refusal of every step count outside it.
+- Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,
+  stop, rejection before control publication, and a series checkpoint restart. The existing KafScale CI job runs
+  retrieval acceptance and retains its reports. See [the operating guide](docs/devops/kafka-native-streaming.md).
+- The PFD runtime accepts `--out-of-orderness` in milliseconds with a ten-second default and permits zero delay.
+  It validates both runtime options in either order and rejects invalid values and duplicates before graph creation.
+- The PFD runtime accepts `--window-size` in milliseconds, matching `TimeSeriesAnalysisJob`, with a five-minute
+  default. Invalid window values and unexpected trailing arguments fail before graph construction.
+- CI verifies recorder-exported PFDs through Kafka and Flink, including completed event-time window values.
+  The opt-in `pfd-acceptance` profile retains the descriptor, Flink log and verified result as artifacts.
+- Tests for the weather collection: hourly wind, gusts, pressure, precipitation and solar on excerpts of real DWD
+  files; every parameter of `market weather-backfill` against its CDC directory, column, unit and time
+  convention; the default stations and the years of the daily jobs.
+- CI renders and validates `deploy/k3s/history/` (kustomization and the one-off Jobs) with kubeconform.
+- User manual, chapter 16, section 16.8: pair windows of `pair.coverage`, `pair.xcorr` and `pair.es` (pairing, window
+  and step, clock, coverage, `maxAge` and `minCoverage` with their defaults, and the refusals), with the figures of
+  the operator examples.
 
 ### Changed
 
@@ -698,6 +714,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `zeit,einstrahlung_wm2` must switch to the new ones.
 - `MeterNormalizer` refuses an episode length below 1 microsecond with `episodeDuration: PT0S is shorter than 1
   microsecond; set episodeDuration to a positive length, such as PT1M`.
+- Iceberg-backed Retrieval opens existing episode and series tables without creating missing namespaces or
+  tables. Its store rejects writes, including empty batches, and does not expose a mutable episodes table.
+  The existing writer path retains provisioning behavior. The new properties-based reader factory closes its
+  owned catalog if table loading fails; the catalog-taking overload leaves ownership with the caller.
+- Unavailable desktop analysis and modern Java/Scala export buttons are disabled with explanatory tooltips.
+  Both trackers label their JSON display action `Show PFD`.
+- The modern desktop tracker starts with an empty transformation tree instead of Swing sample items.
 - A Modbus TCP answer with a protocol id other than 0 fails with `MBAP protocol id: <n> is not 0; the peer is not a
   Modbus TCP server`.
 - opentsx-dwd and opentsx-market read the proxy key `opentsx.https.proxy` through one class,
@@ -721,6 +744,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   sections from the pages, and the nginx section from `nginx.conf` with `<host>` placeholders. Installs use `npm ci`
   and the full stack starts with `docker compose up -d --build`. The code copies and the sections on project
   structure, performance and browser support are deleted.
+- The DevOps guide intro is in English and names the DAGs `opentsx.dag.v1` and `opentsx.dag.v2` that the vector
+  processor runs. The descriptors of `pair.coverage` and `pair.xcorr` link section 16.8 of the manual, and
+  `CONTRIBUTING.md` links the task list in `EVOLUTION/README.md` instead of naming the completed TASK-011 as the plan.
+- The changelog lists the entries of the unreleased version under one heading per section, and the 3.0.0 features that
+  stood under Fixed under Added.
 
 ### Removed
 
@@ -1645,6 +1673,34 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   the user manual and the `opentsx-core` README instead of 20 pages that do not exist.
 - `tools/check_links.py` exits 2 when its root is not a directory or holds no `.md` file to check, instead of passing
   on 0 files, and answers `--help` with its usage.
+- The Python topic reader closes consumers on failures, validates time filters before creating a consumer,
+  disables automatic offset storage, and shares one finite timeout across metadata, watermarks and polling.
+  Assigned reads tolerate at most 32 nonfatal unsupported FindCoordinator notices within that deadline;
+  other broker errors propagate. Records outside the initial per-partition offset ranges are not decoded,
+  including records arriving on a completed partition while another partition is still being read.
+- The exercise runner uses the Maven classpath, propagates failed assertions and rejects invalid modes.
+  Seeded exercise checks recalculate means and test the actual scaling and daily-window behavior.
+- Local SequenceFile loaders stop at EOF, handle empty buckets and close readers. The file loader reads
+  at most the configured record limit. Failed processing stops loading and retains the original error cause.
+- Classic bucket workflow entry points `loadViaContext` and `processBucket` throw `UnsupportedOperationException`
+  instead of reporting success with empty results. `MacroRunner` propagates the unsupported-load error.
+- Classic FFT conversion preserves the input coordinates and the frequency coordinates of FFT results.
+  `TimeSeriesObjectFFT` headers, diagnostics and error messages use English; averaged series use the `Mean_` prefix.
+- Desktop FFT derives sampling rates from uniformly spaced coordinates and requests an explicit rate for integer
+  index axes. Invalid data and rates produce an error; cancelling the rate dialog leaves the flow unchanged.
+- A Maven download that failed with HTTP 502 failed the build, because Maven retries only 429 and 503 by default.
+  `.mvn/maven.config` now retries a download up to five times, 3 seconds apart, on 429, 500, 502, 503 and 504.
+- The bucket analysis CLI honors its input arguments, accepts an optional filename filter and record limit,
+  and rejects invalid input. `BucketLoader.setLimit` applies to all three load and process entry points.
+- PFD file export, schema and runtime accept Kafka input, centering and log output. Unsupported operations,
+  normalization methods and sinks fail explicitly. Topics and brokers require configuration; event-time
+  watermarks advance from observation timestamps. The missing Flink connector-base dependency is included.
+- The Flink null-field aggregation test runs with nullable getter fixtures and preserves its result assertions.
+- Z-score normalization rejects malformed, non-finite and zero-variance inputs before producing invalid values.
+- PFD log output writes JSON coordinates and values for every window, including fewer than five points.
+- Hourly solar observations (`FG_LBERG`, `FD_LBERG`) sat up to almost an hour early (56 minutes at Arkona in
+  October). `MESS_DATUM` of that product is the UTC moment at which the hour in true solar time ends (`hh:mm`), and
+  the parser cut off the minutes. It now rounds to the nearest full hour.
 - The market licence texts written into manifests, episode labels and the MOSMIX index are English: `CC BY 4.0;
   Source: Bundesnetzagentur | SMARD.de` and the same `Source:` form for Energy-Charts, netztransparenz.de and the DWD.
   The history manifest example in `docs/devops/` shows the same form.
@@ -1690,6 +1746,19 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `not after` as Python does. `model-refusals.v1.json` has four more shared cases (21 refusal texts).
 - SaaS backend: `POST /api/v1/systems/<system>/generate` answers 403 to an account that may not run generators before
   it checks `RETRIEVAL_URL` (503), in the same order as the DAG routes.
+- The exercise solution `BonusExercise_PatternCreation` and the starter code of SWE episodes 2 and 3 imported
+  `org.opentsx.tsa.rng.RNGWrapper`, which does not exist, so they did not compile. They import
+  `org.opentsx.data.generator.RNGWrapper`.
+- `exercises/README.md` listed solutions for episodes 9 and 10 that do not exist and compiled
+  `Exercise1_ManualCreation` from a path and a package that do not exist. It lists the exercises and solutions that
+  exist and compiles a solution from `exercises/solutions/` in the package `org.opentsx.exercises.swe.solutions`; the
+  filler and the footer are gone.
+- `docs/devops/today-vs-planned.md` said that none of the DAG `opentsx.dag.v1` is implemented. It lists the DAGs
+  `opentsx.dag.v1` (vector sinks) and `opentsx.dag.v2` (series sinks) and the vector processor as deployable now, and
+  the figures of a one-off test session are replaced by what the CI job `k3s scripts and manifests` checks.
+- `SECURITY.md` said there are no tagged releases. It lists 3.0.x (`v3.0.0`, `v3.0.1`) and `master` as supported.
+- `CONTRIBUTING.md` named a CI trigger (`opentsx/**`) and job descriptions that were out of date. It describes the
+  triggers and jobs of `ci.yml`, `image.yml` and `openmetadata-smoke.yml`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
@@ -1765,64 +1834,6 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   placeholder. The TSCache NetBeans project files and a Kafka Connect offset file, which only worked on one machine,
   are deleted.
 
-### Added
-- Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,
-  stop, rejection before control publication, and a series checkpoint restart. The existing KafScale CI job runs
-  retrieval acceptance and retains its reports. See [the operating guide](docs/devops/kafka-native-streaming.md).
-
-- Iceberg-backed Retrieval opens existing episode and series tables without creating missing namespaces or
-  tables. Its store rejects writes, including empty batches, and does not expose a mutable episodes table.
-  The existing writer path retains provisioning behavior. The new properties-based reader factory closes its
-  owned catalog if table loading fails; the catalog-taking overload leaves ownership with the caller.
-
-- The Python topic reader closes consumers on failures, validates time filters before creating a consumer,
-  disables automatic offset storage, and shares one finite timeout across metadata, watermarks and polling.
-  Assigned reads tolerate at most 32 nonfatal unsupported FindCoordinator notices within that deadline;
-  other broker errors propagate. Records outside the initial per-partition offset ranges are not decoded,
-  including records arriving on a completed partition while another partition is still being read.
-
-- The PFD runtime accepts `--out-of-orderness` in milliseconds with a ten-second default and permits zero delay.
-  It validates both runtime options in either order and rejects invalid values and duplicates before graph creation.
-
-- The PFD runtime accepts `--window-size` in milliseconds, matching `TimeSeriesAnalysisJob`, with a five-minute
-  default. Invalid window values and unexpected trailing arguments fail before graph construction.
-
-- CI verifies recorder-exported PFDs through Kafka and Flink, including completed event-time window values.
-  The opt-in `pfd-acceptance` profile retains the descriptor, Flink log and verified result as artifacts.
-
-- The exercise runner uses the Maven classpath, propagates failed assertions and rejects invalid modes.
-  Seeded exercise checks recalculate means and test the actual scaling and daily-window behavior.
-- Unavailable desktop analysis and modern Java/Scala export buttons are disabled with explanatory tooltips.
-  Both trackers label their JSON display action `Show PFD`.
-- Local SequenceFile loaders stop at EOF, handle empty buckets and close readers. The file loader reads
-  at most the configured record limit. Failed processing stops loading and retains the original error cause.
-- Classic bucket workflow entry points `loadViaContext` and `processBucket` throw `UnsupportedOperationException`
-  instead of reporting success with empty results. `MacroRunner` propagates the unsupported-load error.
-- Classic FFT conversion preserves the input coordinates and the frequency coordinates of FFT results.
-  `TimeSeriesObjectFFT` headers, diagnostics and error messages use English; averaged series use the `Mean_` prefix.
-- Desktop FFT derives sampling rates from uniformly spaced coordinates and requests an explicit rate for integer
-  index axes. Invalid data and rates produce an error; cancelling the rate dialog leaves the flow unchanged.
-- A Maven download that failed with HTTP 502 failed the build, because Maven retries only 429 and 503 by default.
-  `.mvn/maven.config` now retries a download up to five times, 3 seconds apart, on 429, 500, 502, 503 and 504.
-- The bucket analysis CLI honors its input arguments, accepts an optional filename filter and record limit,
-  and rejects invalid input. `BucketLoader.setLimit` applies to all three load and process entry points.
-- PFD file export, schema and runtime accept Kafka input, centering and log output. Unsupported operations,
-  normalization methods and sinks fail explicitly. Topics and brokers require configuration; event-time
-  watermarks advance from observation timestamps. The missing Flink connector-base dependency is included.
-- The modern desktop tracker starts with an empty transformation tree instead of Swing sample items.
-- The Flink null-field aggregation test runs with nullable getter fixtures and preserves its result assertions.
-- Z-score normalization rejects malformed, non-finite and zero-variance inputs before producing invalid values.
-- PFD log output writes JSON coordinates and values for every window, including fewer than five points.
-- Hourly solar observations (`FG_LBERG`, `FD_LBERG`) sat up to almost an hour early (56 minutes at Arkona in
-  October). `MESS_DATUM` of that product is the UTC moment at which the hour in true solar time ends (`hh:mm`), and
-  the parser cut off the minutes. It now rounds to the nearest full hour.
-
-### Added
-- Tests for the weather collection: hourly wind, gusts, pressure, precipitation and solar on excerpts of real DWD
-  files; every parameter of `market weather-backfill` against its CDC directory, column, unit and time
-  convention; the default stations and the years of the daily jobs.
-- CI renders and validates `deploy/k3s/history/` (kustomization and the one-off Jobs) with kubeconform.
-
 ## [3.0.1] - 2026-10-16
 
 ### Fixed
@@ -1841,10 +1852,6 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Workflow `.github/workflows/image.yml` builds `opentsx-tools` for `linux/amd64` and `linux/arm64` with SBOM and
   provenance. On a tag `v<version>` it pushes `ghcr.io/kamir/opentsx-tools:<version>`; the tag must match the
   project version and be a stable version. On a pull request that changes `deploy/docker/` it only builds.
-
-### Fixed
-- `bin/opentsx market load` wrote every episode again on each run, because each run gave it a new random id. It now
-  uses the identity of `publish` (series, start, value count), so the Iceberg store skips what it already holds.
 - Web workbench in `opentsx-saas-frontend` (route `/workbench`): the Swing bucket analyser in the browser. Load a
   bucket (sample, CSV/TSV, episode JSON, retrieval server), apply the time series operations, inspect every result
   on an oscilloscope view (time base, vertical scale, cursors, trigger, measurements), build the processing flow as
@@ -2023,6 +2030,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   Without a local `config/opentsx-local.props` (git-ignored), `OpenTSxClusterLink` falls back to this template.
 
 ### Fixed
+- `bin/opentsx market load` wrote every episode again on each run, because each run gave it a new random id. It now
+  uses the identity of `publish` (series, start, value count), so the Iceberg store skips what it already holds.
 - Example system `h2-chain`: the available power of the wind farm was bound to the sum of the measured turbine power.
   Under curtailment that is the actual generation, not what the wind offers. They are two signals now: an
   observation (`park.p_gen_kw`) and an estimate from the wind speed (`park.p_avail_kw`).

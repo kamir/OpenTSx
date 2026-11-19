@@ -395,7 +395,7 @@ public class BonusExercise_SeasonalDecomposition {
 
 ## Next Steps
 
-1. Review solutions in `exercises/solutions/tsx-track/episode-09/`
+1. Compare your results with the demo `bin/episode_09_analysis.sh` (class `org.opentsx.demo.onboarding.TimeSeriesAnalysis`)
 2. Compare with your R/Python implementations
 3. Try the bonus seasonal decomposition
 4. Move to production patterns (Episode 10)

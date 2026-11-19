@@ -434,7 +434,7 @@ When deploying to production, ensure:
 
 ## Next Steps
 
-1. Review solutions
+1. Compare your results with the demo `bin/episode_10_production_config.sh` (class `org.opentsx.demo.onboarding.ProductionConfig`)
 2. Apply patterns to real OpenTSx deployment
 3. Add monitoring and alerting
 4. Implement CI/CD pipeline

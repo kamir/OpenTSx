@@ -26,11 +26,11 @@ OpenTSx is maintained by volunteers; there is no bug bounty.
 
 | Version | Supported |
 |---------|-----------|
-| `master` (Maven version 3.0.1: data model v2 modules, Python package `opentsx` 1.0.x) | yes |
-| 2.x modules on `master` (`opentsx-data`, `-core`, `-connectors`, `-lg`, `-flink-core`) | fixes on a best-effort basis |
-| older releases, branches and everything in `archive/` | no |
+| 3.0.x (tags `v3.0.0` and `v3.0.1`: data model v2 modules, Python package `opentsx` 1.0.x) and `master` | yes |
+| 2.x modules in 3.0.x and on `master` (`opentsx-data`, `-core`, `-connectors`, `-lg`, `-flink-core`) | fixes on a best-effort basis |
+| versions before 3.0.0, other branches and everything in `archive/` | no |
 
-There are no tagged releases yet; fixes go to `master`.
+Fixes go to `master` and ship in the next release, a tag `v<version>` on `master`.
 
 ## Scope notes
 

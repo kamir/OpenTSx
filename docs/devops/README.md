@@ -1,23 +1,22 @@
 # DevOps guide: OpenTSx on k3s against an existing KafScale cluster
 
-> **Kurzfassung (Deutsch).** Dieser Leitfaden zeigt, wie OpenTSx lokal in einem **k3s-Cluster** gegen ein
-> **bestehendes KafScale-Cluster** läuft. Die Skripte liegen in [`deploy/k3s/`](../../deploy/k3s/), die Images in
-> [`deploy/docker/`](../../deploy/docker/). Reihenfolge: `00-prereqs.sh` → `10-build.sh` → `11-import-images.sh` →
-> `20-configure.sh KAFSCALE_BOOTSTRAP=<host:port>` → `30-deploy.sh` → `40-demo.sh all`. Danach laufen
-> Statistik-Prozessor, Retrieval-Server und Smart Topics Studio dauerhaft; Windpark-Simulator, die drei
-> Zwillings-Szenarien (H2-Kette, Haus, Boot), Studio-Export, DWD-Wetter, Modbus-Poller und der OpenMetadata-Export
-> laufen als Jobs; optional kommen ein Modbus-Simulator sowie CronJobs für den täglichen MOSMIX-Abruf und einen
-> synthetischen Check hinzu.
-> Lauffähig ist heute der Java-Stand; der Go-Smart-Topic-Prozessor mit YAML-DAG und MLflow aus Konzept 11 ist geplant
-> und fügt sich später als weiteres Deployment ein ([heute und geplant](today-vs-planned.md)).
-> Der [Sizing-Plan](sizing-plan.md) rechnet Speicher und Ressourcen je Szenario vor (z. B. 50 Anlagen × 100 Kanäle
-> × 1 Hz ≈ 0,94 GB/Tag auf S3 bei gemessenen 2,18 B/Wert). Wichtigste Stolperfalle: Die **advertised address** des
-> KafScale-Brokers muss aus den Pods erreichbar sein – `40-demo.sh kafscale-check` prüft genau das.
-> **Lokal verproben in einem Schritt:** `deploy/k3s/60-probe.sh --local-kafscale` startet KafScale per Docker Compose
-> mit der LAN-IP als advertised address, baut, installiert, führt alle Beispiele aus (inklusive DWD-Wetter offline und
-> Modbus-Simulator mit Poller) und schreibt einen PASS/FAIL-Bericht `probe-report-<Zeit>.md`; `--dry-run` zeigt nur
-> den Plan. Das **[Betriebskonzept](operations.md)** beschreibt Dienstkatalog, Umgebungen, Überwachung, Sicherung
-> (`70-backup.sh`, `71-restore.sh`), Updates, Secrets, Sicherheit, Runbooks, Rollen und SLOs.
+> This guide shows how OpenTSx runs locally in a **k3s cluster** against an **existing KafScale cluster**. The scripts
+> are in [`deploy/k3s/`](../../deploy/k3s/), the images in [`deploy/docker/`](../../deploy/docker/). The order is
+> `00-prereqs.sh` → `10-build.sh` → `11-import-images.sh` → `20-configure.sh KAFSCALE_BOOTSTRAP=<host:port>` →
+> `30-deploy.sh` → `40-demo.sh all`. After that the statistics processor, the retrieval server and Smart Topics Studio
+> run permanently; the wind farm simulator, the three twin scenarios (H2 chain, house, boat), the Studio export, DWD
+> weather, the Modbus poller and the OpenMetadata export run as Jobs. A Modbus simulator and CronJobs for the daily
+> MOSMIX download and a synthetic check are optional.
+> What runs today is the Java code, including the DAGs `opentsx.dag.v1` and `opentsx.dag.v2` that the vector processor
+> runs; the Go Smart Topic processor and MLflow of concept 11 are planned ([today vs. planned](today-vs-planned.md)).
+> The [sizing plan](sizing-plan.md) works out storage and resources per scenario (for example 50 turbines × 100
+> channels × 1 Hz ≈ 0.94 GB/day on S3 at a measured 2.18 B/value). The most common trap: the **advertised address** of
+> the KafScale broker must be reachable from the pods; `40-demo.sh kafscale-check` checks exactly that.
+> **Probe locally in one step:** `deploy/k3s/60-probe.sh --local-kafscale` starts KafScale with Docker Compose and the
+> LAN IP as advertised address, builds, installs, runs all examples (including DWD weather offline and the Modbus
+> simulator with the poller) and writes a PASS/FAIL report `probe-report-<UTC time>.md`; `--dry-run` only shows the
+> plan. The **[operations concept](operations.md)** describes the service catalogue, environments, monitoring, backup
+> (`70-backup.sh`, `71-restore.sh`), updates, secrets, security, runbooks, roles and SLOs.
 
 ## Pages
 
@@ -28,7 +27,7 @@
 | [Setup plan](setup-plan.md) | prerequisites, network path to KafScale, step-by-step installation with checks after each step, configuration reference, upgrade, teardown |
 | [Sizing plan](sizing-plan.md) | resources per component, storage formula and worked examples (wind farm, house, boat), what still has to be measured |
 | [Demos](demos.md) | how to run each example on k3s and what output to expect |
-| [Today vs. planned](today-vs-planned.md) | what is deployable now, and where the Go Smart Topic processor, DAG and MLflow (concept 11) will slot in |
+| [Today vs. planned](today-vs-planned.md) | what is deployable now, including the DAGs `opentsx.dag.v1` and `opentsx.dag.v2` on the vector processor, and where the Go Smart Topic processor and MLflow (concept 11) fit in |
 | [Troubleshooting](troubleshooting.md) | symptoms, causes, fixes |
 | [History archive](history-archive.md) | market and weather history: one-off backfill, daily forward archiving of day-ahead data and MOSMIX as k3s CronJobs (`deploy/k3s/history/`) |
 
@@ -75,7 +74,7 @@ flowchart LR
 | Modbus simulator (`MODBUS_SIM=true`) | Deployment + Service :1502 | `opentsx/tools` | `opentsx modbus simulate --map example --port 1502 --bind 0.0.0.0` |
 | Modbus poller | Job | `opentsx/tools` | `opentsx modbus poll --file /data/modbus/…jsonl` (map, host, port, count, interval, output and episode length as variables) |
 | synthetic check (`MONITORING=true`) | CronJob, every 10 min | `opentsx/tools` | `kafscale-check`, checkpoint age, disk usage |
-| Iceberg REST catalog, MinIO | Deployments (lake profile) | `apache/iceberg-rest-fixture:1.9.2`, `quay.io/minio/minio` | — |
+| Iceberg REST catalog, MinIO | Deployments (lake profile) | `apache/iceberg-rest-fixture:1.9.2`, `quay.io/minio/minio` | the command of the image; MinIO with `server /data --console-address :9001` |
 
 The commands read the ConfigMap values as variables of the configuration registry, not as flags. The DWD forecast
 collector is the exception: the registry has no key for a list of stations, so its script runs

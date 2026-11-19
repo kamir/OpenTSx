@@ -203,7 +203,7 @@ Given a full day of sensor data (1440 minutes = 24 hours):
 package org.opentsx.exercises.swe;
 
 import org.opentsx.data.series.TimeSeriesObject;
-import org.opentsx.tsa.rng.RNGWrapper;
+import org.opentsx.data.generator.RNGWrapper;
 
 public class Exercise4_Windowing {
     public static void main(String[] args) {
