@@ -22,11 +22,13 @@ It does not enumerate every auxiliary window, numerical method or browser action
 Regressions can belong to more than one category.
 Test names alone do not establish an executed result or a coverage percentage.
 
-The Java CI matrix runs the Maven verification lifecycle under Xvfb on Java 17 and 21:
-[ci.yml:501](../../../.github/workflows/ci.yml#L501).
+The Java CI matrix runs the Maven 3.9.8 verification lifecycle under Xvfb on Java 17 and 21:
+[ci.yml:509](../../../.github/workflows/ci.yml#L509).
+Each Maven job verifies the bundled HTTP transport's download retry policy before its workload:
+[download retry check](../../../tools/check_maven_downloads.py).
 Broker integration and recorder-through-Kafka/Flink acceptance use separate configured gates:
-[ci.yml:703](../../../.github/workflows/ci.yml#L703),
-[ci.yml:840](../../../.github/workflows/ci.yml#L840).
+[ci.yml:731](../../../.github/workflows/ci.yml#L731),
+[ci.yml:868](../../../.github/workflows/ci.yml#L868).
 Pull requests select affected jobs from module dependencies and shared inputs. Pushes to `master` and manual runs
 execute the full workflow. The [CI selection contract](../../../CONTRIBUTING.md#check-continuous-integration)
 defines the final result check and the treatment of explicitly excluded jobs.

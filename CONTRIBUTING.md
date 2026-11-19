@@ -32,7 +32,7 @@ python -m pip install -e ".[forecasting,kafka]" pytest
 python -m pytest -q
 
 cd ..
-python -m unittest discover -s deploy/local-cp -p test_workbench.py -v
+python -m unittest discover -s deploy/local-cp -p 'test_workbench*.py' -v
 python3 tools/check_links.py                   # relative links in the maintained Markdown (from the repo root)
 ```
 
@@ -41,7 +41,19 @@ Tests that need an external service run only when its variable is set: `KAFSCALE
 fixture) and `OPENTSX_RETRIEVAL_URL` (Python client against a running retrieval server).
 
 [`.mvn/maven.config`](.mvn/maven.config) makes Maven retry a download up to five times when the repository answers
-HTTP 429, 500, 502, 503 or 504.
+HTTP 429, 500, 502, 503 or 504. With Maven 3.9.8 and its bundled Resolver 1.9.20, the intervals increase linearly:
+3, 6, 9, 12 and 15 seconds. `Retry-After` takes precedence up to five minutes; longer values stop retries.
+HTTP 401, 403 and 404 are not retried. Exhausted retries leave the build failed; Maven goals are not rerun.
+
+You need JDK 17 or 21, Maven 3.9.8 and Python 3 to check this policy. From the repository root, run:
+
+```bash
+python3 tools/check_maven_downloads.py
+```
+
+The check requires the active Maven distribution and tests its native HTTP transport retry strategy without
+network requests or sleeps. A different Maven version, missing bundled libraries or a failed policy check returns
+an error.
 
 ## Check continuous integration
 
@@ -49,6 +61,9 @@ HTTP 429, 500, 502, 503 or 504.
 Pull requests select affected jobs. Pushes to `master` and manual runs execute
 every workload job plus the selection and result checks. The existing workload
 commands and matrix dimensions are retained.
+All six Maven job definitions install checksum-verified Maven 3.9.8 and run the download retry check before their
+builds. Rust and Wayang Compose artifacts retain `java-build.log` and `java-classpath.log`, including
+after a failed build.
 
 The selector verifies the checked-out pull request merge commit and both event parents. A depth-two checkout
 supplies these commits. It compares the base parent with the tested merge tree using NUL-delimited paths and
