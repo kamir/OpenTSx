@@ -680,15 +680,15 @@ export function validate(nodes: FlowNode[]): Finding[] {
       });
     }
   }
+  const used = new Set<string>();
+  for (const s of sinks) for (const n of upstream(nodes, s.id)) used.add(n.id);
   for (const n of nodes) {
-    const clash = n.op === VECTOR_OP ? inputNameClash(vectorComponents(nodes, n)) : null;
+    const clash = n.op === VECTOR_OP && used.has(n.id) ? inputNameClash(vectorComponents(nodes, n)) : null;
     if (clash) out.push({ level: 'error', text: `${n.label}: ${clash}.` });
     if (n.op === VECTOR_OP && inputsOf(n).length < 2) {
       out.push({ level: 'warning', text: `${n.label} has one input only. Add further inputs: each becomes a component of the vector.` });
     }
   }
-  const used = new Set<string>();
-  for (const s of sinks) for (const n of upstream(nodes, s.id)) used.add(n.id);
   const unused = nodes.filter((n) => n.op !== 'source' && !used.has(n.id));
   if (sinks.length > 0 && unused.length > 0) {
     out.push({ level: 'info', text: `${unused.length} node(s) feed no published topic and are left out of the DAG.` });

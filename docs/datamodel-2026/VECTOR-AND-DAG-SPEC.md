@@ -157,8 +157,11 @@ Implemented in: `workbench/vector.ts:125-238`, `vector/VectorAligner.java:99-213
 
 The workbench edits seconds and writes `PT<seconds>S`. It writes `maxAge` only with `fill: as-of`, and `lateness`
 only when it is greater than 0.
-It writes a name given in its comma-separated parameter `names` as given. It derives a name left empty from the
-bucket name and appends `_2`, `_3` and so on when another input has that name.
+It writes a name typed in its comma-separated parameter `names` in lower-case snake case: lower case, every run of
+characters other than a-z and 0-9 becomes `_`, and `_` at either end is dropped. A typed name is never renamed, so
+two typed names with the same snake-case name are refused. A typed name without a letter or digit counts as left
+empty. It derives a name left empty from the bucket name and appends `_2`, `_3` and so on when another input has
+that name.
 
 Implemented in: `vector/VectorJob.java:83-104,119-130`, `vector/VectorAligner.java:21,29-38,104`,
 `vector/VectorStream.java:110-111`, `workbench/flow.ts:505-509`.
@@ -238,17 +241,17 @@ addition to [1.2](#12-checks-before-a-deployment):
 | Point | Rule | Message |
 |---|---|---|
 | Inputs | Every input of the `align.vector` node MUST be the decoder node. Another operator before the vector is refused and named. | `node <id> (<op>) is not available in this runtime: it executes align.vector on the series of the source topic only. Build the vector from the source bucket.` |
-| Names | Two inputs of the `align.vector` node MUST NOT have the same name. An input without an entry in `names` is named `in<i>`, where `<i>` is its position from 1. Wayang and the Rust runner refuse such a node with the same message. `VectorAligner.align`, `new VectorStream(inputNames, ...)`, `VectorStream::new` of the Rust runner and the workbench preview refuse it with the text after `node <id>: `. The deploy checks of the workbench list `<label>: two inputs of the vector are both named "<name>"; give every input its own name.`, where `<label>` is the name of the node, so the workbench neither downloads nor deploys the flow. | `node <id>: two inputs of the vector are both named "<name>"; give every input its own name` |
+| Names | Two inputs of the `align.vector` node MUST NOT have the same name. Without `names`, the input at position `<i>` from 1 is named `in<i>`. The vector processor also names an input `in<i>` when `names` has no entry or a blank entry for it. Wayang refuses a `names` list whose length differs from `in`, or that holds a blank name, with `node <id>: names must uniquely name every input`. The Rust runner refuses such a length with `vector names must uniquely name every input` and a blank name with `vector input name must be a nonempty string`. Wayang and the Rust runner refuse two inputs with one name with the same message as the processor. `VectorAligner.align`, `new VectorStream(inputNames, ...)`, `VectorStream::new` of the Rust runner and the workbench preview refuse it with the text after `node <id>: `. For a vector node that feeds a published node, the deploy checks of the workbench list `<label>: two inputs of the vector are both named "<name>"; give every input its own name.`, where `<label>` is the name of the node, so the workbench neither downloads nor deploys the flow. A vector node that feeds no published node is left out of the DAG and is not checked. | `node <id>: two inputs of the vector are both named "<name>"; give every input its own name` |
 | Source topic | `source.topics` MUST be `[tsx.<domain>.episodes.v2]` of the domain of the processor. A vector over several topics is not supported. | `the DAG reads <topics>; this server holds <topic>` |
 | Series | Every input reads every series named in `source.series`. The workbench writes the series chosen in the TS inventory. | see [1.2](#12-checks-before-a-deployment) |
 | Sink topic | MUST be `tsx.<domain>.smart.<name>.vectors.v1` of the domain of the processor. | `sink topic <topic> must be tsx.<domain>.smart.<name>.vectors.v1 (lower-case letters, digits and hyphens in <name>)` |
 | Derived episodes | Episodes cut out of other episodes, with a parent episode id or a source episode id, are ignored. | none |
 
 Implemented in: `vector/VectorJob.java:53-121`, `vector/VectorProcessor.java:378-391,602-606`,
-`workbench/flow.ts:684-685,718`, `vector/VectorAligner.java:103-106,219-228`, `vector/VectorStream.java:106-109`,
+`workbench/flow.ts:683-686,718`, `vector/VectorAligner.java:103-106,219-228`, `vector/VectorStream.java:106-109`,
 `workbench/vector.ts:99-129,150-151`, `opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayangBuild.java:61-78`,
 `opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java:74`, `rust/tsx-runner/src/pairs.rs:333-340,1786-1791`,
-`rust/tsx-runner/src/catalog.rs:536-541`.
+`rust/tsx-runner/src/catalog.rs:519-541,1206-1210`.
 
 ## 3. Vector processor
 
@@ -352,7 +355,7 @@ Implemented in: `server/RetrievalServer.java:178-185`, `server/KafScaleFeed.java
   with a large offset between them hold many open ticks.
 
 Implemented in: `vector/VectorProcessor.java:63,565-587`,
-`deploy/k3s/components/vector-processor/vector-processor.yaml:1-14`, `vector/VectorStream.java:223-229,291-342`.
+`deploy/k3s/components/vector-processor/vector-processor.yaml:1-14`, `vector/VectorStream.java:227-233,295-346`.
 
 ## 4. Stream operator catalog
 

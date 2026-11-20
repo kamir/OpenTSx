@@ -3484,7 +3484,7 @@
       ],
       "pitfalls": [
         "Both inputs must carry a time axis.",
-        "Two inputs with one name, such as names \"speed,Speed\", are refused with the message 'two inputs of the vector are both named \"speed\"; give every input its own name', as the vector processor, Wayang and the Rust runner refuse them. A given name stays as given; a name derived from a bucket name gets _2 when another input has it.",
+        "Two inputs with one name, such as names \"speed,Speed\", are refused with the message 'two inputs of the vector are both named \"speed\"; give every input its own name', as the vector processor, Wayang and the Rust runner refuse them. A typed name is written in lower-case snake case: lower case, every run of characters other than a-z and 0-9 becomes _, and _ at either end is dropped. A typed name is never renamed, so two typed names with the same snake-case name are refused. A name derived from a bucket name gets _2 when another input has it.",
         "Lateness configures the running processor and does not delay this batch apply call.",
         "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights."
       ],

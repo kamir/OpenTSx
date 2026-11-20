@@ -559,9 +559,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `new VectorStream(inputNames, ...)`, `VectorStream::new` of the Rust runner and the workbench preview use the text
   after `node <id>: `. `VectorAligner.align` filled one component with the samples of both inputs, so `COUNT` gave
   `2.0` where `VectorStream` gave `1.0`, and the processor accepted `names: [a, a]`. Wayang refused only when it
-  built the plan, and Rust gave a generic message. The workbench renamed a repeated given name to `<name>_2`; it now
-  keeps a given name as given, gives a derived name `_2` when another input has it, fails the preview and lists
-  `<label>: two inputs of the vector are both named "<name>"; give every input its own name.` in the deploy checks.
+  built the plan, and Rust gave a generic message. The workbench renamed a repeated typed name to `<name>_2`. It now
+  writes a typed name in lower-case snake case (lower case, every run of characters other than a-z and 0-9 becomes
+  `_`, and `_` at either end is dropped) and never renames it, so two typed names with the same snake-case name are
+  refused. It gives a derived name `_2` when another input has it, fails the preview and, for a vector that feeds a
+  published node, lists `<label>: two inputs of the vector are both named "<name>"; give every input its own name.`
+  in the deploy checks. A vector that feeds no published node is left out of the DAG and does not block the flow.
 - The retrieval server with `--kafscale` follows `tsx.<domain>.features.v2` like the clean and synthetic topics.
   Feature series appear in `GET /v1/inventory`, and `GET /v1/systems/{id}/signals` shows their data under the
   features grade. The inventory names the topic under `source.topics.features`.

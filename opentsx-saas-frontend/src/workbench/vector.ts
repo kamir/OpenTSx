@@ -98,9 +98,9 @@ function snake(text: string): string {
 
 /**
  * Component names from the bucket names of the inputs: what the names have in common at the end (the source they
- * all derive from) is dropped. `custom` (comma separated) replaces names from the left. A given name stays as given,
- * so two inputs given one name keep it and the vector refuses them ({@link inputNameClash}). A derived name that
- * another input has gets `_2`, `_3` and so on.
+ * all derive from) is dropped. `custom` (comma separated) replaces names from the left. A typed name is written in
+ * lower-case snake case and is never renamed, so two typed names with the same snake-case name are refused
+ * ({@link inputNameClash}). A derived name that another input has gets `_2`, `_3` and so on.
  */
 export function componentNames(labels: string[], custom = ''): string[] {
   let common = labels.length > 1 ? labels[0] : '';

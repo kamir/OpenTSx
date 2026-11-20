@@ -123,11 +123,14 @@ Read the [analysis guide](../docs/devguide/workbench-analysis.md) for the result
   date, and shows what it reports; needs an administrator account, a retrieval server started with `--kafscale` and
   `--dag-runs true`, and a running vector processor
 - Vector component names: the parameter `names` of "Align to vector" names the inputs from the left, comma
-  separated. A given name stays as given. A name left empty comes from the bucket name and gets `_2`, `_3` when
-  another input has it. Two inputs with one name are refused: the preview fails with
-  `two inputs of the vector are both named "<name>"; give every input its own name`, and the deploy checks list
+  separated. A typed name is written in lower-case snake case: lower case, every run of characters other than a-z
+  and 0-9 becomes `_`, and `_` at either end is dropped. A typed name is never renamed, so two typed names with the
+  same snake-case name are refused. A name left empty comes from the bucket name and gets `_2`, `_3` when another
+  input has it. The preview of a vector with two inputs of one name fails with
+  `two inputs of the vector are both named "<name>"; give every input its own name`. When the vector feeds a
+  published node, the deploy checks list
   `<label>: two inputs of the vector are both named "<name>"; give every input its own name.`, so the flow is neither
-  downloaded nor deployed
+  downloaded nor deployed. A vector that feeds no published node is left out of the DAG and does not block the flow
 - Time series operations as buttons, recorded as a processing flow graph
 - Export: `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor, Java code
 - Code in `src/workbench/`

@@ -287,6 +287,22 @@ describe('flow with a vector node', () => {
     expect(validate(state().nodes).filter((f) => f.level === 'error')).toEqual([]);
   });
 
+  it('does not refuse two inputs with one name of a vector that is left out of the DAG', () => {
+    state().setSink(v, 'tsx.wind.smart.turbine-state.vectors.v1');
+    state().select(SOURCE_ID);
+    const draft = state().applyOp(VECTOR_OP, { every: 60 })!;
+    state().addInput(draft, z);
+    state().updateParams(draft, { names: 'speed,speed' });
+    expect(toDagYaml(state())).not.toContain(`id: ${draft}`);
+    expect(validate(state().nodes).filter((f) => f.level === 'error')).toEqual([]);
+    expect(deployChecks(state().nodes, ['a']).filter((c) => !c.ok)).toEqual([]);
+    expect(runBlocker(state().nodes, ['a'])).toBeNull();
+    state().setSink(draft, 'tsx.wind.smart.draft.vectors.v1');
+    expect(validate(state().nodes).filter((f) => f.level === 'error').map((f) => f.text)).toEqual([
+      `${state().nodes.find((n) => n.id === draft)!.label}: two inputs of the vector are both named "speed"; give every input its own name.`,
+    ]);
+  });
+
   it('loses a component when its node is removed and goes when its first input goes', () => {
     state().addInput(v, z);
     state().addInput(v, sm);
