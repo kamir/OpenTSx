@@ -889,6 +889,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   returned null before.
 - `opentsx-core`: the `main` methods of `ReturnIntervallStatistik2` and `TSPropertyTester` do not print the minimum of
   each shifted series any more. It is a DEBUG line.
+- opentsx-lg: `src/main/connect-cfg/deploy_connector.py` starts with `#!/usr/bin/env python3`.
+  `tools/test_lg_python.py` fails on a tracked `opentsx-lg` Python script that does not compile with Python 3 or does
+  not start with that line.
+- opentsx-lg: the core tool image Dockerfile sets its variables as `ENV key=value` and runs `java -jar
+  /opentsx-lg/opentsx-lg-3.0.1.jar` in exec form. `DockerImageTest` fails on the legacy `ENV key value` form, on a
+  shell-form `CMD` or `ENTRYPOINT`, and on an image from `k8s.gcr.io`.
 
 ### Removed
 
@@ -1072,6 +1078,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   longer log in. The opentsx-lg README lists the ACLs the latency tools need (CREATE, READ, WRITE, ALTER and DELETE on
   the topics with the prefix `OpenTSx_`, READ on the consumer group `KPING-Consumer`) for you to create with the tools
   of your Kafka platform.
+- opentsx-lg: the MQTT example scripts `04_run_tsdb.sh` and `influxdb-grafana/run_container_02.sh`, and the gitlink
+  `influxdb-grafana/docker-compose-influxdb-grafana`. The gitlink had no `.gitmodules` entry, so a clone got an empty
+  directory and the scripts ran `docker-compose up -d` without a compose file.
+  `influxdb-grafana/__run_container_01.sh` starts InfluxDB and Grafana.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -2174,6 +2184,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   inside its container `docker-influxdb-grafana` from `GRAFANA_ADMIN_PASSWORD` on standard input (`grafana-cli admin
   reset-admin-password --password-from-stdin`) and exits 2 without the variable, where it opened a shell in a
   hard-coded container id and then ran `grafana-cli admin reset-admin-password admin` on the host.
+- opentsx-lg: the MQTT example `01_bootstrap.sh` installs `paho-mqtt==1.6.1` with `pip3 install --user` instead of an
+  unpinned `sudo pip3 install paho-mqtt`. It no longer runs `mqtt sub`, which stayed subscribed until interrupted, so
+  the script reaches the connector installs. `tools/test_lg_python.py` runs it with stubs and checks both.
+- opentsx-lg: `src/main/k8s/krake-app/echo-demo.yaml` pulls `registry.k8s.io/echoserver:1.10` instead of the frozen
+  `k8s.gcr.io`, and has no `env` entry without a name, which the Kubernetes API server rejected. `DockerImageTest`
+  fails on a manifest under `src/main/k8s` with a `- name:` entry that has no value.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

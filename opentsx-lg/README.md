@@ -50,7 +50,8 @@ installation, from your shell. Without it they exit with status 2 and
 
 CI runs `bash -n` and `shellcheck -x -P SCRIPTDIR` on every shell script (`*.sh`) of this module.
 `tools/test_lg_scripts.py` fails on a shell script whose first line is not a shebang (`#!`) and on a `cd` that is not
-followed by `|| exit` or `|| return`.
+followed by `|| exit` or `|| return`. `tools/test_lg_python.py` fails on a Python script (`*.py`) of this module that
+does not compile or does not start with `#!/usr/bin/env python3`.
 
 ### Run the example image
 
@@ -64,7 +65,9 @@ directory with that file at `/etc/opentsx/config/` when you start the container.
 `OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME: "/etc/opentsx/config/opentsx-local.props" cannot be read (/etc/opentsx/config/opentsx-local.props); give a readable Kafka client profile or its .example template`.
 
 [`src/main/docker/core-tool-image/README.md`](src/main/docker/core-tool-image/README.md) describes a Dockerfile for the
-same jar with Xvfb and x11vnc.
+same jar with Xvfb and x11vnc. `DockerImageTest` fails on a Dockerfile under `src/` with an `ENV <key> <value>` line or
+a `CMD` or `ENTRYPOINT` in shell form, on a Dockerfile or YAML file under `src/` that pulls an image from
+`k8s.gcr.io`, and on a manifest under `src/main/k8s/` with a list entry `- name:` that has no value.
 
 ### Grant the ACLs the latency tools need
 
@@ -90,10 +93,10 @@ status 2 and
 
 ### Versions in the MQTT example
 
-Three scripts in `src/main/mqtt-example/` pin the connectors and images they install and start:
+Three scripts in `src/main/mqtt-example/` pin the package, connectors and images they install and start:
 
-* `01_bootstrap.sh` installs the connectors `confluentinc/kafka-connect-mqtt:1.7.11` and
-  `confluentinc/kafka-connect-influxdb:1.2.13` with `confluent-hub`;
+* `01_bootstrap.sh` installs `paho-mqtt==1.6.1` with `pip3 install --user`, and the connectors
+  `confluentinc/kafka-connect-mqtt:1.7.11` and `confluentinc/kafka-connect-influxdb:1.2.13` with `confluent-hub`;
 * `02_run_mqtt_broker.sh` starts `toke/mosquitto@sha256:3c18df61133085cec34050ed3d2f851bbe8d883483fb9167a05c616950b5e94b`;
 * `influxdb-grafana/__run_container_01.sh` starts
   `philhawthorne/docker-influxdb-grafana@sha256:fe36a6b2b9fc8779c5ffc4b25cd0db5d24ebbb62ce4ac18148a4bc8c2fef0771`.
@@ -102,9 +105,13 @@ Docker Hub has no version tag for the image that `latest` names in these two rep
 digest. `tools/test_lg_scripts.py` fails on an image or connector without an exact version in the scripts and
 Dockerfiles of this module, and on a Dockerfile `RUN` that runs `apt-get update` without `apt-get install`.
 
-`01_bootstrap.sh` installs `paho-mqtt` with `pip3` without a version. `04_run_tsdb.sh` runs `docker-compose up -d` in
-`influxdb-grafana/docker-compose-influxdb-grafana`, which is empty in a clone of this repository: the compose file
-comes from an external repository, and this repository pins none of its images.
+`mqtt-generator-gist/mqttgen.py` uses the 1.x client API of `paho-mqtt`. With paho-mqtt 2.0.0 it stops with
+`TypeError: Client.__init__() missing 1 required positional argument: 'callback_api_version'`. `01_bootstrap.sh`
+runs no `mqtt sub`, so it runs on to the connector installs. Its `mqtt pub -t test -m "Hello2" --mqttVersion 3`
+reaches a broker only if one already runs: `02_run_mqtt_broker.sh` starts the broker of the example after it.
+`influxdb-grafana/__run_container_01.sh` is the script of the example that starts InfluxDB and Grafana.
+`tools/test_lg_python.py` runs `01_bootstrap.sh` with stubs and fails unless it installs `paho-mqtt==1.6.1` and reaches
+both connector installs.
 
 ### Handle errors
 

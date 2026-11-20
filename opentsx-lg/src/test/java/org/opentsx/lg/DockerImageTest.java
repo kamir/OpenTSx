@@ -4,11 +4,13 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -16,11 +18,41 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DockerImageTest {
 
     private static final String MOUNTED_PROFILE = "/etc/opentsx/config/opentsx-local.props";
+    private static final Pattern LEGACY_ENV = Pattern.compile("(?i)ENV\\s+[^\\s=]+(\\s|$)");
+    private static final Pattern SHELL_FORM = Pattern.compile("(?i)(CMD|ENTRYPOINT)\\s+[^\\s\\[]");
+    private static final Pattern EMPTY_NAME = Pattern.compile("\\s*-\\s*name:\\s*");
 
     private static List<Path> files(String root, String name) throws Exception {
         try (Stream<Path> files = Files.walk(Path.of(root))) {
             return files.filter(f -> f.getFileName().toString().equals(name)).toList();
         }
+    }
+
+    private static List<String> dockerfileProblems(String where, String dockerfile) {
+        List<String> problems = new ArrayList<>();
+        List<String> lines = dockerfile.lines().toList();
+        for (int n = 1; n <= lines.size(); n++) {
+            String line = lines.get(n - 1).strip();
+            if (LEGACY_ENV.matcher(line).lookingAt()) {
+                problems.add(where + ":" + n + ": " + line + ": legacy form; write ENV <key>=<value>");
+            }
+            if (SHELL_FORM.matcher(line).lookingAt()) {
+                problems.add(where + ":" + n + ": " + line
+                        + ": shell form; write the exec form [\"<executable>\", \"<argument>\"]");
+            }
+        }
+        return problems;
+    }
+
+    private static List<String> registryProblems(String where, String text) {
+        List<String> problems = new ArrayList<>();
+        List<String> lines = text.lines().toList();
+        for (int n = 1; n <= lines.size(); n++) {
+            if (lines.get(n - 1).contains("k8s.gcr.io/")) {
+                problems.add(where + ":" + n + ": k8s.gcr.io is frozen; pull the image from registry.k8s.io");
+            }
+        }
+        return problems;
     }
 
     @Test
@@ -44,7 +76,7 @@ class DockerImageTest {
         for (Path dockerfile : dockerfiles) {
             String text = Files.readString(dockerfile);
             assertFalse(text.contains("ccloud.props"), dockerfile.toString());
-            assertTrue(text.contains("ENV OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME " + MOUNTED_PROFILE),
+            assertTrue(text.contains("ENV OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME=" + MOUNTED_PROFILE),
                     dockerfile.toString());
         }
     }
@@ -69,6 +101,77 @@ class DockerImageTest {
             assertTrue(base.find(), dockerfile.toString());
             assertPinned(base.group(1), dockerfile.toString());
         }
+    }
+
+    @Test
+    void theChecksFindTheLegacyEnvFormTheShellFormAndTheFrozenRegistry() {
+        String dockerfile = "FROM eclipse-temurin:21.0.8_9-jre-noble\n"
+                + "ENV DISPLAY :99\n"
+                + "ENV OPENTSX_SHOW_GUI=false\n"
+                + "env A b\n"
+                + "CMD java -jar /app.jar\n"
+                + "CMD [\"java\", \"-jar\", \"/app.jar\"]\n"
+                + "ENTRYPOINT /run.sh\n"
+                + "ENTRYPOINT [\"/run.sh\"]\n";
+        String manifest = "containers:\n- name: echo\n  image: k8s.gcr.io/echoserver:1.10\n"
+                + "- name: echo2\n  image: registry.k8s.io/echoserver:1.10\n";
+        String execForm = "shell form; write the exec form [\"<executable>\", \"<argument>\"]";
+
+        assertEquals(List.of(
+                "Dockerfile:2: ENV DISPLAY :99: legacy form; write ENV <key>=<value>",
+                "Dockerfile:4: env A b: legacy form; write ENV <key>=<value>",
+                "Dockerfile:5: CMD java -jar /app.jar: " + execForm,
+                "Dockerfile:7: ENTRYPOINT /run.sh: " + execForm),
+                dockerfileProblems("Dockerfile", dockerfile));
+        assertEquals(List.of("echo-demo.yaml:3: k8s.gcr.io is frozen; pull the image from registry.k8s.io"),
+                registryProblems("echo-demo.yaml", manifest));
+    }
+
+    @Test
+    void eachDockerfileSetsKeyValueVariablesAndRunsItsCommandInExecForm() throws Exception {
+        List<Path> dockerfiles = files("src", "Dockerfile");
+        List<String> problems = new ArrayList<>();
+        for (Path dockerfile : dockerfiles) {
+            problems.addAll(dockerfileProblems(dockerfile.toString(), Files.readString(dockerfile)));
+        }
+
+        assertFalse(dockerfiles.isEmpty());
+        assertEquals(List.of(), problems);
+    }
+
+    @Test
+    void noManifestOrDockerfilePullsFromTheFrozenK8sGcrRegistry() throws Exception {
+        List<Path> sources;
+        try (Stream<Path> files = Files.walk(Path.of("src"))) {
+            sources = files.filter(f -> f.getFileName().toString().matches("Dockerfile|.*\\.ya?ml")).toList();
+        }
+        List<String> problems = new ArrayList<>();
+        for (Path source : sources) {
+            problems.addAll(registryProblems(source.toString(), Files.readString(source)));
+        }
+
+        assertTrue(sources.contains(Path.of("src/main/k8s/krake-app/echo-demo.yaml")), sources.toString());
+        assertEquals(List.of(), problems);
+    }
+
+    @Test
+    void noKubernetesManifestHasAListEntryWithAnEmptyName() throws Exception {
+        List<Path> manifests;
+        try (Stream<Path> files = Files.walk(Path.of("src/main/k8s"))) {
+            manifests = files.filter(f -> f.getFileName().toString().matches(".*\\.ya?ml")).toList();
+        }
+        List<String> problems = new ArrayList<>();
+        for (Path manifest : manifests) {
+            List<String> lines = Files.readAllLines(manifest);
+            for (int n = 1; n <= lines.size(); n++) {
+                if (EMPTY_NAME.matcher(lines.get(n - 1)).matches()) {
+                    problems.add(manifest + ":" + n + ": name: empty value; give the entry a name or delete it");
+                }
+            }
+        }
+
+        assertTrue(manifests.contains(Path.of("src/main/k8s/krake-app/echo-demo.yaml")), manifests.toString());
+        assertEquals(List.of(), problems);
     }
 
     private static void assertPinned(String image, String where) {
