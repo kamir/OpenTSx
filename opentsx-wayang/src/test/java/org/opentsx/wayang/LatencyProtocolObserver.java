@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -127,7 +128,7 @@ final class LatencyProtocolObserver implements AutoCloseable {
             DataInputStream in = new DataInputStream(client.getInputStream());
             DataOutputStream out = new DataOutputStream(broker.getOutputStream());
             byte[] frame;
-            while ((frame = readFrame(in)) != null) {
+            while ((frame = readFrame(in, pending)) != null) {
                 long nanos = System.nanoTime();
                 Instant at = Instant.now();
                 ByteBuffer buffer = ByteBuffer.wrap(frame);
@@ -144,7 +145,9 @@ final class LatencyProtocolObserver implements AutoCloseable {
                     FetchRequest fetch = FetchRequest.parse(buffer, header.apiVersion());
                     if (fetch.fetchData(topics).keySet().stream().anyMatch(p -> inputTopic.equals(p.topic()))) firstFetch = nanos;
                 }
-                pending.put(header.correlationId(), new Pending(header, nanos, at, increment, produce));
+                synchronized (pending) {
+                    pending.put(header.correlationId(), new Pending(header, nanos, at, increment, produce));
+                }
                 writeFrame(out, frame);
             }
         } catch (Exception e) {
@@ -160,18 +163,20 @@ final class LatencyProtocolObserver implements AutoCloseable {
             DataInputStream in = new DataInputStream(broker.getInputStream());
             DataOutputStream out = new DataOutputStream(client.getOutputStream());
             byte[] frame;
-            while ((frame = readFrame(in)) != null) {
-                int correlation = ByteBuffer.wrap(frame).getInt();
-                Pending request = pending.remove(correlation);
-                if (request == null) throw new IllegalStateException("unknown response correlation " + correlation);
-                if (request.header.apiKey() == ApiKeys.METADATA) {
-                    frame = metadata(frame, request.header, server.getLocalPort(), topics);
-                } else if (request.produce != null) {
-                    if (recordTopics != null) acknowledgeRecords(frame, request, System.nanoTime(), recordEntries, recordTopics);
-                    else if (decodeEpisodes) acknowledge(frame, request, System.nanoTime(), entries);
-                    else produceErrors.addAndGet(acknowledge(frame, request, System.nanoTime(), entries, false));
+            while ((frame = readFrame(in, pending)) != null) {
+                synchronized (pending) {
+                    int correlation = ByteBuffer.wrap(frame).getInt();
+                    Pending request = pending.get(correlation);
+                    if (request == null) throw new IllegalStateException("unknown response correlation " + correlation);
+                    if (request.header.apiKey() == ApiKeys.METADATA) {
+                        frame = metadata(frame, request.header, server.getLocalPort(), topics);
+                    } else if (request.produce != null) {
+                        if (recordTopics != null) acknowledgeRecords(frame, request, System.nanoTime(), recordEntries, recordTopics);
+                        else if (decodeEpisodes) acknowledge(frame, request, System.nanoTime(), entries);
+                        else produceErrors.addAndGet(acknowledge(frame, request, System.nanoTime(), entries, false));
+                    }
+                    forwardResponse(out, frame, pending);
                 }
-                writeFrame(out, frame);
             }
         } catch (Exception e) {
             if (!closing && !client.isClosed() && !broker.isClosed()) failure.compareAndSet(null, e);
@@ -278,7 +283,19 @@ final class LatencyProtocolObserver implements AutoCloseable {
     }
 
     static byte[] readFrame(DataInputStream in) throws IOException {
-        int first = in.read();
+        return readFrame(in, Collections.emptyMap());
+    }
+
+    static byte[] readFrame(DataInputStream in, Map<Integer, Pending> pending) throws IOException {
+        int first;
+        try {
+            first = in.read();
+        } catch (SocketException error) {
+            synchronized (pending) {
+                if (pending.values().stream().allMatch(request -> request.header.apiKey() == ApiKeys.METADATA)) return null;
+            }
+            throw error;
+        }
         if (first < 0) return null;
         byte[] rest = in.readNBytes(3);
         if (rest.length != 3) throw new EOFException("incomplete Kafka frame length");
@@ -293,6 +310,15 @@ final class LatencyProtocolObserver implements AutoCloseable {
         out.writeInt(frame.length);
         out.write(frame);
         out.flush();
+    }
+
+    static void forwardResponse(DataOutputStream out, byte[] frame, Map<Integer, Pending> pending) throws IOException {
+        synchronized (pending) {
+            int correlation = ByteBuffer.wrap(frame).getInt();
+            if (!pending.containsKey(correlation)) throw new IllegalStateException("unknown response correlation " + correlation);
+            writeFrame(out, frame);
+            pending.remove(correlation);
+        }
     }
 
     private void closeSocket(Socket socket) {
