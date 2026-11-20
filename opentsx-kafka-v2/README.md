@@ -162,10 +162,12 @@ records instead, puts every partition back to its position before the poll and p
 5 s and gives up after 10 minutes of refusals in a row with `IllegalStateException`
 `the broker has refused reads for more than PT10M`, the limit written as an ISO-8601 duration. `LogReader`, `LogTail`,
 `EpisodeLogTail`, the statistics processor and the retrieval feed poll through it. `refusing()` tells whether the broker
-refused the last poll; it is false before the first poll and after an answer without records. The statistics processor
-writes its progress file only after a poll the broker answered.
+refused the last poll; it is false before the first poll and after a poll that returned, also one without records and
+one that reached no broker. The statistics processor writes its progress file only after a poll the broker did not
+refuse.
 
-The first refusal of a row is logged at WARN and the next answer at INFO, logger `org.opentsx.kafka.Patience`:
+The first refusal of a row is logged at WARN and the first poll that returns after it at INFO, also one that reached
+no broker, logger `org.opentsx.kafka.Patience`:
 
 ```text
 the broker refuses reads; waiting pause=PT5S limit=PT10M cause=Unexpected error code 7 while fetching at offset <offset> from topic-partition <topic>-<partition>

@@ -48,18 +48,23 @@ spec:
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_STATS_WINDOWS}}
             - name: OPENTSX_STATS_ALLOWED_LATENESS
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_STATS_ALLOWED_LATENESS}}
-          # <checkpoint>.progress: the time of the last poll the broker answered, in seconds since the epoch,
-          # written at most every 10 s
+          # <checkpoint>.progress: the time of the last poll the broker did not refuse, in seconds since the epoch,
+          # written at most every 10 s. A broker that cannot be reached at all gives empty polls without a refusal:
+          # with no records read since the last checkpoint the file stays fresh and these probes do not detect it;
+          # otherwise the next checkpoint fails after the 3-minute delivery timeout and the processor exits 1; when it
+          # wrote no statistics in the 5 minutes before, after up to 60 s per statistics record instead.
+          # kafscale-check and the synthetic check detect an unreachable broker.
           startupProbe:     # up to 10 minutes for restoring the checkpoint and assigning the partitions
             exec: {command: [/bin/sh, -c, 'test $(( $(date +%s) - $(cat /state/stats.ckpt.progress) )) -lt 120']}
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 60
-          readinessProbe:   # the broker answered a poll within the last 2 minutes
+          readinessProbe:   # a poll the broker did not refuse within the last 2 minutes
             exec: {command: [/bin/sh, -c, 'test $(( $(date +%s) - $(cat /state/stats.ckpt.progress) )) -lt 120']}
             periodSeconds: 30
             timeoutSeconds: 5
-          livenessProbe:    # 10 minutes without an answered poll: stuck; 10 minutes of refusals stop the processor
+          livenessProbe:    # 10 minutes without a poll the broker did not refuse: stuck;
+                            # 10 minutes of refusals stop the processor
             exec: {command: [/bin/sh, -c, 'test $(( $(date +%s) - $(cat /state/stats.ckpt.progress) )) -lt 600']}
             periodSeconds: 60
             timeoutSeconds: 5

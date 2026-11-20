@@ -93,7 +93,7 @@ public final class StatsProcessor {
     private long statsWritten;
     /** KafScale refuses reads for about a minute at a time; the processor waits instead of ending. */
     private Patience patience = Patience.standard();
-    private boolean answered;
+    private boolean notRefused;
 
     /**
      * @param checkpoint   checkpoint file; restored if it exists, null for none (always start from the beginning)
@@ -120,9 +120,12 @@ public final class StatsProcessor {
         this.patience = patience;
     }
 
-    /** Whether the broker answered the last poll of {@link #run}, also with no records; false before the first. */
-    boolean answered() {
-        return answered;
+    /**
+     * Whether the broker did not refuse the last poll of {@link #run}; false before the first. A poll without records is
+     * not refused, and neither is one to a broker that cannot be reached at all: the client returns no records then.
+     */
+    boolean notRefused() {
+        return notRefused;
     }
 
     public StatsEngine engine() {
@@ -203,7 +206,7 @@ public final class StatsProcessor {
                     handle(r);
                     records++;
                 }
-                answered = !patience.refusing();
+                notRefused = !patience.refusing();
                 if (System.nanoTime() >= next) {
                     send(engine.emitGlobal());
                     checkpoint();

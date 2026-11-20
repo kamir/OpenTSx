@@ -39,9 +39,14 @@ import java.util.function.Function;
  * 0 success, 1 runtime failure, 2 usage or configuration error.
  *
  * <p>A continuous run with a checkpoint keeps the progress file {@code <checkpoint>.progress}: the time of the last poll
- * the broker answered, also with no records, in seconds since the epoch, written at most every {@link Progress#EVERY}.
- * A refused read writes nothing, so the file ages while the broker refuses reads. The exec probes of the k3s Deployment
- * check its age.
+ * the broker did not refuse, also with no records, in seconds since the epoch, written at most every
+ * {@link Progress#EVERY}. A refused read writes nothing, so the file ages while the broker refuses reads. A broker that
+ * cannot be reached at all gives empty polls without a refusal: the file stays fresh while the processor has read no
+ * records since its last checkpoint; otherwise the next {@link StatsProcessor#checkpoint} fails after
+ * {@link KafScaleClients#DELIVERY_TIMEOUT} and the run ends with exit code 1. When it has written no statistics in the
+ * 5 minutes before, the producer may have dropped the topic from its metadata; each statistics record then waits up
+ * to 60 s for it instead of the delivery timeout, and the run ends after up to 60 s per record. The exec probes of the
+ * k3s Deployment check its age.
  */
 public final class StatsProcessorApp {
 
@@ -127,7 +132,7 @@ public final class StatsProcessorApp {
                 Progress progress = Progress.start(checkpoint.resolveSibling(checkpoint.getFileName() + ".progress"), clock);
                 // the processor asks once before its first poll and once after each poll
                 stopped = () -> {
-                    if (p.answered()) {
+                    if (p.notRefused()) {
                         progress.passed();
                     }
                     return stop.get();

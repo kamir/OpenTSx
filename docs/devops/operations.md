@@ -96,7 +96,7 @@ with `kubectl diff -k deploy/k3s/overlays/local` before `30-deploy.sh`.
 | Signal | Why | Today, without a metrics stack | As a metric (kube-state-metrics / kubelet) |
 |--------|-----|-------------------------------|--------------------------------------------|
 | KafScale reachable, **advertised address** reachable from the pods | most common failure; everything depends on it | `40-demo.sh kafscale-check`; `opentsx-synthetic-check` every 10 min | indirectly: `kube_cronjob_status_last_successful_time{cronjob="opentsx-synthetic-check"}` |
-| statistics processor alive and progressing | stale statistics are silent | the probes on its progress file (not ready about 3 min after the last poll the broker answered, restarted about 12 min after it; [Read the probes](#read-the-probes)), checkpoint age in `50-status.sh` (written every 30 s; > 5 min = stuck), synthetic check | `kube_deployment_status_replicas_available{deployment="opentsx-stats"}`, restarts `kube_pod_container_status_restarts_total{container="stats"}` |
+| statistics processor alive and progressing | stale statistics are silent | the probes on its progress file (not ready about 3 min after the last poll the broker did not refuse, restarted about 12 min after it; [Read the probes](#read-the-probes)), checkpoint age in `50-status.sh` (written every 30 s; > 5 min = stuck), synthetic check | `kube_deployment_status_replicas_available{deployment="opentsx-stats"}`, restarts `kube_pod_container_status_restarts_total{container="stats"}` |
 | consumer lag of the processor (end offset − checkpoint position) | backlog after an outage | **not available**: the positions are only in the checkpoint file; compare the `series-stats` record count over time (`kafscale-check`) | **not exported** (backlog) |
 | Job and CronJob failures | demo Jobs, DWD fetch, synthetic check | `kubectl -n opentsx get jobs,cronjobs`, `50-status.sh` | `kube_job_status_failed`, `kube_cronjob_status_last_successful_time` |
 | pods waiting (CrashLoopBackOff, ImagePullBackOff, CreateContainerConfigError) | broken rollout | `50-status.sh` (warnings) | `kube_pod_container_status_waiting_reason` |
@@ -125,13 +125,22 @@ liveness every 60 s, so a processor whose poll loop stops is not ready about 3 m
 restarted about 12 minutes after it.
 
 The two processors write a time in seconds since the epoch into the progress file: the statistics processor the time
-of the last poll the broker answered, also with no records, at most every 10 s, next to its checkpoint; the vector
+of the last poll the broker did not refuse, also with no records, at most every 10 s, next to its checkpoint; the vector
 processor the time its last round ended, at most every 5 s, in its state directory. Each probe runs
 `test $(( $(date +%s) - $(cat <file>) )) -lt <seconds>` in the container. A startup probe gives each processor 10
 minutes for its first pass, for restoring the checkpoint and assigning the partitions. Each processor removes the file
 of an earlier run when it starts. A read the broker refuses does not count for the statistics processor: while the
 broker refuses reads, `opentsx-stats` is not ready about 3 minutes after the refusals start, and after 10 minutes of
 refusals it stops itself with exit code 1 and `opentsx: the broker has refused reads for more than PT10M; caused by <cause>`.
+A broker that cannot be reached at all gives empty polls without a refusal. If `opentsx-stats` has read no records
+since its last checkpoint, it has nothing to write, so its progress file stays fresh and its probes do not detect it.
+Otherwise its next checkpoint, at most 30 s later, waits up to the delivery timeout of 3 minutes and then stops it
+with exit code 1 and `opentsx: writing statistics failed; checkpoint not advanced; caused by <cause>`. When it has
+written no statistics in the 5 minutes before, its producer may have dropped the statistics topic from its metadata;
+each statistics record then waits up to 60 s for the topic instead of the delivery timeout, so with more than 3 records
+the stop takes more than 3 minutes and the liveness probe can restart it before.
+`40-demo.sh kafscale-check` and the synthetic check detect an unreachable broker in both cases, and
+[R1](#r1-kafscale-unreachable-or-wrong-advertised-address) has the fix.
 
 ### Monitoring stack: two levels
 
@@ -362,8 +371,9 @@ Each runbook: symptom → check → cause → fix → verify. Start every invest
 
 ### R1: KafScale unreachable or wrong advertised address
 
-* **Symptom:** `kafscale-check` prints `NOT reachable`; `windpark-sim` times out; `opentsx-stats` restarts; the
-  synthetic check fails.
+* **Symptom:** `kafscale-check` prints `NOT reachable`; `windpark-sim` times out; `opentsx-stats` restarts, except a
+  running one that has read no records since its last checkpoint, which stays ready (see
+  [Read the probes](#read-the-probes)); the synthetic check fails.
 * **Check:** `deploy/k3s/40-demo.sh kafscale-check` (from inside the cluster). Read both lines: `bootstrap …` and
   `advertised …`. From the node: `nc -vz <host> <port>`.
 * **Cause:** bootstrap unreachable (routing, firewall for `10.42.0.0/16`, wrong port), or the broker advertises an

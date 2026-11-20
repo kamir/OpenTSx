@@ -874,6 +874,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `tools/test_lg_scripts.py` fails on an `opentsx-lg` shell script whose first line is not a shebang and on a `cd` in
   it that is not followed by `|| exit` or `|| return`, and fails when the CI lists miss a tracked `opentsx-lg` shell
   script.
+- The statistics processor docs say that a processor that wrote no statistics in the 5 minutes before the broker
+  became unreachable may wait up to 60 s for each statistics record instead of the 3-minute delivery timeout, so with
+  more than 3 records its stop takes more than 3 minutes and the liveness probe can restart it before.
 
 ### Removed
 
@@ -2006,8 +2009,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The event bridge looks up topics for its readiness probe through one Admin client for its whole life instead of a
   new one per probe; a lookup that fails closes the client and the next one opens a new one, and a stream still looks
   its topic up on a client of its own.
-- The statistics processor writes its progress file only after a poll the broker answered, so `opentsx-stats` is no
-  longer ready about 3 minutes after the broker starts refusing reads; until now the file stayed fresh for up to 10
+- The statistics processor writes its progress file only after a poll the broker did not refuse, so `opentsx-stats` is
+  no longer ready about 3 minutes after the broker starts refusing reads; until now the file stayed fresh for up to 10
   minutes of refusals.
 - `boat --data` refuses a file with more than 527040 data rows (one row per minute for 366 days; every line after the
   header that is neither blank nor a comment counts) with `line <n>: more than 527040 data rows; expected at most

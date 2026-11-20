@@ -178,13 +178,20 @@ with 1, naming each one that is not ready. On a new broker the statistics proces
 
 A readiness or liveness probe acts after 3 failures in a row. A processor whose poll loop stops is therefore not
 ready about 3 minutes after its last pass (its readiness probe runs every 30 s) and restarted about 12 minutes after
-it (its liveness probe runs every 60 s). The statistics processor counts only polls the broker answered: while the
-broker refuses reads it is not ready about 3 minutes after the refusals start, and after 10 minutes of refusals it
-stops itself with exit code 1.
+it (its liveness probe runs every 60 s). The statistics processor counts only polls the broker did not refuse: while
+the broker refuses reads it is not ready about 3 minutes after the refusals start, and after 10 minutes of refusals it
+stops itself with exit code 1. A broker that cannot be reached at all gives empty polls without a refusal. If the
+processor has read no records since its last checkpoint, its progress file stays fresh and its probes do not detect
+it; otherwise its next checkpoint, at most 30 s later, fails after the delivery timeout of 3 minutes and stops it with
+exit code 1. When it has written no statistics in the 5 minutes before, its producer may have dropped the statistics
+topic from its metadata; each statistics record then waits up to 60 s for the topic instead of the delivery timeout, so
+with more than 3 records the stop takes more than 3 minutes and the liveness probe can restart it before.
+`kafscale-check` and the synthetic check detect an unreachable broker in both cases
+([R1](../devops/operations.md#r1-kafscale-unreachable-or-wrong-advertised-address)).
 
 A progress file holds a time in seconds since the epoch. The statistics processor writes the time of the last poll the
-broker answered, also with no records, only in a continuous run with `--checkpoint`, at most every 10 s, and removes
-the file of an earlier run when it starts. A file it cannot write stops it with exit code 1 and
+broker did not refuse, also with no records, only in a continuous run with `--checkpoint`, at most every 10 s, and
+removes the file of an earlier run when it starts. A file it cannot write stops it with exit code 1 and
 `opentsx: <checkpoint>.progress: cannot write the progress file; check that its directory exists, is writable and has space; caused by <cause>`.
 The vector processor writes the time its last round ended, at most every 5 s, and also removes the file of an earlier
 run when it starts.

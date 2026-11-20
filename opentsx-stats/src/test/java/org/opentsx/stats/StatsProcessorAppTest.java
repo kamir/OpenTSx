@@ -363,7 +363,7 @@ class StatsProcessorAppTest {
     }
 
     @Test
-    void aContinuousRunWritesTheTimeOfItsLastAnsweredPollIntoTheProgressFileNextToTheCheckpoint() throws Exception {
+    void aContinuousRunWritesTheTimeOfItsLastPollTheBrokerDidNotRefuseIntoTheProgressFileNextToTheCheckpoint() throws Exception {
         Path checkpoint = tmp.resolve("stats.ckpt");
         Path progress = tmp.resolve("stats.ckpt.progress");
         Files.writeString(progress, "1735689600\n");
@@ -412,8 +412,8 @@ class StatsProcessorAppTest {
         assertEquals(List.of(5000L, 5000L), pauses, "two refused polls");
         assertEquals(List.of("none", seconds("2026-01-01T00:01:00Z"), seconds("2026-01-01T00:01:00Z"),
                 seconds("2026-01-01T00:01:00Z"), seconds("2026-01-01T00:02:00Z")), seen,
-                "the file of an earlier run is removed at the start; the time is written after each poll the broker answered"
-                        + " and not after a refused one");
+                "the file of an earlier run is removed at the start; the time is written after each poll the broker did not"
+                        + " refuse and not after a refused one");
     }
 
     @Test

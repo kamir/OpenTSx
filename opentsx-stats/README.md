@@ -64,11 +64,20 @@ Only `opentsx.kafscale.bootstrap` is required. Without `opentsx.stats.checkpoint
 the log start on every start. `--once` and `--observations` take `true` or `false`; a bare flag means `true`.
 
 A continuous run with `--checkpoint` writes the progress file `<checkpoint>.progress`: the time of the last poll the
-broker answered, also with no records, in seconds since the epoch, at most every 10 s, through a temporary file. A read
-the broker refuses writes nothing, so the file ages while the broker refuses reads; after 10 minutes of refusals in a
-row the processor stops with exit code 1 and `opentsx: the broker has refused reads for more than PT10M; caused by <cause>`.
-It removes the file of an earlier run when it starts and writes the first time after the first poll the broker
-answered. A probe checks its age with `test $(( $(date +%s) - $(cat <checkpoint>.progress) )) -lt <seconds>`.
+broker did not refuse, also with no records, in seconds since the epoch, at most every 10 s, through a temporary file. A
+read the broker refuses writes nothing, so the file ages while the broker refuses reads; after 10 minutes of refusals in
+a row the processor stops with exit code 1 and `opentsx: the broker has refused reads for more than PT10M; caused by <cause>`.
+It removes the file of an earlier run when it starts and writes the first time after the first poll the broker did not
+refuse. A probe checks its age with `test $(( $(date +%s) - $(cat <checkpoint>.progress) )) -lt <seconds>`.
+A broker that cannot be reached at all gives empty polls without a refusal. If the processor has read no records since
+its last checkpoint, it has nothing to write, so the file stays fresh and a probe does not detect it; otherwise its next
+checkpoint, at most 30 s later, waits up to the delivery timeout of 3 minutes and then stops it with exit code 1 and
+`opentsx: writing statistics failed; checkpoint not advanced; caused by <cause>`. When it has written no statistics in
+the 5 minutes before, its producer may have dropped the statistics topic from its metadata; each statistics record then
+waits up to 60 s for the topic instead of the delivery timeout, so with more than 3 records the stop takes more than
+3 minutes and the liveness probe can restart it before. `kafscale-check` and the synthetic check detect an unreachable
+broker in both cases
+([R1](../docs/devops/operations.md#r1-kafscale-unreachable-or-wrong-advertised-address)).
 A file it cannot write stops the processor with exit code 1 and
 `opentsx: <checkpoint>.progress: cannot write the progress file; check that its directory exists, is writable and has space; caused by <cause>`.
 `--once` writes no progress file.
