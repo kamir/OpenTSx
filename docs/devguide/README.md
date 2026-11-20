@@ -3,6 +3,8 @@
 The developer guide holds notes for contributors. User-facing documentation is in the
 [user manual](../user-manual/README.md).
 
+* [Choose a reproducible demo](demos.md): prerequisites, acceptance and captured
+  evidence for the local Workbench, finite forecast and Windpark journeys.
 * [PDF generation](PDF-GENERATION.md): build the manual as PDF (Honkit / Docker).
 * [Local infrastructure](infrastructure/local-development.md): the local Docker stacks.
 * [Deploy UI DAGs through Wayang to Java and Rust nodes](integration/wayang-unified-plan.md): unified delivery
