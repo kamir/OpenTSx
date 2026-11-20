@@ -17,9 +17,9 @@ import java.util.Set;
  * feed    --bootstrap B --domain D --series N --seed S --blocks K [--partitions P]
  * digest  --domain D --series N --seed S --blocks K
  * track-a --bootstrap B --domain D --chain C --series N --seed S --catalog DIR --checkpoint FILE
- *         --interval-seconds I --duration-seconds T
+ *         --interval-seconds I --duration-seconds T [--lag-file FILE]
  * track-b --bootstrap B --domain D --chain C --series N --seed S --runner FILE --listen HOST:PORT --state DIR
- *         --log FILE --interval-seconds I --duration-seconds T [--profile measurement]
+ *         --log FILE --interval-seconds I --duration-seconds T [--profile measurement] [--lag-file FILE]
  * </pre>
  */
 public final class BoardWorkload {
@@ -32,7 +32,8 @@ public final class BoardWorkload {
             "track-b", Set.of("bootstrap", "domain", "chain", "series", "seed", "runner", "listen", "state", "log",
                     "interval-seconds", "duration-seconds"));
     private static final Map<String, Set<String>> OPTIONAL = Map.of(
-            "feed", Set.of("partitions"), "digest", Set.of(), "track-a", Set.of(), "track-b", Set.of("profile"));
+            "feed", Set.of("partitions"), "digest", Set.of(), "track-a", Set.of("lag-file"),
+            "track-b", Set.of("profile", "lag-file"));
 
     private BoardWorkload() {
     }
@@ -87,13 +88,19 @@ public final class BoardWorkload {
                         "chain", o.get("chain"), "series", series, "java", Runtime.version().toString(),
                         "maxHeapBytes", Runtime.getRuntime().maxMemory()));
                 BoardTrackA.run(o.get("bootstrap"), layout, o.get("chain"), series, seed, Path.of(o.get("catalog")),
-                        Path.of(o.get("checkpoint")), seconds(o, "interval-seconds"), seconds(o, "duration-seconds"), events);
+                        Path.of(o.get("checkpoint")), seconds(o, "interval-seconds"), seconds(o, "duration-seconds"),
+                        path(o, "lag-file"), events);
             }
             case "track-b" -> BoardTrackB.run(Path.of(o.get("runner")), o.get("listen"), Path.of(o.get("state")),
                     o.getOrDefault("profile", "measurement"), o.get("bootstrap"), layout, o.get("chain"), series, seed,
-                    seconds(o, "interval-seconds"), seconds(o, "duration-seconds"), Path.of(o.get("log")), events);
+                    seconds(o, "interval-seconds"), seconds(o, "duration-seconds"), Path.of(o.get("log")),
+                    path(o, "lag-file"), events);
             default -> throw new IllegalStateException(command);
         }
+    }
+
+    private static Path path(Map<String, String> o, String name) {
+        return o.containsKey(name) ? Path.of(o.get(name)) : null;
     }
 
     private static Duration seconds(Map<String, String> o, String name) {

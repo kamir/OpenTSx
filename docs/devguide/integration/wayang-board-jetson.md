@@ -27,9 +27,9 @@ The workload driver `BoardWorkload` starts Track A or Track B against the paced
 feed and reports the process id, the time to the first fetch and the time to the
 first output; see [Run one condition](#run-one-condition). `BoardOutputProofTest`
 writes the output proof of a condition; see
-[Prove the output of one condition](#prove-the-output-of-one-condition). A lag
-command for the sampler is still missing; without it the sampler records a lag
-of 0.
+[Prove the output of one condition](#prove-the-output-of-one-condition).
+`board_lag.py` gives the sampler the run's lag; see
+[Sample one condition](#sample-one-condition).
 
 The board identity and the one-second samples are covered by the tools below.
 
@@ -112,13 +112,15 @@ java -cp "$CLASSPATH" org.opentsx.wayang.board.BoardWorkload feed \
 java -Xms1g -Xmx1g -cp "$CLASSPATH" org.opentsx.wayang.board.BoardWorkload track-a \
   --bootstrap <proxy> --domain b42c1 --chain clean --series 1000 --seed 42 \
   --catalog systems/processors --checkpoint evidence/arm64-clean-s1000-java17-r1/checkpoint.json \
-  --interval-seconds 10 --duration-seconds 2100 > evidence/arm64-clean-s1000-java17-r1/events.jsonl
+  --interval-seconds 10 --duration-seconds 2100 --lag-file /ssd/run.lag \
+  > evidence/arm64-clean-s1000-java17-r1/events.jsonl
 
 # board, Track B; the measured process is tsx-runner, not this JVM
 java -Xmx256m -cp "$CLASSPATH" org.opentsx.wayang.board.BoardWorkload track-b \
   --bootstrap <proxy> --domain b42c2 --chain clean --series 1000 --seed 42 \
   --runner ./tsx-runner --listen 127.0.0.1:8090 --state /ssd/tsx-state-c2 --log evidence/arm64-clean-s1000-rust-r1/runner.log \
-  --interval-seconds 10 --duration-seconds 2100 > evidence/arm64-clean-s1000-rust-r1/events.jsonl
+  --interval-seconds 10 --duration-seconds 2100 --lag-file /ssd/run.lag \
+  > evidence/arm64-clean-s1000-rust-r1/events.jsonl
 ```
 
 The `started` event names the `pid` to sample. `firstFetch` and `firstOutput`
@@ -165,9 +167,18 @@ Start the workload of the condition, then sample its process for the whole run:
 python3 tools/board_resource_sampler.py \
   --pid "$WORKLOAD_PID" \
   --duration 2100 \
-  --output evidence/arm64-s1000-rust-r1/resources.csv \
-  --lag-command ./lag-of-run.sh
+  --output evidence/arm64-clean-s1000-rust-r1/resources.csv \
+  --lag-command python3 tools/board_lag.py --file /ssd/run.lag
 ```
+
+With `--lag-file`, the driver writes the run's lag twice per second: the records
+in the input topic minus the records the run has processed. Track A has
+processed what its checkpoint has passed; Track B what its last completed
+increment covered, so the lag rises between increments and falls at each one.
+`board_lag.py` prints that number without a broker client and answers in a few
+milliseconds. It fails when the file is older than 3 seconds or malformed, so the
+sampler stops instead of recording a stale lag. For Track A the polling thread
+runs in the measured JVM: one offset request every 500 ms.
 
 The CSV has exactly the columns the validator accepts: `elapsed_seconds`,
 `rss_bytes`, `cpu_seconds` and `lag_records`. `rss_bytes` is `VmRSS` and

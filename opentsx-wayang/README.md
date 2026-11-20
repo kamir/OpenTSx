@@ -542,7 +542,9 @@ measurement (TASK-020, D-T15). It writes JSON lines to standard output.
 `passthrough` writes the episodes to `tsx.<domain>.synthetic.v2`, `clean` runs
 `dq.checks` and `resample PT1M` into `tsx.<domain>.clean.v2`, and `stats` runs
 `stats.welford-ddsketch` with one-minute windows into
-`tsx.<domain>.series-stats.v2`. The `started` event carries the process id to
+`tsx.<domain>.series-stats.v2`. With `--lag-file`, `track-a` and `track-b` write
+the run's lag (input records minus processed records) to that file twice per
+second for `tools/board_lag.py`. The `started` event carries the process id to
 sample (the JVM for Track A, `tsx-runner` for Track B). `firstFetch` is written
 when the first increment over a non-empty input range starts, and `firstOutput`
 when the end offsets of the output topic first grow, polled every 100 ms.

@@ -798,7 +798,9 @@ statistics chains on a paced feed of one sample per series and second (D-T15),
 Java 17/21/Rust and three repetitions per series count. Its validator checks supplied
 source/artifact/sample/output proof integrity. It does not start workloads,
 collect physical measurements or attest hardware. `board_identity.py` and
-`board_resource_sampler.py` record step 1 and step 5 in its formats; the
+`board_resource_sampler.py` record step 1 and step 5 in its formats, with the
+lag from `board_lag.py`. `BoardWorkload` in `opentsx-wayang` drives one
+condition and `BoardOutputProofTest` writes its step 6 output proof; the
 [Jetson runbook](../devguide/integration/wayang-board-jetson.md) prepares a
 Jetson Nano 4 GB. The board remains unmeasured for B4.2; hosted ARM64 checks do
 not replace it. The
