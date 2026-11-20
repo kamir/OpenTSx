@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Anlagen-Explorer</title>
-<meta name="description" content="Prototyp der Studio-Ansicht 'Anlage erkunden': visuelles Inventar auf Karte, Grundriss und Decksplan mit Hover-Karte, Datenblatt und Wartung. Beispieldaten, erfunden.">
+<title>Plant explorer</title>
+<meta name="description" content="Prototype of the Studio view 'Explore the plant': visual inventory on a map, floor plan and deck plan with hover card, data sheet and maintenance. Example data, invented.">
 <style>
 /* Layout: tool page. Header with system selector; toolbar (breadcrumb, plan tabs, search, filters, layers);
    workspace = map stage (zoom/pan, mini-map, hover card) + detail sheet on the right, bottom sheet at phone width. */
@@ -332,53 +332,53 @@ footer.foot a { color: var(--accent); }
 <div class="app">
   <header class="top">
     <div>
-      <h1>Anlage erkunden</h1>
-      <div class="sub">Visuelles Inventar · vierte Ansicht des Smart Topics Studio · <span class="tag-example">Beispieldaten, erfunden</span></div>
+      <h1>Explore the plant</h1>
+      <div class="sub">Visual inventory · fourth view of the Smart Topics Studio · <span class="tag-example">Example data, invented</span></div>
     </div>
     <div class="top-right">
       <div class="seg" role="group" aria-label="System" id="systems"></div>
-      <button class="icon-btn" id="theme" type="button" aria-label="Farbschema wechseln">Auto</button>
+      <button class="icon-btn" id="theme" type="button" aria-label="Change color scheme">Auto</button>
     </div>
   </header>
 
   <div class="toolbar">
-    <nav class="crumbs" id="crumbs" aria-label="Brotkrumen"></nav>
-    <div class="plantabs" id="plantabs" role="tablist" aria-label="Ebene"></div>
+    <nav class="crumbs" id="crumbs" aria-label="Breadcrumb"></nav>
+    <div class="plantabs" id="plantabs" role="tablist" aria-label="Level"></div>
   </div>
 
   <div class="toolbar">
     <div class="tools">
       <div class="search">
-        <input id="q" type="search" placeholder="Suchen: Id, Name, Typ, Seriennummer" aria-label="Inventar durchsuchen" autocomplete="off">
+        <input id="q" type="search" placeholder="Search: id, name, type, serial number" aria-label="Search the inventory" autocomplete="off">
         <ul class="results" id="results" hidden></ul>
       </div>
-      <button class="chip-toggle" id="f-due" type="button" aria-pressed="false">Wartung fällig <span class="n" id="n-due"></span></button>
-      <button class="chip-toggle" id="f-dev" type="button" aria-pressed="false">Nur Abweichungen <span class="n" id="n-dev"></span></button>
+      <button class="chip-toggle" id="f-due" type="button" aria-pressed="false">Maintenance due <span class="n" id="n-due"></span></button>
+      <button class="chip-toggle" id="f-dev" type="button" aria-pressed="false">Deviations only <span class="n" id="n-dev"></span></button>
     </div>
-    <div class="layers" role="group" aria-label="Ebenen">
-      <label><input type="checkbox" id="l-labels" checked> Beschriftungen</label>
-      <label><input type="checkbox" id="l-live" checked> Livewerte</label>
-      <label><input type="checkbox" id="l-maint" checked> Wartung</label>
-      <label id="l-wake-wrap"><input type="checkbox" id="l-wake"> Wake-Sektor</label>
+    <div class="layers" role="group" aria-label="Layers">
+      <label><input type="checkbox" id="l-labels" checked> Labels</label>
+      <label><input type="checkbox" id="l-live" checked> Live values</label>
+      <label><input type="checkbox" id="l-maint" checked> Maintenance</label>
+      <label id="l-wake-wrap"><input type="checkbox" id="l-wake"> Wake sector</label>
     </div>
   </div>
 
   <div class="work" id="work">
     <div class="stage" id="stage">
-      <svg id="map" role="application" aria-label="Plan mit Anlagenelementen; Tab wechselt zwischen Elementen, Enter öffnet das Datenblatt">
+      <svg id="map" role="application" aria-label="Plan with plant items; Tab moves between items, Enter opens the data sheet">
         <g id="vp"><g id="plan"></g><g id="overlay"></g><g id="assets"></g></g>
       </svg>
       <div class="lod" id="lod"></div>
       <div class="zoom">
-        <button type="button" id="z-in" aria-label="Hineinzoomen">+</button>
-        <button type="button" id="z-out" aria-label="Herauszoomen">&minus;</button>
-        <button type="button" id="z-fit" aria-label="Ansicht zurücksetzen">&#8634;</button>
+        <button type="button" id="z-in" aria-label="Zoom in">+</button>
+        <button type="button" id="z-out" aria-label="Zoom out">&minus;</button>
+        <button type="button" id="z-fit" aria-label="Reset view">&#8634;</button>
       </div>
-      <div class="minimap" aria-label="Mini-Karte"><svg id="mini"></svg></div>
+      <div class="minimap" aria-label="Mini map"><svg id="mini"></svg></div>
       <div class="legend" id="legend"></div>
       <div class="hovercard" id="hc" hidden></div>
     </div>
-    <aside class="sheet" id="sheet" hidden aria-label="Datenblatt">
+    <aside class="sheet" id="sheet" hidden aria-label="Data sheet">
       <div class="sheet-head" id="sheet-head"></div>
       <div class="sheet-tabs" role="tablist" id="sheet-tabs"></div>
       <div class="sheet-body" id="sheet-body"></div>
@@ -388,8 +388,8 @@ footer.foot a { color: var(--accent); }
   <div class="tray" id="tray"></div>
 
   <footer class="foot">
-    <div>Ids = Atom-Ids der Schaltpläne <span class="mono">opentsx-twin/src/main/resources/twin/*.yaml</span> (+ Unterobjektpfad). Alle Werte, Seriennummern, Dokumente und Wartungsdaten sind <b>erfundene Beispiele</b>; Abbildungen sind gekennzeichnete Illustrationen, keine Fotos.</div>
-    <div>Konzept: <a href="../datamodel-2026/12-EXPLORATIVES-UI-INVENTAR.md">12-EXPLORATIVES-UI-INVENTAR</a> · Studio: <a href="smart-topics-studio.html">Smart Topics Studio</a> · Stand 2026-10-12 (Beispielzeitpunkt 09:41 UTC)</div>
+    <div>Ids = atom ids of the wiring plans <span class="mono">opentsx-twin/src/main/resources/twin/*.yaml</span> (+ sub-asset path). All values, serial numbers, documents and maintenance data are <b>invented examples</b>; images are labeled illustrations, not photos.</div>
+    <div>Studio: <a href="smart-topics-studio.html">Smart Topics Studio</a> · As of 2026-10-12 (example time 09:41 UTC)</div>
   </footer>
 </div>
 
@@ -397,18 +397,18 @@ footer.foot a { color: var(--accent); }
 "use strict";
 /* ------------------------------------------------------------------ data (example, invented) ------------------ */
 const TODAY = "2026-10-12";
-const ORIGIN = { MEASURED: "gemessen", REPORTED: "gemeldet", FORECAST: "Prognose", ESTIMATED: "geschätzt", SYNTHETIC: "modelliert" };
-const STATUS = { ok: ["✓", "in Ordnung"], warn: ["!", "Warnung"], crit: ["×", "Störung"], off: ["–", "außer Betrieb"] };
+const ORIGIN = { MEASURED: "measured", REPORTED: "reported", FORECAST: "forecast", ESTIMATED: "estimated", SYNTHETIC: "modeled" };
+const STATUS = { ok: ["✓", "OK"], warn: ["!", "Warning"], crit: ["×", "Fault"], off: ["–", "Out of service"] };
 const TYPES = {
-  "wind-turbine": ["Windenergieanlage", "turbine"], electrolyzer: ["Elektrolyseur", "ely"], battery: ["Batteriespeicher", "battery"],
-  "grid-connection": ["Übergabestation / Bilanzknoten", "substation"], "h2-line": ["H2-Leitung, Druckmessstelle", "gauge"],
-  "h2-offtake": ["H2-Abnehmer", "factory"], market: ["Markt", "market"], "direct-marketer": ["Direktvermarkter", "market"],
-  "operating-rules": ["Betriebsvorgaben", "rules"], component: ["Komponente", "gear"],
-  "oil-boiler": ["Ölkessel", "boiler"], "oil-tank": ["Öltank", "tank"], "wood-stove": ["Kaminofen", "stove"], dhw: ["Warmwasserspeicher", "dhw"],
-  meter: ["Stromzähler", "meter"], "wood-store": ["Holzlager", "wood"], appliance: ["Gerät", "tv"], weather: ["Wetter", "sun"],
-  building: ["Gebäude (Rahmen)", "house"], appliances: ["Geräte (Gruppe)", "bulb"],
-  "power-station": ["Powerstation", "station"], solar: ["Solarmodule", "solar"], "shore-power": ["Landstrom", "plug"],
-  device: ["Gerät", "chip"], "boat-mode": ["Nutzungsmodus", "boat"], antenna: ["Antenne", "vhf"]
+  "wind-turbine": ["Wind turbine", "turbine"], electrolyzer: ["Electrolyzer", "ely"], battery: ["Battery storage", "battery"],
+  "grid-connection": ["Grid substation / balance node", "substation"], "h2-line": ["H2 pipeline, pressure measuring point", "gauge"],
+  "h2-offtake": ["H2 offtaker", "factory"], market: ["Market", "market"], "direct-marketer": ["Direct marketer", "market"],
+  "operating-rules": ["Operating rules", "rules"], component: ["Component", "gear"],
+  "oil-boiler": ["Oil boiler", "boiler"], "oil-tank": ["Oil tank", "tank"], "wood-stove": ["Wood stove", "stove"], dhw: ["Hot water tank", "dhw"],
+  meter: ["Electricity meter", "meter"], "wood-store": ["Wood store", "wood"], appliance: ["Appliance", "tv"], weather: ["Weather", "sun"],
+  building: ["Building (frame)", "house"], appliances: ["Appliances (group)", "bulb"],
+  "power-station": ["Power station", "station"], solar: ["Solar modules", "solar"], "shore-power": ["Shore power", "plug"],
+  device: ["Device", "chip"], "boat-mode": ["Usage mode", "boat"], antenna: ["Antenna", "vhf"]
 };
 const PROJ = { lon0: 13.90, lon1: 14.02, lat0: 54.4746, lat1: 54.4300, w: 1000, h: 640 };
 const geo = (lat, lon) => [Math.round((lon - PROJ.lon0) / (PROJ.lon1 - PROJ.lon0) * PROJ.w), Math.round((PROJ.lat0 - lat) / (PROJ.lat0 - PROJ.lat1) * PROJ.h)];
@@ -419,10 +419,10 @@ function doc(kind, title, fmt, size, sha) { return { kind, title, fmt, size, sha
 function iv(name, kind, every, last, next) { return { name, kind, every, last, next }; }
 
 const TURBINES = [
-  ["T01", 54.4520, 13.9350, "ok", false, "2.212 kW", "+0,4 %", "99,1 %", { ns: "windpark-ost", dev: "t01-scada-gw", state: "online" }],
-  ["T02", 54.4515, 13.9430, "warn", true, "1.842 kW", "−6,1 %", "97,8 %", { ns: "windpark-ost", dev: "t02-scada-gw", state: "online" }],
-  ["T03", 54.4523, 13.9510, "crit", false, "0 kW", "–", "88,4 %", { ns: "windpark-ost", dev: "t03-scada-gw", state: "offline" }],
-  ["T04", 54.4518, 13.9590, "ok", true, "1.960 kW", "−1,2 %", "98,9 %", { ns: "windpark-ost", dev: "t04-scada-gw", state: "online" }]
+  ["T01", 54.4520, 13.9350, "ok", false, "2,212 kW", "+0.4 %", "99.1 %", { ns: "windpark-ost", dev: "t01-scada-gw", state: "online" }],
+  ["T02", 54.4515, 13.9430, "warn", true, "1,842 kW", "−6.1 %", "97.8 %", { ns: "windpark-ost", dev: "t02-scada-gw", state: "online" }],
+  ["T03", 54.4523, 13.9510, "crit", false, "0 kW", "–", "88.4 %", { ns: "windpark-ost", dev: "t03-scada-gw", state: "offline" }],
+  ["T04", 54.4518, 13.9590, "ok", true, "1,960 kW", "−1.2 %", "98.9 %", { ns: "windpark-ost", dev: "t04-scada-gw", state: "online" }]
 ];
 
 const ASSETS = [];
@@ -432,106 +432,106 @@ function add(a) { ASSETS.push(a); return a; }
 TURBINES.forEach(([t, lat, lon, status, due, p, dev, av, im], i) => {
   const [x, y] = geo(lat, lon);
   add({
-    id: `h2-chain/park/${t}`, sys: "h2-chain", atom: "park", parent: "h2-chain/park", type: "wind-turbine", name: `WEA ${t}`,
+    id: `h2-chain/park/${t}`, sys: "h2-chain", atom: "park", parent: "h2-chain/park", type: "wind-turbine", name: `Turbine ${t}`,
     plan: "park", x, y, lat, lon, status, due, cluster: "park", zoomable: true,
-    kpi: [["Nennleistung", "3,0 MW"], ["Verfügbarkeit 30 d", av], ["Leistungskurve", dev], ["Betriebsstunden", `${(84210 + i * 1312).toLocaleString("de-DE")} h`]],
-    live: { label: "Wirkleistung", v: p, origin: "MEASURED", ts: status === "crit" ? "2026-10-12 07:58 UTC" : "2026-10-12 09:41 UTC", stale: status === "crit" },
+    kpi: [["Rated power", "3.0 MW"], ["Availability 30 d", av], ["Power curve", dev], ["Operating hours", `${(84210 + i * 1312).toLocaleString("en-US")} h`]],
+    live: { label: "Active power", v: p, origin: "MEASURED", ts: status === "crit" ? "2026-10-12 07:58 UTC" : "2026-10-12 09:41 UTC", stale: status === "crit" },
     im,
-    plate: { Hersteller: "(Beispiel)", Modell: "GENERIC-3MW", Seriennummer: `EX-0000-${t}`, Rotordurchmesser: "≈ 100 m (Annahme)", Nabenhöhe: "≈ 100 m (Annahme)", Inbetriebnahme: "2014-06-30" },
-    refs: { "RDS-PP": `=G00${i + 1} (Beispiel, zu prüfen)`, "IEC 61400-25": `LD ${t}: WTUR, WGEN, WNAC, WROT, WCNV, WTRF`, "ISO 14224": "Anlagenklasse Windturbine (zu prüfen)" },
-    docs: [doc("Datenblatt", "Datenblatt GENERIC-3MW", "PDF", "1,4 MB", "9c1e04…"), doc("Handbuch", "Betriebsanleitung, Rev. 7", "PDF", "18,2 MB", "51aa7f…"),
-           doc("Zertifikat", "Typenzertifikat (Beispiel)", "PDF", "0,6 MB", "e07b3d…"), doc("Protokoll", "Wiederkehrende Prüfung 2025", "PDF", "3,1 MB", "0f88c2…")],
+    plate: { Manufacturer: "(example)", Model: "GENERIC-3MW", "Serial number": `EX-0000-${t}`, "Rotor diameter": "≈ 100 m (assumption)", "Hub height": "≈ 100 m (assumption)", Commissioning: "2014-06-30" },
+    refs: { "RDS-PP": `=G00${i + 1} (example, to be checked)`, "IEC 61400-25": `LD ${t}: WTUR, WGEN, WNAC, WROT, WCNV, WTRF`, "ISO 14224": "Equipment class wind turbine (to be checked)" },
+    docs: [doc("Datasheet", "Datasheet GENERIC-3MW", "PDF", "1.4 MB", "9c1e04…"), doc("Manual", "Operating manual, Rev. 7", "PDF", "18.2 MB", "51aa7f…"),
+           doc("Certificate", "Type certificate (example)", "PDF", "0.6 MB", "e07b3d…"), doc("Report", "Periodic inspection 2025", "PDF", "3.1 MB", "0f88c2…")],
     maint: {
-      intervals: [iv("Jahreswartung", "Zeit", "P1Y", "2025-10-28", "2026-10-28"), iv("Ölwechsel Getriebe", "Betriebsstunden", "20.000 h", "2024-04-11", "≈ 2027-02"),
-                  iv("Blattinspektion", "Zustand", "Leistungskurve < −5 % über 14 d", "2024-08-02", status === "warn" ? "fällig seit 2026-10-01" : "Regel nicht erfüllt")],
-      open: status === "warn" ? [["wo-2026-0042", "Blattinspektion Rotor, Drohnenbefliegung", "geplant", "2026-10-14"]]
-          : status === "crit" ? [["wo-2026-0047", "Störung Umrichter, Fehlersuche vor Ort", "in Arbeit", "2026-10-12"]]
-          : due ? [["wo-2026-0039", "Jahreswartung", "vorgeschlagen", "2026-10-28"]] : [],
-      history: [["2025-10-28", "Jahreswartung, Befund: keiner", "Servicepartner (Rolle)"], ["2024-04-11", "Getriebeölwechsel", "Servicepartner (Rolle)"]]
+      intervals: [iv("Annual service", "Time", "P1Y", "2025-10-28", "2026-10-28"), iv("Gearbox oil change", "Operating hours", "20,000 h", "2024-04-11", "≈ 2027-02"),
+                  iv("Blade inspection", "Condition", "Power curve < −5 % over 14 d", "2024-08-02", status === "warn" ? "due since 2026-10-01" : "Rule not met")],
+      open: status === "warn" ? [["wo-2026-0042", "Rotor blade inspection, drone flight", "planned", "2026-10-14"]]
+          : status === "crit" ? [["wo-2026-0047", "Converter fault, on-site troubleshooting", "in progress", "2026-10-12"]]
+          : due ? [["wo-2026-0039", "Annual service", "proposed", "2026-10-28"]] : [],
+      history: [["2025-10-28", "Annual service, findings: none", "Service partner (role)"], ["2024-04-11", "Gearbox oil change", "Service partner (role)"]]
     },
     series: [["wind.turbine.power_active", "kW", "MEASURED"], ["wind.met.wind_speed", "m/s", "MEASURED"], ["wind.generator.temperature", "°C", "MEASURED"], ["wind.turbine.operating_hours", "h", "MEASURED"]],
-    ports: ["park.p_gen_kw (Anteil)", "rules.limit_kw → park.limit_kw"], smart: [`st.wind.${t.toLowerCase()}.power_curve_dev`],
-    note: "Unterobjekt des Atoms park (heute aggregiert 12 MW, 4 × 3 MW Beispiel). Benennung T01 … wie im Windpark-Simulator."
+    ports: ["park.p_gen_kw (share)", "rules.limit_kw → park.limit_kw"], smart: [`st.wind.${t.toLowerCase()}.power_curve_dev`],
+    note: "Sub-asset of the atom park (aggregated as 12 MW today, 4 × 3 MW example). Names T01 … as in the wind park simulator."
   });
 });
 (function () {
   const [x, y] = geo(54.4470, 13.9660);
-  add({ id: "h2-chain/grid", sys: "h2-chain", atom: "grid", type: "grid-connection", name: "Übergabestation / NVP", plan: "park", x, y, lat: 54.4470, lon: 13.9660, status: "ok", due: false,
-    kpi: [["Netzanschluss", "12 MW (Annahme)"], ["Einspeisung heute", "41,8 MWh"], ["Bilanzfehler", "0,0 kW"], ["Priorität", "self › ely › bat"]],
-    live: { label: "Netz", v: "+2.106 kW", origin: "MEASURED", ts: "2026-10-12 09:41 UTC" },
+  add({ id: "h2-chain/grid", sys: "h2-chain", atom: "grid", type: "grid-connection", name: "Grid substation / PCC", plan: "park", x, y, lat: 54.4470, lon: 13.9660, status: "ok", due: false,
+    kpi: [["Grid connection", "12 MW (assumption)"], ["Feed-in today", "41.8 MWh"], ["Balance error", "0.0 kW"], ["Priority", "self › ely › bat"]],
+    live: { label: "Grid", v: "+2,106 kW", origin: "MEASURED", ts: "2026-10-12 09:41 UTC" },
     im: { ns: "windpark-ost", dev: "nvp-zaehler-gw", state: "online" },
-    plate: { Betreiber: "Parkbetreiber (Rolle)", Spannungsebene: "20 kV (Annahme)", Zähler: "RLM-Zähler Netzbetreiber (Beispiel)" },
-    refs: { "RDS-PP": "=AAA (Beispiel, zu prüfen)", Atom: "grid (balance)" },
-    docs: [doc("Zeichnung", "Übersichtsschaltplan Übergabestation", "PDF", "2,2 MB", "77c0a1…"), doc("Protokoll", "Prüfprotokoll Schutztechnik 2024", "PDF", "1,1 MB", "3ad910…")],
-    maint: { intervals: [iv("Schutzprüfung", "Zeit", "P4Y", "2024-05-06", "2028-05")], open: [], history: [["2024-05-06", "Schutzprüfung ohne Befund", "Prüfdienst (Rolle)"]] },
+    plate: { Operator: "Park operator (role)", "Voltage level": "20 kV (assumption)", Meter: "Interval meter (RLM) of the grid operator (example)" },
+    refs: { "RDS-PP": "=AAA (example, to be checked)", Atom: "grid (balance)" },
+    docs: [doc("Drawing", "Overview single-line diagram, grid substation", "PDF", "2.2 MB", "77c0a1…"), doc("Report", "Protection test report 2024", "PDF", "1.1 MB", "3ad910…")],
+    maint: { intervals: [iv("Protection test", "Time", "P4Y", "2024-05-06", "2028-05")], open: [], history: [["2024-05-06", "Protection test, no findings", "Test service (role)"]] },
     series: [["grid.p_grid_kw", "kW", "MEASURED"], ["grid.balance_error_kw", "kW", "SYNTHETIC"]],
     ports: ["park.p_gen_kw → grid.p_gen_kw", "ely.p_el_kw → grid.p_ely_kw", "battery.p_bat_kw → grid.p_bat_kw", "grid.p_grid_kw → marketer.p_grid_kw"], smart: [] });
 })();
 (function () {
   const [x, y] = geo(54.4430, 13.9600);
-  add({ id: "h2-chain/battery", sys: "h2-chain", atom: "battery", type: "battery", name: "Batteriespeicher", plan: "park", x, y, lat: 54.4430, lon: 13.9600, status: "ok", due: false,
-    kpi: [["Kapazität", "2.000 kWh"], ["Leistung", "1.000 kW"], ["SoH", "96 %"], ["Zyklen", "412"]],
+  add({ id: "h2-chain/battery", sys: "h2-chain", atom: "battery", type: "battery", name: "Battery storage", plan: "park", x, y, lat: 54.4430, lon: 13.9600, status: "ok", due: false,
+    kpi: [["Capacity", "2,000 kWh"], ["Power", "1,000 kW"], ["SoH", "96 %"], ["Cycles", "412"]],
     live: { label: "SoC", v: "63 %", origin: "MEASURED", ts: "2026-10-12 09:41 UTC" },
     im: { ns: "windpark-ost", dev: "bess-ems", state: "online" },
-    plate: { Hersteller: "(Beispiel)", Chemie: "LFP", Container: "1 × 20 ft" },
+    plate: { Manufacturer: "(example)", Chemistry: "LFP", Container: "1 × 20 ft" },
     refs: { Atom: "battery" },
-    docs: [doc("Datenblatt", "Datenblatt BESS 2 MWh", "PDF", "0,9 MB", "aa01c7…"), doc("Garantie", "Leistungsgarantie 10 Jahre", "PDF", "0,3 MB", "5d2e88…")],
-    maint: { intervals: [iv("Inspektion Klima/Brandschutz", "Zeit", "P6M", "2026-05-02", "2026-11-02")], open: [], history: [["2026-05-02", "Filter Klimagerät getauscht", "Servicepartner (Rolle)"]] },
+    docs: [doc("Datasheet", "Datasheet BESS 2 MWh", "PDF", "0.9 MB", "aa01c7…"), doc("Warranty", "Performance warranty 10 years", "PDF", "0.3 MB", "5d2e88…")],
+    maint: { intervals: [iv("Inspection HVAC/fire protection", "Time", "P6M", "2026-05-02", "2026-11-02")], open: [], history: [["2026-05-02", "Air conditioner filter replaced", "Service partner (role)"]] },
     series: [["battery.soc", "1", "MEASURED"], ["battery.p_bat_kw", "kW", "MEASURED"]],
     ports: ["battery.p_bat_kw → grid.p_bat_kw"], smart: [] });
 })();
 (function () {
   const [x, y] = geo(54.4440, 13.9760);
-  add({ id: "h2-chain/ely", sys: "h2-chain", atom: "ely", type: "electrolyzer", name: "Elektrolyseur", plan: "park", x, y, lat: 54.4440, lon: 13.9760, status: "ok", due: false,
-    kpi: [["Nennleistung", "5,0 MW"], ["Mindestlast", "10 %"], ["spez. Verbrauch", "55 kWh/kg"], ["Abschaltdruck", "40 bar"]],
-    live: { label: "Elektr. Leistung", v: "3.950 kW", origin: "REPORTED", ts: "2026-10-12 09:40 UTC" },
+  add({ id: "h2-chain/ely", sys: "h2-chain", atom: "ely", type: "electrolyzer", name: "Electrolyzer", plan: "park", x, y, lat: 54.4440, lon: 13.9760, status: "ok", due: false,
+    kpi: [["Rated power", "5.0 MW"], ["Minimum load", "10 %"], ["Specific consumption", "55 kWh/kg"], ["Shutdown pressure", "40 bar"]],
+    live: { label: "Electrical power", v: "3,950 kW", origin: "REPORTED", ts: "2026-10-12 09:40 UTC" },
     im: { ns: "h2-ely", dev: "ely-sps-gw", state: "online" },
-    plate: { Betreiber: "Elektrolyseurbetreiber (Rolle)", Technologie: "PEM (Annahme)", Rampe: "500 kW/min" },
-    refs: { Atom: "ely (electrolyzer)", Hinweis: "Daten über vereinbarte Schnittstelle (IEC 104/OPC UA)" },
-    docs: [doc("Datenblatt", "Datenblatt Stack-Modul", "PDF", "1,7 MB", "c4d2e1…"), doc("Zertifikat", "Druckgeräte-Konformität", "PDF", "0,8 MB", "9e1f00…")],
-    maint: { intervals: [iv("Stack-Inspektion", "Betriebsstunden", "8.000 h", "2026-03-15", "≈ 2027-01")], open: [], history: [["2026-03-15", "Stack-Inspektion, Wasseraufbereitung gewartet", "Betreiber (Rolle)"]] },
+    plate: { Operator: "Electrolyzer operator (role)", Technology: "PEM (assumption)", Ramp: "500 kW/min" },
+    refs: { Atom: "ely (electrolyzer)", Note: "Data through an agreed interface (IEC 104/OPC UA)" },
+    docs: [doc("Datasheet", "Datasheet stack module", "PDF", "1.7 MB", "c4d2e1…"), doc("Certificate", "Pressure equipment conformity", "PDF", "0.8 MB", "9e1f00…")],
+    maint: { intervals: [iv("Stack inspection", "Operating hours", "8,000 h", "2026-03-15", "≈ 2027-01")], open: [], history: [["2026-03-15", "Stack inspection, water treatment serviced", "Operator (role)"]] },
     series: [["ely.p_el_kw", "kW", "REPORTED"], ["ely.m_h2_kgph", "kg/h", "REPORTED"], ["ely.state", "–", "REPORTED"]],
     ports: ["ely.p_el_kw → grid.p_ely_kw", "ely.m_h2_kgph → line.m_in_kgph", "line.p_bar → ely.p_downstream_bar", "line.headroom_kg → ely.headroom_kg"], smart: [],
-    commandable: false, note: "Schutzabregelung bei Leitungsdruck > 40 bar bleibt lokale Logik; aus dem Explorer nicht schaltbar." });
+    commandable: false, note: "Protective curtailment at line pressure > 40 bar stays local logic; it cannot be switched from the explorer." });
 })();
 (function () {
   const [x, y] = geo(54.4410, 13.9930);
-  add({ id: "h2-chain/line", sys: "h2-chain", atom: "line", type: "h2-line", name: "H2-Leitung (Druck)", plan: "park", x, y, lat: 54.4410, lon: 13.9930, status: "warn", due: false,
-    kpi: [["Volumen", "157 m³"], ["Grenzen", "20–40 bar"], ["Puffer bis Grenze", "≈ 74 min"], ["Länge", "≈ 2,6 km (Beispiel)"]],
-    live: { label: "Druck", v: "37,8 bar", origin: "REPORTED", ts: "2026-10-12 09:40 UTC" },
+  add({ id: "h2-chain/line", sys: "h2-chain", atom: "line", type: "h2-line", name: "H2 pipeline (pressure)", plan: "park", x, y, lat: 54.4410, lon: 13.9930, status: "warn", due: false,
+    kpi: [["Volume", "157 m³"], ["Limits", "20–40 bar"], ["Buffer to limit", "≈ 74 min"], ["Length", "≈ 2.6 km (example)"]],
+    live: { label: "Pressure", v: "37.8 bar", origin: "REPORTED", ts: "2026-10-12 09:40 UTC" },
     im: null,
-    plate: { Werkstoff: "(Beispiel)", Nenndruck: "PN 40 (Annahme)" },
+    plate: { Material: "(example)", "Nominal pressure": "PN 40 (assumption)" },
     refs: { Atom: "line (h2-line)" },
-    docs: [doc("Zeichnung", "Trassenplan (Beispiel)", "PDF", "4,6 MB", "1b0c9a…"), doc("Protokoll", "Druckprüfung Inbetriebnahme", "PDF", "0,7 MB", "6f3e2d…")],
-    maint: { intervals: [iv("Dichtheitsprüfung", "Zeit", "P1Y", "2026-04-20", "2027-04-20")], open: [], history: [["2026-04-20", "Dichtheitsprüfung ohne Befund", "Prüfdienst (Rolle)"]] },
+    docs: [doc("Drawing", "Route plan (example)", "PDF", "4.6 MB", "1b0c9a…"), doc("Report", "Commissioning pressure test", "PDF", "0.7 MB", "6f3e2d…")],
+    maint: { intervals: [iv("Leak test", "Time", "P1Y", "2026-04-20", "2027-04-20")], open: [], history: [["2026-04-20", "Leak test, no findings", "Test service (role)"]] },
     series: [["line.p_bar", "bar", "REPORTED"], ["line.headroom_kg", "kg", "SYNTHETIC"]],
     ports: ["ely.m_h2_kgph → line.m_in_kgph", "offtake.m_out_kgph → line.m_out_kgph", "line.p_bar → ely.p_downstream_bar"], smart: [],
-    note: "Warnung: Zeit bis Druckgrenze unter 90 min (Schwelle Beispiel). Ereignis aus dem Schattenlauf." });
+    note: "Warning: time to pressure limit below 90 min (example threshold). Event from the shadow run." });
 })();
 (function () {
   const [x, y] = geo(54.4370, 14.0100);
-  add({ id: "h2-chain/offtake", sys: "h2-chain", atom: "offtake", type: "h2-offtake", name: "H2-Abnehmer", plan: "park", x, y, lat: 54.4370, lon: 14.0100, status: "ok", due: false,
-    kpi: [["Abnahme", "70 kg/h"], ["Schieber", "offen"], ["heute geliefert", "602 kg"]],
-    live: { label: "Abnahme", v: "70 kg/h", origin: "REPORTED", ts: "2026-10-12 09:40 UTC" }, im: null,
-    plate: { Rolle: "H2-Abnehmer (Rolle)" }, refs: { Atom: "offtake (h2-offtake)" },
-    docs: [doc("Vertrag", "Liefervereinbarung (vertraulich, nicht hinterlegt)", "–", "–", "–")],
+  add({ id: "h2-chain/offtake", sys: "h2-chain", atom: "offtake", type: "h2-offtake", name: "H2 offtaker", plan: "park", x, y, lat: 54.4370, lon: 14.0100, status: "ok", due: false,
+    kpi: [["Offtake", "70 kg/h"], ["Valve", "open"], ["Delivered today", "602 kg"]],
+    live: { label: "Offtake", v: "70 kg/h", origin: "REPORTED", ts: "2026-10-12 09:40 UTC" }, im: null,
+    plate: { Role: "H2 offtaker (role)" }, refs: { Atom: "offtake (h2-offtake)" },
+    docs: [doc("Contract", "Supply agreement (confidential, not stored)", "–", "–", "–")],
     maint: { intervals: [], open: [], history: [] },
     series: [["offtake.m_out_kgph", "kg/h", "REPORTED"]], ports: ["offtake.m_out_kgph → line.m_out_kgph", "offtake.m_out_kgph → ely.m_offtake_kgph"], smart: [] });
 })();
-[["market", "market", "Markt", "Day-Ahead 15 min", "86,40 €/MWh", "REPORTED"], ["marketer", "direct-marketer", "Direktvermarkter", "Toleranz 100 kW", "−64 kW Abw.", "SYNTHETIC"], ["rules", "operating-rules", "Betriebsvorgaben", "Abregelung", "keine", "REPORTED"]]
+[["market", "market", "Market", "Day-ahead 15 min", "86.40 €/MWh", "REPORTED"], ["marketer", "direct-marketer", "Direct marketer", "Tolerance 100 kW", "−64 kW dev.", "SYNTHETIC"], ["rules", "operating-rules", "Operating rules", "Curtailment", "none", "REPORTED"]]
   .forEach(([atom, type, name, k, v, o]) => add({ id: `h2-chain/${atom}`, sys: "h2-chain", atom, type, name, plan: null, status: "ok", due: false,
-    kpi: [["Kenngröße", k]], live: { label: name, v, origin: o, ts: "2026-10-12 09:41 UTC" }, im: null, plate: {}, refs: { Atom: atom },
-    docs: [], maint: { intervals: [], open: [], history: [] }, series: [], ports: [], smart: [], note: "Atom ohne Ort: erscheint in der Leiste unter dem Plan, nicht auf der Karte." }));
+    kpi: [["Parameter", k]], live: { label: name, v, origin: o, ts: "2026-10-12 09:41 UTC" }, im: null, plate: {}, refs: { Atom: atom },
+    docs: [], maint: { intervals: [], open: [], history: [] }, series: [], ports: [], smart: [], note: "Atom without a location: shown in the bar below the plan, not on the map." }));
 
 /* turbine components (level 2), generated per turbine */
 const COMPONENTS = [
-  ["rotor", "Rotor / Blätter", "rotor", 418, 92, "WROT", "Blattwinkel, Drehzahl"],
-  ["getriebe", "Getriebe", "gear", 540, 190, "WTRM", "Öltemperatur, Schwingung (CMS)"],
-  ["generator", "Generator", "generator", 640, 190, "WGEN", "Wicklungstemperatur"],
-  ["azimut", "Azimutantrieb", "yaw", 560, 248, "WYAW", "Gondelposition"],
-  ["umrichter", "Umrichter", "converter", 500, 520, "WCNV", "Leistung, Fehlercodes"],
-  ["trafo", "Trafo (Turmfuß)", "substation", 690, 560, "WTRF", "Öltemperatur"],
-  ["anemometer", "Gondel-Anemometer", "wind", 690, 120, "WMET", "Windgeschwindigkeit, -richtung"]
+  ["rotor", "Rotor / blades", "rotor", 418, 92, "WROT", "Pitch angle, speed"],
+  ["getriebe", "Gearbox", "gear", 540, 190, "WTRM", "Oil temperature, vibration (CMS)"],
+  ["generator", "Generator", "generator", 640, 190, "WGEN", "Winding temperature"],
+  ["azimut", "Yaw drive", "yaw", 560, 248, "WYAW", "Nacelle position"],
+  ["umrichter", "Converter", "converter", 500, 520, "WCNV", "Power, fault codes"],
+  ["trafo", "Transformer (tower base)", "substation", 690, 560, "WTRF", "Oil temperature"],
+  ["anemometer", "Nacelle anemometer", "wind", 690, 120, "WMET", "Wind speed, direction"]
 ];
 function componentAssets(turbine) {
   const t = turbine.id.split("/").pop();
@@ -541,129 +541,129 @@ function componentAssets(turbine) {
     return {
       id: `${turbine.id}/${k}`, sys: "h2-chain", atom: "park", parent: turbine.id, type: "component", glyph, name: `${name} ${t}`, plan: "wea", x, y,
       status: crit ? "crit" : warn ? "warn" : "ok", due: warn, comp: true,
-      kpi: [["IEC 61400-25", ln], ["Messgrößen", what]],
-      live: crit ? { label: "Fehlercode", v: "F-1207 (Beispiel)", origin: "MEASURED", ts: "2026-10-12 07:58 UTC" } : null,
-      im: null, plate: { Hersteller: "(Beispiel)", Seriennummer: `EX-${t}-${k.toUpperCase().slice(0, 3)}-01` },
-      refs: { "IEC 61400-25": `LD ${t} / LN ${ln}`, "RDS-PP": "(Beispiel, zu prüfen)", "ISO 14224": "Unterklasse (zu prüfen)" },
-      docs: [doc("Datenblatt", `Datenblatt ${name}`, "PDF", "0,5 MB", "b1c2d3…")],
-      maint: warn ? { intervals: [iv("Blattinspektion", "Zustand", "Leistungskurve < −5 % über 14 d", "2024-08-02", "fällig seit 2026-10-01")], open: [["wo-2026-0042", "Blattinspektion Rotor, Drohnenbefliegung", "geplant", "2026-10-14"]], history: [] }
-          : crit ? { intervals: [], open: [["wo-2026-0047", "Störung Umrichter, Fehlersuche vor Ort", "in Arbeit", "2026-10-12"]], history: [] }
+      kpi: [["IEC 61400-25", ln], ["Measured quantities", what]],
+      live: crit ? { label: "Fault code", v: "F-1207 (example)", origin: "MEASURED", ts: "2026-10-12 07:58 UTC" } : null,
+      im: null, plate: { Manufacturer: "(example)", "Serial number": `EX-${t}-${k.toUpperCase().slice(0, 3)}-01` },
+      refs: { "IEC 61400-25": `LD ${t} / LN ${ln}`, "RDS-PP": "(example, to be checked)", "ISO 14224": "Subclass (to be checked)" },
+      docs: [doc("Datasheet", `Datasheet ${name}`, "PDF", "0.5 MB", "b1c2d3…")],
+      maint: warn ? { intervals: [iv("Blade inspection", "Condition", "Power curve < −5 % over 14 d", "2024-08-02", "due since 2026-10-01")], open: [["wo-2026-0042", "Rotor blade inspection, drone flight", "planned", "2026-10-14"]], history: [] }
+          : crit ? { intervals: [], open: [["wo-2026-0047", "Converter fault, on-site troubleshooting", "in progress", "2026-10-12"]], history: [] }
           : { intervals: [], open: [], history: [] },
-      series: [], ports: [], smart: [], note: "Komponente (Ebene 2), Unterobjekt der WEA. Ort in Bildkoordinaten des Schemas."
+      series: [], ports: [], smart: [], note: "Component (level 2), sub-asset of the turbine. Location in image coordinates of the schematic."
     };
   });
 }
 
 /* --- haus-erzgebirge --- */
 function hAdd(o) { const [x, y] = hx(o.mx, o.my); return add(Object.assign({ sys: "haus-erzgebirge", x, y, due: false, status: "ok", im: null, refs: {}, docs: [], series: [], ports: [], smart: [], plate: {}, maint: { intervals: [], open: [], history: [] } }, o)); }
-hAdd({ id: "haus-erzgebirge/boiler", atom: "boiler", type: "oil-boiler", name: "Ölkessel", plan: "kg", mx: 1.2, my: 1.4, status: "warn", due: true,
-  kpi: [["Nennleistung", "18 kW"], ["Wirkungsgrad", "90 % (Annahme)"], ["Brennerstarts heute", "31"], ["Baujahr", "1990er"]],
-  live: { label: "Heizleistung", v: "6,2 kW", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" },
-  plate: { Hersteller: "(Beispiel)", Typ: "Niedertemperaturkessel", Brenner: "einstufig, 120 W", Umwälzpumpe: "ungeregelt, 65 W" },
-  refs: { Atom: "boiler (oil-boiler)", "ISO 14224": "Kessel (zu prüfen)" },
-  docs: [doc("Handbuch", "Bedienungsanleitung Kessel", "PDF", "2,4 MB", "4c11e0…"), doc("Protokoll", "Abgasmessung Schornsteinfeger 2025", "PDF", "0,2 MB", "8a90b1…"), doc("Rechnung", "Wartungsrechnung 2025 (privat, lokal)", "PDF", "0,1 MB", "d00f13…")],
-  maint: { intervals: [iv("Kesselwartung", "Zeit", "P1Y", "2025-09-30", "2026-09-30"), iv("Abgasmessung", "Zeit", "P2Y", "2024-10-15", "2026-10-15"), iv("Düse/Ölfilter", "Brennerstunden", "1.500 h", "2025-09-30", "≈ 2026-12")],
-          open: [["wo-2026-0103", "Kesselwartung und Abgasmessung", "vorgeschlagen", "2026-10-20"]], history: [["2025-09-30", "Wartung, Düse getauscht", "Heizungsbauer (Rolle)"], ["2024-10-15", "Abgasmessung bestanden", "Schornsteinfeger (Rolle)"]] },
+hAdd({ id: "haus-erzgebirge/boiler", atom: "boiler", type: "oil-boiler", name: "Oil boiler", plan: "kg", mx: 1.2, my: 1.4, status: "warn", due: true,
+  kpi: [["Rated power", "18 kW"], ["Efficiency", "90 % (assumption)"], ["Burner starts today", "31"], ["Year built", "1990s"]],
+  live: { label: "Heat output", v: "6.2 kW", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" },
+  plate: { Manufacturer: "(example)", Type: "Low-temperature boiler", Burner: "single-stage, 120 W", "Circulation pump": "unregulated, 65 W" },
+  refs: { Atom: "boiler (oil-boiler)", "ISO 14224": "Boiler (to be checked)" },
+  docs: [doc("Manual", "Boiler operating instructions", "PDF", "2.4 MB", "4c11e0…"), doc("Report", "Flue gas measurement by the chimney sweep 2025", "PDF", "0.2 MB", "8a90b1…"), doc("Invoice", "Service invoice 2025 (private, local)", "PDF", "0.1 MB", "d00f13…")],
+  maint: { intervals: [iv("Boiler service", "Time", "P1Y", "2025-09-30", "2026-09-30"), iv("Flue gas measurement", "Time", "P2Y", "2024-10-15", "2026-10-15"), iv("Nozzle/oil filter", "Burner hours", "1,500 h", "2025-09-30", "≈ 2026-12")],
+          open: [["wo-2026-0103", "Boiler service and flue gas measurement", "proposed", "2026-10-20"]], history: [["2025-09-30", "Service, nozzle replaced", "Heating engineer (role)"], ["2024-10-15", "Flue gas measurement passed", "Chimney sweep (role)"]] },
   series: [["boiler.q_space_kw", "kW", "SYNTHETIC"], ["boiler.fuel_lph", "l/h", "SYNTHETIC"], ["boiler.starts", "1", "SYNTHETIC"]],
   ports: ["building.q_req_kw → boiler.q_req_kw", "dhw.q_dhw_kw → boiler.q_dhw_kw", "tank.level_l → boiler.tank_level_l", "boiler.q_space_kw → building.q_heater_kw", "boiler.fuel_lph → tank.fuel_lph"],
-  smart: ["st.haus.boiler.cycling"], commandable: false, note: "Kein Sensor: Werte aus dem Zwilling (modelliert). Wartung fällig: Intervall überschritten." });
-hAdd({ id: "haus-erzgebirge/dhw", atom: "dhw", type: "dhw", name: "Warmwasserspeicher 150 l", plan: "kg", mx: 2.9, my: 1.0,
-  kpi: [["Volumen", "150 l"], ["Solltemperatur", "60 °C"], ["Verlust", "60 W"]], live: { label: "Wärmebedarf", v: "0,3 kW", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" },
-  plate: { Hersteller: "(Beispiel)", Inhalt: "150 l" }, refs: { Atom: "dhw" },
-  maint: { intervals: [iv("Schutzanode prüfen", "Zeit", "P2Y", "2025-09-30", "2027-09")], open: [], history: [] },
+  smart: ["st.haus.boiler.cycling"], commandable: false, note: "No sensor: values from the twin (modeled). Maintenance due: interval exceeded." });
+hAdd({ id: "haus-erzgebirge/dhw", atom: "dhw", type: "dhw", name: "Hot water tank 150 l", plan: "kg", mx: 2.9, my: 1.0,
+  kpi: [["Volume", "150 l"], ["Target temperature", "60 °C"], ["Loss", "60 W"]], live: { label: "Heat demand", v: "0.3 kW", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" },
+  plate: { Manufacturer: "(example)", Capacity: "150 l" }, refs: { Atom: "dhw" },
+  maint: { intervals: [iv("Check protective anode", "Time", "P2Y", "2025-09-30", "2027-09")], open: [], history: [] },
   series: [["dhw.q_dhw_kw", "kW", "SYNTHETIC"]], ports: ["dhw.q_dhw_kw → boiler.q_dhw_kw"] });
-hAdd({ id: "haus-erzgebirge/tank", atom: "tank", type: "oil-tank", name: "Öltank 2 × 2.000 l", plan: "kg", mx: 7.27, my: 1.18,
-  kpi: [["Kapazität", "4.000 l"], ["Nachbestellen bei", "600 l"], ["Reichweite", "≈ 74 Tage (Prognose)"]],
-  live: { label: "Füllstand", v: "1.150 l", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" },
-  plate: { Bauart: "Batterietank, Kunststoff", Inhalt: "2 × 2.000 l" }, refs: { Atom: "tank (oil-tank)" },
-  docs: [doc("Protokoll", "Tankprüfung (Beispiel)", "PDF", "0,3 MB", "71ab02…"), doc("Rechnung", "Öllieferung 2025-08 (privat, lokal)", "PDF", "0,1 MB", "2fe9c4…")],
-  maint: { intervals: [iv("Sichtprüfung Auffangraum", "Zeit", "P1Y", "2026-03-01", "2027-03-01")], open: [], history: [["2025-08-19", "Lieferung 2.400 l", "Händler (Rolle)"]] },
+hAdd({ id: "haus-erzgebirge/tank", atom: "tank", type: "oil-tank", name: "Oil tank 2 × 2,000 l", plan: "kg", mx: 7.27, my: 1.18,
+  kpi: [["Capacity", "4,000 l"], ["Reorder at", "600 l"], ["Range", "≈ 74 days (forecast)"]],
+  live: { label: "Level", v: "1,150 l", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" },
+  plate: { Design: "Tank battery, plastic", Capacity: "2 × 2,000 l" }, refs: { Atom: "tank (oil-tank)" },
+  docs: [doc("Report", "Tank inspection (example)", "PDF", "0.3 MB", "71ab02…"), doc("Invoice", "Oil delivery 2025-08 (private, local)", "PDF", "0.1 MB", "2fe9c4…")],
+  maint: { intervals: [iv("Visual check of the containment room", "Time", "P1Y", "2026-03-01", "2027-03-01")], open: [], history: [["2025-08-19", "Delivery 2,400 l", "Dealer (role)"]] },
   series: [["tank.level_l", "l", "SYNTHETIC"]], ports: ["boiler.fuel_lph → tank.fuel_lph", "tank.level_l → boiler.tank_level_l"], smart: ["st.haus.oil.days_left"],
-  note: "Kein Füllstandssensor: Füllstand modelliert, Tankstände aus Ablesungen gehen als REPORTED in die Kalibrierung." });
-hAdd({ id: "haus-erzgebirge/appliances/gefriertruhe", atom: "appliances", parent: "haus-erzgebirge/appliances", type: "appliance", glyph: "freezer", name: "Gefriertruhe (alt)", plan: "kg", mx: 1.5, my: 6.4, status: "warn",
-  kpi: [["Mittlere Leistung", "45 W"], ["Jahresverbrauch", "394 kWh"], ["Austausch spart", "≈ 250 kWh/a (modelliert)"]],
-  live: { label: "Leistung", v: "45 W", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" }, plate: { Baujahr: "≈ 2005 (Annahme)" }, refs: { Atom: "appliances.inventory[gefriertruhe]" },
-  series: [["appliances.p_el_kw (Anteil)", "kW", "SYNTHETIC"]], note: "Warnung = Effizienzhinweis, keine Störung." });
-hAdd({ id: "haus-erzgebirge/meter", atom: "meter", type: "meter", name: "Stromzähler", plan: "kg", mx: 8.6, my: 6.8,
-  kpi: [["Arbeitspreis", "0,36 €/kWh"], ["Grundlast", "≈ 190 W"], ["Jahr bisher", "2.318 kWh"]],
-  live: { label: "Leistung", v: "412 W", origin: "MEASURED", ts: "2026-10-12 09:41 UTC" }, im: { ns: "haus-erzgebirge", dev: "zaehler-ir-lesekopf", state: "online" },
-  plate: { Typ: "moderne Messeinrichtung (Beispiel)", Zählernummer: "1EX0000000000 (Beispiel)" }, refs: { Atom: "meter", OBIS: "1.8.0 / 16.7.0" },
-  docs: [doc("Datenblatt", "IR-Lesekopf (Beispiel)", "PDF", "0,2 MB", "aa77d0…")],
-  maint: { intervals: [iv("Eichfrist", "Zeit", "8 Jahre (zu prüfen)", "2021-03", "2029-03")], open: [], history: [] },
+  note: "No level sensor: level modeled; tank levels from readings enter the calibration as REPORTED." });
+hAdd({ id: "haus-erzgebirge/appliances/gefriertruhe", atom: "appliances", parent: "haus-erzgebirge/appliances", type: "appliance", glyph: "freezer", name: "Chest freezer (old)", plan: "kg", mx: 1.5, my: 6.4, status: "warn",
+  kpi: [["Average power", "45 W"], ["Annual consumption", "394 kWh"], ["Replacement saves", "≈ 250 kWh/a (modeled)"]],
+  live: { label: "Power", v: "45 W", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" }, plate: { "Year built": "≈ 2005 (assumption)" }, refs: { Atom: "appliances.inventory[gefriertruhe]" },
+  series: [["appliances.p_el_kw (share)", "kW", "SYNTHETIC"]], note: "Warning = efficiency hint, not a fault." });
+hAdd({ id: "haus-erzgebirge/meter", atom: "meter", type: "meter", name: "Electricity meter", plan: "kg", mx: 8.6, my: 6.8,
+  kpi: [["Energy price", "0.36 €/kWh"], ["Base load", "≈ 190 W"], ["Year to date", "2,318 kWh"]],
+  live: { label: "Power", v: "412 W", origin: "MEASURED", ts: "2026-10-12 09:41 UTC" }, im: { ns: "haus-erzgebirge", dev: "zaehler-ir-lesekopf", state: "online" },
+  plate: { Type: "Modern metering device (example)", "Meter number": "1EX0000000000 (example)" }, refs: { Atom: "meter", OBIS: "1.8.0 / 16.7.0" },
+  docs: [doc("Datasheet", "IR read head (example)", "PDF", "0.2 MB", "aa77d0…")],
+  maint: { intervals: [iv("Calibration period", "Time", "8 years (to be checked)", "2021-03", "2029-03")], open: [], history: [] },
   series: [["meter.p_kw", "kW", "MEASURED"], ["meter.e_kwh", "kWh", "MEASURED"]], ports: ["appliances.p_el_kw → meter.p_appl_kw", "boiler.p_el_kw → meter.p_heating_kw"] });
-hAdd({ id: "haus-erzgebirge/stove", atom: "stove", type: "wood-stove", name: "Kaminofen", plan: "eg", mx: 0.9, my: 1.1, due: true,
-  kpi: [["Brennstoffleistung", "6 kW"], ["Wirkungsgrad", "70 %"], ["Abende/Woche", "7 (Heizperiode)"]],
-  live: { label: "Wärme", v: "0 kW (aus)", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" }, plate: { Hersteller: "(Beispiel)", Nennwärmeleistung: "6 kW" }, refs: { Atom: "stove (wood-stove)" },
-  docs: [doc("Handbuch", "Bedienungsanleitung Kaminofen", "PDF", "1,1 MB", "f3a0b9…"), doc("Protokoll", "Feuerstättenschau (Beispiel)", "PDF", "0,2 MB", "aa0911…")],
-  maint: { intervals: [iv("Schornsteinfegen", "Zeit", "P1Y", "2025-10-09", "2026-10-09")], open: [["wo-2026-0104", "Kehrtermin vereinbaren", "vorgeschlagen", "2026-10-19"]], history: [["2025-10-09", "Kehren ohne Befund", "Schornsteinfeger (Rolle)"]] },
-  series: [["stove.q_heat_kw", "kW", "SYNTHETIC"], ["stove.wood_ster_ph", "Ster/h", "SYNTHETIC"]], ports: ["stove.q_heat_kw → building.q_stove_kw", "stove.wood_ster_ph → woodstore.wood_ster_ph"] });
-hAdd({ id: "haus-erzgebirge/woodstore", atom: "woodstore", type: "wood-store", name: "Holzlager (außen)", plan: "eg", mx: 11.9, my: 1.6,
-  kpi: [["Vorrat", "2,6 Ster"], ["Warnschwelle", "1 Ster"], ["Preis", "90 €/Ster"]], live: { label: "Vorrat", v: "2,6 Ster", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" }, refs: { Atom: "woodstore" },
-  series: [["woodstore.stock_ster", "Ster", "SYNTHETIC"]], ports: ["stove.wood_ster_ph → woodstore.wood_ster_ph"] });
-[["kuehlschrank", "Kühlschrank", "fridge", 9.3, 0.7, "25 W", "219 kWh"], ["herd", "E-Herd", "herd", 7.6, 0.6, "1,3 kW", "475 kWh"], ["radio", "Radio", "radio", 8.7, 2.9, "6 W", "21 kWh"],
- ["tv-kueche", "TV Küche", "tv", 7.0, 2.2, "40 W", "45 kWh"], ["tv-wohnzimmer", "TV Wohnzimmer", "tv", 4.9, 2.9, "100 W", "191 kWh"], ["waschmaschine", "Waschmaschine", "washer", 1.6, 6.5, "0,9 kWh/Gang", "94 kWh"]]
+hAdd({ id: "haus-erzgebirge/stove", atom: "stove", type: "wood-stove", name: "Wood stove", plan: "eg", mx: 0.9, my: 1.1, due: true,
+  kpi: [["Fuel input", "6 kW"], ["Efficiency", "70 %"], ["Evenings/week", "7 (heating season)"]],
+  live: { label: "Heat", v: "0 kW (off)", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" }, plate: { Manufacturer: "(example)", "Rated heat output": "6 kW" }, refs: { Atom: "stove (wood-stove)" },
+  docs: [doc("Manual", "Wood stove operating instructions", "PDF", "1.1 MB", "f3a0b9…"), doc("Report", "Fireplace inspection (example)", "PDF", "0.2 MB", "aa0911…")],
+  maint: { intervals: [iv("Chimney sweeping", "Time", "P1Y", "2025-10-09", "2026-10-09")], open: [["wo-2026-0104", "Book a sweeping appointment", "proposed", "2026-10-19"]], history: [["2025-10-09", "Sweeping, no findings", "Chimney sweep (role)"]] },
+  series: [["stove.q_heat_kw", "kW", "SYNTHETIC"], ["stove.wood_ster_ph", "stere/h", "SYNTHETIC"]], ports: ["stove.q_heat_kw → building.q_stove_kw", "stove.wood_ster_ph → woodstore.wood_ster_ph"] });
+hAdd({ id: "haus-erzgebirge/woodstore", atom: "woodstore", type: "wood-store", name: "Wood store (outside)", plan: "eg", mx: 11.9, my: 1.6,
+  kpi: [["Stock", "2.6 stere"], ["Warning threshold", "1 stere"], ["Price", "90 €/stere"]], live: { label: "Stock", v: "2.6 stere", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" }, refs: { Atom: "woodstore" },
+  series: [["woodstore.stock_ster", "stere", "SYNTHETIC"]], ports: ["stove.wood_ster_ph → woodstore.wood_ster_ph"] });
+[["kuehlschrank", "Fridge", "fridge", 9.3, 0.7, "25 W", "219 kWh"], ["herd", "Electric cooker", "herd", 7.6, 0.6, "1.3 kW", "475 kWh"], ["radio", "Radio", "radio", 8.7, 2.9, "6 W", "21 kWh"],
+ ["tv-kueche", "TV kitchen", "tv", 7.0, 2.2, "40 W", "45 kWh"], ["tv-wohnzimmer", "TV living room", "tv", 4.9, 2.9, "100 W", "191 kWh"], ["waschmaschine", "Washing machine", "washer", 1.6, 6.5, "0.9 kWh/cycle", "94 kWh"]]
   .forEach(([k, name, glyph, mx, my, p, e]) => hAdd({ id: `haus-erzgebirge/appliances/${k}`, atom: "appliances", parent: "haus-erzgebirge/appliances", type: "appliance", glyph, name, plan: "eg", mx, my,
-    kpi: [["Leistung", p], ["Jahr (Modell)", e]], live: { label: "Leistung", v: k === "kuehlschrank" ? "25 W" : "0 W", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" },
-    refs: { Atom: `appliances.inventory[${k}]` }, series: [["appliances.p_el_kw (Anteil)", "kW", "SYNTHETIC"]], docs: [doc("Handbuch", `Anleitung ${name}`, "PDF", "0,8 MB", "0c0c0c…")] }));
-[["tv-schlafzimmer", "TV Schlafzimmer", "tv", 2.0, 3.3, "70 W", "58 kWh", "Standby 3 W"], ["router", "Router", "router", 8.6, 1.8, "10 W", "88 kWh", "Dauerbetrieb"]]
+    kpi: [["Power", p], ["Year (model)", e]], live: { label: "Power", v: k === "kuehlschrank" ? "25 W" : "0 W", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" },
+    refs: { Atom: `appliances.inventory[${k}]` }, series: [["appliances.p_el_kw (share)", "kW", "SYNTHETIC"]], docs: [doc("Manual", `Instructions ${name}`, "PDF", "0.8 MB", "0c0c0c…")] }));
+[["tv-schlafzimmer", "TV bedroom", "tv", 2.0, 3.3, "70 W", "58 kWh", "Standby 3 W"], ["router", "Router", "router", 8.6, 1.8, "10 W", "88 kWh", "Continuous operation"]]
   .forEach(([k, name, glyph, mx, my, p, e, x]) => hAdd({ id: `haus-erzgebirge/appliances/${k}`, atom: "appliances", parent: "haus-erzgebirge/appliances", type: "appliance", glyph, name, plan: "og", mx, my,
-    kpi: [["Leistung", p], ["Jahr (Modell)", e], ["Hinweis", x]], live: { label: "Leistung", v: k === "router" ? "10 W" : "3 W", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" },
-    refs: { Atom: `appliances.inventory[${k}]` }, series: [["appliances.p_el_kw (Anteil)", "kW", "SYNTHETIC"]] }));
-[["weather", "weather", "Wetter (synthetisch)", "7,0 °C Jahresmittel", "9,4 °C"], ["building", "building", "Gebäude 130 m²", "H = 200 W/K (Annahme)", "20,6 °C"], ["appliances", "appliances", "Geräte (Gruppe)", "11 Geräte", "0,41 kW"]]
-  .forEach(([atom, type, name, k, v]) => hAdd({ id: `haus-erzgebirge/${atom}`, atom, type, name, plan: null, mx: 0, my: 0, kpi: [["Kenngröße", k]],
-    live: { label: name, v, origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" }, refs: { Atom: atom }, note: "Atom ohne einzelnen Ort (Rahmen bzw. Gruppe)." }));
+    kpi: [["Power", p], ["Year (model)", e], ["Note", x]], live: { label: "Power", v: k === "router" ? "10 W" : "3 W", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" },
+    refs: { Atom: `appliances.inventory[${k}]` }, series: [["appliances.p_el_kw (share)", "kW", "SYNTHETIC"]] }));
+[["weather", "weather", "Weather (synthetic)", "7.0 °C annual mean", "9.4 °C"], ["building", "building", "Building 130 m²", "H = 200 W/K (assumption)", "20.6 °C"], ["appliances", "appliances", "Appliances (group)", "11 appliances", "0.41 kW"]]
+  .forEach(([atom, type, name, k, v]) => hAdd({ id: `haus-erzgebirge/${atom}`, atom, type, name, plan: null, mx: 0, my: 0, kpi: [["Parameter", k]],
+    live: { label: name, v, origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" }, refs: { Atom: atom }, note: "Atom without a single location (frame or group)." }));
 
 /* --- boot-etap22 --- */
 function bAdd(o) { const [x, y] = bx(o.mx, o.my); return add(Object.assign({ sys: "boot-etap22", x, y, due: false, status: "ok", im: null, refs: {}, docs: [], series: [], ports: [], smart: [], plate: {}, maint: { intervals: [], open: [], history: [] } }, o)); }
 const RASPI = { ns: "boot-etap22", dev: "raspi-boatlog", state: "online" };
-bAdd({ id: "boot-etap22/station", atom: "station", type: "power-station", name: "Powerstation 1 kWh", plan: "kajuete", mx: 2.15, my: 0.05,
-  kpi: [["Kapazität", "1.024 Wh"], ["Laden max.", "800 W"], ["Solar-Eingang", "500 W"], ["Zyklen", "143"]],
+bAdd({ id: "boot-etap22/station", atom: "station", type: "power-station", name: "Power station 1 kWh", plan: "kajuete", mx: 2.15, my: 0.05,
+  kpi: [["Capacity", "1,024 Wh"], ["Max. charging", "800 W"], ["Solar input", "500 W"], ["Cycles", "143"]],
   live: { label: "SoC", v: "72 %", origin: "MEASURED", ts: "2026-10-12 09:40 UTC" }, im: RASPI,
-  plate: { Hersteller: "(Beispiel)", Chemie: "LiFePO4", Ausgänge: "12 V, USB-C PD, 230 V" }, refs: { Atom: "station (power-station)" },
-  docs: [doc("Datenblatt", "Datenblatt Powerstation (Beispiel)", "PDF", "0,6 MB", "e1d2c3…"), doc("Garantie", "Garantie bis 2029-05", "PDF", "0,1 MB", "77aa11…")],
-  maint: { intervals: [iv("Kapazitätstest", "Zeit", "P1Y", "2026-04-18", "2027-04-18")], open: [], history: [["2026-04-18", "Kapazitätstest: 97 % (Beispiel)", "Eigner"]] },
+  plate: { Manufacturer: "(example)", Chemistry: "LiFePO4", Outputs: "12 V, USB-C PD, 230 V" }, refs: { Atom: "station (power-station)" },
+  docs: [doc("Datasheet", "Datasheet power station (example)", "PDF", "0.6 MB", "e1d2c3…"), doc("Warranty", "Warranty until 2029-05", "PDF", "0.1 MB", "77aa11…")],
+  maint: { intervals: [iv("Capacity test", "Time", "P1Y", "2026-04-18", "2027-04-18")], open: [], history: [["2026-04-18", "Capacity test: 97 % (example)", "Owner"]] },
   series: [["boat.station.soc", "1", "MEASURED"], ["station.p_load_meas_w", "W", "MEASURED"]],
   ports: ["solar.p_avail_w → station.p_solar_w", "shore.p_avail_w → station.p_shore_w", "vhf/raspi/phone/laptop1/laptop2/starlink.p_w → station.p_*_w"], smart: ["st.boot.station.soc_forecast"] });
 bAdd({ id: "boot-etap22/raspi", atom: "raspi", type: "device", glyph: "chip", name: "Raspberry Pi (Edge)", plan: "kajuete", mx: 2.5, my: -0.55,
-  kpi: [["Leistung", "4 W"], ["Puffer", "3 Tage lokal"], ["Rolle", "Edge-Publisher"]],
-  live: { label: "Leistung", v: "4,1 W", origin: "MEASURED", ts: "2026-10-12 09:40 UTC" }, im: RASPI, refs: { Atom: "raspi (device)" },
-  maint: { intervals: [iv("SD-Karte sichern", "Zeit", "P3M", "2026-07-01", "2026-10-01")], open: [], history: [] }, due: true,
+  kpi: [["Power", "4 W"], ["Buffer", "3 days local"], ["Role", "Edge publisher"]],
+  live: { label: "Power", v: "4.1 W", origin: "MEASURED", ts: "2026-10-12 09:40 UTC" }, im: RASPI, refs: { Atom: "raspi (device)" },
+  maint: { intervals: [iv("Back up SD card", "Time", "P3M", "2026-07-01", "2026-10-01")], open: [], history: [] }, due: true,
   series: [["raspi.p_w", "W", "MEASURED"]], ports: ["boat.mode → raspi.mode", "raspi.p_w → station.p_raspi_w"] });
-bAdd({ id: "boot-etap22/vhf", atom: "vhf", type: "device", glyph: "radiounit", name: "UKW-Funkgerät", plan: "kajuete", mx: 2.45, my: 0.55,
-  kpi: [["Empfang", "5 W"], ["Senden", "66 W"], ["Sendeanteil", "3 %"]], live: { label: "Leistung", v: "0 W (Hafen)", origin: "SYNTHETIC", ts: "2026-10-12 09:40 UTC" },
-  plate: { Hersteller: "(Beispiel)", MMSI: "(privat, nicht angezeigt)" }, refs: { Atom: "vhf (device)" }, commandable: false,
-  maint: { intervals: [iv("Antennenkabel/Stecker prüfen", "Zeit", "P1Y", "2025-04-12", "2026-04-12")], open: [["wo-2026-0201", "Antennenstecker am Mastfuß prüfen", "vorgeschlagen", "vor Saisonbeginn"]], history: [] }, due: true,
-  series: [["vhf.p_w", "W", "SYNTHETIC"]], ports: ["boat.mode → vhf.mode", "vhf.p_w → station.p_vhf_w"], note: "Sicherheitsrelevant: wird nie geschaltet (commandable: false)." });
-[["laptop1", "Laptop 1", "laptop", 3.35, -0.58, "15 W", "60 Wh"], ["laptop2", "Laptop 2", "laptop", 4.0, -0.58, "10 W", "50 Wh"], ["phone", "Pixel 10", "phone", 4.3, 0.6, "1,2 W", "18,5 Wh"]]
+bAdd({ id: "boot-etap22/vhf", atom: "vhf", type: "device", glyph: "radiounit", name: "VHF radio", plan: "kajuete", mx: 2.45, my: 0.55,
+  kpi: [["Receive", "5 W"], ["Transmit", "66 W"], ["Transmit share", "3 %"]], live: { label: "Power", v: "0 W (harbor)", origin: "SYNTHETIC", ts: "2026-10-12 09:40 UTC" },
+  plate: { Manufacturer: "(example)", MMSI: "(private, not shown)" }, refs: { Atom: "vhf (device)" }, commandable: false,
+  maint: { intervals: [iv("Check antenna cable/connector", "Time", "P1Y", "2025-04-12", "2026-04-12")], open: [["wo-2026-0201", "Check antenna connector at the mast foot", "proposed", "before season start"]], history: [] }, due: true,
+  series: [["vhf.p_w", "W", "SYNTHETIC"]], ports: ["boat.mode → vhf.mode", "vhf.p_w → station.p_vhf_w"], note: "Safety-relevant: never switched (commandable: false)." });
+[["laptop1", "Laptop 1", "laptop", 3.35, -0.58, "15 W", "60 Wh"], ["laptop2", "Laptop 2", "laptop", 4.0, -0.58, "10 W", "50 Wh"], ["phone", "Pixel 10", "phone", 4.3, 0.6, "1.2 W", "18.5 Wh"]]
   .forEach(([atom, name, glyph, mx, my, p, b]) => bAdd({ id: `boot-etap22/${atom}`, atom, type: "device", glyph, name, plan: "kajuete", mx, my,
-    kpi: [["Nutzung", p], ["Akku", b]], live: { label: "Leistung", v: "0 W", origin: "SYNTHETIC", ts: "2026-10-12 09:40 UTC" }, refs: { Atom: `${atom} (device)` },
+    kpi: [["Usage", p], ["Battery", b]], live: { label: "Power", v: "0 W", origin: "SYNTHETIC", ts: "2026-10-12 09:40 UTC" }, refs: { Atom: `${atom} (device)` },
     series: [[`${atom}.p_w`, "W", "SYNTHETIC"]], ports: [`boat.mode → ${atom}.mode`, `${atom}.p_w → station.p_${atom}_w`] }));
 bAdd({ id: "boot-etap22/solar", atom: "solar", type: "solar", name: "Solar 2 × 100 Wp", plan: "deck", mx: 2.6, my: -0.05,
-  kpi: [["Leistung", "200 Wp"], ["Minderung", "0,75"], ["heute", "0,41 kWh"]], live: { label: "Leistung", v: "96 W", origin: "MEASURED", ts: "2026-10-12 09:40 UTC" }, im: RASPI,
-  plate: { Bauart: "flexibel, auf Kajütdach (Annahme)" }, refs: { Atom: "solar" },
-  docs: [doc("Datenblatt", "Flexibles Modul 100 Wp (Beispiel)", "PDF", "0,4 MB", "abcd01…")],
-  maint: { intervals: [iv("Reinigen, Stecker prüfen", "Zeit", "P3M", "2026-08-01", "2026-11-01")], open: [], history: [] },
+  kpi: [["Power", "200 Wp"], ["Derating", "0.75"], ["Today", "0.41 kWh"]], live: { label: "Power", v: "96 W", origin: "MEASURED", ts: "2026-10-12 09:40 UTC" }, im: RASPI,
+  plate: { Design: "flexible, on the cabin roof (assumption)" }, refs: { Atom: "solar" },
+  docs: [doc("Datasheet", "Flexible module 100 Wp (example)", "PDF", "0.4 MB", "abcd01…")],
+  maint: { intervals: [iv("Clean, check connectors", "Time", "P3M", "2026-08-01", "2026-11-01")], open: [], history: [] },
   series: [["solar.p_meas_w", "W", "MEASURED"], ["solar.ghi_wm2", "W/m²", "MEASURED"]], ports: ["boat.mode → solar.mode", "solar.p_avail_w → station.p_solar_w"] });
 bAdd({ id: "boot-etap22/starlink", atom: "starlink", type: "device", glyph: "starlink", name: "Starlink Mini", plan: "deck", mx: 0.25, my: 0.75,
-  kpi: [["Leistung", "≈ 30 W"], ["an Bord", "7–23 h"], ["Pfad", "12 V DC"]], live: { label: "Leistung", v: "31 W", origin: "MEASURED", ts: "2026-10-12 09:40 UTC" }, im: RASPI,
+  kpi: [["Power", "≈ 30 W"], ["On board", "7–23 h"], ["Path", "12 V DC"]], live: { label: "Power", v: "31 W", origin: "MEASURED", ts: "2026-10-12 09:40 UTC" }, im: RASPI,
   refs: { Atom: "starlink (device)" }, series: [["starlink.p_w", "W", "MEASURED"]], ports: ["boat.mode → starlink.mode", "starlink.p_w → station.p_starlink_w"] });
-bAdd({ id: "boot-etap22/shore", atom: "shore", type: "shore-power", name: "Landstrom-Einspeisung", plan: "deck", mx: 1.6, my: -0.95, due: true,
-  kpi: [["Ladegerät", "400 W AC"], ["Wirkungsgrad", "0,9"], ["nur", "Hafen"]], live: { label: "Leistung", v: "0 W", origin: "SYNTHETIC", ts: "2026-10-12 09:40 UTC" },
-  refs: { Atom: "shore (shore-power)" }, docs: [doc("Protokoll", "Sichtprüfung Landstromkabel (Beispiel)", "PDF", "0,1 MB", "5e5e5e…")],
-  maint: { intervals: [iv("Landstromkabel und FI prüfen", "Zeit", "P1Y", "2025-09-20", "2026-09-20")], open: [["wo-2026-0202", "Kabel, Stecker, FI-Test", "vorgeschlagen", "2026-10-18"]], history: [] },
+bAdd({ id: "boot-etap22/shore", atom: "shore", type: "shore-power", name: "Shore power inlet", plan: "deck", mx: 1.6, my: -0.95, due: true,
+  kpi: [["Charger", "400 W AC"], ["Efficiency", "0.9"], ["Available", "in harbor only"]], live: { label: "Power", v: "0 W", origin: "SYNTHETIC", ts: "2026-10-12 09:40 UTC" },
+  refs: { Atom: "shore (shore-power)" }, docs: [doc("Report", "Visual check of the shore power cable (example)", "PDF", "0.1 MB", "5e5e5e…")],
+  maint: { intervals: [iv("Check shore power cable and RCD", "Time", "P1Y", "2025-09-20", "2026-09-20")], open: [["wo-2026-0202", "Cable, plug, RCD test", "proposed", "2026-10-18"]], history: [] },
   series: [["shore.p_avail_w", "W", "SYNTHETIC"]], ports: ["boat.mode → shore.mode", "shore.p_avail_w → station.p_shore_w"] });
-bAdd({ id: "boot-etap22/vhf/antenne", atom: "vhf", parent: "boot-etap22/vhf", type: "antenna", name: "UKW-Antenne (Masttopp)", plan: "deck", mx: 4.0, my: 0,
-  kpi: [["Kabel", "≈ 12 m (Annahme)"]], live: null, refs: { Atom: "vhf (Unterobjekt)" }, note: "Unterobjekt des Funkgeräts." });
-bAdd({ id: "boot-etap22/boat", atom: "boat", type: "boat-mode", name: "Boot (Nutzungsmodus)", plan: null, mx: 0, my: 0,
-  kpi: [["Rumpf", "Etap 22, ≈ 6,6 m"], ["Revier", "Kieler Bucht"]], live: { label: "Modus", v: "Hafen", origin: "REPORTED", ts: "2026-10-12 09:40 UTC" },
-  refs: { Atom: "boat (boat-mode)" }, ports: ["boat.mode → alle Geräte"], note: "Atom ohne Ort: der Modus gilt für das ganze Boot." });
+bAdd({ id: "boot-etap22/vhf/antenne", atom: "vhf", parent: "boot-etap22/vhf", type: "antenna", name: "VHF antenna (masthead)", plan: "deck", mx: 4.0, my: 0,
+  kpi: [["Cable", "≈ 12 m (assumption)"]], live: null, refs: { Atom: "vhf (sub-asset)" }, note: "Sub-asset of the radio." });
+bAdd({ id: "boot-etap22/boat", atom: "boat", type: "boat-mode", name: "Boat (usage mode)", plan: null, mx: 0, my: 0,
+  kpi: [["Hull", "Etap 22, ≈ 6.6 m"], ["Cruising area", "Kiel Bay"]], live: { label: "Mode", v: "Harbor", origin: "REPORTED", ts: "2026-10-12 09:40 UTC" },
+  refs: { Atom: "boat (boat-mode)" }, ports: ["boat.mode → all devices"], note: "Atom without a location: the mode applies to the whole boat." });
 
 const SYSTEMS = {
-  "h2-chain": { label: "Windpark & H2", plans: [{ id: "park", label: "Park (Karte)", w: 1000, h: 640, draw: drawPark, phone: [1.5, 605, 430] }] },
-  "haus-erzgebirge": { label: "Haus", plans: [{ id: "kg", label: "Keller", w: 1000, h: 640, draw: () => drawHouse("kg"), phone: [1.55, 520, 320] }, { id: "eg", label: "Erdgeschoss", w: 1000, h: 640, draw: () => drawHouse("eg"), phone: [1.55, 520, 320] }, { id: "og", label: "Obergeschoss", w: 1000, h: 640, draw: () => drawHouse("og"), phone: [1.55, 520, 320] }] },
-  "boot-etap22": { label: "Boot Etap 22", plans: [{ id: "deck", label: "Deck", w: 1000, h: 440, draw: () => drawBoat("deck"), phone: [1.15, 500, 220] }, { id: "kajuete", label: "Kajüte", w: 1000, h: 440, draw: () => drawBoat("kajuete"), phone: [1.15, 500, 220] }] }
+  "h2-chain": { label: "Wind park & H2", plans: [{ id: "park", label: "Park (map)", w: 1000, h: 640, draw: drawPark, phone: [1.5, 605, 430] }] },
+  "haus-erzgebirge": { label: "House", plans: [{ id: "kg", label: "Basement", w: 1000, h: 640, draw: () => drawHouse("kg"), phone: [1.55, 520, 320] }, { id: "eg", label: "Ground floor", w: 1000, h: 640, draw: () => drawHouse("eg"), phone: [1.55, 520, 320] }, { id: "og", label: "Upper floor", w: 1000, h: 640, draw: () => drawHouse("og"), phone: [1.55, 520, 320] }] },
+  "boot-etap22": { label: "Boat Etap 22", plans: [{ id: "deck", label: "Deck", w: 1000, h: 440, draw: () => drawBoat("deck"), phone: [1.15, 500, 220] }, { id: "kajuete", label: "Cabin", w: 1000, h: 440, draw: () => drawBoat("kajuete"), phone: [1.15, 500, 220] }] }
 };
-const WEA_PLAN = { id: "wea", label: "Komponenten", w: 1000, h: 640, draw: drawWea, phone: [1.5, 540, 330] };
+const WEA_PLAN = { id: "wea", label: "Components", w: 1000, h: 640, draw: drawWea, phone: [1.5, 540, 330] };
 
 /* ------------------------------------------------------------------ plan drawings (schematic) ----------------- */
 function drawPark() {
@@ -678,18 +678,18 @@ function drawPark() {
   <path class="p-contour" d="M0 470 C200 440 340 500 520 470 S 820 430 1000 470"/><path class="p-contour" d="M0 540 C220 510 360 570 560 540 S 840 500 1000 540"/>
   <path class="p-sea" d="M0 0 H1000 V120 C 900 150 820 110 720 140 C 620 170 560 130 470 160 C 380 190 300 150 200 175 C 120 195 60 170 0 185 Z"/>
   <path class="p-coast" d="M1000 120 C 900 150 820 110 720 140 C 620 170 560 130 470 160 C 380 190 300 150 200 175 C 120 195 60 170 0 185"/>
-  <text class="p-italic" x="330" y="80">Ostsee</text>
+  <text class="p-italic" x="330" y="80">Baltic Sea</text>
   <path class="p-road-edge" d="M0 420 C 200 400 420 430 600 410 S 900 380 1000 400"/><path class="p-road" d="M0 420 C 200 400 420 430 600 410 S 900 380 1000 400"/>
   <path class="p-road-edge" d="M700 640 C 690 520 720 430 740 300"/><path class="p-road" d="M700 640 C 690 520 720 430 740 300"/>
   <g class="p-inkfill" opacity=".35"><rect x="300" y="470" width="16" height="12"/><rect x="322" y="480" width="14" height="12"/><rect x="310" y="498" width="18" height="12"/><rect x="336" y="502" width="12" height="10"/></g>
-  <text class="p-text" x="290" y="530">Ortschaft (fiktiv)</text>
+  <text class="p-text" x="290" y="530">Village (fictional)</text>
   <path class="p-cable" d="M${t[0][0]} ${t[0][1] + 6} L${t[3][0]} ${t[3][1] + 6} L${sx} ${sy}"/>
-  <text class="p-text" x="${sx + 22}" y="${sy - 44}">Kabeltrasse 20 kV (Beispiel)</text>
+  <text class="p-text" x="${sx + 22}" y="${sy - 44}">Cable route 20 kV (example)</text>
   <path class="p-h2" d="M${ex} ${ey} C ${ex + 60} ${ey + 10}, ${lx - 60} ${ly - 20}, ${lx} ${ly} S ${ox - 50} ${oy - 20}, ${ox} ${oy}"/>
-  <text class="p-text" x="${lx + 24}" y="${ly - 22}">H2-Leitung (Beispiel)</text>
+  <text class="p-text" x="${lx + 24}" y="${ly - 22}">H2 pipeline (example)</text>
   <g transform="translate(40 600)"><rect class="p-paper" x="-6" y="-22" width="150" height="34" rx="4" opacity=".85"/><path class="p-ink" d="M0 0 h129 M0 -5 v10 M129 -5 v10 M64 -3 v6"/><text class="p-text" x="0" y="-8">0</text><text class="p-text" x="112" y="-8">1 km</text></g>
   <g transform="translate(950 40)"><path class="p-inkfill" d="M0 -18 L7 6 L0 1 L-7 6 Z"/><text class="p-text-strong" x="-5" y="24">N</text></g>
-  <g transform="translate(70 300)"><path class="p-ink" d="M-34 6 L30 -5" stroke-width="2.5"/><path class="p-inkfill" d="M36 -6 L22 -12 L25 1 Z"/><text class="p-text" x="-40" y="28">Wind aus 260°</text></g>`;
+  <g transform="translate(70 300)"><path class="p-ink" d="M-34 6 L30 -5" stroke-width="2.5"/><path class="p-inkfill" d="M36 -6 L22 -12 L25 1 Z"/><text class="p-text" x="-40" y="28">Wind from 260°</text></g>`;
 }
 function wakeOverlay() {
   const dir = 80 * Math.PI / 180, dx = Math.sin(dir), dy = -Math.cos(dir), nx = -dy, ny = dx;
@@ -700,7 +700,7 @@ function wakeOverlay() {
     s += `<polygon class="p-wake" points="${x + nx * r0},${y + ny * r0} ${x + dx * L + nx * r1},${y + dy * L + ny * r1} ${x + dx * L - nx * r1},${y + dy * L - ny * r1} ${x - nx * r0},${y - ny * r0}"/>`;
   });
   const [x2, y2] = geo(TURBINES[0][1], TURBINES[0][2]);
-  return s + `<text class="p-text" x="${x2 - 60}" y="${y2 - 70}">Wake-Kegel bei 260° · Jensen, k = 0,04, D ≈ 100 m · Simulationsreferenz (Beispiel)</text>`;
+  return s + `<text class="p-text" x="${x2 - 60}" y="${y2 - 70}">Wake cone at 260° · Jensen, k = 0.04, D ≈ 100 m · simulation reference (example)</text>`;
 }
 function drawWea() {
   return `<rect class="p-paper" x="-1500" y="-1000" width="4000" height="2640"/>
@@ -716,18 +716,18 @@ function drawWea() {
   <rect class="p-tower" x="470" y="560" width="80" height="34" rx="3"/>
   <rect class="p-tower" x="660" y="566" width="60" height="34" rx="3"/>
   <path class="p-cable" d="M550 584 L660 584"/>
-  <text class="p-text" x="740" y="196">Gondel (Schnitt)</text><text class="p-text" x="560" y="300">Turm</text>
-  <text class="p-text" x="30" y="40">Schema, nicht maßstäblich · Komponenten als Unterobjekte der WEA (Ebene 2)</text>`;
+  <text class="p-text" x="740" y="196">Nacelle (section)</text><text class="p-text" x="560" y="300">Tower</text>
+  <text class="p-text" x="30" y="40">Schematic, not to scale · components as sub-assets of the turbine (level 2)</text>`;
 }
 const ROOMS = {
-  kg: [["Heizraum", 0, 0, 4, 4, "", "p-room-alt"], ["Tankraum", 4, 0, 6, 4, "", "p-room-alt"], ["Vorratskeller", 0, 4, 5, 4, ""], ["Werkstatt / Zähler", 5, 4, 5, 4, ""]],
-  eg: [["Wohnzimmer", 0, 0, 6, 5.8, "35 m²"], ["Küche", 6, 0, 4, 3.75, "15 m²"], ["WC/HWR", 0, 5.8, 2.3, 2.2, "5 m²"], ["Flur/Diele", 2.3, 5.8, 7.7, 2.2, "14 m²"], ["", 6, 3.75, 4, 2.05, "", "p-room"]],
-  og: [["Schlafzimmer", 0, 0, 4.25, 4, "17 m²"], ["Bad", 4.25, 0, 2.25, 4, "9 m²"], ["Arbeitszimmer", 6.5, 0, 3.5, 3.7, "13 m²"], ["Gästezimmer", 0, 4.3, 3.5, 3.7, "13 m²"], ["Flur", 3.5, 4, 6.5, 4, "9 m²"], ["", 0, 4, 3.5, 0.3, "", "p-room"]]
+  kg: [["Boiler room", 0, 0, 4, 4, "", "p-room-alt"], ["Tank room", 4, 0, 6, 4, "", "p-room-alt"], ["Storage cellar", 0, 4, 5, 4, ""], ["Workshop / meter", 5, 4, 5, 4, ""]],
+  eg: [["Living room", 0, 0, 6, 5.8, "35 m²"], ["Kitchen", 6, 0, 4, 3.75, "15 m²"], ["WC/utility", 0, 5.8, 2.3, 2.2, "5 m²"], ["Hall/entrance", 2.3, 5.8, 7.7, 2.2, "14 m²"], ["", 6, 3.75, 4, 2.05, "", "p-room"]],
+  og: [["Bedroom", 0, 0, 4.25, 4, "17 m²"], ["Bathroom", 4.25, 0, 2.25, 4, "9 m²"], ["Study", 6.5, 0, 3.5, 3.7, "13 m²"], ["Guest room", 0, 4.3, 3.5, 3.7, "13 m²"], ["Hall", 3.5, 4, 6.5, 4, "9 m²"], ["", 0, 4, 3.5, 0.3, "", "p-room"]]
 };
 function drawHouse(level) {
   const P = (x, y) => hx(x, y);
   let s = `<rect class="${level === "kg" ? "p-paper" : "p-garden"}" x="-1500" y="-1000" width="4000" height="2640"/>`;
-  if (level === "eg") s += `<rect class="p-land" x="830" y="110" width="150" height="200" rx="6"/><rect class="p-room-alt" x="845" y="135" width="125" height="120" stroke="var(--ink-3)"/><text class="p-text" x="840" y="290">Garten</text>`;
+  if (level === "eg") s += `<rect class="p-land" x="830" y="110" width="150" height="200" rx="6"/><rect class="p-room-alt" x="845" y="135" width="125" height="120" stroke="var(--ink-3)"/><text class="p-text" x="840" y="290">Garden</text>`;
   ROOMS[level].forEach(([n, x, y, w, h, a, cls]) => {
     const [px, py] = P(x, y);
     s += `<rect class="${cls || "p-room"}" x="${px}" y="${py}" width="${w * 60}" height="${h * 60}"/><rect class="p-iwall" x="${px}" y="${py}" width="${w * 60}" height="${h * 60}" fill="none"/>`;
@@ -738,16 +738,16 @@ function drawHouse(level) {
   // stairs (same position on every level)
   const [sx, sy] = P(5.2, 4.1);
   for (let i = 0; i < 8; i++) s += `<line class="p-stairs" x1="${sx}" y1="${sy + i * 9}" x2="${sx + 60}" y2="${sy + i * 9}"/>`;
-  s += `<rect class="p-stairs" x="${sx}" y="${sy}" width="60" height="72"/><text class="p-text" x="${sx + 2}" y="${sy + 88}">Treppe</text>`;
+  s += `<rect class="p-stairs" x="${sx}" y="${sy}" width="60" height="72"/><text class="p-text" x="${sx + 2}" y="${sy + 88}">Stairs</text>`;
   if (level !== "kg") {
     [[1, 0], [3.5, 0], [7, 0], [9, 0]].forEach(([x]) => { const [a, b] = P(x, 0); s += `<line class="p-window" x1="${a}" y1="${b}" x2="${a + 60}" y2="${b}"/>`; });
     [[1.5, 8], [7, 8]].forEach(([x]) => { const [a, b] = P(x, 8); s += `<line class="p-window" x1="${a}" y1="${b}" x2="${a + 60}" y2="${b}"/>`; });
     const [wx, wy] = P(10, 1.2); s += `<line class="p-window" x1="${wx}" y1="${wy}" x2="${wx}" y2="${wy + 60}"/>`;
   }
-  if (level === "eg") { const [dx, dy] = P(4.2, 8); s += `<path class="p-door" d="M${dx} ${dy} a54 54 0 0 1 54 -54 v54"/><text class="p-text" x="${dx}" y="${dy + 22}">Haustür</text>`; }
-  if (level === "kg") { const [tx, ty] = P(4.6, 0.6); s += `<rect class="p-tower" x="${tx}" y="${ty}" width="150" height="70" rx="12"/><rect class="p-tower" x="${tx + 170}" y="${ty}" width="150" height="70" rx="12"/><text class="p-text" x="${tx}" y="${ty + 128}">2 × 2.000 l Batterietank, Auffangwanne</text>`; }
+  if (level === "eg") { const [dx, dy] = P(4.2, 8); s += `<path class="p-door" d="M${dx} ${dy} a54 54 0 0 1 54 -54 v54"/><text class="p-text" x="${dx}" y="${dy + 22}">Front door</text>`; }
+  if (level === "kg") { const [tx, ty] = P(4.6, 0.6); s += `<rect class="p-tower" x="${tx}" y="${ty}" width="150" height="70" rx="12"/><rect class="p-tower" x="${tx + 170}" y="${ty}" width="150" height="70" rx="12"/><text class="p-text" x="${tx}" y="${ty + 128}">2 × 2,000 l tank battery, containment tray</text>`; }
   s += `<g transform="translate(${x0} ${y0 + 500})"><path class="p-ink" d="M0 0 h120 M0 -5 v10 M120 -5 v10"/><text class="p-text" x="0" y="20">0</text><text class="p-text" x="104" y="20">2 m</text></g>`;
-  s += `<text class="p-text" x="${x0 + 200}" y="${y0 + 520}">Grundriss schematisch, Flächen aus dem Beispielhaus (08 §3)</text>`;
+  s += `<text class="p-text" x="${x0 + 200}" y="${y0 + 520}">Floor plan schematic, areas from the example house (08 §3)</text>`;
   return s;
 }
 function drawBoat(view) {
@@ -756,25 +756,25 @@ function drawBoat(view) {
   <path class="p-thin" d="M30 400 q20 -8 40 0 t40 0 M880 30 q20 -8 40 0 t40 0 M40 40 q20 -8 40 0 t40 0" opacity=".6"/>
   <path class="p-hull" d="${hull}"/>`;
   if (view === "deck") {
-    s += `<path class="p-deck" d="M100 140 H330 V300 H100 Z"/><text class="p-text" x="110" y="292">Plicht</text>
+    s += `<path class="p-deck" d="M100 140 H330 V300 H100 Z"/><text class="p-text" x="110" y="292">Cockpit</text>
     <path class="p-deck" d="M330 128 C 450 112 560 116 650 150 C 680 175 680 265 650 290 C 560 324 450 328 330 312 Z"/>
-    <rect class="p-thin" x="342" y="190" width="40" height="60" rx="4"/><text class="p-text" x="338" y="270">Niedergang</text>
-    <rect class="p-thin" x="690" y="196" width="48" height="48" rx="4"/><text class="p-text" x="690" y="266">Vorluk</text>
+    <rect class="p-thin" x="342" y="190" width="40" height="60" rx="4"/><text class="p-text" x="338" y="270">Companionway</text>
+    <rect class="p-thin" x="690" y="196" width="48" height="48" rx="4"/><text class="p-text" x="690" y="266">Forehatch</text>
     <rect class="p-tower" x="388" y="158" width="125" height="58" rx="6"/><rect class="p-tower" x="388" y="224" width="125" height="58" rx="6"/>
     <path class="p-thin" d="M388 187 h125 M450 158 v58 M388 253 h125 M450 224 v58"/>
     <circle class="p-tower" cx="590" cy="220" r="9"/><path class="p-thin" d="M590 220 L 915 220" stroke-dasharray="3 5"/><path class="p-thin" d="M590 220 L 300 220" stroke-dasharray="1 0" opacity=".6"/>
-    <path class="p-ink" d="M90 220 L 200 220" stroke-width="4"/><text class="p-text" x="120" y="210">Pinne</text>
-    <path class="p-thin" d="M95 110 C 150 96 200 92 250 92 M95 330 C 150 344 200 348 250 348"/><text class="p-text" x="680" y="112">Bug (vorn)</text><text class="p-text" x="20" y="226">Heck</text>
+    <path class="p-ink" d="M90 220 L 200 220" stroke-width="4"/><text class="p-text" x="120" y="210">Tiller</text>
+    <path class="p-thin" d="M95 110 C 150 96 200 92 250 92 M95 330 C 150 344 200 348 250 348"/><text class="p-text" x="680" y="112">Bow (forward)</text><text class="p-text" x="20" y="226">Stern</text>
     <text class="p-text" x="600" y="244">Mast</text>`;
   } else {
     s += `<path class="p-deck" d="M330 128 C 450 112 560 116 650 150 C 760 170 850 200 880 220 C 850 240 760 270 650 290 C 560 324 450 328 330 312 Z" opacity=".55"/>
-    <rect class="p-room-alt" x="400" y="128" width="200" height="44" rx="6" stroke="var(--ink-3)"/><text class="p-text" x="410" y="122">Sitzbank / Koje Bb</text>
-    <rect class="p-room-alt" x="400" y="268" width="200" height="44" rx="6" stroke="var(--ink-3)"/><text class="p-text" x="470" y="330">Sitzbank / Koje Stb</text>
-    <path class="p-room-alt" d="M650 160 C 740 180 820 205 850 220 C 820 235 740 260 650 280 Z" stroke="var(--ink-3)"/><text class="p-text" x="700" y="224">Vorschiff-Koje</text>
-    <rect class="p-tower" x="335" y="190" width="52" height="60" rx="4"/><text class="p-text" x="326" y="226" text-anchor="end">Niedergang</text>
-    <rect class="p-thin" x="440" y="196" width="110" height="48" rx="6"/><text class="p-text" x="452" y="226">Klapptisch</text>
+    <rect class="p-room-alt" x="400" y="128" width="200" height="44" rx="6" stroke="var(--ink-3)"/><text class="p-text" x="410" y="122">Bench / berth port</text>
+    <rect class="p-room-alt" x="400" y="268" width="200" height="44" rx="6" stroke="var(--ink-3)"/><text class="p-text" x="470" y="330">Bench / berth stbd</text>
+    <path class="p-room-alt" d="M650 160 C 740 180 820 205 850 220 C 820 235 740 260 650 280 Z" stroke="var(--ink-3)"/><text class="p-text" x="700" y="224">Forward berth</text>
+    <rect class="p-tower" x="335" y="190" width="52" height="60" rx="4"/><text class="p-text" x="326" y="226" text-anchor="end">Companionway</text>
+    <rect class="p-thin" x="440" y="196" width="110" height="48" rx="6"/><text class="p-text" x="452" y="226">Folding table</text>
     <path class="p-cable" d="M359 228 C 380 200 390 170 403 151"/><path class="p-cable" d="M359 228 L 425 288"/>
-    <text class="p-text" x="200" y="400">Einrichtung schematisch (Annahme), Lage der Geräte nach Absprache mit dem Eigner zu prüfen</text>`;
+    <text class="p-text" x="200" y="400">Interior schematic (assumption); check device positions with the owner</text>`;
   }
   s += `<g transform="translate(780 410)"><path class="p-ink" d="M0 0 h125 M0 -5 v10 M125 -5 v10"/><text class="p-text" x="132" y="5">1 m</text></g>`;
   return s;
@@ -808,12 +808,12 @@ function renderSystems() {
 function renderPlanTabs() {
   const plans = SYSTEMS[state.sys].plans;
   let html = plans.map(p => `<button type="button" role="tab" data-plan="${p.id}" aria-selected="${p.id === state.plan}">${esc(p.label)}</button>`).join("");
-  if (state.plan === "wea") html += `<button type="button" role="tab" aria-selected="true" data-plan="wea">${esc(byId(state.parent).name)} · Komponenten</button>`;
+  if (state.plan === "wea") html += `<button type="button" role="tab" aria-selected="true" data-plan="wea">${esc(byId(state.parent).name)} · Components</button>`;
   $("plantabs").innerHTML = html;
 }
 function renderCrumbs() {
   const parts = [[SYSTEMS[state.sys].label, "sys"]];
-  if (state.plan === "wea") { parts.push(["Park (Karte)", "plan:park"]); parts.push([byId(state.parent).name, "asset:" + state.parent]); parts.push(["Komponenten", "plan:wea"]); }
+  if (state.plan === "wea") { parts.push(["Park (map)", "plan:park"]); parts.push([byId(state.parent).name, "asset:" + state.parent]); parts.push(["Components", "plan:wea"]); }
   else parts.push([currentPlan().label, "plan:" + state.plan]);
   if (state.sel) { const a = byId(state.sel); if (a && a.id !== state.parent) parts.push([a.name, "asset:" + a.id]); }
   $("crumbs").innerHTML = parts.map(([l, act], i) => (i ? '<span class="sep" aria-hidden="true">›</span>' : "") +
@@ -843,14 +843,14 @@ function renderAssets() {
     const ts = list.filter(a => a.cluster);
     const cx = ts.reduce((s, a) => s + a.x, 0) / ts.length, cy = ts.reduce((s, a) => s + a.y, 0) / ts.length;
     const worst = ts.some(a => a.status === "crit") ? "crit" : ts.some(a => a.status === "warn") ? "warn" : "ok";
-    const c = marker({ id: "__cluster", name: `Park · ${ts.length} WEA`, x: cx, y: cy, status: worst, due: ts.some(a => a.due), glyph: "cluster", live: { v: "6.014 kW" }, cluster: true });
+    const c = marker({ id: "__cluster", name: `Park · ${ts.length} turbines`, x: cx, y: cy, status: worst, due: ts.some(a => a.due), glyph: "cluster", live: { v: "6,014 kW" }, cluster: true });
     c.classList.add("cluster"); g.appendChild(c);
   }
   applyZoom(); applyFilters();
 }
 function marker(a) {
   const g = svgEl("g", { class: `asset st-${a.status}`, tabindex: "0", role: "button", "data-id": a.id, transform: `translate(${a.x} ${a.y})`,
-    "aria-label": `${a.name}, ${STATUS[a.status][1]}${a.due ? ", Wartung fällig" : ""}` });
+    "aria-label": `${a.name}, ${STATUS[a.status][1]}${a.due ? ", maintenance due" : ""}` });
   const k = svgEl("g", { class: "mk" });
   k.appendChild(svgEl("circle", { class: "pin", r: "17" }));
   const u = svgEl("use", { class: "glyph", href: "#g-" + glyphOf(a), x: "-11", y: "-11", width: "22", height: "22" });
@@ -880,7 +880,7 @@ function applyZoom() {
   stage.classList.toggle("hide-labels", !$("l-labels").checked || state.s < 0.85);
   stage.classList.toggle("hide-live", !$("l-live").checked);
   stage.classList.toggle("hide-maint", !$("l-maint").checked);
-  const lvl = state.plan === "wea" ? "Ebene 2 · Komponente" : (state.plan === "park" && state.s < 0.75) ? "Ebene 0 · Übersicht" : "Ebene 1 · Objekte";
+  const lvl = state.plan === "wea" ? "Level 2 · component" : (state.plan === "park" && state.s < 0.75) ? "Level 0 · overview" : "Level 1 · objects";
   $("lod").textContent = `${lvl} · Zoom ${Math.round(state.s * 100)} %`;
   updateMiniRect();
 }
@@ -909,22 +909,22 @@ function updateMiniRect() {
   r.setAttribute("width", p.w / state.s); r.setAttribute("height", p.h / state.s);
 }
 function renderLegend() {
-  const extra = state.plan === "park" ? `<div class="row"><svg width="22" height="8"><path d="M1 4h20" stroke="var(--h2)" stroke-width="4"/></svg>H2-Leitung</div><div class="row"><svg width="22" height="8"><path d="M1 4h20" stroke="var(--cable)" stroke-width="2" stroke-dasharray="5 3"/></svg>Kabeltrasse</div>` : "";
-  $("legend").innerHTML = `<div class="row"><span class="st ok">✓</span>in Ordnung</div><div class="row"><span class="st warn">!</span>Warnung</div><div class="row"><span class="st crit">×</span>Störung</div>
-    <div class="row"><svg width="16" height="16" viewBox="-8 -8 16 16"><circle r="7.5" class="b-due"/><use href="#g-wrench" x="-5" y="-5" width="10" height="10" style="color:#fff"/></svg>Wartung fällig</div>${extra}`;
+  const extra = state.plan === "park" ? `<div class="row"><svg width="22" height="8"><path d="M1 4h20" stroke="var(--h2)" stroke-width="4"/></svg>H2 pipeline</div><div class="row"><svg width="22" height="8"><path d="M1 4h20" stroke="var(--cable)" stroke-width="2" stroke-dasharray="5 3"/></svg>Cable route</div>` : "";
+  $("legend").innerHTML = `<div class="row"><span class="st ok">✓</span>OK</div><div class="row"><span class="st warn">!</span>Warning</div><div class="row"><span class="st crit">×</span>Fault</div>
+    <div class="row"><svg width="16" height="16" viewBox="-8 -8 16 16"><circle r="7.5" class="b-due"/><use href="#g-wrench" x="-5" y="-5" width="10" height="10" style="color:#fff"/></svg>Maintenance due</div>${extra}`;
 }
 function renderTray() {
   const free = state.plan === "wea" ? [] : ASSETS.filter(a => a.sys === state.sys && !a.plan);
-  $("tray").innerHTML = free.length ? `<span>Atome ohne Ort:</span>` + free.map(a => `<button type="button" data-open="${esc(a.id)}">${esc(a.name)} <span class="mono">${esc(a.atom)}</span></button>`).join("") : "";
+  $("tray").innerHTML = free.length ? `<span>Atoms without a location:</span>` + free.map(a => `<button type="button" data-open="${esc(a.id)}">${esc(a.name)} <span class="mono">${esc(a.atom)}</span></button>`).join("") : "";
 }
 
 /* ------------------------------------------------------------------ hover card ------------------------------ */
 function illus(a, caption) {
-  return `<div class="illus"><svg viewBox="0 0 160 70" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="160" height="70" fill="url(#hatch)"/><use href="#g-${glyphOf(a)}" x="56" y="9" width="48" height="48"/></svg><span class="illus-tag">${esc(caption || "Illustration – Foto folgt")}</span></div>`;
+  return `<div class="illus"><svg viewBox="0 0 160 70" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="160" height="70" fill="url(#hatch)"/><use href="#g-${glyphOf(a)}" x="56" y="9" width="48" height="48"/></svg><span class="illus-tag">${esc(caption || "Illustration, photo to follow")}</span></div>`;
 }
 function liveLine(a) {
-  if (!a.live) return `<div class="liveline note">kein Livewert</div>`;
-  return `<div class="liveline">${esc(a.live.label)} <b>${esc(a.live.v)}</b> <span class="origin ${a.live.origin}" title="Herkunft ${a.live.origin}">${ORIGIN[a.live.origin]}</span> <span class="ts">${esc(a.live.ts)}${a.live.stale ? " · veraltet" : ""}</span></div>`;
+  if (!a.live) return `<div class="liveline note">no live value</div>`;
+  return `<div class="liveline">${esc(a.live.label)} <b>${esc(a.live.v)}</b> <span class="origin ${a.live.origin}" title="Origin ${a.live.origin}">${ORIGIN[a.live.origin]}</span> <span class="ts">${esc(a.live.ts)}${a.live.stale ? " · stale" : ""}</span></div>`;
 }
 function imLine(a) {
   if (!a.im) return "";
@@ -932,15 +932,15 @@ function imLine(a) {
 }
 function maintLine(a) {
   const o = a.maint && a.maint.open && a.maint.open[0];
-  if (a.due) return `<div class="mline due"><svg width="12" height="12"><use href="#g-wrench"/></svg>Wartung fällig${o ? ": " + esc(o[1]) : ""}</div>`;
+  if (a.due) return `<div class="mline due"><svg width="12" height="12"><use href="#g-wrench"/></svg>Maintenance due${o ? ": " + esc(o[1]) : ""}</div>`;
   if (o) return `<div class="mline"><svg width="12" height="12"><use href="#g-wrench"/></svg>${esc(o[0])} · ${esc(o[2])}</div>`;
   const n = a.maint && a.maint.intervals && a.maint.intervals[0];
-  return n ? `<div class="mline note">Nächste Wartung: ${esc(n.name)} ${esc(n.next)}</div>` : "";
+  return n ? `<div class="mline note">Next maintenance: ${esc(n.name)} ${esc(n.next)}</div>` : "";
 }
 function showCard(id, anchorEl, touch) {
   const hc = $("hc");
   if (id === "__cluster") {
-    hc.innerHTML = `<div class="hc-body"><div class="hc-head"><b>Windpark · 4 WEA</b></div><div class="hc-id">h2-chain/park</div><div class="liveline">Summe <b>6.014 kW</b> <span class="origin MEASURED">gemessen</span></div><div class="hint">Klick oder Hineinzoomen: einzelne Anlagen</div></div>`;
+    hc.innerHTML = `<div class="hc-body"><div class="hc-head"><b>Wind park · 4 turbines</b></div><div class="hc-id">h2-chain/park</div><div class="liveline">Total <b>6,014 kW</b> <span class="origin MEASURED">measured</span></div><div class="hint">Click or zoom in: individual turbines</div></div>`;
   } else {
     const a = byId(id); if (!a) return;
     const kp = (a.kpi || []).slice(0, 4).map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("");
@@ -948,7 +948,7 @@ function showCard(id, anchorEl, touch) {
       <div class="hc-head"><b>${esc(a.name)}</b><span class="st ${a.status}">${STATUS[a.status][0]} ${STATUS[a.status][1]}</span></div>
       <div class="hc-id">${esc(a.id)} · ${esc(typeLabel(a))}</div>
       <dl class="kpis">${kp}</dl>${liveLine(a)}${maintLine(a)}${imLine(a)}
-      <div class="hint">${touch ? "Karte oder Symbol nochmals tippen: Datenblatt" : "Klick: Datenblatt"}${a.zoomable ? " · Doppelklick: Komponenten" : ""}</div></div>`;
+      <div class="hint">${touch ? "Tap the card or symbol again: data sheet" : "Click: data sheet"}${a.zoomable ? " · Double-click: components" : ""}</div></div>`;
   }
   hc.hidden = false; hc.classList.toggle("touch", !!touch);
   const sr = $("stage").getBoundingClientRect(), er = anchorEl.getBoundingClientRect();
@@ -971,54 +971,54 @@ function showCard(id, anchorEl, touch) {
 function hideCard() { $("hc").hidden = true; state.hover = null; document.querySelectorAll("#assets .asset.hot").forEach(g => g.classList.remove("hot")); }
 
 /* ------------------------------------------------------------------ detail sheet ---------------------------- */
-const TABS = [["uebersicht", "Übersicht"], ["dokumente", "Dokumente"], ["wartung", "Wartung"], ["messwerte", "Messwerte"]];
+const TABS = [["uebersicht", "Overview"], ["dokumente", "Documents"], ["wartung", "Maintenance"], ["messwerte", "Values"]];
 function openSheet(id, tab) {
   const a = byId(id); if (!a) return;
   state.sel = id; if (tab) state.tab = tab;
   hideCard();
   $("sheet").hidden = false; $("work").classList.add("has-sheet");
-  $("sheet-head").innerHTML = `<div class="row"><div><h2>${esc(a.name)}</h2><div class="hc-id">${esc(a.id)}</div></div><button class="sheet-close" type="button" id="sheet-close" aria-label="Datenblatt schließen">×</button></div>
-    <div class="actions"><span class="st ${a.status}">${STATUS[a.status][0]} ${STATUS[a.status][1]}</span>${a.due ? '<span class="st warn">Wartung fällig</span>' : ""}<span class="tag-example">Beispiel</span><span class="note">${esc(typeLabel(a))}</span></div>`;
+  $("sheet-head").innerHTML = `<div class="row"><div><h2>${esc(a.name)}</h2><div class="hc-id">${esc(a.id)}</div></div><button class="sheet-close" type="button" id="sheet-close" aria-label="Close data sheet">×</button></div>
+    <div class="actions"><span class="st ${a.status}">${STATUS[a.status][0]} ${STATUS[a.status][1]}</span>${a.due ? '<span class="st warn">Maintenance due</span>' : ""}<span class="tag-example">Example</span><span class="note">${esc(typeLabel(a))}</span></div>`;
   $("sheet-tabs").innerHTML = TABS.map(([k, l]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${k === state.tab}">${l}</button>`).join("");
   renderTab(a);
   document.querySelectorAll("#assets .asset").forEach(g => g.classList.toggle("sel", g.dataset.id === id));
   renderCrumbs();
 }
 function closeSheet() { state.sel = null; $("sheet").hidden = true; $("work").classList.remove("has-sheet"); document.querySelectorAll("#assets .asset.sel").forEach(g => g.classList.remove("sel")); renderCrumbs(); }
-function kv(obj) { const r = Object.entries(obj || {}); return r.length ? `<table class="kv">${r.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join("")}</table>` : `<p class="note">keine Angaben</p>`; }
+function kv(obj) { const r = Object.entries(obj || {}); return r.length ? `<table class="kv">${r.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join("")}</table>` : `<p class="note">no data</p>`; }
 function renderTab(a) {
   const b = $("sheet-body"); let h = "";
   if (state.tab === "uebersicht") {
-    h += `<div class="gallery"><div class="main">${illus(a, "Illustration – Foto folgt")}</div>${illus(a, "Illustration")}${illus(a, "Illustration")}</div>
-      <p class="note">Gesamtansicht, Typenschild, Detail: Bildplätze für echte Fotos, Drohnen- oder 360°-Aufnahmen des Eigentümers (mit Quelle, Datum, Lizenz). Bis dahin gekennzeichnete Illustrationen.</p>`;
+    h += `<div class="gallery"><div class="main">${illus(a, "Illustration, photo to follow")}</div>${illus(a, "Illustration")}${illus(a, "Illustration")}</div>
+      <p class="note">Overall view, nameplate, detail: image slots for real photos, drone or 360° shots by the owner (with source, date, license). Until then, labeled illustrations.</p>`;
     if (a.note) h += `<div class="callout">${esc(a.note)}</div>`;
-    h += `<h3>Kennzahlen</h3>${kv(Object.fromEntries(a.kpi || []))}${liveLine(a)}`;
-    h += `<h3>Typenschild</h3>${kv(a.plate)}`;
-    const loc = a.lat ? { Ort: `${a.lat.toFixed(4)}° N, ${a.lon.toFixed(4)}° O (WGS84)` } : a.plan ? { Ort: `Plan ${a.plan}, x ${Math.round(a.x)} / y ${Math.round(a.y)} (Planeinheiten)` } : { Ort: "ohne Ort" };
-    h += `<h3>Kennzeichen & Ort</h3>${kv(Object.assign({ "Asset-Id": a.id, Atom: a.atom || "–", Elternobjekt: a.parent || "–" }, a.refs, loc))}`;
-    if (a.im) h += `<h3>infinimesh</h3>${kv({ Namespace: a.im.ns, Gerät: a.im.dev, Status: a.im.state, "Letztes reported": a.live ? `${a.live.v} · ${a.live.ts}` : "–" })}`;
-    h += `<div class="actions">${a.zoomable ? `<button type="button" class="primary" data-zoomin="${esc(a.id)}">Komponenten ansehen (Ebene 2)</button>` : ""}<a href="smart-topics-studio.html">Im Node-Graph zeigen</a>
-      <button type="button" disabled title="nur mit Freigabe, Stufe E2+">${a.commandable === false ? "Nicht schaltbar (Sicherheit)" : "Kommando mit Freigabe …"}</button></div>`;
+    h += `<h3>Key figures</h3>${kv(Object.fromEntries(a.kpi || []))}${liveLine(a)}`;
+    h += `<h3>Nameplate</h3>${kv(a.plate)}`;
+    const loc = a.lat ? { Location: `${a.lat.toFixed(4)}° N, ${a.lon.toFixed(4)}° E (WGS84)` } : a.plan ? { Location: `Plan ${a.plan}, x ${Math.round(a.x)} / y ${Math.round(a.y)} (plan units)` } : { Location: "no location" };
+    h += `<h3>Identifiers & location</h3>${kv(Object.assign({ "Asset id": a.id, Atom: a.atom || "–", "Parent asset": a.parent || "–" }, a.refs, loc))}`;
+    if (a.im) h += `<h3>infinimesh</h3>${kv({ Namespace: a.im.ns, Device: a.im.dev, Status: a.im.state, "Last reported": a.live ? `${a.live.v} · ${a.live.ts}` : "–" })}`;
+    h += `<div class="actions">${a.zoomable ? `<button type="button" class="primary" data-zoomin="${esc(a.id)}">View components (level 2)</button>` : ""}<a href="smart-topics-studio.html">Show in the node graph</a>
+      <button type="button" disabled title="approval required, stage E2+">${a.commandable === false ? "Not switchable (safety)" : "Command with approval …"}</button></div>`;
   } else if (state.tab === "dokumente") {
-    h += (a.docs && a.docs.length) ? a.docs.map(d => `<div class="doc"><svg><use href="#g-doc"/></svg><div><div>${esc(d.title)}</div><div class="meta">${esc(d.kind)} · ${esc(d.fmt)} · ${esc(d.size)} · sha256 ${esc(d.sha)}</div></div><button type="button" disabled title="Beispiel – Datei nicht hinterlegt">öffnen</button></div>`).join("")
-      : `<p class="note">Noch keine Dokumente hinterlegt.</p>`;
-    h += `<p class="note">Ablage im Objektspeicher (s3://opentsx-inventory/…) mit Prüfsumme; Dateien in diesem Prototyp nicht hinterlegt. Private Dokumente (Haus, Boot) bleiben lokal.</p>`;
-    h += `<h3>Bildherkunft</h3><table class="grid"><tr><th>Medium</th><th>Art</th><th>Quelle</th><th>Lizenz</th></tr>
-      <tr><td>Gesamtansicht</td><td>Illustration</td><td>generiert (Prototyp)</td><td>–</td></tr><tr><td>Typenschild</td><td>Illustration</td><td>generiert (Prototyp)</td><td>–</td></tr></table>`;
+    h += (a.docs && a.docs.length) ? a.docs.map(d => `<div class="doc"><svg><use href="#g-doc"/></svg><div><div>${esc(d.title)}</div><div class="meta">${esc(d.kind)} · ${esc(d.fmt)} · ${esc(d.size)} · sha256 ${esc(d.sha)}</div></div><button type="button" disabled title="Example: file not stored">open</button></div>`).join("")
+      : `<p class="note">No documents stored yet.</p>`;
+    h += `<p class="note">Stored in the object store (s3://opentsx-inventory/…) with a checksum; files are not stored in this prototype. Private documents (house, boat) stay local.</p>`;
+    h += `<h3>Image provenance</h3><table class="grid"><tr><th>Medium</th><th>Kind</th><th>Source</th><th>License</th></tr>
+      <tr><td>Overall view</td><td>Illustration</td><td>generated (prototype)</td><td>–</td></tr><tr><td>Nameplate</td><td>Illustration</td><td>generated (prototype)</td><td>–</td></tr></table>`;
   } else if (state.tab === "wartung") {
     const m = a.maint || { intervals: [], open: [], history: [] };
-    if (a.due) h += `<div class="callout due">Wartung fällig${m.open[0] ? ": " + esc(m.open[0][1]) : ""}</div>`;
-    h += `<h3>Intervalle</h3>` + (m.intervals.length ? `<table class="grid"><tr><th>Was</th><th>Art</th><th>Intervall</th><th>zuletzt</th><th>nächste</th></tr>${m.intervals.map(i => `<tr><td>${esc(i.name)}</td><td>${esc(i.kind)}</td><td>${esc(i.every)}</td><td>${esc(i.last)}</td><td>${esc(i.next)}</td></tr>`).join("")}</table>` : `<p class="note">keine</p>`);
-    h += `<h3>Offene Aufträge</h3>` + (m.open.length ? `<table class="grid"><tr><th>Auftrag</th><th>Inhalt</th><th>Status</th><th>Termin</th></tr>${m.open.map(o => `<tr><td class="mono">${esc(o[0])}</td><td>${esc(o[1])}</td><td><span class="st ${o[2] === "in Arbeit" ? "warn" : "off"}">${esc(o[2])}</span></td><td>${esc(o[3])}</td></tr>`).join("")}</table>` : `<p class="note">keine</p>`);
-    h += `<h3>Historie</h3>` + (m.history.length ? `<table class="grid"><tr><th>Datum</th><th>Arbeit</th><th>durch</th></tr>${m.history.map(o => `<tr><td>${esc(o[0])}</td><td>${esc(o[1])}</td><td>${esc(o[2])}</td></tr>`).join("")}</table>` : `<p class="note">keine Einträge</p>`);
-    h += `<p class="note">Lebenszyklus: vorgeschlagen → geplant → in Arbeit ↔ wartet → erledigt → abgenommen. Jede Änderung ist ein Ereignis in <span class="mono">tsx.&lt;domain&gt;.maintenance.v1</span>; ein geplanter Auftrag ist im Zwilling ein Eingriff (Verfügbarkeit).</p>
-      <div class="actions"><button type="button" disabled title="Stufe E3">Auftrag anlegen</button><button type="button" disabled title="Stufe E3">Was-wäre-wenn: Wartung verschieben</button></div>`;
+    if (a.due) h += `<div class="callout due">Maintenance due${m.open[0] ? ": " + esc(m.open[0][1]) : ""}</div>`;
+    h += `<h3>Intervals</h3>` + (m.intervals.length ? `<table class="grid"><tr><th>What</th><th>Kind</th><th>Interval</th><th>Last</th><th>Next</th></tr>${m.intervals.map(i => `<tr><td>${esc(i.name)}</td><td>${esc(i.kind)}</td><td>${esc(i.every)}</td><td>${esc(i.last)}</td><td>${esc(i.next)}</td></tr>`).join("")}</table>` : `<p class="note">none</p>`);
+    h += `<h3>Open work orders</h3>` + (m.open.length ? `<table class="grid"><tr><th>Work order</th><th>Description</th><th>Status</th><th>Date</th></tr>${m.open.map(o => `<tr><td class="mono">${esc(o[0])}</td><td>${esc(o[1])}</td><td><span class="st ${o[2] === "in progress" ? "warn" : "off"}">${esc(o[2])}</span></td><td>${esc(o[3])}</td></tr>`).join("")}</table>` : `<p class="note">none</p>`);
+    h += `<h3>History</h3>` + (m.history.length ? `<table class="grid"><tr><th>Date</th><th>Work</th><th>By</th></tr>${m.history.map(o => `<tr><td>${esc(o[0])}</td><td>${esc(o[1])}</td><td>${esc(o[2])}</td></tr>`).join("")}</table>` : `<p class="note">no entries</p>`);
+    h += `<p class="note">Lifecycle: proposed → planned → in progress ↔ waiting → done → accepted. Every change is an event in <span class="mono">tsx.&lt;domain&gt;.maintenance.v1</span>; in the twin, a planned work order is an intervention (availability).</p>
+      <div class="actions"><button type="button" disabled title="Stage E3">Create work order</button><button type="button" disabled title="Stage E3">What-if: postpone maintenance</button></div>`;
   } else {
     h += liveLine(a) + sparkline(a);
-    h += `<h3>Reihen</h3>` + (a.series && a.series.length ? `<table class="grid"><tr><th>Metrik</th><th>Einheit</th><th>Herkunft</th></tr>${a.series.map(([m, u, o]) => `<tr><td class="mono">${esc(m)}</td><td>${esc(u)}</td><td><span class="origin ${o}">${ORIGIN[o]}</span></td></tr>`).join("")}</table>` : `<p class="note">keine</p>`);
-    h += `<h3>Ports im Schaltplan</h3>` + (a.ports && a.ports.length ? `<ul class="mono" style="margin:0;padding-left:18px;font-size:.78rem">${a.ports.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : `<p class="note">keine</p>`);
+    h += `<h3>Series</h3>` + (a.series && a.series.length ? `<table class="grid"><tr><th>Metric</th><th>Unit</th><th>Origin</th></tr>${a.series.map(([m, u, o]) => `<tr><td class="mono">${esc(m)}</td><td>${esc(u)}</td><td><span class="origin ${o}">${ORIGIN[o]}</span></td></tr>`).join("")}</table>` : `<p class="note">none</p>`);
+    h += `<h3>Ports in the wiring plan</h3>` + (a.ports && a.ports.length ? `<ul class="mono" style="margin:0;padding-left:18px;font-size:.78rem">${a.ports.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : `<p class="note">none</p>`);
     if (a.smart && a.smart.length) h += `<h3>Smart Topics</h3><ul class="mono" style="margin:0;padding-left:18px;font-size:.78rem">${a.smart.map(p => `<li>${esc(p)}</li>`).join("")}</ul>`;
-    h += `<p class="note">Historie aus OpenTSx, nicht aus dem Gerät: ${a.im ? "infinimesh Kafka-Addon → " : ""}KafScale → Normalizer → Episoden (v2) → Iceberg.</p>`;
+    h += `<p class="note">History from OpenTSx, not from the device: ${a.im ? "infinimesh Kafka add-on → " : ""}KafScale → Normalizer → Episodes (v2) → Iceberg.</p>`;
   }
   b.innerHTML = h; b.scrollTop = 0;
 }
@@ -1027,7 +1027,7 @@ function sparkline(a) {
   for (let i = 0; i < 48; i++) { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; v = Math.max(0.05, Math.min(0.95, v + ((seed / 4294967296) - 0.5) * 0.18)); pts.push(v); }
   const W = 320, H = 70, xs = i => 4 + i * (W - 8) / 47, ys = v => 8 + (1 - v) * (H - 22);
   const line = pts.map((v, i) => `${i ? "L" : "M"}${xs(i).toFixed(1)} ${ys(v).toFixed(1)}`).join(" ");
-  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Beispielverlauf 48 h"><path class="ar" d="${line} L${xs(47)} ${H - 14} L${xs(0)} ${H - 14} Z"/><path class="ln" d="${line}"/><line class="ax" x1="0" x2="${W}" y1="${H - 14}" y2="${H - 14}"/><text x="4" y="${H - 2}">−48 h</text><text x="${W - 34}" y="${H - 2}">jetzt</text><text x="${W / 2 - 50}" y="${H - 2}">Beispielverlauf, erfunden</text></svg>`;
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Example trend 48 h"><path class="ar" d="${line} L${xs(47)} ${H - 14} L${xs(0)} ${H - 14} Z"/><path class="ln" d="${line}"/><line class="ax" x1="0" x2="${W}" y1="${H - 14}" y2="${H - 14}"/><text x="4" y="${H - 2}">−48 h</text><text x="${W - 34}" y="${H - 2}">now</text><text x="${W / 2 - 50}" y="${H - 2}">Example trend, invented</text></svg>`;
 }
 
 /* ------------------------------------------------------------------ navigation ------------------------------ */
@@ -1138,14 +1138,14 @@ $("q").addEventListener("input", () => {
   const q = $("q").value.trim().toLowerCase(); const r = $("results");
   if (!q) { r.hidden = true; return; }
   const hits = searchPool().filter(a => [a.id, a.name, typeLabel(a), Object.values(a.plate || {}).join(" "), Object.values(a.refs || {}).join(" ")].join(" ").toLowerCase().includes(q)).slice(0, 8);
-  r.innerHTML = hits.length ? hits.map(a => `<li><button type="button" data-loc="${esc(a.id)}">${esc(a.name)} <small>${esc(a.id)} · ${esc(SYSTEMS[a.sys].label)}</small></button></li>`).join("") : `<li class="note" style="padding:6px 8px">keine Treffer</li>`;
+  r.innerHTML = hits.length ? hits.map(a => `<li><button type="button" data-loc="${esc(a.id)}">${esc(a.name)} <small>${esc(a.id)} · ${esc(SYSTEMS[a.sys].label)}</small></button></li>`).join("") : `<li class="note" style="padding:6px 8px">no matches</li>`;
   r.hidden = false;
 });
 $("results").addEventListener("click", e => { const b = e.target.closest("button[data-loc]"); if (b) { $("results").hidden = true; $("q").value = ""; locate(b.dataset.loc); } });
 document.addEventListener("click", e => { if (!e.target.closest(".search")) $("results").hidden = true; });
 const THEMES = ["auto", "light", "dark"]; let theme = 0;
 try { const t = localStorage.getItem("explorer-theme"); if (t && THEMES.includes(t)) theme = THEMES.indexOf(t); } catch (_) {}
-function applyTheme() { const t = THEMES[theme]; if (t === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", t); $("theme").textContent = { auto: "Auto", light: "Hell", dark: "Dunkel" }[t]; try { localStorage.setItem("explorer-theme", t); } catch (_) {} }
+function applyTheme() { const t = THEMES[theme]; if (t === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", t); $("theme").textContent = { auto: "Auto", light: "Light", dark: "Dark" }[t]; try { localStorage.setItem("explorer-theme", t); } catch (_) {} }
 $("theme").onclick = () => { theme = (theme + 1) % 3; applyTheme(); };
 let lastW = window.innerWidth;
 window.addEventListener("resize", () => { if (window.innerWidth !== lastW && !$("hc").hidden) hideCard(); lastW = window.innerWidth; });
