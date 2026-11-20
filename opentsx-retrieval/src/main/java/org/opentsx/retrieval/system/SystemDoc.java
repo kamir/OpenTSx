@@ -25,7 +25,7 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 /**
- * A system document ({@code opentsx.system.v1}, docs/datamodel-2026/14-ENGINEERING-FLOW.md): one system with its
+ * A system document ({@code opentsx.system.v1}, docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 2): one system with its
  * signals and where the raw, clean and feature data of each signal comes from. The document refers to the twin plan,
  * the channel catalogs and the inventory; {@link #load} reads them too and checks every reference. Problems are
  * collected, not thrown, so a document with a mistake can still be shown with what is wrong.
@@ -59,7 +59,7 @@ public final class SystemDoc {
 
     /**
      * A source a person set in the web application: it lies over the document until it is written into the file
-     * (decision D42). {@code source} has the form of {@code signals[].<grade>.source}.
+     * (docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 7). {@code source} has the form of {@code signals[].<grade>.source}.
      */
     public record Binding(String signal, String grade, JsonNode source) {
     }
@@ -532,7 +532,7 @@ public final class SystemDoc {
         if (!s.atom().equals(a.path("atom").asText(s.atom()))) {
             problems.add(s.id() + ": the inventory puts " + asset + " below the atom " + a.path("atom").asText());
         }
-        // D47: the binding lives here; as long as the inventory lists series too, the two must agree
+        // the binding lives here (SYSTEM-DOCUMENT-SPEC.md, section 2.5); as long as the inventory lists series too, the two must agree
         if (s.raw() != null && "topic".equals(s.raw().kind()) && a.path("series").isArray()) {
             boolean listed = false;
             for (JsonNode e : a.path("series")) {

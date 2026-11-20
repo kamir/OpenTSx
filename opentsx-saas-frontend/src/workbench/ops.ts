@@ -777,7 +777,7 @@ function pairParams(minCoverage: number): ParamDef[] {
 const PAIR_HINT =
   'Compares series A and B window by window, one result per window at its centre. One input: every pair of its series; a second input (Properties tab, or a connection onto the node): each series of the first with each of the second. ' +
   'pairing same: episodes with the same start and end; intersect: overlapping episodes on their overlap. window: episode (one point per pair range) or a width in seconds; step 0 puts the windows side by side. ' +
-  'A and B are put on one clock as in "Align to vector"; clock 0 takes the larger sampling interval of the two. Below "min coverage" (share of ticks where both have a value) the result is a gap with quality 1.';
+  'A and B are put on one clock as in "Align to vector"; clock 0 takes, per pair range, the larger sampling interval of its two episodes. Below "min coverage" (share of ticks where both have a value) the result is a gap with quality 1.';
 
 export const OPS: OpDef[] = [
   // Tab "Transformations" of the Swing panel
@@ -827,7 +827,7 @@ export const OPS: OpDef[] = [
       { key: 'scales', label: 'scales', type: 'number', default: 40, min: 4 },
     ], apply: dfaOp },
 
-  // Tab "Multi-variate Analysis": pair methods (EVOLUTION/TASK-015-multivariate-analysis.md, "Pair windows")
+  // Tab "Multi-variate Analysis": pair methods (docs/datamodel-2026/PAIR-WINDOWS-SPEC.md)
   { id: PAIR_COVERAGE.id, label: 'Pair coverage', group: 'multivariate', prefix: PAIR_COVERAGE.prefix, pfdOperation: 'PAIR_COVERAGE', inCatalog: false, multiInput: true, maxInputs: 2,
     hint: `${PAIR_HINT} This method gives the coverage itself and the number of ticks per window: what the other pair methods will see.`,
     params: pairParams(0), apply: (b, p, others) => pairWindows(PAIR_COVERAGE, b, p, others) },

@@ -1,6 +1,6 @@
 /**
  * Pair windows: a pair method compares two series A and B window by window and gives one result item per window,
- * stamped at the window centre. Design: EVOLUTION/TASK-015-multivariate-analysis.md, section "Pair windows".
+ * stamped at the window centre. Rules: docs/datamodel-2026/PAIR-WINDOWS-SPEC.md, sections 3 to 9.
  *
  * - Pair range: `same` pairs an episode of A with the episode of B that has the same start and end; `intersect`
  *   pairs overlapping episodes on their intersection and drops one shorter than the window. A series without
@@ -11,8 +11,8 @@
  *   computed.
  * - Alignment: A and B go onto one clock by the rules of align.vector (vector.ts): ticks of `every` seconds since the
  *   epoch, one aggregate per tick, fill as-of up to `maxAge`. Only ticks that lie inside the window count, and the
- *   fill does not reach back across the start of the pair range. The default clock is the larger of the two
- *   sampling intervals.
+ *   fill does not reach back across the start of the pair range. The default clock of a pair range is the larger
+ *   sampling interval of its two episodes, as Wayang and the Rust runner take it (pairClocks).
  * - Coverage: the share of ticks of a window in which both A and B have a value. Below `minCoverage` the item is NaN
  *   with quality 1, so the time index stays regular.
  * - Result: one series per pair and field, metric `pair.<method>.<field>`, tags a, b, window and step, the series id
@@ -61,7 +61,7 @@ export interface PairSettings {
   /** Window width in seconds; null for `window: episode`. */
   window: number | null;
   step: number;
-  /** Clock in seconds; null for the larger sampling interval of the two series. */
+  /** Clock in seconds; null for the larger sampling interval of the two episodes of each pair range. */
   every: number | null;
   agg: string;
   /** Fill as-of up to this age in seconds; null without fill. */
@@ -82,7 +82,9 @@ export function pairSettings(p: Params): PairSettings {
   const every = Number(p.every) > 0 ? Number(p.every) : null;
   const agg = String(p.agg ?? 'MEAN');
   if (!VECTOR_AGGREGATIONS.includes(agg)) throw new Error(`Aggregate "${agg}" is unknown.`);
-  const maxAge = String(p.fill ?? 'none') === 'as-of' ? Math.max(0, Number(p.maxAge) || 0) : null;
+  const fill = String(p.fill ?? 'none');
+  if (fill !== 'none' && fill !== 'as-of') throw new Error('pair fill must be none or as-of');
+  const maxAge = fill === 'as-of' ? Math.max(0, Number(p.maxAge) || 0) : null;
   const minCoverage = Number.isFinite(Number(p.minCoverage)) ? Number(p.minCoverage) : 0.8;
   if (minCoverage < 0 || minCoverage > 1) throw new Error('The minimum coverage is a share between 0 and 1.');
   return { pairing: pairing as PairSettings['pairing'], window, step, every, agg, maxAge, minCoverage };
@@ -165,6 +167,51 @@ export function windowsOf(start: number, end: number, width: number | null, step
   });
 }
 
+/** First index in [lo, hi) at which `reached` holds, for a test that turns true once and then stays true. */
+function firstIndex(lo: number, hi: number, reached: (i: number) => boolean): number {
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1;
+    if (reached(mid)) hi = mid;
+    else lo = mid + 1;
+  }
+  return lo;
+}
+
+/**
+ * The clock of each pair range: `every`, or else the larger sampling interval of its two episodes. The interval of an
+ * episode is taken on the times of its samples in epoch microseconds divided by 1e6, as Wayang (TsxPairWindows.java)
+ * and the Rust runner (pairs.rs) take it, so all three get the same clock to the bit. x + shift is x on the axis of
+ * the ranges, which starts at `originMs`; x is sorted. `known` keeps the interval of each series and range across the
+ * pairs of one run.
+ */
+export function pairClocks(
+  every: number | null,
+  ranges: PairRange[],
+  a: { series: Series; shift: number },
+  b: { series: Series; shift: number },
+  originMs: number,
+  known: Map<Series, Map<string, number>>,
+): number[] {
+  if (every !== null) return ranges.map(() => every);
+  const originUs = Math.round(originMs * 1000);
+  const interval = ({ series: s, shift }: { series: Series; shift: number }, r: EpisodeRange): number => {
+    const bySpan = known.get(s) ?? new Map<string, number>();
+    known.set(s, bySpan);
+    const key = `${shift} ${r.start} ${r.end}`;
+    let v = bySpan.get(key);
+    if (v === undefined) {
+      const from = firstIndex(0, s.x.length, (i) => s.x[i] + shift >= r.start - TOL);
+      const to = firstIndex(from, s.x.length, (i) => s.x[i] + shift >= r.end - TOL);
+      const t = new Float64Array(to - from);
+      for (let i = from; i < to; i++) t[i - from] = (Math.round((s.x[i] + shift) * 1e6) + originUs) / 1e6;
+      v = samplingInterval(t);
+      bySpan.set(key, v);
+    }
+    return v;
+  };
+  return ranges.map((r) => Math.max(interval(a, r.a), interval(b, r.b)));
+}
+
 /** First tick that starts at or after `t` (epoch seconds). */
 function tickFrom(t: number, every: number): number {
   return Math.ceil((t - TOL) / every);
@@ -210,35 +257,45 @@ export function pairWindows(method: PairMethod, first: Bucket, p: Params, others
   const own = method.settings?.(p) ?? {};
   for (const b of [first, ...others]) {
     if (b.xKind !== 'time') throw new Error(`${b.name} has a ${b.xKind} axis. A pair method needs inputs with a time axis.`);
+    for (const s of b.series) {
+      for (let i = 1; i < s.x.length; i++) {
+        if (!(s.x[i] >= s.x[i - 1])) throw new Error(`${s.label} has times out of order. A pair method needs them in increasing order.`);
+      }
+    }
   }
   const originS = (first.t0Ms ?? 0) / 1000;
   const windowTag = durationTag(st.window);
   const stepTag = st.window === null ? 'episode' : durationTag(st.step);
-  // a series takes part in several pairs: its ticks are filled once per clock
-  const cellCache = new Map<Series, Map<number, Map<number, Cell>>>();
-  const cellsOf = (s: Side, every: number): Map<number, Cell> => {
-    const byClock = cellCache.get(s.series) ?? new Map<number, Map<number, Cell>>();
-    cellCache.set(s.series, byClock);
-    let cells = byClock.get(every);
+  // a series takes part in several pairs: the cells of the same ticks on the same clock are filled once
+  const cellCache = new Map<Series, Map<string, Map<number, Cell>>>();
+  const cellsOf = (s: Side, every: number, lo: number, n: number): Map<number, Cell> => {
+    const bySpan = cellCache.get(s.series) ?? new Map<string, Map<number, Cell>>();
+    cellCache.set(s.series, bySpan);
+    const key = `${s.shift} ${every} ${lo} ${n}`;
+    let cells = bySpan.get(key);
     if (!cells) {
+      const { x, y } = s.series;
+      const shift = s.shift + originS;
+      // the samples that fall into ticks lo to lo + n - 1 lie side by side, because x is sorted
+      const from = firstIndex(0, x.length, (i) => Math.floor((x[i] + shift) / every) >= lo);
+      const to = firstIndex(from, x.length, (i) => Math.floor((x[i] + shift) / every) >= lo + n);
       cells = new Map();
-      addSamples(cells, s.series, s.shift + originS, every);
-      byClock.set(every, cells);
+      addSamples(cells, { ...s.series, x: x.subarray(from, to), y: y.subarray(from, to) }, shift, every);
+      bySpan.set(key, cells);
     }
     return cells;
   };
+  const intervals = new Map<Series, Map<string, number>>();
 
   const series: Series[] = [];
   const episodes: EpisodeRange[] = [];
-  const clocks = new Set<number>();
+  let clockMin = Infinity;
+  let clockMax = -Infinity;
   let rangesUsed = 0;
   let rangesShort = 0;
   let items = 0;
   let low = 0;
   for (const [A, B] of pairsOf(first, others)) {
-    const every = st.every ?? Math.max(samplingInterval(A.series.x), samplingInterval(B.series.x));
-    clocks.add(every);
-    const maxAgeTicks = st.maxAge === null ? -1 : Math.floor(st.maxAge / every);
     const shifted = (r: EpisodeRange, shift: number): EpisodeRange => (shift === 0 ? r : { ...r, start: r.start + shift, end: r.end + shift });
     const ranges = pairRanges(
       rangesOf(A.bucket, A.series).map((r) => shifted(r, A.shift)),
@@ -246,21 +303,26 @@ export function pairWindows(method: PairMethod, first: Bucket, p: Params, others
       st.pairing,
       st.window ?? 0,
     );
+    const clocks = pairClocks(st.every, ranges, A, B, first.t0Ms ?? 0, intervals);
     const xs: number[] = [];
     const ys: number[][] = method.fields.map(() => []);
     const qs: number[] = [];
     const spans: { start: number; end: number; range: PairRange }[] = [];
-    for (const range of ranges) {
+    for (const [k, range] of ranges.entries()) {
       const windows = windowsOf(range.start, range.end, st.window, st.step);
       if (windows.length === 0) {
         rangesShort++;
         continue;
       }
       rangesUsed++;
+      const every = clocks[k];
+      clockMin = Math.min(clockMin, every);
+      clockMax = Math.max(clockMax, every);
+      const maxAgeTicks = st.maxAge === null ? -1 : Math.floor(st.maxAge / every);
       const lo = tickFrom(range.start + originS, every);
       const n = tickTo(range.end + originS, every) - lo;
-      const colA = fillColumn(cellsOf(A, every), lo, n, st.agg, maxAgeTicks);
-      const colB = fillColumn(cellsOf(B, every), lo, n, st.agg, maxAgeTicks);
+      const colA = fillColumn(cellsOf(A, every, lo, n), lo, n, st.agg, maxAgeTicks);
+      const colB = fillColumn(cellsOf(B, every, lo, n), lo, n, st.agg, maxAgeTicks);
       for (const w of windows) {
         const j0 = Math.max(0, tickFrom(w.start + originS, every) - lo);
         const j1 = Math.min(n, tickTo(w.end + originS, every) - lo);
@@ -313,6 +375,8 @@ export function pairWindows(method: PairMethod, first: Bucket, p: Params, others
   }
 
   const pairs = series.length / method.fields.length;
+  const shown = (c: number) => Number(c.toPrecision(6));
+  const clock = rangesUsed === 0 ? '' : `, clock ${shown(clockMin)}${shown(clockMax) > shown(clockMin) ? ` to ${shown(clockMax)}` : ''} s`;
   return {
     name: `${method.prefix}${first.name}`,
     xKind: 'time',
@@ -323,7 +387,7 @@ export function pairWindows(method: PairMethod, first: Bucket, p: Params, others
     marks: first.marks,
     episodes: episodes.sort((p, q) => (p.seriesId === q.seriesId ? p.start - q.start : p.seriesId < q.seriesId ? -1 : 1)),
     note:
-      `${method.id}${Object.entries(own).map(([k, v]) => `, ${k} ${v}`).join('')} over ${pairs} pair(s), pairing ${st.pairing}, window ${windowTag}, step ${stepTag}, clock ${[...clocks].map((c) => Number(c.toPrecision(6))).join(', ')} s\n` +
+      `${method.id}${Object.entries(own).map(([k, v]) => `, ${k} ${v}`).join('')} over ${pairs} pair(s), pairing ${st.pairing}, window ${windowTag}, step ${stepTag}${clock}\n` +
       `${rangesUsed} pair range(s), ${items} item(s) per field, ${low} below the minimum coverage ${st.minCoverage}` +
       (rangesShort > 0 ? `; ${rangesShort} pair range(s) shorter than the window` : ''),
   };

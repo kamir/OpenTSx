@@ -155,7 +155,8 @@ Vector topics are written by the vector processor (below). The server is its fro
 * `POST /v1/dags/deploy` (body: the DAG as YAML) checks that the processor can run the DAG and appends it to the
   control topic. `POST /v1/dags/stop?name=<dag>` appends the stop. Both exist only with `--dag-runs true`.
 * The processor runs `align.vector` on the series of the source topic only (`in: [decode]`); any other operator
-  before the vector is refused with the id of the node. `source.series` must name the series.
+  before the vector is refused with the id of the node. `source.series` must name the series. A `fill` other than
+  `none` or `as-of` is refused with `node <id>: vector fill must be none or as-of`; a missing `fill` is `none`.
 * **Run token.** With `--dag-run-token <token>` or the environment variable `OPENTSX_DAG_RUN_TOKEN` the two write
   routes need the token in the header `X-OpenTSx-Run-Token`; anything else gets 401. Without a token, whoever
   reaches the port can deploy and stop. The SaaS backend holds the token and forwards for its users
@@ -163,7 +164,7 @@ Vector topics are written by the vector processor (below). The server is its fro
 
 The operator is `org.opentsx.retrieval.vector.VectorAligner`. It passes the test vectors shared with the web
 workbench (`docs/datamodel-2026/testvectors/align-vector.v1.json`); the rules are in
-`docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md`, section 5a.
+`docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md`, section 2.
 
 `VectorStream` is the same operator over a continuing input. `new VectorStream(expected, params, lateness)` reads one
 set of series for every input; `new VectorStream(expectedByInput, params, lateness)` gives each input series of its
@@ -195,7 +196,7 @@ opentsx vectors stop   --kafscale host:9092 --domain wind --name <dag name>
 * A changed DAG starts over from the beginning of the topic (`source.start: latest`: from now).
 
 Limits: one processor per domain, no idle timeout for a series that falls silent, vectors on source series only.
-The rules are in `docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md`, section 5b.
+The rules are in `docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md`, section 3.
 
 ### Series inventory
 
@@ -238,6 +239,11 @@ With `--kafscale` the server reads `tsx.<domain>.episodes.v2` into memory and fo
 assignment without a consumer group and writes nothing. Loading stops at `--max-episodes`. `--scenario <file>` and
 `--catalog <file>` (YAML) work with every source and are handed out in the inventory.
 
+The server also follows `tsx.<domain>.clean.v2`, `tsx.<domain>.features.v2` and `tsx.<domain>.synthetic.v2` into
+the same store, each once it exists. `--max-episodes` does not limit them. Their series carry the tags `system`,
+`signal` and `grade`, a feature also `feature`, so `GET /v1/systems/{id}/signals` finds them per grade. The inventory
+names the topics under `source.topics`.
+
 Use it from Python:
 
 ```python
@@ -254,5 +260,4 @@ CI starts the server in demo mode, and the Python client queries it (job "Java â
 
 * **Power-curve analysis:** method of bins, performance index and underperformance periods. It lives in
   `opentsx-windpark` (`analysis.PowerCurveAnalysis`).
-* **Smart Topics (P7):** they build on segmentation, resampling and statistics. See
-  [`docs/datamodel-2026/05-SMART-TOPICS.md`](../docs/datamodel-2026/05-SMART-TOPICS.md).
+* **Smart Topics (P7):** they build on segmentation, resampling and statistics.

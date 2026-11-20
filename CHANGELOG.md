@@ -4,7 +4,7 @@ All notable changes to OpenTSx are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Releases are tagged `v<version>`;
 entries before 3.0.0 are grouped by date. The detailed progress log is in
-[`EVOLUTION/TASK-011-datamodel-refresher-2026.md`](EVOLUTION/TASK-011-datamodel-refresher-2026.md).
+`EVOLUTION/TASK-011-datamodel-refresher-2026.md`.
 
 ## [Unreleased]
 
@@ -13,6 +13,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- OpenTSx is maintainer-led: issues are welcome, pull requests are reviewed after the change was agreed in an
+  issue ([`GOVERNANCE.md`](GOVERNANCE.md), `CONTRIBUTING.md`, `.github/CODEOWNERS`).
+- `tools/test_wayang_track_a_results.py` checks the public Track A record (matrix, 306 raw-file names and SHA-256
+  digests, no raw files committed). The check of the raw files against the record runs when `OPENTSX_TRACK_A_DATA`
+  points to them. `tools/test_public_scope.py` fails when a tracked file points to the private companion repository.
+- The `metadata.json` records of three measurement runs show `~/` instead of a personal home directory.
+- AGENTS.md rule 15 and CLAUDE.md: research, paper planning, task plans, roadmaps, design drafts and raw measurement
+  data stay out of the repository. `tools/test_public_scope.py` also fails on tracked files in `docs/research/`,
+  `docs/business/`, `docs/roadmap/`, `archive/` and `EVOLUTION/` other than TASK-020, and on files of a measurement
+  run other than its reports and records. The orbit testbed and situation center plans (TASK-021, TASK-022) left
+  with the other task files; `lascaris-space/README.md` and the README section on LASCARIS for Space stay.
 - Align operator lessons with D-T14, D-T15 and the 81-condition ARM64
   board plan.
   Check the lesson's condition count against the executable planner; keep the
@@ -81,16 +92,28 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- The workbench Deployments panel lists the `jobs` of `GET /v1/dags` apart from the deployments: job id, track, site
+  when present, state, input record count and report age. A job in any state but `stopped` or `failed` without a
+  report for 120 s is flagged. Jobs have no Stop, because Track A and B do not read the control topic.
+- English normative specifications for the rules that code, tests and `systems/` cite:
+  [`VECTOR-AND-DAG-SPEC.md`](docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md),
+  [`SYSTEM-DOCUMENT-SPEC.md`](docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md),
+  [`DECISION-CARD-SPEC.md`](docs/datamodel-2026/DECISION-CARD-SPEC.md),
+  [`TWIN-COUPLING-SPEC.md`](docs/datamodel-2026/TWIN-COUPLING-SPEC.md) and
+  [`PAIR-WINDOWS-SPEC.md`](docs/datamodel-2026/PAIR-WINDOWS-SPEC.md). Each states the implemented behavior, verified
+  against the code with file and line references. Code comments, schema descriptions, `systems/` YAML and READMEs
+  that cited the German design documents 07, 11, 14 and 15 or TASK-015 now cite these files.
+
 - `lascaris-space/`: home of the OpenTSx components for in-orbit computation on LASCARIS for Space, with the
   components it holds, the modules that stay responsible for the runner, Wayang and the Workbench, and the contracts
   it keeps. It contains no code yet. The README section "Take time series into orbit with LASCARIS for Space" states
   the direction: series from orbit in the ground Workspace, identity by series key, provenance to the declared source,
   and what provenance and signed downlink chunks do and do not guarantee for training data.
-- Planned task [`EVOLUTION/TASK-022-situation-center.md`](EVOLUTION/TASK-022-situation-center.md): in-orbit nodes
+- Planned task TASK-022, situation center: in-orbit nodes
   with a KafScale and `tsx-runner` sidecar, the ground station as hub and discovery point, a component state model
   whose liveness follows predicted passes, a Workbench situation page, and later a decentralized registry and
   cooperating situation centers. Phase L0 is an orbit profile in which a failed status report no longer stops a plan.
-- Planned task [`EVOLUTION/TASK-021-orbit-testbed.md`](EVOLUTION/TASK-021-orbit-testbed.md): a homelab testbed with a
+- Planned task TASK-021, orbit testbed: a homelab testbed with a
   Jetson Nano as onboard computer and a Synology NAS as ground station, a satellite simulator writing an onboard
   ring buffer, an emulated space-ground link driven by computed passes, and phases P0 to P6 up to the D-T13 CPU
   fallback path. Phase P0 prepares the board with the Jetson runbook and board tools of D-T14. No implementation
@@ -182,12 +205,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   kernel packages, the first kernel pack, the admission gate per kernel, and that the contract changes ship with the
   first kernel.
 - Study on running OpenTSx operators in orbit
-  ([`docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md`](docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md)):
+  (`docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md`):
   no tool compiles the Python operators to FPGA logic; a bounded streaming subset can be reimplemented as FPGA kernels
   behind the Rust runner, with Wayang planning and signing on the ground. Covers toolchains, space-grade hardware,
   in-orbit platform services, onboard logs, space-ground transport, pre-flight test environments and a roadmap.
 - Study on earth-plus-orbit data product architecture
-  ([`docs/research/03-EARTH-ORBIT-DATA-PRODUCT-ARCHITECTURE.md`](docs/research/03-EARTH-ORBIT-DATA-PRODUCT-ARCHITECTURE.md)):
+  (`docs/research/03-EARTH-ORBIT-DATA-PRODUCT-ARCHITECTURE.md`):
   ground service APIs (SQL, graphs, key-value, Flink or Spark, Kubernetes, S3) are not a cross-tier standard for orbit;
   standardize a contract-first boundary of sealed, signed log segments and signed plans, and allow small embedded
   engines inside the payload partition. Includes a two-sided debate with fact checks, six options and a decision guide.
@@ -422,7 +445,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `(M - 2) / (M - 1)`, a series that follows the first gives a negative delay, an event halfway between two events of
   the other series is not matched twice, and sync and delay stay in [0, 1] and [-1, 1] on random event series.
 
-- Related-work study for the IEEE paper ([`docs/research/01-RELATED-WORK-AND-POSITIONING.md`](docs/research/01-RELATED-WORK-AND-POSITIONING.md)):
+- Related-work study for the IEEE paper (`docs/research/01-RELATED-WORK-AND-POSITIONING.md`):
   188 candidates in nine clusters, high and medium candidates checked against primary sources on 2026-11-16, a comparison
   matrix over 14 dimensions, a concept mapping to commercial historians and cloud services, a claim check of what
   distinguishes OpenTSx, and the evaluation a federated variant would need before it can be claimed.
@@ -436,7 +459,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   event-synchronization output with `opentsx.algorithms.results`. The `v2.0` records are unchanged. The
   specification [`04-MODELL-V2-SPEC.md`](docs/datamodel-2026/04-MODELL-V2-SPEC.md) is now in English and covers 2.1.
 
-- `pair.es` in the web workbench (TASK-015 phase 1d, operator "Event synchronisation"): event synchronisation after
+- `pair.es` in the web workbench (`docs/datamodel-2026/PAIR-WINDOWS-SPEC.md`, section 12, operator "Event synchronisation"): event synchronisation after
   Quiroga, Kreuz and Grassberger per pair window, ported from `event_sync.py`, with the fields `q_total`, `q_ab` (B
   after A), `q_ba` and `q_rand`, the mean `q_total` against copies of B with shuffled intervals between its events.
   The Python package gets the same surrogate (`EventSynchronization.surrogate_sync`, `Mulberry32`, `isi_shuffle`);
@@ -456,18 +479,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   acceptance criteria: [`EVOLUTION/TASK-020-wayang-ts-operators.md`](EVOLUTION/TASK-020-wayang-ts-operators.md).
 
 - Concept for graph layers on KafScale and Iceberg
-  ([`docs/datamodel-2026/19-GRAPH-LAYERS.md`](docs/datamodel-2026/19-GRAPH-LAYERS.md), proposal, not implemented):
+  (`docs/datamodel-2026/19-GRAPH-LAYERS.md`, proposal, not implemented):
   one node table and one edge table for twin wiring, inventory, measured dependencies, expert influence matrices,
   GeoQB location context on H3 cells and software architecture; immutable layer versions sealed with a checksum and
   Iceberg snapshot IDs; serving to QGIS, ArcGIS and graph tools; an eight-step implementation plan.
 
-- `pair.xcorr` in the web workbench (TASK-015 phase 1c, operator "Cross-correlation"): per pair window the lagged
+- `pair.xcorr` in the web workbench (`docs/datamodel-2026/PAIR-WINDOWS-SPEC.md`, section 11, operator "Cross-correlation"): per pair window the lagged
   cross-correlation CC(k) for k = -lags..lags clock ticks, with the fields `max` (peak of |CC|, sign kept), `lag` (in
   seconds, > 0 when B follows A) and `strength` ((|max| - mean) / std of CC). Ported from `KreuzKorrelation` and
   `CCFunction` of kamir/WikiExplorer.NG (Apache License 2.0); `tools/pair_xcorr_vectors.sh` runs the original code
   for the test vectors `docs/datamodel-2026/testvectors/pair-xcorr.v1.json`, which the port matches to 12 decimals.
 
-- Pair windows in the web workbench (TASK-015 phase 1b, `src/workbench/pairs.ts`): a pair method compares two series
+- Pair windows in the web workbench (`docs/datamodel-2026/PAIR-WINDOWS-SPEC.md`, sections 3 to 9, `src/workbench/pairs.ts`): a pair method compares two series
   window by window and stamps each result at the window centre. Episodes of A and B are paired by the same range or
   on their intersection; `window: episode` gives one point per pair range, a width and step give a regular series per
   pair range. A and B go onto one clock by the rules of `align.vector`; a window below the minimum coverage keeps its
@@ -476,7 +499,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   with both inputs. First method: "Pair coverage" in the new tab "Multi-variate Analysis".
 - The web workbench keeps the episode ranges of loaded episodes (`Bucket.episodes`): series, episode id, [start, end)
   from `tStart`/`tEnd` to the microsecond, and the segmentation strategy. Operators that keep the time axis hand them
-  on; the Properties tab shows how many episodes a bucket holds. First step of the pair windows of TASK-015.
+  on; the Properties tab shows how many episodes a bucket holds. First step of the pair windows (`docs/datamodel-2026/PAIR-WINDOWS-SPEC.md`, section 1).
 
 - `WireRoundTripTest` (`opentsx-legacy-bridge`) checks success criterion 2 of TASK-011 in one chain:
   `TimeSeriesObject` to `Episode` to Kafka in single-object and in Confluent framing to `Episode` to
@@ -510,6 +533,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Removed
 
+- Owner-only material left the public repository: research studies (`docs/research`), market and campaign
+  material (`docs/business`), the roadmap briefing, the 2026 documentation inventory, the German design drafts 01
+  to 19 of `docs/datamodel-2026` (their normative parts are the English specs of that folder), the task files in
+  `EVOLUTION` except TASK-020, and `archive/`. The 2025 archive is available at the tag `v3.0.1`. The raw files of the
+  measurement runs are no longer in the repository; each run keeps its report and its record with the SHA-256 of
+  every raw file ([`measurements/README.md`](docs/datamodel-2026/measurements/README.md)).
 - Files that `.gitignore` excludes are no longer tracked: `config/private/ccloud.props` (the credentials in it
   no longer exist), `.idea/workspace.xml` and every `.DS_Store`. The unreachable commented block after `exit` in
   `bin/010_build.sh` is gone. `tools/test_repo_hygiene.py` fails if such files are tracked again.
@@ -519,6 +548,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- The web workbench takes the default clock of `pair.coverage`, `pair.xcorr` and `pair.es` per pair range: the larger
+  sampling interval of the two paired episodes, on their sample times in epoch microseconds. Wayang and the Rust
+  runner use the same rule. The note names the smallest and the largest clock. A pair method refuses a series whose
+  times are out of order.
+- The web workbench and the Wayang pair API (`TsxPairXcorr.pairSettings`) refuse a `fill` other than `none` or
+  `as-of` with `pair fill must be none or as-of`, the message of the Rust runner.
+- `docs/datamodel-2026/testvectors/pair-clock.v1.json` (`tools/pair_clock_vectors.sh`) holds pair cases with
+  timestamps, a sampling interval that changes between episodes and jittered samples, expected values from the Wayang
+  kernel and the `fill` refusal. The workbench results are checked against Wayang for `pair.xcorr` and `pair.es` and
+  against the Rust runner for `pair.xcorr` only; `pair.coverage` has no Wayang or Rust counterpart. All three refuse
+  the unknown `fill`. Sections 2, 3, 6, 14 and 16 of
+  [`PAIR-WINDOWS-SPEC.md`](docs/datamodel-2026/PAIR-WINDOWS-SPEC.md) state these rules.
 - Concept 20 section 6.1 and the TASK-020 B1 notes list the signed `tsx-runner`
   modes that exist. With the B3 site configuration, `agent`, `conform` and `run`
   handle signed bounded statistics. With the B1 configuration, `run` executes
@@ -527,6 +568,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   control record has that name. A record that carries `job` is a job record. It is not shown as a refusal of the
   processor and does not replace a refusal under the same key. Specification S5.4 requires `job` in every Track A
   and B record.
+- The retrieval server with `--kafscale` follows `tsx.<domain>.features.v2` like the clean and synthetic topics.
+  Feature series appear in `GET /v1/inventory`, and `GET /v1/systems/{id}/signals` shows their data under the
+  features grade. The inventory names the topic under `source.topics.features`.
 
 - Retrieval POST routes `/v1/patterns/search`, `/v1/episodes/similar` and `/v1/segments` require a single JSON object
   and report invalid bodies as HTTP 400. Response exchanges close after success or failure while preserving the
@@ -596,6 +640,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   response after preparation was persisted. Identical retry keeps the admitted plan, clock and whole-topic placement;
   activation still requires every preparation and the cross-topic ownership checks. Permanent refusals remain failures.
 
+- `align.vector` refuses a `fill` other than `none` or `as-of` in the web workbench and the vector processor, as the
+  Rust runner and Wayang already did. A typo such as `fill: asof` aligned without fill in the workbench preview, was
+  dropped from the DAG export and ran without fill on the processor. The workbench preview refuses it with
+  `vector fill must be none or as-of`, the message of the Rust runner, and the processor with
+  `node <id>: vector fill must be none or as-of`. The deploy checks of the workbench and of the Flow Composer list
+  `<label>: vector fill must be none or as-of.`, so such a stored flow still opens but is neither downloaded nor
+  deployed; the DAG export writes the fill as stored. A missing `fill` stays `none`.
+
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,
   stop, rejection before control publication, and a series checkpoint restart. The existing KafScale CI job runs
@@ -654,6 +706,15 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   convention; the default stations and the years of the daily jobs.
 - CI renders and validates `deploy/k3s/history/` (kustomization and the one-off Jobs) with kubeconform.
 
+## [3.1.0] - 2026-11-20
+
+[Tools 3.1.0](https://github.com/kamir/OpenTSx/releases/tag/v3.1.0) publishes
+an immutable Java Tools image with packaged Windpark startup and replay.
+Native AMD64 and ARM64 acceptance verified 90 episodes and 900 values with
+identical numerical reports. The release retains verification receipts,
+checksums and CI identities as download assets. Its release notes include
+upgrade instructions.
+
 ## [3.0.1] - 2026-10-16
 
 ### Fixed
@@ -680,7 +741,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   bucket (sample, CSV/TSV, episode JSON, retrieval server), apply the time series operations, inspect every result
   on an oscilloscope view (time base, vertical scale, cursors, trigger, measurements), build the processing flow as
   a graph and export it as `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor or Java code. See
-  [`EVOLUTION/TASK-013-web-workbench.md`](EVOLUTION/TASK-013-web-workbench.md) for the editor context. The Java processor executes the supported vector and series subset.
+  `EVOLUTION/TASK-013-web-workbench.md` for the editor context. The Java processor executes the supported vector and series subset.
 - TS inventory: the retrieval server reads the episodes topic of a domain from KafScale (`--kafscale <host:port>
   --domain <d>`) and lists every series with extent, value range, episode labels and the ground truth of the
   scenario as time ranges (`GET /v1/inventory`, `opentsx.ts-inventory.v1`). The workbench has a "TS Inventory"
@@ -688,7 +749,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   bucket. `deploy/k3s`: `RETRIEVAL_SOURCE=kafscale`.
 - Vector measuring points (draft): operator `align.vector` brings the results of several nodes onto one clock and
   gives one record per tick and key with one value per component (`opentsx.vector.v1`, JSON schema in
-  `docs/datamodel-2026/schemas/`, rules in `docs/datamodel-2026/11`, section 5a). The workbench has the operator as
+  `docs/datamodel-2026/schemas/`, rules in `docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md`, section 2). The workbench has the operator as
   "Align to vector": nodes can have several inputs, the scope shows the components on one time base, and the DAG
   export writes the node with all inputs and a vector sink. The Java processor executes source-vector alignment.
 - Vector topics are written and read back. The vector processor (`opentsx vectors`, `deploy/k3s`:
@@ -728,7 +789,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   "Pause") run a flow as a Smart Topic on the vector processor. A flow the processor cannot run shows what it
   needs and is no longer marked active.
 - Concept and draft for the engineering workflow from system to model
-  ([`docs/datamodel-2026/14-ENGINEERING-FLOW.md`](docs/datamodel-2026/14-ENGINEERING-FLOW.md), German): the
+  ([`docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md`](docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md)): the
   signal as the key between Studio, workbench and Flow Composer, and two draft schemas, `opentsx.system.v1` (a
   whole system: which signal comes from where) and `opentsx.processor.v1` (generators, transformers, models),
   with examples for the system `h2-chain`. Signed off on 2026-10-13 with three grades of a signal (raw, clean,
@@ -750,10 +811,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   signal" (check, save and start in one step) when it was opened for a signal; the page "Signals" then shows the
   signal as clean. Shared test vectors for the cleaning operators in Java and TypeScript
   (`docs/datamodel-2026/testvectors/clean-ops.v1.json`).
-- Plan revised after an external review ([`docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md`](docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md),
-  German, decided on 2026-10-13: stages L4 and L5 are built first, then E1 to E3): the decision as the central unit, with draft schemas `opentsx.decision.v1` (decision
+- Plan revised after an external review ([`docs/datamodel-2026/DECISION-CARD-SPEC.md`](docs/datamodel-2026/DECISION-CARD-SPEC.md),
+  decided on 2026-10-13: stages L4 and L5 are built first, then E1 to E3): the decision as the central unit, with draft schemas `opentsx.decision.v1` (decision
   card) and `opentsx.decision-record.v1` (recommendation, approval, action, outcome) and an example; a streaming
-  contract with what holds today and what is the aim (11, section 7a); release of a model for a purpose (05, section
+  contract with what holds today and what is the aim (`docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md`, section 5); release of a model for a purpose (05, section
   5a). Signals carry a role, a meaning and an operating range next to the plausible range. Clean episodes carry an
   identity, so a restart is not counted twice. The user manual's chapter 16 is rewritten as eight steps from a
   decision to its effect.
@@ -770,8 +831,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   or blocked today, with the reasons (`GET /v1/systems/<id>/decisions`): grade, age against the newest data,
   accepted origin, the range the analysis was checked in, and its evidence. The place "Models" shows the cards; the
   place "System" shows the plan as a graph above the table. Comparing alternatives over a period is not built.
-- System plan of the H2 chain in a second form (TASK-014, stage S1, after a second briefing; decisions D64 to D66 in
-  [`docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md`](docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md), section 13). The
+- System plan of the H2 chain in a second form (TASK-014, stage S1, after a second briefing; powers of the wind park in
+  [`docs/datamodel-2026/DECISION-CARD-SPEC.md`](docs/datamodel-2026/DECISION-CARD-SPEC.md), section 5). The
   twin has six new atoms: `wind-park` (potential, available and generated power, with the energy not generated
   counted per cause), `h2-compressor`, `h2-buffer` with the regulator that feeds the pipeline, `h2-pipeline` with a
   pressure at each end, `h2-handover` (regulating valve, lowest delivery pressure, shortfall) and `h2-consumer`
@@ -780,7 +841,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   from outside. The scenario now tells: the handover station closes, the buffer fills, the electrolyzer trips at
   200 bar. The first form of the plan is kept for the tests of the twin, and its atoms stay in the catalog.
 - Demo of the H2 chain made showable (TASK-014, after the first walk-through in
-  [`docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md`](docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md),
+  `docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md`,
   section 7). The place "System" draws the plan in the phases of a time step, with power, hydrogen and information in
   three colours and late wires dashed, shows what the system document assumes (`assumptions`), follows the working
   copy (`POST /v1/systems/<id>/plan`) and links to the Smart Topics Studio, which the frontend image now serves
@@ -804,7 +865,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   the customer is declared as a demo generator. The night of the scenario is 2025-10-01. A decision measures the
   age of an input against the newest data among the signals it needs, not against every series of the system.
 - Draft: notebooks as a further application
-  ([`docs/datamodel-2026/17-NOTEBOOK-ARBEITSPLATZ.md`](docs/datamodel-2026/17-NOTEBOOK-ARBEITSPLATZ.md), German):
+  (`docs/datamodel-2026/17-NOTEBOOK-ARBEITSPLATZ.md`, German):
   load the series directly, look at them, test a new series against what the system expects. Not built.
 - Notebooks as an OpenTSx application, stage N1 (TASK-014). The Python package reads the inventory, systems,
   signals, decisions and runs of the twin from the retrieval server, and `TopicReader` reads the episodes of a

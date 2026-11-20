@@ -2,7 +2,7 @@
 
 This module reads meters and other devices over Modbus. It decodes the values with a register map in YAML and
 turns them into v2 episodes ([`opentsx-model`](../opentsx-model)). It belongs to stage A of P9 (data access,
-[TASK-011](../EVOLUTION/TASK-011-datamodel-refresher-2026.md)). The first use case is the grid operator's meters
+TASK-011). The first use case is the grid operator's meters
 at the wind farm / electrolyzer site, which are read through a converter at the fibre termination.
 
 The Modbus client, framing and simulator use **only the JDK**: sockets, no Modbus library. The only extra dependency

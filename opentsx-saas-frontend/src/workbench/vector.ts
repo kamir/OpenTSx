@@ -2,7 +2,7 @@
  * Vector alignment: the results of several nodes on one clock, one measuring point per tick.
  *
  * The operator `align.vector` and the record `opentsx.vector.v1` are described in
- * docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md, section 5a. The rules, in short:
+ * docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md, section 2. The rules, in short:
  *
  * - Clock: ticks are multiples of `every` seconds since the epoch. Tick k covers [k * every, (k + 1) * every).
  * - Component: one per input node, in the order of the inputs. Its value in a tick is the aggregate of the samples
@@ -130,7 +130,7 @@ export function alignVector(first: Bucket, p: Params, others: Bucket[] = []): Bu
     if (b.xKind !== 'time') throw new Error(`${b.name} has a ${b.xKind} axis. A vector needs inputs with a time axis.`);
   }
   const agg = String(p.agg ?? 'MEAN');
-  const asOf = String(p.fill ?? 'none') === 'as-of';
+  const asOf = fillsAsOf(p);
   const maxAgeTicks = Math.floor((Number(p.maxAge) >= 0 ? Number(p.maxAge) : every) / every);
   const complete = String(p.emit ?? 'any') === 'complete';
   const keyBy = String(p.key ?? 'series').trim() || 'series';
@@ -315,4 +315,11 @@ export function vectorRecords(bucket: Bucket, name: string, limit = Infinity): V
     }
   }
   return out;
+}
+
+/** Whether `fill` is as-of; a missing fill is none. Any other value is refused with the message of the Rust runner. */
+export function fillsAsOf(p: Params): boolean {
+  const fill = String(p.fill ?? 'none');
+  if (fill !== 'none' && fill !== 'as-of') throw new Error('vector fill must be none or as-of');
+  return fill === 'as-of';
 }

@@ -13,8 +13,8 @@
 > production fleet activation remains separate; D-T14 requires no ARMv7
 > hardware. Checked against Apache
 > Wayang release 1.1.1 (tag `wayang-1.1.1`, commit `61deee43`, 2026-02-09) and `main` at `713faa7d` (2026-11-12).
-> Crate and tool versions are named where they are used. Related: [05](05-SMART-TOPICS.md) (federated global model),
-> [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md) (Go Smart Topic processor, `opentsx.dag.v1`),
+> Crate and tool versions are named where they are used. Related: 05 (federated global model),
+> [Vector and DAG rules](VECTOR-AND-DAG-SPEC.md) (`opentsx.dag.v1`, `align.vector`, vector processor),
 > [Kafka native streaming](../devops/kafka-native-streaming.md) (the Java processor that runs today).
 > Normative rules: [20-WAYANG-TS-OPERATORS-SPEC.md](20-WAYANG-TS-OPERATORS-SPEC.md) (S1 to S7). Tasks and acceptance
 > criteria: [TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.md).
@@ -60,7 +60,7 @@ Two implementation tracks share one operator catalog, one topic and schema contr
 
 Kafka is the source and sink of this continuous edge profile. The unified plan defines bounded Iceberg work
 as a separate profile with immutable inputs and publication guarantees. Out of scope: training (it stays a batch job,
-[11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), D28), joins over raw data of two sites, and history search (pattern
+[11](VECTOR-AND-DAG-SPEC.md), D28), joins over raw data of two sites, and history search (pattern
 search, twin, causal analysis).
 
 ## 2. Current state
@@ -95,9 +95,9 @@ legacy Java UI admission or signed B1 pass-through profile.
 | Build | Java release 17 (`pom.xml:39`), CI on Java 17 and 21 ([CONTRIBUTING.md](../../CONTRIBUTING.md)); `kafka.version` 3.9.2, `avro.version` 1.12.1, `hadoop.version` 3.5.0 (`pom.xml:50-55`) | `pom.xml` |
 | Streaming runtime that runs today | Java processor in `opentsx-retrieval`: manual assignment, explicit offsets, checkpoint per runner written after the broker acknowledged the output, control topic `tsx.<domain>.dags.v1`, status topic `tsx.<domain>.dag-status.v1` | [kafka-native-streaming.md](../devops/kafka-native-streaming.md); `VectorProcessor.java:46-59`; `TopicLayout.java:119-125` |
 | DAG validation | unique node ids, existing inputs, no cycles, supported sinks only, before the control record is written | `opentsx-retrieval/src/main/java/org/opentsx/retrieval/vector/DagPlan.java:17` |
-| Go processor proposal | `opentsx.dag.v1`, Go core on the KafScale processor template, shared vectors, at-least-once plus deterministic ids (D25 to D29) | [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), sections 5, 6, 7, 10 |
+| Go processor proposal | `opentsx.dag.v1`, Go core on the KafScale processor template, shared vectors, at-least-once plus deterministic ids (D25 to D29) | [11](VECTOR-AND-DAG-SPEC.md), sections 5, 6, 7, 10 |
 | Processor description | `opentsx.processor.v1`: operator id, kind, ports, params, semantics, `runtimes` with `workbench`, `java`, `python`, `go`, `processor`; instances in `systems/processors/`, validated by `SystemDocTest` | `docs/datamodel-2026/schemas/opentsx.processor.v1.schema.json`; `opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java:49-57` |
-| DAG export | the workbench writes `opentsx.dag.v1`, or `opentsx.dag.v2` (with `schema: opentsx.dag.v2`) when the flow has a series sink; `source.kind: kafscale-broker`, `checkpoint: { backend: file }` | `opentsx-saas-frontend/src/workbench/flow.ts:684-745`; [14](14-ENGINEERING-FLOW.md), section 6.3; `EVOLUTION/TASK-013-web-workbench.md` |
+| DAG export | the workbench writes `opentsx.dag.v1`, or `opentsx.dag.v2` (with `schema: opentsx.dag.v2`) when the flow has a series sink; `source.kind: kafscale-broker`, `checkpoint: { backend: file }` | `opentsx-saas-frontend/src/workbench/flow.ts:684-745`; [SYSTEM-DOCUMENT-SPEC](SYSTEM-DOCUMENT-SPEC.md#s51-sink-fields), section 5.1 |
 | Series identity | `seriesId` = lower-case hex of xxHash64, seed 0, over the canonical form of metric and tags | `SeriesKey.avsc`; `SeriesKeys.java:37-41` |
 | Episode | `[tStart, tEnd)` in microseconds, values, optional quality byte per value, mergeable `EpisodeSummary`, `revision`, `Provenance` | `Episode.avsc`, `EpisodeSummary.avsc`, `Provenance.avsc` |
 | Wire format | Avro single-object encoding, `C3 01` plus CRC-64-AVRO fingerprint, no schema registry; shared vectors | `OpenTsxAvro.java:71-123`; `opentsx-model/src/test/resources/testvectors/wire-format.json` (`Episode` = `8985f02b48c77195`) |
@@ -245,12 +245,12 @@ Materialize is BSL 1.1; Bytewax is community-maintained after its company stoppe
 | Id | Decision | Reason |
 |---|---|---|
 | C1 | One operator catalog: ids and versions of `opentsx.processor.v1`. The schema gets runtime keys `wayang` (Track A) and `rust` (Track B), a `state` and a `merge` field (S1). | The workbench already writes these ids (`opentsx-saas-frontend/src/workbench/ops.ts:784-911`). |
-| C2 | An operator version enters a track only when it passes the shared vectors that the reference implementation passes. | Rule of [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), 7a, row "Equality of preview and operation". |
+| C2 | An operator version enters a track only when it passes the shared vectors that the reference implementation passes. | Rule of [Vector and DAG rules](VECTOR-AND-DAG-SPEC.md#5-streaming-contract), section 5, row "Equality of preview and operation". |
 | C3 | Topic names from `TopicLayout` (`tsx.<domain>.<kind>.v2`), records in Avro single-object encoding, key `seriesId`, Java-compatible murmur2 partitioning. | `TopicLayout.java:189-191`; `BucketWriter.java:107-108`. |
 | C4 | Clients connect to the KafScale proxy only, with `enable.idempotence=false`, `acks=all`, one request in flight. | `KafScaleClients.java:36-50`. |
 | C5 | At-least-once delivery, deterministic output ids, readers keep one record per id. | Section 3.4. |
 | C6 | Checkpoint per task with offsets and operator state, written after all output before it is acknowledged. | `VectorProcessor.java:56-59`. |
-| C7 | Event time on the epoch grid; episodes `[tStart, tEnd)`; late data creates a revision. | [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), 5a and 7a. |
+| C7 | Event time on the epoch grid; episodes `[tStart, tEnd)`; late data creates a revision. | [Vector and DAG rules](VECTOR-AND-DAG-SPEC.md#5-streaming-contract), sections 2.2 and 5. |
 | C8 | One plan format for sites of both tracks: `opentsx.runner-plan.v1` (section 9.2), wrapping the `opentsx.dag.v1` or `opentsx.dag.v2` document the workbench exported. | One federation path for JVM and Rust sites. |
 | C9 | Each `seriesId` belongs to exactly one site. | Per-series stateful operators break when a series is split (section 10.3). |
 
@@ -452,7 +452,7 @@ retention must cover that gap.
 | `decode.avro-soe`, `dq.checks`, `convert.unit`, `resample`, `feature.lag`, `feature.rolling` | yes | bounded state per series |
 | `stats.welford-ddsketch` | yes | bounded state: moments plus at most `maxBins` bins (`QuantileSketch.java:33`) per window |
 | `segment.threshold`, fixed duration and count | yes | bounded buffers (`SampleBuffer`) |
-| `align.vector` | yes, with a cap on open ticks | state grows with open ticks ([11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), 5b, "Limits") |
+| `align.vector` | yes, with a cap on open ticks | state grows with open ticks ([Vector and DAG rules](VECTOR-AND-DAG-SPEC.md#35-limits), 3.5) |
 | SAX word | yes | per episode |
 | `pair.xcorr` | only for short windows and few lags | cost grows with window length times lags |
 | `pair.es` | JVM | surrogate shuffles multiply the cost by the shuffle count |
@@ -510,7 +510,7 @@ All shapes keep the record key `seriesId`, except where an operator changes the 
 | Shape | Example | Rule |
 |---|---|---|
 | 1:1 | `tsx.d.episodes.v2` to `tsx.d.clean.v2` through `dq.checks`, `resample` | one task owns the complete input topic; internal output partition follows from `murmur2(seriesId)` |
-| 1:m | `episodes` to `clean` and `aggregates` | one task, several sinks; one producer per sink topic (KOI-2026-10-13-02 in [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), 5b) |
+| 1:m | `episodes` to `clean` and `aggregates` | one task, several sinks; one producer per sink topic ([Vector and DAG rules](VECTOR-AND-DAG-SPEC.md#32-runners), 3.2, row "One producer per runner") |
 | n:1 | `episodes` and `synthetic` to `features` | co-locate the complete input topics; validate key/clock compatibility; partitions remain internal reads, never separate node assignments |
 | n:m | several inputs, several sinks | both rules above |
 | key change | `align.vector` with `key: turbine`, `pair.*` over two series | an explicit sink writes a new topic `tsx.<domain>.repartition.<dag>.<node>.v2` keyed by the new key; the next stage owns that topic in full (proposed kind) |
@@ -618,7 +618,7 @@ Sites hold disjoint value sets of one group and one window (C9 and the epoch gri
 | `pair.xcorr`, `pair.es` with A and B at different sites | needs both series aligned at one place | only pairs within one site; for zero-lag Pearson correlation, co-moment sums (n, Σx, Σy, Σxy, Σx², Σy²) where both are present |
 | per-series stateful operators over a split series | state per series | C9 forbids the split |
 | DDSketch bins in a mixed federation | Java `Math.log` may differ from the correctly rounded result by 1 ulp ([Java SE 17 `Math.log`](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Math.html#log(double))); Rust `f64::ln` uses the platform libm. A value on a bin boundary can land in neighbouring bins on JVM and Rust sites | apply the qualified accuracy domain; byte equality additionally needs one runtime and no collapse; boundary, zero-bucket and collapsed-tail tests document the limits |
-| model training (FedAvg) | not a statistic | stays in the Python training path of [05](05-SMART-TOPICS.md) |
+| model training (FedAvg) | not a statistic | stays in the Python training path of 05 |
 
 The merge binds expected membership to the generation. A merged window is `final` only with admitted closed-window
 or source-cut evidence from every expected assignment. Open partials are insufficient. Missing evidence produces
@@ -709,8 +709,11 @@ and the site agents also write `site` and `artifact` (version and digest). Neith
 `GET /v1/dags` lists every status record that carries `job` under `jobs`: the latest record per key, as written, with
 or without a control record of that name (`KafScaleFeed.java:320`, `:375`). The processor never writes `job`.
 `dags` holds the control records with the processor's sink reports (key `<dag>/<sink>`) and refusals (key `<dag>`).
-Job records do not appear under `dags`. The workbench Deployments panel reads `dags` only and does not show job
-records (`opentsx-saas-frontend/src/workbench/deployments.ts:27-31`).
+Job records do not appear under `dags`. The workbench Deployments panel shows them in a separate list below the
+deployments: job id, track, site when present, state, input record count and report age
+(`opentsx-saas-frontend/src/workbench/DeploymentsPanel.tsx:189-209`). It offers no Stop for a job, because neither
+track reads the control topic. A job in any state but `stopped` or `failed` without a report for 120 s is flagged
+(`deployments.ts:100`). When the response has no `jobs`, the panel says so.
 
 Metrics per task: lag per partition, records in and out, operator time, checkpoint age, delivery failures.
 
@@ -827,9 +830,9 @@ are excluded from that execution topology. Source hashes and HEAD are checked
 before and after execution. Each route checks the actual received records.
 
 The [report](measurements/wayang-federation-2026-11-17/REPORT.md),
-[site samples](measurements/wayang-federation-2026-11-17/bytes.csv),
-[window comparisons](measurements/wayang-federation-2026-11-17/windows.csv),
-[run evidence](measurements/wayang-federation-2026-11-17/run.json) and
+site samples,
+window comparisons,
+run evidence and
 [metadata](measurements/wayang-federation-2026-11-17/metadata.json) retain the
 executed commands, source/runtime hashes, hardware, OS, JDK and results.
 The input is synthetic W data. All 420 windows and 2,520 merge-order comparisons
@@ -952,7 +955,7 @@ owner decisions are in [TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.m
 
 ## 17. Relation to concept 11
 
-[11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md) proposes a Go processor on the KafScale processor template, reading closed
+[11](VECTOR-AND-DAG-SPEC.md) proposes a Go processor on the KafScale processor template, reading closed
 segments from S3 and optionally the Kafka protocol.
 
 | Part of 11 | This concept |
