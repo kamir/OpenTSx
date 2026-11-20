@@ -109,6 +109,10 @@ change select full CI. No narrower CI override is added.
 
 ## Resolve rejected output and replay
 
+The [packaged image checks](published-artifact-acceptance.md) execute this demo
+through the container dispatcher and validate published image provenance,
+startup and numerical replay on native runners.
+
 `output already exists: <directory>` rejects a second run before writing.
 Choose a new unused output directory. The demo preserves existing data.
 

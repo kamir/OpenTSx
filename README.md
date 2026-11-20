@@ -185,6 +185,11 @@ to simulate three turbines, detect underperformance, persist real Iceberg
 episodes locally and verify their replay. Its focused regressions run offline
 after the first Maven build.
 
+The [packaged artifact checks](docs/devguide/published-artifact-acceptance.md)
+test tools-image startup and Windpark replay before publication, then pull
+the published digest on native AMD64 and ARM64 runners. Their edit tests run
+locally without Docker or network access.
+
 You need Docker Compose and an existing Confluent Platform Docker cluster for
 the local CP profile. The profile uses pinned Linux ARM64 images, a React
 Workbench, the Python numerical service, MLflow and persistent lifecycle state.
