@@ -67,9 +67,8 @@ Missing folders, unreadable directory listings, invalid booleans and invalid lim
 `saveToFile` validates the flow before opening the destination. An invalid flow cannot overwrite an export.
 Set `opentsx.pfd.input.topic` through the existing `ConfigManager` before resetting the recorder.
 The recorder uses that Kafka input topic and `LOG` output; it does not supply placeholder topics.
-When the configuration cannot load and `PFDRecorder` is the first class that reads it, every call of
-`PFDRecorder.getInstance()` throws `IllegalStateException` with the message of the configuration, for example
-`<file>: no such file; give an existing file`.
+When the configuration cannot load, every call of `PFDRecorder.getInstance()` throws `IllegalStateException` with the
+message of the configuration, for example `<file>: no such file; give an existing file`.
 
 An executable export supports only `NORMALIZE` with an omitted method or `method: center`.
 Other operations, methods and parameters fail with `IllegalArgumentException`.
@@ -88,10 +87,11 @@ operation that ends in `(` gets an empty `arg`. When the PFD recorder cannot sta
 configuration file does not exist, `addTransformation` throws before it adds the node. Without an open tracker,
 `MacroTrackerFrame.addSource` and `MacroTrackerFrame.addTransformation` write only their DEBUG line. `show Chart` of the classic tracker shows the chart
 of the selected operation node. The chart panel keeps the chart of each operation it records for the node of that
-operation; `TEST Normal Distribution` keeps its t-value chart and `MF-DFA` the F(s,q) chart of the original values of
-the first series. `MacroRecorder` keeps the charts of its `Components` and `Shuffled` nodes. For a node without a
-chart, such as a source node, `show Chart` shows `show Chart: no chart for <node>; select an operation node` in a
-dialog; without a selection it does nothing.
+run, so two runs of one operation, such as `Histogram per series` with other bins, keep their own charts;
+`TEST Normal Distribution` keeps its t-value chart and `MF-DFA` the F(s,q) chart of the original values of
+the first series. `MacroRecorder` keeps the charts of its `Components` and `Shuffled` nodes; its `fitMIN` and `fitMAX`
+are deprecated and have no effect. For a node without a chart, such as a source node, `show Chart` shows
+`show Chart: no chart for <node>; select an operation node` in a dialog; without a selection it does nothing.
 Swing control tests use a display; the Java CI jobs run them under Xvfb on Ubuntu 24.04.
 Opening a chart panel prints nothing and creates no folder; the chart folder and the series colors are DEBUG lines of
 `TSStoreDescriptor` and `MultiChart`. `save PN` writes below `opentsx/plots/` in `user.home` and creates the folders
@@ -114,8 +114,10 @@ The chart comment of `DFA` has one line per series with its label and its fitted
 window sizes from 4 to an eighth of the number of values, rounded down; a series of 1024 values gets the 124 window
 sizes 4 to 126 and 128, 1 apart except the last step of 2. Alpha is the slope of log F(s) over the window sizes from
 16 to 3162, log s from 1.2 to 3.5 (`EntropieTest.fitMIN` and `fitMAX`). A series of fewer than 144 or more than
-3160031 values gives fewer than two window sizes in that range, so `DFA` stops with a message from the table below.
-`CDF` names each series `<series>_CDF`.
+3160031 values gives fewer than two window sizes in that range, so `DFA` stops with a message from the table below
+before it computes the fluctuation function.
+`TimeSeriesObject.cumulatedDistributionOfYValues(bins)` names its series `<series>_CDF`, so `CDF` names each series
+`<series>_CDF`.
 `TEST Normal Distribution` runs the Shapiro-Wilk test on slices of 20, 40, 60, 80 and 100 values and opens both
 charts, with one series per slice length named `l=<length>`. A slice the test cannot evaluate, such as constant
 values, counts W = -1; a slice with a NaN or infinite value counts W = NaN.
@@ -503,8 +505,8 @@ mean `lambda`.
 `OPENTSX_CONFIG_FILE` must exist. Without such a file, `config/opentsx-<profile>.properties` must exist for a profile
 set by `opentsx.config.profile` or `OPENTSX_CONFIG_PROFILE`; with one, the profile file is not read. The system
 property wins over the variable, and only the value that wins is checked. When that value is empty, or a file is
-missing or does not load, the first call of `getInstance()` fails with `ExceptionInInitializerError` and later calls
-with `NoClassDefFoundError`. The cause names the key, the variable or the file:
+missing or does not load, every call of `getInstance()` throws `IllegalStateException` with the message of its cause
+until a call loads the configuration. The cause names the key, the variable or the file:
 
 | Problem | Cause and message |
 |---------|-------------------|

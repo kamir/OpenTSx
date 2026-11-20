@@ -86,6 +86,13 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
     }
 
     public static void addTransformation(TSBucketTransformation t) {
+        addTransformation(t, t.target);
+    }
+
+    /**
+     * Records {@code t} and lets {@code show Chart} of its node open the chart titled {@code chart}.
+     */
+    public static void addTransformation(TSBucketTransformation t, String chart) {
         LOG.debug("recorded transformation source={} target={} operation={} type={}", t.source, t.target, t.operation,
                 t.type);
         if (frame != null) {
@@ -102,22 +109,12 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
             }
             PFDRecorder recorder = PFDRecorder.getInstance();
 
-            frame.track.addTransformation(t);
+            frame.track.addTransformation(t, chart);
 
             frame.refresh();
 
             recorder.addStep(opName, params);
 
-        }
-    }
-
-    /**
-     * Records {@code t} and lets {@code show Chart} of its node open the chart titled {@code chart}.
-     */
-    public static void addTransformation(TSBucketTransformation t, String chart) {
-        addTransformation(t);
-        if (frame != null) {
-            frame.track._registerChartToNode(chart, t.target);
         }
     }
 
@@ -328,7 +325,7 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
             return;
         }
         Object selected = node.getUserObject();
-        if (!(selected instanceof Transform) || !track.showDialog(((Transform) selected).getDialogKey())) {
+        if (!(selected instanceof Transform) || !track.showDialog((Transform) selected)) {
             showError("show Chart: no chart for " + selected + "; select an operation node");
         }
     }// GEN-LAST:event_jButton3ActionPerformed
@@ -517,16 +514,17 @@ class Track {
         createNodes();
     }
 
-    void addTransformation(TSBucketTransformation tsbtf) {
+    void addTransformation(TSBucketTransformation tsbtf, String chart) {
 
         String sourceNode = tsbtf.source;
-        addNode(sourceNode, tsbtf);
+        addNode(sourceNode, tsbtf, dialogs.get(chart));
 
     }
 
-    private void addNode(String source, TSBucketTransformation t) {
+    private void addNode(String source, TSBucketTransformation t, JDialog dialog) {
 
         Transform tr = new Transform(this, t.source, t.target, t.operation, t.type);
+        tr.dialog = dialog;
 
         DefaultMutableTreeNode trans = new DefaultMutableTreeNode(tr);
 
@@ -577,11 +575,13 @@ class Track {
 
     }
 
-    void _registerChartToNode(String chart, String node) {
-        JDialog dialog = dialogs.get(chart);
-        if (dialog != null) {
-            dialogs.put(node, dialog);
+    boolean showDialog(Transform node) {
+        if (node.dialog == null) {
+            return showDialog(node.getDialogKey());
         }
+        LOG.debug("showing chart dialog node={}", node.inspect());
+        node.dialog.setVisible(true);
+        return true;
     }
 
     boolean showDialog(String dialogKey) {
@@ -683,6 +683,8 @@ class Transform implements ProcessComponent {
     String parameter = null;
 
     Track track = null;
+
+    JDialog dialog = null;
 
     public Transform(Track mytrack, String s, String t, String op, String typ) {
         type = typ;

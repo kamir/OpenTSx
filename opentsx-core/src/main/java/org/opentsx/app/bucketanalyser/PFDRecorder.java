@@ -21,7 +21,6 @@ public class PFDRecorder {
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(PFDRecorder.class);
 
     private static PFDRecorder instance;
-    private static Throwable configurationFailure;
     private ProcessingFlowDescriptor currentFlow;
 
     private PFDRecorder() {
@@ -49,15 +48,7 @@ public class PFDRecorder {
     }
 
     private static String inputTopic() {
-        // ConfigManager fails its class initialization once; later calls get NoClassDefFoundError without the message.
-        if (configurationFailure == null) {
-            try {
-                return ConfigManager.getInstance().getString("opentsx.pfd.input.topic", null);
-            } catch (ExceptionInInitializerError e) {
-                configurationFailure = e.getCause();
-            }
-        }
-        throw new IllegalStateException(configurationFailure.getMessage(), configurationFailure);
+        return ConfigManager.getInstance().getString("opentsx.pfd.input.topic", null);
     }
 
     public void addStep(String operation, Map<String, Object> params) {

@@ -2321,6 +2321,7 @@ public class TimeSeriesObject implements Serializable {
         
         hz.calcWS();
         
+        hz.mrCUMUL.setLabel(this.getLabel() + "_CDF");
         return hz.mrCUMUL;
         
     }

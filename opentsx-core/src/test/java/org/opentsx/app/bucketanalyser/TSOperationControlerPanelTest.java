@@ -188,7 +188,7 @@ class TSOperationControlerPanelTest {
     @Test
     void aDfaThatFailsShowsTheMessageAndOpensNoChart() throws Exception {
         TSOperationControlerPanel.baseFolder = home.toString();
-        ProbePanel panel = onEdt(() -> new ProbePanel(rows(wave(3)), chart(), "probe"));
+        ProbePanel panel = onEdt(() -> new ProbePanel(rows(new Unread(1024)), chart(), "probe"));
         boolean chartOpened;
         try {
             click(panel, "jButton5ActionPerformed");
@@ -197,7 +197,7 @@ class TSOperationControlerPanelTest {
         }
 
         assertNotNull(panel.actionError, "the DFA action showed no error");
-        assertTrue(panel.actionError.startsWith("DFA of wave: cannot compute the fluctuation function ("),
+        assertTrue(panel.actionError.startsWith("DFA of unread: cannot compute the fluctuation function ("),
                 panel.actionError);
         assertFalse(chartOpened, "the DFA action opened a chart after it failed");
     }
@@ -765,6 +765,30 @@ class TSOperationControlerPanelTest {
         assertFalse(chartOpened, "the DFA action opened a chart for a series too short for the fit");
     }
 
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "3160031 | DFA of unread: cannot compute the fluctuation function (java.lang.IllegalStateException: the "
+                    + "values cannot be read)",
+            "3160032 | DFA of unread: 3160032 values give 1 window sizes in the fit range; use from 144 to 3160031 "
+                    + "values"})
+    void aDfaCountsTheWindowSizesInTheFitRangeBeforeItReadsTheValues(int values, String message) throws Exception {
+        ProbePanel panel = onEdt(() -> new ProbePanel(rows(new Unread(values)), chart(), "probe"));
+        boolean chartOpened;
+        Set<String> recorded;
+        openTracker();
+        try {
+            click(panel, "jButton5ActionPerformed");
+            recorded = recorded();
+        } finally {
+            chartOpened = disposeWindows();
+            closeTracker();
+        }
+
+        assertEquals(message, panel.actionError);
+        assertEquals(Set.of(), recorded);
+        assertFalse(chartOpened, "the DFA action opened a chart after it stopped");
+    }
+
     @Test
     void aDfaOf144ValuesFitsAFiniteAlphaAndRecordsIt() throws Exception {
         ProbePanel panel = onEdt(() -> new ProbePanel(rows(noise(144)), chart(), "probe"));
@@ -1071,6 +1095,22 @@ class TSOperationControlerPanelTest {
             setLabel("unreadable");
             for (int i = 0; i < 64; i++) {
                 addValuePair(i, i % 3);
+            }
+        }
+
+        @Override
+        public double[][] getData() {
+            throw new IllegalStateException("the values cannot be read");
+        }
+    }
+
+    static class Unread extends TimeSeriesObject {
+        Unread(int values) {
+            setLabel("unread");
+            Double zero = 0.0;
+            for (int i = 0; i < values; i++) {
+                xValues.add(zero);
+                yValues.add(zero);
             }
         }
 

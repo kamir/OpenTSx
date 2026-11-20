@@ -1203,9 +1203,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `ConfigManager` stops with `<path>: no such file; give an existing file` when `OPENTSX_CONFIG_FILE` or
   `opentsx.config.file` names a missing file, or, when neither is set, a profile does. It stops with `<name>: empty
   value; set a value or leave the key unset` when the value it uses is empty. It reports files that do not load, and
-  `getInt` stops on a value that is not a whole number instead of returning the default. When `PFDRecorder` is the
-  first class that reads the configuration, every call of `PFDRecorder.getInstance()` throws `IllegalStateException`
-  with the message of the configuration.
+  `getInt` stops on a value that is not a whole number instead of returning the default. While the configuration
+  cannot load, every call of `ConfigManager.getInstance()`, and so of `PFDRecorder.getInstance()`, throws
+  `IllegalStateException` with the message of the configuration.
 - Phase-randomized surrogates of `TimeSeriesObjectFFT`, also used by `FFTPhaseRandomizer`, set c_0 of the zero-padded
   values to 0, keep the amplitude of every other Fourier coefficient and the Nyquist coefficient, and open no chart
   windows. A surrogate holds the first n values of the inverse transform, so it has mean 0 and the amplitude spectrum
@@ -2377,6 +2377,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `deploy/k3s/50-status.sh` reports a k3s containerd that cannot list its images as `k3s containerd: cannot list the
   images (<error>); check it with sudo k3s ctr images ls`. Before, it dropped the error and reported `no <repo>
   images`.
+- `show Chart` of the classic tracker opened the chart of the last run on every node of an operation that ran twice on
+  one chart panel, such as `Histogram per series` with other bins or `ENTROPY` with another length. Each node now
+  keeps the chart of its own run.
+- `ConfigManager.getInstance()` failed with `ExceptionInInitializerError` once and with `NoClassDefFoundError` without
+  the message after that when the configuration could not load, also for `PFDRecorder` when another class read the
+  configuration first. It now loads on the first call that succeeds; until then every call throws
+  `IllegalStateException` with the message of the configuration and keeps the cause.
+- `TimeSeriesObject.cumulatedDistributionOfYValues(bins)` returned a series named `unnamed - <date time>`. It now
+  names it `<series>_CDF`.
+- The `DFA` of the chart panel counted the window sizes in the fit range only after it had computed the fluctuation
+  function, so a series of more than 3160031 values ran the whole computation before it stopped. It now counts them
+  from the number of values and stops before the computation.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

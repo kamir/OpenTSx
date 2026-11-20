@@ -142,6 +142,14 @@ class TimeSeriesObjectStatisticsTest {
     }
 
     @Test
+    void theCumulatedDistributionIsNamedAfterTheSeries() {
+        TimeSeriesObject row = values(1.0, 2.0, 3.0, 4.0);
+        row.setLabel("probe");
+
+        assertEquals("probe_CDF", row.cumulatedDistributionOfYValues(4).getLabel());
+    }
+
+    @Test
     void theLogarithmHasOneMethodThatReturnsANewSeries() {
         assertThrows(NoSuchMethodException.class, () -> TimeSeriesObject.class.getMethod("calcMR_Log_for_Y"));
     }

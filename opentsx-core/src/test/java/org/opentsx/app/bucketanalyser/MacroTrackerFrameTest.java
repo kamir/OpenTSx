@@ -10,10 +10,13 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.series.TimeSeriesObject;
 
 import javax.swing.JDialog;
+import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -32,6 +35,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 import java.util.Vector;
+import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -324,8 +328,100 @@ class MacroTrackerFrameTest {
         assertEquals(List.of("DFA of ", "FFT of "), shown);
     }
 
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "jButton4ActionPerformed | 'AC of ' | | AUTO-CORRELATION of probe",
+            "jButton8ActionPerformed | 'Diff of ' | | Diff of probe",
+            "jButton9ActionPerformed | 'LogRETURN of ' | | LogRETURN of probe",
+            "jButton10ActionPerformed | 'PDF of ' | | y-value distributions of probe",
+            "jButton12ActionPerformed | 'Norm MAX of ' | | NORM_MAX=1 of probe",
+            "jButton13ActionPerformed | 'Standardized of ' | | NORM_STD=1, AVG=0 of probe",
+            "jButton19ActionPerformed | 'CDF of ' | | y-value distributions of probe",
+            "jButton20ActionPerformed | PDF (cross) | 8 | y-value distributions (tims slice l=8 of probe",
+            "jButton21ActionPerformed | PDF (SW_pvalues) | | SW t-value distributions of probe",
+            "jButton22ActionPerformed | 'ln of ' | | ln of probe"})
+    void showChartOnTheNodeOfAnOperationShowsItsHiddenChartAgain(String action, String operation, String answer,
+            String title) throws Exception {
+        ProbeTracker tracker = openProbeTracker();
+        RecordingPanel panel = onEdt(() -> new RecordingPanel(positive(128), "probe"));
+        panel.answer = answer;
+        boolean shown;
+        try {
+            SwingUtilities.invokeAndWait(() -> clickOn(panel, action));
+            MultiChart[] chart = new MultiChart[1];
+            SwingUtilities.invokeAndWait(() -> {
+                chart[0] = openChart(title);
+                chart[0].setVisible(false);
+                selectOperation(tracker, operation);
+                clickOn(tracker, "jButton3ActionPerformed");
+            });
+            shown = chart[0].isVisible();
+        } finally {
+            disposeCharts();
+            closeProbeTracker();
+        }
+
+        assertEquals(List.of(), panel.errors);
+        assertEquals(List.of(), tracker.errors);
+        assertTrue(shown, "show Chart did not show the chart " + title + " of the node " + operation);
+    }
+
+    @Test
+    void showChartOnTwoHistogramsWithOtherBinsShowsTheChartOfEachRun() throws Exception {
+        List<List<Boolean>> shown = showChartOnTwoRuns("jButton10ActionPerformed", "PDF of ",
+                "y-value distributions of probe", new String[]{"50", "10"}, (panel, bins) -> panel.bins(bins));
+
+        assertEquals(List.of(List.of(true, false), List.of(false, true)), shown);
+    }
+
+    @Test
+    void showChartOnTwoEntropiesWithOtherLengthsShowsTheChartOfEachRun() throws Exception {
+        List<List<Boolean>> shown = showChartOnTwoRuns("jButton14ActionPerformed", "H of ", "H_probe",
+                new String[]{"8", "16"}, (panel, length) -> panel.answer = length);
+
+        assertEquals(List.of(List.of(true, false), List.of(false, true)), shown);
+    }
+
+    private static List<List<Boolean>> showChartOnTwoRuns(String action, String operation, String title,
+            String[] settings, BiConsumer<RecordingPanel, String> set) throws Exception {
+        ProbeTracker tracker = openProbeTracker();
+        RecordingPanel panel = onEdt(() -> new RecordingPanel(positive(128), "probe"));
+        List<MultiChart> charts = new ArrayList<>();
+        List<List<Boolean>> shown = new ArrayList<>();
+        try {
+            for (String setting : settings) {
+                SwingUtilities.invokeAndWait(() -> {
+                    set.accept(panel, setting);
+                    clickOn(panel, action);
+                });
+                SwingUtilities.invokeAndWait(() -> {
+                    MultiChart chart = openChart(title);
+                    chart.setVisible(false);
+                    charts.add(chart);
+                });
+            }
+            SwingUtilities.invokeAndWait(() -> {
+                for (int run = 0; run < settings.length; run++) {
+                    selectOperation(tracker, operation, run);
+                    clickOn(tracker, "jButton3ActionPerformed");
+                    shown.add(List.of(charts.get(0).isVisible(), charts.get(1).isVisible()));
+                    charts.forEach(chart -> chart.setVisible(false));
+                }
+            });
+        } finally {
+            disposeCharts();
+            closeProbeTracker();
+        }
+
+        assertEquals(List.of(), panel.errors);
+        assertEquals(List.of(), tracker.errors);
+        assertNotSame(charts.get(0), charts.get(1));
+        return shown;
+    }
+
     static class RecordingPanel extends TSOperationControlerPanel {
         final List<String> errors = new ArrayList<>();
+        String answer;
 
         RecordingPanel(Vector<TimeSeriesObject> rows, String label) {
             super(rows, chart(), label, null);
@@ -337,6 +433,20 @@ class MacroTrackerFrameTest {
 
         void showFftError(String message) {
             errors.add(message);
+        }
+
+        String requestInput(String prompt) {
+            return answer;
+        }
+
+        void bins(String bins) {
+            try {
+                var declared = TSOperationControlerPanel.class.getDeclaredField("jtBINS");
+                declared.setAccessible(true);
+                ((JTextField) declared.get(this)).setText(bins);
+            } catch (ReflectiveOperationException e) {
+                throw new AssertionError(e);
+            }
         }
     }
 
@@ -409,6 +519,17 @@ class MacroTrackerFrameTest {
         return rows;
     }
 
+    private static Vector<TimeSeriesObject> positive(int n) {
+        TimeSeriesObject row = new TimeSeriesObject();
+        row.setLabel("positive");
+        for (int i = 0; i < n; i++) {
+            row.addValuePair(i, 2 + Math.sin(i * 0.3) + i % 7);
+        }
+        Vector<TimeSeriesObject> rows = new Vector<>();
+        rows.add(row);
+        return rows;
+    }
+
     private static JFreeChart chart() {
         XYSeries series = new XYSeries("probe");
         series.add(0.0, 1.0);
@@ -430,15 +551,20 @@ class MacroTrackerFrameTest {
     }
 
     private static void selectOperation(ProbeTracker tracker, String operation) {
+        selectOperation(tracker, operation, 0);
+    }
+
+    private static void selectOperation(ProbeTracker tracker, String operation, int run) {
         JTree tree = tracker.jTree();
+        int seen = 0;
         for (int row = 0; row < tree.getRowCount(); row++) {
             Object node = ((DefaultMutableTreeNode) tree.getPathForRow(row).getLastPathComponent()).getUserObject();
-            if (node instanceof Transform && ((Transform) node).operation.equals(operation)) {
+            if (node instanceof Transform && ((Transform) node).operation.equals(operation) && seen++ == run) {
                 tree.setSelectionRow(row);
                 return;
             }
         }
-        fail("no node of the operation " + operation);
+        fail("no node of run " + run + " of the operation " + operation);
     }
 
     private static <T> T onEdt(java.util.concurrent.Callable<T> create) throws Exception {

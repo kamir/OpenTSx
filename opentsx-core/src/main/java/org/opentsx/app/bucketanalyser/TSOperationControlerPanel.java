@@ -553,14 +553,6 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
                 int N = d4.yValues.size() / 2;
 
-                double[] zr = new double[N];
-
-                Vector<TimeSeriesObject> vr = new Vector<TimeSeriesObject>();
-
-                vr.add(d4);
-
-                zr = d4.getData()[1];
-
                 IDetrendingMethod dfa = DetrendingMethodFactory.getDetrendingMethod(DetrendingMethodFactory.DFA2);
                 order = dfa.getPara().getGradeOfPolynom();
                 // initIntervalS divides the range from s_min to N / 4 by the count; a larger count gives a step of 0.
@@ -571,15 +563,6 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
                 dfa.initIntervalS();
 
                 dfa.showS();
-
-                // http://stackoverflow.com/questions/12049407/build-sample-data-for-apache-commons-fast-fourier-transform-algorithm
-                dfa.setZR(d4.getData()[1]);
-
-                dfa.calc();
-
-                TimeSeriesObject mr4 = dfa.getResultsMRLogLog();
-
-                mr4.setLabel(d4.getLabel());
 
                 int fitted = 0;
                 for (int s : dfa.getS()) {
@@ -592,6 +575,15 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
                             + " window sizes in the fit range; use from 144 to 3160031 values");
                     return;
                 }
+
+                // http://stackoverflow.com/questions/12049407/build-sample-data-for-apache-commons-fast-fourier-transform-algorithm
+                dfa.setZR(d4.getData()[1]);
+
+                dfa.calc();
+
+                TimeSeriesObject mr4 = dfa.getResultsMRLogLog();
+
+                mr4.setLabel(d4.getLabel());
 
                 SimpleRegression alphaSR = mr4.linFit(EntropieTest.fitMIN, EntropieTest.fitMAX);
 
@@ -1020,7 +1012,6 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         for (TimeSeriesObject r : this.rows) {
 
             TimeSeriesObject distr = r.cumulatedDistributionOfYValues(30);
-            distr.setLabel(r.getLabel() + "_CDF");
             v.add(distr);
 
         }

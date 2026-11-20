@@ -9,7 +9,7 @@ import java.util.Properties;
 
 public final class ConfigManager {
 
-    private static final ConfigManager INSTANCE = new ConfigManager();
+    private static ConfigManager instance;
 
     private final Properties properties = new Properties();
 
@@ -18,8 +18,21 @@ public final class ConfigManager {
         loadProfileOverrides();
     }
 
-    public static ConfigManager getInstance() {
-        return INSTANCE;
+    /**
+     * Loads the configuration on the first call that succeeds and returns it from then on.
+     *
+     * @throws IllegalStateException with the message of the failure and the failure as its cause, on every call while
+     *         the configuration cannot load
+     */
+    public static synchronized ConfigManager getInstance() {
+        if (instance == null) {
+            try {
+                instance = new ConfigManager();
+            } catch (IllegalArgumentException | UncheckedIOException e) {
+                throw new IllegalStateException(e.getMessage(), e);
+            }
+        }
+        return instance;
     }
 
     public String getString(String key, String defaultValue) {

@@ -4,11 +4,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.opentsx.app.bucketanalyser.PFDRecorder;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.concurrent.Callable;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -95,6 +98,46 @@ class ConfigManagerTest {
     @Test
     void anUnsetIntUsesTheDefault() {
         assertEquals(7, ConfigManager.getInstance().getInt("opentsx.test.port", 7));
+    }
+
+    @Test
+    void everyCallWhileTheConfigurationCannotLoadThrowsItsMessageUntilALoadSucceeds() throws Exception {
+        Path missing = dir.resolve("missing.properties");
+        Path output = dir.resolve("output.txt");
+        ProcessBuilder builder = new ProcessBuilder(List.of(
+                Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "-Dopentsx.config.file=" + missing,
+                "-cp", System.getProperty("surefire.test.class.path"),
+                ReadWithoutConfiguration.class.getName(), missing.toString()))
+                .directory(dir.toFile()).redirectErrorStream(true).redirectOutput(output.toFile());
+        int status = builder.start().waitFor();
+        String printed = Files.readString(output);
+
+        assertEquals(0, status, printed);
+        String refusal = "IllegalStateException " + missing + ": no such file; give an existing file (cause "
+                + "IllegalArgumentException)\n";
+        assertTrue(printed.contains("ConfigManager.getInstance " + refusal), printed);
+        assertTrue(printed.contains("PFDRecorder.getInstance " + refusal), printed);
+        assertTrue(printed.contains("ConfigManager.getInstance after the file exists 9092\n"), printed);
+    }
+
+    public static class ReadWithoutConfiguration {
+        public static void main(String[] args) throws Exception {
+            read("ConfigManager.getInstance", ConfigManager::getInstance);
+            read("PFDRecorder.getInstance", PFDRecorder::getInstance);
+            Files.writeString(Path.of(args[0]), "opentsx.test.port=9092\n");
+            read("ConfigManager.getInstance after the file exists",
+                    () -> ConfigManager.getInstance().getInt("opentsx.test.port", 1));
+        }
+
+        private static void read(String call, Callable<Object> read) {
+            try {
+                System.out.println(call + " " + read.call());
+            } catch (Throwable e) {
+                System.out.println(call + " " + e.getClass().getSimpleName() + " " + e.getMessage() + " (cause "
+                        + (e.getCause() == null ? null : e.getCause().getClass().getSimpleName()) + ")");
+            }
+        }
     }
 
     private static ConfigManager load() throws Exception {
