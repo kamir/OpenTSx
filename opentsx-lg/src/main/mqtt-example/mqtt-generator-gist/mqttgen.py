@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """a simple sensor data generator that sends to an MQTT broker via paho"""
+import os
 import sys
 import json
 import time
@@ -62,7 +63,10 @@ def generate(host, port, username, password, topic, sensors, interval_ms, verbos
         if verbose:
             print("%s: %s" % (topic, payload))
 
-        mqttc.publish(topic, payload)
+        try:
+            mqttc.publish(topic, payload)
+        except OSError as error:
+            sys.exit("%s:%s: cannot publish to topic %s (%s); check the MQTT broker" % (host, port, topic, error))
         time.sleep(interval_secs)
 
 
@@ -90,16 +94,28 @@ def main(config_path):
 
     interval_ms = misc_config.get("interval_ms", 500)
     verbose = misc_config.get("verbose", False)
+    host = mqtt_config.get("host", "localhost")
+    port = mqtt_config.get("port", 1883)
+    topic = mqtt_config.get("topic", "mqttgen")
+    for key, value, allowed, expected in (
+            ("misc.interval_ms", interval_ms, isinstance(interval_ms, (int, float))
+             and not isinstance(interval_ms, bool) and 0 <= interval_ms <= 86400000,
+             "a number of milliseconds from 0 to 86400000"),
+            ("misc.verbose", verbose, isinstance(verbose, bool), "true or false"),
+            ("mqtt.host", host, isinstance(host, str) and host != "", "a non-empty JSON string"),
+            ("mqtt.port", port, isinstance(port, int) and not isinstance(port, bool) and 1 <= port <= 65535,
+             "a whole number from 1 to 65535"),
+            ("mqtt.topic", topic, isinstance(topic, str) and topic != "" and "+" not in topic and "#" not in topic,
+             "a non-empty JSON string without + or #")):
+        if not allowed:
+            sys.exit("%s: %s: %s is not allowed; expected %s" % (config_path, key, json.dumps(value), expected))
 
     if not sensors:
         print("no sensors specified in config, nothing to do")
         return
 
-    host = mqtt_config.get("host", "localhost")
-    port = mqtt_config.get("port", 1883)
     username = mqtt_config.get("username")
     password = mqtt_config.get("password")
-    topic = mqtt_config.get("topic", "mqttgen")
 
     print("MQTT broker %s:%s, user %s" % (host, port, username))
 
@@ -112,8 +128,15 @@ def main(config_path):
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:
-        print("Start %s with %s" % (sys.argv[0],sys.argv[1]) )
-        main(sys.argv[1])
+        try:
+            # Line buffering makes a closed stdout fail at the print, inside this handler, not in the flush at exit.
+            sys.stdout.reconfigure(line_buffering=True)
+            print("Start %s with %s" % (sys.argv[0],sys.argv[1]) )
+            main(sys.argv[1])
+        except BrokenPipeError:
+            # Python flushes stdout again at exit; point it at devnull so that flush cannot fail a second time.
+            os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+            sys.exit("stdout: closed by its reader; read the whole output or set misc.verbose to false")
     else:
         print("%s: %d arguments given; expected 1, the path of a JSON configuration file such as config.json"
               % (sys.argv[0], len(sys.argv) - 1), file=sys.stderr)

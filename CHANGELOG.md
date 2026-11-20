@@ -2451,8 +2451,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   script in a folder with a JSON file cfg.json, such as src/main/connect-cfg/` for a missing or invalid `cfg.json`,
   and `mqttgen.py` exits with status 1 and its configuration message also for a file that is not valid JSON, instead
   of ending in a traceback.
-- `mqttgen.py` reports `cannot connect to the MQTT broker` only when the connect fails. An error after the connect,
-  such as `BrokenPipeError` when its output is piped into `head`, stops the script with that error.
+- `mqttgen.py` reports `cannot connect to the MQTT broker` only when the connect fails.
 - The pin check in `tools/test_lg_scripts.py` also reads a command after a single `&` (the `&` of a redirection such
   as `2>&1` or `&>log` does not split) and a `docker run`, `create` or `pull` after the docker global options
   `--config`, `--context`, `--debug`, `--host`, `--log-level` and the TLS options. It fails on any other option before
@@ -2534,6 +2533,28 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   unset it`. A `MANIFEST` without a `namespace=` line is refused too, and so is a backup whose env names another
   namespace than its `MANIFEST`, as a backup taken with `OPENTSX_NS` set in the shell can. The script restored the
   volumes into the current namespace and then switched `.env` to the namespace of the backup.
+- tools: `tools/test_lg_scripts.py` reads an unknown option between `docker` and its subcommand with at most one value
+  word, none when the option has `=`, and reports it only when a `run`, `create` or `pull` subcommand follows. So
+  `docker -x foo bar pull <image>` and `docker --x=1 ps pull <image>` are no finding, and `docker --foo pull <image>`
+  and `docker --foo bar pull <image>` still are.
+- tools: `tools/test_lg_scripts.py` keeps a command substitution without quotes as one word, so `docker run -e
+  X=$(date +%s) img:1.2.3` no longer gives `+%s): no exact version`. An option of `sudo`, `env`, `nice`, `ionice`,
+  `timeout`, `xargs` or `exec` that takes a value takes the next word, so `sudo -u docker pull <image>` is not read as
+  `docker pull <image>`.
+- opentsx-lg: `mqtt-generator-gist/mqttgen.py` writes its output line by line. It exits 1 with `stdout: closed by its
+  reader; read the whole output or set misc.verbose to false` when the reader of its output closes it, for example
+  `head`, also with `PYTHONUNBUFFERED=1`, with `python3 -u` and without sensors. When a publish fails, it exits 1 with
+  `<host>:<port>: cannot publish to topic <topic> (<cause>); check the MQTT broker`. Both used to end in a traceback.
+- opentsx-lg: before it connects, `mqtt-generator-gist/mqttgen.py` exits 1 with `<file>: <key>: <value> is not
+  allowed; expected <allowed values>` when a value is not allowed. That is a `misc.interval_ms` that is not a number
+  from 0 to 86400000, a `misc.verbose` that is not true or false, a `mqtt.host` that is not a non-empty string, a
+  `mqtt.port` that is not a whole number from 1 to 65535, or a `mqtt.topic` that is empty, is not a string or holds
+  `+` or `#`. For example `"interval_ms": "x"` used to end in a `TypeError` after the connect.
+- opentsx-lg: `src/main/connect-cfg/deploy_connector.py` keeps the HTTP status of an answer whose body ends before its
+  `Content-Length` or whose connection is reset while the body is read. A 200 or 201 prints `New connector debug_c1
+  created.`, and any other status gives `debug_c1: POST http://127.0.0.1:8083/connectors answered HTTP <status>
+  <body>; the connector was not created, check the log of the Kafka Connect worker` instead of `no HTTP answer
+  (<cause>)`. `<body>` is the part of the body that arrived, or the cause in parentheses after a reset.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

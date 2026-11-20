@@ -1,7 +1,8 @@
 """The opentsx-lg Python scripts compile and start with #!/usr/bin/env python3, the MQTT generator prints no password,
-exits 1 on a configuration file it cannot read or parse or whose entries have the wrong shape, names the broker only
-when the connect fails, and exits 2 on a usage error, the connector script posts the config object of cfg.json,
-refuses a cfg.json it cannot read or without one and reports what Kafka Connect answered or that no HTTP answer came,
+exits 1 on a configuration file it cannot read or parse or whose entries have the wrong shape or a value it cannot use,
+names the broker only when the connect fails, reports a closed stdout and a failed publish in one line, and exits 2 on
+a usage error, the connector script posts the config object of cfg.json, refuses a cfg.json it cannot read or without
+one and reports what Kafka Connect answered, also when the body ends early, or that no HTTP answer came,
 waiting at most 10 s for each socket operation, and the MQTT example bootstrap installs a pinned paho-mqtt without
 sudo, reaches the connector installs without a broker and stops at the first command that fails, and the broker script
 publishes its test message after it starts the broker.
@@ -14,6 +15,8 @@ import os
 import pathlib
 import py_compile
 import signal
+import socket
+import struct
 import subprocess
 import sys
 import threading
@@ -154,23 +157,146 @@ def test_the_generator_exits_1_when_it_cannot_read_the_configuration(tmp_path, m
                                "pass the path of a JSON configuration file such as config.json")
 
 
-def test_the_generator_reports_a_failure_after_the_connect_as_itself(tmp_path, monkeypatch):
+STUB_CLIENT = """class Client:
+    def connect(self, host, port):
+        pass
+
+    def loop_start(self):
+        pass
+
+    def publish(self, topic, payload):
+        {publish}
+"""
+
+
+def generator(tmp_path: pathlib.Path, publish: str, verbose: bool, stdout, unbuffered: bool = False,
+              sensors: dict | None = None) -> subprocess.CompletedProcess:
+    stub = tmp_path / "stub" / "paho" / "mqtt"
+    stub.mkdir(parents=True)
+    (stub.parent / "__init__.py").touch()
+    (stub / "__init__.py").touch()
+    (stub / "client.py").write_text(STUB_CLIENT.format(publish=publish), encoding="utf-8")
+    config = tmp_path / "config.json"
+    config.write_text(json.dumps({"mqtt": {"host": "localhost", "port": 1884, "topic": "t"},
+                                  "misc": {"interval_ms": 0, "verbose": verbose},
+                                  "sensors": {"s1": {"range": [0, 1]}} if sensors is None else sensors}),
+                      encoding="utf-8")
+    environment = {k: v for k, v in os.environ.items() if k != "PYTHONUNBUFFERED"}
+    environment["PYTHONPATH"] = str(tmp_path / "stub")
+    if unbuffered:
+        environment["PYTHONUNBUFFERED"] = "1"
+    return subprocess.run([sys.executable, str(MQTTGEN), str(config)], cwd=tmp_path, stdin=subprocess.DEVNULL,
+                          stdout=stdout, stderr=subprocess.PIPE, text=True, env=environment, timeout=30, check=False)
+
+
+@pytest.mark.parametrize("sensors", [None, {}], ids=["sensors", "no-sensors"])
+@pytest.mark.parametrize("unbuffered", [False, True])
+def test_the_generator_exits_1_with_one_line_when_the_reader_closes_its_stdout(tmp_path, unbuffered, sensors):
+    read, write = os.pipe()
+    os.close(read)
+    try:
+        result = generator(tmp_path, "pass", True, write, unbuffered, sensors)
+    finally:
+        os.close(write)
+    assert result.returncode == 1, result.stderr
+    assert result.stderr.splitlines() == [
+        "stdout: closed by its reader; read the whole output or set misc.verbose to false"]
+
+
+def test_the_generator_exits_1_with_one_line_when_a_publish_fails(tmp_path):
+    result = generator(tmp_path, 'raise BrokenPipeError(32, "Broken pipe")', False, subprocess.PIPE)
+    assert result.returncode == 1, result.stderr
+    assert result.stderr.splitlines() == [
+        "localhost:1884: cannot publish to topic t ([Errno 32] Broken pipe); check the MQTT broker"]
+
+
+def test_the_generator_publishes_with_the_shipped_configuration(monkeypatch, capsys):
+    class Published(Exception):
+        pass
+
+    calls = []
+
     class Client:
+        def username_pw_set(self, username, password):
+            calls.append(("user", username))
+
         def connect(self, host, port):
-            pass
+            calls.append(("connect", host, port))
 
         def loop_start(self):
             pass
 
         def publish(self, topic, payload):
-            raise BrokenPipeError(32, "Broken pipe")
+            calls.append(("publish", topic))
+            raise Published()
 
     stub_paho(monkeypatch, Client)
-    config = tmp_path / "config.json"
-    config.write_text(json.dumps({"mqtt": {"host": "localhost", "port": 1884, "topic": "t"},
-                                  "sensors": {"s1": {"range": [0, 1]}}}), encoding="utf-8")
-    with pytest.raises(BrokenPipeError):
-        load(MQTTGEN, "mqttgen").main(str(config))
+    with pytest.raises(Published):
+        load(MQTTGEN, "mqttgen").main(str(MQTTGEN.parent / "config.json"))
+    assert calls == [("user", "demo1"), ("connect", "localhost", 1883), ("publish", "sensors")]
+
+
+@pytest.mark.parametrize("config, address", [
+    ({"mqtt": {"host": "h", "port": 1, "topic": "a/b"}, "misc": {"interval_ms": 0, "verbose": False}}, ("h", 1)),
+    ({"mqtt": {"port": 65535}, "misc": {"interval_ms": 86400000, "verbose": True}}, ("localhost", 65535)),
+    ({"misc": {"interval_ms": 0.5}}, ("localhost", 1883)),
+])
+def test_the_generator_connects_with_values_at_their_bounds(tmp_path, monkeypatch, capsys, config, address):
+    class Connected(Exception):
+        pass
+
+    class Client:
+        def connect(self, host, port):
+            raise Connected(host, port)
+
+    stub_paho(monkeypatch, Client)
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(dict(config, sensors={"s1": {"range": [0, 1]}})), encoding="utf-8")
+    with pytest.raises(Connected) as connected:
+        load(MQTTGEN, "mqttgen").main(str(path))
+    assert connected.value.args == address
+
+
+INTERVAL = "a number of milliseconds from 0 to 86400000"
+PORT = "a whole number from 1 to 65535"
+TOPIC = "a non-empty JSON string without + or #"
+
+
+@pytest.mark.parametrize("section, key, value, expected", [
+    ("misc", "interval_ms", "x", INTERVAL),
+    ("misc", "interval_ms", -1, INTERVAL),
+    ("misc", "interval_ms", 86400001, INTERVAL),
+    ("misc", "interval_ms", True, INTERVAL),
+    ("misc", "interval_ms", None, INTERVAL),
+    ("misc", "interval_ms", float("inf"), INTERVAL),
+    ("misc", "interval_ms", float("nan"), INTERVAL),
+    ("misc", "verbose", "yes", "true or false"),
+    ("misc", "verbose", 1, "true or false"),
+    ("mqtt", "host", 5, "a non-empty JSON string"),
+    ("mqtt", "host", "", "a non-empty JSON string"),
+    ("mqtt", "port", "1883", PORT),
+    ("mqtt", "port", 0, PORT),
+    ("mqtt", "port", 65536, PORT),
+    ("mqtt", "port", 1883.0, PORT),
+    ("mqtt", "port", False, PORT),
+    ("mqtt", "topic", ["t"], TOPIC),
+    ("mqtt", "topic", "", TOPIC),
+    ("mqtt", "topic", "a/#", TOPIC),
+    ("mqtt", "topic", "a/+/b", TOPIC),
+])
+def test_the_generator_exits_1_before_the_connect_on_a_value_it_cannot_use(tmp_path, monkeypatch, capsys, section,
+                                                                          key, value, expected):
+    class Client:
+        def connect(self, host, port):
+            raise AssertionError(f"connected to {host}:{port}")
+
+    stub_paho(monkeypatch, Client)
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({section: {key: value}, "sensors": {"s1": {"range": [0, 1]}}}), encoding="utf-8")
+    with pytest.raises(SystemExit) as stop:
+        load(MQTTGEN, "mqttgen").main(str(path))
+    assert stop.value.code == f"{path}: {section}.{key}: {json.dumps(value)} is not allowed; expected {expected}"
+    assert capsys.readouterr().out == ""
 
 
 RANGE = "is not allowed; expected two whole numbers [low, high] with low <= high"
@@ -232,7 +358,7 @@ def test_the_generator_exits_2_on_a_usage_error(monkeypatch, capsys, arguments):
 
 
 class Connect(http.server.BaseHTTPRequestHandler):
-    status, answer, requests = 0, b"", []
+    status, answer, length, reset, requests = 0, b"", None, False, []
 
     def do_POST(self):
         body = self.rfile.read(int(self.headers["Content-Length"]))
@@ -242,16 +368,19 @@ class Connect(http.server.BaseHTTPRequestHandler):
             return
         self.send_response(Connect.status)
         self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(Connect.answer)))
+        self.send_header("Content-Length", str(len(Connect.answer) if Connect.length is None else Connect.length))
         self.end_headers()
         self.wfile.write(Connect.answer)
+        if Connect.reset:
+            self.connection.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
+            os.close(self.connection.detach())
 
     def log_message(self, format, *args):
         pass
 
 
-def deploy_connector(status: int | None, answer: bytes):
-    Connect.status, Connect.answer, Connect.requests = status, answer, []
+def deploy_connector(status: int | None, answer: bytes, length: int | None = None, reset: bool = False):
+    Connect.status, Connect.answer, Connect.length, Connect.reset, Connect.requests = status, answer, length, reset, []
     server = http.server.HTTPServer(("127.0.0.1", 0), Connect)
     thread = threading.Thread(target=server.serve_forever)
     thread.start()
@@ -286,6 +415,38 @@ def test_the_connector_script_prints_created_when_kafka_connect_creates_the_conn
     assert result.returncode == 0, result.stdout + result.stderr
     assert result.stdout.splitlines()[-1] == "New connector debug_c1 created."
     assert result.stderr == ""
+
+
+def test_the_connector_script_keeps_the_status_201_of_an_answer_whose_body_ends_early():
+    result = deploy_connector(201, b'{"name":"debug_c1"}', length=40)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.splitlines()[-1] == "New connector debug_c1 created."
+    assert result.stderr == ""
+
+
+def test_the_connector_script_keeps_the_status_500_of_an_answer_whose_body_ends_early():
+    result = deploy_connector(500, b'{"error_code":500,', length=40)
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "created" not in result.stdout
+    assert result.stderr.splitlines() == [
+        'debug_c1: POST http://127.0.0.1:8083/connectors answered HTTP 500 {"error_code":500,; the connector was not '
+        "created, check the log of the Kafka Connect worker"]
+
+
+def test_the_connector_script_keeps_the_status_201_when_the_connection_is_reset_in_the_body():
+    result = deploy_connector(201, b'{"name":', length=40, reset=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.splitlines()[-1] == "New connector debug_c1 created."
+    assert result.stderr == ""
+
+
+def test_the_connector_script_keeps_the_status_500_and_the_cause_when_the_connection_is_reset_in_the_body():
+    result = deploy_connector(500, b'{"error_code":500,', length=40, reset=True)
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "created" not in result.stdout
+    assert result.stderr.splitlines() == [
+        "debug_c1: POST http://127.0.0.1:8083/connectors answered HTTP 500 ([Errno 104] Connection reset by peer); "
+        "the connector was not created, check the log of the Kafka Connect worker"]
 
 
 @pytest.mark.parametrize("answer, cause", [

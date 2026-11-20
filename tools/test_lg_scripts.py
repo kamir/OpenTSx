@@ -32,7 +32,7 @@ INSTALL = re.compile(COMMAND_WORD + r"(?:[^\s;&|()<>]*/)?(?P<tool>docker\s+(?:" 
                      r"|confluent-hub\s+install\s|confluent\s+connect\s+plugin\s+install\s)")
 DOCKER_INSTALL = r"(?:(?:container\s+)?(?:run|create)|(?:image\s+)?pull)\s"
 SUBCOMMAND = re.compile(DOCKER_INSTALL)
-LATER_SUBCOMMAND = re.compile(r".*\s" + DOCKER_INSTALL)
+OPTIONS_BEFORE_SUBCOMMAND = re.compile(r"(?:-[^\s=]+(?:=\S*|(?:\s+[^\s-]\S*)?)\s+)+" + DOCKER_INSTALL)
 LITERAL = re.compile(r"[\w.-]+")
 VALUE_OPTIONS = {"-p", "--publish", "-v", "--volume", "-e", "--env", "--env-file", "--name", "--network", "--restart",
                  "-w", "--workdir", "-u", "--user", "-h", "--hostname", "--entrypoint", "--mount", "-l", "--label",
@@ -40,6 +40,17 @@ VALUE_OPTIONS = {"-p", "--publish", "-v", "--volume", "-e", "--env", "--env-file
                  "--worker-configurations"}
 FLAG_OPTIONS = {"-d", "--detach", "--rm", "-i", "--interactive", "-t", "--tty", "--init", "--privileged", "-q",
                 "--quiet", "--no-prompt", "--dry-run", "--force"}
+WRAPPER_VALUE_OPTIONS = {
+    "sudo": {"-C", "-D", "-g", "-p", "-R", "-r", "-T", "-t", "-U", "-u", "--close-from", "--chdir", "--group",
+             "--host", "--prompt", "--chroot", "--role", "--command-timeout", "--type", "--other-user", "--user"},
+    "env": {"-C", "-S", "-u", "--chdir", "--split-string", "--unset"},
+    "nice": {"-n", "--adjustment"},
+    "ionice": {"-c", "-n", "-P", "-p", "-u", "--class", "--classdata", "--pgid", "--pid", "--uid"},
+    "timeout": {"-k", "-s", "--kill-after", "--signal"},
+    "xargs": {"-a", "-d", "-E", "-I", "-L", "-n", "-P", "-s", "--arg-file", "--delimiter", "--max-lines",
+              "--max-args", "--max-procs", "--process-slot-var", "--max-chars"},
+    "exec": {"-a"},
+}
 PINNED = re.compile(r"(?::[\w.-]*\d+\.\d+\.\d+[\w.-]*|@sha256:[0-9a-f]{64})$")
 
 
@@ -130,6 +141,55 @@ def substitution_end(line: str, position: int) -> int:
     return len(line)
 
 
+def join_substitutions(text: str) -> str:
+    joined, stack, i = list(text), [], 0
+    while i < len(text):
+        c, top = text[i], stack[-1] if stack else None
+        if c.isspace() and ("(" in stack or "`" in stack):
+            joined[i] = "\0"
+        elif top == "'":
+            if c == "'":
+                stack.pop()
+        elif c == "\\":
+            i += 1
+        elif top == '"' and c == '"':
+            stack.pop()
+        elif text.startswith("$(", i):
+            stack.append("(")
+            i += 1
+        elif c == "(" and top != '"':
+            stack.append("(")
+        elif (c == ")" and top == "(") or (c == "`" and top == "`"):
+            stack.pop()
+        elif c == "`" or (c in "\"'" and top != '"'):
+            stack.append(c)
+        i += 1
+    return "".join(joined)
+
+
+def takes_the_next_word(prefix: str) -> bool:
+    prefix = re.split(r"[(`]", prefix)[-1]
+    words = prefix.split()
+    if words and not prefix[-1].isspace():
+        words.pop()
+    wrapper, value = None, False
+    for word in words:
+        if value:
+            value = False
+        elif word in WRAPPER_VALUE_OPTIONS:
+            wrapper = word
+        elif not word.startswith("-") or wrapper is None:
+            wrapper = None
+        elif word.startswith("--"):
+            value = word in WRAPPER_VALUE_OPTIONS[wrapper]
+        else:
+            for end, letter in enumerate(word[1:], 2):
+                if "-" + letter in WRAPPER_VALUE_OPTIONS[wrapper]:
+                    value = end == len(word)
+                    break
+    return value
+
+
 def commands(line: str) -> list[tuple[int, str]]:
     parts, start = [], 0
     for separator in SEPARATOR.finditer(unquoted(line)):
@@ -200,6 +260,8 @@ def image_problems(root: pathlib.Path, name: str) -> list[str]:
             for start, command in commands(line):
                 stop = start + len(command)
                 for install in INSTALL.finditer(masked, start, stop):
+                    if takes_the_next_word(masked[install.start():install.start("tool")]):
+                        continue
                     begin = install.end()
                     if install.group("word") is not None:
                         first, last = install.span("word")
@@ -208,7 +270,7 @@ def image_problems(root: pathlib.Path, name: str) -> list[str]:
                         subcommand = SUBCOMMAND.match(masked, first, limit)
                         if not subcommand:
                             if word.startswith("-"):
-                                if word not in DOCKER_INFO and LATER_SUBCOMMAND.match(masked, last, limit):
+                                if word not in DOCKER_INFO and OPTIONS_BEFORE_SUBCOMMAND.match(masked, first, limit):
                                     problems.append(f"{name}:{number}: {word}: unknown docker option before the "
                                                     "subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py")
                             elif not LITERAL.fullmatch(word):
@@ -219,7 +281,8 @@ def image_problems(root: pathlib.Path, name: str) -> list[str]:
                         begin = subcommand.end()
                     end = min(stop, substitution_end(line, begin))
                     try:
-                        references.append(first_operand(shlex.split(line[begin:end])))
+                        words = shlex.split(join_substitutions(line[begin:end]))
+                        references.append(first_operand([word.replace("\0", " ") for word in words]))
                     except ValueError as error:
                         tool = line[install.start("tool"):begin].strip()
                         problems.append(f"{name}:{number}: {tool}: cannot split the arguments into words ({error}); "
@@ -446,6 +509,26 @@ def test_a_command_after_a_single_ampersand_or_after_docker_global_options_is_re
                      "cat <&3 >&- &>>log": ["cat <&3 >&- &>>log"]}
 
 
+def test_an_unknown_docker_option_is_a_finding_only_when_a_subcommand_it_reads_follows_it(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "docker -x foo; echo pull\n"
+        "docker -x ps && docker run img:1.2.3\n"
+        "docker -x foo bar pull img:1.2.3\n"
+        "docker --x=1 ps pull img:1.2.3\n"
+        "docker --foo pull img:1.2.3\n"
+        "docker --foo bar pull img:1.2.3\n"
+        'docker --label="a b" pull img:1.2.3\n'
+        "docker -x --context c pull img:1.2.3\n", encoding="utf-8")
+    unknown = "unknown docker option before the subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:6: --foo: {unknown}",
+        f"run.sh:7: --foo: {unknown}",
+        f'run.sh:8: --label="a b": {unknown}',
+        f"run.sh:9: -x: {unknown}",
+    ]
+
+
 def test_a_docker_subcommand_that_is_not_a_literal_word_is_a_finding(tmp_path):
     (tmp_path / "run.sh").write_text(
         "#!/usr/bin/env bash\n"
@@ -526,6 +609,35 @@ def test_a_docker_command_behind_a_wrapper_with_option_values_is_read(tmp_path):
         f"run.sh:3: toke/mosquitto: {rest}",
         f"run.sh:4: toke/mosquitto: {rest}",
         f"run.sh:5: toke/mosquitto: {rest}",
+    ]
+
+
+def test_a_substitution_with_blanks_is_one_word_and_the_value_of_a_wrapper_option_is_no_command_word(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "docker run -e X=$(date +%s) img:1.2.3\n"
+        "sudo -u docker pull x\n"
+        "docker run -e X=`date +%s` -e Y=$(echo $(id -u) 'a b') img:1.2.3\n"
+        "docker run --name a$(date +%s) img:$(cat version file)\n"
+        "sudo -Eu docker pull x\n"
+        "sudo --user docker pull x\n"
+        "xargs -E docker pull x\n"
+        "sudo -u docker docker pull toke/mosquitto\n"
+        "sudo -ubob docker pull toke/mosquitto\n"
+        "sudo --user=bob docker pull toke/mosquitto\n"
+        "sudo -D /tmp/ docker pull toke/mosquitto\n"
+        "sudo -u bob command -p docker pull toke/mosquitto\n"
+        'X="$(sudo -u docker pull x)" Y=`sudo -u docker pull x`\n'
+        "echo $(sudo -u bob docker pull toke/mosquitto)\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:5: img:$(cat version file): {rest}",
+        f"run.sh:9: toke/mosquitto: {rest}",
+        f"run.sh:10: toke/mosquitto: {rest}",
+        f"run.sh:11: toke/mosquitto: {rest}",
+        f"run.sh:12: toke/mosquitto: {rest}",
+        f"run.sh:13: toke/mosquitto: {rest}",
+        f"run.sh:15: toke/mosquitto: {rest}",
     ]
 
 

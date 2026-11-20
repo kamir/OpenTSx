@@ -126,14 +126,20 @@ such as `/usr/bin/docker`: at the start of a command, of a `case` arm such as `s
 substitution, of a subshell or of a `{` group, also after variable assignments, options (words that start with `-`,
 with or without one value), a number or duration such as `10` or `5s`, and the words `!`, `time`, `command`,
 `builtin`, `exec`, `nohup`, `sudo`, `env`, `nice`, `ionice`, `timeout`, `xargs`, `if`, `elif`, `then`, `else`, `do`,
-`while` and `until`. A `docker` that is an argument of another command, as in `echo docker pull <image>` or
-`docker exec <container> docker pull <image>`, is not read, and neither is the `docker` of `command -v docker`,
-`command -V docker` or `command -p -v docker`, which do not run it.
+`while` and `until`. An option of `sudo`, `env`, `nice`, `ionice`, `timeout`, `xargs` or `exec` that takes a value,
+such as `-u` of `sudo` or `-n` of `nice`, takes the next word as its value, so `sudo -u docker pull <image>`, which
+runs `pull` as the user `docker`, is not read. A `docker` that is an argument of another command, as in
+`echo docker pull <image>` or `docker exec <container> docker pull <image>`, is not read, and neither is the `docker`
+of `command -v docker`, `command -V docker` or `command -p -v docker`, which do not run it.
 Before the subcommand of `docker` it skips the global options `--config`, `-c` or `--context`, `-D`
 or `--debug`, `-H` or `--host`, `-l` or `--log-level`, `--tls`, `--tlscacert`, `--tlscert`, `--tlskey` and
 `--tlsverify`, with their values. It fails on any other option between `docker` and a subcommand it reads, also on
 the `=` form of a flag such as `--tlsverify=true`, except `-v`, `--version`, `-h` and `--help`, with
 `<file>:<line>: <option>: unknown docker option before the subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py`.
+It reads each such option with at most one value word, a word that does not start with `-`, and with none when the
+option has `=`. So `docker --foo pull <image>` and `docker --foo bar pull <image>` are a finding, and
+`docker -x foo bar pull <image>`, whose subcommand is `bar`, and `docker --x=1 ps pull <image>` are not. The finding
+names the option as the line writes it, as in `--label="a b"`.
 It fails on a `docker` command whose subcommand is not a literal word of letters, digits, `_`, `.` and `-`, as in
 `docker $OPTS pull <image>` or `docker "$CMD" <image>`, with
 `<file>:<line>: <word>: the check cannot read a docker command whose subcommand is not a literal word; write the docker options and the subcommand literally`.
@@ -142,7 +148,8 @@ It also fails on an option before the image that it does not know, with
 `<file>:<line>: <option>: unknown option before the image; add it to the option lists of tools/test_lg_scripts.py`,
 on a command whose arguments do not split into words, for example at a quote that is not closed, with
 `<file>:<line>: <command>: cannot split the arguments into words (<cause>); close every quote on the line`,
-and on a Dockerfile `RUN` that runs `apt-get update` without `apt-get install`. A command inside quotes, as in
+and on a Dockerfile `RUN` that runs `apt-get update` without `apt-get install`. A command substitution without quotes
+in an argument, as in `docker run -e X=$(date +%s) <image>`, is one word for the check. A command inside quotes, as in
 `echo "use docker pull x"`, is not read. A command in a command substitution or a subshell, as in
 `CID=$(docker run <image>)`, `CID="$(docker run <image>)"` or `(docker pull <image>)`, is read up to the end of the
 substitution or subshell, also after `&&`, `||`, `;`, `|` or `&` inside it, and so is each further substitution of the
@@ -155,8 +162,12 @@ images that has no exact version.
 prints `MQTT broker <host>:<port>, user <username>` (`None` without a `username`) and no password. When it cannot
 connect to the broker, it exits with status 1 and
 `<host>:<port>: cannot connect to the MQTT broker (<cause>); start the broker first, for example with 02_run_mqtt_broker.sh`.
-An error after the connect, for example `BrokenPipeError` when you pipe its output into `head`, stops the script with
-that error. When it cannot read the configuration file or the file is not valid JSON, it exits with status 1 and
+It writes its output line by line. When the reader of its output closes it, for example `head` after its last line,
+the next line it prints makes it exit with status 1 and
+`stdout: closed by its reader; read the whole output or set misc.verbose to false`, also with `PYTHONUNBUFFERED=1` or
+`python3 -u`. When a publish fails, it exits with status 1 and
+`<host>:<port>: cannot publish to topic <topic> (<cause>); check the MQTT broker`.
+When it cannot read the configuration file or the file is not valid JSON, it exits with status 1 and
 `<file>: cannot read the configuration file (<cause>); pass the path of a JSON configuration file such as config.json`.
 Before it connects, it checks that the top level, `mqtt`, `misc`, `sensors` and each sensor `sensors.<id>` are JSON
 objects and that the `range` of each sensor is two whole numbers `[low, high]` with low <= high. When an entry is not a
@@ -165,6 +176,19 @@ JSON object, it exits with status 1 and `<file>: <key>: a JSON <type> is not all
 `expected a JSON object with mqtt, misc and sensors`, for `sensors` with
 `expected a JSON object with one object per sensor`. When a `range` is not allowed, it exits with status 1 and
 `<file>: sensors.<id>.range: <value> is not allowed; expected two whole numbers [low, high] with low <= high`.
+Before it connects, it also checks these values:
+
+| Key | Allowed values | Default |
+|-----|----------------|---------|
+| `misc.interval_ms` | a number of milliseconds from 0 to 86400000 | `500` |
+| `misc.verbose` | `true` or `false` | `false` |
+| `mqtt.host` | a non-empty JSON string | `"localhost"` |
+| `mqtt.port` | a whole number from 1 to 65535 | `1883` |
+| `mqtt.topic` | a non-empty JSON string without `+` or `#` | `"mqttgen"` |
+
+When a value is not allowed, it exits with status 1 and
+`<file>: <key>: <value> is not allowed; expected <allowed values>`, for example
+`config.json: misc.interval_ms: "x" is not allowed; expected a number of milliseconds from 0 to 86400000`.
 Without exactly one argument, it exits with status 2 and
 `<script>: <n> arguments given; expected 1, the path of a JSON configuration file such as config.json`.
 
@@ -196,6 +220,10 @@ When `cfg.json` has no `config` object, it posts nothing and exits with status 1
 `cfg.json: config: missing or not a JSON object; write the connector settings as the object "config": {...}`.
 After HTTP 200 or 201 it prints `New connector debug_c1 created.`. On any other answer it exits with status 1 and
 `debug_c1: POST http://127.0.0.1:8083/connectors answered HTTP <status> <body>; the connector was not created, check the log of the Kafka Connect worker`.
+When the body of an answer ends before its `Content-Length`, the script keeps the status and uses the part of the
+body that arrived: a 201 prints `New connector debug_c1 created.` and a 500 gives the message above with that part.
+When the connection is reset while the body is read, the script keeps the status as well, and `<body>` is the cause
+in parentheses, as in `answered HTTP 500 ([Errno 104] Connection reset by peer)`.
 When it cannot connect, it exits with status 1 and
 `http://127.0.0.1:8083/connectors: cannot connect (<cause>); start Kafka Connect on 127.0.0.1:8083 first`.
 A connection that takes longer than 10 s gives this message with the cause `timed out`. When Kafka Connect accepts
