@@ -55,7 +55,9 @@ not start a comment for the check, and a `cd` inside quotes, as in `echo "a; cd 
 A `cd` in a command substitution inside double quotes, as in `X="$(cd b)"`, is still checked, and the check follows
 the quotes inside the substitution, so `DIR="$(cd "$(dirname "$0")" || exit 1; pwd)"` passes. The suggested fix ends
 at the end of the substitution or subshell, so `X="$(cd b)"` gives
-`<file>:<line>: cd without a guard; write cd b || exit 1`.
+`<file>:<line>: cd without a guard; write cd b || exit 1`. The `&` of a redirection, as in `2>&1`, `>&2` or
+`&>/dev/null`, does not end the `cd`, so `cd x 2>&1 || exit 1` passes and `cd x 2>&1` gives
+`<file>:<line>: cd without a guard; write cd x 2>&1 || exit 1`.
 `tools/test_lg_python.py` fails on a Python script (`*.py`) of this module that
 does not compile or does not start with `#!/usr/bin/env python3`.
 
@@ -72,10 +74,10 @@ directory with that file at `/etc/opentsx/config/` when you start the container.
 
 [`src/main/docker/core-tool-image/README.md`](src/main/docker/core-tool-image/README.md) describes a Dockerfile for the
 same jar with Xvfb and x11vnc. `DockerImageTest` fails on a Dockerfile under `src/` with an `ENV <key> <value>` line or
-a `CMD` or `ENTRYPOINT` in shell form, on a Dockerfile or YAML file under `src/` that pulls an image from
-`k8s.gcr.io`, and on a manifest under `src/main/k8s/` with a list entry `- name:` that has no value. It joins a
-Dockerfile line that ends with `\` with the next line before it checks the instruction, so `ENV \` followed by
-`<key>=<value>` lines and `CMD \` followed by an exec-form array pass, and it names the first line of the instruction.
+a `CMD` or `ENTRYPOINT` in shell form, and on a manifest under `src/main/k8s/` with a list entry `- name:` that has
+no value. It joins a Dockerfile line that ends with `\` with the next line before it checks the instruction, so
+`ENV \` followed by `<key>=<value>` lines and `CMD \` followed by an exec-form array pass, and it names the first line
+of the instruction.
 It skips comment lines and empty lines as Docker does, so neither ends an instruction, and a comment line does not
 continue, even when it ends with `\`. `tools/test_registries.py` fails on every line of a tracked YAML file or
 Dockerfile of the repository, also under `archive/`, that names the registry `k8s.gcr.io` and is not a comment line,
@@ -119,13 +121,23 @@ digest. `tools/test_lg_scripts.py` reads the image or connector of every `docker
 `docker container run`, `docker container create`, `docker image pull`, `confluent-hub install` and
 `confluent connect plugin install` in the scripts of this module, also after `&&`, `||`, `;`, `|` or a single `&` on
 the same line, and of every `FROM` in its Dockerfiles. The `&` of a redirection, as in `2>&1`, `>&2` or `&>log`, does
-not end a command. Before the subcommand of `docker` it skips the global options `--config`, `-c` or `--context`, `-D`
+not end a command. It reads `docker`, `confluent-hub` and `confluent` only as the command word, also with a path
+such as `/usr/bin/docker`: at the start of a command, of a `case` arm such as `start)` or `(start)`, of a command
+substitution, of a subshell or of a `{` group, also after variable assignments, options (words that start with `-`,
+with or without one value), a number or duration such as `10` or `5s`, and the words `!`, `time`, `command`,
+`builtin`, `exec`, `nohup`, `sudo`, `env`, `nice`, `ionice`, `timeout`, `xargs`, `if`, `elif`, `then`, `else`, `do`,
+`while` and `until`. A `docker` that is an argument of another command, as in `echo docker pull <image>` or
+`docker exec <container> docker pull <image>`, is not read, and neither is the `docker` of `command -v docker`,
+`command -V docker` or `command -p -v docker`, which do not run it.
+Before the subcommand of `docker` it skips the global options `--config`, `-c` or `--context`, `-D`
 or `--debug`, `-H` or `--host`, `-l` or `--log-level`, `--tls`, `--tlscacert`, `--tlscert`, `--tlskey` and
 `--tlsverify`, with their values. It fails on any other option between `docker` and a subcommand it reads, also on
 the `=` form of a flag such as `--tlsverify=true`, except `-v`, `--version`, `-h` and `--help`, with
 `<file>:<line>: <option>: unknown docker option before the subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py`.
-A `docker` command with a word that is not an option before its subcommand, as in `docker $OPTS pull <image>`, is not
-read. It fails when an image or connector has no exact version, such as `1.2.3`, and no sha256 digest.
+It fails on a `docker` command whose subcommand is not a literal word of letters, digits, `_`, `.` and `-`, as in
+`docker $OPTS pull <image>` or `docker "$CMD" <image>`, with
+`<file>:<line>: <word>: the check cannot read a docker command whose subcommand is not a literal word; write the docker options and the subcommand literally`.
+It fails when an image or connector has no exact version, such as `1.2.3`, and no sha256 digest.
 It also fails on an option before the image that it does not know, with
 `<file>:<line>: <option>: unknown option before the image; add it to the option lists of tools/test_lg_scripts.py`,
 on a command whose arguments do not split into words, for example at a quote that is not closed, with
@@ -134,7 +146,9 @@ and on a Dockerfile `RUN` that runs `apt-get update` without `apt-get install`. 
 `echo "use docker pull x"`, is not read. A command in a command substitution or a subshell, as in
 `CID=$(docker run <image>)`, `CID="$(docker run <image>)"` or `(docker pull <image>)`, is read up to the end of the
 substitution or subshell, also after `&&`, `||`, `;`, `|` or `&` inside it, and so is each further substitution of the
-same command, as in `echo $(docker pull <image>) $(docker pull <image>)`.
+same command, as in `echo $(docker pull <image>) $(docker pull <image>)`. A command substitution inside an argument of
+an install is read too, so `docker run -e "X=$(docker pull <image>)" <image>` gives a finding for each of the two
+images that has no exact version.
 
 `mqtt-generator-gist/mqttgen.py` uses the 1.x client API of `paho-mqtt`. With paho-mqtt 2.0.0 it stops with
 `TypeError: Client.__init__() missing 1 required positional argument: 'callback_api_version'`. Before it connects, it
@@ -144,6 +158,13 @@ connect to the broker, it exits with status 1 and
 An error after the connect, for example `BrokenPipeError` when you pipe its output into `head`, stops the script with
 that error. When it cannot read the configuration file or the file is not valid JSON, it exits with status 1 and
 `<file>: cannot read the configuration file (<cause>); pass the path of a JSON configuration file such as config.json`.
+Before it connects, it checks that the top level, `mqtt`, `misc`, `sensors` and each sensor `sensors.<id>` are JSON
+objects and that the `range` of each sensor is two whole numbers `[low, high]` with low <= high. When an entry is not a
+JSON object, it exits with status 1 and `<file>: <key>: a JSON <type> is not allowed; expected a JSON object`, where
+`<type>` is `array`, `string`, `number`, `boolean` or `null`. For the top level the message ends with
+`expected a JSON object with mqtt, misc and sensors`, for `sensors` with
+`expected a JSON object with one object per sensor`. When a `range` is not allowed, it exits with status 1 and
+`<file>: sensors.<id>.range: <value> is not allowed; expected two whole numbers [low, high] with low <= high`.
 Without exactly one argument, it exits with status 2 and
 `<script>: <n> arguments given; expected 1, the path of a JSON configuration file such as config.json`.
 

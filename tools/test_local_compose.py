@@ -39,7 +39,8 @@ def test_every_image_is_pinned_and_known():
 
 
 def test_the_confluent_images_share_one_version():
-    tags = {s["image"].rpartition(":")[2] for s in services().values() if s.get("image", "").startswith("confluentinc/")}
+    tags = {s["image"].rpartition(":")[2] for s in services().values()
+            if s.get("image", "").startswith("confluentinc/")}
     assert tags == {"7.6.0"}
 
 

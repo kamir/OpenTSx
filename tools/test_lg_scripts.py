@@ -17,17 +17,23 @@ GRAFANA_CONTAINER = "docker-influxdb-grafana"
 GRAFANA_PASSWORD = "test-password-0x1"
 CI = ROOT / ".github" / "workflows" / "ci.yml"
 CD = re.compile(r"(?:^|[;&|({]|\b(?:then|do|else)\s)\s*(?:(?:!|command|builtin|time)\s+)*cd(?=\s|$)")
-CD_GUARD = re.compile(r"[^;&|]*\|\|\s*(?:exit|return)\b")
-CD_END = re.compile(r"[;&|]")
+CD_GUARD = re.compile(r"(?:[<>]&|&>|[^;&|])*\|\|\s*(?:exit|return)\b")
 SHELL = re.compile(r"""'[^']*'|"(?:\\.|[^"\\])*"|\\.|(?P<comment>(?<![^\s;&|()])#.*)""")
 SEPARATOR = re.compile(r"&&|\|\||(?<![<>])&(?!>)|[;|]")
 DOCKER_GLOBAL = (r"(?:(?:--(?:config|context|host|log-level|tlscacert|tlscert|tlskey)|-[cHl])(?:=|\s+)\S+"
                  r"|(?:--(?:debug|tls|tlsverify)|-D)(?=\s))\s+")
-DOCKER_OPTION = re.compile(r"\bdocker\s+(?:" + DOCKER_GLOBAL + r")*(?!" + DOCKER_GLOBAL + r")(-\S+)"
-                           r"(?=.*\s(?:(?:container\s+)?(?:run|create)|(?:image\s+)?pull)\s)")
 DOCKER_INFO = {"-v", "--version", "-h", "--help"}
-INSTALL = re.compile(r"\b(?:docker\s+(?:" + DOCKER_GLOBAL + r")*(?:(?:container\s+)?(?:run|create)|(?:image\s+)?pull)"
-                     r"|confluent-hub\s+install|confluent\s+connect\s+plugin\s+install)\s(.*)$")
+CASE_ARM = r"\(?[^\s;&|()]+\)\s*"
+COMMAND_WORD = (r"(?:(?:^|(?<=[;&|{])|(?<=\sin\s)(?=\s*" + CASE_ARM + r"))\s*(?:" + CASE_ARM + r")?|(?<=[(`])\s*)"
+                r"(?:(?:[A-Za-z_][A-Za-z0-9_]*=\S*|-\S+(?:\s+[^\s;&|()<>-][^\s;&|()<>]*)?|[0-9][0-9.]*[smhd]?|!|time"
+                r"|command(?!(?:\s+-[pvV]+)*\s+-[pvV]*[vV][pvV]*\s)|builtin|exec|nohup|sudo|env|nice|ionice|timeout"
+                r"|xargs|if|elif|then|else|do|while|until)\s+)*")
+INSTALL = re.compile(COMMAND_WORD + r"(?:[^\s;&|()<>]*/)?(?P<tool>docker\s+(?:" + DOCKER_GLOBAL + r")*(?P<word>\S+)"
+                     r"|confluent-hub\s+install\s|confluent\s+connect\s+plugin\s+install\s)")
+DOCKER_INSTALL = r"(?:(?:container\s+)?(?:run|create)|(?:image\s+)?pull)\s"
+SUBCOMMAND = re.compile(DOCKER_INSTALL)
+LATER_SUBCOMMAND = re.compile(r".*\s" + DOCKER_INSTALL)
+LITERAL = re.compile(r"[\w.-]+")
 VALUE_OPTIONS = {"-p", "--publish", "-v", "--volume", "-e", "--env", "--env-file", "--name", "--network", "--restart",
                  "-w", "--workdir", "-u", "--user", "-h", "--hostname", "--entrypoint", "--mount", "-l", "--label",
                  "--platform", "--add-host", "--component-dir", "--worker-configs", "--plugin-directory",
@@ -50,7 +56,7 @@ def script_problems(root: pathlib.Path, name: str) -> list[str]:
         masked = unquoted(line)
         for cd in CD.finditer(masked):
             if not CD_GUARD.match(masked, cd.end()):
-                stop = CD_END.search(masked, cd.end())
+                stop = SEPARATOR.search(masked, cd.end())
                 end = min(stop.start() if stop else len(line), substitution_end(line, cd.end()))
                 target = line[cd.end():end].strip() or "<dir>"
                 problems.append(f"{name}:{number}: cd without a guard; write cd {target} || exit 1")
@@ -192,18 +198,30 @@ def image_problems(root: pathlib.Path, name: str) -> list[str]:
             line = uncommented(line)
             masked = unquoted(line)
             for start, command in commands(line):
-                stop, position = start + len(command), start
-                unknown = DOCKER_OPTION.search(masked, start, stop)
-                if unknown and unknown.group(1) not in DOCKER_INFO:
-                    problems.append(f"{name}:{number}: {unknown.group(1)}: unknown docker option before the "
-                                    "subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py")
-                while install := INSTALL.search(masked, position, stop):
-                    begin = install.start(1)
-                    position = min(stop, substitution_end(line, begin))
+                stop = start + len(command)
+                for install in INSTALL.finditer(masked, start, stop):
+                    begin = install.end()
+                    if install.group("word") is not None:
+                        first, last = install.span("word")
+                        limit = min(stop, substitution_end(line, first))
+                        word = line[first:last]
+                        subcommand = SUBCOMMAND.match(masked, first, limit)
+                        if not subcommand:
+                            if word.startswith("-"):
+                                if word not in DOCKER_INFO and LATER_SUBCOMMAND.match(masked, last, limit):
+                                    problems.append(f"{name}:{number}: {word}: unknown docker option before the "
+                                                    "subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py")
+                            elif not LITERAL.fullmatch(word):
+                                problems.append(f"{name}:{number}: {word}: the check cannot read a docker command "
+                                                "whose subcommand is not a literal word; write the docker options and "
+                                                "the subcommand literally")
+                            continue
+                        begin = subcommand.end()
+                    end = min(stop, substitution_end(line, begin))
                     try:
-                        references.append(first_operand(shlex.split(line[begin:position])))
+                        references.append(first_operand(shlex.split(line[begin:end])))
                     except ValueError as error:
-                        tool = line[install.start():begin].strip()
+                        tool = line[install.start("tool"):begin].strip()
                         problems.append(f"{name}:{number}: {tool}: cannot split the arguments into words ({error}); "
                                         "close every quote on the line")
         for reference, option in references:
@@ -307,6 +325,16 @@ def test_a_cd_inside_quotes_is_no_cd_for_the_check(tmp_path):
     assert script_problems(tmp_path, "run.sh") == [
         "run.sh:5: cd without a guard; write cd c || exit 1",
         'run.sh:6: cd without a guard; write cd "$DIR;x" || exit 1',
+    ]
+
+
+def test_the_ampersand_of_a_redirection_does_not_end_a_cd(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\ncd x 2>&1 || exit 1\ncd y &>/dev/null || exit 1\ncd z 2>&1\ncd w >&2 & wait\n",
+        encoding="utf-8")
+    assert script_problems(tmp_path, "run.sh") == [
+        "run.sh:4: cd without a guard; write cd z 2>&1 || exit 1",
+        "run.sh:5: cd without a guard; write cd w >&2 || exit 1",
     ]
 
 
@@ -416,6 +444,117 @@ def test_a_command_after_a_single_ampersand_or_after_docker_global_options_is_re
     assert split == {"docker pull a:1.0.0 2>&1 | tee pull.log": ["docker pull a:1.0.0 2>&1 ", " tee pull.log"],
                      "docker pull a:1.0.0 &>pull.log & wait": ["docker pull a:1.0.0 &>pull.log ", " wait"],
                      "cat <&3 >&- &>>log": ["cat <&3 >&- &>>log"]}
+
+
+def test_a_docker_subcommand_that_is_not_a_literal_word_is_a_finding(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "docker $OPTS pull toke/mosquitto\n"
+        'docker --context x "$CMD" run -d img:1.2.3\n'
+        'docker "pull" toke/mosquitto\n'
+        "docker network create net1\n"
+        'docker exec "$C" ls\n'
+        "echo $(docker ps -q) $(docker pull img:1.2.3)\n", encoding="utf-8")
+    rest = ("the check cannot read a docker command whose subcommand is not a literal word; "
+            "write the docker options and the subcommand literally")
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:2: $OPTS: {rest}",
+        f'run.sh:3: "$CMD": {rest}',
+        f'run.sh:4: "pull": {rest}',
+    ]
+
+
+def test_an_install_in_a_substitution_inside_an_argument_of_another_install_is_read(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        'docker run -e "X=$(docker pull toke/mosquitto)" img:1.2.3\n'
+        'docker run -e "X=`docker pull toke/mosquitto`" -d img:1.2.3\n'
+        'docker run -e "X=$(confluent-hub install a/b:latest)" img:1.2.3\n'
+        'docker run -e "X=$(docker pull img:1.2.3)" toke/mosquitto\n', encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:2: toke/mosquitto: {rest}",
+        f"run.sh:3: toke/mosquitto: {rest}",
+        f"run.sh:4: a/b:latest: {rest}",
+        f"run.sh:5: toke/mosquitto: {rest}",
+    ]
+
+
+def test_only_a_docker_or_confluent_command_word_is_read(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "echo docker pull x\n"
+        "echo run confluent-hub install a/b and docker run x\n"
+        "printf '%s\\n' docker pull x\n"
+        "sudo -E docker pull toke/mosquitto\n"
+        "IMG=x docker pull toke/mosquitto\n"
+        "if docker pull toke/mosquitto; then echo ok; fi\n"
+        "{ docker pull toke/mosquitto; }\n"
+        "! time docker pull toke/mosquitto\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:5: toke/mosquitto: {rest}",
+        f"run.sh:6: toke/mosquitto: {rest}",
+        f"run.sh:7: toke/mosquitto: {rest}",
+        f"run.sh:8: toke/mosquitto: {rest}",
+        f"run.sh:9: toke/mosquitto: {rest}",
+    ]
+
+
+def test_a_check_that_docker_is_installed_is_no_docker_command(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "command -v docker >/dev/null 2>&1 || exit 1\n"
+        "if ! command -v docker &>/dev/null; then exit 1; fi\n"
+        "command -V docker > /dev/null\n"
+        "command -pv docker >/dev/null\n", encoding="utf-8")
+    assert image_problems(tmp_path, "run.sh") == []
+
+
+def test_a_docker_command_behind_a_wrapper_with_option_values_is_read(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "sudo -u bob docker pull toke/mosquitto\n"
+        "timeout 10 docker pull toke/mosquitto\n"
+        "nice -n 5 docker pull toke/mosquitto\n"
+        "xargs docker pull toke/mosquitto\n"
+        "command -p -v docker >/dev/null\n"
+        "command -vp docker >/dev/null\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:2: toke/mosquitto: {rest}",
+        f"run.sh:3: toke/mosquitto: {rest}",
+        f"run.sh:4: toke/mosquitto: {rest}",
+        f"run.sh:5: toke/mosquitto: {rest}",
+    ]
+
+
+def test_an_install_in_a_case_arm_or_with_a_path_is_read(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        '#!/usr/bin/env bash\n'
+        'case "$1" in\n'
+        '  start) docker run toke/mosquitto ;;\n'
+        '  "pull"|stop) docker pull toke/mosquitto ;;\n'
+        '  (up) docker pull toke/mosquitto ;;\n'
+        '  *) docker pull toke/mosquitto ;;\n'
+        'esac\n'
+        'case "$1" in start) docker pull toke/mosquitto ;; esac\n'
+        '/usr/bin/docker pull toke/mosquitto\n'
+        'sudo /usr/local/bin/confluent-hub install a/b:latest\n'
+        'echo $(date) docker pull x\n'
+        'echo $( date) docker pull x\n'
+        'echo /usr/bin/docker pull x\n'
+        'for word in docker pull x; do echo "$word"; done\n', encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:3: toke/mosquitto: {rest}",
+        f"run.sh:4: toke/mosquitto: {rest}",
+        f"run.sh:5: toke/mosquitto: {rest}",
+        f"run.sh:6: toke/mosquitto: {rest}",
+        f"run.sh:8: toke/mosquitto: {rest}",
+        f"run.sh:9: toke/mosquitto: {rest}",
+        f"run.sh:10: a/b:latest: {rest}",
+    ]
 
 
 def test_an_option_after_the_word_docker_without_an_install_subcommand_is_no_finding(tmp_path):

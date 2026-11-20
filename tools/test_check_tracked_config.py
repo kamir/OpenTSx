@@ -219,9 +219,41 @@ def test_a_gitlink_without_a_submodule_entry_fails(tmp_path):
         result = run_guard(gitlink_repository(tmp_path / name, modules))
         assert result.returncode == 1, result.stdout + result.stderr
         assert result.stdout.splitlines() == [
-            "dir/sub: gitlink without a .gitmodules entry; add it with git submodule add <url> dir/sub or remove it "
-            "with git rm --cached dir/sub",
+            "dir/sub: gitlink without a .gitmodules entry; add it with git submodule add --force <url> dir/sub or "
+            "remove it with git rm --cached dir/sub",
             f"checked {files} tracked files, 1 findings"]
+
+
+def test_the_suggested_submodule_add_passes_the_guard(tmp_path):
+    source = tmp_path / "source"
+    subprocess.run(["git", "init", "-q", str(source)], check=True, env=git_environment())
+    subprocess.run(["git", "-C", str(source), "-c", "user.name=test", "-c", "user.email=test@example.com", "-c",
+                    "commit.gpgsign=false", "commit", "-q", "--allow-empty", "-m", "start"], check=True,
+                   env=git_environment())
+    repository = gitlink_repository(tmp_path / "repository", None)
+    advice = run_guard(repository).stdout.splitlines()[0]
+    command = advice.partition("add it with ")[2].partition(" or remove it")[0].replace("<url>", str(source))
+    assert command == f"git submodule add --force {source} dir/sub"
+    subprocess.run(["git", "-c", "protocol.file.allow=always", *command.split()[1:]], cwd=repository,
+                   capture_output=True, check=True, env=git_environment())
+    result = run_guard(repository)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.splitlines() == ["checked 2 tracked files, 0 findings"]
+
+
+def test_a_gitmodules_file_that_git_cannot_read_is_one_finding_and_the_other_checks_run(tmp_path):
+    conflict = '<<<<<<< HEAD\n[submodule "sub"]\n\tpath = dir/sub\n=======\n>>>>>>> other\n'
+    repository = gitlink_repository(tmp_path / "repository", conflict)
+    write(repository, {"config/cpl.props": "bootstrap.servers=192.168.3.5:9092\n"})
+    subprocess.run(["git", "-C", str(repository), "add", "config"], check=True, env=git_environment())
+    result = run_guard(repository)
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert result.stderr == ""
+    assert result.stdout.splitlines() == [
+        ".gitmodules: git cannot read it (fatal: bad config line 1 in file .gitmodules); fix the file, for example "
+        "resolve its conflict markers",
+        'config/cpl.props:1: bootstrap.servers: "192.168.3.5" is not localhost or a placeholder',
+        "checked 3 tracked files, 2 findings"]
 
 
 def test_a_gitlink_with_its_submodule_entry_passes(tmp_path):
@@ -240,7 +272,7 @@ def test_a_root_below_the_top_level_reads_the_top_level_submodule_entries(tmp_pa
     result = run_guard(repository / "dir")
     assert result.returncode == 1, result.stdout + result.stderr
     assert result.stdout.splitlines() == [
-        "stray: gitlink without a .gitmodules entry; add it with git submodule add <url> stray or remove it "
+        "stray: gitlink without a .gitmodules entry; add it with git submodule add --force <url> stray or remove it "
         "with git rm --cached stray",
         "checked 2 tracked files, 1 findings"]
 

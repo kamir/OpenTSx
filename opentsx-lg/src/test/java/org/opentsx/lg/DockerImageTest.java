@@ -74,17 +74,6 @@ class DockerImageTest {
         return problems;
     }
 
-    private static List<String> registryProblems(String where, String text) {
-        List<String> problems = new ArrayList<>();
-        List<String> lines = text.lines().toList();
-        for (int n = 1; n <= lines.size(); n++) {
-            if (lines.get(n - 1).contains("k8s.gcr.io/")) {
-                problems.add(where + ":" + n + ": k8s.gcr.io is frozen; pull the image from registry.k8s.io");
-            }
-        }
-        return problems;
-    }
-
     @Test
     void theDockerProfileCopiesNoKafkaClientProfileAndReadsTheMountedOne() throws Exception {
         String pom = Files.readString(Path.of("pom.xml"));
@@ -134,7 +123,7 @@ class DockerImageTest {
     }
 
     @Test
-    void theChecksFindTheLegacyEnvFormTheShellFormAndTheFrozenRegistry() {
+    void theChecksFindTheLegacyEnvFormAndTheShellForm() {
         String dockerfile = "FROM eclipse-temurin:21.0.8_9-jre-noble\n"
                 + "ENV DISPLAY :99\n"
                 + "ENV OPENTSX_SHOW_GUI=false\n"
@@ -155,8 +144,6 @@ class DockerImageTest {
                 + "ENV \\\n"
                 + "\n"
                 + "C 3\n";
-        String manifest = "containers:\n- name: echo\n  image: k8s.gcr.io/echoserver:1.10\n"
-                + "- name: echo2\n  image: registry.k8s.io/echoserver:1.10\n";
         String execForm = "shell form; write the exec form [\"<executable>\", \"<argument>\"]";
 
         assertEquals(List.of(
@@ -168,8 +155,6 @@ class DockerImageTest {
                 "Dockerfile:17: CMD java -jar /app.jar: " + execForm,
                 "Dockerfile:18: ENV C 3: legacy form; write ENV <key>=<value>"),
                 dockerfileProblems("Dockerfile", dockerfile));
-        assertEquals(List.of("echo-demo.yaml:3: k8s.gcr.io is frozen; pull the image from registry.k8s.io"),
-                registryProblems("echo-demo.yaml", manifest));
     }
 
     @Test
@@ -181,21 +166,6 @@ class DockerImageTest {
         }
 
         assertFalse(dockerfiles.isEmpty());
-        assertEquals(List.of(), problems);
-    }
-
-    @Test
-    void noManifestOrDockerfilePullsFromTheFrozenK8sGcrRegistry() throws Exception {
-        List<Path> sources;
-        try (Stream<Path> files = Files.walk(Path.of("src"))) {
-            sources = files.filter(f -> f.getFileName().toString().matches("Dockerfile|.*\\.ya?ml")).toList();
-        }
-        List<String> problems = new ArrayList<>();
-        for (Path source : sources) {
-            problems.addAll(registryProblems(source.toString(), Files.readString(source)));
-        }
-
-        assertTrue(sources.contains(Path.of("src/main/k8s/krake-app/echo-demo.yaml")), sources.toString());
         assertEquals(List.of(), problems);
     }
 

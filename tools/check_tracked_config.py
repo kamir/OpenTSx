@@ -21,7 +21,8 @@ Checks the files `git ls-files` lists under root:
 
 When it reads the git listing itself (no paths given), it also fails on a gitlink, an index entry of mode 160000,
 whose path has no submodule.<name>.path entry in the .gitmodules file at the top level of the repository (no file
-means no entries). A root below the top level compares the paths below it.
+means no entries). A root below the top level compares the paths below it. A .gitmodules file that git cannot read,
+for example one with conflict markers, is one finding with git's reason; the other checks still run.
 """
 import ipaddress
 import pathlib
@@ -57,25 +58,34 @@ def gitlinks(root: pathlib.Path) -> list[str]:
     return [path for info, _, path in entries if info.startswith("160000 ")]
 
 
+class UnreadableModules(Exception):
+    pass
+
+
 def submodule_paths(root: pathlib.Path) -> set[str]:
     location = subprocess.run(["git", "-C", str(root), "rev-parse", "--show-toplevel", "--show-prefix"],
                               capture_output=True, check=True)
     top, prefix = location.stdout.decode("utf-8").split("\n")[:2]
-    modules = pathlib.Path(top) / ".gitmodules"
-    if not modules.is_file():
+    if not (pathlib.Path(top) / ".gitmodules").is_file():
         return set()
-    command = ["git", "-C", str(root), "config", "-z", "-f", str(modules), "--get-regexp", r"^submodule\..*\.path$"]
+    command = ["git", "-C", top, "config", "-z", "-f", ".gitmodules", "--get-regexp", r"^submodule\..*\.path$"]
     result = subprocess.run(command, capture_output=True, check=False)
     if result.returncode not in (0, 1):
-        raise subprocess.CalledProcessError(result.returncode, command, result.stdout, result.stderr)
+        reason = "; ".join(line.strip() for line in result.stderr.decode("utf-8", "replace").splitlines()
+                           if line.strip())
+        raise UnreadableModules(f".gitmodules: git cannot read it ({reason}); fix the file, for example resolve "
+                                "its conflict markers")
     paths = (entry.partition("\n")[2] for entry in result.stdout.decode("utf-8").split("\0") if entry)
     return {path[len(prefix):] for path in paths if path.startswith(prefix)}
 
 
 def gitlink_findings(root: pathlib.Path) -> list[str]:
-    known = submodule_paths(root)
-    return [f"{path}: gitlink without a .gitmodules entry; add it with git submodule add <url> {path} or remove it "
-            f"with git rm --cached {path}" for path in gitlinks(root) if path not in known]
+    try:
+        known = submodule_paths(root)
+    except UnreadableModules as error:
+        return [str(error)]
+    return [f"{path}: gitlink without a .gitmodules entry; add it with git submodule add --force <url> {path} or "
+            f"remove it with git rm --cached {path}" for path in gitlinks(root) if path not in known]
 
 
 def is_config(path: str) -> bool:

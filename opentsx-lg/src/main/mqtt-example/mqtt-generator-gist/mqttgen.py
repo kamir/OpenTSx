@@ -7,6 +7,22 @@ import random
 
 import paho.mqtt.client as mqtt
 
+JSON_TYPES = ((dict, "object"), (list, "array"), (str, "string"), (bool, "boolean"), ((int, float), "number"))
+
+
+def json_object(config_path, key, value, shape="a JSON object"):
+    if not isinstance(value, dict):
+        found = next((name for kind, name in JSON_TYPES if isinstance(value, kind)), "null")
+        sys.exit("%s: %s: a JSON %s is not allowed; expected %s" % (config_path, key, found, shape))
+    return value
+
+
+def whole_range(value):
+    return (isinstance(value, list) and len(value) == 2
+            and all(isinstance(bound, int) and not isinstance(bound, bool) for bound in value)
+            and value[0] <= value[1])
+
+
 def generate(host, port, username, password, topic, sensors, interval_ms, verbose):
     """generate data and send it to an MQTT broker"""
     mqttc = mqtt.Client()
@@ -61,9 +77,16 @@ def main(config_path):
         sys.exit("%s: cannot read the configuration file (%s); pass the path of a JSON configuration file such as "
                  "config.json" % (config_path, cause))
 
-    mqtt_config = config.get("mqtt", {})
-    misc_config = config.get("misc", {})
-    sensors = config.get("sensors")
+    config = json_object(config_path, "top level", config, "a JSON object with mqtt, misc and sensors")
+    mqtt_config = json_object(config_path, "mqtt", config.get("mqtt", {}))
+    misc_config = json_object(config_path, "misc", config.get("misc", {}))
+    sensors = json_object(config_path, "sensors", config.get("sensors", {}),
+                          "a JSON object with one object per sensor")
+    for sensor_id, sensor in sensors.items():
+        bounds = json_object(config_path, "sensors.%s" % sensor_id, sensor).get("range", [0, 100])
+        if not whole_range(bounds):
+            sys.exit("%s: sensors.%s.range: %s is not allowed; expected two whole numbers [low, high] with "
+                     "low <= high" % (config_path, sensor_id, json.dumps(bounds)))
 
     interval_ms = misc_config.get("interval_ms", 500)
     verbose = misc_config.get("verbose", False)

@@ -224,7 +224,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   command line leave out a DAG that `DagPlan.of` refuses, and the sinks of a DAG whose redeploy the processor refused
   because another DAG writes one of its topics.
 - tools: `tools/check_tracked_config.py` fails on a gitlink that has no `.gitmodules` entry, with `<path>: gitlink
-  without a .gitmodules entry; add it with git submodule add <url> <path> or remove it with git rm --cached <path>`.
+  without a .gitmodules entry; add it with git submodule add --force <url> <path> or remove it with git rm --cached
+  <path>`. A `.gitmodules` file that git cannot read is one finding, `.gitmodules: git cannot read it (<git's
+  message>); fix the file, for example resolve its conflict markers`, and the other checks still run.
   It reads the submodule entries from the `.gitmodules` file at the top level of the repository, also when it checks a
   directory below it.
 - `tools/test_registries.py` fails on every line of a tracked YAML file or Dockerfile of the repository, the archived
@@ -908,8 +910,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `tools/test_lg_python.py` fails on a tracked `opentsx-lg` Python script that does not compile with Python 3 or does
   not start with that line.
 - opentsx-lg: the core tool image Dockerfile sets its variables as `ENV key=value` and runs `java -jar
-  /opentsx-lg/opentsx-lg-3.0.1.jar` in exec form. `DockerImageTest` fails on the legacy `ENV key value` form, on a
-  shell-form `CMD` or `ENTRYPOINT`, and on an image from `k8s.gcr.io`.
+  /opentsx-lg/opentsx-lg-3.0.1.jar` in exec form. `DockerImageTest` fails on the legacy `ENV key value` form and on a
+  shell-form `CMD` or `ENTRYPOINT`.
 - The opentsx-twin-live README says that `twin-live publish` creates each topic before the first record of its run and
   exits with code 1 when that create fails, and that a caller of `KafkaTopics.append` that appends again after a
   failed create tries the create again on a new Admin client.
@@ -2493,6 +2495,25 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   R_q and probabilities of the call before; the counters `anzRowRAW` and `anzRowsFILTERED` stay unchanged.
 - `opentsx-core`: `MacroRecorder` and `MacroRecorder2` open the `Components` chart before they record its node, so
   `show Chart` on the `Components` node opens that chart, also after another chart with the same title has opened.
+- tools: a `.gitmodules` file that git cannot read, for example one with conflict markers, no longer ends
+  `tools/check_tracked_config.py` with a traceback. It is one finding, `.gitmodules: git cannot read it (<git's
+  message>); fix the file, for example resolve its conflict markers`, the other checks still run, and the guard exits
+  1.
+- tools: `tools/test_lg_scripts.py` reads `docker`, `confluent-hub` and `confluent` only as the command word, so `echo
+  docker pull x` and `command -v docker >/dev/null` are no finding. A command word in a `case` arm such as `start)` or
+  `(start)` counts, also on a one-line `case`, and so does one with a path such as `/usr/bin/docker`. It reads an
+  install in a command substitution inside an argument of another install, as in `docker run -e "X=$(docker pull
+  <image>)" <image>`. It fails on a `docker` command whose subcommand is not a literal word, as in `docker $OPTS pull
+  <image>`, with `<word>: the check cannot read a docker command whose subcommand is not a literal word; write the
+  docker options and the subcommand literally`. It also reads `docker` after `nice`, `ionice`, `timeout` and `xargs`,
+  after a number or duration such as `10` or `5s`, and after an option with one value, as in `sudo -u <user> docker
+  pull <image>` or `nice -n 5 docker pull <image>`. It does not read the `docker` of `command -p -v docker` or
+  `command -vp docker`. The `&` of a redirection no longer ends a `cd`, so `cd x 2>&1 || exit 1` passes.
+- opentsx-lg: before it connects, `mqtt-generator-gist/mqttgen.py` exits 1 when the top level, `mqtt`, `misc`,
+  `sensors` or a sensor is not a JSON object, `null` included, with `<file>: <key>: a JSON <type> is not allowed;
+  expected a JSON object`. It also exits 1 when a sensor `range` is not two whole numbers with low <= high, with
+  `<file>: sensors.<id>.range: <value> is not allowed; expected two whole numbers [low, high] with low <= high`. Both
+  cases used to end in a traceback, or for `"sensors": null` in exit 0.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

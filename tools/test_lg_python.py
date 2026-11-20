@@ -1,10 +1,10 @@
 """The opentsx-lg Python scripts compile and start with #!/usr/bin/env python3, the MQTT generator prints no password,
-exits 1 on a configuration file it cannot read or parse, names the broker only when the connect fails, and exits 2 on a
-usage error, the connector script posts the config object of cfg.json, refuses a cfg.json it cannot read or without
-one and reports what Kafka Connect answered or that no HTTP answer came, waiting at most 10 s for each socket
-operation, and the MQTT example bootstrap installs a pinned paho-mqtt
-without sudo, reaches the connector installs without a broker and stops at the first command that fails, and the broker
-script publishes its test message after it starts the broker.
+exits 1 on a configuration file it cannot read or parse or whose entries have the wrong shape, names the broker only
+when the connect fails, and exits 2 on a usage error, the connector script posts the config object of cfg.json,
+refuses a cfg.json it cannot read or without one and reports what Kafka Connect answered or that no HTTP answer came,
+waiting at most 10 s for each socket operation, and the MQTT example bootstrap installs a pinned paho-mqtt without
+sudo, reaches the connector installs without a broker and stops at the first command that fails, and the broker script
+publishes its test message after it starts the broker.
 
 Run from the repository root: python -m pytest -q tools
 """
@@ -171,6 +171,52 @@ def test_the_generator_reports_a_failure_after_the_connect_as_itself(tmp_path, m
                                   "sensors": {"s1": {"range": [0, 1]}}}), encoding="utf-8")
     with pytest.raises(BrokenPipeError):
         load(MQTTGEN, "mqttgen").main(str(config))
+
+
+RANGE = "is not allowed; expected two whole numbers [low, high] with low <= high"
+
+
+@pytest.mark.parametrize("config, message", [
+    ([], "top level: a JSON array is not allowed; expected a JSON object with mqtt, misc and sensors"),
+    ("config", "top level: a JSON string is not allowed; expected a JSON object with mqtt, misc and sensors"),
+    ({"mqtt": "localhost:1883", "sensors": {"s1": {}}}, "mqtt: a JSON string is not allowed; expected a JSON object"),
+    ({"misc": [500], "sensors": {"s1": {}}}, "misc: a JSON array is not allowed; expected a JSON object"),
+    ({"sensors": ["s1"]}, "sensors: a JSON array is not allowed; expected a JSON object with one object per sensor"),
+    ({"sensors": None}, "sensors: a JSON null is not allowed; expected a JSON object with one object per sensor"),
+    ({"sensors": {"s1": 5}}, "sensors.s1: a JSON number is not allowed; expected a JSON object"),
+    ({"sensors": {"s1": {}, "s2": {"range": [0, 45, 90]}}}, f"sensors.s2.range: [0, 45, 90] {RANGE}"),
+    ({"sensors": {"s1": {}, "s2": {"range": [0.5, 45]}}}, f"sensors.s2.range: [0.5, 45] {RANGE}"),
+    ({"sensors": {"s1": {}, "s2": {"range": [45, 0]}}}, f"sensors.s2.range: [45, 0] {RANGE}"),
+    ({"sensors": {"s1": {}, "s2": {"range": [True, 5]}}}, f"sensors.s2.range: [true, 5] {RANGE}"),
+    ({"sensors": {"s1": {}, "s2": {"range": "0-45"}}}, f'sensors.s2.range: "0-45" {RANGE}'),
+])
+def test_the_generator_exits_1_on_a_configuration_of_the_wrong_shape(tmp_path, monkeypatch, capsys, config, message):
+    class Client:
+        def connect(self, host, port):
+            pass
+
+        def loop_start(self):
+            pass
+
+        def publish(self, topic, payload):
+            raise AssertionError(f"published {payload}")
+
+    stub_paho(monkeypatch, Client)
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(config), encoding="utf-8")
+    with pytest.raises(SystemExit) as stop:
+        load(MQTTGEN, "mqttgen").main(str(path))
+    assert stop.value.code == f"{path}: {message}"
+    assert capsys.readouterr().out == ""
+
+
+@pytest.mark.parametrize("config", [{}, {"sensors": {}}])
+def test_the_generator_without_sensors_does_not_connect(tmp_path, monkeypatch, capsys, config):
+    refusing_paho(monkeypatch)
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(config), encoding="utf-8")
+    load(MQTTGEN, "mqttgen").main(str(path))
+    assert capsys.readouterr().out == "no sensors specified in config, nothing to do\n"
 
 
 @pytest.mark.parametrize("arguments", [[], ["a.json", "b.json"]])
