@@ -147,6 +147,44 @@ The [federation measurement report](docs/datamodel-2026/measurements/wayang-fede
 records executed comparisons and data movement. It distinguishes observed
 results from performance claims.
 
+## Take time series into orbit with LASCARIS for Space
+
+LASCARIS for Space is the plan to carry the same contracts to satellites.
+KafScale holds the topics on board and on the ground, Apache Wayang plans and
+signs on the ground, and the Rust runner executes signed plans on the onboard
+computer. In that plan the OpenTSx Workspace on the ground shows series from
+orbit next to ground data: historical episodes by replay and new episodes as
+they arrive after each pass. Forecasts stay labelled `FORECAST`; they are
+predictions, not future measurements.
+
+KafScale and Wayang are the base that makes OpenTSx a universal time-series
+layer. A series is identified by its key: metric and tags hash to its
+`seriesId` ([`SeriesKey`](opentsx-model/src/main/avro/SeriesKey.avsc)). Each
+episode names its source, producer, pipeline and parent episode in
+[`Provenance`](opentsx-model/src/main/avro/Provenance.avsc), and system
+documents tie signals to their raw source topic and to an origin class
+(`MEASURED`, `REPORTED`, `FORECAST`, `ESTIMATED` or `SYNTHETIC`). Provenance
+records where values come from; it does not prove that they are correct. In
+orbit, raw samples stay in the onboard ring buffer only for its retention, and
+the ground receives reduced episodes.
+
+For training data this means: every value is tied to a declared source and a
+processing chain. TASK-021 plans signed downlink chunks, which prove that an
+episode is unchanged since the onboard runner signed it; the signature covers
+the path from the runner to the ground, not the path from the sensor to the
+runner. This makes training data traceable and reproducible, not automatically
+correct. Calibration, data quality, time correlation and representativeness
+need their own evidence.
+
+Complex algorithms run on the onboard CPU or on the ground. FPGA kernels reduce
+high-rate raw data near the sensor; owner decision D-T13 in
+[TASK-020](EVOLUTION/TASK-020-wayang-ts-operators.md) admits them behind the
+runner, with a CPU fallback. The components are planned in
+[TASK-021](EVOLUTION/TASK-021-orbit-testbed.md) (orbit testbed) and
+[TASK-022](EVOLUTION/TASK-022-situation-center.md) (situation center) and are
+built in [`lascaris-space/`](lascaris-space/README.md). None of them is
+implemented yet.
+
 ## Run the Workbench
 
 Start the standalone synthetic thermal demo with Node 24.22.2 and the locked
