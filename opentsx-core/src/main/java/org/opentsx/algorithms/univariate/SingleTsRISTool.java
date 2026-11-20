@@ -97,7 +97,7 @@ public class SingleTsRISTool extends SingleRowTSO {
 
  
 
-        line = line + "\t" + vRQ1 + "\t"; //  + vRQ2 + "\t" + vRQ3;
+        line = line + "\t" + vRQ1 + "\t";
 
 
 
@@ -120,16 +120,5 @@ public class SingleTsRISTool extends SingleRowTSO {
      */
     public String processReihe(Writer resultWriter, TimeSeriesObject reihe) throws Exception {
         return "... (" + this.getClass().getName() + ") ";
-    }
-
-    private double calcAverage(Vector<Double> rr1) {
-        double sum = 0.0;
-        double c = 0.0;
-       
-        for( double l : rr1 ) { 
-            sum = sum + l;
-            c++;
-        }
-        return sum / (1.0*c);
     }
 }

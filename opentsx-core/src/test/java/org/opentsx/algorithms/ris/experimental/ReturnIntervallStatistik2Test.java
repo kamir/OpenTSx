@@ -199,6 +199,49 @@ class ReturnIntervallStatistik2Test {
     }
 
     @Test
+    void aSingleResultAndAContainerHoldingItPutEachScaledBinAtTheSameX() throws Exception {
+        ReturnIntervallStatistik2 single = new ReturnIntervallStatistik2("single", 12, 10);
+        single.addDistData(new Vector<>(List.of(0.25, 0.25, 0.5, 3.0)));
+        single.calcMessreihen();
+        ReturnIntervallStatistik2 container = new ReturnIntervallStatistik2("all", 12, 10);
+        container.isContainerInstanz = true;
+        container.add(single);
+
+        container.calcMessreihen();
+
+        assertEquals(List.of(List.of(0.5 * 10 / 12, 0.75), List.of(3.5 * 10 / 12, 0.25)),
+                pointsWithAShare(container.mrVerteilungSkaliert));
+        assertEquals(pointsWithAShare(container.mrVerteilungSkaliert), pointsWithAShare(single.mrVerteilungSkaliert));
+    }
+
+    @Test
+    void aNegativeIntervalKeptWithAnOffsetBelow0IsCountedInTheFirstBin() throws Exception {
+        double offset = ReturnIntervallStatistik2.offset;
+        ReturnIntervallStatistik2.offset = -5;
+        try {
+            ReturnIntervallStatistik2 near = new ReturnIntervallStatistik2("near", 12, 10);
+            ReturnIntervallStatistik2 far = new ReturnIntervallStatistik2("far", 12, 10);
+            ReturnIntervallStatistik2 negativeMean = new ReturnIntervallStatistik2("negativeMean", 12, 10);
+
+            near.addDistData(new Vector<>(List.of(-0.5, 2.0, 3.0)));
+            far.addDistData(new Vector<>(List.of(-3.0, 2.0, 3.0)));
+            negativeMean.addDistData(new Vector<>(List.of(-3.0, 1.0)));
+
+            assertEquals(List.of(-0.5, 2.0, 3.0), near.dataRawFILTERED);
+            assertArrayEquals(new int[] {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}, near.data);
+            assertArrayEquals(new int[] {1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, near.dataSKALIERT);
+            assertArrayEquals(new int[] {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}, far.data);
+            assertArrayEquals(new int[] {1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0}, far.dataSKALIERT);
+            assertEquals(1.0, Arrays.stream(far.probSKALIERT).sum(), 1e-12);
+            assertEquals(-1.0, negativeMean.getRq());
+            assertArrayEquals(new int[] {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0}, negativeMean.data);
+            assertArrayEquals(new int[] {1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, negativeMean.dataSKALIERT);
+        } finally {
+            ReturnIntervallStatistik2.offset = offset;
+        }
+    }
+
+    @Test
     void aSecondCalcMessreihenGivesTheSameSeriesAsTheFirst() throws Exception {
         ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2("twice", 12, 10);
         ris.addDistData(new Vector<>(List.of(0.15, 0.25, 0.25, 0.55, 3.0)));
@@ -341,6 +384,16 @@ class ReturnIntervallStatistik2Test {
             assertEquals((firstBin + i + 0.5) * 10.0 / 12.0, (Double) series.xValues.get(i), 1e-12);
             assertEquals(counts[i] / total, (Double) series.yValues.get(i), 1e-12);
         }
+    }
+
+    static List<List<Object>> pointsWithAShare(TimeSeriesObject series) {
+        List<List<Object>> points = new ArrayList<>();
+        for (int i = 0; i < series.yValues.size(); i++) {
+            if ((Double) series.yValues.get(i) != 0.0) {
+                points.add(List.of(series.xValues.get(i), series.yValues.get(i)));
+            }
+        }
+        return points;
     }
 
     static List<List<Object>> pairsOf(TimeSeriesObject... series) {

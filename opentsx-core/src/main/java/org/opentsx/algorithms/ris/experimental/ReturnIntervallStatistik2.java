@@ -372,10 +372,12 @@ public class ReturnIntervallStatistik2 {
              int index = (int)v;
              
              if ( index >= dataSKALIERT.length ) index = dataSKALIERT.length-1;
+             else if ( index < 0 ) index = 0;
              dataSKALIERT[index]++;
 
              int bin = (int)( dist1 * (double)scale );
              if ( bin >= data.length ) bin = data.length-1;
+             else if ( bin < 0 ) bin = 0;
              data[bin]++;
         }
         
@@ -727,9 +729,11 @@ public class ReturnIntervallStatistik2 {
         return dv;
     };
 
-    String logFileKey = null;
+    /**
+     * @deprecated Has no effect; this class writes no log files.
+     */
+    @Deprecated
     public void setLofFileNameKey_1(String string) {
-        logFileKey = string;
     }
     
     public static int ZZZ = 0;

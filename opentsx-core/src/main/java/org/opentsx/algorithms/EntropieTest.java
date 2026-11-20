@@ -1,43 +1,3 @@
-/**
- * This functional test uses the OSZI class to produce the images and raw data
- * for a publishabel PIXNODE.
- *
- * PIXNODEs are introduced in the context of writing Mirko's thesis.
- *
- * First, a set of time series (a mix of different frequncies, ampitudes and
- * phases) is created and superposed. In a second step, we use different noise
- * levels and to disturb the signal which was a clear sine-wave.
- *
- * Univariate time series analysis is applied to illustrate properties and
- * measures obtained from the data.
- *
- * We compare the fluctuation function F(s) obtained by DFA for several series
- * with and without additonal shuffeling.
- *
- * For the combined time series we compare the influence of PHASE
- * TRANSFORMATIINS and compare with simple shuffeling.
- *
- * Finally we look into the entropy of individual time series.
- *
- * Questions:
- *
- * Is entropy changing as a function of length? => Would impact sliding windows.
- *
- *
- *
- * Next, we apply Multi-Variate analysis, such as calculation of TE and MI.
- *
- * Is TE transfer entropy removed by shuffeling? TE(mr,mr) = 0
- * TE(mr,shuffled(mr) > 0 but depends not on number of shufflings.
- *
- * TE(a,b) = X TE(shuffled(a), shuffled(b)) should be higher than X.
- *
- * APPLY this algorithms to snippets of TS of variable length.
- *
- * - How is Entropy changing over time during the BURST? - Is Entropy in link
- * strength distribution also changing During this time?
- *
- */
 package org.opentsx.algorithms;
 
 
@@ -61,7 +21,8 @@ import java.text.DecimalFormat;
 import java.util.Vector;
 
 /**
- * Produce Images for chapter 7.
+ * Correlation of two sine waves as a function of the series length. It computes no transfer entropy and no mutual
+ * information.
  *
  * @author kamir
  */
@@ -73,9 +34,13 @@ public class EntropieTest {
     public static double samplingRate = 1000;
 
     /**
-     * NO ARGUMENTS
+     * Builds sine waves of 2 Hz and 3 Hz over 10 s at 2000 values per second and their sum, labels each with its
+     * entropy and charts them. For each length from 5 to 5999 values it prints the length and the Pearson correlation
+     * of the two waves cut to that length, separated by a tab and with a decimal comma, after the header
+     * {@code length<TAB>cc}, and charts the correlation over the length. It then builds a shuffled and two
+     * phase-randomized copies of the sum and labels them with their entropy.
      *
-     * @param args the command line arguments
+     * @param args not used
      */
     public static void main(String[] args) throws Exception {
 
@@ -117,27 +82,15 @@ public class EntropieTest {
         TimeSeriesObject mix = new TimeSeriesObject();
         mix.setLabel("mix");
 
-        if (!label_of_EXPERIMENT.equals("EXP3")) {
-            /**
-             * Run the generator for Sine-Waves and label the wave with its
-             * ENTROPY value.
-             */
-            for (int i = 0; i < f.length; i++) {
-                TimeSeriesObject m = TSGenerator.getSinusWave(f[i], time, samplingRate, a[i], phase[i] * PI, noise[i]);
-                m.labelWithEntropy();
-                mix = mix.add(m);
+        for (int i = 0; i < f.length; i++) {
+            TimeSeriesObject m = TSGenerator.getSinusWave(f[i], time, samplingRate, a[i], phase[i] * PI, noise[i]);
+            m.labelWithEntropy();
+            mix = mix.add(m);
 
-                components.add(m.copy());
-            }
-            mix.labelWithEntropy();
-            components.add(mix);
+            components.add(m.copy());
         }
-
-        if (label_of_EXPERIMENT.equals("EXP3")) {
-
-            components = loadStockData();
-
-        }
+        mix.labelWithEntropy();
+        components.add(mix);
 
         MultiChart.open(components, true, "Components");
 
@@ -152,9 +105,7 @@ public class EntropieTest {
         applyDFA(components, "RAW components  ");
         applyDFA(shuffledComponents, "SHUFFLED components   ");
 
-        int dig = 50;
-
-        System.out.println("length\tbins\tcc");
+        System.out.println("length\tcc");
 
         TimeSeriesObject mrPROBE2 = new TimeSeriesObject();
         mrPROBE2.setLabel("CC as a function ot length");
@@ -181,30 +132,13 @@ public class EntropieTest {
                 SCATTERPLOT = false;
             }
 
-            System.out.println(i + "\t" + calcTEandMI(comp.elementAt(0), comp.elementAt(1), dig, "r0", "r1", mrPROBE2, i));
+            System.out.println(i + "\t" + calcTEandMI(comp.elementAt(0), comp.elementAt(1), "r0", "r1", mrPROBE2, i));
 
         }
 
         MultiChart.open(prob, subLabel, "length", "CC", true, ContextRecorder.sb.toString(), null);
 
-        /**
-         * SECTION 2
-         */
-        // How is TE between shuffled and raw time series 
-        // dependent on nr of shuffelings?
-        //
-        //   => Shuffeling is not changing the values for
-        //      one particular series, but the pairs are changed by
-        //      shuffeling, so we see a fluctuation of TE for the pairs.
-        // 
         Vector<TimeSeriesObject> mrv2 = new Vector<TimeSeriesObject>();
-        Vector<TimeSeriesObject> mrv3 = new Vector<TimeSeriesObject>();
-
-        TimeSeriesObject mrTE_i_SIMPLE = new TimeSeriesObject();
-        TimeSeriesObject mrTE_i_PHASE_RANDOMISATION = new TimeSeriesObject();
-
-        mrv3.add(mrTE_i_SIMPLE);
-        mrv3.add(mrTE_i_PHASE_RANDOMISATION);
 
         int i = 1;
 
@@ -306,7 +240,11 @@ public class EntropieTest {
 
     static boolean singleDebug = true;
 
-    private static String calcTEandMI(TimeSeriesObject mr1, TimeSeriesObject mr2, int dig, String l1, String l2, TimeSeriesObject row2, int x) throws Exception {
+    /**
+     * Normalizes both series and returns their Pearson correlation with a decimal comma. It adds the point (x, cc)
+     * to row2 and computes no transfer entropy and no mutual information.
+     */
+    private static String calcTEandMI(TimeSeriesObject mr1, TimeSeriesObject mr2, String l1, String l2, TimeSeriesObject row2, int x) throws Exception {
 
         mr1.normalize();
         mr2.normalize();
@@ -324,7 +262,7 @@ public class EntropieTest {
          */
         PearsonsCorrelation pc = new PearsonsCorrelation();
         double cc = pc.correlation(mr1.getYData(), mr2.getYData());   // no timelag
-        String line = dig + "\t" + cc;
+        String line = String.valueOf(cc);
 
         row2.addValuePair(x, cc);
 
@@ -344,12 +282,6 @@ public class EntropieTest {
         }
 
         return line.replace('.', ',');
-
-    }
-
-    private static Vector<TimeSeriesObject> loadStockData() {
-
-        return null;
 
     }
 

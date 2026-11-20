@@ -910,6 +910,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   windpark-sim and the retrieval server cannot open an s3:// warehouse without S3FileIO, run 10-build.sh --with-s3`
   and `<env file>: not found; the backup holds no configuration, run 70-backup.sh in the checkout that configured the
   installation`.
+- `opentsx-core`: `ReturnIntervallStatistik2.setLofFileNameKey_1` is deprecated and has no effect; the class writes no
+  log files.
 
 ### Removed
 
@@ -2122,7 +2124,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `opentsx-core`: `ReturnIntervallStatistik2` and `TSPropertyTester` fill the counts that `calcMessreihen` reads for a
   result that is not a container. `mrHaeufigkeit` and `mrVerteilung` hold the count and the share of the intervals in
   bins of width 1/`scale` instead of zeros. The shares of the scaled bins added to `mrVerteilungSkaliert` are divided
-  as doubles instead of being rounded to 0, and they are placed at i / `scale` instead of its integer part.
+  as doubles instead of being rounded to 0, and they are placed at the center of the scaled bin, (i + 0.5) * `scale` /
+  `binning`, instead of the integer part of i / `scale`.
 - `opentsx-core`: `TSPropertyTester.addDistData` scales its bins with the mean of its intervals instead of the value
   of `setRQ` (1.0 by default), and `getRq()` returns that mean. It counts an interval below the first or past the last
   bin in that bin, so its probabilities add up to 1. `setRQ` does not change the bins.
@@ -2184,7 +2187,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `opentsx-core`: `Sigma Band` (`SigmaFilter.open`) charts the mean of the selected series and the mean plus and minus
   one standard deviation; it charted the static rows that only `SigmaFilter.main` fills, so the chart was empty.
 - `opentsx-core`: `SingleTsRISTool.processReihe` writes the R_q of the result it adds to `risCollector`, the mean of
-  the intervals between the values of the series. It wrote the last value divided by the number of values instead, so
+  the intervals between the values of the series that it keeps, those that are not 0 and not below `offset`. It wrote
+  the last value divided by the number of values instead, so
   the values 0, 2, 5 and 9 gave 2.25 instead of 3.0. A series that keeps no interval, for example the values 3, 3 and
   3, now writes NaN and adds nothing to `risCollector`.
 - `opentsx-core`: `ReturnIntervallStatistik2.addDistData` refuses an interval that is NaN or infinite with
@@ -2195,9 +2199,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `TSPropertyTester` replaces the series of an earlier call, so a second call, for example from `showData`, does not
   double every point. `mrVerteilungSkaliert` holds one point per scaled bin at the center of the bin, (i + 0.5) *
   scale / binning in units of R_q, and with an `offset` above 0 it leaves out the bins that start below offset / R_q.
-  Before, it held two interleaved point sets, and the scaled one sat at i / scale.
-- `opentsx-core`: the header that `EntropieTest.main` prints names the three tab-separated columns of its rows:
-  `length`, `bins` and `cc`. The MI column, which was always 0.0, and its series in the chart are removed.
+  Before, it held two interleaved point sets, and the scaled one sat at the integer part of i / scale.
+- `opentsx-core`: the header that `EntropieTest.main` prints names the two tab-separated columns of its rows:
+  `length` and `cc`. The MI column, which was always 0.0, and its series in the chart are removed, and so is the
+  column that repeated the 50 bins no computation used.
 - The Grafana script of the opentsx-lg MQTT example (`influxdb-grafana/__run_container_01.sh`) sets the admin password
   inside its container `docker-influxdb-grafana` from `GRAFANA_ADMIN_PASSWORD` on standard input (`grafana-cli admin
   reset-admin-password --password-from-stdin`) and exits 2 without the variable, where it opened a shell in a
@@ -2221,6 +2226,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   recorded; `TEST Normal Distribution` opens its t-value chart. Only `Profile`, `ENTROPY` and `Shuffle` nodes found
   their chart before. A `Sigma Band` or `MF-DFA` node, which keeps no chart, shows `show Chart: no chart for <node>;
   select an operation node other than Sigma Band or MF-DFA`.
+- `opentsx-core`: `ReturnIntervallStatistik2.addDistData` counts a negative interval that it keeps, which happens only
+  when `offset` is below 0, in the first bin of its counts, and an interval whose scaled bin falls below 0 in the
+  first scaled bin, as `TSPropertyTester` does. It threw `ArrayIndexOutOfBoundsException`.
+- `opentsx-core`: `HaeufigkeitsZaehlerDouble.getHistogramNORM()` names its series with the label set by `setLabel`, as
+  `getHistogram()` does, so normalized histograms with the same number of values no longer share the name
+  `HISTOGRAM/<count>`. Without `setLabel` the name stays `HISTOGRAM/<count>`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

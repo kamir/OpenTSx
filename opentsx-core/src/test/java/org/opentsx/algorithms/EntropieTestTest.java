@@ -28,7 +28,7 @@ class EntropieTestTest {
         }
         TimeSeriesObject cc = new TimeSeriesObject();
         Method calc = EntropieTest.class.getDeclaredMethod("calcTEandMI", TimeSeriesObject.class,
-                TimeSeriesObject.class, int.class, String.class, String.class, TimeSeriesObject.class, int.class);
+                TimeSeriesObject.class, String.class, String.class, TimeSeriesObject.class, int.class);
         calc.setAccessible(true);
         boolean scatterplot = EntropieTest.SCATTERPLOT;
         boolean singleDebug = EntropieTest.singleDebug;
@@ -37,7 +37,7 @@ class EntropieTestTest {
         Object[] line = new Object[1];
         String out;
         try {
-            out = stdoutOf(() -> line[0] = calc.invoke(null, first, second, 50, "r0", "r1", cc, 40));
+            out = stdoutOf(() -> line[0] = calc.invoke(null, first, second, "r0", "r1", cc, 40));
         } finally {
             EntropieTest.SCATTERPLOT = scatterplot;
             EntropieTest.singleDebug = singleDebug;
@@ -45,7 +45,7 @@ class EntropieTestTest {
 
         assertEquals("", out);
         assertEquals(1.0, (Double) cc.yValues.get(0), 1e-9);
-        assertEquals("50\t" + String.valueOf(cc.yValues.get(0)).replace('.', ','), line[0]);
+        assertEquals(String.valueOf(cc.yValues.get(0)).replace('.', ','), line[0]);
     }
 
     @Test
@@ -115,8 +115,8 @@ class EntropieTestTest {
         for (int i = 1; i < lines.length; i++) {
             assertEquals(lines[0].split("\t", -1).length, lines[i].split("\t", -1).length, lines[0] + " | " + lines[i]);
         }
-        assertEquals("length\tbins\tcc", lines[0]);
-        assertTrue(lines[1].startsWith("5\t50\t"), lines[1]);
+        assertEquals("length\tcc", lines[0]);
+        assertTrue(lines[1].startsWith("5\t"), lines[1]);
     }
 
     interface Action {

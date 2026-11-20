@@ -435,39 +435,6 @@ public class RISTool {
     }
     
     
-    void _calcSingleMR() throws Exception {
-
-        double summe = 0.0;
-        
-        // for every bin i
-        for (int i = 0; i < data.length; i++) {
-
-            double relAnzahl = 0.0;
-            double anzahlProSpalte = 0.0;
-            
-               
-            anzahlProSpalte = data[i];
-            relAnzahl = (double) data[i] / (double) this.zElements;
-                
-            mrHaeufigkeit.addValuePair(
-                        (double)i / (double)scale,  anzahlProSpalte  );
-                
-            mrVerteilung.addValuePair(
-                        (double)i / (double)scale , relAnzahl );
-                
-            mrVerteilungSkaliert.addValuePair(
-                        (double)i  / ( (double)scale * _Rq), relAnzahl * _Rq);
-                
-                
-            summe = summe + relAnzahl;
-           
-            
-        }
-        if ( LOG.isDebugEnabled() ) {
-            LOG.debug("distribution result={} intervals={} rq={} sum={}", name, this.zElements, _Rq, summe);
-        }
-    }
-    
     public void showData() throws Exception {
         calcMessreihen();
         v1 = new Vector<TimeSeriesObject>();

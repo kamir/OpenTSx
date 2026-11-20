@@ -16,6 +16,7 @@ import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2T
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.intervals;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.isOpen;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.pairsOf;
+import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.pointsWithAShare;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.stderrOf;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.times;
 
@@ -138,6 +139,45 @@ class TSPropertyTesterTest {
 
         assertArrayEquals(new int[] {3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, tester.dataSKALIERT);
         assertScaledSeries(new double[] {3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 4.0, tester.mrVerteilungSkaliert);
+    }
+
+    @Test
+    void aSingleResultAndAContainerHoldingItPutEachScaledBinAtTheSameX() throws Exception {
+        TSPropertyTester single = new TSPropertyTester("single", 12, 10);
+        single.addDistData(new Vector<>(List.of(0.25, 0.25, 0.5, 3.0)));
+        single.calcMessreihen();
+        TSPropertyTester container = new TSPropertyTester("all", 12, 10);
+        container.isContainerInstanz = true;
+        container.add(single);
+
+        container.calcMessreihen();
+
+        assertEquals(List.of(List.of(0.5 * 10 / 12, 0.75), List.of(3.5 * 10 / 12, 0.25)),
+                pointsWithAShare(container.mrVerteilungSkaliert));
+        assertEquals(pointsWithAShare(container.mrVerteilungSkaliert), pointsWithAShare(single.mrVerteilungSkaliert));
+    }
+
+    @Test
+    void setRQAfterAddDistDataReplacesTheMeanForCalcMessreihenAndAdd() throws Exception {
+        double offset = TSPropertyTester.offset;
+        TSPropertyTester.offset = 2.0;
+        try {
+            TSPropertyTester tester = new TSPropertyTester("set after", 12, 10);
+            tester.addDistData(new Vector<>(List.of(1.0, 2.0, 3.0)));
+            tester.setRQ(4.0);
+            TSPropertyTester container = new TSPropertyTester("all", 12, 10);
+            container.isContainerInstanz = true;
+
+            tester.calcMessreihen();
+            container.add(tester);
+
+            assertEquals(4.0, tester.getRq());
+            assertArrayEquals(new int[] {1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, tester.dataSKALIERT);
+            assertScaledSeriesFrom(1, new double[] {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 3.0, tester.mrVerteilungSkaliert);
+            assertEquals(List.of(4.0), container.allRqs);
+        } finally {
+            TSPropertyTester.offset = offset;
+        }
     }
 
     @Test

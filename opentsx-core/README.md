@@ -363,27 +363,32 @@ intervals add up to more than 7200 hours to the log `LENGTH`.
 
 `ReturnIntervallStatistik2` and `TSPropertyTester` refuse a NaN or infinite probability, a receiver that is not a
 container, a different binning and intervals added to a container with the same exceptions and messages as `RISTool`.
-They write no log files. Their `_addData(times, rq)` adds the intervals between consecutive times with `addDistData`,
+They write no log files, and `ReturnIntervallStatistik2.setLofFileNameKey_1` is deprecated and has no effect. Their
+`_addData(times, rq)` adds the intervals between consecutive times with `addDistData`,
 so times 0, 2, 5 and 9 add the intervals 2, 3 and 4. The intervals replace those of an earlier call, and `rq` is not
 used. A time before the time before it throws `IllegalArgumentException` with
 `_addData: time <k> of <name> is <value>, before time <k - 1> at <previous value>; expected times that do not decrease`.
 A time that is NaN or infinite throws `IllegalArgumentException` with
 `_addData: time <k> of <name> is <value>; expected a finite time`. `k` counts from 0, and a refused call adds nothing.
 `ReturnIntervallStatistik2.addDistData` leaves out intervals that are 0 or below `offset` and sorts the others into bins
-scaled with their mean R_q, so the probabilities of a result add up to 1. An interval that is NaN or infinite throws
+scaled with their mean R_q. An interval below the first or past the last scaled bin is counted in that bin, so the
+probabilities of a result add up to 1. An interval that is NaN or infinite throws
 `IllegalArgumentException` with `addDistData: interval <k> of <name> is <value>; expected a finite interval`, and a
 refused call adds nothing. A result that keeps no interval, for example
 times 1, 1 and 1, has NaN probabilities and R_q, and `add` skips it. For times 0, 1, 1 and 2 the bins count the
 intervals 1 and 1, not the 0.
 `TSPropertyTester.addDistData` keeps every interval and sorts it into bins scaled with the mean R_q of its intervals. An
 interval below the first or past the last bin is counted in that bin, so the probabilities add up to 1. `setRQ` does not
-change the bins, and after `addDistData` `getRq()` returns the mean R_q of the intervals. An interval that is NaN or
+change the bins, and after `addDistData` `getRq()` returns the mean R_q of the intervals. `setRQ(rq)` after
+`addDistData` replaces that mean for `calcMessreihen` and `add`: `mrVerteilungSkaliert` leaves out the bins that start
+below `offset` / `rq`, and a container that adds the result records `rq`. An interval that is NaN or
 infinite throws `IllegalArgumentException` with
 `addDistData: interval <k> of <name> is <value>; expected a finite interval`, and a refused call adds nothing.
 For a result that is not a container, `addDistData` also counts the kept intervals as they are, in bins of width
 1/`scale`, and `calcMessreihen()` writes these counts: `mrHaeufigkeit` holds the count of bin i at i / `scale`, and
-`mrVerteilung` holds its share of all kept intervals. The last bin also counts the longer intervals, and in
-`TSPropertyTester` the first bin also counts the negative ones. With binning 12 and scale 10, the intervals 0.15, 0.25,
+`mrVerteilung` holds its share of all kept intervals. The last bin also counts the longer intervals, and the first bin
+also counts the negative ones, which `ReturnIntervallStatistik2` keeps only when `offset` is below 0. With binning 12
+and scale 10, the intervals 0.15, 0.25,
 0.25, 0.55 and 3.0 give the counts 1 at 0.1, 2 at 0.2, 1 at 0.5 and 1 at 1.2. `mrVerteilungSkaliert` holds the share
 of the intervals in scaled bin i at (i + 0.5) * `scale` / `binning`, the center of the bin in units of R_q. With binning
 12 and scale 10, the intervals 0.25, 0.25, 0.5 and 3.0 (R_q 1) give the share 0.75 at 5/12, 0.25 at 35/12 and 0 at the

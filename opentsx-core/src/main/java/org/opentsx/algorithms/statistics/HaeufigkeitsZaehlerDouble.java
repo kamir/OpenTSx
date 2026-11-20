@@ -200,6 +200,7 @@ public class HaeufigkeitsZaehlerDouble {
     }
     
     public TimeSeriesObject getHistogramNORM() {
+        if ( labelOfHist != null ) mr2.setLabel(labelOfHist);
         return mr2;
     }
 

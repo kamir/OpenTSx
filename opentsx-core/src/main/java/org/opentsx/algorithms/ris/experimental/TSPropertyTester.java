@@ -455,17 +455,19 @@ public class TSPropertyTester {
 
     Vector<Double> dataRawNOT_FILTERED = new Vector<Double>();
     
-    /** 
-     * Adds a vector of return intervals.
-     * 
-     * The intervals are sorted into the bins and scaled with Rq
-     * at once.
-     * 
-     * The existing array is cleared first.
-     * 
-     **/
     int cutOff = 0;
     public int anzFiltered = 0;
+    /**
+     * Adds a vector of return intervals.
+     *
+     * The intervals are sorted into the bins and scaled with Rq
+     * at once.
+     *
+     * The existing array is cleared first.
+     *
+     * @throws IllegalArgumentException when an interval is NaN or infinite
+     * @throws IllegalStateException when this instance is a container
+     **/
     public void addDistData( Vector dists ) throws Exception {
         
         if ( this.isContainerInstanz ) {
