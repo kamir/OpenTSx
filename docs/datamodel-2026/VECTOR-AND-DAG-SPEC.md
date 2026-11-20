@@ -172,7 +172,7 @@ Implemented in: `vector/VectorJob.java:83-104,119-130`, `vector/VectorAligner.ja
 | Missing value | A component without a value in the tick is `null`. With `fill: as-of` it takes the last value of the component when that value lies at most floor(maxAge / every) ticks back. |
 | Ticks | Per key the ticks run from the first to the last tick in which any component of the key has a value. With `emit: any` a tick is written when at least one component has a value, filled values included. With `emit: complete` it is written only when every component has one. |
 | Time axis | Every input MUST have a time axis. The workbench refuses spectra, histograms and other axes with `<bucket> has a <kind> axis. A vector needs inputs with a time axis.` |
-| One series per component | The key MUST tell apart the series that give the same component. The processor refuses data in which two series give the same component of one vector: `the series <a> and <b> both give the component "<c>" of one vector; choose a key that tells them apart`. The workbench and `VectorAligner` aggregate both series into one value. |
+| One series per component | The key MUST tell apart the series that give the same component. The processor and `VectorAligner` refuse data in which two series give the same component of one vector: `the series <a> and <b> both give the component "<c>" of one vector; choose a key that tells them apart`. The workbench aggregates both series into one value. |
 
 Implemented in: `vector/VectorAligner.java:88-97,103-198,200-213`, `workbench/vector.ts:56-93,125-178`,
 `vector/VectorStream.java:240-282`.

@@ -536,6 +536,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The retrieval server with `--kafscale` follows `tsx.<domain>.features.v2` like the clean and synthetic topics.
   Feature series appear in `GET /v1/inventory`, and `GET /v1/systems/{id}/signals` shows their data under the
   features grade. The inventory names the topic under `source.topics.features`.
+- `VectorAligner.align` refuses two series that give the same component of one vector, as the vector processor,
+  Wayang and `tsx-runner` do, instead of aggregating them into one value:
+  `the series <a> and <b> both give the component "<c>" of one vector; choose a key that tells them apart`. `<a>` and
+  `<b>` are the series ids, `<a>` the first in id order, as in `VectorStream`.
 
 - Retrieval POST routes `/v1/patterns/search`, `/v1/episodes/similar` and `/v1/segments` require a single JSON object
   and report invalid bodies as HTTP 400. Response exchanges close after success or failure while preserving the
