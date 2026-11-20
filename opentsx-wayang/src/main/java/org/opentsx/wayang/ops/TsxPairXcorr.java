@@ -45,9 +45,12 @@ public final class TsxPairXcorr {
         if (!List.of("MEAN", "LAST", "FIRST", "MIN", "MAX", "SUM", "COUNT").contains(agg)) {
             throw new IllegalArgumentException("Aggregate \"" + agg + "\" is unknown.");
         }
+        String fill = text(params.get("fill"), "none");
+        if (!fill.equals("none") && !fill.equals("as-of")) {
+            throw new IllegalArgumentException("pair fill must be none or as-of");
+        }
         double requestedAge = numeric(params.get("maxAge"));
-        Double maxAge = text(params.get("fill"), "none").equals("as-of")
-                ? Math.max(0, Double.isNaN(requestedAge) ? 0 : requestedAge) : null;
+        Double maxAge = fill.equals("as-of") ? Math.max(0, Double.isNaN(requestedAge) ? 0 : requestedAge) : null;
         double requestedCoverage = params.containsKey("minCoverage") ? numeric(params.get("minCoverage")) : Double.NaN;
         double minCoverage = Double.isFinite(requestedCoverage) ? requestedCoverage : 0.8;
         if (minCoverage < 0 || minCoverage > 1) {

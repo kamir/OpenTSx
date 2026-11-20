@@ -7,7 +7,7 @@ import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { dagsAPI, flowsAPI } from '../services/api';
-import { DagList, describeSink, hasProcessor, topicConflict } from './deployments';
+import { DagList, describeJob, describeSink, hasProcessor, jobIsStale, reportAge, topicConflict } from './deployments';
 import { summarize } from './flows';
 import { DeployCheck, dagName, flowIdOfDag, toDagYaml, useFlow } from './flow';
 
@@ -153,36 +153,61 @@ export default function DeploymentsPanel({ base, blocker, checks, onMakeVector, 
 
       {list === null ? (
         <p className="wb-muted">The state of the deployments cannot be read from {url}.</p>
-      ) : list.dags.length === 0 ? (
-        <p className="wb-muted">Nothing is deployed in this domain.</p>
       ) : (
-        <ul className="wb-deployments" aria-label="Deployed flows">
-          {list.dags.map((d) => (
-            <li key={d.dag} className={d.desired}>
-              <div className="head">
-                <b>{d.dag}{d.dag === own ? ' (this flow)' : ''}</b>
-                <span>
-                  {d.desired} by {d.by}, {d.at.slice(0, 16).replace('T', ' ')} UTC
-                </span>
-                {d.desired === 'deployed' && (
-                  <button disabled={!allowed || !!busy} onClick={() => act('Stop', () => stop(d.dag), (dag) => `${dag} is stopped.`)}>
-                    Stop
-                  </button>
-                )}
-              </div>
-              {d.refused && <p className="bad">The processor refused it: {d.refused}</p>}
-              {d.desired === 'deployed' && !d.refused && !hasProcessor(d, list.now) && (
-                <p className="bad">No vector processor has reported for two minutes. Is one running for this domain?</p>
-              )}
-              {d.sinks.map((s) => (
-                <p key={s.vector} className={s.state}>
-                  <code>{s.topic}</code> {describeSink(s)}
-                  {s.skippedBlocks ? `; ${s.skippedBlocks} episodes skipped (duplicates or out of order)` : ''}
-                </p>
+        <>
+          {list.dags.length === 0 ? (
+            <p className="wb-muted">Nothing is deployed in this domain.</p>
+          ) : (
+            <ul className="wb-deployments" aria-label="Deployed flows">
+              {list.dags.map((d) => (
+                <li key={d.dag} className={d.desired}>
+                  <div className="head">
+                    <b>{d.dag}{d.dag === own ? ' (this flow)' : ''}</b>
+                    <span>
+                      {d.desired} by {d.by}, {d.at.slice(0, 16).replace('T', ' ')} UTC
+                    </span>
+                    {d.desired === 'deployed' && (
+                      <button disabled={!allowed || !!busy} onClick={() => act('Stop', () => stop(d.dag), (dag) => `${dag} is stopped.`)}>
+                        Stop
+                      </button>
+                    )}
+                  </div>
+                  {d.refused && <p className="bad">The processor refused it: {d.refused}</p>}
+                  {d.desired === 'deployed' && !d.refused && !hasProcessor(d, list.now) && (
+                    <p className="bad">No vector processor has reported for two minutes. Is one running for this domain?</p>
+                  )}
+                  {d.sinks.map((s) => (
+                    <p key={s.vector} className={s.state}>
+                      <code>{s.topic}</code> {describeSink(s)}
+                      {s.skippedBlocks ? `; ${s.skippedBlocks} episodes skipped (duplicates or out of order)` : ''}
+                    </p>
+                  ))}
+                </li>
               ))}
-            </li>
-          ))}
-        </ul>
+            </ul>
+          )}
+          {list.jobs === undefined ? (
+            <p className="wb-muted">This retrieval server does not list Track A and B jobs.</p>
+          ) : list.jobs.length === 0 ? null : (
+            <>
+              <p className="wb-muted">Track A and B jobs report here too. They do not follow Deploy and Stop of this tab.</p>
+              <ul className="wb-deployments" aria-label="Track A and B jobs">
+                {list.jobs.map((j) => (
+                  <li key={j.job} className={j.state}>
+                    <div className="head">
+                      <b>{j.job}</b>
+                      <span>
+                        Track {j.track}{j.site ? `, site ${j.site}` : ''}, reported {reportAge(j.at, list.now)}
+                      </span>
+                    </div>
+                    {jobIsStale(j, list.now) && <p className="bad">This job has not reported for two minutes. Is it still running?</p>}
+                    <p className={j.state}>{describeJob(j)}</p>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </>
       )}
     </fieldset>
   );

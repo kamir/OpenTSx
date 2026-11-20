@@ -97,6 +97,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   outbox in the state directory, bounded to 5,760 records, and buffered records are sent oldest first before newer
   and terminal records. A full outbox stops the plan. The `ground` profile, also used without the field, still
   stops a plan when a heartbeat fails.
+- The workbench Deployments panel lists the `jobs` of `GET /v1/dags` apart from the deployments: job id, track, site
+  when present, state, input record count and report age. A job in any state but `stopped` or `failed` without a
+  report for 120 s is flagged. Jobs have no Stop, because Track A and B do not read the control topic.
 - English normative specifications for the rules that code, tests and `systems/` cite:
   [`VECTOR-AND-DAG-SPEC.md`](docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md),
   [`SYSTEM-DOCUMENT-SPEC.md`](docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md),
@@ -550,6 +553,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- The web workbench takes the default clock of `pair.coverage`, `pair.xcorr` and `pair.es` per pair range: the larger
+  sampling interval of the two paired episodes, on their sample times in epoch microseconds. Wayang and the Rust
+  runner use the same rule. The note names the smallest and the largest clock. A pair method refuses a series whose
+  times are out of order.
+- The web workbench and the Wayang pair API (`TsxPairXcorr.pairSettings`) refuse a `fill` other than `none` or
+  `as-of` with `pair fill must be none or as-of`, the message of the Rust runner.
+- `docs/datamodel-2026/testvectors/pair-clock.v1.json` (`tools/pair_clock_vectors.sh`) holds pair cases with
+  timestamps, a sampling interval that changes between episodes and jittered samples, expected values from the Wayang
+  kernel and the `fill` refusal. The workbench results are checked against Wayang for `pair.xcorr` and `pair.es` and
+  against the Rust runner for `pair.xcorr` only; `pair.coverage` has no Wayang or Rust counterpart. All three refuse
+  the unknown `fill`. Sections 2, 3, 6, 14 and 16 of
+  [`PAIR-WINDOWS-SPEC.md`](docs/datamodel-2026/PAIR-WINDOWS-SPEC.md) state these rules.
 - Concept 20 section 6.1 and the TASK-020 B1 notes list the signed `tsx-runner`
   modes that exist. With the B3 site configuration, `agent`, `conform` and `run`
   handle signed bounded statistics. With the B1 configuration, `run` executes
@@ -629,6 +644,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Continuous Wayang increments retain private preparations after a transient preparation failure, including a lost
   response after preparation was persisted. Identical retry keeps the admitted plan, clock and whole-topic placement;
   activation still requires every preparation and the cross-topic ownership checks. Permanent refusals remain failures.
+
+- `align.vector` refuses a `fill` other than `none` or `as-of` in the web workbench and the vector processor, as the
+  Rust runner and Wayang already did. A typo such as `fill: asof` aligned without fill in the workbench preview, was
+  dropped from the DAG export and ran without fill on the processor. The workbench preview refuses it with
+  `vector fill must be none or as-of`, the message of the Rust runner, and the processor with
+  `node <id>: vector fill must be none or as-of`. The deploy checks of the workbench and of the Flow Composer list
+  `<label>: vector fill must be none or as-of.`, so such a stored flow still opens but is neither downloaded nor
+  deployed; the DAG export writes the fill as stored. A missing `fill` stays `none`.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,
