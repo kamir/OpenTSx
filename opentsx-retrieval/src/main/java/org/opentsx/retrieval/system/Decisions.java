@@ -13,8 +13,8 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * What the analyses of a decision card may claim today (docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md, sections 3 and
- * 7; decision D59). A card says which signals a decision needs and what makes each fit for this purpose; this class
+ * What the analyses of a decision card may claim today (docs/datamodel-2026/DECISION-CARD-SPEC.md, sections 1 and
+ * 2). A card says which signals a decision needs and what makes each fit for this purpose; this class
  * puts the state of the signals next to that and gives every analysis a status:
  *
  * <ul>

@@ -18,7 +18,7 @@ import java.util.TreeMap;
  * Demo generators: series for a signal nobody delivers data for, made of its expectation. They give plausible
  * single values and know nothing of the rest of the system: no coupling between wind, price and demand, no balance,
  * no dynamics of a storage. They are for trying out the surface and the pipes; a comparison of strategies needs a
- * scenario model (docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md, section 5.3, decision D61).
+ * scenario model (docs/datamodel-2026/DECISION-CARD-SPEC.md, section 6).
  *
  * <p>The value at a time depends on the seed, the parameters and that time only, not on where a run began: two runs
  * over overlapping periods agree where they overlap, and a period can be generated in pieces.

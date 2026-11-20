@@ -13,6 +13,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Align operator lessons with D-T14, D-T15 and the 81-condition ARM64
+  board plan.
+  Check the lesson's condition count against the executable planner; keep the
+  physical ARM64 measurement open and ARMv7 outside hardware qualification.
+  Bind the verified library-learning version to the current release.
+  Keep conversion expressions copyable as inline code in generated lessons.
 - Accept idle Kafka frame-boundary resets and cancelled metadata requests in the
   validation observer. Retain response correlations until forwarding succeeds;
   keep interrupted frames and resets with data requests as errors.
@@ -75,6 +81,15 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- English normative specifications for the rules that code, tests and `systems/` cite:
+  [`VECTOR-AND-DAG-SPEC.md`](docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md),
+  [`SYSTEM-DOCUMENT-SPEC.md`](docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md),
+  [`DECISION-CARD-SPEC.md`](docs/datamodel-2026/DECISION-CARD-SPEC.md),
+  [`TWIN-COUPLING-SPEC.md`](docs/datamodel-2026/TWIN-COUPLING-SPEC.md) and
+  [`PAIR-WINDOWS-SPEC.md`](docs/datamodel-2026/PAIR-WINDOWS-SPEC.md). Each states the implemented behavior, verified
+  against the code with file and line references. Code comments, schema descriptions, `systems/` YAML and READMEs
+  that cited the German design documents 07, 11, 14 and 15 or TASK-015 now cite these files.
+
 - `lascaris-space/`: home of the OpenTSx components for in-orbit computation on LASCARIS for Space, with the
   components it holds, the modules that stay responsible for the runner, Wayang and the Workbench, and the contracts
   it keeps. It contains no code yet. The README section "Take time series into orbit with LASCARIS for Space" states
@@ -89,10 +104,38 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   ring buffer, an emulated space-ground link driven by computed passes, and phases P0 to P6 up to the D-T13 CPU
   fallback path. Phase P0 prepares the board with the Jetson runbook and board tools of D-T14. No implementation
   yet.
+- `opentsx-wayang`: output proof for the B4.2 board measurement. `BoardOutputProofTest` reads a condition's output
+  topic, requires that every output series equals the first records of the reference output of the same feed, field
+  for field (`BoardOutputs`, `BoardReference`), checks the input digest, and only then writes JUnit XML with the
+  binding properties `opentsx.sourceCommit`, `opentsx.conditionId`, `opentsx.artifactSha256` and `opentsx.inputSha256`.
+  `BoardWorkloadIntegrationTest` now holds both tracks to that reference instead of comparing record counts.
+- `opentsx-wayang`: workload driver `org.opentsx.wayang.board.BoardWorkload` for the B4.2 board measurement. It
+  writes the paced deterministic feed, runs the pass-through, clean or statistics chain on Track A (Wayang increments
+  through the new `DagToWayang.incrementPlan`) or on Track B (`tsx-runner serve --profile measurement`), and reports
+  the measured process id, the first fetch and the first output as JSON lines.
+- TASK-020 D-T15 (owner, 2026-11-20): B4.2 measures three chains (pass-through, clean, statistics) on a paced
+  feed of one sample per series and second. `wayang_board_evaluation.py` plans 81 conditions with a `chain`
+  field and the feed rate in its protocol, and refuses evidence with a missing chain or a different feed between
+  comparable conditions.
+- `tsx-runner serve --profile measurement`: an opt-in worker profile for the B4.2 board measurement. It admits
+  requests of up to 4,390,912 bytes with 16,384 series, 100,000 records, 4,000,000 samples, 64 MiB of input and
+  output and 256 MiB of state; `GET /v1/capabilities` reports the profile. Requests cannot select or widen it, and
+  the default `standard` profile keeps its ceilings (`tests/measurement_profile.rs`).
+- Shared execution-assignment contract: a source or fragment DAG text may have 524,288 UTF-8 bytes (was 32,768)
+  and the envelope 2,162,688 bytes (was 65,536), equally in Java `ExecutionAssignments`, Rust `tsx-contracts`
+  and the schema. A source inventory of 16,384 series ids fits, which B4.2 needs at 10,000 series. Runtime
+  request limits and the UI rollout's 32,768-byte DAG limit are unchanged. Size-boundary vectors store their
+  padding as an `expand` marker, so the vector file the Rust runner embeds stays small; new cases cover a
+  source and a fragment text exactly at and one byte above the limit.
+- `tsx-runner`: regression test `tests/stats_increments.rs` shows that B2 statistics run as local increments:
+  across a worker restart the increments emit the closed windows byte for byte as one bounded run, without its
+  final flush. The B2 request ceilings (1,024 series, 1 MiB state) are unchanged.
 - TASK-020 D-T14 (owner, 2026-11-20): B1.2 and B4.2 need no ARMv7 hardware. The native x86_64 and ARM64 CI
   jobs meet B1.2; the ARMv7 artifact stays built and QEMU-tested but is not hardware-qualified. B4.2 is measured
-  on one physical ARM64 board, so `wayang_board_evaluation.py` plans 27 conditions and refuses ARMv7 and AArch32
-  boards. New `tools/board_identity.py` and `tools/board_resource_sampler.py` record the board and the one-second
+  on one physical ARM64 board. Under D-T15, `wayang_board_evaluation.py`
+  plans 81 conditions and refuses ARMv7 and AArch32 boards. The
+  `tools/board_identity.py` and `tools/board_resource_sampler.py` tools record
+  the board and the one-second
   RSS, CPU and lag samples in the validator's formats (Python 3.6, for JetPack 4.6), and the
   [Jetson runbook](docs/devguide/integration/wayang-board-jetson.md) prepares a Jetson Nano 4 GB for B4.2.
 - Artifact-embedded WASM `convert.unit` in the local Rust cleaning pipeline,
@@ -119,9 +162,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   partial/window evidence and six canonical-merge arrival orders. Separate
   exact-binary64 sketch cases retain shared vectors and identify boundary,
   zero-bucket and collapsed-tail accuracy domains without widening the
-  moments criterion. Board evaluation tooling prepares the fixed 54-condition
-  matrix and validates supplied evidence integrity. Physical ARM64 and ARMv7
-  B4.2 measurements and ARMv7 B1.2 acceptance remain open. Manual and learning
+  moments criterion. Board evaluation tooling prepares the fixed 81-condition
+  ARM64 matrix and validates supplied evidence integrity. The physical ARM64
+  B4.2 measurement remains open under D-T14. Manual and learning
   metadata keep these execution and hardware scopes separate.
 
 - Check tools-image identity, packaged Windpark startup and numerical replay
@@ -173,7 +216,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   Acceptance failures retain the actual unexpected server exit status.
   OpenSSH authentication-attempt exit 5 is accepted only for verified certificate denials.
   The profile admits decode-to-statistics only; broader B2 operators, mixed
-  continuous fleets, production release enrollment and physical ARMv7
+  continuous fleets, production release enrollment and physical ARM64 B4.2
   acceptance retain separate gates. Documentation, operational and learning references
   describe these boundaries.
 
@@ -183,7 +226,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   and signed B1 profiles retain their separate contracts. Shared vectors,
   restored-state regressions and actual full-windpark Java/Rust parity cover
   the operators. Manual, learning metadata and generated lessons describe the
-  qualified scope. Physical ARMv7 hardware acceptance remains open.
+  qualified scope. The physical ARM64 B4.2 measurement remains open under D-T14.
 
 - Standalone thermal Workbench entry through `npm run demo`, with deterministic
   synthetic episodes, local computation and preserved analysis across display
@@ -201,8 +244,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Rust shared-vector coverage for xxHash64, bucket checksums and time deltas,
   plus native x86_64/ARM64 and three-target static
   musl CI gates with ELF and test-report validation. ARMv7 QEMU execution is
-  supplementary; physical ARMv7 qualification and full TASK-020 B1 closure
-  remain open.
+  supplementary and does not establish physical ARMv7 qualification. Native
+  x86_64/ARM64 CI satisfies TASK-020 B1.2 under D-T14.
 
 - Local publication fencing for three whole-topic Rust workers. A private, single-owner Java gateway serializes
   publication and epoch rotation, validates captured grants and retains unknown broker outcomes without blind
@@ -399,7 +442,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   event-synchronization output with `opentsx.algorithms.results`. The `v2.0` records are unchanged. The
   specification [`04-MODELL-V2-SPEC.md`](docs/datamodel-2026/04-MODELL-V2-SPEC.md) is now in English and covers 2.1.
 
-- `pair.es` in the web workbench (TASK-015 phase 1d, operator "Event synchronisation"): event synchronisation after
+- `pair.es` in the web workbench (`docs/datamodel-2026/PAIR-WINDOWS-SPEC.md`, section 12, operator "Event synchronisation"): event synchronisation after
   Quiroga, Kreuz and Grassberger per pair window, ported from `event_sync.py`, with the fields `q_total`, `q_ab` (B
   after A), `q_ba` and `q_rand`, the mean `q_total` against copies of B with shuffled intervals between its events.
   The Python package gets the same surrogate (`EventSynchronization.surrogate_sync`, `Mulberry32`, `isi_shuffle`);
@@ -424,13 +467,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   GeoQB location context on H3 cells and software architecture; immutable layer versions sealed with a checksum and
   Iceberg snapshot IDs; serving to QGIS, ArcGIS and graph tools; an eight-step implementation plan.
 
-- `pair.xcorr` in the web workbench (TASK-015 phase 1c, operator "Cross-correlation"): per pair window the lagged
+- `pair.xcorr` in the web workbench (`docs/datamodel-2026/PAIR-WINDOWS-SPEC.md`, section 11, operator "Cross-correlation"): per pair window the lagged
   cross-correlation CC(k) for k = -lags..lags clock ticks, with the fields `max` (peak of |CC|, sign kept), `lag` (in
   seconds, > 0 when B follows A) and `strength` ((|max| - mean) / std of CC). Ported from `KreuzKorrelation` and
   `CCFunction` of kamir/WikiExplorer.NG (Apache License 2.0); `tools/pair_xcorr_vectors.sh` runs the original code
   for the test vectors `docs/datamodel-2026/testvectors/pair-xcorr.v1.json`, which the port matches to 12 decimals.
 
-- Pair windows in the web workbench (TASK-015 phase 1b, `src/workbench/pairs.ts`): a pair method compares two series
+- Pair windows in the web workbench (`docs/datamodel-2026/PAIR-WINDOWS-SPEC.md`, sections 3 to 9, `src/workbench/pairs.ts`): a pair method compares two series
   window by window and stamps each result at the window centre. Episodes of A and B are paired by the same range or
   on their intersection; `window: episode` gives one point per pair range, a width and step give a regular series per
   pair range. A and B go onto one clock by the rules of `align.vector`; a window below the minimum coverage keeps its
@@ -439,7 +482,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   with both inputs. First method: "Pair coverage" in the new tab "Multi-variate Analysis".
 - The web workbench keeps the episode ranges of loaded episodes (`Bucket.episodes`): series, episode id, [start, end)
   from `tStart`/`tEnd` to the microsecond, and the segmentation strategy. Operators that keep the time axis hand them
-  on; the Properties tab shows how many episodes a bucket holds. First step of the pair windows of TASK-015.
+  on; the Properties tab shows how many episodes a bucket holds. First step of the pair windows (`docs/datamodel-2026/PAIR-WINDOWS-SPEC.md`, section 1).
 
 - `WireRoundTripTest` (`opentsx-legacy-bridge`) checks success criterion 2 of TASK-011 in one chain:
   `TimeSeriesObject` to `Episode` to Kafka in single-object and in Confluent framing to `Episode` to
@@ -501,6 +544,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   control record has that name. A record that carries `job` is a job record. It is not shown as a refusal of the
   processor and does not replace a refusal under the same key. Specification S5.4 requires `job` in every Track A
   and B record.
+- The retrieval server with `--kafscale` follows `tsx.<domain>.features.v2` like the clean and synthetic topics.
+  Feature series appear in `GET /v1/inventory`, and `GET /v1/systems/{id}/signals` shows their data under the
+  features grade. The inventory names the topic under `source.topics.features`.
 
 - Retrieval POST routes `/v1/patterns/search`, `/v1/episodes/similar` and `/v1/segments` require a single JSON object
   and report invalid bodies as HTTP 400. Response exchanges close after success or failure while preserving the
@@ -662,7 +708,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   bucket. `deploy/k3s`: `RETRIEVAL_SOURCE=kafscale`.
 - Vector measuring points (draft): operator `align.vector` brings the results of several nodes onto one clock and
   gives one record per tick and key with one value per component (`opentsx.vector.v1`, JSON schema in
-  `docs/datamodel-2026/schemas/`, rules in `docs/datamodel-2026/11`, section 5a). The workbench has the operator as
+  `docs/datamodel-2026/schemas/`, rules in `docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md`, section 2). The workbench has the operator as
   "Align to vector": nodes can have several inputs, the scope shows the components on one time base, and the DAG
   export writes the node with all inputs and a vector sink. The Java processor executes source-vector alignment.
 - Vector topics are written and read back. The vector processor (`opentsx vectors`, `deploy/k3s`:
@@ -702,7 +748,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   "Pause") run a flow as a Smart Topic on the vector processor. A flow the processor cannot run shows what it
   needs and is no longer marked active.
 - Concept and draft for the engineering workflow from system to model
-  ([`docs/datamodel-2026/14-ENGINEERING-FLOW.md`](docs/datamodel-2026/14-ENGINEERING-FLOW.md), German): the
+  ([`docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md`](docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md)): the
   signal as the key between Studio, workbench and Flow Composer, and two draft schemas, `opentsx.system.v1` (a
   whole system: which signal comes from where) and `opentsx.processor.v1` (generators, transformers, models),
   with examples for the system `h2-chain`. Signed off on 2026-10-13 with three grades of a signal (raw, clean,
@@ -724,10 +770,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   signal" (check, save and start in one step) when it was opened for a signal; the page "Signals" then shows the
   signal as clean. Shared test vectors for the cleaning operators in Java and TypeScript
   (`docs/datamodel-2026/testvectors/clean-ops.v1.json`).
-- Plan revised after an external review ([`docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md`](docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md),
-  German, decided on 2026-10-13: stages L4 and L5 are built first, then E1 to E3): the decision as the central unit, with draft schemas `opentsx.decision.v1` (decision
+- Plan revised after an external review ([`docs/datamodel-2026/DECISION-CARD-SPEC.md`](docs/datamodel-2026/DECISION-CARD-SPEC.md),
+  decided on 2026-10-13: stages L4 and L5 are built first, then E1 to E3): the decision as the central unit, with draft schemas `opentsx.decision.v1` (decision
   card) and `opentsx.decision-record.v1` (recommendation, approval, action, outcome) and an example; a streaming
-  contract with what holds today and what is the aim (11, section 7a); release of a model for a purpose (05, section
+  contract with what holds today and what is the aim (`docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md`, section 5); release of a model for a purpose (05, section
   5a). Signals carry a role, a meaning and an operating range next to the plausible range. Clean episodes carry an
   identity, so a restart is not counted twice. The user manual's chapter 16 is rewritten as eight steps from a
   decision to its effect.
@@ -744,8 +790,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   or blocked today, with the reasons (`GET /v1/systems/<id>/decisions`): grade, age against the newest data,
   accepted origin, the range the analysis was checked in, and its evidence. The place "Models" shows the cards; the
   place "System" shows the plan as a graph above the table. Comparing alternatives over a period is not built.
-- System plan of the H2 chain in a second form (TASK-014, stage S1, after a second briefing; decisions D64 to D66 in
-  [`docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md`](docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md), section 13). The
+- System plan of the H2 chain in a second form (TASK-014, stage S1, after a second briefing; powers of the wind park in
+  [`docs/datamodel-2026/DECISION-CARD-SPEC.md`](docs/datamodel-2026/DECISION-CARD-SPEC.md), section 5). The
   twin has six new atoms: `wind-park` (potential, available and generated power, with the energy not generated
   counted per cause), `h2-compressor`, `h2-buffer` with the regulator that feeds the pipeline, `h2-pipeline` with a
   pressure at each end, `h2-handover` (regulating valve, lowest delivery pressure, shortfall) and `h2-consumer`

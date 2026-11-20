@@ -21,7 +21,7 @@ fn shared_execution_contract_vectors() {
         match case["kind"].as_str().expect("case kind") {
             "assignment" => {
                 counts[0] += 1;
-                let actual = validate(case["input"].as_str().expect("raw assignment JSON"));
+                let actual = validate(&input(case));
                 assert_eq!(actual.err(), expected_error(case), "{name}");
             }
             "set" => {
@@ -57,6 +57,11 @@ fn shared_execution_contract_vectors() {
         }
     }
     assert!(counts.iter().all(|count| *count > 0));
+    let expanded: Vec<_> = cases
+        .iter()
+        .filter(|case| case.get("expand").is_some())
+        .collect();
+    assert_eq!(expanded.len(), 5, "the five size-boundary cases use expand");
     println!(
         "checked {} shared cases: {} assignments, {} sets, {} hashes",
         cases.len(),
@@ -64,6 +69,24 @@ fn shared_execution_contract_vectors() {
         counts[1],
         counts[2]
     );
+}
+
+/// The raw assignment of a case, with its `expand` marker replaced: boundary cases near the size limits keep
+/// their padding out of the file.
+fn input(case: &Value) -> String {
+    let raw = case["input"].as_str().expect("raw assignment JSON");
+    let Some(expand) = case.get("expand") else {
+        return raw.to_string();
+    };
+    let marker = expand["marker"].as_str().expect("expand marker");
+    let text = expand["text"].as_str().expect("expand text");
+    let count = usize::try_from(expand["count"].as_u64().expect("expand count")).unwrap();
+    assert_eq!(
+        raw.matches(marker).count(),
+        1,
+        "one expand marker per input"
+    );
+    raw.replace(marker, &text.repeat(count))
 }
 
 fn expected_error(case: &Value) -> Option<&str> {

@@ -163,7 +163,7 @@ Vector topics are written by the vector processor (below). The server is its fro
 
 The operator is `org.opentsx.retrieval.vector.VectorAligner`. It passes the test vectors shared with the web
 workbench (`docs/datamodel-2026/testvectors/align-vector.v1.json`); the rules are in
-`docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md`, section 5a.
+`docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md`, section 2.
 
 `VectorStream` is the same operator over a continuing input. `new VectorStream(expected, params, lateness)` reads one
 set of series for every input; `new VectorStream(expectedByInput, params, lateness)` gives each input series of its
@@ -195,7 +195,7 @@ opentsx vectors stop   --kafscale host:9092 --domain wind --name <dag name>
 * A changed DAG starts over from the beginning of the topic (`source.start: latest`: from now).
 
 Limits: one processor per domain, no idle timeout for a series that falls silent, vectors on source series only.
-The rules are in `docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md`, section 5b.
+The rules are in `docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md`, section 3.
 
 ### Series inventory
 
@@ -237,6 +237,11 @@ java -cp … org.opentsx.retrieval.server.RetrievalServer --port 8080 --kafscale
 With `--kafscale` the server reads `tsx.<domain>.episodes.v2` into memory and follows the topic. It uses manual
 assignment without a consumer group and writes nothing. Loading stops at `--max-episodes`. `--scenario <file>` and
 `--catalog <file>` (YAML) work with every source and are handed out in the inventory.
+
+The server also follows `tsx.<domain>.clean.v2`, `tsx.<domain>.features.v2` and `tsx.<domain>.synthetic.v2` into
+the same store, each once it exists. `--max-episodes` does not limit them. Their series carry the tags `system`,
+`signal` and `grade`, a feature also `feature`, so `GET /v1/systems/{id}/signals` finds them per grade. The inventory
+names the topics under `source.topics`.
 
 Use it from Python:
 

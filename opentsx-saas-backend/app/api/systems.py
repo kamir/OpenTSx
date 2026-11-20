@@ -2,7 +2,7 @@
 
 A system document (opentsx.system.v1) lives in the repository and is served by the retrieval server. What a user
 binds in the web application is kept here per user and laid over the document when its signals are shown; it is
-written into the file by a person (decision D42). Running a demo generator writes to the broker, so it goes through
+written into the file by a person (docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 7). Running a demo generator writes to the broker, so it goes through
 the backend like a DAG deployment: the backend checks who asks and adds the run token.
 """
 
@@ -153,7 +153,7 @@ def check(binding: Binding) -> None:
         if source.get("origin") not in ORIGINS:
             raise HTTPException(bad, f"A topic source says how its data came to be: one of {', '.join(ORIGINS)}.")
         if not binding.meaningConfirmed:
-            # a matching name and unit are a suggestion, not a proof (decision D53)
+            # a matching name and unit are a suggestion, not a proof (docs/datamodel-2026/DECISION-CARD-SPEC.md, section 4.2)
             raise HTTPException(bad, "Confirm that the series is the quantity the signal means before binding it.")
     elif kind == "generator":
         if source.get("processor") not in GENERATORS:

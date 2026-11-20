@@ -155,6 +155,6 @@ Not scheduled. P0 and P1 come first because the ground side reuses existing comp
 
 - The Jetson Nano is a constrained stand-in, not a performance model of the Jetson Orin modules that fly in orbit.
 - The Jetson is also the B4.2 board of TASK-020. B4.2 needs KafScale on another host and the board's memory for the
-  measured process, so its 27 conditions do not run while the testbed's onboard broker or simulator runs.
+  measured process, so its 81 conditions do not run while the testbed's onboard broker or simulator runs.
 - KafScale for arm64 is unbuilt and untested. The fallback onboard is a plain spool file instead of a broker.
 - The Synology `netem` module is read from the published kernel configuration and is not yet loaded on a device.

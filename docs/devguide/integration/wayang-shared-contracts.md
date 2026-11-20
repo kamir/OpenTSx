@@ -25,14 +25,17 @@ and [Rust library](../../../rust/tsx-contracts/src/lib.rs) implement the same re
 | `runtime` | `java` or `rust`. |
 | `catalog` | Exact string `tsx-catalog/1`; operator availability is a later admission gate. |
 | `artifactDigest` | `sha256:` followed by 64 lowercase hexadecimal characters. The offline validator checks its form, not an artifact signature. |
-| `sourceDagText` | Exact original UI text, JSON or YAML, at most 32,768 UTF-8 bytes. Its graph semantics are not parsed here. |
+| `sourceDagText` | Exact original UI text, JSON or YAML, at most 524,288 UTF-8 bytes. Its graph semantics are not parsed here. |
 | `specHash` | SHA-256 of the exact UTF-8 `sourceDagText`, as 64 lowercase hexadecimal characters. |
-| `fragmentText` | Compiler-produced JSON object with a source object and nonempty node and sink arrays; at most 32,768 UTF-8 bytes. |
+| `fragmentText` | Compiler-produced JSON object with a source object and nonempty node and sink arrays; at most 524,288 UTF-8 bytes. |
 | `fragmentHash` | SHA-256 of the exact UTF-8 `fragmentText`, as 64 lowercase hexadecimal characters. |
 | `mode` | `bounded` or `continuous`. |
 | `inputs` | Between 1 and 128 whole-topic bindings described below. Every topic includes its complete internal partition positions. This first contract does not describe an Iceberg scan. |
 
-No envelope fields are optional and unknown fields reject. The envelope has at most 65,536 UTF-8 bytes.
+No envelope fields are optional and unknown fields reject. The envelope has at most 2,162,688 UTF-8 bytes:
+room for both DAG texts, which JSON escaping may double, plus 65,536 bytes for the other fields. A DAG text of
+524,288 bytes holds a source inventory of 16,384 series ids. Runtime profiles may set smaller request limits;
+the size-boundary vectors store their padding as an `expand` marker that readers replace before validation.
 Outer and fragment JSON reject duplicate decoded keys, malformed Unicode, trailing documents and container depth
 above 64. Parsed JSON number tokens must be finite in binary64; numerical operator admission remains separate.
 The original `sourceDagText` stays opaque, so this parser rule does not reformat or interpret that source text.

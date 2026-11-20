@@ -1,4 +1,4 @@
-use crate::admission::{self, Admitted, REQUEST_BYTES};
+use crate::admission::{self, Admitted, Profile};
 use crate::broker::Broker;
 use crate::checkpoint::{Completion, Receipt};
 use crate::operators::{STATE_ABI, SUPPORTED_OPS};
@@ -12,9 +12,6 @@ use std::io::{Read, Write};
 use std::net::IpAddr;
 use std::path::{Component, Path, PathBuf};
 use tiny_http::{Header, Method, Request, Response, Server};
-
-const JOURNAL_BYTES: usize = 85_000_000;
-const INCREMENT_BYTES: usize = JOURNAL_BYTES + 1_048_576 + 262_144;
 
 pub struct Config {
     pub node: String,
@@ -108,6 +105,7 @@ pub struct Worker {
     _lock: File,
     lock_owner_pid: u32,
     controller: Option<IpAddr>,
+    profile: Profile,
 }
 
 impl Drop for Worker {
@@ -122,6 +120,12 @@ impl Drop for Worker {
 
 impl Worker {
     pub fn open(config: Config) -> Result<Self, String> {
+        Self::open_profiled(config, Profile::STANDARD)
+    }
+
+    /// Opens the worker with the admission ceilings of `profile`. Journals written under one profile are
+    /// read back only under a profile at least as large.
+    pub fn open_profiled(config: Config, profile: Profile) -> Result<Self, String> {
         if !identifier(&config.node)
             || !identifier(&config.site)
             || !config
@@ -145,6 +149,7 @@ impl Worker {
             _lock: lock,
             lock_owner_pid: std::process::id(),
             controller: None,
+            profile,
         };
         for entry in fs::read_dir(&worker.config.state)
             .map_err(|e| format!("cannot list worker state: {e}"))?
@@ -187,16 +192,19 @@ impl Worker {
             "requestSchema":"opentsx.local-bounded-run.v1","stateAbi":STATE_ABI,
             "incrementalRequestSchema":"opentsx.local-increment.v1",
             "fingerprint":crate::wire::FINGERPRINT,"operators":operators,
-            "limits":{"records":10000,"payloadBytes":1048576,"inputBytes":16777216,
-                "samples":100000,"outputBytes":16777216,"series":64,"stateBytes":1048576,
-                "requestBytes":REQUEST_BYTES,"partitions":admission::MAX_PARTITIONS,
+            "profile":self.profile.name,
+            "limits":{"records":self.profile.records,"payloadBytes":self.profile.payload_bytes,
+                "inputBytes":self.profile.input_bytes,"samples":self.profile.samples,
+                "outputBytes":self.profile.output_bytes,"series":self.profile.series,
+                "stateBytes":self.profile.state_bytes,"requestBytes":self.profile.request_bytes,
+                "partitions":admission::MAX_PARTITIONS,
                 "incrementalChains":1,
                 "episodeSamples":admission::MAX_EPISODE_SAMPLES}});
         if self.controller.is_some() {
             capabilities["publicationFencing"] = json!(true);
         }
         capabilities["catalogExecution"] = json!({"stateAbi":"opentsx.rust.catalog-state.v1","contextRequiredForExtendedCaps":true,
-            "operators":catalog_operators,"limits":{"series":1024,"samples":1000000},"signedRunOperators":["decode.avro-soe"]});
+            "operators":catalog_operators,"limits":{"series":self.profile.context_series,"samples":self.profile.context_samples},"signedRunOperators":["decode.avro-soe"]});
         capabilities
     }
 
@@ -319,7 +327,7 @@ impl Worker {
     }
 
     fn admit(&self, text: &str) -> Result<Admitted, String> {
-        let run = admission::admit(text, &self.config.artifact_digest)?;
+        let run = admission::admit_profiled(text, &self.config.artifact_digest, &self.profile)?;
         if run.assignment["node"] != self.config.node
             || run.assignment["site"] != self.config.site
             || run.bootstrap != self.config.bootstrap
@@ -343,14 +351,15 @@ impl Worker {
         regular_or_absent(&path)?;
         let file = File::open(&path).map_err(|e| format!("cannot open prepared request: {e}"))?;
         let mut bytes = Vec::new();
-        file.take(JOURNAL_BYTES as u64 + 1)
+        file.take(self.profile.journal_bytes as u64 + 1)
             .read_to_end(&mut bytes)
             .map_err(|e| format!("cannot read prepared request: {e}"))?;
-        if bytes.len() > JOURNAL_BYTES {
+        if bytes.len() > self.profile.journal_bytes {
             return Err("prepared request exceeds byte limit".into());
         }
         let text = std::str::from_utf8(&bytes).map_err(|_| "prepared request is not UTF-8")?;
-        let value = tsx_contracts::parse_json(text, JOURNAL_BYTES).map_err(str::to_string)?;
+        let value =
+            tsx_contracts::parse_json(text, self.profile.journal_bytes).map_err(str::to_string)?;
         let envelope: Envelope =
             serde_json::from_value(value).map_err(|_| "invalid prepared envelope")?;
         let canonical = serde_json::to_vec(&envelope.payload)
@@ -439,7 +448,7 @@ impl Worker {
         };
         let bytes =
             serde_json::to_vec(&envelope).map_err(|e| format!("cannot encode preparation: {e}"))?;
-        if bytes.len() > JOURNAL_BYTES {
+        if bytes.len() > self.profile.journal_bytes {
             return Err("preparation exceeds persistence byte limit".into());
         }
         let dir = self.job_path(request_hash)?;
@@ -552,14 +561,15 @@ impl Worker {
             Err(error) => return Err(format!("cannot open increment checkpoint: {error}")),
         };
         let mut bytes = Vec::new();
-        file.take(INCREMENT_BYTES as u64 + 1)
+        file.take(self.profile.increment_bytes() as u64 + 1)
             .read_to_end(&mut bytes)
             .map_err(|e| format!("cannot read increment checkpoint: {e}"))?;
-        if bytes.len() > INCREMENT_BYTES {
+        if bytes.len() > self.profile.increment_bytes() {
             return Err("increment checkpoint exceeds byte limit".into());
         }
         let text = std::str::from_utf8(&bytes).map_err(|_| "increment checkpoint is not UTF-8")?;
-        let value = tsx_contracts::parse_json(text, INCREMENT_BYTES).map_err(str::to_string)?;
+        let value = tsx_contracts::parse_json(text, self.profile.increment_bytes())
+            .map_err(str::to_string)?;
         let envelope: Envelope =
             serde_json::from_value(value).map_err(|_| "invalid increment envelope")?;
         let canonical = serde_json::to_vec(&envelope.payload)
@@ -648,7 +658,7 @@ impl Worker {
         };
         let bytes = serde_json::to_vec(&envelope)
             .map_err(|e| format!("cannot encode increment checkpoint: {e}"))?;
-        if bytes.len() > INCREMENT_BYTES {
+        if bytes.len() > self.profile.increment_bytes() {
             return Err("increment checkpoint exceeds byte limit".into());
         }
         let dir = self.config.state.join("increments");
@@ -692,8 +702,8 @@ impl Worker {
                 if prior_increment.sequence.checked_add(1) != Some(increment.sequence)
                     || increment.previous_request_hash.as_deref()
                         != Some(head.completion.request_hash.as_str())
-                    || admission::increment_context(text)?
-                        != admission::increment_context(&head.request_text)?
+                    || admission::increment_context(text, &self.profile)?
+                        != admission::increment_context(&head.request_text, &self.profile)?
                     || run.cut.positions.len() != head.completion.receipt.positions.len()
                     || run
                         .cut
@@ -976,7 +986,7 @@ impl Worker {
     }
 
     pub fn install_publication(&mut self, text: &str) -> Result<Value, String> {
-        let value = tsx_contracts::parse_json(text, REQUEST_BYTES)
+        let value = tsx_contracts::parse_json(text, self.profile.request_bytes)
             .map_err(|_| "invalid publication installation")?;
         if !value.is_object()
             || value
@@ -1082,7 +1092,7 @@ impl Worker {
                 json!({"error":"worker mutations require the configured controller peer"}),
             );
         }
-        let body = match request_body(request) {
+        let body = match request_body(request, self.profile.request_bytes) {
             Ok(body) => body,
             Err((status, error)) => return (status, json!({"error":error})),
         };
@@ -1235,7 +1245,7 @@ fn validate_journal(journal: &Journal, run: &Admitted) -> Result<(), String> {
     Ok(())
 }
 
-fn request_body(request: &mut Request) -> Result<Vec<u8>, (u16, String)> {
+fn request_body(request: &mut Request, limit: usize) -> Result<Vec<u8>, (u16, String)> {
     let lengths: Vec<_> = request
         .headers()
         .iter()
@@ -1251,16 +1261,16 @@ fn request_body(request: &mut Request) -> Result<Vec<u8>, (u16, String)> {
         return Err((400, "unsupported or ambiguous request framing".into()));
     }
     let length = framed_length(request.body_length(), request.headers())?;
-    if length > REQUEST_BYTES {
+    if length > limit {
         return Err((413, "request exceeds byte limit".into()));
     }
     let mut body = Vec::new();
     request
         .as_reader()
-        .take(REQUEST_BYTES as u64 + 1)
+        .take(limit as u64 + 1)
         .read_to_end(&mut body)
         .map_err(|e| (400, format!("cannot read request: {e}")))?;
-    if body.len() > REQUEST_BYTES {
+    if body.len() > limit {
         return Err((413, "request exceeds byte limit".into()));
     }
     if body.len() != length {

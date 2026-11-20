@@ -2,7 +2,7 @@
 
 A twin built from **atoms** (standard parts) and a **wiring plan** (per site). It runs in fixed supersteps, so a
 decision changes every downstream number the way it would in the plant. Concept:
-[`07-DIGITAL-TWIN-BSP.md`](../docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md) (German).
+[`TWIN-COUPLING-SPEC.md`](../docs/datamodel-2026/TWIN-COUPLING-SPEC.md).
 
 This module contains the tightly coupled execution variant **T** (one process). The loosely coupled variant **L**
 (atoms as Smart Topics) is planned and will use the same atom code and the same message contract.
@@ -69,7 +69,7 @@ feedback cycle of the plan (strongly connected component) in one processor.
   wire.
 * `bin/opentsx twin-coupling [--csv out.csv] [--scenario id]` runs the RQ1 grid over all scenarios. Results and
   the design rule (cycles in one processor, BSP between processors) are in
-  [07 §10a](../docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md).
+  [TWIN-COUPLING-SPEC §11](../docs/datamodel-2026/TWIN-COUPLING-SPEC.md#11-coupling-results-and-design-rule).
 
 ### Topic contract as Avro
 

@@ -122,7 +122,7 @@ Read the [analysis guide](../docs/devguide/workbench-analysis.md) for the result
   `pair fill must be none or as-of`. A series whose times are not in increasing order is refused with
   `<label> has times out of order. A pair method needs them in increasing order.`, where `<label>` is the label of
   the series. Workbench only, not in the stream operator catalog (`src/workbench/pairs.ts`, design in
-  `../EVOLUTION/TASK-015-multivariate-analysis.md`)
+  `../docs/datamodel-2026/PAIR-WINDOWS-SPEC.md`)
 - Deploy and Stop (tab "Smart Topic"): a list says what a deployment still needs, "Create a vector of the loaded
   series" builds the one thing the processor runs, and Deploy hands the flow to the vector processor, which keeps the vector topic up to
   date, and shows what it reports; needs an administrator account, a retrieval server started with `--kafscale` and
