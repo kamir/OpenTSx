@@ -95,9 +95,10 @@ class ExecutionAssignmentsTest {
         duplicate.put("fragmentText", text).put("fragmentHash", ExecutionAssignments.sha256(text));
         assertCode("assignment.dag", () -> ExecutionAssignments.validate(JSON.writeValueAsString(duplicate)));
         ObjectNode tooLarge = valid();
-        String unicode = "🙂".repeat(8_193);
+        String unicode = "🙂".repeat(ExecutionAssignments.MAX_DAG_BYTES / 4 + 1);
         tooLarge.put("sourceDagText", unicode).put("specHash", ExecutionAssignments.sha256(unicode));
-        assertTrue(JSON.writeValueAsString(tooLarge).getBytes(StandardCharsets.UTF_8).length < 65_536);
+        assertTrue(unicode.length() < ExecutionAssignments.MAX_DAG_BYTES);
+        assertTrue(JSON.writeValueAsString(tooLarge).getBytes(StandardCharsets.UTF_8).length < ExecutionAssignments.MAX_BYTES);
         assertCode("assignment.dag", () -> ExecutionAssignments.validate(JSON.writeValueAsString(tooLarge)));
     }
 
@@ -112,7 +113,7 @@ class ExecutionAssignmentsTest {
 
     private static void validate(JsonNode vector) {
         switch (vector.path("kind").textValue()) {
-            case "assignment" -> ExecutionAssignments.validate(vector.path("input").textValue());
+            case "assignment" -> ExecutionAssignments.validate(input(vector));
             case "set" -> {
                 List<String> inputs = new ArrayList<>();
                 vector.path("inputs").forEach(value -> inputs.add(value.textValue()));
@@ -120,6 +121,21 @@ class ExecutionAssignmentsTest {
             }
             default -> throw new IllegalArgumentException("unknown vector kind");
         }
+    }
+
+    /**
+     * The raw assignment of a vector, with its {@code expand} marker replaced: boundary cases near the size limits
+     * keep their padding out of the file.
+     */
+    static String input(JsonNode vector) {
+        String raw = vector.path("input").textValue();
+        JsonNode expand = vector.path("expand");
+        if (expand.isMissingNode()) {
+            return raw;
+        }
+        String marker = expand.path("marker").textValue();
+        assertEquals(1, raw.split(java.util.regex.Pattern.quote(marker), -1).length - 1, "one expand marker per input");
+        return raw.replace(marker, expand.path("text").textValue().repeat(expand.path("count").intValue()));
     }
 
     private static ObjectNode valid() throws IOException {
