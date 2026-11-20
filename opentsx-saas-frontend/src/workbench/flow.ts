@@ -515,7 +515,7 @@ export interface Finding {
   text: string;
 }
 
-// ---------------------------------------------------------------- clean signals (docs/datamodel-2026/14, section 6)
+// ---------------------------------------------------------------- clean signals (docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, sections 4 and 5)
 
 /** Operators the processor runs before a series sink; everything else computes in the workbench only. */
 export const CLEAN_OPS = PROCESSOR_SERIES_OPS;
@@ -694,14 +694,14 @@ export function validate(nodes: FlowNode[]): Finding[] {
   return out;
 }
 
-/** The flow as opentsx.dag.v1 (docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md, section 5). */
+/** The flow as opentsx.dag.v1 (docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md, section 1). */
 export function toDagYaml(s: FlowDoc): string {
   const sinks = s.nodes.filter((n) => n.sinkTopic);
   const keep = new Set<string>();
   for (const sink of sinks) for (const n of upstream(s.nodes, sink.id)) keep.add(n.id);
   // Without a sink the whole flow is written, so the draft can be read.
   const nodes = s.nodes.filter((n) => n.op !== 'source' && (sinks.length === 0 || keep.has(n.id)));
-  // a series sink makes the document an opentsx.dag.v2 (docs/datamodel-2026/14, section 6.3)
+  // a series sink makes the document an opentsx.dag.v2 (docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 5.1)
   const series = sinks.filter((n) => isCleanSink(n) && s.context);
   const toSeries = new Set<string>();
   for (const sink of series) for (const n of upstream(s.nodes, sink.id)) toSeries.add(n.id);

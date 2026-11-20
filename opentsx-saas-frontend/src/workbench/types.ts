@@ -44,7 +44,7 @@ export interface Mark {
 
 /**
  * The time range of one loaded episode: [start, end) in the x unit of its bucket (seconds from x = 0), the end
- * exclusive as in the v2 model. Pair methods (TASK-015) pair the episodes of two series by these ranges.
+ * exclusive as in the v2 model. Pair methods (docs/datamodel-2026/PAIR-WINDOWS-SPEC.md, section 4) pair the episodes of two series by these ranges.
  */
 export interface EpisodeRange {
   /** `Series.id` of the series the episode belongs to. */
@@ -136,7 +136,7 @@ export interface FlowNode {
   sinkTopic?: string;
 }
 
-/** The signal of a system the workbench was opened for (concept: docs/datamodel-2026/14-ENGINEERING-FLOW.md). */
+/** The signal of a system the workbench was opened for (spec: docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 8.3). */
 export interface SignalContext {
   system: string;
   systemTitle: string;

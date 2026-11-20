@@ -10,7 +10,7 @@
  *   optionally capped by tauMax (_count_pairs). B within the window after A counts for c(B|A), A after B for c(A|B),
  *   both at the same tick half for each.
  * - q_total = (c(B|A) + c(A|B)) / sqrt(mA mB) in [0, 1]; q_ab = c(B|A) / sqrt(mA mB), A leads; q_ba likewise, B
- *   leads. q_ab > q_ba is the direction TASK-015 calls lag > 0: B follows A.
+ *   leads. q_ab > q_ba is the direction docs/datamodel-2026/PAIR-WINDOWS-SPEC.md, section 10, calls lag > 0: B follows A.
  * - q_rand, the baseline against chance (surrogate_sync): the mean q_total of A against `shuffles` copies of B whose
  *   intervals between events are shuffled, drawn by mulberry32(seed) in turn. Rates and intervals stay, the timing
  *   relative to A goes. Strictly periodic events keep their timing under any shuffle, so there q_rand equals

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://opentsx.org/schemas/opentsx.decision.v1.schema.json",
   "title": "opentsx.decision.v1",
-  "description": "A decision card: a recurring question on a system, who answers it, what it aims at, what it may change, what it must respect, which signals and analyses it needs and which alternatives are compared. Draft, see docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md.",
+  "description": "A decision card: a recurring question on a system, who answers it, what it aims at, what it may change, what it must respect, which signals and analyses it needs and which alternatives are compared. Draft, see docs/datamodel-2026/DECISION-CARD-SPEC.md, section 1.",
   "type": "object",
   "required": [
     "schema",

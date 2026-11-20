@@ -827,7 +827,7 @@ export const OPS: OpDef[] = [
       { key: 'scales', label: 'scales', type: 'number', default: 40, min: 4 },
     ], apply: dfaOp },
 
-  // Tab "Multi-variate Analysis": pair methods (EVOLUTION/TASK-015-multivariate-analysis.md, "Pair windows")
+  // Tab "Multi-variate Analysis": pair methods (docs/datamodel-2026/PAIR-WINDOWS-SPEC.md)
   { id: PAIR_COVERAGE.id, label: 'Pair coverage', group: 'multivariate', prefix: PAIR_COVERAGE.prefix, pfdOperation: 'PAIR_COVERAGE', multiInput: true, maxInputs: 2,
     hint: `${PAIR_HINT} This method gives the coverage itself and the number of ticks per window: what the other pair methods will see.`,
     params: pairParams(0), apply: (b, p, others) => pairWindows(PAIR_COVERAGE, b, p, others) },

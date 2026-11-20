@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Writes docs/datamodel-2026/testvectors/pair-es.v1.json: event synchronisation of
-pair.es (EVOLUTION/TASK-015-multivariate-analysis.md, phase 1d) as the Python
+pair.es (docs/datamodel-2026/PAIR-WINDOWS-SPEC.md, section 12) as the Python
 reference computes it (python-package/opentsx/algorithms/event_sync.py).
 
 Read by python-package/tests/test_event_sync.py and by

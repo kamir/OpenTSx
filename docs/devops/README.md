@@ -129,5 +129,5 @@ Every script has `--help`, is idempotent and stops with a clear message when som
 
 * [Operations](../user-manual/12-operations.md) (configuration, state and restarts, security notes),
   [Appendix A: CLI](../user-manual/appendix-a-cli.md), [Appendix B: REST](../user-manual/appendix-b-rest.md).
-* [Concept 11: Smart Topic processor and DevOps](../datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md) (German).
+* [Vector and DAG rules](../datamodel-2026/VECTOR-AND-DAG-SPEC.md): DAG document, vector measuring points and the vector processor.
 * [KafScale constraints](../../opentsx-kafka-v2/README.md) and the measured storage cost.

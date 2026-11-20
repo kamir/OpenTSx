@@ -119,7 +119,7 @@ Read the [analysis guide](../docs/devguide/workbench-analysis.md) for the result
   ported from WikiExplorer.NG), "Event synchronisation" the share of synchronous events and the level of chance
   (`src/workbench/es.ts`, ported from the Python package). The vector processor does not run them. Catalog 1 lists
   `pair.xcorr` and `pair.es`, not `pair.coverage`; the DAG export marks every pair node `experimental: true`
-  (`src/workbench/pairs.ts`, design in `../EVOLUTION/TASK-015-multivariate-analysis.md`)
+  (`src/workbench/pairs.ts`, design in `../docs/datamodel-2026/PAIR-WINDOWS-SPEC.md`)
 - Deploy and Stop (tab "Smart Topic"): a list says what a deployment still needs, "Create a vector of the loaded
   series" builds the one thing the processor runs, and Deploy hands the flow to the vector processor, which keeps the vector topic up to
   date, and shows what it reports; needs an administrator account, a retrieval server started with `--kafscale` and

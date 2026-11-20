@@ -21,8 +21,8 @@ import java.util.TreeMap;
 
 /**
  * The clean grade of a signal for data that keeps arriving: every raw series of the signal runs through a
- * {@link CleanChain} and comes out as episodes of a new series. Rules: docs/datamodel-2026/14-ENGINEERING-FLOW.md,
- * section 6.
+ * {@link CleanChain} and comes out as episodes of a new series. Rules: docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md,
+ * sections 4.3 and 5.4.
  *
  * <ul>
  *   <li><b>The clean series</b> has the metric of the raw series and its tags, plus {@code system},

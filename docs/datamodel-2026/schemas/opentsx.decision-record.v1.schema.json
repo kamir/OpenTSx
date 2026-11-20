@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://opentsx.org/schemas/opentsx.decision-record.v1.schema.json",
   "title": "opentsx.decision-record.v1",
-  "description": "One event in the life of a decision: a recommendation, what a person made of it, what was carried out, and what was observed afterwards. Every record names its predecessor. Draft, see docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md, section 8.",
+  "description": "One event in the life of a decision: a recommendation, what a person made of it, what was carried out, and what was observed afterwards. Every record names its predecessor. Draft, see docs/datamodel-2026/DECISION-CARD-SPEC.md, section 3.",
   "type": "object",
   "required": [
     "schema",

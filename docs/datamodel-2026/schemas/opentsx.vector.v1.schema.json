@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/kamir/OpenTSx/docs/datamodel-2026/schemas/opentsx.vector.v1.schema.json",
   "title": "opentsx.vector.v1",
-  "description": "Draft. One measuring point of a vector Smart Topic: the values of several DAG nodes for one key in one tick of a common clock. Written by the operator align.vector, see docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md, section 5a.",
+  "description": "Draft. One measuring point of a vector Smart Topic: the values of several DAG nodes for one key in one tick of a common clock. Written by the operator align.vector, see docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md, section 2.",
   "type": "object",
   "required": ["schema", "vector", "key", "ts", "window", "clock", "components", "values", "missing"],
   "additionalProperties": false,
