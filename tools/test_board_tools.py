@@ -2,6 +2,7 @@ import importlib.util
 import json
 from pathlib import Path
 import platform
+import sys
 import tempfile
 import unittest
 
@@ -16,6 +17,7 @@ def load(name):
 SAMPLER = load("board_resource_sampler")
 IDENTITY = load("board_identity")
 EVALUATION = load("wayang_board_evaluation")
+LAG = load("board_lag")
 
 
 class Clock:
@@ -157,6 +159,38 @@ class IdentityTest(unittest.TestCase):
         self.assertEqual(0 if platform.machine() == "aarch64" else 1, code)
         with self.assertRaises(FileExistsError):
             IDENTITY.main(["--storage", "x", "--network", "y", "--output", str(output), "--root", str(self.root)])
+
+
+class LagTest(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.file = Path(self.directory.name) / "run.lag"
+
+    def tearDown(self):
+        self.directory.cleanup()
+
+    def test_a_fresh_value_is_printed_as_the_sampler_expects(self):
+        self.file.write_text("1234\n", encoding="ascii")
+        self.assertEqual(1234, LAG.read(self.file))
+        self.assertEqual(0, LAG.main(["--file", str(self.file)]))
+        self.file.write_text("0\n", encoding="ascii")
+        self.assertEqual(0, LAG.read(self.file))
+
+    def test_a_stale_missing_or_malformed_file_fails(self):
+        self.file.write_text("7\n", encoding="ascii")
+        mtime = self.file.stat().st_mtime
+        with self.assertRaisesRegex(ValueError, "old"):
+            LAG.read(self.file, now=lambda: mtime + 3.5)
+        for text in ("-1\n", "7", "7\n8\n", "\n", "x\n"):
+            self.file.write_text(text, encoding="ascii")
+            with self.subTest(text=text), self.assertRaises(ValueError):
+                LAG.read(self.file)
+        self.assertEqual(1, LAG.main(["--file", str(self.file) + ".absent"]))
+
+    def test_the_sampler_records_the_printed_lag(self):
+        self.file.write_text("42\n", encoding="ascii")
+        command = [sys.executable, str(Path(__file__).with_name("board_lag.py")), "--file", str(self.file)]
+        self.assertEqual(42, SAMPLER.lag(command, 5))
 
 
 if __name__ == "__main__":

@@ -125,7 +125,7 @@ Read the [analysis guide](../docs/devguide/workbench-analysis.md) for the result
   `--dag-runs true`, and a running vector processor
 - Time series operations as buttons, recorded as a processing flow graph
 - Export: `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor, Java code
-- Code in `src/workbench/`; limits in `../EVOLUTION/TASK-013-web-workbench.md`
+- Code in `src/workbench/`
 
 ### State Management
 

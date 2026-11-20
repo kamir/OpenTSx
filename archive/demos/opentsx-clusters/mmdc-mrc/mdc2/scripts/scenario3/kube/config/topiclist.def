@@ -1,4 +1,0 @@
-#topic_name,nr_partittions,replication_factor,min_isr
-OpenTSx_Episodes,1,1,1
-OpenTSx_Events,1,1,1
-OpenTSx_Event_Flow_State,1,1,1

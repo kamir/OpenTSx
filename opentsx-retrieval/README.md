@@ -260,5 +260,4 @@ CI starts the server in demo mode, and the Python client queries it (job "Java â
 
 * **Power-curve analysis:** method of bins, performance index and underperformance periods. It lives in
   `opentsx-windpark` (`analysis.PowerCurveAnalysis`).
-* **Smart Topics (P7):** they build on segmentation, resampling and statistics. See
-  [`docs/datamodel-2026/05-SMART-TOPICS.md`](../docs/datamodel-2026/05-SMART-TOPICS.md).
+* **Smart Topics (P7):** they build on segmentation, resampling and statistics.
