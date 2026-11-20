@@ -1,7 +1,8 @@
 # Vector and DAG rules
 
 This page specifies the DAG document `opentsx.dag.v1`, the operator `align.vector`, the record `opentsx.vector.v1`
-and the vector processor that runs them, verified against commit `a513aa98`.
+and the vector processor that runs them; section 4 was verified against the code with the per-episode pair clock
+(fix of 2026-11-20), the others against commit `a513aa98`.
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are used as in
 [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) and [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174) when they
@@ -378,7 +379,7 @@ Implemented in: `workbench/ops.ts:857,871,905,911,919`, `workbench/flow.ts:493-5
 `workbench/types.ts:113-117`, `workbench/vector.test.ts:197-224`, `vector-tests/VectorAlignerTest.java:23`,
 `vector-tests/VectorStreamTest.java:202`,
 `opentsx-wayang/src/test/java/org/opentsx/wayang/TsxVectorVectorsTest.java:46`,
-`rust/tsx-runner/tests/pair_vector_vectors.rs:39`.
+`rust/tsx-runner/tests/pair_vector_vectors.rs:40`.
 
 ## 5. Streaming contract
 

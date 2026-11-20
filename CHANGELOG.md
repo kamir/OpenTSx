@@ -548,6 +548,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- The web workbench takes the default clock of `pair.coverage`, `pair.xcorr` and `pair.es` per pair range: the larger
+  sampling interval of the two paired episodes, on their sample times in epoch microseconds. Wayang and the Rust
+  runner use the same rule. The note names the smallest and the largest clock. A pair method refuses a series whose
+  times are out of order.
+- The web workbench and the Wayang pair API (`TsxPairXcorr.pairSettings`) refuse a `fill` other than `none` or
+  `as-of` with `pair fill must be none or as-of`, the message of the Rust runner.
+- `docs/datamodel-2026/testvectors/pair-clock.v1.json` (`tools/pair_clock_vectors.sh`) holds pair cases with
+  timestamps, a sampling interval that changes between episodes and jittered samples, expected values from the Wayang
+  kernel and the `fill` refusal. The workbench results are checked against Wayang for `pair.xcorr` and `pair.es` and
+  against the Rust runner for `pair.xcorr` only; `pair.coverage` has no Wayang or Rust counterpart. All three refuse
+  the unknown `fill`. Sections 2, 3, 6, 14 and 16 of
+  [`PAIR-WINDOWS-SPEC.md`](docs/datamodel-2026/PAIR-WINDOWS-SPEC.md) state these rules.
 - Concept 20 section 6.1 and the TASK-020 B1 notes list the signed `tsx-runner`
   modes that exist. With the B3 site configuration, `agent`, `conform` and `run`
   handle signed bounded statistics. With the B1 configuration, `run` executes
