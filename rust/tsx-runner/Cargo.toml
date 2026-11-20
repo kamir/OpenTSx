@@ -2,7 +2,7 @@
 name = "tsx-runner"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.89.0"
+rust-version = "1.97.0"
 license = "Apache-2.0"
 description = "Bounded whole-topic execution of OpenTSx cleaning fragments"
 
@@ -19,3 +19,8 @@ libc = "=0.2.191"
 time = { version = "=0.3.55", features = ["parsing", "formatting"] }
 ureq = { version = "=3.2.0", default-features = false, features = ["rustls-no-provider"] }
 rustls = { version = "=0.23.46", default-features = false, features = ["ring", "std"] }
+wasmtime = { version = "=50.0.1", default-features = false, features = ["std", "runtime", "cranelift", "pulley"] }
+wat = "=1.263.0"
+
+[profile.dev.package."*"]
+debug = 0

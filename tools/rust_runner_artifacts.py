@@ -40,6 +40,27 @@ EXAMPLE_TESTS = (
     "tests::wrong_prefixes_case_order_paths_counts_and_error_expectations_are_rejected",
     "tests::stopped_outcomes_require_exact_schema_counts_and_whole_topic_cursors",
 )
+WASM_TESTS = (
+    "wasm::wasm_limits::endless_export_exhausts_fuel",
+    "wasm::wasm_limits::endless_start_exhausts_fuel_before_instantiation",
+    "wasm::wasm_limits::oversized_initial_memory_fails_the_task",
+    "wasm::wasm_limits::denied_memory_growth_fails_instead_of_returning_success",
+    "wasm::wasm_limits::all_imports_are_refused",
+    "wasm::wasm_limits::malformed_oversized_and_wrong_abi_modules_are_refused",
+    "wasm::wasm_limits::unsupported_guest_features_are_refused",
+    "wasm::wasm_limits::tables_and_additional_instances_are_refused",
+    "wasm::wasm_limits::fuel_is_bounded_and_replenished_per_scalar_call",
+    "wasm::wasm_limits::guest_stack_is_bounded_by_the_configured_limit",
+    "wasm::wasm_limits::numeric_boundaries_preserve_separate_operations",
+    "wasm::wasm_limits::trapped_conversion_preserves_the_real_pipeline_state",
+    "wasm::wasm_limits::traps_do_not_publish_or_commit_a_checkpoint",
+    "wasm::wasm_limits::scoped_fixture_is_cleared_after_unwinding",
+    "both_shared_conversion_cases_match_through_admitted_wasm_pipeline",
+    "every_shared_conversion_partition_restores_exact_host_state_and_samples",
+    "signed_zero_gaps_and_separate_multiply_add_preserve_unit_metadata",
+    "plans_cannot_supply_wasm_code_or_limits",
+    "conversion_overflow_cannot_publish_or_commit_candidate_state",
+)
 
 
 def run(command):
@@ -123,12 +144,12 @@ def test_counts(logs):
             if outcome != "ok" or any(values[1:]):
                 raise ValueError("failed, ignored, measured or filtered tests cannot qualify")
             totals = [old + value for old, value in zip(totals, values)]
-    for name in (*VECTOR_TESTS, *EXAMPLE_TESTS):
+    for name in (*VECTOR_TESTS, *EXAMPLE_TESTS, *WASM_TESTS):
         if not re.search(r"^test " + re.escape(name) + r" \.\.\. ok$", combined, re.M):
             raise ValueError("qualification test did not execute: " + name)
     return {"passed": totals[0], "failed": totals[1], "ignored": totals[2],
             "measured": totals[3], "filtered": totals[4], "sharedVectorTests": list(VECTOR_TESTS),
-            "acceptanceExampleTests": list(EXAMPLE_TESTS)}
+            "acceptanceExampleTests": [*EXAMPLE_TESTS, *WASM_TESTS]}
 
 
 def compiler(tool, arguments):

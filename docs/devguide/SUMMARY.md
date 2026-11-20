@@ -10,3 +10,4 @@
 * [Deliver Wayang orchestration](integration/wayang-unified-plan.md)
 * [Validate shared assignments](integration/wayang-shared-contracts.md)
 * [Inspect bounded mixed Java and Rust federation](integration/wayang-mixed-federation.md)
+* [Execute the embedded WASM conversion](integration/rust-runner-b5.md)
