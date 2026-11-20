@@ -19,6 +19,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   digests, no raw files committed). The check of the raw files against the record runs when `OPENTSX_TRACK_A_DATA`
   points to them. `tools/test_public_scope.py` fails when a tracked file points to the private companion repository.
 - The `metadata.json` records of three measurement runs show `~/` instead of a personal home directory.
+- AGENTS.md rule 15 and CLAUDE.md: research, paper planning, task plans, roadmaps, design drafts and raw measurement
+  data stay out of the repository. `tools/test_public_scope.py` also fails on tracked files in `docs/research/`,
+  `docs/business/`, `docs/roadmap/`, `archive/` and `EVOLUTION/` other than TASK-020, and on files of a measurement
+  run other than its reports and records. The orbit testbed and situation center plans (TASK-021, TASK-022) left
+  with the other task files; `lascaris-space/README.md` and the README section on LASCARIS for Space stay.
 
 - Accept idle Kafka frame-boundary resets and cancelled metadata requests in the
   validation observer. Retain response correlations until forwarding succeeds;
@@ -96,11 +101,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   it keeps. It contains no code yet. The README section "Take time series into orbit with LASCARIS for Space" states
   the direction: series from orbit in the ground Workspace, identity by series key, provenance to the declared source,
   and what provenance and signed downlink chunks do and do not guarantee for training data.
-- Planned task [`EVOLUTION/TASK-022-situation-center.md`](EVOLUTION/TASK-022-situation-center.md): in-orbit nodes
+- Planned task TASK-022, situation center: in-orbit nodes
   with a KafScale and `tsx-runner` sidecar, the ground station as hub and discovery point, a component state model
   whose liveness follows predicted passes, a Workbench situation page, and later a decentralized registry and
   cooperating situation centers. Phase L0 is an orbit profile in which a failed status report no longer stops a plan.
-- Planned task [`EVOLUTION/TASK-021-orbit-testbed.md`](EVOLUTION/TASK-021-orbit-testbed.md): a homelab testbed with a
+- Planned task TASK-021, orbit testbed: a homelab testbed with a
   Jetson Nano as onboard computer and a Synology NAS as ground station, a satellite simulator writing an onboard
   ring buffer, an emulated space-ground link driven by computed passes, and phases P0 to P6 up to the D-T13 CPU
   fallback path. Phase P0 prepares the board with the Jetson runbook and board tools of D-T14. No implementation

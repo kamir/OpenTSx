@@ -197,8 +197,8 @@ Pull requests are squash-merged when every required check is green.
   for Java and Python (see `opentsx-model` and `python-package/tests/test_model_v2.py`).
 * Update the documentation that your change affects (module README, `docs/user-manual/`) and add an entry to
   [CHANGELOG.md](CHANGELOG.md) under "Unreleased".
-* Everything you write is in English. The design documents in `docs/datamodel-2026/` and `EVOLUTION/` are still in
-  German; a German document you change is translated to English in the same pull request.
+* Everything you write is in English. A German document you change is translated to English in the same pull
+  request.
 
 ## Configuration and data
 
