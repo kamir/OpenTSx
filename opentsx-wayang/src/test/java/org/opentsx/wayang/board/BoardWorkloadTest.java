@@ -105,12 +105,29 @@ class BoardWorkloadTest {
     }
 
     @Test
+    void theLagFileHoldsOneNonNegativeLineAndIsReplacedWhole(@org.junit.jupiter.api.io.TempDir Path dir) throws Exception {
+        assertEquals(40, LagWatch.lag(140, 100));
+        assertEquals(0, LagWatch.lag(100, 140));
+        Path file = dir.resolve("run.lag");
+        LagWatch.write(file, 12_345);
+        assertEquals("12345\n", java.nio.file.Files.readString(file));
+        LagWatch.write(file, 0);
+        assertEquals("0\n", java.nio.file.Files.readString(file));
+        assertEquals(List.of(file), java.nio.file.Files.list(dir).toList());
+    }
+
+    @Test
     void optionsAreCheckedBeforeAnythingRuns() {
         assertEquals("stats", BoardWorkload.options("track-a", List.of("--bootstrap", "b", "--domain", "d", "--chain", "stats",
                 "--series", "100", "--seed", "1", "--catalog", "c", "--checkpoint", "k", "--interval-seconds", "10",
                 "--duration-seconds", "2100")).get("chain"));
         assertThrows(IllegalArgumentException.class, () -> BoardWorkload.options("track-a", List.of("--chain", "stats")));
         assertThrows(IllegalArgumentException.class, () -> BoardWorkload.options("track-c", List.of()));
+        assertEquals("run.lag", BoardWorkload.options("track-b", List.of("--bootstrap", "b", "--domain", "d", "--chain", "clean",
+                "--series", "1", "--seed", "1", "--runner", "r", "--listen", "l", "--state", "s", "--log", "g",
+                "--interval-seconds", "10", "--duration-seconds", "2100", "--lag-file", "run.lag")).get("lag-file"));
+        assertThrows(IllegalArgumentException.class, () -> BoardWorkload.options("feed", List.of("--bootstrap", "b",
+                "--domain", "d", "--series", "1", "--seed", "1", "--blocks", "1", "--lag-file", "x")));
         assertThrows(IllegalArgumentException.class, () -> BoardWorkload.options("digest", List.of("--domain", "d",
                 "--series", "1", "--seed", "1", "--blocks", "1", "--profile", "x")));
     }

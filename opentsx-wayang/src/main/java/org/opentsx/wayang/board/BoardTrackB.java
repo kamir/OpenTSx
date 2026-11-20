@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Track B of one B4.2 condition: starts {@code tsx-runner serve} as the measured process and sends it one
@@ -98,10 +99,11 @@ public final class BoardTrackB {
 
     public static long run(Path runner, String listen, Path state, String profile, String bootstrap, TopicLayout layout,
                            String chain, int series, long seed, Duration interval, Duration duration, Path log,
-                           BoardEvents events) throws Exception {
+                           Path lagFile, BoardEvents events) throws Exception {
         String dag = BoardChains.dag(chain, layout, new BoardFeed(series, seed).seriesIds());
         String input = layout.episodes();
         String output = BoardChains.output(chain, layout);
+        AtomicLong processed = new AtomicLong(-1);
         Process process = new ProcessBuilder(runner.toString(), "serve", "--listen", listen, "--node", NODE,
                 "--site", SITE, "--bootstrap", bootstrap, "--state", state.toString(), "--profile", profile)
                 .redirectErrorStream(true).redirectOutput(log.toFile()).start();
@@ -109,7 +111,9 @@ public final class BoardTrackB {
         HttpClient http = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(Duration.ofSeconds(5)).build();
         URI base = URI.create("http://" + listen);
         try (KafkaConsumer<byte[], byte[]> consumer = KafScaleClients.consumer(bootstrap);
-             OutputWatch watch = new OutputWatch(bootstrap, output, events)) {
+             OutputWatch watch = new OutputWatch(bootstrap, output, events);
+             LagWatch lag = lagFile == null ? null : new LagWatch(bootstrap, input, lagFile,
+                     begin -> processed.get() < 0 ? begin : processed.get(), events)) {
             JsonNode capabilities = awaitCapabilities(http, base, process);
             List<TopicPartition> inputs = partitions(consumer, input);
             int outputPartitions = partitions(consumer, output).size();
@@ -136,6 +140,7 @@ public final class BoardTrackB {
                     previous = hash;
                     records += size;
                     for (Position p : positions) from[p.partition()] = p.to();
+                    processed.set(java.util.Arrays.stream(from).sum());
                     events.emit("increment", Map.of("sequence", sequence, "records", size));
                 }
                 long rest = interval.toNanos() - (System.nanoTime() - started);

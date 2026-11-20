@@ -115,6 +115,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   ring buffer, an emulated space-ground link driven by computed passes, and phases P0 to P6 up to the D-T13 CPU
   fallback path. Phase P0 prepares the board with the Jetson runbook and board tools of D-T14. No implementation
   yet.
+- Lag for the B4.2 board sampler: `BoardWorkload track-a` and `track-b` take `--lag-file` and write the run's lag,
+  input records minus processed records, twice per second. `tools/board_lag.py` (Python 3.6) prints it for
+  `board_resource_sampler.py --lag-command` and fails on a stale or malformed value.
 - `opentsx-wayang`: output proof for the B4.2 board measurement. `BoardOutputProofTest` reads a condition's output
   topic, requires that every output series equals the first records of the reference output of the same feed, field
   for field (`BoardOutputs`, `BoardReference`), checks the input digest, and only then writes JUnit XML with the
