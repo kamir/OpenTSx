@@ -55,6 +55,13 @@ The check requires the active Maven distribution and tests its native HTTP trans
 network requests or sleeps. A different Maven version, missing bundled libraries or a failed policy check returns
 an error.
 
+Maven prints execution exception details and the selected Resolver transport.
+The check also runs a missing-plugin fixture with an isolated offline
+repository and requires a failed exit with its exception and offline reason.
+Resolver 1.9.20 discards the original HTTP exception when classifying a 404 as
+a missing artifact. A statusless missing-artifact message alone does not
+establish rate limiting or cache corruption.
+
 ## Check continuous integration
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) starts on every pull request, push to `master` and manual run.
@@ -64,6 +71,49 @@ commands and matrix dimensions are retained.
 All six Maven job definitions install checksum-verified Maven 3.9.8 and run the download retry check before their
 builds. Rust and Wayang Compose artifacts retain `java-build.log` and `java-classpath.log`, including
 after a failed build.
+Every Maven job uploads `maven-downloads-*` artifacts containing `before.json`
+and `after.json` cache reports, including after failures. Reports describe
+`.lastUpdated` and `_remote.repositories` files by relative path, size,
+modification time and SHA-256. Missing-artifact markers and transfer-error
+markers remain distinct; HTTP status codes are included only when explicitly
+present in transfer-error text. Existing artifacts associated with
+`.lastUpdated` markers receive file fingerprints. Reports omit repository URLs,
+credentials and raw error text. They read the cache without deleting files or
+changing update policies. These diagnostics do not establish the cause of
+historical download failures or prevent new repository failures.
+
+CI also builds and checks a local Maven extension against the pinned runtime.
+`http-responses.jsonl` records actual HTTP response statuses for the three
+Wayang libraries and two BOM imports from Central and Confluent, before
+Resolver retry handling.
+It includes the public host and artifact path, fixed classifications for
+cache, server and content type, and SHA-256 fingerprints of selected response
+headers. Request headers, cookies, response bodies, URL credentials and query
+strings are excluded. Other endpoints and paths are excluded. The extension
+preserves the response and the existing retry strategy. A failure to install
+or record capture fails the job. The offline checks isolate their simulated
+responses from the CI report; an empty report means no matching request was
+captured. The generated extension is enabled only in CI through `MAVEN_OPTS`.
+Capture is limited to HTTPS GET and HEAD requests for `wayang-core`,
+`wayang-basic` and `wayang-java` POMs and JARs, plus the `junit-bom:5.14.4` and
+`jackson-bom:2.23.0` POMs. Other BOM versions are excluded.
+Numeric age, content length and
+Retry-After values are included only for a single header containing at most
+nine decimal digits; absent or invalid values are `null`. Header fingerprints
+cover age, cache control, CDN cache status and request identifier, content
+length and type, date, ETag, Retry-After, server, Via, X-Cache, X-Cache-Hits and
+X-Served-By. Free header values are excluded.
+The native cookie-parser logger is disabled because malformed-cookie warnings
+can include complete cookie values. An in-memory malformed-cookie regression
+checks this exclusion against the actual bundled handler. Cookie parsing and
+HTTP failure handling remain unchanged.
+
+Each Maven job scopes its dependency-cache key with its workload identity in
+`cache-context`. The key also hashes POMs, Maven wrapper and extension inputs,
+`.mvn/maven.config` and the pinned-runtime checker. Matrix variants of the same
+job share that workload's cache. A smaller workload cannot reserve the same
+immutable key and prevent a larger workload from retaining its dependencies.
+The context is created before Java setup; an empty identity fails the step.
 
 The selector verifies the checked-out pull request merge commit and both event parents. A depth-two checkout
 supplies these commits. It compares the base parent with the tested merge tree using NUL-delimited paths and

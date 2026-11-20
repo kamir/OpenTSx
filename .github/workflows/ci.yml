@@ -219,11 +219,23 @@ jobs:
       GOTOOLCHAIN: local
     steps:
       - uses: actions/checkout@v7
+      - name: Scope Maven cache to its workload
+        run: |
+          test -n "$GITHUB_JOB"
+          mkdir -p target/maven-downloads
+          printf '%s\n' "$GITHUB_JOB" > target/maven-downloads/cache-context
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
+          cache-dependency-path: |
+            **/pom.xml
+            **/.mvn/wrapper/maven-wrapper.properties
+            **/.mvn/extensions.xml
+            .mvn/maven.config
+            tools/check_maven_downloads.py
+            target/maven-downloads/cache-context
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
@@ -237,6 +249,10 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
       - name: Verify Maven download retries
         run: python3 tools/check_maven_downloads.py
+      - name: Verify and enable bounded HTTP response capture
+        run: python3 tools/check_maven_http_capture.py
+      - name: Record Maven cache before builds
+        run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json
       - name: Install the pinned Rust toolchain
         run: rustup toolchain install 1.99.1 --profile minimal
       - uses: actions/checkout@v7
@@ -315,6 +331,15 @@ jobs:
             ${{ runner.temp }}/kafscale-broker.log
           if-no-files-found: error
           retention-days: 7
+      - name: Record Maven cache after builds
+        if: always()
+        run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/after.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: maven-downloads-rust-b1
+          path: target/maven-downloads/
+          if-no-files-found: error
 
   rust-runner-compose:
     needs: ci-selection
@@ -326,11 +351,23 @@ jobs:
       KAFSCALE_BROKER_PORT: "39093"
     steps:
       - uses: actions/checkout@v7
+      - name: Scope Maven cache to its workload
+        run: |
+          test -n "$GITHUB_JOB"
+          mkdir -p target/maven-downloads
+          printf '%s\n' "$GITHUB_JOB" > target/maven-downloads/cache-context
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
+          cache-dependency-path: |
+            **/pom.xml
+            **/.mvn/wrapper/maven-wrapper.properties
+            **/.mvn/extensions.xml
+            .mvn/maven.config
+            tools/check_maven_downloads.py
+            target/maven-downloads/cache-context
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
@@ -344,6 +381,10 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
       - name: Verify Maven download retries
         run: python3 tools/check_maven_downloads.py
+      - name: Verify and enable bounded HTTP response capture
+        run: python3 tools/check_maven_http_capture.py
+      - name: Record Maven cache before builds
+        run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json
       - name: Check helper syntax and CLI
         run: |
           python3 -m py_compile tools/verify_rust_runner_compose.py
@@ -378,6 +419,15 @@ jobs:
           path: |
             target/rust-runner-compose/
             target/rust-runner-linux/release/tsx-runner
+      - name: Record Maven cache after builds
+        if: always()
+        run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/after.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: maven-downloads-rust-runner-compose
+          path: target/maven-downloads/
+          if-no-files-found: error
 
   wayang-rust-compose:
     needs: ci-selection
@@ -404,11 +454,23 @@ jobs:
       WAYANG_PROFILE: ${{ matrix.profile }}
     steps:
       - uses: actions/checkout@v7
+      - name: Scope Maven cache to its workload
+        run: |
+          test -n "$GITHUB_JOB"
+          mkdir -p target/maven-downloads
+          printf '%s\n' "$GITHUB_JOB" > target/maven-downloads/cache-context
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
+          cache-dependency-path: |
+            **/pom.xml
+            **/.mvn/wrapper/maven-wrapper.properties
+            **/.mvn/extensions.xml
+            .mvn/maven.config
+            tools/check_maven_downloads.py
+            target/maven-downloads/cache-context
       - uses: actions/setup-node@v7
         with:
           node-version: "24.22.2"
@@ -427,6 +489,10 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
       - name: Verify Maven download retries
         run: python3 tools/check_maven_downloads.py
+      - name: Verify and enable bounded HTTP response capture
+        run: python3 tools/check_maven_http_capture.py
+      - name: Record Maven cache before builds
+        run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json
       - name: Install the pinned browser runtime
         run: |
           npm install --prefix "$RUNNER_TEMP/wayang-browser" --no-audit --no-fund --ignore-scripts playwright@1.62.1
@@ -505,6 +571,15 @@ jobs:
             target/wayang-rust-compose/browser-*.log
             target/wayang-rust-compose/parity-*.log
             target/wayang-rust-compose/runtime.log
+      - name: Record Maven cache after builds
+        if: always()
+        run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/after.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: maven-downloads-${{ matrix.artifact }}
+          path: target/maven-downloads/
+          if-no-files-found: error
 
   java:
     needs: ci-selection
@@ -517,11 +592,23 @@ jobs:
         java: ["17", "21"]
     steps:
       - uses: actions/checkout@v7
+      - name: Scope Maven cache to its workload
+        run: |
+          test -n "$GITHUB_JOB"
+          mkdir -p target/maven-downloads
+          printf '%s\n' "$GITHUB_JOB" > target/maven-downloads/cache-context
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
           cache: maven
+          cache-dependency-path: |
+            **/pom.xml
+            **/.mvn/wrapper/maven-wrapper.properties
+            **/.mvn/extensions.xml
+            .mvn/maven.config
+            tools/check_maven_downloads.py
+            target/maven-downloads/cache-context
       - name: Install Maven 3.9.8
         run: |
           curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 \
@@ -532,10 +619,23 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
       - name: Verify Maven download retries
         run: python3 tools/check_maven_downloads.py
+      - name: Verify and enable bounded HTTP response capture
+        run: python3 tools/check_maven_http_capture.py
+      - name: Record Maven cache before builds
+        run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json
       - name: Build and test
         run: xvfb-run --auto-servernum mvn -B -ntp verify
       - name: Check shared aggregate transport bytes
         run: python3 tools/aggregate_transport_vectors.py --check
+      - name: Record Maven cache after builds
+        if: always()
+        run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/after.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: maven-downloads-java-${{ matrix.java }}
+          path: target/maven-downloads/
+          if-no-files-found: error
 
   python:
     needs: ci-selection
@@ -682,11 +782,23 @@ jobs:
       KAFSCALE_REF: v1.6.0
     steps:
       - uses: actions/checkout@v7
+      - name: Scope Maven cache to its workload
+        run: |
+          test -n "$GITHUB_JOB"
+          mkdir -p target/maven-downloads
+          printf '%s\n' "$GITHUB_JOB" > target/maven-downloads/cache-context
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
+          cache-dependency-path: |
+            **/pom.xml
+            **/.mvn/wrapper/maven-wrapper.properties
+            **/.mvn/extensions.xml
+            .mvn/maven.config
+            tools/check_maven_downloads.py
+            target/maven-downloads/cache-context
       - name: Install Maven 3.9.8
         run: |
           curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 \
@@ -697,6 +809,10 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
       - name: Verify Maven download retries
         run: python3 tools/check_maven_downloads.py
+      - name: Verify and enable bounded HTTP response capture
+        run: python3 tools/check_maven_http_capture.py
+      - name: Record Maven cache before builds
+        run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json
       - name: Qualify and build the pinned Rust B2 to B4 harnesses
         shell: bash
         run: |
@@ -959,6 +1075,15 @@ jobs:
         with:
           name: kafscale-broker-log
           path: ${{ runner.temp }}/kafscale-broker.log
+      - name: Record Maven cache after builds
+        if: always()
+        run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/after.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: maven-downloads-kafscale
+          path: target/maven-downloads/
+          if-no-files-found: error
 
   cross-language:
     needs: ci-selection
@@ -967,11 +1092,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - name: Scope Maven cache to its workload
+        run: |
+          test -n "$GITHUB_JOB"
+          mkdir -p target/maven-downloads
+          printf '%s\n' "$GITHUB_JOB" > target/maven-downloads/cache-context
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
+          cache-dependency-path: |
+            **/pom.xml
+            **/.mvn/wrapper/maven-wrapper.properties
+            **/.mvn/extensions.xml
+            .mvn/maven.config
+            tools/check_maven_downloads.py
+            target/maven-downloads/cache-context
       - name: Install Maven 3.9.8
         run: |
           curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 \
@@ -982,6 +1119,10 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
       - name: Verify Maven download retries
         run: python3 tools/check_maven_downloads.py
+      - name: Verify and enable bounded HTTP response capture
+        run: python3 tools/check_maven_http_capture.py
+      - name: Record Maven cache before builds
+        run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
@@ -1006,6 +1147,15 @@ jobs:
             org.opentsx.retrieval.server.RetrievalServer --port 18080 --demo true > retrieval-server.log 2>&1 &
           for i in $(seq 1 60); do curl -sf localhost:18080/v1/health && break; sleep 1; done
           cd python-package && OPENTSX_RETRIEVAL_URL=http://127.0.0.1:18080 python -m pytest -q tests/test_retrieval_client.py
+      - name: Record Maven cache after builds
+        if: always()
+        run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/after.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: maven-downloads-cross-language
+          path: target/maven-downloads/
+          if-no-files-found: error
 
   standalone-analysis:
     name: Standalone analysis package
