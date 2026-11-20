@@ -43,6 +43,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Open owner decision D-T13 in
+  [`EVOLUTION/TASK-020-wayang-ts-operators.md`](EVOLUTION/TASK-020-wayang-ts-operators.md): admit FPGA kernels on raw
+  sensor data as Tier 3, behind the Rust runner and for data reduction only. The record states the concept 09
+  boundary it changes, the partial and finish numerics, the `runtimes.fpga` key, the `raw` port, signed kernel
+  packages, the first kernel pack and the admission gate per kernel. The decision is not taken.
 - Study on running OpenTSx operators in orbit
   ([`docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md`](docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md)):
   no tool compiles the Python operators to FPGA logic; a bounded streaming subset can be reimplemented as FPGA kernels
