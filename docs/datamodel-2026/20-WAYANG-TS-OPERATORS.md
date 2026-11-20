@@ -709,8 +709,11 @@ and the site agents also write `site` and `artifact` (version and digest). Neith
 `GET /v1/dags` lists every status record that carries `job` under `jobs`: the latest record per key, as written, with
 or without a control record of that name (`KafScaleFeed.java:320`, `:375`). The processor never writes `job`.
 `dags` holds the control records with the processor's sink reports (key `<dag>/<sink>`) and refusals (key `<dag>`).
-Job records do not appear under `dags`. The workbench Deployments panel reads `dags` only and does not show job
-records (`opentsx-saas-frontend/src/workbench/deployments.ts:27-31`).
+Job records do not appear under `dags`. The workbench Deployments panel shows them in a separate list below the
+deployments: job id, track, site when present, state, input record count and report age
+(`opentsx-saas-frontend/src/workbench/DeploymentsPanel.tsx:189-209`). It offers no Stop for a job, because neither
+track reads the control topic. A job in any state but `stopped` or `failed` without a report for 120 s is flagged
+(`deployments.ts:100`). When the response has no `jobs`, the panel says so.
 
 Metrics per task: lag per partition, records in and out, operator time, checkpoint age, delivery failures.
 
