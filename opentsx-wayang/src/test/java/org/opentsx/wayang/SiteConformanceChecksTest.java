@@ -23,6 +23,6 @@ class SiteConformanceChecksTest {
         String digest = SiteConformanceChecks.artifactDigest();
         assertTrue(digest.matches("sha256:[0-9a-f]{64}"));
         assertEquals(digest, SiteConformanceChecks.artifactDigest());
-        assertEquals("3.0.1", SiteConformanceChecks.version(ROOT));
+        assertEquals("3.1.0", SiteConformanceChecks.version(ROOT));
     }
 }
