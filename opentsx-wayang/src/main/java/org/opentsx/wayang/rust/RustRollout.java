@@ -25,6 +25,7 @@ import org.apache.wayang.core.types.DataSetType;
 import org.opentsx.kafka.KafScaleClients;
 import org.opentsx.kafka.TopicLayout;
 import org.opentsx.model.contracts.ExecutionAssignments;
+import org.opentsx.model.contracts.PhysicalDeployments;
 import org.opentsx.wayang.DagToWayang;
 import org.opentsx.retrieval.vector.DagPlan;
 
@@ -92,12 +93,21 @@ public final class RustRollout {
     private final RustWorkerClient client;
     private final Metadata metadata;
     private final RustPublicationGateway publication;
+    private final AdmissionFacts admission;
+
+    public record Observation(JsonNode facts, String nowMicros) { }
+    public interface AdmissionFacts { Observation observe(JsonNode physicalPlan); }
 
     public RustRollout(String bootstrap, Path catalog, List<Worker> workers, RustWorkerClient client, Metadata metadata) {
         this(bootstrap, catalog, workers, client, metadata, null);
     }
 
     public RustRollout(String bootstrap, Path catalog, List<Worker> workers, RustWorkerClient client, Metadata metadata, RustPublicationGateway publication) {
+        this(bootstrap, catalog, workers, client, metadata, publication, null);
+    }
+
+    public RustRollout(String bootstrap, Path catalog, List<Worker> workers, RustWorkerClient client, Metadata metadata,
+                       RustPublicationGateway publication, AdmissionFacts admission) {
         if (workers.isEmpty() || workers.size() > 3 || workers.stream().map(Worker::node).distinct().count() != workers.size()
                 || workers.stream().map(Worker::endpoint).distinct().count() != workers.size()) {
             throw new IllegalArgumentException("configure one to three distinct worker nodes and endpoints");
@@ -108,6 +118,7 @@ public final class RustRollout {
         this.client = client;
         this.metadata = metadata;
         this.publication = publication;
+        this.admission = admission;
     }
 
     public ObjectNode capabilities() {
@@ -129,6 +140,7 @@ public final class RustRollout {
         }
         ArrayNode profiles = result.putArray("profiles").add("bounded");
         if (incremental) profiles.add("continuous");
+        if (admission != null && publication == null) profiles.add("physical");
         if (publication != null) {
             result.put("publicationFencing", true);
             result.putArray("switchModes").add("resume").add("restart");
@@ -139,6 +151,65 @@ public final class RustRollout {
 
     public ObjectNode plan(String deployment, String sourceText, String createdAt) {
         return plan(deployment, sourceText, createdAt, null, false);
+    }
+
+    public ObjectNode planPhysical(String deployment, String sourceText, String createdAt) {
+        requireAdmission();
+        try { return physicalPlan(deployment, sourceText, createdAt); }
+        catch (PhysicalDeployments.Refused error) { throw error; }
+        catch (IllegalArgumentException error) { throw computationRefusal(error, sourceText); }
+    }
+
+    private ObjectNode physicalPlan(String deployment, String sourceText, String createdAt) {
+        ObjectNode legacy = plan(deployment, sourceText, createdAt);
+        JsonNode effective = effective(sourceText);
+        ObjectNode physical = RustPhysicalDeployment.skeleton(legacy, effective);
+        Observation observation = admission.observe(physical.deepCopy());
+        ObjectNode result = RustPhysicalDeployment.finish(physical, observation.facts());
+        PhysicalDeployments.admit(stringify(result), observation.facts(), observation.nowMicros());
+        if (stringify(result).getBytes(StandardCharsets.UTF_8).length > 262_144)
+            throw new PhysicalDeployments.Refused("deployment.limit", null, "/");
+        return result;
+    }
+
+    public void validatePhysical(JsonNode physical) {
+        requireAdmission();
+        PhysicalDeployments.validate(stringify(physical));
+        JsonNode effective = effective(physical.path("sourceDagText").asText());
+        if (!PhysicalDeployments.encodeComputation(effective).equals(physical.path("computationText").asText()))
+            throw new PhysicalDeployments.Refused("deployment.computation", null, "/computationText");
+        for (JsonNode raw : physical.path("assignmentTexts")) if (!json(raw.asText()).path("mode").asText().equals("bounded"))
+            throw new PhysicalDeployments.Refused("deployment.assignment", null, "/assignmentTexts/mode");
+        Observation observation = admission.observe(physical.deepCopy());
+        PhysicalDeployments.admit(stringify(physical), observation.facts(), observation.nowMicros());
+    }
+
+    private void requireAdmission() {
+        if (publication != null) throw new PhysicalDeployments.Refused("deployment.capability", null, "/profile");
+        if (admission == null) throw new PhysicalDeployments.Refused("deployment.incarnation", null, "/facts/topics");
+    }
+
+    private JsonNode effective(String text) {
+        try {
+            JsonNode selected = source(text);
+            String domain = selected.path("source").path("topics").get(0).asText().split("\\.")[1];
+            return DagToWayang.compile(text, new TopicLayout(domain), catalog).dag();
+        } catch (IOException error) { throw new IllegalStateException("operator catalog cannot be read", error); }
+        catch (PhysicalDeployments.Refused error) { throw error; }
+        catch (IllegalArgumentException error) { throw computationRefusal(error, text); }
+    }
+
+    private static PhysicalDeployments.Refused computationRefusal(IllegalArgumentException error, String text) {
+        java.util.regex.Matcher location = java.util.regex.Pattern.compile("^node ([a-z0-9][a-z0-9-]{0,62}): parameter ([A-Za-z0-9_]+) ").matcher(error.getMessage() == null ? "" : error.getMessage());
+        if (location.find()) {
+            JsonNode raw;
+            try { raw = YAML.readTree(text); }
+            catch (IOException parsing) { throw new PhysicalDeployments.Refused("deployment.computation", null, "/computationText"); }
+            if (raw != null) for (int index = 0; index < raw.path("nodes").size(); index++)
+                if (raw.path("nodes").get(index).path("id").asText().equals(location.group(1)))
+                    return new PhysicalDeployments.Refused("deployment.computation", location.group(1), "/nodes/" + index + "/params/" + location.group(2));
+        }
+        return new PhysicalDeployments.Refused("deployment.computation", null, "/computationText");
     }
 
     public ObjectNode planContinuous(String deployment, String sourceText, String createdAt) {
@@ -327,7 +398,19 @@ public final class RustRollout {
     }
 
     public synchronized ObjectNode execute(JsonNode plan) {
+        if (PhysicalDeployments.SCHEMA.equals(plan.path("schema").asText())) {
+            validatePhysical(plan);
+            ObjectNode local = RustPhysicalDeployment.local(plan, bootstrap, workers);
+            validatePlan(local, true);
+            ObjectNode answer = executeAdmitted(local, plan);
+            answer.put("planHash", plan.path("planHash").asText());
+            return answer;
+        }
         validatePlan(plan);
+        return executeAdmitted(plan, null);
+    }
+
+    private ObjectNode executeAdmitted(JsonNode plan, JsonNode physical) {
         if (publication != null && publication.epoch(plan.path("deployment").asText()).equals("0")) {
             for (JsonNode unit : plan.path("assignments")) {
                 JsonNode current = client.get(worker(unit), "/v1/publication");
@@ -338,7 +421,7 @@ public final class RustRollout {
         JsonNode dag = source(plan.path("sourceDagText").asText());
         AtomicReference<JsonNode> result = new AtomicReference<>();
         RustStageAction action = () -> {
-            JsonNode answer = stage(plan);
+            JsonNode answer = stage(plan, physical);
             if (!result.compareAndSet(null, answer)) throw new IllegalStateException("a deployment stage executed twice");
             if (!answer.path("state").asText().equals("completed")) throw new IllegalStateException("Rust deployment failed: " + answer.path("error").asText());
             return answer;
@@ -377,6 +460,11 @@ public final class RustRollout {
         configuration.setProperty("wayang.core.log.enabled", "false");
         try { new WayangContext(configuration).with(new RustPlugin()).execute(new WayangPlan(sink)); }
         catch (RuntimeException error) {
+            Throwable cause = error;
+            while (cause != null) {
+                if (cause instanceof PhysicalDeployments.Refused refused) throw refused;
+                cause = cause.getCause();
+            }
             if (result.get() == null || !result.get().path("state").asText().equals("failed")) throw error;
         }
         JsonNode answer = result.get();
@@ -384,7 +472,8 @@ public final class RustRollout {
         return (ObjectNode) answer;
     }
 
-    private ObjectNode stage(JsonNode plan) {
+    private ObjectNode stage(JsonNode plan, JsonNode physical) {
+        if (physical != null) validatePhysical(physical);
         JsonNode output = plan.path("output");
         metadata.provision(output.path("topic").asText(), Integer.parseInt(output.path("partitionCount").asText()), output.path("create").asBoolean());
         List<JsonNode> units = new ArrayList<>();
@@ -406,7 +495,9 @@ public final class RustRollout {
             publication.admit(plan);
             for (JsonNode unit : units) installPublication(plan, unit, false, null);
         }
-        List<Call> prepared = parallel(units, unit -> client.post(worker(unit), "/v1/prepare", unit.path("requestText").asText()));
+        if (physical != null) validatePhysical(physical);
+        List<Call> prepared = parallel(units, unit -> client.post(worker(unit), json(unit.path("requestText").asText()).path("schema").asText().equals(RustPhysicalDeployment.REQUEST_SCHEMA)
+                ? "/v1/prepare-physical" : "/v1/prepare", unit.path("requestText").asText()));
         if (CONTINUOUS_SCHEMA.equals(plan.path("schema").asText()) && prepared.stream().anyMatch(call -> call.error() != null
                 && !(call.error() instanceof RustWorkerClient.Rejected rejected && Set.of(400, 409, 413, 422).contains(rejected.status())))) {
             throw new IllegalStateException("worker preparation requires identical retry; retain private candidates");
@@ -429,6 +520,7 @@ public final class RustRollout {
             return abort(plan, prepared, error.getMessage());
         }
         if (publication != null) for (Call call : prepared) publication.register(plan, call.unit(), call.status());
+        if (physical != null) validatePhysical(physical);
         List<Call> activated = parallel(units, unit -> client.post(worker(unit), "/v1/activate/" + requestHash(unit), ""));
         ArrayNode statuses = JSON.createArrayNode();
         boolean completed = true;
@@ -478,7 +570,7 @@ public final class RustRollout {
             for (int index = 0; index < target.path("assignments").size(); index++) {
                 JsonNode unit = target.path("assignments").get(index);
                 JsonNode old = previous.path("assignments").get(index);
-                JsonNode request = json(unit.path("requestText").asText());
+                JsonNode request = RustPhysicalDeployment.request(unit);
                 JsonNode assignment = json(request.path("assignmentText").asText());
                 JsonNode oldAssignment = json(json(old.path("requestText").asText()).path("assignmentText").asText());
                 if (!unit.path("node").equals(old.path("node")) || !unit.path("endpoint").equals(old.path("endpoint"))
@@ -572,7 +664,9 @@ public final class RustRollout {
         return value;
     }
 
-    private void validatePlan(JsonNode plan) {
+    private void validatePlan(JsonNode plan) { validatePlan(plan, false); }
+
+    private void validatePlan(JsonNode plan, boolean physical) {
         boolean continuous = CONTINUOUS_SCHEMA.equals(plan.path("schema").asText());
         fields(plan, continuous
                 ? Set.of("schema", "deployment", "sourceDagText", "specHash", "createdAtMicros", "output", "assignments", "planHash", "sequence", "previousPlanHash")
@@ -605,7 +699,9 @@ public final class RustRollout {
             fields(unit, Set.of("node", "endpoint", "inputTopic", "requestText"));
             Worker worker = worker(unit);
             if (!worker.equals(workers.get(index)) || !unit.path("inputTopic").asText().equals(topics.get(index))) throw new IllegalArgumentException("physical placement changed");
-            JsonNode request = json(unit.path("requestText").asText());
+            boolean wrapped = json(unit.path("requestText").asText()).path("schema").asText().equals(RustPhysicalDeployment.REQUEST_SCHEMA);
+            if (wrapped != physical) throw new IllegalArgumentException("physical requests require the physical deployment profile");
+            JsonNode request = RustPhysicalDeployment.request(unit);
             fields(request, continuous ? Set.of("schema", "assignmentText", "bindings", "sink", "createdAtMicros", "limits", "sequence", "previousRequestHash")
                     : Set.of("schema", "assignmentText", "bindings", "sink", "createdAtMicros", "limits"));
             if (!request.path("schema").asText().equals(continuous ? INCREMENT_SCHEMA : "opentsx.local-bounded-run.v1")
@@ -644,6 +740,8 @@ public final class RustRollout {
                     .put("partitionCount", output.path("partitionCount").asText());
             ObjectNode limits = JSON.createObjectNode();
             for (String name : LIMITS) limits.put(name, cap.path("workers").get(index).path("limits").path(name).asInt());
+            if (physical) limits = RustPhysicalDeployment.limits(cap.path("workers").get(index),
+                    json(json(unit.path("requestText").asText()).path("physicalText").asText()), assignment.path("assignment").asText());
             if (!request.path("bindings").equals(bindings) || !request.path("sink").equals(sink) || !request.path("limits").equals(limits)
                     || records > limits.path("records").asLong()
                     || (continuous && records > incrementBudget(cap.path("workers").get(index)))) throw new IllegalArgumentException("physical binding or capacity mismatch");
@@ -734,7 +832,7 @@ public final class RustRollout {
     }
 
     private void verifyStatus(JsonNode unit, JsonNode status) {
-        JsonNode request = json(unit.path("requestText").asText());
+        JsonNode request = RustPhysicalDeployment.request(unit);
         JsonNode assignment = json(request.path("assignmentText").asText());
         if (!status.path("schema").asText().equals("opentsx.local-worker-status.v1") || !status.path("requestHash").asText().equals(requestHash(unit))
                 || !status.path("node").equals(unit.path("node")) || !status.path("site").equals(assignment.path("site"))
@@ -797,6 +895,7 @@ public final class RustRollout {
     }
 
     public static String hash(JsonNode plan) {
+        if (PhysicalDeployments.SCHEMA.equals(plan.path("schema").asText())) return PhysicalDeployments.planHash(plan);
         ObjectNode payload = plan.deepCopy();
         payload.remove("planHash");
         return ExecutionAssignments.sha256(stringify(canonical(payload)));
@@ -818,7 +917,7 @@ public final class RustRollout {
         return value;
     }
 
-    private static String sinkName(JsonNode dag) {
+    static String sinkName(JsonNode dag) {
         JsonNode sink = dag.path("sinks").get(0);
         if (sink.has("name")) return sink.path("name").asText();
         if (dag.path("nodes").size() == 1) return sink.path("from").asText();

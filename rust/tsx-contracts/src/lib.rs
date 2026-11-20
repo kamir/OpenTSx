@@ -2,6 +2,8 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::collections::{HashMap, HashSet};
 
+pub mod physical;
+
 /// Largest original or fragment DAG text: room for a source inventory of 16,384 series ids.
 pub const MAX_DAG_BYTES: usize = 524_288;
 /// Largest assignment envelope: two DAG texts that JSON escaping may double, plus a 65,536-byte envelope.

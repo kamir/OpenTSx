@@ -1139,7 +1139,9 @@
         "Trace the B3 owner-local site configuration through actual qualified evidence and fresh complete-cut conformance before a signed bounded delivery reaches execution.",
         "Compare a configured but policy-denied input with an admitted input and verify refusal before any broker read.",
         "Trace the actual main-command daemon cold start without manual conformance, verify the acknowledged delivery cursor and SIGTERM exit, then replay the retained outcome through signed file and standard-input commands.",
-        "Trace the mixed W3 input as one complete topic per site, then distinguish two Java instances from the actual signed Rust CLI and its current conformance report."
+        "Trace the mixed W3 input as one complete topic per site, then distinguish two Java instances from the actual signed Rust CLI and its current conformance report.",
+        "Resolve source binding aliases to authoritative cluster and topic-incarnation facts in the bounded physical profile; keep every internal partition position in one whole-topic assignment.",
+        "Change the admitted incarnation or remove a source channel and prove refusal before broker access or journal mutation."
       ],
       "starter": {
         "language": "java",
@@ -1160,7 +1162,8 @@
         "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
         "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration.",
         "B3 signs a separate bounded decode-to-statistics profile. Local B2 availability does not admit the remaining operators, and the ordinary runtime has no admin or arbitrary probe-topic rights.",
-        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. The physical ARM64 B4.2 measurement remains open. D-T14 requires native x86_64 and ARM64 CI for B1.2; ARMv7 is not hardware-qualified."
+        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. The physical ARM64 B4.2 measurement remains open. D-T14 requires native x86_64 and ARM64 CI for B1.2; ARMv7 is not hardware-qualified.",
+        "The bounded physical profile does not qualify a live incarnation provider or U06 production operation. The physical ARM64 B4.2 measurement remains open."
       ],
       "references": {
         "manual": [
@@ -1177,7 +1180,8 @@
           "docs/devguide/integration/rust-runner-b3.md",
           "docs/user-manual/17-learn-operators.md#trace-qualified-bounded-rust-site-operation",
           "docs/devguide/integration/wayang-mixed-federation.md",
-          "docs/user-manual/17-learn-operators.md#trace-bounded-mixed-federation-without-claiming-hardware-qualification"
+          "docs/user-manual/17-learn-operators.md#trace-bounded-mixed-federation-without-claiming-hardware-qualification",
+          "docs/user-manual/17-learn-operators.md#trace-physical-deployment-admission"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#construct-a-whole-topic-source",
@@ -1185,7 +1189,8 @@
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s114-execute-qualified-bounded-rust-sites",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s55-refusal-codes"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s55-refusal-codes",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s115-admit-a-physical-deployment"
         ],
         "source": [
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxTopicSource.java#L12",
@@ -1209,7 +1214,12 @@
           "opentsx-saas-backend/app/services/wayang_service.py#reconcile_switch",
           "rust/tsx-runner/src/site_plan.rs",
           "rust/tsx-runner/src/conformance.rs",
-          "rust/tsx-runner/src/agent.rs"
+          "rust/tsx-runner/src/agent.rs",
+          "opentsx-model/src/main/java/org/opentsx/model/contracts/PhysicalDeployments.java",
+          "rust/tsx-contracts/src/physical.rs",
+          "rust/tsx-runner/src/physical.rs",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustPhysicalDeployment.java",
+          "opentsx-saas-backend/app/services/wayang_contract.py"
         ],
         "tests": [
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxWireVectorsTest.java#L39",
@@ -1239,12 +1249,18 @@
           "rust/tsx-runner/tests/agent_cli.rs",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/RustSiteAdmissionTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#L82"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#L82",
+          "opentsx-model/src/test/java/org/opentsx/model/contracts/PhysicalDeploymentsVectorsTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPhysicalDeploymentTest.java",
+          "rust/tsx-contracts/tests/physical_vectors.rs",
+          "rust/tsx-runner/tests/physical_deployment.rs",
+          "opentsx-saas-backend/tests/test_wayang_physical.py"
         ],
         "vectors": [
           "opentsx-model/src/test/resources/testvectors/wire-format.json",
           "docs/datamodel-2026/testvectors/dag-to-wayang-rejections.v1.json",
-          "docs/datamodel-2026/testvectors/workbench-dags/clean-signal.yaml"
+          "docs/datamodel-2026/testvectors/workbench-dags/clean-signal.yaml",
+          "docs/datamodel-2026/testvectors/physical-deployment.v1.json"
         ]
       }
     },
@@ -1272,7 +1288,9 @@
         "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output.",
         "Keep the signal path unavailable during the complete B3 W run, then inspect every full site-outbox partial, closed-cut header and appended final revision after catch-up.",
         "Lose a target acknowledgement, restart the forwarder and compare deterministic key/revision deduplication without dropping or replacing acknowledged partials.",
-        "Inspect actual Rust site aggregate forwarding beside two Java sites; bind full payloads and closed-cut evidence to the same signed membership before reading final windows."
+        "Inspect actual Rust site aggregate forwarding beside two Java sites; bind full payloads and closed-cut evidence to the same signed membership before reading final windows.",
+        "Trace the physical sink channel through original ports, payload/schema, key, partitioner, buffer, backpressure and closed-cut completion.",
+        "Change a pinned physical identity after preparation and prove that activation performs no output publication."
       ],
       "starter": {
         "language": "java",
@@ -1296,7 +1314,8 @@
         "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
         "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration.",
         "The B3 forwarder copies only validated completed aggregate records from its retained immutable site outbox. A lost target acknowledgement can repeat a key/revision; it does not grant permission to forward raw Episodes or arbitrary topics.",
-        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. The physical ARM64 B4.2 measurement remains open. D-T14 requires native x86_64 and ARM64 CI for B1.2; ARMv7 is not hardware-qualified."
+        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. The physical ARM64 B4.2 measurement remains open. D-T14 requires native x86_64 and ARM64 CI for B1.2; ARMv7 is not hardware-qualified.",
+        "The bounded physical profile does not qualify a live incarnation provider or U06 production operation. The physical ARM64 B4.2 measurement remains open."
       ],
       "references": {
         "manual": [
@@ -1309,7 +1328,8 @@
           "docs/devguide/integration/rust-runner-b3.md",
           "docs/user-manual/17-learn-operators.md#trace-qualified-bounded-rust-site-operation",
           "docs/devguide/integration/wayang-mixed-federation.md",
-          "docs/user-manual/17-learn-operators.md#trace-bounded-mixed-federation-without-claiming-hardware-qualification"
+          "docs/user-manual/17-learn-operators.md#trace-bounded-mixed-federation-without-claiming-hardware-qualification",
+          "docs/user-manual/17-learn-operators.md#trace-physical-deployment-admission"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#construct-a-topic-sink",
@@ -1319,7 +1339,8 @@
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s114-execute-qualified-bounded-rust-sites",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s55-refusal-codes"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s55-refusal-codes",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s115-admit-a-physical-deployment"
         ],
         "source": [
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxTopicSink.java#L14",
@@ -1333,7 +1354,12 @@
           "opentsx-saas-backend/app/services/wayang_service.py#reconcile_switch",
           "rust/tsx-runner/src/federation.rs",
           "rust/tsx-runner/src/forwarder.rs",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/AggregateInventory.java"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/AggregateInventory.java",
+          "opentsx-model/src/main/java/org/opentsx/model/contracts/PhysicalDeployments.java",
+          "rust/tsx-contracts/src/physical.rs",
+          "rust/tsx-runner/src/physical.rs",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustPhysicalDeployment.java",
+          "opentsx-saas-backend/app/services/wayang_contract.py"
         ],
         "tests": [
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxWireVectorsTest.java#L39",
@@ -1357,10 +1383,16 @@
           "rust/tsx-runner/src/forwarder.rs",
           "rust/tsx-runner/src/federation.rs",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#L82"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#L82",
+          "opentsx-model/src/test/java/org/opentsx/model/contracts/PhysicalDeploymentsVectorsTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPhysicalDeploymentTest.java",
+          "rust/tsx-contracts/tests/physical_vectors.rs",
+          "rust/tsx-runner/tests/physical_deployment.rs",
+          "opentsx-saas-backend/tests/test_wayang_physical.py"
         ],
         "vectors": [
-          "opentsx-model/src/test/resources/testvectors/wire-format.json"
+          "opentsx-model/src/test/resources/testvectors/wire-format.json",
+          "docs/datamodel-2026/testvectors/physical-deployment.v1.json"
         ]
       }
     },
@@ -1397,7 +1429,9 @@
         "Inspect the B3 private outbox and forwarder state after target-acknowledgement loss and require the same command, qualified runtime and immutable cut on restart.",
         "Trace the actual main-command daemon cold start without manual conformance, verify the acknowledged delivery cursor and SIGTERM exit, then replay the retained outcome through signed file and standard-input commands.",
         "Lose a terminal-status response, keep the job generation current until its delivery acknowledgement is durable, then replay that acknowledgement after a driver restart.",
-        "Inspect how a qualified Rust runtime version, executable digest and state ABI enter the aggregate inventory fingerprint and prevent silent reuse of incompatible completeness state."
+        "Inspect how a qualified Rust runtime version, executable digest and state ABI enter the aggregate inventory fingerprint and prevent silent reuse of incompatible completeness state.",
+        "Reject changed or stale physical admission facts after preparation and verify that publication and acknowledged checkpoint progress remain unchanged.",
+        "Compare exact retained physical-plan retry with substitution of a different topic incarnation; preserve the original source bytes and accepted clock."
       ],
       "starter": {
         "language": "java",
@@ -1425,7 +1459,8 @@
         "Rust file locks release explicitly in the acquiring process; inherited descriptors cannot postpone restart or authorize a copied owner to unlock its parent. These lock lifetimes do not change the Java starter or make its checkpoint state portable.",
         "A retained B3 acknowledgement can recover after conformance expires, while fresh activation still needs current qualification and job-bound conformance. Its private state ABI is separate from the Java starter checkpoint and local B2 catalog state.",
         "A stopped status alone does not retire a delivery; every previous site also needs a durable accepted acknowledgement before the next job generation.",
-        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. The physical ARM64 B4.2 measurement remains open. D-T14 requires native x86_64 and ARM64 CI for B1.2; ARMv7 is not hardware-qualified."
+        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. The physical ARM64 B4.2 measurement remains open. D-T14 requires native x86_64 and ARM64 CI for B1.2; ARMv7 is not hardware-qualified.",
+        "The bounded physical profile does not qualify a live incarnation provider or U06 production operation. The physical ARM64 B4.2 measurement remains open."
       ],
       "references": {
         "manual": [
@@ -1442,7 +1477,8 @@
           "docs/devguide/integration/rust-runner-b3.md",
           "docs/user-manual/17-learn-operators.md#trace-qualified-bounded-rust-site-operation",
           "docs/devguide/integration/wayang-mixed-federation.md",
-          "docs/user-manual/17-learn-operators.md#trace-bounded-mixed-federation-without-claiming-hardware-qualification"
+          "docs/user-manual/17-learn-operators.md#trace-bounded-mixed-federation-without-claiming-hardware-qualification",
+          "docs/user-manual/17-learn-operators.md#trace-physical-deployment-admission"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#persist-an-increment-checkpoint",
@@ -1451,7 +1487,8 @@
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s114-execute-qualified-bounded-rust-sites",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s55-refusal-codes"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s55-refusal-codes",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s115-admit-a-physical-deployment"
         ],
         "source": [
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxCheckpoint.java#TsxCheckpoint",
@@ -1476,7 +1513,12 @@
           "rust/tsx-runner/src/agent.rs",
           "rust/tsx-runner/src/site_plan.rs",
           "rust/tsx-runner/src/forwarder.rs",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/AggregateInventory.java#L146"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/AggregateInventory.java#L146",
+          "opentsx-model/src/main/java/org/opentsx/model/contracts/PhysicalDeployments.java",
+          "rust/tsx-contracts/src/physical.rs",
+          "rust/tsx-runner/src/physical.rs",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustPhysicalDeployment.java",
+          "opentsx-saas-backend/app/services/wayang_contract.py"
         ],
         "tests": [
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointTest.java#aWrittenCheckpointReadsBackAndLeavesNoTemporaryFile",
@@ -1513,9 +1555,16 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceStatusReplayTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceRetirementTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#L82",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/RustSiteAdmissionTest.java"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/RustSiteAdmissionTest.java",
+          "opentsx-model/src/test/java/org/opentsx/model/contracts/PhysicalDeploymentsVectorsTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPhysicalDeploymentTest.java",
+          "rust/tsx-contracts/tests/physical_vectors.rs",
+          "rust/tsx-runner/tests/physical_deployment.rs",
+          "opentsx-saas-backend/tests/test_wayang_physical.py"
         ],
-        "vectors": []
+        "vectors": [
+          "docs/datamodel-2026/testvectors/physical-deployment.v1.json"
+        ]
       }
     },
     {
@@ -1545,7 +1594,13 @@
         "Compare all eight S5.5 refusals with TLS endpoint errors, then inspect certificate-forced SSH stop, refusal and runtime-failure exits under the fixed local configuration.",
         "Trace the actual main-command daemon cold start without manual conformance, verify the acknowledged delivery cursor and SIGTERM exit, then replay the retained outcome through signed file and standard-input commands.",
         "Stop a prior version without acknowledging its delivery and observe plan.busy; acknowledge every previous site before publishing the next job generation.",
-        "Trace TsxPlanService.admitAggregateInventory after current conformance; reject changed membership, scopes or runtime pins and keep the JVM executor separate from the actual Rust CLI."
+        "Trace TsxPlanService.admitAggregateInventory after current conformance; reject changed membership, scopes or runtime pins and keep the JVM executor separate from the actual Rust CLI.",
+        "Load physical-deployment.v1.json and compare exact source identity, default-expanded computation identity and physical plan identity, including signed zero and ordered inputs.",
+        "Move placement without changing computation, then change an effective parameter; distinguish the resulting computationHash and planHash values.",
+        "Resolve alias ownership within a fragment, preserve valid replicated logical fragments and reject missing or incompatible typed channels at original node and field locations.",
+        "Compare separate trusted host facts with pinned capabilities, topic incarnations and permitted sites before preparation and activation.",
+        "Run the offline ownership upgrade against synthetic completed history; retain history and refuse active or ambiguous legacy ownership.",
+        "Compare successful injected-provider execution with the default Rust provider deployment.incarnation refusal; do not interpret passing schema validation as live recreation fencing."
       ],
       "starter": {
         "language": "java",
@@ -1572,7 +1627,8 @@
         "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration.",
         "Passing the offline assignment validator does not qualify signed B3 execution. The driver cannot supply broker addresses, role keys, policy or state paths; signed B3 admits only bounded decode-to-statistics.",
         "An accepted delivery acknowledgement and a stopped status form the replacement boundary; losing a response must not make the previous generation unreachable.",
-        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. The physical ARM64 B4.2 measurement remains open. D-T14 requires native x86_64 and ARM64 CI for B1.2; ARMv7 is not hardware-qualified."
+        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. The physical ARM64 B4.2 measurement remains open. D-T14 requires native x86_64 and ARM64 CI for B1.2; ARMv7 is not hardware-qualified.",
+        "The bounded physical profile does not qualify a live incarnation provider or U06 production operation. The physical ARM64 B4.2 measurement remains open."
       ],
       "references": {
         "manual": [
@@ -1586,7 +1642,8 @@
           "docs/devguide/integration/rust-runner-b3.md",
           "docs/user-manual/17-learn-operators.md#trace-qualified-bounded-rust-site-operation",
           "docs/devguide/integration/wayang-mixed-federation.md",
-          "docs/user-manual/17-learn-operators.md#trace-bounded-mixed-federation-without-claiming-hardware-qualification"
+          "docs/user-manual/17-learn-operators.md#trace-bounded-mixed-federation-without-claiming-hardware-qualification",
+          "docs/user-manual/17-learn-operators.md#trace-physical-deployment-admission"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#validate-a-whole-topic-execution-assignment",
@@ -1594,7 +1651,8 @@
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s114-execute-qualified-bounded-rust-sites",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s55-refusal-codes"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s55-refusal-codes",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s115-admit-a-physical-deployment"
         ],
         "source": [
           "opentsx-model/src/main/java/org/opentsx/model/contracts/ExecutionAssignments.java#L56",
@@ -1618,7 +1676,14 @@
           "rust/tsx-runner/src/site_client.rs",
           "tools/rust_ssh_launch.py",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxPlanService.java",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/AggregateInventory.java#L146"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/AggregateInventory.java#L146",
+          "opentsx-model/src/main/java/org/opentsx/model/contracts/PhysicalDeployments.java",
+          "rust/tsx-contracts/src/physical.rs",
+          "rust/tsx-runner/src/physical.rs",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustPhysicalDeployment.java",
+          "opentsx-saas-backend/app/services/wayang_contract.py",
+          "opentsx-saas-backend/app/db/upgrade_wayang_ownership.py",
+          "opentsx-saas-frontend/src/workbench/WayangRunPanel.tsx"
         ],
         "tests": [
           "opentsx-model/src/test/java/org/opentsx/model/contracts/ExecutionAssignmentsTest.java#L35",
@@ -1649,10 +1714,17 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceStatusReplayTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceRetirementTest.java",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#L82"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#L82",
+          "opentsx-model/src/test/java/org/opentsx/model/contracts/PhysicalDeploymentsVectorsTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPhysicalDeploymentTest.java",
+          "rust/tsx-contracts/tests/physical_vectors.rs",
+          "rust/tsx-runner/tests/physical_deployment.rs",
+          "opentsx-saas-backend/tests/test_wayang_physical.py",
+          "opentsx-saas-frontend/src/workbench/WayangRunPanel.test.tsx"
         ],
         "vectors": [
-          "docs/datamodel-2026/testvectors/execution-contracts.v1.json"
+          "docs/datamodel-2026/testvectors/execution-contracts.v1.json",
+          "docs/datamodel-2026/testvectors/physical-deployment.v1.json"
         ]
       }
     },

@@ -22,7 +22,7 @@ class DeployRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     flowId: StrictInt = Field(gt=0, le=2_147_483_647)
     dagText: StrictStr = Field(min_length=1)
-    profile: Literal["bounded", "continuous"] = "bounded"
+    profile: Literal["bounded", "continuous", "physical"] = "bounded"
 
 
 class ReplaceRequest(BaseModel):
@@ -58,7 +58,8 @@ async def capabilities(user: User = Depends(get_current_user)):
                 or not isinstance(value.get("operators"), list)
                 or not all(isinstance(operator, str) for operator in value["operators"])
                 or not isinstance(value.get("profiles", ["bounded"]), list)
-                or value.get("profiles", ["bounded"]) not in (["bounded"], ["bounded", "continuous"])):
+                or value.get("profiles", ["bounded"]) not in (
+                    ["bounded"], ["bounded", "continuous"], ["bounded", "physical"], ["bounded", "continuous", "physical"])):
             raise WayangError(502, "The Wayang service returned incompatible capabilities.")
         fenced = value.get("publicationFencing", False)
         modes = value.get("switchModes", [])
@@ -69,7 +70,7 @@ async def capabilities(user: User = Depends(get_current_user)):
         return {"canRun": True, "reason": None, "profile": "bounded", "profiles": value.get("profiles", ["bounded"]),
                 "workers": workers, "operators": value["operators"], "publicationFencing": fenced, "switchModes": modes}
     except WayangError as error:
-        return {"canRun": False, "reason": error.message}
+        return {"canRun": False, "reason": error.message, **({"refusal": error.refusal} if error.refusal else {})}
 
 
 @router.post("/deploy", status_code=202)
@@ -93,23 +94,29 @@ async def deploy(request: Request, user: User = Depends(get_current_user), journ
     if existing:
         if existing.flow_id != data.flowId or existing.dag_text != data.dagText:
             raise HTTPException(409, "This source identity belongs to another flow.")
-        if ("continuous" if existing.continuous is not None else "bounded") != data.profile:
+        if public_deployment(existing).get("profile", "bounded") != data.profile:
             raise HTTPException(409, "This source identity already uses another Wayang profile.")
+        if data.profile == "physical":
+            try:
+                validate_plan(strict_json(existing.plan_text), existing.id, existing.dag_text,
+                              existing.created_at_micros, "physical")
+            except WayangError as error:
+                raise HTTPException(error.status, error.detail) from error
         return public_deployment(existing)
     deployment, created_at = "local-" + str(uuid.uuid4()), str(time.time_ns() // 1000)
     try:
-        fenced = await publication_fencing()
+        fenced = await publication_fencing() if data.profile != "physical" else False
         payload = {"deployment": deployment, "dagText": data.dagText, "createdAtMicros": created_at}
-        if data.profile == "continuous":
+        if data.profile != "bounded":
             payload["profile"] = data.profile
-        plan_text, plan = await driver("/v1/plan", json.dumps(payload))
+        plan_text, plan = await driver("/v1/plan", json.dumps(payload), physical=data.profile == "physical")
         assignments = validate_plan(plan, deployment, data.dagText, created_at, data.profile)
         row = WayangDeployment(id=deployment, owner_id=user.id, flow_id=data.flowId, spec_hash=spec_hash,
                                dag_text=data.dagText, created_at_micros=created_at, plan_hash=plan["planHash"],
                                plan_text=plan_text, state="queued")
         return public_deployment(await journal.accept(row, assignments, data.profile, fenced))
     except WayangError as error:
-        raise HTTPException(error.status, error.message) from error
+        raise HTTPException(error.status, error.detail) from error
 
 
 @router.post("/deployments/{deployment}/replace", status_code=202)
@@ -164,7 +171,7 @@ async def replace(deployment: str, request: Request, user: User = Depends(get_cu
         operation = await journal.replace(row, expected, data.mode, body_hash, replacement)
         return public_deployment(row, operation)
     except WayangError as error:
-        raise HTTPException(error.status, error.message) from error
+        raise HTTPException(error.status, error.detail) from error
 
 
 @router.get("/deployments")
@@ -191,4 +198,4 @@ async def stop(deployment: str, user: User = Depends(get_current_user), journal=
     try:
         return public_deployment(await journal.stop(row))
     except WayangError as error:
-        raise HTTPException(error.status, error.message) from error
+        raise HTTPException(error.status, error.detail) from error

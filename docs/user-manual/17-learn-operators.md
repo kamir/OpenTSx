@@ -52,6 +52,30 @@ output after revocation. The single-owner gateway has explicit capacity ceilings
 Existing browser examples and numerical test vectors remain unchanged. Follow the linked gateway, worker and
 backend regressions for operational behavior; passing an operator lesson does not qualify network fencing.
 
+## Trace physical deployment admission
+
+Use the [physical contract checks](../devguide/integration/wayang-shared-contracts.md#admit-a-bounded-physical-deployment)
+with the existing source, sink, checkpoint and execution-assignment lessons. Their numerical starters remain
+unchanged. The API-only bounded `physical` profile supplies a separate admission exercise:
+
+1. Compare exact `sourceDagText/specHash`, default-expanded `computationHash` and physical `planHash`.
+   Move an assignment without changing computation, then change an effective parameter or ordered input.
+   Inspect signed-zero and adjacent binary64 cases in the shared physical-deployment vectors.
+2. Resolve two aliases to the same authoritative cluster/topic incarnation. Reject duplicate ownership within
+   one fragment while retaining complete-topic consumption by distinct replicated logical fragments.
+3. Remove an internal or external channel. Follow its original node/port location through the refusal rather
+   than treating a topic name, cursor or schema-valid document as execution authority.
+4. Change a pinned capability report, validity interval, permitted site or topic incarnation. Verify refusal
+   before preparation, publication and checkpoint advancement, including activation after preparation.
+5. Inspect the explicit offline ownership upgrade. Active or ambiguous legacy ownership blocks the upgrade;
+   completed deployment history remains intact. Do not run this exercise against a production database.
+6. Compare an injected trusted provider's successful execution with the default Rust adapter's
+   `deployment.incarnation` refusal. The adapter has no authoritative topic UUID and does not fall back to
+   a local profile. Passing injected-provider tests does not qualify a live production provider.
+
+The [normative contract](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s115-admit-a-physical-deployment)
+keeps U06 production operation separate. The physical ARM64 B4.2 measurement remains open.
+
 ## Distinguish signed runner admission from operator availability
 
 The isolated signed runner accepts one complete input topic and one Episode sink

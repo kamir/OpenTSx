@@ -1,11 +1,10 @@
-# Validate the shared Java and Rust assignment contract
+# Validate shared assignments and physical deployments
 
-Validate the first shared execution-assignment contract on PR #258 base `dc5f05043158a7ddf80ac156f9690ca92cf93788`;
-the implementations use Java 17 or 21 and Rust 1.99.1.
+Validate the execution-assignment and physical-deployment contracts with Java 17 or 21 and Rust 1.99.1.
 
 You need the [schema](../../datamodel-2026/schemas/opentsx.execution-assignment.v1.schema.json),
 [shared vectors](../../datamodel-2026/testvectors/execution-contracts.v1.json), Maven and the Rust toolchain.
-**Implemented scope: offline preflight validation and exact-text hashing.** Validation does not authorize a
+**Assignment v1 scope: offline preflight validation and exact-text hashing.** Assignment validation does not authorize a
 deployment, prove live exclusive ownership, validate an entire operator graph or execute a runner.
 The JSON schema is a structural check. Java/Rust semantic validation is mandatory for UTF-8 byte ceilings,
 integer bounds, hashes, interval order and ownership; schema acceptance alone is insufficient.
@@ -44,8 +43,8 @@ Signatures must cover the actual transport bytes; this library does not perform 
 
 Moving a fragment from Java to Rust, or to another node, leaves `specHash` unchanged. Changing the source text,
 including whitespace, changes this legacy hash. A fragment cut changes `fragmentHash`, not `specHash`.
-These hashes do not implement canonical scientific equivalence. A separately versioned semantic hash remains a
-delivery requirement; silently replacing legacy `specHash` would alter the
+These hashes do not implement canonical scientific equivalence. The physical envelope below carries a separate
+versioned computation identity; replacing legacy `specHash` would alter the
 [existing episode identity](../../../opentsx-retrieval/src/main/java/org/opentsx/retrieval/clean/SeriesStream.java#L151).
 
 ## Assign whole topics and preserve exact internal positions
@@ -99,8 +98,8 @@ It does not check node-to-site membership, operator availability or a partitione
 
 After all individuals pass, a set rejects inconsistent deployment/fragment context with `assignment.context`,
 duplicate assignment IDs with `assignment.duplicate`, then duplicate ownership with `assignment.ownership`.
-An empty set rejects with `assignment.context`. Codes are exact API results; diagnostic paths and UI messages
-remain additional work in the [unified plan](wayang-unified-plan.md).
+An empty set rejects with `assignment.context`. These exact offline API codes remain unchanged. The separate
+physical profile adds located deployment refusals.
 
 ## Reproduce the shared cases
 
@@ -141,3 +140,47 @@ Same-DAG resume retains the original assignment context and state while advancin
 Changed-DAG restart creates a distinct normal deployment and replays the same complete inputs from zero into a
 fresh output after old grants are revoked. Neither case adds cross-runtime checkpoint portability. The public
 assignment validator remains an offline boundary and does not inspect private grants or contact the gateway.
+
+## Admit a bounded physical deployment
+
+The opt-in `physical` profile wraps the unchanged assignment texts in
+[`opentsx.physical-deployment.v1`](../../datamodel-2026/schemas/opentsx.physical-deployment.v1.schema.json).
+It is an API-only profile. The Workbench retains its existing bounded and continuous target controls.
+Read [SPEC S1.15](../../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s115-admit-a-physical-deployment)
+for the exact identity, channel, facts and refusal rules.
+
+- Compiler: validate the existing DAG and expand its existing defaults before computing a placement-independent
+  identity. Preserve original IDs, ordered inputs and binary64 bits, including signed zero.
+- Assignment: retain exact source/fragment texts and complete whole-topic positions. Resolve binding aliases to
+  authoritative cluster and topic-incarnation identities.
+- Channel: cover every fragment input, internal edge and sink, with original ports, payload/schema, key,
+  partitioner, residency, bounded buffering, backpressure and completion.
+- Host facts: compare exact capability reports and authoritative topic identities with separate host-owned
+  observations. Reject unavailable, changed, stale or forbidden facts before work.
+- Journal: retain admitted bytes and scoped ownership; refuse ambiguous legacy ownership. An offline upgrade
+  preserves completed history and refuses active state.
+- Diagnostic: return a fixed public refusal code, original node and field pointer through Java, Rust, backend and UI.
+
+The current assignment runtime is Rust, in bounded mode with the existing cleaning subset. It does not expand the local
+continuous target or signed B1/B3 admission. A schema-valid document supplies neither trusted facts nor
+publication authority. The Rust metadata adapter cannot provide authoritative topic UUIDs; its default physical
+provider refuses with `deployment.incarnation` before broker access. Successful injected-provider tests exercise
+the actual prepare and activation path. They do not qualify a live production provider or U06 operation.
+The current physical profile also refuses a configured publication gateway before admission.
+The shared envelope ceiling is 4,194,304 UTF-8 bytes; runtime transport ceilings remain smaller. Original node IDs
+in this profile use `[a-z0-9][a-z0-9-]{0,62}`.
+
+Run from the repository root with the dependencies listed above:
+
+```bash
+python3 tools/physical_deployment_vectors.py --check
+mvn -B -ntp verify
+cargo +1.99.1 test --offline --locked --manifest-path rust/tsx-contracts/Cargo.toml
+```
+
+The generator compares `docs/datamodel-2026/testvectors/physical-deployment.v1.json` byte for byte.
+`PhysicalDeploymentsVectorsTest` and the Rust shared-contract tests load that repository file directly.
+`RustPhysicalDeploymentTest` exercises driver admission and retained physical identity. Read the backend
+[ownership upgrade instructions](../../../opentsx-saas-backend/README.md) before changing an existing schema;
+startup table creation is not an upgrade. No production migration is performed by these checks.
+The physical ARM64 B4.2 measurement remains open.

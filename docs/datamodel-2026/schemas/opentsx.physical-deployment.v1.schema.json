@@ -1,0 +1,323 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentsx.org/schemas/opentsx.physical-deployment.v1.schema.json",
+  "title": "OpenTSx physical deployment v1",
+  "description": "Opt-in bounded clean-chain deployment. Assignment texts remain exact execution-assignment v1. Canonical tagged computation JSON preserves binary64 bits and array order. Host-owned admission facts are supplied separately; this document provides no publication fencing or production authorization.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "deployment",
+    "generation",
+    "sourceDagText",
+    "specHash",
+    "computationText",
+    "computationHash",
+    "createdAtMicros",
+    "expiresAtMicros",
+    "assignmentTexts",
+    "placements",
+    "ownership",
+    "channels",
+    "capabilities",
+    "planHash"
+  ],
+  "properties": {
+    "schema": {
+      "const": "opentsx.physical-deployment.v1"
+    },
+    "deployment": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+    },
+    "generation": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]*$",
+      "maxLength": 19
+    },
+    "sourceDagText": {
+      "type": "string"
+    },
+    "specHash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "computationText": {
+      "type": "string"
+    },
+    "computationHash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "createdAtMicros": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "maxLength": 19
+    },
+    "expiresAtMicros": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "maxLength": 19
+    },
+    "assignmentTexts": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {
+        "type": "string"
+      }
+    },
+    "placements": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "assignment",
+          "nodes"
+        ],
+        "properties": {
+          "assignment": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+          },
+          "nodes": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 16384,
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "ownership": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16384,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "assignment",
+          "binding",
+          "cluster",
+          "topic",
+          "incarnation",
+          "partitionCount"
+        ],
+        "properties": {
+          "assignment": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+          },
+          "binding": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+          },
+          "cluster": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "topic": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 249
+          },
+          "incarnation": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "partitionCount": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$",
+            "maxLength": 19
+          }
+        }
+      }
+    },
+    "channels": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16384,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "assignment",
+          "from",
+          "fromPort",
+          "to",
+          "toPort",
+          "dataType",
+          "transport",
+          "binding",
+          "cluster",
+          "topic",
+          "incarnation",
+          "partitionCount",
+          "residency",
+          "schema",
+          "key",
+          "partitioner",
+          "bufferRecords",
+          "backpressure",
+          "completion"
+        ],
+        "properties": {
+          "assignment": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+          },
+          "from": {
+            "type": "string"
+          },
+          "fromPort": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$",
+            "maxLength": 19
+          },
+          "to": {
+            "type": "string"
+          },
+          "toPort": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$",
+            "maxLength": 19
+          },
+          "dataType": {
+            "enum": [
+              "episode",
+              "series"
+            ]
+          },
+          "transport": {
+            "enum": [
+              "topic",
+              "memory"
+            ]
+          },
+          "binding": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cluster": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "topic": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "incarnation": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "partitionCount": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$",
+            "maxLength": 19
+          },
+          "residency": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 128,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+            },
+            "uniqueItems": true
+          },
+          "schema": {
+            "enum": [
+              "opentsx.episode.v2",
+              "opentsx.series.v1"
+            ]
+          },
+          "key": {
+            "const": "seriesId"
+          },
+          "partitioner": {
+            "enum": [
+              "murmur2",
+              "none"
+            ]
+          },
+          "bufferRecords": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$",
+            "maxLength": 19
+          },
+          "backpressure": {
+            "const": "block"
+          },
+          "completion": {
+            "const": "closed-cut"
+          }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "assignment",
+          "digest",
+          "observedAtMicros",
+          "validUntilMicros",
+          "reportText"
+        ],
+        "properties": {
+          "assignment": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+          },
+          "digest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "observedAtMicros": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$",
+            "maxLength": 19
+          },
+          "validUntilMicros": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$",
+            "maxLength": 19
+          },
+          "reportText": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "planHash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

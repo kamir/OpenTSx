@@ -1,6 +1,7 @@
 package org.opentsx.wayang.rust;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.opentsx.model.contracts.PhysicalDeployments;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
@@ -50,7 +51,8 @@ public final class RustRolloutServer {
             boolean continuous = input.has("profile");
             if (!input.isObject() || input.size() != (continuous ? 4 : 3) || !input.path("deployment").isTextual()
                     || !input.path("dagText").isTextual() || !input.path("createdAtMicros").isTextual()
-                    || (continuous && !input.path("profile").asText().equals("continuous"))) throw new IllegalArgumentException("expected deployment, dagText, createdAtMicros and optional continuous profile");
+                    || (continuous && !java.util.Set.of("continuous", "physical").contains(input.path("profile").asText()))) throw new IllegalArgumentException("expected deployment, dagText, createdAtMicros and optional continuous profile");
+            if (input.path("profile").asText().equals("physical")) return rollout.planPhysical(input.path("deployment").asText(), input.path("dagText").asText(), input.path("createdAtMicros").asText());
             if (continuous) return rollout.planContinuous(input.path("deployment").asText(), input.path("dagText").asText(), input.path("createdAtMicros").asText());
             return rollout.plan(input.path("deployment").asText(), input.path("dagText").asText(), input.path("createdAtMicros").asText());
         }
@@ -65,6 +67,7 @@ public final class RustRolloutServer {
         String hash = input.path("planHash").asText();
         if (!hash.matches("[0-9a-f]{64}") || !deployment.matches("[a-z0-9][a-z0-9-]{0,62}")
                 || !hash.equals(RustRollout.hash(input))) throw new IllegalArgumentException("invalid physical plan identity");
+        if (PhysicalDeployments.SCHEMA.equals(input.path("schema").asText())) rollout.validatePhysical(input);
         Job candidate = new Job(hash, new CompletableFuture<>());
         boolean continuous = input.path("schema").asText().equals(RustRollout.CONTINUOUS_SCHEMA);
         String key = continuous ? deployment + ":" + input.path("sequence").asText() : deployment;
@@ -106,6 +109,10 @@ public final class RustRolloutServer {
                     .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString();
             if (exchange.getRequestURI().getRawQuery() != null) throw new IllegalArgumentException("rollout routes do not accept query fields");
             respond(exchange, 200, request(exchange.getRequestMethod(), exchange.getRequestURI().getPath(), body));
+        } catch (PhysicalDeployments.Refused error) {
+            com.fasterxml.jackson.databind.node.ObjectNode answer = (com.fasterxml.jackson.databind.node.ObjectNode) error(error.getMessage());
+            answer.set("refusal", error.document());
+            respond(exchange, 422, answer);
         } catch (RustPublicationGateway.Refused error) {
             respond(exchange, 409, error(error.getMessage()));
         } catch (IllegalArgumentException | CharacterCodingException error) {

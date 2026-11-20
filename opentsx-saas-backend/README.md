@@ -2,6 +2,46 @@
 
 FastAPI backend with JWT authentication, async SQLAlchemy, and PostgreSQL.
 
+## Admit physical deployments
+
+You need the configured PostgreSQL journal, the existing administrator role and an authenticated Wayang driver.
+The opt-in `physical` profile uses the existing `/api/v1/dags/wayang-rust/deploy` request with `flowId`, `dagText`
+and `profile: "physical"`. The default host provider returns `deployment.incarnation` because authoritative
+incarnation facts are unavailable. This API path does not establish production qualification or publication fencing.
+The Workbench target selector retains its bounded and continuous local profiles.
+
+The backend verifies the unchanged legacy plan hash or the physical envelope hash before accepting a deployment.
+The physical response exposes `assignmentHash`; its opaque worker `requestHash` appears only with a verified receipt.
+Physical admission also binds exact assignment bytes, effective computation, original nodes and channels to trusted
+capability, residency and topic-incarnation observations. Retries retain the existing journal's exact plan bytes and
+revalidate the observations before execution. Located refusals use `opentsx.plan-refusal.v1` in HTTP `detail`;
+messages contain only the fixed code, original node and field location. See the
+[physical deployment contract](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s115-admit-a-physical-deployment).
+
+## Upgrade the offline ownership journal
+
+Stop the API and Wayang coordinator before upgrading an existing journal. Back up the database using your existing
+PostgreSQL procedure. Startup refuses the legacy or a partial ownership-table shape instead of upgrading it.
+The sole `wayang_topic_owners` table uses typed legacy rows or the physical
+`(fragment, cluster, incarnation, topic)` key for every input and sink topic channel. Legacy rows contain no trusted physical identity and conservatively
+conflict with physical claims on the same topic name.
+
+The offline upgrade requires an empty legacy ownership table, terminal deployments and cycles, retired publication
+authority and no pending switch or orphan history. It preserves all deployment, plan, result and history rows.
+Active or ambiguous ownership produces `The Wayang journal has active or ambiguous legacy ownership; upgrade refused.`
+Resolve ownership through the existing stop and reconciliation paths; do not delete reservations or invent incarnations.
+Run from `opentsx-saas-backend` with its pinned requirements installed:
+
+```bash
+python -m app.db.upgrade_wayang_ownership --help
+python -m pytest -q tests/test_wayang_physical.py -k offline
+```
+
+The module's required `--offline` option confirms that both services are stopped. It uses the existing `POSTGRES_*`
+configuration. The regression command executes the entry point against a disposable SQLite fixture, proves refusal
+without mutation and verifies byte-preserved completed history. It does not change the configured deployment database.
+After an operator runs the module with `--offline`, rerunning it prints `Wayang ownership schema is current.`
+
 ## Quick Start
 
 ```bash
