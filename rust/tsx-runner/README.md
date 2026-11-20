@@ -78,6 +78,15 @@ ceilings. B2 requests with `context` allow at most 1,024 series and 1,000,000
 samples, subject to every declared byte and state bound. Numerical kernels,
 admitted local execution and fleet deployment are separate capabilities.
 
+## Continue B2 statistics in increments
+
+A local worker also runs a B2 request with `context` and `stats.welford-ddsketch`
+as `opentsx.local-increment.v1` increments. Each increment emits only the windows
+it closes and keeps open windows in the worker state, so the increments after a
+restart equal one bounded run without its final flush of the open and `GLOBAL`
+windows (`tests/stats_increments.rs`). The B2 ceilings of 1,024 series and 1 MiB
+of state per request still apply.
+
 ## Execute conversion inside WASM
 
 The existing local `convert.unit` stage runs the artifact-embedded module
@@ -122,6 +131,10 @@ a supplementary QEMU check.
 
 The service command is `tsx-runner serve --listen <addr> --node <id> --site <id>`
 followed by `--bootstrap <host:port> --state <directory>`.
+`--profile measurement` raises the admission ceilings for the B4.2 board measurement to 16,384 series,
+100,000 records and 256 MiB of state per request; the default is `--profile standard`. The
+[local runner guide](../../docs/devguide/integration/rust-runner-local.md#raise-the-ceilings-for-a-board-measurement)
+lists every ceiling (`tests/measurement_profile.rs`).
 `<addr>` is the HTTP listening address. The node and site identifiers must match admitted assignments.
 `<host:port>` is the fixed permitted Apache Kafka Broker or KafScale Proxy address list. Never publish directly
 to KafScale Broker. `<directory>` is the worker-owned state directory.
@@ -135,7 +148,8 @@ Use these HTTP operations:
 
 - `GET /v1/capabilities` returns the executable digest, identities, legacy operators, state ABI,
   Episode fingerprint and resource ceilings. `catalogExecution.operators` lists the separate B2 catalog.
-- `POST /v1/prepare` accepts the exact `opentsx.local-bounded-run.v1` request text, up to 65,536 bytes.
+- `POST /v1/prepare` accepts the exact `opentsx.local-bounded-run.v1` request text, up to 65,536 bytes
+  (4,390,912 bytes under the measurement profile).
   It reads the entire admitted cut, validates all input, computes output, and durably saves private output bytes
   and retained state before returning `prepared`. It publishes no Kafka output.
 - `POST /v1/activate/<requestHash>` publishes the saved bytes, waits for acknowledgements, and writes the

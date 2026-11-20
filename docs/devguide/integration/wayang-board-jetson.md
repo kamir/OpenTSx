@@ -16,25 +16,25 @@ defines the protocol, and
 
 | Item | Value |
 |---|---|
-| Conditions | 27: runtimes Java 17, Java 21 and Rust; 100, 1,000 and 10,000 series; three repetitions each |
+| Conditions | 81: chains pass-through, clean and statistics; runtimes Java 17, Java 21 and Rust; 100, 1,000 and 10,000 series; three repetitions each (D-T15) |
+| Input | a paced live feed of one sample per series and second from the KafScale host; every chain and runtime of one size reads the same recorded feed |
 | One condition | 5 minutes of warm-up and 30 minutes of measurement (`durationSeconds` at least 2,100) |
 | Samples | RSS, CPU time and lag once per second, covering every whole second |
-| Machine time | 27 × 35 minutes, about 16 hours, plus setup between conditions |
+| Machine time | 81 × 35 minutes, about 47 hours, plus setup between conditions |
 | Output check | both tracks must produce identical output records before any number counts |
 
-Two parts of a run still have to be written before the 27 conditions can be
-measured. Without them the validator refuses the evidence:
+The workload driver `BoardWorkload` starts Track A or Track B against the paced
+feed and reports the process id, the time to the first fetch and the time to the
+first output; see [Run one condition](#run-one-condition). Two parts of a run
+are still missing. Without the first, the validator refuses the evidence:
 
-1. A workload driver that starts Track A (on JDK 17 or 21, with an explicit
-   heap) or Track B against the recorded input topic and reports the process id,
-   the time to the first fetch and the time to the first output.
-2. The output proof: a Java test under `src/test/java/` that compares the
+1. The output proof: a Java test under `src/test/java/` that compares the
    condition's output records and writes JUnit XML with the properties
    `opentsx.sourceCommit`, `opentsx.conditionId`, `opentsx.artifactSha256` and
    `opentsx.inputSha256`.
+2. A lag command for the sampler. Without it the sampler records a lag of 0.
 
-The board identity and the one-second samples are already covered by the tools
-below.
+The board identity and the one-second samples are covered by the tools below.
 
 ## Prepare the board
 
@@ -91,6 +91,44 @@ ready, for example when one CPU does not run the `performance` governor or the
 machine is not `aarch64`. The `board` object in the file is the `boards` entry
 of the evidence manifest; set its `identityEvidence` to this file and its
 SHA-256.
+
+## Run one condition
+
+Build the classes and the classpath on a workstation and copy both to the board:
+
+```bash
+mvn -B -ntp -pl opentsx-wayang -am install -DskipTests
+mvn -B -ntp -pl opentsx-wayang dependency:build-classpath -Dmdep.outputFile=board.classpath
+```
+
+Give each condition its own domain, so outputs and checkpoints of two conditions
+never mix. Start the feed on the KafScale host and the track on the board at the
+same time. 215 blocks cover the 2,100 seconds of the condition and 50 seconds of
+margin. `<proxy>` is the KafScale proxy address; never use a broker address.
+
+```bash
+# KafScale host
+java -cp "$CLASSPATH" org.opentsx.wayang.board.BoardWorkload feed \
+  --bootstrap <proxy> --domain b42c1 --series 1000 --seed 42 --blocks 215 > feed.jsonl
+
+# board, Track A on JDK 17 with an explicit heap
+java -Xms1g -Xmx1g -cp "$CLASSPATH" org.opentsx.wayang.board.BoardWorkload track-a \
+  --bootstrap <proxy> --domain b42c1 --chain clean --series 1000 --seed 42 \
+  --catalog systems/processors --checkpoint evidence/arm64-clean-s1000-java17-r1/checkpoint.json \
+  --interval-seconds 10 --duration-seconds 2100 > evidence/arm64-clean-s1000-java17-r1/events.jsonl
+
+# board, Track B; the measured process is tsx-runner, not this JVM
+java -Xmx256m -cp "$CLASSPATH" org.opentsx.wayang.board.BoardWorkload track-b \
+  --bootstrap <proxy> --domain b42c2 --chain clean --series 1000 --seed 42 \
+  --runner ./tsx-runner --listen 127.0.0.1:8090 --state /ssd/tsx-state-c2 --log evidence/arm64-clean-s1000-rust-r1/runner.log \
+  --interval-seconds 10 --duration-seconds 2100 > evidence/arm64-clean-s1000-rust-r1/events.jsonl
+```
+
+The `started` event names the `pid` to sample. `firstFetch` and `firstOutput`
+give `firstFetchSeconds` and `firstOutputSeconds` of the run. The `digest`
+command prints the condition's `inputSha256` without a broker; it is the same for
+every chain and runtime of one size. The Track B state directory must be new and
+private (mode 0700).
 
 ## Sample one condition
 

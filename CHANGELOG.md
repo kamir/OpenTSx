@@ -13,6 +13,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Align operator lessons with D-T14, D-T15 and the 81-condition ARM64
+  board plan.
+  Check the lesson's condition count against the executable planner; keep the
+  physical ARM64 measurement open and ARMv7 outside hardware qualification.
+  Bind the verified library-learning version to the current release.
+  Keep conversion expressions copyable as inline code in generated lessons.
 - Accept idle Kafka frame-boundary resets and cancelled metadata requests in the
   validation observer. Retain response correlations until forwarding succeeds;
   keep interrupted frames and resets with data requests as errors.
@@ -70,6 +76,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Route Track A evaluation clients through the same guarded Proxy bundle and record its transport provenance.
   Archived measurement samples retain their recorded source and runtime hashes.
 - Require a verified Proxy bundle and private MinIO environment before the k3s probe starts local KafScale.
+- Show the plant explorer prototype (`docs/prototypes/anlagen-explorer.html`) in English. The page no longer links
+  to the removed concept document.
 
 ### Added
 
@@ -96,10 +104,33 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   ring buffer, an emulated space-ground link driven by computed passes, and phases P0 to P6 up to the D-T13 CPU
   fallback path. Phase P0 prepares the board with the Jetson runbook and board tools of D-T14. No implementation
   yet.
+- `opentsx-wayang`: workload driver `org.opentsx.wayang.board.BoardWorkload` for the B4.2 board measurement. It
+  writes the paced deterministic feed, runs the pass-through, clean or statistics chain on Track A (Wayang increments
+  through the new `DagToWayang.incrementPlan`) or on Track B (`tsx-runner serve --profile measurement`), and reports
+  the measured process id, the first fetch and the first output as JSON lines.
+- TASK-020 D-T15 (owner, 2026-11-20): B4.2 measures three chains (pass-through, clean, statistics) on a paced
+  feed of one sample per series and second. `wayang_board_evaluation.py` plans 81 conditions with a `chain`
+  field and the feed rate in its protocol, and refuses evidence with a missing chain or a different feed between
+  comparable conditions.
+- `tsx-runner serve --profile measurement`: an opt-in worker profile for the B4.2 board measurement. It admits
+  requests of up to 4,390,912 bytes with 16,384 series, 100,000 records, 4,000,000 samples, 64 MiB of input and
+  output and 256 MiB of state; `GET /v1/capabilities` reports the profile. Requests cannot select or widen it, and
+  the default `standard` profile keeps its ceilings (`tests/measurement_profile.rs`).
+- Shared execution-assignment contract: a source or fragment DAG text may have 524,288 UTF-8 bytes (was 32,768)
+  and the envelope 2,162,688 bytes (was 65,536), equally in Java `ExecutionAssignments`, Rust `tsx-contracts`
+  and the schema. A source inventory of 16,384 series ids fits, which B4.2 needs at 10,000 series. Runtime
+  request limits and the UI rollout's 32,768-byte DAG limit are unchanged. Size-boundary vectors store their
+  padding as an `expand` marker, so the vector file the Rust runner embeds stays small; new cases cover a
+  source and a fragment text exactly at and one byte above the limit.
+- `tsx-runner`: regression test `tests/stats_increments.rs` shows that B2 statistics run as local increments:
+  across a worker restart the increments emit the closed windows byte for byte as one bounded run, without its
+  final flush. The B2 request ceilings (1,024 series, 1 MiB state) are unchanged.
 - TASK-020 D-T14 (owner, 2026-11-20): B1.2 and B4.2 need no ARMv7 hardware. The native x86_64 and ARM64 CI
   jobs meet B1.2; the ARMv7 artifact stays built and QEMU-tested but is not hardware-qualified. B4.2 is measured
-  on one physical ARM64 board, so `wayang_board_evaluation.py` plans 27 conditions and refuses ARMv7 and AArch32
-  boards. New `tools/board_identity.py` and `tools/board_resource_sampler.py` record the board and the one-second
+  on one physical ARM64 board. Under D-T15, `wayang_board_evaluation.py`
+  plans 81 conditions and refuses ARMv7 and AArch32 boards. The
+  `tools/board_identity.py` and `tools/board_resource_sampler.py` tools record
+  the board and the one-second
   RSS, CPU and lag samples in the validator's formats (Python 3.6, for JetPack 4.6), and the
   [Jetson runbook](docs/devguide/integration/wayang-board-jetson.md) prepares a Jetson Nano 4 GB for B4.2.
 - Artifact-embedded WASM `convert.unit` in the local Rust cleaning pipeline,
@@ -126,9 +157,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   partial/window evidence and six canonical-merge arrival orders. Separate
   exact-binary64 sketch cases retain shared vectors and identify boundary,
   zero-bucket and collapsed-tail accuracy domains without widening the
-  moments criterion. Board evaluation tooling prepares the fixed 54-condition
-  matrix and validates supplied evidence integrity. Physical ARM64 and ARMv7
-  B4.2 measurements and ARMv7 B1.2 acceptance remain open. Manual and learning
+  moments criterion. Board evaluation tooling prepares the fixed 81-condition
+  ARM64 matrix and validates supplied evidence integrity. The physical ARM64
+  B4.2 measurement remains open under D-T14. Manual and learning
   metadata keep these execution and hardware scopes separate.
 
 - Check tools-image identity, packaged Windpark startup and numerical replay
@@ -180,7 +211,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   Acceptance failures retain the actual unexpected server exit status.
   OpenSSH authentication-attempt exit 5 is accepted only for verified certificate denials.
   The profile admits decode-to-statistics only; broader B2 operators, mixed
-  continuous fleets, production release enrollment and physical ARMv7
+  continuous fleets, production release enrollment and physical ARM64 B4.2
   acceptance retain separate gates. Documentation, operational and learning references
   describe these boundaries.
 
@@ -190,7 +221,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   and signed B1 profiles retain their separate contracts. Shared vectors,
   restored-state regressions and actual full-windpark Java/Rust parity cover
   the operators. Manual, learning metadata and generated lessons describe the
-  qualified scope. Physical ARMv7 hardware acceptance remains open.
+  qualified scope. The physical ARM64 B4.2 measurement remains open under D-T14.
 
 - Standalone thermal Workbench entry through `npm run demo`, with deterministic
   synthetic episodes, local computation and preserved analysis across display
@@ -208,8 +239,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Rust shared-vector coverage for xxHash64, bucket checksums and time deltas,
   plus native x86_64/ARM64 and three-target static
   musl CI gates with ELF and test-report validation. ARMv7 QEMU execution is
-  supplementary; physical ARMv7 qualification and full TASK-020 B1 closure
-  remain open.
+  supplementary and does not establish physical ARMv7 qualification. Native
+  x86_64/ARM64 CI satisfies TASK-020 B1.2 under D-T14.
 
 - Local publication fencing for three whole-topic Rust workers. A private, single-owner Java gateway serializes
   publication and epoch rotation, validates captured grants and retains unknown broker outcomes without blind

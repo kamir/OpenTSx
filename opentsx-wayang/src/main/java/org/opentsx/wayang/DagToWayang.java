@@ -151,6 +151,28 @@ public final class DagToWayang {
         };
     }
 
+    /**
+     * The increment plan of a DAG with one source topic and one sink. Every operator of the DAG runs; stateful ones keep
+     * their state in the increment's {@link TsxState}, so a statistics stage emits only the windows an increment closes.
+     */
+    public TsxIncrement.Plan incrementPlan(String bootstrap) {
+        if (dag.path("source").path("topics").size() != 1 || dag.path("sinks").size() != 1) {
+            throw new IllegalArgumentException("an increment plan needs exactly one source topic and one sink");
+        }
+        String topic = dag.path("source").path("topics").get(0).asText();
+        JsonNode sink = dag.path("sinks").get(0);
+        return (source, state) -> {
+            if (!source.read().topic().equals(topic)) {
+                throw new IllegalArgumentException("the plan reads " + topic + ", not " + source.read().topic());
+            }
+            Operator output = outputsBySink(Map.of(topic, source), state).get(DagToWayangValidation.identity(sink, layout));
+            Operator target = sink.path("schema").asText().equals("opentsx.vector.v1")
+                    ? new TsxVectorSink(bootstrap, sink.path("topic").asText()) : new TsxTopicSink(bootstrap, sink.path("topic").asText());
+            output.connectTo(0, target, 0);
+            return target;
+        };
+    }
+
     public static JsonNode parameters(JsonNode dag, Path catalogDirectory) throws IOException {
         if (dag == null || !dag.isObject() || !dag.path("nodes").isArray()) {
             throw new IllegalArgumentException("the document is no opentsx.dag DAG (no nodes)");
