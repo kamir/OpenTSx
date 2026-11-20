@@ -177,7 +177,7 @@ orbit, raw samples stay in the onboard ring buffer only for its retention, and
 the ground receives reduced episodes.
 
 For training data this means: every value is tied to a declared source and a
-processing chain. TASK-021 plans signed downlink chunks, which prove that an
+processing chain. The orbit testbed plans signed downlink chunks, which prove that an
 episode is unchanged since the onboard runner signed it; the signature covers
 the path from the runner to the ground, not the path from the sensor to the
 runner. This makes training data traceable and reproducible, not automatically
@@ -187,11 +187,10 @@ need their own evidence.
 Complex algorithms run on the onboard CPU or on the ground. FPGA kernels reduce
 high-rate raw data near the sensor; owner decision D-T13 in
 [TASK-020](EVOLUTION/TASK-020-wayang-ts-operators.md) admits them behind the
-runner, with a CPU fallback. The components are planned in
-[TASK-021](EVOLUTION/TASK-021-orbit-testbed.md) (orbit testbed) and
-[TASK-022](EVOLUTION/TASK-022-situation-center.md) (situation center) and are
-built in [`lascaris-space/`](lascaris-space/README.md). None of them is
-implemented yet.
+runner, with a CPU fallback. The components are planned for an orbit testbed
+and a situation center and are built in
+[`lascaris-space/`](lascaris-space/README.md). None of them is implemented
+yet.
 
 ## Run the Workbench
 
@@ -237,10 +236,12 @@ to simulate three turbines, detect underperformance, persist real Iceberg
 episodes locally and verify their replay. Its focused regressions run offline
 after the first Maven build.
 
-The [packaged artifact checks](docs/devguide/published-artifact-acceptance.md)
-test tools-image startup and Windpark replay before publication, then pull
-the published digest on native AMD64 and ARM64 runners. Their edit tests run
-locally without Docker or network access.
+Download [Tools 3.1.0](https://github.com/kamir/OpenTSx/releases/tag/v3.1.0)
+and follow the [packaged artifact checks](docs/devguide/published-artifact-acceptance.md)
+with Python and Docker. The release retains passing native AMD64 and ARM64
+receipts for startup and Windpark replay. Its checker runs outside a checkout.
+The image checks also run before publication; their edit tests run locally
+without Docker or network access.
 Publication rejects mismatched reactor versions and staged internal JAR
 identities before uploading the image. The image build uses the same verified
 Maven mirror, workload cache and download diagnostics as the Java CI jobs.
@@ -302,7 +303,7 @@ and reproducible experiments.
 
 ## Contribute
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md), the
+Read [GOVERNANCE.md](GOVERNANCE.md) (issues welcome, pull requests after agreement), [CONTRIBUTING.md](CONTRIBUTING.md), the
 [Code of Conduct](CODE_OF_CONDUCT.md), the [security policy](SECURITY.md) and the
 [changelog](CHANGELOG.md). Changes to operators include their applicable
 contracts, tests, documentation and learning material.

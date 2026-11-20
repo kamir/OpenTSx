@@ -29,6 +29,14 @@ class ExecutionAssignmentSchemaTest {
                 "docs/datamodel-2026/testvectors/execution-contracts.v1.json").toFile()).path("cases");
     }
 
+    /** The raw assignment of a case, with its {@code expand} marker replaced (see the vector generator). */
+    private static String input(JsonNode c) {
+        String raw = c.path("input").textValue();
+        JsonNode expand = c.path("expand");
+        return expand.isMissingNode() ? raw
+                : raw.replace(expand.path("marker").textValue(), expand.path("text").textValue().repeat(expand.path("count").intValue()));
+    }
+
     @Test
     void validSharedAssignmentsMatchTheSchema() throws IOException {
         JsonSchema schema = schema();
@@ -38,7 +46,7 @@ class ExecutionAssignmentSchemaTest {
                 continue;
             }
             if (c.path("kind").asText().equals("assignment")) {
-                assertTrue(schema.validate(JSON.readTree(c.path("input").textValue())).isEmpty(),
+                assertTrue(schema.validate(JSON.readTree(input(c))).isEmpty(),
                         c.path("name").textValue());
                 checked++;
             } else if (c.path("kind").asText().equals("set")) {
@@ -64,7 +72,7 @@ class ExecutionAssignmentSchemaTest {
         int checked = 0;
         for (JsonNode c : cases()) {
             if (structural.contains(c.path("name").textValue())) {
-                assertFalse(schema.validate(JSON.readTree(c.path("input").textValue())).isEmpty(),
+                assertFalse(schema.validate(JSON.readTree(input(c))).isEmpty(),
                         c.path("name").textValue());
                 checked++;
             }

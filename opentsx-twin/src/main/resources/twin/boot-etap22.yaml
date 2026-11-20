@@ -1,7 +1,7 @@
 # Scenario "Boot": Etap 22 (6.7 m sailing yacht) as an island energy system.
 # Power station (portable LiFePO4, ~1 kWh) with solar (2 x 100 Wp flexible) and shore power (230 V, harbour only);
 # consumers: 2 laptops, phone (Pixel 10), Starlink Mini, Raspberry Pi, VHF radio.
-# ALL NUMBERS ARE ASSUMPTIONS (concept: docs/datamodel-2026/10-BOOT-ZWILLING.md) until replaced by real data.
+# ALL NUMBERS ARE ASSUMPTIONS until replaced by real data.
 # Time: 14 days from Saturday 2026-07-04 00:00 CEST, 15-minute steps; sailing area Kiel Bay / western Baltic.
 # Inputs (logbook, measurements) are bound per run; see BoatDemo and BoatData (CSV import).
 twin: boot-etap22

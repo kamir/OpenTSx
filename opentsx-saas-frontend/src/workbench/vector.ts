@@ -2,7 +2,7 @@
  * Vector alignment: the results of several nodes on one clock, one measuring point per tick.
  *
  * The operator `align.vector` and the record `opentsx.vector.v1` are described in
- * docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md, section 5a. The rules, in short:
+ * docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md, section 2. The rules, in short:
  *
  * - Clock: ticks are multiples of `every` seconds since the epoch. Tick k covers [k * every, (k + 1) * every).
  * - Component: one per input node, in the order of the inputs. Its value in a tick is the aggregate of the samples

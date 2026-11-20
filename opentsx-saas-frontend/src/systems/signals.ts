@@ -2,7 +2,7 @@
  * The signals of a system as the retrieval server reports them (GET /v1/systems/<id>/signals,
  * opentsx.signal-status.v1), and the words the page "Signals" uses for them. A signal is a quantity the system
  * expects; its state says how far its data has come and what to do next.
- * Concept: docs/datamodel-2026/14-ENGINEERING-FLOW.md.
+ * Spec: docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 6.
  */
 
 export interface Expect {

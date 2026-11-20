@@ -1,6 +1,6 @@
 /**
  * Episode ranges of a bucket (`Bucket.episodes`): the [start, end) of every loaded episode in the x unit of the
- * bucket. TASK-015 pairs the episodes of two series by these ranges; this file only reads them.
+ * bucket. Pair methods (docs/datamodel-2026/PAIR-WINDOWS-SPEC.md, section 4) pair the episodes of two series by these ranges; this file only reads them.
  */
 
 import { Bucket, EpisodeRange } from './types';

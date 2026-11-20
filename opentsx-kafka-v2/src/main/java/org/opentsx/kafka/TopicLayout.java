@@ -106,7 +106,7 @@ public final class TopicLayout {
 
     /**
      * Topic of a vector Smart Topic: {@code tsx.<domain>.smart.<name>.vectors.v1}, records
-     * {@code opentsx.vector.v1} (JSON). See docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md, section 5a.
+     * {@code opentsx.vector.v1} (JSON). See docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md, section 2.3.
      */
     public String smartVectors(String name) {
         if (!SMART_NAME.matcher(name).matches()) {
@@ -164,7 +164,7 @@ public final class TopicLayout {
 
     /**
      * Topic of the clean series of the domain: v2 episodes written by flows, one series per signal with the tags
-     * {@code system} and {@code signal}. See docs/datamodel-2026/14-ENGINEERING-FLOW.md, section 6.1.
+     * {@code system} and {@code signal}. See docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 4.
      */
     public String clean() {
         return topic("clean");

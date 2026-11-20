@@ -46,7 +46,7 @@ import java.util.function.Supplier;
 /**
  * Keeps the vector sinks of deployed DAGs up to date: it follows the episodes topic of a domain and appends the
  * measuring points to {@code tsx.<domain>.smart.<name>.vectors.v1} as they become final.
- * Rules: docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md, section 5b.
+ * Rules: docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md, section 3.
  *
  * <ul>
  *   <li><b>What runs</b> comes from the control topic {@link TopicLayout#dags()}: the latest record per DAG name

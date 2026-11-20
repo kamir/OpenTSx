@@ -10,7 +10,7 @@ import java.util.TreeMap;
 
 /**
  * The operator {@code align.vector}: the series of several inputs on one clock, one measuring point per tick and key
- * with one value per component. Rules: docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md, section 5a.
+ * with one value per component. Rules: docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md, section 2.
  *
  * <p>This is the Java side of the operator. The reference is the web workbench
  * ({@code opentsx-saas-frontend/src/workbench/vector.ts}); both run the shared test vectors in
