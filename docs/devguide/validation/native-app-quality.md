@@ -1,6 +1,6 @@
 # Check native application quality
 
-Use this source and test matrix for OpenTSx 3.0.1 to distinguish native regressions from remaining gaps.
+Use this source and test matrix for OpenTSx 3.1.0 to distinguish native regressions from remaining gaps.
 
 You need the source and test files from the same checkout to inspect the evidence.
 This inventory covers `TSOperationControlerPanel`, tracker display/export controls, local bucket and text exports,

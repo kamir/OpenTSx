@@ -1,7 +1,7 @@
 # Today vs. planned
 
 What this guide deploys exists and runs today (Java 17/21 CLIs and services). The stream architecture of
-[concept 11](../datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md) (German) — a Go Smart Topic processor executing a
+[concept 11](../datamodel-2026/VECTOR-AND-DAG-SPEC.md) (German) — a Go Smart Topic processor executing a
 declarative YAML DAG, training via MLflow — is a **proposal**; none of it is implemented yet. This page separates the
 two and shows where the planned parts will fit into the same namespace, images and scripts.
 

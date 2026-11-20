@@ -4,7 +4,7 @@ All notable changes to OpenTSx are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Releases are tagged `v<version>`;
 entries before 3.0.0 are grouped by date. The detailed progress log is in
-[`EVOLUTION/TASK-011-datamodel-refresher-2026.md`](EVOLUTION/TASK-011-datamodel-refresher-2026.md).
+`EVOLUTION/TASK-011-datamodel-refresher-2026.md`.
 
 ## [Unreleased]
 
@@ -13,6 +13,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- OpenTSx is maintainer-led: issues are welcome, pull requests are reviewed after the change was agreed in an
+  issue ([`GOVERNANCE.md`](GOVERNANCE.md), `CONTRIBUTING.md`, `.github/CODEOWNERS`).
+- `tools/test_wayang_track_a_results.py` checks the public Track A record (matrix, 306 raw-file names and SHA-256
+  digests, no raw files committed). The check of the raw files against the record runs when `OPENTSX_TRACK_A_DATA`
+  points to them. `tools/test_public_scope.py` fails when a tracked file points to the private companion repository.
+- The `metadata.json` records of three measurement runs show `~/` instead of a personal home directory.
+- AGENTS.md rule 15 and CLAUDE.md: research, paper planning, task plans, roadmaps, design drafts and raw measurement
+  data stay out of the repository. `tools/test_public_scope.py` also fails on tracked files in `docs/research/`,
+  `docs/business/`, `docs/roadmap/`, `archive/` and `EVOLUTION/` other than TASK-020, and on files of a measurement
+  run other than its reports and records. The orbit testbed and situation center plans (TASK-021, TASK-022) left
+  with the other task files; `lascaris-space/README.md` and the README section on LASCARIS for Space stay.
 - Align operator lessons with D-T14, D-T15 and the 81-condition ARM64
   board plan.
   Check the lesson's condition count against the executable planner; keep the
@@ -95,11 +106,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   it keeps. It contains no code yet. The README section "Take time series into orbit with LASCARIS for Space" states
   the direction: series from orbit in the ground Workspace, identity by series key, provenance to the declared source,
   and what provenance and signed downlink chunks do and do not guarantee for training data.
-- Planned task [`EVOLUTION/TASK-022-situation-center.md`](EVOLUTION/TASK-022-situation-center.md): in-orbit nodes
+- Planned task TASK-022, situation center: in-orbit nodes
   with a KafScale and `tsx-runner` sidecar, the ground station as hub and discovery point, a component state model
   whose liveness follows predicted passes, a Workbench situation page, and later a decentralized registry and
   cooperating situation centers. Phase L0 is an orbit profile in which a failed status report no longer stops a plan.
-- Planned task [`EVOLUTION/TASK-021-orbit-testbed.md`](EVOLUTION/TASK-021-orbit-testbed.md): a homelab testbed with a
+- Planned task TASK-021, orbit testbed: a homelab testbed with a
   Jetson Nano as onboard computer and a Synology NAS as ground station, a satellite simulator writing an onboard
   ring buffer, an emulated space-ground link driven by computed passes, and phases P0 to P6 up to the D-T13 CPU
   fallback path. Phase P0 prepares the board with the Jetson runbook and board tools of D-T14. No implementation
@@ -188,12 +199,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   kernel packages, the first kernel pack, the admission gate per kernel, and that the contract changes ship with the
   first kernel.
 - Study on running OpenTSx operators in orbit
-  ([`docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md`](docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md)):
+  (`docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md`):
   no tool compiles the Python operators to FPGA logic; a bounded streaming subset can be reimplemented as FPGA kernels
   behind the Rust runner, with Wayang planning and signing on the ground. Covers toolchains, space-grade hardware,
   in-orbit platform services, onboard logs, space-ground transport, pre-flight test environments and a roadmap.
 - Study on earth-plus-orbit data product architecture
-  ([`docs/research/03-EARTH-ORBIT-DATA-PRODUCT-ARCHITECTURE.md`](docs/research/03-EARTH-ORBIT-DATA-PRODUCT-ARCHITECTURE.md)):
+  (`docs/research/03-EARTH-ORBIT-DATA-PRODUCT-ARCHITECTURE.md`):
   ground service APIs (SQL, graphs, key-value, Flink or Spark, Kubernetes, S3) are not a cross-tier standard for orbit;
   standardize a contract-first boundary of sealed, signed log segments and signed plans, and allow small embedded
   engines inside the payload partition. Includes a two-sided debate with fact checks, six options and a decision guide.
@@ -428,7 +439,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `(M - 2) / (M - 1)`, a series that follows the first gives a negative delay, an event halfway between two events of
   the other series is not matched twice, and sync and delay stay in [0, 1] and [-1, 1] on random event series.
 
-- Related-work study for the IEEE paper ([`docs/research/01-RELATED-WORK-AND-POSITIONING.md`](docs/research/01-RELATED-WORK-AND-POSITIONING.md)):
+- Related-work study for the IEEE paper (`docs/research/01-RELATED-WORK-AND-POSITIONING.md`):
   188 candidates in nine clusters, high and medium candidates checked against primary sources on 2026-11-16, a comparison
   matrix over 14 dimensions, a concept mapping to commercial historians and cloud services, a claim check of what
   distinguishes OpenTSx, and the evaluation a federated variant would need before it can be claimed.
@@ -462,7 +473,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   acceptance criteria: [`EVOLUTION/TASK-020-wayang-ts-operators.md`](EVOLUTION/TASK-020-wayang-ts-operators.md).
 
 - Concept for graph layers on KafScale and Iceberg
-  ([`docs/datamodel-2026/19-GRAPH-LAYERS.md`](docs/datamodel-2026/19-GRAPH-LAYERS.md), proposal, not implemented):
+  (`docs/datamodel-2026/19-GRAPH-LAYERS.md`, proposal, not implemented):
   one node table and one edge table for twin wiring, inventory, measured dependencies, expert influence matrices,
   GeoQB location context on H3 cells and software architecture; immutable layer versions sealed with a checksum and
   Iceberg snapshot IDs; serving to QGIS, ArcGIS and graph tools; an eight-step implementation plan.
@@ -516,6 +527,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Removed
 
+- Owner-only material left the public repository: research studies (`docs/research`), market and campaign
+  material (`docs/business`), the roadmap briefing, the 2026 documentation inventory, the German design drafts 01
+  to 19 of `docs/datamodel-2026` (their normative parts are the English specs of that folder), the task files in
+  `EVOLUTION` except TASK-020, and `archive/`. The 2025 archive is available at the tag `v3.0.1`. The raw files of the
+  measurement runs are no longer in the repository; each run keeps its report and its record with the SHA-256 of
+  every raw file ([`measurements/README.md`](docs/datamodel-2026/measurements/README.md)).
 - Files that `.gitignore` excludes are no longer tracked: `config/private/ccloud.props` (the credentials in it
   no longer exist), `.idea/workspace.xml` and every `.DS_Store`. The unreachable commented block after `exit` in
   `bin/010_build.sh` is gone. `tools/test_repo_hygiene.py` fails if such files are tracked again.
@@ -675,6 +692,15 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   convention; the default stations and the years of the daily jobs.
 - CI renders and validates `deploy/k3s/history/` (kustomization and the one-off Jobs) with kubeconform.
 
+## [3.1.0] - 2026-11-20
+
+[Tools 3.1.0](https://github.com/kamir/OpenTSx/releases/tag/v3.1.0) publishes
+an immutable Java Tools image with packaged Windpark startup and replay.
+Native AMD64 and ARM64 acceptance verified 90 episodes and 900 values with
+identical numerical reports. The release retains verification receipts,
+checksums and CI identities as download assets. Its release notes include
+upgrade instructions.
+
 ## [3.0.1] - 2026-10-16
 
 ### Fixed
@@ -701,7 +727,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   bucket (sample, CSV/TSV, episode JSON, retrieval server), apply the time series operations, inspect every result
   on an oscilloscope view (time base, vertical scale, cursors, trigger, measurements), build the processing flow as
   a graph and export it as `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor or Java code. See
-  [`EVOLUTION/TASK-013-web-workbench.md`](EVOLUTION/TASK-013-web-workbench.md) for the editor context. The Java processor executes the supported vector and series subset.
+  `EVOLUTION/TASK-013-web-workbench.md` for the editor context. The Java processor executes the supported vector and series subset.
 - TS inventory: the retrieval server reads the episodes topic of a domain from KafScale (`--kafscale <host:port>
   --domain <d>`) and lists every series with extent, value range, episode labels and the ground truth of the
   scenario as time ranges (`GET /v1/inventory`, `opentsx.ts-inventory.v1`). The workbench has a "TS Inventory"
@@ -801,7 +827,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   from outside. The scenario now tells: the handover station closes, the buffer fills, the electrolyzer trips at
   200 bar. The first form of the plan is kept for the tests of the twin, and its atoms stay in the catalog.
 - Demo of the H2 chain made showable (TASK-014, after the first walk-through in
-  [`docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md`](docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md),
+  `docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md`,
   section 7). The place "System" draws the plan in the phases of a time step, with power, hydrogen and information in
   three colours and late wires dashed, shows what the system document assumes (`assumptions`), follows the working
   copy (`POST /v1/systems/<id>/plan`) and links to the Smart Topics Studio, which the frontend image now serves
@@ -825,7 +851,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   the customer is declared as a demo generator. The night of the scenario is 2025-10-01. A decision measures the
   age of an input against the newest data among the signals it needs, not against every series of the system.
 - Draft: notebooks as a further application
-  ([`docs/datamodel-2026/17-NOTEBOOK-ARBEITSPLATZ.md`](docs/datamodel-2026/17-NOTEBOOK-ARBEITSPLATZ.md), German):
+  (`docs/datamodel-2026/17-NOTEBOOK-ARBEITSPLATZ.md`, German):
   load the series directly, look at them, test a new series against what the system expects. Not built.
 - Notebooks as an OpenTSx application, stage N1 (TASK-014). The Python package reads the inventory, systems,
   signals, decisions and runs of the twin from the retrieval server, and `TopicReader` reads the episodes of a
