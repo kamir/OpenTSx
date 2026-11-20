@@ -93,12 +93,42 @@ class DagRunEndpointTest {
         statuses.put("c", record("state", "failed", "error", "node n1 (norm.zscore) is not available", "at", "2026-10-13T10:00:05Z"));
         statuses.put("ab/v", record("vector", "v", "state", "running", "at", "2026-10-13T10:00:30Z"));      // another DAG
 
-        JsonNode dags = KafScaleFeed.dagView(deployments, statuses, "2026-10-13T10:01:00Z").path("dags");
+        JsonNode dags = KafScaleFeed.dagView(deployments, statuses, java.util.Map.of(), "2026-10-13T10:01:00Z").path("dags");
         assertEquals(3, dags.size());
         assertEquals("[{\"vector\":\"v\",\"state\":\"running\",\"at\":\"2026-10-13T10:00:30Z\"}]", dags.get(0).path("sinks").toString());
         assertEquals("stopped", dags.get(1).path("sinks").get(0).path("state").asText(), "a stopped DAG does not show as running");
         assertEquals("node n1 (norm.zscore) is not available", dags.get(2).path("refused").asText());
         assertEquals(0, dags.get(2).path("sinks").size());
+    }
+
+    @Test
+    void theViewOfTheDagsListsWhatTrackAAndTrackBJobsReport() {
+        java.util.Map<String, JsonNode> deployments = new java.util.TreeMap<>();
+        java.util.Map<String, JsonNode> statuses = new java.util.TreeMap<>();
+        java.util.Map<String, JsonNode> jobs = new java.util.TreeMap<>();
+        deployments.put("a2-clean", record("state", "deployed", "by", "admin", "at", "2026-10-13T10:00:00Z"));
+        deployments.put("c", record("state", "deployed", "by", "admin", "at", "2026-10-13T10:00:00Z"));
+        KafScaleFeed.keepStatus(statuses, jobs, "c",
+                record("dag", "c", "state", "failed", "error", "node n1 (norm.zscore) is not available", "at", "2026-10-13T10:00:05Z"));
+        KafScaleFeed.keepStatus(statuses, jobs, "a2-clean/clean",
+                record("dag", "a2-clean", "vector", "clean", "state", "running", "at", "2026-10-13T10:00:20Z"));
+        KafScaleFeed.keepStatus(statuses, jobs, "a2-clean",
+                record("dag", "a2-clean", "job", "a2-clean", "track", "A", "state", "running", "at", "2026-10-13T10:00:30Z"));
+        KafScaleFeed.keepStatus(statuses, jobs, "c",       // a job of the same name as the DAG the processor refused
+                record("dag", "c", "job", "c", "track", "A", "state", "running", "at", "2026-10-13T10:00:35Z"));
+        KafScaleFeed.keepStatus(statuses, jobs, "edge-pass",       // no control record
+                record("dag", "edge-pass", "job", "edge-pass", "track", "B", "state", "running", "at", "2026-10-13T10:00:40Z"));
+
+        JsonNode view = KafScaleFeed.dagView(deployments, statuses, jobs, "2026-10-13T10:01:00Z");
+        JsonNode dags = view.path("dags");
+        assertEquals(2, dags.size());
+        assertTrue(dags.get(0).path("refused").isMissingNode(), "a job report is no refusal: " + dags.get(0));
+        assertEquals("[{\"dag\":\"a2-clean\",\"vector\":\"clean\",\"state\":\"running\",\"at\":\"2026-10-13T10:00:20Z\"}]",
+                dags.get(0).path("sinks").toString());
+        assertEquals("node n1 (norm.zscore) is not available", dags.get(1).path("refused").asText());
+        List<String> reported = new ArrayList<>();
+        view.path("jobs").forEach(j -> reported.add(j.path("job").asText() + " " + j.path("track").asText() + " " + j.path("state").asText()));
+        assertEquals(List.of("a2-clean A running", "c A running", "edge-pass B running"), reported);
     }
 
     @Test
