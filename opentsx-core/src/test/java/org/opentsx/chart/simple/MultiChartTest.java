@@ -11,6 +11,7 @@ import org.opentsx.data.series.TimeSeriesObject;
 import javax.imageio.ImageIO;
 import javax.swing.SwingUtilities;
 import java.awt.Color;
+import java.awt.Window;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -119,6 +120,45 @@ class MultiChartTest {
         assertTrue(Files.size(dir.resolve("probe.png")) > 0);
         assertTrue(Files.size(dir.resolve("TAB_probe.dat")) > 0);
         assertEquals("", captured.toString(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void storingSeriesCreatesTheFolder() throws Exception {
+        Path folder = dir.resolve("opentsx/plots");
+
+        SwingUtilities.invokeAndWait(() -> MultiChart.store(rows(), "probe", "x", "y", false, folder.toString(),
+                "probe", "no comment"));
+
+        assertTrue(Files.size(folder.resolve("probe.png")) > 0);
+        assertTrue(Files.size(folder.resolve("TAB_probe.dat")) > 0);
+    }
+
+    @Test
+    void openingAndStoringSeriesCreatesTheFolder() throws Exception {
+        Path folder = dir.resolve("opentsx/plots");
+        try {
+            SwingUtilities.invokeAndWait(() -> MultiChart.openAndStore(rows(), "probe", "x", "y", false,
+                    folder.toString(), "probe", "no comment"));
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                for (Window window : Window.getWindows()) {
+                    window.dispose();
+                }
+            });
+        }
+
+        assertTrue(Files.size(folder.resolve("probe.png")) > 0);
+        assertTrue(Files.size(folder.resolve("probe.mwt.data")) > 0);
+    }
+
+    private static Vector<TimeSeriesObject> rows() {
+        TimeSeriesObject row = new TimeSeriesObject();
+        row.setLabel("probe");
+        row.addValuePair(0.0, 1.0);
+        row.addValuePair(1.0, 2.0);
+        Vector<TimeSeriesObject> rows = new Vector<>();
+        rows.add(row);
+        return rows;
     }
 
     private static MultiChart chart(String label) throws Exception {

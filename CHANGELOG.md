@@ -2047,6 +2047,29 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   twin reads. A file of 64 MiB of blank lines and one of 64 MiB with 527040 rows of 55 columns, 54 of them not read,
   now fit the 1152 MiB heap of the boat Job (measured peak RSS 968 MB and 903 MB). Before, such files were read into
   memory in full and ran out of memory.
+- `opentsx-core`: `MultiChart.store(chart, folder, name)` and `TSOperationControlerPanel.storeChartImageAsPNG(chart,
+  folder, name)` create the folder before they write the image. Before, a missing folder stopped
+  `MultiChart.store(rows, ...)` and `MultiChart.openAndStore` with `<file>: cannot write the chart image (<cause>)`,
+  and with them `TSOWriter.persistBucket_CSV` and the opentsx-lg analysis consumers with `OPENTSX_SHOW_GUI=true`; the
+  measurement table was not written.
+- `opentsx-core`: `Histogram per series`, `Histogram cross-cut` and `ENTROPY` of the chart panel check their numbers
+  before they compute. A cancelled dialog does nothing. A `min` or `max` that is not a whole number shows `<field>:
+  "<value>" is not allowed; expected a whole number`. A `bins` or `window length` that is not a whole number above 0
+  shows `<field>: "<value>" is not allowed; expected a whole number above 0`. An `ENTROPY` length that is not a whole
+  number of at least 4 shows `length: "<value>" is not allowed; expected a whole number of at least 4`. Each message
+  shows in a dialog, the operation stops and no chart opens. Before, they threw `NumberFormatException` or
+  `IllegalArgumentException` on the event dispatch thread, and a window length of 0 made `Histogram cross-cut` loop
+  until the heap ran out.
+- `opentsx-core`: the chart panel records an operation in the macro track only after it succeeded, `FFT` included, so
+  an operation that fails leaves the track unchanged. The chart comment of `DFA` has one line per series with its
+  label and its own fitted alpha; before, each line showed the alpha of the series before it (0.0 for the first). The
+  `Shuffle` dialog asks `Number of shuffles:`.
+- `opentsx-core`: `MacroTrackerFrame`, `SigmaFilter.aggregate` and `HurstSurface.plot` print nothing. Added sources,
+  selected nodes, opened charts and the progress of `Sigma Band` and `MF-DFA` are DEBUG lines, and `MacroTrackerFrame`
+  no longer uses java.util.logging. `Export code (Java)` and `Export code (Scala)` copy the generated code to the
+  clipboard without printing it, and `Export code (Scala)` copies the Scala code instead of the Java code. A PFD step
+  that cannot be recorded throws `IllegalStateException` with `<operation>: cannot record the PFD step (<cause>)`
+  instead of printing to standard error and going on.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

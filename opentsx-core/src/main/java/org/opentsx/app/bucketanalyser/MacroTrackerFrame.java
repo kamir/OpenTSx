@@ -112,15 +112,15 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
                 }
 
                 org.opentsx.app.bucketanalyser.PFDRecorder.getInstance().addStep(opName, params);
-            } catch (Exception e) {
-                System.err.println("Failed to record PFD step: " + e.getMessage());
+            } catch (RuntimeException e) {
+                throw new IllegalStateException(t.operation + ": cannot record the PFD step (" + e + ")", e);
             }
 
         }
     }
 
     public static void addSource(TSBucketSource t) {
-        System.out.println("ADDED A NEW SOURCE ... " + t.techSource + " ... " + t.hint + " => " + t.cacheFolder);
+        LOG.debug("added source techSource={} hint={} cacheFolder={}", t.techSource, t.hint, t.cacheFolder);
         frame.track.addSource(t);
         frame.refresh();
     }
@@ -332,8 +332,6 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
         Enumeration e = rootNode.preorderEnumeration();
         while (e.hasMoreElements()) {
 
-            System.out.println();
-
             Object node = ((DefaultMutableTreeNode) e.nextElement()).getUserObject();
 
             boolean t = node instanceof ProcessComponent;
@@ -341,7 +339,6 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
             if (t) {
 
                 ProcessComponent c = (ProcessComponent) node;
-                System.out.println(c.getCode());
                 sb.append(c.getCode() + "\n");
 
             }
@@ -364,8 +361,6 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
         Enumeration e = rootNode.preorderEnumeration();
         while (e.hasMoreElements()) {
 
-            System.out.println();
-
             Object node = ((DefaultMutableTreeNode) e.nextElement()).getUserObject();
 
             boolean t = node instanceof ProcessComponent;
@@ -373,8 +368,7 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
             if (t) {
 
                 ProcessComponent c = (ProcessComponent) node;
-                System.out.println(c.getCodeSCALA());
-                sb.append(c.getCode() + "\n");
+                sb.append(c.getCodeSCALA() + "\n");
 
             }
 
@@ -406,18 +400,9 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
                     break;
                 }
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(MacroTrackerFrame.class.getName()).log(java.util.logging.Level.SEVERE,
-                    null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(MacroTrackerFrame.class.getName()).log(java.util.logging.Level.SEVERE,
-                    null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(MacroTrackerFrame.class.getName()).log(java.util.logging.Level.SEVERE,
-                    null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(MacroTrackerFrame.class.getName()).log(java.util.logging.Level.SEVERE,
-                    null, ex);
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException
+                | javax.swing.UnsupportedLookAndFeelException ex) {
+            LOG.debug("look and feel not set name=Nimbus", ex);
         }
         // </editor-fold>
         //
@@ -464,7 +449,7 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
         Object nodeInfo = node.getUserObject();
 
         boolean t = nodeInfo instanceof ProcessComponent;
-        System.out.println(nodeInfo + " is of type {ProcessComponent} " + t);
+        LOG.debug("selected node node={} processComponent={}", nodeInfo, t);
 
         if (t) {
             ProcessComponent c = (ProcessComponent) nodeInfo;
@@ -580,12 +565,7 @@ class Track {
 
     void showDialog(String dialogKey) {
 
-        Enumeration en = this.dialogs.keys();
-        while (en.hasMoreElements()) {
-            System.out.println(">>> DIALOG: " + en.nextElement());
-        }
-
-        System.out.println("OPEN WINDOW: " + dialogKey);
+        LOG.debug("showing chart dialog key={} registered={}", dialogKey, dialogs.keySet());
         dialogs.get(dialogKey).setVisible(true);
     }
 

@@ -28,6 +28,7 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.util.Enumeration;
 import java.util.Locale;
@@ -580,14 +581,15 @@ public class MultiChart extends javax.swing.JDialog {
     }
 
     /**
-     * Writes the chart cp as {@code <folder>/<filename>.png}.
+     * Writes the chart cp as {@code <folder>/<filename>.png} and creates the folder when it does not exist.
      *
-     * @throws UncheckedIOException naming the file, with the cause, when the image cannot be written
+     * @throws UncheckedIOException naming the file, with the cause, when the folder or the image cannot be written
      */
     public void store(JFreeChart cp, File folder, String filename) {
 
         final File file1 = new File(folder.getAbsolutePath() + File.separator + filename + ".png");
         try {
+            Files.createDirectories(folder.toPath());
             ChartUtilities.saveChartAsPNG(file1, cp, 600, 400, new ChartRenderingInfo(new StandardEntityCollection()));
         } catch (IOException e) {
             throw new UncheckedIOException(file1 + ": cannot write the chart image (" + e + ")", e);

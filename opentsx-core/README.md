@@ -77,22 +77,29 @@ See [PFD validation](../docs/devguide/validation/PFD_VALIDATION_PLAN.md) for the
 The AR, MA, ARMA, ARIMA, SARIMA and CARIMA buttons are disabled and show an explanatory tooltip.
 The modern tracker disables Java and Scala export. Both trackers use `Show PFD` to display recorded JSON;
 these buttons do not write a file. The modern tracker starts with an empty transformation tree.
+`Export code (Java)` and `Export code (Scala)` of the classic tracker (`MacroTrackerFrame`) copy the generated Java
+or Scala code to the clipboard and print nothing. Added sources, selected nodes and opened charts of the classic tracker
+are DEBUG lines of `MacroTrackerFrame` and `Track`. A PFD step that cannot be recorded throws
+`IllegalStateException` with `<operation>: cannot record the PFD step (<cause>)` to the caller of
+`MacroTrackerFrame.addTransformation`.
 Swing control tests use a display; the Java CI jobs run them under Xvfb on Ubuntu 24.04.
 Opening a chart panel prints nothing and creates no folder; the chart folder and the series colors are DEBUG lines of
 `TSStoreDescriptor` and `MultiChart`. `save PN` writes below `opentsx/plots/` in `user.home` and creates the folders
 it needs. `MultiChart.store(chart, folder, name)` and
-`TSOperationControlerPanel.storeChartImageAsPNG(chart, folder, name)` write the chart they are given as
-`<folder>/<name>.png` without waiting and print nothing. An image that cannot be written throws `UncheckedIOException`
-with `<file>: cannot write the chart image (<cause>)`; `save PN` shows that message in a dialog.
+`TSOperationControlerPanel.storeChartImageAsPNG(chart, folder, name)` create `<folder>` when it does not exist and
+write the chart they are given as `<folder>/<name>.png` without waiting and print nothing. A folder or an image that
+cannot be written throws `UncheckedIOException` with `<file>: cannot write the chart image (<cause>)`; `save PN` shows
+that message in a dialog.
 `HaeufigkeitsZaehler.store()` writes `<folder><label>`; `folder` defaults to `opentsx/histograms/` below
 `user.home`, which `store()` creates.
 
 `TSOperationControlerPanel` writes nothing to standard output. The fitted alpha of `DFA` and the time slices of
 `Histogram cross-cut` and `TEST Normal Distribution` are DEBUG lines of `TSOperationControlerPanel`. Every recorded
 operation is a DEBUG line of `MacroTrackerFrame` and, while the macro tracker is open, of `Track` and `PFDRecorder`.
-The classes an operation calls can print: `Sigma Band` (`SigmaFilter`) prints its progress, and `MF-DFA`
-(`HurstSurface.plot`) prints one number for every pixel of each Hurst surface. The operations in this table stop when
-they fail and show the message in a dialog:
+`SigmaFilter` (`Sigma Band`) and `HurstSurface.plot` (`MF-DFA`) print nothing; their progress is a DEBUG line.
+An operation is recorded in the macro track after it succeeded, so an operation that fails leaves the track unchanged.
+The chart comment of `DFA` has one line per series with its label and its fitted alpha. The operations in this table
+stop when they fail and show the message in a dialog:
 
 | Button | Message |
 |--------|---------|
@@ -104,10 +111,19 @@ they fail and show the message in a dialog:
 | `Shuffle` | `shuffle of <label>: cannot shuffle the series (<cause>)` |
 | `TEST Normal Distribution` | `SW test of <series>: cannot test the values <from> to <to> (<cause>)`; no chart opens |
 
-Cancelling the `Shuffle` dialog does nothing. `Histogram per series`, `Histogram cross-cut` and `ENTROPY` show no
-dialog when they fail: a value in the three number fields of `Univariate Analysis` or a dialog answer that is not a
-whole number, or a cancelled dialog, throws `NumberFormatException` and no chart opens. `persistTSB()` throws `UncheckedIOException` with
-`<track>/<label>: cannot write the bucket (<cause>)`.
+Cancelling the `Shuffle` dialog (`Number of shuffles:`), the `ENTROPY` dialog (`Length:`) or the
+`Histogram cross-cut` dialog (`Window length l=`) does nothing. `Histogram per series`, `Histogram cross-cut` and
+`ENTROPY` check their numbers before they compute. The three number fields of `Univariate Analysis` are `min`, `max`
+and `bins`, in this order. A value that is not allowed shows its message in a dialog, the operation stops and no
+chart opens:
+
+| Field | Message |
+|-------|---------|
+| `min`, `max` | `<field>: "<value>" is not allowed; expected a whole number` |
+| `bins`, `window length` (`Histogram cross-cut`) | `<field>: "<value>" is not allowed; expected a whole number above 0` |
+| `length` (`ENTROPY`) | `length: "<value>" is not allowed; expected a whole number of at least 4` |
+
+`persistTSB()` throws `UncheckedIOException` with `<track>/<label>: cannot write the bucket (<cause>)`.
 
 ## Reload local SequenceFile buckets
 

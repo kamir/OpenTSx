@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.util.OptionalDouble;
 import java.util.Vector;
 
@@ -463,8 +464,8 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
             showFftError(e.getMessage());
             return;
         }
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(this.label, "FFT_" + this.label, "FFT of "));
         showFftResults(v);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(this.label, "FFT_" + this.label, "FFT of "));
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private static OptionalDouble fftSamplingRate(TimeSeriesObject row) {
@@ -556,14 +557,14 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
                 dfa.calc();
 
                 TimeSeriesObject mr4 = dfa.getResultsMRLogLog();
-                
-                alphas.append( mr4.getLabel() + "\t" + alpha + "\n");
 
                 mr4.setLabel(d4.getLabel());
 
                 SimpleRegression alphaSR = mr4.linFit(EntropieTest.fitMIN, EntropieTest.fitMAX);
 
                 alpha = alphaSR.getSlope();
+
+                alphas.append(d4.getLabel() + "\t" + alpha + "\n");
 
                 LOG.debug("computed fluctuation function series={} order={} alpha={} betaFromAlpha={}", d4.getLabel(),
                         order, alpha, (2 * alpha) - 1.0);
@@ -599,8 +600,6 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         String source = this.label;
         String target = operationPrefix + this.label;
 
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
-
         Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
         for (TimeSeriesObject r : this.rows) {
@@ -630,6 +629,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
 
         MultiChart.open(v, this.jRadioButton1.isSelected(), "AUTO-CORRELATION of " + this.label);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
     }//GEN-LAST:event_jButton4ActionPerformed
 
     /**
@@ -645,8 +645,6 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         String source = this.label;
         String target = operationPrefix + this.label;
 
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
-
         Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
         for (TimeSeriesObject r : this.rows) {
@@ -657,6 +655,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
 
         MultiChart.open(v, this.jRadioButton1.isSelected(), target);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
     }//GEN-LAST:event_jButton7ActionPerformed
 
@@ -666,8 +665,6 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         String source = this.label;
         String target = operationPrefix + this.label;
-
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
         Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
@@ -679,6 +676,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
 
         MultiChart.open(v, this.jRadioButton1.isSelected(), "Diff of " + this.label);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
     }//GEN-LAST:event_jButton8ActionPerformed
 
     private void jButton9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton9ActionPerformed
@@ -688,8 +686,6 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         String source = this.label;
         String target = operationPrefix + this.label;
-
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
         Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
@@ -701,6 +697,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
 
         MultiChart.open(v, this.jRadioButton1.isSelected(), "LogRETURN of " + this.label);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
     }//GEN-LAST:event_jButton9ActionPerformed
 
     private void jButton10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton10ActionPerformed
@@ -711,22 +708,29 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         String source = this.label;
         String target = operationPrefix + this.label;
 
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
+        int minY;
+        int maxY;
+        int bins;
+        try {
+            minY = wholeNumber("min", this.jtMIN.getText(), false);
+            maxY = wholeNumber("max", this.jtMAX.getText(), false);
+            bins = wholeNumber("bins", this.jtBINS.getText(), true);
+        } catch (IllegalArgumentException e) {
+            showActionError(e.getMessage());
+            return;
+        }
 
         Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
-        double minY = Integer.parseInt(this.jtMIN.getText());
-        double maxY = Integer.parseInt(this.jtMAX.getText());
-        int bins = Integer.parseInt(this.jtBINS.getText());
-
         for (TimeSeriesObject r : this.rows) {
 
-            TimeSeriesObject distr = r.distributionOfYValues((int) minY, (int) maxY, bins);
+            TimeSeriesObject distr = r.distributionOfYValues(minY, maxY, bins);
             v.add(distr);
 
         }
 
         MultiChart.open(v, this.jRadioButton1.isSelected(), "y-value distributions of " + this.label);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
     }//GEN-LAST:event_jButton10ActionPerformed
 
@@ -737,8 +741,6 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         String source = this.label;
         String target = operationPrefix + this.label;
-
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
         Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
@@ -752,6 +754,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
 
         MultiChart.open(v, this.jRadioButton1.isSelected(), "NORM_MAX=1 of " + this.label);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
     }//GEN-LAST:event_jButton12ActionPerformed
 
@@ -766,8 +769,6 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         String source = this.label;
         String target = operationPrefix + this.label;
-
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
         Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
@@ -789,7 +790,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
         catch (Exception ex) {
             showActionError("standardized series of " + this.label + ": cannot open the chart (" + ex + ")");
+            return;
         }
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
         
         
     }//GEN-LAST:event_jButton13ActionPerformed
@@ -802,7 +805,20 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         String source = this.label;
         String target = operationPrefix + this.label;
 
-        int l = Integer.parseInt(javax.swing.JOptionPane.showInputDialog("Length: "));
+        String answer = requestInput("Length: ");
+        if (answer == null) return;
+        String refusal = "length: \"" + answer + "\" is not allowed; expected a whole number of at least 4";
+        int l;
+        try {
+            l = Integer.parseInt(answer.trim());
+        } catch (NumberFormatException e) {
+            showActionError(refusal);
+            return;
+        }
+        if (l < 4) {
+            showActionError(refusal);
+            return;
+        }
 
         Vector<TimeSeriesObject> slidingWindowResults = new Vector<TimeSeriesObject>();
 
@@ -823,8 +839,6 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         String source = this.label;
         String target = operationPrefix + this.label;
 
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
-
         try {
             
             MFDFAAnalyzer.process(this.rows, "MFDFA of " + this.label);
@@ -832,7 +846,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         } 
         catch (Exception ex) {
             showActionError("MFDFA of " + this.label + ": cannot compute the analysis (" + ex + ")");
+            return;
         }
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
 
     }//GEN-LAST:event_jButton6ActionPerformed
@@ -877,8 +893,8 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         String source = this.label;
         String target = operationPrefix + this.label;
 
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
         SigmaFilter.open(this.rows, "AVG for " + this.label, true);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
 
     }//GEN-LAST:event_jButton16ActionPerformed
@@ -892,7 +908,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         try {
 
-            String answer = requestShuffleRounds();
+            String answer = requestInput("Number of shuffles: ");
             if (answer == null) return;
             int l = Integer.parseInt(answer);
 
@@ -912,8 +928,23 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_jButton18ActionPerformed
 
-    String requestShuffleRounds() {
-        return JOptionPane.showInputDialog("Nr fo shuffelings: ");
+    String requestInput(String prompt) {
+        return JOptionPane.showInputDialog(prompt);
+    }
+
+    private static int wholeNumber(String field, String value, boolean above0) {
+        String refusal = field + ": \"" + value + "\" is not allowed; expected a whole number"
+                + (above0 ? " above 0" : "");
+        int number;
+        try {
+            number = Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(refusal, e);
+        }
+        if (above0 && number <= 0) {
+            throw new IllegalArgumentException(refusal);
+        }
+        return number;
     }
 
     private void jButton19ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton19ActionPerformed
@@ -923,8 +954,6 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         String source = this.label;
         String target = operationPrefix + this.label;
-
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
         Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
@@ -936,6 +965,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
 
         MultiChart.open(v, this.jRadioButton1.isSelected(), "y-value distributions of " + this.label);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
     }//GEN-LAST:event_jButton19ActionPerformed
 
@@ -947,16 +977,23 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         String source = this.label;
         String target = operationPrefix + this.label;
 
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
+        String answer = requestInput("Window length l=");
+        if (answer == null) return;
 
-        String i = javax.swing.JOptionPane.showInputDialog("Window length l=");
-
-        int l = Integer.parseInt(i);
+        int l;
+        int minY;
+        int maxY;
+        int bins;
+        try {
+            l = wholeNumber("window length", answer, true);
+            minY = wholeNumber("min", this.jtMIN.getText(), false);
+            maxY = wholeNumber("max", this.jtMAX.getText(), false);
+            bins = wholeNumber("bins", this.jtBINS.getText(), true);
+        } catch (IllegalArgumentException e) {
+            showActionError(e.getMessage());
+            return;
+        }
         int pos = 0;
-
-        double minY = Integer.parseInt(this.jtMIN.getText());
-        double maxY = Integer.parseInt(this.jtMAX.getText());
-        int bins = Integer.parseInt(this.jtBINS.getText());
 
         Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
@@ -988,6 +1025,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
 
         MultiChart.open(v, this.jRadioButton1.isSelected(), "y-value distributions (tims slice l=" + l + " of " + this.label);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
 
     }//GEN-LAST:event_jButton20ActionPerformed
@@ -999,8 +1037,6 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         String source = this.label;
         String target = operationPrefix + this.label;
-
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
         int[] L = {20, 40, 60, 80, 100};
 
@@ -1071,6 +1107,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         MultiChart.open(v, this.jRadioButton1.isSelected(), "SW t-value distributions of " + this.label);
         MultiChart.open(v2, this.jRadioButton1.isSelected(), "SW CDF of " + this.label);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
 
     }//GEN-LAST:event_jButton21ActionPerformed
@@ -1083,8 +1120,6 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         String source = this.label;
         String target = operationPrefix + this.label;
 
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
-
         Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
         for (TimeSeriesObject r : this.rows) {
@@ -1096,17 +1131,19 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
 
         MultiChart.open(v, this.jRadioButton1.isSelected(), "ln of " + this.label);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
     }//GEN-LAST:event_jButton22ActionPerformed
 
     /**
-     * Writes the chart as {@code <folder>/<filename>.png}.
+     * Writes the chart as {@code <folder>/<filename>.png} and creates the folder when it does not exist.
      *
-     * @throws UncheckedIOException naming the file, with the cause, when the image cannot be written
+     * @throws UncheckedIOException naming the file, with the cause, when the folder or the image cannot be written
      */
     public void storeChartImageAsPNG(JFreeChart chart, File folder, String filename) {
 
         final File file1 = new File(folder.getAbsolutePath() + File.separator + filename + ".png");
         try {
+            Files.createDirectories(folder.toPath());
             ChartUtilities.saveChartAsPNG(file1, chart, 800, 600, new ChartRenderingInfo(new StandardEntityCollection()));
         } catch (IOException e) {
             throw new UncheckedIOException(file1 + ": cannot write the chart image (" + e + ")", e);

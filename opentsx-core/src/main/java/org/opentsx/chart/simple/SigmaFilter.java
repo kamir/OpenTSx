@@ -6,6 +6,8 @@ import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.exporter.MeasurementTable;
 import org.opentsx.data.exporter.OriginProject;
 import org.opentsx.data.series.TimeSeriesObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Vector;
@@ -13,6 +15,8 @@ import java.util.Vector;
 
 
 public class SigmaFilter extends TimeSeriesObject {
+
+    private static final Logger LOG = LoggerFactory.getLogger(SigmaFilter.class);
 
     String label = null;
     boolean legend = true;
@@ -216,17 +220,13 @@ public class SigmaFilter extends TimeSeriesObject {
 
     public void aggregate() {
 
-        System.out.println(">   aggregate now ... " + rows.size() );
-        
-        
-
         mwRAW = TimeSeriesObject.averageForAll(rows);
         mwBINNED = TimeSeriesObject.averageForAll(binned);
 
         sigmaRAW = TimeSeriesObject.sigmaForAll(rows);
         sigmaBINNED = TimeSeriesObject.sigmaForAll(binned);
 
-        System.out.println(">   Sigma-Band calculation DONE!");
+        LOG.debug("computed sigma band series={}", rows.size());
 
     }
 

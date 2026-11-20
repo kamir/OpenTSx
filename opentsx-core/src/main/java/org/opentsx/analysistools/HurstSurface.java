@@ -2,6 +2,8 @@ package org.opentsx.analysistools;
 
 import org.opentsx.analysistools.utils.FitbereichLogScale;
 import org.opentsx.data.series.TimeSeriesObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,6 +17,8 @@ import java.util.Vector;
  * @author kamir
  */
 public class HurstSurface {
+
+    private static final Logger LOG = LoggerFactory.getLogger(HurstSurface.class);
 
     JFrame frame = null;
     BufferedImage img;
@@ -93,15 +97,15 @@ public class HurstSurface {
                 double v = (double) r.yValues.elementAt(x);
 
                 int value = (int) ((v / (double) vMax) * zColors);
-                
-                System.out.println(value);
-                
+
                 int col = (value << 16) | (value << 8) | value;
                 
                 img.setRGB(x, y, (int)col );
 
             }
         }
+
+        LOG.debug("plotted hurst surface series={} columns={}", sy, sx);
 
         frame.setVisible(true);
 
