@@ -72,6 +72,11 @@ public class ReturnIntervallStatistik2 {
      * normalized frequencies, so the sum of all values is 1
      */
     public TimeSeriesObject mrVerteilung = new TimeSeriesObject();
+    /**
+     * For a result that is not a container: the share of the intervals in scaled bin i at
+     * x = (i + 0.5) * scale / binning, the center of the bin in units of R_q. When offset is above 0, the bins that
+     * start below offset / R_q are left out.
+     */
     public TimeSeriesObject mrVerteilungSkaliert = new TimeSeriesObject();
 
     public static int binning = 400;   // number of values per interval
@@ -266,20 +271,28 @@ public class ReturnIntervallStatistik2 {
     public static HaeufigkeitsZaehler anzRowRAW = new HaeufigkeitsZaehler("length of rows (raw)");
     public static HaeufigkeitsZaehler anzRowsFILTERED = new HaeufigkeitsZaehler("length of rows (filtered, offset="+ReturnIntervallStatistik2.offset+"h)");
 
-    /** 
-     * Adds a vector of return intervals.
-     * 
-     * The intervals are sorted into the bins and scaled with Rq
-     * at once.
-     * 
-     * The existing array is cleared first.
-     * 
-     **/
     int cutOff = 0;
     public int anzFiltered = 0;
+    /**
+     * Adds a vector of return intervals.
+     *
+     * The intervals are sorted into the bins and scaled with Rq
+     * at once.
+     *
+     * The existing array is cleared first.
+     *
+     * @throws IllegalArgumentException when an interval is NaN or infinite
+     **/
     public void addDistData( Vector dists ) throws Exception {
         if ( this.isContainerInstanz ) {
             throw new IllegalStateException("addDistData: " + name + " is a container; add intervals to a result that is not a container");
+        }
+
+        for( int k = 0; k < dists.size(); k++ ) {
+            double da = (Double) dists.elementAt(k);
+            if ( !Double.isFinite( da ) ) {
+                throw new IllegalArgumentException( "addDistData: interval " + k + " of " + name + " is " + da + "; expected a finite interval" );
+            }
         }
         
         if ( LOG.isDebugEnabled() ) {
@@ -304,17 +317,6 @@ public class ReturnIntervallStatistik2 {
                 cutOff++;
             }
         }
-        
-        long anzahlNach = (long)dataRawFILTERED.size(); 
-        
-        
-        long delta = (anzahlVor-anzahlNach);
-        
-        if ( delta > 0) {
-            String line = "### FILTER : " + label + "\t" + anzahlVor + "\t" + anzahlNach + "\t" + delta + "\n";
-            logLineToFile( logFileKey, line);
-        }
-        
         
         if ( LOG.isDebugEnabled() ) {
             LOG.debug("filtered intervals result={} cutOff={} offset={}", name, cutOff, offset);
@@ -424,6 +426,11 @@ public class ReturnIntervallStatistik2 {
     
     void calcSingleMR() throws Exception {
 
+        for ( TimeSeriesObject series : new TimeSeriesObject[] { mrHaeufigkeit, mrVerteilung, mrVerteilungSkaliert } ) {
+            series.xValues.clear();
+            series.yValues.clear();
+        }
+
         double summe = 0.0;
         
         // for every bin i
@@ -442,21 +449,15 @@ public class ReturnIntervallStatistik2 {
             mrVerteilung.addValuePair(
                         (double)i / (double)scale , relAnzahl );
                 
-            mrVerteilungSkaliert.addValuePair(
-                        (double)i  / ( (double)scale * _Rq), relAnzahl * _Rq);
-                
-                
             summe = summe + relAnzahl;
            
             
         // leave out the first values
-        if ( i >= (offset*scale / _Rq) ) { 
+        if ( i >= offset * binning / ( (double)scale * _Rq ) ) {
                 
-          anzahlProSpalte = dataSKALIERT[i];
-                                
           relAnzahl = (double) dataSKALIERT[i] / (double) this.zElements;
  
-          mrVerteilungSkaliert.addValuePair( (double)i / (double)scale, relAnzahl);
+          mrVerteilungSkaliert.addValuePair( ((double)i + 0.5) * (double)scale / (double)binning, relAnzahl);
         }
         }
         if ( LOG.isDebugEnabled() ) {
@@ -629,19 +630,15 @@ public class ReturnIntervallStatistik2 {
         // V3
         TimeSeriesObjectFFT mr3 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, 20), 1.4, false, false);
         min = mr3.getMinY();
-        System.out.println( min );
         mr3.add_value_to_Y( -1.0 * min);
-        min = mr3.getMinY();
-        System.out.println( min );
+        LOG.debug("shifted series series={} min={} shiftedMin={}", mr3.getLabel(), min, mr3.getMinY());
         addRow( mr3 );
         
         // V3
         mr3 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, 20), 1.2, false, false);
         min = mr3.getMinY();
-        System.out.println( min );
         mr3.add_value_to_Y( -1.0 * min);
-        min = mr3.getMinY();
-        System.out.println( min );
+        LOG.debug("shifted series series={} min={} shiftedMin={}", mr3.getLabel(), min, mr3.getMinY());
         
         addRow( mr3 );
         

@@ -80,16 +80,10 @@ public class SingleTsRISTool extends SingleRowTSO {
 
         ReturnIntervallStatistik2 rr1;
         rr1 = new ReturnIntervallStatistik2("R1");
-               
-        // calc averag inter-event time
-        double vRQ1 = calcAverageOfDist(r.yValues );
+
+        rr1._addData( r.yValues, 0.0 );
+        double vRQ1 = rr1.getRq();
         LOG.debug("mean interval series={} rq={}", r.getLabel(), vRQ1);
-        
-        rr1.setRQ(vRQ1);
-        
-        // create interevent time series ... on the way ...
-        // set data
-        rr1._addData( r.yValues, vRQ1 );        
         
         if ( debugViews < maxDebugViews ) {
             rr1.showData();
@@ -128,22 +122,6 @@ public class SingleTsRISTool extends SingleRowTSO {
         return "... (" + this.getClass().getName() + ") ";
     }
 
-    private double calcAverageOfDist(Vector<Double> rr1) {
-        double sum = 0.0;
-        double c = 0.0;
-
-        double last = 0;
-        double delta = 0;
-        
-        for( double l : rr1 ) { 
-            delta = l - last;
-            sum = sum + delta;
-            last = l;
-            c++;
-        }
-        return sum / (1.0*c);
-    }
-    
     private double calcAverage(Vector<Double> rr1) {
         double sum = 0.0;
         double c = 0.0;

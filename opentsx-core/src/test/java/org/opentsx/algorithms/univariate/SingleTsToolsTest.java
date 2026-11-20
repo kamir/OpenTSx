@@ -7,6 +7,8 @@ import org.opentsx.data.series.TimeSeriesObject;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -66,6 +68,87 @@ class SingleTsToolsTest {
         } finally {
             SingleTsRISTool.risCollector = collector;
         }
+    }
+
+    @Test
+    void theRisToolCollectsTheIntervalsBetweenTheValuesOfASeriesAndWritesTheirMean() throws Exception {
+        ReturnIntervallStatistik2 collector = SingleTsRISTool.risCollector;
+        int binning = ReturnIntervallStatistik2.binning;
+        int scale = ReturnIntervallStatistik2.scale;
+        ReturnIntervallStatistik2.binning = 400;
+        ReturnIntervallStatistik2.scale = 8;
+        try {
+            SingleTsRISTool tool = new SingleTsRISTool();
+            tool.init();
+            StringWriter out = new StringWriter();
+
+            tool.processReihe(out, values("events", 0.0, 2.0, 5.0, 9.0), null);
+
+            assertEquals("events\t\t3.0\t\n", out.toString());
+            ReturnIntervallStatistik2 collected = SingleTsRISTool.risCollector;
+            collected.calcMessreihen();
+            assertEquals(List.of(0.67, 1.01, 1.33), rounded(collected.mrVerteilungSkaliert.xValues));
+            assertEquals(List.of(0.33, 0.33, 0.33), rounded(collected.mrVerteilungSkaliert.yValues));
+        } finally {
+            SingleTsRISTool.risCollector = collector;
+            ReturnIntervallStatistik2.binning = binning;
+            ReturnIntervallStatistik2.scale = scale;
+        }
+    }
+
+    @Test
+    void theRisToolWritesNanAndCollectsNothingForASeriesWithoutAnInterval() throws Exception {
+        ReturnIntervallStatistik2 collector = SingleTsRISTool.risCollector;
+        try {
+            SingleTsRISTool tool = new SingleTsRISTool();
+            tool.init();
+            StringWriter out = new StringWriter();
+
+            tool.processReihe(out, values("flat", 3.0, 3.0, 3.0), null);
+            tool.processReihe(out, values("single", 7.0), null);
+
+            assertEquals("flat\t\tNaN\t\nsingle\t\tNaN\t\n", out.toString());
+            SingleTsRISTool.risCollector.calcMessreihen();
+            assertEquals(List.of(), SingleTsRISTool.risCollector.mrVerteilungSkaliert.xValues);
+        } finally {
+            SingleTsRISTool.risCollector = collector;
+        }
+    }
+
+    @Test
+    void theRisToolRefusesASeriesWithAValueBelowTheValueBeforeIt() {
+        ReturnIntervallStatistik2 collector = SingleTsRISTool.risCollector;
+        try {
+            SingleTsRISTool tool = new SingleTsRISTool();
+            tool.init();
+            StringWriter out = new StringWriter();
+
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                    () -> tool.processReihe(out, values("falling", 0.0, 5.0, 2.0), null));
+
+            assertEquals("_addData: time 2 of R1 is 2.0, before time 1 at 5.0; expected times that do not decrease",
+                    e.getMessage());
+            assertEquals("", out.toString());
+        } finally {
+            SingleTsRISTool.risCollector = collector;
+        }
+    }
+
+    private static TimeSeriesObject values(String label, double... values) {
+        TimeSeriesObject row = new TimeSeriesObject();
+        row.setLabel(label);
+        for (int i = 0; i < values.length; i++) {
+            row.addValuePair(i, values[i]);
+        }
+        return row;
+    }
+
+    private static List<Double> rounded(List<?> values) {
+        List<Double> rounded = new ArrayList<>();
+        for (Object value : values) {
+            rounded.add(Math.round((Double) value * 100.0) / 100.0);
+        }
+        return rounded;
     }
 
     private static TimeSeriesObject series(int n) {

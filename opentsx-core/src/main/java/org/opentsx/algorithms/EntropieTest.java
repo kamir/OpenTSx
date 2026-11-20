@@ -154,15 +154,11 @@ public class EntropieTest {
 
         int dig = 50;
 
-        // Analyse the Transfer Entropy and Mutual Information
-        System.out.println("BINS;JIDT.TE (mr1,mr2,5);JavaMI.Entropy(mr1);JavaMI.Entropy(mr2);JIDT.MI(mr1,mr2);JavaMI.MI(mr1,mr2),ACM3.cc(mr1,mr2)");
+        System.out.println("length\tbins\tcc");
 
-        TimeSeriesObject mrPROBE1 = new TimeSeriesObject();
         TimeSeriesObject mrPROBE2 = new TimeSeriesObject();
-        mrPROBE1.setLabel("MI as a function ot length");
         mrPROBE2.setLabel("CC as a function ot length");
         Vector<TimeSeriesObject> prob = new Vector<TimeSeriesObject>();
-        prob.add(mrPROBE1);
         prob.add(mrPROBE2);
 
         for (int i = 5; i < 6000; i = i + 1) {
@@ -185,11 +181,11 @@ public class EntropieTest {
                 SCATTERPLOT = false;
             }
 
-            System.out.println(i + "\t" + calcTEandMI(comp.elementAt(0), comp.elementAt(1), dig, "r0", "r1", mrPROBE1, mrPROBE2, i));
+            System.out.println(i + "\t" + calcTEandMI(comp.elementAt(0), comp.elementAt(1), dig, "r0", "r1", mrPROBE2, i));
 
         }
 
-        MultiChart.open(prob, subLabel, "length", "MI and CC", true, ContextRecorder.sb.toString(), null);
+        MultiChart.open(prob, subLabel, "length", "CC", true, ContextRecorder.sb.toString(), null);
 
         /**
          * SECTION 2
@@ -310,7 +306,7 @@ public class EntropieTest {
 
     static boolean singleDebug = true;
 
-    private static String calcTEandMI(TimeSeriesObject mr1, TimeSeriesObject mr2, int dig, String l1, String l2, TimeSeriesObject row1, TimeSeriesObject row2, int x) throws Exception {
+    private static String calcTEandMI(TimeSeriesObject mr1, TimeSeriesObject mr2, int dig, String l1, String l2, TimeSeriesObject row2, int x) throws Exception {
 
         mr1.normalize();
         mr2.normalize();
@@ -323,27 +319,13 @@ public class EntropieTest {
             singleDebug = false;
         }
 
-        double v1 = 0.0;
-
-        /**
-         * CALCULATE INFORMATION THEORETICAL MEASURES
-         *
-         */
-        String line = dig + "\t"
-                //                + calcTransferEntropy(mr1, mr2, dig) + "\t"
-                //                + JavaMI.Entropy.calculateEntropy(mr1.getYData()) + "\t"
-                //                + JavaMI.Entropy.calculateEntropy(mr2.getYData()) + "\t"
-                //                + calcMI_JIDT(mr1.getYData(), mr2.getYData()) + "\t"
-                + v1;
-
         /**
          * CALCULATE CROSSCORRELATION ...
          */
         PearsonsCorrelation pc = new PearsonsCorrelation();
         double cc = pc.correlation(mr1.getYData(), mr2.getYData());   // no timelag
-        line = line.concat("\t" + cc);
+        String line = dig + "\t" + cc;
 
-        row1.addValuePair(x, v1);
         row2.addValuePair(x, cc);
 
         if (SCATTERPLOT) {
@@ -367,9 +349,7 @@ public class EntropieTest {
 
     private static Vector<TimeSeriesObject> loadStockData() {
 
-        int[] YEARS = {2011, 2012, 2013, 2014};
-
-        return null; //StockDataLoader2.concatRowsForYearsFromCache(YEARS);
+        return null;
 
     }
 

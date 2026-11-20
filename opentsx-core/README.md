@@ -300,8 +300,10 @@ Pass a `java.util.Random` with a seed to get the same surrogate again. Without t
 `Random`. `FFTPhaseRandomizer.getPhaseRandomizedRow(ts, showTest, runDFA, testZaehler, mode)` calls the shuffle for
 `MODE_shuffle_phase` and the random phases for `MODE_multiply_phase_with_random_value`, both without a seed. It does
 not use `showTest`, `runDFA` or `testZaehler`. None of these methods opens a window. `FFTPhaseRandomizer` has no
-`main` method; `LongTermCorrelationSeriesGenerator.main` charts alpha against beta. `getPhaseRandomizedRow` returns
-null for any other `mode`. `FFTPhaseRandomizer.nrOfSValues` is deprecated and has no effect.
+`main` method; `LongTermCorrelationSeriesGenerator.main` charts alpha against beta. Any other `mode` of
+`getPhaseRandomizedRow` throws `IllegalArgumentException` with
+`mode: <mode> is not allowed; expected 0 (MODE_shuffle_phase) or 1 (MODE_multiply_phase_with_random_value)`.
+`FFTPhaseRandomizer.nrOfSValues` is deprecated and has no effect.
 
 ## Generate long-range correlated noise
 
@@ -364,7 +366,9 @@ used. A time before the time before it throws `IllegalArgumentException` with
 A time that is NaN or infinite throws `IllegalArgumentException` with
 `_addData: time <k> of <name> is <value>; expected a finite time`. `k` counts from 0, and a refused call adds nothing.
 `ReturnIntervallStatistik2.addDistData` leaves out intervals that are 0 or below `offset` and sorts the others into bins
-scaled with their mean R_q, so the probabilities of a result add up to 1. A result that keeps no interval, for example
+scaled with their mean R_q, so the probabilities of a result add up to 1. An interval that is NaN or infinite throws
+`IllegalArgumentException` with `addDistData: interval <k> of <name> is <value>; expected a finite interval`, and a
+refused call adds nothing. A result that keeps no interval, for example
 times 1, 1 and 1, has NaN probabilities and R_q, and `add` skips it. For times 0, 1, 1 and 2 the bins count the
 intervals 1 and 1, not the 0.
 `TSPropertyTester.addDistData` keeps every interval and sorts it into bins scaled with the mean R_q of its intervals. An
@@ -376,8 +380,16 @@ For a result that is not a container, `addDistData` also counts the kept interva
 1/`scale`, and `calcMessreihen()` writes these counts: `mrHaeufigkeit` holds the count of bin i at i / `scale`, and
 `mrVerteilung` holds its share of all kept intervals. The last bin also counts the longer intervals, and in
 `TSPropertyTester` the first bin also counts the negative ones. With binning 12 and scale 10, the intervals 0.15, 0.25,
-0.25, 0.55 and 3.0 give the counts 1 at 0.1, 2 at 0.2, 1 at 0.5 and 1 at 1.2.
-`SingleTsRISTool` passes the y values of each series as times and adds the result to `risCollector`.
+0.25, 0.55 and 3.0 give the counts 1 at 0.1, 2 at 0.2, 1 at 0.5 and 1 at 1.2. `mrVerteilungSkaliert` holds the share
+of the intervals in scaled bin i at (i + 0.5) * `scale` / `binning`, the center of the bin in units of R_q. With binning
+12 and scale 10, the intervals 0.25, 0.25, 0.5 and 3.0 (R_q 1) give the share 0.75 at 5/12, 0.25 at 35/12 and 0 at the
+centers of the other bins. When `offset` is above 0, the bins that start below `offset` / R_q are left out: with
+`offset` 0.5, the intervals 0.5, 1.0, 1.5 and 3.0 (R_q 1.5) leave out bin 0 and its share 0.5, and the series starts at
+1.25. Each call of `calcMessreihen()` replaces the series of the call before.
+`SingleTsRISTool` passes the y values of each series as times and adds the result to `risCollector`. For each series
+it writes one line: the label, two tabs, the R_q of the result and a tab. R_q is the mean of the kept intervals, so the
+values 0, 2, 5 and 9 give 3.0. A series that keeps no interval, for example the values 3, 3 and 3, writes NaN and adds
+nothing to `risCollector`. A series whose values go down throws the `_addData` refusal above and writes nothing.
 `SingleTsRISTool.finish()` throws `IllegalStateException` with
 `finish: the RIS of <name> cannot be shown (<cause>)` when the collected result cannot be shown.
 

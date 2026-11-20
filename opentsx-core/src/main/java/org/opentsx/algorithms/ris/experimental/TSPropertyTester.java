@@ -208,6 +208,11 @@ public class TSPropertyTester {
      * normalized frequencies, so the sum of all values is 1
      */
     public TimeSeriesObject mrVerteilung = new TimeSeriesObject();
+    /**
+     * For a result that is not a container: the share of the intervals in scaled bin i at
+     * x = (i + 0.5) * scale / binning, the center of the bin in units of R_q. When offset is above 0, the bins that
+     * start below offset / R_q are left out.
+     */
     public TimeSeriesObject mrVerteilungSkaliert = new TimeSeriesObject();
 
     public int binning = 400;   // number of values per interval
@@ -493,16 +498,6 @@ public class TSPropertyTester {
                 dataRawFILTERED.add( da );
         }
         
-        long anzahlNach = (long)dataRawFILTERED.size(); 
-        
-        
-        long delta = (anzahlVor-anzahlNach);
-        
-        if ( delta > 0) {
-            String line = "### FILTER : " + label + "\t" + anzahlVor + "\t" + anzahlNach + "\t" + delta + "\n";
-        }
-        
-        
         if ( LOG.isDebugEnabled() ) {
             LOG.debug("filtered intervals result={} cutOff={} offset={}", name, cutOff, offset);
         }
@@ -620,6 +615,11 @@ public class TSPropertyTester {
     
     void calcSingleMR() throws Exception {
 
+        for ( TimeSeriesObject series : new TimeSeriesObject[] { mrHaeufigkeit, mrVerteilung, mrVerteilungSkaliert } ) {
+            series.xValues.clear();
+            series.yValues.clear();
+        }
+
         double summe = 0.0;
         
         // for every bin i
@@ -638,21 +638,15 @@ public class TSPropertyTester {
             mrVerteilung.addValuePair(
                         (double)i / (double)scale , relAnzahl );
                 
-            mrVerteilungSkaliert.addValuePair(
-                        (double)i  / ( (double)scale * _Rq), relAnzahl * _Rq);
-                
-                
             summe = summe + relAnzahl;
            
             
         // leave out the first values
-        if ( i >= (offset*scale / _Rq) ) { 
+        if ( i >= offset * binning / ( (double)scale * _Rq ) ) {
                 
-          anzahlProSpalte = dataSKALIERT[i];
-                                
           relAnzahl = (double) dataSKALIERT[i] / (double) this.zElements;
  
-          mrVerteilungSkaliert.addValuePair( (double)i / (double)scale, relAnzahl);
+          mrVerteilungSkaliert.addValuePair( ((double)i + 0.5) * (double)scale / (double)binning, relAnzahl);
         }
         }
         if ( LOG.isDebugEnabled() ) {
@@ -834,20 +828,16 @@ public class TSPropertyTester {
         TimeSeriesObjectFFT mr3 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, N), 0.8, false, false);
         mr3.normalize();
         min = mr3.getMinY();
-        System.out.println( min );
         mr3.add_value_to_Y( -1.0 * min);
-        min = mr3.getMinY();
-        System.out.println( min );
+        LOG.debug("shifted series series={} min={} shiftedMin={}", mr3.getLabel(), min, mr3.getMinY());
         TSPropertyTester.addSample(mr3);
       
         // V3
         mr3 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, N), 0.9, false, false);
         mr3.normalize();
         min = mr3.getMinY();
-        System.out.println( min );
         mr3.add_value_to_Y( -1.0 * min);
-        min = mr3.getMinY();
-        System.out.println( min );
+        LOG.debug("shifted series series={} min={} shiftedMin={}", mr3.getLabel(), min, mr3.getMinY());
         TSPropertyTester.addSample(mr3);
         
         Color[] colors = new Color[8];
@@ -922,7 +912,6 @@ public class TSPropertyTester {
         double rq = ris1.calcAverageOfDist(data1,ts);
         LOG.debug("mean interval series={} rq={}", m.label, rq);
         
-        m.calcAverage();
         ris1.useLog = false;
         
         ris1.addDistData(data1);

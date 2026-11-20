@@ -12,6 +12,7 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
@@ -194,8 +195,56 @@ class ReturnIntervallStatistik2Test {
         ris.calcMessreihen();
 
         assertArrayEquals(new int[] {3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, ris.dataSKALIERT);
-        assertTrue(hasPair(ris.mrVerteilungSkaliert, 0.0, 0.75), ris.mrVerteilungSkaliert.toString());
-        assertTrue(hasPair(ris.mrVerteilungSkaliert, 0.3, 0.25), ris.mrVerteilungSkaliert.toString());
+        assertScaledSeries(new double[] {3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 4.0, ris.mrVerteilungSkaliert);
+    }
+
+    @Test
+    void aSecondCalcMessreihenGivesTheSameSeriesAsTheFirst() throws Exception {
+        ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2("twice", 12, 10);
+        ris.addDistData(new Vector<>(List.of(0.15, 0.25, 0.25, 0.55, 3.0)));
+        ris.calcMessreihen();
+        List<List<Object>> once = pairsOf(ris.mrHaeufigkeit, ris.mrVerteilung, ris.mrVerteilungSkaliert);
+
+        ris.calcMessreihen();
+
+        assertEquals(once, pairsOf(ris.mrHaeufigkeit, ris.mrVerteilung, ris.mrVerteilungSkaliert));
+    }
+
+    @Test
+    void aPositiveOffsetLeavesOutTheScaledBinsThatStartBelowOffsetOverRq() throws Exception {
+        double offset = ReturnIntervallStatistik2.offset;
+        ReturnIntervallStatistik2.offset = 0.5;
+        try {
+            ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2("offset", 12, 10);
+            ris.addDistData(new Vector<>(List.of(0.5, 1.0, 1.5, 3.0)));
+
+            ris.calcMessreihen();
+
+            assertEquals(1.5, ris.getRq(), 1e-12);
+            assertArrayEquals(new int[] {2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, ris.dataSKALIERT);
+            assertScaledSeriesFrom(1, new double[] {1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 4.0, ris.mrVerteilungSkaliert);
+        } finally {
+            ReturnIntervallStatistik2.offset = offset;
+        }
+    }
+
+    @Test
+    void aNanOrInfiniteIntervalIsRefused() {
+        ReturnIntervallStatistik2 nan = new ReturnIntervallStatistik2("nan", 12, 10);
+        ReturnIntervallStatistik2 infinite = new ReturnIntervallStatistik2("infinite", 12, 10);
+
+        IllegalArgumentException notANumber = assertThrows(IllegalArgumentException.class,
+                () -> nan.addDistData(new Vector<>(List.of(1.0, 2.0, Double.NaN, 3.0))));
+        IllegalArgumentException tooLong = assertThrows(IllegalArgumentException.class,
+                () -> infinite.addDistData(new Vector<>(List.of(1.0, Double.POSITIVE_INFINITY))));
+
+        assertEquals("addDistData: interval 2 of nan is NaN; expected a finite interval", notANumber.getMessage());
+        assertEquals("addDistData: interval 1 of infinite is Infinity; expected a finite interval", tooLong.getMessage());
+        for (ReturnIntervallStatistik2 refused : List.of(nan, infinite)) {
+            assertArrayEquals(new int[13], refused.dataSKALIERT);
+            assertEquals(List.of(), refused.dataRawFILTERED);
+            assertEquals(0.0, refused.getRq());
+        }
     }
 
     @Test
@@ -282,14 +331,25 @@ class ReturnIntervallStatistik2Test {
         }
     }
 
-    static boolean hasPair(TimeSeriesObject series, double x, double y) {
-        for (int i = 0; i < series.xValues.size(); i++) {
-            if (Math.abs((Double) series.xValues.get(i) - x) < 1e-12
-                    && Math.abs((Double) series.yValues.get(i) - y) < 1e-12) {
-                return true;
-            }
+    static void assertScaledSeries(double[] counts, double total, TimeSeriesObject series) {
+        assertScaledSeriesFrom(0, counts, total, series);
+    }
+
+    static void assertScaledSeriesFrom(int firstBin, double[] counts, double total, TimeSeriesObject series) {
+        assertEquals(counts.length, series.yValues.size(), series.toString());
+        for (int i = 0; i < counts.length; i++) {
+            assertEquals((firstBin + i + 0.5) * 10.0 / 12.0, (Double) series.xValues.get(i), 1e-12);
+            assertEquals(counts[i] / total, (Double) series.yValues.get(i), 1e-12);
         }
-        return false;
+    }
+
+    static List<List<Object>> pairsOf(TimeSeriesObject... series) {
+        List<List<Object>> pairs = new ArrayList<>();
+        for (TimeSeriesObject one : series) {
+            pairs.add(new ArrayList<>(one.xValues));
+            pairs.add(new ArrayList<>(one.yValues));
+        }
+        return pairs;
     }
 
     static Vector<Double> times(double... values) {

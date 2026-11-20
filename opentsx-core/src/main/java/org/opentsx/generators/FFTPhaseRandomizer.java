@@ -123,7 +123,9 @@ public class FFTPhaseRandomizer {
         };
         
 
-        return null;
+        throw new IllegalArgumentException( "mode: " + mode + " is not allowed; expected " + MODE_shuffle_phase
+                + " (MODE_shuffle_phase) or " + MODE_multiply_phase_with_random_value
+                + " (MODE_multiply_phase_with_random_value)" );
     }
 
 }

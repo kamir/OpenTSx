@@ -884,6 +884,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `PVC opentsx-data: not found in namespace opentsx; run 30-deploy.sh first (opentsx-iceberg-catalog needs LAKE=true,
   opentsx-minio LAKE=true and LAKE_MINIO=true)`. 20-configure.sh names the empty key of MODBUS_HOST and MODBUS_MAP and
   of S3_ACCESS_KEY and S3_SECRET_KEY. Exit codes and accepted values are unchanged.
+- `opentsx-core`: `FFTPhaseRandomizer.getPhaseRandomizedRow` throws `IllegalArgumentException` with `mode: <mode> is
+  not allowed; expected 0 (MODE_shuffle_phase) or 1 (MODE_multiply_phase_with_random_value)` for any other mode. It
+  returned null before.
+- `opentsx-core`: the `main` methods of `ReturnIntervallStatistik2` and `TSPropertyTester` do not print the minimum of
+  each shifted series any more. It is a DEBUG line.
 
 ### Removed
 
@@ -2148,6 +2153,21 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   throwing `NullPointerException`.
 - `opentsx-core`: `Sigma Band` (`SigmaFilter.open`) charts the mean of the selected series and the mean plus and minus
   one standard deviation; it charted the static rows that only `SigmaFilter.main` fills, so the chart was empty.
+- `opentsx-core`: `SingleTsRISTool.processReihe` writes the R_q of the result it adds to `risCollector`, the mean of
+  the intervals between the values of the series. It wrote the last value divided by the number of values instead, so
+  the values 0, 2, 5 and 9 gave 2.25 instead of 3.0. A series that keeps no interval, for example the values 3, 3 and
+  3, now writes NaN and adds nothing to `risCollector`.
+- `opentsx-core`: `ReturnIntervallStatistik2.addDistData` refuses an interval that is NaN or infinite with
+  `addDistData: interval <k> of <name> is <value>; expected a finite interval`, as `TSPropertyTester` does, and a
+  refused call adds nothing. An infinite interval made R_q infinite and put every interval into the first scaled bin,
+  and a NaN interval was left out without a message.
+- `opentsx-core`: for a result that is not a container, `calcMessreihen()` of `ReturnIntervallStatistik2` and
+  `TSPropertyTester` replaces the series of an earlier call, so a second call, for example from `showData`, does not
+  double every point. `mrVerteilungSkaliert` holds one point per scaled bin at the center of the bin, (i + 0.5) *
+  scale / binning in units of R_q, and with an `offset` above 0 it leaves out the bins that start below offset / R_q.
+  Before, it held two interleaved point sets, and the scaled one sat at i / scale.
+- `opentsx-core`: the header that `EntropieTest.main` prints names the three tab-separated columns of its rows:
+  `length`, `bins` and `cc`. The MI column, which was always 0.0, and its series in the chart are removed.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

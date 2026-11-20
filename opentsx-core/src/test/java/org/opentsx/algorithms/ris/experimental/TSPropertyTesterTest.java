@@ -9,11 +9,13 @@ import java.util.List;
 import java.util.Vector;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.assertScaledSeries;
+import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.assertScaledSeriesFrom;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.assertSeries;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.failingSeries;
-import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.hasPair;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.intervals;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.isOpen;
+import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.pairsOf;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.stderrOf;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.times;
 
@@ -135,8 +137,37 @@ class TSPropertyTesterTest {
         tester.calcMessreihen();
 
         assertArrayEquals(new int[] {3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, tester.dataSKALIERT);
-        assertTrue(hasPair(tester.mrVerteilungSkaliert, 0.0, 0.75), tester.mrVerteilungSkaliert.toString());
-        assertTrue(hasPair(tester.mrVerteilungSkaliert, 0.3, 0.25), tester.mrVerteilungSkaliert.toString());
+        assertScaledSeries(new double[] {3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 4.0, tester.mrVerteilungSkaliert);
+    }
+
+    @Test
+    void aSecondCalcMessreihenGivesTheSameSeriesAsTheFirst() throws Exception {
+        TSPropertyTester tester = new TSPropertyTester("twice", 12, 10);
+        tester.addDistData(new Vector<>(List.of(0.15, 0.25, 0.25, 0.55, 3.0)));
+        tester.calcMessreihen();
+        List<List<Object>> once = pairsOf(tester.mrHaeufigkeit, tester.mrVerteilung, tester.mrVerteilungSkaliert);
+
+        tester.calcMessreihen();
+
+        assertEquals(once, pairsOf(tester.mrHaeufigkeit, tester.mrVerteilung, tester.mrVerteilungSkaliert));
+    }
+
+    @Test
+    void aPositiveOffsetLeavesOutTheScaledBinsThatStartBelowOffsetOverRq() throws Exception {
+        double offset = TSPropertyTester.offset;
+        TSPropertyTester.offset = 0.5;
+        try {
+            TSPropertyTester tester = new TSPropertyTester("offset", 12, 10);
+            tester.addDistData(new Vector<>(List.of(0.5, 1.0, 1.5, 3.0)));
+
+            tester.calcMessreihen();
+
+            assertEquals(1.5, tester.getRq(), 1e-12);
+            assertArrayEquals(new int[] {2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, tester.dataSKALIERT);
+            assertScaledSeriesFrom(1, new double[] {1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 4.0, tester.mrVerteilungSkaliert);
+        } finally {
+            TSPropertyTester.offset = offset;
+        }
     }
 
     @Test
