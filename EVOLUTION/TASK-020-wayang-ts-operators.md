@@ -380,7 +380,7 @@ durable-storage and remote-network performance, Track B parity and the
 small-device matrix remain separate qualification work.
 
 ### B1: Rust runner foundation
-- [ ] `tsx-runner run`: decode, encode, pass-through, checkpoint; cross builds.
+- [x] `tsx-runner run`: decode, encode, pass-through, checkpoint; cross builds (B1.2 under D-T14).
 
 The
 [isolated signed Rust profile](../docs/devguide/integration/rust-runner-b1.md)
@@ -396,12 +396,12 @@ signed bounded statistics; production fleet activation remains separate.
 CI defines native x86_64/ARM64 tests, the three required musl artifacts and
 supplementary ARMv7 QEMU tests. Artifact and test reports bind actual run
 results to source, tool versions and executable hashes; their definitions do not
-establish successful builds. Physical ARMv7 hardware is unavailable, so B1.2 and
-the B1 checkbox remain open. The public hosted ARM64 runner is separate from
-ARMv7. An ARMv7 board can be controlled over SSH from a supported runner; an
-ARM32 GitHub Actions runner is not the supported hardware plan. Read the
-[qualification plan](https://github.com/kamir/OpenTSx/issues/294) for the
-hardware and isolation boundary.
+establish successful builds. Under D-T14 B1.2 runs on x86_64 and ARM64: the
+native x86_64 and ARM64 CI jobs must execute every shared vector test
+(`tools/rust_runner_artifacts.py`), which meets B1.2. The
+`armv7-unknown-linux-musleabihf` artifact is still built and tested under QEMU,
+but it is not hardware-qualified, and the ARMv7 board plan of
+[issue 294](https://github.com/kamir/OpenTSx/issues/294) is no longer required.
 
 The executable acceptance fixtures cover the six required KafScale protocol
 families plus acknowledged batch-topic retention in ten codec-expanded
@@ -412,7 +412,7 @@ from signed S3 site-conformance evidence.
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
 | B1.1 | Cross builds exist | CI job builds `aarch64-unknown-linux-musl`, `armv7-unknown-linux-musleabihf`, `x86_64-unknown-linux-musl` | none | three artifacts; `file` reports "statically linked" for each |
-| B1.2 | Avro and series ids are identical | `cargo test` on x86_64 in CI and on arm64 and armv7 hardware | V: as A1.1 and A1.2 | 100 % of cases on all three targets |
+| B1.2 | Avro and series ids are identical | `cargo test` on native x86_64 and ARM64 in CI (D-T14; ARMv7 under QEMU, supplementary) | V: as A1.1 and A1.2 | 100 % of cases on both native targets |
 | B1.3 | KafScale conformance holds | Rust port of the six required tests of `opentsx-kafscale-conformance` | K | 6 of 6 pass |
 | B1.4 | Partitioning equals Java | `placement_probe` test: 10,000 random keys, 12 partitions, Rust producer against Java `DefaultPartitioner` | generated keys | 10,000 of 10,000 equal |
 | B1.5 | Crash recovery as A1.5 | `crash_recovery` integration test | W on K | as A1.5 |
@@ -428,7 +428,8 @@ The [B2 operating guide](../docs/devguide/integration/rust-runner-b2.md) and
 SPEC S1.13 define explicit local context, typed output, resource ceilings,
 whole-topic ownership and retained state. The no-context local profile retains
 its three clean operations. Signed B1 admission remains pass-through-only.
-Physical ARMv7 acceptance remains open under B1.2 and issue 294.
+ARMv7 is built and tested under QEMU only; D-T14 requires no physical ARMv7
+board.
 
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
@@ -474,8 +475,8 @@ student material reference these implementation and regression paths.
   criteria below. The [B3 operating guide](../docs/devguide/integration/rust-runner-b3.md)
   records its signed decode-to-statistics scope, local evidence and security
   boundaries. The pinned Rust executable passes the complete W run, actual
-  CLI and certificate-forced SSH acceptance. Physical ARMv7 B1.2 remains open
-  independently.
+  CLI and certificate-forced SSH acceptance. Physical ARMv7 is not required
+  (D-T14).
 
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
@@ -498,23 +499,24 @@ release enrollment. Owner-local qualification binds actual executable,
 endpoint, vectors, executed test/protocol/placement evidence and validity;
 ordinary runtimes receive no broker-admin or arbitrary probe-topic rights.
 Fresh conformance observes the job cut, metadata, fingerprints and complete
-series inventory. ARMv7 QEMU remains supplementary to physical B1.2 hardware
-acceptance.
+series inventory. ARMv7 runs under QEMU only, as a supplementary check (D-T14).
 
 ### B4: mixed federation and evaluation on small hardware
 
 - [x] B4.1: execute the bounded mixed W3 signal-cluster qualification with two
   Java sites and one actual signed Rust CLI site. Retain exact source/runtime
   identities, all partials/windows and separate numerical-domain cases.
-- [ ] B4.2: measure baseline (c) on physical Linux ARM64 and ARMv7 boards.
-  Both measurements remain open by owner instruction. The preparation tool
-  defines 54 unassigned conditions and validates supplied evidence integrity;
+- [ ] B4.2: measure baseline (c) on one physical Linux ARM64 board (D-T14). The
+  [Jetson runbook](../docs/devguide/integration/wayang-board-jetson.md) prepares a
+  Jetson Nano 4 GB for the 27 conditions.
+  The measurement remains open. The preparation tool
+  defines 27 unassigned conditions and validates supplied evidence integrity;
   it does not execute measurements or establish hardware acceptance.
 
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
 | B4.1 | Mixed federation equals centralized | `FederatedStatsIntegrationTest` with `s1`, `s2` on Track A and `s3` on Track B | W3 on K | counts, `min`, `max` bit-identical; `mean`, `m2` within D-T2; quantile accuracy qualified by S4.3; listed boundary, zero-bucket and collapsed-tail cases explain sketch differences |
-| B4.2 | Baseline (c) is measured | protocol of concept 20, section 14, on one arm64 and one armv7 board | W, 100, 1,000 and 10,000 series | RSS, CPU, start time, throughput of both tracks measured and reported with raw samples; no threshold unless the owner sets one |
+| B4.2 | Baseline (c) is measured | protocol of concept 20, section 14, on one physical arm64 board (D-T14) | W, 100, 1,000 and 10,000 series | RSS, CPU, start time, throughput of both tracks measured and reported with raw samples; no threshold unless the owner sets one |
 
 Status of B4 on 2026-11-20, JDK 21 and Rust 1.99.1, KafScale v1.6.0 built
 from source with disposable Proxy endpoints. The [qualification report and raw data](../docs/datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md)
@@ -523,7 +525,7 @@ retain source/runtime hashes and the exact executed JUnit methods:
 | # | Result |
 |---|---|
 | B4.1 | met for bounded W3 on the signal-cluster route: `FederatedStatsIntegrationTest.everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders` executes Java `s1`/`s2` and actual Rust CLI `s3`, 3,600 Episodes, 2,160,000 values, 1,260 partials, 420 final windows, 30 conformance checks and 2,520 canonical-merge byte comparisons. Exact counts/extrema/lastSeen pass; maximum relative mean error is `1.7308017671758118e-14`, M2 `2.7235050829345894e-12`, within unchanged `3e-12`. `MixedSketchQualificationTest` executes 58 cases and 348 mixed arrival-order comparisons, including 42 gamma-boundary, six zero-threshold and four collapsed-tail cases. |
-| B4.2 | open for both physical ARM64 and ARMv7 boards. `wayang_board_evaluation.py` emits the unassigned 54-condition matrix; its 23 deterministic tests validate evidence completeness and association only. No physical RSS, CPU, startup or throughput result is claimed. Physical ARMv7 B1.2 also remains open in [issue 294](https://github.com/kamir/OpenTSx/issues/294). |
+| B4.2 | open for one physical ARM64 board (D-T14). `wayang_board_evaluation.py` emits the unassigned 27-condition matrix; its 24 deterministic tests validate evidence completeness and association only and refuse ARMv7 or AArch32 boards. `board_identity.py` and `board_resource_sampler.py` record the board and the one-second samples in the validator's formats (10 tests). No physical RSS, CPU, startup or throughput result is claimed. |
 
 Six arrival orders use one canonical site fold; they do not establish floating-point
 associativity. The Java-only test and shared sketch bytes remain exact. On this
@@ -534,11 +536,37 @@ accuracy exceptions. Continuous mixed fleets and the Rust job-state route are
 outside this acceptance.
 
 ### B5: WASM operators
+
+- [x] B5.1: qualify deterministic fuel exhaustion in both exported and start functions.
+- [x] B5.2: qualify bounded initial memory and growth with task failure.
+- [x] B5.3: qualify artifact-embedded `convert.unit` against the shared vectors.
+
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
 | B5.1 | Fuel stops a runaway operator | `wasm_limits` test with an endless loop | fixture | the task fails with a fuel error within the configured fuel |
 | B5.2 | Memory is capped | `wasm_limits` test that allocates past the limit | fixture | allocation refused; task fails |
 | B5.3 | A WASM operator matches its vectors | `wasm_operator` test with `convert.unit` compiled to WASM | V: `clean-ops.v1.json` (unit cases) | as A2.1 |
+
+The owner-approved [B5 contract](https://github.com/kamir/OpenTSx/issues/328)
+fixes the artifact-only Wasmtime/Pulley profile in
+[SPEC S7.5.1](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s751-execute-the-embedded-b5-conversion).
+Status on 2026-11-20, Rust 1.99.1 and JDK 21:
+
+- B5.1 is met: `wasm_limits` exhausts the fixed 10,000 fuel units in an
+  exported loop and a start function before instantiation completes.
+- B5.2 is met: oversized initial memory and growth past 65,536 bytes fail the
+  task. The pipeline retains its preceding state; the real runner publishes
+  no output and commits no checkpoint after either memory or fuel traps.
+  A separate stack regression verifies the 262,144-byte engine limit.
+- B5.3 is met: all five `wasm_operator` tests pass, including both shared
+  conversion cases, all 16 checkpointed input partitions and 49 refused
+  code/limit-field placements. The 14 `wasm_limits` tests also pass.
+
+All 346 runner tests and three shared-contract tests pass without failures,
+ignored or filtered cases. The artifact qualification parser requires every
+one of the 19 B5 test names in native and supplementary ARMv7 QEMU logs.
+The physical ARM64 B4.2 measurement remains open; D-T14 requires no ARMv7
+board.
 
 Criteria per milestone: A0 5, A1 7, A2 6, A3 6, A4 9, A5 2, B1 6, B2 3, B3 4, B4 2, B5 3.
 
@@ -559,6 +587,7 @@ Criteria per milestone: A0 5, A1 7, A2 6, A3 6, A4 9, A5 2, B1 6, B2 3, B3 4, B4
 | D-T11 | Kafka transport security until KafScale is checked | TLS-terminating proxy; isolated network; wait for KafScale support | TLS-terminating proxy | as recommended, owner, 2026-11-16 |
 | D-T12 | Where `opentsx-wayang` lives | module in this repository; separate repository | module in this repository: it reuses five OpenTSx modules | as recommended, owner, 2026-11-16 |
 | D-T13 | FPGA kernels on raw sensor data (Tier 3) | kernels behind the Rust runner, data reduction only; a separate FPGA track reached from Wayang; not admitted, results enter as `MEASURED` edge metrics | behind the Rust runner, data reduction only: the runner keeps transport, framing, keyed state and checkpoints; see qualification below | as recommended, owner, 2026-11-20 |
+| D-T14 | ARMv7 hardware for B1.2 and B4.2 | physical ARMv7 board; ARMv7 userland on an ARMv8 core (AArch32); no ARMv7 hardware, ARM64 only | ARM64 only: no planned target is 32-bit (the orbit work and the space boards of the research studies are 64-bit). B1.2 is met by the native x86_64 and ARM64 CI jobs; B4.2 is measured on one physical ARM64 board, a Jetson Nano 4 GB. The `armv7-unknown-linux-musleabihf` artifact stays built and QEMU-tested but is not hardware-qualified. A 32-bit run on an ARMv8 board (a pi-top with 32-bit Raspberry Pi OS) is optional and is reported as AArch32 compatibility mode, never as B1.2 or B4.2 | as recommended, owner, 2026-11-20 |
 
 D-T2 compares a fixed relative bound with per-data-set measurement in A4.5.
 The owner approved relative `3e-12` for bounded W3 `mean` and `m2` on
@@ -589,7 +618,7 @@ Rust runner on an onboard computer?
 - No tool compiles the Python operators to FPGA logic. A kernel is reimplemented from the operator specification
   and checked against the shared vectors (study, section "No compiler turns the Python TSA package into FPGA logic").
 - Every runtime computes in IEEE 754 double precision. Admission compares against the shared vectors at `1e-12`
-  relative, `5e-13` absolute or exact equality (`docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md:105-123`). A
+  relative, `5e-13` absolute or exact equality (`docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md:108-126`). A
   change to an operator's output for any input raises its version and the catalog version (`SPEC:56-57`).
 
 **Decision.**
@@ -608,7 +637,7 @@ Rust runner on an onboard computer?
    contract compares exactly, the FPGA path is a new operator version with its own tolerance class, approved by the
    owner as D-T2 approved the bound for federated moments.
 5. Raw ring frames get a port type `raw`, allowed only between a kernel and the runner and never on a topic
-   (port types: `SPEC:62-71`). The ring source is a new operator `ingest.raw-ring` with its own contract and
+   (port types: `SPEC:65-74`). The ring source is a new operator `ingest.raw-ring` with its own contract and
    vectors.
 6. Kernel packages and bitstreams are signed with Ed25519 (D-T5) and verified by the runner before loading. AMD
    UltraScale RSA bitstream authentication cannot be combined with partial reconfiguration

@@ -339,7 +339,7 @@ def report(snapshot, metadata, mixed, sketch):
              f"Execution host: {metadata['executionHost']['osName']} ({metadata['executionHost']['osArch']}). "
              f"Collection host: {metadata['platform']}. Hardware: {metadata['hardware']}.", "",
              "This is local lab qualification. It does not establish physical Linux board acceptance. "
-             "ARMv7 hardware acceptance remains open.", "",
+             "ARMv7 hardware is not required (TASK-020 D-T14).", "",
              "The bounded signal-cluster plan uses Java at s1 and s2 and the actual signed Rust runner at s3. "
              "All three sites supply accepted conformance reports before inventory admission.", "",
              "| Evidence | Executed count |", "|---|---:|", f"| Input episodes | {mixed['episodes']} |", f"| Input samples | {mixed['samples']} |",

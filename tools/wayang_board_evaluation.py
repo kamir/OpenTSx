@@ -23,7 +23,8 @@ SPEC.loader.exec_module(FEDERATION)
 PLAN_SCHEMA = "opentsx.board-evaluation-plan.v1"
 EVIDENCE_SCHEMA = "opentsx.board-evaluation-evidence.v1"
 RESOURCE_FIELDS = ("elapsed_seconds", "rss_bytes", "cpu_seconds", "lag_records")
-ARCHITECTURES = ("arm64", "armv7")
+# D-T14 (owner, 2026-11-20): B4.2 is measured on one physical ARM64 board; ARMv7 is not part of the matrix.
+ARCHITECTURES = ("arm64",)
 RUNTIMES = ("java17", "java21", "rust")
 SERIES = (100, 1000, 10000)
 EVIDENCE_HELP = (
@@ -178,12 +179,13 @@ def validate(value, root, source):
     if value.get("sourceSnapshot") != snapshot or not re.fullmatch("[0-9a-f]{40}", str(snapshot.get("commit"))):
         raise ValueError("source evidence differs from the actual clean checkout")
     boards = value.get("boards")
-    if not isinstance(boards, list) or len(boards) != 2 or {b.get("architecture") for b in boards if isinstance(b, dict)} != set(ARCHITECTURES):
-        raise ValueError("board evidence requires one arm64 and one armv7 device")
+    if (not isinstance(boards, list) or len(boards) != len(ARCHITECTURES)
+            or [b.get("architecture") for b in boards if isinstance(b, dict)] != list(ARCHITECTURES)):
+        raise ValueError("board evidence requires exactly one physical arm64 device (D-T14)")
     for board in boards:
         for field in ("deviceModel", "os", "kernel", "cpuGovernor", "storage", "network"):
             text(board.get(field), "board " + field)
-        machine = "aarch64" if board["architecture"] == "arm64" else "armv7l"
+        machine = "aarch64"
         if board.get("executionMode") != "physical" or board.get("system") != "Linux" or board.get("machine") != machine or board["cpuGovernor"] != "performance":
             raise ValueError("board execution must record physical Linux architecture and performance governor")
         file_evidence(root, board.get("identityEvidence"), limit=2_097_152)
@@ -280,7 +282,7 @@ def main(argv=None):
         if arguments.command == "plan":
             with arguments.output.open("x", encoding="utf-8") as target:
                 target.write(json.dumps(plan(), indent=2) + "\n")
-            print("Planned 54 unassigned conditions; no board measurements or hardware qualification.")
+            print(f"Planned {len(conditions())} unassigned conditions; no board measurements or hardware qualification.")
         else:
             if arguments.input.is_symlink() or not arguments.input.is_file() or arguments.input.stat().st_size > 2_097_152:
                 raise ValueError("evidence manifest must be a bounded regular file")

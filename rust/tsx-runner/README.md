@@ -5,6 +5,10 @@ signed continuous pass-through and qualified signed bounded statistics with
 explicit resource caps and acknowledged checkpoints.
 
 You need the pinned Rust 1.99.1 toolchain and the native C/C++ build tools used by `rdkafka` and zstd.
+The runner manifest declares Rust 1.97.0 as its minimum for Wasmtime 50.0.1.
+Development and test builds omit dependency debug information while retaining
+runner debug information. The signed CLI regression records the executable
+size and requires it to fit the existing 256 MiB identity-read limit.
 Broker execution also needs existing input/output topics and a trusted local request.
 The [local operating guide](../../docs/devguide/integration/rust-runner-local.md) defines the complete request,
 checkpoint, receipt, Compose and failure contracts.
@@ -55,8 +59,8 @@ selects the actual B3 executable for `s3` beside two Java sites and records its
 qualified identity, signed statuses and retained completed outcome. The
 `b4_sketch` example separately exposes existing statistics through bounded
 exact-bit JSON for cross-runtime boundary, zero-bucket and collapsed-tail
-checks; it does not add a deployed operator. Both physical ARM64 and ARMv7
-B4.2 measurements and physical ARMv7 B1.2 acceptance remain open.
+checks; it does not add a deployed operator. The physical ARM64 B4.2
+measurement remains open; D-T14 requires no ARMv7 hardware.
 
 ## Execute the local catalog profile
 
@@ -73,6 +77,20 @@ Without `context`, local requests retain their 64-series and 100,000-sample
 ceilings. B2 requests with `context` allow at most 1,024 series and 1,000,000
 samples, subject to every declared byte and state bound. Numerical kernels,
 admitted local execution and fleet deployment are separate capabilities.
+
+## Execute conversion inside WASM
+
+The existing local `convert.unit` stage runs the artifact-embedded module
+through Wasmtime 50.0.1 and its Pulley interpreter. Its import-free binary64
+ABI preserves separate multiplication and addition; host code retains units,
+timestamps, gaps, identities and overflow rejection. The operator parameters
+retain their existing contract. Undeclared cleaning DAG fields are refused.
+
+The [B5 operating guide](../../docs/devguide/integration/rust-runner-b5.md)
+defines fixed module, fuel, memory and stack bounds, executable regression
+cases and failure handling. Plans cannot supply code or enlarge these bounds.
+There is no WASI or native conversion fallback. This local implementation
+does not broaden signed B1 pass-through or signed B3 statistics admission.
 
 ## Qualify signed continuous pass-through
 
@@ -96,8 +114,9 @@ signed production fleet deployment remain outside both isolated profiles.
 The CI definition runs shared-vector and runner tests on native x86_64 and ARM64
 Linux, builds the three B1 musl targets, and executes supplementary ARMv7 tests
 under QEMU. Static-artifact reports check the actual ELF, dynamic dependencies,
-version and digest. A QEMU result is not physical ARMv7 qualification. TASK-020
-B1 and B1.2 remain open until the shared cases run on physical ARMv7 hardware.
+version and digest. A QEMU result is not physical ARMv7 qualification; under
+D-T14 TASK-020 B1.2 is met by the native x86_64 and ARM64 jobs, and ARMv7 stays
+a supplementary QEMU check.
 
 ## Serve a trusted local worker
 

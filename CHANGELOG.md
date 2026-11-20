@@ -13,6 +13,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Accept idle Kafka frame-boundary resets and cancelled metadata requests in the
+  validation observer. Retain response correlations until forwarding succeeds;
+  keep interrupted frames and resets with data requests as errors.
 - Resolve Central dependencies and plugins in CI through a Google Cloud-hosted
   mirror. Verify endpoint selection and permanent errors offline, including a
   Central 404 response with a long Retry-After value.
@@ -64,9 +67,37 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `lascaris-space/`: home of the OpenTSx components for in-orbit computation on LASCARIS for Space, with the
+  components it holds, the modules that stay responsible for the runner, Wayang and the Workbench, and the contracts
+  it keeps. It contains no code yet. The README section "Take time series into orbit with LASCARIS for Space" states
+  the direction: series from orbit in the ground Workspace, identity by series key, provenance to the declared source,
+  and what provenance and signed downlink chunks do and do not guarantee for training data.
+- Planned task [`EVOLUTION/TASK-022-situation-center.md`](EVOLUTION/TASK-022-situation-center.md): in-orbit nodes
+  with a KafScale and `tsx-runner` sidecar, the ground station as hub and discovery point, a component state model
+  whose liveness follows predicted passes, a Workbench situation page, and later a decentralized registry and
+  cooperating situation centers. Phase L0 is an orbit profile in which a failed status report no longer stops a plan.
+- Planned task [`EVOLUTION/TASK-021-orbit-testbed.md`](EVOLUTION/TASK-021-orbit-testbed.md): a homelab testbed with a
+  Jetson Nano as onboard computer and a Synology NAS as ground station, a satellite simulator writing an onboard
+  ring buffer, an emulated space-ground link driven by computed passes, and phases P0 to P6 up to the D-T13 CPU
+  fallback path. Phase P0 prepares the board with the Jetson runbook and board tools of D-T14. No implementation
+  yet.
+- TASK-020 D-T14 (owner, 2026-11-20): B1.2 and B4.2 need no ARMv7 hardware. The native x86_64 and ARM64 CI
+  jobs meet B1.2; the ARMv7 artifact stays built and QEMU-tested but is not hardware-qualified. B4.2 is measured
+  on one physical ARM64 board, so `wayang_board_evaluation.py` plans 27 conditions and refuses ARMv7 and AArch32
+  boards. New `tools/board_identity.py` and `tools/board_resource_sampler.py` record the board and the one-second
+  RSS, CPU and lag samples in the validator's formats (Python 3.6, for JetPack 4.6), and the
+  [Jetson runbook](docs/devguide/integration/wayang-board-jetson.md) prepares a Jetson Nano 4 GB for B4.2.
+- Artifact-embedded WASM `convert.unit` in the local Rust cleaning pipeline,
+  with Wasmtime 50.0.1/Pulley, fixed fuel, memory and stack bounds, no host
+  imports and no native conversion fallback. Resource-limit and shared-vector
+  regressions retain existing numerical, record and checkpoint contracts.
+  Manual and generated conversion lessons distinguish this local binding
+  from signed fleet admission and open physical ARM64/ARMv7 acceptance.
+
 - Catalog `tsx-catalog/1` records the SHA-256 of each operator's vector file, with the new schema
   `opentsx.catalog.v1`. `SystemDocTest` fails when a vector file changes without a new operator version and a new
   catalog (S1.1.3). No operator, version or vector file changes.
+
 - Demo entry page linking local thermal, finite forecast and Windpark
   journeys to prerequisites, acceptance checks and a recording tied to its
   tested revision.
@@ -434,6 +465,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Removed
 
+- Files that `.gitignore` excludes are no longer tracked: `config/private/ccloud.props` (the credentials in it
+  no longer exist), `.idea/workspace.xml` and every `.DS_Store`. The unreachable commented block after `exit` in
+  `bin/010_build.sh` is gone. `tools/test_repo_hygiene.py` fails if such files are tracked again.
+
 - `TimeSeriesAnalysisJob`, the 2.x Flink example job. `StatsJob` is the v2 Flink job. `TimeSeriesAggregateFunction`
   stays, because the PFD runtime `DynamicTopologyJob` uses it.
 
@@ -443,6 +478,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   modes that exist. With the B3 site configuration, `agent`, `conform` and `run`
   handle signed bounded statistics. With the B1 configuration, `run` executes
   isolated signed continuous pass-through.
+- `GET /v1/dags` lists the status records of Track A and B jobs under `jobs`, the latest per key, also when no
+  control record has that name. A record that carries `job` is a job record. It is not shown as a refusal of the
+  processor and does not replace a refusal under the same key. Specification S5.4 requires `job` in every Track A
+  and B record.
 
 - Retrieval POST routes `/v1/patterns/search`, `/v1/episodes/similar` and `/v1/segments` require a single JSON object
   and report invalid bodies as HTTP 400. Response exchanges close after success or failure while preserving the

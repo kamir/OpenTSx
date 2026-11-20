@@ -125,10 +125,9 @@ Read the [B2 acceptance criteria](../../../EVOLUTION/TASK-020-wayang-ts-operator
 for Track A parity and exact cross-correlation-limit evidence. Passing offline
 vectors does not establish physical device qualification.
 
-## Keep ARMv7 hardware acceptance open
+## Keep ARMv7 as a QEMU check
 
 Native hosted x86_64 and ARM64 tests and supplementary ARMv7 QEMU tests are
-separate evidence. B1.2 requires the shared Avro and identity cases on actual
-ARMv7 hardware. The board, operating system, source revision, commands and
-results must be recorded before closing B1.2 or B1. The missing hardware
-acceptance remains tracked in [issue 294](https://github.com/kamir/OpenTSx/issues/294).
+separate evidence. Under D-T14 the native jobs satisfy B1.2 and no ARMv7
+hardware is required. The ARMv7 artifact stays built and QEMU-tested but is not
+hardware-qualified.

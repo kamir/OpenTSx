@@ -10,3 +10,5 @@
 * [Deliver Wayang orchestration](integration/wayang-unified-plan.md)
 * [Validate shared assignments](integration/wayang-shared-contracts.md)
 * [Inspect bounded mixed Java and Rust federation](integration/wayang-mixed-federation.md)
+* [Prepare the B4.2 run on a Jetson Nano](integration/wayang-board-jetson.md)
+* [Execute the embedded WASM conversion](integration/rust-runner-b5.md)

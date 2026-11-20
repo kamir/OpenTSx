@@ -17,7 +17,7 @@ Read the lesson's source, manual, SPEC and test references before choosing its r
 | Java or Python library | A public numerical entry point. A library implementation alone does not supply a DAG binding or a Wayang mapping. |
 | Processor DAG | An operator accepted by the current series/vector processor, with that runtime's parameters and state rules. |
 | Wayang | An implemented mapping or infrastructure entry point, separately identified by the lesson. A pure Java kernel alone does not establish a mapping. |
-| Rust | Offline contracts, the local B2 catalog, isolated signed pass-through and qualified signed bounded statistics. |
+| Rust | Local catalog, embedded WASM and qualified signed profiles. |
 
 The [UI contracts](../learning/ui-operator-contracts.md) and
 [library contracts](../learning/library-operator-contracts.md) identify the actual algorithm behavior.
@@ -71,9 +71,35 @@ The Avro library lesson preserves its Java starter. Its Rust references
 separately trace Episode wire bytes, canonical series identity, xxHash64, time
 deltas and bucket checksums to the same repository vectors. The bucket-checksum
 helper is a library utility, not another runtime operator. Native x86_64 and
-ARM64 CI and supplementary ARMv7 QEMU execution are distinct evidence. Physical
-ARMv7 vector execution is still required by
-[TASK-020 B1.2](../../EVOLUTION/TASK-020-wayang-ts-operators.md#b1-rust-runner-foundation).
+ARM64 CI and supplementary ARMv7 QEMU execution are distinct evidence. Under
+D-T14 the native jobs satisfy
+[TASK-020 B1.2](../../EVOLUTION/TASK-020-wayang-ts-operators.md#b1-rust-runner-foundation);
+no ARMv7 hardware is required.
+
+## Trace the embedded WASM conversion
+
+Keep the `ui.convert.unit` Celsius/Fahrenheit input, parameters and expected
+values. The [B5 guide](../devguide/integration/rust-runner-b5.md) and linked
+WASM tests add these tasks:
+
+1. Follow the existing `convert.unit` stage into its artifact-embedded module.
+   Identify the three binary64 inputs, separate multiplication and addition,
+   and host-owned unit labels, gaps, timestamps and Episode identities.
+2. Inspect fuel exhaustion in both an exported loop and a start function.
+   Distinguish deterministic fuel accounting from a timeout or sleep.
+3. Inspect initial-memory and growth failures. Explain why an allocation
+   refusal followed by task success does not satisfy B5.2.
+4. Trace import and ABI rejection, then prove a trap leaves publication and
+   acknowledged checkpoint progress unchanged. No native fallback or plan
+   code delivery is part of this profile.
+5. Run both shared conversion-bearing cleaning cases through the actual
+   pipeline, including chunked state restoration. Preserve numerical
+   tolerances, gap positions, timestamps and unit labels.
+
+The browser exercise retains its workbench implementation. This Rust binding
+adds no operator ID or signed fleet admission. Native hosted tests and ARMv7
+QEMU remain separate from the physical ARM64 B4.2 measurement, which remains
+open.
 
 ## Trace qualified bounded Rust site operation
 
@@ -118,8 +144,7 @@ manual conformance, checks the acknowledged cursor, stops with SIGTERM and
 replays the retained outcome through signed file/stdin commands.
 The [`SSH helper regressions`](../../tools/test_rust_ssh_launch.py) provide
 operational evidence without changing numerical lessons. Local proof does not
-close production release enrollment, mixed continuous federation or physical
-ARMv7 hardware acceptance.
+close production release enrollment or mixed continuous federation.
 
 ## Trace bounded mixed federation without claiming hardware qualification
 
@@ -141,9 +166,9 @@ for these operational tasks:
    the zero bucket and explicitly excluded collapsed tails from the qualified
    alpha domain.
 4. Read the [board plan and validator](../../tools/wayang_board_evaluation.py).
-   Distinguish its 54 planned conditions and synthetic regression fixtures from
-   actual physical measurements. Both ARM64 and ARMv7 B4.2 measurements remain
-   open, as does physical ARMv7 B1.2 acceptance. A generated plan or passing
+   Distinguish its 27 planned conditions and synthetic regression fixtures from
+   actual physical measurements. The ARM64 B4.2 measurement remains open
+   (D-T14: ARM64 only). A generated plan or passing
    integrity validator does not supply device performance numbers.
 
 The learning metadata adds traceability to these cases. It does not change

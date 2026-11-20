@@ -107,8 +107,9 @@ architecture, absence of a dynamic interpreter or needed libraries, executable
 version, SHA-256 and actual test summaries. Reports retain source and tool
 versions. The `rust-native-<target>` and `rust-static-<target>` artifacts have
 seven-day retention. The ARMv7 job executes tests under QEMU and labels its
-result as emulated. It does not satisfy the physical ARMv7 requirement in
-[TASK-020 B1.2](../../EVOLUTION/TASK-020-wayang-ts-operators.md#b1-rust-runner-foundation).
+result as emulated. Under D-T14,
+[TASK-020 B1.2](../../EVOLUTION/TASK-020-wayang-ts-operators.md#b1-rust-runner-foundation)
+needs no ARMv7 hardware; the QEMU job stays a supplementary check.
 Job definitions alone do not establish a successful cross build; inspect the
 run's artifacts and reports.
 
@@ -122,6 +123,15 @@ and state formats. The disposable B1 KafScale acceptance harness supplies
 protocol evidence; the separate [B3 site profile](../devguide/integration/rust-runner-b3.md)
 binds that prior evidence to its exact executable and endpoint, performs fresh
 job checks and submits signed site conformance.
+
+The [embedded WASM conversion](../devguide/integration/rust-runner-b5.md)
+executes local `convert.unit` with Wasmtime 50.0.1/Pulley and fixed fuel,
+memory and stack bounds. It accepts no host imports or plan-carried code.
+A trap fails processing before publication or checkpoint commit; it does not
+fall back to native conversion. Host Episode identities, units and retained
+state use their existing contracts. Signed B1 and B3 operator admission is
+unchanged. The physical ARM64 B4.2 measurement remains open (D-T14: ARM64
+only).
 
 For a failed bounded JVM federation test, download `kafscale-capabilities` from the KafScale conformance job.
 It includes `opentsx-wayang/target/surefire-reports/` and retained
@@ -343,11 +353,9 @@ The signed B1 profile remains pass-through only. Java UI deployment has its
 own smaller admitted subset. Catalog kernels and local parity evidence do not
 grant fleet execution or production rollout rights.
 
-Physical ARMv7 qualification remains open in
-[issue 294](https://github.com/kamir/OpenTSx/issues/294). Native ARM64 and
-supplementary ARMv7 QEMU tests do not satisfy B1.2. Run the shared Avro and
-identity cases on an actual ARMv7 board and record its hardware, OS, source
-revision and results before closing B1.2 or B1.
+Under D-T14 the native x86_64 and ARM64 CI jobs satisfy B1.2; ARMv7 is built
+and tested under QEMU only and is not hardware-qualified. A 32-bit run on an
+ARMv8 board is optional and is reported as AArch32 compatibility mode.
 
 ## 12.10 Operate signed bounded Rust statistics
 
@@ -391,8 +399,8 @@ The signed profile admits only `decode.avro-soe` and
 B2 operator set, continuous mixed-fleet qualification and production rollout
 remain separate. The [bounded mixed W3 guide](../devguide/integration/wayang-mixed-federation.md)
 identifies the separate actual-CLI acceptance harness and its retained numeric
-evidence. Both physical ARM64 and ARMv7 B4.2 measurements remain open, as does
-physical ARMv7 B1.2 acceptance.
+evidence. The physical ARM64 B4.2 measurement remains open (D-T14: ARM64
+only).
 
 ## 12.11 Inspect mixed-federation and board evidence
 
@@ -406,9 +414,11 @@ tails. Retain the JUnit outcome with the successful final report; diagnostic
 CSV files alone do not establish acceptance.
 
 The [board evidence tool](../../tools/wayang_board_evaluation.py) prepares the
-54 baseline (c) conditions and checks supplied files. It does not run the
+27 baseline (c) conditions on one ARM64 board (D-T14) and checks supplied files.
+The [Jetson runbook](../devguide/integration/wayang-board-jetson.md) prepares a
+Jetson Nano 4 GB for them. It does not run the
 5-minute warm-up or 30-minute measurement. Keep actual source/runtime/artifact
 identity, explicit Java heap, exact input, one-second resource samples and
 condition-specific output proof with each physical run. Evidence-integrity
-validation does not attest hardware or close B4.2. Both physical ARM64 and
-ARMv7 measurements require separate executed evidence and owner review.
+validation does not attest hardware or close B4.2. The physical ARM64
+measurement requires separate executed evidence and owner review.

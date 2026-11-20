@@ -108,7 +108,8 @@ publication guarantees are defined per profile.
 The separate [signed Rust profile](docs/devguide/integration/rust-runner-b1.md)
 verifies Ed25519 continuous pass-through plans against local policy and retains
 acknowledged whole-topic checkpoints. Native x86_64/ARM64 and three-target musl
-CI gates are defined. Physical ARMv7 qualification remains open.
+CI gates are defined. ARMv7 is built and tested under QEMU only; D-T14 requires
+no ARMv7 hardware.
 
 The [local Rust B2 catalog](docs/devguide/integration/rust-runner-b2.md)
 adds the remaining Track B operators and bounded cross-correlation through
@@ -116,18 +117,25 @@ explicit local context. It includes typed statistics, vector and DQ output,
 restored operator state and Java/Rust regression proof. Its admission is
 separate from signed B1 and the Java UI rollout profile.
 
+Local `convert.unit` uses an
+[artifact-embedded WASM module](docs/devguide/integration/rust-runner-b5.md)
+with Wasmtime/Pulley, fixed fuel, memory and stack bounds, and no host imports.
+It retains the existing parameters and host record/checkpoint contracts.
+Plans cannot supply code or change sandbox limits; signed B1 and B3 admission
+remain separate.
+
 The [signed bounded Rust site profile](docs/devguide/integration/rust-runner-b3.md)
 adds certificate-authenticated plan pulls, signed conformance and bounded
 decode-to-statistics execution. Owner-local qualification pins actual test,
 protocol and placement evidence. Fresh job checks retain whole-topic cuts and
 series inventories; acknowledged site aggregates survive signal-cluster
 outages and forward with deterministic deduplication identities. This profile
-does not admit the remaining B2 operators or close physical ARMv7 acceptance.
+does not admit the remaining B2 operators.
 The [bounded mixed W3 harness](docs/devguide/integration/wayang-mixed-federation.md)
 selects two Java sites and an actual qualified Rust CLI site. Its numerical
 acceptance depends on retained execution evidence. Board tooling prepares and
-validates supplied evidence; both physical ARM64 and ARMv7 B4.2 measurements
-remain open.
+validates supplied evidence; the physical ARM64 B4.2 measurement remains open
+(D-T14: ARM64 only).
 
 For the local three-worker Rust profile, choose **Legacy** in the Workbench
 header, then open **Smart Topic**. The [bounded rollout
@@ -146,6 +154,44 @@ This capped single-owner gateway has no automatic failover.
 The [federation measurement report](docs/datamodel-2026/measurements/wayang-federation-2026-11-17/REPORT.md)
 records executed comparisons and data movement. It distinguishes observed
 results from performance claims.
+
+## Take time series into orbit with LASCARIS for Space
+
+LASCARIS for Space is the plan to carry the same contracts to satellites.
+KafScale holds the topics on board and on the ground, Apache Wayang plans and
+signs on the ground, and the Rust runner executes signed plans on the onboard
+computer. In that plan the OpenTSx Workspace on the ground shows series from
+orbit next to ground data: historical episodes by replay and new episodes as
+they arrive after each pass. Forecasts stay labelled `FORECAST`; they are
+predictions, not future measurements.
+
+KafScale and Wayang are the base that makes OpenTSx a universal time-series
+layer. A series is identified by its key: metric and tags hash to its
+`seriesId` ([`SeriesKey`](opentsx-model/src/main/avro/SeriesKey.avsc)). Each
+episode names its source, producer, pipeline and parent episode in
+[`Provenance`](opentsx-model/src/main/avro/Provenance.avsc), and system
+documents tie signals to their raw source topic and to an origin class
+(`MEASURED`, `REPORTED`, `FORECAST`, `ESTIMATED` or `SYNTHETIC`). Provenance
+records where values come from; it does not prove that they are correct. In
+orbit, raw samples stay in the onboard ring buffer only for its retention, and
+the ground receives reduced episodes.
+
+For training data this means: every value is tied to a declared source and a
+processing chain. TASK-021 plans signed downlink chunks, which prove that an
+episode is unchanged since the onboard runner signed it; the signature covers
+the path from the runner to the ground, not the path from the sensor to the
+runner. This makes training data traceable and reproducible, not automatically
+correct. Calibration, data quality, time correlation and representativeness
+need their own evidence.
+
+Complex algorithms run on the onboard CPU or on the ground. FPGA kernels reduce
+high-rate raw data near the sensor; owner decision D-T13 in
+[TASK-020](EVOLUTION/TASK-020-wayang-ts-operators.md) admits them behind the
+runner, with a CPU fallback. The components are planned in
+[TASK-021](EVOLUTION/TASK-021-orbit-testbed.md) (orbit testbed) and
+[TASK-022](EVOLUTION/TASK-022-situation-center.md) (situation center) and are
+built in [`lascaris-space/`](lascaris-space/README.md). None of them is
+implemented yet.
 
 ## Run the Workbench
 

@@ -1,6 +1,6 @@
 # Concept 20: time-series operators on Apache Wayang, a Java track and a Rust edge track
 
-> Status: **concept**, 2026-11-19. The module has its Java platform plugin,
+> Status: **concept**, 2026-11-20. The module has its Java platform plugin,
 > KafScale source and sink, checkpointed increments, and the pure Java
 > `TsxPairXcorr` and `TsxPairEs` kernels. Shared vectors cover statistics,
 > segmentation, SAX, and data-quality results. `tsx-runner` 0.1.0 executes
@@ -10,8 +10,8 @@
 > A separate isolated signed `run` profile admits continuous Episode
 > pass-through. The B3 site configuration adds signed bounded statistics,
 > outbound mTLS plan pulls, qualified conformance and aggregate catch-up;
-> production fleet activation and
-> physical ARMv7 qualification remain separate. Checked against Apache
+> production fleet activation remains separate; D-T14 requires no ARMv7
+> hardware. Checked against Apache
 > Wayang release 1.1.1 (tag `wayang-1.1.1`, commit `61deee43`, 2026-02-09) and `main` at `713faa7d` (2026-11-12).
 > Crate and tool versions are named where they are used. Related: [05](05-SMART-TOPICS.md) (federated global model),
 > [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md) (Go Smart Topic processor, `opentsx.dag.v1`),
@@ -27,6 +27,11 @@ plausible-range checks, unit conversion and an optional trailing resample on a c
 The separate [B2 catalog profile](../devguide/integration/rust-runner-b2.md)
 uses explicit local context to execute fourteen Track B target entries and
 bounded `pair.xcorr`, with typed output and retained operator state.
+Its existing `convert.unit` stage executes an
+[artifact-embedded WASM module](../devguide/integration/rust-runner-b5.md)
+through Wasmtime 50.0.1/Pulley. Fixed fuel, memory and stack caps and an
+import-free ABI bound guest execution; parameters and host record semantics
+remain unchanged. No plan carries code or sandbox-limit overrides.
 The [signed Rust profile](../devguide/integration/rust-runner-b1.md) uses its
 own local authority and continuous pass-through loop. It does not expand the
 local cleaning profile or implement a public fleet service.
@@ -38,8 +43,8 @@ to the remaining local B2 operators. The [bounded mixed W3 harness](../devguide/
 selects two Java sites and one actual qualified Rust CLI site. It retains
 conformance, runtime identity, per-partial and per-window comparisons; actual
 acceptance is recorded in the [qualification report](measurements/rust-b4-mixed-20261120/REPORT.md).
-Both physical ARM64 and ARMv7
-B4.2 measurements remain open.
+The physical ARM64
+B4.2 measurement remains open (D-T14: ARM64 only).
 
 ## 1. Goal
 
@@ -85,6 +90,7 @@ legacy Java UI admission or signed B1 pass-through profile.
 | Bounded Rust orchestration | Explicit workbench target, PostgreSQL journal/coordinator, `RustRollout` compiler, custom `RustPlatform`/`RustExecutor`, private HTTP preparation and acknowledged completion | [local guide](../devguide/integration/wayang-rust-compose.md), `opentsx-saas-backend/app/services/wayang_service.py`, `opentsx-wayang/src/main/java/org/opentsx/wayang/rust/`, `rust/tsx-runner/src/worker.rs` |
 | Isolated signed Rust run | Continuous whole-topic pass-through, compact Ed25519 JWS, local bindings/policy, durable activation intent and acknowledged progress checkpoints; full B1 qualification remains open | [signed runner guide](../devguide/integration/rust-runner-b1.md), `rust/tsx-runner/src/run_plan.rs`, [TASK-020 B1](../../EVOLUTION/TASK-020-wayang-ts-operators.md#b1-rust-runner-foundation) |
 | Qualified bounded Rust sites | Signed decode-to-statistics, TLS 1.3 mTLS pulls/conformance, owner-local executed qualification evidence, exact membership/scopes and acknowledged offline aggregate forwarding | [B3 guide](../devguide/integration/rust-runner-b3.md), `rust/tsx-runner/src/site_plan.rs`, `rust/tsx-runner/src/conformance.rs`, `rust/tsx-runner/src/forwarder.rs` |
+| Embedded Rust WASM conversion | Existing local `convert.unit` executes a reviewed artifact module with Pulley, fixed fuel/memory/stack bounds and no imports; signed admission is unchanged | [B5 guide](../devguide/integration/rust-runner-b5.md), `rust/tsx-runner/src/wasm.rs`, `rust/tsx-runner/tests/wasm_operator.rs` |
 | Wayang in OpenTSx | `TsxJavaPlugin` registers the Java platform and KafScale transport; `TsxIncrement` runs checkpointed increments; `TsxPairXcorr` and `TsxPairEs` are pure Java pair kernels. Shared vectors cover statistics, segmentation, SAX, and data-quality results. | `opentsx-wayang/pom.xml`, `TsxJavaPlugin.java`, `TsxIncrement.java`, `TsxPairXcorr.java`, `TsxPairXcorrVectorsTest.java`, `TsxPairEs.java`, `TsxPairEsVectorsTest.java`, `tools/java_operator_vectors.py` |
 | Build | Java release 17 (`pom.xml:39`), CI on Java 17 and 21 ([CONTRIBUTING.md](../../CONTRIBUTING.md)); `kafka.version` 3.9.2, `avro.version` 1.12.1, `hadoop.version` 3.5.0 (`pom.xml:50-55`) | `pom.xml` |
 | Streaming runtime that runs today | Java processor in `opentsx-retrieval`: manual assignment, explicit offsets, checkpoint per runner written after the broker acknowledged the output, control topic `tsx.<domain>.dags.v1`, status topic `tsx.<domain>.dag-status.v1` | [kafka-native-streaming.md](../devops/kafka-native-streaming.md); `VectorProcessor.java:46-59`; `TopicLayout.java:119-125` |
@@ -224,7 +230,7 @@ Versions from crates.io on 2026-11-16.
 | Avro | `apache-avro` | 0.22.0, Apache-2.0 | `GenericSingleObjectWriter`, `SpecificSingleObjectWriter<T>`; `RabinFingerprintHeader` writes `C3 01` plus the fingerprint little-endian (`src/headers.rs`) |
 | xxHash64 | `twox-hash` | 2.1.5, MIT | `XxHash64::oneshot(seed, bytes)` |
 | DDSketch | port of `QuantileSketch` | | `sketches-ddsketch` 0.4.2 uses floor indexing and the Java DDSketch byte format; OpenTSx uses `ceil` indexing and its own format v1 (`QuantileSketch.java:13-28`, `:221`) |
-| Sandbox | `wasmtime` | 50.0.1 | fuel, epoch interruption, `StoreLimitsBuilder::memory_size`; WASI 0.2 components tier 1 |
+| Sandbox | `wasmtime` | 50.0.1 | embedded conversion; see B5 |
 | Supply chain | `cargo-auditable` 0.7.7, `cargo-cyclonedx` 0.5.10, `cargo-deny` 0.20.2, cosign 3.1.4, `actions/attest-build-provenance` 4.2.2 | | embedded dependency list, CycloneDX SBOM, licence and advisory gate, Sigstore signatures, SLSA v1.0 provenance |
 
 Stream engines checked for reuse, none adopted: Arroyo (MIT or Apache-2.0, acquired by Cloudflare 2025-04-10,
@@ -369,6 +375,13 @@ acknowledgement-before-checkpoint recovery. Its typed outputs include
 SeriesStats, vectors and DQ signals. The worker reports its fifteen operations
 under `catalogExecution.operators`; the legacy `operators` list retains four
 entries for Java UI admission.
+The local conversion stage uses the embedded B5 module. Its three binary64
+arguments are value, factor and offset; its result preserves separate
+multiplication and addition. The host retains units, gaps, identities,
+timestamps and checkpoints. Fuel or memory failure aborts processing without
+native fallback. The [B5 guide](../devguide/integration/rust-runner-b5.md)
+and [SPEC S7.5](20-WAYANG-TS-OPERATORS-SPEC.md#s75-process-isolation) define
+the artifact-only boundary and host-owned limits.
 The [isolated signed profile](../devguide/integration/rust-runner-b1.md)
 verifies a continuous pass-through plan and its original whole-topic assignment,
 artifact, site, node, catalog and local policy before broker access. It uses one
@@ -386,8 +399,8 @@ below remains a target.
 CI defines native x86_64 and ARM64 execution, all three B1 static musl builds,
 ELF/digest/version checks and supplementary ARMv7 QEMU execution. Its reports
 distinguish native execution from emulation; a workflow definition alone is not
-a successful build result. B1.2 still requires physical ARMv7 execution of the
-shared cases. The
+a successful build result. Under D-T14 the native x86_64 and ARM64 jobs satisfy
+B1.2; ARMv7 stays a QEMU check. The
 [B1 operating guide](../devguide/integration/rust-runner-b1.md) identifies the
 qualification evidence.
 
@@ -650,7 +663,7 @@ Assets: raw episodes at each site, plans, the plan signing key, site credentials
 | tampered artifact | Track A: signed JAR or image from CI; Track B: `cargo-auditable`, CycloneDX SBOM, cosign signature, SLSA provenance; both report their digest in the conformance report |
 | compromised process reaches other hosts | systemd unit with `DynamicUser=yes`, `RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX`, `IPAddressDeny=any`, `IPAddressAllow=` proxy and signal cluster ([systemd.exec](https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html), [systemd.resource-control](https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html)); optional Landlock (Linux 5.13 and later) |
 | stolen broker credentials | client certificates at the TLS-terminating proxy; KafScale ACLs with prefix rules on `tsx.<domain>.` and principal source `proxy_addr` (KafScale has no SASL, see below) |
-| WASM user operators (Track B, later) | `wasmtime` with fuel or epoch deadline, memory cap, no WASI sockets or filesystem |
+| WASM conversion | Embedded module with fixed limits and no imports |
 
 **KafScale security, checked in [KafScale tag v1.6.0, commit `2809a3a`](https://github.com/KafScale/platform/tree/v1.6.0)** (phase A0):
 
@@ -682,11 +695,24 @@ run the signature and conformance checks before the first fetch.
 
 ## 12. Observability
 
-Both tracks write the records the Java processor writes today, so the workbench and `GET /v1/dags` work unchanged:
-`opentsx.dag-control.v1` on `tsx.<domain>.dags.v1` and `opentsx.dag-status.v1` (`state`, `records`, `watermark`,
-`waitingFor`, `skippedBlocks`, `error`) on `tsx.<domain>.dag-status.v1`, on each state change and every 30 s. New
-fields, proposed: `site`, `job`, `planVersion`, `track`, `artifact` (version and digest). Metrics per task: lag per
-partition, records in and out, operator time, checkpoint age, delivery failures.
+`TsxStatus` (Track A) and the Rust `run` profile (Track B) write `opentsx.dag-status.v1` to
+`tsx.<domain>.dag-status.v1` on each state change and at least every 30 s. Track A repeats every 30 s
+(`TsxStatus.java:92`), the Rust `run` profile every 15 s (`run_loop.rs:20`). The Kafka key is the job id
+(`TsxStatus.java:79`, `run_loop.rs:310`). Site agents of both tracks send the same record to the plan service
+instead (S5.3; `SiteStatus.java:76-83`, `agent.rs:967`).
+
+A job record has the processor fields `dag`, `state`, `specHash`, `records`, `watermark`, `waitingFor`,
+`skippedBlocks`, `error` and `at`, plus `job`, `planVersion` and `track` (S5.4). `dag` equals `job`. The Rust runner
+and the site agents also write `site` and `artifact` (version and digest). Neither track writes or reads
+`opentsx.dag-control.v1` on `tsx.<domain>.dags.v1`.
+
+`GET /v1/dags` lists every status record that carries `job` under `jobs`: the latest record per key, as written, with
+or without a control record of that name (`KafScaleFeed.java:320`, `:375`). The processor never writes `job`.
+`dags` holds the control records with the processor's sink reports (key `<dag>/<sink>`) and refusals (key `<dag>`).
+Job records do not appear under `dags`. The workbench Deployments panel reads `dags` only and does not show job
+records (`opentsx-saas-frontend/src/workbench/deployments.ts:27-31`).
+
+Metrics per task: lag per partition, records in and out, operator time, checkpoint age, delivery failures.
 
 ## 13. Testing
 
@@ -722,7 +748,7 @@ Baselines:
 |---|---|---|
 | (a) centralized against federated: the same operator plan once with all raw data moved to one site, once federated over k sites | k sites plus one central site | equality of results (section 9.4) and bytes moved |
 | (b) the existing OpenTSx Java streaming path (the processor in `opentsx-retrieval` and the statistics processor in `opentsx-stats`) | same server | in-repository reference for throughput and latency of the same operators |
-| (c) Track B against Track A | the same small device: one arm64 board and one armv7 board (models named in the report) | resource use and throughput on low-capacity hardware |
+| (c) Track B against Track A | the same small device: one physical arm64 board (D-T14; model named in the report) | resource use and throughput on low-capacity hardware |
 
 ### 14.1 Measure Track A increments
 
@@ -766,11 +792,14 @@ durable-storage behavior, a remote-network result or Track B parity.
 7. Publish raw samples and the scripts in the repository.
 
 The [board evidence tool](../../tools/wayang_board_evaluation.py) prepares this
-54-condition matrix for ARM64/ARMv7, Java 17/21/Rust and three repetitions per
-series count. Its validator checks supplied source/artifact/sample/output
-proof integrity. It does not start workloads, collect physical measurements or
-attest hardware. Both physical boards remain unmeasured for B4.2; hosted
-ARM64 and ARMv7 QEMU checks do not replace them. The
+27-condition matrix for one ARM64 board (D-T14), Java 17/21/Rust and three
+repetitions per series count. Its validator checks supplied
+source/artifact/sample/output proof integrity. It does not start workloads,
+collect physical measurements or attest hardware. `board_identity.py` and
+`board_resource_sampler.py` record step 1 and step 5 in its formats; the
+[Jetson runbook](../devguide/integration/wayang-board-jetson.md) prepares a
+Jetson Nano 4 GB. The board remains unmeasured for B4.2; hosted ARM64 checks do
+not replace it. The
 [mixed federation guide](../devguide/integration/wayang-mixed-federation.md#prepare-physical-board-evidence)
 keeps this preparation separate from the bounded W3 correctness harness.
 
