@@ -140,17 +140,13 @@ public class TopicsManagerTool {
         return topics;
     }
 
-    public static Vector<String> initTopicDefinitions(String topicsDefFn) {
+    /** Sets the topic list file and returns the names of its topics. */
+    public static Vector<String> initTopicDefinitions(String topicsDefFn) throws IOException {
 
         TOPICS_DEF_FN = topicsDefFn;
-        LOG.debug("topic list path={}", TOPICS_DEF_FN);
 
-        return getExpectedTopicList();
+        return getTopicNames();
 
-    }
-
-    private static Vector<String> getExpectedTopicList() {
-        return null;
     }
 
     public static void createTopics() throws IOException, InterruptedException {

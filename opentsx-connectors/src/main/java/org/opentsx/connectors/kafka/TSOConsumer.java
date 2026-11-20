@@ -7,31 +7,35 @@ import org.opentsx.tsa.rng.ReferenceDataset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.time.Duration;
+import java.util.Collections;
+import java.util.Properties;
 
 /**
+ * Reads the String records of one topic into a {@link TSBucket} with one consumer, which {@link #runConsumer} closes.
  *
  * https://www.confluent.io/blog/tutorial-getting-started-with-the-new-apache-kafka-0-9-consumer-client/
- *
  */
 public class TSOConsumer {
 
     private static final Logger LOG = LoggerFactory.getLogger(TSOConsumer.class);
 
-    Consumer c = null;
+    static final int GIVE_UP_AFTER_EMPTY_POLLS = 10;
+
+    private final Consumer<String, String> consumer;
+
+    private final String topic;
 
     public TSOConsumer(String tn) {
-        c = TSOConsumer.createConsumer( tn );
+        this(createConsumer(), tn == null ? ReferenceDataset.topicname : tn);
     }
 
-    private static String TOPIC = ReferenceDataset.topicname;
+    TSOConsumer(Consumer<String, String> consumer, String topic) {
+        this.consumer = consumer;
+        this.topic = topic;
+    }
 
-    /*
-
-           We create a simple consumer which can consume String messages.
-
-     */
-    private static Consumer<String, String> createConsumer(String TOPIC_NAME) {
+    private static Consumer<String, String> createConsumer() {
 
         final Properties props = OpenTSxClusterLink.getClientProperties();
 
@@ -43,51 +47,55 @@ public class TSOConsumer {
                 StringDeserializer.class.getName());
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,"earliest");
 
-        // Create the consumer using props.
-        final Consumer<String, String> consumer = new KafkaConsumer<>(props);
-
-        // Subscribe to the topic.
-        if ( TOPIC_NAME != null )
-            TOPIC = TOPIC_NAME;
-
-        consumer.subscribe(Collections.singletonList(TOPIC));
-
-        return consumer;
+        return new KafkaConsumer<>(props);
     }
 
+    /**
+     * Reads the records of the topic {@code tn} (the topic of the constructor when null) until at least {@code z} have
+     * arrived, keeping every record of the last poll, and closes the consumer. It stops early after 10 empty polls of
+     * one second in a row.
+     */
     public void runConsumer(TSBucket tsb, int z, String tn) {
 
-        final Consumer<String, String> consumer = createConsumer(tn);
+        final String name = tn == null ? topic : tn;
 
-        final int giveUp = z;
-
-        int noRecordsCount = 0;
+        int read = 0;
+        int emptyPolls = 0;
 
         try {
-            while (noRecordsCount < giveUp) {
+            consumer.subscribe(Collections.singletonList(name));
 
-                final ConsumerRecords<String, String> consumerRecords = consumer.poll(1000);
+            while (read < z && emptyPolls < GIVE_UP_AFTER_EMPTY_POLLS) {
 
-                Iterator<ConsumerRecord<String, String>> it = consumerRecords.iterator();
+                final ConsumerRecords<String, String> consumerRecords = consumer.poll(Duration.ofSeconds(1));
 
-                while( it.hasNext() ) {
+                if (consumerRecords.isEmpty()) {
+                    emptyPolls++;
+                    continue;
+                }
+                emptyPolls = 0;
 
-                    noRecordsCount++;
+                for (ConsumerRecord<String, String> record : consumerRecords) {
 
-                    ConsumerRecord record = it.next();
+                    read++;
 
-                    tsb.processKVToTSO( (String)record.key() , (String)record.value(), TOPIC );
+                    tsb.processKVToTSO( record.key() , record.value(), name );
 
                     LOG.debug("record read count={} of={} partition={} offset={}",
-                            noRecordsCount, giveUp, record.partition(), record.offset());
+                            read, z, record.partition(), record.offset());
 
-                };
+                }
 
                 consumer.commitAsync();
             }
         }
         finally {
             consumer.close();
+        }
+
+        if (read < z) {
+            LOG.warn("stopped reading after empty polls topic={} read={} expected={} emptyPolls={}",
+                    name, read, z, GIVE_UP_AFTER_EMPTY_POLLS);
         }
     }
 

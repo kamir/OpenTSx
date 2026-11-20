@@ -146,6 +146,28 @@ public class TimeSeriesObjectSerializerTest {
     }
 
     @Test
+    public void theFormatPatternsSurviveARoundTripAndACopy() throws Exception {
+        TimeSeriesObject original = new TimeSeriesObject();
+        original.setLabel("formats");
+        original.addValuePair(1.0, 100.0);
+        original.setDecimalFomrmatX("0.0");
+        original.setDecimalFomrmatY("0.00");
+        original.getDecimalFormat_STAT().applyPattern("0.000");
+
+        DataOutputSerializer out = new DataOutputSerializer(256);
+        serializer.serialize(original, out);
+        TimeSeriesObject read = serializer.deserialize(new DataInputDeserializer(out.getCopyOfBuffer()));
+        TimeSeriesObject copy = serializer.copy(original);
+
+        for (TimeSeriesObject series : new TimeSeriesObject[] {read, copy}) {
+            assertEquals("#0.0", series.getDecimalFormat_X().toPattern());
+            assertEquals("#0.00", series.getDecimalFormat_Y().toPattern());
+            assertEquals("#0.000", series.getDecimalFormat_STAT().toPattern());
+            assertNotSame(original.getDecimalFormat_STAT(), series.getDecimalFormat_STAT());
+        }
+    }
+
+    @Test
     public void testCopy_NullTimeSeries() {
         TimeSeriesObject copy = serializer.copy(null);
         assertNull(copy);

@@ -141,6 +141,14 @@ class LegacyBridgeTest {
         SeriesKey k = LegacyBridge.seriesKeyFromLabel("m b=2,a=1", "kW");
         assertEquals("m a=1,b=2", LegacyBridge.legacyLabel(k));
         assertEquals("kW", k.getUnit());
-        assertThrows(IllegalArgumentException.class, () -> LegacyBridge.seriesKeyFromLabel("m broken", null));
+        assertEquals("label: tag \"broken\" in \"m broken\" is not key=value; expected \"metric k1=v1,k2=v2\"",
+                assertThrows(IllegalArgumentException.class,
+                        () -> LegacyBridge.seriesKeyFromLabel("m broken", null)).getMessage());
+        assertEquals("label: tag \"=2\" in \"m a=1,=2\" is not key=value; expected \"metric k1=v1,k2=v2\"",
+                assertThrows(IllegalArgumentException.class,
+                        () -> LegacyBridge.seriesKeyFromLabel("m a=1,=2", null)).getMessage());
+        assertEquals("label: empty; expected \"metric k1=v1,k2=v2\"",
+                assertThrows(IllegalArgumentException.class,
+                        () -> LegacyBridge.seriesKeyFromLabel("  ", null)).getMessage());
     }
 }

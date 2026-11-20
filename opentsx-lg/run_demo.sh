@@ -1,7 +1,11 @@
+#!/usr/bin/env bash
 #
-# Prepare environment variables for local CP
+# Needs CONFLUENT_HOME, the directory of a Confluent Platform installation; exits 2 without it.
 #
-export CONFLUENT_HOME="$HOME/bin/confluent-5.5.1"
+if [[ -z "${CONFLUENT_HOME:-}" ]]; then
+  echo "CONFLUENT_HOME: not set; expected the directory of a Confluent Platform installation" >&2
+  exit 2
+fi
 
 #
 # clean and start local CP
@@ -17,10 +21,10 @@ confluent local start
 #
 rm -rf "$HOME/.m2/repository/org/opentsx"
 
-cd ..
+cd .. || exit 1
 mvn clean generate-sources compile package install
 
-cd opentsx-lg
+cd opentsx-lg || exit 1
 mvn clean generate-sources compile package install -PSimpleTimeSeriesProducer,Docker
 
 #
@@ -48,21 +52,21 @@ mvn clean compile exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGener
 #
 # inspection of LOG-File size
 #
-$CONFLUENT_HOME/bin/kafka-log-dirs --bootstrap-server 127.0.0.1:9092 --describe --topic-list OpenTSx_Episodes,OpenTSx_Events | grep "{" | python -mjson.tool
+"$CONFLUENT_HOME"/bin/kafka-log-dirs --bootstrap-server 127.0.0.1:9092 --describe --topic-list OpenTSx_Episodes,OpenTSx_Events | grep "{" | python -mjson.tool
 
 #
 # inspect of TOPIC HEALTHINESS
 #
-$CONFLUENT_HOME/bin/kafka-log-dirs --bootstrap-server 127.0.0.1:9092 --describe
+"$CONFLUENT_HOME"/bin/kafka-log-dirs --bootstrap-server 127.0.0.1:9092 --describe
 
 # Show all details of all topics:
-$CONFLUENT_HOME/bin/kafka-topics --bootstrap-server 127.0.0.1:9092 --describe
+"$CONFLUENT_HOME"/bin/kafka-topics --bootstrap-server 127.0.0.1:9092 --describe
 
 # Show the details of all partitions (in all topics):
-$CONFLUENT_HOME/bin/kafka-topics --bootstrap-server 127.0.0.1:9092 --describe | grep 'Offline:'
+"$CONFLUENT_HOME"/bin/kafka-topics --bootstrap-server 127.0.0.1:9092 --describe | grep 'Offline:'
 
 # Show the offline partitions (if any) from all topics:
-$CONFLUENT_HOME/bin/kafka-topics --bootstrap-server 127.0.0.1:9092 --describe | grep 'Offline: .+'
+"$CONFLUENT_HOME"/bin/kafka-topics --bootstrap-server 127.0.0.1:9092 --describe | grep 'Offline: .+'
 
 #
 # The KSQL statements of the demo. Paste them into the ksql CLI; the SELECT statements block and print results.

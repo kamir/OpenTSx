@@ -2,9 +2,12 @@ package org.opentsx.connectors.kafka;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.UnsupportedFileSystemException;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.Text;
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.apache.mahout.math.VectorWritable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,6 +16,7 @@ import org.opentsx.connectors.kafka.klatency.LatencyTestEventProducer;
 import org.opentsx.core.TSData;
 import org.opentsx.data.model.LatencyTesterEvent;
 import org.opentsx.data.series.TimeSeriesObject;
+import org.opentsx.tsa.rng.ReferenceDataset;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,8 +24,10 @@ import java.util.Properties;
 import java.util.Vector;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HelperFailureTest {
 
@@ -115,6 +121,19 @@ class HelperFailureTest {
     }
 
     @Test
+    void persistEventsKafkaSendsToTheGivenTopic() throws Exception {
+        useProfile(UNREACHABLE);
+        TimeSeriesObject series = new TimeSeriesObject();
+        series.setLabel("probe");
+        series.addValuePair(1.0, 2.0);
+        Vector<TimeSeriesObject> data = new Vector<>();
+        data.add(series);
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> new TSOWriter().persistEvents_Kafka(data, "probe", "tsx_probe_events"));
+        assertEquals(notSent("tsx_probe_events"), e.getMessage());
+    }
+
+    @Test
     void persistBucketKafkaThrowsAndStoresNothing() {
         UnsupportedOperationException e = assertThrows(UnsupportedOperationException.class,
                 () -> TSOWriter.persistBucket_Kafka(new Vector<>(), "probe", "probe_topic"));
@@ -132,6 +151,35 @@ class HelperFailureTest {
                     () -> TSOWriter.persistBucket_SequenceFile(new Vector<>(), "probe", "probe", "seq"));
         }
         finally {
+            TSOWriter.setConfig(null);
+        }
+    }
+
+    @Test
+    void aSeriesThatCannotBeAppendedClosesTheSequenceFile() throws Exception {
+        String previousPath = ReferenceDataset.FILE_PATH;
+        ReferenceDataset.FILE_PATH = dir + "/";
+        Configuration conf = new Configuration();
+        TSOWriter.setConfig(conf);
+        TimeSeriesObject first = new TimeSeriesObject();
+        first.setLabel("s1");
+        first.addValue(1.0);
+        Vector<TimeSeriesObject> series = new Vector<>();
+        series.add(first);
+        series.add(null);
+        try {
+            assertThrows(NullPointerException.class,
+                    () -> TSOWriter.persistBucket_SequenceFile(series, "probe", "probe", "seq"));
+            org.apache.hadoop.fs.Path file = new org.apache.hadoop.fs.Path(dir.resolve("probe.tsb.vec.seq").toString());
+            try (SequenceFile.Reader reader = new SequenceFile.Reader(conf, SequenceFile.Reader.file(file))) {
+                Text name = new Text();
+                assertTrue(reader.next(name, new VectorWritable()));
+                assertEquals("s1", name.toString());
+                assertFalse(reader.next(name, new VectorWritable()));
+            }
+        }
+        finally {
+            ReferenceDataset.FILE_PATH = previousPath;
             TSOWriter.setConfig(null);
         }
     }

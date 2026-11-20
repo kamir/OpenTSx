@@ -37,6 +37,15 @@ serializers and deserializers, `schema.registry.url`, `basic.auth.credentials.so
 listed topic and skips the ones that do not exist. Both stop at the first topic the cluster refuses or does not
 answer for, with `<topic>: could not create the topic; <cause>` or `<topic>: could not delete the topic; <cause>`.
 `TopicsUP` and `TopicsCHECK` stop with `<profile>: could not list the topics; <cause>` when the topics cannot be listed.
+`TopicsManagerTool.initTopicDefinitions(<file>)` sets the topic list and returns the names of its topics; it throws
+`IOException` when the file cannot be read.
+
+## Read a topic into a bucket
+
+`TSOReader.loadBucket_Kafka(<topic>, <z>)` reads the topic with one `TSOConsumer` until at least `<z>` records have
+arrived, keeping every record of the last poll, and `runConsumer` closes the consumer. It stops early after 10 empty
+polls of one second in a row and then logs at WARN:
+`stopped reading after empty polls topic=<topic> read=<n> expected=<z> emptyPolls=10`.
 
 ## Handle errors
 
@@ -48,6 +57,9 @@ The helpers stop at the first failure and throw.
   `EventFlowStateProducer.pushFlowState` and `LatencyTestEventProducer.pushTestEventToCluster` with
   `<topic>: could not send the record; <cause>`. The `TSOProducer` and `TSOEventProducer` methods close their producer;
   `EventFlowStateProducer` and `LatencyTestEventProducer` keep theirs until `close()`.
+* `TSOWriter.persistBucket_SequenceFile` closes the SequenceFile when a series cannot be written and passes the
+  failure on.
+* `TSOWriter.persistEvents_Kafka` sends to the topic it is given.
 * `TSOWriter.persistBucket_Kafka` stores nothing and throws
   `<topic>: persistBucket_Kafka stores nothing; use org.opentsx.bridge.LegacyBridge and org.opentsx.kafka.BucketWriter`.
 * `TopicsCHECK` prints its verdict on stdout and exits with status 0 when every listed topic exists and 1 when a topic
@@ -55,4 +67,6 @@ The helpers stop at the first failure and throw.
   `<topic list>: topics missing on the cluster [<topic>, ...]; create them with TopicsUP`.
 
 The helpers log through SLF4J under the logger names `org.opentsx.connectors.kafka.*`, one line per event at DEBUG.
+`mvn exec:java` in this module puts slf4j-simple and
+[`conf/simplelogger.properties`](../conf/simplelogger.properties) on the classpath, so INFO and higher lines go to stderr.
 `TopicsUP`, `TopicsDOWN` and `TopicsCHECK` print their results on stdout.

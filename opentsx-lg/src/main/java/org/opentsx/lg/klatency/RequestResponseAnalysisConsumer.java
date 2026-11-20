@@ -29,7 +29,7 @@ public class RequestResponseAnalysisConsumer {
 
     static int NR_OF_SAMPLES = 1000;
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
 
         LOG.info("starting RequestResponseAnalysisConsumer");
 
@@ -41,16 +41,19 @@ public class RequestResponseAnalysisConsumer {
         GIVE_UP = Integer.parseInt( OpenTSxClusterLink.getClientProperties().getProperty( "klatency.consumer.giveUp") );
         NR_OF_SAMPLES = Integer.parseInt( OpenTSxClusterLink.getClientProperties().getProperty( "klatency.consumer.nrOfSamples") );
 
-        runConsumer();
+        runConsumer(LatencyTestEventConsumer.createConsumer( TOPIC ), System.getenv("OPENTSX_SHOW_GUI"), "./opentsx/plots");
 
     }
 
-    static void runConsumer() throws InterruptedException {
-
+    /**
+     * Measures the end-to-end latency of the responses until {@link #GIVE_UP} polls in a row are empty, then writes the
+     * table to {@code folder} or, with {@code showGui} true, opens and stores the chart.
+     */
+    static void runConsumer(Consumer<String, String> consumer, String showGui, String folder) {
 
         TimeSeriesObject tso = new TimeSeriesObject();
 
-        final Consumer<String, String> consumer = LatencyTestEventConsumer.createConsumer( TOPIC );
+        tso.setLabel( TOPIC );
 
         final int giveUp = GIVE_UP;
 
@@ -110,12 +113,6 @@ public class RequestResponseAnalysisConsumer {
 
         String comment = OpenTSxClusterLink.getPropsAsString_NO_SECURITY_PROPS();
 
-        /**
-         * the ENV VARIABLE OPENTSX_SHOW_GUI can turn off the GUI.
-         */
-        String gui_prop = System.getenv("OPENTSX_SHOW_GUI");
-
-
         System.out.println( comment );
 
         String title = "latency per message";
@@ -123,7 +120,6 @@ public class RequestResponseAnalysisConsumer {
         String y = "latency [ms]";
 
         boolean b = true;
-        String folder = "./opentsx/plots";
 
         long t0 = System.currentTimeMillis();
         String filename = "latency-by-message-" + t0;
@@ -155,7 +151,7 @@ public class RequestResponseAnalysisConsumer {
 
         vtso = tso.getSeriesWithPercentiles(100);
 
-        if ( gui_prop.equals( "false" ) ) {
+        if ( !Boolean.parseBoolean( showGui ) ) {
 
             File f = new File( folder + "/" + filename );
             MeasurementTable t = new MeasurementTable();

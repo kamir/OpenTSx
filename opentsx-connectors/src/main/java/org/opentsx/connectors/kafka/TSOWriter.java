@@ -35,23 +35,20 @@ public class TSOWriter{
 
         Path path = new Path(ReferenceDataset.FILE_PATH + fn + ".tsb.vec." + seq);
 
-        // write a SequenceFile form a Vector
-        SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
+        try (SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class)) {
+            for (int i = 0; i < ANZ; i++) {
 
-        for (int i = 0; i < ANZ; i++) {
+                TimeSeriesObject mr = show.get(i);
 
-            TimeSeriesObject mr = show.get(i);
+                TSData data = TSData.convertMessreihe(mr);
 
-            TSData data = TSData.convertMessreihe(mr);
+                NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
+                VectorWritable vec = new VectorWritable();
+                vec.set(nv);
 
-            NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
-            VectorWritable vec = new VectorWritable();
-            vec.set(nv);
-
-            writer.append(new Text(nv.getName()), vec);
+                writer.append(new Text(nv.getName()), vec);
+            }
         }
-
-        writer.close();
         LOG.debug("bucket written title={} path={} series={}", title, path, ANZ);
 
     }
@@ -101,9 +98,9 @@ public class TSOWriter{
 
         TSOEventProducer tsop = new TSOEventProducer();
 
-        tsop.pushTSOItemsToKafka(tsos);
+        tsop.pushTSOItemsToKafka(tsos, topicname);
 
-        LOG.debug("events sent topic={} series={}", TSOEventProducer.TOPIC, tsos.size());
+        LOG.debug("events sent topic={} series={}", topicname, tsos.size());
 
     }
 }

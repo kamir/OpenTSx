@@ -297,7 +297,7 @@ class KafScaleConformanceTest {
             Capabilities.record("group.rejoin.latency.ms", latency);
             // Kafka reassigns within about a second. KafScale v1.6.0 ignores the LeaveGroup v4 member list and
             // answers new members with REBALANCE_IN_PROGRESS instead of MEMBER_ID_REQUIRED, so the Java client
-            // rejoins without a member id in a tight loop and the group never stabilises (no assignment here).
+            // rejoins without a member id in a tight loop and the group never stabilizes (no assignment here).
             Capabilities.record("group.rejoin.assigned", !c.assignment().isEmpty());
         }
     }

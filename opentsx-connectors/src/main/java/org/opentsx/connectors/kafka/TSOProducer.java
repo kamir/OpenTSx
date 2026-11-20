@@ -41,9 +41,6 @@ public class TSOProducer {
             // the key will be based on current time and than one item per ___ms___.
             for (long index = time; index < time + sendMessageCount; index++) {
 
-                /**
-                 *  Create RECORD ...
-                 */
                 final ProducerRecord<String, String> record =
                         new ProducerRecord<>(TOPIC_for_events_string, index+"",
                                 "TSOItem-" + index);
@@ -157,7 +154,6 @@ public class TSOProducer {
             // the key will be based on current time and than one item per ___ms___.
             for ( TSData mrd : data ) {
 
-                // one record per series (a reused record leaked fields between series)
                 EpisodesRecord er = new EpisodesRecord();
 
                 // this MD is needed and not available in TSData object ...
@@ -200,9 +196,6 @@ public class TSOProducer {
                 String tn = TOPIC_for_episodes;
                 if ( topic_suffix != null )
                     tn = tn.concat( "_" + topic_suffix );
-                /**
-                 *  Create RECORD ...
-                 */
                 final ProducerRecord<String, EpisodesRecord> record =
                         new ProducerRecord<>(tn, mrd.label,
                                 er);
@@ -250,7 +243,6 @@ public class TSOProducer {
 
                     long tP = System.currentTimeMillis();
 
-                    // evenly spaced, 200 ms apart
                     long t = t0 + ( i * 200 );
 
                     i++;
@@ -262,12 +254,6 @@ public class TSOProducer {
                     // required by the schema (no default); set by the consumer when measuring latency
                     e.setConsumerTimestamp( -1L );
 
-                    /**
-                     *  Create RECORD ...
-                     *
-                     *  TODO: Use the AVRO FORMAT from OpenTSX-DATA
-                     *
-                     */
                     final ProducerRecord<String, Event> record =
                             new ProducerRecord<>(TOPIC_for_events, key, e );
 

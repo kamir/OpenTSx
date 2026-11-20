@@ -22,7 +22,7 @@ import java.util.Vector;
  * </pre>
  *
  * About 16 bytes per point (two doubles) plus the label and the patterns. A null value in {@code xValues} or
- * {@code yValues} is refused with its index; NaN is written as it is. The stat format is written but not read back.
+ * {@code yValues} is refused with its index; NaN is written as it is.
  *
  * @see TimeSeriesObjectTypeInfo
  */
@@ -66,6 +66,7 @@ public class TimeSeriesObjectSerializer extends TypeSerializer<TimeSeriesObject>
         // Copy metadata
         copy.setDecimalFomrmatX(from.getDecimalFormat_X().toPattern());
         copy.setDecimalFomrmatY(from.getDecimalFormat_Y().toPattern());
+        copy.getDecimalFormat_STAT().applyPattern(from.getDecimalFormat_STAT().toPattern());
 
         return copy;
     }
@@ -168,10 +169,7 @@ public class TimeSeriesObjectSerializer extends TypeSerializer<TimeSeriesObject>
 
         ts.setDecimalFomrmatX(dfx);
         ts.setDecimalFomrmatY(dfy);
-        // Note: TimeSeriesObject doesn't have setDecimalFormat_STAT, but it's
-        // initialized with default.
-        // If needed, we would add that setter. For now, X and Y formats are most
-        // important for display.
+        ts.getDecimalFormat_STAT().applyPattern(dfstat);
 
         return ts;
     }

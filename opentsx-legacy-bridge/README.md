@@ -26,4 +26,11 @@ label: missing in the EpisodesRecord "opentsx://demo"; expected a label such as 
 A record without a uri is named `an EpisodesRecord without uri`. A record or a `TimeSeriesObject` without values
 throws `values: empty; expected at least one value`.
 
+`seriesKeyFromLabel` throws `IllegalArgumentException` for an empty label and for a tag that is not `key=value`:
+
+```text
+label: empty; expected "metric k1=v1,k2=v2"
+label: tag "broken" in "m broken" is not key=value; expected "metric k1=v1,k2=v2"
+```
+
 See [user manual, chapter 13](../docs/user-manual/13-migration.md).

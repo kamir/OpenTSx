@@ -84,23 +84,19 @@ public class DynamicTopologyJob {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        // 1. Source
         DataStream<Observation> sourceStream = buildSource(env, pfd.input, outOfOrdernessMs);
 
-        // 2. Initial Aggregation (Observation -> TimeSeriesObject)
         DataStream<TimeSeriesObject> timeSeriesStream = sourceStream
                 .keyBy(obs -> obs.getUri().toString())
                 .window(TumblingEventTimeWindows.of(Time.milliseconds(windowSizeMs)))
                 .aggregate(new TimeSeriesAggregateFunction())
                 .returns(new TimeSeriesObjectTypeInfo());
 
-        // 3. Dynamic Steps
         DataStream<TimeSeriesObject> currentStream = timeSeriesStream;
         for (PFDStep step : pfd.steps) {
             currentStream = OperationFactory.apply(currentStream, step);
         }
 
-        // 4. Sink
         buildSink(currentStream, pfd.output);
 
         env.execute("OpenTSx Dynamic Job: " + pfd.name);

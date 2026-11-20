@@ -783,6 +783,19 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   when it runs java directly, and the episode scripts pass `shellcheck`.
 - opentsx-core: the guided demos print PASSED or FAILED instead of glyphs and drop their banner comments and filler
   lists; the remaining German strings and comments of opentsx-core are English.
+- opentsx-legacy-bridge: LegacyBridge.seriesKeyFromLabel refuses an empty label with 'label: empty; expected "metric
+  k1=v1,k2=v2"' and a tag without = with 'label: tag "<pair>" in "<label>" is not key=value; expected "metric
+  k1=v1,k2=v2"'.
+- opentsx-connectors: TopicsManagerTool.initTopicDefinitions returns the topic names of the list instead of null and
+  declares IOException when the list cannot be read. This is a breaking change.
+- opentsx-lg: EventFlowAnalysisConsumer writes its latency table to $HOME/opentsx/plots instead of
+  /root/opentsx/plots.
+- opentsx-lg: run_demo.sh, run_demo_container.sh, run_demo_docker_compose.sh, bin/build_all.sh, bin/run_cluster.sh and
+  src/main/mqtt-example/env.sh (now executable) take CONFLUENT_HOME from the caller and exit 2 with 'CONFLUENT_HOME:
+  not set; expected the directory of a Confluent Platform installation' without it. These scripts, build_demo.sh and
+  run_ddc.sh have a bash shebang and stop when a cd fails.
+- opentsx-lg: src/main/k8s/krake-app/lg-demo.yaml is marked as an example and names
+  opentsx/time-series-generator:3.0.1, the image the Docker profile builds; no workflow publishes it.
 
 ### Removed
 
@@ -1839,6 +1852,25 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The solution of exercise 3 of episode 2 reads `sample_data/sensor_data.csv` with its header line and ISO-8601 times
   and exits with 1 and one message line on a broken or missing file instead of printing a stack trace and exiting with
   0.
+- opentsx-flink-core: TimeSeriesObjectSerializer keeps the statistics DecimalFormat pattern when it reads a series
+  back and in copy(); the read and copied series used to fall back to the default pattern.
+- opentsx-connectors: TSOConsumer opens one consumer, which runConsumer closes. runConsumer reads until at least the
+  requested number of records has arrived, keeping every record of the last poll, and stops with a WARN line after 10
+  empty polls of one second in a row when the topic holds fewer records. The constructor used to leak an unused
+  consumer, and runConsumer never returned on such a topic. A second runConsumer call on the same TSOConsumer now
+  fails because the consumer is closed.
+- opentsx-connectors: TSOWriter.persistBucket_SequenceFile closes the SequenceFile when a series cannot be written.
+- opentsx-lg: EventFlowAnalysisConsumer and RequestResponseAnalysisConsumer no longer fail with a NullPointerException
+  after the measurement when OPENTSX_SHOW_GUI is unset. With OPENTSX_SHOW_GUI=true they open the chart; otherwise they
+  write the table file. Their latency series is named after the topic, so an empty topic stops with 'getStatisticData:
+  the series <topic> has no values; expected at least 1 value'.
+- opentsx-lg: the krake-metrics-provider file docker-compose-witth-prometheus.yml has a services key and no dependency
+  on services it does not define, so docker compose config accepts it.
+- opentsx-connectors, opentsx-lg: mvn exec:java and the jar of the opentsx-lg SimpleTimeSeriesProducer profile carry
+  slf4j-simple with conf/simplelogger.properties, so the tools' log lines reach stderr instead of the SLF4J
+  no-operation logger.
+- opentsx-connectors: `TSOWriter.persistEvents_Kafka` sends to the topic it is given instead of always to
+  `TSOEventProducer.TOPIC`; `TSOEventProducer` has `pushTSOItemsToKafka(series, topic)`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

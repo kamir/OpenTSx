@@ -1,0 +1,100 @@
+package org.opentsx.lg.kping;
+
+import org.apache.avro.Schema;
+import org.apache.avro.SchemaBuilder;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.MockConsumer;
+import org.apache.kafka.clients.consumer.OffsetResetStrategy;
+import org.apache.kafka.common.TopicPartition;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.opentsx.connectors.kafka.OpenTSxClusterLink;
+
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class EventFlowAnalysisConsumerTest {
+
+    private static final String TOPIC = "OpenTSx_Events";
+
+    private static final Schema EVENT = SchemaBuilder.record("Event").fields()
+            .requiredLong("timestamp").requiredLong("producer_timestamp").endRecord();
+
+    @TempDir
+    Path dir;
+
+    private String previousProfile;
+
+    private int previousGiveUp;
+
+    @BeforeEach
+    void useProfile() throws Exception {
+        previousProfile = OpenTSxClusterLink.PROPS_FN;
+        previousGiveUp = EventFlowAnalysisConsumer.GIVE_UP;
+        Path profile = dir.resolve("probe.props");
+        Files.writeString(profile, "bootstrap.servers=127.0.0.1:1\n");
+        OpenTSxClusterLink.PROPS_FN = profile.toString();
+        EventFlowAnalysisConsumer.GIVE_UP = 2;
+    }
+
+    @AfterEach
+    void restore() {
+        OpenTSxClusterLink.PROPS_FN = previousProfile;
+        EventFlowAnalysisConsumer.GIVE_UP = previousGiveUp;
+    }
+
+    private static MockConsumer<Long, GenericRecord> consumerWith(int records) {
+        MockConsumer<Long, GenericRecord> consumer = new MockConsumer<>(OffsetResetStrategy.EARLIEST);
+        TopicPartition partition = new TopicPartition(TOPIC, 0);
+        consumer.assign(List.of(partition));
+        consumer.updateBeginningOffsets(Map.of(partition, 0L));
+        for (long i = 0; i < records; i++) {
+            GenericRecord event = new GenericData.Record(EVENT);
+            event.put("timestamp", i);
+            event.put("producer_timestamp", i);
+            consumer.addRecord(new ConsumerRecord<>(TOPIC, 0, i, i, event));
+        }
+        return consumer;
+    }
+
+    @Test
+    void withoutOpentsxShowGuiTheTableOfTheTopicIsWrittenToTheFolder() throws Exception {
+        MockConsumer<Long, GenericRecord> consumer = consumerWith(3);
+        Path plots = dir.resolve("plots");
+
+        EventFlowAnalysisConsumer.runConsumer(consumer, null, plots.toString());
+
+        File[] tables = plots.toFile().listFiles((d, name) -> name.startsWith("latency-by-message-"));
+        assertEquals(1, tables.length);
+        assertTrue(Files.readString(tables[0].toPath()).contains(TOPIC));
+        assertTrue(consumer.closed());
+    }
+
+    @Test
+    void anEmptyTopicStopsAndNamesTheTopic() {
+        MockConsumer<Long, GenericRecord> consumer = consumerWith(0);
+
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> EventFlowAnalysisConsumer.runConsumer(consumer, null, dir.resolve("plots").toString()));
+
+        assertEquals("getStatisticData: the series OpenTSx_Events has no values; expected at least 1 value",
+                e.getMessage());
+        assertTrue(consumer.closed());
+    }
+
+    @Test
+    void thePlotsGoToTheHomeDirectory() {
+        assertEquals(System.getProperty("user.home") + "/opentsx/plots", EventFlowAnalysisConsumer.PLOT_FOLDER);
+    }
+}

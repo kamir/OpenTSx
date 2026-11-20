@@ -81,6 +81,20 @@ class TopicsManagerToolTest {
         assertTrue(out.contains("TOPICS=[tsx_a, tsx_b]"), out);
     }
 
+    @Test
+    void initTopicDefinitionsReturnsTheTopicsOfTheList(@TempDir Path dir) throws Exception {
+        Path list = dir.resolve("topiclist.def");
+        Files.writeString(list, "name,partitions,replication\ntsx_a,1,1\ntsx_b,2,1\n");
+        String previous = TopicsManagerTool.TOPICS_DEF_FN;
+        try {
+            assertEquals(List.of("tsx_a", "tsx_b"), TopicsManagerTool.initTopicDefinitions(list.toString()));
+            assertEquals(list.toString(), TopicsManagerTool.TOPICS_DEF_FN);
+        }
+        finally {
+            TopicsManagerTool.TOPICS_DEF_FN = previous;
+        }
+    }
+
     public static class PrintTopicNames {
         public static void main(String[] args) throws Exception {
             System.out.println("TOPICS=" + TopicsManagerTool.getTopicNames());

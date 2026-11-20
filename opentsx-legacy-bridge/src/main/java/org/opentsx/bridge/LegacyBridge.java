@@ -78,7 +78,7 @@ public final class LegacyBridge {
     public static SeriesKey seriesKeyFromLabel(String label, String unit) {
         String trimmed = label == null ? "" : label.trim();
         if (trimmed.isEmpty()) {
-            throw new IllegalArgumentException("empty label");
+            throw new IllegalArgumentException("label: empty; expected \"metric k1=v1,k2=v2\"");
         }
         int space = trimmed.indexOf(' ');
         if (space < 0) {
@@ -88,7 +88,8 @@ public final class LegacyBridge {
         for (String pair : trimmed.substring(space + 1).trim().split(",")) {
             int eq = pair.indexOf('=');
             if (eq <= 0) {
-                throw new IllegalArgumentException("malformed tag '" + pair + "' in label: " + label);
+                throw new IllegalArgumentException("label: tag \"" + pair + "\" in \"" + label
+                        + "\" is not key=value; expected \"metric k1=v1,k2=v2\"");
             }
             tags.put(pair.substring(0, eq).trim(), pair.substring(eq + 1).trim());
         }

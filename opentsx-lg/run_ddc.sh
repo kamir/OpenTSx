@@ -1,9 +1,4 @@
-#
-#
-#
-
-export CONFLUENT_HOME="$HOME/bin/confluent-5.5.1"
-
+#!/usr/bin/env bash
 #
 # Main class: org.opentsx.lg.TSDataSineWaveGenerator
 #
@@ -14,6 +9,6 @@ export CONFLUENT_HOME="$HOME/bin/confluent-5.5.1"
 ### <OPENTSX_SHOW_GUI>false</OPENTSX_SHOW_GUI>
 #
 
-cd src/main/docker-compose
+cd src/main/docker-compose || exit 1
 
 docker-compose up -d

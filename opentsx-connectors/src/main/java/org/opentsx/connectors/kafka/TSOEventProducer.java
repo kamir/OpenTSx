@@ -37,6 +37,11 @@ public class TSOEventProducer {
      * @param show
      */
     public void pushTSOItemsToKafka(Vector<TimeSeriesObject> show) {
+        pushTSOItemsToKafka(show, TOPIC);
+    }
+
+    /** Sends one JSON record per value of each series to {@code topic}. */
+    public void pushTSOItemsToKafka(Vector<TimeSeriesObject> show, String topic) {
 
         final Producer<String, String> producer = createProducer();
 
@@ -60,7 +65,7 @@ public class TSOEventProducer {
                     String dataJSON = jsonObject.toString();
 
                     final ProducerRecord<String, String> record =
-                            new ProducerRecord<>(TOPIC, data.label + "_" + mr.xValues.get(i),
+                            new ProducerRecord<>(topic, data.label + "_" + mr.xValues.get(i),
                                     dataJSON);
 
                     OpenTSxClusterLink.send(producer, record);

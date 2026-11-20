@@ -92,6 +92,27 @@
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <configuration>
+                    <includePluginDependencies>true</includePluginDependencies>
+                    <executableDependency>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-simple</artifactId>
+                    </executableDependency>
+                    <additionalClasspathElements>
+                        <additionalClasspathElement>${project.basedir}/../conf</additionalClasspathElement>
+                    </additionalClasspathElements>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-simple</artifactId>
+                        <version>${slf4j.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
         </plugins>
     </build>
 
@@ -100,6 +121,13 @@
     <profiles>
         <profile>
             <id>SimpleTimeSeriesProducer</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -116,6 +144,11 @@
                                         <transformer
                                                 implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                             <mainClass>org.opentsx.lg.TSDataSineWaveGenerator</mainClass>
+                                        </transformer>
+                                        <transformer
+                                                implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                                            <resource>simplelogger.properties</resource>
+                                            <file>${project.basedir}/../conf/simplelogger.properties</file>
                                         </transformer>
                                     </transformers>
 

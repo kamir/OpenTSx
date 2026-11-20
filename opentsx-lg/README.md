@@ -34,12 +34,17 @@ The tools and the Kafka Streams applications `FWL_TSA_KStreamsApplication` and `
 
 `src/main/k8s/krake-app/lg-demo.yaml` mounts the ConfigMap `opentsx-lg-demo-config` at `/etc/opentsx/config/`. The
 ConfigMap holds `cuh.props` and `topiclist.def`; `src/main/k8s/krake-app/config/` has templates of both files.
+The manifest is an example: no workflow publishes its image `opentsx/time-series-generator:3.0.1`. Build the image
+with step (2) and load it into your cluster.
 
 The Docker Compose files under `src/main/docker-compose/` map the cluster host names to the addresses `MDC1`, `MDC2`
 and `MDC3`. Set the three variables in the `.env` file next to the compose file.
 
 The scripts use the `JAVA_HOME` you set, or the `java` on your `PATH`. `run_demo.sh` prints the KSQL statements of the
-demo for the ksql CLI.
+demo for the ksql CLI. `run_demo.sh`, `run_demo_container.sh`, `run_demo_docker_compose.sh`, `bin/build_all.sh`,
+`bin/run_cluster.sh` and `src/main/mqtt-example/env.sh` take `CONFLUENT_HOME`, the directory of a Confluent Platform
+installation, from your shell. Without it they exit with status 2 and
+`CONFLUENT_HOME: not set; expected the directory of a Confluent Platform installation`.
 
 ### Handle errors
 
@@ -53,9 +58,18 @@ Each tool stops at the first failure and exits with status 1:
   `<topic list>: topics missing on the cluster [<topic>, ...]; create them with TopicsUP` on stdout.
 * `EventFlowAnalysisConsumer` and `RequestResponseAnalysisConsumer` stop when a poll fails, and close the consumer.
   When no record arrived before they give up, they stop with
-  `getStatisticData: the series <label> has no values; expected at least 1 value`.
+  `getStatisticData: the series <topic> has no values; expected at least 1 value`, where `<topic>` is
+  `OpenTSx_Events` or `latency_benchmark_response`.
 * `EventFlowAnalysisSetup` stops when the topics cannot be created.
+
+With `OPENTSX_SHOW_GUI=true`, `EventFlowAnalysisConsumer` and `RequestResponseAnalysisConsumer` open and store the
+latency chart. Unset or with any other value, they write the table `latency-by-message-<milliseconds>` to
+`$HOME/opentsx/plots` (`EventFlowAnalysisConsumer`) or `./opentsx/plots` (`RequestResponseAnalysisConsumer`).
 
 `TSDataSineWaveGenerator` sends the flow states of all rounds through one `EventFlowStateProducer` and closes it when the
 rounds end. It prints one line per round on stdout:
 `round done round=<n> series=16 generateSeconds=<seconds> sendSeconds=<seconds>`.
+
+The tools log through SLF4J. `mvn exec:java` in this module and the jar of the `SimpleTimeSeriesProducer` profile carry
+slf4j-simple with [`conf/simplelogger.properties`](../conf/simplelogger.properties), so INFO and higher lines go to
+stderr.

@@ -1,3 +1,5 @@
+# Example. No workflow publishes opentsx/time-series-generator: build it in opentsx-lg with
+# mvn package -PSimpleTimeSeriesProducer,Docker (the tag is the Maven version) and load it into your cluster.
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -14,7 +16,7 @@ spec:
     spec:
       containers:
       - name: tsa-generator
-        image: opentsx/time-series-generator:3.0.0
+        image: opentsx/time-series-generator:3.0.1
         env:
           - name: OPENTSX_TOPIC_MAP_FILE_NAME
             value: "/etc/opentsx/config/topiclist.def"
