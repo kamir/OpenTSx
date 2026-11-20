@@ -486,6 +486,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   origins of the signals the flow reads. `park.p_potential_kw` of `h2-chain`, a power curve over the measured wind
   of a station, is `ESTIMATED` and no longer `MEASURED`. The Signals page marks it as modelled, and the decision
   `h2-dispatch`, which accepts estimates and forecasts, no longer blocks it when its data has no `origin` label.
+- The recommendation in `systems/decisions/h2-dispatch.records.example.yaml` no longer carries `shadow: true`,
+  because an approval and an action follow it. `SystemDocTest` refuses an approval or an action that follows a
+  recommendation in shadow operation. No component reads records at run time.
 
 - Concept 20 section 6.1 and the TASK-020 B1 notes list the signed `tsx-runner`
   modes that exist. With the B3 site configuration, `agent`, `conform` and `run`

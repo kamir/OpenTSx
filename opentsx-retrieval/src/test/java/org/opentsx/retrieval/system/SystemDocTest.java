@@ -42,6 +42,7 @@ class SystemDocTest {
     static final Path H2 = ROOT.resolve("systems/h2-chain.system.yaml");
     static final Path SCHEMAS = ROOT.resolve("docs/datamodel-2026/schemas");
     static final Path CATALOG = ROOT.resolve("systems/catalogs/tsx-catalog-1.yaml");
+    static final Path RECORDS = ROOT.resolve("systems/decisions/h2-dispatch.records.example.yaml");
     static final Map<String, Integer> CATALOG_1 = Map.ofEntries(
             Map.entry("decode.avro-soe", 1), Map.entry("dq.plausible-range", 1), Map.entry("convert.unit", 1),
             Map.entry("resample", 1), Map.entry("model.wind-shear", 1), Map.entry("model.power-curve", 1),
@@ -429,7 +430,7 @@ class SystemDocTest {
             assertTrue(analyses.contains(a.path("analysis").asText()), "alternative " + a.path("id").asText() + " names no analysis of the card");
         }
         // the four records of one period follow each other
-        JsonNode records = SystemDoc.read(ROOT.resolve("systems/decisions/h2-dispatch.records.example.yaml"));
+        JsonNode records = SystemDoc.read(RECORDS);
         assertEquals(4, records.size());
         String previous = null;
         for (JsonNode r : records) {
@@ -437,6 +438,36 @@ class SystemDocTest {
             assertEquals(previous, r.path("follows").asText(null), r.path("id").asText());
             previous = r.path("id").asText();
         }
+        nobodyActsInShadowOperation(records);
+    }
+
+    /** In shadow operation nobody acts on the recommendation: no approval or action follows it, the outcome does. */
+    static void nobodyActsInShadowOperation(JsonNode records) {
+        Set<String> shadow = new LinkedHashSet<>();
+        for (JsonNode r : records) {
+            String id = r.path("id").asText();
+            if (r.path("shadow").asBoolean(false) || shadow.contains(r.path("follows").asText(""))) {
+                assertFalse(Set.of("approval", "action").contains(r.path("kind").asText()), id + " acts on a recommendation in shadow operation");
+                shadow.add(id);
+            }
+        }
+    }
+
+    @Test
+    void aRecommendationInShadowOperationIsNotActedOn() throws IOException {
+        ArrayNode records = (ArrayNode) SystemDoc.read(RECORDS);
+        String recommendation = records.get(0).path("id").asText();
+        ((ObjectNode) records.get(0)).put("shadow", true);
+        AssertionError approved = assertThrows(AssertionError.class, () -> nobodyActsInShadowOperation(records));
+        assertTrue(approved.getMessage().contains("apr-h2-dispatch-20261001T0200-v1 acts on a recommendation in shadow operation"), approved.getMessage());
+        records.remove(1);
+        ((ObjectNode) records.get(1)).put("follows", recommendation);
+        AssertionError acted = assertThrows(AssertionError.class, () -> nobodyActsInShadowOperation(records));
+        assertTrue(acted.getMessage().contains("act-h2-dispatch-20261001T0200-v1 acts on a recommendation in shadow operation"), acted.getMessage());
+        // the outcome compares the recommendation with what happened without it
+        records.remove(1);
+        ((ObjectNode) records.get(1)).put("follows", recommendation);
+        nobodyActsInShadowOperation(records);
     }
 
     @Test
