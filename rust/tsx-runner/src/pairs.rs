@@ -1568,7 +1568,7 @@ impl PairStream {
                 revision: 0,
                 provenance: Provenance {
                     source: "opentsx-wayang".into(),
-                    producer: "opentsx-model/3.0.1".into(),
+                    producer: "opentsx-model/3.1.0".into(),
                     created_at: self.created_at,
                     pipeline: None,
                     parent_episode_id: Some(a.episode_id.clone()),

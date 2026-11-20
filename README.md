@@ -241,6 +241,9 @@ The [packaged artifact checks](docs/devguide/published-artifact-acceptance.md)
 test tools-image startup and Windpark replay before publication, then pull
 the published digest on native AMD64 and ARM64 runners. Their edit tests run
 locally without Docker or network access.
+Publication rejects mismatched reactor versions and staged internal JAR
+identities before uploading the image. The image build uses the same verified
+Maven mirror, workload cache and download diagnostics as the Java CI jobs.
 
 You need Docker Compose and an existing Confluent Platform Docker cluster for
 the local CP profile. The profile uses pinned Linux ARM64 images, a React
