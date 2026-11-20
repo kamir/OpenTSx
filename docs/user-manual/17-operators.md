@@ -1453,7 +1453,7 @@ Builds the histogram of each series, with bins of equal width w between its mini
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | available | operator `cdf` |  |
-| java | available (2.x) | `org.opentsx.data.series.TimeSeriesObject#cumulatedDistributionOfYValues` | The 2.x model in opentsx-core has TimeSeriesObject#cumulatedDistributionOfYValues(bins) behind the Swing button CDF, without a test. It returns cumulated counts, not shares. |
+| java | available (2.x) | `org.opentsx.data.series.TimeSeriesObject#cumulatedDistributionOfYValues` | The 2.x model in opentsx-core has TimeSeriesObject#cumulatedDistributionOfYValues(bins) behind the Swing button CDF, which names each series <series>_CDF; TSOperationControlerPanelTest checks the names, no test checks the values. It returns cumulated counts, not shares. |
 | python | none |  |  |
 | processor | none |  |  |
 | go | none |  |  |

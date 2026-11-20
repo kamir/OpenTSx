@@ -23,7 +23,8 @@ runtimes:
     class: "org.opentsx.data.series.TimeSeriesObject#cumulatedDistributionOfYValues"
     note: >-
       The 2.x model in opentsx-core has TimeSeriesObject#cumulatedDistributionOfYValues(bins) behind the Swing button
-      CDF, without a test. It returns cumulated counts, not shares.
+      CDF, which names each series <series>_CDF; TSOperationControlerPanelTest checks the names, no test checks the
+      values. It returns cumulated counts, not shares.
   python: { status: none }
   processor: { status: none }
   go: { status: none }

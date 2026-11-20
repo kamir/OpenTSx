@@ -927,6 +927,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   (the pod does not run or has not written one yet); see kubectl -n <namespace> logs deployment/opentsx-stats`. In
   `lib.sh`: `<deployment>: not scaled back to <replicas>; run kubectl -n <namespace> scale deployment/<deployment>
   --replicas=<replicas>`.
+- `docs/datamodel-2026/01-ANALYSE-Datenmodell.md` names `TSOProducer.pushTSDataAsEpisodesToKafka_String_Avro`,
+  `pushTSDataAsEventsToKafka_String_Avro`, `OpenTSxClusterLink.send` and `LegacyBridge.seriesKeyFromLabel` instead of
+  line numbers of code that moved or is not in the repository. It no longer reports a hard-coded label `"123"` or
+  quadratic event timestamps, which the producer does not have.
 
 ### Removed
 
@@ -1182,7 +1186,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `ConfigManager` stops with `<path>: no such file; give an existing file` when `OPENTSX_CONFIG_FILE` or
   `opentsx.config.file` names a missing file, or, when neither is set, a profile does. It stops with `<name>: empty
   value; set a value or leave the key unset` when the value it uses is empty. It reports files that do not load, and
-  `getInt` stops on a value that is not a whole number instead of returning the default.
+  `getInt` stops on a value that is not a whole number instead of returning the default. When `PFDRecorder` is the
+  first class that reads the configuration, every call of `PFDRecorder.getInstance()` throws `IllegalStateException`
+  with the message of the configuration.
 - Phase-randomized surrogates of `TimeSeriesObjectFFT`, also used by `FFTPhaseRandomizer`, set c_0 of the zero-padded
   values to 0, keep the amplitude of every other Fourier coefficient and the Nyquist coefficient, and open no chart
   windows. A surrogate holds the first n values of the inverse transform, so it has mean 0 and the amplitude spectrum
@@ -2180,28 +2186,32 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `deploy/k3s/70-backup.sh` and `71-restore.sh` stop with `pod <name>: not ready after 180 s; check that the image
   <image> is imported and that the PVCs are on one node, see <kubectl> -n <namespace> describe pod <name>` when their
   helper pod does not get ready.
-- `opentsx-core`: `NORM std=1, avg=0` shows `standardized series of <series>: cannot standardize the values (<cause>)`
-  in a dialog and opens no chart when a series has fewer than two values, a NaN or infinite value or no positive
-  standard deviation; it threw `IllegalArgumentException` on the event dispatch thread.
+- `opentsx-core`: `NORM std=1, avg=0` shows `standardized series of <series>: cannot standardize the values (<cause>);
+  select series with at least two finite values that are not all equal` in a dialog and opens no chart when a series
+  has fewer than two values, a NaN or infinite value or no positive standard deviation; it threw
+  `IllegalArgumentException` on the event dispatch thread.
 - `opentsx-core`: `show PN` shows `<folder>: no such folder; press save PN to create it` while the folder of the panel
   does not exist yet, and `<folder>: cannot open the folder (<cause>); open it in a file manager` when the desktop
   cannot open it. On a desktop without open support it did nothing.
-- `opentsx-core`: `FFT` over two series with the same label shows `FFT of <label>: cannot open the chart (<cause>)` in
-  a dialog and records nothing; it threw `IllegalArgumentException` on the event dispatch thread.
+- `opentsx-core`: `FFT` over two series with the same label shows `FFT of <label>: cannot open the chart (<cause>);
+  give each series its own label` in a dialog and records nothing; it threw `IllegalArgumentException` on the event
+  dispatch thread.
 - `opentsx-core`: the panel `DFA` uses at most as many window sizes as fit 1 apart between 4 and an eighth of the
   number of values, so a series of 1024 values gets 124 window sizes and a finite alpha instead of 250 sizes, almost
-  all of them 4, and alpha NaN. Series of 2032 values or more keep their 250 window sizes and their alpha.
+  all of them 4, and alpha NaN. Series of 2032 values or more keep their 250 window sizes, and series of 2032 to
+  3160031 values their alpha.
 - `opentsx-core`: `TEST Normal Distribution` names its series `l=20` to `l=100` and opens both charts; when two slice
   lengths gave the same number of slices, as for a series of 100 values, both W histograms were named `HISTOGRAM/1`
   and the button threw `IllegalArgumentException` on the event dispatch thread.
 - `opentsx-core`: `show Chart` of `MacroTrackerFrame` does nothing without a selection, shows `show Chart: no chart
-  for <node>; select an operation node` for a node that is not an operation node and `show Chart: no chart for <node>;
-  select an operation node other than Sigma Band or MF-DFA` for a `Sigma Band` or `MF-DFA` node, which keeps no chart,
-  and opens the chart of every other operation node the chart panel recorded; it threw `NullPointerException`.
+  for <node>; select an operation node` for a node without a chart and opens the chart of every operation node the
+  chart panel recorded, for an `MF-DFA` node the F(s,q) chart of the original values of the first series; it threw
+  `NullPointerException`.
   `MacroTrackerFrame.addSource` without an open tracker writes only its DEBUG line instead of
   throwing `NullPointerException`.
 - `opentsx-core`: `Sigma Band` (`SigmaFilter.open`) charts the mean of the selected series and the mean plus and minus
-  one standard deviation; it charted the static rows that only `SigmaFilter.main` fills, so the chart was empty.
+  one standard deviation as the series `mean`, `mean + sigma` and `mean - sigma`, in a chart with the operation panel
+  of the other charts; it charted the static rows that only `SigmaFilter.main` fills, so the chart was empty.
 - `opentsx-core`: `SingleTsRISTool.processReihe` writes the R_q of the result it adds to `risCollector`, the mean of
   the intervals between the values of the series that it keeps, those that are not 0 and not below `offset`. It wrote
   the last value divided by the number of values instead, so
@@ -2240,8 +2250,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   deploy it first with 30-deploy.sh`.
 - `opentsx-core`: `show Chart` of `MacroTrackerFrame` opens the chart of every operation node the chart panel
   recorded; `TEST Normal Distribution` opens its t-value chart. Only `Profile`, `ENTROPY` and `Shuffle` nodes found
-  their chart before. A `Sigma Band` or `MF-DFA` node, which keeps no chart, shows `show Chart: no chart for <node>;
-  select an operation node other than Sigma Band or MF-DFA`.
+  their chart before.
 - `opentsx-core`: `ReturnIntervallStatistik2.addDistData` counts a negative interval that it keeps, which happens only
   when `offset` is below 0, in the first bin of its counts, and an interval whose scaled bin falls below 0 in the
   first scaled bin, as `TSPropertyTester` does. It threw `ArrayIndexOutOfBoundsException`.
@@ -2299,6 +2308,19 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `deploy/k3s/70-backup.sh` refuses a `--out` directory that it cannot list with `<dir>: cannot list it; see the error
   above, then give a new or empty directory with --out` and no longer takes it for an empty one, so it no longer
   writes into a directory that holds an older backup and overwrites its files.
+- `opentsx-core`: the panel `DFA` stops with `DFA of <series>: <n> values give <k> window sizes in the fit range; use
+  from 144 to 3160031 values` in a dialog, opens no chart and records nothing when fewer than two window sizes fall
+  between 16 and 3162, the fit range of alpha. That holds for every series of fewer than 144 or more than 3160031
+  values. It opened a chart with alpha NaN.
+- `opentsx-core`: `Auto-Correlation`, `Profile`, `Diffs`, `Returns (Rel-Diff)`, `Histogram per series`, `NORM max=1`,
+  `ENTROPY`, `CDF`, `ln`, `DFA` and `Shuffle` show `<name> of <label>: cannot open the chart (<cause>); give each
+  series its own label` in a dialog and record nothing when their chart cannot open, for example for two selected
+  series with the same label. `Shuffle` logged the failure and went on; the others threw `IllegalArgumentException` on
+  the event dispatch thread. `CDF` names each series `<series>_CDF`. It named them `unnamed - <date time>`, so the CDF
+  chart of two series with their own labels did not open when both were computed in the same second.
+- docs/datamodel-2026/01-ANALYSE-Datenmodell.md no longer lists a `pushTSOItemsToKafka` path that writes Gson JSON to
+  `OpenTSx_Episodes`; that code was commented out in 3.0.1 and is deleted. The table names
+  `TSOEventProducer.pushTSOItemsToKafka`, which writes JSON `{ts,value}` to `refds_events_topic_<TAG>`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

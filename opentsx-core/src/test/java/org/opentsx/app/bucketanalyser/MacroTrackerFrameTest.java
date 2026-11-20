@@ -21,15 +21,18 @@ import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.datatransfer.DataFlavor;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 import java.util.Vector;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -154,9 +157,10 @@ class MacroTrackerFrameTest {
     @Test
     void anOperationWhosePfdRecorderCannotStartLeavesTheTrackUnchanged(@TempDir Path dir) throws Exception {
         Path output = dir.resolve("output.txt");
+        Path missing = dir.resolve("missing.properties");
         ProcessBuilder builder = new ProcessBuilder(List.of(
                 Path.of(System.getProperty("java.home"), "bin", "java").toString(),
-                "-Dopentsx.config.file=" + dir.resolve("missing.properties"),
+                "-Dopentsx.config.file=" + missing,
                 "-cp", System.getProperty("surefire.test.class.path"),
                 RecordWithoutConfiguration.class.getName()))
                 .directory(dir.toFile()).redirectErrorStream(true).redirectOutput(output.toFile());
@@ -164,8 +168,9 @@ class MacroTrackerFrameTest {
         String printed = Files.readString(output);
 
         assertEquals(0, status, printed);
-        assertTrue(printed.contains("first ExceptionInInitializerError\n"), printed);
-        assertTrue(printed.contains("second NoClassDefFoundError\n"), printed);
+        String refusal = "IllegalStateException " + missing + ": no such file; give an existing file\n";
+        assertTrue(printed.contains("first " + refusal), printed);
+        assertTrue(printed.contains("second " + refusal), printed);
         assertTrue(printed.contains("nodes []\n"), printed);
     }
 
@@ -189,7 +194,7 @@ class MacroTrackerFrameTest {
                 MacroTrackerFrame.addTransformation(t);
                 System.out.println(call + " recorded");
             } catch (Throwable e) {
-                System.out.println(call + " " + e.getClass().getSimpleName());
+                System.out.println(call + " " + e.getClass().getSimpleName() + " " + e.getMessage());
             }
         }
     }
@@ -252,21 +257,42 @@ class MacroTrackerFrameTest {
     }
 
     @Test
-    void showChartOnASigmaBandNodeShowsTheMessage() throws Exception {
+    void showChartOnTheNodesOfSigmaBandAndMfDfaShowsTheirCharts() throws Exception {
+        Path created = Path.of("databuffer");
+        for (String part : new String[]{"MFDFA", "MFDFA of probe"}) {
+            if (Files.exists(created)) {
+                created = created.resolve(part);
+            }
+        }
         ProbeTracker tracker = openProbeTracker();
+        RecordingPanel panel = onEdt(() -> new RecordingPanel(sampled(512), "probe"));
+        List<String> shown = new ArrayList<>();
         try {
             SwingUtilities.invokeAndWait(() -> {
-                clickOn(new TSOperationControlerPanel(rows(), chart(), "probe", null), "jButton16ActionPerformed");
-                select(tracker, tracker.jTree().getRowCount() - 1);
-                clickOn(tracker, "jButton3ActionPerformed");
+                clickOn(panel, "jButton16ActionPerformed");
+                clickOn(panel, "jButton6ActionPerformed");
+            });
+            SwingUtilities.invokeAndWait(() -> {
+                for (String[] node : new String[][]{{"AVG of ", "AVG for probe"},
+                        {"MFDFA of ", "sampled F(s,q) _raw_0"}}) {
+                    MultiChart chart = openChart(node[1]);
+                    chart.setVisible(false);
+                    selectOperation(tracker, node[0]);
+                    clickOn(tracker, "jButton3ActionPerformed");
+                    if (chart.isVisible()) {
+                        shown.add(node[0]);
+                    }
+                }
             });
         } finally {
             disposeCharts();
             closeProbeTracker();
+            delete(created);
         }
 
-        assertEquals(List.of("show Chart: no chart for Transform{SIMPLE per Record Operation: AVG of }; select an "
-                + "operation node other than Sigma Band or MF-DFA"), tracker.errors);
+        assertEquals(List.of(), panel.errors);
+        assertEquals(List.of(), tracker.errors);
+        assertEquals(List.of("AVG of ", "MFDFA of "), shown);
     }
 
     @Test
@@ -427,6 +453,17 @@ class MacroTrackerFrameTest {
         @SuppressWarnings("unchecked")
         T result = (T) created[0];
         return result;
+    }
+
+    private static void delete(Path path) throws IOException {
+        if (!Files.exists(path)) {
+            return;
+        }
+        try (Stream<Path> files = Files.walk(path)) {
+            for (Path file : files.sorted(Comparator.reverseOrder()).toList()) {
+                Files.delete(file);
+            }
+        }
     }
 
     private static void select(ProbeTracker tracker, int row) {

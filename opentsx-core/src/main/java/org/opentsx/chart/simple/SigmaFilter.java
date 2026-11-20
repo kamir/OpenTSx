@@ -35,12 +35,19 @@ public class SigmaFilter extends TimeSeriesObject {
 
         sf.aggregate();
 
-        Vector<TimeSeriesObject> band = new Vector<TimeSeriesObject>();
-        band.add(sf.mwBINNED.setBinningX_sum(sf.scale));
-        band.add(sf.mwBINNED.add(sf.sigmaBINNED.scaleY_2(sf.upperTS)).setBinningX_sum(sf.scale));
-        band.add(sf.mwBINNED.add(sf.sigmaBINNED.scaleY_2(sf.lowerTS)).setBinningX_sum(sf.scale));
+        TimeSeriesObject mean = sf.mwBINNED.setBinningX_sum(sf.scale);
+        mean.setLabel("mean");
+        TimeSeriesObject upper = sf.mwBINNED.add(sf.sigmaBINNED.scaleY_2(sf.upperTS)).setBinningX_sum(sf.scale);
+        upper.setLabel("mean + sigma");
+        TimeSeriesObject lower = sf.mwBINNED.add(sf.sigmaBINNED.scaleY_2(sf.lowerTS)).setBinningX_sum(sf.scale);
+        lower.setLabel("mean - sigma");
 
-        MultiChart.open(band, label, "t", "y(t) , sigma(t)", legend);
+        Vector<TimeSeriesObject> band = new Vector<TimeSeriesObject>();
+        band.add(mean);
+        band.add(upper);
+        band.add(lower);
+
+        MultiChart.open(band, label, "t", "y(t) , sigma(t)", legend, "", null);
 
     }
 

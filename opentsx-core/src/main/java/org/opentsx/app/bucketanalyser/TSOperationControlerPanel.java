@@ -421,6 +421,17 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         JOptionPane.showMessageDialog(this, message);
     }
 
+    private boolean openChart(String operation, Runnable open) {
+        try {
+            open.run();
+            return true;
+        } catch (IllegalArgumentException e) {
+            showActionError(operation + " of " + this.label + ": cannot open the chart (" + e
+                    + "); give each series its own label");
+            return false;
+        }
+    }
+
     private void jTextField3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField3ActionPerformed
     }//GEN-LAST:event_jTextField3ActionPerformed
 
@@ -470,10 +481,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
             showFftError(e.getMessage());
             return;
         }
-        try {
-            showFftResults(v);
-        } catch (IllegalArgumentException e) {
-            showActionError("FFT of " + this.label + ": cannot open the chart (" + e + ")");
+        if (!openChart("FFT", () -> showFftResults(v))) {
             return;
         }
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(this.label, "FFT_" + this.label, "FFT of "),
@@ -573,6 +581,18 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
                 mr4.setLabel(d4.getLabel());
 
+                int fitted = 0;
+                for (int s : dfa.getS()) {
+                    if (Math.log10(s) >= EntropieTest.fitMIN && Math.log10(s) <= EntropieTest.fitMAX) {
+                        fitted++;
+                    }
+                }
+                if (fitted < 2) {
+                    showActionError("DFA of " + d4.getLabel() + ": " + d4.yValues.size() + " values give " + fitted
+                            + " window sizes in the fit range; use from 144 to 3160031 values");
+                    return;
+                }
+
                 SimpleRegression alphaSR = mr4.linFit(EntropieTest.fitMIN, EntropieTest.fitMAX);
 
                 alpha = alphaSR.getSlope();
@@ -593,7 +613,10 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
 
         String chart = label + " fluctuation function F(s) [order:" + order + "] ";
-        MultiChart.open(v, chart, "log(s)", "log(F(s))", this.jRadioButton1.isSelected(), alphas.toString(), null);
+        if (!openChart("DFA", () -> MultiChart.open(v, chart, "log(s)", "log(F(s))", this.jRadioButton1.isSelected(),
+                alphas.toString(), null))) {
+            return;
+        }
 
         String operationLabel = "DFA of ";
         String operationPrefix = "DFA_" + order;
@@ -643,7 +666,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
 
         String chart = "AUTO-CORRELATION of " + this.label;
-        MultiChart.open(v, this.jRadioButton1.isSelected(), chart);
+        if (!openChart("auto-correlation", () -> MultiChart.open(v, this.jRadioButton1.isSelected(), chart))) {
+            return;
+        }
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
     }//GEN-LAST:event_jButton4ActionPerformed
 
@@ -669,7 +694,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         }
 
-        MultiChart.open(v, this.jRadioButton1.isSelected(), target);
+        if (!openChart("profile", () -> MultiChart.open(v, this.jRadioButton1.isSelected(), target))) {
+            return;
+        }
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), target);
 
     }//GEN-LAST:event_jButton7ActionPerformed
@@ -691,7 +718,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
 
         String chart = "Diff of " + this.label;
-        MultiChart.open(v, this.jRadioButton1.isSelected(), chart);
+        if (!openChart("diffs", () -> MultiChart.open(v, this.jRadioButton1.isSelected(), chart))) {
+            return;
+        }
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
     }//GEN-LAST:event_jButton8ActionPerformed
 
@@ -713,7 +742,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
 
         String chart = "LogRETURN of " + this.label;
-        MultiChart.open(v, this.jRadioButton1.isSelected(), chart);
+        if (!openChart("returns", () -> MultiChart.open(v, this.jRadioButton1.isSelected(), chart))) {
+            return;
+        }
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
     }//GEN-LAST:event_jButton9ActionPerformed
 
@@ -747,7 +778,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
 
         String chart = "y-value distributions of " + this.label;
-        MultiChart.open(v, this.jRadioButton1.isSelected(), chart);
+        if (!openChart("histogram", () -> MultiChart.open(v, this.jRadioButton1.isSelected(), chart))) {
+            return;
+        }
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
 
     }//GEN-LAST:event_jButton10ActionPerformed
@@ -772,7 +805,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
 
         String chart = "NORM_MAX=1 of " + this.label;
-        MultiChart.open(v, this.jRadioButton1.isSelected(), chart);
+        if (!openChart("max-normalized series", () -> MultiChart.open(v, this.jRadioButton1.isSelected(), chart))) {
+            return;
+        }
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
 
     }//GEN-LAST:event_jButton12ActionPerformed
@@ -798,7 +833,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
                 a = r.copy().normalizeToStdevIsOne();
             } catch (IllegalArgumentException ex) {
                 showActionError("standardized series of " + r.getLabel() + ": cannot standardize the values (" + ex
-                        + ")");
+                        + "); select series with at least two finite values that are not all equal");
                 return;
             }
 
@@ -807,14 +842,8 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
 
         String chart = "NORM_STD=1, AVG=0 of " + this.label;
-        try {
-            
-             
-            MultiChart.openWithCorrelator(v, this.jRadioButton1.isSelected(), chart, null );
-
-        }
-        catch (Exception ex) {
-            showActionError("standardized series of " + this.label + ": cannot open the chart (" + ex + ")");
+        if (!openChart("standardized series",
+                () -> MultiChart.openWithCorrelator(v, this.jRadioButton1.isSelected(), chart, null))) {
             return;
         }
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
@@ -847,7 +876,10 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
             slidingWindowResults.add(comp.calcEntropyForWindow(l));
         }
 
-        MultiChart.open(slidingWindowResults, this.jRadioButton1.isSelected(), target);
+        if (!openChart("entropy",
+                () -> MultiChart.open(slidingWindowResults, this.jRadioButton1.isSelected(), target))) {
+            return;
+        }
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), target);
 
     }//GEN-LAST:event_jButton14ActionPerformed
@@ -868,7 +900,13 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
             showActionError("MFDFA of " + this.label + ": cannot compute the analysis (" + ex + ")");
             return;
         }
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
+        TSBucketTransformation t = TSBucketTransformation.getTransformation(source, target, operationLabel);
+        if (this.rows.isEmpty()) {
+            MacroTrackerFrame.addTransformation(t);
+        } else {
+            // MFDFAAnalyzer.processMFDFA titles the F(s,q) chart of the original values "<label> F(s,q) _raw_0".
+            MacroTrackerFrame.addTransformation(t, this.rows.get(0).getLabel() + " F(s,q) _raw_0");
+        }
 
 
     }//GEN-LAST:event_jButton6ActionPerformed
@@ -913,8 +951,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         String source = this.label;
         String target = operationPrefix + this.label;
 
-        SigmaFilter.open(this.rows, "AVG for " + this.label, true);
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
+        String chart = "AVG for " + this.label;
+        SigmaFilter.open(this.rows, chart, true);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
 
 
     }//GEN-LAST:event_jButton16ActionPerformed
@@ -926,13 +965,12 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         String source = this.label;
         String target = operationPrefix + this.label;
 
+        Vector<TimeSeriesObject> shuffled = new Vector<TimeSeriesObject>();
         try {
 
             String answer = requestInput("Number of shuffles: ");
             if (answer == null) return;
             int l = Integer.parseInt(answer);
-
-            Vector<TimeSeriesObject> shuffled = new Vector<TimeSeriesObject>();
 
             for (TimeSeriesObject comp : this.rows) {
                 TimeSeriesObject m = comp.copy();
@@ -940,10 +978,11 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
                 shuffled.add(m);
             }
 
-            MultiChart.open(shuffled, this.jRadioButton1.isSelected(), target);
-
         } catch (Exception ex) {
             showActionError("shuffle of " + this.label + ": cannot shuffle the series (" + ex + ")");
+            return;
+        }
+        if (!openChart("shuffle", () -> MultiChart.open(shuffled, this.jRadioButton1.isSelected(), target))) {
             return;
         }
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel + source), target);
@@ -981,12 +1020,15 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         for (TimeSeriesObject r : this.rows) {
 
             TimeSeriesObject distr = r.cumulatedDistributionOfYValues(30);
+            distr.setLabel(r.getLabel() + "_CDF");
             v.add(distr);
 
         }
 
         String chart = "y-value distributions of " + this.label;
-        MultiChart.open(v, this.jRadioButton1.isSelected(), chart);
+        if (!openChart("CDF", () -> MultiChart.open(v, this.jRadioButton1.isSelected(), chart))) {
+            return;
+        }
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
 
     }//GEN-LAST:event_jButton19ActionPerformed
@@ -1155,7 +1197,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
 
         String chart = "ln of " + this.label;
-        MultiChart.open(v, this.jRadioButton1.isSelected(), chart);
+        if (!openChart("ln", () -> MultiChart.open(v, this.jRadioButton1.isSelected(), chart))) {
+            return;
+        }
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
     }//GEN-LAST:event_jButton22ActionPerformed
 

@@ -328,13 +328,8 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
             return;
         }
         Object selected = node.getUserObject();
-        if (!(selected instanceof Transform)) {
+        if (!(selected instanceof Transform) || !track.showDialog(((Transform) selected).getDialogKey())) {
             showError("show Chart: no chart for " + selected + "; select an operation node");
-            return;
-        }
-        if (!track.showDialog(((Transform) selected).getDialogKey())) {
-            showError("show Chart: no chart for " + selected + "; select an operation node other than Sigma Band or "
-                    + "MF-DFA");
         }
     }// GEN-LAST:event_jButton3ActionPerformed
 

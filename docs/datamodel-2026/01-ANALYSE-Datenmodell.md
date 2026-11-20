@@ -5,7 +5,8 @@
 > (plan) and [`02-ZIELMODELL.md`](02-ZIELMODELL.md) (draft of the target model).
 >
 > The page records the analysis of 2026-10. Sections 1.2 and 1.8 describe the module `opentsx-data` and the platform
-> as they are now, and section 3 lists the defects that are still open.
+> as they are now, section 1.3 describes each Kafka path it lists as it is now, and section 3 lists the defects that
+> are still open.
 
 ## 1. Overview: what exists
 
@@ -45,7 +46,7 @@ Observations:
 1. **`org.opentsx.data.model.Event` has one definition**, in `event.avsc`. `event-series.avsc` refers to it by name, and the build imports `event.avsc` first (`opentsx-data/pom.xml`).
 2. **One episode schema**: `EpisodesRecord` in `episode.avsc`.
 3. **Redundancy in `EpisodesRecord`**: each observation carries `timestamp` *and* the header carries `tStart/increment`, so there are two truths about the time axis. `uri` is a string **per data point**: the most expensive field, repeated in every point.
-4. **No identity of a series**: the identity sits in the free string `label` (or `uri`, `taglabel`). For OpenTSDB the label is expected to have the form `"metric k1=v1,k2=v2"` (`OpenTSDBConnector.java:635-670`), an implicit format that nothing validates.
+4. **No identity of a series**: the identity sits in the free string `label` (or `uri`, `taglabel`). For OpenTSDB the label is expected to have the form `"metric k1=v1,k2=v2"`, an implicit format that the 2.x model does not check. The 2.x class `OpenTSDBConnector` is not in the repository; `LegacyBridge.seriesKeyFromLabel` (`opentsx-legacy-bridge`) parses that form into a `SeriesKey` and refuses a tag that is not `key=value`.
 5. **No unit, no quality, no schema version, no provenance or lineage**, no logical Avro types (`timestamp-millis`), timestamp precision undocumented.
 6. **Generated code**: the build generates the records into `target/generated-sources/avro` with Avro 1.12.1. `src/main/java` holds only `LatencyTesterEvent`.
 7. Fields without defaults (`producer_timestamp`, `consumer_timestamp`) cannot evolve backward compatibly.
@@ -54,10 +55,9 @@ Observations:
 
 | Path | Topic | Key | Value | Problems |
 |------|-------|-----|-------|----------|
-| `TSOProducer.pushTSDataAsEpisodesToKafka_String_Avro` | `OpenTSx_Episodes[_suffix]` | Series label | Avro `EpisodesRecord` (SR) | **Label hard-coded `"123"`**, uri `"URI"` (`TSOProducer.java:262`), synthetic time `now + i·200ms`, record object reused |
-| `pushTSDataAsEventsToKafka_String_Avro` | `OpenTSx_Events` | Label | Avro `Event` (SR) | **Timestamps grow quadratically** (`t = t + i*200`, `TSOProducer.java:356`), `send().get()` per message |
-| `pushTSOItemsToKafka` | `OpenTSx_Episodes` | Label | **Gson JSON** of `TSData` | Same topic as the Avro path, so one topic holds mixed formats |
-| `TSOEventProducer` | `refds_events_topic_<TAG>` | `label_<x>` | JSON `{ts,value}` | The key contains x, so a series is scattered over partitions |
+| `TSOProducer.pushTSDataAsEpisodesToKafka_String_Avro` | `OpenTSx_Episodes[_suffix]` | Series label | Avro `EpisodesRecord` (SR) | **Synthetic time** `now + i·200ms` with increment 200, whatever the x values of the series; every observation repeats the `uri` argument; `OpenTSxClusterLink.send` waits for each record (`send().get()`) |
+| `TSOProducer.pushTSDataAsEventsToKafka_String_Avro` | `OpenTSx_Events` | Label | Avro `Event` (SR) | **Synthetic time** `now + i·200ms`, whatever the x values of the series; `OpenTSxClusterLink.send` waits for each message (`send().get()`) |
+| `TSOEventProducer.pushTSOItemsToKafka` | `refds_events_topic_<TAG>` | `label_<x>` | JSON `{ts,value}` | The key contains x, so a series is scattered over partitions |
 | `EventFlowStateProducer` | `OpenTSx_Event_Flow_State` | flowSource | Properties as JSON | none |
 | `TSOConsumer` | `refds_small_bucket_topic_<TAG>` | none | none | Random `group.id` plus `earliest` means an implicit full replay at every start; no targeted replay logic |
 | `TSOWriter.persistBucket_Kafka` | none | none | none | **Stub; stores nothing and throws `UnsupportedOperationException`** |

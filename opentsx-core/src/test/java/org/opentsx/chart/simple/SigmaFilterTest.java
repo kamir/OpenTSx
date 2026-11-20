@@ -71,6 +71,33 @@ class SigmaFilterTest {
                 List.of(2.0 - sigma, 2.0 - sigma, 2.0 - sigma)), series);
     }
 
+    @Test
+    void theSigmaBandChartNamesItsSeries() throws Exception {
+        Vector<TimeSeriesObject> rows = new Vector<>(List.of(constant("low", 1.0), constant("high", 3.0)));
+        List<String> keys = new ArrayList<>();
+        try {
+            SwingUtilities.invokeAndWait(() -> SigmaFilter.open(rows, "AVG for probe", true));
+            SwingUtilities.invokeAndWait(() -> {
+                for (Window window : Window.getWindows()) {
+                    if (window instanceof MultiChart && window.isVisible()
+                            && ((MultiChart) window).chartTitle.equals("AVG for probe")) {
+                        for (int i = 0; i < ((MultiChart) window).dataset.getSeriesCount(); i++) {
+                            keys.add(((MultiChart) window).dataset.getSeriesKey(i).toString());
+                        }
+                    }
+                }
+            });
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                for (Window window : Window.getWindows()) {
+                    window.dispose();
+                }
+            });
+        }
+
+        assertEquals(List.of("mean", "mean + sigma", "mean - sigma"), keys);
+    }
+
     private static TimeSeriesObject constant(String label, double value) {
         TimeSeriesObject row = new TimeSeriesObject();
         row.setLabel(label);

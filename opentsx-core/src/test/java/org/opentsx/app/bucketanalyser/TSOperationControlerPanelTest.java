@@ -36,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -378,31 +379,92 @@ class TSOperationControlerPanelTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"jButton4ActionPerformed", "jButton7ActionPerformed", "jButton8ActionPerformed",
-            "jButton9ActionPerformed", "jButton10ActionPerformed", "jButton12ActionPerformed",
-            "jButton22ActionPerformed", "jButton13ActionPerformed"})
-    void anOperationWhoseChartCannotOpenLeavesTheMacroTrackUnchanged(String action) throws Exception {
-        Vector<TimeSeriesObject> twins = rows(wave(64));
-        twins.add(wave(64));
+    @CsvSource(delimiter = '|', value = {
+            "jButton4ActionPerformed | 64 | | auto-correlation | AC_wave",
+            "jButton7ActionPerformed | 64 | | profile | wave_Profil",
+            "jButton8ActionPerformed | 64 | | diffs | wave_Returns",
+            "jButton9ActionPerformed | 64 | | returns | wave_Log(RelDiff)",
+            "jButton10ActionPerformed | 64 | | histogram | wave_y",
+            "jButton12ActionPerformed | 64 | | max-normalized series | wave (max=<max>)",
+            "jButton13ActionPerformed | 64 | | standardized series | wave (stdv=1.0;mw=0.0)",
+            "jButton14ActionPerformed | 64 | 8 | entropy | waveH(l=8)",
+            "jButton22ActionPerformed | 64 | | ln | wave_ln",
+            "jButton19ActionPerformed | 64 | | CDF | wave_CDF",
+            "jButton18ActionPerformed | 64 | 3 | shuffle | wave (s3)"})
+    void anOperationWhoseChartCannotOpenShowsTheMessageAndLeavesTheMacroTrackUnchanged(String action, int values,
+            String answer, String operation, String key) throws Exception {
+        Vector<TimeSeriesObject> twins = rows(wave(values));
+        twins.add(wave(values));
+        String max = String.valueOf(Arrays.stream(wave(values).getYData()).max().getAsDouble());
         ProbePanel panel = onEdt(() -> new ProbePanel(twins, chart(), "probe"));
+        panel.answer = answer;
         boolean chartOpened;
         Set<String> recorded;
-        Throwable thrown;
         openTracker();
         try {
-            thrown = clickAllowingFailure(panel, action);
+            click(panel, action);
             recorded = recorded();
         } finally {
             chartOpened = disposeWindows();
             closeTracker();
         }
 
-        String failure = thrown != null ? thrown.toString() : panel.actionError;
-        assertNotNull(failure, action + " did not fail");
-        assertTrue(failure.contains("IllegalArgumentException: This dataset already contains a series with the key "),
-                failure);
+        assertEquals(operation + " of probe: cannot open the chart (java.lang.IllegalArgumentException: This dataset "
+                + "already contains a series with the key " + key.replace("<max>", max) + "); give each series its own "
+                + "label", panel.actionError);
         assertEquals(Set.of(), recorded);
         assertFalse(chartOpened, action + " opened a chart after it failed");
+    }
+
+    @Test
+    void aDfaWhoseChartCannotOpenShowsTheMessageAndLeavesTheMacroTrackUnchanged() throws Exception {
+        Vector<TimeSeriesObject> twins = rows(wave(1024));
+        twins.add(wave(1024));
+        ProbePanel panel = onEdt(() -> new ProbePanel(twins, chart(), "probe"));
+        boolean chartOpened;
+        Set<String> recorded;
+        openTracker();
+        try {
+            click(panel, "jButton5ActionPerformed");
+            recorded = recorded();
+        } finally {
+            chartOpened = disposeWindows();
+            closeTracker();
+        }
+
+        assertNotNull(panel.actionError, "the DFA action showed no error");
+        assertTrue(panel.actionError.startsWith("DFA of probe: cannot open the chart (java.lang."
+                + "IllegalArgumentException: This dataset already contains a series with the key wave_alpha="),
+                panel.actionError);
+        assertTrue(panel.actionError.endsWith("); give each series its own label"), panel.actionError);
+        assertEquals(Set.of(), recorded);
+        assertFalse(chartOpened, "the DFA action opened a chart after it failed");
+    }
+
+    @Test
+    void theCdfOfTwoSeriesWithTheirOwnLabelsNamesEachSeriesAndRecordsIt() throws Exception {
+        Vector<TimeSeriesObject> rows = rows(wave(64));
+        TimeSeriesObject other = wave(64);
+        other.setLabel("other");
+        rows.add(other);
+        ProbePanel panel = onEdt(() -> new ProbePanel(rows, chart(), "probe"));
+        List<String> names = new ArrayList<>();
+        Set<String> recorded;
+        openTracker();
+        try {
+            click(panel, "jButton19ActionPerformed");
+            recorded = recorded();
+            assertNull(panel.actionError, panel.actionError);
+            for (Object series : openChart("y-value distributions of probe").dataset.getSeries()) {
+                names.add(((XYSeries) series).getKey().toString());
+            }
+        } finally {
+            disposeWindows();
+            closeTracker();
+        }
+
+        assertEquals(List.of("wave_CDF", "other_CDF"), names);
+        assertEquals(Set.of("CDF_probe"), recorded);
     }
 
     @Test
@@ -481,7 +543,7 @@ class TSOperationControlerPanelTest {
         }
 
         assertEquals("FFT of probe: cannot open the chart (java.lang.IllegalArgumentException: This dataset already "
-                + "contains a series with the key FFT : sampled)", panel.actionError);
+                + "contains a series with the key FFT : sampled); give each series its own label", panel.actionError);
         assertEquals(Set.of(), recorded);
         assertFalse(chartOpened, "the FFT action opened a chart after it failed");
     }
@@ -510,8 +572,8 @@ class TSOperationControlerPanelTest {
             closeTracker();
         }
 
-        assertEquals("standardized series of " + row.getLabel() + ": cannot standardize the values (" + cause + ")",
-                panel.actionError);
+        assertEquals("standardized series of " + row.getLabel() + ": cannot standardize the values (" + cause + "); "
+                + "select series with at least two finite values that are not all equal", panel.actionError);
         assertEquals(Set.of(), recorded);
         assertFalse(chartOpened, "the standardize action opened a chart after it failed");
     }
@@ -653,6 +715,19 @@ class TSOperationControlerPanelTest {
     }
 
     @Test
+    void showPnOnADesktopWithoutOpenSupportShowsTheRemedy() throws Exception {
+        ProbePanel panel = panelBelow(home);
+        File folder = Files.createDirectories(home.resolve("opentsx/plots/default")).toFile();
+        panel.openFailure = new UnsupportedOperationException("open is not supported");
+
+        click(panel, "jButton2ActionPerformed");
+
+        assertEquals(List.of(folder), panel.opened);
+        assertEquals(folder + ": cannot open the folder (java.lang.UnsupportedOperationException: open is not "
+                + "supported); open it in a file manager", panel.actionError);
+    }
+
+    @Test
     void aDfaOfAShortSeriesFitsAFiniteAlpha() throws Exception {
         ProbePanel panel = onEdt(() -> new ProbePanel(rows(noise(1024)), chart(), "probe"));
         double alpha;
@@ -667,6 +742,48 @@ class TSOperationControlerPanelTest {
 
         assertNull(panel.actionError, panel.actionError);
         assertEquals(0.5, alpha, 0.1);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"100, 0", "143, 1"})
+    void aDfaOfASeriesTooShortForTheFitShowsTheMessageAndRecordsNothing(int values, int windows) throws Exception {
+        ProbePanel panel = onEdt(() -> new ProbePanel(rows(noise(values)), chart(), "probe"));
+        boolean chartOpened;
+        Set<String> recorded;
+        openTracker();
+        try {
+            click(panel, "jButton5ActionPerformed");
+            recorded = recorded();
+        } finally {
+            chartOpened = disposeWindows();
+            closeTracker();
+        }
+
+        assertEquals("DFA of noise: " + values + " values give " + windows + " window sizes in the fit range; use from "
+                + "144 to 3160031 values", panel.actionError);
+        assertEquals(Set.of(), recorded);
+        assertFalse(chartOpened, "the DFA action opened a chart for a series too short for the fit");
+    }
+
+    @Test
+    void aDfaOf144ValuesFitsAFiniteAlphaAndRecordsIt() throws Exception {
+        ProbePanel panel = onEdt(() -> new ProbePanel(rows(noise(144)), chart(), "probe"));
+        double alpha;
+        Set<String> recorded;
+        openTracker();
+        try {
+            click(panel, "jButton5ActionPerformed");
+            recorded = recorded();
+            String key = openChart("DFA of probe").dataset.getSeries(0).getKey().toString();
+            alpha = Double.parseDouble(key.split("_alpha=")[1]);
+        } finally {
+            disposeWindows();
+            closeTracker();
+        }
+
+        assertNull(panel.actionError, panel.actionError);
+        assertTrue(Double.isFinite(alpha), "alpha " + alpha);
+        assertEquals(Set.of("DFA_2probe"), recorded);
     }
 
     @Test
@@ -736,22 +853,6 @@ class TSOperationControlerPanelTest {
                 throw new AssertionError(e);
             }
         });
-    }
-
-    private static Throwable clickAllowingFailure(TSOperationControlerPanel panel, String action) throws Exception {
-        var method = TSOperationControlerPanel.class.getDeclaredMethod(action, java.awt.event.ActionEvent.class);
-        method.setAccessible(true);
-        Throwable[] thrown = new Throwable[1];
-        SwingUtilities.invokeAndWait(() -> {
-            try {
-                method.invoke(panel, new Object[]{null});
-            } catch (InvocationTargetException e) {
-                thrown[0] = e.getCause();
-            } catch (ReflectiveOperationException e) {
-                throw new AssertionError(e);
-            }
-        });
-        return thrown[0];
     }
 
     private static boolean disposeWindows() throws Exception {
@@ -1006,7 +1107,7 @@ class TSOperationControlerPanelTest {
         String error;
         String actionError;
         String answer;
-        IOException openFailure;
+        Exception openFailure;
         final List<String> prompts = new ArrayList<>();
         final List<File> opened = new ArrayList<>();
 
@@ -1016,8 +1117,11 @@ class TSOperationControlerPanelTest {
 
         void openFolder(File folder) throws IOException {
             opened.add(folder);
+            if (openFailure instanceof IOException) {
+                throw (IOException) openFailure;
+            }
             if (openFailure != null) {
-                throw openFailure;
+                throw (RuntimeException) openFailure;
             }
         }
 

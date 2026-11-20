@@ -67,6 +67,9 @@ Missing folders, unreadable directory listings, invalid booleans and invalid lim
 `saveToFile` validates the flow before opening the destination. An invalid flow cannot overwrite an export.
 Set `opentsx.pfd.input.topic` through the existing `ConfigManager` before resetting the recorder.
 The recorder uses that Kafka input topic and `LOG` output; it does not supply placeholder topics.
+When the configuration cannot load and `PFDRecorder` is the first class that reads it, every call of
+`PFDRecorder.getInstance()` throws `IllegalStateException` with the message of the configuration, for example
+`<file>: no such file; give an existing file`.
 
 An executable export supports only `NORMALIZE` with an omitted method or `method: center`.
 Other operations, methods and parameters fail with `IllegalArgumentException`.
@@ -85,10 +88,9 @@ operation that ends in `(` gets an empty `arg`. When the PFD recorder cannot sta
 configuration file does not exist, `addTransformation` throws before it adds the node. Without an open tracker,
 `MacroTrackerFrame.addSource` and `MacroTrackerFrame.addTransformation` write only their DEBUG line. `show Chart` of the classic tracker shows the chart
 of the selected operation node. The chart panel keeps the chart of each operation it records for the node of that
-operation; `TEST Normal Distribution` keeps its t-value chart. `MacroRecorder` keeps the charts of its `Components`
-and `Shuffled` nodes. `Sigma Band` and `MF-DFA` keep no chart: for their nodes `show Chart` shows
-`show Chart: no chart for <node>; select an operation node other than Sigma Band or MF-DFA`, for a node that is not
-an operation node, such as a source node, `show Chart: no chart for <node>; select an operation node`, both in a
+operation; `TEST Normal Distribution` keeps its t-value chart and `MF-DFA` the F(s,q) chart of the original values of
+the first series. `MacroRecorder` keeps the charts of its `Components` and `Shuffled` nodes. For a node without a
+chart, such as a source node, `show Chart` shows `show Chart: no chart for <node>; select an operation node` in a
 dialog; without a selection it does nothing.
 Swing control tests use a display; the Java CI jobs run them under Xvfb on Ubuntu 24.04.
 Opening a chart panel prints nothing and creates no folder; the chart folder and the series colors are DEBUG lines of
@@ -105,27 +107,42 @@ that message in a dialog.
 `Histogram cross-cut` and `TEST Normal Distribution` are DEBUG lines of `TSOperationControlerPanel`. Every recorded
 operation is a DEBUG line of `MacroTrackerFrame` and, while the macro tracker is open, of `Track` and `PFDRecorder`.
 `SigmaFilter` (`Sigma Band`) and `HurstSurface.plot` (`MF-DFA`) print nothing; their progress is a DEBUG line.
-The `Sigma Band` chart has three series: the mean of the selected series and the mean plus and minus one standard
-deviation.
+The `Sigma Band` chart has three series, `mean`, `mean + sigma` and `mean - sigma`: the mean of the selected series
+and the mean plus and minus one standard deviation.
 An operation is recorded in the macro track after it succeeded, so an operation that fails leaves the track unchanged.
 The chart comment of `DFA` has one line per series with its label and its fitted alpha. `DFA` uses at most 250
-window sizes from 4 to an eighth of the number of values; a series of fewer than 2032 values gets window sizes 1
-apart, so a series of 1024 values gets 124 window sizes and a finite alpha.
+window sizes from 4 to an eighth of the number of values, rounded down; a series of 1024 values gets the 124 window
+sizes 4 to 126 and 128, 1 apart except the last step of 2. Alpha is the slope of log F(s) over the window sizes from
+16 to 3162, log s from 1.2 to 3.5 (`EntropieTest.fitMIN` and `fitMAX`). A series of fewer than 144 or more than
+3160031 values gives fewer than two window sizes in that range, so `DFA` stops with a message from the table below.
+`CDF` names each series `<series>_CDF`.
 `TEST Normal Distribution` runs the Shapiro-Wilk test on slices of 20, 40, 60, 80 and 100 values and opens both
 charts, with one series per slice length named `l=<length>`. A slice the test cannot evaluate, such as constant
 values, counts W = -1; a slice with a NaN or infinite value counts W = NaN.
-The operations in this table stop when they fail and show the message in a dialog:
+The operations in this table stop when they fail, show the message in a dialog and record nothing. An operation
+with a name in the table whose chart cannot open, for example because two selected series have the same label, shows
+`<name> of <label>: cannot open the chart (<cause>); give each series its own label`, where `<label>` is the label of
+the chart panel, and opens no chart. The other messages also open no chart, except that `MF-DFA` keeps the charts it
+opened before the failure:
 
-| Button | Message |
-|--------|---------|
-| `show PN` | `<folder>: no such folder; press save PN to create it` when the folder does not exist, otherwise `<folder>: cannot open the folder (<cause>); open it in a file manager` |
-| `FFT` | `FFT of <label>: cannot open the chart (<cause>)`; no chart opens |
-| `DFA` | `DFA of <series>: cannot compute the fluctuation function (<cause>)`; no chart opens |
-| `Auto-Correlation` | `auto-correlation of <series>: cannot correlate lag <lag> (<cause>)`; no chart opens |
-| `NORM std=1, avg=0` | `standardized series of <series>: cannot standardize the values (<cause>)` or `standardized series of <label>: cannot open the chart (<cause>)`; no chart opens |
-| `MF-DFA` | `MFDFA of <label>: cannot compute the analysis (<cause>)` |
-| `TEST Normal Distribution` | `SW test of <series>: cannot test the values <from> to <to> (<cause>)`; no chart opens |
-| `Shuffle` | `shuffle of <label>: cannot shuffle the series (<cause>)` |
+| Button | `<name>` | Other messages |
+|--------|----------|----------------|
+| `show PN` | n/a | `<folder>: no such folder; press save PN to create it` when the folder does not exist, otherwise `<folder>: cannot open the folder (<cause>); open it in a file manager` |
+| `FFT` | `FFT` | n/a |
+| `DFA` | `DFA` | `DFA of <series>: cannot compute the fluctuation function (<cause>)`, `DFA of <series>: <n> values give <k> window sizes in the fit range; use from 144 to 3160031 values` |
+| `Auto-Correlation` | `auto-correlation` | `auto-correlation of <series>: cannot correlate lag <lag> (<cause>)` |
+| `Profile` | `profile` | n/a |
+| `Diffs` | `diffs` | n/a |
+| `Returns (Rel-Diff)` | `returns` | n/a |
+| `ln` | `ln` | n/a |
+| `NORM max=1` | `max-normalized series` | n/a |
+| `NORM std=1, avg=0` | `standardized series` | `standardized series of <series>: cannot standardize the values (<cause>); select series with at least two finite values that are not all equal` |
+| `Histogram per series` | `histogram` | the number field messages below |
+| `CDF` | `CDF` | n/a |
+| `ENTROPY` | `entropy` | the number dialog messages below |
+| `Shuffle` | `shuffle` | `shuffle of <label>: cannot shuffle the series (<cause>)` |
+| `MF-DFA` | n/a | `MFDFA of <label>: cannot compute the analysis (<cause>)` |
+| `TEST Normal Distribution` | n/a | `SW test of <series>: cannot test the values <from> to <to> (<cause>)` |
 
 Cancelling the `Shuffle` dialog (`Number of shuffles:`), the `ENTROPY` dialog (`Length:`) or the
 `Histogram cross-cut` dialog (`Window length l=`) does nothing. `Histogram per series`, `Histogram cross-cut` and
