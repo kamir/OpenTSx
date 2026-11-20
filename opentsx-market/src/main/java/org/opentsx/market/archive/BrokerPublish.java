@@ -68,7 +68,7 @@ public final class BrokerPublish {
                 if (year < y0 || year > y1) {
                     continue;
                 }
-                for (Episode e : EpisodeMapper.episodes(new MarketSeries(def, archive.read(def, year)), "opentsx-market/3.0.1")) {
+                for (Episode e : EpisodeMapper.episodes(new MarketSeries(def, archive.read(def, year)), "opentsx-market/3.1.0")) {
                     if (e.getTStart().isBefore(fromDay) || !e.getTStart().isBefore(toDay)) {
                         continue;
                     }

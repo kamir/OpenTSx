@@ -13,6 +13,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Align the Maven reactor, runtime producer identities and built-JAR launchers.
+  Reject unstable or mismatched internal versions in source and staged
+  JARs before publication. Use the existing CI Maven mirror, scoped dependency
+  cache and retained download diagnostics in the image build.
+- Pin the classpath plugin and stage compile/runtime dependencies without
+  provided or test JARs in the Tools image.
 - Resolve Central dependencies and plugins in CI through a Google Cloud-hosted
   mirror. Verify endpoint selection and permanent errors offline, including a
   Central 404 response with a long Retry-After value.

@@ -14,6 +14,65 @@ CHECKSUM = "7d171def9b85846bf757a2cec94b7529371068a0670df14682447224e57983528e97
 
 
 class ImageWorkflowTest(unittest.TestCase):
+    def test_image_build_reuses_verified_maven_transport_and_scoped_cache(self):
+        workflow = WORKFLOW.read_text()
+        build = workflow.split("\n  published-acceptance:\n", 1)[0]
+        steps = re.split(r"\n(?=      - )", build)
+        scope = next(
+            (
+                step
+                for step in steps
+                if "name: Scope Maven cache to its workload\n" in step
+            ),
+            "",
+        )
+        self.assertTrue(scope, "Image builds need a workload-specific Maven cache")
+        setup = next(step for step in steps if "actions/setup-java@v6" in step)
+        for value in (
+            'test -n "$GITHUB_JOB"',
+            "printf '%s\\n' \"$GITHUB_JOB\" > target/maven-downloads/cache-context",
+        ):
+            self.assertIn(value, scope)
+        for value in (
+            "**/pom.xml",
+            "**/.mvn/wrapper/maven-wrapper.properties",
+            "**/.mvn/extensions.xml",
+            ".mvn/maven.config",
+            ".mvn/ci-settings.xml",
+            "tools/check_maven_downloads.py",
+            "target/maven-downloads/cache-context",
+        ):
+            self.assertIn(value, setup)
+        capture = next(
+            (
+                step
+                for step in steps
+                if "run: python3 tools/check_maven_http_capture.py" in step
+            ),
+            "",
+        )
+        self.assertTrue(capture, "Image builds need the verified CI repository mirror")
+        before = next(
+            step for step in steps if "target/maven-downloads/before.json" in step
+        )
+        after = next(
+            step for step in steps if "target/maven-downloads/after.json" in step
+        )
+        upload = next(step for step in steps if "path: target/maven-downloads/" in step)
+        build_jars = next(step for step in steps if "name: Build jars\n" in step)
+        stage = next(step for step in steps if "run: deploy/docker/stage.sh" in step)
+        for step in (scope, setup, capture, before):
+            self.assertNotRegex(step, r"(?m)^        (?:if|continue-on-error):")
+        self.assertLess(steps.index(scope), steps.index(setup))
+        self.assertLess(steps.index(capture), steps.index(before))
+        self.assertLess(steps.index(before), steps.index(build_jars))
+        self.assertLess(steps.index(stage), steps.index(after))
+        self.assertLess(steps.index(after), steps.index(upload))
+        self.assertLess(build.index(upload), build.index("docker/login-action@v4"))
+        for step in (after, upload):
+            self.assertIn("if: always()", step)
+        self.assertIn("if-no-files-found: error", upload)
+
     def test_container_dispatcher_preserves_demo_modes_and_spaced_paths(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -83,7 +142,7 @@ class ImageWorkflowTest(unittest.TestCase):
             "name: Build the native candidate\n",
             "name: Verify candidate startup and replay\n",
             "id: publish\n",
-            "mvn -q -B help:evaluate",
+            "python3 deploy/docker/check_tools_release.py",
         ):
             self.assertIn(required, build)
         self.assertLess(build.index(fast), build.index("mvn -B -ntp install"))
@@ -100,9 +159,28 @@ class ImageWorkflowTest(unittest.TestCase):
         )
         self.assertLess(
             build.index("python3 tools/check_maven_downloads.py"),
-            build.index("mvn -q -B help:evaluate"),
+            build.index("python3 deploy/docker/check_tools_release.py"),
         )
         steps = re.split(r"\n(?=      - )", build)
+        source_gate = next(step for step in steps if "name: Version\n" in step)
+        staged_gate = next(
+            step for step in steps if "name: Verify staged release versions\n" in step
+        )
+        build_jars = next(step for step in steps if "name: Build jars\n" in step)
+        stage = next(step for step in steps if "run: deploy/docker/stage.sh" in step)
+        for step in (source_gate, staged_gate):
+            self.assertNotRegex(step, r"(?m)^        (?:if|continue-on-error):")
+        self.assertIn('args=(--tag "$GITHUB_REF_NAME")', source_gate)
+        self.assertIn('check_tools_release.py "${args[@]}"', source_gate)
+        self.assertIn(
+            "run: python3 deploy/docker/check_tools_release.py --staged deploy/docker/.stage",
+            staged_gate,
+        )
+        self.assertLess(steps.index(source_gate), steps.index(build_jars))
+        self.assertLess(steps.index(stage), steps.index(staged_gate))
+        self.assertLess(
+            build.index(staged_gate), build.index("name: Build the native candidate\n")
+        )
         candidate = next(
             step for step in steps if "name: Build the native candidate\n" in step
         )
@@ -174,6 +252,8 @@ class ImageWorkflowTest(unittest.TestCase):
             )
             self.assertIn("if: always()", upload)
             self.assertIn(f"path: target/image-acceptance/{path}/", upload)
+            if path == "candidate":
+                self.assertLess(build.index(upload), build.index(publish))
 
     def test_workflow_requires_candidate_acceptance_and_downloads_published_digest_natively(
         self,
@@ -197,6 +277,17 @@ class ImageWorkflowTest(unittest.TestCase):
             "wrong Maven checksum": workflow.replace(CHECKSUM, "0" * len(CHECKSUM)),
             "missing retry verification": workflow.replace(
                 "python3 tools/check_maven_downloads.py", "true"
+            ),
+            "bypassed staged release gate": workflow.replace(
+                "name: Verify staged release versions\n",
+                "name: Verify staged release versions\n        if: false\n",
+            ),
+            "lost staged release verification": workflow.replace(
+                "check_tools_release.py --staged deploy/docker/.stage",
+                "check_tools_release.py",
+            ),
+            "lost tag verification": workflow.replace(
+                'args=(--tag "$GITHUB_REF_NAME")', "args=()"
             ),
             "mutable registry reference": workflow.replace(
                 "opentsx-tools@${{ needs.opentsx-tools.outputs.digest }}",

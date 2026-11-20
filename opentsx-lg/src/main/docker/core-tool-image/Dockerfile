@@ -10,4 +10,4 @@ ENV DISPLAY :99
 
 COPY opentsx-lg /opentsx-lg/
 
-CMD java -jar /opentsx-lg/opentsx-lg-3.0.1.jar
+CMD java -jar /opentsx-lg/opentsx-lg-3.1.0.jar

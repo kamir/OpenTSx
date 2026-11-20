@@ -5,4 +5,4 @@ echo "------------------------------------------"
 echo " Start the LATENCY analysis ... PRECHECK "
 echo "------------------------------------------"
 
-java -cp /opentsx-lg/opentsx-lg-3.0.1.jar org.opentsx.lg.kping.EventFlowAnalysisSetup
+java -cp /opentsx-lg/opentsx-lg-3.1.0.jar org.opentsx.lg.kping.EventFlowAnalysisSetup
