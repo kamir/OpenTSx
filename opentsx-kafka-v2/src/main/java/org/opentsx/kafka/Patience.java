@@ -22,8 +22,8 @@ import java.util.function.LongSupplier;
  * {@link KafScaleClients#producerProps}). A consumer does not: its {@code poll} throws
  * {@code IllegalStateException: Unexpected error code 7 while fetching ...}, and a reader that lets the exception
  * through dies although the broker is fine a minute later. {@link #poll} pauses instead and tries again; the
- * position of the consumer is untouched by the refusal. The first refusal of a row is logged at WARN, the next answer
- * at INFO.
+ * position of the consumer is untouched by the refusal. The first refusal of a row is logged at WARN, the next read
+ * that is not refused at INFO.
  *
  * <p>One instance per reading loop; not thread-safe.
  */
@@ -114,7 +114,7 @@ public final class Patience {
             ConsumerRecords<K, V> records = consumer.poll(timeout);
             if (refused) {
                 refused = false;
-                LOG.info("the broker answers reads again refusedFor={}",
+                LOG.info("the broker no longer refuses reads refusedFor={}",
                         Duration.ofNanos(nanoClock.getAsLong() - refusedSince).truncatedTo(ChronoUnit.MILLIS));
             }
             return records;

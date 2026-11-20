@@ -220,6 +220,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   minutes (liveness), so a processor whose poll loop stops is not ready about 3 minutes and restarted about 12 minutes
   after its last pass; the first pass may take 10 minutes.
 - `Patience.refusing()` in `opentsx-kafka-v2` tells whether the broker refused the last poll.
+- A test of the vector processor checks that the writers `VectorProcessor.deployedWrites` names for the server and the
+  command line leave out a DAG that `DagPlan.of` refuses, and the sinks of a DAG whose redeploy the processor refused
+  because another DAG writes one of its topics.
 
 ### Changed
 
@@ -515,9 +518,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `Patience`, `LogTail` and `EpisodeLogTail` of `opentsx-kafka-v2` and the statistics processor of `opentsx-stats` log
   through SLF4J instead of printing to stderr, one line per event in the form `<what happened> key=value ...`.
   `Patience` logs the first refused read of a row at WARN (`the broker refuses reads; waiting pause=PT5S limit=PT10M
-  cause=...`) and the next answer at INFO (`the broker answers reads again refusedFor=<duration>`). `LogTail` logs a
-  retention gap and `EpisodeLogTail` the first undecodable record per partition at WARN with topic, partition and
-  offset.
+  cause=...`) and the next read that is not refused at INFO (`the broker no longer refuses reads
+  refusedFor=<duration>`). `LogTail` logs a retention gap and `EpisodeLogTail` the first undecodable record per
+  partition at WARN with topic, partition and offset.
 - The statistics processor (`bin/opentsx stats`) logs its first undecodable record and first invalid episode per
   partition and every retention gap at WARN with topic, partition, offset and cause. It logs the restored checkpoint
   or `no checkpoint`, the assigned partitions with their start offsets (WARN `no partitions assigned` when there are
@@ -861,8 +864,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   MacroTrackerFrame, Track and PFDRecorder log each recorded operation at DEBUG instead of printing `ADDED A NEW
   TRANSFORMATION`, `[OK] ... Node added to tree` and `[PFDRecorder] Added step` lines.
 - `KafkaTopics.create` in opentsx-twin-live uses the Admin client that the topic lookups share instead of opening one
-  per topic. A create that fails closes that client, and the next create opens a new one. After `close`, a create
-  throws `topics: closed; create a new KafkaTopics to create a topic`.
+  per topic. A create that fails closes that client, and the next create opens a new one. After `close`, every
+  create throws `topics: closed; create a new KafkaTopics to create a topic`, also one for a topic it created before.
 - The k3s scripts 70-backup.sh, 20-configure.sh and 11-import-images.sh report a missing namespace, an OPENTSX_DOMAIN
   that is not allowed, a missing tool of the import method and a kind cluster that does not exist in the form
   '<subject>: <problem>; <what to do>', for example `namespace opentsx: not found; nothing to back up`,
@@ -895,6 +898,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - opentsx-lg: the core tool image Dockerfile sets its variables as `ENV key=value` and runs `java -jar
   /opentsx-lg/opentsx-lg-3.0.1.jar` in exec form. `DockerImageTest` fails on the legacy `ENV key value` form, on a
   shell-form `CMD` or `ENTRYPOINT`, and on an image from `k8s.gcr.io`.
+- The opentsx-twin-live README says that `twin-live publish` creates each topic before the first record of its run and
+  exits with code 1 when that create fails, and that a caller of `KafkaTopics.append` that appends again after a
+  failed create tries the create again on a new Admin client.
 
 ### Removed
 

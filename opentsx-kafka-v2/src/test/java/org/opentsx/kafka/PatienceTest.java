@@ -208,7 +208,7 @@ class PatienceTest {
         assertEquals(List.of(
                 "WARN org.opentsx.kafka.Patience - the broker refuses reads; waiting pause=PT0.005S limit=PT30S"
                         + " cause=Unexpected error code 7 while fetching at offset 612 from topic-partition tsx.wind.episodes.v2-3",
-                "INFO org.opentsx.kafka.Patience - the broker answers reads again refusedFor=PT0.01S"),
+                "INFO org.opentsx.kafka.Patience - the broker no longer refuses reads refusedFor=PT0.01S"),
                 log.lines().map(l -> l.substring(l.indexOf("] ") + 2)).toList(), log);
     }
 

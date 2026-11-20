@@ -81,6 +81,9 @@ public final class KafkaTopics implements Topics {
     /** A topic counts as known only once it was created, so a failed create is tried again by the next call. */
     @Override
     public void create(String topic) {
+        if (closed) {
+            throw new IllegalStateException("topics: closed; create a new KafkaTopics to create a topic");
+        }
         if (known.contains(topic)) {
             return;
         }

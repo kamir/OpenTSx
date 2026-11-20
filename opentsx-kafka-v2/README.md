@@ -171,7 +171,7 @@ no broker, logger `org.opentsx.kafka.Patience`:
 
 ```text
 the broker refuses reads; waiting pause=PT5S limit=PT10M cause=Unexpected error code 7 while fetching at offset <offset> from topic-partition <topic>-<partition>
-the broker answers reads again refusedFor=<duration>
+the broker no longer refuses reads refusedFor=<duration>
 ```
 
 `<duration>` is ISO-8601 with millisecond precision, for example `PT1M4.512S`. `bin/opentsx` and the image write

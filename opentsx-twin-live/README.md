@@ -13,9 +13,10 @@ twin run --> EventPublisher --> twin.<id>.<run>.events (KafScale) --> EventBridg
 Name: `twin.<id>.<run>.events`, next to `.msgs`, `.barrier` and `.interventions` of the Avro contract in
 `opentsx-twin`. `TopicLayout.twinEvents` in `opentsx-kafka-v2` builds the name, and `TopicLayout.provisionTwinEvents`
 creates the topic when it is missing: one partition, so the log keeps the order of the run, `compression.type=zstd`
-and `cleanup.policy=delete` like every OpenTSx topic. The creates share one Admin client; a create that fails closes
-it and is tried again on a new one before the next record. Key:
-the atom. Value: JSON, schema `twin.event.v1` (header `tsx-schema`):
+and `cleanup.policy=delete` like every OpenTSx topic. The creates share one Admin client, and a create that fails
+closes it. `twin-live publish` creates each topic before the first record of its run and exits with code 1 when that
+create fails. A caller of `KafkaTopics.append` that appends again after a failed create tries the create again on a new
+Admin client. Key: the atom. Value: JSON, schema `twin.event.v1` (header `tsx-schema`):
 
 ```json
 {"run_id":"h2-chain-32d17d33b237bf6b","k":147,"atom":"line","type":"pressure_limit",
@@ -49,7 +50,8 @@ bin/opentsx twin-live demo --port 8090
   A reconnecting browser sends `Last-Event-ID` and continues behind that offset. While KafScale refuses reads, a
   stream waits 5 s and tries again, and logs
   `WARN org.opentsx.kafka.Patience - the broker refuses reads; waiting pause=PT5S limit=PT10M cause=<causes>` once and
-  `INFO org.opentsx.kafka.Patience - the broker answers reads again refusedFor=<duration>` when reads work again;
+  `INFO org.opentsx.kafka.Patience - the broker no longer refuses reads refusedFor=<duration>` after the next read that
+  is not refused, also one that returned nothing because it reached no broker;
   after 10 minutes of refusals the stream is closed.
 - `demo` runs both in one process on topics kept in memory, plays every run in 120 seconds unless `--duration` says
   otherwise, and loops. No broker is involved and nothing reaches KafScale.

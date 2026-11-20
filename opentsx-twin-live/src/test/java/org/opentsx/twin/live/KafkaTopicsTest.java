@@ -240,6 +240,15 @@ class KafkaTopicsTest {
     }
 
     @Test
+    void aCreateAfterCloseIsRefusedAlsoForATopicCreatedBefore() {
+        KafkaTopics topics = topics(new MockAdminClient(List.of(BROKER), BROKER), producer(), null);
+        topics.create(TOPIC);
+        topics.close();
+        IllegalStateException closed = assertThrows(IllegalStateException.class, () -> topics.create(TOPIC));
+        assertEquals("topics: closed; create a new KafkaTopics to create a topic", closed.getMessage());
+    }
+
+    @Test
     void aFailedCreateDropsTheSharedAdminAndTheNextCreateOpensANewOne() {
         FailsFirstCreate failing = new FailsFirstCreate();
         List<MockAdminClient> made = new ArrayList<>();

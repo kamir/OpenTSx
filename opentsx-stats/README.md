@@ -166,7 +166,7 @@ stderr, after the time, the thread and the level. `opentsx.log.level` (`--conf o
 In the progress line `records`, `undecodable`, `invalid`, `lostToRetention` and `statsWritten` count since the
 process started; `duplicates` and `lateValues` are engine counters and come back from the checkpoint. While KafScale
 refuses reads, `org.opentsx.kafka.Patience` logs `the broker refuses reads; waiting ...` at WARN and
-`the broker answers reads again refusedFor=<duration>` at INFO.
+`the broker no longer refuses reads refusedFor=<duration>` at INFO after the next read that is not refused.
 
 ## Data quality
 

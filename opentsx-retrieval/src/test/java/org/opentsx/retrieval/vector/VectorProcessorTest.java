@@ -547,6 +547,30 @@ public class VectorProcessorTest {
     }
 
     @Test
+    void theWritersLeaveOutADagThatCannotRunAndARedeployThatWasRefused(@TempDir Path state) throws Exception {
+        String broken = dag("\"" + SPEED.getSeriesId() + "\"", "  - id: n0\n    op: no.such.op\n    in: [decode]\n", "n0")
+                .replace("dag: wind-exp2-smart", "dag: wind-broken");
+        JsonNode third = new ObjectMapper(new YAMLFactory()).readTree(goodDag().replace("dag: wind-exp2-smart", "dag: wind-third"));
+        broker.append(LAYOUT.dags(), 0, VectorProcessor.deployRecord("wind-broken", broken, "test"));
+        Map<String, Set<String>> writers = VectorProcessor.deployedWrites(broker.consumer(), LAYOUT);
+        assertEquals(Map.of(), writers, "the processor cannot run wind-broken, so it writes nothing");
+        assertEquals(Optional.empty(), VectorProcessor.sinkConflict("wind-third", third, writers));
+
+        String other = goodDag().replace("dag: wind-exp2-smart", "dag: wind-other-smart").replace("turbine-state", "other-state");
+        String both = goodDag() + "  - { from: n1, topic: tsx.wind.smart.other-state.vectors.v1, schema: opentsx.vector.v1 }\n";
+        List<Map<String, String>> runs = liveAndAfterARestart(state, List.of(
+                VectorProcessor.deployRecord("wind-exp2-smart", goodDag(), "test"),
+                VectorProcessor.deployRecord("wind-other-smart", other, "test"),
+                VectorProcessor.deployRecord("wind-exp2-smart", both, "test")));
+        assertEquals(Map.of("wind-other-smart", Set.of("topic tsx.wind.smart.other-state.vectors.v1")),
+                VectorProcessor.deployedWrites(broker.consumer(), LAYOUT), "the refused redeploy ends what wind-exp2-smart wrote");
+        assertEquals(Map.of("wind-other-smart/other-state", "running"), runs.get(0));
+        assertEquals(runs.get(0), runs.get(1), "a restart keeps the writer");
+        assertEquals("wind-exp2-smart: sink topic tsx.wind.smart.other-state.vectors.v1 is already written by DAG wind-other-smart;"
+                + " stop that DAG first or choose another sink", lastStatus("wind-exp2-smart").path("error").asText());
+    }
+
+    @Test
     void aRestartKeepsTheDagThatHeldTheVectorTopicWhenTheOtherWasDeployedAgainAndRefused(@TempDir Path state) {
         String copy = goodDag().replace("dag: wind-exp2-smart", "dag: wind-copy");
         List<Map<String, String>> runs = liveAndAfterARestart(state, List.of(
