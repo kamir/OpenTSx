@@ -92,9 +92,21 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Data model `v2.2`: the `resultId` of an `AnalysisResult` binds the content of its input episodes. The new field
+  `inputDigests` holds a SHA-256 content digest per input episode over the series key, unit, time range, timestamps,
+  values and quality (Java `Episodes.contentDigest`, Python `opentsx.model.content_digest`). The digests enter the
+  canonical form as a `{...}` section, so a result on a revised episode with the same episode id gets another id.
+  `opentsx.algorithms.results` fills the digests; the Python builder `analysis_result` requires `input_digests`.
+  Records written with `v2.1` decode in Java, Python and the workbench with empty `inputDigests` and keep their ids.
+  Python now ships the `v2.1` writer schema of `AnalysisResult` to read them. New vectors `episode-digest.json` and
+  `analysis-result-wire.json` (`v2.2` bytes). `wire-format.json` stays byte-identical because catalog
+  `tsx-catalog/1` pins it; its `analysisResults` entries are now the `v2.1` vectors and the generator rebuilds it from
+  `schema-history/v2.1`. The workbench result view shows the digests and says when a record has none.
+
 - The workbench Deployments panel lists the `jobs` of `GET /v1/dags` apart from the deployments: job id, track, site
   when present, state, input record count and report age. A job in any state but `stopped` or `failed` without a
   report for 120 s is flagged. Jobs have no Stop, because Track A and B do not read the control topic.
+
 - English normative specifications for the rules that code, tests and `systems/` cite:
   [`VECTOR-AND-DAG-SPEC.md`](docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md),
   [`SYSTEM-DOCUMENT-SPEC.md`](docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md),

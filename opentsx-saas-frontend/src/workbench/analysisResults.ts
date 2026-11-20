@@ -29,6 +29,7 @@ export interface InspectedAnalysis {
   methodVersion: string;
   inputEpisodeIds: string[];
   inputSeriesIds: string[];
+  inputDigests: string[];
   tStart: string;
   tEnd: string;
   scalars: AnalysisScalar[];
@@ -157,10 +158,17 @@ export function inspectAnalysisJson(json: string): InspectedAnalysis {
     throw new Error(
       "inputEpisodeIds and inputSeriesIds must have the same length.",
     );
-  const id = resultId(method, methodVersion, params(r.params), inputEpisodeIds);
+  const inputDigests = strings(r.inputDigests ?? [], "inputDigests", 1000);
+  const id = resultId(
+    method,
+    methodVersion,
+    params(r.params),
+    inputEpisodeIds,
+    inputDigests,
+  );
   if (r.resultId !== id)
     throw new Error(
-      `resultId does not match method, version, typed parameters and input episodes (expected ${id}).`,
+      `resultId does not match method, version, typed parameters, input episodes and their digests (expected ${id}).`,
     );
   const tStart = integer(r.tStart, "tStart");
   const tEnd = integer(r.tEnd, "tEnd");
@@ -220,6 +228,7 @@ export function inspectAnalysisJson(json: string): InspectedAnalysis {
     methodVersion,
     inputEpisodeIds,
     inputSeriesIds,
+    inputDigests,
     tStart: String(tStart),
     tEnd: String(tEnd),
     scalars,

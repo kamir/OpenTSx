@@ -113,7 +113,7 @@ Every operator whose output may leave a site (S4) MUST declare `merge.class`:
 
 | Vector file | Comparison | Source |
 |---|---|---|
-| `opentsx-model/src/test/resources/testvectors/wire-format.json` | byte-identical hex | `opentsx-model` tests |
+| `opentsx-model/src/test/resources/testvectors/wire-format.json` | byte-identical hex; its `v2.1` analysis results decode with their ids | `opentsx-model` tests |
 | `series-id.json`, `xxh64.json`, `time-deltas.json`, `bucket-checksum.json` | identical values | same |
 | `docs/datamodel-2026/testvectors/clean-ops.v1.json` | `\|expected - actual\| <= 1e-12 * max(1, \|expected\|)`; a gap must be a gap | `CleanChainTest.java:76-85` |
 | `align-vector.v1.json` | exact equality | `VectorAlignerTest.java:83` |
@@ -704,7 +704,7 @@ version or catalog.
 
 | Check id | Pass condition |
 |---|---|
-| `vectors.wire` | every record of `wire-format.json` encodes byte-identically |
+| `vectors.wire` | the episodes and the observation of `wire-format.json` encode byte-identically, its `v2.1` analysis results decode with their ids, and every record of `analysis-result-wire.json` encodes byte-identically |
 | `vectors.series-id` | `series-id.json` and `xxh64.json` pass |
 | `vectors.operators` | every operator of the catalog version passes its vectors (S1.6) |
 | `kafscale.required` | the required tests of `opentsx-kafscale-conformance` pass against the site broker |

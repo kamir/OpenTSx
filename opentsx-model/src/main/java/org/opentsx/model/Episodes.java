@@ -7,7 +7,12 @@ import org.opentsx.model.v2.SeriesKey;
 import org.opentsx.model.v2.TimeEncoding;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +29,8 @@ import java.util.Map;
 public final class Episodes {
 
     public static final String PRODUCER = "opentsx-model/3.1.0";
+
+    private static final byte[] CONTENT_TAG = "opentsx.episode.content.v1\n".getBytes(StandardCharsets.US_ASCII);
 
     private Episodes() {
     }
@@ -64,6 +71,52 @@ public final class Episodes {
 
     public static long[] timestampsMicros(Episode episode) {
         return TimeAxis.timestampsMicros(episode);
+    }
+
+    /**
+     * Lower-case hex SHA-256 over what an analysis method reads from an episode. All integers are signed 64-bit
+     * little-endian:
+     * {@code "opentsx.episode.content.v1\n" || str(canonical(metric, tags)) || optStr(unit) || tStart || tEnd
+     * || count || timestamps || values || optBytes(quality)} with {@code str(s) = len(utf8(s)) || utf8(s)},
+     * {@code optStr} and {@code optBytes} a byte 0 for null, else a byte 1 and the value, and values as IEEE 754
+     * bits little-endian with every NaN as {@code 0x7ff8000000000000}. Episode id, time encoding, labels, bucket,
+     * revision, summary, segmentation and provenance are not part of it.
+     */
+    public static String contentDigest(Episode episode) {
+        validate(episode);
+        SeriesKey series = episode.getSeries();
+        byte[] canonical = SeriesKeys.canonical(series.getMetric(), series.getTags()).getBytes(StandardCharsets.UTF_8);
+        byte[] unit = series.getUnit() == null ? null : series.getUnit().getBytes(StandardCharsets.UTF_8);
+        ByteBuffer quality = episode.getQuality() == null ? null : episode.getQuality().duplicate();
+        long[] ts = timestampsMicros(episode);
+        List<Double> values = episode.getValues();
+        int n = ts.length;
+        long size = CONTENT_TAG.length + 8L + canonical.length + 1 + (unit == null ? 0 : 8L + unit.length) + 24
+                + 16L * n + 1 + (quality == null ? 0 : n);
+        ByteBuffer buf = ByteBuffer.allocate(Math.toIntExact(size)).order(ByteOrder.LITTLE_ENDIAN);
+        buf.put(CONTENT_TAG).putLong(canonical.length).put(canonical);
+        if (unit == null) {
+            buf.put((byte) 0);
+        } else {
+            buf.put((byte) 1).putLong(unit.length).put(unit);
+        }
+        buf.putLong(Micros.of(episode.getTStart())).putLong(Micros.of(episode.getTEnd())).putLong(n);
+        for (long t : ts) {
+            buf.putLong(t);
+        }
+        for (Double v : values) {
+            buf.putLong(Double.doubleToLongBits(v));
+        }
+        if (quality == null) {
+            buf.put((byte) 0);
+        } else {
+            buf.put((byte) 1).put(quality);
+        }
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(buf.array()));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is required by every Java platform", e);
+        }
     }
 
     /** Checks the invariants the builder guarantees; use on episodes received from outside. */
