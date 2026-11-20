@@ -26,9 +26,9 @@ import java.util.function.Supplier;
  * Topics on KafScale or Apache Kafka, with the client settings of {@link KafScaleClients}. Event topics have one
  * partition. Readers assign that partition and seek; they use no consumer group, because KafScale neither commits
  * without membership nor lets a restarted member rejoin. A cursor waits out the reads KafScale refuses ({@link Patience}).
- * The readiness lookups of {@link #exists} share one Admin client, opened at the first lookup and closed by
- * {@link #close}; a lookup that fails closes it, and the next lookup opens a new one. {@link #open} looks its topic up on
- * an Admin of its own, because closing the shared one ends every lookup that waits on it.
+ * The readiness lookups of {@link #exists} and the creates of {@link #create} share one Admin client, opened at the first
+ * of them and closed by {@link #close}; one that fails closes it, and the next opens a new one. {@link #open} looks its
+ * topic up on an Admin of its own, because closing the shared one ends every lookup that waits on it.
  */
 public final class KafkaTopics implements Topics {
 
@@ -84,15 +84,19 @@ public final class KafkaTopics implements Topics {
         if (known.contains(topic)) {
             return;
         }
-        try (Admin admin = admins.apply(bootstrap)) {
-            TopicLayout.provisionTwinEvents(admin, topic, (short) 1);
+        Admin shared = admin("create a topic");
+        try {
+            TopicLayout.provisionTwinEvents(shared, topic, (short) 1);
+        } catch (RuntimeException e) {
+            drop(shared);
+            throw e;
         }
         known.add(topic);
     }
 
     @Override
     public boolean exists(String topic, Duration timeout) {
-        Admin lookup = admin();
+        Admin lookup = admin("look up a topic");
         try {
             return listed(lookup, topic, timeout);
         } catch (RuntimeException e) {
@@ -115,11 +119,14 @@ public final class KafkaTopics implements Topics {
         }
     }
 
-    /** The Admin of the lookups, opened when there is none. */
-    private Admin admin() {
+    /**
+     * The Admin of the lookups and creates, opened when there is none; {@code what} names the call in the refusal after
+     * {@link #close}.
+     */
+    private Admin admin(String what) {
         synchronized (adminLock) {
             if (closed) {
-                throw new IllegalStateException("topics: closed; create a new KafkaTopics to look up a topic");
+                throw new IllegalStateException("topics: closed; create a new KafkaTopics to " + what);
             }
             if (admin == null) {
                 admin = newAdmin();
@@ -136,7 +143,7 @@ public final class KafkaTopics implements Topics {
         }
     }
 
-    /** Closes an Admin whose lookup failed, so that the next lookup opens a new one. */
+    /** Closes an Admin whose lookup or create failed, so that the next one opens a new one. */
     private void drop(Admin failed) {
         synchronized (adminLock) {
             if (admin == failed) {

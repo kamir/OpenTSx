@@ -13,7 +13,8 @@ twin run --> EventPublisher --> twin.<id>.<run>.events (KafScale) --> EventBridg
 Name: `twin.<id>.<run>.events`, next to `.msgs`, `.barrier` and `.interventions` of the Avro contract in
 `opentsx-twin`. `TopicLayout.twinEvents` in `opentsx-kafka-v2` builds the name, and `TopicLayout.provisionTwinEvents`
 creates the topic when it is missing: one partition, so the log keeps the order of the run, `compression.type=zstd`
-and `cleanup.policy=delete` like every OpenTSx topic. A create that fails is tried again before the next record. Key:
+and `cleanup.policy=delete` like every OpenTSx topic. The creates share one Admin client; a create that fails closes
+it and is tried again on a new one before the next record. Key:
 the atom. Value: JSON, schema `twin.event.v1` (header `tsx-schema`):
 
 ```json

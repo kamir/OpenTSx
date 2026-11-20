@@ -266,7 +266,7 @@ Every error answers a JSON object with two fields, `error` and `type`:
 | `403` | `forbidden` | `register` while `ENABLE_SIGNUP=false`; an inactive account; a new flow for an organization the account is not a member of; an account that may not deploy, stop or generate under `DAG_RUN_ROLE` |
 | `404` | `not_found` | a path the backend does not know; a flow of another account or none; a binding the working copy does not hold |
 | `405` | `method_not_allowed` | a known path with a method it does not take; the `Allow` header lists the methods it takes |
-| `409` | `conflict` | `register` with an address that is already registered; a DAG whose vector topic, or whose signal on the clean or features topic, another deployed DAG writes, with the reason of the retrieval server |
+| `409` | `conflict` | `register` with an address that is already registered; a DAG whose vector topic, or whose signal on the clean or features topic, another DAG that the vector processor runs writes, with the reason of the retrieval server |
 | `413` | `too_large` | a DAG over 262144 bytes |
 | `422` | `bad_request` | a field that is missing or malformed, a body that is not valid JSON, a binding that cannot be a source |
 | `500` | `internal` | a fault in the backend; the body is always `{"error":"internal error","type":"internal"}` |

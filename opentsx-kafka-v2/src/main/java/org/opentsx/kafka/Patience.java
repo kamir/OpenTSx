@@ -35,7 +35,8 @@ public final class Patience {
     private final long pauseMillis;
     private final LongSupplier nanoClock;
     private final LongConsumer sleeper;
-    private long refusedSince = -1;
+    /** The clock at the first refusal of the row; compared by difference only, as nanoTime has no fixed origin. */
+    private long refusedSince;
     private boolean refused;
 
     /**
@@ -111,18 +112,16 @@ public final class Patience {
         Map<TopicPartition, Long> before = positions(consumer);
         try {
             ConsumerRecords<K, V> records = consumer.poll(timeout);
-            refused = false;
-            if (refusedSince >= 0) {
+            if (refused) {
+                refused = false;
                 LOG.info("the broker answers reads again refusedFor={}",
                         Duration.ofNanos(nanoClock.getAsLong() - refusedSince).truncatedTo(ChronoUnit.MILLIS));
-                refusedSince = -1;
             }
             return records;
         } catch (RuntimeException e) {
             if (!isRefusal(e)) {
                 throw e;
             }
-            refused = true;
             // The client throws the refusal of one partition out of the middle of a poll: records it had already taken
             // from other partitions are gone, and their positions have moved on. Nothing of this poll reached the
             // caller, so every partition goes back to where it was.
@@ -134,7 +133,8 @@ public final class Patience {
                 }
             });
             long now = nanoClock.getAsLong();
-            if (refusedSince < 0) {
+            if (!refused) {
+                refused = true;
                 refusedSince = now;
                 LOG.warn("the broker refuses reads; waiting pause={} limit={} cause={}", Duration.ofMillis(pauseMillis),
                         Duration.ofNanos(limitNanos), LogReader.causes(e));

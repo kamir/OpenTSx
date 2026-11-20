@@ -167,6 +167,19 @@ class VectorProcessorAppTest {
     }
 
     @Test
+    void deployCountsNoWriterForADagTheProcessorRefused() throws Exception {
+        broker.append(VectorProcessorTest.LAYOUT.dags(), 0, VectorProcessor.deployRecord("wind-exp2-smart",
+                VectorProcessorTest.goodDag(), "ops"));
+        broker.append(VectorProcessorTest.LAYOUT.dags(), 0, VectorProcessor.deployRecord("wind-copy",
+                VectorProcessorTest.goodDag().replace("dag: wind-exp2-smart", "dag: wind-copy"), "ops"));
+        broker.append(VectorProcessorTest.LAYOUT.dags(), 0, VectorProcessor.stopRecord("wind-exp2-smart", "ops"));
+        Path third = Files.writeString(dir.resolve("third.dag.yaml"),
+                VectorProcessorTest.goodDag().replace("dag: wind-exp2-smart", "dag: wind-third"));
+        assertEquals(0, run("deploy", "--kafscale", "ks:9092", "--dag", third.toString()), err());
+        assertEquals("deployed wind-third (control topic tsx.wind.dags.v1)\n", out());
+    }
+
+    @Test
     void theProgressFileHoldsTheTimeOfTheLastRound() throws Exception {
         Path state = dir.resolve("state");
         Path progress = state.resolve(VectorProcessorApp.PROGRESS_FILE);

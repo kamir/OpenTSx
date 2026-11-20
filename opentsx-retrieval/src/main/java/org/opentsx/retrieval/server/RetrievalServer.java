@@ -79,8 +79,8 @@ import java.util.stream.Collectors;
  *                             (both only with {@code --kafscale} and {@code --dag-runs true}, and with the run token
  *                             when the server has one; {@link #main} starts no such server without one unless
  *                             {@code --open-dag-runs} binds it to 127.0.0.1); a DAG whose vector topic, or whose
- *                             signal on the clean or features topic, another deployed DAG writes is answered 409
- *                             {@code conflict}
+ *                             signal on the clean or features topic, another DAG that the vector processor runs
+ *                             writes is answered 409 {@code conflict}
  * GET  /v1/health             liveness: 200 while the process answers, also while every request thread waits
  * GET  /v1/ready              readiness: 200 once the server listens; with {@code --kafscale} 503 {@code unavailable}
  *                             after {@value #READY_PERIODS} failed refreshes of the feed in a row or as many refresh
@@ -1178,9 +1178,9 @@ public final class RetrievalServer implements AutoCloseable {
 
     /**
      * The DAG routes of a server on KafScale. A deployment is refused with {@link Conflict} when another DAG that the
-     * control topic holds as deployed writes one of its vector topics or one of the signals of its series sinks
-     * ({@link VectorProcessor#sinkConflict}); the control topic is read to its end first, so the refusal holds also for
-     * DAGs deployed from the command line.
+     * vector processor runs writes one of its vector topics or one of the signals of its series sinks
+     * ({@link VectorProcessor#sinkConflict}); the control topic is read to its end and decided as the processor decides
+     * it ({@link VectorProcessor#deployedWrites}), so the refusal holds also for DAGs deployed from the command line.
      *
      * @param consumers a new consumer for each deployment, closed after it read the control topic
      */

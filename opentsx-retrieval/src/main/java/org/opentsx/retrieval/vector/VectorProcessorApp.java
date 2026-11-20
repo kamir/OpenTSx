@@ -54,8 +54,8 @@ import java.util.function.Function;
  * </pre>
  * {@code deploy} and {@code stop} only write a record to the control topic; the running processor takes it up. The
  * options and the DAG file are checked before the first Admin call. {@code deploy} then reads the control topic and
- * refuses a DAG whose vector topic or signal another deployed DAG writes. Exit codes: 0 success, 1 runtime failure or a
- * refused second writer, 2 usage or configuration error.
+ * refuses a DAG whose vector topic or signal another DAG that the processor runs writes. Exit codes: 0 success, 1
+ * runtime failure or a refused second writer, 2 usage or configuration error.
  */
 public final class VectorProcessorApp {
 
@@ -192,7 +192,10 @@ public final class VectorProcessorApp {
         }
     }
 
-    /** Refuses a DAG whose vector topic or signal another DAG deployed on the control topic writes. */
+    /**
+     * Refuses a DAG whose vector topic or signal another DAG that the processor runs writes
+     * ({@link VectorProcessor#deployedWrites}).
+     */
     private static void refuseSecondWriter(Function<String, Consumer<byte[], byte[]>> consumers, String bootstrap,
                                            TopicLayout layout, String name, String spec) throws IOException {
         Map<String, Set<String>> written;

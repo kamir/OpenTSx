@@ -14,6 +14,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
 import org.opentsx.conf.OpenTsxConf;
 import org.opentsx.retrieval.EpisodeService;
+import org.opentsx.retrieval.vector.VectorProcessor;
 import org.opentsx.retrieval.vector.VectorProcessorTest;
 import org.opentsx.retrieval.vector.VectorProcessorTest.FakeBroker;
 import org.opentsx.store.InMemorySeriesStore;
@@ -417,6 +418,27 @@ class DagRunEndpointTest {
             assertEquals(200, post(server, "/v1/dags/stop?name=wind-exp2-smart", "").statusCode());
             assertEquals(200, post(server, "/v1/dags/deploy", copy).statusCode(), "the topic has no writer after the stop");
             assertEquals(4, broker.log.get(control).size());
+        }
+    }
+
+    @Test
+    void aDagTheProcessorRefusedHoldsNoVectorTopicOnceItsWriterStops() throws Exception {
+        FakeBroker broker = new FakeBroker();
+        String first = VectorProcessorTest.goodDag();
+        String third = first.replace("dag: wind-exp2-smart", "dag: wind-third");
+        try (KafScaleFeed feed = feed(broker); RetrievalServer server = server(kafscale(feed, broker), true, null)) {
+            assertEquals(200, post(server, "/v1/dags/deploy", first).statusCode());
+            // a second writer that reached the control topic past the check, as two deployments at the same time can
+            broker.append(VectorProcessorTest.LAYOUT.dags(), 0, VectorProcessor.deployRecord("wind-copy",
+                    first.replace("dag: wind-exp2-smart", "dag: wind-copy"), "test"));
+            HttpResponse<String> refused = post(server, "/v1/dags/deploy", third);
+            assertEquals(409, refused.statusCode(), refused.body());
+            assertEquals("{\"error\":\"wind-third: sink topic tsx.wind.smart.turbine-state.vectors.v1 is already written by DAG"
+                    + " wind-exp2-smart; stop that DAG first or choose another sink\",\"type\":\"conflict\"}", refused.body());
+
+            assertEquals(200, post(server, "/v1/dags/stop?name=wind-exp2-smart", "").statusCode());
+            HttpResponse<String> deployed = post(server, "/v1/dags/deploy", third);
+            assertEquals(200, deployed.statusCode(), "the processor refused wind-copy, so it writes nothing: " + deployed.body());
         }
     }
 

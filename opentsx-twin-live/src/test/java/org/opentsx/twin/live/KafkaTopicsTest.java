@@ -57,9 +57,15 @@ class KafkaTopicsTest {
     /** A MockAdminClient whose first createTopics fails; the later ones create the topics. */
     static final class FailsFirstCreate extends MockAdminClient {
         int creates;
+        boolean closed;
 
         FailsFirstCreate() {
             super(List.of(BROKER), BROKER);
+        }
+
+        @Override
+        public synchronized void close(Duration timeout) {
+            closed = true;
         }
 
         @Override
@@ -195,9 +201,10 @@ class KafkaTopicsTest {
         }
     }
 
-    /** A MockAdminClient that records whether it was closed. */
+    /** A MockAdminClient that records whether and how often it was closed. */
     static final class Closes extends MockAdminClient {
         boolean closed;
+        int closes;
 
         Closes() {
             super(List.of(BROKER), BROKER);
@@ -206,6 +213,47 @@ class KafkaTopicsTest {
         @Override
         public synchronized void close(Duration timeout) {
             closed = true;
+            closes++;
+        }
+    }
+
+    @Test
+    void createsShareTheAdminOfTheLookupsAndCloseClosesItOnce() throws Exception {
+        List<Closes> made = new ArrayList<>();
+        KafkaTopics topics = new KafkaTopics("mock:9092", b -> {
+            Closes admin = new Closes();
+            made.add(admin);
+            return admin;
+        }, b -> producer(), b -> null, Patience::standard);
+        topics.create(TOPIC);
+        topics.create("twin.demo.run-2.events");
+        assertEquals(1, made.size(), "two creates open one Admin");
+        assertTrue(topics.exists("twin.demo.run-2.events", Duration.ofSeconds(2)), "the lookup asks the Admin that created the topic");
+        assertEquals(1, made.size(), "the lookup shares it");
+        assertEquals(0, made.get(0).closes);
+
+        topics.close();
+        assertEquals(1, made.get(0).closes, "close closes the shared Admin once");
+        IllegalStateException closed = assertThrows(IllegalStateException.class, () -> topics.create("twin.demo.run-3.events"));
+        assertEquals("topics: closed; create a new KafkaTopics to create a topic", closed.getMessage());
+        assertEquals(1, made.size(), "no Admin is opened after close");
+    }
+
+    @Test
+    void aFailedCreateDropsTheSharedAdminAndTheNextCreateOpensANewOne() {
+        FailsFirstCreate failing = new FailsFirstCreate();
+        List<MockAdminClient> made = new ArrayList<>();
+        try (KafkaTopics topics = new KafkaTopics("mock:9092", b -> {
+            MockAdminClient admin = made.isEmpty() ? failing : new Closes();
+            made.add(admin);
+            return admin;
+        }, b -> producer(), b -> null, Patience::standard)) {
+            IllegalStateException failed = assertThrows(IllegalStateException.class, () -> topics.create(TOPIC));
+            assertEquals("could not create " + TOPIC, failed.getMessage());
+            assertTrue(failing.closed, "a create that failed leaves no client behind");
+            topics.create(TOPIC);
+            topics.create("twin.demo.run-2.events");
+            assertEquals(2, made.size(), "the creates after the failed one share one Admin");
         }
     }
 

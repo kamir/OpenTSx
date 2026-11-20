@@ -213,6 +213,24 @@ class PatienceTest {
     }
 
     @Test
+    void aClockWithANegativeOriginLogsOneWarningAndEndsTheWaitAfterTheLimit() {
+        Refusing consumer = new Refusing(refusal(), refusal(), refusal(), refusal());
+        Time time = new Time();
+        time.nanos = Long.MIN_VALUE / 2;
+        Patience patience = time.patience(Duration.ofMillis(20), Duration.ofMillis(15));
+
+        String log = stderrOf(() -> {
+            assertEquals(0, patience.poll(consumer, Duration.ofMillis(1)).count());
+            assertEquals(0, patience.poll(consumer, Duration.ofMillis(1)).count(), "15 ms of refusals are within the limit");
+            IllegalStateException e = assertThrows(IllegalStateException.class, () -> patience.poll(consumer, Duration.ofMillis(1)));
+            assertEquals("the broker has refused reads for more than PT0.02S", e.getMessage());
+        });
+
+        assertEquals(1, log.lines().filter(l -> l.contains("WARN")).count(), log);
+        assertEquals(List.of(15L, 15L), time.pausesMillis);
+    }
+
+    @Test
     void letsEveryOtherErrorThrough() {
         IllegalStateException real = new IllegalStateException("Consumer is not subscribed to any topics or assigned any partitions");
         Refusing consumer = new Refusing(real);

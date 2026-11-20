@@ -316,29 +316,61 @@ public final class VectorProcessor implements AutoCloseable {
     }
 
     /**
-     * What every DAG whose latest control record says deployed writes ({@link #writes}), by DAG name, read from the
-     * start of the control topic to its end. A document that is no YAML is left out: the processor refuses it, so it
-     * writes nothing.
+     * What every DAG that the processor runs writes ({@link #writes}), by DAG name: the control topic is read from its
+     * start to its end and replayed in the order of the log as the processor does ({@link #replay}), so a DAG the
+     * processor refused, or whose document it cannot run, writes nothing.
      */
     public static Map<String, Set<String>> deployedWrites(Consumer<byte[], byte[]> consumer, TopicLayout layout) {
-        Map<String, JsonNode> latest = new TreeMap<>();
+        List<JsonNode> records = new ArrayList<>();
         new LogTail(consumer, layout.dags(), Duration.ofSeconds(30)).poll(r -> {
             JsonNode n = controlRecord(r.value());
             if (n != null) {
-                latest.put(n.path("dag").asText(), n);
+                records.add(n);
             }
         });
-        Map<String, Set<String>> out = new TreeMap<>();
-        latest.forEach((dag, n) -> {
-            if ("deployed".equals(n.path("state").asText())) {
-                try {
-                    out.put(dag, writes(YAML.readTree(n.path("spec").asText(""))));
-                } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-                    // the processor refuses a document that is no YAML, so it writes nothing
+        Map<String, Set<String>> written = new TreeMap<>();
+        replay(records, layout, written, new HashMap<>());
+        return written;
+    }
+
+    /**
+     * Reads control records one after the other, in the order of the log: a DAG is refused when, at its deploy record,
+     * another DAG in {@code written} writes its vector topic or signal, and it stays refused when that DAG stops later.
+     * Keeps per DAG name what it writes in {@code written} and the hash of its running document in {@code hashes} (""
+     * when it is stopped, refused or cannot run). Returns the refusal of each DAG refused for a sink of another DAG.
+     */
+    private static Map<String, String> replay(List<JsonNode> records, TopicLayout layout, Map<String, Set<String>> written,
+                                              Map<String, String> hashes) {
+        Map<String, String> refused = new HashMap<>();
+        for (JsonNode record : records) {
+            String dag = record.path("dag").asText();
+            boolean deploy = "deployed".equals(record.path("state").asText());
+            String spec = record.path("spec").asText("");
+            String hash = deploy ? sha256(spec) : "";
+            if (hash.equals(hashes.get(dag))) {
+                continue;
+            }
+            written.remove(dag);
+            refused.remove(dag);
+            hashes.put(dag, "");
+            if (!deploy) {
+                continue;
+            }
+            try {
+                JsonNode document = YAML.readTree(spec);
+                DagPlan.of(document, layout, hash);
+                Optional<String> conflict = sinkConflict(dag, document, written);
+                if (conflict.isPresent()) {
+                    refused.put(dag, conflict.get());
+                } else {
+                    written.put(dag, writes(document));
+                    hashes.put(dag, hash);
                 }
+            } catch (IllegalArgumentException | IOException e) {
+                // the processor refuses the document, so it writes nothing
             }
-        });
-        return out;
+        }
+        return refused;
     }
 
     /**
@@ -394,46 +426,16 @@ public final class VectorProcessor implements AutoCloseable {
     }
 
     /**
-     * Applies the latest control record of each DAG in the batch with the outcome the records have when they are read
-     * one after the other, in the order of the log: a DAG is refused when, at its deploy record, another DAG writes its
-     * vector topic or signal, and it stays refused when that DAG stops later. How the records fall into batches does
-     * not change the outcome, so a restart, which reads the whole control topic again, keeps the writers it had.
+     * Applies the latest control record of each DAG in the batch with the outcome {@link #replay} gives the records,
+     * starting from the sinks that run. How the records fall into batches does not change the outcome, so a restart,
+     * which reads the whole control topic again, keeps the writers it had, and {@link #deployedWrites} names the same.
      */
     private void decide(List<JsonNode> batch) {
         Map<String, Set<String>> written = new TreeMap<>();
         runners.values().forEach(r -> written.computeIfAbsent(r.job.dag(), d -> new TreeSet<>()).add(r.job.writes()));
-        Map<String, String> hashes = new HashMap<>(deployed);
+        Map<String, String> refused = replay(batch, layout, written, new HashMap<>(deployed));
         Map<String, JsonNode> latest = new LinkedHashMap<>();
-        Map<String, String> refused = new HashMap<>();
-        for (JsonNode record : batch) {
-            String dag = record.path("dag").asText();
-            latest.put(dag, record);
-            boolean deploy = "deployed".equals(record.path("state").asText());
-            String spec = record.path("spec").asText("");
-            String hash = deploy ? sha256(spec) : "";
-            if (hash.equals(hashes.get(dag))) {
-                continue;
-            }
-            written.remove(dag);
-            refused.remove(dag);
-            hashes.put(dag, "");
-            if (!deploy) {
-                continue;
-            }
-            try {
-                JsonNode document = YAML.readTree(spec);
-                DagPlan.of(document, layout, hash);
-                Optional<String> conflict = sinkConflict(dag, document, written);
-                if (conflict.isPresent()) {
-                    refused.put(dag, conflict.get());
-                } else {
-                    written.put(dag, writes(document));
-                    hashes.put(dag, hash);
-                }
-            } catch (IllegalArgumentException | IOException e) {
-                // apply refuses the document with the same reason
-            }
-        }
+        batch.forEach(record -> latest.put(record.path("dag").asText(), record));
         // first what ends, so that what runs after this batch finds its topics and signals free
         latest.forEach((dag, record) -> {
             if (!written.containsKey(dag)) {

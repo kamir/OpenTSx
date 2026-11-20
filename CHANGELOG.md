@@ -860,6 +860,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The chart panel operations of the bucket analyser no longer print to standard output when they are recorded:
   MacroTrackerFrame, Track and PFDRecorder log each recorded operation at DEBUG instead of printing `ADDED A NEW
   TRANSFORMATION`, `[OK] ... Node added to tree` and `[PFDRecorder] Added step` lines.
+- `KafkaTopics.create` in opentsx-twin-live uses the Admin client that the topic lookups share instead of opening one
+  per topic. A create that fails closes that client, and the next create opens a new one. After `close`, a create
+  throws `topics: closed; create a new KafkaTopics to create a topic`.
 
 ### Removed
 
@@ -2025,6 +2028,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `ReturnIntervallStatistik2.addDistData` sorts into its bins only the intervals it keeps (not 0 and not below
   `offset`), scaled with their mean, so the probabilities of a result that keeps an interval add up to 1; the
   intervals 1, 0 and 1 gave probabilities that added up to 1.5.
+- `POST /v1/dags/deploy` and `opentsx vectors deploy` now read the control topic and decide its records in log order,
+  the same way the vector processor does. A DAG that the processor refused no longer counts as the writer of its
+  vector topic or signal. A later DAG is no longer refused because of it, and a refusal names the DAG that actually
+  writes the topic or signal.
+- `Patience` in opentsx-kafka-v2 now compares clock readings only by their difference while it waits out refused
+  reads. With a clock that reads negative values, a run of refusals logs the WARN line once and the wait still ends
+  after the limit.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

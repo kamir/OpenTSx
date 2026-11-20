@@ -159,8 +159,9 @@ Vector topics are written by the vector processor (below). The server is its fro
 * `POST /v1/dags/deploy` (body: the DAG as YAML) checks that the processor can run the DAG and appends it to the
   control topic. `POST /v1/dags/stop?name=<dag>` appends the stop. Both exist only with `--dag-runs true`.
 * A vector topic has one writer, and so has a signal (system and id) on the clean or the features topic of the domain.
-  Before it writes, `POST /v1/dags/deploy` reads the control topic to its end; when another DAG deployed there writes a
-  vector topic of the new one, it answers 409 `conflict` and writes nothing:
+  Before it writes, `POST /v1/dags/deploy` reads the control topic to its end and decides its records in their order,
+  as the processor does, so a DAG the processor refused writes nothing. When another DAG writes a vector topic of the
+  new one, it answers 409 `conflict` and writes nothing:
   `<dag>: sink topic <topic> is already written by DAG <other>; stop that DAG first or choose another sink`.
   When another DAG writes the signal of a series sink of the new one to the same topic, the answer is
   `<dag>: sink <topic> signal <id> of system <system> is already written by DAG <other>; stop that DAG first or choose another signal`.
@@ -195,8 +196,9 @@ opentsx vectors stop   --kafscale host:9092 --domain wind --name <dag name>
 `opentsx vectors <run|deploy|stop> --help` lists the keys of each command. The options, the DAG name and the DAG file
 are checked before the first call to the broker: a missing `--name` or `--dag`, an unknown option, a misspelled command
 or a DAG the processor would refuse exits with code 2 and writes nothing. A runtime failure exits with code 1.
-`vectors deploy` then reads the control topic and refuses a DAG whose vector topic or signal another deployed DAG
-writes, with exit code 1, the text of the 409 of `POST /v1/dags/deploy`, and nothing written.
+`vectors deploy` then reads the control topic, decides its records in their order as the processor does, and refuses
+a DAG whose vector topic or signal another DAG writes, with exit code 1, the text of the 409 of `POST /v1/dags/deploy`,
+and nothing written.
 
 * Deployments live in the control topic `tsx.<domain>.dags.v1` (latest record per DAG name), so they survive a
   restart. The processor reports per sink to `tsx.<domain>.dag-status.v1`.

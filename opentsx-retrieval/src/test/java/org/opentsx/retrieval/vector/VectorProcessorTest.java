@@ -2,6 +2,7 @@ package org.opentsx.retrieval.vector;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -34,6 +35,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
@@ -512,6 +515,34 @@ public class VectorProcessorTest {
         try (VectorProcessor p = processor(state)) {
             steps(p, 2);
             return List.of(live, p.states());
+        }
+    }
+
+    @Test
+    void theWritersForTheServerAndTheCommandLineAreTheOnesTheProcessorAccepted(@TempDir Path state) throws Exception {
+        String copy = goodDag().replace("dag: wind-exp2-smart", "dag: wind-copy");
+        String thirdSpec = goodDag().replace("dag: wind-exp2-smart", "dag: wind-third");
+        JsonNode third = new ObjectMapper(new YAMLFactory()).readTree(thirdSpec);
+        broker.append(LAYOUT.dags(), 0, VectorProcessor.deployRecord("wind-exp2-smart", goodDag(), "test"));
+        broker.append(LAYOUT.dags(), 0, VectorProcessor.deployRecord("wind-copy", copy, "test"));
+        assertEquals(Optional.of("wind-third: sink topic tsx.wind.smart.turbine-state.vectors.v1 is already written by"
+                        + " DAG wind-exp2-smart; stop that DAG first or choose another sink"),
+                VectorProcessor.sinkConflict("wind-third", third, VectorProcessor.deployedWrites(broker.consumer(), LAYOUT)),
+                "the refusal names the DAG that holds the topic, not the one the processor refused");
+
+        broker.append(LAYOUT.dags(), 0, VectorProcessor.stopRecord("wind-exp2-smart", "test"));
+        assertEquals(Optional.empty(),
+                VectorProcessor.sinkConflict("wind-third", third, VectorProcessor.deployedWrites(broker.consumer(), LAYOUT)),
+                "wind-copy was refused, so it writes nothing after wind-exp2-smart stopped");
+
+        broker.append(LAYOUT.dags(), 0, VectorProcessor.deployRecord("wind-third", thirdSpec, "test"));
+        assertEquals(Map.of("wind-third", Set.of("topic tsx.wind.smart.turbine-state.vectors.v1")),
+                VectorProcessor.deployedWrites(broker.consumer(), LAYOUT));
+        appendBlock(0);
+        try (VectorProcessor p = processor(state)) {
+            steps(p, 3);
+            assertEquals(Map.of("wind-third/turbine-state", "running"), p.states());
+            assertEquals("failed", lastStatus("wind-copy").path("state").asText());
         }
     }
 
