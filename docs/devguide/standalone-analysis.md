@@ -1,6 +1,6 @@
 # Build and run the standalone analysis package
 
-Run the Workbench and finite numerical service as one isolated Compose service.
+Run and record the Workbench and finite numerical service in one isolated Compose service, verified with OpenTSx Python 1.0.0.
 The pinned package targets `linux/arm64`; these commands use Docker 29.3.0 and
 Compose 5.1.0.
 
@@ -143,7 +143,12 @@ npm install --prefix /tmp/opentsx-demo-browser \
 node /tmp/opentsx-demo-browser/node_modules/playwright/cli.js install chromium
 ```
 
-With the package running:
+Use a clean Git checkout and build that exact revision before recording. Commit
+your changes locally, rebuild and restart after an edit. The recording checks
+the source digest, all three build keys and runtime provenance before and after
+the browser journey. Ignored frontend environment files affect the build keys.
+
+With the package running, choose a new output directory:
 
 ```bash
 node deploy/local-cp/finite-smoke.mjs \
@@ -159,8 +164,61 @@ SHA-256, units, episode identity, absolute clock, forecasts and held-out folds.
 Other APIs, external requests, WebSockets and browser errors fail the check.
 
 The output directory contains `result.json`, `workbench.png`,
-`input-episode.json` and `opentsx-modelling-result.json`. CI runs the same
-journey against a newly built package on an ARM64 runner with no CP cluster.
+`input-episode.json`, `opentsx-modelling-result.json`, `workbench.webm` and
+`trace.zip`. The video records the actual 1600 by 1100 browser viewport.
+The trace retains browser actions, DOM snapshots, screenshots and network
+evidence without copying source files. No artificial delays are added.
+
+`recording.json` is published only after the numerical checks, capture and
+source comparisons pass. It records the revision, source and build hashes,
+runtime identity, browser tool versions and every evidence file's size and
+SHA-256. CI runs this same journey against a newly built package on an ARM64
+runner with no CP cluster and uploads the complete output directory.
+
+## Verify and replay the recording
+
+Check every recorded file before opening it:
+
+```bash
+node --input-type=module - <<'JS'
+import { verifyRecording } from './deploy/local-cp/finite-recording.mjs';
+const recording = await verifyRecording('target/standalone-analysis');
+console.log(recording.status, recording.source.revision);
+JS
+```
+
+Open `target/standalone-analysis/workbench.webm` in a WebM video player.
+For the interactive action trace, run the pinned Playwright viewer:
+
+```bash
+node /tmp/opentsx-demo-browser/node_modules/playwright/cli.js show-trace \
+  --host 127.0.0.1 --port 0 target/standalone-analysis/trace.zip
+```
+
+The viewer serves on a free loopback port. Stop it with Ctrl+C. Replay uses
+the recorded snapshots; it does not refit the model. To rerun the numerical
+journey against the same built source, use a different fresh directory:
+
+```bash
+node deploy/local-cp/finite-smoke.mjs \
+  --url http://127.0.0.1:18083 \
+  --playwright-module /tmp/opentsx-demo-browser/node_modules/playwright \
+  --output target/standalone-analysis-repeat
+```
+
+The reproducible contract covers source, input, controls and numerical
+assertions. Capture timing, video bytes and trace bytes can differ between
+runs. Compare each run's manifest and numerical output; do not compare video
+hashes across separate runs.
+
+`EEXIST` means the output directory already exists. Choose a fresh directory.
+`recording requires a clean Git checkout` means tracked edits or untracked
+files are present. Commit the intended source, rebuild and restart.
+`Runtime provenance differs from the local source.` means the running package
+does not match the checkout or its build inputs. Rebuild and restart before
+recording. Output inside the repository must be ignored by Git; use `target/`
+or an external directory. Failed runs retain diagnostics without an approved
+`recording.json`.
 
 ## Keep the edit checks local
 
@@ -174,7 +232,7 @@ python3 -m unittest discover -s deploy/local-cp -p 'test_workbench*.py' -v
 With Node available, check the acceptance helper without a browser or service:
 
 ```bash
-python3 -m unittest discover -s deploy/local-cp -p test_finite_smoke.py -v
+python3 -m unittest discover -s deploy/local-cp -p 'test_*.py' -v
 ```
 
 Before pushing package changes, test the built artifacts:

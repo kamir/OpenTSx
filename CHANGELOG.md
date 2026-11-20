@@ -48,6 +48,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Record the finite Workbench browser journey as WebM video and a Playwright
+  trace. Require matching clean source and runtime identities before and after
+  capture, verify numerical exports and hash the evidence in a recording manifest.
+
 - Check tools-image identity, packaged Windpark startup and numerical replay
   before publication. Pull published digests on native AMD64 and ARM64 runners
   and retain receipts and cleanup evidence. Supply a named Hadoop account while
