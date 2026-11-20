@@ -15,7 +15,7 @@
  *
  * Where the port differs, and why:
  * - Lag sign: CC(k) pairs A at t with B at t - k, so B following A by d peaks at k = -d. The field `lag` is -k times
- *   the clock: lag > 0 means B follows A, the convention of TASK-015.
+ *   the clock: lag > 0 means B follows A, the convention of docs/datamodel-2026/PAIR-WINDOWS-SPEC.md, section 10.
  * - `max` and `lag` belong to the extreme that `strength` measures, with its sign. The old t_max (:230 to 233) only
  *   looks at values above 0, so for an anti-correlated pair it named a small positive side peak while the strength
  *   described the negative one.

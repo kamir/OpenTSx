@@ -14,7 +14,7 @@ import static org.opentsx.retrieval.system.SystemsTest.series;
 import static org.opentsx.retrieval.system.SystemsTest.texts;
 import static org.opentsx.retrieval.system.SystemsTest.windFarm;
 
-/** What the analyses of the decision h2-dispatch may claim, against inventories in different states (D59). */
+/** What the analyses of the decision h2-dispatch may claim, against inventories in different states (DECISION-CARD-SPEC.md, section 2). */
 class DecisionsTest {
 
     static JsonNode byId(JsonNode array, String key, String id) {

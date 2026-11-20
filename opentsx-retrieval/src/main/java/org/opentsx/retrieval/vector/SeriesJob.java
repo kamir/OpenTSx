@@ -12,7 +12,7 @@ import java.util.Map;
 
 /**
  * One series sink of an {@code opentsx.dag.v2} document: a chain of cleaning operators from the series of the source
- * topic to the clean grade of a signal. See docs/datamodel-2026/14-ENGINEERING-FLOW.md, section 6.
+ * topic to the clean grade of a signal. See docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 5.
  *
  * <pre>
  * sinks:
