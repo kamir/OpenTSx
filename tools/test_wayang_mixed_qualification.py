@@ -217,7 +217,7 @@ class MixedQualificationTest(unittest.TestCase):
         self.assertEqual(10, len(manifest["files"]))
         for name in QUALIFICATION.FILES:
             self.assertEqual((self.root / ("opentsx-wayang/target/rust-b4-" + name)).read_bytes(), (destination / name).read_bytes())
-        self.assertIn("ARMv7 hardware acceptance remains open", (destination / "REPORT.md").read_text())
+        self.assertIn("ARMv7 hardware is not required (TASK-020 D-T14)", (destination / "REPORT.md").read_text())
         self.assertFalse(json.loads((destination / "metadata.json").read_text())["physicalLinuxBoardAcceptance"])
 
     def test_collect_rejects_dirty_source_before_creating_output(self):
