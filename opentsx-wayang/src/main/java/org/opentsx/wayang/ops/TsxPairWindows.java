@@ -244,7 +244,7 @@ public final class TsxPairWindows {
         return col;
     }
 
-    /** Runs the method over the windows of one pair range (pairs.ts:301-350); null when the range is shorter than a window. */
+    /** Runs the method over the windows of one pair range (pairs.ts:306-349); null when the range is shorter than a window. */
     public static Result run(Method method, TsxPairXcorr.PairSettings st, Range range) {
         double every = st.every() != null ? st.every()
                 : Math.max(samplingInterval(range.a().x()), samplingInterval(range.b().x()));

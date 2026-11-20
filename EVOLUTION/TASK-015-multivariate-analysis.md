@@ -63,7 +63,7 @@ item is stamped at the centre `tc = t0 + k*S + W/2`.
 
 - A and B are put on one clock by the rules of `align.vector` (opentsx-saas-frontend/src/workbench/vector.ts:4 to
   14): ticks of `every` seconds since the epoch, one aggregate per tick, fill as-of up to `maxAge`. The default clock
-  is the larger of the two sampling intervals.
+  of a pair range is the larger sampling interval of its two episodes ([PAIR-WINDOWS-SPEC.md, section 6](../docs/datamodel-2026/PAIR-WINDOWS-SPEC.md#alignment)).
 - Coverage of a window: the share of ticks in which both A and B have a value. Below `minCoverage` (default 0.8)
   the result item is kept with the value NaN and the quality byte 1 (Episode.avsc:16, one byte per value,
   0 = ok), so the time index stays regular.

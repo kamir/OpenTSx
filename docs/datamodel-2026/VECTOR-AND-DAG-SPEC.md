@@ -1,7 +1,8 @@
 # Vector and DAG rules
 
 This page specifies the DAG document `opentsx.dag.v1`, the operator `align.vector`, the record `opentsx.vector.v1`
-and the vector processor that runs them, verified against commit `a513aa98`.
+and the vector processor that runs them; section 4 was verified against commit `eefff844`, the others against
+`a513aa98`.
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are used as in
 [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) and [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174) when they
