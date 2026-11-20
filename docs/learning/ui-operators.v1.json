@@ -1473,7 +1473,8 @@
         "A low-coverage item stays on the regular output grid as a gap.",
         "Coverage measures available overlap, not statistical dependence.",
         "Without an explicit clock each pair range takes the larger sampling interval of its two episodes, so the ranges of one pair can run on different clocks.",
-        "A fill other than none or as-of is refused with the message \"pair fill must be none or as-of\"."
+        "A fill other than none or as-of is refused with the message \"pair fill must be none or as-of\".",
+        "A series whose times are not in increasing order is refused with the message \"<label> has times out of order. A pair method needs them in increasing order.\""
       ],
       "parameterKeys": [
         "pairing",
@@ -1635,7 +1636,8 @@
         "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights.",
         "Track B admits only cross-correlation windows within the explicit site product budget. It does not offer pair.es.",
         "Without an explicit clock each pair range takes the larger sampling interval of its two episodes, so the ranges of one pair can run on different clocks.",
-        "A fill other than none or as-of is refused with the message \"pair fill must be none or as-of\"."
+        "A fill other than none or as-of is refused with the message \"pair fill must be none or as-of\".",
+        "A series whose times are not in increasing order is refused with the message \"<label> has times out of order. A pair method needs them in increasing order.\""
       ],
       "parameterKeys": [
         "pairing",
@@ -1823,7 +1825,8 @@
         "The frozen pair.es entry identifies native Wayang availability; local Java compilation does not establish a deployed UI runtime binding.",
         "A large whole-number seed must wrap to the unsigned 32-bit random state without changing its settings label.",
         "Without an explicit clock each pair range takes the larger sampling interval of its two episodes, so the ranges of one pair can run on different clocks.",
-        "A fill other than none or as-of is refused with the message \"pair fill must be none or as-of\"."
+        "A fill other than none or as-of is refused with the message \"pair fill must be none or as-of\".",
+        "A series whose times are not in increasing order is refused with the message \"<label> has times out of order. A pair method needs them in increasing order.\""
       ],
       "parameterKeys": [
         "pairing",

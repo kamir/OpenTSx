@@ -142,7 +142,7 @@ public final class JavaTsxPair extends TsxPair implements JavaExecutionOperator 
         return Math.round(seconds * 1e6);
     }
 
-    /** One result episode per field of a pair range (pairs.ts:289-313). */
+    /** One result episode per field of a pair range (pairs.ts:351-375). */
     static List<Episode> episodes(TsxPair op, TsxPairWindows.Method method, TsxPairXcorr.PairSettings st,
                                   TsxPairWindows.Result res) {
         String window = TsxPairWindows.durationTag(st.window());

@@ -185,15 +185,24 @@ describe('alignment and coverage', () => {
     expect(coverage(b).note).toMatch(/clock 0\.000999928 s\n/);
   });
 
-  it('takes the clock of a resampled copy from its own samples', () => {
+  it('takes the clock and the ticks of a resampled copy from its own samples', () => {
     // the copy keeps the series id and the episode objects of its source, with new times
     const x = Float64Array.from({ length: 6000 }, (_, i) => i);
     const a: Bucket = { ...park(), series: [{ id: 'A', label: 'A', x, y: Float64Array.from(x, (v) => Math.sin(v / 10)) }], episodes: ranges('A', [[0, 6000]]) };
-    const b = OP_BY_ID.resample.apply(a, { every: 10, agg: 'MEAN' });
+    const b = OP_BY_ID.resample.apply(a, { every: 10, agg: 'LAST' });
     expect(b.episodes![0]).toBe(a.episodes![0]);
     const out = coverage(a, { minCoverage: 0.8 }, [b]);
     expect(out.note).toMatch(/clock 10 s\n/);
     expect(Array.from(field(out, 'coverage')[0].y)).toEqual([1]);
+    // a deep copy of B shares nothing with A: the shared objects must give the same values
+    const copy: Bucket = { ...b, series: b.series.map((s) => ({ ...s, x: s.x.slice(), y: s.y.slice() })), episodes: b.episodes!.map((e) => ({ ...e })) };
+    const xcorr = OP_BY_ID['pair.xcorr'];
+    const shared = xcorr.apply(a, { ...defaultParams(xcorr), lags: 2 }, [b]);
+    const own = xcorr.apply(a, { ...defaultParams(xcorr), lags: 2 }, [copy]);
+    expect(shared.series.map((s) => [s.metric, ...s.y])).toEqual(own.series.map((s) => [s.metric, ...s.y]));
+    // B holds the last sample of each 10 s tick and A the mean of its ten: they do not correlate perfectly
+    expect(shared.series[0].metric).toBe('pair.xcorr.max');
+    expect(Math.abs(shared.series[0].y[0] - 1)).toBeGreaterThan(1e-6);
     // the work limits count 600 ticks of the same clock, 2 * lags + 2 values per tick, against a limit of 1e8
     expect(() => checkBrowserWork('pair.xcorr', [a, b], { lags: 80000 })).not.toThrow();
     expect(() => checkBrowserWork('pair.xcorr', [a, b], { lags: 90000 })).toThrow(/browser work limit/);
