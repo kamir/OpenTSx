@@ -78,7 +78,8 @@ def main(config_path):
                 generate(host, port, username, password, topic, sensors, interval_ms, verbose)
 
             except IOError as error1:
-                print("Error connecting to service '%s:%s'" % host, port)
+                sys.exit("%s:%s: cannot connect to the MQTT broker (%s); start the broker first, for example with "
+                         "02_run_mqtt_broker.sh" % (host, port, error1))
 
     except IOError as error2:
         print("Error opening config file '%s'" % config_path, error2)

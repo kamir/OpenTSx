@@ -2,6 +2,7 @@
 
 Run from the repository root: python -m pytest -q tools
 """
+import os
 import pathlib
 import subprocess
 import sys
@@ -104,13 +105,23 @@ def test_a_real_host_in_any_tracked_text_file_fails(tmp_path, capsys):
     assert f'src/Producer.java:1: "{CLOUD_HOST}" is a real host' in out
 
 
-def test_the_guard_reads_the_git_listing(tmp_path):
-    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
-    write(tmp_path, {"config/cpl.props": "bootstrap.servers=192.168.3.5:9092\n", "config/ok.props": LOCAL_PROFILE,
-                     "untracked.props": "bootstrap.servers=192.168.3.6:9092\n"})
-    subprocess.run(["git", "-C", str(tmp_path), "add", "config"], check=True)
+def git_environment() -> dict[str, str]:
+    return {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+
+
+def test_the_guard_reads_the_git_listing(tmp_path, monkeypatch):
+    other, repository = tmp_path / "other", tmp_path / "repository"
+    subprocess.run(["git", "init", "-q", str(other)], check=True, env=git_environment())
+    write(other, {"other.props": LOCAL_PROFILE})
+    subprocess.run(["git", "-C", str(other), "add", "other.props"], check=True, env=git_environment())
+    monkeypatch.setenv("GIT_INDEX_FILE", str(other / ".git" / "index"))
+    subprocess.run(["git", "init", "-q", str(repository)], check=True, env=git_environment())
+    write(repository, {"config/cpl.props": "bootstrap.servers=192.168.3.5:9092\n", "config/ok.props": LOCAL_PROFILE,
+                       "untracked.props": "bootstrap.servers=192.168.3.6:9092\n"})
+    subprocess.run(["git", "-C", str(repository), "add", "config"], check=True, env=git_environment())
     script = pathlib.Path(guard.__file__)
-    result = subprocess.run([sys.executable, str(script), str(tmp_path)], capture_output=True, text=True, check=False)
+    result = subprocess.run([sys.executable, str(script), str(repository)], capture_output=True, text=True,
+                            env=git_environment(), check=False)
     assert result.returncode == 1, result.stdout + result.stderr
     assert 'config/cpl.props:1: bootstrap.servers: "192.168.3.5"' in result.stdout
     assert "untracked.props" not in result.stdout

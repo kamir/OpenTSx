@@ -50,7 +50,8 @@ installation, from your shell. Without it they exit with status 2 and
 
 CI runs `bash -n` and `shellcheck -x -P SCRIPTDIR` on every shell script (`*.sh`) of this module.
 `tools/test_lg_scripts.py` fails on a shell script whose first line is not a shebang (`#!`) and on a `cd` that is not
-followed by `|| exit` or `|| return`. `tools/test_lg_python.py` fails on a Python script (`*.py`) of this module that
+followed by `|| exit` or `|| return`, also a `cd` after `!`, `command`, `builtin` or `time`. A `#` inside quotes does
+not start a comment for the check. `tools/test_lg_python.py` fails on a Python script (`*.py`) of this module that
 does not compile or does not start with `#!/usr/bin/env python3`.
 
 ### Run the example image
@@ -102,16 +103,47 @@ Three scripts in `src/main/mqtt-example/` pin the package, connectors and images
   `philhawthorne/docker-influxdb-grafana@sha256:fe36a6b2b9fc8779c5ffc4b25cd0db5d24ebbb62ce4ac18148a4bc8c2fef0771`.
 
 Docker Hub has no version tag for the image that `latest` names in these two repositories, so the scripts pin its
-digest. `tools/test_lg_scripts.py` fails on an image or connector without an exact version in the scripts and
-Dockerfiles of this module, and on a Dockerfile `RUN` that runs `apt-get update` without `apt-get install`.
+digest. `tools/test_lg_scripts.py` reads the image or connector of every `docker run`, `docker create`, `docker pull`,
+`docker container run`, `docker container create`, `docker image pull`, `confluent-hub install` and
+`confluent connect plugin install` in the scripts of this module, also after `&&`, `||`, `;` or `|` on the same line,
+and of every `FROM` in its Dockerfiles. It fails when one has no exact version, such as `1.2.3`, and no sha256 digest.
+It also fails on an option before the image that it does not know, with
+`<file>:<line>: <option>: unknown option before the image; add it to the option lists of tools/test_lg_scripts.py`,
+and on a Dockerfile `RUN` that runs `apt-get update` without `apt-get install`.
 
 `mqtt-generator-gist/mqttgen.py` uses the 1.x client API of `paho-mqtt`. With paho-mqtt 2.0.0 it stops with
-`TypeError: Client.__init__() missing 1 required positional argument: 'callback_api_version'`. `01_bootstrap.sh`
-runs no `mqtt sub`, so it runs on to the connector installs. Its `mqtt pub -t test -m "Hello2" --mqttVersion 3`
-reaches a broker only if one already runs: `02_run_mqtt_broker.sh` starts the broker of the example after it.
-`influxdb-grafana/__run_container_01.sh` is the script of the example that starts InfluxDB and Grafana.
-`tools/test_lg_python.py` runs `01_bootstrap.sh` with stubs and fails unless it installs `paho-mqtt==1.6.1` and reaches
-both connector installs.
+`TypeError: Client.__init__() missing 1 required positional argument: 'callback_api_version'`. When it cannot connect
+to the broker, it exits with status 1 and
+`<host>:<port>: cannot connect to the MQTT broker (<cause>); start the broker first, for example with 02_run_mqtt_broker.sh`.
+
+`01_bootstrap.sh` runs with `set -euo pipefail`: it stops at the first command that fails and exits with the status of
+that command. It runs no `mqtt` command, so it reaches the connector installs before a broker runs.
+`02_run_mqtt_broker.sh` starts the broker, then runs `mqtt pub -t test -m "Hello2" --mqttVersion 3` and
+`mqtt test -h 127.0.0.1`. `influxdb-grafana/__run_container_01.sh` is the script of the example that starts InfluxDB
+and Grafana. `tools/test_lg_python.py` runs `01_bootstrap.sh` with stubs and fails unless it installs
+`paho-mqtt==1.6.1` and reaches both connector installs, also when `mqtt` fails, and unless it stops at a failed `pip3`,
+`mosquitto_passwd` or `confluent-hub`. It runs `02_run_mqtt_broker.sh` with stubs and fails unless `mqtt pub` comes
+after `docker run`.
+
+### Create a connector with the Kafka Connect REST API
+
+You need Python 3 and a Kafka Connect worker on `127.0.0.1:8083`. `src/main/connect-cfg/deploy_connector.py` posts the
+connector `debug_c1` with the content of `cfg.json` as its configuration to `http://127.0.0.1:8083/connectors`.
+`cfg.json` is itself a whole create request with `name` `c1` and `config`, the body that `test.sh` posts with `curl`.
+The configuration this script posts therefore holds `name` and a nested `config` object and no `connector.class`.
+It uses only the Python standard library. Run it in `src/main/connect-cfg/`:
+
+```bash
+python3 deploy_connector.py
+```
+
+After HTTP 200 or 201 it prints `New connector debug_c1 created.`. On any other answer it exits with status 1 and
+`debug_c1: POST http://127.0.0.1:8083/connectors answered HTTP <status> <body>; the connector was not created, check the log of the Kafka Connect worker`.
+When it cannot connect, it exits with status 1 and
+`http://127.0.0.1:8083/connectors: cannot connect (<cause>); start Kafka Connect on 127.0.0.1:8083 first`.
+A connection that takes longer than 10 s gives this message with the cause `timed out`. When Kafka Connect accepts
+the connection and then sends nothing for 10 s, the script exits with status 1 and
+`http://127.0.0.1:8083/connectors: no answer within 10 s; check the log of the Kafka Connect worker`.
 
 ### Handle errors
 

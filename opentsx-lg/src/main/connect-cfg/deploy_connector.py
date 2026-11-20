@@ -2,27 +2,21 @@
 
 # Copyright: (c) 2019, Confluent Inc
 
-#
-# This script reproduces the connector creation process in the way how ANSIBLE
-# works internally.
-#
-# The equivalent CURL command is this one:
-#
-#    curl --insecure -XPOST -H 'Content-Type:application/json' -d @/tmp/csm_future_upsert.json https://kafka_connect-1.cdh-dev-1:8083/connectors
-#
-#    curl --insecure -XPOST -H 'Content-Type:application/json' -d @./connector_Generator-001_config.json http://127.0.0.1:8083/connectors
-#
-#
 import json
-
-from ansible.module_utils.urls import open_url
+import sys
+import urllib.error
+import urllib.request
 
 
 def create_new_connector(connect_url, name, config):
-    data = json.dumps({'name': name, 'config': config})
+    data = json.dumps({'name': name, 'config': config}).encode('utf-8')
     headers = {'Content-Type': 'application/json'}
-    r = open_url(method='POST', url=connect_url, data=data, headers=headers)
-    return r.getcode() in (200, 201, 409)
+    request = urllib.request.Request(connect_url, data=data, headers=headers, method='POST')
+    try:
+        with urllib.request.urlopen(request, timeout=10) as r:
+            return r.getcode(), r.read().decode('utf-8', 'replace')
+    except urllib.error.HTTPError as error:
+        return error.code, error.read().decode('utf-8', 'replace')
 
 def main():
 
@@ -45,11 +39,20 @@ def main():
 
     print(" ")
 
-    result = create_new_connector(
-        connect_url=connect_url,
-        name=connector_name,
-        config=connector_config
-    )
+    try:
+        status, answer = create_new_connector(
+            connect_url=connect_url,
+            name=connector_name,
+            config=connector_config
+        )
+    except urllib.error.URLError as error:
+        sys.exit("{}: cannot connect ({}); start Kafka Connect on 127.0.0.1:8083 first".format(
+            connect_url, error.reason))
+    except TimeoutError:
+        sys.exit("{}: no answer within 10 s; check the log of the Kafka Connect worker".format(connect_url))
+    if status not in (200, 201):
+        sys.exit("{}: POST {} answered HTTP {} {}; the connector was not created, check the log of the Kafka Connect "
+                 "worker".format(connector_name, connect_url, status, answer.strip()))
 
     print( "New connector {} created.".format(connector_name))
 

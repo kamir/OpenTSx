@@ -16,12 +16,17 @@ GRAFANA = LG / "src" / "main" / "mqtt-example" / "influxdb-grafana" / "__run_con
 GRAFANA_CONTAINER = "docker-influxdb-grafana"
 GRAFANA_PASSWORD = "test-password-0x1"
 CI = ROOT / ".github" / "workflows" / "ci.yml"
-CD = re.compile(r"(?:^|[;&|({]|\b(?:then|do|else)\s)\s*cd(?=\s|$)")
+CD = re.compile(r"(?:^|[;&|({]|\b(?:then|do|else)\s)\s*(?:(?:!|command|builtin|time)\s+)*cd(?=\s|$)")
 CD_GUARD = re.compile(r"[^;&|]*\|\|\s*(?:exit|return)\b")
-INSTALL = re.compile(r"\b(?:docker\s+(?:run|create|pull)|confluent-hub\s+install)\s(.*)$")
+SHELL = re.compile(r"""'[^']*'|"(?:\\.|[^"\\])*"|\\.|(?P<comment>(?<![^\s;&|()])#.*)|(?P<separator>&&|\|\||[;|])""")
+INSTALL = re.compile(r"\b(?:docker\s+(?:(?:container\s+)?(?:run|create)|(?:image\s+)?pull)|confluent-hub\s+install"
+                     r"|confluent\s+connect\s+plugin\s+install)\s(.*)$")
 VALUE_OPTIONS = {"-p", "--publish", "-v", "--volume", "-e", "--env", "--env-file", "--name", "--network", "--restart",
                  "-w", "--workdir", "-u", "--user", "-h", "--hostname", "--entrypoint", "--mount", "-l", "--label",
-                 "--platform", "--component-dir", "--worker-configs"}
+                 "--platform", "--add-host", "--component-dir", "--worker-configs", "--plugin-directory",
+                 "--worker-configurations"}
+FLAG_OPTIONS = {"-d", "--detach", "--rm", "-i", "--interactive", "-t", "--tty", "--init", "--privileged", "-q",
+                "--quiet", "--no-prompt", "--dry-run", "--force"}
 PINNED = re.compile(r"(?::[\w.-]*\d+\.\d+\.\d+[\w.-]*|@sha256:[0-9a-f]{64})$")
 
 
@@ -34,13 +39,29 @@ def script_problems(root: pathlib.Path, name: str) -> list[str]:
     text = (root / name).read_text(encoding="utf-8")
     problems = [] if text.startswith("#!") else [f"{name}: no shebang; start the script with #!/usr/bin/env bash"]
     for number, line in enumerate(text.splitlines(), 1):
-        line = re.sub(r"(?:^|\s)#.*$", "", line)
+        line = uncommented(line)
         for cd in CD.finditer(line):
             rest = line[cd.end():]
             if not CD_GUARD.match(rest):
                 target = re.split(r"[;&|]", rest, maxsplit=1)[0].strip().rstrip(")").strip() or "<dir>"
                 problems.append(f"{name}:{number}: cd without a guard; write cd {target} || exit 1")
     return problems
+
+
+def uncommented(line: str) -> str:
+    for piece in SHELL.finditer(line):
+        if piece.group("comment") is not None:
+            return line[:piece.start()]
+    return line
+
+
+def commands(line: str) -> list[str]:
+    parts, start = [], 0
+    for piece in SHELL.finditer(line):
+        if piece.group("separator"):
+            parts.append(line[start:piece.start()])
+            start = piece.end()
+    return parts + [line[start:]]
 
 
 def logical_lines(text: str):
@@ -55,14 +76,26 @@ def logical_lines(text: str):
         yield start, " ".join(parts)
 
 
-def first_operand(words: list[str]) -> str:
+def first_operand(words: list[str]) -> tuple[str, str]:
     rest = iter(words)
     for word in rest:
         if not word.startswith("-"):
-            return word
-        if word in VALUE_OPTIONS:
-            next(rest, None)
-    return ""
+            return word, ""
+        if word.startswith("--"):
+            option, attached, _ = word.partition("=")
+            if option in VALUE_OPTIONS and not attached:
+                next(rest, None)
+            elif option not in VALUE_OPTIONS | FLAG_OPTIONS:
+                return "", option
+            continue
+        for end, letter in enumerate(word[1:], 2):
+            if "-" + letter in VALUE_OPTIONS:
+                if end == len(word):
+                    next(rest, None)
+                break
+            if "-" + letter not in FLAG_OPTIONS:
+                return "", "-" + letter
+    return "", ""
 
 
 def image_problems(root: pathlib.Path, name: str) -> list[str]:
@@ -87,10 +120,13 @@ def image_problems(root: pathlib.Path, name: str) -> list[str]:
                 problems.append(f"{name}:{number}: apt-get install: the package lists stay in the image; "
                                 "end the RUN with rm -rf /var/lib/apt/lists/*")
         else:
-            install = INSTALL.search(line)
-            references = [first_operand(shlex.split(install.group(1), comments=True))] if install else []
-        for reference in references:
-            if not PINNED.search(reference):
+            installs = [INSTALL.search(command) for command in commands(uncommented(line))]
+            references = [first_operand(shlex.split(install.group(1))) for install in installs if install]
+        for reference, option in references:
+            if option:
+                problems.append(f"{name}:{number}: {option}: unknown option before the image; "
+                                "add it to the option lists of tools/test_lg_scripts.py")
+            elif not PINNED.search(reference):
                 problems.append(f"{name}:{number}: {reference}: no exact version; "
                                 "pin a version such as 1.2.3 or a sha256 digest")
     return problems
@@ -158,12 +194,19 @@ def expand(pattern: str, files: list[str]) -> list[str]:
 
 def test_a_script_without_a_shebang_or_with_a_plain_cd_fails_the_check(tmp_path):
     (tmp_path / "opentsx-lg").mkdir()
-    (tmp_path / "opentsx-lg" / "run.sh").write_text("set -e\ncd ..\n(cd lib && ls)\ncd bin || exit 1\n",
-                                                    encoding="utf-8")
+    (tmp_path / "opentsx-lg" / "run.sh").write_text(
+        "set -e\ncd ..\n(cd lib && ls)\ncd bin || exit 1\n"
+        'echo "step #2"; cd out\ncommand cd out\nbuiltin cd out\n! cd out\ntime cd out\n'
+        "# cd old\ncd x || exit 1 # note\nif true; then cd x || exit 1; fi\n", encoding="utf-8")
     assert script_problems(tmp_path, "opentsx-lg/run.sh") == [
         "opentsx-lg/run.sh: no shebang; start the script with #!/usr/bin/env bash",
         "opentsx-lg/run.sh:2: cd without a guard; write cd .. || exit 1",
         "opentsx-lg/run.sh:3: cd without a guard; write cd lib || exit 1",
+        "opentsx-lg/run.sh:5: cd without a guard; write cd out || exit 1",
+        "opentsx-lg/run.sh:6: cd without a guard; write cd out || exit 1",
+        "opentsx-lg/run.sh:7: cd without a guard; write cd out || exit 1",
+        "opentsx-lg/run.sh:8: cd without a guard; write cd out || exit 1",
+        "opentsx-lg/run.sh:9: cd without a guard; write cd out || exit 1",
     ]
 
 
@@ -199,12 +242,25 @@ def test_an_image_or_connector_without_an_exact_version_fails_the_check(tmp_path
         "# docker run unpinned/in-a-comment\n"
         f"docker run --rm -e A=1 toke/mosquitto{digest} mosquitto -v\n"
         "confluent-hub install --no-prompt --component-dir /plugins confluentinc/kafka-connect-influxdb:1.2.3\n"
-        "docker pull eclipse-temurin:21.0.8_9-jre-noble\n", encoding="utf-8")
+        "docker pull eclipse-temurin:21.0.8_9-jre-noble\n"
+        "docker run --add-host h:127.0.0.1 toke/mosquitto\n"
+        "docker container run -d toke/mosquitto\n"
+        "docker image pull toke/mosquitto\n"
+        "docker pull a:1.0.0 && docker pull toke/mosquitto\n"
+        "confluent connect plugin install confluentinc/kafka-connect-mqtt:latest\n"
+        "docker run --cpus 2 toke/mosquitto\n"
+        "docker run -e 'A=x && y' -tid toke/mosquitto:1.2.3 # && docker pull toke/mosquitto\n", encoding="utf-8")
     rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
     assert image_problems(tmp_path, "run.sh") == [
         f"run.sh:2: philhawthorne/docker-influxdb-grafana:latest: {rest}",
         f"run.sh:3: toke/mosquitto: {rest}",
         f"run.sh:6: confluentinc/kafka-connect-mqtt:latest: {rest}",
+        f"run.sh:11: toke/mosquitto: {rest}",
+        f"run.sh:12: toke/mosquitto: {rest}",
+        f"run.sh:13: toke/mosquitto: {rest}",
+        f"run.sh:14: toke/mosquitto: {rest}",
+        f"run.sh:15: confluentinc/kafka-connect-mqtt:latest: {rest}",
+        "run.sh:16: --cpus: unknown option before the image; add it to the option lists of tools/test_lg_scripts.py",
     ]
 
 

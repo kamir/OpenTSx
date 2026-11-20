@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 pip3 install --user paho-mqtt==1.6.1
 
 # https://gist.github.com/marianoguerra/be216a581ef7bc23673f501fdea0e15a
@@ -7,8 +8,6 @@ mkdir -p ./volume1/docker/mqtt/config
 # brew install hivemq/mqtt-cli/mqtt-cli
 
 mosquitto_passwd -c ./volume1/docker/mqtt/config/passwd demo1
-
-mqtt pub -t test -m "Hello2" --mqttVersion 3
 
 #
 # On Kafka cluster

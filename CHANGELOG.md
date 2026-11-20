@@ -912,6 +912,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   installation`.
 - `opentsx-core`: `ReturnIntervallStatistik2.setLofFileNameKey_1` is deprecated and has no effect; the class writes no
   log files.
+- The MQTT example publishes its test message in `02_run_mqtt_broker.sh` after it starts the broker, instead of in
+  `01_bootstrap.sh` before any broker runs.
 
 ### Removed
 
@@ -2140,7 +2142,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `confluentinc/kafka-connect-influxdb:1.2.13`, and `02_run_mqtt_broker.sh` and
   `influxdb-grafana/__run_container_01.sh` start `toke/mosquitto` and `philhawthorne/docker-influxdb-grafana` by the
   digest that `latest` names, in place of `latest` or no tag. `tools/test_lg_scripts.py` fails on an image or
-  connector without an exact version in the opentsx-lg scripts and Dockerfiles.
+  connector without an exact version in the opentsx-lg scripts and Dockerfiles, and on an option before the image
+  that it does not know.
 - `opentsx-lg/src/main/docker/core-tool-image/Dockerfile` runs `apt-get update` and `apt-get install -y
   --no-install-recommends` in one `RUN` and removes the package lists, in place of two layers and the deprecated
   `--force-yes`.
@@ -2232,6 +2235,31 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `opentsx-core`: `HaeufigkeitsZaehlerDouble.getHistogramNORM()` names its series with the label set by `setLabel`, as
   `getHistogram()` does, so normalized histograms with the same number of values no longer share the name
   `HISTOGRAM/<count>`. Without `setLabel` the name stays `HISTOGRAM/<count>`.
+- `tools/test_lg_scripts.py` reads the image or connector of every `docker run`, `docker create`, `docker pull`,
+  `docker container run`, `docker container create`, `docker image pull`, `confluent-hub install` and `confluent
+  connect plugin install` in the opentsx-lg scripts. This includes a second command after `&&`, `||`, `;` or `|` on
+  the same line. It skips only the options it lists. Any other option before the image fails with `<file>:<line>:
+  <option>: unknown option before the image; add it to the option lists of tools/test_lg_scripts.py`. Before, the
+  check read the value of an unlisted option as the image and passed it, for example `h:127.0.0.1` of `--add-host`.
+- `tools/test_lg_scripts.py` removes only real comments from an opentsx-lg shell line, so a `#` inside quotes no
+  longer hides a later `cd` without a guard. The check also covers a `cd` after `!`, `command`, `builtin` or `time`.
+- opentsx-lg: when `mqtt-generator-gist/mqttgen.py` cannot reach the broker, it exits 1 with `<host>:<port>: cannot
+  connect to the MQTT broker (<cause>); start the broker first, for example with 02_run_mqtt_broker.sh`. Before, it
+  stopped with `TypeError: not enough arguments for format string`.
+- opentsx-lg: `src/main/connect-cfg/deploy_connector.py` sends its POST with urllib from the Python standard library
+  instead of the ansible helper that nothing installed. It prints `New connector debug_c1 created.` only after HTTP
+  200 or 201. On any other answer it exits 1 with `debug_c1: POST http://127.0.0.1:8083/connectors answered HTTP
+  <status> <body>; the connector was not created, check the log of the Kafka Connect worker`. When it cannot connect,
+  it exits 1 with `http://127.0.0.1:8083/connectors: cannot connect (<cause>); start Kafka Connect on 127.0.0.1:8083
+  first`. When Kafka Connect accepts the connection and sends nothing for 10 s, it exits 1 with
+  `http://127.0.0.1:8083/connectors: no answer within 10 s; check the log of the Kafka Connect worker`.
+- opentsx-lg: the MQTT example `01_bootstrap.sh` runs with `set -euo pipefail` and stops at the first command that
+  fails. A failed `pip3`, `mosquitto_passwd`, `mqtt pub` or `confluent-hub` no longer runs on to the next step.
+  `tools/test_lg_python.py` checks each of them with a failing stub.
+- The archived echo demos `archive/demos/opentsx-clusters/krake-container/echo-demo.yaml` and the `mmdc-mrc` scenario3
+  manifests of mdc1, mdc2 and mdc3 pull `registry.k8s.io/echoserver:1.10` instead of the frozen `k8s.gcr.io`.
+- `tools/test_check_tracked_config.py` runs the git commands of its temporary repository without the caller's `GIT_*`
+  variables. It now passes when the suite runs with `GIT_INDEX_FILE` or `GIT_DIR` set.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
