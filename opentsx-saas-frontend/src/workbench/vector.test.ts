@@ -33,6 +33,10 @@ describe('component names', () => {
     expect(componentNames(['A_x', 'A_x'])).toEqual(['raw', 'raw_2']);
     expect(componentNames(['A_x', 'B_x', 'C_x'], 'Speed, ,level')).toEqual(['speed', 'b', 'level']);
   });
+  it('keeps a given name as given and moves a derived name out of its way', () => {
+    expect(componentNames(['A_x', 'B_x'], 'Speed,speed')).toEqual(['speed', 'speed']);
+    expect(componentNames(['A_x', 'B_x'], ',a')).toEqual(['a_2', 'a']);
+  });
 });
 
 describe('align.vector', () => {
@@ -265,6 +269,22 @@ describe('flow with a vector node', () => {
     const before = out.series[2].y[1];
     state().updateParams(sm, { window: 50 });
     expect(evaluate(state().source, state().nodes, v)!.series[2].y[1]).not.toBe(before);
+  });
+
+  it('refuses two inputs with one name in the preview and the deploy checks, as every runtime does', () => {
+    state().addInput(v, z);
+    state().setSink(v, 'tsx.wind.smart.turbine-state.vectors.v1');
+    state().updateParams(v, { names: 'speed,Speed' });
+    const node = state().nodes.find((n) => n.id === v)!;
+    const message = 'two inputs of the vector are both named "speed"; give every input its own name';
+    expect(vectorComponents(state().nodes, node)).toEqual(['speed', 'speed']);
+    expect(() => evaluate(state().source, state().nodes, v)).toThrow(message);
+    expect(validate(state().nodes).filter((f) => f.level === 'error')).toEqual([{ level: 'error', text: `${node.label}: ${message}.` }]);
+    expect(deployChecks(state().nodes, ['a']).filter((c) => !c.ok).map((c) => c.text)).toContain(`${node.label}: ${message}.`);
+    expect(toDagYaml(state())).toContain('emit: any, names: [speed, speed] }');
+    state().updateParams(v, { names: 'speed,power' });
+    expect(evaluate(state().source, state().nodes, v)!.vector?.components).toEqual(['speed', 'power']);
+    expect(validate(state().nodes).filter((f) => f.level === 'error')).toEqual([]);
   });
 
   it('loses a component when its node is removed and goes when its first input goes', () => {

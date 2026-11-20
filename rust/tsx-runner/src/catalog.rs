@@ -1,7 +1,9 @@
 use crate::broker::OutputRecord;
 use crate::model::{xxh64_hex, Episode};
 use crate::operators::{Limits, Pipeline as CleanPipeline, SUPPORTED_OPS};
-use crate::pairs::{PairParams, PairStream, VectorParams, VectorPoint, VectorStream};
+use crate::pairs::{
+    input_name_clash, PairParams, PairStream, VectorParams, VectorPoint, VectorStream,
+};
 use crate::retrieval::{sax_breakpoints, sax_word, Segmenter};
 use crate::stats::{self, Expectation, StatsEngine, StatsRecord};
 use serde::{Deserialize, Serialize};
@@ -531,10 +533,11 @@ impl Catalog {
                             .unwrap_or_else(|| {
                                 (1..=from.len()).map(|i| format!("in{i}")).collect()
                             });
-                        if names.len() != from.len()
-                            || names.iter().collect::<BTreeSet<_>>().len() != names.len()
-                        {
+                        if names.len() != from.len() {
                             return Err("vector names must uniquely name every input".into());
+                        }
+                        if let Some(clash) = input_name_clash(&names) {
+                            return Err(format!("node {id}: {clash}"));
                         }
                         let declared = names
                             .into_iter()

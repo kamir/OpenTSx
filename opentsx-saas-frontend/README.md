@@ -122,6 +122,12 @@ Read the [analysis guide](../docs/devguide/workbench-analysis.md) for the result
   series" builds the one thing the processor runs, and Deploy hands the flow to the vector processor, which keeps the vector topic up to
   date, and shows what it reports; needs an administrator account, a retrieval server started with `--kafscale` and
   `--dag-runs true`, and a running vector processor
+- Vector component names: the parameter `names` of "Align to vector" names the inputs from the left, comma
+  separated. A given name stays as given. A name left empty comes from the bucket name and gets `_2`, `_3` when
+  another input has it. Two inputs with one name are refused: the preview fails with
+  `two inputs of the vector are both named "<name>"; give every input its own name`, and the deploy checks list
+  `<label>: two inputs of the vector are both named "<name>"; give every input its own name.`, so the flow is neither
+  downloaded nor deployed
 - Time series operations as buttons, recorded as a processing flow graph
 - Export: `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor, Java code
 - Code in `src/workbench/`

@@ -160,6 +160,11 @@ Vector topics are written by the vector processor (below). The server is its fro
   routes need the token in the header `X-OpenTSx-Run-Token`; anything else gets 401. Without a token, whoever
   reaches the port can deploy and stop. The SaaS backend holds the token and forwards for its users
   (`POST /api/v1/dags/deploy`, `/stop`); it names the user in `X-OpenTSx-By`, which ends up in the control record.
+* Two inputs of one `align.vector` node with the same name are refused with
+  `node <id>: two inputs of the vector are both named "<name>"; give every input its own name`. An input without an
+  entry in `params.names` is named `in1`, `in2` and so on by its position. `VectorAligner.align` and
+  `new VectorStream(inputNames, params, expected, lateness)` refuse such inputs with the same text, without
+  `node <id>: `.
 
 The operator is `org.opentsx.retrieval.vector.VectorAligner`. It passes the test vectors shared with the web
 workbench (`docs/datamodel-2026/testvectors/align-vector.v1.json`); the rules are in

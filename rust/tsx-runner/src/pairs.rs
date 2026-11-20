@@ -330,13 +330,13 @@ impl VectorStream {
         params: VectorParams,
         max_samples: usize,
     ) -> Result<Self, String> {
-        if inputs.is_empty()
-            || inputs.iter().any(|(n, s)| n.is_empty() || s.is_empty())
-            || inputs.iter().map(|(n, _)| n).collect::<BTreeSet<_>>().len() != inputs.len()
-        {
+        if inputs.is_empty() || inputs.iter().any(|(n, s)| n.is_empty() || s.is_empty()) {
             return Err(
                 "a vector that keeps running needs the ids of the series of every input".into(),
             );
+        }
+        if let Some(clash) = input_name_clash(inputs.iter().map(|(n, _)| n)) {
+            return Err(clash);
         }
         if max_samples == 0
             || params.every_micros <= 0
@@ -1781,4 +1781,11 @@ pub fn vector_json(
         "components":point.components,"values":point.values,"missing":point.values.iter().filter(|v|v.is_none()).count(),
         "provenance":{"dag":dag,"specHash":spec_hash}}),
     )
+}
+
+pub fn input_name_clash<'a>(names: impl IntoIterator<Item = &'a String>) -> Option<String> {
+    let mut seen = BTreeSet::new();
+    names.into_iter().find(|n| !seen.insert(*n)).map(|n| {
+        format!("two inputs of the vector are both named \"{n}\"; give every input its own name")
+    })
 }

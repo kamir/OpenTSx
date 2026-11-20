@@ -181,6 +181,24 @@ class DagToWayangErrorsTest {
     }
 
     @Test
+    void refusesTwoVectorInputsWithOneNameWhenItCompiles() throws Exception {
+        String vector = """
+                dag: flow
+                source: { topics: [tsx.wind.episodes.v2], series: [series-1], start: earliest }
+                nodes:
+                  - { id: decode, op: decode.avro-soe }
+                  - { id: n1, op: align.vector, in: [decode, decode], params: { every: PT1M, names: [a, a] } }
+                sinks:
+                  - { from: n1, topic: tsx.wind.smart.v.vectors.v1, schema: opentsx.vector.v1 }
+                """;
+        assertEquals("node n1: two inputs of the vector are both named \"a\"; give every input its own name",
+                assertThrows(IllegalArgumentException.class,
+                        () -> DagToWayang.compile(YAML.readTree(vector), LAYOUT, "spec", CATALOG)).getMessage());
+        assertEquals("[\"a\",\"b\"]", DagToWayang.compile(YAML.readTree(vector.replace("[a, a]", "[a, b]")), LAYOUT, "spec", CATALOG)
+                .dag().path("nodes").get(1).path("params").path("names").toString());
+    }
+
+    @Test
     void zeroAlignmentAgeIsValidForTheCurrentTick() throws Exception {
         JsonNode normalized = DagToWayang.parameters(
                 dag("align.vector", "{every: PT1M, lateness: PT1S, maxAge: PT0S}"), CATALOG);

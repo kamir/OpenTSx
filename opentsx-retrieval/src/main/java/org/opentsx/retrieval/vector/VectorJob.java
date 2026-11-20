@@ -96,6 +96,10 @@ public record VectorJob(String dag, String topic, String name, List<String> seri
             if (names.isEmpty()) {
                 throw new IllegalArgumentException("node " + from + " has no input");
             }
+            String clash = VectorAligner.inputNameClash(names);
+            if (clash != null) {
+                throw new IllegalArgumentException("node " + from + ": " + clash);
+            }
             Duration lateness;
             try {
                 lateness = Duration.parse(node.path("params").path("lateness").asText("PT0S"));

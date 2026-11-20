@@ -97,6 +97,17 @@ class VectorJobTest {
     }
 
     @Test
+    void refusesTwoInputsWithOneName() throws Exception {
+        String twice = VECTOR_NODE.replace("in: [decode]", "in: [decode, decode]");
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> plan(dag(twice.replace("names: [state]", "names: [state, state]"), VECTOR_SINK)));
+        assertEquals("node n1: two inputs of the vector are both named \"state\"; give every input its own name", e.getMessage());
+        e = assertThrows(IllegalArgumentException.class, () -> plan(dag(twice.replace("names: [state]", "names: [in2]"), VECTOR_SINK)));
+        assertEquals("node n1: two inputs of the vector are both named \"in2\"; give every input its own name", e.getMessage());
+        assertEquals(List.of("in1", "in2"), plan(dag(twice.replace(", names: [state]", ""), VECTOR_SINK)).jobs().get(0).inputNames());
+    }
+
+    @Test
     void refusesWhatThisRuntimeCannotRun() throws Exception {
         String viaOther = """
                 - id: n1

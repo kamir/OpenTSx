@@ -9,7 +9,7 @@ import { checkBrowserWork } from './workLimits';
 import { PROCESSOR_SERIES_OPS, capabilityOf } from './capabilities';
 import { OP_BY_ID, defaultParams } from './ops';
 import { Bucket, FlowNode, Params, SignalContext, SourceInfo, WayangConfig } from './types';
-import { VECTOR_OP, VECTOR_SCHEMA, componentNames } from './vector';
+import { VECTOR_OP, VECTOR_SCHEMA, componentNames, inputNameClash } from './vector';
 
 export const SOURCE_ID = 'source';
 /** `kind` of a flow definition stored in the backend by the workbench. */
@@ -681,6 +681,8 @@ export function validate(nodes: FlowNode[]): Finding[] {
     }
   }
   for (const n of nodes) {
+    const clash = n.op === VECTOR_OP ? inputNameClash(vectorComponents(nodes, n)) : null;
+    if (clash) out.push({ level: 'error', text: `${n.label}: ${clash}.` });
     if (n.op === VECTOR_OP && inputsOf(n).length < 2) {
       out.push({ level: 'warning', text: `${n.label} has one input only. Add further inputs: each becomes a component of the vector.` });
     }

@@ -98,22 +98,34 @@ function snake(text: string): string {
 
 /**
  * Component names from the bucket names of the inputs: what the names have in common at the end (the source they
- * all derive from) is dropped. `custom` (comma separated) replaces names from the left.
+ * all derive from) is dropped. `custom` (comma separated) replaces names from the left. A given name stays as given,
+ * so two inputs given one name keep it and the vector refuses them ({@link inputNameClash}). A derived name that
+ * another input has gets `_2`, `_3` and so on.
  */
 export function componentNames(labels: string[], custom = ''): string[] {
   let common = labels.length > 1 ? labels[0] : '';
   for (const l of labels) {
     while (common && !l.endsWith(common)) common = common.slice(1);
   }
-  const given = custom.split(',').map((s) => snake(s));
+  const given = custom.split(',').map((s) => snake(s)).slice(0, labels.length);
   const out: string[] = [];
   labels.forEach((l, i) => {
-    const base = given[i] || snake(common ? l.slice(0, l.length - common.length) : l) || 'raw';
+    if (given[i]) {
+      out.push(given[i]);
+      return;
+    }
+    const base = snake(common ? l.slice(0, l.length - common.length) : l) || 'raw';
     let name = base;
-    for (let k = 2; out.includes(name); k++) name = `${base}_${k}`;
+    for (let k = 2; out.includes(name) || given.includes(name); k++) name = `${base}_${k}`;
     out.push(name);
   });
   return out;
+}
+
+/** The refusal of a vector in which two inputs have one name, or null. Every runtime refuses it with this text. */
+export function inputNameClash(names: string[]): string | null {
+  const name = names.find((n, i) => names.indexOf(n) !== i);
+  return name === undefined ? null : `two inputs of the vector are both named "${name}"; give every input its own name`;
 }
 
 /** Name of a series inside its input: the metric when the source carried one, otherwise the label. */
@@ -135,6 +147,8 @@ export function alignVector(first: Bucket, p: Params, others: Bucket[] = []): Bu
   const complete = String(p.emit ?? 'any') === 'complete';
   const keyBy = String(p.key ?? 'series').trim() || 'series';
   const names = componentNames(inputs.map((b) => b.name), String(p.names ?? ''));
+  const clash = inputNameClash(names);
+  if (clash) throw new Error(clash);
   const originMs = first.t0Ms ?? 0;
   const originS = originMs / 1000;
 

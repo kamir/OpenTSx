@@ -503,5 +503,10 @@ any retains ticks with at least one component, complete requires all. Preserves 
 metadata, and ignores lateness in batch evaluation. VectorAligner and VectorProcessor provide existing Java
 implementations tested with shared vectors.
 
+Two inputs with one name, such as `names="speed,Speed"` , are refused with
+`two inputs of the vector are both named "speed"; give every input its own name` , as the vector processor, Wayang and
+the Rust runner refuse them. A given name stays as given. A name derived from a bucket name gets `_2` when another
+input has it.
+
 Source: [vector.ts#alignVector](../../opentsx-saas-frontend/src/workbench/vector.ts#alignVector) . Executable exercise:
 `ui.align.vector` .

@@ -401,7 +401,9 @@ incremental saved state. These Java execution modes do not add DAG parameters.
 inputs, so mark every input with its name (`TsxTagged`) and join the inputs with `UnionAllOperator`. Give the operator
 the series ids of every input. Series of an input the operator does not know are ignored. The operator keeps open ticks
 in `TsxState`; set `flush` only for a complete input. `TsxVectorSink` writes the `opentsx.vector.v1` records to a vector
-topic, key = canonical text of the vector key, and returns after every record is acknowledged.
+topic, key = canonical text of the vector key, and returns after every record is acknowledged. `DagToWayang.compile`
+refuses an `align.vector` node whose inputs share a name with
+`node <id>: two inputs of the vector are both named "<name>"; give every input its own name`.
 
 ```java
 MapOperator<SpecificRecord, TsxTagged> tag = new MapOperator<>(r -> new TsxTagged("raw", (Episode) r),
