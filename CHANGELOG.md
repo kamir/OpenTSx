@@ -67,6 +67,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `tsx-runner`: regression test `tests/stats_increments.rs` shows that B2 statistics run as local increments:
+  across a worker restart the increments emit the closed windows byte for byte as one bounded run, without its
+  final flush. The B2 request ceilings (1,024 series, 1 MiB state) are unchanged.
 - TASK-020 D-T14 (owner, 2026-11-20): B1.2 and B4.2 need no ARMv7 hardware. The native x86_64 and ARM64 CI
   jobs meet B1.2; the ARMv7 artifact stays built and QEMU-tested but is not hardware-qualified. B4.2 is measured
   on one physical ARM64 board, so `wayang_board_evaluation.py` plans 27 conditions and refuses ARMv7 and AArch32

@@ -78,6 +78,15 @@ ceilings. B2 requests with `context` allow at most 1,024 series and 1,000,000
 samples, subject to every declared byte and state bound. Numerical kernels,
 admitted local execution and fleet deployment are separate capabilities.
 
+## Continue B2 statistics in increments
+
+A local worker also runs a B2 request with `context` and `stats.welford-ddsketch`
+as `opentsx.local-increment.v1` increments. Each increment emits only the windows
+it closes and keeps open windows in the worker state, so the increments after a
+restart equal one bounded run without its final flush of the open and `GLOBAL`
+windows (`tests/stats_increments.rs`). The B2 ceilings of 1,024 series and 1 MiB
+of state per request still apply.
+
 ## Execute conversion inside WASM
 
 The existing local `convert.unit` stage runs the artifact-embedded module
