@@ -139,7 +139,7 @@ sudo ufw allow from 10.42.0.0/16 to any port 9092 proto tcp
 | C2 build (10 to 20 minutes) | `deploy/k3s/10-build.sh` | two images `opentsx/tools` and `opentsx/studio` |
 | C3 give the images to k3s | `deploy/k3s/11-import-images.sh` | asks for the sudo password, imports both images |
 | C4 configure | `deploy/k3s/20-configure.sh KAFSCALE_BOOTSTRAP=$HOST_IP:9092` | writes `deploy/k3s/.env` |
-| C5 deploy | `deploy/k3s/30-deploy.sh` | namespace `opentsx`, three Deployments |
+| C5 deploy | `deploy/k3s/30-deploy.sh` | namespace `opentsx`, three Deployments; on this new broker it stops with `FAIL  deployment.apps/opentsx-stats: not ready after 180s; ...` (exit code 1), because the topics of the domain do not exist yet: run C7, then `deploy/k3s/30-deploy.sh --restart` |
 | C6 look at the state | `deploy/k3s/50-status.sh` | all pods `Running`, no errors |
 | C7 check the connection | `deploy/k3s/40-demo.sh kafscale-check` | see below |
 
@@ -204,7 +204,7 @@ The results are reproducible: the same code and the same inputs give the same ru
 | `ErrImagePull` / `ImagePullBackOff` | the images are not in k3s (k3s does not see Docker's images) | `deploy/k3s/11-import-images.sh`, then `deploy/k3s/30-deploy.sh --restart` |
 | `bootstrap ... NOT reachable` | firewall or wrong IP | `nc -vz $HOST_IP 9092`; the ufw rule from part B; check the IP in C4 |
 | `advertised localhost:9092: NOT reachable` | KafScale advertises `localhost` | restart part B with `KAFSCALE_ADVERTISED_HOST=$HOST_IP` |
-| statistics stay at 0 records | the processor started before the topics existed | `kubectl -n opentsx rollout restart deploy/opentsx-stats` |
+| statistics stay at 0 records | the processor exits with 2 until the topics exist and waits in `CrashLoopBackOff` | `deploy/k3s/40-demo.sh kafscale-check`, then `kubectl -n opentsx rollout restart deploy/opentsx-stats` |
 | pod `OOMKilled` | not enough memory | close other programs; limits in `docs/devops/sizing-plan.md` |
 | `port-forward`: address already in use | port 8088 is taken | `kubectl -n opentsx port-forward svc/opentsx-studio 9099:80`, then open http://localhost:9099 |
 | old version after a rebuild | same image tag | `deploy/k3s/30-deploy.sh --restart` |

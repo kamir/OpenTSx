@@ -17,6 +17,10 @@ deploy/k3s/70-backup.sh --quiesce                                 # PVCs + confi
 deploy/k3s/71-restore.sh ./opentsx-backup-<time>                  # back into the PVCs (asks first)
 ```
 
+On a broker without the topics of the domain, `30-deploy.sh` stops with
+`FAIL  deployment.apps/opentsx-stats: not ready after 180s; ...` (exit code 1): run `40-demo.sh kafscale-check`, which
+creates them, then `30-deploy.sh --restart`.
+
 | Path | Content |
 |------|---------|
 | `env.example` | all configuration keys with defaults |
@@ -30,13 +34,14 @@ deploy/k3s/71-restore.sh ./opentsx-backup-<time>                  # back into th
 
 ## Read the exit codes
 
-`00-prereqs.sh`, `20-configure.sh`, `40-demo.sh`, `60-probe.sh`, `70-backup.sh` and `90-teardown.sh` exit with 0
-when they did their work, 1 when a check, a step or a request failed, and 2 on a usage error; `--help` lists the
-cases of each. Usage errors are an unknown option, an option without its value, an unknown demo of `40-demo.sh` or
-extra arguments for one of its demos that take none, and for `20-configure.sh` an unknown key, an argument that is
-not `KEY=VALUE` or an option, or a secret key as an argument. `10-build.sh`, `11-import-images.sh`, `30-deploy.sh`,
-`50-status.sh` and `71-restore.sh` exit with 1 on an unknown option. The tests in `deploy/k3s/test/` run the
-scripts without a cluster, for example `bash deploy/k3s/test/test-40-demo.sh`.
+Every script exits with 0 when it did its work, 1 when a check, a step or a request failed, and 2 on a usage error;
+`--help` lists the cases of each. Usage errors are an unknown option, an option without its value, an argument the
+script does not take, an unknown demo of `40-demo.sh` or extra arguments for one of its demos that take none, a
+`--builder` of `10-build.sh` or a method of `11-import-images.sh` (`--method` or `IMAGE_METHOD`) that is not in the
+list, a `--timeout` of `30-deploy.sh` that is not a duration, no backup directory or an unknown `--only` part of
+`71-restore.sh`, and for `20-configure.sh` an unknown key, an argument that is not `KEY=VALUE` or an option, or a
+secret key as an argument. The tests in `deploy/k3s/test/` run the scripts without a cluster, for example
+`bash deploy/k3s/test/test-40-demo.sh`.
 
 ```text
 error: nosuch: unknown demo; expected one of kafscale-check windpark-sim stats metadata metadata-publish twin house boat studio-export retrieval studio dwd dwd-online dwd-forward modbus modbus-poll all
@@ -139,6 +144,13 @@ CI renders the overlays and loads every `opentsx/tools` container through the co
 variables, its arguments and `OPENTSX_EXTRA_ARGS`. It fails when a container sets a variable that its command does
 not read, passes a variable as the value of an option, or gives an `opentsx` command in its shell script an argument
 from the shell that is not the value of an option.
+
+## Size the twin Jobs
+
+The Job `boat` (limit 1536Mi, heap 1152 MiB) holds `--data` with one row per 15-minute step for a year (35136 steps)
+and `--calibrate`; measured peak RSS 1312 MB. The Job `house` (limit 4Gi, heap 3 GiB) holds `--calibrate` with bills
+over 10 years (87673 steps); measured peak RSS 3260 MB. More rows per step need more memory; raise the limit in
+`deploy/k3s/jobs/boat.yaml`.
 
 ## Retrieval server on the episodes topic
 

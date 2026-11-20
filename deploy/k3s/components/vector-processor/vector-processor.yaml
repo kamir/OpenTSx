@@ -41,6 +41,21 @@ spec:
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: KAFSCALE_BOOTSTRAP}}
             - name: OPENTSX_DOMAIN
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_DOMAIN}}
+          # <state>/progress: the time the last round ended in seconds since the epoch, written at most every 5 s
+          startupProbe:     # up to 10 minutes for the first round
+            exec: {command: [/bin/sh, -c, 'test $(( $(date +%s) - $(cat /state/progress) )) -lt 120']}
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:   # a round ended within the last 2 minutes
+            exec: {command: [/bin/sh, -c, 'test $(( $(date +%s) - $(cat /state/progress) )) -lt 120']}
+            periodSeconds: 30
+            timeoutSeconds: 5
+          livenessProbe:    # 10 minutes without a round: stuck (a round waits at most 30 s plus 90 s per new sink)
+            exec: {command: [/bin/sh, -c, 'test $(( $(date +%s) - $(cat /state/progress) )) -lt 600']}
+            periodSeconds: 60
+            timeoutSeconds: 5
+            failureThreshold: 3
           resources:
             requests: {cpu: 100m, memory: 384Mi}
             limits: {cpu: "1", memory: 1Gi}

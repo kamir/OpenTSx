@@ -185,7 +185,8 @@ maven "mvn dependency:build-classpath opentsx-core" -pl opentsx-core dependency:
 CP="$ROOT/opentsx-core/target/classes:$(cat "$WORK/core.cp")"
 rm -rf "$WORK/classes"
 mkdir -p "$WORK/classes"
-if ! javac -nowarn -encoding UTF-8 -d "$WORK/classes" -cp "$CP" $(find "$WORK/src" -name '*.java') 2>&1 \
+mapfile -t SOURCES < <(find "$WORK/src" -name '*.java')
+if ! javac -nowarn -encoding UTF-8 -d "$WORK/classes" -cp "$CP" "${SOURCES[@]}" 2>&1 \
     | { grep -v '^Note:' >&2 || true; }; then
   echo "pair_xcorr_vectors.sh: javac: the sources in $WORK/src do not compile; fix the errors above, no vectors were written" >&2
   exit 1

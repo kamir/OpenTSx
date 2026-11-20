@@ -120,7 +120,7 @@ The workflow `CI` (`.github/workflows/ci.yml`) runs on every pull request and on
 | "Python 3.10" to "Python 3.13" | `python -m pytest -q` in `python-package/`; on 3.12 also the link check `tools/check_links.py` |
 | "SaaS frontend" | `npx tsc --noEmit`, `npm run lint`, `npx vitest run`, `npm run build` |
 | "SaaS backend" | `python -m pytest -q tests` |
-| "k3s scripts and manifests" | `shellcheck` of `deploy/k3s/*.sh` and `deploy/docker/*.sh`; the kustomize overlays rendered and checked with `kubeconform`; the plan of `deploy/k3s/60-probe.sh --dry-run` |
+| "k3s scripts and manifests" | `bash -n` and `shellcheck` of `deploy/k3s/*.sh`, `deploy/k3s/test/*.sh`, `deploy/docker/*.sh` and the scripts of `bin/`, `opentsx-saas-backend/` and `tools/` that [CONTRIBUTING.md](../../CONTRIBUTING.md) lists; the shell tests in `deploy/k3s/test/`; the kustomize overlays rendered and checked with `kubeconform`; the plan of `deploy/k3s/60-probe.sh --dry-run` |
 | "KafScale conformance" | a KafScale broker v1.6.0 built from source; against it the tests of `opentsx-kafscale-conformance`, `opentsx-kafka-v2`, `opentsx-legacy-bridge`, `opentsx-windpark`, `opentsx-stats`, `opentsx-twin-live` and `opentsx-retrieval`; the three streaming acceptance cases of `KafkaStreamingIntegrationTest` must run and pass; the PFD acceptance through Kafka and Flink (`-Ppfd-acceptance`) |
 | "Java -> Iceberg -> Python" | Java writes Iceberg and PyIceberg must read identical bytes; the Python client queries the Java retrieval server |
 
@@ -159,3 +159,31 @@ must not be a prerelease.
 | duplicate episodes after a retry | expected without an idempotent producer. Stores with the `EPISODES` capability, the episode index and the statistics processor deduplicate by `episodeId`; the OpenTSDB store does not ([chapter 3](03-data-model.md#33-episodes)) |
 | PyIceberg warns "v0 schema" | the catalog was created by the Java JDBC catalog. The warning is harmless |
 | `bin/opentsx`: "module … is not built" | run `mvn -q install -DskipTests` first |
+
+## 12.7 Check that the services are ready
+
+On k3s every long-running service has a readiness probe, which decides whether it gets traffic and whether
+`deploy/k3s/30-deploy.sh` counts it as ready. Every one except the Iceberg REST catalog also has a liveness probe,
+which restarts a container that hangs. `30-deploy.sh` waits up to 180 s for each Deployment (`--timeout`) and exits
+with 1, naming each one that is not ready. On a new broker the statistics processor is not ready until
+`deploy/k3s/40-demo.sh kafscale-check` has created the topics of the domain; then run `30-deploy.sh --restart`.
+
+| Service | Ready when | Restarted when |
+|---------|------------|----------------|
+| retrieval server | `GET /v1/ready` answers 200; 503 after 3 failed refreshes of the feed in a row, or 3 refresh periods without one that worked | `GET /v1/health` does not answer |
+| event bridge | `GET /v1/ready` answers 200; 503 when the broker does not answer a topic lookup within 2 s | `GET /v1/health` does not answer |
+| SaaS backend | `GET /ready` answers 200; 503 `database: no answer to SELECT 1; check that the database runs and accepts connections` | `GET /health` does not answer |
+| statistics processor | its progress file `<checkpoint>.progress` is younger than 2 minutes | the file is older than 10 minutes |
+| vector processor | its progress file `<state>/progress` is younger than 2 minutes | the file is older than 10 minutes |
+
+A readiness or liveness probe acts after 3 failures in a row. A processor whose poll loop stops is therefore not
+ready about 3 minutes after its last pass (its readiness probe runs every 30 s) and restarted about 12 minutes after
+it (its liveness probe runs every 60 s).
+
+A progress file holds the time of the last pass of the poll loop in seconds since the epoch. The statistics processor
+writes it only in a continuous run with `--checkpoint`, at most every 10 s, and removes the file of an earlier run
+when it starts. A file it cannot write stops it with exit code 1 and
+`opentsx: <checkpoint>.progress: cannot write the progress file; check that its directory exists, is writable and has space; caused by <cause>`.
+The vector processor writes it after a round, at most every 5 s, and also removes the file of an earlier run when it
+starts.
+The [operations concept](../devops/operations.md#read-the-probes) lists the probes with their limits.

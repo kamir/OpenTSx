@@ -5,7 +5,7 @@
 #                          [--platform linux/arm64] [--tag TAG] [--no-images]
 #
 #   --skip-maven   reuse an existing `mvn install` (the staging step still needs the installed jars)
-#   --with-s3      add iceberg-aws + AWS SDK bundle (S3FileIO) - required for the lake profile (s3:// warehouse)
+#   --with-s3      add iceberg-aws + AWS SDK bundle (S3FileIO), required for the lake profile (s3:// warehouse)
 #   --builder      image builder (default: first of docker, podman, nerdctl, buildah)
 #   --platform     target platform, e.g. linux/arm64 for a Raspberry Pi (docker buildx / podman --platform);
 #                  no emulation needed: the images have no RUN step for the target platform
@@ -15,6 +15,12 @@
 # Images: <OPENTSX_IMAGE_REPO>/tools:<tag> (JRE + all jars + entrypoint) and <OPENTSX_IMAGE_REPO>/studio:<tag>
 # (nginx + the Studio page generated during the build). nerdctl tip: to build straight into k3s' containerd use
 #   NERDCTL="nerdctl --address /run/k3s/containerd/containerd.sock --namespace k8s.io" (then IMAGE_METHOD=none).
+#
+# Exit codes:
+#   0  built (and staged)
+#   1  the Maven build, the staging or an image build failed, or no JDK, Maven or image builder was found
+#   2  usage error: an unknown option, an option without its value, a --builder that is not one of the four, an
+#      argument, or a line of deploy/k3s/.env that is not a comment or KEY=VALUE with a known key
 set -euo pipefail
 # shellcheck source=deploy/k3s/lib.sh
 source "$(dirname "$0")/lib.sh"
@@ -24,12 +30,19 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --skip-maven) MAVEN=false; shift ;;
     --with-s3) WITH_S3=true; shift ;;
-    --builder) BUILDER="${2:?--builder needs a value}"; shift 2 ;;
-    --platform) PLATFORM_OPT="${2:?--platform needs a value}"; shift 2 ;;
-    --tag) TAG_OPT="${2:?--tag needs a value}"; shift 2 ;;
+    --builder)
+      [[ -n "${2:-}" ]] || usage_error "--builder: missing value; expected docker, podman, nerdctl or buildah"
+      [[ "$2" =~ ^(docker|podman|nerdctl|buildah)$ ]] \
+        || usage_error "--builder: \"$2\" is not a builder; expected docker, podman, nerdctl or buildah"
+      BUILDER="$2"; shift 2 ;;
+    --platform)
+      [[ -n "${2:-}" ]] || usage_error "--platform: missing value; expected a platform such as linux/arm64"
+      PLATFORM_OPT="$2"; shift 2 ;;
+    --tag) [[ -n "${2:-}" ]] || usage_error "--tag: missing value; expected an image tag such as 3.0.1-local"; TAG_OPT="$2"; shift 2 ;;
     --no-images) IMAGES=false; shift ;;
     -h|--help) usage 0 ;;
-    *) die "unknown option $1 (see --help)" ;;
+    -*) usage_error "$1: unknown option; expected --skip-maven, --with-s3, --builder, --platform, --tag, --no-images or --help" ;;
+    *) usage_error "$1: unexpected argument; 10-build.sh takes options only" ;;
   esac
 done
 load_env

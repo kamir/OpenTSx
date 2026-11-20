@@ -146,8 +146,13 @@ Key dependencies:
 
 ## API Endpoints
 
-`GET /` answers a page (`static/index.html`) that links `/docs`, the OpenAPI document, `/health` and the web
-application at `http://localhost:3000`. It has no sign-in.
+`GET /` answers a page (`static/index.html`) that links `/docs`, the OpenAPI document, `/health`, `/ready` and the
+web application at `http://localhost:3000`. It has no sign-in.
+
+`GET /health` answers `{"status": "healthy", "version": ...}` while the process runs (liveness). `GET /ready` runs
+`SELECT 1` on the database within 2 s and answers `{"status": "ready"}`, or 503
+`{"error": "database: no answer to SELECT 1; check that the database runs and accepts connections", "type": "unavailable"}`
+and logs `not ready db=<host>:<port>/<db> cause=<cause>` at WARN (readiness).
 
 ### Authentication
 
@@ -261,7 +266,7 @@ Every error answers a JSON object with two fields, `error` and `type`:
 | `403` | `forbidden` | `register` while `ENABLE_SIGNUP=false`; an inactive account; a new flow for an organization the account is not a member of; an account that may not deploy, stop or generate under `DAG_RUN_ROLE` |
 | `404` | `not_found` | a path the backend does not know; a flow of another account or none; a binding the working copy does not hold |
 | `405` | `method_not_allowed` | a known path with a method it does not take; the `Allow` header lists the methods it takes |
-| `409` | `bad_request` | `register` with an address that is already registered |
+| `409` | `conflict` | `register` with an address that is already registered; a DAG whose vector topic another deployed DAG writes, with the reason of the retrieval server |
 | `413` | `too_large` | a DAG over 262144 bytes |
 | `422` | `bad_request` | a field that is missing or malformed, a body that is not valid JSON, a binding that cannot be a source |
 | `500` | `internal` | a fault in the backend; the body is always `{"error":"internal error","type":"internal"}` |
@@ -309,6 +314,7 @@ The texts towards the retrieval server:
 | Status | `error` |
 |--------|---------|
 | `400` | the `error` of the retrieval server, or `retrieval server: refused the request without a reason; check the request` |
+| `409` | the `error` of the retrieval server, or `retrieval server: the DAG conflicts with a deployed one; see the log of the backend` |
 | `502` | `retrieval server: not reachable; try again later` |
 | `502` | `retrieval server: answered HTTP <status>; see the log of the backend` |
 | `502` | `retrieval server: gave an answer the backend cannot read; check that RETRIEVAL_URL names the retrieval server` |
@@ -319,7 +325,7 @@ The texts towards the retrieval server:
 | `503` | `RETRIEVAL_URL: not set; this installation deploys no DAGs` |
 | `503` | `RETRIEVAL_URL: not set; this installation runs no generators` |
 
-The text of an upstream error other than 400 stays in the log of the backend (logger `app.api.dags`, level
+The text of an upstream error other than 400 and 409 stays in the log of the backend (logger `app.api.dags`, level
 WARNING):
 
 ```text

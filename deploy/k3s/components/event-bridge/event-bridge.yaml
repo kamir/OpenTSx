@@ -36,10 +36,11 @@ spec:
           ports:
             - name: http
               containerPort: 8090
-          readinessProbe:
-            httpGet: {path: /v1/health, port: http}
+          readinessProbe:   # 200 while the broker answers a topic lookup, which can take longer than the default 1 s
+            httpGet: {path: /v1/ready, port: http}
             initialDelaySeconds: 3
             periodSeconds: 10
+            timeoutSeconds: 3
           livenessProbe:
             httpGet: {path: /v1/health, port: http}
             initialDelaySeconds: 20

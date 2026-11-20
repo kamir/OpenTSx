@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Tests the usage errors of deploy/k3s/60-probe.sh: each exits 2 with its message before any step runs, --help
-# documents the exit codes, and the port-forward of the retrieval step ends when the step gives up. Needs no kubectl,
-# no cluster and no network: stand-ins for kubectl, curl and sleep take their place.
+# documents the exit codes, the port-forward of the retrieval step ends when the step gives up, and the deploy step
+# runs kafscale-check and 30-deploy.sh --restart when a Deployment is not ready. Needs no kubectl, no cluster and no
+# network: stand-ins for kubectl, curl, sleep, 30-deploy.sh and 40-demo.sh take their place.
 #
 #   bash deploy/k3s/test/test-60-probe.sh
 set -euo pipefail
@@ -92,6 +93,58 @@ elif [[ -z "$report" ]] || ! grep -qxF "| result | **FAIL**: 0 passed, 1 failed,
   sed 's/^/    /' "${report:-/dev/null}"
 else
   echo "ok   retrieval-summary and report result line"
+fi
+
+# deploy on a new broker: 30-deploy.sh fails because opentsx-stats gets ready only once its topics exist, so the step
+# runs kafscale-check, which creates them, and then 30-deploy.sh --restart; the stand-ins record the calls in order
+deploy_case() {   # NAME KAFSCALE_CHECK_EXIT: output in NAME.out, calls in NAME.calls, report NAME.md, exit code in rc
+  local name="$1" kc_exit="$2"
+  rm -rf "$WORK/k3s" "$WORK/topics"
+  mkdir -p "$WORK/k3s" "$WORK/run"
+  cp "$K3S_DIR/60-probe.sh" "$K3S_DIR/lib.sh" "$K3S_DIR/env.example" "$WORK/k3s/"
+  cat > "$WORK/k3s/30-deploy.sh" <<'STANDIN'
+#!/usr/bin/env bash
+echo "30-deploy.sh $*" >> "$CALLS"
+[[ -e "$WORK/topics" ]] && exit 0
+echo "  FAIL  deployment.apps/opentsx-stats: not ready after 180s"
+exit 1
+STANDIN
+  cat > "$WORK/k3s/40-demo.sh" <<'STANDIN'
+#!/usr/bin/env bash
+echo "40-demo.sh $*" >> "$CALLS"
+if [[ "$1" == kafscale-check && "$KC_EXIT" == 0 ]]; then touch "$WORK/topics"; fi
+exit "$KC_EXIT"
+STANDIN
+  chmod +x "$WORK/k3s/30-deploy.sh" "$WORK/k3s/40-demo.sh"
+  : > "$WORK/$name.calls"
+  rc=0
+  (cd "$WORK/run" && env -i PATH="$PATH" HOME="$WORK" WORK="$WORK" CALLS="$WORK/$name.calls" KC_EXIT="$kc_exit" \
+    KUBECTL=false OPENTSX_ENV_FILE="$WORK/none.env" bash "$WORK/k3s/60-probe.sh" --only deploy \
+    --report "$WORK/$name.md") > "$WORK/$name.out" 2>&1 || rc=$?
+}
+
+deploy_case deploy-new-broker 0
+calls="$(tr '\n' ',' < "$WORK/deploy-new-broker.calls")"
+if (( rc != 0 )); then
+  failed "deploy-new-broker: exit $rc, expected 0"; sed 's/^/    /' "$WORK/deploy-new-broker.out"
+elif [[ "$calls" != "30-deploy.sh ,40-demo.sh kafscale-check,30-deploy.sh --restart," ]]; then
+  failed "deploy-new-broker: calls $calls, expected 30-deploy.sh, 40-demo.sh kafscale-check, 30-deploy.sh --restart"
+elif ! grep -qF "| 1 | \`deploy\` | PASS |" "$WORK/deploy-new-broker.md"; then
+  failed "deploy-new-broker: step deploy is not PASS in the report"; sed 's/^/    /' "$WORK/deploy-new-broker.md"
+else
+  echo "ok   deploy-new-broker"
+fi
+
+deploy_case deploy-check-fails 1
+calls="$(tr '\n' ',' < "$WORK/deploy-check-fails.calls")"
+if (( rc != 1 )); then
+  failed "deploy-check-fails: exit $rc, expected 1"; sed 's/^/    /' "$WORK/deploy-check-fails.out"
+elif [[ "$calls" != "30-deploy.sh ,40-demo.sh kafscale-check," ]]; then
+  failed "deploy-check-fails: calls $calls, expected 30-deploy.sh, 40-demo.sh kafscale-check"
+elif ! grep -qF "| 1 | \`deploy\` | FAIL |" "$WORK/deploy-check-fails.md"; then
+  failed "deploy-check-fails: step deploy is not FAIL in the report"; sed 's/^/    /' "$WORK/deploy-check-fails.md"
+else
+  echo "ok   deploy-check-fails"
 fi
 
 # messages and report lines use a colon or a semicolon, not a spaced hyphen as a dash

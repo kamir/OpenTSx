@@ -15,6 +15,13 @@
 # scales the writers back. The KafScale topics are not touched.
 # Caution: the statistics checkpoint holds positions (offsets) in tsx.<domain>.episodes.v2. Restore it only against the
 # SAME topics; if the topics were deleted and recreated, skip stats-state (the processor then re-reads from the start).
+#
+# Exit codes:
+#   0  restored
+#   1  the backup is damaged or incomplete, the cluster, namespace or a PVC is missing, a step failed, or the
+#      question was not answered with y
+#   2  usage error: no backup directory or a second one, an unknown option, --only without its value or with an
+#      unknown part, or a line of deploy/k3s/.env that is not a comment or KEY=VALUE with a known key
 set -euo pipefail
 # shellcheck source=deploy/k3s/lib.sh
 source "$(dirname "$0")/lib.sh"
@@ -22,21 +29,24 @@ source "$(dirname "$0")/lib.sh"
 DIR=""; ONLY=""; YES=false
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --only) ONLY="${2:?--only needs a list}"; shift 2 ;;
+    --only)
+      [[ -n "${2:-}" ]] || usage_error "--only: missing value; expected a list of stats-state, data, iceberg-catalog, minio and env"
+      ONLY="$2"; shift 2 ;;
     --yes|-y) YES=true; shift ;;
     -h|--help) usage 0 ;;
-    -*) die "unknown option $1 (see --help)" ;;
-    *) [[ -z "$DIR" ]] || die "only one backup directory"; DIR="$1"; shift ;;
+    -*) usage_error "$1: unknown option; expected --only LIST, --yes or --help" ;;
+    *) [[ -z "$DIR" ]] || usage_error "$1: unexpected argument; 71-restore.sh takes one backup directory"; DIR="$1"; shift ;;
   esac
 done
-[[ -n "$DIR" ]] || usage 1
+[[ -n "$DIR" ]] || usage_error "DIR: missing; expected 71-restore.sh DIR [--only LIST] [--yes]"
 [[ -f "$DIR/MANIFEST" ]] || die "$DIR/MANIFEST not found - not a 70-backup.sh directory"
 load_env
 
 declare -A PVC=([stats-state]=opentsx-stats-state [data]=opentsx-data [iceberg-catalog]=opentsx-iceberg-catalog
   [minio]=opentsx-minio)
 for x in ${ONLY//,/ }; do
-  [[ -n "${PVC[$x]:-}" || "$x" == env ]] || die "unknown part '$x' (stats-state, data, iceberg-catalog, minio, env)"
+  [[ -n "${PVC[$x]:-}" || "$x" == env ]] \
+    || usage_error "--only: \"$x\" is not a part; expected stats-state, data, iceberg-catalog, minio or env"
 done
 want() { [[ -z "$ONLY" && "$1" != env ]] || [[ ",$ONLY," == *",$1,"* ]]; }
 

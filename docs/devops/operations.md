@@ -21,7 +21,7 @@ deploy/k3s/60-probe.sh --skip-build --only modbus,dwd   # repeat single steps
 | `prereqs` | `00-prereqs.sh` (`--no-build` with `--skip-build`) | no FAIL item |
 | `build`, `import` | `10-build.sh` (`--with-s3` when `LAKE=true`), `11-import-images.sh` | exit 0 |
 | `configure` | `20-configure.sh MODBUS_SIM=true` (+ `KAFSCALE_BOOTSTRAP=<ip>:9092 KAFSCALE_NETWORK=direct`) | renders |
-| `deploy` | `30-deploy.sh` | every Deployment rolled out |
+| `deploy` | `30-deploy.sh`; when a Deployment is not ready, `40-demo.sh kafscale-check` and `30-deploy.sh --restart` (a new broker has no topics yet) | every Deployment ready: its readiness probe passes ([Read the probes](#read-the-probes)) |
 | `kafscale-check` | `40-demo.sh kafscale-check` from inside the cluster | bootstrap **and** advertised addresses reachable |
 | `windpark-sim` | `40-demo.sh windpark-sim` (restarts the stats processor) | Job complete |
 | `series-stats` | `kafscale-check` every 30 s for up to 5 min (`PROBE_STATS_WAIT`) | `tsx.<domain>.series-stats.v2` > 0 records |
@@ -96,14 +96,40 @@ with `kubectl diff -k deploy/k3s/overlays/local` before `30-deploy.sh`.
 | Signal | Why | Today, without a metrics stack | As a metric (kube-state-metrics / kubelet) |
 |--------|-----|-------------------------------|--------------------------------------------|
 | KafScale reachable, **advertised address** reachable from the pods | most common failure; everything depends on it | `40-demo.sh kafscale-check`; `opentsx-synthetic-check` every 10 min | indirectly: `kube_cronjob_status_last_successful_time{cronjob="opentsx-synthetic-check"}` |
-| statistics processor alive and progressing | stale statistics are silent | checkpoint age in `50-status.sh` (written every 30 s; > 5 min = stuck), synthetic check | `kube_deployment_status_replicas_available{deployment="opentsx-stats"}`, restarts `kube_pod_container_status_restarts_total{container="stats"}` |
+| statistics processor alive and progressing | stale statistics are silent | the probes on its progress file (not ready about 3 min after the last poll, restarted about 12 min after it; [Read the probes](#read-the-probes)), checkpoint age in `50-status.sh` (written every 30 s; > 5 min = stuck), synthetic check | `kube_deployment_status_replicas_available{deployment="opentsx-stats"}`, restarts `kube_pod_container_status_restarts_total{container="stats"}` |
 | consumer lag of the processor (end offset − checkpoint position) | backlog after an outage | **not available**: the positions are only in the checkpoint file; compare the `series-stats` record count over time (`kafscale-check`) | **not exported** (backlog) |
 | Job and CronJob failures | demo Jobs, DWD fetch, synthetic check | `kubectl -n opentsx get jobs,cronjobs`, `50-status.sh` | `kube_job_status_failed`, `kube_cronjob_status_last_successful_time` |
 | pods waiting (CrashLoopBackOff, ImagePullBackOff, CreateContainerConfigError) | broken rollout | `50-status.sh` (warnings) | `kube_pod_container_status_waiting_reason` |
 | PVC usage | a full checkpoint or data volume stops the writers | `df` in the synthetic check (alarm > 85 %) | `kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes`; **not reported for k3s' `local-path` volumes** (they are host paths); available with a CSI driver such as Longhorn |
 | Iceberg REST catalog and MinIO (lake) | lake reads/writes | readiness probes (`/v1/config`, `/minio/health/ready`), `kubectl get deploy` | `kube_deployment_status_replicas_available`; MinIO's own `/minio/v2/metrics/cluster` needs `MINIO_PROMETHEUS_AUTH_TYPE=public` or a token (not configured) |
-| retrieval API | user-facing | readiness probe `/v1/health` | `kube_deployment_status_replicas_available{deployment="opentsx-retrieval"}` |
+| retrieval API | user-facing | readiness probe `/v1/ready` (503 after 3 failed refresh periods of the feed) | `kube_deployment_status_replicas_available{deployment="opentsx-retrieval"}` |
 | node resources | sizing | `kubectl top pod -n opentsx` (metrics-server ships with k3s) | `container_memory_working_set_bytes` (cAdvisor via the kubelet) |
+
+### Read the probes
+
+Readiness decides whether a Service sends traffic to a pod and whether `30-deploy.sh` counts a Deployment as ready.
+Liveness restarts a container that hangs. `kubectl -n opentsx describe pod <pod>` shows the failed probe and its
+output under `Events`. On a new broker `opentsx-stats` is not ready until `40-demo.sh kafscale-check` has created the
+topics of the domain ([R2](#r2-statistics-processor-stuck-or-crash-looping)).
+
+| Deployment | Readiness | Liveness |
+|------------|-----------|----------|
+| `opentsx-retrieval` | `GET /v1/ready`: 503 after 3 failed refreshes in a row, or 3 refresh periods without one that worked | `GET /v1/health`, answered also while every request thread waits for the broker |
+| `opentsx-event-bridge` | `GET /v1/ready`: 503 when the broker does not answer a topic lookup within 2 s | `GET /v1/health` |
+| `opentsx-saas-backend` | `GET /ready`: 503 while the database does not answer `SELECT 1` within 2 s | `GET /health`; the startup probe on `/health` waits up to 3 min for the database |
+| `opentsx-stats` | `/state/stats.ckpt.progress` younger than 2 min | `/state/stats.ckpt.progress` younger than 10 min |
+| `opentsx-vectors` | `/state/progress` younger than 2 min | `/state/progress` younger than 10 min |
+
+Readiness and liveness act after 3 failures in a row: the stats and vector processors run readiness every 30 s and
+liveness every 60 s, so a processor whose poll loop stops is not ready about 3 minutes after its last pass and
+restarted about 12 minutes after it.
+
+The two processors write the time of the last pass of their poll loop, in seconds since the epoch, into the progress
+file: the statistics processor at most every 10 s, next to its checkpoint, and the vector processor at most every 5 s,
+in its state directory. Each probe runs `test $(( $(date +%s) - $(cat <file>) )) -lt <seconds>` in the container. A
+startup probe gives each processor 10 minutes for its first pass, for restoring the checkpoint and assigning the
+partitions. Each processor removes the file of an earlier run when it starts. While the broker refuses reads, the
+poll loop of the statistics processor still passes every 5 s, and after 10 minutes of refusals it stops itself.
 
 ### Monitoring stack: two levels
 
@@ -349,12 +375,15 @@ Each runbook: symptom → check → cause → fix → verify. Start every invest
 
 ### R2: Statistics processor stuck or crash-looping
 
-* **Symptom:** checkpoint older than 5 minutes (`50-status.sh`, synthetic check), `series-stats` record count does not
-  grow, or `CrashLoopBackOff`.
+* **Symptom:** the pod is not ready (`30-deploy.sh` names `deployment.apps/opentsx-stats`), its liveness probe
+  restarted it, checkpoint older than 5 minutes (`50-status.sh`, synthetic check), `series-stats` record count does
+  not grow, or `CrashLoopBackOff`.
 * **Check:** `kubectl -n opentsx logs deploy/opentsx-stats --previous`; `kubectl -n opentsx describe pod -l
   app.kubernetes.io/name=opentsx-stats` (OOMKilled?); `40-demo.sh kafscale-check` (are there new episodes?).
 * **Causes and fixes:**
-  * started before the topics existed → assigned nothing: `kubectl -n opentsx rollout restart deploy/opentsx-stats`;
+  * the topics of the domain do not exist yet (a new broker) → the log ends with `opentsx: tsx.<domain>.episodes.v2:
+    the input topics do not exist or have no partitions; ...` and exit code 2: `40-demo.sh kafscale-check` creates
+    them, then `kubectl -n opentsx rollout restart deploy/opentsx-stats`;
   * KafScale unreachable → [R1](#r1-kafscale-unreachable-or-wrong-advertised-address);
   * `OOMKilled` → raise the memory limit in `deploy/k3s/base/stats.yaml` (~3× checkpoint size + 300 MB,
     [sizing plan §4.1](sizing-plan.md#41-statistics-processor));
@@ -475,7 +504,7 @@ Simple targets, measured with the signals above, reviewed monthly:
 |-----------|--------------|-------------|
 | synthetic check passes (KafScale reachable, checkpoint fresh, disks < 85 %) | ≥ 95 % of runs per month | CronJob history / `kube_cronjob_status_last_successful_time` |
 | statistics freshness | checkpoint younger than 5 min, ≥ 99 % of the time while episodes arrive | synthetic check |
-| retrieval API available | `/v1/health` ready ≥ 99 % during working hours | readiness / `kube_deployment_status_replicas_available` |
+| retrieval API available | `/v1/ready` ready ≥ 99 % during working hours | readiness / `kube_deployment_status_replicas_available` |
 | DWD forecast | a successful fetch on ≥ 95 % of days, never two days in a row missed | `OpenTSxDwdForwardStale` |
 | backup | daily, restore tested once per quarter | backup directory, test log |
 | recovery (lab) | RPO 24 h for PVC state, RTO 2 h after a node loss (rebuild + restore) | restore test |

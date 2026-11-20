@@ -208,6 +208,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   state directory (opentsx.vectors.state) exists, is writable and has space`.
 - SaaS backend: a DAG deployment that the retrieval server refuses with 409 `conflict` answers 409 `conflict` with the
   reason of the retrieval server instead of 502.
+- SaaS backend: `GET /ready` runs `SELECT 1` within 2 s and answers `{"status": "ready"}`, or 503 `{"error":
+  "database: no answer to SELECT 1; check that the database runs and accepts connections", "type": "unavailable"}` and
+  logs `not ready db=<host>:<port>/<db> cause=<cause>` at WARN. The k3s Deployment `opentsx-saas-backend` uses it as
+  its readiness probe.
+- Statistics processor: a continuous run with `--checkpoint` writes the progress file `<checkpoint>.progress`, the
+  time of the last pass of its poll loop in seconds since the epoch, at most every 10 s, and removes the file of an
+  earlier run when it starts. A file it cannot write stops it with exit code 1.
+- k3s: `opentsx-stats` and `opentsx-vectors` get exec startup, readiness and liveness probes on their progress files
+  (`/state/stats.ckpt.progress`, `/state/progress`). The probes fail on a file older than 2 minutes (readiness) or 10
+  minutes (liveness), so a processor whose poll loop stops is not ready about 3 minutes and restarted about 12 minutes
+  after its last pass; the first pass may take 10 minutes.
 
 ### Changed
 
@@ -818,6 +829,21 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   the status `failed`. Deploying the same DAG name again is no conflict.
 - The SaaS backend answers a registration with an address that is already registered (409) with the type `conflict`
   instead of `bad_request`.
+- k3s: the readiness probes of `opentsx-retrieval` and `opentsx-event-bridge` use `GET /v1/ready`; `GET /v1/health`
+  stays their liveness probe. The event bridge probe waits 3 s for an answer.
+- `deploy/k3s/30-deploy.sh` waits until every Deployment is ready and names each one that is not with `FAIL
+  deployment.apps/<name>: not ready after <timeout>; see kubectl -n opentsx describe deployment.apps/<name>`. On a
+  broker without the topics of the domain, `opentsx-stats` is not ready until `40-demo.sh kafscale-check` creates
+  them; the script then says to run `30-deploy.sh --restart`.
+- `deploy/k3s/10-build.sh`, `11-import-images.sh`, `30-deploy.sh`, `50-status.sh` and `71-restore.sh` exit with 2 on a
+  usage error (an unknown option, an option without its value, an argument they do not take, a `--builder`, method,
+  `--timeout` or `--only` part that is not allowed, no backup directory), with a message in the form `<option>:
+  <problem>; <what is allowed>`; `--help` lists the exit codes 0, 1 and 2.
+- k3s Jobs: `boat` has a memory limit of 1536Mi and `house` of 4Gi, so that `boat --data` over a year of 15-minute
+  rows with `--calibrate` and `house --calibrate` over 10 years of bills fit the heap.
+- `deploy/k3s/60-probe.sh`: when a Deployment is not ready, the step `deploy` runs `40-demo.sh kafscale-check` and
+  then `30-deploy.sh --restart`.
+- CI: the job `k3s scripts and manifests` also runs `bash -n` and `shellcheck` on `bin/episode_*.sh`.
 
 ### Removed
 
@@ -1914,6 +1940,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The workbench keeps the notice that the browser kept flows from opening in tabs of their own after the first flow
   has loaded, until the next action in the Flow Composer; the notice text is held once, and the Flow Composer page and
   the Systems page no longer clear and restore the flow the workbench holds.
+- `deploy/k3s/30-deploy.sh` no longer reports `deployed` when it cannot list the Deployments; it exits with 1 and
+  names the namespace.
+- `tools/pair_xcorr_vectors.sh` passes the Java sources to javac as an array; CI runs `bash -n` and `shellcheck` on it
+  and on `opentsx-saas-backend/local-run.sh`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

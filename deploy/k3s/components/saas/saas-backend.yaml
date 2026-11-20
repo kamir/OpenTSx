@@ -54,9 +54,10 @@ spec:
             httpGet: {path: /health, port: http}
             periodSeconds: 5
             failureThreshold: 36   # waits for the database
-          readinessProbe:
-            httpGet: {path: /health, port: http}
+          readinessProbe:   # 503 while the database does not answer SELECT 1 within 2 s
+            httpGet: {path: /ready, port: http}
             periodSeconds: 10
+            timeoutSeconds: 3
           livenessProbe:
             httpGet: {path: /health, port: http}
             periodSeconds: 30

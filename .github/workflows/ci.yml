@@ -142,19 +142,24 @@ jobs:
       - uses: actions/checkout@v7
       - name: Shell syntax and shellcheck
         run: |
-          for f in deploy/k3s/*.sh deploy/k3s/test/*.sh deploy/docker/*.sh bin/opentsx bin/000_validate_environment.sh bin/run_all_tests.sh bin/000_launch_tsa_workbench.sh bin/010_build.sh opentsx-saas-backend/local-setup.sh; do bash -n "$f"; done
+          for f in deploy/k3s/*.sh deploy/k3s/test/*.sh deploy/docker/*.sh bin/opentsx bin/000_validate_environment.sh bin/run_all_tests.sh bin/000_launch_tsa_workbench.sh bin/010_build.sh bin/episode_*.sh opentsx-saas-backend/local-setup.sh opentsx-saas-backend/local-run.sh tools/pair_xcorr_vectors.sh; do bash -n "$f"; done
           command -v shellcheck || { sudo apt-get update -q && sudo apt-get install -y -q shellcheck; }
           shellcheck --version
-          shellcheck -x -P SCRIPTDIR deploy/k3s/*.sh deploy/k3s/test/*.sh deploy/docker/*.sh bin/opentsx bin/000_validate_environment.sh bin/run_all_tests.sh bin/000_launch_tsa_workbench.sh bin/010_build.sh opentsx-saas-backend/local-setup.sh
+          shellcheck -x -P SCRIPTDIR deploy/k3s/*.sh deploy/k3s/test/*.sh deploy/docker/*.sh bin/opentsx bin/000_validate_environment.sh bin/run_all_tests.sh bin/000_launch_tsa_workbench.sh bin/010_build.sh bin/episode_*.sh opentsx-saas-backend/local-setup.sh opentsx-saas-backend/local-run.sh tools/pair_xcorr_vectors.sh
       - name: 20-configure.sh, secrets in docs and the MinIO bucket Job (deploy/k3s/test)
         run: bash deploy/k3s/test/test-20-configure.sh
       - name: 00-prereqs.sh shows the error of the staged kafscale-check (deploy/k3s/test)
         run: bash deploy/k3s/test/test-00-prereqs.sh
-      - name: 40-demo.sh, 60-probe.sh, 70-backup.sh and 90-teardown.sh (deploy/k3s/test)
+      - name: 10-build.sh, 11-import-images.sh, 30-deploy.sh, 40-demo.sh, 50-status.sh, 60-probe.sh, 70-backup.sh, 71-restore.sh and 90-teardown.sh (deploy/k3s/test)
         run: |
+          bash deploy/k3s/test/test-10-build.sh
+          bash deploy/k3s/test/test-11-import-images.sh
+          bash deploy/k3s/test/test-30-deploy.sh
           bash deploy/k3s/test/test-40-demo.sh
+          bash deploy/k3s/test/test-50-status.sh
           bash deploy/k3s/test/test-60-probe.sh
           bash deploy/k3s/test/test-70-backup.sh
+          bash deploy/k3s/test/test-71-restore.sh
           bash deploy/k3s/test/test-90-teardown.sh
       - name: Launchers and logger settings (deploy/docker/test-launchers.sh)
         run: bash deploy/docker/test-launchers.sh

@@ -27,7 +27,11 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,6 +44,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -335,6 +340,126 @@ class StatsProcessorAppTest {
         assertEquals(0, code.get(), err.toString(StandardCharsets.UTF_8));
     }
 
+    /** A clock that moves one minute on every reading, from 2026-01-01T00:00:00Z. */
+    private static Clock ticking() {
+        AtomicLong minutes = new AtomicLong();
+        return new Clock() {
+            @Override
+            public ZoneId getZone() {
+                return ZoneOffset.UTC;
+            }
+
+            @Override
+            public Clock withZone(ZoneId zone) {
+                return this;
+            }
+
+            @Override
+            public Instant instant() {
+                return Instant.parse("2026-01-01T00:00:00Z").plus(Duration.ofMinutes(minutes.incrementAndGet()));
+            }
+        };
+    }
+
+    @Test
+    void aContinuousRunWritesTheTimeOfItsLastPollIntoTheProgressFileNextToTheCheckpoint() throws Exception {
+        Path checkpoint = tmp.resolve("stats.ckpt");
+        Path progress = tmp.resolve("stats.ckpt.progress");
+        Files.writeString(progress, "1735689600\n");
+        MockConsumer<byte[], byte[]> consumer = emptyTopic("wind");
+        List<String> seen = new ArrayList<>();
+        CountDownLatch polled = new CountDownLatch(1);
+        consumer.schedulePollTask(() -> seen.add(read(progress)));
+        consumer.schedulePollTask(() -> {
+            seen.add(read(progress));
+            polled.countDown();
+        });
+        BlockingQueue<Thread> hooks = new LinkedBlockingQueue<>();
+        AtomicInteger code = new AtomicInteger(-1);
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        PrintStream errStream = new PrintStream(err, true, StandardCharsets.UTF_8);
+        PrintStream stderr = System.err;
+        System.setErr(errStream);
+        try {
+            Thread processor = new Thread(() -> code.set(StatsProcessorApp.run(List.of("--kafscale", "mock:9092",
+                    "--checkpoint", checkpoint.toString()), Map.of(), new PrintStream(new ByteArrayOutputStream()), errStream,
+                    bootstrap -> consumer, bootstrap -> new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()),
+                    hooks::add, hook -> { }, ticking())));
+            processor.start();
+            Thread hook = hooks.poll(30, TimeUnit.SECONDS);
+            assertNotNull(hook, "the continuous run registers a shutdown hook");
+            assertTrue(polled.await(30, TimeUnit.SECONDS), err.toString(StandardCharsets.UTF_8));
+            hook.run();
+            processor.join(30_000);
+            assertFalse(processor.isAlive(), err.toString(StandardCharsets.UTF_8));
+        } finally {
+            System.setErr(stderr);
+        }
+
+        assertEquals(0, code.get(), err.toString(StandardCharsets.UTF_8));
+        assertEquals(List.of(seconds("2026-01-01T00:01:00Z"), seconds("2026-01-01T00:02:00Z")), seen,
+                "the file of an earlier run is replaced after the partitions are assigned, and again after each poll");
+    }
+
+    @Test
+    void theProgressFileIsWrittenAtMostEveryTenSeconds() throws IOException {
+        Path file = tmp.resolve("stats.ckpt.progress");
+        AtomicLong seconds = new AtomicLong();
+        Clock clock = new Clock() {
+            @Override
+            public ZoneId getZone() {
+                return ZoneOffset.UTC;
+            }
+
+            @Override
+            public Clock withZone(ZoneId zone) {
+                return this;
+            }
+
+            @Override
+            public Instant instant() {
+                return Instant.parse("2026-01-01T00:00:00Z").plusSeconds(seconds.get());
+            }
+        };
+        StatsProcessorApp.Progress progress = StatsProcessorApp.Progress.start(file, clock);
+        assertFalse(Files.exists(file), "nothing before the first pass of the poll loop");
+
+        List<String> written = new ArrayList<>();
+        for (long s : new long[]{0, 9, 10, 15, 20}) {
+            seconds.set(s);
+            progress.passed();
+            written.add(read(file));
+        }
+
+        assertEquals(List.of(seconds("2026-01-01T00:00:00Z"), seconds("2026-01-01T00:00:00Z"),
+                seconds("2026-01-01T00:00:10Z"), seconds("2026-01-01T00:00:10Z"), seconds("2026-01-01T00:00:20Z")), written);
+        assertFalse(Files.exists(tmp.resolve("stats.ckpt.progress.tmp")), "written through a temporary file");
+    }
+
+    @Test
+    void aProgressFileThatCannotBeWrittenThrowsNamingTheFile() throws IOException {
+        Path checkpoint = tmp.resolve("missing").resolve("stats.ckpt");
+        StatsProcessorApp.Progress progress = StatsProcessorApp.Progress.start(
+                checkpoint.resolveSibling("stats.ckpt.progress"), Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
+        java.io.UncheckedIOException e = org.junit.jupiter.api.Assertions.assertThrows(java.io.UncheckedIOException.class,
+                progress::passed);
+        assertEquals(checkpoint.resolveSibling("stats.ckpt.progress") + ": cannot write the progress file; check that its"
+                + " directory exists, is writable and has space", e.getMessage());
+    }
+
+    /** The content of a progress file written at {@code instant}: seconds since the epoch and a newline. */
+    private static String seconds(String instant) {
+        return Instant.parse(instant).getEpochSecond() + "\n";
+    }
+
+    private static String read(Path file) {
+        try {
+            return Files.readString(file);
+        } catch (IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
+    }
+
     @Test
     void theArgumentsOfTheK3sManifestLoad() throws IOException {
         ObjectMapper yaml = new ObjectMapper(new YAMLFactory());
@@ -380,6 +505,11 @@ class StatsProcessorAppTest {
         assertEquals(Duration.ZERO, conf.getDuration("opentsx.stats.allowedLateness"));
         assertEquals("environment", conf.source("opentsx.stats.windows"));
         assertFalse(conf.getBoolean("opentsx.stats.once"));
+        for (String probe : List.of("startupProbe", "readinessProbe", "livenessProbe")) {
+            String script = container.path(probe).path("exec").path("command").path(2).asText();
+            assertTrue(script.contains(" " + conf.get("opentsx.stats.checkpoint") + ".progress) "),
+                    probe + " checks the progress file of the checkpoint: " + script);
+        }
     }
 
     /** The variables Kubernetes sets in a pod for a Service of its namespace unless enableServiceLinks is false. */

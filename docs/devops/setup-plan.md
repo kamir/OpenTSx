@@ -12,7 +12,7 @@ backup, updates, runbooks) is described in the [operations concept](operations.m
 | 1 | `10-build.sh` | `opentsx/tools:<tag>` and `opentsx/studio:<tag>` built |
 | 2 | `11-import-images.sh` | images in k3s' containerd (or in a registry) |
 | 3 | `20-configure.sh KEY=VALUE…` | `deploy/k3s/.env` and the overlay `deploy/k3s/overlays/local/` |
-| 4 | `30-deploy.sh` | namespace, config, PVCs, stats, retrieval, Studio (+ lake) running |
+| 4 | `30-deploy.sh` | namespace, config, PVCs, stats, retrieval, Studio (+ lake); every Deployment ready (its readiness probe passes) |
 | 5 | `40-demo.sh <demo>` | examples run as Jobs, output in the terminal |
 | n/a | `50-status.sh`, `90-teardown.sh` | state; removal |
 | n/a | `60-probe.sh` | all of the above plus checks, as one trial run with a report |
@@ -184,10 +184,13 @@ go into a separate Secret `opentsx-private` that you create by hand (see [Demos]
 ## Step 4: deploy
 
 ```bash
-deploy/k3s/30-deploy.sh             # kubectl apply -k deploy/k3s/overlays/local, wait for rollouts
+deploy/k3s/30-deploy.sh             # kubectl apply -k deploy/k3s/overlays/local, wait until every Deployment is ready
 deploy/k3s/30-deploy.sh --dry-run   # server-side dry run
 deploy/k3s/30-deploy.sh --restart   # after a config change or a re-imported image with the same tag
 ```
+
+On a new broker `opentsx-stats` is not ready until the topics of the domain exist: `30-deploy.sh` exits with 1 naming
+it; run `40-demo.sh kafscale-check`, then `30-deploy.sh --restart`.
 
 **Verify:**
 

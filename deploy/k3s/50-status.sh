@@ -5,6 +5,12 @@
 #   deploy/k3s/50-status.sh [--logs]
 #
 #   --logs   also print the last 20 log lines of every OpenTSx Deployment
+#
+# Exit codes:
+#   0  the state was shown
+#   1  the namespace does not exist or the cluster is not reachable
+#   2  usage error: an unknown option, an argument, or a line of deploy/k3s/.env that is not a comment or KEY=VALUE
+#      with a known key
 set -euo pipefail
 # shellcheck source=deploy/k3s/lib.sh
 source "$(dirname "$0")/lib.sh"
@@ -14,7 +20,8 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --logs) LOGS=true; shift ;;
     -h|--help) usage 0 ;;
-    *) die "unknown option $1 (see --help)" ;;
+    -*) usage_error "$1: unknown option; expected --logs or --help" ;;
+    *) usage_error "$1: unexpected argument; 50-status.sh takes options only" ;;
   esac
 done
 load_env

@@ -63,6 +63,13 @@ from its flag, `--conf <key>=<value>`, `--properties-file`, its environment vari
 Only `opentsx.kafscale.bootstrap` is required. Without `opentsx.stats.checkpoint` the processor reads the topics from
 the log start on every start. `--once` and `--observations` take `true` or `false`; a bare flag means `true`.
 
+A continuous run with `--checkpoint` writes the progress file `<checkpoint>.progress`: the time of the last pass of its
+poll loop in seconds since the epoch, at most every 10 s, through a temporary file. It removes the file of an earlier
+run when it starts. A probe checks its age with `test $(( $(date +%s) - $(cat <checkpoint>.progress) )) -lt <seconds>`.
+A file it cannot write stops the processor with exit code 1 and
+`opentsx: <checkpoint>.progress: cannot write the progress file; check that its directory exists, is writable and has space; caused by <cause>`.
+`--once` writes no progress file.
+
 * **Start:** the processor logs one INFO line with every value and its source, for example
   `starting stats: opentsx.domain=wind (default), opentsx.kafscale.bootstrap=localhost:9092 (commandLine), ...`.
 * **Exit codes:** 0 success, 1 runtime failure, 2 usage or configuration error.

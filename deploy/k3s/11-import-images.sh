@@ -20,22 +20,36 @@
 #
 # The manifests use imagePullPolicy IfNotPresent and a fixed tag: after re-importing the same tag run
 # 30-deploy.sh --restart so the pods pick up the new image.
+#
+# Exit codes:
+#   0  imported (or nothing to do with the method none)
+#   1  the tool of the method is missing, saving, importing or pushing failed, or the images are not in k3s'
+#      containerd afterwards
+#   2  usage error: an unknown option, an option without its value, an argument, a method that is not one of the
+#      list (from --method or IMAGE_METHOD), the method ssh without --ssh or K3S_SSH, the method kind without
+#      --kind-cluster or KIND_CLUSTER, or a line of deploy/k3s/.env that is not a comment or KEY=VALUE with a known key
 set -euo pipefail
 # shellcheck source=deploy/k3s/lib.sh
 source "$(dirname "$0")/lib.sh"
 
-METHOD=""; SSH_TARGET="${K3S_SSH:-}"; KIND_CLUSTER="${KIND_CLUSTER:-}"
+METHODS="docker, podman, nerdctl, buildah, kind, registry, ssh or none"
+METHOD=""; METHOD_FROM=--method; SSH_TARGET="${K3S_SSH:-}"; KIND_CLUSTER="${KIND_CLUSTER:-}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --method) METHOD="${2:?--method needs a value}"; shift 2 ;;
-    --ssh) SSH_TARGET="${2:?--ssh needs user@host}"; METHOD="${METHOD:-ssh}"; shift 2 ;;
-    --kind-cluster) KIND_CLUSTER="${2:?--kind-cluster needs a name}"; METHOD="${METHOD:-kind}"; shift 2 ;;
+    --method) [[ -n "${2:-}" ]] || usage_error "--method: missing value; expected $METHODS"; METHOD="$2"; shift 2 ;;
+    --ssh)
+      [[ -n "${2:-}" ]] || usage_error "--ssh: missing value; expected user@host"
+      SSH_TARGET="$2"; METHOD="${METHOD:-ssh}"; shift 2 ;;
+    --kind-cluster)
+      [[ -n "${2:-}" ]] || usage_error "--kind-cluster: missing value; expected the name of a kind cluster"
+      KIND_CLUSTER="$2"; METHOD="${METHOD:-kind}"; shift 2 ;;
     -h|--help) usage 0 ;;
-    *) die "unknown option $1 (see --help)" ;;
+    -*) usage_error "$1: unknown option; expected --method, --ssh, --kind-cluster or --help" ;;
+    *) usage_error "$1: unexpected argument; 11-import-images.sh takes options only" ;;
   esac
 done
 load_env
-METHOD="${METHOD:-$IMAGE_METHOD}"
+[[ -n "$METHOD" ]] || { METHOD="$IMAGE_METHOD"; METHOD_FROM=IMAGE_METHOD; }
 IMAGES=("$TOOLS_IMAGE" "$STUDIO_IMAGE")
 if is_true "$SAAS"; then IMAGES+=("$SAAS_FRONTEND_IMAGE" "$SAAS_BACKEND_IMAGE"); fi
 
@@ -70,15 +84,15 @@ case "$METHOD" in
       rm -f "$tmp/image.tar"
     done ;;
   ssh)
-    [[ -n "$SSH_TARGET" ]] || die "--method ssh needs --ssh user@host (or K3S_SSH)"
+    [[ -n "$SSH_TARGET" ]] || usage_error "--ssh: missing; the method ssh needs --ssh user@host or K3S_SSH"
     s="$(saver)"
     info "importing ${IMAGES[*]} on $SSH_TARGET ($s save | ssh ... k3s ctr images import)"
     "$s" save "${IMAGES[@]}" | ssh "$SSH_TARGET" sudo k3s ctr images import -
     echo "check on the node: ssh $SSH_TARGET sudo k3s ctr images ls | grep $OPENTSX_IMAGE_REPO"
     exit 0 ;;
   kind)
+    [[ -n "$KIND_CLUSTER" ]] || usage_error "--kind-cluster: missing; the method kind needs --kind-cluster <name> or KIND_CLUSTER (kind get clusters lists them)"
     have kind || die "kind not found - install kind, or use --method ssh/registry for a remote k3s"
-    [[ -n "$KIND_CLUSTER" ]] || die "method kind needs the cluster name: --kind-cluster <name> (or KIND_CLUSTER). Available: $(kubectl config get-contexts -o name 2>/dev/null | sed -n 's/^kind-//p' | paste -sd, - || echo 'none found')"
     kind get clusters 2>/dev/null | grep -qxF "$KIND_CLUSTER" || die "kind cluster '$KIND_CLUSTER' not found (kind get clusters)"
     info "loading ${IMAGES[*]} into kind cluster $KIND_CLUSTER (kind load docker-image)"
     kind load docker-image "${IMAGES[@]}" --name "$KIND_CLUSTER"
@@ -91,7 +105,7 @@ case "$METHOD" in
     echo "k3s pulls from ${OPENTSX_IMAGE_REPO%%/*}; a plain-HTTP registry needs /etc/rancher/k3s/registries.yaml on each node"
     exit 0 ;;
   none) info "IMAGE_METHOD=none - nothing to import"; exit 0 ;;
-  *) die "unknown method $METHOD (see --help)" ;;
+  *) usage_error "$METHOD_FROM: \"$METHOD\" is not a method; expected $METHODS" ;;
 esac
 
 info "images in k3s containerd:"

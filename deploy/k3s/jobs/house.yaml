@@ -32,7 +32,9 @@ spec:
               value: ""
           resources:
             requests: {cpu: 250m, memory: 512Mi}   # measured: needs > 384 MB heap with --calibrate; RSS ~670 MB at 512 MB heap
-            limits: {cpu: "1", memory: 1Gi}
+            # heap 3 GiB (75 %): --calibrate with bills over 10 years (87673 steps), measured peak RSS 3260 MB; a heap
+            # of 2.5 GiB runs out of memory
+            limits: {cpu: "1", memory: 4Gi}
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

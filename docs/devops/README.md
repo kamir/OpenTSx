@@ -1,22 +1,7 @@
 # DevOps guide: OpenTSx on k3s against an existing KafScale cluster
 
-> This guide shows how OpenTSx runs locally in a **k3s cluster** against an **existing KafScale cluster**. The scripts
-> are in [`deploy/k3s/`](../../deploy/k3s/), the images in [`deploy/docker/`](../../deploy/docker/). The order is
-> `00-prereqs.sh` → `10-build.sh` → `11-import-images.sh` → `20-configure.sh KAFSCALE_BOOTSTRAP=<host:port>` →
-> `30-deploy.sh` → `40-demo.sh all`. After that the statistics processor, the retrieval server and Smart Topics Studio
-> run permanently; the wind farm simulator, the three twin scenarios (H2 chain, house, boat), the Studio export, DWD
-> weather, the Modbus poller and the OpenMetadata export run as Jobs. A Modbus simulator and CronJobs for the daily
-> MOSMIX download and a synthetic check are optional.
-> What runs today is the Java code, including the DAGs `opentsx.dag.v1` and `opentsx.dag.v2` that the vector processor
-> runs; the Go Smart Topic processor and MLflow of concept 11 are planned ([today vs. planned](today-vs-planned.md)).
-> The [sizing plan](sizing-plan.md) works out storage and resources per scenario (for example 50 turbines × 100
-> channels × 1 Hz ≈ 0.94 GB/day on S3 at a measured 2.18 B/value). The most common trap: the **advertised address** of
-> the KafScale broker must be reachable from the pods; `40-demo.sh kafscale-check` checks exactly that.
-> **Probe locally in one step:** `deploy/k3s/60-probe.sh --local-kafscale` starts KafScale with Docker Compose and the
-> LAN IP as advertised address, builds, installs, runs all examples (including DWD weather offline and the Modbus
-> simulator with the poller) and writes a PASS/FAIL report `probe-report-<UTC time>.md`; `--dry-run` only shows the
-> plan. The **[operations concept](operations.md)** describes the service catalogue, environments, monitoring, backup
-> (`70-backup.sh`, `71-restore.sh`), updates, secrets, security, runbooks, roles and SLOs.
+Run OpenTSx 3.0.1 in a k3s cluster against an existing KafScale cluster, from the images to the demos; verified on
+3.0.1 with stand-ins for the cluster ([what was validated](operations.md#what-was-validated-here)).
 
 ## Pages
 
@@ -114,6 +99,10 @@ deploy/k3s/50-status.sh                                    # state at a glance
 deploy/k3s/70-backup.sh --quiesce                          # checkpoint, data, catalog, MinIO, config -> ./opentsx-backup-<time>/
 deploy/k3s/90-teardown.sh                                  # remove everything (KafScale topics stay)
 ```
+
+On a broker without the topics of the domain, `30-deploy.sh` stops with
+`FAIL  deployment.apps/opentsx-stats: not ready after 180s; ...` (exit code 1) until `40-demo.sh kafscale-check` has
+created them; then run `30-deploy.sh --restart`.
 
 Every script has `--help`, is idempotent and stops with a clear message when something is missing.
 

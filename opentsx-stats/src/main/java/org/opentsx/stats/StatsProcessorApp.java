@@ -11,9 +11,15 @@ import org.opentsx.kafka.TopicLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -23,12 +29,17 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 
 /**
  * The command {@code stats}: the statistics processor on KafScale. It reads the keys of {@code stats} in the registry
  * {@code opentsx.config.v1} through {@link OpenTsxConf#load}; {@code bin/opentsx stats --help} lists them. Exit codes:
  * 0 success, 1 runtime failure, 2 usage or configuration error.
+ *
+ * <p>A continuous run with a checkpoint keeps the progress file {@code <checkpoint>.progress}: the time of the last pass
+ * of its poll loop in seconds since the epoch, written at most every {@link Progress#EVERY}. The exec probes of the k3s
+ * Deployment check its age.
  */
 public final class StatsProcessorApp {
 
@@ -48,6 +59,13 @@ public final class StatsProcessorApp {
     static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err,
                    Function<String, Consumer<byte[], byte[]>> consumers, Function<String, Producer<String, byte[]>> producers,
                    java.util.function.Consumer<Thread> addHook, java.util.function.Consumer<Thread> removeHook) {
+        return run(args, env, out, err, consumers, producers, addHook, removeHook, Clock.systemUTC());
+    }
+
+    /** {@code clock} gives the times of the progress file. */
+    static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err,
+                   Function<String, Consumer<byte[], byte[]>> consumers, Function<String, Producer<String, byte[]>> producers,
+                   java.util.function.Consumer<Thread> addHook, java.util.function.Consumer<Thread> removeHook, Clock clock) {
         List<String> words = new ArrayList<>(args.size() + 1);
         words.add(COMMAND);
         words.addAll(args);
@@ -100,7 +118,16 @@ public final class StatsProcessorApp {
             AtomicBoolean stop = new AtomicBoolean();
             hook = new Thread(stopHook(stop, closed, Duration.ofSeconds(60), log));
             addHook.accept(hook);
-            p.run(Duration.ofSeconds(30), stop::get);
+            BooleanSupplier stopped = stop::get;
+            if (checkpoint != null) {
+                Progress progress = Progress.start(checkpoint.resolveSibling(checkpoint.getFileName() + ".progress"), clock);
+                // the processor asks once before its first poll and once after each poll
+                stopped = () -> {
+                    progress.passed();
+                    return stop.get();
+                };
+            }
+            p.run(Duration.ofSeconds(30), stopped);
             return 0;
         } catch (OpenTsxConfException e) {
             err.print("opentsx: " + e.getMessage() + "\n");
@@ -142,6 +169,49 @@ public final class StatsProcessorApp {
                 Thread.currentThread().interrupt();
             }
         };
+    }
+
+    /** The progress file of a continuous run. */
+    static final class Progress {
+
+        static final Duration EVERY = Duration.ofSeconds(10);
+
+        private final Path file;
+        private final Clock clock;
+        private Instant last;
+
+        private Progress(Path file, Clock clock) {
+            this.file = file;
+            this.clock = clock;
+        }
+
+        /** Removes the file of an earlier run, so that a probe sees this run only. */
+        static Progress start(Path file, Clock clock) {
+            try {
+                Files.deleteIfExists(file);
+            } catch (IOException e) {
+                throw new UncheckedIOException(file + ": cannot remove the progress file of an earlier run; check that its"
+                        + " directory is writable", e);
+            }
+            return new Progress(file, clock);
+        }
+
+        /** Writes the time unless the last write is less than {@link #EVERY} ago; a probe never reads half a file. */
+        void passed() {
+            Instant now = clock.instant();
+            if (last != null && now.isBefore(last.plus(EVERY))) {
+                return;
+            }
+            Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
+            try {
+                Files.writeString(tmp, now.getEpochSecond() + "\n");
+                Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (IOException e) {
+                throw new UncheckedIOException(file + ": cannot write the progress file; check that its directory exists,"
+                        + " is writable and has space", e);
+            }
+            last = now;
+        }
     }
 
     private static int written(PrintStream out, PrintStream err) {

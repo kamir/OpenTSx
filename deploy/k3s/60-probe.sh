@@ -26,7 +26,8 @@
 #   build, import   10-build.sh (--with-s3 when LAKE=true), 11-import-images.sh   (skipped by --skip-build)
 #   configure       20-configure.sh, adding MODBUS_SIM=true (and the KafScale address with --local-kafscale);
 #                   these values are written to deploy/k3s/.env like any other configure run
-#   deploy          30-deploy.sh
+#   deploy          30-deploy.sh; when a Deployment is not ready (on a new broker opentsx-stats waits for its topics):
+#                   40-demo.sh kafscale-check, then 30-deploy.sh --restart
 #   kafscale-check  40-demo.sh kafscale-check (bootstrap + advertised addresses from inside the cluster, topics)
 #   windpark-sim    40-demo.sh windpark-sim (one sealed bucket on KafScale; restarts the stats processor)
 #   series-stats    the stats processor wrote tsx.<domain>.series-stats.v2 records (kafscale-check, up to 5 min)
@@ -189,7 +190,11 @@ step_configure() {
   "$K3S_DIR/20-configure.sh" "${a[@]}"
 }
 
-step_deploy() { "$K3S_DIR/30-deploy.sh"; }
+step_deploy() {   # on a new broker opentsx-stats gets ready only once kafscale-check has created its topics
+  "$K3S_DIR/30-deploy.sh" && return 0
+  note "not every Deployment was ready; kafscale-check creates the topics of a new broker, then 30-deploy.sh --restart"
+  demo kafscale-check && "$K3S_DIR/30-deploy.sh" --restart
+}
 
 step_kafscale-check() { demo kafscale-check; }
 
@@ -326,7 +331,7 @@ hints() {   # step log -> markdown bullet list
     build) h+=("\`mvn -q install -DskipTests\` must pass first; a missing image builder or daemon is reported by \`00-prereqs.sh\`") ;;
     deploy) h+=("\`50-status.sh\`, \`kubectl -n $OPENTSX_NS describe pod <pod>\` ([troubleshooting](docs/devops/troubleshooting.md#images-and-pods))") ;;
     kafscale-check|windpark-sim) h+=("[setup plan, step 3](docs/devops/setup-plan.md#step-3-network-path-to-kafscale) and [runbook R1](docs/devops/operations.md#r1-kafscale-unreachable-or-wrong-advertised-address)") ;;
-    series-stats) h+=("processor started before the topics existed: \`kubectl -n $OPENTSX_NS rollout restart deploy/opentsx-stats\` ([runbook R2](docs/devops/operations.md#r2-statistics-processor-stuck-or-crash-looping))") ;;
+    series-stats) h+=("the processor exits with 2 until the topics exist (\`opentsx: tsx.<domain>.episodes.v2: the input topics do not exist or have no partitions; ...\`): \`40-demo.sh kafscale-check\`, then \`kubectl -n $OPENTSX_NS rollout restart deploy/opentsx-stats\` ([runbook R2](docs/devops/operations.md#r2-statistics-processor-stuck-or-crash-looping))") ;;
     retrieval) h+=("\`kubectl -n $OPENTSX_NS logs deploy/opentsx-retrieval\`; lake profile without data: run windpark-sim with LAKE=true first ([troubleshooting](docs/devops/troubleshooting.md#studio-and-retrieval))") ;;
     studio) h+=("[runbook R8](docs/devops/operations.md#r8-studio-blank-or-not-reachable): rebuild + re-import the studio image, \`30-deploy.sh --restart\`") ;;
     dwd|dwd-forward) h+=("[runbook R6](docs/devops/operations.md#r6-dwd-fetch-failing): offline mode needs the fixture in the image (\`10-build.sh\` re-stages); online mode needs HTTPS from the pods to opendata.dwd.de") ;;
@@ -412,7 +417,7 @@ step_command() {   # what a step runs, for the plan
     build) echo "10-build.sh$(is_true "$LAKE" && echo ' --with-s3')" ;;
     import) echo "11-import-images.sh (IMAGE_METHOD=$IMAGE_METHOD)" ;;
     configure) echo "20-configure.sh MODBUS_SIM=true$($LOCAL_KS && echo " KAFSCALE_BOOTSTRAP=$KAFSCALE_BOOTSTRAP KAFSCALE_NETWORK=direct")" ;;
-    deploy) echo "30-deploy.sh" ;;
+    deploy) echo "30-deploy.sh; when a Deployment is not ready: 40-demo.sh kafscale-check, 30-deploy.sh --restart" ;;
     series-stats) echo "40-demo.sh kafscale-check until tsx.$OPENTSX_DOMAIN.series-stats.v2 > 0 records (max ${PROBE_STATS_WAIT:-300} s)" ;;
     retrieval) echo "port-forward svc/opentsx-retrieval ${PROBE_RETRIEVAL_PORT:-18080}:8080; GET /v1/health, /v1/episodes" ;;
     studio) echo "port-forward svc/opentsx-studio ${PROBE_STUDIO_PORT:-18088}:80; GET / = HTTP 200, > 100 KB" ;;

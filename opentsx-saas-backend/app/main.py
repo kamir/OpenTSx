@@ -21,6 +21,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
 from starlette.exceptions import HTTPException
 
 from app.api import auth, dags, flows, systems
@@ -223,6 +224,28 @@ async def health_check():
         "status": "healthy",
         "version": settings.VERSION,
     }
+
+
+# below the timeoutSeconds of the readiness probe in deploy/k3s/components/saas/saas-backend.yaml
+READY_TIMEOUT_SECONDS = 2.0
+
+
+async def select_1() -> None:
+    async with AsyncSessionLocal() as session:
+        await session.execute(text("SELECT 1"))
+
+
+@app.get("/ready")
+async def ready():
+    """Readiness: the database answers SELECT 1 within READY_TIMEOUT_SECONDS, otherwise 503."""
+    try:
+        await asyncio.wait_for(select_1(), READY_TIMEOUT_SECONDS)
+    except Exception as exc:
+        cause = f"no answer within {READY_TIMEOUT_SECONDS:g} s" if isinstance(exc, asyncio.TimeoutError) else causes(exc)
+        log.warning("not ready db=%s:%s/%s cause=%s", settings.POSTGRES_SERVER, settings.POSTGRES_PORT,
+                    settings.POSTGRES_DB, cause)
+        return error_answer(503, "database: no answer to SELECT 1; check that the database runs and accepts connections")
+    return {"status": "ready"}
 
 
 # Flows: stored per user (app/api/flows.py)

@@ -30,8 +30,8 @@ spec:
           ports:
             - name: http
               containerPort: 8080
-          readinessProbe:
-            httpGet: {path: /v1/health, port: http}
+          readinessProbe:   # 503 after three failed refresh periods of the feed
+            httpGet: {path: /v1/ready, port: http}
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:

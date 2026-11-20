@@ -15,6 +15,10 @@ step-by-step runbooks for the common incidents are in [operations](operations.md
 | pod `OOMKilled` | limit too small for the run | raise the limit in `deploy/k3s/base` or `jobs/` (see [sizing plan](sizing-plan.md)); `house --calibrate` needs > 384 MB heap |
 | `CreateContainerConfigError` | a referenced ConfigMap key or Secret is missing (e.g. lake without S3 keys) | re-run `20-configure.sh` and `30-deploy.sh` |
 | `opentsx: no classpath for module …` | image built from an incomplete stage | `10-build.sh` (it re-stages from `mvn install`) |
+| `30-deploy.sh`: `FAIL  deployment.apps/<name>: not ready after 180s; see kubectl -n opentsx describe deployment.apps/<name>` (exit code 1) | the readiness probe of that Deployment does not pass ([which probe checks what](operations.md#read-the-probes)) | `kubectl -n opentsx describe pod -l app.kubernetes.io/name=<name>` shows the probe output under `Events`; fix the cause, then run `30-deploy.sh` again |
+| `Readiness probe failed: HTTP probe failed with statuscode: 503` for `opentsx-retrieval` or `opentsx-event-bridge` | the retrieval feed or the bridge does not reach the broker: `GET /v1/ready` of the retrieval server through a port-forward names the reason; the bridge answers 503 when the broker does not answer a topic lookup within 2 s, and its log has `not ready, the broker cannot be reached cause=<cause>` | [R1](operations.md#r1-kafscale-unreachable-or-wrong-advertised-address) |
+| `opentsx-saas-backend` not ready; its log repeats `not ready db=<host>:<port>/<db> cause=<cause>` | the database does not answer `SELECT 1` within 2 s | `kubectl -n opentsx logs deploy/opentsx-saas-db`; the backend gets ready again by itself |
+| `Liveness probe failed` and a restart of `opentsx-stats` or `opentsx-vectors` | the poll loop did not pass for about 12 minutes: the probe found a progress file older than 10 minutes 3 times in a row, 60 s apart | `kubectl -n opentsx logs deploy/<name> --previous`; [R2](operations.md#r2-statistics-processor-stuck-or-crash-looping) |
 
 ## KafScale
 
@@ -23,7 +27,7 @@ step-by-step runbooks for the common incidents are in [operations](operations.md
 | `kafscale-check`: bootstrap `NOT reachable` | routing/firewall from the pod network, wrong port | from the node: `nc -vz <host> <port>`; open the firewall for the pod CIDR (`10.42.0.0/16`) |
 | bootstrap reachable, **advertised** `localhost:9092` (or another unreachable address) `NOT reachable`; clients time out | the broker advertises an address only valid on its own host | KafScale: set `KAFSCALE_BROKER_HOST` to a reachable address (compose: `KAFSCALE_ADVERTISED_HOST=<LAN IP>`), or `KAFSCALE_NETWORK=hostnetwork` when KafScale runs on the k3s host |
 | `advertised …` list empty | no topic with partitions exists yet | run `kafscale-check` (the Job provisions the topics through `OPENTSX_KAFSCALE_PROVISION=true`, deploy/k3s/jobs/kafscale-check.yaml), then check again |
-| stats runs but `series-stats` stays at 0 records | the processor started before the topics existed and assigned nothing | `kubectl -n opentsx rollout restart deploy/opentsx-stats` (`40-demo.sh windpark-sim` does this) |
+| `opentsx-stats` not ready or in `CrashLoopBackOff` on a new broker; its log ends with `opentsx: tsx.<domain>.episodes.v2: the input topics do not exist or have no partitions; ...` | the topics of the domain do not exist yet | `40-demo.sh kafscale-check` creates them; then `kubectl -n opentsx rollout restart deploy/opentsx-stats` (`40-demo.sh windpark-sim` restarts it too) |
 | the stats pod log repeats `WARN org.apache.kafka.clients.NetworkClient - [Producer clientId=producer-1] Connection to node -1 (/<host>:<port>) could not be established. Node may not be available.` and `Bootstrap broker <host>:<port> (id: -1 rack: null) disconnected` | the bootstrap address is not reachable from the pod | as above |
 | consumer hangs or rejoins | consumer groups on KafScale | OpenTSx tools use manual assignment; do the same in your own code |
 | duplicate episodes after a rerun | expected: no idempotent producer | readers and stores drop duplicates by `episodeId` |
@@ -92,15 +96,14 @@ lines only.
 | probe: `kafscale-local` FAIL, `docker compose … up failed` | docker daemon running and accessible? `docker compose version` (v2 plugin) or `docker-compose` |
 | probe: `could not detect this host's IP` | `60-probe.sh --local-kafscale --kafscale-host <LAN IP>` |
 | probe: every step after `deploy` is SKIP | a critical step failed; fix it (report) or run with `--keep-going` |
-| probe: `series-stats` FAIL with records 0 | processor started before the topics: `kubectl -n opentsx rollout restart deploy/opentsx-stats`, then `60-probe.sh --skip-build --only series-stats`; longer wait: `PROBE_STATS_WAIT=600` |
+| probe: `series-stats` FAIL with records 0 | the processor exits with 2 until the topics exist and waits in `CrashLoopBackOff`: `40-demo.sh kafscale-check`, then `kubectl -n opentsx rollout restart deploy/opentsx-stats` and `60-probe.sh --skip-build --only series-stats`; longer wait: `PROBE_STATS_WAIT=600` |
 | probe: `retrieval`/`studio` port-forward failed | local ports 18080/18088 taken: `PROBE_RETRIEVAL_PORT=…`, `PROBE_STUDIO_PORT=…` |
 | `70-backup.sh` / `71-restore.sh`: `helper pod not ready` | tools image not in containerd, or the PVCs are on different nodes (`kubectl -n opentsx describe pod opentsx-backup-helper`) |
 | `71-restore.sh`: `checksum mismatch` | the backup directory was changed or damaged; use another backup |
 
 ## Scripts
 
-`00-prereqs.sh`, `20-configure.sh`, `40-demo.sh`, `60-probe.sh`, `70-backup.sh` and `90-teardown.sh` exit with 2 on a
-usage error and with 1 when a check or a step failed; the other scripts exit with 1 in both cases
+Every script in `deploy/k3s/` exits with 2 on a usage error and with 1 when a check or a step failed
 ([exit codes](../../deploy/k3s/README.md#read-the-exit-codes)).
 
 | Symptom | Fix |
