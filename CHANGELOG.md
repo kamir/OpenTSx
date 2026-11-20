@@ -95,6 +95,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   ring buffer, an emulated space-ground link driven by computed passes, and phases P0 to P6 up to the D-T13 CPU
   fallback path. Phase P0 prepares the board with the Jetson runbook and board tools of D-T14. No implementation
   yet.
+- `opentsx-wayang`: output proof for the B4.2 board measurement. `BoardOutputProofTest` reads a condition's output
+  topic, requires that every output series equals the first records of the reference output of the same feed, field
+  for field (`BoardOutputs`, `BoardReference`), checks the input digest, and only then writes JUnit XML with the
+  binding properties `opentsx.sourceCommit`, `opentsx.conditionId`, `opentsx.artifactSha256` and `opentsx.inputSha256`.
+  `BoardWorkloadIntegrationTest` now holds both tracks to that reference instead of comparing record counts.
 - `opentsx-wayang`: workload driver `org.opentsx.wayang.board.BoardWorkload` for the B4.2 board measurement. It
   writes the paced deterministic feed, runs the pass-through, clean or statistics chain on Track A (Wayang increments
   through the new `DagToWayang.incrementPlan`) or on Track B (`tsx-runner serve --profile measurement`), and reports
