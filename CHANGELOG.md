@@ -13,6 +13,19 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Retain Maven execution exception details, selected transport and sanitized
+  cache reports before and after every Maven CI job. Check missing-plugin
+  failure diagnostics offline and distinguish fresh HTTP failures from cached
+  failures in the pinned Resolver tests. Historical statusless download
+  failures remain undiagnosed.
+- Record actual Wayang and BOM HTTP response statuses and sanitized metadata
+  in CI before retry handling. Verify capture without requests or sleeps and
+  preserve permanent-error handling and response content.
+- Suppress native cookie-parser logging that can include complete cookie values.
+  Exercise the bundled handler with a malformed-cookie fixture without network
+  requests or sleeps.
+- Scope Maven dependency-cache keys by workload and runtime inputs so a smaller
+  job cannot freeze another job's dependency subset under an immutable key.
 - Execute Rust CLI prefix fixtures through the installed shell without temporary files. Regressions rerun the exact
   fixture with an unusable temporary-directory path and retain runner-prefix and spaced-argument checks.
 - Reuse separate verified caches for locked Python dependencies, the application
@@ -47,6 +60,21 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Require a verified Proxy bundle and private MinIO environment before the k3s probe starts local KafScale.
 
 ### Added
+
+- Bounded mixed W3 acceptance harness with two Java sites and an actual
+  qualified Rust CLI site, runtime-bound aggregate admission, complete
+  partial/window evidence and six canonical-merge arrival orders. Separate
+  exact-binary64 sketch cases retain shared vectors and identify boundary,
+  zero-bucket and collapsed-tail accuracy domains without widening the
+  moments criterion. Board evaluation tooling prepares the fixed 54-condition
+  matrix and validates supplied evidence integrity. Physical ARM64 and ARMv7
+  B4.2 measurements and ARMv7 B1.2 acceptance remain open. Manual and learning
+  metadata keep these execution and hardware scopes separate.
+
+- Check tools-image identity, packaged Windpark startup and numerical replay
+  before publication. Pull published digests on native AMD64 and ARM64 runners
+  and retain receipts and cleanup evidence. Supply a named Hadoop account while
+  retaining runtime UID and GID 10001.
 
 - Add a deterministic local windpark demo with healthy, fault and curtailed
   turbines. Persist real Iceberg episodes through a SQLite catalog and verify

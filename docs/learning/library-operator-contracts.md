@@ -65,7 +65,15 @@ processes have no admin or arbitrary probe-topic rights. The infrastructure
 and statistics lessons trace durable delivery acknowledgement, site outboxes,
 offline forwarding, final revisions and certificate-forced SSH launch. Their
 starters, numerical values and processor defaults stay unchanged. Signed B3
-does not admit the remaining B2 operations or qualify production/mixed fleets.
+does not admit the remaining B2 operations or qualify production/mixed continuous fleets.
+The [bounded mixed W3 guide](../devguide/integration/wayang-mixed-federation.md)
+adds traceability from two Java sites and one actual qualified Rust CLI to
+conformance, runtime-bound inventory admission and full record comparisons.
+The separate exact-bit sketch harness records boundary, zero-bucket and
+collapsed-tail domains. Its execution evidence retains the existing moments
+criterion; the harness alone does not establish a new numerical bound.
+Both physical ARM64 and ARMv7 B4.2 measurements remain open. The board tool
+prepares and validates supplied evidence without running device measurements.
 
 The [local publication contract](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment)
 adds explicit same-DAG resume and changed-DAG replay into a fresh output after old authority is revoked.

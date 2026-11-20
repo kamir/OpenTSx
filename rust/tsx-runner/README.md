@@ -50,7 +50,13 @@ acknowledgement. Retrying an unknown acknowledgement can repeat a deterministic
 key/revision. The [offline regression](../../opentsx-wayang/src/test/java/org/opentsx/wayang/RustOfflineCatchupIntegrationTest.java)
 checks the complete W scenario, signal-cluster outage, restart, catch-up and
 final revisions. Production continuous or mixed-runtime fleet activation
-remains separate. Physical ARMv7 B1.2 remains open.
+remains separate. The [bounded mixed W3 harness](../../docs/devguide/integration/wayang-mixed-federation.md)
+selects the actual B3 executable for `s3` beside two Java sites and records its
+qualified identity, signed statuses and retained completed outcome. The
+`b4_sketch` example separately exposes existing statistics through bounded
+exact-bit JSON for cross-runtime boundary, zero-bucket and collapsed-tail
+checks; it does not add a deployed operator. Both physical ARM64 and ARMv7
+B4.2 measurements and physical ARMv7 B1.2 acceptance remain open.
 
 ## Execute the local catalog profile
 
