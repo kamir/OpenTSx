@@ -1,8 +1,8 @@
 # Specification 20: time-series operators on Apache Wayang (S1 to S7)
 
-> Status: **fleet specification draft 0.1; Catalog 1 frozen**, 2026-11-17.
+> Status: **fleet specification draft 0.1; Catalog 1 frozen**, 2026-11-19.
 > All 16 native Java entries in S1.7 are available. Implemented Rust profiles
-> are qualified separately in S1.9 to S1.13, including the isolated local B2 catalog.
+> are qualified separately in S1.9 to S1.14, including the local B2 catalog and bounded B3 sites.
 > Signed continuous fleet requirements remain separate contracts. Concept and research:
 > [20-WAYANG-TS-OPERATORS.md](20-WAYANG-TS-OPERATORS.md). Tasks and acceptance criteria:
 > [TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.md). Catalog checks use
@@ -426,6 +426,63 @@ profile. Shared Rust vectors and `TrackParityIntegrationTest` provide its
 numerical and actual Java/Rust transport proof. Physical ARMv7 acceptance remains
 open under TASK-020 B1.2.
 
+### S1.14 Execute qualified bounded Rust sites
+
+`tsx-runner` 0.1.0 accepts the owner-approved B3 laboratory profile through
+`opentsx.rust-site-config.v1`. It uses S5.3 outbound TLS 1.3 mTLS and compact
+Ed25519 plans/reports. The runtime MUST admit only a bounded Rust fragment
+containing `decode.avro-soe` and `stats.welford-ddsketch`, alpha 0.01,
+tumbling windows and one site `SeriesStats` output. `GLOBAL`, other
+B2 operations, continuous Rust federation and mixed-runtime qualification are
+outside this profile. The JVM executor MUST refuse Rust assignments.
+
+Local configuration MUST supply separate plan/report role keys, TLS paths,
+site/node identities, permitted jobs, bindings, topic policy, private state,
+all resource limits and a qualification file. The site and signal endpoints
+MUST be distinct. Driver-provided plans MUST NOT supply broker addresses,
+credential paths, policy or checkpoint paths. A configured input MUST also
+pass the narrower local input policy before any broker read. Limits remain
+explicit and subject to the B2 ceilings; no local context can widen the signed
+operator set.
+
+The mandatory owner-local `opentsx.rust-b3-qualification.v1` evidence MUST bind
+the actual executable digest/version, `tsx-catalog/1`, state ABI
+`opentsx.rust.site-state.v1`, site Proxy endpoint, shared vector hashes,
+executed test/protocol/placement evidence and a UTC validity interval.
+Qualification uses actual retained logs, the ten-case/seven-family broker
+protocol report and Java/Rust placement of 10,000 keys over 12 partitions.
+Missing, mismatched, expired or not-yet-active qualification MUST refuse fresh
+activation. This local laboratory pin does not satisfy production
+release-signature enrollment.
+
+Ordinary `agent` and `conform` processes MUST NOT acquire admin or arbitrary
+probe-topic rights. Their vector, broker-protocol and placement check details
+identify prior qualified evidence. Fresh conformance MUST verify the exact raw
+challenge-contract hash, runtime/site/job/generation identity and local policy,
+then observe input/output partition metadata, retained input cuts, input
+fingerprints and the complete sorted unique series inventory. It MUST include
+every admitted input record, including each partition's first and last record.
+Output fingerprints identify the configured encoder, including an empty target.
+The driver MUST check cross-site series disjointness and current job-bound
+conformance before new activation or qualified aggregate admission.
+
+The signed wrapper retains the exact assignment, complete immutable source
+cut, expected assignment membership and declared group/window scopes. Bounded
+execution MUST acknowledge full site-outbox partials before saving completion.
+Signal forwarding MUST validate the completed inventory and retained outbox
+cut and advance its checkpoint only after target acknowledgements. Retrying an
+unknown acknowledgement MAY repeat the deterministic aggregate key/revision.
+The receiving inventory MUST bind the qualified runtime/artifact/state ABI and
+the exact signed membership, scopes, assignment and closed-cut evidence.
+
+S5.3 durable outcomes precede acknowledgements and cursors advance afterward.
+Retained acknowledgement recovery does not require a new activation, fresh
+conformance or another execution. New activation retains all qualification and
+conformance gates. Private Rust checkpoints are not interchangeable with JVM
+state. Physical ARMv7 hardware acceptance remains open under B1.2.
+The [B3 operating guide](../devguide/integration/rust-runner-b3.md) records the
+configuration, entry points and executable evidence.
+
 ## S2. Plan translation
 
 ### S2.1 Input
@@ -636,6 +693,12 @@ counts; the driver compares the exact union of admitted inputs and outputs. Inpu
 on the broker; output fingerprints identify the configured encoder, including an empty target.
 A locally configured qualified digest identifies the laboratory runtime. That pin is not production
 release-signature evidence, and the laboratory acceptance does not claim the production condition above.
+The bounded Rust qualification follows S1.14: prior executed vector, protocol
+and placement evidence is locally pinned, while each job handshake performs
+fresh identity, policy, metadata, retained-cut, fingerprint and complete-series
+checks. It MUST NOT substitute static pass defaults or grant ordinary runtimes
+probe-topic permissions. The signed track-B report retains all ten detailed
+check results and the same job-bound inventory contract.
 
 ## S4. Federation and merge
 
@@ -798,8 +861,9 @@ The general continuous scheduling rules above are separate from this bounded qua
 | `run --plan <file>` | verifies the signed plan in `<file>` and runs it until stopped; used by SSH launch |
 | `conform` | runs the checks of S3.3 and writes the signed report to standard output |
 
-SSH launch: the driver connects with an OpenSSH user certificate whose `force-command` is
-`tsx-runner run --plan -` and sends the signed plan (compact JWS) on standard input. Exit codes: 0 stopped on
+SSH launch: the driver connects with an OpenSSH user certificate whose `force-command` fixes
+the executable, `run --plan -` and the owner-provisioned `--config` path, and sends the signed plan (compact JWS)
+on standard input. The client MUST pin the SSH host key. Exit codes: 0 stopped on
 request, 2 plan refused (message on standard error, S5.5), 3 runtime failure.
 
 The isolated B1 executable subset is `run --plan <file> --config <file>`, with
@@ -830,10 +894,11 @@ the acquiring process's lock.
 This subset publishes track-B status and exact S3.2 input failures. Its
 independent status worker schedules
 15-second heartbeats and serializes publication health with checkpoint commits.
-The public `agent` and signed
-`conform` modes, SSH certificate enrollment, distributed stale-writer fencing
-and production release qualification
-are separate interfaces. An unsigned protocol fixture is not a signed
+The separate S1.14 site configuration admits `agent --config <file>`,
+`conform --config <file> --job <job>` and bounded
+`run --plan <file>|- --config <file>`. SSH certificate enrollment,
+distributed stale-writer fencing and production release qualification remain
+separate owner responsibilities. An unsigned protocol fixture is not a signed
 site-conformance report.
 
 ### S5.3 Plan service API
@@ -880,6 +945,17 @@ the saved outcome, even after conformance expires. This recovery covers an
 unsent acknowledgement and a lost response after the service confirmed it. The
 acknowledgement still requires the original site identity and exact command
 hash. New activation requires valid job-bound conformance.
+
+A later job generation MUST NOT be published until every previous site has a
+durable `stopped` status and an accepted acknowledgement for its previous
+delivery. An active callback still blocks replacement. A stopped status alone
+does not retire that delivery: its HTTP response can be lost while the runtime
+retains the terminal status for retry. Keeping that version current lets the
+runtime finish the exact status retry before acknowledging the delivery.
+After the accepted acknowledgement is durable, its identical retry MUST remain
+idempotent even when the response was lost and a later generation is published.
+The retry retains the original site, sequence and command identity. Stale status
+requests still receive `409`.
 
 The agent SHOULD poll `GET .../plans` every 30 s and MUST back off to at most once per 5 min while the driver is
 unreachable.
@@ -988,7 +1064,7 @@ The earlier local `TsxCheckpoint.load` helper is not an admission boundary for t
    Rollback and freeze protection follow
    [TUF](https://theupdateframework.github.io/specification/latest/).
 
-The bounded JVM and isolated B1 Rust profiles select the owner-approved Ed25519
+The bounded JVM, isolated B1 Rust and bounded B3 Rust profiles select the owner-approved Ed25519
 algorithm with the exact
 protected header
 `{"alg":"EdDSA"}`. It rejects padding, noncanonical base64url, extra headers and unsigned algorithms.

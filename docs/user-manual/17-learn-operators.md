@@ -17,7 +17,7 @@ Read the lesson's source, manual, SPEC and test references before choosing its r
 | Java or Python library | A public numerical entry point. A library implementation alone does not supply a DAG binding or a Wayang mapping. |
 | Processor DAG | An operator accepted by the current series/vector processor, with that runtime's parameters and state rules. |
 | Wayang | An implemented mapping or infrastructure entry point, separately identified by the lesson. A pure Java kernel alone does not establish a mapping. |
-| Rust | Offline contracts, the admitted local B2 catalog and isolated signed pass-through. |
+| Rust | Offline contracts, the local B2 catalog, isolated signed pass-through and qualified signed bounded statistics. |
 
 The [UI contracts](../learning/ui-operator-contracts.md) and
 [library contracts](../learning/library-operator-contracts.md) identify the actual algorithm behavior.
@@ -61,7 +61,11 @@ pass-through profile does not enable the three cleaning UI lessons or the
 remaining catalog operators. Its durable activation intent and progress
 checkpoint belong to the signed runner, rather than the local HTTP worker's
 prepare/activate protocol. Read the
-[signed runner guide](../devguide/integration/rust-runner-b1.md).
+[signed runner guide](../devguide/integration/rust-runner-b1.md). The separate
+[B3 site profile](../devguide/integration/rust-runner-b3.md) admits signed
+bounded decode-to-statistics through its own local configuration and
+qualification. It does not promote the remaining B2 operators into signed
+fleet admission.
 
 The Avro library lesson preserves its Java starter. Its Rust references
 separately trace Episode wire bytes, canonical series identity, xxHash64, time
@@ -70,6 +74,52 @@ helper is a library utility, not another runtime operator. Native x86_64 and
 ARM64 CI and supplementary ARMv7 QEMU execution are distinct evidence. Physical
 ARMv7 vector execution is still required by
 [TASK-020 B1.2](../../EVOLUTION/TASK-020-wayang-ts-operators.md#b1-rust-runner-foundation).
+
+## Trace qualified bounded Rust site operation
+
+Use the [retirement acknowledgement regression](../../opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceRetirementTest.java)
+to distinguish a stopped status from a retired delivery. A later generation
+requires every previous site's accepted delivery acknowledgement as well.
+
+Use the [B3 guide](../devguide/integration/rust-runner-b3.md) with the existing
+source, sink, checkpoint, execution-assignment and statistics lessons. Keep
+their Java starters, numerical expected values and processor defaults intact.
+These operational exercises add admission and delivery checks:
+
+1. Trace `opentsx.rust-site-config.v1` from owner-provisioned role keys, TLS
+   paths, permitted jobs and topic policy to the exact signed bounded wrapper.
+   Explain why a configured input still needs separate policy permission.
+2. Inspect the local qualification evidence. Identify actual test/protocol and
+   Java/Rust placement results, executable/vector hashes, endpoint and validity.
+   Separate those prior executed checks from the fresh challenge, metadata,
+   retained-cut, fingerprint and complete-series checks in `conform`.
+3. Follow a delivery through persisted outcome, acknowledgement and cursor
+   advancement. Retry a lost acknowledgement after conformance expires and
+   distinguish that recovery from a fresh activation.
+4. Run the linked complete-W offline fixture. Keep the signal path unreachable
+   during site execution, then inspect full partial records and closed-cut
+   evidence through forwarding, target-acknowledgement loss, restart and
+   deterministic key/revision deduplication. Require every declared window's
+   appended final revision.
+5. Inspect the real SSH tests: fixed certificate command and configuration,
+   pinned host key, non-root identity, refusal/runtime exit codes and command
+   override rejection. A rejected SSH credential does not establish a runner
+   refusal code.
+
+[`RustSiteAdmissionTest`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/site/RustSiteAdmissionTest.java)
+also rejects mismatched runtime/artifact/ABI, membership and scopes, and keeps
+Rust assignments outside JVM execution. The
+[`conformance` tests](../../rust/tsx-runner/src/conformance.rs) cover exact raw
+JSON hashing and complete bounded scans. The
+[`offline test`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/RustOfflineCatchupIntegrationTest.java)
+and [`daemon test`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java)
+trace the actual runtime. The daemon test starts the real main command without
+manual conformance, checks the acknowledged cursor, stops with SIGTERM and
+replays the retained outcome through signed file/stdin commands.
+The [`SSH helper regressions`](../../tools/test_rust_ssh_launch.py) provide
+operational evidence without changing numerical lessons. Local proof does not
+close production release enrollment, mixed continuous federation or physical
+ARMv7 hardware acceptance.
 
 <a id="use-frozen-catalog-1"></a>
 

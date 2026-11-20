@@ -106,7 +106,7 @@ impl StopToken {
         Ok(SIGNALLED.load(Ordering::SeqCst)
             || *self.inner.0.lock().map_err(|_| "stop state is poisoned")?)
     }
-    fn wait(&self, duration: Duration) -> Result<(), String> {
+    pub(crate) fn wait(&self, duration: Duration) -> Result<(), String> {
         let state = self.inner.0.lock().map_err(|_| "stop state is poisoned")?;
         if *state || SIGNALLED.load(Ordering::SeqCst) {
             return Ok(());

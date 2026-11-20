@@ -63,10 +63,25 @@ public final class TsxPlanService implements AutoCloseable {
     }
 
     public synchronized void registerQualifiedRuntime(String site, String node, String version, String digest, String stateAbi) {
+        registerQualifiedRuntime(site, node, version, digest, stateAbi, "java");
+    }
+
+    public synchronized void registerQualifiedRuntime(String site, String node, String version, String digest, String stateAbi, String runtime) {
         knownSite(site);
-        var pin = new ConformanceHandshake.QualifiedRuntime(site, node, version, digest, stateAbi);
+        var pin = new ConformanceHandshake.QualifiedRuntime(site, node, version, digest, stateAbi, runtime);
         var previous = qualified.putIfAbsent(site, pin);
         if (previous != null && !previous.equals(pin)) throw new IllegalArgumentException("a runtime pin cannot change while the service is running");
+    }
+
+    public synchronized void admitAggregateInventory(String site, String job, org.opentsx.wayang.federation.AggregateInventory inventory) {
+        state.check();
+        RunnerPlan plan = latest(site, job);
+        admitted(site, plan);
+        inventory.requireContract(plan.job(), plan.planVersion(), plan.document().path("specHash").asText(),
+                plan.document().path("federation").path("expectedAssignments"), plan.document().path("federation").path("scopes"));
+        var pin = runtime(site);
+        if (pin.runtime().equals("rust")) inventory.admitRustBounded(plan.exactAssignmentText(), pin);
+        else inventory.admit(plan.exactAssignmentText());
     }
 
     public synchronized String publish(String compact) {
@@ -91,6 +106,7 @@ public final class TsxPlanService implements AutoCloseable {
         ObjectNode site = state.value.with("sites").with(plan.site());
         ObjectNode deliveries = site.with("deliveries");
         RunnerPlan previousPlan = null;
+        JsonNode previousDelivery = null;
         for (JsonNode item : deliveries) {
             if (item.path("job").asText().equals(plan.job()) && item.path("planVersion").asInt() == plan.planVersion()) {
                 if (!item.path("commandHash").asText().equals(plan.commandHash())) throw new HttpFailure(409, "published command identity conflicts");
@@ -98,14 +114,16 @@ public final class TsxPlanService implements AutoCloseable {
             }
             if (item.path("job").asText().equals(plan.job()) && (previousPlan == null || item.path("planVersion").asInt() > previousPlan.planVersion())) {
                 previousPlan = RunnerPlan.verify(item.path("plan").asText(), driverKey);
+                previousDelivery = item;
             }
         }
         if (previousPlan != null) {
             JsonNode stopped = state.value.path("statuses").path(plan.site()).path(plan.job());
             if (plan.planVersion() < previousPlan.planVersion() || inFlight.containsKey(callbackKey(plan))
                     || !stopped.path("state").asText().equals("stopped")
-                    || stopped.path("planVersion").asInt() != previousPlan.planVersion()) {
-                throw new HttpFailure(409, "plan.busy: the previous assignment has not stopped");
+                    || stopped.path("planVersion").asInt() != previousPlan.planVersion()
+                    || !previousDelivery.path("ack").path("result").asText().equals("accepted")) {
+                throw new HttpFailure(409, "plan.busy: the previous assignment has not retired");
             }
         }
         for (var sites = state.value.path("sites").fields(); sites.hasNext();) {
@@ -117,8 +135,9 @@ public final class TsxPlanService implements AutoCloseable {
             if (previous == null || previous.path("planVersion").asInt() == plan.planVersion()) continue;
             JsonNode stopped = state.value.path("statuses").path(otherSite.getKey()).path(plan.job());
             if (previous.path("planVersion").asInt() > plan.planVersion() || inFlight.containsKey(otherSite.getKey() + "|" + plan.job())
-                    || !stopped.path("state").asText().equals("stopped") || !stopped.path("planVersion").equals(previous.path("planVersion"))) {
-                throw new HttpFailure(409, "plan.busy: the previous job generation has not stopped");
+                    || !stopped.path("state").asText().equals("stopped") || !stopped.path("planVersion").equals(previous.path("planVersion"))
+                    || !previous.path("ack").path("result").asText().equals("accepted")) {
+                throw new HttpFailure(409, "plan.busy: the previous job generation has not retired");
             }
         }
         long previous = SiteJson.decimal(site.path("sequence").asText("0"), false);
@@ -209,11 +228,14 @@ public final class TsxPlanService implements AutoCloseable {
         synchronized (this) {
             state.check();
             plan = latest(site, job);
-            admitted(site, plan);
             currentVersion(copy, plan);
             try { SiteStatus.validate(copy, plan, runtime(site)); }
             catch (IllegalArgumentException error) { throw new HttpFailure(400, error.getMessage()); }
             JsonNode previous = state.value.path("statuses").path(site).path(job);
+            if (previous.path("planVersion").asInt() == plan.planVersion()
+                    && Set.of("stopped", "failed").contains(previous.path("state").asText())
+                    && java.util.Arrays.equals(SiteJson.bytes(previous), SiteJson.bytes(copy))) return;
+            admitted(site, plan);
             if (previous.path("planVersion").asInt() == plan.planVersion()
                     && Set.of("stopped", "failed").contains(previous.path("state").asText())
                     && !copy.path("state").equals(previous.path("state"))) throw new HttpFailure(409, "a terminal assignment cannot change state");
@@ -388,10 +410,10 @@ public final class TsxPlanService implements AutoCloseable {
                 if (response == null) status = 204;
             } catch (HttpFailure error) {
                 status = error.status();
-                response = SiteJson.JSON.createObjectNode().put("error", "request-refused").put("message", error.getMessage());
+                response = SiteJson.JSON.createObjectNode().put("error", status == 400 ? "bad-request" : "request-refused").put("message", error.getMessage());
             } catch (PlanRefusal error) {
                 status = 400;
-                response = SiteJson.JSON.createObjectNode().put("error", error.code()).put("message", error.getMessage());
+                response = SiteJson.JSON.createObjectNode().put("error", "bad-request").put("message", error.getMessage());
             } catch (CertificateEncodingException | javax.net.ssl.SSLPeerUnverifiedException error) {
                 status = 401;
                 response = SiteJson.JSON.createObjectNode().put("error", "unknown-client");

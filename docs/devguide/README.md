@@ -14,6 +14,8 @@ The developer guide holds notes for contributors. User-facing documentation is i
   cumulative ownership and positions, stateful service restart and a durable Stop operation.
 * [Replay a bounded topic with Rust](integration/rust-runner-local.md): trusted local configuration, three cleaning
   operations, retained state and a standalone three-worker Compose check against Java.
+* [Operate signed bounded Rust statistics sites](integration/rust-runner-b3.md): owner-local qualification,
+  TLS 1.3 plan pulls, signed conformance, acknowledged aggregate catch-up and certificate-forced SSH launch.
 * [Processing-flow descriptor schema](schemas/README.md) and its [validation plan](validation/README.md). The
   descriptor is used by `opentsx-flink-core` (`pfd.DynamicTopologyJob`).
 * [Maintain operator lessons](../user-manual/17-learn-operators.md): execute the UI/library workloads and check

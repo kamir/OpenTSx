@@ -1,8 +1,8 @@
 # Execute whole-topic assignments and increments
 
-Use `tsx-runner` 0.1.0 to execute trusted-local Kafka assignments and isolated
-signed continuous pass-through with explicit resource caps and acknowledged
-checkpoints.
+Use `tsx-runner` 0.1.0 to execute trusted-local Kafka assignments, isolated
+signed continuous pass-through and qualified signed bounded statistics with
+explicit resource caps and acknowledged checkpoints.
 
 You need the pinned Rust 1.99.1 toolchain and the native C/C++ build tools used by `rdkafka` and zstd.
 Broker execution also needs existing input/output topics and a trusted local request.
@@ -21,8 +21,36 @@ cargo +1.99.1 run --locked --manifest-path rust/tsx-runner/Cargo.toml -- --help
 The replay command is `tsx-runner replay --request <file> --checkpoint <file>`.
 `<file>` identifies a trusted request or its private completed-checkpoint path.
 The executable verifies its own artifact digest before reading the broker.
-The separate signed `run` profile admits continuous pass-through only. It does
-not activate the trusted-local cleaning chain or supply a fleet service.
+The B1 configuration selects signed continuous pass-through. The separate B3
+site configuration selects signed bounded statistics, outbound plan pulls and
+signed conformance. Neither signed profile admits the remaining B2 catalog.
+
+## Operate a qualified bounded statistics site
+
+The [B3 operating guide](../../docs/devguide/integration/rust-runner-b3.md)
+defines `agent --config <file>`, `conform --config <file> --job <job>` and
+`run --plan <file>|- --config <file>` with `opentsx.rust-site-config.v1`.
+Its signed fragment admits only `decode.avro-soe` followed by
+`stats.welford-ddsketch`, alpha 0.01 and tumbling windows. A Java
+executor cannot execute a Rust assignment.
+Before publishing a later generation, the driver requires every previous
+site's durable stopped status and accepted delivery acknowledgement.
+
+Local configuration supplies separate plan/report role keys, TLS paths,
+permitted jobs, site/signal bindings, topic policy, a private state directory,
+all resource limits and mandatory owner-local qualification evidence. The
+runtime uses TLS 1.3 mTLS with explicit roots and hostname checks, without
+proxy fallback or redirects. It has no broker-admin or probe-topic rights.
+Prior executed vectors, broker protocol and producer placement are pinned
+separately from fresh job-cut, fingerprint, partition and series checks.
+
+Bounded execution writes complete aggregate records to the site outbox.
+The forwarder validates the completed inventory and advances only after target
+acknowledgement. Retrying an unknown acknowledgement can repeat a deterministic
+key/revision. The [offline regression](../../opentsx-wayang/src/test/java/org/opentsx/wayang/RustOfflineCatchupIntegrationTest.java)
+checks the complete W scenario, signal-cluster outage, restart, catch-up and
+final revisions. Production continuous or mixed-runtime fleet activation
+remains separate. Physical ARMv7 B1.2 remains open.
 
 ## Execute the local catalog profile
 
@@ -55,9 +83,9 @@ use Apache Kafka or KafScale Proxy.
 Each finite cut has explicit record, byte, sample, series and state ceilings.
 All output acknowledgements precede the progress checkpoint. Durable activation
 intent binds the exact signed grant and local configuration; it is separate from
-the trusted-local replay checkpoint and HTTP worker state. Public `agent` and
-`conform` modes, automatic takeover and signed production fleet deployment are
-not implemented.
+the trusted-local replay checkpoint and HTTP worker state. The B3 site profile
+has its own bounded `agent` and `conform` interfaces. Automatic takeover and
+signed production fleet deployment remain outside both isolated profiles.
 
 The CI definition runs shared-vector and runner tests on native x86_64 and ARM64
 Linux, builds the three B1 musl targets, and executes supplementary ARMv7 tests

@@ -223,6 +223,18 @@ impl RunConfig {
     }
 }
 
+pub fn configuration_schema(path: &Path) -> Result<Option<String>, Refusal> {
+    let bytes = read_file(path, CONFIG_BYTES, "run configuration")?;
+    let text = std::str::from_utf8(&bytes)
+        .map_err(|_| Refusal::invalid("run configuration is not UTF-8"))?;
+    let value = tsx_contracts::parse_json(text, CONFIG_BYTES)
+        .map_err(|_| Refusal::invalid("run configuration JSON is invalid"))?;
+    Ok(value
+        .get("schema")
+        .and_then(Value::as_str)
+        .map(str::to_string))
+}
+
 pub struct SignedPlan {
     pub document: Value,
     pub assignment: Value,
@@ -592,7 +604,7 @@ impl SignedPlan {
     }
 }
 
-fn verify_jws(compact: &str, key: &VerifyingKey) -> Result<Vec<u8>, Refusal> {
+pub(crate) fn verify_jws(compact: &str, key: &VerifyingKey) -> Result<Vec<u8>, Refusal> {
     if compact.len() > MAX_COMPACT_BYTES {
         return Err(Refusal::signature());
     }

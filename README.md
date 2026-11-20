@@ -116,6 +116,14 @@ explicit local context. It includes typed statistics, vector and DQ output,
 restored operator state and Java/Rust regression proof. Its admission is
 separate from signed B1 and the Java UI rollout profile.
 
+The [signed bounded Rust site profile](docs/devguide/integration/rust-runner-b3.md)
+adds certificate-authenticated plan pulls, signed conformance and bounded
+decode-to-statistics execution. Owner-local qualification pins actual test,
+protocol and placement evidence. Fresh job checks retain whole-topic cuts and
+series inventories; acknowledged site aggregates survive signal-cluster
+outages and forward with deterministic deduplication identities. This profile
+does not admit the remaining B2 operators or close physical ARMv7 acceptance.
+
 For the local three-worker Rust profile, choose **Legacy** in the Workbench
 header, then open **Smart Topic**. The [bounded rollout
 guide](docs/devguide/integration/wayang-rust-compose.md) connects the original

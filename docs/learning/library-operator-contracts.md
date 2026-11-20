@@ -55,6 +55,18 @@ Ed25519 driver key and local bindings/policy. It does not expand the cleaning
 lessons or the available Rust operators. Physical ARMv7 qualification remains
 open.
 
+The [qualified bounded Rust site profile](../devguide/integration/rust-runner-b3.md)
+adds signed decode-to-statistics admission with its separate local
+configuration and explicit qualified runtime pin. It binds exact assignment
+text, artifact, catalog/state ABI, membership, scopes and complete input cuts.
+Owner-local actual test/protocol/placement evidence precedes fresh job
+metadata, retained-cut, fingerprint and complete-series checks. Ordinary site
+processes have no admin or arbitrary probe-topic rights. The infrastructure
+and statistics lessons trace durable delivery acknowledgement, site outboxes,
+offline forwarding, final revisions and certificate-forced SSH launch. Their
+starters, numerical values and processor defaults stay unchanged. Signed B3
+does not admit the remaining B2 operations or qualify production/mixed fleets.
+
 The [local publication contract](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment)
 adds explicit same-DAG resume and changed-DAG replay into a fresh output after old authority is revoked.
 Terminal recovery saves verified results and publication epochs before retiring authority. The checkpoint lesson

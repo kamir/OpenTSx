@@ -127,6 +127,9 @@ The public `agent` and signed
 `conform` interfaces, fleet enrollment, ownership takeover, remote deployment
 and production release gates remain outside this isolated profile. The protocol
 acceptance example is a test fixture, not the signed S3 conformance handshake.
+The separate [B3 site configuration](rust-runner-b3.md) supplies signed bounded
+statistics, outbound plan polling and signed job-bound conformance. Its local
+qualification and runtime/track pins do not widen this B1 pass-through grant.
 
 CI defines native functional tests on hosted x86_64 and ARM64. The ARMv7 job
 runs under QEMU and is explicitly supplemental. It does not satisfy the physical

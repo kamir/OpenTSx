@@ -9,7 +9,7 @@ description = "Bounded whole-topic execution of OpenTSx cleaning fragments"
 [dependencies]
 tsx-contracts = { path = "../tsx-contracts", version = "=0.1.0" }
 serde = { version = "=1.0.229", features = ["derive"] }
-serde_json = { version = "=1.0.154", features = ["float_roundtrip"] }
+serde_json = { version = "=1.0.154", features = ["float_roundtrip", "raw_value"] }
 xxhash-rust = { version = "=0.8.19", features = ["xxh64"] }
 rdkafka = { version = "=0.39.0", default-features = false, features = ["zstd"] }
 tiny_http = { version = "=0.12.0", default-features = false }
@@ -17,4 +17,5 @@ base64 = "=0.22.1"
 ed25519-dalek = { version = "=2.2.0", features = ["pkcs8", "pem"] }
 libc = "=0.2.191"
 time = { version = "=0.3.55", features = ["parsing", "formatting"] }
-ureq = { version = "=3.2.0", default-features = false }
+ureq = { version = "=3.2.0", default-features = false, features = ["rustls-no-provider"] }
+rustls = { version = "=0.23.46", default-features = false, features = ["ring", "std"] }

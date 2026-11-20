@@ -48,8 +48,8 @@ public final class RunnerPlan {
         try { ExecutionAssignments.validate(text); }
         catch (IllegalArgumentException error) { throw SiteJson.invalid(error.getMessage()); }
         JsonNode assignment = SiteJson.parse(text.getBytes(StandardCharsets.UTF_8), 65_536);
-        if (!assignment.path("runtime").asText().equals("java") || !assignment.path("mode").asText().equals("bounded")) {
-            throw SiteJson.invalid("the JVM site profile requires a bounded Java assignment");
+        if (!Set.of("java", "rust").contains(assignment.path("runtime").asText()) || !assignment.path("mode").asText().equals("bounded")) {
+            throw SiteJson.invalid("the site profile requires a bounded Java or Rust assignment");
         }
         if (!assignment.path("deployment").equals(value.get("job")) || !assignment.path("site").equals(value.get("site"))
                 || !assignment.path("catalog").equals(value.get("catalog")) || !assignment.path("specHash").equals(value.get("specHash"))
@@ -135,7 +135,7 @@ public final class RunnerPlan {
         try {
             AggregateInventory inventory = new AggregateInventory(value.path("job").asText(), version.intValue(),
                     value.path("specHash").asText(), expected, federation.path("scopes"));
-            inventory.admit(text);
+            if (assignment.path("runtime").asText().equals("java")) inventory.admit(text);
         } catch (IllegalArgumentException error) { throw SiteJson.invalid(error.getMessage()); }
         return new RunnerPlan(value, assignment, hash);
     }

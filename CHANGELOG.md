@@ -71,6 +71,21 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Local frontend type, lint and related-test checks through `check:local`.
   Empty selections and failing stages return an error without a fallback run.
 
+- Signed bounded Rust statistics sites with TLS 1.3 mutual authentication,
+  job-bound conformance and explicit local policy. Owner-local qualification
+  binds actual executable, vector, broker-protocol and producer-placement
+  evidence. Durable delivery outcomes and acknowledged aggregate outboxes
+  support offline catch-up with deterministic key/revision deduplication.
+  Later job generations wait for every previous site's durable stopped status
+  and accepted delivery acknowledgement, preserving recovery after lost responses.
+  Certificate-forced SSH launch fixes the executable and local configuration.
+  Acceptance failures retain the actual unexpected server exit status.
+  OpenSSH authentication-attempt exit 5 is accepted only for verified certificate denials.
+  The profile admits decode-to-statistics only; broader B2 operators, mixed
+  continuous fleets, production release enrollment and physical ARMv7
+  acceptance retain separate gates. Documentation, operational and learning references
+  describe these boundaries.
+
 - Isolated local Rust B2 catalog execution with typed SeriesStats, vector and DQ
   output, model and feature chains, segmentation, SAX and bounded XCorr.
   Explicit local context admits the extended resource ceilings; legacy local

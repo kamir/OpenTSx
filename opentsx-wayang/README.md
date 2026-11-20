@@ -92,7 +92,20 @@ the remaining Track B operators, bounded `pair.xcorr` and typed output through
 explicit local context. `TrackParityIntegrationTest` runs the complete W scenario
 through actual Java Wayang and Rust worker increments, including state restoration
 and completed retries. Signed B1 remains pass-through-only; physical ARMv7
-acceptance remains open. The separate
+acceptance remains open.
+The [B3 site profile](../docs/devguide/integration/rust-runner-b3.md) uses the
+same Java plan service with explicitly qualified bounded Rust statistics.
+`QualifiedRuntime` binds runtime, artifact, version and state ABI; job-bound
+conformance selects track B. `admitAggregateInventory` requires current
+conformance and the exact signed membership/scopes before admitting Rust
+partials. The JVM site executor refuses Rust assignments.
+The service publishes a later job generation only after every previous site
+has a durable stopped status and an accepted delivery acknowledgement.
+The Rust process retains local authority, TLS paths, permitted jobs and
+owner-local qualification. It executes decode-to-statistics only, retains the
+site outbox during signal outages and forwards complete SOE records and
+closed-cut evidence after connectivity returns. B2 catalog availability does
+not expand this signed profile. The separate
 [bounded UI rollout](../docs/devguide/integration/wayang-rust-compose.md) uses `RustRollout`, `RustPlugin`,
 `RustPlatform` and `RustExecutor` to map one connected source/union/clean/sink stage to one to three HTTP workers.
 The backend owns the frozen plan and clock in PostgreSQL; the Java driver has no authoritative deployment journal.

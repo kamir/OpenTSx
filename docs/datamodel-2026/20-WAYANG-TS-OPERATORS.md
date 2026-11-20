@@ -8,7 +8,9 @@
 > profile retains three cleaning operations. The bounded and continuous UI targets use a custom
 > Wayang Rust stage and HTTP workers.
 > A separate isolated signed `run` profile admits continuous Episode
-> pass-through; production fleet activation and
+> pass-through. The B3 site configuration adds signed bounded statistics,
+> outbound mTLS plan pulls, qualified conformance and aggregate catch-up;
+> production fleet activation and
 > physical ARMv7 qualification remain separate. Checked against Apache
 > Wayang release 1.1.1 (tag `wayang-1.1.1`, commit `61deee43`, 2026-02-09) and `main` at `713faa7d` (2026-11-12).
 > Crate and tool versions are named where they are used. Related: [05](05-SMART-TOPICS.md) (federated global model),
@@ -28,6 +30,11 @@ bounded `pair.xcorr`, with typed output and retained operator state.
 The [signed Rust profile](../devguide/integration/rust-runner-b1.md) uses its
 own local authority and continuous pass-through loop. It does not expand the
 local cleaning profile or implement a public fleet service.
+The [B3 site profile](../devguide/integration/rust-runner-b3.md) separately
+admits bounded decode-to-statistics fragments with owner-local qualification,
+fresh job checks and signed control. Its site outbox retains full partials
+while the signal cluster is unreachable. It does not extend signed admission
+to the remaining local B2 operators.
 
 ## 1. Goal
 
@@ -72,6 +79,7 @@ legacy Java UI admission or signed B1 pass-through profile.
 |---|---|---|
 | Bounded Rust orchestration | Explicit workbench target, PostgreSQL journal/coordinator, `RustRollout` compiler, custom `RustPlatform`/`RustExecutor`, private HTTP preparation and acknowledged completion | [local guide](../devguide/integration/wayang-rust-compose.md), `opentsx-saas-backend/app/services/wayang_service.py`, `opentsx-wayang/src/main/java/org/opentsx/wayang/rust/`, `rust/tsx-runner/src/worker.rs` |
 | Isolated signed Rust run | Continuous whole-topic pass-through, compact Ed25519 JWS, local bindings/policy, durable activation intent and acknowledged progress checkpoints; full B1 qualification remains open | [signed runner guide](../devguide/integration/rust-runner-b1.md), `rust/tsx-runner/src/run_plan.rs`, [TASK-020 B1](../../EVOLUTION/TASK-020-wayang-ts-operators.md#b1-rust-runner-foundation) |
+| Qualified bounded Rust sites | Signed decode-to-statistics, TLS 1.3 mTLS pulls/conformance, owner-local executed qualification evidence, exact membership/scopes and acknowledged offline aggregate forwarding | [B3 guide](../devguide/integration/rust-runner-b3.md), `rust/tsx-runner/src/site_plan.rs`, `rust/tsx-runner/src/conformance.rs`, `rust/tsx-runner/src/forwarder.rs` |
 | Wayang in OpenTSx | `TsxJavaPlugin` registers the Java platform and KafScale transport; `TsxIncrement` runs checkpointed increments; `TsxPairXcorr` and `TsxPairEs` are pure Java pair kernels. Shared vectors cover statistics, segmentation, SAX, and data-quality results. | `opentsx-wayang/pom.xml`, `TsxJavaPlugin.java`, `TsxIncrement.java`, `TsxPairXcorr.java`, `TsxPairXcorrVectorsTest.java`, `TsxPairEs.java`, `TsxPairEsVectorsTest.java`, `tools/java_operator_vectors.py` |
 | Build | Java release 17 (`pom.xml:39`), CI on Java 17 and 21 ([CONTRIBUTING.md](../../CONTRIBUTING.md)); `kafka.version` 3.9.2, `avro.version` 1.12.1, `hadoop.version` 3.5.0 (`pom.xml:50-55`) | `pom.xml` |
 | Streaming runtime that runs today | Java processor in `opentsx-retrieval`: manual assignment, explicit offsets, checkpoint per runner written after the broker acknowledged the output, control topic `tsx.<domain>.dags.v1`, status topic `tsx.<domain>.dag-status.v1` | [kafka-native-streaming.md](../devops/kafka-native-streaming.md); `VectorProcessor.java:46-59`; `TopicLayout.java:119-125` |
@@ -360,8 +368,15 @@ The [isolated signed profile](../devguide/integration/rust-runner-b1.md)
 verifies a continuous pass-through plan and its original whole-topic assignment,
 artifact, site, node, catalog and local policy before broker access. It uses one
 locally permitted binding, one complete Episode input and one Episode sink. It
-has no cleaning graph, federation egress or public `agent` or `conform` mode.
-The broader fleet operator table below remains a target.
+has no cleaning graph or federation egress. Its B1 configuration does not select
+the separate B3 `agent` or `conform` interface.
+The [B3 bounded site profile](../devguide/integration/rust-runner-b3.md)
+uses a separate local configuration, role keys and qualified runtime pin. It
+executes only decode-to-statistics, reads immutable complete-topic cuts and
+publishes full site-outbox partials with closed-cut evidence. An acknowledged
+forwarder copies those records after signal connectivity returns. Its ordinary
+runtime has no admin or probe-topic rights. The broader fleet operator table
+below remains a target.
 
 CI defines native x86_64 and ARM64 execution, all three B1 static musl builds,
 ELF/digest/version checks and supplementary ARMv7 QEMU execution. Its reports
@@ -486,9 +501,13 @@ offset map; a start by time goes through the episode index (`EpisodeIndex.find`)
 
 A site, JVM or Rust, is admitted to a federated job only when all checks pass. Track A runs them in its site agent,
 Track B in `tsx-runner conform`. The report is signed with the site key.
-The isolated B1 Rust profile does not implement this `conform` command. Its
-disposable-broker protocol harness checks seven families in ten codec-expanded
-executions; that unsigned test report is not signed site admission.
+The isolated B1 Rust configuration retains its pass-through contract. The B3
+site configuration implements `conform` using locally pinned actual vector,
+broker-protocol and Java/Rust placement evidence, followed by fresh job
+identity, policy, metadata, retained-cut, fingerprint and complete-series checks.
+Its report distinguishes prior executed qualification from current broker
+observations. An unsigned protocol report alone is not signed site admission,
+and a laboratory runtime pin is not production release enrollment.
 
 | Check | Pass condition |
 |---|---|

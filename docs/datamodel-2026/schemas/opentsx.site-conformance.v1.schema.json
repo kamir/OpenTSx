@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://opentsx.org/schemas/opentsx.site-conformance.v1.schema.json",
   "title": "opentsx.site-conformance.v1",
-  "description": "Signed job-bound JVM site conformance report. Exactly one detailed result is required for each check. Semantic admission compares qualified runtime pins, the exact challenge, freshness, topic inventories and cross-site series identities.",
+  "description": "Signed job-bound Java or bounded Rust site conformance report. Exactly one detailed result is required for each check. Semantic admission compares the explicit runtime and track pins, the exact challenge, freshness, topic inventories and cross-site series identities.",
   "type": "object",
   "required": [
     "site",
@@ -69,7 +69,7 @@
       "pattern": "Z$"
     },
     "track": {
-      "const": "A"
+      "enum": ["A", "B"]
     },
     "artifact": {
       "type": "object",

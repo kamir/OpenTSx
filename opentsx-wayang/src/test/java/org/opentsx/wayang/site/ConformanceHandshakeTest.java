@@ -193,6 +193,8 @@ class ConformanceHandshakeTest {
             delivery.putArray("records").addObject().putObject("headers").put("tsx-site", "s1").put("tsx-job", "wind").put("tsx-plan-version", "1");
             service.aggregates("s1", "wind", delivery);
             assertEquals(2, callbacks.get());
+            service.ack("s1", "1", SiteJson.JSON.createObjectNode().put("job", "wind").put("planVersion", 1)
+                    .put("commandHash", service.challenge("s1", "wind").path("contract").path("commandHash").asText()).put("result", "accepted"));
             assertEquals("2", service.publish(newer));
         }
     }
@@ -237,10 +239,14 @@ class ConformanceHandshakeTest {
             service.conformance("s1", SignedJws.sign(SiteJson.bytes(SiteTestData.report(service.challenge("s1", "wind"), "0123456789abcdef")), site.getPrivate()));
             service.conformance("s2", SignedJws.sign(SiteJson.bytes(SiteTestData.report(service.challenge("s2", "wind"), "fedcba9876543210")), site.getPrivate()));
             service.status("s1", "wind", status("stopped"));
+            service.ack("s1", "1", SiteJson.JSON.createObjectNode().put("job", "wind").put("planVersion", 1)
+                    .put("commandHash", service.challenge("s1", "wind").path("contract").path("commandHash").asText()).put("result", "accepted"));
             String next = SignedJws.sign(SiteJson.bytes(nextFirst), driver.getPrivate());
             assertEquals(409, assertThrows(TsxPlanService.HttpFailure.class, () -> service.publish(next)).status());
             ObjectNode secondStopped = status("stopped").put("site", "s2");
             service.status("s2", "wind", secondStopped);
+            service.ack("s2", "1", SiteJson.JSON.createObjectNode().put("job", "wind").put("planVersion", 1)
+                    .put("commandHash", service.challenge("s2", "wind").path("contract").path("commandHash").asText()).put("result", "accepted"));
             assertEquals("2", service.publish(next));
         }
     }
