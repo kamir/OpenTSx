@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Checks relative links in the maintained Markdown documentation (not in archive/).
+"""Checks relative links in the maintained Markdown documentation.
 
 Usage: python3 tools/check_links.py [root]   - exits 1 if a link target does not exist.
 External links (http, https, mailto) are not fetched; anchors are not checked.

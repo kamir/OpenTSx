@@ -261,7 +261,7 @@ and reproducible experiments.
 
 ## Contribute
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md), the
+Read [GOVERNANCE.md](GOVERNANCE.md) (issues welcome, pull requests after agreement), [CONTRIBUTING.md](CONTRIBUTING.md), the
 [Code of Conduct](CODE_OF_CONDUCT.md), the [security policy](SECURITY.md) and the
 [changelog](CHANGELOG.md). Changes to operators include their applicable
 contracts, tests, documentation and learning material.

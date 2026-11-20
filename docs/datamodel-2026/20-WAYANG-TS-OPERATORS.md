@@ -13,7 +13,7 @@
 > production fleet activation remains separate; D-T14 requires no ARMv7
 > hardware. Checked against Apache
 > Wayang release 1.1.1 (tag `wayang-1.1.1`, commit `61deee43`, 2026-02-09) and `main` at `713faa7d` (2026-11-12).
-> Crate and tool versions are named where they are used. Related: [05](05-SMART-TOPICS.md) (federated global model),
+> Crate and tool versions are named where they are used. Related: 05 (federated global model),
 > [Vector and DAG rules](VECTOR-AND-DAG-SPEC.md) (`opentsx.dag.v1`, `align.vector`, vector processor),
 > [Kafka native streaming](../devops/kafka-native-streaming.md) (the Java processor that runs today).
 > Normative rules: [20-WAYANG-TS-OPERATORS-SPEC.md](20-WAYANG-TS-OPERATORS-SPEC.md) (S1 to S7). Tasks and acceptance
@@ -60,7 +60,7 @@ Two implementation tracks share one operator catalog, one topic and schema contr
 
 Kafka is the source and sink of this continuous edge profile. The unified plan defines bounded Iceberg work
 as a separate profile with immutable inputs and publication guarantees. Out of scope: training (it stays a batch job,
-[11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), D28), joins over raw data of two sites, and history search (pattern
+[11](VECTOR-AND-DAG-SPEC.md), D28), joins over raw data of two sites, and history search (pattern
 search, twin, causal analysis).
 
 ## 2. Current state
@@ -95,9 +95,9 @@ legacy Java UI admission or signed B1 pass-through profile.
 | Build | Java release 17 (`pom.xml:39`), CI on Java 17 and 21 ([CONTRIBUTING.md](../../CONTRIBUTING.md)); `kafka.version` 3.9.2, `avro.version` 1.12.1, `hadoop.version` 3.5.0 (`pom.xml:50-55`) | `pom.xml` |
 | Streaming runtime that runs today | Java processor in `opentsx-retrieval`: manual assignment, explicit offsets, checkpoint per runner written after the broker acknowledged the output, control topic `tsx.<domain>.dags.v1`, status topic `tsx.<domain>.dag-status.v1` | [kafka-native-streaming.md](../devops/kafka-native-streaming.md); `VectorProcessor.java:46-59`; `TopicLayout.java:119-125` |
 | DAG validation | unique node ids, existing inputs, no cycles, supported sinks only, before the control record is written | `opentsx-retrieval/src/main/java/org/opentsx/retrieval/vector/DagPlan.java:17` |
-| Go processor proposal | `opentsx.dag.v1`, Go core on the KafScale processor template, shared vectors, at-least-once plus deterministic ids (D25 to D29) | [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), sections 5, 6, 7, 10 |
+| Go processor proposal | `opentsx.dag.v1`, Go core on the KafScale processor template, shared vectors, at-least-once plus deterministic ids (D25 to D29) | [11](VECTOR-AND-DAG-SPEC.md), sections 5, 6, 7, 10 |
 | Processor description | `opentsx.processor.v1`: operator id, kind, ports, params, semantics, `runtimes` with `workbench`, `java`, `python`, `go`, `processor`; instances in `systems/processors/`, validated by `SystemDocTest` | `docs/datamodel-2026/schemas/opentsx.processor.v1.schema.json`; `opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java:49-57` |
-| DAG export | the workbench writes `opentsx.dag.v1`, or `opentsx.dag.v2` (with `schema: opentsx.dag.v2`) when the flow has a series sink; `source.kind: kafscale-broker`, `checkpoint: { backend: file }` | `opentsx-saas-frontend/src/workbench/flow.ts:684-745`; [SYSTEM-DOCUMENT-SPEC](SYSTEM-DOCUMENT-SPEC.md#s51-sink-fields), section 5.1; `EVOLUTION/TASK-013-web-workbench.md` |
+| DAG export | the workbench writes `opentsx.dag.v1`, or `opentsx.dag.v2` (with `schema: opentsx.dag.v2`) when the flow has a series sink; `source.kind: kafscale-broker`, `checkpoint: { backend: file }` | `opentsx-saas-frontend/src/workbench/flow.ts:684-745`; [SYSTEM-DOCUMENT-SPEC](SYSTEM-DOCUMENT-SPEC.md#s51-sink-fields), section 5.1 |
 | Series identity | `seriesId` = lower-case hex of xxHash64, seed 0, over the canonical form of metric and tags | `SeriesKey.avsc`; `SeriesKeys.java:37-41` |
 | Episode | `[tStart, tEnd)` in microseconds, values, optional quality byte per value, mergeable `EpisodeSummary`, `revision`, `Provenance` | `Episode.avsc`, `EpisodeSummary.avsc`, `Provenance.avsc` |
 | Wire format | Avro single-object encoding, `C3 01` plus CRC-64-AVRO fingerprint, no schema registry; shared vectors | `OpenTsxAvro.java:71-123`; `opentsx-model/src/test/resources/testvectors/wire-format.json` (`Episode` = `8985f02b48c77195`) |
@@ -612,7 +612,7 @@ Sites hold disjoint value sets of one group and one window (C9 and the epoch gri
 | `pair.xcorr`, `pair.es` with A and B at different sites | needs both series aligned at one place | only pairs within one site; for zero-lag Pearson correlation, co-moment sums (n, Σx, Σy, Σxy, Σx², Σy²) where both are present |
 | per-series stateful operators over a split series | state per series | C9 forbids the split |
 | DDSketch bins in a mixed federation | Java `Math.log` may differ from the correctly rounded result by 1 ulp ([Java SE 17 `Math.log`](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Math.html#log(double))); Rust `f64::ln` uses the platform libm. A value on a bin boundary can land in neighbouring bins on JVM and Rust sites | apply the qualified accuracy domain; byte equality additionally needs one runtime and no collapse; boundary, zero-bucket and collapsed-tail tests document the limits |
-| model training (FedAvg) | not a statistic | stays in the Python training path of [05](05-SMART-TOPICS.md) |
+| model training (FedAvg) | not a statistic | stays in the Python training path of 05 |
 
 The merge binds expected membership to the generation. A merged window is `final` only with admitted closed-window
 or source-cut evidence from every expected assignment. Open partials are insufficient. Missing evidence produces
@@ -804,9 +804,9 @@ are excluded from that execution topology. Source hashes and HEAD are checked
 before and after execution. Each route checks the actual received records.
 
 The [report](measurements/wayang-federation-2026-11-17/REPORT.md),
-[site samples](measurements/wayang-federation-2026-11-17/bytes.csv),
-[window comparisons](measurements/wayang-federation-2026-11-17/windows.csv),
-[run evidence](measurements/wayang-federation-2026-11-17/run.json) and
+site samples,
+window comparisons,
+run evidence and
 [metadata](measurements/wayang-federation-2026-11-17/metadata.json) retain the
 executed commands, source/runtime hashes, hardware, OS, JDK and results.
 The input is synthetic W data. All 420 windows and 2,520 merge-order comparisons
@@ -929,7 +929,7 @@ owner decisions are in [TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.m
 
 ## 17. Relation to concept 11
 
-[11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md) proposes a Go processor on the KafScale processor template, reading closed
+[11](VECTOR-AND-DAG-SPEC.md) proposes a Go processor on the KafScale processor template, reading closed
 segments from S3 and optionally the Kafka protocol.
 
 | Part of 11 | This concept |

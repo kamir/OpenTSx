@@ -1,7 +1,6 @@
 name: OpenMetadata smoke test
 
 # Publishes the simulated wind farm to a real OpenMetadata 2.0.5 and reads it back (OpenMetadataSmokeTest).
-# Design: docs/datamodel-2026/18-CLOSING-TASK-011.md, section 3 (D91).
 
 on:
   schedule:
