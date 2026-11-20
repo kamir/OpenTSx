@@ -19,9 +19,15 @@ CI = ROOT / ".github" / "workflows" / "ci.yml"
 CD = re.compile(r"(?:^|[;&|({]|\b(?:then|do|else)\s)\s*(?:(?:!|command|builtin|time)\s+)*cd(?=\s|$)")
 CD_GUARD = re.compile(r"[^;&|]*\|\|\s*(?:exit|return)\b")
 CD_END = re.compile(r"[;&|]")
-SHELL = re.compile(r"""'[^']*'|"(?:\\.|[^"\\])*"|\\.|(?P<comment>(?<![^\s;&|()])#.*)|(?P<separator>&&|\|\||[;|])""")
-INSTALL = re.compile(r"\b(?:docker\s+(?:(?:container\s+)?(?:run|create)|(?:image\s+)?pull)|confluent-hub\s+install"
-                     r"|confluent\s+connect\s+plugin\s+install)\s(.*)$")
+SHELL = re.compile(r"""'[^']*'|"(?:\\.|[^"\\])*"|\\.|(?P<comment>(?<![^\s;&|()])#.*)""")
+SEPARATOR = re.compile(r"&&|\|\||(?<![<>])&(?!>)|[;|]")
+DOCKER_GLOBAL = (r"(?:(?:--(?:config|context|host|log-level|tlscacert|tlscert|tlskey)|-[cHl])(?:=|\s+)\S+"
+                 r"|(?:--(?:debug|tls|tlsverify)|-D)(?=\s))\s+")
+DOCKER_OPTION = re.compile(r"\bdocker\s+(?:" + DOCKER_GLOBAL + r")*(?!" + DOCKER_GLOBAL + r")(-\S+)"
+                           r"(?=.*\s(?:(?:container\s+)?(?:run|create)|(?:image\s+)?pull)\s)")
+DOCKER_INFO = {"-v", "--version", "-h", "--help"}
+INSTALL = re.compile(r"\b(?:docker\s+(?:" + DOCKER_GLOBAL + r")*(?:(?:container\s+)?(?:run|create)|(?:image\s+)?pull)"
+                     r"|confluent-hub\s+install|confluent\s+connect\s+plugin\s+install)\s(.*)$")
 VALUE_OPTIONS = {"-p", "--publish", "-v", "--volume", "-e", "--env", "--env-file", "--name", "--network", "--restart",
                  "-w", "--workdir", "-u", "--user", "-h", "--hostname", "--entrypoint", "--mount", "-l", "--label",
                  "--platform", "--add-host", "--component-dir", "--worker-configs", "--plugin-directory",
@@ -45,7 +51,8 @@ def script_problems(root: pathlib.Path, name: str) -> list[str]:
         for cd in CD.finditer(masked):
             if not CD_GUARD.match(masked, cd.end()):
                 stop = CD_END.search(masked, cd.end())
-                target = line[cd.end():stop.start() if stop else len(line)].strip().rstrip(")").strip() or "<dir>"
+                end = min(stop.start() if stop else len(line), substitution_end(line, cd.end()))
+                target = line[cd.end():end].strip() or "<dir>"
                 problems.append(f"{name}:{number}: cd without a guard; write cd {target} || exit 1")
     return problems
 
@@ -88,17 +95,41 @@ def unquoted(line: str, literal: frozenset[int] = frozenset()) -> str:
             if top[2] < 0:
                 stack.pop()
         i += 1
-    # An unclosed quote stays a plain character, as SHELL treats it in commands().
+    # An unclosed quote stays a plain character, as SHELL treats it in uncommented().
     return unquoted(line, literal | {stack[0][1]}) if stack else "".join(masked)
 
 
-def commands(line: str) -> list[str]:
+def substitution_end(line: str, position: int) -> int:
+    stack, i = [], 0
+    while i < len(line):
+        c, top = line[i], stack[-1][0] if stack else None
+        if top == "'":
+            if c == "'":
+                stack.pop()
+        elif c == "\\":
+            i += 1
+        elif top == '"' and c == '"':
+            stack.pop()
+        elif line.startswith("$(", i):
+            stack.append(["(", i])
+            i += 1
+        elif c == "(" and top != '"':
+            stack.append(["(", i])
+        elif (c == ")" and top == "(") or (c == "`" and top == "`"):
+            if stack.pop()[1] < position <= i:
+                return i
+        elif c == "`" or (c in "\"'" and top != '"'):
+            stack.append([c, i])
+        i += 1
+    return len(line)
+
+
+def commands(line: str) -> list[tuple[int, str]]:
     parts, start = [], 0
-    for piece in SHELL.finditer(line):
-        if piece.group("separator"):
-            parts.append(line[start:piece.start()])
-            start = piece.end()
-    return parts + [line[start:]]
+    for separator in SEPARATOR.finditer(unquoted(line)):
+        parts.append((start, line[start:separator.start()]))
+        start = separator.end()
+    return parts + [(start, line[start:])]
 
 
 def logical_lines(text: str):
@@ -158,16 +189,23 @@ def image_problems(root: pathlib.Path, name: str) -> list[str]:
                                 "end the RUN with rm -rf /var/lib/apt/lists/*")
         else:
             references = []
-            for command in commands(uncommented(line)):
-                install = INSTALL.search(unquoted(command))
-                if not install:
-                    continue
-                try:
-                    references.append(first_operand(shlex.split(command[install.start(1):])))
-                except ValueError as error:
-                    tool = command[install.start():install.start(1)].strip()
-                    problems.append(f"{name}:{number}: {tool}: cannot split the arguments into words ({error}); "
-                                    "close every quote on the line")
+            line = uncommented(line)
+            masked = unquoted(line)
+            for start, command in commands(line):
+                stop, position = start + len(command), start
+                unknown = DOCKER_OPTION.search(masked, start, stop)
+                if unknown and unknown.group(1) not in DOCKER_INFO:
+                    problems.append(f"{name}:{number}: {unknown.group(1)}: unknown docker option before the "
+                                    "subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py")
+                while install := INSTALL.search(masked, position, stop):
+                    begin = install.start(1)
+                    position = min(stop, substitution_end(line, begin))
+                    try:
+                        references.append(first_operand(shlex.split(line[begin:position])))
+                    except ValueError as error:
+                        tool = line[install.start():begin].strip()
+                        problems.append(f"{name}:{number}: {tool}: cannot split the arguments into words ({error}); "
+                                        "close every quote on the line")
         for reference, option in references:
             if option:
                 problems.append(f"{name}:{number}: {option}: unknown option before the image; "
@@ -272,16 +310,26 @@ def test_a_cd_inside_quotes_is_no_cd_for_the_check(tmp_path):
     ]
 
 
-def test_a_cd_or_an_install_in_a_quoted_command_substitution_is_checked(tmp_path):
+def test_a_cd_or_an_install_in_a_command_substitution_is_read_up_to_the_end_of_the_substitution(tmp_path):
     (tmp_path / "run.sh").write_text(
         '#!/usr/bin/env bash\nX="$(cd /tmp)"\nCID="$(docker run -d toke/mosquitto:latest)"\n'
-        'ID="`docker pull toke/mosquitto`"\n', encoding="utf-8")
-    assert script_problems(tmp_path, "run.sh") == ['run.sh:2: cd without a guard; write cd /tmp)" || exit 1']
+        'ID="`docker pull toke/mosquitto`"\nCID=$(docker run img:1.2.3)\n"$(docker pull img:1.2.3)"\n'
+        '"$(docker pull img)"\n(docker pull img:1.2.3)\nID=`docker pull img:1.2.3`\n'
+        'CID="$(docker run -e "A=(x)" img:1.2.3)"\nX="$(docker pull img:1.2.3; docker pull toke/mosquitto)"\n'
+        'X="$(docker run -e "A=1;2" img:1.2.3 && echo ";")"\n'
+        'echo "$(docker pull img:1.2.3)" "$(docker pull toke/mosquitto)"\n'
+        'echo $(docker pull img:1.2.3) $(docker pull toke/mosquitto)\n'
+        'echo `docker pull img:1.2.3` `docker pull toke/mosquitto`\n', encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    assert script_problems(tmp_path, "run.sh") == ["run.sh:2: cd without a guard; write cd /tmp || exit 1"]
     assert image_problems(tmp_path, "run.sh") == [
-        "run.sh:3: docker run: cannot split the arguments into words (No closing quotation); "
-        "close every quote on the line",
-        "run.sh:4: docker pull: cannot split the arguments into words (No closing quotation); "
-        "close every quote on the line",
+        f"run.sh:3: toke/mosquitto:latest: {rest}",
+        f"run.sh:4: toke/mosquitto: {rest}",
+        f"run.sh:7: img: {rest}",
+        f"run.sh:11: toke/mosquitto: {rest}",
+        f"run.sh:13: toke/mosquitto: {rest}",
+        f"run.sh:14: toke/mosquitto: {rest}",
+        f"run.sh:15: toke/mosquitto: {rest}",
     ]
 
 
@@ -289,7 +337,7 @@ def test_a_guard_after_nested_quotes_in_a_command_substitution_counts(tmp_path):
     (tmp_path / "run.sh").write_text(
         '#!/usr/bin/env bash\nDIR="$(cd "$(dirname "$0")" || exit 1; pwd)"\necho "a; cd b $(pwd)"\n'
         'Y="$(cd "$1")"\n', encoding="utf-8")
-    assert script_problems(tmp_path, "run.sh") == ['run.sh:4: cd without a guard; write cd "$1")" || exit 1']
+    assert script_problems(tmp_path, "run.sh") == ['run.sh:4: cd without a guard; write cd "$1" || exit 1']
 
 
 def test_every_lg_script_starts_with_a_shebang_and_guards_each_cd():
@@ -338,6 +386,44 @@ def test_an_image_or_connector_without_an_exact_version_fails_the_check(tmp_path
         f"run.sh:15: confluentinc/kafka-connect-mqtt:latest: {rest}",
         "run.sh:16: --cpus: unknown option before the image; add it to the option lists of tools/test_lg_scripts.py",
     ]
+
+
+def test_a_command_after_a_single_ampersand_or_after_docker_global_options_is_read(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "docker pull a:1.0.0 & docker pull toke/mosquitto\n"
+        "docker --context x pull toke/mosquitto\n"
+        "docker -H unix:///tmp/docker.sock --config /tmp/c run -d toke/mosquitto\n"
+        "docker --tls --context=x -D -l debug container create toke/mosquitto\n"
+        "docker pull a:1.0.0 2>&1 | tee pull.log\n"
+        "docker pull a:1.0.0 &>pull.log\n"
+        "docker run -d a:1.0.0 >&2 &\n"
+        "docker --foo pull toke/mosquitto\n"
+        "docker --version && docker -H x ps && docker -v\n"
+        "docker --tlsverify=true pull toke/mosquitto\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    unknown = "unknown docker option before the subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:2: toke/mosquitto: {rest}",
+        f"run.sh:3: toke/mosquitto: {rest}",
+        f"run.sh:4: toke/mosquitto: {rest}",
+        f"run.sh:5: toke/mosquitto: {rest}",
+        f"run.sh:9: --foo: {unknown}",
+        f"run.sh:11: --tlsverify=true: {unknown}",
+    ]
+    split = {line: [c for _, c in commands(line)] for line in
+             ["docker pull a:1.0.0 2>&1 | tee pull.log", "docker pull a:1.0.0 &>pull.log & wait", "cat <&3 >&- &>>log"]}
+    assert split == {"docker pull a:1.0.0 2>&1 | tee pull.log": ["docker pull a:1.0.0 2>&1 ", " tee pull.log"],
+                     "docker pull a:1.0.0 &>pull.log & wait": ["docker pull a:1.0.0 &>pull.log ", " wait"],
+                     "cat <&3 >&- &>>log": ["cat <&3 >&- &>>log"]}
+
+
+def test_an_option_after_the_word_docker_without_an_install_subcommand_is_no_finding(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "pip install docker --user\n"
+        "echo start && python -m pip install docker -q\n", encoding="utf-8")
+    assert image_problems(tmp_path, "run.sh") == []
 
 
 def test_an_install_inside_quotes_is_no_install_and_an_open_quote_is_a_finding(tmp_path):

@@ -53,7 +53,9 @@ CI runs `bash -n` and `shellcheck -x -P SCRIPTDIR` on every shell script (`*.sh`
 followed by `|| exit` or `|| return`, also a `cd` after `!`, `command`, `builtin` or `time`. A `#` inside quotes does
 not start a comment for the check, and a `cd` inside quotes, as in `echo "a; cd b"`, is not a command for the check.
 A `cd` in a command substitution inside double quotes, as in `X="$(cd b)"`, is still checked, and the check follows
-the quotes inside the substitution, so `DIR="$(cd "$(dirname "$0")" || exit 1; pwd)"` passes.
+the quotes inside the substitution, so `DIR="$(cd "$(dirname "$0")" || exit 1; pwd)"` passes. The suggested fix ends
+at the end of the substitution or subshell, so `X="$(cd b)"` gives
+`<file>:<line>: cd without a guard; write cd b || exit 1`.
 `tools/test_lg_python.py` fails on a Python script (`*.py`) of this module that
 does not compile or does not start with `#!/usr/bin/env python3`.
 
@@ -75,7 +77,10 @@ a `CMD` or `ENTRYPOINT` in shell form, on a Dockerfile or YAML file under `src/`
 Dockerfile line that ends with `\` with the next line before it checks the instruction, so `ENV \` followed by
 `<key>=<value>` lines and `CMD \` followed by an exec-form array pass, and it names the first line of the instruction.
 It skips comment lines and empty lines as Docker does, so neither ends an instruction, and a comment line does not
-continue, even when it ends with `\`.
+continue, even when it ends with `\`. `tools/test_registries.py` fails on every line of a tracked YAML file or
+Dockerfile of the repository, also under `archive/`, that names the registry `k8s.gcr.io` and is not a comment line,
+in an image such as `k8s.gcr.io/pause:3.2` or as a value such as `registry: k8s.gcr.io`, with
+`<file>:<line>: k8s.gcr.io is frozen; pull the image from registry.k8s.io`.
 
 ### Grant the ACLs the latency tools need
 
@@ -112,23 +117,32 @@ Three scripts in `src/main/mqtt-example/` pin the package, connectors and images
 Docker Hub has no version tag for the image that `latest` names in these two repositories, so the scripts pin its
 digest. `tools/test_lg_scripts.py` reads the image or connector of every `docker run`, `docker create`, `docker pull`,
 `docker container run`, `docker container create`, `docker image pull`, `confluent-hub install` and
-`confluent connect plugin install` in the scripts of this module, also after `&&`, `||`, `;` or `|` on the same line,
-and of every `FROM` in its Dockerfiles. It fails when one has no exact version, such as `1.2.3`, and no sha256 digest.
+`confluent connect plugin install` in the scripts of this module, also after `&&`, `||`, `;`, `|` or a single `&` on
+the same line, and of every `FROM` in its Dockerfiles. The `&` of a redirection, as in `2>&1`, `>&2` or `&>log`, does
+not end a command. Before the subcommand of `docker` it skips the global options `--config`, `-c` or `--context`, `-D`
+or `--debug`, `-H` or `--host`, `-l` or `--log-level`, `--tls`, `--tlscacert`, `--tlscert`, `--tlskey` and
+`--tlsverify`, with their values. It fails on any other option between `docker` and a subcommand it reads, also on
+the `=` form of a flag such as `--tlsverify=true`, except `-v`, `--version`, `-h` and `--help`, with
+`<file>:<line>: <option>: unknown docker option before the subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py`.
+A `docker` command with a word that is not an option before its subcommand, as in `docker $OPTS pull <image>`, is not
+read. It fails when an image or connector has no exact version, such as `1.2.3`, and no sha256 digest.
 It also fails on an option before the image that it does not know, with
 `<file>:<line>: <option>: unknown option before the image; add it to the option lists of tools/test_lg_scripts.py`,
 on a command whose arguments do not split into words, for example at a quote that is not closed, with
 `<file>:<line>: <command>: cannot split the arguments into words (<cause>); close every quote on the line`,
 and on a Dockerfile `RUN` that runs `apt-get update` without `apt-get install`. A command inside quotes, as in
-`echo "use docker pull x"`, is not read; a command substitution inside double quotes, as in
-`CID="$(docker run <image>)"`, is read. The check does not find where such a substitution ends, so it reports that
-line with the split message above.
+`echo "use docker pull x"`, is not read. A command in a command substitution or a subshell, as in
+`CID=$(docker run <image>)`, `CID="$(docker run <image>)"` or `(docker pull <image>)`, is read up to the end of the
+substitution or subshell, also after `&&`, `||`, `;`, `|` or `&` inside it, and so is each further substitution of the
+same command, as in `echo $(docker pull <image>) $(docker pull <image>)`.
 
 `mqtt-generator-gist/mqttgen.py` uses the 1.x client API of `paho-mqtt`. With paho-mqtt 2.0.0 it stops with
 `TypeError: Client.__init__() missing 1 required positional argument: 'callback_api_version'`. Before it connects, it
 prints `MQTT broker <host>:<port>, user <username>` (`None` without a `username`) and no password. When it cannot
 connect to the broker, it exits with status 1 and
 `<host>:<port>: cannot connect to the MQTT broker (<cause>); start the broker first, for example with 02_run_mqtt_broker.sh`.
-When it cannot read the configuration file, it exits with status 1 and
+An error after the connect, for example `BrokenPipeError` when you pipe its output into `head`, stops the script with
+that error. When it cannot read the configuration file or the file is not valid JSON, it exits with status 1 and
 `<file>: cannot read the configuration file (<cause>); pass the path of a JSON configuration file such as config.json`.
 Without exactly one argument, it exits with status 2 and
 `<script>: <n> arguments given; expected 1, the path of a JSON configuration file such as config.json`.
@@ -154,6 +168,9 @@ posts the create request `{"name": "debug_c1", "config": <config>}` to `http://1
 python3 deploy_connector.py
 ```
 
+When it cannot read `cfg.json` in the current folder, or `cfg.json` is not valid JSON, it posts nothing and exits with
+status 1 and
+`cfg.json: cannot read the configuration file (<cause>); run the script in a folder with a JSON file cfg.json, such as src/main/connect-cfg/`.
 When `cfg.json` has no `config` object, it posts nothing and exits with status 1 and
 `cfg.json: config: missing or not a JSON object; write the connector settings as the object "config": {...}`.
 After HTTP 200 or 201 it prints `New connector debug_c1 created.`. On any other answer it exits with status 1 and
@@ -164,7 +181,9 @@ A connection that takes longer than 10 s gives this message with the cause `time
 the connection and then sends nothing for 10 s, the script exits with status 1 and
 `http://127.0.0.1:8083/connectors: no answer within 10 s; check the log of the Kafka Connect worker`.
 The limit of 10 s applies to the connect and to each read on its own, not to the whole request: an answer that
-arrives in parts less than 10 s apart can take longer.
+arrives in parts less than 10 s apart can take longer. When the program on the port closes the connection without an
+answer, or answers with something that is not HTTP, the script exits with status 1 and
+`http://127.0.0.1:8083/connectors: no HTTP answer (<cause>); check that Kafka Connect listens on http://127.0.0.1:8083/connectors and read the log of its worker`.
 
 ### Handle errors
 

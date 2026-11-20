@@ -227,6 +227,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   without a .gitmodules entry; add it with git submodule add <url> <path> or remove it with git rm --cached <path>`.
   It reads the submodule entries from the `.gitmodules` file at the top level of the repository, also when it checks a
   directory below it.
+- `tools/test_registries.py` fails on every line of a tracked YAML file or Dockerfile of the repository, the archived
+  echo demos included, that names the registry `k8s.gcr.io`, as in an image `k8s.gcr.io/pause:3.2` or a value
+  `registry: k8s.gcr.io`.
 
 ### Changed
 
@@ -957,6 +960,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   stands instead of pointing to section 3 of the analysis, which holds only the Flink wire format break.
 - `MacroRecorder.fitMIN` and `MacroRecorder.fitMAX` are deprecated and have no effect, because `MacroRecorder` runs no
   DFA.
+- `tools/test_lg_scripts.py` fails on an unknown option only between `docker` and a `run`, `create` or `pull`
+  subcommand that it reads. An option after the word `docker` in another command, as in `pip install docker --user`,
+  is no finding.
 
 ### Removed
 
@@ -2375,7 +2381,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - opentsx-lg: `DockerImageTest` joins Dockerfile lines that end with a backslash before it checks an instruction, and
   it names the first line of the instruction. It skips comment lines and empty lines inside an instruction as Docker
   does. A multi-line `ENV` with `<key>=<value>` lines or a `CMD` followed by an exec-form array is no longer reported.
-  A comment that ends with a backslash no longer hides the instruction after it.
+  A comment line that ends with a backslash is skipped and does not join the next line.
 - tools: `tools/test_lg_scripts.py` ignores a `cd` or an image install command inside quotes, also the quoted text
   around a command substitution such as `echo "a; cd b $(pwd)"`; a `cd` inside the substitution is still checked. When
   the arguments of a command do not split into words, it reports a finding instead of stopping with `ValueError`.
@@ -2419,6 +2425,23 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   showed its bins.
 - `opentsx-core`: a `ReturnIntervallStatistik2` or `TSPropertyTester` result that keeps no interval has an empty
   `mrVerteilung` after `calcMessreihen()`. It held NaN for every bin.
+- `deploy_connector.py` exits with status 1 and `http://127.0.0.1:8083/connectors: no HTTP answer (<cause>); check
+  that Kafka Connect listens on http://127.0.0.1:8083/connectors and read the log of its worker` when the program on
+  the port closes the connection without an answer or answers with something that is not HTTP, instead of ending in a
+  traceback.
+- `deploy_connector.py` exits with status 1 and `cfg.json: cannot read the configuration file (<cause>); run the
+  script in a folder with a JSON file cfg.json, such as src/main/connect-cfg/` for a missing or invalid `cfg.json`,
+  and `mqttgen.py` exits with status 1 and its configuration message also for a file that is not valid JSON, instead
+  of ending in a traceback.
+- `mqttgen.py` reports `cannot connect to the MQTT broker` only when the connect fails. An error after the connect,
+  such as `BrokenPipeError` when its output is piped into `head`, stops the script with that error.
+- The pin check in `tools/test_lg_scripts.py` also reads a command after a single `&` (the `&` of a redirection such
+  as `2>&1` or `&>log` does not split) and a `docker run`, `create` or `pull` after the docker global options
+  `--config`, `--context`, `--debug`, `--host`, `--log-level` and the TLS options. It fails on any other option before
+  the docker subcommand with `<option>: unknown docker option before the subcommand; add it to DOCKER_GLOBAL in
+  tools/test_lg_scripts.py`. It reads each command substitution or subshell up to its end, every one of them in a
+  command, so `CID=$(docker run img:1.2.3)` passes and `echo $(docker pull a:1.2.3) $(docker pull b)` fails on `b`.
+  The suggestion for an unguarded `cd` in a substitution names only the target.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

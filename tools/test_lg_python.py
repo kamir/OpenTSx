@@ -1,7 +1,8 @@
 """The opentsx-lg Python scripts compile and start with #!/usr/bin/env python3, the MQTT generator prints no password,
-exits 1 on a configuration file it cannot read and names the broker it cannot reach, and exits 2 on a usage error, the
-connector script posts the config object of cfg.json, refuses a cfg.json without one and reports what Kafka Connect
-answered, waiting at most 10 s for each socket operation, and the MQTT example bootstrap installs a pinned paho-mqtt
+exits 1 on a configuration file it cannot read or parse, names the broker only when the connect fails, and exits 2 on a
+usage error, the connector script posts the config object of cfg.json, refuses a cfg.json it cannot read or without
+one and reports what Kafka Connect answered or that no HTTP answer came, waiting at most 10 s for each socket
+operation, and the MQTT example bootstrap installs a pinned paho-mqtt
 without sudo, reaches the connector installs without a broker and stops at the first command that fails, and the broker
 script publishes its test message after it starts the broker.
 
@@ -101,8 +102,12 @@ def refusing_paho(monkeypatch):
         def connect(self, host, port):
             raise ConnectionRefusedError(111, "Connection refused")
 
+    stub_paho(monkeypatch, Client)
+
+
+def stub_paho(monkeypatch, client_class):
     client = types.ModuleType("paho.mqtt.client")
-    client.Client = Client
+    client.Client = client_class
     monkeypatch.setitem(sys.modules, "paho", types.ModuleType("paho"))
     monkeypatch.setitem(sys.modules, "paho.mqtt", types.ModuleType("paho.mqtt"))
     monkeypatch.setitem(sys.modules, "paho.mqtt.client", client)
@@ -134,13 +139,38 @@ def test_the_generator_prints_the_broker_and_the_user_but_not_the_password(tmp_p
     assert out.splitlines() == ["MQTT broker localhost:1884, user demo1"]
 
 
-def test_the_generator_exits_1_when_it_cannot_read_the_configuration(tmp_path, monkeypatch):
+@pytest.mark.parametrize("text, cause", [
+    (None, "No such file or directory"),
+    ("not json", "Expecting value: line 1 column 1 (char 0)"),
+])
+def test_the_generator_exits_1_when_it_cannot_read_the_configuration(tmp_path, monkeypatch, text, cause):
     refusing_paho(monkeypatch)
-    missing = tmp_path / "missing.json"
+    config = tmp_path / "config.json"
+    if text is not None:
+        config.write_text(text, encoding="utf-8")
     with pytest.raises(SystemExit) as stop:
-        load(MQTTGEN, "mqttgen").main(str(missing))
-    assert stop.value.code == (f"{missing}: cannot read the configuration file (No such file or directory); "
+        load(MQTTGEN, "mqttgen").main(str(config))
+    assert stop.value.code == (f"{config}: cannot read the configuration file ({cause}); "
                                "pass the path of a JSON configuration file such as config.json")
+
+
+def test_the_generator_reports_a_failure_after_the_connect_as_itself(tmp_path, monkeypatch):
+    class Client:
+        def connect(self, host, port):
+            pass
+
+        def loop_start(self):
+            pass
+
+        def publish(self, topic, payload):
+            raise BrokenPipeError(32, "Broken pipe")
+
+    stub_paho(monkeypatch, Client)
+    config = tmp_path / "config.json"
+    config.write_text(json.dumps({"mqtt": {"host": "localhost", "port": 1884, "topic": "t"},
+                                  "sensors": {"s1": {"range": [0, 1]}}}), encoding="utf-8")
+    with pytest.raises(BrokenPipeError):
+        load(MQTTGEN, "mqttgen").main(str(config))
 
 
 @pytest.mark.parametrize("arguments", [[], ["a.json", "b.json"]])
@@ -161,6 +191,9 @@ class Connect(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
         body = self.rfile.read(int(self.headers["Content-Length"]))
         Connect.requests.append((self.command, self.path, self.headers["Content-Type"], json.loads(body)))
+        if Connect.status is None:
+            self.wfile.write(Connect.answer)
+            return
         self.send_response(Connect.status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(Connect.answer)))
@@ -171,7 +204,7 @@ class Connect(http.server.BaseHTTPRequestHandler):
         pass
 
 
-def deploy_connector(status: int, answer: bytes):
+def deploy_connector(status: int | None, answer: bytes):
     Connect.status, Connect.answer, Connect.requests = status, answer, []
     server = http.server.HTTPServer(("127.0.0.1", 0), Connect)
     thread = threading.Thread(target=server.serve_forever)
@@ -209,6 +242,19 @@ def test_the_connector_script_prints_created_when_kafka_connect_creates_the_conn
     assert result.stderr == ""
 
 
+@pytest.mark.parametrize("answer, cause", [
+    (b"", "Remote end closed connection without response"),
+    (b"SSH-2.0-stub\r\n", "SSH-2.0-stub"),
+])
+def test_the_connector_script_exits_1_when_the_connection_closes_without_an_http_answer(answer, cause):
+    result = deploy_connector(None, answer)
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "created" not in result.stdout
+    assert result.stderr.splitlines() == [
+        f"http://127.0.0.1:8083/connectors: no HTTP answer ({cause}); check that Kafka Connect listens on "
+        "http://127.0.0.1:8083/connectors and read the log of its worker"]
+
+
 def test_the_connector_script_exits_1_when_it_cannot_reach_kafka_connect(monkeypatch, capsys):
     def refuse(request, timeout):
         raise urllib.error.URLError(ConnectionRefusedError(111, "Connection refused"))
@@ -235,6 +281,25 @@ def test_the_connector_script_exits_1_when_cfg_json_has_no_config_object(tmp_pat
     assert stop.value.code == ("cfg.json: config: missing or not a JSON object; "
                                "write the connector settings as the object \"config\": {...}")
     assert "created" not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("text, cause", [
+    (None, "No such file or directory"),
+    ("not json", "Expecting value: line 1 column 1 (char 0)"),
+])
+def test_the_connector_script_exits_1_when_it_cannot_read_cfg_json(tmp_path, monkeypatch, capsys, text, cause):
+    def unreachable(request, timeout=None):
+        raise AssertionError("no request without a readable cfg.json")
+
+    if text is not None:
+        (tmp_path / "cfg.json").write_text(text, encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("urllib.request.urlopen", unreachable)
+    with pytest.raises(SystemExit) as stop:
+        load(ROOT / CONNECTOR_SCRIPT, "deploy_connector").main()
+    assert stop.value.code == (f"cfg.json: cannot read the configuration file ({cause}); "
+                               "run the script in a folder with a JSON file cfg.json, such as src/main/connect-cfg/")
+    assert capsys.readouterr().out == ""
 
 
 @pytest.mark.parametrize("failure, message", [

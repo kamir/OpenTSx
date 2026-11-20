@@ -146,7 +146,8 @@ def test_latency_plots_of_the_load_generator_fail_even_when_not_on_disk(tmp_path
 
 def test_a_personal_home_path_in_any_tracked_text_file_fails(tmp_path, capsys):
     paths = write(tmp_path, {"bin/demo.sh": f"export CONFLUENT_HOME={MAC_HOMES}/{PERSON}/bin/confluent-7.3.0\n",
-                             "nb/project.xml": f"<definitions>{MAC_HOMES}/Shared/home/{PERSON}/nb.properties</definitions>\n",
+                             "nb/project.xml":
+                                 f"<definitions>{MAC_HOMES}/Shared/home/{PERSON}/nb.properties</definitions>\n",
                              "notes.md": f"cd /home/{PERSON}.else/OpenTSx\n",
                              "run.sh": f"cd /home/{PERSON}\nX=\"{MAC_HOMES}/{PERSON}\" # `/home/{PERSON}`\n"})
     assert guard.main(tmp_path, paths) == 1
@@ -164,7 +165,8 @@ def test_a_personal_home_path_in_any_tracked_text_file_fails(tmp_path, capsys):
 
 def test_home_placeholders_and_service_account_homes_pass(tmp_path, capsys):
     paths = write(tmp_path, {
-        "bin/demo.sh": f"export CONFLUENT_HOME=$HOME/bin/confluent-7.3.0\ncd {MAC_HOMES}/<name>/OpenTSx\nls /home/${{USER}}/\n",
+        "bin/demo.sh":
+            f"export CONFLUENT_HOME=$HOME/bin/confluent-7.3.0\ncd {MAC_HOMES}/<name>/OpenTSx\nls /home/${{USER}}/\n",
         "deploy/notebook.yaml": "mountPath: /home/jovyan/opentsx\n",
         "archive/update.sh": "scp app.jar ubuntu@localhost:/home/ubuntu/\nls /home/ec2-user/.cache/\n",
         "HOW_TO_RUN.md": "cd /home/user/OpenTSx\n",

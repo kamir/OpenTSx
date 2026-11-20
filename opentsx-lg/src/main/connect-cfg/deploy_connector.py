@@ -2,6 +2,7 @@
 
 # Copyright: (c) 2019, Confluent Inc
 
+import http.client
 import json
 import sys
 import urllib.error
@@ -22,8 +23,13 @@ def main():
 
     fn = 'cfg.json'
 
-    with open( fn, 'r') as f:
-        connector_config = json.load(f)
+    try:
+        with open( fn, 'r') as f:
+            connector_config = json.load(f)
+    except (OSError, ValueError) as error:
+        cause = error.strerror if isinstance(error, OSError) else error
+        sys.exit("{}: cannot read the configuration file ({}); run the script in a folder with a JSON file {}, such "
+                 "as src/main/connect-cfg/".format(fn, cause, fn))
 
     config = connector_config.get('config') if isinstance(connector_config, dict) else None
     if not isinstance(config, dict):
@@ -55,6 +61,9 @@ def main():
             connect_url, error.reason))
     except TimeoutError:
         sys.exit("{}: no answer within 10 s; check the log of the Kafka Connect worker".format(connect_url))
+    except (http.client.HTTPException, ConnectionError) as error:
+        sys.exit("{}: no HTTP answer ({}); check that Kafka Connect listens on {} and read the log of its "
+                 "worker".format(connect_url, str(error).strip(), connect_url))
     if status not in (200, 201):
         sys.exit("{}: POST {} answered HTTP {} {}; the connector was not created, check the log of the Kafka Connect "
                  "worker".format(connector_name, connect_url, status, answer.strip()))
