@@ -13,6 +13,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Accept idle Kafka frame-boundary resets and cancelled metadata requests in the
+  validation observer. Retain response correlations until forwarding succeeds;
+  keep interrupted frames and resets with data requests as errors.
 - Resolve Central dependencies and plugins in CI through a Google Cloud-hosted
   mirror. Verify endpoint selection and permanent errors offline, including a
   Central 404 response with a long Retry-After value.
