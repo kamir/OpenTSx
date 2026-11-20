@@ -10,8 +10,11 @@
 # missing namespace or PVC and a failed volume step leave .env as it is; env alone needs no cluster; a MANIFEST of file=
 # lines only restores; a current .env that cannot be kept exits 1 and stays as it is; the rerun after a failed volume
 # step restores into the same namespace; a .env that already equals the backup's env stays, and the message names the
-# kept copy only when there is one; a .env that cannot be replaced exits 1 and names the restored PVCs. A stand-in
-# kubectl records any call; needs no kubectl, no cluster, no network.
+# kept copy only when there is one; with env and volumes a backup whose MANIFEST names another namespace than the
+# current .env, or none, or whose env names another namespace than its MANIFEST, exits 1 before the question and before
+# anything changes, and so does a backup of another namespace than OPENTSX_NS of the shell, naming the shell; volumes
+# alone restore into the namespace of the current .env; a .env that cannot be replaced exits 1 and names the restored
+# PVCs. A stand-in kubectl records any call; needs no kubectl, no cluster, no network.
 #
 #   bash deploy/k3s/test/test-71-restore.sh
 set -euo pipefail
@@ -265,8 +268,9 @@ fi
 mkdir -p "$WORK/env-data"
 printf 'OPENTSX_DOMAIN=frombackup\n' > "$WORK/env-data/env"
 cp "$WORK/good/data.tar.gz" "$WORK/env-data/"
-(cd "$WORK/env-data" && for f in env data.tar.gz; do echo "file=$(sha256sum "$f" | cut -d' ' -f1) $(wc -c < "$f") $f"; done) \
-  > "$WORK/env-data/MANIFEST"
+{ echo "namespace=opentsx"
+  (cd "$WORK/env-data" && for f in env data.tar.gz; do echo "file=$(sha256sum "$f" | cut -d' ' -f1) $(wc -c < "$f") $f"; done)
+} > "$WORK/env-data/MANIFEST"
 
 printf 'OPENTSX_DOMAIN=original\n' > "$WORK/down.env"
 STUB_ENV=(CLUSTER=down OPENTSX_ENV_FILE="$WORK/down.env")
@@ -341,10 +345,11 @@ else
 fi
 
 mkdir -p "$WORK/other-ns"
-printf 'OPENTSX_NS=frombackup\n' > "$WORK/other-ns/env"
+printf 'OPENTSX_NS=current\nOPENTSX_DOMAIN=frombackup\n' > "$WORK/other-ns/env"
 cp "$WORK/good/data.tar.gz" "$WORK/other-ns/"
-(cd "$WORK/other-ns" && for f in env data.tar.gz; do echo "file=$(sha256sum "$f" | cut -d' ' -f1) $(wc -c < "$f") $f"; done) \
-  > "$WORK/other-ns/MANIFEST"
+{ echo "namespace=current"
+  (cd "$WORK/other-ns" && for f in env data.tar.gz; do echo "file=$(sha256sum "$f" | cut -d' ' -f1) $(wc -c < "$f") $f"; done)
+} > "$WORK/other-ns/MANIFEST"
 printf 'OPENTSX_NS=current\n' > "$WORK/rerun.env"
 STUB_ENV=(CLUSTER=up EXEC=unpack-fails OPENTSX_ENV_FILE="$WORK/rerun.env")
 restore rerun-first "$WORK/other-ns" --only env,data --yes
@@ -358,9 +363,10 @@ if (( first != 1 || rc != 0 )); then
   sed 's/^/    first: /' "$WORK/rerun-first.out"; sed 's/^/    second: /' "$WORK/rerun-second.out"
 elif [[ "$first_env" != OPENTSX_NS=current ]]; then
   failed "rerun: the failed unpack left .env replaced: $first_env"
-elif grep -qF frombackup "$WORK/calls.log" || ! grep -qxF "get namespace current --ignore-not-found -o name" "$WORK/calls.log"; then
+elif grep -qvE '^(-n current |get namespace current |apply -f -$)' "$WORK/calls.log" \
+  || ! grep -qxF "get namespace current --ignore-not-found -o name" "$WORK/calls.log"; then
   failed "rerun: the rerun did not restore into the namespace current"; sed 's/^/    calls: /' "$WORK/calls.log"
-elif [[ "$(cat "$WORK/rerun.env")" != OPENTSX_NS=frombackup || "$(cat "$WORK/rerun.env.before-restore")" != OPENTSX_NS=current ]]; then
+elif ! cmp -s "$WORK/rerun.env" "$WORK/other-ns/env" || [[ "$(cat "$WORK/rerun.env.before-restore")" != OPENTSX_NS=current ]]; then
   failed "rerun: .env is not the backup's, or the kept copy is not the previous .env"; sed 's/^/    /' "$WORK/rerun-second.out"
 else
   echo "ok   rerun"
@@ -389,6 +395,97 @@ elif [[ -e "$WORK/same.env.before-restore" || -L "$WORK/same.env.before-restore"
   failed "already-no-copy: a kept copy was created"
 else
   echo "ok   already-no-copy"
+fi
+
+# a backup of another namespace: with env and volumes refused before the question and before anything changes,
+# volumes alone restore into the namespace of the current .env
+mkdir -p "$WORK/elsewhere"
+printf 'OPENTSX_NS=elsewhere\n' > "$WORK/elsewhere/env"
+cp "$WORK/good/data.tar.gz" "$WORK/elsewhere/"
+{ echo "namespace=elsewhere"
+  (cd "$WORK/elsewhere" && for f in env data.tar.gz; do echo "file=$(sha256sum "$f" | cut -d' ' -f1) $(wc -c < "$f") $f"; done)
+} > "$WORK/elsewhere/MANIFEST"
+message="error: namespace: the backup is of elsewhere, deploy/k3s/.env names opentsx; restore env alone first or set OPENTSX_NS to elsewhere"
+for name in other-namespace-yes other-namespace-asked; do
+  args=(--only "env,data")
+  [[ "$name" == *-yes ]] && args+=(--yes)
+  printf 'OPENTSX_DOMAIN=original\n' > "$WORK/ns.env"
+  STUB_ENV=(CLUSTER=up OPENTSX_ENV_FILE="$WORK/ns.env")
+  restore "$name" "$WORK/elsewhere" "${args[@]}"
+  STUB_ENV=()
+  if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/$name.out" || grep -qF "Continue?" "$WORK/$name.out" \
+    || grep -qF "no answer" "$WORK/$name.out"; then
+    failed "$name: exit $rc, expected 1 and the message before the question: $message"; sed 's/^/    /' "$WORK/$name.out"
+  elif [[ "$(cat "$WORK/ns.env")" != OPENTSX_DOMAIN=original || -e "$WORK/ns.env.before-restore" ]]; then
+    failed "$name: .env was replaced or kept aside"; sed 's/^/    /' "$WORK/ns.env"
+  elif [[ -s "$WORK/calls.log" ]]; then
+    failed "$name: kubectl was called"; sed 's/^/    call: /' "$WORK/calls.log"
+  else
+    echo "ok   $name"
+  fi
+done
+STUB_ENV=(CLUSTER=up OPENTSX_ENV_FILE="$WORK/ns.env")
+restore other-namespace-volumes "$WORK/elsewhere" --only data --yes
+STUB_ENV=()
+if (( rc != 0 )) || ! grep -qF "data.tar.gz -> PVC opentsx-data" "$WORK/other-namespace-volumes.out" \
+  || ! grep -qxF "get namespace opentsx --ignore-not-found -o name" "$WORK/calls.log"; then
+  failed "other-namespace-volumes: exit $rc, expected 0 and data.tar.gz restored into the namespace opentsx"
+  sed 's/^/    /' "$WORK/other-namespace-volumes.out"
+else
+  echo "ok   other-namespace-volumes"
+fi
+
+mkdir -p "$WORK/no-namespace"
+cp "$WORK/env-data/env" "$WORK/env-data/data.tar.gz" "$WORK/no-namespace/"
+grep '^file=' "$WORK/env-data/MANIFEST" > "$WORK/no-namespace/MANIFEST"
+printf 'OPENTSX_DOMAIN=original\n' > "$WORK/ns.env"
+STUB_ENV=(CLUSTER=up OPENTSX_ENV_FILE="$WORK/ns.env")
+restore manifest-without-namespace "$WORK/no-namespace" --only env,data --yes
+STUB_ENV=()
+message="error: namespace: missing in $WORK/no-namespace/MANIFEST; restore env alone first, then the volumes"
+if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/manifest-without-namespace.out"; then
+  failed "manifest-without-namespace: exit $rc, expected 1 and the message: $message"
+  sed 's/^/    /' "$WORK/manifest-without-namespace.out"
+elif [[ "$(cat "$WORK/ns.env")" != OPENTSX_DOMAIN=original || -e "$WORK/ns.env.before-restore" || -s "$WORK/calls.log" ]]; then
+  failed "manifest-without-namespace: .env was replaced or kept aside, or kubectl was called"
+else
+  echo "ok   manifest-without-namespace"
+fi
+
+# a backup taken with OPENTSX_NS set in the shell: its MANIFEST names the current namespace, its env another one
+mkdir -p "$WORK/env-elsewhere"
+printf 'OPENTSX_NS=frombackup\n' > "$WORK/env-elsewhere/env"
+cp "$WORK/good/data.tar.gz" "$WORK/env-elsewhere/"
+{ echo "namespace=current"
+  (cd "$WORK/env-elsewhere" && for f in env data.tar.gz; do echo "file=$(sha256sum "$f" | cut -d' ' -f1) $(wc -c < "$f") $f"; done)
+} > "$WORK/env-elsewhere/MANIFEST"
+printf 'OPENTSX_NS=current\n' > "$WORK/ns.env"
+STUB_ENV=(CLUSTER=up OPENTSX_ENV_FILE="$WORK/ns.env")
+restore env-other-namespace "$WORK/env-elsewhere" --only env,data --yes
+STUB_ENV=()
+message="error: namespace: the backup is of current, $WORK/env-elsewhere/env names frombackup; restore env alone first, then the volumes"
+if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/env-other-namespace.out"; then
+  failed "env-other-namespace: exit $rc, expected 1 and the message: $message"
+  sed 's/^/    /' "$WORK/env-other-namespace.out"
+elif [[ "$(cat "$WORK/ns.env")" != OPENTSX_NS=current || -e "$WORK/ns.env.before-restore" || -s "$WORK/calls.log" ]]; then
+  failed "env-other-namespace: .env was replaced or kept aside, or kubectl was called"
+else
+  echo "ok   env-other-namespace"
+fi
+
+# OPENTSX_NS set in the shell wins over .env, so the refusal names the shell, not a .env that names the backup's namespace
+printf 'OPENTSX_NS=elsewhere\n' > "$WORK/ns.env"
+STUB_ENV=(CLUSTER=up OPENTSX_ENV_FILE="$WORK/ns.env" OPENTSX_NS=fromshell)
+restore other-namespace-shell "$WORK/elsewhere" --only env,data --yes
+STUB_ENV=()
+message="error: namespace: the backup is of elsewhere, the shell sets OPENTSX_NS to fromshell; set OPENTSX_NS to elsewhere or unset it"
+if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/other-namespace-shell.out"; then
+  failed "other-namespace-shell: exit $rc, expected 1 and the message: $message"
+  sed 's/^/    /' "$WORK/other-namespace-shell.out"
+elif [[ "$(cat "$WORK/ns.env")" != OPENTSX_NS=elsewhere || -e "$WORK/ns.env.before-restore" || -s "$WORK/calls.log" ]]; then
+  failed "other-namespace-shell: .env was replaced or kept aside, or kubectl was called"
+else
+  echo "ok   other-namespace-shell"
 fi
 
 # a .env below a regular file cannot be written, also by root

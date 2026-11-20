@@ -8,8 +8,9 @@
 #
 # Exit codes:
 #   0  the state was shown
-#   1  the namespace does not exist, the cluster is not reachable, or the Deployment of the Modbus simulator or the
-#      event bridge cannot be read
+#   1  the namespace does not exist, the cluster is not reachable, the Jobs, the CronJobs, the events, the Deployment
+#      of the Modbus simulator or the event bridge cannot be read, or with --logs the Deployments or the logs of one
+#      of them cannot be read (the logs of the others are still shown)
 #   2  usage error: an unknown option, an argument, or a line of deploy/k3s/.env that is not a comment or KEY=VALUE
 #      with a known key
 set -euo pipefail
@@ -42,10 +43,11 @@ kns get configmap opentsx-config -o go-template='{{range $k, $v := .data}}  {{$k
 info "deployments, pods, services"
 kns get deployment,pod,service -l app.kubernetes.io/part-of=opentsx -o wide
 info "jobs"
-kns get job -L opentsx.org/demo 2>/dev/null || true
+kns get job -L opentsx.org/demo || die "jobs: cannot read them; check the cluster with ${KUBECTL} -n $OPENTSX_NS get job"
 info "cronjobs (dwd-forward: DWD_FORWARD=true, synthetic-check: MONITORING=true)"
 # shellcheck disable=SC2016  # a Go template, not a shell expansion
-kns get cronjob -o go-template='{{range .items}}  {{.metadata.name}}  schedule "{{.spec.schedule}}"  last run {{or .status.lastScheduleTime "-"}}  last success {{or .status.lastSuccessfulTime "-"}}{{"\n"}}{{end}}' 2>/dev/null || true
+kns get cronjob -o go-template='{{range .items}}  {{.metadata.name}}  schedule "{{.spec.schedule}}"  last run {{or .status.lastScheduleTime "-"}}  last success {{or .status.lastSuccessfulTime "-"}}{{"\n"}}{{end}}' \
+  || die "cronjobs: cannot read them; check the cluster with ${KUBECTL} -n $OPENTSX_NS get cronjob"
 info "persistent volume claims"
 kns get pvc
 info "images in use"
@@ -79,12 +81,21 @@ show_deployment opentsx-modbus-sim
 info "event bridge (EVENT_BRIDGE=true)"
 show_deployment opentsx-event-bridge
 info "warnings (last 10 events)"
-kns get events --field-selector type=Warning --sort-by=.lastTimestamp 2>/dev/null | tail -n 10 || true
+events="$(kns get events --field-selector type=Warning --sort-by=.lastTimestamp)" \
+  || die "events: cannot read them; check the cluster with ${KUBECTL} -n $OPENTSX_NS get events"
+[[ -z "$events" ]] || tail -n 10 <<< "$events"
 if $LOGS; then
-  for d in $(kns get deployment -l app.kubernetes.io/part-of=opentsx -o name); do
+  deployments="$(kns get deployment -l app.kubernetes.io/part-of=opentsx -o name)" \
+    || die "--logs: cannot list the Deployments; check the cluster with ${KUBECTL} -n $OPENTSX_NS get deployment -l app.kubernetes.io/part-of=opentsx"
+  unread=0
+  for d in $deployments; do
     info "logs $d"
-    kns logs "$d" --tail=20 2>/dev/null || true
+    if ! kns logs "$d" --tail=20; then
+      warn "$d: cannot read its logs; check them with ${KUBECTL} -n $OPENTSX_NS logs $d"
+      unread=$((unread + 1))
+    fi
   done
+  (( unread == 0 )) || die "--logs: the logs of $unread Deployment(s) cannot be read; see the warn lines above"
 fi
 echo
 echo "Studio:    ${KUBECTL} -n $OPENTSX_NS port-forward svc/opentsx-studio 8088:80     -> http://localhost:8088"

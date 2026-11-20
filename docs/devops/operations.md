@@ -290,8 +290,15 @@ deploy/k3s/71-restore.sh DIR --only stats-state --yes
   **replaces** the PVC contents, replaces `.env` with the backup's env last and scales the writers back. A failed step
   leaves `.env` as it was, so the rerun restores into the same namespace. On a new cluster, restore `env` first
   (`71-restore.sh DIR --only env`, needs no cluster), then run `20-configure.sh` and `30-deploy.sh`, then restore the
-  volumes without `env` (`71-restore.sh DIR`). Restore the statistics checkpoint only against the **same** topics: it stores offsets. After topics were
-  deleted and recreated, skip `stats-state`.
+  volumes without `env` (`71-restore.sh DIR`). With `env` and volumes, the `namespace=` line of the backup's
+  `MANIFEST` and `OPENTSX_NS` of the backup's env must both name `OPENTSX_NS` as the shell or the current `.env` sets
+  it; otherwise, or without a `namespace=` line, it exits with 1 before the question and changes nothing. Restore
+  `env` alone first, or, when the `MANIFEST` and the env of the backup name the same namespace, set `OPENTSX_NS` to
+  it. `OPENTSX_NS` set in the shell wins over `.env`, and restoring `env` does not change it: unset it or set it to
+  the namespace of the backup. A backup taken with `OPENTSX_NS` set in the shell can name one namespace in its
+  `MANIFEST` and another in its env; restore its `env` alone first. Volumes alone restore into `OPENTSX_NS` as the
+  shell or the current `.env` sets it. Restore the statistics checkpoint only against the **same** topics: it stores
+  offsets. After topics were deleted and recreated, skip `stats-state`.
 * Schedule (lab): a daily cron entry on the admin host, e.g. `17 2 * * * cd /opt/opentsx && deploy/k3s/70-backup.sh
   --quiesce --out /srv/backup/opentsx/$(date +\%F)`, plus deleting copies older than 14 days. Test a restore every
   quarter into a second namespace (`20-configure.sh OPENTSX_NS=opentsx-restore …`). A run that fails removes the files

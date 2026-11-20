@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Tests the arguments of deploy/k3s/10-build.sh: an unknown option, an option without its value, a builder that is not
 # one, an argument and a NERDCTL of blanks exit 2 before Maven or an image builder runs, --help lists the exit codes, a
-# --tag that differs from OPENTSX_TAG and LAKE=true without --with-s3 print a warning, and a missing java, mvn or image
+# --tag that differs from OPENTSX_TAG and LAKE=true without --with-s3 print a warning, a missing java, mvn or image
 # builder exits 1 with its message, a builder named with --builder or a NERDCTL command that is not installed before
-# Maven runs.
+# Maven runs, and --no-images on a PATH without an image builder builds, stages and exits 0.
 # Stand-ins for mvn, java, the builders and deploy/docker/stage.sh record any call; needs no JDK, no builder, no
 # network.
 #
@@ -107,6 +107,24 @@ missing no-java "error: java: not found; install a JDK 17 or newer, deploy/k3s/0
 missing no-maven "error: mvn: not found; install Maven, deploy/k3s/00-prereqs.sh checks the build tools" java
 missing no-builder "error: image builder: none of docker, podman, nerdctl or buildah found; install one, or stage only with --no-images" \
   java mvn
+
+# --no-images, as the refusal above recommends, on a PATH with java and mvn and no image builder: Maven and the
+# staging run, no builder is looked for
+rm -rf "$WORK/bare-no-images"; mkdir -p "$WORK/bare-no-images"
+for tool in java mvn; do ln -s "$WORK/bin/record" "$WORK/bare-no-images/$tool"; done
+rc=0
+rm -f "$WORK/calls.log"
+env -i PATH="$WORK/bare-no-images:$WORK/bare" HOME="$WORK" WORK="$WORK" OPENTSX_ENV_FILE="$WORK/none.env" \
+  "$WORK/bare/bash" "$WORK/repo/deploy/k3s/10-build.sh" --no-images > "$WORK/no-images.out" 2>&1 || rc=$?
+staged="mvn -q -B install -DskipTests
+stage.sh "
+if (( rc != 0 )) || ! grep -qxF "==> done (no images built)" "$WORK/no-images.out"; then
+  failed "no-images: exit $rc, expected 0 and the staging without an image builder"; sed 's/^/    /' "$WORK/no-images.out"
+elif [[ "$(cat "$WORK/calls.log" 2>/dev/null)" != "$staged" ]]; then
+  failed "no-images: expected the calls of Maven and stage.sh only"; sed 's/^/    call: /' "$WORK/calls.log"
+else
+  echo "ok   no-images"
+fi
 
 # unbuilt NAME EXIT MESSAGE [KEY=VALUE ...] -- ARG ...: a PATH with bash, dirname, basename and the stand-ins java, mvn
 # and nerdctl only; exit EXIT with MESSAGE before mvn or stage.sh runs

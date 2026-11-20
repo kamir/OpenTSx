@@ -5,8 +5,10 @@
 # that answers, no OpenTSx image in k3s containerd, a k3s containerd that cannot list its images (with the error of
 # k3s ctr), an old statistics checkpoint (also when kubectl writes to stderr while it reads the age), a checkpoint and
 # a checkpoint age that cannot be read (with the error of kubectl exec) and an age that is not a number give their warn
-# lines and exit 0; a Deployment that is not there is not deployed, and one that cannot be
-# read exits 1 with kubectl's error and its message.
+# lines and exit 0; a Deployment that is not there is not deployed, and one that cannot be read exits 1 with kubectl's
+# error and its message; --logs shows the logs of every OpenTSx Deployment; Jobs, CronJobs, events or the Deployments
+# for --logs that cannot be read exit 1 with kubectl's error and their message; logs of one Deployment that cannot be
+# read give a warn line, the logs of the others and exit 1.
 # Stand-ins for kubectl, k3s and sudo; needs no kubectl, no cluster, no network.
 #
 #   bash deploy/k3s/test/test-50-status.sh
@@ -20,10 +22,11 @@ failed() { echo "FAIL $1"; failures=$((failures + 1)); }
 mkdir -p "$WORK/bin"
 # kubectl records its call and fails as an unreachable API server does; NAMESPACE=missing answers that the namespace
 # does not exist, with --ignore-not-found as kubectl does: no output and exit 0. CLUSTER=up answers as a cluster with
-# the namespace, opentsx-stats and its checkpoint CKPT_AGE seconds old (default 10), no other Deployment; CKPT=missing:
-# the checkpoint cannot be listed; CKPT_AGE=fails: its age cannot be read; STDERR=throttled: kubectl also writes its
-# client-side throttling line to stderr when it reads the age; DEPLOY=fails: a Deployment read is refused as by an
-# unreachable API server.
+# the namespace, the Deployments opentsx-stats and opentsx-retrieval with one log line each, the checkpoint of
+# opentsx-stats CKPT_AGE seconds old (default 10), and no other Deployment; CKPT=missing: the checkpoint cannot be
+# listed; CKPT_AGE=fails: its age cannot be read; STDERR=throttled: kubectl also writes its client-side throttling
+# line to stderr when it reads the age; DEPLOY=fails: a Deployment read is refused as by an unreachable API server;
+# REFUSE=<call>: the calls that start with <call> are refused as by a missing permission.
 cat > "$WORK/bin/kubectl" <<'STUB'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "$WORK/calls.log"
@@ -33,6 +36,9 @@ if [[ "${NAMESPACE:-}" == missing && "$1 $2" == "get namespace" ]]; then
 fi
 if [[ "${CLUSTER:-}" == up ]]; then
   [[ "$1" == -n ]] && shift 2
+  if [[ -n "${REFUSE:-}" && "$*" == "$REFUSE"* ]]; then
+    echo "Error from server (Forbidden): $*: forbidden" >&2; exit 1
+  fi
   case "$*" in
     "get namespace "*) echo "namespace/$3" ;;
     "exec deployment/opentsx-stats -- ls "*)
@@ -47,6 +53,9 @@ if [[ "${CLUSTER:-}" == up ]]; then
       [[ "${DEPLOY:-}" != fails ]] || { echo "The connection to the server 10.0.0.1:6443 was refused" >&2; exit 1; }
       [[ "$*" == *--ignore-not-found* ]] && exit 0
       echo "Error from server (NotFound): deployments.apps \"${2#deployment/}\" not found" >&2; exit 1 ;;
+    "get deployment -l app.kubernetes.io/part-of=opentsx -o name")
+      printf '%s\n' deployment.apps/opentsx-stats deployment.apps/opentsx-retrieval ;;
+    "logs "*) echo "log line of $2" ;;
   esac
   exit 0
 fi
@@ -208,6 +217,52 @@ elif grep -qF "no opentsx images" "$WORK/ctr-fails.out"; then
 else
   echo "ok   ctr-fails"
 fi
+
+STUB_ENV=(CLUSTER=up)
+status logs --logs
+STUB_ENV=()
+if (( rc != 0 )) || ! grep -qxF "log line of deployment.apps/opentsx-stats" "$WORK/logs.out" \
+  || ! grep -qxF "log line of deployment.apps/opentsx-retrieval" "$WORK/logs.out"; then
+  failed "logs: exit $rc, expected 0 and the log lines of opentsx-stats and opentsx-retrieval"; sed 's/^/    /' "$WORK/logs.out"
+else
+  echo "ok   logs"
+fi
+
+# refused NAME MESSAGE CALL ARG ...: against the cluster that answers, the reads that start with CALL are refused;
+# exit 1 with the error of kubectl and MESSAGE
+refused() {
+  local name="$1" message="$2" call="$3"; shift 3
+  STUB_ENV=(CLUSTER=up REFUSE="$call")
+  status "$name" "$@"
+  STUB_ENV=()
+  if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/$name.out"; then
+    failed "$name: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/$name.out"
+  elif ! grep -qF "Error from server (Forbidden): $call" "$WORK/$name.out"; then
+    failed "$name: the error of kubectl is not shown"; sed 's/^/    /' "$WORK/$name.out"
+  else
+    echo "ok   $name"
+  fi
+}
+refused jobs-refused "error: jobs: cannot read them; check the cluster with $WORK/bin/kubectl -n opentsx get job" "get job "
+refused cronjobs-refused "error: cronjobs: cannot read them; check the cluster with $WORK/bin/kubectl -n opentsx get cronjob" \
+  "get cronjob "
+refused events-refused "error: events: cannot read them; check the cluster with $WORK/bin/kubectl -n opentsx get events" \
+  "get events "
+refused logs-list-refused "error: --logs: cannot list the Deployments; check the cluster with $WORK/bin/kubectl -n opentsx get deployment -l app.kubernetes.io/part-of=opentsx" \
+  "get deployment -l " --logs
+
+STUB_ENV=(CLUSTER=up REFUSE="logs deployment.apps/opentsx-stats")
+status logs-refused --logs
+STUB_ENV=()
+before=$failures
+if (( rc != 1 )); then failed "logs-refused: exit $rc, expected 1"; fi
+for message in "Error from server (Forbidden): logs deployment.apps/opentsx-stats --tail=20: forbidden" \
+  "  warn  deployment.apps/opentsx-stats: cannot read its logs; check them with $WORK/bin/kubectl -n opentsx logs deployment.apps/opentsx-stats" \
+  "log line of deployment.apps/opentsx-retrieval" \
+  "error: --logs: the logs of 1 Deployment(s) cannot be read; see the warn lines above"; do
+  grep -qxF -- "$message" "$WORK/logs-refused.out" || failed "logs-refused: expected the line: $message"
+done
+if (( failures > before )); then sed 's/^/    /' "$WORK/logs-refused.out"; else echo "ok   logs-refused"; fi
 
 if (( failures )); then echo "$failures failed"; exit 1; fi
 echo "all passed"

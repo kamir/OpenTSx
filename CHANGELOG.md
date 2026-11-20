@@ -234,6 +234,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `registry: k8s.gcr.io`.
 - `MacroTrackerFrame.addTransformation(t, dialog)` records an operation with the chart dialog that `show Chart` of its
   node opens; `addTransformation(t, chart)` still takes the title of an open chart.
+- The k3s shell tests cover `10-build.sh --no-images` on a host without an image builder and `90-teardown.sh --images`
+  without `--yes` on a host without k3s, where the k3s refusal comes before the question.
 
 ### Changed
 
@@ -2223,7 +2225,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   .env there; see the error above, nothing was restored` when it cannot copy the current `.env` aside. Before, it
   replaced `.env` without the copy and exited 0.
 - `deploy/k3s/71-restore.sh` restores a backup whose MANIFEST has no `created=`, `namespace=`, `image=` or `git=`
-  line. Before, it stopped after the checksum check with exit code 1 and no message.
+  line; with `env` and volumes among the parts it refuses a MANIFEST without `namespace=` (exit code 1, nothing
+  changed). Before, it stopped after the checksum check with exit code 1 and no message.
 - `house --calibrate` reads the bills file only up to the first data row over 1200 (ten bills a month for 10 years),
   and `--weather` reads the temperatures file only up to the first data row over 87673 (one per step of the longest
   house plan). It refuses a bills file of more than 1048576 bytes (1 MiB) and a temperatures file of more than
@@ -2514,6 +2517,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   expected a JSON object`. It also exits 1 when a sensor `range` is not two whole numbers with low <= high, with
   `<file>: sensors.<id>.range: <value> is not allowed; expected two whole numbers [low, high] with low <= high`. Both
   cases used to end in a traceback, or for `"sensors": null` in exit 0.
+- `deploy/k3s/50-status.sh` exits with 1 after the error of kubectl when it cannot read the Jobs, the CronJobs, the
+  events or, with `--logs`, the list of Deployments, for example `jobs: cannot read them; check the cluster with
+  kubectl -n opentsx get job`. With `--logs`, a Deployment whose logs cannot be read gets a warn line, the logs of the
+  others are still shown and the script exits with 1. These reads showed an empty section and exited with 0.
+- `deploy/k3s/71-restore.sh` with `env` and volumes checks the namespace before the question and before it changes
+  anything, and exits with 1 when the check fails. A backup whose `MANIFEST` names another namespace than `OPENTSX_NS`
+  is refused with `namespace: the backup is of <backup ns>, deploy/k3s/.env names <ns>; restore env alone first or set
+  OPENTSX_NS to <backup ns>`. When `OPENTSX_NS` is set in the shell, the refusal names the shell: `namespace: the
+  backup is of <backup namespace>, the shell sets OPENTSX_NS to <namespace>; set OPENTSX_NS to <backup namespace> or
+  unset it`. A `MANIFEST` without a `namespace=` line is refused too, and so is a backup whose env names another
+  namespace than its `MANIFEST`, as a backup taken with `OPENTSX_NS` set in the shell can. The script restored the
+  volumes into the current namespace and then switched `.env` to the namespace of the backup.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

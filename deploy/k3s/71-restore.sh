@@ -15,14 +15,17 @@
 # starts a helper pod with the PVCs mounted read-write, REPLACES each PVC's content with the archive (ownership as in
 # the backup), replaces .env with the backup's env last and scales the writers back. A failed step leaves .env as it
 # was, so the rerun restores into the same namespace. A .env that already equals the backup's env stays, and so does
-# the kept copy. The KafScale topics are not touched.
+# the kept copy. With env and volumes, the namespace= line of the MANIFEST and OPENTSX_NS of the backup's env must both
+# name OPENTSX_NS as the shell or the current .env sets it.
+# The KafScale topics are not touched.
 # Caution: the statistics checkpoint holds positions (offsets) in tsx.<domain>.episodes.v2. Restore it only against the
 # SAME topics; if the topics were deleted and recreated, skip stats-state (the processor then re-reads from the start).
 #
 # Exit codes:
 #   0  restored
-#   1  the backup is damaged or incomplete, the namespace or a PVC is missing or cannot be read, a step failed, or
-#      the question was not answered with y (also at the end of standard input)
+#   1  the backup is damaged or incomplete, with env and volumes its MANIFEST names no namespace or another one than
+#      its env or OPENTSX_NS (checked before the question), the namespace or a PVC is missing or cannot be read, a step
+#      failed, or the question was not answered with y (also at the end of standard input)
 #   2  usage error: no backup directory or a second one, an unknown option, --only without its value or with an
 #      unknown part, or a line of deploy/k3s/.env that is not a comment or KEY=VALUE with a known key
 set -euo pipefail
@@ -43,6 +46,8 @@ while [[ $# -gt 0 ]]; do
 done
 [[ -n "$DIR" ]] || usage_error "DIR: missing; expected 71-restore.sh DIR [--only LIST] [--yes]"
 [[ -f "$DIR/MANIFEST" ]] || die "$DIR/MANIFEST: not found; expected a directory written by 70-backup.sh"
+NS_FROM_SHELL=false
+[[ -z "${OPENTSX_NS+x}" ]] || NS_FROM_SHELL=true
 load_env
 
 declare -A PVC=([stats-state]=opentsx-stats-state [data]=opentsx-data [iceberg-catalog]=opentsx-iceberg-catalog
@@ -76,6 +81,21 @@ if want env; then
 fi
 (( ${#PARTS[@]} )) || $RESTORE_ENV \
   || die "$DIR: nothing to restore; the backup holds none of the parts asked for, see the file list in $DIR/MANIFEST"
+# the volumes go into the current OPENTSX_NS, the next 20-configure.sh and 30-deploy.sh into that of the backup
+if $RESTORE_ENV && (( ${#PARTS[@]} )); then
+  backup_ns="$(sed -n '/^namespace=/{s///p;q;}' "$DIR/MANIFEST")"
+  [[ -n "$backup_ns" ]] || die "namespace: missing in $DIR/MANIFEST; restore env alone first, then the volumes"
+  # as load_env reads it: env.example first, the backup's env last; 70-backup.sh takes namespace= from the shell too
+  env_ns="$(sed -n -E 's/^[[:space:]]*(export[[:space:]]+)?OPENTSX_NS=([^[:space:]#]*).*/\2/p' \
+    "$K3S_DIR/env.example" "$DIR/env" | tail -n 1 | tr -d "\"'")"
+  [[ "$env_ns" == "$backup_ns" ]] \
+    || die "namespace: the backup is of $backup_ns, $DIR/env names $env_ns; restore env alone first, then the volumes"
+  # load_env lets the shell win over .env, and restoring env does not change the shell
+  [[ "$backup_ns" == "$OPENTSX_NS" ]] || ! $NS_FROM_SHELL \
+    || die "namespace: the backup is of $backup_ns, the shell sets OPENTSX_NS to $OPENTSX_NS; set OPENTSX_NS to $backup_ns or unset it"
+  [[ "$backup_ns" == "$OPENTSX_NS" ]] \
+    || die "namespace: the backup is of $backup_ns, deploy/k3s/.env names $OPENTSX_NS; restore env alone first or set OPENTSX_NS to $backup_ns"
+fi
 
 if ! $YES; then
   echo "This REPLACES the content of: ${PARTS[*]:-(no volumes)}$($RESTORE_ENV && echo " and deploy/k3s/.env") in namespace $OPENTSX_NS."

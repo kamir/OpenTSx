@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Tests deploy/k3s/90-teardown.sh: an image that k3s ctr cannot remove gives a warn line naming it and exit 1, an image
-# that is not there is no failure, --images without k3s exits 1 and deletes nothing, a declined question and a
-# question at the end of standard input exit 1 with their message on stderr before kubectl runs, an answer without a
-# newline at the end counts as given, a namespace that cannot be read exits 1 and is not taken as missing, a missing
-# namespace deletes nothing, an existing one is deleted, and usage errors exit 2. Stand-ins for kubectl, k3s and sudo;
-# needs no cluster.
+# that is not there is no failure, --images without k3s exits 1 and deletes nothing, also without --yes, where the
+# k3s refusal comes before the question, a declined question and a question at the end of standard input exit 1 with
+# their message on stderr before kubectl runs, an answer without a newline at the end counts as given, a namespace
+# that cannot be read exits 1 and is not taken as missing, a missing namespace deletes nothing, an existing one is
+# deleted, and usage errors exit 2. Stand-ins for kubectl, k3s and sudo; needs no cluster.
 #
 #   bash deploy/k3s/test/test-90-teardown.sh
 set -euo pipefail
@@ -179,6 +179,23 @@ elif [[ -s "$WORK/calls.log" ]]; then
   failed "images-without-k3s: kubectl was called before k3s was checked"; sed 's/^/    call: /' "$WORK/calls.log"
 else
   echo "ok   images-without-k3s"
+fi
+
+# without --yes and the answer n: the k3s check comes before the question, so only the k3s refusal is printed
+rc=0
+rm -f "$WORK/calls.log"
+env -i PATH="$WORK/no-k3s" HOME="$WORK" WORK="$WORK" KUBECTL="$WORK/bin/kubectl" OPENTSX_ENV_FILE="$WORK/none.env" \
+  OPENTSX_OVERLAY="$WORK/overlay" NAMESPACE=present "$WORK/no-k3s/bash" "$K3S_DIR/90-teardown.sh" --images \
+  > "$WORK/images-without-k3s-asked.out" 2> "$WORK/images-without-k3s-asked.err" <<< n || rc=$?
+message="error: --images: k3s not found on this host; run 90-teardown.sh --images on the k3s node, or leave out --images"
+if (( rc != 1 )) || [[ "$(cat "$WORK/images-without-k3s-asked.err")" != "$message" ]] \
+  || [[ -s "$WORK/images-without-k3s-asked.out" ]]; then
+  failed "images-without-k3s-asked: exit $rc, expected 1 and only the k3s refusal on stderr, before the question: $message"
+  sed 's/^/    stderr: /' "$WORK/images-without-k3s-asked.err"; sed 's/^/    stdout: /' "$WORK/images-without-k3s-asked.out"
+elif [[ -s "$WORK/calls.log" ]]; then
+  failed "images-without-k3s-asked: kubectl was called"; sed 's/^/    call: /' "$WORK/calls.log"
+else
+  echo "ok   images-without-k3s-asked"
 fi
 
 expect() {   # NAME MESSAGE ARG ...: a usage error, exit 2, before kubectl runs

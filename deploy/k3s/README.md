@@ -55,6 +55,8 @@ in `NERDCTL`. A builder that is not installed exits with 1:
 error: podman: not found; install it or choose another builder with --builder
 ```
 
+`10-build.sh --no-images` builds and stages without an image builder and checks for none.
+
 `10-build.sh` with the builder `nerdctl` and `11-import-images.sh --method nerdctl` refuse a `NERDCTL` that holds only
 blanks as a usage error with exit 2:
 
@@ -113,6 +115,21 @@ and exits with 1 after the error of kubectl when it cannot read one:
 error: deployment/opentsx-modbus-sim: cannot read it; check the cluster with kubectl -n opentsx get deployment/opentsx-modbus-sim
 ```
 
+It exits with 1 the same way when it cannot read the Jobs, the CronJobs, the events or, with `--logs`, the list of
+OpenTSx Deployments:
+
+```text
+error: jobs: cannot read them; check the cluster with kubectl -n opentsx get job
+```
+
+With `--logs`, a Deployment whose logs cannot be read gets a warn line after the error of kubectl. The logs of the
+other Deployments are still shown, then the script exits with 1:
+
+```text
+  warn  deployment.apps/opentsx-stats: cannot read its logs; check them with kubectl -n opentsx logs deployment.apps/opentsx-stats
+error: --logs: the logs of 1 Deployment(s) cannot be read; see the warn lines above
+```
+
 `71-restore.sh` and `90-teardown.sh` ask before they change anything. Without `--yes`, an answer that does not start
 with `y` or `Y` exits with 1, and so does standard input that ends before an answer, for example in CI:
 
@@ -148,6 +165,36 @@ error: namespace opentsx: not found; nothing was restored; run 71-restore.sh ./o
 
 The last command of the hint leaves `env` out. `20-configure.sh` rewrites `.env`, so restoring `env` again would
 replace `.env.before-restore`, the copy of the `.env` from before the restore, with it.
+
+With `env` and volumes among the parts, the volumes go into `OPENTSX_NS` as the shell or the current `.env` sets it,
+while the next `20-configure.sh` and `30-deploy.sh` use `OPENTSX_NS` of the backup's env. The script therefore checks
+before the question that the `namespace=` line of the backup's `MANIFEST` and `OPENTSX_NS` of the backup's env (with
+the default of `env.example`, as the scripts read it) both name `OPENTSX_NS`. A backup of another namespace, or one
+without a `namespace=` line, stops the restore with exit 1 before it changes anything:
+
+```text
+error: namespace: the backup is of opentsx-old, deploy/k3s/.env names opentsx; restore env alone first or set OPENTSX_NS to opentsx-old
+```
+
+Restore `env` alone first and follow the order for a new cluster, or set the namespace of the backup with
+`20-configure.sh OPENTSX_NS=<namespace>` and run `30-deploy.sh` first. `OPENTSX_NS` set in the shell wins over
+`.env`, and restoring `env` does not change it, so the message then names the shell:
+
+```text
+error: namespace: the backup is of opentsx-old, the shell sets OPENTSX_NS to opentsx; set OPENTSX_NS to opentsx-old or unset it
+```
+
+`70-backup.sh` writes `namespace=` from
+`OPENTSX_NS` as the shell or `.env` sets it, but copies `.env` as it is, so a backup taken with `OPENTSX_NS` set in the
+shell can name one namespace in its `MANIFEST` and another in its env. Such a backup is refused whatever `OPENTSX_NS`
+is; restore `env` alone first:
+
+```text
+error: namespace: the backup is of opentsx, ./opentsx-backup-20261012T021700Z/env names opentsx-old; restore env alone first, then the volumes
+```
+
+Volumes alone restore into `OPENTSX_NS` as the shell or the current `.env` sets it, whatever namespace the backup
+was taken from.
 
 A `.env` that already equals the backup's env stays as it is, and so does `.env.before-restore`. The message names
 `.env.before-restore` only when that file exists; without it the line ends with `already the backup's env; left as it
