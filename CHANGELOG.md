@@ -869,6 +869,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `OPENTSX_DOMAIN: "Wind" is not allowed; expected lower-case letters, digits, hyphens or underscores, starting with a
   letter or digit, such as wind`, `buildah: not found; install it or choose another method with --method` and `kind
   cluster <name>: not found; list the clusters with kind get clusters`.
+- `opentsx-core`: `FFTPhaseRandomizer.nrOfSValues` is deprecated and has no effect.
 
 ### Removed
 
@@ -2070,6 +2071,19 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   clipboard without printing it, and `Export code (Scala)` copies the Scala code instead of the Java code. A PFD step
   that cannot be recorded throws `IllegalStateException` with `<operation>: cannot record the PFD step (<cause>)`
   instead of printing to standard error and going on.
+- `opentsx-core`: `ReturnIntervallStatistik2` and `TSPropertyTester` fill the counts that `calcMessreihen` reads for a
+  result that is not a container. `mrHaeufigkeit` and `mrVerteilung` hold the count and the share of the intervals in
+  bins of width 1/`scale` instead of zeros. The shares of the scaled bins added to `mrVerteilungSkaliert` are divided
+  as doubles instead of being rounded to 0, and they are placed at i / `scale` instead of its integer part.
+- `opentsx-core`: `TSPropertyTester.addDistData` scales its bins with the mean of its intervals instead of the value
+  of `setRQ` (1.0 by default), and `getRq()` returns that mean. It counts an interval below the first or past the last
+  bin in that bin, so its probabilities add up to 1. `setRQ` does not change the bins.
+- `opentsx-core`: `TSPropertyTester.addDistData` refuses an interval that is NaN or infinite with
+  `IllegalArgumentException` `addDistData: interval <k> of <name> is <value>; expected a finite interval` and adds
+  nothing, instead of sorting every interval into the first bin.
+- `opentsx-core`: `EntropieTest` prints nothing from its library methods. The DFA status is a DEBUG line, and `main`
+  prints the result line that `calcTEandMI` returns. `main` no longer ends with an empty line and `mr and m2`; it logs
+  `compared surrogates experiment=<label> series=<n>` at DEBUG instead.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

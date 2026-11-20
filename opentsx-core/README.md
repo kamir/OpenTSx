@@ -288,7 +288,8 @@ Pass a `java.util.Random` with a seed to get the same surrogate again. Without t
 `Random`. `FFTPhaseRandomizer.getPhaseRandomizedRow(ts, showTest, runDFA, testZaehler, mode)` calls the shuffle for
 `MODE_shuffle_phase` and the random phases for `MODE_multiply_phase_with_random_value`, both without a seed. It does
 not use `showTest`, `runDFA` or `testZaehler`. None of these methods opens a window. `FFTPhaseRandomizer` has no
-`main` method; `LongTermCorrelationSeriesGenerator.main` charts alpha against beta.
+`main` method; `LongTermCorrelationSeriesGenerator.main` charts alpha against beta. `getPhaseRandomizedRow` returns
+null for any other `mode`. `FFTPhaseRandomizer.nrOfSValues` is deprecated and has no effect.
 
 ## Generate long-range correlated noise
 
@@ -354,6 +355,16 @@ A time that is NaN or infinite throws `IllegalArgumentException` with
 scaled with their mean R_q, so the probabilities of a result add up to 1. A result that keeps no interval, for example
 times 1, 1 and 1, has NaN probabilities and R_q, and `add` skips it. For times 0, 1, 1 and 2 the bins count the
 intervals 1 and 1, not the 0.
+`TSPropertyTester.addDistData` keeps every interval and sorts it into bins scaled with the mean R_q of its intervals. An
+interval below the first or past the last bin is counted in that bin, so the probabilities add up to 1. `setRQ` does not
+change the bins, and after `addDistData` `getRq()` returns the mean R_q of the intervals. An interval that is NaN or
+infinite throws `IllegalArgumentException` with
+`addDistData: interval <k> of <name> is <value>; expected a finite interval`, and a refused call adds nothing.
+For a result that is not a container, `addDistData` also counts the kept intervals as they are, in bins of width
+1/`scale`, and `calcMessreihen()` writes these counts: `mrHaeufigkeit` holds the count of bin i at i / `scale`, and
+`mrVerteilung` holds its share of all kept intervals. The last bin also counts the longer intervals, and in
+`TSPropertyTester` the first bin also counts the negative ones. With binning 12 and scale 10, the intervals 0.15, 0.25,
+0.25, 0.55 and 3.0 give the counts 1 at 0.1, 2 at 0.2, 1 at 0.5 and 1 at 1.2.
 `SingleTsRISTool` passes the y values of each series as times and adds the result to `risCollector`.
 `SingleTsRISTool.finish()` throws `IllegalStateException` with
 `finish: the RIS of <name> cannot be shown (<cause>)` when the collected result cannot be shown.

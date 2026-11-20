@@ -175,6 +175,30 @@ class ReturnIntervallStatistik2Test {
     }
 
     @Test
+    void aSingleResultGivesTheCountsAndTheDistributionOfItsIntervals() throws Exception {
+        ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2("single", 12, 10);
+        ris.addDistData(new Vector<>(List.of(0.15, 0.25, 0.25, 0.55, 3.0)));
+
+        ris.calcMessreihen();
+
+        double[] counts = {0, 1, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1};
+        assertSeries(counts, 1.0, ris.mrHaeufigkeit);
+        assertSeries(counts, 5.0, ris.mrVerteilung);
+    }
+
+    @Test
+    void aSingleResultAddsTheShareOfEachScaledBin() throws Exception {
+        ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2("single", 12, 10);
+        ris.addDistData(new Vector<>(List.of(0.25, 0.25, 0.5, 3.0)));
+
+        ris.calcMessreihen();
+
+        assertArrayEquals(new int[] {3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, ris.dataSKALIERT);
+        assertTrue(hasPair(ris.mrVerteilungSkaliert, 0.0, 0.75), ris.mrVerteilungSkaliert.toString());
+        assertTrue(hasPair(ris.mrVerteilungSkaliert, 0.3, 0.25), ris.mrVerteilungSkaliert.toString());
+    }
+
+    @Test
     void aTimeBeforeTheTimeBeforeItIsRefused() {
         ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2("unsorted", 12, 10);
 
@@ -248,6 +272,24 @@ class ReturnIntervallStatistik2Test {
         ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2(name, 12, 10);
         ris.addDistData(intervals(1100));
         return ris;
+    }
+
+    static void assertSeries(double[] counts, double total, TimeSeriesObject series) {
+        assertEquals(counts.length, series.yValues.size(), series.toString());
+        for (int i = 0; i < counts.length; i++) {
+            assertEquals(i / 10.0, (Double) series.xValues.get(i), 1e-12);
+            assertEquals(counts[i] / total, (Double) series.yValues.get(i), 1e-12);
+        }
+    }
+
+    static boolean hasPair(TimeSeriesObject series, double x, double y) {
+        for (int i = 0; i < series.xValues.size(); i++) {
+            if (Math.abs((Double) series.xValues.get(i) - x) < 1e-12
+                    && Math.abs((Double) series.yValues.get(i) - y) < 1e-12) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static Vector<Double> times(double... values) {

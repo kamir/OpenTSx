@@ -32,16 +32,15 @@ The inverse transform of these realizations are the desired target surrogates.
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.data.series.TimeSeriesObjectFFT;
 
-import java.text.DecimalFormat;
-
 public class FFTPhaseRandomizer {
     
     public static final int MODE_shuffle_phase = 0;
     public static final int MODE_multiply_phase_with_random_value = 1;
     
     /**
-     *   Parameters with influence on RUNTIME and PERFORMANCE
+     * @deprecated Has no effect; no method of this class runs a DFA.
      */
+    @Deprecated
     static public int nrOfSValues = 250;
 
     /**
@@ -103,19 +102,12 @@ public class FFTPhaseRandomizer {
                                                          int testZaehler,
                                                          int mode ) throws Exception {
 
-        DecimalFormat df = new DecimalFormat("0.000");
-        
-        int N = ts.yValues.size();
-        double[] zr = new double[N];
-
         // pass the array with the series data
         TimeSeriesObjectFFT mrNEW = TimeSeriesObjectFFT.convertToMessreiheFFT( ts );
         
         //
         // MANIPULATION OF THE REAL Time Series 
         //
-        TimeSeriesObjectFFT temp = null;
-        
         switch( mode )  {
           
             case 0 : { 
@@ -131,7 +123,7 @@ public class FFTPhaseRandomizer {
         };
         
 
-        return temp;
+        return null;
     }
 
 }

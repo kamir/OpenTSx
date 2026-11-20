@@ -355,7 +355,7 @@ public class ReturnIntervallStatistik2 {
         
         
         
-        // count the filtered intervals scaled with their Rq
+        // count the filtered intervals as they are and scaled with their Rq
         Enumeration en = dataRawFILTERED.elements();
         if ( LOG.isDebugEnabled() ) LOG.debug("counting intervals result={} intervals={}", name, dataRawFILTERED.size());
         
@@ -371,6 +371,10 @@ public class ReturnIntervallStatistik2 {
              
              if ( index >= dataSKALIERT.length ) index = dataSKALIERT.length-1;
              dataSKALIERT[index]++;
+
+             int bin = (int)( dist1 * (double)scale );
+             if ( bin >= data.length ) bin = data.length-1;
+             data[bin]++;
         }
         
         // probability of each bin
@@ -450,9 +454,9 @@ public class ReturnIntervallStatistik2 {
                 
           anzahlProSpalte = dataSKALIERT[i];
                                 
-          relAnzahl = dataSKALIERT[i] / this.zElements;
+          relAnzahl = (double) dataSKALIERT[i] / (double) this.zElements;
  
-          mrVerteilungSkaliert.addValuePair( i / ( scale ), relAnzahl);
+          mrVerteilungSkaliert.addValuePair( (double)i / (double)scale, relAnzahl);
         }
         }
         if ( LOG.isDebugEnabled() ) {

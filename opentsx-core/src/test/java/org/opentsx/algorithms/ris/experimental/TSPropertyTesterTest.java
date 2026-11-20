@@ -4,10 +4,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Vector;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.assertSeries;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.failingSeries;
+import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.hasPair;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.intervals;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.isOpen;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.stderrOf;
@@ -109,6 +113,91 @@ class TSPropertyTesterTest {
 
         assertEquals(List.of(1.0), tester.dataRaw_InterEventTIMES);
         assertEquals(List.of(1.0), tester.dataRawFILTERED);
+    }
+
+    @Test
+    void aSingleResultGivesTheCountsAndTheDistributionOfItsIntervals() throws Exception {
+        TSPropertyTester tester = new TSPropertyTester("single", 12, 10);
+        tester.addDistData(new Vector<>(List.of(0.15, 0.25, 0.25, 0.55, 3.0)));
+
+        tester.calcMessreihen();
+
+        double[] counts = {0, 1, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1};
+        assertSeries(counts, 1.0, tester.mrHaeufigkeit);
+        assertSeries(counts, 5.0, tester.mrVerteilung);
+    }
+
+    @Test
+    void aSingleResultAddsTheShareOfEachScaledBin() throws Exception {
+        TSPropertyTester tester = new TSPropertyTester("single", 12, 10);
+        tester.addDistData(new Vector<>(List.of(0.25, 0.25, 0.5, 3.0)));
+
+        tester.calcMessreihen();
+
+        assertArrayEquals(new int[] {3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, tester.dataSKALIERT);
+        assertTrue(hasPair(tester.mrVerteilungSkaliert, 0.0, 0.75), tester.mrVerteilungSkaliert.toString());
+        assertTrue(hasPair(tester.mrVerteilungSkaliert, 0.3, 0.25), tester.mrVerteilungSkaliert.toString());
+    }
+
+    @Test
+    void theBinsAreScaledWithTheMeanOfTheIntervalsAndCountAnIntervalPastTheLastBin() throws Exception {
+        TSPropertyTester tester = new TSPropertyTester("scaled", 12, 10);
+        Vector<Double> intervals = new Vector<>();
+        for (int i = 0; i < 10; i++) {
+            intervals.add(1.0);
+        }
+        intervals.add(1000.0);
+
+        tester.addDistData(intervals);
+
+        assertEquals(10, tester.dataSKALIERT[0]);
+        assertEquals(1, tester.dataSKALIERT[12]);
+        assertEquals(10.0 / 11.0, tester.probSKALIERT[0], 1e-12);
+        assertEquals(1.0, Arrays.stream(tester.probSKALIERT).sum(), 1e-9);
+    }
+
+    @Test
+    void setRQDoesNotChangeTheBins() throws Exception {
+        TSPropertyTester tester = new TSPropertyTester("set", 12, 10);
+        tester.setRQ(4.0);
+
+        tester.addDistData(new Vector<>(List.of(1.0, 2.0, 3.0)));
+
+        assertArrayEquals(new int[] {1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, tester.dataSKALIERT);
+    }
+
+    @Test
+    void getRqReturnsTheMeanTheBinsAreScaledWith() throws Exception {
+        TSPropertyTester tester = new TSPropertyTester("rq", 12, 10);
+        tester.setRQ(4.0);
+
+        tester.addDistData(new Vector<>(List.of(1.0, 2.0, 3.0)));
+
+        assertEquals(2.0, tester.getRq(), 1e-12);
+    }
+
+    @Test
+    void aNanOrInfiniteIntervalIsRefused() {
+        for (double bad : new double[] {Double.NaN, Double.POSITIVE_INFINITY}) {
+            TSPropertyTester tester = new TSPropertyTester("bad", 12, 10);
+
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                    () -> tester.addDistData(new Vector<>(List.of(1.0, 2.0, bad, 3.0))));
+
+            assertEquals("addDistData: interval 2 of bad is " + bad + "; expected a finite interval", e.getMessage());
+            assertArrayEquals(new int[13], tester.dataSKALIERT);
+            assertEquals(List.of(), tester.dataRawFILTERED);
+        }
+    }
+
+    @Test
+    void anIntervalBelowTheFirstBinIsCountedInTheFirstBin() throws Exception {
+        TSPropertyTester tester = new TSPropertyTester("negative", 12, 10);
+
+        tester.addDistData(new Vector<>(List.of(-3.0, 1.0, 2.0, 4.0)));
+
+        assertArrayEquals(new int[] {1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0}, tester.dataSKALIERT);
+        assertEquals(1.0, Arrays.stream(tester.probSKALIERT).sum(), 1e-9);
     }
 
     @Test

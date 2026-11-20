@@ -54,6 +54,8 @@ import org.opentsx.chart.simple.MyXYPlot;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.algorithms.detrending.DetrendingMethodFactory;
 import org.opentsx.algorithms.detrending.methods.IDetrendingMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.DecimalFormat;
 import java.util.Vector;
@@ -64,6 +66,8 @@ import java.util.Vector;
  * @author kamir
  */
 public class EntropieTest {
+
+    private static final Logger LOG = LoggerFactory.getLogger(EntropieTest.class);
 
     public static String label_of_EXPERIMENT = "EXP0";
     public static double samplingRate = 1000;
@@ -163,8 +167,6 @@ public class EntropieTest {
 
         for (int i = 5; i < 6000; i = i + 1) {
 
-            System.out.print(i + "\t");
-
             Vector<TimeSeriesObject> comp = new Vector<TimeSeriesObject>();
 
             TimeSeriesObject mm = components.elementAt(0).cutOut(0, i);
@@ -183,7 +185,7 @@ public class EntropieTest {
                 SCATTERPLOT = false;
             }
 
-            calcTEandMI(comp.elementAt(0), comp.elementAt(1), dig, "r0", "r1", mrPROBE1, mrPROBE2, i);
+            System.out.println(i + "\t" + calcTEandMI(comp.elementAt(0), comp.elementAt(1), dig, "r0", "r1", mrPROBE1, mrPROBE2, i));
 
         }
 
@@ -233,8 +235,7 @@ public class EntropieTest {
 
         applyDFA(mrv2, "<<< RAW, Shuffled, PHRand.MULTIPLY, PHRand.SHUFFLE >>> ");
 
-        System.out.println();
-        System.out.println("mr and m2");
+        LOG.debug("compared surrogates experiment={} series={}", label_of_EXPERIMENT, mrv2.size());
 
     }
 
@@ -294,7 +295,7 @@ public class EntropieTest {
 
             double alpha = alphaSR.getSlope();
 
-            System.out.println(status);
+            LOG.debug("computed DFA series={} alpha={} status={}", d4.getLabel(), alpha, status.strip().replace('\n', ' '));
         }
 
         if (true) {
@@ -309,7 +310,7 @@ public class EntropieTest {
 
     static boolean singleDebug = true;
 
-    private static void calcTEandMI(TimeSeriesObject mr1, TimeSeriesObject mr2, int dig, String l1, String l2, TimeSeriesObject row1, TimeSeriesObject row2, int x) throws Exception {
+    private static String calcTEandMI(TimeSeriesObject mr1, TimeSeriesObject mr2, int dig, String l1, String l2, TimeSeriesObject row1, TimeSeriesObject row2, int x) throws Exception {
 
         mr1.normalize();
         mr2.normalize();
@@ -360,8 +361,7 @@ public class EntropieTest {
             MyXYPlot plot = MyXYPlot.openAndGet(v, l1 + "_vs_" + l2, mr1.getLabel(), mr2.getLabel(), true);
         }
 
-        // CLEAN RESULTLINE
-        System.out.println(line.replace('.', ','));
+        return line.replace('.', ',');
 
     }
 

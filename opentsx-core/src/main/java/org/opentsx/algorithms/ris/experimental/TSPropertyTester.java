@@ -219,7 +219,6 @@ public class TSPropertyTester {
 
     private double _Rq = 1.0;
     private int zElements = 0;
-    private double Rq = 1.0;
     
     /* 
      * the binned values, an array of counters
@@ -467,6 +466,13 @@ public class TSPropertyTester {
         if ( this.isContainerInstanz ) {
             throw new IllegalStateException("addDistData: " + name + " is a container; add intervals to a result that is not a container");
         }
+
+        for( int k = 0; k < dists.size(); k++ ) {
+            double da = (Double) dists.elementAt(k);
+            if ( !Double.isFinite( da ) ) {
+                throw new IllegalArgumentException( "addDistData: interval " + k + " of " + name + " is " + da + "; expected a finite interval" );
+            }
+        }
         
         if ( LOG.isDebugEnabled() ) LOG.debug("adding intervals result={} intervals={}", name, dists.size());
         
@@ -535,7 +541,7 @@ public class TSPropertyTester {
       
         
         
-        // count the intervals scaled with Rq
+        // count the intervals as they are and scaled with their Rq
         Enumeration en = dataRawNOT_FILTERED.elements();
         if ( LOG.isDebugEnabled() ) LOG.debug("counting intervals result={} intervals={}", name, dataRawFILTERED.size());
         
@@ -543,7 +549,7 @@ public class TSPropertyTester {
              
              double dist1 = (Double) en.nextElement();
              
-             double v = dist1 / getRq() ;
+             double v = dist1 / Rq_filtered;
              
              v = v * ( (double)binning / (double)scale );
              
@@ -551,7 +557,12 @@ public class TSPropertyTester {
              
              if ( index >= dataSKALIERT.length ) index = dataSKALIERT.length-1;
              else if ( index < 0 ) index = 0;
-             else dataSKALIERT[index]++;
+             dataSKALIERT[index]++;
+
+             int bin = (int)( dist1 * (double)scale );
+             if ( bin >= data.length ) bin = data.length-1;
+             else if ( bin < 0 ) bin = 0;
+             data[bin]++;
         }
         
         // probability of each bin
@@ -639,9 +650,9 @@ public class TSPropertyTester {
                 
           anzahlProSpalte = dataSKALIERT[i];
                                 
-          relAnzahl = dataSKALIERT[i] / this.zElements;
+          relAnzahl = (double) dataSKALIERT[i] / (double) this.zElements;
  
-          mrVerteilungSkaliert.addValuePair( i / ( scale ), relAnzahl);
+          mrVerteilungSkaliert.addValuePair( (double)i / (double)scale, relAnzahl);
         }
         }
         if ( LOG.isDebugEnabled() ) {
@@ -728,12 +739,12 @@ public class TSPropertyTester {
     };
 
     public void setRQ(double vRQ) {
-        Rq = vRQ;
+        _Rq = vRQ;
     }
     
     
     public double getRq() {
-        return Rq;
+        return _Rq;
     }
 
     private static boolean storeSingleDistributions = false;
@@ -914,7 +925,6 @@ public class TSPropertyTester {
         m.calcAverage();
         ris1.useLog = false;
         
-        ris1.setRQ( m.getAvarage() );
         ris1.addDistData(data1);
         ris1.calcMessreihen();
 
@@ -922,7 +932,6 @@ public class TSPropertyTester {
                 m.getLabel(), binA, scaleA);
         ris4.isContainerInstanz = true;
         ris4.add(ris1);
-        ris4.setRQ( 1.0 );
         ris4.calcMessreihen();
 
         mrv.add( ris4.mrVerteilungSkaliert ); 
