@@ -7,6 +7,7 @@ import { OP_BY_ID, defaultParams } from './ops';
 import { MAX_PAIRS, PAIR_COVERAGE, pairClocks, pairRanges, pairSettings, rangesOf, windowsOf } from './pairs';
 import { canonicalKey, seriesIdOf, xxh64Hex } from './seriesKeys';
 import { Bucket, EpisodeRange, Params, Series } from './types';
+import { checkBrowserWork } from './workLimits';
 
 const T0 = Date.parse('2026-10-01T00:00:00Z');
 const COVERAGE = OP_BY_ID[PAIR_COVERAGE.id];
@@ -177,11 +178,25 @@ describe('alignment and coverage', () => {
     expect(out.note).toMatch(/clock 10 s/);
   });
 
-  it('prints the clock without the noise of the sample spacing', () => {
+  it('prints the clock of 1 ms samples as epoch seconds give it, to 6 digits', () => {
     const fast = (id: string) => series(id, 0.001, 1, Math.sin);
     const b: Bucket = { ...park(), series: [fast('A'), fast('B')], episodes: undefined };
     // epoch seconds of 2026 lie 2.4e-7 s apart: Wayang and the Rust runner take 0.0009999275207519531 s for 1 ms samples
     expect(coverage(b).note).toMatch(/clock 0\.000999928 s\n/);
+  });
+
+  it('takes the clock of a resampled copy from its own samples', () => {
+    // the copy keeps the series id and the episode objects of its source, with new times
+    const x = Float64Array.from({ length: 6000 }, (_, i) => i);
+    const a: Bucket = { ...park(), series: [{ id: 'A', label: 'A', x, y: Float64Array.from(x, (v) => Math.sin(v / 10)) }], episodes: ranges('A', [[0, 6000]]) };
+    const b = OP_BY_ID.resample.apply(a, { every: 10, agg: 'MEAN' });
+    expect(b.episodes![0]).toBe(a.episodes![0]);
+    const out = coverage(a, { minCoverage: 0.8 }, [b]);
+    expect(out.note).toMatch(/clock 10 s\n/);
+    expect(Array.from(field(out, 'coverage')[0].y)).toEqual([1]);
+    // the work limits count 600 ticks of the same clock, 2 * lags + 2 values per tick, against a limit of 1e8
+    expect(() => checkBrowserWork('pair.xcorr', [a, b], { lags: 80000 })).not.toThrow();
+    expect(() => checkBrowserWork('pair.xcorr', [a, b], { lags: 90000 })).toThrow(/browser work limit/);
   });
 
   it('counts only the clock ticks that lie inside the window, on the epoch', () => {
@@ -303,7 +318,8 @@ describe('the default clock of the shared vectors (pair-clock.v1.json)', () => {
     const bRanges = rangesOf(b, b.series[0]).map((r) => ({ ...r, start: r.start + shift, end: r.end + shift }));
     const ranges = pairRanges(rangesOf(a, a.series[0]), bRanges, pairSettings(c.params).pairing);
     expect(ranges.map((r) => [r.a.episodeId, r.b.episodeId])).toEqual(c.ranges.map((r) => [r.a, r.b]));
-    expect(pairClocks(null, ranges, a.series[0], 0, b.series[0], shift, a.t0Ms!)).toEqual(c.ranges.map((r) => r.every));
+    const clocks = pairClocks(null, ranges, { series: a.series[0], shift: 0 }, { series: b.series[0], shift }, a.t0Ms!, new Map());
+    expect(clocks).toEqual(c.ranges.map((r) => r.every));
   });
 
   it.each(CLOCK.cases.flatMap((c) => ['pair.xcorr', 'pair.es'].map((method) => [c.name, method, c] as const)))('%s: %s gives the values of Wayang', (_, method, c) => {

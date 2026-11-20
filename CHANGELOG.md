@@ -482,16 +482,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
-- The web workbench takes the default clock of `pair.xcorr`, `pair.es` and `pair.coverage` per pair range: the larger
-  sampling interval of the two paired episodes, on their sample times in epoch microseconds, as Wayang and the Rust
-  runner take it. The results agree with both runtimes also when a series changes its sampling interval between
-  episodes or is sampled with jitter. The note names the smallest and the largest clock. A pair method refuses a
-  series whose times are out of order.
+- The web workbench takes the default clock of `pair.coverage`, `pair.xcorr` and `pair.es` per pair range: the larger
+  sampling interval of the two paired episodes, on their sample times in epoch microseconds. Wayang and the Rust
+  runner use the same rule. The note names the smallest and the largest clock. A pair method refuses a series whose
+  times are out of order.
 - The web workbench and the Wayang pair API (`TsxPairXcorr.pairSettings`) refuse a `fill` other than `none` or
   `as-of` with `pair fill must be none or as-of`, the message of the Rust runner.
 - `docs/datamodel-2026/testvectors/pair-clock.v1.json` (`tools/pair_clock_vectors.sh`) holds pair cases with
-  timestamps, expected values from the Wayang kernel and the `fill` refusal. The workbench, Wayang and the Rust runner
-  run them.
+  timestamps, a sampling interval that changes between episodes and jittered samples, expected values from the Wayang
+  kernel and the `fill` refusal. The workbench results are checked against Wayang for `pair.xcorr` and `pair.es` and
+  against the Rust runner for `pair.xcorr` only; `pair.coverage` has no Wayang or Rust counterpart. All three refuse
+  the unknown `fill`.
 - Concept 20 section 6.1 and the TASK-020 B1 notes list the signed `tsx-runner`
   modes that exist. With the B3 site configuration, `agent`, `conform` and `run`
   handle signed bounded statistics. With the B1 configuration, `run` executes

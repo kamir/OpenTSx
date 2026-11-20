@@ -290,6 +290,12 @@ the workbench. Read
 for membership and the catalog's text representation of pair windows; direct
 pair APIs also accept numeric seconds.
 
+With every=0 each pair range takes the larger sampling interval of its two episodes, on their sample times in epoch
+microseconds. The workbench, `TsxPair` and the Rust runner run the timestamped cases of
+[pair-clock.v1.json](../datamodel-2026/testvectors/pair-clock.v1.json), including a series that changes its sampling
+interval between episodes and jittered samples. A fill other than none or as-of is refused with
+`pair fill must be none or as-of`.
+
 Source: [xcorr.ts#PAIR_XCORR](../../opentsx-saas-frontend/src/workbench/xcorr.ts#PAIR_XCORR) . Executable exercise:
 `ui.pair.xcorr` .
 
@@ -322,6 +328,11 @@ retain workbench numeric formatting. The native regression methods
 boundaries. Read the
 [native API instructions](../user-manual/11-classic-analytics.md#run-sampled-event-pairs-through-wayang)
 for the distinction between seconds in pair settings and units in event lists.
+
+With every=0 each pair range takes the larger sampling interval of its two episodes, on their sample times in epoch
+microseconds. The workbench and `TsxPair` run the timestamped `pair.es` cases of
+[pair-clock.v1.json](../datamodel-2026/testvectors/pair-clock.v1.json); the Rust runner has no `pair.es`. A fill
+other than none or as-of is refused with `pair fill must be none or as-of`.
 
 Source: [es.ts#PAIR_ES](../../opentsx-saas-frontend/src/workbench/es.ts#PAIR_ES). Executable exercise: `ui.pair.es`.
 

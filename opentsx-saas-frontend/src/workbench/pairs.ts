@@ -181,23 +181,35 @@ function firstIndex(lo: number, hi: number, reached: (i: number) => boolean): nu
  * The clock of each pair range: `every`, or else the larger sampling interval of its two episodes. The interval of an
  * episode is taken on the times of its samples in epoch microseconds divided by 1e6, as Wayang (TsxPairWindows.java)
  * and the Rust runner (pairs.rs) take it, so all three get the same clock to the bit. x + shift is x on the axis of
- * the ranges, which starts at `originMs`; x is sorted.
+ * the ranges, which starts at `originMs`; x is sorted. `known` keeps the interval of each series and range across the
+ * pairs of one run.
  */
-export function pairClocks(every: number | null, ranges: PairRange[], a: Series, aShift: number, b: Series, bShift: number, originMs: number): number[] {
+export function pairClocks(
+  every: number | null,
+  ranges: PairRange[],
+  a: { series: Series; shift: number },
+  b: { series: Series; shift: number },
+  originMs: number,
+  known: Map<Series, Map<string, number>>,
+): number[] {
   if (every !== null) return ranges.map(() => every);
   const originUs = Math.round(originMs * 1000);
-  const known = new Map<EpisodeRange, number>();
-  const interval = (s: Series, shift: number, r: EpisodeRange): number => {
-    let v = known.get(r);
+  const interval = ({ series: s, shift }: { series: Series; shift: number }, r: EpisodeRange): number => {
+    const bySpan = known.get(s) ?? new Map<string, number>();
+    known.set(s, bySpan);
+    const key = `${shift} ${r.start} ${r.end}`;
+    let v = bySpan.get(key);
     if (v === undefined) {
       const from = firstIndex(0, s.x.length, (i) => s.x[i] + shift >= r.start - TOL);
       const to = firstIndex(from, s.x.length, (i) => s.x[i] + shift >= r.end - TOL);
-      v = samplingInterval(Float64Array.from({ length: to - from }, (_, k) => (Math.round((s.x[from + k] + shift) * 1e6) + originUs) / 1e6));
-      known.set(r, v);
+      const t = new Float64Array(to - from);
+      for (let i = from; i < to; i++) t[i - from] = (Math.round((s.x[i] + shift) * 1e6) + originUs) / 1e6;
+      v = samplingInterval(t);
+      bySpan.set(key, v);
     }
     return v;
   };
-  return ranges.map((r) => Math.max(interval(a, aShift, r.a), interval(b, bShift, r.b)));
+  return ranges.map((r) => Math.max(interval(a, r.a), interval(b, r.b)));
 }
 
 /** First tick that starts at or after `t` (epoch seconds). */
@@ -254,16 +266,26 @@ export function pairWindows(method: PairMethod, first: Bucket, p: Params, others
   const originS = (first.t0Ms ?? 0) / 1000;
   const windowTag = durationTag(st.window);
   const stepTag = st.window === null ? 'episode' : durationTag(st.step);
-  // the samples that fall into ticks lo to lo + n - 1 lie side by side, because x is sorted
+  // a series takes part in several pairs: the cells of the same ticks on the same clock are filled once
+  const cellCache = new Map<Series, Map<string, Map<number, Cell>>>();
   const cellsOf = (s: Side, every: number, lo: number, n: number): Map<number, Cell> => {
-    const { x, y } = s.series;
-    const shift = s.shift + originS;
-    const from = firstIndex(0, x.length, (i) => Math.floor((x[i] + shift) / every) >= lo);
-    const to = firstIndex(from, x.length, (i) => Math.floor((x[i] + shift) / every) >= lo + n);
-    const cells = new Map<number, Cell>();
-    addSamples(cells, { ...s.series, x: x.subarray(from, to), y: y.subarray(from, to) }, shift, every);
+    const bySpan = cellCache.get(s.series) ?? new Map<string, Map<number, Cell>>();
+    cellCache.set(s.series, bySpan);
+    const key = `${s.shift} ${every} ${lo} ${n}`;
+    let cells = bySpan.get(key);
+    if (!cells) {
+      const { x, y } = s.series;
+      const shift = s.shift + originS;
+      // the samples that fall into ticks lo to lo + n - 1 lie side by side, because x is sorted
+      const from = firstIndex(0, x.length, (i) => Math.floor((x[i] + shift) / every) >= lo);
+      const to = firstIndex(from, x.length, (i) => Math.floor((x[i] + shift) / every) >= lo + n);
+      cells = new Map();
+      addSamples(cells, { ...s.series, x: x.subarray(from, to), y: y.subarray(from, to) }, shift, every);
+      bySpan.set(key, cells);
+    }
     return cells;
   };
+  const intervals = new Map<Series, Map<string, number>>();
 
   const series: Series[] = [];
   const episodes: EpisodeRange[] = [];
@@ -281,7 +303,7 @@ export function pairWindows(method: PairMethod, first: Bucket, p: Params, others
       st.pairing,
       st.window ?? 0,
     );
-    const clocks = pairClocks(st.every, ranges, A.series, A.shift, B.series, B.shift, first.t0Ms ?? 0);
+    const clocks = pairClocks(st.every, ranges, A, B, first.t0Ms ?? 0, intervals);
     const xs: number[] = [];
     const ys: number[][] = method.fields.map(() => []);
     const qs: number[] = [];
