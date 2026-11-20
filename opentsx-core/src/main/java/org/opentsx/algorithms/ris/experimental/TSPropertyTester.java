@@ -100,7 +100,7 @@ public class TSPropertyTester {
 
             // choose the window sizes
             dfa.initIntervalSlog();
-            if ( debug ) dfa.showS();
+            dfa.showS();
 
 
             // http://stackoverflow.com/questions/12049407/build-sample-data-for-apache-commons-fast-fourier-transform-algorithm
@@ -231,7 +231,15 @@ public class TSPropertyTester {
     Vector<Double> dataRawFILTERED = null;
     Vector<Double> dataRaw_InterEventTIMES = null;
     
+    /**
+     * @deprecated Has no effect; the level of the SLF4J logger of this class decides.
+     */
+    @Deprecated
     static public boolean debug = false;
+    /**
+     * @deprecated Has no effect; the level of the SLF4J logger of this class decides.
+     */
+    @Deprecated
     static public boolean verbose = false;
     
     // smallest value of r that is used
@@ -355,12 +363,12 @@ public class TSPropertyTester {
                     + " has " + data.length + "; expected the same binning and scale");
         }
         
-        if ( debug ) {
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("adding result container={} result={} rq={}", name, ris.name, ris._Rq);
         }
         
         if ( ris.dataRawFILTERED.size() < 1 ) {
-            if ( debug ) {
+            if ( LOG.isDebugEnabled() ) {
                 LOG.debug("skipped empty result container={} result={}", name, ris.name);
             }        
             return;
@@ -381,7 +389,7 @@ public class TSPropertyTester {
         
         allRqs.add(ris._Rq);
         
-        if ( debug ) {
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("added result container={} result={} intervals={}", name, ris.name, ris.dataRawFILTERED.size());
         }
         
@@ -398,7 +406,7 @@ public class TSPropertyTester {
     public void _addData( Vector<Double> times, double Rq ) throws Exception {
 
 
-        if ( debug ) {
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("computing intervals result={} intervals={}", name, times.size() - 1);
         }
 
@@ -449,7 +457,7 @@ public class TSPropertyTester {
             throw new IllegalStateException("addDistData: " + name + " is a container; add intervals to a result that is not a container");
         }
         
-        if ( debug ) LOG.debug("adding intervals result={} intervals={}", name, dists.size());
+        if ( LOG.isDebugEnabled() ) LOG.debug("adding intervals result={} intervals={}", name, dists.size());
         
         
         long anzahlVor = (long)dists.size();
@@ -478,7 +486,7 @@ public class TSPropertyTester {
         }
         
         
-        if ( debug ) {
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("filtered intervals result={} cutOff={} offset={}", name, cutOff, offset);
         }
         
@@ -511,14 +519,14 @@ public class TSPropertyTester {
         double Rq_filtered = sumRq_filteres/(1.0*anzRq_filterd);
         zElements = anzRq_filterd;
        
-        if ( debug ) LOG.debug("mean interval result={} rqAll={} rqFiltered={}", name, Rq_alt, Rq_filtered);
+        if ( LOG.isDebugEnabled() ) LOG.debug("mean interval result={} rqAll={} rqFiltered={}", name, Rq_alt, Rq_filtered);
         _Rq = Rq_filtered;
       
         
         
         // count the intervals scaled with Rq
         Enumeration en = dataRawNOT_FILTERED.elements();
-        if ( debug ) LOG.debug("counting intervals result={} intervals={}", name, dataRawFILTERED.size());
+        if ( LOG.isDebugEnabled() ) LOG.debug("counting intervals result={} intervals={}", name, dataRawFILTERED.size());
         
         while( en.hasMoreElements() ) {
              
@@ -625,7 +633,7 @@ public class TSPropertyTester {
           mrVerteilungSkaliert.addValuePair( i / ( scale ), relAnzahl);
         }
         }
-        if ( debug ) {
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("distribution result={} intervals={} rq={} sum={}", name, this.zElements, _Rq, summe);
         }
     }
@@ -703,7 +711,7 @@ public class TSPropertyTester {
             fw.write( mrVerteilung.toString() );
         }
 
-        if ( verbose ) { 
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("stored distribution result={} file={} bins={}", name, folder + label, mrVerteilung.xValues.size());
         }
     };
@@ -771,7 +779,6 @@ public class TSPropertyTester {
         
         mrvB = new Vector<TimeSeriesObject>();
         mrv2B = new Vector<TimeSeriesObject>();
-        debug = true;
         
         double min;
         

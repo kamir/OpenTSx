@@ -28,9 +28,8 @@ The library classes in `org.opentsx.data`, `org.opentsx.core` and `org.opentsx.a
 output. A failing call throws an exception that names the input. Progress and intermediate values go to the SLF4J
 logger named after the class, at DEBUG, as one line per event in the form `<what happened> key=value`. The level of
 that logger decides which lines appear. The public `debug` fields of `DFACore`, `SingleDFATool`, `ESCalc2`,
-`TimeSeriesObjectFFT`, `MessreihenLoader` and `RISTool` are deprecated and have no effect. `ReturnIntervallStatistik2`
-and `TSPropertyTester` still log some lines only while their public `debug` flag is true, and `store()` of `RISTool`,
-`ReturnIntervallStatistik2` and `TSPropertyTester` logs its line only while the public `verbose` flag is true.
+`TimeSeriesObjectFFT`, `MessreihenLoader`, `RISTool`, `ReturnIntervallStatistik2` and `TSPropertyTester` and the public
+`verbose` fields of `RISTool`, `ReturnIntervallStatistik2` and `TSPropertyTester` are deprecated and have no effect.
 `bin/opentsx` puts `slf4j-simple` and `conf/simplelogger.properties` on the class path, so the default level is
 `info`. Raise the level of one class with a JVM system property:
 
@@ -81,7 +80,10 @@ these buttons do not write a file. The modern tracker starts with an empty trans
 Swing control tests use a display; the Java CI jobs run them under Xvfb on Ubuntu 24.04.
 Opening a chart panel prints nothing and creates no folder; the chart folder and the series colors are DEBUG lines of
 `TSStoreDescriptor` and `MultiChart`. `save PN` writes below `opentsx/plots/` in `user.home` and creates the folders
-it needs. `HaeufigkeitsZaehler.store()` writes `<folder><label>`; `folder` defaults to `opentsx/histograms/` below
+it needs. `MultiChart.store` and `TSOperationControlerPanel.storeChartImageAsPNG` write `<folder>/<name>.png` without
+waiting and print nothing. An image that cannot be written throws `UncheckedIOException` with
+`<file>: cannot write the chart image (<cause>)`; `save PN` shows that message in a dialog.
+`HaeufigkeitsZaehler.store()` writes `<folder><label>`; `folder` defaults to `opentsx/histograms/` below
 `user.home`, which `store()` creates.
 
 ## Reload local SequenceFile buckets
@@ -317,6 +319,11 @@ from log s 1 to 3. Set the public field `savePath`, which ends with a separator;
 `user.home`. `SingleDFATool` and `MultiDFATool2` throw
 `IllegalArgumentException` for an empty list (`calcMultiDFA: vmr has no series; expected at least 1 series`) and for a
 missing series (`runDFA: series <index> is null; expected a series at every index`).
+
+`FluctuationFunktion.calcAlpha(range)` fits alpha, the slope of the F(s) series for x from `range.getULog10()` to
+`range.getOLog10()`, and prints nothing. It returns NaN when the values of F(s) in that range have fewer than two
+different x values. An F(s) without values throws `IllegalStateException` with
+`<label>: alpha cannot be fitted in [<min>, <max>]; expected a fluctuation function with values`.
 
 ## Write a measurement table
 

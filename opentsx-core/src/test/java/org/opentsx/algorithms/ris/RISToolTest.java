@@ -179,6 +179,23 @@ class RISToolTest {
     }
 
     @Test
+    void storingIsLoggedAtDebugWithoutAVerboseFlag() throws Exception {
+        RISTool ris = new RISTool("stored", 12, 10);
+        ris.folder = dir + "/";
+        ris.label = "distribution.dat";
+        PrintStream err = System.err;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        System.setErr(new PrintStream(captured, true, UTF_8));
+        try {
+            ris.store();
+        } finally {
+            System.setErr(err);
+        }
+        String log = captured.toString(UTF_8);
+        assertTrue(log.contains("stored distribution result=stored file=" + dir + "/distribution.dat"), log);
+    }
+
+    @Test
     void addingIntervalsOpensNoWindowAndPrintsNothing() throws Exception {
         RISTool ris = new RISTool("intervals", 12, 10);
         int windows = Window.getWindows().length;

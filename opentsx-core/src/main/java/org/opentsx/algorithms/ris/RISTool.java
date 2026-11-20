@@ -98,6 +98,10 @@ public class RISTool {
      */
     @Deprecated
     static public boolean debug = false;
+    /**
+     * @deprecated Has no effect; the level of the SLF4J logger of this class decides.
+     */
+    @Deprecated
     static public boolean verbose = false;
     
     // smallest value of r that is used
@@ -530,7 +534,7 @@ public class RISTool {
             fw.write( mrVerteilung.toString() );
         }
 
-        if ( verbose ) { 
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("stored distribution result={} file={} bins={}", name, folder + label, mrVerteilung.xValues.size());
         }
     };

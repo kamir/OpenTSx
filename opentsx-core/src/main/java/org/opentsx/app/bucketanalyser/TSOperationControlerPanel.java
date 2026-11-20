@@ -25,6 +25,7 @@ import java.awt.*;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.text.DecimalFormat;
 import java.util.OptionalDouble;
 import java.util.Vector;
@@ -36,6 +37,8 @@ import java.util.logging.Logger;
  * @author kamir
  */
 public class TSOperationControlerPanel extends javax.swing.JPanel {
+
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(TSOperationControlerPanel.class);
 
     /**
      * Creates new form FileControlerPanel2
@@ -406,11 +409,15 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         try {
             save();
-        } catch (IOException ex) {
-            Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException | UncheckedIOException ex) {
+            showSaveError(ex.getMessage());
         }
 
     }//GEN-LAST:event_jButton1ActionPerformed
+
+    void showSaveError(String message) {
+        JOptionPane.showMessageDialog(this, message);
+    }
 
     private void jTextField3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField3ActionPerformed
     }//GEN-LAST:event_jTextField3ActionPerformed
@@ -1081,29 +1088,20 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         MultiChart.open(v, this.jRadioButton1.isSelected(), "ln of " + this.label);
     }//GEN-LAST:event_jButton22ActionPerformed
 
+    /**
+     * Writes the chart as {@code <folder>/<filename>.png}.
+     *
+     * @throws UncheckedIOException naming the file, with the cause, when the image cannot be written
+     */
     public void storeChartImageAsPNG(JFreeChart chart, File folder, String filename) {
 
-        String fn = filename;
+        final File file1 = new File(folder.getAbsolutePath() + File.separator + filename + ".png");
         try {
-
-            final File file1 = new File(folder.getAbsolutePath() + File.separator + fn + ".png");
-            System.out.println("\n>>> Save as PNG Image - Filename: " + file1.getAbsolutePath()
-                    + "; CP: " + chart);
-            try {
-                final ChartRenderingInfo info = new ChartRenderingInfo(new StandardEntityCollection());
-
-                Thread.currentThread().sleep(1000);
-
-                ChartUtilities.saveChartAsPNG(file1, chart, 800, 600, info);
-
-                Thread.currentThread().sleep(1000);
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+            ChartUtilities.saveChartAsPNG(file1, chart, 800, 600, new ChartRenderingInfo(new StandardEntityCollection()));
+        } catch (IOException e) {
+            throw new UncheckedIOException(file1 + ": cannot write the chart image (" + e + ")", e);
         }
+        LOG.debug("stored chart image file={}", file1.getAbsolutePath());
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -1177,12 +1175,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         if (statsAndComments != null) {
 
             File fCAP = new File(folder.getParentFile().getAbsolutePath() + "/caption_" + fn + ".tex");
-            FileWriter fw2 = new FileWriter(fCAP);
-
-            fw2.write(statsAndComments.getText());
-
-            fw2.flush();
-            fw2.close();
+            try (FileWriter fw2 = new FileWriter(fCAP)) {
+                fw2.write(statsAndComments.getText());
+            }
 
         }
 

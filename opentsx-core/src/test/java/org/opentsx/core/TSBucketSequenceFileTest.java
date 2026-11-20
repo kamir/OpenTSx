@@ -210,6 +210,20 @@ class TSBucketSequenceFileTest {
     }
 
     @Test
+    void aRecordWithoutAKeyAddsASeriesWithAnEmptyKey() {
+        TSBucket bucket = bucket();
+
+        bucket.processKVToTSO(null, "{\"label\":\"probe\",\"dataset\":[1.0,2.0,3.0]}", "probe_topic");
+
+        assertEquals(1, bucket.bucketData.size());
+        TimeSeriesObject series = bucket.bucketData.get(0);
+        assertEquals("(---){probe_topic}\n[]", series.getDescription());
+        assertEquals("?", series.getLabel());
+        assertEquals(3, series.yValues.size());
+        assertEquals("(---){probe_topic}\n[]\n", bucket.getProcessingLog());
+    }
+
+    @Test
     void aBucketHasNoFlushThatDoesNothing() {
         assertThrows(NoSuchMethodException.class, () -> TSBucket.class.getMethod("flush"));
     }

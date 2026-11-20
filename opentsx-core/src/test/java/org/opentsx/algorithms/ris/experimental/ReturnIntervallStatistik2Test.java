@@ -6,13 +6,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.data.series.TimeSeriesObject;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Vector;
 import java.util.stream.Stream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -97,6 +100,37 @@ class ReturnIntervallStatistik2Test {
         assertThrows(IllegalStateException.class, ris::store);
 
         assertFalse(isOpen(dir.resolve("distribution.dat")));
+    }
+
+    @Test
+    void addingAndStoringAreLoggedAtDebugWithoutTheDebugAndVerboseFlags() throws Exception {
+        ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2("logged", 12, 10);
+        ris.folder = dir + "/";
+        ris.label = "distribution.dat";
+
+        String log = stderrOf(() -> {
+            ris.addDistData(intervals(10));
+            ris.store();
+        });
+
+        assertTrue(log.contains("adding intervals result=logged intervals=10"), log);
+        assertTrue(log.contains("stored distribution result=logged file=" + dir + "/distribution.dat"), log);
+    }
+
+    interface Action {
+        void run() throws Exception;
+    }
+
+    static String stderrOf(Action action) throws Exception {
+        PrintStream err = System.err;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        System.setErr(new PrintStream(captured, true, UTF_8));
+        try {
+            action.run();
+        } finally {
+            System.setErr(err);
+        }
+        return captured.toString(UTF_8);
     }
 
     static TimeSeriesObject failingSeries() {

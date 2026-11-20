@@ -32,12 +32,12 @@ public class Exercise3_LoadAndTransform {
             // Print basic statistics
             System.out.println("\n=== Original Data Statistics ===");
             System.out.println("Number of points: " + temperatures.yValues.size());
-            System.out.println("Mean temperature: " + String.format("%.2f°C", temperatures.getAvarage()));
-            System.out.println("Std deviation: " + String.format("%.2f°C", temperatures.getStddev()));
-            System.out.println("Min temperature: " + String.format("%.2f°C", temperatures.getMinY()));
-            System.out.println("Max temperature: " + String.format("%.2f°C", temperatures.getMaxY()));
+            System.out.println("Mean temperature: " + String.format("%.2f degC", temperatures.getAvarage()));
+            System.out.println("Std deviation: " + String.format("%.2f degC", temperatures.getStddev()));
+            System.out.println("Min temperature: " + String.format("%.2f degC", temperatures.getMinY()));
+            System.out.println("Max temperature: " + String.format("%.2f degC", temperatures.getMaxY()));
 
-            // Create filtered series (temperatures > 25°C)
+            // Create filtered series (temperatures > 25 degC)
             TimeSeriesObject filtered = new TimeSeriesObject();
             filtered.setLabel("high_temperatures");
 
@@ -56,7 +56,7 @@ public class Exercise3_LoadAndTransform {
 
             // Print filtering results
             System.out.println("\n=== Filtering Results ===");
-            System.out.println("Threshold: >" + threshold + "°C");
+            System.out.println("Threshold: >" + threshold + " degC");
             System.out.println("Original points: " + temperatures.yValues.size());
             System.out.println("Filtered points: " + filteredCount);
             System.out.println("Percentage filtered: " +
@@ -65,10 +65,10 @@ public class Exercise3_LoadAndTransform {
             // Statistics of filtered data
             if (filteredCount > 0) {
                 System.out.println("\n=== Filtered Data Statistics ===");
-                System.out.println("Mean: " + String.format("%.2f°C", filtered.getAvarage()));
-                System.out.println("Std deviation: " + String.format("%.2f°C", filtered.getStddev()));
-                System.out.println("Min: " + String.format("%.2f°C", filtered.getMinY()));
-                System.out.println("Max: " + String.format("%.2f°C", filtered.getMaxY()));
+                System.out.println("Mean: " + String.format("%.2f degC", filtered.getAvarage()));
+                System.out.println("Std deviation: " + String.format("%.2f degC", filtered.getStddev()));
+                System.out.println("Min: " + String.format("%.2f degC", filtered.getMinY()));
+                System.out.println("Max: " + String.format("%.2f degC", filtered.getMaxY()));
 
                 // Save filtered series
                 File outputFile = new File("high_temp_readings.csv");
@@ -85,10 +85,10 @@ public class Exercise3_LoadAndTransform {
             int range25to30 = countInRange(temperatures, 25.0, 30.0);
             int above30 = countInRange(temperatures, 30.0, Double.POSITIVE_INFINITY);
 
-            System.out.println("Below 20°C: " + below20 + " points");
-            System.out.println("20-25°C: " + range20to25 + " points");
-            System.out.println("25-30°C: " + range25to30 + " points");
-            System.out.println("Above 30°C: " + above30 + " points");
+            System.out.println("Below 20 degC: " + below20 + " points");
+            System.out.println("20-25 degC: " + range20to25 + " points");
+            System.out.println("25-30 degC: " + range25to30 + " points");
+            System.out.println("Above 30 degC: " + above30 + " points");
 
         } catch (IOException | IllegalArgumentException e) {
             System.err.println(e.getMessage());

@@ -91,7 +91,15 @@ public class ReturnIntervallStatistik2 {
     Vector<Double> dataRawFILTERED = null;
     Vector<Double> dataRaw_InterEventTIMES = null;
     
+    /**
+     * @deprecated Has no effect; the level of the SLF4J logger of this class decides.
+     */
+    @Deprecated
     static public boolean debug = false;
+    /**
+     * @deprecated Has no effect; the level of the SLF4J logger of this class decides.
+     */
+    @Deprecated
     static public boolean verbose = false;
     
     // smallest value of r that is used
@@ -172,12 +180,12 @@ public class ReturnIntervallStatistik2 {
                     + " has " + data.length + "; expected the same binning and scale");
         }
         
-        if ( debug ) {
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("adding result container={} result={} rq={}", name, ris.name, ris._Rq);
         }
         
         if ( ris.dataRawFILTERED.size() < 1 ) {
-            if ( debug ) {
+            if ( LOG.isDebugEnabled() ) {
                 LOG.debug("skipped empty result container={} result={}", name, ris.name);
             }        
             return;
@@ -198,7 +206,7 @@ public class ReturnIntervallStatistik2 {
         
         allRqs.add(ris._Rq);
         
-        if ( debug ) {
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("added result container={} result={} intervals={}", name, ris.name, ris.dataRawFILTERED.size());
         }
         
@@ -215,7 +223,7 @@ public class ReturnIntervallStatistik2 {
     public void _addData( Vector<Double> times, double Rq ) throws Exception {
 
 
-        if ( debug ) {
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("computing intervals result={} intervals={}", name, times.size() - 1);
         }
 
@@ -263,7 +271,7 @@ public class ReturnIntervallStatistik2 {
             throw new IllegalStateException("addDistData: " + name + " is a container; add intervals to a result that is not a container");
         }
         
-        if ( debug ) {
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("adding intervals result={} intervals={}", name, dists.size());
         }
         
@@ -300,7 +308,7 @@ public class ReturnIntervallStatistik2 {
         }
         
         
-        if ( debug ) {
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("filtered intervals result={} cutOff={} offset={}", name, cutOff, offset);
         }
    
@@ -333,7 +341,7 @@ public class ReturnIntervallStatistik2 {
         double Rq_filtered = sumRq_filteres/(1.0*anzRq_filterd);
         zElements = anzRq_filterd;
        
-        if ( debug ) LOG.debug("mean interval result={} rqAll={} rqFiltered={}", name, Rq_alt, Rq_filtered);
+        if ( LOG.isDebugEnabled() ) LOG.debug("mean interval result={} rqAll={} rqFiltered={}", name, Rq_alt, Rq_filtered);
         _Rq = Rq_filtered;
 
         
@@ -341,7 +349,7 @@ public class ReturnIntervallStatistik2 {
         
         // count the intervals scaled with Rq
         Enumeration en = dataRawNOT_FILTERED.elements();
-        if ( debug ) LOG.debug("counting intervals result={} intervals={}", name, dataRawFILTERED.size());
+        if ( LOG.isDebugEnabled() ) LOG.debug("counting intervals result={} intervals={}", name, dataRawFILTERED.size());
         
         while( en.hasMoreElements() ) {
              
@@ -439,7 +447,7 @@ public class ReturnIntervallStatistik2 {
           mrVerteilungSkaliert.addValuePair( i / ( scale ), relAnzahl);
         }
         }
-        if ( debug ) {
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("distribution result={} intervals={} rq={} sum={}", name, this.zElements, _Rq, summe);
         }
     }
@@ -517,7 +525,7 @@ public class ReturnIntervallStatistik2 {
             fw.write( mrVerteilung.toString() );
         }
 
-        if ( verbose ) { 
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("stored distribution result={} file={} bins={}", name, folder + label, mrVerteilung.xValues.size());
         }
     };
@@ -590,7 +598,6 @@ public class ReturnIntervallStatistik2 {
         
         mrvB = new Vector<TimeSeriesObject>();
         mrv2B = new Vector<TimeSeriesObject>();
-        debug = true;
         
         double min;
         // V1

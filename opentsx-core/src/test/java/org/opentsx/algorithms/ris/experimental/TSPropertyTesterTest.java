@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.failingSeries;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.intervals;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.isOpen;
+import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.stderrOf;
 
 class TSPropertyTesterTest {
 
@@ -25,6 +26,21 @@ class TSPropertyTesterTest {
         assertThrows(IllegalStateException.class, tester::store);
 
         assertFalse(isOpen(dir.resolve("distribution.dat")));
+    }
+
+    @Test
+    void addingAndStoringAreLoggedAtDebugWithoutTheDebugAndVerboseFlags() throws Exception {
+        TSPropertyTester tester = new TSPropertyTester("logged", 12, 10);
+        tester.folder = dir + "/";
+        tester.label = "distribution.dat";
+
+        String log = stderrOf(() -> {
+            tester.addDistData(intervals(10));
+            tester.store();
+        });
+
+        assertTrue(log.contains("adding intervals result=logged intervals=10"), log);
+        assertTrue(log.contains("stored distribution result=logged file=" + dir + "/distribution.dat"), log);
     }
 
     @Test

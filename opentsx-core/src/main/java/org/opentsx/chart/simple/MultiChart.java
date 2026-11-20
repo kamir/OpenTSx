@@ -27,6 +27,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.text.DecimalFormat;
 import java.util.Enumeration;
 import java.util.Locale;
@@ -578,28 +579,20 @@ public class MultiChart extends javax.swing.JDialog {
         dataset.addSeries(serie);
     }
 
+    /**
+     * Writes the chart of this dialog as {@code <folder>/<filename>.png}.
+     *
+     * @throws UncheckedIOException naming the file, with the cause, when the image cannot be written
+     */
     public void store(JFreeChart cp, File folder, String filename) {
 
-        String fn = filename;
+        final File file1 = new File(folder.getAbsolutePath() + File.separator + filename + ".png");
         try {
-
-            final File file1 = new File(folder.getAbsolutePath() + File.separator + fn + ".png");
-            System.out.println("\n>>> Save as PNG Image - Filename: " + file1.getAbsolutePath()
-                    + "; CP: " + cp);
-            try {
-                final ChartRenderingInfo info = new ChartRenderingInfo(new StandardEntityCollection());
-
-                Thread.currentThread().sleep(1000);
-
-                ChartUtilities.saveChartAsPNG(file1, chart, 600, 400, info);
-
-                Thread.currentThread().sleep(1000);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+            ChartUtilities.saveChartAsPNG(file1, chart, 600, 400, new ChartRenderingInfo(new StandardEntityCollection()));
+        } catch (IOException e) {
+            throw new UncheckedIOException(file1 + ": cannot write the chart image (" + e + ")", e);
         }
+        LOG.debug("stored chart image file={}", file1.getAbsolutePath());
     }
 
 
@@ -803,14 +796,13 @@ public class MultiChart extends javax.swing.JDialog {
 
         dialog.store(dialog.chart, f2, filename);
 
-        System.out.println(folder + "\t" + filename);
         MeasurementTable tab = new MeasurementTable();
         tab.fill_UP_VALUE = 0.0;
 
         if (mrs.size() > 0) {
             File f = new File(folder + "/" + "TAB_" + filename + ".dat");
             tab.setMessReihen(mrs);
-            System.out.println(mrs.size() + " series ...");
+            LOG.debug("storing chart table file={} series={}", f.getAbsolutePath(), mrs.size());
             tab.writeToFile(f);
         }
         

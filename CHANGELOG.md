@@ -844,6 +844,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `deploy/k3s/60-probe.sh`: when a Deployment is not ready, the step `deploy` runs `40-demo.sh kafscale-check` and
   then `30-deploy.sh --restart`.
 - CI: the job `k3s scripts and manifests` also runs `bash -n` and `shellcheck` on `bin/episode_*.sh`.
+- The public `debug` and `verbose` fields of `ReturnIntervallStatistik2` and `TSPropertyTester` and the public
+  `verbose` field of `RISTool` are deprecated and have no effect; the level of the SLF4J logger of each class decides
+  which DEBUG lines appear. `BucketAnalyserTool` no longer sets `ReturnIntervallStatistik2.debug`.
 
 ### Removed
 
@@ -1944,6 +1947,23 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   names the namespace.
 - `tools/pair_xcorr_vectors.sh` passes the Java sources to javac as an array; CI runs `bash -n` and `shellcheck` on it
   and on `opentsx-saas-backend/local-run.sh`.
+- `FluctuationFunktion.calcAlpha` prints nothing and logs the fitted alpha at DEBUG through SLF4J. An F(s) without
+  values throws `IllegalStateException` with `<label>: alpha cannot be fitted in [<min>, <max>]; expected a
+  fluctuation function with values` instead of logging SEVERE and returning NaN; NaN stays when the values of F(s) in
+  the fit range have fewer than two different x values.
+- `MultiChart.store` and `TSOperationControlerPanel.storeChartImageAsPNG` write the PNG without the fixed waits of up
+  to 2 seconds and print nothing. An image that cannot be written throws `UncheckedIOException` with `<file>: cannot
+  write the chart image (<cause>)`, and the `save PN` button shows that message in a dialog. The static
+  `MultiChart.store(...)` prints nothing, and `save()` closes the caption file when the caption cannot be written.
+- `FFTPhaseRandomizer` prints nothing outside `main`: the error chart step throws `IllegalStateException` with
+  `calcErrorChart: beta index <i> failed; expected a beta and <n> alphas for it` and the cause instead of printing
+  them, and the unused private method `debugRows` is removed.
+- `TSBucket.processKVToTSO` accepts a Kafka record without a key: the series description shows `[]` for the key, where
+  `TSOConsumer.runConsumer` stopped with a `NullPointerException`.
+- `bin/episode_02_create_timeseries.sh`, `bin/episode_03_basic_operations.sh` and `bin/episode_09_analysis.sh` no
+  longer create an empty `output/` folder; the demos write to `data/demo_output/`.
+- The solution of exercise 3 of episode 2 prints `degC` instead of a degree sign, so its output is plain ASCII under
+  any default charset.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

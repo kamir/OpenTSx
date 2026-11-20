@@ -176,7 +176,7 @@ public class Exercise3_LoadAndTransform {
 
 
         System.out.println("Original points: " + /* ... */);
-        System.out.println("Filtered points (>25°C): " + /* ... */);
+        System.out.println("Filtered points (>25 degC): " + /* ... */);
     }
 }
 ```

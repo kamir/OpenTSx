@@ -234,3 +234,19 @@ def test_run_all_tests_demo_only_runs_no_test(tmp_path):
     assert result.returncode == 0, result.stdout + result.stderr
     assert summary["tests"] == {"total": 0, "passed": 0, "failed": 0}
     assert summary["syntax_checks"] == {"total": 4, "passed": 4, "failed": 0}
+
+
+def test_episode_scripts_create_no_output_folder(tmp_path):
+    for name in ("episode_02_create_timeseries.sh", "episode_03_basic_operations.sh", "episode_09_analysis.sh"):
+        root = tmp_path / name.removesuffix(".sh")
+        root.mkdir()
+        script = copy_script(root, name)
+        (root / "opentsx-core" / "target" / "classes").mkdir(parents=True)
+        launcher = root / "bin" / "opentsx"
+        launcher.write_text("#!/bin/bash\necho classes\n", encoding="utf-8")
+        launcher.chmod(0o755)
+        fake = fake_tools(root / "fake", {"java": "echo demo ran"})
+        result = run(script, fake)
+        assert result.returncode == 0, name + result.stdout + result.stderr
+        assert "demo ran" in result.stdout.splitlines(), name + result.stdout
+        assert not (root / "output").exists(), name

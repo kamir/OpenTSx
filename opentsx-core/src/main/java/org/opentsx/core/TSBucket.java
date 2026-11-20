@@ -851,11 +851,15 @@ public class TSBucket {
 
 
 
+    /**
+     * Converts one Kafka record to a series, which the bucket keeps while it is in memory. A record without a key
+     * gives a series whose description shows [] for the key and that has no label, so getLabel returns ?.
+     */
     public void processKVToTSO( String key, String dataJSON, String topic ) {
 
         TSData data = gson.fromJson( dataJSON, TSData.class );
 
-        String descr = "(" + "---" + "){" + topic + "}\n[" + key.toString() + "]";
+        String descr = "(" + "---" + "){" + topic + "}\n[" + ( key == null ? "" : key ) + "]";
         this.processLog.append( descr + "\n" );
 
         TimeSeriesObject mr = new TimeSeriesObject();

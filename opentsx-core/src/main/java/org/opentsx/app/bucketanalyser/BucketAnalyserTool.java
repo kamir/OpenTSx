@@ -120,7 +120,6 @@ public class BucketAnalyserTool extends SimpleFilteredBucketTool {
                 TSBucket.FN_EXT = "(RIS)";
                 t = new SingleTsRISTool( args );
 
-                ReturnIntervallStatistik2.debug = true;
                 ReturnIntervallStatistik2.binning = 15;
                 ReturnIntervallStatistik2.scale = 3;
                 

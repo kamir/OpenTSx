@@ -39,8 +39,6 @@ if [ ! -d "opentsx-core/target/classes" ]; then
     echo
 fi
 
-mkdir -p output
-
 CLASSPATH="$(bin/opentsx classpath opentsx-core)"
 
 JAVA_OPTS="${JAVA_OPTS:--Xmx1g -Xms256m}"

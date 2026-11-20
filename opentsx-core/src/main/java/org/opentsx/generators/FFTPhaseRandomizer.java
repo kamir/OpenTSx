@@ -41,14 +41,11 @@ The inverse transform of these realizations are the desired target surrogates.
 
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
-import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.exporter.MeasurementTable;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.data.series.TimeSeriesObjectFFT;
-import org.opentsx.algorithms.detrending.DetrendingMethodFactory;
-import org.opentsx.algorithms.detrending.methods.IDetrendingMethod;
 
 import java.io.File;
 import java.text.DecimalFormat;
@@ -59,8 +56,6 @@ public class FFTPhaseRandomizer {
     public static final int MODE_shuffle_phase = 0;
     public static final int MODE_multiply_phase_with_random_value = 1;
     
-    private static boolean debug = false;
-
     static double fitMIN = 1.2;
     static double fitMAX = 3.5;
     
@@ -265,78 +260,6 @@ public class FFTPhaseRandomizer {
         return temp;
     }
     
-    /**
-     * inspection of results ...
-     * 
-     * @param runDFA
-     * @param row
-     * @param N
-     * @param temp
-     * @param testZaehler
-     * @param showTest
-     * @param df
-     * @throws Exception 
-     */
-    private static void debugRows(boolean runDFA, TimeSeriesObject row, int N, TimeSeriesObjectFFT temp, int testZaehler, boolean showTest, DecimalFormat df) throws Exception {
-        double[] zr;
-        if ( runDFA ) {
-            
-            Vector<TimeSeriesObject> vr = new Vector<TimeSeriesObject>();
-            Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
-            vr.add(row );
-
-            zr = row.getData()[1];
-
-            IDetrendingMethod dfa = DetrendingMethodFactory.getDetrendingMethod(DetrendingMethodFactory.DFA2);
-            order = dfa.getPara().getGradeOfPolynom();
-            dfa.getPara().setzSValues( nrOfSValues );
-
-            // number of values in the series
-            dfa.setNrOfValues(N);
-
-            // choose the window sizes
-            dfa.initIntervalSlog();
-            if ( debug ) dfa.showS();
-            
-            
-            // http://stackoverflow.com/questions/12049407/build-sample-data-for-apache-commons-fast-fourier-transform-algorithm
-
-            dfa.setZR(temp.getData()[1]);
-
-            dfa.calc();
-
-            TimeSeriesObject mr4 = dfa.getResultsMRLogLog();
-            mr4.setLabel(row.getLabel() );
-            v.add(mr4);
-
-            String status = dfa.getStatus();
-
-            SimpleRegression alphaSR = mr4.linFit(fitMIN, fitMAX);
-
-            double alpha = alphaSR.getSlope();
-
-            alphasCALC.addValuePair( testZaehler, alpha );
-
-            if ( showTest ) {
-                MultiChart.open(v, "fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", true, "alpha=" + alpha , null);
-                if ( firstInLoop ) tests.add(mr4);
-
-                try{
-                    alphas[numberOfBeta][numberOfLoop] = alpha;  
-                }
-                catch(Exception ex) { 
-                    
-                }
-                    
-                System.out.println( " alpha = " + df.format( alpha ) );
-                System.out.println( "       = " + ( (2 * alpha) - 1.0 ) );
-
-            }
-
-        }
-    }
-
-    
     static TimeSeriesObject mrAV = new TimeSeriesObject();  // mean values
     static TimeSeriesObject mrSTD = new TimeSeriesObject();  // standard deviations
     static TimeSeriesObject mrMAX = new TimeSeriesObject();  // ERROR
@@ -382,11 +305,9 @@ public class FFTPhaseRandomizer {
                 mrMIN.addValuePair( betas[iB] , mean-std );
 
             }
-            catch(Exception ex) {
-
-                System.err.println( ex.getMessage() );
-                System.err.println( ex.getCause() );
-                
+            catch(RuntimeException ex) {
+                throw new IllegalStateException( "calcErrorChart: beta index " + iB + " failed; expected a beta and "
+                        + nrLOOPS + " alphas for it", ex );
             }
         }
         

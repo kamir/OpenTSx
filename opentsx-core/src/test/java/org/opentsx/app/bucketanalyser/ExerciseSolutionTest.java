@@ -8,6 +8,7 @@ import javax.tools.ToolProvider;
 import java.io.ByteArrayOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -56,11 +57,25 @@ class ExerciseSolutionTest {
                 result.stderr());
     }
 
-    private Result run() throws Exception {
+    @Test
+    void exercise3PrintsOnlyAsciiUnderAnAsciiCharset() throws Exception {
+        Files.copy(Path.of("..", "sample_data", "sensor_data.csv"), data.resolve("sensor_data.csv"));
+
+        Result result = run("-Dfile.encoding=US-ASCII", "-Dstdout.encoding=US-ASCII");
+
+        assertEquals(0, result.exitCode(), result.stdout() + result.stderr());
+        assertTrue(result.stdout().contains("Threshold: >25.0 degC\n"), result.stdout());
+        assertFalse(result.stdout().contains("?"), result.stdout());
+        assertTrue(result.stdout().chars().allMatch(c -> c < 128), result.stdout());
+    }
+
+    private Result run(String... options) throws Exception {
         Path stdout = directory.resolve("stdout.txt");
         Path stderr = directory.resolve("stderr.txt");
-        List<String> command = List.of(Path.of(System.getProperty("java.home"), "bin", "java").toString(),
-                "-cp", classes + java.io.File.pathSeparator + classpath(), EXERCISE_3);
+        List<String> command = new ArrayList<>();
+        command.add(Path.of(System.getProperty("java.home"), "bin", "java").toString());
+        command.addAll(List.of(options));
+        command.addAll(List.of("-cp", classes + java.io.File.pathSeparator + classpath(), EXERCISE_3));
         ProcessBuilder builder = new ProcessBuilder(command).directory(data.getParent().toFile())
                 .redirectOutput(stdout.toFile()).redirectError(stderr.toFile());
         builder.environment().remove("JAVA_TOOL_OPTIONS");
