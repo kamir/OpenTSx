@@ -48,7 +48,7 @@ General continuous activation, production release qualification and ownership ha
 
 1. An operator is identified by `id` and `version` of an `opentsx.processor.v1` description
    ([schema](schemas/opentsx.processor.v1.schema.json)). Descriptions live in `systems/processors/<id>.yaml`; the file
-   name MUST equal the id (checked by `SystemDocTest.java:49-57`).
+   name MUST equal the id (checked by `SystemDocTest.java:71-79`).
 2. The DAG names an operator by its `op`. When the description has `dag.op`, that value is the DAG `op`;
    otherwise the `id` is. Example: `dq.plausible-range` is written as `op: dq.checks` with
    `fixed: { checks: [PLAUSIBLE_RANGE] }` (`systems/processors/dq.plausible-range.yaml`).
