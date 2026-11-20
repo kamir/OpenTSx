@@ -20,16 +20,21 @@ CD = re.compile(r"(?:^|[;&|({]|\b(?:then|do|else)\s)\s*(?:(?:!|command|builtin|t
 CD_GUARD = re.compile(r"(?:[<>]&|&>|[^;&|])*\|\|\s*(?:exit|return)\b")
 SHELL = re.compile(r"""'[^']*'|"(?:\\.|[^"\\])*"|\\.|(?P<comment>(?<![^\s;&|()])#.*)""")
 SEPARATOR = re.compile(r"&&|\|\||(?<![<>])&(?!>)|[;|]")
-DOCKER_GLOBAL = (r"(?:(?:--(?:config|context|host|log-level|tlscacert|tlscert|tlskey)|-[cHl])(?:=|\s+)\S+"
-                 r"|(?:--(?:debug|tls|tlsverify)|-D)(?=\s))\s+")
+# unquoted() masks a closing backtick as ")".
+SUBSTITUTION = r"\$\([^()]*\)|`[^`()]*\)"
+WORD_PIECE = rf"(?:{SUBSTITUTION}|(?!{SUBSTITUTION})\S)"
+VALUE_PIECE = rf"(?:{SUBSTITUTION}|(?!{SUBSTITUTION})[^\s;&|()<>])"
+DOCKER_GLOBAL = (r"(?:(?:--(?:config|context|host|log-level|tlscacert|tlscert|tlskey)|-[cHl])(?:=|\s+)" + WORD_PIECE
+                 + r"+|(?:--(?:debug|tls|tlsverify)|-D)(?=\s))\s+")
 DOCKER_INFO = {"-v", "--version", "-h", "--help"}
-CASE_ARM = r"\(?[^\s;&|()]+\)\s*"
+CASE_ARM = r"\(?(?:" + SUBSTITUTION + r"|[^\s;&|()`])+\)\s*"
 COMMAND_WORD = (r"(?:(?:^|(?<=[;&|{])|(?<=\sin\s)(?=\s*" + CASE_ARM + r"))\s*(?:" + CASE_ARM + r")?|(?<=[(`])\s*)"
-                r"(?:(?:[A-Za-z_][A-Za-z0-9_]*=\S*|-\S+(?:\s+[^\s;&|()<>-][^\s;&|()<>]*)?|[0-9][0-9.]*[smhd]?|!|time"
+                r"(?:(?:[A-Za-z_][A-Za-z0-9_]*=" + WORD_PIECE + r"*|-" + WORD_PIECE + r"+(?:\s+(?!-)" + VALUE_PIECE
+                + r"+)?|[0-9][0-9.]*[smhd]?|!|time"
                 r"|command(?!(?:\s+-[pvV]+)*\s+-[pvV]*[vV][pvV]*\s)|builtin|exec|nohup|sudo|env|nice|ionice|timeout"
                 r"|xargs|if|elif|then|else|do|while|until)\s+)*")
-INSTALL = re.compile(COMMAND_WORD + r"(?:[^\s;&|()<>]*/)?(?P<tool>docker\s+(?:" + DOCKER_GLOBAL + r")*(?P<word>\S+)"
-                     r"|confluent-hub\s+install\s|confluent\s+connect\s+plugin\s+install\s)")
+INSTALL = re.compile(COMMAND_WORD + r"(?:[^\s;&|()<>]*/)?(?P<tool>docker\s+(?:" + DOCKER_GLOBAL + r")*(?P<word>"
+                     + VALUE_PIECE + r"+)|confluent-hub\s+install\s|confluent\s+connect\s+plugin\s+install\s)")
 DOCKER_INSTALL = r"(?:(?:container\s+)?(?:run|create)|(?:image\s+)?pull)\s"
 SUBCOMMAND = re.compile(DOCKER_INSTALL)
 OPTIONS_BEFORE_SUBCOMMAND = re.compile(r"(?:-[^\s=]+(?:=\S*|(?:\s+[^\s-]\S*)?)\s+)+" + DOCKER_INSTALL)
@@ -107,6 +112,9 @@ def unquoted(line: str, literal: frozenset[int] = frozenset()) -> str:
             masked[i] = "_"
         elif top and top[0] == "`" and c == "`":
             stack.pop()
+            masked[i] = ")"
+        elif c == "`" and i not in literal:
+            stack.append(["`", i])
         elif top and top[0] == "(" and c in "()":
             top[2] += 1 if c == "(" else -1
             if top[2] < 0:
@@ -168,7 +176,7 @@ def join_substitutions(text: str) -> str:
 
 
 def takes_the_next_word(prefix: str) -> bool:
-    prefix = re.split(r"[(`]", prefix)[-1]
+    prefix = re.split(r"[(`]", re.sub(SUBSTITUTION, "_", prefix))[-1]
     words = prefix.split()
     if words and not prefix[-1].isspace():
         words.pop()
@@ -259,7 +267,11 @@ def image_problems(root: pathlib.Path, name: str) -> list[str]:
             masked = unquoted(line)
             for start, command in commands(line):
                 stop = start + len(command)
-                for install in INSTALL.finditer(masked, start, stop):
+                installs, position = {}, start
+                while install := INSTALL.search(masked, position, stop):
+                    installs.setdefault(install.start("tool"), install)
+                    position = install.start() + 1
+                for _, install in sorted(installs.items()):
                     if takes_the_next_word(masked[install.start():install.start("tool")]):
                         continue
                     begin = install.end()
@@ -547,6 +559,29 @@ def test_a_docker_subcommand_that_is_not_a_literal_word_is_a_finding(tmp_path):
     ]
 
 
+def test_a_literal_docker_subcommand_ends_at_a_shell_metacharacter(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        '[ "$(docker info)" ]\n'
+        'echo "$(docker ps)"\n'
+        "IDS=`docker ps`\n"
+        "(docker version)\n"
+        "while ! docker info>/dev/null 2>&1; do sleep 1; done\n"
+        "X=$(docker pull toke/mosquitto)\n"
+        "docker ${CMD} run img:1.2.3\n"
+        "docker $(echo pull) img:1.2.3\n"
+        "docker --context $(cat c) pull toke/mosquitto\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    literal = ("the check cannot read a docker command whose subcommand is not a literal word; "
+               "write the docker options and the subcommand literally")
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:7: toke/mosquitto: {rest}",
+        f"run.sh:8: ${{CMD}}: {literal}",
+        f"run.sh:9: $(echo pull): {literal}",
+        f"run.sh:10: toke/mosquitto: {rest}",
+    ]
+
+
 def test_an_install_in_a_substitution_inside_an_argument_of_another_install_is_read(tmp_path):
     (tmp_path / "run.sh").write_text(
         "#!/usr/bin/env bash\n"
@@ -666,6 +701,37 @@ def test_an_install_in_a_case_arm_or_with_a_path_is_read(tmp_path):
         f"run.sh:8: toke/mosquitto: {rest}",
         f"run.sh:9: toke/mosquitto: {rest}",
         f"run.sh:10: a/b:latest: {rest}",
+    ]
+
+
+def test_a_prefix_value_may_hold_a_command_substitution_and_a_closing_backtick_starts_no_command(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "X=$(cat f) docker pull toke/mosquitto\n"
+        "env X=$(cat f) docker pull toke/mosquitto\n"
+        "sudo -u $(whoami) docker pull toke/mosquitto\n"
+        "X=$(docker pull a) docker pull b\n"
+        "sudo --user=$(echo a b) docker pull toke/mosquitto\n"
+        "X=`cat f` docker pull toke/mosquitto\n"
+        "X=$((1+2)) docker pull toke/mosquitto\n"
+        "echo `date` docker pull x\n"
+        "echo $(cat f) docker pull x\n"
+        "X=$(cat f) echo docker pull x\n"
+        'log "step" `whoami` docker pull x\n'
+        "sudo -u $(whoami) -g docker pull x\n"
+        'case "$1" in `hostname`) docker pull toke/mosquitto ;; esac\n'
+        "`date` docker pull x\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:2: toke/mosquitto: {rest}",
+        f"run.sh:3: toke/mosquitto: {rest}",
+        f"run.sh:4: toke/mosquitto: {rest}",
+        f"run.sh:5: a: {rest}",
+        f"run.sh:5: b: {rest}",
+        f"run.sh:6: toke/mosquitto: {rest}",
+        f"run.sh:7: toke/mosquitto: {rest}",
+        f"run.sh:8: toke/mosquitto: {rest}",
+        f"run.sh:14: toke/mosquitto: {rest}",
     ]
 
 

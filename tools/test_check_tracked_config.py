@@ -106,7 +106,7 @@ def test_a_real_host_in_any_tracked_text_file_fails(tmp_path, capsys):
 
 
 def git_environment() -> dict[str, str]:
-    return {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    return {**{k: v for k, v in os.environ.items() if not k.startswith("GIT_")}, "LC_ALL": "C"}
 
 
 def test_the_guard_reads_the_git_listing(tmp_path, monkeypatch):
@@ -219,26 +219,41 @@ def test_a_gitlink_without_a_submodule_entry_fails(tmp_path):
         result = run_guard(gitlink_repository(tmp_path / name, modules))
         assert result.returncode == 1, result.stdout + result.stderr
         assert result.stdout.splitlines() == [
-            "dir/sub: gitlink without a .gitmodules entry; add it with git submodule add --force <url> dir/sub or "
-            "remove it with git rm --cached dir/sub",
+            "dir/sub: gitlink without a .gitmodules entry; add one with git config -f .gitmodules "
+            "submodule.dir/sub.path dir/sub, git config -f .gitmodules submodule.dir/sub.url <url> and "
+            "git add .gitmodules, or remove it with git rm --cached dir/sub",
             f"checked {files} tracked files, 1 findings"]
 
 
-def test_the_suggested_submodule_add_passes_the_guard(tmp_path):
-    source = tmp_path / "source"
-    subprocess.run(["git", "init", "-q", str(source)], check=True, env=git_environment())
-    subprocess.run(["git", "-C", str(source), "-c", "user.name=test", "-c", "user.email=test@example.com", "-c",
-                    "commit.gpgsign=false", "commit", "-q", "--allow-empty", "-m", "start"], check=True,
-                   env=git_environment())
-    repository = gitlink_repository(tmp_path / "repository", None)
-    advice = run_guard(repository).stdout.splitlines()[0]
-    command = advice.partition("add it with ")[2].partition(" or remove it")[0].replace("<url>", str(source))
-    assert command == f"git submodule add --force {source} dir/sub"
-    subprocess.run(["git", "-c", "protocol.file.allow=always", *command.split()[1:]], cwd=repository,
-                   capture_output=True, check=True, env=git_environment())
-    result = run_guard(repository)
+def git(root: pathlib.Path, *arguments: str) -> str:
+    return subprocess.run(["git", "-C", str(root), "-c", "user.name=test", "-c", "user.email=test@example.com", "-c",
+                           "commit.gpgsign=false", "-c", "protocol.file.allow=always", *arguments],
+                          capture_output=True, text=True, check=True, env=git_environment()).stdout
+
+
+def test_the_suggested_submodule_entry_passes_the_guard_in_a_clone_and_keeps_the_pinned_commit(tmp_path):
+    source, origin, clone = tmp_path / "source", tmp_path / "origin", tmp_path / "clone"
+    git(tmp_path, "init", "-q", str(source))
+    git(source, "commit", "-q", "--allow-empty", "-m", "pinned")
+    pinned = git(source, "rev-parse", "HEAD").strip()
+    git(source, "commit", "-q", "--allow-empty", "-m", "later")
+    git(tmp_path, "init", "-q", str(origin))
+    git(origin, "update-index", "--add", "--cacheinfo", f"160000,{pinned},dir/sub")
+    git(origin, "commit", "-q", "-m", "stray gitlink")
+    git(tmp_path, "clone", "-q", str(origin), str(clone))
+    assert (clone / "dir" / "sub").is_dir()
+    advice = run_guard(clone).stdout.splitlines()[0]
+    commands = advice.partition("add one with ")[2].partition(", or remove it with ")[0]
+    assert commands == ("git config -f .gitmodules submodule.dir/sub.path dir/sub, "
+                        "git config -f .gitmodules submodule.dir/sub.url <url> and git add .gitmodules")
+    for command in commands.replace(" and ", ", ").split(", "):
+        git(clone, *[str(source) if word == "<url>" else word for word in command.split()[1:]])
+    result = run_guard(clone)
     assert result.returncode == 0, result.stdout + result.stderr
     assert result.stdout.splitlines() == ["checked 2 tracked files, 0 findings"]
+    assert git(clone, "ls-files", "-s", "dir/sub") == f"160000 {pinned} 0\tdir/sub\n"
+    git(clone, "submodule", "update", "--init")
+    assert git(clone / "dir" / "sub", "rev-parse", "HEAD").strip() == pinned
 
 
 def test_a_gitmodules_file_that_git_cannot_read_is_one_finding_and_the_other_checks_run(tmp_path):
@@ -272,8 +287,9 @@ def test_a_root_below_the_top_level_reads_the_top_level_submodule_entries(tmp_pa
     result = run_guard(repository / "dir")
     assert result.returncode == 1, result.stdout + result.stderr
     assert result.stdout.splitlines() == [
-        "stray: gitlink without a .gitmodules entry; add it with git submodule add --force <url> stray or remove it "
-        "with git rm --cached stray",
+        "stray: gitlink without a .gitmodules entry; add one with git config -f .gitmodules "
+        "submodule.dir/stray.path dir/stray, git config -f .gitmodules submodule.dir/stray.url <url> and "
+        "git add .gitmodules, or remove it with git rm --cached dir/stray",
         "checked 2 tracked files, 1 findings"]
 
 

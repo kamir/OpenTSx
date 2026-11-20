@@ -11,10 +11,13 @@ import paho.mqtt.client as mqtt
 JSON_TYPES = ((dict, "object"), (list, "array"), (str, "string"), (bool, "boolean"), ((int, float), "number"))
 
 
+def json_type(value):
+    return next((name for kind, name in JSON_TYPES if isinstance(value, kind)), "null")
+
+
 def json_object(config_path, key, value, shape="a JSON object"):
     if not isinstance(value, dict):
-        found = next((name for kind, name in JSON_TYPES if isinstance(value, kind)), "null")
-        sys.exit("%s: %s: a JSON %s is not allowed; expected %s" % (config_path, key, found, shape))
+        sys.exit("%s: %s: a JSON %s is not allowed; expected %s" % (config_path, key, json_type(value), shape))
     return value
 
 
@@ -97,6 +100,8 @@ def main(config_path):
     host = mqtt_config.get("host", "localhost")
     port = mqtt_config.get("port", 1883)
     topic = mqtt_config.get("topic", "mqttgen")
+    username = mqtt_config.get("username")
+    password = mqtt_config.get("password")
     for key, value, allowed, expected in (
             ("misc.interval_ms", interval_ms, isinstance(interval_ms, (int, float))
              and not isinstance(interval_ms, bool) and 0 <= interval_ms <= 86400000,
@@ -106,16 +111,17 @@ def main(config_path):
             ("mqtt.port", port, isinstance(port, int) and not isinstance(port, bool) and 1 <= port <= 65535,
              "a whole number from 1 to 65535"),
             ("mqtt.topic", topic, isinstance(topic, str) and topic != "" and "+" not in topic and "#" not in topic,
-             "a non-empty JSON string without + or #")):
+             "a non-empty JSON string without + or #"),
+            ("mqtt.username", username, "username" not in mqtt_config or isinstance(username, str), "a JSON string")):
         if not allowed:
             sys.exit("%s: %s: %s is not allowed; expected %s" % (config_path, key, json.dumps(value), expected))
+    if "password" in mqtt_config and not isinstance(password, str):
+        sys.exit("%s: mqtt.password: a JSON %s is not allowed; expected a JSON string"
+                 % (config_path, json_type(password)))
 
     if not sensors:
         print("no sensors specified in config, nothing to do")
         return
-
-    username = mqtt_config.get("username")
-    password = mqtt_config.get("password")
 
     print("MQTT broker %s:%s, user %s" % (host, port, username))
 

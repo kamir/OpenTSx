@@ -62,12 +62,12 @@ class UnreadableModules(Exception):
     pass
 
 
-def submodule_paths(root: pathlib.Path) -> set[str]:
+def submodule_paths(root: pathlib.Path) -> tuple[str, set[str]]:
     location = subprocess.run(["git", "-C", str(root), "rev-parse", "--show-toplevel", "--show-prefix"],
                               capture_output=True, check=True)
     top, prefix = location.stdout.decode("utf-8").split("\n")[:2]
     if not (pathlib.Path(top) / ".gitmodules").is_file():
-        return set()
+        return prefix, set()
     command = ["git", "-C", top, "config", "-z", "-f", ".gitmodules", "--get-regexp", r"^submodule\..*\.path$"]
     result = subprocess.run(command, capture_output=True, check=False)
     if result.returncode not in (0, 1):
@@ -75,17 +75,22 @@ def submodule_paths(root: pathlib.Path) -> set[str]:
                            if line.strip())
         raise UnreadableModules(f".gitmodules: git cannot read it ({reason}); fix the file, for example resolve "
                                 "its conflict markers")
-    paths = (entry.partition("\n")[2] for entry in result.stdout.decode("utf-8").split("\0") if entry)
-    return {path[len(prefix):] for path in paths if path.startswith(prefix)}
+    return prefix, {entry.partition("\n")[2] for entry in result.stdout.decode("utf-8").split("\0") if entry}
 
 
 def gitlink_findings(root: pathlib.Path) -> list[str]:
     try:
-        known = submodule_paths(root)
+        prefix, known = submodule_paths(root)
     except UnreadableModules as error:
         return [str(error)]
-    return [f"{path}: gitlink without a .gitmodules entry; add it with git submodule add --force <url> {path} or "
-            f"remove it with git rm --cached {path}" for path in gitlinks(root) if path not in known]
+    findings = []
+    for path in gitlinks(root):
+        top = prefix + path
+        if top not in known:
+            findings.append(f"{path}: gitlink without a .gitmodules entry; add one with git config -f .gitmodules "
+                            f"submodule.{top}.path {top}, git config -f .gitmodules submodule.{top}.url <url> and "
+                            f"git add .gitmodules, or remove it with git rm --cached {top}")
+    return findings
 
 
 def is_config(path: str) -> bool:

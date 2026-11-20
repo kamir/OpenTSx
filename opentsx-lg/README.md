@@ -122,27 +122,36 @@ digest. `tools/test_lg_scripts.py` reads the image or connector of every `docker
 `confluent connect plugin install` in the scripts of this module, also after `&&`, `||`, `;`, `|` or a single `&` on
 the same line, and of every `FROM` in its Dockerfiles. The `&` of a redirection, as in `2>&1`, `>&2` or `&>log`, does
 not end a command. It reads `docker`, `confluent-hub` and `confluent` only as the command word, also with a path
-such as `/usr/bin/docker`: at the start of a command, of a `case` arm such as `start)` or `(start)`, of a command
-substitution, of a subshell or of a `{` group, also after variable assignments, options (words that start with `-`,
-with or without one value), a number or duration such as `10` or `5s`, and the words `!`, `time`, `command`,
-`builtin`, `exec`, `nohup`, `sudo`, `env`, `nice`, `ionice`, `timeout`, `xargs`, `if`, `elif`, `then`, `else`, `do`,
-`while` and `until`. An option of `sudo`, `env`, `nice`, `ionice`, `timeout`, `xargs` or `exec` that takes a value,
+such as `/usr/bin/docker`: at the start of a command, of a `case` arm such as `start)`, `(start)` or
+`` `hostname`) ``, of a command substitution, of a subshell or of a `{` group, also after variable assignments,
+options (words that start with `-`, with or without one value), a number or duration such as `10` or `5s`, and the
+words `!`, `time`, `command`, `builtin`, `exec`, `nohup`, `sudo`, `env`, `nice`, `ionice`, `timeout`, `xargs`, `if`,
+`elif`, `then`, `else`, `do`, `while` and `until`. The value of an assignment or an option may hold a command
+substitution, as in `X=$(cat f) docker pull <image>`, `sudo -u $(whoami) docker pull <image>` or
+``X=`cat f` docker pull <image>``.
+An option of `sudo`, `env`, `nice`, `ionice`, `timeout`, `xargs` or `exec` that takes a value,
 such as `-u` of `sudo` or `-n` of `nice`, takes the next word as its value, so `sudo -u docker pull <image>`, which
 runs `pull` as the user `docker`, is not read. A `docker` that is an argument of another command, as in
-`echo docker pull <image>` or `docker exec <container> docker pull <image>`, is not read, and neither is the `docker`
-of `command -v docker`, `command -V docker` or `command -p -v docker`, which do not run it.
+`echo docker pull <image>`, `echo $(date) docker pull <image>`, ``echo `date` docker pull <image>``,
+`$(date) docker pull <image>`, `` `date` docker pull <image> `` or `docker exec <container> docker pull <image>`, is
+not read, and neither is the `docker` of `command -v docker`, `command -V docker` or
+`command -p -v docker`, which do not run it.
 Before the subcommand of `docker` it skips the global options `--config`, `-c` or `--context`, `-D`
 or `--debug`, `-H` or `--host`, `-l` or `--log-level`, `--tls`, `--tlscacert`, `--tlscert`, `--tlskey` and
-`--tlsverify`, with their values. It fails on any other option between `docker` and a subcommand it reads, also on
-the `=` form of a flag such as `--tlsverify=true`, except `-v`, `--version`, `-h` and `--help`, with
+`--tlsverify`, with their values, also a value that holds a command substitution, as in `--context $(cat c)`. It
+fails on any other option between `docker` and a subcommand it reads, also on the `=` form of a flag such as
+`--tlsverify=true`, except `-v`, `--version`, `-h` and `--help`, with
 `<file>:<line>: <option>: unknown docker option before the subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py`.
 It reads each such option with at most one value word, a word that does not start with `-`, and with none when the
 option has `=`. So `docker --foo pull <image>` and `docker --foo bar pull <image>` are a finding, and
 `docker -x foo bar pull <image>`, whose subcommand is `bar`, and `docker --x=1 ps pull <image>` are not. The finding
 names the option as the line writes it, as in `--label="a b"`.
 It fails on a `docker` command whose subcommand is not a literal word of letters, digits, `_`, `.` and `-`, as in
-`docker $OPTS pull <image>` or `docker "$CMD" <image>`, with
+`docker $OPTS pull <image>`, `docker "$CMD" <image>` or `docker $(echo pull) <image>`, with
 `<file>:<line>: <word>: the check cannot read a docker command whose subcommand is not a literal word; write the docker options and the subcommand literally`.
+The subcommand ends at a blank, at `;`, `&`, `|`, `(`, `)`, `<`, `>` and at the backtick that closes a substitution,
+so `[ "$(docker info)" ]`, `` IDS=`docker ps` `` and `docker info>/dev/null` have the literal subcommands `info` and
+`ps`. A command substitution in the subcommand is named whole, as in `$(echo pull)`.
 It fails when an image or connector has no exact version, such as `1.2.3`, and no sha256 digest.
 It also fails on an option before the image that it does not know, with
 `<file>:<line>: <option>: unknown option before the image; add it to the option lists of tools/test_lg_scripts.py`,
@@ -155,7 +164,8 @@ in an argument, as in `docker run -e X=$(date +%s) <image>`, is one word for the
 substitution or subshell, also after `&&`, `||`, `;`, `|` or `&` inside it, and so is each further substitution of the
 same command, as in `echo $(docker pull <image>) $(docker pull <image>)`. A command substitution inside an argument of
 an install is read too, so `docker run -e "X=$(docker pull <image>)" <image>` gives a finding for each of the two
-images that has no exact version.
+images that has no exact version, and so is one in the value of an assignment before a command it reads, as in
+`X=$(docker pull <image>) docker pull <image>`.
 
 `mqtt-generator-gist/mqttgen.py` uses the 1.x client API of `paho-mqtt`. With paho-mqtt 2.0.0 it stops with
 `TypeError: Client.__init__() missing 1 required positional argument: 'callback_api_version'`. Before it connects, it
@@ -185,10 +195,14 @@ Before it connects, it also checks these values:
 | `mqtt.host` | a non-empty JSON string | `"localhost"` |
 | `mqtt.port` | a whole number from 1 to 65535 | `1883` |
 | `mqtt.topic` | a non-empty JSON string without `+` or `#` | `"mqttgen"` |
+| `mqtt.username` | a JSON string | none |
+| `mqtt.password` | a JSON string | none |
 
 When a value is not allowed, it exits with status 1 and
 `<file>: <key>: <value> is not allowed; expected <allowed values>`, for example
 `config.json: misc.interval_ms: "x" is not allowed; expected a number of milliseconds from 0 to 86400000`.
+For `mqtt.password` the message names the JSON type and not the value:
+`<file>: mqtt.password: a JSON <type> is not allowed; expected a JSON string`.
 Without exactly one argument, it exits with status 2 and
 `<script>: <n> arguments given; expected 1, the path of a JSON configuration file such as config.json`.
 
@@ -222,8 +236,9 @@ After HTTP 200 or 201 it prints `New connector debug_c1 created.`. On any other 
 `debug_c1: POST http://127.0.0.1:8083/connectors answered HTTP <status> <body>; the connector was not created, check the log of the Kafka Connect worker`.
 When the body of an answer ends before its `Content-Length`, the script keeps the status and uses the part of the
 body that arrived: a 201 prints `New connector debug_c1 created.` and a 500 gives the message above with that part.
-When the connection is reset while the body is read, the script keeps the status as well, and `<body>` is the cause
-in parentheses, as in `answered HTTP 500 ([Errno 104] Connection reset by peer)`.
+When the connection is reset while the body is read, or the body stops for 10 s, the script keeps the status as well,
+and `<body>` is the cause in parentheses, as in `answered HTTP 500 ([Errno 104] Connection reset by peer)` or
+`answered HTTP 500 (timed out)`.
 When it cannot connect, it exits with status 1 and
 `http://127.0.0.1:8083/connectors: cannot connect (<cause>); start Kafka Connect on 127.0.0.1:8083 first`.
 A connection that takes longer than 10 s gives this message with the cause `timed out`. When Kafka Connect accepts

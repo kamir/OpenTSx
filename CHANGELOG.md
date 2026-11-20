@@ -224,11 +224,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   command line leave out a DAG that `DagPlan.of` refuses, and the sinks of a DAG whose redeploy the processor refused
   because another DAG writes one of its topics.
 - tools: `tools/check_tracked_config.py` fails on a gitlink that has no `.gitmodules` entry, with `<path>: gitlink
-  without a .gitmodules entry; add it with git submodule add --force <url> <path> or remove it with git rm --cached
-  <path>`. A `.gitmodules` file that git cannot read is one finding, `.gitmodules: git cannot read it (<git's
-  message>); fix the file, for example resolve its conflict markers`, and the other checks still run.
-  It reads the submodule entries from the `.gitmodules` file at the top level of the repository, also when it checks a
-  directory below it.
+  without a .gitmodules entry; add one with git config -f .gitmodules submodule.<path>.path <path>, git config -f
+  .gitmodules submodule.<path>.url <url> and git add .gitmodules, or remove it with git rm --cached <path>`. A
+  `.gitmodules` file that git cannot read is one finding, `.gitmodules: git cannot read it (<git's message>); fix the
+  file, for example resolve its conflict markers`, and the other checks still run. It reads the submodule entries from
+  the `.gitmodules` file at the top level of the repository, also when it checks a directory below it. For a root
+  below the top level, the commands name the path from the top level of the repository.
 - `tools/test_registries.py` fails on every line of a tracked YAML file or Dockerfile of the repository, the archived
   echo demos included, that names the registry `k8s.gcr.io`, as in an image `k8s.gcr.io/pause:3.2` or a value
   `registry: k8s.gcr.io`.
@@ -2579,6 +2580,26 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   on `PATH`, puts `slf4j-simple` and `conf/simplelogger.properties` on the class path, as in `opentsx-connectors` and
   `opentsx-lg`, so the WARN line of `MacroRecorder2` and the other log lines at INFO and above reach standard error.
   It used to find no SLF4J provider and drop every log line after the warning `No SLF4J providers were found`.
+- tools: `tools/test_lg_scripts.py` ends a docker subcommand at a blank, at `;`, `&`, `|`, `(`, `)`, `<`, `>` and at
+  the backtick that closes a substitution, so `[ "$(docker info)" ]`, ``IDS=`docker ps` ``, `(docker version)` and
+  `docker info>/dev/null` are no finding. It names a substitution in the subcommand whole, as in `$(echo pull)`, and
+  reads a global option value that holds a substitution, as in `docker --context $(cat c) pull <image>`.
+- tools: `tools/test_lg_scripts.py` reads a docker command after an assignment or option value that holds a command
+  substitution, as in `X=$(cat f) docker pull <image>`, `env X=$(cat f) docker pull <image>` and `sudo -u $(whoami)
+  docker pull <image>`. It reads both images of `X=$(docker pull <image>) docker pull <image>`, and it reads a `case`
+  arm whose pattern holds a command substitution, as in `"$(hostname)") docker pull <image>`. A closing backtick no
+  longer starts a command, so ``echo `date` docker pull x`` and `` `date` docker pull x `` are no finding, as with
+  `$(date)`.
+- opentsx-lg: `mqtt-generator-gist/mqttgen.py` checks `mqtt.username` and `mqtt.password` before it connects and exits
+  with status 1 on a value that is not a JSON string: `<file>: mqtt.username: <value> is not allowed; expected a JSON
+  string` or `<file>: mqtt.password: a JSON <type> is not allowed; expected a JSON string`, which names the JSON type
+  and not the password.
+- opentsx-lg: `src/main/connect-cfg/deploy_connector.py` keeps the HTTP status when the body stops for 10 s after the
+  headers arrived: a 201 prints `New connector debug_c1 created.` and any other status gives `debug_c1: POST
+  http://127.0.0.1:8083/connectors answered HTTP <status> (timed out); the connector was not created, check the log of
+  the Kafka Connect worker` instead of `no answer within 10 s`.
+- tools: `tools/test_check_tracked_config.py` runs git with `LC_ALL=C`, so the test that quotes git's `bad config
+  line` message also passes with a translated git.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

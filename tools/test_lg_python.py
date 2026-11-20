@@ -2,10 +2,10 @@
 exits 1 on a configuration file it cannot read or parse or whose entries have the wrong shape or a value it cannot use,
 names the broker only when the connect fails, reports a closed stdout and a failed publish in one line, and exits 2 on
 a usage error, the connector script posts the config object of cfg.json, refuses a cfg.json it cannot read or without
-one and reports what Kafka Connect answered, also when the body ends early, or that no HTTP answer came,
-waiting at most 10 s for each socket operation, and the MQTT example bootstrap installs a pinned paho-mqtt without
-sudo, reaches the connector installs without a broker and stops at the first command that fails, and the broker script
-publishes its test message after it starts the broker.
+one and reports what Kafka Connect answered, also when the body ends early, is reset or stops for 10 s, or that no
+HTTP answer came, waiting at most 10 s for each socket operation, and the MQTT example bootstrap installs a pinned
+paho-mqtt without sudo, reaches the connector installs without a broker and stops at the first command that fails,
+and the broker script publishes its test message after it starts the broker.
 
 Run from the repository root: python -m pytest -q tools
 """
@@ -299,6 +299,63 @@ def test_the_generator_exits_1_before_the_connect_on_a_value_it_cannot_use(tmp_p
     assert capsys.readouterr().out == ""
 
 
+@pytest.mark.parametrize("login, message", [
+    ({"username": 5}, "mqtt.username: 5 is not allowed; expected a JSON string"),
+    ({"username": None}, "mqtt.username: null is not allowed; expected a JSON string"),
+    ({"username": "demo1", "password": 12345}, "mqtt.password: a JSON number is not allowed; expected a JSON string"),
+    ({"password": 12345}, "mqtt.password: a JSON number is not allowed; expected a JSON string"),
+    ({"username": "demo1", "password": []}, "mqtt.password: a JSON array is not allowed; expected a JSON string"),
+    ({"username": "demo1", "password": None}, "mqtt.password: a JSON null is not allowed; expected a JSON string"),
+])
+def test_the_generator_exits_1_before_the_connect_on_a_login_that_is_not_a_json_string(tmp_path, monkeypatch, capsys,
+                                                                                      login, message):
+    class Client:
+        def username_pw_set(self, username, password):
+            raise AssertionError(f"login as {username}")
+
+        def connect(self, host, port):
+            raise AssertionError(f"connected to {host}:{port}")
+
+    stub_paho(monkeypatch, Client)
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({"mqtt": login, "sensors": {"s1": {"range": [0, 1]}}}), encoding="utf-8")
+    with pytest.raises(SystemExit) as stop:
+        load(MQTTGEN, "mqttgen").main(str(path))
+    assert stop.value.code == f"{path}: {message}"
+    assert "12345" not in stop.value.code.removeprefix(f"{path}: ")
+    assert capsys.readouterr().out == ""
+
+
+@pytest.mark.parametrize("login, calls", [
+    ({}, [("connect", "localhost", 1883)]),
+    ({"username": "demo1"}, [("login", "demo1", None), ("connect", "localhost", 1883)]),
+    ({"username": "demo1", "password": MQTT_PASSWORD},
+     [("login", "demo1", MQTT_PASSWORD), ("connect", "localhost", 1883)]),
+])
+def test_the_generator_connects_without_a_login_or_with_a_login_of_json_strings(tmp_path, monkeypatch, capsys, login,
+                                                                                calls):
+    class Connected(Exception):
+        pass
+
+    done = []
+
+    class Client:
+        def username_pw_set(self, username, password):
+            done.append(("login", username, password))
+
+        def connect(self, host, port):
+            done.append(("connect", host, port))
+            raise Connected()
+
+    stub_paho(monkeypatch, Client)
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({"mqtt": login, "sensors": {"s1": {"range": [0, 1]}}}), encoding="utf-8")
+    with pytest.raises(Connected):
+        load(MQTTGEN, "mqttgen").main(str(path))
+    assert done == calls
+    assert MQTT_PASSWORD not in capsys.readouterr().out
+
+
 RANGE = "is not allowed; expected two whole numbers [low, high] with low <= high"
 
 
@@ -447,6 +504,44 @@ def test_the_connector_script_keeps_the_status_500_and_the_cause_when_the_connec
     assert result.stderr.splitlines() == [
         "debug_c1: POST http://127.0.0.1:8083/connectors answered HTTP 500 ([Errno 104] Connection reset by peer); "
         "the connector was not created, check the log of the Kafka Connect worker"]
+
+
+class Stalled:
+    def read(self, *arguments):
+        raise TimeoutError("timed out")
+
+    def close(self):
+        pass
+
+
+def test_the_connector_script_keeps_the_status_201_when_the_body_stops_for_10_s(monkeypatch, capsys):
+    class Created(Stalled):
+        def getcode(self):
+            return 201
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *failure):
+            return False
+
+    monkeypatch.chdir(CONNECT_CFG)
+    monkeypatch.setattr("urllib.request.urlopen", lambda request, timeout=None: Created())
+    load(ROOT / CONNECTOR_SCRIPT, "deploy_connector").main()
+    assert capsys.readouterr().out.splitlines()[-1] == "New connector debug_c1 created."
+
+
+def test_the_connector_script_keeps_the_status_500_and_the_cause_when_the_body_stops_for_10_s(monkeypatch, capsys):
+    def refuse(request, timeout=None):
+        raise urllib.error.HTTPError(request.full_url, 500, "Internal Server Error", {}, Stalled())
+
+    monkeypatch.chdir(CONNECT_CFG)
+    monkeypatch.setattr("urllib.request.urlopen", refuse)
+    with pytest.raises(SystemExit) as stop:
+        load(ROOT / CONNECTOR_SCRIPT, "deploy_connector").main()
+    assert stop.value.code == ("debug_c1: POST http://127.0.0.1:8083/connectors answered HTTP 500 (timed out); "
+                               "the connector was not created, check the log of the Kafka Connect worker")
+    assert "created" not in capsys.readouterr().out
 
 
 @pytest.mark.parametrize("answer, cause", [

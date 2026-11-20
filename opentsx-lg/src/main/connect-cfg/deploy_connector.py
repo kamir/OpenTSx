@@ -14,7 +14,7 @@ def body(response):
         data = response.read()
     except http.client.IncompleteRead as error:
         data = error.partial
-    except ConnectionError as error:
+    except (ConnectionError, TimeoutError) as error:
         return '({})'.format(error)
     return data.decode('utf-8', 'replace')
 
