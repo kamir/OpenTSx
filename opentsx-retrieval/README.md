@@ -155,7 +155,8 @@ Vector topics are written by the vector processor (below). The server is its fro
 * `POST /v1/dags/deploy` (body: the DAG as YAML) checks that the processor can run the DAG and appends it to the
   control topic. `POST /v1/dags/stop?name=<dag>` appends the stop. Both exist only with `--dag-runs true`.
 * The processor runs `align.vector` on the series of the source topic only (`in: [decode]`); any other operator
-  before the vector is refused with the id of the node. `source.series` must name the series.
+  before the vector is refused with the id of the node. `source.series` must name the series. A `fill` other than
+  `none` or `as-of` is refused with `node <id>: vector fill must be none or as-of`; a missing `fill` is `none`.
 * **Run token.** With `--dag-run-token <token>` or the environment variable `OPENTSX_DAG_RUN_TOKEN` the two write
   routes need the token in the header `X-OpenTSx-Run-Token`; anything else gets 401. Without a token, whoever
   reaches the port can deploy and stop. The SaaS backend holds the token and forwards for its users

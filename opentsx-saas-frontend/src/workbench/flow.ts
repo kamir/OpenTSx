@@ -9,7 +9,7 @@ import { checkBrowserWork } from './workLimits';
 import { PROCESSOR_SERIES_OPS, capabilityOf } from './capabilities';
 import { OP_BY_ID, defaultParams } from './ops';
 import { Bucket, FlowNode, Params, SignalContext, SourceInfo, WayangConfig } from './types';
-import { VECTOR_OP, VECTOR_SCHEMA, componentNames } from './vector';
+import { VECTOR_OP, VECTOR_SCHEMA, componentNames, fillsAsOf } from './vector';
 
 export const SOURCE_ID = 'source';
 /** `kind` of a flow definition stored in the backend by the workbench. */
@@ -504,7 +504,7 @@ function dagParams(nodes: FlowNode[], node: FlowNode, seconds = false): Params |
   }
   if (node.op === VECTOR_OP) {
     const p = node.params;
-    const fill = (p.fill === 'as-of' ? `, fill: as-of, maxAge: PT${p.maxAge}S` : '') + (Number(p.lateness) > 0 ? `, lateness: PT${p.lateness}S` : '');
+    const fill = (fillsAsOf(p) ? `, fill: as-of, maxAge: PT${p.maxAge}S` : '') + (Number(p.lateness) > 0 ? `, lateness: PT${p.lateness}S` : '');
     return `{ every: PT${p.every}S, key: ${p.key}, agg: ${p.agg}${fill}, emit: ${p.emit}, names: [${vectorComponents(nodes, node).join(', ')}] }`;
   }
   return node.params;

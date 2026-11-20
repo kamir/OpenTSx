@@ -605,6 +605,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   response after preparation was persisted. Identical retry keeps the admitted plan, clock and whole-topic placement;
   activation still requires every preparation and the cross-topic ownership checks. Permanent refusals remain failures.
 
+- `align.vector` refuses a `fill` other than `none` or `as-of` in the web workbench and the vector processor, as the
+  Rust runner and Wayang already did. A typo such as `fill: asof` aligned without fill in the workbench preview, was
+  dropped from the DAG export and ran without fill on the processor. The workbench refuses it with
+  `vector fill must be none or as-of`, the message of the Rust runner, and the processor with
+  `node <id>: vector fill must be none or as-of`. A missing `fill` stays `none`.
+
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,
   stop, rejection before control publication, and a series checkpoint restart. The existing KafScale CI job runs
