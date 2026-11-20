@@ -533,6 +533,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   control record has that name. A record that carries `job` is a job record. It is not shown as a refusal of the
   processor and does not replace a refusal under the same key. Specification S5.4 requires `job` in every Track A
   and B record.
+- The retrieval server with `--kafscale` follows `tsx.<domain>.features.v2` like the clean and synthetic topics.
+  Feature series appear in `GET /v1/inventory`, and `GET /v1/systems/{id}/signals` shows their data under the
+  features grade. The inventory names the topic under `source.topics.features`.
 
 - Retrieval POST routes `/v1/patterns/search`, `/v1/episodes/similar` and `/v1/segments` require a single JSON object
   and report invalid bodies as HTTP 400. Response exchanges close after success or failure while preserving the
