@@ -4,8 +4,8 @@ This module collects weather data from the Deutscher Wetterdienst (DWD) open dat
 ([opendata.dwd.de](https://opendata.dwd.de)). It reads forecasts (MOSMIX) and station measurements (CDC), converts
 them to v2 series and episodes ([`opentsx-model`](../opentsx-model)) with a unit and an origin, and binds them to
 the weather inputs of the twins ([`opentsx-twin`](../opentsx-twin)): house, boat and energy system. It is the
-"DWD-Sammler" (weather atom A4) from [`07-DIGITAL-TWIN-BSP.md`](../docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md)
-(German).
+collector for weather atom A4, type `weather` in [`TWIN-COUPLING-SPEC.md` §2](../docs/datamodel-2026/TWIN-COUPLING-SPEC.md#2-atom-catalog).
+
 
 It uses only the JDK (`java.net.http`, `java.util.zip`, StAX) and has no third-party dependencies.
 

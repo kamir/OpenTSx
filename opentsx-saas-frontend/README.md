@@ -117,7 +117,7 @@ Read the [analysis guide](../docs/devguide/workbench-analysis.md) for the result
   "Cross-correlation" gives the peak of the lagged cross-correlation, its lag and link strength (`src/workbench/xcorr.ts`,
   ported from WikiExplorer.NG), "Event synchronisation" the share of synchronous events and the level of chance
   (`src/workbench/es.ts`, ported from the Python package). Workbench only, not in the stream operator catalog (`src/workbench/pairs.ts`, design in
-  `../EVOLUTION/TASK-015-multivariate-analysis.md`)
+  `../docs/datamodel-2026/PAIR-WINDOWS-SPEC.md`)
 - Deploy and Stop (tab "Smart Topic"): a list says what a deployment still needs, "Create a vector of the loaded
   series" builds the one thing the processor runs, and Deploy hands the flow to the vector processor, which keeps the vector topic up to
   date, and shows what it reports; needs an administrator account, a retrieval server started with `--kafscale` and

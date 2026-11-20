@@ -105,7 +105,7 @@ storage failures fail closed. Never clear or copy an uncertain ledger to admit a
 | Publication HTTP body | 85,000,000 bytes |
 
 The control body may contain the completed old plan/result and a replacement plan. Its 1 MiB transport ceiling
-does not change the 32,768-byte original DAG limit. The publication data interface has its own larger body cap.
+does not change the 32,768-byte limit the UI rollout applies to an original DAG. The publication data interface has its own larger body cap.
 
 Retired identities and operation receipts remain recorded. Each active group reserves one operation slot for
 retirement, so recorded operations plus active-group reservations cannot exceed 64. New admission or switching

@@ -1,7 +1,7 @@
 /**
  * The place "Signals" of a system: every quantity the system expects, where its data comes from, how far it has
  * come and what to do next. The state is computed by the retrieval server from the system document and the TS
- * inventory. Concept: docs/datamodel-2026/14-ENGINEERING-FLOW.md.
+ * inventory. Spec: docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, sections 6 and 8.2.
  */
 
 import { useEffect, useMemo, useState } from 'react';

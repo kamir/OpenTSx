@@ -96,7 +96,7 @@ class SystemsTest {
         assertEquals("bound-no-data", turbineState.path("state").asText());
         assertEquals(List.of("check-source"), texts(turbineState.path("next")));
 
-        // what was generated is an observation; what the weather would give is an estimate (15, sections 9 and 13.2)
+        // what was generated is an observation; what the weather would give is an estimate (DECISION-CARD-SPEC.md, sections 4.1 and 5)
         assertEquals("observation", signal(st, "park.p_gen_kw").path("role").asText());
         assertEquals("estimate", signal(st, "park.p_potential_kw").path("role").asText());
 

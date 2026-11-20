@@ -83,6 +83,6 @@ classical solvers or, as an experiment, to quantum backends. The concept is in
 
 It would also host the **digital twin** of an energy system (phase P9): operators review optimizer proposals and
 play their own decisions through the twin before releasing them. The concept is in
-[07-DIGITAL-TWIN-BSP](../datamodel-2026/07-DIGITAL-TWIN-BSP.md) (German).
+[TWIN-COUPLING-SPEC §9](../datamodel-2026/TWIN-COUPLING-SPEC.md#9-operating-modes).
 
 This is a proposal; it is tracked in the roadmap ([chapter 15](15-roadmap.md)).

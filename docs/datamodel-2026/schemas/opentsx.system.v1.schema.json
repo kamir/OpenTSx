@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://opentsx.org/schemas/opentsx.system.v1.schema.json",
   "title": "opentsx.system.v1",
-  "description": "Declarative description of one system: its plan, catalogs and inventory by reference, and for every signal where its raw and its clean data come from. Draft, see docs/datamodel-2026/14-ENGINEERING-FLOW.md. The tool checks what a schema cannot: unique ids and every reference.",
+  "description": "Declarative description of one system: its plan, catalogs and inventory by reference, and for every signal where its raw and its clean data come from. Draft, see docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 2. The tool checks what a schema cannot: unique ids and every reference.",
   "type": "object",
   "required": [
     "schema",

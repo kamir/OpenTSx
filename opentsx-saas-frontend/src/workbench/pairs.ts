@@ -1,6 +1,6 @@
 /**
  * Pair windows: a pair method compares two series A and B window by window and gives one result item per window,
- * stamped at the window centre. Design: EVOLUTION/TASK-015-multivariate-analysis.md, section "Pair windows".
+ * stamped at the window centre. Rules: docs/datamodel-2026/PAIR-WINDOWS-SPEC.md, sections 3 to 9.
  *
  * - Pair range: `same` pairs an episode of A with the episode of B that has the same start and end; `intersect`
  *   pairs overlapping episodes on their intersection and drops one shorter than the window. A series without
