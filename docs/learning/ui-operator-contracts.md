@@ -373,6 +373,14 @@ bucket y label; an empty unit retains existing metadata. CleanChain provides the
 Source: [ops.ts#convertUnit](../../opentsx-saas-frontend/src/workbench/ops.ts#convertUnit) . Executable exercise:
 `ui.convert.unit` .
 
+The local Rust cleaning stage executes the artifact-embedded
+[WASM conversion](../devguide/integration/rust-runner-b5.md) with fixed fuel,
+memory and stack limits and no imports. The guest performs separate binary64
+multiplication and addition; the host retains metadata, gaps, timestamps and
+identities and rejects overflow. Its shared-vector and limit tests are
+separate from this browser workload. Plans cannot supply code or raise the
+limits. Signed B1 and B3 operator admission is unchanged.
+
 <a id="resample"></a>
 
 ## Aggregate a regular series into two-second windows

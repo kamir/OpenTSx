@@ -93,6 +93,10 @@ explicit local context. `TrackParityIntegrationTest` runs the complete W scenari
 through actual Java Wayang and Rust worker increments, including state restoration
 and completed retries. Signed B1 remains pass-through-only; physical ARMv7
 acceptance remains open.
+Local Rust `convert.unit` uses the
+[embedded WASM profile](../docs/devguide/integration/rust-runner-b5.md) with
+fixed resource limits and no imports. It adds no Wayang operator or catalog
+entry, and does not extend either signed Rust profile's admitted operators.
 The [B3 site profile](../docs/devguide/integration/rust-runner-b3.md) uses the
 same Java plan service with explicitly qualified bounded Rust statistics.
 `QualifiedRuntime` binds runtime, artifact, version and state ABI; job-bound

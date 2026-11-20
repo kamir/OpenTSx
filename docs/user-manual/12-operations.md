@@ -123,6 +123,15 @@ protocol evidence; the separate [B3 site profile](../devguide/integration/rust-r
 binds that prior evidence to its exact executable and endpoint, performs fresh
 job checks and submits signed site conformance.
 
+The [embedded WASM conversion](../devguide/integration/rust-runner-b5.md)
+executes local `convert.unit` with Wasmtime 50.0.1/Pulley and fixed fuel,
+memory and stack bounds. It accepts no host imports or plan-carried code.
+A trap fails processing before publication or checkpoint commit; it does not
+fall back to native conversion. Host Episode identities, units and retained
+state use their existing contracts. Signed B1 and B3 operator admission is
+unchanged. Physical ARM64 and ARMv7 B4.2 measurements and physical ARMv7
+B1.2 acceptance remain open.
+
 For a failed bounded JVM federation test, download `kafscale-capabilities` from the KafScale conformance job.
 It includes `opentsx-wayang/target/surefire-reports/` and retained
 `opentsx-wayang/target/federation-test-logs/**/brokers/*.log`. Fixtures retain their directories when construction,

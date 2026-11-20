@@ -64,6 +64,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Artifact-embedded WASM `convert.unit` in the local Rust cleaning pipeline,
+  with Wasmtime 50.0.1/Pulley, fixed fuel, memory and stack bounds, no host
+  imports and no native conversion fallback. Resource-limit and shared-vector
+  regressions retain existing numerical, record and checkpoint contracts.
+  Manual and generated conversion lessons distinguish this local binding
+  from signed fleet admission and open physical ARM64/ARMv7 acceptance.
+
 - Record the finite Workbench browser journey as WebM video and a Playwright
   trace. Require matching clean source and runtime identities before and after
   capture, verify numerical exports and hash the evidence in a recording manifest.

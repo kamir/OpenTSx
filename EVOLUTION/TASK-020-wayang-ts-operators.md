@@ -529,11 +529,37 @@ accuracy exceptions. Continuous mixed fleets and the Rust job-state route are
 outside this acceptance.
 
 ### B5: WASM operators
+
+- [x] B5.1: qualify deterministic fuel exhaustion in both exported and start functions.
+- [x] B5.2: qualify bounded initial memory and growth with task failure.
+- [x] B5.3: qualify artifact-embedded `convert.unit` against the shared vectors.
+
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
 | B5.1 | Fuel stops a runaway operator | `wasm_limits` test with an endless loop | fixture | the task fails with a fuel error within the configured fuel |
 | B5.2 | Memory is capped | `wasm_limits` test that allocates past the limit | fixture | allocation refused; task fails |
 | B5.3 | A WASM operator matches its vectors | `wasm_operator` test with `convert.unit` compiled to WASM | V: `clean-ops.v1.json` (unit cases) | as A2.1 |
+
+The owner-approved [B5 contract](https://github.com/kamir/OpenTSx/issues/328)
+fixes the artifact-only Wasmtime/Pulley profile in
+[SPEC S7.5.1](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s751-execute-the-embedded-b5-conversion).
+Status on 2026-11-20, Rust 1.99.1 and JDK 21:
+
+- B5.1 is met: `wasm_limits` exhausts the fixed 10,000 fuel units in an
+  exported loop and a start function before instantiation completes.
+- B5.2 is met: oversized initial memory and growth past 65,536 bytes fail the
+  task. The pipeline retains its preceding state; the real runner publishes
+  no output and commits no checkpoint after either memory or fuel traps.
+  A separate stack regression verifies the 262,144-byte engine limit.
+- B5.3 is met: all five `wasm_operator` tests pass, including both shared
+  conversion cases, all 16 checkpointed input partitions and 49 refused
+  code/limit-field placements. The 14 `wasm_limits` tests also pass.
+
+All 346 runner tests and three shared-contract tests pass without failures,
+ignored or filtered cases. The artifact qualification parser requires every
+one of the 19 B5 test names in native and supplementary ARMv7 QEMU logs.
+Both physical ARM64 and ARMv7 B4.2 measurements and physical ARMv7 B1.2
+acceptance remain open.
 
 Criteria per milestone: A0 5, A1 7, A2 6, A3 6, A4 9, A5 2, B1 6, B2 3, B3 4, B4 2, B5 3.
 

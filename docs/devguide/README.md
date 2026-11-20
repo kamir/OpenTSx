@@ -16,6 +16,9 @@ The developer guide holds notes for contributors. User-facing documentation is i
   operations, retained state and a standalone three-worker Compose check against Java.
 * [Operate signed bounded Rust statistics sites](integration/rust-runner-b3.md): owner-local qualification,
   TLS 1.3 plan pulls, signed conformance, acknowledged aggregate catch-up and certificate-forced SSH launch.
+* [Execute the embedded WASM conversion](integration/rust-runner-b5.md):
+  artifact-only `convert.unit`, fixed fuel, memory and stack limits, no host
+  imports and unchanged signed admission.
 * [Inspect bounded mixed Java and Rust federation](integration/wayang-mixed-federation.md): actual-CLI W3
   acceptance, numerical-domain evidence and board preparation. Both physical ARM64 and ARMv7 measurements remain open.
 * [Processing-flow descriptor schema](schemas/README.md) and its [validation plan](validation/README.md). The

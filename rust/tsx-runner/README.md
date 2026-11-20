@@ -5,6 +5,7 @@ signed continuous pass-through and qualified signed bounded statistics with
 explicit resource caps and acknowledged checkpoints.
 
 You need the pinned Rust 1.99.1 toolchain and the native C/C++ build tools used by `rdkafka` and zstd.
+The runner manifest declares Rust 1.97.0 as its minimum for Wasmtime 50.0.1.
 Broker execution also needs existing input/output topics and a trusted local request.
 The [local operating guide](../../docs/devguide/integration/rust-runner-local.md) defines the complete request,
 checkpoint, receipt, Compose and failure contracts.
@@ -73,6 +74,20 @@ Without `context`, local requests retain their 64-series and 100,000-sample
 ceilings. B2 requests with `context` allow at most 1,024 series and 1,000,000
 samples, subject to every declared byte and state bound. Numerical kernels,
 admitted local execution and fleet deployment are separate capabilities.
+
+## Execute conversion inside WASM
+
+The existing local `convert.unit` stage runs the artifact-embedded module
+through Wasmtime 50.0.1 and its Pulley interpreter. Its import-free binary64
+ABI preserves separate multiplication and addition; host code retains units,
+timestamps, gaps, identities and overflow rejection. The operator parameters
+retain their existing contract. Undeclared cleaning DAG fields are refused.
+
+The [B5 operating guide](../../docs/devguide/integration/rust-runner-b5.md)
+defines fixed module, fuel, memory and stack bounds, executable regression
+cases and failure handling. Plans cannot supply code or enlarge these bounds.
+There is no WASI or native conversion fallback. This local implementation
+does not broaden signed B1 pass-through or signed B3 statistics admission.
 
 ## Qualify signed continuous pass-through
 

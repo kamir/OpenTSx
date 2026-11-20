@@ -1139,8 +1139,46 @@ beyond `plan.policy`.
    the signal cluster and the driver ([systemd.exec](https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html),
    [systemd.resource-control](https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html)).
 3. Plans MUST NOT carry code. A runtime MUST NOT load operators that are not in its signed artifact.
-4. WASM operators (Track B, later) MUST run in `wasmtime` with fuel or an epoch deadline, a memory limit and no
+4. WASM operators (Track B) MUST run in `wasmtime` with fuel or an epoch deadline, a memory limit and no
    WASI socket or filesystem access.
+
+<a id="s751-execute-the-embedded-b5-conversion"></a>
+
+#### S7.5.1 Execute the embedded B5 conversion
+
+The local Rust cleaning pipeline executes `convert.unit` through the reviewed
+module embedded in the runtime artifact, using Wasmtime 50.0.1 and Pulley on
+32-bit and 64-bit targets. The runtime MUST NOT load code, module paths, URLs,
+module bytes or precompiled native artifacts supplied by plans or local
+requests. It MUST NOT supply host imports, including WASI, filesystem,
+sockets, environment, clocks or random sources.
+
+The scalar ABI takes binary64 value, factor and offset and returns one
+binary64 result. It MUST use separate multiplication and addition. The host
+retains existing parameter validation, gap positions, overflow rejection,
+unit metadata, timestamps, record identities and checkpoint state.
+
+| Resource | Fixed host-owned limit |
+| --- | --- |
+| Module bytes | 65,536 |
+| Fuel before instantiation and per scalar invocation | 10,000 units |
+| Linear memory | 65,536 bytes |
+| Memories and instances | 1 each |
+| Tables | 0 |
+| Guest stack | 262,144 bytes |
+
+Plans MUST NOT override these bounds. Fuel MUST be set before instantiation,
+including execution of any start function. Initial memory and subsequent
+growth MUST respect the cap. Refused allocation, fuel exhaustion, invalid
+imports/ABI, instantiation failure or execution trap MUST fail processing
+before output publication or checkpoint commit. There MUST be no native
+conversion fallback.
+
+This local binding adds no operator ID or plan field. Signed B1 remains
+decode-only; bounded signed B3 remains decode-to-statistics only. It does not
+establish production artifact enrollment or physical ARM64/ARMv7 acceptance.
+The [B5 guide](../devguide/integration/rust-runner-b5.md) records the runtime
+entry point and executable checks.
 
 ### S7.6 Artifacts
 
