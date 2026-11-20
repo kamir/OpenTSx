@@ -77,6 +77,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   Jetson Nano as onboard computer and a Synology NAS as ground station, a satellite simulator writing an onboard
   ring buffer, an emulated space-ground link driven by computed passes, and phases P0 to P6 up to the D-T13 CPU
   fallback path. No implementation yet.
+- Catalog `tsx-catalog/1` records the SHA-256 of each operator's vector file, with the new schema
+  `opentsx.catalog.v1`. `SystemDocTest` fails when a vector file changes without a new operator version and a new
+  catalog (S1.1.3). No operator, version or vector file changes.
 - Demo entry page linking local thermal, finite forecast and Windpark
   journeys to prerequisites, acceptance checks and a recording tied to its
   tested revision.

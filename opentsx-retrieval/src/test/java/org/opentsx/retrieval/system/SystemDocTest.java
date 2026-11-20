@@ -13,6 +13,9 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -101,18 +104,20 @@ class SystemDocTest {
 
     static void catalogMatches(JsonNode catalog, Map<String, JsonNode> descriptions) throws IOException {
         assertTrue(catalog.isObject(), "catalog must be an object");
-        assertEquals(Set.of("catalog", "operators"), fields(catalog), "catalog fields");
+        assertEquals(Set.of("schema", "catalog", "operators"), fields(catalog), "catalog fields");
         assertEquals("tsx-catalog/1", catalog.path("catalog").asText(), "catalog identity");
         assertTrue(catalog.path("operators").isArray(), "catalog operators must be an array");
         Map<String, Integer> versions = new LinkedHashMap<>();
+        Map<String, String> frozen = new LinkedHashMap<>();
         for (JsonNode entry : catalog.path("operators")) {
             assertTrue(entry.isObject(), "catalog operator must be an object");
-            assertEquals(Set.of("id", "version"), fields(entry), "catalog operator fields");
+            assertEquals(Set.of("id", "version", "sha256"), fields(entry), "catalog operator fields");
             assertTrue(entry.path("id").isTextual() && !entry.path("id").asText().isBlank(), "catalog operator id");
             assertTrue(entry.path("version").isIntegralNumber() && entry.path("version").canConvertToInt(),
                     "catalog operator version");
             String id = entry.path("id").asText();
             assertNull(versions.putIfAbsent(id, entry.path("version").asInt()), "duplicate catalog operator " + id);
+            frozen.put(id, entry.path("sha256").asText());
         }
         assertEquals(CATALOG_1, versions, "catalog 1 identity/version membership");
         JsonSchema processorSchema = schema("opentsx.processor.v1.schema.json");
@@ -151,6 +156,9 @@ class SystemDocTest {
                     "processor Wayang source " + id);
             assertTrue(description.path("testvectors").isTextual(), "processor vectors " + id);
             repositoryFile(description.path("testvectors").asText(), "processor vectors " + id);
+            // the vectors define the output (S1.1.3): changed bytes need a new version and a new catalog
+            assertEquals(frozen.get(id), sha256(Files.readAllBytes(ROOT.resolve(description.path("testvectors").asText()))),
+                    "processor vectors changed since the catalog was frozen " + id);
         }
         String spec = Files.readString(ROOT.resolve("docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md"));
         String section = spec.substring(spec.indexOf("### S1.7 Catalog 1"), spec.indexOf("### S1.8"));
@@ -159,6 +167,15 @@ class SystemDocTest {
         while (rows.find()) assertTrue(specified.add(rows.group(1)), "duplicate S1.7 operator");
         assertEquals(16, specified.size(), "S1.7 membership");
         assertEquals(specified, operators, "catalog DAG operators must equal S1.7");
+        assertEquals(List.of(), List.copyOf(schema("opentsx.catalog.v1.schema.json").validate(catalog)), "catalog schema");
+    }
+
+    static String sha256(byte[] bytes) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     static void refusesCatalog(JsonNode catalog, Map<String, JsonNode> descriptions, String message) {
@@ -187,7 +204,16 @@ class SystemDocTest {
         changed = catalog.deepCopy();
         ((ArrayNode) changed.path("operators")).set(0, new ObjectMapper().getNodeFactory().numberNode(1));
         refusesCatalog(changed, descriptions(), "operator must be an object");
-        for (String field : List.of("id", "version")) {
+        changed = catalog.deepCopy();
+        changed.remove("schema");
+        refusesCatalog(changed, descriptions(), "catalog fields");
+        changed = catalog.deepCopy();
+        changed.put("schema", "opentsx.catalog.v2");
+        refusesCatalog(changed, descriptions(), "catalog schema");
+        changed = catalog.deepCopy();
+        ((ObjectNode) changed.path("operators").get(0)).put("sha256", "ABC");
+        refusesCatalog(changed, descriptions(), "processor vectors changed since the catalog was frozen decode.avro-soe");
+        for (String field : List.of("id", "version", "sha256")) {
             changed = catalog.deepCopy();
             ((ObjectNode) changed.path("operators").get(0)).remove(field);
             refusesCatalog(changed, descriptions(), "operator fields");
@@ -207,7 +233,7 @@ class SystemDocTest {
         ((ArrayNode) changed.path("operators")).remove(0);
         refusesCatalog(changed, descriptions(), "identity/version membership");
         changed = catalog.deepCopy();
-        ((ArrayNode) changed.path("operators")).addObject().put("id", "gen.sine").put("version", 1);
+        ((ArrayNode) changed.path("operators")).addObject().put("id", "gen.sine").put("version", 1).put("sha256", "0".repeat(64));
         refusesCatalog(changed, descriptions(), "identity/version membership");
         changed = catalog.deepCopy();
         ((ArrayNode) changed.path("operators")).add(changed.path("operators").get(0).deepCopy());
@@ -284,6 +310,21 @@ class SystemDocTest {
         processors = descriptions();
         ((ObjectNode) processors.get("sax.word").path("runtimes").path("wayang")).put("class", "org.opentsx.wayang.Missing");
         refusesCatalog(catalog, processors, "processor Wayang source sax.word");
+    }
+
+    @Test
+    void catalogOneRefusesVectorsThatChangedAfterTheFreeze() throws IOException {
+        JsonNode catalog = SystemDoc.read(CATALOG);
+        ObjectNode changed = catalog.deepCopy();
+        for (JsonNode entry : changed.path("operators")) {
+            if (entry.path("id").asText().equals("pair.es")) {
+                ((ObjectNode) entry).put("sha256", "0".repeat(64));
+            }
+        }
+        refusesCatalog(changed, descriptions(), "processor vectors changed since the catalog was frozen pair.es");
+        Map<String, JsonNode> processors = descriptions();
+        ((ObjectNode) processors.get("sax.word")).put("testvectors", "docs/datamodel-2026/testvectors/pair-es.v1.json");
+        refusesCatalog(catalog, processors, "processor vectors changed since the catalog was frozen sax.word");
     }
 
     @Test
