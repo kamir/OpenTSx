@@ -128,7 +128,7 @@ Read the [analysis guide](../docs/devguide/workbench-analysis.md) for the result
 - Export: `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor, Java code. The DAG writes
   `# not in the stream operator catalog` after every operator that catalog 1
   (`../systems/catalogs/tsx-catalog-1.yaml`, list `CATALOG_1` in `src/workbench/ops.ts`) does not list
-- Code in `src/workbench/`; limits in `../EVOLUTION/TASK-013-web-workbench.md`
+- Code in `src/workbench/`
 
 ### State Management
 

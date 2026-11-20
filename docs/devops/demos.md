@@ -359,7 +359,7 @@ deploy/k3s/40-demo.sh studio        # port-forward -> http://localhost:8088  (Ct
 ```
 
 You see the three scenarios H2 chain, house and boat in the three views (statistics, process, data flow) described in
-[concept 09](../datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md). With `INGRESS=true` it is also served at
+concept 09. With `INGRESS=true` it is also served at
 `http://<node>/` by Traefik.
 
 The export also runs in the cluster as a Job:

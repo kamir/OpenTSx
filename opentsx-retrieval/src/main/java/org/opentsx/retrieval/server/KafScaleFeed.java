@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.kafka.clients.admin.Admin;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.opentsx.kafka.EpisodeLogTail;
@@ -53,7 +53,7 @@ final class KafScaleFeed implements AutoCloseable {
 
     private final String bootstrap;
     private final TopicLayout layout;
-    private final KafkaConsumer<byte[], byte[]> consumer;
+    private final Consumer<byte[], byte[]> consumer;
     private final EpisodeLogTail tail;
     private final InMemorySeriesStore store;
     private final int maxEpisodes;
@@ -67,7 +67,7 @@ final class KafScaleFeed implements AutoCloseable {
     private final Map<String, JsonNode> jobs = new TreeMap<>();
     private LogTail controlTail;
     private LogTail statusTail;
-    /** Follow the clean and the generated series of the domain, each once something has written its topic. */
+    /** Follow the clean, feature and generated series of the domain, each once something has written its topic. */
     private final Map<String, EpisodeLogTail> signalTails = new LinkedHashMap<>();
     private final ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread t = new Thread(r, "kafscale-feed");
@@ -79,10 +79,11 @@ final class KafScaleFeed implements AutoCloseable {
     private volatile SeriesStore vectors = new InMemorySeriesStore();
     private volatile List<String> vectorTopics = List.of();
 
-    private KafScaleFeed(String bootstrap, String domain, InMemorySeriesStore store, int maxEpisodes, Runnable onChange) {
+    KafScaleFeed(String bootstrap, Consumer<byte[], byte[]> consumer, String domain, InMemorySeriesStore store,
+                 int maxEpisodes, Runnable onChange) {
         this.bootstrap = bootstrap;
         this.layout = new TopicLayout(domain);
-        this.consumer = KafScaleClients.consumer(bootstrap);
+        this.consumer = consumer;
         this.tail = new EpisodeLogTail(consumer, layout, Duration.ofMinutes(2));
         this.store = store;
         this.maxEpisodes = maxEpisodes;
@@ -92,7 +93,7 @@ final class KafScaleFeed implements AutoCloseable {
     /** Reads the logs once (blocking; fails when the broker cannot be reached), then follows them in the background. */
     static KafScaleFeed start(String bootstrap, String domain, Duration refresh, InMemorySeriesStore store,
                               int maxEpisodes, Runnable onChange) {
-        KafScaleFeed feed = new KafScaleFeed(bootstrap, domain, store, maxEpisodes, onChange);
+        KafScaleFeed feed = new KafScaleFeed(bootstrap, KafScaleClients.consumer(bootstrap), domain, store, maxEpisodes, onChange);
         int n = feed.pull();
         System.out.println("kafscale feed: " + n + " episodes from " + feed.tail.topic()
                 + (feed.truncated ? " (stopped at --max-episodes " + maxEpisodes + ")" : "")
@@ -111,7 +112,7 @@ final class KafScaleFeed implements AutoCloseable {
         return feed;
     }
 
-    private synchronized int pull() {
+    synchronized int pull() {
         int written = 0;
         if (!truncated) {
             List<Episode> batch = new ArrayList<>();
@@ -124,7 +125,7 @@ final class KafScaleFeed implements AutoCloseable {
             written = store.write(batch).written();
             loaded += written;
         }
-        for (String topic : List.of(layout.clean(), layout.synthetic())) {
+        for (String topic : List.of(layout.clean(), layout.features(), layout.synthetic())) {
             try {
                 written += pullSignals(topic);
             } catch (RuntimeException e) {
@@ -401,6 +402,7 @@ final class KafScaleFeed implements AutoCloseable {
         Map<String, String> t = new LinkedHashMap<>();
         t.put("episodes", layout.episodes());
         t.put("clean", layout.clean());
+        t.put("features", layout.features());
         t.put("synthetic", layout.synthetic());
         t.put("observations", layout.observations());
         t.put("seriesStats", layout.seriesStats());
