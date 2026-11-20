@@ -48,6 +48,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `lascaris-space/`: home of the OpenTSx components for in-orbit computation on LASCARIS for Space, with the
+  components it holds, the modules that stay responsible for the runner, Wayang and the Workbench, and the contracts
+  it keeps. It contains no code yet. The README section "Take time series into orbit with LASCARIS for Space" states
+  the direction: series from orbit in the ground Workspace, identity by series key, provenance to the declared source.
+- Planned task [`EVOLUTION/TASK-022-situation-center.md`](EVOLUTION/TASK-022-situation-center.md): in-orbit nodes
+  with a KafScale and `tsx-runner` sidecar, the ground station as hub and discovery point, a component state model
+  whose liveness follows predicted passes, a Workbench situation page, and later a decentralized registry and
+  cooperating situation centers. Phase L0 is an orbit profile in which a failed status report no longer stops a plan.
 - Planned task [`EVOLUTION/TASK-021-orbit-testbed.md`](EVOLUTION/TASK-021-orbit-testbed.md): a homelab testbed with a
   Jetson Nano as onboard computer and a Synology NAS as ground station, a satellite simulator writing an onboard
   ring buffer, an emulated space-ground link driven by computed passes, and phases P0 to P6 up to the D-T13 CPU
