@@ -480,6 +480,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- Research studies 02 and 03 refer to commit `cfd9ab6`. Their OpenTSx facts and
+  line citations match that commit: signed B3 bounded statistics, owner decisions
+  D-T13 and D-T14, the embedded B5 WASM conversion and the planned orbit testbed.
+  Errors that predate the re-pin are also corrected: Python checks event
+  synchronization and Avro decoding against shared vectors, CI runs the shared
+  vectors natively rather than on static builds, and five citations name the exact
+  lines.
+
 - Concept 20 section 6.1 and the TASK-020 B1 notes list the signed `tsx-runner`
   modes that exist. With the B3 site configuration, `agent`, `conform` and `run`
   handle signed bounded statistics. With the B1 configuration, `run` executes
