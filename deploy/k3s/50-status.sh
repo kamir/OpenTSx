@@ -8,12 +8,21 @@
 #
 # Exit codes:
 #   0  the state was shown
-#   1  the namespace does not exist or the cluster is not reachable
+#   1  the namespace does not exist, the cluster is not reachable, or the Deployment of the Modbus simulator or the
+#      event bridge cannot be read
 #   2  usage error: an unknown option, an argument, or a line of deploy/k3s/.env that is not a comment or KEY=VALUE
 #      with a known key
 set -euo pipefail
 # shellcheck source=deploy/k3s/lib.sh
 source "$(dirname "$0")/lib.sh"
+
+# show_deployment NAME: the Deployment NAME, or "not deployed" when it does not exist; kubectl's error stays on stderr
+show_deployment() {
+  local out
+  out="$(kns get "deployment/$1" --ignore-not-found)" \
+    || die "deployment/$1: cannot read it; check the cluster with ${KUBECTL} -n $OPENTSX_NS get deployment/$1"
+  if [[ -n "$out" ]]; then printf '%s\n' "$out"; else echo "  not deployed"; fi
+}
 
 LOGS=false
 while [[ $# -gt 0 ]]; do
@@ -49,20 +58,26 @@ if have k3s; then
   fi
 fi
 info "statistics checkpoint (written every 30 s; older than a few minutes = processor stuck, see operations.md R2)"
-if kns exec deployment/opentsx-stats -- ls -l --time-style=+%Y-%m-%dT%H:%M:%S /state 2>/dev/null; then
+if listing="$(kns exec deployment/opentsx-stats -- ls -l --time-style=+%Y-%m-%dT%H:%M:%S /state 2>&1)"; then
+  printf '%s\n' "$listing"
+  age_err="$(mktemp)"; trap 'rm -f "$age_err"' EXIT
   # shellcheck disable=SC2016  # expanded by the shell inside the pod
-  age="$(kns exec deployment/opentsx-stats -- sh -c 'echo $(( $(date +%s) - $(stat -c %Y /state/stats.ckpt) ))' 2>/dev/null || true)"
-  if [[ "$age" =~ ^[0-9]+$ ]]; then
+  if ! age="$(kns exec deployment/opentsx-stats -- sh -c 'echo $(( $(date +%s) - $(stat -c %Y /state/stats.ckpt) ))' 2>"$age_err")"; then
+    err="$(<"$age_err")"
+    warn "statistics checkpoint: cannot read its age (${err//$'\n'/ }); see ${KUBECTL} -n $OPENTSX_NS logs deployment/opentsx-stats"
+  elif [[ "$age" =~ ^[0-9]+$ ]]; then
     if (( age > 300 )); then warn "statistics checkpoint: ${age} s old; the processor may be stuck, see docs/devops/operations.md R2"
     else ok "checkpoint age ${age} s"; fi
+  else
+    warn "statistics checkpoint: cannot read its age (\"${age//$'\n'/ }\" is not a number of seconds); see ${KUBECTL} -n $OPENTSX_NS logs deployment/opentsx-stats"
   fi
 else
-  warn "statistics checkpoint: not available (the pod does not run or has not written one yet); see ${KUBECTL} -n $OPENTSX_NS logs deployment/opentsx-stats"
+  warn "statistics checkpoint: cannot read it (${listing//$'\n'/ }); see ${KUBECTL} -n $OPENTSX_NS logs deployment/opentsx-stats"
 fi
 info "Modbus simulator (MODBUS_SIM=true)"
-kns get deployment/opentsx-modbus-sim 2>/dev/null || echo "  not deployed"
+show_deployment opentsx-modbus-sim
 info "event bridge (EVENT_BRIDGE=true)"
-kns get deployment/opentsx-event-bridge 2>/dev/null || echo "  not deployed"
+show_deployment opentsx-event-bridge
 info "warnings (last 10 events)"
 kns get events --field-selector type=Warning --sort-by=.lastTimestamp 2>/dev/null | tail -n 10 || true
 if $LOGS; then

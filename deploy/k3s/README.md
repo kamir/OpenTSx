@@ -38,10 +38,11 @@ Every script exits with 0 when it did its work, 1 when a check, a step or a requ
 `--help` lists the cases of each. Usage errors are an unknown option, an option without its value, an argument the
 script does not take, an unknown demo of `40-demo.sh` or extra arguments for one of its demos that take none, a
 `--builder` of `10-build.sh` or a method of `11-import-images.sh` (`--method` or `IMAGE_METHOD`) that is not in the
-list, a `--timeout` of `30-deploy.sh` that is not a duration, no backup directory or an unknown `--only` part of
-`71-restore.sh`, and for `20-configure.sh` an unknown key, an argument that is not `KEY=VALUE` or an option, or a
-secret key as an argument. The tests in `deploy/k3s/test/` run the scripts without a cluster, for example
-`bash deploy/k3s/test/test-40-demo.sh`.
+list, a `NERDCTL` of blanks for the builder `nerdctl` of `10-build.sh` or the method `nerdctl` of
+`11-import-images.sh`, a `--timeout` of `30-deploy.sh` that is not a duration, no backup directory or an unknown
+`--only` part of `71-restore.sh`, and for `20-configure.sh` an unknown key, an argument that is not `KEY=VALUE` or an
+option, or a secret key as an argument. The tests in `deploy/k3s/test/` run the scripts without a cluster, for
+example `bash deploy/k3s/test/test-40-demo.sh`.
 
 ```text
 error: nosuch: unknown demo; expected one of kafscale-check windpark-sim stats metadata metadata-publish twin house boat studio-export retrieval studio dwd dwd-online dwd-forward modbus modbus-poll all
@@ -54,8 +55,12 @@ in `NERDCTL`. A builder that is not installed exits with 1:
 error: podman: not found; install it or choose another builder with --builder
 ```
 
-A `NERDCTL` that holds only blanks exits with 1 as `NERDCTL: holds no command; set it to the nerdctl command, or unset
-it to use nerdctl`.
+`10-build.sh` with the builder `nerdctl` and `11-import-images.sh --method nerdctl` refuse a `NERDCTL` that holds only
+blanks as a usage error with exit 2:
+
+```text
+error: NERDCTL: empty value; set it to the nerdctl command or leave it unset
+```
 
 Every script reads `deploy/k3s/.env` and refuses a line that is not empty, a comment or `KEY=VALUE` with a key of
 `env.example` when it loads the configuration, with exit 2. `.env` stays as it is:
@@ -73,8 +78,9 @@ error: OPENTSX_STATS_WINDOWS: item "PT5" is not a duration; expected ISO-8601 su
 ```
 
 `50-status.sh`, `70-backup.sh` and `71-restore.sh` read the namespace `OPENTSX_NS` before any other kubectl call and
-exit with 1 when they cannot use it. `71-restore.sh` reads it before it replaces `deploy/k3s/.env`, and not at all
-for `--only env`. A namespace that does not exist gives the next step, here from `70-backup.sh`:
+exit with 1 when they cannot use it. `71-restore.sh` reads the namespace of the current `deploy/k3s/.env` before it
+changes anything, and not at all for `--only env`. A namespace that does not exist gives the next step, here from
+`70-backup.sh`:
 
 ```text
 error: namespace opentsx: not found; check OPENTSX_NS in deploy/k3s/.env and the kubectl context, or deploy it first with 30-deploy.sh
@@ -91,8 +97,21 @@ error: namespace opentsx: cannot read it; check the cluster with kubectl get nam
 ```
 
 `70-backup.sh` reads each PVC the same way: a PVC that does not exist is left out of the backup, and a PVC that
-cannot be read stops the backup with exit 1 before it writes a file. `50-status.sh` shows the error of `k3s ctr` in a
-warn line when k3s' containerd cannot list its images, and does not report that as no images.
+cannot be read stops the backup with exit 1 before it writes a file. `71-restore.sh` stops with exit 1 before it
+changes anything when a PVC it restores does not exist or cannot be read:
+
+```text
+error: PVC opentsx-data: cannot read it; check the cluster with kubectl -n opentsx get pvc opentsx-data
+```
+
+`50-status.sh` shows the error of `k3s ctr` in a warn line when k3s' containerd cannot list its images, and does not
+report that as no images. It shows the error of `kubectl exec` in a warn line when it cannot read the statistics
+checkpoint or its age, and a warn line when the age it reads is not a number of seconds. It prints `not deployed` for a Modbus simulator or event bridge Deployment that does not exist,
+and exits with 1 after the error of kubectl when it cannot read one:
+
+```text
+error: deployment/opentsx-modbus-sim: cannot read it; check the cluster with kubectl -n opentsx get deployment/opentsx-modbus-sim
+```
 
 `71-restore.sh` and `90-teardown.sh` ask before they change anything. Without `--yes`, an answer that does not start
 with `y` or `Y` exits with 1, and so does standard input that ends before an answer, for example in CI:
@@ -112,9 +131,27 @@ was not empty when the run started, or that `ls` cannot list, is refused and kee
 error: PVC opentsx-stats-state: the backup into stats-state.tar.gz failed; see the error above, then run 70-backup.sh again
 ```
 
-`71-restore.sh` with `env` keeps the current `.env` as `deploy/k3s/.env.before-restore`, then replaces it. When a
-later step fails and you run the same command again, `.env` already holds the backup's env: the script leaves `.env`
-and `.env.before-restore` as they are and prints `already the backup's env` with both file names.
+`71-restore.sh` with `env` keeps the current `.env` as `deploy/k3s/.env.before-restore` and replaces `.env` with the
+backup's env as the last step. With volumes among the parts, it checks the namespace and the PVCs of the current
+`.env` first and restores the volumes before it replaces `.env`. A failed volume step leaves `.env` as it was, so
+running the same command again restores into the same namespace. `--only env` alone replaces `.env` and needs no
+cluster. When `.env` cannot be replaced, the script exits with 1 after the error of `cp` with
+`<path of .env>: cannot replace it with <dir>/env after the PVCs <pvcs> were restored; see the error above, then run 71-restore.sh <dir> --only env`.
+Without volumes among the parts, the message leaves out `after the PVCs <pvcs> were restored`.
+
+On a new cluster, restore `env` first. With `env` among the parts, a namespace or PVC that does not exist stops the
+restore with exit 1 before it changes anything:
+
+```text
+error: namespace opentsx: not found; nothing was restored; run 71-restore.sh ./opentsx-backup-20261012T021700Z --only env, then 20-configure.sh and 30-deploy.sh, then 71-restore.sh ./opentsx-backup-20261012T021700Z --only data
+```
+
+The last command of the hint leaves `env` out. `20-configure.sh` rewrites `.env`, so restoring `env` again would
+replace `.env.before-restore`, the copy of the `.env` from before the restore, with it.
+
+A `.env` that already equals the backup's env stays as it is, and so does `.env.before-restore`. The message names
+`.env.before-restore` only when that file exists; without it the line ends with `already the backup's env; left as it
+is`.
 
 ## Set secrets
 

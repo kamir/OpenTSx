@@ -28,7 +28,8 @@
 #      importing or pushing failed, or the images are not in k3s' containerd afterwards
 #   2  usage error: an unknown option, an option without its value, an argument, a method that is not one of the
 #      list (from --method or IMAGE_METHOD), the method ssh without --ssh or K3S_SSH, the method kind without
-#      --kind-cluster or KIND_CLUSTER, or a line of deploy/k3s/.env that is not a comment or KEY=VALUE with a known key
+#      --kind-cluster or KIND_CLUSTER, the method nerdctl with a NERDCTL of blanks, or a line of deploy/k3s/.env that
+#      is not a comment or KEY=VALUE with a known key
 set -euo pipefail
 # shellcheck source=deploy/k3s/lib.sh
 source "$(dirname "$0")/lib.sh"
@@ -71,6 +72,7 @@ case "$METHOD" in
     "$METHOD" save "${IMAGES[@]}" | as_root k3s ctr images import - ;;
   nerdctl)
     read -r -a N <<< "${NERDCTL:-nerdctl}"
+    (( ${#N[@]} )) || usage_error "NERDCTL: empty value; set it to the nerdctl command or leave it unset"
     have "${N[0]}" || die "${N[0]}: not found; install it, set NERDCTL or choose another method with --method"
     local_ctr
     info "importing via nerdctl save"

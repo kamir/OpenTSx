@@ -18,10 +18,11 @@
 #
 # Exit codes:
 #   0  built (and staged)
-#   1  the Maven build, the staging or an image build failed, no JDK, Maven or image builder was found, or NERDCTL
-#      holds no command; the image builder, also one named with --builder or NERDCTL, is checked before the Maven build
+#   1  the Maven build, the staging or an image build failed, or no JDK, Maven or image builder was found; the image
+#      builder, also one named with --builder or NERDCTL, is checked before the Maven build
 #   2  usage error: an unknown option, an option without its value, a --builder that is not one of the four, an
-#      argument, or a line of deploy/k3s/.env that is not a comment or KEY=VALUE with a known key
+#      argument, a NERDCTL of blanks for the builder nerdctl, or a line of deploy/k3s/.env that is not a comment or
+#      KEY=VALUE with a known key
 set -euo pipefail
 # shellcheck source=deploy/k3s/lib.sh
 source "$(dirname "$0")/lib.sh"
@@ -67,7 +68,7 @@ if $IMAGES; then
   BUILD_CMD=("$BUILDER"); hint="install it or choose another builder with --builder"
   if [[ "$BUILDER" == nerdctl ]]; then
     read -r -a BUILD_CMD <<< "${NERDCTL:-nerdctl}"; hint="install it, set NERDCTL or choose another builder with --builder"
-    (( ${#BUILD_CMD[@]} )) || die "NERDCTL: holds no command; set it to the nerdctl command, or unset it to use nerdctl"
+    (( ${#BUILD_CMD[@]} )) || usage_error "NERDCTL: empty value; set it to the nerdctl command or leave it unset"
   fi
   have "${BUILD_CMD[0]}" || die "${BUILD_CMD[0]}: not found; $hint"
 fi

@@ -285,11 +285,13 @@ deploy/k3s/71-restore.sh DIR --only stats-state --yes
   the lake profile: a live copy of SQLite/MinIO files can be inconsistent. The checkpoint itself is always consistent
   (written to a temporary file and renamed).
 * `71-restore.sh` verifies the checksums first, asks for confirmation (unless `--yes`; an answer that does not start
-  with `y` or `Y`, or standard input that ends before an answer, exits with 1), checks the namespace and the PVCs,
-  keeps the current `.env` as `.env.before-restore` when it restores `env` (a rerun after a failed step leaves that
-  copy as it is), stops the writers, **replaces** the PVC contents and scales the writers back. Restore the statistics
-  checkpoint only against the **same** topics: it stores offsets. After topics were deleted and recreated, skip
-  `stats-state`.
+  with `y` or `Y`, or standard input that ends before an answer, exits with 1), checks the namespace and the PVCs of
+  the current `.env`, keeps the current `.env` as `.env.before-restore` when it restores `env`, stops the writers,
+  **replaces** the PVC contents, replaces `.env` with the backup's env last and scales the writers back. A failed step
+  leaves `.env` as it was, so the rerun restores into the same namespace. On a new cluster, restore `env` first
+  (`71-restore.sh DIR --only env`, needs no cluster), then run `20-configure.sh` and `30-deploy.sh`, then restore the
+  volumes without `env` (`71-restore.sh DIR`). Restore the statistics checkpoint only against the **same** topics: it stores offsets. After topics were
+  deleted and recreated, skip `stats-state`.
 * Schedule (lab): a daily cron entry on the admin host, e.g. `17 2 * * * cd /opt/opentsx && deploy/k3s/70-backup.sh
   --quiesce --out /srv/backup/opentsx/$(date +\%F)`, plus deleting copies older than 14 days. Test a restore every
   quarter into a second namespace (`20-configure.sh OPENTSX_NS=opentsx-restore …`). A run that fails removes the files

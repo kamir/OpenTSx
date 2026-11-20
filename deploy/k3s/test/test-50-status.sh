@@ -3,7 +3,10 @@
 # --help lists the exit codes, a namespace that is not there exits 1 with its message, and a cluster that cannot be
 # reached exits 1 with kubectl's error and a message that does not say the namespace is missing; against a cluster
 # that answers, no OpenTSx image in k3s containerd, a k3s containerd that cannot list its images (with the error of
-# k3s ctr), an old statistics checkpoint and a checkpoint that cannot be read give their warn lines and exit 0.
+# k3s ctr), an old statistics checkpoint (also when kubectl writes to stderr while it reads the age), a checkpoint and
+# a checkpoint age that cannot be read (with the error of kubectl exec) and an age that is not a number give their warn
+# lines and exit 0; a Deployment that is not there is not deployed, and one that cannot be
+# read exits 1 with kubectl's error and its message.
 # Stand-ins for kubectl, k3s and sudo; needs no kubectl, no cluster, no network.
 #
 #   bash deploy/k3s/test/test-50-status.sh
@@ -17,8 +20,10 @@ failed() { echo "FAIL $1"; failures=$((failures + 1)); }
 mkdir -p "$WORK/bin"
 # kubectl records its call and fails as an unreachable API server does; NAMESPACE=missing answers that the namespace
 # does not exist, with --ignore-not-found as kubectl does: no output and exit 0. CLUSTER=up answers as a cluster with
-# the namespace, opentsx-stats and its checkpoint CKPT_AGE seconds old (default 10); CKPT=missing: the checkpoint
-# cannot be listed.
+# the namespace, opentsx-stats and its checkpoint CKPT_AGE seconds old (default 10), no other Deployment; CKPT=missing:
+# the checkpoint cannot be listed; CKPT_AGE=fails: its age cannot be read; STDERR=throttled: kubectl also writes its
+# client-side throttling line to stderr when it reads the age; DEPLOY=fails: a Deployment read is refused as by an
+# unreachable API server.
 cat > "$WORK/bin/kubectl" <<'STUB'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "$WORK/calls.log"
@@ -33,8 +38,15 @@ if [[ "${CLUSTER:-}" == up ]]; then
     "exec deployment/opentsx-stats -- ls "*)
       [[ "${CKPT:-}" != missing ]] || { echo "ls: cannot access '/state': No such file or directory" >&2; exit 2; }
       echo "-rw-r--r-- 1 1000 1000 4096 2026-01-01T00:00:00 stats.ckpt" ;;
-    "exec deployment/opentsx-stats -- sh -c "*) echo "${CKPT_AGE:-10}" ;;
-    "get deployment/"*) echo "Error from server (NotFound): deployments.apps \"${1#deployment/}\" not found" >&2; exit 1 ;;
+    "exec deployment/opentsx-stats -- sh -c "*)
+      [[ "${CKPT_AGE:-}" != fails ]] || { echo "stat: cannot statx '/state/stats.ckpt': No such file or directory" >&2; exit 2; }
+      [[ "${STDERR:-}" != throttled ]] \
+        || echo "I1120 10:00:00.000000 1 request.go:697] Waited for 1.04s due to client-side throttling" >&2
+      echo "${CKPT_AGE:-10}" ;;
+    "get deployment/"*)
+      [[ "${DEPLOY:-}" != fails ]] || { echo "The connection to the server 10.0.0.1:6443 was refused" >&2; exit 1; }
+      [[ "$*" == *--ignore-not-found* ]] && exit 0
+      echo "Error from server (NotFound): deployments.apps \"${2#deployment/}\" not found" >&2; exit 1 ;;
   esac
   exit 0
 fi
@@ -110,8 +122,10 @@ STUB_ENV=(CLUSTER=up)
 status up
 STUB_ENV=()
 if (( rc != 0 )) || grep -q '^  warn  ' "$WORK/up.out" || ! grep -qxF "  ok    checkpoint age 10 s" "$WORK/up.out" \
-  || ! grep -qxF "  in k3s containerd: docker.io/opentsx/tools:3.0.1-local" "$WORK/up.out"; then
-  failed "up: exit $rc, expected 0, the image, the checkpoint age and no warn line"; sed 's/^/    /' "$WORK/up.out"
+  || ! grep -qxF "  in k3s containerd: docker.io/opentsx/tools:3.0.1-local" "$WORK/up.out" \
+  || [[ "$(grep -cxF "  not deployed" "$WORK/up.out")" != 2 ]]; then
+  failed "up: exit $rc, expected 0, the image, the checkpoint age, the Modbus simulator and event bridge not deployed and no warn line"
+  sed 's/^/    /' "$WORK/up.out"
 else
   echo "ok   up"
 fi
@@ -130,11 +144,57 @@ if (( failures > before )); then sed 's/^/    /' "$WORK/old-checkpoint.out"; els
 STUB_ENV=(CLUSTER=up CKPT=missing)
 status no-checkpoint
 STUB_ENV=()
-message="  warn  statistics checkpoint: not available (the pod does not run or has not written one yet); see $WORK/bin/kubectl -n opentsx logs deployment/opentsx-stats"
+message="  warn  statistics checkpoint: cannot read it (ls: cannot access '/state': No such file or directory); see $WORK/bin/kubectl -n opentsx logs deployment/opentsx-stats"
 if (( rc != 0 )) || ! grep -qxF -- "$message" "$WORK/no-checkpoint.out"; then
   failed "no-checkpoint: exit $rc, expected 0 and the message: $message"; sed 's/^/    /' "$WORK/no-checkpoint.out"
 else
   echo "ok   no-checkpoint"
+fi
+
+STUB_ENV=(CLUSTER=up CKPT_AGE=fails)
+status no-checkpoint-age
+STUB_ENV=()
+message="  warn  statistics checkpoint: cannot read its age (stat: cannot statx '/state/stats.ckpt': No such file or directory); see $WORK/bin/kubectl -n opentsx logs deployment/opentsx-stats"
+if (( rc != 0 )) || ! grep -qxF -- "$message" "$WORK/no-checkpoint-age.out"; then
+  failed "no-checkpoint-age: exit $rc, expected 0 and the message: $message"; sed 's/^/    /' "$WORK/no-checkpoint-age.out"
+else
+  echo "ok   no-checkpoint-age"
+fi
+
+STUB_ENV=(CLUSTER=up CKPT_AGE=900 STDERR=throttled)
+status old-checkpoint-stderr
+STUB_ENV=()
+message="  warn  statistics checkpoint: 900 s old; the processor may be stuck, see docs/devops/operations.md R2"
+if (( rc != 0 )) || ! grep -qxF -- "$message" "$WORK/old-checkpoint-stderr.out"; then
+  failed "old-checkpoint-stderr: exit $rc, expected 0 and the message: $message"
+  sed 's/^/    /' "$WORK/old-checkpoint-stderr.out"
+else
+  echo "ok   old-checkpoint-stderr"
+fi
+
+STUB_ENV=(CLUSTER=up CKPT_AGE=abc)
+status checkpoint-age-not-a-number
+STUB_ENV=()
+message="  warn  statistics checkpoint: cannot read its age (\"abc\" is not a number of seconds); see $WORK/bin/kubectl -n opentsx logs deployment/opentsx-stats"
+if (( rc != 0 )) || ! grep -qxF -- "$message" "$WORK/checkpoint-age-not-a-number.out"; then
+  failed "checkpoint-age-not-a-number: exit $rc, expected 0 and the message: $message"
+  sed 's/^/    /' "$WORK/checkpoint-age-not-a-number.out"
+else
+  echo "ok   checkpoint-age-not-a-number"
+fi
+
+STUB_ENV=(CLUSTER=up DEPLOY=fails)
+status deployment-unreadable
+STUB_ENV=()
+message="error: deployment/opentsx-modbus-sim: cannot read it; check the cluster with $WORK/bin/kubectl -n opentsx get deployment/opentsx-modbus-sim"
+if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/deployment-unreadable.out"; then
+  failed "deployment-unreadable: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/deployment-unreadable.out"
+elif ! grep -qxF "The connection to the server 10.0.0.1:6443 was refused" "$WORK/deployment-unreadable.out" \
+  || grep -qxF "  not deployed" "$WORK/deployment-unreadable.out"; then
+  failed "deployment-unreadable: the error of kubectl is not shown, or a failed read is reported as not deployed"
+  sed 's/^/    /' "$WORK/deployment-unreadable.out"
+else
+  echo "ok   deployment-unreadable"
 fi
 
 STUB_ENV=(CLUSTER=up CTR=fails)

@@ -4,10 +4,14 @@
 # MANIFEST, an archive that is missing, damaged or not gzip, a missing env and nothing to restore exit 1 before kubectl
 # runs; a declined question and a question at the end of standard input exit 1 with their message on stderr before
 # kubectl runs; an answer without a newline at the end counts as given; a missing namespace, a namespace that cannot be
-# read, a missing PVC and a failed step in the helper pod exit 1 with their message; a namespace that cannot be read
-# stops before .env is replaced, and env alone needs no cluster; a MANIFEST of file= lines only restores; a current .env
-# that cannot be kept exits 1 and stays as it is; a rerun after a failed step leaves the kept copy of the previous .env
-# as it is. A stand-in kubectl records any call; needs no kubectl, no cluster, no network.
+# read, a missing PVC, a PVC that cannot be read and a failed step in the helper pod exit 1 with their message; with env
+# among the parts a missing namespace or PVC says how to restore env first, and following that hint after
+# 20-configure.sh rewrote .env keeps the copy of the .env from before the restore; a namespace that cannot be read, a
+# missing namespace or PVC and a failed volume step leave .env as it is; env alone needs no cluster; a MANIFEST of file=
+# lines only restores; a current .env that cannot be kept exits 1 and stays as it is; the rerun after a failed volume
+# step restores into the same namespace; a .env that already equals the backup's env stays, and the message names the
+# kept copy only when there is one; a .env that cannot be replaced exits 1 and names the restored PVCs. A stand-in
+# kubectl records any call; needs no kubectl, no cluster, no network.
 #
 #   bash deploy/k3s/test/test-71-restore.sh
 set -euo pipefail
@@ -21,7 +25,8 @@ mkdir -p "$WORK/bin" "$WORK/backup"
 # kubectl records its call and fails; none is expected to run. CLUSTER=up answers as a cluster with the namespace,
 # the PVCs and no writer deployed; CLUSTER=down refuses every call as an unreachable API server does;
 # NAMESPACE=missing: no namespace, with --ignore-not-found as kubectl does: no output and exit 0; PVC_STATE=missing: no
-# PVC; EXEC=empty-fails or unpack-fails: that step in the helper pod fails.
+# PVC, the same way; PVC_STATE=unreadable: the PVC read is refused as by an unreachable API server; EXEC=empty-fails or
+# unpack-fails: that step in the helper pod fails.
 cat > "$WORK/bin/kubectl" <<'STUB'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "$WORK/calls.log"
@@ -38,7 +43,14 @@ case "$*" in
     fi
     echo "namespace/$3" ;;
   "get deployment "*|"delete pod "*|"wait --for=condition=Ready "*) exit 0 ;;
-  "get pvc "*) [[ "${PVC_STATE:-}" != missing ]] || { echo "Error from server (NotFound): persistentvolumeclaims \"$3\" not found" >&2; exit 1; } ;;
+  "get pvc "*)
+    if [[ "${PVC_STATE:-}" == unreadable ]]; then
+      echo "The connection to the server 10.0.0.1:6443 was refused" >&2; exit 1
+    elif [[ "${PVC_STATE:-}" == missing ]]; then
+      [[ "$*" == *--ignore-not-found* ]] && exit 0
+      echo "Error from server (NotFound): persistentvolumeclaims \"$3\" not found" >&2; exit 1
+    fi
+    echo "persistentvolumeclaim/$3" ;;
   "apply -f -") cat > /dev/null ;;
   "exec opentsx-restore-helper -- sh -c "*) [[ "${EXEC:-}" != empty-fails ]] || { echo "find: permission denied" >&2; exit 1; } ;;
   "exec -i opentsx-restore-helper -- tar xzf "*)
@@ -191,6 +203,11 @@ failing() {   # NAME MESSAGE KEY=VALUE ...: restore of the good backup against t
 failing no-namespace "error: namespace opentsx: not found; run 20-configure.sh and 30-deploy.sh first" NAMESPACE=missing
 failing pvc-missing "error: PVC opentsx-data: not found in namespace opentsx; run 30-deploy.sh first (opentsx-iceberg-catalog needs LAKE=true, opentsx-minio LAKE=true and LAKE_MINIO=true)" \
   PVC_STATE=missing
+failing pvc-unreadable "error: PVC opentsx-data: cannot read it; check the cluster with $WORK/bin/kubectl -n opentsx get pvc opentsx-data" \
+  PVC_STATE=unreadable
+if ! grep -qxF "The connection to the server 10.0.0.1:6443 was refused" "$WORK/pvc-unreadable.out"; then
+  failed "pvc-unreadable: the error of kubectl is not shown"; sed 's/^/    /' "$WORK/pvc-unreadable.out"
+fi
 failing empty-fails "error: PVC opentsx-data: emptying it failed; see the error above, then run 71-restore.sh again" \
   EXEC=empty-fails
 failing unpack-fails "error: PVC opentsx-data: unpacking data.tar.gz failed; see the error above, then run 71-restore.sh again" \
@@ -275,26 +292,119 @@ else
   echo "ok   env-only-no-cluster"
 fi
 
-printf 'OPENTSX_DOMAIN=original\n' > "$WORK/rerun.env"
-STUB_ENV=(CLUSTER=up EXEC=unpack-fails OPENTSX_ENV_FILE="$WORK/rerun.env")
-restore rerun-first "$WORK/env-data" --only env,data --yes
-first=$rc
-STUB_ENV=(CLUSTER=up OPENTSX_ENV_FILE="$WORK/rerun.env")
-restore rerun-second "$WORK/env-data" --only env,data --yes
+hint="nothing was restored; run 71-restore.sh $WORK/env-data --only env, then 20-configure.sh and 30-deploy.sh, then 71-restore.sh $WORK/env-data --only data"
+for case in "NAMESPACE=missing|error: namespace opentsx: not found; $hint" \
+  "PVC_STATE=missing|error: PVC opentsx-data: not found in namespace opentsx; $hint"; do
+  name="env-${case%%=*}"; name="${name,,}"; message="${case#*|}"
+  printf 'OPENTSX_DOMAIN=original\n' > "$WORK/missing.env"
+  STUB_ENV=(CLUSTER=up "${case%%|*}" OPENTSX_ENV_FILE="$WORK/missing.env")
+  restore "$name" "$WORK/env-data" --only env,data --yes
+  STUB_ENV=()
+  if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/$name.out"; then
+    failed "$name: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/$name.out"
+  elif [[ "$(cat "$WORK/missing.env")" != OPENTSX_DOMAIN=original || -e "$WORK/missing.env.before-restore" ]]; then
+    failed "$name: .env was replaced or kept aside although nothing was restored"; sed 's/^/    /' "$WORK/missing.env"
+  else
+    echo "ok   $name"
+  fi
+done
+
+printf 'OPENTSX_DOMAIN=original\n' > "$WORK/flow.env"
+STUB_ENV=(CLUSTER=up PVC_STATE=missing OPENTSX_ENV_FILE="$WORK/flow.env")
+restore flow-hint "$WORK/env-data" --only env,data --yes
+STUB_ENV=(CLUSTER=down OPENTSX_ENV_FILE="$WORK/flow.env")
+restore flow-env "$WORK/env-data" --only env --yes
 STUB_ENV=()
-message="  ok    $WORK/rerun.env: already the backup's env; $WORK/rerun.env.before-restore left as it is"
+configured="# written by deploy/k3s/20-configure.sh on 2026-01-02T00:00:00Z; contains secrets, never commit
+OPENTSX_DOMAIN=frombackup"
+printf '%s\n' "$configured" > "$WORK/flow.env"
+last="$(sed -n 's/^error: .*, then 71-restore\.sh \(.*\)$/\1/p' "$WORK/flow-hint.out")"
+if [[ -z "$last" ]]; then
+  failed "hint-flow: the hint does not end with the 71-restore.sh command to run after 30-deploy.sh"
+  sed 's/^/    /' "$WORK/flow-hint.out"
+else
+  read -ra args <<< "$last"
+  STUB_ENV=(CLUSTER=up OPENTSX_ENV_FILE="$WORK/flow.env")
+  restore flow-volumes "${args[@]}" --yes
+  STUB_ENV=()
+  if (( rc != 0 )) || ! grep -qF "data.tar.gz -> PVC opentsx-data" "$WORK/flow-volumes.out"; then
+    failed "hint-flow: exit $rc, expected 0 and data.tar.gz restored by 71-restore.sh $last"
+    sed 's/^/    /' "$WORK/flow-volumes.out"
+  elif [[ "$(cat "$WORK/flow.env.before-restore")" != OPENTSX_DOMAIN=original ]]; then
+    failed "hint-flow: the kept copy of the .env from before the restore was overwritten"
+    sed 's/^/    /' "$WORK/flow.env.before-restore"
+  elif [[ "$(cat "$WORK/flow.env")" != "$configured" ]]; then
+    failed "hint-flow: the .env written by 20-configure.sh was replaced"; sed 's/^/    /' "$WORK/flow.env"
+  else
+    echo "ok   hint-flow"
+  fi
+fi
+
+mkdir -p "$WORK/other-ns"
+printf 'OPENTSX_NS=frombackup\n' > "$WORK/other-ns/env"
+cp "$WORK/good/data.tar.gz" "$WORK/other-ns/"
+(cd "$WORK/other-ns" && for f in env data.tar.gz; do echo "file=$(sha256sum "$f" | cut -d' ' -f1) $(wc -c < "$f") $f"; done) \
+  > "$WORK/other-ns/MANIFEST"
+printf 'OPENTSX_NS=current\n' > "$WORK/rerun.env"
+STUB_ENV=(CLUSTER=up EXEC=unpack-fails OPENTSX_ENV_FILE="$WORK/rerun.env")
+restore rerun-first "$WORK/other-ns" --only env,data --yes
+first=$rc
+first_env="$(cat "$WORK/rerun.env")"
+STUB_ENV=(CLUSTER=up OPENTSX_ENV_FILE="$WORK/rerun.env")
+restore rerun-second "$WORK/other-ns" --only env,data --yes
+STUB_ENV=()
 if (( first != 1 || rc != 0 )); then
   failed "rerun: exit $first and $rc, expected 1 for the failed unpack and 0 for the rerun"
   sed 's/^/    first: /' "$WORK/rerun-first.out"; sed 's/^/    second: /' "$WORK/rerun-second.out"
-elif [[ "$(cat "$WORK/rerun.env.before-restore")" != OPENTSX_DOMAIN=original ]]; then
-  failed "rerun: the kept copy of the previous .env was overwritten"; sed 's/^/    /' "$WORK/rerun.env.before-restore"
-elif ! grep -qxF -- "$message" "$WORK/rerun-second.out"; then
-  failed "rerun: expected the message: $message"; sed 's/^/    /' "$WORK/rerun-second.out"
-elif grep -qF "previous .env kept as" "$WORK/rerun-second.out" || [[ "$(cat "$WORK/rerun.env")" != OPENTSX_DOMAIN=frombackup ]]; then
-  failed "rerun: the rerun says it kept the previous .env, or .env is not the backup's"; sed 's/^/    /' "$WORK/rerun-second.out"
+elif [[ "$first_env" != OPENTSX_NS=current ]]; then
+  failed "rerun: the failed unpack left .env replaced: $first_env"
+elif grep -qF frombackup "$WORK/calls.log" || ! grep -qxF "get namespace current --ignore-not-found -o name" "$WORK/calls.log"; then
+  failed "rerun: the rerun did not restore into the namespace current"; sed 's/^/    calls: /' "$WORK/calls.log"
+elif [[ "$(cat "$WORK/rerun.env")" != OPENTSX_NS=frombackup || "$(cat "$WORK/rerun.env.before-restore")" != OPENTSX_NS=current ]]; then
+  failed "rerun: .env is not the backup's, or the kept copy is not the previous .env"; sed 's/^/    /' "$WORK/rerun-second.out"
 else
   echo "ok   rerun"
 fi
+
+STUB_ENV=(CLUSTER=up OPENTSX_ENV_FILE="$WORK/rerun.env")
+restore rerun-third "$WORK/other-ns" --only env,data --yes
+STUB_ENV=()
+message="  ok    $WORK/rerun.env: already the backup's env; $WORK/rerun.env.before-restore left as it is"
+if (( rc != 0 )) || ! grep -qxF -- "$message" "$WORK/rerun-third.out"; then
+  failed "already-kept: exit $rc, expected 0 and the message: $message"; sed 's/^/    /' "$WORK/rerun-third.out"
+elif [[ "$(cat "$WORK/rerun.env.before-restore")" != OPENTSX_NS=current ]]; then
+  failed "already-kept: the kept copy of the previous .env was overwritten"; sed 's/^/    /' "$WORK/rerun.env.before-restore"
+else
+  echo "ok   already-kept"
+fi
+
+cp "$WORK/env-data/env" "$WORK/same.env"
+STUB_ENV=(OPENTSX_ENV_FILE="$WORK/same.env")
+restore already-no-copy "$WORK/env-data" --only env --yes
+STUB_ENV=()
+message="  ok    $WORK/same.env: already the backup's env; left as it is"
+if (( rc != 0 )) || ! grep -qxF -- "$message" "$WORK/already-no-copy.out"; then
+  failed "already-no-copy: exit $rc, expected 0 and the message: $message"; sed 's/^/    /' "$WORK/already-no-copy.out"
+elif [[ -e "$WORK/same.env.before-restore" || -L "$WORK/same.env.before-restore" ]]; then
+  failed "already-no-copy: a kept copy was created"
+else
+  echo "ok   already-no-copy"
+fi
+
+# a .env below a regular file cannot be written, also by root
+printf 'not a directory\n' > "$WORK/blocked"
+for case in "env,data|after the PVCs opentsx-data were restored" "env|"; do
+  parts="${case%%|*}"; name="env-not-replaced-${parts//,/-}"; after="${case#*|}"; after="${after:+ $after}"
+  STUB_ENV=(CLUSTER=up OPENTSX_ENV_FILE="$WORK/blocked/current.env")
+  restore "$name" "$WORK/env-data" --only "$parts" --yes
+  STUB_ENV=()
+  message="error: $WORK/blocked/current.env: cannot replace it with $WORK/env-data/env$after; see the error above, then run 71-restore.sh $WORK/env-data --only env"
+  if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/$name.out"; then
+    failed "$name: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/$name.out"
+  else
+    echo "ok   $name"
+  fi
+done
 
 if (( failures )); then echo "$failures failed"; exit 1; fi
 echo "all passed"

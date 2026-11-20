@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Tests the arguments of deploy/k3s/11-import-images.sh: an unknown option, an option without its value, an argument,
-# a method that is not one (from --method or IMAGE_METHOD) and the methods ssh and kind without their target exit 2
-# before an image is saved or imported, --help lists the exit codes, the method registry with a repository without a
-# registry host exits 1 before an image is pushed, the tool of a method that is not installed (also nerdctl and ssh
-# when the other tools are there), a kind cluster that does not exist, a failing kind get clusters and the methods ssh
-# and registry without docker or podman exit 1 before an image is saved, images that k3s' containerd does not list
-# after the import exit 1, and the method none imports nothing. Stand-ins for docker, podman, k3s, ssh and kind record
-# any call; needs no image, no cluster, no network.
+# a method that is not one (from --method or IMAGE_METHOD), the methods ssh and kind without their target and the method
+# nerdctl with a NERDCTL of blanks exit 2 before an image is saved or imported, --help lists the exit codes, the method
+# registry with a repository without a registry host exits 1 before an image is pushed, the tool of a method that is not
+# installed (also nerdctl and ssh when the other tools are there), a kind cluster that does not exist, a failing kind
+# get clusters and the methods ssh and registry without docker or podman exit 1 before an image is saved, images that
+# k3s' containerd does not list after the import exit 1, and the method none imports nothing. Stand-ins for docker,
+# podman, k3s, ssh and kind record any call; needs no image, no cluster, no network.
 #
 #   bash deploy/k3s/test/test-11-import-images.sh
 set -euo pipefail
@@ -59,6 +59,9 @@ expect method-unknown "error: --method: \"scp\" is not a method; expected $METHO
 expect image-method-unknown "error: IMAGE_METHOD: \"scp\" is not a method; expected $METHODS" IMAGE_METHOD=scp --
 expect ssh-without-target "error: --ssh: missing; the method ssh needs --ssh user@host or K3S_SSH" -- --method ssh
 expect kind-without-cluster "error: --kind-cluster: missing; the method kind needs --kind-cluster <name> or KIND_CLUSTER (kind get clusters lists them)" -- --method kind
+expect nerdctl-blank "error: NERDCTL: empty value; set it to the nerdctl command or leave it unset" NERDCTL="  " -- --method nerdctl
+expect image-method-nerdctl-blank "error: NERDCTL: empty value; set it to the nerdctl command or leave it unset" \
+  IMAGE_METHOD=nerdctl NERDCTL="  " --
 
 import help -- --help
 if (( rc != 0 )) || ! grep -qF "  2  usage error" "$WORK/help.out"; then

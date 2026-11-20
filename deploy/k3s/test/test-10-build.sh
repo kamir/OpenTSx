@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Tests the arguments of deploy/k3s/10-build.sh: an unknown option, an option without its value, a builder that is not
-# one, and an argument exit 2 before Maven or an image builder runs, --help lists the exit codes, a --tag that differs
-# from OPENTSX_TAG and LAKE=true without --with-s3 print a warning, and a missing java, mvn or image builder exits 1
-# with its message, a builder named with --builder, a NERDCTL command that is not installed or a NERDCTL of blanks
-# before Maven runs.
+# one, an argument and a NERDCTL of blanks exit 2 before Maven or an image builder runs, --help lists the exit codes, a
+# --tag that differs from OPENTSX_TAG and LAKE=true without --with-s3 print a warning, and a missing java, mvn or image
+# builder exits 1 with its message, a builder named with --builder or a NERDCTL command that is not installed before
+# Maven runs.
 # Stand-ins for mvn, java, the builders and deploy/docker/stage.sh record any call; needs no JDK, no builder, no
 # network.
 #
@@ -108,10 +108,10 @@ missing no-maven "error: mvn: not found; install Maven, deploy/k3s/00-prereqs.sh
 missing no-builder "error: image builder: none of docker, podman, nerdctl or buildah found; install one, or stage only with --no-images" \
   java mvn
 
-# unbuilt NAME MESSAGE [KEY=VALUE ...] -- ARG ...: a PATH with bash, dirname, basename and the stand-ins java, mvn and
-# nerdctl only; exit 1 with MESSAGE before mvn or stage.sh runs
+# unbuilt NAME EXIT MESSAGE [KEY=VALUE ...] -- ARG ...: a PATH with bash, dirname, basename and the stand-ins java, mvn
+# and nerdctl only; exit EXIT with MESSAGE before mvn or stage.sh runs
 unbuilt() {
-  local name="$1" message="$2" tool; shift 2
+  local name="$1" want="$2" message="$3" tool; shift 3
   local -a envs=()
   while (( $# )) && [[ "$1" != -- ]]; do envs+=("$1"); shift; done
   if (( $# )); then shift; fi
@@ -121,23 +121,23 @@ unbuilt() {
   rm -f "$WORK/calls.log"
   env -i PATH="$WORK/bare-$name:$WORK/bare" HOME="$WORK" WORK="$WORK" OPENTSX_ENV_FILE="$WORK/none.env" \
     ${envs[@]+"${envs[@]}"} "$WORK/bare/bash" "$WORK/repo/deploy/k3s/10-build.sh" "$@" > "$WORK/$name.out" 2>&1 || rc=$?
-  if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/$name.out"; then
-    failed "$name: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/$name.out"
+  if (( rc != want )) || ! grep -qxF -- "$message" "$WORK/$name.out"; then
+    failed "$name: exit $rc, expected $want and the message: $message"; sed 's/^/    /' "$WORK/$name.out"
   elif [[ -s "$WORK/calls.log" ]]; then
     failed "$name: a tool ran before the builder was checked: $(cat "$WORK/calls.log")"
   else
     echo "ok   $name"
   fi
 }
-unbuilt builder-not-installed "error: podman: not found; install it or choose another builder with --builder" \
+unbuilt builder-not-installed 1 "error: podman: not found; install it or choose another builder with --builder" \
   -- --builder podman
-unbuilt nerdctl-command-missing "error: $WORK/none/nerdctl: not found; install it, set NERDCTL or choose another builder with --builder" \
+unbuilt nerdctl-command-missing 1 "error: $WORK/none/nerdctl: not found; install it, set NERDCTL or choose another builder with --builder" \
   NERDCTL="$WORK/none/nerdctl --namespace k8s.io" -- --builder nerdctl
-unbuilt nerdctl-detected-command-missing "error: $WORK/none/nerdctl: not found; install it, set NERDCTL or choose another builder with --builder" \
+unbuilt nerdctl-detected-command-missing 1 "error: $WORK/none/nerdctl: not found; install it, set NERDCTL or choose another builder with --builder" \
   NERDCTL="$WORK/none/nerdctl --namespace k8s.io"
-unbuilt nerdctl-blank "error: NERDCTL: holds no command; set it to the nerdctl command, or unset it to use nerdctl" \
+unbuilt nerdctl-blank 2 "error: NERDCTL: empty value; set it to the nerdctl command or leave it unset" \
   NERDCTL="   " -- --builder nerdctl
-unbuilt nerdctl-detected-blank "error: NERDCTL: holds no command; set it to the nerdctl command, or unset it to use nerdctl" \
+unbuilt nerdctl-detected-blank 2 "error: NERDCTL: empty value; set it to the nerdctl command or leave it unset" \
   NERDCTL="   "
 
 if (( failures )); then echo "$failures failed"; exit 1; fi

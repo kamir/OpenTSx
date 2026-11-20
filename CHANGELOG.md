@@ -930,8 +930,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   --images`, `<image>: not removed from k3s containerd (<reason>); remove it with sudo k3s ctr images rm
   docker.io/<image> <image>` and `--images: <n> image(s) not removed from k3s containerd; see the warn lines above`.
   In `50-status.sh`: `k3s containerd: no <repo> images; import them with 11-import-images.sh`, `statistics checkpoint:
-  <n> s old; the processor may be stuck, see docs/devops/operations.md R2` and `statistics checkpoint: not available
-  (the pod does not run or has not written one yet); see kubectl -n <namespace> logs deployment/opentsx-stats`. In
+  <n> s old; the processor may be stuck, see docs/devops/operations.md R2` and `statistics checkpoint: cannot read it
+  (<error of kubectl exec>); see kubectl -n <namespace> logs deployment/opentsx-stats`. In
   `lib.sh`: `<deployment>: not scaled back to <replicas> (<error>); run kubectl -n <namespace> scale
   deployment/<deployment> --replicas=<replicas>`.
 - `docs/datamodel-2026/01-ANALYSE-Datenmodell.md` names `TSOProducer.pushTSDataAsEpisodesToKafka_String_Avro`,
@@ -2332,7 +2332,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   not removed, it holds files this run did not write; remove them, or give a new or empty directory with --out`.
   Before, a failed run left `env`, `opentsx-config.yaml` and archives behind.
 - `deploy/k3s/71-restore.sh` with `env` leaves `.env` and `.env.before-restore` as they are when `.env` already equals
-  the backup's env, and prints `<env file>: already the backup's env; <env file>.before-restore left as it is`.
+  the backup's env, and prints `<env file>: already the backup's env; <env file>.before-restore left as it is`, or
+  `<env file>: already the backup's env; left as it is` when no `.env.before-restore` exists.
   Before, a rerun after a failed step copied the restored `.env` over `.env.before-restore`, the only copy of the
   previous configuration.
 - `deploy/k3s/30-deploy.sh` and `90-teardown.sh` stop with exit code 1 and `namespace <namespace>: cannot read it;
@@ -2388,8 +2389,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `deploy/k3s/10-build.sh` checks the image builder before the Maven build, also a builder named with `--builder` and
   the command in `NERDCTL`. A builder that is not installed stops with `<tool>: not found; install it or choose
   another builder with --builder` (for nerdctl: `install it, set NERDCTL or choose another builder with --builder`)
-  and exit code 1. A `NERDCTL` that holds only blanks stops with `NERDCTL: holds no command; set it to the nerdctl
-  command, or unset it to use nerdctl`. Before, the script ran the whole Maven build and then failed with exit code
+  and exit code 1. A `NERDCTL` that holds only blanks is a usage error: exit code 2 and `NERDCTL: empty value; set it
+  to the nerdctl command or leave it unset`, the same message as `11-import-images.sh`. Before, the script ran the
+  whole Maven build and then failed with exit code
   127 and the shell's `command not found`.
 - `deploy/k3s/90-teardown.sh --images` checks for k3s before the question and before anything is deleted. Before, on a
   host without k3s, it deleted the installation first and then exited with code 1.
@@ -2442,6 +2444,33 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   tools/test_lg_scripts.py`. It reads each command substitution or subshell up to its end, every one of them in a
   command, so `CID=$(docker run img:1.2.3)` passes and `echo $(docker pull a:1.2.3) $(docker pull b)` fails on `b`.
   The suggestion for an unguarded `cd` in a substitution names only the target.
+- `deploy/k3s/71-restore.sh` with `env` and volumes checks the namespace and the PVCs of the current `.env`, restores
+  the volumes and replaces `.env` with the backup's env last, so a failed volume step leaves `.env` as it was and the
+  rerun restores into the same namespace. Before, `.env` was replaced first, and the rerun after a failed step
+  restored into the namespace of the backup's env, which the first run had not checked.
+- `deploy/k3s/71-restore.sh` with `env` among the parts stops on a missing namespace or PVC with exit code 1 and
+  `namespace <namespace>: not found; nothing was restored; run 71-restore.sh <dir> --only env, then 20-configure.sh
+  and 30-deploy.sh, then 71-restore.sh <dir> --only <volume parts>` (for a PVC `PVC <pvc>: not found in namespace
+  <namespace>; nothing was restored; ...`). The last command leaves `env` out, so the restore after `20-configure.sh`
+  keeps `.env.before-restore`. Before, the hint led to configuring without the backup's env.
+- `deploy/k3s/71-restore.sh` names `.env.before-restore` in its `already the backup's env` line only when that file
+  exists and prints `<env file>: already the backup's env; left as it is` otherwise.
+- `deploy/k3s/71-restore.sh` stops with exit code 1 and `PVC <pvc>: cannot read it; check the cluster with kubectl -n
+  <namespace> get pvc <pvc>` when a PVC read fails for another reason than NotFound. Before, every failure was
+  reported as not found.
+- `deploy/k3s/50-status.sh` prints `not deployed` only for a Modbus simulator or event bridge Deployment that does not
+  exist, and stops with exit code 1 and `deployment/<name>: cannot read it; check the cluster with kubectl -n
+  <namespace> get deployment/<name>` when it cannot read one. It names the error of `kubectl exec` when it cannot read
+  the statistics checkpoint (`statistics checkpoint: cannot read it (<error>); see kubectl -n <namespace> logs
+  deployment/opentsx-stats`) or its age (`statistics checkpoint: cannot read its age (<error>); ...`), and warns with
+  `statistics checkpoint: cannot read its age ("<output>" is not a number of seconds); ...` when the age it reads is
+  not a number. Before, a failed or unreadable age gave no line at all.
+- `deploy/k3s/11-import-images.sh --method nerdctl` refuses a `NERDCTL` of blanks with exit code 2 and `NERDCTL: empty
+  value; set it to the nerdctl command or leave it unset`. Before, bash stopped with `N[0]: unbound variable`.
+- `deploy/k3s/71-restore.sh` names the restored PVCs when it cannot replace `.env` with the backup's env as its last
+  step. It exits with 1 and `<path of .env>: cannot replace it with <dir>/env after the PVCs <pvcs> were restored; see
+  the error above, then run 71-restore.sh <dir> --only env`. Without volumes among the parts, the message leaves out
+  the PVCs.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
