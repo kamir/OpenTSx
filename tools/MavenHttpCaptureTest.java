@@ -25,11 +25,14 @@ import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.cookie.DefaultCookieSpecProvider;
 import org.apache.http.impl.execchain.ClientExecChain;
 import org.apache.http.message.BasicHttpResponse;
+import org.apache.maven.settings.Settings;
+import org.apache.maven.settings.io.xpp3.SettingsXpp3Reader;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.spi.connector.transport.GetTask;
 import org.eclipse.aether.spi.connector.transport.Transporter;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
+import org.eclipse.aether.util.repository.DefaultMirrorSelector;
 
 public final class MavenHttpCaptureTest {
     private static int assertions;
@@ -90,6 +93,85 @@ public final class MavenHttpCaptureTest {
         require(store.getCookies().isEmpty(), "The malformed-cookie fixture was not exercised");
     }
 
+    private static void verifyCiMirror(Path settingsFile) throws Exception {
+        Settings settings = new Settings();
+        if (Files.exists(settingsFile)) {
+            try (var input = Files.newBufferedReader(settingsFile, StandardCharsets.UTF_8)) {
+                settings = new SettingsXpp3Reader().read(input);
+            }
+        }
+        DefaultMirrorSelector selector = new DefaultMirrorSelector();
+        for (var mirror : settings.getMirrors()) {
+            selector.add(mirror.getId(), mirror.getUrl(), mirror.getLayout(), false, mirror.isBlocked(),
+                    mirror.getMirrorOf(), mirror.getMirrorOfLayouts());
+        }
+        RemoteRepository central = new RemoteRepository.Builder(
+                "central", "default", "https://repo.maven.apache.org/maven2/").build();
+        RemoteRepository selected = selector.getMirror(central);
+        RemoteRepository repository = selected == null ? central : selected;
+        boolean unavailable = repository.getUrl().equals(central.getUrl());
+        DefaultRepositorySystemSession session = new DefaultRepositorySystemSession();
+        session.setConfigProperty("aether.connector.http.retryHandler.interval", 0);
+        DiagnosticHttpTransporterFactory factory = new DiagnosticHttpTransporterFactory(new HttpTransporterFactory(Map.of()));
+        try (Transporter transporter = factory.newInstance(session, repository)) {
+            Object client = field(transporter, "client").get(transporter);
+            Object executor = field(client, "execChain").get(client);
+            while (!executor.getClass().getSimpleName().equals("ServiceUnavailableRetryExec")) {
+                executor = field(executor, "requestExecutor").get(executor);
+            }
+            Object capture = field(executor, "requestExecutor").get(executor);
+            require(capture instanceof DiagnosticHttpTransporterFactory.CaptureExec,
+                    "The configured Central endpoint is missing response capture");
+            int[] attempts = {0};
+            Response response = new Response(unavailable ? 404 : 200);
+            response.setHeader("Retry-After", "2309");
+            response.setHeader("Content-Type", "text/plain");
+            response.setHeader("Server", "cloudflare");
+            response.setEntity(new StringEntity(unavailable ? "?" : "fixture-bom", StandardCharsets.UTF_8));
+            field(capture, "delegate").set(capture, (ClientExecChain) (a, b, c, d) -> {
+                attempts[0]++;
+                return response;
+            });
+            URI artifact = URI.create("com/fasterxml/jackson/jackson-bom/2.23.0/jackson-bom-2.23.0.pom");
+            GetTask task = new GetTask(artifact);
+            try {
+                transporter.get(task);
+            } catch (HttpResponseException failure) {
+                require(failure.getStatusCode() == 404 && attempts[0] == 1,
+                        "The observed 404 response was changed or retried");
+                throw new AssertionError("A cold CI download reached the unavailable Central endpoint", failure);
+            }
+            require(task.getDataString().equals("fixture-bom") && attempts[0] == 1 && response.closed,
+                    "The mirror changed artifact content, repeated the request or leaked its response");
+            String evidence = Files.readString(Path.of("target/maven-downloads/http-responses.jsonl"));
+            require(evidence.contains("\"host\":\"maven-central.storage-download.googleapis.com\"")
+                    && !evidence.contains("private-"), "Mirror response capture was missing or exposed private values");
+            for (int status : new int[] {401, 403, 404}) {
+                attempts[0] = 0;
+                Response missing = new Response(status);
+                field(capture, "delegate").set(capture, (ClientExecChain) (a, b, c, d) -> {
+                    attempts[0]++;
+                    return missing;
+                });
+                try {
+                    transporter.get(new GetTask(artifact));
+                    throw new AssertionError("A permanent mirror error was accepted");
+                } catch (HttpResponseException failure) {
+                    require(failure.getStatusCode() == status && attempts[0] == 1 && missing.closed,
+                            "A permanent mirror error was changed or retried");
+                }
+            }
+        }
+        require(repository.getUrl().equals("https://maven-central.storage-download.googleapis.com/maven2/"),
+                "CI must use the configured Central mirror");
+        require(selector.getMirror(new RemoteRepository.Builder(
+                "confluent", "default", "https://packages.confluent.io/maven/").build()) == null,
+                "The Central mirror replaced Confluent");
+        require(selector.getMirror(new RemoteRepository.Builder(
+                "private", "default", "https://private.invalid/").build()) == null,
+                "The Central mirror replaced another repository");
+    }
+
     public static void main(String[] arguments) throws Exception {
         for (String option : Files.readAllLines(Path.of(arguments[1]))) {
             if (option.startsWith("-Dorg.slf4j.simpleLogger.log.")) {
@@ -98,6 +180,7 @@ public final class MavenHttpCaptureTest {
             }
         }
         verifyCookieLogExclusion();
+        verifyCiMirror(Path.of(arguments[1]).resolveSibling("ci-settings.xml"));
         Path directory = Path.of(arguments[0]);
         Path output = directory.resolve("responses.jsonl");
         Response response = new Response(404);

@@ -35,12 +35,34 @@ def verify_extension(jar, directory):
 def enable_ci(jar):
     if "GITHUB_ENV" not in os.environ:
         return
-    if os.environ.get("MAVEN_OPTS"):
-        raise ValueError("Existing Maven JVM options must be reviewed before enabling capture")
+    arguments = os.environ.get("MAVEN_ARGS", "")
+    if os.environ.get("MAVEN_OPTS") or arguments not in ("", "-ntp"):
+        raise ValueError("Existing Maven options must be reviewed before configuring CI transport")
     if any(character.isspace() or character == os.pathsep for character in str(jar)):
         raise ValueError("The capture extension path must not contain whitespace or classpath separators")
+    settings = ROOT / ".mvn/ci-settings.xml"
+    if any(character.isspace() for character in str(settings)):
+        raise ValueError("The CI settings path must not contain whitespace")
     with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as output:
         output.write("MAVEN_OPTS=-Dmaven.ext.class.path=" + str(jar) + "\n")
+        output.write("MAVEN_ARGS=" + ("-ntp " if arguments else "") + "--settings " + str(settings) + "\n")
+
+
+def verify_ci_mirror(directory):
+    global_settings = directory / "empty-settings.xml"
+    global_settings.write_text("<settings/>", encoding="utf-8")
+    result = subprocess.run(["mvn", "--offline", "--batch-mode",
+                             "--settings", str(ROOT / ".mvn/ci-settings.xml"),
+                             "--global-settings", str(global_settings),
+                             "-Dmaven.repo.local=" + str(directory / "mirror-repository"),
+                             "org.opentsx.test:missing-plugin:1.0.0:missing"],
+                            cwd=directory, capture_output=True, text=True)
+    output = result.stdout + result.stderr
+    if (result.returncode != 1 or "org.apache.maven.plugin.PluginResolutionException" not in output
+            or "google-maven-central (https://maven-central.storage-download.googleapis.com/maven2/)" not in output
+            or "in offline mode" not in output):
+        raise ValueError("The CI settings must mirror plugin resolution in the isolated offline Maven fixture")
+    print("Maven CI repository mirror verified offline", flush=True)
 
 
 def verify():
@@ -73,6 +95,7 @@ def verify():
         fixture = directory / "fixture"
         fixture.mkdir()
         verify_extension(jar, fixture)
+        verify_ci_mirror(fixture)
     responses = jar.with_name("http-responses.jsonl")
     if responses.is_symlink() or responses.exists() and not responses.is_file():
         raise ValueError("HTTP response output must be a regular file")
