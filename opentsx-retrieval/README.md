@@ -165,11 +165,13 @@ The operator is `org.opentsx.retrieval.vector.VectorAligner`. It passes the test
 workbench (`docs/datamodel-2026/testvectors/align-vector.v1.json`); the rules are in
 `docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md`, section 2.
 
-`VectorStream` is the same operator over a continuing input. `new VectorStream(expected, params, lateness)` reads one
-set of series for every input; `new VectorStream(expectedByInput, params, lateness)` gives each input series of its
-own, so two inputs may read the same series under different names. Call `add(input, seriesId, ...)` for a stream with
-named inputs and `add(seriesId, ...)` otherwise; the other call fails. `state()` and `restore(...)` carry open ticks
-from one run to the next. `VectorStreamTest` checks both modes against `VectorAligner.align` for every shared case.
+`VectorStream` is the same operator over a continuing input. It refuses two series that give the same component of
+one vector, which `VectorAligner` aggregates into one value (`docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md`, section
+2.2). `new VectorStream(expected, params, lateness)` reads one set of series for every input;
+`new VectorStream(expectedByInput, params, lateness)` gives each input series of its own, so two inputs may read the
+same series under different names. Call `add(input, seriesId, ...)` for a stream with named inputs and
+`add(seriesId, ...)` otherwise; the other call fails. `state()` and `restore(...)` carry open ticks from one run to
+the next. `VectorStreamTest` checks both modes against `VectorAligner.align` for every shared case.
 
 See the [Kafka-native streaming operating guide](../docs/devops/kafka-native-streaming.md) for the supported
 series and vector operators, strict deployment checks, restart semantics and broker acceptance.

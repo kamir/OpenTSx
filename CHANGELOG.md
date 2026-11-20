@@ -529,9 +529,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   writes `# not in the stream operator catalog`, and the publish check warns, only for operators that catalog 1 does
   not list. `align.vector`, `convert.unit`, `model.wind-shear`, `model.power-curve`, `feature.lag`, `feature.rolling`,
   `pair.xcorr` and `pair.es` are catalog operators. A test compares the list `CATALOG_1` of the workbench with the
-  catalog file.
+  catalog file. An exported flow that uses one of these operators now differs in text from its earlier export and
+  gets another `specHash`: deploying it under the name of a running DAG ends that DAG, deletes its checkpoints and
+  starts it again from `source.start`.
 - The workbench preview of `align.vector` refuses two series that give the same component of one vector, with the
-  rule and message of the vector processor, instead of averaging them into one value that every deployment refuses.
+  rule and message of the vector processor, instead of aggregating them into one value that every deployment refuses.
   "Create a vector of the loaded series" names components as the operator does when it suggests a key, so two
   channels with the same last metric segment, such as `wind.rotor.speed` and `wind.generator.speed`, keep one vector
   per series. The `tsx-runner` refusal names both series by their ids, as the Java processor does.

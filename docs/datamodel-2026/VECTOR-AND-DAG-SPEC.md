@@ -288,7 +288,7 @@ Implemented in: `kafka/TopicLayout.java:130-160`, `vector/VectorProcessor.java:6
 | Refused reads | A fetch the broker refuses is tried again every 5 s. The consumer goes back to its positions before that fetch, so no record is skipped. After 10 minutes of refusals the runner reports `failed`. |
 | Missing confirmations | A send retries up to the delivery timeout of 3 minutes. When a send fails, or a confirmation is still missing 3 minutes 30 s after the snapshot, the runner reports `failed`. It starts again 60 s later from its last checkpoint, with a new producer and a new consumer. |
 | One producer per runner | Every runner writes only to its sink topic, with its own producer. Status records use one more producer, replaced after a failed send. Waiting for confirmations does not stop the loop. A sink whose writes the broker does not confirm holds up neither the other sinks nor the status. |
-| Equality with the one-shot operator | Fed with all data, `VectorStream` gives the measuring points that `VectorAligner` gives, whatever the order in which the series arrive. |
+| Equality with the one-shot operator | Fed with all data in which no two series give the same component of one vector, `VectorStream` gives the measuring points that `VectorAligner` gives, whatever the order in which the series arrive. On data in which two series give one component, `VectorStream` refuses ([2.2](#22-clock-components-and-key)) and `VectorAligner` aggregates them into one value. |
 | Shutdown | On an orderly stop every runner writes a last checkpoint when the broker confirms within 30 s. `opentsx vectors` waits up to 60 s for this. |
 
 Implemented in: `vector/VectorProcessor.java:73-81,83-87,102-105,176-199,258-294,492-761`,
@@ -365,7 +365,7 @@ lists its id or the `op` it writes into the DAG. These workbench operators are c
 | `model.wind-shear` | `model.wind-shear` | the parameters of the node |
 | `model.power-curve` | `model.power-curve` | the parameters of the node |
 | `feature.lag` | `feature.lag` | the parameters of the node |
-| `feature.rolling` | `feature.rolling` | `{ window: PT<seconds>S, fn }` when the node feeds a series sink, otherwise the parameters of the node |
+| `feature.rolling` | `feature.rolling` | `{ window: PT<seconds>S, fn }` when the node feeds a series sink with a `signal`, otherwise the parameters of the node |
 | `stats.window` | `stats.welford-ddsketch` | `{ windows: [PT<seconds>S] }` |
 | `align.vector` | `align.vector` | see [2.1](#21-parameters) |
 | `segment.threshold` | `segment.threshold` | the parameters of the node |
