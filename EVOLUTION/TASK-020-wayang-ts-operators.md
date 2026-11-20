@@ -527,6 +527,7 @@ Criteria per milestone: A0 5, A1 7, A2 6, A3 6, A4 9, A5 2, B1 6, B2 3, B3 4, B4
 | D-T10 | S3 segment input | not needed; Go KafScale template; Rust segment decoder | not needed: both tracks read the Kafka protocol | as recommended, owner, 2026-11-16 |
 | D-T11 | Kafka transport security until KafScale is checked | TLS-terminating proxy; isolated network; wait for KafScale support | TLS-terminating proxy | as recommended, owner, 2026-11-16 |
 | D-T12 | Where `opentsx-wayang` lives | module in this repository; separate repository | module in this repository: it reuses five OpenTSx modules | as recommended, owner, 2026-11-16 |
+| D-T13 | FPGA kernels on raw sensor data (Tier 3) | kernels behind the Rust runner, data reduction only; a separate FPGA track reached from Wayang; not admitted, results enter as `MEASURED` edge metrics | behind the Rust runner, data reduction only: the runner keeps transport, framing, keyed state and checkpoints; see qualification below | open, proposed 2026-11-20 |
 
 D-T2 compares a fixed relative bound with per-data-set measurement in A4.5.
 The owner approved relative `3e-12` for bounded W3 `mean` and `m2` on
@@ -534,6 +535,84 @@ The owner approved relative `3e-12` for bounded W3 `mean` and `m2` on
 The measured maximum mean error is `1.7308017671758118e-14`; maximum M2 error
 is `2.7235050829345894e-12` over all 420 windows and six merge orders.
 No bound is established for arbitrary data or mixed runtimes.
+
+### D-T13: admit FPGA kernels as Tier 3
+
+Status: open, proposed 2026-11-20 for an owner decision. Evidence and design are in the study
+[`02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md`](../docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md).
+
+**Question.** May the catalog admit operator versions that execute as FPGA kernels on raw sensor data, below the
+Rust runner on an onboard computer?
+
+**Why it is asked.**
+
+- Concept 09 places FPGA work outside OpenTSx. Its row "Timed Loop, Real-Time, FPGA" reads "not a task of OpenTSx;
+  clock 1 min, supervisory" (`docs/datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md:130`). RMS, peaks and spectra per
+  run belong to the device, which publishes them as `MEASURED` edge metrics (`09:163-165`). Real-time and safety
+  stay at the device (`09:174`). D-T13 changes that boundary for data reduction only.
+- Raw rates exceed the downlink. An illustrative 1,000-channel, 1 kHz, 16-bit feed produces about 173 GB per day,
+  about 460 times what one S-band ground station downlinks. Per-minute window statistics of the same feed need 144
+  to 288 MB per day (study, section "Raw sensor rates exceed a day of S-band downlink by 460 times").
+- No tool compiles the Python operators to FPGA logic. A kernel is reimplemented from the operator specification
+  and checked against the shared vectors (study, section "No compiler turns the Python TSA package into FPGA logic").
+- Every runtime computes in IEEE 754 double precision. Admission compares against the shared vectors at `1e-12`
+  relative, `5e-13` absolute or exact equality (`docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md:105-123`). A
+  change to an operator's output for any input raises its version and the catalog version (`SPEC:56-57`).
+
+**Recommended decision.**
+
+1. Kernels run only behind the Rust runner of Track B. The runner keeps Kafka transport, Avro framing, keyed state,
+   checkpoints and publication. Kernels never read or write a topic (C3, C4).
+2. Kernels reduce data. They do not command actuators, close control loops or carry a safety function. `09:174`
+   stays true.
+3. The catalog marks FPGA support with an `fpga` key in the existing `runtimes` map of `opentsx.processor.v1`
+   (`docs/datamodel-2026/schemas/opentsx.processor.v1.schema.json:102-130`), using the existing `status`, `class`
+   and `note` fields (`:390-411`). There is no second registry. A `planned` entry does not establish a deployed
+   binding (`AGENTS.md:118-120`).
+4. Numerics follow a partial and finish split. A kernel emits exact integer partials of raw samples: sums, sums of
+   squares, counts, minima and maxima. The Rust runner finishes them in f64. Kernel and finish together pass the
+   parent operator's vectors at the parent's tolerance. Where they cannot, as for the Welford moments that the
+   contract compares exactly, the FPGA path is a new operator version with its own tolerance class, approved by the
+   owner as D-T2 approved the bound for federated moments.
+5. Raw ring frames get a port type `raw`, allowed only between a kernel and the runner and never on a topic
+   (port types: `SPEC:62-71`). The ring source is a new operator `ingest.raw-ring` with its own contract and
+   vectors.
+6. Kernel packages and bitstreams are signed with Ed25519 (D-T5) and verified by the runner before loading. AMD
+   UltraScale RSA bitstream authentication cannot be combined with partial reconfiguration
+   ([UG570](https://docs.amd.com/r/en-US/ug570-ultrascale-configuration/RSA-Authentication)), so the first kernel
+   pack ships as full bitstreams.
+7. The first kernel pack is `ingest.raw-ring`, `dq.checks` with thresholds in raw counts, `resample` partials and
+   moment partials (study, section "Each operator goes to the lowest tier that keeps its contract"). DFA, MFDFA,
+   RIS, event synchronization, decomposition and all model fitting stay on the ground.
+
+**Admission gate per kernel.** The rungs are those of the study's test ladder.
+
+| Rung | Evidence required |
+|---|---|
+| R1, host CI | `mvn -B -ntp verify` green; the finished output passes the parent operator's shared vectors |
+| R5, development board equivalent to the flight part | kernel output bit-exact with a bit-accurate integer model driven by the JSON vectors in cocotb; resources, power and reconfiguration time measured |
+| R6, fault injection without a beam | kernel, runner and ring recover from injected configuration upsets and watchdog reboots without losing an acknowledged record |
+| CPU fallback | the runner's CPU implementation of the same operator version produces identical output and runs when no matching bitstream is loaded |
+
+**Consequences if accepted.**
+
+- The delivery of the first kernel changes the concept 09 row at line 130 and translates concept 09 to English in
+  the same pull request.
+- Concept 20 adds Tier 3 to sections 1 and 15. The SPEC adds `runtimes.fpga`, the `raw` port and tolerance classes
+  to S1.
+- Each kernel is an operator addition under `AGENTS.md` section 14: manual, SPEC, learning metadata, student
+  exercise, implementation and executable regression cases in one coordinated delivery (`AGENTS.md:116-117`).
+
+**Options not recommended.**
+
+- A separate FPGA track reached from Wayang repeats the transport, checkpoint and publication logic that the Rust
+  runner already holds, and adds a third runtime to keep in parity. D-T1 chose one non-JVM runtime.
+- Not admitting keeps the boundary: FPGA results enter OpenTSx as `MEASURED` edge metrics with the computing device
+  as provenance (`09:163-165`). The reduction that decides what reaches the ground then has no catalog version, no
+  shared vectors and no parity check.
+
+**Not decided by D-T13.** The FPGA family and board; the HLS or HDL toolchain; partial reconfiguration; the onboard
+log that holds records between passes; the Wayang platforms that place work on Tier 2 and Tier 3.
 
 ## Non-goals
 - A Kafka Streams-like runtime: no RocksDB state stores, no changelog topics, no automatic repartition topics, no
