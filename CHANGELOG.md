@@ -607,9 +607,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 - `align.vector` refuses a `fill` other than `none` or `as-of` in the web workbench and the vector processor, as the
   Rust runner and Wayang already did. A typo such as `fill: asof` aligned without fill in the workbench preview, was
-  dropped from the DAG export and ran without fill on the processor. The workbench refuses it with
+  dropped from the DAG export and ran without fill on the processor. The workbench preview refuses it with
   `vector fill must be none or as-of`, the message of the Rust runner, and the processor with
-  `node <id>: vector fill must be none or as-of`. A missing `fill` stays `none`.
+  `node <id>: vector fill must be none or as-of`. The deploy checks of the workbench and of the Flow Composer list
+  `<label>: vector fill must be none or as-of.`, so such a stored flow still opens but is neither downloaded nor
+  deployed; the DAG export writes the fill as stored. A missing `fill` stays `none`.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

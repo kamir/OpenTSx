@@ -111,7 +111,8 @@ Read the [analysis guide](../docs/devguide/workbench-analysis.md) for the result
 - Ground truth: the scenario events of series loaded from the inventory are drawn as bands on the time axis
   (yellow: operation, red: sensor fault); the field "Ground truth" jumps to an event
 - Align to vector: several nodes on one clock, one measuring point per tick (`opentsx.vector.v1`, a draft;
-  `src/workbench/vector.ts`)
+  `src/workbench/vector.ts`). A stored flow whose `fill` is not `none` or `as-of` opens, but its preview fails with
+  `vector fill must be none or as-of` and the deploy checks list `<label>: vector fill must be none or as-of.`
 - Pair windows (tab "Multi-variate Analysis"): a pair method compares two series window by window, paired by their
   episode ranges, one result per window at its centre; "Pair coverage" shows what the methods will see,
   "Cross-correlation" gives the peak of the lagged cross-correlation, its lag and link strength (`src/workbench/xcorr.ts`,

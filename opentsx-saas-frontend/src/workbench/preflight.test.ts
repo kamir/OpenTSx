@@ -27,6 +27,7 @@ describe('deployment preflight for every published path', () => {
   it('checks a vector path beside a valid clean sink', () => blocked([source, clean, { ...vector, input: clean.id }], /source bucket directly/));
   it('rejects duplicate output topics', () => blocked([source, vector, { ...vector, id: 'v2' }], /same topic/));
   it('refuses statistics outside the deployed processor profile', () => blocked([source, vector, { ...pair, op: 'stats.window', label: 'Statistics', params: defaultParams(OP_BY_ID['stats.window']) }], /Statistics.*catalog parameters/));
+  it('refuses a vector fill other than none or as-of', () => blocked([source, { ...vector, params: { fill: 'asof' } }], /^Vector: vector fill must be none or as-of\.$/));
   it('rejects statistics with missing export parameters', () => {
     const input = doc([source, { ...pair, op: 'stats.window', label: 'Statistics' }]);
     const message = 'A deployed statistics window must be a positive number of seconds.';

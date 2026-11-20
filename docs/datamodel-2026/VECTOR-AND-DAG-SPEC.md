@@ -146,7 +146,7 @@ Implemented in: `workbench/vector.ts:125-238`, `vector/VectorAligner.java:99-213
 | `every` | ISO-8601 duration | none | Length of a tick. Required. MUST be greater than 0. |
 | `key` | string | `series` | `series`, `all` or a tag name. See [2.2](#22-clock-components-and-key). |
 | `agg` | enum | `MEAN` | `MEAN`, `LAST`, `FIRST`, `MIN`, `MAX`, `SUM` or `COUNT`. |
-| `fill` | enum | `none` | `as-of` fills a missing value with the last one. A missing or null `fill` is `none`. Any other value is refused in every runtime, see below. |
+| `fill` | enum | `none` | `as-of` fills a missing value with the last one. A missing `fill` is `none`. Any other string is refused, see below. |
 | `maxAge` | ISO-8601 duration | the value of `every` | How old a value may be that `fill: as-of` takes. |
 | `emit` | enum | `any` | `complete` writes only ticks in which every component has a value. Any other value means `any`. |
 | `names` | list of strings | `in1`, `in2` and so on | One component name per input, in the order of `in`. |
@@ -155,8 +155,10 @@ Implemented in: `workbench/vector.ts:125-238`, `vector/VectorAligner.java:99-213
 `every`, `maxAge` and `lateness` MUST be ISO-8601 durations such as `PT60S`. A number such as `60` is refused with
 `node <id>: every and maxAge must be durations like PT60S` or `node <id>: lateness must be a duration like PT2M`.
 
-A `fill` other than `none` or `as-of`, such as `asof`, is refused. The workbench preview, the workbench DAG export
-and the Rust runner refuse it with `vector fill must be none or as-of`. The processor refuses it with
+A `fill` other than `none` or `as-of`, such as `asof`, is refused. The workbench preview and the Rust runner refuse it
+with `vector fill must be none or as-of`. The deploy checks of the workbench and of the Flow Composer list
+`<label>: vector fill must be none or as-of.`, where `<label>` is the name of the node, so the workbench neither
+downloads nor deploys the flow. Its DAG export writes the fill as stored. The processor refuses it with
 `node <id>: vector fill must be none or as-of`. Wayang refuses it with
 `node <id>: parameter fill must be one of [none, as-of]`.
 
@@ -164,7 +166,7 @@ The workbench edits seconds and writes `PT<seconds>S`. It writes `maxAge` only w
 only when it is greater than 0.
 
 Implemented in: `vector/VectorJob.java:83-104,119-134`, `vector/VectorAligner.java:21,29-38,104`,
-`vector/VectorStream.java:110-111`, `workbench/flow.ts:505-509`, `workbench/vector.ts:320-325`,
+`vector/VectorStream.java:110-111`, `workbench/flow.ts:505-512,690-692`, `workbench/vector.ts:320-325`,
 `rust/tsx-runner/src/pairs.rs:182-185`, `opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java:235-244`.
 
 ### 2.2 Clock, components and key
