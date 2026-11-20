@@ -187,6 +187,9 @@ implemented yet.
 
 ## Run the Workbench
 
+Use the [demo entry page](docs/devguide/demos.md) to choose a local journey
+with its prerequisites, expected result and acceptance evidence.
+
 Start the standalone synthetic thermal demo with Node 24.22.2 and the locked
 frontend dependencies. It needs no account, Python service, Docker or broker:
 
