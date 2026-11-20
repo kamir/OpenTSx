@@ -525,7 +525,7 @@ retain source/runtime hashes and the exact executed JUnit methods:
 | # | Result |
 |---|---|
 | B4.1 | met for bounded W3 on the signal-cluster route: `FederatedStatsIntegrationTest.everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders` executes Java `s1`/`s2` and actual Rust CLI `s3`, 3,600 Episodes, 2,160,000 values, 1,260 partials, 420 final windows, 30 conformance checks and 2,520 canonical-merge byte comparisons. Exact counts/extrema/lastSeen pass; maximum relative mean error is `1.7308017671758118e-14`, M2 `2.7235050829345894e-12`, within unchanged `3e-12`. `MixedSketchQualificationTest` executes 58 cases and 348 mixed arrival-order comparisons, including 42 gamma-boundary, six zero-threshold and four collapsed-tail cases. |
-| B4.2 | open for one physical ARM64 board (D-T14). `wayang_board_evaluation.py` emits the unassigned 81-condition matrix of three chains (D-T15); its 26 deterministic tests validate evidence completeness and association only and refuse ARMv7 or AArch32 boards. `board_identity.py` and `board_resource_sampler.py` record the board and the one-second samples in the validator's formats (10 tests). `BoardWorkload` in `opentsx-wayang` drives one condition: paced feed, Track A or Track B, process id, first fetch and first output (`BoardWorkloadTest`, `BoardWorkloadIntegrationTest`). `BoardOutputProofTest` writes the output proof of one condition: the run equals, series by series, a prefix of the reference output of the same feed, field for field; the board validator accepts the proof file. A lag command is still missing. No physical RSS, CPU, startup or throughput result is claimed. |
+| B4.2 | open for one physical ARM64 board (D-T14). `wayang_board_evaluation.py` emits the unassigned 81-condition matrix of three chains (D-T15); its 26 deterministic tests validate evidence completeness and association only and refuse ARMv7 or AArch32 boards. `board_identity.py` and `board_resource_sampler.py` record the board and the one-second samples in the validator's formats (10 tests). `BoardWorkload` in `opentsx-wayang` drives one condition: paced feed, Track A or Track B, process id, first fetch and first output (`BoardWorkloadTest`, `BoardWorkloadIntegrationTest`). `BoardOutputProofTest` writes the output proof of one condition: the run equals, series by series, a prefix of the reference output of the same feed, field for field; the board validator accepts the proof file. `board_lag.py` prints the lag that `BoardWorkload --lag-file` writes twice per second, for the sampler's `--lag-command` (3 tests). No physical RSS, CPU, startup or throughput result is claimed. |
 
 Six arrival orders use one canonical site fold; they do not establish floating-point
 associativity. The Java-only test and shared sketch bytes remain exact. On this
@@ -602,7 +602,7 @@ CLI site. No bound is established for arbitrary data or other mixed workloads.
 ### D-T13: admit FPGA kernels as Tier 3
 
 Accepted by the owner on 2026-11-20 with all seven points as recommended. Evidence and design are in the study
-[`02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md`](../docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md).
+`02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md`.
 
 **Question.** May the catalog admit operator versions that execute as FPGA kernels on raw sensor data, below the
 Rust runner on an onboard computer?
@@ -610,8 +610,8 @@ Rust runner on an onboard computer?
 **Why it is asked.**
 
 - Concept 09 places FPGA work outside OpenTSx. Its row "Timed Loop, Real-Time, FPGA" reads "not a task of OpenTSx;
-  clock 1 min, supervisory" (`docs/datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md:130`). RMS, peaks and spectra per
-  run belong to the device, which publishes them as `MEASURED` edge metrics (`09:163-165`). Real-time and safety
+  clock 1 min, supervisory". RMS, peaks and spectra per
+  run belong to the device, which publishes them as `MEASURED` edge metrics. Real-time and safety
   stay at the device (`09:174`). D-T13 changes that boundary for data reduction only.
 - Raw rates exceed the downlink. An illustrative 1,000-channel, 1 kHz, 16-bit feed produces about 173 GB per day,
   about 460 times what one S-band ground station downlinks. Per-minute window statistics of the same feed need 144

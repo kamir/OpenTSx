@@ -6,6 +6,7 @@ import org.opentsx.model.OpenTsxAvro;
 import org.opentsx.model.XxHash64;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.wayang.DagToWayang;
+import org.opentsx.wayang.TsxCheckpoint;
 import org.opentsx.wayang.TsxCompileContext;
 import org.opentsx.wayang.TsxIncrement;
 import org.opentsx.wayang.TsxStatus;
@@ -25,7 +26,8 @@ public final class BoardTrackA {
     }
 
     public static long run(String bootstrap, TopicLayout layout, String chain, int series, long seed, Path catalog,
-                           Path checkpoint, Duration interval, Duration duration, BoardEvents events) throws Exception {
+                           Path checkpoint, Duration interval, Duration duration, Path lagFile, BoardEvents events)
+            throws Exception {
         String text = BoardChains.dag(chain, layout, new BoardFeed(series, seed).seriesIds());
         DagToWayang compiled = DagToWayang.compile(text, layout, catalog, TsxCompileContext.local());
         TsxIncrement.Plan plan = compiled.incrementPlan(bootstrap);
@@ -37,7 +39,11 @@ public final class BoardTrackA {
             return plan.build(source, state);
         };
         long deadline = System.nanoTime() + duration.toNanos();
+        String specHash = compiled.specHash();
         try (OutputWatch watch = new OutputWatch(bootstrap, BoardChains.output(chain, layout), events);
+             LagWatch lag = lagFile == null ? null : new LagWatch(bootstrap, layout.episodes(), lagFile,
+                     begin -> TsxCheckpoint.load(checkpoint, specHash)
+                             .map(c -> c.next().values().stream().mapToLong(Long::longValue).sum()).orElse(begin), events);
              TsxStatus status = new TsxStatus(bootstrap, layout.dagStatus())) {
             long records = TsxIncrement.loop(config, observed, status, interval, () -> System.nanoTime() >= deadline);
             events.emit("stopped", Map.of("records", records));

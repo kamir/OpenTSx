@@ -3,23 +3,21 @@
 This directory is the home of the OpenTSx components for in-orbit computation on LASCARIS for Space. Verified
 against commit `8fcf386`.
 
-It contains no code yet. The components, their order and their acceptance criteria are defined in
-[TASK-021](../EVOLUTION/TASK-021-orbit-testbed.md) (orbit testbed) and
-[TASK-022](../EVOLUTION/TASK-022-situation-center.md) (situation center, hub and registry).
+It contains no code yet. The components are planned for an orbit testbed and a situation center.
 
 ## Find what belongs here
 
 Space-specific components that have no home in an existing module are built here:
 
-| Component | Role | Defined in |
-|---|---|---|
-| Satellite simulator | orbit, attitude, power, thermal, sensors and camera into an onboard ring buffer | TASK-021, P2 and P4 |
-| Downlink agent | seals immutable chunks per topic, partition and offset range, sends them during passes, deletes after acknowledgment | TASK-021, P3 |
-| Ground ingester | replays chunks from S3 into KafScale and drops duplicates | TASK-021, P3 |
-| Link emulator and pass controller | shapes and cuts the space-ground link from computed passes | TASK-021, P3 |
-| Registry and presence | signed node descriptors, leases and revocations on append-only topics | TASK-022, L1 |
-| Situation service | folds registry, presence and status into component state for the situation center | TASK-022, L2 |
-| Compose projects | one for the onboard node, one per ground role | TASK-021, P0 and P1 |
+| Component | Role |
+|---|---|
+| Satellite simulator | orbit, attitude, power, thermal, sensors and camera into an onboard ring buffer |
+| Downlink agent | seals immutable chunks per topic, partition and offset range, sends them during passes, deletes after acknowledgment |
+| Ground ingester | replays chunks from S3 into KafScale and drops duplicates |
+| Link emulator and pass controller | shapes and cuts the space-ground link from computed passes |
+| Registry and presence | signed node descriptors, leases and revocations on append-only topics |
+| Situation service | folds registry, presence and status into component state for the situation center |
+| Compose projects | one for the onboard node, one per ground role |
 
 These stay in their modules and are extended there:
 
@@ -42,8 +40,3 @@ These stay in their modules and are extended there:
 
 Station coordinates, orbit records, keys, addresses and downloaded telemetry datasets go to `config/private/`, which
 is git-ignored. Nothing in this directory may contain them.
-
-## Read the background
-
-- [In-orbit operator study](../docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md)
-- [Earth and orbit data product architecture](../docs/research/03-EARTH-ORBIT-DATA-PRODUCT-ARCHITECTURE.md)

@@ -126,3 +126,12 @@ Hard rules. No exceptions. If a rule blocks you, stop and ask. Do not work aroun
   unknown operators, broken manual/SPEC/code/test references and stale generated content fail the change.
 - Coordinate OpenTSx and student-repository updates. Publish referenced source commits before dependent material;
   pin the material to the source content it verifies. No cross-runtime parity claim without executed parity cases.
+
+## 15. Public scope
+- This repository holds code, user and developer docs, normative specs, schemas, test vectors and measurement reports. Nothing else.
+- NEVER commit research studies, paper or venue planning, task plans, roadmaps, design drafts, decision logs, business material or raw measurement data. They stay with the owner, outside this repository.
+- A design becomes public as an English normative spec next to the code (`docs/datamodel-2026/*-SPEC.md`), in the same PR as the code that implements it.
+- `EVOLUTION/` holds only TASK-020 until its phase closes. Add no task files.
+- A measurement run commits its report and its record with the SHA-256 of every raw file, never the raw files.
+- NEVER link to or name the owner's private material.
+- `tools/test_public_scope.py` enforces this.

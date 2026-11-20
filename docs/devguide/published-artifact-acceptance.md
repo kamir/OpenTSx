@@ -1,18 +1,83 @@
 # Verify the packaged tools image
 
-Check image identity, startup and Windpark replay with Python 3.12 or newer
-and Docker; local execution was verified with Docker 29.3.0.
+Verify download, startup and Windpark replay for released OpenTSx Tools 3.1.0;
+local execution was checked with Docker 29.3.0.
 
-You need Python for the offline controls and Docker for image execution.
+You need Bash, curl, Python 3.12 or newer and a running native AMD64 or ARM64
+Docker daemon for the release-file path. The helper uses Python's standard
+library. Source edit checks need a checkout and Python.
 The published artifact is `ghcr.io/kamir/opentsx-tools`, an OCI image.
 The [Image workflow](../../.github/workflows/image.yml) builds large images in
-CI. It checks a native AMD64 candidate before tag publication. After
+CI. It checks a native AMD64 candidate before image publication. After
 publication, fresh native AMD64 and ARM64 jobs download the returned registry
 digest and run the same acceptance helper.
 
+## Download and accept the released image
+
+Run this Bash block from a directory outside the checkout. It creates a new
+`opentsx-tools-3.1.0` directory, downloads the checker and license files from the
+[stable release][release], verifies the checker checksum, and pulls the
+immutable image digest. The Docker daemon's architecture selects the platform.
+
+```bash
+set -euo pipefail
+
+mkdir opentsx-tools-3.1.0
+cd opentsx-tools-3.1.0
+tools_release='https://github.com/kamir/OpenTSx/releases/download/v3.1.0'
+for asset in check_tools_image.py LICENSE NOTICE SHA256SUMS; do
+  curl --disable --fail --location --silent --show-error \
+    --output "$asset" "$tools_release/$asset"
+done
+python3 - <<'PY'
+import hashlib
+from pathlib import Path
+
+expected = '970b4930b1fda713ac7c313ebb115bfdde63ae709b48f34bf776d8153d980333'
+actual = hashlib.sha256(Path('check_tools_image.py').read_bytes()).hexdigest()
+if actual != expected:
+    raise SystemExit('Checker SHA-256 does not match the 3.1.0 release.')
+print('Verified the 3.1.0 checker SHA-256.')
+PY
+tools_platform="linux/$(docker version --format '{{.Server.Arch}}')"
+tools_image='ghcr.io/kamir/opentsx-tools@sha256:'
+tools_image+='f87293656e730d6a3b15604d44d2f890e7d600d19787fe0e464ee62ea810888a'
+python3 check_tools_image.py --image "$tools_image" \
+  --platform "$tools_platform" --version 3.1.0 \
+  --revision cfd9ab64b7cadf10146edc5f99d3167452289224 \
+  --output acceptance
+python3 -m json.tool acceptance/verification.json
+```
+
+The helper starts two isolated containers, stores episodes in the first and
+reopens them in the second. It saves logs, image identity, numerical reports
+and `verification.json` under `opentsx-tools-3.1.0/acceptance`, then removes
+its containers and volume. Both demo containers run with networking disabled.
+This path needs no Maven, JDK or existing CP cluster.
+
+## Inspect the released acceptance evidence
+
+The [full source CI][source-ci] passed all 27 jobs on tagged revision
+`cfd9ab64b7cadf10146edc5f99d3167452289224`. The [Image run][image-ci] published
+version 3.1.0 and accepted that same digest on both native runner types:
+
+| Platform | Native runner | Retained receipt |
+| --- | --- | --- |
+| `linux/amd64` | `ubuntu-24.04` | [AMD64 verification][amd64-proof] |
+| `linux/arm64` | `ubuntu-24.04-arm` | [ARM64 verification][arm64-proof] |
+
+Both runs and anonymous local ARM64 execution produced identical report bytes:
+90 episodes, 900 values and 90 episode payload hashes. The [report][report]
+SHA-256 is
+`47f0f768c7046e4be2fc8574f935dfb85ce6b6205cc626dd292b7ade2b3872cd`.
+The release retains these receipts, CI identities and `SHA256SUMS` as download
+assets independently of CI artifact expiration. These checks cover native
+Linux runner and Docker execution.
+
 ## Run the offline edit checks
 
-These checks need no Docker daemon, network, Maven or scientific packages:
+Run from the repository root. These checks need no Docker daemon, network,
+Maven or scientific packages:
 
 ```bash
 python3 -m unittest discover -s deploy/docker -p 'test_*.py' -v
@@ -37,7 +102,7 @@ test dependencies. The build
 uses the verified CI Maven mirror, a workload-specific dependency cache and
 retains sanitized download diagnostics in `maven-downloads-opentsx-tools`.
 
-## Inspect the actual published release
+## Inspect the rejected legacy artifact
 
 The published `3.0.1` image identifies source revision
 `752786b422e9ef8175d208b74f26edc84100e15a`. It predates the Windpark demo and
@@ -127,3 +192,10 @@ errors also fail acceptance and suppress `verification.json`.
 
 `output already exists` preserves earlier evidence. Select a new output
 directory instead of mixing results from different image checks.
+
+[release]: https://github.com/kamir/OpenTSx/releases/tag/v3.1.0
+[source-ci]: https://github.com/kamir/OpenTSx/actions/runs/44793425324
+[image-ci]: https://github.com/kamir/OpenTSx/actions/runs/44801869628
+[amd64-proof]: https://github.com/kamir/OpenTSx/releases/download/v3.1.0/verification-linux-amd64.json
+[arm64-proof]: https://github.com/kamir/OpenTSx/releases/download/v3.1.0/verification-linux-arm64.json
+[report]: https://github.com/kamir/OpenTSx/releases/download/v3.1.0/windpark-report.json
