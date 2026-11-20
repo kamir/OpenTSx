@@ -1,9 +1,15 @@
-# opentsx-windpark — data-point catalog, normalizer and wind-farm simulator
+# opentsx-windpark: data-point catalog, normalizer and wind-farm simulator
 
 This module captures wind-farm time series, inventories them, normalizes them and stores them as v2 episodes
 ([`opentsx-model`](../opentsx-model)). It also generates reproducible simulated data with known ground truth for
 experiments, written to KafScale ([`opentsx-kafka-v2`](../opentsx-kafka-v2)) and/or Iceberg
 ([`opentsx-store-iceberg`](../opentsx-store-iceberg)).
+
+Run the [deterministic local demo](../docs/devguide/windpark-replay-demo.md)
+with `bin/opentsx windpark-demo run --output target/windpark-demo` after the
+documented Maven build. Replay uses the closed Iceberg store and verifies all
+episode payload hashes and recalculated underperformance results. The guide
+lists exact acceptance values and offline edit tests.
 
 ## 1. Versioned data-point catalog (IEC 61400-25-2)
 

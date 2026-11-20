@@ -48,6 +48,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Add a deterministic local windpark demo with healthy, fault and curtailed
+  turbines. Persist real Iceberg episodes through a SQLite catalog and verify
+  replay against full payload hashes and recalculated underperformance results.
+
 - Standalone analysis package through the existing launcher with
   `--profile finite`, its own Compose project, network and runtime volume.
   Locked artifacts serve the Workbench and finite numerical API without CP

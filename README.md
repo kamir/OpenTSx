@@ -175,6 +175,11 @@ python3 deploy/local-cp/workbench.py up --profile finite
 Repeated package builds reuse separate verified dependency, wheel and frontend
 artifact caches. The package test command still executes the complete suites.
 
+Run the [deterministic windpark demo](docs/devguide/windpark-replay-demo.md)
+to simulate three turbines, detect underperformance, persist real Iceberg
+episodes locally and verify their replay. Its focused regressions run offline
+after the first Maven build.
+
 You need Docker Compose and an existing Confluent Platform Docker cluster for
 the local CP profile. The profile uses pinned Linux ARM64 images, a React
 Workbench, the Python numerical service, MLflow and persistent lifecycle state.
