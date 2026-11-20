@@ -16,6 +16,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Align operator lessons with D-T14 and the 27-condition ARM64 board plan.
   Check the lesson's condition count against the executable planner; keep the
   physical ARM64 measurement open and ARMv7 outside hardware qualification.
+  Bind the verified library-learning version to the current release.
 - Accept idle Kafka frame-boundary resets and cancelled metadata requests in the
   validation observer. Retain response correlations until forwarding succeeds;
   keep interrupted frames and resets with data requests as errors.

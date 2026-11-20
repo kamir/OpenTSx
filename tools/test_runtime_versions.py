@@ -28,6 +28,12 @@ JAR_LAUNCHERS = (
 
 
 class RuntimeVersionTests(unittest.TestCase):
+    def test_library_learning_contract_names_the_current_release(self):
+        source = (ROOT / "docs/learning/library-operator-contracts.md").read_text(encoding="utf-8")
+        introduction = source.split("\n\n", 2)[1]
+        versions = re.findall(r"\bOpenTSx ([0-9]+\.[0-9]+\.[0-9]+)", introduction)
+        self.assertEqual([VERSION], versions)
+
     def test_built_jar_launchers_use_the_current_release(self):
         for name in JAR_LAUNCHERS:
             with self.subTest(source=name):

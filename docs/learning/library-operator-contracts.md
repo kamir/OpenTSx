@@ -1,7 +1,7 @@
 # Exercise the public library operator families
 
-Use these contracts with OpenTSx 3.0.1; the learning examples were checked with JDK 21.0.8, Maven 3.9.8
-and Python 3.12.9.
+Use these contracts with OpenTSx 3.1.0. The learning examples were checked with
+JDK 21.0.8, Maven 3.9.8 and Python 3.12.9.
 
 You need the built Java module for a Java example, or the local `python-package` with its declared dependencies
 for a Python example. The [lesson manifest](library-operators.v1.json) contains the inputs, tasks and evidence links.
