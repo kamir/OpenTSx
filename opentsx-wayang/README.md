@@ -91,8 +91,7 @@ The [isolated B2 catalog](../docs/devguide/integration/rust-runner-b2.md) admits
 the remaining Track B operators, bounded `pair.xcorr` and typed output through
 explicit local context. `TrackParityIntegrationTest` runs the complete W scenario
 through actual Java Wayang and Rust worker increments, including state restoration
-and completed retries. Signed B1 remains pass-through-only; physical ARMv7
-acceptance remains open.
+and completed retries. Signed B1 remains pass-through-only.
 Local Rust `convert.unit` uses the
 [embedded WASM profile](../docs/devguide/integration/rust-runner-b5.md) with
 fixed resource limits and no imports. It adds no Wayang operator or catalog
@@ -292,7 +291,7 @@ canonical-merge arrival orders. `MixedSketchQualificationTest` adds actual
 cross-runtime binary64 boundary, zero-bucket and collapsed-tail cases without
 changing shared vectors. Retained run evidence establishes acceptance; the
 harness alone does not. General mixed continuous fleets and production rollout
-remain separate. Physical ARM64 and ARMv7 B4.2 measurements are both open;
+remain separate. The physical ARM64 B4.2 measurement is open (D-T14: ARM64 only);
 [the board tool](../tools/wayang_board_evaluation.py) prepares and validates
 supplied evidence rather than executing measurements.
 
@@ -617,4 +616,4 @@ The generator is verified with JDK 21 and Python 3.12 on 2026-11-16.
 
 The [bounded mixed W3 report](../docs/datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md)
 retains actual per-window and per-partial data, source/runtime identities and
-executed test evidence. Physical ARM64 and ARMv7 board measurements remain open.
+executed test evidence. The physical ARM64 board measurement remains open.

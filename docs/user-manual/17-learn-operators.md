@@ -71,9 +71,10 @@ The Avro library lesson preserves its Java starter. Its Rust references
 separately trace Episode wire bytes, canonical series identity, xxHash64, time
 deltas and bucket checksums to the same repository vectors. The bucket-checksum
 helper is a library utility, not another runtime operator. Native x86_64 and
-ARM64 CI and supplementary ARMv7 QEMU execution are distinct evidence. Physical
-ARMv7 vector execution is still required by
-[TASK-020 B1.2](../../EVOLUTION/TASK-020-wayang-ts-operators.md#b1-rust-runner-foundation).
+ARM64 CI and supplementary ARMv7 QEMU execution are distinct evidence. Under
+D-T14 the native jobs satisfy
+[TASK-020 B1.2](../../EVOLUTION/TASK-020-wayang-ts-operators.md#b1-rust-runner-foundation);
+no ARMv7 hardware is required.
 
 ## Trace the embedded WASM conversion
 
@@ -97,8 +98,8 @@ WASM tests add these tasks:
 
 The browser exercise retains its workbench implementation. This Rust binding
 adds no operator ID or signed fleet admission. Native hosted tests and ARMv7
-QEMU remain separate from physical ARM64/ARMv7 B4.2 measurements and physical
-ARMv7 B1.2 acceptance, which remain open.
+QEMU remain separate from the physical ARM64 B4.2 measurement, which remains
+open.
 
 ## Trace qualified bounded Rust site operation
 
@@ -143,8 +144,7 @@ manual conformance, checks the acknowledged cursor, stops with SIGTERM and
 replays the retained outcome through signed file/stdin commands.
 The [`SSH helper regressions`](../../tools/test_rust_ssh_launch.py) provide
 operational evidence without changing numerical lessons. Local proof does not
-close production release enrollment, mixed continuous federation or physical
-ARMv7 hardware acceptance.
+close production release enrollment or mixed continuous federation.
 
 ## Trace bounded mixed federation without claiming hardware qualification
 
@@ -166,9 +166,9 @@ for these operational tasks:
    the zero bucket and explicitly excluded collapsed tails from the qualified
    alpha domain.
 4. Read the [board plan and validator](../../tools/wayang_board_evaluation.py).
-   Distinguish its 54 planned conditions and synthetic regression fixtures from
-   actual physical measurements. Both ARM64 and ARMv7 B4.2 measurements remain
-   open, as does physical ARMv7 B1.2 acceptance. A generated plan or passing
+   Distinguish its 27 planned conditions and synthetic regression fixtures from
+   actual physical measurements. The ARM64 B4.2 measurement remains open
+   (D-T14: ARM64 only). A generated plan or passing
    integrity validator does not supply device performance numbers.
 
 The learning metadata adds traceability to these cases. It does not change

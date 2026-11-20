@@ -427,8 +427,8 @@ Output acknowledgements precede progress. An interrupted publication can repeat
 identical records; completed retries return the saved receipt without broker I/O.
 The [operating guide](../devguide/integration/rust-runner-b2.md) documents the
 profile. Shared Rust vectors and `TrackParityIntegrationTest` provide its
-numerical and actual Java/Rust transport proof. Physical ARMv7 acceptance remains
-open under TASK-020 B1.2.
+numerical and actual Java/Rust transport proof. TASK-020 D-T14 requires no
+ARMv7 hardware.
 
 ### S1.14 Execute qualified bounded Rust sites
 
@@ -487,7 +487,7 @@ S5.3 durable outcomes precede acknowledgements and cursors advance afterward.
 Retained acknowledgement recovery does not require a new activation, fresh
 conformance or another execution. New activation retains all qualification and
 conformance gates. Private Rust checkpoints are not interchangeable with JVM
-state. Physical ARMv7 hardware acceptance remains open under B1.2.
+state. Under D-T14 ARMv7 is built and tested under QEMU only.
 The [B3 operating guide](../devguide/integration/rust-runner-b3.md) records the
 configuration, entry points and executable evidence.
 
@@ -1180,7 +1180,7 @@ conversion fallback.
 
 This local binding adds no operator ID or plan field. Signed B1 remains
 decode-only; bounded signed B3 remains decode-to-statistics only. It does not
-establish production artifact enrollment or physical ARM64/ARMv7 acceptance.
+establish production artifact enrollment or the physical ARM64 B4.2 measurement.
 The [B5 guide](../devguide/integration/rust-runner-b5.md) records the runtime
 entry point and executable checks.
 

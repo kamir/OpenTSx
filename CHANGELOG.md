@@ -13,15 +13,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Accept idle Kafka frame-boundary resets and cancelled metadata requests in the
+  validation observer. Retain response correlations until forwarding succeeds;
+  keep interrupted frames and resets with data requests as errors.
+- Resolve Central dependencies and plugins in CI through a Google Cloud-hosted
+  mirror. Verify endpoint selection and permanent errors offline, including a
+  Central 404 response with a long Retry-After value.
 - Align the Maven reactor, runtime producer identities and built-JAR launchers.
   Reject unstable or mismatched internal versions in source and staged
   JARs before publication. Use the existing CI Maven mirror, scoped dependency
   cache and retained download diagnostics in the image build.
 - Pin the classpath plugin and stage compile/runtime dependencies without
   provided or test JARs in the Tools image.
-- Resolve Central dependencies and plugins in CI through a Google Cloud-hosted
-  mirror. Verify endpoint selection and permanent errors offline, including a
-  Central 404 response with a long Retry-After value.
 - Retain Maven execution exception details, selected transport and sanitized
   cache reports before and after every Maven CI job. Check missing-plugin
   failure diagnostics offline and distinguish fresh HTTP failures from cached
@@ -70,6 +73,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- TASK-020 D-T14 (owner, 2026-11-20): B1.2 and B4.2 need no ARMv7 hardware. The native x86_64 and ARM64 CI
+  jobs meet B1.2; the ARMv7 artifact stays built and QEMU-tested but is not hardware-qualified. B4.2 is measured
+  on one physical ARM64 board, so `wayang_board_evaluation.py` plans 27 conditions and refuses ARMv7 and AArch32
+  boards. New `tools/board_identity.py` and `tools/board_resource_sampler.py` record the board and the one-second
+  RSS, CPU and lag samples in the validator's formats (Python 3.6, for JetPack 4.6), and the
+  [Jetson runbook](docs/devguide/integration/wayang-board-jetson.md) prepares a Jetson Nano 4 GB for B4.2.
 - Artifact-embedded WASM `convert.unit` in the local Rust cleaning pipeline,
   with Wasmtime 50.0.1/Pulley, fixed fuel, memory and stack bounds, no host
   imports and no native conversion fallback. Resource-limit and shared-vector

@@ -6,8 +6,8 @@ pass-through assignment.
 You need an existing Apache Kafka or KafScale Proxy endpoint, preprovisioned
 input, output and status topics, a driver-signed plan, the pinned driver's
 public key, local policy and a dedicated checkpoint path. Keep this profile on
-an isolated test network. Physical ARMv7 qualification and production fleet
-operation are separate acceptance work.
+an isolated test network. Production fleet operation is separate acceptance
+work; D-T14 requires no ARMv7 hardware.
 
 ## Prepare trusted inputs
 
@@ -132,8 +132,8 @@ statistics, outbound plan polling and signed job-bound conformance. Its local
 qualification and runtime/track pins do not widen this B1 pass-through grant.
 
 CI defines native functional tests on hosted x86_64 and ARM64. The ARMv7 job
-runs under QEMU and is explicitly supplemental. It does not satisfy the physical
-ARMv7 criterion in [TASK-020
+runs under QEMU and is explicitly supplemental. Under D-T14 the native jobs
+satisfy [TASK-020
 B1.2](../../../EVOLUTION/TASK-020-wayang-ts-operators.md#b1-rust-runner-foundation).
 
 The [runner-plan implementation](../../../rust/tsx-runner/src/run_plan.rs)
