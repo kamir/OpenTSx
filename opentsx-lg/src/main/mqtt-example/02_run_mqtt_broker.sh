@@ -7,7 +7,7 @@ docker run --name mqtt --restart=always -tid \
  -v "$WP/volume1/docker/mqtt/config:/mqtt/config:ro" \
  -v "$WP/volume1/docker/mqtt/log:/mqtt/log" \
  -v "$WP/volume1/docker/mqtt/data/:/mqtt/data/" \
- toke/mosquitto
+ toke/mosquitto@sha256:3c18df61133085cec34050ed3d2f851bbe8d883483fb9167a05c616950b5e94b
 
 mqtt test -h 127.0.0.1
 

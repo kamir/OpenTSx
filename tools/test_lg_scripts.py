@@ -1,10 +1,12 @@
-"""The opentsx-lg scripts take ids and passwords from the caller, and the module README names scripts that exist.
+"""The opentsx-lg scripts take ids and passwords from the caller, start with a shebang, guard every cd, are checked
+by CI, the scripts and Dockerfiles pin every image and connector, and the module README names scripts that exist.
 
 Run from the repository root: python -m pytest -q tools
 """
 import os
 import pathlib
 import re
+import shlex
 import subprocess
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -14,6 +16,85 @@ GRAFANA = LG / "src" / "main" / "mqtt-example" / "influxdb-grafana" / "__run_con
 CLOUD_IDS = {"CCLOUDENV": "env-" + "0test1", "CLUSTER": "lkc-" + "0test1", "SERVICE_ACCOUNT": "sa-" + "0test1"}
 CLOUD_KINDS = {"CCLOUDENV": "environment", "CLUSTER": "cluster", "SERVICE_ACCOUNT": "service account"}
 GRAFANA_CONTAINER = "docker-influxdb-grafana"
+CI = ROOT / ".github" / "workflows" / "ci.yml"
+CD = re.compile(r"(?:^|[;&|({]|\b(?:then|do|else)\s)\s*cd(?=\s|$)")
+CD_GUARD = re.compile(r"[^;&|]*\|\|\s*(?:exit|return)\b")
+INSTALL = re.compile(r"\b(?:docker\s+(?:run|create|pull)|confluent-hub\s+install)\s(.*)$")
+VALUE_OPTIONS = {"-p", "--publish", "-v", "--volume", "-e", "--env", "--env-file", "--name", "--network", "--restart",
+                 "-w", "--workdir", "-u", "--user", "-h", "--hostname", "--entrypoint", "--mount", "-l", "--label",
+                 "--platform", "--component-dir", "--worker-configs"}
+PINNED = re.compile(r"(?::[\w.-]*\d+\.\d+\.\d+[\w.-]*|@sha256:[0-9a-f]{64})$")
+
+
+def tracked(pattern: str) -> list[str]:
+    listing = subprocess.run(["git", "-C", str(ROOT), "ls-files", "-z", pattern], capture_output=True, check=True)
+    return [p for p in listing.stdout.decode("utf-8").split("\0") if p]
+
+
+def script_problems(root: pathlib.Path, name: str) -> list[str]:
+    text = (root / name).read_text(encoding="utf-8")
+    problems = [] if text.startswith("#!") else [f"{name}: no shebang; start the script with #!/usr/bin/env bash"]
+    for number, line in enumerate(text.splitlines(), 1):
+        line = re.sub(r"(?:^|\s)#.*$", "", line)
+        for cd in CD.finditer(line):
+            rest = line[cd.end():]
+            if not CD_GUARD.match(rest):
+                target = re.split(r"[;&|]", rest, maxsplit=1)[0].strip().rstrip(")").strip() or "<dir>"
+                problems.append(f"{name}:{number}: cd without a guard; write cd {target} || exit 1")
+    return problems
+
+
+def logical_lines(text: str):
+    start, parts = 0, []
+    for number, line in enumerate(text.splitlines(), 1):
+        start = start or number
+        parts.append(line.removesuffix("\\"))
+        if not line.endswith("\\"):
+            yield start, " ".join(parts)
+            start, parts = 0, []
+    if parts:
+        yield start, " ".join(parts)
+
+
+def first_operand(words: list[str]) -> str:
+    rest = iter(words)
+    for word in rest:
+        if not word.startswith("-"):
+            return word
+        if word in VALUE_OPTIONS:
+            next(rest, None)
+    return ""
+
+
+def image_problems(root: pathlib.Path, name: str) -> list[str]:
+    text = (root / name).read_text(encoding="utf-8")
+    dockerfile = pathlib.PurePosixPath(name).name.startswith("Dockerfile")
+    problems = []
+    for number, line in logical_lines(text):
+        line = line.strip()
+        if line.startswith("#"):
+            continue
+        if dockerfile:
+            instruction, _, rest = line.partition(" ")
+            run_line = instruction.upper() == "RUN"
+            references = [first_operand(rest.split())] if instruction.upper() == "FROM" else []
+            if run_line and "apt-get update" in rest and "apt-get install" not in rest:
+                problems.append(f"{name}:{number}: apt-get update: no apt-get install in the same RUN; "
+                                "run update and install in one RUN")
+            if run_line and "--force-yes" in rest:
+                problems.append(f"{name}:{number}: apt-get install: --force-yes is deprecated; "
+                                "write apt-get install -y --no-install-recommends")
+            if run_line and "apt-get install" in rest and "/var/lib/apt/lists" not in rest:
+                problems.append(f"{name}:{number}: apt-get install: the package lists stay in the image; "
+                                "end the RUN with rm -rf /var/lib/apt/lists/*")
+        else:
+            install = INSTALL.search(line)
+            references = [first_operand(shlex.split(install.group(1), comments=True))] if install else []
+        for reference in references:
+            if not PINNED.search(reference):
+                problems.append(f"{name}:{number}: {reference}: no exact version; "
+                                "pin a version such as 1.2.3 or a sha256 digest")
+    return problems
 
 
 def run(script: pathlib.Path, tmp_path: pathlib.Path, tools: tuple[str, ...], fail: str = "", **variables: str):
@@ -107,3 +188,96 @@ def test_the_readme_names_only_scripts_that_exist():
     dangling = sorted(n for n in names if not any(s == n or s.endswith("/" + n) for s in scripts))
     assert names
     assert not dangling, dangling
+
+
+def ci_script_lists() -> dict[str, list[str]]:
+    text = CI.read_text(encoding="utf-8")
+    syntax = re.search(r'^\s*for f in (.+?); do bash -n "\$f"; done$', text, re.M)
+    lint = re.search(r"^\s*shellcheck -x -P SCRIPTDIR (.+)$", text, re.M)
+    assert syntax and lint
+    return {"bash -n": syntax.group(1).split(), "shellcheck": lint.group(1).split()}
+
+
+def expand(pattern: str, files: list[str]) -> list[str]:
+    parts = len(pathlib.PurePosixPath(pattern).parts)
+    return [f for f in files
+            if len(pathlib.PurePosixPath(f).parts) == parts and pathlib.PurePosixPath(f).match(pattern)]
+
+
+def test_a_script_without_a_shebang_or_with_a_plain_cd_fails_the_check(tmp_path):
+    (tmp_path / "opentsx-lg").mkdir()
+    (tmp_path / "opentsx-lg" / "run.sh").write_text("set -e\ncd ..\n(cd lib && ls)\ncd bin || exit 1\n",
+                                                    encoding="utf-8")
+    assert script_problems(tmp_path, "opentsx-lg/run.sh") == [
+        "opentsx-lg/run.sh: no shebang; start the script with #!/usr/bin/env bash",
+        "opentsx-lg/run.sh:2: cd without a guard; write cd .. || exit 1",
+        "opentsx-lg/run.sh:3: cd without a guard; write cd lib || exit 1",
+    ]
+
+
+def test_a_script_with_a_shebang_and_guarded_cds_passes_the_check(tmp_path):
+    (tmp_path / "run.sh").write_text('#!/usr/bin/env bash\ncd .. || exit 1\ncd "$(dirname "$0")" || return\n'
+                                     "# cd old\nif true; then cd x || exit 1; fi\nabcd ..\n", encoding="utf-8")
+    assert script_problems(tmp_path, "run.sh") == []
+
+
+def test_every_lg_script_starts_with_a_shebang_and_guards_each_cd():
+    scripts = tracked("opentsx-lg/*.sh")
+    assert scripts
+    assert [p for s in scripts for p in script_problems(ROOT, s)] == []
+
+
+def test_ci_runs_bash_n_and_shellcheck_on_every_lg_script():
+    files = tracked(".")
+    scripts = tracked("opentsx-lg/*.sh")
+    for command, words in ci_script_lists().items():
+        matched = {word: expand(word, files) for word in words}
+        assert [w for w, m in matched.items() if not m] == [], command
+        covered = {f for m in matched.values() for f in m}
+        assert [s for s in scripts if s not in covered] == [], command
+
+
+def test_an_image_or_connector_without_an_exact_version_fails_the_check(tmp_path):
+    digest = "@sha256:" + "0" * 64
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        'docker run -d --name grafana -p 3003:3003 -v "$WP/a:/a" philhawthorne/docker-influxdb-grafana:latest\n'
+        "docker run --name mqtt --restart=always -tid \\\n -p 1883:1883 \\\n toke/mosquitto\n"
+        "confluent-hub install confluentinc/kafka-connect-mqtt:latest\n"
+        "# docker run unpinned/in-a-comment\n"
+        f"docker run --rm -e A=1 toke/mosquitto{digest} mosquitto -v\n"
+        "confluent-hub install --no-prompt --component-dir /plugins confluentinc/kafka-connect-influxdb:1.2.3\n"
+        "docker pull eclipse-temurin:21.0.8_9-jre-noble\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:2: philhawthorne/docker-influxdb-grafana:latest: {rest}",
+        f"run.sh:3: toke/mosquitto: {rest}",
+        f"run.sh:6: confluentinc/kafka-connect-mqtt:latest: {rest}",
+    ]
+
+
+def test_a_dockerfile_with_an_unpinned_base_or_apt_get_update_in_its_own_run_fails_the_check(tmp_path):
+    (tmp_path / "Dockerfile").write_text(
+        "FROM eclipse-temurin:21\nRUN apt-get update\nRUN apt-get install --force-yes -y xvfb \\\n  x11-apps\n",
+        encoding="utf-8")
+    assert image_problems(tmp_path, "Dockerfile") == [
+        "Dockerfile:1: eclipse-temurin:21: no exact version; pin a version such as 1.2.3 or a sha256 digest",
+        "Dockerfile:2: apt-get update: no apt-get install in the same RUN; run update and install in one RUN",
+        "Dockerfile:3: apt-get install: --force-yes is deprecated; write apt-get install -y --no-install-recommends",
+        "Dockerfile:3: apt-get install: the package lists stay in the image; "
+        "end the RUN with rm -rf /var/lib/apt/lists/*",
+    ]
+
+
+def test_a_dockerfile_that_installs_in_one_run_passes_the_check(tmp_path):
+    (tmp_path / "Dockerfile").write_text(
+        "FROM eclipse-temurin:21.0.8_9-jre-noble\n"
+        "RUN apt-get update \\\n && apt-get install -y --no-install-recommends xvfb \\\n"
+        " && rm -rf /var/lib/apt/lists/*\n", encoding="utf-8")
+    assert image_problems(tmp_path, "Dockerfile") == []
+
+
+def test_every_lg_script_and_dockerfile_pins_its_images_and_connectors():
+    files = tracked("opentsx-lg/*.sh") + tracked("opentsx-lg/*Dockerfile")
+    assert any(f.endswith("Dockerfile") for f in files)
+    assert [p for f in files for p in image_problems(ROOT, f)] == []

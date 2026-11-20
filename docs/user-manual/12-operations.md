@@ -120,7 +120,7 @@ The workflow `CI` (`.github/workflows/ci.yml`) runs on every pull request and on
 | "Python 3.10" to "Python 3.13" | `python -m pytest -q` in `python-package/`; on 3.12 also the link check `tools/check_links.py` |
 | "SaaS frontend" | `npx tsc --noEmit`, `npm run lint`, `npx vitest run`, `npm run build` |
 | "SaaS backend" | `python -m pytest -q tests` |
-| "k3s scripts and manifests" | `bash -n` and `shellcheck` of `deploy/k3s/*.sh`, `deploy/k3s/test/*.sh`, `deploy/docker/*.sh` and the scripts of `bin/`, `opentsx-saas-backend/` and `tools/` that [CONTRIBUTING.md](../../CONTRIBUTING.md) lists; the shell tests in `deploy/k3s/test/`; the kustomize overlays rendered and checked with `kubeconform`; the plan of `deploy/k3s/60-probe.sh --dry-run` |
+| "k3s scripts and manifests" | `bash -n` and `shellcheck` of `deploy/k3s/*.sh`, `deploy/k3s/test/*.sh`, `deploy/docker/*.sh` and the scripts of `bin/`, `opentsx-saas-backend/`, `tools/` and `opentsx-lg/` that [CONTRIBUTING.md](../../CONTRIBUTING.md) lists; the shell tests in `deploy/k3s/test/`; the kustomize overlays rendered and checked with `kubeconform`; the plan of `deploy/k3s/60-probe.sh --dry-run` |
 | "KafScale conformance" | a KafScale broker v1.6.0 built from source; against it the tests of `opentsx-kafscale-conformance`, `opentsx-kafka-v2`, `opentsx-legacy-bridge`, `opentsx-windpark`, `opentsx-stats`, `opentsx-twin-live` and `opentsx-retrieval`; the three streaming acceptance cases of `KafkaStreamingIntegrationTest` must run and pass; the PFD acceptance through Kafka and Flink (`-Ppfd-acceptance`) |
 | "Java -> Iceberg -> Python" | Java writes Iceberg and PyIceberg must read identical bytes; the Python client queries the Java retrieval server |
 

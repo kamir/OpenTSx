@@ -27,10 +27,10 @@ def write(root: pathlib.Path, files: dict[str, str]) -> list[str]:
 
 
 def test_a_cloud_host_in_a_profile_fails(tmp_path, capsys):
-    paths = write(tmp_path, {"opentsx-lg/config/ccloud.props": f"bootstrap.servers={CLOUD_HOST}:9092\n"})
+    paths = write(tmp_path, {"opentsx-lg/config/cluster.props": f"bootstrap.servers={CLOUD_HOST}:9092\n"})
     assert guard.main(tmp_path, paths) == 1
     out = capsys.readouterr().out
-    assert f'opentsx-lg/config/ccloud.props:1: bootstrap.servers: "{CLOUD_HOST}"' in out
+    assert f'opentsx-lg/config/cluster.props:1: bootstrap.servers: "{CLOUD_HOST}"' in out
 
 
 def test_a_private_address_in_an_env_file_fails(tmp_path, capsys):
@@ -69,6 +69,28 @@ def test_ide_state_and_private_configuration_fail_even_when_not_on_disk(tmp_path
     for path in paths:
         assert f"{path}: " in out
     assert "checked 3 tracked files, 3 findings" in out
+
+
+def test_a_tracked_client_profile_or_mqtt_password_file_fails_even_when_not_on_disk(tmp_path):
+    profile = "opentsx-lg/src/main/docker-compose/config/ccloud.props"
+    password = "opentsx-lg/src/main/mqtt-example/volume1/docker/mqtt/config/passwd"
+    assert guard.check(tmp_path, [profile, password]) == [
+        f"{profile}: a Kafka client profile with credentials is tracked; untrack it, ccloud.props is git-ignored",
+        f"{password}: the MQTT password file is tracked; untrack it, 01_bootstrap.sh creates it",
+    ]
+
+
+def test_a_tracked_client_profile_or_mqtt_password_file_on_disk_fails_once(tmp_path):
+    paths = write(tmp_path, {"opentsx-lg/config/ccloud.props": f"bootstrap.servers={CLOUD_HOST}:9092\n",
+                             "opentsx-lg/src/main/mqtt-example/volume1/docker/mqtt/config/passwd": "demo1:hash\n",
+                             "opentsx-lg/src/main/mqtt-example/volume1/docker/mqtt/config/mosquitto.conf":
+                                 "password_file /mqtt/config/passwd\n"})
+    assert guard.check(tmp_path, paths) == [
+        "opentsx-lg/config/ccloud.props: a Kafka client profile with credentials is tracked; untrack it, "
+        "ccloud.props is git-ignored",
+        "opentsx-lg/src/main/mqtt-example/volume1/docker/mqtt/config/passwd: the MQTT password file is tracked; "
+        "untrack it, 01_bootstrap.sh creates it",
+    ]
 
 
 def test_a_real_host_in_any_tracked_text_file_fails(tmp_path, capsys):

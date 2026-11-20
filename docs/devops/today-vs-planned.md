@@ -69,10 +69,12 @@ wins), no timestamp seek (episode index).
 The job `k3s scripts and manifests` (`deploy` in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)) runs on
 every pull request and on every push to `master`. It runs:
 
-* `bash -n` and `shellcheck -x -P SCRIPTDIR` on the scripts of `deploy/k3s/`, `deploy/k3s/test/` and `deploy/docker/`.
-* the shell tests in `deploy/k3s/test/` for `00-prereqs.sh`, `20-configure.sh`, `40-demo.sh`, `60-probe.sh`,
-  `70-backup.sh` and `90-teardown.sh`, with stand-ins for `kubectl` and the other tools they call instead of a
-  cluster.
+* `bash -n` and `shellcheck -x -P SCRIPTDIR` on the scripts of `deploy/k3s/`, `deploy/k3s/test/`, `deploy/docker/` and
+  `opentsx-lg/`, and on the `bin/`, `opentsx-saas-backend/` and `tools/` scripts that
+  [CONTRIBUTING.md](../../CONTRIBUTING.md#continuous-integration) lists.
+* the shell tests in `deploy/k3s/test/` for `00-prereqs.sh`, `10-build.sh`, `11-import-images.sh`, `20-configure.sh`,
+  `30-deploy.sh`, `40-demo.sh`, `50-status.sh`, `60-probe.sh`, `70-backup.sh`, `71-restore.sh` and `90-teardown.sh`,
+  with stand-ins for `kubectl` and the other tools they call instead of a cluster.
 * `kubectl kustomize` of the overlay and the Jobs for four `20-configure.sh` configurations and of the history archive,
   then `kubeconform -strict` against the Kubernetes 1.31 schemas on everything rendered.
 * a load of every rendered `opentsx/tools` container through `OpenTsxConf` (environment, arguments and

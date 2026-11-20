@@ -870,6 +870,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   letter or digit, such as wind`, `buildah: not found; install it or choose another method with --method` and `kind
   cluster <name>: not found; list the clusters with kind get clusters`.
 - `opentsx-core`: `FFTPhaseRandomizer.nrOfSValues` is deprecated and has no effect.
+- CI runs `bash -n` and `shellcheck -x -P SCRIPTDIR` on the `opentsx-lg` shell scripts as well.
+  `tools/test_lg_scripts.py` fails on an `opentsx-lg` shell script whose first line is not a shebang and on a `cd` in
+  it that is not followed by `|| exit` or `|| return`, and fails when the CI lists miss a tracked `opentsx-lg` shell
+  script.
 
 ### Removed
 
@@ -2084,6 +2088,15 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `opentsx-core`: `EntropieTest` prints nothing from its library methods. The DFA status is a DEBUG line, and `main`
   prints the result line that `calcTEandMI` returns. `main` no longer ends with an empty line and `mr and m2`; it logs
   `compared surrogates experiment=<label> series=<n>` at DEBUG instead.
+- The opentsx-lg MQTT example pins the connectors and images that three of its scripts install and start:
+  `01_bootstrap.sh` installs `confluentinc/kafka-connect-mqtt:1.7.11` and
+  `confluentinc/kafka-connect-influxdb:1.2.13`, and `02_run_mqtt_broker.sh` and
+  `influxdb-grafana/__run_container_01.sh` start `toke/mosquitto` and `philhawthorne/docker-influxdb-grafana` by the
+  digest that `latest` names, in place of `latest` or no tag. `tools/test_lg_scripts.py` fails on an image or
+  connector without an exact version in the opentsx-lg scripts and Dockerfiles.
+- `opentsx-lg/src/main/docker/core-tool-image/Dockerfile` runs `apt-get update` and `apt-get install -y
+  --no-install-recommends` in one `RUN` and removes the package lists, in place of two layers and the deprecated
+  `--force-yes`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
@@ -2177,6 +2190,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `tools/check_tracked_config.py` fails on a Confluent Cloud resource id in a tracked text file (`lkc-`, `pkc-`,
   `psrc-`, `lsrc-`, `env-` or `sa-` and 5 or more lower-case letters or digits with at least one digit) with
   `<path>:<line>: <id>: looks like a Confluent Cloud resource id; write a placeholder such as lkc-xxxxx`.
+- `tools/check_tracked_config.py` fails on a tracked file named `ccloud.props` and on the tracked MQTT password file
+  `opentsx-lg/src/main/mqtt-example/volume1/docker/mqtt/config/passwd`, also when one was added with `git add -f`.
 
 ## [3.0.1] - 2026-10-16
 

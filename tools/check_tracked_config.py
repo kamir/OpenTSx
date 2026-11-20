@@ -7,6 +7,8 @@ Exits 1 and prints one line per finding.
 Checks the files `git ls-files` lists under root:
   * nothing under config/private/, nothing under .idea/ and nothing under the measurement output directories
     (opentsx-lg/src/main/docker-compose/output/, opentsx-lg/opentsx/plots/);
+  * no file named ccloud.props, a Kafka client profile with credentials, and not the MQTT password file
+    opentsx-lg/src/main/mqtt-example/volume1/docker/mqtt/config/passwd that 01_bootstrap.sh creates;
   * in *.props, *.properties and .env files (.env, .env.<name>, .env-<name>): the hosts in the values of keys that
     end in servers, url, host, hostname, address or addresses (bootstrap.servers, schema.registry.url) and every
     value that is an IPv4 address are localhost, a loopback address or a placeholder (<name>, ${NAME}, $NAME, or a
@@ -33,6 +35,8 @@ REAL_HOST = re.compile(r"\b(?:(?:pkc|psrc|lkc|lsrc)-(?!x+\b)[a-z0-9]+(?:\.[a-z0-
 RESOURCE_ID = re.compile(r"(?<![A-Za-z0-9_-])(?:lkc|pkc|psrc|lsrc|env|sa)-(?=[a-z0-9]*[0-9])[a-z0-9]{5,}"
                          r"(?![A-Za-z0-9_])")
 OUTPUT_DIRS = ("opentsx-lg/src/main/docker-compose/output/", "opentsx-lg/opentsx/plots/")
+CLIENT_PROFILE = "ccloud.props"
+MQTT_PASSWORD_FILE = "opentsx-lg/src/main/mqtt-example/volume1/docker/mqtt/config/passwd"
 HOME_PATH = re.compile(r"/(?:Users|home)/([A-Za-z0-9._-]+)(?![A-Za-z0-9._-])")
 SERVICE_HOMES = {"Shared", "jovyan", "ubuntu", "ec2-user", "user"}
 
@@ -101,6 +105,13 @@ def check(root: pathlib.Path, paths: list[str]) -> list[str]:
             continue
         if any(parts[i:i + 2] == ("config", "private") for i in range(len(parts) - 1)):
             findings.append(f"{path}: private configuration is tracked; untrack it, config/private/ is git-ignored")
+            continue
+        if parts[-1] == CLIENT_PROFILE:
+            findings.append(f"{path}: a Kafka client profile with credentials is tracked; untrack it, "
+                            f"{CLIENT_PROFILE} is git-ignored")
+            continue
+        if path == MQTT_PASSWORD_FILE:
+            findings.append(f"{path}: the MQTT password file is tracked; untrack it, 01_bootstrap.sh creates it")
             continue
         output_dir = next((d for d in OUTPUT_DIRS if path.startswith(d)), None)
         if output_dir:

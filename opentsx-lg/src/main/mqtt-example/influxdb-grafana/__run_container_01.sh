@@ -33,7 +33,7 @@ docker run -d \
   -p 8086:8086 \
   -v "$WP/influxdb:/var/lib/influxdb" \
   -v "$WP/grafana:/var/lib/grafana" \
-  philhawthorne/docker-influxdb-grafana:latest
+  philhawthorne/docker-influxdb-grafana@sha256:fe36a6b2b9fc8779c5ffc4b25cd0db5d24ebbb62ce4ac18148a4bc8c2fef0771
 
 
 docker container ls

@@ -7,7 +7,7 @@ The image holds:
 
 * the base image `eclipse-temurin:21.0.8_9-jre-noble`, Ubuntu 24.04 with a Java 21 runtime;
 * the packages `apt-utils`, `xvfb`, `x11vnc`, `x11-xkb-utils`, `xfonts-100dpi`, `xfonts-75dpi`, `xfonts-scalable`,
-  `xfonts-cyrillic` and `x11-apps`;
+  `xfonts-cyrillic` and `x11-apps`, without their recommended packages and without the apt package lists;
 * the directory `opentsx-lg/` of the build context at `/opentsx-lg/`.
 
 The command is `java -jar /opentsx-lg/opentsx-lg-3.0.1.jar`. The image starts no X server.

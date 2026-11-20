@@ -15,6 +15,6 @@ mqtt pub -t test -m "Hello2" --mqttVersion 3
 #
 # On Kafka cluster
 #
-confluent-hub install confluentinc/kafka-connect-mqtt:latest
+confluent-hub install confluentinc/kafka-connect-mqtt:1.7.11
 
-confluent-hub install confluentinc/kafka-connect-influxdb:latest
+confluent-hub install confluentinc/kafka-connect-influxdb:1.2.13
