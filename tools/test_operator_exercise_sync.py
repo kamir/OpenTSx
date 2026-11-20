@@ -116,6 +116,23 @@ class OperatorExerciseSyncTest(unittest.TestCase):
                 self.assertNotIn('"code":', document)
                 self.run_tool(check=True)
 
+    def test_conversion_formulas_are_copyable_from_the_generated_lesson(self):
+        source = TOOL.parent.parent
+        result = subprocess.run([sys.executable, str(TOOL), "--opentsx-root", str(source),
+                                 "--student-root", str(self.student)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        metadata = json.loads((source / "docs/learning/ui-operators.v1.json").read_text(encoding="utf-8"))
+        lesson = next(lesson for lesson in metadata["lessons"] if lesson["id"] == "ui.convert.unit")
+        document = (self.student / "docs/operators/ui.convert.unit.md").read_text(encoding="utf-8")
+        inline_code = re.findall(r"`([^`\n]+)`", document)
+        parameters = lesson["starter"]["params"]
+        values = lesson["starter"]["bucket"]["series"][0]["y"]
+        self.assertTrue(values)
+        for value in values:
+            expression = f"{value}*{parameters['factor']}+{parameters['offset']}"
+            with self.subTest(expression=expression):
+                self.assertTrue(expression in inline_code, f"Missing literal conversion expression: {expression}")
+
     def test_library_starter_rejects_unsupported_language_or_missing_code(self):
         for starter in ({"language": "shell", "code": "echo example", "data": {}},
                         {"language": "python", "code": "", "data": {}},
