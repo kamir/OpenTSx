@@ -2289,7 +2289,7 @@
         "Load the synthetic bucket and set every starter parameter explicitly."
       ],
       "tasks": [
-        "Calculate 0*1.8+32 and 100*1.8+32.",
+        "Calculate `0*1.8+32` and `100*1.8+32`.",
         "Run the conversion and inspect the degF series unit.",
         "Explain why relabeling a series without the numeric conversion would be wrong.",
         "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output.",
@@ -2342,7 +2342,7 @@
         "Worker capability discovery keeps the four legacy operators in operators; catalogExecution.operators lists B2 operations and does not extend Java UI admission.",
         "The embedded Rust WASM module is a separate execution path from this browser workload. Its ABI uses separate binary64 multiplication and addition.",
         "Plans cannot supply WASM code, module paths, URLs or resource-limit overrides. The module has no host imports and a trap has no native conversion fallback.",
-        "WASM availability does not extend signed B1 pass-through or signed B3 statistics admission. Physical ARM64 and ARMv7 B4.2 measurements and physical ARMv7 B1.2 acceptance remain open."
+        "WASM availability does not extend signed B1 pass-through or signed B3 statistics admission. The physical ARM64 B4.2 measurement remains open. D-T14 requires native x86_64 and ARM64 CI for B1.2; ARMv7 is not hardware-qualified."
       ],
       "parameterKeys": [
         "factor",
@@ -2422,7 +2422,8 @@
           "rust/tsx-runner/tests/clean_catalog.rs",
           "rust/tsx-runner/tests/worker_service.rs#capability_discovery_preserves_legacy_admission_and_reports_b2_separately",
           "rust/tsx-runner/src/wasm.rs#wasm_limits",
-          "rust/tsx-runner/tests/wasm_operator.rs"
+          "rust/tsx-runner/tests/wasm_operator.rs",
+          "tools/test_operator_exercise_sync.py#test_conversion_formulas_are_copyable_from_the_generated_lesson"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"

@@ -510,7 +510,7 @@ series inventory. ARMv7 runs under QEMU only, as a supplementary check (D-T14).
   [Jetson runbook](../docs/devguide/integration/wayang-board-jetson.md) prepares a
   Jetson Nano 4 GB for the 81 conditions (D-T15).
   The measurement remains open. The preparation tool
-  defines 27 unassigned conditions and validates supplied evidence integrity;
+  defines 81 unassigned conditions and validates supplied evidence integrity;
   it does not execute measurements or establish hardware acceptance.
 
 | # | Criterion | Proof | Data | Pass |
@@ -525,7 +525,7 @@ retain source/runtime hashes and the exact executed JUnit methods:
 | # | Result |
 |---|---|
 | B4.1 | met for bounded W3 on the signal-cluster route: `FederatedStatsIntegrationTest.everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders` executes Java `s1`/`s2` and actual Rust CLI `s3`, 3,600 Episodes, 2,160,000 values, 1,260 partials, 420 final windows, 30 conformance checks and 2,520 canonical-merge byte comparisons. Exact counts/extrema/lastSeen pass; maximum relative mean error is `1.7308017671758118e-14`, M2 `2.7235050829345894e-12`, within unchanged `3e-12`. `MixedSketchQualificationTest` executes 58 cases and 348 mixed arrival-order comparisons, including 42 gamma-boundary, six zero-threshold and four collapsed-tail cases. |
-| B4.2 | open for one physical ARM64 board (D-T14). `wayang_board_evaluation.py` emits the unassigned 81-condition matrix of three chains (D-T15); its 26 deterministic tests validate evidence completeness and association only and refuse ARMv7 or AArch32 boards. `board_identity.py` and `board_resource_sampler.py` record the board and the one-second samples in the validator's formats (10 tests). No physical RSS, CPU, startup or throughput result is claimed. |
+| B4.2 | open for one physical ARM64 board (D-T14). `wayang_board_evaluation.py` emits the unassigned 81-condition matrix of three chains (D-T15); its 26 deterministic tests validate evidence completeness and association only and refuse ARMv7 or AArch32 boards. `board_identity.py` and `board_resource_sampler.py` record the board and the one-second samples in the validator's formats (10 tests). `BoardWorkload` in `opentsx-wayang` drives one condition: paced feed, Track A or Track B, process id, first fetch and first output (`BoardWorkloadTest`, `BoardWorkloadIntegrationTest`). The output proof and a lag command are still missing. No physical RSS, CPU, startup or throughput result is claimed. |
 
 Six arrival orders use one canonical site fold; they do not establish floating-point
 associativity. The Java-only test and shared sketch bytes remain exact. On this
@@ -562,7 +562,7 @@ Status on 2026-11-20, Rust 1.99.1 and JDK 21:
   conversion cases, all 16 checkpointed input partitions and 49 refused
   code/limit-field placements. The 14 `wasm_limits` tests also pass.
 
-All 346 runner tests and three shared-contract tests pass without failures,
+All 351 runner tests and three shared-contract tests pass without failures,
 ignored or filtered cases. The artifact qualification parser requires every
 one of the 19 B5 test names in native and supplementary ARMv7 QEMU logs.
 The physical ARM64 B4.2 measurement remains open; D-T14 requires no ARMv7

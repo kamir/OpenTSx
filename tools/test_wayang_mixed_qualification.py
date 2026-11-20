@@ -220,6 +220,18 @@ class MixedQualificationTest(unittest.TestCase):
         self.assertIn("ARMv7 hardware is not required (TASK-020 D-T14)", (destination / "REPORT.md").read_text())
         self.assertFalse(json.loads((destination / "metadata.json").read_text())["physicalLinuxBoardAcceptance"])
 
+    def test_provenance_marks_armv7_not_required_without_claiming_physical_acceptance(self):
+        versions = ['openjdk version "21.0.9"', "rustc 1.99.1", "cargo 1.99.1",
+                    "go version go1.25.2 darwin/arm64", "synthetic ARM64 hardware"]
+        with patch.object(QUALIFICATION.FEDERATION.LATENCY, "run", side_effect=versions), \
+                patch.object(QUALIFICATION.platform, "system", return_value="Darwin"), \
+                patch.object(QUALIFICATION.platform, "machine", return_value="arm64"), \
+                patch.object(QUALIFICATION.platform, "platform", return_value="synthetic macOS host"), \
+                patch.dict(QUALIFICATION.os.environ, {}, clear=True):
+            metadata = QUALIFICATION.provenance(self.root, self.sketch)
+        self.assertEqual("not-required", metadata["armv7HardwareAcceptance"])
+        self.assertFalse(metadata["physicalLinuxBoardAcceptance"])
+
     def test_collect_rejects_dirty_source_before_creating_output(self):
         destination = self.root / "collection"
         with patch.object(QUALIFICATION, "source_snapshot", side_effect=RuntimeError("dirty source")), self.assertRaisesRegex(RuntimeError, "dirty source"):

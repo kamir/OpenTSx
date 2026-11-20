@@ -1,7 +1,7 @@
 # Exercise the public library operator families
 
-Use these contracts with OpenTSx 3.1.0; the learning examples were checked with JDK 21.0.8, Maven 3.9.8
-and Python 3.12.9.
+Use these contracts with OpenTSx 3.1.0. The learning examples were checked with
+JDK 21.0.8, Maven 3.9.8 and Python 3.12.9.
 
 You need the built Java module for a Java example, or the local `python-package` with its declared dependencies
 for a Python example. The [lesson manifest](library-operators.v1.json) contains the inputs, tasks and evidence links.
@@ -72,7 +72,11 @@ The separate exact-bit sketch harness records boundary, zero-bucket and
 collapsed-tail domains. Its execution evidence retains the existing moments
 criterion; the harness alone does not establish a new numerical bound.
 The physical ARM64 B4.2 measurement remains open (D-T14). The board tool
-prepares and validates supplied evidence without running device measurements.
+prepares 81 unassigned conditions across pass-through, clean and statistics
+chains (D-T15) and validates supplied evidence without running device
+measurements. The
+[synchronization regression](../../tools/test_operator_exercise_sync.py)
+compares the statistics lesson's condition count with the executable plan.
 
 The [local publication contract](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment)
 adds explicit same-DAG resume and changed-DAG replay into a fresh output after old authority is revoked.
