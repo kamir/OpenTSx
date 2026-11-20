@@ -985,8 +985,9 @@ unreachable.
    counts (`TopicLayout.java:134-140`).
 2. Status stays `opentsx.dag-status.v1` on `tsx.<domain>.dag-status.v1` with its fields (`schema`, `dag`, `state`,
    `specHash`, `records`, `watermark`, `waitingFor`, `skippedBlocks`, `error`, `at`; `VectorProcessor.java:298`,
-   `:620`). This specification adds the optional fields `site`, `job`, `planVersion`, `track` (`A` or `B`) and
-   `artifact` (version and digest). Readers MUST ignore fields they do not know.
+   `:765`). This specification adds the fields `site`, `job`, `planVersion`, `track` (`A` or `B`) and `artifact`
+   (version and digest). Every Track A and B record MUST carry `job`; the processor does not write it. Readers MUST
+   NOT take a record with `job` for a processor sink report or refusal, and MUST ignore fields they do not know.
 3. A runtime MUST write a status record on every state change and at least every 30 s, as the processor does today.
 
 ### S5.5 Refusal codes

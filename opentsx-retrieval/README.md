@@ -112,7 +112,7 @@ POST /v1/patterns/search   {"pattern":[…] | "episodeId","offset","length", "me
 POST /v1/episodes/similar  {"episodeId", …}
 POST /v1/segments          {"strategy","params":{…}, "metric","tags","from","to"}
 GET  /v1/inventory         every series of the store with its metadata
-GET  /v1/dags              the DAGs of the domain: what was deployed or stopped, what the processor reports
+GET  /v1/dags              the DAGs of the domain: what was deployed or stopped, what the processor and jobs report
 POST /v1/dags/deploy       opentsx.dag.v1 (YAML): hands the DAG to the vector processor
 POST /v1/dags/stop?name=   stops the DAG of that name
 ```
@@ -150,6 +150,8 @@ Vector topics are written by the vector processor (below). The server is its fro
 
 * `GET /v1/dags` lists the DAGs of the domain: what was asked for (deployed or stopped, by whom, when) and what
   the processor reports per sink (state, records, how far the data goes, what it waits for). It needs no token.
+  Under `jobs` it lists what Track A and B jobs report to `tsx.<domain>.dag-status.v1`: the latest record per key
+  of every status record that carries `job`, as written, also when no control record has that name.
 * `POST /v1/dags/deploy` (body: the DAG as YAML) checks that the processor can run the DAG and appends it to the
   control topic. `POST /v1/dags/stop?name=<dag>` appends the stop. Both exist only with `--dag-runs true`.
 * The processor runs `align.vector` on the series of the source topic only (`in: [decode]`); any other operator

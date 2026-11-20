@@ -483,6 +483,15 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- Concept 20 section 6.1 and the TASK-020 B1 notes list the signed `tsx-runner`
+  modes that exist. With the B3 site configuration, `agent`, `conform` and `run`
+  handle signed bounded statistics. With the B1 configuration, `run` executes
+  isolated signed continuous pass-through.
+- `GET /v1/dags` lists the status records of Track A and B jobs under `jobs`, the latest per key, also when no
+  control record has that name. A record that carries `job` is a job record. It is not shown as a refusal of the
+  processor and does not replace a refusal under the same key. Specification S5.4 requires `job` in every Track A
+  and B record.
+
 - Retrieval POST routes `/v1/patterns/search`, `/v1/episodes/similar` and `/v1/segments` require a single JSON object
   and report invalid bodies as HTTP 400. Response exchanges close after success or failure while preserving the
   primary exception and any suppressed close failure.
