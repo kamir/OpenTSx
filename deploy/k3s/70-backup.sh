@@ -45,7 +45,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 load_env
-kc get namespace "$OPENTSX_NS" >/dev/null 2>&1 || die "namespace $OPENTSX_NS: not found; nothing to back up"
+require_namespace "check OPENTSX_NS in deploy/k3s/.env and the kubectl context, or deploy it first with 30-deploy.sh"
 OUT="${OUT:-$PWD/opentsx-backup-$(date -u +%Y%m%dT%H%M%SZ)}"
 [[ ! -e "$OUT" || -z "$(ls -A "$OUT" 2>/dev/null)" ]] \
   || die "$OUT: exists and is not empty; give a new or empty directory with --out"
@@ -78,7 +78,7 @@ helper_pod "$HELPER" ro "${PVCS[@]}"
 
 info "configuration"
 if [[ -f "$ENV_FILE" ]]; then cp "$ENV_FILE" "$OUT/env"; ok "env (contains secrets; keep $OUT private)"
-else warn "$ENV_FILE not found; configuration not backed up"; fi
+else warn "$ENV_FILE: not found; the backup holds no configuration, run 70-backup.sh in the checkout that configured the installation"; fi
 kns get configmap opentsx-config -o yaml > "$OUT/opentsx-config.yaml" \
   || die "ConfigMap opentsx-config: cannot read it in namespace $OPENTSX_NS; see the error above, then run 70-backup.sh again"
 ok "opentsx-config.yaml"

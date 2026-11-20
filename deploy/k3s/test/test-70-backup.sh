@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Tests deploy/k3s/70-backup.sh and stop_writers of deploy/k3s/lib.sh: a writer whose pods outlive the wait stops the
 # quiesce with exit 1 (and no MANIFEST says quiesced=true), a failed read of a Deployment is not taken as "not
-# deployed", a missing namespace, a backup directory that is not empty, no PVC, a ConfigMap that cannot be read, a
-# failed copy of a PVC and a helper pod that does not get ready stop the backup with exit 1, and usage errors exit 2. A
-# stand-in kubectl plays the cluster; needs no kubectl, no cluster, no network.
+# deployed", a missing namespace, a namespace that cannot be read, a backup directory that is not empty, no PVC, a
+# ConfigMap that cannot be read, a failed copy of a PVC and a helper pod that does not get ready stop the backup with
+# exit 1, and usage errors exit 2. A stand-in kubectl plays the cluster; needs no kubectl, no cluster, no network.
 #
 #   bash deploy/k3s/test/test-70-backup.sh
 set -euo pipefail
@@ -16,7 +16,7 @@ failed() { echo "FAIL $1"; failures=$((failures + 1)); }
 mkdir -p "$WORK/bin"
 # kubectl: opentsx-stats runs with 1 replica and the PVC opentsx-stats-state exists; nothing else is deployed.
 # CLUSTER=down refuses every call as an unreachable API server does; NAMESPACE=missing answers that the namespace does
-# not exist. PODS=stay: the pods of opentsx-stats outlive the wait; PODS=none: the wait finds no pod (kubectl reports
+# not exist, with --ignore-not-found as kubectl does: no output and exit 0. PODS=stay: the pods of opentsx-stats outlive the wait; PODS=none: the wait finds no pod (kubectl reports
 # "no matching resources found"); PODS=evicted: an evicted pod (phase Failed) is left, which the ReplicaSet does not
 # delete and a field selector on the phase leaves out. EXEC=fails: the copy in the helper pod fails; CONFIGMAP=fails: the
 # ConfigMap cannot be read; READY=never: the helper pod does not get ready.
@@ -29,7 +29,11 @@ fi
 [[ "$1" == -n ]] && shift 2
 case "$*" in
   "get namespace "*)
-    [[ "${NAMESPACE:-}" != missing ]] || { echo "Error from server (NotFound): namespaces \"$3\" not found" >&2; exit 1; } ;;
+    if [[ "${NAMESPACE:-}" == missing ]]; then
+      [[ "$*" == *--ignore-not-found* ]] && exit 0
+      echo "Error from server (NotFound): namespaces \"$3\" not found" >&2; exit 1
+    fi
+    echo "namespace/$3" ;;
   "get pvc opentsx-stats-state") [[ "${STATS_PVC:-}" != missing ]] || { echo "Error from server (NotFound): persistentvolumeclaims \"$3\" not found" >&2; exit 1; } ;;
   "get pvc "*) echo "Error from server (NotFound): persistentvolumeclaims \"$3\" not found" >&2; exit 1 ;;
   "get deployment opentsx-stats "*) echo 1 ;;
@@ -139,8 +143,18 @@ else
   echo "ok   backup-quiesce"
 fi
 
+backup backup-no-env -- --out "$WORK/backup-no-env"
+message="  warn  $WORK/none.env: not found; the backup holds no configuration, run 70-backup.sh in the checkout that configured the installation"
+if (( rc != 0 )) || ! grep -qxF -- "$message" "$WORK/backup-no-env.out"; then
+  failed "backup-no-env: exit $rc, expected 0 and the message: $message"; sed 's/^/    /' "$WORK/backup-no-env.out"
+elif [[ -e "$WORK/backup-no-env/env" ]]; then
+  failed "backup-no-env: an env file was written"
+else
+  echo "ok   backup-no-env"
+fi
+
 backup backup-no-namespace NAMESPACE=missing -- --out "$WORK/backup-no-namespace"
-message="error: namespace opentsx: not found; nothing to back up"
+message="error: namespace opentsx: not found; check OPENTSX_NS in deploy/k3s/.env and the kubectl context, or deploy it first with 30-deploy.sh"
 if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/backup-no-namespace.out"; then
   failed "backup-no-namespace: exit $rc, expected 1 and the message: $message"
   sed 's/^/    /' "$WORK/backup-no-namespace.out"
@@ -148,6 +162,19 @@ elif [[ -e "$WORK/backup-no-namespace" ]]; then
   failed "backup-no-namespace: the backup directory was created"
 else
   echo "ok   backup-no-namespace"
+fi
+
+backup backup-cluster-down CLUSTER=down -- --out "$WORK/backup-cluster-down"
+message="error: namespace opentsx: cannot read it; check the cluster with $WORK/bin/kubectl get namespace opentsx"
+if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/backup-cluster-down.out"; then
+  failed "backup-cluster-down: exit $rc, expected 1 and the message: $message"
+  sed 's/^/    /' "$WORK/backup-cluster-down.out"
+elif ! grep -qxF "The connection to the server 10.0.0.1:6443 was refused" "$WORK/backup-cluster-down.out"; then
+  failed "backup-cluster-down: the error of kubectl is not shown"; sed 's/^/    /' "$WORK/backup-cluster-down.out"
+elif [[ -e "$WORK/backup-cluster-down" ]]; then
+  failed "backup-cluster-down: the backup directory was created"
+else
+  echo "ok   backup-cluster-down"
 fi
 
 # stopped NAME MESSAGE [KEY=VALUE ...] -- ARG ...: exit 1 with MESSAGE and no MANIFEST in the backup directory

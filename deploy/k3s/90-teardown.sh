@@ -37,7 +37,7 @@ require_overlay
 if ! $YES; then
   what="namespace $OPENTSX_NS with all data"; $KEEP && what="workloads in $OPENTSX_NS (data kept)"
   read -r -p "Delete $what? [y/N] " a
-  [[ "$a" =~ ^[yY] ]] || { echo "aborted"; exit 1; }
+  [[ "$a" =~ ^[yY] ]] || die "90-teardown.sh: aborted at the question; nothing was changed"
 fi
 
 if kc get namespace "$OPENTSX_NS" >/dev/null 2>&1; then

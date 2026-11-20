@@ -868,7 +868,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   create throws `topics: closed; create a new KafkaTopics to create a topic`, also one for a topic it created before.
 - The k3s scripts 70-backup.sh, 20-configure.sh and 11-import-images.sh report a missing namespace, an OPENTSX_DOMAIN
   that is not allowed, a missing tool of the import method and a kind cluster that does not exist in the form
-  '<subject>: <problem>; <what to do>', for example `namespace opentsx: not found; nothing to back up`,
+  '<subject>: <problem>; <what to do>', for example `namespace opentsx: not found; check OPENTSX_NS in
+  deploy/k3s/.env and the kubectl context, or deploy it first with 30-deploy.sh`,
   `OPENTSX_DOMAIN: "Wind" is not allowed; expected lower-case letters, digits, hyphens or underscores, starting with a
   letter or digit, such as wind`, `buildah: not found; install it or choose another method with --method` and `kind
   cluster <name>: not found; list the clusters with kind get clusters`.
@@ -901,6 +902,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The opentsx-twin-live README says that `twin-live publish` creates each topic before the first record of its run and
   exits with code 1 when that create fails, and that a caller of `KafkaTopics.append` that appends again after a
   failed create tries the create again on a new Admin client.
+- `deploy/k3s/71-restore.sh` and `90-teardown.sh` write a declined question on standard error as `error:
+  71-restore.sh: aborted at the question; nothing was changed` (or `90-teardown.sh`) instead of `aborted` on standard
+  output. The exit code stays 1.
+- The warnings of `deploy/k3s/10-build.sh` about `LAKE=true` without `--with-s3` and of `deploy/k3s/70-backup.sh`
+  about a missing `.env` use the form '<subject>: <problem>; <what to do>': `--with-s3: not given with LAKE=true;
+  windpark-sim and the retrieval server cannot open an s3:// warehouse without S3FileIO, run 10-build.sh --with-s3`
+  and `<env file>: not found; the backup holds no configuration, run 70-backup.sh in the checkout that configured the
+  installation`.
 
 ### Removed
 
@@ -2196,6 +2205,15 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - opentsx-lg: `src/main/k8s/krake-app/echo-demo.yaml` pulls `registry.k8s.io/echoserver:1.10` instead of the frozen
   `k8s.gcr.io`, and has no `env` entry without a name, which the Kubernetes API server rejected. `DockerImageTest`
   fails on a manifest under `src/main/k8s` with a `- name:` entry that has no value.
+- `deploy/k3s/11-import-images.sh` checks the nerdctl command (`NERDCTL`, default `nerdctl`) and `ssh` before it saves
+  an image. A missing tool exits with 1 and `nerdctl: not found; install it, set NERDCTL or choose another method with
+  --method` or `ssh: not found; install an ssh client or choose another method with --method`. Before, bash reported
+  `command not found`, the other side of the pipe ran anyway and the script exited with 127.
+- `deploy/k3s/50-status.sh`, `70-backup.sh` and `71-restore.sh` no longer report a cluster they cannot reach as a
+  missing namespace. They show the error of kubectl and exit with 1 and `namespace opentsx: cannot read it; check the
+  cluster with kubectl get namespace opentsx`. A namespace that does not exist still gives `namespace opentsx: not
+  found; <what to do>`. For `70-backup.sh` that is `check OPENTSX_NS in deploy/k3s/.env and the kubectl context, or
+  deploy it first with 30-deploy.sh`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

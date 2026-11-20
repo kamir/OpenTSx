@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Tests the arguments of deploy/k3s/10-build.sh: an unknown option, an option without its value, a builder that is not
 # one, and an argument exit 2 before Maven or an image builder runs, --help lists the exit codes, a --tag that differs
-# from OPENTSX_TAG prints a warning, and a missing java, mvn or image builder exits 1 with its message. Stand-ins for
+# from OPENTSX_TAG and LAKE=true without --with-s3 print a warning, and a missing java, mvn or image builder exits 1
+# with its message. Stand-ins for
 # mvn, java, the builders and deploy/docker/stage.sh record any call; needs no JDK, no builder, no network.
 #
 #   bash deploy/k3s/test/test-10-build.sh
@@ -68,6 +69,16 @@ if (( rc != 0 )) || ! grep -qxF -- "$message" "$WORK/tag-differs.out"; then
   failed "tag-differs: exit $rc, expected 0 and the message: $message"; sed 's/^/    /' "$WORK/tag-differs.out"
 else
   echo "ok   tag-differs"
+fi
+
+rc=0
+env -i PATH="$WORK/bin:$PATH" HOME="$WORK" WORK="$WORK" OPENTSX_ENV_FILE="$WORK/none.env" LAKE=true \
+  bash "$WORK/repo/deploy/k3s/10-build.sh" --skip-maven --no-images > "$WORK/lake-without-s3.out" 2>&1 || rc=$?
+message='  warn  --with-s3: not given with LAKE=true; windpark-sim and the retrieval server cannot open an s3:// warehouse without S3FileIO, run 10-build.sh --with-s3'
+if (( rc != 0 )) || ! grep -qxF -- "$message" "$WORK/lake-without-s3.out"; then
+  failed "lake-without-s3: exit $rc, expected 0 and the message: $message"; sed 's/^/    /' "$WORK/lake-without-s3.out"
+else
+  echo "ok   lake-without-s3"
 fi
 
 # missing NAME MESSAGE TOOL ...: a PATH with bash, dirname, basename and the stand-ins TOOL ... only; exit 1 with

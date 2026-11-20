@@ -94,6 +94,15 @@ tcp_check() {
   timeout "$t" bash -c "exec 3<>/dev/tcp/$host/$port" 2>/dev/null
 }
 
+# require_namespace HINT: dies when the namespace OPENTSX_NS does not exist, with HINT as what to do, or cannot be read;
+# kubectl's error stays on stderr, so an unreachable cluster is not reported as a missing namespace.
+require_namespace() {
+  local found
+  found="$(kc get namespace "$OPENTSX_NS" --ignore-not-found -o name)" \
+    || die "namespace $OPENTSX_NS: cannot read it; check the cluster with ${KUBECTL} get namespace $OPENTSX_NS"
+  [[ -n "$found" ]] || die "namespace $OPENTSX_NS: not found; $1"
+}
+
 require_overlay() {
   [[ -f "$OVERLAY/kustomization.yaml" ]] || die "no rendered overlay in ${OVERLAY#"$ROOT"/}; run deploy/k3s/20-configure.sh first"
 }

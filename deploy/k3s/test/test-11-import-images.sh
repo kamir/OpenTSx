@@ -2,10 +2,11 @@
 # Tests the arguments of deploy/k3s/11-import-images.sh: an unknown option, an option without its value, an argument,
 # a method that is not one (from --method or IMAGE_METHOD) and the methods ssh and kind without their target exit 2
 # before an image is saved or imported, --help lists the exit codes, the method registry with a repository without a
-# registry host exits 1 before an image is pushed, the tool of a method that is not installed, a kind cluster that
-# does not exist, a failing kind get clusters and the methods ssh and registry without docker or podman exit 1 before
-# an image is saved, images that k3s' containerd does not list after the import exit 1, and the method none imports
-# nothing. Stand-ins for docker, podman, k3s, ssh and kind record any call; needs no image, no cluster, no network.
+# registry host exits 1 before an image is pushed, the tool of a method that is not installed (also nerdctl and ssh
+# when the other tools are there), a kind cluster that does not exist, a failing kind get clusters and the methods ssh
+# and registry without docker or podman exit 1 before an image is saved, images that k3s' containerd does not list
+# after the import exit 1, and the method none imports nothing. Stand-ins for docker, podman, k3s, ssh and kind record
+# any call; needs no image, no cluster, no network.
 #
 #   bash deploy/k3s/test/test-11-import-images.sh
 set -euo pipefail
@@ -80,18 +81,46 @@ fi
 # a PATH with bash and dirname only: the tool of the method is not installed
 mkdir -p "$WORK/bare"
 for tool in bash dirname; do ln -s "$(command -v "$tool")" "$WORK/bare/$tool"; done
-for method in docker podman buildah; do
+for method in docker podman nerdctl buildah; do
   rc=0
   rm -f "$WORK/calls.log"
   env -i PATH="$WORK/bare" HOME="$WORK" WORK="$WORK" OPENTSX_ENV_FILE="$WORK/none.env" \
     "$WORK/bare/bash" "$K3S_DIR/11-import-images.sh" --method "$method" > "$WORK/$method-missing.out" 2>&1 || rc=$?
   message="error: $method: not found; install it or choose another method with --method"
+  [[ "$method" != nerdctl ]] \
+    || message="error: nerdctl: not found; install it, set NERDCTL or choose another method with --method"
   if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/$method-missing.out"; then
     failed "$method-missing: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/$method-missing.out"
   elif [[ -s "$WORK/calls.log" ]]; then
     failed "$method-missing: a tool was called: $(cat "$WORK/calls.log")"
   else
     echo "ok   $method-missing"
+  fi
+done
+
+# docker, k3s and sudo are there, the tool of the method is not: bash would report command not found and run the
+# other side of the pipe
+mkdir -p "$WORK/partial"
+for tool in bash dirname basename; do ln -s "$(command -v "$tool")" "$WORK/partial/$tool"; done
+for tool in docker k3s sudo; do ln -s "$WORK/bin/record" "$WORK/partial/$tool"; done
+for method in nerdctl ssh; do
+  rc=0
+  rm -f "$WORK/calls.log"
+  args=(--method "$method")
+  message="error: nerdctl: not found; install it, set NERDCTL or choose another method with --method"
+  if [[ "$method" == ssh ]]; then
+    args+=(--ssh user@k3s-node)
+    message="error: ssh: not found; install an ssh client or choose another method with --method"
+  fi
+  env -i PATH="$WORK/partial" HOME="$WORK" WORK="$WORK" OPENTSX_ENV_FILE="$WORK/none.env" \
+    "$WORK/partial/bash" "$K3S_DIR/11-import-images.sh" "${args[@]}" > "$WORK/$method-only-missing.out" 2>&1 || rc=$?
+  if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/$method-only-missing.out"; then
+    failed "$method-only-missing: exit $rc, expected 1 and the message: $message"
+    sed 's/^/    /' "$WORK/$method-only-missing.out"
+  elif [[ -s "$WORK/calls.log" ]]; then
+    failed "$method-only-missing: a tool was called: $(cat "$WORK/calls.log")"
+  else
+    echo "ok   $method-only-missing"
   fi
 done
 
@@ -128,11 +157,13 @@ else
   echo "ok   kind-fails"
 fi
 
-# the methods ssh and registry save with docker or podman; neither is on the PATH
+# the methods ssh and registry save with docker or podman; neither is on the PATH, ssh is
+mkdir -p "$WORK/ssh-only"
+ln -s "$WORK/bin/record" "$WORK/ssh-only/ssh"
 for method in ssh registry; do
   rc=0
   rm -f "$WORK/calls.log"
-  env -i PATH="$WORK/bare" HOME="$WORK" WORK="$WORK" OPENTSX_ENV_FILE="$WORK/none.env" K3S_SSH=pi@k3s-node \
+  env -i PATH="$WORK/ssh-only:$WORK/bare" HOME="$WORK" WORK="$WORK" OPENTSX_ENV_FILE="$WORK/none.env" K3S_SSH=pi@k3s-node \
     OPENTSX_IMAGE_REPO=registry.lan:5000/opentsx \
     "$WORK/bare/bash" "$K3S_DIR/11-import-images.sh" --method "$method" > "$WORK/$method-no-saver.out" 2>&1 || rc=$?
   message="error: docker, podman: no running docker and no podman found; start docker or install podman to save the images"

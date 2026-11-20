@@ -77,7 +77,7 @@ fi
 if ! $YES; then
   echo "This REPLACES the content of: ${PARTS[*]:-(no volumes)}$($RESTORE_ENV && echo " and deploy/k3s/.env") in namespace $OPENTSX_NS."
   read -r -p "Continue? [y/N] " a
-  [[ "$a" =~ ^[yY] ]] || { echo "aborted"; exit 1; }
+  [[ "$a" =~ ^[yY] ]] || die "71-restore.sh: aborted at the question; nothing was changed"
 fi
 
 if $RESTORE_ENV; then
@@ -92,7 +92,7 @@ if $RESTORE_ENV; then
   load_env
 fi
 
-kc get namespace "$OPENTSX_NS" >/dev/null 2>&1 || die "namespace $OPENTSX_NS: not found; run 20-configure.sh and 30-deploy.sh first"
+require_namespace "run 20-configure.sh and 30-deploy.sh first"
 PVCS=()
 for part in "${PARTS[@]}"; do
   kns get pvc "${PVC[$part]}" >/dev/null 2>&1 \

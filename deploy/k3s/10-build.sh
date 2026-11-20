@@ -52,7 +52,7 @@ CONFIGURED_TAG="$OPENTSX_TAG"
 TOOLS_IMAGE="$OPENTSX_IMAGE_REPO/tools:$OPENTSX_TAG"
 STUDIO_IMAGE="$OPENTSX_IMAGE_REPO/studio:$OPENTSX_TAG"
 if is_true "$LAKE" && ! $WITH_S3; then
-  warn "LAKE=true but --with-s3 not given: windpark-sim/retrieval cannot open an s3:// warehouse without S3FileIO"
+  warn "--with-s3: not given with LAKE=true; windpark-sim and the retrieval server cannot open an s3:// warehouse without S3FileIO, run 10-build.sh --with-s3"
 fi
 
 have java || die "java: not found; install a JDK 17 or newer, deploy/k3s/00-prereqs.sh checks the build tools"
@@ -90,7 +90,6 @@ build() {   # dockerfile image [context]
       local -a n; read -r -a n <<< "${NERDCTL:-nerdctl}"
       "${n[@]}" build ${OPENTSX_PLATFORM:+--platform "$OPENTSX_PLATFORM"} -f "$file" -t "$image" "$CTX" ;;
     buildah) buildah bud ${OPENTSX_PLATFORM:+--platform "$OPENTSX_PLATFORM"} -f "$file" -t "$image" "$CTX" ;;
-    *) die "--builder: \"$BUILDER\" is not a builder; expected docker, podman, nerdctl or buildah" ;;
   esac
 }
 build "$ROOT/deploy/docker/opentsx-tools.Dockerfile" "$TOOLS_IMAGE"

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Tests deploy/k3s/90-teardown.sh: an image that k3s ctr cannot remove gives a warn line naming it and exit 1, an image
-# that is not there is no failure, and usage errors exit 2. Stand-ins for kubectl, k3s and sudo; needs no cluster.
+# that is not there is no failure, a declined question exits 1 with its message on stderr before kubectl runs, and
+# usage errors exit 2. Stand-ins for kubectl, k3s and sudo; needs no cluster.
 #
 #   bash deploy/k3s/test/test-90-teardown.sh
 set -euo pipefail
@@ -61,6 +62,21 @@ if (( rc != 0 )) || grep -q 'warn' "$WORK/images-removed.out"; then
   failed "images-removed: exit $rc, expected 0 without a warn line"; sed 's/^/    /' "$WORK/images-removed.out"
 else
   echo "ok   images-removed"
+fi
+
+rc=0
+rm -f "$WORK/calls.log"
+env -i PATH="$WORK/bin:$PATH" HOME="$WORK" WORK="$WORK" KUBECTL="$WORK/bin/kubectl" OPENTSX_ENV_FILE="$WORK/none.env" \
+  OPENTSX_OVERLAY="$WORK/overlay" bash "$K3S_DIR/90-teardown.sh" > "$WORK/declined.out" 2> "$WORK/declined.err" <<< n \
+  || rc=$?
+message="error: 90-teardown.sh: aborted at the question; nothing was changed"
+if (( rc != 1 )) || [[ "$(cat "$WORK/declined.err")" != "$message" ]] || [[ -s "$WORK/declined.out" ]]; then
+  failed "declined: exit $rc, expected 1, only the message on stderr and nothing on stdout: $message"
+  sed 's/^/    stderr: /' "$WORK/declined.err"; sed 's/^/    stdout: /' "$WORK/declined.out"
+elif [[ -s "$WORK/calls.log" ]]; then
+  failed "declined: kubectl was called"
+else
+  echo "ok   declined"
 fi
 
 expect() {   # NAME MESSAGE ARG ...: a usage error, exit 2, before kubectl runs

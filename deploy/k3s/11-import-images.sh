@@ -7,7 +7,8 @@
 # Methods (default IMAGE_METHOD from .env, "docker"):
 #   docker    docker save <images> | sudo k3s ctr images import -          (k3s on this host)
 #   podman    podman save ... | sudo k3s ctr images import -
-#   nerdctl   nerdctl save ... | sudo k3s ctr images import -               (images built in another namespace)
+#   nerdctl   nerdctl save ... | sudo k3s ctr images import -               (images built in another namespace;
+#             NERDCTL is the nerdctl command, default nerdctl)
 #   buildah   buildah push <image> docker-archive:<tmp>; sudo k3s ctr images import <tmp>
 #   kind      kind load docker-image <images> --name <cluster>                      (a kind cluster instead of k3s,
 #             e.g. for a trial run on macOS, where k3s does not run natively; the cluster name is required,
@@ -69,8 +70,9 @@ case "$METHOD" in
     info "importing ${IMAGES[*]} into k3s containerd ($METHOD save | k3s ctr images import)"
     "$METHOD" save "${IMAGES[@]}" | as_root k3s ctr images import - ;;
   nerdctl)
-    local_ctr
     read -r -a N <<< "${NERDCTL:-nerdctl}"
+    have "${N[0]}" || die "${N[0]}: not found; install it, set NERDCTL or choose another method with --method"
+    local_ctr
     info "importing via nerdctl save"
     "${N[@]}" save "${IMAGES[@]}" | as_root k3s ctr images import - ;;
   buildah)
@@ -85,6 +87,7 @@ case "$METHOD" in
     done ;;
   ssh)
     [[ -n "$SSH_TARGET" ]] || usage_error "--ssh: missing; the method ssh needs --ssh user@host or K3S_SSH"
+    have ssh || die "ssh: not found; install an ssh client or choose another method with --method"
     s="$(saver)"
     info "importing ${IMAGES[*]} on $SSH_TARGET ($s save | ssh ... k3s ctr images import)"
     "$s" save "${IMAGES[@]}" | ssh "$SSH_TARGET" sudo k3s ctr images import -

@@ -62,6 +62,20 @@ URLs, durations, paths or the cron schedule in the rendered files. A refused val
 error: OPENTSX_STATS_WINDOWS: item "PT5" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m
 ```
 
+`50-status.sh`, `70-backup.sh` and `71-restore.sh` read the namespace `OPENTSX_NS` before any other kubectl call and
+exit with 1 when they cannot use it. A namespace that does not exist gives the next step, here from `70-backup.sh`:
+
+```text
+error: namespace opentsx: not found; check OPENTSX_NS in deploy/k3s/.env and the kubectl context, or deploy it first with 30-deploy.sh
+```
+
+Any other failure, for example an API server that cannot be reached, is not reported as a missing namespace. The
+script prints the error of kubectl, then:
+
+```text
+error: namespace opentsx: cannot read it; check the cluster with kubectl get namespace opentsx
+```
+
 ## Set secrets
 
 `20-configure.sh` refuses a secret key as an argument, because the shell history and the process list keep
