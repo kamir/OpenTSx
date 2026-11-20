@@ -74,14 +74,9 @@ public class TSBucket {
     int[] ids = null;
     public java.util.Vector<TimeSeriesObject> bucketData = new java.util.Vector<TimeSeriesObject>();
 
-    // record mode is a domain specific feature from WIKIPEDIA analysis.
-    static String recoderIdMode = "counter";
-
     FileWriter fw = null;
     FileWriter fwe = null;
     public static String FN_EXT = "A";
-
-    static int counter = 0;
 
     /**
      * Create an empty TSBucket and set LIMIT to Integer.MAX_VALUE.
@@ -108,11 +103,6 @@ public class TSBucket {
     // define the limit ...
     public void setLimitTo(int i) {
         LIMIT = i;
-    }
-
-    private static void setRecordMode(String c) {
-        recoderIdMode = c;
-        resetCounter();
     }
 
     public TSBucket() {
@@ -163,7 +153,8 @@ public class TSBucket {
 
     /**
      * Reload a TSBucket from a Sequence-File and do an implicit processing, if
-     * the TSOperation object is not null.
+     * the TSOperation object is not null. While processSeriesLabelOnLoad is true, each series is labelled with its
+     * position in the file, counted from 1 for every load; otherwise with its key.
      *
      * @param fn
      * @param ids the positions of the records to load, counted from 1; null loads every record
@@ -187,8 +178,6 @@ public class TSBucket {
             LOG.debug("loading bucket file={} codec={} key={} value={}", fn, reader.getCompressionCodec(),
                     reader.getKeyClassName(), reader.getValueClassName());
 
-            TSBucket.setRecordMode("counter");
-
             int i = 1;
             while (i <= LIMIT) {
 
@@ -202,7 +191,7 @@ public class TSBucket {
                 String seriesID = key.toString();
 
                 if (processSeriesLabelOnLoad) {
-                    seriesID = "" + TSBucket.getRecordID(key.toString());
+                    seriesID = "" + i;
                 }
 
                 if (ids != null && !ids.contains(i)) {
@@ -274,36 +263,6 @@ public class TSBucket {
 
     public java.util.Vector<TimeSeriesObject> getBucketData() {
         return bucketData;
-    }
-
-    public static void resetCounter() {
-        counter = 0;
-    }
-
-    public static int getRecordID(String t) {
-
-        if (recoderIdMode.equals("counter")) {
-            counter++;
-            return counter;
-
-        } else {
-
-            if (t.length() > 0) {
-
-                int i1 = t.indexOf("PageID_");
-
-                String a = t.substring(i1 + 7);
-
-                int i2 = a.indexOf(".nrv.h.dat");
-
-                String b = a.substring(0, i2);
-                return Integer.parseInt(b);
-
-            } else {
-                return 0;
-            }
-
-        }
     }
 
     /**

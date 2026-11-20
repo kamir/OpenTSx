@@ -12,6 +12,8 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Vector;
 import java.util.stream.Stream;
 
@@ -117,6 +119,89 @@ class ReturnIntervallStatistik2Test {
         assertTrue(log.contains("stored distribution result=logged file=" + dir + "/distribution.dat"), log);
     }
 
+    @Test
+    void addingTimesAddsTheIntervalsBetweenThem() throws Exception {
+        ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2("times", 12, 10);
+
+        ris._addData(times(0.0, 2.0, 5.0, 9.0), 3.0);
+
+        assertEquals(List.of(2.0, 3.0, 4.0), ris.dataRaw_InterEventTIMES);
+        assertEquals(List.of(2.0, 3.0, 4.0), ris.dataRawFILTERED);
+        assertEquals(3.0, ris.getRq());
+
+        ris._addData(times(10.0, 11.0), 1.0);
+
+        assertEquals(List.of(1.0), ris.dataRaw_InterEventTIMES);
+        assertEquals(List.of(1.0), ris.dataRawFILTERED);
+    }
+
+    @Test
+    void equalTimesAddNoIntervalAndTheProbabilitiesSumToOne() throws Exception {
+        ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2("equal", 12, 10);
+
+        ris._addData(times(0.0, 1.0, 1.0, 2.0), 1.0);
+
+        assertEquals(List.of(1.0, 1.0), ris.dataRawFILTERED);
+        assertEquals(0, ris.dataSKALIERT[0]);
+        assertEquals(2, ris.dataSKALIERT[1]);
+        assertEquals(1.0, Arrays.stream(ris.probSKALIERT).sum(), 1e-12);
+    }
+
+    @Test
+    void anIntervalThatIsLeftOutIsNotBinned() throws Exception {
+        ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2("intervals", 12, 10);
+
+        ris.addDistData(new Vector<>(List.of(1.0, 0.0, 1.0)));
+
+        assertEquals(List.of(1.0, 1.0), ris.dataRawFILTERED);
+        assertEquals(0, ris.dataSKALIERT[0]);
+        assertEquals(1.0, Arrays.stream(ris.probSKALIERT).sum(), 1e-12);
+    }
+
+    @Test
+    void aResultThatKeepsNoIntervalHasNaNProbabilitiesAndIsSkipped() throws Exception {
+        ReturnIntervallStatistik2 empty = new ReturnIntervallStatistik2("empty", 12, 10);
+        ReturnIntervallStatistik2 container = new ReturnIntervallStatistik2("all", 12, 10);
+        container.isContainerInstanz = true;
+
+        empty._addData(times(1.0, 1.0, 1.0), 1.0);
+        container.add(empty);
+
+        assertEquals(List.of(), empty.dataRawFILTERED);
+        assertTrue(Double.isNaN(empty.getRq()));
+        assertTrue(Arrays.stream(empty.probSKALIERT).allMatch(Double::isNaN));
+        assertEquals(List.of(), container.allRqs);
+        assertEquals(0.0, Arrays.stream(container.probSKALIERT).sum());
+    }
+
+    @Test
+    void aTimeBeforeTheTimeBeforeItIsRefused() {
+        ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2("unsorted", 12, 10);
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> ris._addData(times(0.0, 5.0, 2.0), 1.0));
+
+        assertEquals("_addData: time 2 of unsorted is 2.0, before time 1 at 5.0; expected times that do not decrease",
+                e.getMessage());
+        assertEquals(List.of(), ris.dataRaw_InterEventTIMES);
+    }
+
+    @Test
+    void aTimeThatIsNotFiniteIsRefused() {
+        ReturnIntervallStatistik2 nan = new ReturnIntervallStatistik2("nan", 12, 10);
+        ReturnIntervallStatistik2 infinite = new ReturnIntervallStatistik2("infinite", 12, 10);
+
+        IllegalArgumentException later = assertThrows(IllegalArgumentException.class,
+                () -> nan._addData(times(0.0, Double.NaN, 5.0), 1.0));
+        IllegalArgumentException first = assertThrows(IllegalArgumentException.class,
+                () -> infinite._addData(times(Double.POSITIVE_INFINITY, 1.0), 1.0));
+
+        assertEquals("_addData: time 1 of nan is NaN; expected a finite time", later.getMessage());
+        assertEquals("_addData: time 0 of infinite is Infinity; expected a finite time", first.getMessage());
+        assertEquals(List.of(), nan.dataRaw_InterEventTIMES);
+        assertEquals(List.of(), infinite.dataRaw_InterEventTIMES);
+    }
+
     interface Action {
         void run() throws Exception;
     }
@@ -163,6 +248,14 @@ class ReturnIntervallStatistik2Test {
         ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2(name, 12, 10);
         ris.addDistData(intervals(1100));
         return ris;
+    }
+
+    static Vector<Double> times(double... values) {
+        Vector<Double> times = new Vector<>();
+        for (double value : values) {
+            times.add(value);
+        }
+        return times;
     }
 
     static Vector<Double> intervals(int n) {

@@ -1,11 +1,17 @@
 package org.opentsx.chart.simple;
 
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.xy.XYSeriesCollection;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.data.series.TimeSeriesObject;
 
+import javax.imageio.ImageIO;
 import javax.swing.SwingUtilities;
 import java.awt.Color;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
@@ -74,6 +80,22 @@ class MultiChartTest {
         assertTrue(stillInterrupted, "storing the chart slept and cleared the interrupt");
         assertTrue(Files.size(dir.resolve("probe.png")) > 0);
         assertEquals("", captured.toString(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void storingAnotherChartWritesThatChart() throws Exception {
+        MultiChart dialog = chart("own");
+        JFreeChart other = ChartFactory.createXYLineChart("other", "x", "y", new XYSeriesCollection(),
+                PlotOrientation.VERTICAL, false, false, false);
+        other.setBackgroundPaint(Color.RED);
+        try {
+            dialog.store(other, dir.toFile(), "other");
+        } finally {
+            SwingUtilities.invokeAndWait(dialog::dispose);
+        }
+
+        BufferedImage image = ImageIO.read(dir.resolve("other.png").toFile());
+        assertEquals(Color.RED.getRGB(), image.getRGB(1, 1));
     }
 
     @Test

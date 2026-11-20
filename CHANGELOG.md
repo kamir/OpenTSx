@@ -857,6 +857,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   using a spaced hyphen as a dash.
 - `opentsx-lg/src/main/docker/core-tool-image/README.md` describes the image, its build and its environment variables
   instead of holding a 2020 build log.
+- The chart panel operations of the bucket analyser no longer print to standard output when they are recorded:
+  MacroTrackerFrame, Track and PFDRecorder log each recorded operation at DEBUG instead of printing `ADDED A NEW
+  TRANSFORMATION`, `[OK] ... Node added to tree` and `[PFDRecorder] Added step` lines.
 
 ### Removed
 
@@ -1030,6 +1033,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `opentsx.threads.pool.size` and `opentsx.retry.attempts`; no `ConfigManager` caller read them.
 - The opentsx-lg jar no longer carries the unused localhost profiles `config/cpl.props` and `config/mdc_c1.props`, and
   `opentsx-lg/run_ddc.sh`, which ran docker-compose in a directory without a compose file, is deleted.
+- `opentsx-core`: `FFTPhaseRandomizer.main`, which opened an empty F(s) chart titled with order -1 and an empty alpha
+  versus beta chart and wrote tables of empty series to `./TESTDATA_PhaseRandom`; surrogates of white noise have no
+  beta to chart. This is a breaking change.
+- `opentsx-core`: `TSBucket.getRecordID(String)` and `TSBucket.resetCounter()`, the static record counter that only
+  `loadFromSequenceFile` used. This is a breaking change.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -1967,9 +1975,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   to 2 seconds and print nothing. An image that cannot be written throws `UncheckedIOException` with `<file>: cannot
   write the chart image (<cause>)`, and the `save PN` button shows that message in a dialog. The static
   `MultiChart.store(...)` prints nothing, and `save()` closes the caption file when the caption cannot be written.
-- `FFTPhaseRandomizer` prints nothing outside `main`: the error chart step throws `IllegalStateException` with
-  `calcErrorChart: beta index <i> failed; expected a beta and <n> alphas for it` and the cause instead of printing
-  them, and the unused private method `debugRows` is removed.
+- `FFTPhaseRandomizer` prints nothing, and the unused private method `debugRows` is removed.
 - `TSBucket.processKVToTSO` accepts a Kafka record without a key: the series description shows `[]` for the key, where
   `TSOConsumer.runConsumer` stopped with a `NullPointerException`.
 - `bin/episode_02_create_timeseries.sh`, `bin/episode_03_basic_operations.sh` and `bin/episode_09_analysis.sh` no
@@ -2000,6 +2006,25 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The opentsx-lg Docker profile and `src/main/docker/core-tool-image/Dockerfile` build on the pinned base image
   `eclipse-temurin:21.0.8_9-jre-noble` instead of the unpinned `confluentinc/cp-base`, whose newest tag carries Java 8
   and cannot run the Java 17 jar.
+- `opentsx-core`: `MultiChart.store(chart, folder, name)` writes the chart it is given; it wrote the chart of its own
+  dialog.
+- `opentsx-core`: `TSOperationControlerPanel` writes nothing to standard output and no longer uses java.util.logging;
+  the fitted alpha of `DFA` and the time slices of `Histogram cross-cut` and `TEST Normal Distribution` are DEBUG
+  lines. A failing `show PN`, `DFA`, `Auto-Correlation`, `NORM std=1, avg=0`, `MF-DFA`, `Shuffle` or `TEST Normal
+  Distribution` stops and shows a message such as `DFA of <series>: cannot compute the fluctuation function (<cause>)`
+  in a dialog instead of logging and going on, `persistTSB()` throws `UncheckedIOException` with `<track>/<label>:
+  cannot write the bucket (<cause>)`, and cancelling the `Shuffle` dialog does nothing.
+- `opentsx-core`: `ReturnIntervallStatistik2._addData` and `TSPropertyTester._addData` add the intervals between the
+  times they are given; they passed an empty list to `addDistData`, so `SingleTsRISTool` collected nothing. A time
+  before the time before it throws `IllegalArgumentException` with `_addData: time <k> of <name> is <value>, before
+  time <k - 1> at <previous value>; expected times that do not decrease`, and a NaN or infinite time throws it with
+  `_addData: time <k> of <name> is <value>; expected a finite time`.
+- `opentsx-core`: `TSBucket.loadFromSequenceFile(path, ids, operation)` and `BucketLoader` label each series with its
+  position in the file, counted from 1 for every load; loads that ran at the same time shared one static counter and
+  mixed their labels.
+- `ReturnIntervallStatistik2.addDistData` sorts into its bins only the intervals it keeps (not 0 and not below
+  `offset`), scaled with their mean, so the probabilities of a result that keeps an interval add up to 1; the
+  intervals 1, 0 and 1 gave probabilities that added up to 1.5.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

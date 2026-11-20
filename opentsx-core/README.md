@@ -80,11 +80,34 @@ these buttons do not write a file. The modern tracker starts with an empty trans
 Swing control tests use a display; the Java CI jobs run them under Xvfb on Ubuntu 24.04.
 Opening a chart panel prints nothing and creates no folder; the chart folder and the series colors are DEBUG lines of
 `TSStoreDescriptor` and `MultiChart`. `save PN` writes below `opentsx/plots/` in `user.home` and creates the folders
-it needs. `MultiChart.store` and `TSOperationControlerPanel.storeChartImageAsPNG` write `<folder>/<name>.png` without
-waiting and print nothing. An image that cannot be written throws `UncheckedIOException` with
-`<file>: cannot write the chart image (<cause>)`; `save PN` shows that message in a dialog.
+it needs. `MultiChart.store(chart, folder, name)` and
+`TSOperationControlerPanel.storeChartImageAsPNG(chart, folder, name)` write the chart they are given as
+`<folder>/<name>.png` without waiting and print nothing. An image that cannot be written throws `UncheckedIOException`
+with `<file>: cannot write the chart image (<cause>)`; `save PN` shows that message in a dialog.
 `HaeufigkeitsZaehler.store()` writes `<folder><label>`; `folder` defaults to `opentsx/histograms/` below
 `user.home`, which `store()` creates.
+
+`TSOperationControlerPanel` writes nothing to standard output. The fitted alpha of `DFA` and the time slices of
+`Histogram cross-cut` and `TEST Normal Distribution` are DEBUG lines of `TSOperationControlerPanel`. Every recorded
+operation is a DEBUG line of `MacroTrackerFrame` and, while the macro tracker is open, of `Track` and `PFDRecorder`.
+The classes an operation calls can print: `Sigma Band` (`SigmaFilter`) prints its progress, and `MF-DFA`
+(`HurstSurface.plot`) prints one number for every pixel of each Hurst surface. The operations in this table stop when
+they fail and show the message in a dialog:
+
+| Button | Message |
+|--------|---------|
+| `show PN` | `<folder>: cannot open the folder (<cause>)` |
+| `DFA` | `DFA of <series>: cannot compute the fluctuation function (<cause>)`; no chart opens |
+| `Auto-Correlation` | `auto-correlation of <series>: cannot correlate lag <lag> (<cause>)`; no chart opens |
+| `NORM std=1, avg=0` | `standardized series of <label>: cannot open the chart (<cause>)` |
+| `MF-DFA` | `MFDFA of <label>: cannot compute the analysis (<cause>)` |
+| `Shuffle` | `shuffle of <label>: cannot shuffle the series (<cause>)` |
+| `TEST Normal Distribution` | `SW test of <series>: cannot test the values <from> to <to> (<cause>)`; no chart opens |
+
+Cancelling the `Shuffle` dialog does nothing. `Histogram per series`, `Histogram cross-cut` and `ENTROPY` show no
+dialog when they fail: a value in the three number fields of `Univariate Analysis` or a dialog answer that is not a
+whole number, or a cancelled dialog, throws `NumberFormatException` and no chart opens. `persistTSB()` throws `UncheckedIOException` with
+`<track>/<label>: cannot write the bucket (<cause>)`.
 
 ## Reload local SequenceFile buckets
 
@@ -98,6 +121,11 @@ every record.
 
 The SequenceFile writer stores each series label and Y values. Loading reconstructs sequential X values;
 arbitrary input X coordinates and other metadata are not persisted by this format.
+
+While `TSBucket.processSeriesLabelOnLoad` is true, the default, `loadFromSequenceFile(path, ids, operation)` and
+`BucketLoader` label each series with its position in the file, counted from 1 for every load, so loads that run at the
+same time do not change each other's labels. While it is false, the label is the key of the record.
+`loadFromSequenceFile(file)` labels a series `<position> <key>`.
 
 ## Write a bucket
 
@@ -243,7 +271,8 @@ methods differ in the new phase:
 Pass a `java.util.Random` with a seed to get the same surrogate again. Without the argument, each method uses a new
 `Random`. `FFTPhaseRandomizer.getPhaseRandomizedRow(ts, showTest, runDFA, testZaehler, mode)` calls the shuffle for
 `MODE_shuffle_phase` and the random phases for `MODE_multiply_phase_with_random_value`, both without a seed. It does
-not use `showTest`, `runDFA` or `testZaehler`. None of these methods opens a window.
+not use `showTest`, `runDFA` or `testZaehler`. None of these methods opens a window. `FFTPhaseRandomizer` has no
+`main` method; `LongTermCorrelationSeriesGenerator.main` charts alpha against beta.
 
 ## Generate long-range correlated noise
 
@@ -299,7 +328,18 @@ intervals add up to more than 7200 hours to the log `LENGTH`.
 
 `ReturnIntervallStatistik2` and `TSPropertyTester` refuse a NaN or infinite probability, a receiver that is not a
 container, a different binning and intervals added to a container with the same exceptions and messages as `RISTool`.
-They write no log files. `SingleTsRISTool.finish()` throws `IllegalStateException` with
+They write no log files. Their `_addData(times, rq)` adds the intervals between consecutive times with `addDistData`,
+so times 0, 2, 5 and 9 add the intervals 2, 3 and 4. The intervals replace those of an earlier call, and `rq` is not
+used. A time before the time before it throws `IllegalArgumentException` with
+`_addData: time <k> of <name> is <value>, before time <k - 1> at <previous value>; expected times that do not decrease`.
+A time that is NaN or infinite throws `IllegalArgumentException` with
+`_addData: time <k> of <name> is <value>; expected a finite time`. `k` counts from 0, and a refused call adds nothing.
+`ReturnIntervallStatistik2.addDistData` leaves out intervals that are 0 or below `offset` and sorts the others into bins
+scaled with their mean R_q, so the probabilities of a result add up to 1. A result that keeps no interval, for example
+times 1, 1 and 1, has NaN probabilities and R_q, and `add` skips it. For times 0, 1, 1 and 2 the bins count the
+intervals 1 and 1, not the 0.
+`SingleTsRISTool` passes the y values of each series as times and adds the result to `risCollector`.
+`SingleTsRISTool.finish()` throws `IllegalStateException` with
 `finish: the RIS of <name> cannot be shown (<cause>)` when the collected result cannot be shown.
 
 ## Run the DFA

@@ -7,7 +7,7 @@ package org.opentsx.algorithms.ris.experimental;
  *   when the instance is added to a container instance
  * - A container instance combines the results of several interval
  *   series
- * - A container instance gives a histogram of the Rq values
+ * - A container instance keeps the Rq of every result it adds
  * - Shows the data of single series
  */
 
@@ -48,7 +48,7 @@ import static org.opentsx.generators.LongTermCorrelationSeriesGenerator.nrOfSVal
  * The scaled values can be combined.
  *
  * add( RIS2 )                  => collect in the container
- * addData( Vector<Long> ...  ) => points in time
+ * _addData( Vector<Double>, Rq ) => points in time, adds the intervals between them
  * addDistData( Vector<Double)  => collect time intervals
  *
  * @author Mirko Kämpf
@@ -395,13 +395,11 @@ public class TSPropertyTester {
         
     }
 
-    /** 
-     * Vector<Long> times ==> points in time, in order.
-     *                        No y values, only the sequence of t.
-     *  
-     * A vector of times is passed.
-     * 
-     * The return intervals are computed from it first.
+    /**
+     * Adds the intervals between consecutive times with addDistData. They replace the intervals of an earlier
+     * call. Rq is not used.
+     *
+     * @throws IllegalArgumentException when a time is not finite or is before the time before it
      **/
     public void _addData( Vector<Double> times, double Rq ) throws Exception {
 
@@ -410,21 +408,34 @@ public class TSPropertyTester {
             LOG.debug("computing intervals result={} intervals={}", name, times.size() - 1);
         }
 
-        
-        int nullDistCounter = 0;
+        Vector<Double> intervals = new Vector<Double>();
         
         // points in time
         Enumeration<Double> en = times.elements();
         
         // first element (index 0)
         double vor = en.nextElement(); 
+        if ( !Double.isFinite( vor ) ) {
+            throw new IllegalArgumentException( "_addData: time 0 of " + name + " is " + vor + "; expected a finite time" );
+        }
         
+        int k = 0;
         while( en.hasMoreElements() ) {
             Double now = en.nextElement();
+            k++;
+            if ( !Double.isFinite( now ) ) {
+                throw new IllegalArgumentException( "_addData: time " + k + " of " + name + " is " + now + "; expected a finite time" );
+            }
+            if ( now < vor ) {
+                throw new IllegalArgumentException( "_addData: time " + k + " of " + name + " is " + now + ", before time "
+                        + (k - 1) + " at " + vor + "; expected times that do not decrease" );
+            }
             Double dist = now - vor;
+            intervals.add(dist);
             vor = now;
         } 
 
+        dataRaw_InterEventTIMES = intervals;
         addDistData(dataRaw_InterEventTIMES);
         
     }

@@ -580,7 +580,7 @@ public class MultiChart extends javax.swing.JDialog {
     }
 
     /**
-     * Writes the chart of this dialog as {@code <folder>/<filename>.png}.
+     * Writes the chart cp as {@code <folder>/<filename>.png}.
      *
      * @throws UncheckedIOException naming the file, with the cause, when the image cannot be written
      */
@@ -588,7 +588,7 @@ public class MultiChart extends javax.swing.JDialog {
 
         final File file1 = new File(folder.getAbsolutePath() + File.separator + filename + ".png");
         try {
-            ChartUtilities.saveChartAsPNG(file1, chart, 600, 400, new ChartRenderingInfo(new StandardEntityCollection()));
+            ChartUtilities.saveChartAsPNG(file1, cp, 600, 400, new ChartRenderingInfo(new StandardEntityCollection()));
         } catch (IOException e) {
             throw new UncheckedIOException(file1 + ": cannot write the chart image (" + e + ")", e);
         }

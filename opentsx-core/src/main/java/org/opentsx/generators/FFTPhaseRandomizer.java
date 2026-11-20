@@ -27,149 +27,23 @@ frequency by image002ao, where image004ao is a uniformly distributed random
 number in the range image006ao in such a way as to preserve symmetry ...
  
 The inverse transform of these realizations are the desired target surrogates.
-
- * 
- * The Fourier-Transformation is applied again and the
- * result is a random number series with long term 
- * correlations.
- * 
- * The main method is a Tester which shows DFA2 for 
- * multiple test series and a chart with the dependency
- * between alpha and beta, beside the theoretical 
- * curve.
  */
 
-import org.apache.commons.math3.stat.StatUtils;
-import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
-import org.opentsx.chart.simple.MultiChart;
-import org.opentsx.data.generator.RNGWrapper;
-import org.opentsx.data.exporter.MeasurementTable;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.data.series.TimeSeriesObjectFFT;
 
-import java.io.File;
 import java.text.DecimalFormat;
-import java.util.Vector;
 
 public class FFTPhaseRandomizer {
     
     public static final int MODE_shuffle_phase = 0;
     public static final int MODE_multiply_phase_with_random_value = 1;
     
-    static double fitMIN = 1.2;
-    static double fitMAX = 3.5;
-    
-    static TimeSeriesObject alphasCALC = new TimeSeriesObject();
-    static TimeSeriesObject alphasTHEO = new TimeSeriesObject();
-    static Vector<TimeSeriesObject> check = new Vector<TimeSeriesObject>();
-    
-    static Vector<TimeSeriesObject> tests = null;
-    static StringBuffer log = null;
-    
-    static double[][] alphas = null; 
-    static double[] betas = null; 
-    
-    // show a DFA curve only in this case
-    static boolean firstInLoop = false;
-    static int numberOfLoop = 0;
-    static int numberOfBeta = 0;
- 
-    static int order = -1; // is defined in method: getRandomRow() ...
-    
-    
     /**
      *   Parameters with influence on RUNTIME and PERFORMANCE
      */
     static public int nrOfSValues = 250;
-    
-    static int EXP = 16; // 2 ^ EXP = length of the row
 
-    public static void main(String args[]) throws Exception {
-        
-        boolean showTest = true;
-
-        RNGWrapper.init();
-
-        // prepare some data structures
-        tests = new Vector<TimeSeriesObject>();
-        log = new StringBuffer();
-                
-        log.append("fit range: [" + fitMIN + ", ..., " + fitMAX + " ]\n" );
-        
-        int Z = 15;
-        double STRETCH = 4;
-
-        int LOOPS = 2;
-        
-        alphas = new double[Z][LOOPS];
-        betas = new double[Z]; 
-
-
-        int c = 0;
-        for( int i=0; i < Z; i++ ) {
-           
-            if ( showTest ) { 
-                System.out.println(">>> i=" +  i + "\n" );
-            }
-            
-            for( int j = 0; j < LOOPS; j++ ) {  
-                
-                if ( j == 0 ) firstInLoop = true;
-                else firstInLoop = false;
-                numberOfLoop = j;
-                
-                TimeSeriesObject measure = getRandomRow( (int)Math.pow(2, EXP) );
-                
-                TimeSeriesObject mr = getPhaseRandomizedRow( measure, showTest, true, i, MODE_shuffle_phase  );
-            
-            }    
-            
-            c = i;
-        }
-        
-        c++;
-        
-        firstInLoop = true;
-        TimeSeriesObject mr2 = getRandomRow( (int)Math.pow(2, EXP) );
-        
-        TimeSeriesObject mr = getPhaseRandomizedRow( mr2, showTest, true, c, MODE_shuffle_phase );
-        
-        boolean showLegend = true;
-        MultiChart.open(tests, "Fluctuation Function F(s): DFA " + order, 
-                        "log(s)", "log(F(s))", false, log.toString(), null );
-        
-        
-        alphasCALC.setLabel("CALC");
-        alphasTHEO.setLabel("theory");
-        check.add( alphasTHEO );
-        
-        calcErrorChart( alphas, numberOfBeta, numberOfLoop, 100.0 );
-        
-        MultiChart.open(check, "alpha vs. beta", 
-                        "beta", "alpha", showLegend );
-        
-        File f = new File( "./TESTDATA_PhaseRandom" );
-        
-        MeasurementTable mwt = new MeasurementTable( "random_numbers_CHECK" );
-        
-        mwt.createParrentFile( f );
-        mwt.singleX = false;
-        mwt.setMessReihen( check );
-        mwt.setHeader("# random_numbers_CHECK");
-        mwt.writeToFile();
-        
-        mwt = new MeasurementTable( "random_numbers_FS" );
-        
-        mwt.createParrentFile( f );
-        mwt.singleX = false;
-        mwt.setMessReihen( tests );
-        mwt.setHeader("# random_numbers_FS");
-        mwt.writeToFile();
-        
-    }
-    
-     
-    
     /**
      * A random time series of length N with a Gaissian distribution
      * is generated.
@@ -259,64 +133,5 @@ public class FFTPhaseRandomizer {
 
         return temp;
     }
-    
-    static TimeSeriesObject mrAV = new TimeSeriesObject();  // mean values
-    static TimeSeriesObject mrSTD = new TimeSeriesObject();  // standard deviations
-    static TimeSeriesObject mrMAX = new TimeSeriesObject();  // ERROR
-    static TimeSeriesObject mrMIN = new TimeSeriesObject();  // ERROR
-        
-    /**
-     * some more debugging code ...
-     * 
-     * @param d
-     * @param nrB
-     * @param nrLOOPS 
-     */
-    private static void calcErrorChart(double[][] d, int nrB, int nrLOOPS, double scaleSTDDEV ) {
-        
-        mrAV = new TimeSeriesObject();  // mean values
-        mrSTD = new TimeSeriesObject();  // standard deviations
-        mrMAX = new TimeSeriesObject();  // ERROR
-        mrMIN = new TimeSeriesObject();  // ERROR
-    
-        mrAV.setLabel("mean");
-        mrSTD.setLabel("stddev * " + scaleSTDDEV);
-        mrMAX.setLabel("upper");
-        mrMIN.setLabel("lower");
-        
-        for( int iB = 0; iB < nrB; iB++ ) { 
-            
-            double[] L = new double[nrLOOPS];
-            
-            for( int iL = 0; iL < nrLOOPS; iL++ ) { 
-                L[iL] = d[iB][iL];
-            }
-            try {
-
-                StandardDeviation stdev = new StandardDeviation();
-
-                double mean = StatUtils.mean(L);
-                double std = stdev.evaluate(L);
-
-                mrAV.addValuePair(betas[iB] , mean );
-                mrSTD.addValuePair(betas[iB] , std * scaleSTDDEV);
-
-                mrMAX.addValuePair( betas[iB] , mean+std );
-                mrMIN.addValuePair( betas[iB] , mean-std );
-
-            }
-            catch(RuntimeException ex) {
-                throw new IllegalStateException( "calcErrorChart: beta index " + iB + " failed; expected a beta and "
-                        + nrLOOPS + " alphas for it", ex );
-            }
-        }
-        
-        check.add( mrAV );        
-        check.add( mrSTD );
-        check.add( mrMAX );
-        check.add( mrMIN );
-        
-    }
-    
 
 }

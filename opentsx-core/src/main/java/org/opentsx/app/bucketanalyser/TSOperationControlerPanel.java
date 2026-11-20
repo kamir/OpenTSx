@@ -26,11 +26,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.text.DecimalFormat;
 import java.util.OptionalDouble;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -419,15 +416,20 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         JOptionPane.showMessageDialog(this, message);
     }
 
+    void showActionError(String message) {
+        JOptionPane.showMessageDialog(this, message);
+    }
+
     private void jTextField3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField3ActionPerformed
     }//GEN-LAST:event_jTextField3ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         if (Desktop.isDesktopSupported()) {
+            File folder = getPixNodeFolder().getParentFile();
             try {
-                Desktop.getDesktop().open(getPixNodeFolder().getParentFile());
-            } catch (IOException ex) {
-                Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
+                Desktop.getDesktop().open(folder);
+            } catch (IOException | IllegalArgumentException ex) {
+                showActionError(folder + ": cannot open the folder (" + ex + ")");
             }
         }
     }//GEN-LAST:event_jButton2ActionPerformed
@@ -559,30 +561,24 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
                 mr4.setLabel(d4.getLabel());
 
-                String status = dfa.getStatus();
-
                 SimpleRegression alphaSR = mr4.linFit(EntropieTest.fitMIN, EntropieTest.fitMAX);
 
                 alpha = alphaSR.getSlope();
 
-                System.out.println(status);
+                LOG.debug("computed fluctuation function series={} order={} alpha={} betaFromAlpha={}", d4.getLabel(),
+                        order, alpha, (2 * alpha) - 1.0);
 
                 mr4.setLabel( mr4.getLabel() +  "_alpha=" + alpha);
                 v.add(mr4);
 
                 
             } catch (Exception ex) {
-                Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
+                showActionError("DFA of " + d4.getLabel() + ": cannot compute the fluctuation function (" + ex + ")");
+                return;
             }
         }
 
-        if (true) {
-            DecimalFormat df = new DecimalFormat("0.000");
-            MultiChart.open(v, label + " fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", this.jRadioButton1.isSelected(), alphas.toString(), null);
-
-            System.out.println(" alpha = " + df.format(alpha));
-            System.out.println("       = " + ((2 * alpha) - 1.0));
-        }
+        MultiChart.open(v, label + " fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", this.jRadioButton1.isSelected(), alphas.toString(), null);
 
         String operationLabel = "DFA of ";
         String operationPrefix = "DFA_" + order;
@@ -624,7 +620,8 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
                     ac.addValuePair(i, ac_i);
 
                 } catch (Exception ex) {
-                    Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
+                    showActionError("auto-correlation of " + r.getLabel() + ": cannot correlate lag " + i + " (" + ex + ")");
+                    return;
                 }
 
             }
@@ -791,7 +788,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         }
         catch (Exception ex) {
-            Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
+            showActionError("standardized series of " + this.label + ": cannot open the chart (" + ex + ")");
         }
         
         
@@ -834,12 +831,17 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         
         } 
         catch (Exception ex) {
-            Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
+            showActionError("MFDFA of " + this.label + ": cannot compute the analysis (" + ex + ")");
         }
 
 
     }//GEN-LAST:event_jButton6ActionPerformed
 
+    /**
+     * Writes the rows as the bucket {@code <track>/<label>} below {@code TSBASE.BASE_PATH}.
+     *
+     * @throws UncheckedIOException naming the bucket, with the cause, when it cannot be written
+     */
     public void persistTSB() {
         
         TSBucket tsb = new TSBucket();
@@ -850,7 +852,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         } 
         catch (IOException ex) {
-            Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
+            throw new UncheckedIOException(this.track + "/" + this.label + ": cannot write the bucket (" + ex + ")", ex);
         }
     
     }
@@ -890,7 +892,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         try {
 
-            int l = Integer.parseInt(javax.swing.JOptionPane.showInputDialog("Nr fo shuffelings: "));
+            String answer = requestShuffleRounds();
+            if (answer == null) return;
+            int l = Integer.parseInt(answer);
 
             Vector<TimeSeriesObject> shuffled = new Vector<TimeSeriesObject>();
 
@@ -904,9 +908,13 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
             MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel + source));
 
         } catch (Exception ex) {
-            Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
+            showActionError("shuffle of " + this.label + ": cannot shuffle the series (" + ex + ")");
         }
     }//GEN-LAST:event_jButton18ActionPerformed
+
+    String requestShuffleRounds() {
+        return JOptionPane.showInputDialog("Nr fo shuffelings: ");
+    }
 
     private void jButton19ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton19ActionPerformed
 
@@ -955,7 +963,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         // create series of cuts ...
         while (pos < this.rows.elementAt(0).getXValues().size()) {
 
-            System.out.println(pos + " => " + (pos + l));
+            LOG.debug("cutting time slice series={} from={} to={}", this.label, pos, pos + l);
 
             HaeufigkeitsZaehlerDouble hz = new HaeufigkeitsZaehlerDouble();
 
@@ -1022,7 +1030,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
             while (pos < this.rows.elementAt(0).getXValues().size()) {
 
-                System.out.println(pos + " => " + (pos + l));
+                LOG.debug("cutting time slice series={} length={} from={} to={}", this.label, l, pos, pos + l);
 
                 for (TimeSeriesObject r : this.rows) {
 
@@ -1039,7 +1047,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
                         }
                     } 
                     catch (IOException ex) {
-                        Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
+                        showActionError("SW test of " + r.getLabel() + ": cannot test the values " + pos + " to "
+                                + (pos + l) + " (" + ex + ")");
+                        return;
                     }
 
                 }

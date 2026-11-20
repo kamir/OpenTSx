@@ -20,7 +20,13 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -224,8 +230,54 @@ class TSBucketSequenceFileTest {
     }
 
     @Test
+    void twoLoadsAtTheSameTimeLabelTheirSeriesFromOne() throws Exception {
+        TSBucket.processSeriesLabelOnLoad = true;
+        String path = save("concurrent", rows()).toString();
+        Semaphore firstTurn = new Semaphore(0);
+        Semaphore secondTurn = new Semaphore(0);
+        TSBucket first = bucket();
+        TSBucket second = bucket();
+        ExecutorService threads = Executors.newFixedThreadPool(2);
+        try {
+            Future<?> firstLoad = threads.submit(() -> {
+                first.loadFromSequenceFile(path, null, handOver(secondTurn, firstTurn));
+                secondTurn.release();
+                return null;
+            });
+            Future<?> secondLoad = threads.submit(() -> {
+                secondTurn.acquire();
+                second.loadFromSequenceFile(path, null, handOver(firstTurn, secondTurn));
+                return null;
+            });
+            firstLoad.get(1, TimeUnit.MINUTES);
+            secondLoad.get(1, TimeUnit.MINUTES);
+        } finally {
+            threads.shutdownNow();
+        }
+
+        assertEquals(List.of("1", "2", "3"), labels(first));
+        assertEquals(List.of("1", "2", "3"), labels(second));
+    }
+
+    @Test
     void aBucketHasNoFlushThatDoesNothing() {
         assertThrows(NoSuchMethodException.class, () -> TSBucket.class.getMethod("flush"));
+    }
+
+    private static SingleRowTSO handOver(Semaphore give, Semaphore take) {
+        return new SingleRowTSO() {
+            @Override
+            public TimeSeriesObject processReihe(Writer output, TimeSeriesObject row, Writer exploded)
+                    throws Exception {
+                give.release();
+                take.acquire();
+                return row;
+            }
+        };
+    }
+
+    private static List<String> labels(TSBucket bucket) {
+        return bucket.bucketData.stream().map(TimeSeriesObject::getLabel).toList();
     }
 
     private Vector<TimeSeriesObject> rows() {

@@ -18,6 +18,8 @@ import java.util.UUID;
  */
 public class PFDRecorder {
 
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(PFDRecorder.class);
+
     private static PFDRecorder instance;
     private ProcessingFlowDescriptor currentFlow;
 
@@ -51,7 +53,7 @@ public class PFDRecorder {
         step.operation = operation;
         step.params = params != null ? params : new HashMap<>();
         currentFlow.steps.add(step);
-        System.out.println("[PFDRecorder] Added step: " + operation);
+        LOG.debug("added step operation={}", operation);
     }
 
     public String toJSON() {

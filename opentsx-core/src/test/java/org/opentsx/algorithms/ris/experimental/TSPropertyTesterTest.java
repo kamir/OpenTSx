@@ -4,12 +4,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.failingSeries;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.intervals;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.isOpen;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.stderrOf;
+import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.times;
 
 class TSPropertyTesterTest {
 
@@ -92,6 +94,49 @@ class TSPropertyTesterTest {
 
         assertEquals("addDistData: all is a container; add intervals to a result that is not a container",
                 e.getMessage());
+    }
+
+    @Test
+    void addingTimesAddsTheIntervalsBetweenThem() throws Exception {
+        TSPropertyTester tester = new TSPropertyTester("times", 12, 10);
+
+        tester._addData(times(0.0, 2.0, 5.0, 9.0), 3.0);
+
+        assertEquals(List.of(2.0, 3.0, 4.0), tester.dataRaw_InterEventTIMES);
+        assertEquals(List.of(2.0, 3.0, 4.0), tester.dataRawFILTERED);
+
+        tester._addData(times(10.0, 11.0), 1.0);
+
+        assertEquals(List.of(1.0), tester.dataRaw_InterEventTIMES);
+        assertEquals(List.of(1.0), tester.dataRawFILTERED);
+    }
+
+    @Test
+    void aTimeBeforeTheTimeBeforeItIsRefused() {
+        TSPropertyTester tester = new TSPropertyTester("unsorted", 12, 10);
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> tester._addData(times(0.0, 5.0, 2.0), 1.0));
+
+        assertEquals("_addData: time 2 of unsorted is 2.0, before time 1 at 5.0; expected times that do not decrease",
+                e.getMessage());
+        assertEquals(List.of(), tester.dataRaw_InterEventTIMES);
+    }
+
+    @Test
+    void aTimeThatIsNotFiniteIsRefused() {
+        TSPropertyTester nan = new TSPropertyTester("nan", 12, 10);
+        TSPropertyTester infinite = new TSPropertyTester("infinite", 12, 10);
+
+        IllegalArgumentException later = assertThrows(IllegalArgumentException.class,
+                () -> nan._addData(times(0.0, Double.NaN, 5.0), 1.0));
+        IllegalArgumentException first = assertThrows(IllegalArgumentException.class,
+                () -> infinite._addData(times(Double.POSITIVE_INFINITY, 1.0), 1.0));
+
+        assertEquals("_addData: time 1 of nan is NaN; expected a finite time", later.getMessage());
+        assertEquals("_addData: time 0 of infinite is Infinity; expected a finite time", first.getMessage());
+        assertEquals(List.of(), nan.dataRaw_InterEventTIMES);
+        assertEquals(List.of(), infinite.dataRaw_InterEventTIMES);
     }
 
     private static TSPropertyTester filled(String name) throws Exception {

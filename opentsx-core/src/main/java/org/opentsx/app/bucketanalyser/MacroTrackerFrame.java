@@ -24,6 +24,8 @@ import javax.swing.tree.TreeSelectionModel;
  */
 public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelectionListener {
 
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(MacroTrackerFrame.class);
+
     public static MacroTrackerFrame frame = null;
 
     public static void _registerDialogToNode(String string, javax.swing.JDialog dialog) {
@@ -83,8 +85,8 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
     }
 
     public static void addTransformation(TSBucketTransformation t) {
-        System.out.println("ADDED A NEW TRANSFORMATION ... " + t.source + " ... " + t.target + " => " + t.operation
-                + " Type: " + t.type);
+        LOG.debug("recorded transformation source={} target={} operation={} type={}", t.source, t.target, t.operation,
+                t.type);
         if (frame != null) {
 
             frame.track.addTransformation(t);
@@ -487,6 +489,8 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
 
 class Track {
 
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(Track.class);
+
     /**
      * The base folder for all tracks ...
      */
@@ -530,13 +534,13 @@ class Track {
         DefaultMutableTreeNode s = nodes.get(source);
         if (s != null) {
             s.add(trans);
-            System.out.println("[OK] " + s + " :: Node added to tree. (KEY:" + t.target + ")");
+            LOG.debug("added transformation node source={} target={}", source, t.target);
         } else {
 
             trackNode.add(trans);
 
-            System.out.println(trackNode);
-            System.out.println("{PROBLEM} " + trans);
+            LOG.debug("added transformation node at the track root track={} source={} target={}", label, source,
+                    t.target);
 
         }
 
