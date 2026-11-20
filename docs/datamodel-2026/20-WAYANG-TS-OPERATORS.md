@@ -246,7 +246,7 @@ Materialize is BSL 1.1; Bytewax is community-maintained after its company stoppe
 |---|---|---|
 | C1 | One operator catalog: ids and versions of `opentsx.processor.v1`. The schema gets runtime keys `wayang` (Track A) and `rust` (Track B), a `state` and a `merge` field (S1). | The workbench already writes these ids (`opentsx-saas-frontend/src/workbench/ops.ts:784-911`). |
 | C2 | An operator version enters a track only when it passes the shared vectors that the reference implementation passes. | Rule of [Vector and DAG rules](VECTOR-AND-DAG-SPEC.md#5-streaming-contract), section 5, row "Equality of preview and operation". |
-| C3 | Topic names from `TopicLayout` (`tsx.<domain>.<kind>.v2`), records in Avro single-object encoding, key `seriesId`, Java-compatible murmur2 partitioning. | `TopicLayout.java:189-191`; `BucketWriter.java:107-108`. |
+| C3 | Topic names from `TopicLayout` (`tsx.<domain>.<kind>.v2`), records in Avro single-object encoding, key `seriesId`, Java-compatible murmur2 partitioning. | `TopicLayout.java:204-206`; `BucketWriter.java:107-108`. |
 | C4 | Clients connect to the KafScale proxy only, with `enable.idempotence=false`, `acks=all`, one request in flight. | `KafScaleClients.java:36-50`. |
 | C5 | At-least-once delivery, deterministic output ids, readers keep one record per id. | Section 3.4. |
 | C6 | Checkpoint per task with offsets and operator state, written after all output before it is acknowledged. | `VectorProcessor.java:56-59`. |
@@ -910,7 +910,7 @@ Metadata records artifact sizes, hardware, versions, heap, commands and
 source/runtime hashes. No CPU reservation or performance threshold is applied.
 
 The [report](measurements/wayang-track-a-evaluation-2026-11-18/REPORT.md)
-record the completed 63-condition run on 2026-11-18 with JDK 21 on an Apple
+records the completed 63-condition run on 2026-11-18 with JDK 21 on an Apple
 M3 Max host. The nine federation conditions compare 3,780 windows and 17,640
 partials and retain 126 site/route byte rows. Counts, extrema and sketch
 bytes are exact; recorded q01, q50 and q99 sketch-quantile differences are

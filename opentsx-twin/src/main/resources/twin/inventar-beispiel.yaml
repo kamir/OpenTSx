@@ -4,7 +4,7 @@
 # ALL VALUES ARE INVENTED EXAMPLES: serial numbers, documents, checksums, coordinates, maintenance dates.
 # Asset id = <twin>/<atom>[/<sub-asset>...]; "atom" must exist in the wiring plan of the same twin (twin/*.yaml).
 # Real inventories (photos of the house or boat, serial numbers, berths) belong in config/private/, not in the repo.
-# Not read by code yet (stage E1: JSON schema, validation against the plan, Studio export).
+# Read by the retrieval server through the system document: SystemDoc checks every asset a signal names against it.
 schema: opentsx.inventory.v1
 example: true
 systems:

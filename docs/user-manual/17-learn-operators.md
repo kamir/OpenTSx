@@ -364,9 +364,12 @@ with a clean checkout, JDK 17 or 21, Maven, Git, Python and the pinned Go
 toolchain. The harness owns four disposable KafScale brokers and records three
 site instances in one execution JVM. Its
 [report](../datamodel-2026/measurements/wayang-federation-2026-11-17/REPORT.md)
-includes hardware, versions, commands and per-site transport counters; the 420 reference window comparisons are in
-`windows.csv`, which is not in this repository. Kafka frames, HTTP bodies and TLS streams remain separate
-metrics. The route clocks cover different work and do not compare latency.
+gives hardware, versions and per-route transport counters, and its
+[metadata](../datamodel-2026/measurements/wayang-federation-2026-11-17/metadata.json)
+records the commands. The per-site counters (`bytes.csv`) and the 420 reference window comparisons
+(`windows.csv`) are not in this repository; `artifactsSha256` in the metadata lists their SHA-256.
+Kafka frames, HTTP bodies and TLS streams remain separate metrics. The route clocks cover different work and do
+not compare latency.
 
 ## Work through a lesson
 

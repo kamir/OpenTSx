@@ -3,8 +3,7 @@
 All notable changes to OpenTSx are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Releases are tagged `v<version>`;
-entries before 3.0.0 are grouped by date. The detailed progress log is in
-`EVOLUTION/TASK-011-datamodel-refresher-2026.md`.
+entries before 3.0.0 are grouped by date.
 
 ## [Unreleased]
 
@@ -13,14 +12,15 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
-- Documentation, comments and example files describe the current code. Chapter 15 lists the pair windows of the
-  workbench as available and the twin variants T and L as proofs of concept. The worked example of chapter 16 counts
-  twelve components and sixteen signals and names the five flows that run. The `maxAge` description of
-  `opentsx.decision.v1`, rule C7 of the Wayang concept, the javadoc of `TopicLayout.clean()`, `jobs[]` of
-  `GET /v1/dags`, the features topic of the KafScale feed and the five places of the Systems shell match the code.
+- Documentation, comments and example files describe the current code. Chapter 15 drops the pair windows from the
+  open items, links PAIR-WINDOWS-SPEC from P8 and lists the twin variants T and L as proofs of concept. The worked
+  example of chapter 16 counts twelve components and sixteen signals and names the five flows that run. The `maxAge`
+  description of `opentsx.decision.v1`, rule C7 of the Wayang concept, the javadoc of `TopicLayout.clean()`, `jobs[]`
+  of `GET /v1/dags`, the features topic of the KafScale feed and the five places of the Systems shell match the code.
   References to the removed German drafts, task files and their decision ids point to the English specifications or
-  are removed. Links to the 2025 documentation point to the tag `v3.0.1`. Pages about measurement runs say that the
-  raw files are not in this repository.
+  are removed. Links to the 2025 documentation point to the tag `v3.0.1`; the 2025 release summary of
+  `opentsx-saas-backend` is removed and stays at that tag. Pages about measurement runs say that the raw files are not
+  in this repository.
 - OpenTSx is maintainer-led: issues are welcome, pull requests are reviewed after the change was agreed in an
   issue ([`GOVERNANCE.md`](GOVERNANCE.md), `CONTRIBUTING.md`, `.github/CODEOWNERS`).
 - `tools/test_wayang_track_a_results.py` checks the public Track A record (matrix, 306 raw-file names and SHA-256
