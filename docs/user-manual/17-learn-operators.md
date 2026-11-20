@@ -121,6 +121,35 @@ operational evidence without changing numerical lessons. Local proof does not
 close production release enrollment, mixed continuous federation or physical
 ARMv7 hardware acceptance.
 
+## Trace bounded mixed federation without claiming hardware qualification
+
+Keep the existing statistics, source, sink, checkpoint and assignment starters.
+Use the [mixed W3 guide](../devguide/integration/wayang-mixed-federation.md)
+and the actual mixed method in
+[`FederatedStatsIntegrationTest`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders)
+for these operational tasks:
+
+1. Identify Java `s1`/`s2` and the actual Rust CLI `s3`. Bind each qualified
+   artifact, state ABI, signed command, conformance report and terminal status
+   before following its full partial records into one admitted inventory.
+2. Compare exact counts/extrema with centralized output, then inspect mean/M2
+   against the existing `3e-12` criterion. Explain why canonical site order makes
+   six arrival orders byte-identical without proving floating-point associativity.
+3. Inspect input bits, bins and native quantile representatives in
+   [`MixedSketchQualificationTest`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/MixedSketchQualificationTest.java).
+   Keep shared sketch-byte vectors exact. Distinguish adjacent boundary bins,
+   the zero bucket and explicitly excluded collapsed tails from the qualified
+   alpha domain.
+4. Read the [board plan and validator](../../tools/wayang_board_evaluation.py).
+   Distinguish its 54 planned conditions and synthetic regression fixtures from
+   actual physical measurements. Both ARM64 and ARMv7 B4.2 measurements remain
+   open, as does physical ARMv7 B1.2 acceptance. A generated plan or passing
+   integrity validator does not supply device performance numbers.
+
+The learning metadata adds traceability to these cases. It does not change
+operator semantics, processor defaults, numerical starter values or runtime
+admission. Retained execution evidence establishes each qualification scope.
+
 <a id="use-frozen-catalog-1"></a>
 
 ## Use frozen catalog 1

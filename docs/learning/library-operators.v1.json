@@ -838,7 +838,10 @@
         "Keep Kafka Produce frames, HTTP body bytes, encrypted TLS client-stream bytes and route elapsed time as separate measured quantities.",
         "Compare Rust statistics and data-quality results with the shared Java vectors, including exact sketch bytes, non-finite values and explicitly clocked findings.",
         "Run the complete B3 W offline statistics fixture and compare actual Rust grouped partials with Java aggregate admission and completeness after signal connectivity returns.",
-        "Distinguish prior executed vector/protocol/producer-placement qualification from fresh job-cut checks without giving the ordinary statistics runtime probe-topic rights."
+        "Distinguish prior executed vector/protocol/producer-placement qualification from fresh job-cut checks without giving the ordinary statistics runtime probe-topic rights.",
+        "Trace the bounded mixed W3 method with Java s1/s2 and an actual qualified Rust CLI s3; compare exact counts/extrema, the unchanged moments criterion and six canonical-merge arrival orders.",
+        "Inspect exact binary64 zero-threshold and gamma-boundary inputs, native quantile representatives and collapsed-tail exceptions without weakening shared sketch vectors or extending the alpha domain.",
+        "Distinguish the board tool's 54 planned conditions and synthetic validator regressions from physical ARM64 and ARMv7 measurement evidence."
       ],
       "starter": {
         "language": "java",
@@ -860,7 +863,9 @@
         "The bounded signed JVM statistics profile admits one SeriesStats sink; local catalog compilation has a broader graph API.",
         "The integration topology contains three site-agent instances in one JVM and four Go brokers; transient build and conformance-check subprocesses are excluded from that execution count.",
         "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights.",
-        "Signed B3 admits only bounded decode-to-statistics with alpha 0.01 and tumbling windows. GLOBAL and the remaining B2 operators require their separate profiles; this qualification does not close mixed continuous fleets or physical ARMv7 acceptance."
+        "Signed B3 admits only bounded decode-to-statistics with alpha 0.01 and tumbling windows. GLOBAL and the remaining B2 operators require their separate profiles; this qualification does not close mixed continuous fleets or physical ARMv7 acceptance.",
+        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. Both ARM64 and ARMv7 B4.2 measurements and physical ARMv7 B1.2 acceptance remain open.",
+        "Six arrival orders use the same canonical site fold. Bit-identical output for those orders does not prove floating-point associativity or a numerical bound for arbitrary mixed data."
       ],
       "references": {
         "manual": [
@@ -872,7 +877,9 @@
           "opentsx-wayang/README.md#execute-a-signed-bounded-jvm-statistics-stage",
           "docs/devguide/integration/rust-runner-b2.md",
           "docs/devguide/integration/rust-runner-b3.md",
-          "docs/user-manual/17-learn-operators.md#trace-qualified-bounded-rust-site-operation"
+          "docs/user-manual/17-learn-operators.md#trace-qualified-bounded-rust-site-operation",
+          "docs/devguide/integration/wayang-mixed-federation.md",
+          "docs/user-manual/17-learn-operators.md#trace-bounded-mixed-federation-without-claiming-hardware-qualification"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#compute-window-statistics",
@@ -905,7 +912,9 @@
           "rust/tsx-runner/src/federation.rs",
           "rust/tsx-runner/src/forwarder.rs",
           "rust/tsx-runner/src/conformance.rs",
-          "tools/rust_b3_qualification.py"
+          "tools/rust_b3_qualification.py",
+          "rust/tsx-runner/examples/b4_sketch.rs",
+          "tools/wayang_board_evaluation.py"
         ],
         "tests": [
           "opentsx-stats/src/test/java/org/opentsx/stats/StatsEngineTest.java#L54",
@@ -929,7 +938,10 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustOfflineCatchupIntegrationTest.java",
           "tools/test_rust_b3_qualification.py",
           "rust/tsx-runner/src/conformance.rs",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/MixedSketchQualificationTest.java",
+          "tools/test_wayang_board_evaluation.py"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/stats-window.v1.json"
@@ -1125,7 +1137,8 @@
         "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output.",
         "Trace the B3 owner-local site configuration through actual qualified evidence and fresh complete-cut conformance before a signed bounded delivery reaches execution.",
         "Compare a configured but policy-denied input with an admitted input and verify refusal before any broker read.",
-        "Trace the actual main-command daemon cold start without manual conformance, verify the acknowledged delivery cursor and SIGTERM exit, then replay the retained outcome through signed file and standard-input commands."
+        "Trace the actual main-command daemon cold start without manual conformance, verify the acknowledged delivery cursor and SIGTERM exit, then replay the retained outcome through signed file and standard-input commands.",
+        "Trace the mixed W3 input as one complete topic per site, then distinguish two Java instances from the actual signed Rust CLI and its current conformance report."
       ],
       "starter": {
         "language": "java",
@@ -1145,7 +1158,8 @@
         "A frozen source entry neither performs broker reads during construction nor supplies a production admission gate.",
         "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
         "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration.",
-        "B3 signs a separate bounded decode-to-statistics profile. Local B2 availability does not admit the remaining operators, and the ordinary runtime has no admin or arbitrary probe-topic rights."
+        "B3 signs a separate bounded decode-to-statistics profile. Local B2 availability does not admit the remaining operators, and the ordinary runtime has no admin or arbitrary probe-topic rights.",
+        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. Both ARM64 and ARMv7 B4.2 measurements and physical ARMv7 B1.2 acceptance remain open."
       ],
       "references": {
         "manual": [
@@ -1160,7 +1174,9 @@
           "docs/user-manual/17-learn-operators.md#follow-the-signed-bounded-jvm-statistics-profile",
           "opentsx-wayang/README.md#execute-a-signed-bounded-jvm-statistics-stage",
           "docs/devguide/integration/rust-runner-b3.md",
-          "docs/user-manual/17-learn-operators.md#trace-qualified-bounded-rust-site-operation"
+          "docs/user-manual/17-learn-operators.md#trace-qualified-bounded-rust-site-operation",
+          "docs/devguide/integration/wayang-mixed-federation.md",
+          "docs/user-manual/17-learn-operators.md#trace-bounded-mixed-federation-without-claiming-hardware-qualification"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#construct-a-whole-topic-source",
@@ -1221,7 +1237,8 @@
           "rust/tsx-runner/tests/agent_api.rs",
           "rust/tsx-runner/tests/agent_cli.rs",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/RustSiteAdmissionTest.java",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders"
         ],
         "vectors": [
           "opentsx-model/src/test/resources/testvectors/wire-format.json",
@@ -1253,7 +1270,8 @@
         "Trace the shared remote sink from private preparation through cross-topic derived-series ownership checks to activation acknowledgements.",
         "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output.",
         "Keep the signal path unavailable during the complete B3 W run, then inspect every full site-outbox partial, closed-cut header and appended final revision after catch-up.",
-        "Lose a target acknowledgement, restart the forwarder and compare deterministic key/revision deduplication without dropping or replacing acknowledged partials."
+        "Lose a target acknowledgement, restart the forwarder and compare deterministic key/revision deduplication without dropping or replacing acknowledged partials.",
+        "Inspect actual Rust site aggregate forwarding beside two Java sites; bind full payloads and closed-cut evidence to the same signed membership before reading final windows."
       ],
       "starter": {
         "language": "java",
@@ -1276,7 +1294,8 @@
         "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
         "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
         "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration.",
-        "The B3 forwarder copies only validated completed aggregate records from its retained immutable site outbox. A lost target acknowledgement can repeat a key/revision; it does not grant permission to forward raw Episodes or arbitrary topics."
+        "The B3 forwarder copies only validated completed aggregate records from its retained immutable site outbox. A lost target acknowledgement can repeat a key/revision; it does not grant permission to forward raw Episodes or arbitrary topics.",
+        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. Both ARM64 and ARMv7 B4.2 measurements and physical ARMv7 B1.2 acceptance remain open."
       ],
       "references": {
         "manual": [
@@ -1287,7 +1306,9 @@
           "docs/devguide/integration/wayang-rust-compose.md",
           "docs/devguide/integration/wayang-rust-continuous.md",
           "docs/devguide/integration/rust-runner-b3.md",
-          "docs/user-manual/17-learn-operators.md#trace-qualified-bounded-rust-site-operation"
+          "docs/user-manual/17-learn-operators.md#trace-qualified-bounded-rust-site-operation",
+          "docs/devguide/integration/wayang-mixed-federation.md",
+          "docs/user-manual/17-learn-operators.md#trace-bounded-mixed-federation-without-claiming-hardware-qualification"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#construct-a-topic-sink",
@@ -1334,7 +1355,8 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustOfflineCatchupIntegrationTest.java",
           "rust/tsx-runner/src/forwarder.rs",
           "rust/tsx-runner/src/federation.rs",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders"
         ],
         "vectors": [
           "opentsx-model/src/test/resources/testvectors/wire-format.json"
@@ -1373,7 +1395,8 @@
         "Trace the B3 durable outcome before acknowledgement and delivery cursor after acknowledgement; retry retained acknowledgements after conformance expiry without another activation.",
         "Inspect the B3 private outbox and forwarder state after target-acknowledgement loss and require the same command, qualified runtime and immutable cut on restart.",
         "Trace the actual main-command daemon cold start without manual conformance, verify the acknowledged delivery cursor and SIGTERM exit, then replay the retained outcome through signed file and standard-input commands.",
-        "Lose a terminal-status response, keep the job generation current until its delivery acknowledgement is durable, then replay that acknowledgement after a driver restart."
+        "Lose a terminal-status response, keep the job generation current until its delivery acknowledgement is durable, then replay that acknowledgement after a driver restart.",
+        "Inspect how a qualified Rust runtime version, executable digest and state ABI enter the aggregate inventory fingerprint and prevent silent reuse of incompatible completeness state."
       ],
       "starter": {
         "language": "java",
@@ -1400,7 +1423,8 @@
         "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration.",
         "Rust file locks release explicitly in the acquiring process; inherited descriptors cannot postpone restart or authorize a copied owner to unlock its parent. These lock lifetimes do not change the Java starter or make its checkpoint state portable.",
         "A retained B3 acknowledgement can recover after conformance expires, while fresh activation still needs current qualification and job-bound conformance. Its private state ABI is separate from the Java starter checkpoint and local B2 catalog state.",
-        "A stopped status alone does not retire a delivery; every previous site also needs a durable accepted acknowledgement before the next job generation."
+        "A stopped status alone does not retire a delivery; every previous site also needs a durable accepted acknowledgement before the next job generation.",
+        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. Both ARM64 and ARMv7 B4.2 measurements and physical ARMv7 B1.2 acceptance remain open."
       ],
       "references": {
         "manual": [
@@ -1415,7 +1439,9 @@
           "opentsx-wayang/README.md#execute-a-signed-bounded-jvm-statistics-stage",
           "rust/tsx-runner/README.md#serve-a-trusted-local-worker",
           "docs/devguide/integration/rust-runner-b3.md",
-          "docs/user-manual/17-learn-operators.md#trace-qualified-bounded-rust-site-operation"
+          "docs/user-manual/17-learn-operators.md#trace-qualified-bounded-rust-site-operation",
+          "docs/devguide/integration/wayang-mixed-federation.md",
+          "docs/user-manual/17-learn-operators.md#trace-bounded-mixed-federation-without-claiming-hardware-qualification"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#persist-an-increment-checkpoint",
@@ -1448,7 +1474,8 @@
           "rust/tsx-runner/src/checkpoint.rs",
           "rust/tsx-runner/src/agent.rs",
           "rust/tsx-runner/src/site_plan.rs",
-          "rust/tsx-runner/src/forwarder.rs"
+          "rust/tsx-runner/src/forwarder.rs",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/AggregateInventory.java#fingerprint"
         ],
         "tests": [
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointTest.java#aWrittenCheckpointReadsBackAndLeavesNoTemporaryFile",
@@ -1483,7 +1510,9 @@
           "rust/tsx-runner/src/forwarder.rs",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceStatusReplayTest.java",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceRetirementTest.java"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceRetirementTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/RustSiteAdmissionTest.java"
         ],
         "vectors": []
       }
@@ -1514,7 +1543,8 @@
         "Bind the B3 signed bounded assignment to its exact runtime, artifact, catalog/state ABI, local jobs, complete cuts, membership and scopes; reject a JVM execution attempt for that Rust assignment.",
         "Compare all eight S5.5 refusals with TLS endpoint errors, then inspect certificate-forced SSH stop, refusal and runtime-failure exits under the fixed local configuration.",
         "Trace the actual main-command daemon cold start without manual conformance, verify the acknowledged delivery cursor and SIGTERM exit, then replay the retained outcome through signed file and standard-input commands.",
-        "Stop a prior version without acknowledging its delivery and observe plan.busy; acknowledge every previous site before publishing the next job generation."
+        "Stop a prior version without acknowledging its delivery and observe plan.busy; acknowledge every previous site before publishing the next job generation.",
+        "Trace TsxPlanService.admitAggregateInventory after current conformance; reject changed membership, scopes or runtime pins and keep the JVM executor separate from the actual Rust CLI."
       ],
       "starter": {
         "language": "java",
@@ -1540,7 +1570,8 @@
         "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
         "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration.",
         "Passing the offline assignment validator does not qualify signed B3 execution. The driver cannot supply broker addresses, role keys, policy or state paths; signed B3 admits only bounded decode-to-statistics.",
-        "An accepted delivery acknowledgement and a stopped status form the replacement boundary; losing a response must not make the previous generation unreachable."
+        "An accepted delivery acknowledgement and a stopped status form the replacement boundary; losing a response must not make the previous generation unreachable.",
+        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. Both ARM64 and ARMv7 B4.2 measurements and physical ARMv7 B1.2 acceptance remain open."
       ],
       "references": {
         "manual": [
@@ -1552,7 +1583,9 @@
           "docs/user-manual/17-learn-operators.md#follow-the-signed-bounded-jvm-statistics-profile",
           "opentsx-wayang/README.md#execute-a-signed-bounded-jvm-statistics-stage",
           "docs/devguide/integration/rust-runner-b3.md",
-          "docs/user-manual/17-learn-operators.md#trace-qualified-bounded-rust-site-operation"
+          "docs/user-manual/17-learn-operators.md#trace-qualified-bounded-rust-site-operation",
+          "docs/devguide/integration/wayang-mixed-federation.md",
+          "docs/user-manual/17-learn-operators.md#trace-bounded-mixed-federation-without-claiming-hardware-qualification"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#validate-a-whole-topic-execution-assignment",
@@ -1583,7 +1616,8 @@
           "rust/tsx-runner/src/agent.rs",
           "rust/tsx-runner/src/site_client.rs",
           "tools/rust_ssh_launch.py",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxPlanService.java"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxPlanService.java",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/AggregateInventory.java#fingerprint"
         ],
         "tests": [
           "opentsx-model/src/test/java/org/opentsx/model/contracts/ExecutionAssignmentsTest.java#L35",
@@ -1613,7 +1647,8 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/RustSiteAdmissionTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceStatusReplayTest.java",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceRetirementTest.java"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceRetirementTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/execution-contracts.v1.json"

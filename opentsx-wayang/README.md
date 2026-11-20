@@ -280,6 +280,18 @@ records after the stopped site returns and the coordinator reloads its state.
 The bounded W3 numerical qualification uses the approved relative `3e-12`
 mean/M2 criterion in
 [SPEC S4.3](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s43-merge-functions).
+The separate [mixed federation harness](../docs/devguide/integration/wayang-mixed-federation.md)
+selects Java sites `s1`/`s2` and an actual qualified Rust CLI site `s3` for the
+bounded W3 signal-cluster route. Its target is 1,260 partials and 420 final
+windows, exact counts/extrema, the existing `3e-12` moments criterion and six
+canonical-merge arrival orders. `MixedSketchQualificationTest` adds actual
+cross-runtime binary64 boundary, zero-bucket and collapsed-tail cases without
+changing shared vectors. Retained run evidence establishes acceptance; the
+harness alone does not. General mixed continuous fleets and production rollout
+remain separate. Physical ARM64 and ARMv7 B4.2 measurements are both open;
+[the board tool](../tools/wayang_board_evaluation.py) prepares and validates
+supplied evidence rather than executing measurements.
+
 These integration classes use the existing `KAFSCALE_BOOTSTRAP` test switch and
 require `KAFSCALE_BROKER_BINARY`, `KAFSCALE_PROXY_BINARY` and `KAFSCALE_CLUSTER_BINARY`
 to name the source-built KafScale v1.6.0 broker, Proxy and isolated cluster launcher.

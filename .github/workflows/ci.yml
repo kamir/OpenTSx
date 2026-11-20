@@ -697,7 +697,7 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
       - name: Verify Maven download retries
         run: python3 tools/check_maven_downloads.py
-      - name: Qualify and build the pinned Rust B2 and B3 harnesses
+      - name: Qualify and build the pinned Rust B2 to B4 harnesses
         shell: bash
         run: |
           set -euo pipefail
@@ -752,7 +752,7 @@ jobs:
           KAFSCALE_PROXY_BINARY: ${{ runner.temp }}/kafscale-proxy
           KAFSCALE_CLUSTER_BINARY: ${{ runner.temp }}/kafscale-cluster
         # opentsx-legacy-bridge pulls in opentsx-core, whose Swing tests need a display
-        run: xvfb-run --auto-servernum mvn -B -ntp -Dopentsx.rust.b2.parity="$GITHUB_WORKSPACE/target/rust-b2/debug/examples/b2_parity" -Dopentsx.rust.b3.offline="$GITHUB_WORKSPACE/target/rust-b2/debug/examples/b3_offline" -Dopentsx.rust.b3.runner="$GITHUB_WORKSPACE/target/rust-b2/debug/tsx-runner" -Dopentsx.rust.b3.testLog="$GITHUB_WORKSPACE/target/rust-b3-evidence/runner.log" -Dopentsx.rust.b3.contractsLog="$GITHUB_WORKSPACE/target/rust-b3-evidence/contracts.log" -pl opentsx-kafscale-conformance,opentsx-kafka-v2,opentsx-legacy-bridge,opentsx-windpark,opentsx-stats,opentsx-twin-live,opentsx-retrieval,opentsx-wayang -am test
+        run: xvfb-run --auto-servernum mvn -B -ntp -Dopentsx.sourceCommit="$GITHUB_SHA" -Dopentsx.rust.b2.parity="$GITHUB_WORKSPACE/target/rust-b2/debug/examples/b2_parity" -Dopentsx.rust.b3.offline="$GITHUB_WORKSPACE/target/rust-b2/debug/examples/b3_offline" -Dopentsx.rust.b4.sketch="$GITHUB_WORKSPACE/target/rust-b2/debug/examples/b4_sketch" -Dopentsx.rust.b3.runner="$GITHUB_WORKSPACE/target/rust-b2/debug/tsx-runner" -Dopentsx.rust.b3.testLog="$GITHUB_WORKSPACE/target/rust-b3-evidence/runner.log" -Dopentsx.rust.b3.contractsLog="$GITHUB_WORKSPACE/target/rust-b3-evidence/contracts.log" -pl opentsx-kafscale-conformance,opentsx-kafka-v2,opentsx-legacy-bridge,opentsx-windpark,opentsx-stats,opentsx-twin-live,opentsx-retrieval,opentsx-wayang -am test
       - name: Require executed streaming acceptance
         if: always()
         run: |
@@ -770,7 +770,7 @@ jobs:
               raise SystemExit("streaming acceptance is missing, skipped or failed")
           print("All three streaming acceptance cases executed successfully")
           PYTHON
-      - name: Require executed Wayang acceptance (TASK-020 A1 to B3)
+      - name: Require executed Wayang acceptance (TASK-020 A1 to B4)
         if: always()
         run: |
           python3 - <<'PYTHON'
@@ -799,7 +799,8 @@ jobs:
               "MergeOrderTest": 8,
               "W3StatsMergeTest": 2,
               "ConformanceHandshakeTest": 3,
-              "FederatedStatsIntegrationTest": 1,
+              "FederatedStatsIntegrationTest": 2,
+              "MixedSketchQualificationTest": 2,
               "CompletenessIntegrationTest": 1,
               "JobStateRouteIntegrationTest": 1,
               "federation.AggregateRecordTest": 5,
@@ -843,6 +844,16 @@ jobs:
                   "fullWindparkCutSurvivesOfflineSignalAndAcknowledgementLossWithoutMissingFinalWindows",
               }):
                   raise SystemExit("the complete Rust offline catch-up case did not execute exactly once")
+              if name == "FederatedStatsIntegrationTest" and (int(suite.attrib["tests"]) != 2 or executed != {
+                  "everyActualW3WindowMatchesCentralizedAndAllSixMergeOrders",
+                  "everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders",
+              }):
+                  raise SystemExit("the Java and mixed W3 cases did not execute exactly once")
+              if name == "MixedSketchQualificationTest" and (int(suite.attrib["tests"]) != 2 or executed != {
+                  "mixedSketchesQualifySharedBoundaryZeroBucketAndCollapsedTailCases",
+                  "helperReportsItsVersionAndRejectsMalformedOrOversizedInput",
+              }):
+                  raise SystemExit("the mixed sketch qualification cases did not execute exactly once")
               if name == "RustAgentDaemonIntegrationTest" and (int(suite.attrib["tests"]) != 1 or executed != {
                   "realDaemonConformsPullsExecutesAcknowledgesAndStops",
               }):
@@ -931,6 +942,8 @@ jobs:
             opentsx-flink-core/target/pfd-acceptance/
             opentsx-wayang/target/surefire-reports/
             opentsx-wayang/target/federation-test-logs/**/brokers/*.log
+            opentsx-wayang/target/rust-b4-mixed/**
+            opentsx-wayang/target/rust-b4-sketch/**
             opentsx-wayang/target/rust-b3-daemon/result.json
             opentsx-wayang/target/rust-b3-offline/result.json
             opentsx-wayang/target/rust-b3-offline/protocol.json

@@ -34,7 +34,11 @@ The [B3 site profile](../devguide/integration/rust-runner-b3.md) separately
 admits bounded decode-to-statistics fragments with owner-local qualification,
 fresh job checks and signed control. Its site outbox retains full partials
 while the signal cluster is unreachable. It does not extend signed admission
-to the remaining local B2 operators.
+to the remaining local B2 operators. The [bounded mixed W3 harness](../devguide/integration/wayang-mixed-federation.md)
+selects two Java sites and one actual qualified Rust CLI site. It retains
+conformance, runtime identity, per-partial and per-window comparisons; actual
+acceptance depends on its executed evidence. Both physical ARM64 and ARMv7
+B4.2 measurements remain open.
 
 ## 1. Goal
 
@@ -753,6 +757,15 @@ durable-storage behavior, a remote-network result or Track B parity.
 5. Sample RSS, CPU time and lag every second from `/proc`; record start time to first fetch and to first output.
 6. Check that both tracks produced identical output records (section 13) before any number is reported.
 7. Publish raw samples and the scripts in the repository.
+
+The [board evidence tool](../../tools/wayang_board_evaluation.py) prepares this
+54-condition matrix for ARM64/ARMv7, Java 17/21/Rust and three repetitions per
+series count. Its validator checks supplied source/artifact/sample/output
+proof integrity. It does not start workloads, collect physical measurements or
+attest hardware. Both physical boards remain unmeasured for B4.2; hosted
+ARM64 and ARMv7 QEMU checks do not replace them. The
+[mixed federation guide](../devguide/integration/wayang-mixed-federation.md#prepare-physical-board-evidence)
+keeps this preparation separate from the bounded W3 correctness harness.
 
 ### 14.3 Measure bounded JVM federation
 

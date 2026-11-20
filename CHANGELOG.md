@@ -48,6 +48,16 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Bounded mixed W3 acceptance harness with two Java sites and an actual
+  qualified Rust CLI site, runtime-bound aggregate admission, complete
+  partial/window evidence and six canonical-merge arrival orders. Separate
+  exact-binary64 sketch cases retain shared vectors and identify boundary,
+  zero-bucket and collapsed-tail accuracy domains without widening the
+  moments criterion. Board evaluation tooling prepares the fixed 54-condition
+  matrix and validates supplied evidence integrity. Physical ARM64 and ARMv7
+  B4.2 measurements and ARMv7 B1.2 acceptance remain open. Manual and learning
+  metadata keep these execution and hardware scopes separate.
+
 - Add a deterministic local windpark demo with healthy, fault and curtailed
   turbines. Persist real Iceberg episodes through a SQLite catalog and verify
   replay against full payload hashes and recalculated underperformance results.
