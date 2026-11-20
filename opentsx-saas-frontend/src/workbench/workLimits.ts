@@ -1,5 +1,5 @@
 import { esSettings } from './es';
-import { MAX_PAIRS, pairRanges, pairSettings, rangesOf, samplingInterval } from './pairs';
+import { MAX_PAIRS, pairClocks, pairRanges, pairSettings, rangesOf } from './pairs';
 import { Bucket, Params, Series } from './types';
 import { lagsOf } from './xcorr';
 
@@ -43,12 +43,14 @@ function pairWork(op: string, inputs: Bucket[], p: Params): void {
   let windows = 0;
   let work = 0;
   const origin = (first.t0Ms ?? 0) / 1000;
+  const intervals = new Map<Series, Map<string, number>>();
   for (const [a, b, other] of pairs) {
-    const every = st.every ?? Math.max(samplingInterval(a.x), samplingInterval(b.x));
     const shift = ((other.t0Ms ?? first.t0Ms ?? 0) - (first.t0Ms ?? 0)) / 1000;
     const ranges = pairRanges(rangesOf(first, a), rangesOf(other, b).map((r) => ({ ...r, start: r.start + shift, end: r.end + shift })), st.pairing, st.window ?? 0);
     bounded(op, ranges.length, MAX_WINDOWS);
-    for (const r of ranges) {
+    const clocks = pairClocks(st.every, ranges, { series: a, shift: 0 }, { series: b, shift }, first.t0Ms ?? 0, intervals);
+    for (const [k, r] of ranges.entries()) {
+      const every = clocks[k];
       const length = r.end - r.start;
       const count = st.window === null ? (length > TOL ? 1 : 0) : length < st.window - TOL || !(st.step > 0) ? 0 : Math.floor((length - st.window) / st.step + 1e-9) + 1;
       windows += count;

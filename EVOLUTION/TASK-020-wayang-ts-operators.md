@@ -234,9 +234,10 @@ Status of A3.2 on 2026-11-16, JDK 21: `TsxPairVectorsTest` runs all 5 shared
 (peak of largest magnitude, as `xcorr.ts`), the same 5 with B in a later
 increment, a repeated delivery, and `intersect` pairing (12 tests, 0
 failures). An episode waits in `TsxState` until every series of the other
-input has passed its end. One difference to the workbench: without `every`
-the clock is the larger sampling interval of the two paired episodes, not of
-the two whole series, because a continuing input has no whole series.
+input has passed its end. Without `every` the clock is the larger sampling
+interval of the two paired episodes, because a continuing input has no whole
+series. The workbench and the Rust runner take the same clock; the timestamped
+cases of `pair-clock.v1.json` check it.
 
 
 | # | Criterion | Proof | Data | Pass |
@@ -525,7 +526,7 @@ retain source/runtime hashes and the exact executed JUnit methods:
 | # | Result |
 |---|---|
 | B4.1 | met for bounded W3 on the signal-cluster route: `FederatedStatsIntegrationTest.everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders` executes Java `s1`/`s2` and actual Rust CLI `s3`, 3,600 Episodes, 2,160,000 values, 1,260 partials, 420 final windows, 30 conformance checks and 2,520 canonical-merge byte comparisons. Exact counts/extrema/lastSeen pass; maximum relative mean error is `1.7308017671758118e-14`, M2 `2.7235050829345894e-12`, within unchanged `3e-12`. `MixedSketchQualificationTest` executes 58 cases and 348 mixed arrival-order comparisons, including 42 gamma-boundary, six zero-threshold and four collapsed-tail cases. |
-| B4.2 | open for one physical ARM64 board (D-T14). `wayang_board_evaluation.py` emits the unassigned 81-condition matrix of three chains (D-T15); its 26 deterministic tests validate evidence completeness and association only and refuse ARMv7 or AArch32 boards. `board_identity.py` and `board_resource_sampler.py` record the board and the one-second samples in the validator's formats (10 tests). `BoardWorkload` in `opentsx-wayang` drives one condition: paced feed, Track A or Track B, process id, first fetch and first output (`BoardWorkloadTest`, `BoardWorkloadIntegrationTest`). `BoardOutputProofTest` writes the output proof of one condition: the run equals, series by series, a prefix of the reference output of the same feed, field for field; the board validator accepts the proof file. A lag command is still missing. No physical RSS, CPU, startup or throughput result is claimed. |
+| B4.2 | open for one physical ARM64 board (D-T14). `wayang_board_evaluation.py` emits the unassigned 81-condition matrix of three chains (D-T15); its 26 deterministic tests validate evidence completeness and association only and refuse ARMv7 or AArch32 boards. `board_identity.py` and `board_resource_sampler.py` record the board and the one-second samples in the validator's formats (10 tests). `BoardWorkload` in `opentsx-wayang` drives one condition: paced feed, Track A or Track B, process id, first fetch and first output (`BoardWorkloadTest`, `BoardWorkloadIntegrationTest`). `BoardOutputProofTest` writes the output proof of one condition: the run equals, series by series, a prefix of the reference output of the same feed, field for field; the board validator accepts the proof file. `board_lag.py` prints the lag that `BoardWorkload --lag-file` writes twice per second, for the sampler's `--lag-command` (3 tests). No physical RSS, CPU, startup or throughput result is claimed. |
 
 Six arrival orders use one canonical site fold; they do not establish floating-point
 associativity. The Java-only test and shared sketch bytes remain exact. On this

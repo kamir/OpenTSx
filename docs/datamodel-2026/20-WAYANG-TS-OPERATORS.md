@@ -709,8 +709,11 @@ and the site agents also write `site` and `artifact` (version and digest). Neith
 `GET /v1/dags` lists every status record that carries `job` under `jobs`: the latest record per key, as written, with
 or without a control record of that name (`KafScaleFeed.java:320`, `:375`). The processor never writes `job`.
 `dags` holds the control records with the processor's sink reports (key `<dag>/<sink>`) and refusals (key `<dag>`).
-Job records do not appear under `dags`. The workbench Deployments panel reads `dags` only and does not show job
-records (`opentsx-saas-frontend/src/workbench/deployments.ts:27-31`).
+Job records do not appear under `dags`. The workbench Deployments panel shows them in a separate list below the
+deployments: job id, track, site when present, state, input record count and report age
+(`opentsx-saas-frontend/src/workbench/DeploymentsPanel.tsx:189-209`). It offers no Stop for a job, because neither
+track reads the control topic. A job in any state but `stopped` or `failed` without a report for 120 s is flagged
+(`deployments.ts:100`). When the response has no `jobs`, the panel says so.
 
 Metrics per task: lag per partition, records in and out, operator time, checkpoint age, delivery failures.
 
@@ -798,7 +801,9 @@ statistics chains on a paced feed of one sample per series and second (D-T15),
 Java 17/21/Rust and three repetitions per series count. Its validator checks supplied
 source/artifact/sample/output proof integrity. It does not start workloads,
 collect physical measurements or attest hardware. `board_identity.py` and
-`board_resource_sampler.py` record step 1 and step 5 in its formats; the
+`board_resource_sampler.py` record step 1 and step 5 in its formats, with the
+lag from `board_lag.py`. `BoardWorkload` in `opentsx-wayang` drives one
+condition and `BoardOutputProofTest` writes its step 6 output proof; the
 [Jetson runbook](../devguide/integration/wayang-board-jetson.md) prepares a
 Jetson Nano 4 GB. The board remains unmeasured for B4.2; hosted ARM64 checks do
 not replace it. The
