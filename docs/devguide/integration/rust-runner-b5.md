@@ -113,8 +113,7 @@ references separately from the browser workload.
 
 ## Keep physical board acceptance open
 
-Both physical ARM64 and ARMv7 measurements under
+The physical ARM64 measurement under
 [B4.2](../../../EVOLUTION/TASK-020-wayang-ts-operators.md#b4-mixed-federation-and-evaluation-on-small-hardware)
-remain open. Physical ARMv7 B1.2 vector acceptance also remains open in
-[issue 294](https://github.com/kamir/OpenTSx/issues/294). Hosted CI, emulation
+remains open; D-T14 requires no ARMv7 hardware. Hosted CI, emulation
 and sandbox limits provide no device RSS, CPU, startup or throughput result.

@@ -30,7 +30,7 @@ activation and device measurements remain separate. The
 [bounded mixed W3 harness](wayang-mixed-federation.md) selects this existing
 statistics profile at one Rust site beside two Java sites. Its retained
 acceptance evidence has a separate bounded scope; it does not qualify mixed
-continuous fleets. Physical ARM64 and ARMv7 B4.2 measurements are both open.
+continuous fleets. The physical ARM64 B4.2 measurement is open (D-T14: ARM64 only).
 
 ## Qualify the exact executable and site endpoint
 
@@ -241,6 +241,5 @@ and [cleanup path](https://github.com/openssh/openssh-portable/blob/V_10_2_P1/ss
 | Owner-local qualification evidence | [`qualification generator regressions`](../../../tools/test_rust_b3_qualification.py) |
 
 Read [TASK-020 B3](../../../EVOLUTION/TASK-020-wayang-ts-operators.md#b3-agent-offline-operation-ssh-launch)
-for the acceptance results. Physical ARMv7 execution remains open under
-[B1.2 and issue 294](https://github.com/kamir/OpenTSx/issues/294). Native ARM64
-and ARMv7 QEMU results do not close that hardware requirement.
+for the acceptance results. Under D-T14 no ARMv7 hardware is required; ARMv7
+QEMU results stay supplementary.

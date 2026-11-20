@@ -10,8 +10,8 @@
 > A separate isolated signed `run` profile admits continuous Episode
 > pass-through. The B3 site configuration adds signed bounded statistics,
 > outbound mTLS plan pulls, qualified conformance and aggregate catch-up;
-> production fleet activation and
-> physical ARMv7 qualification remain separate. Checked against Apache
+> production fleet activation remains separate; D-T14 requires no ARMv7
+> hardware. Checked against Apache
 > Wayang release 1.1.1 (tag `wayang-1.1.1`, commit `61deee43`, 2026-02-09) and `main` at `713faa7d` (2026-11-12).
 > Crate and tool versions are named where they are used. Related: [05](05-SMART-TOPICS.md) (federated global model),
 > [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md) (Go Smart Topic processor, `opentsx.dag.v1`),
@@ -43,8 +43,8 @@ to the remaining local B2 operators. The [bounded mixed W3 harness](../devguide/
 selects two Java sites and one actual qualified Rust CLI site. It retains
 conformance, runtime identity, per-partial and per-window comparisons; actual
 acceptance is recorded in the [qualification report](measurements/rust-b4-mixed-20261120/REPORT.md).
-Both physical ARM64 and ARMv7
-B4.2 measurements remain open.
+The physical ARM64
+B4.2 measurement remains open (D-T14: ARM64 only).
 
 ## 1. Goal
 
@@ -399,8 +399,8 @@ below remains a target.
 CI defines native x86_64 and ARM64 execution, all three B1 static musl builds,
 ELF/digest/version checks and supplementary ARMv7 QEMU execution. Its reports
 distinguish native execution from emulation; a workflow definition alone is not
-a successful build result. B1.2 still requires physical ARMv7 execution of the
-shared cases. The
+a successful build result. Under D-T14 the native x86_64 and ARM64 jobs satisfy
+B1.2; ARMv7 stays a QEMU check. The
 [B1 operating guide](../devguide/integration/rust-runner-b1.md) identifies the
 qualification evidence.
 
@@ -729,7 +729,7 @@ Baselines:
 |---|---|---|
 | (a) centralized against federated: the same operator plan once with all raw data moved to one site, once federated over k sites | k sites plus one central site | equality of results (section 9.4) and bytes moved |
 | (b) the existing OpenTSx Java streaming path (the processor in `opentsx-retrieval` and the statistics processor in `opentsx-stats`) | same server | in-repository reference for throughput and latency of the same operators |
-| (c) Track B against Track A | the same small device: one arm64 board and one armv7 board (models named in the report) | resource use and throughput on low-capacity hardware |
+| (c) Track B against Track A | the same small device: one physical arm64 board (D-T14; model named in the report) | resource use and throughput on low-capacity hardware |
 
 ### 14.1 Measure Track A increments
 
@@ -773,11 +773,14 @@ durable-storage behavior, a remote-network result or Track B parity.
 7. Publish raw samples and the scripts in the repository.
 
 The [board evidence tool](../../tools/wayang_board_evaluation.py) prepares this
-54-condition matrix for ARM64/ARMv7, Java 17/21/Rust and three repetitions per
-series count. Its validator checks supplied source/artifact/sample/output
-proof integrity. It does not start workloads, collect physical measurements or
-attest hardware. Both physical boards remain unmeasured for B4.2; hosted
-ARM64 and ARMv7 QEMU checks do not replace them. The
+27-condition matrix for one ARM64 board (D-T14), Java 17/21/Rust and three
+repetitions per series count. Its validator checks supplied
+source/artifact/sample/output proof integrity. It does not start workloads,
+collect physical measurements or attest hardware. `board_identity.py` and
+`board_resource_sampler.py` record step 1 and step 5 in its formats; the
+[Jetson runbook](../devguide/integration/wayang-board-jetson.md) prepares a
+Jetson Nano 4 GB. The board remains unmeasured for B4.2; hosted ARM64 checks do
+not replace it. The
 [mixed federation guide](../devguide/integration/wayang-mixed-federation.md#prepare-physical-board-evidence)
 keeps this preparation separate from the bounded W3 correctness harness.
 
