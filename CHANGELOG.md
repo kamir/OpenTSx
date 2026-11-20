@@ -971,6 +971,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   is no finding.
 - `MFDFAAnalyzer.process(rows, runid)` returns the F(s,q) chart of the original values of the first series as a
   `MultiChart`, or `null` for no rows, instead of `void`. This is a breaking change.
+- opentsx-connectors: `kping.TSOEventAnalysisConsumer.createConsumer(topic)` returns `Consumer<String, GenericRecord>`
+  instead of `Consumer<Long, GenericRecord>` and sets `StringDeserializer` and `KafkaAvroDeserializer`, so it reads
+  the series label keys that `TSOProducer.pushTSDataAsEventsToKafka_String_Avro` writes to `OpenTSx_Events`;
+  `EventFlowAnalysisConsumer` in opentsx-lg reads them as `String`. Code that assigns the result to `Consumer<Long,
+  GenericRecord>` no longer compiles. This is a breaking change.
 
 ### Removed
 

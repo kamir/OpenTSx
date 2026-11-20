@@ -50,6 +50,20 @@ polls of one second in a row and then logs at WARN:
 `KafkaConnector.close()` and `TSOConsumer.close()` close the consumer when `processTopic` or `runConsumer` has not
 closed it yet, so a `KafkaConnector` that connected but never read leaks no consumer. A second `close()` does nothing.
 
+## Read the probe topics
+
+`kping.TSOEventAnalysisConsumer.createConsumer(<topic>)` returns a `Consumer<String, GenericRecord>` subscribed to
+`<topic>`, for the events that `TSOProducer.pushTSDataAsEventsToKafka_String_Avro` writes to `OpenTSx_Events`: the
+series label as the key and the Avro `Event` as the value. It sets `key.deserializer` to
+`org.apache.kafka.common.serialization.StringDeserializer` and `value.deserializer` to
+`io.confluent.kafka.serializers.KafkaAvroDeserializer`, whatever the profile says. `KafkaAvroDeserializer` reads
+`schema.registry.url` from the profile. The consumer uses the group id `KPING-Consumer` and starts at the latest
+offset.
+
+`klatency.LatencyTestEventConsumer.createConsumer(<topic>)` returns a `Consumer<String, String>` subscribed to
+`<topic>`, with the group id `LatencyTestEventConsumer`, that starts at the latest offset. It takes `key.deserializer`
+and `value.deserializer` from the profile.
+
 ## Handle errors
 
 The helpers stop at the first failure and throw.

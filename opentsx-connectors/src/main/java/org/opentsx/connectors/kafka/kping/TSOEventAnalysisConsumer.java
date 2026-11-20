@@ -4,6 +4,8 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import org.opentsx.tsa.rng.ReferenceDataset;
 import org.opentsx.connectors.kafka.OpenTSxClusterLink;
 
@@ -15,12 +17,13 @@ public class TSOEventAnalysisConsumer {
     public final static String TOPIC = ReferenceDataset.event_topicname;
 
     /**
-     * We create the Analysis Consumer which can read the TSOEventSeries.
-     *
-     * @param TOPIC
-     * @return
+     * Creates the consumer of the given topic for the events that
+     * {@code TSOProducer.pushTSDataAsEventsToKafka_String_Avro} writes to {@code OpenTSx_Events}
+     * ({@code TSOProducer.TOPIC_for_events}): the series label as a String key and the Avro {@code Event} as a
+     * {@link GenericRecord}, in the group {@code KPING-Consumer} from the latest offset. It sets the deserializers
+     * itself; the other settings, {@code schema.registry.url} included, come from the Kafka client profile.
      */
-    public static Consumer<Long, GenericRecord> createConsumer( String TOPIC ) {
+    public static Consumer<String, GenericRecord> createConsumer( String TOPIC ) {
 
         Properties props = OpenTSxClusterLink.getClientProperties();
 
@@ -28,8 +31,11 @@ public class TSOEventAnalysisConsumer {
 
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class.getName());
+
         // Create the consumer using props.
-        final Consumer<Long, GenericRecord> consumer =
+        final Consumer<String, GenericRecord> consumer =
                 new KafkaConsumer<>(props);
 
         // Subscribe to the topic.

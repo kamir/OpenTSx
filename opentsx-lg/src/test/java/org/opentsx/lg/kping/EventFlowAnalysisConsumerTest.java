@@ -54,8 +54,8 @@ class EventFlowAnalysisConsumerTest {
         EventFlowAnalysisConsumer.GIVE_UP = previousGiveUp;
     }
 
-    private static MockConsumer<Long, GenericRecord> consumerWith(int records) {
-        MockConsumer<Long, GenericRecord> consumer = new MockConsumer<>(OffsetResetStrategy.EARLIEST);
+    private static MockConsumer<String, GenericRecord> consumerWith(int records) {
+        MockConsumer<String, GenericRecord> consumer = new MockConsumer<>(OffsetResetStrategy.EARLIEST);
         TopicPartition partition = new TopicPartition(TOPIC, 0);
         consumer.assign(List.of(partition));
         consumer.updateBeginningOffsets(Map.of(partition, 0L));
@@ -63,14 +63,14 @@ class EventFlowAnalysisConsumerTest {
             GenericRecord event = new GenericData.Record(EVENT);
             event.put("timestamp", i);
             event.put("producer_timestamp", i);
-            consumer.addRecord(new ConsumerRecord<>(TOPIC, 0, i, i, event));
+            consumer.addRecord(new ConsumerRecord<>(TOPIC, 0, i, "probe", event));
         }
         return consumer;
     }
 
     @Test
     void withoutOpentsxShowGuiTheTableOfTheTopicIsWrittenToTheFolder() throws Exception {
-        MockConsumer<Long, GenericRecord> consumer = consumerWith(3);
+        MockConsumer<String, GenericRecord> consumer = consumerWith(3);
         Path plots = dir.resolve("plots");
 
         EventFlowAnalysisConsumer.runConsumer(consumer, null, plots.toString());
@@ -83,7 +83,7 @@ class EventFlowAnalysisConsumerTest {
 
     @Test
     void anEmptyTopicStopsAndNamesTheTopic() {
-        MockConsumer<Long, GenericRecord> consumer = consumerWith(0);
+        MockConsumer<String, GenericRecord> consumer = consumerWith(0);
 
         IllegalStateException e = assertThrows(IllegalStateException.class,
                 () -> EventFlowAnalysisConsumer.runConsumer(consumer, null, dir.resolve("plots").toString()));

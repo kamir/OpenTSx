@@ -47,7 +47,7 @@ public class EventFlowAnalysisConsumer {
      * Measures the latency of the events until {@link #GIVE_UP} polls in a row are empty, then writes the table to
      * {@code folder} or, with {@code showGui} true, opens and stores the chart.
      */
-    static void runConsumer(Consumer<Long, GenericRecord> consumer, String showGui, String folder) {
+    static void runConsumer(Consumer<String, GenericRecord> consumer, String showGui, String folder) {
 
         TimeSeriesObject tso = new TimeSeriesObject();
 
@@ -59,7 +59,7 @@ public class EventFlowAnalysisConsumer {
 
             while (true) {
 
-                final ConsumerRecords<Long, GenericRecord> consumerRecords =
+                final ConsumerRecords<String, GenericRecord> consumerRecords =
                         consumer.poll(50);
 
                 /**

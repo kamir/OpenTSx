@@ -1,6 +1,5 @@
 package org.opentsx.connectors.kafka.klatency;
 
-import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -14,10 +13,8 @@ public class LatencyTestEventConsumer {
     public final static String TOPIC_for_response_events_string = "latency_benchmark_response";
 
     /**
-     * We create the Analysis Consumer which can read the TSOEventSeries.
-     *
-     * @param TOPIC
-     * @return
+     * Creates the consumer of the String records of {@code TOPIC}, in the group {@code LatencyTestEventConsumer} from
+     * the latest offset. The deserializers and the other settings come from the Kafka client profile.
      */
     public static Consumer<String, String> createConsumer( String TOPIC ) {
 
