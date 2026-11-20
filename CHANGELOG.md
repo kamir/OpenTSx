@@ -89,6 +89,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   ring buffer, an emulated space-ground link driven by computed passes, and phases P0 to P6 up to the D-T13 CPU
   fallback path. Phase P0 prepares the board with the Jetson runbook and board tools of D-T14. No implementation
   yet.
+- `opentsx-wayang`: workload driver `org.opentsx.wayang.board.BoardWorkload` for the B4.2 board measurement. It
+  writes the paced deterministic feed, runs the pass-through, clean or statistics chain on Track A (Wayang increments
+  through the new `DagToWayang.incrementPlan`) or on Track B (`tsx-runner serve --profile measurement`), and reports
+  the measured process id, the first fetch and the first output as JSON lines.
 - TASK-020 D-T15 (owner, 2026-11-20): B4.2 measures three chains (pass-through, clean, statistics) on a paced
   feed of one sample per series and second. `wayang_board_evaluation.py` plans 81 conditions with a `chain`
   field and the feed rate in its protocol, and refuses evidence with a missing chain or a different feed between

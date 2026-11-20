@@ -524,6 +524,31 @@ identifies the hardware, versions, exact commands and raw samples. Produce ingre
 clocks measure transport latency; Kafka record timestamps retain event time.
 These measurements cover A1.7, not the broader throughput or Track B matrix.
 
+## Drive the B4.2 board workload
+
+`org.opentsx.wayang.board.BoardWorkload` drives one condition of the B4.2 board
+measurement (TASK-020, D-T15). It writes JSON lines to standard output.
+
+| Command | Does |
+| --- | --- |
+| `feed` | Writes the paced feed: one sample per series and second, one episode of 10 samples per series every 10 seconds, staggered over the 10 seconds. Event times and values depend only on `--series`, `--seed` and the block, so every run of one size writes the same records. |
+| `digest` | Prints the SHA-256 of the feed, the condition's `inputSha256`, without a broker. |
+| `track-a` | Runs the chain's DAG on Wayang in this JVM, in increments, through `DagToWayang.incrementPlan`. |
+| `track-b` | Starts `tsx-runner serve --profile measurement` and sends it one `opentsx.local-increment.v1` request per interval over the new input. |
+
+`BoardChains` builds one DAG per chain, the same text for both tracks:
+`passthrough` writes the episodes to `tsx.<domain>.synthetic.v2`, `clean` runs
+`dq.checks` and `resample PT1M` into `tsx.<domain>.clean.v2`, and `stats` runs
+`stats.welford-ddsketch` with one-minute windows into
+`tsx.<domain>.series-stats.v2`. The `started` event carries the process id to
+sample (the JVM for Track A, `tsx-runner` for Track B). `firstFetch` is written
+when the first increment over a non-empty input range starts, and `firstOutput`
+when the end offsets of the output topic first grow, polled every 100 ms.
+`BoardWorkloadIntegrationTest` runs every chain on both tracks over the same feed
+and checks the timings and that both tracks write the same number of records.
+The [Jetson runbook](../docs/devguide/integration/wayang-board-jetson.md#run-one-condition)
+has the commands for one condition.
+
 ## Dependencies
 
 The root `pom.xml` pins `wayang.version` and manages `wayang-core`, `wayang-basic` and `wayang-java` with these
