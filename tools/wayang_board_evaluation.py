@@ -26,6 +26,8 @@ RESOURCE_FIELDS = ("elapsed_seconds", "rss_bytes", "cpu_seconds", "lag_records")
 # D-T14 (owner, 2026-11-20): B4.2 is measured on one physical ARM64 board; ARMv7 is not part of the matrix.
 ARCHITECTURES = ("arm64",)
 RUNTIMES = ("java17", "java21", "rust")
+# D-T15 (owner, 2026-11-20): three chains on a paced live feed of one sample per series and second.
+CHAINS = ("passthrough", "clean", "stats")
 SERIES = (100, 1000, 10000)
 EVIDENCE_HELP = (
     "Each run separates artifact.version (the stable OpenTSx application version) from runtimeVersion "
@@ -39,13 +41,15 @@ EVIDENCE_HELP = (
 
 
 def protocol():
-    return {"warmupSeconds": 300, "measurementSeconds": 1800, "sampleEverySeconds": 1}
+    return {"warmupSeconds": 300, "measurementSeconds": 1800, "sampleEverySeconds": 1,
+            "feedSamplesPerSeriesPerSecond": 1}
 
 
 def conditions():
-    return [{"id": f"{architecture}-s{series}-{runtime}-r{repetition}", "architecture": architecture,
-             "series": series, "runtime": runtime, "repetition": repetition}
-            for architecture in ARCHITECTURES for series in SERIES for runtime in RUNTIMES for repetition in range(1, 4)]
+    return [{"id": f"{architecture}-{chain}-s{series}-{runtime}-r{repetition}", "architecture": architecture,
+             "chain": chain, "series": series, "runtime": runtime, "repetition": repetition}
+            for architecture in ARCHITECTURES for chain in CHAINS for series in SERIES for runtime in RUNTIMES
+            for repetition in range(1, 4)]
 
 
 def plan():
@@ -172,7 +176,8 @@ def validate(value, root, source):
     if not isinstance(value, dict) or value.get("schema") != EVIDENCE_SCHEMA or value.get("status") != "complete":
         raise ValueError("validation needs a complete evidence manifest, not a measurement plan")
     if value.get("protocol") != protocol() or any(type(item) is not int for item in value["protocol"].values()):
-        raise ValueError("board protocol must retain 300-second warm-up, 1800-second measurement and one-second sampling")
+        raise ValueError("board protocol must retain 300-second warm-up, 1800-second measurement, one-second sampling "
+                         "and a feed of one sample per series and second")
     if value.get("evidenceKind") not in ("physical-board-measurements", "synthetic-test-fixture"):
         raise ValueError("evidence kind must distinguish measurements from synthetic test fixtures")
     snapshot = FEDERATION.source_snapshot(source)
