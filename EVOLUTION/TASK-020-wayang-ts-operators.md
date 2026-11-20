@@ -508,7 +508,7 @@ series inventory. ARMv7 runs under QEMU only, as a supplementary check (D-T14).
   identities, all partials/windows and separate numerical-domain cases.
 - [ ] B4.2: measure baseline (c) on one physical Linux ARM64 board (D-T14). The
   [Jetson runbook](../docs/devguide/integration/wayang-board-jetson.md) prepares a
-  Jetson Nano 4 GB for the 27 conditions.
+  Jetson Nano 4 GB for the 81 conditions (D-T15).
   The measurement remains open. The preparation tool
   defines 27 unassigned conditions and validates supplied evidence integrity;
   it does not execute measurements or establish hardware acceptance.
@@ -525,7 +525,7 @@ retain source/runtime hashes and the exact executed JUnit methods:
 | # | Result |
 |---|---|
 | B4.1 | met for bounded W3 on the signal-cluster route: `FederatedStatsIntegrationTest.everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders` executes Java `s1`/`s2` and actual Rust CLI `s3`, 3,600 Episodes, 2,160,000 values, 1,260 partials, 420 final windows, 30 conformance checks and 2,520 canonical-merge byte comparisons. Exact counts/extrema/lastSeen pass; maximum relative mean error is `1.7308017671758118e-14`, M2 `2.7235050829345894e-12`, within unchanged `3e-12`. `MixedSketchQualificationTest` executes 58 cases and 348 mixed arrival-order comparisons, including 42 gamma-boundary, six zero-threshold and four collapsed-tail cases. |
-| B4.2 | open for one physical ARM64 board (D-T14). `wayang_board_evaluation.py` emits the unassigned 27-condition matrix; its 24 deterministic tests validate evidence completeness and association only and refuse ARMv7 or AArch32 boards. `board_identity.py` and `board_resource_sampler.py` record the board and the one-second samples in the validator's formats (10 tests). No physical RSS, CPU, startup or throughput result is claimed. |
+| B4.2 | open for one physical ARM64 board (D-T14). `wayang_board_evaluation.py` emits the unassigned 81-condition matrix of three chains (D-T15); its 26 deterministic tests validate evidence completeness and association only and refuse ARMv7 or AArch32 boards. `board_identity.py` and `board_resource_sampler.py` record the board and the one-second samples in the validator's formats (10 tests). No physical RSS, CPU, startup or throughput result is claimed. |
 
 Six arrival orders use one canonical site fold; they do not establish floating-point
 associativity. The Java-only test and shared sketch bytes remain exact. On this
@@ -588,6 +588,7 @@ Criteria per milestone: A0 5, A1 7, A2 6, A3 6, A4 9, A5 2, B1 6, B2 3, B3 4, B4
 | D-T12 | Where `opentsx-wayang` lives | module in this repository; separate repository | module in this repository: it reuses five OpenTSx modules | as recommended, owner, 2026-11-16 |
 | D-T13 | FPGA kernels on raw sensor data (Tier 3) | kernels behind the Rust runner, data reduction only; a separate FPGA track reached from Wayang; not admitted, results enter as `MEASURED` edge metrics | behind the Rust runner, data reduction only: the runner keeps transport, framing, keyed state and checkpoints; see qualification below | as recommended, owner, 2026-11-20 |
 | D-T14 | ARMv7 hardware for B1.2 and B4.2 | physical ARMv7 board; ARMv7 userland on an ARMv8 core (AArch32); no ARMv7 hardware, ARM64 only | ARM64 only: no planned target is 32-bit (the orbit work and the space boards of the research studies are 64-bit). B1.2 is met by the native x86_64 and ARM64 CI jobs; B4.2 is measured on one physical ARM64 board, a Jetson Nano 4 GB. The `armv7-unknown-linux-musleabihf` artifact stays built and QEMU-tested but is not hardware-qualified. A 32-bit run on an ARMv8 board (a pi-top with 32-bit Raspberry Pi OS) is optional and is reported as AArch32 compatibility mode, never as B1.2 or B4.2 | as recommended, owner, 2026-11-20 |
+| D-T15 | Workload of the B4.2 matrix | pass-through only; pass-through, clean and statistics chains; recorded replay; paced live feed | all three chains (pass-through, `clean` with `dq.checks` and `resample`, `stats.welford-ddsketch`) on a paced live feed of one sample per series and second from the KafScale host: 81 conditions, about 47 hours. Track B runs 10,000 series under the worker profile `serve --profile measurement`; the shared assignment allows 524,288-byte DAG texts for the source inventory | owner, 2026-11-20 |
 
 D-T2 compares a fixed relative bound with per-data-set measurement in A4.5.
 The owner approved relative `3e-12` for bounded W3 `mean` and `m2` on

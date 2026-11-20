@@ -10,6 +10,23 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 - Show the plant explorer prototype (`docs/prototypes/anlagen-explorer.html`) in English. The page no longer links
   to the removed concept document.
+- TASK-020 D-T15 (owner, 2026-11-20): B4.2 measures three chains (pass-through, clean, statistics) on a paced
+  feed of one sample per series and second. `wayang_board_evaluation.py` plans 81 conditions with a `chain`
+  field and the feed rate in its protocol, and refuses evidence with a missing chain or a different feed between
+  comparable conditions.
+- `tsx-runner serve --profile measurement`: an opt-in worker profile for the B4.2 board measurement. It admits
+  requests of up to 4,390,912 bytes with 16,384 series, 100,000 records, 4,000,000 samples, 64 MiB of input and
+  output and 256 MiB of state; `GET /v1/capabilities` reports the profile. Requests cannot select or widen it, and
+  the default `standard` profile keeps its ceilings (`tests/measurement_profile.rs`).
+- Shared execution-assignment contract: a source or fragment DAG text may have 524,288 UTF-8 bytes (was 32,768)
+  and the envelope 2,162,688 bytes (was 65,536), equally in Java `ExecutionAssignments`, Rust `tsx-contracts`
+  and the schema. A source inventory of 16,384 series ids fits, which B4.2 needs at 10,000 series. Runtime
+  request limits and the UI rollout's 32,768-byte DAG limit are unchanged. Size-boundary vectors store their
+  padding as an `expand` marker, so the vector file the Rust runner embeds stays small; new cases cover a
+  source and a fragment text exactly at and one byte above the limit.
+- `tsx-runner`: regression test `tests/stats_increments.rs` shows that B2 statistics run as local increments:
+  across a worker restart the increments emit the closed windows byte for byte as one bounded run, without its
+  final flush. The B2 request ceilings (1,024 series, 1 MiB state) are unchanged.
 
 ## [3.1.0] - 2026-11-20
 

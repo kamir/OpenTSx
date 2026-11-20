@@ -8,6 +8,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "docs/datamodel-2026/testvectors/execution-contracts.v1.json"
+# Limits of the shared contract, equal in Java (ExecutionAssignments) and Rust (tsx-contracts).
+MAX_DAG_BYTES = 524_288
+MAX_ASSIGNMENT_BYTES = 4 * MAX_DAG_BYTES + 65_536
+# Boundary cases near these limits would add megabytes of padding to the file, which the Rust runner embeds.
+# Such a case stores this marker in its input and an `expand` object; readers replace the marker by `count`
+# copies of `text` before they validate the input.
+MARKER = "@@opentsx-expand@@"
 
 
 def encoded(value):
@@ -65,6 +72,22 @@ def vectors():
     def single(name, value, error=None):
         cases.append({"name": name, "kind": "assignment", "input": encoded(value), "error": error})
 
+    def expanded(name, value, text, count, error=None):
+        cases.append({"name": name, "kind": "assignment", "input": encoded(value),
+                      "expand": {"marker": MARKER, "text": text, "count": count}, "error": error})
+
+    def large_source(count, error=None):
+        value = assignment()
+        value.update(sourceDagText=MARKER, specHash=digest("a" * count))
+        expanded(f"source-text-{'too-large' if error else 'at-limit'}", value, "a", count, error)
+
+    def large_fragment(count, error=None):
+        value = assignment()
+        base = value["fragmentText"]
+        padding = count - len(base.encode("utf-8"))
+        value.update(fragmentText=base + MARKER, fragmentHash=digest(base + " " * padding))
+        expanded(f"fragment-text-{'too-large' if error else 'at-limit'}", value, " ", padding, error)
+
     def changed(name, mutate, error=None):
         value = assignment()
         mutate(value)
@@ -113,7 +136,10 @@ def vectors():
     changed("uppercase-hash", lambda v: v.update(specHash=v["specHash"].upper()), "assignment.hash")
     changed("unknown-mode", lambda v: v.update(mode="automatic"), "assignment.mode")
     changed("source-text-not-string", lambda v: v.update(sourceDagText={}), "assignment.dag")
-    changed("source-text-too-large", lambda v: v.update(sourceDagText="a" * 32769), "assignment.dag")
+    large_source(MAX_DAG_BYTES)
+    large_source(MAX_DAG_BYTES + 1, "assignment.dag")
+    large_fragment(MAX_DAG_BYTES)
+    large_fragment(MAX_DAG_BYTES + 1, "assignment.dag")
     bad = '{"source":{},"nodes":[],"sinks":[]}'
     changed("empty-fragment-graph", lambda v: v.update(fragmentText=bad, fragmentHash=digest(bad)), "assignment.dag")
     bad = '{"source":{},"nodes":[{}],"sinks":[{}],"nodes":[{}]}'
@@ -149,7 +175,8 @@ def vectors():
                   "input": encoded(assignment()) + "{}", "error": "assignment.json"})
     cases.append({"name": "unpaired-surrogate", "kind": "assignment",
                   "input": encoded(assignment()).replace('"rust-a"', '"\\ud800"'), "error": "assignment.json"})
-    cases.append({"name": "document-byte-limit", "kind": "assignment", "input": " " * 65537,
+    cases.append({"name": "document-byte-limit", "kind": "assignment", "input": MARKER,
+                  "expand": {"marker": MARKER, "text": " ", "count": MAX_ASSIGNMENT_BYTES + 1},
                   "error": "assignment.limit"})
     cases.append({"name": "document-depth-limit", "kind": "assignment",
                   "input": '{"nested":' + "[" * 65 + "0" + "]" * 65 + "}", "error": "assignment.json"})

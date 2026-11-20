@@ -22,8 +22,10 @@ import java.util.regex.Pattern;
 
 public final class ExecutionAssignments {
 
-    private static final int MAX_BYTES = 65_536;
-    private static final int MAX_DAG_BYTES = 32_768;
+    /** Largest original or fragment DAG text: room for a source inventory of 16,384 series ids. */
+    static final int MAX_DAG_BYTES = 524_288;
+    /** Largest assignment envelope: two DAG texts that JSON escaping may double, plus a 65,536-byte envelope. */
+    static final int MAX_BYTES = 4 * MAX_DAG_BYTES + 65_536;
     private static final String MAX_OFFSET = "9223372036854775807";
     private static final Set<String> FIELDS = Set.of("schema", "deployment", "generation", "assignment", "attempt",
             "fence", "fragment", "site", "node", "runtime", "catalog", "artifactDigest", "specHash", "sourceDagText",

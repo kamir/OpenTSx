@@ -8,6 +8,80 @@ pub const REQUEST_BYTES: usize = 65_536;
 pub const MAX_PARTITIONS: usize = 128;
 pub const MAX_EPISODE_SAMPLES: usize = 25_000;
 
+/// Admission ceilings of one worker. A request can only lower them through its `limits`, never raise them.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Profile {
+    pub name: &'static str,
+    pub request_bytes: usize,
+    pub assignment_bytes: usize,
+    pub fragment_bytes: usize,
+    pub records: usize,
+    pub payload_bytes: usize,
+    pub input_bytes: usize,
+    pub output_bytes: usize,
+    pub state_bytes: usize,
+    /// Series and samples without and with a catalog `context`.
+    pub series: usize,
+    pub samples: usize,
+    pub context_series: usize,
+    pub context_samples: usize,
+    /// Largest prepared journal and increment checkpoint the worker reads back.
+    pub journal_bytes: usize,
+}
+
+impl Profile {
+    /// The default local profile.
+    pub const STANDARD: Profile = Profile {
+        name: "standard",
+        request_bytes: REQUEST_BYTES,
+        assignment_bytes: REQUEST_BYTES,
+        fragment_bytes: 32_768,
+        records: 10_000,
+        payload_bytes: 1_048_576,
+        input_bytes: 16_777_216,
+        output_bytes: 16_777_216,
+        state_bytes: 1_048_576,
+        series: 64,
+        samples: 100_000,
+        context_series: 1_024,
+        context_samples: 1_000_000,
+        journal_bytes: 85_000_000,
+    };
+
+    /// Opt-in profile for the B4.2 board measurement: one source inventory of up to 16,384 series.
+    /// The operator selects it with `serve --profile measurement`; a request cannot select it.
+    pub const MEASUREMENT: Profile = Profile {
+        name: "measurement",
+        request_bytes: 2 * tsx_contracts::MAX_ASSIGNMENT_BYTES + 65_536,
+        assignment_bytes: tsx_contracts::MAX_ASSIGNMENT_BYTES,
+        fragment_bytes: tsx_contracts::MAX_DAG_BYTES,
+        records: 100_000,
+        payload_bytes: 1_048_576,
+        input_bytes: 67_108_864,
+        output_bytes: 67_108_864,
+        state_bytes: 268_435_456,
+        series: 16_384,
+        samples: 4_000_000,
+        context_series: 16_384,
+        context_samples: 4_000_000,
+        // a prepared journal stores output payloads as JSON byte arrays, up to five bytes per payload byte
+        journal_bytes: 5 * 67_108_864 + 2 * (2 * tsx_contracts::MAX_ASSIGNMENT_BYTES + 65_536),
+    };
+
+    pub fn named(name: &str) -> Result<Profile, String> {
+        match name {
+            "standard" => Ok(Profile::STANDARD),
+            "measurement" => Ok(Profile::MEASUREMENT),
+            _ => Err(format!("unknown worker profile: {name}")),
+        }
+    }
+
+    /// Largest increment checkpoint: one journal, one state snapshot and one request.
+    pub fn increment_bytes(&self) -> usize {
+        self.journal_bytes + self.state_bytes + self.request_bytes
+    }
+}
+
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Limits {
@@ -83,19 +157,31 @@ pub struct Increment {
 }
 
 pub fn admit(text: &str, artifact_digest: &str) -> Result<Admitted, String> {
-    admit_with_caps(text, artifact_digest, REQUEST_BYTES, 64, 100_000)
+    admit_profiled(text, artifact_digest, &Profile::STANDARD)
+}
+
+pub fn admit_profiled(
+    text: &str,
+    artifact_digest: &str,
+    profile: &Profile,
+) -> Result<Admitted, String> {
+    admit_with_caps(text, artifact_digest, profile, profile.request_bytes)
 }
 
 pub(crate) fn admit_run(text: &str, artifact_digest: &str) -> Result<Admitted, String> {
-    admit_with_caps(text, artifact_digest, 262_144, 1_024, 1_000_000)
+    let profile = Profile {
+        series: 1_024,
+        samples: 1_000_000,
+        ..Profile::STANDARD
+    };
+    admit_with_caps(text, artifact_digest, &profile, 262_144)
 }
 
 fn admit_with_caps(
     text: &str,
     artifact_digest: &str,
+    profile: &Profile,
     request_bytes: usize,
-    max_series: usize,
-    max_samples: usize,
 ) -> Result<Admitted, String> {
     let value = tsx_contracts::parse_json(text, request_bytes).map_err(str::to_string)?;
     let increment = match value["schema"].as_str() {
@@ -146,16 +232,16 @@ fn admit_with_caps(
     let request: LocalRequest =
         serde_json::from_value(value).map_err(|e| format!("local request fields: {e}"))?;
     let (max_series, max_samples) = if request.context.is_some() {
-        (1_024, 1_000_000)
+        (profile.context_series, profile.context_samples)
     } else {
-        (max_series, max_samples)
+        (profile.series, profile.samples)
     };
-    validate_limits(&request.limits, max_series, max_samples)?;
+    validate_limits(&request.limits, profile, max_series, max_samples)?;
     if !tsx_contracts::valid_topic(&request.sink.topic) {
         return Err("invalid output topic name".into());
     }
     tsx_contracts::validate(&request.assignment_text).map_err(str::to_string)?;
-    let assignment = tsx_contracts::parse_json(&request.assignment_text, REQUEST_BYTES)
+    let assignment = tsx_contracts::parse_json(&request.assignment_text, profile.assignment_bytes)
         .map_err(str::to_string)?;
     if assignment["runtime"] != "rust" || assignment["mode"] != "bounded" {
         return Err("local replay requires a bounded Rust assignment".into());
@@ -195,7 +281,8 @@ fn admit_with_caps(
     let fragment_text = assignment["fragmentText"]
         .as_str()
         .ok_or("fragment text missing")?;
-    let fragment = tsx_contracts::parse_json(fragment_text, 32_768).map_err(str::to_string)?;
+    let fragment =
+        tsx_contracts::parse_json(fragment_text, profile.fragment_bytes).map_err(str::to_string)?;
     let pipeline = Pipeline::compile(
         &fragment,
         assignment["specHash"].as_str().ok_or("specHash missing")?,
@@ -260,13 +347,14 @@ fn admit_with_caps(
     })
 }
 
-pub(crate) fn increment_context(text: &str) -> Result<String, String> {
-    let mut value = tsx_contracts::parse_json(text, REQUEST_BYTES).map_err(str::to_string)?;
+pub(crate) fn increment_context(text: &str, profile: &Profile) -> Result<String, String> {
+    let mut value =
+        tsx_contracts::parse_json(text, profile.request_bytes).map_err(str::to_string)?;
     let mut assignment = tsx_contracts::parse_json(
         value["assignmentText"]
             .as_str()
             .ok_or("assignmentText missing")?,
-        REQUEST_BYTES,
+        profile.assignment_bytes,
     )
     .map_err(str::to_string)?;
     assignment["inputs"][0]
@@ -293,18 +381,23 @@ pub fn canonical_i64(text: &str, field: &str) -> Result<i64, String> {
 }
 
 pub(crate) fn validate_run_limits(limits: &Limits) -> Result<(), String> {
-    validate_limits(limits, 1_024, 1_000_000)
+    validate_limits(limits, &Profile::STANDARD, 1_024, 1_000_000)
 }
 
-fn validate_limits(limits: &Limits, max_series: usize, max_samples: usize) -> Result<(), String> {
+fn validate_limits(
+    limits: &Limits,
+    profile: &Profile,
+    max_series: usize,
+    max_samples: usize,
+) -> Result<(), String> {
     for (name, value, ceiling) in [
-        ("records", limits.records, 10_000),
-        ("payloadBytes", limits.payload_bytes, 1_048_576),
-        ("inputBytes", limits.input_bytes, 16_777_216),
+        ("records", limits.records, profile.records),
+        ("payloadBytes", limits.payload_bytes, profile.payload_bytes),
+        ("inputBytes", limits.input_bytes, profile.input_bytes),
         ("samples", limits.samples, max_samples),
-        ("outputBytes", limits.output_bytes, 16_777_216),
+        ("outputBytes", limits.output_bytes, profile.output_bytes),
         ("series", limits.series, max_series),
-        ("stateBytes", limits.state_bytes, 1_048_576),
+        ("stateBytes", limits.state_bytes, profile.state_bytes),
     ] {
         if value == 0 || value > ceiling {
             return Err(format!("{name} must be within 1..={ceiling}"));
