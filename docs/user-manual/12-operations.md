@@ -388,5 +388,27 @@ test and the full-W offline regression.
 
 The signed profile admits only `decode.avro-soe` and
 `stats.welford-ddsketch` with alpha 0.01 and tumbling windows. The local
-B2 operator set, continuous/mixed fleet qualification, production rollout and
-physical ARMv7 B1.2 acceptance remain separate.
+B2 operator set, continuous mixed-fleet qualification and production rollout
+remain separate. The [bounded mixed W3 guide](../devguide/integration/wayang-mixed-federation.md)
+identifies the separate actual-CLI acceptance harness and its retained numeric
+evidence. Both physical ARM64 and ARMv7 B4.2 measurements remain open, as does
+physical ARMv7 B1.2 acceptance.
+
+## 12.11 Inspect mixed-federation and board evidence
+
+Use the [mixed W3 guide](../devguide/integration/wayang-mixed-federation.md)
+to distinguish two Java site instances plus a Rust CLI from three Java sites
+or a continuous fleet. Its acceptance method checks signed runtime identity,
+current conformance, full aggregate records, centralized statistics, six input
+arrival orders and one final window per declared scope. The separate numeric
+helper records exact binary64 boundaries, zero-bucket behavior and collapsed
+tails. Retain the JUnit outcome with the successful final report; diagnostic
+CSV files alone do not establish acceptance.
+
+The [board evidence tool](../../tools/wayang_board_evaluation.py) prepares the
+54 baseline (c) conditions and checks supplied files. It does not run the
+5-minute warm-up or 30-minute measurement. Keep actual source/runtime/artifact
+identity, explicit Java heap, exact input, one-second resource samples and
+condition-specific output proof with each physical run. Evidence-integrity
+validation does not attest hardware or close B4.2. Both physical ARM64 and
+ARMv7 measurements require separate executed evidence and owner review.
