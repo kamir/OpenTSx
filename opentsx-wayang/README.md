@@ -610,3 +610,7 @@ These tests replay every case exactly in `opentsx-stats` and
 `python tools/java_operator_vectors.py` from the repository root to
 regenerate all five files. You need JDK 17 or 21, Maven, and Python.
 The generator is verified with JDK 21 and Python 3.12 on 2026-11-16.
+
+The [bounded mixed W3 report](../docs/datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md)
+retains actual per-window and per-partial data, source/runtime identities and
+executed test evidence. Physical ARM64 and ARMv7 board measurements remain open.

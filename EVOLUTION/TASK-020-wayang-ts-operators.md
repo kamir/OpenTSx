@@ -512,7 +512,8 @@ acceptance.
 | B4.2 | Baseline (c) is measured | protocol of concept 20, section 14, on one arm64 and one armv7 board | W, 100, 1,000 and 10,000 series | RSS, CPU, start time, throughput of both tracks measured and reported with raw samples; no threshold unless the owner sets one |
 
 Status of B4 on 2026-11-20, JDK 21 and Rust 1.99.1, KafScale v1.6.0 built
-from source with disposable Proxy endpoints:
+from source with disposable Proxy endpoints. The [qualification report and raw data](../docs/datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md)
+retain source/runtime hashes and the exact executed JUnit methods:
 
 | # | Result |
 |---|---|

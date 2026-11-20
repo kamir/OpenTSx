@@ -37,7 +37,8 @@ while the signal cluster is unreachable. It does not extend signed admission
 to the remaining local B2 operators. The [bounded mixed W3 harness](../devguide/integration/wayang-mixed-federation.md)
 selects two Java sites and one actual qualified Rust CLI site. It retains
 conformance, runtime identity, per-partial and per-window comparisons; actual
-acceptance depends on its executed evidence. Both physical ARM64 and ARMv7
+acceptance is recorded in the [qualification report](measurements/rust-b4-mixed-20261120/REPORT.md).
+Both physical ARM64 and ARMv7
 B4.2 measurements remain open.
 
 ## 1. Goal

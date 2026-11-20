@@ -9,15 +9,18 @@ JDK 17 or 21, the pinned Rust 1.99.1 toolchain and the actual qualification inpu
 used by the [B3 site profile](rust-runner-b3.md). The harness uses disposable
 clusters and synthetic windpark data. Producers connect to Proxy endpoints.
 
+The [retained W3 qualification](../../datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md)
+records the executed cases, source/runtime hashes and raw per-window evidence.
+Both physical ARM64 and ARMv7 board measurements remain open.
+
 ## Follow the actual runtime boundary
 
 [`FederatedStatsIntegrationTest.everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders`](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders)
 selects Java sites `s1` and `s2` and a real Rust CLI process at `s3`.
 [`FederationFixture`](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/FederationFixture.java#mixed)
 uses the complete W3 input: 3,600 Episodes and 2,160,000 values from 100 series.
-The target inventory has 1,260 site partials and 420 final windows across
-`PT10M` and `PT1H`, with alpha 0.01. These are asserted targets, rather than a
-claim that a particular run passed.
+The retained run has 1,260 site partials and 420 final windows across
+`PT10M` and `PT1H`, with alpha 0.01. The test asserts this complete inventory.
 
 [`RustMixedSite`](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/RustMixedSite.java)
 copies the actual executable, computes its digest and uses the B3 qualification
