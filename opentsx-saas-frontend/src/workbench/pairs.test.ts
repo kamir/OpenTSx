@@ -2,8 +2,9 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SOURCE_ID, evaluate, keepQuality, useFlow } from './flow';
+import { parseEpisodes } from './loaders';
 import { OP_BY_ID, defaultParams } from './ops';
-import { MAX_PAIRS, PAIR_COVERAGE, pairRanges, rangesOf, windowsOf } from './pairs';
+import { MAX_PAIRS, PAIR_COVERAGE, pairClocks, pairRanges, pairSettings, rangesOf, windowsOf } from './pairs';
 import { canonicalKey, seriesIdOf, xxh64Hex } from './seriesKeys';
 import { Bucket, EpisodeRange, Params, Series } from './types';
 
@@ -179,7 +180,8 @@ describe('alignment and coverage', () => {
   it('prints the clock without the noise of the sample spacing', () => {
     const fast = (id: string) => series(id, 0.001, 1, Math.sin);
     const b: Bucket = { ...park(), series: [fast('A'), fast('B')], episodes: undefined };
-    expect(coverage(b).note).toMatch(/clock 0\.001 s\n/);
+    // epoch seconds of 2026 lie 2.4e-7 s apart: Wayang and the Rust runner take 0.0009999275207519531 s for 1 ms samples
+    expect(coverage(b).note).toMatch(/clock 0\.000999928 s\n/);
   });
 
   it('counts only the clock ticks that lie inside the window, on the epoch', () => {
@@ -225,6 +227,8 @@ describe('pairs of the inputs', () => {
     expect(() => coverage({ ...park(), xKind: 'frequency' })).toThrow(/time axis/);
     expect(() => coverage(park(), { window: 'ten' })).toThrow(/neither episode nor a width/);
     expect(() => coverage(park(), {}, [park(), park()])).toThrow(/two inputs at most/);
+    const backwards = { ...park(), series: [park().series[0], { ...park().series[1], x: park().series[1].x.slice().reverse() }] };
+    expect(() => coverage(backwards)).toThrow(/B has times out of order/);
   });
 
   it('says which pair ranges were too short for the window', () => {
@@ -270,5 +274,69 @@ describe('a pair node in the flow', () => {
     expect(evaluate(state().source, state().nodes, resampled)!.series[0].quality).toBeUndefined();
     // bytes an operator made itself are kept
     expect(keepQuality(pair, [state().source!])).toBe(pair);
+  });
+});
+
+interface ClockCase {
+  name: string;
+  params: Params;
+  a: unknown;
+  b: unknown;
+  ranges: ({ a: string; b: string; every: number; centreMicros: number } & Record<string, Record<string, number | null>>)[];
+}
+
+const CLOCK: { schema: string; cases: ClockCase[]; refusals: { name: string; params: Params; error: string }[] } = JSON.parse(
+  readFileSync(resolve(process.cwd(), '../docs/datamodel-2026/testvectors/pair-clock.v1.json'), 'utf8'),
+);
+
+describe('the default clock of the shared vectors (pair-clock.v1.json)', () => {
+  it('holds the cases and refusals of tools/pair_clock_vectors.sh', () => {
+    expect(CLOCK.schema).toBe('opentsx.testvectors.pair-clock.v1');
+    expect(CLOCK.cases).toHaveLength(3);
+    expect(CLOCK.refusals).toHaveLength(2);
+  });
+
+  it.each(CLOCK.cases.map((c) => [c.name, c] as const))('takes the clock of each pair range from its two episodes: %s', (_, c) => {
+    const a = parseEpisodes(c.a, 'A');
+    const b = parseEpisodes(c.b, 'B');
+    const shift = (b.t0Ms! - a.t0Ms!) / 1000;
+    const bRanges = rangesOf(b, b.series[0]).map((r) => ({ ...r, start: r.start + shift, end: r.end + shift }));
+    const ranges = pairRanges(rangesOf(a, a.series[0]), bRanges, pairSettings(c.params).pairing);
+    expect(ranges.map((r) => [r.a.episodeId, r.b.episodeId])).toEqual(c.ranges.map((r) => [r.a, r.b]));
+    expect(pairClocks(null, ranges, a.series[0], 0, b.series[0], shift, a.t0Ms!)).toEqual(c.ranges.map((r) => r.every));
+  });
+
+  it.each(CLOCK.cases.flatMap((c) => ['pair.xcorr', 'pair.es'].map((method) => [c.name, method, c] as const)))('%s: %s gives the values of Wayang', (_, method, c) => {
+    const op = OP_BY_ID[method];
+    const out = op.apply(parseEpisodes(c.a, 'A'), { ...defaultParams(op), ...c.params }, [parseEpisodes(c.b, 'B')]);
+    const fields = Object.keys(c.ranges[0][method]).filter((f) => f !== 'quality');
+    expect(out.series.map((s) => s.metric)).toEqual(fields.map((f) => `${method}.${f}`));
+    for (const s of out.series) {
+      expect(s.x).toHaveLength(c.ranges.length);
+      const f = s.metric!.slice(method.length + 1);
+      for (const r of c.ranges) {
+        const e = out.episodes!.find((x) => x.seriesId === s.id && x.labels!['pair.a'] === r.a && x.labels!['pair.b'] === r.b)!;
+        const i = s.x.indexOf(e.start);
+        expect(Math.round(out.t0Ms! * 1000 + s.x[i] * 1e6)).toBe(r.centreMicros);
+        expect(s.quality![i]).toBe(r[method].quality);
+        const expected = r[method][f];
+        if (expected === null) expect(s.y[i], `${f} of ${r.a}`).toBeNaN();
+        else expect(Math.abs(s.y[i] - expected), `${f} of ${r.a}: ${s.y[i]} instead of ${expected}`).toBeLessThanOrEqual(5e-13);
+      }
+    }
+  });
+
+  it('names the smallest and the largest clock in the note', () => {
+    const [rate, , jitter] = CLOCK.cases;
+    const note = (c: ClockCase) => COVERAGE.apply(parseEpisodes(c.a, 'A'), { ...defaultParams(COVERAGE), ...c.params }, [parseEpisodes(c.b, 'B')]).note;
+    expect(note(rate)).toMatch(/, clock 1 to 10 s\n/);
+    expect(note(jitter)).toMatch(/, clock 1\.01301 to 1\.02511 s\n/);
+  });
+
+  it.each(CLOCK.refusals.map((r) => [r.name, r] as const))('refuses %s', (_, r) => {
+    const c = CLOCK.cases[0];
+    for (const op of ['pair.xcorr', 'pair.es', PAIR_COVERAGE.id].map((id) => OP_BY_ID[id])) {
+      expect(() => op.apply(parseEpisodes(c.a, 'A'), { ...defaultParams(op), ...r.params }, [parseEpisodes(c.b, 'B')])).toThrow(new Error(r.error));
+    }
   });
 });

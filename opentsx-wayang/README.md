@@ -418,7 +418,9 @@ input `a` and those of B with input `b` (`TsxTagged`). Every series of `a` is co
 `pairing` `same` pairs episodes with equal ranges, `intersect` overlapping episodes on their intersection. Each pair
 range gives one episode per field, series `pair.<method>.<field>` with the tags `a`, `b`, `window` and `step`, parent
 the episode of A. An episode waits in `TsxState` until every series of the other input has passed its end. Without
-`every` the clock is the larger sampling interval of the two paired episodes.
+`every` the clock is the larger sampling interval of the two paired episodes, as in the workbench and the Rust runner
+(`TsxPairClockVectorsTest` runs `docs/datamodel-2026/testvectors/pair-clock.v1.json`). A `fill` other than `none` or
+`as-of` is refused with `pair fill must be none or as-of`.
 
 ```java
 TsxPair xcorr = new TsxPair("x", "pair.xcorr", Map.of("lags", 5, "window", 32, "step", 8),

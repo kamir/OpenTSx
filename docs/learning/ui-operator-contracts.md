@@ -264,8 +264,11 @@ Operator: `pair.coverage` . Defaults: `pairing="same"` , `window="episode"` , `s
 `fill="none"` , `maxAge=60` , `minCoverage=0`
 
 Uses pair windows and vector alignment. Without explicit episodes, each series range ends one sampling interval after
-its final sample. Reports joint finite tick share and total ticks, stamped at the window center. Below minCoverage all
-method fields become NaN with quality 1. Output remains a time axis with pair metric metadata.
+its final sample. With every=0 each pair range takes the larger sampling interval of its two episodes, on their sample
+times in epoch microseconds, as `TsxPair` and the Rust runner do; the shared cases are
+[pair-clock.v1.json](../datamodel-2026/testvectors/pair-clock.v1.json). A fill other than none or as-of is refused.
+Reports joint finite tick share and total ticks, stamped at the window center. Below minCoverage all method fields
+become NaN with quality 1. Output remains a time axis with pair metric metadata.
 
 Source: [pairs.ts#PAIR_COVERAGE](../../opentsx-saas-frontend/src/workbench/pairs.ts#PAIR_COVERAGE) . Executable
 exercise: `ui.pair.coverage` .
