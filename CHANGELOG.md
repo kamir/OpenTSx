@@ -21,6 +21,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Record actual Wayang HTTP response statuses and sanitized metadata in CI
   before retry handling. Verify capture without requests or sleeps and preserve
   permanent-error handling and response content.
+- Suppress native cookie-parser logging that can include complete cookie values.
+  Exercise the bundled handler with a malformed-cookie fixture without network
+  requests or sleeps.
 - Execute Rust CLI prefix fixtures through the installed shell without temporary files. Regressions rerun the exact
   fixture with an unusable temporary-directory path and retain runner-prefix and spaced-argument checks.
 - Reuse separate verified caches for locked Python dependencies, the application

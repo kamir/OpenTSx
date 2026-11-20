@@ -1,6 +1,8 @@
 package org.opentsx.build;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -15,8 +17,12 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestWrapper;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.client.protocol.ResponseProcessCookies;
 import org.apache.http.conn.routing.HttpRoute;
+import org.apache.http.cookie.CookieOrigin;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.cookie.DefaultCookieSpecProvider;
 import org.apache.http.impl.execchain.ClientExecChain;
 import org.apache.http.message.BasicHttpResponse;
 import org.eclipse.aether.DefaultRepositorySystemSession;
@@ -62,7 +68,36 @@ public final class MavenHttpCaptureTest {
         return result;
     }
 
+    private static void verifyCookieLogExclusion() throws Exception {
+        HttpClientContext context = HttpClientContext.create();
+        BasicCookieStore store = new BasicCookieStore();
+        context.setCookieStore(store);
+        context.setAttribute(HttpClientContext.COOKIE_SPEC, new DefaultCookieSpecProvider().create(context));
+        context.setAttribute(HttpClientContext.COOKIE_ORIGIN,
+                new CookieOrigin("repo.maven.apache.org", 443, "/", true));
+        BasicHttpResponse response = new BasicHttpResponse(HttpVersion.HTTP_1_1, 200, "test");
+        response.setHeader("Set-Cookie", "session=private-cookie-log-value; Expires=invalid");
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        PrintStream original = System.err;
+        try (PrintStream captured = new PrintStream(output, true, StandardCharsets.UTF_8)) {
+            System.setErr(captured);
+            new ResponseProcessCookies().process(response, context);
+        } finally {
+            System.setErr(original);
+        }
+        require(!output.toString(StandardCharsets.UTF_8).contains("private-cookie-log-value"),
+                "The native cookie handler exposed a cookie value");
+        require(store.getCookies().isEmpty(), "The malformed-cookie fixture was not exercised");
+    }
+
     public static void main(String[] arguments) throws Exception {
+        for (String option : Files.readAllLines(Path.of(arguments[1]))) {
+            if (option.startsWith("-Dorg.slf4j.simpleLogger.log.")) {
+                int separator = option.indexOf('=');
+                System.setProperty(option.substring(2, separator), option.substring(separator + 1));
+            }
+        }
+        verifyCookieLogExclusion();
         Path directory = Path.of(arguments[0]);
         Path output = directory.resolve("responses.jsonl");
         Response response = new Response(404);

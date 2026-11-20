@@ -38,6 +38,8 @@ actual statuses before retries, public artifact paths and sanitized response
 metadata. Request headers, cookies and bodies are excluded. The capture check
 executes synthetic responses and a local-file Maven fixture without network
 requests or sleeps.
+The native malformed-cookie fixture also verifies that cookie-parser warnings
+cannot expose cookie values in the configured runtime.
 Broker integration and recorder-through-Kafka/Flink acceptance use separate configured gates:
 [ci.yml:731](../../../.github/workflows/ci.yml#L731),
 [ci.yml:868](../../../.github/workflows/ci.yml#L868).

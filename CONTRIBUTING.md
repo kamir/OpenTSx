@@ -100,6 +100,10 @@ nine decimal digits; absent or invalid values are `null`. Header fingerprints
 cover age, cache control, CDN cache status and request identifier, content
 length and type, date, ETag, Retry-After, server, Via, X-Cache, X-Cache-Hits and
 X-Served-By. Free header values are excluded.
+The native cookie-parser logger is disabled because malformed-cookie warnings
+can include complete cookie values. An in-memory malformed-cookie regression
+checks this exclusion against the actual bundled handler. Cookie parsing and
+HTTP failure handling remain unchanged.
 
 The selector verifies the checked-out pull request merge commit and both event parents. A depth-two checkout
 supplies these commits. It compares the base parent with the tested merge tree using NUL-delimited paths and

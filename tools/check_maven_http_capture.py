@@ -60,7 +60,8 @@ def verify():
         tests = directory / "tests"
         tests.mkdir()
         subprocess.run(["java", "-cp", os.pathsep.join((str(classes), str(libraries / "*"))),
-                        "org.opentsx.build.MavenHttpCaptureTest", str(tests)], cwd=directory, check=True)
+                        "org.opentsx.build.MavenHttpCaptureTest", str(tests),
+                        str(ROOT / ".mvn/maven.config")], cwd=directory, check=True)
         with ZipFile(jar, "w", compression=ZIP_DEFLATED) as archive:
             for file in sorted(classes.rglob("*.class")):
                 if "MavenHttpCaptureTest" not in file.name:
