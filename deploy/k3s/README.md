@@ -115,12 +115,21 @@ and exits with 1 after the error of kubectl when it cannot read one:
 error: deployment/opentsx-modbus-sim: cannot read it; check the cluster with kubectl -n opentsx get deployment/opentsx-modbus-sim
 ```
 
-It exits with 1 the same way when it cannot read the Jobs, the CronJobs, the events or, with `--logs`, the list of
-OpenTSx Deployments:
+It exits with 1 the same way when it cannot read the ConfigMap `opentsx-config`, the OpenTSx Deployments, pods and
+services, the Jobs, the CronJobs, the PVCs, the pods for the images in use, the events or, with `--logs`, the list
+of OpenTSx Deployments. Each read has its own line, for example:
 
 ```text
 error: jobs: cannot read them; check the cluster with kubectl -n opentsx get job
 ```
+
+The others are `ConfigMap opentsx-config: cannot read it; check the cluster with kubectl -n <namespace> get configmap opentsx-config`,
+`deployments, pods, services: cannot read them; check the cluster with kubectl -n <namespace> get deployment,pod,service -l app.kubernetes.io/part-of=opentsx`,
+`cronjobs: cannot read them; check the cluster with kubectl -n <namespace> get cronjob`,
+`PVCs: cannot read them; check the cluster with kubectl -n <namespace> get pvc`,
+`images in use: cannot read them; check the cluster with kubectl -n <namespace> get pod`,
+`events: cannot read them; check the cluster with kubectl -n <namespace> get events` and
+`--logs: cannot list the Deployments; check the cluster with kubectl -n <namespace> get deployment -l app.kubernetes.io/part-of=opentsx`.
 
 With `--logs`, a Deployment whose logs cannot be read gets a warn line after the error of kubectl. The logs of the
 other Deployments are still shown, then the script exits with 1:
@@ -150,44 +159,75 @@ error: PVC opentsx-stats-state: the backup into stats-state.tar.gz failed; see t
 
 `71-restore.sh` with `env` keeps the current `.env` as `deploy/k3s/.env.before-restore` and replaces `.env` with the
 backup's env as the last step. With volumes among the parts, it checks the namespace and the PVCs of the current
-`.env` first and restores the volumes before it replaces `.env`. A failed volume step leaves `.env` as it was, so
-running the same command again restores into the same namespace. `--only env` alone replaces `.env` and needs no
-cluster. When `.env` cannot be replaced, the script exits with 1 after the error of `cp` with
+`.env` first and restores the volumes before it replaces `.env`. A failed volume step leaves the configuration as it
+was, and the namespace check described below keeps the rerun of the same command in the same namespace. `--only env`
+alone replaces `.env` and needs no cluster. The script copies the backup's env to `<path of .env>.restoring` and
+renames that file over `.env`, so a `.env` that is a link stays a link and the file it points to gets the backup's
+env. Git ignores `deploy/k3s/.env.before-restore` and `deploy/k3s/.env.restoring`, which hold the configuration with
+its secrets, as it ignores `deploy/k3s/.env`. When `.env` cannot be replaced, the script removes the partial copy,
+leaves `.env` as it was and exits with 1 after the error of `cp` or `mv` with
 `<path of .env>: cannot replace it with <dir>/env after the PVCs <pvcs> were restored; see the error above, then run 71-restore.sh <dir> --only env`.
-Without volumes among the parts, the message leaves out `after the PVCs <pvcs> were restored`.
+Without volumes among the parts, the message leaves out `after the PVCs <pvcs> were restored`. A `.env` that links
+to a path that cannot be resolved, because a directory on it does not exist or is a file, or the links form a loop,
+stops the step before the copy with exit 1 and
+`<path of .env>: cannot replace it with <dir>/env after the PVCs <pvcs> were restored; it links to <link target>, which cannot be resolved (a directory on its path is missing or is a file, or the links form a loop); fix the link, then run 71-restore.sh <dir> --only env`,
+again without `after the PVCs <pvcs> were restored` when no volume is among the parts.
+As `.env` is unchanged, the rerun the message names passes the check of `.env.before-restore` described below.
 
 On a new cluster, restore `env` first. With `env` among the parts, a namespace or PVC that does not exist stops the
 restore with exit 1 before it changes anything:
 
 ```text
-error: namespace opentsx: not found; nothing was restored; run 71-restore.sh ./opentsx-backup-20261012T021700Z --only env, then 20-configure.sh and 30-deploy.sh, then 71-restore.sh ./opentsx-backup-20261012T021700Z --only data
+error: namespace opentsx: not found; nothing was restored; run 71-restore.sh ./opentsx-backup-20261012T021700Z --only env, then 20-configure.sh, 10-build.sh, 11-import-images.sh and 30-deploy.sh, then 71-restore.sh ./opentsx-backup-20261012T021700Z --only data
 ```
 
-The last command of the hint leaves `env` out. `20-configure.sh` rewrites `.env`, so restoring `env` again would
-replace `.env.before-restore`, the copy of the `.env` from before the restore, with it.
+The images are not in the containerd of a new cluster, so the hint builds and imports them with `10-build.sh` and
+`11-import-images.sh` before `30-deploy.sh`. The last command of the hint leaves `env` out. `20-configure.sh` rewrites
+`.env`, so restoring `env` again would replace `.env.before-restore`, the copy of the `.env` from before the restore,
+with it. A restore with `env` therefore stops with exit 1 before it changes either file when `.env.before-restore`
+exists and differs from `.env`:
+`<path of .env>.before-restore: holds the .env from before an earlier restore; leave env out of --only, or move that file away first`.
 
 With `env` and volumes among the parts, the volumes go into `OPENTSX_NS` as the shell or the current `.env` sets it,
 while the next `20-configure.sh` and `30-deploy.sh` use `OPENTSX_NS` of the backup's env. The script therefore checks
 before the question that the `namespace=` line of the backup's `MANIFEST` and `OPENTSX_NS` of the backup's env (with
-the default of `env.example`, as the scripts read it) both name `OPENTSX_NS`. A backup of another namespace, or one
-without a `namespace=` line, stops the restore with exit 1 before it changes anything:
+the default of `env.example`, as the scripts read it) both name `OPENTSX_NS`. A backup of another namespace stops the
+restore with exit 1 before it changes anything. The message names the file `OPENTSX_NS` came from: `.env` when it sets
+`OPENTSX_NS`, otherwise `deploy/k3s/env.example`:
 
 ```text
 error: namespace: the backup is of opentsx-old, deploy/k3s/.env names opentsx; restore env alone first or set OPENTSX_NS to opentsx-old
 ```
 
 Restore `env` alone first and follow the order for a new cluster, or set the namespace of the backup with
-`20-configure.sh OPENTSX_NS=<namespace>` and run `30-deploy.sh` first. `OPENTSX_NS` set in the shell wins over
-`.env`, and restoring `env` does not change it, so the message then names the shell:
+`20-configure.sh OPENTSX_NS=<namespace>` and run `30-deploy.sh` first.
+
+A backup without a `namespace=` line in its `MANIFEST` stops the restore the same way. It names no namespace to set,
+so the only fix is to restore `env` alone first and follow the order for a new cluster:
+
+```text
+error: namespace: missing in ./opentsx-backup-20261012T021700Z/MANIFEST; restore env alone first, then the volumes
+```
+
+`OPENTSX_NS` set in the shell wins over `.env`, and restoring `env` does not change it, so the message for a backup of
+another namespace then names the shell:
 
 ```text
 error: namespace: the backup is of opentsx-old, the shell sets OPENTSX_NS to opentsx; set OPENTSX_NS to opentsx-old or unset it
 ```
 
-`70-backup.sh` writes `namespace=` from
-`OPENTSX_NS` as the shell or `.env` sets it, but copies `.env` as it is, so a backup taken with `OPENTSX_NS` set in the
-shell can name one namespace in its `MANIFEST` and another in its env. Such a backup is refused whatever `OPENTSX_NS`
-is; restore `env` alone first:
+`70-backup.sh` copies `.env` as it is and writes `namespace=` from `OPENTSX_NS`, where the shell wins over `.env`. It
+therefore stops with exit 1 before it writes anything when `OPENTSX_NS` is set in the shell to another namespace than
+`.env` names, or than `env.example` names when `.env` sets none:
+
+```text
+error: OPENTSX_NS: the shell sets opentsx-old, deploy/k3s/.env names opentsx; unset it or change .env first
+```
+
+Run `unset OPENTSX_NS`, or write the namespace into `.env` with `20-configure.sh OPENTSX_NS=<namespace>`, then run
+`70-backup.sh` again. Without a `.env` the backup holds no env, and its `namespace=` line names `OPENTSX_NS` of the
+shell. A backup whose `MANIFEST` names one namespace and whose env another is refused by `71-restore.sh` with `env`
+and volumes whatever `OPENTSX_NS` is; restore `env` alone first:
 
 ```text
 error: namespace: the backup is of opentsx, ./opentsx-backup-20261012T021700Z/env names opentsx-old; restore env alone first, then the volumes

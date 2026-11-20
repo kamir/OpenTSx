@@ -29,7 +29,9 @@
 #
 # Exit codes:
 #   0  backup written
-#   1  the backup failed, for example a writer still ran 150 s after --quiesce scaled it to 0
+#   1  the backup failed, for example a writer still ran 150 s after --quiesce scaled it to 0, or OPENTSX_NS set in
+#      the shell differs from OPENTSX_NS of deploy/k3s/.env, or of env.example when .env sets none (checked before
+#      anything is written)
 #   2  usage error: an unknown option, an option without its value, or a line of deploy/k3s/.env that is not a
 #      comment or KEY=VALUE with a known key
 set -euo pipefail
@@ -46,7 +48,18 @@ while [[ $# -gt 0 ]]; do
     *) usage_error "$1: unknown option; expected --out DIR, --quiesce, --no-data or --help" ;;
   esac
 done
+NS_FROM_SHELL=false
+[[ -z "${OPENTSX_NS+x}" ]] || NS_FROM_SHELL=true
 load_env
+# DIR/env is a copy of .env, but namespace= takes OPENTSX_NS from the shell; the sed reads env as 71-restore.sh does
+if $NS_FROM_SHELL && [[ -f "$ENV_FILE" ]]; then
+  env_ns="$(sed -n -E 's/^[[:space:]]*(export[[:space:]]+)?OPENTSX_NS=([^[:space:]#]*).*/\2/p' \
+    "$K3S_DIR/env.example" "$ENV_FILE" | tail -n 1 | tr -d "\"'")"
+  ns_from=deploy/k3s/env.example
+  grep -qE '^[[:space:]]*(export[[:space:]]+)?OPENTSX_NS=' "$ENV_FILE" && ns_from="${ENV_FILE#"$ROOT"/}"
+  [[ "$env_ns" == "$OPENTSX_NS" ]] \
+    || die "OPENTSX_NS: the shell sets $OPENTSX_NS, $ns_from names $env_ns; unset it or change .env first"
+fi
 require_namespace "check OPENTSX_NS in deploy/k3s/.env and the kubectl context, or deploy it first with 30-deploy.sh"
 OUT="${OUT:-$PWD/opentsx-backup-$(date -u +%Y%m%dT%H%M%SZ)}"
 if [[ -e "$OUT" ]]; then

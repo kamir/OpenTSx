@@ -5,16 +5,22 @@
 # runs; a declined question and a question at the end of standard input exit 1 with their message on stderr before
 # kubectl runs; an answer without a newline at the end counts as given; a missing namespace, a namespace that cannot be
 # read, a missing PVC, a PVC that cannot be read and a failed step in the helper pod exit 1 with their message; with env
-# among the parts a missing namespace or PVC says how to restore env first, and following that hint after
-# 20-configure.sh rewrote .env keeps the copy of the .env from before the restore; a namespace that cannot be read, a
-# missing namespace or PVC and a failed volume step leave .env as it is; env alone needs no cluster; a MANIFEST of file=
-# lines only restores; a current .env that cannot be kept exits 1 and stays as it is; the rerun after a failed volume
-# step restores into the same namespace; a .env that already equals the backup's env stays, and the message names the
-# kept copy only when there is one; with env and volumes a backup whose MANIFEST names another namespace than the
-# current .env, or none, or whose env names another namespace than its MANIFEST, exits 1 before the question and before
-# anything changes, and so does a backup of another namespace than OPENTSX_NS of the shell, naming the shell; volumes
-# alone restore into the namespace of the current .env; a .env that cannot be replaced exits 1 and names the restored
-# PVCs. A stand-in kubectl records any call; needs no kubectl, no cluster, no network.
+# among the parts a missing namespace or PVC says how to restore env first (env, 20-configure.sh, 10-build.sh,
+# 11-import-images.sh, 30-deploy.sh, the volumes), following that hint after 20-configure.sh rewrote .env keeps the
+# copy of the .env from before the restore, and restoring env again then stops before it changes .env or that copy,
+# with or without volumes; a namespace that cannot be read, a missing namespace or PVC and a failed volume step leave
+# .env as it is; env alone needs no cluster; a MANIFEST of file= lines only restores; a current .env that cannot be kept
+# exits 1 and stays as it is; the rerun after a failed volume step restores into the same namespace; a .env that
+# already equals the backup's env stays, and the message names the kept copy only when there is one; with env and
+# volumes a backup whose MANIFEST names another namespace than the current .env, or none, or whose env names another
+# namespace than its MANIFEST, exits 1 before the question and before anything changes, naming the env file that sets
+# OPENTSX_NS or else env.example, and so does a backup of another namespace than OPENTSX_NS of the shell, naming the
+# shell; volumes alone restore into the namespace of the current .env; a .env that cannot be replaced exits 1 and names
+# the restored PVCs; a copy of the backup's env that fails halfway leaves .env as it was, and the rerun the message
+# names restores it; a .env that is a link stays a link, and one that links to a path that cannot be resolved exits
+# 1, stays as it is and the message names that path; git ignores deploy/k3s/.env.before-restore and
+# deploy/k3s/.env.restoring. A stand-in kubectl records any call, a stand-in cp fails on request; needs git, no kubectl,
+# no cluster, no network.
 #
 #   bash deploy/k3s/test/test-71-restore.sh
 set -euo pipefail
@@ -296,7 +302,7 @@ else
   echo "ok   env-only-no-cluster"
 fi
 
-hint="nothing was restored; run 71-restore.sh $WORK/env-data --only env, then 20-configure.sh and 30-deploy.sh, then 71-restore.sh $WORK/env-data --only data"
+hint="nothing was restored; run 71-restore.sh $WORK/env-data --only env, then 20-configure.sh, 10-build.sh, 11-import-images.sh and 30-deploy.sh, then 71-restore.sh $WORK/env-data --only data"
 for case in "NAMESPACE=missing|error: namespace opentsx: not found; $hint" \
   "PVC_STATE=missing|error: PVC opentsx-data: not found in namespace opentsx; $hint"; do
   name="env-${case%%=*}"; name="${name,,}"; message="${case#*|}"
@@ -343,6 +349,28 @@ else
     echo "ok   hint-flow"
   fi
 fi
+
+# restoring env again after 20-configure.sh rewrote the restored .env would overwrite the only copy of the .env from
+# before the first restore
+for case in "env|CLUSTER=down" "env,data|CLUSTER=up"; do
+  parts="${case%%|*}"; name="kept-copy-differs-${parts//,/-}"
+  printf '%s\n' "$configured" > "$WORK/kept.env"
+  printf 'OPENTSX_DOMAIN=original\n' > "$WORK/kept.env.before-restore"
+  STUB_ENV=("${case#*|}" OPENTSX_ENV_FILE="$WORK/kept.env")
+  restore "$name" "$WORK/env-data" --only "$parts" --yes
+  STUB_ENV=()
+  message="error: $WORK/kept.env.before-restore: holds the .env from before an earlier restore; leave env out of --only, or move that file away first"
+  if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/$name.out"; then
+    failed "$name: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/$name.out"
+  elif [[ "$(cat "$WORK/kept.env")" != "$configured" || "$(cat "$WORK/kept.env.before-restore")" != OPENTSX_DOMAIN=original ]]; then
+    failed "$name: .env or .env.before-restore was changed"
+    sed 's/^/    env: /' "$WORK/kept.env"; sed 's/^/    kept: /' "$WORK/kept.env.before-restore"
+  elif [[ -e "$WORK/calls.log" ]] && grep -qE '^-n [^ ]+ (scale|exec|apply) |^apply ' "$WORK/calls.log"; then
+    failed "$name: a writer was stopped or the helper pod started"; sed 's/^/    call: /' "$WORK/calls.log"
+  else
+    echo "ok   $name"
+  fi
+done
 
 mkdir -p "$WORK/other-ns"
 printf 'OPENTSX_NS=current\nOPENTSX_DOMAIN=frombackup\n' > "$WORK/other-ns/env"
@@ -405,7 +433,8 @@ cp "$WORK/good/data.tar.gz" "$WORK/elsewhere/"
 { echo "namespace=elsewhere"
   (cd "$WORK/elsewhere" && for f in env data.tar.gz; do echo "file=$(sha256sum "$f" | cut -d' ' -f1) $(wc -c < "$f") $f"; done)
 } > "$WORK/elsewhere/MANIFEST"
-message="error: namespace: the backup is of elsewhere, deploy/k3s/.env names opentsx; restore env alone first or set OPENTSX_NS to elsewhere"
+# ns.env sets no OPENTSX_NS, so the namespace comes from env.example
+message="error: namespace: the backup is of elsewhere, deploy/k3s/env.example names opentsx; restore env alone first or set OPENTSX_NS to elsewhere"
 for name in other-namespace-yes other-namespace-asked; do
   args=(--only "env,data")
   [[ "$name" == *-yes ]] && args+=(--yes)
@@ -424,6 +453,26 @@ for name in other-namespace-yes other-namespace-asked; do
     echo "ok   $name"
   fi
 done
+# the refusal names the file OPENTSX_NS came from: the env file that sets it, or env.example without an env file
+printf 'OPENTSX_NS=current\n' > "$WORK/ns-current.env"
+for case in "other-namespace-env-file|$WORK/ns-current.env|$WORK/ns-current.env names current" \
+  "other-namespace-no-env-file|$WORK/none.env|deploy/k3s/env.example names opentsx"; do
+  IFS='|' read -r name file names <<< "$case"
+  STUB_ENV=(CLUSTER=up OPENTSX_ENV_FILE="$file")
+  restore "$name" "$WORK/elsewhere" --only env,data --yes
+  STUB_ENV=()
+  message="error: namespace: the backup is of elsewhere, $names; restore env alone first or set OPENTSX_NS to elsewhere"
+  if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/$name.out"; then
+    failed "$name: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/$name.out"
+  elif [[ -e "$file.before-restore" || -s "$WORK/calls.log" ]] || { [[ -e "$file" ]] && [[ "$(cat "$file")" != OPENTSX_NS=current ]]; }; then
+    failed "$name: .env was replaced or kept aside, or kubectl was called"
+  elif [[ "$file" == "$WORK/none.env" && -e "$file" ]]; then
+    failed "$name: an env file was written"
+  else
+    echo "ok   $name"
+  fi
+done
+
 STUB_ENV=(CLUSTER=up OPENTSX_ENV_FILE="$WORK/ns.env")
 restore other-namespace-volumes "$WORK/elsewhere" --only data --yes
 STUB_ENV=()
@@ -452,7 +501,7 @@ else
   echo "ok   manifest-without-namespace"
 fi
 
-# a backup taken with OPENTSX_NS set in the shell: its MANIFEST names the current namespace, its env another one
+# a backup whose MANIFEST names the current namespace and whose env names another one
 mkdir -p "$WORK/env-elsewhere"
 printf 'OPENTSX_NS=frombackup\n' > "$WORK/env-elsewhere/env"
 cp "$WORK/good/data.tar.gz" "$WORK/env-elsewhere/"
@@ -502,6 +551,93 @@ for case in "env,data|after the PVCs opentsx-data were restored" "env|"; do
     echo "ok   $name"
   fi
 done
+
+# cp with the source CP_FAILS_ON cuts its destination to nothing and fails, as on a full disk; any other copy is real
+cat > "$WORK/bin/cp" <<STUB
+#!/usr/bin/env bash
+if [[ -n "\${CP_FAILS_ON:-}" && "\${*: -2:1}" == "\$CP_FAILS_ON" ]]; then
+  : > "\${*: -1}"; echo "cp: error writing '\${*: -1}': No space left on device" >&2; exit 1
+fi
+exec "$(command -v cp)" "\$@"
+STUB
+chmod +x "$WORK/bin/cp"
+# a copy of the backup's env that fails halfway leaves .env as it was, so the rerun the message names restores env
+printf 'OPENTSX_DOMAIN=original\n' > "$WORK/partial.env"
+STUB_ENV=(CP_FAILS_ON="$WORK/env-data/env" OPENTSX_ENV_FILE="$WORK/partial.env")
+restore env-copy-fails "$WORK/env-data" --only env --yes
+first=$rc
+first_env="$(cat "$WORK/partial.env")"
+left="$(cd "$WORK" && echo partial.env.*)"
+STUB_ENV=(OPENTSX_ENV_FILE="$WORK/partial.env")
+restore env-copy-rerun "$WORK/env-data" --only env --yes
+STUB_ENV=()
+message="error: $WORK/partial.env: cannot replace it with $WORK/env-data/env; see the error above, then run 71-restore.sh $WORK/env-data --only env"
+if (( first != 1 )) || ! grep -qxF -- "$message" "$WORK/env-copy-fails.out"; then
+  failed "env-copy-fails: exit $first, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/env-copy-fails.out"
+elif [[ "$first_env" != OPENTSX_DOMAIN=original || "$left" != partial.env.before-restore ]]; then
+  failed "env-copy-fails: .env is [$first_env], expected OPENTSX_DOMAIN=original; files left next to it: $left"
+elif (( rc != 0 )) || ! cmp -s "$WORK/partial.env" "$WORK/env-data/env" \
+  || [[ "$(cat "$WORK/partial.env.before-restore")" != OPENTSX_DOMAIN=original ]]; then
+  failed "env-copy-fails: the rerun exit $rc, expected 0, the backup's env in .env and the original in the kept copy"
+  sed 's/^/    /' "$WORK/env-copy-rerun.out"
+elif [[ "$(stat -c %a "$WORK/partial.env")" != 600 ]]; then
+  failed "env-copy-fails: the restored .env has mode $(stat -c %a "$WORK/partial.env"), expected 600"
+else
+  echo "ok   env-copy-fails"
+fi
+
+# a .env that is a link stays a link, and the file it points to holds the backup's env
+printf 'OPENTSX_DOMAIN=original\n' > "$WORK/link-target.env"
+ln -s "$WORK/link-target.env" "$WORK/link.env"
+STUB_ENV=(OPENTSX_ENV_FILE="$WORK/link.env")
+restore env-link "$WORK/env-data" --only env --yes
+STUB_ENV=()
+if (( rc != 0 )) || [[ ! -L "$WORK/link.env" ]] || ! cmp -s "$WORK/link-target.env" "$WORK/env-data/env"; then
+  failed "env-link: exit $rc, expected 0, .env still a link and the backup's env in the file it points to"
+  sed 's/^/    /' "$WORK/env-link.out"
+elif [[ "$(cat "$WORK/link.env.before-restore")" != OPENTSX_DOMAIN=original ]]; then
+  failed "env-link: the kept copy is not the original"
+else
+  echo "ok   env-link"
+fi
+
+# a .env that links to a path with a missing directory, or with a file where a directory belongs, stays as it is, and
+# the message names the link and why it cannot be resolved
+ln -s "$WORK/missing-dir/target.env" "$WORK/dangling.env"
+STUB_ENV=(OPENTSX_ENV_FILE="$WORK/dangling.env")
+restore env-dangling-link "$WORK/env-data" --only env --yes
+STUB_ENV=()
+message="error: $WORK/dangling.env: cannot replace it with $WORK/env-data/env; it links to $WORK/missing-dir/target.env, which cannot be resolved (a directory on its path is missing or is a file, or the links form a loop); fix the link, then run 71-restore.sh $WORK/env-data --only env"
+if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/env-dangling-link.out"; then
+  failed "env-dangling-link: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/env-dangling-link.out"
+elif [[ "$(readlink -- "$WORK/dangling.env")" != "$WORK/missing-dir/target.env" || -e "$WORK/missing-dir" ]]; then
+  failed "env-dangling-link: the link or its missing directory changed"
+else
+  echo "ok   env-dangling-link"
+fi
+
+printf 'OPENTSX_DOMAIN=original\n' > "$WORK/a-file"
+ln -s "$WORK/a-file/target.env" "$WORK/through-file.env"
+STUB_ENV=(OPENTSX_ENV_FILE="$WORK/through-file.env")
+restore env-link-through-file "$WORK/env-data" --only env --yes
+STUB_ENV=()
+message="error: $WORK/through-file.env: cannot replace it with $WORK/env-data/env; it links to $WORK/a-file/target.env, which cannot be resolved (a directory on its path is missing or is a file, or the links form a loop); fix the link, then run 71-restore.sh $WORK/env-data --only env"
+if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/env-link-through-file.out"; then
+  failed "env-link-through-file: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/env-link-through-file.out"
+elif [[ "$(readlink -- "$WORK/through-file.env")" != "$WORK/a-file/target.env" \
+        || "$(cat "$WORK/a-file")" != OPENTSX_DOMAIN=original ]]; then
+  failed "env-link-through-file: the link or the file on its path changed"
+else
+  echo "ok   env-link-through-file"
+fi
+
+# the kept copy of .env and the copy renamed over it hold its secrets
+ignored="$(git -C "$K3S_DIR" check-ignore -- .env.before-restore .env.restoring 2>&1)" || true
+if [[ "$ignored" == $'.env.before-restore\n.env.restoring' ]]; then
+  echo "ok   env-copies-ignored"
+else
+  failed "env-copies-ignored: git check-ignore printed [$ignored], expected both .env.before-restore and .env.restoring"
+fi
 
 if (( failures )); then echo "$failures failed"; exit 1; fi
 echo "all passed"

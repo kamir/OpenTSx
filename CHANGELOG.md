@@ -2465,14 +2465,15 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   command, so `CID=$(docker run img:1.2.3)` passes and `echo $(docker pull a:1.2.3) $(docker pull b)` fails on `b`.
   The suggestion for an unguarded `cd` in a substitution names only the target.
 - `deploy/k3s/71-restore.sh` with `env` and volumes checks the namespace and the PVCs of the current `.env`, restores
-  the volumes and replaces `.env` with the backup's env last, so a failed volume step leaves `.env` as it was and the
-  rerun restores into the same namespace. Before, `.env` was replaced first, and the rerun after a failed step
-  restored into the namespace of the backup's env, which the first run had not checked.
+  the volumes and replaces `.env` with the backup's env last, so a failed volume step leaves `.env` as it was; the
+  namespace check keeps the rerun in the same namespace. Before, `.env` was replaced first, and the rerun after a
+  failed step restored into the namespace of the backup's env, which the first run had not checked.
 - `deploy/k3s/71-restore.sh` with `env` among the parts stops on a missing namespace or PVC with exit code 1 and
-  `namespace <namespace>: not found; nothing was restored; run 71-restore.sh <dir> --only env, then 20-configure.sh
-  and 30-deploy.sh, then 71-restore.sh <dir> --only <volume parts>` (for a PVC `PVC <pvc>: not found in namespace
-  <namespace>; nothing was restored; ...`). The last command leaves `env` out, so the restore after `20-configure.sh`
-  keeps `.env.before-restore`. Before, the hint led to configuring without the backup's env.
+  `namespace <namespace>: not found; nothing was restored; run 71-restore.sh <dir> --only env, then 20-configure.sh,
+  10-build.sh, 11-import-images.sh and 30-deploy.sh, then 71-restore.sh <dir> --only <volume parts>` (for a PVC `PVC
+  <pvc>: not found in namespace <namespace>; nothing was restored; ...`). The last command leaves `env` out, so the
+  restore after `20-configure.sh` keeps `.env.before-restore`. Before, the hint led to configuring without the
+  backup's env.
 - `deploy/k3s/71-restore.sh` names `.env.before-restore` in its `already the backup's env` line only when that file
   exists and prints `<env file>: already the backup's env; left as it is` otherwise.
 - `deploy/k3s/71-restore.sh` stops with exit code 1 and `PVC <pvc>: cannot read it; check the cluster with kubectl -n
@@ -2532,12 +2533,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   others are still shown and the script exits with 1. These reads showed an empty section and exited with 0.
 - `deploy/k3s/71-restore.sh` with `env` and volumes checks the namespace before the question and before it changes
   anything, and exits with 1 when the check fails. A backup whose `MANIFEST` names another namespace than `OPENTSX_NS`
-  is refused with `namespace: the backup is of <backup ns>, deploy/k3s/.env names <ns>; restore env alone first or set
-  OPENTSX_NS to <backup ns>`. When `OPENTSX_NS` is set in the shell, the refusal names the shell: `namespace: the
-  backup is of <backup namespace>, the shell sets OPENTSX_NS to <namespace>; set OPENTSX_NS to <backup namespace> or
-  unset it`. A `MANIFEST` without a `namespace=` line is refused too, and so is a backup whose env names another
-  namespace than its `MANIFEST`, as a backup taken with `OPENTSX_NS` set in the shell can. The script restored the
-  volumes into the current namespace and then switched `.env` to the namespace of the backup.
+  is refused with `namespace: the backup is of <backup ns>, <file> names <ns>; restore env alone first or set
+  OPENTSX_NS to <backup ns>`, where `<file>` is the `.env` when it sets `OPENTSX_NS` and `deploy/k3s/env.example`
+  otherwise. When `OPENTSX_NS` is set in the shell, the refusal names the shell: `namespace: the backup is of <backup
+  namespace>, the shell sets OPENTSX_NS to <namespace>; set OPENTSX_NS to <backup namespace> or unset it`. A
+  `MANIFEST` without a `namespace=` line is refused too, and so is a backup whose env names another namespace than
+  its `MANIFEST`. The script restored the volumes into the current namespace and then switched `.env` to the
+  namespace of the backup.
 - tools: `tools/test_lg_scripts.py` reads an unknown option between `docker` and its subcommand with at most one value
   word, none when the option has `=`, and reports it only when a `run`, `create` or `pull` subcommand follows. So
   `docker -x foo bar pull <image>` and `docker --x=1 ps pull <image>` are no finding, and `docker --foo pull <image>`
@@ -2600,6 +2602,40 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   the Kafka Connect worker` instead of `no answer within 10 s`.
 - tools: `tools/test_check_tracked_config.py` runs git with `LC_ALL=C`, so the test that quotes git's `bad config
   line` message also passes with a translated git.
+- `deploy/k3s/71-restore.sh` with `env` among the parts names the image steps in its hint for a new cluster:
+  `namespace <namespace>: not found; nothing was restored; run 71-restore.sh <dir> --only env, then 20-configure.sh,
+  10-build.sh, 11-import-images.sh and 30-deploy.sh, then 71-restore.sh <dir> --only <volume parts>`, and the same
+  after `PVC <pvc>: not found in namespace <namespace>`. The hint left out building and importing the images, so
+  `30-deploy.sh` could not get ready on a new cluster.
+- `deploy/k3s/71-restore.sh` with `env` stops with exit code 1 and `<path of .env>.before-restore: holds the .env from
+  before an earlier restore; leave env out of --only, or move that file away first` when `.env.before-restore` exists
+  and differs from `.env`, and changes neither file. It copied `.env` over it, for example after `20-configure.sh`
+  rewrote a restored `.env`, and lost the only copy of the configuration from before the first restore.
+- `deploy/k3s/71-restore.sh` copies the backup's env to `<path of .env>.restoring` and renames it over `.env`, and
+  removes that copy when a step fails. A failed copy, for example on a full disk, now leaves `.env` as it was, and the
+  rerun `71-restore.sh <dir> --only env` that the message names restores it. `cp` wrote into `.env` directly, so a
+  failed copy could leave it empty or cut short. A `.env` that is a link stays a link. When the link cannot be
+  resolved, the script stops with exit code 1 before the copy and leaves `.env` as it is: `<path of .env>: cannot
+  replace it with <dir>/env; it links to <link target>, which cannot be resolved (a directory on its path is missing
+  or is a file, or the links form a loop); fix the link, then run 71-restore.sh <dir> --only env`.
+- `deploy/k3s/50-status.sh` exits with 1 after the error of kubectl and a line of its own when it cannot read the
+  ConfigMap `opentsx-config` (`ConfigMap opentsx-config: cannot read it; check the cluster with kubectl -n <namespace>
+  get configmap opentsx-config`), the OpenTSx Deployments, pods and services (`deployments, pods, services: cannot
+  read them; ...`), the PVCs (`PVCs: cannot read them; ...`) or the pods for the images in use (`images in use: cannot
+  read them; ...`). These reads stopped the script with the error of kubectl only.
+- `deploy/k3s/70-backup.sh` stops with exit code 1 before it writes anything when `OPENTSX_NS` set in the shell
+  differs from `OPENTSX_NS` of `deploy/k3s/.env`, or of `env.example` when `.env` sets none: `OPENTSX_NS: the shell
+  sets <namespace>, <file> names <other namespace>; unset it or change .env first`, where `<file>` is
+  `deploy/k3s/.env` when it sets `OPENTSX_NS` and `deploy/k3s/env.example` otherwise. Such a backup named one
+  namespace in its MANIFEST and another in its env, and `71-restore.sh` refused to restore it with `env` and volumes.
+- `deploy/k3s/71-restore.sh` names the file `OPENTSX_NS` came from when it refuses a backup of another namespace:
+  `namespace: the backup is of <backup namespace>, <file> names <namespace>; restore env alone first or set OPENTSX_NS
+  to <backup namespace>`, where `<file>` is the `.env` when it sets `OPENTSX_NS` and `deploy/k3s/env.example`
+  otherwise. It always named `deploy/k3s/.env`, also when there was none or it set no `OPENTSX_NS`.
+- `docs/devops/troubleshooting.md` gives `namespace: missing in <dir>/MANIFEST; restore env alone first, then the
+  volumes` its own row whose only fix is to restore `env` alone first, because setting `OPENTSX_NS` cannot clear it,
+  and names every cause of the `50-status.sh --logs` warn line: a pod that has not started, a user who may not read
+  `pods/log`, or a cluster or kubelet that did not answer.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
@@ -2691,6 +2727,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `opentsx-lg/src/main/mqtt-example/volume1/docker/mqtt/config/passwd`, also when one was added with `git add -f`.
 - opentsx-lg: `mqtt-generator-gist/mqttgen.py` no longer prints the MQTT password from its configuration. It prints
   `MQTT broker <host>:<port>, user <username>`.
+- deploy/k3s: git ignores `deploy/k3s/.env.before-restore` and `deploy/k3s/.env.restoring`, the copies of `.env` with
+  its secrets that `71-restore.sh` writes next to it, so `git add -A` does not stage them.
 
 ## [3.0.1] - 2026-10-16
 

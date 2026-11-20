@@ -287,16 +287,21 @@ deploy/k3s/71-restore.sh DIR --only stats-state --yes
 * `71-restore.sh` verifies the checksums first, asks for confirmation (unless `--yes`; an answer that does not start
   with `y` or `Y`, or standard input that ends before an answer, exits with 1), checks the namespace and the PVCs of
   the current `.env`, keeps the current `.env` as `.env.before-restore` when it restores `env`, stops the writers,
-  **replaces** the PVC contents, replaces `.env` with the backup's env last and scales the writers back. A failed step
-  leaves `.env` as it was, so the rerun restores into the same namespace. On a new cluster, restore `env` first
-  (`71-restore.sh DIR --only env`, needs no cluster), then run `20-configure.sh` and `30-deploy.sh`, then restore the
-  volumes without `env` (`71-restore.sh DIR`). With `env` and volumes, the `namespace=` line of the backup's
-  `MANIFEST` and `OPENTSX_NS` of the backup's env must both name `OPENTSX_NS` as the shell or the current `.env` sets
-  it; otherwise, or without a `namespace=` line, it exits with 1 before the question and changes nothing. Restore
-  `env` alone first, or, when the `MANIFEST` and the env of the backup name the same namespace, set `OPENTSX_NS` to
-  it. `OPENTSX_NS` set in the shell wins over `.env`, and restoring `env` does not change it: unset it or set it to
-  the namespace of the backup. A backup taken with `OPENTSX_NS` set in the shell can name one namespace in its
-  `MANIFEST` and another in its env; restore its `env` alone first. Volumes alone restore into `OPENTSX_NS` as the
+  **replaces** the PVC contents, replaces `.env` with the backup's env last and scales the writers back. An earlier
+  `.env.before-restore` that differs from `.env` stops a restore with `env` with exit 1 before it changes either file,
+  so the copy of the `.env` from before the first restore is kept. With `env` and volumes, the `namespace=` line of
+  the backup's `MANIFEST` and `OPENTSX_NS` of the backup's env must both name `OPENTSX_NS` as the shell or the current
+  `.env` sets it; otherwise, or without a `namespace=` line, it exits with 1 before the question and changes nothing.
+  A failed step leaves the configuration as it was, and that namespace check keeps the rerun in the same namespace.
+  On a new cluster, restore `env` first (`71-restore.sh DIR --only env`, needs no cluster), then run
+  `20-configure.sh`, `10-build.sh`, `11-import-images.sh` and `30-deploy.sh`, then restore the volumes without `env`
+  (`71-restore.sh DIR`). For a backup of another namespace, restore `env` alone first, or, when the `MANIFEST` and the
+  env of the backup name the same namespace, set `OPENTSX_NS` to it. For a `MANIFEST` without a `namespace=` line,
+  only restoring `env` alone first helps. `OPENTSX_NS` set in the shell wins over `.env`, and restoring `env` does not
+  change it: unset it or set it to the namespace of the backup. `70-backup.sh` stops with exit 1 before it writes
+  anything when `OPENTSX_NS` set in the shell differs from the namespace of `.env` (or of `env.example` when `.env`
+  sets none), so the `MANIFEST` and the env of a backup name one namespace. A backup whose `MANIFEST` and env name
+  different namespaces is refused; restore its `env` alone first. Volumes alone restore into `OPENTSX_NS` as the
   shell or the current `.env` sets it. Restore the statistics checkpoint only against the **same** topics: it stores
   offsets. After topics were deleted and recreated, skip `stats-state`.
 * Schedule (lab): a daily cron entry on the admin host, e.g. `17 2 * * * cd /opt/opentsx && deploy/k3s/70-backup.sh

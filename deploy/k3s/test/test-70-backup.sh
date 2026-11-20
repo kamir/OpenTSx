@@ -5,8 +5,10 @@
 # run, a missing namespace, a namespace that cannot be read, a backup directory that is not empty or cannot be listed
 # (it keeps its files), a PVC that cannot be read (it is not taken as missing), no PVC, a ConfigMap that cannot be
 # read, a failed copy of a PVC and a helper pod that does not get ready stop the backup with exit 1, a backup that
-# fails after it copied .env leaves its directory empty for the rerun, LAKE=true without --quiesce warns, and usage
-# errors exit 2. A stand-in kubectl plays the cluster; needs no kubectl, no cluster, no network.
+# fails after it copied .env leaves its directory empty for the rerun, OPENTSX_NS set in the shell that differs from
+# that of .env (or of env.example when .env sets none) exits 1 before kubectl runs and the same value backs up,
+# LAKE=true without --quiesce warns, and usage errors exit 2. A stand-in kubectl plays the cluster; needs no kubectl,
+# no cluster, no network.
 #
 #   bash deploy/k3s/test/test-70-backup.sh
 set -euo pipefail
@@ -300,6 +302,34 @@ elif [[ "$(ls -A "$WORK/foreign")" != other ]]; then
   failed "discard-foreign: expected only the foreign file left, found: $(find "$WORK/foreign" -mindepth 1 -printf '%f ')"
 else
   echo "ok   discard-foreign"
+fi
+
+# OPENTSX_NS of the shell wins over .env, but the backup copies .env as it is: refused before anything is written when
+# the two differ, so that the MANIFEST and the env of a backup name one namespace
+printf 'OPENTSX_NS=current\n' > "$WORK/ns.env"
+printf 'OPENTSX_DOMAIN=wind\n' > "$WORK/no-ns.env"
+for case in "shell-ns-differs|ns.env|$WORK/ns.env names current" \
+  "shell-ns-default|no-ns.env|deploy/k3s/env.example names opentsx"; do
+  IFS='|' read -r name file names <<< "$case"
+  backup "$name" OPENTSX_ENV_FILE="$WORK/$file" OPENTSX_NS=fromshell -- --out "$WORK/$name"
+  message="error: OPENTSX_NS: the shell sets fromshell, $names; unset it or change .env first"
+  if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/$name.out"; then
+    failed "$name: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/$name.out"
+  elif [[ -e "$WORK/$name" ]]; then
+    failed "$name: the backup directory was created"
+  elif [[ -s "$WORK/calls.log" ]]; then
+    failed "$name: kubectl was called"; sed 's/^/    call: /' "$WORK/calls.log"
+  else
+    echo "ok   $name"
+  fi
+done
+backup shell-ns-same OPENTSX_ENV_FILE="$WORK/ns.env" OPENTSX_NS=current -- --out "$WORK/shell-ns-same"
+if (( rc != 0 )) || ! grep -qx 'namespace=current' "$WORK/shell-ns-same/MANIFEST" 2>/dev/null \
+  || ! cmp -s "$WORK/ns.env" "$WORK/shell-ns-same/env"; then
+  failed "shell-ns-same: exit $rc, expected 0, namespace=current in MANIFEST and .env copied"
+  sed 's/^/    /' "$WORK/shell-ns-same.out"
+else
+  echo "ok   shell-ns-same"
 fi
 
 backup backup-lake-live LAKE=true -- --out "$WORK/backup-lake-live"

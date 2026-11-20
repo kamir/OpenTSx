@@ -8,9 +8,10 @@
 #
 # Exit codes:
 #   0  the state was shown
-#   1  the namespace does not exist, the cluster is not reachable, the Jobs, the CronJobs, the events, the Deployment
-#      of the Modbus simulator or the event bridge cannot be read, or with --logs the Deployments or the logs of one
-#      of them cannot be read (the logs of the others are still shown)
+#   1  the namespace does not exist, the cluster is not reachable, the ConfigMap opentsx-config, the OpenTSx
+#      Deployments, pods and services, the Jobs, the CronJobs, the PVCs, the pods for the images in use, the events,
+#      the Deployment of the Modbus simulator or the event bridge cannot be read, or with --logs the Deployments or
+#      the logs of one of them cannot be read (the logs of the others are still shown)
 #   2  usage error: an unknown option, an argument, or a line of deploy/k3s/.env that is not a comment or KEY=VALUE
 #      with a known key
 set -euo pipefail
@@ -39,9 +40,11 @@ require_namespace "deploy it first with 30-deploy.sh"
 
 info "configuration (opentsx-config)"
 # shellcheck disable=SC2016  # a Go template, not a shell expansion
-kns get configmap opentsx-config -o go-template='{{range $k, $v := .data}}  {{$k}}={{$v}}{{"\n"}}{{end}}'
+kns get configmap opentsx-config -o go-template='{{range $k, $v := .data}}  {{$k}}={{$v}}{{"\n"}}{{end}}' \
+  || die "ConfigMap opentsx-config: cannot read it; check the cluster with ${KUBECTL} -n $OPENTSX_NS get configmap opentsx-config"
 info "deployments, pods, services"
-kns get deployment,pod,service -l app.kubernetes.io/part-of=opentsx -o wide
+kns get deployment,pod,service -l app.kubernetes.io/part-of=opentsx -o wide \
+  || die "deployments, pods, services: cannot read them; check the cluster with ${KUBECTL} -n $OPENTSX_NS get deployment,pod,service -l app.kubernetes.io/part-of=opentsx"
 info "jobs"
 kns get job -L opentsx.org/demo || die "jobs: cannot read them; check the cluster with ${KUBECTL} -n $OPENTSX_NS get job"
 info "cronjobs (dwd-forward: DWD_FORWARD=true, synthetic-check: MONITORING=true)"
@@ -49,9 +52,11 @@ info "cronjobs (dwd-forward: DWD_FORWARD=true, synthetic-check: MONITORING=true)
 kns get cronjob -o go-template='{{range .items}}  {{.metadata.name}}  schedule "{{.spec.schedule}}"  last run {{or .status.lastScheduleTime "-"}}  last success {{or .status.lastSuccessfulTime "-"}}{{"\n"}}{{end}}' \
   || die "cronjobs: cannot read them; check the cluster with ${KUBECTL} -n $OPENTSX_NS get cronjob"
 info "persistent volume claims"
-kns get pvc
+kns get pvc || die "PVCs: cannot read them; check the cluster with ${KUBECTL} -n $OPENTSX_NS get pvc"
 info "images in use"
-kns get pod -o 'jsonpath={range .items[*]}{.spec.containers[*].image}{"\n"}{end}' | sort | uniq -c
+in_use="$(kns get pod -o 'jsonpath={range .items[*]}{.spec.containers[*].image}{"\n"}{end}')" \
+  || die "images in use: cannot read them; check the cluster with ${KUBECTL} -n $OPENTSX_NS get pod"
+[[ -z "$in_use" ]] || sort <<< "$in_use" | uniq -c
 if have k3s; then
   if ! images="$(as_root k3s ctr images ls -q 2>&1)"; then
     warn "k3s containerd: cannot list the images (${images//$'\n'/ }); check it with sudo k3s ctr images ls"

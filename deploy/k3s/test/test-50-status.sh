@@ -6,9 +6,10 @@
 # k3s ctr), an old statistics checkpoint (also when kubectl writes to stderr while it reads the age), a checkpoint and
 # a checkpoint age that cannot be read (with the error of kubectl exec) and an age that is not a number give their warn
 # lines and exit 0; a Deployment that is not there is not deployed, and one that cannot be read exits 1 with kubectl's
-# error and its message; --logs shows the logs of every OpenTSx Deployment; Jobs, CronJobs, events or the Deployments
-# for --logs that cannot be read exit 1 with kubectl's error and their message; logs of one Deployment that cannot be
-# read give a warn line, the logs of the others and exit 1.
+# error and its message; --logs shows the logs of every OpenTSx Deployment; the ConfigMap, the Deployments, pods and
+# services, Jobs, CronJobs, PVCs, the pods for the images in use, events or the Deployments for --logs that cannot be
+# read exit 1 with kubectl's error and their message; logs of one Deployment that cannot be read give a warn line, the
+# logs of the others and exit 1.
 # Stand-ins for kubectl, k3s and sudo; needs no kubectl, no cluster, no network.
 #
 #   bash deploy/k3s/test/test-50-status.sh
@@ -250,6 +251,13 @@ refused events-refused "error: events: cannot read them; check the cluster with 
   "get events "
 refused logs-list-refused "error: --logs: cannot list the Deployments; check the cluster with $WORK/bin/kubectl -n opentsx get deployment -l app.kubernetes.io/part-of=opentsx" \
   "get deployment -l " --logs
+refused configmap-refused "error: ConfigMap opentsx-config: cannot read it; check the cluster with $WORK/bin/kubectl -n opentsx get configmap opentsx-config" \
+  "get configmap "
+refused workloads-refused "error: deployments, pods, services: cannot read them; check the cluster with $WORK/bin/kubectl -n opentsx get deployment,pod,service -l app.kubernetes.io/part-of=opentsx" \
+  "get deployment,pod,service "
+refused pvcs-refused "error: PVCs: cannot read them; check the cluster with $WORK/bin/kubectl -n opentsx get pvc" "get pvc"
+refused images-refused "error: images in use: cannot read them; check the cluster with $WORK/bin/kubectl -n opentsx get pod" \
+  "get pod -o "
 
 STUB_ENV=(CLUSTER=up REFUSE="logs deployment.apps/opentsx-stats")
 status logs-refused --logs
