@@ -416,6 +416,37 @@ class RISToolTest {
     }
 
     @Test
+    void intervalsWhoseSumOverflowsGiveTheirMeanAsRqAndTheirScaledBin() throws Exception {
+        RISTool ris = new RISTool("two", 12, 10);
+
+        ris.addDistData(new Vector<>(List.of(1.7e308, 1.7e308)));
+
+        assertEquals(1.7e308, ris.getRq());
+        assertEquals(2, ris.dataSKALIERT[5]);
+        assertEquals(1.0, ris.probSKALIERT[5]);
+    }
+
+    @Test
+    void aNanOrInfiniteIntervalIsRefusedAndKeepsTheIntervalsBefore() throws Exception {
+        RISTool ris = new RISTool("bad", 12, 10);
+        ris.addDistData(new Vector<>(List.of(2.0, 4.0)));
+        int[] scaled = ris.dataSKALIERT.clone();
+        int rows = RISTool.anzRowRAW.dists.size();
+
+        IllegalArgumentException infinite = assertThrows(IllegalArgumentException.class,
+                () -> ris.addDistData(new Vector<>(List.of(1.0, Double.POSITIVE_INFINITY))));
+        IllegalArgumentException nan = assertThrows(IllegalArgumentException.class,
+                () -> ris.addDistData(new Vector<>(List.of(1.0, 2.0, Double.NaN, 3.0))));
+
+        assertEquals("addDistData: interval 1 of bad is Infinity; expected a finite interval", infinite.getMessage());
+        assertEquals("addDistData: interval 2 of bad is NaN; expected a finite interval", nan.getMessage());
+        assertEquals(List.of(2.0, 4.0), ris.dataRawFILTERED);
+        assertEquals(3.0, ris.getRq());
+        assertArrayEquals(scaled, ris.dataSKALIERT);
+        assertEquals(rows, RISTool.anzRowRAW.dists.size());
+    }
+
+    @Test
     void aFailingStoreClosesItsFile() throws Exception {
         RISTool ris = new RISTool("stored", 12, 10);
         ris.folder = dir + "/";

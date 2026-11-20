@@ -148,20 +148,12 @@ public class ReturnIntervallStatistik2 {
         }
     }
     
-    private double calcAverageOfDist(Vector<Double> rr1) {
-        double sum = 0.0;
-        double c = 0.0;
-
-        double last = 0;
-        double delta = 0;
-        
-        for( double l : rr1 ) { 
-            delta = l - last;
-            sum = sum + delta;
-            last = l;
-            c++;
+    double calcAverageOfDist(Vector<Double> rr1) {
+        Vector<Double> intervals = new Vector<Double>();
+        for( int i = 1; i < rr1.size(); i++ ) {
+            intervals.add( rr1.elementAt(i) - rr1.elementAt(i - 1) );
         }
-        return sum / (1.0*c);
+        return meanOf( intervals );
     }
     
 
@@ -379,7 +371,10 @@ public class ReturnIntervallStatistik2 {
         }              
     }
     
-    static double meanOf( Vector<?> values ) {
+    /**
+     * Returns the mean of the finite {@code Double} values, also when their sum overflows; NaN for no values and for a NaN or infinite value.
+     */
+    public static double meanOf( Vector<?> values ) {
         double sum = 0.0;
         double largest = 0.0;
         for ( Object value : values ) {

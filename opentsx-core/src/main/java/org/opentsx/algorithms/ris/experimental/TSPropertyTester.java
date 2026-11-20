@@ -805,7 +805,7 @@ public class TSPropertyTester {
 
  
         mr1 = TimeSeriesObject.getGaussianDistribution( (int)Math.pow(2, N), 1.0, 0.5);
-        ReturnIntervallStatistik2.shiftToZero(mr1, LOG);
+        shiftToZero(mr1);
         TSPropertyTester.addSample(mr1);
                 
         // V1
@@ -823,13 +823,13 @@ public class TSPropertyTester {
         // V3
         TimeSeriesObjectFFT mr3 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, N), 0.8, false, false);
         mr3.normalize();
-        ReturnIntervallStatistik2.shiftToZero(mr3, LOG);
+        shiftToZero(mr3);
         TSPropertyTester.addSample(mr3);
       
         // V3
         mr3 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, N), 0.9, false, false);
         mr3.normalize();
-        ReturnIntervallStatistik2.shiftToZero(mr3, LOG);
+        shiftToZero(mr3);
         TSPropertyTester.addSample(mr3);
         
         Color[] colors = new Color[8];
@@ -847,7 +847,11 @@ public class TSPropertyTester {
   
         TSPropertyTester.showTestResult();
     }
-    
+
+    static void shiftToZero( TimeSeriesObject series ) {
+        ReturnIntervallStatistik2.shiftToZero( series, LOG );
+    }
+
     static int N = 16;
     static double ts = 0.5;
     /**

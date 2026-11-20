@@ -7,13 +7,17 @@ import javax.swing.JTree;
 import javax.swing.LookAndFeel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.plaf.metal.MetalLookAndFeel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 import java.awt.Window;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MacroRecorderTest {
@@ -48,6 +52,32 @@ class MacroRecorderTest {
                 }
             });
         }
+    }
+
+    @Test
+    void aLookAndFeelThatCannotBeSetIsLoggedAtWarnWithItsCauseAndTheCurrentOneStays() throws Exception {
+        LookAndFeel current = UIManager.getLookAndFeel();
+        LookAndFeel unsupported = new MetalLookAndFeel() {
+            @Override
+            public boolean isSupportedLookAndFeel() {
+                return false;
+            }
+        };
+        PrintStream err = System.err;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        System.setErr(new PrintStream(captured, true, UTF_8));
+        try {
+            MacroRecorder2.setLookAndFeel(unsupported);
+        } finally {
+            System.setErr(err);
+        }
+
+        String log = captured.toString(UTF_8);
+        assertTrue(log.contains("WARN " + MacroRecorder2.class.getName() + " - look and feel not set; the workbench keeps"
+                + " the current one lookAndFeel=" + unsupported.getClass().getName() + " cause=" + unsupported
+                + " not supported on this platform"), log);
+        assertEquals(1, log.lines().count(), log);
+        assertSame(current, UIManager.getLookAndFeel());
     }
 
     private static List<String> nodesShowingTheirOwnChart(Main main) throws Exception {

@@ -30,8 +30,9 @@ logger named after the class, at DEBUG, as one line per event in the form `<what
 that logger decides which lines appear. The public `debug` fields of `DFACore`, `SingleDFATool`, `ESCalc2`,
 `TimeSeriesObjectFFT`, `MessreihenLoader`, `RISTool`, `ReturnIntervallStatistik2` and `TSPropertyTester` and the public
 `verbose` fields of `RISTool`, `ReturnIntervallStatistik2` and `TSPropertyTester` are deprecated and have no effect.
-`bin/opentsx` puts `slf4j-simple` and `conf/simplelogger.properties` on the class path, so the default level is
-`info`. Raise the level of one class with a JVM system property:
+`bin/opentsx` and `mvn -f opentsx-core/pom.xml exec:java`, which `bin/000_launch_tsa_workbench.sh` runs when Maven is
+on `PATH`, put `slf4j-simple` and `conf/simplelogger.properties` on the class path, so the default level is `info`.
+Raise the level of one class with a JVM system property:
 
 ```bash
 java -Dorg.slf4j.simpleLogger.log.org.opentsx.data.loader.MessreihenLoader=debug -cp "$(bin/opentsx classpath opentsx-core)" <main class>
@@ -90,10 +91,15 @@ of the selected operation node. The chart panel keeps the chart of each operatio
 run, so two runs of one operation, such as `Histogram per series` with other bins, keep their own charts;
 `TEST Normal Distribution` keeps its t-value chart and `MF-DFA` the F(s,q) chart of the original values of
 the first series, also when other selected series have the same label. `MFDFAAnalyzer.process(rows, runid)` returns
-that chart, or `null` for no rows. `MacroTrackerFrame.addTransformation(t, chart)` takes the title of an open chart and
+that chart, or `null` for no rows, so `MF-DFA` of no rows records its node without a chart. The shuffled analysis of
+`process`, and `processMFDFA` with `doShuffle` true, shuffle a copy of each series, so the selected series keeps the
+order of its values. `MacroTrackerFrame.addTransformation(t, chart)` takes the title of an open chart and
 `MacroTrackerFrame.addTransformation(t, dialog)` takes the chart dialog itself.
 `MacroRecorder` and `MacroRecorder2` keep the charts of their `Components` and `Shuffled` nodes; the `fitMIN` and
-`fitMAX` of `MacroRecorder` are deprecated and have no effect. For a node without a chart, such as a source node,
+`fitMAX` of `MacroRecorder` and `MacroRecorder2` are deprecated and have no effect. When `MacroRecorder2` cannot set the
+FlatLaf look and feel, it starts with the current one and logs at WARN
+`look and feel not set; the workbench keeps the current one lookAndFeel=<class> cause=<cause>`.
+For a node without a chart, such as a source node,
 `show Chart` shows `show Chart: no chart for <node>; select an operation node` in a dialog; without a selection it
 does nothing.
 Swing control tests use a display; the Java CI jobs run them under Xvfb on Ubuntu 24.04.
@@ -356,8 +362,10 @@ is not a whole number throws `IllegalArgumentException` with
 
 ## Collect return intervals
 
-`RISTool.addDistData(intervals)` sorts the intervals into bins scaled with their mean R_q. It opens no window and
-writes nothing to standard output. `add(result)` adds the probabilities of a single result to a container instance.
+`RISTool.addDistData(intervals)` sorts the intervals into bins scaled with their mean R_q. It computes R_q with
+`ReturnIntervallStatistik2.meanOf(values)`, which stays finite when the sum of the values overflows, so the intervals
+1.7e308 and 1.7e308 give R_q 1.7e308. It opens no window and writes nothing to standard output. `add(result)` adds the
+probabilities of a single result to a container instance.
 Errors stop the call:
 
 | Problem | Exception and message |
@@ -365,6 +373,7 @@ Errors stop the call:
 | a probability of the result is NaN or infinite | `IllegalArgumentException`: `add: probability <index> of <name> is <value>; expected a finite probability` |
 | the receiver is not a container | `IllegalStateException`: `add: <name> is not a container; set isContainerInstanz to true before adding results` |
 | the binning differs | `IllegalArgumentException`: `add: <name> has <n> bins and <container> has <m>; expected the same binning and scale` |
+| an interval is NaN or infinite | `IllegalArgumentException`: `addDistData: interval <k> of <name> is <value>; expected a finite interval` |
 | an interval is 0 or negative while `RISTool.offset` is 0 | `IllegalStateException`: `addDistData: <n> intervals of <name> are 0 or negative; expected positive intervals while offset is 0` |
 | intervals are added to a container | `IllegalStateException`: `addDistData: <name> is a container; add intervals to a result that is not a container` |
 | `RISTool.projekt` is not set for a result with 2 to 1024 intervals | `IllegalStateException`: `add: RISTool.projekt is not set; set RISTool.projekt and RISTool.logFileNames and call RISTool.initRqMIN() before adding <name>, which has <n> intervals` |
@@ -407,7 +416,8 @@ time adds no interval.
 scaled with their mean R_q. An interval below the first or past the last scaled bin is counted in that bin, so the
 probabilities of a result add up to 1. The R_q of `ReturnIntervallStatistik2` and `TSPropertyTester` stays finite when
 the sum of the intervals is not: with binning 12 and scale 10 the intervals 1.7e308 and 1.7e308 give R_q 1.7e308 and
-fall into scaled bin 1. An interval that is NaN or infinite throws
+fall into scaled bin 1, and a sum of -Infinity also gives a finite R_q: the `TSPropertyTester` intervals -1.7e308, -1.7e308
+and 1.0 give R_q -1.1333333333333332E308. An interval that is NaN or infinite throws
 `IllegalArgumentException` with `addDistData: interval <k> of <name> is <value>; expected a finite interval`, and a
 refused call adds nothing. A result that keeps no interval, for example
 times 1, 1 and 1, has NaN probabilities and R_q, and `add` skips it. For times 0, 1, 1 and 2 the bins count the

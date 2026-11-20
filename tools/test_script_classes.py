@@ -1,4 +1,5 @@
-"""Launcher scripts name main classes that exist, a classpath the build makes, and keep Maven's exit status.
+"""Launcher scripts name main classes that exist, a classpath the build makes, keep Maven's exit status, and log
+through slf4j-simple under mvn exec:java.
 
 Run from the repository root: python -m pytest -q tools
 """
@@ -7,6 +8,7 @@ import pathlib
 import re
 import shutil
 import subprocess
+from xml.etree import ElementTree
 
 import pytest
 
@@ -104,3 +106,27 @@ def test_production_config_script_shows_the_level_that_applies(tmp_path, level, 
     result = run_production_config_script(tmp_path, level)
     assert result.returncode == 0, result.stdout + result.stderr
     assert f"  Log Level: {shown}\n" in result.stdout, result.stdout
+
+
+POM = "{http://maven.apache.org/POM/4.0.0}"
+EXEC_JAVA = re.compile(r'mvn -f "?(?:\$\w+/)?([\w-]+)/pom\.xml"?[^\n]*?\bexec:java\b')
+EXEC_JAVA_SCRIPTS = ["bin/000_launch_tsa_workbench.sh", "bin/005_minimal_no_kafka_demo.sh"]
+
+
+@pytest.mark.parametrize("script", EXEC_JAVA_SCRIPTS)
+def test_exec_java_of_a_launcher_logs_through_slf4j_simple(script):
+    modules = EXEC_JAVA.findall((ROOT / script).read_text(encoding="utf-8"))
+    assert modules, f"{script} runs no mvn -f <module>/pom.xml exec:java"
+    for module in modules:
+        pom = ElementTree.parse(ROOT / module / "pom.xml").getroot()
+        plugins = [p for p in pom.iterfind(f"{POM}build/{POM}plugins/{POM}plugin")
+                   if p.findtext(f"{POM}artifactId") == "exec-maven-plugin"]
+        assert plugins, f"{module}/pom.xml configures no exec-maven-plugin, so exec:java logs through the NOP logger"
+        plugin = plugins[0]
+        assert plugin.findtext(f"{POM}configuration/{POM}includePluginDependencies") == "true", module
+        assert plugin.findtext(f"{POM}configuration/{POM}executableDependency/{POM}artifactId") == "slf4j-simple", module
+        assert [d.findtext(f"{POM}artifactId") for d in plugin.iterfind(f"{POM}dependencies/{POM}dependency")] \
+            == ["slf4j-simple"], module
+        assert [e.text for e in plugin.iterfind(f"{POM}configuration/{POM}additionalClasspathElements/"
+                                                f"{POM}additionalClasspathElement")] \
+            == ["${project.basedir}/../conf"], module

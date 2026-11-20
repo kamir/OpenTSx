@@ -155,6 +155,7 @@ public class MFDFAAnalyzer {
         int di = 1;
         
         if( doShuffle ) {
+            rBMM1 = rBMM1.copy();
             for( int ii = 0 ; ii < 10; ii++) {
                 rBMM1.shuffleYValues();
             }

@@ -84,4 +84,29 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <configuration>
+                    <includePluginDependencies>true</includePluginDependencies>
+                    <executableDependency>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-simple</artifactId>
+                    </executableDependency>
+                    <additionalClasspathElements>
+                        <additionalClasspathElement>${project.basedir}/../conf</additionalClasspathElement>
+                    </additionalClasspathElements>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-simple</artifactId>
+                        <version>${slf4j.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
 </project>

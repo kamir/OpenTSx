@@ -966,6 +966,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   stands instead of pointing to section 3 of the analysis, which holds only the Flink wire format break.
 - `MacroRecorder.fitMIN` and `MacroRecorder.fitMAX` are deprecated and have no effect, because `MacroRecorder` runs no
   DFA.
+- `MacroRecorder2.fitMIN` and `MacroRecorder2.fitMAX` are deprecated and have no effect, because `MacroRecorder2` runs
+  no DFA.
 - `tools/test_lg_scripts.py` fails on an unknown option only between `docker` and a `run`, `create` or `pull`
   subcommand that it reads. An option after the word `docker` in another command, as in `pip install docker --user`,
   is no finding.
@@ -1172,6 +1174,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   and the thesis notes before the package statement.
 - `opentsx-core`: the unused `SCATTERPLOT` and `SCATTERPLOT_AUTO_SAVE` fields of `MacroRecorder` and `MacroRecorder2`,
   and the sliding-window entropy series of their `main` methods, which nothing read.
+- `opentsx-core`: the unused local `market`, the field `doDFA`, the private methods `applyDFA` and
+  `loadStockDataFromBucket` and the thesis notes before the package statement of `MacroRecorder2`.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -2555,6 +2559,26 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   created.`, and any other status gives `debug_c1: POST http://127.0.0.1:8083/connectors answered HTTP <status>
   <body>; the connector was not created, check the log of the Kafka Connect worker` instead of `no HTTP answer
   (<cause>)`. `<body>` is the part of the body that arrived, or the cause in parentheses after a reset.
+- `opentsx-core`: `MFDFAAnalyzer.processMFDFA` with `doShuffle` true, and so the shuffled run of
+  `MFDFAAnalyzer.process` and the `MF-DFA` button of the chart panel, shuffles a copy of the series. The selected
+  series used to stay shuffled after the analysis.
+- `opentsx-core`: `RISTool.addDistData` computes R_q with `ReturnIntervallStatistik2.meanOf`, which is now public, so
+  finite intervals whose sum overflows, such as 1.7e308 and 1.7e308, give R_q 1.7e308 instead of Infinity. It refuses
+  a NaN or infinite interval with `IllegalArgumentException` and `addDistData: interval <k> of <name> is <value>;
+  expected a finite interval`, the text of `ReturnIntervallStatistik2` and `TSPropertyTester`, and keeps the result of
+  the call before. An infinite interval used to give R_q Infinity, and a NaN interval was refused with the
+  `IllegalStateException` for intervals that are 0 or negative.
+- `opentsx-core`: the DEBUG line `mean interval series=<label> rq=<value>` of `ReturnIntervallStatistik2.addRow` gives
+  the mean of the intervals between consecutive values, 3.0 for 0, 2, 5 and 9, where it gave the last value divided by
+  the count (2.25).
+- `opentsx-core`: when `MacroRecorder2` cannot set the FlatLaf look and feel, it logs `look and feel not set; the
+  workbench keeps the current one lookAndFeel=<class> cause=<cause>` at WARN and starts with the current look and
+  feel. It used to leave the report to FlatLaf, which logged `FlatLaf: Failed to setup look and feel '<class>'.` with
+  a stack trace through java.util.logging.
+- `opentsx-core`: `mvn -f opentsx-core/pom.xml exec:java`, which `bin/000_launch_tsa_workbench.sh` runs when Maven is
+  on `PATH`, puts `slf4j-simple` and `conf/simplelogger.properties` on the class path, as in `opentsx-connectors` and
+  `opentsx-lg`, so the WARN line of `MacroRecorder2` and the other log lines at INFO and above reach standard error.
+  It used to find no SLF4J provider and drop every log line after the warning `No SLF4J providers were found`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

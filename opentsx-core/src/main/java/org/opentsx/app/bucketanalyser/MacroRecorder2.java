@@ -1,60 +1,17 @@
-/**
- * This functional test uses the OSZI class to produce the images
- * and raw data for a publishabel PIXNODE.
- *
- * PIXNODEs are introduced in the context of writing Mirko's thesis.
- *
- * First, a set of time series (a mix of different frequncies, ampitudes and
- * phases) is created and superposed. In a second step, we use different 
- * noise levels and to disturb the signal which was a clear sine-wave.
- *
- * Univariate time series analysis is applied to illustrate properties
- * and measures obtained from the data.
- * 
- * We compare the fluctuation function F(s) obtained by DFA for several 
- * series with and without additonal shuffeling. 
- *  
- * For the combined time series we compare the influence of 
- * PHASE TRANSFORMATIINS and compare with simple shuffeling.
- * 
- * Finally we look into the entropy of individual time series.
- * 
- * Questions:
- * 
- * Is entropy changing as a function of length? => Would impact sliding windows.
- *
- * 
- * 
- * Next, we apply Multi-Variate analysis, such as calculation of TE and MI.
- * 
- * Is TE transfer entropy removed by shuffeling?
- *  TE(mr,mr) = 0
- *  TE(mr,shuffled(mr) > 0 but depends not on number of shufflings.
- *
- *  TE(a,b) = X
- *  TE(shuffled(a), shuffled(b)) should be higher than X.
- * 
- * APPLY this algorithms to snippets of TS of variable length.
- *
- * - How is Entropy changing over time during the BURST? 
- * - Is Entropy in link strength distribution also changing During this time?
- *
- */
 package org.opentsx.app.bucketanalyser;
 
-import org.apache.commons.math3.stat.regression.SimpleRegression;
-
+import com.formdev.flatlaf.FlatDarkLaf;
 import org.opentsx.generators.TSGeneratorFINAL;
 import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.series.TimeSeriesObject;
-import org.opentsx.tsbucket.BucketLoader;
-import org.opentsx.core.TSBucket;
-import org.opentsx.algorithms.detrending.DetrendingMethodFactory;
-import org.opentsx.algorithms.detrending.methods.IDetrendingMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.text.DecimalFormat;
+import javax.swing.LookAndFeel;
+import javax.swing.UIManager;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
 import java.util.Vector;
 
 /**
@@ -63,6 +20,8 @@ import java.util.Vector;
  * @author kamir
  */
 public class MacroRecorder2 {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MacroRecorder2.class);
 
     public static String label_of_TRACK = "EXP4";
 
@@ -79,17 +38,9 @@ public class MacroRecorder2 {
         // components.
         Vector<TimeSeriesObject> components = new Vector<TimeSeriesObject>();
 
-        // DAX2, IPC, MDAX, SDAX, TECDAX
-        String market = "DAX2";
-
         components = TSGeneratorFINAL.getSampleA();
 
-        // Initialize UI Look and Feel (Task 005 - UI Modernization)
-        try {
-            com.formdev.flatlaf.FlatDarkLaf.setup();
-        } catch (Exception ex) {
-            System.err.println("Failed to initialize FlatLaf");
-        }
+        setLookAndFeel(new FlatDarkLaf());
 
         MacroTrackerFrame.init(label_of_TRACK);
         MultiChart.open(components, true, "Components");
@@ -120,92 +71,35 @@ public class MacroRecorder2 {
 
     }
 
-    static boolean doDFA = false;
-
+    /**
+     * @deprecated Has no effect; MacroRecorder2 runs no DFA.
+     */
+    @Deprecated
     public static double fitMIN = 1.2;
+
+    /**
+     * @deprecated Has no effect; MacroRecorder2 runs no DFA.
+     */
+    @Deprecated
     public static double fitMAX = 3.5;
 
-    private static void applyDFA(Vector<TimeSeriesObject> mrv, String label) throws Exception {
-
-        if (!doDFA)
-            return;
-
-        int nrOfSValues = 250;
-        int order = 0;
-
-        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
-
-        for (TimeSeriesObject d4 : mrv) {
-
-            int N = d4.yValues.size();
-            double[] zr = new double[N];
-
-            Vector<TimeSeriesObject> vr = new Vector<TimeSeriesObject>();
-
-            vr.add(d4);
-
-            zr = d4.getData()[1];
-
-            IDetrendingMethod dfa = DetrendingMethodFactory.getDetrendingMethod(DetrendingMethodFactory.DFA2);
-            order = dfa.getPara().getGradeOfPolynom();
-            dfa.getPara().setzSValues(nrOfSValues);
-
-            // number of values in the series
-            dfa.setNrOfValues(N);
-
-            // choose the window sizes
-            dfa.initIntervalSlog();
-
-            dfa.showS();
-
-            // http://stackoverflow.com/questions/12049407/build-sample-data-for-apache-commons-fast-fourier-transform-algorithm
-            dfa.setZR(d4.getData()[1]);
-
-            dfa.calc();
-
-            TimeSeriesObject mr4 = dfa.getResultsMRLogLog();
-            mr4.setLabel(d4.getLabel());
-            v.add(mr4);
-
-            String status = dfa.getStatus();
-
-            SimpleRegression alphaSR = mr4.linFit(fitMIN, fitMAX);
-
-            double alpha = alphaSR.getSlope();
-
-            System.out.println(status);
-        }
-
-        if (true) {
-            DecimalFormat df = new DecimalFormat("0.000");
-            MultiChart.open(v, label + " fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", true,
-                    "???", null);
-
+    static void setLookAndFeel(LookAndFeel lookAndFeel) {
+        try {
+            UIManager.setLookAndFeel(lookAndFeel);
+        } catch (Exception ex) {
+            LOG.warn("look and feel not set; the workbench keeps the current one lookAndFeel={} cause={}",
+                    lookAndFeel.getClass().getName(), causes(ex));
         }
     }
 
-    private static Vector<TimeSeriesObject> loadStockDataFromBucket(String market) throws IOException {
-
-        String folder = "/TSBASE/EXP1/";
-        String fn = "Components_" + market
-                + "_Close__2003_2004_2005_2006_2007_2008_2009_2010_2011_2012_2013_2014.tsb.vec.seq";
-
-        File f = new File(fn);
-        if (!f.exists()) {
-
-            TSBucket.useHDFS = false;
-            BucketLoader loader = new BucketLoader();
-
-            loader.loadBucketData(folder + fn);
-
-            return loader.getBucketData();
-
-        } else {
-
-            return null;
-
+    private static String causes(Throwable t) {
+        StringBuilder s = new StringBuilder(t.getMessage() == null ? t.toString() : t.getMessage());
+        Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        seen.add(t);
+        for (Throwable c = t.getCause(); c != null && seen.add(c); c = c.getCause()) {
+            s.append("; caused by ").append(c);
         }
-
+        return s.toString();
     }
 
 }

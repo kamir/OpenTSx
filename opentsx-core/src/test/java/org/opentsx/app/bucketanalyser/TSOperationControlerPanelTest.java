@@ -691,6 +691,32 @@ class TSOperationControlerPanelTest {
     }
 
     @Test
+    void anMfDfaOfNoRowsRecordsTheNodeWithoutAChart() throws Exception {
+        Path created = Paths.get("databuffer");
+        for (String part : new String[]{"MFDFA", "MFDFA of probe"}) {
+            if (Files.exists(created)) {
+                created = created.resolve(part);
+            }
+        }
+        ProbePanel panel = onEdt(() -> new ProbePanel(new Vector<>(), chart(), "probe"));
+        boolean chartOpened;
+        Set<String> recorded;
+        openTracker();
+        try {
+            click(panel, "jButton6ActionPerformed");
+            recorded = recorded();
+        } finally {
+            chartOpened = disposeWindows();
+            closeTracker();
+            delete(created);
+        }
+
+        assertNull(panel.actionError, panel.actionError);
+        assertEquals(Set.of("MFDFA_probe"), recorded);
+        assertFalse(chartOpened, "the MF-DFA of no rows opened a chart");
+    }
+
+    @Test
     void showPnOnAPanelWithoutItsFolderShowsTheMessageAndOpensNothing() throws Exception {
         ProbePanel panel = panelBelow(home);
         File folder = home.resolve("opentsx/plots/default").toFile();

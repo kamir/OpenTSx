@@ -138,6 +138,25 @@ class ReturnIntervallStatistik2Test {
     }
 
     @Test
+    void theAverageOfDistIsTheMeanOfTheIntervalsBetweenTheValues() {
+        ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2("average", 12, 10);
+
+        assertEquals(3.0, ris.calcAverageOfDist(times(0.0, 2.0, 5.0, 9.0)));
+        assertEquals(3.0, ris.calcAverageOfDist(times(1.0, 3.0, 6.0, 10.0)));
+        assertTrue(Double.isNaN(ris.calcAverageOfDist(times(4.0))));
+    }
+
+    @Test
+    void theMeanOfANaNOrInfiniteValueIsNaN() {
+        assertEquals(1.7e308, ReturnIntervallStatistik2.meanOf(times(1.7e308, 1.7e308)));
+        assertTrue(Double.isNaN(ReturnIntervallStatistik2.meanOf(times())));
+        assertTrue(Double.isNaN(ReturnIntervallStatistik2.meanOf(times(1.0, Double.POSITIVE_INFINITY))));
+        assertTrue(Double.isNaN(ReturnIntervallStatistik2.meanOf(times(Double.POSITIVE_INFINITY))));
+        assertTrue(Double.isNaN(ReturnIntervallStatistik2.meanOf(times(Double.NEGATIVE_INFINITY, 1.0))));
+        assertTrue(Double.isNaN(ReturnIntervallStatistik2.meanOf(times(1.0, Double.NaN))));
+    }
+
+    @Test
     void equalTimesAddNoIntervalAndTheProbabilitiesSumToOne() throws Exception {
         ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2("equal", 12, 10);
 

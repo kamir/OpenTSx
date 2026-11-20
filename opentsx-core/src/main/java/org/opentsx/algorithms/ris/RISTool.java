@@ -23,6 +23,7 @@ import java.io.UncheckedIOException;
 import java.util.Enumeration;
 import java.util.Vector;
 
+import org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2;
 import org.opentsx.algorithms.statistics.HaeufigkeitsZaehler;
 import org.opentsx.algorithms.statistics.HaeufigkeitsZaehlerDouble;
 
@@ -313,6 +314,13 @@ public class RISTool {
         if ( this.isContainerInstanz ) {
             throw new IllegalStateException("addDistData: " + name + " is a container; add intervals to a result that is not a container");
         }
+
+        for( int k = 0; k < dists.size(); k++ ) {
+            double da = (Double) dists.elementAt(k);
+            if ( !Double.isFinite( da ) ) {
+                throw new IllegalArgumentException( "addDistData: interval " + k + " of " + name + " is " + da + "; expected a finite interval" );
+            }
+        }
         
         if ( LOG.isDebugEnabled() ) {
             LOG.debug("adding intervals result={} intervals={}", name, dists.size());
@@ -359,29 +367,12 @@ public class RISTool {
         
         clear();
         
-        double sumRq_alt = 0.0;
-        int anzRq_alt =0;
-        
         // Rq of all intervals
-        Enumeration enUM_Rq_alt = dists.elements();
-        while( enUM_Rq_alt.hasMoreElements() ) {
-            double v = (Double) enUM_Rq_alt.nextElement();
-             sumRq_alt = sumRq_alt + v;
-             anzRq_alt++;
-        }
-        double Rq_alt = sumRq_alt /(1.0*anzRq_alt);
+        double Rq_alt = ReturnIntervallStatistik2.meanOf( dists );
         
         // Rq of the filtered intervals
-        double sumRq_filteres = 0.0;
-        int anzRq_filterd = 0;
-        Enumeration enUM_Rq_filteres = dataRawFILTERED.elements();
-        while( enUM_Rq_filteres.hasMoreElements() ) {
-            double v = (Double) enUM_Rq_filteres.nextElement();
-             sumRq_filteres = sumRq_filteres + v;
-             anzRq_filterd++;
-        }
-        double Rq_filtered = sumRq_filteres/(1.0*anzRq_filterd);
-        zElements = anzRq_filterd;
+        double Rq_filtered = ReturnIntervallStatistik2.meanOf( dataRawFILTERED );
+        zElements = dataRawFILTERED.size();
        
         if ( LOG.isDebugEnabled() ) LOG.debug("mean interval result={} rqAll={} rqFiltered={}", name, Rq_alt, Rq_filtered);
         _Rq = Rq_filtered;

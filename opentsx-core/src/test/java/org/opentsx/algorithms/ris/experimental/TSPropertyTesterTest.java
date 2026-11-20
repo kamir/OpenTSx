@@ -248,6 +248,20 @@ class TSPropertyTesterTest {
     }
 
     @Test
+    void negativeIntervalsWhoseSumOverflowsGiveTheirMeanAsRqAndTheirScaledBin() throws Exception {
+        TSPropertyTester two = new TSPropertyTester("two", 12, 10);
+        TSPropertyTester mixed = new TSPropertyTester("mixed", 12, 10);
+
+        two.addDistData(new Vector<>(List.of(-1.7e308, -1.7e308)));
+        mixed.addDistData(new Vector<>(List.of(-1.7e308, -1.7e308, 1.0)));
+
+        assertEquals(-1.7e308, two.getRq());
+        assertArrayEquals(new int[] {0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, two.dataSKALIERT);
+        assertEquals(-1.1333333333333332E308, mixed.getRq());
+        assertArrayEquals(new int[] {1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, mixed.dataSKALIERT);
+    }
+
+    @Test
     void setRQDoesNotChangeTheBins() throws Exception {
         TSPropertyTester tester = new TSPropertyTester("set", 12, 10);
         tester.setRQ(4.0);
@@ -468,6 +482,22 @@ class TSPropertyTesterTest {
 
         assertTrue(log.contains("DEBUG " + TSPropertyTester.class.getName()
                 + " - shifted series series=gauss min=-2.5 shiftedMin=0.0"), log);
+    }
+
+    @Test
+    void shiftingASeriesForMainLogsOnTheTSPropertyTesterLogger() throws Exception {
+        TimeSeriesObject series = new TimeSeriesObject();
+        series.setLabel("gauss");
+        for (double y : new double[] {1.0, -2.5, 4.0}) {
+            series.addValue(y);
+        }
+
+        String log = stderrOf(() -> TSPropertyTester.shiftToZero(series));
+
+        assertTrue(log.contains("DEBUG " + TSPropertyTester.class.getName()
+                + " - shifted series series=gauss min=-2.5 shiftedMin=0.0"), log);
+        assertFalse(log.contains(ReturnIntervallStatistik2.class.getName()), log);
+        assertEquals(0.0, series.getMinY());
     }
 
     @Test
