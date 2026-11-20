@@ -92,6 +92,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- The workbench Deployments panel lists the `jobs` of `GET /v1/dags` apart from the deployments: job id, track, site
+  when present, state, input record count and report age. A job in any state but `stopped` or `failed` without a
+  report for 120 s is flagged. Jobs have no Stop, because Track A and B do not read the control topic.
 - English normative specifications for the rules that code, tests and `systems/` cite:
   [`VECTOR-AND-DAG-SPEC.md`](docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md),
   [`SYSTEM-DOCUMENT-SPEC.md`](docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md),
