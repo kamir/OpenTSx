@@ -80,8 +80,9 @@ series and 1,000,000 samples with the other byte and record ceilings unchanged.
 There is no unlimited batch mode. Resource limits are explicit request fields, not deployment defaults.
 The local request has at most 65,536 UTF-8 bytes. Input topics have at most 128 internal partitions,
 and each input episode has at most 25,000 samples, further restricted by `samples`.
-The shared assignment retains its 65,536-byte envelope limit, 32,768-byte source/fragment limits,
-64-level JSON depth limit and complete ascending partition inventory.
+The shared assignment allows a 2,162,688-byte envelope and 524,288-byte source/fragment texts, but the
+65,536-byte request limit of this profile is the tighter bound. The 64-level JSON depth limit and the complete
+ascending partition inventory apply unchanged.
 See the [shared contract reference](wayang-shared-contracts.md#assign-whole-topics-and-preserve-exact-internal-positions).
 
 ## Keep input, output and state together

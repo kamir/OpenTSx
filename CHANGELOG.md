@@ -67,6 +67,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Shared execution-assignment contract: a source or fragment DAG text may have 524,288 UTF-8 bytes (was 32,768)
+  and the envelope 2,162,688 bytes (was 65,536), equally in Java `ExecutionAssignments`, Rust `tsx-contracts`
+  and the schema. A source inventory of 16,384 series ids fits, which B4.2 needs at 10,000 series. Runtime
+  request limits and the UI rollout's 32,768-byte DAG limit are unchanged. Size-boundary vectors store their
+  padding as an `expand` marker, so the vector file the Rust runner embeds stays small; new cases cover a
+  source and a fragment text exactly at and one byte above the limit.
 - `tsx-runner`: regression test `tests/stats_increments.rs` shows that B2 statistics run as local increments:
   across a worker restart the increments emit the closed windows byte for byte as one bounded run, without its
   final flush. The B2 request ceilings (1,024 series, 1 MiB state) are unchanged.
