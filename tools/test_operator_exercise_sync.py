@@ -1,6 +1,7 @@
 import copy
 import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -86,6 +87,21 @@ class OperatorExerciseSyncTest(unittest.TestCase):
         self.assertFalse(lock["source"]["dirty"])
         self.assertIn("source.py", lock["source"]["files"])
         self.assertTrue((self.student / "docs/operators/ui-scale.md").is_file())
+
+    def test_board_lesson_count_matches_the_executable_plan(self):
+        source = TOOL.parent.parent
+        output = self.root / "board-plan.json"
+        result = subprocess.run([sys.executable, str(source / "tools/wayang_board_evaluation.py"),
+                                 "plan", "--output", str(output)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        plan = json.loads(output.read_text(encoding="utf-8"))
+        metadata = json.loads((source / "docs/learning/library-operators.v1.json").read_text(encoding="utf-8"))
+        lesson = next(lesson for lesson in metadata["lessons"] if lesson["id"] == "library.stats-engine")
+        claims = re.findall(r"\b(\d+)\s+planned conditions\b", "\n".join(lesson["tasks"]))
+        self.assertTrue(claims)
+        for count in claims:
+            with self.subTest(claim=count):
+                self.assertEqual(len(plan["conditions"]), int(count))
 
     def test_library_starter_renders_copyable_code_and_separate_json_data(self):
         for language, code in (("python", "from math import prod\nresult = prod([2, 3])"),

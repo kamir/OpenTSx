@@ -2342,7 +2342,7 @@
         "Worker capability discovery keeps the four legacy operators in operators; catalogExecution.operators lists B2 operations and does not extend Java UI admission.",
         "The embedded Rust WASM module is a separate execution path from this browser workload. Its ABI uses separate binary64 multiplication and addition.",
         "Plans cannot supply WASM code, module paths, URLs or resource-limit overrides. The module has no host imports and a trap has no native conversion fallback.",
-        "WASM availability does not extend signed B1 pass-through or signed B3 statistics admission. Physical ARM64 and ARMv7 B4.2 measurements and physical ARMv7 B1.2 acceptance remain open."
+        "WASM availability does not extend signed B1 pass-through or signed B3 statistics admission. The physical ARM64 B4.2 measurement remains open. D-T14 requires native x86_64 and ARM64 CI for B1.2; ARMv7 is not hardware-qualified."
       ],
       "parameterKeys": [
         "factor",

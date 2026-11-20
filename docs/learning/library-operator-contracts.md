@@ -72,7 +72,10 @@ The separate exact-bit sketch harness records boundary, zero-bucket and
 collapsed-tail domains. Its execution evidence retains the existing moments
 criterion; the harness alone does not establish a new numerical bound.
 The physical ARM64 B4.2 measurement remains open (D-T14). The board tool
-prepares and validates supplied evidence without running device measurements.
+prepares 27 unassigned conditions and validates supplied evidence without
+running device measurements. The
+[synchronization regression](../../tools/test_operator_exercise_sync.py)
+compares the statistics lesson's condition count with the executable plan.
 
 The [local publication contract](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment)
 adds explicit same-DAG resume and changed-DAG replay into a fresh output after old authority is revoked.

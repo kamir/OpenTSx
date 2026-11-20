@@ -13,6 +13,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Align operator lessons with D-T14 and the 27-condition ARM64 board plan.
+  Check the lesson's condition count against the executable planner; keep the
+  physical ARM64 measurement open and ARMv7 outside hardware qualification.
 - Accept idle Kafka frame-boundary resets and cancelled metadata requests in the
   validation observer. Retain response correlations until forwarding succeeds;
   keep interrupted frames and resets with data requests as errors.
@@ -97,9 +100,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   partial/window evidence and six canonical-merge arrival orders. Separate
   exact-binary64 sketch cases retain shared vectors and identify boundary,
   zero-bucket and collapsed-tail accuracy domains without widening the
-  moments criterion. Board evaluation tooling prepares the fixed 54-condition
-  matrix and validates supplied evidence integrity. Physical ARM64 and ARMv7
-  B4.2 measurements and ARMv7 B1.2 acceptance remain open. Manual and learning
+  moments criterion. Board evaluation tooling prepares the fixed 27-condition
+  ARM64 matrix and validates supplied evidence integrity. The physical ARM64
+  B4.2 measurement remains open under D-T14. Manual and learning
   metadata keep these execution and hardware scopes separate.
 
 - Check tools-image identity, packaged Windpark startup and numerical replay
@@ -151,7 +154,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   Acceptance failures retain the actual unexpected server exit status.
   OpenSSH authentication-attempt exit 5 is accepted only for verified certificate denials.
   The profile admits decode-to-statistics only; broader B2 operators, mixed
-  continuous fleets, production release enrollment and physical ARMv7
+  continuous fleets, production release enrollment and physical ARM64 B4.2
   acceptance retain separate gates. Documentation, operational and learning references
   describe these boundaries.
 
@@ -161,7 +164,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   and signed B1 profiles retain their separate contracts. Shared vectors,
   restored-state regressions and actual full-windpark Java/Rust parity cover
   the operators. Manual, learning metadata and generated lessons describe the
-  qualified scope. Physical ARMv7 hardware acceptance remains open.
+  qualified scope. The physical ARM64 B4.2 measurement remains open under D-T14.
 
 - Standalone thermal Workbench entry through `npm run demo`, with deterministic
   synthetic episodes, local computation and preserved analysis across display
@@ -179,8 +182,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Rust shared-vector coverage for xxHash64, bucket checksums and time deltas,
   plus native x86_64/ARM64 and three-target static
   musl CI gates with ELF and test-report validation. ARMv7 QEMU execution is
-  supplementary; physical ARMv7 qualification and full TASK-020 B1 closure
-  remain open.
+  supplementary and does not establish physical ARMv7 qualification. Native
+  x86_64/ARM64 CI satisfies TASK-020 B1.2 under D-T14.
 
 - Local publication fencing for three whole-topic Rust workers. A private, single-owner Java gateway serializes
   publication and epoch rotation, validates captured grants and retains unknown broker outcomes without blind

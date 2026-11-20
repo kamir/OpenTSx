@@ -174,6 +174,8 @@ for these operational tasks:
 The learning metadata adds traceability to these cases. It does not change
 operator semantics, processor defaults, numerical starter values or runtime
 admission. Retained execution evidence establishes each qualification scope.
+The [synchronization regression](../../tools/test_operator_exercise_sync.py)
+checks the lesson's planned-condition count against the executable board plan.
 
 <a id="use-frozen-catalog-1"></a>
 
