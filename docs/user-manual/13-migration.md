@@ -25,9 +25,10 @@ see its README.
 
 ## 13.2 What was archived
 
-Archived components are not built and not maintained. The 2025 documentation and the demos are kept under
-`archive/` for reference. The archived Maven modules were removed from `master` in October 2026 because their
-outdated dependencies kept raising security alerts; their last state is commit `315f01d`.
+Archived components are not built and not maintained. The archived Maven modules were removed from `master` in
+October 2026 because their outdated dependencies kept raising security alerts; their last state is commit `315f01d`.
+The 2025 documentation and the demos were removed from `master` in November 2026; their last state is the tag
+`v3.0.1`.
 
 | Archived | Replaced by / reason |
 |----------|----------------------|
@@ -49,4 +50,4 @@ git checkout 315f01d -- archive/modules/opentsx-store-cassandra   # or archive/o
 ```
 
 The module overview is `archive/modules/README.md` at `315f01d`; the archived documentation and demos are described in
-`archive/docs/README.md` and `archive/demos/README.md`.
+`archive/docs/README.md` and `archive/demos/README.md` at `v3.0.1`.

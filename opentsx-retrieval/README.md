@@ -255,6 +255,11 @@ With `--kafscale` the server reads `tsx.<domain>.episodes.v2` into memory and fo
 assignment without a consumer group and writes nothing. Loading stops at `--max-episodes`. `--scenario <file>` and
 `--catalog <file>` (YAML) work with every source and are handed out in the inventory.
 
+The server also follows `tsx.<domain>.clean.v2`, `tsx.<domain>.features.v2` and `tsx.<domain>.synthetic.v2` into
+the same store, each once it exists. `--max-episodes` does not limit them. Their series carry the tags `system`,
+`signal` and `grade`, a feature also `feature`, so `GET /v1/systems/{id}/signals` finds them per grade. The inventory
+names the topics under `source.topics`.
+
 Use it from Python:
 
 ```python
@@ -271,5 +276,4 @@ CI starts the server in demo mode, and the Python client queries it (job "Java â
 
 * **Power-curve analysis:** method of bins, performance index and underperformance periods. It lives in
   `opentsx-windpark` (`analysis.PowerCurveAnalysis`).
-* **Smart Topics (P7):** they build on segmentation, resampling and statistics. See
-  [`docs/datamodel-2026/05-SMART-TOPICS.md`](../docs/datamodel-2026/05-SMART-TOPICS.md).
+* **Smart Topics (P7):** they build on segmentation, resampling and statistics.

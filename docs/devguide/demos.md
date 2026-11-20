@@ -1,6 +1,6 @@
 # Choose a reproducible demo
 
-Choose a local journey for OpenTSx 3.0.1 and the Python/frontend packages
+Choose a local journey for OpenTSx 3.1.0 and the Python/frontend packages
 1.0.0, with checked inputs, expected results and retained evidence.
 
 You need the tools listed for your chosen journey and registry access for its
@@ -46,12 +46,17 @@ the actual numerical result.
 Simulate three turbines, detect underperformance, persist their episodes in
 Iceberg and recompute the analysis from the closed store.
 
-- **Needs:** JDK 17 or newer, Maven 3.9.8 and Python 3.
-- **Start:** Follow the [Windpark guide](windpark-replay-demo.md).
+- **Needs:** For the released image: Bash, curl, Python 3.12 or newer and native
+  AMD64 or ARM64 Docker. For source execution: JDK 17 or newer, Maven 3.9.8
+  and Python 3.
+- **Start:** [Download and accept Tools 3.1.0][released-tools], or follow the
+  [Windpark source guide](windpark-replay-demo.md).
 - **Expected result:** 90 episodes and 900 values. T02 and T03 each have one
   detected period `[00:10, 00:20)` UTC; healthy T01 has none. The stored
   report and replay have identical bytes, including all episode payload hashes.
-- **Check:** Use the guide's [replay from the closed store][windpark-replay] and
+- **Check:** The released-image helper verifies download, startup, numerical
+  results and replay with [retained native receipts][released-proof]. For source
+  edits, use [replay from the closed store][windpark-replay] and
   [focused offline regressions][windpark-checks] after the initial build.
 - **Limits:** Detection identifies underperformance, not its cause. The
   synthetic fixture is not a benchmark calibrated for a real site.
@@ -98,3 +103,6 @@ publication limits apply.
 [recorded-source]: https://github.com/kamir/OpenTSx/commit/0884233ed0daf44d4aff4ecddcf0926fd47c4cd2
 [recorded-guide]: https://github.com/kamir/OpenTSx/blob/0884233ed0daf44d4aff4ecddcf0926fd47c4cd2/docs/devguide/standalone-analysis.md
 [artifact-help]: https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts
+
+[released-tools]: published-artifact-acceptance.md#download-and-accept-the-released-image
+[released-proof]: published-artifact-acceptance.md#inspect-the-released-acceptance-evidence

@@ -1,5 +1,5 @@
 # Example inventory (asset registry) for the three twin scenarios, schema opentsx.inventory.v1 (draft).
-# Concept: docs/datamodel-2026/12-EXPLORATIVES-UI-INVENTAR.md; prototype: docs/prototypes/anlagen-explorer.html.
+# Prototype: docs/prototypes/anlagen-explorer.html.
 #
 # ALL VALUES ARE INVENTED EXAMPLES: serial numbers, documents, checksums, coordinates, maintenance dates.
 # Asset id = <twin>/<atom>[/<sub-asset>...]; "atom" must exist in the wiring plan of the same twin (twin/*.yaml).

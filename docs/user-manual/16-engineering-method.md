@@ -5,7 +5,6 @@
 > ([`docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md`](../datamodel-2026/SYSTEM-DOCUMENT-SPEC.md)). The frame
 > around them, a decision at the start and its effect at the end, is a revision after an external review, decided
 > on the same day ([`docs/datamodel-2026/DECISION-CARD-SPEC.md`](../datamodel-2026/DECISION-CARD-SPEC.md)).
-> Work item: [`EVOLUTION/TASK-014-engineering-flow.md`](../../EVOLUTION/TASK-014-engineering-flow.md).
 > Where this chapter and the design differ, the design is the source and this chapter follows.
 
 ## 16.1 What the method is for
