@@ -107,18 +107,26 @@ The signed CLI regression also checks the actual executable against the
 existing 268,435,456-byte identity-read limit. Development and test profiles
 omit dependency debug information; runner debug information is retained.
 
-The validation observer drops a request that its client abandons by closing
-or resetting the connection. This applies to every request type. It applies
-whether the observer sees the close before the next request frame or while it
-writes a response. The observer then ends that connection and its pending
-requests without a failure. These errors fail the check: a close or reset
-inside a frame, a malformed frame, an unknown response correlation, a reset or
-other I/O error on the broker side while the client is still connected, and
-any other error while both sides are open.
-Response correlations remain pending until forwarding and flushing succeed.
+The validation observer classifies the end of a connection by side.
+An end of the client stream is abandonment by the client. This covers a clean
+close and a reset, between frames and inside a frame. It also covers a socket
+error while the observer writes a response to the client. The observer then
+drops the pending requests of that connection and later responses, and does
+not fail. It keeps reading the client stream to its end, so it still
+validates every complete frame the client sent. At that end it closes the
+client side, shuts down its output toward the broker, and reads and drops
+broker responses until the broker closes its side.
+Before the observer reaches the end of the client stream, these errors fail
+the check: a complete client frame that fails validation, such as an invalid
+length, an unparsable header or request, or a broken measurement requirement;
+an unknown response correlation; and a close, reset or other I/O error on the
+broker side, with or without pending requests.
+A response correlation remains pending until its response is forwarded and
+flushed or its client has ended the connection.
 The signal link of the
 [B3 offline test](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/RustOfflineCatchupIntegrationTest.java)
-applies the same rule to its runner side.
+ends a connection without a failure when its runner side closes or resets, and
+fails on errors while both sides are open.
 The deterministic
 [observer tests](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/LatencyProtocolObserverTest.java),
 [connection tests](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/LatencyProtocolObserverConnectionTest.java)

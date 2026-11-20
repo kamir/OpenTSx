@@ -13,8 +13,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
-- Retain response correlations in the validation observer until forwarding
-  succeeds, and keep interrupted frames as errors.
+- Retain a response correlation in the validation observer until its response
+  is forwarded and flushed or its client has ended the connection.
 - Resolve Central dependencies and plugins in CI through a Google Cloud-hosted
   mirror. Verify endpoint selection and permanent errors offline, including a
   Central 404 response with a long Retry-After value.
@@ -481,15 +481,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
-- Drop a request in the validation observer when its client abandons it by
-  closing or resetting the connection, for every request type, whether the
-  observer sees the close while reading the next request or while writing a
-  response. The observer ends that connection without a failure. Malformed or
-  interrupted frames, unknown response correlations, broker-side I/O errors
-  while the client is connected and errors while both sides are open still fail
-  the check. The B3 offline signal link ends a connection without a failure when
-  its runner side closes or resets, and keeps failing on errors while both sides
-  are open.
+- Classify the end of a validation observer connection by side. Any end of the
+  client stream, a clean close or a reset, between frames or inside a frame, and
+  a socket error while writing a response to the client, drop the pending
+  requests of that client and later responses without a failure. The observer
+  reads the client stream to its end, then closes the client side and
+  half-closes the broker side. Before it reaches that end, a complete client
+  frame that fails validation, an unknown response correlation, and a close,
+  reset or other I/O error on the broker side, with or without pending
+  requests, fail the check. The B3 offline signal link ends a connection
+  without a failure when its runner side closes or resets, and fails on errors
+  while both sides are open.
 - Concept 20 section 6.1 and the TASK-020 B1 notes list the signed `tsx-runner`
   modes that exist. With the B3 site configuration, `agent`, `conform` and `run`
   handle signed bounded statistics. With the B1 configuration, `run` executes

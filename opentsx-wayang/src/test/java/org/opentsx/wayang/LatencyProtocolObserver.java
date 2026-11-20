@@ -19,6 +19,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -95,8 +96,9 @@ final class LatencyProtocolObserver implements AutoCloseable {
                     sockets.add(client);
                     sockets.add(broker);
                     Map<Integer, Pending> pending = new ConcurrentHashMap<>();
+                    DataOutputStream toClient = new DataOutputStream(client.getOutputStream());
                     threads.submit(() -> requests(client, broker, pending));
-                    threads.submit(() -> responses(broker, client, pending));
+                    threads.submit(() -> responses(broker, client, toClient, pending));
                 } catch (IOException e) {
                     if (!closing) failure.compareAndSet(null, e);
                 }
@@ -154,14 +156,19 @@ final class LatencyProtocolObserver implements AutoCloseable {
             if (!closing && !client.isClosed() && !broker.isClosed()) failure.compareAndSet(null, e);
         } finally {
             closeSocket(client);
-            closeSocket(broker);
+            // Half-close so the response thread reads the remaining responses; closing with unread data would reset the broker.
+            try {
+                broker.shutdownOutput();
+            } catch (IOException ended) {
+                closeSocket(broker);
+            }
         }
     }
 
-    private void responses(Socket broker, Socket client, Map<Integer, Pending> pending) {
+    private void responses(Socket broker, Socket client, DataOutputStream toClient, Map<Integer, Pending> pending) {
         try {
             DataInputStream in = new DataInputStream(broker.getInputStream());
-            DataOutputStream out = new DataOutputStream(client.getOutputStream());
+            DataOutputStream out = toClient;
             byte[] frame;
             while ((frame = readBrokerFrame(in)) != null) {
                 synchronized (pending) {
@@ -176,9 +183,11 @@ final class LatencyProtocolObserver implements AutoCloseable {
                         else produceErrors.addAndGet(acknowledge(frame, request, System.nanoTime(), entries, false));
                     }
                     forwardResponse(out, frame, pending);
-                    if (pending.containsKey(correlation)) return;
+                    // The client is gone: drop its responses; the request thread ends the connection at the client end.
+                    if (pending.remove(correlation) != null) out = new DataOutputStream(OutputStream.nullOutputStream());
                 }
             }
+            throw new EOFException("broker closed the connection; pending requests: " + pending.size());
         } catch (Exception e) {
             if (!closing && !client.isClosed() && !broker.isClosed()) failure.compareAndSet(null, e);
         } finally {
@@ -284,28 +293,22 @@ final class LatencyProtocolObserver implements AutoCloseable {
     }
 
     static byte[] readFrame(DataInputStream in) throws IOException {
-        int first;
         try {
-            first = in.read();
+            return readBrokerFrame(in);
         } catch (SocketException reset) {
             return null;
         }
-        return readFrame(in, first);
     }
 
     static byte[] readBrokerFrame(DataInputStream in) throws IOException {
-        return readFrame(in, in.read());
-    }
-
-    private static byte[] readFrame(DataInputStream in, int first) throws IOException {
+        int first = in.read();
         if (first < 0) return null;
         byte[] rest = in.readNBytes(3);
-        if (rest.length != 3) throw new EOFException("incomplete Kafka frame length");
+        if (rest.length != 3) return null;
         int length = (first << 24) | ((rest[0] & 255) << 16) | ((rest[1] & 255) << 8) | (rest[2] & 255);
         if (length < 4 || length > 64 * 1024 * 1024) throw new IOException("invalid Kafka frame length " + length);
         byte[] frame = in.readNBytes(length);
-        if (frame.length != length) throw new EOFException("incomplete Kafka frame body");
-        return frame;
+        return frame.length == length ? frame : null;
     }
 
     static void writeFrame(DataOutputStream out, byte[] frame) throws IOException {

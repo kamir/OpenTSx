@@ -1,6 +1,7 @@
 package org.opentsx.wayang;
 
 import org.apache.kafka.common.compress.Compression;
+import org.apache.kafka.common.errors.InvalidRequestException;
 import org.apache.kafka.common.message.ProduceRequestData;
 import org.apache.kafka.common.message.ProduceResponseData;
 import org.apache.kafka.common.protocol.ApiKeys;
@@ -52,9 +53,17 @@ class LatencyProtocolObserverConnectionTest {
         return IncrementLatencyTest.response(PRODUCE.toResponseHeader(), data, VERSION);
     }
 
-    private static byte[] metadata(int correlation, int size) {
-        RequestHeader header = new RequestHeader(ApiKeys.METADATA, ApiKeys.METADATA.latestVersion(), "fixture", correlation);
+    private static byte[] request(ApiKeys key, int correlation, int size) {
+        RequestHeader header = new RequestHeader(key, key.latestVersion(), "fixture", correlation);
         return ByteBuffer.allocate(size).put(MessageUtil.toByteBuffer(header.data(), header.headerVersion())).array();
+    }
+
+    // With this receive buffer, an unread 16 MiB frame keeps the request thread writing until the test drains the broker side.
+    private static ServerSocket gatedBackend() throws IOException {
+        ServerSocket backend = new ServerSocket();
+        backend.setReceiveBufferSize(4096);
+        backend.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 1);
+        return backend;
     }
 
     @Test
@@ -76,12 +85,27 @@ class LatencyProtocolObserverConnectionTest {
     }
 
     @Test
+    void brokerResponsesAfterTheClientEndAreReadWithoutAReset() throws Exception {
+        byte[] request = request(ApiKeys.API_VERSIONS, 0, 64);
+        try (ServerSocket backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress());
+             LatencyProtocolObserver observer = new LatencyProtocolObserver(backend.getLocalPort(), false)) {
+            try (Socket client = connect(observer); Socket broker = backend.accept()) {
+                DataInputStream in = new DataInputStream(broker.getInputStream());
+                LatencyProtocolObserver.writeFrame(new DataOutputStream(client.getOutputStream()), request);
+                assertArrayEquals(request, LatencyProtocolObserver.readFrame(in));
+                client.close();
+                assertEquals(-1, in.read());
+                LatencyProtocolObserver.writeFrame(new DataOutputStream(broker.getOutputStream()), new byte[16 << 20]);
+            }
+            observer.check();
+        }
+    }
+
+    @Test
     void cleanClientCloseSeenAfterTheResponseWriteDropsAPendingProduce() throws Exception {
         byte[] request = produce();
-        byte[] held = metadata(1, 16 << 20);
-        try (ServerSocket backend = new ServerSocket()) {
-            backend.setReceiveBufferSize(4096);
-            backend.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 1);
+        byte[] held = request(ApiKeys.METADATA, 1, 16 << 20);
+        try (ServerSocket backend = gatedBackend()) {
             try (LatencyProtocolObserver observer = new LatencyProtocolObserver(backend.getLocalPort(), false)) {
                 try (Socket client = connect(observer); Socket broker = backend.accept()) {
                     DataInputStream in = new DataInputStream(broker.getInputStream());
@@ -89,7 +113,6 @@ class LatencyProtocolObserverConnectionTest {
                     LatencyProtocolObserver.writeFrame(out, request);
                     LatencyProtocolObserver.writeFrame(out, held);
                     assertArrayEquals(request, LatencyProtocolObserver.readFrame(in));
-                    // The unread 16 MiB frame keeps the request thread writing, so it sees the close only after the response.
                     assertEquals(held.length, in.readInt());
                     client.close();
                     LatencyProtocolObserver.writeFrame(new DataOutputStream(broker.getOutputStream()), produced());
@@ -119,7 +142,7 @@ class LatencyProtocolObserverConnectionTest {
 
     @Test
     void brokerResetWhileTheClientIsConnectedFailsTheObserver() throws Exception {
-        byte[] request = metadata(0, 64);
+        byte[] request = request(ApiKeys.METADATA, 0, 64);
         try (ServerSocket backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
             LatencyProtocolObserver observer = new LatencyProtocolObserver(backend.getLocalPort(), false);
             try (Socket client = connect(observer); Socket broker = backend.accept()) {
@@ -138,7 +161,7 @@ class LatencyProtocolObserverConnectionTest {
 
     @Test
     void unknownResponseCorrelationFailsTheObserver() throws Exception {
-        byte[] request = metadata(3, 64);
+        byte[] request = request(ApiKeys.METADATA, 3, 64);
         try (ServerSocket backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
             LatencyProtocolObserver observer = new LatencyProtocolObserver(backend.getLocalPort(), false);
             try (Socket client = connect(observer); Socket broker = backend.accept()) {
@@ -152,5 +175,115 @@ class LatencyProtocolObserverConnectionTest {
             assertEquals("unknown response correlation 4", failure.getCause().getMessage());
             assertThrows(IllegalStateException.class, observer::close);
         }
+    }
+
+    @Test
+    void truncatedClientFrameSeenByTheRequestThreadIsAbandonment() throws Exception {
+        byte[] request = produce();
+        try (ServerSocket backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress());
+             LatencyProtocolObserver observer = new LatencyProtocolObserver(backend.getLocalPort(), false)) {
+            try (Socket client = connect(observer); Socket broker = backend.accept()) {
+                DataInputStream in = new DataInputStream(broker.getInputStream());
+                DataOutputStream out = new DataOutputStream(client.getOutputStream());
+                LatencyProtocolObserver.writeFrame(out, request);
+                out.write(new byte[]{0, 0, 0, 100, 1, 2});
+                client.close();
+                assertArrayEquals(request, LatencyProtocolObserver.readFrame(in));
+                assertEquals(-1, in.read());
+            }
+            observer.check();
+        }
+    }
+
+    // The first response cannot reach the closed client. The second completes only after the observer read the first.
+    private static void respondToTheClosedClient(Socket broker) throws IOException {
+        DataOutputStream out = new DataOutputStream(broker.getOutputStream());
+        byte[] response = new byte[16 << 20];
+        LatencyProtocolObserver.writeFrame(out, ByteBuffer.wrap(response).putInt(0, 2).array());
+        LatencyProtocolObserver.writeFrame(out, ByteBuffer.wrap(response).putInt(0, 1).array());
+    }
+
+    @Test
+    void truncatedClientFrameAfterADroppedResponseIsAbandonment() throws Exception {
+        byte[] request = produce();
+        byte[] versions = request(ApiKeys.API_VERSIONS, 2, 64);
+        byte[] held = request(ApiKeys.API_VERSIONS, 1, 16 << 20);
+        try (ServerSocket backend = gatedBackend();
+             LatencyProtocolObserver observer = new LatencyProtocolObserver(backend.getLocalPort(), false)) {
+            try (Socket client = connect(observer); Socket broker = backend.accept()) {
+                DataInputStream in = new DataInputStream(broker.getInputStream());
+                DataOutputStream out = new DataOutputStream(client.getOutputStream());
+                for (byte[] frame : List.of(request, versions, held)) LatencyProtocolObserver.writeFrame(out, frame);
+                out.write(new byte[]{0, 0, 0, 100, 1, 2});
+                assertArrayEquals(request, LatencyProtocolObserver.readFrame(in));
+                assertArrayEquals(versions, LatencyProtocolObserver.readFrame(in));
+                assertEquals(held.length, in.readInt());
+                client.close();
+                respondToTheClosedClient(broker);
+                assertEquals(held.length, in.transferTo(OutputStream.nullOutputStream()));
+            }
+            observer.check();
+        }
+    }
+
+    private static Throwable malformedClientFrameFailure(boolean responseFirst) throws Exception {
+        byte[] malformed = ByteBuffer.allocate(8).putShort((short) 0x7fff).putShort((short) 0).putInt(5).array();
+        byte[] versions = request(ApiKeys.API_VERSIONS, 2, 64);
+        byte[] held = request(ApiKeys.API_VERSIONS, 1, 16 << 20);
+        try (ServerSocket backend = gatedBackend()) {
+            LatencyProtocolObserver observer = new LatencyProtocolObserver(backend.getLocalPort(), false);
+            try (Socket client = connect(observer); Socket broker = backend.accept()) {
+                DataInputStream in = new DataInputStream(broker.getInputStream());
+                DataOutputStream out = new DataOutputStream(client.getOutputStream());
+                if (responseFirst) {
+                    for (byte[] frame : List.of(versions, held)) LatencyProtocolObserver.writeFrame(out, frame);
+                    assertArrayEquals(versions, LatencyProtocolObserver.readFrame(in));
+                    assertEquals(held.length, in.readInt());
+                }
+                LatencyProtocolObserver.writeFrame(out, malformed);
+                client.close();
+                if (responseFirst) {
+                    respondToTheClosedClient(broker);
+                    assertEquals(held.length, in.readNBytes(held.length).length);
+                }
+                assertEquals(-1, in.read());
+            }
+            Throwable failure = assertThrows(IllegalStateException.class, observer::check).getCause();
+            assertThrows(IllegalStateException.class, observer::close);
+            return failure;
+        }
+    }
+
+    @Test
+    void completeMalformedClientFrameFailsWhicheverThreadSeesTheCloseFirst() throws Exception {
+        Throwable requestFirst = malformedClientFrameFailure(false);
+        Throwable responseFirst = malformedClientFrameFailure(true);
+        assertInstanceOf(InvalidRequestException.class, requestFirst);
+        assertInstanceOf(InvalidRequestException.class, responseFirst);
+        assertEquals(requestFirst.getMessage(), responseFirst.getMessage());
+    }
+
+    private static Throwable brokerCloseFailure(boolean pendingRequest) throws Exception {
+        try (ServerSocket backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            LatencyProtocolObserver observer = new LatencyProtocolObserver(backend.getLocalPort(), false);
+            try (Socket client = connect(observer); Socket broker = backend.accept()) {
+                if (pendingRequest) {
+                    byte[] request = request(ApiKeys.METADATA, 0, 64);
+                    LatencyProtocolObserver.writeFrame(new DataOutputStream(client.getOutputStream()), request);
+                    assertArrayEquals(request, LatencyProtocolObserver.readFrame(new DataInputStream(broker.getInputStream())));
+                }
+                broker.close();
+                assertEquals(-1, client.getInputStream().read());
+            }
+            Throwable failure = assertThrows(IllegalStateException.class, observer::check).getCause();
+            assertThrows(IllegalStateException.class, observer::close);
+            return failure;
+        }
+    }
+
+    @Test
+    void brokerCloseWhileTheClientIsConnectedFailsTheObserver() throws Exception {
+        assertEquals("broker closed the connection; pending requests: 1", brokerCloseFailure(true).getMessage());
+        assertEquals("broker closed the connection; pending requests: 0", brokerCloseFailure(false).getMessage());
     }
 }

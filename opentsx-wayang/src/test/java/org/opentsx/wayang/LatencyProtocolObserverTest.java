@@ -92,17 +92,28 @@ class LatencyProtocolObserverTest {
     }
 
     @Test
-    void partialFramesKeepResetAndTruncationFailures() throws IOException {
+    void partialFramesEndTheClientStreamAndBrokerResetsFail() throws IOException {
         byte[] payload = {0, 1, 2, 3, 4, 5, 6, 7};
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         LatencyProtocolObserver.writeFrame(new DataOutputStream(bytes), payload);
         byte[] wire = bytes.toByteArray();
-        for (FrameReader reader : READERS) {
-            for (int length = 1; length < wire.length; length++) {
-                byte[] prefix = Arrays.copyOf(wire, length);
-                SocketException failure = new SocketException("fixture reset");
-                assertSame(failure, assertThrows(SocketException.class, () -> reader.read(input(prefix, failure))));
-                assertThrows(EOFException.class, () -> reader.read(input(prefix, null)));
+        for (int length = 1; length < wire.length; length++) {
+            byte[] prefix = Arrays.copyOf(wire, length);
+            SocketException failure = new SocketException("fixture reset");
+            assertNull(LatencyProtocolObserver.readFrame(input(prefix, failure)));
+            assertNull(LatencyProtocolObserver.readFrame(input(prefix, null)));
+            assertSame(failure, assertThrows(SocketException.class, () -> LatencyProtocolObserver.readBrokerFrame(input(prefix, failure))));
+            assertNull(LatencyProtocolObserver.readBrokerFrame(input(prefix, null)));
+        }
+    }
+
+    @Test
+    void completeFrameLengthsOutsideTheKafkaLimitsFail() {
+        for (int length : new int[]{-1, 0, 3, 64 * 1024 * 1024 + 1}) {
+            byte[] wire = ByteBuffer.allocate(Integer.BYTES).putInt(length).array();
+            for (FrameReader reader : READERS) {
+                assertEquals("invalid Kafka frame length " + length,
+                        assertThrows(IOException.class, () -> reader.read(input(wire, null))).getMessage());
             }
         }
     }
