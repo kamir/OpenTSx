@@ -378,7 +378,7 @@ Implemented in: `workbench/ops.ts:857,871,905,911,919`, `workbench/flow.ts:493-5
 `workbench/types.ts:113-117`, `workbench/vector.test.ts:197-224`, `vector-tests/VectorAlignerTest.java:23`,
 `vector-tests/VectorStreamTest.java:202`,
 `opentsx-wayang/src/test/java/org/opentsx/wayang/TsxVectorVectorsTest.java:46`,
-`rust/tsx-runner/tests/pair_vector_vectors.rs:39`.
+`rust/tsx-runner/tests/pair_vector_vectors.rs:40`.
 
 ## 5. Streaming contract
 

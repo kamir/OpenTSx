@@ -535,7 +535,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   timestamps, a sampling interval that changes between episodes and jittered samples, expected values from the Wayang
   kernel and the `fill` refusal. The workbench results are checked against Wayang for `pair.xcorr` and `pair.es` and
   against the Rust runner for `pair.xcorr` only; `pair.coverage` has no Wayang or Rust counterpart. All three refuse
-  the unknown `fill`.
+  the unknown `fill`. Sections 2, 3, 6, 14 and 16 of
+  [`PAIR-WINDOWS-SPEC.md`](docs/datamodel-2026/PAIR-WINDOWS-SPEC.md) state these rules.
 - Concept 20 section 6.1 and the TASK-020 B1 notes list the signed `tsx-runner`
   modes that exist. With the B3 site configuration, `agent`, `conform` and `run`
   handle signed bounded statistics. With the B1 configuration, `run` executes
