@@ -1,6 +1,7 @@
 # Summary
 
 * [Developer guide](README.md)
+* [Choose a reproducible demo](demos.md)
 * [PDF generation](PDF-GENERATION.md)
 * [Local infrastructure](infrastructure/local-development.md)
 * [Processing-flow descriptor schema](schemas/README.md)

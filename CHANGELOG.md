@@ -71,6 +71,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   Manual and generated conversion lessons distinguish this local binding
   from signed fleet admission and open physical ARM64/ARMv7 acceptance.
 
+- Demo entry page linking local thermal, finite forecast and Windpark
+  journeys to prerequisites, acceptance checks and a recording tied to its
+  tested revision.
+
 - Record the finite Workbench browser journey as WebM video and a Playwright
   trace. Require matching clean source and runtime identities before and after
   capture, verify numerical exports and hash the evidence in a recording manifest.
