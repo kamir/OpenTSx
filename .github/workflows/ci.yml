@@ -234,6 +234,7 @@ jobs:
             **/.mvn/wrapper/maven-wrapper.properties
             **/.mvn/extensions.xml
             .mvn/maven.config
+            .mvn/ci-settings.xml
             tools/check_maven_downloads.py
             target/maven-downloads/cache-context
       - uses: actions/setup-python@v7
@@ -249,7 +250,7 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
       - name: Verify Maven download retries
         run: python3 tools/check_maven_downloads.py
-      - name: Verify and enable bounded HTTP response capture
+      - name: Verify Maven HTTP capture and CI repository routing
         run: python3 tools/check_maven_http_capture.py
       - name: Record Maven cache before builds
         run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json
@@ -366,6 +367,7 @@ jobs:
             **/.mvn/wrapper/maven-wrapper.properties
             **/.mvn/extensions.xml
             .mvn/maven.config
+            .mvn/ci-settings.xml
             tools/check_maven_downloads.py
             target/maven-downloads/cache-context
       - uses: actions/setup-python@v7
@@ -381,7 +383,7 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
       - name: Verify Maven download retries
         run: python3 tools/check_maven_downloads.py
-      - name: Verify and enable bounded HTTP response capture
+      - name: Verify Maven HTTP capture and CI repository routing
         run: python3 tools/check_maven_http_capture.py
       - name: Record Maven cache before builds
         run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json
@@ -469,6 +471,7 @@ jobs:
             **/.mvn/wrapper/maven-wrapper.properties
             **/.mvn/extensions.xml
             .mvn/maven.config
+            .mvn/ci-settings.xml
             tools/check_maven_downloads.py
             target/maven-downloads/cache-context
       - uses: actions/setup-node@v7
@@ -489,7 +492,7 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
       - name: Verify Maven download retries
         run: python3 tools/check_maven_downloads.py
-      - name: Verify and enable bounded HTTP response capture
+      - name: Verify Maven HTTP capture and CI repository routing
         run: python3 tools/check_maven_http_capture.py
       - name: Record Maven cache before builds
         run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json
@@ -607,6 +610,7 @@ jobs:
             **/.mvn/wrapper/maven-wrapper.properties
             **/.mvn/extensions.xml
             .mvn/maven.config
+            .mvn/ci-settings.xml
             tools/check_maven_downloads.py
             target/maven-downloads/cache-context
       - name: Install Maven 3.9.8
@@ -619,7 +623,7 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
       - name: Verify Maven download retries
         run: python3 tools/check_maven_downloads.py
-      - name: Verify and enable bounded HTTP response capture
+      - name: Verify Maven HTTP capture and CI repository routing
         run: python3 tools/check_maven_http_capture.py
       - name: Record Maven cache before builds
         run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json
@@ -797,6 +801,7 @@ jobs:
             **/.mvn/wrapper/maven-wrapper.properties
             **/.mvn/extensions.xml
             .mvn/maven.config
+            .mvn/ci-settings.xml
             tools/check_maven_downloads.py
             target/maven-downloads/cache-context
       - name: Install Maven 3.9.8
@@ -809,7 +814,7 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
       - name: Verify Maven download retries
         run: python3 tools/check_maven_downloads.py
-      - name: Verify and enable bounded HTTP response capture
+      - name: Verify Maven HTTP capture and CI repository routing
         run: python3 tools/check_maven_http_capture.py
       - name: Record Maven cache before builds
         run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json
@@ -1094,6 +1099,7 @@ jobs:
             **/.mvn/wrapper/maven-wrapper.properties
             **/.mvn/extensions.xml
             .mvn/maven.config
+            .mvn/ci-settings.xml
             tools/check_maven_downloads.py
             target/maven-downloads/cache-context
       - name: Install Maven 3.9.8
@@ -1106,7 +1112,7 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
       - name: Verify Maven download retries
         run: python3 tools/check_maven_downloads.py
-      - name: Verify and enable bounded HTTP response capture
+      - name: Verify Maven HTTP capture and CI repository routing
         run: python3 tools/check_maven_http_capture.py
       - name: Record Maven cache before builds
         run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json

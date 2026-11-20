@@ -84,8 +84,8 @@ historical download failures or prevent new repository failures.
 
 CI also builds and checks a local Maven extension against the pinned runtime.
 `http-responses.jsonl` records actual HTTP response statuses for the three
-Wayang libraries and two BOM imports from Central and Confluent, before
-Resolver retry handling.
+Wayang libraries and two BOM imports from Central, its CI mirror and
+Confluent, before Resolver retry handling.
 It includes the public host and artifact path, fixed classifications for
 cache, server and content type, and SHA-256 fingerprints of selected response
 headers. Request headers, cookies, response bodies, URL credentials and query
@@ -110,10 +110,27 @@ HTTP failure handling remain unchanged.
 
 Each Maven job scopes its dependency-cache key with its workload identity in
 `cache-context`. The key also hashes POMs, Maven wrapper and extension inputs,
-`.mvn/maven.config` and the pinned-runtime checker. Matrix variants of the same
+`.mvn/maven.config`, `.mvn/ci-settings.xml` and the pinned-runtime checker.
+Matrix variants of the same
 job share that workload's cache. A smaller workload cannot reserve the same
 immutable key and prevent a larger workload from retaining its dependencies.
 The context is created before Java setup; an empty identity fails the step.
+
+The transport check enables [CI settings](.mvn/ci-settings.xml) through
+`MAVEN_ARGS` after its offline fixtures. Maven mirrors only `central` to the
+[Google Cloud-hosted copy](https://docs.cloud.google.com/docs/buildpacks/java).
+This applies to dependencies and plugins. Confluent keeps its own endpoint;
+local Maven invocations keep their normal settings. Existing `MAVEN_ARGS` or
+`MAVEN_OPTS` fail the CI setup instead of being overwritten or logged.
+The mirror can lag Central, so pinned artifacts must resolve there in CI.
+The native 401, 403 and 404 failure policy remains in effect. HTTP 404 with a
+`Retry-After` header is still not retried. A native fixture reproduces that
+response and verifies resolution through the configured mirror without
+requests or sleeps. Run the offline transport and routing checks locally:
+
+```bash
+python3 tools/check_maven_http_capture.py
+```
 
 The selector verifies the checked-out pull request merge commit and both event parents. A depth-two checkout
 supplies these commits. It compares the base parent with the tested merge tree using NUL-delimited paths and

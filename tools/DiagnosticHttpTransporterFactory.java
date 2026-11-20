@@ -37,7 +37,8 @@ import org.eclipse.aether.transport.http.HttpTransporterFactory;
 @Named("opentsx-http-capture")
 @Singleton
 public final class DiagnosticHttpTransporterFactory implements TransporterFactory {
-    private static final Set<String> HOSTS = Set.of("repo.maven.apache.org", "packages.confluent.io");
+    private static final Set<String> HOSTS = Set.of("repo.maven.apache.org", "packages.confluent.io",
+            "maven-central.storage-download.googleapis.com");
     private static final Pattern ARTIFACT = Pattern.compile(
             "/(?:(?:maven2|maven)/)?(?:org/apache/wayang/(wayang-(?:core|basic|java))/"
             + "([0-9]+\\.[0-9]+\\.[0-9]+)/\\1-\\2\\.(?:pom|jar)"

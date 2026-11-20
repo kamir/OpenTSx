@@ -247,8 +247,9 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md), the
 [changelog](CHANGELOG.md). Changes to operators include their applicable
 contracts, tests, documentation and learning material.
 Maven CI retains exception diagnostics, sanitized cache reports and bounded
-HTTP response metadata for Wayang and BOM downloads. Caches are scoped by
-workload and runtime inputs. Read the
+HTTP response metadata for Wayang and BOM downloads. CI resolves Central
+artifacts through a Google Cloud-hosted mirror and scopes caches by workload
+and runtime inputs. Read the
 [CI diagnostics and their limits](CONTRIBUTING.md#check-continuous-integration).
 
 ## License
