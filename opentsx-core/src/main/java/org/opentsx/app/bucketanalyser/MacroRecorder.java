@@ -52,7 +52,6 @@ import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.algorithms.detrending.DetrendingMethodFactory;
 import org.opentsx.algorithms.detrending.methods.IDetrendingMethod;
 
-import java.io.File;
 import java.text.DecimalFormat;
 import java.util.Vector;
 
@@ -103,27 +102,15 @@ public class MacroRecorder {
         TimeSeriesObject mix = new TimeSeriesObject();
         mix.setLabel("mix");
         
-        if ( !label_of_TRACK.equals( "EXP3") ) {
-            /**
-             * Run the generator for Sine-Waves and label the wave with its 
-             * ENTROPY value.
-             */
-            for (int i = 0; i < f.length; i++) {
-                TimeSeriesObject m = TSGenerator.getSinusWave(f[i], time, samplingRate, a[i], phase[i] * PI, noise[i]);
-                m.labelWithEntropy();
-                mix = mix.add(m);
+        for (int i = 0; i < f.length; i++) {
+            TimeSeriesObject m = TSGenerator.getSinusWave(f[i], time, samplingRate, a[i], phase[i] * PI, noise[i]);
+            m.labelWithEntropy();
+            mix = mix.add(m);
 
-                components.add(m.copy());
-            }
-            mix.labelWithEntropy();
-            components.add(mix);
+            components.add(m.copy());
         }
-        
-        if ( label_of_TRACK.equals( "EXP4") ) {
-            
-            components = loadStockDataFromBucket(); 
-            
-        }
+        mix.labelWithEntropy();
+        components.add(mix);
 
         
         
@@ -273,41 +260,6 @@ public class MacroRecorder {
             MultiChart.open(v, label + " fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", true, "???", null);
 
         }
-    }
-
-
-    
-    
-
-
-
-    /**
-     *
-
-    private static Vector<TimeSeriesObject> loadStockData() {
-        
-        int [] YEARS = {2013,2014};
-        
-        return StockDataLoader2.concatRowsForYearsFromCache( YEARS );
-        
-    }
-
-     *
-     **/
-
-    private static Vector<TimeSeriesObject> loadStockDataFromBucket() {
-
-        String fn = "Components_IPC_Close__2003_2004_2005_2006_2007_2008_2009_2010_2011_2012_2013_2014.tsb.vec.seq";
-        File f = new File( fn );
-        if ( !f.exists() ) {
-            
-            
-        } 
-        else {
-            
-        }
-        
-        return null;
     }
 
 }

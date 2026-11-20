@@ -238,7 +238,7 @@ public class RISTool {
         }
 
         if ( LOG.isDebugEnabled() ) {
-            LOG.debug("computing intervals result={} intervals={}", name, times.size() - 1);
+            LOG.debug("computing intervals result={} intervals={}", name, Math.max(0, times.size() - 1));
         }
 
         
@@ -251,7 +251,10 @@ public class RISTool {
         Enumeration<Double> en = times.elements();
         
         // first element (index 0)
-        double vor = en.nextElement(); 
+        double vor = 0.0;
+        if ( en.hasMoreElements() ) {
+            vor = en.nextElement();
+        }
         
         while( en.hasMoreElements() ) {
             Double now = en.nextElement();

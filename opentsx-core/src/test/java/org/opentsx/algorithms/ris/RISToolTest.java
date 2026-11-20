@@ -16,6 +16,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Vector;
 import java.util.stream.Stream;
 
@@ -257,6 +258,44 @@ class RISToolTest {
             assertEquals(0.0, container.probSKALIERT[i]);
             assertEquals(0, container.dataSKALIERT[i]);
         }
+    }
+
+    @Test
+    void noTimesAddNoIntervalLikeOneTime() throws Exception {
+        RISTool none = new RISTool("none", 12, 10);
+        RISTool one = new RISTool("one", 12, 10);
+        RISTool container = new RISTool("all", 12, 10);
+        container.isContainerInstanz = true;
+
+        none._addData(new Vector<>());
+        one._addData(new Vector<>(List.of(4.0)));
+        container.add(none);
+        container.add(one);
+
+        for (RISTool ris : List.of(none, one)) {
+            assertEquals(List.of(), ris.dataRawTIMES);
+            assertEquals(List.of(), ris.dataRawFILTERED);
+            assertTrue(Double.isNaN(ris.getRq()));
+        }
+        for (int i = 0; i < container.probSKALIERT.length; i++) {
+            assertEquals(0.0, container.probSKALIERT[i]);
+            assertEquals(0, container.dataSKALIERT[i]);
+        }
+    }
+
+    @Test
+    void noTimesAreLoggedAsNoInterval() throws Exception {
+        RISTool ris = new RISTool("none", 12, 10);
+        PrintStream err = System.err;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        System.setErr(new PrintStream(captured, true, UTF_8));
+        try {
+            ris._addData(new Vector<>());
+        } finally {
+            System.setErr(err);
+        }
+        String log = captured.toString(UTF_8);
+        assertTrue(log.contains("computing intervals result=none intervals=0"), log);
     }
 
     @Test

@@ -171,6 +171,8 @@ class ReturnIntervallStatistik2Test {
         assertEquals(List.of(), empty.dataRawFILTERED);
         assertTrue(Double.isNaN(empty.getRq()));
         assertTrue(Arrays.stream(empty.probSKALIERT).allMatch(Double::isNaN));
+        empty.calcMessreihen();
+        assertEquals(List.of(), empty.mrVerteilungSkaliert.xValues);
         assertEquals(List.of(), container.allRqs);
         assertEquals(0.0, Arrays.stream(container.probSKALIERT).sum());
     }
@@ -318,8 +320,122 @@ class ReturnIntervallStatistik2Test {
         assertEquals(List.of(), infinite.dataRaw_InterEventTIMES);
     }
 
+    @Test
+    void noTimesAddNoIntervalLikeOneTime() throws Exception {
+        ReturnIntervallStatistik2 none = new ReturnIntervallStatistik2("none", 12, 10);
+        ReturnIntervallStatistik2 one = new ReturnIntervallStatistik2("one", 12, 10);
+        ReturnIntervallStatistik2 container = new ReturnIntervallStatistik2("all", 12, 10);
+        container.isContainerInstanz = true;
+
+        none._addData(times(), 1.0);
+        one._addData(times(4.0), 1.0);
+        container.add(none);
+        container.add(one);
+
+        for (ReturnIntervallStatistik2 ris : List.of(none, one)) {
+            assertEquals(List.of(), ris.dataRaw_InterEventTIMES);
+            assertEquals(List.of(), ris.dataRawFILTERED);
+            assertTrue(Double.isNaN(ris.getRq()));
+            ris.calcMessreihen();
+            assertEquals(List.of(), ris.mrVerteilungSkaliert.xValues);
+        }
+        assertEquals(List.of(), container.allRqs);
+        assertEquals(0.0, Arrays.stream(container.probSKALIERT).sum());
+    }
+
+    @Test
+    void noTimesAreLoggedAsNoInterval() throws Exception {
+        String log = stderrOf(() -> new ReturnIntervallStatistik2("none", 12, 10)._addData(times(), 1.0));
+
+        assertTrue(log.contains("computing intervals result=none intervals=0"), log);
+    }
+
+    @Test
+    void anOffsetOf0OrBelowKeepsEveryScaledBin() throws Exception {
+        double offset = ReturnIntervallStatistik2.offset;
+        try {
+            ReturnIntervallStatistik2.offset = 0.0;
+            ReturnIntervallStatistik2 zeroMean = new ReturnIntervallStatistik2("zeroMean", 12, 10);
+            zeroMean.addDistData(new Vector<>(List.of(1.0, 2.0, 3.0)));
+            zeroMean.setRQ(0.0);
+            zeroMean.calcMessreihen();
+
+            ReturnIntervallStatistik2.offset = -5;
+            ReturnIntervallStatistik2 negativeMean = new ReturnIntervallStatistik2("negativeMean", 12, 10);
+            negativeMean.addDistData(new Vector<>(List.of(-3.0, 1.0)));
+            negativeMean.calcMessreihen();
+            ReturnIntervallStatistik2 container = new ReturnIntervallStatistik2("all", 12, 10);
+            container.isContainerInstanz = true;
+            container.add(negativeMean);
+            container.calcMessreihen();
+
+            assertScaledSeries(new double[] {1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 3.0, zeroMean.mrVerteilungSkaliert);
+            assertScaledSeries(new double[] {1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 2.0, negativeMean.mrVerteilungSkaliert);
+            assertEquals(pointsWithAShare(container.mrVerteilungSkaliert), pointsWithAShare(negativeMean.mrVerteilungSkaliert));
+        } finally {
+            ReturnIntervallStatistik2.offset = offset;
+        }
+    }
+
+    @Test
+    void timesMoreThanDoubleMaxValueApartAreRefusedAndKeepTheIntervalsBefore() throws Exception {
+        ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2("far", 12, 10);
+        ris._addData(times(0.0, 2.0), 1.0);
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> ris._addData(times(-1e308, 1e308), 1.0));
+
+        assertEquals("_addData: time 1 of far is 1.0E308, more than Double.MAX_VALUE after time 0 at -1.0E308;"
+                + " expected times whose difference is finite", e.getMessage());
+        assertEquals(List.of(2.0), ris.dataRaw_InterEventTIMES);
+        assertEquals(List.of(2.0), ris.dataRawFILTERED);
+        assertEquals(2.0, ris.getRq());
+    }
+
+    @Test
+    void timesAddedToAContainerAreRefusedAndAddNoInterval() {
+        ReturnIntervallStatistik2 container = new ReturnIntervallStatistik2("all", 12, 10);
+        container.isContainerInstanz = true;
+
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> container._addData(times(0.0, 1.0), 1.0));
+
+        assertEquals("addDistData: all is a container; add intervals to a result that is not a container",
+                e.getMessage());
+        assertEquals(List.of(), container.dataRaw_InterEventTIMES);
+    }
+
+    @Test
+    void shiftingASeriesMovesItsMinimumTo0AndPrintsNothing() throws Exception {
+        TimeSeriesObject series = new TimeSeriesObject();
+        series.setLabel("gauss");
+        for (double y : new double[] {1.0, -2.5, 4.0}) {
+            series.addValue(y);
+        }
+
+        String[] out = new String[1];
+        String log = stderrOf(() -> out[0] = stdoutOf(() -> ReturnIntervallStatistik2.shiftToZero(series)));
+
+        assertEquals("", out[0]);
+        assertEquals(0.0, series.getMinY());
+        assertEquals(List.of(3.5, 0.0, 6.5), series.yValues);
+        assertTrue(log.contains("shifted series series=gauss min=-2.5 shiftedMin=0.0"), log);
+    }
+
     interface Action {
         void run() throws Exception;
+    }
+
+    static String stdoutOf(Action action) throws Exception {
+        PrintStream out = System.out;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(captured, true, UTF_8));
+        try {
+            action.run();
+        } finally {
+            System.setOut(out);
+        }
+        return captured.toString(UTF_8);
     }
 
     static String stderrOf(Action action) throws Exception {

@@ -931,6 +931,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `pushTSDataAsEventsToKafka_String_Avro`, `OpenTSxClusterLink.send` and `LegacyBridge.seriesKeyFromLabel` instead of
   line numbers of code that moved or is not in the repository. It no longer reports a hard-coded label `"123"` or
   quadratic event timestamps, which the producer does not have.
+- `opentsx-core`: the `main` methods of `ReturnIntervallStatistik2` and `TSPropertyTester` shift every series they
+  move to a minimum of 0 the same way and log a `shifted series` DEBUG line for each, including the Gaussian series.
 
 ### Removed
 
@@ -1118,6 +1120,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `influxdb-grafana/docker-compose-influxdb-grafana`. The gitlink had no `.gitmodules` entry, so a clone got an empty
   directory and the scripts ran `docker-compose up -d` without a compose file.
   `influxdb-grafana/__run_container_01.sh` starts InfluxDB and Grafana.
+- `opentsx-core`: the dead EXP3 and EXP4 branches and the private `loadStockDataFromBucket` of `MacroRecorder`, the
+  unused shuffled component list of `EntropieTest.main` and the unused `cutOff` field of `TSPropertyTester`, whose
+  `filtered intervals` DEBUG line no longer carries a `cutOff` value.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -2321,6 +2326,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - docs/datamodel-2026/01-ANALYSE-Datenmodell.md no longer lists a `pushTSOItemsToKafka` path that writes Gson JSON to
   `OpenTSx_Episodes`; that code was commented out in 3.0.1 and is deleted. The table names
   `TSOEventProducer.pushTSOItemsToKafka`, which writes JSON `{ts,value}` to `refds_events_topic_<TAG>`.
+- `opentsx-core`: `SingleTsRISTool` and the `_addData` methods of `ReturnIntervallStatistik2`, `TSPropertyTester` and
+  `RISTool` treat a series without values like a series with one value: it adds no interval, R_q is NaN,
+  `mrVerteilungSkaliert` stays empty and a container skips the result. The DEBUG line `computing intervals` logs
+  `intervals=0` for it. They threw `NoSuchElementException` before.
+- `opentsx-core`: `ReturnIntervallStatistik2` and `TSPropertyTester` keep every scaled bin of `mrVerteilungSkaliert`
+  when `offset` is 0 or below. With `offset` 0 and an R_q of 0, for example `TSPropertyTester` intervals that are all
+  0, the series was empty while a container that added the result showed its bins. With `offset` below 0 and a
+  negative R_q, the first bins were left out. A result that keeps no interval has an empty `mrVerteilungSkaliert`.
+- `opentsx-core`: the `_addData` methods of `ReturnIntervallStatistik2` and `TSPropertyTester` refuse two times more
+  than `Double.MAX_VALUE` apart with `_addData: time <k> of <name> is <value>, more than Double.MAX_VALUE after time
+  <k - 1> at <previous value>; expected times whose difference is finite`. A refused call, also one on a container,
+  keeps the intervals of the call before.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

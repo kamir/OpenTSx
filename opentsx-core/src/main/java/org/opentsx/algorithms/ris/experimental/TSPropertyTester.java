@@ -403,13 +403,14 @@ public class TSPropertyTester {
      * Adds the intervals between consecutive times with addDistData. They replace the intervals of an earlier
      * call. Rq is not used.
      *
-     * @throws IllegalArgumentException when a time is not finite or is before the time before it
+     * @throws IllegalArgumentException when a time is not finite, is before the time before it or is more than
+     *         Double.MAX_VALUE after it
      **/
     public void _addData( Vector<Double> times, double Rq ) throws Exception {
 
 
         if ( LOG.isDebugEnabled() ) {
-            LOG.debug("computing intervals result={} intervals={}", name, times.size() - 1);
+            LOG.debug("computing intervals result={} intervals={}", name, Math.max(0, times.size() - 1));
         }
 
         Vector<Double> intervals = new Vector<Double>();
@@ -418,9 +419,12 @@ public class TSPropertyTester {
         Enumeration<Double> en = times.elements();
         
         // first element (index 0)
-        double vor = en.nextElement(); 
-        if ( !Double.isFinite( vor ) ) {
-            throw new IllegalArgumentException( "_addData: time 0 of " + name + " is " + vor + "; expected a finite time" );
+        double vor = 0.0;
+        if ( en.hasMoreElements() ) {
+            vor = en.nextElement();
+            if ( !Double.isFinite( vor ) ) {
+                throw new IllegalArgumentException( "_addData: time 0 of " + name + " is " + vor + "; expected a finite time" );
+            }
         }
         
         int k = 0;
@@ -435,12 +439,17 @@ public class TSPropertyTester {
                         + (k - 1) + " at " + vor + "; expected times that do not decrease" );
             }
             Double dist = now - vor;
+            if ( Double.isInfinite( dist ) ) {
+                throw new IllegalArgumentException( "_addData: time " + k + " of " + name + " is " + now
+                        + ", more than Double.MAX_VALUE after time " + (k - 1) + " at " + vor
+                        + "; expected times whose difference is finite" );
+            }
             intervals.add(dist);
             vor = now;
         } 
 
+        addDistData(intervals);
         dataRaw_InterEventTIMES = intervals;
-        addDistData(dataRaw_InterEventTIMES);
         
     }
     
@@ -455,7 +464,6 @@ public class TSPropertyTester {
 
     Vector<Double> dataRawNOT_FILTERED = new Vector<Double>();
     
-    int cutOff = 0;
     public int anzFiltered = 0;
     /**
      * Adds a vector of return intervals.
@@ -501,7 +509,7 @@ public class TSPropertyTester {
         }
         
         if ( LOG.isDebugEnabled() ) {
-            LOG.debug("filtered intervals result={} cutOff={} offset={}", name, cutOff, offset);
+            LOG.debug("filtered intervals result={} offset={}", name, offset);
         }
         
         anzFiltered = dataRawFILTERED.size();
@@ -644,7 +652,7 @@ public class TSPropertyTester {
            
             
         // leave out the first values
-        if ( i >= offset * binning / ( (double)scale * _Rq ) ) {
+        if ( this.zElements > 0 && ( offset <= 0 || i >= offset * binning / ( (double)scale * _Rq ) ) ) {
                 
           relAnzahl = (double) dataSKALIERT[i] / (double) this.zElements;
  
@@ -798,8 +806,6 @@ public class TSPropertyTester {
         mrvB = new Vector<TimeSeriesObject>();
         mrv2B = new Vector<TimeSeriesObject>();
         
-        double min;
-        
         TimeSeriesObject mr1 = null;
         
 
@@ -810,8 +816,7 @@ public class TSPropertyTester {
 
  
         mr1 = TimeSeriesObject.getGaussianDistribution( (int)Math.pow(2, N), 1.0, 0.5);
-        min = mr1.getMinY();
-        mr1.add_value_to_Y( -1.0 * min);
+        ReturnIntervallStatistik2.shiftToZero(mr1);
         TSPropertyTester.addSample(mr1);
                 
         // V1
@@ -829,17 +834,13 @@ public class TSPropertyTester {
         // V3
         TimeSeriesObjectFFT mr3 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, N), 0.8, false, false);
         mr3.normalize();
-        min = mr3.getMinY();
-        mr3.add_value_to_Y( -1.0 * min);
-        LOG.debug("shifted series series={} min={} shiftedMin={}", mr3.getLabel(), min, mr3.getMinY());
+        ReturnIntervallStatistik2.shiftToZero(mr3);
         TSPropertyTester.addSample(mr3);
       
         // V3
         mr3 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, N), 0.9, false, false);
         mr3.normalize();
-        min = mr3.getMinY();
-        mr3.add_value_to_Y( -1.0 * min);
-        LOG.debug("shifted series series={} min={} shiftedMin={}", mr3.getLabel(), min, mr3.getMinY());
+        ReturnIntervallStatistik2.shiftToZero(mr3);
         TSPropertyTester.addSample(mr3);
         
         Color[] colors = new Color[8];

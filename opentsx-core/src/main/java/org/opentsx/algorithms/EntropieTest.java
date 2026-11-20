@@ -94,16 +94,11 @@ public class EntropieTest {
 
         MultiChart.open(components, true, "Components");
 
-        // Now we shuffle the values and calc the Entropy per row again.        
-        // shuffeling should not change the Entropy
-        Vector<TimeSeriesObject> shuffledComponents = new Vector<TimeSeriesObject>();
-
         int windowSize = 20;
         int shuffles = 1;
 
         // DFA ...
         applyDFA(components, "RAW components  ");
-        applyDFA(shuffledComponents, "SHUFFLED components   ");
 
         System.out.println("length\tcc");
 
@@ -257,9 +252,6 @@ public class EntropieTest {
             singleDebug = false;
         }
 
-        /**
-         * CALCULATE CROSSCORRELATION ...
-         */
         PearsonsCorrelation pc = new PearsonsCorrelation();
         double cc = pc.correlation(mr1.getYData(), mr2.getYData());   // no timelag
         String line = String.valueOf(cc);
@@ -268,9 +260,6 @@ public class EntropieTest {
 
         if (SCATTERPLOT) {
 
-            /**
-             * SHOW A SCATERPLOT
-             */
             Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
             v.add(mr1.zip(mr2));
 

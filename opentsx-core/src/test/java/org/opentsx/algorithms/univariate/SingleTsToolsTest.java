@@ -116,6 +116,24 @@ class SingleTsToolsTest {
     }
 
     @Test
+    void theRisToolWritesNanAndCollectsNothingForASeriesWithoutValues() throws Exception {
+        ReturnIntervallStatistik2 collector = SingleTsRISTool.risCollector;
+        try {
+            SingleTsRISTool tool = new SingleTsRISTool();
+            tool.init();
+            StringWriter out = new StringWriter();
+
+            tool.processReihe(out, values("empty"), null);
+
+            assertEquals("empty\t\tNaN\t\n", out.toString());
+            SingleTsRISTool.risCollector.calcMessreihen();
+            assertEquals(List.of(), SingleTsRISTool.risCollector.mrVerteilungSkaliert.xValues);
+        } finally {
+            SingleTsRISTool.risCollector = collector;
+        }
+    }
+
+    @Test
     void theRisToolRefusesASeriesWithAValueBelowTheValueBeforeIt() {
         ReturnIntervallStatistik2 collector = SingleTsRISTool.risCollector;
         try {

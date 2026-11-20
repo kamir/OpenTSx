@@ -386,7 +386,11 @@ so times 0, 2, 5 and 9 add the intervals 2, 3 and 4. The intervals replace those
 used. A time before the time before it throws `IllegalArgumentException` with
 `_addData: time <k> of <name> is <value>, before time <k - 1> at <previous value>; expected times that do not decrease`.
 A time that is NaN or infinite throws `IllegalArgumentException` with
-`_addData: time <k> of <name> is <value>; expected a finite time`. `k` counts from 0, and a refused call adds nothing.
+`_addData: time <k> of <name> is <value>; expected a finite time`. A time more than `Double.MAX_VALUE` after the time
+before it throws `IllegalArgumentException` with
+`_addData: time <k> of <name> is <value>, more than Double.MAX_VALUE after time <k - 1> at <previous value>; expected times whose difference is finite`.
+`k` counts from 0, and a refused call adds nothing, also when `addDistData` refuses the intervals. No time or a single
+time adds no interval.
 `ReturnIntervallStatistik2.addDistData` leaves out intervals that are 0 or below `offset` and sorts the others into bins
 scaled with their mean R_q. An interval below the first or past the last scaled bin is counted in that bin, so the
 probabilities of a result add up to 1. An interval that is NaN or infinite throws
@@ -398,8 +402,8 @@ intervals 1 and 1, not the 0.
 interval below the first or past the last bin is counted in that bin, so the probabilities add up to 1. `setRQ` does not
 change the bins, and after `addDistData` `getRq()` returns the mean R_q of the intervals. `setRQ(rq)` after
 `addDistData` replaces that mean for `calcMessreihen` and `add`: `mrVerteilungSkaliert` leaves out the bins that start
-below `offset` / `rq`, and a container that adds the result records `rq`. An interval that is NaN or
-infinite throws `IllegalArgumentException` with
+below `offset` / `rq` when `offset` is above 0, and a container that adds the result records `rq`. An interval that is
+NaN or infinite throws `IllegalArgumentException` with
 `addDistData: interval <k> of <name> is <value>; expected a finite interval`, and a refused call adds nothing.
 For a result that is not a container, `addDistData` also counts the kept intervals as they are, in bins of width
 1/`scale`, and `calcMessreihen()` writes these counts: `mrHaeufigkeit` holds the count of bin i at i / `scale`, and
@@ -411,11 +415,15 @@ of the intervals in scaled bin i at (i + 0.5) * `scale` / `binning`, the center 
 12 and scale 10, the intervals 0.25, 0.25, 0.5 and 3.0 (R_q 1) give the share 0.75 at 5/12, 0.25 at 35/12 and 0 at the
 centers of the other bins. When `offset` is above 0, the bins that start below `offset` / R_q are left out: with
 `offset` 0.5, the intervals 0.5, 1.0, 1.5 and 3.0 (R_q 1.5) leave out bin 0 and its share 0.5, and the series starts at
-1.25. Each call of `calcMessreihen()` replaces the series of the call before.
+1.25. When `offset` is 0 or below, `mrVerteilungSkaliert` keeps every bin, also when R_q is 0 or negative: with binning
+12 and scale 10, the `TSPropertyTester` intervals 0 and 0 (R_q 0) give 13 points with the share 1 at 5/12, the point a
+container that adds the result shows. A result that keeps no interval has an empty `mrVerteilungSkaliert`. Each call of
+`calcMessreihen()` replaces the series of the call before.
 `SingleTsRISTool` passes the y values of each series as times and adds the result to `risCollector`. For each series
 it writes one line: the label, two tabs, the R_q of the result and a tab. R_q is the mean of the kept intervals, so the
-values 0, 2, 5 and 9 give 3.0. A series that keeps no interval, for example the values 3, 3 and 3, writes NaN and adds
-nothing to `risCollector`. A series whose values go down throws the `_addData` refusal above and writes nothing.
+values 0, 2, 5 and 9 give 3.0. A series that keeps no interval, for example the values 3, 3 and 3, a single value or
+no value, writes NaN and adds nothing to `risCollector`. A series whose values go down throws the `_addData` refusal
+above and writes nothing.
 `SingleTsRISTool.finish()` throws `IllegalStateException` with
 `finish: the RIS of <name> cannot be shown (<cause>)` when the collected result cannot be shown.
 

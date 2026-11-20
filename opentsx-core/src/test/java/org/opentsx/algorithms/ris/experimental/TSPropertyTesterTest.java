@@ -299,6 +299,87 @@ class TSPropertyTesterTest {
         assertEquals(List.of(), infinite.dataRaw_InterEventTIMES);
     }
 
+    @Test
+    void noTimesAddNoIntervalLikeOneTime() throws Exception {
+        TSPropertyTester none = new TSPropertyTester("none", 12, 10);
+        TSPropertyTester one = new TSPropertyTester("one", 12, 10);
+        TSPropertyTester container = new TSPropertyTester("all", 12, 10);
+        container.isContainerInstanz = true;
+
+        none._addData(times(), 1.0);
+        one._addData(times(4.0), 1.0);
+        container.add(none);
+        container.add(one);
+
+        for (TSPropertyTester tester : List.of(none, one)) {
+            assertEquals(List.of(), tester.dataRaw_InterEventTIMES);
+            assertEquals(List.of(), tester.dataRawFILTERED);
+            assertTrue(Double.isNaN(tester.getRq()));
+            tester.calcMessreihen();
+            assertEquals(List.of(), tester.mrVerteilungSkaliert.xValues);
+        }
+        assertEquals(List.of(), container.allRqs);
+        assertEquals(0.0, Arrays.stream(container.probSKALIERT).sum());
+    }
+
+    @Test
+    void noTimesAreLoggedAsNoInterval() throws Exception {
+        String log = stderrOf(() -> new TSPropertyTester("none", 12, 10)._addData(times(), 1.0));
+
+        assertTrue(log.contains("computing intervals result=none intervals=0"), log);
+    }
+
+    @Test
+    void anOffsetOf0KeepsEveryScaledBinWhenTheMeanIntervalIs0() throws Exception {
+        double offset = TSPropertyTester.offset;
+        TSPropertyTester.offset = 0.0;
+        try {
+            TSPropertyTester single = new TSPropertyTester("still", 12, 10);
+            single.addDistData(new Vector<>(List.of(0.0, 0.0)));
+            single.calcMessreihen();
+            TSPropertyTester container = new TSPropertyTester("all", 12, 10);
+            container.isContainerInstanz = true;
+            container.add(single);
+
+            container.calcMessreihen();
+
+            assertEquals(0.0, single.getRq());
+            assertScaledSeries(new double[] {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 1.0, single.mrVerteilungSkaliert);
+            assertEquals(List.of(List.of(0.5 * 10 / 12, 1.0)), pointsWithAShare(container.mrVerteilungSkaliert));
+            assertEquals(pointsWithAShare(container.mrVerteilungSkaliert), pointsWithAShare(single.mrVerteilungSkaliert));
+        } finally {
+            TSPropertyTester.offset = offset;
+        }
+    }
+
+    @Test
+    void timesMoreThanDoubleMaxValueApartAreRefusedAndKeepTheIntervalsBefore() throws Exception {
+        TSPropertyTester tester = new TSPropertyTester("far", 12, 10);
+        tester._addData(times(0.0, 2.0), 1.0);
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> tester._addData(times(-1e308, 1e308), 1.0));
+
+        assertEquals("_addData: time 1 of far is 1.0E308, more than Double.MAX_VALUE after time 0 at -1.0E308;"
+                + " expected times whose difference is finite", e.getMessage());
+        assertEquals(List.of(2.0), tester.dataRaw_InterEventTIMES);
+        assertEquals(List.of(2.0), tester.dataRawFILTERED);
+        assertEquals(2.0, tester.getRq());
+    }
+
+    @Test
+    void timesAddedToAContainerAreRefusedAndAddNoInterval() {
+        TSPropertyTester container = new TSPropertyTester("all", 12, 10);
+        container.isContainerInstanz = true;
+
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> container._addData(times(0.0, 1.0), 1.0));
+
+        assertEquals("addDistData: all is a container; add intervals to a result that is not a container",
+                e.getMessage());
+        assertEquals(List.of(), container.dataRaw_InterEventTIMES);
+    }
+
     private static TSPropertyTester filled(String name) throws Exception {
         TSPropertyTester ris = new TSPropertyTester(name, 12, 10);
         ris.addDistData(intervals(1100));

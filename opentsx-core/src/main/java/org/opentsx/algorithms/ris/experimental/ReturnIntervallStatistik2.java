@@ -221,13 +221,14 @@ public class ReturnIntervallStatistik2 {
      * Adds the intervals between consecutive times with addDistData. They replace the intervals of an earlier
      * call. Rq is not used.
      *
-     * @throws IllegalArgumentException when a time is not finite or is before the time before it
+     * @throws IllegalArgumentException when a time is not finite, is before the time before it or is more than
+     *         Double.MAX_VALUE after it
      **/
     public void _addData( Vector<Double> times, double Rq ) throws Exception {
 
 
         if ( LOG.isDebugEnabled() ) {
-            LOG.debug("computing intervals result={} intervals={}", name, times.size() - 1);
+            LOG.debug("computing intervals result={} intervals={}", name, Math.max(0, times.size() - 1));
         }
 
         Vector<Double> intervals = new Vector<Double>();
@@ -236,9 +237,12 @@ public class ReturnIntervallStatistik2 {
         Enumeration<Double> en = times.elements();
         
         // first element (index 0)
-        double vor = en.nextElement(); 
-        if ( !Double.isFinite( vor ) ) {
-            throw new IllegalArgumentException( "_addData: time 0 of " + name + " is " + vor + "; expected a finite time" );
+        double vor = 0.0;
+        if ( en.hasMoreElements() ) {
+            vor = en.nextElement();
+            if ( !Double.isFinite( vor ) ) {
+                throw new IllegalArgumentException( "_addData: time 0 of " + name + " is " + vor + "; expected a finite time" );
+            }
         }
         
         int k = 0;
@@ -253,12 +257,17 @@ public class ReturnIntervallStatistik2 {
                         + (k - 1) + " at " + vor + "; expected times that do not decrease" );
             }
             Double dist = now - vor;
+            if ( Double.isInfinite( dist ) ) {
+                throw new IllegalArgumentException( "_addData: time " + k + " of " + name + " is " + now
+                        + ", more than Double.MAX_VALUE after time " + (k - 1) + " at " + vor
+                        + "; expected times whose difference is finite" );
+            }
             intervals.add(dist);
             vor = now;
         } 
 
+        addDistData(intervals);
         dataRaw_InterEventTIMES = intervals;
-        addDistData(dataRaw_InterEventTIMES);
         
     }
     
@@ -455,7 +464,7 @@ public class ReturnIntervallStatistik2 {
            
             
         // leave out the first values
-        if ( i >= offset * binning / ( (double)scale * _Rq ) ) {
+        if ( this.zElements > 0 && ( offset <= 0 || i >= offset * binning / ( (double)scale * _Rq ) ) ) {
                 
           relAnzahl = (double) dataSKALIERT[i] / (double) this.zElements;
  
@@ -614,14 +623,12 @@ public class ReturnIntervallStatistik2 {
         mrvB = new Vector<TimeSeriesObject>();
         mrv2B = new Vector<TimeSeriesObject>();
         
-        double min;
         // V1
         TimeSeriesObject mr1 = TimeSeriesObject.getGaussianDistribution( (int)Math.pow(2, 20), 5.0, 0.5);
         addRow( mr1 );
 
         mr1 = TimeSeriesObject.getGaussianDistribution( (int)Math.pow(2, 22), 5.0, 4.5);
-        min = mr1.getMinY();
-        mr1.add_value_to_Y( -1.0 * min);
+        shiftToZero( mr1 );
         addRow( mr1 ); 
         
         
@@ -631,16 +638,12 @@ public class ReturnIntervallStatistik2 {
         
         // V3
         TimeSeriesObjectFFT mr3 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, 20), 1.4, false, false);
-        min = mr3.getMinY();
-        mr3.add_value_to_Y( -1.0 * min);
-        LOG.debug("shifted series series={} min={} shiftedMin={}", mr3.getLabel(), min, mr3.getMinY());
+        shiftToZero( mr3 );
         addRow( mr3 );
         
         // V3
         mr3 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, 20), 1.2, false, false);
-        min = mr3.getMinY();
-        mr3.add_value_to_Y( -1.0 * min);
-        LOG.debug("shifted series series={} min={} shiftedMin={}", mr3.getLabel(), min, mr3.getMinY());
+        shiftToZero( mr3 );
         
         addRow( mr3 );
         
@@ -650,6 +653,14 @@ public class ReturnIntervallStatistik2 {
 
         MultiChart.open(mrvB, true);
         MultiChart.open(mrv2B, true);
+    }
+
+    static void shiftToZero( TimeSeriesObject series ) {
+        double min = series.getMinY();
+        series.add_value_to_Y( -1.0 * min );
+        if ( LOG.isDebugEnabled() ) {
+            LOG.debug("shifted series series={} min={} shiftedMin={}", series.getLabel(), min, series.getMinY());
+        }
     }
     
     /**
