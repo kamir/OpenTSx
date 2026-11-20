@@ -691,7 +691,7 @@ export function validate(nodes: FlowNode[]): Finding[] {
     if (n.op === VECTOR_OP && inputsOf(n).length < 2) {
       out.push({ level: 'warning', text: `${n.label} has one input only. Add further inputs: each becomes a component of the vector.` });
     }
-    if (n.op === VECTOR_OP && !['none', 'as-of'].includes(String(n.params.fill ?? 'none'))) {
+    if (n.op === VECTOR_OP && used.has(n.id) && !['none', 'as-of'].includes(String(n.params.fill ?? 'none'))) {
       out.push({ level: 'error', text: `${n.label}: vector fill must be none or as-of.` });
     }
   }

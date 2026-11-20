@@ -287,6 +287,21 @@ describe('flow with a vector node', () => {
     expect(validate(state().nodes).filter((f) => f.level === 'error')).toEqual([]);
   });
 
+  it('does not refuse an unknown fill of a vector that is left out of the DAG', () => {
+    state().setSink(v, 'tsx.wind.smart.turbine-state.vectors.v1');
+    state().select(SOURCE_ID);
+    const draft = state().applyOp(VECTOR_OP, { every: 60 })!;
+    state().addInput(draft, z);
+    state().updateParams(draft, { fill: 'asof' });
+    expect(toDagYaml(state())).not.toContain(`id: ${draft}`);
+    expect(validate(state().nodes).filter((f) => f.level === 'error')).toEqual([]);
+    expect(runBlocker(state().nodes, ['a'])).toBeNull();
+    state().setSink(draft, 'tsx.wind.smart.draft.vectors.v1');
+    expect(validate(state().nodes).filter((f) => f.level === 'error').map((f) => f.text)).toEqual([
+      `${state().nodes.find((n) => n.id === draft)!.label}: vector fill must be none or as-of.`,
+    ]);
+  });
+
   it('does not refuse two inputs with one name of a vector that is left out of the DAG', () => {
     state().setSink(v, 'tsx.wind.smart.turbine-state.vectors.v1');
     state().select(SOURCE_ID);

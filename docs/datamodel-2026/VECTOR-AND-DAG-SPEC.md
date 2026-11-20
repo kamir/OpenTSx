@@ -157,9 +157,9 @@ Implemented in: `workbench/vector.ts:125-238`, `vector/VectorAligner.java:99-213
 `node <id>: every and maxAge must be durations like PT60S` or `node <id>: lateness must be a duration like PT2M`.
 
 A `fill` other than `none` or `as-of`, such as `asof`, is refused. The workbench preview and the Rust runner refuse it
-with `vector fill must be none or as-of`. The deploy checks of the workbench and of the Flow Composer list
-`<label>: vector fill must be none or as-of.`, where `<label>` is the name of the node, so the workbench neither
-downloads nor deploys the flow. Its DAG export writes the fill as stored. The processor refuses it with
+with `vector fill must be none or as-of`. For a vector that feeds a published node, the deploy checks of the workbench
+and of the Flow Composer list `<label>: vector fill must be none or as-of.`, where `<label>` is the name of the node,
+so the workbench neither downloads nor deploys the flow; a vector left out of the DAG does not block it. Its DAG export writes the fill as stored. The processor refuses it with
 `node <id>: vector fill must be none or as-of`. Wayang refuses it with
 `node <id>: parameter fill must be one of [none, as-of]`.
 
