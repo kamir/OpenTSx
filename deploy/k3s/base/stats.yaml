@@ -53,7 +53,9 @@ spec:
           # with no records read since the last checkpoint the file stays fresh and these probes do not detect it;
           # otherwise the next checkpoint fails after the 3-minute delivery timeout and the processor exits 1; when it
           # wrote no statistics in the 5 minutes before, after up to 60 s per statistics record instead.
-          # kafscale-check and the synthetic check detect an unreachable broker.
+          # 40-demo.sh kafscale-check detects an unreachable broker, and so does the CronJob opentsx-synthetic-check
+          # every 10 minutes with MONITORING=true, which is off by default (docs/devops/operations.md, section
+          # Monitoring stack: two levels).
           startupProbe:     # up to 10 minutes for restoring the checkpoint and assigning the partitions
             exec: {command: [/bin/sh, -c, 'test $(( $(date +%s) - $(cat /state/stats.ckpt.progress) )) -lt 120']}
             periodSeconds: 10

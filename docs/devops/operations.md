@@ -95,7 +95,7 @@ with `kubectl diff -k deploy/k3s/overlays/local` before `30-deploy.sh`.
 
 | Signal | Why | Today, without a metrics stack | As a metric (kube-state-metrics / kubelet) |
 |--------|-----|-------------------------------|--------------------------------------------|
-| KafScale reachable, **advertised address** reachable from the pods | most common failure; everything depends on it | `40-demo.sh kafscale-check`; `opentsx-synthetic-check` every 10 min | indirectly: `kube_cronjob_status_last_successful_time{cronjob="opentsx-synthetic-check"}` |
+| KafScale reachable, **advertised address** reachable from the pods | most common failure; everything depends on it | `40-demo.sh kafscale-check`; `opentsx-synthetic-check` every 10 min with `MONITORING=true` | indirectly: `kube_cronjob_status_last_successful_time{cronjob="opentsx-synthetic-check"}` |
 | statistics processor alive and progressing | stale statistics are silent | the probes on its progress file (not ready about 3 min after the last poll the broker did not refuse, restarted about 12 min after it; [Read the probes](#read-the-probes)), checkpoint age in `50-status.sh` (written every 30 s; > 5 min = stuck), synthetic check | `kube_deployment_status_replicas_available{deployment="opentsx-stats"}`, restarts `kube_pod_container_status_restarts_total{container="stats"}` |
 | consumer lag of the processor (end offset − checkpoint position) | backlog after an outage | **not available**: the positions are only in the checkpoint file; compare the `series-stats` record count over time (`kafscale-check`) | **not exported** (backlog) |
 | Job and CronJob failures | demo Jobs, DWD fetch, synthetic check | `kubectl -n opentsx get jobs,cronjobs`, `50-status.sh` | `kube_job_status_failed`, `kube_cronjob_status_last_successful_time` |
@@ -137,9 +137,13 @@ since its last checkpoint, it has nothing to write, so its progress file stays f
 Otherwise its next checkpoint, at most 30 s later, waits up to the delivery timeout of 3 minutes and then stops it
 with exit code 1 and `opentsx: writing statistics failed; checkpoint not advanced; caused by <cause>`. When it has
 written no statistics in the 5 minutes before, its producer may have dropped the statistics topic from its metadata;
-each statistics record then waits up to 60 s for the topic instead of the delivery timeout, so with more than 3 records
-the stop takes more than 3 minutes and the liveness probe can restart it before.
-`40-demo.sh kafscale-check` and the synthetic check detect an unreachable broker in both cases, and
+each statistics record then waits up to 60 s for the topic instead of the delivery timeout, so the stop takes about one
+minute per record. The liveness probe of `opentsx-stats` fails when the progress file is 600 s old or older, runs every
+60 s and restarts the container after 3 failures in a row, 12 to 13 minutes after the last write of the file; it can
+restart the processor before the stop ends only with 12 or more records. `40-demo.sh kafscale-check` detects an
+unreachable broker in both cases, and so does the CronJob `opentsx-synthetic-check` every 10 minutes when
+`20-configure.sh` was run with `MONITORING=true`, which is off by default
+([Monitoring stack: two levels](#monitoring-stack-two-levels)).
 [R1](#r1-kafscale-unreachable-or-wrong-advertised-address) has the fix.
 
 ### Monitoring stack: two levels
@@ -280,12 +284,17 @@ deploy/k3s/71-restore.sh DIR --only stats-state --yes
   afterwards (a few seconds to minutes of statistics delay; the processor resumes from its checkpoint). Use it with
   the lake profile: a live copy of SQLite/MinIO files can be inconsistent. The checkpoint itself is always consistent
   (written to a temporary file and renamed).
-* `71-restore.sh` verifies the checksums first, asks for confirmation (unless `--yes`), stops the writers, **replaces**
-  the PVC contents and scales the writers back. Restore the statistics checkpoint only against the **same** topics: it
-  stores offsets. After topics were deleted and recreated, skip `stats-state`.
+* `71-restore.sh` verifies the checksums first, asks for confirmation (unless `--yes`; an answer that does not start
+  with `y` or `Y`, or standard input that ends before an answer, exits with 1), checks the namespace and the PVCs,
+  keeps the current `.env` as `.env.before-restore` when it restores `env` (a rerun after a failed step leaves that
+  copy as it is), stops the writers, **replaces** the PVC contents and scales the writers back. Restore the statistics
+  checkpoint only against the **same** topics: it stores offsets. After topics were deleted and recreated, skip
+  `stats-state`.
 * Schedule (lab): a daily cron entry on the admin host, e.g. `17 2 * * * cd /opt/opentsx && deploy/k3s/70-backup.sh
   --quiesce --out /srv/backup/opentsx/$(date +\%F)`, plus deleting copies older than 14 days. Test a restore every
-  quarter into a second namespace (`20-configure.sh OPENTSX_NS=opentsx-restore …`).
+  quarter into a second namespace (`20-configure.sh OPENTSX_NS=opentsx-restore …`). A run that fails removes the files
+  it wrote, and removes the directory when it created it, so a rerun the same day with the same `--out` starts in an
+  empty directory.
 * On a multi-node cluster all PVCs of one backup must be on the same node (the helper pod mounts all of them).
 
 ## Update and rollback
@@ -373,7 +382,8 @@ Each runbook: symptom → check → cause → fix → verify. Start every invest
 
 * **Symptom:** `kafscale-check` prints `NOT reachable`; `windpark-sim` times out; `opentsx-stats` restarts, except a
   running one that has read no records since its last checkpoint, which stays ready (see
-  [Read the probes](#read-the-probes)); the synthetic check fails.
+  [Read the probes](#read-the-probes)); with `MONITORING=true` the CronJob `opentsx-synthetic-check` fails
+  ([Monitoring stack: two levels](#monitoring-stack-two-levels)).
 * **Check:** `deploy/k3s/40-demo.sh kafscale-check` (from inside the cluster). Read both lines: `bootstrap …` and
   `advertised …`. From the node: `nc -vz <host> <port>`.
 * **Cause:** bootstrap unreachable (routing, firewall for `10.42.0.0/16`, wrong port), or the broker advertises an

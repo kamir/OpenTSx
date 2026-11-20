@@ -879,8 +879,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   it that is not followed by `|| exit` or `|| return`, and fails when the CI lists miss a tracked `opentsx-lg` shell
   script.
 - The statistics processor docs say that a processor that wrote no statistics in the 5 minutes before the broker
-  became unreachable may wait up to 60 s for each statistics record instead of the 3-minute delivery timeout, so with
-  more than 3 records its stop takes more than 3 minutes and the liveness probe can restart it before.
+  became unreachable may wait up to 60 s for each statistics record instead of the 3-minute delivery timeout, so its
+  stop takes about one minute per record. The liveness probe (progress file 600 s old or older, every 60 s, 3 failures
+  in a row) restarts it 12 to 13 minutes after the last write of the progress file, before the stop ends only with 12
+  or more records.
 - The k3s scripts 10-build.sh, 11-import-images.sh, 20-configure.sh, 70-backup.sh and 71-restore.sh write every
   remaining refusal in the form '<subject>: <problem>; <what to do>', for example `OPENTSX_NS: "Open_TSx" is not a
   valid namespace name; expected lower-case letters, digits and hyphens, starting and ending with a letter or digit,
@@ -2260,6 +2262,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   manifests of mdc1, mdc2 and mdc3 pull `registry.k8s.io/echoserver:1.10` instead of the frozen `k8s.gcr.io`.
 - `tools/test_check_tracked_config.py` runs the git commands of its temporary repository without the caller's `GIT_*`
   variables. It now passes when the suite runs with `GIT_INDEX_FILE` or `GIT_DIR` set.
+- The statistics processor docs and the comments of `deploy/k3s/base/stats.yaml` name `40-demo.sh kafscale-check` as
+  the check that detects an unreachable broker. The CronJob `opentsx-synthetic-check` runs every 10 minutes only when
+  `20-configure.sh` was run with `MONITORING=true`, which is off by default. The operations guide says the same in its
+  'What to watch' table and in runbook R1.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

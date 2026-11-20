@@ -185,9 +185,13 @@ processor has read no records since its last checkpoint, its progress file stays
 it; otherwise its next checkpoint, at most 30 s later, fails after the delivery timeout of 3 minutes and stops it with
 exit code 1. When it has written no statistics in the 5 minutes before, its producer may have dropped the statistics
 topic from its metadata; each statistics record then waits up to 60 s for the topic instead of the delivery timeout, so
-with more than 3 records the stop takes more than 3 minutes and the liveness probe can restart it before.
-`kafscale-check` and the synthetic check detect an unreachable broker in both cases
-([R1](../devops/operations.md#r1-kafscale-unreachable-or-wrong-advertised-address)).
+the stop takes about one minute per record. The liveness probe of the statistics processor fails when the progress file
+is 600 s old or older, runs every 60 s and restarts the container after 3 failures in a row, 12 to 13 minutes after the
+last write of the file; it can restart the processor before the stop ends only with 12 or more records.
+`40-demo.sh kafscale-check` detects an unreachable broker in both cases, and so does the CronJob
+`opentsx-synthetic-check` every 10 minutes when `20-configure.sh` was run with `MONITORING=true`, which is off by
+default ([monitoring](../devops/operations.md#monitoring-stack-two-levels),
+[R1](../devops/operations.md#r1-kafscale-unreachable-or-wrong-advertised-address)).
 
 A progress file holds a time in seconds since the epoch. The statistics processor writes the time of the last poll the
 broker did not refuse, also with no records, only in a continuous run with `--checkpoint`, at most every 10 s, and

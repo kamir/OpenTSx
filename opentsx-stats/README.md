@@ -74,10 +74,14 @@ its last checkpoint, it has nothing to write, so the file stays fresh and a prob
 checkpoint, at most 30 s later, waits up to the delivery timeout of 3 minutes and then stops it with exit code 1 and
 `opentsx: writing statistics failed; checkpoint not advanced; caused by <cause>`. When it has written no statistics in
 the 5 minutes before, its producer may have dropped the statistics topic from its metadata; each statistics record then
-waits up to 60 s for the topic instead of the delivery timeout, so with more than 3 records the stop takes more than
-3 minutes and the liveness probe can restart it before. `kafscale-check` and the synthetic check detect an unreachable
-broker in both cases
-([R1](../docs/devops/operations.md#r1-kafscale-unreachable-or-wrong-advertised-address)).
+waits up to 60 s for the topic instead of the delivery timeout, so the stop takes about one minute per record. The
+liveness probe in [`deploy/k3s/base/stats.yaml`](../deploy/k3s/base/stats.yaml) fails when the file is 600 s old or
+older, runs every 60 s and restarts the container after 3 failures in a row, 12 to 13 minutes after the last write of
+the file; it can restart the processor before the stop ends only with 12 or more records. `40-demo.sh kafscale-check`
+detects an unreachable broker in both cases, and so does the CronJob `opentsx-synthetic-check` every 10 minutes when
+`20-configure.sh` was run with `MONITORING=true`, which is off by default
+([monitoring](../docs/devops/operations.md#monitoring-stack-two-levels),
+[R1](../docs/devops/operations.md#r1-kafscale-unreachable-or-wrong-advertised-address)).
 A file it cannot write stops the processor with exit code 1 and
 `opentsx: <checkpoint>.progress: cannot write the progress file; check that its directory exists, is writable and has space; caused by <cause>`.
 `--once` writes no progress file.
