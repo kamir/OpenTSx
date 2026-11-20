@@ -33,6 +33,54 @@ def steps(block):
 
 
 class MavenCiTest(unittest.TestCase):
+    def assert_cache_evidence(self, job, block):
+        commands = steps(block)
+        before = step_with_command(block, 'python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json')
+        after = step_with_command(block, 'python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/after.json')
+        self.assertNotRegex(before, r"(?m)^        (?:if|continue-on-error):")
+        self.assertRegex(after, r"(?m)^        if: always\(\)\s*$")
+        self.assertNotRegex(after, r"(?m)^        continue-on-error:")
+        workloads = [index for index, step in enumerate(commands)
+                     if re.search(r"\bmvn\b[^\n]*(?:\bverify\b|\binstall\b|\btest\b|dependency:build-classpath)|" + HELPERS, step)]
+        self.assertTrue(workloads, job)
+        self.assertLess(commands.index(before), min(workloads), job)
+        self.assertGreater(commands.index(after), max(workloads), job)
+        artifacts = [step for step in commands
+                     if "uses: actions/upload-artifact@v7" in step
+                     and re.search(r"(?m)^        if: always\(\)\s*$", step)
+                     and re.search(r"(?m)^          path: target/maven-downloads/\s*$", step)]
+        self.assertEqual(1, len(artifacts), job)
+        self.assertIn("if-no-files-found: error", artifacts[0])
+        self.assertGreater(commands.index(artifacts[0]), commands.index(after), job)
+
+    def test_every_maven_job_retains_cache_evidence_before_and_after_failure(self):
+        jobs = self.assert_jobs(WORKFLOW.read_text(encoding="utf-8"))
+        for job in sorted(MAVEN_JOBS):
+            with self.subTest(job=job):
+                self.assert_cache_evidence(job, jobs[job])
+
+    def test_cache_evidence_rejects_missing_conditional_or_late_snapshots(self):
+        before = ('      - name: Record Maven cache before builds\n'
+                  '        run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json\n')
+        after = ('      - name: Record Maven cache after builds\n'
+                 '        if: always()\n'
+                 '        run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/after.json\n')
+        artifacts = ('      - uses: actions/upload-artifact@v7\n        if: always()\n'
+                     '        with:\n          name: maven-downloads-test\n'
+                     '          path: target/maven-downloads/\n          if-no-files-found: error\n')
+        workload = "      - run: mvn -B -ntp verify\n"
+        valid = before + workload + after + artifacts
+        self.assert_cache_evidence("test", valid)
+        for mutation in (valid.replace(before, ""), valid.replace(after, ""),
+                         valid.replace("if: always()", "if: success()"),
+                         valid.replace(before, before + "        if: success()\n"),
+                         workload + before + after + artifacts,
+                         before + after + workload + artifacts, valid.replace(artifacts, ""),
+                         valid.replace("if-no-files-found: error", "if-no-files-found: warn")):
+            with self.subTest(mutation=mutation):
+                with self.assertRaises(AssertionError):
+                    self.assert_cache_evidence("test", mutation)
+
     def assert_jobs(self, workflow):
         jobs = job_blocks(workflow)
         actual = {job for job, block in jobs.items() if re.search(r"\bmvn\b|" + HELPERS, block)}

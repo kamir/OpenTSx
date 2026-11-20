@@ -55,6 +55,13 @@ The check requires the active Maven distribution and tests its native HTTP trans
 network requests or sleeps. A different Maven version, missing bundled libraries or a failed policy check returns
 an error.
 
+Maven prints execution exception details and the selected Resolver transport.
+The check also runs a missing-plugin fixture with an isolated offline
+repository and requires a failed exit with its exception and offline reason.
+Resolver 1.9.20 discards the original HTTP exception when classifying a 404 as
+a missing artifact. A statusless missing-artifact message alone does not
+establish rate limiting or cache corruption.
+
 ## Check continuous integration
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) starts on every pull request, push to `master` and manual run.
@@ -64,6 +71,16 @@ commands and matrix dimensions are retained.
 All six Maven job definitions install checksum-verified Maven 3.9.8 and run the download retry check before their
 builds. Rust and Wayang Compose artifacts retain `java-build.log` and `java-classpath.log`, including
 after a failed build.
+Every Maven job uploads `maven-downloads-*` artifacts containing `before.json`
+and `after.json` cache reports, including after failures. Reports describe
+`.lastUpdated` and `_remote.repositories` files by relative path, size,
+modification time and SHA-256. Missing-artifact markers and transfer-error
+markers remain distinct; HTTP status codes are included only when explicitly
+present in transfer-error text. Existing artifacts associated with
+`.lastUpdated` markers receive file fingerprints. Reports omit repository URLs,
+credentials and raw error text. They read the cache without deleting files or
+changing update policies. These diagnostics do not establish the cause of
+historical download failures or prevent new repository failures.
 
 The selector verifies the checked-out pull request merge commit and both event parents. A depth-two checkout
 supplies these commits. It compares the base parent with the tested merge tree using NUL-delimited paths and

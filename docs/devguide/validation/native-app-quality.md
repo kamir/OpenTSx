@@ -26,6 +26,12 @@ The Java CI matrix runs the Maven 3.9.8 verification lifecycle under Xvfb on Jav
 [ci.yml:509](../../../.github/workflows/ci.yml#L509).
 Each Maven job verifies the bundled HTTP transport's download retry policy before its workload:
 [download retry check](../../../tools/check_maven_downloads.py).
+The check also requires exception diagnostics from an isolated offline
+missing-plugin fixture. Maven logs its selected transport; every Maven job
+retains sanitized cache reports before and after workloads in
+`maven-downloads-*` artifacts. See
+[CI diagnostics](../../../CONTRIBUTING.md#check-continuous-integration)
+for report fields and the limits of statusless missing-artifact errors.
 Broker integration and recorder-through-Kafka/Flink acceptance use separate configured gates:
 [ci.yml:731](../../../.github/workflows/ci.yml#L731),
 [ci.yml:868](../../../.github/workflows/ci.yml#L868).

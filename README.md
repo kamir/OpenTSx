@@ -241,6 +241,8 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md), the
 [Code of Conduct](CODE_OF_CONDUCT.md), the [security policy](SECURITY.md) and the
 [changelog](CHANGELOG.md). Changes to operators include their applicable
 contracts, tests, documentation and learning material.
+Maven CI retains exception diagnostics and sanitized cache reports. Read the
+[CI diagnostics and their limits](CONTRIBUTING.md#check-continuous-integration).
 
 ## License
 

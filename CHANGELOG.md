@@ -13,6 +13,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Retain Maven execution exception details, selected transport and sanitized
+  cache reports before and after every Maven CI job. Check missing-plugin
+  failure diagnostics offline and distinguish fresh HTTP failures from cached
+  failures in the pinned Resolver tests. Historical statusless download
+  failures remain undiagnosed.
 - Execute Rust CLI prefix fixtures through the installed shell without temporary files. Regressions rerun the exact
   fixture with an unusable temporary-directory path and retain runner-prefix and spaced-argument checks.
 - Reuse separate verified caches for locked Python dependencies, the application

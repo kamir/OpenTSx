@@ -9,6 +9,28 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def verify_failure_diagnostics():
+    with tempfile.TemporaryDirectory(prefix="opentsx-maven-failure-") as temporary:
+        directory = Path(temporary)
+        (directory / ".mvn").mkdir()
+        (directory / ".mvn/maven.config").write_bytes((ROOT / ".mvn/maven.config").read_bytes())
+        (directory / "pom.xml").write_text(
+            '<project><modelVersion>4.0.0</modelVersion><groupId>org.opentsx.test</groupId>'
+            '<artifactId>diagnostics</artifactId><version>1.0.0</version></project>', encoding="utf-8")
+        settings = directory / "settings.xml"
+        settings.write_text('<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"/>', encoding="utf-8")
+        result = subprocess.run(["mvn", "--offline", "--batch-mode", "--no-transfer-progress",
+                                 "--settings", str(settings), "--global-settings", str(settings),
+                                 "-Dmaven.repo.local=" + str(directory / "repository"),
+                                 "org.opentsx.test:missing-plugin:1.0.0:missing"],
+                                cwd=directory, capture_output=True, text=True)
+        output = result.stdout + result.stderr
+        if (result.returncode != 1 or "org.apache.maven.plugin.PluginResolutionException" not in output
+                or "in offline mode" not in output):
+            raise ValueError("Maven must retain the plugin failure and its offline cause without retrying the build")
+    print("Maven failure diagnostics passed with an isolated offline repository", flush=True)
+
+
 def verify():
     result = subprocess.run(["mvn", "--version"], check=True, capture_output=True, text=True)
     banner = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout)
@@ -30,6 +52,7 @@ def verify():
                         str(ROOT / "tools/MavenDownloadRetryTest.java")], check=True)
         subprocess.run(["java", "-cp", os.pathsep.join((temporary, str(libraries / "*"))),
                         "MavenDownloadRetryTest", str(ROOT / ".mvn/maven.config")], check=True)
+    verify_failure_diagnostics()
 
 
 def main():
