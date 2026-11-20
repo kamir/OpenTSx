@@ -88,6 +88,12 @@ changes anything, and not at all for `--only env`. A namespace that does not exi
 error: namespace opentsx: not found; check OPENTSX_NS in deploy/k3s/.env and the kubectl context, or deploy it first with 30-deploy.sh
 ```
 
+`71-restore.sh` without `env` among the parts names the steps that create the namespace on a new cluster:
+
+```text
+error: namespace opentsx: not found; run 20-configure.sh, 10-build.sh, 11-import-images.sh and 30-deploy.sh first
+```
+
 `30-deploy.sh` and `90-teardown.sh` take a namespace that does not exist as nothing to clean up. Any other failure,
 for example an API server that cannot be reached, is not reported as a missing namespace by any of these scripts.
 `30-deploy.sh` reads the nodes first and stops with `cluster not reachable with 'kubectl' (see 00-prereqs.sh)` when
@@ -161,7 +167,9 @@ error: PVC opentsx-stats-state: the backup into stats-state.tar.gz failed; see t
 backup's env as the last step. With volumes among the parts, it checks the namespace and the PVCs of the current
 `.env` first and restores the volumes before it replaces `.env`. A failed volume step leaves the configuration as it
 was, and the namespace check described below keeps the rerun of the same command in the same namespace. `--only env`
-alone replaces `.env` and needs no cluster. The script copies the backup's env to `<path of .env>.restoring` and
+alone replaces `.env`, needs no cluster and ends with
+`<path of .env>: restored; run 20-configure.sh (re-renders the overlay), 10-build.sh, 11-import-images.sh and 30-deploy.sh`.
+The script copies the backup's env to `<path of .env>.restoring` and
 renames that file over `.env`, so a `.env` that is a link stays a link and the file it points to gets the backup's
 env. Git ignores `deploy/k3s/.env.before-restore` and `deploy/k3s/.env.restoring`, which hold the configuration with
 its secrets, as it ignores `deploy/k3s/.env`. When `.env` cannot be replaced, the script removes the partial copy,

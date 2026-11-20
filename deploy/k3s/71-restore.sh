@@ -110,7 +110,7 @@ fi
 
 PVCS=()
 if (( ${#PARTS[@]} )); then
-  ns_hint="run 20-configure.sh and 30-deploy.sh first"
+  ns_hint="run 20-configure.sh, 10-build.sh, 11-import-images.sh and 30-deploy.sh first"
   pvc_hint="run 30-deploy.sh first (opentsx-iceberg-catalog needs LAKE=true, opentsx-minio LAKE=true and LAKE_MINIO=true)"
   if $RESTORE_ENV; then
     ns_hint="nothing was restored; run 71-restore.sh $DIR --only env, then 20-configure.sh, 10-build.sh, 11-import-images.sh and 30-deploy.sh, then 71-restore.sh $DIR --only $(IFS=,; echo "${PARTS[*]}")"
@@ -160,7 +160,7 @@ replace_env() {
   { (umask 077; cp "$DIR/env" "$target.restoring") && chmod 600 "$target.restoring" \
     && mv -f "$target.restoring" "$target"; } \
     || { rm -f -- "$target.restoring" || true; die "$msg"; }
-  ok "deploy/k3s/.env: restored; run 20-configure.sh (re-renders the overlay) and 30-deploy.sh"
+  ok "${ENV_FILE#"$ROOT"/}: restored; run 20-configure.sh (re-renders the overlay), 10-build.sh, 11-import-images.sh and 30-deploy.sh"
 }
 if (( ! ${#PARTS[@]} )); then replace_env; exit 0; fi
 

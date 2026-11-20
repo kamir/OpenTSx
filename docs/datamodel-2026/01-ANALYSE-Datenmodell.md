@@ -66,6 +66,10 @@ Observations:
 | `kping.TSOEventAnalysisConsumer.createConsumer(topic)` | The given topic; `EventFlowAnalysisConsumer` (`opentsx-lg`) passes `OpenTSx_Events`, the deprecated constant `TOPIC` is `refds_events_topic_<TAG>` (`ReferenceDataset.event_topicname`), the JSON topic of `TSOEventProducer` | `String` (`StringDeserializer`), the series label | Avro `Event` as `GenericRecord` (`KafkaAvroDeserializer`, needs `schema.registry.url` in the profile) | Fixed `group.id` `KPING-Consumer` with `latest`, which applies only while the group has no committed offset or its committed offset no longer exists, so a rerun continues at the committed offset; the code sets both deserializers, so those of the client profile do not apply |
 | `TSOWriter.persistBucket_Kafka` | none | none | none | **Stub; stores nothing and throws `UnsupportedOperationException`** |
 
+`<TAG>` in the topic names above is `ReferenceDataset.EXPERIMENT__TAG` (`opentsx-core`, package `org.opentsx.tsa.rng`),
+whose value is `ccloud_demo_09_2020`: the topics are `refds_events_topic_ccloud_demo_09_2020` and
+`refds_small_bucket_topic_ccloud_demo_09_2020`.
+
 Across all paths: Kafka record timestamps are never set (event time only in the payload, so `offsetsForTimes` is useless), no headers, no notion of a bucket at the Kafka level.
 
 **Wire format break:** Flink `ObservationSchema` (`opentsx-flink-core`) decodes **raw** Avro binary, while the producers write the **Confluent wire format** (magic byte plus schema id). The two sides are not compatible.

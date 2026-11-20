@@ -4,7 +4,9 @@
 # MANIFEST, an archive that is missing, damaged or not gzip, a missing env and nothing to restore exit 1 before kubectl
 # runs; a declined question and a question at the end of standard input exit 1 with their message on stderr before
 # kubectl runs; an answer without a newline at the end counts as given; a missing namespace, a namespace that cannot be
-# read, a missing PVC, a PVC that cannot be read and a failed step in the helper pod exit 1 with their message; with env
+# read, a missing PVC, a PVC that cannot be read and a failed step in the helper pod exit 1 with their message; without
+# env a missing namespace names 20-configure.sh, 10-build.sh, 11-import-images.sh and 30-deploy.sh; a restored env names
+# the env file in use, relative to the repository when it lies in it, and the same four steps; with env
 # among the parts a missing namespace or PVC says how to restore env first (env, 20-configure.sh, 10-build.sh,
 # 11-import-images.sh, 30-deploy.sh, the volumes), following that hint after 20-configure.sh rewrote .env keeps the
 # copy of the .env from before the restore, and restoring env again then stops before it changes .env or that copy,
@@ -209,7 +211,7 @@ failing() {   # NAME MESSAGE KEY=VALUE ...: restore of the good backup against t
     echo "ok   $name"
   fi
 }
-failing no-namespace "error: namespace opentsx: not found; run 20-configure.sh and 30-deploy.sh first" NAMESPACE=missing
+failing no-namespace "error: namespace opentsx: not found; run 20-configure.sh, 10-build.sh, 11-import-images.sh and 30-deploy.sh first" NAMESPACE=missing
 failing pvc-missing "error: PVC opentsx-data: not found in namespace opentsx; run 30-deploy.sh first (opentsx-iceberg-catalog needs LAKE=true, opentsx-minio LAKE=true and LAKE_MINIO=true)" \
   PVC_STATE=missing
 failing pvc-unreadable "error: PVC opentsx-data: cannot read it; check the cluster with $WORK/bin/kubectl -n opentsx get pvc opentsx-data" \
@@ -294,12 +296,29 @@ fi
 STUB_ENV=(CLUSTER=down OPENTSX_ENV_FILE="$WORK/down.env")
 restore env-only-no-cluster "$WORK/env-data" --only env --yes
 STUB_ENV=()
+message="  ok    $WORK/down.env: restored; run 20-configure.sh (re-renders the overlay), 10-build.sh, 11-import-images.sh and 30-deploy.sh"
 if (( rc != 0 )) || [[ "$(cat "$WORK/down.env")" != OPENTSX_DOMAIN=frombackup ]]; then
   failed "env-only-no-cluster: exit $rc, expected 0 and .env restored without the cluster"; sed 's/^/    /' "$WORK/env-only-no-cluster.out"
 elif [[ -s "$WORK/calls.log" ]]; then
   failed "env-only-no-cluster: kubectl was called"; sed 's/^/    /' "$WORK/calls.log"
+elif ! grep -qxF -- "$message" "$WORK/env-only-no-cluster.out"; then
+  failed "env-only-no-cluster: expected the message: $message"; sed 's/^/    /' "$WORK/env-only-no-cluster.out"
 else
   echo "ok   env-only-no-cluster"
+fi
+
+# an env file inside the repository is named relative to it, as in the other messages
+mkdir -p "$WORK/repo/deploy/k3s"
+cp "$K3S_DIR/71-restore.sh" "$K3S_DIR/lib.sh" "$K3S_DIR/env.example" "$WORK/repo/deploy/k3s/"
+rc=0
+env -i PATH="$WORK/bin:$PATH" HOME="$WORK" WORK="$WORK" KUBECTL="$WORK/bin/kubectl" \
+  OPENTSX_ENV_FILE="$WORK/repo/deploy/k3s/restored.env" bash "$WORK/repo/deploy/k3s/71-restore.sh" "$WORK/env-data" \
+  --only env --yes > "$WORK/env-in-repository.out" 2>&1 < /dev/null || rc=$?
+message="  ok    deploy/k3s/restored.env: restored; run 20-configure.sh (re-renders the overlay), 10-build.sh, 11-import-images.sh and 30-deploy.sh"
+if (( rc != 0 )) || ! grep -qxF -- "$message" "$WORK/env-in-repository.out"; then
+  failed "env-in-repository: exit $rc, expected 0 and the message: $message"; sed 's/^/    /' "$WORK/env-in-repository.out"
+else
+  echo "ok   env-in-repository"
 fi
 
 hint="nothing was restored; run 71-restore.sh $WORK/env-data --only env, then 20-configure.sh, 10-build.sh, 11-import-images.sh and 30-deploy.sh, then 71-restore.sh $WORK/env-data --only data"

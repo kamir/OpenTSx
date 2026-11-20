@@ -1,6 +1,5 @@
 package org.opentsx.connectors.kafka;
 
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.opentsx.data.model.EpisodesRecord;
 import org.opentsx.data.model.Event;
 import org.opentsx.core.TSData;
@@ -71,8 +70,6 @@ public class TSOProducer {
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "io.confluent.kafka.serializers.KafkaAvroSerializer");
 
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-
         return new KafkaProducer<>(props);
 
     }
@@ -85,8 +82,6 @@ public class TSOProducer {
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "io.confluent.kafka.serializers.KafkaAvroSerializer");
 
-
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         return new KafkaProducer<>(props);
 

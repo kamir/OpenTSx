@@ -2714,6 +2714,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   intervals left out while `RISTool.projekt` is not set or has no log of the name set with `setLofFileNameKey_1`,
   `IllegalArgumentException` for a NaN or infinite interval and `UncheckedIOException` when the log line cannot be
   written.
+- `deploy/k3s/71-restore.sh` without `env` among the parts names `20-configure.sh`, `10-build.sh`,
+  `11-import-images.sh` and `30-deploy.sh` in its hint for a missing namespace. After it restored `env`, it names the
+  env file in use, relative to the repository, and the same four steps.
+- opentsx-connectors: the Avro event and episode producers of `TSOProducer` no longer set the consumer key
+  `auto.offset.reset`, which has no effect on a producer.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
