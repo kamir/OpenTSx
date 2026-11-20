@@ -547,7 +547,12 @@ sample (the JVM for Track A, `tsx-runner` for Track B). `firstFetch` is written
 when the first increment over a non-empty input range starts, and `firstOutput`
 when the end offsets of the output topic first grow, polled every 100 ms.
 `BoardWorkloadIntegrationTest` runs every chain on both tracks over the same feed
-and checks the timings and that both tracks write the same number of records.
+and checks the timings and that both tracks write exactly the reference records
+of the feed. `BoardOutputProofTest` is the output proof of one measured
+condition: it compares the condition's output topic with `BoardReference`, the
+chain run once over the whole feed without a broker, through
+`BoardOutputs.compare`, and only then writes the JUnit XML the board validator
+reads.
 The [Jetson runbook](../docs/devguide/integration/wayang-board-jetson.md#run-one-condition)
 has the commands for one condition.
 
