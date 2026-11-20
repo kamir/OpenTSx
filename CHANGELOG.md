@@ -482,6 +482,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- `GET /v1/systems/{id}/signals` gives a signal that a flow computes the worst of its `expect.origin` and the
+  origins of the signals the flow reads. `park.p_potential_kw` of `h2-chain`, a power curve over the measured wind
+  of a station, is `ESTIMATED` and no longer `MEASURED`. The Signals page marks it as modelled, and the decision
+  `h2-dispatch`, which accepts estimates and forecasts, no longer blocks it when its data has no `origin` label.
+
 - Concept 20 section 6.1 and the TASK-020 B1 notes list the signed `tsx-runner`
   modes that exist. With the B3 site configuration, `agent`, `conform` and `run`
   handle signed bounded statistics. With the B1 configuration, `run` executes

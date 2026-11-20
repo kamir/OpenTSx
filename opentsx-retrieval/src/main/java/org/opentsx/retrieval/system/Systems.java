@@ -402,7 +402,11 @@ public final class Systems {
         };
     }
 
-    /** The origin of the data: declared at a topic or a manual value, synthetic for a generator, the worst input for a flow. */
+    /**
+     * The origin of the data: declared at a topic or a manual value, synthetic for a generator. A flow computes a
+     * signal, so it is what the signal expects (an estimate from measured wind is no measurement), but never better
+     * than the worst input: made of generated data it stays synthetic.
+     */
     private static Origin origin(Signal s, Map<String, Signal> byId, Map<String, Flow> flows, Set<String> visiting) {
         if (s.raw() != null && s.raw().origin() != null) {
             return parse(s.raw().origin());
@@ -418,7 +422,7 @@ public final class Systems {
                 worst = Origin.worst(worst, origin(in, byId, flows, visiting));
             }
         }
-        return worst;
+        return Origin.worst(worst, s.expect().origin() == null ? null : parse(s.expect().origin()));
     }
 
     private static Origin parse(String name) {

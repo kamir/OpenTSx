@@ -189,7 +189,7 @@ class RunsTest {
         String status = """
                 {"signals":[
                  {"id":"market.price_eur_mwh","origin":"REPORTED","grades":{"raw":{"source":{"kind":"topic"},"data":{"series":["%s"],"intervalMicros":900000000,"origin":"REPORTED"}}}},
-                 {"id":"park.p_potential_kw","origin":"MEASURED","grades":{"clean":{"source":{"kind":"flow"},"data":{"series":["%s"],"intervalMicros":600000000,"origin":"ESTIMATED","madeOf":"park/DWD-01759/wind_speed@clean (MEASURED)"}}}},
+                 {"id":"park.p_potential_kw","origin":"ESTIMATED","grades":{"clean":{"source":{"kind":"flow"},"data":{"series":["%s"],"intervalMicros":600000000,"origin":"ESTIMATED","madeOf":"park/DWD-01759/wind_speed@clean (MEASURED)"}}}},
                  {"id":"offtake.demand_kgph","origin":"SYNTHETIC","grades":{"raw":{"source":{"kind":"generator"},"data":{"series":["%s"],"intervalMicros":60000000,"origin":"SYNTHETIC","fidelity":"demo"}}}},
                  {"id":"ely.setpoint_kw","origin":"REPORTED","grades":{"raw":{"source":{"kind":"manual","value":5000,"origin":"REPORTED"}}}},
                  {"id":"marketer.schedule_kw","grades":{}}

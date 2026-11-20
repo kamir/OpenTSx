@@ -98,12 +98,15 @@ class SystemsTest {
         assertEquals("observation", signal(st, "park.p_gen_kw").path("role").asText());
         assertEquals("estimate", signal(st, "park.p_potential_kw").path("role").asText());
 
-        // derived: no raw grade; its origin is the worst of what its flow reads, here the measured wind of a station
+        // derived: no raw grade. A power curve computes it from the measured wind of a station: an estimate, as the
+        // document expects, and not a measurement
         JsonNode avail = signal(st, "park.p_potential_kw");
         assertEquals("clean-not-running", avail.path("state").asText());
         assertEquals("derived", avail.path("via").asText());
-        assertEquals("MEASURED", avail.path("origin").asText());
+        assertEquals("ESTIMATED", avail.path("origin").asText());
         assertTrue(avail.path("port").asBoolean());
+        // the sum of the turbines expects a measurement, but the turbines are simulated
+        assertEquals("SYNTHETIC", signal(st, "park.p_gen_kw").path("origin").asText());
 
         // the price is the published one of 2025, bound to the topic; this inventory holds no such series
         JsonNode price = signal(st, "market.price_eur_mwh");
@@ -316,6 +319,18 @@ class SystemsTest {
         JsonNode wrong = SYSTEMS.signals("h2-chain", inv, Systems.bindings(body(
                 "{\"bindings\":[{\"signal\":\"offtake.no_such\",\"grade\":\"raw\",\"source\":{\"kind\":\"manual\",\"value\":1}}]}")));
         assertTrue(wrong.path("problems").get(0).asText().contains("offtake.no_such@raw is no grade of a signal"));
+    }
+
+    @Test
+    void aComputedSignalIsNoBetterThanWhatItIsMadeOf() throws Exception {
+        // the sum of the turbines expects a measurement; it is one only when the turbines measure
+        String turbine = """
+                {"bindings":[{"signal":"park/T02/WTUR.W","grade":"raw",
+                  "source":{"kind":"topic","topic":"tsx.wind.episodes.v2","origin":"%s","select":{"metric":"wind.turbine.power_active","tags":{"turbine":"T02"}}}}]}""";
+        assertEquals("MEASURED", signal(SYSTEMS.signals("h2-chain", windFarm(), Systems.bindings(body(turbine.formatted("MEASURED")))),
+                "park.p_gen_kw").path("origin").asText());
+        assertEquals("ESTIMATED", signal(SYSTEMS.signals("h2-chain", windFarm(), Systems.bindings(body(turbine.formatted("ESTIMATED")))),
+                "park.p_gen_kw").path("origin").asText());
     }
 
     @Test
