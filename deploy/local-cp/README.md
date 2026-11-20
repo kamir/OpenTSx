@@ -28,6 +28,12 @@ The frontend test container mounts both shared operator fixtures and
 `opentsx-model` identity/wire vectors. Generated bundles under `.build/` do not
 enter the source digest or Git.
 
+Both profiles reuse separate verified dependency, wheel and frontend entries
+under `.build/cache/`. The manifest records their `build_inputs` keys alongside
+current source provenance. The `test` command always executes the suites.
+Read the [cache contract](../../docs/devguide/standalone-analysis.md#reuse-artifacts-between-edits)
+for invalidation and rejected entries.
+
 The profile includes an internal MLflow registry with a persistent database and
 artifact volume. A separate Workbench state volume stores completed runs,
 registrations, deployment intent and scoring checkpoints. The registry has no
