@@ -51,7 +51,10 @@ installation, from your shell. Without it they exit with status 2 and
 CI runs `bash -n` and `shellcheck -x -P SCRIPTDIR` on every shell script (`*.sh`) of this module.
 `tools/test_lg_scripts.py` fails on a shell script whose first line is not a shebang (`#!`) and on a `cd` that is not
 followed by `|| exit` or `|| return`, also a `cd` after `!`, `command`, `builtin` or `time`. A `#` inside quotes does
-not start a comment for the check. `tools/test_lg_python.py` fails on a Python script (`*.py`) of this module that
+not start a comment for the check, and a `cd` inside quotes, as in `echo "a; cd b"`, is not a command for the check.
+A `cd` in a command substitution inside double quotes, as in `X="$(cd b)"`, is still checked, and the check follows
+the quotes inside the substitution, so `DIR="$(cd "$(dirname "$0")" || exit 1; pwd)"` passes.
+`tools/test_lg_python.py` fails on a Python script (`*.py`) of this module that
 does not compile or does not start with `#!/usr/bin/env python3`.
 
 ### Run the example image
@@ -68,7 +71,11 @@ directory with that file at `/etc/opentsx/config/` when you start the container.
 [`src/main/docker/core-tool-image/README.md`](src/main/docker/core-tool-image/README.md) describes a Dockerfile for the
 same jar with Xvfb and x11vnc. `DockerImageTest` fails on a Dockerfile under `src/` with an `ENV <key> <value>` line or
 a `CMD` or `ENTRYPOINT` in shell form, on a Dockerfile or YAML file under `src/` that pulls an image from
-`k8s.gcr.io`, and on a manifest under `src/main/k8s/` with a list entry `- name:` that has no value.
+`k8s.gcr.io`, and on a manifest under `src/main/k8s/` with a list entry `- name:` that has no value. It joins a
+Dockerfile line that ends with `\` with the next line before it checks the instruction, so `ENV \` followed by
+`<key>=<value>` lines and `CMD \` followed by an exec-form array pass, and it names the first line of the instruction.
+It skips comment lines and empty lines as Docker does, so neither ends an instruction, and a comment line does not
+continue, even when it ends with `\`.
 
 ### Grant the ACLs the latency tools need
 
@@ -109,12 +116,22 @@ digest. `tools/test_lg_scripts.py` reads the image or connector of every `docker
 and of every `FROM` in its Dockerfiles. It fails when one has no exact version, such as `1.2.3`, and no sha256 digest.
 It also fails on an option before the image that it does not know, with
 `<file>:<line>: <option>: unknown option before the image; add it to the option lists of tools/test_lg_scripts.py`,
-and on a Dockerfile `RUN` that runs `apt-get update` without `apt-get install`.
+on a command whose arguments do not split into words, for example at a quote that is not closed, with
+`<file>:<line>: <command>: cannot split the arguments into words (<cause>); close every quote on the line`,
+and on a Dockerfile `RUN` that runs `apt-get update` without `apt-get install`. A command inside quotes, as in
+`echo "use docker pull x"`, is not read; a command substitution inside double quotes, as in
+`CID="$(docker run <image>)"`, is read. The check does not find where such a substitution ends, so it reports that
+line with the split message above.
 
 `mqtt-generator-gist/mqttgen.py` uses the 1.x client API of `paho-mqtt`. With paho-mqtt 2.0.0 it stops with
-`TypeError: Client.__init__() missing 1 required positional argument: 'callback_api_version'`. When it cannot connect
-to the broker, it exits with status 1 and
+`TypeError: Client.__init__() missing 1 required positional argument: 'callback_api_version'`. Before it connects, it
+prints `MQTT broker <host>:<port>, user <username>` (`None` without a `username`) and no password. When it cannot
+connect to the broker, it exits with status 1 and
 `<host>:<port>: cannot connect to the MQTT broker (<cause>); start the broker first, for example with 02_run_mqtt_broker.sh`.
+When it cannot read the configuration file, it exits with status 1 and
+`<file>: cannot read the configuration file (<cause>); pass the path of a JSON configuration file such as config.json`.
+Without exactly one argument, it exits with status 2 and
+`<script>: <n> arguments given; expected 1, the path of a JSON configuration file such as config.json`.
 
 `01_bootstrap.sh` runs with `set -euo pipefail`: it stops at the first command that fails and exits with the status of
 that command. It runs no `mqtt` command, so it reaches the connector installs before a broker runs.
@@ -127,16 +144,18 @@ after `docker run`.
 
 ### Create a connector with the Kafka Connect REST API
 
-You need Python 3 and a Kafka Connect worker on `127.0.0.1:8083`. `src/main/connect-cfg/deploy_connector.py` posts the
-connector `debug_c1` with the content of `cfg.json` as its configuration to `http://127.0.0.1:8083/connectors`.
-`cfg.json` is itself a whole create request with `name` `c1` and `config`, the body that `test.sh` posts with `curl`.
-The configuration this script posts therefore holds `name` and a nested `config` object and no `connector.class`.
-It uses only the Python standard library. Run it in `src/main/connect-cfg/`:
+You need Python 3 and a Kafka Connect worker on `127.0.0.1:8083`. `cfg.json` is a whole create request with `name`
+`c1` and a `config` object, the body that `test.sh` posts with `curl`. `src/main/connect-cfg/deploy_connector.py`
+posts the create request `{"name": "debug_c1", "config": <config>}` to `http://127.0.0.1:8083/connectors`, where
+`<config>` is the `config` object of `cfg.json`. It uses only the Python standard library. Run it in
+`src/main/connect-cfg/`:
 
 ```bash
 python3 deploy_connector.py
 ```
 
+When `cfg.json` has no `config` object, it posts nothing and exits with status 1 and
+`cfg.json: config: missing or not a JSON object; write the connector settings as the object "config": {...}`.
 After HTTP 200 or 201 it prints `New connector debug_c1 created.`. On any other answer it exits with status 1 and
 `debug_c1: POST http://127.0.0.1:8083/connectors answered HTTP <status> <body>; the connector was not created, check the log of the Kafka Connect worker`.
 When it cannot connect, it exits with status 1 and
@@ -144,6 +163,8 @@ When it cannot connect, it exits with status 1 and
 A connection that takes longer than 10 s gives this message with the cause `timed out`. When Kafka Connect accepts
 the connection and then sends nothing for 10 s, the script exits with status 1 and
 `http://127.0.0.1:8083/connectors: no answer within 10 s; check the log of the Kafka Connect worker`.
+The limit of 10 s applies to the connect and to each read on its own, not to the whole request: an answer that
+arrives in parts less than 10 s apart can take longer.
 
 ### Handle errors
 

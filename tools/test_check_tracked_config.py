@@ -194,3 +194,56 @@ def test_resource_id_placeholders_and_words_with_a_prefix_pass(tmp_path, capsys)
         "deploy/labels.yaml": "tag: lkc-ab12cXYZ\nuser: sa-ab12cd_suffix\n",
     })
     assert guard.main(tmp_path, paths) == 0, capsys.readouterr().out
+
+
+def gitlink_repository(root: pathlib.Path, modules: str | None) -> pathlib.Path:
+    subprocess.run(["git", "init", "-q", str(root)], check=True, env=git_environment())
+    subprocess.run(["git", "-C", str(root), "update-index", "--add", "--cacheinfo", f"160000,{'1' * 40},dir/sub"],
+                   check=True, env=git_environment())
+    if modules is not None:
+        write(root, {".gitmodules": modules})
+        subprocess.run(["git", "-C", str(root), "add", ".gitmodules"], check=True, env=git_environment())
+    return root
+
+
+def run_guard(root: pathlib.Path) -> subprocess.CompletedProcess:
+    return subprocess.run([sys.executable, str(pathlib.Path(guard.__file__)), str(root)], capture_output=True,
+                          text=True, env=git_environment(), check=False)
+
+
+def test_a_gitlink_without_a_submodule_entry_fails(tmp_path):
+    other = '[submodule "other"]\n\tpath = dir/other\n\turl = https://example.com/other.git\n'
+    for name, modules, files in (("bare", None, 1), ("other", other, 2)):
+        result = run_guard(gitlink_repository(tmp_path / name, modules))
+        assert result.returncode == 1, result.stdout + result.stderr
+        assert result.stdout.splitlines() == [
+            "dir/sub: gitlink without a .gitmodules entry; add it with git submodule add <url> dir/sub or remove it "
+            "with git rm --cached dir/sub",
+            f"checked {files} tracked files, 1 findings"]
+
+
+def test_a_gitlink_with_its_submodule_entry_passes(tmp_path):
+    modules = '[submodule "sub"]\n\tpath = dir/sub\n\turl = https://example.com/sub.git\n'
+    result = run_guard(gitlink_repository(tmp_path / "repository", modules))
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.splitlines() == ["checked 2 tracked files, 0 findings"]
+
+
+def test_a_root_below_the_top_level_reads_the_top_level_submodule_entries(tmp_path):
+    modules = '[submodule "sub"]\n\tpath = dir/sub\n\turl = https://example.com/sub.git\n'
+    repository = gitlink_repository(tmp_path / "repository", modules)
+    subprocess.run(["git", "-C", str(repository), "update-index", "--add", "--cacheinfo",
+                    f"160000,{'2' * 40},dir/stray"], check=True, env=git_environment())
+    (repository / "dir").mkdir()
+    result = run_guard(repository / "dir")
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert result.stdout.splitlines() == [
+        "stray: gitlink without a .gitmodules entry; add it with git submodule add <url> stray or remove it "
+        "with git rm --cached stray",
+        "checked 2 tracked files, 1 findings"]
+
+
+def test_the_gitlinks_of_the_repository_have_their_submodule_entry():
+    root = pathlib.Path(guard.__file__).resolve().parent.parent
+    assert "external/wayang" in guard.gitlinks(root)
+    assert guard.gitlink_findings(root) == []

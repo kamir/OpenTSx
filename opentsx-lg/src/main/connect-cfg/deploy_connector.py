@@ -25,6 +25,11 @@ def main():
     with open( fn, 'r') as f:
         connector_config = json.load(f)
 
+    config = connector_config.get('config') if isinstance(connector_config, dict) else None
+    if not isinstance(config, dict):
+        sys.exit('{}: config: missing or not a JSON object; write the connector settings as the object '
+                 '"config": {{...}}'.format(fn))
+
     connector_name = "debug_c1"
     connect_url = "http://127.0.0.1:8083/connectors"
 
@@ -34,8 +39,8 @@ def main():
     print( " -> NAME        : " +  connector_name)
     print( " ")
 
-    for x in connector_config:
-        print("%s: %s" % (x, connector_config[x]))
+    for x in config:
+        print("%s: %s" % (x, config[x]))
 
     print(" ")
 
@@ -43,7 +48,7 @@ def main():
         status, answer = create_new_connector(
             connect_url=connect_url,
             name=connector_name,
-            config=connector_config
+            config=config
         )
     except urllib.error.URLError as error:
         sys.exit("{}: cannot connect ({}); start Kafka Connect on 127.0.0.1:8083 first".format(

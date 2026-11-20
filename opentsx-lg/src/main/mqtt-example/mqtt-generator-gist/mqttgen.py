@@ -73,7 +73,7 @@ def main(config_path):
                 password = mqtt_config.get("password")
                 topic = mqtt_config.get("topic", "mqttgen")
 
-                print( "%s %s %s %s %s %s %s" % (host, port, username, password, topic, sensors, interval_ms) )
+                print("MQTT broker %s:%s, user %s" % (host, port, username))
 
                 generate(host, port, username, password, topic, sensors, interval_ms, verbose)
 
@@ -82,7 +82,8 @@ def main(config_path):
                          "02_run_mqtt_broker.sh" % (host, port, error1))
 
     except IOError as error2:
-        print("Error opening config file '%s'" % config_path, error2)
+        sys.exit("%s: cannot read the configuration file (%s); pass the path of a JSON configuration file such as "
+                 "config.json" % (config_path, error2.strerror))
 
 
 
@@ -94,4 +95,6 @@ if __name__ == '__main__':
         print("Start %s with %s" % (sys.argv[0],sys.argv[1]) )
         main(sys.argv[1])
     else:
-        print("usage %s config.json" % sys.argv[0] )
+        print("%s: %d arguments given; expected 1, the path of a JSON configuration file such as config.json"
+              % (sys.argv[0], len(sys.argv) - 1), file=sys.stderr)
+        sys.exit(2)

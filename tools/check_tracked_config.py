@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Fails when tracked files hold private configuration, IDE state, measurement output, real hosts or home paths.
+"""Fails when tracked files hold private configuration, IDE state, measurement output, real hosts or home paths, and
+on a gitlink without a submodule entry.
 
 Usage: python3 tools/check_tracked_config.py [root]
 Exits 1 and prints one line per finding.
@@ -17,6 +18,10 @@ Checks the files `git ls-files` lists under root:
     Confluent Cloud resource id (lkc-, pkc-, psrc-, lsrc-, env- or sa- and 5 or more lower-case letters or digits
     with at least one digit, not inside a word) and no personal home path, a directory below /Users or /home other
     than the service account homes Shared, jovyan, ubuntu, ec2-user and user.
+
+When it reads the git listing itself (no paths given), it also fails on a gitlink, an index entry of mode 160000,
+whose path has no submodule.<name>.path entry in the .gitmodules file at the top level of the repository (no file
+means no entries). A root below the top level compares the paths below it.
 """
 import ipaddress
 import pathlib
@@ -44,6 +49,33 @@ SERVICE_HOMES = {"Shared", "jovyan", "ubuntu", "ec2-user", "user"}
 def tracked_files(root: pathlib.Path) -> list[str]:
     listing = subprocess.run(["git", "-C", str(root), "ls-files", "-z"], capture_output=True, check=True)
     return [p for p in listing.stdout.decode("utf-8").split("\0") if p]
+
+
+def gitlinks(root: pathlib.Path) -> list[str]:
+    listing = subprocess.run(["git", "-C", str(root), "ls-files", "-s", "-z"], capture_output=True, check=True)
+    entries = (entry.partition("\t") for entry in listing.stdout.decode("utf-8").split("\0") if entry)
+    return [path for info, _, path in entries if info.startswith("160000 ")]
+
+
+def submodule_paths(root: pathlib.Path) -> set[str]:
+    location = subprocess.run(["git", "-C", str(root), "rev-parse", "--show-toplevel", "--show-prefix"],
+                              capture_output=True, check=True)
+    top, prefix = location.stdout.decode("utf-8").split("\n")[:2]
+    modules = pathlib.Path(top) / ".gitmodules"
+    if not modules.is_file():
+        return set()
+    command = ["git", "-C", str(root), "config", "-z", "-f", str(modules), "--get-regexp", r"^submodule\..*\.path$"]
+    result = subprocess.run(command, capture_output=True, check=False)
+    if result.returncode not in (0, 1):
+        raise subprocess.CalledProcessError(result.returncode, command, result.stdout, result.stderr)
+    paths = (entry.partition("\n")[2] for entry in result.stdout.decode("utf-8").split("\0") if entry)
+    return {path[len(prefix):] for path in paths if path.startswith(prefix)}
+
+
+def gitlink_findings(root: pathlib.Path) -> list[str]:
+    known = submodule_paths(root)
+    return [f"{path}: gitlink without a .gitmodules entry; add it with git submodule add <url> {path} or remove it "
+            f"with git rm --cached {path}" for path in gitlinks(root) if path not in known]
 
 
 def is_config(path: str) -> bool:
@@ -142,8 +174,11 @@ def check(root: pathlib.Path, paths: list[str]) -> list[str]:
 
 
 def main(root: pathlib.Path, paths: list[str] | None = None) -> int:
-    paths = tracked_files(root) if paths is None else paths
-    findings = check(root, paths)
+    findings = []
+    if paths is None:
+        paths = tracked_files(root)
+        findings = gitlink_findings(root)
+    findings += check(root, paths)
     for finding in findings:
         print(finding)
     print(f"checked {len(paths)} tracked files, {len(findings)} findings")

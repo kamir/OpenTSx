@@ -223,6 +223,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - A test of the vector processor checks that the writers `VectorProcessor.deployedWrites` names for the server and the
   command line leave out a DAG that `DagPlan.of` refuses, and the sinks of a DAG whose redeploy the processor refused
   because another DAG writes one of its topics.
+- tools: `tools/check_tracked_config.py` fails on a gitlink that has no `.gitmodules` entry, with `<path>: gitlink
+  without a .gitmodules entry; add it with git submodule add <url> <path> or remove it with git rm --cached <path>`.
+  It reads the submodule entries from the `.gitmodules` file at the top level of the repository, also when it checks a
+  directory below it.
 
 ### Changed
 
@@ -2281,7 +2285,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   first`. When Kafka Connect accepts the connection and sends nothing for 10 s, it exits 1 with
   `http://127.0.0.1:8083/connectors: no answer within 10 s; check the log of the Kafka Connect worker`.
 - opentsx-lg: the MQTT example `01_bootstrap.sh` runs with `set -euo pipefail` and stops at the first command that
-  fails. A failed `pip3`, `mosquitto_passwd`, `mqtt pub` or `confluent-hub` no longer runs on to the next step.
+  fails. A failed `pip3`, `mosquitto_passwd` or `confluent-hub` no longer runs on to the next step.
   `tools/test_lg_python.py` checks each of them with a failing stub.
 - The archived echo demos `archive/demos/opentsx-clusters/krake-container/echo-demo.yaml` and the `mmdc-mrc` scenario3
   manifests of mdc1, mdc2 and mdc3 pull `registry.k8s.io/echoserver:1.10` instead of the frozen `k8s.gcr.io`.
@@ -2338,6 +2342,19 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   than `Double.MAX_VALUE` apart with `_addData: time <k> of <name> is <value>, more than Double.MAX_VALUE after time
   <k - 1> at <previous value>; expected times whose difference is finite`. A refused call, also one on a container,
   keeps the intervals of the call before.
+- opentsx-lg: `mqttgen.py` now exits 1 when it cannot read its configuration, with `<file>: cannot read the
+  configuration file (<cause>); pass the path of a JSON configuration file such as config.json`. It exits 2 on a usage
+  error. Both cases used to exit 0.
+- opentsx-lg: `src/main/connect-cfg/deploy_connector.py` posts `{"name": "debug_c1", "config": <config>}` with the
+  `config` object of `cfg.json`, not the whole file. When `cfg.json` has no `config` object it exits 1 and sends no
+  request. The README says the 10 s timeout applies to the connect and to each read separately.
+- opentsx-lg: `DockerImageTest` joins Dockerfile lines that end with a backslash before it checks an instruction, and
+  it names the first line of the instruction. It skips comment lines and empty lines inside an instruction as Docker
+  does. A multi-line `ENV` with `<key>=<value>` lines or a `CMD` followed by an exec-form array is no longer reported.
+  A comment that ends with a backslash no longer hides the instruction after it.
+- tools: `tools/test_lg_scripts.py` ignores a `cd` or an image install command inside quotes, also the quoted text
+  around a command substitution such as `echo "a; cd b $(pwd)"`; a `cd` inside the substitution is still checked. When
+  the arguments of a command do not split into words, it reports a finding instead of stopping with `ValueError`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
@@ -2427,6 +2444,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `<path>:<line>: <id>: looks like a Confluent Cloud resource id; write a placeholder such as lkc-xxxxx`.
 - `tools/check_tracked_config.py` fails on a tracked file named `ccloud.props` and on the tracked MQTT password file
   `opentsx-lg/src/main/mqtt-example/volume1/docker/mqtt/config/passwd`, also when one was added with `git add -f`.
+- opentsx-lg: `mqtt-generator-gist/mqttgen.py` no longer prints the MQTT password from its configuration. It prints
+  `MQTT broker <host>:<port>, user <username>`.
 
 ## [3.0.1] - 2026-10-16
 

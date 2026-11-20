@@ -5,7 +5,9 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -28,11 +30,39 @@ class DockerImageTest {
         }
     }
 
-    private static List<String> dockerfileProblems(String where, String dockerfile) {
-        List<String> problems = new ArrayList<>();
-        List<String> lines = dockerfile.lines().toList();
+    private static Map<Integer, String> logicalLines(String text) {
+        Map<Integer, String> logical = new LinkedHashMap<>();
+        List<String> lines = text.lines().toList();
+        StringBuilder joined = new StringBuilder();
+        int first = 1;
         for (int n = 1; n <= lines.size(); n++) {
             String line = lines.get(n - 1).strip();
+            if (line.isEmpty() || line.startsWith("#")) {
+                if (joined.isEmpty()) {
+                    first = n + 1;
+                }
+                continue;
+            }
+            boolean continued = line.endsWith("\\");
+            joined.append(joined.isEmpty() ? "" : " ")
+                    .append(continued ? line.substring(0, line.length() - 1).strip() : line);
+            if (!continued) {
+                logical.put(first, joined.toString());
+                joined.setLength(0);
+                first = n + 1;
+            }
+        }
+        if (!joined.isEmpty()) {
+            logical.put(first, joined.toString());
+        }
+        return logical;
+    }
+
+    private static List<String> dockerfileProblems(String where, String dockerfile) {
+        List<String> problems = new ArrayList<>();
+        for (Map.Entry<Integer, String> instruction : logicalLines(dockerfile).entrySet()) {
+            int n = instruction.getKey();
+            String line = instruction.getValue();
             if (LEGACY_ENV.matcher(line).lookingAt()) {
                 problems.add(where + ":" + n + ": " + line + ": legacy form; write ENV <key>=<value>");
             }
@@ -112,7 +142,19 @@ class DockerImageTest {
                 + "CMD java -jar /app.jar\n"
                 + "CMD [\"java\", \"-jar\", \"/app.jar\"]\n"
                 + "ENTRYPOINT /run.sh\n"
-                + "ENTRYPOINT [\"/run.sh\"]\n";
+                + "ENTRYPOINT [\"/run.sh\"]\n"
+                + "ENV \\\n"
+                + "A=1 \\\n"
+                + "B=2\n"
+                + "CMD \\\n"
+                + "[\"java\", \"-jar\", \"/app.jar\"]\n"
+                + "ENV \\\n"
+                + "A 1\n"
+                + "# note C:\\\n"
+                + "CMD java -jar /app.jar\n"
+                + "ENV \\\n"
+                + "\n"
+                + "C 3\n";
         String manifest = "containers:\n- name: echo\n  image: k8s.gcr.io/echoserver:1.10\n"
                 + "- name: echo2\n  image: registry.k8s.io/echoserver:1.10\n";
         String execForm = "shell form; write the exec form [\"<executable>\", \"<argument>\"]";
@@ -121,7 +163,10 @@ class DockerImageTest {
                 "Dockerfile:2: ENV DISPLAY :99: legacy form; write ENV <key>=<value>",
                 "Dockerfile:4: env A b: legacy form; write ENV <key>=<value>",
                 "Dockerfile:5: CMD java -jar /app.jar: " + execForm,
-                "Dockerfile:7: ENTRYPOINT /run.sh: " + execForm),
+                "Dockerfile:7: ENTRYPOINT /run.sh: " + execForm,
+                "Dockerfile:14: ENV A 1: legacy form; write ENV <key>=<value>",
+                "Dockerfile:17: CMD java -jar /app.jar: " + execForm,
+                "Dockerfile:18: ENV C 3: legacy form; write ENV <key>=<value>"),
                 dockerfileProblems("Dockerfile", dockerfile));
         assertEquals(List.of("echo-demo.yaml:3: k8s.gcr.io is frozen; pull the image from registry.k8s.io"),
                 registryProblems("echo-demo.yaml", manifest));

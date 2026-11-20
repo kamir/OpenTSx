@@ -18,6 +18,7 @@ GRAFANA_PASSWORD = "test-password-0x1"
 CI = ROOT / ".github" / "workflows" / "ci.yml"
 CD = re.compile(r"(?:^|[;&|({]|\b(?:then|do|else)\s)\s*(?:(?:!|command|builtin|time)\s+)*cd(?=\s|$)")
 CD_GUARD = re.compile(r"[^;&|]*\|\|\s*(?:exit|return)\b")
+CD_END = re.compile(r"[;&|]")
 SHELL = re.compile(r"""'[^']*'|"(?:\\.|[^"\\])*"|\\.|(?P<comment>(?<![^\s;&|()])#.*)|(?P<separator>&&|\|\||[;|])""")
 INSTALL = re.compile(r"\b(?:docker\s+(?:(?:container\s+)?(?:run|create)|(?:image\s+)?pull)|confluent-hub\s+install"
                      r"|confluent\s+connect\s+plugin\s+install)\s(.*)$")
@@ -40,10 +41,11 @@ def script_problems(root: pathlib.Path, name: str) -> list[str]:
     problems = [] if text.startswith("#!") else [f"{name}: no shebang; start the script with #!/usr/bin/env bash"]
     for number, line in enumerate(text.splitlines(), 1):
         line = uncommented(line)
-        for cd in CD.finditer(line):
-            rest = line[cd.end():]
-            if not CD_GUARD.match(rest):
-                target = re.split(r"[;&|]", rest, maxsplit=1)[0].strip().rstrip(")").strip() or "<dir>"
+        masked = unquoted(line)
+        for cd in CD.finditer(masked):
+            if not CD_GUARD.match(masked, cd.end()):
+                stop = CD_END.search(masked, cd.end())
+                target = line[cd.end():stop.start() if stop else len(line)].strip().rstrip(")").strip() or "<dir>"
                 problems.append(f"{name}:{number}: cd without a guard; write cd {target} || exit 1")
     return problems
 
@@ -53,6 +55,41 @@ def uncommented(line: str) -> str:
         if piece.group("comment") is not None:
             return line[:piece.start()]
     return line
+
+
+def unquoted(line: str, literal: frozenset[int] = frozenset()) -> str:
+    masked, stack, i = list(line), [], 0
+    while i < len(line):
+        c, top = line[i], stack[-1] if stack else None
+        if top and top[0] == "'":
+            if c == "'":
+                stack.pop()
+            masked[i] = "_"
+        elif c == "\\":
+            masked[i:i + 2] = "_" * len(line[i:i + 2])
+            i += 1
+        elif top and top[0] == '"':
+            if line.startswith("$(", i):
+                stack.append(["(", i, 0])
+                i += 1
+            elif c == "`":
+                stack.append(["`", i])
+            else:
+                if c == '"':
+                    stack.pop()
+                masked[i] = "_"
+        elif c in "\"'" and i not in literal:
+            stack.append([c, i])
+            masked[i] = "_"
+        elif top and top[0] == "`" and c == "`":
+            stack.pop()
+        elif top and top[0] == "(" and c in "()":
+            top[2] += 1 if c == "(" else -1
+            if top[2] < 0:
+                stack.pop()
+        i += 1
+    # An unclosed quote stays a plain character, as SHELL treats it in commands().
+    return unquoted(line, literal | {stack[0][1]}) if stack else "".join(masked)
 
 
 def commands(line: str) -> list[str]:
@@ -120,8 +157,17 @@ def image_problems(root: pathlib.Path, name: str) -> list[str]:
                 problems.append(f"{name}:{number}: apt-get install: the package lists stay in the image; "
                                 "end the RUN with rm -rf /var/lib/apt/lists/*")
         else:
-            installs = [INSTALL.search(command) for command in commands(uncommented(line))]
-            references = [first_operand(shlex.split(install.group(1))) for install in installs if install]
+            references = []
+            for command in commands(uncommented(line)):
+                install = INSTALL.search(unquoted(command))
+                if not install:
+                    continue
+                try:
+                    references.append(first_operand(shlex.split(command[install.start(1):])))
+                except ValueError as error:
+                    tool = command[install.start():install.start(1)].strip()
+                    problems.append(f"{name}:{number}: {tool}: cannot split the arguments into words ({error}); "
+                                    "close every quote on the line")
         for reference, option in references:
             if option:
                 problems.append(f"{name}:{number}: {option}: unknown option before the image; "
@@ -216,6 +262,36 @@ def test_a_script_with_a_shebang_and_guarded_cds_passes_the_check(tmp_path):
     assert script_problems(tmp_path, "run.sh") == []
 
 
+def test_a_cd_inside_quotes_is_no_cd_for_the_check(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        '#!/usr/bin/env bash\necho "a; cd b"\necho \'x && cd y\'\ncd "a;b" || exit 1\necho "a; cd b"; cd c\n'
+        'cd "$DIR;x" && ls\n', encoding="utf-8")
+    assert script_problems(tmp_path, "run.sh") == [
+        "run.sh:5: cd without a guard; write cd c || exit 1",
+        'run.sh:6: cd without a guard; write cd "$DIR;x" || exit 1',
+    ]
+
+
+def test_a_cd_or_an_install_in_a_quoted_command_substitution_is_checked(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        '#!/usr/bin/env bash\nX="$(cd /tmp)"\nCID="$(docker run -d toke/mosquitto:latest)"\n'
+        'ID="`docker pull toke/mosquitto`"\n', encoding="utf-8")
+    assert script_problems(tmp_path, "run.sh") == ['run.sh:2: cd without a guard; write cd /tmp)" || exit 1']
+    assert image_problems(tmp_path, "run.sh") == [
+        "run.sh:3: docker run: cannot split the arguments into words (No closing quotation); "
+        "close every quote on the line",
+        "run.sh:4: docker pull: cannot split the arguments into words (No closing quotation); "
+        "close every quote on the line",
+    ]
+
+
+def test_a_guard_after_nested_quotes_in_a_command_substitution_counts(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        '#!/usr/bin/env bash\nDIR="$(cd "$(dirname "$0")" || exit 1; pwd)"\necho "a; cd b $(pwd)"\n'
+        'Y="$(cd "$1")"\n', encoding="utf-8")
+    assert script_problems(tmp_path, "run.sh") == ['run.sh:4: cd without a guard; write cd "$1")" || exit 1']
+
+
 def test_every_lg_script_starts_with_a_shebang_and_guards_each_cd():
     scripts = tracked("opentsx-lg/*.sh")
     assert scripts
@@ -261,6 +337,20 @@ def test_an_image_or_connector_without_an_exact_version_fails_the_check(tmp_path
         f"run.sh:14: toke/mosquitto: {rest}",
         f"run.sh:15: confluentinc/kafka-connect-mqtt:latest: {rest}",
         "run.sh:16: --cpus: unknown option before the image; add it to the option lists of tools/test_lg_scripts.py",
+    ]
+
+
+def test_an_install_inside_quotes_is_no_install_and_an_open_quote_is_a_finding(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        '#!/usr/bin/env bash\necho "use docker pull x"\necho \'run confluent-hub install a/b\'\n'
+        'docker pull toke/mosquitto\necho "x" && docker run -d "toke/mosquitto"\ndocker pull "toke/mosquitto\n',
+        encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:4: toke/mosquitto: {rest}",
+        f"run.sh:5: toke/mosquitto: {rest}",
+        "run.sh:6: docker pull: cannot split the arguments into words (No closing quotation); "
+        "close every quote on the line",
     ]
 
 

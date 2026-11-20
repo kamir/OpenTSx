@@ -1,7 +1,9 @@
-"""The opentsx-lg Python scripts compile and start with #!/usr/bin/env python3, the MQTT generator exits 1 and names the
-broker it cannot reach, the connector script reports what Kafka Connect answered within 10 s, and the MQTT example
-bootstrap installs a pinned paho-mqtt without sudo, reaches the connector installs without a broker and stops at the
-first command that fails, and the broker script publishes its test message after it starts the broker.
+"""The opentsx-lg Python scripts compile and start with #!/usr/bin/env python3, the MQTT generator prints no password,
+exits 1 on a configuration file it cannot read and names the broker it cannot reach, and exits 2 on a usage error, the
+connector script posts the config object of cfg.json, refuses a cfg.json without one and reports what Kafka Connect
+answered, waiting at most 10 s for each socket operation, and the MQTT example bootstrap installs a pinned paho-mqtt
+without sudo, reaches the connector installs without a broker and stops at the first command that fails, and the broker
+script publishes its test message after it starts the broker.
 
 Run from the repository root: python -m pytest -q tools
 """
@@ -88,8 +90,14 @@ def load(path: pathlib.Path, name: str):
     return module
 
 
-def test_the_generator_exits_1_and_names_the_broker_when_it_cannot_connect(tmp_path, monkeypatch):
+MQTT_PASSWORD = "test-password-0x2"
+
+
+def refusing_paho(monkeypatch):
     class Client:
+        def username_pw_set(self, username, password):
+            pass
+
         def connect(self, host, port):
             raise ConnectionRefusedError(111, "Connection refused")
 
@@ -100,6 +108,10 @@ def test_the_generator_exits_1_and_names_the_broker_when_it_cannot_connect(tmp_p
     monkeypatch.setitem(sys.modules, "paho.mqtt.client", client)
     sys.modules["paho"].mqtt = sys.modules["paho.mqtt"]
     sys.modules["paho.mqtt"].client = client
+
+
+def test_the_generator_exits_1_and_names_the_broker_when_it_cannot_connect(tmp_path, monkeypatch):
+    refusing_paho(monkeypatch)
     config = tmp_path / "config.json"
     config.write_text(json.dumps({"mqtt": {"host": "localhost", "port": 1884, "topic": "t"},
                                   "sensors": {"s1": {"range": [0, 1]}}}), encoding="utf-8")
@@ -107,6 +119,40 @@ def test_the_generator_exits_1_and_names_the_broker_when_it_cannot_connect(tmp_p
         load(MQTTGEN, "mqttgen").main(str(config))
     assert stop.value.code == ("localhost:1884: cannot connect to the MQTT broker ([Errno 111] Connection refused); "
                                "start the broker first, for example with 02_run_mqtt_broker.sh")
+
+
+def test_the_generator_prints_the_broker_and_the_user_but_not_the_password(tmp_path, monkeypatch, capsys):
+    refusing_paho(monkeypatch)
+    config = tmp_path / "config.json"
+    config.write_text(json.dumps({"mqtt": {"host": "localhost", "port": 1884, "username": "demo1",
+                                           "password": MQTT_PASSWORD, "topic": "t"},
+                                  "sensors": {"s1": {"range": [0, 1]}}}), encoding="utf-8")
+    with pytest.raises(SystemExit):
+        load(MQTTGEN, "mqttgen").main(str(config))
+    out = capsys.readouterr().out
+    assert MQTT_PASSWORD not in out
+    assert out.splitlines() == ["MQTT broker localhost:1884, user demo1"]
+
+
+def test_the_generator_exits_1_when_it_cannot_read_the_configuration(tmp_path, monkeypatch):
+    refusing_paho(monkeypatch)
+    missing = tmp_path / "missing.json"
+    with pytest.raises(SystemExit) as stop:
+        load(MQTTGEN, "mqttgen").main(str(missing))
+    assert stop.value.code == (f"{missing}: cannot read the configuration file (No such file or directory); "
+                               "pass the path of a JSON configuration file such as config.json")
+
+
+@pytest.mark.parametrize("arguments", [[], ["a.json", "b.json"]])
+def test_the_generator_exits_2_on_a_usage_error(monkeypatch, capsys, arguments):
+    refusing_paho(monkeypatch)
+    monkeypatch.setattr(sys, "argv", ["mqttgen.py", *arguments])
+    with pytest.raises(SystemExit) as stop:
+        load(MQTTGEN, "__main__")
+    assert stop.value.code == 2
+    assert capsys.readouterr().err.splitlines() == [
+        f"mqttgen.py: {len(arguments)} arguments given; expected 1, the path of a JSON configuration file such as "
+        "config.json"]
 
 
 class Connect(http.server.BaseHTTPRequestHandler):
@@ -140,7 +186,8 @@ def deploy_connector(status: int, answer: bytes):
         server.shutdown()
         thread.join()
         server.server_close()
-    config = json.loads((CONNECT_CFG / "cfg.json").read_text(encoding="utf-8"))
+    config = json.loads((CONNECT_CFG / "cfg.json").read_text(encoding="utf-8"))["config"]
+    assert "connector.class" in config
     assert Connect.requests == [("POST", "http://127.0.0.1:8083/connectors", "application/json",
                                  {"name": "debug_c1", "config": config})], result.stdout + result.stderr
     return result
@@ -175,13 +222,28 @@ def test_the_connector_script_exits_1_when_it_cannot_reach_kafka_connect(monkeyp
     assert "created" not in capsys.readouterr().out
 
 
+@pytest.mark.parametrize("text", ['{"name": "c1"}', '{"name": "c1", "config": "f1"}', '["c1"]'])
+def test_the_connector_script_exits_1_when_cfg_json_has_no_config_object(tmp_path, monkeypatch, capsys, text):
+    def unreachable(request, timeout=None):
+        raise AssertionError("no request without a config object")
+
+    (tmp_path / "cfg.json").write_text(text, encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("urllib.request.urlopen", unreachable)
+    with pytest.raises(SystemExit) as stop:
+        load(ROOT / CONNECTOR_SCRIPT, "deploy_connector").main()
+    assert stop.value.code == ("cfg.json: config: missing or not a JSON object; "
+                               "write the connector settings as the object \"config\": {...}")
+    assert "created" not in capsys.readouterr().out
+
+
 @pytest.mark.parametrize("failure, message", [
     (urllib.error.URLError(TimeoutError("timed out")),
      "http://127.0.0.1:8083/connectors: cannot connect (timed out); start Kafka Connect on 127.0.0.1:8083 first"),
     (TimeoutError("timed out"),
      "http://127.0.0.1:8083/connectors: no answer within 10 s; check the log of the Kafka Connect worker"),
 ])
-def test_the_connector_script_waits_at_most_10_s_for_kafka_connect(monkeypatch, capsys, failure, message):
+def test_the_connector_script_waits_at_most_10_s_for_each_socket_operation(monkeypatch, capsys, failure, message):
     timeouts = []
 
     def wait(request, timeout=None):
