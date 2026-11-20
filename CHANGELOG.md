@@ -482,6 +482,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- Accept a socket error while the validation observer writes a response to a
+  closed client when only metadata requests remain pending, and end that
+  connection. The unforwarded correlation stays pending, so lost data
+  responses, other write errors and unknown correlations still fail the check.
 - Concept 20 section 6.1 and the TASK-020 B1 notes list the signed `tsx-runner`
   modes that exist. With the B3 site configuration, `agent`, `conform` and `run`
   handle signed bounded statistics. With the B1 configuration, `run` executes

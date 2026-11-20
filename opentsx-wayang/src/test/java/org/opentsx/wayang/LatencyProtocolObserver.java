@@ -176,6 +176,7 @@ final class LatencyProtocolObserver implements AutoCloseable {
                         else produceErrors.addAndGet(acknowledge(frame, request, System.nanoTime(), entries, false));
                     }
                     forwardResponse(out, frame, pending);
+                    if (pending.containsKey(correlation)) return;
                 }
             }
         } catch (Exception e) {
@@ -292,7 +293,7 @@ final class LatencyProtocolObserver implements AutoCloseable {
             first = in.read();
         } catch (SocketException error) {
             synchronized (pending) {
-                if (pending.values().stream().allMatch(request -> request.header.apiKey() == ApiKeys.METADATA)) return null;
+                if (onlyMetadata(pending)) return null;
             }
             throw error;
         }
@@ -316,9 +317,18 @@ final class LatencyProtocolObserver implements AutoCloseable {
         synchronized (pending) {
             int correlation = ByteBuffer.wrap(frame).getInt();
             if (!pending.containsKey(correlation)) throw new IllegalStateException("unknown response correlation " + correlation);
-            writeFrame(out, frame);
+            try {
+                writeFrame(out, frame);
+            } catch (SocketException error) {
+                if (onlyMetadata(pending)) return;
+                throw error;
+            }
             pending.remove(correlation);
         }
+    }
+
+    private static boolean onlyMetadata(Map<Integer, Pending> pending) {
+        return pending.values().stream().allMatch(request -> request.header.apiKey() == ApiKeys.METADATA);
     }
 
     private void closeSocket(Socket socket) {

@@ -4,6 +4,7 @@ import org.apache.kafka.common.compress.Compression;
 import org.apache.kafka.common.message.ProduceRequestData;
 import org.apache.kafka.common.message.ProduceResponseData;
 import org.apache.kafka.common.protocol.ApiKeys;
+import org.apache.kafka.common.protocol.MessageUtil;
 import org.apache.kafka.common.record.MemoryRecords;
 import org.apache.kafka.common.record.SimpleRecord;
 import org.apache.kafka.common.requests.ProduceRequest;
@@ -20,6 +21,9 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.time.Instant;
@@ -189,6 +193,73 @@ class LatencyProtocolObserverTest {
             assertSame(failure, assertThrows(IOException.class,
                     () -> LatencyProtocolObserver.forwardResponse(new DataOutputStream(output), frame, pending)));
             assertEquals(1, pending.size());
+        }
+    }
+
+    private static void resetAfterRequest(Socket client, Socket observer) throws IOException {
+        byte[] request = ByteBuffer.allocate(8).putInt(0).putInt(7).array();
+        LatencyProtocolObserver.writeFrame(new DataOutputStream(client.getOutputStream()), request);
+        assertArrayEquals(request, LatencyProtocolObserver.readFrame(new DataInputStream(observer.getInputStream())));
+        client.setSoLinger(true, 0);
+        client.close();
+        assertThrows(SocketException.class, () -> observer.getInputStream().read());
+    }
+
+    @Test
+    void metadataResponseToAClosedClientKeepsItsCorrelationWithoutFailing() throws IOException {
+        byte[] frame = ByteBuffer.allocate(8).putInt(0).putInt(42).array();
+        Map<Integer, LatencyProtocolObserver.Pending> pending = pending(ApiKeys.METADATA);
+        try (ServerSocket server = new ServerSocket(0, 1, InetAddress.getLoopbackAddress());
+             Socket client = new Socket(server.getInetAddress(), server.getLocalPort());
+             Socket observer = server.accept()) {
+            resetAfterRequest(client, observer);
+            LatencyProtocolObserver.forwardResponse(new DataOutputStream(observer.getOutputStream()), frame, pending);
+            assertTrue(pending.containsKey(0));
+        }
+    }
+
+    @Test
+    void closedClientWritesWithDataRequestsAndOtherWriteFailuresRemainFailures() throws IOException {
+        byte[] frame = ByteBuffer.allocate(8).putInt(0).putInt(42).array();
+        try (ServerSocket server = new ServerSocket(0, 1, InetAddress.getLoopbackAddress());
+             Socket client = new Socket(server.getInetAddress(), server.getLocalPort());
+             Socket observer = server.accept()) {
+            resetAfterRequest(client, observer);
+            DataOutputStream out = new DataOutputStream(observer.getOutputStream());
+            for (ApiKeys[] keys : new ApiKeys[][]{{ApiKeys.PRODUCE}, {ApiKeys.METADATA, ApiKeys.PRODUCE}, {ApiKeys.FETCH}, {ApiKeys.API_VERSIONS}}) {
+                Map<Integer, LatencyProtocolObserver.Pending> pending = pending(keys);
+                assertThrows(SocketException.class, () -> LatencyProtocolObserver.forwardResponse(out, frame, pending));
+                assertEquals(keys.length, pending.size());
+            }
+        }
+        Map<Integer, LatencyProtocolObserver.Pending> pending = pending(ApiKeys.METADATA);
+        IOException failure = new IOException("fixture forwarding failure");
+        OutputStream output = new OutputStream() {
+            @Override
+            public void write(int value) throws IOException { throw failure; }
+        };
+        assertSame(failure, assertThrows(IOException.class,
+                () -> LatencyProtocolObserver.forwardResponse(new DataOutputStream(output), frame, pending)));
+        assertEquals(1, pending.size());
+    }
+
+    @Test
+    void unknownResponseCorrelationStillFailsTheObserverCheck() throws Exception {
+        try (ServerSocket backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            LatencyProtocolObserver observer = new LatencyProtocolObserver(backend.getLocalPort(), false);
+            try (Socket client = new Socket(InetAddress.getLoopbackAddress(), observer.server.getLocalPort());
+                 Socket broker = backend.accept()) {
+                RequestHeader header = new RequestHeader(ApiKeys.METADATA, ApiKeys.METADATA.latestVersion(), "fixture", 3);
+                byte[] request = MessageUtil.toByteBuffer(header.data(), header.headerVersion()).array();
+                LatencyProtocolObserver.writeFrame(new DataOutputStream(client.getOutputStream()), request);
+                assertArrayEquals(request, LatencyProtocolObserver.readFrame(new DataInputStream(broker.getInputStream())));
+                LatencyProtocolObserver.writeFrame(new DataOutputStream(broker.getOutputStream()), ByteBuffer.allocate(8).putInt(4).putInt(0).array());
+                assertEquals(-1, client.getInputStream().read());
+            }
+            IllegalStateException failure = assertThrows(IllegalStateException.class, observer::check);
+            assertEquals("protocol observer failed", failure.getMessage());
+            assertEquals("unknown response correlation 4", failure.getCause().getMessage());
+            assertThrows(IllegalStateException.class, observer::close);
         }
     }
 

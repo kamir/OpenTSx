@@ -111,9 +111,13 @@ The validation observer accepts a reset before a new Kafka frame only when
 no request or only metadata requests remain pending. Frame decoding rejects
 resets that interrupt a length or body, and resets with pending data requests.
 Response correlations remain pending until forwarding and flushing succeed.
+A socket error while a response is written to a closed client ends that
+connection under the same rule. The unforwarded correlation counts as
+pending, so a lost data response fails the check. Other write errors and
+unknown response correlations also fail the check.
 The deterministic
 [observer tests](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/LatencyProtocolObserverTest.java)
-check these boundaries with streams rather than sockets or waits.
+check these boundaries with streams and loopback sockets, without sleeps.
 
 Use the [conversion lesson](../../learning/ui-operators.v1.json) with its
 existing Celsius/Fahrenheit starter. Trace its WASM and resource-limit test
