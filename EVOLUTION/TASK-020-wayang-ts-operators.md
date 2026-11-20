@@ -527,7 +527,7 @@ Criteria per milestone: A0 5, A1 7, A2 6, A3 6, A4 9, A5 2, B1 6, B2 3, B3 4, B4
 | D-T10 | S3 segment input | not needed; Go KafScale template; Rust segment decoder | not needed: both tracks read the Kafka protocol | as recommended, owner, 2026-11-16 |
 | D-T11 | Kafka transport security until KafScale is checked | TLS-terminating proxy; isolated network; wait for KafScale support | TLS-terminating proxy | as recommended, owner, 2026-11-16 |
 | D-T12 | Where `opentsx-wayang` lives | module in this repository; separate repository | module in this repository: it reuses five OpenTSx modules | as recommended, owner, 2026-11-16 |
-| D-T13 | FPGA kernels on raw sensor data (Tier 3) | kernels behind the Rust runner, data reduction only; a separate FPGA track reached from Wayang; not admitted, results enter as `MEASURED` edge metrics | behind the Rust runner, data reduction only: the runner keeps transport, framing, keyed state and checkpoints; see qualification below | open, proposed 2026-11-20 |
+| D-T13 | FPGA kernels on raw sensor data (Tier 3) | kernels behind the Rust runner, data reduction only; a separate FPGA track reached from Wayang; not admitted, results enter as `MEASURED` edge metrics | behind the Rust runner, data reduction only: the runner keeps transport, framing, keyed state and checkpoints; see qualification below | as recommended, owner, 2026-11-20 |
 
 D-T2 compares a fixed relative bound with per-data-set measurement in A4.5.
 The owner approved relative `3e-12` for bounded W3 `mean` and `m2` on
@@ -538,7 +538,7 @@ No bound is established for arbitrary data or mixed runtimes.
 
 ### D-T13: admit FPGA kernels as Tier 3
 
-Status: open, proposed 2026-11-20 for an owner decision. Evidence and design are in the study
+Accepted by the owner on 2026-11-20 with all seven points as recommended. Evidence and design are in the study
 [`02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md`](../docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md).
 
 **Question.** May the catalog admit operator versions that execute as FPGA kernels on raw sensor data, below the
@@ -559,7 +559,7 @@ Rust runner on an onboard computer?
   relative, `5e-13` absolute or exact equality (`docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md:105-123`). A
   change to an operator's output for any input raises its version and the catalog version (`SPEC:56-57`).
 
-**Recommended decision.**
+**Decision.**
 
 1. Kernels run only behind the Rust runner of Track B. The runner keeps Kafka transport, Avro framing, keyed state,
    checkpoints and publication. Kernels never read or write a topic (C3, C4).
@@ -594,16 +594,16 @@ Rust runner on an onboard computer?
 | R6, fault injection without a beam | kernel, runner and ring recover from injected configuration upsets and watchdog reboots without losing an acknowledged record |
 | CPU fallback | the runner's CPU implementation of the same operator version produces identical output and runs when no matching bitstream is loaded |
 
-**Consequences if accepted.**
+**Consequences.**
 
-- The delivery of the first kernel changes the concept 09 row at line 130 and translates concept 09 to English in
-  the same pull request.
-- Concept 20 adds Tier 3 to sections 1 and 15. The SPEC adds `runtimes.fpga`, the `raw` port and tolerance classes
-  to S1.
+- The delivery of the first kernel carries the contract changes in one pull request: the concept 09 row at line 130
+  and an English translation of concept 09; Tier 3 in sections 1 and 15 of concept 20; `runtimes.fpga`, the `raw`
+  port and tolerance classes in S1 of the SPEC and in the processor schema. Until then no runtime key, port or
+  tolerance class for FPGA exists.
 - Each kernel is an operator addition under `AGENTS.md` section 14: manual, SPEC, learning metadata, student
   exercise, implementation and executable regression cases in one coordinated delivery (`AGENTS.md:116-117`).
 
-**Options not recommended.**
+**Options rejected.**
 
 - A separate FPGA track reached from Wayang repeats the transport, checkpoint and publication logic that the Rust
   runner already holds, and adds a third runtime to keep in parity. D-T1 chose one non-JVM runtime.
