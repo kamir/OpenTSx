@@ -75,6 +75,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `tsx-runner` site configuration field `profile` (`ground` or `orbit`). In the `orbit` profile `agent` and
+  `run --plan` keep a plan running when a status record cannot reach the plan service: the record goes to a durable
+  outbox in the state directory, bounded to 5,760 records, and buffered records are sent oldest first before newer
+  and terminal records. A full outbox stops the plan. The `ground` profile, also used without the field, still
+  stops a plan when a heartbeat fails. TASK-022 phase L0.
 - `lascaris-space/`: home of the OpenTSx components for in-orbit computation on LASCARIS for Space, with the
   components it holds, the modules that stay responsible for the runner, Wayang and the Workbench, and the contracts
   it keeps. It contains no code yet. The README section "Take time series into orbit with LASCARIS for Space" states

@@ -3,7 +3,7 @@
 ## Task Metadata
 - **Task ID**: TASK-022-situation-center
 - **Created**: 2026-11-20
-- **Status**: Planned
+- **Status**: In progress (L0 done)
 - **Priority**: Medium
 - **Epic**: OpenTSx in orbit on LASCARIS for Space ([`lascaris-space/`](../lascaris-space/README.md))
 - **Builds on**: [TASK-021](TASK-021-orbit-testbed.md) (orbit testbed), D-T13 in [TASK-020](TASK-020-wayang-ts-operators.md)
@@ -25,18 +25,21 @@ several cooperating situation centers follow later, each center acting as a set 
 |---|---|---|
 | Admission | per-job conformance handshake: challenge, signed report with 10 checks, stored admission with expiry (`opentsx-wayang/src/main/java/org/opentsx/wayang/site/ConformanceHandshake.java:15-17`, `:38-144`; `opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxPlanService.java:154-181`) | nodes are not registered as nodes; only jobs are admitted |
 | Hub | `TsxPlanService` knows sites from key and certificate pins set at construction (`TsxPlanService.java:31-33`, `:48-74`); plans are pulled (`TsxPlanService.java:354-356`) | runs only inside tests; no own process, no read API |
-| Status | `opentsx.dag-status.v1` per running job (`rust/tsx-runner/src/agent.rs:967-969`), every 15 s (`agent.rs:1044`) | no status for idle nodes; plan polls are not recorded (`TsxPlanService.java:183-201`) |
+| Status | `opentsx.dag-status.v1` per running job (`rust/tsx-runner/src/agent.rs:1107-1109`), every 15 s (`agent.rs:17`) | no status for idle nodes; plan polls are not recorded (`TsxPlanService.java:183-201`) |
 | Display | `GET /v1/dags` folds DAG control and status (`opentsx-retrieval/src/main/java/org/opentsx/retrieval/server/KafScaleFeed.java:335-361`) | no page for nodes, admissions, plan delivery, federation or a map; job-keyed Track A and B status is not shown |
-| Keys | a site trusts exactly one driver key (`rust/tsx-runner/src/site_plan.rs:124`) | several centers need one key per center |
+| Keys | a site trusts exactly one driver key (`rust/tsx-runner/src/site_plan.rs:151`) | several centers need one key per center |
 | Wayang costs | disk and network load converters of the site platform are 0 (`opentsx-wayang/src/main/java/org/opentsx/wayang/TsxSitePlatform.java:37`) | link availability does not influence placement |
 | KafScale | topics are append-only, no compaction (`opentsx-kafka-v2/src/main/java/org/opentsx/kafka/TopicLayout.java:18`) | a registry needs a fold over an append-only log |
 
 ### Orbit profile first
 
-During a run the agent reports status every 15 s and stops the plan when one report fails
-(`rust/tsx-runner/src/agent.rs:1044`, `:1048-1055`). In orbit that happens at every loss of signal. An orbit profile
-appends status to the sidecar log and forwards it at the next acquisition of signal (AOS). Ground sites keep today's
-fail-closed behavior. The change ships with a regression test (AGENTS.md section 7).
+During a run the agent reports status every 15 s. In the `ground` profile it stops the plan when one report fails
+(`rust/tsx-runner/src/agent.rs:1181-1187`). In orbit that would happen at every loss of signal. The site configuration
+field `profile` `orbit` (`rust/tsx-runner/src/site_plan.rs:188-193`) makes the agent append the status to a durable
+outbox in its state directory and send it, oldest first, at the next acquisition of signal (AOS), before the terminal
+status (`agent.rs:101-150`). Ground sites keep the fail-closed behavior. The
+[B3 operating guide](../docs/devguide/integration/rust-runner-b3.md#keep-plans-running-through-loss-of-signal)
+lists the bounds and messages.
 
 ### Component state model
 
@@ -54,7 +57,7 @@ Per kind:
 
 - **Node**: mode (`nominal`, `safe`, `maintenance`), power (battery voltage, state of charge, budget), position (OMM
   epoch or last onboard fix), onboard time offset, key id and expiry, boot count, last reset reason.
-- **Sidecar**: runner version and digest (already in the status document, `agent.rs:967-969`), operator catalog
+- **Sidecar**: runner version and digest (already in the status document, `agent.rs:1107-1109`), operator catalog
   version, log size, free storage, oldest unsent offset per topic, downlink backlog and passes to drain.
 - **Link**: AOS, LOS, maximum elevation, planned and achieved bytes, loss, round-trip time, convergence layer.
 - **Ground station**: tracking state, upcoming passes, uplink and downlink queues.
@@ -130,14 +133,14 @@ above a threshold is itself a condition, `ContactPlanDivergent`.
 - Every center mirrors the other centers' registry and presence logs read-only.
 - In Wayang a center is a set of sites under its own driver key, not a new platform. A center plans only for nodes it
   holds authority over; cross-center work is two plans joined by a mirrored topic.
-- Needed in code: several driver keys per site instead of one (`site_plan.rs:124`), the authority lease in plan
+- Needed in code: several driver keys per site instead of one (`site_plan.rs:151`), the authority lease in plan
   admission, and link availability as network cost in the Wayang cost model (`TsxSitePlatform.java:37`).
 
 ## Sub-Tasks
 
 | Phase | Work | Done when |
 |---|---|---|
-| L0 Orbit profile | runner buffers status in the sidecar log instead of stopping the plan; regression test | a plan keeps running through a simulated loss of signal and its status arrives complete at the next AOS |
+| L0 Orbit profile | runner buffers status in a durable outbox instead of stopping the plan; regression test | a plan keeps running through a simulated loss of signal and its status arrives complete at the next AOS; done, `agent::tests::orbit_plan_keeps_running_through_loss_of_signal_and_every_status_arrives_at_aos` |
 | L1 Registry and presence | topics, descriptor schema, admission, lease, revocation; hub as its own process on the NAS | two nodes appear, renew their leases, and a revocation takes effect |
 | L2 State model and situation service | component record schema, contact state machine, REST and WebSocket | every contact state including `expectedSilent`, `overdue` and `lost` is reproduced in tests |
 | L3 Situation page | table, timeline, map, plans and backlog in the Workbench; Grafana beside it | one simulated day with passes is shown correctly live and in retrospect |
