@@ -13,6 +13,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Resolve Central dependencies and plugins in CI through a Google Cloud-hosted
+  mirror. Verify endpoint selection and permanent errors offline, including a
+  Central 404 response with a long Retry-After value.
 - Retain Maven execution exception details, selected transport and sanitized
   cache reports before and after every Maven CI job. Check missing-plugin
   failure diagnostics offline and distinguish fresh HTTP failures from cached

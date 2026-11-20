@@ -27,6 +27,7 @@ class MavenCacheKeysTest(unittest.TestCase):
             "module/pom.xml": "<project><modelVersion>4.0.0</modelVersion><artifactId>module</artifactId></project>",
             ".mvn/extensions.xml": "<extensions/>",
             ".mvn/maven.config": (ROOT / ".mvn/maven.config").read_text(),
+            ".mvn/ci-settings.xml": "<settings/>",
             "tools/check_maven_downloads.py": (ROOT / "tools/check_maven_downloads.py").read_text(),
         }.items():
             path = self.root / name
@@ -73,7 +74,8 @@ class MavenCacheKeysTest(unittest.TestCase):
         self.assertEqual(keys, {job: self.key(job) for job in sorted(MAVEN_JOBS)})
 
     def test_runtime_configuration_extensions_and_module_poms_invalidate_the_key(self):
-        for name in (".mvn/maven.config", "tools/check_maven_downloads.py", ".mvn/extensions.xml", "module/pom.xml"):
+        for name in (".mvn/maven.config", ".mvn/ci-settings.xml", "tools/check_maven_downloads.py",
+                     ".mvn/extensions.xml", "module/pom.xml"):
             path = self.root / name
             original = path.read_bytes()
             before = self.key("java")
