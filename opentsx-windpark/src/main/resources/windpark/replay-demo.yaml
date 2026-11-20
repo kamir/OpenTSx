@@ -1,0 +1,36 @@
+name: windpark-replay
+seed: 31
+start: 2026-10-01T00:00:00Z
+duration: PT30M
+sampleInterval: PT1M
+episodeDuration: PT10M
+park:
+  id: replay-demo
+  name: Synthetic replay park
+  latitude: 54
+  longitude: 13
+  turbineModel: GENERIC-3MW
+  rows: 1
+  columns: 3
+  spacingRotorDiameters: 5
+  rowSpacingRotorDiameters: 7
+  wakeDecay: 0.05
+wind:
+  weibullK: 2.2
+  weibullC: 14
+  turbulenceIntensity: 0
+  meanDirectionDeg: 0
+  directionStdDeg: 0
+  diurnalAmplitude: 0
+  meanTemperatureC: 10
+operations:
+  - type: FAULT
+    turbines: [T02]
+    offset: PT10M
+    duration: PT10M
+  - type: CURTAILMENT
+    turbines: [T03]
+    offset: PT10M
+    duration: PT10M
+    limitKw: 1500
+sensorFaults: []
