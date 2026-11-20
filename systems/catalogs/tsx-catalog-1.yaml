@@ -1,18 +1,21 @@
+# Catalog 1 (S1.7), frozen 2026-11-17 (TASK-020, A3.6). Immutable (S1.1.3): sha256 is the SHA-256 of the bytes of
+# the vector file the description names; an operator whose output changes gets a new version and a new catalog.
+schema: opentsx.catalog.v1
 catalog: tsx-catalog/1
 operators:
-  - { id: decode.avro-soe, version: 1 }
-  - { id: dq.plausible-range, version: 1 }
-  - { id: convert.unit, version: 1 }
-  - { id: resample, version: 1 }
-  - { id: model.wind-shear, version: 1 }
-  - { id: model.power-curve, version: 1 }
-  - { id: feature.lag, version: 1 }
-  - { id: feature.rolling, version: 1 }
-  - { id: stats.welford-ddsketch, version: 1 }
-  - { id: align.vector, version: 1 }
-  - { id: segment.threshold, version: 1 }
-  - { id: segment.extremum, version: 1 }
-  - { id: sax.word, version: 1 }
-  - { id: pair.xcorr, version: 1 }
-  - { id: pair.es, version: 1 }
-  - { id: dq.result, version: 1 }
+  - { id: decode.avro-soe, version: 1, sha256: 48b574017f17df9497f2d2a599b9d6fc077871ae002df65ae42bffde613a66dd }
+  - { id: dq.plausible-range, version: 1, sha256: 95a033958d68142c169b09896259ff0ac17a762f1110324e83dd4cf06ec90fef }
+  - { id: convert.unit, version: 1, sha256: 95a033958d68142c169b09896259ff0ac17a762f1110324e83dd4cf06ec90fef }
+  - { id: resample, version: 1, sha256: 95a033958d68142c169b09896259ff0ac17a762f1110324e83dd4cf06ec90fef }
+  - { id: model.wind-shear, version: 1, sha256: 95a033958d68142c169b09896259ff0ac17a762f1110324e83dd4cf06ec90fef }
+  - { id: model.power-curve, version: 1, sha256: 95a033958d68142c169b09896259ff0ac17a762f1110324e83dd4cf06ec90fef }
+  - { id: feature.lag, version: 1, sha256: 95a033958d68142c169b09896259ff0ac17a762f1110324e83dd4cf06ec90fef }
+  - { id: feature.rolling, version: 1, sha256: 95a033958d68142c169b09896259ff0ac17a762f1110324e83dd4cf06ec90fef }
+  - { id: stats.welford-ddsketch, version: 1, sha256: 75917a6a6aba2aca118508c552201567f0b8146e0b75564add5aae203afd850e }
+  - { id: align.vector, version: 1, sha256: 3b87608cae2050b151389d9eacd018a83cc4a9ae4170254d20213d94b031d6aa }
+  - { id: segment.threshold, version: 1, sha256: 90c64d470b1a544b2640a8bc40fc4efb5ed45091527ac0da558b357987c1e0f5 }
+  - { id: segment.extremum, version: 1, sha256: 2e8734663da709d2562aee11eb2defe8c5869bfc7d419d845c3688334c6ee176 }
+  - { id: sax.word, version: 1, sha256: 64936bf29e641976f2dcf8febe55fadd2473be5aec5046a6f86e028aec268d9b }
+  - { id: pair.xcorr, version: 1, sha256: 678bcdcfa69c9e85db5171a4334f0d987793a2fb0234c4e0262b29e39f826380 }
+  - { id: pair.es, version: 1, sha256: 9a470bd6bb0572e83e552319a23e8e113ad09ece036a2c0b9e7efed1b5f02f8d }
+  - { id: dq.result, version: 1, sha256: 6b90bdab9c40657277a70ed95663b14b63dd7f8ff153a7546f7ea6500030ab26 }
