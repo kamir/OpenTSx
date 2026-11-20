@@ -5,10 +5,15 @@
 #   deploy/docker/stage.sh [--with-s3]                                   # after mvn install -DskipTests
 #   docker build -f deploy/docker/opentsx-tools.Dockerfile -t opentsx/tools:3.0.1-local deploy/docker/.stage
 #
-# There is no RUN step, so cross-building for the Raspberry Pi needs no emulation:
+# The account stage runs natively, so cross-building for the Raspberry Pi needs no emulation:
 #   docker buildx build --platform linux/arm64 -f ... -t opentsx/tools:3.0.1-local-arm64 --load deploy/docker/.stage
-# (the jars are platform-independent; eclipse-temurin publishes amd64 and arm64 variants).
+# (jars and account files are platform-independent; eclipse-temurin publishes both variants).
 ARG JRE_IMAGE=eclipse-temurin:21.0.8_9-jre-noble
+FROM --platform=$BUILDPLATFORM ${JRE_IMAGE} AS accounts
+
+RUN printf 'opentsx:x:10001:10001:OpenTSx:/tmp:/usr/sbin/nologin\n' >> /etc/passwd \
+    && printf 'opentsx:x:10001:\n' >> /etc/group
+
 FROM ${JRE_IMAGE}
 
 LABEL org.opencontainers.image.title="opentsx-tools" \
@@ -21,8 +26,9 @@ ENV OPENTSX_HOME=/opt/opentsx \
     JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
 
 COPY opt/opentsx /opt/opentsx
+COPY --from=accounts /etc/passwd /etc/passwd
+COPY --from=accounts /etc/group /etc/group
 
-# numeric non-root user (no useradd -> no RUN step); writable state lives in mounted volumes (/data, /state)
 USER 10001:10001
 WORKDIR /tmp
 ENTRYPOINT ["/opt/opentsx/bin/opentsx"]

@@ -118,7 +118,7 @@ Every script has `--help`, is idempotent and stops with a clear message when som
 
 | Decision | Choice | Why |
 |----------|--------|-----|
-| Images | one tools image for all Java commands, built from **pre-staged jars** (no Maven in Docker) | one artifact to version and import; the build reuses the local Maven repository and works offline; no `RUN` step, so an arm64 image for a Raspberry Pi needs no emulation |
+| Images | Staged JARs | Native accounts; target copies need no emulation. |
 | Studio | page generated **during the image build** (multi-stage: StudioExport → `build_studio.py` → nginx) | immutable and versioned with the code; no ReadWriteMany volume between a Job and nginx (k3s' local-path volumes are node-local). The `studio-export` Job proves the export also runs in the cluster |
 | KafScale access | `direct` (default), `hostnetwork` or `service` | KafScale clients connect to the **advertised** Proxy address after the bootstrap; a Service can only alias the bootstrap. See [setup plan, step 3](setup-plan.md#step-3-network-path-to-kafscale) |
 | Statistics processor | exactly one replica, `Recreate`, checkpoint on a PVC | manual partition assignment and checkpoint file (KafScale consumer groups are unreliable) |

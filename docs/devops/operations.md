@@ -293,9 +293,11 @@ deploy/k3s/71-restore.sh DIR --only stats-state --yes
   authentication either.
 * **Modbus:** Modbus TCP has no authentication or encryption. Put converter and poller on an isolated network
   segment. The OpenTSx client implements only the read function codes (0x01–0x04), so it cannot write to a meter.
-* **Supply chain:** base images are pinned by tag (`eclipse-temurin:21.0.8_9-jre-noble`,
-  `nginxinc/nginx-unprivileged:1.27.4-alpine`, MinIO, Iceberg REST); the tools image has no `RUN` step. Pin by digest
-  for production-like environments.
+* **Supply chain:** base images are pinned by tag
+  (`eclipse-temurin:21.0.8_9-jre-noble`,
+  `nginxinc/nginx-unprivileged:1.27.4-alpine`, MinIO, Iceberg REST).
+  The tools image prepares account files on the build platform and copies
+  them into the target image. Pin by digest for production environments.
 
 ## Runbooks
 

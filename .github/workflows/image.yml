@@ -23,13 +23,31 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      digest: ${{ steps.publish.outputs.digest }}
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Test image acceptance controls
+        run: python3 -m unittest discover -s deploy/docker -p 'test_*.py' -v
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
+      - name: Install Maven 3.9.8
+        run: |
+          curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 \
+            -o "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" \
+            https://archive.apache.org/dist/maven/maven-3/3.9.8/binaries/apache-maven-3.9.8-bin.tar.gz
+          printf '%s  %s\n' '7d171def9b85846bf757a2cec94b7529371068a0670df14682447224e57983528e97a6d1b850327e4ca02b139abaab7fcb93c4315119e6f0ffb3f0cbc0d0b9a2' "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" | sha512sum --check
+          tar xzf "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
+      - name: Verify Maven download retries
+        run: python3 tools/check_maven_downloads.py
       - name: Version
         id: version
         run: |
@@ -51,13 +69,36 @@ jobs:
               || { echo "$m: failsafe is missing; S3FileIO cannot read" >&2; exit 1; }
           done
       - uses: docker/setup-buildx-action@v4
+      - name: Build the native candidate
+        uses: docker/build-push-action@v7
+        with:
+          context: deploy/docker/.stage
+          file: deploy/docker/opentsx-tools.Dockerfile
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: opentsx-tools:acceptance
+          labels: |
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          provenance: false
+      - name: Verify candidate startup and replay
+        env:
+          OPENTSX_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          image_id="$(docker image inspect --format '{{.Id}}' opentsx-tools:acceptance)"
+          python3 deploy/docker/check_tools_image.py --image "$image_id" \
+            --platform linux/amd64 --version "$OPENTSX_VERSION" --revision "$GITHUB_SHA" \
+            --output target/image-acceptance/candidate
       - uses: docker/login-action@v4
         if: github.ref_type == 'tag'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v7
+      - name: Build and publish the multi-platform image
+        id: publish
+        uses: docker/build-push-action@v7
         with:
           context: deploy/docker/.stage
           file: deploy/docker/opentsx-tools.Dockerfile
@@ -69,3 +110,46 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
           provenance: true
           sbom: true
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: candidate-image-acceptance
+          path: target/image-acceptance/candidate/
+
+  published-acceptance:
+    name: Published tools image ${{ matrix.arch }}
+    needs: opentsx-tools
+    if: github.ref_type == 'tag'
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux/amd64
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            platform: linux/arm64
+            arch: arm64
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Download and verify the published image
+        env:
+          OPENTSX_IMAGE: ghcr.io/kamir/opentsx-tools@${{ needs.opentsx-tools.outputs.digest }}
+          OPENTSX_VERSION: ${{ needs.opentsx-tools.outputs.version }}
+          OPENTSX_PLATFORM: ${{ matrix.platform }}
+        run: |
+          python3 deploy/docker/check_tools_image.py --image "$OPENTSX_IMAGE" \
+            --platform "$OPENTSX_PLATFORM" --version "$OPENTSX_VERSION" --revision "$GITHUB_SHA" \
+            --output target/image-acceptance/published
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: published-image-acceptance-${{ matrix.arch }}
+          path: target/image-acceptance/published/
