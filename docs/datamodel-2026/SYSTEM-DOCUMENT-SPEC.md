@@ -767,7 +767,7 @@ Implemented in: `signals.ts:150-158,181-188,223-252,573-611`, `SignalsPlace.tsx:
 * `dq.plausible-range` is preset with `expect.min` and `expect.max`. `resample` is preset with 60 seconds.
 * The workbench MAY be used without a signal. It then has no context line.
 
-Implemented in: `Workbench.tsx:168-181,695-742,826-831,948-972`, `types.ts:144-160`.
+Implemented in: `Workbench.tsx:168-181,695-742,826-831,948-972`, `types.ts:139-155`.
 
 <a id="s84-publish-as-clean-signal"></a>
 

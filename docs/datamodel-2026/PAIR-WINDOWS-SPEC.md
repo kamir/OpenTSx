@@ -85,7 +85,7 @@ Every pair method reads the same pair parameters. The method parameters are in s
   the key is missing.
 
 Implemented in: `workbench/pairs.ts:75-89`, `workbench/ops.ts:764-775`, `wayang/ops/TsxPairXcorr.java:29-57`,
-`runner/pairs.rs:738-844`.
+`runner/pairs.rs:741-847`.
 
 <a id="pairs"></a>
 
@@ -123,7 +123,7 @@ A pair range is the time range that one episode of A and one episode of B both c
   series it can skip pairs.
 * The pair ranges of one pair are sorted by start.
 
-Implemented in: `workbench/pairs.ts:125-148`, `wayang/ops/TsxPairWindows.java:145-155`, `runner/pairs.rs:1396-1412`.
+Implemented in: `workbench/pairs.ts:125-148`, `wayang/ops/TsxPairWindows.java:145-155`, `runner/pairs.rs:1399-1415`.
 
 <a id="windows"></a>
 
@@ -148,7 +148,7 @@ n         = floor((L-W)/S + 1e-9) + 1     when L >= W-TOL, otherwise 0
 * A pair range shorter than the window gives no item. The workbench counts these ranges in the note of the result
   bucket (`<n> pair range(s) shorter than the window`).
 
-Implemented in: `workbench/pairs.ts:157-166`, `wayang/ops/TsxPairXcorr.java:112-134`, `runner/pairs.rs:979-1011`.
+Implemented in: `workbench/pairs.ts:157-166`, `wayang/ops/TsxPairXcorr.java:112-134`, `runner/pairs.rs:982-1014`.
 
 <a id="alignment"></a>
 
@@ -174,8 +174,8 @@ A and B are put on one clock by the rules of `align.vector`
   has no value, and the clock `every`.
 
 Implemented in: `workbench/pairs.ts:97-104`, `workbench/pairs.ts:169-176`, `workbench/pairs.ts:239-266`,
-`workbench/vector.ts:32-93`, `wayang/ops/TsxPairWindows.java:158-169`, `wayang/ops/TsxPairWindows.java:180-267`,
-`runner/pairs.rs:1109-1173`, `runner/pairs.rs:1425-1428`.
+`workbench/vector.ts:33-94`, `wayang/ops/TsxPairWindows.java:158-169`, `wayang/ops/TsxPairWindows.java:180-267`,
+`runner/pairs.rs:1112-1176`, `runner/pairs.rs:1428-1431`.
 
 <a id="coverage"></a>
 
@@ -220,8 +220,8 @@ A pair method gives one or more fields per window. Each field of each pair is a 
   of the first input. The prefixes are `Coverage_`, `XCorr_` and `ES_`.
 
 Implemented in: `workbench/pairs.ts:91-94`, `workbench/pairs.ts:288-329`, `workbench/seriesKeys.ts:84-92`,
-`wayang/ops/TsxPairWindows.java:172-178`, `wayang/JavaTsxPair.java:146-154`, `runner/pairs.rs:1175`,
-`runner/pairs.rs:1484-1500`.
+`wayang/ops/TsxPairWindows.java:172-178`, `wayang/JavaTsxPair.java:146-154`, `runner/pairs.rs:1178`,
+`runner/pairs.rs:1487-1503`.
 
 <a id="result-episodes"></a>
 
@@ -259,7 +259,7 @@ Lineage:
 * Episode id in Wayang and the Rust runner: `p` followed by the lower-case hex of xxHash64 over the UTF-8 bytes of
   `<series id>|<episode id of A>|<episode id of B>|<specHash>`. `Provenance.source` is `opentsx-wayang`.
 
-Implemented in: `workbench/pairs.ts:280-312`, `wayang/JavaTsxPair.java:145-172`, `runner/pairs.rs:1500-1580`.
+Implemented in: `workbench/pairs.ts:280-312`, `wayang/JavaTsxPair.java:145-172`, `runner/pairs.rs:1503-1583`.
 
 <a id="lag-sign"></a>
 
@@ -311,7 +311,7 @@ Origin: `KreuzKorrelation.calcKRCoeffizient`, `KreuzKorrelation.calcKR_SLIDINGWI
   equal the output of `calcKR_SLIDINGWINDOW`, which stops one window early.
 
 Implemented in: `workbench/xcorr.ts:35-114`, `wayang/ops/TsxPairXcorr.java:59-110`,
-`wayang/ops/TsxPairWindows.java:37-61`, `runner/pairs.rs:749-764`, `runner/pairs.rs:905-977`.
+`wayang/ops/TsxPairWindows.java:37-61`, `runner/pairs.rs:752-767`, `runner/pairs.rs:908-980`.
 
 <a id="pair-es"></a>
 
@@ -431,17 +431,19 @@ Implemented in: `workbench/workLimits.ts:6-13`, `workbench/workLimits.ts:27-66`,
 | Wayang, Java platform | `pair.xcorr`, `pair.es` | `TsxPair` executed by `JavaTsxPair` ([20-WAYANG-TS-OPERATORS-SPEC.md, S1.7](20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1)) |
 | Rust runner `tsx-runner` | `pair.xcorr` | bounded profile of [20-WAYANG-TS-OPERATORS-SPEC.md, S1.13](20-WAYANG-TS-OPERATORS-SPEC.md#s113-execute-the-isolated-local-rust-b2-catalog); `pair.es` is rejected |
 
-* The workbench operators have `group: 'multivariate'`, `multiInput: true`, `maxInputs: 2` and `inCatalog: false`.
-* The DAG export writes `# not in the stream operator catalog` after the `op` of every pair node and the line
-  `experimental: true` under it.
+* The workbench operators have `group: 'multivariate'`, `multiInput: true` and `maxInputs: 2`.
+* Catalog 1 lists `pair.xcorr` and `pair.es`, not `pair.coverage`
+  ([VECTOR-AND-DAG-SPEC.md, section 4](VECTOR-AND-DAG-SPEC.md#4-stream-operator-catalog)). Of the pair nodes, the
+  DAG export writes `# not in the stream operator catalog` after the `op` of `pair.coverage` only. It writes the
+  line `experimental: true` under every pair node.
 * The vector processor does not run pair nodes. The deploy checks refuse a published pair node with
   `<label> (<op>): Runs in the browser on this path. Native Java Wayang mappings are available. This workbench
   deployment path does not execute pair operators. This output is not a supported processor sink.`
 * Every runtime MUST follow sections 3 to 12 for the methods it runs.
 
-Implemented in: `workbench/ops.ts:831-847`, `workbench/flow.ts:650-651`, `workbench/flow.ts:726-727`,
-`workbench/capabilities.ts:12-26`, `wayang/JavaTsxPair.java:45-53`, `systems/processors/pair.xcorr.yaml`,
-`systems/processors/pair.es.yaml`.
+Implemented in: `workbench/ops.ts:831-847`, `workbench/ops.ts:935-946`, `workbench/flow.ts:650-651`,
+`workbench/flow.ts:726-727`, `workbench/capabilities.ts:12-26`, `wayang/JavaTsxPair.java:45-53`,
+`systems/processors/pair.xcorr.yaml`, `systems/processors/pair.es.yaml`.
 
 <a id="test-vectors"></a>
 
