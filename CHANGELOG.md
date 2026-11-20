@@ -439,6 +439,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- Concept 20 section 6.1 and the TASK-020 B1 notes list the signed `tsx-runner`
+  modes that exist. With the B3 site configuration, `agent`, `conform` and `run`
+  handle signed bounded statistics. With the B1 configuration, `run` executes
+  isolated signed continuous pass-through.
+
 - Retrieval POST routes `/v1/patterns/search`, `/v1/episodes/similar` and `/v1/segments` require a single JSON object
   and report invalid bodies as HTTP 400. Response exchanges close after success or failure while preserving the
   primary exception and any suppressed close failure.

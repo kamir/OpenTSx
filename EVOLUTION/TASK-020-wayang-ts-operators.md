@@ -388,8 +388,10 @@ implements continuous whole-topic pass-through with Ed25519 plan verification,
 exact assignment/artifact/local-policy checks, explicit finite-cut caps and
 acknowledgement-before-checkpoint recovery. The
 [trusted-local replay and HTTP profiles](../docs/devguide/integration/rust-runner-local.md)
-retain their separate cleaning operators, state formats and limits. Public fleet
-`agent` and signed `conform` modes are not implemented.
+retain their separate cleaning operators, state formats and limits. The B1
+configuration does not select `agent` or `conform`. The separate
+[B3 site profile](#b3-agent-offline-operation-ssh-launch) implements both for
+signed bounded statistics; production fleet activation remains separate.
 
 CI defines native x86_64/ARM64 tests, the three required musl artifacts and
 supplementary ARMv7 QEMU tests. Artifact and test reports bind actual run

@@ -397,15 +397,21 @@ qualification evidence.
 same topics, with the same checkpoint rules (C1 to C9). It reads and writes Kafka through the site's KafScale proxy
 and nothing else. Producers set `partitioner=murmur2_random` in addition to C4 (section 3.5).
 
-The fleet target has modes `agent` (mTLS REST service, outbound polling by
-default), `run` (one plan file), and `conform` (site checks of section 8, signed
-report). Only the isolated pass-through `run` profile is implemented as a signed
-command. Trusted-local `replay` and `serve` remain separate interfaces.
+The runner has three signed modes. `agent` pulls signed plans from the driver
+over outbound mTLS. `conform` runs the job-bound site checks of section 8 and
+submits a signed report. `run` executes one signed plan from a file or standard
+input. The [B3 site configuration](../devguide/integration/rust-runner-b3.md)
+selects all three modes. Its plans execute signed bounded statistics only:
+`decode.avro-soe` followed by `stats.welford-ddsketch` over the fixed finite cut
+of one complete topic. With the isolated
+[B1 configuration](../devguide/integration/rust-runner-b1.md), `run` executes
+signed continuous pass-through instead. Trusted-local `replay` and `serve`
+remain separate interfaces.
 
 Inside, one owner executes each assigned whole topic: fetch every partition with `BaseConsumer`
 (manual `assign`, `seek`, no group id),
 decode, run the operator chain in process, produce, collect delivery reports, then write the checkpoint. Unlike
-Track A, the runner is continuous: no job start per increment.
+Track A, the B1 `run` loop is continuous: no job start per increment.
 
 ### 6.2 Resource targets
 
