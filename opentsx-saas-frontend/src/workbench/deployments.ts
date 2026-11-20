@@ -24,13 +24,35 @@ export interface DagState {
   sinks: SinkStatus[];
 }
 
+/** What a Track A or Track B job reports (opentsx.dag-status.v1 with `job`), the latest record per key, as written. */
+export interface JobStatus {
+  dag: string;
+  job: string;
+  track: 'A' | 'B' | string;
+  planVersion: number;
+  state: 'running' | 'idle' | 'stopped' | 'failed' | string;
+  /** Input records read, not records written. */
+  records: number;
+  watermark: string | null;
+  waitingFor: string[];
+  skippedBlocks: number;
+  error?: string;
+  at: string;
+  site?: string;
+  artifact?: { version: string; digest: string };
+  /** The input topic, not an output topic. */
+  topic?: string;
+}
+
 export interface DagList {
   now: string;
   writes: boolean;
   dags: DagState[];
+  /** Missing on retrieval servers that do not list job reports. */
+  jobs?: JobStatus[];
 }
 
-/** A deployed DAG whose newest report is older than this has no processor behind it. */
+/** A report older than this has nobody behind it: the processor and both job tracks report at least every 30 s. */
 const STALE_SECONDS = 120;
 
 /** One line about a sink, in the words of a person watching it. */
@@ -55,6 +77,38 @@ export function describeSink(s: SinkStatus): string {
 export function hasProcessor(d: DagState, now: string): boolean {
   const newest = Math.max(Date.parse(d.at), ...d.sinks.map((s) => Date.parse(s.at)));
   return (Date.parse(now) - newest) / 1000 <= STALE_SECONDS;
+}
+
+/** One line about a job: its state and how many input records it read. */
+export function describeJob(j: JobStatus): string {
+  const read = `${j.records.toLocaleString('en')} input records`;
+  switch (j.state) {
+    case 'running':
+      return `running: ${read} read`;
+    case 'idle':
+      return `idle, no new input: ${read} read`;
+    case 'stopped':
+      return `stopped after ${read}`;
+    case 'failed':
+      return `failed after ${read}: ${j.error ?? 'no reason given'}`;
+    default:
+      return `${j.state}: ${read} read`;
+  }
+}
+
+/** Whether a job that should still report has not done so for two minutes. Stopped and failed are its last reports. */
+export function jobIsStale(j: JobStatus, now: string): boolean {
+  return j.state !== 'stopped' && j.state !== 'failed' && (Date.parse(now) - Date.parse(j.at)) / 1000 > STALE_SECONDS;
+}
+
+/** How long before `now` the report was written. */
+export function reportAge(at: string, now: string): string {
+  const seconds = Math.round((Date.parse(now) - Date.parse(at)) / 1000);
+  if (seconds < 0) return `${-seconds} s ahead of the server clock`;
+  if (seconds < 120) return `${seconds} s ago`;
+  if (seconds < 7200) return `${Math.floor(seconds / 60)} min ago`;
+  if (seconds < 172800) return `${Math.floor(seconds / 3600)} h ago`;
+  return `${Math.floor(seconds / 86400)} d ago`;
 }
 
 /** Topics several flows write on purpose. */
