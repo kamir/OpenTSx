@@ -166,8 +166,9 @@ for these operational tasks:
    the zero bucket and explicitly excluded collapsed tails from the qualified
    alpha domain.
 4. Read the [board plan and validator](../../tools/wayang_board_evaluation.py).
-   Distinguish its 27 planned conditions and synthetic regression fixtures from
-   actual physical measurements. The ARM64 B4.2 measurement remains open
+   Distinguish its 81 planned conditions across pass-through, clean and
+   statistics chains (D-T15) and synthetic regression fixtures from actual
+   physical measurements. The ARM64 B4.2 measurement remains open
    (D-T14: ARM64 only). A generated plan or passing
    integrity validator does not supply device performance numbers.
 

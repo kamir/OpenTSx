@@ -13,7 +13,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
-- Align operator lessons with D-T14 and the 27-condition ARM64 board plan.
+- Align operator lessons with D-T14, D-T15 and the 81-condition ARM64
+  board plan.
   Check the lesson's condition count against the executable planner; keep the
   physical ARM64 measurement open and ARMv7 outside hardware qualification.
   Bind the verified library-learning version to the current release.
@@ -113,8 +114,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   final flush. The B2 request ceilings (1,024 series, 1 MiB state) are unchanged.
 - TASK-020 D-T14 (owner, 2026-11-20): B1.2 and B4.2 need no ARMv7 hardware. The native x86_64 and ARM64 CI
   jobs meet B1.2; the ARMv7 artifact stays built and QEMU-tested but is not hardware-qualified. B4.2 is measured
-  on one physical ARM64 board, so `wayang_board_evaluation.py` plans 27 conditions and refuses ARMv7 and AArch32
-  boards. New `tools/board_identity.py` and `tools/board_resource_sampler.py` record the board and the one-second
+  on one physical ARM64 board. Under D-T15, `wayang_board_evaluation.py`
+  plans 81 conditions and refuses ARMv7 and AArch32 boards. The
+  `tools/board_identity.py` and `tools/board_resource_sampler.py` tools record
+  the board and the one-second
   RSS, CPU and lag samples in the validator's formats (Python 3.6, for JetPack 4.6), and the
   [Jetson runbook](docs/devguide/integration/wayang-board-jetson.md) prepares a Jetson Nano 4 GB for B4.2.
 - Artifact-embedded WASM `convert.unit` in the local Rust cleaning pipeline,
@@ -141,7 +144,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   partial/window evidence and six canonical-merge arrival orders. Separate
   exact-binary64 sketch cases retain shared vectors and identify boundary,
   zero-bucket and collapsed-tail accuracy domains without widening the
-  moments criterion. Board evaluation tooling prepares the fixed 27-condition
+  moments criterion. Board evaluation tooling prepares the fixed 81-condition
   ARM64 matrix and validates supplied evidence integrity. The physical ARM64
   B4.2 measurement remains open under D-T14. Manual and learning
   metadata keep these execution and hardware scopes separate.

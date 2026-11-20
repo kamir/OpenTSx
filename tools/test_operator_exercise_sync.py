@@ -102,6 +102,19 @@ class OperatorExerciseSyncTest(unittest.TestCase):
         for count in claims:
             with self.subTest(claim=count):
                 self.assertEqual(len(plan["conditions"]), int(count))
+        guidance = (
+            ("docs/learning/library-operator-contracts.md", r"prepares (\d+) unassigned conditions"),
+            ("docs/user-manual/17-learn-operators.md", r"Distinguish its (\d+) planned conditions"),
+            ("opentsx-wayang/README.md", r"prepares (\d+) unassigned conditions"),
+            ("EVOLUTION/TASK-020-wayang-ts-operators.md", r"defines (\d+) unassigned conditions"),
+            ("CHANGELOG.md", r"(\d+)-condition\s+ARM64\s+(?:board plan|matrix)"),
+            ("CHANGELOG.md", r"plans (\d+) conditions and refuses"),
+        )
+        for path, pattern in guidance:
+            counts = re.findall(pattern, (source / path).read_text(encoding="utf-8"))
+            with self.subTest(path=path, pattern=pattern):
+                self.assertTrue(counts)
+                self.assertEqual([len(plan["conditions"])] * len(counts), [int(count) for count in counts])
 
     def test_library_starter_renders_copyable_code_and_separate_json_data(self):
         for language, code in (("python", "from math import prod\nresult = prod([2, 3])"),

@@ -72,8 +72,9 @@ The separate exact-bit sketch harness records boundary, zero-bucket and
 collapsed-tail domains. Its execution evidence retains the existing moments
 criterion; the harness alone does not establish a new numerical bound.
 The physical ARM64 B4.2 measurement remains open (D-T14). The board tool
-prepares 27 unassigned conditions and validates supplied evidence without
-running device measurements. The
+prepares 81 unassigned conditions across pass-through, clean and statistics
+chains (D-T15) and validates supplied evidence without running device
+measurements. The
 [synchronization regression](../../tools/test_operator_exercise_sync.py)
 compares the statistics lesson's condition count with the executable plan.
 
