@@ -103,6 +103,9 @@ directly. Both the standalone unit conversion and combined cleaning chain
 exercise the real pipeline. Values retain A2.1's tolerance of
 `1e-12 * max(1, abs(expected))`; gaps, timestamps and units remain exact.
 Chunked runs serialize and restore the existing host state.
+The signed CLI regression also checks the actual executable against the
+existing 268,435,456-byte identity-read limit. Development and test profiles
+omit dependency debug information; runner debug information is retained.
 
 Use the [conversion lesson](../../learning/ui-operators.v1.json) with its
 existing Celsius/Fahrenheit starter. Trace its WASM and resource-limit test

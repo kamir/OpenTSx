@@ -21,3 +21,6 @@ ureq = { version = "=3.2.0", default-features = false, features = ["rustls-no-pr
 rustls = { version = "=0.23.46", default-features = false, features = ["ring", "std"] }
 wasmtime = { version = "=50.0.1", default-features = false, features = ["std", "runtime", "cranelift", "pulley"] }
 wat = "=1.263.0"
+
+[profile.dev.package."*"]
+debug = 0

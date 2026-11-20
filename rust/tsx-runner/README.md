@@ -6,6 +6,9 @@ explicit resource caps and acknowledged checkpoints.
 
 You need the pinned Rust 1.99.1 toolchain and the native C/C++ build tools used by `rdkafka` and zstd.
 The runner manifest declares Rust 1.97.0 as its minimum for Wasmtime 50.0.1.
+Development and test builds omit dependency debug information while retaining
+runner debug information. The signed CLI regression records the executable
+size and requires it to fit the existing 256 MiB identity-read limit.
 Broker execution also needs existing input/output topics and a trusted local request.
 The [local operating guide](../../docs/devguide/integration/rust-runner-local.md) defines the complete request,
 checkpoint, receipt, Compose and failure contracts.
