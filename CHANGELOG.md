@@ -8,6 +8,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ## [Unreleased]
 
+- Show the plant explorer prototype (`docs/prototypes/anlagen-explorer.html`) in English. The page no longer links
+  to the removed concept document.
+
+## [3.1.0] - 2026-11-20
+
 - Serialize pinned local KafScale metadata snapshots and refresh durable metadata before public reads. Proxy metadata
   responses retain acknowledged topic changes without waiting for watchers and propagate durable read failures.
 
@@ -70,8 +75,6 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Route Track A evaluation clients through the same guarded Proxy bundle and record its transport provenance.
   Archived measurement samples retain their recorded source and runtime hashes.
 - Require a verified Proxy bundle and private MinIO environment before the k3s probe starts local KafScale.
-- Show the plant explorer prototype (`docs/prototypes/anlagen-explorer.html`) in English. The page no longer links
-  to the removed concept document.
 
 ### Added
 

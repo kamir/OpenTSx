@@ -1,6 +1,6 @@
 # Run Kafka native streaming projections
 
-Use the OpenTSx 3.0.1 Kafka-client path to maintain derived topics on KafScale. The broker acceptance uses KafScale v1.6.0, matching the existing CI broker pin.
+Use the OpenTSx 3.1.0 Kafka-client path to maintain derived topics on KafScale. The broker acceptance uses KafScale v1.6.0, matching the existing CI broker pin.
 
 ## Choose the supported deployment
 

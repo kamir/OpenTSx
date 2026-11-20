@@ -1,6 +1,6 @@
 # Inspect bounded mixed Java and Rust federation
 
-Inspect the B4 acceptance harness for OpenTSx 3.0.1 and `tsx-runner` 0.1.0;
+Inspect the B4 acceptance harness for OpenTSx 3.1.0 and `tsx-runner` 0.1.0;
 execution results belong to the retained run evidence.
 
 You need the source-built KafScale v1.6.0 broker, Proxy and isolated cluster
