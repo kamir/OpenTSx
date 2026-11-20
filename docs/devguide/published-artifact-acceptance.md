@@ -22,6 +22,21 @@ They exercise the packaged dispatcher, publication gates, Docker failure and
 cleanup paths, image identity and independently calculated numerical values.
 Docker calls use deterministic fixtures in these tests.
 
+Check the current source release identity without Maven or network access:
+
+```bash
+python3 deploy/docker/check_tools_release.py
+```
+
+The checker reads the canonical POM version and requires stable, matching
+versions for reactor parents, modules and internal dependencies. The image
+workflow runs it before the Maven build and checks the staged internal JAR
+paths and embedded Maven identities before building the candidate. Staging
+uses pinned dependency-plugin 3.7.0 with runtime scope, excluding provided and
+test dependencies. The build
+uses the verified CI Maven mirror, a workload-specific dependency cache and
+retains sanitized download diagnostics in `maven-downloads-opentsx-tools`.
+
 ## Inspect the actual published release
 
 The published `3.0.1` image identifies source revision

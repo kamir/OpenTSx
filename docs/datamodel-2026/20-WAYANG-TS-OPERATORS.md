@@ -410,15 +410,21 @@ qualification evidence.
 same topics, with the same checkpoint rules (C1 to C9). It reads and writes Kafka through the site's KafScale proxy
 and nothing else. Producers set `partitioner=murmur2_random` in addition to C4 (section 3.5).
 
-The fleet target has modes `agent` (mTLS REST service, outbound polling by
-default), `run` (one plan file), and `conform` (site checks of section 8, signed
-report). Only the isolated pass-through `run` profile is implemented as a signed
-command. Trusted-local `replay` and `serve` remain separate interfaces.
+The runner has three signed modes. `agent` pulls signed plans from the driver
+over outbound mTLS. `conform` runs the job-bound site checks of section 8 and
+submits a signed report. `run` executes one signed plan from a file or standard
+input. The [B3 site configuration](../devguide/integration/rust-runner-b3.md)
+selects all three modes. Its plans execute signed bounded statistics only:
+`decode.avro-soe` followed by `stats.welford-ddsketch` over the fixed finite cut
+of one complete topic. With the isolated
+[B1 configuration](../devguide/integration/rust-runner-b1.md), `run` executes
+signed continuous pass-through instead. Trusted-local `replay` and `serve`
+remain separate interfaces.
 
 Inside, one owner executes each assigned whole topic: fetch every partition with `BaseConsumer`
 (manual `assign`, `seek`, no group id),
 decode, run the operator chain in process, produce, collect delivery reports, then write the checkpoint. Unlike
-Track A, the runner is continuous: no job start per increment.
+Track A, the B1 `run` loop is continuous: no job start per increment.
 
 ### 6.2 Resource targets
 
@@ -689,11 +695,24 @@ run the signature and conformance checks before the first fetch.
 
 ## 12. Observability
 
-Both tracks write the records the Java processor writes today, so the workbench and `GET /v1/dags` work unchanged:
-`opentsx.dag-control.v1` on `tsx.<domain>.dags.v1` and `opentsx.dag-status.v1` (`state`, `records`, `watermark`,
-`waitingFor`, `skippedBlocks`, `error`) on `tsx.<domain>.dag-status.v1`, on each state change and every 30 s. New
-fields, proposed: `site`, `job`, `planVersion`, `track`, `artifact` (version and digest). Metrics per task: lag per
-partition, records in and out, operator time, checkpoint age, delivery failures.
+`TsxStatus` (Track A) and the Rust `run` profile (Track B) write `opentsx.dag-status.v1` to
+`tsx.<domain>.dag-status.v1` on each state change and at least every 30 s. Track A repeats every 30 s
+(`TsxStatus.java:92`), the Rust `run` profile every 15 s (`run_loop.rs:20`). The Kafka key is the job id
+(`TsxStatus.java:79`, `run_loop.rs:310`). Site agents of both tracks send the same record to the plan service
+instead (S5.3; `SiteStatus.java:76-83`, `agent.rs:967`).
+
+A job record has the processor fields `dag`, `state`, `specHash`, `records`, `watermark`, `waitingFor`,
+`skippedBlocks`, `error` and `at`, plus `job`, `planVersion` and `track` (S5.4). `dag` equals `job`. The Rust runner
+and the site agents also write `site` and `artifact` (version and digest). Neither track writes or reads
+`opentsx.dag-control.v1` on `tsx.<domain>.dags.v1`.
+
+`GET /v1/dags` lists every status record that carries `job` under `jobs`: the latest record per key, as written, with
+or without a control record of that name (`KafScaleFeed.java:320`, `:375`). The processor never writes `job`.
+`dags` holds the control records with the processor's sink reports (key `<dag>/<sink>`) and refusals (key `<dag>`).
+Job records do not appear under `dags`. The workbench Deployments panel reads `dags` only and does not show job
+records (`opentsx-saas-frontend/src/workbench/deployments.ts:27-31`).
+
+Metrics per task: lag per partition, records in and out, operator time, checkpoint age, delivery failures.
 
 ## 13. Testing
 

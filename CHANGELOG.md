@@ -19,6 +19,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Resolve Central dependencies and plugins in CI through a Google Cloud-hosted
   mirror. Verify endpoint selection and permanent errors offline, including a
   Central 404 response with a long Retry-After value.
+- Align the Maven reactor, runtime producer identities and built-JAR launchers.
+  Reject unstable or mismatched internal versions in source and staged
+  JARs before publication. Use the existing CI Maven mirror, scoped dependency
+  cache and retained download diagnostics in the image build.
+- Pin the classpath plugin and stage compile/runtime dependencies without
+  provided or test JARs in the Tools image.
 - Retain Maven execution exception details, selected transport and sanitized
   cache reports before and after every Maven CI job. Check missing-plugin
   failure diagnostics offline and distinguish fresh HTTP failures from cached
@@ -76,6 +82,20 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   against the code with file and line references. Code comments, schema descriptions, `systems/` YAML and READMEs
   that cited the German design documents 07, 11, 14 and 15 or TASK-015 now cite these files.
 
+- `lascaris-space/`: home of the OpenTSx components for in-orbit computation on LASCARIS for Space, with the
+  components it holds, the modules that stay responsible for the runner, Wayang and the Workbench, and the contracts
+  it keeps. It contains no code yet. The README section "Take time series into orbit with LASCARIS for Space" states
+  the direction: series from orbit in the ground Workspace, identity by series key, provenance to the declared source,
+  and what provenance and signed downlink chunks do and do not guarantee for training data.
+- Planned task [`EVOLUTION/TASK-022-situation-center.md`](EVOLUTION/TASK-022-situation-center.md): in-orbit nodes
+  with a KafScale and `tsx-runner` sidecar, the ground station as hub and discovery point, a component state model
+  whose liveness follows predicted passes, a Workbench situation page, and later a decentralized registry and
+  cooperating situation centers. Phase L0 is an orbit profile in which a failed status report no longer stops a plan.
+- Planned task [`EVOLUTION/TASK-021-orbit-testbed.md`](EVOLUTION/TASK-021-orbit-testbed.md): a homelab testbed with a
+  Jetson Nano as onboard computer and a Synology NAS as ground station, a satellite simulator writing an onboard
+  ring buffer, an emulated space-ground link driven by computed passes, and phases P0 to P6 up to the D-T13 CPU
+  fallback path. Phase P0 prepares the board with the Jetson runbook and board tools of D-T14. No implementation
+  yet.
 - TASK-020 D-T14 (owner, 2026-11-20): B1.2 and B4.2 need no ARMv7 hardware. The native x86_64 and ARM64 CI
   jobs meet B1.2; the ARMv7 artifact stays built and QEMU-tested but is not hardware-qualified. B4.2 is measured
   on one physical ARM64 board, so `wayang_board_evaluation.py` plans 27 conditions and refuses ARMv7 and AArch32
@@ -460,10 +480,23 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Removed
 
+- Files that `.gitignore` excludes are no longer tracked: `config/private/ccloud.props` (the credentials in it
+  no longer exist), `.idea/workspace.xml` and every `.DS_Store`. The unreachable commented block after `exit` in
+  `bin/010_build.sh` is gone. `tools/test_repo_hygiene.py` fails if such files are tracked again.
+
 - `TimeSeriesAnalysisJob`, the 2.x Flink example job. `StatsJob` is the v2 Flink job. `TimeSeriesAggregateFunction`
   stays, because the PFD runtime `DynamicTopologyJob` uses it.
 
 ### Fixed
+
+- Concept 20 section 6.1 and the TASK-020 B1 notes list the signed `tsx-runner`
+  modes that exist. With the B3 site configuration, `agent`, `conform` and `run`
+  handle signed bounded statistics. With the B1 configuration, `run` executes
+  isolated signed continuous pass-through.
+- `GET /v1/dags` lists the status records of Track A and B jobs under `jobs`, the latest per key, also when no
+  control record has that name. A record that carries `job` is a job record. It is not shown as a refusal of the
+  processor and does not replace a refusal under the same key. Specification S5.4 requires `job` in every Track A
+  and B record.
 
 - Retrieval POST routes `/v1/patterns/search`, `/v1/episodes/similar` and `/v1/segments` require a single JSON object
   and report invalid bodies as HTTP 400. Response exchanges close after success or failure while preserving the
