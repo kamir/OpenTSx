@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.retrieval.EpisodeService;
 import org.opentsx.retrieval.server.RetrievalServer;
 import org.opentsx.retrieval.server.SeriesInventory;
@@ -13,6 +14,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 
@@ -331,6 +333,13 @@ class SystemsTest {
                 "park.p_gen_kw").path("origin").asText());
         assertEquals("ESTIMATED", signal(SYSTEMS.signals("h2-chain", windFarm(), Systems.bindings(body(turbine.formatted("ESTIMATED")))),
                 "park.p_gen_kw").path("origin").asText());
+    }
+
+    @Test
+    void aComputedSignalThatExpectsNoOriginHasTheWorstOriginOfItsInputs(@TempDir Path dir) throws Exception {
+        SystemDoc d = SystemDocTest.changed(dir, "max: 13000, interval: PT1M, kind: ANALOG, origin: MEASURED,", "max: 13000, interval: PT1M, kind: ANALOG,");
+        assertEquals(List.of(), d.problems());
+        assertEquals("SYNTHETIC", signal(new Systems(List.of(d)).signals("h2-chain", windFarm()), "park.p_gen_kw").path("origin").asText());
     }
 
     @Test

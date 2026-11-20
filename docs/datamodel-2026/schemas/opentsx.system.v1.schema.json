@@ -450,7 +450,7 @@
               "description": "Node of the flow whose result is this stage."
             }
           },
-          "description": "Derived: the data goes to tsx.<domain>.clean.v2; the origin is the worst of the inputs."
+          "description": "Derived: the data goes to tsx.<domain>.features.v2. The features give the signal no origin: it comes from the raw or the clean grade."
         },
         "names": {
           "type": "array",

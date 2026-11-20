@@ -142,13 +142,13 @@ and exchange closure. They start no server and use no network.
 
 ### Origin of a signal
 
-With `--systems`, `GET /v1/systems/{id}/signals` gives every signal an `origin`. From best to worst the origins are
-`MEASURED`, `REPORTED`, `FORECAST`, `ESTIMATED` and `SYNTHETIC`. The first rule that applies gives the origin:
+With `--systems`, `GET /v1/systems/{id}/signals` gives a signal an `origin` by the first rule that applies. From
+best to worst the origins are `MEASURED`, `REPORTED`, `FORECAST`, `ESTIMATED` and `SYNTHETIC`.
 
 1. The raw source states it. A generator source is `SYNTHETIC`. A manual source without an origin is `REPORTED`.
-2. A flow computes the clean grade: the worst of `expect.origin` and the origins of the signals the flow reads. A
-   computed estimate is `ESTIMATED`, and a result made of `SYNTHETIC` data stays `SYNTHETIC`.
-3. Otherwise the signal has no origin.
+2. A flow computes the clean grade: the worst of `expect.origin` and the origins of the signals the flow reads, when
+   any of them has one. A computed estimate is `ESTIMATED`, and a result made of `SYNTHETIC` data stays `SYNTHETIC`.
+3. Otherwise the signal has no `origin`, for example a signal without a source.
 
 In `systems/h2-chain.system.yaml`, `park.p_potential_kw` is `ESTIMATED`: a power curve computes it from the
 `MEASURED` wind of a station. From the repository root, run:

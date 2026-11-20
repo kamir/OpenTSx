@@ -43,7 +43,7 @@ in that case walk the steps backwards.
 | **Plausible range** | What the sensor can deliver. A value outside it puts the **measurement** in question. |
 | **Operating range** | What normal operation gives. A value outside it says something about the **system**; the measurement may be perfectly right. |
 | **Grade** | `raw`: as delivered or generated. `clean`: on the clock and in the unit of the system, with a verdict on every value. `features`: values computed from the clean series for models. |
-| **Origin** | How data came to be: measured, reported, forecast, estimated, synthetic. For a derived series it is a path, not a rank. |
+| **Origin** | How data came to be: measured, reported, forecast, estimated, synthetic, from best to worst. A signal a flow computes gets the worst of the origin it expects and the origins of its inputs; its series can name what it was made of (`madeOf`). |
 | **Flow** | The recipe that turns series into other series. A running flow publishes a Smart Topic. |
 | **Analysis** | A rule, a model or an optimiser that gives a recommendation. It is released for a purpose, with a range it was checked in. |
 
@@ -226,8 +226,8 @@ Use **Stop deployment** to request a conclusive stop, including reconciliation o
 5. **A measurement and a state are two things.** Out of the plausible range puts the measurement in question; out
    of the operating range is an event.
 6. **Origin is a path, and always visible.** Generated or modelled values never look like measurements, in a
-   list, on a screen, or in a report. A derived series says what it was made of; there is no ranking of origins
-   and no single quality number.
+   list, on a screen, or in a report. A derived series says what it was made of, and a computed estimate is
+   estimated, never measured. There is no single quality number.
 7. **Open is a state.** A signal without a source is recorded as open. It blocks what depends on it and nothing
    else.
 8. **One result, one writer.** One signal in one grade is written by one flow.
