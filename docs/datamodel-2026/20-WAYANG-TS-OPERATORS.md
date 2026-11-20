@@ -689,11 +689,24 @@ run the signature and conformance checks before the first fetch.
 
 ## 12. Observability
 
-Both tracks write the records the Java processor writes today, so the workbench and `GET /v1/dags` work unchanged:
-`opentsx.dag-control.v1` on `tsx.<domain>.dags.v1` and `opentsx.dag-status.v1` (`state`, `records`, `watermark`,
-`waitingFor`, `skippedBlocks`, `error`) on `tsx.<domain>.dag-status.v1`, on each state change and every 30 s. New
-fields, proposed: `site`, `job`, `planVersion`, `track`, `artifact` (version and digest). Metrics per task: lag per
-partition, records in and out, operator time, checkpoint age, delivery failures.
+`TsxStatus` (Track A) and the Rust `run` profile (Track B) write `opentsx.dag-status.v1` to
+`tsx.<domain>.dag-status.v1` on each state change and at least every 30 s. Track A repeats every 30 s
+(`TsxStatus.java:92`), the Rust `run` profile every 15 s (`run_loop.rs:20`). The Kafka key is the job id
+(`TsxStatus.java:79`, `run_loop.rs:310`). Site agents of both tracks send the same record to the plan service
+instead (S5.3; `SiteStatus.java:76-83`, `agent.rs:967`).
+
+A job record has the processor fields `dag`, `state`, `specHash`, `records`, `watermark`, `waitingFor`,
+`skippedBlocks`, `error` and `at`, plus `job`, `planVersion` and `track` (S5.4). `dag` equals `job`. The Rust runner
+and the site agents also write `site` and `artifact` (version and digest). Neither track writes or reads
+`opentsx.dag-control.v1` on `tsx.<domain>.dags.v1`.
+
+`GET /v1/dags` lists every status record that carries `job` under `jobs`: the latest record per key, as written, with
+or without a control record of that name (`KafScaleFeed.java:320`, `:375`). The processor never writes `job`.
+`dags` holds the control records with the processor's sink reports (key `<dag>/<sink>`) and refusals (key `<dag>`).
+Job records do not appear under `dags`. The workbench Deployments panel reads `dags` only and does not show job
+records (`opentsx-saas-frontend/src/workbench/deployments.ts:27-31`).
+
+Metrics per task: lag per partition, records in and out, operator time, checkpoint age, delivery failures.
 
 ## 13. Testing
 

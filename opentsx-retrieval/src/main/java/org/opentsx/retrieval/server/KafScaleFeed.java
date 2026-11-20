@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  *   <li>Reads the vector topics of the domain ({@code tsx.<domain>.smart.<name>.vectors.v1}) and offers their
  *   components as series ({@link #vectorStore()}).</li>
  *   <li>Deploys and stops DAGs for the vector processor by writing to its control topic ({@link #deploy},
- *   {@link #stop}), and reads back what the processor reports ({@link #dags()}).</li>
+ *   {@link #stop}), and reads back what the processor and Track A and B jobs report ({@link #dags()}).</li>
  * </ul>
  *
  * <p>The stores live in the heap. Loading episodes stops at {@code maxEpisodes}; {@link #truncated()} then says
@@ -64,6 +64,7 @@ final class KafScaleFeed implements AutoCloseable {
     private final Map<String, Long> unreadable = new java.util.concurrent.ConcurrentHashMap<>();
     private final Map<String, JsonNode> deployments = new TreeMap<>();
     private final Map<String, JsonNode> statuses = new TreeMap<>();
+    private final Map<String, JsonNode> jobs = new TreeMap<>();
     private LogTail controlTail;
     private LogTail statusTail;
     /** Follow the clean and the generated series of the domain, each once something has written its topic. */
@@ -305,9 +306,19 @@ final class KafScaleFeed implements AutoCloseable {
         statusTail.poll(r -> {
             JsonNode n = json(r.value());
             if (n != null && VectorProcessor.STATUS_SCHEMA.equals(n.path("schema").asText()) && r.key() != null) {
-                statuses.put(new String(r.key(), StandardCharsets.UTF_8), n);
+                keepStatus(statuses, jobs, new String(r.key(), StandardCharsets.UTF_8), n);
             }
         });
+    }
+
+    /**
+     * Keeps the latest status record per key, the processor's in {@code statuses} and those of Track A and B jobs in
+     * {@code jobs}. A job record names its {@code job}, which the processor never writes. A refusal of the processor
+     * is keyed by the DAG name and a job record by the job id; kept apart, a job named like a DAG does not replace the
+     * refusal.
+     */
+    static void keepStatus(Map<String, JsonNode> statuses, Map<String, JsonNode> jobs, String key, JsonNode status) {
+        (status.hasNonNull("job") ? jobs : statuses).put(key, status);
     }
 
     private static JsonNode json(byte[] value) {
@@ -321,18 +332,21 @@ final class KafScaleFeed implements AutoCloseable {
     /**
      * The DAGs of the domain as the control topic and the vector processor see them: per DAG what was asked for
      * (deployed or stopped, by whom, when) and what the processor reports per sink. {@code now} lets a reader judge
-     * how old a report is: a deployed DAG without a recent report has no processor behind it.
+     * how old a report is: a deployed DAG without a recent report has no processor behind it. Under {@code jobs}, what
+     * Track A and B jobs report.
      */
     synchronized ObjectNode dags() {
-        return dagView(deployments, statuses, org.opentsx.model.Micros.toInstant(org.opentsx.model.Micros.now()).toString());
+        return dagView(deployments, statuses, jobs, org.opentsx.model.Micros.toInstant(org.opentsx.model.Micros.now()).toString());
     }
 
     /**
      * Puts the latest control record per DAG together with the reports of its sinks. A report older than the control
      * record belongs to what ran before: under a stopped DAG it is shown as stopped, under a DAG deployed again it is
-     * left out until the processor reports for the new deployment.
+     * left out until the processor reports for the new deployment. The job reports follow as they are, the latest per
+     * key, with or without a control record of that name: Track A and B do not read the control topic.
      */
-    static ObjectNode dagView(Map<String, JsonNode> deployments, Map<String, JsonNode> statuses, String now) {
+    static ObjectNode dagView(Map<String, JsonNode> deployments, Map<String, JsonNode> statuses,
+                              Map<String, JsonNode> jobs, String now) {
         ObjectNode out = EpisodeJson.JSON.createObjectNode();
         out.put("now", now);
         ArrayNode list = out.putArray("dags");
@@ -358,6 +372,7 @@ final class KafScaleFeed implements AutoCloseable {
                 }
             }
         }
+        out.putArray("jobs").addAll(jobs.values());
         return out;
     }
 
