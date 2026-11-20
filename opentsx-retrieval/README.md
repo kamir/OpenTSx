@@ -94,7 +94,8 @@ Reading the table:
 lists the parameters, bodies and answers of each.
 
 ```text
-GET  /v1/health            {"status":"ok"}
+GET  /v1/health            liveness: {"status":"ok"}, also while every request thread waits for the broker
+GET  /v1/ready             readiness: 200; with --kafscale 503 after 3 failed refreshes in a row or 3 periods without one
 GET  /v1/episodes?metric=&tag.turbine=T07&from=ISO&to=ISO&limit=&clip=true&resample=PT1M&agg=MEAN
 GET  /v1/episodes/{id}
 POST /v1/patterns/search   {"pattern":[…] | "episodeId","offset","length", "metric","tags","from","to","distance","band","topK"}
@@ -128,14 +129,22 @@ an episode out of range is a 400 that names the field and the range, for example
 Every error answer is `{"error": "<text>", "type": "<type>"}`. A malformed parameter names itself and what it takes,
 for example `limit: "abc" is not an int; expected a whole number from 1 to 20000`. A body that is not valid JSON is a
 400 `the body is not valid JSON: <parser message>`, a DAG that is not valid YAML a 400
-`the DAG is not valid YAML: <parser message>`. An unknown episode is a 404 on `GET /v1/episodes/{id}`,
-`POST /v1/episodes/similar` and `POST /v1/patterns/search`. A known path with a method it does not take is a 405 with
+`the DAG is not valid YAML: <parser message>`. An unknown episode is a 404 `unknown episode <id>` on
+`GET /v1/episodes/{id}`, `POST /v1/episodes/similar` and `POST /v1/patterns/search`. A known path with a method it does not take is a 405 with
 an `Allow` header; any other path is a 404 `no such endpoint: <path>`. A fault in the server is a 500
 `internal error` and one ERROR line `request failed method=<method> path=<path> status=500 cause=<causes>` in the log;
 the stack trace is logged at DEBUG. A write the broker does not take (`POST /v1/dags/deploy`, `POST /v1/dags/stop`,
 `POST /v1/systems/{id}/generate`) is a 503 `cannot reach the broker; try again` with type `unavailable`; the answer
 names no broker address, and the ERROR line `request failed ... status=503 cause=<causes>` names the topic and the
 error of the Kafka client. The statuses and types are in [Appendix B](../docs/user-manual/appendix-b-rest.md).
+
+Two threads take every request. They answer `GET /v1/health` and `GET /v1/ready` themselves and hand every other
+route to four request threads, which can wait minutes for the broker; so the probes answer also while every request
+thread waits. `GET /v1/ready` answers `{"status":"ready"}` for the demo and the iceberg source. With `--kafscale` it
+adds `feed` with `lastRefresh`, `ageSeconds`, `refreshFailures` and `truncated`, and answers 503 `unavailable` after
+3 failed refreshes in a row or when no refresh worked for more than 3 refresh periods
+(`opentsx.retrieval.refreshInterval`, at least 1 s), for example
+`feed: 3 refreshes failed in a row, the last one that worked ended at <instant>; check that the broker is reachable and read the log of the server`.
 
 ### Vector topics
 
@@ -149,6 +158,10 @@ Vector topics are written by the vector processor (below). The server is its fro
   the processor reports per sink (state, records, how far the data goes, what it waits for). It needs no token.
 * `POST /v1/dags/deploy` (body: the DAG as YAML) checks that the processor can run the DAG and appends it to the
   control topic. `POST /v1/dags/stop?name=<dag>` appends the stop. Both exist only with `--dag-runs true`.
+* A vector topic has one writer. Before it writes, `POST /v1/dags/deploy` reads the control topic to its end; when
+  another DAG deployed there writes a vector topic of the new one, it answers 409 `conflict` and writes nothing:
+  `<dag>: sink topic <topic> is already written by DAG <other>; stop that DAG first or choose another sink`.
+  The same DAG name deployed again replaces its DAG and is no conflict.
 * The processor runs `align.vector` on the series of the source topic only (`in: [decode]`); any other operator
   before the vector is refused with the id of the node. `source.series` must name the series.
 * **Run token.** `--dag-runs true` needs a token in the environment variable `OPENTSX_DAG_RUN_TOKEN`
@@ -179,6 +192,8 @@ opentsx vectors stop   --kafscale host:9092 --domain wind --name <dag name>
 `opentsx vectors <run|deploy|stop> --help` lists the keys of each command. The options, the DAG name and the DAG file
 are checked before the first call to the broker: a missing `--name` or `--dag`, an unknown option, a misspelled command
 or a DAG the processor would refuse exits with code 2 and writes nothing. A runtime failure exits with code 1.
+`vectors deploy` then reads the control topic and refuses a DAG whose vector topic another deployed DAG writes, with
+exit code 1, the text of the 409 of `POST /v1/dags/deploy`, and nothing written.
 
 * Deployments live in the control topic `tsx.<domain>.dags.v1` (latest record per DAG name), so they survive a
   restart. The processor reports per sink to `tsx.<domain>.dag-status.v1`.
@@ -193,6 +208,20 @@ or a DAG the processor would refuse exits with code 2 and writes nothing. A runt
 * A checkpoint that cannot be read, or holds no JSON object, fails the sink: the status says `failed` and names the
   file in `error`, and the file stays as it is. Repair it, or delete it to start the sink over.
 * A changed DAG starts over from the beginning of the topic (`source.start: latest`: from now).
+* A DAG whose vector topic a running sink of another DAG writes is refused: its status says `failed` with
+  `<dag>: sink topic <topic> is already written by DAG <other>; stop that DAG first or choose another sink`, and the
+  WARN line `dag refused` follows. Stop the other DAG, then deploy it again.
+* `fill` of `align.vector` takes `none` (the default) or `as-of`, `emit` takes `any` (the default) or `complete`. Any
+  other value refuses the DAG, for example `node n1: fill: "asof" is not allowed; expected one of none, as-of`.
+* After every round, at most once per 5 s, the processor writes the time the round ended, in seconds since the epoch,
+  to the file `progress` in the state directory (`opentsx.vectors.state`). It removes the file of an earlier run when
+  it starts. A probe checks its age, where `<state>` is the state directory and `<seconds>` the limit:
+  `test $(( $(date +%s) - $(cat <state>/progress) )) -lt <seconds>`. A round lasts as long as its broker calls wait:
+  30 s for the control topic and, while the broker does not answer, up to 90 s for each sink that starts. Choose the
+  limit above that. A progress file that cannot be written ends the processor with exit code 1 and
+  `<state>/progress: cannot write the progress file; check that the state directory (opentsx.vectors.state) exists, is writable and has space`.
+  A progress file of an earlier run that cannot be removed ends the processor with exit code 1 and
+  `<state>/progress: cannot remove the progress file of an earlier run; check that the state directory (opentsx.vectors.state) is writable`.
 * Numbers in a node of a series sink, such as `factor` of `convert.unit` or `min` of `dq.checks`, are YAML numbers.
   Text there, also a number in quotes such as `"1.5"`, refuses the DAG with the node and the field, for example
   `node n3: factor: "1,5" is not a number; expected a number without quotes, such as 0.01 or 1e-3`.

@@ -34,6 +34,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class KafkaTopicsTest {
@@ -158,6 +159,17 @@ class KafkaTopicsTest {
             IllegalStateException open = assertThrows(IllegalStateException.class, () -> topics.open(TOPIC, Topics.EARLIEST));
             assertTrue(Thread.interrupted(), "open keeps the interrupt for the caller: " + open.getMessage());
             assertInstanceOf(InterruptedException.class, open.getCause());
+        }
+    }
+
+    @Test
+    void aLookupThatTheBrokerDoesNotAnswerEndsAtItsTimeout() {
+        try (KafkaTopics topics = topics(new NeverAnswers(), producer(), null)) {
+            IllegalStateException e = assertTimeoutPreemptively(Duration.ofSeconds(10),
+                    () -> assertThrows(IllegalStateException.class, () -> topics.exists(TOPIC, Duration.ofMillis(50))),
+                    "a lookup the broker does not answer ends at its timeout, not after 30 s");
+            assertEquals("cannot reach the broker at mock:9092", e.getMessage());
+            assertInstanceOf(java.util.concurrent.TimeoutException.class, e.getCause());
         }
     }
 

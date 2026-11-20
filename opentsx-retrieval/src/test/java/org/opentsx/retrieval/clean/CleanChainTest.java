@@ -257,6 +257,15 @@ class CleanChainTest {
     static double[] rollingByHand(long[] t, double[] v, long window, String fn) {
         double[] out = new double[t.length];
         for (int i = 0; i < t.length; i++) {
+            // divided by the power of two of the largest finite magnitude, which rounds nothing, the values add up and
+            // square without overflow
+            double largest = 0;
+            for (int k = 0; k <= i; k++) {
+                if (t[k] > t[i] - window && Double.isFinite(v[k])) {
+                    largest = Math.max(largest, Math.abs(v[k]));
+                }
+            }
+            double scale = largest == 0 ? 1 : Math.scalb(1.0, Math.getExponent(largest));
             double sum = 0;
             double sq = 0;
             double min = Double.POSITIVE_INFINITY;
@@ -264,8 +273,8 @@ class CleanChainTest {
             int n = 0;
             for (int k = 0; k <= i; k++) {
                 if (t[k] > t[i] - window && !Double.isNaN(v[k])) {
-                    sum += v[k];
-                    sq += v[k] * v[k];
+                    sum += v[k] / scale;
+                    sq += (v[k] / scale) * (v[k] / scale);
                     min = Math.min(min, v[k]);
                     max = Math.max(max, v[k]);
                     n++;
@@ -275,8 +284,8 @@ class CleanChainTest {
             out[i] = n == 0 ? Double.NaN : switch (fn) {
                 case "MIN" -> min;
                 case "MAX" -> max;
-                case "STD" -> Math.sqrt(Math.max(0, sq / n - mean * mean));
-                default -> mean;
+                case "STD" -> Math.sqrt(Math.max(0, sq / n - mean * mean)) * scale;
+                default -> mean * scale;
             };
         }
         return out;
@@ -374,11 +383,12 @@ class CleanChainTest {
     }
 
     /**
-     * While a finite value whose square is no finite number is in the window, a step does not add up the whole window
-     * again: the running sums go on, and the checkpoint counts the values that left since they were last added up.
+     * While a finite value whose square is no finite number is in the window, the running sums are not added up afresh:
+     * the checkpoint counts the values that left since they were last added up. STD then comes from the scaled window at
+     * every step.
      */
     @Test
-    void aValueWhoseSquareIsNoFiniteNumberDoesNotMakeEveryStepAddUpTheWindow() throws Exception {
+    void aValueWhoseSquareIsNoFiniteNumberDoesNotMakeEveryStepAddUpTheRunningSums() throws Exception {
         int n = 13;
         long[] t = new long[n];
         double[] v = new double[n];
@@ -404,16 +414,42 @@ class CleanChainTest {
         }
     }
 
-    /** The sum of 1e308 and 1.5e308 is no finite number, so their mean is; two equal values are their own mean. */
+    /** The sum of 1e308 and 1.5e308 is no finite number, but their mean and their spread are. */
     @Test
-    void theMeanOfAWindowWhoseSumIsNoFiniteNumberIsInfiniteUntilAValueLeaves() throws Exception {
+    void theMeanAndTheSpreadOfAWindowWhoseSumIsNoFiniteNumberAreFinite() throws Exception {
         long[] t = {T0, T0 + SECOND, T0 + 2 * SECOND, T0 + 3 * SECOND};
-        CleanChain chain = CleanChain.of(List.of(JSON.readTree(
+        Map<String, double[]> expected = Map.of("MEAN", new double[]{1e308, 1.25e308, 7.5e307, 1},
+                "STD", new double[]{0, 2.5e307, 7.5e307, 0});
+        for (String fn : List.of("MEAN", "STD")) {
+            CleanChain chain = CleanChain.of(List.of(JSON.readTree(
+                    "{\"id\":\"r\",\"op\":\"feature.rolling\",\"params\":{\"window\":\"PT2S\",\"fn\":\"" + fn + "\"}}")));
+            double[] got = chain.apply(chain.newState(), new CleanChain.Block(t, new double[]{1e308, 1.5e308, 1, 1}), t[3] + 1).values();
+            for (int i = 0; i < t.length; i++) {
+                assertEquals(expected.get(fn)[i], got[i], 1e-12 * Math.abs(expected.get(fn)[i]), fn + " at " + i);
+            }
+        }
+        CleanChain mean = CleanChain.of(List.of(JSON.readTree(
                 "{\"id\":\"r\",\"op\":\"feature.rolling\",\"params\":{\"window\":\"PT2S\",\"fn\":\"MEAN\"}}")));
-        assertArrayEquals(new double[]{1e308, Double.POSITIVE_INFINITY, 7.5e307, 1},
-                chain.apply(chain.newState(), new CleanChain.Block(t, new double[]{1e308, 1.5e308, 1, 1}), t[3] + 1).values());
         assertArrayEquals(new double[]{1e308, 1e308, 5e307, 1},
-                chain.apply(chain.newState(), new CleanChain.Block(t, new double[]{1e308, 1e308, 1, 1}), t[3] + 1).values());
+                mean.apply(mean.newState(), new CleanChain.Block(t, new double[]{1e308, 1e308, 1, 1}), t[3] + 1).values());
+        assertArrayEquals(new double[]{-1e308, -1.25e308, -7.5e307, -1},
+                mean.apply(mean.newState(), new CleanChain.Block(t, new double[]{-1e308, -1.5e308, -1, -1}), t[3] + 1).values());
+    }
+
+    /** Each square of 2e153 and 1e153 is finite, but the squares of 120 such values add up beyond the range of a double. */
+    @Test
+    void theSpreadOfAWindowWhoseSquaresAddUpToNoFiniteNumberIsFinite() throws Exception {
+        int n = 120;
+        long[] t = new long[n];
+        double[] v = new double[n];
+        for (int i = 0; i < n; i++) {
+            t[i] = T0 + i * SECOND;
+            v[i] = i % 2 == 0 ? 2e153 : 1e153;
+        }
+        CleanChain chain = CleanChain.of(List.of(JSON.readTree(
+                "{\"id\":\"r\",\"op\":\"feature.rolling\",\"params\":{\"window\":\"PT1H\",\"fn\":\"STD\"}}")));
+        double[] got = chain.apply(chain.newState(), new CleanChain.Block(t, v), t[n - 1] + 1).values();
+        assertEquals(5e152, got[n - 1], 1e-12 * 5e152);
     }
 
     static final long T0 = Instant.parse("2026-10-01T00:00:00Z").toEpochMilli() * 1000;

@@ -37,6 +37,9 @@ def _write_zigzag(out: bytearray, v: int) -> None:
 
 
 def encode_deltas(timestamps_us: Sequence[int]) -> bytes:
+    for i, t in enumerate(timestamps_us):
+        if not _LONG_MIN <= int(t) <= _LONG_MAX:
+            raise ValueError(f"timestamps: timestamp {i} is {int(t)}; expected timestamps from {_LONG_MIN} to {_LONG_MAX}")
     out = bytearray()
     prev_delta = 0
     for i in range(1, len(timestamps_us)):

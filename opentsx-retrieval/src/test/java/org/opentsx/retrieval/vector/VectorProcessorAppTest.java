@@ -17,7 +17,10 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -43,8 +46,11 @@ class VectorProcessorAppTest {
             new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer());
     private final List<String> admins = new ArrayList<>();
     private final List<String> producers = new ArrayList<>();
+    private final List<String> consumers = new ArrayList<>();
     private final ByteArrayOutputStream out = new ByteArrayOutputStream();
     private final ByteArrayOutputStream err = new ByteArrayOutputStream();
+    /** The control topic deploy reads before it writes. */
+    private final VectorProcessorTest.FakeBroker broker = new VectorProcessorTest.FakeBroker();
 
     private int run(String... args) {
         out.reset();
@@ -57,7 +63,8 @@ class VectorProcessorAppTest {
                     producers.add(b);
                     return producer;
                 }, b -> {
-                    throw new AssertionError("no consumer expected");
+                    consumers.add(b);
+                    return broker.consumer();
                 });
     }
 
@@ -86,6 +93,7 @@ class VectorProcessorAppTest {
         assertEquals("", out());
         assertEquals(List.of(), admins);
         assertEquals(List.of(), producers);
+        assertEquals(List.of(), consumers);
         assertEquals(Set.of(), topics());
     }
 
@@ -100,6 +108,7 @@ class VectorProcessorAppTest {
         assertEquals("opentsx: opentsx.kafscale.bootstrap: not set; set it with --kafscale, --conf"
                 + " opentsx.kafscale.bootstrap=<value> or OPENTSX_KAFSCALE_BOOTSTRAP\n", err());
         assertEquals(List.of(), admins);
+        assertEquals(List.of(), consumers);
         assertEquals(Set.of(), topics());
     }
 
@@ -118,6 +127,7 @@ class VectorProcessorAppTest {
                 + " underscores\n", err());
         assertEquals(List.of(), admins);
         assertEquals(List.of(), producers);
+        assertEquals(List.of(), consumers);
         assertEquals(Set.of(), topics());
     }
 
@@ -128,6 +138,7 @@ class VectorProcessorAppTest {
         assertEquals("deployed wind-exp2-smart (control topic tsx.wind.dags.v1)\n", out());
         assertEquals(List.of("ks:9092"), admins);
         assertEquals(List.of("ks:9092"), producers);
+        assertEquals(List.of("ks:9092"), consumers);
         assertEquals(Set.of("tsx.wind.dag-status.v1", "tsx.wind.dags.v1"), topics());
         ProducerRecord<String, byte[]> r = producer.history().get(0);
         assertEquals("tsx.wind.dags.v1", r.topic());
@@ -139,6 +150,113 @@ class VectorProcessorAppTest {
     }
 
     @Test
+    void deployRefusesADagWhoseVectorTopicAnotherDeployedDagWritesAndExitsWith1() throws Exception {
+        broker.append(VectorProcessorTest.LAYOUT.dags(), 0, VectorProcessor.deployRecord("wind-exp2-smart",
+                VectorProcessorTest.goodDag(), "ops"));
+        Path copy = Files.writeString(dir.resolve("copy.dag.yaml"),
+                VectorProcessorTest.goodDag().replace("dag: wind-exp2-smart", "dag: wind-copy"));
+        assertEquals(1, run("deploy", "--kafscale", "ks:9092", "--dag", copy.toString()));
+        assertEquals("opentsx: wind-copy: sink topic tsx.wind.smart.turbine-state.vectors.v1 is already written by DAG"
+                + " wind-exp2-smart; stop that DAG first or choose another sink\n", err());
+        assertEquals("", out());
+        assertEquals(List.of(), producer.history());
+
+        Path again = Files.writeString(dir.resolve("again.dag.yaml"), VectorProcessorTest.goodDag().replace("PT60S", "PT30S"));
+        assertEquals(0, run("deploy", "--kafscale", "ks:9092", "--dag", again.toString()), err());
+        assertEquals("deployed wind-exp2-smart (control topic tsx.wind.dags.v1)\n", out());
+    }
+
+    @Test
+    void theProgressFileHoldsTheTimeOfTheLastRound() throws Exception {
+        Path state = dir.resolve("state");
+        Path progress = state.resolve(VectorProcessorApp.PROGRESS_FILE);
+        VectorProcessor p = new VectorProcessor(broker::consumer,
+                () -> new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()), VectorProcessorTest.LAYOUT,
+                state, VectorProcessorTest.FAST);
+        int[] rounds = {0};
+        Instant[] now = {Instant.parse("2026-11-20T10:00:00Z")};
+        Clock clock = new Clock() {
+            @Override
+            public java.time.ZoneId getZone() {
+                return ZoneOffset.UTC;
+            }
+
+            @Override
+            public Clock withZone(java.time.ZoneId zone) {
+                return this;
+            }
+
+            @Override
+            public Instant instant() {
+                return now[0];
+            }
+        };
+        VectorProcessorApp.loop(p, () -> {
+            if (rounds[0] == 1) {
+                assertEquals("1795168800\n", read(progress), "written after the first round");
+                now[0] = now[0].plusSeconds(4);
+            } else if (rounds[0] == 2) {
+                assertEquals("1795168800\n", read(progress), "at most once per " + VectorProcessorApp.PROGRESS_EVERY);
+                now[0] = now[0].plusSeconds(1);
+            }
+            return rounds[0]++ == 3;
+        }, progress, clock);
+        assertEquals("1795168805\n", read(progress));
+        assertTrue(!Files.exists(state.resolve(VectorProcessorApp.PROGRESS_FILE + ".tmp")), "no file left behind");
+    }
+
+    @Test
+    void theProgressFileOfAnEarlierRunIsGoneBeforeTheFirstRound() throws Exception {
+        Path state = Files.createDirectories(dir.resolve("state"));
+        Path progress = Files.writeString(state.resolve(VectorProcessorApp.PROGRESS_FILE), "1795168790\n");
+        VectorProcessor p = new VectorProcessor(broker::consumer,
+                () -> new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()), VectorProcessorTest.LAYOUT,
+                state, VectorProcessorTest.FAST);
+        boolean[] kept = {true};
+        VectorProcessorApp.loop(p, () -> {
+            kept[0] = Files.exists(progress);
+            return true;
+        }, progress, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
+        assertTrue(!kept[0], "a probe must not pass on the file of the pod before");
+    }
+
+    @Test
+    void aProgressFileThatCannotBeWrittenEndsTheLoopNamingTheFileAndTheKey() {
+        Path progress = dir.resolve("missing").resolve(VectorProcessorApp.PROGRESS_FILE);
+        VectorProcessor p = new VectorProcessor(broker::consumer,
+                () -> new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()), VectorProcessorTest.LAYOUT,
+                dir.resolve("state"), VectorProcessorTest.FAST);
+        java.io.UncheckedIOException e = org.junit.jupiter.api.Assertions.assertThrows(java.io.UncheckedIOException.class,
+                () -> VectorProcessorApp.loop(p, () -> false, progress, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC)));
+        p.close();
+        assertEquals(progress + ": cannot write the progress file; check that the state directory (opentsx.vectors.state)"
+                + " exists, is writable and has space", e.getMessage());
+    }
+
+    @Test
+    void aProgressFileOfAnEarlierRunThatCannotBeRemovedEndsTheLoopNamingTheFileAndTheKey() throws Exception {
+        Path state = Files.createDirectories(dir.resolve("state"));
+        Path progress = Files.createDirectories(state.resolve(VectorProcessorApp.PROGRESS_FILE));
+        Files.writeString(progress.resolve("held"), "1795168790\n");
+        VectorProcessor p = new VectorProcessor(broker::consumer,
+                () -> new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()), VectorProcessorTest.LAYOUT,
+                state, VectorProcessorTest.FAST);
+        java.io.UncheckedIOException e = org.junit.jupiter.api.Assertions.assertThrows(java.io.UncheckedIOException.class,
+                () -> VectorProcessorApp.loop(p, () -> true, progress, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC)));
+        p.close();
+        assertEquals(progress + ": cannot remove the progress file of an earlier run; check that the state directory"
+                + " (opentsx.vectors.state) is writable", e.getMessage());
+    }
+
+    private static String read(Path file) {
+        try {
+            return Files.readString(file);
+        } catch (java.io.IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
+    }
+
+    @Test
     void stopWritesOneStopRecord() throws Exception {
         assertEquals(0, run("stop", "--kafscale", "ks:9092", "--domain", "wind", "--name", "wind-exp2-smart"), err());
         assertEquals("stopped wind-exp2-smart\n", out());
@@ -147,6 +265,7 @@ class VectorProcessorAppTest {
         assertEquals("wind-exp2-smart", record.path("dag").asText());
         assertEquals("stopped", record.path("state").asText());
         assertEquals("cli", record.path("by").asText());
+        assertEquals(List.of(), consumers);
     }
 
     @Test
@@ -199,5 +318,6 @@ class VectorProcessorAppTest {
         assertEquals(Registry.shipped().help("vectors stop"), out());
         assertEquals("", err());
         assertEquals(List.of(), admins);
+        assertEquals(List.of(), consumers);
     }
 }

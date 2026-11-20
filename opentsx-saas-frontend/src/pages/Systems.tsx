@@ -9,7 +9,7 @@ import { Link, NavLink, useNavigate, useParams, useSearchParams } from 'react-ro
 import { RETRIEVAL_BASE, SignalBindingDoc, errorMessage, fetchJson, hasAccessToken, systemsAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import FlowComposer from '../workbench/FlowComposer';
-import { forgetFlows, newFlow, openFlows } from '../workbench/composerActions';
+import { forgetFlows, keptNotice, newFlow, openFlows } from '../workbench/composerActions';
 import { useFlow } from '../workbench/flow';
 import ModelsPlace from '../systems/ModelsPlace';
 import SimulatePlace from '../systems/SimulatePlace';
@@ -131,14 +131,8 @@ export default function Systems() {
 
   // when the browser kept a tab from opening, the page stays to say so and the workbench keeps the flow it holds
   const open = (ids: number[]) => {
-    const held = useFlow.getState().savedId;
-    const blocked = openFlows(ids, () => undefined);
-    if (blocked === 0) {
-      navigate(`/workbench?flow=${ids[0]}`);
-      return;
-    }
-    useFlow.getState().setSavedId(held);
-    setNotice(`The browser kept ${blocked} of the flows from opening in tabs of their own, so this page stayed and did not open the first one either. Allow pop-ups for this page, or open them one at a time.`);
+    const blocked = openFlows(ids, (id) => navigate(`/workbench?flow=${id}`), true);
+    if (blocked > 0) setNotice(keptNotice(blocked, false));
   };
   const create = () => {
     newFlow();

@@ -89,6 +89,9 @@ async def _forward(user: User, what: str, path: str, body: bytes = b"", params: 
                             "retrieval server: does not deploy DAGs; it needs --kafscale and --dag-runs true"
                             if path.startswith("/v1/dags")
                             else "retrieval server: does not offer this route or system; see the log of the backend")
+    if answer.status_code == 409:
+        raise HTTPException(status.HTTP_409_CONFLICT,
+                            reason or "retrieval server: the DAG conflicts with a deployed one; see the log of the backend")
     if answer.status_code == 503:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "retrieval server: cannot reach the broker; try again")
     raise HTTPException(status.HTTP_502_BAD_GATEWAY,

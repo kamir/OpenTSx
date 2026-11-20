@@ -74,6 +74,11 @@ describe('errorMessage', () => {
     expect(errorMessage(await failure(register))).toBe('from: "yesterday" is not an instant; expected an ISO-8601 instant such as 2026-01-01T00:00:00Z');
   });
 
+  it('gives the error of a conflict', async () => {
+    reply(409, { error: 'email: already registered; sign in or use another address', type: 'conflict' });
+    expect(errorMessage(await failure(register))).toBe('email: already registered; sign in or use another address');
+  });
+
   it('gives the error nginx answers when the backend is down', async () => {
     reply(502, { error: 'the backend is not reachable', type: 'unavailable' });
     expect(errorMessage(await failure(register))).toBe('the backend is not reachable');

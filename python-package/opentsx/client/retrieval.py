@@ -29,7 +29,8 @@ AVRO_STREAM = "application/x-opentsx-avro-stream"
 
 
 class RetrievalError(RuntimeError):
-    """A failed request: ``method``, ``url``, ``status`` (None when no answer came) and the server's error ``type``."""
+    """A failed request: ``method``, ``url``, ``status`` (None when no answer came), the server's error ``type`` and
+    ``reason``, the text after the status: the server's error text when it sent one."""
 
     def __init__(self, method: str, url: str, status: Optional[int], message: str, error_type: Optional[str] = None):
         super().__init__(f"{method} {url}: " + ("" if status is None else f"HTTP {status}: ") + message)
@@ -37,6 +38,7 @@ class RetrievalError(RuntimeError):
         self.url = url
         self.status = status
         self.type = error_type
+        self.reason = message
 
 
 _EXAMPLE_TIME = "such as 2026-10-01T00:00:00Z"
@@ -191,12 +193,13 @@ class RetrievalClient:
         return self._request("GET", path, accept=AVRO_STREAM, parse=decode_stream)
 
     def episode(self, episode_id: str) -> Optional[dict]:
-        """The episode with this id; None when the server answers 404 with the type ``not_found``."""
+        """The episode with this id; None when the server answers 404 ``not_found`` with ``unknown episode <id>``.
+        A path the server does not know (``no such endpoint``) raises RetrievalError."""
         path = "/v1/episodes/" + _id(episode_id, "episode_id")
         try:
             return self._request("GET", path, accept=AVRO_STREAM, parse=_one_episode)
         except RetrievalError as e:
-            if e.status == 404 and e.type == "not_found":
+            if e.status == 404 and e.type == "not_found" and e.reason == f"unknown episode {episode_id}":
                 return None
             raise
 

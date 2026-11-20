@@ -303,6 +303,54 @@ class EpisodeLogSyncTest {
         assertTrue(e.getCause() instanceof TimeoutException, e.getCause().toString());
     }
 
+    /**
+     * A broker that does not answer the metadata requests before the copy: each request takes the time it is given
+     * on the clock {@code nanos} and throws the client's TimeoutException, as KafkaConsumer does. The partitions come
+     * after {@code partitionsNanos}, or never when that is negative.
+     */
+    static final class Silent extends MockConsumer<byte[], byte[]> {
+        private final long partitionsNanos;
+        long nanos;
+
+        Silent(long partitionsNanos) {
+            super(OffsetResetStrategy.EARLIEST);
+            this.partitionsNanos = partitionsNanos;
+            Node node = new Node(0, "localhost", 9092);
+            updatePartitions(LAYOUT.episodes(), List.of(new PartitionInfo(LAYOUT.episodes(), 0, node, new Node[]{node}, new Node[]{node})));
+        }
+
+        @Override
+        public synchronized List<PartitionInfo> partitionsFor(String topic, Duration timeout) {
+            if (partitionsNanos < 0) {
+                nanos += timeout.toNanos();
+                throw new TimeoutException("Timeout expired while fetching topic metadata");
+            }
+            nanos += partitionsNanos;
+            return super.partitionsFor(topic, timeout);
+        }
+
+        @Override
+        public synchronized Map<TopicPartition, Long> beginningOffsets(Collection<TopicPartition> partitions, Duration timeout) {
+            nanos += timeout.toNanos();
+            throw new TimeoutException("Failed to get offsets by times in " + timeout.toMillis() + "ms");
+        }
+    }
+
+    @Test
+    void theRequestsBeforeTheCopyShareTheTimeoutAndATimeoutNamesTheTopic() {
+        for (long partitionsNanos : new long[]{-1, TIMEOUT.toNanos() - Duration.ofSeconds(1).toNanos()}) {
+            Silent consumer = new Silent(partitionsNanos);
+
+            IllegalStateException e = assertThrows(IllegalStateException.class, () -> EpisodeLogSync.sync(consumer, LAYOUT,
+                    new InMemorySeriesStore(), Map.of(), 2, TIMEOUT,
+                    new Patience(TIMEOUT, Duration.ofSeconds(2), () -> consumer.nanos, millis -> { }), () -> consumer.nanos));
+
+            assertEquals("timed out syncing tsx.sync.episodes.v2", e.getMessage());
+            assertTrue(e.getCause() instanceof TimeoutException, String.valueOf(e.getCause()));
+            assertTrue(consumer.nanos <= TIMEOUT.toNanos(), "the call ends within the timeout: " + consumer.nanos + " ns");
+        }
+    }
+
     @Test
     void aFirstReadWithoutASavedPositionLosesNothing() {
         MockConsumer<byte[], byte[]> consumer = fill(new MockConsumer<>(OffsetResetStrategy.EARLIEST), episodes(3), 5);

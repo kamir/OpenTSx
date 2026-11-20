@@ -119,11 +119,15 @@ npm run dev
   series" builds the one thing the processor runs, and Deploy hands the flow to the vector processor, which keeps the vector topic up to
   date, and shows what it reports; needs an administrator account, a retrieval server started with `--kafscale` and
   `--dag-runs true`, and a running vector processor. Deploy, Start (Flow Composer) and "Publish and start" read
-  `GET /v1/dags` first and refuse a flow whose topic another deployment writes. While that list is read or cannot be
+  `GET /v1/dags` first and refuse a flow whose topic another deployment writes; the retrieval server refuses such a
+  deployment too, with 409 `conflict`. While that list is read or cannot be
   read, Deploy stays off and the panel says why. Deploy, Start and "Publish and start" fail with
   `the deployments could not be read from <url> (<reason>); try again` when the list cannot be read. Every node a
   flow publishes is the clean signal or an "Align to vector" node: any other published node keeps the flow from
   deploying, and the list names it, because the processor writes only the clean series and vector topics.
+- When the browser keeps flows that the Flow Composer of the workbench opens from opening in tabs of their own, the
+  workbench opens the first one and says `The browser kept <n> of the flows from opening in tabs of their own. Allow pop-ups for this page, or open them one at a time.`
+  until the next action in the Flow Composer.
 - Time series operations as buttons, recorded as a processing flow graph
 - Export: `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor, Java code
 - Code in `src/workbench/`; limits in `../EVOLUTION/TASK-013-web-workbench.md`

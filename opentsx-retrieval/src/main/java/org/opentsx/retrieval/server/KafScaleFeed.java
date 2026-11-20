@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -61,7 +62,7 @@ import java.util.function.Function;
  * ({@code droppedControlRecords}, {@code droppedStatusRecords}). The counts go to the refresh line of the log and to
  * the inventory ({@link #details}).
  */
-final class KafScaleFeed implements AutoCloseable {
+final class KafScaleFeed implements RetrievalServer.Feed, AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(KafScaleFeed.class);
     /** The answer to a write the broker did not take; the cause, with the broker address, goes to the log only. */
@@ -108,6 +109,10 @@ final class KafScaleFeed implements AutoCloseable {
     private final Map<String, String> failing = new ConcurrentHashMap<>();
     /** Refreshes that failed since the last one that worked. */
     private volatile int refreshFailures;
+    /** When the last load or refresh that worked ended. */
+    private volatile Instant lastRefresh;
+    /** The time between two refreshes, as {@link #start} schedules them. */
+    private volatile Duration refreshInterval = Duration.ofSeconds(1);
     private int loaded;
     private volatile boolean truncated;
     private volatile SeriesStore vectors = new InMemorySeriesStore();
@@ -139,6 +144,7 @@ final class KafScaleFeed implements AutoCloseable {
                 KafScaleClients::producer, store, maxEpisodes, onChange);
         feed.load();
         long ms = Math.max(1000, refresh.toMillis());
+        feed.refreshInterval = Duration.ofMillis(ms);
         feed.timer.scheduleWithFixedDelay(feed::refresh, ms, ms, TimeUnit.MILLISECONDS);
         return feed;
     }
@@ -146,6 +152,7 @@ final class KafScaleFeed implements AutoCloseable {
     /** The first read of the logs; fails when the broker cannot be reached. */
     void load() {
         int n = pull();
+        lastRefresh = Instant.now();
         Map<String, Long> c = counts;
         LOG.info("feed loaded topic={} episodes={} truncated={} vectorTopics={} {}", tail.topic(), n, truncated,
                 String.join(",", vectorTopics), text(c));
@@ -160,6 +167,7 @@ final class KafScaleFeed implements AutoCloseable {
     void refresh() {
         try {
             int added = pull();
+            lastRefresh = Instant.now();
             if (refreshFailures > 0) {
                 refreshFailures = 0;
                 onChange.run();
@@ -515,8 +523,24 @@ final class KafScaleFeed implements AutoCloseable {
         return out;
     }
 
-    boolean truncated() {
+    @Override
+    public boolean truncated() {
         return truncated;
+    }
+
+    @Override
+    public Instant lastRefresh() {
+        return lastRefresh;
+    }
+
+    @Override
+    public int refreshFailures() {
+        return refreshFailures;
+    }
+
+    @Override
+    public Duration refreshInterval() {
+        return refreshInterval;
     }
 
     /** The series of the vector topics, rebuilt whenever a topic changed. */

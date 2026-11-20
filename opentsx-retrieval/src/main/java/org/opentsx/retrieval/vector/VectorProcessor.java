@@ -42,8 +42,10 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -59,7 +61,8 @@ import java.util.regex.Pattern;
  *
  * <ul>
  *   <li><b>What runs</b> comes from the control topic {@link TopicLayout#dags()}: the latest record per DAG name
- *   says deployed (with the DAG document) or stopped. A deployment survives a restart of the processor.</li>
+ *   says deployed (with the DAG document) or stopped. A deployment survives a restart of the processor. A vector topic
+ *   has one writer: a DAG whose vector topic a sink of another DAG writes is refused ({@link #sinkConflict}).</li>
  *   <li><b>One runner per vector sink</b> with its own consumer, positions and state. A new or changed DAG starts
  *   from the beginning of the source topic (or from now, {@code source.start: latest}) without touching the others.</li>
  *   <li><b>Checkpoint</b> per runner in the state directory: positions and {@link VectorStream} state, written only
@@ -264,6 +267,74 @@ public final class VectorProcessor implements AutoCloseable {
         }
     }
 
+    /** The record as a control record; null when it is empty, no JSON, of another schema or without a dag. */
+    private static JsonNode controlRecord(byte[] value) {
+        if (value == null) {
+            return null;
+        }
+        JsonNode n;
+        try {
+            n = JSON.readTree(value);
+        } catch (IOException e) {
+            return null;
+        }
+        return CONTROL_SCHEMA.equals(n.path("schema").asText()) && n.hasNonNull("dag") ? n : null;
+    }
+
+    /** The vector topics a DAG document writes: the topics of its sinks of {@link VectorJob#SCHEMA}. */
+    static Set<String> vectorTopics(JsonNode dag) {
+        Set<String> topics = new TreeSet<>();
+        for (JsonNode sink : dag.path("sinks")) {
+            if (VectorJob.SCHEMA.equals(sink.path("schema").asText()) && sink.hasNonNull("topic")) {
+                topics.add(sink.path("topic").asText());
+            }
+        }
+        return topics;
+    }
+
+    /**
+     * The vector topics of every DAG whose latest control record says deployed, by DAG name, read from the start of the
+     * control topic to its end. A document that is no YAML is left out: the processor refuses it, so it writes
+     * nothing.
+     */
+    public static Map<String, Set<String>> deployedVectorTopics(Consumer<byte[], byte[]> consumer, TopicLayout layout) {
+        Map<String, JsonNode> latest = new TreeMap<>();
+        new LogTail(consumer, layout.dags(), Duration.ofSeconds(30)).poll(r -> {
+            JsonNode n = controlRecord(r.value());
+            if (n != null) {
+                latest.put(n.path("dag").asText(), n);
+            }
+        });
+        Map<String, Set<String>> out = new TreeMap<>();
+        latest.forEach((dag, n) -> {
+            if ("deployed".equals(n.path("state").asText())) {
+                try {
+                    out.put(dag, vectorTopics(YAML.readTree(n.path("spec").asText(""))));
+                } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                    // the processor refuses a document that is no YAML, so it writes nothing
+                }
+            }
+        });
+        return out;
+    }
+
+    /**
+     * Each vector topic has one writer. The refusal when another DAG in {@code written} (vector topics by DAG name)
+     * writes a vector topic of the document {@code dag} under the name {@code name}; empty when none does. The same
+     * name deployed again is no other writer.
+     */
+    public static Optional<String> sinkConflict(String name, JsonNode dag, Map<String, Set<String>> written) {
+        for (String topic : vectorTopics(dag)) {
+            for (Map.Entry<String, Set<String>> other : written.entrySet()) {
+                if (!other.getKey().equals(name) && other.getValue().contains(topic)) {
+                    return Optional.of(name + ": sink topic " + topic + " is already written by DAG " + other.getKey()
+                            + "; stop that DAG first or choose another sink");
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
     private void readControl() {
         Map<String, JsonNode> latest = new LinkedHashMap<>();
         try {
@@ -272,13 +343,8 @@ public final class VectorProcessor implements AutoCloseable {
                 control = new LogTail(controlConsumer, layout.dags(), Duration.ofSeconds(30));
             }
             control.poll(r -> {
-                JsonNode n = null;
-                try {
-                    n = r.value() == null ? null : JSON.readTree(r.value());
-                } catch (IOException e) {
-                    // no JSON: counted below
-                }
-                if (n != null && CONTROL_SCHEMA.equals(n.path("schema").asText()) && n.hasNonNull("dag")) {
+                JsonNode n = controlRecord(r.value());
+                if (n != null) {
                     latest.put(n.path("dag").asText(), n);
                 } else if (++ignoredControlRecords == 1) {
                     LOG.warn("control record ignored and counted in ignoredControlRecords; later ones are only counted"
@@ -327,7 +393,15 @@ public final class VectorProcessor implements AutoCloseable {
             return;
         }
         try {
-            DagPlan plan = DagPlan.of(YAML.readTree(spec), layout, hash);
+            JsonNode document = YAML.readTree(spec);
+            DagPlan plan = DagPlan.of(document, layout, hash);
+            Map<String, Set<String>> written = new TreeMap<>();
+            runners.values().stream().filter(r -> r.job.kind().equals("vector"))
+                    .forEach(r -> written.computeIfAbsent(r.job.dag(), d -> new TreeSet<>()).add(r.job.topic()));
+            Optional<String> conflict = sinkConflict(dag, document, written);
+            if (conflict.isPresent()) {
+                throw new IllegalArgumentException(conflict.get());
+            }
             List<Sink> sinks = new ArrayList<>();
             plan.vectors().forEach(job -> sinks.add(new VectorSink(job, hash)));
             plan.series().forEach(job -> sinks.add(new SeriesSink(job, avro)));

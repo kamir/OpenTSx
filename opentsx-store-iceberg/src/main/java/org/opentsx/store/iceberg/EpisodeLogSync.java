@@ -50,8 +50,12 @@ public final class EpisodeLogSync {
     }
 
     /**
+     * {@code timeout} covers the whole call: each metadata request before the copy and the copy get what is left of it.
+     *
      * @throws IllegalStateException when the episodes topic does not exist or has no partitions, when the broker
-     *                               refuses reads for longer than {@code timeout}, or when the copy takes longer
+     *                               refuses reads for longer than {@code timeout}, or when the call takes longer
+     *                               ("timed out syncing &lt;topic&gt;", with the client's TimeoutException as cause when
+     *                               a request got no answer)
      */
     public static Result sync(Consumer<byte[], byte[]> consumer, TopicLayout layout, SeriesStore store,
                               Map<TopicPartition, Long> fromPositions, int batchSize, Duration timeout) {
@@ -63,13 +67,21 @@ public final class EpisodeLogSync {
                        Map<TopicPartition, Long> fromPositions, int batchSize, Duration timeout, Patience patience,
                        LongSupplier nanoClock) {
         String topic = layout.episodes();
-        List<PartitionInfo> infos = consumer.partitionsFor(topic, timeout);
-        if (infos == null || infos.isEmpty()) {
-            throw new IllegalStateException(topic + ": no such topic; check the domain, or create the topic first");
+        long deadline = nanoClock.getAsLong() + timeout.toNanos();
+        List<TopicPartition> tps;
+        Map<TopicPartition, Long> begin;
+        Map<TopicPartition, Long> end;
+        try {
+            List<PartitionInfo> infos = consumer.partitionsFor(topic, remaining(topic, deadline, nanoClock));
+            if (infos == null || infos.isEmpty()) {
+                throw new IllegalStateException(topic + ": no such topic; check the domain, or create the topic first");
+            }
+            tps = infos.stream().map(i -> new TopicPartition(i.topic(), i.partition())).toList();
+            begin = consumer.beginningOffsets(tps, remaining(topic, deadline, nanoClock));
+            end = consumer.endOffsets(tps, remaining(topic, deadline, nanoClock));
+        } catch (TimeoutException e) {
+            throw new IllegalStateException("timed out syncing " + topic, e);
         }
-        List<TopicPartition> tps = infos.stream().map(i -> new TopicPartition(i.topic(), i.partition())).toList();
-        Map<TopicPartition, Long> begin = consumer.beginningOffsets(tps, timeout);
-        Map<TopicPartition, Long> end = consumer.endOffsets(tps, timeout);
         Map<TopicPartition, Long> next = new HashMap<>();
         long lost = 0;
         consumer.assign(tps);
@@ -92,7 +104,6 @@ public final class EpisodeLogSync {
         long skipped = 0;
         long bad = 0;
         long invalid = 0;
-        long deadline = nanoClock.getAsLong() + timeout.toNanos();
         try {
             while (tps.stream().anyMatch(tp -> next.get(tp) < end.get(tp))) {
                 if (nanoClock.getAsLong() > deadline) {
@@ -166,6 +177,15 @@ public final class EpisodeLogSync {
             consumer.assign(List.of());
         }
         return new Result(written, skipped, bad, invalid, lost, next);
+    }
+
+    /** Whole milliseconds: with less than one, KafkaConsumer answers an offset request with an empty map. */
+    private static Duration remaining(String topic, long deadline, LongSupplier nanoClock) {
+        long left = TimeUnit.NANOSECONDS.toMillis(deadline - nanoClock.getAsLong());
+        if (left <= 0) {
+            throw new IllegalStateException("timed out syncing " + topic);
+        }
+        return Duration.ofMillis(left);
     }
 
     /** Retention can delete past a position with no record left to poll; only the log start shows that. */

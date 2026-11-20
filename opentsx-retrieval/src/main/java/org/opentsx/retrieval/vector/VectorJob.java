@@ -116,12 +116,22 @@ public record VectorJob(String dag, String topic, String name, List<String> seri
         VectorAligner.Agg aggregate = Arrays.stream(VectorAligner.Agg.values()).filter(a -> a.name().equals(agg)).findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("node " + node + ": agg: \"" + agg + "\" is not allowed; expected one of "
                         + Arrays.stream(VectorAligner.Agg.values()).map(Enum::name).collect(Collectors.joining(", "))));
+        boolean asOf = oneOf(node, "fill", p.path("fill").asText("none"), "none", "as-of");
+        boolean complete = oneOf(node, "emit", p.path("emit").asText("any"), "any", "complete");
         try {
-            return new VectorAligner.Params(every, p.path("key").asText("series"), aggregate,
-                    "as-of".equals(p.path("fill").asText()), maxAge, "complete".equals(p.path("emit").asText()));
+            return new VectorAligner.Params(every, p.path("key").asText("series"), aggregate, asOf, maxAge, complete);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("node " + node + ": " + e.getMessage(), e);
         }
+    }
+
+    /** True for {@code on}, false for {@code off}; any other value is refused with both. */
+    private static boolean oneOf(String node, String field, String text, String off, String on) {
+        if (!text.equals(off) && !text.equals(on)) {
+            throw new IllegalArgumentException("node " + node + ": " + field + ": \"" + text + "\" is not allowed; expected one of "
+                    + off + ", " + on);
+        }
+        return text.equals(on);
     }
 
     /** A duration whose nanoseconds fit a long, and at least {@code least} when that is given. */

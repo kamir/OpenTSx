@@ -283,4 +283,26 @@ class KafScaleFeedTest {
         assertEquals("", Files.readString(out), "the feed and the processor write nothing to stdout");
         return Files.readString(err);
     }
+
+    @Test
+    void theFeedTellsWhenItLastRefreshedAndHowManyRefreshesFailedSince() throws Exception {
+        FakeBroker broker = broker();
+        try (KafScaleFeed feed = feed(broker, new InMemorySeriesStore(), () -> { })) {
+            feed.load();
+            java.time.Instant loaded = feed.lastRefresh();
+            assertTrue(loaded != null, "the load is the first refresh that worked");
+            assertEquals(0, feed.refreshFailures());
+            broker.unreadable.put(LAYOUT.episodes(), new org.apache.kafka.common.errors.TimeoutException("no answer"));
+            logged(() -> {
+                feed.refresh();
+                feed.refresh();
+            });
+            assertEquals(2, feed.refreshFailures());
+            assertEquals(loaded, feed.lastRefresh(), "a failed refresh leaves the time of the last one that worked");
+            broker.unreadable.clear();
+            feed.refresh();
+            assertEquals(0, feed.refreshFailures());
+            assertTrue(feed.lastRefresh() != null);
+        }
+    }
 }

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { forgetFlows, newFlow, openFlows } from './composerActions';
+import { forgetFlows, keptNotice, newFlow, openFlows } from './composerActions';
 import { useFlow } from './flow';
 import { Bucket } from './types';
 
@@ -44,6 +44,31 @@ describe('opening flows from the composer', () => {
     openFlows([7], () => undefined);
     expect(useFlow.getState().savedId).toBeNull();
     expect(useFlow.getState().nodes).toHaveLength(2);
+  });
+
+  it('opens none here and keeps the flow of the workbench when the caller stays after a kept tab', () => {
+    vi.spyOn(window, 'open').mockReturnValueOnce(null).mockReturnValueOnce({} as Window);
+    const here = vi.fn();
+    expect(openFlows([7, 4, 5], here, true)).toBe(1);
+    expect(here).not.toHaveBeenCalled();
+    expect(useFlow.getState().savedId).toBe(7);
+  });
+
+  it('opens the first here when every tab opened, also for a caller that stays otherwise', () => {
+    vi.spyOn(window, 'open').mockReturnValue({} as Window);
+    const here = vi.fn();
+    expect(openFlows([7, 4], here, true)).toBe(0);
+    expect(here).toHaveBeenCalledWith(7);
+    expect(useFlow.getState().savedId).toBeNull();
+  });
+
+  it('says in one text how many flows the browser kept and whether the first one opened', () => {
+    expect(keptNotice(1, false)).toBe(
+      'The browser kept 1 of the flows from opening in tabs of their own, so this page stayed and did not open the first one either. Allow pop-ups for this page, or open them one at a time.'
+    );
+    expect(keptNotice(2, true)).toBe(
+      'The browser kept 2 of the flows from opening in tabs of their own. Allow pop-ups for this page, or open them one at a time.'
+    );
   });
 });
 

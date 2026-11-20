@@ -108,6 +108,30 @@ def test_a_step_outside_64_bits_is_refused_when_encoding(timestamps, i, step):
                             "expected steps of at most 9223372036854775807 microseconds")
 
 
+@pytest.mark.parametrize("timestamps, i, t", [
+    ([2**63, 2**63 + 1], 0, 2**63),
+    ([0, 2**63], 1, 2**63),
+    ([-2**63 - 1, 0], 0, -2**63 - 1),
+    ([2**63], 0, 2**63),
+])
+def test_a_timestamp_outside_64_bits_is_refused_when_encoding(timestamps, i, t):
+    text = f"timestamps: timestamp {i} is {t}; expected timestamps from -9223372036854775808 to 9223372036854775807"
+    with pytest.raises(ValueError) as e:
+        m.encode_deltas(timestamps)
+    assert str(e.value) == text
+    with pytest.raises(ValueError) as e:
+        m.irregular(m.series_key("x"), timestamps, [1.0] * len(timestamps), t_end_us=0)
+    assert str(e.value) == text
+
+
+def test_timestamps_at_the_ends_of_the_64_bit_range_are_encoded():
+    timestamps = [-2**63, -2**63 + 1]
+    enc = m.encode_deltas(timestamps)
+    np.testing.assert_array_equal(m.decode_deltas(timestamps[0], 2, enc), timestamps)
+    episode = m.irregular(m.series_key("x"), [2**63 - 3, 2**63 - 2], [1.0, 2.0])
+    np.testing.assert_array_equal(m.timestamps_us(episode), [2**63 - 3, 2**63 - 2])
+
+
 def test_the_largest_step_is_encoded_and_decoded():
     timestamps = [-2**63, -1, 2**63 - 2]
     enc = m.encode_deltas(timestamps)

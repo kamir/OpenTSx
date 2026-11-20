@@ -470,6 +470,35 @@ public class VectorProcessorTest {
     }
 
     @Test
+    void aSecondDagThatWritesTheVectorTopicOfARunningOneIsRefusedNamingBoth(@TempDir Path state) throws Exception {
+        appendBlock(0);
+        deploy(goodDag());
+        String copy = goodDag().replace("dag: wind-exp2-smart", "dag: wind-copy");
+        deploy(copy);
+        try (VectorProcessor p = processor(state)) {
+            List<String> lines = logged(() -> steps(p, 3));
+            assertEquals(Map.of("wind-exp2-smart/turbine-state", "running"), p.states());
+            String refusal = "wind-copy: sink topic tsx.wind.smart.turbine-state.vectors.v1 is already written by DAG"
+                    + " wind-exp2-smart; stop that DAG first or choose another sink";
+            assertEquals("failed", lastStatus("wind-copy").path("state").asText());
+            assertEquals(refusal, lastStatus("wind-copy").path("error").asText());
+            assertTrue(messages(lines, "WARN").contains("dag refused dag=wind-copy cause=java.lang.IllegalArgumentException: " + refusal),
+                    String.join("\n", lines));
+
+            // the same DAG deployed again under its own name keeps its topic
+            deploy(goodDag().replace("every: PT60S", "every: PT30S"));
+            steps(p, 3);
+            assertEquals(Map.of("wind-exp2-smart/turbine-state", "running"), p.states());
+
+            // once the first is stopped, the copy may write the topic
+            broker.append(LAYOUT.dags(), 0, VectorProcessor.stopRecord("wind-exp2-smart", "test"));
+            deploy(copy);
+            steps(p, 3);
+            assertEquals(Map.of("wind-copy/turbine-state", "running"), p.states());
+        }
+    }
+
+    @Test
     void waitsUntilEverySeriesWasSeenAndClosesATickOnlyWhenAllPassedIt(@TempDir Path state) throws Exception {
         // only the speed has arrived
         double[] speed = new double[600];

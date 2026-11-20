@@ -1,7 +1,15 @@
 package org.opentsx.twin.live;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.kafka.clients.admin.ListTopicsOptions;
+import org.apache.kafka.clients.admin.ListTopicsResult;
+import org.apache.kafka.clients.admin.MockAdminClient;
+import org.apache.kafka.clients.admin.TopicListing;
+import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.Node;
+import org.apache.kafka.common.internals.KafkaFutureImpl;
 import org.junit.jupiter.api.Test;
+import org.opentsx.kafka.Patience;
 import org.opentsx.kafka.TopicLayout;
 import org.opentsx.twin.RunResult;
 import org.opentsx.twin.TwinEvent;
@@ -10,6 +18,7 @@ import org.opentsx.twin.studio.StudioScenario;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.lang.reflect.Constructor;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -19,6 +28,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -30,6 +40,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EventTopicLiveTest {
+
+    private static final Node NODE = new Node(0, "localhost", 9092);
 
     private static StudioScenario h2() {
         return Scenarios.all().stream().filter(s -> s.id().equals("h2-chain")).findFirst().orElseThrow();
@@ -165,6 +177,130 @@ class EventTopicLiveTest {
                     HttpResponse.BodyHandlers.ofString());
             assertEquals(200, health.statusCode());
             assertEquals("https://studio.example", health.headers().firstValue("Access-Control-Allow-Origin").orElse(null));
+        }
+    }
+
+    @Test
+    void aFromThatIsNoneOfItsValuesIsRefusedWithTheValue() throws Exception {
+        try (EventBridge bridge = new EventBridge(new MemoryTopics(), 0, "*", 4)) {
+            HttpResponse<String> r = HttpClient.newHttpClient().send(HttpRequest.newBuilder(URI.create("http://localhost:" + bridge.port()
+                    + "/v1/topics/twin.demo.run-1.events/events?from=yesterday")).build(), HttpResponse.BodyHandlers.ofString());
+            assertEquals(400, r.statusCode());
+            assertEquals("{\"error\":\"from: \\\"yesterday\\\" is not allowed; expected latest, earliest or an offset of 0 or more\","
+                    + "\"type\":\"bad_request\"}", r.body());
+        }
+    }
+
+    /** A log whose lookups fail while {@code down} is set, as a broker that cannot be reached. */
+    static final class Flaky implements Topics {
+        final MemoryTopics log = new MemoryTopics();
+        volatile boolean down;
+
+        @Override
+        public void create(String topic) {
+            log.create(topic);
+        }
+
+        @Override
+        public void append(String topic, String key, byte[] value, String schema) {
+            log.append(topic, key, value, schema);
+        }
+
+        @Override
+        public Cursor open(String topic, long offset) throws NoSuchTopicException {
+            if (down) {
+                throw new IllegalStateException("cannot reach the broker at broker.invalid:9092",
+                        new java.util.concurrent.TimeoutException("timed out waiting for a node assignment"));
+            }
+            return log.open(topic, offset);
+        }
+
+        @Override
+        public void close() {
+            log.close();
+        }
+    }
+
+    @Test
+    void theBridgeIsReadyWhileItReachesTheBroker() throws Exception {
+        Flaky topics = new Flaky();
+        try (EventBridge bridge = new EventBridge(topics, 0, "*", 4)) {
+            HttpClient http = HttpClient.newHttpClient();
+            URI ready = URI.create("http://localhost:" + bridge.port() + "/v1/ready");
+            HttpResponse<String> up = http.send(HttpRequest.newBuilder(ready).build(), HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, up.statusCode(), up.body());
+            assertEquals("{\"status\":\"ready\"}", up.body());
+
+            topics.down = true;
+            PrintStream stderr = System.err;
+            System.setErr(new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8));
+            HttpResponse<String> down;
+            try {
+                down = http.send(HttpRequest.newBuilder(ready).build(), HttpResponse.BodyHandlers.ofString());
+            } finally {
+                System.setErr(stderr);
+            }
+            assertEquals(503, down.statusCode());
+            assertEquals("{\"error\":\"broker: cannot be reached; check the address of the broker and its log\","
+                    + "\"type\":\"unavailable\"}", down.body());
+            assertFalse(down.body().contains("broker.invalid"), "the address stays in the log");
+
+            topics.down = false;
+            assertEquals(200, http.send(HttpRequest.newBuilder(ready).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
+        }
+    }
+
+    /** A broker whose topic lookups record their deadline and, while {@code silent} is set, end at it without an answer. */
+    static final class Deadlines extends MockAdminClient {
+        final List<Integer> timeoutsMs = new ArrayList<>();
+        volatile boolean silent;
+
+        Deadlines() {
+            super(List.of(NODE), NODE);
+        }
+
+        @Override
+        public synchronized ListTopicsResult listTopics(ListTopicsOptions options) {
+            timeoutsMs.add(options.timeoutMs());
+            if (!silent) {
+                return super.listTopics(options);
+            }
+            KafkaFutureImpl<Map<String, TopicListing>> f = new KafkaFutureImpl<>();
+            f.completeExceptionally(new org.apache.kafka.common.errors.TimeoutException(
+                    "Timed out waiting for a node assignment. Call: listTopics"));
+            try {
+                // the constructor of ListTopicsResult is package-private
+                Constructor<ListTopicsResult> c = ListTopicsResult.class.getDeclaredConstructor(KafkaFuture.class);
+                c.setAccessible(true);
+                return c.newInstance(f);
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+    }
+
+    @Test
+    void theReadinessLookupGivesTheBrokerTwoSecondsBeforeTheBridgeAnswers503() throws Exception {
+        Deadlines admin = new Deadlines();
+        try (KafkaTopics topics = new KafkaTopics("broker.invalid:9092", b -> admin, b -> null, b -> null, Patience::standard);
+             EventBridge bridge = new EventBridge(topics, 0, "*", 4)) {
+            HttpClient http = HttpClient.newHttpClient();
+            URI ready = URI.create("http://localhost:" + bridge.port() + "/v1/ready");
+            HttpResponse<String> up = http.send(HttpRequest.newBuilder(ready).build(), HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, up.statusCode(), up.body());
+
+            admin.silent = true;
+            PrintStream stderr = System.err;
+            System.setErr(new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8));
+            HttpResponse<String> down;
+            try {
+                down = http.send(HttpRequest.newBuilder(ready).build(), HttpResponse.BodyHandlers.ofString());
+            } finally {
+                System.setErr(stderr);
+            }
+            assertEquals(503, down.statusCode(), down.body());
+            assertEquals(List.of(2000, 2000), admin.timeoutsMs,
+                    "the probe of the kubelet waits 3 s, so the lookup must end within 2 s");
         }
     }
 

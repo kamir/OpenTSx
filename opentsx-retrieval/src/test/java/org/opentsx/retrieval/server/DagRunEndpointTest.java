@@ -2,17 +2,35 @@ package org.opentsx.retrieval.server;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.kafka.clients.admin.MockAdminClient;
+import org.apache.kafka.clients.producer.Callback;
+import org.apache.kafka.clients.producer.MockProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.Node;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
 import org.opentsx.retrieval.EpisodeService;
+import org.opentsx.retrieval.vector.VectorProcessorTest;
+import org.opentsx.retrieval.vector.VectorProcessorTest.FakeBroker;
 import org.opentsx.store.InMemorySeriesStore;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -189,6 +207,185 @@ class DagRunEndpointTest {
             // reading stays open
             assertEquals(200, get(server, "/v1/dags").statusCode());
             assertEquals(200, get(server, "/v1/inventory").statusCode());
+        }
+    }
+
+    @Test
+    void healthAnswersWhileEveryRequestThreadWaitsForTheBroker() throws Exception {
+        int threads = RetrievalServer.REQUEST_THREADS;
+        CountDownLatch entered = new CountDownLatch(threads);
+        CountDownLatch release = new CountDownLatch(1);
+        RetrievalServer.Dags waiting = new RetrievalServer.Dags() {
+            @Override
+            public JsonNode deploy(JsonNode dag, String text, String by) {
+                entered.countDown();
+                try {
+                    release.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                return EpisodeJson.JSON.createObjectNode().put("dag", dag.path("dag").asText()).put("state", "deployed");
+            }
+
+            @Override
+            public JsonNode stop(String name, String by) {
+                throw new AssertionError("no stop expected");
+            }
+
+            @Override
+            public JsonNode list() {
+                return EpisodeJson.JSON.createObjectNode().putArray("dags");
+            }
+        };
+        try (RetrievalServer server = server(waiting, true, null)) {
+            List<CompletableFuture<HttpResponse<String>>> held = new ArrayList<>();
+            try {
+                for (int i = 0; i < threads; i++) {
+                    held.add(HTTP.sendAsync(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + server.port() + "/v1/dags/deploy"))
+                            .POST(HttpRequest.BodyPublishers.ofString("dag: d" + i + "\n")).build(), HttpResponse.BodyHandlers.ofString()));
+                }
+                assertTrue(entered.await(30, TimeUnit.SECONDS), "every request thread holds a deployment");
+                for (String path : List.of("/v1/health", "/v1/ready")) {
+                    HttpResponse<String> probe = HTTP.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + server.port() + path))
+                            .timeout(Duration.ofSeconds(10)).build(), HttpResponse.BodyHandlers.ofString());
+                    assertEquals(200, probe.statusCode(), path + ": " + probe.body());
+                }
+            } finally {
+                release.countDown();
+            }
+            for (CompletableFuture<HttpResponse<String>> f : held) {
+                assertEquals(200, f.get(30, TimeUnit.SECONDS).statusCode());
+            }
+        }
+    }
+
+    @Test
+    void aServerWithoutAFeedIsReadyOnceItListens() throws Exception {
+        try (RetrievalServer server = server(null, false, null)) {
+            HttpResponse<String> ready = get(server, "/v1/ready");
+            assertEquals(200, ready.statusCode(), ready.body());
+            assertEquals("{\"status\":\"ready\"}", ready.body());
+        }
+    }
+
+    /** A feed whose refreshes the test decides. */
+    static final class Refreshes implements RetrievalServer.Feed {
+        Instant last;
+        int failures;
+
+        Refreshes(Instant loaded) {
+            last = loaded;
+        }
+
+        void failed() {
+            failures++;
+        }
+
+        void worked(Instant at) {
+            last = at;
+            failures = 0;
+        }
+
+        @Override
+        public Instant lastRefresh() {
+            return last;
+        }
+
+        @Override
+        public int refreshFailures() {
+            return failures;
+        }
+
+        @Override
+        public Duration refreshInterval() {
+            return Duration.ofSeconds(30);
+        }
+
+        @Override
+        public boolean truncated() {
+            return true;
+        }
+    }
+
+    @Test
+    void aServerIsNotReadyAfterThreeFailedRefreshesAndReadyAgainAfterOneThatWorked() throws Exception {
+        Instant t0 = Instant.parse("2026-11-20T10:00:00Z");
+        Refreshes feed = new Refreshes(t0);
+        try (RetrievalServer server = server(null, false, null)) {
+            server.follows(feed, Clock.fixed(t0.plusSeconds(30), ZoneOffset.UTC));
+            HttpResponse<String> ready = get(server, "/v1/ready");
+            assertEquals(200, ready.statusCode(), ready.body());
+            assertEquals("{\"status\":\"ready\",\"feed\":{\"lastRefresh\":\"2026-11-20T10:00:00Z\",\"ageSeconds\":30,"
+                    + "\"refreshFailures\":0,\"truncated\":true}}", ready.body());
+
+            feed.failed();
+            feed.failed();
+            assertEquals(200, get(server, "/v1/ready").statusCode(), "two failed refreshes");
+            feed.failed();
+            HttpResponse<String> down = get(server, "/v1/ready");
+            assertEquals(503, down.statusCode());
+            assertEquals("{\"error\":\"feed: 3 refreshes failed in a row, the last one that worked ended at 2026-11-20T10:00:00Z;"
+                    + " check that the broker is reachable and read the log of the server\",\"type\":\"unavailable\"}", down.body());
+            assertEquals(200, get(server, "/v1/health").statusCode(), "liveness does not follow the feed");
+
+            feed.worked(t0.plusSeconds(30));
+            assertEquals(200, get(server, "/v1/ready").statusCode(), "one refresh that worked");
+        }
+    }
+
+    @Test
+    void aServerIsNotReadyWhenNoRefreshWorkedForThreePeriods() throws Exception {
+        Instant t0 = Instant.parse("2026-11-20T10:00:00Z");
+        Refreshes feed = new Refreshes(t0);
+        try (RetrievalServer server = server(null, false, null)) {
+            server.follows(feed, Clock.fixed(t0.plusSeconds(90), ZoneOffset.UTC));
+            assertEquals(200, get(server, "/v1/ready").statusCode(), "three periods of 30 s");
+            server.follows(feed, Clock.fixed(t0.plusSeconds(91), ZoneOffset.UTC));
+            HttpResponse<String> late = get(server, "/v1/ready");
+            assertEquals(503, late.statusCode());
+            assertEquals("{\"error\":\"feed: no refresh worked for 91 s, more than 3 refresh periods of PT30S; check that the"
+                    + " broker is reachable and read the log of the server\",\"type\":\"unavailable\"}", late.body());
+        }
+    }
+
+    static final Node NODE = new Node(0, "127.0.0.1", 1);
+
+    /** A feed over a broker in memory whose producers append to its log, as a broker does. */
+    static KafScaleFeed feed(FakeBroker broker) {
+        return new KafScaleFeed("ks:9092", "wind", broker.consumer(), b -> new MockAdminClient(List.of(NODE), NODE),
+                b -> new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()) {
+                    @Override
+                    public synchronized Future<RecordMetadata> send(ProducerRecord<String, byte[]> r, Callback callback) {
+                        broker.append(r.topic(), 0, r.value());
+                        return super.send(r, callback);
+                    }
+                }, new InMemorySeriesStore(), 100, () -> { });
+    }
+
+    /** The DAG routes of a server on KafScale, as {@link RetrievalServer#main} wires them. */
+    static RetrievalServer.Dags kafscale(KafScaleFeed feed, FakeBroker broker) {
+        return RetrievalServer.kafscaleDags(feed, broker::consumer, VectorProcessorTest.LAYOUT);
+    }
+
+    @Test
+    void aSecondDagThatWritesTheVectorTopicOfAnotherAnswers409AndWritesNothing() throws Exception {
+        FakeBroker broker = new FakeBroker();
+        TopicPartition control = new TopicPartition(VectorProcessorTest.LAYOUT.dags(), 0);
+        String first = VectorProcessorTest.goodDag();
+        String copy = first.replace("dag: wind-exp2-smart", "dag: wind-copy");
+        try (KafScaleFeed feed = feed(broker); RetrievalServer server = server(kafscale(feed, broker), true, null)) {
+            assertEquals(200, post(server, "/v1/dags/deploy", first).statusCode());
+            HttpResponse<String> refused = post(server, "/v1/dags/deploy", copy);
+            assertEquals(409, refused.statusCode(), refused.body());
+            assertEquals("{\"error\":\"wind-copy: sink topic tsx.wind.smart.turbine-state.vectors.v1 is already written by DAG"
+                    + " wind-exp2-smart; stop that DAG first or choose another sink\",\"type\":\"conflict\"}", refused.body());
+            assertEquals(1, broker.log.get(control).size(), "nothing reaches the control topic");
+
+            HttpResponse<String> again = post(server, "/v1/dags/deploy", first.replace("every: PT60S", "every: PT30S"));
+            assertEquals(200, again.statusCode(), "a DAG deployed again under its name: " + again.body());
+            assertEquals(200, post(server, "/v1/dags/stop?name=wind-exp2-smart", "").statusCode());
+            assertEquals(200, post(server, "/v1/dags/deploy", copy).statusCode(), "the topic has no writer after the stop");
+            assertEquals(4, broker.log.get(control).size());
         }
     }
 }

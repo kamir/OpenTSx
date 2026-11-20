@@ -22,6 +22,19 @@ public interface Topics extends AutoCloseable {
     /** Opens a cursor at {@code offset}, {@link #EARLIEST} or {@link #LATEST}. */
     Cursor open(String topic, long offset) throws NoSuchTopicException;
 
+    /**
+     * Whether the log has {@code topic}. {@link KafkaTopics} throws when the broker does not answer within
+     * {@code timeout}; this default opens a cursor and closes it again, and waits as long as {@link #open} does.
+     */
+    default boolean exists(String topic, Duration timeout) {
+        try {
+            open(topic, LATEST).close();
+            return true;
+        } catch (NoSuchTopicException e) {
+            return false;
+        }
+    }
+
     @Override
     void close();
 

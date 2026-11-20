@@ -5,10 +5,13 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.common.KafkaException;
 import org.opentsx.conf.ConfCli;
 import org.opentsx.conf.OpenTsxConf;
 import org.opentsx.conf.OpenTsxConfException;
 import org.opentsx.conf.Registry;
+import org.opentsx.kafka.KafScaleClients;
 import org.opentsx.kafka.TopicLayout;
 import org.opentsx.model.Episodes;
 import org.opentsx.model.OpenTsxAvro;
@@ -21,6 +24,8 @@ import org.opentsx.retrieval.Resampling;
 import org.opentsx.retrieval.pattern.Distance;
 import org.opentsx.retrieval.segment.Segmenter;
 import org.opentsx.retrieval.system.Systems;
+import org.opentsx.retrieval.vector.DagPlan;
+import org.opentsx.retrieval.vector.VectorProcessor;
 import org.opentsx.store.InMemorySeriesStore;
 import org.opentsx.store.SeriesStore;
 import org.slf4j.Logger;
@@ -37,6 +42,7 @@ import java.net.UnknownHostException;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -48,8 +54,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Consumer;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -70,8 +78,12 @@ import java.util.stream.Collectors;
  * POST /v1/dags/stop?name=    stops the DAG of that name
  *                             (both only with {@code --kafscale} and {@code --dag-runs true}, and with the run token
  *                             when the server has one; {@link #main} starts no such server without one unless
- *                             {@code --open-dag-runs} binds it to 127.0.0.1)
- * GET  /v1/health
+ *                             {@code --open-dag-runs} binds it to 127.0.0.1); a DAG whose vector topic another
+ *                             deployed DAG writes is answered 409 {@code conflict}
+ * GET  /v1/health             liveness: 200 while the process answers, also while every request thread waits
+ * GET  /v1/ready              readiness: 200 once the server listens; with {@code --kafscale} 503 {@code unavailable}
+ *                             after {@value #READY_PERIODS} failed refreshes of the feed in a row or as many refresh
+ *                             periods without one that worked
  * </pre>
  * Episode responses are JSON by default; with {@code Accept: application/x-opentsx-avro-stream} they are a stream of
  * {@code [uint32 big-endian length][Avro single-object encoded Episode]}, which the Python client reads.
@@ -116,6 +128,40 @@ public final class RetrievalServer implements AutoCloseable {
         public Unavailable(String message, Throwable cause) {
             super(message, cause);
         }
+    }
+
+    /** The request conflicts with what the server holds, such as a vector topic another DAG writes; answered 409 {@code conflict}. */
+    public static final class Conflict extends RuntimeException {
+        public Conflict(String message) {
+            super(message);
+        }
+    }
+
+    /** A log the server follows, as {@code GET /v1/ready} reports it. */
+    public interface Feed {
+        /** When the last load or refresh of the log that worked ended. */
+        Instant lastRefresh();
+
+        /** Refreshes that failed since the last one that worked. */
+        int refreshFailures();
+
+        /** The time between two refreshes. */
+        Duration refreshInterval();
+
+        /** Whether the store stopped loading at its limit and holds part of the log only. */
+        boolean truncated();
+    }
+
+    /** Refresh periods without a refresh that worked, and failed refreshes in a row, after which the server is not ready. */
+    static final int READY_PERIODS = 3;
+
+    private volatile Feed followed;
+    private volatile Clock clock = Clock.systemUTC();
+
+    /** Lets {@code GET /v1/ready} report this feed, its age read on {@code clock}. */
+    void follows(Feed feed, Clock clock) {
+        this.clock = clock;
+        this.followed = feed;
     }
 
     /** Header a caller of the DAG write routes proves itself with when the server has a run token. */
@@ -176,9 +222,35 @@ public final class RetrievalServer implements AutoCloseable {
         }
         this.dagRunToken = dagRunToken == null || dagRunToken.isBlank() ? null : dagRunToken.getBytes(StandardCharsets.UTF_8);
         this.http = HttpServer.create(address, 0);
-        http.setExecutor(Executors.newFixedThreadPool(4));
-        http.createContext("/", this::handle);
+        // two threads take every request: they answer health and ready themselves and hand the rest to the request
+        // threads, which can wait minutes for the broker
+        http.setExecutor(Executors.newFixedThreadPool(2));
+        http.createContext("/", this::dispatch);
         http.start();
+    }
+
+    /** Threads that answer the routes other than health and ready. */
+    static final int REQUEST_THREADS = 4;
+    private final ExecutorService requests = Executors.newFixedThreadPool(REQUEST_THREADS);
+
+    private void dispatch(HttpExchange ex) throws IOException {
+        String path = ex.getRequestURI().getPath();
+        if (path.equals("/v1/health") || path.equals("/v1/ready")) {
+            handle(ex);
+            return;
+        }
+        try {
+            requests.execute(() -> {
+                try {
+                    handle(ex);
+                } catch (IOException | RuntimeException e) {
+                    log.debug("request ended without an answer path={}", oneLine(path), e);
+                    ex.close();
+                }
+            });
+        } catch (RejectedExecutionException closing) {
+            ex.close();
+        }
     }
 
     public int port() {
@@ -193,7 +265,8 @@ public final class RetrievalServer implements AutoCloseable {
     @Override
     public void close() {
         http.stop(0);
-        ((java.util.concurrent.ExecutorService) http.getExecutor()).shutdownNow();
+        ((ExecutorService) http.getExecutor()).shutdownNow();
+        requests.shutdownNow();
         KafScaleFeed f = feed;
         if (f != null) {
             f.close();
@@ -227,6 +300,8 @@ public final class RetrievalServer implements AutoCloseable {
                 error(ex, 405, method + " " + path + ": method not allowed; expected " + allow);
             } else if (method.equals("GET") && path.equals("/v1/health")) {
                 json(ex, 200, EpisodeJson.JSON.createObjectNode().put("status", "ok"));
+            } else if (method.equals("GET") && path.equals("/v1/ready")) {
+                ready(ex);
             } else if (method.equals("GET") && path.equals("/v1/inventory")) {
                 json(ex, 200, inventory.get());
             } else if (method.equals("GET") && (path.equals("/v1/systems") || path.startsWith("/v1/systems/"))) {
@@ -272,6 +347,8 @@ public final class RetrievalServer implements AutoCloseable {
             }
         } catch (TooLarge e) {
             error(ex, 413, e.getMessage());
+        } catch (Conflict e) {
+            error(ex, 409, e.getMessage());
         } catch (Unavailable e) {
             log.error("request failed method={} path={} status=503 cause={}", oneLine(method), oneLine(path), causes(e));
             log.debug("stack trace of the failed request method={} path={}", oneLine(method), oneLine(path), e);
@@ -290,7 +367,7 @@ public final class RetrievalServer implements AutoCloseable {
     /** The methods a known path takes, as the Allow header lists them; null for a path the server does not know. */
     private static String allowed(String path) {
         return switch (path) {
-            case "/v1/health", "/v1/inventory", "/v1/systems", "/v1/dags", "/v1/episodes" -> "GET";
+            case "/v1/health", "/v1/ready", "/v1/inventory", "/v1/systems", "/v1/dags", "/v1/episodes" -> "GET";
             case "/v1/dags/deploy", "/v1/dags/stop", "/v1/patterns/search", "/v1/segments" -> "POST";
             case "/v1/episodes/similar" -> "GET, POST";
             default -> {
@@ -304,6 +381,36 @@ public final class RetrievalServer implements AutoCloseable {
                 yield null;
             }
         };
+    }
+
+    /**
+     * 200 with the age of the feed, its failed refreshes in a row and whether it is truncated; 503 {@code unavailable}
+     * naming the reason after {@link #READY_PERIODS} failed refreshes in a row or as many refresh periods without one
+     * that worked. A server without a feed holds what it loaded and is ready once it listens.
+     */
+    private void ready(HttpExchange ex) throws IOException {
+        Feed feed = followed;
+        ObjectNode answer = EpisodeJson.JSON.createObjectNode().put("status", "ready");
+        if (feed == null) {
+            json(ex, 200, answer);
+            return;
+        }
+        Instant last = feed.lastRefresh();
+        Duration age = Duration.between(last, clock.instant());
+        Duration limit = feed.refreshInterval().multipliedBy(READY_PERIODS);
+        int failures = feed.refreshFailures();
+        if (failures >= READY_PERIODS) {
+            error(ex, 503, "feed: " + failures + " refreshes failed in a row, the last one that worked ended at " + last
+                    + "; check that the broker is reachable and read the log of the server");
+        } else if (age.compareTo(limit) > 0) {
+            error(ex, 503, "feed: no refresh worked for " + age.toSeconds() + " s, more than " + READY_PERIODS
+                    + " refresh periods of " + feed.refreshInterval() + "; check that the broker is reachable and read the"
+                    + " log of the server");
+        } else {
+            answer.putObject("feed").put("lastRefresh", last.toString()).put("ageSeconds", age.toSeconds())
+                    .put("refreshFailures", failures).put("truncated", feed.truncated());
+            json(ex, 200, answer);
+        }
     }
 
     /** The exception and its causes on one line, for the log. */
@@ -668,6 +775,7 @@ public final class RetrievalServer implements AutoCloseable {
             case 401 -> "unauthorized";
             case 404 -> "not_found";
             case 405 -> "method_not_allowed";
+            case 409 -> "conflict";
             case 413 -> "too_large";
             case 500 -> "internal";
             case 503 -> "unavailable";
@@ -834,7 +942,7 @@ public final class RetrievalServer implements AutoCloseable {
 
     /** {@code args} without the command word, as bin/opentsx passes them; {@code started} gets the listening server. */
     static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err,
-                   Consumer<RetrievalServer> started) {
+                   java.util.function.Consumer<RetrievalServer> started) {
         List<String> argv = new ArrayList<>(args.size() + 1);
         argv.add(COMMAND);
         argv.addAll(args);
@@ -1026,22 +1134,7 @@ public final class RetrievalServer implements AutoCloseable {
                 }
                 feed.details(src);
             });
-            dags = new Dags() {
-                @Override
-                public JsonNode deploy(JsonNode dag, String text, String by) {
-                    return feed.deploy(dag, text, by);
-                }
-
-                @Override
-                public JsonNode stop(String name, String by) {
-                    return feed.stop(name, by);
-                }
-
-                @Override
-                public JsonNode list() {
-                    return feed.dags();
-                }
-            };
+            dags = kafscaleDags(feed, () -> KafScaleClients.consumer(plan.bootstrap()), new TopicLayout(domain));
             if (dagRuns) {
                 generated[0] = new TopicLayout(domain).synthetic();
                 writer[0] = feed::writeGenerated;
@@ -1064,6 +1157,7 @@ public final class RetrievalServer implements AutoCloseable {
         }
         if (opened[0] != null) {
             s.closes(opened[0]);
+            s.follows(opened[0], Clock.systemUTC());
         }
         if (plan.dagRuns() && plan.runToken() == null) {
             log.warn("dag deployments: OPEN on {}:{}, any process that reaches this address can deploy and stop DAGs"
@@ -1073,6 +1167,43 @@ public final class RetrievalServer implements AutoCloseable {
             log.info("dag deployments: for callers with the run token");
         }
         return s;
+    }
+
+    /**
+     * The DAG routes of a server on KafScale. A deployment is refused with {@link Conflict} when another DAG that the
+     * control topic holds as deployed writes one of its vector topics; the control topic is read to its end first, so
+     * the refusal holds also for DAGs deployed from the command line.
+     *
+     * @param consumers a new consumer for each deployment, closed after it read the control topic
+     */
+    static Dags kafscaleDags(KafScaleFeed feed, Supplier<Consumer<byte[], byte[]>> consumers, TopicLayout layout) {
+        return new Dags() {
+            @Override
+            public synchronized JsonNode deploy(JsonNode dag, String text, String by) {
+                String name = VectorProcessor.dagName(text);
+                DagPlan.of(dag, layout, "");
+                Map<String, Set<String>> written;
+                try (Consumer<byte[], byte[]> consumer = consumers.get()) {
+                    written = VectorProcessor.deployedVectorTopics(consumer, layout);
+                } catch (KafkaException | IllegalStateException e) {
+                    throw new Unavailable(KafScaleFeed.BROKER_UNAVAILABLE, new IllegalStateException("cannot read " + layout.dags(), e));
+                }
+                VectorProcessor.sinkConflict(name, dag, written).ifPresent(conflict -> {
+                    throw new Conflict(conflict);
+                });
+                return feed.deploy(dag, text, by);
+            }
+
+            @Override
+            public JsonNode stop(String name, String by) {
+                return feed.stop(name, by);
+            }
+
+            @Override
+            public JsonNode list() {
+                return feed.dags();
+            }
+        };
     }
 
     /** {@code IcebergSeriesStore.openExisting}, called by name: opentsx-store-iceberg is on the class path of the launcher only. */

@@ -26,16 +26,21 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 
 /**
@@ -48,8 +53,9 @@ import java.util.function.Function;
  * opentsx vectors stop   --kafscale host:9092 --domain wind --name wind-exp2-smart
  * </pre>
  * {@code deploy} and {@code stop} only write a record to the control topic; the running processor takes it up. The
- * options and the DAG file are checked before the first Admin call. Exit codes: 0 success, 1 runtime failure, 2 usage
- * or configuration error.
+ * options and the DAG file are checked before the first Admin call. {@code deploy} then reads the control topic and
+ * refuses a DAG whose vector topic another deployed DAG writes. Exit codes: 0 success, 1 runtime failure or a refused
+ * second writer, 2 usage or configuration error.
  */
 public final class VectorProcessorApp {
 
@@ -133,6 +139,7 @@ public final class VectorProcessorApp {
         try {
             switch (loaded.command()) {
                 case "vectors deploy" -> {
+                    refuseSecondWriter(consumers, bootstrap, layout, name, spec);
                     send(admins, producers, bootstrap, layout, name, VectorProcessor.deployRecord(name, spec, by));
                     out.println("deployed " + name + " (control topic " + layout.dags() + ")");
                 }
@@ -185,6 +192,19 @@ public final class VectorProcessorApp {
         }
     }
 
+    /** Refuses a DAG whose vector topic another DAG deployed on the control topic writes. */
+    private static void refuseSecondWriter(Function<String, Consumer<byte[], byte[]>> consumers, String bootstrap,
+                                           TopicLayout layout, String name, String spec) throws IOException {
+        Map<String, Set<String>> written;
+        try (Consumer<byte[], byte[]> consumer = consumers.apply(bootstrap)) {
+            written = VectorProcessor.deployedVectorTopics(consumer, layout);
+        }
+        Optional<String> conflict = VectorProcessor.sinkConflict(name, new ObjectMapper(new YAMLFactory()).readTree(spec), written);
+        if (conflict.isPresent()) {
+            throw new IllegalStateException(conflict.get());
+        }
+    }
+
     private static void send(Function<String, Admin> admins, Function<String, Producer<String, byte[]>> producers,
                              String bootstrap, TopicLayout layout, String key, byte[] value) throws Exception {
         try (Admin admin = admins.apply(bootstrap)) {
@@ -213,11 +233,55 @@ public final class VectorProcessorApp {
         AtomicBoolean stop = new AtomicBoolean();
         CountDownLatch ended = new CountDownLatch(1);
         Runtime.getRuntime().addShutdownHook(new Thread(stopping(() -> stop.set(true), ended, HOOK_WAIT, log)));
-        log.info("vector processor started domain={} state={}", layout.domain(), state.toAbsolutePath());
+        Path progress = state.resolve(PROGRESS_FILE);
+        log.info("vector processor started domain={} state={} progress={}", layout.domain(), state.toAbsolutePath(),
+                progress.toAbsolutePath());
         try {
-            p.run(stop::get);
+            loop(p, stop::get, progress, Clock.systemUTC());
         } finally {
             ended.countDown();
+        }
+    }
+
+    /** The file in the state directory that holds the time the last round ended, in seconds since the epoch. */
+    static final String PROGRESS_FILE = "progress";
+    /** How long the progress file may lag behind the rounds; less often than every round spares the disk. */
+    static final Duration PROGRESS_EVERY = Duration.ofSeconds(5);
+
+    /**
+     * Runs rounds until {@code stop} says so, then writes the checkpoints. It first removes the progress file of an
+     * earlier run, so that a probe sees this run only. After a round it writes the time to {@code progress}, at most
+     * once per {@link #PROGRESS_EVERY}, so that a probe can tell a loop that goes on from one that hangs.
+     *
+     * @throws UncheckedIOException when the progress file cannot be removed or written
+     */
+    static void loop(VectorProcessor p, BooleanSupplier stop, Path progress, Clock clock) {
+        try {
+            Files.deleteIfExists(progress);
+        } catch (IOException e) {
+            throw new UncheckedIOException(progress + ": cannot remove the progress file of an earlier run; check that the"
+                    + " state directory (opentsx.vectors.state) is writable", e);
+        }
+        Instant written = null;
+        while (!stop.getAsBoolean()) {
+            p.step();
+            Instant now = clock.instant();
+            if (written == null || Duration.between(written, now).compareTo(PROGRESS_EVERY) >= 0) {
+                writeProgress(progress, now);
+                written = now;
+            }
+        }
+        p.close();
+    }
+
+    private static void writeProgress(Path progress, Instant at) {
+        Path tmp = progress.resolveSibling(progress.getFileName() + ".tmp");
+        try {
+            Files.writeString(tmp, at.getEpochSecond() + "\n");
+            Files.move(tmp, progress, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) {
+            throw new UncheckedIOException(progress + ": cannot write the progress file; check that the state directory"
+                    + " (opentsx.vectors.state) exists, is writable and has space", e);
         }
     }
 

@@ -193,6 +193,21 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - User manual, chapter 16, section 16.8: pair windows of `pair.coverage`, `pair.xcorr` and `pair.es` (pairing, window
   and step, clock, coverage, `maxAge` and `minCoverage` with their defaults, and the refusals), with the figures of
   the operator examples.
+- The retrieval server answers `GET /v1/ready`: 200 with the age of the KafScale feed, its failed refreshes in a row
+  and whether it is truncated, and 503 `unavailable` naming the reason after 3 failed refreshes in a row or 3 refresh
+  periods without one that worked. `GET /v1/health` and `GET /v1/ready` are answered by two threads of their own, so
+  they answer also while all four request threads wait for the broker.
+- The event bridge of `opentsx-twin-live` answers `GET /v1/ready`: 200 while the broker answers a topic lookup within
+  2 s, 503 `unavailable` with `broker: cannot be reached; check the address of the broker and its log` when it does
+  not, so the readiness probe (timeout 3 s) sees the 503; the address and the cause go to the log once per outage.
+- `opentsx vectors` writes the time its last round ended, in seconds since the epoch, to the file `progress` in its
+  state directory (`opentsx.vectors.state`) at most every 5 s, so an exec probe can tell a loop that goes on from one
+  that hangs, and removes the file of an earlier run when it starts, so its probes see only the current run. A
+  progress file that cannot be written or removed ends the processor with exit code 1 and a message that names the
+  file and `opentsx.vectors.state`, for example `<state>/progress: cannot write the progress file; check that the
+  state directory (opentsx.vectors.state) exists, is writable and has space`.
+- SaaS backend: a DAG deployment that the retrieval server refuses with 409 `conflict` answers 409 `conflict` with the
+  reason of the retrieval server instead of 502.
 
 ### Changed
 
@@ -796,6 +811,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   run_ddc.sh have a bash shebang and stop when a cd fails.
 - opentsx-lg: src/main/k8s/krake-app/lg-demo.yaml is marked as an example and names
   opentsx/time-series-generator:3.0.1, the image the Docker profile builds; no workflow publishes it.
+- A vector topic has one writer. `POST /v1/dags/deploy` reads the control topic first and answers 409 with the new
+  error type `conflict` (`<dag>: sink topic <topic> is already written by DAG <other>; stop that DAG first or choose
+  another sink`) and writes nothing when another deployed DAG writes one of its vector topics; `opentsx vectors
+  deploy` refuses the same case with exit code 1 and the same text, and the vector processor refuses such a DAG with
+  the status `failed`. Deploying the same DAG name again is no conflict.
+- The SaaS backend answers a registration with an address that is already registered (409) with the type `conflict`
+  instead of `bad_request`.
 
 ### Removed
 
@@ -1871,6 +1893,27 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   no-operation logger.
 - opentsx-connectors: `TSOWriter.persistEvents_Kafka` sends to the topic it is given instead of always to
   `TSOEventProducer.TOPIC`; `TSOEventProducer` has `pushTSOItemsToKafka(series, topic)`.
+- `fill` and `emit` of `align.vector` no longer run with their default for an unknown value: `fill: asof` and `emit:
+  completed` refuse the DAG with `node <id>: fill: "asof" is not allowed; expected one of none, as-of` (and `any,
+  complete` for `emit`), `POST /v1/dags/deploy` answers 400 and `vectors deploy` exits with code 2.
+- `feature.rolling` MEAN and STD are finite whenever the mean and the spread of the window are: a window whose sum or
+  squares overflow a double is added up scaled by a power of two of its largest magnitude, so 1e308 and 1.5e308 give a
+  MEAN of 1.25e308 and a STD of 2.5e307 instead of Infinity and NaN, and 120 values alternating 2e153 and 1e153 give a
+  STD of 5e152 instead of Infinity.
+- `EpisodeLogSync.sync` gives the metadata requests before the copy what is left of one `timeout` instead of the full
+  timeout each, and fails with `timed out syncing <topic>` (the client's `TimeoutException` as cause) within the
+  timeout when the broker does not answer.
+- `RetrievalClient.episode()` returns `None` only for the server's `unknown episode <id>`; a path the server does not
+  know (`no such endpoint: <path>`, for a base URL with a wrong path prefix) raises `RetrievalError`, which gains the
+  field `reason`.
+- Python `encode_deltas` and `irregular` refuse a timestamp outside the 64-bit range up front with `timestamps:
+  timestamp <i> is <t>; expected timestamps from -9223372036854775808 to 9223372036854775807`, also when every step
+  fits.
+- The event bridge refuses an unknown `from` with `from: "<value>" is not allowed; expected latest, earliest or an
+  offset of 0 or more`.
+- The workbench keeps the notice that the browser kept flows from opening in tabs of their own after the first flow
+  has loaded, until the next action in the Flow Composer; the notice text is held once, and the Flow Composer page and
+  the Systems page no longer clear and restore the flow the workbench holds.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

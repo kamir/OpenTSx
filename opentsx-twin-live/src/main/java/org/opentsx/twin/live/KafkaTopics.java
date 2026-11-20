@@ -1,6 +1,7 @@
 package org.opentsx.twin.live;
 
 import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.ListTopicsOptions;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Producer;
@@ -84,19 +85,25 @@ public final class KafkaTopics implements Topics {
         known.add(topic);
     }
 
+    /** The broker gets at most {@code timeout} to answer the lookup; the admin request ends at the same deadline. */
     @Override
-    public Cursor open(String topic, long offset) throws NoSuchTopicException {
+    public boolean exists(String topic, Duration timeout) {
+        long ms = timeout.toMillis();
         try (Admin admin = admins.apply(bootstrap)) {
-            if (!admin.listTopics().names().get(30, TimeUnit.SECONDS).contains(topic)) {
-                throw new NoSuchTopicException(topic);
-            }
-        } catch (NoSuchTopicException e) {
-            throw e;
+            return admin.listTopics(new ListTopicsOptions().timeoutMs((int) ms)).names().get(ms, TimeUnit.MILLISECONDS)
+                    .contains(topic);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("interrupted while looking up " + topic + " at " + bootstrap, e);
         } catch (Exception e) {
             throw new IllegalStateException("cannot reach the broker at " + bootstrap, e);
+        }
+    }
+
+    @Override
+    public Cursor open(String topic, long offset) throws NoSuchTopicException {
+        if (!exists(topic, Duration.ofSeconds(30))) {
+            throw new NoSuchTopicException(topic);
         }
         Consumer<byte[], byte[]> consumer = consumers.apply(bootstrap);
         TopicPartition tp = new TopicPartition(topic, 0);

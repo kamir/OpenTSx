@@ -114,7 +114,7 @@ most six decimal places`. With pandas 2, a time after 2262-04-11T23:47:16Z or be
 
 ### Handle retrieval errors
 
-Every failed request raises `RetrievalError`. Its message starts with the method and the URL. It has four fields:
+Every failed request raises `RetrievalError`. Its message starts with the method and the URL. It has five fields:
 
 | Field | Value |
 |-------|-------|
@@ -122,6 +122,7 @@ Every failed request raises `RetrievalError`. Its message starts with the method
 | `url` | the base URL, the path and the query of the request |
 | `status` | the HTTP status of the answer; `None` when no answer came |
 | `type` | the `type` of the server's error body ([appendix B](../docs/user-manual/appendix-b-rest.md)); `None` when the body has none |
+| `reason` | the text after the status: the `error` of the server's body, or what the client found wrong |
 
 An error answer of the server keeps its text and its type, here `status` 400 and `type` `bad_request`:
 
@@ -143,10 +144,10 @@ port 8081 that is not the retrieval server:
 GET http://localhost:8081/v1/inventory: HTTP 200: the answer is not JSON (Expecting value: line 1 column 1 (char 0)); check that the base URL points at the retrieval server
 ```
 
-`c.episode(<id>)` returns `None` only when the server answers 404 with the type `not_found`. Any other 404, a 404 page
-of a proxy included, and an answer without exactly one episode raise `RetrievalError`. The retrieval server also
-answers `not_found` for a path it does not know: a base URL with a wrong path prefix, for example
-`http://localhost:8080/api`, gives `None` for every id. When every id gives `None`, check the base URL.
+`c.episode(<id>)` returns `None` only when the server answers 404 with the type `not_found` and the text
+`unknown episode <id>`. Any other 404 raises `RetrievalError`: the answer to a path the server does not know
+(`no such endpoint: <path>`, for a base URL with a wrong path prefix such as `http://localhost:8080/api`), a 404 page of
+a proxy, and an answer without exactly one episode.
 
 ## Read a topic
 

@@ -4,7 +4,8 @@ Base URL: `http://<host>:<port>`. Times are ISO-8601 instants (UTC).
 
 | Method and path | Parameters / body | Response |
 |-----------------|-------------------|----------|
-| `GET /v1/health` | none | `{"status":"ok"}` |
+| `GET /v1/health` | none | liveness: `{"status":"ok"}` while the process answers, also while every request thread waits for the broker |
+| `GET /v1/ready` | none | readiness: `{"status":"ready"}`; a server with `--kafscale` adds `feed` with `lastRefresh`, `ageSeconds`, `refreshFailures` and `truncated`. 503 `unavailable` after 3 failed refreshes in a row (`feed: <n> refreshes failed in a row, the last one that worked ended at <instant>; ...`) or when no refresh worked for more than 3 refresh periods (`feed: no refresh worked for <s> s, more than 3 refresh periods of <period>; ...`) |
 | `GET /v1/episodes` | `metric`, `tag.<key>=<value>` (repeatable), `series=id,id`, `from`, `to`, `limit` (1 to 20000), `clip=true\|false` (default `false`), `resample=PT1M`, `agg=MEAN\|MIN\|MAX\|FIRST\|LAST\|SUM\|COUNT` (default `MEAN`, only with `resample`); any other parameter is a 400 | episodes |
 | `GET /v1/episodes/{id}` | none | episodes: an array with the one episode; 404 for an unknown id; 400 for an id that holds `/` |
 | `POST /v1/patterns/search` | `pattern` (array of 4 to 100000 finite values) **or** `episodeId`+`offset`+`length` (`length` 4 to 100000 and at most the values of the episode); `metric`, `tags` (object), `series`, `from`, `to`, `distance` (`zED`\|`DTW`, in any case), `band` (DTW, default 0.1), `topK` (1 to 1000, default 10) | matches; 404 for an unknown `episodeId` |
@@ -23,7 +24,7 @@ Base URL: `http://<host>:<port>`. Times are ISO-8601 instants (UTC).
 | `POST /v1/systems/{id}/signals` | JSON `{bindings: [{signal, grade, source}]}` | as the GET, with the sources of a working copy laid over the system document; such a source is marked `workingCopy`. Reads only |
 | `POST /v1/systems/{id}/generate` | JSON `{signal, from, to, bindings?}`; header `X-OpenTSx-Run-Token` when the server has a run token | runs the demo generator the signal is bound to over the period and writes the series to `tsx.<domain>.synthetic.v2`, nowhere else. Needs `--kafscale` and `--dag-runs true`; 503 when the broker does not take the series |
 | `GET /v1/dags` | none | the DAGs of the domain: what was deployed or stopped (`tsx.<domain>.dags.v1`) and what the vector processor reports per sink (`tsx.<domain>.dag-status.v1`); `writes` says whether this server deploys and stops DAGs. 404 unless the server runs with `--kafscale` |
-| `POST /v1/dags/deploy` | body: the DAG as YAML (`opentsx.dag.v1`; `opentsx.dag.v2` when it has series sinks), at most 262144 bytes; optional header `X-OpenTSx-By` | writes the DAG to the control topic `tsx.<domain>.dags.v1` and answers `{dag, state, sinks}`; 404 unless the server runs with `--kafscale` and `--dag-runs true`; 401 without the run token when the server has one (header `X-OpenTSx-Run-Token`); 400 `the DAG is not valid YAML: <parser message>`, or 400 with the reason when the DAG cannot be run; 413 over 262144 bytes; 503 when the broker does not take the record |
+| `POST /v1/dags/deploy` | body: the DAG as YAML (`opentsx.dag.v1`; `opentsx.dag.v2` when it has series sinks), at most 262144 bytes; optional header `X-OpenTSx-By` | writes the DAG to the control topic `tsx.<domain>.dags.v1` and answers `{dag, state, sinks}`; 404 unless the server runs with `--kafscale` and `--dag-runs true`; 401 without the run token when the server has one (header `X-OpenTSx-Run-Token`); 400 `the DAG is not valid YAML: <parser message>`, or 400 with the reason when the DAG cannot be run; 409 `conflict` when another DAG that the control topic holds as deployed writes one of its vector topics (`<dag>: sink topic <topic> is already written by DAG <other>; stop that DAG first or choose another sink`), and nothing is written; the same DAG name deployed again is no conflict; 413 over 262144 bytes; 503 when the broker does not take the record or the control topic cannot be read |
 | `POST /v1/dags/stop?name=<dag>` | `name`; any other parameter is a 400 | `{dag, state}` with `state` `stopped`; 404, 401 and 503 as for deploy |
 | `POST /v1/segments` | `strategy` (`FIXED_DURATION`, `FIXED_COUNT`, `FEATURE_EXTREMUM`, `FEATURE_THRESHOLD`), `params` (see below); `metric`, `tags`, `series`, `from`, `to` | episodes |
 
@@ -134,20 +135,22 @@ offset: 595 is out of range; expected a whole number from 0 to 590, so that 10 v
 {"error":"limit: \"abc\" is not an int; expected a whole number from 1 to 20000","type":"bad_request"}
 ```
 
-`error` is the reason in words. `type` is one of `bad_request`, `not_found`, `method_not_allowed`, `too_large`,
-`unauthorized`, `forbidden`, `unavailable` and `internal`. Branch on `type`, not on the text. The retrieval server
-answers the seven types in the table below, never `forbidden`. The event bridge of `opentsx-twin-live` uses the same
-body and answers `unavailable` too.
+`error` is the reason in words. `type` is one of `bad_request`, `not_found`, `method_not_allowed`, `conflict`,
+`too_large`, `unauthorized`, `forbidden`, `unavailable` and `internal`. Branch on `type`, not on the text. The retrieval
+server answers the eight types in the table below, never `forbidden`. The event bridge of `opentsx-twin-live` uses the
+same body and answers `unavailable` too. The SaaS backend answers `conflict` for a registration with an address that
+is already registered.
 
 | Status | `type` | When |
 |--------|--------|------|
 | `400` | `bad_request` | a parameter or a body field that is missing, malformed or outside its limit; a POST body that is not valid JSON or not a JSON object; an episode id that holds `/`; a DAG that cannot be run, is not valid YAML or is over 262144 bytes; a `resample` step that gives more than 100000 points for one episode |
 | `401` | `unauthorized` | the server has a run token and the request lacks it |
-| `404` | `not_found` | an unknown episode in `GET /v1/episodes/{id}`, `POST /v1/episodes/similar` or `POST /v1/patterns/search`; a path the server does not know, also outside `/v1/`; an unknown system or run; a system without a scenario on the run routes; a route the server does not offer without `--systems`, `--kafscale` or `--dag-runs true` |
+| `404` | `not_found` | an unknown episode in `GET /v1/episodes/{id}`, `POST /v1/episodes/similar` or `POST /v1/patterns/search` (`unknown episode <id>`); a path the server does not know, also outside `/v1/` (`no such endpoint: <path>`); an unknown system or run; a system without a scenario on the run routes; a route the server does not offer without `--systems`, `--kafscale` or `--dag-runs true` |
 | `405` | `method_not_allowed` | a known path with a method it does not take; the `Allow` header lists the methods it takes |
+| `409` | `conflict` | `POST /v1/dags/deploy` of a DAG whose vector topic another deployed DAG writes |
 | `413` | `too_large` | a `POST /v1/patterns/search`, `/v1/episodes/similar`, `/v1/segments` or `/v1/systems/{id}/...` request with a body over 262144 bytes |
 | `500` | `internal` | a fault in the server; the body is always `{"error":"internal error","type":"internal"}` |
-| `503` | `unavailable` | the broker did not take the write of `POST /v1/dags/deploy`, `POST /v1/dags/stop` or `POST /v1/systems/{id}/generate`; the body is always `{"error":"cannot reach the broker; try again","type":"unavailable"}` and names no broker address. Send the request again |
+| `503` | `unavailable` | the broker did not take the write of `POST /v1/dags/deploy`, `POST /v1/dags/stop` or `POST /v1/systems/{id}/generate`, or the control topic could not be read before a deployment; the body is then always `{"error":"cannot reach the broker; try again","type":"unavailable"}` and names no broker address. Send the request again. `GET /v1/ready` answers 503 with the reason of the feed |
 
 A POST body that is not valid JSON is a 400 with the parser message, for example the body `{"pattern":[1,2`:
 

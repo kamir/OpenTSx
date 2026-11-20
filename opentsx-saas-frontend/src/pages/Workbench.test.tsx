@@ -3,8 +3,11 @@ import { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
+vi.mock('../workbench/FlowComposer', () => ({
+  default: ({ onOpen }: { onOpen: (ids: number[]) => void }) => <button onClick={() => onOpen([3, 4, 5])}>Open in the editor</button>,
+}));
 import Workbench from './Workbench';
-import { systemsAPI } from '../services/api';
+import { flowsAPI, systemsAPI } from '../services/api';
 import { useFlow } from '../workbench/flow';
 
 beforeEach(() => {
@@ -110,3 +113,22 @@ describe('opening a signal', () => {
   });
 });
 
+describe('opening flows from the Flow Composer', () => {
+  it('keeps the notice about kept tabs after the first flow has loaded', async () => {
+    localStorage.setItem('access_token', 'access');
+    const node = (id: string, op: string, input: string | null) => ({ id, op, input, label: id, params: {} });
+    vi.spyOn(flowsAPI, 'getDefinition').mockResolvedValue({
+      id: 3,
+      name: 'f3',
+      definition: { kind: 'opentsx.workbench.v1', nodes: [node('source', 'source', null), node('n1', 'diff', 'source')] },
+    });
+    vi.spyOn(window, 'open').mockReturnValueOnce(null).mockReturnValueOnce({} as Window);
+    show();
+    fireEvent.click(screen.getByRole('button', { name: 'Flow Composer' }));
+    fireEvent.click(screen.getByText('Open in the editor'));
+    expect(await screen.findByText('Flow "f3" opened. Load a bucket to run it.')).toBeInTheDocument();
+    expect(screen.getByText(
+      'The browser kept 1 of the flows from opening in tabs of their own. Allow pop-ups for this page, or open them one at a time.'
+    )).toHaveAttribute('role', 'alert');
+  });
+});

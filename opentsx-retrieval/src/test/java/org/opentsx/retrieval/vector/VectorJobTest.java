@@ -114,6 +114,23 @@ class VectorJobTest {
                 e.getMessage());
     }
 
+    @Test
+    void aFillOrEmitThatIsNoneOfItsValuesIsRefusedWithTheAllowedValues() throws Exception {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> plan(dag(VECTOR_NODE.replace("emit: any", "emit: any, fill: asof"), VECTOR_SINK)));
+        assertEquals("node n1: fill: \"asof\" is not allowed; expected one of none, as-of", e.getMessage());
+        e = assertThrows(IllegalArgumentException.class,
+                () -> plan(dag(VECTOR_NODE.replace("emit: any", "emit: completed"), VECTOR_SINK)));
+        assertEquals("node n1: emit: \"completed\" is not allowed; expected one of any, complete", e.getMessage());
+        VectorAligner.Params given = plan(dag(VECTOR_NODE.replace("emit: any", "emit: complete, fill: as-of"), VECTOR_SINK))
+                .jobs().get(0).params();
+        assertTrue(given.asOf() && given.complete(), given.toString());
+        VectorAligner.Params defaults = plan(dag(VECTOR_NODE.replace("emit: any, ", ""), VECTOR_SINK)).jobs().get(0).params();
+        assertTrue(!defaults.asOf() && !defaults.complete(), defaults.toString());
+        VectorAligner.Params named = plan(dag(VECTOR_NODE.replace("emit: any", "emit: any, fill: none"), VECTOR_SINK)).jobs().get(0).params();
+        assertEquals(defaults, named);
+    }
+
     /** Below the microsecond of the time axis the clock does not move; beyond what a long holds in nanoseconds it overflows. */
     @Test
     void aDurationTheClockCannotCountIsRefusedWithItsRange() throws Exception {

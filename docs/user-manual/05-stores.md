@@ -80,7 +80,9 @@ WARN org.opentsx.store.iceberg.EpisodeLogSync - invalid episode skipped and coun
 ```
 
 Check `undecodable` and `invalid` before you persist the positions. A failing store write stops the call with its
-error. The call throws `IllegalStateException` ("timed out syncing <topic>") when `timeout` passes first.
+error. `timeout` covers the whole call, the metadata requests before the copy included. When it passes first, the call
+throws `IllegalStateException` ("timed out syncing <topic>"); when a request got no answer, the client's
+`TimeoutException` is its cause.
 
 A refused fetch is waited out within `timeout`. A missing episodes topic fails with `IllegalStateException`
 ("<topic>: no such topic; check the domain, or create the topic first"). When the log start of a partition lies after

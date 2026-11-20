@@ -506,7 +506,8 @@ public final class CleanChain {
      * of infinite ones and of finite ones whose square is no finite number, how many of the latest values are equal,
      * and for MIN and MAX the samples that can still become the extreme. Each sample enters and leaves once, so a step
      * costs the same for any window. A step adds up the window afresh when a value whose square is no finite number
-     * leaves it, and while the finite values or their squares add up beyond the range of a double.
+     * leaves it, and while the finite values or their squares add up beyond the range of a double; MEAN and STD then
+     * come from the values scaled down, so they are finite whenever the mean and the spread of the window are.
      */
     static final class Window {
         double sum;
@@ -610,20 +611,48 @@ public final class CleanChain {
             }
         }
 
-        double value(Fn fn) {
+        double value(Fn fn, java.util.ArrayDeque<double[]> kept) {
             if (n == 0) {
                 return Double.NaN;
             }
             boolean same = n <= equal;
             double mean = same ? latest : (sum + sumLost) / n;
+            boolean finite = Double.isFinite(mean) && infiniteSquares == 0 && Double.isFinite(sq + sqLost);
             return switch (fn) {
                 case MIN, MAX -> extremes.peekFirst()[1];
-                case MEAN -> positiveInfinite + negativeInfinite == 0 || same ? mean : negativeInfinite == 0 ? Double.POSITIVE_INFINITY
-                        : positiveInfinite == 0 ? Double.NEGATIVE_INFINITY : Double.NaN;
+                case MEAN -> same ? mean : positiveInfinite + negativeInfinite == 0 ? (Double.isFinite(mean) ? mean : scaled(fn, kept))
+                        : negativeInfinite == 0 ? Double.POSITIVE_INFINITY : positiveInfinite == 0 ? Double.NEGATIVE_INFINITY : Double.NaN;
                 // of the values in the window, as a population: no value, no spread
                 case STD -> positiveInfinite + negativeInfinite > 0 ? Double.NaN : same ? 0
-                        : Math.sqrt(Math.max(0, (infiniteSquares > 0 ? Double.POSITIVE_INFINITY : sq + sqLost) / n - mean * mean));
+                        : finite ? Math.sqrt(Math.max(0, (sq + sqLost) / n - mean * mean)) : scaled(fn, kept);
             };
+        }
+
+        /**
+         * MEAN or STD of the finite values of the window, each divided by the power of two of the largest magnitude
+         * among them, which rounds nothing: for sums or squares beyond the range of a double. It adds up the window.
+         */
+        private static double scaled(Fn fn, java.util.ArrayDeque<double[]> kept) {
+            double largest = 0;
+            for (double[] tv : kept) {
+                if (Double.isFinite(tv[1])) {
+                    largest = Math.max(largest, Math.abs(tv[1]));
+                }
+            }
+            double scale = Math.scalb(1.0, Math.getExponent(largest));
+            double s = 0;
+            double q = 0;
+            int k = 0;
+            for (double[] tv : kept) {
+                if (Double.isFinite(tv[1])) {
+                    double y = tv[1] / scale;
+                    s += y;
+                    q += y * y;
+                    k++;
+                }
+            }
+            double mean = s / k;
+            return (fn == Fn.MEAN ? mean : Math.sqrt(Math.max(0, q / k - mean * mean))) * scale;
         }
     }
 
@@ -653,7 +682,7 @@ public final class CleanChain {
                 // sum that is no finite number stays so: only adding up afresh brings the sums back
                 w.addUp(kept);
             }
-            v[k] = w.value(r.fn());
+            v[k] = w.value(r.fn(), kept);
         }
         return new Block(in.times(), v);
     }

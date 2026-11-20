@@ -39,8 +39,10 @@ bin/opentsx twin-live demo --port 8090
   sees it unfold; without it all events are written at once. `--loop` or `--loop true` publishes the runs again and
   again; without it, or with `--loop false`, they are published once. Publishing the same run again appends the same
   events again.
-- `bridge` serves `GET /v1/topics/{topic}/events?from=latest|earliest|<offset>` as `text/event-stream` and
-  `GET /v1/health`. A message has the offset as its id and `{"topic","offset","timestamp","key","value"}` as data.
+- `bridge` serves `GET /v1/topics/{topic}/events?from=latest|earliest|<offset>` as `text/event-stream`,
+  `GET /v1/health` (liveness: `{"status":"ok"}` while the process answers) and `GET /v1/ready` (readiness:
+  `{"status":"ready"}` while the broker answers a lookup of a topic within 2 s, 503 when it does not). A message has the
+  offset as its id and `{"topic","offset","timestamp","key","value"}` as data.
   A reconnecting browser sends `Last-Event-ID` and continues behind that offset. While KafScale refuses reads, a
   stream waits 5 s and tries again, and logs
   `WARN org.opentsx.kafka.Patience - the broker refuses reads; waiting pause=PT5S limit=PT10M cause=<causes>` once and
@@ -128,18 +130,20 @@ An error answer of the bridge is `{"error": "<text>", "type": "<type>"}`, with t
 
 | Status | `type` | `error` |
 |--------|--------|---------|
-| 400 | `bad_request` | `not an event topic of a twin: <topic>` or `from must be latest, earliest or an offset` |
+| 400 | `bad_request` | `not an event topic of a twin: <topic>` or `from: "<value>" is not allowed; expected latest, earliest or an offset of 0 or more` |
 | 404 | `not_found` | `no such topic: <topic>`, or `no such endpoint` for any other path, whatever the method |
-| 405 | `method_not_allowed` | `<method>: method not allowed; expected GET` on `/v1/health` and `/v1/topics/{topic}/events`, with the header `Allow: GET` |
+| 405 | `method_not_allowed` | `<method>: method not allowed; expected GET` on `/v1/health`, `/v1/ready` and `/v1/topics/{topic}/events`, with the header `Allow: GET` |
 | 500 | `internal` | `internal error` |
 | 502 | `unavailable` | `cannot reach the broker` |
-| 503 | `unavailable` | `too many open streams` (see `--max-streams`) |
+| 503 | `unavailable` | `too many open streams` (see `--max-streams`); on `/v1/ready` `broker: cannot be reached; check the address of the broker and its log` |
 
 A 500 or a 502 writes one line at ERROR to stderr:
 `request failed method=<method> path=<path> status=<status> cause=<causes>`. The causes name the broker address; the
 answer does not. The stack trace is logged at DEBUG. A stream that fails after it started has answered 200 already;
 it is closed and logged at ERROR with the bytes it wrote, and the browser then reconnects:
-`stream failed topic=<topic> bytes=<bytes written> cause=<causes>`.
+`stream failed topic=<topic> bytes=<bytes written> cause=<causes>`. A `/v1/ready` that cannot reach the broker logs
+`not ready, the broker cannot be reached cause=<causes>` at WARN once per outage, and
+`ready, the broker answers again` at INFO when it answers again.
 
 ## Limits
 

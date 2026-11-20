@@ -49,7 +49,7 @@ ERROR_TYPES = {
     403: "forbidden",
     404: "not_found",
     405: "method_not_allowed",
-    409: "bad_request",
+    409: "conflict",
     413: "too_large",
     422: "bad_request",
     500: "internal",

@@ -55,7 +55,7 @@ def test_an_address_that_is_registered_is_named(database):
     finally:
         app.dependency_overrides.clear()
     assert again.status_code == 409
-    assert again.json() == {"error": "email: already registered; sign in or use another address", "type": "bad_request"}
+    assert again.json() == {"error": "email: already registered; sign in or use another address", "type": "conflict"}
     assert count(database, User) == 1
 
 

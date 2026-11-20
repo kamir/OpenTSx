@@ -106,6 +106,16 @@ def test_the_reason_of_a_refused_dag_reaches_the_user(retrieval):
     assert answer.json() == {"error": "node n1 (norm.zscore) is not available in this runtime", "type": "bad_request"}
 
 
+def test_the_reason_of_a_conflicting_dag_reaches_the_user(retrieval):
+    reason = ("wind-copy: sink topic tsx.wind.smart.turbine-state.vectors.v1 is already written by DAG wind-exp2-smart;"
+              " stop that DAG first or choose another sink")
+    retrieval["status"] = 409
+    retrieval["json"] = {"error": reason, "type": "conflict"}
+    answer = client_as(ADMIN).post("/api/v1/dags/deploy", content=DAG)
+    assert answer.status_code == 409
+    assert answer.json() == {"error": reason, "type": "conflict"}
+
+
 @pytest.mark.parametrize("upstream, expected, kind, text", [
     (401, 503, "unavailable", "retrieval server: refused the run token of this installation; "
                               "DAG_RUN_TOKEN must equal OPENTSX_DAG_RUN_TOKEN of the retrieval server"),

@@ -76,6 +76,14 @@ def test_a_refused_register_names_the_field_and_does_not_echo_the_body():
     assert "input" not in answer.text
 
 
+def test_a_second_registration_of_an_address_is_a_conflict():
+    known = User(id=2, email="a@example.com", is_active=True)
+    answer = client_with(row=known).post("/api/v1/auth/register",
+                                         json={"email": "a@example.com", "password": SECRET, "full_name": "A"})
+    assert answer.status_code == 409
+    assert answer.json() == {"error": "email: already registered; sign in or use another address", "type": "conflict"}
+
+
 def test_a_body_that_is_not_json_is_a_bad_request():
     answer = client_with().post("/api/v1/auth/login", content=b'{"email":', headers={"Content-Type": "application/json"})
     assert answer.status_code == 422

@@ -54,8 +54,12 @@ def stub():
                 self._send(200, AVRO_STREAM, _stream(eps))
             elif u.path == "/v1/episodes/" + eps[0]["episodeId"]:
                 self._send(200, AVRO_STREAM, _stream(eps[:1]))
+            elif u.path.startswith("/v1/episodes/"):
+                self._send(404, "application/json", json.dumps(
+                    {"error": "unknown episode " + u.path[len("/v1/episodes/"):], "type": "not_found"}).encode())
             else:
-                self._send(404, "application/json", b'{"error":"unknown episode","type":"not_found"}')
+                self._send(404, "application/json", json.dumps(
+                    {"error": "no such endpoint: " + u.path, "type": "not_found"}).encode())
 
         def do_POST(self):
             seen["path"] = self.path
@@ -194,6 +198,18 @@ def test_episode_is_none_only_for_an_unknown_episode(monkeypatch):
             RetrievalClient(BASE).episode("e1")
         assert str(err.value).startswith(f"GET {BASE}/v1/episodes/e1: HTTP 404: {text}")
         assert (err.value.status, err.value.type) == (404, None)
+
+
+def test_episode_raises_for_a_path_the_server_does_not_know(monkeypatch):
+    base = "http://127.0.0.1:9/api"
+    answer_with(monkeypatch, http_error(404, b'{"error": "no such endpoint: /api/v1/episodes/e1", "type": "not_found"}'))
+    with pytest.raises(RetrievalError) as err:
+        RetrievalClient(base).episode("e1")
+    assert str(err.value) == f"GET {base}/v1/episodes/e1: HTTP 404: no such endpoint: /api/v1/episodes/e1"
+    assert (err.value.status, err.value.type) == (404, "not_found")
+    answer_with(monkeypatch, http_error(404, b'{"error": "unknown episode e2", "type": "not_found"}'))
+    with pytest.raises(RetrievalError):
+        RetrievalClient(base).episode("e1")
 
 
 @pytest.mark.parametrize("count", [0, 2])

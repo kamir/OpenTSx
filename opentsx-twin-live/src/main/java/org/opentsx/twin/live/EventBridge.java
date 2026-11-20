@@ -30,7 +30,8 @@ import java.util.concurrent.TimeUnit;
  *
  * <pre>
  * GET /v1/topics/{topic}/events?from=latest|earliest|&lt;offset&gt;     text/event-stream, one message per record
- * GET /v1/health
+ * GET /v1/health      liveness: 200 while the process answers
+ * GET /v1/ready       readiness: 200 while the broker answers a lookup within 2 s, 503 {@code unavailable} when it does not
  * </pre>
  * A message carries the offset as its id and {@code {"topic","offset","timestamp","key","value"}} as data, where
  * {@code value} is the JSON of the record. A browser that reconnects sends {@code Last-Event-ID}; the stream then
@@ -100,13 +101,16 @@ public final class EventBridge implements AutoCloseable {
         try {
             ex.getResponseHeaders().set("Access-Control-Allow-Origin", allowOrigin);
             boolean health = path.equals("/v1/health");
-            if (!health && !path.matches("/v1/topics/[^/]+/events")) {
+            boolean ready = path.equals("/v1/ready");
+            if (!health && !ready && !path.matches("/v1/topics/[^/]+/events")) {
                 error(ex, 404, "no such endpoint");
             } else if (!ex.getRequestMethod().equals("GET")) {
                 ex.getResponseHeaders().set("Allow", "GET");
                 error(ex, 405, ex.getRequestMethod() + ": method not allowed; expected GET");
             } else if (health) {
                 json(ex, 200, EventTopic.JSON.createObjectNode().put("status", "ok"));
+            } else if (ready) {
+                ready(ex);
             } else {
                 String topic = path.substring("/v1/topics/".length(), path.length() - "/events".length());
                 if (!TopicLayout.isTwinEvents(topic)) {
@@ -143,6 +147,38 @@ public final class EventBridge implements AutoCloseable {
 
     private static String oneLine(String s) {
         return s.replaceAll("\\p{Cntrl}", " ");
+    }
+
+    /** A topic the bridge never serves: looking it up asks the broker without opening a reader. */
+    static final String READY_TOPIC = "opentsx.event-bridge.ready";
+    /** How long the readiness lookup waits for the broker; below the 3 s timeout of the readiness probe. */
+    static final Duration READY_WAIT = Duration.ofSeconds(2);
+
+    /** The cause chain while the broker cannot be reached, so the log has one line per outage; null while it answers. */
+    private volatile String unreachable;
+
+    /**
+     * Ready while the broker answers a lookup within {@link #READY_WAIT}: 200, or 503 {@code unavailable} when it does
+     * not. The address and the cause go to the log only, once when the outage starts or its cause changes.
+     */
+    private void ready(HttpExchange ex) throws IOException {
+        try {
+            topics.exists(READY_TOPIC, READY_WAIT);
+        } catch (RuntimeException e) {
+            String cause = causes(e);
+            if (!cause.equals(unreachable)) {
+                unreachable = cause;
+                LOG.warn("not ready, the broker cannot be reached cause={}", cause);
+                LOG.debug("stack trace of the failed readiness check", e);
+            }
+            error(ex, 503, "broker: cannot be reached; check the address of the broker and its log");
+            return;
+        }
+        if (unreachable != null) {
+            unreachable = null;
+            LOG.info("ready, the broker answers again");
+        }
+        json(ex, 200, EventTopic.JSON.createObjectNode().put("status", "ready"));
     }
 
     private void stream(HttpExchange ex, String topic) throws IOException {
@@ -223,7 +259,8 @@ public final class EventBridge implements AutoCloseable {
             case "earliest" -> Topics.EARLIEST;
             default -> {
                 if (!from.matches("\\d{1,18}")) {
-                    throw new IllegalArgumentException("from must be latest, earliest or an offset");
+                    throw new IllegalArgumentException("from: \"" + from + "\" is not allowed; expected latest, earliest or an offset"
+                            + " of 0 or more");
                 }
                 yield Long.parseLong(from);
             }

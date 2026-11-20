@@ -14,7 +14,7 @@ import FlowComposer from '../workbench/FlowComposer';
 import PublishClean from '../workbench/PublishClean';
 import InventoryDialog, { InventoryLoad } from '../workbench/InventoryDialog';
 import { fetchFlowSeries } from '../workbench/inventoryLoad';
-import { forgetFlows, newFlow, openFlows } from '../workbench/composerActions';
+import { forgetFlows, keptNotice, newFlow, openFlows } from '../workbench/composerActions';
 import { GradeName, expectText, isSynthetic, parseStatus } from '../systems/signals';
 import Scope from '../workbench/Scope';
 import {
@@ -560,6 +560,8 @@ export default function Workbench() {
   const [showLabels, setShowLabels] = useState(true);
   const [status, setStatus] = useState('Ready');
   const [error, setError] = useState<string | null>(null);
+  // apart from error, which loading the flow clears: the notice stays until the next action in the Flow Composer
+  const [notice, setNotice] = useState<string | null>(null);
   const [remote, setRemote] = useState({ open: false, base: RETRIEVAL_BASE, query: 'limit=50' });
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [flowsOpen, setFlowsOpen] = useState(false);
@@ -669,15 +671,13 @@ export default function Workbench() {
   const openFromComposer = (ids: number[]) => {
     setFlowsOpen(false);
     const blocked = openFlows(ids, (id) => setSearchParams({ flow: String(id) }));
-    setError(
-      blocked > 0
-        ? `The browser kept ${blocked} of the flows from opening in tabs of their own. Allow pop-ups for this page, or open them one at a time.`
-        : null
-    );
+    setError(null);
+    setNotice(blocked > 0 ? keptNotice(blocked, true) : null);
   };
 
   const newFromComposer = () => {
     setFlowsOpen(false);
+    setNotice(null);
     newFlow();
     setSearchParams({}, { replace: true });
     setError(null);
@@ -902,6 +902,7 @@ export default function Workbench() {
           onClose={() => setFlowsOpen(false)}
         />
       )}
+      {notice && <div className="wb-error" role="alert">{notice}</div>}
       {(error || result.error) && <div className="wb-error" role="alert">{error ?? `The operation failed: ${result.error}`}</div>}
 
       <main className={`wb-main ${sideTab === 'topic' ? 'wb-side-wide' : ''}`}>
