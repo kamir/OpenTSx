@@ -1,4 +1,4 @@
-FROM confluentinc/cp-base
+FROM eclipse-temurin:21.0.8_9-jre-noble
 
 RUN apt-get update
 RUN apt-get install --force-yes -y apt-utils xvfb x11vnc x11-xkb-utils xfonts-100dpi xfonts-75dpi xfonts-scalable xfonts-cyrillic x11-apps

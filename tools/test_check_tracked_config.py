@@ -135,3 +135,26 @@ def test_home_placeholders_and_service_account_homes_pass(tmp_path, capsys):
         "HOW_TO_RUN.md": "cd /home/user/OpenTSx\n",
     })
     assert guard.main(tmp_path, paths) == 0, capsys.readouterr().out
+
+
+def test_a_confluent_cloud_resource_id_in_any_tracked_text_file_fails(tmp_path, capsys):
+    cluster = "lkc-" + "0test1"
+    paths = write(tmp_path, {"opentsx-lg/bin/bootstrap.sh": f"export CLUSTER={cluster}\n",
+                             "notes.md": f"cluster {'pkc-' + '0test1'}, account {'sa-' + '0test1x'} and env-0te\n"})
+    assert guard.main(tmp_path, paths) == 1
+    out = capsys.readouterr().out
+    rest = "looks like a Confluent Cloud resource id; write a placeholder such as lkc-xxxxx"
+    assert f"opentsx-lg/bin/bootstrap.sh:1: {cluster}: {rest}" in out
+    assert f"notes.md:1: {'pkc-' + '0test1'}: {rest}" in out
+    assert f"notes.md:1: {'sa-' + '0test1x'}: {rest}" in out
+    assert "env-0te:" not in out
+    assert "checked 2 tracked files, 3 findings" in out
+
+
+def test_resource_id_placeholders_and_words_with_a_prefix_pass(tmp_path, capsys):
+    paths = write(tmp_path, {
+        "docs/guide.md": "CLUSTER=lkc-xxxxx\nbootstrap.servers=pkc-xxxxx.us-east-1.aws.confluent.cloud:9092\n",
+        "docs/datamodel-2026/testvectors/conf.v1.json": '{"name": "env-blank-is-unset"}\n',
+        "deploy/region.yaml": "region: sa-east-1\nname: my-env-a1b2c3d\nkey: SA-ABC123\n",
+    })
+    assert guard.main(tmp_path, paths) == 0, capsys.readouterr().out

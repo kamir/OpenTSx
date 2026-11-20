@@ -855,6 +855,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The k3s scripts 10-build.sh, 11-import-images.sh, 50-status.sh and 71-restore.sh write their messages as '<subject>:
   <problem>; <what to do>', for example 'namespace opentsx: not found; deploy it first with 30-deploy.sh', instead of
   using a spaced hyphen as a dash.
+- `opentsx-lg/src/main/docker/core-tool-image/README.md` describes the image, its build and its environment variables
+  instead of holding a 2020 build log.
 
 ### Removed
 
@@ -1026,6 +1028,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `config/opentsx-default.properties` and the packaged `opentsx-default.properties` no longer list
   `opentsx.kafka.topic.map.file`, `opentsx.kafka.client.config.file`, `opentsx.data.directory`,
   `opentsx.threads.pool.size` and `opentsx.retry.attempts`; no `ConfigManager` caller read them.
+- The opentsx-lg jar no longer carries the unused localhost profiles `config/cpl.props` and `config/mdc_c1.props`, and
+  `opentsx-lg/run_ddc.sh`, which ran docker-compose in a directory without a compose file, is deleted.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -1990,6 +1994,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   527040 rows, such as one row per minute for 366 days`. It stops reading the file at the first data row over the
   bound, so a file far over the bound exits with 2 instead of running out of memory, and a calibrated run at the bound
   fits the 1536Mi boat Job. `BoatData.MAX_ROWS` holds the bound.
+- The Grafana script of the opentsx-lg MQTT example (`influxdb-grafana/__run_container_01.sh`) runs its container
+  under the name `docker-influxdb-grafana`, sets the admin password inside that container to `GRAFANA_ADMIN_PASSWORD`
+  instead of `admin`, and exits 2 without the variable.
+- The opentsx-lg Docker profile and `src/main/docker/core-tool-image/Dockerfile` build on the pinned base image
+  `eclipse-temurin:21.0.8_9-jre-noble` instead of the unpinned `confluentinc/cp-base`, whose newest tag carries Java 8
+  and cannot run the Java 17 jar.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
@@ -2074,6 +2084,15 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `02_run_mqtt_broker.sh` mounts it.
 - `.gitignore` ignores a file named `ccloud.props` anywhere in the repository, so a filled-in client profile such as
   `config/ccloud.props` is not committed.
+- `opentsx-lg/bin/bootstrap_LatencyProbe_CHECK.sh` takes the Confluent Cloud ids from `CCLOUDENV`, `CLUSTER` and
+  `SERVICE_ACCOUNT` instead of holding the ids of one real environment, cluster and service account. Without one of
+  them, or with an empty one, it calls no `ccloud` command and exits 2 with `<VARIABLE>: missing; export the id of
+  your Confluent Cloud <environment|cluster|service account> before you run the script`. It stops with exit status 1
+  at the first `ccloud` command that fails, so it creates no ACL when the environment or the cluster cannot be
+  selected.
+- `tools/check_tracked_config.py` fails on a Confluent Cloud resource id in a tracked text file (`lkc-`, `pkc-`,
+  `psrc-`, `lsrc-`, `env-` or `sa-` and 5 or more lower-case letters or digits with at least one digit) with
+  `<path>:<line>: <id>: looks like a Confluent Cloud resource id; write a placeholder such as lkc-xxxxx`.
 
 ## [3.0.1] - 2026-10-16
 

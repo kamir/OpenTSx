@@ -50,18 +50,49 @@ installation, from your shell. Without it they exit with status 2 and
 
 ### Run the example image
 
-Step (2) builds the image `opentsx/time-series-generator:3.0.1` on your machine with the `Docker` profile. The image is
-a local example: no workflow builds or publishes it. It holds the jar and `/opentsx-lg/config/topiclist.def`. The jar
-carries the localhost profiles `config/cpl.props` and `config/mdc_c1.props` as resources, which no tool reads; the image
-holds no other Kafka client profile. The container reads the profile at run time from the file that
-`OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME` names, `/etc/opentsx/config/opentsx-local.props` by default. Mount a
+Step (2) builds the image `opentsx/time-series-generator:3.0.1` on your machine with the `Docker` profile, from the base
+image `eclipse-temurin:21.0.8_9-jre-noble`. The image is a local example: no workflow builds or publishes it. It holds
+the jar and `/opentsx-lg/config/topiclist.def`. The jar and the image carry no Kafka client profile. The container reads
+the profile at run time from the file that `OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME` names,
+`/etc/opentsx/config/opentsx-local.props` by default. Mount a
 directory with that file at `/etc/opentsx/config/` when you start the container. Without the file and without its
 `.example` template, the generator stops with
 `OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME: "/etc/opentsx/config/opentsx-local.props" cannot be read (/etc/opentsx/config/opentsx-local.props); give a readable Kafka client profile or its .example template`.
 
+[`src/main/docker/core-tool-image/README.md`](src/main/docker/core-tool-image/README.md) describes a Dockerfile for the
+same jar with Xvfb and x11vnc.
+
+### Prepare the ACLs on a Confluent Cloud cluster
+
+`bin/bootstrap_LatencyProbe_CHECK.sh` creates the ACLs the latency tools need: CREATE, READ, WRITE, ALTER and DELETE on
+the topics with the prefix `OpenTSx_`, and READ on the consumer group `KPING-Consumer`, for one service account. You
+need the `ccloud` CLI, logged in with `ccloud login --save`. Export the ids of your environment, cluster and service
+account, then run the script from `bin/`:
+
+```bash
+cd opentsx-lg/bin
+export CCLOUDENV=<environment-id>
+export CLUSTER=<cluster-id>
+export SERVICE_ACCOUNT=<service-account-id>
+./bootstrap_LatencyProbe_CHECK.sh
+```
+
+Without one of the three variables, or with an empty one, the script calls no `ccloud` command and exits with status 2
+and one line per missing variable, for example
+`CLUSTER: missing; export the id of your Confluent Cloud cluster before you run the script`. The script stops with exit
+status 1 at the first `ccloud` command that fails, so it creates no ACL when the environment or the cluster cannot be
+selected.
+
+### Keep credentials out of the repository
+
 A client profile named `ccloud.props` anywhere in this module is git-ignored. So is the MQTT password file
 `src/main/mqtt-example/volume1/docker/mqtt/config/passwd`, which `src/main/mqtt-example/01_bootstrap.sh` creates with
 `mosquitto_passwd` and `02_run_mqtt_broker.sh` mounts into the broker.
+
+`src/main/mqtt-example/influxdb-grafana/__run_container_01.sh` starts the container `docker-influxdb-grafana` and sets
+the Grafana admin password inside it to the value of `GRAFANA_ADMIN_PASSWORD`. Without the variable it starts no
+container and exits with status 2 and
+`GRAFANA_ADMIN_PASSWORD: missing; export the Grafana admin password to set before you run the script`.
 
 ### Handle errors
 

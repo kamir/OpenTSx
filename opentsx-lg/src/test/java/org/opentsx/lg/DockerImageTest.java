@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DockerImageTest {
@@ -49,9 +50,30 @@ class DockerImageTest {
     }
 
     @Test
-    void theJarAndTheImageCarryNoCloudProfile() throws Exception {
-        List<Path> profiles = files("src/main/resources", "ccloud.props");
+    void theJarCarriesNoKafkaClientProfile() throws Exception {
+        try (Stream<Path> resources = Files.walk(Path.of("src/main/resources"))) {
+            List<Path> profiles = resources.filter(f -> f.getFileName().toString().endsWith(".props")).toList();
 
-        assertTrue(profiles.isEmpty(), profiles.toString());
+            assertTrue(profiles.isEmpty(), profiles.toString());
+        }
+    }
+
+    @Test
+    void thePomAndEachDockerfilePinTheirBaseImage() throws Exception {
+        Matcher from = Pattern.compile("<from>([^<]*)</from>").matcher(Files.readString(Path.of("pom.xml")));
+        assertTrue(from.find());
+        assertPinned(from.group(1), "pom.xml");
+
+        for (Path dockerfile : files("src", "Dockerfile")) {
+            Matcher base = Pattern.compile("(?m)^FROM\\s+(\\S+)").matcher(Files.readString(dockerfile));
+            assertTrue(base.find(), dockerfile.toString());
+            assertPinned(base.group(1), dockerfile.toString());
+        }
+    }
+
+    private static void assertPinned(String image, String where) {
+        int tag = image.lastIndexOf(':');
+        assertTrue(tag > image.lastIndexOf('/') && tag < image.length() - 1, where + ": " + image);
+        assertNotEquals("latest", image.substring(tag + 1), where + ": " + image);
     }
 }

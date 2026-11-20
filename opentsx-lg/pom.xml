@@ -197,7 +197,7 @@
                                     <alias>OpenTSx-DataGenerator</alias>
                                     <name>opentsx/time-series-generator:${project.version}</name>
                                     <build>
-                                        <from>confluentinc/cp-base</from>
+                                        <from>eclipse-temurin:21.0.8_9-jre-noble</from>
                                         <assembly>
                                             <name>opentsx-lg</name>
                                             <descriptorRef>artifact</descriptorRef>

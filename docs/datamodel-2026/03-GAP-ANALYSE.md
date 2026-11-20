@@ -21,6 +21,8 @@ Recommendation: **do not rebuild the existing code; build a lean "OpenTSx Platfo
 | S3 | MQTT password file | `opentsx-lg/src/main/mqtt-example/volume1/docker/mqtt/config/passwd` | done: the file is deleted and git-ignored in opentsx-lg; `01_bootstrap.sh` creates it with `mosquitto_passwd` |
 | S4 | Development default secrets in the SaaS backend | `opentsx-saas-backend/app/core/config.py` | only through the environment, no defaults |
 | S5 | Known CVEs on the class path: log4j 1.2.17, xstream 1.2.2, jackson-databind 2.8.1 | root `pom.xml` | done with the POM cleanup (section 5) |
+| S6 | Confluent Cloud ids of one environment, cluster and service account in a script | `opentsx-lg/bin/bootstrap_LatencyProbe_CHECK.sh` | done: the script takes `CCLOUDENV`, `CLUSTER` and `SERVICE_ACCOUNT` from the caller, exits 2 without them and stops with 1 at the first failed `ccloud` command; `tools/check_tracked_config.py` fails on a Confluent Cloud resource id in a tracked file; the ids stay in the history |
+| S7 | Grafana admin password set to a fixed value through a hard-coded container id | `opentsx-lg/src/main/mqtt-example/influxdb-grafana/__run_container_01.sh` | done: the script execs into the named container `docker-influxdb-grafana` and sets the password from `GRAFANA_ADMIN_PASSWORD`; it exits 2 without it |
 
 ---
 

@@ -5,21 +5,29 @@
 #
 # http://localhost:3003
 # user     : root
-# password : root
+# password : the value of GRAFANA_ADMIN_PASSWORD
 
 #
 # http://localhost:3004
 # Username: root
 # Password: root
 # Port: 8086
+#
+# Needs GRAFANA_ADMIN_PASSWORD, the Grafana admin password the script sets; exits 2 without it.
+#
+if [[ -z "${GRAFANA_ADMIN_PASSWORD:-}" ]]; then
+  echo "GRAFANA_ADMIN_PASSWORD: missing; export the Grafana admin password to set before you run the script" >&2
+  exit 2
+fi
 
+CONTAINER=docker-influxdb-grafana
 WP=$(pwd)
 
 mkdir -p influxdb
 mkdir -p grafana
 
 docker run -d \
-  --name docker-influxdb-grafana \
+  --name "$CONTAINER" \
   -p 3003:3003 \
   -p 3004:8083 \
   -p 8086:8086 \
@@ -29,9 +37,4 @@ docker run -d \
 
 
 docker container ls
-docker exec -it 5210acac7ac3 bash
-grafana-cli admin reset-admin-password admin
-
-
-
-
+docker exec "$CONTAINER" grafana-cli admin reset-admin-password "$GRAFANA_ADMIN_PASSWORD"

@@ -11,9 +11,10 @@ Checks the files `git ls-files` lists under root:
     end in servers, url, host, hostname, address or addresses (bootstrap.servers, schema.registry.url) and every
     value that is an IPv4 address are localhost, a loopback address or a placeholder (<name>, ${NAME}, $NAME, or a
     host under example.com, example.org, example.net or .example);
-  * in every tracked text file: no Confluent Cloud cluster or registry host, no *.gce.cloudera.com host and no
-    personal home path, a directory below /Users or /home other than the service account homes Shared, jovyan,
-    ubuntu, ec2-user and user.
+  * in every tracked text file: no Confluent Cloud cluster or registry host, no *.gce.cloudera.com host, no
+    Confluent Cloud resource id (lkc-, pkc-, psrc-, lsrc-, env- or sa- and 5 or more lower-case letters or digits
+    with at least one digit, not inside a word) and no personal home path, a directory below /Users or /home other
+    than the service account homes Shared, jovyan, ubuntu, ec2-user and user.
 """
 import ipaddress
 import pathlib
@@ -29,6 +30,8 @@ PLACEHOLDER = re.compile(r"^(?:<[^<>]+>|\$\{[^}]+\}|\$[A-Za-z_][A-Za-z0-9_]*)$")
 EXAMPLE_DOMAIN = re.compile(r"(?:^|\.)(?:example\.(?:com|org|net)|example)$", re.I)
 REAL_HOST = re.compile(r"\b(?:(?:pkc|psrc|lkc|lsrc)-(?!x+\b)[a-z0-9]+(?:\.[a-z0-9-]+)*\.confluent\.cloud"
                        r"|[a-z0-9-]+(?:\.[a-z0-9-]+)*\.gce\.cloudera\.com)\b", re.I)
+RESOURCE_ID = re.compile(r"(?<![A-Za-z0-9_-])(?:lkc|pkc|psrc|lsrc|env|sa)-(?=[a-z0-9]*[0-9])[a-z0-9]{5,}"
+                         r"(?![A-Za-z0-9_])")
 OUTPUT_DIRS = ("opentsx-lg/src/main/docker-compose/output/", "opentsx-lg/opentsx/plots/")
 HOME_PATH = re.compile(r"/(?:Users|home)/([A-Za-z0-9._-]+)(?![A-Za-z0-9._-])")
 SERVICE_HOMES = {"Shared", "jovyan", "ubuntu", "ec2-user", "user"}
@@ -113,8 +116,13 @@ def check(root: pathlib.Path, paths: list[str]) -> list[str]:
         if is_config(path):
             findings.extend(config_findings(path, text))
         for number, line in enumerate(text.splitlines(), 1):
-            for host in REAL_HOST.findall(line):
-                findings.append(f"{path}:{number}: \"{host}\" is a real host; use localhost or a placeholder")
+            hosts = list(REAL_HOST.finditer(line))
+            for host in hosts:
+                findings.append(f"{path}:{number}: \"{host.group(0)}\" is a real host; use localhost or a placeholder")
+            for resource in RESOURCE_ID.finditer(line):
+                if not any(h.start() <= resource.start() < h.end() for h in hosts):
+                    findings.append(f"{path}:{number}: {resource.group(0)}: looks like a Confluent Cloud resource id; "
+                                    "write a placeholder such as lkc-xxxxx")
             for home in HOME_PATH.finditer(line):
                 if home.group(1) not in SERVICE_HOMES:
                     findings.append(f"{path}:{number}: \"{home.group(0)}\" is a personal home path; "
