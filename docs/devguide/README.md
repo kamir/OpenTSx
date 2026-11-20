@@ -24,7 +24,7 @@ The developer guide holds notes for contributors. User-facing documentation is i
 * [Inspect bounded mixed Java and Rust federation](integration/wayang-mixed-federation.md): actual-CLI W3
   acceptance, numerical-domain evidence and board preparation. The physical ARM64 measurement remains open.
 * [Prepare the B4.2 run on a Jetson Nano](integration/wayang-board-jetson.md): board setup, identity, one-second
-  samples and the 27-condition matrix on one ARM64 board (D-T14).
+  samples and the 81-condition matrix on one ARM64 board (D-T14, D-T15).
 * [Processing-flow descriptor schema](schemas/README.md) and its [validation plan](validation/README.md). The
   descriptor is used by `opentsx-flink-core` (`pfd.DynamicTopologyJob`).
 * [Maintain operator lessons](../user-manual/17-learn-operators.md): execute the UI/library workloads and check

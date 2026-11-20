@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use tsx_runner::publication::HttpFencedBroker;
 use tsx_runner::{admission, broker::KafkaBroker, run_loop, run_plan, runner, worker};
 
-const HELP: &str = "Usage: tsx-runner agent --config <file>\n       tsx-runner conform --config <file> --job <job>\n       tsx-runner run --plan <file>|- --config <file>\n       tsx-runner replay --request <file> --checkpoint <file>\n       tsx-runner serve --listen <addr> --node <id> --site <id> --bootstrap <host:port> --state <directory> [--publisher <http-origin> --controller <IP>]\n       tsx-runner --version\n\nExecutes qualified signed bounded statistics, isolated signed continuous pass-through and trusted-local assignments. Local site configuration fixes control trust, qualified evidence, jobs, bindings and policy. Fenced local publication requires both publisher and controller options for serve.";
+const HELP: &str = "Usage: tsx-runner agent --config <file>\n       tsx-runner conform --config <file> --job <job>\n       tsx-runner run --plan <file>|- --config <file>\n       tsx-runner replay --request <file> --checkpoint <file>\n       tsx-runner serve --listen <addr> --node <id> --site <id> --bootstrap <host:port> --state <directory> [--publisher <http-origin> --controller <IP>] [--profile standard|measurement]\n       tsx-runner --version\n\nExecutes qualified signed bounded statistics, isolated signed continuous pass-through and trusted-local assignments. Local site configuration fixes control trust, qualified evidence, jobs, bindings and policy. Fenced local publication requires both publisher and controller options for serve. The measurement profile raises the serve admission ceilings for board measurements.";
 
 fn main() {
     match command() {
@@ -248,7 +248,7 @@ fn print_site_result(
 }
 
 fn serve(args: &[String]) -> Result<(), (i32, String)> {
-    if ![10, 12, 14].contains(&args.len()) {
+    if ![10, 12, 14, 16].contains(&args.len()) {
         return Err((2, HELP.into()));
     }
     let mut listen = None;
@@ -258,6 +258,7 @@ fn serve(args: &[String]) -> Result<(), (i32, String)> {
     let mut state = None;
     let mut publisher = None;
     let mut controller = None;
+    let mut profile = None;
     for pair in args.as_chunks::<2>().0 {
         let slot = match pair[0].as_str() {
             "--listen" => &mut listen,
@@ -267,6 +268,7 @@ fn serve(args: &[String]) -> Result<(), (i32, String)> {
             "--state" => &mut state,
             "--publisher" => &mut publisher,
             "--controller" => &mut controller,
+            "--profile" => &mut profile,
             _ => return Err((2, format!("unknown serve argument: {}", pair[0]))),
         };
         if slot.is_some() {
@@ -303,7 +305,9 @@ fn serve(args: &[String]) -> Result<(), (i32, String)> {
     if controller.is_some_and(|address| address.is_unspecified() || address.is_multicast()) {
         return Err((2, "controller must identify one TCP peer".into()));
     }
-    let worker = worker::Worker::open(config).map_err(|e| (3, e))?;
+    let profile = admission::Profile::named(profile.as_deref().unwrap_or("standard"))
+        .map_err(|error| (2, error))?;
+    let worker = worker::Worker::open_profiled(config, profile).map_err(|e| (3, e))?;
     match (publication, controller) {
         (Some(broker), Some(controller)) => {
             worker.serve_with_controller(&listen, broker, controller)
