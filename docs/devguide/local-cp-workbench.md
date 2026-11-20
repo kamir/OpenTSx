@@ -43,7 +43,7 @@ not evidence that an optional external-service test executed.
 Run the host launcher checks separately without scientific packages or Docker:
 
 ```bash
-python3 -m unittest discover -s deploy/local-cp -p test_workbench.py -v
+python3 -m unittest discover -s deploy/local-cp -p 'test_workbench*.py' -v
 ```
 
 `source differs from the built bundle; run build before test` means that source

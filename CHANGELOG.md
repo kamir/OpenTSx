@@ -45,6 +45,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Standalone analysis package through the existing launcher with
+  `--profile finite`, its own Compose project, network and runtime volume.
+  Locked artifacts serve the Workbench and finite numerical API without CP
+  or MLflow. Browser acceptance fits and exports a checked synthetic result.
+
 - Study on running OpenTSx operators in orbit
   ([`docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md`](docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md)):
   no tool compiles the Python operators to FPGA logic; a bounded streaming subset can be reimplemented as FPGA kernels

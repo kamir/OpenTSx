@@ -104,6 +104,38 @@ def test_finite_service_starts_api_only_without_clients_or_frontend(startup):
     assert startup.events == [("serve",), ("server_close",)]
 
 
+def test_finite_service_accepts_an_explicit_container_bind(startup):
+    startup.api.main(["serve-finite", "--bind", "0.0.0.0"])
+    assert startup.servers[0].address == ("0.0.0.0", 8080)
+    assert startup.servers[0].closed
+    assert startup.events == [("serve",), ("server_close",)]
+
+
+@pytest.mark.parametrize("address", ["", "remote.example", "192.0.2.1", "::"])
+def test_serving_rejects_unsupported_bind_addresses_before_clients(startup, capsys, address):
+    with pytest.raises(SystemExit) as error:
+        startup.api.main(["serve-finite", "--bind", address])
+    assert error.value.code == 2
+    assert "--bind: invalid choice" in capsys.readouterr().err
+    assert startup.servers == []
+
+
+def test_connected_service_can_explicitly_bind_to_loopback(startup, monkeypatch, tmp_path):
+    arguments = connected(startup, monkeypatch, tmp_path)
+    startup.api.main([*arguments, "--bind", "127.0.0.1"])
+    assert startup.servers[0].address == ("127.0.0.1", 18083)
+    assert startup.servers[0].closed
+
+
+@pytest.mark.parametrize("command", ["seed", "demo-seed"])
+def test_nonserving_commands_reject_bind_before_clients(startup, capsys, command):
+    with pytest.raises(SystemExit) as error:
+        startup.api.main([command, "--bootstrap", "broker:29092", "--bind", "0.0.0.0"])
+    assert error.value.code == 2
+    assert "--bind is only valid for serving commands" in capsys.readouterr().err
+    assert startup.servers == []
+
+
 def test_finite_service_can_serve_an_explicit_built_web_root(startup, tmp_path):
     (tmp_path / "index.html").write_text("<title>Finite fixture</title>", encoding="utf-8")
     startup.api.main(["serve-finite", "--web-root", str(tmp_path)])

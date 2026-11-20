@@ -34,6 +34,10 @@ The server binds to `127.0.0.1:18082`. In another terminal, check readiness:
 curl --fail http://127.0.0.1:18082/analysis/v1/health
 ```
 
+`--bind` accepts `127.0.0.1` or `0.0.0.0`. The default finite listener stays on
+loopback. The [Compose package](standalone-analysis.md) sets the container
+listener explicitly and publishes its host port on loopback.
+
 The finite service constructs no broker, registry, catalogue or lifecycle
 clients. It performs no recovery and keeps no lifecycle database. Results are
 returned to the requesting client. Stop the foreground service with Ctrl+C.
