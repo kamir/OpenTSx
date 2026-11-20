@@ -387,7 +387,8 @@ the intervals 1.0 and 2.0. It writes a series whose intervals add up to more tha
 instead. It refuses a time that is NaN or infinite, a time before the time before it and a time more than
 `Double.MAX_VALUE` after it with the `IllegalArgumentException` messages of `ReturnIntervallStatistik2._addData` below.
 Equal times give an interval of 0, which `addDistData` refuses while `RISTool.offset` is 0. A call that `_addData` or
-`addDistData` refuses adds nothing: the result keeps the intervals, R_q and probabilities of the call before.
+`addDistData` refuses, or whose log line cannot be written, adds nothing: the result keeps the intervals, R_q and
+probabilities of the call before.
 
 `ReturnIntervallStatistik2` and `TSPropertyTester` refuse a NaN or infinite probability, a receiver that is not a
 container, a different binning and intervals added to a container with the same exceptions and messages as `RISTool`.
@@ -404,7 +405,9 @@ before it throws `IllegalArgumentException` with
 time adds no interval.
 `ReturnIntervallStatistik2.addDistData` leaves out intervals that are 0 or below `offset` and sorts the others into bins
 scaled with their mean R_q. An interval below the first or past the last scaled bin is counted in that bin, so the
-probabilities of a result add up to 1. An interval that is NaN or infinite throws
+probabilities of a result add up to 1. The R_q of `ReturnIntervallStatistik2` and `TSPropertyTester` stays finite when
+the sum of the intervals is not: with binning 12 and scale 10 the intervals 1.7e308 and 1.7e308 give R_q 1.7e308 and
+fall into scaled bin 1. An interval that is NaN or infinite throws
 `IllegalArgumentException` with `addDistData: interval <k> of <name> is <value>; expected a finite interval`, and a
 refused call adds nothing. A result that keeps no interval, for example
 times 1, 1 and 1, has NaN probabilities and R_q, and `add` skips it. For times 0, 1, 1 and 2 the bins count the

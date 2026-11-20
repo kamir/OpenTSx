@@ -1156,11 +1156,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `influxdb-grafana/__run_container_01.sh` starts InfluxDB and Grafana.
 - `opentsx-core`: the dead EXP3 and EXP4 branches and the private `loadStockDataFromBucket` of `MacroRecorder`, the
   unused shuffled component list of `EntropieTest.main` and the unused `cutOff` field of `TSPropertyTester`, whose
-  `filtered intervals` DEBUG line no longer carries a `cutOff` value.
+  `kept intervals` DEBUG line of `addDistData` no longer carries a `cutOff` value.
 - `opentsx-core`: the unused locals `windowSize` and `shuffles` of `EntropieTest.main`. From `MacroRecorder`: the
   private `applyDFA`, which nothing called, and its `doDFA` flag; the unused `dig`, `mrv2` and `mrv3` and the
   surrogate and transfer entropy series that only filled them; the first of two `samplingRate` assignments in `main`;
   and the thesis notes before the package statement.
+- `opentsx-core`: the unused `SCATTERPLOT` and `SCATTERPLOT_AUTO_SAVE` fields of `MacroRecorder` and `MacroRecorder2`,
+  and the sliding-window entropy series of their `main` methods, which nothing read.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -2480,6 +2482,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The failure table of the opentsx-core README lists the five messages of the `FFT` button: `Select at least one
   series for FFT`, `Sampling rate must be a finite positive number`, `FFT needs at least three samples with matching
   coordinates`, `FFT values and coordinates must be finite` and `FFT coordinates must increase at a uniform interval`.
+- `opentsx-core`: `ReturnIntervallStatistik2.addDistData` and `TSPropertyTester.addDistData` compute R_q without
+  overflow. When every interval was finite but their sum was not, R_q was Infinity, every interval fell into scaled
+  bin 0 and a container that added the result recorded Infinity. Now the intervals 1.7e308 and 1.7e308 give R_q
+  1.7e308 and fall into scaled bin 1 with binning 12 and scale 10.
+- `opentsx-core`: `TSPropertyTester.main` writes its shifted-series DEBUG lines to the `TSPropertyTester` logger
+  instead of the `ReturnIntervallStatistik2` logger.
+- `opentsx-core`: `RISTool.addDistData` writes the log line for the intervals below `offset` before it changes the
+  result. When that line cannot be written, the call throws `UncheckedIOException` and the result keeps the intervals,
+  R_q and probabilities of the call before; the counters `anzRowRAW` and `anzRowsFILTERED` stay unchanged.
+- `opentsx-core`: `MacroRecorder` and `MacroRecorder2` open the `Components` chart before they record its node, so
+  `show Chart` on the `Components` node opens that chart, also after another chart with the same title has opened.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

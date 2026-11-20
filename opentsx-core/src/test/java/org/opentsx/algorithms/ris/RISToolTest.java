@@ -133,6 +133,29 @@ class RISToolTest {
     }
 
     @Test
+    void aFailingLogWriteOfFilteredIntervalsKeepsTheResultOfTheCallBefore() throws Exception {
+        RISTool.offset = 2.0;
+        RISTool.projekt = project("kept");
+        RISTool ris = new RISTool("kept", 12, 10);
+        ris.setLofFileNameKey_1("log_0");
+        ris.addDistData(new Vector<>(List.of(2.0, 3.0, 4.0)));
+        int[] scaled = ris.dataSKALIERT.clone();
+        int raw = RISTool.anzRowRAW.dists.size();
+        int filtered = RISTool.anzRowsFILTERED.dists.size();
+        RISTool.projekt.closeAllWriters();
+
+        assertThrows(UncheckedIOException.class, () -> ris.addDistData(intervals(10)));
+
+        assertEquals(List.of(2.0, 3.0, 4.0), ris.dataRawFILTERED);
+        assertEquals(0, ris.cutOff);
+        assertEquals(3, ris.anzFiltered);
+        assertEquals(3.0, ris.getRq());
+        assertArrayEquals(scaled, ris.dataSKALIERT);
+        assertEquals(raw, RISTool.anzRowRAW.dists.size());
+        assertEquals(filtered, RISTool.anzRowsFILTERED.dists.size());
+    }
+
+    @Test
     void aFailingLogWriteOfASeriesThatIsTooLongSurfaces() throws Exception {
         RISTool.projekt = project("long");
         RISTool.projekt.createLogFile("LENGTH");

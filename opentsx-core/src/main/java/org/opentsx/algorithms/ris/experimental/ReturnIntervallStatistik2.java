@@ -336,29 +336,12 @@ public class ReturnIntervallStatistik2 {
         
         clear();
         
-        double sumRq_alt = 0.0;
-        int anzRq_alt =0;
-        
         // Rq of all intervals
-        Enumeration enUM_Rq_alt = dists.elements();
-        while( enUM_Rq_alt.hasMoreElements() ) {
-            double v = (Double) enUM_Rq_alt.nextElement();
-             sumRq_alt = sumRq_alt + v;
-             anzRq_alt++;
-        }
-        double Rq_alt = sumRq_alt /(1.0*anzRq_alt);
+        double Rq_alt = meanOf( dists );
         
         // Rq of the filtered intervals
-        double sumRq_filteres = 0.0;
-        int anzRq_filterd = 0;
-        Enumeration enUM_Rq_filteres = dataRawFILTERED.elements();
-        while( enUM_Rq_filteres.hasMoreElements() ) {
-            double v = (Double) enUM_Rq_filteres.nextElement();
-             sumRq_filteres = sumRq_filteres + v;
-             anzRq_filterd++;
-        }
-        double Rq_filtered = sumRq_filteres/(1.0*anzRq_filterd);
-        zElements = anzRq_filterd;
+        double Rq_filtered = meanOf( dataRawFILTERED );
+        zElements = dataRawFILTERED.size();
        
         if ( LOG.isDebugEnabled() ) LOG.debug("mean interval result={} rqAll={} rqFiltered={}", name, Rq_alt, Rq_filtered);
         _Rq = Rq_filtered;
@@ -396,6 +379,25 @@ public class ReturnIntervallStatistik2 {
         }              
     }
     
+    static double meanOf( Vector<?> values ) {
+        double sum = 0.0;
+        double largest = 0.0;
+        for ( Object value : values ) {
+            double v = (Double) value;
+            sum = sum + v;
+            largest = Math.max( largest, Math.abs( v ) );
+        }
+        if ( Double.isInfinite( sum ) ) {
+            // each value over the largest magnitude is at most 1, so this sum of finite values cannot overflow
+            double scaled = 0.0;
+            for ( Object value : values ) {
+                scaled = scaled + (Double) value / largest;
+            }
+            return largest * ( scaled / values.size() );
+        }
+        return sum / values.size();
+    }
+
     double epsilon = 1e-6; 
     
     public static void logLineToFile( String key, String line ) { 
@@ -634,7 +636,7 @@ public class ReturnIntervallStatistik2 {
         addRow( mr1 );
 
         mr1 = TimeSeriesObject.getGaussianDistribution( (int)Math.pow(2, 22), 5.0, 4.5);
-        shiftToZero( mr1 );
+        shiftToZero( mr1, LOG );
         addRow( mr1 ); 
         
         
@@ -644,12 +646,12 @@ public class ReturnIntervallStatistik2 {
         
         // V3
         TimeSeriesObjectFFT mr3 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, 20), 1.4, false, false);
-        shiftToZero( mr3 );
+        shiftToZero( mr3, LOG );
         addRow( mr3 );
         
         // V3
         mr3 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, 20), 1.2, false, false);
-        shiftToZero( mr3 );
+        shiftToZero( mr3, LOG );
         
         addRow( mr3 );
         
@@ -661,11 +663,11 @@ public class ReturnIntervallStatistik2 {
         MultiChart.open(mrv2B, true);
     }
 
-    static void shiftToZero( TimeSeriesObject series ) {
+    static void shiftToZero( TimeSeriesObject series, Logger log ) {
         double min = series.getMinY();
         series.add_value_to_Y( -1.0 * min );
-        if ( LOG.isDebugEnabled() ) {
-            LOG.debug("shifted series series={} min={} shiftedMin={}", series.getLabel(), min, series.getMinY());
+        if ( log.isDebugEnabled() ) {
+            log.debug("shifted series series={} min={} shiftedMin={}", series.getLabel(), min, series.getMinY());
         }
     }
     

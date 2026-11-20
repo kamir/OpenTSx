@@ -2,6 +2,8 @@ package org.opentsx.algorithms.ris.experimental;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.opentsx.data.series.TimeSeriesObject;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -228,6 +230,24 @@ class TSPropertyTesterTest {
     }
 
     @Test
+    void intervalsWhoseSumOverflowsGiveTheirMeanAsRqAndTheirScaledBin() throws Exception {
+        TSPropertyTester two = new TSPropertyTester("two", 12, 10);
+        TSPropertyTester three = new TSPropertyTester("three", 12, 10);
+        TSPropertyTester container = new TSPropertyTester("all", 12, 10);
+        container.isContainerInstanz = true;
+
+        two.addDistData(new Vector<>(List.of(1.7e308, 1.7e308)));
+        three.addDistData(new Vector<>(List.of(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE)));
+        container.add(two);
+
+        assertEquals(1.7e308, two.getRq());
+        assertArrayEquals(new int[] {0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, two.dataSKALIERT);
+        assertEquals(Double.MAX_VALUE, three.getRq());
+        assertArrayEquals(new int[] {0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, three.dataSKALIERT);
+        assertEquals(List.of(1.7e308), container.allRqs);
+    }
+
+    @Test
     void setRQDoesNotChangeTheBins() throws Exception {
         TSPropertyTester tester = new TSPropertyTester("set", 12, 10);
         tester.setRQ(4.0);
@@ -379,6 +399,27 @@ class TSPropertyTesterTest {
     }
 
     @Test
+    void anOffsetBelow0KeepsEveryScaledBinWhenTheMeanIntervalIsNegative() throws Exception {
+        double offset = TSPropertyTester.offset;
+        TSPropertyTester.offset = -5;
+        try {
+            TSPropertyTester negativeMean = new TSPropertyTester("negativeMean", 12, 10);
+            negativeMean.addDistData(new Vector<>(List.of(-3.0, 1.0)));
+            negativeMean.calcMessreihen();
+            TSPropertyTester container = new TSPropertyTester("all", 12, 10);
+            container.isContainerInstanz = true;
+            container.add(negativeMean);
+            container.calcMessreihen();
+
+            assertEquals(-1.0, negativeMean.getRq());
+            assertScaledSeries(new double[] {1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 2.0, negativeMean.mrVerteilungSkaliert);
+            assertEquals(pointsWithAShare(container.mrVerteilungSkaliert), pointsWithAShare(negativeMean.mrVerteilungSkaliert));
+        } finally {
+            TSPropertyTester.offset = offset;
+        }
+    }
+
+    @Test
     void aResultWithoutIntervalsHasAnEmptyDistribution() throws Exception {
         TSPropertyTester none = new TSPropertyTester("none", 12, 10);
         none._addData(times(4.0), 1.0);
@@ -413,6 +454,20 @@ class TSPropertyTesterTest {
         assertEquals(List.of(2.0), tester.dataRaw_InterEventTIMES);
         assertEquals(List.of(2.0), tester.dataRawFILTERED);
         assertEquals(2.0, tester.getRq());
+    }
+
+    @Test
+    void shiftingASeriesLogsOnTheLoggerOfTheCaller() throws Exception {
+        TimeSeriesObject series = new TimeSeriesObject();
+        series.setLabel("gauss");
+        for (double y : new double[] {1.0, -2.5, 4.0}) {
+            series.addValue(y);
+        }
+
+        String log = stderrOf(() -> ReturnIntervallStatistik2.shiftToZero(series, LoggerFactory.getLogger(TSPropertyTester.class)));
+
+        assertTrue(log.contains("DEBUG " + TSPropertyTester.class.getName()
+                + " - shifted series series=gauss min=-2.5 shiftedMin=0.0"), log);
     }
 
     @Test

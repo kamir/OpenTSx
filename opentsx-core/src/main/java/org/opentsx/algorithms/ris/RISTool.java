@@ -337,18 +337,18 @@ public class RISTool {
                     + " are 0 or negative; expected positive intervals while offset is 0" );
         }
 
-        anzRowRAW.addData( anzahlVor  );
-        dataRawFILTERED = kept;
-        cutOff = cut;
-
-        long anzahlNach = (long)dataRawFILTERED.size();
-        anzRowsFILTERED.addData( anzahlNach );
+        long anzahlNach = (long)kept.size();
         long delta = (anzahlVor-anzahlNach);
         
         if ( delta > 0) {
             String line = label + "\t" + anzahlVor + "\t" + anzahlNach + "\t" + delta + "\n";
             logLineToFile( logFileKey, line);
         }
+
+        anzRowRAW.addData( anzahlVor  );
+        dataRawFILTERED = kept;
+        cutOff = cut;
+        anzRowsFILTERED.addData( anzahlNach );
         
         
         if ( LOG.isDebugEnabled() ) {

@@ -92,21 +92,16 @@ public class MacroRecorder2 {
         }
 
         MacroTrackerFrame.init(label_of_TRACK);
-        MacroTrackerFrame.addTransformation(
-                TSBucketTransformation.getTransformation("Collection", "Components", loadOp));
-
         MultiChart.open(components, true, "Components");
+        MacroTrackerFrame.addTransformation(
+                TSBucketTransformation.getTransformation("Collection", "Components", loadOp), "Components");
 
         // Now we shuffle the values and calc the Entropy per row again.
         // shuffeling should not change the Entropy
         Vector<TimeSeriesObject> shuffledComponents = new Vector<TimeSeriesObject>();
 
-        int windowSize = 20;
         int shuffles = 1;
 
-        // Here we calculate the Entropy for a sliding Window ...
-        // in unshuffled data
-        Vector<TimeSeriesObject> slidingWindowResults = new Vector<TimeSeriesObject>();
         for (TimeSeriesObject comp : components) {
 
             TimeSeriesObject mm = comp.copy();
@@ -115,8 +110,6 @@ public class MacroRecorder2 {
             mm.labelWithEntropy();
 
             shuffledComponents.add(mm);
-
-            slidingWindowResults.add(comp.calcEntropyForWindow(windowSize));
 
         }
 
@@ -128,8 +121,6 @@ public class MacroRecorder2 {
     }
 
     static boolean doDFA = false;
-    static boolean SCATTERPLOT = false;
-    static boolean SCATTERPLOT_AUTO_SAVE = false;
 
     public static double fitMIN = 1.2;
     public static double fitMAX = 3.5;

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.data.series.TimeSeriesObject;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -244,6 +245,24 @@ class ReturnIntervallStatistik2Test {
     }
 
     @Test
+    void intervalsWhoseSumOverflowsGiveTheirMeanAsRqAndTheirScaledBin() throws Exception {
+        ReturnIntervallStatistik2 two = new ReturnIntervallStatistik2("two", 12, 10);
+        ReturnIntervallStatistik2 three = new ReturnIntervallStatistik2("three", 12, 10);
+        ReturnIntervallStatistik2 container = new ReturnIntervallStatistik2("all", 12, 10);
+        container.isContainerInstanz = true;
+
+        two.addDistData(new Vector<>(List.of(1.7e308, 1.7e308)));
+        three.addDistData(new Vector<>(List.of(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE)));
+        container.add(two);
+
+        assertEquals(1.7e308, two.getRq());
+        assertArrayEquals(new int[] {0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, two.dataSKALIERT);
+        assertEquals(Double.MAX_VALUE, three.getRq());
+        assertArrayEquals(new int[] {0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, three.dataSKALIERT);
+        assertEquals(List.of(1.7e308), container.allRqs);
+    }
+
+    @Test
     void aSecondCalcMessreihenGivesTheSameSeriesAsTheFirst() throws Exception {
         ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2("twice", 12, 10);
         ris.addDistData(new Vector<>(List.of(0.15, 0.25, 0.25, 0.55, 3.0)));
@@ -447,7 +466,8 @@ class ReturnIntervallStatistik2Test {
         }
 
         String[] out = new String[1];
-        String log = stderrOf(() -> out[0] = stdoutOf(() -> ReturnIntervallStatistik2.shiftToZero(series)));
+        String log = stderrOf(() -> out[0] = stdoutOf(() -> ReturnIntervallStatistik2.shiftToZero(series,
+                LoggerFactory.getLogger(ReturnIntervallStatistik2.class))));
 
         assertEquals("", out[0]);
         assertEquals(0.0, series.getMinY());

@@ -37,9 +37,6 @@ public class MacroRecorder {
         double[] phase = {0.0, 0.5, 0.25, 0.0, 0.0, 0.0};   // phase
         double[] noise = {1.0, 0.5, 20.0, 0.0, 0.0, 0.0};  // noise level
 
-        SCATTERPLOT = false;
-        SCATTERPLOT_AUTO_SAVE = false;
-        
         double time = 5;
         samplingRate = 1000;
 
@@ -64,22 +61,15 @@ public class MacroRecorder {
         
         
         MacroTrackerFrame.init(label_of_TRACK);
-        MacroTrackerFrame.addTransformation( TSBucketTransformation.getTransformation("Collection", "Components", loadOp));
-        
-        
-        
         MultiChart.open(components, true, "Components");
+        MacroTrackerFrame.addTransformation( TSBucketTransformation.getTransformation("Collection", "Components", loadOp), "Components");
         
         // Now we shuffle the values and calc the Entropy per row again.        
         // shuffeling should not change the Entropy
         Vector<TimeSeriesObject> shuffledComponents = new Vector<TimeSeriesObject>();
         
-        int windowSize = 20;
         int shuffles = 1;
         
-        // Here we calculate the Entropy for a sliding Window ...
-        // in unshuffled data
-        Vector<TimeSeriesObject> slidingWindowResults = new Vector<TimeSeriesObject>();
         for( TimeSeriesObject comp : components ) {
               
             TimeSeriesObject mm = comp.copy();
@@ -89,8 +79,6 @@ public class MacroRecorder {
             
             shuffledComponents.add(mm);
             
-            slidingWindowResults.add(comp.calcEntropyForWindow(windowSize));
-            
         }
         
         MultiChart.open(shuffledComponents, true, "Shuffled");
@@ -98,9 +86,6 @@ public class MacroRecorder {
 
     }
 
-    static boolean SCATTERPLOT = false;
-    static boolean SCATTERPLOT_AUTO_SAVE = false;
-    
     /**
      * @deprecated Has no effect; MacroRecorder runs no DFA.
      */

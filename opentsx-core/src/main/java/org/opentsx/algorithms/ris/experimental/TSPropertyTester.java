@@ -517,29 +517,12 @@ public class TSPropertyTester {
         
         clear();
         
-        double sumRq_alt = 0.0;
-        int anzRq_alt =0;
-        
         // Rq of all intervals
-        Enumeration enUM_Rq_alt = dists.elements();
-        while( enUM_Rq_alt.hasMoreElements() ) {
-            double v = (Double) enUM_Rq_alt.nextElement();
-             sumRq_alt = sumRq_alt + v;
-             anzRq_alt++;
-        }
-        double Rq_alt = sumRq_alt /(1.0*anzRq_alt);
+        double Rq_alt = ReturnIntervallStatistik2.meanOf( dists );
         
         // Rq of the filtered intervals
-        double sumRq_filteres = 0.0;
-        int anzRq_filterd = 0;
-        Enumeration enUM_Rq_filteres = dataRawFILTERED.elements();
-        while( enUM_Rq_filteres.hasMoreElements() ) {
-            double v = (Double) enUM_Rq_filteres.nextElement();
-             sumRq_filteres = sumRq_filteres + v;
-             anzRq_filterd++;
-        }
-        double Rq_filtered = sumRq_filteres/(1.0*anzRq_filterd);
-        zElements = anzRq_filterd;
+        double Rq_filtered = ReturnIntervallStatistik2.meanOf( dataRawFILTERED );
+        zElements = dataRawFILTERED.size();
        
         if ( LOG.isDebugEnabled() ) LOG.debug("mean interval result={} rqAll={} rqFiltered={}", name, Rq_alt, Rq_filtered);
         _Rq = Rq_filtered;
@@ -822,7 +805,7 @@ public class TSPropertyTester {
 
  
         mr1 = TimeSeriesObject.getGaussianDistribution( (int)Math.pow(2, N), 1.0, 0.5);
-        ReturnIntervallStatistik2.shiftToZero(mr1);
+        ReturnIntervallStatistik2.shiftToZero(mr1, LOG);
         TSPropertyTester.addSample(mr1);
                 
         // V1
@@ -840,13 +823,13 @@ public class TSPropertyTester {
         // V3
         TimeSeriesObjectFFT mr3 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, N), 0.8, false, false);
         mr3.normalize();
-        ReturnIntervallStatistik2.shiftToZero(mr3);
+        ReturnIntervallStatistik2.shiftToZero(mr3, LOG);
         TSPropertyTester.addSample(mr3);
       
         // V3
         mr3 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, N), 0.9, false, false);
         mr3.normalize();
-        ReturnIntervallStatistik2.shiftToZero(mr3);
+        ReturnIntervallStatistik2.shiftToZero(mr3, LOG);
         TSPropertyTester.addSample(mr3);
         
         Color[] colors = new Color[8];
