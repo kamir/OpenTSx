@@ -33,11 +33,24 @@ jobs:
           python-version: "3.12"
       - name: Test image acceptance controls
         run: python3 -m unittest discover -s deploy/docker -p 'test_*.py' -v
+      - name: Scope Maven cache to its workload
+        run: |
+          test -n "$GITHUB_JOB"
+          mkdir -p target/maven-downloads
+          printf '%s\n' "$GITHUB_JOB" > target/maven-downloads/cache-context
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
+          cache-dependency-path: |
+            **/pom.xml
+            **/.mvn/wrapper/maven-wrapper.properties
+            **/.mvn/extensions.xml
+            .mvn/maven.config
+            .mvn/ci-settings.xml
+            tools/check_maven_downloads.py
+            target/maven-downloads/cache-context
       - name: Install Maven 3.9.8
         run: |
           curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 \
@@ -48,26 +61,34 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
       - name: Verify Maven download retries
         run: python3 tools/check_maven_downloads.py
+      - name: Verify Maven HTTP capture and CI repository routing
+        run: python3 tools/check_maven_http_capture.py
+      - name: Record Maven cache before builds
+        run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json
       - name: Version
         id: version
         run: |
-          version="$(mvn -q -B help:evaluate -Dexpression=project.version -DforceStdout)"
-          [ -n "$version" ] || { echo "cannot read the project version" >&2; exit 1; }
+          args=()
           if [ "$GITHUB_REF_TYPE" = tag ]; then
-            [ "$GITHUB_REF_NAME" = "v$version" ] || { echo "tag $GITHUB_REF_NAME does not match project version $version" >&2; exit 1; }
-            case "$version" in *-*) echo "tag $GITHUB_REF_NAME is not a stable version" >&2; exit 1 ;; esac
+            args=(--tag "$GITHUB_REF_NAME")
           fi
+          version="$(python3 deploy/docker/check_tools_release.py "${args[@]}")"
           echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Build jars
         run: mvn -B -ntp install -DskipTests
       - name: Stage the build context
         run: deploy/docker/stage.sh --with-s3
+      - name: Verify staged release versions
+        run: python3 deploy/docker/check_tools_release.py --staged deploy/docker/.stage
       - name: S3FileIO runtime classes are on the classpath
         run: |
           for m in opentsx-market opentsx-store-iceberg; do
             grep -q '^lib/m2/dev/failsafe/failsafe/' "deploy/docker/.stage/opt/opentsx/cp/$m.txt" \
               || { echo "$m: failsafe is missing; S3FileIO cannot read" >&2; exit 1; }
           done
+      - name: Record Maven cache after builds
+        if: always()
+        run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/after.json
       - uses: docker/setup-buildx-action@v4
       - name: Build the native candidate
         uses: docker/build-push-action@v7
@@ -90,6 +111,17 @@ jobs:
           python3 deploy/docker/check_tools_image.py --image "$image_id" \
             --platform linux/amd64 --version "$OPENTSX_VERSION" --revision "$GITHUB_SHA" \
             --output target/image-acceptance/candidate
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: candidate-image-acceptance
+          path: target/image-acceptance/candidate/
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: maven-downloads-opentsx-tools
+          path: target/maven-downloads/
+          if-no-files-found: error
       - uses: docker/login-action@v4
         if: github.ref_type == 'tag'
         with:
@@ -110,11 +142,6 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
           provenance: true
           sbom: true
-      - uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: candidate-image-acceptance
-          path: target/image-acceptance/candidate/
 
   published-acceptance:
     name: Published tools image ${{ matrix.arch }}

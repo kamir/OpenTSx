@@ -388,8 +388,10 @@ implements continuous whole-topic pass-through with Ed25519 plan verification,
 exact assignment/artifact/local-policy checks, explicit finite-cut caps and
 acknowledgement-before-checkpoint recovery. The
 [trusted-local replay and HTTP profiles](../docs/devguide/integration/rust-runner-local.md)
-retain their separate cleaning operators, state formats and limits. Public fleet
-`agent` and signed `conform` modes are not implemented.
+retain their separate cleaning operators, state formats and limits. The B1
+configuration does not select `agent` or `conform`. The separate
+[B3 site profile](#b3-agent-offline-operation-ssh-launch) implements both for
+signed bounded statistics; production fleet activation remains separate.
 
 CI defines native x86_64/ARM64 tests, the three required musl artifacts and
 supplementary ARMv7 QEMU tests. Artifact and test reports bind actual run
@@ -616,7 +618,7 @@ Rust runner on an onboard computer?
 - No tool compiles the Python operators to FPGA logic. A kernel is reimplemented from the operator specification
   and checked against the shared vectors (study, section "No compiler turns the Python TSA package into FPGA logic").
 - Every runtime computes in IEEE 754 double precision. Admission compares against the shared vectors at `1e-12`
-  relative, `5e-13` absolute or exact equality (`docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md:105-123`). A
+  relative, `5e-13` absolute or exact equality (`docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md:108-126`). A
   change to an operator's output for any input raises its version and the catalog version (`SPEC:56-57`).
 
 **Decision.**
@@ -635,7 +637,7 @@ Rust runner on an onboard computer?
    contract compares exactly, the FPGA path is a new operator version with its own tolerance class, approved by the
    owner as D-T2 approved the bound for federated moments.
 5. Raw ring frames get a port type `raw`, allowed only between a kernel and the runner and never on a topic
-   (port types: `SPEC:62-71`). The ring source is a new operator `ingest.raw-ring` with its own contract and
+   (port types: `SPEC:65-74`). The ring source is a new operator `ingest.raw-ring` with its own contract and
    vectors.
 6. Kernel packages and bitstreams are signed with Ed25519 (D-T5) and verified by the runner before loading. AMD
    UltraScale RSA bitstream authentication cannot be combined with partial reconfiguration
