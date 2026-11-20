@@ -292,8 +292,10 @@ cross-runtime binary64 boundary, zero-bucket and collapsed-tail cases without
 changing shared vectors. Retained run evidence establishes acceptance; the
 harness alone does not. General mixed continuous fleets and production rollout
 remain separate. The physical ARM64 B4.2 measurement is open (D-T14: ARM64 only);
-[the board tool](../tools/wayang_board_evaluation.py) prepares and validates
-supplied evidence rather than executing measurements.
+[the board tool](../tools/wayang_board_evaluation.py)
+prepares 81 unassigned conditions across pass-through, clean and statistics
+chains (D-T15) and validates supplied evidence rather than executing
+measurements.
 
 These integration classes use the existing `KAFSCALE_BOOTSTRAP` test switch and
 require `KAFSCALE_BROKER_BINARY`, `KAFSCALE_PROXY_BINARY` and `KAFSCALE_CLUSTER_BINARY`

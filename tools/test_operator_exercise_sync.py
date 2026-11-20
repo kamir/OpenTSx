@@ -1,6 +1,7 @@
 import copy
 import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -87,6 +88,34 @@ class OperatorExerciseSyncTest(unittest.TestCase):
         self.assertIn("source.py", lock["source"]["files"])
         self.assertTrue((self.student / "docs/operators/ui-scale.md").is_file())
 
+    def test_board_lesson_count_matches_the_executable_plan(self):
+        source = TOOL.parent.parent
+        output = self.root / "board-plan.json"
+        result = subprocess.run([sys.executable, str(source / "tools/wayang_board_evaluation.py"),
+                                 "plan", "--output", str(output)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        plan = json.loads(output.read_text(encoding="utf-8"))
+        metadata = json.loads((source / "docs/learning/library-operators.v1.json").read_text(encoding="utf-8"))
+        lesson = next(lesson for lesson in metadata["lessons"] if lesson["id"] == "library.stats-engine")
+        claims = re.findall(r"\b(\d+)\s+planned conditions\b", "\n".join(lesson["tasks"]))
+        self.assertTrue(claims)
+        for count in claims:
+            with self.subTest(claim=count):
+                self.assertEqual(len(plan["conditions"]), int(count))
+        guidance = (
+            ("docs/learning/library-operator-contracts.md", r"prepares (\d+) unassigned conditions"),
+            ("docs/user-manual/17-learn-operators.md", r"Distinguish its (\d+) planned conditions"),
+            ("opentsx-wayang/README.md", r"prepares (\d+) unassigned conditions"),
+            ("EVOLUTION/TASK-020-wayang-ts-operators.md", r"defines (\d+) unassigned conditions"),
+            ("CHANGELOG.md", r"(\d+)-condition\s+ARM64\s+(?:board plan|matrix)"),
+            ("CHANGELOG.md", r"plans (\d+) conditions and refuses"),
+        )
+        for path, pattern in guidance:
+            counts = re.findall(pattern, (source / path).read_text(encoding="utf-8"))
+            with self.subTest(path=path, pattern=pattern):
+                self.assertTrue(counts)
+                self.assertEqual([len(plan["conditions"])] * len(counts), [int(count) for count in counts])
+
     def test_library_starter_renders_copyable_code_and_separate_json_data(self):
         for language, code in (("python", "from math import prod\nresult = prod([2, 3])"),
                                ("java", "import java.util.List;\nvar values = List.of(2, 3);")):
@@ -99,6 +128,23 @@ class OperatorExerciseSyncTest(unittest.TestCase):
                 self.assertIn("```json\n" + json.dumps(data, indent=2) + "\n```", document)
                 self.assertNotIn('"code":', document)
                 self.run_tool(check=True)
+
+    def test_conversion_formulas_are_copyable_from_the_generated_lesson(self):
+        source = TOOL.parent.parent
+        result = subprocess.run([sys.executable, str(TOOL), "--opentsx-root", str(source),
+                                 "--student-root", str(self.student)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        metadata = json.loads((source / "docs/learning/ui-operators.v1.json").read_text(encoding="utf-8"))
+        lesson = next(lesson for lesson in metadata["lessons"] if lesson["id"] == "ui.convert.unit")
+        document = (self.student / "docs/operators/ui.convert.unit.md").read_text(encoding="utf-8")
+        inline_code = re.findall(r"`([^`\n]+)`", document)
+        parameters = lesson["starter"]["params"]
+        values = lesson["starter"]["bucket"]["series"][0]["y"]
+        self.assertTrue(values)
+        for value in values:
+            expression = f"{value}*{parameters['factor']}+{parameters['offset']}"
+            with self.subTest(expression=expression):
+                self.assertTrue(expression in inline_code, f"Missing literal conversion expression: {expression}")
 
     def test_library_starter_rejects_unsupported_language_or_missing_code(self):
         for starter in ({"language": "shell", "code": "echo example", "data": {}},

@@ -841,7 +841,7 @@
         "Distinguish prior executed vector/protocol/producer-placement qualification from fresh job-cut checks without giving the ordinary statistics runtime probe-topic rights.",
         "Trace the bounded mixed W3 method with Java s1/s2 and an actual qualified Rust CLI s3; compare exact counts/extrema, the unchanged moments criterion and six canonical-merge arrival orders.",
         "Inspect exact binary64 zero-threshold and gamma-boundary inputs, native quantile representatives and collapsed-tail exceptions without weakening shared sketch vectors or extending the alpha domain.",
-        "Distinguish the board tool's 54 planned conditions and synthetic validator regressions from physical ARM64 and ARMv7 measurement evidence."
+        "Distinguish the board tool's 81 planned conditions across pass-through, clean and statistics chains on a paced feed of one sample per series and second (D-T15) from physical ARM64 measurement evidence and synthetic validator regressions."
       ],
       "starter": {
         "language": "java",
@@ -863,8 +863,8 @@
         "The bounded signed JVM statistics profile admits one SeriesStats sink; local catalog compilation has a broader graph API.",
         "The integration topology contains three site-agent instances in one JVM and four Go brokers; transient build and conformance-check subprocesses are excluded from that execution count.",
         "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights.",
-        "Signed B3 admits only bounded decode-to-statistics with alpha 0.01 and tumbling windows. GLOBAL and the remaining B2 operators require their separate profiles; this qualification does not close mixed continuous fleets or physical ARMv7 acceptance.",
-        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. Both ARM64 and ARMv7 B4.2 measurements and physical ARMv7 B1.2 acceptance remain open.",
+        "Signed B3 admits only bounded decode-to-statistics with alpha 0.01 and tumbling windows. GLOBAL and the remaining B2 operators require their separate profiles; this qualification does not close mixed continuous fleets or physical ARM64 B4.2 acceptance.",
+        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. The physical ARM64 B4.2 measurement remains open. D-T14 requires native x86_64 and ARM64 CI for B1.2; ARMv7 is not hardware-qualified.",
         "Six arrival orders use the same canonical site fold. Bit-identical output for those orders does not prove floating-point associativity or a numerical bound for arbitrary mixed data."
       ],
       "references": {
@@ -941,7 +941,8 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#L82",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/MixedSketchQualificationTest.java",
-          "tools/test_wayang_board_evaluation.py"
+          "tools/test_wayang_board_evaluation.py",
+          "tools/test_operator_exercise_sync.py#test_board_lesson_count_matches_the_executable_plan"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/stats-window.v1.json"
@@ -1159,7 +1160,7 @@
         "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
         "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration.",
         "B3 signs a separate bounded decode-to-statistics profile. Local B2 availability does not admit the remaining operators, and the ordinary runtime has no admin or arbitrary probe-topic rights.",
-        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. Both ARM64 and ARMv7 B4.2 measurements and physical ARMv7 B1.2 acceptance remain open."
+        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. The physical ARM64 B4.2 measurement remains open. D-T14 requires native x86_64 and ARM64 CI for B1.2; ARMv7 is not hardware-qualified."
       ],
       "references": {
         "manual": [
@@ -1295,7 +1296,7 @@
         "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
         "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration.",
         "The B3 forwarder copies only validated completed aggregate records from its retained immutable site outbox. A lost target acknowledgement can repeat a key/revision; it does not grant permission to forward raw Episodes or arbitrary topics.",
-        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. Both ARM64 and ARMv7 B4.2 measurements and physical ARMv7 B1.2 acceptance remain open."
+        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. The physical ARM64 B4.2 measurement remains open. D-T14 requires native x86_64 and ARM64 CI for B1.2; ARMv7 is not hardware-qualified."
       ],
       "references": {
         "manual": [
@@ -1424,7 +1425,7 @@
         "Rust file locks release explicitly in the acquiring process; inherited descriptors cannot postpone restart or authorize a copied owner to unlock its parent. These lock lifetimes do not change the Java starter or make its checkpoint state portable.",
         "A retained B3 acknowledgement can recover after conformance expires, while fresh activation still needs current qualification and job-bound conformance. Its private state ABI is separate from the Java starter checkpoint and local B2 catalog state.",
         "A stopped status alone does not retire a delivery; every previous site also needs a durable accepted acknowledgement before the next job generation.",
-        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. Both ARM64 and ARMv7 B4.2 measurements and physical ARMv7 B1.2 acceptance remain open."
+        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. The physical ARM64 B4.2 measurement remains open. D-T14 requires native x86_64 and ARM64 CI for B1.2; ARMv7 is not hardware-qualified."
       ],
       "references": {
         "manual": [
@@ -1571,7 +1572,7 @@
         "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration.",
         "Passing the offline assignment validator does not qualify signed B3 execution. The driver cannot supply broker addresses, role keys, policy or state paths; signed B3 admits only bounded decode-to-statistics.",
         "An accepted delivery acknowledgement and a stopped status form the replacement boundary; losing a response must not make the previous generation unreachable.",
-        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. Both ARM64 and ARMv7 B4.2 measurements and physical ARMv7 B1.2 acceptance remain open."
+        "The bounded mixed W3 harness does not qualify a continuous fleet or physical hardware. The physical ARM64 B4.2 measurement remains open. D-T14 requires native x86_64 and ARM64 CI for B1.2; ARMv7 is not hardware-qualified."
       ],
       "references": {
         "manual": [

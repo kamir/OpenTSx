@@ -510,7 +510,7 @@ series inventory. ARMv7 runs under QEMU only, as a supplementary check (D-T14).
   [Jetson runbook](../docs/devguide/integration/wayang-board-jetson.md) prepares a
   Jetson Nano 4 GB for the 81 conditions (D-T15).
   The measurement remains open. The preparation tool
-  defines 27 unassigned conditions and validates supplied evidence integrity;
+  defines 81 unassigned conditions and validates supplied evidence integrity;
   it does not execute measurements or establish hardware acceptance.
 
 | # | Criterion | Proof | Data | Pass |
@@ -562,7 +562,7 @@ Status on 2026-11-20, Rust 1.99.1 and JDK 21:
   conversion cases, all 16 checkpointed input partitions and 49 refused
   code/limit-field placements. The 14 `wasm_limits` tests also pass.
 
-All 346 runner tests and three shared-contract tests pass without failures,
+All 351 runner tests and three shared-contract tests pass without failures,
 ignored or filtered cases. The artifact qualification parser requires every
 one of the 19 B5 test names in native and supplementary ARMv7 QEMU logs.
 The physical ARM64 B4.2 measurement remains open; D-T14 requires no ARMv7
