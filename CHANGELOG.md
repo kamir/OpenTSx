@@ -48,6 +48,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Planned task [`EVOLUTION/TASK-021-orbit-testbed.md`](EVOLUTION/TASK-021-orbit-testbed.md): a homelab testbed with a
+  Jetson Nano as onboard computer and a Synology NAS as ground station, a satellite simulator writing an onboard
+  ring buffer, an emulated space-ground link driven by computed passes, and phases P0 to P6 up to the D-T13 CPU
+  fallback path. No implementation yet.
 - Add a deterministic local windpark demo with healthy, fault and curtailed
   turbines. Persist real Iceberg episodes through a SQLite catalog and verify
   replay against full payload hashes and recalculated underperformance results.

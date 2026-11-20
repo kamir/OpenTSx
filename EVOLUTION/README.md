@@ -16,6 +16,7 @@ Where:
 
 | Task ID | Title | Status | Created |
 |---------|-------|--------|---------|
+| TASK-021 | [Orbit testbed](TASK-021-orbit-testbed.md): Jetson Nano as onboard computer, Synology NAS as ground station, satellite simulator and ring buffer, emulated space-ground link with passes, phases P0 to P6 | planned | 2026-11-20 |
 | TASK-020 | [Time-series operators on Apache Wayang](TASK-020-wayang-ts-operators.md): Track A Java operators on Wayang, Track B Rust runner for low-capacity hardware, federation with mergeable statistics; specification S1 to S7 | planned | 2026-11-16 |
 | TASK-019 | [Planned major upgrades](TASK-019-major-upgrades.md): Avro 1.12.2+, Iceberg 1.11/1.12, JFreeChart 1.5, Confluent 8, JUnit 6, frontend, Flink 2.x | planned | 2026-10-26 |
 | TASK-018 | [Analytics, retrieval, storage and data-source extensions](TASK-018-analytics-storage-extensions.md): analytics gaps (P6), Matrix Profile, iSAX, D6, records/s on real S3, vendor exports | planned | 2026-10-26 |
