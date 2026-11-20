@@ -121,7 +121,9 @@ Read the [analysis guide](../docs/devguide/workbench-analysis.md) for the result
 - Deploy and Stop (tab "Smart Topic"): a list says what a deployment still needs, "Create a vector of the loaded
   series" builds the one thing the processor runs, and Deploy hands the flow to the vector processor, which keeps the vector topic up to
   date, and shows what it reports; needs an administrator account, a retrieval server started with `--kafscale` and
-  `--dag-runs true`, and a running vector processor
+  `--dag-runs true`, and a running vector processor. A separate list shows the Track A and B jobs of `GET /v1/dags`
+  with job id, track, site, state, input record count and report age. It has no Stop: those jobs do not read the
+  control topic
 - Time series operations as buttons, recorded as a processing flow graph
 - Export: `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor, Java code
 - Code in `src/workbench/`; limits in `../EVOLUTION/TASK-013-web-workbench.md`

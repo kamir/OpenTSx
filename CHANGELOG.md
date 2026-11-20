@@ -73,6 +73,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- The workbench Deployments panel lists the `jobs` of `GET /v1/dags` apart from the deployments: job id, track, site
+  when present, state, input record count and report age. A job in any state but `stopped` or `failed` without a
+  report for 120 s is flagged. Jobs have no Stop, because Track A and B do not read the control topic.
+
 - `lascaris-space/`: home of the OpenTSx components for in-orbit computation on LASCARIS for Space, with the
   components it holds, the modules that stay responsible for the runner, Wayang and the Workbench, and the contracts
   it keeps. It contains no code yet. The README section "Take time series into orbit with LASCARIS for Space" states
