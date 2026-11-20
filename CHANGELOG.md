@@ -24,6 +24,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Suppress native cookie-parser logging that can include complete cookie values.
   Exercise the bundled handler with a malformed-cookie fixture without network
   requests or sleeps.
+- Scope Maven dependency-cache keys by workload and runtime inputs so a smaller
+  job cannot freeze another job's dependency subset under an immutable key.
 - Execute Rust CLI prefix fixtures through the installed shell without temporary files. Regressions rerun the exact
   fixture with an unusable temporary-directory path and retain runner-prefix and spaced-argument checks.
 - Reuse separate verified caches for locked Python dependencies, the application

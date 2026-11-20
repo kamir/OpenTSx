@@ -68,7 +68,24 @@ def step_with_command(block, command):
     return matches[0]
 
 
+def maven_commands(block):
+    return [shlex.split(command) for command in re.findall(
+        r"\bmvn(?=[ \t]|$)[^\n]*", block.replace("\\\n", " "), re.MULTILINE)]
+
+
 class CiWorkflowSelectionTest(unittest.TestCase):
+    def test_maven_command_detection_excludes_paths_and_retains_empty_invocations(self):
+        source = ("          cache-dependency-path: |\n"
+                  "            **/.mvn/wrapper/maven-wrapper.properties\n"
+                  "            **/.mvn/extensions.xml\n"
+                  "            .mvn/maven.config\n"
+                  "        run: mvn -B -pl opentsx-wayang -am install\n"
+                  "          mvn\n")
+        commands = maven_commands(source)
+        self.assertEqual([["mvn", "-B", "-pl", "opentsx-wayang", "-am", "install"], ["mvn"]], commands)
+        with self.assertRaises(AssertionError):
+            self.assert_maven_roots("rust-b1-acceptance", commands)
+
     def assert_maven_roots(self, job, commands):
         from ci_job_selection import MAVEN_ROOTS
 
@@ -174,8 +191,7 @@ class CiWorkflowSelectionTest(unittest.TestCase):
         jobs = job_blocks(WORKFLOW.read_text(encoding="utf-8"))
         for job in ("rust-b1-acceptance", "kafscale-conformance", "cross-language"):
             with self.subTest(job=job):
-                commands = re.findall(r"\bmvn\b[^\n]*", jobs[job].replace("\\\n", " "))
-                self.assert_maven_roots(job, [shlex.split(command) for command in commands])
+                self.assert_maven_roots(job, maven_commands(jobs[job]))
 
     def test_kafscale_b3_qualifies_the_final_artifact_and_requires_the_full_offline_case(self):
         job = job_blocks(WORKFLOW.read_text(encoding="utf-8"))["kafscale-conformance"]

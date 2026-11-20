@@ -105,6 +105,13 @@ can include complete cookie values. An in-memory malformed-cookie regression
 checks this exclusion against the actual bundled handler. Cookie parsing and
 HTTP failure handling remain unchanged.
 
+Each Maven job scopes its dependency-cache key with its workload identity in
+`cache-context`. The key also hashes POMs, Maven wrapper and extension inputs,
+`.mvn/maven.config` and the pinned-runtime checker. Matrix variants of the same
+job share that workload's cache. A smaller workload cannot reserve the same
+immutable key and prevent a larger workload from retaining its dependencies.
+The context is created before Java setup; an empty identity fails the step.
+
 The selector verifies the checked-out pull request merge commit and both event parents. A depth-two checkout
 supplies these commits. It compares the base parent with the tested merge tree using NUL-delimited paths and
 disabled rename detection, so renames select both source and destination inputs and deletions remain visible.

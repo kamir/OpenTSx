@@ -176,6 +176,20 @@ public final class MavenHttpCaptureTest {
                 require(expected.getStatusCode() == 404 && attempts[0] == 1,
                         "A missing artifact was retried or changed classification");
             }
+            Response failedRecord = new Response(404);
+            attempts[0] = 0;
+            field(captured, "output").set(captured, link);
+            field(captured, "delegate").set(captured, (ClientExecChain) (a, b, c, d) -> {
+                attempts[0]++;
+                return failedRecord;
+            });
+            try {
+                transporter.get(new GetTask(URI.create("org/apache/wayang/wayang-core/1.1.1/wayang-core-1.1.1.pom")));
+                throw new AssertionError("A capture write failure was ignored");
+            } catch (IOException expected) {
+                require(!(expected instanceof HttpResponseException) && attempts[0] == 1 && failedRecord.closed,
+                        "Capture write failure retried the request, hid failure or leaked the response");
+            }
         }
         System.out.println("Maven HTTP capture passed " + assertions + " assertions without network or sleeps");
     }

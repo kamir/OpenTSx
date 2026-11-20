@@ -219,11 +219,23 @@ jobs:
       GOTOOLCHAIN: local
     steps:
       - uses: actions/checkout@v7
+      - name: Scope Maven cache to its workload
+        run: |
+          test -n "$GITHUB_JOB"
+          mkdir -p target/maven-downloads
+          printf '%s\n' "$GITHUB_JOB" > target/maven-downloads/cache-context
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
+          cache-dependency-path: |
+            **/pom.xml
+            **/.mvn/wrapper/maven-wrapper.properties
+            **/.mvn/extensions.xml
+            .mvn/maven.config
+            tools/check_maven_downloads.py
+            target/maven-downloads/cache-context
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
@@ -339,11 +351,23 @@ jobs:
       KAFSCALE_BROKER_PORT: "39093"
     steps:
       - uses: actions/checkout@v7
+      - name: Scope Maven cache to its workload
+        run: |
+          test -n "$GITHUB_JOB"
+          mkdir -p target/maven-downloads
+          printf '%s\n' "$GITHUB_JOB" > target/maven-downloads/cache-context
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
+          cache-dependency-path: |
+            **/pom.xml
+            **/.mvn/wrapper/maven-wrapper.properties
+            **/.mvn/extensions.xml
+            .mvn/maven.config
+            tools/check_maven_downloads.py
+            target/maven-downloads/cache-context
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
@@ -430,11 +454,23 @@ jobs:
       WAYANG_PROFILE: ${{ matrix.profile }}
     steps:
       - uses: actions/checkout@v7
+      - name: Scope Maven cache to its workload
+        run: |
+          test -n "$GITHUB_JOB"
+          mkdir -p target/maven-downloads
+          printf '%s\n' "$GITHUB_JOB" > target/maven-downloads/cache-context
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
+          cache-dependency-path: |
+            **/pom.xml
+            **/.mvn/wrapper/maven-wrapper.properties
+            **/.mvn/extensions.xml
+            .mvn/maven.config
+            tools/check_maven_downloads.py
+            target/maven-downloads/cache-context
       - uses: actions/setup-node@v7
         with:
           node-version: "24.22.2"
@@ -556,11 +592,23 @@ jobs:
         java: ["17", "21"]
     steps:
       - uses: actions/checkout@v7
+      - name: Scope Maven cache to its workload
+        run: |
+          test -n "$GITHUB_JOB"
+          mkdir -p target/maven-downloads
+          printf '%s\n' "$GITHUB_JOB" > target/maven-downloads/cache-context
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
           cache: maven
+          cache-dependency-path: |
+            **/pom.xml
+            **/.mvn/wrapper/maven-wrapper.properties
+            **/.mvn/extensions.xml
+            .mvn/maven.config
+            tools/check_maven_downloads.py
+            target/maven-downloads/cache-context
       - name: Install Maven 3.9.8
         run: |
           curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 \
@@ -734,11 +782,23 @@ jobs:
       KAFSCALE_REF: v1.6.0
     steps:
       - uses: actions/checkout@v7
+      - name: Scope Maven cache to its workload
+        run: |
+          test -n "$GITHUB_JOB"
+          mkdir -p target/maven-downloads
+          printf '%s\n' "$GITHUB_JOB" > target/maven-downloads/cache-context
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
+          cache-dependency-path: |
+            **/pom.xml
+            **/.mvn/wrapper/maven-wrapper.properties
+            **/.mvn/extensions.xml
+            .mvn/maven.config
+            tools/check_maven_downloads.py
+            target/maven-downloads/cache-context
       - name: Install Maven 3.9.8
         run: |
           curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 \
@@ -1019,11 +1079,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - name: Scope Maven cache to its workload
+        run: |
+          test -n "$GITHUB_JOB"
+          mkdir -p target/maven-downloads
+          printf '%s\n' "$GITHUB_JOB" > target/maven-downloads/cache-context
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
+          cache-dependency-path: |
+            **/pom.xml
+            **/.mvn/wrapper/maven-wrapper.properties
+            **/.mvn/extensions.xml
+            .mvn/maven.config
+            tools/check_maven_downloads.py
+            target/maven-downloads/cache-context
       - name: Install Maven 3.9.8
         run: |
           curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 \
