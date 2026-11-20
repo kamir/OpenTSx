@@ -18,9 +18,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   failure diagnostics offline and distinguish fresh HTTP failures from cached
   failures in the pinned Resolver tests. Historical statusless download
   failures remain undiagnosed.
-- Record actual Wayang HTTP response statuses and sanitized metadata in CI
-  before retry handling. Verify capture without requests or sleeps and preserve
-  permanent-error handling and response content.
+- Record actual Wayang and BOM HTTP response statuses and sanitized metadata
+  in CI before retry handling. Verify capture without requests or sleeps and
+  preserve permanent-error handling and response content.
 - Suppress native cookie-parser logging that can include complete cookie values.
   Exercise the bundled handler with a malformed-cookie fixture without network
   requests or sleeps.

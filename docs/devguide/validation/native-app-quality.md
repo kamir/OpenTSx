@@ -33,7 +33,8 @@ retains sanitized cache reports before and after workloads in
 [CI diagnostics](../../../CONTRIBUTING.md#check-continuous-integration)
 for report fields and the limits of statusless missing-artifact errors.
 Each Maven job also verifies and enables bounded response capture for the
-three Wayang libraries. The artifact retains `http-responses.jsonl` with
+three Wayang libraries and two BOM imports. It retains `http-responses.jsonl`
+with
 actual statuses before retries, public artifact paths and sanitized response
 metadata. Request headers, cookies and bodies are excluded. The capture check
 executes synthetic responses and a local-file Maven fixture without network

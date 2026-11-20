@@ -39,8 +39,10 @@ import org.eclipse.aether.transport.http.HttpTransporterFactory;
 public final class DiagnosticHttpTransporterFactory implements TransporterFactory {
     private static final Set<String> HOSTS = Set.of("repo.maven.apache.org", "packages.confluent.io");
     private static final Pattern ARTIFACT = Pattern.compile(
-            "/(?:(?:maven2|maven)/)?org/apache/wayang/(wayang-(?:core|basic|java))/"
-            + "([0-9]+\\.[0-9]+\\.[0-9]+)/\\1-\\2\\.(?:pom|jar)");
+            "/(?:(?:maven2|maven)/)?(?:org/apache/wayang/(wayang-(?:core|basic|java))/"
+            + "([0-9]+\\.[0-9]+\\.[0-9]+)/\\1-\\2\\.(?:pom|jar)"
+            + "|org/junit/junit-bom/5\\.14\\.4/junit-bom-5\\.14\\.4\\.pom"
+            + "|com/fasterxml/jackson/jackson-bom/2\\.23\\.0/jackson-bom-2\\.23\\.0\\.pom)");
     private static final List<String> HEADERS = List.of("age", "cache-control", "cf-cache-status", "cf-ray",
             "content-length", "content-type", "date", "etag", "retry-after", "server", "via",
             "x-cache", "x-cache-hits", "x-served-by");

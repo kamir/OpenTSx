@@ -84,7 +84,8 @@ historical download failures or prevent new repository failures.
 
 CI also builds and checks a local Maven extension against the pinned runtime.
 `http-responses.jsonl` records actual HTTP response statuses for the three
-Wayang libraries from Central and Confluent, before Resolver retry handling.
+Wayang libraries and two BOM imports from Central and Confluent, before
+Resolver retry handling.
 It includes the public host and artifact path, fixed classifications for
 cache, server and content type, and SHA-256 fingerprints of selected response
 headers. Request headers, cookies, response bodies, URL credentials and query
@@ -94,7 +95,9 @@ or record capture fails the job. The offline checks isolate their simulated
 responses from the CI report; an empty report means no matching request was
 captured. The generated extension is enabled only in CI through `MAVEN_OPTS`.
 Capture is limited to HTTPS GET and HEAD requests for `wayang-core`,
-`wayang-basic` and `wayang-java` POMs and JARs. Numeric age, content length and
+`wayang-basic` and `wayang-java` POMs and JARs, plus the `junit-bom:5.14.4` and
+`jackson-bom:2.23.0` POMs. Other BOM versions are excluded.
+Numeric age, content length and
 Retry-After values are included only for a single header containing at most
 nine decimal digits; absent or invalid values are `null`. Header fingerprints
 cover age, cache control, CDN cache status and request identifier, content

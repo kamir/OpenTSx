@@ -123,10 +123,20 @@ public final class MavenHttpCaptureTest {
                 "Numeric response metadata was not validated");
         require(!record.contains("private-") && !record.contains("Authorization") && !record.contains("Set-Cookie"),
                 "Capture exposed request, response or cookie values");
+        Path models = directory.resolve("model-responses.jsonl");
+        for (String model : new String[] {"/maven2/org/junit/junit-bom/5.14.4/junit-bom-5.14.4.pom",
+                "/maven2/com/fasterxml/jackson/jackson-bom/2.23.0/jackson-bom-2.23.0.pom"}) {
+            DiagnosticHttpTransporterFactory.record(models, route,
+                    HttpRequestWrapper.wrap(new HttpGet("https://repo.maven.apache.org" + model)), response);
+            require(Files.exists(models) && Files.readString(models).contains(model),
+                    "A model import HTTP response was lost");
+        }
         for (String uri : new String[] {"https://repo.maven.apache.org" + PATH + "?private=value",
                 "https://repo.maven.apache.org" + PATH + "#private", "https://private@repo.maven.apache.org" + PATH,
                 "https://repo.maven.apache.org/private/path", "http://repo.maven.apache.org" + PATH,
-                "https://repo.maven.apache.org/private-prefix" + PATH}) {
+                "https://repo.maven.apache.org/private-prefix" + PATH,
+                "https://repo.maven.apache.org/maven2/org/junit/junit-bom/5.14.3/junit-bom-5.14.3.pom",
+                "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/jackson-bom/2.22.0/jackson-bom-2.22.0.pom"}) {
             DiagnosticHttpTransporterFactory.record(output, route,
                     HttpRequestWrapper.wrap(new HttpGet(URI.create(uri))), response);
             require(record.equals(Files.readString(output)), "Capture accepted an unsafe request URI");
