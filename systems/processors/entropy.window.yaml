@@ -27,7 +27,7 @@ runtimes:
       The 2.x model in opentsx-core has TimeSeriesObject#calcEntropyForWindow(length) behind the Swing button ENTROPY.
       It uses the same windows and step, but divides each window by its maximum and maps the values to 100 levels
       instead of bins over the range of the series. A length below 4 throws IllegalArgumentException. The button
-      refuses a length that is not a whole number of at least 4 with a message in a dialog.
+      refuses a length that is not a whole number from 4 to 2147483647 with a message in a dialog.
       TimeSeriesObjectStatisticsTest checks the length and the step, not the entropy values.
   python: { status: none }
   processor: { status: none }

@@ -26,8 +26,8 @@ runtimes:
     note: >-
       The 2.x model in opentsx-core has TimeSeriesObject#distributionOfYValues(min, max, bins) behind the Swing button
       Histogram per series; no test checks its counts. It returns counts, not shares, takes min and max as integers
-      and leaves out empty bins. The button refuses a min or max that is not a whole number and bins that are not a
-      whole number above 0 with a message in a dialog.
+      and leaves out empty bins. The button refuses a min or max that is not a whole number from -2147483648 to
+      2147483647 and bins that are not a whole number from 1 to 2147483647 with a message in a dialog.
   python: { status: none }
   processor: { status: none }
   go: { status: none }

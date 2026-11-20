@@ -2100,10 +2100,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   and with them `TSOWriter.persistBucket_CSV` and the opentsx-lg analysis consumers with `OPENTSX_SHOW_GUI=true`; the
   measurement table was not written.
 - `opentsx-core`: `Histogram per series`, `Histogram cross-cut` and `ENTROPY` of the chart panel check their numbers
-  before they compute. A cancelled dialog does nothing. A `min` or `max` that is not a whole number shows `<field>:
-  "<value>" is not allowed; expected a whole number`. A `bins` or `window length` that is not a whole number above 0
-  shows `<field>: "<value>" is not allowed; expected a whole number above 0`. An `ENTROPY` length that is not a whole
-  number of at least 4 shows `length: "<value>" is not allowed; expected a whole number of at least 4`. Each message
+  before they compute. A cancelled dialog does nothing. A `min` or `max` that is not a whole number from -2147483648
+  to 2147483647 shows `<field>: "<value>" is not allowed; expected a whole number from -2147483648 to 2147483647`. A
+  `bins` or `window length` that is not a whole number from 1 to 2147483647 shows `<field>: "<value>" is not allowed;
+  expected a whole number from 1 to 2147483647`. An `ENTROPY` length that is not a whole number from 4 to 2147483647
+  shows `length: "<value>" is not allowed; expected a whole number from 4 to 2147483647`. Each message
   shows in a dialog, the operation stops and no chart opens. Before, they threw `NumberFormatException` or
   `IllegalArgumentException` on the event dispatch thread, and a window length of 0 made `Histogram cross-cut` loop
   until the heap ran out.
@@ -2114,9 +2115,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `opentsx-core`: `MacroTrackerFrame`, `SigmaFilter.aggregate` and `HurstSurface.plot` print nothing. Added sources,
   selected nodes, opened charts and the progress of `Sigma Band` and `MF-DFA` are DEBUG lines, and `MacroTrackerFrame`
   no longer uses java.util.logging. `Export code (Java)` and `Export code (Scala)` copy the generated code to the
-  clipboard without printing it, and `Export code (Scala)` copies the Scala code instead of the Java code. A PFD step
-  that cannot be recorded throws `IllegalStateException` with `<operation>: cannot record the PFD step (<cause>)`
-  instead of printing to standard error and going on.
+  clipboard without printing it, and `Export code (Scala)` copies the Scala code instead of the Java code. An
+  operation that ends in `(`, such as `Shuffle of x(` for a series labelled `x(`, records its node and a PFD step with
+  an empty `arg` instead of printing to standard error and recording no step, and a PFD recorder that cannot start
+  makes the call throw before the node is added.
 - `opentsx-core`: `ReturnIntervallStatistik2` and `TSPropertyTester` fill the counts that `calcMessreihen` reads for a
   result that is not a container. `mrHaeufigkeit` and `mrVerteilung` hold the count and the share of the intervals in
   bins of width 1/`scale` instead of zeros. The shares of the scaled bins added to `mrVerteilungSkaliert` are divided
@@ -2175,8 +2177,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   and the button threw `IllegalArgumentException` on the event dispatch thread.
 - `opentsx-core`: `show Chart` of `MacroTrackerFrame` does nothing without a selection, shows `show Chart: no chart
   for <node>; select an operation node` for a node that is not an operation node and `show Chart: no chart for <node>;
-  select a Profile, ENTROPY or Shuffle node` for an operation node without a chart under its target; it threw
-  `NullPointerException`. `MacroTrackerFrame.addSource` without an open tracker writes only its DEBUG line instead of
+  select an operation node other than Sigma Band or MF-DFA` for a `Sigma Band` or `MF-DFA` node, which keeps no chart,
+  and opens the chart of every other operation node the chart panel recorded; it threw `NullPointerException`.
+  `MacroTrackerFrame.addSource` without an open tracker writes only its DEBUG line instead of
   throwing `NullPointerException`.
 - `opentsx-core`: `Sigma Band` (`SigmaFilter.open`) charts the mean of the selected series and the mean plus and minus
   one standard deviation; it charted the static rows that only `SigmaFilter.main` fills, so the chart was empty.
@@ -2214,6 +2217,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   cluster with kubectl get namespace opentsx`. A namespace that does not exist still gives `namespace opentsx: not
   found; <what to do>`. For `70-backup.sh` that is `check OPENTSX_NS in deploy/k3s/.env and the kubectl context, or
   deploy it first with 30-deploy.sh`.
+- `opentsx-core`: `show Chart` of `MacroTrackerFrame` opens the chart of every operation node the chart panel
+  recorded; `TEST Normal Distribution` opens its t-value chart. Only `Profile`, `ENTROPY` and `Shuffle` nodes found
+  their chart before. A `Sigma Band` or `MF-DFA` node, which keeps no chart, shows `show Chart: no chart for <node>;
+  select an operation node other than Sigma Band or MF-DFA`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

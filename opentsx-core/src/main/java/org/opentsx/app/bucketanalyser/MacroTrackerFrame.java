@@ -90,33 +90,34 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
                 t.type);
         if (frame != null) {
 
+            java.util.Map<String, Object> params = new java.util.HashMap<>();
+            String opName = t.operation;
+            String[] parts = opName.split("\\(", 2);
+            if (parts.length == 2) {
+                opName = parts[0];
+                params.put("arg", parts[1].replace(")", ""));
+            }
+            for (String key : t.parameters.stringPropertyNames()) {
+                params.put(key, t.parameters.getProperty(key));
+            }
+            PFDRecorder recorder = PFDRecorder.getInstance();
+
             frame.track.addTransformation(t);
 
             frame.refresh();
 
-            // TASK-005: Record PFD Step
-            try {
-                java.util.Map<String, Object> params = new java.util.HashMap<>();
-                String opName = t.operation;
+            recorder.addStep(opName, params);
 
-                // Simple parsing for "OpName(Param)"
-                if (opName.contains("(")) {
-                    String[] parts = opName.split("\\(");
-                    opName = parts[0];
-                    String paramStr = parts[1].replace(")", "");
-                    params.put("arg", paramStr);
-                }
+        }
+    }
 
-                // Merge Properties from TSBucketTransformation if any
-                for (String key : t.parameters.stringPropertyNames()) {
-                    params.put(key, t.parameters.getProperty(key));
-                }
-
-                org.opentsx.app.bucketanalyser.PFDRecorder.getInstance().addStep(opName, params);
-            } catch (RuntimeException e) {
-                throw new IllegalStateException(t.operation + ": cannot record the PFD step (" + e + ")", e);
-            }
-
+    /**
+     * Records {@code t} and lets {@code show Chart} of its node open the chart titled {@code chart}.
+     */
+    public static void addTransformation(TSBucketTransformation t, String chart) {
+        addTransformation(t);
+        if (frame != null) {
+            frame.track._registerChartToNode(chart, t.target);
         }
     }
 
@@ -332,7 +333,8 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
             return;
         }
         if (!track.showDialog(((Transform) selected).getDialogKey())) {
-            showError("show Chart: no chart for " + selected + "; select a Profile, ENTROPY or Shuffle node");
+            showError("show Chart: no chart for " + selected + "; select an operation node other than Sigma Band or "
+                    + "MF-DFA");
         }
     }// GEN-LAST:event_jButton3ActionPerformed
 
@@ -578,6 +580,13 @@ class Track {
 
         dialogs.put(s, dialog);
 
+    }
+
+    void _registerChartToNode(String chart, String node) {
+        JDialog dialog = dialogs.get(chart);
+        if (dialog != null) {
+            dialogs.put(node, dialog);
+        }
     }
 
     boolean showDialog(String dialogKey) {

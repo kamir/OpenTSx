@@ -138,4 +138,4 @@ Almost all weaknesses found in 2026-10 follow from these levels being mixed:
 
 1. Flink `ObservationSchema` against the Confluent wire format.
 2. `TSData.convertMessreihe` drops timestamps, so `TSBucket` files do not keep the time.
-3. Hard-coded paths (figure folders below the home directory in `ESMain.java:28` and `SigmaFilter.java:59`).
+3. Hard-coded paths (figure folders below the home directory in the `initBaseFolder` calls of `ESMain.main` and `SigmaFilter.main`).

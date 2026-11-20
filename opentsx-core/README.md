@@ -79,14 +79,17 @@ The modern tracker disables Java and Scala export. Both trackers use `Show PFD` 
 these buttons do not write a file. The modern tracker starts with an empty transformation tree.
 `Export code (Java)` and `Export code (Scala)` of the classic tracker (`MacroTrackerFrame`) copy the generated Java
 or Scala code to the clipboard and print nothing. Added sources, selected nodes and opened charts of the classic tracker
-are DEBUG lines of `MacroTrackerFrame` and `Track`. A PFD step that cannot be recorded throws
-`IllegalStateException` with `<operation>: cannot record the PFD step (<cause>)` to the caller of
-`MacroTrackerFrame.addTransformation`. Without an open tracker, `MacroTrackerFrame.addSource` and
-`MacroTrackerFrame.addTransformation` write only their DEBUG line. `show Chart` of the classic tracker shows the chart
-of the selected operation node. A chart belongs to a node when its title equals the target of the node; of the panel
-operations only `Profile`, `ENTROPY` and `Shuffle` title their chart that way. For another operation node `show Chart`
-shows `show Chart: no chart for <node>; select a Profile, ENTROPY or Shuffle node`, for any other node
-`show Chart: no chart for <node>; select an operation node`, both in a dialog; without a selection it does nothing.
+are DEBUG lines of `MacroTrackerFrame` and `Track`. `MacroTrackerFrame.addTransformation` records an operation
+`<name>(<argument>)` as the PFD step `<name>` with the parameter `arg`, the text after the first `(` without `)`; an
+operation that ends in `(` gets an empty `arg`. When the PFD recorder cannot start, for example because the
+configuration file does not exist, `addTransformation` throws before it adds the node. Without an open tracker,
+`MacroTrackerFrame.addSource` and `MacroTrackerFrame.addTransformation` write only their DEBUG line. `show Chart` of the classic tracker shows the chart
+of the selected operation node. The chart panel keeps the chart of each operation it records for the node of that
+operation; `TEST Normal Distribution` keeps its t-value chart. `MacroRecorder` keeps the charts of its `Components`
+and `Shuffled` nodes. `Sigma Band` and `MF-DFA` keep no chart: for their nodes `show Chart` shows
+`show Chart: no chart for <node>; select an operation node other than Sigma Band or MF-DFA`, for a node that is not
+an operation node, such as a source node, `show Chart: no chart for <node>; select an operation node`, both in a
+dialog; without a selection it does nothing.
 Swing control tests use a display; the Java CI jobs run them under Xvfb on Ubuntu 24.04.
 Opening a chart panel prints nothing and creates no folder; the chart folder and the series colors are DEBUG lines of
 `TSStoreDescriptor` and `MultiChart`. `save PN` writes below `opentsx/plots/` in `user.home` and creates the folders
@@ -121,6 +124,7 @@ The operations in this table stop when they fail and show the message in a dialo
 | `Auto-Correlation` | `auto-correlation of <series>: cannot correlate lag <lag> (<cause>)`; no chart opens |
 | `NORM std=1, avg=0` | `standardized series of <series>: cannot standardize the values (<cause>)` or `standardized series of <label>: cannot open the chart (<cause>)`; no chart opens |
 | `MF-DFA` | `MFDFA of <label>: cannot compute the analysis (<cause>)` |
+| `TEST Normal Distribution` | `SW test of <series>: cannot test the values <from> to <to> (<cause>)`; no chart opens |
 | `Shuffle` | `shuffle of <label>: cannot shuffle the series (<cause>)` |
 
 Cancelling the `Shuffle` dialog (`Number of shuffles:`), the `ENTROPY` dialog (`Length:`) or the
@@ -131,9 +135,9 @@ chart opens:
 
 | Field | Message |
 |-------|---------|
-| `min`, `max` | `<field>: "<value>" is not allowed; expected a whole number` |
-| `bins`, `window length` (`Histogram cross-cut`) | `<field>: "<value>" is not allowed; expected a whole number above 0` |
-| `length` (`ENTROPY`) | `length: "<value>" is not allowed; expected a whole number of at least 4` |
+| `min`, `max` | `<field>: "<value>" is not allowed; expected a whole number from -2147483648 to 2147483647` |
+| `bins`, `window length` (`Histogram cross-cut`) | `<field>: "<value>" is not allowed; expected a whole number from 1 to 2147483647` |
+| `length` (`ENTROPY`) | `length: "<value>" is not allowed; expected a whole number from 4 to 2147483647` |
 
 `persistTSB()` throws `UncheckedIOException` with `<track>/<label>: cannot write the bucket (<cause>)`.
 

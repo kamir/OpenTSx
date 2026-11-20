@@ -1,16 +1,22 @@
 package org.opentsx.app.bucketanalyser;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.series.TimeSeriesObject;
 
 import javax.swing.JDialog;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
+import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.datatransfer.DataFlavor;
@@ -18,8 +24,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.Vector;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -123,13 +132,66 @@ class MacroTrackerFrameTest {
     }
 
     @Test
-    void aPfdStepThatCannotBeRecordedReachesTheCaller() throws Exception {
-        RuntimeException[] thrown = new RuntimeException[1];
-        String printed = inOpenTracker(() -> thrown[0] = assertThrows(IllegalStateException.class,
-                () -> MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation("a", "b", "x("))));
+    void anOperationThatEndsInAnOpeningParenthesisRecordsItsNodeAndAStepWithAnEmptyArgument() throws Exception {
+        List<String> nodes = new ArrayList<>();
+        JsonArray[] steps = new JsonArray[1];
+        String printed = inOpenTracker(() -> {
+            PFDRecorder.getInstance().reset("New Flow");
+            MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation("a", "b", "x("));
+            nodes.addAll(MacroTrackerFrame.frame.track.nodes.keySet());
+            steps[0] = JsonParser.parseString(PFDRecorder.getInstance().toJSON()).getAsJsonObject()
+                    .getAsJsonArray("steps");
+        });
 
-        assertEquals("x(: cannot record the PFD step (" + thrown[0].getCause() + ")", thrown[0].getMessage());
+        assertEquals(List.of("b"), nodes);
+        assertEquals(1, steps[0].size());
+        JsonObject step = steps[0].get(0).getAsJsonObject();
+        assertEquals("x", step.get("operation").getAsString());
+        assertEquals("", step.getAsJsonObject("params").get("arg").getAsString());
         assertEquals("", printed);
+    }
+
+    @Test
+    void anOperationWhosePfdRecorderCannotStartLeavesTheTrackUnchanged(@TempDir Path dir) throws Exception {
+        Path output = dir.resolve("output.txt");
+        ProcessBuilder builder = new ProcessBuilder(List.of(
+                Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "-Dopentsx.config.file=" + dir.resolve("missing.properties"),
+                "-cp", System.getProperty("surefire.test.class.path"),
+                RecordWithoutConfiguration.class.getName()))
+                .directory(dir.toFile()).redirectErrorStream(true).redirectOutput(output.toFile());
+        int status = builder.start().waitFor();
+        String printed = Files.readString(output);
+
+        assertEquals(0, status, printed);
+        assertTrue(printed.contains("first ExceptionInInitializerError\n"), printed);
+        assertTrue(printed.contains("second NoClassDefFoundError\n"), printed);
+        assertTrue(printed.contains("nodes []\n"), printed);
+    }
+
+    public static class RecordWithoutConfiguration {
+        public static void main(String[] args) throws Exception {
+            SwingUtilities.invokeAndWait(() -> {
+                MacroTrackerFrame.init("probe");
+                try {
+                    record("first", TSBucketTransformation.getTransformation("a", "b", "DFA"));
+                    record("second", TSBucketTransformation.getTransformation("b", "c", "NORMALIZE"));
+                    System.out.println("nodes " + MacroTrackerFrame.frame.track.nodes.keySet());
+                } finally {
+                    MacroTrackerFrame.frame.dispose();
+                }
+            });
+            System.exit(0);
+        }
+
+        private static void record(String call, TSBucketTransformation t) {
+            try {
+                MacroTrackerFrame.addTransformation(t);
+                System.out.println(call + " recorded");
+            } catch (Throwable e) {
+                System.out.println(call + " " + e.getClass().getSimpleName());
+            }
+        }
     }
 
     @Test
@@ -190,11 +252,11 @@ class MacroTrackerFrameTest {
     }
 
     @Test
-    void showChartOnAnOperationNodeWithoutItsChartNamesTheNodesThatHaveOne() throws Exception {
+    void showChartOnASigmaBandNodeShowsTheMessage() throws Exception {
         ProbeTracker tracker = openProbeTracker();
         try {
             SwingUtilities.invokeAndWait(() -> {
-                clickOn(new TSOperationControlerPanel(rows(), chart(), "probe", null), "jButton8ActionPerformed");
+                clickOn(new TSOperationControlerPanel(rows(), chart(), "probe", null), "jButton16ActionPerformed");
                 select(tracker, tracker.jTree().getRowCount() - 1);
                 clickOn(tracker, "jButton3ActionPerformed");
             });
@@ -203,8 +265,53 @@ class MacroTrackerFrameTest {
             closeProbeTracker();
         }
 
-        assertEquals(List.of("show Chart: no chart for Transform{SIMPLE per Record Operation: Diff of }; select a "
-                + "Profile, ENTROPY or Shuffle node"), tracker.errors);
+        assertEquals(List.of("show Chart: no chart for Transform{SIMPLE per Record Operation: AVG of }; select an "
+                + "operation node other than Sigma Band or MF-DFA"), tracker.errors);
+    }
+
+    @Test
+    void showChartOnTheNodesOfDfaAndFftShowsTheirCharts() throws Exception {
+        ProbeTracker tracker = openProbeTracker();
+        RecordingPanel panel = onEdt(() -> new RecordingPanel(sampled(1024), "probe"));
+        List<String> shown = new ArrayList<>();
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                clickOn(panel, "jButton5ActionPerformed");
+                clickOn(panel, "jButton3ActionPerformed");
+                for (String[] node : new String[][]{{"DFA of ", "DFA of probe"}, {"FFT of ", "FFT of probe"}}) {
+                    MultiChart chart = openChart(node[1]);
+                    chart.setVisible(false);
+                    selectOperation(tracker, node[0]);
+                    clickOn(tracker, "jButton3ActionPerformed");
+                    if (chart.isVisible()) {
+                        shown.add(node[0]);
+                    }
+                }
+            });
+        } finally {
+            disposeCharts();
+            closeProbeTracker();
+        }
+
+        assertEquals(List.of(), panel.errors);
+        assertEquals(List.of(), tracker.errors);
+        assertEquals(List.of("DFA of ", "FFT of "), shown);
+    }
+
+    static class RecordingPanel extends TSOperationControlerPanel {
+        final List<String> errors = new ArrayList<>();
+
+        RecordingPanel(Vector<TimeSeriesObject> rows, String label) {
+            super(rows, chart(), label, null);
+        }
+
+        void showActionError(String message) {
+            errors.add(message);
+        }
+
+        void showFftError(String message) {
+            errors.add(message);
+        }
     }
 
     static class ProbeTracker extends MacroTrackerFrame {
@@ -264,12 +371,62 @@ class MacroTrackerFrameTest {
         return rows;
     }
 
+    private static Vector<TimeSeriesObject> sampled(int n) {
+        Random random = new Random(3);
+        TimeSeriesObject row = new TimeSeriesObject();
+        row.setLabel("sampled");
+        for (int i = 0; i < n; i++) {
+            row.addValuePair(i * 0.25, random.nextGaussian());
+        }
+        Vector<TimeSeriesObject> rows = new Vector<>();
+        rows.add(row);
+        return rows;
+    }
+
     private static JFreeChart chart() {
         XYSeries series = new XYSeries("probe");
         series.add(0.0, 1.0);
         series.add(1.0, 2.0);
         return ChartFactory.createXYLineChart("probe", "x", "y", new XYSeriesCollection(series),
                 PlotOrientation.VERTICAL, false, false, false);
+    }
+
+    private static MultiChart openChart(String titlePrefix) {
+        MultiChart found = null;
+        for (Window window : Window.getWindows()) {
+            if (window instanceof MultiChart && window.isVisible()
+                    && ((MultiChart) window).chartTitle.startsWith(titlePrefix)) {
+                found = (MultiChart) window;
+            }
+        }
+        assertNotNull(found, "no chart titled " + titlePrefix);
+        return found;
+    }
+
+    private static void selectOperation(ProbeTracker tracker, String operation) {
+        JTree tree = tracker.jTree();
+        for (int row = 0; row < tree.getRowCount(); row++) {
+            Object node = ((DefaultMutableTreeNode) tree.getPathForRow(row).getLastPathComponent()).getUserObject();
+            if (node instanceof Transform && ((Transform) node).operation.equals(operation)) {
+                tree.setSelectionRow(row);
+                return;
+            }
+        }
+        fail("no node of the operation " + operation);
+    }
+
+    private static <T> T onEdt(java.util.concurrent.Callable<T> create) throws Exception {
+        Object[] created = new Object[1];
+        SwingUtilities.invokeAndWait(() -> {
+            try {
+                created[0] = create.call();
+            } catch (Exception e) {
+                throw new AssertionError(e);
+            }
+        });
+        @SuppressWarnings("unchecked")
+        T result = (T) created[0];
+        return result;
     }
 
     private static void select(ProbeTracker tracker, int row) {

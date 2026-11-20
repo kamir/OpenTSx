@@ -1,5 +1,7 @@
 package org.opentsx.app.bucketanalyser;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonParser;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
@@ -283,11 +285,18 @@ class TSOperationControlerPanelTest {
 
     @ParameterizedTest
     @CsvSource(delimiter = '|', value = {
-            "jButton14ActionPerformed | abc | length: \"abc\" is not allowed; expected a whole number of at least 4",
-            "jButton14ActionPerformed | 0 | length: \"0\" is not allowed; expected a whole number of at least 4",
-            "jButton14ActionPerformed | 3 | length: \"3\" is not allowed; expected a whole number of at least 4",
-            "jButton20ActionPerformed | abc | window length: \"abc\" is not allowed; expected a whole number above 0",
-            "jButton20ActionPerformed | 0 | window length: \"0\" is not allowed; expected a whole number above 0"})
+            "jButton14ActionPerformed | abc | length: \"abc\" is not allowed; expected a whole number from 4 to "
+                    + "2147483647",
+            "jButton14ActionPerformed | 0 | length: \"0\" is not allowed; expected a whole number from 4 to 2147483647",
+            "jButton14ActionPerformed | 3 | length: \"3\" is not allowed; expected a whole number from 4 to 2147483647",
+            "jButton14ActionPerformed | 3000000000 | length: \"3000000000\" is not allowed; expected a whole number "
+                    + "from 4 to 2147483647",
+            "jButton20ActionPerformed | abc | window length: \"abc\" is not allowed; expected a whole number from 1 to "
+                    + "2147483647",
+            "jButton20ActionPerformed | 0 | window length: \"0\" is not allowed; expected a whole number from 1 to "
+                    + "2147483647",
+            "jButton20ActionPerformed | 3000000000 | window length: \"3000000000\" is not allowed; expected a whole "
+                    + "number from 1 to 2147483647"})
     void aDialogAnswerThatIsNotAllowedShowsTheMessageAndOpensNoChart(String action, String answer, String message)
             throws Exception {
         ProbePanel panel = onEdt(() -> new ProbePanel(rows(wave(64)), chart(), "probe"));
@@ -310,12 +319,24 @@ class TSOperationControlerPanelTest {
 
     @ParameterizedTest
     @CsvSource(delimiter = '|', value = {
-            "jButton10ActionPerformed | jtMIN | x | min: \"x\" is not allowed; expected a whole number",
-            "jButton10ActionPerformed | jtMAX | 1.5 | max: \"1.5\" is not allowed; expected a whole number",
-            "jButton10ActionPerformed | jtBINS | abc | bins: \"abc\" is not allowed; expected a whole number above 0",
-            "jButton10ActionPerformed | jtBINS | 0 | bins: \"0\" is not allowed; expected a whole number above 0",
-            "jButton20ActionPerformed | jtMIN | x | min: \"x\" is not allowed; expected a whole number",
-            "jButton20ActionPerformed | jtBINS | -1 | bins: \"-1\" is not allowed; expected a whole number above 0"})
+            "jButton10ActionPerformed | jtMIN | x | min: \"x\" is not allowed; expected a whole number from "
+                    + "-2147483648 to 2147483647",
+            "jButton10ActionPerformed | jtMIN | -3000000000 | min: \"-3000000000\" is not allowed; expected a whole "
+                    + "number from -2147483648 to 2147483647",
+            "jButton10ActionPerformed | jtMAX | 1.5 | max: \"1.5\" is not allowed; expected a whole number from "
+                    + "-2147483648 to 2147483647",
+            "jButton10ActionPerformed | jtMAX | 3000000000 | max: \"3000000000\" is not allowed; expected a whole "
+                    + "number from -2147483648 to 2147483647",
+            "jButton10ActionPerformed | jtBINS | abc | bins: \"abc\" is not allowed; expected a whole number from 1 to "
+                    + "2147483647",
+            "jButton10ActionPerformed | jtBINS | 0 | bins: \"0\" is not allowed; expected a whole number from 1 to "
+                    + "2147483647",
+            "jButton10ActionPerformed | jtBINS | 3000000000 | bins: \"3000000000\" is not allowed; expected a whole "
+                    + "number from 1 to 2147483647",
+            "jButton20ActionPerformed | jtMIN | x | min: \"x\" is not allowed; expected a whole number from "
+                    + "-2147483648 to 2147483647",
+            "jButton20ActionPerformed | jtBINS | -1 | bins: \"-1\" is not allowed; expected a whole number from 1 to "
+                    + "2147483647"})
     void aNumberFieldThatIsNotAllowedShowsTheMessageAndOpensNoChart(String action, String field, String value,
             String message) throws Exception {
         ProbePanel panel = onEdt(() -> new ProbePanel(rows(wave(64)), chart(), "probe"));
@@ -338,7 +359,7 @@ class TSOperationControlerPanelTest {
     }
 
     @Test
-    void aHistogramOpensItsChartAndThenRecordsIt() throws Exception {
+    void aHistogramOpensItsChartAndRecordsIt() throws Exception {
         ProbePanel panel = onEdt(() -> new ProbePanel(rows(wave(64)), chart(), "probe"));
         boolean chartOpened;
         Set<String> recorded;
@@ -356,27 +377,91 @@ class TSOperationControlerPanelTest {
         assertTrue(chartOpened, "the histogram opened no chart");
     }
 
-    @Test
-    void aFailingOperationLeavesTheMacroTrackUnchanged() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"jButton4ActionPerformed", "jButton7ActionPerformed", "jButton8ActionPerformed",
+            "jButton9ActionPerformed", "jButton10ActionPerformed", "jButton12ActionPerformed",
+            "jButton22ActionPerformed", "jButton13ActionPerformed"})
+    void anOperationWhoseChartCannotOpenLeavesTheMacroTrackUnchanged(String action) throws Exception {
         Vector<TimeSeriesObject> twins = rows(wave(64));
         twins.add(wave(64));
         ProbePanel panel = onEdt(() -> new ProbePanel(twins, chart(), "probe"));
         boolean chartOpened;
         Set<String> recorded;
+        Throwable thrown;
         openTracker();
         try {
-            click(panel, "jButton13ActionPerformed");
+            thrown = clickAllowingFailure(panel, action);
             recorded = recorded();
         } finally {
             chartOpened = disposeWindows();
             closeTracker();
         }
 
+        String failure = thrown != null ? thrown.toString() : panel.actionError;
+        assertNotNull(failure, action + " did not fail");
+        assertTrue(failure.contains("IllegalArgumentException: This dataset already contains a series with the key "),
+                failure);
+        assertEquals(Set.of(), recorded);
+        assertFalse(chartOpened, action + " opened a chart after it failed");
+    }
+
+    @Test
+    void aStandardizedChartThatCannotOpenShowsTheMessage() throws Exception {
+        Vector<TimeSeriesObject> twins = rows(wave(64));
+        twins.add(wave(64));
+        ProbePanel panel = onEdt(() -> new ProbePanel(twins, chart(), "probe"));
+        try {
+            click(panel, "jButton13ActionPerformed");
+        } finally {
+            disposeWindows();
+        }
+
         assertNotNull(panel.actionError, "the standardize action showed no error");
         assertTrue(panel.actionError.startsWith("standardized series of probe: cannot open the chart ("),
                 panel.actionError);
+    }
+
+    @Test
+    void aNormalityTestThatCannotTestASliceShowsTheMessageAndLeavesTheMacroTrackUnchanged() throws Exception {
+        ProbePanel panel = onEdt(() -> new ProbePanel(rows(new Untestable()), chart(), "probe"));
+        boolean chartOpened;
+        Set<String> recorded;
+        openTracker();
+        try {
+            click(panel, "jButton21ActionPerformed");
+            recorded = recorded();
+        } finally {
+            chartOpened = disposeWindows();
+            closeTracker();
+        }
+
+        assertEquals("SW test of untestable: cannot test the values 0 to 20 (java.io.IOException: the slice cannot "
+                + "be tested)", panel.actionError);
         assertEquals(Set.of(), recorded);
-        assertFalse(chartOpened, "the standardize action opened a chart after it failed");
+        assertFalse(chartOpened, "the normality test opened a chart after it failed");
+    }
+
+    @Test
+    void aShuffleOfASeriesWhoseLabelEndsInAnOpeningParenthesisRecordsIt() throws Exception {
+        ProbePanel panel = onEdt(() -> new ProbePanel(rows(), chart(), "x("));
+        panel.answer = "3";
+        Set<String> recorded;
+        JsonArray steps;
+        openTracker();
+        PFDRecorder.getInstance().reset("New Flow");
+        try {
+            click(panel, "jButton18ActionPerformed");
+            recorded = recorded();
+            steps = JsonParser.parseString(PFDRecorder.getInstance().toJSON()).getAsJsonObject()
+                    .getAsJsonArray("steps");
+        } finally {
+            disposeWindows();
+            closeTracker();
+        }
+
+        assertNull(panel.actionError, panel.actionError);
+        assertEquals(Set.of("Shuffle_x("), recorded);
+        assertEquals(1, steps.size());
     }
 
     @Test
@@ -653,6 +738,22 @@ class TSOperationControlerPanelTest {
         });
     }
 
+    private static Throwable clickAllowingFailure(TSOperationControlerPanel panel, String action) throws Exception {
+        var method = TSOperationControlerPanel.class.getDeclaredMethod(action, java.awt.event.ActionEvent.class);
+        method.setAccessible(true);
+        Throwable[] thrown = new Throwable[1];
+        SwingUtilities.invokeAndWait(() -> {
+            try {
+                method.invoke(panel, new Object[]{null});
+            } catch (InvocationTargetException e) {
+                thrown[0] = e.getCause();
+            } catch (ReflectiveOperationException e) {
+                throw new AssertionError(e);
+            }
+        });
+        return thrown[0];
+    }
+
     private static boolean disposeWindows() throws Exception {
         boolean[] visible = new boolean[1];
         SwingUtilities.invokeAndWait(() -> {
@@ -875,6 +976,29 @@ class TSOperationControlerPanelTest {
         @Override
         public double[][] getData() {
             throw new IllegalStateException("the values cannot be read");
+        }
+    }
+
+    static class Untestable extends TimeSeriesObject {
+        Untestable() {
+            setLabel("untestable");
+            for (int i = 0; i < 100; i++) {
+                addValuePair(i, i % 3);
+            }
+        }
+
+        @Override
+        public TimeSeriesObject cutOut(int begin, int end) {
+            TimeSeriesObject slice = new TimeSeriesObject() {
+                @Override
+                public double[] getSWTestResult() throws IOException {
+                    throw new IOException("the slice cannot be tested");
+                }
+            };
+            for (int i = begin; i < end; i++) {
+                slice.addValuePair(i, i % 3);
+            }
+            return slice;
         }
     }
 

@@ -1506,7 +1506,7 @@ Computes the Shannon entropy H = −sum_k p_k log2(p_k) in bit of the values in 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | available | operator `entropy.window` | Gaps are left out of the counts. |
-| java | available (2.x) | `org.opentsx.data.series.TimeSeriesObject#calcEntropyForWindow` | The 2.x model in opentsx-core has TimeSeriesObject#calcEntropyForWindow(length) behind the Swing button ENTROPY. It uses the same windows and step, but divides each window by its maximum and maps the values to 100 levels instead of bins over the range of the series. A length below 4 throws IllegalArgumentException. The button refuses a length that is not a whole number of at least 4 with a message in a dialog. TimeSeriesObjectStatisticsTest checks the length and the step, not the entropy values. |
+| java | available (2.x) | `org.opentsx.data.series.TimeSeriesObject#calcEntropyForWindow` | The 2.x model in opentsx-core has TimeSeriesObject#calcEntropyForWindow(length) behind the Swing button ENTROPY. It uses the same windows and step, but divides each window by its maximum and maps the values to 100 levels instead of bins over the range of the series. A length below 4 throws IllegalArgumentException. The button refuses a length that is not a whole number from 4 to 2147483647 with a message in a dialog. TimeSeriesObjectStatisticsTest checks the length and the step, not the entropy values. |
 | python | none |  |  |
 | processor | none |  |  |
 | go | none |  |  |
@@ -1559,7 +1559,7 @@ Counts the values of each series in bins of equal width w = (max − min) / bins
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | available | operator `histogram` |  |
-| java | available (2.x) | `org.opentsx.data.series.TimeSeriesObject#distributionOfYValues` | The 2.x model in opentsx-core has TimeSeriesObject#distributionOfYValues(min, max, bins) behind the Swing button Histogram per series; no test checks its counts. It returns counts, not shares, takes min and max as integers and leaves out empty bins. The button refuses a min or max that is not a whole number and bins that are not a whole number above 0 with a message in a dialog. |
+| java | available (2.x) | `org.opentsx.data.series.TimeSeriesObject#distributionOfYValues` | The 2.x model in opentsx-core has TimeSeriesObject#distributionOfYValues(min, max, bins) behind the Swing button Histogram per series; no test checks its counts. It returns counts, not shares, takes min and max as integers and leaves out empty bins. The button refuses a min or max that is not a whole number from -2147483648 to 2147483647 and bins that are not a whole number from 1 to 2147483647 with a message in a dialog. |
 | python | none |  |  |
 | processor | none |  |  |
 | go | none |  |  |
@@ -1614,7 +1614,7 @@ Cuts the sample index into consecutive slices of the given length and pools the 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | available | operator `histogram.crosscut` |  |
-| java | none |  | The 2.x Swing button Histogram cross-cut computes it inside TSOperationControlerPanel (opentsx-core), with no API; no test checks its slices. It returns counts, not shares, and has no limit of 16 slices. The button refuses a window length or bins that are not a whole number above 0 and a min or max that is not a whole number with a message in a dialog. |
+| java | none |  | The 2.x Swing button Histogram cross-cut computes it inside TSOperationControlerPanel (opentsx-core), with no API; no test checks its slices. It returns counts, not shares, and has no limit of 16 slices. The button refuses a window length or bins that are not a whole number from 1 to 2147483647 and a min or max that is not a whole number from -2147483648 to 2147483647 with a message in a dialog. |
 | python | none |  |  |
 | processor | none |  |  |
 | go | none |  |  |

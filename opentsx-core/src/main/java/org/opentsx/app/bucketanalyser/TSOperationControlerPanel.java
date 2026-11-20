@@ -476,7 +476,8 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
             showActionError("FFT of " + this.label + ": cannot open the chart (" + e + ")");
             return;
         }
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(this.label, "FFT_" + this.label, "FFT of "));
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(this.label, "FFT_" + this.label, "FFT of "),
+                "FFT of " + this.label);
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private static OptionalDouble fftSamplingRate(TimeSeriesObject row) {
@@ -591,7 +592,8 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
             }
         }
 
-        MultiChart.open(v, label + " fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", this.jRadioButton1.isSelected(), alphas.toString(), null);
+        String chart = label + " fluctuation function F(s) [order:" + order + "] ";
+        MultiChart.open(v, chart, "log(s)", "log(F(s))", this.jRadioButton1.isSelected(), alphas.toString(), null);
 
         String operationLabel = "DFA of ";
         String operationPrefix = "DFA_" + order;
@@ -599,7 +601,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         String source = this.label;
         String target = operationPrefix + this.label;
 
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
 
 
     }//GEN-LAST:event_jButton5ActionPerformed
@@ -640,8 +642,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         }
 
-        MultiChart.open(v, this.jRadioButton1.isSelected(), "AUTO-CORRELATION of " + this.label);
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
+        String chart = "AUTO-CORRELATION of " + this.label;
+        MultiChart.open(v, this.jRadioButton1.isSelected(), chart);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
     }//GEN-LAST:event_jButton4ActionPerformed
 
     /**
@@ -667,7 +670,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
 
         MultiChart.open(v, this.jRadioButton1.isSelected(), target);
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), target);
 
     }//GEN-LAST:event_jButton7ActionPerformed
 
@@ -687,8 +690,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         }
 
-        MultiChart.open(v, this.jRadioButton1.isSelected(), "Diff of " + this.label);
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
+        String chart = "Diff of " + this.label;
+        MultiChart.open(v, this.jRadioButton1.isSelected(), chart);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
     }//GEN-LAST:event_jButton8ActionPerformed
 
     private void jButton9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton9ActionPerformed
@@ -708,8 +712,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         }
 
-        MultiChart.open(v, this.jRadioButton1.isSelected(), "LogRETURN of " + this.label);
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
+        String chart = "LogRETURN of " + this.label;
+        MultiChart.open(v, this.jRadioButton1.isSelected(), chart);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
     }//GEN-LAST:event_jButton9ActionPerformed
 
     private void jButton10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton10ActionPerformed
@@ -724,9 +729,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         int maxY;
         int bins;
         try {
-            minY = wholeNumber("min", this.jtMIN.getText(), false);
-            maxY = wholeNumber("max", this.jtMAX.getText(), false);
-            bins = wholeNumber("bins", this.jtBINS.getText(), true);
+            minY = wholeNumber("min", this.jtMIN.getText(), Integer.MIN_VALUE);
+            maxY = wholeNumber("max", this.jtMAX.getText(), Integer.MIN_VALUE);
+            bins = wholeNumber("bins", this.jtBINS.getText(), 1);
         } catch (IllegalArgumentException e) {
             showActionError(e.getMessage());
             return;
@@ -741,8 +746,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         }
 
-        MultiChart.open(v, this.jRadioButton1.isSelected(), "y-value distributions of " + this.label);
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
+        String chart = "y-value distributions of " + this.label;
+        MultiChart.open(v, this.jRadioButton1.isSelected(), chart);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
 
     }//GEN-LAST:event_jButton10ActionPerformed
 
@@ -765,8 +771,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         }
 
-        MultiChart.open(v, this.jRadioButton1.isSelected(), "NORM_MAX=1 of " + this.label);
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
+        String chart = "NORM_MAX=1 of " + this.label;
+        MultiChart.open(v, this.jRadioButton1.isSelected(), chart);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
 
     }//GEN-LAST:event_jButton12ActionPerformed
 
@@ -799,17 +806,18 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         }
 
+        String chart = "NORM_STD=1, AVG=0 of " + this.label;
         try {
             
              
-            MultiChart.openWithCorrelator(v, this.jRadioButton1.isSelected(), "NORM_STD=1, AVG=0 of " + this.label, null );
+            MultiChart.openWithCorrelator(v, this.jRadioButton1.isSelected(), chart, null );
 
         }
         catch (Exception ex) {
             showActionError("standardized series of " + this.label + ": cannot open the chart (" + ex + ")");
             return;
         }
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
         
         
     }//GEN-LAST:event_jButton13ActionPerformed
@@ -824,16 +832,11 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         String answer = requestInput("Length: ");
         if (answer == null) return;
-        String refusal = "length: \"" + answer + "\" is not allowed; expected a whole number of at least 4";
         int l;
         try {
-            l = Integer.parseInt(answer.trim());
-        } catch (NumberFormatException e) {
-            showActionError(refusal);
-            return;
-        }
-        if (l < 4) {
-            showActionError(refusal);
+            l = wholeNumber("length", answer, 4);
+        } catch (IllegalArgumentException e) {
+            showActionError(e.getMessage());
             return;
         }
 
@@ -845,7 +848,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
 
         MultiChart.open(slidingWindowResults, this.jRadioButton1.isSelected(), target);
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), target);
 
     }//GEN-LAST:event_jButton14ActionPerformed
 
@@ -938,27 +941,28 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
             }
 
             MultiChart.open(shuffled, this.jRadioButton1.isSelected(), target);
-            MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel + source));
 
         } catch (Exception ex) {
             showActionError("shuffle of " + this.label + ": cannot shuffle the series (" + ex + ")");
+            return;
         }
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel + source), target);
     }//GEN-LAST:event_jButton18ActionPerformed
 
     String requestInput(String prompt) {
         return JOptionPane.showInputDialog(prompt);
     }
 
-    private static int wholeNumber(String field, String value, boolean above0) {
-        String refusal = field + ": \"" + value + "\" is not allowed; expected a whole number"
-                + (above0 ? " above 0" : "");
+    private static int wholeNumber(String field, String value, int least) {
+        String refusal = field + ": \"" + value + "\" is not allowed; expected a whole number from " + least + " to "
+                + Integer.MAX_VALUE;
         int number;
         try {
             number = Integer.parseInt(value.trim());
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException(refusal, e);
         }
-        if (above0 && number <= 0) {
+        if (number < least) {
             throw new IllegalArgumentException(refusal);
         }
         return number;
@@ -981,8 +985,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         }
 
-        MultiChart.open(v, this.jRadioButton1.isSelected(), "y-value distributions of " + this.label);
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
+        String chart = "y-value distributions of " + this.label;
+        MultiChart.open(v, this.jRadioButton1.isSelected(), chart);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
 
     }//GEN-LAST:event_jButton19ActionPerformed
 
@@ -1002,10 +1007,10 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         int maxY;
         int bins;
         try {
-            l = wholeNumber("window length", answer, true);
-            minY = wholeNumber("min", this.jtMIN.getText(), false);
-            maxY = wholeNumber("max", this.jtMAX.getText(), false);
-            bins = wholeNumber("bins", this.jtBINS.getText(), true);
+            l = wholeNumber("window length", answer, 1);
+            minY = wholeNumber("min", this.jtMIN.getText(), Integer.MIN_VALUE);
+            maxY = wholeNumber("max", this.jtMAX.getText(), Integer.MIN_VALUE);
+            bins = wholeNumber("bins", this.jtBINS.getText(), 1);
         } catch (IllegalArgumentException e) {
             showActionError(e.getMessage());
             return;
@@ -1041,8 +1046,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         }
 
-        MultiChart.open(v, this.jRadioButton1.isSelected(), "y-value distributions (tims slice l=" + l + " of " + this.label);
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
+        String chart = "y-value distributions (tims slice l=" + l + " of " + this.label;
+        MultiChart.open(v, this.jRadioButton1.isSelected(), chart);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
 
 
     }//GEN-LAST:event_jButton20ActionPerformed
@@ -1122,9 +1128,10 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         }
 
-        MultiChart.open(v, this.jRadioButton1.isSelected(), "SW t-value distributions of " + this.label);
+        String chart = "SW t-value distributions of " + this.label;
+        MultiChart.open(v, this.jRadioButton1.isSelected(), chart);
         MultiChart.open(v2, this.jRadioButton1.isSelected(), "SW CDF of " + this.label);
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
 
 
     }//GEN-LAST:event_jButton21ActionPerformed
@@ -1147,8 +1154,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         }
 
-        MultiChart.open(v, this.jRadioButton1.isSelected(), "ln of " + this.label);
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
+        String chart = "ln of " + this.label;
+        MultiChart.open(v, this.jRadioButton1.isSelected(), chart);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
     }//GEN-LAST:event_jButton22ActionPerformed
 
     /**

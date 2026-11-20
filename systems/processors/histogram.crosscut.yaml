@@ -26,8 +26,8 @@ runtimes:
     note: >-
       The 2.x Swing button Histogram cross-cut computes it inside TSOperationControlerPanel (opentsx-core), with no API;
       no test checks its slices. It returns counts, not shares, and has no limit of 16 slices. The button refuses a
-      window length or bins that are not a whole number above 0 and a min or max that is not a whole number with a
-      message in a dialog.
+      window length or bins that are not a whole number from 1 to 2147483647 and a min or max that is not a whole
+      number from -2147483648 to 2147483647 with a message in a dialog.
   python: { status: none }
   processor: { status: none }
   go: { status: none }
