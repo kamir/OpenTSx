@@ -2,17 +2,20 @@ package org.opentsx.wayang.board;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.opentsx.kafka.KafScaleClients;
 import org.opentsx.kafka.TopicLayout;
+import org.apache.avro.specific.SpecificRecord;
+import org.opentsx.model.v2.Episode;
+import org.opentsx.model.v2.SeriesStats;
+import org.opentsx.wayang.BoardOutputProofTest;
+import org.opentsx.wayang.BoardReference;
+import java.util.Map;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -27,13 +30,12 @@ import java.util.UUID;
 import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Each chain runs on Track A and on Track B over the same 70 seconds of feed on KafScale. Both tracks report the start,
- * the first fetch and the first output in that order, and write the same number of records. Track B needs the
+ * the first fetch and the first output in that order, and both write exactly the reference records of the feed. Track B needs the
  * {@code opentsx.rust.b3.runner} executable that the KafScale conformance job builds.
  */
 @EnabledIfEnvironmentVariable(named = "KAFSCALE_BOOTSTRAP", matches = ".+")
@@ -61,10 +63,15 @@ class BoardWorkloadIntegrationTest {
         BoardTrackB.run(Path.of(runner), "127.0.0.1:" + freePort(), dir.resolve("state"), "measurement", bootstrap, b,
                 chain, SERIES, 7, Duration.ofSeconds(2), Duration.ofSeconds(6), dir.resolve("runner.log"), events(bLines));
 
-        List<ConsumerRecord<byte[], byte[]>> outA = readAll(bootstrap, BoardChains.output(chain, a));
-        List<ConsumerRecord<byte[], byte[]>> outB = readAll(bootstrap, BoardChains.output(chain, b));
-        assertFalse(outA.isEmpty(), chain + " on Track A wrote nothing");
-        assertEquals(outA.size(), outB.size(), chain + ": Track B wrote " + outB.size() + " records, Track A " + outA.size());
+        Class<? extends SpecificRecord> type = chain.equals("stats") ? SeriesStats.class : Episode.class;
+        BoardFeed feed = new BoardFeed(SERIES, 7);
+        Path catalog = Path.of("..", "systems", "processors");
+        // clean episode ids carry the spec hash, and the DAG text names the domain's topics: one reference per domain
+        Map<String, List<String>> outA = BoardOutputs.bySeries(BoardOutputProofTest.read(bootstrap, BoardChains.output(chain, a), type));
+        Map<String, List<String>> outB = BoardOutputs.bySeries(BoardOutputProofTest.read(bootstrap, BoardChains.output(chain, b), type));
+        BoardOutputs.Comparison onA = compare("Track A", chain, BoardOutputs.bySeries(BoardReference.output(chain, a, feed, BLOCKS, catalog)), outA);
+        BoardOutputs.Comparison onB = compare("Track B", chain, BoardOutputs.bySeries(BoardReference.output(chain, b, feed, BLOCKS, catalog)), outB);
+        assertTrue(onA.records() > 0 && onA.records() == onB.records(), chain + ": Track A " + onA.records() + ", Track B " + onB.records());
         for (ByteArrayOutputStream lines : List.of(aLines, bLines)) {
             List<JsonNode> events = new ArrayList<>();
             for (String line : lines.toString(StandardCharsets.UTF_8).lines().toList()) events.add(JSON.readTree(line));
@@ -74,6 +81,15 @@ class BoardWorkloadIntegrationTest {
             assertTrue(events.stream().anyMatch(e -> e.path("event").asText().equals("stopped")), chain + " did not stop");
         }
         assertTrue(bLines.toString(StandardCharsets.UTF_8).contains("\"pid\""), "Track B reports the runner pid");
+    }
+
+    static BoardOutputs.Comparison compare(String track, String chain, Map<String, List<String>> reference,
+                                           Map<String, List<String>> run) {
+        try {
+            return BoardOutputs.compare(reference, run);
+        } catch (AssertionError e) {
+            throw new AssertionError(chain + " on " + track + ": " + e.getMessage(), e);
+        }
     }
 
     static BoardEvents events(ByteArrayOutputStream lines) {
@@ -96,20 +112,6 @@ class BoardWorkloadIntegrationTest {
     static double time(List<JsonNode> events, String name) {
         return events.stream().filter(e -> e.path("event").asText().equals(name)).findFirst()
                 .orElseThrow(() -> new AssertionError("no " + name + " event")).path("seconds").asDouble();
-    }
-
-    static List<ConsumerRecord<byte[], byte[]>> readAll(String bootstrap, String topic) {
-        List<ConsumerRecord<byte[], byte[]>> out = new ArrayList<>();
-        try (KafkaConsumer<byte[], byte[]> consumer = KafScaleClients.consumer(bootstrap)) {
-            List<TopicPartition> partitions = consumer.partitionsFor(topic, Duration.ofSeconds(30)).stream()
-                    .map(i -> new TopicPartition(topic, i.partition())).toList();
-            consumer.assign(partitions);
-            consumer.seekToBeginning(partitions);
-            long end = consumer.endOffsets(partitions).values().stream().mapToLong(Long::longValue).sum();
-            long deadline = System.nanoTime() + Duration.ofSeconds(30).toNanos();
-            while (out.size() < end && System.nanoTime() < deadline) consumer.poll(Duration.ofMillis(200)).forEach(out::add);
-        }
-        return out;
     }
 
     static int freePort() throws Exception {

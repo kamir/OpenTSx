@@ -25,14 +25,11 @@ defines the protocol, and
 
 The workload driver `BoardWorkload` starts Track A or Track B against the paced
 feed and reports the process id, the time to the first fetch and the time to the
-first output; see [Run one condition](#run-one-condition). Two parts of a run
-are still missing. Without the first, the validator refuses the evidence:
-
-1. The output proof: a Java test under `src/test/java/` that compares the
-   condition's output records and writes JUnit XML with the properties
-   `opentsx.sourceCommit`, `opentsx.conditionId`, `opentsx.artifactSha256` and
-   `opentsx.inputSha256`.
-2. A lag command for the sampler. Without it the sampler records a lag of 0.
+first output; see [Run one condition](#run-one-condition). `BoardOutputProofTest`
+writes the output proof of a condition; see
+[Prove the output of one condition](#prove-the-output-of-one-condition). A lag
+command for the sampler is still missing; without it the sampler records a lag
+of 0.
 
 The board identity and the one-second samples are covered by the tools below.
 
@@ -129,6 +126,36 @@ give `firstFetchSeconds` and `firstOutputSeconds` of the run. The `digest`
 command prints the condition's `inputSha256` without a broker; it is the same for
 every chain and runtime of one size. The Track B state directory must be new and
 private (mode 0700).
+
+## Prove the output of one condition
+
+After the condition, run the checker on the workstation against the clean
+checkout of the measured source. It reads the condition's output topic, runs the
+chain once over the whole feed without a broker as the reference, and requires
+that every output series of the run equals the first records of the reference
+series, field for field: identity, times, values as raw bits, statistics with
+their sketch bytes. No series may lag the most advanced series by more than two
+records. Both tracks are held to the same reference, so the proofs of a Track A
+and a Track B condition together show identical output records. The checker
+also requires that `opentsx.inputSha256` is the digest of the feed.
+
+```bash
+mvn -B -ntp -pl opentsx-wayang test -Dtest=BoardOutputProofTest \
+  -Dopentsx.board.proof=evidence/arm64-clean-s1000-rust-r1/proof.xml \
+  -Dopentsx.board.bootstrap=<proxy> -Dopentsx.board.domain=b42c2 -Dopentsx.board.chain=clean \
+  -Dopentsx.board.series=1000 -Dopentsx.board.seed=42 -Dopentsx.board.blocks=215 \
+  -Dopentsx.sourceCommit="$(git rev-parse HEAD)" -Dopentsx.conditionId=arm64-clean-s1000-rust-r1 \
+  -Dopentsx.artifactSha256=<artifact sha256> -Dopentsx.inputSha256=<digest of the feed>
+```
+
+The test writes `proof.xml` only after every comparison passed and never
+overwrites a file. The file carries the four binding properties, the chain and
+the compared series and records, and nothing else from the environment, so it
+names no host. Reference the file in the run's `outputProof` with
+`checkerSource` `opentsx-wayang/src/test/java/org/opentsx/wayang/BoardOutputProofTest.java`
+and `checkerClass` `org.opentsx.wayang.BoardOutputProofTest`. Clean episode ids
+contain the spec hash of the DAG, and the DAG names the domain's topics, so the
+checker always builds the reference from the condition's own domain.
 
 ## Sample one condition
 
