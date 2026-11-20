@@ -284,6 +284,10 @@ Boat twin boot-etap22 on operating data: 72 rows, 285 steps from 2026-07-03T22:0
      laptops.scale    1.236
 ```
 
+A file in the Secret `opentsx-private` must fit its size limit of 1 MiB, so a year of 15-minute rows does not fit;
+[Size the twin Jobs](../../deploy/k3s/README.md#size-the-twin-jobs) says how to run such a file on a host and how much
+memory the Job has.
+
 ## DWD weather (MOSMIX)
 
 ```bash

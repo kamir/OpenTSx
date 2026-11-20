@@ -43,7 +43,8 @@ import java.util.stream.IntStream;
  * </table>
  * Rows inside one plan step are averaged (mode: last value, shore power: maximum). A step without rows holds the
  * previous value for up to one hour, after that the value is missing and the model fills in (origin SYNTHETIC). The
- * rows span at most {@link #MAX_SPAN_DAYS} days and at most {@link #MAX_STEPS} steps of the plan.
+ * rows span at most {@link #MAX_SPAN_DAYS} days and at most {@link #MAX_STEPS} steps of the plan, and a file has at
+ * most {@link #MAX_ROWS} data rows.
  *
  * @param plan     the template plan moved to the data period (start floored to the step, steps to cover all rows)
  * @param inputs   bindings for the twin
@@ -62,10 +63,18 @@ public record BoatData(TwinPlan plan, SeriesInputs inputs, double[] socMeas, Map
 
     /**
      * The most plan steps the rows may span: 366 days of the 15-minute steps of {@code twin/boot-etap22.yaml}. A
-     * calibrated boat run over 35040 steps needs about 2.4 GB of Java heap. The plan of the boat command has at most
-     * this many steps as well; a synthetic run over them fits 2 GB.
+     * calibrated boat run over 35136 steps fits a heap of 1152 MiB and runs out of memory with 768 MiB. The plan of
+     * the boat command has at most this many steps as well; a synthetic run over them fits 2 GB.
      */
     public static final long MAX_STEPS = 366 * 96;
+
+    /**
+     * The most data rows a file may have: one row per minute for 366 days. Every line after the header that is neither
+     * blank nor a comment counts, also one without a time. Measured with a heap of 1152 MiB, the heap of the boat Job
+     * of deploy/k3s: a calibrated run on 527040 rows of 10 columns over 35136 steps peaks at 1301 MB RSS; the same run
+     * on three times as many rows still fits, on four times as many it runs out of memory.
+     */
+    public static final int MAX_ROWS = 366 * 1440;
 
     private static final Map<String, String> GERMAN_COLUMNS = Map.of("zeit", "time", "modus", "mode",
             "landstrom", "shore", "soc_prozent", "soc_percent", "last_w", "load_w", "einstrahlung_wm2", "ghi_wm2",
@@ -102,7 +111,7 @@ public record BoatData(TwinPlan plan, SeriesInputs inputs, double[] socMeas, Map
         List<Integer> numbers = IntStream.range(0, lines.size()).filter(i -> {
             String l = lines.get(i).strip();
             return !l.isEmpty() && !l.startsWith("#");
-        }).mapToObj(i -> i + 1).toList();
+        }).limit(MAX_ROWS + 2L).mapToObj(i -> i + 1).toList();
         List<String> content = numbers.stream().map(n -> lines.get(n - 1).strip()).toList();
         if (content.isEmpty()) {
             throw new IllegalArgumentException("no header row");
@@ -165,6 +174,11 @@ public record BoatData(TwinPlan plan, SeriesInputs inputs, double[] socMeas, Map
         List<String[]> rows = new ArrayList<>();
         List<Integer> rowLines = new ArrayList<>();
         for (int r = 1; r < content.size(); r++) {
+            if (r > MAX_ROWS) {
+                throw new IllegalArgumentException("line " + numbers.get(r) + ": more than " + MAX_ROWS
+                        + " data rows; expected at most " + MAX_ROWS
+                        + " rows, such as one row per minute for 366 days");
+            }
             String[] f = content.get(r).split(java.util.regex.Pattern.quote(String.valueOf(sep)), header.length);
             if (f.length <= timeCol || f[timeCol].isBlank()) {
                 continue;

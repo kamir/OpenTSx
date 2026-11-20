@@ -852,6 +852,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   answers 409 `conflict`, `opentsx vectors deploy` exits with 1 and the vector processor refuses a DAG whose series
   sink writes a signal (system and id) that another deployed DAG writes to the same topic, with `<dag>: sink <topic>
   signal <id> of system <system> is already written by DAG <other>; stop that DAG first or choose another signal`.
+- The k3s scripts 10-build.sh, 11-import-images.sh, 50-status.sh and 71-restore.sh write their messages as '<subject>:
+  <problem>; <what to do>', for example 'namespace opentsx: not found; deploy it first with 30-deploy.sh', instead of
+  using a spaced hyphen as a dash.
 
 ### Removed
 
@@ -1982,6 +1985,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The statistics processor writes its progress file only after a poll the broker answered, so `opentsx-stats` is no
   longer ready about 3 minutes after the broker starts refusing reads; until now the file stayed fresh for up to 10
   minutes of refusals.
+- `boat --data` refuses a file with more than 527040 data rows (one row per minute for 366 days; every line after the
+  header that is neither blank nor a comment counts) with `line <n>: more than 527040 data rows; expected at most
+  527040 rows, such as one row per minute for 366 days`. It stops reading the file at the first data row over the
+  bound, so a file far over the bound exits with 2 instead of running out of memory, and a calibrated run at the bound
+  fits the 1536Mi boat Job. `BoatData.MAX_ROWS` holds the bound.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

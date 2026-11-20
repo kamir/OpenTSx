@@ -9,6 +9,7 @@ import org.opentsx.twin.TwinPlan;
 import org.opentsx.twin.TwinRunner;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -116,7 +117,39 @@ public final class TwinCli {
 
     /** Parses the CSV file a key names; a refusal of its content names the file. */
     static <T> T csv(Path path, String what, Function<List<String>, T> parse) {
-        List<String> lines = read(path, what, p -> Files.readAllLines(p, StandardCharsets.UTF_8));
+        return parsed(path, read(path, what, p -> Files.readAllLines(p, StandardCharsets.UTF_8)), parse);
+    }
+
+    /**
+     * Parses the CSV file a key names like {@link #csv(Path, String, Function)}, but stops reading at the first data
+     * row over {@code maxRows}, a line after the header that is neither blank nor a comment; {@code parse} refuses
+     * that row.
+     */
+    static <T> T csv(Path path, String what, int maxRows, Function<List<String>, T> parse) {
+        long[] data = {-1};
+        List<String> lines = read(path, what, p -> {
+            List<String> head = new ArrayList<>();
+            try (BufferedReader in = Files.newBufferedReader(p, StandardCharsets.UTF_8)) {
+                String line;
+                while (data[0] <= maxRows && (line = in.readLine()) != null) {
+                    head.add(line);
+                    String l = line.strip();
+                    if (!l.isEmpty() && !l.startsWith("#")) {
+                        data[0]++;
+                    }
+                }
+            }
+            return head;
+        });
+        T parsed = parsed(path, lines, parse);
+        if (data[0] > maxRows) {
+            throw new IllegalStateException(path + ": read up to data row " + data[0] + ", but the parser did not "
+                    + "refuse more than " + maxRows + " data rows");
+        }
+        return parsed;
+    }
+
+    private static <T> T parsed(Path path, List<String> lines, Function<List<String>, T> parse) {
         try {
             return parse.apply(lines);
         } catch (IllegalArgumentException e) {

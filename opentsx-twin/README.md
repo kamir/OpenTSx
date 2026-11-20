@@ -76,16 +76,19 @@ opentsx: boat.csv: line 3: time "x" is not a time; expected 2026-07-04T10:00+02:
 opentsx: long.csv: line 3: time "9999-12-31T00:00Z" lies more than 3653 days after the earliest row (line 2); expected rows that span at most 3653 days (10 years)
 ```
 
-Data that need more steps of the plan than one run can hold are a usage error too. Boat data span at most 35136
-steps of the plan (366 days of the 15-minute steps of `twin/boot-etap22.yaml`), and bills at most 87673 steps (3653
-days of hourly steps from local midnight to local midnight in Europe/Berlin, with one more clock change in autumn
-than in spring). `--simulated` checks the bundled data the same way. A `twin` or `boat` run over 35136 steps and a
-`house` run over 87673 steps fit 2 GB of Java heap, the default on a host with 8 GB of memory. A calibrated boat run
-over a year of 15-minute steps needs about 2.4 GB, and a house calibration over 10 years of hourly steps more than
-2 GB. Use a plan with a longer `baseStep` or data that span less time:
+Data that need more steps of the plan than one run can hold are a usage error too. Boat data span at most 35136 steps
+of the plan (366 days of the 15-minute steps of `twin/boot-etap22.yaml`) and have at most 527040 data rows (one row
+per minute for 366 days; every line after the header that is neither blank nor a comment counts, also one without a
+time), and bills span at most 87673 steps (3653 days of hourly steps from local midnight to local midnight in
+Europe/Berlin, with one more clock change in autumn than in spring). `--simulated` checks the bundled data the same
+way. A `twin` or `boat` run over 35136 steps and a `house` run over 87673 steps fit 2 GB of Java heap, the default on
+a host with 8 GB of memory. A calibrated boat run on 527040 rows over 35136 steps fits a heap of 1152 MiB (measured
+peak RSS 1301 MB), and a house calibration over 10 years of hourly steps needs more than 2 GB. Use a plan with a
+longer `baseStep`, data that span less time or rows averaged over a longer interval:
 
 ```text
 opentsx: season.csv: line 3: time "2026-08-31T10:00Z" needs 83521 plan steps of PT1M from the earliest row (line 2); expected at most 35136 plan steps, from a longer baseStep or rows that span less time
+opentsx: boat.csv: line 527042: more than 527040 data rows; expected at most 527040 rows, such as one row per minute for 366 days
 opentsx: my-site.yaml: steps: 50000000 is not allowed; expected a whole number from 1 to 87673
 opentsx: bills10.csv: period_from 2016-01-01 to period_to 2025-12-31 needs 5260320 plan steps of PT1M; expected at most 87673 plan steps, from a longer baseStep or bills that span less time
 ```
@@ -320,7 +323,7 @@ the levers act on measured values. For front ends, `BoatDemo` exposes `plan()`, 
   * determinism, forecast from a snapshot, origins
   * what-ifs (+100 Wp, Starlink 3 h/day, shore power every third day) and the scenario API
   * CSV import (resampling, holding, origins) and calibration that recovers known parameters
-  * a column named twice, the limits of 3653 days and of 35136 plan steps
+  * a column named twice, the limits of 3653 days, of 35136 plan steps and of 527040 data rows
 * **`boat.SimulatedLogsTest`**: the bundled simulated logs equal the generator output; calibration on them recovers
   the hidden parameters, and unmet demand and autonomy on the logs match the hidden true run
 * **`studio.EnglishTextsTest`**: the scenario texts, the guides, the bundled READMEs, templates and plans are English

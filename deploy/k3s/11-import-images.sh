@@ -59,7 +59,7 @@ saver() {   # first available of docker/podman
   else die "neither a running docker nor podman found to save the images"; fi
 }
 local_ctr() {
-  have k3s || die "k3s not found on this host - use --method ssh --ssh user@k3s-host or --method registry"
+  have k3s || die "k3s: not found on this host; use --method ssh --ssh user@k3s-host or --method registry"
 }
 
 case "$METHOD" in
@@ -92,19 +92,19 @@ case "$METHOD" in
     exit 0 ;;
   kind)
     [[ -n "$KIND_CLUSTER" ]] || usage_error "--kind-cluster: missing; the method kind needs --kind-cluster <name> or KIND_CLUSTER (kind get clusters lists them)"
-    have kind || die "kind not found - install kind, or use --method ssh/registry for a remote k3s"
+    have kind || die "kind: not found; install kind, or use --method ssh or --method registry for a remote k3s"
     kind get clusters 2>/dev/null | grep -qxF "$KIND_CLUSTER" || die "kind cluster '$KIND_CLUSTER' not found (kind get clusters)"
     info "loading ${IMAGES[*]} into kind cluster $KIND_CLUSTER (kind load docker-image)"
     kind load docker-image "${IMAGES[@]}" --name "$KIND_CLUSTER"
     echo "check on the node: docker exec ${KIND_CLUSTER}-control-plane crictl images | grep ${OPENTSX_IMAGE_REPO##*/}"
     exit 0 ;;
   registry)
-    [[ "$OPENTSX_IMAGE_REPO" == */* ]] || die "OPENTSX_IMAGE_REPO=$OPENTSX_IMAGE_REPO has no registry host - e.g. 20-configure.sh OPENTSX_IMAGE_REPO=registry.lan:5000/opentsx, then rebuild"
+    [[ "$OPENTSX_IMAGE_REPO" == */* ]] || die "OPENTSX_IMAGE_REPO: \"$OPENTSX_IMAGE_REPO\" has no registry host; set one with 20-configure.sh OPENTSX_IMAGE_REPO=registry.lan:5000/opentsx, then rebuild with 10-build.sh"
     s="$(saver)"
     for img in "${IMAGES[@]}"; do info "pushing $img"; "$s" push "$img"; done
     echo "k3s pulls from ${OPENTSX_IMAGE_REPO%%/*}; a plain-HTTP registry needs /etc/rancher/k3s/registries.yaml on each node"
     exit 0 ;;
-  none) info "IMAGE_METHOD=none - nothing to import"; exit 0 ;;
+  none) info "$METHOD_FROM none: nothing to import"; exit 0 ;;
   *) usage_error "$METHOD_FROM: \"$METHOD\" is not a method; expected $METHODS" ;;
 esac
 

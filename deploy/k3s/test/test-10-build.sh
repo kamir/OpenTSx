@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Tests the arguments of deploy/k3s/10-build.sh: an unknown option, an option without its value, a builder that is not
-# one, and an argument exit 2 before Maven or an image builder runs, and --help lists the exit codes. Stand-ins for
-# mvn, java and the builders record any call; needs no JDK, no builder, no network.
+# one, and an argument exit 2 before Maven or an image builder runs, --help lists the exit codes, and a --tag that
+# differs from OPENTSX_TAG prints a warning. Stand-ins for mvn, java, the builders and deploy/docker/stage.sh record
+# any call; needs no JDK, no builder, no network.
 #
 #   bash deploy/k3s/test/test-10-build.sh
 set -euo pipefail
@@ -53,6 +54,20 @@ if (( rc != 0 )) || ! grep -qF "  2  usage error" "$WORK/help.out"; then
   failed "help: exit $rc, expected 0 and the exit code 2 in the usage"; sed 's/^/    /' "$WORK/help.out"
 else
   echo "ok   help"
+fi
+
+# a copy of the script in a throw-away tree, so the stand-in stage.sh writes nothing into deploy/docker
+mkdir -p "$WORK/repo/deploy/k3s" "$WORK/repo/deploy/docker"
+cp "$K3S_DIR/10-build.sh" "$K3S_DIR/lib.sh" "$K3S_DIR/env.example" "$WORK/repo/deploy/k3s/"
+ln -s "$WORK/bin/record" "$WORK/repo/deploy/docker/stage.sh"
+rc=0
+env -i PATH="$WORK/bin:$PATH" HOME="$WORK" WORK="$WORK" OPENTSX_ENV_FILE="$WORK/none.env" \
+  bash "$WORK/repo/deploy/k3s/10-build.sh" --skip-maven --builder docker --tag 9.9.9 > "$WORK/tag-differs.out" 2>&1 || rc=$?
+message='  warn  --tag: "9.9.9" differs from OPENTSX_TAG "3.0.1-local"; run 20-configure.sh OPENTSX_TAG=9.9.9 so the manifests use it'
+if (( rc != 0 )) || ! grep -qxF -- "$message" "$WORK/tag-differs.out"; then
+  failed "tag-differs: exit $rc, expected 0 and the message: $message"; sed 's/^/    /' "$WORK/tag-differs.out"
+else
+  echo "ok   tag-differs"
 fi
 
 if (( failures )); then echo "$failures failed"; exit 1; fi

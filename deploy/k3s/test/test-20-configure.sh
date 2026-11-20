@@ -241,8 +241,8 @@ expect env-command 2 "error: $WORK/env-command.env:2: not a KEY=VALUE line; writ
 [[ ! -e "$WORK/env-command-ran" ]] || failed "env-command: the line of .env was run"
 
 # no spaced hyphen as a dash in the messages and comments of the scripts (arithmetic and "-f -" are not dashes)
-dashes="$(cd "$K3S_DIR"; grep -nE "[[:alnum:])'?.] - [[:alnum:](]" lib.sh 00-prereqs.sh 20-configure.sh 40-demo.sh \
-  70-backup.sh 90-teardown.sh env.example base/kustomization.yaml | grep -vE '\(\(.* - .*\)\)' || (( $? == 1 )))"
+dashes="$(cd "$K3S_DIR"; grep -nE "[[:alnum:])'?.] - [[:alnum:](]" ./*.sh ../docker/*.sh env.example base/kustomization.yaml \
+  | grep -vE '\(\(.* - .*\)\)' || (( $? == 1 )))"
 if [[ -n "$dashes" ]]; then failed "dashes: a spaced hyphen used as a dash"; printf '%s\n' "$dashes" | sed 's/^/    /'
 else echo "ok   dashes"; fi
 

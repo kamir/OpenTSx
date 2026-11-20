@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Tests the arguments of deploy/k3s/11-import-images.sh: an unknown option, an option without its value, an argument,
 # a method that is not one (from --method or IMAGE_METHOD) and the methods ssh and kind without their target exit 2
-# before an image is saved or imported, and --help lists the exit codes. Stand-ins for docker, podman, k3s, ssh and
-# kind record any call; needs no image, no cluster, no network.
+# before an image is saved or imported, --help lists the exit codes, the method registry with a repository without a
+# registry host exits 1 before an image is pushed, and the method none imports nothing. Stand-ins for docker, podman,
+# k3s, ssh and kind record any call; needs no image, no cluster, no network.
 #
 #   bash deploy/k3s/test/test-11-import-images.sh
 set -euo pipefail
@@ -61,6 +62,25 @@ if (( rc != 0 )) || ! grep -qF "  2  usage error" "$WORK/help.out"; then
   failed "help: exit $rc, expected 0 and the exit code 2 in the usage"; sed 's/^/    /' "$WORK/help.out"
 else
   echo "ok   help"
+fi
+
+import registry-without-host IMAGE_METHOD=registry OPENTSX_IMAGE_REPO=opentsx --
+message="error: OPENTSX_IMAGE_REPO: \"opentsx\" has no registry host; set one with 20-configure.sh OPENTSX_IMAGE_REPO=registry.lan:5000/opentsx, then rebuild with 10-build.sh"
+if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/registry-without-host.out"; then
+  failed "registry-without-host: exit $rc, expected 1 and the message: $message"
+  sed 's/^/    /' "$WORK/registry-without-host.out"
+elif [[ -s "$WORK/calls.log" ]]; then
+  failed "registry-without-host: a tool was called: $(cat "$WORK/calls.log")"
+else
+  echo "ok   registry-without-host"
+fi
+
+import method-none -- --method none
+if (( rc != 0 )) || ! grep -qxF -- "==> --method none: nothing to import" "$WORK/method-none.out" || [[ -s "$WORK/calls.log" ]]; then
+  failed "method-none: exit $rc, expected 0, the message ==> --method none: nothing to import and no tool call"
+  sed 's/^/    /' "$WORK/method-none.out"
+else
+  echo "ok   method-none"
 fi
 
 if (( failures )); then echo "$failures failed"; exit 1; fi

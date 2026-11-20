@@ -16,6 +16,9 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -144,6 +147,55 @@ class BoatDataTest {
         assertEquals("line 2: time \"2027-01-02T00:00Z\" needs 35137 plan steps of PT15M from the earliest row "
                 + "(line 3); expected at most 35136 plan steps, from a longer baseStep or rows that span less time",
                 steps.getMessage());
+    }
+
+    @Test
+    void theFileHasAtMost527040DataRows() {
+        List<String> lines = new ArrayList<>();
+        lines.add("time,soc_percent");
+        lines.addAll(Collections.nCopies(527_040, "2026-07-04T10:00Z,80"));
+        assertEquals(527_040, BoatData.parse(lines, BoatDemo.plan(), BERLIN).rows());
+
+        lines.add("2026-07-04T10:00Z,81");
+        lines.add("2026-07-04T10:00Z,82");
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> BoatData.parse(lines, BoatDemo.plan(), BERLIN));
+        assertEquals("line 527042: more than 527040 data rows; expected at most 527040 rows, such as one row per "
+                + "minute for 366 days", e.getMessage());
+    }
+
+    @Test
+    void aRowWithoutATimeCountsAsADataRow() {
+        List<String> lines = new ArrayList<>();
+        lines.add("time,soc_percent");
+        lines.addAll(Collections.nCopies(527_040, "2026-07-04T10:00Z,80"));
+        lines.add(",81");
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> BoatData.parse(lines, BoatDemo.plan(), BERLIN));
+        assertEquals("line 527042: more than 527040 data rows; expected at most 527040 rows, such as one row per "
+                + "minute for 366 days", e.getMessage());
+    }
+
+    @Test
+    void parseStopsAtTheFirstRowOverTheBound() {
+        List<String> lines = new AbstractList<>() {
+            @Override
+            public String get(int i) {
+                if (i > 527_041) {
+                    throw new IllegalStateException("line " + (i + 1) + " was read");
+                }
+                return i == 0 ? "time,soc_percent" : "2026-07-04T10:00Z,80";
+            }
+
+            @Override
+            public int size() {
+                return 10_000_000;
+            }
+        };
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> BoatData.parse(lines, BoatDemo.plan(), BERLIN));
+        assertEquals("line 527042: more than 527040 data rows; expected at most 527040 rows, such as one row per "
+                + "minute for 366 days", e.getMessage());
     }
 
     @Test

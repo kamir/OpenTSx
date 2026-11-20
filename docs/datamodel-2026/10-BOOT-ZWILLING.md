@@ -224,7 +224,9 @@ of **invented** example rows, each with a `note` that starts with `EXAMPLE`). Re
 
 The German column names `zeit`, `modus`, `landstrom`, `soc_prozent`, `last_w`, `<device>_an`, `einstrahlung_wm2` and
 `notiz` and the German modes `hafen`, `segeln`, `anker` and `unbemannt` are accepted as aliases. A column named twice
-is refused. The rows may span at most 3653 days and at most 35136 steps of the plan (366 days of 15-minute steps).
+is refused. The rows may span at most 3653 days and at most 35136 steps of the plan (366 days of 15-minute steps), and
+a file has at most 527040 data rows (one row per minute for 366 days); every line after the header that is neither
+blank nor a comment counts.
 
 Separator `,` or `;` (then a decimal comma is allowed), `#` lines are comments. Rows inside a 15-minute step are
 averaged (mode: last value); gaps up to 1 h are held, after that the model calculates (origin `SYNTHETIC`). Measured

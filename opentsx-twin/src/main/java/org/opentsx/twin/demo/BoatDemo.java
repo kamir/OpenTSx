@@ -233,7 +233,8 @@ public final class BoatDemo {
             if (data == null) {
                 return o -> synthetic(o, plan);
             }
-            BoatData d = TwinCli.csv(data, "operating data file", lines -> BoatData.parse(lines, plan, zone));
+            BoatData d = TwinCli.csv(data, "operating data file", BoatData.MAX_ROWS,
+                    lines -> BoatData.parse(lines, plan, zone));
             return o -> real(o, plan, d, calibrate);
         });
     }

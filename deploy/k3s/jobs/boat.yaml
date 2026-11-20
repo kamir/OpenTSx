@@ -33,7 +33,7 @@ spec:
           resources:
             requests: {cpu: 250m, memory: 384Mi}   # measured peak RSS ~300-410 MB with the bundled data
             # heap 1152 MiB (75 %): --data with one row per step for a year (35136 steps) and --calibrate, measured
-            # peak RSS 1312 MB; a heap of 768 MiB runs out of memory
+            # peak RSS 1312 MB, with 527040 rows (the most boat reads) 1301 MB; a heap of 768 MiB runs out of memory
             limits: {cpu: "1", memory: 1536Mi}
           securityContext:
             allowPrivilegeEscalation: false

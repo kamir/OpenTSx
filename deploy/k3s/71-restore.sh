@@ -39,7 +39,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 [[ -n "$DIR" ]] || usage_error "DIR: missing; expected 71-restore.sh DIR [--only LIST] [--yes]"
-[[ -f "$DIR/MANIFEST" ]] || die "$DIR/MANIFEST not found - not a 70-backup.sh directory"
+[[ -f "$DIR/MANIFEST" ]] || die "$DIR/MANIFEST: not found; expected a directory written by 70-backup.sh"
 load_env
 
 declare -A PVC=([stats-state]=opentsx-stats-state [data]=opentsx-data [iceberg-catalog]=opentsx-iceberg-catalog
@@ -55,7 +55,7 @@ while read -r key size name; do
   [[ "$key" == file=* ]] || continue
   sum="${key#file=}"
   [[ -f "$DIR/$name" ]] || die "$name listed in MANIFEST but missing"
-  [[ "$(sha256sum "$DIR/$name" | cut -d' ' -f1)" == "$sum" ]] || die "$name: checksum mismatch - backup damaged"
+  [[ "$(sha256sum "$DIR/$name" | cut -d' ' -f1)" == "$sum" ]] || die "$name: checksum mismatch; the backup is damaged, use another backup"
   [[ "$name" == *.tar.gz ]] && { gzip -t "$DIR/$name" || die "$name: not a valid gzip archive"; }
   ok "$name ($size bytes)"
 done < "$DIR/MANIFEST"
@@ -78,12 +78,12 @@ fi
 if $RESTORE_ENV; then
   [[ -f "$ENV_FILE" ]] && cp -p "$ENV_FILE" "$ENV_FILE.before-restore" && warn "previous .env kept as $ENV_FILE.before-restore"
   (umask 077; cp "$DIR/env" "$ENV_FILE"); chmod 600 "$ENV_FILE"
-  ok "deploy/k3s/.env restored - run 20-configure.sh (re-renders the overlay) and 30-deploy.sh"
+  ok "deploy/k3s/.env: restored; run 20-configure.sh (re-renders the overlay) and 30-deploy.sh"
   (( ${#PARTS[@]} )) || exit 0
   load_env
 fi
 
-kc get namespace "$OPENTSX_NS" >/dev/null 2>&1 || die "namespace $OPENTSX_NS not found - run 20-configure.sh and 30-deploy.sh first"
+kc get namespace "$OPENTSX_NS" >/dev/null 2>&1 || die "namespace $OPENTSX_NS: not found; run 20-configure.sh and 30-deploy.sh first"
 PVCS=()
 for part in "${PARTS[@]}"; do
   kns get pvc "${PVC[$part]}" >/dev/null 2>&1 || die "PVC ${PVC[$part]} not found (LAKE profile not configured? run 30-deploy.sh)"

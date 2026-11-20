@@ -102,5 +102,5 @@ fi
 info "built $TOOLS_IMAGE and $STUDIO_IMAGE"
 echo "next: deploy/k3s/11-import-images.sh   (or IMAGE_METHOD=registry / none, see --help there)"
 if [[ "$OPENTSX_TAG" != "$CONFIGURED_TAG" ]]; then
-  warn "tag $OPENTSX_TAG differs from .env - run 20-configure.sh OPENTSX_TAG=$OPENTSX_TAG so the manifests use it"
+  warn "--tag: \"$OPENTSX_TAG\" differs from OPENTSX_TAG \"$CONFIGURED_TAG\"; run 20-configure.sh OPENTSX_TAG=$OPENTSX_TAG so the manifests use it"
 fi

@@ -15,7 +15,7 @@ marked **assumption** are estimates to be replaced by measurements on your hardw
 | Job `windpark-sim` (Ostsee demo) | 500m / 2 | 768Mi / 1.5Gi | PVC `opentsx-data` 2Gi (index, ground truth) | **measured** peak RSS 460–560 MB, ~10 s wall, ~18 s CPU (2.16 M values, Iceberg sink) |
 | Job `twin` | 250m / 1 | 256Mi / 512Mi | n/a | **measured** peak RSS ~120 MB, 1.4 s |
 | Job `house` | 250m / 1 | 512Mi / 4Gi | n/a | **measured**: `--calibrate` needs > 384 MB heap; RSS ~670 MB at 512 MB heap; 9–19 s; `--calibrate` over 10 years of bills (87673 steps) needs a heap above 2.5 GiB, measured peak RSS 3260 MB at a 3 GiB heap |
-| Job `boat` | 250m / 1 | 384Mi / 1536Mi | n/a | **measured** peak RSS 300–410 MB, 2 s; `--data` with one row per step for a year (35136 steps) and `--calibrate` runs out of memory at a 768 MiB heap, peak RSS 1312 MB at 1152 MiB |
+| Job `boat` | 250m / 1 | 384Mi / 1536Mi | n/a | **measured** peak RSS 300–410 MB, 2 s; `--data` with one row per step for a year (35136 steps) and `--calibrate` runs out of memory at a 768 MiB heap, peak RSS 1312 MB at 1152 MiB; with 527040 rows, the most `boat` reads from one file, peak RSS 1301 MB at 1152 MiB |
 | Job `studio-export` | 250m / 1 | 512Mi / 1Gi | n/a | **measured** peak RSS 400–670 MB, 11 s (all three scenarios) |
 | Job `metadata` | 250m / 1 | 256Mi / 512Mi | n/a | **measured** peak RSS ~100 MB, 1 s |
 | Job `kafscale-check` | 250m / 1 | 256Mi / 768Mi | n/a | Kafka client only |

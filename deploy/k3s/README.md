@@ -147,10 +147,15 @@ from the shell that is not the value of an option.
 
 ## Size the twin Jobs
 
-The Job `boat` (limit 1536Mi, heap 1152 MiB) holds `--data` with one row per 15-minute step for a year (35136 steps)
-and `--calibrate`; measured peak RSS 1312 MB. The Job `house` (limit 4Gi, heap 3 GiB) holds `--calibrate` with bills
-over 10 years (87673 steps); measured peak RSS 3260 MB. More rows per step need more memory; raise the limit in
-`deploy/k3s/jobs/boat.yaml`.
+The Job `boat` (limit 1536Mi, heap 1152 MiB) has the memory for `--data` over a year of 15-minute steps (35136
+steps) and `--calibrate`: measured peak RSS 1312 MB with one row per step and 1301 MB with 527040 rows, the most rows
+`boat` reads from one file. The Job reads your `--data` file from the Secret `opentsx-private`, mounted at `/private`,
+and Kubernetes refuses a Secret larger than 1 MiB
+([Secret size limit](https://kubernetes.io/docs/concepts/configuration/secret/#restriction-data-size)). A year at one
+row per 15-minute step (35136 rows of 10 columns, 2.3 MB) does not fit into it; run
+`bin/opentsx boat --data <file> --calibrate` on a host for such a file, where `<file>` is your CSV file. The Job
+`house` (limit 4Gi, heap 3 GiB) holds `--calibrate` with bills over 10 years (87673 steps); measured peak RSS
+3260 MB.
 
 ## Retrieval server on the episodes topic
 

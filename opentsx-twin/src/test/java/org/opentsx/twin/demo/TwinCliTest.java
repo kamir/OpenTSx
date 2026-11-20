@@ -10,8 +10,10 @@ import org.opentsx.conf.OpenTsxConf;
 import org.opentsx.conf.Registry;
 import org.opentsx.twin.TwinPlan;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -290,6 +292,33 @@ class TwinCliTest {
                 + "2026-07-04T10:05Z,cruise\n");
         assertEquals(new Result(2, "", "opentsx: " + badMode + ": line 4: mode \"cruise\" is not a mode; expected "
                 + "harbour, sailing, anchor or away\n"), run(BoatDemo::run, "--data", badMode.toString()));
+    }
+
+    @Test
+    void theBoatDataFileIsReadOnlyUpToTheFirstRowOverTheBound() throws IOException {
+        Path data = tmp.resolve("long.csv");
+        try (OutputStream o = new BufferedOutputStream(Files.newOutputStream(data))) {
+            o.write("time,soc_percent\n".getBytes(StandardCharsets.US_ASCII));
+            byte[] row = "2026-07-04T10:00Z,80\n".getBytes(StandardCharsets.US_ASCII);
+            for (int i = 0; i < 532_041; i++) {
+                o.write(row);
+            }
+            // not UTF-8, 5000 rows after the bound: beyond what the reader buffers ahead
+            o.write(new byte[]{'x', (byte) 0xFF, '\n'});
+        }
+        assertEquals(new Result(2, "", "opentsx: " + data + ": line 527042: more than 527040 data rows; expected at "
+                + "most 527040 rows, such as one row per minute for 366 days\n"),
+                run(BoatDemo::run, "--data", data.toString()));
+    }
+
+    @Test
+    void theBoundedReadKeepsAFileAtTheBoundAndFailsWhenTheParserAcceptsMore() throws IOException {
+        Path file = Files.writeString(tmp.resolve("rows.csv"), "a\n1\n# note\n\n2\n3\n4\n");
+        assertEquals(List.of("a", "1", "# note", "", "2", "3", "4"), TwinCli.csv(file, "rows file", 4, lines -> lines));
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> TwinCli.csv(file, "rows file", 2, lines -> lines));
+        assertEquals(file + ": read up to data row 3, but the parser did not refuse more than 2 data rows",
+                e.getMessage());
     }
 
     @Test

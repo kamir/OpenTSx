@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Tests the arguments of deploy/k3s/71-restore.sh: an unknown option, --only without its value or with an unknown
-# part, a second directory and no directory exit 2 before kubectl runs, and --help lists the exit codes. A stand-in
+# part, a second directory and no directory exit 2 before kubectl runs, and --help lists the exit codes; a directory
+# without a MANIFEST and an archive whose checksum differs from the MANIFEST exit 1 before kubectl runs. A stand-in
 # kubectl records any call; needs no kubectl, no cluster, no network.
 #
 #   bash deploy/k3s/test/test-71-restore.sh
@@ -54,6 +55,26 @@ if (( rc != 0 )) || ! grep -qF "  2  usage error" "$WORK/help.out"; then
 else
   echo "ok   help"
 fi
+
+refused() {   # NAME MESSAGE ARG ...: a damaged backup, exit 1, before kubectl runs
+  local name="$1" message="$2"; shift 2
+  restore "$name" "$@"
+  if (( rc != 1 )); then
+    failed "$name: exit $rc, expected 1"; sed 's/^/    /' "$WORK/$name.out"
+  elif ! grep -qxF -- "$message" "$WORK/$name.out"; then
+    failed "$name: expected the message: $message"; sed 's/^/    /' "$WORK/$name.out"
+  elif [[ -s "$WORK/calls.log" ]]; then
+    failed "$name: kubectl was called"
+  else
+    echo "ok   $name"
+  fi
+}
+mkdir -p "$WORK/empty" "$WORK/damaged"
+refused no-manifest "error: $WORK/empty/MANIFEST: not found; expected a directory written by 70-backup.sh" "$WORK/empty" --yes
+printf 'data' > "$WORK/damaged/data.tar.gz"
+printf 'file=%064d 4 data.tar.gz\n' 0 > "$WORK/damaged/MANIFEST"
+refused checksum-mismatch "error: data.tar.gz: checksum mismatch; the backup is damaged, use another backup" \
+  "$WORK/damaged" --yes
 
 if (( failures )); then echo "$failures failed"; exit 1; fi
 echo "all passed"

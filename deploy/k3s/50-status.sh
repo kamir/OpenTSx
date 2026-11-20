@@ -25,7 +25,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 load_env
-kc get namespace "$OPENTSX_NS" >/dev/null 2>&1 || die "namespace $OPENTSX_NS not found - not deployed yet (30-deploy.sh)"
+kc get namespace "$OPENTSX_NS" >/dev/null 2>&1 || die "namespace $OPENTSX_NS: not found; deploy it first with 30-deploy.sh"
 
 info "configuration (opentsx-config)"
 # shellcheck disable=SC2016  # a Go template, not a shell expansion
