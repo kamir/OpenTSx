@@ -137,7 +137,7 @@ with one value per component. The processor writes the points as `opentsx.vector
 The web workbench and Java implement the operator. Both pass the shared test vectors in
 [testvectors/align-vector.v1.json](testvectors/align-vector.v1.json).
 
-Implemented in: `workbench/vector.ts:125-238`, `vector/VectorAligner.java:99-213`, `vector/VectorStream.java:149-348`.
+Implemented in: `workbench/vector.ts:125-238`, `vector/VectorAligner.java:100-219`, `vector/VectorStream.java:149-348`.
 
 ### 2.1 Parameters
 
@@ -158,7 +158,7 @@ Implemented in: `workbench/vector.ts:125-238`, `vector/VectorAligner.java:99-213
 The workbench edits seconds and writes `PT<seconds>S`. It writes `maxAge` only with `fill: as-of`, and `lateness`
 only when it is greater than 0.
 
-Implemented in: `vector/VectorJob.java:83-104,119-130`, `vector/VectorAligner.java:21,29-38,104`,
+Implemented in: `vector/VectorJob.java:83-104,119-130`, `vector/VectorAligner.java:21,29-38,105`,
 `vector/VectorStream.java:110-111`, `workbench/flow.ts:505-509`.
 
 ### 2.2 Clock, components and key
@@ -174,7 +174,7 @@ Implemented in: `vector/VectorJob.java:83-104,119-130`, `vector/VectorAligner.ja
 | Time axis | Every input MUST have a time axis. The workbench refuses spectra, histograms and other axes with `<bucket> has a <kind> axis. A vector needs inputs with a time axis.` |
 | One series per component | The key MUST tell apart the series that give the same component. The processor and `VectorAligner` refuse data in which two series give the same component of one vector: `the series <a> and <b> both give the component "<c>" of one vector; choose a key that tells them apart`. The workbench aggregates both series into one value. |
 
-Implemented in: `vector/VectorAligner.java:88-97,103-198,200-213`, `workbench/vector.ts:56-93,125-178`,
+Implemented in: `vector/VectorAligner.java:89-98,104-204,206-219`, `workbench/vector.ts:56-93,125-178`,
 `vector/VectorStream.java:240-282`.
 
 ### 2.3 Record

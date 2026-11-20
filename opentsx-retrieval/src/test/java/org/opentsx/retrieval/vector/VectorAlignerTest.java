@@ -125,5 +125,10 @@ class VectorAlignerTest {
 
         assertEquals(2, VectorAligner.align(in, new VectorAligner.Params(Duration.ofSeconds(60), "turbine",
                 VectorAligner.Agg.MEAN, false, null, false)).size());
+
+        List<VectorAligner.Input> twoInputs = List.of(new VectorAligner.Input("x.wind_speed", List.of(b)),
+                new VectorAligner.Input("x", List.of(a, b)));
+        assertEquals("the series b and a both give the component \"x.wind_speed\" of one vector; choose a key that tells them apart",
+                assertThrows(IllegalArgumentException.class, () -> VectorAligner.align(twoInputs, all)).getMessage());
     }
 }
