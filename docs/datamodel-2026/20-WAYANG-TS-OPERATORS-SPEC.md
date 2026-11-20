@@ -330,7 +330,7 @@ whole-topic ownership or the signed fleet requirements in S5/S7.
 | Ambiguity | A send error or interruption can leave an unknown broker outcome. Retain `publishing`/`uncertain`, refuse retransmission and block replacement/retirement for that group. A lost HTTP reply after durable `acknowledged` returns the cached receipt without Kafka I/O. Never infer absence from a missing reply. |
 | Terminal recovery | Persist verified execution results and the adopted gateway epoch before reloading authority for retirement. Bounded retries reuse the persisted result and retry the same durable retirement operation without another execute call. Continuous Stop persists its verified cycle and epoch before retirement. Publish terminal state and release ownership only after confirmed retirement. |
 | Ledger | Use one checksummed atomic `opentsx.publication-ledger.v1` envelope, fsynced file/directory updates and an exclusive process lock. Directories are `0700`; private files are `0600`. Corruption, missing initialized state, a second owner or storage failure rejects work. Reuse the same private directory after restart. |
-| Capacity | Retain at most 64 deployment groups, 64 operation receipts and 256 request entries. The serialized ledger envelope is at most 4,194,304 bytes. Driver control HTTP bodies are capped at 1,048,576 bytes, independently of the 32,768-byte original DAG limit. The publication HTTP body is separately capped at 85,000,000 bytes. Each active group reserves one operation slot for retirement: recorded operations plus active groups MUST NOT exceed 64. Admission/switching preserve that reserve. Capacity is fail-closed, not an eviction or tenant-quota policy. |
+| Capacity | Retain at most 64 deployment groups, 64 operation receipts and 256 request entries. The serialized ledger envelope is at most 4,194,304 bytes. Driver control HTTP bodies are capped at 1,048,576 bytes, independently of the 32,768-byte limit the UI rollout applies to an original DAG. The publication HTTP body is separately capped at 85,000,000 bytes. Each active group reserves one operation slot for retirement: recorded operations plus active groups MUST NOT exceed 64. Admission/switching preserve that reserve. Capacity is fail-closed, not an eviction or tenant-quota policy. |
 
 The authenticated owner route `POST /api/v1/dags/wayang-rust/deployments/{id}/replace` accepts a canonical
 `expectedEpoch` and `mode`, either `resume` or `restart`. Resume accepts no replacement flow/DAG fields.
@@ -391,6 +391,14 @@ With context, `limits.series` is at most 1,024 and `limits.samples` at most
 legacy profile retains its 64-series and 100,000-sample ceilings, three clean
 operations and trailing-resample restriction. Neither profile silently widens
 the caller's declared limits.
+
+A worker the operator starts with `serve --profile measurement` raises these
+ceilings for the B4.2 board measurement: 16,384 series and 4,000,000 samples with
+or without context, 100,000 records, 64 MiB of input and output, 256 MiB of state
+and a 4,390,912-byte request that can carry a full shared assignment. A request
+MUST NOT select or widen the profile, and the worker MUST still refuse every
+declared limit above it. Replay, signed runs and the default `standard` profile
+keep the ceilings above.
 
 Parameters, defaults and output semantics follow the existing processor
 descriptions. The adapter validates graph shape, typed edges, bound inventories,

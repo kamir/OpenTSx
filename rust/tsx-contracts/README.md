@@ -32,7 +32,8 @@ The package's supported compiler baseline is Rust 1.89.0, also checked locally.
 
 The [implementation](src/lib.rs) rejects unknown or missing envelope fields, duplicate JSON keys,
 invalid JSON Unicode escapes, trailing documents and container nesting above 64.
-Assignment input is limited to 65,536 UTF-8 bytes. Each source or fragment text is limited to 32,768 bytes.
+Assignment input is limited to 2,162,688 UTF-8 bytes (`MAX_ASSIGNMENT_BYTES`). Each source or fragment text is
+limited to 524,288 bytes (`MAX_DAG_BYTES`), enough for a source inventory of 16,384 series ids.
 An assignment contains between 1 and 128 whole-topic inputs. A topic is the atomic placement unit.
 Identifiers, runtime/catalog identity and artifact/content digests follow the shared contract.
 Epochs, fences, partition counts and internal recovery positions use canonical decimal strings with checked bounds.

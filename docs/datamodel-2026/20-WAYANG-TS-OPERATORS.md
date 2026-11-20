@@ -784,7 +784,8 @@ durable-storage behavior, a remote-network result or Track B parity.
 
 1. Fix the device, OS image, kernel, CPU governor (`performance`) and storage; record them.
 2. Run a local KafScale or connect to one KafScale over a fixed network; record which.
-3. Feed one recorded input topic (simulator, fixed seed) with 100, 1,000 and 10,000 series.
+3. Feed one recorded input topic (simulator, fixed seed) with 100, 1,000 and 10,000 series, paced at one sample per
+   series and second (D-T15).
 4. Run each track alone, three times per size, 30 minutes per run after a 5-minute warm-up. Track A runs on the JDK
    used in CI (17 and 21), with the heap set explicitly and recorded.
 5. Sample RSS, CPU time and lag every second from `/proc`; record start time to first fetch and to first output.
@@ -792,8 +793,9 @@ durable-storage behavior, a remote-network result or Track B parity.
 7. Publish raw samples and the scripts in the repository.
 
 The [board evidence tool](../../tools/wayang_board_evaluation.py) prepares this
-27-condition matrix for one ARM64 board (D-T14), Java 17/21/Rust and three
-repetitions per series count. Its validator checks supplied
+81-condition matrix for one ARM64 board (D-T14): the pass-through, clean and
+statistics chains on a paced feed of one sample per series and second (D-T15),
+Java 17/21/Rust and three repetitions per series count. Its validator checks supplied
 source/artifact/sample/output proof integrity. It does not start workloads,
 collect physical measurements or attest hardware. `board_identity.py` and
 `board_resource_sampler.py` record step 1 and step 5 in its formats; the
