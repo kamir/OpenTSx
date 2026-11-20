@@ -928,7 +928,7 @@ Gives, at every sample index, the mean of all input series and the mean plus and
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | available | operator `sigma.band` | A value that is not finite is left out of its column. One series gives a band of width 0. |
-| java | available (2.x) | `org.opentsx.data.series.TimeSeriesObject#sigmaForAll` | 2.x model in opentsx-core: averageForAll and sigmaForAll (std with n − 1) up to the shortest series; sigmaForAll uses the sample index as x. The Swing button Sigma Band opens org.opentsx.chart.simple.SigmaFilter. No automated test. |
+| java | available (2.x) | `org.opentsx.data.series.TimeSeriesObject#sigmaForAll` | 2.x model in opentsx-core: averageForAll and sigmaForAll (std with n − 1) up to the shortest series; sigmaForAll uses the sample index as x. The Swing button Sigma Band opens org.opentsx.chart.simple.SigmaFilter, which charts the mean and the mean plus and minus one standard deviation; SigmaFilterTest checks the three series. |
 | python | none |  |  |
 | processor | none |  |  |
 | go | none |  |  |

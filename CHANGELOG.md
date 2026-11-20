@@ -2034,10 +2034,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   dialog.
 - `opentsx-core`: `TSOperationControlerPanel` writes nothing to standard output and no longer uses java.util.logging;
   the fitted alpha of `DFA` and the time slices of `Histogram cross-cut` and `TEST Normal Distribution` are DEBUG
-  lines. A failing `show PN`, `DFA`, `Auto-Correlation`, `NORM std=1, avg=0`, `MF-DFA`, `Shuffle` or `TEST Normal
-  Distribution` stops and shows a message such as `DFA of <series>: cannot compute the fluctuation function (<cause>)`
-  in a dialog instead of logging and going on, `persistTSB()` throws `UncheckedIOException` with `<track>/<label>:
-  cannot write the bucket (<cause>)`, and cancelling the `Shuffle` dialog does nothing.
+  lines. A failing `show PN`, `DFA`, `Auto-Correlation`, `NORM std=1, avg=0`, `MF-DFA` or `Shuffle` stops and shows a
+  message such as `DFA of <series>: cannot compute the fluctuation function (<cause>)` in a dialog instead of logging
+  and going on, `persistTSB()` throws `UncheckedIOException` with `<track>/<label>: cannot write the bucket
+  (<cause>)`, and cancelling the `Shuffle` dialog does nothing.
 - `opentsx-core`: `ReturnIntervallStatistik2._addData` and `TSPropertyTester._addData` add the intervals between the
   times they are given; they passed an empty list to `addDistData`, so `SingleTsRISTool` collected nothing. A time
   before the time before it throws `IllegalArgumentException` with `_addData: time <k> of <name> is <value>, before
@@ -2127,6 +2127,27 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `deploy/k3s/70-backup.sh` and `71-restore.sh` stop with `pod <name>: not ready after 180 s; check that the image
   <image> is imported and that the PVCs are on one node, see <kubectl> -n <namespace> describe pod <name>` when their
   helper pod does not get ready.
+- `opentsx-core`: `NORM std=1, avg=0` shows `standardized series of <series>: cannot standardize the values (<cause>)`
+  in a dialog and opens no chart when a series has fewer than two values, a NaN or infinite value or no positive
+  standard deviation; it threw `IllegalArgumentException` on the event dispatch thread.
+- `opentsx-core`: `show PN` shows `<folder>: no such folder; press save PN to create it` while the folder of the panel
+  does not exist yet, and `<folder>: cannot open the folder (<cause>); open it in a file manager` when the desktop
+  cannot open it. On a desktop without open support it did nothing.
+- `opentsx-core`: `FFT` over two series with the same label shows `FFT of <label>: cannot open the chart (<cause>)` in
+  a dialog and records nothing; it threw `IllegalArgumentException` on the event dispatch thread.
+- `opentsx-core`: the panel `DFA` uses at most as many window sizes as fit 1 apart between 4 and an eighth of the
+  number of values, so a series of 1024 values gets 124 window sizes and a finite alpha instead of 250 sizes, almost
+  all of them 4, and alpha NaN. Series of 2032 values or more keep their 250 window sizes and their alpha.
+- `opentsx-core`: `TEST Normal Distribution` names its series `l=20` to `l=100` and opens both charts; when two slice
+  lengths gave the same number of slices, as for a series of 100 values, both W histograms were named `HISTOGRAM/1`
+  and the button threw `IllegalArgumentException` on the event dispatch thread.
+- `opentsx-core`: `show Chart` of `MacroTrackerFrame` does nothing without a selection, shows `show Chart: no chart
+  for <node>; select an operation node` for a node that is not an operation node and `show Chart: no chart for <node>;
+  select a Profile, ENTROPY or Shuffle node` for an operation node without a chart under its target; it threw
+  `NullPointerException`. `MacroTrackerFrame.addSource` without an open tracker writes only its DEBUG line instead of
+  throwing `NullPointerException`.
+- `opentsx-core`: `Sigma Band` (`SigmaFilter.open`) charts the mean of the selected series and the mean plus and minus
+  one standard deviation; it charted the static rows that only `SigmaFilter.main` fills, so the chart was empty.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

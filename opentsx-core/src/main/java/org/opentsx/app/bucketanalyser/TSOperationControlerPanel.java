@@ -425,15 +425,21 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_jTextField3ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        if (Desktop.isDesktopSupported()) {
-            File folder = getPixNodeFolder().getParentFile();
-            try {
-                Desktop.getDesktop().open(folder);
-            } catch (IOException | IllegalArgumentException ex) {
-                showActionError(folder + ": cannot open the folder (" + ex + ")");
-            }
+        File folder = getPixNodeFolder().getParentFile();
+        if (!folder.isDirectory()) {
+            showActionError(folder + ": no such folder; press save PN to create it");
+            return;
+        }
+        try {
+            openFolder(folder);
+        } catch (IOException | IllegalArgumentException | UnsupportedOperationException ex) {
+            showActionError(folder + ": cannot open the folder (" + ex + "); open it in a file manager");
         }
     }//GEN-LAST:event_jButton2ActionPerformed
+
+    void openFolder(File folder) throws IOException {
+        Desktop.getDesktop().open(folder);
+    }
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
         Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
@@ -464,7 +470,12 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
             showFftError(e.getMessage());
             return;
         }
-        showFftResults(v);
+        try {
+            showFftResults(v);
+        } catch (IllegalArgumentException e) {
+            showActionError("FFT of " + this.label + ": cannot open the chart (" + e + ")");
+            return;
+        }
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(this.label, "FFT_" + this.label, "FFT of "));
     }//GEN-LAST:event_jButton3ActionPerformed
 
@@ -543,7 +554,8 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
                 IDetrendingMethod dfa = DetrendingMethodFactory.getDetrendingMethod(DetrendingMethodFactory.DFA2);
                 order = dfa.getPara().getGradeOfPolynom();
-                dfa.getPara().setzSValues(nrOfSValues);
+                // initIntervalS divides the range from s_min to N / 4 by the count; a larger count gives a step of 0.
+                dfa.getPara().setzSValues(Math.max(2, Math.min(nrOfSValues, N / 4 - (Math.abs(order) + 2))));
 
                 dfa.setNrOfValues(N);
 
@@ -774,9 +786,14 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         for (TimeSeriesObject r : this.rows) {
 
-            TimeSeriesObject a = r.copy();
-
-            a = a.normalizeToStdevIsOne();
+            TimeSeriesObject a;
+            try {
+                a = r.copy().normalizeToStdevIsOne();
+            } catch (IllegalArgumentException ex) {
+                showActionError("standardized series of " + r.getLabel() + ": cannot standardize the values (" + ex
+                        + ")");
+                return;
+            }
 
             v.add(a);
 
@@ -1057,8 +1074,6 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
             HaeufigkeitsZaehlerDouble hz = new HaeufigkeitsZaehlerDouble();
 
-            hz.setLabel("SW_PDF_pvalues l=" + l);
-
             hz.min = minY;
             hz.max = maxY;
 
@@ -1096,7 +1111,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
             hz.calcWS();
 
-            v.add(hz.getHistogramNORM());
+            TimeSeriesObject pdf = hz.getHistogramNORM();
+            pdf.setLabel("l=" + l);
+            v.add(pdf);
             
             hz.mrCUMUL.normalize();
             hz.mrCUMUL.setLabel( "l=" + l );

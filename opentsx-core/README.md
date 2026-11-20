@@ -81,7 +81,12 @@ these buttons do not write a file. The modern tracker starts with an empty trans
 or Scala code to the clipboard and print nothing. Added sources, selected nodes and opened charts of the classic tracker
 are DEBUG lines of `MacroTrackerFrame` and `Track`. A PFD step that cannot be recorded throws
 `IllegalStateException` with `<operation>: cannot record the PFD step (<cause>)` to the caller of
-`MacroTrackerFrame.addTransformation`.
+`MacroTrackerFrame.addTransformation`. Without an open tracker, `MacroTrackerFrame.addSource` and
+`MacroTrackerFrame.addTransformation` write only their DEBUG line. `show Chart` of the classic tracker shows the chart
+of the selected operation node. A chart belongs to a node when its title equals the target of the node; of the panel
+operations only `Profile`, `ENTROPY` and `Shuffle` title their chart that way. For another operation node `show Chart`
+shows `show Chart: no chart for <node>; select a Profile, ENTROPY or Shuffle node`, for any other node
+`show Chart: no chart for <node>; select an operation node`, both in a dialog; without a selection it does nothing.
 Swing control tests use a display; the Java CI jobs run them under Xvfb on Ubuntu 24.04.
 Opening a chart panel prints nothing and creates no folder; the chart folder and the series colors are DEBUG lines of
 `TSStoreDescriptor` and `MultiChart`. `save PN` writes below `opentsx/plots/` in `user.home` and creates the folders
@@ -97,19 +102,26 @@ that message in a dialog.
 `Histogram cross-cut` and `TEST Normal Distribution` are DEBUG lines of `TSOperationControlerPanel`. Every recorded
 operation is a DEBUG line of `MacroTrackerFrame` and, while the macro tracker is open, of `Track` and `PFDRecorder`.
 `SigmaFilter` (`Sigma Band`) and `HurstSurface.plot` (`MF-DFA`) print nothing; their progress is a DEBUG line.
+The `Sigma Band` chart has three series: the mean of the selected series and the mean plus and minus one standard
+deviation.
 An operation is recorded in the macro track after it succeeded, so an operation that fails leaves the track unchanged.
-The chart comment of `DFA` has one line per series with its label and its fitted alpha. The operations in this table
-stop when they fail and show the message in a dialog:
+The chart comment of `DFA` has one line per series with its label and its fitted alpha. `DFA` uses at most 250
+window sizes from 4 to an eighth of the number of values; a series of fewer than 2032 values gets window sizes 1
+apart, so a series of 1024 values gets 124 window sizes and a finite alpha.
+`TEST Normal Distribution` runs the Shapiro-Wilk test on slices of 20, 40, 60, 80 and 100 values and opens both
+charts, with one series per slice length named `l=<length>`. A slice the test cannot evaluate, such as constant
+values, counts W = -1; a slice with a NaN or infinite value counts W = NaN.
+The operations in this table stop when they fail and show the message in a dialog:
 
 | Button | Message |
 |--------|---------|
-| `show PN` | `<folder>: cannot open the folder (<cause>)` |
+| `show PN` | `<folder>: no such folder; press save PN to create it` when the folder does not exist, otherwise `<folder>: cannot open the folder (<cause>); open it in a file manager` |
+| `FFT` | `FFT of <label>: cannot open the chart (<cause>)`; no chart opens |
 | `DFA` | `DFA of <series>: cannot compute the fluctuation function (<cause>)`; no chart opens |
 | `Auto-Correlation` | `auto-correlation of <series>: cannot correlate lag <lag> (<cause>)`; no chart opens |
-| `NORM std=1, avg=0` | `standardized series of <label>: cannot open the chart (<cause>)` |
+| `NORM std=1, avg=0` | `standardized series of <series>: cannot standardize the values (<cause>)` or `standardized series of <label>: cannot open the chart (<cause>)`; no chart opens |
 | `MF-DFA` | `MFDFA of <label>: cannot compute the analysis (<cause>)` |
 | `Shuffle` | `shuffle of <label>: cannot shuffle the series (<cause>)` |
-| `TEST Normal Distribution` | `SW test of <series>: cannot test the values <from> to <to> (<cause>)`; no chart opens |
 
 Cancelling the `Shuffle` dialog (`Number of shuffles:`), the `ENTROPY` dialog (`Length:`) or the
 `Histogram cross-cut` dialog (`Window length l=`) does nothing. `Histogram per series`, `Histogram cross-cut` and

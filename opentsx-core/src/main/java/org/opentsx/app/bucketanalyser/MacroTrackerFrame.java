@@ -8,6 +8,7 @@ import java.io.File;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import javax.swing.JDialog;
+import javax.swing.JOptionPane;
 import javax.swing.JTree;
 import javax.swing.ToolTipManager;
 import javax.swing.event.TreeSelectionEvent;
@@ -121,8 +122,10 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
 
     public static void addSource(TSBucketSource t) {
         LOG.debug("added source techSource={} hint={} cacheFolder={}", t.techSource, t.hint, t.cacheFolder);
-        frame.track.addSource(t);
-        frame.refresh();
+        if (frame != null) {
+            frame.track.addSource(t);
+            frame.refresh();
+        }
     }
 
     private javax.swing.JTextArea jTextAreaPFD;
@@ -319,9 +322,23 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jButton3ActionPerformed
-        String dialogKey = this.jLabel2.getText();
-        frame.track.showDialog(dialogKey);
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) jTree1.getLastSelectedPathComponent();
+        if (node == null) {
+            return;
+        }
+        Object selected = node.getUserObject();
+        if (!(selected instanceof Transform)) {
+            showError("show Chart: no chart for " + selected + "; select an operation node");
+            return;
+        }
+        if (!track.showDialog(((Transform) selected).getDialogKey())) {
+            showError("show Chart: no chart for " + selected + "; select a Profile, ENTROPY or Shuffle node");
+        }
     }// GEN-LAST:event_jButton3ActionPerformed
+
+    void showError(String message) {
+        JOptionPane.showMessageDialog(this, message);
+    }
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jButton2ActionPerformed
 
@@ -563,10 +580,15 @@ class Track {
 
     }
 
-    void showDialog(String dialogKey) {
+    boolean showDialog(String dialogKey) {
 
         LOG.debug("showing chart dialog key={} registered={}", dialogKey, dialogs.keySet());
-        dialogs.get(dialogKey).setVisible(true);
+        JDialog dialog = dialogs.get(dialogKey);
+        if (dialog == null) {
+            return false;
+        }
+        dialog.setVisible(true);
+        return true;
     }
 
 }

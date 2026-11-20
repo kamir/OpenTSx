@@ -1,16 +1,26 @@
 package org.opentsx.app.bucketanalyser;
 
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 import org.junit.jupiter.api.Test;
+import org.opentsx.data.series.TimeSeriesObject;
 
 import javax.swing.JDialog;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.datatransfer.DataFlavor;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -120,6 +130,170 @@ class MacroTrackerFrameTest {
 
         assertEquals("x(: cannot record the PFD step (" + thrown[0].getCause() + ")", thrown[0].getMessage());
         assertEquals("", printed);
+    }
+
+    @Test
+    void addingASourceWithoutAnOpenTrackerDoesNotThrow() {
+        assertNull(MacroTrackerFrame.frame);
+
+        assertDoesNotThrow(() -> MacroTrackerFrame.addSource(TSBucketSource.getSourceStockData("probe")));
+    }
+
+    @Test
+    void showChartOnASourceNodeShowsTheMessage() throws Exception {
+        ProbeTracker tracker = openProbeTracker();
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                MacroTrackerFrame.addSource(TSBucketSource.getSourceStockData("probe"));
+                select(tracker, tracker.jTree().getRowCount() - 1);
+                clickOn(tracker, "jButton3ActionPerformed");
+            });
+        } finally {
+            closeProbeTracker();
+        }
+
+        assertEquals(List.of("show Chart: no chart for SourceTSB{type=extracted via SDL2; name=probe}; select an "
+                + "operation node"), tracker.errors);
+    }
+
+    @Test
+    void showChartWithoutASelectionDoesNothing() throws Exception {
+        ProbeTracker tracker = openProbeTracker();
+        try {
+            SwingUtilities.invokeAndWait(() -> clickOn(tracker, "jButton3ActionPerformed"));
+        } finally {
+            closeProbeTracker();
+        }
+
+        assertEquals(List.of(), tracker.errors);
+    }
+
+    @Test
+    void showChartOnAProfileNodeShowsItsChart() throws Exception {
+        ProbeTracker tracker = openProbeTracker();
+        boolean shown;
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                clickOn(new TSOperationControlerPanel(rows(), chart(), "probe", null), "jButton7ActionPerformed");
+                tracker.track.dialogs.get("Profile_probe").setVisible(false);
+                select(tracker, tracker.jTree().getRowCount() - 1);
+                clickOn(tracker, "jButton3ActionPerformed");
+            });
+            shown = tracker.track.dialogs.get("Profile_probe").isVisible();
+        } finally {
+            disposeCharts();
+            closeProbeTracker();
+        }
+
+        assertTrue(shown, "the chart of the Profile node was not shown");
+        assertEquals(List.of(), tracker.errors);
+    }
+
+    @Test
+    void showChartOnAnOperationNodeWithoutItsChartNamesTheNodesThatHaveOne() throws Exception {
+        ProbeTracker tracker = openProbeTracker();
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                clickOn(new TSOperationControlerPanel(rows(), chart(), "probe", null), "jButton8ActionPerformed");
+                select(tracker, tracker.jTree().getRowCount() - 1);
+                clickOn(tracker, "jButton3ActionPerformed");
+            });
+        } finally {
+            disposeCharts();
+            closeProbeTracker();
+        }
+
+        assertEquals(List.of("show Chart: no chart for Transform{SIMPLE per Record Operation: Diff of }; select a "
+                + "Profile, ENTROPY or Shuffle node"), tracker.errors);
+    }
+
+    static class ProbeTracker extends MacroTrackerFrame {
+        final List<String> errors = new ArrayList<>();
+
+        void showError(String message) {
+            errors.add(message);
+        }
+
+        JTree jTree() {
+            try {
+                var declared = MacroTrackerFrame.class.getDeclaredField("jTree1");
+                declared.setAccessible(true);
+                return (JTree) declared.get(this);
+            } catch (ReflectiveOperationException e) {
+                throw new AssertionError(e);
+            }
+        }
+    }
+
+    private static ProbeTracker openProbeTracker() throws Exception {
+        ProbeTracker[] tracker = new ProbeTracker[1];
+        SwingUtilities.invokeAndWait(() -> {
+            tracker[0] = new ProbeTracker();
+            tracker[0].track = new Track("probe", tracker[0].top);
+            MacroTrackerFrame.frame = tracker[0];
+        });
+        return tracker[0];
+    }
+
+    private static void closeProbeTracker() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            MacroTrackerFrame.frame.dispose();
+            MacroTrackerFrame.frame = null;
+        });
+        PFDRecorder.getInstance().reset("New Flow");
+    }
+
+    private static void disposeCharts() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            for (Window window : Window.getWindows()) {
+                if (!(window instanceof MacroTrackerFrame)) {
+                    window.dispose();
+                }
+            }
+        });
+    }
+
+    private static Vector<TimeSeriesObject> rows() {
+        TimeSeriesObject row = new TimeSeriesObject();
+        row.setLabel("probe");
+        for (int i = 0; i < 8; i++) {
+            row.addValuePair(i, i % 3);
+        }
+        Vector<TimeSeriesObject> rows = new Vector<>();
+        rows.add(row);
+        return rows;
+    }
+
+    private static JFreeChart chart() {
+        XYSeries series = new XYSeries("probe");
+        series.add(0.0, 1.0);
+        series.add(1.0, 2.0);
+        return ChartFactory.createXYLineChart("probe", "x", "y", new XYSeriesCollection(series),
+                PlotOrientation.VERTICAL, false, false, false);
+    }
+
+    private static void select(ProbeTracker tracker, int row) {
+        tracker.jTree().setSelectionRow(row);
+    }
+
+    private static void clickOn(MacroTrackerFrame tracker, String action) {
+        clickOn(MacroTrackerFrame.class, tracker, action);
+    }
+
+    private static void clickOn(TSOperationControlerPanel panel, String action) {
+        clickOn(TSOperationControlerPanel.class, panel, action);
+    }
+
+    private static void clickOn(Class<?> type, Object component, String action) {
+        try {
+            var method = type.getDeclaredMethod(action, java.awt.event.ActionEvent.class);
+            method.setAccessible(true);
+            method.invoke(component, new Object[]{null});
+        } catch (InvocationTargetException e) {
+            fail(action + " threw", e.getCause());
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
+        }
     }
 
     interface Step {

@@ -24,8 +24,8 @@ runtimes:
     class: "org.opentsx.data.series.TimeSeriesObject#sigmaForAll"
     note: >-
       2.x model in opentsx-core: averageForAll and sigmaForAll (std with n − 1) up to the shortest series; sigmaForAll
-      uses the sample index as x. The Swing button Sigma Band opens org.opentsx.chart.simple.SigmaFilter. No automated
-      test.
+      uses the sample index as x. The Swing button Sigma Band opens org.opentsx.chart.simple.SigmaFilter, which charts
+      the mean and the mean plus and minus one standard deviation; SigmaFilterTest checks the three series.
   python: { status: none }
   processor: { status: none }
   go: { status: none }

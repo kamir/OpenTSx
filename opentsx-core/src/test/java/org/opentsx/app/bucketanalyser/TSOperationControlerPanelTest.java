@@ -380,35 +380,223 @@ class TSOperationControlerPanelTest {
     }
 
     @Test
-    void aFailingFftLeavesTheMacroTrackUnchanged() throws Exception {
+    void aFailingFftShowsTheMessageAndLeavesTheMacroTrackUnchanged() throws Exception {
         Vector<TimeSeriesObject> twins = rows(sampled(64));
         twins.add(sampled(64));
         ProbePanel panel = onEdt(() -> new ProbePanel(twins, chart(), "probe"));
-        var method = TSOperationControlerPanel.class.getDeclaredMethod("jButton3ActionPerformed",
-                java.awt.event.ActionEvent.class);
-        method.setAccessible(true);
-        Throwable[] thrown = new Throwable[1];
+        boolean chartOpened;
         Set<String> recorded;
         openTracker();
         try {
-            SwingUtilities.invokeAndWait(() -> {
-                try {
-                    method.invoke(panel, new Object[]{null});
-                } catch (InvocationTargetException e) {
-                    thrown[0] = e.getCause();
-                } catch (ReflectiveOperationException e) {
-                    throw new AssertionError(e);
-                }
-            });
+            click(panel, "jButton3ActionPerformed");
             recorded = recorded();
         } finally {
-            disposeWindows();
+            chartOpened = disposeWindows();
             closeTracker();
         }
 
-        assertInstanceOf(IllegalArgumentException.class, thrown[0]);
-        assertEquals("This dataset already contains a series with the key FFT : sampled", thrown[0].getMessage());
+        assertEquals("FFT of probe: cannot open the chart (java.lang.IllegalArgumentException: This dataset already "
+                + "contains a series with the key FFT : sampled)", panel.actionError);
         assertEquals(Set.of(), recorded);
+        assertFalse(chartOpened, "the FFT action opened a chart after it failed");
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "constant | java.lang.IllegalArgumentException: Normalization requires a finite positive standard deviation",
+            "NaN | java.lang.IllegalArgumentException: Normalization requires finite coordinates and values"})
+    void aSeriesThatCannotBeStandardizedShowsTheMessageAndOpensNoChart(String kind, String cause) throws Exception {
+        TimeSeriesObject row = kind.equals("constant") ? constant(64) : wave(64);
+        if (kind.equals("NaN")) {
+            row.yValues.set(5, Double.NaN);
+            row.setLabel("gap");
+        }
+        Vector<TimeSeriesObject> rows = rows(wave(64));
+        rows.add(row);
+        ProbePanel panel = onEdt(() -> new ProbePanel(rows, chart(), "probe"));
+        boolean chartOpened;
+        Set<String> recorded;
+        openTracker();
+        try {
+            click(panel, "jButton13ActionPerformed");
+            recorded = recorded();
+        } finally {
+            chartOpened = disposeWindows();
+            closeTracker();
+        }
+
+        assertEquals("standardized series of " + row.getLabel() + ": cannot standardize the values (" + cause + ")",
+                panel.actionError);
+        assertEquals(Set.of(), recorded);
+        assertFalse(chartOpened, "the standardize action opened a chart after it failed");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"constant", "NaN"})
+    void aSliceTheNormalityTestCannotEvaluateStillOpensBothChartsAndPrintsNothing(String kind) throws Exception {
+        TimeSeriesObject row = kind.equals("constant") ? constant(240) : wave(240);
+        if (kind.equals("NaN")) {
+            row.yValues.set(5, Double.NaN);
+        }
+        double w = row.cutOut(0, 20).getSWTestResult()[0];
+        ProbePanel panel = onEdt(() -> new ProbePanel(rows(row), chart(), "probe"));
+        PrintStream stdout = System.out;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        try {
+            System.setOut(new PrintStream(captured, true, StandardCharsets.UTF_8));
+            click(panel, "jButton21ActionPerformed");
+            openChart("SW t-value distributions of probe");
+            openChart("SW CDF of probe");
+        } finally {
+            System.setOut(stdout);
+            disposeWindows();
+        }
+
+        assertEquals(kind.equals("constant") ? -1.0 : Double.NaN, w);
+        assertNull(panel.actionError, panel.actionError);
+        assertEquals("", captured.toString(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void theNormalityTestOfASeriesOf100ValuesOpensBothCharts() throws Exception {
+        ProbePanel panel = onEdt(() -> new ProbePanel(rows(wave(100)), chart(), "probe"));
+        List<String> names = new ArrayList<>();
+        try {
+            click(panel, "jButton21ActionPerformed");
+            for (Object series : openChart("SW t-value distributions of probe").dataset.getSeries()) {
+                names.add(((XYSeries) series).getKey().toString());
+            }
+            openChart("SW CDF of probe");
+        } finally {
+            disposeWindows();
+        }
+
+        assertNull(panel.actionError, panel.actionError);
+        assertEquals(List.of("l=20", "l=40", "l=60", "l=80", "l=100"), names);
+    }
+
+    @Test
+    void theHistogramCrossCutPrintsNothing() throws Exception {
+        ProbePanel panel = onEdt(() -> new ProbePanel(rows(wave(64)), chart(), "probe"));
+        panel.answer = "8";
+        PrintStream stdout = System.out;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        boolean chartOpened;
+        try {
+            System.setOut(new PrintStream(captured, true, StandardCharsets.UTF_8));
+            click(panel, "jButton20ActionPerformed");
+            openChart("y-value distributions (tims slice l=8 of probe");
+        } finally {
+            System.setOut(stdout);
+            chartOpened = disposeWindows();
+        }
+
+        assertNull(panel.actionError, panel.actionError);
+        assertTrue(chartOpened, "the histogram cross-cut opened no chart");
+        assertEquals("", captured.toString(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void anAutoCorrelationThatFailsShowsTheMessageAndOpensNoChart() throws Exception {
+        ProbePanel panel = onEdt(() -> new ProbePanel(rows(new Unshiftable()), chart(), "probe"));
+        boolean chartOpened;
+        Set<String> recorded;
+        openTracker();
+        try {
+            click(panel, "jButton4ActionPerformed");
+            recorded = recorded();
+        } finally {
+            chartOpened = disposeWindows();
+            closeTracker();
+        }
+
+        assertEquals("auto-correlation of unshiftable: cannot correlate lag 0 (java.lang.Exception: the series cannot "
+                + "be shifted)", panel.actionError);
+        assertEquals(Set.of(), recorded);
+        assertFalse(chartOpened, "the auto-correlation opened a chart after it failed");
+    }
+
+    @Test
+    void anMfDfaThatFailsShowsTheMessageAndOpensNoChart() throws Exception {
+        Path created = Paths.get("databuffer");
+        for (String part : new String[]{"MFDFA", "MFDFA of probe"}) {
+            if (Files.exists(created)) {
+                created = created.resolve(part);
+            }
+        }
+        ProbePanel panel = onEdt(() -> new ProbePanel(rows(new Unreadable()), chart(), "probe"));
+        boolean chartOpened;
+        Set<String> recorded;
+        openTracker();
+        try {
+            click(panel, "jButton6ActionPerformed");
+            recorded = recorded();
+        } finally {
+            chartOpened = disposeWindows();
+            closeTracker();
+            delete(created);
+        }
+
+        assertEquals("MFDFA of probe: cannot compute the analysis (java.lang.IllegalStateException: the values "
+                + "cannot be read)", panel.actionError);
+        assertEquals(Set.of(), recorded);
+        assertFalse(chartOpened, "the MF-DFA opened a chart after it failed");
+    }
+
+    @Test
+    void showPnOnAPanelWithoutItsFolderShowsTheMessageAndOpensNothing() throws Exception {
+        ProbePanel panel = panelBelow(home);
+        File folder = home.resolve("opentsx/plots/default").toFile();
+
+        click(panel, "jButton2ActionPerformed");
+
+        assertEquals(folder + ": no such folder; press save PN to create it", panel.actionError);
+        assertEquals(List.of(), panel.opened);
+    }
+
+    @Test
+    void showPnThatCannotOpenTheFolderShowsTheRemedy() throws Exception {
+        ProbePanel panel = panelBelow(home);
+        File folder = Files.createDirectories(home.resolve("opentsx/plots/default")).toFile();
+        panel.openFailure = new IOException("no file manager");
+
+        click(panel, "jButton2ActionPerformed");
+
+        assertEquals(List.of(folder), panel.opened);
+        assertEquals(folder + ": cannot open the folder (java.io.IOException: no file manager); open it in a file "
+                + "manager", panel.actionError);
+    }
+
+    @Test
+    void aDfaOfAShortSeriesFitsAFiniteAlpha() throws Exception {
+        ProbePanel panel = onEdt(() -> new ProbePanel(rows(noise(1024)), chart(), "probe"));
+        double alpha;
+        try {
+            click(panel, "jButton5ActionPerformed");
+            MultiChart chart = openChart("DFA of probe");
+            String key = chart.dataset.getSeries(0).getKey().toString();
+            alpha = Double.parseDouble(key.split("_alpha=")[1]);
+        } finally {
+            disposeWindows();
+        }
+
+        assertNull(panel.actionError, panel.actionError);
+        assertEquals(0.5, alpha, 0.1);
+    }
+
+    @Test
+    void aDfaOfALongSeriesUses250WindowSizes() throws Exception {
+        ProbePanel panel = onEdt(() -> new ProbePanel(rows(noise(4096)), chart(), "probe"));
+        int windows;
+        try {
+            click(panel, "jButton5ActionPerformed");
+            windows = openChart("DFA of probe").dataset.getSeries(0).getItemCount();
+        } finally {
+            disposeWindows();
+        }
+
+        assertNull(panel.actionError, panel.actionError);
+        assertEquals(250, windows);
     }
 
     @Test
@@ -561,6 +749,36 @@ class TSOperationControlerPanelTest {
         return row;
     }
 
+    private static TimeSeriesObject constant(int n) {
+        TimeSeriesObject row = new TimeSeriesObject();
+        row.setLabel("constant");
+        for (int i = 0; i < n; i++) {
+            row.addValuePair(i, 1.0);
+        }
+        return row;
+    }
+
+    private ProbePanel panelBelow(Path userHome) throws Exception {
+        String original = System.getProperty("user.home");
+        try {
+            System.setProperty("user.home", userHome.toString());
+            return onEdt(() -> new ProbePanel(rows(), chart(), "probe"));
+        } finally {
+            System.setProperty("user.home", original);
+        }
+    }
+
+    private static void delete(Path path) throws IOException {
+        if (!Files.exists(path)) {
+            return;
+        }
+        try (Stream<Path> files = Files.walk(path)) {
+            for (Path file : files.sorted(java.util.Comparator.reverseOrder()).toList()) {
+                Files.delete(file);
+            }
+        }
+    }
+
     private static TimeSeriesObject sampled(int n) {
         TimeSeriesObject row = new TimeSeriesObject();
         row.setLabel("sampled");
@@ -632,14 +850,51 @@ class TSOperationControlerPanelTest {
         }
     }
 
+    static class Unshiftable extends TimeSeriesObject {
+        Unshiftable() {
+            setLabel("unshiftable");
+            for (int i = 0; i < 8; i++) {
+                addValuePair(i, i % 3);
+            }
+        }
+
+        @Override
+        public TimeSeriesObject shift(int offset) throws Exception {
+            throw new Exception("the series cannot be shifted");
+        }
+    }
+
+    static class Unreadable extends TimeSeriesObject {
+        Unreadable() {
+            setLabel("unreadable");
+            for (int i = 0; i < 64; i++) {
+                addValuePair(i, i % 3);
+            }
+        }
+
+        @Override
+        public double[][] getData() {
+            throw new IllegalStateException("the values cannot be read");
+        }
+    }
+
     static class ProbePanel extends TSOperationControlerPanel {
         String error;
         String actionError;
         String answer;
+        IOException openFailure;
         final List<String> prompts = new ArrayList<>();
+        final List<File> opened = new ArrayList<>();
 
         ProbePanel(Vector<TimeSeriesObject> rows, JFreeChart chart, String label) {
             super(rows, chart, label, null);
+        }
+
+        void openFolder(File folder) throws IOException {
+            opened.add(folder);
+            if (openFailure != null) {
+                throw openFailure;
+            }
         }
 
         void showSaveError(String message) {
