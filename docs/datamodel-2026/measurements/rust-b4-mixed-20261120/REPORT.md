@@ -27,9 +27,9 @@ Maximum W3 quantile relative error outside the zero bucket: 0.009999999999999897
 
 Numerical boundary sketch differences observed: 0. Collapsed-tail cases: 4. Collapsed low-magnitude tails retain their explicit accuracy exception.
 
-Read [windows.csv](mixed/windows.csv) for actual and centralized moments, raw lower quantiles, accuracy domains and bin spans. Read [partials.csv](mixed/partials.csv) for all source identities, statistics and sketch bytes.
+Read windows.csv for actual and centralized moments, raw lower quantiles, accuracy domains and bin spans. Read partials.csv for all source identities, statistics and sketch bytes.
 
-Read [mixed execution](mixed/execution.json) for authenticated status histories, runtime pins, signed-command hashes and actual run/replay outcomes. Read [numerical results](sketch/result.json), [requests](sketch/input.json) and [Rust output](sketch/rust-output.json) for all cases.
+Read mixed execution for authenticated status histories, runtime pins, signed-command hashes and actual run/replay outcomes. Read numerical results, requests and Rust output for all cases.
 
 [test-evidence.json](test-evidence.json) records exact successful JUnit methods and zero-skip counts, the explicit source-commit property and actual executable hashes. This records the owner-run source association and is not an attestation of the build process.
 

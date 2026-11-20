@@ -17,6 +17,8 @@ This repository is public.
   Private configuration goes to `config/private/`, which is git-ignored.
 - No AI attribution and no agent tooling. `.claude/`, `.cursor/`, `.codex/` and `.grok/` are in `.gitignore`.
 - Everything written is English. A German document you change is translated in the same pull request.
+- Research, paper planning, task plans, roadmaps, design drafts and raw measurement data do not go into this
+  repository; only code, user and developer docs, normative specs and measurement reports do (AGENTS.md rule 15).
 
 ## Change the code
 

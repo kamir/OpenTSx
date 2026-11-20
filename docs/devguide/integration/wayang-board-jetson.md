@@ -23,21 +23,15 @@ defines the protocol, and
 | Machine time | 81 × 35 minutes, about 47 hours, plus setup between conditions |
 | Output check | both tracks must produce identical output records before any number counts |
 
-Two parts of a run still have to be written before the 81 conditions can be
-measured. Without them the validator refuses the evidence:
+The workload driver `BoardWorkload` starts Track A or Track B against the paced
+feed and reports the process id, the time to the first fetch and the time to the
+first output; see [Run one condition](#run-one-condition). `BoardOutputProofTest`
+writes the output proof of a condition; see
+[Prove the output of one condition](#prove-the-output-of-one-condition).
+`board_lag.py` gives the sampler the run's lag; see
+[Sample one condition](#sample-one-condition).
 
-1. A workload driver that starts Track A (on JDK 17 or 21, with an explicit
-   heap) or Track B against the paced feed and reports the process id, the time
-   to the first fetch and the time to the first output. Track B at 10,000 series
-   needs a worker started with `serve --profile measurement`; see the
-   [local runner guide](rust-runner-local.md#raise-the-ceilings-for-a-board-measurement).
-2. The output proof: a Java test under `src/test/java/` that compares the
-   condition's output records and writes JUnit XML with the properties
-   `opentsx.sourceCommit`, `opentsx.conditionId`, `opentsx.artifactSha256` and
-   `opentsx.inputSha256`.
-
-The board identity and the one-second samples are already covered by the tools
-below.
+The board identity and the one-second samples are covered by the tools below.
 
 ## Prepare the board
 
@@ -95,6 +89,76 @@ machine is not `aarch64`. The `board` object in the file is the `boards` entry
 of the evidence manifest; set its `identityEvidence` to this file and its
 SHA-256.
 
+## Run one condition
+
+Build the classes and the classpath on a workstation and copy both to the board:
+
+```bash
+mvn -B -ntp -pl opentsx-wayang -am install -DskipTests
+mvn -B -ntp -pl opentsx-wayang dependency:build-classpath -Dmdep.outputFile=board.classpath
+```
+
+Give each condition its own domain, so outputs and checkpoints of two conditions
+never mix. Start the feed on the KafScale host and the track on the board at the
+same time. 215 blocks cover the 2,100 seconds of the condition and 50 seconds of
+margin. `<proxy>` is the KafScale proxy address; never use a broker address.
+
+```bash
+# KafScale host
+java -cp "$CLASSPATH" org.opentsx.wayang.board.BoardWorkload feed \
+  --bootstrap <proxy> --domain b42c1 --series 1000 --seed 42 --blocks 215 > feed.jsonl
+
+# board, Track A on JDK 17 with an explicit heap
+java -Xms1g -Xmx1g -cp "$CLASSPATH" org.opentsx.wayang.board.BoardWorkload track-a \
+  --bootstrap <proxy> --domain b42c1 --chain clean --series 1000 --seed 42 \
+  --catalog systems/processors --checkpoint evidence/arm64-clean-s1000-java17-r1/checkpoint.json \
+  --interval-seconds 10 --duration-seconds 2100 --lag-file /ssd/run.lag \
+  > evidence/arm64-clean-s1000-java17-r1/events.jsonl
+
+# board, Track B; the measured process is tsx-runner, not this JVM
+java -Xmx256m -cp "$CLASSPATH" org.opentsx.wayang.board.BoardWorkload track-b \
+  --bootstrap <proxy> --domain b42c2 --chain clean --series 1000 --seed 42 \
+  --runner ./tsx-runner --listen 127.0.0.1:8090 --state /ssd/tsx-state-c2 --log evidence/arm64-clean-s1000-rust-r1/runner.log \
+  --interval-seconds 10 --duration-seconds 2100 --lag-file /ssd/run.lag \
+  > evidence/arm64-clean-s1000-rust-r1/events.jsonl
+```
+
+The `started` event names the `pid` to sample. `firstFetch` and `firstOutput`
+give `firstFetchSeconds` and `firstOutputSeconds` of the run. The `digest`
+command prints the condition's `inputSha256` without a broker; it is the same for
+every chain and runtime of one size. The Track B state directory must be new and
+private (mode 0700).
+
+## Prove the output of one condition
+
+After the condition, run the checker on the workstation against the clean
+checkout of the measured source. It reads the condition's output topic, runs the
+chain once over the whole feed without a broker as the reference, and requires
+that every output series of the run equals the first records of the reference
+series, field for field: identity, times, values as raw bits, statistics with
+their sketch bytes. No series may lag the most advanced series by more than two
+records. Both tracks are held to the same reference, so the proofs of a Track A
+and a Track B condition together show identical output records. The checker
+also requires that `opentsx.inputSha256` is the digest of the feed.
+
+```bash
+mvn -B -ntp -pl opentsx-wayang test -Dtest=BoardOutputProofTest \
+  -Dopentsx.board.proof=evidence/arm64-clean-s1000-rust-r1/proof.xml \
+  -Dopentsx.board.bootstrap=<proxy> -Dopentsx.board.domain=b42c2 -Dopentsx.board.chain=clean \
+  -Dopentsx.board.series=1000 -Dopentsx.board.seed=42 -Dopentsx.board.blocks=215 \
+  -Dopentsx.sourceCommit="$(git rev-parse HEAD)" -Dopentsx.conditionId=arm64-clean-s1000-rust-r1 \
+  -Dopentsx.artifactSha256=<artifact sha256> -Dopentsx.inputSha256=<digest of the feed>
+```
+
+The test writes `proof.xml` only after every comparison passed and never
+overwrites a file. The file carries the four binding properties, the chain and
+the compared series and records, and nothing else from the environment, so it
+names no host. Reference the file in the run's `outputProof` with
+`checkerSource` `opentsx-wayang/src/test/java/org/opentsx/wayang/BoardOutputProofTest.java`
+and `checkerClass` `org.opentsx.wayang.BoardOutputProofTest`. Clean episode ids
+contain the spec hash of the DAG, and the DAG names the domain's topics, so the
+checker always builds the reference from the condition's own domain.
+
 ## Sample one condition
 
 Start the workload of the condition, then sample its process for the whole run:
@@ -103,9 +167,18 @@ Start the workload of the condition, then sample its process for the whole run:
 python3 tools/board_resource_sampler.py \
   --pid "$WORKLOAD_PID" \
   --duration 2100 \
-  --output evidence/arm64-s1000-rust-r1/resources.csv \
-  --lag-command ./lag-of-run.sh
+  --output evidence/arm64-clean-s1000-rust-r1/resources.csv \
+  --lag-command python3 tools/board_lag.py --file /ssd/run.lag
 ```
+
+With `--lag-file`, the driver writes the run's lag twice per second: the records
+in the input topic minus the records the run has processed. Track A has
+processed what its checkpoint has passed; Track B what its last completed
+increment covered, so the lag rises between increments and falls at each one.
+`board_lag.py` prints that number without a broker client and answers in a few
+milliseconds. It fails when the file is older than 3 seconds or malformed, so the
+sampler stops instead of recording a stale lag. For Track A the polling thread
+runs in the measured JVM: one offset request every 500 ms.
 
 The CSV has exactly the columns the validator accepts: `elapsed_seconds`,
 `rss_bytes`, `cpu_seconds` and `lag_records`. `rss_bytes` is `VmRSS` and

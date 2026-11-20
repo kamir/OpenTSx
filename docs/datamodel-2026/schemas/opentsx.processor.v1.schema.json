@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://opentsx.org/schemas/opentsx.processor.v1.schema.json",
   "title": "opentsx.processor.v1",
-  "description": "Declarative description of one time series processor: a generator, a transformer or a model. The id is the op of a node in opentsx.dag.v1. Draft, see docs/datamodel-2026/14-ENGINEERING-FLOW.md.",
+  "description": "Declarative description of one time series processor: a generator, a transformer or a model. The id is the op of a node in opentsx.dag.v1. Draft, see docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 9.",
   "type": "object",
   "required": [
     "schema",
@@ -174,7 +174,7 @@
         "demo",
         "scenario"
       ],
-      "description": "For a generator: demo gives plausible single values of one signal and knows nothing of the rest of the system; scenario generates several quantities together from assumptions and dependencies. Results that rest on a demo generator are not for comparing strategies (decision D61)."
+      "description": "For a generator: demo gives plausible single values of one signal and knows nothing of the rest of the system; scenario generates several quantities together from assumptions and dependencies. Results that rest on a demo generator are not for comparing strategies (docs/datamodel-2026/DECISION-CARD-SPEC.md, section 6)."
     },
     "state": {
       "type": "object",

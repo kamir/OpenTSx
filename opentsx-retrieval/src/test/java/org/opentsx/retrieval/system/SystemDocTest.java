@@ -361,10 +361,10 @@ class SystemDocTest {
         assertEquals(3300.0, power.expect().operatingMax());
         assertEquals("observation", power.role());
         assertTrue(power.meaning().contains("curtailed"));
-        // actual generation and available power are two signals with two roles (15, section 9)
+        // actual generation and available power are two signals with two roles (DECISION-CARD-SPEC.md, section 5)
         assertEquals("observation", d.signals().stream().filter(s -> s.id().equals("park.p_gen_kw")).findFirst().orElseThrow().role());
         assertEquals("estimate", d.signals().stream().filter(s -> s.id().equals("park.p_potential_kw")).findFirst().orElseThrow().role());
-        // D47: the inventory lists the power of T02 but not its wind speed or its state; that is a note, not a problem
+        // SYSTEM-DOCUMENT-SPEC.md, section 2.5: the inventory lists the power of T02 but not its wind speed or its state; that is a note, not a problem
         assertEquals(List.of("park/T02/WMET.HorWdSpd: the inventory does not list this series for h2-chain/park/T02",
                 "park/T02/WTUR.TurSt: the inventory does not list this series for h2-chain/park/T02"), d.notes());
         assertEquals(16, d.hash().length());

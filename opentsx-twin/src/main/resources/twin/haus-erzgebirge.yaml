@@ -1,6 +1,6 @@
 # House twin (P9.7): single-family house in the Erzgebirge, two residents, oil boiler + wood stove, no PV, no heat pump.
 # ALL NUMBERS ARE INVENTED EXAMPLE ASSUMPTIONS until they are calibrated against real bills
-# (bin/opentsx house --calibrate config/private/abrechnungen.csv). Concept: docs/datamodel-2026/08-HAUS-ZWILLING.md
+# (bin/opentsx house --calibrate config/private/abrechnungen.csv).
 #
 # One year in hourly supersteps. Start = local midnight 2025-01-01 (Europe/Berlin = UTC+1 in winter).
 twin: haus-erzgebirge
