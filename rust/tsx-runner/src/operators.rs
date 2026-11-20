@@ -329,14 +329,26 @@ impl Pipeline {
         {
             return Err("invalid pipeline specHash".into());
         }
-        object(fragment, "fragment")?;
+        allowed_keys(
+            fragment,
+            &[
+                "schema",
+                "dag",
+                "version",
+                "source",
+                "nodes",
+                "sinks",
+                "checkpoint",
+            ],
+            "fragment",
+        )?;
         if let Some(schema) = fragment.get("schema") {
             if !matches!(schema.as_str(), Some("opentsx.dag.v1" | "opentsx.dag.v2")) {
                 return Err("unsupported DAG schema".into());
             }
         }
         let source = &fragment["source"];
-        object(source, "source")?;
+        allowed_keys(source, &["kind", "topics", "series", "start"], "source")?;
         if let Some(kind) = source.get("kind") {
             if kind.as_str() != Some("kafscale-broker") {
                 return Err("unsupported source kind".into());
@@ -373,7 +385,13 @@ impl Pipeline {
             return Err("a pipeline needs exactly one sink".into());
         }
         let sink = &sinks[0];
-        object(sink, "sink")?;
+        allowed_keys(
+            sink,
+            &[
+                "name", "from", "schema", "topic", "signal", "origin", "madeOf",
+            ],
+            "sink",
+        )?;
         if sink["schema"].as_str() != Some("opentsx.episode.v2") {
             return Err("unsupported sink schema".into());
         }
@@ -386,7 +404,7 @@ impl Pipeline {
             .ok_or("nodes must be an array")?;
         let mut nodes = BTreeMap::new();
         for node in node_values {
-            object(node, "node")?;
+            allowed_keys(node, &["id", "op", "in", "params"], "node")?;
             let id = text(&node["id"], "node id")?;
             if nodes.insert(id, node).is_some() {
                 return Err("duplicate node id".into());
@@ -595,7 +613,7 @@ impl Pipeline {
                 return Err("a cleaning pipeline needs source series IDs".into());
             }
             let signal = &sink["signal"];
-            object(signal, "sink signal")?;
+            allowed_keys(signal, &["system", "id", "grade", "metric"], "sink signal")?;
             let grade = optional_text(signal, "grade")?.unwrap_or_else(|| "clean".into());
             if grade != "clean" && !(catalog_profile && grade == "features") {
                 return Err("this runtime supports clean grade only".into());
@@ -776,12 +794,7 @@ impl Pipeline {
                         }
                     }
                     Step::Convert { factor, offset } => {
-                        for value in &mut values {
-                            *value = *value * factor + offset;
-                            if value.is_infinite() {
-                                return Err("unit conversion overflow".into());
-                            }
-                        }
+                        crate::wasm::convert_values(&mut values, factor, offset)?;
                     }
                     Step::Resample { every, agg } => {
                         let multiple = self

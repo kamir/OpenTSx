@@ -19,5 +19,6 @@ pub mod site_client;
 pub mod site_plan;
 mod site_qualification;
 pub mod stats;
+mod wasm;
 pub mod wire;
 pub mod worker;

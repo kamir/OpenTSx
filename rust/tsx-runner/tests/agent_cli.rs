@@ -86,9 +86,16 @@ impl RunBroker for StoppedBroker {
 #[test]
 fn documented_signed_plan_file_and_stdin_replay_the_same_saved_stop() {
     let fixture = profile::Fixture::new();
+    let executable = env!("CARGO_BIN_EXE_tsx-runner");
+    let executable_bytes = fs::metadata(executable).unwrap().len();
+    eprintln!("signed runner executable bytes: {executable_bytes}; limit: 268435456");
+    assert!(
+        executable_bytes <= 268_435_456,
+        "runner executable exceeds the signed identity byte limit"
+    );
     let artifact = format!(
         "sha256:{}",
-        tsx_contracts::sha256_bytes(&fs::read(env!("CARGO_BIN_EXE_tsx-runner")).unwrap())
+        tsx_contracts::sha256_bytes(&fs::read(executable).unwrap())
     );
     let mut document = fixture.plan_document();
     let mut assignment: Value =

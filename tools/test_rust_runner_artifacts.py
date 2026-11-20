@@ -28,6 +28,27 @@ EXAMPLE_TESTS = (
     "tests::wrong_prefixes_case_order_paths_counts_and_error_expectations_are_rejected",
     "tests::stopped_outcomes_require_exact_schema_counts_and_whole_topic_cursors",
 )
+WASM_TESTS = (
+    "wasm::wasm_limits::endless_export_exhausts_fuel",
+    "wasm::wasm_limits::endless_start_exhausts_fuel_before_instantiation",
+    "wasm::wasm_limits::oversized_initial_memory_fails_the_task",
+    "wasm::wasm_limits::denied_memory_growth_fails_instead_of_returning_success",
+    "wasm::wasm_limits::all_imports_are_refused",
+    "wasm::wasm_limits::malformed_oversized_and_wrong_abi_modules_are_refused",
+    "wasm::wasm_limits::unsupported_guest_features_are_refused",
+    "wasm::wasm_limits::tables_and_additional_instances_are_refused",
+    "wasm::wasm_limits::fuel_is_bounded_and_replenished_per_scalar_call",
+    "wasm::wasm_limits::guest_stack_is_bounded_by_the_configured_limit",
+    "wasm::wasm_limits::numeric_boundaries_preserve_separate_operations",
+    "wasm::wasm_limits::trapped_conversion_preserves_the_real_pipeline_state",
+    "wasm::wasm_limits::traps_do_not_publish_or_commit_a_checkpoint",
+    "wasm::wasm_limits::scoped_fixture_is_cleared_after_unwinding",
+    "both_shared_conversion_cases_match_through_admitted_wasm_pipeline",
+    "every_shared_conversion_partition_restores_exact_host_state_and_samples",
+    "signed_zero_gaps_and_separate_multiply_add_preserve_unit_metadata",
+    "plans_cannot_supply_wasm_code_or_limits",
+    "conversion_overflow_cannot_publish_or_commit_candidate_state",
+)
 
 
 def elf(target, extra=None, dynamic=None):
@@ -67,7 +88,9 @@ def logs():
             "\ntest result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;\n"
             "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;\n",
             "\n".join("test " + name + " ... ok" for name in EXAMPLE_TESTS) +
-            "\ntest result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;\n"]
+            "\ntest result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;\n",
+            "\n".join("test " + name + " ... ok" for name in WASM_TESTS) +
+            f"\ntest result: ok. {len(WASM_TESTS)} passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;\n"]
 
 
 class ElfArtifactTest(unittest.TestCase):
@@ -283,7 +306,7 @@ class RustTestEvidenceTest(unittest.TestCase):
 
     def test_shared_vectors_and_real_positive_summaries_are_required(self):
         result = HELPER.test_counts(logs())
-        self.assertEqual(17, result["passed"])
+        self.assertEqual(17 + len(WASM_TESTS), result["passed"])
         self.assertEqual(0, result["ignored"])
         for invalid in ([""], ["test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"],
                         [text.replace(HELPER.VECTOR_TESTS[0], "other_test") for text in logs()]):
@@ -295,6 +318,21 @@ class RustTestEvidenceTest(unittest.TestCase):
             altered = [text.replace("test " + name + " ... ok", "test unrelated ... ok") for text in logs()]
             with self.subTest(test=name), self.assertRaisesRegex(ValueError, "did not execute"):
                 HELPER.test_counts(altered)
+
+    def test_wasm_module_and_pipeline_execution_is_required(self):
+        required = list(EXAMPLE_TESTS) + list(WASM_TESTS)
+        self.assertEqual(len(required), len(set(required)))
+        self.assertEqual(required, HELPER.test_counts(logs())["acceptanceExampleTests"])
+        with self.assertRaisesRegex(ValueError, "did not execute"):
+            HELPER.test_counts(logs()[:-1])
+
+    def test_missing_renamed_or_ignored_wasm_cases_cannot_qualify(self):
+        for name in WASM_TESTS:
+            for replacement in ("", "test renamed_wasm_case ... ok", "test " + name + " ... ignored"):
+                altered = [text.replace("test " + name + " ... ok", replacement) for text in logs()]
+                with self.subTest(test=name, replacement=replacement), \
+                        self.assertRaisesRegex(ValueError, "did not execute"):
+                    HELPER.test_counts(altered)
 
     def test_failed_ignored_filtered_and_measured_cases_cannot_qualify(self):
         for mutation in ("FAILED. 5 passed", "ok. 5 passed; 1 failed", "ok. 5 passed; 0 failed; 1 ignored",

@@ -2293,7 +2293,10 @@
         "Run the conversion and inspect the degF series unit.",
         "Explain why relabeling a series without the numeric conversion would be wrong.",
         "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output.",
-        "Run all fifteen shared cleaning cases through the Rust tests, then restore state between chunks and compare the same logical samples with Java."
+        "Run all fifteen shared cleaning cases through the Rust tests, then restore state between chunks and compare the same logical samples with Java.",
+        "Trace the Rust conversion stage into its artifact-embedded WASM module, keeping units, gaps, timestamps and Episode identities in the host.",
+        "Run the fuel and memory regressions, including an endless start function, then verify that a trap stops processing before output or checkpoint commit.",
+        "Run both shared conversion-bearing cleaning cases through the actual WASM pipeline and restore host state between chunks without changing the numerical tolerance."
       ],
       "starter": {
         "bucket": {
@@ -2336,7 +2339,10 @@
         "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
         "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration.",
         "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights.",
-        "Worker capability discovery keeps the four legacy operators in operators; catalogExecution.operators lists B2 operations and does not extend Java UI admission."
+        "Worker capability discovery keeps the four legacy operators in operators; catalogExecution.operators lists B2 operations and does not extend Java UI admission.",
+        "The embedded Rust WASM module is a separate execution path from this browser workload. Its ABI uses separate binary64 multiplication and addition.",
+        "Plans cannot supply WASM code, module paths, URLs or resource-limit overrides. The module has no host imports and a trap has no native conversion fallback.",
+        "WASM availability does not extend signed B1 pass-through or signed B3 statistics admission. Physical ARM64 and ARMv7 B4.2 measurements and physical ARMv7 B1.2 acceptance remain open."
       ],
       "parameterKeys": [
         "factor",
@@ -2368,7 +2374,8 @@
           "docs/devguide/integration/rust-runner-local.md",
           "docs/devguide/integration/wayang-rust-compose.md",
           "docs/devguide/integration/wayang-rust-continuous.md",
-          "docs/devguide/integration/rust-runner-b2.md"
+          "docs/devguide/integration/rust-runner-b2.md",
+          "docs/devguide/integration/rust-runner-b5.md"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#convert-unit",
@@ -2376,7 +2383,8 @@
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s751-execute-the-embedded-b5-conversion"
         ],
         "source": [
           "opentsx-saas-frontend/src/workbench/ops.ts#convertUnit",
@@ -2391,7 +2399,9 @@
           "rust/tsx-runner/src/operators.rs",
           "rust/tsx-runner/src/catalog.rs",
           "systems/processors/convert.unit.yaml",
-          "rust/tsx-runner/src/worker.rs#capabilities"
+          "rust/tsx-runner/src/worker.rs#capabilities",
+          "rust/tsx-runner/src/wasm.rs",
+          "rust/tsx-runner/wasm/convert_unit.wat"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
@@ -2410,7 +2420,9 @@
           "tools/test_kafscale_fenced_topology.py",
           "rust/tsx-runner/tests/catalog_flow.rs",
           "rust/tsx-runner/tests/clean_catalog.rs",
-          "rust/tsx-runner/tests/worker_service.rs#capability_discovery_preserves_legacy_admission_and_reports_b2_separately"
+          "rust/tsx-runner/tests/worker_service.rs#capability_discovery_preserves_legacy_admission_and_reports_b2_separately",
+          "rust/tsx-runner/src/wasm.rs#wasm_limits",
+          "rust/tsx-runner/tests/wasm_operator.rs"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"

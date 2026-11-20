@@ -46,7 +46,7 @@ class QualificationTest(unittest.TestCase):
 
     def write_logs(self, zero_suite=None):
         primitive = [n for n in self.module.artifacts.VECTOR_TESTS if n != "shared_execution_contract_vectors"]
-        names = [*primitive, *self.module.artifacts.EXAMPLE_TESTS]
+        names = [*primitive, *self.module.artifacts.EXAMPLE_TESTS, *self.module.artifacts.WASM_TESTS]
         names.extend(f"fixture::case_{i}" for i in range(260 - len(names)))
         lines = ["     Running unittests src/lib.rs (target/debug/deps/runner)", "running 260 tests",
                  *(f"test {name} ... ok" for name in names),

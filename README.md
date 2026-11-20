@@ -116,6 +116,13 @@ explicit local context. It includes typed statistics, vector and DQ output,
 restored operator state and Java/Rust regression proof. Its admission is
 separate from signed B1 and the Java UI rollout profile.
 
+Local `convert.unit` uses an
+[artifact-embedded WASM module](docs/devguide/integration/rust-runner-b5.md)
+with Wasmtime/Pulley, fixed fuel, memory and stack bounds, and no host imports.
+It retains the existing parameters and host record/checkpoint contracts.
+Plans cannot supply code or change sandbox limits; signed B1 and B3 admission
+remain separate.
+
 The [signed bounded Rust site profile](docs/devguide/integration/rust-runner-b3.md)
 adds certificate-authenticated plan pulls, signed conformance and bounded
 decode-to-statistics execution. Owner-local qualification pins actual test,
