@@ -61,19 +61,6 @@ public class TSOProducer {
     }
 
 
-    /**
-     * Creates a Producer with custom settings, and in case some cutsom settings are missing,
-     * we use the default settings.
-     *
-     * Minimal required settings are:
-     *
-     *         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
-     *         props.put(ProducerConfig.CLIENT_ID_CONFIG, "TXItemProducer");
-     *         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-     *         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-     *
-     * @return
-     */
     private static Producer<String, Event> createProducer_Avro(Properties props) {
 
 
@@ -81,6 +68,7 @@ public class TSOProducer {
             props.put(ProducerConfig.CLIENT_ID_CONFIG, "TSOEventProducer_AVRO");
 
 
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "io.confluent.kafka.serializers.KafkaAvroSerializer");
 
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");

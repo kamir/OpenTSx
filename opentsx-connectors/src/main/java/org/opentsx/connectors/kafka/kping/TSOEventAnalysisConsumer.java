@@ -14,14 +14,21 @@ import java.util.Properties;
 
 public class TSOEventAnalysisConsumer {
 
+    /**
+     * @deprecated Names the topic of {@code TSOEventProducer}, which holds String JSON records that this consumer
+     * cannot read; pass {@code TSOProducer.TOPIC_for_events} ({@code OpenTSx_Events}) to {@link #createConsumer}.
+     */
+    @Deprecated
     public final static String TOPIC = ReferenceDataset.event_topicname;
 
     /**
      * Creates the consumer of the given topic for the events that
      * {@code TSOProducer.pushTSDataAsEventsToKafka_String_Avro} writes to {@code OpenTSx_Events}
      * ({@code TSOProducer.TOPIC_for_events}): the series label as a String key and the Avro {@code Event} as a
-     * {@link GenericRecord}, in the group {@code KPING-Consumer} from the latest offset. It sets the deserializers
-     * itself; the other settings, {@code schema.registry.url} included, come from the Kafka client profile.
+     * {@link GenericRecord}, in the fixed group {@code KPING-Consumer}. The consumer continues at the offsets the
+     * group committed and starts at the latest offset only while the group has no committed offset or its committed
+     * offset no longer exists. It sets the deserializers itself; the other settings, {@code schema.registry.url}
+     * included, come from the Kafka client profile.
      */
     public static Consumer<String, GenericRecord> createConsumer( String TOPIC ) {
 
@@ -34,11 +41,9 @@ public class TSOEventAnalysisConsumer {
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class.getName());
 
-        // Create the consumer using props.
         final Consumer<String, GenericRecord> consumer =
                 new KafkaConsumer<>(props);
 
-        // Subscribe to the topic.
         consumer.subscribe(Collections.singletonList(TOPIC));
         return consumer;
 

@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.connectors.kafka.OpenTSxClusterLink;
+import org.opentsx.connectors.kafka.TSOEventProducer;
 import org.opentsx.connectors.kafka.TSOProducer;
 
 import java.lang.reflect.ParameterizedType;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TSOEventAnalysisConsumerTest {
 
@@ -61,6 +63,12 @@ class TSOEventAnalysisConsumerTest {
                 .getMethod("createConsumer", String.class).getGenericReturnType();
 
         assertEquals(List.of(String.class, GenericRecord.class), List.of(consumer.getActualTypeArguments()));
+    }
+
+    @Test
+    void theTopicConstantIsDeprecatedBecauseItNamesTheJsonTopicOfTheEventProducer() throws Exception {
+        assertEquals(TSOEventProducer.TOPIC, TSOEventAnalysisConsumer.TOPIC);
+        assertTrue(TSOEventAnalysisConsumer.class.getField("TOPIC").isAnnotationPresent(Deprecated.class));
     }
 
     @Test

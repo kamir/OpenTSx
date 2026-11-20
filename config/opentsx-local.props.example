@@ -33,11 +33,6 @@ acks=1
 # KafScale has no InitProducerId: clients >= 3.0 default to idempotence=true, which KafScale rejects
 enable.idempotence=false
 
-key.serializer=org.apache.kafka.common.serialization.StringSerializer
-value.serializer=io.confluent.kafka.serializers.KafkaAvroSerializer
-key.deserializer=org.apache.kafka.common.serialization.StringDeserializer
-value.deserializer=io.confluent.kafka.serializers.KafkaAvroDeserializer
-
 # --- Confluent Schema Registry ---------------------------------------------------------------------------------
 # The 2.x Avro producers (TSOProducer, kping) always use KafkaAvroSerializer and need a registry.
 # docker-compose.kafscale.yml does not start one; run a registry on localhost:8081 or point this to yours.

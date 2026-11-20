@@ -1,14 +1,11 @@
 package org.opentsx.lg.klatency;
 
-import org.apache.avro.generic.GenericRecord;
 import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.connectors.kafka.OpenTSxClusterLink;
 import org.opentsx.connectors.kafka.klatency.LatencyTestEventConsumer;
-import org.opentsx.connectors.kafka.klatency.LatencyTestEventProducer;
-import org.opentsx.connectors.kafka.kping.TSOEventAnalysisConsumer;
 import org.opentsx.data.exporter.MeasurementTable;
 import org.opentsx.data.model.LatencyTesterEvent;
 import org.opentsx.data.series.TimeSeriesObject;

@@ -979,6 +979,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   the series label keys that `TSOProducer.pushTSDataAsEventsToKafka_String_Avro` writes to `OpenTSx_Events`;
   `EventFlowAnalysisConsumer` in opentsx-lg reads them as `String`. Code that assigns the result to `Consumer<Long,
   GenericRecord>` no longer compiles. This is a breaking change.
+- opentsx-connectors: `kping.TSOEventAnalysisConsumer.TOPIC` is deprecated. It names
+  `refds_events_topic_ccloud_demo_09_2020` (`ReferenceDataset.event_topicname`), the String JSON topic of
+  `TSOEventProducer`, which the Avro consumer cannot read; pass `TSOProducer.TOPIC_for_events` (`OpenTSx_Events`) to
+  `createConsumer`.
+- `config/opentsx-local.props.example` no longer sets `key.serializer`, `value.serializer`, `key.deserializer` and
+  `value.deserializer`. Every producer and consumer of opentsx-connectors and opentsx-lg sets its own and the Kafka
+  Streams clients of the FWL applications use byte array serializers, so these keys of a profile do not apply.
 
 ### Removed
 
@@ -2636,6 +2643,19 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   volumes` its own row whose only fix is to restore `env` alone first, because setting `OPENTSX_NS` cannot clear it,
   and names every cause of the `50-status.sh --logs` warn line: a pod that has not started, a user who may not read
   `pods/log`, or a cluster or kubelet that did not answer.
+- opentsx-connectors: `klatency.LatencyTestEventConsumer.createConsumer` sets `key.deserializer` and
+  `value.deserializer` to `StringDeserializer` itself, so `RequestResponseAnalysisConsumer` reads the JSON responses
+  also with a profile whose `value.deserializer` is `KafkaAvroDeserializer`, as the localhost template of 3.0.1 set
+  it, and with a profile without deserializers. It took both deserializers from the profile.
+- opentsx-connectors: `TSOProducer.pushTSDataAsEventsToKafka_String_Avro` writes the series label keys to
+  `OpenTSx_Events` with `StringSerializer` whatever the profile says, as the episode producer does, so
+  `kping.TSOEventAnalysisConsumer` reads them as the plain label. A profile without `key.serializer` no longer stops
+  it with a `ConfigException`.
+- The opentsx-connectors README and the Javadoc of `kping.TSOEventAnalysisConsumer` and
+  `klatency.LatencyTestEventConsumer` say that the fixed groups `KPING-Consumer` and `LatencyTestEventConsumer`
+  continue at their committed offsets and start at the latest offset only while the group has no committed offset, so
+  a rerun reads the records written while no consumer of the group ran. They said that the consumers start at the
+  latest offset.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

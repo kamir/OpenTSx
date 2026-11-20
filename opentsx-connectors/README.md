@@ -26,7 +26,8 @@ A profile that cannot be loaded stops each tool listed above with
 `<absolute path>: cannot read the Kafka client profile (<cause>); set OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME to a readable file`.
 The tools log the path of the profile at DEBUG, not its properties.
 Every producer and consumer of this module, `TSOConsumer` and `TSOEventProducer` included, takes `bootstrap.servers`
-and the other client settings from this profile.
+and the other client settings from this profile. Each sets its own serializers or deserializers, so the
+`key.serializer`, `value.serializer`, `key.deserializer` and `value.deserializer` of the profile do not apply.
 `OpenTSxClusterLink.getPropsAsString_NO_SECURITY_PROPS()` lists the profile without `security.protocol`, the
 serializers and deserializers, `schema.registry.url`, `basic.auth.credentials.source` and every key that contains
 `sasl.`, `ssl.`, `password`, `secret`, `token` or `user.info`.
@@ -57,12 +58,23 @@ closed it yet, so a `KafkaConnector` that connected but never read leaks no cons
 series label as the key and the Avro `Event` as the value. It sets `key.deserializer` to
 `org.apache.kafka.common.serialization.StringDeserializer` and `value.deserializer` to
 `io.confluent.kafka.serializers.KafkaAvroDeserializer`, whatever the profile says. `KafkaAvroDeserializer` reads
-`schema.registry.url` from the profile. The consumer uses the group id `KPING-Consumer` and starts at the latest
-offset.
+`schema.registry.url` from the profile. The consumer uses the fixed group id `KPING-Consumer`.
 
 `klatency.LatencyTestEventConsumer.createConsumer(<topic>)` returns a `Consumer<String, String>` subscribed to
-`<topic>`, with the group id `LatencyTestEventConsumer`, that starts at the latest offset. It takes `key.deserializer`
-and `value.deserializer` from the profile.
+`<topic>`, with the fixed group id `LatencyTestEventConsumer`. It sets `key.deserializer` and `value.deserializer` to
+`org.apache.kafka.common.serialization.StringDeserializer`, whatever the profile says.
+
+Both consumers continue at the offsets their group committed. They start at the latest offset
+(`auto.offset.reset=latest`) only while the group has no committed offset or its committed offset no longer exists on
+the cluster. The Kafka client commits the offsets while it polls, because `enable.auto.commit` is `true` unless the
+profile sets it to `false`, and `EventFlowAnalysisConsumer` and `RequestResponseAnalysisConsumer` in `opentsx-lg` call
+`commitAsync()` when they stop after their run of empty polls. A rerun therefore reads the records written while no
+consumer of the group ran. To start at the latest offset again, stop every consumer of the group and reset the
+offsets of the group to the latest offset with the tools of your Kafka platform.
+
+`kping.TSOEventAnalysisConsumer.TOPIC` is deprecated. It names `refds_events_topic_ccloud_demo_09_2020`
+(`ReferenceDataset.event_topicname`), the topic of `TSOEventProducer`, which holds String JSON records that
+`KafkaAvroDeserializer` cannot read. Pass `TSOProducer.TOPIC_for_events` (`OpenTSx_Events`) to `createConsumer`.
 
 ## Handle errors
 
