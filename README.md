@@ -237,10 +237,12 @@ to simulate three turbines, detect underperformance, persist real Iceberg
 episodes locally and verify their replay. Its focused regressions run offline
 after the first Maven build.
 
-The [packaged artifact checks](docs/devguide/published-artifact-acceptance.md)
-test tools-image startup and Windpark replay before publication, then pull
-the published digest on native AMD64 and ARM64 runners. Their edit tests run
-locally without Docker or network access.
+Download [Tools 3.1.0](https://github.com/kamir/OpenTSx/releases/tag/v3.1.0)
+and follow the [packaged artifact checks](docs/devguide/published-artifact-acceptance.md)
+with Python and Docker. The release retains passing native AMD64 and ARM64
+receipts for startup and Windpark replay. Its checker runs outside a checkout.
+The image checks also run before publication; their edit tests run locally
+without Docker or network access.
 Publication rejects mismatched reactor versions and staged internal JAR
 identities before uploading the image. The image build uses the same verified
 Maven mirror, workload cache and download diagnostics as the Java CI jobs.

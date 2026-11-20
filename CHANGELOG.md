@@ -663,6 +663,15 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   convention; the default stations and the years of the daily jobs.
 - CI renders and validates `deploy/k3s/history/` (kustomization and the one-off Jobs) with kubeconform.
 
+## [3.1.0] - 2026-11-20
+
+[Tools 3.1.0](https://github.com/kamir/OpenTSx/releases/tag/v3.1.0) publishes
+an immutable Java Tools image with packaged Windpark startup and replay.
+Native AMD64 and ARM64 acceptance verified 90 episodes and 900 values with
+identical numerical reports. The release retains verification receipts,
+checksums and CI identities as download assets. Its release notes include
+upgrade instructions.
+
 ## [3.0.1] - 2026-10-16
 
 ### Fixed
