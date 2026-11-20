@@ -442,6 +442,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Removed
 
+- Files that `.gitignore` excludes are no longer tracked: `config/private/ccloud.props` (the credentials in it
+  no longer exist), `.idea/workspace.xml` and every `.DS_Store`. The unreachable commented block after `exit` in
+  `bin/010_build.sh` is gone. `tools/test_repo_hygiene.py` fails if such files are tracked again.
+
 - `TimeSeriesAnalysisJob`, the 2.x Flink example job. `StatsJob` is the v2 Flink job. `TimeSeriesAggregateFunction`
   stays, because the PFD runtime `DynamicTopologyJob` uses it.
 
