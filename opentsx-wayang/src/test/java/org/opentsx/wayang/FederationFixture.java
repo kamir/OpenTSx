@@ -18,11 +18,13 @@ import org.apache.wayang.core.plan.wayangplan.Operator;
 import org.opentsx.kafka.KafScaleClients;
 import org.opentsx.kafka.LogReader;
 import org.opentsx.kafka.TopicLayout;
+import org.opentsx.model.Episodes;
 import org.opentsx.model.Micros;
 import org.opentsx.model.OpenTsxAvro;
 import org.opentsx.model.contracts.ExecutionAssignments;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.model.v2.SeriesStats;
+import org.opentsx.stats.QuantileSketch;
 import org.opentsx.wayang.federation.AggregateForwarder;
 import org.opentsx.wayang.federation.AggregateInventory;
 import org.opentsx.wayang.federation.AggregateRecord;
@@ -77,6 +79,7 @@ final class FederationFixture implements AutoCloseable {
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Path ROOT = Path.of("..").toAbsolutePath().normalize();
     private final List<String> sites;
+    private final boolean mixed;
     private static final String JOB = "w3";
     private static final String ABI = "tsx-java/1";
     private static final Duration TIMEOUT = Duration.ofMinutes(5);
@@ -100,7 +103,12 @@ final class FederationFixture implements AutoCloseable {
 
     FederationFixture(Path directory, int siteCount) throws Exception { this(directory, Fault.NONE, siteCount); }
 
-    private FederationFixture(Path directory, Fault fault, int siteCount) throws Exception {
+    static FederationFixture mixed(Path directory) throws Exception { return new FederationFixture(directory, Fault.NONE, 3, true); }
+
+    private FederationFixture(Path directory, Fault fault, int siteCount) throws Exception { this(directory, fault, siteCount, false); }
+
+    private FederationFixture(Path directory, Fault fault, int siteCount, boolean mixed) throws Exception {
+        this.mixed = mixed;
         sites = FederatedWindparkData.siteNames(siteCount);
         this.directory = directory;
         Files.createDirectories(directory);
@@ -121,7 +129,7 @@ final class FederationFixture implements AutoCloseable {
                     layout.provision(admin, 3, (short) 1);
                     layout.provisionTopic(admin, layout.aggregates(), (short) 1);
                     layout.provisionTopic(admin, layout.signals(), (short) 1);
-                    if (cluster.equals("signal")) layout.provisionTopic(admin, layout.dagStatus(), (short) 1);
+                    if (cluster.equals("signal") || mixed && cluster.equals("s3")) layout.provisionTopic(admin, layout.dagStatus(), (short) 1);
                 }
             }
             for (String site : sites) writeInput(site, generated.sites().get(site));
@@ -165,7 +173,9 @@ final class FederationFixture implements AutoCloseable {
 
     private ObjectNode dag() {
         ObjectNode dag = JSON.createObjectNode().put("schema", "opentsx.dag.v2").put("dag", "w3-stats");
-        dag.putObject("source").putArray("topics").add(layout.episodes());
+        ObjectNode source = dag.putObject("source");
+        if (mixed) source.put("kind", "kafscale-broker");
+        source.putArray("topics").add(layout.episodes());
         var nodes = dag.putArray("nodes");
         nodes.addObject().put("id", "decode").put("op", "decode.avro-soe");
         ObjectNode statistics = nodes.addObject().put("id", "stats").put("op", "stats.welford-ddsketch");
@@ -211,10 +221,12 @@ final class FederationFixture implements AutoCloseable {
     Result routeJ() throws Exception { return route("job-state"); }
 
     private Result route(String route) throws Exception {
+        if (mixed && !route.equals("signal-cluster")) throw new IllegalArgumentException("mixed qualification requires the signal-cluster route");
         Result previous = results.get(route);
         if (previous != null) return previous;
         try (Session session = session(route)) {
             for (String site : sites) assertEquals("accepted", session.conform(site).path("result").asText());
+            if (mixed) session.admitMixed();
             long started = System.nanoTime();
             session.execute(sites);
             long elapsed = System.nanoTime() - started;
@@ -306,7 +318,11 @@ final class FederationFixture implements AutoCloseable {
         private final String route;
         private final Path state;
         private final MutableClock clock = new MutableClock();
+        private final Clock serviceClock = mixed ? Clock.systemUTC() : clock;
+        private final RustMixedSite rust;
         private final Map<String, RunnerPlan> plans = new TreeMap<>();
+        private final Map<String, String> signedPlans = new TreeMap<>();
+        private final Map<String, JsonNode> rustOutcomes = new TreeMap<>();
         private final Map<String, TsxSiteAgent> agents = new TreeMap<>();
         private final Map<String, TsxPlanClient> clients = new TreeMap<>();
         private final Map<String, SiteTrafficProxy> proxies = new TreeMap<>();
@@ -329,6 +345,7 @@ final class FederationFixture implements AutoCloseable {
             this.route = route;
             this.state = state;
             Files.createDirectories(state);
+            rust = mixed ? new RustMixedSite(state.resolve("rust-s3"), brokers.bootstrap("s3"), JOB) : null;
             List<String> assignments = new ArrayList<>();
             for (String site : sites) assignments.add(assignment(site).toString());
             ArrayNode members = JSON.createArrayNode();
@@ -341,21 +358,25 @@ final class FederationFixture implements AutoCloseable {
             data.centralized().keySet().forEach(w -> scopes.addObject().put("groupId", w.groupId()).put("windowType", w.windowType())
                     .put("startMicros", Long.toString(w.startMicros())).put("endMicros", Long.toString(w.endMicros())));
             inventory = new AggregateInventory(JOB, 1, specHash(), members, scopes);
-            assignments.forEach(inventory::admit);
-            coordinator = new CompletenessCoordinator(inventory, Duration.ofMinutes(1), 0.01, clock, state.resolve("merge.json"));
+            if (!mixed) {
+                assignments.forEach(inventory::admit);
+                coordinator = new CompletenessCoordinator(inventory, Duration.ofMinutes(1), 0.01, clock, state.resolve("merge.json"));
+            }
             mergedProducer = KafScaleClients.producer(brokers.bootstrap("signal"));
             Map<String, java.security.PublicKey> publicKeys = new TreeMap<>();
             siteKeys.forEach((site, key) -> publicKeys.put(site, key.getPublic()));
-            service = new TsxPlanService(driver.getPublic(), publicKeys, tls.certificateSites(), state.resolve("driver"), clock,
+            service = new TsxPlanService(driver.getPublic(), publicKeys, tls.certificateSites(), state.resolve("driver"), serviceClock,
                     this::status, (plan, delivery) -> accept(AggregateRecord.fromDelivery(delivery)));
             int index = 0;
             for (String site : sites) {
                 ObjectNode document = document(site, assignments.get(index++), members, scopes);
                 String compact = SignedJws.sign(JSON.writeValueAsBytes(document), driver.getPrivate());
                 plans.put(site, RunnerPlan.verify(compact, driver.getPublic()));
-                service.registerQualifiedRuntime(site, "node-" + site, version, digest, ABI);
+                signedPlans.put(site, compact);
+                var pin = pin(site);
+                service.registerQualifiedRuntime(site, pin.node(), pin.version(), pin.digest(), pin.stateAbi(), pin.runtime());
                 service.publish(compact);
-                agents.put(site, agent(site));
+                if (!isRust(site)) agents.put(site, agent(site));
                 observers.put(site, new LatencyProtocolObserver(brokers.port("signal"), false));
             }
             int port = service.start(new InetSocketAddress("127.0.0.1", 0), tls.serverContext()).getAddress().getPort();
@@ -365,13 +386,34 @@ final class FederationFixture implements AutoCloseable {
                 clients.put(site, new TsxPlanClient(URI.create("https://localhost:" + proxy.port()), site, tls.clientContext(site)));
             }
             cuts(brokers.bootstrap("signal"), layout.aggregates()).forEach((partition, range) -> centralNext.put(partition.partition(), range[1]));
+            if (mixed) {
+                try {
+                    rust.configure(endpoint("s3"), layout, observers.get("s3").bootstrap(), tls.clientPem("s3"), driver,
+                            siteKeys.get("s3"), signedPlans.get("s3"));
+                } catch (Exception | AssertionError error) {
+                    try { close(); } catch (Exception cleanup) { error.addSuppressed(cleanup); }
+                    throw error;
+                }
+            }
+        }
+
+        private boolean isRust(String site) { return mixed && site.equals("s3"); }
+
+        private ConformanceHandshake.QualifiedRuntime pin(String site) {
+            return isRust(site) ? rust.pin() : new ConformanceHandshake.QualifiedRuntime(site, "node-" + site, version, digest, ABI);
+        }
+
+        private void admitMixed() {
+            for (String site : sites) service.admitAggregateInventory(site, JOB, inventory);
+            coordinator = new CompletenessCoordinator(inventory, Duration.ofMinutes(1), 0.01, clock, state.resolve("merge.json"));
         }
 
         private ObjectNode assignment(String site) {
+            var pin = pin(site);
             ObjectNode a = JSON.createObjectNode().put("schema", "opentsx.execution-assignment.v1").put("deployment", JOB)
                     .put("generation", "1").put("assignment", "assignment-" + site).put("attempt", "attempt-1").put("fence", "1")
-                    .put("fragment", "fragment-" + site).put("site", site).put("node", "node-" + site).put("runtime", "java")
-                    .put("catalog", "tsx-catalog/1").put("artifactDigest", digest).put("specHash", specHash()).put("sourceDagText", dagText)
+                    .put("fragment", "fragment-" + site).put("site", site).put("node", "node-" + site).put("runtime", pin.runtime())
+                    .put("catalog", "tsx-catalog/1").put("artifactDigest", pin.digest()).put("specHash", specHash()).put("sourceDagText", dagText)
                     .put("fragmentHash", ExecutionAssignments.sha256(dagText)).put("fragmentText", dagText).put("mode", "bounded");
             var positions = a.putArray("inputs").addObject().put("binding", "site-" + site).put("topic", layout.episodes())
                     .put("partitionCount", "3").putArray("positions");
@@ -382,7 +424,8 @@ final class FederationFixture implements AutoCloseable {
 
         private ObjectNode document(String site, String assignment, ArrayNode members, ArrayNode scopes) {
             ObjectNode document = JSON.createObjectNode().put("schema", "opentsx.runner-plan.v1").put("job", JOB).put("planVersion", 1)
-                    .put("issued", "2026-10-01T00:00:00Z").put("expires", "2026-10-02T00:00:00Z").put("site", site)
+                    .put("issued", mixed ? serviceClock.instant().minusSeconds(60).toString() : "2026-10-01T00:00:00Z")
+                    .put("expires", mixed ? serviceClock.instant().plusSeconds(3600).toString() : "2026-10-02T00:00:00Z").put("site", site)
                     .put("catalog", "tsx-catalog/1").put("specHash", specHash()).put("assignmentText", assignment);
             document.putArray("inputContracts").addObject().put("binding", "site-" + site).put("topic", layout.episodes())
                     .putArray("fingerprints").add(KafScaleFixture.EPISODE_ONLY.iterator().next());
@@ -405,18 +448,19 @@ final class FederationFixture implements AutoCloseable {
             outputs.putArray("signal").add(layout.aggregates());
             policy.putArray("catalogs").add("tsx-catalog/1");
             var runtime = new ConformanceHandshake.QualifiedRuntime(site, "node-" + site, version, digest, ABI);
-            return new TsxSiteAgent(runtime, driver.getPublic(), policy, state.resolve(site), clock);
+            return new TsxSiteAgent(runtime, driver.getPublic(), policy, state.resolve(site), serviceClock);
         }
 
         private synchronized void status(RunnerPlan plan, JsonNode value) {
+            var pin = pin(plan.site());
             if (!value.path("schema").asText().equals("opentsx.dag-status.v1") || !value.path("dag").asText().equals(plan.job())
                     || !value.path("job").asText().equals(plan.job()) || !value.path("site").asText().equals(plan.site())
                     || !value.path("planVersion").isIntegralNumber() || !value.path("planVersion").canConvertToInt()
-                    || value.path("planVersion").intValue() != plan.planVersion() || !value.path("track").asText().equals("A")
+                    || value.path("planVersion").intValue() != plan.planVersion() || !value.path("track").asText().equals(pin.track())
                     || !value.path("specHash").equals(plan.document().path("specHash"))
                     || !value.path("artifact").isObject() || value.path("artifact").size() != 2
-                    || !value.path("artifact").path("version").asText().equals(version)
-                    || !value.path("artifact").path("digest").asText().equals(digest)) {
+                    || !value.path("artifact").path("version").asText().equals(pin.version())
+                    || !value.path("artifact").path("digest").asText().equals(pin.digest())) {
                 throw new IllegalArgumentException("received site status identity does not match the qualified plan");
             }
             String state = value.path("state").asText();
@@ -457,10 +501,16 @@ final class FederationFixture implements AutoCloseable {
         List<ConsumerRecord<byte[], byte[]>> storedStatuses() { return readAll(brokers.bootstrap("signal"), layout.dagStatus()); }
 
         JsonNode conform(String site) throws Exception {
+            if (isRust(site)) {
+                String signed = rust.conform();
+                JsonNode report = JSON.readTree(SignedJws.verify(signed, siteKeys.get(site).getPublic()));
+                reports.add(report.deepCopy());
+                return submitConformance(site, route, () -> clients.get(site).conformance(signed));
+            }
             JsonNode challenge = clients.get(site).challenge(JOB);
             Map<String, String> bindings = Map.of("site-" + site, brokers.bootstrap(site), "site", brokers.bootstrap(site), "signal", brokers.bootstrap("signal"));
             var runtime = new ConformanceHandshake.QualifiedRuntime(site, "node-" + site, version, digest, ABI);
-            JsonNode report = SiteConformanceChecks.report(challenge, brokers.bootstrap(site), bindings, ROOT, state.resolve("conformance-" + site), runtime, clock);
+            JsonNode report = SiteConformanceChecks.report(challenge, brokers.bootstrap(site), bindings, ROOT, state.resolve("conformance-" + site), runtime, serviceClock);
             reports.add(report.deepCopy());
             String signed = SignedJws.sign(JSON.writeValueAsBytes(report), siteKeys.get(site).getPrivate());
             System.out.println("Conformance request: site=" + site + ", route=" + route
@@ -476,6 +526,10 @@ final class FederationFixture implements AutoCloseable {
             for (String site : sites) tlsBefore.putIfAbsent(site, proxies.get(site).clientBytes.get());
             TsxSiteStage stage = new TsxSiteStage(data.centralized().size(), () -> {
                 for (String site : sites) {
+                    if (isRust(site)) {
+                        executeRust();
+                        continue;
+                    }
                     TsxSiteAgent agent = agents.get(site);
                     if (agent == null) throw new IllegalStateException("site is stopped");
                     TsxCompileContext context = new TsxCompileContext(Map.of(), Map.of(layout.aggregates(),
@@ -491,6 +545,27 @@ final class FederationFixture implements AutoCloseable {
             LocalCallbackSink<SeriesStats> sink = LocalCallbackSink.createCollectingSink(driverOutput, SeriesStats.class);
             stage.connectTo(0, sink, 0);
             new WayangContext(new Configuration()).with(new TsxSitePlugin()).with(new TsxJavaPlugin()).execute(new WayangPlan(sink));
+        }
+
+        private void executeRust() {
+            try {
+                JsonNode outcome = rust.run("run");
+                assertEquals("completed", outcome.path("state").asText());
+                assertTrue(outcome.path("completed").asBoolean());
+                assertEquals(data.centralized().size(), outcome.path("forwardedRecords").asLong());
+                List<JsonNode> sourceStatuses = statuses("s3");
+                assertTrue(sourceStatuses.stream().anyMatch(s -> s.path("state").asText().equals("running")));
+                JsonNode terminal = sourceStatuses.get(sourceStatuses.size() - 1);
+                assertEquals("stopped", terminal.path("state").asText());
+                assertEquals("B", terminal.path("track").asText());
+                assertEquals(inputRecords.get("s3").size(), terminal.path("records").asInt());
+                assertEquals(rust.pin().digest(), terminal.path("artifact").path("digest").asText());
+                JsonNode replay = rust.run("run-replay");
+                assertEquals(outcome, replay);
+                rustOutcomes.put("run", outcome.deepCopy());
+                rustOutcomes.put("replay", replay.deepCopy());
+                acceptForwarded();
+            } catch (Exception error) { throw new IllegalStateException("mixed Rust site execution failed", error); }
         }
 
         private void publish(RunnerPlan plan, List<AggregateRecord> records) {
@@ -515,6 +590,10 @@ final class FederationFixture implements AutoCloseable {
 
         private void forward(String site) {
             AggregateForwarder.copy(brokers.bootstrap(site), observers.get(site).bootstrap(), layout.aggregates(), state.resolve("forward-" + site + ".json"));
+            acceptForwarded();
+        }
+
+        private void acceptForwarded() {
             Map<TopicPartition, long[]> ranges = cuts(brokers.bootstrap("signal"), layout.aggregates());
             ranges.forEach((partition, range) -> range[0] = centralNext.get(partition.partition()));
             List<AggregateRecord> records = read(brokers.bootstrap("signal"), ranges).stream().map(AggregateRecord::fromConsumerRecord).toList();
@@ -528,7 +607,9 @@ final class FederationFixture implements AutoCloseable {
                 SeriesStats statistics = record.statistics();
                 var window = new FederatedWindparkData.Window(statistics.getSeriesId(), statistics.getWindowType(),
                         Micros.of(statistics.getWindowStart()), Micros.of(statistics.getWindowEnd()));
-                assertArrayEquals(data.uncollapsedSites().get(record.header("tsx-site")).get(window), sketch(statistics), "site sketch did not collapse");
+                if (!isRust(record.header("tsx-site"))) {
+                    assertArrayEquals(data.uncollapsedSites().get(record.header("tsx-site")).get(window), sketch(statistics), "site sketch did not collapse");
+                }
                 publishMerged(coordinator.accept(record));
                 AggregateRecord previous = accepted.putIfAbsent(record.key() + "|" + record.revision(), record);
                 if (previous != null) assertEquals(previous, record);
@@ -569,7 +650,7 @@ final class FederationFixture implements AutoCloseable {
             return latest.values().stream().filter(r -> r.header("tsx-final").equals("true")).map(AggregateRecord::statistics).toList();
         }
 
-        Result result(long elapsed) {
+        Result result(long elapsed) throws Exception {
             List<ByteRow> bytes = new ArrayList<>();
             for (String site : sites) {
                 if (route.equals("signal-cluster")) {
@@ -585,6 +666,25 @@ final class FederationFixture implements AutoCloseable {
                             proxies.get(site).clientBytes.get() - tlsBefore.get(site), elapsed));
                 }
             }
+            if (mixed) {
+                Path output = Path.of("target", "rust-b4-mixed");
+                Files.createDirectories(output);
+                ObjectNode evidence = JSON.createObjectNode().put("schema", "opentsx.rust-b4-mixed-execution.v1")
+                        .put("route", route).put("job", JOB);
+                ObjectNode commands = evidence.putObject("sites");
+                for (String site : sites) {
+                    RunnerPlan plan = plans.get(site);
+                    var pin = pin(site);
+                    ObjectNode command = commands.putObject(site).put("runtime", pin.runtime()).put("track", pin.track())
+                            .put("version", pin.version()).put("digest", pin.digest()).put("stateAbi", pin.stateAbi())
+                            .put("commandHash", plan.commandHash()).put("specHash", specHash())
+                            .put("inputRecords", inputRecords.get(site).size());
+                    command.put("fragmentHash", JSON.readTree(plan.document().path("assignmentText").asText()).path("fragmentHash").asText());
+                    command.set("statuses", JSON.valueToTree(statuses(site)));
+                }
+                evidence.set("rustOutcomes", JSON.valueToTree(rustOutcomes));
+                JSON.writerWithDefaultPrettyPrinter().writeValue(output.resolve("execution.json").toFile(), evidence);
+            }
             return new Result(route, List.copyOf(accepted.values()), List.copyOf(emitted), List.copyOf(driverOutput), List.copyOf(bytes),
                     windows(route, emitted), elapsed, List.copyOf(reports));
         }
@@ -599,8 +699,9 @@ final class FederationFixture implements AutoCloseable {
         }
     }
 
-    private List<WindowRow> windows(String route, List<AggregateRecord> records) {
+    private List<WindowRow> windows(String route, List<AggregateRecord> records) throws java.security.NoSuchAlgorithmException {
         List<WindowRow> rows = new ArrayList<>();
+        Map<FederatedWindparkData.Window, double[]> raw = mixed ? rawWindows() : Map.of();
         for (AggregateRecord record : records) {
             if (!record.header("tsx-final").equals("true")) continue;
             SeriesStats actual = record.statistics();
@@ -615,9 +716,11 @@ final class FederationFixture implements AutoCloseable {
             double meanError = relative(expected.getMean(), actual.getMean());
             double m2Error = relative(expected.getM2(), actual.getM2());
             assertTrue(exact, window.toString());
-            assertTrue(sketchEqual, window.toString());
-            assertTrue(meanError <= 3e-12, window + " mean=" + meanError);
-            assertTrue(m2Error <= 3e-12, window + " m2=" + m2Error);
+            if (!mixed) assertTrue(sketchEqual, window.toString());
+            if (!mixed) {
+                assertTrue(meanError <= 3e-12, window + " mean=" + meanError);
+                assertTrue(m2Error <= 3e-12, window + " m2=" + m2Error);
+            }
             Map<String, String> row = new LinkedHashMap<>();
             row.put("route", route); row.put("group_id", window.groupId()); row.put("window_type", window.windowType());
             row.put("window_start_micros", Long.toString(window.startMicros())); row.put("window_end_micros", Long.toString(window.endMicros()));
@@ -627,9 +730,84 @@ final class FederationFixture implements AutoCloseable {
             row.put("expected_min", Double.toString(expected.getMin())); row.put("expected_max", Double.toString(expected.getMax())); row.put("expected_mean", Double.toString(expected.getMean())); row.put("expected_m2", Double.toString(expected.getM2()));
             row.put("mean_relative_error", Double.toString(meanError)); row.put("m2_relative_error", Double.toString(m2Error));
             row.put("sketch_equal", Boolean.toString(sketchEqual)); row.put("exact_fields_equal", Boolean.toString(exact));
+            if (mixed) {
+                row.put("key", record.key()); row.put("revision", Long.toString(record.revision()));
+                row.put("final", record.header("tsx-final")); row.put("missing_sites", record.header("tsx-missing-sites"));
+                row.put("spec_hash", record.header("tsx-spec-hash")); row.put("generation", record.header("tsx-generation"));
+                row.put("payload_sha256", java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(record.value())));
+                row.put("last_seen_micros", Long.toString(Micros.of(actual.getLastSeen())));
+                row.put("expected_last_seen_micros", Long.toString(Micros.of(expected.getLastSeen())));
+                sketchShape(row, "actual_", actual.getQuantileSketch());
+                sketchShape(row, "expected_", expected.getQuantileSketch());
+                double[] sorted = raw.get(window);
+                assertEquals(actual.getValidCount(), sorted.length, window.toString());
+                QuantileSketch actualSketch = QuantileSketch.fromBytes(actual.getQuantileSketch());
+                QuantileSketch expectedSketch = QuantileSketch.fromBytes(expected.getQuantileSketch());
+                for (double q : new double[]{0.01, 0.5, 0.99}) {
+                    String name = q == 0.01 ? "q01" : q == 0.5 ? "q50" : "q99";
+                    double exactQuantile = sorted[(int) Math.floor(q * (sorted.length - 1))];
+                    row.put(name + "_exact", Double.toString(exactQuantile));
+                    quantile(row, name + "_actual", exactQuantile, actualSketch.quantile(q));
+                    quantile(row, name + "_expected", exactQuantile, expectedSketch.quantile(q));
+                }
+            }
             rows.add(new WindowRow(Collections.unmodifiableMap(row)));
         }
         return List.copyOf(rows);
+    }
+
+    private Map<FederatedWindparkData.Window, double[]> rawWindows() {
+        Map<FederatedWindparkData.Window, double[]> raw = new TreeMap<>();
+        Map<FederatedWindparkData.Window, int[]> positions = new TreeMap<>();
+        data.centralized().forEach((window, statistics) -> {
+            raw.put(window, new double[Math.toIntExact(statistics.getValidCount())]);
+            positions.put(window, new int[1]);
+        });
+        for (Episode episode : data.episodes()) {
+            String group = data.rawGroups().get(episode.getSeries().getSeriesId());
+            long[] times = Episodes.timestampsMicros(episode);
+            double[] values = Episodes.values(episode);
+            for (Duration duration : FederatedWindparkData.WINDOWS) {
+                long width = duration.toNanos() / 1000;
+                for (int index = 0; index < values.length; index++) {
+                    if (!Double.isFinite(values[index])) continue;
+                    long start = Math.floorDiv(times[index], width) * width;
+                    var window = new FederatedWindparkData.Window(group, duration.toString(), start, Math.addExact(start, width));
+                    double[] samples = raw.get(window);
+                    assertNotNull(samples, window.toString());
+                    samples[positions.get(window)[0]++] = values[index];
+                }
+            }
+        }
+        raw.forEach((window, samples) -> {
+            assertEquals(samples.length, positions.get(window)[0], window.toString());
+            Arrays.sort(samples);
+        });
+        return raw;
+    }
+
+    static void sketchShape(Map<String, String> row, String prefix, ByteBuffer bytes) {
+        var stores = MixedSketchQualificationTest.inspect(bytes);
+        row.put(prefix + "zero_count", Long.toString(stores.zeros()));
+        for (String sign : List.of("positive", "negative")) {
+            Map<Integer, Long> bins = sign.equals("positive") ? stores.positive() : stores.negative();
+            row.put(prefix + sign + "_bins", Integer.toString(bins.size()));
+            long span = bins.isEmpty() ? 0 : (long) Collections.max(bins.keySet()) - Collections.min(bins.keySet()) + 1;
+            row.put(prefix + sign + "_span", Long.toString(span));
+            row.put(prefix + sign + "_min_index", bins.isEmpty() ? "" : Integer.toString(Collections.min(bins.keySet())));
+            row.put(prefix + sign + "_max_index", bins.isEmpty() ? "" : Integer.toString(Collections.max(bins.keySet())));
+        }
+    }
+
+    private static void quantile(Map<String, String> row, String name, double exact, double estimate) {
+        boolean zero = Math.abs(exact) < QuantileSketch.MIN_INDEXABLE;
+        double lower = Math.min(exact * 0.99, exact * 1.01);
+        double upper = Math.max(exact * 0.99, exact * 1.01);
+        row.put(name, Double.toString(estimate));
+        row.put(name + "_domain", zero ? "zero-bucket" : "outside-zero-without-collapse");
+        row.put(name + "_absolute_error", Double.toString(Math.abs(estimate - exact)));
+        row.put(name + "_relative_error", zero ? "" : Double.toString(relative(exact, estimate)));
+        row.put(name + "_within_alpha", Boolean.toString(zero ? estimate == 0 : estimate >= lower && estimate <= upper));
     }
 
     private static byte[] sketch(SeriesStats value) {

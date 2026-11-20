@@ -123,6 +123,11 @@ protocol and placement evidence. Fresh job checks retain whole-topic cuts and
 series inventories; acknowledged site aggregates survive signal-cluster
 outages and forward with deterministic deduplication identities. This profile
 does not admit the remaining B2 operators or close physical ARMv7 acceptance.
+The [bounded mixed W3 harness](docs/devguide/integration/wayang-mixed-federation.md)
+selects two Java sites and an actual qualified Rust CLI site. Its numerical
+acceptance depends on retained execution evidence. Board tooling prepares and
+validates supplied evidence; both physical ARM64 and ARMv7 B4.2 measurements
+remain open.
 
 For the local three-worker Rust profile, choose **Legacy** in the Workbench
 header, then open **Smart Topic**. The [bounded rollout

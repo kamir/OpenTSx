@@ -26,7 +26,11 @@ Its cleaning, model, feature, retrieval, pair, vector and DQ operations are not
 admitted by this signed statistics profile. The [B1 configuration](rust-runner-b1.md)
 still selects isolated continuous pass-through. The Java executor explicitly
 rejects Rust assignments. Production release enrollment, continuous fleet
-activation, mixed-runtime federation and device measurements remain separate.
+activation and device measurements remain separate. The
+[bounded mixed W3 harness](wayang-mixed-federation.md) selects this existing
+statistics profile at one Rust site beside two Java sites. Its retained
+acceptance evidence has a separate bounded scope; it does not qualify mixed
+continuous fleets. Physical ARM64 and ARMv7 B4.2 measurements are both open.
 
 ## Qualify the exact executable and site endpoint
 
