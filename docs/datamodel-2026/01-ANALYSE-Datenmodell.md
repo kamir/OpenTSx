@@ -5,8 +5,8 @@
 > (plan) and [`02-ZIELMODELL.md`](02-ZIELMODELL.md) (draft of the target model).
 >
 > The page records the analysis of 2026-10. Sections 1.2 and 1.8 describe the module `opentsx-data` and the platform
-> as they are now, section 1.3 describes each Kafka path it lists as it is now, and section 3 lists the defects that
-> are still open.
+> as they are now, section 1.3 lists every Kafka producer and consumer of `opentsx-connectors` as it is now, and
+> section 3 lists the defects that are still open.
 
 ## 1. Overview: what exists
 
@@ -57,9 +57,13 @@ Observations:
 |------|-------|-----|-------|----------|
 | `TSOProducer.pushTSDataAsEpisodesToKafka_String_Avro` | `OpenTSx_Episodes[_suffix]` | Series label | Avro `EpisodesRecord` (SR) | **Synthetic time** `now + i·200ms` with increment 200, whatever the x values of the series; every observation repeats the `uri` argument; `OpenTSxClusterLink.send` waits for each record (`send().get()`) |
 | `TSOProducer.pushTSDataAsEventsToKafka_String_Avro` | `OpenTSx_Events` | Label | Avro `Event` (SR) | **Synthetic time** `now + i·200ms`, whatever the x values of the series; `OpenTSxClusterLink.send` waits for each message (`send().get()`) |
-| `TSOEventProducer.pushTSOItemsToKafka` | `refds_events_topic_<TAG>` | `label_<x>` | JSON `{ts,value}` | The key contains x, so a series is scattered over partitions |
+| `TSOProducer.runProducer` | `TSOData_Events_string` | Loop counter, starting at the current time in milliseconds, as a string | The string `TSOItem-<counter>` | Test records without series data; waits for each record (`send().get()`) and prints one line per record to standard output |
+| `TSOEventProducer.pushTSOItemsToKafka` | `refds_events_topic_<TAG>`, or the topic given to `pushTSOItemsToKafka(series, topic)` and `TSOWriter.persistEvents_Kafka` | `label_<x>` | JSON `{ts,value}` | The key contains x, so a series is scattered over partitions |
 | `EventFlowStateProducer` | `OpenTSx_Event_Flow_State` | flowSource | Properties as JSON | none |
-| `TSOConsumer` | `refds_small_bucket_topic_<TAG>` | none | none | Random `group.id` plus `earliest` means an implicit full replay at every start; no targeted replay logic |
+| `klatency.LatencyTestEventProducer.pushTestEventToCluster` | `latency_benchmark_request` | `targetAgentDC` of the event | Gson JSON of `LatencyTesterEvent`, with the send time set by `trackSendTS` | `OpenTSxClusterLink.send` waits for each record (`send().get()`) |
+| `TSOConsumer.runConsumer` | `refds_small_bucket_topic_<TAG>`, or the topic given to the constructor or to `runConsumer` (`KafkaConnector` passes its topic) | `String` (`StringDeserializer`), used as the series label | `String` (`StringDeserializer`), Gson JSON of `TSData` read by `TSBucket.processKVToTSO` | A new `group.id` `TSOConsumer_<current time in milliseconds>` plus `earliest` at every start means an implicit full replay; no targeted replay logic |
+| `klatency.LatencyTestEventConsumer.createConsumer(topic)` | The given topic; `RequestResponseAnalysisConsumer` (`opentsx-lg`) passes `latency_benchmark_response` (`TOPIC_for_response_events_string`) | `String`, deserializer from the client profile | `String`, deserializer from the client profile | Fixed `group.id` `LatencyTestEventConsumer` with `latest`; no code in the repository writes `latency_benchmark_response` |
+| `kping.TSOEventAnalysisConsumer.createConsumer(topic)` | The given topic; `EventFlowAnalysisConsumer` (`opentsx-lg`) passes `OpenTSx_Events`, the constant `TOPIC` is `refds_events_topic_<TAG>` | Declared `Long`, deserializer from the client profile | Avro `Event` as `GenericRecord`, deserializer from the client profile | Fixed `group.id` `KPING-Consumer` with `latest`; the key is declared `Long`, while `TSOProducer.pushTSDataAsEventsToKafka_String_Avro` writes the label as a `String` key |
 | `TSOWriter.persistBucket_Kafka` | none | none | none | **Stub; stores nothing and throws `UnsupportedOperationException`** |
 
 Across all paths: Kafka record timestamps are never set (event time only in the payload, so `offsetsForTimes` is useless), no headers, no notion of a bucket at the Kafka level.

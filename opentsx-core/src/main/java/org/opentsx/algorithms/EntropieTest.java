@@ -94,9 +94,6 @@ public class EntropieTest {
 
         MultiChart.open(components, true, "Components");
 
-        int windowSize = 20;
-        int shuffles = 1;
-
         // DFA ...
         applyDFA(components, "RAW components  ");
 

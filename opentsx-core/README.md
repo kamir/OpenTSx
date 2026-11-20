@@ -361,7 +361,7 @@ Errors stop the call:
 | a probability of the result is NaN or infinite | `IllegalArgumentException`: `add: probability <index> of <name> is <value>; expected a finite probability` |
 | the receiver is not a container | `IllegalStateException`: `add: <name> is not a container; set isContainerInstanz to true before adding results` |
 | the binning differs | `IllegalArgumentException`: `add: <name> has <n> bins and <container> has <m>; expected the same binning and scale` |
-| an interval is 0 or negative while `RISTool.offset` is 0 | `IllegalStateException`: `addDistData: <n> intervals are 0 or negative; expected positive intervals while offset is 0` |
+| an interval is 0 or negative while `RISTool.offset` is 0 | `IllegalStateException`: `addDistData: <n> intervals of <name> are 0 or negative; expected positive intervals while offset is 0` |
 | intervals are added to a container | `IllegalStateException`: `addDistData: <name> is a container; add intervals to a result that is not a container` |
 | `RISTool.projekt` is not set for a result with 2 to 1024 intervals | `IllegalStateException`: `add: RISTool.projekt is not set; set RISTool.projekt and RISTool.logFileNames and call RISTool.initRqMIN() before adding <name>, which has <n> intervals` |
 | `RISTool.logFileNames` holds fewer than 8 names | `IllegalStateException`: `add: RISTool.logFileNames has <n> names; set 8 names, one per interval range, before adding <name>, which has <n> intervals` |
@@ -377,8 +377,13 @@ filtered intervals, `add` then writes one line per interval through `RISTool.pro
 divided by the lower bound of its interval range gets a line in the log `RqTooLarge` as well. Create the logs with
 `OriginProject.createLogFile`. When `RISTool.offset` is not 0, `add` counts an interval below `RISTool.rqMIN` in
 `RISTool.debug1`, which `initRqCollectors()` creates, and `addDistData` writes the number of intervals below the offset
-to the log named by `setLofFileNameKey_1`, which needs `RISTool.projekt` as well. `_addData` writes a series whose
-intervals add up to more than 7200 hours to the log `LENGTH`.
+to the log named by `setLofFileNameKey_1`, which needs `RISTool.projekt` as well. `RISTool._addData(times)` adds the
+intervals between consecutive times in milliseconds as hours with `addDistData`, so times 0, 3600000 and 10800000 add
+the intervals 1.0 and 2.0. It writes a series whose intervals add up to more than 7200 hours to the log `LENGTH`
+instead. It refuses a time that is NaN or infinite, a time before the time before it and a time more than
+`Double.MAX_VALUE` after it with the `IllegalArgumentException` messages of `ReturnIntervallStatistik2._addData` below.
+Equal times give an interval of 0, which `addDistData` refuses while `RISTool.offset` is 0. A call that `_addData` or
+`addDistData` refuses adds nothing: the result keeps the intervals, R_q and probabilities of the call before.
 
 `ReturnIntervallStatistik2` and `TSPropertyTester` refuse a NaN or infinite probability, a receiver that is not a
 container, a different binning and intervals added to a container with the same exceptions and messages as `RISTool`.
@@ -404,8 +409,8 @@ intervals 1 and 1, not the 0.
 interval below the first or past the last bin is counted in that bin, so the probabilities add up to 1. `setRQ` does not
 change the bins, and after `addDistData` `getRq()` returns the mean R_q of the intervals. `setRQ(rq)` after
 `addDistData` replaces that mean for `calcMessreihen` and `add`: `mrVerteilungSkaliert` leaves out the bins that start
-below `offset` / `rq` when `offset` is above 0, and a container that adds the result records `rq`. An interval that is
-NaN or infinite throws `IllegalArgumentException` with
+below `offset` / `rq` when `offset` and `rq` are above 0, and a container that adds the result records `rq`. An interval
+that is NaN or infinite throws `IllegalArgumentException` with
 `addDistData: interval <k> of <name> is <value>; expected a finite interval`, and a refused call adds nothing.
 For a result that is not a container, `addDistData` also counts the kept intervals as they are, in bins of width
 1/`scale`, and `calcMessreihen()` writes these counts: `mrHaeufigkeit` holds the count of bin i at i / `scale`, and
@@ -415,11 +420,13 @@ and scale 10, the intervals 0.15, 0.25,
 0.25, 0.55 and 3.0 give the counts 1 at 0.1, 2 at 0.2, 1 at 0.5 and 1 at 1.2. `mrVerteilungSkaliert` holds the share
 of the intervals in scaled bin i at (i + 0.5) * `scale` / `binning`, the center of the bin in units of R_q. With binning
 12 and scale 10, the intervals 0.25, 0.25, 0.5 and 3.0 (R_q 1) give the share 0.75 at 5/12, 0.25 at 35/12 and 0 at the
-centers of the other bins. When `offset` is above 0, the bins that start below `offset` / R_q are left out: with
-`offset` 0.5, the intervals 0.5, 1.0, 1.5 and 3.0 (R_q 1.5) leave out bin 0 and its share 0.5, and the series starts at
-1.25. When `offset` is 0 or below, `mrVerteilungSkaliert` keeps every bin, also when R_q is 0 or negative: with binning
-12 and scale 10, the `TSPropertyTester` intervals 0 and 0 (R_q 0) give 13 points with the share 1 at 5/12, the point a
-container that adds the result shows. A result that keeps no interval has an empty `mrVerteilungSkaliert`. Each call of
+centers of the other bins. When `offset` and R_q are above 0, the bins that start below `offset` / R_q are left out:
+with `offset` 0.5, the intervals 0.5, 1.0, 1.5 and 3.0 (R_q 1.5) leave out bin 0 and its share 0.5, and the series
+starts at 1.25. When `offset` or R_q is 0 or below, `mrVerteilungSkaliert` keeps every bin: with binning 12 and scale
+10, the `TSPropertyTester` intervals 0 and 0 (R_q 0) give 13 points with the share 1 at 5/12, the point a container that
+adds the result shows, and with `offset` 1 the `TSPropertyTester` intervals -3 and 1 (R_q -1) give 13 points with the
+share 0.5 at 5/12 and at 35/12. A result that keeps no interval has an empty `mrVerteilung` and an empty
+`mrVerteilungSkaliert`, and its `mrHaeufigkeit` holds the count 0 for each bin. Each call of
 `calcMessreihen()` replaces the series of the call before.
 `SingleTsRISTool` passes the y values of each series as times and adds the result to `risCollector`. For each series
 it writes one line: the label, two tabs, the R_q of the result and a tab. R_q is the mean of the kept intervals, so the

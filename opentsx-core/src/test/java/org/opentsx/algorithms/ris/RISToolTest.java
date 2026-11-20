@@ -299,6 +299,81 @@ class RISToolTest {
     }
 
     @Test
+    void aTimeBeforeTheTimeBeforeItIsRefused() {
+        RISTool ris = new RISTool("unsorted", 12, 10);
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> ris._addData(times(0.0, 5.0, 2.0)));
+
+        assertEquals("_addData: time 2 of unsorted is 2.0, before time 1 at 5.0; expected times that do not decrease",
+                e.getMessage());
+        assertEquals(List.of(), ris.dataRawTIMES);
+        assertEquals(List.of(), ris.dataRawFILTERED);
+    }
+
+    @Test
+    void aTimeThatIsNotFiniteIsRefused() {
+        RISTool nan = new RISTool("nan", 12, 10);
+        RISTool infinite = new RISTool("infinite", 12, 10);
+
+        IllegalArgumentException later = assertThrows(IllegalArgumentException.class,
+                () -> nan._addData(times(0.0, Double.NaN, 5.0)));
+        IllegalArgumentException first = assertThrows(IllegalArgumentException.class,
+                () -> infinite._addData(times(Double.POSITIVE_INFINITY, 1.0)));
+
+        assertEquals("_addData: time 1 of nan is NaN; expected a finite time", later.getMessage());
+        assertEquals("_addData: time 0 of infinite is Infinity; expected a finite time", first.getMessage());
+        assertEquals(List.of(), nan.dataRawTIMES);
+        assertEquals(List.of(), infinite.dataRawTIMES);
+    }
+
+    @Test
+    void timesMoreThanDoubleMaxValueApartAreRefusedAndKeepTheIntervalsBefore() throws Exception {
+        RISTool ris = new RISTool("far", 12, 10);
+        ris._addData(times(0.0, 2.0 * 60 * 60 * 1000));
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> ris._addData(times(-1e308, 1e308)));
+
+        assertEquals("_addData: time 1 of far is 1.0E308, more than Double.MAX_VALUE after time 0 at -1.0E308;"
+                + " expected times whose difference is finite", e.getMessage());
+        assertEquals(List.of(2.0), ris.dataRawTIMES);
+        assertEquals(List.of(2.0), ris.dataRawFILTERED);
+        assertEquals(2.0, ris.getRq());
+    }
+
+    @Test
+    void equalTimesAddAnIntervalOf0ThatIsRefusedWhileOffsetIs0AndKeepTheIntervalsBefore() throws Exception {
+        RISTool ris = new RISTool("equal", 12, 10);
+        ris._addData(times(0.0, 2.0 * 60 * 60 * 1000));
+        int rows = RISTool.anzRowRAW.dists.size();
+
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> ris._addData(times(0.0, 0.0, 60 * 60 * 1000)));
+
+        assertEquals("addDistData: 1 intervals of equal are 0 or negative; expected positive intervals while offset"
+                + " is 0", e.getMessage());
+        assertEquals(List.of(2.0), ris.dataRawTIMES);
+        assertEquals(List.of(2.0), ris.dataRawFILTERED);
+        assertEquals(2.0, ris.getRq());
+        assertEquals(1, ris.anzFiltered);
+        assertEquals(0, ris.cutOff);
+        assertEquals(rows, RISTool.anzRowRAW.dists.size());
+    }
+
+    @Test
+    void aRefusedIntervalOf0IsNotCountedInTheNextCall() throws Exception {
+        RISTool ris = new RISTool("again", 12, 10);
+        assertThrows(IllegalStateException.class, () -> ris.addDistData(new Vector<>(List.of(1.0, 0.0))));
+
+        ris._addData(times(0.0, 60 * 60 * 1000, 3 * 60 * 60 * 1000));
+
+        assertEquals(List.of(1.0, 2.0), ris.dataRawTIMES);
+        assertEquals(List.of(1.0, 2.0), ris.dataRawFILTERED);
+        assertEquals(1.5, ris.getRq());
+    }
+
+    @Test
     void addingToAResultThatIsNotAContainerFailsInEnglish() throws Exception {
         RISTool single = filled("single");
         RISTool other = filled("other");
@@ -313,8 +388,8 @@ class RISToolTest {
         Vector<Double> values = intervals(3);
         values.add(0.0);
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> ris.addDistData(values));
-        assertEquals("addDistData: 1 intervals are 0 or negative; expected positive intervals while offset is 0",
-                e.getMessage());
+        assertEquals("addDistData: 1 intervals of zero are 0 or negative; expected positive intervals while offset"
+                + " is 0", e.getMessage());
     }
 
     @Test
@@ -355,6 +430,14 @@ class RISToolTest {
         RISTool ris = new RISTool(name, 12, 10);
         ris.addDistData(intervals(1100));
         return ris;
+    }
+
+    private static Vector<Double> times(double... values) {
+        Vector<Double> times = new Vector<>();
+        for (double value : values) {
+            times.add(value);
+        }
+        return times;
     }
 
     private static Vector<Double> intervals(int n) {

@@ -37,7 +37,7 @@ import org.opentsx.algorithms.statistics.HaeufigkeitsZaehlerDouble;
  * The scaled values can be combined.
  * 
  * add( RIS2 )                  => collect in the container
- * addData( Vector<Long> ...  ) => points in time
+ * _addData( Vector<Double> ) => points in time in milliseconds
  * addDistData( Vector<Double)  => collect time intervals
  * 
  * 
@@ -224,12 +224,12 @@ public class RISTool {
     }
 
     /** 
-     * Vector<Long> times ==> points in time, in order.
-     *                        No y values, only the sequence of t.
+     * Adds the intervals between consecutive times in milliseconds as hours with addDistData, or writes them to the
+     * log LENGTH when they add up to more than 7200 hours. Equal times give an interval of 0, which addDistData
+     * refuses while offset is 0.
      *  
-     * A vector of times is passed.
-     * 
-     * The return intervals are computed from it first.
+     * @throws IllegalArgumentException when a time is not finite, is before the time before it or is more than
+     *         Double.MAX_VALUE after it
      **/
     public void _addData( Vector<Double> times ) throws Exception {
 
@@ -241,11 +241,7 @@ public class RISTool {
             LOG.debug("computing intervals result={} intervals={}", name, Math.max(0, times.size() - 1));
         }
 
-        
-        // recreate the container
-        dataRawTIMES = new Vector<Double>();
-
-        int nullDistCounter = 0;
+        Vector<Double> intervals = new Vector<Double>();
         
         // points in time
         Enumeration<Double> en = times.elements();
@@ -254,31 +250,42 @@ public class RISTool {
         double vor = 0.0;
         if ( en.hasMoreElements() ) {
             vor = en.nextElement();
+            if ( !Double.isFinite( vor ) ) {
+                throw new IllegalArgumentException( "_addData: time 0 of " + name + " is " + vor + "; expected a finite time" );
+            }
         }
         
+        int k = 0;
         while( en.hasMoreElements() ) {
             Double now = en.nextElement();
-            double dist = (double)(now - vor);
-            if ( dist > 0.0 ) {
-                
-                // intervals in hours
-                dist = dist / (60 * 60 * 1000);
-                dataRawTIMES.add(dist);
+            k++;
+            if ( !Double.isFinite( now ) ) {
+                throw new IllegalArgumentException( "_addData: time " + k + " of " + name + " is " + now + "; expected a finite time" );
             }
-            else {
-                nullDistCounter++;
+            if ( now < vor ) {
+                throw new IllegalArgumentException( "_addData: time " + k + " of " + name + " is " + now + ", before time "
+                        + (k - 1) + " at " + vor + "; expected times that do not decrease" );
             }
+            double dist = now - vor;
+            if ( Double.isInfinite( dist ) ) {
+                throw new IllegalArgumentException( "_addData: time " + k + " of " + name + " is " + now
+                        + ", more than Double.MAX_VALUE after time " + (k - 1) + " at " + vor
+                        + "; expected times whose difference is finite" );
+            }
+            // intervals in hours
+            dist = dist / (60 * 60 * 1000);
+            intervals.add(dist);
             if ( LOG.isDebugEnabled() ) LOG.debug("interval result={} interval={} now={} before={}", name, dist, now, vor);
             vor = now;
         } 
 
-        if ( preCheck( dataRawTIMES ) ) {
-            addDistData(dataRawTIMES);
+        if ( preCheck( intervals ) ) {
+            addDistData(intervals);
         }
         else { 
             errosLENGTH++;            
         }
-        
+        dataRawTIMES = intervals;
         
     }
     
@@ -312,25 +319,28 @@ public class RISTool {
         }
         
         long anzahlVor = (long)dists.size();
-        anzRowRAW.addData( anzahlVor  );
-        
-        dataRawFILTERED = new Vector<Double>();
+        Vector<Double> kept = new Vector<Double>();
+        int cut = 0;
         Enumeration en1 = dists.elements();
         while( en1.hasMoreElements() ) {
             double da = (Double)en1.nextElement();
             if ( da >= offset && da != 0.0  ) {
-                dataRawFILTERED.add( da );
+                kept.add( da );
             }
             else {
-                cutOff++;
+                cut++;
             }
         }
 
-        if ( cutOff != 0 && offset == 0 ) {
-            throw new IllegalStateException( "addDistData: " + cutOff
-                    + " intervals are 0 or negative; expected positive intervals while offset is 0" );
+        if ( cut != 0 && offset == 0 ) {
+            throw new IllegalStateException( "addDistData: " + cut + " intervals of " + name
+                    + " are 0 or negative; expected positive intervals while offset is 0" );
         }
-        
+
+        anzRowRAW.addData( anzahlVor  );
+        dataRawFILTERED = kept;
+        cutOff = cut;
+
         long anzahlNach = (long)dataRawFILTERED.size();
         anzRowsFILTERED.addData( anzahlNach );
         long delta = (anzahlVor-anzahlNach);

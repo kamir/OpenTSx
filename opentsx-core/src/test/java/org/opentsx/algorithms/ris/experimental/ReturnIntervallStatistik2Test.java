@@ -378,6 +378,39 @@ class ReturnIntervallStatistik2Test {
     }
 
     @Test
+    void aPositiveOffsetLeavesOutNoScaledBinWhenRqIs0OrNegative() throws Exception {
+        double offset = ReturnIntervallStatistik2.offset;
+        ReturnIntervallStatistik2.offset = 0.5;
+        try {
+            ReturnIntervallStatistik2 zero = new ReturnIntervallStatistik2("zero", 12, 10);
+            zero.addDistData(new Vector<>(List.of(1.0, 2.0, 3.0)));
+            zero.setRQ(0.0);
+            zero.calcMessreihen();
+            ReturnIntervallStatistik2 negative = new ReturnIntervallStatistik2("negative", 12, 10);
+            negative.addDistData(new Vector<>(List.of(1.0, 2.0, 3.0)));
+            negative.setRQ(-1.0);
+            negative.calcMessreihen();
+
+            assertScaledSeries(new double[] {1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 3.0, zero.mrVerteilungSkaliert);
+            assertScaledSeries(new double[] {1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 3.0, negative.mrVerteilungSkaliert);
+        } finally {
+            ReturnIntervallStatistik2.offset = offset;
+        }
+    }
+
+    @Test
+    void aResultThatKeepsNoIntervalHasAnEmptyDistribution() throws Exception {
+        ReturnIntervallStatistik2 empty = new ReturnIntervallStatistik2("empty", 12, 10);
+        empty._addData(times(1.0, 1.0, 1.0), 1.0);
+
+        empty.calcMessreihen();
+
+        assertEquals(List.of(), empty.mrVerteilung.xValues);
+        assertEquals(List.of(), empty.mrVerteilung.yValues);
+        assertSeries(new double[13], 1.0, empty.mrHaeufigkeit);
+    }
+
+    @Test
     void timesMoreThanDoubleMaxValueApartAreRefusedAndKeepTheIntervalsBefore() throws Exception {
         ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2("far", 12, 10);
         ris._addData(times(0.0, 2.0), 1.0);

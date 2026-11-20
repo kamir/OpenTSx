@@ -59,7 +59,10 @@ Recommendation: **do not rebuild the existing code; build a lean "OpenTSx Platfo
 ### 3.3 Architecture and code
 * `TimeSeriesObject` as a 2900-line god class; Swing/AWT in 48 core files (GUI in the library core).
 * Uncontrolled logging: 2186 times `System.out`, 182 times `printStackTrace`, JUL, slf4j, log4j2.
-* Serialization bugs (label `"123"`, quadratic timestamps, Avro and JSON on the same topic, Flink wire format break): see 01-ANALYSE section 3.
+* Serialization: Flink `ObservationSchema` decodes raw Avro binary, while the producers write the Confluent wire format
+  (01-ANALYSE sections 1.3 and 3). `TSOProducer` writes Avro to `OpenTSx_Episodes[_suffix]` and `OpenTSx_Events`: each
+  episode carries the label of its series and is keyed by it, and the synthetic timestamps of a series are 200 ms
+  apart. No code in the repository writes JSON to these topics (01-ANALYSE section 1.3).
 * `TSBucketStore`/`TSO*Interface` empty stubs; `TSOWriter.persistBucket_Kafka` stores nothing and throws.
 * Python `from_pandas` loses the time zone, and the time unit depends on the pandas version; `TSBucket.apply(parallel=True)` is sequential.
 

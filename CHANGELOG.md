@@ -945,6 +945,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   1.
 - docs/devops/operations.md says that the synthetic check runs only with `MONITORING=true` everywhere it names the
   check as a signal: the What to watch table, R2, R3, the service levels and the capacity review.
+- `opentsx-core`: the `RISTool.addDistData` refusal names the result: `addDistData: <n> intervals of <name> are 0 or
+  negative; expected positive intervals while offset is 0`.
+- `opentsx-core`: the DEBUG line of `TSPropertyTester.addDistData` reads `kept intervals result=<name> intervals=<n>`,
+  because the method keeps every interval. It read `filtered intervals result=<name> offset=<offset>`.
+- Section 1.3 of `docs/datamodel-2026/01-ANALYSE-Datenmodell.md` lists every Kafka producer and consumer of
+  `opentsx-connectors`, including `TSOProducer.runProducer` (`TSOData_Events_string`), `LatencyTestEventProducer`
+  (`latency_benchmark_request`), `LatencyTestEventConsumer` and `kping.TSOEventAnalysisConsumer`, and its
+  `TSOConsumer.runConsumer` row gives the `String` key used as the series label, the Gson JSON of `TSData` as value
+  and the topic of the constructor or of `runConsumer`. `03-GAP-ANALYSE.md` states each serialization finding where it
+  stands instead of pointing to section 3 of the analysis, which holds only the Flink wire format break.
+- `MacroRecorder.fitMIN` and `MacroRecorder.fitMAX` are deprecated and have no effect, because `MacroRecorder` runs no
+  DFA.
 
 ### Removed
 
@@ -1135,6 +1147,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `opentsx-core`: the dead EXP3 and EXP4 branches and the private `loadStockDataFromBucket` of `MacroRecorder`, the
   unused shuffled component list of `EntropieTest.main` and the unused `cutOff` field of `TSPropertyTester`, whose
   `filtered intervals` DEBUG line no longer carries a `cutOff` value.
+- `opentsx-core`: the unused locals `windowSize` and `shuffles` of `EntropieTest.main`. From `MacroRecorder`: the
+  private `applyDFA`, which nothing called, and its `doDFA` flag; the unused `dig`, `mrv2` and `mrv3` and the
+  surrogate and transfer entropy series that only filled them; the first of two `samplingRate` assignments in `main`;
+  and the thesis notes before the package statement.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -2389,6 +2405,20 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The `DFA` of the chart panel counted the window sizes in the fit range only after it had computed the fluctuation
   function, so a series of more than 3160031 values ran the whole computation before it stopped. It now counts them
   from the number of values and stops before the computation.
+- `opentsx-core`: `RISTool._addData` refuses a time that is NaN or infinite, a time before the time before it and a
+  time more than `Double.MAX_VALUE` after it with the `IllegalArgumentException` messages of
+  `ReturnIntervallStatistik2._addData`. Equal times give an interval of 0, which `addDistData` refuses while `offset`
+  is 0. A refused call adds nothing. `_addData` used to drop such times without a message.
+- `opentsx-core`: `RISTool.addDistData` refuses intervals of 0 or below while `offset` is 0 before it changes
+  anything, so the result keeps the intervals, R_q and probabilities of the call before and the next call counts only
+  its own intervals. It used to replace the kept intervals before it refused, and after one refused call it refused
+  every later call on the same instance.
+- `opentsx-core`: `ReturnIntervallStatistik2` and `TSPropertyTester` leave out the scaled bins below `offset` / R_q
+  only when both `offset` and R_q are above 0. With `offset` above 0 and an R_q of 0, for example the
+  `TSPropertyTester` intervals -1 and 1, `mrVerteilungSkaliert` was empty while a container that added the result
+  showed its bins.
+- `opentsx-core`: a `ReturnIntervallStatistik2` or `TSPropertyTester` result that keeps no interval has an empty
+  `mrVerteilung` after `calcMessreihen()`. It held NaN for every bin.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

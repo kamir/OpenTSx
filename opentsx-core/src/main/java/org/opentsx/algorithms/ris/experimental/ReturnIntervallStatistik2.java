@@ -74,8 +74,8 @@ public class ReturnIntervallStatistik2 {
     public TimeSeriesObject mrVerteilung = new TimeSeriesObject();
     /**
      * For a result that is not a container: the share of the intervals in scaled bin i at
-     * x = (i + 0.5) * scale / binning, the center of the bin in units of R_q. When offset is above 0, the bins that
-     * start below offset / R_q are left out.
+     * x = (i + 0.5) * scale / binning, the center of the bin in units of R_q. When offset and R_q are above 0, the
+     * bins that start below offset / R_q are left out.
      */
     public TimeSeriesObject mrVerteilungSkaliert = new TimeSeriesObject();
 
@@ -452,10 +452,15 @@ public class ReturnIntervallStatistik2 {
             
                
             anzahlProSpalte = data[i];
-            relAnzahl = (double) data[i] / (double) this.zElements;
                 
             mrHaeufigkeit.addValuePair(
                         (double)i / (double)scale,  anzahlProSpalte  );
+
+            if ( this.zElements == 0 ) {
+                continue;
+            }
+
+            relAnzahl = (double) data[i] / (double) this.zElements;
                 
             mrVerteilung.addValuePair(
                         (double)i / (double)scale , relAnzahl );
@@ -464,7 +469,8 @@ public class ReturnIntervallStatistik2 {
            
             
         // leave out the first values
-        if ( this.zElements > 0 && ( offset <= 0 || i >= offset * binning / ( (double)scale * _Rq ) ) ) {
+        boolean belowOffset = offset > 0 && _Rq > 0 && i < offset * binning / ( (double)scale * _Rq );
+        if ( !belowOffset ) {
                 
           relAnzahl = (double) dataSKALIERT[i] / (double) this.zElements;
  

@@ -353,6 +353,54 @@ class TSPropertyTesterTest {
     }
 
     @Test
+    void aPositiveOffsetLeavesOutNoScaledBinWhenTheMeanIntervalIs0OrNegative() throws Exception {
+        double offset = TSPropertyTester.offset;
+        TSPropertyTester.offset = 1.0;
+        try {
+            TSPropertyTester zeroMean = new TSPropertyTester("zeroMean", 12, 10);
+            zeroMean.addDistData(new Vector<>(List.of(-1.0, 1.0)));
+            zeroMean.calcMessreihen();
+            TSPropertyTester negativeMean = new TSPropertyTester("negativeMean", 12, 10);
+            negativeMean.addDistData(new Vector<>(List.of(-3.0, 1.0)));
+            negativeMean.calcMessreihen();
+            TSPropertyTester container = new TSPropertyTester("all", 12, 10);
+            container.isContainerInstanz = true;
+            container.add(zeroMean);
+            container.calcMessreihen();
+
+            assertEquals(0.0, zeroMean.getRq());
+            assertEquals(-1.0, negativeMean.getRq());
+            assertScaledSeries(new double[] {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}, 2.0, zeroMean.mrVerteilungSkaliert);
+            assertScaledSeries(new double[] {1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 2.0, negativeMean.mrVerteilungSkaliert);
+            assertEquals(pointsWithAShare(container.mrVerteilungSkaliert), pointsWithAShare(zeroMean.mrVerteilungSkaliert));
+        } finally {
+            TSPropertyTester.offset = offset;
+        }
+    }
+
+    @Test
+    void aResultWithoutIntervalsHasAnEmptyDistribution() throws Exception {
+        TSPropertyTester none = new TSPropertyTester("none", 12, 10);
+        none._addData(times(4.0), 1.0);
+
+        none.calcMessreihen();
+
+        assertEquals(List.of(), none.mrVerteilung.xValues);
+        assertEquals(List.of(), none.mrVerteilung.yValues);
+        assertSeries(new double[13], 1.0, none.mrHaeufigkeit);
+    }
+
+    @Test
+    void addingIntervalsLogsHowManyItKeeps() throws Exception {
+        TSPropertyTester tester = new TSPropertyTester("kept", 12, 10);
+
+        String log = stderrOf(() -> tester.addDistData(intervals(10)));
+
+        assertTrue(log.contains("kept intervals result=kept intervals=10"), log);
+        assertFalse(log.contains("filtered intervals"), log);
+    }
+
+    @Test
     void timesMoreThanDoubleMaxValueApartAreRefusedAndKeepTheIntervalsBefore() throws Exception {
         TSPropertyTester tester = new TSPropertyTester("far", 12, 10);
         tester._addData(times(0.0, 2.0), 1.0);
