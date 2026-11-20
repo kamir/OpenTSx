@@ -71,6 +71,10 @@ pulls it on a fresh native runner. The helper rejects mutable tags. Version
 and revision labels, architecture, image ID and default UID `10001:10001`
 must match.
 
+The image supplies the named `opentsx` account for UID and GID 10001 so Hadoop
+can resolve the effective user. Account files are prepared on the native build
+platform, then copied into the target image. Runtime stages need no emulation.
+
 Two separate containers invoke the packaged `windpark-demo run` and
 `windpark-demo replay` commands. Both use the same unique volume mounted at
 `/tmp`, preserving absolute Iceberg warehouse paths between starts. The

@@ -50,7 +50,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 - Check tools-image identity, packaged Windpark startup and numerical replay
   before publication. Pull published digests on native AMD64 and ARM64 runners
-  and retain receipts and cleanup evidence.
+  and retain receipts and cleanup evidence. Supply a named Hadoop account while
+  retaining runtime UID and GID 10001.
 
 - Add a deterministic local windpark demo with healthy, fault and curtailed
   turbines. Persist real Iceberg episodes through a SQLite catalog and verify
