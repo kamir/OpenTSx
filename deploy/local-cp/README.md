@@ -4,6 +4,10 @@ Use the [standalone analysis profile](../../docs/devguide/standalone-analysis.md
 for finite fitting without a CP cluster. Select `--profile finite` on the
 existing launcher; it uses a separate Compose project, generated env file,
 network and runtime volume.
+The finite browser acceptance also captures WebM video and a Playwright trace.
+Its recording manifest requires matching clean source and runtime provenance
+and includes hashes for all evidence files. The standalone guide covers
+capture, verification and replay.
 
 The default connected profile serves the Workbench and Python service on the CP
 network. Read the [developer path](../../docs/devguide/local-cp-workbench.md)

@@ -13,6 +13,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Resolve Central dependencies and plugins in CI through a Google Cloud-hosted
+  mirror. Verify endpoint selection and permanent errors offline, including a
+  Central 404 response with a long Retry-After value.
 - Retain Maven execution exception details, selected transport and sanitized
   cache reports before and after every Maven CI job. Check missing-plugin
   failure diagnostics offline and distinguish fresh HTTP failures from cached
@@ -65,6 +68,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   Jetson Nano as onboard computer and a Synology NAS as ground station, a satellite simulator writing an onboard
   ring buffer, an emulated space-ground link driven by computed passes, and phases P0 to P6 up to the D-T13 CPU
   fallback path. No implementation yet.
+- Record the finite Workbench browser journey as WebM video and a Playwright
+  trace. Require matching clean source and runtime identities before and after
+  capture, verify numerical exports and hash the evidence in a recording manifest.
+
 - Bounded mixed W3 acceptance harness with two Java sites and an actual
   qualified Rust CLI site, runtime-bound aggregate admission, complete
   partial/window evidence and six canonical-merge arrival orders. Separate
@@ -89,6 +96,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   Locked artifacts serve the Workbench and finite numerical API without CP
   or MLflow. Browser acceptance fits and exports a checked synthetic result.
 
+- Owner decision D-T13 in
+  [`EVOLUTION/TASK-020-wayang-ts-operators.md`](EVOLUTION/TASK-020-wayang-ts-operators.md), accepted on 2026-11-20:
+  FPGA kernels on raw sensor data run as Tier 3, behind the Rust runner and for data reduction only. The record states
+  the concept 09 boundary it changes, the partial and finish numerics, the `runtimes.fpga` key, the `raw` port, signed
+  kernel packages, the first kernel pack, the admission gate per kernel, and that the contract changes ship with the
+  first kernel.
 - Study on running OpenTSx operators in orbit
   ([`docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md`](docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md)):
   no tool compiles the Python operators to FPGA logic; a bounded streaming subset can be reimplemented as FPGA kernels

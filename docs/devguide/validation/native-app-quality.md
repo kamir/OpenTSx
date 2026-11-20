@@ -23,7 +23,7 @@ Regressions can belong to more than one category.
 Test names alone do not establish an executed result or a coverage percentage.
 
 The Java CI matrix runs the Maven 3.9.8 verification lifecycle under Xvfb on Java 17 and 21:
-[ci.yml:584](../../../.github/workflows/ci.yml#L584).
+[ci.yml:587](../../../.github/workflows/ci.yml#L587).
 Each Maven job verifies the bundled HTTP transport's download retry policy before its workload:
 [download retry check](../../../tools/check_maven_downloads.py).
 The check also requires exception diagnostics from an isolated offline
@@ -41,11 +41,16 @@ executes synthetic responses and a local-file Maven fixture without network
 requests or sleeps.
 The native malformed-cookie fixture also verifies that cookie-parser warnings
 cannot expose cookie values in the configured runtime.
+The CI settings mirror Central dependencies and plugins to the Google
+Cloud-hosted copy. An offline native fixture reproduces a Central 404 with a
+long Retry-After value and verifies the configured route while preserving
+permanent failures. A separate offline Maven invocation verifies plugin
+mirror selection from the actual settings file.
 Dependency-cache keys include each Maven workload's identity and runtime
 inputs, retaining separate dependency sets for small and full-reactor jobs.
 Broker integration and recorder-through-Kafka/Flink acceptance use separate configured gates:
-[ci.yml:864](../../../.github/workflows/ci.yml#L864),
-[ci.yml:1024](../../../.github/workflows/ci.yml#L1024).
+[ci.yml:869](../../../.github/workflows/ci.yml#L869),
+[ci.yml:1040](../../../.github/workflows/ci.yml#L1040).
 Pull requests select affected jobs from module dependencies and shared inputs. Pushes to `master` and manual runs
 execute the full workflow. The [CI selection contract](../../../CONTRIBUTING.md#check-continuous-integration)
 defines the final result check and the treatment of explicitly excluded jobs.

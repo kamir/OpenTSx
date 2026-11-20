@@ -1,9 +1,16 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  finishCapture,
+  localProvenance,
+  prepareOutput,
+  publishRecording,
+  runtimeProvenance,
+} from './finite-recording.mjs';
 
 const ORIGIN = 1795003200000000;
 const SECOND = 1000000;
@@ -166,6 +173,9 @@ async function main(args) {
     );
     return;
   }
+  await prepareOutput(options.output);
+  const sourceBefore = await localProvenance(options.output);
+  const runtimeBefore = await runtimeProvenance(options.url, sourceBefore);
   const require = createRequire(import.meta.url);
   assert.equal(
     require(path.join(options.playwrightModule, 'package.json')).version,
@@ -194,14 +204,28 @@ async function main(args) {
   let failure;
   let downloaded;
   let sourceHash;
-  await mkdir(options.output, { recursive: true });
+  let tracingStarted = false;
+  let sourceAfter;
+  let runtimeAfter;
+  const tools = { node: process.version, playwright: '1.62.1' };
   try {
     browser = await chromium.launch({ headless: true });
     context = await browser.newContext({
       viewport: { width: 1600, height: 1100 },
       acceptDownloads: true,
       serviceWorkers: 'block',
+      recordVideo: {
+        dir: path.join(options.output, 'video'),
+        size: { width: 1600, height: 1100 },
+      },
     });
+    tools.chromium = browser.version();
+    await context.tracing.start({
+      screenshots: true,
+      snapshots: true,
+      sources: false,
+    });
+    tracingStarted = true;
     context.setDefaultTimeout(15000);
     await context.route('**/*', async (route) => {
       const request = route.request();
@@ -343,31 +367,26 @@ async function main(args) {
     checks.push(
       'Every forecast equals the closed-form random-walk value 16 within absolute tolerance 1e-8; two held-out folds give naive MAE 2.5.',
     );
+    await panel
+      .getByRole('img', {
+        name: 'Observed target and forecast with prediction interval',
+        exact: true,
+      })
+      .scrollIntoViewIfNeeded();
   } catch (error) {
     failure = error;
   } finally {
     const errors = failure ? [failure] : [];
-    if (page && !page.isClosed()) {
-      try {
-        await page.screenshot({
-          path: path.join(options.output, 'workbench.png'),
-          fullPage: true,
-        });
-      } catch (error) {
-        errors.push(
-          new Error('Failed to capture the finite Workbench screenshot.', {
-            cause: error,
-          }),
-        );
-      }
-    }
-    for (const resource of [context, browser]) {
-      if (!resource) continue;
-      try {
-        await resource.close();
-      } catch (error) {
-        errors.push(error);
-      }
+    try {
+      await finishCapture({
+        page,
+        context,
+        browser,
+        output: options.output,
+        tracingStarted,
+      });
+    } catch (error) {
+      errors.push(error);
     }
     if (forbiddenRequests.length)
       errors.push(new Error('The browser attempted a forbidden connection.'));
@@ -379,6 +398,14 @@ async function main(args) {
         : errors.length
           ? new AggregateError(errors, 'Finite browser acceptance failed.')
           : null;
+  }
+  if (!failure) {
+    try {
+      sourceAfter = await localProvenance(options.output);
+      runtimeAfter = await runtimeProvenance(options.url, sourceAfter);
+    } catch (error) {
+      failure = error;
+    }
   }
   const result = {
     status: failure ? 'failed' : 'passed',
@@ -405,6 +432,26 @@ async function main(args) {
     path.join(options.output, 'result.json'),
     JSON.stringify(result, null, 2) + '\n',
   );
+  if (!failure) {
+    try {
+      await publishRecording(options.output, {
+        sourceBefore,
+        sourceAfter,
+        runtimeBefore,
+        runtimeAfter,
+        tools,
+        sourceHash,
+      });
+    } catch (error) {
+      failure = error;
+      result.status = 'failed';
+      result.error = error.stack ?? String(error);
+      await writeFile(
+        path.join(options.output, 'result.json'),
+        JSON.stringify(result, null, 2) + '\n',
+      );
+    }
+  }
   console.log(JSON.stringify(result, null, 2));
   if (failure) throw failure;
 }
