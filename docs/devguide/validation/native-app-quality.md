@@ -50,7 +50,7 @@ Dependency-cache keys include each Maven workload's identity and runtime
 inputs, retaining separate dependency sets for small and full-reactor jobs.
 Broker integration and recorder-through-Kafka/Flink acceptance use separate configured gates:
 [ci.yml:869](../../../.github/workflows/ci.yml#L869),
-[ci.yml:1029](../../../.github/workflows/ci.yml#L1029).
+[ci.yml:1040](../../../.github/workflows/ci.yml#L1040).
 Pull requests select affected jobs from module dependencies and shared inputs. Pushes to `master` and manual runs
 execute the full workflow. The [CI selection contract](../../../CONTRIBUTING.md#check-continuous-integration)
 defines the final result check and the treatment of explicitly excluded jobs.
