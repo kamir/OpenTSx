@@ -72,7 +72,7 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
         TreeCellRenderer renderer = new ToolTipTreeCellRenderer();
         jTree1.setCellRenderer(renderer);
 
-        initPFDTab(); // TASK-005
+        initPFDTab();
 
     }
 
@@ -96,7 +96,7 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
 
             frame.refresh();
 
-            // TASK-005: Record PFD Step
+            // Record PFD Step
             try {
                 java.util.Map<String, Object> params = new java.util.HashMap<>();
                 String opName = t.operation;

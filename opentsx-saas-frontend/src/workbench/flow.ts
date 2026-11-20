@@ -755,7 +755,8 @@ export function toDagYaml(s: FlowDoc): string {
 }
 
 /**
- * Processing Flow Descriptor of TASK-005 for the path down to one node.
+ * Processing Flow Descriptor (docs/devguide/schemas/processing-flow-descriptor-schema.json) for the path down to
+ * one node.
  * The descriptor is a linear list of steps, so it describes one branch.
  */
 export function toPfdJson(s: Pick<FlowState, 'track' | 'sourceTopic' | 'nodes'>, nodeId: string): string {

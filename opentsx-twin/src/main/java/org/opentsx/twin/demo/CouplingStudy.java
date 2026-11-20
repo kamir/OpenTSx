@@ -20,10 +20,10 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Research question RQ1 of the twin concept: when does loose coupling (variant L) give the same result as tight
- * coupling (variant T), and what does it buy? For every scenario the reference run is repeated under a grid of
- * staleness bounds and transport latencies; the study reports simulated wall time, stale reads, the deviation of
- * the scenario's compare series and KPIs from variant T, and how many events (trips, alarms) differ.
+ * The coupling study of TWIN-COUPLING-SPEC.md, section 11.1: when does loose coupling (variant L) give the same
+ * result as tight coupling (variant T), and what does it buy? For every scenario the reference run is repeated under
+ * a grid of staleness bounds and transport latencies; the study reports simulated wall time, stale reads, the
+ * deviation of the scenario's compare series and KPIs from variant T, and how many events (trips, alarms) differ.
  *
  * <pre>bin/opentsx twin-coupling [--csv out.csv] [--scenario id]</pre>
  */

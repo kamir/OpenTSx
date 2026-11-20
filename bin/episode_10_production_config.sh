@@ -147,6 +147,6 @@ echo "  • Check opentsx.log for detailed execution logs"
 echo "  • Experiment with environment variables:"
 echo "    OPENTSX_THREADS_POOL_SIZE=8 ./bin/episode_10_production_config.sh"
 echo "  • Add sample CSV files to sample_data/ for parallel processing"
-echo "  • Review production deployment checklist in docs/manual/"
+echo "  • Review production operations in docs/user-manual/12-operations.md"
 echo
 echo -e "${GREEN}════════════════════════════════════════════════════════════════${NC}"

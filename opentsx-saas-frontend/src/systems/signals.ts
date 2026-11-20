@@ -45,7 +45,7 @@ export interface GradeData {
   min?: number;
   max?: number;
   intervalMicros?: number;
-  /** Series of the same grade that another flow wrote earlier; named, not counted (D84). */
+  /** Series of the same grade that another flow wrote earlier; named, not counted (SYSTEM-DOCUMENT-SPEC.md, section 4.4). */
   others?: { seriesId: string; flow?: string; from?: string; to?: string; samples: number }[];
 }
 

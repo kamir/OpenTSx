@@ -325,13 +325,14 @@ Implemented in: `opentsx-saas-backend/app/api/dags.py:32-113`, `opentsx-saas-bac
 | `now` | Server time, to judge how old a report is. |
 | `writes` | Whether the write routes of [3.3](#33-deploy-and-stop) exist. |
 | `dags[]` | Per DAG name: `dag`, `desired` (`deployed` or `stopped`), `by`, `at`, `sinks[]` (the latest status record per sink) and `refused` (the error of a refusal). |
+| `jobs[]` | The latest `opentsx.dag-status.v1` record per key among the records that carry `job`: the status of Track A and Track B jobs, as written, with or without a control record of that name. The vector processor never writes `job`; its records appear under `dags[]`. |
 
 Under a stopped DAG every sink report is shown with `state` `stopped`. Under a deployed DAG a report older than the
 latest control record is left out until the processor reports for the new deployment. The workbench shows
 "No vector processor has reported for two minutes. Is one running for this domain?" when neither the deployment nor
 any sink report is younger than 120 s.
 
-Implemented in: `server/RetrievalServer.java:178-185`, `server/KafScaleFeed.java:291-362`,
+Implemented in: `server/RetrievalServer.java:178-185`, `server/KafScaleFeed.java:294-313,321-323,339-378`,
 `workbench/deployments.ts:33-58`, `workbench/DeploymentsPanel.tsx:175`.
 
 ### 3.5 Limits

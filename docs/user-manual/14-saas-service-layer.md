@@ -40,7 +40,7 @@
     optional trailing resample on one to three complete topics. HTTP workers prepare privately before activation and
     checkpoint acknowledged output. Exact retry reuses the frozen plan and receipts; partial activation can expose
     at-least-once output. See the [local rollout guide](../devguide/integration/wayang-rust-compose.md).
-  * **Systems** (`/systems`): a shell around one system with four places. "System": the atoms of its plan and what
+  * **Systems** (`/systems`): a shell around one system with five places. "System": the atoms of its plan and what
     feeds each input. "Signals": the signals the system expects, each with its expectation, origin, state and next
     step; "Prepare" opens the raw series of a signal in the workbench with the expected range on the screen;
     "Bind", "Simulate" and "Generate" give an open signal a series or a demo generator, kept as a working copy of
@@ -67,19 +67,18 @@ take on these roles:
 
 | Today | Planned role |
 |-------|--------------|
-| `Flow` (JSON definition, owner, status) | **smart series specification**: the versioned YAML of a Smart Topic (design), owned by a user or team |
+| `Flow` (JSON definition, owner, status) | **smart series specification**: the versioned YAML of a Smart Topic (`opentsx.dag.v1`, [VECTOR-AND-DAG-SPEC, section 1](../datamodel-2026/VECTOR-AND-DAG-SPEC.md#1-dag-document)), owned by a user or team |
 | `FlowExecution` | training runs and deployments (MLflow run ids, champion version, processor status) |
 | `FlinkService` | a general **runner**: statistics processor, Smart Topic scoring processor, Python training job |
 | dashboard | "my series": smart metrics, model quality and drift, data-quality results, prediction with or without context |
 | users / teams | ownership of topic prefixes (`tsx.<domain>`), Iceberg namespaces and OpenMetadata domains |
 
 A personal instance is also the natural participant in **federated training**: it trains locally and contributes only
-model updates to the global model (the Wayang approach in the Smart Topic design).
+model updates to the global model.
 
 The same control plane would steer **system reconstruction, simulation and optimization** (phase P8). It would
 connect sources, trigger reconstruction runs, compare simulation scenarios, and submit optimization instances to
-classical solvers or, as an experiment, to quantum backends. The concept is in
-06-SYSTEMREKONSTRUKTION-OPTIMIERUNG (German).
+classical solvers or, as an experiment, to quantum backends.
 
 It would also host the **digital twin** of an energy system (phase P9): operators review optimizer proposals and
 play their own decisions through the twin before releasing them. The concept is in

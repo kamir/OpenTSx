@@ -363,9 +363,9 @@ Use the [federation measurement instructions](../datamodel-2026/20-WAYANG-TS-OPE
 with a clean checkout, JDK 17 or 21, Maven, Git, Python and the pinned Go
 toolchain. The harness owns four disposable KafScale brokers and records three
 site instances in one execution JVM. Its
-[report and raw files](../datamodel-2026/measurements/wayang-federation-2026-11-17/REPORT.md)
-include hardware, versions, commands, all 420 reference windows and per-site
-transport counters. Kafka frames, HTTP bodies and TLS streams remain separate
+[report](../datamodel-2026/measurements/wayang-federation-2026-11-17/REPORT.md)
+includes hardware, versions, commands and per-site transport counters; the 420 reference window comparisons are in
+`windows.csv`, which is not in this repository. Kafka frames, HTTP bodies and TLS streams remain separate
 metrics. The route clocks cover different work and do not compare latency.
 
 ## Work through a lesson

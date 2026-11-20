@@ -1351,9 +1351,9 @@ async def test_stream_processor_executes_pipeline():
 
 ### For Users
 
-- **Time Series Analysis**: MANUALS/01-PHYSICIST-JOURNEY.md
-- **DFA Tutorial**: MANUALS/03-BEGINNERS-JOURNEY.md
-- **Kafka Basics**: MANUALS/02-DEVELOPER-JOURNEY.md
+- **Time Series Analysis**: https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/MANUALS-2025/01-PHYSICIST-JOURNEY.md
+- **DFA Tutorial**: https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/MANUALS-2025/03-BEGINNERS-JOURNEY.md
+- **Kafka Basics**: https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/MANUALS-2025/02-DEVELOPER-JOURNEY.md
 
 ---
 

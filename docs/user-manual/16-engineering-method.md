@@ -247,12 +247,12 @@ column says what of each step you can do today.
 | Step | In the example | Today |
 |---|---|---|
 | 1 Decision | Which setpoint does the electrolyser run at, and does the battery charge or discharge, in the next hour? Aims: deliver the hydrogen, low energy cost, keep the announced feed-in. Limits: line pressure, state of charge. Reference: hold the setpoint. | as a file |
-| 2 System | Nine components. Nine inputs come from outside. | on the page "System" |
-| 3 Signals | Ten signals. Six of the nine outside inputs have one; three do not. What the park generated and what it could have generated are two signals: an observation and an estimate. | on the page "Signals" |
-| 4 Sources | The topic `tsx.wind.episodes.v2` holds power, wind speed and state per turbine; they are bound, with the origin synthetic, because the topic holds simulator output. The price is bound to a demo generator. Two commands are constants set by hand. Demand and marketing schedule are open. | on the page "Signals", with Bind, Simulate and Generate |
+| 2 System | Twelve components. Nine inputs come from outside. | on the page "System" |
+| 3 Signals | Sixteen signals. Each of the nine outside inputs has one; two of these signals are open. What the park generated and what it could have generated are two signals: an observation and an estimate. | on the page "Signals" |
+| 4 Sources | The topic `tsx.wind.episodes.v2` holds power, wind speed and state per turbine; they are bound, with the origin synthetic, because the topic holds simulator output. The same topic holds the wind speed, air temperature and air pressure of a DWD station, measured, and the day-ahead price of 2025, reported. The demand of the offtaker is bound to a demo generator. Four commands are constants set by hand. The grid meter and the marketing schedule are open. | on the page "Signals", with Bind, Simulate and Generate |
 | 5 Preparation | Wind speed of a turbine: plausible range, then the mean per minute. | in the workbench |
-| 6 Shadow | That flow runs on the processor and writes the clean wind speed. The sum of the turbine power (actual generation) and the estimate of the available power over the power curve are declared and do not run: their operators do not exist yet. | the one flow runs |
-| 7 Options | Hold the setpoint against following the price. The recommendation is blocked: the demand has no source, the price is generated, the price-following analysis has no evidence. | as a file |
+| 6 Shadow | That flow runs on the processor and writes the clean wind speed. The flows for the clean turbine power, its features, the clean wind of the DWD station and the potential of the park (`model.wind-shear`, then `model.power-curve`) run on the processor too. The sum of the turbine power (actual generation) is declared and does not run: no processor implements `agg.sum`. | five of the six flows run |
+| 7 Options | Hold the setpoint against following the price. The recommendation is blocked: the decision needs clean demand that is reported or forecast, and the demand has only a raw demo generator. The price-following analysis has no evidence. | as a file |
 | 8 Effect | The approved action was carried out three minutes late and without the battery; one period cannot separate that from a model error. | as a file |
 
 The example is blocked at step 7, and that is its point: it says exactly what is missing before the hydrogen side

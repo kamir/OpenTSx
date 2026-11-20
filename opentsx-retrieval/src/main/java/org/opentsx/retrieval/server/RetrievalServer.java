@@ -135,7 +135,8 @@ public final class RetrievalServer implements AutoCloseable {
             });
         }
         if (systems != null && dags != null) {
-            // which flows run, so that a signal written by several flows shows the one that runs (D84)
+            // which flows run, so that a signal written by several flows shows the one that runs
+            // (SYSTEM-DOCUMENT-SPEC.md, section 4.4)
             systems.runningFlows(() -> {
                 java.util.Set<String> names = new java.util.TreeSet<>();
                 dags.list().path("dags").forEach(x -> {

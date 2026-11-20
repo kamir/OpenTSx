@@ -276,9 +276,9 @@ double value = (Double)ts.yValues.elementAt(i);
 ## Getting Help
 
 1. **Check the Documentation:**
-   - [OpenTSx Manual](../docs/manual/README.md)
-   - [API Reference](../docs/manual/appendix/api-reference.md)
-   - [Best Practices](../docs/manual/best-practices/README.md)
+   - [OpenTSx Manual](../docs/user-manual/README.md)
+   - [API Reference (2025)](https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/manual-v1/appendix/api-reference.md)
+   - [Best Practices (2025)](https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/manual-v1/best-practices/README.md)
 
 2. **Review Demo Code:**
    - Each episode has a demo script
@@ -367,9 +367,9 @@ After completing the exercises:
    - Machine Learning Integration
 
 3. **Review Advanced Documentation:**
-   - [Architecture Guide](../ARCHITECTURE.md)
-   - [Features Documentation](../FEATURES.md)
-   - [Deployment Guide](../DEPLOYMENT.md)
+   - [Architecture Guide (2025)](https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/devguide-2025/guides/ARCHITECTURE.md)
+   - [Features Documentation (2025)](https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/devguide-2025/guides/FEATURES.md)
+   - [Deployment Guide (2025)](https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/devguide-2025/guides/DEPLOYMENT.md)
 
 4. **Join the Community:**
    - Share your implementations
@@ -380,8 +380,8 @@ After completing the exercises:
 
 - **Main Documentation:** [README.md](../README.md)
 - **Onboarding Guide:** [Getting Started](../README.md#getting-started--onboarding)
-- **SWE Track Path:** [ONBOARDING-PATH-SWE.md](../ONBOARDING-PATH-SWE.md)
-- **TSx Track Path:** [ONBOARDING-PATH-TSx.md](../ONBOARDING-PATH-TSx.md)
+- **SWE Track Path:** [ONBOARDING-PATH-SWE.md](https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/onboarding-2025/ONBOARDING-PATH-SWE.md)
+- **TSx Track Path:** [ONBOARDING-PATH-TSx.md](https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/onboarding-2025/ONBOARDING-PATH-TSx.md)
 - **Demo Scripts:** [bin/README.md](../bin/README.md)
 - **Local Development:** [docs/devguide/infrastructure/local-development.md](../docs/devguide/infrastructure/local-development.md)
 

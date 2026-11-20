@@ -1,7 +1,7 @@
 # OpenTSx in the notebook of a stack
 
 Puts the Python package `opentsx` and the OpenTSx notebooks into a Jupyter deployment that a stack already runs,
-and lets that notebook reach the retrieval server. Concept: `17-NOTEBOOK-ARBEITSPLATZ.md` (German).
+and lets that notebook reach the retrieval server.
 
 OpenTSx does not deploy the notebook. The two files here change a notebook that belongs to the stack, so the people
 who run the stack apply them, and can take them back:

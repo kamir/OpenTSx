@@ -163,8 +163,10 @@ public final class TopicLayout {
     }
 
     /**
-     * Topic of the clean series of the domain: v2 episodes written by flows, one series per signal with the tags
-     * {@code system} and {@code signal}. See docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 4.
+     * Topic of the clean series of the domain: v2 episodes written by series sinks with grade {@code clean}. A series
+     * has the tags {@code system}, {@code signal}, {@code grade} and {@code flow}; without {@code signal.metric} it also
+     * keeps the metric and tags of its raw series, so each raw series gives one clean series. See
+     * docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 4.3.
      */
     public String clean() {
         return topic("clean");
