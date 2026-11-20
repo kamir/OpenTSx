@@ -1,34 +1,32 @@
 package org.opentsx.exercises.swe.solutions;
 
 import org.opentsx.data.series.TimeSeriesObject;
-import org.opentsx.data.loader.MessreihenLoader;
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.util.List;
 
 /**
  * Solution for Exercise 3: Loading and Transforming CSV Data
  *
  * Demonstrates loading time series from CSV files,
  * analyzing the data, and creating filtered subsets.
+ *
+ * sample_data/sensor_data.csv starts with a header line and has an ISO-8601 time in column 1, which
+ * MessreihenLoader cannot parse, so the solution reads the file itself.
  */
 public class Exercise3_LoadAndTransform {
 
     public static void main(String[] args) {
         try {
-            // Load sensor data from CSV
             File inputFile = new File("sample_data/sensor_data.csv");
-
-            if (!inputFile.exists()) {
-                System.err.println("Error: sample_data/sensor_data.csv not found!");
-                System.err.println("Please ensure sample data directory exists.");
-                return;
-            }
 
             System.out.println("Loading: " + inputFile.getPath());
 
-            MessreihenLoader loader = MessreihenLoader.getLoader();
-
-            // Load temperature column (assuming column 1 is timestamp, column 2 is temperature)
-            TimeSeriesObject temperatures = loader.loadMessreihe_2(inputFile, 1, 2, ",");
+            TimeSeriesObject temperatures = load(inputFile);
             temperatures.setLabel("sensor_temperatures");
 
             // Print basic statistics
@@ -92,10 +90,49 @@ public class Exercise3_LoadAndTransform {
             System.out.println("25-30°C: " + range25to30 + " points");
             System.out.println("Above 30°C: " + above30 + " points");
 
-        } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-            e.printStackTrace();
+        } catch (IOException | IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
         }
+    }
+
+    /**
+     * Reads column 1 as the time and column 2 as the temperature; line 1 is the header.
+     */
+    private static TimeSeriesObject load(File file) throws IOException {
+        if (!file.isFile()) {
+            throw new IOException(file + ": no such file; run the solution from the project root");
+        }
+        List<String> lines = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
+        TimeSeriesObject series = new TimeSeriesObject();
+        for (int i = 1; i < lines.size(); i++) {
+            int lineNumber = i + 1;
+            String[] fields = lines.get(i).split(",");
+            if (fields.length < 2) {
+                throw new IllegalArgumentException(file + ":" + lineNumber
+                        + ": 1 column; expected at least 2 columns, timestamp,temperature_c");
+            }
+            double time;
+            try {
+                time = Instant.parse(fields[0].trim()).toEpochMilli();
+            } catch (DateTimeParseException e) {
+                throw new IllegalArgumentException(file + ":" + lineNumber + ": \"" + fields[0]
+                        + "\" is not a time; expected an ISO-8601 time such as 2024-01-01T00:00:00Z", e);
+            }
+            double temperature;
+            try {
+                temperature = Double.parseDouble(fields[1].trim());
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException(file + ":" + lineNumber + ": \"" + fields[1]
+                        + "\" is not a number; expected a decimal number such as 21.1", e);
+            }
+            series.addValuePair(time, temperature);
+        }
+        if (series.yValues.isEmpty()) {
+            throw new IllegalArgumentException(file + ": no data lines; expected a header and at least one line"
+                    + " timestamp,temperature_c");
+        }
+        return series;
     }
 
     /**

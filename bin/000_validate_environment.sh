@@ -17,7 +17,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 FIX_MODE=false
 ERRORS=0
@@ -41,25 +41,21 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-echo -e "${BLUE}==========================================${NC}"
-echo -e "${BLUE}  OpenTSx Environment Validation${NC}"
-echo -e "${BLUE}==========================================${NC}"
-echo
-echo "Running environment checks..."
+echo -e "${BLUE}OpenTSx environment check${NC}"
 echo
 
 check_pass() {
-    echo -e "${GREEN}✓${NC} $1"
+    echo -e "${GREEN}ok${NC}    $1"
     CHECKS_PASSED=$((CHECKS_PASSED + 1))
 }
 
 check_warn() {
-    echo -e "${YELLOW}⚠${NC} $1"
+    echo -e "${YELLOW}warn${NC}  $1"
     WARNINGS=$((WARNINGS + 1))
 }
 
 check_fail() {
-    echo -e "${RED}✗${NC} $1" >&2
+    echo -e "${RED}FAIL${NC}  $1" >&2
     ERRORS=$((ERRORS + 1))
 }
 
@@ -281,17 +277,14 @@ fi
 
 echo
 
-echo -e "${BLUE}==========================================${NC}"
-echo -e "${BLUE}  Validation Summary${NC}"
-echo -e "${BLUE}==========================================${NC}"
-echo
+echo -e "${BLUE}Summary${NC}"
 echo -e "${GREEN}Passed checks: $CHECKS_PASSED${NC}"
 echo -e "${YELLOW}Warnings: $WARNINGS${NC}"
 echo -e "${RED}Failed checks: $ERRORS${NC}"
 echo
 
 if [[ "$ERRORS" -eq 0 ]] && [[ "$WARNINGS" -eq 0 ]]; then
-    echo -e "${GREEN}✓ Environment is fully configured!${NC}"
+    echo -e "${GREEN}ok${NC}    every check passed"
     echo
     echo "Next steps:"
     echo "  1. Build the project: ./bin/010_build.sh"
@@ -299,9 +292,7 @@ if [[ "$ERRORS" -eq 0 ]] && [[ "$WARNINGS" -eq 0 ]]; then
     echo "  3. Read the user manual: docs/user-manual/02-getting-started.md"
     exit 0
 elif [[ "$ERRORS" -eq 0 ]]; then
-    echo -e "${YELLOW}⚠ Environment has minor issues (warnings only)${NC}"
-    echo
-    echo "You can proceed, but consider fixing warnings for better experience."
+    echo -e "${YELLOW}warn${NC}  no check failed; see the warnings above"
     echo
     echo "Next steps:"
     echo "  1. Review warnings above"
@@ -310,13 +301,12 @@ elif [[ "$ERRORS" -eq 0 ]]; then
     exit 0
 else
     {
-        echo -e "${RED}✗ Environment has critical issues${NC}"
+        echo -e "${RED}FAIL${NC}  fix the failed checks above before you build"
         echo
-        echo "Please fix the failed checks above before proceeding."
         echo "Common fixes:"
-        echo "  • Install Java 17+ (Temurin): https://adoptium.net/"
-        echo "  • Install Maven 3.9+: https://maven.apache.org/"
-        echo "  • Install Git: https://git-scm.com/"
+        echo "  Install Java 17+ (Temurin): https://adoptium.net/"
+        echo "  Install Maven 3.9+: https://maven.apache.org/"
+        echo "  Install Git: https://git-scm.com/"
     } >&2
     exit 1
 fi

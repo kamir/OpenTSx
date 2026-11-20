@@ -19,6 +19,10 @@ public class SingleDFATool {
     private static final Logger LOG = LoggerFactory.getLogger(SingleDFATool.class);
 
     public static boolean logLogResults = false;
+    /**
+     * @deprecated Has no effect; the level of the SLF4J logger of this class decides.
+     */
+    @Deprecated
     public static boolean debug;
 
     public SingleDFATool() {
@@ -212,8 +216,6 @@ public class SingleDFATool {
                 double[] zr = mr.getData()[1];
                 dfa.setZR(zr);
                 dfa.setNrOfValues(zr.length);
-
-                dfa.debug = false;
 
                 dfa.calc();
 

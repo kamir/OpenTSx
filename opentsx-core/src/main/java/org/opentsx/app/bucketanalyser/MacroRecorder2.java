@@ -75,8 +75,6 @@ public class MacroRecorder2 {
      */
     public static void main(String[] args) throws Exception {
 
-        // ***********************************************************
-        //
         // To build a time series with N components we need a container to hold
         // components.
         Vector<TimeSeriesObject> components = new Vector<TimeSeriesObject>();
@@ -161,10 +159,10 @@ public class MacroRecorder2 {
             order = dfa.getPara().getGradeOfPolynom();
             dfa.getPara().setzSValues(nrOfSValues);
 
-            // Anzahl der Werte in der Zeitreihe
+            // number of values in the series
             dfa.setNrOfValues(N);
 
-            // die Werte für die Fensterbreiten sind zu wählen ...
+            // choose the window sizes
             dfa.initIntervalSlog();
 
             dfa.showS();

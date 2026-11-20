@@ -26,7 +26,7 @@ public class MFDFA extends DFACore {
             zS++;
             int valueofS = s[currentS];
 
-            if(debug) LOG.debug("window index={} s={}", zS, valueofS);
+            if ( LOG.isDebugEnabled() ) LOG.debug("window index={} s={}", zS, valueofS);
             double FS = 0;
 
             int zw = 0;
@@ -39,7 +39,7 @@ public class MFDFA extends DFACore {
                 double FS_sum = 0;
                 zw++;
                 
-                if(debug) LOG.debug("segment s={} start={} index={}", valueofS, pr_pos, zw);
+                if ( LOG.isDebugEnabled() ) LOG.debug("segment s={} start={} index={}", valueofS, pr_pos, zw);
 
                 double[] fit = null;
                 
@@ -92,7 +92,7 @@ public class MFDFA extends DFACore {
             F[1][currentS] = zw;       // number of segments
             F[3][currentS] = FS;       // F(s)
 
-            if(debug) LOG.debug("stored fluctuation s={} segments={} F={}", valueofS, zw, FS);
+            if ( LOG.isDebugEnabled() ) LOG.debug("stored fluctuation s={} segments={} F={}", valueofS, zw, FS);
             zw = 0;
 
         }
@@ -116,7 +116,7 @@ public class MFDFA extends DFACore {
         for (int i = 0; i < ( s_end-s_start ); i++) {
             s[i] = i+s_start;
         }
-        if ( debug ) LOG.debug("window sizes s={}", Arrays.toString(s));
+        if ( LOG.isDebugEnabled() ) LOG.debug("window sizes s={}", Arrays.toString(s));
         initF();
     }
 

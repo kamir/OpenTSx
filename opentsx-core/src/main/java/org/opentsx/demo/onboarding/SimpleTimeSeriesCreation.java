@@ -40,9 +40,6 @@ public class SimpleTimeSeriesCreation {
         // Initialize the random number generator
         RNGWrapper.init();
 
-        // =====================================================
-        // TASK 1: Create a simple time series manually
-        // =====================================================
         System.out.println("TASK 1: Creating TimeSeriesObject manually");
         System.out.println("------------------------------------------");
 
@@ -63,9 +60,6 @@ public class SimpleTimeSeriesCreation {
         System.out.println("Last value: " + ts.yValues.elementAt(ts.yValues.size() - 1));
         System.out.println();
 
-        // =====================================================
-        // TASK 2: Generate Gaussian distribution time series
-        // =====================================================
         System.out.println("TASK 2: Generate Gaussian distribution");
         System.out.println("---------------------------------------");
 
@@ -81,9 +75,6 @@ public class SimpleTimeSeriesCreation {
         System.out.println("  Actual std dev: " + String.format("%.2f", gaussianTS.getStddev()));
         System.out.println();
 
-        // =====================================================
-        // TASK 3: Access time series properties
-        // =====================================================
         System.out.println("TASK 3: Access time series properties");
         System.out.println("-------------------------------------");
 
@@ -99,9 +90,6 @@ public class SimpleTimeSeriesCreation {
         System.out.println("  Range: " + String.format("%.4f", range));
         System.out.println();
 
-        // =====================================================
-        // TASK 4: Export to different formats
-        // =====================================================
         System.out.println("TASK 4: Export to different formats");
         System.out.println("-----------------------------------");
 
@@ -121,9 +109,6 @@ public class SimpleTimeSeriesCreation {
 
         System.out.println();
 
-        // =====================================================
-        // TASK 5: Load time series from file
-        // =====================================================
         System.out.println("TASK 5: Load time series from file");
         System.out.println("----------------------------------");
 
@@ -139,12 +124,9 @@ public class SimpleTimeSeriesCreation {
 
         // Verify data integrity
         boolean dataMatches = Math.abs(gaussianTS.getAvarage() - loaded.getAvarage()) < 0.001;
-        System.out.println("Data integrity check: " + (dataMatches ? "PASSED ✓" : "FAILED ✗"));
+        System.out.println("Data integrity check: " + (dataMatches ? "PASSED" : "FAILED"));
         System.out.println();
 
-        // =====================================================
-        // TASK 6: Create different distributions
-        // =====================================================
         System.out.println("TASK 6: Create different distributions");
         System.out.println("--------------------------------------");
 
@@ -168,9 +150,6 @@ public class SimpleTimeSeriesCreation {
                           String.format("%.2f", lowVariance.getStddev()));
         System.out.println();
 
-        // =====================================================
-        // TASK 7: Working with metadata and labels
-        // =====================================================
         System.out.println("TASK 7: Working with metadata and labels");
         System.out.println("----------------------------------------");
 
@@ -185,21 +164,11 @@ public class SimpleTimeSeriesCreation {
         System.out.println("  Measurement: " + labelParts[2]);
         System.out.println();
 
-        // =====================================================
-        // Summary and Next Steps
-        // =====================================================
         System.out.println("===========================================");
-        System.out.println("Demo Completed Successfully!");
+        System.out.println("Demo completed");
         System.out.println("===========================================");
-        System.out.println("\nKey Takeaways:");
-        System.out.println("✓ Created TimeSeriesObject programmatically");
-        System.out.println("✓ Generated synthetic time series (Gaussian distribution)");
-        System.out.println("✓ Calculated basic statistics (mean, std dev, min, max)");
-        System.out.println("✓ Exported time series in TSV and CSV formats");
-        System.out.println("✓ Loaded time series from file");
-        System.out.println("✓ Worked with metadata and labels");
         System.out.println("\nNext Steps:");
-        System.out.println("→ Episode 3: Basic Time Series Operations");
+        System.out.println("Episode 3: Basic Time Series Operations");
         System.out.println("  Learn to transform, filter, and aggregate time series data");
         System.out.println("\nExercise:");
         System.out.println("1. Create a time series with your own mean and std dev");

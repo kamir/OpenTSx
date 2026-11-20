@@ -56,7 +56,7 @@ def test_validate_environment_fails_on_maven_older_than_3_9(tmp_path):
     result = validate(tmp_path, "3.5.4")
     assert result.returncode == 1, result.stdout + result.stderr
     assert "Maven version too old: 3.5.4 (need 3.9+)" in result.stderr
-    assert "Environment has critical issues" in result.stderr
+    assert "FAIL\x1b[0m  fix the failed checks above before you build" in result.stderr
 
 
 def test_validate_environment_passes_with_maven_3_9(tmp_path):
@@ -169,6 +169,29 @@ def test_build_script_writes_a_missing_java_to_stderr(tmp_path):
     assert result.returncode == 1, result.stdout + result.stderr
     assert "ERROR: Java not found in PATH" in result.stderr
     assert "Java not found" not in result.stdout
+
+
+def test_build_script_refuses_an_argument(tmp_path):
+    script = copy_script(tmp_path, "010_build.sh")
+    fake = fake_tools(tmp_path / "fake", {"mvn": "echo mvn ran; exit 0", "java": "echo 'openjdk 17'"})
+    result = run(script, fake, "--bogus")
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert result.stderr == "010_build.sh: --bogus: unknown argument; expected no argument or --help\n"
+    assert result.stdout == ""
+
+
+def test_build_script_without_java_home_says_what_is_needed(tmp_path):
+    script = copy_script(tmp_path, "010_build.sh")
+    (tmp_path / "pom.xml").write_text("<project/>\n", encoding="utf-8")
+    fake = fake_tools(tmp_path / "fake", {"mvn": "exit 0", "java": "echo 'openjdk 17'"})
+    environment = {key: value for key, value in os.environ.items() if key != "JAVA_HOME"}
+    environment["PATH"] = f"{fake}{os.pathsep}{os.environ['PATH']}"
+    result = subprocess.run(["bash", str(script)], capture_output=True, text=True, env=environment,
+                            cwd=tmp_path, check=False)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert ("warn  JAVA_HOME is not set; mvn uses the java on PATH, which must be Java 17 or later"
+            in result.stdout.splitlines())
+    assert "/opt/homebrew" not in (ROOT / "bin" / "010_build.sh").read_text(encoding="utf-8")
 
 
 def run_all_tests(tmp_path: pathlib.Path, mode: str) -> tuple[subprocess.CompletedProcess, dict]:

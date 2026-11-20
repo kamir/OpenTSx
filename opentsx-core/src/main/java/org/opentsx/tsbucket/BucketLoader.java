@@ -27,7 +27,6 @@ public class BucketLoader {
         return ids;
     }
     
-    boolean DO_FILTER = true;
     Vector<Integer> ids = null;
     
     public static final int default_LIMIT = 50;
@@ -106,25 +105,13 @@ public class BucketLoader {
     }
 
     public void loadBucket(String absolutePath, Vector<Integer> i) throws IOException {
-        if ( i == null ) {
-            loadBucket( absolutePath );
-        }
-        else {
-            DO_FILTER = true;
-            ids = i;
-            loadBucket( absolutePath );
-        } 
+        ids = i;
+        loadBucket( absolutePath );
     }
 
     public void _processBucket(String resultPath, SingleRowTSO singleTsTool, Vector<Integer> i) throws IOException {
-        if ( i == null ) {
-            _processBucket( resultPath, singleTsTool  );
-        }
-        else {
-            DO_FILTER = true;
-            ids = i;
-            _processBucket( resultPath, singleTsTool );
-        } 
+        ids = i;
+        _processBucket( resultPath, singleTsTool );
     }
 
     public void setLimit(int i) {

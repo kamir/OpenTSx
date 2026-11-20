@@ -53,6 +53,19 @@ class MultiDFAToolTest {
         assertTrue(Files.exists(dir.resolve("3_dfa2.txt")));
     }
 
+    @Test
+    void theDefaultFolderIsBelowTheUserHome() {
+        String home = System.getProperty("user.home");
+        MultiDFATool tool;
+        try {
+            System.setProperty("user.home", dir.toString());
+            tool = new MultiDFATool();
+        } finally {
+            System.setProperty("user.home", home);
+        }
+        assertEquals(dir.resolve("opentsx").resolve("dfa") + File.separator, tool.savePath);
+    }
+
     private static TimeSeriesObject randomWalk(Random random, int length) {
         TimeSeriesObject row = new TimeSeriesObject();
         row.setLabel("walk " + length);

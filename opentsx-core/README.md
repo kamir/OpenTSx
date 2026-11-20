@@ -26,8 +26,11 @@ This is the original OpenTSx library. It works on `TimeSeriesObject` and TSBucke
 
 The library classes in `org.opentsx.data`, `org.opentsx.core` and `org.opentsx.algorithms` write nothing to standard
 output. A failing call throws an exception that names the input. Progress and intermediate values go to the SLF4J
-logger named after the class, at DEBUG, as one line per event in the form `<what happened> key=value`. A class with a
-public `debug` flag, such as `RISTool` or `DFACore`, logs some of these lines only while that flag is true.
+logger named after the class, at DEBUG, as one line per event in the form `<what happened> key=value`. The level of
+that logger decides which lines appear. The public `debug` fields of `DFACore`, `SingleDFATool`, `ESCalc2`,
+`TimeSeriesObjectFFT`, `MessreihenLoader` and `RISTool` are deprecated and have no effect. `ReturnIntervallStatistik2`
+and `TSPropertyTester` still log some lines only while their public `debug` flag is true, and `store()` of `RISTool`,
+`ReturnIntervallStatistik2` and `TSPropertyTester` logs its line only while the public `verbose` flag is true.
 `bin/opentsx` puts `slf4j-simple` and `conf/simplelogger.properties` on the class path, so the default level is
 `info`. Raise the level of one class with a JVM system property:
 
@@ -76,6 +79,10 @@ The AR, MA, ARMA, ARIMA, SARIMA and CARIMA buttons are disabled and show an expl
 The modern tracker disables Java and Scala export. Both trackers use `Show PFD` to display recorded JSON;
 these buttons do not write a file. The modern tracker starts with an empty transformation tree.
 Swing control tests use a display; the Java CI jobs run them under Xvfb on Ubuntu 24.04.
+Opening a chart panel prints nothing and creates no folder; the chart folder and the series colors are DEBUG lines of
+`TSStoreDescriptor` and `MultiChart`. `save PN` writes below `opentsx/plots/` in `user.home` and creates the folders
+it needs. `HaeufigkeitsZaehler.store()` writes `<folder><label>`; `folder` defaults to `opentsx/histograms/` below
+`user.home`, which `store()` creates.
 
 ## Reload local SequenceFile buckets
 
@@ -83,6 +90,9 @@ The file and string loaders stop at the actual end of a SequenceFile, including 
 The file loader reads at most `LIMIT` records; a zero limit reads no records.
 Readers close after loading or failure. A failing `TSOperation` stops loading with `IOException`
 and retains the original exception as its cause. Processing output writers close on failure.
+`BucketLoader.loadBucket(path, ids)` and `_processBucket(path, operation, ids)` load and process only the records
+whose position in the file, counted from 1, is in `ids`; the other records count toward `LIMIT`. `ids` null loads
+every record.
 
 The SequenceFile writer stores each series label and Y values. Loading reconstructs sequential X values;
 arbitrary input X coordinates and other metadata are not persisted by this format.
@@ -205,6 +215,14 @@ delimiter contains a comma. Errors stop the load:
 and the l past values of x. It returns the p value of the F test with l and n − 2l − 1 degrees of freedom, where n is
 the length of y minus l. It writes nothing to standard output.
 
+`l` below 1, `x` and `y` of different length and fewer than 3l + 2 values throw `IllegalArgumentException` with
+`l: <l> is out of range; expected a lag of 1 or more`,
+`x: <n> values do not match the <m> values of y; expected two series of the same length` and
+`y: <n> values are too few for lag <l>; expected at least <3l + 2> values`. A regression that cannot be solved, for
+example of constant series, throws `IllegalArgumentException` with
+`y, x: the regression of lag <l> over <n> values cannot be solved (<cause>); expected series that are not constant`
+and keeps the cause.
+
 ## Make a phase-randomized surrogate
 
 `TimeSeriesObjectFFT` pads the n values with zeros to the smallest power of two that is at least n. It sets the
@@ -235,6 +253,10 @@ without `random` share one `java.util.Random` with the seed `DEFAULT_SEED` (1), 
 the same order on every run. The generator needs no `RNGWrapper.init()`. A series that cannot be
 normalized throws `IllegalArgumentException` with
 `getRandomRow: the filtered series of <n> values has standard deviation <s>; expected at least 2 values that are not all equal`.
+With `showTest` and `runDFA` true the fitted alpha goes into the table that `writeTables` allocates; before
+`writeTables` the call throws `IllegalStateException` with
+`showTest: true needs the alpha table of writeTables, which is not allocated; pass showTest false or call writeTables`.
+`writeTables` prints nothing; its progress is DEBUG output.
 
 `LongTermCorrelationSeriesGenerator.main` takes two optional arguments: the output directory, `./data/` by default,
 and the seed, 1 by default. It runs DFA on 10 series for each of 15 values of beta and on one more series with beta 0,
@@ -291,8 +313,8 @@ throws `IllegalArgumentException` with `initIntervalSlog: <n> values are too few
 
 `MultiDFATool.runDFA(series, order)` runs the DFA of every series at the window sizes of the longest one, writes the
 F(s) of every series to `<savePath><index>_dfa<order>.txt`, opens three charts and fits alpha to log F(s) of all series
-from log s 1 to 3. Set the public field `savePath`, which ends with a separator; the default is
-`/Volumes/MyExternalDrive/CALCULATIONS/data/out/`. `SingleDFATool` and `MultiDFATool2` throw
+from log s 1 to 3. Set the public field `savePath`, which ends with a separator; the default is `opentsx/dfa/` below
+`user.home`. `SingleDFATool` and `MultiDFATool2` throw
 `IllegalArgumentException` for an empty list (`calcMultiDFA: vmr has no series; expected at least 1 series`) and for a
 missing series (`runDFA: series <index> is null; expected a series at every index`).
 

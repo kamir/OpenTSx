@@ -13,35 +13,35 @@ public interface IDetrendingMethod {
         public double fx(double x, double[] terms);
 
     /**
-     * Ein Parameterobjekt überschreibt das intern vorhandene.
+     * Replaces the internal parameter object.
      * 
      * @param parameter
      */
     public void setParameter( Object parameter );
 
     /**
-     * Intern wird ein Parameterobject erzeugt und übergeben,
-     * damit es ausserhalb initialisiert werden kann.
+     * Creates the internal parameter object and returns it, so that the
+     * caller can initialize it.
      * 
      * @return
      */
     public Object initParameter();
 
     /**
-     * Vor Beginn der Rechnung muss die Zahl der Parameter der Zeitreihe
-     * bekannt sein.
+     * Sets the number of values of the series; call it before the
+     * calculation.
      *
      * @param length
      */
     public void setNrOfValues(int length);
 
     /**
-     * Hier werden die Fensterbreiten festgelegt ...
+     * Sets the window sizes.
      */
     public void initIntervalS();
 
     /**
-     * Hier werden die Fensterbreiten logaritmisch festgelegt ...
+     * Sets logarithmically spaced window sizes.
      */
     public void initIntervalSlog();
     public void initIntervalS_FULL();
@@ -49,19 +49,19 @@ public interface IDetrendingMethod {
     public void initIntervalS_version4();
 
     /**
-     * das Array mit den Daten wird nun übergeben ...
+     * Sets the array with the data.
      */
     public void setZR(double[] zr);
 
     /**
-     * das Array mit den Daten wird nun zum ProfilArray umgerechnet ...
+     * Turns the data array into the profile array.
      */
     public void calcProfile();
     public TimeSeriesObject getProfilMR();
 
     public TimeSeriesObject getZeitreiheMR();
     /**
-     * korrelationskoeffizient ...
+     * correlation coefficient
      */
     public double getCorr_coef();
 
@@ -80,12 +80,12 @@ public interface IDetrendingMethod {
     public double getAlpha(double min, double max);
 
     /**
-     * Rückgabe der werte s und F(s) in einem Array
+     * Returns the values s and F(s) as an array.
      */
     public double[][] getResults();
 
     /**
-     * Rückgabe der werte s und F(s) in einer TimeSeriesObject
+     * Returns the values s and F(s) as a TimeSeriesObject.
      */
     public TimeSeriesObject getResultsMR();
     public TimeSeriesObject getResultsMRLogLog();
@@ -96,7 +96,7 @@ public interface IDetrendingMethod {
 
 
     /**
-     * Falls es etwas zu berichten gibt steht es hier ...
+     * Returns the status text of the last calculation.
      *
      * @return status
      */

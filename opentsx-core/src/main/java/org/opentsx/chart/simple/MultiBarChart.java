@@ -1,8 +1,6 @@
 /**
- * Eine Klasse zur ANZEIGE von mehreren Messreihen, die in einem Vector
- * übergeben werden.
- *
- **/
+ * Shows several series, passed in a Vector, as a bar chart.
+ */
 package org.opentsx.chart.simple;
 
 import org.opentsx.data.series.TimeSeriesObject;
@@ -273,7 +271,7 @@ public class MultiBarChart extends javax.swing.JDialog {
                 yLabel,
                 dataset,
                 PlotOrientation.VERTICAL,
-                useLegende, // legende
+                useLegende, // legend
                 true,
                 true);
         ChartPanel chartPanel = new ChartPanel(chart);
@@ -328,7 +326,7 @@ public class MultiBarChart extends javax.swing.JDialog {
                     }
                 });
 
-                System.out.println( "### TS-Originale: " + folder + "/" + "TAB_" + filename + ".dat" );
+                System.out.println( "### TS originals: " + folder + "/" + "TAB_" + filename + ".dat" );
                 Enumeration<TimeSeriesObject> en = mrs.elements();
                 while (en.hasMoreElements()) {
                     TimeSeriesObject mr = en.nextElement();

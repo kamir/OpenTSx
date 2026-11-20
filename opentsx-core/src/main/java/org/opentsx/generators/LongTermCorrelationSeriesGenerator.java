@@ -136,9 +136,7 @@ public class LongTermCorrelationSeriesGenerator {
             
             double beta = -1.0 + ( i * STRETCH * 0.05 ); 
             
-            if ( showTest ) { 
-                System.out.println(">>> i=" +  i + "\t beta=" + beta + " Z=" + Z );
-            }
+            LOG.debug("generating series beta={} index={} betas={}", beta, i, Z);
             
             for( int j = 0; j < LOOPS; j++ ) {  
                 
@@ -352,13 +350,12 @@ public class LongTermCorrelationSeriesGenerator {
             if ( showTest ) {
                 if ( firstInLoop ) tests.add(mr4);
 
-                try{
-                    alphas[numberOfBeta][numberOfLoop] = alpha;  
-                    betas[numberOfBeta] = beta;
+                if ( alphas == null ) {
+                    throw new IllegalStateException( "showTest: true needs the alpha table of writeTables, which is not"
+                            + " allocated; pass showTest false or call writeTables" );
                 }
-                catch(Exception ex) { 
-                    
-                }
+                alphas[numberOfBeta][numberOfLoop] = alpha;
+                betas[numberOfBeta] = beta;
             }
 
             LOG.debug("fitted alpha series={} alpha={} beta={} betaFromAlpha={}", d4.getLabel(), alpha, beta,
@@ -443,24 +440,16 @@ public class LongTermCorrelationSeriesGenerator {
             for( int iL = 0; iL < nrLOOPS; iL++ ) { 
                 L[iL] = d[iB][iL];
             }
-            try {
+            StandardDeviation stdev = new StandardDeviation();
 
-                StandardDeviation stdev = new StandardDeviation();
+            double mean = StatUtils.mean( L );
+            double std = stdev.evaluate( L );
 
-                double mean = StatUtils.mean( L );
-                double std = stdev.evaluate( L );
+            mrAV.addValuePair(betas[iB] , mean );
+            mrSTD.addValuePair(betas[iB] , std * scaleSTDEV );
 
-                mrAV.addValuePair(betas[iB] , mean );
-                mrSTD.addValuePair(betas[iB] , std * scaleSTDEV );
-
-                mrMAX.addValuePair( betas[iB] , mean+std );
-                mrMIN.addValuePair( betas[iB] , mean-std );
-            }
-            catch(Exception ex) { 
-                System.err.println( ex.getMessage() );
-                System.err.println( ex.getCause() );
-                
-            }
+            mrMAX.addValuePair( betas[iB] , mean+std );
+            mrMIN.addValuePair( betas[iB] , mean-std );
         }
         
         check.add( mrAV );        
@@ -476,8 +465,7 @@ public class LongTermCorrelationSeriesGenerator {
      */
     static TimeSeriesObject getRandomRowSchreiberSchmitz(TimeSeriesObject row, double beta, boolean f1, boolean f2, int rounds) throws Exception {
 
-                    System.out.println("\n\n\n\n" + rounds + "rounds" );
-                    System.out.println(      "-------------------------" );
+        LOG.debug("Schreiber Schmitz iteration series={} rounds={}", row.getLabel(), rounds);
 
         TimeSeriesObject rowOriginal = row.copy();
         
@@ -492,7 +480,7 @@ public class LongTermCorrelationSeriesGenerator {
             v.add( mr.copy() );
             v.add( row.copy() );
             
-            System.out.println("\nRound NR:" + i + "\n" );
+            LOG.debug("Schreiber Schmitz round series={} round={}", row.getLabel(), i);
             
         }
         

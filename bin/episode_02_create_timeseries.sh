@@ -25,19 +25,15 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-echo -e "${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║     Episode 2: Creating Time Series                           ║${NC}"
-echo -e "${BLUE}║     OpenTSx Onboarding - SWE + TSx Tracks                      ║${NC}"
-echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}"
+echo -e "${BLUE}Episode 2: Creating Time Series (OpenTSx onboarding, SWE + TSx Tracks)${NC}"
 echo
 
 cd "$PROJECT_ROOT"
 
 if [ ! -d "opentsx-core/target/classes" ]; then
-    echo -e "${YELLOW}⚠ Project not built. Building now...${NC}"
+    echo -e "${YELLOW}warn${NC}  Project not built; running ./bin/010_build.sh"
     ./bin/010_build.sh
     echo
 fi
@@ -48,22 +44,25 @@ CLASSPATH="$(bin/opentsx classpath opentsx-core)"
 
 JAVA_OPTS="${JAVA_OPTS:--Xmx1g -Xms256m}"
 
-echo -e "${GREEN}▶ Running Episode 2: Creating Time Series...${NC}"
+echo "Running Episode 2: Creating Time Series"
 echo
 
-java $JAVA_OPTS -cp "$CLASSPATH" org.opentsx.demo.onboarding.SimpleTimeSeriesCreation
+read -r -a JAVA_ARGS <<< "$JAVA_OPTS"
+java "${JAVA_ARGS[@]}" -cp "$CLASSPATH" org.opentsx.demo.onboarding.SimpleTimeSeriesCreation
 
 echo
-echo -e "${GREEN}✓ Demo completed${NC}"
+echo -e "${GREEN}ok${NC}    Demo completed"
 echo
 
-if ls *.csv 1> /dev/null 2>&1; then
+GENERATED=(data/demo_output/gaussian_ts.*)
+if [ -e "${GENERATED[0]}" ]; then
     echo -e "${BLUE}Generated Files:${NC}"
-    ls -lh *.csv | awk '{print "  " $9 " (" $5 ")"}'
+    for f in "${GENERATED[@]}"; do
+        echo "  $f ($(wc -c < "$f") bytes)"
+    done
     echo
 fi
 
-echo -e "${GREEN}════════════════════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}Key Learnings:${NC}"
 echo
 echo "1. TimeSeriesObject Construction:"
@@ -92,15 +91,13 @@ echo "   - (Double)ts.yValues.elementAt(i) for individual values"
 echo "   - ts.getAvarage() for mean (note: API typo)"
 echo
 echo -e "${BLUE}Next Steps:${NC}"
-echo "  • Review generated CSV files in current directory"
-echo "  • Experiment with different distributions"
-echo "  • Try loading your own CSV data"
-echo "  • Continue to Episode 3: Basic Operations"
+echo "  - Review the files in data/demo_output/"
+echo "  - Experiment with different distributions"
+echo "  - Try loading your own CSV data"
+echo "  - Continue to Episode 3: Basic Operations"
 echo "    ./bin/episode_03_basic_operations.sh"
 echo
 echo -e "${BLUE}Documentation:${NC}"
-echo "  • Core Concepts: docs/manual/core-concepts/timeseries-object.md"
-echo "  • Data Operations: docs/manual/data-operations/creating-timeseries.md"
-echo "  • API Reference: docs/manual/appendix/api-reference.md"
+echo "  - Guided demos and the 2.x Java tools: docs/user-manual/11-classic-analytics.md"
+echo "  - TimeSeriesObject, export and load: opentsx-core/README.md"
 echo
-echo -e "${GREEN}════════════════════════════════════════════════════════════════${NC}"

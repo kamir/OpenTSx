@@ -24,7 +24,7 @@ import java.io.IOException;
  * - Familiarity with R/Python/MATLAB
  * - Episode 1 completed
  *
- * Rosetta Stone: R/Python → OpenTSx
+ * Rosetta Stone: R/Python to OpenTSx
  *
  * @author OpenTSx Onboarding Team
  * @version 1.0
@@ -36,15 +36,12 @@ public class TimeSeriesOperations {
         System.out.println("===========================================");
         System.out.println("OpenTSx Demo: Time Series Operations");
         System.out.println("For Time Series Experts (TSx Track)");
-        System.out.println("Rosetta Stone: R/Python → OpenTSx");
+        System.out.println("Rosetta Stone: R/Python to OpenTSx");
         System.out.println("===========================================\n");
 
         // Initialize RNG
         RNGWrapper.init();
 
-        // =====================================================
-        // TASK 1: Creating Time Series (R/Python → OpenTSx)
-        // =====================================================
         System.out.println("TASK 1: Creating time series");
         System.out.println("----------------------------");
         System.out.println("R:      ts <- rnorm(1000, mean=10, sd=1.5)");
@@ -62,9 +59,6 @@ public class TimeSeriesOperations {
         System.out.println("  Std Dev: " + String.format("%.4f", ts.getStddev()) + " (expected: 1.5)");
         System.out.println();
 
-        // =====================================================
-        // TASK 2: Basic Statistics
-        // =====================================================
         System.out.println("TASK 2: Basic statistics");
         System.out.println("-----------------------");
 
@@ -85,9 +79,6 @@ public class TimeSeriesOperations {
         System.out.println("  Length:  " + ts.yValues.size());
         System.out.println();
 
-        // =====================================================
-        // TASK 3: Normalization (Z-score)
-        // =====================================================
         System.out.println("TASK 3: Normalization (z-score)");
         System.out.println("-------------------------------");
         System.out.println("R:      scale(ts)");
@@ -107,9 +98,6 @@ public class TimeSeriesOperations {
                           " (should be ~1)");
         System.out.println();
 
-        // =====================================================
-        // TASK 4: Differencing
-        // =====================================================
         System.out.println("TASK 4: First difference");
         System.out.println("------------------------");
         System.out.println("R:      diff(ts)");
@@ -145,9 +133,6 @@ public class TimeSeriesOperations {
         System.out.println("  (Trend removed: mean ~0.5)");
         System.out.println();
 
-        // =====================================================
-        // TASK 5: Moving Average (Smoothing)
-        // =====================================================
         System.out.println("TASK 5: Moving average");
         System.out.println("----------------------");
         System.out.println("R:      filter(ts, rep(1/window, window), sides=1)");
@@ -169,9 +154,6 @@ public class TimeSeriesOperations {
                           (1 - smoothed.getStddev() / ts.getStddev()) * 100));
         System.out.println();
 
-        // =====================================================
-        // TASK 6: Autocorrelation
-        // =====================================================
         System.out.println("TASK 6: Autocorrelation");
         System.out.println("----------------------");
         System.out.println("R:      acf(ts, lag.max=20)");
@@ -209,9 +191,6 @@ public class TimeSeriesOperations {
         System.out.println("  (ACF at lag 0 should be 1.0)");
         System.out.println();
 
-        // =====================================================
-        // TASK 7: Resampling
-        // =====================================================
         System.out.println("TASK 7: Resampling (downsample)");
         System.out.println("-------------------------------");
         System.out.println("R:      aggregate(ts, by=..., FUN=mean)");
@@ -233,9 +212,6 @@ public class TimeSeriesOperations {
                           (Math.abs(ts.getAvarage() - downsampled.getAvarage()) < 0.1));
         System.out.println();
 
-        // =====================================================
-        // TASK 8: Combining Time Series
-        // =====================================================
         System.out.println("TASK 8: Combining time series");
         System.out.println("-----------------------------");
         System.out.println("R:      ts1 + ts2");
@@ -259,9 +235,6 @@ public class TimeSeriesOperations {
                           ts1.getAvarage() + ts2.getAvarage()));
         System.out.println();
 
-        // =====================================================
-        // TASK 9: Export for R/Python Analysis
-        // =====================================================
         System.out.println("TASK 9: Export for R/Python analysis");
         System.out.println("------------------------------------");
 
@@ -287,33 +260,25 @@ public class TimeSeriesOperations {
         System.out.println("  pd.plotting.autocorrelation_plot(df.value)");
         System.out.println();
 
-        // =====================================================
-        // Summary - Concept Mapping
-        // =====================================================
         System.out.println("===========================================");
-        System.out.println("Demo Completed Successfully!");
+        System.out.println("Demo completed");
         System.out.println("===========================================");
         System.out.println("\nConcept Mapping Summary:");
         System.out.println();
         System.out.println("Task              | R                  | Python              | OpenTSx");
         System.out.println("------------------|--------------------|--------------------|------------------------");
-        System.out.println("Create TS         | rnorm(n, μ, σ)     | np.random.normal() | getGaussianDistribution()");
+        System.out.println("Create TS         | rnorm(n, mu, sd)   | np.random.normal() | getGaussianDistribution()");
         System.out.println("Mean              | mean(ts)           | ts.mean()          | ts.getAvarage()");
         System.out.println("Std Dev           | sd(ts)             | ts.std()           | ts.getStddev()");
-        System.out.println("Normalize         | scale(ts)          | (ts-μ)/σ           | normalizeToStdevIsOne()");
+        System.out.println("Normalize         | scale(ts)          | (ts-mu)/sd         | normalizeToStdevIsOne()");
         System.out.println("Difference        | diff(ts)           | ts.diff()          | manual loop");
         System.out.println("Moving avg        | rollmean(ts, k)    | rolling().mean()   | setBinningX_average()");
         System.out.println("ACF               | acf(ts)            | acf()              | manual calculation");
         System.out.println("Downsample        | aggregate()        | resample()         | setBinningX_average()");
         System.out.println("Combine           | ts1 + ts2          | ts1 + ts2          | ts1.add(ts2)");
         System.out.println();
-        System.out.println("\nKey Insights:");
-        System.out.println("✓ OpenTSx provides familiar operations with Java syntax");
-        System.out.println("✓ Results match R/Python implementations");
-        System.out.println("✓ Can export for verification in your favorite tools");
-        System.out.println("✓ Same concepts, different API - focus on the math!");
         System.out.println("\nNext Steps:");
-        System.out.println("→ Episode 3: Visualization and Exploratory Analysis");
+        System.out.println("Episode 3: Visualization and Exploratory Analysis");
         System.out.println("  Learn to visualize and explore time series in OpenTSx");
         System.out.println("\nExercise:");
         System.out.println("1. Generate time series using OpenTSx");

@@ -1,8 +1,3 @@
-/**
- *  GPL - infiziert !!!
- * 
- * 
- */
 package org.opentsx.algorithms.statistics;
 
 import org.opentsx.data.generator.RNGWrapper;

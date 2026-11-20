@@ -513,10 +513,9 @@ public class ReturnIntervallStatistik2 {
 
 
     public void store() throws IOException {
-        FileWriter fw = new FileWriter( folder + label );
-        fw.write( mrVerteilung.toString() );
-        fw.flush();
-        fw.close();
+        try (FileWriter fw = new FileWriter( folder + label )) {
+            fw.write( mrVerteilung.toString() );
+        }
 
         if ( verbose ) { 
             LOG.debug("stored distribution result={} file={} bins={}", name, folder + label, mrVerteilung.xValues.size());
@@ -571,7 +570,7 @@ public class ReturnIntervallStatistik2 {
             mrANZ[i].max = binning;
             
             ReturnIntervallStatistik2.debug1[i] = new HaeufigkeitsZaehlerDouble();
-            ReturnIntervallStatistik2.debug1[i].label = "bis="+grenzen[i];
+            ReturnIntervallStatistik2.debug1[i].label = "upTo="+grenzen[i];
         }
     }
     

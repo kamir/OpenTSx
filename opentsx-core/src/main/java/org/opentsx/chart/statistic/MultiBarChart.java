@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.opentsx.chart.statistic;
 
 
@@ -60,12 +56,12 @@ public class MultiBarChart extends ApplicationFrame {
     
     public TimeSeriesObject[][] rows = null;
     
-    public String[] serie; // Was wurde gemessen ?
+    public String[] serie; // what was measured
     
 
 
     int nrCat = 5; // i, Phase
-    int nrSer = 3; // j, Messwert-Sorte
+    int nrSer = 3; // j, kind of measured value
     
     
     /**
@@ -153,17 +149,6 @@ public class MultiBarChart extends ApplicationFrame {
         return chart;
         
     }
-    
-    // ****************************************************************************
-    // * JFREECHART DEVELOPER GUIDE                                               *
-    // * The JFreeChart Developer Guide, written by David Gilbert, is available   *
-    // * to purchase from Object Refinery Limited:                                *
-    // *                                                                          *
-    // * http://www.object-refinery.com/jfreechart/guide.html                     *
-    // *                                                                          *
-    // * Sales are used to provide funding for the JFreeChart project - please    * 
-    // * support us so that we can continue developing free software.             *
-    // ****************************************************************************
     
     /**
      * Starting point for the demonstration application.

@@ -40,9 +40,6 @@ public class TimeSeriesAnalysis {
         // Initialize RNG
         RNGWrapper.init();
 
-        // =====================================================
-        // TASK 1: Create sample time series with patterns
-        // =====================================================
         System.out.println("TASK 1: Create sample time series with patterns");
         System.out.println("-----------------------------------------------");
 
@@ -64,12 +61,9 @@ public class TimeSeriesAnalysis {
         System.out.println("  End value (avg): " + String.format("%.2f",
                           average(trendSeries, 490, 500)));
         System.out.println("  Trend visible: " +
-                          (average(trendSeries, 490, 500) > average(trendSeries, 0, 10) ? "✓" : "✗"));
+                          (average(trendSeries, 490, 500) > average(trendSeries, 0, 10) ? "PASSED" : "FAILED"));
         System.out.println();
 
-        // =====================================================
-        // TASK 2: Moving Average for Smoothing
-        // =====================================================
         System.out.println("TASK 2: Moving average for smoothing");
         System.out.println("------------------------------------");
 
@@ -92,9 +86,6 @@ public class TimeSeriesAnalysis {
             System.out.println();
         }
 
-        // =====================================================
-        // TASK 3: Trend Detection and Removal
-        // =====================================================
         System.out.println("TASK 3: Trend detection and removal");
         System.out.println("-----------------------------------");
 
@@ -127,9 +118,6 @@ public class TimeSeriesAnalysis {
         System.out.println("  (Should be close to 0)");
         System.out.println();
 
-        // =====================================================
-        // TASK 4: Autocorrelation Analysis
-        // =====================================================
         System.out.println("TASK 4: Autocorrelation analysis");
         System.out.println("--------------------------------");
 
@@ -156,10 +144,7 @@ public class TimeSeriesAnalysis {
         System.out.println("  (Should be positive, indicating periodicity)");
         System.out.println();
 
-        // =====================================================
-        // TASK 5: Statistical Summary
-        // =====================================================
-        System.out.println("TASK 5: Comprehensive statistical summary");
+        System.out.println("TASK 5: Statistical summary");
         System.out.println("-----------------------------------------");
 
         TimeSeriesObject sample = TimeSeriesObject.getGaussianDistribution(1000, 50.0, 10.0);
@@ -167,9 +152,6 @@ public class TimeSeriesAnalysis {
 
         printStatisticalSummary(sample);
 
-        // =====================================================
-        // TASK 6: Change Point Detection (Simple)
-        // =====================================================
         System.out.println("\nTASK 6: Simple change point detection");
         System.out.println("-------------------------------------");
 
@@ -209,12 +191,9 @@ public class TimeSeriesAnalysis {
         System.out.println("  Detected change point: " + changePoint);
         System.out.println("  Actual change point: 150");
         System.out.println("  Detection accuracy: " +
-                          (Math.abs(changePoint - 150) < 20 ? "Good ✓" : "Needs tuning"));
+                          (Math.abs(changePoint - 150) < 20 ? "PASSED" : "FAILED"));
         System.out.println();
 
-        // =====================================================
-        // TASK 7: Export for Advanced Analysis
-        // =====================================================
         System.out.println("TASK 7: Export for advanced analysis");
         System.out.println("------------------------------------");
 
@@ -239,21 +218,11 @@ public class TimeSeriesAnalysis {
         System.out.println("  spectrum(data$value)");
         System.out.println();
 
-        // =====================================================
-        // Summary and Next Steps
-        // =====================================================
         System.out.println("===========================================");
-        System.out.println("Demo Completed Successfully!");
+        System.out.println("Demo completed");
         System.out.println("===========================================");
-        System.out.println("\nKey Takeaways:");
-        System.out.println("✓ Applied moving averages for smoothing");
-        System.out.println("✓ Detected and removed linear trends");
-        System.out.println("✓ Analyzed periodic patterns");
-        System.out.println("✓ Computed autocorrelation");
-        System.out.println("✓ Detected change points");
-        System.out.println("✓ Generated comprehensive statistical summaries");
         System.out.println("\nNext Steps:");
-        System.out.println("→ Episode 10: Production Deployment & Best Practices");
+        System.out.println("Episode 10: Production Deployment & Best Practices");
         System.out.println("  Learn to deploy time series analytics at scale");
         System.out.println("\nExercise:");
         System.out.println("1. Create a time series with seasonal pattern (period=7)");
@@ -264,9 +233,6 @@ public class TimeSeriesAnalysis {
         System.out.println();
     }
 
-    // =====================================================
-    // Helper Methods
-    // =====================================================
 
     /**
      * Calculate average of time series in a range
@@ -300,7 +266,7 @@ public class TimeSeriesAnalysis {
     }
 
     /**
-     * Print comprehensive statistical summary
+     * Print a statistical summary
      */
     private static void printStatisticalSummary(TimeSeriesObject ts) {
         System.out.println("Statistical Summary for: " + ts.getLabel());

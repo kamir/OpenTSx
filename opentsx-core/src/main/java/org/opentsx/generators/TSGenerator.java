@@ -55,7 +55,7 @@ public class TSGenerator {
         log = new StringBuffer();
     
         // some sample frequencies ...
-        double[] fs = { 10.0, 20.0, 50.0, 117.0, 1000 }; //, 2000, 5000 };  
+        double[] fs = { 10.0, 20.0, 50.0, 117.0, 1000 };
         
         /**
          * SamplingRate SR;
@@ -72,28 +72,24 @@ public class TSGenerator {
             TimeSeriesObjectFFT mr = TSGenerator.getSinusWave(f, totaltime, samplingRate, ampl, null, null);
             testsA.add(mr);
             
-            /**
-             * 
-             * 
-             * WARNING TERMS NOT ACCURATE !!! 
-             * 
-             *             // http://de.sci.mathematik.narkive.com/gfJHegzO/frequenz-aus-fft-fourier-transform-bestimmen
-
-Zuerst musst du mal den Nullpunkt der FF-transforierten Daten wissen.
-Eine FFT produziert aus n Werten wieder n Werte, wobei n/2 Werte für
-die Frequenzen von 0 bis zur halben Sampling-Frequenz (SF) stehen. Die
-andere Hälfte ist meistens oben dran zu finden (von halber Sampling-
-Frequenz bis zur Samplingfrequenz) oder unten dran (von minus halber
-Sampling-Frequenz bis 0) oder ist gar nicht dargestellt, weil sowieso
-redundant (= gespiegelt).
-
-Dann steht der k-te Wert rechts vom Nullpunkt für die Frequenz k/n mal
-Samplingfrequenz. Die Samplingfrequenz (in Hz) ist 1 durch die
-Samplingrate. Und die Samplingrate ist die Zeit zwischen zwei
-aufeinanderfolgenden Werten im Zeitbereich, oder die Länge des Signals
-in Sekunden dividiert durch n. Die Wellenlänge ist dann c durch die
-Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
-             **/
+            /*
+             * The terms below are not exact. Source:
+             * http://de.sci.mathematik.narkive.com/gfJHegzO/frequenz-aus-fft-fourier-transform-bestimmen
+             *
+             * Find the zero point of the transformed data first. An FFT turns
+             * n values into n values; n/2 of them stand for the frequencies
+             * from 0 to half the sampling frequency. The other half covers
+             * half the sampling frequency to the sampling frequency, or minus
+             * half the sampling frequency to 0, or is left out because it
+             * mirrors the first half.
+             *
+             * The k-th value right of the zero point stands for the frequency
+             * k/n times the sampling frequency. The sampling frequency in Hz is
+             * 1 divided by the sampling interval, the time between two
+             * consecutive values, or the length of the signal in seconds
+             * divided by n. The wavelength is c divided by that frequency,
+             * that is n/k times the sampling interval times c.
+             */
             
             TimeSeriesObject mrFFT = new TimeSeriesObject();
             TimeSeriesObjectFFT mrFFT2 = new TimeSeriesObjectFFT();
@@ -132,12 +128,10 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
     };
     
     /**
-     * 
-     * totaltime         = Laenge in sekunden
-     * samplingRate = anzahl werte pro Sekunde
-     * 
-     * f            = Frequenz
-     * a            = Amplitude
+     * time         = length in seconds
+     * samplingRate = values per second
+     * f            = frequency
+     * a            = amplitude
      */
         public static TimeSeriesObjectFFT getSinusWave(double f, double time, double samplingRate, double a, String uuiid, String unit ) {
 
@@ -205,7 +199,7 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
     }
 
     static TimeSeriesObject getSinusWave(TimeSeriesObject mr, TimeSeriesObject mr0, TimeSeriesObject mr1, TimeSeriesObject mr2) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     public static TimeSeriesObject getWordLengthSeries(File f) throws IOException {

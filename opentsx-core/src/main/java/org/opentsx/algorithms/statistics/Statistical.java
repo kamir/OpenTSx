@@ -175,7 +175,7 @@ public abstract class Statistical
 	 * the central tendency or typical value of a set of numbers. The geometric mean can
 	 * be understood in terms of geometry. The geometric mean of two numbers, a and b, is
 	 * simply the side length of the square whose area is equal to that of a rectangle with
-	 * side lengths a and b. That is, what is n such that n^2 = a � b? Similarly, the
+	 * side lengths a and b. That is, what is n such that n^2 = a * b? Similarly, the
 	 * geometric mean of three numbers, a, b, and c, is the side length of a cube whose
 	 * volume is the same as that of a rectangular prism with side lengths equal to the
 	 * three given numbers.
@@ -758,7 +758,7 @@ public abstract class Statistical
 	}
 	
 	/**
-	 * A binomial is a polynomial with two terms�the sum of two monomials�often bound by
+	 * A binomial is a polynomial with two terms, the sum of two monomials, often bound by
 	 * parenthesis or brackets when operated upon. It is the simplest kind of polynomial
 	 * other than monomials. This method calculates the natural logarithm if the
 	 * bionomial.

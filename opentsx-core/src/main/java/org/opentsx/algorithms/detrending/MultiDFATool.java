@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.Vector;
 
 /**
@@ -30,9 +31,10 @@ public class MultiDFATool {
     double alpha = Double.NaN;
 
     /**
-     * The folder the F(s) file of every series is written to, ending with a separator.
+     * The folder the F(s) file of every series is written to, ending with a separator; by default opentsx/dfa/
+     * below user.home.
      */
-    public String savePath = "/Volumes/MyExternalDrive/CALCULATIONS/data/out/";
+    public String savePath = Paths.get(System.getProperty("user.home"), "opentsx", "dfa") + File.separator;
 
     public static void main(String[] main) {
 

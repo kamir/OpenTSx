@@ -10,6 +10,10 @@ import java.util.Vector;
 
 public class ESCalc2 {
     
+    /**
+     * @deprecated Has no effect.
+     */
+    @Deprecated
     public static boolean debug = true;
     public static OriginProject op;
     public static boolean store_charts;
@@ -199,7 +203,7 @@ public class ESCalc2 {
 
     
     /**
-     * Konversion of equidistant counter time series into 
+     * Conversion of equidistant counter time series into
      * inter event time time series. The result is a sparse
      * representation.
      * 

@@ -26,19 +26,15 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-echo -e "${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║     Episode 9: Statistical Analysis                           ║${NC}"
-echo -e "${BLUE}║     OpenTSx Onboarding - TSx Track                             ║${NC}"
-echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}"
+echo -e "${BLUE}Episode 9: Statistical Analysis (OpenTSx onboarding, TSx Track)${NC}"
 echo
 
 cd "$PROJECT_ROOT"
 
 if [ ! -d "opentsx-core/target/classes" ]; then
-    echo -e "${YELLOW}⚠ Project not built. Building now...${NC}"
+    echo -e "${YELLOW}warn${NC}  Project not built; running ./bin/010_build.sh"
     ./bin/010_build.sh
     echo
 fi
@@ -49,22 +45,16 @@ CLASSPATH="$(bin/opentsx classpath opentsx-core)"
 
 JAVA_OPTS="${JAVA_OPTS:--Xmx1g -Xms256m}"
 
-echo -e "${GREEN}▶ Running Episode 9: Statistical Analysis...${NC}"
+echo "Running Episode 9: Statistical Analysis"
 echo
 
-java $JAVA_OPTS -cp "$CLASSPATH" org.opentsx.demo.onboarding.TimeSeriesAnalysis
+read -r -a JAVA_ARGS <<< "$JAVA_OPTS"
+java "${JAVA_ARGS[@]}" -cp "$CLASSPATH" org.opentsx.demo.onboarding.TimeSeriesAnalysis
 
 echo
-echo -e "${GREEN}✓ Demo completed${NC}"
+echo -e "${GREEN}ok${NC}    Demo completed"
 echo
 
-if ls *_analysis*.csv 1> /dev/null 2>&1; then
-    echo -e "${BLUE}Generated Files:${NC}"
-    ls -lh *_analysis*.csv | awk '{print "  " $9 " (" $5 ")"}'
-    echo
-fi
-
-echo -e "${GREEN}════════════════════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}Key Learnings:${NC}"
 echo
 echo "1. Moving Average (Smoothing):"
@@ -94,31 +84,24 @@ echo "   - Seasonal decomposition concepts"
 echo
 echo -e "${BLUE}From R/Python Perspective:${NC}"
 echo
-echo "  R/Python                    OpenTSx Equivalent"
-echo "  ─────────────────────────   ──────────────────────────────"
-echo "  mean(x)                  →  ts.getAvarage()"
-echo "  sd(x)                    →  ts.getStddev()"
-echo "  length(x)                →  ts.yValues.size()"
-echo "  x[i]                     →  (Double)ts.yValues.elementAt(i)"
-echo "  movavg(x, n)             →  movingAverage(ts, window)"
-echo "  acf(x, lag)              →  simpleAutocorrelation(ts, lag)"
+echo "  R/Python                    OpenTSx"
+echo "  mean(x)                     ts.getAvarage()"
+echo "  sd(x)                       ts.getStddev()"
+echo "  length(x)                   ts.yValues.size()"
+echo "  x[i]                        (Double)ts.yValues.elementAt(i)"
+echo "  movavg(x, n)                ts.setBinningX_average(n)"
+echo "  acf(x, lag)                 simpleAutocorrelation(ts, lag) in TimeSeriesAnalysis"
 echo
 echo -e "${BLUE}Next Steps:${NC}"
-echo "  • Review generated CSV files with analysis results"
-echo "  • Compare smoothed vs. raw data in plotting tool"
-echo "  • Experiment with different window sizes"
-echo "  • Explore advanced algorithms in opentsx-algorithms module"
-echo "  • Review DFA (Detrended Fluctuation Analysis)"
+echo "  - Experiment with different window sizes"
+echo "  - Review DFA (Detrended Fluctuation Analysis)"
 echo
 echo -e "${BLUE}Advanced Topics:${NC}"
-echo "  For production-ready implementations, see:"
-echo "  • opentsx-algorithms module — DFA, MFDFA, Event Sync"
-echo "  • Episode 10: Production Configuration"
+echo "  - DFA, MFDFA and event synchronization in org.opentsx.algorithms of opentsx-core"
+echo "  - Episode 10: Production Configuration"
 echo "    ./bin/episode_10_production_config.sh"
 echo
 echo -e "${BLUE}Documentation:${NC}"
-echo "  • Statistical Analysis: docs/manual/statistical-analysis/README.md"
-echo "  • R/Python Translation: docs/manual/appendix/r-python-translation.md"
-echo "  • Algorithms: FEATURES.md (advanced methods)"
+echo "  - Guided demos and the 2.x Java tools: docs/user-manual/11-classic-analytics.md"
+echo "  - TimeSeriesObject, export and load: opentsx-core/README.md"
 echo
-echo -e "${GREEN}════════════════════════════════════════════════════════════════${NC}"

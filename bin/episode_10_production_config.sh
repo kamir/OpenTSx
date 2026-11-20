@@ -31,33 +31,28 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-echo -e "${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║     Episode 10: Production Configuration Patterns             ║${NC}"
-echo -e "${BLUE}║     OpenTSx Onboarding - SWE Track                             ║${NC}"
-echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}"
+echo -e "${BLUE}Episode 10: Production Configuration Patterns (OpenTSx onboarding, SWE Track)${NC}"
 echo
 
 cd "$PROJECT_ROOT"
 
 if [ ! -d "opentsx-core/target/classes" ]; then
-    echo -e "${YELLOW}⚠ Project not built. Building now...${NC}"
+    echo -e "${YELLOW}warn${NC}  Project not built; running ./bin/010_build.sh"
     ./bin/010_build.sh
     echo
 fi
 
 if [ ! -f "opentsx.properties" ]; then
-    echo -e "${YELLOW}📝 Creating opentsx.properties from example...${NC}"
     cp opentsx.properties.example opentsx.properties
-    echo -e "${GREEN}✓ Configuration file created${NC}"
+    echo -e "${GREEN}ok${NC}    Created opentsx.properties from opentsx.properties.example"
     echo -e "  Edit opentsx.properties to customize settings"
     echo
 fi
 
 if [ ! -d "sample_data" ]; then
-    echo -e "${YELLOW}⚠ No sample_data/ directory found${NC}"
+    echo -e "${YELLOW}warn${NC}  No sample_data/ directory found"
     echo -e "  Demo will run with limited functionality"
     echo -e "  To test with data: create sample_data/ and add CSV files"
     echo
@@ -78,13 +73,14 @@ CLASSPATH="$(bin/opentsx classpath opentsx-core)"
 
 JAVA_OPTS="${JAVA_OPTS:--Xmx2g -Xms512m}"
 
-echo -e "${GREEN}▶ Running Production Configuration Demo...${NC}"
+echo "Running the production configuration demo"
 echo
 
-java $JAVA_OPTS -cp "$CLASSPATH" org.opentsx.demo.onboarding.ProductionConfig
+read -r -a JAVA_ARGS <<< "$JAVA_OPTS"
+java "${JAVA_ARGS[@]}" -cp "$CLASSPATH" org.opentsx.demo.onboarding.ProductionConfig
 
 echo
-echo -e "${GREEN}✓ Demo completed${NC}"
+echo -e "${GREEN}ok${NC}    Demo completed"
 echo
 
 if [ -f "opentsx.log" ]; then
@@ -96,13 +92,15 @@ if [ -f "opentsx.log" ]; then
     echo
 fi
 
-if ls processed_*.csv 1> /dev/null 2>&1; then
+PROCESSED=(processed_*.csv)
+if [ -e "${PROCESSED[0]}" ]; then
     echo -e "${BLUE}Processed Files:${NC}"
-    ls -lh processed_*.csv | awk '{print "  " $9 " (" $5 ")"}'
+    for f in "${PROCESSED[@]}"; do
+        echo "  $f ($(wc -c < "$f") bytes)"
+    done
     echo
 fi
 
-echo -e "${GREEN}════════════════════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}Key Learnings:${NC}"
 echo
 echo "1. Configuration Hierarchy:"
@@ -116,7 +114,7 @@ echo
 echo "3. Error Handling:"
 echo "   - Retry with exponential backoff"
 echo "   - Graceful degradation on failures"
-echo "   - Comprehensive error logging"
+echo "   - Error logging with the cause"
 echo
 echo "4. Resource Management:"
 echo "   - Thread pool for parallel processing"
@@ -130,11 +128,10 @@ echo "   - Monitoring via structured logs"
 echo "   - Resilient to transient failures"
 echo
 echo -e "${BLUE}Next Steps:${NC}"
-echo "  • Review opentsx.properties and customize settings"
-echo "  • Check opentsx.log for detailed execution logs"
-echo "  • Experiment with environment variables:"
+echo "  - Review opentsx.properties and customize settings"
+echo "  - Check opentsx.log for detailed execution logs"
+echo "  - Experiment with environment variables:"
 echo "    OPENTSX_THREADS_POOL_SIZE=8 ./bin/episode_10_production_config.sh"
-echo "  • Add sample CSV files to sample_data/ for parallel processing"
-echo "  • Review production deployment checklist in docs/manual/"
+echo "  - Add sample CSV files to sample_data/ for parallel processing"
+echo "  - Read docs/user-manual/12-operations.md"
 echo
-echo -e "${GREEN}════════════════════════════════════════════════════════════════${NC}"

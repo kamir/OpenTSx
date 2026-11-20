@@ -42,6 +42,46 @@ class GrangerCausalityTest {
     }
 
     @Test
+    void aLagBelowOneFailsNamingTheLag() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> GrangerCausality.grangerCausalityTest(Y, X, 0));
+        assertEquals("l: 0 is out of range; expected a lag of 1 or more", e.getMessage());
+    }
+
+    @Test
+    void seriesOfDifferentLengthFailNamingBothLengths() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> GrangerCausality.grangerCausalityTest(Y, new double[]{1.0, 2.0, 3.0}, 1));
+        assertEquals("x: 3 values do not match the 16 values of y; expected two series of the same length",
+                e.getMessage());
+    }
+
+    @Test
+    void tooFewValuesFailNamingTheLagAndTheMinimum() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> GrangerCausality.grangerCausalityTest(new double[]{1, 2, 3, 4}, new double[]{1, 3, 2, 4}, 1));
+        assertEquals("y: 4 values are too few for lag 1; expected at least 5 values", e.getMessage());
+    }
+
+    @Test
+    void aLagTooLargeForAnIntMinimumFailsNamingTheMinimum() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> GrangerCausality.grangerCausalityTest(Y, X, 1_000_000_000));
+        assertEquals("y: 16 values are too few for lag 1000000000; expected at least 3000000002 values",
+                e.getMessage());
+    }
+
+    @Test
+    void aRegressionThatCannotBeSolvedFailsNamingTheInputAndKeepsTheCause() {
+        double[] zeros = new double[16];
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> GrangerCausality.grangerCausalityTest(zeros, zeros, 1));
+        assertEquals("y, x: the regression of lag 1 over 16 values cannot be solved (matrix is singular); expected"
+                + " series that are not constant", e.getMessage());
+        assertNotNull(e.getCause());
+    }
+
+    @Test
     void writesNothingToStandardOutput() {
         PrintStream original = System.out;
         ByteArrayOutputStream captured = new ByteArrayOutputStream();

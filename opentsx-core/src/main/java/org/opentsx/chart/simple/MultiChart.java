@@ -1,9 +1,6 @@
 /**
- * Eine Klasse zur ANZEIGE von mehreren Messreihen, die in einem Vector
- * übergeben werden. Dabei gilt ein einheitliches Koordinatensystem für alle
- * Messreihen.
- *
- *
+ * Shows several series, passed in a Vector, in one chart with one
+ * coordinate system for all of them.
  */
 package org.opentsx.chart.simple;
 
@@ -23,6 +20,8 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RefineryUtilities;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.*;
@@ -34,6 +33,8 @@ import java.util.Locale;
 import java.util.Vector;
 
 public class MultiChart extends javax.swing.JDialog {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MultiChart.class);
     
     /***
      * 
@@ -654,7 +655,7 @@ public class MultiChart extends javax.swing.JDialog {
                 yLabel,
                 dataset,
                 PlotOrientation.VERTICAL,
-                useLegende, // legende
+                useLegende, // legend
                 true,
                 true);
 
@@ -682,7 +683,7 @@ public class MultiChart extends javax.swing.JDialog {
             int i = 0;
             for (Color c : dcSet) {
                 plot.getRenderer().setSeriesPaint(i, c);
-                System.out.println("Color: " + c);
+                LOG.debug("series color index={} color={}", i, c);
                 i++;
             }
         }
@@ -809,7 +810,7 @@ public class MultiChart extends javax.swing.JDialog {
         if (mrs.size() > 0) {
             File f = new File(folder + "/" + "TAB_" + filename + ".dat");
             tab.setMessReihen(mrs);
-            System.out.println(mrs.size() + " reihen ...");
+            System.out.println(mrs.size() + " series ...");
             tab.writeToFile(f);
         }
         
@@ -824,7 +825,7 @@ public class MultiChart extends javax.swing.JDialog {
                 yLabel,
                 dataset,
                 PlotOrientation.VERTICAL,
-                useLegende, // legende
+                useLegende, // legend
                 true,
                 true);
         chart.getXYPlot().setForegroundAlpha(0.75f);

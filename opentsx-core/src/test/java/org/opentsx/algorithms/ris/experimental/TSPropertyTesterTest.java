@@ -1,11 +1,31 @@
 package org.opentsx.algorithms.ris.experimental;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.failingSeries;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.intervals;
+import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.isOpen;
 
 class TSPropertyTesterTest {
+
+    @TempDir
+    Path dir;
+
+    @Test
+    void aFailingStoreClosesItsFile() throws Exception {
+        TSPropertyTester tester = new TSPropertyTester("stored", 12, 10);
+        tester.folder = dir + "/";
+        tester.label = "distribution.dat";
+        tester.mrVerteilung = failingSeries();
+
+        assertThrows(IllegalStateException.class, tester::store);
+
+        assertFalse(isOpen(dir.resolve("distribution.dat")));
+    }
 
     @Test
     void aNaNProbabilityIsRejectedNamingTheIndexAndTheContainerIsUnchanged() throws Exception {

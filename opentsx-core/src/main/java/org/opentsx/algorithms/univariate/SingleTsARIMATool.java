@@ -2,8 +2,8 @@ package org.opentsx.algorithms.univariate;
 
 /**
  *  SingleTsFilterTool 
- *  arbeitet mit einer Zeitreihe und schreibt ggf. in zwei
- *  verschiedene FileWriter.
+ *  works on one series and can write to two
+ *  different FileWriters.
  * 
  *  
  */

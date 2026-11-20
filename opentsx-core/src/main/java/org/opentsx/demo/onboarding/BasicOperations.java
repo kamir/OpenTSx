@@ -50,9 +50,6 @@ public class BasicOperations {
         System.out.println("  Std Dev: " + String.format("%.2f", rawData.getStddev()));
         System.out.println();
 
-        // =====================================================
-        // TASK 1: Apply Transformations
-        // =====================================================
         System.out.println("TASK 1: Apply transformations");
         System.out.println("-----------------------------");
 
@@ -89,9 +86,6 @@ public class BasicOperations {
         System.out.println("  Expected: " + String.format("%.2f", rawData.getAvarage() + 25.0));
         System.out.println();
 
-        // =====================================================
-        // TASK 2: Filter operations
-        // =====================================================
         System.out.println("TASK 2: Filter operations");
         System.out.println("------------------------");
 
@@ -125,9 +119,6 @@ public class BasicOperations {
         System.out.println("  Subset length: " + subset.yValues.size());
         System.out.println();
 
-        // =====================================================
-        // TASK 3: Aggregations
-        // =====================================================
         System.out.println("TASK 3: Compute aggregations");
         System.out.println("----------------------------");
 
@@ -146,9 +137,6 @@ public class BasicOperations {
         System.out.println("  Range: " + String.format("%.2f", max - min));
         System.out.println();
 
-        // =====================================================
-        // TASK 4: Resampling and binning
-        // =====================================================
         System.out.println("TASK 4: Resampling and binning");
         System.out.println("------------------------------");
 
@@ -165,9 +153,6 @@ public class BasicOperations {
         System.out.println("  (Mean should be similar)");
         System.out.println();
 
-        // =====================================================
-        // TASK 5: Combine multiple time series
-        // =====================================================
         System.out.println("TASK 5: Combine multiple time series");
         System.out.println("------------------------------------");
 
@@ -190,9 +175,6 @@ public class BasicOperations {
                           ts1.getAvarage() + ts2.getAvarage()));
         System.out.println();
 
-        // =====================================================
-        // TASK 6: Calculate correlation
-        // =====================================================
         System.out.println("TASK 6: Calculate correlation");
         System.out.println("-----------------------------");
 
@@ -218,9 +200,6 @@ public class BasicOperations {
         System.out.println("  (Advanced correlation methods available in Episode 9)");
         System.out.println();
 
-        // =====================================================
-        // TASK 7: Export results
-        // =====================================================
         System.out.println("TASK 7: Export results");
         System.out.println("---------------------");
 
@@ -246,21 +225,11 @@ public class BasicOperations {
         System.out.println("          df.plot()");
         System.out.println();
 
-        // =====================================================
-        // Summary and Next Steps
-        // =====================================================
         System.out.println("==========================================");
-        System.out.println("Demo Completed Successfully!");
+        System.out.println("Demo completed");
         System.out.println("==========================================");
-        System.out.println("\nKey Takeaways:");
-        System.out.println("✓ Applied transformations (normalize, scale, offset)");
-        System.out.println("✓ Filtered time series by value and range");
-        System.out.println("✓ Computed aggregate statistics");
-        System.out.println("✓ Resampled time series (downsampling)");
-        System.out.println("✓ Combined multiple time series");
-        System.out.println("✓ Exported results for external analysis");
         System.out.println("\nNext Steps:");
-        System.out.println("→ Episode 4: Kafka Streams Integration");
+        System.out.println("Episode 4: Kafka Streams Integration");
         System.out.println("  Learn to process time series data streams in real-time");
         System.out.println("\nExercise:");
         System.out.println("1. Create two time series with different means and std devs");

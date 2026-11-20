@@ -35,7 +35,7 @@ public class DFAmulti extends DFACore {
 
         indexMaxS = this.getMaxIndex( this.para.getN() );
 
-        if ( debug ) LOG.debug("window sizes values={} windows={} maxIndex={} maxS={}", this.para.getN(),
+        if ( LOG.isDebugEnabled() ) LOG.debug("window sizes values={} windows={} maxIndex={} maxS={}", this.para.getN(),
                 this.para.getzSValues(), indexMaxS, s[indexMaxS]);
 
         // over all window sizes ...
@@ -43,7 +43,7 @@ public class DFAmulti extends DFACore {
             zS++;
             int valueofS = s[currentS];
 
-            if(debug) LOG.debug("window index={} s={}", zS, valueofS);
+            if ( LOG.isDebugEnabled() ) LOG.debug("window index={} s={}", zS, valueofS);
             double FS = 0;
 
             // reset the segment counter
@@ -56,7 +56,7 @@ public class DFAmulti extends DFACore {
 
                 double FS_sum = 0;
                 zw++;
-                if(debug) LOG.debug("segment s={} start={} index={} limit={}", valueofS, pr_pos, zw, pr.length - valueofS);
+                if ( LOG.isDebugEnabled() ) LOG.debug("segment s={} start={} index={} limit={}", valueofS, pr_pos, zw, pr.length - valueofS);
 
                 double[] fit = null;
                 // size of array depends on order of dfa
@@ -109,7 +109,7 @@ public class DFAmulti extends DFACore {
             double b = FSMW[1][currentS];
 
 
-            if(debug) LOG.debug("stored fluctuation s={} segments={}", valueofS, zw);
+            if ( LOG.isDebugEnabled() ) LOG.debug("stored fluctuation s={} segments={}", valueofS, zw);
             
             zw = 0;
         }

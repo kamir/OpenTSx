@@ -699,10 +699,9 @@ public class TSPropertyTester {
 
 
     public void store() throws IOException {
-        FileWriter fw = new FileWriter( folder + label );
-        fw.write( mrVerteilung.toString() );
-        fw.flush();
-        fw.close();
+        try (FileWriter fw = new FileWriter( folder + label )) {
+            fw.write( mrVerteilung.toString() );
+        }
 
         if ( verbose ) { 
             LOG.debug("stored distribution result={} file={} bins={}", name, folder + label, mrVerteilung.xValues.size());

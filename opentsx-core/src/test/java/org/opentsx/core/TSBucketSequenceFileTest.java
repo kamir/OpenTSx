@@ -83,6 +83,37 @@ class TSBucketSequenceFileTest {
     }
 
     @Test
+    void aLoaderWithIdsLoadsOnlyTheListedRecords() throws Exception {
+        Vector<TimeSeriesObject> original = rows();
+        Path path = save("listed", original);
+        BucketLoader loader = new BucketLoader();
+        Vector<Integer> ids = new Vector<>();
+        ids.add(1);
+        ids.add(3);
+
+        loader.loadBucket(path.toUri().toString(), ids);
+
+        Vector<TimeSeriesObject> loaded = loader.getBucketData();
+        assertEquals(2, loaded.size());
+        assertEquals(original.get(0).yValues, loaded.get(0).yValues);
+        assertEquals(original.get(2).yValues, loaded.get(1).yValues);
+    }
+
+    @Test
+    void aLoaderLoadsEveryRecordWithNullIdsAfterACallWithIds() throws Exception {
+        Path path = save("relisted", rows());
+        BucketLoader loader = new BucketLoader();
+        Vector<Integer> ids = new Vector<>();
+        ids.add(1);
+
+        loader.loadBucket(path.toUri().toString(), ids);
+        assertEquals(1, loader.getBucketData().size());
+
+        loader.loadBucket(path.toUri().toString(), null);
+        assertEquals(3, loader.getBucketData().size());
+    }
+
+    @Test
     void operationFailureIsPropagatedWithItsCause() throws Exception {
         IOException failure = new IOException("Fixture operation failed");
         SingleRowTSO operation = new SingleRowTSO() {

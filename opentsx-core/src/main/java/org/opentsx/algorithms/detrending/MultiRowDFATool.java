@@ -93,10 +93,10 @@ public class MultiRowDFATool {
         }
 
         MultiRowContainer rmc = new MultiRowContainer();
-        rmc.addNewRows(mr1, "Sorte 1");
-        rmc.addNewRows(mr2, "Sorte 2");
-        rmc.addNewRows(mr3, "Sorte 3");
-        rmc.addNewRows(mr4, "Sorte 4");
+        rmc.addNewRows(mr1, "kind 1");
+        rmc.addNewRows(mr2, "kind 2");
+        rmc.addNewRows(mr3, "kind 3");
+        rmc.addNewRows(mr4, "kind 4");
 
 
         

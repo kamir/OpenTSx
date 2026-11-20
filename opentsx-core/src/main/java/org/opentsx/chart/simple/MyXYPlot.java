@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.opentsx.chart.simple;
 
 import org.jfree.chart.*;
@@ -289,7 +285,7 @@ public class MyXYPlot extends javax.swing.JDialog {
         int i = 1500;
         TimeSeriesObject r = TimeSeriesObject.getGaussianDistribution(i);
         System.err.println( r.toString() );
-        MyXYPlot p = new MyXYPlot(r, i + " Zufallszahlen", "nr", "rand(x)");
+        MyXYPlot p = new MyXYPlot(r, i + " random numbers", "nr", "rand(x)");
         p.setYIntervall( -1 , 1);
 
         p.setVisible(true);

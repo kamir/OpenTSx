@@ -65,9 +65,6 @@ public class AnomalyDetection {
         // Initialize RNG
         RNGWrapper.init();
 
-        // =====================================================
-        // TASK 1: Create time series with anomalies
-        // =====================================================
         System.out.println("TASK 1: Create time series with anomalies");
         System.out.println("-----------------------------------------");
 
@@ -103,9 +100,6 @@ public class AnomalyDetection {
                 (injectedAnomalies.size() * 100.0) / dataWithAnomalies.yValues.size()));
         System.out.println();
 
-        // =====================================================
-        // TASK 2: Z-Score Based Detection (Global)
-        // =====================================================
         System.out.println("TASK 2: Z-score based anomaly detection (global)");
         System.out.println("------------------------------------------------");
 
@@ -138,9 +132,6 @@ public class AnomalyDetection {
         }
         System.out.println();
 
-        // =====================================================
-        // TASK 3: Moving Window Detection (Local)
-        // =====================================================
         System.out.println("TASK 3: Moving window anomaly detection (local)");
         System.out.println("-----------------------------------------------");
 
@@ -170,9 +161,6 @@ public class AnomalyDetection {
         System.out.println("  (Better for non-stationary data)");
         System.out.println();
 
-        // =====================================================
-        // TASK 4: Seasonal Pattern-Based Detection
-        // =====================================================
         System.out.println("TASK 4: Seasonal pattern-based detection");
         System.out.println("----------------------------------------");
 
@@ -198,9 +186,6 @@ public class AnomalyDetection {
         System.out.println("  (Anomalies violate expected weekly pattern)");
         System.out.println();
 
-        // =====================================================
-        // TASK 5: Consecutive Anomalies (Burst Detection)
-        // =====================================================
         System.out.println("TASK 5: Burst detection (consecutive anomalies)");
         System.out.println("-----------------------------------------------");
 
@@ -226,9 +211,6 @@ public class AnomalyDetection {
         }
         System.out.println();
 
-        // =====================================================
-        // TASK 6: Export Results for Visualization
-        // =====================================================
         System.out.println("TASK 6: Export results for visualization");
         System.out.println("----------------------------------------");
 
@@ -252,23 +234,14 @@ public class AnomalyDetection {
         System.out.println("  plt.show()");
         System.out.println();
 
-        // =====================================================
-        // Summary
-        // =====================================================
         System.out.println("===========================================");
-        System.out.println("Demo Completed Successfully!");
+        System.out.println("Demo completed");
         System.out.println("===========================================");
-        System.out.println("\nKey Takeaways:");
-        System.out.println("✓ Implemented z-score based detection (global)");
-        System.out.println("✓ Used moving windows for local anomaly detection");
-        System.out.println("✓ Detected seasonal pattern violations");
-        System.out.println("✓ Identified anomaly bursts");
-        System.out.println("✓ Evaluated detection performance (precision/recall)");
         System.out.println("\nBest Practices:");
-        System.out.println("• Use local (moving window) detection for non-stationary data");
-        System.out.println("• Consider domain knowledge when setting thresholds");
-        System.out.println("• Account for seasonality in periodic data");
-        System.out.println("• Validate detections to reduce false positives");
+        System.out.println("- Use local (moving window) detection for non-stationary data");
+        System.out.println("- Consider domain knowledge when setting thresholds");
+        System.out.println("- Account for seasonality in periodic data");
+        System.out.println("- Validate detections to reduce false positives");
         System.out.println("\nExercise:");
         System.out.println("1. Adjust the z-score threshold (try 2.5, 3.0, 3.5)");
         System.out.println("2. Observe effect on precision and recall");
@@ -278,9 +251,6 @@ public class AnomalyDetection {
         System.out.println();
     }
 
-    // =====================================================
-    // Detection Methods
-    // =====================================================
 
     /**
      * Z-score based anomaly detection (global statistics)

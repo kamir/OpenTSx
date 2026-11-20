@@ -31,6 +31,10 @@ abstract public class DFACore implements IDetrendingMethod {
     StringBuffer status = new StringBuffer();
     private double corr_coef = -9;
 
+    /**
+     * @deprecated Has no effect; the level of the SLF4J logger of this class decides.
+     */
+    @Deprecated
     public static boolean debug = false;
 
     /**
@@ -158,7 +162,7 @@ abstract public class DFACore implements IDetrendingMethod {
              if(s[lin_steps+step] != s[lin_steps+step-1]) step++;
         }
 
-        if ( debug ) {
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("logarithmic window sizes s={}", Arrays.toString(s));
         }
         initF();
@@ -168,7 +172,7 @@ abstract public class DFACore implements IDetrendingMethod {
      * Allocates the result array F.
      */
     void initF() {
-        if (debug) LOG.debug("allocating results windows={}", para.getzSValues());
+        if ( LOG.isDebugEnabled() ) LOG.debug("allocating results windows={}", para.getzSValues());
         F = new double[4][para.getzSValues()];
     }
 

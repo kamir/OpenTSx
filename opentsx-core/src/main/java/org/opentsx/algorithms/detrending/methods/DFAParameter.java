@@ -3,15 +3,15 @@ package org.opentsx.algorithms.detrending.methods;
 
 public class DFAParameter {
     
-    double q = 1; // normale DFA; q != 1 => MFDFA
+    double q = 1; // plain DFA; q != 1 => MFDFA
 
-    // Controllparameter p
+    // order of the trend polynomial
     private int gradeOfPolynom = 1;
 
-    // Anzahl der Werte der Zeitreihe
+    // number of values of the series
     private int N = 0;
 
-    // Anzahl der s-Werte
+    // number of window sizes s
     private int zSValues = 10;
 
     public static double logScaleFactor = 1.1;
@@ -35,7 +35,7 @@ public class DFAParameter {
     }
 
     /**
-     * Anzahl von Werten in der Zeitreihe
+     * Sets the number of values of the series.
      *
      * @param N
      */
@@ -51,7 +51,7 @@ public class DFAParameter {
         this.zSValues = zSValues;
     }
     /**
-     * Anzahl der s-Werte für die F(s) berechnet wird.
+     * Returns the number of window sizes s for which F(s) is computed.
      **/
     public int getzSValues() {
         return zSValues;

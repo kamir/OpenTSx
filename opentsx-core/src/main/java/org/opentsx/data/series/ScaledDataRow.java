@@ -8,13 +8,10 @@ import java.text.DecimalFormat;
 import java.util.Vector;
 
 /**
- * Eine TimeSeriesObject wird hier "umskaliert" um ein
- * Skalenverhalten zu überprüfen.
+ * Rescales a TimeSeriesObject to check its scaling behavior.
  *
- * Diese allg. Klasse ist ein Vorlage und daher abstract.
- * In der Klasse ScalingLawSQUAREROOT wird zum Beispiel
- * eine Variable wie die Personenzahl und ein Exponent
- * zur Skalierung benutzt.
+ * Subclasses supply the scaling law, for example a variable such as a
+ * population count and an exponent.
  * 
  * @author kamir
  */
@@ -108,7 +105,7 @@ abstract public class ScaledDataRow {
 
         int size = getXValues().size();
 
-        sb.append("#\n# Skalierte M e s s r e i h e \n# Klasse : " + this.getClass() + " \n# Label  : " + label + "\n#\n# Anzahl Wertepaare = " + size + "\n#\n");
+        sb.append("#\n# Scaled series \n# Class : " + this.getClass() + " \n# Label  : " + label + "\n#\n# Number of value pairs = " + size + "\n#\n");
 
         sb.append( getStatisticData("# ") );
         sb.append("\n");
@@ -158,7 +155,7 @@ abstract public class ScaledDataRow {
         sb.append(pre+"Max    \t max_X=" + decimalFormat_STAT.format(StatUtils.max( dx ) ) + "\n" );
         sb.append(pre+"Min    \t min_X=" + decimalFormat_STAT.format(StatUtils.min( dx ) ) + "\n" );
         sb.append(pre+"Mean   \t avg_X=" + decimalFormat_STAT.format(StatUtils.mean( dx ) ) + "\n" );
-        sb.append(pre+"StdAbw \t std_X=" + decimalFormat_STAT.format(stdev.evaluate( dx ) ) + "\n" );
+        sb.append(pre+"StdDev \t std_X=" + decimalFormat_STAT.format(stdev.evaluate( dx ) ) + "\n" );
         sb.append(pre+"Var    \t var_X=" + decimalFormat_STAT.format(StatUtils.variance( dx ) ) + "\n" );
         sb.append(pre+"Sum    \t sum_X=" + decimalFormat_STAT.format(StatUtils.sum( dx ) ) + "\n" ) ;
         sb.append(pre+"Len    \t len_X=" + dx.length + "\n" );
@@ -171,7 +168,7 @@ abstract public class ScaledDataRow {
         sb.append(pre+"Max    \t max_Y=" + decimalFormat_STAT.format(StatUtils.max( dy ) )  + "\n" );
         sb.append(pre+"Min    \t min_Y=" + decimalFormat_STAT.format(StatUtils.min( dy ) )  + "\n" );
         sb.append(pre+"Mean   \t avg_Y=" + decimalFormat_STAT.format(StatUtils.mean( dy ) )  + "\n" );
-        sb.append(pre+"StdAbw \t std_Y=" + decimalFormat_STAT.format(stdev.evaluate( dy ) )  + "\n" );
+        sb.append(pre+"StdDev \t std_Y=" + decimalFormat_STAT.format(stdev.evaluate( dy ) )  + "\n" );
         sb.append(pre+"Var    \t var_Y=" + decimalFormat_STAT.format(StatUtils.variance( dy ) )+ "\n" );
         sb.append(pre+"Sum    \t sum_Y=" + decimalFormat_STAT.format(StatUtils.sum( dy ) ) + "\n" );
         sb.append(pre+"Len    \t len_Y=" + dy.length + "\n#" );

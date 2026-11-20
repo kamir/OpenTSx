@@ -15,6 +15,24 @@ import static org.junit.jupiter.api.Assertions.*;
 class DFACoreTest {
 
     @Test
+    void theWindowSizesAreLoggedAtDebugWithoutADebugFlag() {
+        IDetrendingMethod dfa = DetrendingMethodFactory.getDetrendingMethod(DetrendingMethodFactory.DFA2);
+        dfa.getPara().setzSValues(20);
+        dfa.setNrOfValues(1000);
+        PrintStream err = System.err;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        System.setErr(new PrintStream(captured, true, StandardCharsets.UTF_8));
+        try {
+            dfa.initIntervalSlog();
+        } finally {
+            System.setErr(err);
+        }
+        String log = captured.toString(StandardCharsets.UTF_8);
+        assertTrue(log.contains("logarithmic window sizes s=["), log);
+        assertTrue(log.contains("allocating results windows="), log);
+    }
+
+    @Test
     void aFitOfOrderTwoReturnsTheCoefficientsOfAQuadratic() {
         DFA dfa = new DFA();
         dfa.pr = new double[40];

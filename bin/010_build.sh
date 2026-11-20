@@ -3,38 +3,37 @@
 # Builds and installs every module with `mvn clean generate-sources compile package install -DskipTests=true`.
 # Needs Java 17 or later and Maven 3.9 or later.
 #
-# Usage: ./bin/010_build.sh
+# Usage: ./bin/010_build.sh [--help]
 #
-# Exit codes: 0 built, 1 Java or pom.xml is missing, otherwise the exit code of mvn (127 when mvn is not on PATH).
+# Maven runs with the JDK of JAVA_HOME when it is set, otherwise with the java on PATH.
+#
+# Exit codes: 0 built, 1 Java or pom.xml is missing, 2 usage error, otherwise the exit code of mvn (127 when mvn is
+# not on PATH).
 
 set -e
+
+if [ $# -gt 0 ]; then
+    if [ "$1" = "--help" ] && [ $# -eq 1 ]; then
+        sed -n '3,/^set -e/{/^#/p}' "$0" | sed 's/^# \{0,1\}//'
+        exit 0
+    fi
+    echo "010_build.sh: $1: unknown argument; expected no argument or --help" >&2
+    exit 2
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-echo "=========================================="
-echo "  OpenTSx Build Script"
-echo "=========================================="
+echo "OpenTSx build"
 echo
 echo "Project root: $PROJECT_ROOT"
 echo
 
-if [ -z "$JAVA_HOME" ]; then
-    echo "JAVA_HOME not set, attempting to detect..."
-
-    if [ -d "/opt/homebrew/Cellar/openjdk@21/21.0.8/libexec/openjdk.jdk/Contents/Home" ]; then
-        export JAVA_HOME="/opt/homebrew/Cellar/openjdk@21/21.0.8/libexec/openjdk.jdk/Contents/Home"
-        echo "Found JAVA_HOME: $JAVA_HOME"
-    elif [ -d "/Library/Java/JavaVirtualMachines" ]; then
-        LATEST_JDK=""
-        for jdk in /Library/Java/JavaVirtualMachines/*jdk*; do
-            if [ -d "$jdk" ]; then LATEST_JDK="${jdk##*/}"; fi
-        done
-        if [ -n "$LATEST_JDK" ]; then
-            export JAVA_HOME="/Library/Java/JavaVirtualMachines/$LATEST_JDK/Contents/Home"
-            echo "Found JAVA_HOME: $JAVA_HOME"
-        fi
-    fi
+if [ -n "${JAVA_HOME:-}" ]; then
+    echo "JAVA_HOME: $JAVA_HOME"
+else
+    echo "warn  JAVA_HOME is not set; mvn uses the java on PATH, which must be Java 17 or later"
+    echo "      Set JAVA_HOME to a JDK 17 or later to build with another JDK"
 fi
 
 if ! command -v java &> /dev/null; then
@@ -55,16 +54,13 @@ if [ ! -f "pom.xml" ]; then
     exit 1
 fi
 
-echo "Building OpenTSx..."
 echo "Running: mvn clean generate-sources compile package install -DskipTests=true"
 echo
 
 mvn clean generate-sources compile package install -DskipTests=true
 
 echo
-echo "=========================================="
-echo "✓ Build completed successfully!"
-echo "=========================================="
+echo "ok    Build completed"
 echo
 echo "Next steps:"
 echo "  1. Validate environment: ./bin/000_validate_environment.sh"

@@ -123,7 +123,7 @@ double  *x, a;
 
     
     /**
-     * Gleichverteilte ZZ zw. 0 und 1
+     * Uniformly distributed random numbers between 0 and 1.
      *
      * @param z
      * @return

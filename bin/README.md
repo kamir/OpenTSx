@@ -4,7 +4,7 @@
 |--------|---------|
 | `opentsx` | **Launcher for the current tools.** `bin/opentsx --help` lists the commands; [user manual, appendix A](../docs/user-manual/appendix-a-cli.md) lists every command with its options and the differences to the container image; see also [below](#fix-a-failed-start-of-binopentsx). |
 | `000_validate_environment.sh` | checks the JDK (17+), Maven (3.9+), Git, Docker, memory, disk, CPU, network and the build; failed checks go to stderr, and a `java -version`, `mvn -version` or `git --version` that fails is a failed check. Exit codes: 0 no check failed (warnings allowed), 1 a check failed, 2 unknown option |
-| `010_build.sh` | builds all modules (`mvn install`). Exit codes: 0 built, 1 no Java on `PATH` or no `pom.xml` (message on stderr), otherwise the exit code of Maven |
+| `010_build.sh` | builds all modules (`mvn install`) with the JDK of `JAVA_HOME`, or with the `java` on `PATH` when `JAVA_HOME` is not set; `--help` prints the header. Exit codes: 0 built, 1 no Java on `PATH` or no `pom.xml` (message on stderr), 2 any other argument (`010_build.sh: <argument>: unknown argument; expected no argument or --help`), otherwise the exit code of Maven |
 | `build_docs_pdfs.sh`, `Dockerfile.docs-pdf` | PDF of the user manual and dev guide (used by `mvn -Ppdf-manual`) |
 | `005_minimal_no_kafka_demo.sh` | 2.x sine-wave generator without Kafka; writes CSV files to `data/temp/` |
 | `000_launch_tsa_workbench.sh` | 2.x GUI (MacroRecorder2) through `mvn -f opentsx-core/pom.xml exec:java`, or without Maven with the classpath that `bin/opentsx` cached |

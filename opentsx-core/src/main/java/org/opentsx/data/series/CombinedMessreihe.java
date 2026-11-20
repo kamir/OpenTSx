@@ -1,5 +1,5 @@
 /*
- *   Die y-Spalten zweier Reihen werden zu einer neuen xy Reihe vereint.
+ *   Joins the y columns of two series into a new xy series.
  *
  */
 

@@ -6,16 +6,22 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.algorithms.statistics.HaeufigkeitsZaehlerDouble;
 import org.opentsx.data.exporter.OriginProject;
+import org.opentsx.data.series.TimeSeriesObject;
 
 import java.awt.Window;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Vector;
+import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class RISToolTest {
 
@@ -158,6 +164,21 @@ class RISToolTest {
     }
 
     @Test
+    void addingIntervalsIsLoggedAtDebugWithoutADebugFlag() throws Exception {
+        RISTool ris = new RISTool("logged", 12, 10);
+        PrintStream err = System.err;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        System.setErr(new PrintStream(captured, true, UTF_8));
+        try {
+            ris.addDistData(intervals(10));
+        } finally {
+            System.setErr(err);
+        }
+        assertTrue(captured.toString(UTF_8).contains("adding intervals result=logged intervals=10"),
+                captured.toString(UTF_8));
+    }
+
+    @Test
     void addingIntervalsOpensNoWindowAndPrintsNothing() throws Exception {
         RISTool ris = new RISTool("intervals", 12, 10);
         int windows = Window.getWindows().length;
@@ -238,6 +259,40 @@ class RISToolTest {
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> ris.addDistData(values));
         assertEquals("addDistData: 1 intervals are 0 or negative; expected positive intervals while offset is 0",
                 e.getMessage());
+    }
+
+    @Test
+    void aFailingStoreClosesItsFile() throws Exception {
+        RISTool ris = new RISTool("stored", 12, 10);
+        ris.folder = dir + "/";
+        ris.label = "distribution.dat";
+        ris.mrVerteilung = new TimeSeriesObject() {
+            @Override
+            public String toString() {
+                throw new IllegalStateException("toString fails");
+            }
+        };
+
+        assertThrows(IllegalStateException.class, ris::store);
+
+        assertFalse(isOpen(dir.resolve("distribution.dat")));
+    }
+
+    private static boolean isOpen(Path file) throws IOException {
+        Path fds = Paths.get("/proc/self/fd");
+        assumeTrue(Files.isDirectory(fds), "needs /proc/self/fd");
+        Path real = file.toRealPath();
+        try (Stream<Path> links = Files.list(fds)) {
+            return links.anyMatch(fd -> real.equals(target(fd)));
+        }
+    }
+
+    private static Path target(Path fd) {
+        try {
+            return fd.resolveSibling(Files.readSymbolicLink(fd));
+        } catch (IOException gone) {
+            return null;
+        }
     }
 
     private static RISTool filled(String name) throws Exception {

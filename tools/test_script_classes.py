@@ -74,7 +74,7 @@ def test_build_script_stops_with_the_maven_status(tmp_path):
 def test_build_script_reports_a_successful_build(tmp_path):
     result = run_build_script(tmp_path, 0)
     assert result.returncode == 0, result.stdout + result.stderr
-    assert "Build completed successfully" in result.stdout
+    assert "ok    Build completed" in result.stdout.splitlines()
 
 
 def run_production_config_script(tmp_path: pathlib.Path, level) -> subprocess.CompletedProcess:

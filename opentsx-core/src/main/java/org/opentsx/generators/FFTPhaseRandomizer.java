@@ -74,7 +74,7 @@ public class FFTPhaseRandomizer {
     static double[][] alphas = null; 
     static double[] betas = null; 
     
-    // nur in dem Fall auch eine DFA Kurve zeigen
+    // show a DFA curve only in this case
     static boolean firstInLoop = false;
     static int numberOfLoop = 0;
     static int numberOfBeta = 0;
@@ -145,7 +145,7 @@ public class FFTPhaseRandomizer {
         
         
         alphasCALC.setLabel("CALC");
-        alphasTHEO.setLabel("Theorie");
+        alphasTHEO.setLabel("theory");
         check.add( alphasTHEO );
         
         calcErrorChart( alphas, numberOfBeta, numberOfLoop, 100.0 );
@@ -239,7 +239,7 @@ public class FFTPhaseRandomizer {
         int N = ts.yValues.size();
         double[] zr = new double[N];
 
-        // nun wird das Array mit den Daten der ZR übergeben
+        // pass the array with the series data
         TimeSeriesObjectFFT mrNEW = TimeSeriesObjectFFT.convertToMessreiheFFT( ts );
         
         //
@@ -291,10 +291,10 @@ public class FFTPhaseRandomizer {
             order = dfa.getPara().getGradeOfPolynom();
             dfa.getPara().setzSValues( nrOfSValues );
 
-            // Anzahl der Werte in der Zeitreihe
+            // number of values in the series
             dfa.setNrOfValues(N);
 
-            // die Werte für die Fensterbreiten sind zu wählen ...
+            // choose the window sizes
             dfa.initIntervalSlog();
             if ( debug ) dfa.showS();
             
@@ -337,8 +337,8 @@ public class FFTPhaseRandomizer {
     }
 
     
-    static TimeSeriesObject mrAV = new TimeSeriesObject();  // Mittelwerte
-    static TimeSeriesObject mrSTD = new TimeSeriesObject();  // standardabweichung
+    static TimeSeriesObject mrAV = new TimeSeriesObject();  // mean values
+    static TimeSeriesObject mrSTD = new TimeSeriesObject();  // standard deviations
     static TimeSeriesObject mrMAX = new TimeSeriesObject();  // ERROR
     static TimeSeriesObject mrMIN = new TimeSeriesObject();  // ERROR
         
@@ -351,8 +351,8 @@ public class FFTPhaseRandomizer {
      */
     private static void calcErrorChart(double[][] d, int nrB, int nrLOOPS, double scaleSTDDEV ) {
         
-        mrAV = new TimeSeriesObject();  // Mittelwerte
-        mrSTD = new TimeSeriesObject();  // standardabweichung
+        mrAV = new TimeSeriesObject();  // mean values
+        mrSTD = new TimeSeriesObject();  // standard deviations
         mrMAX = new TimeSeriesObject();  // ERROR
         mrMIN = new TimeSeriesObject();  // ERROR
     
@@ -365,7 +365,6 @@ public class FFTPhaseRandomizer {
             
             double[] L = new double[nrLOOPS];
             
-            // werte umlagern
             for( int iL = 0; iL < nrLOOPS; iL++ ) { 
                 L[iL] = d[iB][iL];
             }

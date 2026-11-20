@@ -206,6 +206,13 @@ class MessreihenLoaderTest {
     }
 
     @Test
+    void everyReadLineIsLoggedAtDebugWithoutADebugFlag() throws IOException {
+        File labels = write("labels.csv", "# c\n\na_b,1.5,2\n");
+        String err = stderrOf(() -> MessreihenLoader.getLoader().loadMessreihe_zr_SC(labels, 2, ","));
+        assertTrue(err.contains("read line file=" + labels + " line=3 text=a_b,1.5,2"), err);
+    }
+
+    @Test
     void loadingWritesNothingToStandardOutput() throws IOException {
         File binned = write("binned.csv", "1.5,1\n2.5,1\n100,1\n");
         File labels = write("labels.csv", "# c\n\na_b,1.5,2\n");

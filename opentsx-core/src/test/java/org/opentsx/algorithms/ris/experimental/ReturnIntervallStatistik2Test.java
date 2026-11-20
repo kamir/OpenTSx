@@ -3,12 +3,23 @@ package org.opentsx.algorithms.ris.experimental;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.opentsx.data.series.TimeSeriesObject;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Vector;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class ReturnIntervallStatistik2Test {
+
+    @TempDir
+    Path dir;
 
     int binning;
     int scale;
@@ -74,6 +85,44 @@ class ReturnIntervallStatistik2Test {
 
         assertEquals("addDistData: all is a container; add intervals to a result that is not a container",
                 e.getMessage());
+    }
+
+    @Test
+    void aFailingStoreClosesItsFile() throws Exception {
+        ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2("stored", 12, 10);
+        ris.folder = dir + "/";
+        ris.label = "distribution.dat";
+        ris.mrVerteilung = failingSeries();
+
+        assertThrows(IllegalStateException.class, ris::store);
+
+        assertFalse(isOpen(dir.resolve("distribution.dat")));
+    }
+
+    static TimeSeriesObject failingSeries() {
+        return new TimeSeriesObject() {
+            @Override
+            public String toString() {
+                throw new IllegalStateException("toString fails");
+            }
+        };
+    }
+
+    static boolean isOpen(Path file) throws IOException {
+        Path fds = Paths.get("/proc/self/fd");
+        assumeTrue(Files.isDirectory(fds), "needs /proc/self/fd");
+        Path real = file.toRealPath();
+        try (Stream<Path> links = Files.list(fds)) {
+            return links.anyMatch(fd -> real.equals(target(fd)));
+        }
+    }
+
+    private static Path target(Path fd) {
+        try {
+            return fd.resolveSibling(Files.readSymbolicLink(fd));
+        } catch (IOException gone) {
+            return null;
+        }
     }
 
     private static ReturnIntervallStatistik2 filled(String name) throws Exception {

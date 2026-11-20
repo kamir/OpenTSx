@@ -26,6 +26,10 @@ public class MessreihenLoader {
 
     private static final Logger LOG = LoggerFactory.getLogger(MessreihenLoader.class);
 
+    /**
+     * @deprecated Has no effect; the level of the SLF4J logger of this class decides.
+     */
+    @Deprecated
     public static boolean debug = false;
     public static final String DEFAULT_DELIMITER = ",";
     public static final int DEFAULT_LIMIT = 1000000000;
@@ -101,7 +105,7 @@ public class MessreihenLoader {
                     continue;
                 }
                 line = decimalPoints(line, DEFAULT_DELIMITER);
-                if ( debug ) LOG.debug("read line file={} line={} text={}", fn, lineNumber, line);
+                if ( LOG.isDebugEnabled() ) LOG.debug("read line file={} line={} text={}", fn, lineNumber, line);
 
                 // columns count from 1
                 String[] data = columns(fn, lineNumber, line, DEFAULT_DELIMITER, Math.max(_spalteX, spalteY));
@@ -227,7 +231,7 @@ public class MessreihenLoader {
                 if ( line.startsWith("#") || line.length() == 0 ) {
                     continue;
                 }
-                if ( debug ) LOG.debug("read line file={} line={} text={}", fn, lineNumber, line);
+                if ( LOG.isDebugEnabled() ) LOG.debug("read line file={} line={} text={}", fn, lineNumber, line);
 
                 // columns count from 1
                 String[] data = columns(fn, lineNumber, line, DEFAULT_DELIMITER, Math.max(_spalteX, spalteY));
@@ -304,7 +308,7 @@ public class MessreihenLoader {
         int c = 0;
         while( z < maxY ) {
             z = z * factor;
-            if ( debug ) LOG.debug("bin border index={} border={}", c, z);
+            if ( LOG.isDebugEnabled() ) LOG.debug("bin border index={} border={}", c, z);
             c++;
         }
         
@@ -335,7 +339,7 @@ public class MessreihenLoader {
             lowerBorder[c] = b;
             
             b = z;
-            if ( debug ) LOG.debug("bin width index={} width={}", c, widthOfBin[c]);
+            if ( LOG.isDebugEnabled() ) LOG.debug("bin width index={} width={}", c, widthOfBin[c]);
             c++;
         }
         
@@ -365,14 +369,14 @@ public class MessreihenLoader {
                 if ( filter != null ) {
                     line = filter.doFilterLine(line);
                 }
-                if ( debug ) LOG.debug("read line file={} line={} text={}", fn, lineNumber, line);
+                if ( LOG.isDebugEnabled() ) LOG.debug("read line file={} line={} text={}", fn, lineNumber, line);
 
                 // columns count from 1
                 String[] data = columns(fn, lineNumber, line, delim, Math.max(spalteX, spalteY));
                 double dx = parseNumber(fn, lineNumber, data[spalteX-1]);
                 double dy = parseNumber(fn, lineNumber, data[spalteY-1]);
 
-                if ( debug ) LOG.debug("read point file={} line={} x={} y={}", fn, lineNumber, dx, dy);
+                if ( LOG.isDebugEnabled() ) LOG.debug("read point file={} line={} x={} y={}", fn, lineNumber, dx, dy);
                 boolean notCorrectBin = true;
                 int zi = 1;
                 
@@ -395,7 +399,7 @@ public class MessreihenLoader {
                             conuterBin2[zi-1] = conuterBin2[zi-1] + 1; 
                             
                             notCorrectBin = false;
-                            if ( debug ) LOG.debug("binned point x={} y={} bin={} border={}", dx, dy, zi, lowerBorder[zi]);
+                            if ( LOG.isDebugEnabled() ) LOG.debug("binned point x={} y={} bin={} border={}", dx, dy, zi, lowerBorder[zi]);
                         }
                     }
                 }
@@ -465,7 +469,7 @@ public class MessreihenLoader {
                     continue;
                 }
                 line = decimalPoints(line, delim);
-                if ( debug ) LOG.debug("read line file={} line={} text={}", fn, lineNumber, line);
+                if ( LOG.isDebugEnabled() ) LOG.debug("read line file={} line={} text={}", fn, lineNumber, line);
 
                 String[] data = columns(fn, lineNumber, line, delim, columns);
                 mr.addValuePair(parseNumber(fn, lineNumber, data[spalteX - 1]), parseNumber(fn, lineNumber, data[spalteY - 1]));
@@ -618,7 +622,7 @@ public class MessreihenLoader {
                     continue;
                 }
                 line = decimalPoints(line, del);
-                if ( debug ) LOG.debug("read line file={} line={} text={}", fn, lineNumber, line);
+                if ( LOG.isDebugEnabled() ) LOG.debug("read line file={} line={} text={}", fn, lineNumber, line);
 
                 // columns count from 1
                 String[] data = columns(fn, lineNumber, line, del, Math.max(1, spalteY));

@@ -70,7 +70,7 @@ public class TestModernUI {
                 "TSB-Transformation-TRACK");
 
         javax.swing.tree.DefaultMutableTreeNode cache = new javax.swing.tree.DefaultMutableTreeNode(
-                "CACHE: Collection → Components");
+                "CACHE: Collection to Components");
         root.add(cache);
 
         javax.swing.tree.DefaultMutableTreeNode normalize = new javax.swing.tree.DefaultMutableTreeNode(

@@ -770,6 +770,19 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   The opentsx-modbus README section is now `Bind a vendor register sheet`.
 - CI runs `bash -n` and `shellcheck -x -P SCRIPTDIR` on `bin/000_launch_tsa_workbench.sh` and `bin/010_build.sh` as
   well.
+- opentsx-core: `MultiDFATool.savePath` defaults to `opentsx/dfa/` and `HaeufigkeitsZaehler.folder` to
+  `opentsx/histograms/` below `user.home` instead of a path on a removable drive; `HaeufigkeitsZaehler.store()`
+  creates the folder.
+- opentsx-core: the level of the SLF4J logger alone decides the DEBUG lines of `DFACore` (and `DFA`, `DFAmulti`,
+  `MFDFA`), `MessreihenLoader` and `RISTool`; the public `debug` fields of `DFACore`, `SingleDFATool`, `ESCalc2`,
+  `TimeSeriesObjectFFT`, `MessreihenLoader` and `RISTool` are deprecated and have no effect.
+- `bin/010_build.sh` refuses an argument other than `--help` with exit code 2, uses `JAVA_HOME` when it is set and
+  says what is needed when it is not, instead of a hard-coded Homebrew JDK path.
+- `bin/000_launch_tsa_workbench.sh`, `bin/000_validate_environment.sh`, `bin/010_build.sh` and the `bin/episode_*.sh`
+  scripts print plain `ok`, `warn` and `FAIL` lines and plain headings; the launcher reports the Java options only
+  when it runs java directly, and the episode scripts pass `shellcheck`.
+- opentsx-core: the guided demos print PASSED or FAILED instead of glyphs and drop their banner comments and filler
+  lists; the remaining German strings and comments of opentsx-core are English.
 
 ### Removed
 
@@ -938,6 +951,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   as before, and any other path opens `/dashboard`.
 - SaaS frontend: the npm script `format`, which ran Prettier over the whole `src/` tree.
 - SaaS frontend: the unused devDependency `prettier`.
+- `config/opentsx-default.properties` and the packaged `opentsx-default.properties` no longer list
+  `opentsx.kafka.topic.map.file`, `opentsx.kafka.client.config.file`, `opentsx.data.directory`,
+  `opentsx.threads.pool.size` and `opentsx.retry.attempts`; no `ConfigManager` caller read them.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -1805,6 +1821,24 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   for example `| result | **FAIL**: 0 passed, 1 failed, 0 skipped/planned |` and `1 step(s) failed; report: <file>`.
 - `.gitignore` ignores the CSV files that the episode 2 and 3 exercise solutions write into the project root, such as
   `exercise1_output.csv`.
+- opentsx-core: `RISTool`, `ReturnIntervallStatistik2`, `TSPropertyTester` and `HaeufigkeitsZaehler` close their file
+  when `store()` fails.
+- opentsx-core: `BucketLoader.loadBucket(path, ids)` and `_processBucket(path, operation, ids)` load and process only
+  the records whose position in the file, counted from 1, is in `ids`, and every record when `ids` is null, also after
+  a call with ids; before, the ids were compared with a string and every record was loaded.
+- opentsx-core: `GrangerCausality.grangerCausalityTest(y, x, l)` refuses a lag below 1, series of different length and
+  fewer than 3l + 2 values with `IllegalArgumentException` that names the argument, also for a lag too large for an
+  int count, and wraps a regression that cannot be solved with a message that names y, x and the lag and keeps the
+  cause.
+- opentsx-core: `LongTermCorrelationSeriesGenerator.writeTables` prints nothing; `getRandomRow` with `showTest` and
+  `runDFA` true before `writeTables` throws `IllegalStateException` (`showTest: true needs the alpha table of
+  writeTables, which is not allocated; pass showTest false or call writeTables`) instead of ignoring the failure.
+- opentsx-core: opening a chart panel (`MultiChart`, `TSOperationControlerPanel`) prints nothing, the chart folder and
+  the series colors are DEBUG lines, and no longer creates `opentsx/plots` below the home directory; `save PN` creates
+  the folder when it writes.
+- The solution of exercise 3 of episode 2 reads `sample_data/sensor_data.csv` with its header line and ISO-8601 times
+  and exits with 1 and one message line on a broken or missing file instead of printing a stack trace and exiting with
+  0.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

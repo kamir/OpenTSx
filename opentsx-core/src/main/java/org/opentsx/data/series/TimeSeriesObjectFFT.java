@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.opentsx.data.series;
 
 import org.apache.commons.lang3.math.NumberUtils;
@@ -928,6 +924,10 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         }
     }
 
+    /**
+     * @deprecated Has no effect; the level of the SLF4J logger of this class decides.
+     */
+    @Deprecated
     public static boolean debug = false;
     
     /**

@@ -39,7 +39,6 @@ public class ESMain {
         int nr2 = 1000;
         int nr3 = 50000;
        
-        ESCalc2.debug = false;
         ESCalc2.op = op;
         ESCalc2.store_charts = true;
         

@@ -93,6 +93,10 @@ public class RISTool {
     Vector<Double> dataRawFILTERED = null;
     Vector<Double> dataRawTIMES = null;
     
+    /**
+     * @deprecated Has no effect; the level of the SLF4J logger of this class decides.
+     */
+    @Deprecated
     static public boolean debug = false;
     static public boolean verbose = false;
     
@@ -110,7 +114,7 @@ public class RISTool {
     }
 
     RISTool(int binning, int scale) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.");
     }
  
     private void clear() {
@@ -153,13 +157,13 @@ public class RISTool {
             throw new IllegalArgumentException( "add: " + ris.name + " has no return intervals; add intervals with addDistData first");
         }
         
-        if ( debug ) {
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("adding result container={} result={} rq={}", name, ris.name, ris._Rq);
         }
         
         // an empty result has NaN probabilities (0 of 0 intervals) and adds nothing
         if ( ris.dataRawFILTERED.size() < 1 ) {
-            if ( debug ) {
+            if ( LOG.isDebugEnabled() ) {
                 LOG.debug("skipped empty result container={} result={}", name, ris.name);
             }        
             return;
@@ -185,7 +189,7 @@ public class RISTool {
         
         allRqs.add(ris._Rq);
         
-        if ( debug ) {
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("added result container={} result={} intervals={}", name, ris.name, ris.dataRawFILTERED.size());
         }
         
@@ -229,7 +233,7 @@ public class RISTool {
             throw new IllegalStateException("_addData: " + name + " is a container; add times to a result that is not a container");
         }
 
-        if ( debug ) {
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("computing intervals result={} intervals={}", name, times.size() - 1);
         }
 
@@ -257,7 +261,7 @@ public class RISTool {
             else {
                 nullDistCounter++;
             }
-            if (debug ) LOG.debug("interval result={} interval={} now={} before={}", name, dist, now, vor);
+            if ( LOG.isDebugEnabled() ) LOG.debug("interval result={} interval={} now={} before={}", name, dist, now, vor);
             vor = now;
         } 
 
@@ -296,7 +300,7 @@ public class RISTool {
             throw new IllegalStateException("addDistData: " + name + " is a container; add intervals to a result that is not a container");
         }
         
-        if ( debug ) {
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("adding intervals result={} intervals={}", name, dists.size());
         }
         
@@ -330,7 +334,7 @@ public class RISTool {
         }
         
         
-        if ( debug ) {
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("filtered intervals result={} cutOff={} offset={}", name, cutOff, offset);
         }
         
@@ -362,7 +366,7 @@ public class RISTool {
         double Rq_filtered = sumRq_filteres/(1.0*anzRq_filterd);
         zElements = anzRq_filterd;
        
-        if ( debug ) LOG.debug("mean interval result={} rqAll={} rqFiltered={}", name, Rq_alt, Rq_filtered);
+        if ( LOG.isDebugEnabled() ) LOG.debug("mean interval result={} rqAll={} rqFiltered={}", name, Rq_alt, Rq_filtered);
         _Rq = Rq_filtered;
 
         
@@ -455,7 +459,7 @@ public class RISTool {
            
             
         }
-        if ( debug ) {
+        if ( LOG.isDebugEnabled() ) {
             LOG.debug("distribution result={} intervals={} rq={} sum={}", name, this.zElements, _Rq, summe);
         }
     }
@@ -522,10 +526,9 @@ public class RISTool {
 
 
     public void store() throws IOException {
-        FileWriter fw = new FileWriter( folder + label );
-        fw.write( mrVerteilung.toString() );
-        fw.flush();
-        fw.close();
+        try (FileWriter fw = new FileWriter( folder + label )) {
+            fw.write( mrVerteilung.toString() );
+        }
 
         if ( verbose ) { 
             LOG.debug("stored distribution result={} file={} bins={}", name, folder + label, mrVerteilung.xValues.size());
@@ -615,8 +618,6 @@ public class RISTool {
         initRqMIN();
         
         initRqCollectors();
-        
-        debug = true;
         
         Vector<Double> data1 = new Vector<Double>();
         Vector<Double> data2 = new Vector<Double>();

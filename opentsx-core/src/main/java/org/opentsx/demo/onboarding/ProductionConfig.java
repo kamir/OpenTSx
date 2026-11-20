@@ -62,7 +62,7 @@ public class ProductionConfig {
 
     /**
      * Initialize production configuration.
-     * Loads from: config file → environment variables → defaults
+     * Loads from the config file, then environment variables, then defaults.
      */
     public ProductionConfig() throws IOException {
         this.config = loadConfiguration();

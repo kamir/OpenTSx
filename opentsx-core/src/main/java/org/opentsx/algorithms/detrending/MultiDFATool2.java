@@ -225,7 +225,6 @@ public class MultiDFATool2 {
                 dfa.setZR(zr);
                 dfa.setNrOfValues(zr.length);
 
-                dfa.debug = false;
 
                 dfa.calc();
 

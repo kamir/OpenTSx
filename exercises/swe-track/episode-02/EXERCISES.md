@@ -153,14 +153,12 @@ Exponential Series:
 package org.opentsx.exercises.swe;
 
 import org.opentsx.data.series.TimeSeriesObject;
-import org.opentsx.data.loader.MessreihenLoader;
 import java.io.File;
 
 public class Exercise3_LoadAndTransform {
     public static void main(String[] args) throws Exception {
         // TODO: Load sensor_data.csv
-        // Hint: Use loader.loadMessreihe_2(file, 1, 2, ",")
-        MessreihenLoader loader = MessreihenLoader.getLoader();
+        // Hint: skip the header line, read column 1 with java.time.Instant.parse and column 2 with Double.parseDouble
 
 
         // TODO: Print basic statistics

@@ -9,7 +9,6 @@ import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.data.series.TimeSeriesObjectFFT;
 
 import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -86,10 +85,11 @@ class LongTermCorrelationSeriesGeneratorTest {
     }
 
     @Test
-    void theTablesAreWrittenUnderTheGivenDirectory() throws Exception {
+    void theTablesAreWrittenUnderTheGivenDirectoryAndNothingIsPrinted() throws Exception {
         Path out = dir.resolve("tables");
         PrintStream stdout = System.out;
-        System.setOut(new PrintStream(OutputStream.nullOutputStream()));
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(captured, true, StandardCharsets.UTF_8));
         try {
             LongTermCorrelationSeriesGenerator.writeTables(out.toFile(), new Random(1));
         } finally {
@@ -97,5 +97,18 @@ class LongTermCorrelationSeriesGeneratorTest {
         }
         assertTrue(Files.size(out.resolve("random_numbers_CHECK.csv")) > 0);
         assertTrue(Files.size(out.resolve("random_numbers_FS.csv")) > 0);
+        assertEquals("", captured.toString(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void storingAnAlphaWithoutTheTablesOfWriteTablesFails() {
+        LongTermCorrelationSeriesGenerator.alphas = null;
+        LongTermCorrelationSeriesGenerator.firstInLoop = false;
+
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> LongTermCorrelationSeriesGenerator.getRandomRow(1024, 0.5, new Random(3), true, true));
+
+        assertEquals("showTest: true needs the alpha table of writeTables, which is not allocated; pass showTest"
+                + " false or call writeTables", e.getMessage());
     }
 }

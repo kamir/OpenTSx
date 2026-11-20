@@ -159,19 +159,17 @@ public class TSBucket {
         LOG.debug("processed bucket file={} output={}", fn, f.getAbsolutePath());
     }
 
+    public static boolean processSeriesLabelOnLoad = true;
+
     /**
      * Reload a TSBucket from a Sequence-File and do an implicit processing, if
      * the TSOperation object is not null.
      *
-     * Handle the ts-ID in a general way.
-     *
      * @param fn
-     * @param ids
+     * @param ids the positions of the records to load, counted from 1; null loads every record
      *
      * @throws IOException
      */
-    public static boolean processSeriesLabelOnLoad = true;
-
     public void loadFromSequenceFile(String fn, java.util.Vector<Integer> ids, TSOperation tst) throws IOException {
 
         if (tst != null) {
@@ -207,14 +205,9 @@ public class TSBucket {
                     seriesID = "" + TSBucket.getRecordID(key.toString());
                 }
 
-                boolean skipped = false;
-
-                if (ids != null) {
-                    if (ids.contains(seriesID)) {
-                        skipped = false;
-                    } else {
-                        skipped = true;
-                    }
+                if (ids != null && !ids.contains(i)) {
+                    i = i + 1;
+                    continue;
                 }
 
                 reader.getCurrentValue(vec);
@@ -243,11 +236,6 @@ public class TSBucket {
                 }
 
                 i = i + 1;
-
-                int code = 1;
-                if (skipped) {
-                    code = 0;
-                }
 
                 if (inMEM) {
                     bucketData.add(mr);
@@ -713,7 +701,7 @@ public class TSBucket {
     }
 
     public void createBucketFromGrayImageFile(File[] folder, String baseOut, String experiment) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     public void createBucketFromFilesViaWordLengthRecursive(File[] folder, String s, String experiment) throws IOException {

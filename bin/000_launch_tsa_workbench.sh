@@ -18,28 +18,25 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-echo -e "${BLUE}==========================================${NC}"
-echo -e "${BLUE}  OpenTSx TSA Workbench Launcher${NC}"
-echo -e "${BLUE}  Time Series Analysis GUI Tool${NC}"
-echo -e "${BLUE}==========================================${NC}"
+echo -e "${BLUE}OpenTSx TSA Workbench launcher${NC}"
 echo
 
 if ! command -v java &> /dev/null; then
-    echo -e "${RED}ERROR: Java not found!${NC}"
-    echo "Please install Java 17 or later and set JAVA_HOME"
+    echo -e "${RED}FAIL  Java not found${NC}"
+    echo "  Install Java 17 or later and set JAVA_HOME"
     exit 1
 fi
 
 JAVA_VERSION=$(java -version 2>&1 | head -n 1 | cut -d'"' -f2)
-echo -e "${GREEN}✓${NC} Java version: $JAVA_VERSION"
+echo -e "${GREEN}ok${NC}    Java version: $JAVA_VERSION"
 
 if [ -z "$JAVA_HOME" ]; then
-    echo -e "${YELLOW}⚠${NC}  JAVA_HOME not set, attempting to find it..."
+    echo -e "${YELLOW}warn${NC}  JAVA_HOME not set, looking for a JDK"
 
     if [ -d "/Library/Java/JavaVirtualMachines" ]; then
         LATEST_JDK=""
@@ -48,7 +45,7 @@ if [ -z "$JAVA_HOME" ]; then
         done
         if [ -n "$LATEST_JDK" ]; then
             export JAVA_HOME="/Library/Java/JavaVirtualMachines/$LATEST_JDK/Contents/Home"
-            echo -e "${GREEN}✓${NC} Found JAVA_HOME: $JAVA_HOME"
+            echo -e "${GREEN}ok${NC}    Found JAVA_HOME: $JAVA_HOME"
         fi
     fi
 
@@ -59,7 +56,7 @@ if [ -z "$JAVA_HOME" ]; then
         done
         if [ -n "$LATEST_JDK" ]; then
             export JAVA_HOME="/usr/lib/jvm/$LATEST_JDK"
-            echo -e "${GREEN}✓${NC} Found JAVA_HOME: $JAVA_HOME"
+            echo -e "${GREEN}ok${NC}    Found JAVA_HOME: $JAVA_HOME"
         fi
     fi
 
@@ -67,55 +64,48 @@ if [ -z "$JAVA_HOME" ]; then
         BREW_JAVA=$(brew --prefix openjdk 2>/dev/null || brew --prefix java 2>/dev/null || echo "")
         if [ -n "$BREW_JAVA" ] && [ -d "$BREW_JAVA" ]; then
             export JAVA_HOME="$BREW_JAVA/libexec/openjdk.jdk/Contents/Home"
-            echo -e "${GREEN}✓${NC} Found JAVA_HOME via Homebrew: $JAVA_HOME"
+            echo -e "${GREEN}ok${NC}    Found JAVA_HOME via Homebrew: $JAVA_HOME"
         fi
     fi
 fi
 
 if ! compgen -G "$PROJECT_ROOT/opentsx-core/target/*.jar" > /dev/null; then
-    echo -e "${RED}ERROR: OpenTSx not built!${NC}"
-    echo "Please run: ./bin/010_build.sh first"
+    echo -e "${RED}FAIL  OpenTSx is not built${NC}"
+    echo "  Run ./bin/010_build.sh first"
     exit 1
 fi
 
-echo -e "${GREEN}✓${NC} OpenTSx build found"
+echo -e "${GREEN}ok${NC}    OpenTSx build found"
 echo
-
-if [ -z "$JAVA_OPTS" ]; then
-    JAVA_OPTS="-Xmx2g -Xms512m"
-    echo -e "${BLUE}Using default Java options: $JAVA_OPTS${NC}"
-else
-    echo -e "${BLUE}Using custom Java options: $JAVA_OPTS${NC}"
-fi
 
 if [ -z "$DISPLAY" ]; then
-    echo -e "${YELLOW}⚠${NC}  DISPLAY not set (headless system?)"
-    echo "   GUI may not work on headless systems without X11 forwarding"
+    echo -e "${YELLOW}warn${NC}  DISPLAY is not set"
+    echo "  The GUI needs a display; on a headless system use X11 forwarding"
 fi
 
 echo
-echo -e "${BLUE}=========================================${NC}"
-echo -e "${BLUE}  Launching TSA Workbench...${NC}"
-echo -e "${BLUE}=========================================${NC}"
-echo
+echo -e "${BLUE}Launching the TSA Workbench${NC}"
 echo "Main class: org.opentsx.app.bucketanalyser.MacroRecorder2"
 echo "Project: $PROJECT_ROOT"
 echo
 
 cd "$PROJECT_ROOT"
 
-echo -e "${GREEN}Starting GUI...${NC}"
-echo
-
 EXIT_CODE=0
 if command -v mvn &> /dev/null; then
-    echo "Launching with Maven..."
+    echo "Launching with Maven"
     mvn -f opentsx-core/pom.xml exec:java \
         -Dexec.mainClass="org.opentsx.app.bucketanalyser.MacroRecorder2" \
         -Dexec.args="" \
         -Dexec.cleanupDaemonThreads=false || EXIT_CODE=$?
 else
-    echo "Launching with java directly..."
+    if [ -z "$JAVA_OPTS" ]; then
+        JAVA_OPTS="-Xmx2g -Xms512m"
+        echo "Using default Java options: $JAVA_OPTS"
+    else
+        echo "Using custom Java options: $JAVA_OPTS"
+    fi
+    echo "Launching with java"
 
     CLASSPATH="$("$PROJECT_ROOT/bin/opentsx" classpath opentsx-core)" || exit 1
 
@@ -127,21 +117,15 @@ fi
 
 echo
 if [ $EXIT_CODE -eq 0 ]; then
-    echo -e "${GREEN}✓ TSA Workbench closed successfully${NC}"
+    echo -e "${GREEN}ok${NC}    TSA Workbench closed"
 else
-    echo -e "${RED}✗ TSA Workbench exited with code: $EXIT_CODE${NC}"
+    echo -e "${RED}FAIL${NC}  TSA Workbench exited with code: $EXIT_CODE"
 fi
 
 echo
-echo -e "${BLUE}=========================================${NC}"
-echo -e "${BLUE}  Session Complete${NC}"
-echo -e "${BLUE}=========================================${NC}"
-echo
-echo "Next Steps:"
-echo "  • Explore the GUI and time series visualization"
-echo "  • Try loading sample data"
-echo "  • Run a guided demo: ./bin/episode_02_create_timeseries.sh"
-echo "  • Learn more: docs/user-manual/02-getting-started.md"
+echo "Next steps:"
+echo "  Run a guided demo: ./bin/episode_02_create_timeseries.sh"
+echo "  Read docs/user-manual/11-classic-analytics.md"
 echo
 
 exit $EXIT_CODE

@@ -1,6 +1,7 @@
 package org.opentsx.algorithms.statistics;
 
 import org.apache.commons.math3.distribution.FDistribution;
+import org.apache.commons.math3.exception.MathIllegalArgumentException;
 import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression;
 
 /**
@@ -17,6 +18,17 @@ public class GrangerCausality {
      * @return p-value of Granger-Causality
      */
     public static double grangerCausalityTest(double[] y, double[] x, int l){
+        if (l < 1) {
+            throw new IllegalArgumentException("l: " + l + " is out of range; expected a lag of 1 or more");
+        }
+        if (x.length != y.length) {
+            throw new IllegalArgumentException("x: " + x.length + " values do not match the " + y.length
+                    + " values of y; expected two series of the same length");
+        }
+        if (y.length < 3L * l + 2) {
+            throw new IllegalArgumentException("y: " + y.length + " values are too few for lag " + l
+                    + "; expected at least " + (3L * l + 2) + " values");
+        }
         OLSMultipleLinearRegression h0 = new OLSMultipleLinearRegression();
         OLSMultipleLinearRegression h1 = new OLSMultipleLinearRegression();
 
@@ -26,24 +38,23 @@ public class GrangerCausality {
 
         int n = laggedY.length;
 
-        h0.newSampleData(strip(l, y), laggedY);
-        h1.newSampleData(strip(l, y), laggedXY);
-
-        double rs0[] = h0.estimateResiduals();
-        double rs1[] = h1.estimateResiduals();
-
-
-        double RSS0 = sqrSum(rs0);
-        double RSS1 = sqrSum(rs1);
-
-        double ftest = ((RSS0 - RSS1)/l) / (RSS1 / ( n - 2*l - 1));
-
-        FDistribution fDist = new FDistribution(l, n-2*l-1);
         try {
-            double pValue = 1.0 - fDist.cumulativeProbability(ftest);
-            return  pValue;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            h0.newSampleData(strip(l, y), laggedY);
+            h1.newSampleData(strip(l, y), laggedXY);
+
+            double rs0[] = h0.estimateResiduals();
+            double rs1[] = h1.estimateResiduals();
+
+            double RSS0 = sqrSum(rs0);
+            double RSS1 = sqrSum(rs1);
+
+            double ftest = ((RSS0 - RSS1)/l) / (RSS1 / ( n - 2*l - 1));
+
+            FDistribution fDist = new FDistribution(l, n-2*l-1);
+            return 1.0 - fDist.cumulativeProbability(ftest);
+        } catch (MathIllegalArgumentException e) {
+            throw new IllegalArgumentException("y, x: the regression of lag " + l + " over " + y.length
+                    + " values cannot be solved (" + e.getMessage() + "); expected series that are not constant", e);
         }
 
     }

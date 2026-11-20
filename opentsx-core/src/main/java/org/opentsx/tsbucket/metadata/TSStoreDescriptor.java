@@ -1,18 +1,22 @@
 package org.opentsx.tsbucket.metadata;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 
 public class TSStoreDescriptor {
 
+    private static final Logger LOG = LoggerFactory.getLogger(TSStoreDescriptor.class);
+
+    /**
+     * Returns opentsx/plots/ below user.home. The folder is created when a chart or table is written into it.
+     */
     public static String _getPathFor_TSCharts() {
 
-        String fn = System.getProperty("user.home" ) + "/opentsx/plots/";
-        File f = new File( fn );
-        f.mkdirs();
+        File f = new File( System.getProperty("user.home" ) + "/opentsx/plots/" );
 
-        System.out.println( "******");
-        System.out.println( "*** Use the OpenTSx home folder : " + f.getAbsolutePath() + " (" + f.canWrite() + ")" );
-        System.out.println( "******");
+        LOG.debug("chart folder path={}", f.getAbsolutePath());
 
         return f.getAbsolutePath() + "/";
 

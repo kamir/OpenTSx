@@ -2,9 +2,8 @@ package org.opentsx.data.loader.util;
 
 /**
  *
- * Vorverarbeitung einer Eingabezeile einer Datei.
- *
- * Hier werden z.B. fehlende Stellen aufgefüllt, oder Zeichen ersetzt.
+ * Preprocesses one input line of a file, for example to fill missing
+ * fields or replace characters.
  *
  */
 

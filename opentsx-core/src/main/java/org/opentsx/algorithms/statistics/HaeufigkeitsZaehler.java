@@ -7,8 +7,11 @@ import org.opentsx.data.series.TimeSeriesObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Vector;
 
 /**
@@ -31,7 +34,7 @@ public class HaeufigkeitsZaehler {
     public String label = "HISTOGRAM";
 
     public TimeSeriesObject mr = new TimeSeriesObject();
-    public String folder = "/Volumes/MyExternalDrive/CALCULATIONS/data/out/topic6/";
+    public String folder = Paths.get(System.getProperty("user.home"), "opentsx", "histograms") + File.separator;
 
     public HaeufigkeitsZaehler( String lab ) { 
         label = lab;
@@ -141,14 +144,14 @@ public class HaeufigkeitsZaehler {
     }
 
     public void store() throws IOException {
-            FileWriter fw = new FileWriter( folder + label );
+        Files.createDirectories(Paths.get(folder));
+        try (FileWriter fw = new FileWriter( folder + label )) {
             fw.write( mr.toString() );
-            fw.flush();
-            fw.close();
+        }
     };
     
     static public void showDistribution(Vector<TimeSeriesObject> rows, String label) {
-        MultiChart.open(rows, "Distribution (" + label + ")","length of rows","anz", true );
+        MultiChart.open(rows, "Distribution (" + label + ")","length of rows","count", true );
     }  
 
     public void showDistribution() {

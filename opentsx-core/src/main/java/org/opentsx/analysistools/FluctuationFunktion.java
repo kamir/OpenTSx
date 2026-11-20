@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package org.opentsx.analysistools;
 
 import org.opentsx.analysistools.utils.FitbereichLogScale;
@@ -41,7 +36,7 @@ public class FluctuationFunktion {
 
                 alpha = Fs.linFit( fu, fo).getSlope();
                 
-                System.out.println(">>> Alpha wurde neu berechnet ["+ fu +","+fo+"] ... a=" + alpha + " beta=" + calcBeta(alpha) );
+                System.out.println(">>> alpha recomputed ["+ fu +","+fo+"] ... a=" + alpha + " beta=" + calcBeta(alpha) );
             }
             catch (Exception ex) {
                 Logger.getLogger(FluctuationFunktion.class.getName()).log(Level.SEVERE, null, ex);
