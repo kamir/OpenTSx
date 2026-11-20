@@ -943,8 +943,8 @@ Building both a Go and a Rust edge runtime doubles the parity work per operator.
 
 ## 18. Open decisions
 
-The owner decisions, with options and a recommendation each, are D-T1 to D-T12 in
-[TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.md#decisions-owner).
+The owner decisions, with options and a recommendation each, are D-T1 to D-T13 in
+[TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.md#decisions-owner). D-T13 admits FPGA kernels on raw sensor data as Tier 3, behind the Rust runner.
 
 ## 19. Risks
 
