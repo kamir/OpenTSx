@@ -1,0 +1,16 @@
+{
+  "files": {
+    "REPORT.md": "a3fa43bbdb603bea20652097e26ef55d5826f04d4d9e4aab7eaeaefbb2ed283f",
+    "metadata.json": "ad3d4c3876ab71d4d1a8f8cdd18d10a516f215f5daae9ddccdd30bc8b184f3ad",
+    "mixed/execution.json": "3151f827655e714e347236a598b0f518ba0a9959c9966317a2d7dd25c852a65f",
+    "mixed/partials.csv": "49dd6053ff7d78b1f9d2582b58ee684341a80d8f0d85482e6ca7bb4421abd251",
+    "mixed/result.json": "53de37d55170770eb806905f07f46f4a2e81dab94ed9d51c0a86138522e7df43",
+    "mixed/windows.csv": "aa720a7bce1cedf4a07c43d3e291166705706a5955dcfc406b2c9c56be2ea243",
+    "sketch/input.json": "d80cb76841f431752c217e4aac46b313ebd75636675b08443b0a13465b9f5710",
+    "sketch/result.json": "b71fc267bd136e0eb90b6426e5143898c96cf5c8d53de96e813259ef85637f61",
+    "sketch/rust-output.json": "0f2c7d9a5e6bb1098612add10ef20a3e6dfad95cdb3c62340a5ad7d3c57f1d03",
+    "test-evidence.json": "8d89efe7dc857beb383a22089eb60df0d39bc61c91e8be389f4aa496600a6dbc"
+  },
+  "schema": "opentsx.rust-b4-qualification-manifest.v1",
+  "sourceCommit": "e9d9a80c413bf8d6c3858f80fcbc68b2c7f3570a"
+}

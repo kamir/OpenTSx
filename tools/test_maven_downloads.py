@@ -10,6 +10,10 @@ from unittest.mock import patch
 import check_maven_downloads as check
 
 
+FAILURE = ("org.apache.maven.plugin.PluginResolutionException\n"
+           "Cannot access central in offline mode\n")
+
+
 class MavenDownloadCheckTest(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
@@ -21,11 +25,17 @@ class MavenDownloadCheckTest(unittest.TestCase):
             (self.libraries / name).touch()
         self.banner = f"Apache Maven 3.9.8 (revision)\nMaven home: {self.home}\n"
 
+    def outcomes(self):
+        return [subprocess.CompletedProcess([], 0, stdout=self.banner),
+                subprocess.CompletedProcess([], 0), subprocess.CompletedProcess([], 0),
+                subprocess.CompletedProcess([], 1, stdout=FAILURE, stderr="")]
+
     def test_active_distribution_compiles_and_executes_the_actual_transport_checks(self):
         for banner in (self.banner, "\x1b[1m" + self.banner + "\x1b[0m"):
             output = io.StringIO()
-            with self.subTest(banner=banner), patch.object(check.subprocess, "run", return_value=
-                    subprocess.CompletedProcess([], 0, stdout=banner)) as execute, \
+            outcomes = self.outcomes()
+            outcomes[0].stdout = banner
+            with self.subTest(banner=banner), patch.object(check.subprocess, "run", side_effect=outcomes) as execute, \
                     contextlib.redirect_stdout(output):
                 check.verify()
                 self.assertIn("Maven 3.9.8; Maven Resolver 1.9.20", output.getvalue())
@@ -37,7 +47,25 @@ class MavenDownloadCheckTest(unittest.TestCase):
                 self.assertEqual(["java", "-cp"], commands[2][:2])
                 self.assertEqual(os.pathsep.join((commands[1][4], str(self.libraries / "*"))), commands[2][2])
                 self.assertEqual(["MavenDownloadRetryTest", str(check.ROOT / ".mvn/maven.config")], commands[2][3:])
-                self.assertTrue(all(call.kwargs["check"] for call in execute.call_args_list))
+                self.assertTrue(all(call.kwargs["check"] for call in execute.call_args_list[:3]))
+                self.assertEqual("mvn", commands[3][0])
+                self.assertIn("--offline", commands[3])
+                self.assertIn("--settings", commands[3])
+                self.assertIn("--global-settings", commands[3])
+                self.assertIn("org.opentsx.test:missing-plugin:1.0.0:missing", commands[3])
+                self.assertIn("Maven failure diagnostics passed", output.getvalue())
+
+    def test_offline_failure_requires_the_exception_reason_and_a_failed_exit(self):
+        for code, output in ((0, FAILURE), (2, FAILURE), (1, ""),
+                             (1, FAILURE.splitlines()[0]), (1, FAILURE.splitlines()[1])):
+            outcomes = self.outcomes()
+            outcomes[-1] = subprocess.CompletedProcess([], code, stdout=output, stderr="")
+            with self.subTest(code=code, output=output), \
+                    patch.object(check.subprocess, "run", side_effect=outcomes) as execute, \
+                    contextlib.redirect_stdout(io.StringIO()):
+                with self.assertRaisesRegex(ValueError, "offline cause"):
+                    check.verify()
+                self.assertEqual(4, execute.call_count)
 
     def test_unknown_or_different_active_maven_versions_fail_before_compilation(self):
         for banner in ("", self.banner.replace("3.9.8", "3.10.0"),

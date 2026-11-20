@@ -8,3 +8,4 @@
 * [Maintain operator lessons](../user-manual/17-learn-operators.md)
 * [Deliver Wayang orchestration](integration/wayang-unified-plan.md)
 * [Validate shared assignments](integration/wayang-shared-contracts.md)
+* [Inspect bounded mixed Java and Rust federation](integration/wayang-mixed-federation.md)
