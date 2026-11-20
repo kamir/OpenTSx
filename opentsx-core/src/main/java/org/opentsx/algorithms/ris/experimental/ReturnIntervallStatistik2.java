@@ -148,16 +148,7 @@ public class ReturnIntervallStatistik2 {
         }
     }
     
-    double calcAverageOfDist(Vector<Double> rr1) {
-        Vector<Double> intervals = new Vector<Double>();
-        for( int i = 1; i < rr1.size(); i++ ) {
-            intervals.add( rr1.elementAt(i) - rr1.elementAt(i - 1) );
-        }
-        return meanOf( intervals );
-    }
-    
-
-    /** 
+    /**
      *
      * Collects the RIS of many series of a group whose values are not
      * scaled with Rq yet.
@@ -709,11 +700,9 @@ public class ReturnIntervallStatistik2 {
         ReturnIntervallStatistik2 ris1 = new ReturnIntervallStatistik2( 
                m.getLabel() , binning, scale);
                        
-        
-        double rq = ris1.calcAverageOfDist(data1);
-        LOG.debug("mean interval series={} rq={}", m.label, rq);
-        
+
         ris1.addDistData(data1);
+        LOG.debug("mean interval series={} rq={}", m.label, ris1.getRq());
         ris1.calcMessreihen();
 
         ReturnIntervallStatistik2 ris4 = new ReturnIntervallStatistik2( 

@@ -133,6 +133,34 @@ class RISToolTest {
     }
 
     @Test
+    void intervalsLeftOutAreRefusedWhenTheProjectIsNotSet() throws Exception {
+        RISTool.offset = 2.0;
+        RISTool.projekt = null;
+        RISTool ris = new RISTool("noproject", 12, 10);
+        ris.setLofFileNameKey_1("log_0");
+
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> ris.addDistData(new Vector<>(List.of(1.0, 3.0, 4.0))));
+
+        assertEquals("logLineToFile: RISTool.projekt is not set; set RISTool.projekt before writing to the log log_0",
+                e.getMessage());
+    }
+
+    @Test
+    void intervalsLeftOutAreRefusedWhenTheProjectHasNoLogOfTheirKey() throws Exception {
+        RISTool.offset = 2.0;
+        RISTool.projekt = project("nolog");
+        RISTool ris = new RISTool("nolog", 12, 10);
+        ris.setLofFileNameKey_1("missing");
+
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> ris.addDistData(new Vector<>(List.of(1.0, 3.0, 4.0))));
+
+        assertEquals("logLine: " + dir.resolve("nolog") + " has no log named missing; call createLogFile with that name"
+                + " first", e.getMessage());
+    }
+
+    @Test
     void aFailingLogWriteOfFilteredIntervalsKeepsTheResultOfTheCallBefore() throws Exception {
         RISTool.offset = 2.0;
         RISTool.projekt = project("kept");

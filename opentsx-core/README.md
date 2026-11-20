@@ -32,6 +32,8 @@ that logger decides which lines appear. The public `debug` fields of `DFACore`, 
 `verbose` fields of `RISTool`, `ReturnIntervallStatistik2` and `TSPropertyTester` are deprecated and have no effect.
 `bin/opentsx` and `mvn -f opentsx-core/pom.xml exec:java`, which `bin/000_launch_tsa_workbench.sh` runs when Maven is
 on `PATH`, put `slf4j-simple` and `conf/simplelogger.properties` on the class path, so the default level is `info`.
+`mvn -q` sets the JVM system property `org.slf4j.simpleLogger.defaultLogLevel` to `error`, which wins over
+`conf/simplelogger.properties` and hides the INFO and WARN lines; run `exec:java` without `-q` to see them.
 Raise the level of one class with a JVM system property:
 
 ```bash
@@ -380,6 +382,7 @@ Errors stop the call:
 | `RISTool.logFileNames` holds fewer than 8 names | `IllegalStateException`: `add: RISTool.logFileNames has <n> names; set 8 names, one per interval range, before adding <name>, which has <n> intervals` |
 | `RISTool.initRqMIN()` was not called | `IllegalStateException`: `add: RISTool.rqMIN is not set; call RISTool.initRqMIN() before adding <name>, which has <n> intervals` |
 | `RISTool.initRqCollectors()` was not called while `RISTool.offset` is not 0 | `IllegalStateException`: `add: RISTool.debug1 is not set while RISTool.offset is <offset>; call RISTool.initRqCollectors() before adding <name>, which has <n> intervals` |
+| `RISTool.projekt` is not set when `addDistData` leaves out intervals below a `RISTool.offset` that is not 0 | `IllegalStateException`: `logLineToFile: RISTool.projekt is not set; set RISTool.projekt before writing to the log <log>` |
 | `RISTool.projekt` has no log of that name | `IllegalStateException`: `logLine: <folder> has no log named <log>; call createLogFile with that name first` |
 | a log line cannot be written | `UncheckedIOException`: `<log>: cannot write the log line (<cause>)` |
 

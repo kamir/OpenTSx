@@ -288,4 +288,5 @@ rounds end. It prints one line per round on stdout:
 
 The tools log through SLF4J. `mvn exec:java` in this module and the jar of the `SimpleTimeSeriesProducer` profile carry
 slf4j-simple with [`conf/simplelogger.properties`](../conf/simplelogger.properties), so INFO and higher lines go to
-stderr.
+stderr. `mvn -q` sets the JVM system property `org.slf4j.simpleLogger.defaultLogLevel` to `error`, which wins over that
+file and hides the INFO and WARN lines of `mvn exec:java`; run it without `-q` to see them.

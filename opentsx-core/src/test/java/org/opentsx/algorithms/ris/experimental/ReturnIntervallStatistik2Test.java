@@ -138,15 +138,6 @@ class ReturnIntervallStatistik2Test {
     }
 
     @Test
-    void theAverageOfDistIsTheMeanOfTheIntervalsBetweenTheValues() {
-        ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2("average", 12, 10);
-
-        assertEquals(3.0, ris.calcAverageOfDist(times(0.0, 2.0, 5.0, 9.0)));
-        assertEquals(3.0, ris.calcAverageOfDist(times(1.0, 3.0, 6.0, 10.0)));
-        assertTrue(Double.isNaN(ris.calcAverageOfDist(times(4.0))));
-    }
-
-    @Test
     void theMeanOfANaNOrInfiniteValueIsNaN() {
         assertEquals(1.7e308, ReturnIntervallStatistik2.meanOf(times(1.7e308, 1.7e308)));
         assertTrue(Double.isNaN(ReturnIntervallStatistik2.meanOf(times())));
@@ -474,6 +465,30 @@ class ReturnIntervallStatistik2Test {
         assertEquals("addDistData: all is a container; add intervals to a result that is not a container",
                 e.getMessage());
         assertEquals(List.of(), container.dataRaw_InterEventTIMES);
+    }
+
+    @Test
+    void addingARowLogsTheRqOfItsResultAndNotTheMeanOfTheValuesReadAsTimes() throws Exception {
+        TimeSeriesObject series = new TimeSeriesObject();
+        series.setLabel("row");
+        for (double y : new double[] {1.0, 2.0, 6.0}) {
+            series.addValue(y);
+        }
+        ReturnIntervallStatistik2.mrv = new Vector<>();
+        ReturnIntervallStatistik2.mrv2 = new Vector<>();
+        ReturnIntervallStatistik2.mrvB = new Vector<>();
+        ReturnIntervallStatistik2.mrv2B = new Vector<>();
+        try {
+            String log = stderrOf(() -> ReturnIntervallStatistik2.addRow(series));
+
+            assertTrue(log.contains("mean interval series=row rq=3.0"), log);
+            assertFalse(log.contains("mean interval series=row rq=2.5"), log);
+        } finally {
+            ReturnIntervallStatistik2.mrv = null;
+            ReturnIntervallStatistik2.mrv2 = null;
+            ReturnIntervallStatistik2.mrvB = null;
+            ReturnIntervallStatistik2.mrv2B = null;
+        }
     }
 
     @Test

@@ -98,4 +98,6 @@ The helpers stop at the first failure and throw.
 The helpers log through SLF4J under the logger names `org.opentsx.connectors.kafka.*`, one line per event at DEBUG.
 `mvn exec:java` in this module puts slf4j-simple and
 [`conf/simplelogger.properties`](../conf/simplelogger.properties) on the classpath, so INFO and higher lines go to stderr.
+`mvn -q` sets the JVM system property `org.slf4j.simpleLogger.defaultLogLevel` to `error`, which wins over that file
+and hides the INFO and WARN lines; run `mvn exec:java` without `-q` to see them.
 `TopicsUP`, `TopicsDOWN` and `TopicsCHECK` print their results on stdout.

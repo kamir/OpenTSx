@@ -299,17 +299,22 @@ public class RISTool {
     public static HaeufigkeitsZaehler anzRowRAW = new HaeufigkeitsZaehler("length of rows (raw)");
     public static HaeufigkeitsZaehler anzRowsFILTERED = new HaeufigkeitsZaehler("length of rows (filtered, offset="+RISTool.offset+"h)");
 
-    /** 
-     * Adds a vector of return intervals.
-     * 
-     * The intervals are sorted into the bins and scaled with Rq
-     * at once.
-     * 
-     * The existing array is cleared first.
-     * 
-     **/
     int cutOff = 0;
     public int anzFiltered = 0;
+    /**
+     * Adds a vector of return intervals.
+     *
+     * The intervals are sorted into the bins and scaled with Rq
+     * at once.
+     *
+     * The existing array is cleared first.
+     *
+     * @throws IllegalStateException when this result is a container, when an interval is 0 or negative while offset
+     *         is 0, or when intervals are left out and RISTool.projekt is not set or has no log of the name set with
+     *         setLofFileNameKey_1
+     * @throws IllegalArgumentException when an interval is NaN or infinite
+     * @throws UncheckedIOException when the log line of the intervals left out cannot be written
+     **/
     public void addDistData( Vector dists ) throws Exception {
         if ( this.isContainerInstanz ) {
             throw new IllegalStateException("addDistData: " + name + " is a container; add intervals to a result that is not a container");

@@ -1001,6 +1001,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `value.serializer`, `key.deserializer` or `value.deserializer`; each producer and consumer sets its own.
   `DockerImageTest` fails when `ENV_CONTEXT` names a file that is not in `src/main/docker-compose/config/`, and it
   checks every YAML file under `src/main/` for a list entry `- name:` without a value.
+- `opentsx-core`, `opentsx-connectors`, `opentsx-lg`: the READMEs say that `mvn -q` sets the JVM system property
+  `org.slf4j.simpleLogger.defaultLogLevel` to `error`, which wins over `conf/simplelogger.properties` and hides the
+  INFO and WARN lines of `mvn exec:java`; run it without `-q` to see them.
 
 ### Removed
 
@@ -2702,6 +2705,15 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   used to stop with an `AttributeError` traceback. A `mqtt.host` that is not a valid host name, such as
   `broker..test`, gives `<host>:<port>: cannot connect to the MQTT broker (<cause>); start the broker first, for
   example with 02_run_mqtt_broker.sh` instead of a `UnicodeError` traceback.
+- `opentsx-core`: the DEBUG line `mean interval series=<label> rq=<R_q>` of `ReturnIntervallStatistik2.addRow` gives
+  the R_q of the result, the mean of the intervals `addDistData` keeps. It gave the mean of the differences between
+  the values, which `addRow` reads as intervals and not as times. The package-private helper `calcAverageOfDist`,
+  which gave NaN when the difference of two finite values overflowed, is removed.
+- `opentsx-core`: the Javadoc of `RISTool.addDistData` sat on the field `cutOff`. It now sits on the method and names
+  its refusals: `IllegalStateException` for a container, for intervals of 0 or below while `offset` is 0 and for
+  intervals left out while `RISTool.projekt` is not set or has no log of the name set with `setLofFileNameKey_1`,
+  `IllegalArgumentException` for a NaN or infinite interval and `UncheckedIOException` when the log line cannot be
+  written.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
