@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Tests deploy/k3s/20-configure.sh: exit codes 0, 1 and 2, secret keys refused as arguments, --print without Secrets,
 # the generated secrets, the limits and published example values the SaaS backend refuses
-# (opentsx-saas-backend/app/core/config.py), the ConfigMap keys and the form of each value, and a deploy/k3s/.env
-# with an unknown key or a line that is not KEY=VALUE. Also checks that the scripts use no spaced hyphen as a dash,
+# (opentsx-saas-backend/app/core/config.py), the ConfigMap keys, the form of each value and its refusal word for word,
+# a failing kubectl kustomize, and a deploy/k3s/.env with an unknown key or a line that is not KEY=VALUE. Also checks that the scripts use no spaced hyphen as a dash,
 # that docs/, the READMEs and the deploy/k3s scripts put no secret on a command line, and runs the script of the
 # MinIO bucket Job (components/lake-minio/minio.yaml) with a stand-in mc. Writes only into a temporary directory and needs no kubectl and no cluster: a stand-in kubectl renders
 # the Secret for --print. Needs python3 to read the published example values.
@@ -45,6 +45,17 @@ expect() {
   fi
 }
 
+# refused NAME MESSAGE [KEY=VALUE ...] [-- ARG ...]: exit 1 and MESSAGE as a whole line of the output
+refused() {
+  local name="$1" message="$2" rc=0; shift 2
+  configure "$name" "$@" || rc=$?
+  if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/$name.out"; then
+    failed "$name: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/$name.out"
+  else
+    echo "ok   $name"
+  fi
+}
+
 accepted() {
   local name="$1" key="$2" value="$3"
   if ! configure "$name" "$key=$value"; then
@@ -67,8 +78,21 @@ accepted admin-72-bytes SAAS_ADMIN_PASSWORD "$(printf 'ä%.0s' {1..36})"
 expect db-11-characters 1 "SAAS_DB_PASSWORD: shorter than 12 characters; set at least 12 letters and digits" \
   SAAS_DB_PASSWORD=abcdefghijk
 accepted db-12-characters SAAS_DB_PASSWORD abcdefghijkl
-expect secret-16-two-byte-characters 1 "SAAS_SECRET_KEY needs at least 32 characters" \
+refused secret-16-two-byte-characters \
+  "error: SAAS_SECRET_KEY: shorter than 32 characters; generate a random key of at least 32 characters" \
   SAAS_SECRET_KEY="$(printf 'ä%.0s' {1..16})"
+refused db-not-letters-and-digits \
+  "error: SAAS_DB_PASSWORD: holds a character that is not a letter or digit; set at least 12 letters and digits" \
+  SAAS_DB_PASSWORD=abcdef-ghijkl
+if grep -qF abcdef-ghijkl "$WORK/db-not-letters-and-digits.out"; then failed "db-not-letters-and-digits: value echoed"; fi
+refused admin-email "error: SAAS_ADMIN_EMAIL: \"admin\" is not an e-mail address; expected <name>@<domain> such as admin@example.com" \
+  -- SAAS_ADMIN_EMAIL=admin
+refused dag-run-role "error: SAAS_DAG_RUN_ROLE: \"admin\" is not a role; expected superuser or user" \
+  -- SAAS_DAG_RUN_ROLE=admin
+refused run-token-short \
+  "error: RETRIEVAL_DAG_RUN_TOKEN: fewer than 24 characters or a character that is not a letter or digit; expected at least 24 letters and digits, or empty to generate one" \
+  RETRIEVAL_DAG_RUN_TOKEN=token-SENTINEL -- RETRIEVAL_SOURCE=kafscale RETRIEVAL_DAG_RUNS=true
+if grep -qF token-SENTINEL "$WORK/run-token-short.out"; then failed "run-token-short: value echoed"; fi
 
 expect help 0 "  2  usage error" -- --help
 expect unknown-key 2 "NOSUCH: unknown key; use a key of deploy/k3s/env.example" -- NOSUCH=1
@@ -117,6 +141,21 @@ elif ! grep -qx 'kind: ConfigMap' "$WORK/print.out" || ! grep -qx 'kind: Service
 else
   echo "ok   print"
 fi
+# kubectl kustomize fails for the overlay, or for its jobs only
+cat > "$WORK/kubectl-fails" <<'EOF'
+#!/usr/bin/env bash
+case "$1" in
+  version) exit 0 ;;
+  kustomize) [[ "$2" == */"$FAILS" ]] && { echo "error: accumulating resources" >&2; exit 1; }; echo "kind: ConfigMap" ;;
+  *) exit 1 ;;
+esac
+EOF
+chmod +x "$WORK/kubectl-fails"
+kubectl="$WORK/kubectl-fails"
+refused kustomize-fails "error: kubectl kustomize $WORK/kustomize-fails/overlays/local: failed; fix the error above, then run 20-configure.sh again" \
+  FAILS=local
+refused kustomize-jobs-fails "error: kubectl kustomize $WORK/kustomize-jobs-fails/overlays/local/jobs: failed; fix the error above, then run 20-configure.sh again" \
+  FAILS=jobs
 kubectl=false
 
 generated() {   # NAME KEY REGEX: the generated value of KEY in .env matches REGEX
@@ -217,10 +256,45 @@ expect schedule-quote 1 "error: DWD_SCHEDULE: \"17 5 * * \"\" holds a character 
   -- 'DWD_SCHEDULE=17 5 * * "'
 expect schedule-semicolon 1 "error: DWD_SCHEDULE: \"17;5 * * * *\" holds a character that is not part of a cron field; expected digits, letters and * / , ? -, such as 17 5 * * *" \
   -- 'DWD_SCHEDULE=17;5 * * * *'
-expect schedule-four-fields 1 "error: DWD_SCHEDULE='17 5 * *': expected 5 cron fields, e.g. '17 5 * * *'" \
+refused schedule-four-fields "error: DWD_SCHEDULE: \"17 5 * *\" has 4 fields; expected 5 cron fields such as 17 5 * * *" \
   -- 'DWD_SCHEDULE=17 5 * *'
 expect allow-origin 1 "error: EVENT_BRIDGE_ALLOW_ORIGIN: \"http://studio.local:8088/\" is not an origin; expected * or <scheme>://<host>[:<port>] such as http://studio.local:8088" \
   -- EVENT_BRIDGE_ALLOW_ORIGIN=http://studio.local:8088/
+refused namespace "error: OPENTSX_NS: \"Open_TSx\" is not a valid namespace name; expected lower-case letters, digits and hyphens, starting and ending with a letter or digit, such as opentsx" \
+  -- OPENTSX_NS=Open_TSx
+refused partitions "error: OPENTSX_PARTITIONS: \"0\" is not allowed; expected a whole number above 0, such as 6" \
+  -- OPENTSX_PARTITIONS=0
+refused bootstrap "error: KAFSCALE_BOOTSTRAP: \"kafscale\" is not a bootstrap list; expected host:port[,host:port...]" \
+  -- KAFSCALE_BOOTSTRAP=kafscale
+refused network "error: KAFSCALE_NETWORK: \"bridge\" is not a network mode; expected direct, hostnetwork or service" \
+  -- KAFSCALE_NETWORK=bridge
+refused bootstrap-loopback "error: KAFSCALE_BOOTSTRAP: \"localhost:9092\" is a loopback address, which pods cannot reach; use the host's LAN IP or KAFSCALE_NETWORK=hostnetwork" \
+  -- KAFSCALE_BOOTSTRAP=localhost:9092
+refused bootstrap-service-list "error: KAFSCALE_BOOTSTRAP: \"10.0.0.5:9092,10.0.0.6:9092\" lists more than one address, which KAFSCALE_NETWORK=service does not support; give one address or use KAFSCALE_NETWORK=direct" \
+  -- KAFSCALE_NETWORK=service KAFSCALE_BOOTSTRAP=10.0.0.5:9092,10.0.0.6:9092
+refused boolean "error: INGRESS: \"maybe\" is not true or false; expected true, false, yes, no, on, off, 1 or 0" \
+  -- INGRESS=maybe
+refused dwd-mode "error: DWD_MODE: \"live\" is not a mode; expected online or offline" -- DWD_MODE=live
+refused retrieval-source "error: RETRIEVAL_SOURCE: \"iceberg\" is not a source; expected demo or kafscale" \
+  -- RETRIEVAL_SOURCE=iceberg
+refused lake-kafscale "error: RETRIEVAL_SOURCE: kafscale does not go with LAKE=true, where the retrieval server reads Iceberg; set RETRIEVAL_SOURCE=demo or LAKE=false" \
+  -- LAKE=true RETRIEVAL_SOURCE=kafscale
+refused dag-runs-demo "error: RETRIEVAL_DAG_RUNS: true needs RETRIEVAL_SOURCE=kafscale, because the runs read and write KafScale; set RETRIEVAL_SOURCE=kafscale or RETRIEVAL_DAG_RUNS=false" \
+  -- RETRIEVAL_DAG_RUNS=true
+refused stations "error: DWD_STATIONS: \"10578 10579\" is not a station list; expected MOSMIX ids separated by commas, such as 10578,10579" \
+  -- 'DWD_STATIONS=10578 10579'
+refused modbus-port "error: MODBUS_PORT: \"70000\" is not a TCP port; expected a whole number from 1 to 65535" \
+  -- MODBUS_PORT=70000
+refused modbus-host "error: MODBUS_HOST: empty value; expected the host of the Modbus TCP server, such as opentsx-modbus-sim" \
+  -- MODBUS_HOST=
+refused modbus-map "error: MODBUS_MAP: empty value; expected example or a path in the image or on a mounted volume" \
+  -- MODBUS_MAP=
+refused s3-endpoint-empty "error: S3_ENDPOINT: empty value; LAKE=true with LAKE_MINIO=false needs the URL of your S3 store, such as http://<host>:<port>" \
+  S3_ACCESS_KEY=access S3_SECRET_KEY=secret -- LAKE=true LAKE_MINIO=false
+refused s3-access-key-empty "error: S3_ACCESS_KEY: empty value; LAKE=true with LAKE_MINIO=false needs the keys of your S3 store, export S3_ACCESS_KEY or put it in deploy/k3s/.env" \
+  S3_SECRET_KEY=secret -- LAKE=true LAKE_MINIO=false S3_ENDPOINT=http://minio:9000
+refused s3-secret-key-empty "error: S3_SECRET_KEY: empty value; LAKE=true with LAKE_MINIO=false needs the keys of your S3 store, export S3_SECRET_KEY or put it in deploy/k3s/.env" \
+  S3_ACCESS_KEY=access -- LAKE=true LAKE_MINIO=false S3_ENDPOINT=http://minio:9000
 if configure values-accepted -- STORAGE_CLASS=local-path OPENTSX_IMAGE_REPO=registry.local:5000/opentsx OPENTSX_TAG=3.0.1_rc.1 \
   OM_URL=http://om.example:8585/api EVENT_BRIDGE_ALLOW_ORIGIN=http://studio.local:8088; then
   if grep -qxF '    newName: registry.local:5000/opentsx/tools' "$WORK/values-accepted/overlays/local/kustomization.yaml" \

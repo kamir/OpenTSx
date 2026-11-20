@@ -324,7 +324,7 @@ hints() {   # step log -> markdown bullet list
   grep -qE 'Cannot connect to the Docker daemon|docker.sock' "$log" 2>/dev/null \
     && h+=("docker daemon not running or not accessible (\`sudo systemctl start docker\`, group \`docker\`)")
   grep -qE 'S3FileIO' "$log" 2>/dev/null && h+=("\`10-build.sh --with-s3\` for the lake profile")
-  grep -qE 'is loopback' "$log" 2>/dev/null && h+=("use the host's LAN IP (\`--local-kafscale\` does this) or \`KAFSCALE_NETWORK=hostnetwork\`")
+  grep -qE 'is (a )?loopback' "$log" 2>/dev/null && h+=("use the host's LAN IP (\`--local-kafscale\` does this) or \`KAFSCALE_NETWORK=hostnetwork\`")
   case "$step" in
     kafscale-local) h+=("check \`docker compose -f docker-compose.kafscale.yml ps\` and \`... logs kafscale-broker\`; a host firewall must allow the pod CIDR to port 9092") ;;
     prereqs) h+=("fix the items marked FAIL in the log; \`--skip-build\` on a node without JDK/Maven") ;;

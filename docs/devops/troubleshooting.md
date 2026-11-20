@@ -98,7 +98,7 @@ lines only.
 | probe: every step after `deploy` is SKIP | a critical step failed; fix it (report) or run with `--keep-going` |
 | probe: `series-stats` FAIL with records 0 | the processor exits with 2 until the topics exist and waits in `CrashLoopBackOff`: `40-demo.sh kafscale-check`, then `kubectl -n opentsx rollout restart deploy/opentsx-stats` and `60-probe.sh --skip-build --only series-stats`; longer wait: `PROBE_STATS_WAIT=600` |
 | probe: `retrieval`/`studio` port-forward failed | local ports 18080/18088 taken: `PROBE_RETRIEVAL_PORT=…`, `PROBE_STUDIO_PORT=…` |
-| `70-backup.sh` / `71-restore.sh`: `helper pod not ready` | tools image not in containerd, or the PVCs are on different nodes (`kubectl -n opentsx describe pod opentsx-backup-helper`) |
+| `70-backup.sh` / `71-restore.sh`: `pod opentsx-backup-helper: not ready after 180 s; …` (or `opentsx-restore-helper`, exit code 1) | tools image not in containerd, or the PVCs are on different nodes (`kubectl -n opentsx describe pod opentsx-backup-helper`) |
 | `71-restore.sh`: `checksum mismatch` | the backup directory was changed or damaged; use another backup |
 
 ## Scripts
@@ -111,7 +111,7 @@ Every script in `deploy/k3s/` exits with 2 on a usage error and with 1 when a ch
 | `no rendered overlay in deploy/k3s/overlays/local; run deploy/k3s/20-configure.sh first` | `20-configure.sh KAFSCALE_BOOTSTRAP=<host:port>` |
 | `cluster not reachable` | `export KUBECONFIG=/etc/rancher/k3s/k3s.yaml` (readable by you) or `20-configure.sh KUBECTL="sudo k3s kubectl"` |
 | `bash >= 4 required` (macOS) | run the scripts on the Linux host, or install a current bash |
-| `20-configure.sh`: `… is loopback` | pods cannot reach `localhost` of the host: use the LAN IP or `KAFSCALE_NETWORK=hostnetwork` |
+| `20-configure.sh`: `KAFSCALE_BOOTSTRAP: "<host>:<port>" is a loopback address, which pods cannot reach; use the host's LAN IP or KAFSCALE_NETWORK=hostnetwork` (exit code 1) | pods cannot reach `localhost` of the host: use the LAN IP or `KAFSCALE_NETWORK=hostnetwork` |
 | any script: `deploy/k3s/.env:<n>: unknown key <KEY>; use a key of deploy/k3s/env.example` (exit code 2) | a misspelled key in `.env`: change it to the key of `env.example` or delete the line; the script left `.env` as it is |
 | any script: `deploy/k3s/.env:<n>: not a KEY=VALUE line; write KEY=VALUE, a comment or an empty line` (exit code 2) | the scripts would run that line as a shell command: write it as `KEY=VALUE` or delete it |
 | `20-configure.sh`: `<KEY>: "<value>" …; expected …` or `<KEY>: the value holds a control character such as a line break; write it on one line` (exit code 1) | set the value in the form named after `expected`; the script wrote nothing |

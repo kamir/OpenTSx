@@ -118,15 +118,10 @@ public final class TwinCli {
                 : line + "; expected a twin plan in YAML such as opentsx-twin/src/main/resources/" + example;
     }
 
-    /** Parses the CSV file a key names; a refusal of its content names the file. */
-    static <T> T csv(Path path, String what, Function<List<String>, T> parse) {
-        return parsed(path, read(path, what, p -> Files.readAllLines(p, StandardCharsets.UTF_8)), parse);
-    }
-
     /**
-     * Parses the CSV file a key names like {@link #csv(Path, String, Function)}, but stops reading at the first data
-     * row over {@code maxRows}, a line after the header that is neither blank nor a comment; {@code parse} refuses
-     * that row. A file of more than {@code maxBytes} bytes is refused once the reader passes them. A blank line reaches
+     * Parses the CSV file a key names; a refusal of its content names the file. Stops reading at the first data row
+     * over {@code maxRows}, a line after the header that is neither blank nor a comment; {@code parse} refuses that
+     * row. A file of more than {@code maxBytes} bytes is refused once the reader passes them. A blank line reaches
      * {@code parse} as {@code ""} and a comment line as {@code "#"}, so that a file of short lines fits the heap.
      */
     static <T> T csv(Path path, String what, int maxRows, long maxBytes, Function<List<String>, T> parse) {

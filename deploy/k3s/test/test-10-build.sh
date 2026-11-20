@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Tests the arguments of deploy/k3s/10-build.sh: an unknown option, an option without its value, a builder that is not
-# one, and an argument exit 2 before Maven or an image builder runs, --help lists the exit codes, and a --tag that
-# differs from OPENTSX_TAG prints a warning. Stand-ins for mvn, java, the builders and deploy/docker/stage.sh record
-# any call; needs no JDK, no builder, no network.
+# one, and an argument exit 2 before Maven or an image builder runs, --help lists the exit codes, a --tag that differs
+# from OPENTSX_TAG prints a warning, and a missing java, mvn or image builder exits 1 with its message. Stand-ins for
+# mvn, java, the builders and deploy/docker/stage.sh record any call; needs no JDK, no builder, no network.
 #
 #   bash deploy/k3s/test/test-10-build.sh
 set -euo pipefail
@@ -69,6 +69,31 @@ if (( rc != 0 )) || ! grep -qxF -- "$message" "$WORK/tag-differs.out"; then
 else
   echo "ok   tag-differs"
 fi
+
+# missing NAME MESSAGE TOOL ...: a PATH with bash, dirname, basename and the stand-ins TOOL ... only; exit 1 with
+# MESSAGE before Maven or an image builder runs
+mkdir -p "$WORK/bare"
+for tool in bash dirname basename; do ln -s "$(command -v "$tool")" "$WORK/bare/$tool"; done
+missing() {
+  local name="$1" message="$2" tool; shift 2
+  rm -rf "$WORK/bare-$name"; mkdir -p "$WORK/bare-$name"
+  for tool in "$@"; do ln -s "$WORK/bin/record" "$WORK/bare-$name/$tool"; done
+  rc=0
+  rm -f "$WORK/calls.log"
+  env -i PATH="$WORK/bare-$name:$WORK/bare" HOME="$WORK" WORK="$WORK" OPENTSX_ENV_FILE="$WORK/none.env" \
+    "$WORK/bare/bash" "$WORK/repo/deploy/k3s/10-build.sh" --skip-maven > "$WORK/$name.out" 2>&1 || rc=$?
+  if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/$name.out"; then
+    failed "$name: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/$name.out"
+  elif grep -qvE '^stage.sh $' "$WORK/calls.log" 2>/dev/null; then
+    failed "$name: a tool other than stage.sh was called: $(cat "$WORK/calls.log")"
+  else
+    echo "ok   $name"
+  fi
+}
+missing no-java "error: java: not found; install a JDK 17 or newer, deploy/k3s/00-prereqs.sh checks the build tools"
+missing no-maven "error: mvn: not found; install Maven, deploy/k3s/00-prereqs.sh checks the build tools" java
+missing no-builder "error: image builder: none of docker, podman, nerdctl or buildah found; install one, or stage only with --no-images" \
+  java mvn
 
 if (( failures )); then echo "$failures failed"; exit 1; fi
 echo "all passed"

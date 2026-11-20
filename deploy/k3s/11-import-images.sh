@@ -23,8 +23,8 @@
 #
 # Exit codes:
 #   0  imported (or nothing to do with the method none)
-#   1  the tool of the method is missing, saving, importing or pushing failed, or the images are not in k3s'
-#      containerd afterwards
+#   1  the tool of the method is missing, kind get clusters fails or does not list the kind cluster, saving,
+#      importing or pushing failed, or the images are not in k3s' containerd afterwards
 #   2  usage error: an unknown option, an option without its value, an argument, a method that is not one of the
 #      list (from --method or IMAGE_METHOD), the method ssh without --ssh or K3S_SSH, the method kind without
 #      --kind-cluster or KIND_CLUSTER, or a line of deploy/k3s/.env that is not a comment or KEY=VALUE with a known key
@@ -56,7 +56,7 @@ if is_true "$SAAS"; then IMAGES+=("$SAAS_FRONTEND_IMAGE" "$SAAS_BACKEND_IMAGE");
 saver() {   # first available of docker/podman
   if have docker && docker info >/dev/null 2>&1; then echo docker
   elif have podman; then echo podman
-  else die "neither a running docker nor podman found to save the images"; fi
+  else die "docker, podman: no running docker and no podman found; start docker or install podman to save the images"; fi
 }
 local_ctr() {
   have k3s || die "k3s: not found on this host; use --method ssh --ssh user@k3s-host or --method registry"
@@ -93,7 +93,12 @@ case "$METHOD" in
   kind)
     [[ -n "$KIND_CLUSTER" ]] || usage_error "--kind-cluster: missing; the method kind needs --kind-cluster <name> or KIND_CLUSTER (kind get clusters lists them)"
     have kind || die "kind: not found; install kind, or use --method ssh or --method registry for a remote k3s"
-    kind get clusters 2>/dev/null | grep -qxF "$KIND_CLUSTER" \
+    kind_err="$(mktemp)"; trap 'rm -f "$kind_err"' EXIT
+    if ! clusters="$(kind get clusters 2> "$kind_err")"; then
+      reason="$(tr -s '\n' ' ' < "$kind_err")"; reason="${reason% }"
+      die "kind get clusters: failed (${reason:-no error output}); start docker or check the kind installation"
+    fi
+    grep -qxF "$KIND_CLUSTER" <<< "$clusters" \
       || die "kind cluster $KIND_CLUSTER: not found; list the clusters with kind get clusters"
     info "loading ${IMAGES[*]} into kind cluster $KIND_CLUSTER (kind load docker-image)"
     kind load docker-image "${IMAGES[@]}" --name "$KIND_CLUSTER"
@@ -110,5 +115,6 @@ case "$METHOD" in
 esac
 
 info "images in k3s containerd:"
-as_root k3s ctr images ls -q | grep -F -e "${TOOLS_IMAGE##*/}" -e "${STUDIO_IMAGE##*/}" || die "images not found in k3s containerd after import"
+as_root k3s ctr images ls -q | grep -F -e "${TOOLS_IMAGE##*/}" -e "${STUDIO_IMAGE##*/}" \
+  || die "$TOOLS_IMAGE, $STUDIO_IMAGE: not in k3s containerd after the import; check the import output above and sudo k3s ctr images ls"
 echo "next: deploy/k3s/20-configure.sh (if not done) and deploy/k3s/30-deploy.sh"

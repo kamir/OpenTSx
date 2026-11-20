@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Tests deploy/k3s/70-backup.sh and stop_writers of deploy/k3s/lib.sh: a writer whose pods outlive the wait stops the
 # quiesce with exit 1 (and no MANIFEST says quiesced=true), a failed read of a Deployment is not taken as "not
-# deployed", a missing namespace stops the backup with exit 1, and usage errors exit 2. A stand-in kubectl plays the
-# cluster; needs no kubectl, no cluster, no network.
+# deployed", a missing namespace, a backup directory that is not empty, no PVC, a ConfigMap that cannot be read, a
+# failed copy of a PVC and a helper pod that does not get ready stop the backup with exit 1, and usage errors exit 2. A
+# stand-in kubectl plays the cluster; needs no kubectl, no cluster, no network.
 #
 #   bash deploy/k3s/test/test-70-backup.sh
 set -euo pipefail
@@ -17,7 +18,8 @@ mkdir -p "$WORK/bin"
 # CLUSTER=down refuses every call as an unreachable API server does; NAMESPACE=missing answers that the namespace does
 # not exist. PODS=stay: the pods of opentsx-stats outlive the wait; PODS=none: the wait finds no pod (kubectl reports
 # "no matching resources found"); PODS=evicted: an evicted pod (phase Failed) is left, which the ReplicaSet does not
-# delete and a field selector on the phase leaves out.
+# delete and a field selector on the phase leaves out. EXEC=fails: the copy in the helper pod fails; CONFIGMAP=fails: the
+# ConfigMap cannot be read; READY=never: the helper pod does not get ready.
 cat > "$WORK/bin/kubectl" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "$WORK/calls.log"
@@ -28,7 +30,7 @@ fi
 case "$*" in
   "get namespace "*)
     [[ "${NAMESPACE:-}" != missing ]] || { echo "Error from server (NotFound): namespaces \"$3\" not found" >&2; exit 1; } ;;
-  "get pvc opentsx-stats-state") exit 0 ;;
+  "get pvc opentsx-stats-state") [[ "${STATS_PVC:-}" != missing ]] || { echo "Error from server (NotFound): persistentvolumeclaims \"$3\" not found" >&2; exit 1; } ;;
   "get pvc "*) echo "Error from server (NotFound): persistentvolumeclaims \"$3\" not found" >&2; exit 1 ;;
   "get deployment opentsx-stats "*) echo 1 ;;
   "get deployment "*)
@@ -52,9 +54,14 @@ case "$*" in
     exit 0 ;;
   "delete pod "*) exit 0 ;;
   "apply -f -") cat > /dev/null ;;
-  "wait --for=condition=Ready "*) exit 0 ;;
-  "exec "*) printf '' | gzip ;;
-  "get configmap "*) printf 'apiVersion: v1\nkind: ConfigMap\n' ;;
+  "wait --for=condition=Ready "*)
+    [[ "${READY:-}" != never ]] || { echo "error: timed out waiting for the condition on pods/opentsx-backup-helper" >&2; exit 1; } ;;
+  "exec "*)
+    [[ "${EXEC:-}" != fails ]] || { echo "error: unable to upgrade connection: container not found (\"helper\")" >&2; exit 1; }
+    printf '' | gzip ;;
+  "get configmap "*)
+    [[ "${CONFIGMAP:-}" != fails ]] || { echo "error: You must be logged in to the server (Unauthorized)" >&2; exit 1; }
+    printf 'apiVersion: v1\nkind: ConfigMap\n' ;;
   *) echo "kubectl stand-in: unexpected call: $*" >&2; exit 1 ;;
 esac
 EOF
@@ -142,6 +149,31 @@ elif [[ -e "$WORK/backup-no-namespace" ]]; then
 else
   echo "ok   backup-no-namespace"
 fi
+
+# stopped NAME MESSAGE [KEY=VALUE ...] -- ARG ...: exit 1 with MESSAGE and no MANIFEST in the backup directory
+stopped() {
+  local name="$1" message="$2"; shift 2
+  backup "$name" "$@"
+  if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/$name.out"; then
+    failed "$name: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/$name.out"
+  elif [[ -e "$WORK/$name/MANIFEST" ]]; then
+    failed "$name: MANIFEST written"
+  else
+    echo "ok   $name"
+  fi
+}
+mkdir -p "$WORK/backup-not-empty"
+touch "$WORK/backup-not-empty/env"
+stopped backup-not-empty "error: $WORK/backup-not-empty: exists and is not empty; give a new or empty directory with --out" \
+  -- --out "$WORK/backup-not-empty"
+stopped backup-no-pvc "error: namespace opentsx: no OpenTSx PVC found; nothing to back up" \
+  STATS_PVC=missing -- --out "$WORK/backup-no-pvc"
+stopped backup-exec-fails "error: PVC opentsx-stats-state: the backup into stats-state.tar.gz failed; see the error above, then run 70-backup.sh again" \
+  EXEC=fails -- --out "$WORK/backup-exec-fails"
+stopped backup-configmap-fails "error: ConfigMap opentsx-config: cannot read it in namespace opentsx; see the error above, then run 70-backup.sh again" \
+  CONFIGMAP=fails -- --out "$WORK/backup-configmap-fails"
+stopped backup-helper-not-ready "error: pod opentsx-backup-helper: not ready after 180 s; check that the image opentsx/tools:0.0.0-test is imported and that the PVCs are on one node, see $WORK/bin/kubectl -n opentsx describe pod opentsx-backup-helper" \
+  OPENTSX_TAG=0.0.0-test READY=never -- --out "$WORK/backup-helper-not-ready"
 
 # expect NAME MESSAGE ARG ...: a usage error, exit 2, before kubectl runs
 expect() {

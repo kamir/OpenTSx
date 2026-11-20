@@ -55,7 +55,8 @@ if is_true "$LAKE" && ! $WITH_S3; then
   warn "LAKE=true but --with-s3 not given: windpark-sim/retrieval cannot open an s3:// warehouse without S3FileIO"
 fi
 
-{ have java && have mvn; } || die "JDK 17+ and Maven are required (see 00-prereqs.sh)"
+have java || die "java: not found; install a JDK 17 or newer, deploy/k3s/00-prereqs.sh checks the build tools"
+have mvn || die "mvn: not found; install Maven, deploy/k3s/00-prereqs.sh checks the build tools"
 if $MAVEN; then
   info "mvn install -DskipTests (all modules)"
   (cd "$ROOT" && mvn -q -B install -DskipTests)
@@ -71,7 +72,8 @@ $IMAGES || { info "done (no images built)"; exit 0; }
 if [[ -z "$BUILDER" ]]; then
   for b in docker podman nerdctl buildah; do have "$b" && { BUILDER="$b"; break; }; done
 fi
-[[ -n "$BUILDER" ]] || die "no image builder found (docker, podman, nerdctl or buildah)"
+[[ -n "$BUILDER" ]] \
+  || die "image builder: none of docker, podman, nerdctl or buildah found; install one, or stage only with --no-images"
 
 build() {   # dockerfile image [context]
   local file="$1" image="$2" CTX="${3:-$CTX}"
@@ -88,7 +90,7 @@ build() {   # dockerfile image [context]
       local -a n; read -r -a n <<< "${NERDCTL:-nerdctl}"
       "${n[@]}" build ${OPENTSX_PLATFORM:+--platform "$OPENTSX_PLATFORM"} -f "$file" -t "$image" "$CTX" ;;
     buildah) buildah bud ${OPENTSX_PLATFORM:+--platform "$OPENTSX_PLATFORM"} -f "$file" -t "$image" "$CTX" ;;
-    *) die "unsupported builder $BUILDER" ;;
+    *) die "--builder: \"$BUILDER\" is not a builder; expected docker, podman, nerdctl or buildah" ;;
   esac
 }
 build "$ROOT/deploy/docker/opentsx-tools.Dockerfile" "$TOOLS_IMAGE"

@@ -2,9 +2,10 @@
 # Tests the arguments of deploy/k3s/11-import-images.sh: an unknown option, an option without its value, an argument,
 # a method that is not one (from --method or IMAGE_METHOD) and the methods ssh and kind without their target exit 2
 # before an image is saved or imported, --help lists the exit codes, the method registry with a repository without a
-# registry host exits 1 before an image is pushed, the tool of a method that is not installed and a kind cluster that
-# does not exist exit 1 before an image is saved, and the method none imports nothing. Stand-ins for docker, podman,
-# k3s, ssh and kind record any call; needs no image, no cluster, no network.
+# registry host exits 1 before an image is pushed, the tool of a method that is not installed, a kind cluster that
+# does not exist, a failing kind get clusters and the methods ssh and registry without docker or podman exit 1 before
+# an image is saved, images that k3s' containerd does not list after the import exit 1, and the method none imports
+# nothing. Stand-ins for docker, podman, k3s, ssh and kind record any call; needs no image, no cluster, no network.
 #
 #   bash deploy/k3s/test/test-11-import-images.sh
 set -euo pipefail
@@ -103,6 +104,54 @@ elif [[ "$(cat "$WORK/calls.log")" != "kind get clusters" ]]; then
   failed "kind-cluster-missing: expected only the call kind get clusters: $(cat "$WORK/calls.log")"
 else
   echo "ok   kind-cluster-missing"
+fi
+
+# a kind whose call fails, as it does when docker is stopped
+mkdir -p "$WORK/kind-fails"
+cat > "$WORK/kind-fails/kind" <<'STUB'
+#!/usr/bin/env bash
+printf '%s %s\n' "$(basename "$0")" "$*" >> "$WORK/calls.log"
+printf 'ERROR: failed to list clusters\nCannot connect to the Docker daemon\n' >&2
+exit 1
+STUB
+chmod +x "$WORK/kind-fails/kind"
+rc=0
+rm -f "$WORK/calls.log"
+env -i PATH="$WORK/kind-fails:$WORK/bin:$PATH" HOME="$WORK" WORK="$WORK" OPENTSX_ENV_FILE="$WORK/none.env" \
+  bash "$K3S_DIR/11-import-images.sh" --method kind --kind-cluster lab > "$WORK/kind-fails.out" 2>&1 || rc=$?
+message="error: kind get clusters: failed (ERROR: failed to list clusters Cannot connect to the Docker daemon); start docker or check the kind installation"
+if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/kind-fails.out"; then
+  failed "kind-fails: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/kind-fails.out"
+elif [[ "$(cat "$WORK/calls.log")" != "kind get clusters" ]]; then
+  failed "kind-fails: expected only the call kind get clusters: $(cat "$WORK/calls.log")"
+else
+  echo "ok   kind-fails"
+fi
+
+# the methods ssh and registry save with docker or podman; neither is on the PATH
+for method in ssh registry; do
+  rc=0
+  rm -f "$WORK/calls.log"
+  env -i PATH="$WORK/bare" HOME="$WORK" WORK="$WORK" OPENTSX_ENV_FILE="$WORK/none.env" K3S_SSH=pi@k3s-node \
+    OPENTSX_IMAGE_REPO=registry.lan:5000/opentsx \
+    "$WORK/bare/bash" "$K3S_DIR/11-import-images.sh" --method "$method" > "$WORK/$method-no-saver.out" 2>&1 || rc=$?
+  message="error: docker, podman: no running docker and no podman found; start docker or install podman to save the images"
+  if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/$method-no-saver.out"; then
+    failed "$method-no-saver: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/$method-no-saver.out"
+  elif [[ -s "$WORK/calls.log" ]]; then
+    failed "$method-no-saver: a tool was called: $(cat "$WORK/calls.log")"
+  else
+    echo "ok   $method-no-saver"
+  fi
+done
+
+# the stand-in k3s lists no image after the import
+import images-missing -- --method docker
+message="error: opentsx/tools:3.0.1-local, opentsx/studio:3.0.1-local: not in k3s containerd after the import; check the import output above and sudo k3s ctr images ls"
+if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/images-missing.out"; then
+  failed "images-missing: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/images-missing.out"
+else
+  echo "ok   images-missing"
 fi
 
 import method-none -- --method none

@@ -47,7 +47,8 @@ done
 load_env
 kc get namespace "$OPENTSX_NS" >/dev/null 2>&1 || die "namespace $OPENTSX_NS: not found; nothing to back up"
 OUT="${OUT:-$PWD/opentsx-backup-$(date -u +%Y%m%dT%H%M%SZ)}"
-[[ ! -e "$OUT" || -z "$(ls -A "$OUT" 2>/dev/null)" ]] || die "$OUT exists and is not empty"
+[[ ! -e "$OUT" || -z "$(ls -A "$OUT" 2>/dev/null)" ]] \
+  || die "$OUT: exists and is not empty; give a new or empty directory with --out"
 umask 077
 mkdir -p "$OUT"
 
@@ -60,7 +61,7 @@ for p in opentsx-stats-state opentsx-data opentsx-iceberg-catalog opentsx-minio;
   [[ -n "${ARCHIVE[$p]:-}" ]] || continue
   kns get pvc "$p" >/dev/null 2>&1 && PVCS+=("$p")
 done
-(( ${#PVCS[@]} )) || die "no OpenTSx PVCs found in $OPENTSX_NS"
+(( ${#PVCS[@]} )) || die "namespace $OPENTSX_NS: no OpenTSx PVC found; nothing to back up"
 
 HELPER=opentsx-backup-helper
 finish() { kns delete pod "$HELPER" --ignore-not-found --wait=false >/dev/null 2>&1 || true; start_writers; }
@@ -78,7 +79,9 @@ helper_pod "$HELPER" ro "${PVCS[@]}"
 info "configuration"
 if [[ -f "$ENV_FILE" ]]; then cp "$ENV_FILE" "$OUT/env"; ok "env (contains secrets; keep $OUT private)"
 else warn "$ENV_FILE not found; configuration not backed up"; fi
-kns get configmap opentsx-config -o yaml > "$OUT/opentsx-config.yaml" && ok "opentsx-config.yaml"
+kns get configmap opentsx-config -o yaml > "$OUT/opentsx-config.yaml" \
+  || die "ConfigMap opentsx-config: cannot read it in namespace $OPENTSX_NS; see the error above, then run 70-backup.sh again"
+ok "opentsx-config.yaml"
 
 info "volumes"
 for p in "${PVCS[@]}"; do
@@ -86,7 +89,7 @@ for p in "${PVCS[@]}"; do
   if kns exec "$HELPER" -- tar czf - --numeric-owner -C "/backup/$p" . > "$f" && gzip -t "$f"; then
     ok "${ARCHIVE[$p]}.tar.gz ($(du -h "$f" | cut -f1)) from PVC $p"
   else
-    die "backup of PVC $p failed"
+    die "PVC $p: the backup into ${ARCHIVE[$p]}.tar.gz failed; see the error above, then run 70-backup.sh again"
   fi
 done
 

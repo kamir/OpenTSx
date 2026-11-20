@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Tests the usage errors of deploy/k3s/60-probe.sh: each exits 2 with its message before any step runs, --help
-# documents the exit codes, the port-forward of the retrieval step ends when the step gives up, and the deploy step
-# runs kafscale-check and 30-deploy.sh --restart when a Deployment is not ready. Needs no kubectl, no cluster and no
-# network: stand-ins for kubectl, curl, sleep, 30-deploy.sh and 40-demo.sh take their place.
+# documents the exit codes, a configure step refused for a loopback bootstrap gets the LAN IP hint in the report, the
+# port-forward of the retrieval step ends when the step gives up, and the deploy step runs kafscale-check and
+# 30-deploy.sh --restart when a Deployment is not ready. Needs no kubectl, no cluster and no network: stand-ins for
+# kubectl, curl, sleep, 30-deploy.sh and 40-demo.sh take their place.
 #
 #   bash deploy/k3s/test/test-60-probe.sh
 set -euo pipefail
@@ -50,6 +51,20 @@ if (( rc != 0 )) || ! grep -qF "  2  usage error" "$WORK/help.out"; then
   failed "help: exit $rc, expected 0 and the exit code 2 in the usage"; sed 's/^/    /' "$WORK/help.out"
 else
   echo "ok   help"
+fi
+
+# configure with a loopback bootstrap: 20-configure.sh refuses it, and the report gives the hint as a bullet; the
+# copied log line names the LAN IP as well, so only the whole bullet line proves the hint
+mkdir -p "$WORK/loop"
+printf 'KAFSCALE_BOOTSTRAP=localhost:9092\n' > "$WORK/loop.env"
+rc=0
+(cd "$WORK/loop" && env -i PATH="$PATH" HOME="$WORK" KUBECTL=false OPENTSX_ENV_FILE="$WORK/loop.env" \
+  bash "$K3S_DIR/60-probe.sh" --only configure --skip-build --report "$WORK/loop.md") > "$WORK/loop.out" 2>&1 || rc=$?
+hint="* use the host's LAN IP (\`--local-kafscale\` does this) or \`KAFSCALE_NETWORK=hostnetwork\`"
+if (( rc != 1 )) || ! grep -qxF -- "$hint" "$WORK/loop.md"; then
+  failed "configure-loopback-hint: exit $rc, expected 1 and the line: $hint"; sed 's/^/    /' "$WORK/loop.md"
+else
+  echo "ok   configure-loopback-hint"
 fi
 
 # retrieval: curl gets no answer, so the step gives up; the stand-in port-forward holds the write end of a fifo until

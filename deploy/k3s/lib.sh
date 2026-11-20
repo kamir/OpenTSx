@@ -138,7 +138,7 @@ EOF
     for p in "$@"; do printf '    - {name: %s, persistentVolumeClaim: {claimName: %s, readOnly: %s}}\n' "$p" "$p" "$ro"; done
   } | kc apply -f - >/dev/null
   kns wait --for=condition=Ready "pod/$name" --timeout=180s >/dev/null \
-    || die "helper pod not ready (image $TOOLS_IMAGE imported? PVCs on different nodes?); see ${KUBECTL} -n $OPENTSX_NS describe pod $name"
+    || die "pod $name: not ready after 180 s; check that the image $TOOLS_IMAGE is imported and that the PVCs are on one node, see ${KUBECTL} -n $OPENTSX_NS describe pod $name"
 }
 
 # stop_writers, start_writers: scale opentsx-stats, opentsx-iceberg-rest and opentsx-minio to 0 (remembering their

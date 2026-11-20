@@ -48,6 +48,14 @@ public final class HouseDemo {
     static final String BILLS = "opentsx.house.bills";
     static final String WEATHER = "opentsx.house.weather";
     static final String HDD_REF_KEY = "opentsx.house.hddRef";
+    /** The most data rows of a bills file: ten bills a month over the longest span of the bills, 10 years. */
+    static final int BILL_ROWS = 1200;
+    /** The most bytes of a bills file: 1 MiB, room for {@link #BILL_ROWS} rows of 873 bytes. */
+    static final long BILL_BYTES = 1024 * 1024;
+    /** The most data rows of a temperatures file: one row per step of the longest house plan. */
+    static final int TEMPERATURE_ROWS = TwinPlan.MAX_STEPS;
+    /** The most bytes of a temperatures file: 16 MiB, room for {@link #TEMPERATURE_ROWS} rows of 191 bytes. */
+    static final long TEMPERATURE_BYTES = 16L * 1024 * 1024;
     /** The atom types the reference run, the levers, the KPIs and the calibration look up. */
     static final List<String> ATOM_TYPES = List.of("building", "weather", "oil-boiler", "oil-tank", "wood-stove",
             "wood-store", "dhw", "appliances", "meter");
@@ -130,15 +138,29 @@ public final class HouseDemo {
                 return o -> simulated(o, plan, bundled, hddRef);
             }
             List<BillCalibration.Bill> rows = bills == null ? null
-                    : TwinCli.csv(bills, "bills file", lines -> BillCalibration.checkSteps(BillCalibration.parse(lines),
-                            plan));
+                    : TwinCli.csv(bills, "bills file", BILL_ROWS, BILL_BYTES, lines -> BillCalibration.checkSteps(
+                            BillCalibration.parse(atMost(lines, BILL_ROWS, "ten bills a month for 10 years")), plan));
             Path temperatures = conf.getOption(WEATHER).map(Path::of).orElse(null);
             String weatherAtom = HouseScenario.id(plan, "weather");
             SeriesInputs weather = temperatures == null ? new SeriesInputs()
-                    : TwinCli.csv(temperatures, "temperatures file",
-                            lines -> BillCalibration.dailyTemperatures(lines, weatherAtom, 5.0));
+                    : TwinCli.csv(temperatures, "temperatures file", TEMPERATURE_ROWS, TEMPERATURE_BYTES,
+                            lines -> BillCalibration.dailyTemperatures(atMost(lines, TEMPERATURE_ROWS,
+                                    "one row per step of the longest house plan"), weatherAtom, 5.0));
             return o -> print(o, plan, bills, rows, weather, hddRef);
         });
+    }
+
+    /** {@code lines} of a CSV file with a header line, refused at the first data row over {@code maxRows}. */
+    private static List<String> atMost(List<String> lines, int maxRows, String example) {
+        int row = -1;
+        for (int i = 0; i < lines.size(); i++) {
+            String l = lines.get(i).strip();
+            if (!l.isEmpty() && !l.startsWith("#") && ++row > maxRows) {
+                throw new IllegalArgumentException("line " + (i + 1) + ": more than " + maxRows
+                        + " data rows; expected at most " + maxRows + " rows, such as " + example);
+            }
+        }
+        return lines;
     }
 
     private static void simulated(PrintStream out, TwinPlan plan, List<BillCalibration.Bill> bills, double hddRef) {

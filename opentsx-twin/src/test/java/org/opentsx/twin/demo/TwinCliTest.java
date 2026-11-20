@@ -43,6 +43,7 @@ class TwinCliTest {
     }
 
     static final String H2_ALLOWED = "expected a twin plan in YAML such as opentsx-twin/src/main/resources/twin/h2-chain.yaml";
+    static final byte[] NOT_UTF8 = {'x', (byte) 0xFF, '\n'};
 
     @TempDir
     Path tmp;
@@ -404,6 +405,73 @@ class TwinCliTest {
         Path good = Files.write(tmp.resolve("good.csv"), resource("twin/beispiel/haus-abrechnungen-simuliert.csv"));
         Path temps = Files.writeString(tmp.resolve("temps.csv"), "# temperatures\ndatum,t_mittel_c\n2024-01-01\n");
         assertEquals(new Result(2, "", "opentsx: " + temps + ": line 3: no temperature; expected date,t_mean_c\n"),
+                run(HouseDemo::run, "--calibrate", good.toString(), "--weather", temps.toString()));
+    }
+
+    /** A header, {@code rows} copies of {@code row}, then {@code tail}. */
+    private Path rows(String name, String header, String row, int rows, byte[] tail) throws IOException {
+        Path file = tmp.resolve(name);
+        try (OutputStream o = new BufferedOutputStream(Files.newOutputStream(file))) {
+            o.write(header.getBytes(StandardCharsets.US_ASCII));
+            byte[] bytes = row.getBytes(StandardCharsets.US_ASCII);
+            for (int i = 0; i < rows; i++) {
+                o.write(bytes);
+            }
+            o.write(tail);
+        }
+        return file;
+    }
+
+    /** {@code text}, padded with NUL bytes to {@code size} bytes, the last of them not UTF-8. */
+    private Path sized(String name, String text, long size) throws IOException {
+        Path file = Files.writeString(tmp.resolve(name), text);
+        try (RandomAccessFile f = new RandomAccessFile(file.toFile(), "rw")) {
+            f.setLength(size);
+            f.seek(size - 1);
+            f.write(0xFF);
+        }
+        return file;
+    }
+
+    @Test
+    void theBillsFileIsReadOnlyUpToTheFirstRowOverTheBound() throws IOException {
+        String header = "# bills\nperiod_from,period_to,electricity_kwh\n";
+        String row = "2024-01-01,2024-01-31,300\n";
+        Path atTheBound = rows("bills1200.csv", header, row, 1199,
+                "2024-02-01,\n".getBytes(StandardCharsets.US_ASCII));
+        assertEquals(new Result(2, "", "opentsx: " + atTheBound + ": line 1202: date missing\n"),
+                run(HouseDemo::run, "--calibrate", atTheBound.toString()));
+        // 5000 rows after the first row over the bound: beyond what the reader buffers ahead
+        Path over = rows("bills.csv", header, row, 6201, NOT_UTF8);
+        assertEquals(new Result(2, "", "opentsx: " + over + ": line 1203: more than 1200 data rows; expected at most "
+                + "1200 rows, such as ten bills a month for 10 years\n"),
+                run(HouseDemo::run, "--calibrate", over.toString()));
+    }
+
+    @Test
+    void theTemperaturesFileIsReadOnlyUpToTheFirstRowOverTheBound() throws IOException {
+        Path good = Files.write(tmp.resolve("good.csv"), resource("twin/beispiel/haus-abrechnungen-simuliert.csv"));
+        Path atTheBound = rows("t87673.csv", "date,t_mean_c\n", "2024-01-01,3.5\n", 87672,
+                "2024-01-02\n".getBytes(StandardCharsets.US_ASCII));
+        assertEquals(new Result(2, "", "opentsx: " + atTheBound + ": line 87674: no temperature; expected "
+                + "date,t_mean_c\n"),
+                run(HouseDemo::run, "--calibrate", good.toString(), "--weather", atTheBound.toString()));
+        Path over = rows("temps.csv", "date,t_mean_c\n", "2024-01-01,3.5\n", 92674, NOT_UTF8);
+        assertEquals(new Result(2, "", "opentsx: " + over + ": line 87675: more than 87673 data rows; expected at most "
+                + "87673 rows, such as one row per step of the longest house plan\n"),
+                run(HouseDemo::run, "--calibrate", good.toString(), "--weather", over.toString()));
+    }
+
+    @Test
+    void houseRefusesABillsFileOf1MiBAndOneByteAndATemperaturesFileOf16MiBAndOneByte() throws IOException {
+        Path bills = sized("bills.csv", "period_from,period_to\n2024-01-01,2024-01-31\n", 1024 * 1024 + 1);
+        assertEquals(new Result(2, "", "opentsx: " + bills + ": more than 1048576 bytes; expected a file of at most "
+                + "1048576 bytes\n"), run(HouseDemo::run, "--calibrate", bills.toString()));
+
+        Path good = Files.write(tmp.resolve("good.csv"), resource("twin/beispiel/haus-abrechnungen-simuliert.csv"));
+        Path temps = sized("temps.csv", "date,t_mean_c\n2024-01-01,3.5\n", 16L * 1024 * 1024 + 1);
+        assertEquals(new Result(2, "", "opentsx: " + temps + ": more than 16777216 bytes; expected a file of at most "
+                + "16777216 bytes\n"),
                 run(HouseDemo::run, "--calibrate", good.toString(), "--weather", temps.toString()));
     }
 

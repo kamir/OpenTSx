@@ -54,20 +54,25 @@ info "checking $DIR against its MANIFEST"
 while read -r key size name; do
   [[ "$key" == file=* ]] || continue
   sum="${key#file=}"
-  [[ -f "$DIR/$name" ]] || die "$name listed in MANIFEST but missing"
+  [[ -f "$DIR/$name" ]] || die "$name: listed in MANIFEST but missing; the backup is incomplete, use another backup"
   [[ "$(sha256sum "$DIR/$name" | cut -d' ' -f1)" == "$sum" ]] || die "$name: checksum mismatch; the backup is damaged, use another backup"
-  [[ "$name" == *.tar.gz ]] && { gzip -t "$DIR/$name" || die "$name: not a valid gzip archive"; }
+  [[ "$name" == *.tar.gz ]] \
+    && { gzip -t "$DIR/$name" || die "$name: not a valid gzip archive; the backup is damaged, use another backup"; }
   ok "$name ($size bytes)"
 done < "$DIR/MANIFEST"
-grep -E '^(created|namespace|image|git)=' "$DIR/MANIFEST" | sed 's/^/  /'
+sed -n -E 's/^(created|namespace|image|git)=/  &/p' "$DIR/MANIFEST"
 
 PARTS=()
 for part in stats-state data iceberg-catalog minio; do
   want "$part" && [[ -f "$DIR/$part.tar.gz" ]] && PARTS+=("$part")
 done
 RESTORE_ENV=false
-if want env; then [[ -f "$DIR/env" ]] || die "$DIR/env not found"; RESTORE_ENV=true; fi
-(( ${#PARTS[@]} )) || $RESTORE_ENV || die "nothing to restore (see the file list in $DIR/MANIFEST)"
+if want env; then
+  [[ -f "$DIR/env" ]] || die "$DIR/env: not found; the backup holds no configuration, leave env out of --only"
+  RESTORE_ENV=true
+fi
+(( ${#PARTS[@]} )) || $RESTORE_ENV \
+  || die "$DIR: nothing to restore; the backup holds none of the parts asked for, see the file list in $DIR/MANIFEST"
 
 if ! $YES; then
   echo "This REPLACES the content of: ${PARTS[*]:-(no volumes)}$($RESTORE_ENV && echo " and deploy/k3s/.env") in namespace $OPENTSX_NS."
@@ -76,7 +81,11 @@ if ! $YES; then
 fi
 
 if $RESTORE_ENV; then
-  [[ -f "$ENV_FILE" ]] && cp -p "$ENV_FILE" "$ENV_FILE.before-restore" && warn "previous .env kept as $ENV_FILE.before-restore"
+  if [[ -f "$ENV_FILE" ]]; then
+    cp -p "$ENV_FILE" "$ENV_FILE.before-restore" \
+      || die "$ENV_FILE.before-restore: cannot keep the current .env there; see the error above, nothing was restored"
+    warn "previous .env kept as $ENV_FILE.before-restore"
+  fi
   (umask 077; cp "$DIR/env" "$ENV_FILE"); chmod 600 "$ENV_FILE"
   ok "deploy/k3s/.env: restored; run 20-configure.sh (re-renders the overlay) and 30-deploy.sh"
   (( ${#PARTS[@]} )) || exit 0
@@ -86,7 +95,8 @@ fi
 kc get namespace "$OPENTSX_NS" >/dev/null 2>&1 || die "namespace $OPENTSX_NS: not found; run 20-configure.sh and 30-deploy.sh first"
 PVCS=()
 for part in "${PARTS[@]}"; do
-  kns get pvc "${PVC[$part]}" >/dev/null 2>&1 || die "PVC ${PVC[$part]} not found (LAKE profile not configured? run 30-deploy.sh)"
+  kns get pvc "${PVC[$part]}" >/dev/null 2>&1 \
+    || die "PVC ${PVC[$part]}: not found in namespace $OPENTSX_NS; run 30-deploy.sh first (opentsx-iceberg-catalog needs LAKE=true, opentsx-minio LAKE=true and LAKE_MINIO=true)"
   PVCS+=("${PVC[$part]}")
 done
 
@@ -104,8 +114,10 @@ helper_pod "$HELPER" rw "${PVCS[@]}"
 info "restoring"
 for part in "${PARTS[@]}"; do
   p="${PVC[$part]}"
-  kns exec "$HELPER" -- sh -c "find '/backup/$p' -mindepth 1 -delete" || die "could not empty PVC $p"
-  kns exec -i "$HELPER" -- tar xzf - --numeric-owner -C "/backup/$p" < "$DIR/$part.tar.gz" || die "unpacking $part.tar.gz into $p failed"
+  kns exec "$HELPER" -- sh -c "find '/backup/$p' -mindepth 1 -delete" \
+    || die "PVC $p: emptying it failed; see the error above, then run 71-restore.sh again"
+  kns exec -i "$HELPER" -- tar xzf - --numeric-owner -C "/backup/$p" < "$DIR/$part.tar.gz" \
+    || die "PVC $p: unpacking $part.tar.gz failed; see the error above, then run 71-restore.sh again"
   ok "$part.tar.gz -> PVC $p"
 done
 info "restore done (writers are scaled back now); check with deploy/k3s/50-status.sh"

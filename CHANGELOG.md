@@ -877,6 +877,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The statistics processor docs say that a processor that wrote no statistics in the 5 minutes before the broker
   became unreachable may wait up to 60 s for each statistics record instead of the 3-minute delivery timeout, so with
   more than 3 records its stop takes more than 3 minutes and the liveness probe can restart it before.
+- The k3s scripts 10-build.sh, 11-import-images.sh, 20-configure.sh, 70-backup.sh and 71-restore.sh write every
+  remaining refusal in the form '<subject>: <problem>; <what to do>', for example `OPENTSX_NS: "Open_TSx" is not a
+  valid namespace name; expected lower-case letters, digits and hyphens, starting and ending with a letter or digit,
+  such as opentsx`, `java: not found; install a JDK 17 or newer, deploy/k3s/00-prereqs.sh checks the build tools` and
+  `PVC opentsx-data: not found in namespace opentsx; run 30-deploy.sh first (opentsx-iceberg-catalog needs LAKE=true,
+  opentsx-minio LAKE=true and LAKE_MINIO=true)`. 20-configure.sh names the empty key of MODBUS_HOST and MODBUS_MAP and
+  of S3_ACCESS_KEY and S3_SECRET_KEY. Exit codes and accepted values are unchanged.
 
 ### Removed
 
@@ -2100,6 +2107,26 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `opentsx-lg/src/main/docker/core-tool-image/Dockerfile` runs `apt-get update` and `apt-get install -y
   --no-install-recommends` in one `RUN` and removes the package lists, in place of two layers and the deprecated
   `--force-yes`.
+- `deploy/k3s/11-import-images.sh --method kind` reports a failing `kind get clusters`, for example with docker
+  stopped, as `kind get clusters: failed (<its error output>); start docker or check the kind installation` with exit
+  code 1. Before, it reported `kind cluster <name>: not found`.
+- `deploy/k3s/70-backup.sh` stops with exit code 1 and `ConfigMap opentsx-config: cannot read it in namespace
+  <namespace>; see the error above, then run 70-backup.sh again` when kubectl cannot read the ConfigMap. Before, it
+  wrote an empty `opentsx-config.yaml`, recorded it in MANIFEST and exited 0.
+- `deploy/k3s/71-restore.sh --only env` stops with exit code 1 and `<env file>.before-restore: cannot keep the current
+  .env there; see the error above, nothing was restored` when it cannot copy the current `.env` aside. Before, it
+  replaced `.env` without the copy and exited 0.
+- `deploy/k3s/71-restore.sh` restores a backup whose MANIFEST has no `created=`, `namespace=`, `image=` or `git=`
+  line. Before, it stopped after the checksum check with exit code 1 and no message.
+- `house --calibrate` reads the bills file only up to the first data row over 1200 (ten bills a month for 10 years),
+  and `--weather` reads the temperatures file only up to the first data row over 87673 (one per step of the longest
+  house plan). It refuses a bills file of more than 1048576 bytes (1 MiB) and a temperatures file of more than
+  16777216 bytes (16 MiB). Both refusals exit with 2 and use the texts of boat, for example `<file>: line <n>: more
+  than 1200 data rows; expected at most 1200 rows, such as ten bills a month for 10 years`. Before, both files were
+  read into memory in full.
+- `deploy/k3s/70-backup.sh` and `71-restore.sh` stop with `pod <name>: not ready after 180 s; check that the image
+  <image> is imported and that the PVCs are on one node, see <kubectl> -n <namespace> describe pod <name>` when their
+  helper pod does not get ready.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

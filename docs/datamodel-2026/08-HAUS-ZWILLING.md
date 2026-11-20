@@ -259,6 +259,10 @@ The German column names `zeitraum_von`, `zeitraum_bis`, `strom_kwh`, `heizoel_li
 `tank_ende_liter`, `holz_ster`, `kosten_eur` and `notiz` are accepted as aliases. The bills may span at most 3653
 days, and a calibration run over them may take at most 87673 steps of the plan (3653 days of the hourly steps of the
 bundled plan, counted from local midnight to local midnight, with one more clock change in autumn than in spring).
+A bills file has at most 1200 data rows (ten bills a month for 10 years) and 1048576 bytes (1 MiB); a `--weather`
+file has at most 87673 data rows (one per step of the longest house plan) and 16777216 bytes (16 MiB). Every line
+after the header that is neither blank nor a comment counts as a row; blank and comment lines count for the bytes
+only.
 
 Rows may overlap. Typical are annual electricity bills with their own reference date next to oil periods from one
 reading to the next. Separator `,` or `;` (spreadsheet export with a decimal comma).

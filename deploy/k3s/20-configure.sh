@@ -60,38 +60,50 @@ for key in "${!SET[@]}"; do printf -v "$key" '%s' "${SET[$key]}"; done
 for key in "${CONFIG_KEYS[@]}"; do
   [[ "${!key}" != *[[:cntrl:]]* ]] || die "$key: the value holds a control character such as a line break; write it on one line"
 done
-[[ "$OPENTSX_NS" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]] || die "OPENTSX_NS=$OPENTSX_NS is not a valid namespace name"
+[[ "$OPENTSX_NS" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]] \
+  || die "OPENTSX_NS: \"$OPENTSX_NS\" is not a valid namespace name; expected lower-case letters, digits and hyphens, starting and ending with a letter or digit, such as opentsx"
 [[ "$OPENTSX_DOMAIN" =~ ^[a-z0-9][a-z0-9_-]*$ ]] \
   || die "OPENTSX_DOMAIN: \"$OPENTSX_DOMAIN\" is not allowed; expected lower-case letters, digits, hyphens or underscores, starting with a letter or digit, such as wind"
-[[ "$OPENTSX_PARTITIONS" =~ ^[1-9][0-9]*$ ]] || die "OPENTSX_PARTITIONS must be a positive number"
+[[ "$OPENTSX_PARTITIONS" =~ ^[1-9][0-9]*$ ]] \
+  || die "OPENTSX_PARTITIONS: \"$OPENTSX_PARTITIONS\" is not allowed; expected a whole number above 0, such as 6"
 [[ "$KAFSCALE_BOOTSTRAP" =~ ^[^,:[:space:]]+:[0-9]+(,[^,:[:space:]]+:[0-9]+)*$ ]] \
-  || die "KAFSCALE_BOOTSTRAP=$KAFSCALE_BOOTSTRAP: expected host:port[,host:port...]"
-case "$KAFSCALE_NETWORK" in direct|hostnetwork|service) ;; *) die "KAFSCALE_NETWORK must be direct, hostnetwork or service" ;; esac
+  || die "KAFSCALE_BOOTSTRAP: \"$KAFSCALE_BOOTSTRAP\" is not a bootstrap list; expected host:port[,host:port...]"
+case "$KAFSCALE_NETWORK" in
+  direct|hostnetwork|service) ;;
+  *) die "KAFSCALE_NETWORK: \"$KAFSCALE_NETWORK\" is not a network mode; expected direct, hostnetwork or service" ;;
+esac
 if [[ "$KAFSCALE_BOOTSTRAP" =~ (^|,)(localhost|127\.[0-9.]+): && "$KAFSCALE_NETWORK" != "hostnetwork" ]]; then
-  die "KAFSCALE_BOOTSTRAP=$KAFSCALE_BOOTSTRAP is loopback, which pods cannot reach. Use the host's LAN IP or KAFSCALE_NETWORK=hostnetwork"
+  die "KAFSCALE_BOOTSTRAP: \"$KAFSCALE_BOOTSTRAP\" is a loopback address, which pods cannot reach; use the host's LAN IP or KAFSCALE_NETWORK=hostnetwork"
 fi
 if [[ "$KAFSCALE_BOOTSTRAP" == "192.168.1.50:9092" ]]; then
   warn "KAFSCALE_BOOTSTRAP is still the example value 192.168.1.50:9092"
 fi
 for b in LAKE LAKE_MINIO INGRESS DWD_FORWARD MODBUS_SIM MONITORING SAAS SAAS_TEST_LOGIN RETRIEVAL_DAG_RUNS VECTOR_PROCESSOR EVENT_BRIDGE; do
-  [[ "${!b,,}" =~ ^(true|false|yes|no|1|0|on|off)$ ]] || die "$b must be true or false"
+  [[ "${!b,,}" =~ ^(true|false|yes|no|1|0|on|off)$ ]] \
+    || die "$b: \"${!b}\" is not true or false; expected true, false, yes, no, on, off, 1 or 0"
 done
-[[ "$DWD_MODE" =~ ^(online|offline)$ ]] || die "DWD_MODE must be online or offline"
-[[ "$RETRIEVAL_SOURCE" =~ ^(demo|kafscale)$ ]] || die "RETRIEVAL_SOURCE must be demo or kafscale"
+[[ "$DWD_MODE" =~ ^(online|offline)$ ]] || die "DWD_MODE: \"$DWD_MODE\" is not a mode; expected online or offline"
+[[ "$RETRIEVAL_SOURCE" =~ ^(demo|kafscale)$ ]] \
+  || die "RETRIEVAL_SOURCE: \"$RETRIEVAL_SOURCE\" is not a source; expected demo or kafscale"
 if is_true "$LAKE" && [[ "$RETRIEVAL_SOURCE" == kafscale ]]; then
-  die "LAKE=true lets the retrieval server read Iceberg; set RETRIEVAL_SOURCE=demo or LAKE=false"
+  die "RETRIEVAL_SOURCE: kafscale does not go with LAKE=true, where the retrieval server reads Iceberg; set RETRIEVAL_SOURCE=demo or LAKE=false"
 fi
 if is_true "$RETRIEVAL_DAG_RUNS" && [[ "$RETRIEVAL_SOURCE" != kafscale ]]; then
-  die "RETRIEVAL_DAG_RUNS=true needs RETRIEVAL_SOURCE=kafscale (the runs read and write KafScale)"
+  die "RETRIEVAL_DAG_RUNS: true needs RETRIEVAL_SOURCE=kafscale, because the runs read and write KafScale; set RETRIEVAL_SOURCE=kafscale or RETRIEVAL_DAG_RUNS=false"
 fi
-[[ "$DWD_STATIONS" =~ ^[A-Za-z0-9]+(,[A-Za-z0-9]+)*$ ]] || die "DWD_STATIONS=$DWD_STATIONS: expected MOSMIX ids like 10578,10579"
+[[ "$DWD_STATIONS" =~ ^[A-Za-z0-9]+(,[A-Za-z0-9]+)*$ ]] \
+  || die "DWD_STATIONS: \"$DWD_STATIONS\" is not a station list; expected MOSMIX ids separated by commas, such as 10578,10579"
 read -r -a cron_fields <<< "$DWD_SCHEDULE"
-(( ${#cron_fields[@]} == 5 )) || die "DWD_SCHEDULE='$DWD_SCHEDULE': expected 5 cron fields, e.g. '17 5 * * *'"
+(( ${#cron_fields[@]} == 5 )) \
+  || die "DWD_SCHEDULE: \"$DWD_SCHEDULE\" has ${#cron_fields[@]} fields; expected 5 cron fields such as 17 5 * * *"
 cron_chars='^[0-9A-Za-z*/,? -]+$'
 [[ "$DWD_SCHEDULE" =~ $cron_chars ]] \
   || die "DWD_SCHEDULE: \"$DWD_SCHEDULE\" holds a character that is not part of a cron field; expected digits, letters and * / , ? -, such as 17 5 * * *"
-if ! [[ "$MODBUS_PORT" =~ ^[0-9]+$ ]] || (( MODBUS_PORT < 1 || MODBUS_PORT > 65535 )); then die "MODBUS_PORT must be a TCP port"; fi
-[[ -n "$MODBUS_HOST" && -n "$MODBUS_MAP" ]] || die "MODBUS_HOST and MODBUS_MAP must not be empty"
+if ! [[ "$MODBUS_PORT" =~ ^[0-9]+$ ]] || (( MODBUS_PORT < 1 || MODBUS_PORT > 65535 )); then
+  die "MODBUS_PORT: \"$MODBUS_PORT\" is not a TCP port; expected a whole number from 1 to 65535"
+fi
+[[ -n "$MODBUS_HOST" ]] || die "MODBUS_HOST: empty value; expected the host of the Modbus TCP server, such as opentsx-modbus-sim"
+[[ -n "$MODBUS_MAP" ]] || die "MODBUS_MAP: empty value; expected example or a path in the image or on a mounted volume"
 # the duration form of the configuration registry (python-package/opentsx/conf/conf.py, _ISO and _UNIT)
 is_duration() {
   local n='(0|[1-9][0-9]{0,19})' iso unit
@@ -137,7 +149,8 @@ origin="^([*]|https?://$host)\$"
 
 POD_BOOTSTRAP="$KAFSCALE_BOOTSTRAP"
 if [[ "$KAFSCALE_NETWORK" == "service" ]]; then
-  [[ "$KAFSCALE_BOOTSTRAP" != *,* ]] || die "KAFSCALE_NETWORK=service supports one bootstrap address; use direct for a list"
+  [[ "$KAFSCALE_BOOTSTRAP" != *,* ]] \
+    || die "KAFSCALE_BOOTSTRAP: \"$KAFSCALE_BOOTSTRAP\" lists more than one address, which KAFSCALE_NETWORK=service does not support; give one address or use KAFSCALE_NETWORK=direct"
   KS_HOST="${KAFSCALE_BOOTSTRAP%:*}"; KS_PORT="${KAFSCALE_BOOTSTRAP##*:}"
   POD_BOOTSTRAP="opentsx-kafscale.$OPENTSX_NS.svc.cluster.local:$KS_PORT"
 fi
@@ -151,8 +164,12 @@ if is_true "$LAKE"; then
       [[ "${!key}" =~ ^[A-Za-z0-9._~-]+$ ]] || die "$key: holds a character that does not fit into the URL MC_HOST_lake of the bucket Job; with LAKE_MINIO=true use letters, digits, '.', '_', '~' and '-'"
     done
   else
-    [[ -n "$S3_ENDPOINT" ]] || die "LAKE=true with LAKE_MINIO=false needs S3_ENDPOINT (your S3 / MinIO URL)"
-    [[ -n "$S3_ACCESS_KEY" && -n "$S3_SECRET_KEY" ]] || die "LAKE=true with LAKE_MINIO=false needs S3_ACCESS_KEY and S3_SECRET_KEY"
+    [[ -n "$S3_ENDPOINT" ]] \
+      || die "S3_ENDPOINT: empty value; LAKE=true with LAKE_MINIO=false needs the URL of your S3 store, such as http://<host>:<port>"
+    for key in S3_ACCESS_KEY S3_SECRET_KEY; do
+      [[ -n "${!key}" ]] \
+        || die "$key: empty value; LAKE=true with LAKE_MINIO=false needs the keys of your S3 store, export $key or put it in deploy/k3s/.env"
+    done
   fi
   ICEBERG_PROPS="type=rest,uri=http://opentsx-iceberg-rest:8181,warehouse=s3://$S3_BUCKET/,io-impl=org.apache.iceberg.aws.s3.S3FileIO,s3.endpoint=$S3_ENDPOINT,s3.path-style-access=true,client.region=$S3_REGION"
 else
@@ -164,9 +181,11 @@ utf8_chars() { printf %s "$1" | LC_ALL=C tr -d '\200-\277' | LC_ALL=C wc -c; }
 if is_true "$RETRIEVAL_DAG_RUNS"; then
   # the retrieval server runs DAGs only for callers that know this token; the SaaS backend is the caller
   [[ -n "$RETRIEVAL_DAG_RUN_TOKEN" ]] || RETRIEVAL_DAG_RUN_TOKEN="$(gen_secret 40)"
-  [[ "$RETRIEVAL_DAG_RUN_TOKEN" =~ ^[A-Za-z0-9]{24,}$ ]] || die "RETRIEVAL_DAG_RUN_TOKEN needs at least 24 letters and digits"
+  [[ "$RETRIEVAL_DAG_RUN_TOKEN" =~ ^[A-Za-z0-9]{24,}$ ]] \
+    || die "RETRIEVAL_DAG_RUN_TOKEN: fewer than 24 characters or a character that is not a letter or digit; expected at least 24 letters and digits, or empty to generate one"
 fi
-[[ "$SAAS_DAG_RUN_ROLE" =~ ^(superuser|user)$ ]] || die "SAAS_DAG_RUN_ROLE must be superuser or user"
+[[ "$SAAS_DAG_RUN_ROLE" =~ ^(superuser|user)$ ]] \
+  || die "SAAS_DAG_RUN_ROLE: \"$SAAS_DAG_RUN_ROLE\" is not a role; expected superuser or user"
 if is_true "$SAAS" && is_true "$SAAS_TEST_LOGIN"; then
   warn "SAAS_TEST_LOGIN=true: admin/admin signs in as administrator. Everyone who reaches the page can deploy DAGs. Lab networks only."
 fi
@@ -186,7 +205,8 @@ read_published_examples() {
 }
 is_published_example() { local v; for v in "${PUBLISHED_EXAMPLES[@]}"; do [[ "$1" == "$v" ]] && return 0; done; return 1; }
 if is_true "$SAAS"; then
-  [[ "$SAAS_ADMIN_EMAIL" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$ ]] || die "SAAS_ADMIN_EMAIL=$SAAS_ADMIN_EMAIL is not an e-mail address"
+  [[ "$SAAS_ADMIN_EMAIL" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$ ]] \
+    || die "SAAS_ADMIN_EMAIL: \"$SAAS_ADMIN_EMAIL\" is not an e-mail address; expected <name>@<domain> such as admin@example.com"
   [[ -n "$SAAS_DB_PASSWORD" ]] || SAAS_DB_PASSWORD="$(gen_secret 32)"
   [[ -n "$SAAS_SECRET_KEY" ]] || SAAS_SECRET_KEY="$(gen_secret 48)"
   [[ -n "$SAAS_ADMIN_PASSWORD" ]] || SAAS_ADMIN_PASSWORD="$(gen_secret 20)"
@@ -198,9 +218,11 @@ if is_true "$SAAS"; then
   ! is_published_example "$SAAS_SECRET_KEY" \
     || die "SAAS_SECRET_KEY: published example value; generate a random key of at least 32 characters"
   # both end up in a URL (database) and in an env file: keep them to letters and digits
-  [[ "$SAAS_DB_PASSWORD" =~ ^[A-Za-z0-9]+$ ]] || die "SAAS_DB_PASSWORD may only hold letters and digits"
+  [[ "$SAAS_DB_PASSWORD" =~ ^[A-Za-z0-9]+$ ]] \
+    || die "SAAS_DB_PASSWORD: holds a character that is not a letter or digit; set at least 12 letters and digits"
   (( ${#SAAS_DB_PASSWORD} >= 12 )) || die "SAAS_DB_PASSWORD: shorter than 12 characters; set at least 12 letters and digits"
-  (( $(utf8_chars "$SAAS_SECRET_KEY") >= 32 )) || die "SAAS_SECRET_KEY needs at least 32 characters"
+  (( $(utf8_chars "$SAAS_SECRET_KEY") >= 32 )) \
+    || die "SAAS_SECRET_KEY: shorter than 32 characters; generate a random key of at least 32 characters"
   # the backend refuses these at start (opentsx-saas-backend/app/core/config.py); bcrypt reads at most 72 bytes
   (( $(utf8_chars "$SAAS_ADMIN_PASSWORD") >= 12 )) || die "SAAS_ADMIN_PASSWORD: shorter than 12 characters; set at least 12 characters"
   (( $(printf %s "$SAAS_ADMIN_PASSWORD" | LC_ALL=C wc -c) <= 72 )) \
@@ -416,8 +438,10 @@ echo "  namespace $OPENTSX_NS | KafScale $KAFSCALE_BOOTSTRAP ($KAFSCALE_NETWORK;
 echo "  images $OPENTSX_IMAGE_REPO/{tools,studio}:$OPENTSX_TAG | lake $LAKE (minio $LAKE_MINIO) | retrieval $RETRIEVAL_SOURCE (dag runs $RETRIEVAL_DAG_RUNS) | vector processor $VECTOR_PROCESSOR | ingress $INGRESS | OpenMetadata ${OM_URL:-off}"
 echo "  modbus-sim $MODBUS_SIM (poll $MODBUS_HOST:$MODBUS_PORT, map $MODBUS_MAP) | dwd-forward $DWD_FORWARD ($DWD_MODE, $DWD_STATIONS, '$DWD_SCHEDULE') | monitoring $MONITORING | saas $SAAS | event-bridge $EVENT_BRIDGE"
 if kc version --client >/dev/null 2>&1; then
-  n="$(kc kustomize "$OVERLAY" | grep -c '^kind:')" || die "kubectl kustomize $OVERLAY failed"
-  m="$(kc kustomize "$OVERLAY/jobs" | grep -c '^kind:')" || die "kubectl kustomize $OVERLAY/jobs failed"
+  n="$(kc kustomize "$OVERLAY" | grep -c '^kind:')" \
+    || die "kubectl kustomize $OVERLAY: failed; fix the error above, then run 20-configure.sh again"
+  m="$(kc kustomize "$OVERLAY/jobs" | grep -c '^kind:')" \
+    || die "kubectl kustomize $OVERLAY/jobs: failed; fix the error above, then run 20-configure.sh again"
   ok "renders: $n objects, $m demo Jobs"
   $PRINT && kc kustomize "$OVERLAY" | awk '
     function flush() { if (doc != "" && !secret) { printf "%s%s", sep, doc; sep = "---\n" } doc = ""; secret = 0 }
