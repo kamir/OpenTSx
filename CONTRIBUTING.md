@@ -120,8 +120,9 @@ The transport check enables [CI settings](.mvn/ci-settings.xml) through
 `MAVEN_ARGS` after its offline fixtures. Maven mirrors only `central` to the
 [Google Cloud-hosted copy](https://docs.cloud.google.com/docs/buildpacks/java).
 This applies to dependencies and plugins. Confluent keeps its own endpoint;
-local Maven invocations keep their normal settings. Existing `MAVEN_ARGS` or
-`MAVEN_OPTS` fail the CI setup instead of being overwritten or logged.
+local Maven invocations keep their normal settings. The runner's `-ntp`
+argument is retained. Other existing `MAVEN_ARGS` or `MAVEN_OPTS` fail the CI
+setup instead of being overwritten or logged.
 The mirror can lag Central, so pinned artifacts must resolve there in CI.
 The native 401, 403 and 404 failure policy remains in effect. HTTP 404 with a
 `Retry-After` header is still not retried. A native fixture reproduces that

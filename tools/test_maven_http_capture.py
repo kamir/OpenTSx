@@ -38,6 +38,13 @@ class MavenHttpCaptureTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     capture.enable_ci(Path("/safe/capture.jar"))
 
+    def test_ci_preserves_the_runners_transfer_progress_option(self):
+        output = self.directory / "environment"
+        with patch.dict(os.environ, {"GITHUB_ENV": str(output), "MAVEN_OPTS": "", "MAVEN_ARGS": "-ntp"}):
+            capture.enable_ci(Path("/safe/capture.jar"))
+        values = dict(line.split("=", 1) for line in output.read_text().splitlines())
+        self.assertEqual("-ntp --settings " + str(capture.ROOT / ".mvn/ci-settings.xml"), values.get("MAVEN_ARGS"))
+
     def test_ci_enables_only_the_verified_extension_without_copying_existing_options(self):
         output = self.directory / "environment"
         with patch.dict(os.environ, {"GITHUB_ENV": str(output), "MAVEN_OPTS": "", "MAVEN_ARGS": ""}):

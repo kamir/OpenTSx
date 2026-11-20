@@ -35,7 +35,8 @@ def verify_extension(jar, directory):
 def enable_ci(jar):
     if "GITHUB_ENV" not in os.environ:
         return
-    if os.environ.get("MAVEN_OPTS") or os.environ.get("MAVEN_ARGS"):
+    arguments = os.environ.get("MAVEN_ARGS", "")
+    if os.environ.get("MAVEN_OPTS") or arguments not in ("", "-ntp"):
         raise ValueError("Existing Maven options must be reviewed before configuring CI transport")
     if any(character.isspace() or character == os.pathsep for character in str(jar)):
         raise ValueError("The capture extension path must not contain whitespace or classpath separators")
@@ -44,7 +45,7 @@ def enable_ci(jar):
         raise ValueError("The CI settings path must not contain whitespace")
     with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as output:
         output.write("MAVEN_OPTS=-Dmaven.ext.class.path=" + str(jar) + "\n")
-        output.write("MAVEN_ARGS=--settings " + str(settings) + "\n")
+        output.write("MAVEN_ARGS=" + ("-ntp " if arguments else "") + "--settings " + str(settings) + "\n")
 
 
 def verify_ci_mirror(directory):
