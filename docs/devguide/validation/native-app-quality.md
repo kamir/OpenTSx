@@ -23,12 +23,29 @@ Regressions can belong to more than one category.
 Test names alone do not establish an executed result or a coverage percentage.
 
 The Java CI matrix runs the Maven 3.9.8 verification lifecycle under Xvfb on Java 17 and 21:
-[ci.yml:509](../../../.github/workflows/ci.yml#L509).
+[ci.yml:584](../../../.github/workflows/ci.yml#L584).
 Each Maven job verifies the bundled HTTP transport's download retry policy before its workload:
 [download retry check](../../../tools/check_maven_downloads.py).
+The check also requires exception diagnostics from an isolated offline
+missing-plugin fixture. Maven logs its selected transport; every Maven job
+retains sanitized cache reports before and after workloads in
+`maven-downloads-*` artifacts. See
+[CI diagnostics](../../../CONTRIBUTING.md#check-continuous-integration)
+for report fields and the limits of statusless missing-artifact errors.
+Each Maven job also verifies and enables bounded response capture for the
+three Wayang libraries and two BOM imports. It retains `http-responses.jsonl`
+with
+actual statuses before retries, public artifact paths and sanitized response
+metadata. Request headers, cookies and bodies are excluded. The capture check
+executes synthetic responses and a local-file Maven fixture without network
+requests or sleeps.
+The native malformed-cookie fixture also verifies that cookie-parser warnings
+cannot expose cookie values in the configured runtime.
+Dependency-cache keys include each Maven workload's identity and runtime
+inputs, retaining separate dependency sets for small and full-reactor jobs.
 Broker integration and recorder-through-Kafka/Flink acceptance use separate configured gates:
-[ci.yml:731](../../../.github/workflows/ci.yml#L731),
-[ci.yml:868](../../../.github/workflows/ci.yml#L868).
+[ci.yml:864](../../../.github/workflows/ci.yml#L864),
+[ci.yml:1024](../../../.github/workflows/ci.yml#L1024).
 Pull requests select affected jobs from module dependencies and shared inputs. Pushes to `master` and manual runs
 execute the full workflow. The [CI selection contract](../../../CONTRIBUTING.md#check-continuous-integration)
 defines the final result check and the treatment of explicitly excluded jobs.

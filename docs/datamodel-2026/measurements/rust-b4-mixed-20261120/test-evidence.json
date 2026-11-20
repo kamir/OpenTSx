@@ -1,0 +1,56 @@
+{
+  "executables": {
+    "runner": {
+      "file": "/private/tmp/opentsx-b4-rust-target/debug/tsx-runner",
+      "sha256": "9bf6c24fd2c60a1847cfb9e59b9d50dce74a5104e0baee79d7d73b7614770d82"
+    },
+    "sketch": {
+      "file": "/private/tmp/opentsx-b4-rust-target/debug/examples/b4_sketch",
+      "sha256": "138857e0021fa0a500c3921e1acabe96ca49343700ee80f3a002ddedee29591f"
+    }
+  },
+  "schema": "opentsx.rust-b4-qualified-tests.v1",
+  "sourceCommit": "e9d9a80c413bf8d6c3858f80fcbc68b2c7f3570a",
+  "suites": {
+    "FederatedStatsIntegrationTest": {
+      "errors": 0,
+      "failures": 0,
+      "methods": [
+        "everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders",
+        "everyActualW3WindowMatchesCentralizedAndAllSixMergeOrders"
+      ],
+      "properties": {
+        "java.version": "21.0.8",
+        "opentsx.rust.b3.runner": "/tmp/opentsx-b4-rust-target/debug/tsx-runner",
+        "opentsx.rust.b4.sketch": "/tmp/opentsx-b4-rust-target/debug/examples/b4_sketch",
+        "opentsx.sourceCommit": "e9d9a80c413bf8d6c3858f80fcbc68b2c7f3570a",
+        "os.arch": "aarch64",
+        "os.name": "Mac OS X"
+      },
+      "sha256": "15e59d16a638fc41aed79006bd73ead288f4dc2700c852e09d3fed513494ad72",
+      "skipped": 0,
+      "sourceFile": "opentsx-wayang/target/surefire-reports/TEST-org.opentsx.wayang.FederatedStatsIntegrationTest.xml",
+      "tests": 2
+    },
+    "MixedSketchQualificationTest": {
+      "errors": 0,
+      "failures": 0,
+      "methods": [
+        "helperReportsItsVersionAndRejectsMalformedOrOversizedInput",
+        "mixedSketchesQualifySharedBoundaryZeroBucketAndCollapsedTailCases"
+      ],
+      "properties": {
+        "java.version": "21.0.8",
+        "opentsx.rust.b3.runner": "/tmp/opentsx-b4-rust-target/debug/tsx-runner",
+        "opentsx.rust.b4.sketch": "/tmp/opentsx-b4-rust-target/debug/examples/b4_sketch",
+        "opentsx.sourceCommit": "e9d9a80c413bf8d6c3858f80fcbc68b2c7f3570a",
+        "os.arch": "aarch64",
+        "os.name": "Mac OS X"
+      },
+      "sha256": "d023d585008cbe3753fb993c7f62d15578aa890997058a75ee69ee8fe62fcf16",
+      "skipped": 0,
+      "sourceFile": "opentsx-wayang/target/surefire-reports/TEST-org.opentsx.wayang.MixedSketchQualificationTest.xml",
+      "tests": 2
+    }
+  }
+}

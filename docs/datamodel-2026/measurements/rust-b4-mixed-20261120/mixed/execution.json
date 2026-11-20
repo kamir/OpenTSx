@@ -1,0 +1,165 @@
+{
+  "schema" : "opentsx.rust-b4-mixed-execution.v1",
+  "route" : "signal-cluster",
+  "job" : "w3",
+  "sites" : {
+    "s1" : {
+      "runtime" : "java",
+      "track" : "A",
+      "version" : "3.0.1",
+      "digest" : "sha256:e776f0bd6a445c75cf60210487087ef8d9c2e9ab81c6830408d9a19635ee723f",
+      "stateAbi" : "tsx-java/1",
+      "commandHash" : "bfdfd24b5cf5419417b6b26f52f756433304086d343ea2c43ea8a075b5ed5d15",
+      "specHash" : "6a5b6a320a9992551a913046e4fbe365e36de672890f953bf2c4c549301f8111",
+      "inputRecords" : 1080,
+      "fragmentHash" : "6a5b6a320a9992551a913046e4fbe365e36de672890f953bf2c4c549301f8111",
+      "statuses" : [ {
+        "schema" : "opentsx.dag-status.v1",
+        "dag" : "w3",
+        "job" : "w3",
+        "site" : "s1",
+        "planVersion" : 1,
+        "track" : "A",
+        "specHash" : "6a5b6a320a9992551a913046e4fbe365e36de672890f953bf2c4c549301f8111",
+        "state" : "running",
+        "records" : 0,
+        "watermark" : null,
+        "skippedBlocks" : 0,
+        "at" : "2026-11-20T11:38:17.895449Z",
+        "waitingFor" : [ ],
+        "artifact" : {
+          "version" : "3.0.1",
+          "digest" : "sha256:e776f0bd6a445c75cf60210487087ef8d9c2e9ab81c6830408d9a19635ee723f"
+        }
+      }, {
+        "schema" : "opentsx.dag-status.v1",
+        "dag" : "w3",
+        "job" : "w3",
+        "site" : "s1",
+        "planVersion" : 1,
+        "track" : "A",
+        "specHash" : "6a5b6a320a9992551a913046e4fbe365e36de672890f953bf2c4c549301f8111",
+        "state" : "stopped",
+        "records" : 1080,
+        "watermark" : null,
+        "skippedBlocks" : 0,
+        "at" : "2026-11-20T11:38:21.458403Z",
+        "waitingFor" : [ ],
+        "artifact" : {
+          "version" : "3.0.1",
+          "digest" : "sha256:e776f0bd6a445c75cf60210487087ef8d9c2e9ab81c6830408d9a19635ee723f"
+        }
+      } ]
+    },
+    "s2" : {
+      "runtime" : "java",
+      "track" : "A",
+      "version" : "3.0.1",
+      "digest" : "sha256:e776f0bd6a445c75cf60210487087ef8d9c2e9ab81c6830408d9a19635ee723f",
+      "stateAbi" : "tsx-java/1",
+      "commandHash" : "d959ca2145406ff850e2c12e029a833828803f7fdef57c7b8b4d02287f8db5ac",
+      "specHash" : "6a5b6a320a9992551a913046e4fbe365e36de672890f953bf2c4c549301f8111",
+      "inputRecords" : 1080,
+      "fragmentHash" : "6a5b6a320a9992551a913046e4fbe365e36de672890f953bf2c4c549301f8111",
+      "statuses" : [ {
+        "schema" : "opentsx.dag-status.v1",
+        "dag" : "w3",
+        "job" : "w3",
+        "site" : "s2",
+        "planVersion" : 1,
+        "track" : "A",
+        "specHash" : "6a5b6a320a9992551a913046e4fbe365e36de672890f953bf2c4c549301f8111",
+        "state" : "running",
+        "records" : 0,
+        "watermark" : null,
+        "skippedBlocks" : 0,
+        "at" : "2026-11-20T11:38:28.117717Z",
+        "waitingFor" : [ ],
+        "artifact" : {
+          "version" : "3.0.1",
+          "digest" : "sha256:e776f0bd6a445c75cf60210487087ef8d9c2e9ab81c6830408d9a19635ee723f"
+        }
+      }, {
+        "schema" : "opentsx.dag-status.v1",
+        "dag" : "w3",
+        "job" : "w3",
+        "site" : "s2",
+        "planVersion" : 1,
+        "track" : "A",
+        "specHash" : "6a5b6a320a9992551a913046e4fbe365e36de672890f953bf2c4c549301f8111",
+        "state" : "stopped",
+        "records" : 1080,
+        "watermark" : null,
+        "skippedBlocks" : 0,
+        "at" : "2026-11-20T11:38:31.703026Z",
+        "waitingFor" : [ ],
+        "artifact" : {
+          "version" : "3.0.1",
+          "digest" : "sha256:e776f0bd6a445c75cf60210487087ef8d9c2e9ab81c6830408d9a19635ee723f"
+        }
+      } ]
+    },
+    "s3" : {
+      "runtime" : "rust",
+      "track" : "B",
+      "version" : "0.1.0",
+      "digest" : "sha256:9bf6c24fd2c60a1847cfb9e59b9d50dce74a5104e0baee79d7d73b7614770d82",
+      "stateAbi" : "opentsx.rust.site-state.v1",
+      "commandHash" : "af3855c7a2b60c08b4e221d3e10b3d5649dcdc7492d591696fade697e20d8523",
+      "specHash" : "6a5b6a320a9992551a913046e4fbe365e36de672890f953bf2c4c549301f8111",
+      "inputRecords" : 1440,
+      "fragmentHash" : "6a5b6a320a9992551a913046e4fbe365e36de672890f953bf2c4c549301f8111",
+      "statuses" : [ {
+        "artifact" : {
+          "digest" : "sha256:9bf6c24fd2c60a1847cfb9e59b9d50dce74a5104e0baee79d7d73b7614770d82",
+          "version" : "0.1.0"
+        },
+        "at" : "2026-11-20T11:38:49.163886Z",
+        "dag" : "w3",
+        "job" : "w3",
+        "planVersion" : 1,
+        "records" : 0,
+        "schema" : "opentsx.dag-status.v1",
+        "site" : "s3",
+        "skippedBlocks" : 0,
+        "specHash" : "6a5b6a320a9992551a913046e4fbe365e36de672890f953bf2c4c549301f8111",
+        "state" : "running",
+        "track" : "B",
+        "waitingFor" : [ ],
+        "watermark" : null
+      }, {
+        "artifact" : {
+          "digest" : "sha256:9bf6c24fd2c60a1847cfb9e59b9d50dce74a5104e0baee79d7d73b7614770d82",
+          "version" : "0.1.0"
+        },
+        "at" : "2026-11-20T11:39:04.839992Z",
+        "dag" : "w3",
+        "job" : "w3",
+        "planVersion" : 1,
+        "records" : 1440,
+        "schema" : "opentsx.dag-status.v1",
+        "site" : "s3",
+        "skippedBlocks" : 0,
+        "specHash" : "6a5b6a320a9992551a913046e4fbe365e36de672890f953bf2c4c549301f8111",
+        "state" : "stopped",
+        "track" : "B",
+        "waitingFor" : [ ],
+        "watermark" : null
+      } ]
+    }
+  },
+  "rustOutcomes" : {
+    "replay" : {
+      "completed" : true,
+      "error" : null,
+      "forwardedRecords" : 420,
+      "state" : "completed"
+    },
+    "run" : {
+      "completed" : true,
+      "error" : null,
+      "forwardedRecords" : 420,
+      "state" : "completed"
+    }
+  }
+}
