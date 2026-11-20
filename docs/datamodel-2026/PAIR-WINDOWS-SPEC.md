@@ -1,6 +1,6 @@
 # Pair windows and pair methods
 
-This page specifies how OpenTSx compares two series window by window and what the pair methods `pair.xcorr`, `pair.es` and `pair.coverage` write; sections 1 to 9, 11, 13, 14 and 16 were verified against commit `eefff844`, the others against `a513aa98`.
+This page specifies how OpenTSx compares two series window by window and what the pair methods `pair.xcorr`, `pair.es` and `pair.coverage` write; sections 1 to 9, 11, 13, 14 and 16 were verified against the code with the per-episode pair clock (fix of 2026-11-20), the others against commit `a513aa98`.
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are used as in
 [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) and [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174) when they
