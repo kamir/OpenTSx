@@ -74,6 +74,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Route Track A evaluation clients through the same guarded Proxy bundle and record its transport provenance.
   Archived measurement samples retain their recorded source and runtime hashes.
 - Require a verified Proxy bundle and private MinIO environment before the k3s probe starts local KafScale.
+- Show the plant explorer prototype (`docs/prototypes/anlagen-explorer.html`) in English. The page no longer links
+  to the removed concept document.
 
 ### Added
 
