@@ -61,6 +61,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Record the finite Workbench browser journey as WebM video and a Playwright
+  trace. Require matching clean source and runtime identities before and after
+  capture, verify numerical exports and hash the evidence in a recording manifest.
+
 - Bounded mixed W3 acceptance harness with two Java sites and an actual
   qualified Rust CLI site, runtime-bound aggregate admission, complete
   partial/window evidence and six canonical-merge arrival orders. Separate
