@@ -108,7 +108,10 @@ the camera exceeds every budget. Onboard reduction is the point of the testbed.
 | Component | Evidence | Use in the testbed |
 |---|---|---|
 | `tsx-runner` modes `agent`, `conform`, `run`, `replay`, `serve` | `rust/tsx-runner/src/main.rs:7` | onboard runner; reads Kafka only |
-| static `aarch64-unknown-linux-musl` build | `.github/workflows/ci.yml:129-209` | copied to the Jetson; first run on physical arm64 hardware |
+| static `aarch64-unknown-linux-musl` build | `.github/workflows/ci.yml:129-209` | copied to the Jetson, the same board on which B4.2 of TASK-020 is measured (D-T14) |
+| Jetson preparation: JetPack 4.6, 10 W mode, `performance` governor, fan, no desktop, broker on another host | `docs/devguide/integration/wayang-board-jetson.md:39-74` | phase P0 follows these steps |
+| board identity: kernel, CPU governors, power mode, temperatures | `tools/board_identity.py:60-80` | names the device and its state for every measurement (success criterion 2) |
+| one-second RSS, CPU and lag sampler for Python 3.6 | `tools/board_resource_sampler.py:54-79` | resource samples of the runner and the onboard broker in the P2 soak |
 | `kafscale-cluster`: one process with embedded etcd, memory S3 broker and Proxy | `tools/kafscale_proxy_cluster.go:84-139` | onboard log in phase P2; ground broker |
 | KafScale build | `tools/build_kafscale_proxy.py:15-34` | x86 build for the NAS; arm64 build is new work |
 | Episode write path: `TopicLayout`, `Episodes.regular`, `OpenTsxAvro`, `KafScaleClients.producer` | `opentsx-kafka-v2/src/main/java/org/opentsx/kafka/TopicLayout.java:85-106` | simulator output `tsx.sat.episodes.v2` |
@@ -123,7 +126,7 @@ The order matters.
 
 | Phase | Work | Done when |
 |---|---|---|
-| P0 Base | Flash the Jetson, upgrade to R32.7.6, headless, Docker with NVIDIA runtime held, chrony against the NAS; on the NAS check `modprobe sch_netem`, create the macvlan network over SSH, enable NTP | `tsx-runner --version` runs on the Jetson; a `netem` qdisc applies on the NAS or on a VMM fallback VM |
+| P0 Base | Flash the Jetson, upgrade to R32.7.6, prepare it as in the [Jetson runbook](../docs/devguide/integration/wayang-board-jetson.md), Docker with NVIDIA runtime held, chrony against the NAS; on the NAS check `modprobe sch_netem`, create the macvlan network over SSH, enable NTP | `tsx-runner --version` runs on the Jetson; a `netem` qdisc applies on the NAS or on a VMM fallback VM |
 | P1 Ground | KafScale, S3, retrieval server and Workbench on the NAS; `WindparkSim --kafscale` as smoke test | the Workbench shows windpark series served from the NAS |
 | P2 Satellite | simulator v1 (orbit, attitude, power, thermal, sensors, Jetson housekeeping); `kafscale-cluster` built for arm64 on the Jetson as the ring-buffer stand-in; `tsx-runner` reduces | a 24 hour soak without thermal throttling and with complete reduced topics |
 | P3 Link | `linkemu`, pass controller, downlink agent with acknowledgments, ground ingester with duplicate check | one simulated day with 4 passes, injected drops and restarts: zero lost and zero duplicated records on the ground |
@@ -151,5 +154,7 @@ Not scheduled. P0 and P1 come first because the ground side reuses existing comp
 ## Notes
 
 - The Jetson Nano is a constrained stand-in, not a performance model of the Jetson Orin modules that fly in orbit.
+- The Jetson is also the B4.2 board of TASK-020. B4.2 needs KafScale on another host and the board's memory for the
+  measured process, so its 27 conditions do not run while the testbed's onboard broker or simulator runs.
 - KafScale for arm64 is unbuilt and untested. The fallback onboard is a plain spool file instead of a broker.
 - The Synology `netem` module is read from the published kernel configuration and is not yet loaded on a device.

@@ -76,7 +76,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Planned task [`EVOLUTION/TASK-021-orbit-testbed.md`](EVOLUTION/TASK-021-orbit-testbed.md): a homelab testbed with a
   Jetson Nano as onboard computer and a Synology NAS as ground station, a satellite simulator writing an onboard
   ring buffer, an emulated space-ground link driven by computed passes, and phases P0 to P6 up to the D-T13 CPU
-  fallback path. No implementation yet.
+  fallback path. Phase P0 prepares the board with the Jetson runbook and board tools of D-T14. No implementation
+  yet.
 - TASK-020 D-T14 (owner, 2026-11-20): B1.2 and B4.2 need no ARMv7 hardware. The native x86_64 and ARM64 CI
   jobs meet B1.2; the ARMv7 artifact stays built and QEMU-tested but is not hardware-qualified. B4.2 is measured
   on one physical ARM64 board, so `wayang_board_evaluation.py` plans 27 conditions and refuses ARMv7 and AArch32
