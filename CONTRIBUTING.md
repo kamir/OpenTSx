@@ -82,6 +82,25 @@ credentials and raw error text. They read the cache without deleting files or
 changing update policies. These diagnostics do not establish the cause of
 historical download failures or prevent new repository failures.
 
+CI also builds and checks a local Maven extension against the pinned runtime.
+`http-responses.jsonl` records actual HTTP response statuses for the three
+Wayang libraries from Central and Confluent, before Resolver retry handling.
+It includes the public host and artifact path, fixed classifications for
+cache, server and content type, and SHA-256 fingerprints of selected response
+headers. Request headers, cookies, response bodies, URL credentials and query
+strings are excluded. Other endpoints and paths are excluded. The extension
+preserves the response and the existing retry strategy. A failure to install
+or record capture fails the job. The offline checks isolate their simulated
+responses from the CI report; an empty report means no matching request was
+captured. The generated extension is enabled only in CI through `MAVEN_OPTS`.
+Capture is limited to HTTPS GET and HEAD requests for `wayang-core`,
+`wayang-basic` and `wayang-java` POMs and JARs. Numeric age, content length and
+Retry-After values are included only for a single header containing at most
+nine decimal digits; absent or invalid values are `null`. Header fingerprints
+cover age, cache control, CDN cache status and request identifier, content
+length and type, date, ETag, Retry-After, server, Via, X-Cache, X-Cache-Hits and
+X-Served-By. Free header values are excluded.
+
 The selector verifies the checked-out pull request merge commit and both event parents. A depth-two checkout
 supplies these commits. It compares the base parent with the tested merge tree using NUL-delimited paths and
 disabled rename detection, so renames select both source and destination inputs and deletions remain visible.

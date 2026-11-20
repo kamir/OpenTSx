@@ -237,6 +237,8 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
       - name: Verify Maven download retries
         run: python3 tools/check_maven_downloads.py
+      - name: Verify and enable bounded HTTP response capture
+        run: python3 tools/check_maven_http_capture.py
       - name: Record Maven cache before builds
         run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json
       - name: Install the pinned Rust toolchain
@@ -355,6 +357,8 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
       - name: Verify Maven download retries
         run: python3 tools/check_maven_downloads.py
+      - name: Verify and enable bounded HTTP response capture
+        run: python3 tools/check_maven_http_capture.py
       - name: Record Maven cache before builds
         run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json
       - name: Check helper syntax and CLI
@@ -449,6 +453,8 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
       - name: Verify Maven download retries
         run: python3 tools/check_maven_downloads.py
+      - name: Verify and enable bounded HTTP response capture
+        run: python3 tools/check_maven_http_capture.py
       - name: Record Maven cache before builds
         run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json
       - name: Install the pinned browser runtime
@@ -565,6 +571,8 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
       - name: Verify Maven download retries
         run: python3 tools/check_maven_downloads.py
+      - name: Verify and enable bounded HTTP response capture
+        run: python3 tools/check_maven_http_capture.py
       - name: Record Maven cache before builds
         run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json
       - name: Build and test
@@ -741,6 +749,8 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
       - name: Verify Maven download retries
         run: python3 tools/check_maven_downloads.py
+      - name: Verify and enable bounded HTTP response capture
+        run: python3 tools/check_maven_http_capture.py
       - name: Record Maven cache before builds
         run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json
       - name: Qualify and build the pinned Rust B2 and B3 harnesses
@@ -1024,6 +1034,8 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
       - name: Verify Maven download retries
         run: python3 tools/check_maven_downloads.py
+      - name: Verify and enable bounded HTTP response capture
+        run: python3 tools/check_maven_http_capture.py
       - name: Record Maven cache before builds
         run: python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json
       - uses: actions/setup-python@v7

@@ -33,6 +33,18 @@ def steps(block):
 
 
 class MavenCiTest(unittest.TestCase):
+    def test_every_maven_job_installs_capture_after_verification_and_before_workloads(self):
+        jobs = self.assert_jobs(WORKFLOW.read_text(encoding="utf-8"))
+        for job in sorted(MAVEN_JOBS):
+            with self.subTest(job=job):
+                commands = steps(jobs[job])
+                install = step_with_command(jobs[job], "python3 tools/check_maven_http_capture.py")
+                verification = step_with_command(jobs[job], "python3 tools/check_maven_downloads.py")
+                before = step_with_command(jobs[job], 'python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json')
+                self.assertNotRegex(install, r"(?m)^        (?:if|continue-on-error):")
+                self.assertLess(commands.index(verification), commands.index(install), job)
+                self.assertLess(commands.index(install), commands.index(before), job)
+
     def assert_cache_evidence(self, job, block):
         commands = steps(block)
         before = step_with_command(block, 'python3 tools/maven_cache_report.py "$HOME/.m2/repository" target/maven-downloads/before.json')

@@ -31,7 +31,7 @@ def verify_failure_diagnostics():
     print("Maven failure diagnostics passed with an isolated offline repository", flush=True)
 
 
-def verify():
+def distribution_libraries():
     result = subprocess.run(["mvn", "--version"], check=True, capture_output=True, text=True)
     banner = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout)
     version = re.search(r"(?m)^Apache Maven ([^\s]+)", banner)
@@ -45,6 +45,11 @@ def verify():
     for name in ("maven-core-3.9.8.jar", "maven-resolver-transport-http-1.9.20.jar"):
         if not (libraries / name).is_file():
             raise ValueError("The pinned Maven distribution is incomplete")
+    return libraries
+
+
+def verify():
+    libraries = distribution_libraries()
     print("Maven 3.9.8; Maven Resolver 1.9.20", flush=True)
     with tempfile.TemporaryDirectory(prefix="opentsx-maven-retries-") as temporary:
         subprocess.run(["javac", "-cp", str(libraries / "*"), "-d", temporary,
