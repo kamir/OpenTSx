@@ -77,6 +77,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   Jetson Nano as onboard computer and a Synology NAS as ground station, a satellite simulator writing an onboard
   ring buffer, an emulated space-ground link driven by computed passes, and phases P0 to P6 up to the D-T13 CPU
   fallback path. No implementation yet.
+- TASK-020 D-T14 (owner, 2026-11-20): B1.2 and B4.2 need no ARMv7 hardware. The native x86_64 and ARM64 CI
+  jobs meet B1.2; the ARMv7 artifact stays built and QEMU-tested but is not hardware-qualified. B4.2 is measured
+  on one physical ARM64 board, so `wayang_board_evaluation.py` plans 27 conditions and refuses ARMv7 and AArch32
+  boards. New `tools/board_identity.py` and `tools/board_resource_sampler.py` record the board and the one-second
+  RSS, CPU and lag samples in the validator's formats (Python 3.6, for JetPack 4.6), and the
+  [Jetson runbook](docs/devguide/integration/wayang-board-jetson.md) prepares a Jetson Nano 4 GB for B4.2.
 - Artifact-embedded WASM `convert.unit` in the local Rust cleaning pipeline,
   with Wasmtime 50.0.1/Pulley, fixed fuel, memory and stack bounds, no host
   imports and no native conversion fallback. Resource-limit and shared-vector

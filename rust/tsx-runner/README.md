@@ -59,8 +59,8 @@ selects the actual B3 executable for `s3` beside two Java sites and records its
 qualified identity, signed statuses and retained completed outcome. The
 `b4_sketch` example separately exposes existing statistics through bounded
 exact-bit JSON for cross-runtime boundary, zero-bucket and collapsed-tail
-checks; it does not add a deployed operator. Both physical ARM64 and ARMv7
-B4.2 measurements and physical ARMv7 B1.2 acceptance remain open.
+checks; it does not add a deployed operator. The physical ARM64 B4.2
+measurement remains open; D-T14 requires no ARMv7 hardware.
 
 ## Execute the local catalog profile
 
@@ -114,8 +114,9 @@ signed production fleet deployment remain outside both isolated profiles.
 The CI definition runs shared-vector and runner tests on native x86_64 and ARM64
 Linux, builds the three B1 musl targets, and executes supplementary ARMv7 tests
 under QEMU. Static-artifact reports check the actual ELF, dynamic dependencies,
-version and digest. A QEMU result is not physical ARMv7 qualification. TASK-020
-B1 and B1.2 remain open until the shared cases run on physical ARMv7 hardware.
+version and digest. A QEMU result is not physical ARMv7 qualification; under
+D-T14 TASK-020 B1.2 is met by the native x86_64 and ARM64 jobs, and ARMv7 stays
+a supplementary QEMU check.
 
 ## Serve a trusted local worker
 

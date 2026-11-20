@@ -11,7 +11,7 @@ clusters and synthetic windpark data. Producers connect to Proxy endpoints.
 
 The [retained W3 qualification](../../datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md)
 records the executed cases, source/runtime hashes and raw per-window evidence.
-Both physical ARM64 and ARMv7 board measurements remain open.
+The physical ARM64 board measurement remains open (D-T14: ARM64 only).
 
 ## Follow the actual runtime boundary
 
@@ -91,15 +91,15 @@ fleets, production enrollment or independent remote hardware.
 
 [`wayang_board_evaluation.py`](../../../tools/wayang_board_evaluation.py) prepares
 the fixed baseline (c) matrix and validates supplied evidence integrity. It does
-not execute or attest physical measurements. The matrix contains one ARM64 board
-and one ARMv7 board, Java 17, Java 21 and Rust, 100/1,000/10,000 series, and
-three repetitions: 54 conditions. Each condition retains the protocol's
+not execute or attest physical measurements. Under D-T14 the matrix contains one
+ARM64 board, Java 17, Java 21 and Rust, 100/1,000/10,000 series, and three
+repetitions: 27 conditions. Each condition retains the protocol's
 5-minute warm-up and 30-minute measurement with one-second resource samples.
 Read [concept 20, section 14.2](../../datamodel-2026/20-WAYANG-TS-OPERATORS.md#142-compare-track-b-and-track-a-on-small-hardware)
 for the measurement requirements.
 
-Both physical ARM64 and ARMv7 measurements remain open. A generated plan,
-synthetic validator test, hosted ARM64 result or ARMv7 QEMU result does not close
-B4.2. The separate physical ARMv7 B1.2 acceptance also remains open in
-[issue 294](https://github.com/kamir/OpenTSx/issues/294). No device performance
-numbers or hardware qualification follow from preparation alone.
+The physical ARM64 measurement remains open. A generated plan, synthetic
+validator test or hosted ARM64 result does not close B4.2, and the validator
+refuses ARMv7 and AArch32 boards. The [Jetson runbook](wayang-board-jetson.md)
+prepares a Jetson Nano 4 GB. No device performance numbers or hardware
+qualification follow from preparation alone.

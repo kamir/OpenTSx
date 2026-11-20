@@ -44,7 +44,7 @@ class BoardEvaluationTest(unittest.TestCase):
         evidence = {"schema": self.tool.EVIDENCE_SCHEMA, "status": "complete",
                     "evidenceKind": "synthetic-test-fixture", "protocol": self.tool.protocol(),
                     "sourceSnapshot": self.snapshot, "boards": [], "runs": []}
-        for architecture, machine in (("arm64", "aarch64"), ("armv7", "armv7l")):
+        for architecture, machine in (("arm64", "aarch64"),):
             evidence["boards"].append({"architecture": architecture, "machine": machine,
                 "executionMode": "physical", "system": "Linux", "deviceModel": "synthetic board fixture",
                 "os": "synthetic Linux fixture", "kernel": "synthetic kernel fixture",
@@ -91,16 +91,16 @@ class BoardEvaluationTest(unittest.TestCase):
         self.assertEqual("planned", plan["status"])
         self.assertFalse(plan["hardwareQualification"])
         self.assertEqual({"warmupSeconds": 300, "measurementSeconds": 1800, "sampleEverySeconds": 1}, plan["protocol"])
-        self.assertEqual(54, len(plan["conditions"]))
-        self.assertEqual(54, len({row["id"] for row in plan["conditions"]}))
+        self.assertEqual(27, len(plan["conditions"]))
+        self.assertEqual(27, len({row["id"] for row in plan["conditions"]}))
         self.assertTrue(all(board["deviceModel"] is None and board["executionMode"] == "unassigned" for board in plan["boards"]))
-        self.assertEqual({"arm64", "armv7"}, {row["architecture"] for row in plan["conditions"]})
+        self.assertEqual({"arm64"}, {row["architecture"] for row in plan["conditions"]})
         self.assertEqual({100, 1000, 10000}, {row["series"] for row in plan["conditions"]})
         self.assertEqual({"java17", "java21", "rust"}, {row["runtime"] for row in plan["conditions"]})
 
     def test_complete_synthetic_fixture_only_qualifies_evidence_integrity(self):
         result = self.validate(self.fixture())
-        self.assertEqual(54, result["conditions"])
+        self.assertEqual(27, result["conditions"])
         self.assertEqual("synthetic-test-fixture", result["evidenceKind"])
         self.assertFalse(result["hardwareQualification"])
         self.assertTrue(result["ownerReviewRequired"])
@@ -139,6 +139,21 @@ class BoardEvaluationTest(unittest.TestCase):
             changed["boards"][0][field] = replacement
             with self.subTest(field=field, value=replacement), self.assertRaisesRegex(ValueError, "board"):
                 self.validate(changed)
+
+    def test_armv7_boards_and_arm64_in_aarch32_mode_are_outside_b4_2(self):
+        value = self.fixture()
+        armv7 = copy.deepcopy(value["boards"][0])
+        armv7.update({"architecture": "armv7", "machine": "armv7l"})
+        for boards in ([armv7], [value["boards"][0], armv7], []):
+            changed = copy.deepcopy(value)
+            changed["boards"] = boards
+            with self.subTest(boards=[b["architecture"] for b in boards]), \
+                    self.assertRaisesRegex(ValueError, "exactly one physical arm64 device"):
+                self.validate(changed)
+        changed = copy.deepcopy(value)
+        changed["boards"][0]["machine"] = "armv7l"
+        with self.assertRaisesRegex(ValueError, "physical Linux architecture"):
+            self.validate(changed)
 
     def test_changed_source_or_artifact_cannot_be_claimed_as_verified(self):
         value = self.fixture()
@@ -208,15 +223,15 @@ class BoardEvaluationTest(unittest.TestCase):
         path = run["resources"]["file"]
         rows = (self.root / path).read_text().splitlines()
         run["resources"] = self.file(path, "\n".join(rows[:-1]) + "\n")
-        self.assertEqual(54, self.validate(value)["conditions"])
+        self.assertEqual(27, self.validate(value)["conditions"])
         run["durationSeconds"] = 2100
-        self.assertEqual(54, self.validate(value)["conditions"])
+        self.assertEqual(27, self.validate(value)["conditions"])
 
     def test_application_version_is_separate_from_the_jdk_or_rust_compiler_version(self):
         value = self.fixture()
         self.assertEqual("3.0.1", value["runs"][0]["artifact"]["version"])
         self.assertEqual("17.0.1", value["runs"][0]["runtimeVersion"])
-        self.assertEqual(54, self.validate(value)["conditions"])
+        self.assertEqual(27, self.validate(value)["conditions"])
         for runtime_version in (None, "dev", "21.0.1"):
             changed = copy.deepcopy(value)
             changed["runs"][0]["runtimeVersion"] = runtime_version
@@ -329,7 +344,7 @@ class BoardEvaluationTest(unittest.TestCase):
         output = self.root / "plan.json"
         with redirect_stdout(io.StringIO()):
             self.assertEqual(0, self.tool.main(["plan", "--output", str(output)]))
-        self.assertEqual(54, len(json.loads(output.read_text())["conditions"]))
+        self.assertEqual(27, len(json.loads(output.read_text())["conditions"]))
         with redirect_stdout(io.StringIO()):
             self.assertEqual(1, self.tool.main(["plan", "--output", str(output)]))
             self.assertEqual(1, self.tool.main(["validate", "--input", str(output), "--source-root", str(self.source)]))

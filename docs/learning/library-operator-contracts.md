@@ -52,8 +52,7 @@ Identical retry still requires every preparation and cross-topic ownership check
 The [isolated signed Rust run](../devguide/integration/rust-runner-b1.md) is
 another admission profile: continuous Episode pass-through only, with a pinned
 Ed25519 driver key and local bindings/policy. It does not expand the cleaning
-lessons or the available Rust operators. Physical ARMv7 qualification remains
-open.
+lessons or the available Rust operators. D-T14 requires no ARMv7 hardware.
 
 The [qualified bounded Rust site profile](../devguide/integration/rust-runner-b3.md)
 adds signed decode-to-statistics admission with its separate local
@@ -72,7 +71,7 @@ conformance, runtime-bound inventory admission and full record comparisons.
 The separate exact-bit sketch harness records boundary, zero-bucket and
 collapsed-tail domains. Its execution evidence retains the existing moments
 criterion; the harness alone does not establish a new numerical bound.
-Both physical ARM64 and ARMv7 B4.2 measurements remain open. The board tool
+The physical ARM64 B4.2 measurement remains open (D-T14). The board tool
 prepares and validates supplied evidence without running device measurements.
 
 The [local publication contract](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment)
