@@ -939,7 +939,7 @@
           "tools/test_rust_b3_qualification.py",
           "rust/tsx-runner/src/conformance.rs",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#L82",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/MixedSketchQualificationTest.java",
           "tools/test_wayang_board_evaluation.py"
         ],
@@ -1238,7 +1238,7 @@
           "rust/tsx-runner/tests/agent_cli.rs",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/RustSiteAdmissionTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#L82"
         ],
         "vectors": [
           "opentsx-model/src/test/resources/testvectors/wire-format.json",
@@ -1356,7 +1356,7 @@
           "rust/tsx-runner/src/forwarder.rs",
           "rust/tsx-runner/src/federation.rs",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#L82"
         ],
         "vectors": [
           "opentsx-model/src/test/resources/testvectors/wire-format.json"
@@ -1475,7 +1475,7 @@
           "rust/tsx-runner/src/agent.rs",
           "rust/tsx-runner/src/site_plan.rs",
           "rust/tsx-runner/src/forwarder.rs",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/AggregateInventory.java#fingerprint"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/AggregateInventory.java#L146"
         ],
         "tests": [
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointTest.java#aWrittenCheckpointReadsBackAndLeavesNoTemporaryFile",
@@ -1511,7 +1511,7 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceStatusReplayTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceRetirementTest.java",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#L82",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/RustSiteAdmissionTest.java"
         ],
         "vectors": []
@@ -1617,7 +1617,7 @@
           "rust/tsx-runner/src/site_client.rs",
           "tools/rust_ssh_launch.py",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxPlanService.java",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/AggregateInventory.java#fingerprint"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/AggregateInventory.java#L146"
         ],
         "tests": [
           "opentsx-model/src/test/java/org/opentsx/model/contracts/ExecutionAssignmentsTest.java#L35",
@@ -1648,7 +1648,7 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustAgentDaemonIntegrationTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceStatusReplayTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceRetirementTest.java",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#L82"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/execution-contracts.v1.json"

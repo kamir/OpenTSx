@@ -126,7 +126,7 @@ ARMv7 hardware acceptance.
 Keep the existing statistics, source, sink, checkpoint and assignment starters.
 Use the [mixed W3 guide](../devguide/integration/wayang-mixed-federation.md)
 and the actual mixed method in
-[`FederatedStatsIntegrationTest`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders)
+[`FederatedStatsIntegrationTest`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#L82)
 for these operational tasks:
 
 1. Identify Java `s1`/`s2` and the actual Rust CLI `s3`. Bind each qualified

@@ -15,9 +15,9 @@ Both physical ARM64 and ARMv7 board measurements remain open.
 
 ## Follow the actual runtime boundary
 
-[`FederatedStatsIntegrationTest.everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders`](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders)
+[`FederatedStatsIntegrationTest.everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders`](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#L82)
 selects Java sites `s1` and `s2` and a real Rust CLI process at `s3`.
-[`FederationFixture`](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/FederationFixture.java#mixed)
+[`FederationFixture`](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/FederationFixture.java#L106)
 uses the complete W3 input: 3,600 Episodes and 2,160,000 values from 100 series.
 The retained run has 1,260 site partials and 420 final windows across
 `PT10M` and `PT1H`, with alpha 0.01. The test asserts this complete inventory.
@@ -35,8 +35,8 @@ membership and scopes after current conformance. The Rust admission records
 site, node, executable version/digest and state ABI in the inventory identity.
 This does not permit a JVM executor to execute a Rust assignment. Each
 assignment still owns one complete topic with all internal partition positions.
-See [`AggregateInventory`](../../../opentsx-wayang/src/main/java/org/opentsx/wayang/federation/AggregateInventory.java#fingerprint)
-and [`TsxPlanService`](../../../opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxPlanService.java#admitAggregateInventory).
+See [`AggregateInventory`](../../../opentsx-wayang/src/main/java/org/opentsx/wayang/federation/AggregateInventory.java#L146)
+and [`TsxPlanService`](../../../opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxPlanService.java#L76).
 
 ## Inspect numerical qualification evidence
 
