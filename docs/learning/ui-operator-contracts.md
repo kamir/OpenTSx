@@ -519,7 +519,9 @@ Operator: `align.vector` . Defaults: `every=60` , `key="series"` , `agg="MEAN"` 
 `emit="any"` , `names=""` , `lateness=0`
 
 Requires time axes and every > 0. Aggregates samples on epoch ticks using MEAN, MIN, MAX, FIRST, LAST, SUM or COUNT.
-Groups by series ID, all, or a tag. Fill none leaves missing components; as-of uses an age bounded in whole ticks. Emit
+Groups by series ID, all, or a tag. Fill none leaves missing components; as-of uses an age bounded in whole ticks. A
+missing fill is none. Any other fill is refused with `vector fill must be none or as-of` , as the Rust runner and the
+vector processor refuse it. Emit
 any retains ticks with at least one component, complete requires all. Preserves per-component units, creates vector
 metadata, and ignores lateness in batch evaluation. VectorAligner and VectorProcessor provide existing Java
 implementations tested with shared vectors.
