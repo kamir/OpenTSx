@@ -71,6 +71,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   Manual and generated conversion lessons distinguish this local binding
   from signed fleet admission and open physical ARM64/ARMv7 acceptance.
 
+- Catalog `tsx-catalog/1` records the SHA-256 of each operator's vector file, with the new schema
+  `opentsx.catalog.v1`. `SystemDocTest` fails when a vector file changes without a new operator version and a new
+  catalog (S1.1.3). No operator, version or vector file changes.
+
 - Demo entry page linking local thermal, finite forecast and Windpark
   journeys to prerequisites, acceptance checks and a recording tied to its
   tested revision.

@@ -54,7 +54,10 @@ General continuous activation, production release qualification and ownership ha
    `fixed: { checks: [PLAUSIBLE_RANGE] }` (`systems/processors/dq.plausible-range.yaml`).
 3. A **catalog version** is a named, immutable set of `(id, version)` pairs: `tsx-catalog/<n>`, `n` an integer from
    1. Catalog 1 is the set in S1.7. A change to an operator's output for any input MUST raise its `version` and
-   MUST produce a new catalog version.
+   MUST produce a new catalog version. A frozen catalog ([schema](schemas/opentsx.catalog.v1.schema.json)) records,
+   per operator, the SHA-256 of the bytes of the vector file its description names (`testvectors`). The vectors
+   define the output, so a vector file whose bytes differ from the frozen hash fails `SystemDocTest`
+   (`catalogOneRefusesVectorsThatChangedAfterTheFreeze`) until the operator has a new version in a new catalog.
 4. A runtime MUST NOT run an operator version that is not in the catalog version named by the site plan.
 
 ### S1.2 Record types
@@ -131,7 +134,8 @@ The immutable identity/version inventory is
 It pins all 16 descriptions to version 1; `dq.plausible-range` supplies the
 `dq.checks` DAG alias. Parameters and semantics remain in the descriptions.
 `SystemDocTest` checks membership against this table, versions, schema validity,
-state, merge declarations, Wayang availability and repository references.
+state, merge declarations, Wayang availability, repository references and the
+SHA-256 of every vector file (S1.1.3).
 `TsxCatalogBindingsTest` checks the compiled logical and Java execution classes.
 
 `A` means an available native Java entry point. The local compiler of S2.3 translates

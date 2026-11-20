@@ -215,6 +215,9 @@ vector cases, and the four named parameter-message tests to execute successfully
   cases and four explicit ES kernel cases, six chunk/order runs each.
 - [x] Catalog `tsx-catalog/1` frozen: 16 version-1 identities in
   `systems/catalogs/tsx-catalog-1.yaml`, with complete validated descriptions.
+  Since 2026-11-20 every entry also carries the SHA-256 of its vector file
+  (schema `opentsx.catalog.v1`), so a changed output without a new version
+  fails `SystemDocTest`.
 
 Status of A3.1 on 2026-11-16, JDK 21, KafScale v1.6.0 built from source:
 `TsxVectorVectorsTest` runs all 6 shared cases through a Wayang plan with exact
