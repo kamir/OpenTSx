@@ -1,6 +1,7 @@
 # Build and run the standalone analysis package
 
-Run and record the Workbench and finite numerical service in one isolated Compose service, verified with OpenTSx Python 1.0.0.
+Run and record the Workbench and finite numerical service in one isolated
+Compose service, verified with OpenTSx Python 1.0.0.
 The pinned package targets `linux/arm64`; these commands use Docker 29.3.0 and
 Compose 5.1.0.
 
