@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# Tests the arguments of deploy/k3s/71-restore.sh: an unknown option, --only without its value or with an unknown
-# part, a second directory and no directory exit 2 before kubectl runs, and --help lists the exit codes; a directory
-# without a MANIFEST, an archive that is missing, damaged or not gzip, a missing env and nothing to restore exit 1
-# before kubectl runs; a declined question exits 1 with its message on stderr before kubectl runs; a missing namespace,
-# a namespace that cannot be read, a missing PVC and a failed step in the helper pod exit 1 with their message; a
-# MANIFEST of file= lines only restores; a current .env that cannot be kept exits 1 and stays as it is. A stand-in kubectl records any call; needs no kubectl, no cluster, no network.
+# Tests the arguments of deploy/k3s/71-restore.sh: an unknown option, --only without its value or with an unknown part,
+# a second directory and no directory exit 2 before kubectl runs, and --help lists the exit codes; a directory without a
+# MANIFEST, an archive that is missing, damaged or not gzip, a missing env and nothing to restore exit 1 before kubectl
+# runs; a declined question and a question at the end of standard input exit 1 with their message on stderr before
+# kubectl runs; an answer without a newline at the end counts as given; a missing namespace, a namespace that cannot be
+# read, a missing PVC and a failed step in the helper pod exit 1 with their message; a namespace that cannot be read
+# stops before .env is replaced, and env alone needs no cluster; a MANIFEST of file= lines only restores; a current .env
+# that cannot be kept exits 1 and stays as it is; a rerun after a failed step leaves the kept copy of the previous .env
+# as it is. A stand-in kubectl records any call; needs no kubectl, no cluster, no network.
 #
 #   bash deploy/k3s/test/test-71-restore.sh
 set -euo pipefail
@@ -134,6 +137,46 @@ else
   echo "ok   declined"
 fi
 
+rc=0
+rm -f "$WORK/calls.log"
+env -i PATH="$WORK/bin:$PATH" HOME="$WORK" WORK="$WORK" KUBECTL="$WORK/bin/kubectl" OPENTSX_ENV_FILE="$WORK/none.env" \
+  bash "$K3S_DIR/71-restore.sh" "$WORK/good" > "$WORK/no-answer.out" 2> "$WORK/no-answer.err" < /dev/null || rc=$?
+message="error: 71-restore.sh: no answer on standard input; pass --yes to run without the question"
+if (( rc != 1 )) || [[ "$(cat "$WORK/no-answer.err")" != "$message" ]]; then
+  failed "no-answer: exit $rc, expected 1 and only the message on stderr: $message"
+  sed 's/^/    stderr: /' "$WORK/no-answer.err"; sed 's/^/    stdout: /' "$WORK/no-answer.out"
+elif [[ -s "$WORK/calls.log" ]]; then
+  failed "no-answer: kubectl was called"
+else
+  echo "ok   no-answer"
+fi
+
+answer() {   # NAME INPUT [KEY=VALUE ...]: restore of the good backup without --yes, INPUT without a newline at the end
+  local name="$1" input="$2"; shift 2
+  rc=0
+  rm -f "$WORK/calls.log"
+  printf '%s' "$input" | env -i PATH="$WORK/bin:$PATH" HOME="$WORK" WORK="$WORK" KUBECTL="$WORK/bin/kubectl" \
+    OPENTSX_ENV_FILE="$WORK/none.env" "$@" bash "$K3S_DIR/71-restore.sh" "$WORK/good" \
+    > "$WORK/$name.out" 2> "$WORK/$name.err" || rc=$?
+}
+answer answered-no-newline y CLUSTER=up
+if (( rc != 0 )) || ! grep -qF "data.tar.gz -> PVC opentsx-data" "$WORK/answered-no-newline.out"; then
+  failed "answered-no-newline: exit $rc, expected 0 and data.tar.gz restored after the answer y without a newline"
+  sed 's/^/    stderr: /' "$WORK/answered-no-newline.err"; sed 's/^/    stdout: /' "$WORK/answered-no-newline.out"
+else
+  echo "ok   answered-no-newline"
+fi
+answer declined-no-newline n
+message="error: 71-restore.sh: aborted at the question; nothing was changed"
+if (( rc != 1 )) || [[ "$(cat "$WORK/declined-no-newline.err")" != "$message" ]]; then
+  failed "declined-no-newline: exit $rc, expected 1 and only the message on stderr: $message"
+  sed 's/^/    stderr: /' "$WORK/declined-no-newline.err"; sed 's/^/    stdout: /' "$WORK/declined-no-newline.out"
+elif [[ -s "$WORK/calls.log" ]]; then
+  failed "declined-no-newline: kubectl was called"
+else
+  echo "ok   declined-no-newline"
+fi
+
 failing() {   # NAME MESSAGE KEY=VALUE ...: restore of the good backup against the stand-in cluster, exit 1 with MESSAGE
   local name="$1" message="$2"; shift 2
   STUB_ENV=(CLUSTER=up "$@")
@@ -200,6 +243,57 @@ elif [[ "$(cat "$WORK/current.env")" != OPENTSX_DOMAIN=previous ]]; then
   failed "env-not-kept: the current .env was replaced"; sed 's/^/    /' "$WORK/current.env"
 else
   echo "ok   env-not-kept"
+fi
+
+mkdir -p "$WORK/env-data"
+printf 'OPENTSX_DOMAIN=frombackup\n' > "$WORK/env-data/env"
+cp "$WORK/good/data.tar.gz" "$WORK/env-data/"
+(cd "$WORK/env-data" && for f in env data.tar.gz; do echo "file=$(sha256sum "$f" | cut -d' ' -f1) $(wc -c < "$f") $f"; done) \
+  > "$WORK/env-data/MANIFEST"
+
+printf 'OPENTSX_DOMAIN=original\n' > "$WORK/down.env"
+STUB_ENV=(CLUSTER=down OPENTSX_ENV_FILE="$WORK/down.env")
+restore env-cluster-down "$WORK/env-data" --only env,data --yes
+STUB_ENV=()
+message="error: namespace opentsx: cannot read it; check the cluster with $WORK/bin/kubectl get namespace opentsx"
+if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/env-cluster-down.out"; then
+  failed "env-cluster-down: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/env-cluster-down.out"
+elif [[ "$(cat "$WORK/down.env")" != OPENTSX_DOMAIN=original || -e "$WORK/down.env.before-restore" ]]; then
+  failed "env-cluster-down: .env was replaced or kept aside although the namespace could not be read"
+  sed 's/^/    /' "$WORK/down.env"
+else
+  echo "ok   env-cluster-down"
+fi
+STUB_ENV=(CLUSTER=down OPENTSX_ENV_FILE="$WORK/down.env")
+restore env-only-no-cluster "$WORK/env-data" --only env --yes
+STUB_ENV=()
+if (( rc != 0 )) || [[ "$(cat "$WORK/down.env")" != OPENTSX_DOMAIN=frombackup ]]; then
+  failed "env-only-no-cluster: exit $rc, expected 0 and .env restored without the cluster"; sed 's/^/    /' "$WORK/env-only-no-cluster.out"
+elif [[ -s "$WORK/calls.log" ]]; then
+  failed "env-only-no-cluster: kubectl was called"; sed 's/^/    /' "$WORK/calls.log"
+else
+  echo "ok   env-only-no-cluster"
+fi
+
+printf 'OPENTSX_DOMAIN=original\n' > "$WORK/rerun.env"
+STUB_ENV=(CLUSTER=up EXEC=unpack-fails OPENTSX_ENV_FILE="$WORK/rerun.env")
+restore rerun-first "$WORK/env-data" --only env,data --yes
+first=$rc
+STUB_ENV=(CLUSTER=up OPENTSX_ENV_FILE="$WORK/rerun.env")
+restore rerun-second "$WORK/env-data" --only env,data --yes
+STUB_ENV=()
+message="  ok    $WORK/rerun.env: already the backup's env; $WORK/rerun.env.before-restore left as it is"
+if (( first != 1 || rc != 0 )); then
+  failed "rerun: exit $first and $rc, expected 1 for the failed unpack and 0 for the rerun"
+  sed 's/^/    first: /' "$WORK/rerun-first.out"; sed 's/^/    second: /' "$WORK/rerun-second.out"
+elif [[ "$(cat "$WORK/rerun.env.before-restore")" != OPENTSX_DOMAIN=original ]]; then
+  failed "rerun: the kept copy of the previous .env was overwritten"; sed 's/^/    /' "$WORK/rerun.env.before-restore"
+elif ! grep -qxF -- "$message" "$WORK/rerun-second.out"; then
+  failed "rerun: expected the message: $message"; sed 's/^/    /' "$WORK/rerun-second.out"
+elif grep -qF "previous .env kept as" "$WORK/rerun-second.out" || [[ "$(cat "$WORK/rerun.env")" != OPENTSX_DOMAIN=frombackup ]]; then
+  failed "rerun: the rerun says it kept the previous .env, or .env is not the backup's"; sed 's/^/    /' "$WORK/rerun-second.out"
+else
+  echo "ok   rerun"
 fi
 
 if (( failures )); then echo "$failures failed"; exit 1; fi

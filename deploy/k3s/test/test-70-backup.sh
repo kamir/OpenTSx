@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
-# Tests deploy/k3s/70-backup.sh and stop_writers of deploy/k3s/lib.sh: a writer whose pods outlive the wait stops the
-# quiesce with exit 1 (and no MANIFEST says quiesced=true), a failed read of a Deployment is not taken as "not
-# deployed", a missing namespace, a namespace that cannot be read, a backup directory that is not empty, no PVC, a
-# ConfigMap that cannot be read, a failed copy of a PVC and a helper pod that does not get ready stop the backup with
-# exit 1, and usage errors exit 2. A stand-in kubectl plays the cluster; needs no kubectl, no cluster, no network.
+# Tests deploy/k3s/70-backup.sh and stop_writers and start_writers of deploy/k3s/lib.sh: a writer whose pods outlive
+# the wait stops the quiesce with exit 1 (and no MANIFEST says quiesced=true), a failed read of a Deployment is not
+# taken as "not deployed", a writer that cannot be scaled back gives a warn line with the command to run, a missing
+# namespace, a namespace that cannot be read, a backup directory that is not empty or cannot be listed (it keeps its
+# files), no PVC, a ConfigMap that cannot be read, a failed copy of a PVC and a helper pod that does not get ready
+# stop the backup with exit 1, a backup that fails after it copied .env leaves its directory empty for the rerun,
+# LAKE=true without --quiesce warns, and usage errors exit 2. A stand-in kubectl plays the cluster; needs no kubectl,
+# no cluster, no network.
 #
 #   bash deploy/k3s/test/test-70-backup.sh
 set -euo pipefail
@@ -19,7 +22,8 @@ mkdir -p "$WORK/bin"
 # not exist, with --ignore-not-found as kubectl does: no output and exit 0. PODS=stay: the pods of opentsx-stats outlive the wait; PODS=none: the wait finds no pod (kubectl reports
 # "no matching resources found"); PODS=evicted: an evicted pod (phase Failed) is left, which the ReplicaSet does not
 # delete and a field selector on the phase leaves out. EXEC=fails: the copy in the helper pod fails; CONFIGMAP=fails: the
-# ConfigMap cannot be read; READY=never: the helper pod does not get ready.
+# ConfigMap cannot be read; READY=never: the helper pod does not get ready; SCALE_BACK=fails: scaling a Deployment to
+# anything but 0 fails; FOREIGN=<file>: reading the ConfigMap also creates that file, as another writer would.
 cat > "$WORK/bin/kubectl" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "$WORK/calls.log"
@@ -40,7 +44,9 @@ case "$*" in
   "get deployment "*)
     [[ "$*" == *--ignore-not-found* ]] && exit 0
     echo "Error from server (NotFound): deployments.apps \"$3\" not found" >&2; exit 1 ;;
-  "scale "*) exit 0 ;;
+  "scale "*)
+    [[ "${SCALE_BACK:-}" != fails || "$*" == *--replicas=0 ]] \
+      || { echo "error: deployments.apps \"$2\" is forbidden" >&2; exit 1; } ;;
   "wait --for=delete "*)
     case "${PODS:-gone}" in
       stay) echo "error: timed out waiting for the condition on pods/opentsx-stats-5d8f9-x2x7q" >&2; exit 1 ;;
@@ -64,6 +70,7 @@ case "$*" in
     [[ "${EXEC:-}" != fails ]] || { echo "error: unable to upgrade connection: container not found (\"helper\")" >&2; exit 1; }
     printf '' | gzip ;;
   "get configmap "*)
+    [[ -z "${FOREIGN:-}" ]] || touch "$FOREIGN"
     [[ "${CONFIGMAP:-}" != fails ]] || { echo "error: You must be logged in to the server (Unauthorized)" >&2; exit 1; }
     printf 'apiVersion: v1\nkind: ConfigMap\n' ;;
   *) echo "kubectl stand-in: unexpected call: $*" >&2; exit 1 ;;
@@ -109,6 +116,19 @@ for pods in gone none evicted; do
     echo "ok   quiesce-pods-$pods"
   fi
 done
+
+rc=0
+rm -f "$WORK/calls.log"
+# shellcheck disable=SC2016  # the inner bash expands $1
+env -i PATH="$WORK/bin:$PATH" HOME="$WORK" WORK="$WORK" KUBECTL="$WORK/bin/kubectl" SCALE_BACK=fails \
+  bash -c 'set -euo pipefail; source "$1"; OPENTSX_NS=opentsx; stop_writers; start_writers' _ "$K3S_DIR/lib.sh" \
+  > "$WORK/scale-back-fails.out" 2>&1 || rc=$?
+message="  warn  opentsx-stats: not scaled back to 1; run $WORK/bin/kubectl -n opentsx scale deployment/opentsx-stats --replicas=1"
+if (( rc != 0 )) || ! grep -qxF -- "$message" "$WORK/scale-back-fails.out"; then
+  failed "scale-back-fails: exit $rc, expected 0 and the message: $message"; sed 's/^/    /' "$WORK/scale-back-fails.out"
+else
+  echo "ok   scale-back-fails"
+fi
 
 # backup NAME [KEY=VALUE ...] -- ARG ...: 70-backup.sh with the stand-in; output in NAME.out, exit code in rc
 backup() {
@@ -193,6 +213,27 @@ mkdir -p "$WORK/backup-not-empty"
 touch "$WORK/backup-not-empty/env"
 stopped backup-not-empty "error: $WORK/backup-not-empty: exists and is not empty; give a new or empty directory with --out" \
   -- --out "$WORK/backup-not-empty"
+[[ -f "$WORK/backup-not-empty/env" ]] || failed "backup-not-empty: the file env of the directory that was not empty is gone"
+
+# ls: LS=fails refuses to list, as ls does for a directory the user may not read (root may read any); otherwise the
+# real ls.
+cat > "$WORK/bin/ls" <<EOF
+#!/usr/bin/env bash
+if [[ "\${LS:-}" == fails ]]; then echo "ls: cannot open directory '\${*: -1}': Permission denied" >&2; exit 2; fi
+exec $(command -v ls) "\$@"
+EOF
+chmod +x "$WORK/bin/ls"
+mkdir -p "$WORK/backup-unlisted"
+touch "$WORK/backup-unlisted/MANIFEST" "$WORK/backup-unlisted/stats-state.tar.gz"
+backup backup-unlisted LS=fails CONFIGMAP=fails -- --out "$WORK/backup-unlisted"
+message="error: $WORK/backup-unlisted: cannot list it; see the error above, then give a new or empty directory with --out"
+if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/backup-unlisted.out"; then
+  failed "backup-unlisted: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/backup-unlisted.out"
+elif [[ ! -f "$WORK/backup-unlisted/MANIFEST" || ! -f "$WORK/backup-unlisted/stats-state.tar.gz" ]]; then
+  failed "backup-unlisted: the files of the directory that could not be listed are gone"
+else
+  echo "ok   backup-unlisted"
+fi
 stopped backup-no-pvc "error: namespace opentsx: no OpenTSx PVC found; nothing to back up" \
   STATS_PVC=missing -- --out "$WORK/backup-no-pvc"
 stopped backup-exec-fails "error: PVC opentsx-stats-state: the backup into stats-state.tar.gz failed; see the error above, then run 70-backup.sh again" \
@@ -201,6 +242,54 @@ stopped backup-configmap-fails "error: ConfigMap opentsx-config: cannot read it 
   CONFIGMAP=fails -- --out "$WORK/backup-configmap-fails"
 stopped backup-helper-not-ready "error: pod opentsx-backup-helper: not ready after 180 s; check that the image opentsx/tools:0.0.0-test is imported and that the PVCs are on one node, see $WORK/bin/kubectl -n opentsx describe pod opentsx-backup-helper" \
   OPENTSX_TAG=0.0.0-test READY=never -- --out "$WORK/backup-helper-not-ready"
+
+# discarded NAME MESSAGE DIR [KEY=VALUE ...]: a backup into DIR that copies .env, then stops with exit 1 and MESSAGE;
+# DIR is empty again when it was given empty and gone when the run created it, and a rerun into DIR writes the backup
+printf 'OPENTSX_DOMAIN=wind\n' > "$WORK/current.env"
+discarded() {
+  local name="$1" message="$2" dir="$3" existed=false; shift 3
+  [[ -d "$dir" ]] && existed=true
+  backup "$name" OPENTSX_ENV_FILE="$WORK/current.env" "$@" -- --out "$dir"
+  if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/$name.out"; then
+    failed "$name: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/$name.out"
+  elif ! grep -qF "ok    env (contains secrets; keep $dir private)" "$WORK/$name.out"; then
+    failed "$name: .env was not copied before the failure"; sed 's/^/    /' "$WORK/$name.out"
+  elif $existed && [[ ! -d "$dir" ]]; then
+    failed "$name: the directory $dir that was given empty is gone"
+  elif [[ -e "$dir" ]] && { ! $existed || [[ -n "$(ls -A "$dir")" ]]; }; then
+    failed "$name: $dir is left with: $(find "$dir" -mindepth 1 -printf '%f ')"
+  else
+    backup "$name-rerun" OPENTSX_ENV_FILE="$WORK/current.env" -- --out "$dir"
+    if (( rc != 0 )) || [[ ! -f "$dir/MANIFEST" || ! -f "$dir/env" ]]; then
+      failed "$name: the rerun into $dir: exit $rc, expected 0, a MANIFEST and env"; sed 's/^/    /' "$WORK/$name-rerun.out"
+    else
+      echo "ok   $name"
+    fi
+  fi
+}
+mkdir -p "$WORK/daily"
+discarded discard-configmap-fails "error: ConfigMap opentsx-config: cannot read it in namespace opentsx; see the error above, then run 70-backup.sh again" \
+  "$WORK/daily" CONFIGMAP=fails
+discarded discard-exec-fails "error: PVC opentsx-stats-state: the backup into stats-state.tar.gz failed; see the error above, then run 70-backup.sh again" \
+  "$WORK/created" EXEC=fails
+
+backup discard-foreign OPENTSX_ENV_FILE="$WORK/current.env" CONFIGMAP=fails FOREIGN="$WORK/foreign/other" -- --out "$WORK/foreign"
+message="  warn  $WORK/foreign: not removed, it holds files this run did not write; remove them, or give a new or empty directory with --out"
+if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/discard-foreign.out"; then
+  failed "discard-foreign: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/discard-foreign.out"
+elif [[ "$(ls -A "$WORK/foreign")" != other ]]; then
+  failed "discard-foreign: expected only the foreign file left, found: $(find "$WORK/foreign" -mindepth 1 -printf '%f ')"
+else
+  echo "ok   discard-foreign"
+fi
+
+backup backup-lake-live LAKE=true -- --out "$WORK/backup-lake-live"
+message="  warn  LAKE=true without --quiesce: the copy of the Iceberg catalog and MinIO may be inconsistent if they were written during the backup; run 70-backup.sh --quiesce for a consistent copy"
+if (( rc != 0 )) || ! grep -qxF -- "$message" "$WORK/backup-lake-live.out"; then
+  failed "backup-lake-live: exit $rc, expected 0 and the message: $message"; sed 's/^/    /' "$WORK/backup-lake-live.out"
+else
+  echo "ok   backup-lake-live"
+fi
 
 # expect NAME MESSAGE ARG ...: a usage error, exit 2, before kubectl runs
 expect() {

@@ -42,17 +42,18 @@ kns get pvc
 info "images in use"
 kns get pod -o 'jsonpath={range .items[*]}{.spec.containers[*].image}{"\n"}{end}' | sort | uniq -c
 if have k3s; then
-  as_root k3s ctr images ls -q 2>/dev/null | grep -F "$OPENTSX_IMAGE_REPO/" | sed 's/^/  in k3s containerd: /' || warn "no $OPENTSX_IMAGE_REPO images in k3s containerd (11-import-images.sh)"
+  as_root k3s ctr images ls -q 2>/dev/null | grep -F "$OPENTSX_IMAGE_REPO/" | sed 's/^/  in k3s containerd: /' || warn "k3s containerd: no $OPENTSX_IMAGE_REPO images; import them with 11-import-images.sh"
 fi
 info "statistics checkpoint (written every 30 s; older than a few minutes = processor stuck, see operations.md R2)"
 if kns exec deployment/opentsx-stats -- ls -l --time-style=+%Y-%m-%dT%H:%M:%S /state 2>/dev/null; then
   # shellcheck disable=SC2016  # expanded by the shell inside the pod
   age="$(kns exec deployment/opentsx-stats -- sh -c 'echo $(( $(date +%s) - $(stat -c %Y /state/stats.ckpt) ))' 2>/dev/null || true)"
   if [[ "$age" =~ ^[0-9]+$ ]]; then
-    if (( age > 300 )); then warn "checkpoint is ${age} s old"; else ok "checkpoint age ${age} s"; fi
+    if (( age > 300 )); then warn "statistics checkpoint: ${age} s old; the processor may be stuck, see docs/devops/operations.md R2"
+    else ok "checkpoint age ${age} s"; fi
   fi
 else
-  warn "not available (pod not running or no checkpoint yet)"
+  warn "statistics checkpoint: not available (the pod does not run or has not written one yet); see ${KUBECTL} -n $OPENTSX_NS logs deployment/opentsx-stats"
 fi
 info "Modbus simulator (MODBUS_SIM=true)"
 kns get deployment/opentsx-modbus-sim 2>/dev/null || echo "  not deployed"

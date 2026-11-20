@@ -15,8 +15,8 @@
 #
 # Exit codes:
 #   0  deployed, every Deployment ready
-#   1  the cluster is not reachable, the apply failed, or a Deployment was not ready within the timeout (each one is
-#      named)
+#   1  the cluster is not reachable, the namespace cannot be read, the apply failed, or a Deployment was not ready
+#      within the timeout (each one is named)
 #   2  usage error: an unknown option, an option without its value, a --timeout that is not a duration, an
 #      argument, or a line of deploy/k3s/.env that is not a comment or KEY=VALUE with a known key
 set -euo pipefail
@@ -49,7 +49,7 @@ if $DRY; then
 fi
 
 # setup Jobs (MinIO bucket) are immutable: delete them first so a re-apply recreates them (they are idempotent)
-if kc get namespace "$OPENTSX_NS" >/dev/null 2>&1; then
+if namespace_exists; then
   kns delete job -l opentsx.org/setup=true --ignore-not-found >/dev/null
 fi
 

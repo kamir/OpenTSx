@@ -63,18 +63,41 @@ error: OPENTSX_STATS_WINDOWS: item "PT5" is not a duration; expected ISO-8601 su
 ```
 
 `50-status.sh`, `70-backup.sh` and `71-restore.sh` read the namespace `OPENTSX_NS` before any other kubectl call and
-exit with 1 when they cannot use it. A namespace that does not exist gives the next step, here from `70-backup.sh`:
+exit with 1 when they cannot use it. `71-restore.sh` reads it before it replaces `deploy/k3s/.env`, and not at all
+for `--only env`. A namespace that does not exist gives the next step, here from `70-backup.sh`:
 
 ```text
 error: namespace opentsx: not found; check OPENTSX_NS in deploy/k3s/.env and the kubectl context, or deploy it first with 30-deploy.sh
 ```
 
-Any other failure, for example an API server that cannot be reached, is not reported as a missing namespace. The
-script prints the error of kubectl, then:
+`30-deploy.sh` and `90-teardown.sh` take a namespace that does not exist as nothing to clean up. Any other failure,
+for example an API server that cannot be reached, is not reported as a missing namespace by any of these scripts.
+`30-deploy.sh` reads the nodes first and stops with `cluster not reachable with 'kubectl' (see 00-prereqs.sh)` when
+they do not answer. When the namespace cannot be read, `90-teardown.sh`, and `30-deploy.sh` after the nodes answered,
+print the error of kubectl, then exit with 1:
 
 ```text
 error: namespace opentsx: cannot read it; check the cluster with kubectl get namespace opentsx
 ```
+
+`71-restore.sh` and `90-teardown.sh` ask before they change anything. Without `--yes`, an answer that does not start
+with `y` or `Y` exits with 1, and so does standard input that ends before an answer, for example in CI:
+
+```text
+error: 90-teardown.sh: no answer on standard input; pass --yes to run without the question
+```
+
+A backup of `70-backup.sh` that fails removes the files it wrote, the copy of `.env` with the secrets included, and
+the directory when the run created it. The rerun with the same `--out` starts in an empty directory. A directory that
+was not empty when the run started, or that `ls` cannot list, is refused and keeps its files.
+
+```text
+error: PVC opentsx-stats-state: the backup into stats-state.tar.gz failed; see the error above, then run 70-backup.sh again
+```
+
+`71-restore.sh` with `env` keeps the current `.env` as `deploy/k3s/.env.before-restore`, then replaces it. When a
+later step fails and you run the same command again, `.env` already holds the backup's env: the script leaves `.env`
+and `.env.before-restore` as they are and prints `already the backup's env` with both file names.
 
 ## Set secrets
 

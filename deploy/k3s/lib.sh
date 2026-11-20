@@ -94,14 +94,17 @@ tcp_check() {
   timeout "$t" bash -c "exec 3<>/dev/tcp/$host/$port" 2>/dev/null
 }
 
-# require_namespace HINT: dies when the namespace OPENTSX_NS does not exist, with HINT as what to do, or cannot be read;
-# kubectl's error stays on stderr, so an unreachable cluster is not reported as a missing namespace.
-require_namespace() {
+# namespace_exists: true when the namespace OPENTSX_NS exists, false when it does not; dies when it cannot be read.
+# kubectl's error stays on stderr, so an unreachable cluster is not taken for a missing namespace.
+namespace_exists() {
   local found
   found="$(kc get namespace "$OPENTSX_NS" --ignore-not-found -o name)" \
     || die "namespace $OPENTSX_NS: cannot read it; check the cluster with ${KUBECTL} get namespace $OPENTSX_NS"
-  [[ -n "$found" ]] || die "namespace $OPENTSX_NS: not found; $1"
+  [[ -n "$found" ]]
 }
+
+# require_namespace HINT: dies when the namespace OPENTSX_NS does not exist, with HINT as what to do, or cannot be read.
+require_namespace() { namespace_exists || die "namespace $OPENTSX_NS: not found; $1"; }
 
 require_overlay() {
   [[ -f "$OVERLAY/kustomization.yaml" ]] || die "no rendered overlay in ${OVERLAY#"$ROOT"/}; run deploy/k3s/20-configure.sh first"
@@ -178,7 +181,7 @@ start_writers() {
   local d
   for d in "${!STOPPED_WRITERS[@]}"; do
     if kns scale "deployment/$d" --replicas="${STOPPED_WRITERS[$d]}" >/dev/null 2>&1; then ok "scaled $d back to ${STOPPED_WRITERS[$d]}"
-    else warn "could not scale $d back to ${STOPPED_WRITERS[$d]}; do it by hand"; fi
+    else warn "$d: not scaled back to ${STOPPED_WRITERS[$d]}; run ${KUBECTL} -n $OPENTSX_NS scale deployment/$d --replicas=${STOPPED_WRITERS[$d]}"; fi
   done
   STOPPED_WRITERS=()
 }

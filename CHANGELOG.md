@@ -916,6 +916,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   log files.
 - The MQTT example publishes its test message in `02_run_mqtt_broker.sh` after it starts the broker, instead of in
   `01_bootstrap.sh` before any broker runs.
+- The remaining warnings and refusals of the k3s scripts use the form '<subject>: <problem>; <what to do>', with
+  unchanged exit codes. In `70-backup.sh`: `LAKE=true without --quiesce: the copy of the Iceberg catalog and MinIO may
+  be inconsistent if they were written during the backup; run 70-backup.sh --quiesce for a consistent copy`. In
+  `90-teardown.sh`: `--images: k3s not found on this host; run 90-teardown.sh --images on the k3s node, or leave out
+  --images`, `<image>: not removed from k3s containerd (<reason>); remove it with sudo k3s ctr images rm
+  docker.io/<image> <image>` and `--images: <n> image(s) not removed from k3s containerd; see the warn lines above`.
+  In `50-status.sh`: `k3s containerd: no <repo> images; import them with 11-import-images.sh`, `statistics checkpoint:
+  <n> s old; the processor may be stuck, see docs/devops/operations.md R2` and `statistics checkpoint: not available
+  (the pod does not run or has not written one yet); see kubectl -n <namespace> logs deployment/opentsx-stats`. In
+  `lib.sh`: `<deployment>: not scaled back to <replicas>; run kubectl -n <namespace> scale deployment/<deployment>
+  --replicas=<replicas>`.
 
 ### Removed
 
@@ -2266,6 +2277,28 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   the check that detects an unreachable broker. The CronJob `opentsx-synthetic-check` runs every 10 minutes only when
   `20-configure.sh` was run with `MONITORING=true`, which is off by default. The operations guide says the same in its
   'What to watch' table and in runbook R1.
+- `deploy/k3s/70-backup.sh` removes the files of a run that fails before it writes MANIFEST, including the copy of
+  `.env` with its secrets, and removes the backup directory when the run created it. A rerun with the same `--out`
+  then gets past `<dir>: exists and is not empty`. A directory that was not empty when the run started is still
+  refused and keeps its files. When another writer put files into the directory during the run, it stays, with `<dir>:
+  not removed, it holds files this run did not write; remove them, or give a new or empty directory with --out`.
+  Before, a failed run left `env`, `opentsx-config.yaml` and archives behind.
+- `deploy/k3s/71-restore.sh` with `env` leaves `.env` and `.env.before-restore` as they are when `.env` already equals
+  the backup's env, and prints `<env file>: already the backup's env; <env file>.before-restore left as it is`.
+  Before, a rerun after a failed step copied the restored `.env` over `.env.before-restore`, the only copy of the
+  previous configuration.
+- `deploy/k3s/30-deploy.sh` and `90-teardown.sh` stop with exit code 1 and `namespace <namespace>: cannot read it;
+  check the cluster with kubectl get namespace <namespace>` when kubectl cannot read the namespace. Before,
+  `90-teardown.sh` took an unreachable cluster for a missing namespace and exited 0, and `30-deploy.sh` skipped
+  deleting the setup Jobs. `deploy/k3s/lib.sh` gets `namespace_exists`.
+- `deploy/k3s/71-restore.sh` checks the namespace and the PVCs before it replaces `deploy/k3s/.env`, so an unreachable
+  cluster or a missing PVC leaves `.env` as it is. `--only env` alone still needs no cluster.
+- `deploy/k3s/71-restore.sh` and `90-teardown.sh` without `--yes` exit with code 1 and `<script>: no answer on
+  standard input; pass --yes to run without the question` when standard input ends before an answer. An answer without
+  a newline at the end now counts as given. Before, both cases exited 1 without a message, even after the answer `y`.
+- `deploy/k3s/70-backup.sh` refuses a `--out` directory that it cannot list with `<dir>: cannot list it; see the error
+  above, then give a new or empty directory with --out` and no longer takes it for an empty one, so it no longer
+  writes into a directory that holds an older backup and overwrites its files.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

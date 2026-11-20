@@ -10,16 +10,18 @@
 # Order of a full restore on a new cluster:
 #   cp DIR/env deploy/k3s/.env      (or: 71-restore.sh DIR --only env)    then 20-configure.sh, 10/11 images, 30-deploy.sh
 #   deploy/k3s/71-restore.sh DIR     (the PVCs must exist: run 30-deploy.sh first)
-# What it does: stops the writers (opentsx-stats, opentsx-iceberg-rest, opentsx-minio scaled to 0), starts a helper pod
-# with the PVCs mounted read-write, REPLACES each PVC's content with the archive (ownership as in the backup), and
-# scales the writers back. The KafScale topics are not touched.
+# What it does: checks the namespace and the PVCs (env alone needs no cluster), keeps the current .env as
+# .env.before-restore and replaces it with the backup's env (a .env that already equals it stays, and so does the kept
+# copy, so a rerun after a failed step does not lose it), stops the writers (opentsx-stats, opentsx-iceberg-rest,
+# opentsx-minio scaled to 0), starts a helper pod with the PVCs mounted read-write, REPLACES each PVC's content with the
+# archive (ownership as in the backup), and scales the writers back. The KafScale topics are not touched.
 # Caution: the statistics checkpoint holds positions (offsets) in tsx.<domain>.episodes.v2. Restore it only against the
 # SAME topics; if the topics were deleted and recreated, skip stats-state (the processor then re-reads from the start).
 #
 # Exit codes:
 #   0  restored
 #   1  the backup is damaged or incomplete, the cluster, namespace or a PVC is missing, a step failed, or the
-#      question was not answered with y
+#      question was not answered with y (also at the end of standard input)
 #   2  usage error: no backup directory or a second one, an unknown option, --only without its value or with an
 #      unknown part, or a line of deploy/k3s/.env that is not a comment or KEY=VALUE with a known key
 set -euo pipefail
@@ -76,29 +78,35 @@ fi
 
 if ! $YES; then
   echo "This REPLACES the content of: ${PARTS[*]:-(no volumes)}$($RESTORE_ENV && echo " and deploy/k3s/.env") in namespace $OPENTSX_NS."
-  read -r -p "Continue? [y/N] " a
+  read -r -p "Continue? [y/N] " a || [[ -n "${a:-}" ]] \
+    || die "71-restore.sh: no answer on standard input; pass --yes to run without the question"
   [[ "$a" =~ ^[yY] ]] || die "71-restore.sh: aborted at the question; nothing was changed"
 fi
 
-if $RESTORE_ENV; then
-  if [[ -f "$ENV_FILE" ]]; then
-    cp -p "$ENV_FILE" "$ENV_FILE.before-restore" \
-      || die "$ENV_FILE.before-restore: cannot keep the current .env there; see the error above, nothing was restored"
-    warn "previous .env kept as $ENV_FILE.before-restore"
-  fi
-  (umask 077; cp "$DIR/env" "$ENV_FILE"); chmod 600 "$ENV_FILE"
-  ok "deploy/k3s/.env: restored; run 20-configure.sh (re-renders the overlay) and 30-deploy.sh"
-  (( ${#PARTS[@]} )) || exit 0
-  load_env
+PVCS=()
+if (( ${#PARTS[@]} )); then
+  require_namespace "run 20-configure.sh and 30-deploy.sh first"
+  for part in "${PARTS[@]}"; do
+    kns get pvc "${PVC[$part]}" >/dev/null 2>&1 \
+      || die "PVC ${PVC[$part]}: not found in namespace $OPENTSX_NS; run 30-deploy.sh first (opentsx-iceberg-catalog needs LAKE=true, opentsx-minio LAKE=true and LAKE_MINIO=true)"
+    PVCS+=("${PVC[$part]}")
+  done
 fi
 
-require_namespace "run 20-configure.sh and 30-deploy.sh first"
-PVCS=()
-for part in "${PARTS[@]}"; do
-  kns get pvc "${PVC[$part]}" >/dev/null 2>&1 \
-    || die "PVC ${PVC[$part]}: not found in namespace $OPENTSX_NS; run 30-deploy.sh first (opentsx-iceberg-catalog needs LAKE=true, opentsx-minio LAKE=true and LAKE_MINIO=true)"
-  PVCS+=("${PVC[$part]}")
-done
+if $RESTORE_ENV; then
+  if [[ -f "$ENV_FILE" ]] && cmp -s "$ENV_FILE" "$DIR/env"; then
+    ok "$ENV_FILE: already the backup's env; $ENV_FILE.before-restore left as it is"
+  else
+    if [[ -f "$ENV_FILE" ]]; then
+      cp -p "$ENV_FILE" "$ENV_FILE.before-restore" \
+        || die "$ENV_FILE.before-restore: cannot keep the current .env there; see the error above, nothing was restored"
+      warn "previous .env kept as $ENV_FILE.before-restore"
+    fi
+    (umask 077; cp "$DIR/env" "$ENV_FILE"); chmod 600 "$ENV_FILE"
+    ok "deploy/k3s/.env: restored; run 20-configure.sh (re-renders the overlay) and 30-deploy.sh"
+  fi
+  (( ${#PARTS[@]} )) || exit 0
+fi
 
 HELPER=opentsx-restore-helper
 finish() { kns delete pod "$HELPER" --ignore-not-found --wait=false >/dev/null 2>&1 || true; start_writers; }

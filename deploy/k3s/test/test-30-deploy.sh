@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Tests deploy/k3s/30-deploy.sh: it waits until every Deployment is ready and names each one that is not with exit 1,
-# a failed listing of the Deployments is no success, and usage errors exit 2 before kubectl runs. A stand-in kubectl
-# plays the cluster; needs no kubectl, no cluster, no network.
+# a failed listing of the Deployments is no success, the setup Jobs are deleted in an existing namespace only, a
+# namespace that cannot be read stops it with exit 1 before the apply, and usage errors exit 2 before kubectl runs. A
+# stand-in kubectl plays the cluster; needs no kubectl, no cluster, no network.
 #
 #   bash deploy/k3s/test/test-30-deploy.sh
 set -euo pipefail
@@ -13,14 +14,23 @@ failed() { echo "FAIL $1"; failures=$((failures + 1)); }
 
 mkdir -p "$WORK/bin" "$WORK/overlay"
 touch "$WORK/overlay/kustomization.yaml"
-# kubectl: opentsx-retrieval and opentsx-stats are deployed. NOT_READY=<name>: its rollout status times out as kubectl
-# does when the pods do not get ready. LIST=fails: listing the Deployments fails.
+# kubectl: the namespace exists, opentsx-retrieval and opentsx-stats are deployed. NOT_READY=<name>: its rollout status
+# times out as kubectl does when the pods do not get ready. LIST=fails: listing the Deployments fails.
+# NAMESPACE=missing: no namespace, with --ignore-not-found as kubectl does: no output and exit 0; NAMESPACE=unreadable:
+# the nodes answer, then reading the namespace fails as an API server that is no longer reachable does.
 cat > "$WORK/bin/kubectl" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "$WORK/calls.log"
 [[ "$1" == -n ]] && shift 2
 case "$*" in
-  "get nodes"|"get namespace "*|"delete job "*|"apply -k "*) exit 0 ;;
+  "get namespace "*)
+    case "${NAMESPACE:-}" in
+      missing) [[ "$*" == *--ignore-not-found* ]] && exit 0
+        echo "Error from server (NotFound): namespaces \"$3\" not found" >&2; exit 1 ;;
+      unreadable) echo "The connection to the server 10.0.0.1:6443 was refused" >&2; exit 1 ;;
+    esac
+    echo "namespace/$3" ;;
+  "get nodes"|"delete job "*|"apply -k "*) exit 0 ;;
   "get deployment -l "*)
     [[ "${LIST:-}" == fails ]] && { echo "The connection to the server 10.0.0.1:6443 was refused" >&2; exit 1; }
     printf 'deployment.apps/opentsx-retrieval\ndeployment.apps/opentsx-stats\n' ;;
@@ -54,7 +64,29 @@ for d in opentsx-retrieval opentsx-stats; do
     || failed "ready: no rollout status with the timeout for $d"
   grep -qF "ok    deployment.apps/$d ready" "$WORK/ready.out" || failed "ready: no ok line for $d"
 done
+grep -qxF -- "-n opentsx delete job -l opentsx.org/setup=true --ignore-not-found" "$WORK/calls.log" \
+  || failed "ready: the setup Jobs of the existing namespace were not deleted"
 if (( failures > before )); then sed 's/^/    /' "$WORK/ready.out"; else echo "ok   ready"; fi
+
+deploy no-namespace NAMESPACE=missing --
+if (( rc != 0 )) || grep -qF "delete job" "$WORK/calls.log" || ! grep -qxF "apply -k $WORK/overlay" "$WORK/calls.log"; then
+  failed "no-namespace: exit $rc, expected 0, no deletion of setup Jobs and the apply"
+  sed 's/^/    /' "$WORK/no-namespace.out"; sed 's/^/    call: /' "$WORK/calls.log"
+else
+  echo "ok   no-namespace"
+fi
+
+deploy namespace-unreadable NAMESPACE=unreadable --
+message="error: namespace opentsx: cannot read it; check the cluster with $WORK/bin/kubectl get namespace opentsx"
+if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/namespace-unreadable.out"; then
+  failed "namespace-unreadable: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/namespace-unreadable.out"
+elif ! grep -qxF "The connection to the server 10.0.0.1:6443 was refused" "$WORK/namespace-unreadable.out"; then
+  failed "namespace-unreadable: the error of kubectl is not shown"; sed 's/^/    /' "$WORK/namespace-unreadable.out"
+elif grep -qF "apply -k" "$WORK/calls.log"; then
+  failed "namespace-unreadable: the overlay was applied"; sed 's/^/    call: /' "$WORK/calls.log"
+else
+  echo "ok   namespace-unreadable"
+fi
 
 deploy not-ready NOT_READY=opentsx-stats --
 before=$failures

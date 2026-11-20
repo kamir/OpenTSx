@@ -14,7 +14,8 @@
 #
 # Exit codes:
 #   0  removed
-#   1  a deletion failed, an image could not be removed from k3s' containerd, or the question was not answered with y
+#   1  the namespace cannot be read, a deletion failed, --images without k3s on this host, an image could not be
+#      removed from k3s' containerd, or the question was not answered with y (also at the end of standard input)
 #   2  usage error: an unknown option, or a line of deploy/k3s/.env that is not a comment or KEY=VALUE with a
 #      known key
 set -euo pipefail
@@ -36,11 +37,12 @@ require_overlay
 
 if ! $YES; then
   what="namespace $OPENTSX_NS with all data"; $KEEP && what="workloads in $OPENTSX_NS (data kept)"
-  read -r -p "Delete $what? [y/N] " a
+  read -r -p "Delete $what? [y/N] " a || [[ -n "${a:-}" ]] \
+    || die "90-teardown.sh: no answer on standard input; pass --yes to run without the question"
   [[ "$a" =~ ^[yY] ]] || die "90-teardown.sh: aborted at the question; nothing was changed"
 fi
 
-if kc get namespace "$OPENTSX_NS" >/dev/null 2>&1; then
+if namespace_exists; then
   info "deleting Jobs"
   kns delete job -l app.kubernetes.io/part-of=opentsx --ignore-not-found
   kns delete job -l opentsx.org/setup=true --ignore-not-found
@@ -56,15 +58,15 @@ else
 fi
 
 if $IMAGES; then
-  have k3s || die "--images needs k3s on this host"
+  have k3s || die "--images: k3s not found on this host; run 90-teardown.sh --images on the k3s node, or leave out --images"
   info "removing images from k3s containerd"
   kept=0
   for img in "$TOOLS_IMAGE" "$STUDIO_IMAGE" "$SAAS_FRONTEND_IMAGE" "$SAAS_BACKEND_IMAGE"; do
     if ! err="$(as_root k3s ctr images rm "docker.io/$img" "$img" 2>&1 >/dev/null)"; then
-      warn "$img: not removed from k3s containerd: ${err//$'\n'/ }"
+      warn "$img: not removed from k3s containerd (${err//$'\n'/ }); remove it with sudo k3s ctr images rm docker.io/$img $img"
       kept=$((kept + 1))
     fi
   done
-  (( kept == 0 )) || die "$kept image(s) not removed from k3s containerd; see the warn lines above"
+  (( kept == 0 )) || die "--images: $kept image(s) not removed from k3s containerd; see the warn lines above"
 fi
 info "done (KafScale topics are untouched)"
