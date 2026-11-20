@@ -18,7 +18,8 @@
 #
 # Exit codes:
 #   0  built (and staged)
-#   1  the Maven build, the staging or an image build failed, or no JDK, Maven or image builder was found
+#   1  the Maven build, the staging or an image build failed, no JDK, Maven or image builder was found, or NERDCTL
+#      holds no command; the image builder, also one named with --builder or NERDCTL, is checked before the Maven build
 #   2  usage error: an unknown option, an option without its value, a --builder that is not one of the four, an
 #      argument, or a line of deploy/k3s/.env that is not a comment or KEY=VALUE with a known key
 set -euo pipefail
@@ -57,6 +58,19 @@ fi
 
 have java || die "java: not found; install a JDK 17 or newer, deploy/k3s/00-prereqs.sh checks the build tools"
 have mvn || die "mvn: not found; install Maven, deploy/k3s/00-prereqs.sh checks the build tools"
+if $IMAGES; then
+  if [[ -z "$BUILDER" ]]; then
+    for b in docker podman nerdctl buildah; do have "$b" && { BUILDER="$b"; break; }; done
+  fi
+  [[ -n "$BUILDER" ]] \
+    || die "image builder: none of docker, podman, nerdctl or buildah found; install one, or stage only with --no-images"
+  BUILD_CMD=("$BUILDER"); hint="install it or choose another builder with --builder"
+  if [[ "$BUILDER" == nerdctl ]]; then
+    read -r -a BUILD_CMD <<< "${NERDCTL:-nerdctl}"; hint="install it, set NERDCTL or choose another builder with --builder"
+    (( ${#BUILD_CMD[@]} )) || die "NERDCTL: holds no command; set it to the nerdctl command, or unset it to use nerdctl"
+  fi
+  have "${BUILD_CMD[0]}" || die "${BUILD_CMD[0]}: not found; $hint"
+fi
 if $MAVEN; then
   info "mvn install -DskipTests (all modules)"
   (cd "$ROOT" && mvn -q -B install -DskipTests)
@@ -69,12 +83,6 @@ $WITH_S3 && stage_args+=(--with-s3)
 CTX="$ROOT/deploy/docker/.stage"
 $IMAGES || { info "done (no images built)"; exit 0; }
 
-if [[ -z "$BUILDER" ]]; then
-  for b in docker podman nerdctl buildah; do have "$b" && { BUILDER="$b"; break; }; done
-fi
-[[ -n "$BUILDER" ]] \
-  || die "image builder: none of docker, podman, nerdctl or buildah found; install one, or stage only with --no-images"
-
 build() {   # dockerfile image [context]
   local file="$1" image="$2" CTX="${3:-$CTX}"
   info "building $image with $BUILDER${OPENTSX_PLATFORM:+ for $OPENTSX_PLATFORM}"
@@ -86,9 +94,7 @@ build() {   # dockerfile image [context]
         docker build -f "$file" -t "$image" "$CTX"
       fi ;;
     podman)  podman build ${OPENTSX_PLATFORM:+--platform "$OPENTSX_PLATFORM"} -f "$file" -t "$image" "$CTX" ;;
-    nerdctl)
-      local -a n; read -r -a n <<< "${NERDCTL:-nerdctl}"
-      "${n[@]}" build ${OPENTSX_PLATFORM:+--platform "$OPENTSX_PLATFORM"} -f "$file" -t "$image" "$CTX" ;;
+    nerdctl) "${BUILD_CMD[@]}" build ${OPENTSX_PLATFORM:+--platform "$OPENTSX_PLATFORM"} -f "$file" -t "$image" "$CTX" ;;
     buildah) buildah bud ${OPENTSX_PLATFORM:+--platform "$OPENTSX_PLATFORM"} -f "$file" -t "$image" "$CTX" ;;
   esac
 }

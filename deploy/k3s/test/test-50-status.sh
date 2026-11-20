@@ -2,8 +2,9 @@
 # Tests the arguments of deploy/k3s/50-status.sh: an unknown option and an argument exit 2 before kubectl runs,
 # --help lists the exit codes, a namespace that is not there exits 1 with its message, and a cluster that cannot be
 # reached exits 1 with kubectl's error and a message that does not say the namespace is missing; against a cluster
-# that answers, no OpenTSx image in k3s containerd, an old statistics checkpoint and a checkpoint that cannot be read
-# give their warn lines and exit 0. Stand-ins for kubectl, k3s and sudo; needs no kubectl, no cluster, no network.
+# that answers, no OpenTSx image in k3s containerd, a k3s containerd that cannot list its images (with the error of
+# k3s ctr), an old statistics checkpoint and a checkpoint that cannot be read give their warn lines and exit 0.
+# Stand-ins for kubectl, k3s and sudo; needs no kubectl, no cluster, no network.
 #
 #   bash deploy/k3s/test/test-50-status.sh
 set -euo pipefail
@@ -40,9 +41,13 @@ fi
 echo "The connection to the server 10.0.0.1:6443 was refused" >&2
 exit 1
 STUB
-# k3s ctr images ls -q: the OpenTSx tools image; IMAGES=none: only an image of another repository
+# k3s ctr images ls -q: the OpenTSx tools image; IMAGES=none: only an image of another repository; CTR=fails: refuses as
+# containerd does without access to its socket
 cat > "$WORK/bin/k3s" <<'STUB'
 #!/usr/bin/env bash
+if [[ "${CTR:-}" == fails ]]; then
+  echo 'ctr: failed to dial "/run/k3s/containerd/containerd.sock": connect: permission denied' >&2; exit 1
+fi
 if [[ "${IMAGES:-}" == none ]]; then echo "docker.io/library/busybox:1.36"; else echo "docker.io/opentsx/tools:3.0.1-local"; fi
 STUB
 printf '#!/usr/bin/env bash\nexec "$@"\n' > "$WORK/bin/sudo"
@@ -130,6 +135,18 @@ if (( rc != 0 )) || ! grep -qxF -- "$message" "$WORK/no-checkpoint.out"; then
   failed "no-checkpoint: exit $rc, expected 0 and the message: $message"; sed 's/^/    /' "$WORK/no-checkpoint.out"
 else
   echo "ok   no-checkpoint"
+fi
+
+STUB_ENV=(CLUSTER=up CTR=fails)
+status ctr-fails
+STUB_ENV=()
+message='  warn  k3s containerd: cannot list the images (ctr: failed to dial "/run/k3s/containerd/containerd.sock": connect: permission denied); check it with sudo k3s ctr images ls'
+if (( rc != 0 )) || ! grep -qxF -- "$message" "$WORK/ctr-fails.out"; then
+  failed "ctr-fails: exit $rc, expected 0 and the message: $message"; sed 's/^/    /' "$WORK/ctr-fails.out"
+elif grep -qF "no opentsx images" "$WORK/ctr-fails.out"; then
+  failed "ctr-fails: a failed listing is reported as no images"; sed 's/^/    /' "$WORK/ctr-fails.out"
+else
+  echo "ok   ctr-fails"
 fi
 
 if (( failures )); then echo "$failures failed"; exit 1; fi

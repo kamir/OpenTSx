@@ -178,10 +178,10 @@ stop_writers() {
   done
 }
 start_writers() {
-  local d
+  local d err
   for d in "${!STOPPED_WRITERS[@]}"; do
-    if kns scale "deployment/$d" --replicas="${STOPPED_WRITERS[$d]}" >/dev/null 2>&1; then ok "scaled $d back to ${STOPPED_WRITERS[$d]}"
-    else warn "$d: not scaled back to ${STOPPED_WRITERS[$d]}; run ${KUBECTL} -n $OPENTSX_NS scale deployment/$d --replicas=${STOPPED_WRITERS[$d]}"; fi
+    if err="$(kns scale "deployment/$d" --replicas="${STOPPED_WRITERS[$d]}" 2>&1 >/dev/null)"; then ok "scaled $d back to ${STOPPED_WRITERS[$d]}"
+    else warn "$d: not scaled back to ${STOPPED_WRITERS[$d]} (${err//$'\n'/ }); run ${KUBECTL} -n $OPENTSX_NS scale deployment/$d --replicas=${STOPPED_WRITERS[$d]}"; fi
   done
   STOPPED_WRITERS=()
 }

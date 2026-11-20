@@ -125,7 +125,7 @@ rc=0
 rm -f "$WORK/calls.log"
 env -i PATH="$WORK/bin:$PATH" HOME="$WORK" WORK="$WORK" KUBECTL="$WORK/bin/kubectl" OPENTSX_ENV_FILE="$WORK/none.env" \
   bash "$K3S_DIR/71-restore.sh" "$WORK/good" > "$WORK/declined.out" 2> "$WORK/declined.err" <<< n || rc=$?
-message="error: 71-restore.sh: aborted at the question; nothing was changed"
+message="error: 71-restore.sh: aborted at the question, nothing was changed; answer y to restore, or pass --yes"
 if (( rc != 1 )) || [[ "$(cat "$WORK/declined.err")" != "$message" ]]; then
   failed "declined: exit $rc, expected 1 and only the message on stderr: $message"
   sed 's/^/    stderr: /' "$WORK/declined.err"; sed 's/^/    stdout: /' "$WORK/declined.out"
@@ -167,7 +167,7 @@ else
   echo "ok   answered-no-newline"
 fi
 answer declined-no-newline n
-message="error: 71-restore.sh: aborted at the question; nothing was changed"
+message="error: 71-restore.sh: aborted at the question, nothing was changed; answer y to restore, or pass --yes"
 if (( rc != 1 )) || [[ "$(cat "$WORK/declined-no-newline.err")" != "$message" ]]; then
   failed "declined-no-newline: exit $rc, expected 1 and only the message on stderr: $message"
   sed 's/^/    stderr: /' "$WORK/declined-no-newline.err"; sed 's/^/    stdout: /' "$WORK/declined-no-newline.out"

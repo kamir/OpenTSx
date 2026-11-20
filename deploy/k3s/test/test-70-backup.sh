@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Tests deploy/k3s/70-backup.sh and stop_writers and start_writers of deploy/k3s/lib.sh: a writer whose pods outlive
 # the wait stops the quiesce with exit 1 (and no MANIFEST says quiesced=true), a failed read of a Deployment is not
-# taken as "not deployed", a writer that cannot be scaled back gives a warn line with the command to run, a missing
-# namespace, a namespace that cannot be read, a backup directory that is not empty or cannot be listed (it keeps its
-# files), no PVC, a ConfigMap that cannot be read, a failed copy of a PVC and a helper pod that does not get ready
-# stop the backup with exit 1, a backup that fails after it copied .env leaves its directory empty for the rerun,
-# LAKE=true without --quiesce warns, and usage errors exit 2. A stand-in kubectl plays the cluster; needs no kubectl,
-# no cluster, no network.
+# taken as "not deployed", a writer that cannot be scaled back gives a warn line with kubectl's error and the command to
+# run, a missing namespace, a namespace that cannot be read, a backup directory that is not empty or cannot be listed
+# (it keeps its files), a PVC that cannot be read (it is not taken as missing), no PVC, a ConfigMap that cannot be
+# read, a failed copy of a PVC and a helper pod that does not get ready stop the backup with exit 1, a backup that
+# fails after it copied .env leaves its directory empty for the rerun, LAKE=true without --quiesce warns, and usage
+# errors exit 2. A stand-in kubectl plays the cluster; needs no kubectl, no cluster, no network.
 #
 #   bash deploy/k3s/test/test-70-backup.sh
 set -euo pipefail
@@ -23,7 +23,8 @@ mkdir -p "$WORK/bin"
 # "no matching resources found"); PODS=evicted: an evicted pod (phase Failed) is left, which the ReplicaSet does not
 # delete and a field selector on the phase leaves out. EXEC=fails: the copy in the helper pod fails; CONFIGMAP=fails: the
 # ConfigMap cannot be read; READY=never: the helper pod does not get ready; SCALE_BACK=fails: scaling a Deployment to
-# anything but 0 fails; FOREIGN=<file>: reading the ConfigMap also creates that file, as another writer would.
+# anything but 0 fails; FOREIGN=<file>: reading the ConfigMap also creates that file, as another writer would;
+# PVC_READ=fails:<pvc>: reading that PVC fails as a lost connection to the API server does.
 cat > "$WORK/bin/kubectl" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "$WORK/calls.log"
@@ -38,15 +39,21 @@ case "$*" in
       echo "Error from server (NotFound): namespaces \"$3\" not found" >&2; exit 1
     fi
     echo "namespace/$3" ;;
-  "get pvc opentsx-stats-state") [[ "${STATS_PVC:-}" != missing ]] || { echo "Error from server (NotFound): persistentvolumeclaims \"$3\" not found" >&2; exit 1; } ;;
-  "get pvc "*) echo "Error from server (NotFound): persistentvolumeclaims \"$3\" not found" >&2; exit 1 ;;
+  "get pvc "*)
+    [[ "${PVC_READ:-}" != "fails:$3" ]] || { echo "The connection to the server 10.0.0.1:6443 was refused" >&2; exit 1; }
+    if [[ "$3" == opentsx-stats-state && "${STATS_PVC:-}" != missing ]]; then
+      [[ "$*" != *"-o name"* ]] || echo "persistentvolumeclaim/$3"
+      exit 0
+    fi
+    [[ "$*" == *--ignore-not-found* ]] && exit 0
+    echo "Error from server (NotFound): persistentvolumeclaims \"$3\" not found" >&2; exit 1 ;;
   "get deployment opentsx-stats "*) echo 1 ;;
   "get deployment "*)
     [[ "$*" == *--ignore-not-found* ]] && exit 0
     echo "Error from server (NotFound): deployments.apps \"$3\" not found" >&2; exit 1 ;;
   "scale "*)
     [[ "${SCALE_BACK:-}" != fails || "$*" == *--replicas=0 ]] \
-      || { echo "error: deployments.apps \"$2\" is forbidden" >&2; exit 1; } ;;
+      || { echo "Error from server (Forbidden): deployments.apps \"${2#deployment/}\" is forbidden" >&2; exit 1; } ;;
   "wait --for=delete "*)
     case "${PODS:-gone}" in
       stay) echo "error: timed out waiting for the condition on pods/opentsx-stats-5d8f9-x2x7q" >&2; exit 1 ;;
@@ -123,7 +130,7 @@ rm -f "$WORK/calls.log"
 env -i PATH="$WORK/bin:$PATH" HOME="$WORK" WORK="$WORK" KUBECTL="$WORK/bin/kubectl" SCALE_BACK=fails \
   bash -c 'set -euo pipefail; source "$1"; OPENTSX_NS=opentsx; stop_writers; start_writers' _ "$K3S_DIR/lib.sh" \
   > "$WORK/scale-back-fails.out" 2>&1 || rc=$?
-message="  warn  opentsx-stats: not scaled back to 1; run $WORK/bin/kubectl -n opentsx scale deployment/opentsx-stats --replicas=1"
+message="  warn  opentsx-stats: not scaled back to 1 (Error from server (Forbidden): deployments.apps \"opentsx-stats\" is forbidden); run $WORK/bin/kubectl -n opentsx scale deployment/opentsx-stats --replicas=1"
 if (( rc != 0 )) || ! grep -qxF -- "$message" "$WORK/scale-back-fails.out"; then
   failed "scale-back-fails: exit $rc, expected 0 and the message: $message"; sed 's/^/    /' "$WORK/scale-back-fails.out"
 else
@@ -234,7 +241,19 @@ elif [[ ! -f "$WORK/backup-unlisted/MANIFEST" || ! -f "$WORK/backup-unlisted/sta
 else
   echo "ok   backup-unlisted"
 fi
-stopped backup-no-pvc "error: namespace opentsx: no OpenTSx PVC found; nothing to back up" \
+backup backup-pvc-unreadable PVC_READ=fails:opentsx-data -- --out "$WORK/backup-pvc-unreadable"
+message="error: PVC opentsx-data: cannot read it; check the cluster with $WORK/bin/kubectl -n opentsx get pvc opentsx-data"
+if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/backup-pvc-unreadable.out"; then
+  failed "backup-pvc-unreadable: exit $rc, expected 1 and the message: $message"
+  sed 's/^/    /' "$WORK/backup-pvc-unreadable.out"
+elif ! grep -qxF "The connection to the server 10.0.0.1:6443 was refused" "$WORK/backup-pvc-unreadable.out"; then
+  failed "backup-pvc-unreadable: the error of kubectl is not shown"; sed 's/^/    /' "$WORK/backup-pvc-unreadable.out"
+elif [[ -e "$WORK/backup-pvc-unreadable" ]]; then
+  failed "backup-pvc-unreadable: the backup directory was created"
+else
+  echo "ok   backup-pvc-unreadable"
+fi
+stopped backup-no-pvc "error: namespace opentsx: no OpenTSx PVC found, nothing to back up; check OPENTSX_NS in deploy/k3s/.env, or deploy it first with 30-deploy.sh" \
   STATS_PVC=missing -- --out "$WORK/backup-no-pvc"
 stopped backup-exec-fails "error: PVC opentsx-stats-state: the backup into stats-state.tar.gz failed; see the error above, then run 70-backup.sh again" \
   EXEC=fails -- --out "$WORK/backup-exec-fails"

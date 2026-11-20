@@ -80,7 +80,7 @@ if ! $YES; then
   echo "This REPLACES the content of: ${PARTS[*]:-(no volumes)}$($RESTORE_ENV && echo " and deploy/k3s/.env") in namespace $OPENTSX_NS."
   read -r -p "Continue? [y/N] " a || [[ -n "${a:-}" ]] \
     || die "71-restore.sh: no answer on standard input; pass --yes to run without the question"
-  [[ "$a" =~ ^[yY] ]] || die "71-restore.sh: aborted at the question; nothing was changed"
+  [[ "$a" =~ ^[yY] ]] || die "71-restore.sh: aborted at the question, nothing was changed; answer y to restore, or pass --yes"
 fi
 
 PVCS=()

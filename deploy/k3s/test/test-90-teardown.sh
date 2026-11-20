@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Tests deploy/k3s/90-teardown.sh: an image that k3s ctr cannot remove gives a warn line naming it and exit 1, an image
-# that is not there is no failure, --images without k3s exits 1, a declined question and a question at the end of
-# standard input exit 1 with their message on stderr before kubectl runs, an answer without a newline at the end counts
-# as given, a namespace that cannot be read exits 1 and is not taken as missing, a missing namespace deletes nothing, an
-# existing one is deleted, and usage errors exit 2. Stand-ins for kubectl, k3s and sudo; needs no cluster.
+# that is not there is no failure, --images without k3s exits 1 and deletes nothing, a declined question and a
+# question at the end of standard input exit 1 with their message on stderr before kubectl runs, an answer without a
+# newline at the end counts as given, a namespace that cannot be read exits 1 and is not taken as missing, a missing
+# namespace deletes nothing, an existing one is deleted, and usage errors exit 2. Stand-ins for kubectl, k3s and sudo;
+# needs no cluster.
 #
 #   bash deploy/k3s/test/test-90-teardown.sh
 set -euo pipefail
@@ -86,7 +87,7 @@ rm -f "$WORK/calls.log"
 env -i PATH="$WORK/bin:$PATH" HOME="$WORK" WORK="$WORK" KUBECTL="$WORK/bin/kubectl" OPENTSX_ENV_FILE="$WORK/none.env" \
   OPENTSX_OVERLAY="$WORK/overlay" bash "$K3S_DIR/90-teardown.sh" > "$WORK/declined.out" 2> "$WORK/declined.err" <<< n \
   || rc=$?
-message="error: 90-teardown.sh: aborted at the question; nothing was changed"
+message="error: 90-teardown.sh: aborted at the question, nothing was changed; answer y to delete, or pass --yes"
 if (( rc != 1 )) || [[ "$(cat "$WORK/declined.err")" != "$message" ]] || [[ -s "$WORK/declined.out" ]]; then
   failed "declined: exit $rc, expected 1, only the message on stderr and nothing on stdout: $message"
   sed 's/^/    stderr: /' "$WORK/declined.err"; sed 's/^/    stdout: /' "$WORK/declined.out"
@@ -127,7 +128,7 @@ else
   echo "ok   answered-no-newline"
 fi
 answer declined-no-newline n
-message="error: 90-teardown.sh: aborted at the question; nothing was changed"
+message="error: 90-teardown.sh: aborted at the question, nothing was changed; answer y to delete, or pass --yes"
 if (( rc != 1 )) || [[ "$(cat "$WORK/declined-no-newline.err")" != "$message" ]] \
   || [[ -s "$WORK/declined-no-newline.out" ]]; then
   failed "declined-no-newline: exit $rc, expected 1, only the message on stderr and nothing on stdout: $message"
@@ -170,10 +171,12 @@ fi
 mkdir -p "$WORK/no-k3s"
 ln -s "$(command -v bash)" "$WORK/no-k3s/bash"
 ln -s "$(command -v dirname)" "$WORK/no-k3s/dirname"
-teardown images-without-k3s PATH="$WORK/no-k3s" -- --images --yes
+teardown images-without-k3s PATH="$WORK/no-k3s" NAMESPACE=present -- --images --yes
 message="error: --images: k3s not found on this host; run 90-teardown.sh --images on the k3s node, or leave out --images"
 if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/images-without-k3s.out"; then
   failed "images-without-k3s: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/images-without-k3s.out"
+elif [[ -s "$WORK/calls.log" ]]; then
+  failed "images-without-k3s: kubectl was called before k3s was checked"; sed 's/^/    call: /' "$WORK/calls.log"
 else
   echo "ok   images-without-k3s"
 fi

@@ -14,8 +14,9 @@
 #
 # Exit codes:
 #   0  removed
-#   1  the namespace cannot be read, a deletion failed, --images without k3s on this host, an image could not be
-#      removed from k3s' containerd, or the question was not answered with y (also at the end of standard input)
+#   1  the namespace cannot be read, a deletion failed, --images without k3s on this host (checked before the
+#      question, so nothing is deleted), an image could not be removed from k3s' containerd, or the question was not
+#      answered with y (also at the end of standard input)
 #   2  usage error: an unknown option, or a line of deploy/k3s/.env that is not a comment or KEY=VALUE with a
 #      known key
 set -euo pipefail
@@ -34,12 +35,15 @@ while [[ $# -gt 0 ]]; do
 done
 load_env
 require_overlay
+if $IMAGES; then
+  have k3s || die "--images: k3s not found on this host; run 90-teardown.sh --images on the k3s node, or leave out --images"
+fi
 
 if ! $YES; then
   what="namespace $OPENTSX_NS with all data"; $KEEP && what="workloads in $OPENTSX_NS (data kept)"
   read -r -p "Delete $what? [y/N] " a || [[ -n "${a:-}" ]] \
     || die "90-teardown.sh: no answer on standard input; pass --yes to run without the question"
-  [[ "$a" =~ ^[yY] ]] || die "90-teardown.sh: aborted at the question; nothing was changed"
+  [[ "$a" =~ ^[yY] ]] || die "90-teardown.sh: aborted at the question, nothing was changed; answer y to delete, or pass --yes"
 fi
 
 if namespace_exists; then
@@ -58,7 +62,6 @@ else
 fi
 
 if $IMAGES; then
-  have k3s || die "--images: k3s not found on this host; run 90-teardown.sh --images on the k3s node, or leave out --images"
   info "removing images from k3s containerd"
   kept=0
   for img in "$TOOLS_IMAGE" "$STUDIO_IMAGE" "$SAAS_FRONTEND_IMAGE" "$SAAS_BACKEND_IMAGE"; do

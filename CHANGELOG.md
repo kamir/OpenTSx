@@ -909,8 +909,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   exits with code 1 when that create fails, and that a caller of `KafkaTopics.append` that appends again after a
   failed create tries the create again on a new Admin client.
 - `deploy/k3s/71-restore.sh` and `90-teardown.sh` write a declined question on standard error as `error:
-  71-restore.sh: aborted at the question; nothing was changed` (or `90-teardown.sh`) instead of `aborted` on standard
-  output. The exit code stays 1.
+  71-restore.sh: aborted at the question, nothing was changed; answer y to restore, or pass --yes` (`90-teardown.sh`:
+  `answer y to delete, or pass --yes`) instead of `aborted` on standard output. The exit code stays 1.
 - The warnings of `deploy/k3s/10-build.sh` about `LAKE=true` without `--with-s3` and of `deploy/k3s/70-backup.sh`
   about a missing `.env` use the form '<subject>: <problem>; <what to do>': `--with-s3: not given with LAKE=true;
   windpark-sim and the retrieval server cannot open an s3:// warehouse without S3FileIO, run 10-build.sh --with-s3`
@@ -929,14 +929,22 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   In `50-status.sh`: `k3s containerd: no <repo> images; import them with 11-import-images.sh`, `statistics checkpoint:
   <n> s old; the processor may be stuck, see docs/devops/operations.md R2` and `statistics checkpoint: not available
   (the pod does not run or has not written one yet); see kubectl -n <namespace> logs deployment/opentsx-stats`. In
-  `lib.sh`: `<deployment>: not scaled back to <replicas>; run kubectl -n <namespace> scale deployment/<deployment>
-  --replicas=<replicas>`.
+  `lib.sh`: `<deployment>: not scaled back to <replicas> (<error>); run kubectl -n <namespace> scale
+  deployment/<deployment> --replicas=<replicas>`.
 - `docs/datamodel-2026/01-ANALYSE-Datenmodell.md` names `TSOProducer.pushTSDataAsEpisodesToKafka_String_Avro`,
   `pushTSDataAsEventsToKafka_String_Avro`, `OpenTSxClusterLink.send` and `LegacyBridge.seriesKeyFromLabel` instead of
   line numbers of code that moved or is not in the repository. It no longer reports a hard-coded label `"123"` or
   quadratic event timestamps, which the producer does not have.
 - `opentsx-core`: the `main` methods of `ReturnIntervallStatistik2` and `TSPropertyTester` shift every series they
   move to a minimum of 0 the same way and log a `shifted series` DEBUG line for each, including the Gaussian series.
+- The warning of `70-backup.sh` and `71-restore.sh` about a writer they could not scale back names kubectl's error:
+  `<deployment>: not scaled back to <replicas> (<error>); run kubectl -n <namespace> scale deployment/<deployment>
+  --replicas=<replicas>`.
+- `deploy/k3s/70-backup.sh` without any OpenTSx PVC says what to do: `namespace <namespace>: no OpenTSx PVC found,
+  nothing to back up; check OPENTSX_NS in deploy/k3s/.env, or deploy it first with 30-deploy.sh`. The exit code stays
+  1.
+- docs/devops/operations.md says that the synthetic check runs only with `MONITORING=true` everywhere it names the
+  check as a signal: the What to watch table, R2, R3, the service levels and the capacity review.
 
 ### Removed
 
@@ -2355,6 +2363,20 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - tools: `tools/test_lg_scripts.py` ignores a `cd` or an image install command inside quotes, also the quoted text
   around a command substitution such as `echo "a; cd b $(pwd)"`; a `cd` inside the substitution is still checked. When
   the arguments of a command do not split into words, it reports a finding instead of stopping with `ValueError`.
+- `deploy/k3s/10-build.sh` checks the image builder before the Maven build, also a builder named with `--builder` and
+  the command in `NERDCTL`. A builder that is not installed stops with `<tool>: not found; install it or choose
+  another builder with --builder` (for nerdctl: `install it, set NERDCTL or choose another builder with --builder`)
+  and exit code 1. A `NERDCTL` that holds only blanks stops with `NERDCTL: holds no command; set it to the nerdctl
+  command, or unset it to use nerdctl`. Before, the script ran the whole Maven build and then failed with exit code
+  127 and the shell's `command not found`.
+- `deploy/k3s/90-teardown.sh --images` checks for k3s before the question and before anything is deleted. Before, on a
+  host without k3s, it deleted the installation first and then exited with code 1.
+- `deploy/k3s/70-backup.sh` stops with exit code 1 and `PVC <pvc>: cannot read it; check the cluster with kubectl -n
+  <namespace> get pvc <pvc>` when kubectl cannot read a PVC, and shows kubectl's error. Before, any failed read
+  counted as a missing PVC, so the backup left that PVC out and exited with code 0.
+- `deploy/k3s/50-status.sh` reports a k3s containerd that cannot list its images as `k3s containerd: cannot list the
+  images (<error>); check it with sudo k3s ctr images ls`. Before, it dropped the error and reported `no <repo>
+  images`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

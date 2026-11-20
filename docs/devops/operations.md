@@ -96,11 +96,11 @@ with `kubectl diff -k deploy/k3s/overlays/local` before `30-deploy.sh`.
 | Signal | Why | Today, without a metrics stack | As a metric (kube-state-metrics / kubelet) |
 |--------|-----|-------------------------------|--------------------------------------------|
 | KafScale reachable, **advertised address** reachable from the pods | most common failure; everything depends on it | `40-demo.sh kafscale-check`; `opentsx-synthetic-check` every 10 min with `MONITORING=true` | indirectly: `kube_cronjob_status_last_successful_time{cronjob="opentsx-synthetic-check"}` |
-| statistics processor alive and progressing | stale statistics are silent | the probes on its progress file (not ready about 3 min after the last poll the broker did not refuse, restarted about 12 min after it; [Read the probes](#read-the-probes)), checkpoint age in `50-status.sh` (written every 30 s; > 5 min = stuck), synthetic check | `kube_deployment_status_replicas_available{deployment="opentsx-stats"}`, restarts `kube_pod_container_status_restarts_total{container="stats"}` |
+| statistics processor alive and progressing | stale statistics are silent | the probes on its progress file (not ready about 3 min after the last poll the broker did not refuse, restarted about 12 min after it; [Read the probes](#read-the-probes)), checkpoint age in `50-status.sh` (written every 30 s; > 5 min = stuck), synthetic check with `MONITORING=true` | `kube_deployment_status_replicas_available{deployment="opentsx-stats"}`, restarts `kube_pod_container_status_restarts_total{container="stats"}` |
 | consumer lag of the processor (end offset − checkpoint position) | backlog after an outage | **not available**: the positions are only in the checkpoint file; compare the `series-stats` record count over time (`kafscale-check`) | **not exported** (backlog) |
-| Job and CronJob failures | demo Jobs, DWD fetch, synthetic check | `kubectl -n opentsx get jobs,cronjobs`, `50-status.sh` | `kube_job_status_failed`, `kube_cronjob_status_last_successful_time` |
+| Job and CronJob failures | demo Jobs, DWD fetch, synthetic check with `MONITORING=true` | `kubectl -n opentsx get jobs,cronjobs`, `50-status.sh` | `kube_job_status_failed`, `kube_cronjob_status_last_successful_time` |
 | pods waiting (CrashLoopBackOff, ImagePullBackOff, CreateContainerConfigError) | broken rollout | `50-status.sh` (warnings) | `kube_pod_container_status_waiting_reason` |
-| PVC usage | a full checkpoint or data volume stops the writers | `df` in the synthetic check (alarm > 85 %) | `kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes`; **not reported for k3s' `local-path` volumes** (they are host paths); available with a CSI driver such as Longhorn |
+| PVC usage | a full checkpoint or data volume stops the writers | `df` in the synthetic check with `MONITORING=true` (alarm > 85 %) | `kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes`; **not reported for k3s' `local-path` volumes** (they are host paths); available with a CSI driver such as Longhorn |
 | Iceberg REST catalog and MinIO (lake) | lake reads/writes | readiness probes (`/v1/config`, `/minio/health/ready`), `kubectl get deploy` | `kube_deployment_status_replicas_available`; MinIO's own `/minio/v2/metrics/cluster` needs `MINIO_PROMETHEUS_AUTH_TYPE=public` or a token (not configured) |
 | retrieval API | user-facing | readiness probe `/v1/ready` (503 after 3 failed refresh periods of the feed) | `kube_deployment_status_replicas_available{deployment="opentsx-retrieval"}` |
 | node resources | sizing | `kubectl top pod -n opentsx` (metrics-server ships with k3s) | `container_memory_working_set_bytes` (cAdvisor via the kubelet) |
@@ -210,8 +210,8 @@ None of the OpenTSx processes (stats, retrieval, Jobs, pollers) has a `/metrics`
 * DWD fetch: issue time of the latest forecast, HTTP errors;
 * KafScale broker metrics: depend on the KafScale release; not checked here.
 
-These are backlog items (see [below](#backlog-operations)). Until then, the synthetic check and the logs are the
-signals.
+These are backlog items (see [below](#backlog-operations)). Until then, the logs and, with `MONITORING=true`, the
+synthetic check are the signals.
 
 ## Logging
 
@@ -398,8 +398,8 @@ Each runbook: symptom → check → cause → fix → verify. Start every invest
 ### R2: Statistics processor stuck or crash-looping
 
 * **Symptom:** the pod is not ready (`30-deploy.sh` names `deployment.apps/opentsx-stats`), its liveness probe
-  restarted it, checkpoint older than 5 minutes (`50-status.sh`, synthetic check), `series-stats` record count does
-  not grow, or `CrashLoopBackOff`.
+  restarted it, checkpoint older than 5 minutes (`50-status.sh`, synthetic check with `MONITORING=true`),
+  `series-stats` record count does not grow, or `CrashLoopBackOff`.
 * **Check:** `kubectl -n opentsx logs deploy/opentsx-stats --previous`; `kubectl -n opentsx describe pod -l
   app.kubernetes.io/name=opentsx-stats` (OOMKilled?); `40-demo.sh kafscale-check` (are there new episodes?).
 * **Causes and fixes:**
@@ -416,8 +416,9 @@ Each runbook: symptom → check → cause → fix → verify. Start every invest
 
 ### R3: PVC full
 
-* **Symptom:** synthetic check `a volume is more than 85 % full`; write errors (`No space left on device`) in the
-  stats processor or Jobs; MinIO returns errors.
+* **Symptom:** the synthetic check, which runs only with `MONITORING=true`, prints
+  `FAIL: a volume is more than 85 % full`; write errors (`No space left on device`) in the stats processor or Jobs;
+  MinIO returns errors.
 * **Check:** `kubectl -n opentsx get pvc`; on the node `df -h /var/lib/rancher/k3s/storage` (local-path); inside:
   `kubectl -n opentsx exec deploy/opentsx-stats -- df -h /state`.
 * **Cause:** with `local-path` the "size" of a PVC is not enforced: all volumes share the node's disk, so a full disk
@@ -426,7 +427,8 @@ Each runbook: symptom → check → cause → fix → verify. Start every invest
 * **Fix:** remove old files (`kubectl -n opentsx run` a helper or use `70-backup.sh` then prune), prune images
   (`sudo k3s crictl rmi --prune`), grow the disk; with a CSI driver expand the PVC
   (`kubectl patch pvc … -p '{"spec":{"resources":{"requests":{"storage":"5Gi"}}}}'`).
-* **Verify:** synthetic check green; writers running again (R2 verify).
+* **Verify:** `df -h` of the volumes (see Check) below 85 %, and with `MONITORING=true` the next synthetic check
+  green; writers running again (R2 verify).
 
 ### R4: Iceberg REST catalog down
 
@@ -524,8 +526,8 @@ Simple targets, measured with the signals above, reviewed monthly:
 
 | Objective | Target (lab) | Measured by |
 |-----------|--------------|-------------|
-| synthetic check passes (KafScale reachable, checkpoint fresh, disks < 85 %) | ≥ 95 % of runs per month | CronJob history / `kube_cronjob_status_last_successful_time` |
-| statistics freshness | checkpoint younger than 5 min, ≥ 99 % of the time while episodes arrive | synthetic check |
+| synthetic check passes (KafScale reachable, checkpoint fresh, disks < 85 %), with `MONITORING=true` | ≥ 95 % of runs per month | CronJob history / `kube_cronjob_status_last_successful_time` |
+| statistics freshness | checkpoint younger than 5 min, ≥ 99 % of the time while episodes arrive | synthetic check with `MONITORING=true` |
 | retrieval API available | `/v1/ready` ready ≥ 99 % during working hours | readiness / `kube_deployment_status_replicas_available` |
 | DWD forecast | a successful fetch on ≥ 95 % of days, never two days in a row missed | `OpenTSxDwdForwardStale` |
 | backup | daily, restore tested once per quarter | backup directory, test log |
@@ -540,7 +542,8 @@ Monthly in the lab (and after every new data source), compare the installation w
 
 1. `kubectl top pod -n opentsx` during a demo run and the steady state → requests/limits ([§1](sizing-plan.md#1-components-requests--limits-as-shipped)).
 2. Checkpoint size (`50-status.sh`) → stats memory limit ≈ 3 × checkpoint + 300 MB ([§4.1](sizing-plan.md#41-statistics-processor)).
-3. Disk usage from the synthetic check (`df`) → act at 70 %, alarm at 85 %.
+3. Disk usage from the synthetic check (`df`, with `MONITORING=true`) or `df -h` of the volumes (R3) → act at 70 %,
+   alarm at 85 %.
 4. Bytes in KafScale's bucket and in the warehouse after a known run → B/value, compare with 2.18 B/value
    ([§3](sizing-plan.md#3-data-volume)); project with the formula for the planned channels.
 5. Record the measured values in the sizing plan and replace its **assumption** rows.

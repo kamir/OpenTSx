@@ -47,6 +47,16 @@ secret key as an argument. The tests in `deploy/k3s/test/` run the scripts witho
 error: nosuch: unknown demo; expected one of kafscale-check windpark-sim stats metadata metadata-publish twin house boat studio-export retrieval studio dwd dwd-online dwd-forward modbus modbus-poll all
 ```
 
+`10-build.sh` checks the image builder before the Maven build, also a builder named with `--builder` and the command
+in `NERDCTL`. A builder that is not installed exits with 1:
+
+```text
+error: podman: not found; install it or choose another builder with --builder
+```
+
+A `NERDCTL` that holds only blanks exits with 1 as `NERDCTL: holds no command; set it to the nerdctl command, or unset
+it to use nerdctl`.
+
 Every script reads `deploy/k3s/.env` and refuses a line that is not empty, a comment or `KEY=VALUE` with a key of
 `env.example` when it loads the configuration, with exit 2. `.env` stays as it is:
 
@@ -80,12 +90,19 @@ print the error of kubectl, then exit with 1:
 error: namespace opentsx: cannot read it; check the cluster with kubectl get namespace opentsx
 ```
 
+`70-backup.sh` reads each PVC the same way: a PVC that does not exist is left out of the backup, and a PVC that
+cannot be read stops the backup with exit 1 before it writes a file. `50-status.sh` shows the error of `k3s ctr` in a
+warn line when k3s' containerd cannot list its images, and does not report that as no images.
+
 `71-restore.sh` and `90-teardown.sh` ask before they change anything. Without `--yes`, an answer that does not start
 with `y` or `Y` exits with 1, and so does standard input that ends before an answer, for example in CI:
 
 ```text
 error: 90-teardown.sh: no answer on standard input; pass --yes to run without the question
 ```
+
+`90-teardown.sh --images` checks for k3s before the question, so on a host without k3s it exits with 1 and deletes
+nothing.
 
 A backup of `70-backup.sh` that fails removes the files it wrote, the copy of `.env` with the secrets included, and
 the directory when the run created it. The rerun with the same `--out` starts in an empty directory. A directory that

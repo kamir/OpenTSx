@@ -61,9 +61,11 @@ $DATA || unset 'ARCHIVE[opentsx-data]'
 PVCS=()
 for p in opentsx-stats-state opentsx-data opentsx-iceberg-catalog opentsx-minio; do
   [[ -n "${ARCHIVE[$p]:-}" ]] || continue
-  kns get pvc "$p" >/dev/null 2>&1 && PVCS+=("$p")
+  found="$(kns get pvc "$p" --ignore-not-found -o name)" \
+    || die "PVC $p: cannot read it; check the cluster with ${KUBECTL} -n $OPENTSX_NS get pvc $p"
+  [[ -z "$found" ]] || PVCS+=("$p")
 done
-(( ${#PVCS[@]} )) || die "namespace $OPENTSX_NS: no OpenTSx PVC found; nothing to back up"
+(( ${#PVCS[@]} )) || die "namespace $OPENTSX_NS: no OpenTSx PVC found, nothing to back up; check OPENTSX_NS in deploy/k3s/.env, or deploy it first with 30-deploy.sh"
 
 CREATED=false; [[ -e "$OUT" ]] || CREATED=true
 umask 077

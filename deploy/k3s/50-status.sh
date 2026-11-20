@@ -42,7 +42,11 @@ kns get pvc
 info "images in use"
 kns get pod -o 'jsonpath={range .items[*]}{.spec.containers[*].image}{"\n"}{end}' | sort | uniq -c
 if have k3s; then
-  as_root k3s ctr images ls -q 2>/dev/null | grep -F "$OPENTSX_IMAGE_REPO/" | sed 's/^/  in k3s containerd: /' || warn "k3s containerd: no $OPENTSX_IMAGE_REPO images; import them with 11-import-images.sh"
+  if ! images="$(as_root k3s ctr images ls -q 2>&1)"; then
+    warn "k3s containerd: cannot list the images (${images//$'\n'/ }); check it with sudo k3s ctr images ls"
+  elif ! grep -F "$OPENTSX_IMAGE_REPO/" <<< "$images" | sed 's/^/  in k3s containerd: /'; then
+    warn "k3s containerd: no $OPENTSX_IMAGE_REPO images; import them with 11-import-images.sh"
+  fi
 fi
 info "statistics checkpoint (written every 30 s; older than a few minutes = processor stuck, see operations.md R2)"
 if kns exec deployment/opentsx-stats -- ls -l --time-style=+%Y-%m-%dT%H:%M:%S /state 2>/dev/null; then
