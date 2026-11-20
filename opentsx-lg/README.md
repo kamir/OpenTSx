@@ -128,11 +128,14 @@ options (words that start with `-`, with or without one value), a number or dura
 words `!`, `time`, `command`, `builtin`, `exec`, `nohup`, `sudo`, `env`, `nice`, `ionice`, `timeout`, `xargs`, `if`,
 `elif`, `then`, `else`, `do`, `while` and `until`. The value of an assignment or an option may hold a command
 substitution, as in `X=$(cat f) docker pull <image>`, `sudo -u $(whoami) docker pull <image>` or
-``X=`cat f` docker pull <image>``.
+``X=`cat f` docker pull <image>``. The duration of `timeout` may be a command substitution, also in double quotes, as in
+`timeout $(cat t) docker pull <image>` or `timeout "$(cat t)" docker pull <image>`.
 An option of `sudo`, `env`, `nice`, `ionice`, `timeout`, `xargs` or `exec` that takes a value,
 such as `-u` of `sudo` or `-n` of `nice`, takes the next word as its value, so `sudo -u docker pull <image>`, which
-runs `pull` as the user `docker`, is not read. A `docker` that is an argument of another command, as in
-`echo docker pull <image>`, `echo $(date) docker pull <image>`, ``echo `date` docker pull <image>``,
+runs `pull` as the user `docker`, is not read. `-S` and `--split-string` of `env` take the command as their value, so
+`env -S docker pull <image>` is read. `--max-lines` of `xargs` takes its optional value only with `=`, as in
+`--max-lines=2`, so `xargs --max-lines docker pull <image>` is read. A `docker` that is an argument of another
+command, as in `echo docker pull <image>`, `echo $(date) docker pull <image>`, ``echo `date` docker pull <image>``,
 `$(date) docker pull <image>`, `` `date` docker pull <image> `` or `docker exec <container> docker pull <image>`, is
 not read, and neither is the `docker` of `command -v docker`, `command -V docker` or
 `command -p -v docker`, which do not run it.
@@ -143,9 +146,10 @@ fails on any other option between `docker` and a subcommand it reads, also on th
 `--tlsverify=true`, except `-v`, `--version`, `-h` and `--help`, with
 `<file>:<line>: <option>: unknown docker option before the subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py`.
 It reads each such option with at most one value word, a word that does not start with `-`, and with none when the
-option has `=`. So `docker --foo pull <image>` and `docker --foo bar pull <image>` are a finding, and
-`docker -x foo bar pull <image>`, whose subcommand is `bar`, and `docker --x=1 ps pull <image>` are not. The finding
-names the option as the line writes it, as in `--label="a b"`.
+option has `=`. A command substitution is one value word, also with blanks inside, as in
+`docker --foo $(cat v) pull <image>` or ``docker --foo `date +%s` pull <image>``. So `docker --foo pull <image>` and
+`docker --foo bar pull <image>` are a finding, and `docker -x foo bar pull <image>`, whose subcommand is `bar`, and
+`docker --x=1 ps pull <image>` are not. The finding names the option as the line writes it, as in `--label="a b"`.
 It fails on a `docker` command whose subcommand is not a literal word of letters, digits, `_`, `.` and `-`, as in
 `docker $OPTS pull <image>`, `docker "$CMD" <image>` or `docker $(echo pull) <image>`, with
 `<file>:<line>: <word>: the check cannot read a docker command whose subcommand is not a literal word; write the docker options and the subcommand literally`.
@@ -158,7 +162,9 @@ It also fails on an option before the image that it does not know, with
 on a command whose arguments do not split into words, for example at a quote that is not closed, with
 `<file>:<line>: <command>: cannot split the arguments into words (<cause>); close every quote on the line`,
 and on a Dockerfile `RUN` that runs `apt-get update` without `apt-get install`. A command substitution without quotes
-in an argument, as in `docker run -e X=$(date +%s) <image>`, is one word for the check. A command inside quotes, as in
+in an argument, as in `docker run -e X=$(date +%s) <image>`, is one word for the check. A redirection such as `>out`,
+`2>&1` or `<<<x` is no argument, also before the image or directly after it, so `docker run >log -d img:1.2.3` and
+`docker pull img:1.2.3>out` read the image `img:1.2.3`. A command inside quotes, as in
 `echo "use docker pull x"`, is not read. A command in a command substitution or a subshell, as in
 `CID=$(docker run <image>)`, `CID="$(docker run <image>)"` or `(docker pull <image>)`, is read up to the end of the
 substitution or subshell, also after `&&`, `||`, `;`, `|` or `&` inside it, and so is each further substitution of the
@@ -170,13 +176,17 @@ images that has no exact version, and so is one in the value of an assignment be
 `mqtt-generator-gist/mqttgen.py` uses the 1.x client API of `paho-mqtt`. With paho-mqtt 2.0.0 it stops with
 `TypeError: Client.__init__() missing 1 required positional argument: 'callback_api_version'`. Before it connects, it
 prints `MQTT broker <host>:<port>, user <username>` (`None` without a `username`) and no password. When it cannot
-connect to the broker, it exits with status 1 and
+connect to the broker, also when `mqtt.host` is no valid host name such as `broker..test`, it exits with status 1 and
 `<host>:<port>: cannot connect to the MQTT broker (<cause>); start the broker first, for example with 02_run_mqtt_broker.sh`.
 It writes its output line by line. When the reader of its output closes it, for example `head` after its last line,
-the next line it prints makes it exit with status 1 and
-`stdout: closed by its reader; read the whole output or set misc.verbose to false`, also with `PYTHONUNBUFFERED=1` or
-`python3 -u`. When a publish fails, it exits with status 1 and
-`<host>:<port>: cannot publish to topic <topic> (<cause>); check the MQTT broker`.
+the next line it prints makes it exit with status 1 and `stdout: closed by its reader; read the whole output`, also
+with `PYTHONUNBUFFERED=1` or `python3 -u`. When that line is a payload line, which it prints only with `misc.verbose`
+set to `true`, the message is
+`stdout: closed by its reader; read the whole output or set misc.verbose to false`.
+When its standard output is closed at the start, it prints nothing and publishes.
+When a publish raises an error or paho-mqtt returns an error code for it, as after the broker closed the connection,
+it exits with status 1 and `<host>:<port>: cannot publish to topic <topic> (<cause>); check the MQTT broker`, where
+`<cause>` is the error or the text of the code, such as `The client is not currently connected.`.
 When it cannot read the configuration file or the file is not valid JSON, it exits with status 1 and
 `<file>: cannot read the configuration file (<cause>); pass the path of a JSON configuration file such as config.json`.
 Before it connects, it checks that the top level, `mqtt`, `misc`, `sensors` and each sensor `sensors.<id>` are JSON
@@ -192,17 +202,20 @@ Before it connects, it also checks these values:
 |-----|----------------|---------|
 | `misc.interval_ms` | a number of milliseconds from 0 to 86400000 | `500` |
 | `misc.verbose` | `true` or `false` | `false` |
-| `mqtt.host` | a non-empty JSON string | `"localhost"` |
+| `mqtt.host` | a non-empty JSON string without a lone surrogate | `"localhost"` |
 | `mqtt.port` | a whole number from 1 to 65535 | `1883` |
-| `mqtt.topic` | a non-empty JSON string without `+` or `#` | `"mqttgen"` |
-| `mqtt.username` | a JSON string | none |
-| `mqtt.password` | a JSON string | none |
+| `mqtt.topic` | a non-empty JSON string of at most 65535 UTF-8 bytes without `+`, `#` or a lone surrogate such as `\ud800` | `"mqttgen"` |
+| `mqtt.username` | a JSON string without a lone surrogate | none |
+| `mqtt.password` | a JSON string without a lone surrogate | none |
 
 When a value is not allowed, it exits with status 1 and
 `<file>: <key>: <value> is not allowed; expected <allowed values>`, for example
 `config.json: misc.interval_ms: "x" is not allowed; expected a number of milliseconds from 0 to 86400000`.
 For `mqtt.password` the message names the JSON type and not the value:
-`<file>: mqtt.password: a JSON <type> is not allowed; expected a JSON string`.
+`<file>: mqtt.password: a JSON <type> is not allowed; expected a JSON string without a lone surrogate`, where `<type>`
+is `string with a lone surrogate` for a string such as `"p\ud800"`.
+For a `mqtt.topic` of more than 65535 UTF-8 bytes the message names the size and not the value:
+`<file>: mqtt.topic: a JSON string of <n> UTF-8 bytes is not allowed; expected a non-empty JSON string of at most 65535 UTF-8 bytes without +, # or a lone surrogate`.
 Without exactly one argument, it exits with status 2 and
 `<script>: <n> arguments given; expected 1, the path of a JSON configuration file such as config.json`.
 

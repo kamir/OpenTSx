@@ -2578,14 +2578,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `timeout`, `xargs` or `exec` that takes a value takes the next word, so `sudo -u docker pull <image>` is not read as
   `docker pull <image>`.
 - opentsx-lg: `mqtt-generator-gist/mqttgen.py` writes its output line by line. It exits 1 with `stdout: closed by its
-  reader; read the whole output or set misc.verbose to false` when the reader of its output closes it, for example
-  `head`, also with `PYTHONUNBUFFERED=1`, with `python3 -u` and without sensors. When a publish fails, it exits 1 with
-  `<host>:<port>: cannot publish to topic <topic> (<cause>); check the MQTT broker`. Both used to end in a traceback.
+  reader; read the whole output` when the reader of its output closes it, for example `head`, also with
+  `PYTHONUNBUFFERED=1`, with `python3 -u` and without sensors, and with `stdout: closed by its reader; read the whole
+  output or set misc.verbose to false` when it closes it at a payload line. When a publish raises an error, it exits 1
+  with `<host>:<port>: cannot publish to topic <topic> (<cause>); check the MQTT broker`. Both used to end in a
+  traceback.
 - opentsx-lg: before it connects, `mqtt-generator-gist/mqttgen.py` exits 1 with `<file>: <key>: <value> is not
   allowed; expected <allowed values>` when a value is not allowed. That is a `misc.interval_ms` that is not a number
-  from 0 to 86400000, a `misc.verbose` that is not true or false, a `mqtt.host` that is not a non-empty string, a
-  `mqtt.port` that is not a whole number from 1 to 65535, or a `mqtt.topic` that is empty, is not a string or holds
-  `+` or `#`. For example `"interval_ms": "x"` used to end in a `TypeError` after the connect.
+  from 0 to 86400000, a `misc.verbose` that is not true or false, a `mqtt.host` that is not a non-empty string or holds
+  a lone surrogate, a `mqtt.port` that is not a whole number from 1 to 65535, or a `mqtt.topic` that is empty, is not
+  a string, holds `+`, `#` or a lone surrogate or has more than 65535 UTF-8 bytes; for such a topic the message names
+  its size (`a JSON string of <n> UTF-8 bytes`) and not the value. For example `"interval_ms": "x"` used to end in a
+  `TypeError` after the connect.
 - opentsx-lg: `src/main/connect-cfg/deploy_connector.py` keeps the HTTP status of an answer whose body ends before its
   `Content-Length` or whose connection is reset while the body is read. A 200 or 201 prints `New connector debug_c1
   created.`, and any other status gives `debug_c1: POST http://127.0.0.1:8083/connectors answered HTTP <status>
@@ -2622,9 +2626,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   longer starts a command, so ``echo `date` docker pull x`` and `` `date` docker pull x `` are no finding, as with
   `$(date)`.
 - opentsx-lg: `mqtt-generator-gist/mqttgen.py` checks `mqtt.username` and `mqtt.password` before it connects and exits
-  with status 1 on a value that is not a JSON string: `<file>: mqtt.username: <value> is not allowed; expected a JSON
-  string` or `<file>: mqtt.password: a JSON <type> is not allowed; expected a JSON string`, which names the JSON type
-  and not the password.
+  with status 1 on a value that is not a JSON string or holds a lone surrogate such as `\ud800`: `<file>:
+  mqtt.username: <value> is not allowed; expected a JSON string without a lone surrogate` or `<file>: mqtt.password: a
+  JSON <type> is not allowed; expected a JSON string without a lone surrogate`, which names the JSON type, or `string
+  with a lone surrogate`, and not the password.
 - opentsx-lg: `src/main/connect-cfg/deploy_connector.py` keeps the HTTP status when the body stops for 10 s after the
   headers arrived: a 201 prints `New connector debug_c1 created.` and any other status gives `debug_c1: POST
   http://127.0.0.1:8083/connectors answered HTTP <status> (timed out); the connector was not created, check the log of
@@ -2678,6 +2683,25 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   continue at their committed offsets and start at the latest offset only while the group has no committed offset, so
   a rerun reads the records written while no consumer of the group ran. They said that the consumers start at the
   latest offset.
+- tools: `tools/test_lg_scripts.py` reads the `docker` after `env -S`, `env --split-string` and `xargs --max-lines`
+  again, so `env -S docker pull <image>` and `xargs --max-lines docker pull <image>` give the `<image>: no exact
+  version` finding again. `-S` and `--split-string` take the command as their value, and `--max-lines` takes its
+  optional value only with `=`, as in `--max-lines=2`.
+- tools: `tools/test_lg_scripts.py` reads a command substitution with blanks as one value word of an unknown docker
+  option, so `docker --foo $(cat v) pull <image>`, `docker --foo "$(echo a b)" pull <image>` and ``docker --foo `date
+  +%s` pull <image>`` give the unknown option finding again. It reads the `docker` after a `timeout` whose duration is
+  a command substitution, also in double quotes, as in `timeout $(cat t) docker pull <image>` or `timeout "$(cat t)"
+  docker pull <image>`. A redirection is no longer part of an argument, so `docker pull img:1.2.3>out` and `docker run
+  >log -d img:1.2.3` read the image `img:1.2.3`. A line with many option and number words and no command word, such as
+  `nice -n 5 -n 5 ... foo`, is now checked in linear time; 22 pairs used to take about 3 s.
+- opentsx-lg: `mqtt-generator-gist/mqttgen.py` checks the return code of each publish with paho-mqtt 1.6.1 and exits 1
+  with `<host>:<port>: cannot publish to topic <topic> (<cause>); check the MQTT broker`, for example with the cause
+  `The client is not currently connected.` after the broker closed the connection. It used to keep printing payload
+  lines while every publish was dropped.
+- opentsx-lg: `mqtt-generator-gist/mqttgen.py` runs and publishes when its standard output is closed at the start; it
+  used to stop with an `AttributeError` traceback. A `mqtt.host` that is not a valid host name, such as
+  `broker..test`, gives `<host>:<port>: cannot connect to the MQTT broker (<cause>); start the broker first, for
+  example with 02_run_mqtt_broker.sh` instead of a `UnicodeError` traceback.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

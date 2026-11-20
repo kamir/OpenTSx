@@ -9,6 +9,7 @@ import pathlib
 import re
 import shlex
 import subprocess
+import time
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 LG = ROOT / "opentsx-lg"
@@ -28,16 +29,26 @@ DOCKER_GLOBAL = (r"(?:(?:--(?:config|context|host|log-level|tlscacert|tlscert|tl
                  + r"+|(?:--(?:debug|tls|tlsverify)|-D)(?=\s))\s+")
 DOCKER_INFO = {"-v", "--version", "-h", "--help"}
 CASE_ARM = r"\(?(?:" + SUBSTITUTION + r"|[^\s;&|()`])+\)\s*"
+NUMBER = r"[0-9][0-9.]*[smhd]?"
+KEYWORD = (r"(?:!|time|command(?!(?:\s+-[pvV]+)*\s+-[pvV]*[vV][pvV]*\s)|builtin|exec|nohup|sudo|env|nice|ionice"
+           r"|timeout|xargs|if|elif|then|else|do|while|until)")
+ASSIGNMENT = r"[A-Za-z_][A-Za-z0-9_]*="
+OPTION = r"-" + WORD_PIECE + r"+(?:\s+(?!-)" + VALUE_PIECE + r"+)?"
+# unquoted() masks the double quotes of "$(cat t)" as "_".
+TIMEOUT = r"timeout(?:\s+" + OPTION + r")*\s+_*(?:" + SUBSTITUTION + r")_*"
+# A word that another alternative reads is never an option value and a timeout with a substitution is no keyword, so
+# each word has one reading and a line without a command word fails in linear time.
 COMMAND_WORD = (r"(?:(?:^|(?<=[;&|{])|(?<=\sin\s)(?=\s*" + CASE_ARM + r"))\s*(?:" + CASE_ARM + r")?|(?<=[(`])\s*)"
-                r"(?:(?:[A-Za-z_][A-Za-z0-9_]*=" + WORD_PIECE + r"*|-" + WORD_PIECE + r"+(?:\s+(?!-)" + VALUE_PIECE
-                + r"+)?|[0-9][0-9.]*[smhd]?|!|time"
-                r"|command(?!(?:\s+-[pvV]+)*\s+-[pvV]*[vV][pvV]*\s)|builtin|exec|nohup|sudo|env|nice|ionice|timeout"
-                r"|xargs|if|elif|then|else|do|while|until)\s+)*")
+                r"(?:(?:" + ASSIGNMENT + WORD_PIECE + r"*|" + TIMEOUT + r"|-" + WORD_PIECE + r"+(?:\s+(?!-|(?:"
+                + NUMBER + "|" + KEYWORD + r")\s|" + ASSIGNMENT + r")" + VALUE_PIECE + r"+)?|" + NUMBER + "|(?!"
+                + TIMEOUT + r"\s)" + KEYWORD + r")\s+)*")
 INSTALL = re.compile(COMMAND_WORD + r"(?:[^\s;&|()<>]*/)?(?P<tool>docker\s+(?:" + DOCKER_GLOBAL + r")*(?P<word>"
                      + VALUE_PIECE + r"+)|confluent-hub\s+install\s|confluent\s+connect\s+plugin\s+install\s)")
 DOCKER_INSTALL = r"(?:(?:container\s+)?(?:run|create)|(?:image\s+)?pull)\s"
 SUBCOMMAND = re.compile(DOCKER_INSTALL)
 OPTIONS_BEFORE_SUBCOMMAND = re.compile(r"(?:-[^\s=]+(?:=\S*|(?:\s+[^\s-]\S*)?)\s+)+" + DOCKER_INSTALL)
+ARGUMENT_PIECE = re.compile(r"(?P<redirection>(?:(?<!\S)[0-9]+)?(?:&>>?|[<>]&|>>|<<<?|<>|[<>])\s*" + VALUE_PIECE
+                            + r"*)|" + SUBSTITUTION + r"|.", re.S)
 LITERAL = re.compile(r"[\w.-]+")
 VALUE_OPTIONS = {"-p", "--publish", "-v", "--volume", "-e", "--env", "--env-file", "--name", "--network", "--restart",
                  "-w", "--workdir", "-u", "--user", "-h", "--hostname", "--entrypoint", "--mount", "-l", "--label",
@@ -48,12 +59,12 @@ FLAG_OPTIONS = {"-d", "--detach", "--rm", "-i", "--interactive", "-t", "--tty", 
 WRAPPER_VALUE_OPTIONS = {
     "sudo": {"-C", "-D", "-g", "-p", "-R", "-r", "-T", "-t", "-U", "-u", "--close-from", "--chdir", "--group",
              "--host", "--prompt", "--chroot", "--role", "--command-timeout", "--type", "--other-user", "--user"},
-    "env": {"-C", "-S", "-u", "--chdir", "--split-string", "--unset"},
+    "env": {"-C", "-u", "--chdir", "--unset"},
     "nice": {"-n", "--adjustment"},
     "ionice": {"-c", "-n", "-P", "-p", "-u", "--class", "--classdata", "--pgid", "--pid", "--uid"},
     "timeout": {"-k", "-s", "--kill-after", "--signal"},
-    "xargs": {"-a", "-d", "-E", "-I", "-L", "-n", "-P", "-s", "--arg-file", "--delimiter", "--max-lines",
-              "--max-args", "--max-procs", "--process-slot-var", "--max-chars"},
+    "xargs": {"-a", "-d", "-E", "-I", "-L", "-n", "-P", "-s", "--arg-file", "--delimiter", "--max-args",
+              "--max-procs", "--process-slot-var", "--max-chars"},
     "exec": {"-a"},
 }
 PINNED = re.compile(r"(?::[\w.-]*\d+\.\d+\.\d+[\w.-]*|@sha256:[0-9a-f]{64})$")
@@ -282,7 +293,8 @@ def image_problems(root: pathlib.Path, name: str) -> list[str]:
                         subcommand = SUBCOMMAND.match(masked, first, limit)
                         if not subcommand:
                             if word.startswith("-"):
-                                if word not in DOCKER_INFO and OPTIONS_BEFORE_SUBCOMMAND.match(masked, first, limit):
+                                joined = unquoted(join_substitutions(line[first:limit]))
+                                if word not in DOCKER_INFO and OPTIONS_BEFORE_SUBCOMMAND.match(joined):
                                     problems.append(f"{name}:{number}: {word}: unknown docker option before the "
                                                     "subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py")
                             elif not LITERAL.fullmatch(word):
@@ -292,8 +304,12 @@ def image_problems(root: pathlib.Path, name: str) -> list[str]:
                             continue
                         begin = subcommand.end()
                     end = min(stop, substitution_end(line, begin))
+                    arguments = list(line[begin:end])
+                    for piece in ARGUMENT_PIECE.finditer(masked, begin, end):
+                        if piece.group("redirection") is not None:
+                            arguments[piece.start() - begin:piece.end() - begin] = " " * len(piece.group())
                     try:
-                        words = shlex.split(join_substitutions(line[begin:end]))
+                        words = shlex.split(join_substitutions("".join(arguments)))
                         references.append(first_operand([word.replace("\0", " ") for word in words]))
                     except ValueError as error:
                         tool = line[install.start("tool"):begin].strip()
@@ -541,6 +557,55 @@ def test_an_unknown_docker_option_is_a_finding_only_when_a_subcommand_it_reads_f
     ]
 
 
+def test_a_substitution_is_one_word_before_the_docker_subcommand_and_as_the_duration_of_timeout(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "docker --newopt $(cat v) pull toke/mosquitto\n"
+        'docker --foo "$(echo a b)" pull toke/mosquitto\n'
+        "docker --foo `date +%s` pull toke/mosquitto\n"
+        "nice -n 5 docker --foo $(date +%s) run toke/mosquitto\n"
+        "docker --config $(mktemp -d) pull toke/mosquitto\n"
+        "timeout $(cat t) docker pull toke/mosquitto\n"
+        "timeout -k 5 -s KILL $(cat t) docker pull toke/mosquitto\n"
+        'timeout "$(cat t)" docker pull toke/mosquitto\n'
+        'timeout -k 5 "`cat t`" docker pull toke/mosquitto\n'
+        "$(cat t) docker pull x\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    unknown = "unknown docker option before the subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:2: --newopt: {unknown}",
+        f"run.sh:3: --foo: {unknown}",
+        f"run.sh:4: --foo: {unknown}",
+        f"run.sh:5: --foo: {unknown}",
+        f"run.sh:6: toke/mosquitto: {rest}",
+        f"run.sh:7: toke/mosquitto: {rest}",
+        f"run.sh:8: toke/mosquitto: {rest}",
+        f"run.sh:9: toke/mosquitto: {rest}",
+        f"run.sh:10: toke/mosquitto: {rest}",
+    ]
+
+
+def test_a_redirection_is_no_part_of_the_image(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "docker pull img:1.2.3>out\n"
+        "docker pull toke/mosquitto>out\n"
+        "docker run >log -d img:1.2.3\n"
+        "docker run 2>/dev/null -d img:1.2.3 >&2\n"
+        'docker run -e "A=1>2" img:1.2.3<<<x\n', encoding="utf-8")
+    assert image_problems(tmp_path, "run.sh") == [
+        "run.sh:3: toke/mosquitto: no exact version; pin a version such as 1.2.3 or a sha256 digest"]
+
+
+def test_option_and_number_words_without_a_command_word_are_read_in_linear_time(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\nnice " + "-n 5 " * 22 + "foo\nsudo " + "-u env " * 22 + "foo\n"
+        + "timeout -k $(cat t) " * 22 + "foo\n", encoding="utf-8")
+    start = time.perf_counter()
+    assert image_problems(tmp_path, "run.sh") == []
+    assert time.perf_counter() - start < 0.1
+
+
 def test_a_docker_subcommand_that_is_not_a_literal_word_is_a_finding(tmp_path):
     (tmp_path / "run.sh").write_text(
         "#!/usr/bin/env bash\n"
@@ -644,6 +709,29 @@ def test_a_docker_command_behind_a_wrapper_with_option_values_is_read(tmp_path):
         f"run.sh:3: toke/mosquitto: {rest}",
         f"run.sh:4: toke/mosquitto: {rest}",
         f"run.sh:5: toke/mosquitto: {rest}",
+    ]
+
+
+def test_the_split_string_of_env_and_the_max_lines_of_xargs_are_the_command(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "env -S docker pull toke/mosquitto\n"
+        "env --split-string docker pull toke/mosquitto\n"
+        "sudo -E env -S docker pull toke/mosquitto\n"
+        "env -iS docker pull toke/mosquitto\n"
+        "xargs --max-lines docker pull toke/mosquitto\n"
+        "env -u docker pull x\n"
+        "env -C /tmp docker pull toke/mosquitto\n"
+        "xargs --max-lines=2 docker pull toke/mosquitto\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:2: toke/mosquitto: {rest}",
+        f"run.sh:3: toke/mosquitto: {rest}",
+        f"run.sh:4: toke/mosquitto: {rest}",
+        f"run.sh:5: toke/mosquitto: {rest}",
+        f"run.sh:6: toke/mosquitto: {rest}",
+        f"run.sh:8: toke/mosquitto: {rest}",
+        f"run.sh:9: toke/mosquitto: {rest}",
     ]
 
 

@@ -129,6 +129,21 @@ def test_the_generator_exits_1_and_names_the_broker_when_it_cannot_connect(tmp_p
                                "start the broker first, for example with 02_run_mqtt_broker.sh")
 
 
+def test_the_generator_exits_1_with_one_line_when_the_host_is_no_valid_name(tmp_path, monkeypatch):
+    class Client:
+        def connect(self, host, port):
+            raise UnicodeError("label empty or too long")
+
+    stub_paho(monkeypatch, Client)
+    config = tmp_path / "config.json"
+    config.write_text(json.dumps({"mqtt": {"host": "broker..test", "port": 1884, "topic": "t"},
+                                  "sensors": {"s1": {"range": [0, 1]}}}), encoding="utf-8")
+    with pytest.raises(SystemExit) as stop:
+        load(MQTTGEN, "mqttgen").main(str(config))
+    assert stop.value.code == ("broker..test:1884: cannot connect to the MQTT broker (label empty or too long); "
+                               "start the broker first, for example with 02_run_mqtt_broker.sh")
+
+
 def test_the_generator_prints_the_broker_and_the_user_but_not_the_password(tmp_path, monkeypatch, capsys):
     refusing_paho(monkeypatch)
     config = tmp_path / "config.json"
@@ -157,7 +172,19 @@ def test_the_generator_exits_1_when_it_cannot_read_the_configuration(tmp_path, m
                                "pass the path of a JSON configuration file such as config.json")
 
 
-STUB_CLIENT = """class Client:
+STUB_CLIENT = """MQTT_ERR_SUCCESS = 0
+
+
+def error_string(rc):
+    return {{4: "The client is not currently connected."}}[rc]
+
+
+class Info:
+    def __init__(self, rc):
+        self.rc = rc
+
+
+class Client:
     def connect(self, host, port):
         pass
 
@@ -167,10 +194,11 @@ STUB_CLIENT = """class Client:
     def publish(self, topic, payload):
         {publish}
 """
+CLOSE_STDOUT = "import os; read, write = os.pipe(); os.close(read); os.dup2(write, 1); return Info(0)"
 
 
 def generator(tmp_path: pathlib.Path, publish: str, verbose: bool, stdout, unbuffered: bool = False,
-              sensors: dict | None = None) -> subprocess.CompletedProcess:
+              sensors: dict | None = None, closed_at_start: bool = False) -> subprocess.CompletedProcess:
     stub = tmp_path / "stub" / "paho" / "mqtt"
     stub.mkdir(parents=True)
     (stub.parent / "__init__.py").touch()
@@ -186,21 +214,39 @@ def generator(tmp_path: pathlib.Path, publish: str, verbose: bool, stdout, unbuf
     if unbuffered:
         environment["PYTHONUNBUFFERED"] = "1"
     return subprocess.run([sys.executable, str(MQTTGEN), str(config)], cwd=tmp_path, stdin=subprocess.DEVNULL,
-                          stdout=stdout, stderr=subprocess.PIPE, text=True, env=environment, timeout=30, check=False)
+                          stdout=stdout, stderr=subprocess.PIPE, text=True, env=environment, timeout=30, check=False,
+                          preexec_fn=(lambda: os.close(1)) if closed_at_start else None)
 
 
 @pytest.mark.parametrize("sensors", [None, {}], ids=["sensors", "no-sensors"])
 @pytest.mark.parametrize("unbuffered", [False, True])
-def test_the_generator_exits_1_with_one_line_when_the_reader_closes_its_stdout(tmp_path, unbuffered, sensors):
+@pytest.mark.parametrize("verbose", [True, False])
+def test_the_generator_exits_1_with_one_line_when_the_reader_closes_its_stdout(tmp_path, verbose, unbuffered,
+                                                                              sensors):
     read, write = os.pipe()
     os.close(read)
     try:
-        result = generator(tmp_path, "pass", True, write, unbuffered, sensors)
+        result = generator(tmp_path, "return Info(0)", verbose, write, unbuffered, sensors)
     finally:
         os.close(write)
     assert result.returncode == 1, result.stderr
+    assert result.stderr.splitlines() == ["stdout: closed by its reader; read the whole output"]
+
+
+@pytest.mark.parametrize("unbuffered", [False, True])
+def test_the_generator_advises_verbose_false_when_the_reader_closes_its_stdout_at_a_payload_line(tmp_path,
+                                                                                                 unbuffered):
+    result = generator(tmp_path, CLOSE_STDOUT, True, subprocess.PIPE, unbuffered)
+    assert result.returncode == 1, result.stderr
+    assert result.stdout.splitlines()[-1].startswith('t: {"id": "s1", "value": ')
     assert result.stderr.splitlines() == [
         "stdout: closed by its reader; read the whole output or set misc.verbose to false"]
+
+
+def test_the_generator_runs_and_publishes_when_stdout_is_closed_at_start(tmp_path):
+    result = generator(tmp_path, "raise SystemExit(0)", True, None, closed_at_start=True)
+    assert result.returncode == 0, result.stderr
+    assert result.stderr == ""
 
 
 def test_the_generator_exits_1_with_one_line_when_a_publish_fails(tmp_path):
@@ -208,6 +254,13 @@ def test_the_generator_exits_1_with_one_line_when_a_publish_fails(tmp_path):
     assert result.returncode == 1, result.stderr
     assert result.stderr.splitlines() == [
         "localhost:1884: cannot publish to topic t ([Errno 32] Broken pipe); check the MQTT broker"]
+
+
+def test_the_generator_exits_1_with_one_line_when_a_publish_returns_an_error_code(tmp_path):
+    result = generator(tmp_path, "return Info(4)", False, subprocess.PIPE)
+    assert result.returncode == 1, result.stderr
+    assert result.stderr.splitlines() == [
+        "localhost:1884: cannot publish to topic t (The client is not currently connected.); check the MQTT broker"]
 
 
 def test_the_generator_publishes_with_the_shipped_configuration(monkeypatch, capsys):
@@ -240,6 +293,8 @@ def test_the_generator_publishes_with_the_shipped_configuration(monkeypatch, cap
     ({"mqtt": {"host": "h", "port": 1, "topic": "a/b"}, "misc": {"interval_ms": 0, "verbose": False}}, ("h", 1)),
     ({"mqtt": {"port": 65535}, "misc": {"interval_ms": 86400000, "verbose": True}}, ("localhost", 65535)),
     ({"misc": {"interval_ms": 0.5}}, ("localhost", 1883)),
+    ({"mqtt": {"topic": "t" * 65535}}, ("localhost", 1883)),
+    ({"mqtt": {"topic": "\u20ac" * 21845}}, ("localhost", 1883)),
 ])
 def test_the_generator_connects_with_values_at_their_bounds(tmp_path, monkeypatch, capsys, config, address):
     class Connected(Exception):
@@ -259,7 +314,9 @@ def test_the_generator_connects_with_values_at_their_bounds(tmp_path, monkeypatc
 
 INTERVAL = "a number of milliseconds from 0 to 86400000"
 PORT = "a whole number from 1 to 65535"
-TOPIC = "a non-empty JSON string without + or #"
+TOPIC = "a non-empty JSON string of at most 65535 UTF-8 bytes without +, # or a lone surrogate"
+HOST = "a non-empty JSON string without a lone surrogate"
+LOGIN = "a JSON string without a lone surrogate"
 
 
 @pytest.mark.parametrize("section, key, value, expected", [
@@ -272,8 +329,9 @@ TOPIC = "a non-empty JSON string without + or #"
     ("misc", "interval_ms", float("nan"), INTERVAL),
     ("misc", "verbose", "yes", "true or false"),
     ("misc", "verbose", 1, "true or false"),
-    ("mqtt", "host", 5, "a non-empty JSON string"),
-    ("mqtt", "host", "", "a non-empty JSON string"),
+    ("mqtt", "host", 5, HOST),
+    ("mqtt", "host", "", HOST),
+    ("mqtt", "host", "h\ud800", HOST),
     ("mqtt", "port", "1883", PORT),
     ("mqtt", "port", 0, PORT),
     ("mqtt", "port", 65536, PORT),
@@ -283,6 +341,7 @@ TOPIC = "a non-empty JSON string without + or #"
     ("mqtt", "topic", "", TOPIC),
     ("mqtt", "topic", "a/#", TOPIC),
     ("mqtt", "topic", "a/+/b", TOPIC),
+    ("mqtt", "topic", "a\ud800", TOPIC),
 ])
 def test_the_generator_exits_1_before_the_connect_on_a_value_it_cannot_use(tmp_path, monkeypatch, capsys, section,
                                                                           key, value, expected):
@@ -299,13 +358,35 @@ def test_the_generator_exits_1_before_the_connect_on_a_value_it_cannot_use(tmp_p
     assert capsys.readouterr().out == ""
 
 
+@pytest.mark.parametrize("topic, size", [("t" * 65536, 65536), ("\u20ac" * 21846, 65538)])
+def test_the_generator_exits_1_before_the_connect_on_a_topic_of_more_than_65535_bytes(tmp_path, monkeypatch, capsys,
+                                                                                     topic, size):
+    class Client:
+        def connect(self, host, port):
+            raise AssertionError(f"connected to {host}:{port}")
+
+    stub_paho(monkeypatch, Client)
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({"mqtt": {"topic": topic}, "sensors": {"s1": {"range": [0, 1]}}}), encoding="utf-8")
+    with pytest.raises(SystemExit) as stop:
+        load(MQTTGEN, "mqttgen").main(str(path))
+    assert stop.value.code == (f"{path}: mqtt.topic: a JSON string of {size} UTF-8 bytes is not allowed; "
+                               f"expected {TOPIC}")
+    assert capsys.readouterr().out == ""
+
+
 @pytest.mark.parametrize("login, message", [
-    ({"username": 5}, "mqtt.username: 5 is not allowed; expected a JSON string"),
-    ({"username": None}, "mqtt.username: null is not allowed; expected a JSON string"),
-    ({"username": "demo1", "password": 12345}, "mqtt.password: a JSON number is not allowed; expected a JSON string"),
-    ({"password": 12345}, "mqtt.password: a JSON number is not allowed; expected a JSON string"),
-    ({"username": "demo1", "password": []}, "mqtt.password: a JSON array is not allowed; expected a JSON string"),
-    ({"username": "demo1", "password": None}, "mqtt.password: a JSON null is not allowed; expected a JSON string"),
+    ({"username": 5}, f"mqtt.username: 5 is not allowed; expected {LOGIN}"),
+    ({"username": None}, f"mqtt.username: null is not allowed; expected {LOGIN}"),
+    ({"username": "u\ud800"}, f'mqtt.username: "u\\ud800" is not allowed; expected {LOGIN}'),
+    ({"username": "demo1", "password": 12345}, f"mqtt.password: a JSON number is not allowed; expected {LOGIN}"),
+    ({"password": 12345}, f"mqtt.password: a JSON number is not allowed; expected {LOGIN}"),
+    ({"username": "demo1", "password": []}, f"mqtt.password: a JSON array is not allowed; expected {LOGIN}"),
+    ({"username": "demo1", "password": None}, f"mqtt.password: a JSON null is not allowed; expected {LOGIN}"),
+    ({"username": "demo1", "password": "12345\ud800"},
+     f"mqtt.password: a JSON string with a lone surrogate is not allowed; expected {LOGIN}"),
+    ({"password": "12345\ud800"},
+     f"mqtt.password: a JSON string with a lone surrogate is not allowed; expected {LOGIN}"),
 ])
 def test_the_generator_exits_1_before_the_connect_on_a_login_that_is_not_a_json_string(tmp_path, monkeypatch, capsys,
                                                                                       login, message):

@@ -9,6 +9,7 @@ import random
 import paho.mqtt.client as mqtt
 
 JSON_TYPES = ((dict, "object"), (list, "array"), (str, "string"), (bool, "boolean"), ((int, float), "number"))
+PUBLISH_FAILED = "%s:%s: cannot publish to topic %s (%s); check the MQTT broker"
 
 
 def json_type(value):
@@ -27,6 +28,16 @@ def whole_range(value):
             and value[0] <= value[1])
 
 
+def lone_surrogate(text):
+    return any("\ud800" <= c <= "\udfff" for c in text)
+
+
+def stdout_closed(message):
+    # Python flushes stdout again at exit; point it at devnull so that flush cannot fail a second time.
+    os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+    sys.exit(message)
+
+
 def generate(host, port, username, password, topic, sensors, interval_ms, verbose):
     """generate data and send it to an MQTT broker"""
     mqttc = mqtt.Client()
@@ -36,7 +47,7 @@ def generate(host, port, username, password, topic, sensors, interval_ms, verbos
 
     try:
         mqttc.connect(host, port)
-    except OSError as error:
+    except (OSError, UnicodeError) as error:
         sys.exit("%s:%s: cannot connect to the MQTT broker (%s); start the broker first, for example with "
                  "02_run_mqtt_broker.sh" % (host, port, error))
     mqttc.loop_start()
@@ -64,12 +75,17 @@ def generate(host, port, username, password, topic, sensors, interval_ms, verbos
         payload = json.dumps(data)
 
         if verbose:
-            print("%s: %s" % (topic, payload))
+            try:
+                print("%s: %s" % (topic, payload))
+            except BrokenPipeError:
+                stdout_closed("stdout: closed by its reader; read the whole output or set misc.verbose to false")
 
         try:
-            mqttc.publish(topic, payload)
+            rc = mqttc.publish(topic, payload).rc
         except OSError as error:
-            sys.exit("%s:%s: cannot publish to topic %s (%s); check the MQTT broker" % (host, port, topic, error))
+            sys.exit(PUBLISH_FAILED % (host, port, topic, error))
+        if rc != mqtt.MQTT_ERR_SUCCESS:
+            sys.exit(PUBLISH_FAILED % (host, port, topic, mqtt.error_string(rc)))
         time.sleep(interval_secs)
 
 
@@ -102,22 +118,30 @@ def main(config_path):
     topic = mqtt_config.get("topic", "mqttgen")
     username = mqtt_config.get("username")
     password = mqtt_config.get("password")
+    topic_size = len(topic.encode("utf-8", "surrogatepass")) if isinstance(topic, str) else 0
     for key, value, allowed, expected in (
             ("misc.interval_ms", interval_ms, isinstance(interval_ms, (int, float))
              and not isinstance(interval_ms, bool) and 0 <= interval_ms <= 86400000,
              "a number of milliseconds from 0 to 86400000"),
             ("misc.verbose", verbose, isinstance(verbose, bool), "true or false"),
-            ("mqtt.host", host, isinstance(host, str) and host != "", "a non-empty JSON string"),
+            ("mqtt.host", host, isinstance(host, str) and host != "" and not lone_surrogate(host),
+             "a non-empty JSON string without a lone surrogate"),
             ("mqtt.port", port, isinstance(port, int) and not isinstance(port, bool) and 1 <= port <= 65535,
              "a whole number from 1 to 65535"),
-            ("mqtt.topic", topic, isinstance(topic, str) and topic != "" and "+" not in topic and "#" not in topic,
-             "a non-empty JSON string without + or #"),
-            ("mqtt.username", username, "username" not in mqtt_config or isinstance(username, str), "a JSON string")):
+            ("mqtt.topic", topic, isinstance(topic, str) and topic != "" and "+" not in topic and "#" not in topic
+             and not lone_surrogate(topic) and topic_size <= 65535,
+             "a non-empty JSON string of at most 65535 UTF-8 bytes without +, # or a lone surrogate"),
+            ("mqtt.username", username, "username" not in mqtt_config
+             or isinstance(username, str) and not lone_surrogate(username), "a JSON string without a lone surrogate")):
         if not allowed:
-            sys.exit("%s: %s: %s is not allowed; expected %s" % (config_path, key, json.dumps(value), expected))
-    if "password" in mqtt_config and not isinstance(password, str):
-        sys.exit("%s: mqtt.password: a JSON %s is not allowed; expected a JSON string"
-                 % (config_path, json_type(password)))
+            shown = json.dumps(value)
+            if key == "mqtt.topic" and topic_size > 65535:
+                shown = "a JSON string of %d UTF-8 bytes" % topic_size
+            sys.exit("%s: %s: %s is not allowed; expected %s" % (config_path, key, shown, expected))
+    if "password" in mqtt_config and (not isinstance(password, str) or lone_surrogate(password)):
+        shown = "a JSON string with a lone surrogate" if isinstance(password, str) else "a JSON " + json_type(password)
+        sys.exit("%s: mqtt.password: %s is not allowed; expected a JSON string without a lone surrogate"
+                 % (config_path, shown))
 
     if not sensors:
         print("no sensors specified in config, nothing to do")
@@ -136,13 +160,12 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         try:
             # Line buffering makes a closed stdout fail at the print, inside this handler, not in the flush at exit.
-            sys.stdout.reconfigure(line_buffering=True)
+            if sys.stdout is not None:
+                sys.stdout.reconfigure(line_buffering=True)
             print("Start %s with %s" % (sys.argv[0],sys.argv[1]) )
             main(sys.argv[1])
         except BrokenPipeError:
-            # Python flushes stdout again at exit; point it at devnull so that flush cannot fail a second time.
-            os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
-            sys.exit("stdout: closed by its reader; read the whole output or set misc.verbose to false")
+            stdout_closed("stdout: closed by its reader; read the whole output")
     else:
         print("%s: %d arguments given; expected 1, the path of a JSON configuration file such as config.json"
               % (sys.argv[0], len(sys.argv) - 1), file=sys.stderr)
