@@ -13,6 +13,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Execute Rust CLI prefix fixtures through the installed shell without temporary files. Regressions rerun the exact
+  fixture with an unusable temporary-directory path and retain runner-prefix and spaced-argument checks.
 - Pin all Maven CI jobs to checksum-verified Maven 3.9.8 and check the existing download retry policy against its
   bundled HTTP transport before builds. Retain Java build and classpath log files in Wayang Compose artifacts
   after failed builds.
@@ -42,6 +44,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Require a verified Proxy bundle and private MinIO environment before the k3s probe starts local KafScale.
 
 ### Added
+
+- Standalone analysis package through the existing launcher with
+  `--profile finite`, its own Compose project, network and runtime volume.
+  Locked artifacts serve the Workbench and finite numerical API without CP
+  or MLflow. Browser acceptance fits and exports a checked synthetic result.
 
 - Study on running OpenTSx operators in orbit
   ([`docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md`](docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md)):

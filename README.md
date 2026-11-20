@@ -163,6 +163,15 @@ The [standalone numerical service](docs/devguide/standalone-numerics.md) runs
 finite snapshot analyses without Kafka or MLflow. It accepts API requests and
 can serve an explicitly built Workbench from the same local address.
 
+The [standalone analysis package](docs/devguide/standalone-analysis.md) combines
+the built Workbench and finite numerical service in an isolated Compose
+project without an existing CP cluster:
+
+```bash
+python3 deploy/local-cp/workbench.py build --profile finite
+python3 deploy/local-cp/workbench.py up --profile finite
+```
+
 You need Docker Compose and an existing Confluent Platform Docker cluster for
 the local CP profile. The profile uses pinned Linux ARM64 images, a React
 Workbench, the Python numerical service, MLflow and persistent lifecycle state.

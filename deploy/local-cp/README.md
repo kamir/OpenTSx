@@ -1,6 +1,11 @@
-# Deploy the local CP workbench
+# Deploy the Workbench profiles
 
-Serve the Workbench and local Python analysis service on the existing CP Docker
+Use the [standalone analysis profile](../../docs/devguide/standalone-analysis.md)
+for finite fitting without a CP cluster. Select `--profile finite` on the
+existing launcher; it uses a separate Compose project, generated env file,
+network and runtime volume.
+
+The default connected profile serves the Workbench and Python service on the CP
 network. Read the [developer path](../../docs/devguide/local-cp-workbench.md)
 for prerequisites, locked build, installed-artifact tests, startup and finite
 modelling. Continue with the
@@ -14,8 +19,8 @@ native-wheel hashes in `requirements.lock` are generated from exact
 `requirements.in` versions; normal builds use the committed lock without
 regenerating it.
 
-The profile opens `http://127.0.0.1:18081/workbench`. It does not start or
-reconfigure CP brokers. Finite modelling accepts explicit browser samples
+The connected profile opens `http://127.0.0.1:18081/workbench`. It does not start
+or reconfigure CP brokers. Finite modelling accepts explicit browser samples
 through `/analysis/v1/modelling/runs`; that route itself does not read or write
 Kafka. Existing topic analysis and seed commands are separate operations.
 

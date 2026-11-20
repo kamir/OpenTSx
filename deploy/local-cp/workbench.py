@@ -1,4 +1,4 @@
-"""Build, test and operate the local CP research workbench."""
+"""Build, test and operate the connected or finite research workbench."""
 
 import argparse
 import hashlib
@@ -6,6 +6,7 @@ from html.parser import HTMLParser
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -118,23 +119,25 @@ def lock(settings):
 
 
 def node(settings, target, test=False):
+    frontend = ROOT / "opentsx-saas-frontend"
+    (frontend / "node_modules").mkdir(exist_ok=True)
+    (frontend / "dist").mkdir(exist_ok=True)
     command = (
-        "mkdir /tmp/ui; tar -C /source --exclude=node_modules --exclude=dist -cf - . | tar -C /tmp/ui -xf -; "
-        "cd /tmp/ui; npm ci --no-audit --no-fund; "
-        + ("npm test -- --run; npm run build; " if test else "npm run build; ")
-        + "cp -R dist/. /out/"
+        "npm ci --no-audit --no-fund; "
+        + ("npm test -- --run; " if test else "")
+        + "npm run build"
     )
     run(
         docker(
             settings,
             "--mount",
-            f"type=bind,source={ROOT / 'opentsx-saas-frontend'},target=/source,readonly",
+            f"type=bind,source={ROOT},target=/source,readonly",
             "--mount",
-            f"type=bind,source={ROOT / 'docs/datamodel-2026'},target=/tmp/docs/datamodel-2026,readonly",
+            "type=volume,target=/source/opentsx-saas-frontend/node_modules,volume-nocopy",
             "--mount",
-            f"type=bind,source={ROOT / 'opentsx-model'},target=/tmp/opentsx-model,readonly",
-            "--mount",
-            f"type=bind,source={target},target=/out",
+            f"type=bind,source={target},target=/source/opentsx-saas-frontend/dist",
+            "--workdir",
+            "/source/opentsx-saas-frontend",
             settings["node_image"],
             "sh",
             "-ec",
@@ -143,11 +146,12 @@ def node(settings, target, test=False):
     )
 
 
-def build(settings):
+def build(settings, profile="connected"):
     initial_source = source_digest()
     initial_revision = output(["git", "rev-parse", "HEAD"])
     BUILD.mkdir(exist_ok=True)
     stage = Path(tempfile.mkdtemp(prefix="stage-", dir=BUILD))
+    stage.chmod(0o755)
     (stage / "wheels").mkdir()
     (stage / "frontend").mkdir()
     shutil.copy2(LOCAL / "entrypoint.sh", stage / "entrypoint.sh")
@@ -193,7 +197,11 @@ def build(settings):
         or output(["git", "rev-parse", "HEAD"]) != initial_revision
     ):
         raise RuntimeError("source changed during build; rebuild a fixed source tree")
+    images = {"python": settings["python_image"], "node": settings["node_image"]}
+    if profile == "connected":
+        images["registry"] = settings["registry_image"]
     manifest = {
+        "profile": profile,
         "revision": output(["git", "rev-parse", "HEAD"]),
         "source_sha256": initial_source,
         "dirty": bool(output(["git", "status", "--porcelain"])),
@@ -201,11 +209,7 @@ def build(settings):
         "runtime_lock_sha256": hashlib.sha256(
             (stage / "runtime.lock").read_bytes()
         ).hexdigest(),
-        "images": {
-            "python": settings["python_image"],
-            "node": settings["node_image"],
-            "registry": settings["registry_image"],
-        },
+        "images": images,
         **json.loads((stage / "python-build.json").read_text()),
     }
     raw = json.dumps(manifest, sort_keys=True, indent=2) + "\n"
@@ -221,29 +225,36 @@ def build(settings):
     env = {
         "OPENTSX_BUNDLE": str(bundle),
         "OPENTSX_PYTHON_IMAGE": settings["python_image"],
-        "KAFKA_BOOTSTRAP": settings["bootstrap"],
-        "OPENTSX_TOPIC_PREFIX": settings["prefix"],
-        "OPENTSX_CP_NETWORK": settings["network"],
         "OPENTSX_WORKBENCH_PORT": settings["port"],
-        "OPENTSX_REGISTRY_IMAGE": settings["registry_image"],
-        "OPENTSX_REGISTRY_URL": settings["registry_url"],
     }
-    temporary = BUILD / "compose.env.tmp"
+    if profile == "connected":
+        env.update(
+            {
+                "KAFKA_BOOTSTRAP": settings["bootstrap"],
+                "OPENTSX_TOPIC_PREFIX": settings["prefix"],
+                "OPENTSX_CP_NETWORK": settings["network"],
+                "OPENTSX_REGISTRY_IMAGE": settings["registry_image"],
+                "OPENTSX_REGISTRY_URL": settings["registry_url"],
+            }
+        )
+    name = "compose.finite.env" if profile == "finite" else "compose.env"
+    temporary = BUILD / (name + ".tmp")
     temporary.write_text("".join(f"{key}={value}\n" for key, value in env.items()))
-    temporary.replace(BUILD / "compose.env")
+    temporary.replace(BUILD / name)
     print(json.dumps(manifest, indent=2))
 
 
-def compose():
+def compose(profile="connected"):
+    finite = profile == "finite"
     return [
         "docker",
         "compose",
         "--project-name",
-        "opentsx-workbench",
+        "opentsx-workbench-finite" if finite else "opentsx-workbench",
         "--env-file",
-        str(BUILD / "compose.env"),
+        str(BUILD / ("compose.finite.env" if finite else "compose.env")),
         "--file",
-        str(LOCAL / "compose.yaml"),
+        str(LOCAL / ("compose.finite.yaml" if finite else "compose.yaml")),
     ]
 
 
@@ -267,19 +278,26 @@ def main(argv=None):
         ),
     )
     parser.add_argument("--scenario", choices=("ar1", "sarimax"), default="ar1")
+    parser.add_argument(
+        "--profile", choices=("connected", "finite"), default="connected"
+    )
     args = parser.parse_args(argv)
+    if args.profile == "finite" and (
+        args.command == "seed" or args.command.startswith("demo-")
+    ):
+        parser.error(f"finite profile does not support {args.command}")
     settings = json.loads((LOCAL / "settings.json").read_text())
+    env_file = BUILD / (
+        "compose.finite.env" if args.profile == "finite" else "compose.env"
+    )
     if args.command == "lock":
         lock(settings)
     elif args.command == "build":
-        build(settings)
+        build(settings, args.profile)
     elif args.command == "test":
-        if not (BUILD / "compose.env").exists():
+        if not env_file.exists():
             parser.error("build the bundle before running tests")
-        env = dict(
-            line.split("=", 1)
-            for line in (BUILD / "compose.env").read_text().splitlines()
-        )
+        env = dict(line.split("=", 1) for line in env_file.read_text().splitlines())
         bundle = Path(env["OPENTSX_BUNDLE"])
         if (
             json.loads((bundle / "manifest.json").read_text())["source_sha256"]
@@ -295,7 +313,7 @@ def main(argv=None):
                 "-s",
                 str(LOCAL),
                 "-p",
-                "test_workbench.py",
+                "test_workbench*.py",
                 "-v",
             ]
         )
@@ -320,8 +338,15 @@ def main(argv=None):
         target = Path(tempfile.mkdtemp(prefix="frontend-test-", dir=BUILD))
         node(settings, target, test=True)
     elif args.command == "up":
-        run(compose() + ["up", "--detach", "--wait", "--wait-timeout", "180"])
-        print(f"http://127.0.0.1:{settings['port']}/workbench")
+        run(
+            compose(args.profile)
+            + ["up", "--detach", "--wait", "--wait-timeout", "180"]
+        )
+        address = output(compose(args.profile) + ["port", "workbench", "8080"])
+        match = re.fullmatch(r"127\.0\.0\.1:([0-9]{1,5})", address)
+        if match is None or not 1 <= int(match[1]) <= 65535:
+            raise RuntimeError("invalid published workbench address")
+        print(f"http://{address}/workbench")
     elif args.command in (
         "seed",
         "demo-seed",
@@ -333,7 +358,7 @@ def main(argv=None):
             ["--scenario", args.scenario] if args.command.startswith("demo-") else []
         )
         run(
-            compose()
+            compose(args.profile)
             + [
                 "run",
                 "--rm",
@@ -348,11 +373,11 @@ def main(argv=None):
             + scenario_args
         )
     elif args.command == "status":
-        run(compose() + ["ps"])
+        run(compose(args.profile) + ["ps"])
     elif args.command == "logs":
-        run(compose() + ["logs", "--tail", "50", "workbench"])
+        run(compose(args.profile) + ["logs", "--tail", "50", "workbench"])
     elif args.command == "down":
-        run(compose() + ["down"])
+        run(compose(args.profile) + ["down"])
 
 
 if __name__ == "__main__":

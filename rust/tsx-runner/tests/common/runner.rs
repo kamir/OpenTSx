@@ -29,34 +29,44 @@ fn configured_command(binary: &Path, prefix: Option<&OsStr>) -> Command {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
+    use std::io::Write;
     use std::os::unix::ffi::OsStrExt;
-    use std::os::unix::fs::PermissionsExt;
-    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::process::Stdio;
 
-    static NEXT: AtomicU64 = AtomicU64::new(0);
+    #[test]
+    fn configured_prefix_fixture_does_not_require_temporary_executables() {
+        let executable = std::env::current_exe().unwrap();
+        assert!(executable.is_file());
+        let prefix = std::env::var_os("CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_RUNNER");
+        let test = "cli_runner::tests::configured_prefix_executes_before_the_binary_and_preserves_argument_boundaries";
+        let output = configured_command(&executable, prefix.as_deref())
+            .args(["--exact", test, "--nocapture"])
+            .env("TMPDIR", &executable)
+            .output()
+            .unwrap();
+        let stdout = String::from_utf8(output.stdout).unwrap();
+        let stderr = String::from_utf8(output.stderr).unwrap();
+        assert!(output.status.success(), "{stdout}\n{stderr}");
+        assert!(stdout.contains("running 1 test"), "{stdout}");
+        assert!(stdout.contains(&format!("test {test} ... ok")), "{stdout}");
+        assert!(stdout.contains("1 passed; 0 failed"), "{stdout}");
+    }
 
     #[test]
     fn configured_prefix_executes_before_the_binary_and_preserves_argument_boundaries() {
-        let directory = std::env::temp_dir().canonicalize().unwrap().join(format!(
-            "tsx-cli-prefix-{}-{}",
-            std::process::id(),
-            NEXT.fetch_add(1, Ordering::SeqCst)
-        ));
-        fs::create_dir(&directory).unwrap();
-        let binary = directory.join("foreign runner binary");
-        let prefix = directory.join("prefix");
-        fs::write(&binary, "#!/bin/sh\nexit 73\n").unwrap();
-        fs::write(&prefix, "#!/bin/sh\nprintf '%s\\n' \"$@\"\n").unwrap();
-        for path in [&binary, &prefix] {
-            fs::set_permissions(path, fs::Permissions::from_mode(0o700)).unwrap();
-        }
-        let configured = format!("{} --sysroot /fixture/sysroot", prefix.display());
-        let output = configured_command(&binary, Some(OsStr::new(&configured)))
+        let binary = Path::new("/fixture/foreign runner binary");
+        let configured = "/bin/sh -s -- --sysroot /fixture/sysroot";
+        let mut child = configured_command(binary, Some(OsStr::new(configured)))
             .args(["--config", "config path with spaces"])
-            .output()
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
             .unwrap();
-        fs::remove_dir_all(directory).unwrap();
+        let mut input = child.stdin.take().unwrap();
+        input.write_all(b"printf '%s\\n' \"$@\"\n").unwrap();
+        drop(input);
+        let output = child.wait_with_output().unwrap();
         assert!(output.status.success());
         assert!(output.stderr.is_empty());
         assert_eq!(

@@ -617,9 +617,12 @@ def main(argv=None):
     parser.add_argument("--web-root")
     parser.add_argument("--manifest")
     parser.add_argument("--port", type=int, default=8080)
+    parser.add_argument("--bind", choices=("127.0.0.1", "0.0.0.0"))
     parser.add_argument("--state-dir")
     parser.add_argument("--registry-url")
     args = parser.parse_args(argv)
+    if args.bind is not None and args.command not in ("serve", "serve-finite"):
+        parser.error("--bind is only valid for serving commands")
     finite = args.command == "serve-finite"
     if finite:
         if any(value is not None for value in (args.bootstrap, args.registry_url, args.state_dir)):
@@ -691,7 +694,7 @@ def main(argv=None):
         if lifecycle is not None:
             lifecycle.recover()
         server = ThreadingHTTPServer(
-            ("127.0.0.1" if finite else "0.0.0.0", args.port),
+            (args.bind or ("127.0.0.1" if finite else "0.0.0.0"), args.port),
             handler(store, args.web_root, manifest, lifecycle),
         )
         print(
