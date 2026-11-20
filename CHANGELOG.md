@@ -1964,6 +1964,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   longer create an empty `output/` folder; the demos write to `data/demo_output/`.
 - The solution of exercise 3 of episode 2 prints `degC` instead of a degree sign, so its output is plain ASCII under
   any default charset.
+- opentsx-connectors: `KafkaConnector.close()` closes the consumer that `connect()` opened when `processTopic` never
+  ran. `TSOConsumer.close()` closes its consumer once, and a second call does nothing.
+- opentsx-lg: `RequestResponseAnalysisConsumer` writes its latency table to `$HOME/opentsx/plots`, as
+  `EventFlowAnalysisConsumer` does, instead of `./opentsx/plots` in the working directory.
+- opentsx-lg: every script has a shebang, stops when a `cd` fails and passes shellcheck.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
@@ -2038,6 +2043,16 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Personal home paths in the archive and in the opentsx-lg scripts are replaced with a quoted `"$HOME/..."` or a
   placeholder. The TSCache NetBeans project files and a Kafka Connect offset file, which only worked on one machine,
   are deleted.
+- opentsx-lg: the image of the `Docker` profile (`opentsx/time-series-generator`) copies no Kafka client profile, and
+  neither the image nor the module jar contains `ccloud.props`. The container reads the profile at run time from
+  `/etc/opentsx/config/opentsx-local.props` (`OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME`) and stops when neither
+  that file nor its `.example` template is mounted. The `ccloud.props` templates under `src/main/resources/config/`
+  and `src/main/docker-compose/config/` are removed, and `ccloud.props` is git-ignored in opentsx-lg.
+- opentsx-lg: the MQTT password file `src/main/mqtt-example/volume1/docker/mqtt/config/passwd` is no longer tracked
+  and is git-ignored. `src/main/mqtt-example/01_bootstrap.sh` creates it with `mosquitto_passwd` before
+  `02_run_mqtt_broker.sh` mounts it.
+- `.gitignore` ignores a file named `ccloud.props` anywhere in the repository, so a filled-in client profile such as
+  `config/ccloud.props` is not committed.
 
 ## [3.0.1] - 2026-10-16
 

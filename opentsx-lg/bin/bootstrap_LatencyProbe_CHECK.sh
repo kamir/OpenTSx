@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 source env.sh
 
 echo
@@ -12,7 +13,6 @@ export CLUSTER=lkc-8q1pq
 
 export SERVICE_ACCOUNT=122239
 
-########################################################################################################################
 echo
 echo ccloud login --save
 echo
@@ -31,18 +31,3 @@ ccloud kafka acl create --allow --service-account $SERVICE_ACCOUNT --topic OpenT
 ccloud kafka acl create --allow --service-account $SERVICE_ACCOUNT --topic OpenTSx_ --prefix --operation DELETE
 
 ccloud kafka acl create --allow --service-account $SERVICE_ACCOUNT --consumer-group KPING-Consumer --operation READ
-
-########################################################################################################################
-
-
-
-
-
-
-
-
-
-
-
-
-

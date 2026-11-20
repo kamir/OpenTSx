@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -81,5 +82,22 @@ class RequestResponseAnalysisConsumerTest {
         assertEquals("getStatisticData: the series latency_benchmark_response has no values; expected at least 1 value",
                 e.getMessage());
         assertTrue(consumer.closed());
+    }
+
+    @Test
+    void theDefaultTableFolderIsBelowTheHomeDirectory() throws Exception {
+        Path home = dir.resolve("home");
+        String previousHome = System.getProperty("user.home");
+        System.setProperty("user.home", home.toString());
+        try {
+            RequestResponseAnalysisConsumer.runConsumer(consumerWith(3), null, RequestResponseAnalysisConsumer.plotFolder());
+        }
+        finally {
+            System.setProperty("user.home", previousHome);
+        }
+
+        File[] tables = home.resolve("opentsx/plots").toFile().listFiles((d, name) -> name.startsWith("latency-by-message-"));
+        assertNotNull(tables);
+        assertEquals(1, tables.length);
     }
 }

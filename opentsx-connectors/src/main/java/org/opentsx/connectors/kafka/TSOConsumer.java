@@ -26,6 +26,8 @@ public class TSOConsumer {
 
     private final String topic;
 
+    private boolean closed;
+
     public TSOConsumer(String tn) {
         this(createConsumer(), tn == null ? ReferenceDataset.topicname : tn);
     }
@@ -90,13 +92,24 @@ public class TSOConsumer {
             }
         }
         finally {
-            consumer.close();
+            close();
         }
 
         if (read < z) {
             LOG.warn("stopped reading after empty polls topic={} read={} expected={} emptyPolls={}",
                     name, read, z, GIVE_UP_AFTER_EMPTY_POLLS);
         }
+    }
+
+    /**
+     * Closes the consumer once; later calls do nothing.
+     */
+    public void close() {
+        if (closed) {
+            return;
+        }
+        closed = true;
+        consumer.close();
     }
 
 }

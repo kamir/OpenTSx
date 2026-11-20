@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # https://hub.docker.com/r/philhawthorne/docker-influxdb-grafana/
 # https://thenewstack.io/how-to-setup-influxdb-telegraf-and-grafana-on-docker-part-1/
 
@@ -12,7 +13,7 @@
 # Password: root
 # Port: 8086
 
-export WP=$(pwd)
+WP=$(pwd)
 
 mkdir -p influxdb
 mkdir -p grafana
@@ -22,8 +23,8 @@ docker run -d \
   -p 3003:3003 \
   -p 3004:8083 \
   -p 8086:8086 \
-  -v $WP/influxdb:/var/lib/influxdb \
-  -v $WP/grafana:/var/lib/grafana \
+  -v "$WP/influxdb:/var/lib/influxdb" \
+  -v "$WP/grafana:/var/lib/grafana" \
   philhawthorne/docker-influxdb-grafana:latest
 
 

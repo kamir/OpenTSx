@@ -15,12 +15,5 @@ confluent local destroy
 
 confluent local start
 
-
-
-
-
-#
-# do not forget the profile !!!
-#
 mvn clean compile package install -PSimpleTimeSeriesProducer,Docker
 

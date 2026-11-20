@@ -1,8 +1,6 @@
-cd ..
+#!/usr/bin/env bash
+cd .. || exit 1
 
-#
-# We start the KStreams app ...
-#
 export OPENTSX_TOPIC_MAP_FILE_NAME=./../config/topiclist.def
 export OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME=./../config/opentsx-local.props
 export OPENTSX_SHOW_GUI=true

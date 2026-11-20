@@ -21,11 +21,6 @@ mvn clean generate-sources compile package install
 cd opentsx-lg || exit 1
 mvn clean generate-sources compile package install -PSimpleTimeSeriesProducer,Docker
 
-##################################
-#
-# Silent Mode ...
-#
-###################################
 export OPENTSX_SHOW_GUI=false
 
 #

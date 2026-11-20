@@ -28,11 +28,7 @@ cd opentsx-lg || exit 1
 mvn clean generate-sources compile package install -PSimpleTimeSeriesProducer,Docker
 
 #
-# Set environment variable so that time series can be managed in an TSA-Panel ...
-#
-
-#
-# List of topics of our TSA-Engine
+# Topic list of the generator
 #
 export OPENTSX_TOPIC_MAP_FILE_NAME=./../config/topiclist.def
 export OPENTSX_NUMBER_OF_ITERATIONS=100

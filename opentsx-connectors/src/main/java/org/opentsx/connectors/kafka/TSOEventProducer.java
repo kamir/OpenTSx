@@ -49,7 +49,6 @@ public class TSOEventProducer {
 
         try {
 
-            // the key will be based on current time and than one item per ___ms___.
             for (int index = 0; index < sendMessageCount; index++) {
 
                 TimeSeriesObject mr = show.get(index);

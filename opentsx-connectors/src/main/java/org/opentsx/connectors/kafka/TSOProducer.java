@@ -38,7 +38,6 @@ public class TSOProducer {
 
         try {
 
-            // the key will be based on current time and than one item per ___ms___.
             for (long index = time; index < time + sendMessageCount; index++) {
 
                 final ProducerRecord<String, String> record =
@@ -151,7 +150,6 @@ public class TSOProducer {
 
         try {
 
-            // the key will be based on current time and than one item per ___ms___.
             for ( TSData mrd : data ) {
 
                 EpisodesRecord er = new EpisodesRecord();
@@ -227,7 +225,6 @@ public class TSOProducer {
 
         try {
 
-            // the key will be based on current time and than one item per ___ms___.
             for ( TSData mrd : data ) {
 
                 Event e = new Event();

@@ -5,7 +5,7 @@ echo "------------------------------------------"
 echo " Start the LATENCY analysis ... CONSUMER"
 echo "------------------------------------------"
 
-echo "DISPLAY: " $DISPLAY
+echo "DISPLAY: $DISPLAY"
 
 java -XshowSettings:properties -version
 

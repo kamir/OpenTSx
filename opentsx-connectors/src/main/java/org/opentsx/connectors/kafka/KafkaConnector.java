@@ -25,7 +25,13 @@ public class KafkaConnector {
 
     }
 
+    /**
+     * Closes the consumer that {@link #connect} opened, once; {@link #processTopic} closes it as well.
+     */
     public void close() {
+        if (consumer != null) {
+            consumer.close();
+        }
     }
 
 }

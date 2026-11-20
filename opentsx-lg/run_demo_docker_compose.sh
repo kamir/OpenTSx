@@ -15,7 +15,3 @@ cd ../../../.. || exit 1
 
 cd src/main/docker-compose/ping-tool-prod || exit 1
 docker-compose --env-file .env-inhouse up -d
-
-#
-# This setup is used for execution of the refernece workload in the CuH stack ... or locally on my Mac.
-#

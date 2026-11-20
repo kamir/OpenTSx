@@ -41,8 +41,12 @@ public class RequestResponseAnalysisConsumer {
         GIVE_UP = Integer.parseInt( OpenTSxClusterLink.getClientProperties().getProperty( "klatency.consumer.giveUp") );
         NR_OF_SAMPLES = Integer.parseInt( OpenTSxClusterLink.getClientProperties().getProperty( "klatency.consumer.nrOfSamples") );
 
-        runConsumer(LatencyTestEventConsumer.createConsumer( TOPIC ), System.getenv("OPENTSX_SHOW_GUI"), "./opentsx/plots");
+        runConsumer(LatencyTestEventConsumer.createConsumer( TOPIC ), System.getenv("OPENTSX_SHOW_GUI"), plotFolder());
 
+    }
+
+    static String plotFolder() {
+        return System.getProperty("user.home") + "/opentsx/plots";
     }
 
     /**

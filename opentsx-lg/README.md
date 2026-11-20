@@ -38,13 +38,30 @@ The manifest is an example: no workflow publishes its image `opentsx/time-series
 with step (2) and load it into your cluster.
 
 The Docker Compose files under `src/main/docker-compose/` map the cluster host names to the addresses `MDC1`, `MDC2`
-and `MDC3`. Set the three variables in the `.env` file next to the compose file.
+and `MDC3`. Set the three variables in the `.env` file next to the compose file. The compose files in
+`ping-tool-cons/` and `ping-tool-prod/` mount `src/main/docker-compose/config/` at `/etc/opentsx/config/`, and
+`ENV_CONTEXT` in their `.env` and `.env-inhouse` files names the client profile there.
 
 The scripts use the `JAVA_HOME` you set, or the `java` on your `PATH`. `run_demo.sh` prints the KSQL statements of the
 demo for the ksql CLI. `run_demo.sh`, `run_demo_container.sh`, `run_demo_docker_compose.sh`, `bin/build_all.sh`,
 `bin/run_cluster.sh` and `src/main/mqtt-example/env.sh` take `CONFLUENT_HOME`, the directory of a Confluent Platform
 installation, from your shell. Without it they exit with status 2 and
 `CONFLUENT_HOME: not set; expected the directory of a Confluent Platform installation`.
+
+### Run the example image
+
+Step (2) builds the image `opentsx/time-series-generator:3.0.1` on your machine with the `Docker` profile. The image is
+a local example: no workflow builds or publishes it. It holds the jar and `/opentsx-lg/config/topiclist.def`. The jar
+carries the localhost profiles `config/cpl.props` and `config/mdc_c1.props` as resources, which no tool reads; the image
+holds no other Kafka client profile. The container reads the profile at run time from the file that
+`OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME` names, `/etc/opentsx/config/opentsx-local.props` by default. Mount a
+directory with that file at `/etc/opentsx/config/` when you start the container. Without the file and without its
+`.example` template, the generator stops with
+`OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME: "/etc/opentsx/config/opentsx-local.props" cannot be read (/etc/opentsx/config/opentsx-local.props); give a readable Kafka client profile or its .example template`.
+
+A client profile named `ccloud.props` anywhere in this module is git-ignored. So is the MQTT password file
+`src/main/mqtt-example/volume1/docker/mqtt/config/passwd`, which `src/main/mqtt-example/01_bootstrap.sh` creates with
+`mosquitto_passwd` and `02_run_mqtt_broker.sh` mounts into the broker.
 
 ### Handle errors
 
@@ -64,7 +81,7 @@ Each tool stops at the first failure and exits with status 1:
 
 With `OPENTSX_SHOW_GUI=true`, `EventFlowAnalysisConsumer` and `RequestResponseAnalysisConsumer` open and store the
 latency chart. Unset or with any other value, they write the table `latency-by-message-<milliseconds>` to
-`$HOME/opentsx/plots` (`EventFlowAnalysisConsumer`) or `./opentsx/plots` (`RequestResponseAnalysisConsumer`).
+`$HOME/opentsx/plots`.
 
 `TSDataSineWaveGenerator` sends the flow states of all rounds through one `EventFlowStateProducer` and closes it when the
 rounds end. It prints one line per round on stdout:

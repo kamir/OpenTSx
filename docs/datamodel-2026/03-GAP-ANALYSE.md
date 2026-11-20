@@ -16,9 +16,9 @@ Recommendation: **do not rebuild the existing code; build a lean "OpenTSx Platfo
 
 | # | Finding | Location (path only) | Action |
 |---|---------|----------------------|--------|
-| S1 | Confluent Cloud configuration checked in although `.gitignore` excludes the path; according to the maintainer **demo data, not critical** | `config/private/ccloud.props` | Hygiene: replace with `*.example` so that scanners and contributors are not misled |
-| S2 | More SASL configurations | `opentsx-lg/src/main/docker-compose/config/ccloud.props`, `opentsx-lg/src/main/resources/config/ccloud.props` | check, rotate, replace with `*.example` |
-| S3 | MQTT password file | `opentsx-lg/src/main/mqtt-example/volume1/docker/mqtt/config/passwd` | replace with an example |
+| S1 | Confluent Cloud configuration checked in although `.gitignore` excludes the path; according to the maintainer **demo data, not critical** | `config/private/ccloud.props` | done: the file is no longer tracked and `config/private/` is git-ignored; it stays in the history, so its key must be rotated |
+| S2 | More SASL configurations | `opentsx-lg/src/main/docker-compose/config/ccloud.props`, `opentsx-lg/src/main/resources/config/ccloud.props` | done: both templates deleted; `ccloud.props` is git-ignored, and the image of the Docker profile holds no credentials: the container reads its client profile from a file mounted at run time |
+| S3 | MQTT password file | `opentsx-lg/src/main/mqtt-example/volume1/docker/mqtt/config/passwd` | done: the file is deleted and git-ignored in opentsx-lg; `01_bootstrap.sh` creates it with `mosquitto_passwd` |
 | S4 | Development default secrets in the SaaS backend | `opentsx-saas-backend/app/core/config.py` | only through the environment, no defaults |
 | S5 | Known CVEs on the class path: log4j 1.2.17, xstream 1.2.2, jackson-databind 2.8.1 | root `pom.xml` | done with the POM cleanup (section 5) |
 

@@ -1,7 +1,8 @@
-cd ..
+#!/usr/bin/env bash
+cd .. || exit 1
 
 #
-## opentsx-lg : opentsx/time-series-generator:${project.version}
-##
+# Builds the local example image opentsx/time-series-generator:<Maven version>.
+#
 sudo mvn clean compile package install -PSimpleTimeSeriesProducer,Docker
 

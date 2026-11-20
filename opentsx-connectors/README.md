@@ -47,6 +47,9 @@ arrived, keeping every record of the last poll, and `runConsumer` closes the con
 polls of one second in a row and then logs at WARN:
 `stopped reading after empty polls topic=<topic> read=<n> expected=<z> emptyPolls=10`.
 
+`KafkaConnector.close()` and `TSOConsumer.close()` close the consumer when `processTopic` or `runConsumer` has not
+closed it yet, so a `KafkaConnector` that connected but never read leaks no consumer. A second `close()` does nothing.
+
 ## Handle errors
 
 The helpers stop at the first failure and throw.
