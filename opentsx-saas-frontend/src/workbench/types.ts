@@ -101,7 +101,7 @@ export type OpGroup = 'transform' | 'univariate' | 'multivariate' | 'group' | 's
 export interface OpDef {
   /** Operator id as written into the DAG (`op:`). */
   id: string;
-  /** Name in the stream operator catalog when it differs from the id. */
+  /** Operator written into the DAG (`op:`) when it differs from the id. */
   dagOp?: string;
   /** Button text, taken from the Swing panel where the operation exists there. */
   label: string;
@@ -110,11 +110,6 @@ export interface OpDef {
   prefix: string;
   /** Operation name written into the Processing Flow Descriptor (TASK-005). */
   pfdOperation: string;
-  /**
-   * True when the operator is listed in the stream operator catalog of
-   * docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md, section 6.
-   */
-  inCatalog: boolean;
   hint: string;
   params: ParamDef[];
   /** True when the operator reads further inputs besides its first one (`FlowNode.inputs`). */

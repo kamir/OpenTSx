@@ -111,19 +111,23 @@ Read the [analysis guide](../docs/devguide/workbench-analysis.md) for the result
 - Ground truth: the scenario events of series loaded from the inventory are drawn as bands on the time axis
   (yellow: operation, red: sensor fault); the field "Ground truth" jumps to an event
 - Align to vector: several nodes on one clock, one measuring point per tick (`opentsx.vector.v1`, a draft;
-  `src/workbench/vector.ts`)
+  `src/workbench/vector.ts`). Two series that give the same component of one vector, such as the wind speed of two
+  turbines with key `all`, are refused with the message of the vector processor; choose a key that tells them apart
 - Pair windows (tab "Multi-variate Analysis"): a pair method compares two series window by window, paired by their
   episode ranges, one result per window at its centre; "Pair coverage" shows what the methods will see,
   "Cross-correlation" gives the peak of the lagged cross-correlation, its lag and link strength (`src/workbench/xcorr.ts`,
   ported from WikiExplorer.NG), "Event synchronisation" the share of synchronous events and the level of chance
-  (`src/workbench/es.ts`, ported from the Python package). Workbench only, not in the stream operator catalog (`src/workbench/pairs.ts`, design in
-  `../EVOLUTION/TASK-015-multivariate-analysis.md`)
+  (`src/workbench/es.ts`, ported from the Python package). The vector processor does not run them. Catalog 1 lists
+  `pair.xcorr` and `pair.es`, not `pair.coverage`; the DAG export marks every pair node `experimental: true`
+  (`src/workbench/pairs.ts`, design in `../EVOLUTION/TASK-015-multivariate-analysis.md`)
 - Deploy and Stop (tab "Smart Topic"): a list says what a deployment still needs, "Create a vector of the loaded
   series" builds the one thing the processor runs, and Deploy hands the flow to the vector processor, which keeps the vector topic up to
   date, and shows what it reports; needs an administrator account, a retrieval server started with `--kafscale` and
   `--dag-runs true`, and a running vector processor
 - Time series operations as buttons, recorded as a processing flow graph
-- Export: `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor, Java code
+- Export: `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor, Java code. The DAG writes
+  `# not in the stream operator catalog` after every operator that catalog 1
+  (`../systems/catalogs/tsx-catalog-1.yaml`, list `CATALOG_1` in `src/workbench/ops.ts`) does not list
 - Code in `src/workbench/`; limits in `../EVOLUTION/TASK-013-web-workbench.md`
 
 ### State Management

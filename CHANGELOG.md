@@ -482,6 +482,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- The web workbench takes its catalog marking from catalog 1 (`systems/catalogs/tsx-catalog-1.yaml`). The DAG export
+  writes `# not in the stream operator catalog`, and the publish check warns, only for operators that catalog 1 does
+  not list. `align.vector`, `convert.unit`, `model.wind-shear`, `model.power-curve`, `feature.lag`, `feature.rolling`,
+  `pair.xcorr` and `pair.es` are catalog operators. A test compares the list `CATALOG_1` of the workbench with the
+  catalog file.
+- The workbench preview of `align.vector` refuses two series that give the same component of one vector, with the
+  rule and message of the vector processor, instead of averaging them into one value that every deployment refuses.
+
 - Concept 20 section 6.1 and the TASK-020 B1 notes list the signed `tsx-runner`
   modes that exist. With the B3 site configuration, `agent`, `conform` and `run`
   handle signed bounded statistics. With the B1 configuration, `run` executes

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { OPS, OP_BY_ID, crossings, defaultParams, dfa, fftRadix2, linFit, mulberry32, profileOf, stats } from './ops';
+import { CATALOG_1, OPS, OP_BY_ID, crossings, defaultParams, dfa, fftRadix2, linFit, mulberry32, profileOf, stats } from './ops';
 import { bucketToCsv, generateSineMix, isoMicros, parseBucketText, parseDelimited, parseEpisodes } from './loaders';
 import { episodeSummary, episodesOf } from './episodes';
 import { SOURCE_ID, evaluate, toDagYaml, toDefinition, toJavaCode, toPfdJson, useFlow, validate } from './flow';
@@ -380,6 +381,22 @@ describe('flow', () => {
     const found = validate(useFlow.getState().nodes);
     expect(found.some((f) => f.level === 'warning' && f.text.includes('fft'))).toBe(true);
     expect(found.some((f) => f.level === 'error' && f.text.includes('same topic'))).toBe(true);
+  });
+
+  it('marks the operators of catalog 1 and no others as catalog operators', () => {
+    const file = readFileSync(resolve(process.cwd(), '../systems/catalogs/tsx-catalog-1.yaml'), 'utf8');
+    const catalog = [...file.matchAll(/^ {2}- \{ id: ([^,]+), version: \d+,/gm)].map((m) => m[1]);
+    expect(catalog).toHaveLength(16);
+    const listed = OPS.filter((op) => catalog.includes(op.id) || catalog.includes(op.dagOp ?? op.id)).map((op) => op.id);
+    const nodes: FlowNode[] = [
+      { id: SOURCE_ID, op: 'source', params: {}, input: null, label: 'B' },
+      ...OPS.map((op, i) => ({ id: `n${i + 1}`, op: op.id, params: defaultParams(op), input: SOURCE_ID, label: op.id, sinkTopic: `t.n${i + 1}` })),
+    ];
+    const yaml = toDagYaml({ ...useFlow.getState(), nodes });
+    expect(OPS.filter((op, i) => yaml.includes(`  - id: n${i + 1}\n    op: ${op.dagOp ?? op.id}\n`)).map((op) => op.id)).toEqual(listed);
+    const warned = validate(nodes).filter((f) => f.text.includes('not in the stream operator catalog')).map((f) => f.text.split(' uses ')[0]);
+    expect(warned).toEqual(OPS.map((op) => op.id).filter((id) => !listed.includes(id)));
+    expect(CATALOG_1).toEqual(catalog);
   });
 
   it('refuses invalid deployed statistics widths and view fields', () => {
