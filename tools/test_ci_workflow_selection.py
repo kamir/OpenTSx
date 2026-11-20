@@ -218,6 +218,26 @@ class CiWorkflowSelectionTest(unittest.TestCase):
         for filename in ("result.json", "protocol.json", "placement.json", "qualification.json"):
             self.assertIn("opentsx-wayang/target/rust-b3-offline/" + filename, job)
 
+    def test_kafscale_b4_requires_both_mixed_and_numeric_cases_and_keeps_the_raw_evidence(self):
+        job = job_blocks(WORKFLOW.read_text(encoding="utf-8"))["kafscale-conformance"]
+        self.assertIn('-Dopentsx.rust.b4.sketch="$GITHUB_WORKSPACE/target/rust-b2/debug/examples/b4_sketch"', job)
+        for name, methods in {
+            "FederatedStatsIntegrationTest": {
+                "everyActualW3WindowMatchesCentralizedAndAllSixMergeOrders",
+                "everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders",
+            },
+            "MixedSketchQualificationTest": {
+                "mixedSketchesQualifySharedBoundaryZeroBucketAndCollapsedTailCases",
+                "helperReportsItsVersionAndRejectsMalformedOrOversizedInput",
+            },
+        }.items():
+            self.assertIn(f'"{name}": 2,', job)
+            self.assertIn(f'if name == "{name}" and (int(suite.attrib["tests"]) != 2 or executed != {{', job)
+            for method in methods:
+                self.assertIn(f'"{method}",', job)
+        for folder in ("rust-b4-mixed", "rust-b4-sketch"):
+            self.assertIn(f"opentsx-wayang/target/{folder}/**", job)
+
     def test_kafscale_b3_runs_real_ssh_and_uploads_only_public_ssh_files(self):
         job = job_blocks(WORKFLOW.read_text(encoding="utf-8"))["kafscale-conformance"]
         self.assertIn("openssh-server", job)

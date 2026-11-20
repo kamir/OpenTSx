@@ -433,8 +433,12 @@ open under TASK-020 B1.2.
 Ed25519 plans/reports. The runtime MUST admit only a bounded Rust fragment
 containing `decode.avro-soe` and `stats.welford-ddsketch`, alpha 0.01,
 tumbling windows and one site `SeriesStats` output. `GLOBAL`, other
-B2 operations, continuous Rust federation and mixed-runtime qualification are
-outside this profile. The JVM executor MUST refuse Rust assignments.
+B2 operations and continuous Rust federation are outside this profile.
+The JVM executor MUST refuse Rust assignments. The separate
+[bounded mixed W3 harness](../devguide/integration/wayang-mixed-federation.md)
+selects this Rust statistics profile beside two Java sites. Its numerical
+qualification remains specific to executed evidence under S4.3; the harness
+does not establish a bound for arbitrary mixed data or qualify a continuous fleet.
 
 Local configuration MUST supply separate plan/report role keys, TLS paths,
 site/node identities, permitted jobs, bindings, topic policy, private state,
@@ -581,6 +585,15 @@ The assignment input-topic set MUST equal the fragment's nonempty, distinct
 before admission.
 
 The site plan MUST be signed (S7.1).
+
+`TsxPlanService.admitAggregateInventory` requires current job-bound conformance
+and exact equality with the signed job, plan version, `specHash`, membership
+and scopes before admitting its assignment. A bounded Rust assignment uses
+an explicitly qualified Rust site/node and matching executable digest. The
+inventory fingerprint includes that runtime's version, digest and state ABI;
+changed qualification cannot silently reuse persisted completeness state.
+Ordinary Java admission continues to refuse Rust assignments. This adapter
+does not execute a Rust assignment inside the JVM.
 
 The isolated B1 Rust profile uses the same wrapper with runtime `rust`, mode
 `continuous` and no `federation`
@@ -774,7 +787,9 @@ Laws:
    `StatsAccumulator` over all values. Sketch-byte equality requires one runtime and no bin collapse at a site
    or merge; collapsed-tail behavior needs separate acceptance vectors. `mean` and `m2` MUST be within the
    tolerance of the job (decision D-T2 in TASK-020: relative 3e-12 for the bounded W3 qualification). This measured
-   qualification does not establish that bound for arbitrary data or mixed runtimes. Quantiles from the merged sketch MUST
+   qualification includes only the executed Java-only and bounded mixed W3
+   signal-cluster cases (two Java sites and one qualified Rust site). It does
+   not establish that bound for arbitrary data or other mixed workloads. Quantiles from the merged sketch MUST
    equal those of the centralized sketch in that one-runtime/no-collapse domain. The relative error `alpha`
    comparison with the exact quantile is
    qualified to nonzero magnitudes outside the zero bucket and without bounded-bin collapse; fixtures must

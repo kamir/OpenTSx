@@ -18,6 +18,8 @@ CAPABILITY_PATHS = {
     "opentsx-flink-core/target/pfd-acceptance/",
     "opentsx-wayang/target/surefire-reports/",
     BROKER_GLOB,
+    "opentsx-wayang/target/rust-b4-mixed/**",
+    "opentsx-wayang/target/rust-b4-sketch/**",
     "opentsx-wayang/target/rust-b3-daemon/result.json",
     "opentsx-wayang/target/rust-b3-offline/result.json",
     "opentsx-wayang/target/rust-b3-offline/protocol.json",
@@ -115,6 +117,8 @@ class CiBrokerLogsTest(unittest.TestCase):
             "private fixture state": workflow.replace(BROKER_GLOB, "opentsx-wayang/target/federation-test-logs/"),
             "private SSH state": workflow.replace("target/rust-b3-evidence/ssh/report.json", "target/rust-b3-evidence/ssh/"),
             "private TLS files": workflow.replace("opentsx-wayang/target/rust-b3-offline/qualification.json", "opentsx-wayang/target/rust-b3-offline/*.pem"),
+            "missing mixed evidence": workflow.replace("            opentsx-wayang/target/rust-b4-mixed/**\n", ""),
+            "missing numerical evidence": workflow.replace("            opentsx-wayang/target/rust-b4-sketch/**\n", ""),
             "missing Wayang reports": workflow.replace("            opentsx-wayang/target/surefire-reports/\n", ""),
             "primary directory": workflow.replace(PRIMARY_LOG, "${{ runner.temp }}/"),
         }
