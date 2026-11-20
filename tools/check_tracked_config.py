@@ -17,7 +17,11 @@ Checks the files `git ls-files` lists under root:
   * in every tracked text file: no Confluent Cloud cluster or registry host, no *.gce.cloudera.com host, no
     Confluent Cloud resource id (lkc-, pkc-, psrc-, lsrc-, env- or sa- and 5 or more lower-case letters or digits
     with at least one digit, not inside a word) and no personal home path, a directory below /Users or /home other
-    than the service account homes Shared, jovyan, ubuntu, ec2-user and user.
+    than the service account homes Shared, jovyan, ubuntu, ec2-user and user;
+  * when root holds the private deny list config/private/denylist.txt (git-ignored; one word per line, blank lines
+    and lines that start with # skipped): no tracked path and no line of a tracked text file holds one of its words,
+    in any letter case, as a whole word, that is, not next to a letter or digit. A deny list that cannot be read is
+    one finding, and so is a link on its path that points to nothing. Without the file these checks do not run.
 
 When it reads the git listing itself (no paths given), it also fails on a gitlink, an index entry of mode 160000,
 whose path has no submodule.<name>.path entry in the .gitmodules file at the top level of the repository (no file
@@ -45,6 +49,7 @@ CLIENT_PROFILE = "ccloud.props"
 MQTT_PASSWORD_FILE = "opentsx-lg/src/main/mqtt-example/volume1/docker/mqtt/config/passwd"
 HOME_PATH = re.compile(r"/(?:Users|home)/([A-Za-z0-9._-]+)(?![A-Za-z0-9._-])")
 SERVICE_HOMES = {"Shared", "jovyan", "ubuntu", "ec2-user", "user"}
+DENY_LIST = "config/private/denylist.txt"
 
 
 def tracked_files(root: pathlib.Path) -> list[str]:
@@ -91,6 +96,23 @@ def gitlink_findings(root: pathlib.Path) -> list[str]:
                             f"submodule.{top}.path {top}, git config -f .gitmodules submodule.{top}.url <url> and "
                             f"git add .gitmodules, or remove it with git rm --cached {top}")
     return findings
+
+
+def deny_list(root: pathlib.Path) -> tuple[list[tuple[str, re.Pattern]], list[str]]:
+    try:
+        text = (root / DENY_LIST).read_text(encoding="utf-8-sig")
+    except FileNotFoundError as error:
+        parts = pathlib.PurePosixPath(DENY_LIST).parts
+        links = (root.joinpath(*parts[:n]) for n in range(1, len(parts) + 1))
+        if not any(link.is_symlink() and not link.exists() for link in links):
+            return [], []
+        return [], [f"{DENY_LIST}: cannot read it ({error.strerror}); fix the file or remove it"]
+    except (OSError, UnicodeDecodeError) as error:
+        cause = getattr(error, "strerror", None) or str(error)
+        return [], [f"{DENY_LIST}: cannot read it ({cause}); fix the file or remove it"]
+    words = dict.fromkeys(line.strip() for line in text.splitlines())
+    return [(word, re.compile(rf"(?<![^\W_]){re.escape(word)}(?![^\W_])", re.I)) for word in words
+            if word and not word.startswith("#")], []
 
 
 def is_config(path: str) -> bool:
@@ -144,8 +166,11 @@ def config_findings(path: str, text: str) -> list[str]:
 
 
 def check(root: pathlib.Path, paths: list[str]) -> list[str]:
-    findings = []
+    denied, findings = deny_list(root)
     for path in paths:
+        for word, pattern in denied:
+            if pattern.search(path):
+                findings.append(f"{path}: {word}: a word of the private deny list in the path; rename the file")
         parts = pathlib.PurePosixPath(path).parts
         if ".idea" in parts:
             findings.append(f"{path}: IDE state is tracked; untrack it, .idea/ is git-ignored")
@@ -185,6 +210,10 @@ def check(root: pathlib.Path, paths: list[str]) -> list[str]:
                 if home.group(1) not in SERVICE_HOMES:
                     findings.append(f"{path}:{number}: \"{home.group(0)}\" is a personal home path; "
                                     "use $HOME or a placeholder such as <home>")
+            for word, pattern in denied:
+                if pattern.search(line):
+                    findings.append(f"{path}:{number}: {word}: a word of the private deny list; "
+                                    "remove it or write a placeholder")
     return findings
 
 

@@ -37,7 +37,7 @@ def test_a_cloud_host_in_a_profile_fails(tmp_path, capsys):
 
 
 def test_a_private_address_in_an_env_file_fails(tmp_path, capsys):
-    paths = write(tmp_path, {"ping/.env": "MDC1=192.168.0.9\nENV_CONTEXT=/etc/opentsx/config/cuh.props\n",
+    paths = write(tmp_path, {"ping/.env": "MDC1=192.168.0.9\nENV_CONTEXT=/etc/opentsx/config/client.props\n",
                              "ping/.env-inhouse": "export MDC2=10.1.2.3\n"})
     assert guard.main(tmp_path, paths) == 1
     out = capsys.readouterr().out
@@ -55,8 +55,8 @@ def test_a_personal_host_name_in_a_url_fails(tmp_path, capsys):
 def test_localhost_and_placeholders_pass(tmp_path, capsys):
     paths = write(tmp_path, {
         "config/opentsx-local.props.example": LOCAL_PROFILE,
-        "a/cuh.props": "bootstrap.servers=<bootstrap-host>:9092,127.0.0.1:9093\n"
-                       "schema.registry.url=https://<schema-registry-host>\n",
+        "a/client.props": "bootstrap.servers=<bootstrap-host>:9092,127.0.0.1:9093\n"
+                          "schema.registry.url=https://<schema-registry-host>\n",
         "a/.env": "MDC1=<mdc1-address>\nMDC2=${MDC2}\nBIND=0.0.0.0\n",
         "a/.env.example": "VITE_API_BASE_URL=http://localhost:8000\nSERVICE_HOST=broker.example.com\n",
         "nbproject/genfiles.properties": "build-impl.xml.stylesheet.CRC32=99ea4b56@1.68.1.1\n",
@@ -297,3 +297,82 @@ def test_the_gitlinks_of_the_repository_have_their_submodule_entry():
     root = pathlib.Path(guard.__file__).resolve().parent.parent
     assert "external/wayang" in guard.gitlinks(root)
     assert guard.gitlink_findings(root) == []
+
+
+DENIED = "a word of the private deny list; remove it or write a placeholder"
+DENIED_PATH = "a word of the private deny list in the path; rename the file"
+
+
+def test_a_word_of_the_private_deny_list_in_a_tracked_line_or_path_fails(tmp_path):
+    write(tmp_path, {"config/private/denylist.txt": "# zzqcomment\n\nzzqword\n   \nZZQOTHER\n"})
+    paths = write(tmp_path, {
+        "docs/notes.md": "first line\nthe ZzqWord tool, zzqword again and zzqword-x\n- zzqcomment -\nand zzqother\n",
+        "deploy/ZZQWORD/run.sh": "echo zzqwordy xzzqword zzqword7 zzqwords\n",
+        "zzqwordy/a.txt": "ok\n",
+    })
+    assert guard.check(tmp_path, paths + ["config/zzqword_client.props"]) == [
+        f"docs/notes.md:2: zzqword: {DENIED}",
+        f"docs/notes.md:4: ZZQOTHER: {DENIED}",
+        f"deploy/ZZQWORD/run.sh: zzqword: {DENIED_PATH}",
+        f"config/zzqword_client.props: zzqword: {DENIED_PATH}",
+    ]
+
+
+def test_without_a_deny_list_its_words_pass(tmp_path, capsys):
+    paths = write(tmp_path, {"docs/notes.md": "the zzqword tool\n", "zzqword/run.sh": "echo zzqword\n"})
+    assert guard.main(tmp_path, paths) == 0, capsys.readouterr().out
+
+
+def test_a_deny_list_that_cannot_be_read_is_one_finding_and_the_other_checks_run(tmp_path):
+    deny_list = tmp_path / "config" / "private" / "denylist.txt"
+    deny_list.mkdir(parents=True)
+    paths = write(tmp_path, {"a/cpl.props": "bootstrap.servers=192.168.3.5:9092\n", "docs/notes.md": "zzqword\n"})
+    assert guard.check(tmp_path, paths) == [
+        "config/private/denylist.txt: cannot read it (Is a directory); fix the file or remove it",
+        'a/cpl.props:1: bootstrap.servers: "192.168.3.5" is not localhost or a placeholder']
+    deny_list.rmdir()
+    deny_list.write_bytes(b"zzqword\n\xff\n")
+    assert guard.check(tmp_path, paths) == [
+        "config/private/denylist.txt: cannot read it ('utf-8' codec can't decode byte 0xff in position 8: invalid "
+        "start byte); fix the file or remove it",
+        'a/cpl.props:1: bootstrap.servers: "192.168.3.5" is not localhost or a placeholder']
+    deny_list.unlink()
+    deny_list.symlink_to(tmp_path / "missing.txt")
+    assert guard.check(tmp_path, paths) == [
+        "config/private/denylist.txt: cannot read it (No such file or directory); fix the file or remove it",
+        'a/cpl.props:1: bootstrap.servers: "192.168.3.5" is not localhost or a placeholder']
+
+
+def test_a_private_folder_that_links_to_a_missing_folder_is_one_finding(tmp_path):
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "private").symlink_to(tmp_path / "missing", target_is_directory=True)
+    paths = write(tmp_path, {"docs/notes.md": "zzqword\n"})
+    assert guard.check(tmp_path, paths) == [
+        "config/private/denylist.txt: cannot read it (No such file or directory); fix the file or remove it"]
+
+
+def test_a_linked_private_folder_without_a_deny_list_is_no_deny_list(tmp_path, capsys):
+    (tmp_path / "elsewhere").mkdir()
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "private").symlink_to(tmp_path / "elsewhere", target_is_directory=True)
+    paths = write(tmp_path, {"docs/notes.md": "the zzqword tool\n"})
+    assert guard.main(tmp_path, paths) == 0, capsys.readouterr().out
+
+
+def test_a_deny_list_with_a_byte_order_mark_keeps_its_first_word(tmp_path):
+    (tmp_path / "config" / "private").mkdir(parents=True)
+    (tmp_path / "config" / "private" / "denylist.txt").write_bytes(b"\xef\xbb\xbfzzqword\nzzqother\n")
+    paths = write(tmp_path, {"docs/notes.md": "zzqword here\nzzqother here\n"})
+    assert guard.check(tmp_path, paths) == [
+        f"docs/notes.md:1: zzqword: {DENIED}", f"docs/notes.md:2: zzqother: {DENIED}"]
+
+
+def test_the_guard_reads_the_deny_list_below_the_root_and_not_the_ignored_list_itself(tmp_path):
+    repository = tmp_path / "repository"
+    subprocess.run(["git", "init", "-q", str(repository)], check=True, env=git_environment())
+    write(repository, {".gitignore": "**/config/private/**\n", "config/private/denylist.txt": "zzqword\n",
+                       "docs/notes.md": "first line\nuse ZZQWORD here\n"})
+    subprocess.run(["git", "-C", str(repository), "add", ".gitignore", "docs"], check=True, env=git_environment())
+    result = run_guard(repository)
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert result.stdout.splitlines() == [f"docs/notes.md:2: zzqword: {DENIED}", "checked 2 tracked files, 1 findings"]

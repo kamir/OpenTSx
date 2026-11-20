@@ -444,8 +444,8 @@ CREATE TABLE time_series (
 # Access Grafana
 open http://localhost:3000
 
-# Dashboards located at:
-# opentsx-clusters/cp-multiregion/grafana/dashboards/
+# Dashboards located at (the folders with these dashboards were removed in November 2026):
+# opentsx-clusters/*/mdc2/grafana/provisioning/dashboards/
 ```
 
 **Available Dashboards:**
@@ -889,7 +889,7 @@ docker push myregistry.com/opentsx/time-series-generator:3.0.0
 
 OpenTSx includes pre-built Grafana dashboards:
 
-**Location:** `opentsx-clusters/*/grafana/dashboards/`
+**Location:** `opentsx-clusters/*/mdc2/grafana/provisioning/dashboards/` (the folders with these dashboards were removed in November 2026)
 
 **Available Dashboards:**
 - `kafka_consumer_metrics.json` - Consumer lag, throughput

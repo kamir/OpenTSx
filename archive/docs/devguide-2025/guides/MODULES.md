@@ -1125,21 +1125,7 @@ GROUP BY sensor_id;
 - Grafana dashboards (Consumer, Producer, Kafka, Zookeeper)
 - Network configurations
 
-#### inhouse-mrc/mdc2/
-**Purpose:** In-house multi-region, multi-datacenter setup
-
-**Deployment Patterns:**
-- Synchronous replication
-- Asynchronous replication
-- Reverse replication
-
-#### mmdc-mrc/mdc2/
-**Purpose:** Mirror multi-datacenter setup
-
-**Features:**
-- MirrorMaker 2.0 configuration
-- Active-active deployments
-- Conflict resolution strategies
+The folders `inhouse-mrc/` and `mmdc-mrc/` were removed in November 2026.
 
 ---
 

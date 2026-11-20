@@ -309,7 +309,7 @@ public void delete(String id) {
 
 **Severity:** HIGH | **CVSS Score:** 8.1 | **CWE-295**
 
-**Location:** `opentsx-clusters/krake-container/config/krake/api.yaml`
+**Location:** `opentsx-clusters/krake-container/config/krake/api.yaml` (the folder `opentsx-clusters/krake-container/` was removed in November 2026)
 
 **Description:**
 TLS/SSL is explicitly disabled for Krake API server and Kubernetes controller, exposing all API traffic in cleartext.
@@ -413,7 +413,7 @@ curl --cacert ca.pem \
 
 **Severity:** CRITICAL | **CVSS Score:** 9.1 | **CWE-284**
 
-**Location:** `opentsx-clusters/krake-container/config/krake/api.yaml:40`
+**Location:** `opentsx-clusters/krake-container/config/krake/api.yaml:40` (the folder `opentsx-clusters/krake-container/` was removed in November 2026)
 
 **Description:**
 Authorization is set to "always-allow" mode, which bypasses all access control checks.
@@ -561,8 +561,8 @@ roleRef:
 - ❌ Hardcoded credentials in source control
 
 **Locations:**
-- `opentsx-clusters/krake-container/config/krake/api.yaml` - TLS disabled
-- `opentsx-clusters/inhouse-mrc/mdc1/docker-compose.yml` - PLAINTEXT Kafka
+- `opentsx-clusters/krake-container/config/krake/api.yaml`: TLS disabled (removed in November 2026)
+- `opentsx-clusters/inhouse-mrc/mdc1/docker-compose.yml`: PLAINTEXT Kafka (removed in November 2026)
 - `opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample1.java:95` - MD5
 
 **Remediation:**
@@ -691,7 +691,7 @@ public void validatePartitionCount(int partitions) {
 - ✅ Outdated components (Java 1.8, Kafka 2.3.0)
 
 **Locations:**
-- `opentsx-clusters/krake-container/config/krake/api.yaml` - Default admin
+- `opentsx-clusters/krake-container/config/krake/api.yaml`: Default admin (removed in November 2026)
 - Multiple files - `e.printStackTrace()` calls
 - `pom.xml` - Outdated dependencies
 

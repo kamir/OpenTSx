@@ -67,7 +67,7 @@ Recommendation: **do not rebuild the existing code; build a lean "OpenTSx Platfo
 * Python `from_pandas` loses the time zone, and the time unit depends on the pandas version; `TSBucket.apply(parallel=True)` is sequential.
 
 ### 3.4 Repository hygiene and docs
-* About 190 MB of jars and tarballs under `modules/ingest-2-cassandra`, 40 MB PPTX, a 10 MB binary in `opentsx-clusters/...`, 22 `.DS_Store`, 18 `.idea` files.
+* About 190 MB of jars and tarballs under `modules/ingest-2-cassandra`, 40 MB PPTX, a 10 MB binary in `opentsx-clusters/...` (removed in November 2026 with the cluster demos), 22 `.DS_Store`, 18 `.idea` files.
 * Empty or dead modules: `opentsx-processors`, `opentsx-cv`, `geoqb`, `opentsx-jetson-nano`; duplicate demo folders, duplicate docs, `opentsx-ksql` ≙ `opentsx-ksql-udf`.
 * Three compose files with three Confluent versions, `latest` tags; a Spark notebook image without PySpark code.
 * **The README promises more than exists** (Smile ML, Parquet, "pluggable ML", Kafka in Python).

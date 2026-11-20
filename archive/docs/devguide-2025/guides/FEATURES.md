@@ -812,7 +812,7 @@ chart.display();
 - Cassandra
 - OpenTSDB
 
-**Location:** `opentsx-clusters/*/grafana/`
+**Location:** `opentsx-clusters/*/mdc2/grafana/` (the folders with these dashboards were removed in November 2026)
 
 ---
 
@@ -852,7 +852,6 @@ gnuplot.plot("output.png");
 
 **Configurations:**
 - Confluent Platform multi-region
-- In-house multi-datacenter
 - Cloud-native multi-region
 
 **Location:** `opentsx-clusters/`

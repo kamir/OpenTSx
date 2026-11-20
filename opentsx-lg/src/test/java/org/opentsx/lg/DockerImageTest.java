@@ -170,9 +170,9 @@ class DockerImageTest {
     }
 
     @Test
-    void noKubernetesManifestHasAListEntryWithAnEmptyName() throws Exception {
+    void noManifestHasAListEntryWithAnEmptyName() throws Exception {
         List<Path> manifests;
-        try (Stream<Path> files = Files.walk(Path.of("src/main/k8s"))) {
+        try (Stream<Path> files = Files.walk(Path.of("src/main"))) {
             manifests = files.filter(f -> f.getFileName().toString().matches(".*\\.ya?ml")).toList();
         }
         List<String> problems = new ArrayList<>();
@@ -185,8 +185,29 @@ class DockerImageTest {
             }
         }
 
-        assertTrue(manifests.contains(Path.of("src/main/k8s/krake-app/echo-demo.yaml")), manifests.toString());
+        assertTrue(manifests.containsAll(List.of(Path.of("src/main/docker-compose/ping-tool-cons/docker-compose.yml"),
+                Path.of("src/main/docker-compose/ping-tool-prod/docker-compose.yml"))), manifests.toString());
         assertEquals(List.of(), problems);
+    }
+
+    @Test
+    void eachEnvFileOfThePingToolsNamesAClientProfileOfTheMountedFolder() throws Exception {
+        Path compose = Path.of("src/main/docker-compose");
+        Pattern context = Pattern.compile("(?m)^ENV_CONTEXT=/etc/opentsx/config/(\\S+)$");
+        List<String> profiles = new ArrayList<>();
+        for (String tool : List.of("ping-tool-cons", "ping-tool-prod")) {
+            assertTrue(Files.readString(compose.resolve(tool).resolve("docker-compose.yml"))
+                    .contains("- ./../config/:/etc/opentsx/config/"), tool);
+            for (String env : List.of(".env", ".env-inhouse")) {
+                Matcher profile = context.matcher(Files.readString(compose.resolve(tool).resolve(env)));
+                assertTrue(profile.find(), tool + "/" + env);
+                assertTrue(Files.isRegularFile(compose.resolve("config").resolve(profile.group(1))),
+                        tool + "/" + env + ": " + profile.group(1));
+                profiles.add(profile.group(1));
+            }
+        }
+
+        assertEquals(List.of("opentsx-local.props", "cpl.props", "opentsx-local.props", "cpl.props"), profiles);
     }
 
     private static void assertPinned(String image, String where) {

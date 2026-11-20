@@ -237,6 +237,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   node opens; `addTransformation(t, chart)` still takes the title of an open chart.
 - The k3s shell tests cover `10-build.sh --no-images` on a host without an image builder and `90-teardown.sh --images`
   without `--yes` on a host without k3s, where the k3s refusal comes before the question.
+- `tools/check_tracked_config.py` reads an optional private deny list, `config/private/denylist.txt` (git-ignored, one
+  word per line, blank lines and `#` lines skipped). It fails on every tracked path and every line of a tracked text
+  file that holds one of its words, in any letter case and as a whole word. The messages are `<path>:<line>: <word>: a
+  word of the private deny list; remove it or write a placeholder` and `<path>: <word>: a word of the private deny
+  list in the path; rename the file`. A deny list it cannot read, or a link on its path that points to nothing, gives
+  `config/private/denylist.txt: cannot read it (<cause>); fix the file or remove it`. Without the file, as in CI, the
+  guard skips this check. CONTRIBUTING.md describes it.
 
 ### Changed
 
@@ -986,6 +993,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `config/opentsx-local.props.example` no longer sets `key.serializer`, `value.serializer`, `key.deserializer` and
   `value.deserializer`. Every producer and consumer of opentsx-connectors and opentsx-lg sets its own and the Kafka
   Streams clients of the FWL applications use byte array serializers, so these keys of a profile do not apply.
+- The client profile of the ping tools is `opentsx-lg/src/main/docker-compose/config/opentsx-local.props`. That is
+  also the default profile of the image `opentsx/time-series-generator:3.0.1` that the `Docker` profile builds.
+  `ENV_CONTEXT` in `ping-tool-cons/.env` and `ping-tool-prod/.env` names it. The profile still names `localhost:9092`
+  and `http://localhost:8081`. Neither this profile nor `opentsx-lg/src/main/docker-compose/config/cpl.props`, which
+  `ENV_CONTEXT` in `ping-tool-cons/.env-inhouse` and `ping-tool-prod/.env-inhouse` names, holds `key.serializer`,
+  `value.serializer`, `key.deserializer` or `value.deserializer`; each producer and consumer sets its own.
+  `DockerImageTest` fails when `ENV_CONTEXT` names a file that is not in `src/main/docker-compose/config/`, and it
+  checks every YAML file under `src/main/` for a list entry `- name:` without a value.
 
 ### Removed
 
@@ -1184,6 +1199,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   and the sliding-window entropy series of their `main` methods, which nothing read.
 - `opentsx-core`: the unused local `market`, the field `doDFA`, the private methods `applyDFA` and
   `loadStockDataFromBucket` and the thesis notes before the package statement of `MacroRecorder2`.
+- The archived cluster demos `archive/demos/opentsx-clusters/mmdc-mrc`, `inhouse-mrc`, `krake-container` and
+  `Krake-container` and a tracked `.DS_Store` are deleted. They held kubeconfigs with client keys, an etcd dump,
+  measurement spreadsheets and the addresses of a private setup. `cp-multiregion` and `confluent_local` stay, and the
+  two `extra_hosts` of `cp-multiregion/docker-compose.yml` now use the documentation addresses 192.0.2.10 and
+  198.51.100.10.
+- opentsx-lg no longer has `src/main/k8s` (the Krake demo manifests `lg-demo.yaml` and `echo-demo.yaml` with their
+  ConfigMap templates) or `src/main/docker-compose/krake-metrics-provider` (Prometheus and Grafana for that demo).
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported

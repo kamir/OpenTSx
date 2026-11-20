@@ -6,12 +6,15 @@ local paths and Confluent Cloud/Platform assumptions.
 Four submodule links (`opentsx-cloud-bridge/cp-all-in-one`, `opentsx-clusters/Krake-container/tmp`,
 `opentsx-clusters/examples`, `opentsx-clusters/multiregion/examples`) were removed in October 2026: they had no URL in
 `.gitmodules`, could not be checked out and caused a warning in every CI run. Their last state is commit `315f01d`.
+The cluster demos `opentsx-clusters/Krake-container/`, `opentsx-clusters/krake-container/`,
+`opentsx-clusters/inhouse-mrc/` and `opentsx-clusters/mmdc-mrc/` were removed in November 2026.
 
 | Folder | Content |
 |--------|---------|
 | `opentsx-app-demos/` | 2019–2021 demo scripts and slides (ApacheCon, Confluent Cloud latency, meetups) |
 | `opentsx-cloud-bridge/`, `opentsx-cv/` | REST-proxy bridges to Confluent Cloud (incl. webcam capture) |
-| `opentsx-cluster-demo0/`, `opentsx-clusters/` | Kubernetes / multi-region / Krake cluster scripts for Confluent Platform |
+| `opentsx-cluster-demo0/` | Kubernetes cluster scripts for Confluent Platform |
+| `opentsx-clusters/` | `cp-multiregion/`, a Docker Compose multi-region cluster of Confluent Platform, and `confluent_local/`, a script for `confluent local` |
 | `opentsx-jetson-nano/` | idea note for a Jetson Nano image processor |
 | `scala-scripts/` | spark-shell demos (RNG, OpenTSDB streaming) |
 | `legacy-modules/` | former `modules/`: TSCache (HBase web app), ingest-2-cassandra (vendored Kafka Connect jars removed), KS-test R scripts |

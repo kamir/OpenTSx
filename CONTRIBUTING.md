@@ -92,6 +92,15 @@ Pull requests are squash-merged when every required check is green.
 * Never commit real hosts, credentials or tokens. Personal and real-cluster configuration belongs in
   `config/private/`, which is git-ignored. The Kafka client profile of the 2.x tools is `config/opentsx-local.props`
   (git-ignored), created from the localhost template `config/opentsx-local.props.example`.
+* Keep customer and project names out of the repository. Write each word that must not appear, one per line, into
+  `config/private/denylist.txt` (git-ignored); blank lines and lines that start with `#` are skipped. Then run
+  `python3 tools/check_tracked_config.py` in the repository root. It exits with status 1 and reports each tracked path
+  and each line of a tracked text file that holds one of these words, in any letter case and as a whole word (not next
+  to a letter or digit), with `<path>:<line>: <word>: a word of the private deny list; remove it or write a placeholder`
+  or `<path>: <word>: a word of the private deny list in the path; rename the file`. A deny list it cannot read, or a
+  link on its path that points to nothing, gives
+  `config/private/denylist.txt: cannot read it (<cause>); fix the file or remove it`. CI has no deny list and skips
+  this check.
 * Real measurement data (plant, meter, house or boat data) stays local and out of the repository. Commit only
   synthetic or simulated data, and mark it as such.
 * `deploy/k3s/.env` and `deploy/k3s/overlays/local/` are generated and git-ignored.

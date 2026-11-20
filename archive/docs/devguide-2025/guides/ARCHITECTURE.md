@@ -412,7 +412,7 @@ OpenTSx supports sophisticated multi-datacenter setups:
    - Replication across regions
    - Locality-aware consumers
 
-2. **Multi-Datacenter with Replication** (`opentsx-clusters/inhouse-mrc/mdc2/`)
+2. **Multi-Datacenter with Replication** (the folder `opentsx-clusters/inhouse-mrc/` was removed in November 2026)
    - Independent clusters per datacenter
    - MirrorMaker for replication
    - Active-active or active-passive

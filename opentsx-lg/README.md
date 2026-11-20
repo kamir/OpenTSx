@@ -32,15 +32,15 @@ The tools and the Kafka Streams applications `FWL_TSA_KStreamsApplication` and `
 `bootstrap.servers`, `schema.registry.url` and the other client settings from the Kafka client profile that
 `OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME` names (see [`opentsx-connectors`](../opentsx-connectors/README.md)).
 
-`src/main/k8s/krake-app/lg-demo.yaml` mounts the ConfigMap `opentsx-lg-demo-config` at `/etc/opentsx/config/`. The
-ConfigMap holds `cuh.props` and `topiclist.def`; `src/main/k8s/krake-app/config/` has templates of both files.
-The manifest is an example: no workflow publishes its image `opentsx/time-series-generator:3.0.1`. Build the image
-with step (2) and load it into your cluster.
-
 The Docker Compose files under `src/main/docker-compose/` map the cluster host names to the addresses `MDC1`, `MDC2`
 and `MDC3`. Set the three variables in the `.env` file next to the compose file. The compose files in
 `ping-tool-cons/` and `ping-tool-prod/` mount `src/main/docker-compose/config/` at `/etc/opentsx/config/`, and
-`ENV_CONTEXT` in their `.env` and `.env-inhouse` files names the client profile there.
+`ENV_CONTEXT` in their `.env` and `.env-inhouse` files names the client profile there: `.env` names
+`opentsx-local.props`, the client profile of the ping tools and the default profile of the image
+`opentsx/time-series-generator:3.0.1` that step (2) builds and both compose files run, and `.env-inhouse` names
+`cpl.props`. Both profiles name `localhost:9092` and `http://localhost:8081`. They hold no serializer or deserializer
+keys: each producer and consumer sets its own.
+`DockerImageTest` fails when `ENV_CONTEXT` names a file that is not in `src/main/docker-compose/config/`.
 
 The scripts use the `JAVA_HOME` you set, or the `java` on your `PATH`. `run_demo.sh` prints the KSQL statements of the
 demo for the ksql CLI. `run_demo.sh`, `run_demo_container.sh`, `run_demo_docker_compose.sh`, `bin/build_all.sh`,
@@ -74,7 +74,7 @@ directory with that file at `/etc/opentsx/config/` when you start the container.
 
 [`src/main/docker/core-tool-image/README.md`](src/main/docker/core-tool-image/README.md) describes a Dockerfile for the
 same jar with Xvfb and x11vnc. `DockerImageTest` fails on a Dockerfile under `src/` with an `ENV <key> <value>` line or
-a `CMD` or `ENTRYPOINT` in shell form, and on a manifest under `src/main/k8s/` with a list entry `- name:` that has
+a `CMD` or `ENTRYPOINT` in shell form, and on a YAML file under `src/main/` with a list entry `- name:` that has
 no value. It joins a Dockerfile line that ends with `\` with the next line before it checks the instruction, so
 `ENV \` followed by `<key>=<value>` lines and `CMD \` followed by an exec-form array pass, and it names the first line
 of the instruction.
