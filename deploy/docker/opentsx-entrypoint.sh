@@ -5,6 +5,7 @@
 #
 # Commands (options as in docs/user-manual/appendix-a-cli.md):
 #   windpark-sim       wind-farm scenario -> KafScale and/or Iceberg   (org.opentsx.windpark.WindparkSim)
+#   windpark-demo      deterministic local simulation, detection and replay
 #   stats              streaming statistics processor on KafScale      (org.opentsx.stats.StatsProcessorApp)
 #   metadata           metadata pool -> OpenMetadata (or --dry-run)    (org.opentsx.openmetadata.WindparkMetadata)
 #   retrieval-server   REST API for episodes, patterns, segments       (org.opentsx.retrieval.server.RetrievalServer)
@@ -57,6 +58,7 @@ run() {   # module-list main-class args...
 cmd="$1"; shift
 case "$cmd" in
   windpark-sim)     run "opentsx-windpark" org.opentsx.windpark.WindparkSim "$@" ;;
+  windpark-demo)    run "opentsx-windpark" org.opentsx.windpark.WindparkDemo "$@" ;;
   stats)            run "opentsx-stats" org.opentsx.stats.StatsProcessorApp "$@" ;;
   metadata)         run "opentsx-openmetadata" org.opentsx.openmetadata.WindparkMetadata "$@" ;;
   retrieval-server) run "opentsx-retrieval opentsx-store-iceberg" org.opentsx.retrieval.server.RetrievalServer "$@" ;;
