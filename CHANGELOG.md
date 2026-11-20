@@ -92,6 +92,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   Locked artifacts serve the Workbench and finite numerical API without CP
   or MLflow. Browser acceptance fits and exports a checked synthetic result.
 
+- Owner decision D-T13 in
+  [`EVOLUTION/TASK-020-wayang-ts-operators.md`](EVOLUTION/TASK-020-wayang-ts-operators.md), accepted on 2026-11-20:
+  FPGA kernels on raw sensor data run as Tier 3, behind the Rust runner and for data reduction only. The record states
+  the concept 09 boundary it changes, the partial and finish numerics, the `runtimes.fpga` key, the `raw` port, signed
+  kernel packages, the first kernel pack, the admission gate per kernel, and that the contract changes ship with the
+  first kernel.
 - Study on running OpenTSx operators in orbit
   ([`docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md`](docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md)):
   no tool compiles the Python operators to FPGA logic; a bounded streaming subset can be reimplemented as FPGA kernels
