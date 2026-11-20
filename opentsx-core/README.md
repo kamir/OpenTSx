@@ -89,9 +89,13 @@ configuration file does not exist, `addTransformation` throws before it adds the
 of the selected operation node. The chart panel keeps the chart of each operation it records for the node of that
 run, so two runs of one operation, such as `Histogram per series` with other bins, keep their own charts;
 `TEST Normal Distribution` keeps its t-value chart and `MF-DFA` the F(s,q) chart of the original values of
-the first series. `MacroRecorder` keeps the charts of its `Components` and `Shuffled` nodes; its `fitMIN` and `fitMAX`
-are deprecated and have no effect. For a node without a chart, such as a source node, `show Chart` shows
-`show Chart: no chart for <node>; select an operation node` in a dialog; without a selection it does nothing.
+the first series, also when other selected series have the same label. `MFDFAAnalyzer.process(rows, runid)` returns
+that chart, or `null` for no rows. `MacroTrackerFrame.addTransformation(t, chart)` takes the title of an open chart and
+`MacroTrackerFrame.addTransformation(t, dialog)` takes the chart dialog itself.
+`MacroRecorder` and `MacroRecorder2` keep the charts of their `Components` and `Shuffled` nodes; the `fitMIN` and
+`fitMAX` of `MacroRecorder` are deprecated and have no effect. For a node without a chart, such as a source node,
+`show Chart` shows `show Chart: no chart for <node>; select an operation node` in a dialog; without a selection it
+does nothing.
 Swing control tests use a display; the Java CI jobs run them under Xvfb on Ubuntu 24.04.
 Opening a chart panel prints nothing and creates no folder; the chart folder and the series colors are DEBUG lines of
 `TSStoreDescriptor` and `MultiChart`. `save PN` writes below `opentsx/plots/` in `user.home` and creates the folders
@@ -130,7 +134,7 @@ opened before the failure:
 | Button | `<name>` | Other messages |
 |--------|----------|----------------|
 | `show PN` | n/a | `<folder>: no such folder; press save PN to create it` when the folder does not exist, otherwise `<folder>: cannot open the folder (<cause>); open it in a file manager` |
-| `FFT` | `FFT` | n/a |
+| `FFT` | `FFT` | `Select at least one series for FFT`, `Sampling rate must be a finite positive number`, `FFT needs at least three samples with matching coordinates`, `FFT values and coordinates must be finite`, `FFT coordinates must increase at a uniform interval` |
 | `DFA` | `DFA` | `DFA of <series>: cannot compute the fluctuation function (<cause>)`, `DFA of <series>: <n> values give <k> window sizes in the fit range; use from 144 to 3160031 values` |
 | `Auto-Correlation` | `auto-correlation` | `auto-correlation of <series>: cannot correlate lag <lag> (<cause>)` |
 | `Profile` | `profile` | n/a |

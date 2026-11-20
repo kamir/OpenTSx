@@ -745,7 +745,7 @@ class TSOperationControlerPanelTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"100, 0", "143, 1"})
+    @CsvSource({"1, 0", "20, 0", "23, 0", "100, 0", "143, 1"})
     void aDfaOfASeriesTooShortForTheFitShowsTheMessageAndRecordsNothing(int values, int windows) throws Exception {
         ProbePanel panel = onEdt(() -> new ProbePanel(rows(noise(values)), chart(), "probe"));
         boolean chartOpened;

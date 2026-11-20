@@ -883,22 +883,17 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         String source = this.label;
         String target = operationPrefix + this.label;
 
+        MultiChart chart;
         try {
             
-            MFDFAAnalyzer.process(this.rows, "MFDFA of " + this.label);
+            chart = MFDFAAnalyzer.process(this.rows, "MFDFA of " + this.label);
         
         } 
         catch (Exception ex) {
             showActionError("MFDFA of " + this.label + ": cannot compute the analysis (" + ex + ")");
             return;
         }
-        TSBucketTransformation t = TSBucketTransformation.getTransformation(source, target, operationLabel);
-        if (this.rows.isEmpty()) {
-            MacroTrackerFrame.addTransformation(t);
-        } else {
-            // MFDFAAnalyzer.processMFDFA titles the F(s,q) chart of the original values "<label> F(s,q) _raw_0".
-            MacroTrackerFrame.addTransformation(t, this.rows.get(0).getLabel() + " F(s,q) _raw_0");
-        }
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel), chart);
 
 
     }//GEN-LAST:event_jButton6ActionPerformed

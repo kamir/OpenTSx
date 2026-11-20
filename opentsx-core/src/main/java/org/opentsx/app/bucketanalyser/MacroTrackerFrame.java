@@ -93,6 +93,13 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
      * Records {@code t} and lets {@code show Chart} of its node open the chart titled {@code chart}.
      */
     public static void addTransformation(TSBucketTransformation t, String chart) {
+        addTransformation(t, frame == null ? null : frame.track.dialogs.get(chart));
+    }
+
+    /**
+     * Records {@code t} and lets {@code show Chart} of its node open {@code dialog}.
+     */
+    public static void addTransformation(TSBucketTransformation t, JDialog dialog) {
         LOG.debug("recorded transformation source={} target={} operation={} type={}", t.source, t.target, t.operation,
                 t.type);
         if (frame != null) {
@@ -109,7 +116,7 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
             }
             PFDRecorder recorder = PFDRecorder.getInstance();
 
-            frame.track.addTransformation(t, chart);
+            frame.track.addTransformation(t, dialog);
 
             frame.refresh();
 
@@ -514,10 +521,10 @@ class Track {
         createNodes();
     }
 
-    void addTransformation(TSBucketTransformation tsbtf, String chart) {
+    void addTransformation(TSBucketTransformation tsbtf, JDialog dialog) {
 
         String sourceNode = tsbtf.source;
-        addNode(sourceNode, tsbtf, dialogs.get(chart));
+        addNode(sourceNode, tsbtf, dialog);
 
     }
 

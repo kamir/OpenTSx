@@ -230,6 +230,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `tools/test_registries.py` fails on every line of a tracked YAML file or Dockerfile of the repository, the archived
   echo demos included, that names the registry `k8s.gcr.io`, as in an image `k8s.gcr.io/pause:3.2` or a value
   `registry: k8s.gcr.io`.
+- `MacroTrackerFrame.addTransformation(t, dialog)` records an operation with the chart dialog that `show Chart` of its
+  node opens; `addTransformation(t, chart)` still takes the title of an open chart.
 
 ### Changed
 
@@ -963,6 +965,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `tools/test_lg_scripts.py` fails on an unknown option only between `docker` and a `run`, `create` or `pull`
   subcommand that it reads. An option after the word `docker` in another command, as in `pip install docker --user`,
   is no finding.
+- `MFDFAAnalyzer.process(rows, runid)` returns the F(s,q) chart of the original values of the first series as a
+  `MultiChart`, or `null` for no rows, instead of `void`. This is a breaking change.
 
 ### Removed
 
@@ -2471,6 +2475,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   step. It exits with 1 and `<path of .env>: cannot replace it with <dir>/env after the PVCs <pvcs> were restored; see
   the error above, then run 71-restore.sh <dir> --only env`. Without volumes among the parts, the message leaves out
   the PVCs.
+- `show Chart` on the `MF-DFA` node of the classic tracker opens the F(s,q) chart of the original values of the first
+  series, also when other selected series have the same label; it opened the chart of the last series with that label.
+- The failure table of the opentsx-core README lists the five messages of the `FFT` button: `Select at least one
+  series for FFT`, `Sampling rate must be a finite positive number`, `FFT needs at least three samples with matching
+  coordinates`, `FFT values and coordinates must be finite` and `FFT coordinates must increase at a uniform interval`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

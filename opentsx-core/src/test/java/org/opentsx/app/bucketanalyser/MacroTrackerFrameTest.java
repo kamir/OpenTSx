@@ -300,6 +300,57 @@ class MacroTrackerFrameTest {
     }
 
     @Test
+    void showChartOnTheMfDfaNodeOfTwoSeriesWithOneLabelShowsTheChartOfTheFirstSeries() throws Exception {
+        Path created = Path.of("databuffer");
+        for (String part : new String[]{"MFDFA", "MFDFA of probe"}) {
+            if (Files.exists(created)) {
+                created = created.resolve(part);
+            }
+        }
+        Vector<TimeSeriesObject> rows = sampled(512);
+        Random random = new Random(5);
+        TimeSeriesObject louder = new TimeSeriesObject();
+        louder.setLabel("sampled");
+        for (int i = 0; i < 512; i++) {
+            louder.addValuePair(i * 0.25, 1e6 * random.nextGaussian());
+        }
+        rows.add(louder);
+        ProbeTracker tracker = openProbeTracker();
+        RecordingPanel panel = onEdt(() -> new RecordingPanel(rows, "probe"));
+        List<MultiChart> raw = new ArrayList<>();
+        List<Double> shown = new ArrayList<>();
+        try {
+            SwingUtilities.invokeAndWait(() -> clickOn(panel, "jButton6ActionPerformed"));
+            SwingUtilities.invokeAndWait(() -> {
+                for (Window window : Window.getWindows()) {
+                    if (window instanceof MultiChart && window.isVisible()
+                            && ((MultiChart) window).chartTitle.equals("sampled F(s,q) _raw_0")) {
+                        raw.add((MultiChart) window);
+                        window.setVisible(false);
+                    }
+                }
+                selectOperation(tracker, "MFDFA of ");
+                clickOn(tracker, "jButton3ActionPerformed");
+                for (MultiChart chart : raw) {
+                    if (chart.isVisible()) {
+                        shown.add(chart.dataset.getSeries(0).getMaxY());
+                    }
+                }
+            });
+        } finally {
+            disposeCharts();
+            closeProbeTracker();
+            delete(created);
+        }
+
+        assertEquals(List.of(), panel.errors);
+        assertEquals(List.of(), tracker.errors);
+        assertEquals(2, raw.size());
+        assertEquals(1, shown.size(), "show Chart opened " + shown.size() + " of the two raw charts");
+        assertTrue(shown.get(0) < 3, "show Chart opened the chart of the second series, log F(s) up to " + shown.get(0));
+    }
+
+    @Test
     void showChartOnTheNodesOfDfaAndFftShowsTheirCharts() throws Exception {
         ProbeTracker tracker = openProbeTracker();
         RecordingPanel panel = onEdt(() -> new RecordingPanel(sampled(1024), "probe"));

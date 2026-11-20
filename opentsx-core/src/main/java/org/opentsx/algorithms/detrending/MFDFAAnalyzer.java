@@ -18,7 +18,12 @@ public class MFDFAAnalyzer {
 
     private static final Logger LOG = LoggerFactory.getLogger(MFDFAAnalyzer.class);
     
-    public static void process(Vector<TimeSeriesObject> rows, String runid ) throws Exception {
+    /**
+     * Runs the MF-DFA of each row and opens its F(s,q) charts of the original and the shuffled values.
+     *
+     * @return the F(s,q) chart of the original values of the first row, or {@code null} for no rows
+     */
+    public static MultiChart process(Vector<TimeSeriesObject> rows, String runid ) throws Exception {
         
         
         String folder = runid;
@@ -36,6 +41,7 @@ public class MFDFAAnalyzer {
                     DetrendingMethodFactory.MFDFA2);
         
         
+        MultiChart first = null;
         int z = 0;
         for( TimeSeriesObject m : rows ) {
 
@@ -57,7 +63,11 @@ public class MFDFAAnalyzer {
             StringBuffer calcLog1 = new StringBuffer();
             StringBuffer calcLog2 = new StringBuffer();
 
-            Vector<TimeSeriesObject> vNonShuffled = processMFDFA(m, dfa, calcLog1, "_raw", project, false, true);
+            Vector<TimeSeriesObject> vNonShuffled = processMFDFA(m, dfa, calcLog1, "_raw", project, false, false);
+            MultiChart raw = openFluctuationChart(m, vNonShuffled, "_raw_0", calcLog1);
+            if (first == null) {
+                first = raw;
+            }
             
             Vector<TimeSeriesObject> vShuffled = processMFDFA(m, dfa, calcLog2, "_shuffled", project, true, true);
             
@@ -78,6 +88,7 @@ public class MFDFAAnalyzer {
              */
 
         };
+        return first;
     }
 
     public static void main(String args[]) throws Exception {
@@ -209,11 +220,17 @@ public class MFDFAAnalyzer {
         project.storeMeasurementTable(mwtH);
 
         if ( showPlot )
-            MultiChart.open(v, rBMM1.getLabel() + " " + "F(s,q) " + randNrType, "log(s)", "log(F(s))", true, calcLog.toString(), null);
+            openFluctuationChart(rBMM1, v, randNrType, calcLog);
         
 
         // --- END od processing ---
         return v;
+    }
+
+    private static MultiChart openFluctuationChart(TimeSeriesObject row, Vector<TimeSeriesObject> v, String type,
+            StringBuffer calcLog) {
+        return MultiChart.open(v, row.getLabel() + " F(s,q) " + type, "log(s)", "log(F(s))", true, calcLog.toString(),
+                null);
     }
     
         public static void _test2( Vector<TimeSeriesObject> mr ) {
