@@ -270,7 +270,7 @@ public final class WindparkSimulator {
                             .episodeId(Ulid.deterministic(windowStart / 1000, idSeed(key, windowStart)))
                             .createdAt(wEnd)
                             .source("simulator:" + scenario.name())
-                            .producer("opentsx-windpark/3.0.1")
+                            .producer("opentsx-windpark/3.1.0")
                             .pipeline("windpark-sim")
                             .label("scenario", scenario.name())
                             .label("seed", Long.toString(scenario.seed()))

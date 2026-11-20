@@ -53,7 +53,7 @@ for m in "${MODULES[@]}"; do
   [[ -f "$jar" ]] || { echo "stage.sh: $jar missing - run: mvn -q install -DskipTests" >&2; exit 1; }
   raw="$OUT/$m.cp.raw"
   # runtime scope (no test jars); -pl without -am: sibling modules resolve from the local repository (installed jars)
-  (cd "$ROOT" && mvn -q -B -pl "$m" dependency:build-classpath -Dmdep.includeScope=runtime -Dmdep.outputFile="$raw" >/dev/null)
+  (cd "$ROOT" && mvn -q -B -pl "$m" dependency:build-classpath -DincludeScope=runtime -Dmdep.outputFile="$raw" >/dev/null)
   {
     # the module's own jar, placed where `mvn install` puts it
     mkdir -p "$H/lib/m2/org/opentsx/$m/$VERSION"
