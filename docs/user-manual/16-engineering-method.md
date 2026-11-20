@@ -2,10 +2,10 @@
 
 > **Status: method described, tooling partial.** This chapter describes a way of working. Each step says what
 > OpenTSx supports today and what is planned. The design behind steps 2 to 5 was signed off on 2026-10-13
-> ([`docs/datamodel-2026/14-ENGINEERING-FLOW.md`](../datamodel-2026/14-ENGINEERING-FLOW.md), German). The frame
+> ([`docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md`](../datamodel-2026/SYSTEM-DOCUMENT-SPEC.md)). The frame
 > around them, a decision at the start and its effect at the end, is a revision after an external review, decided
-> on the same day ([`docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md`](../datamodel-2026/15-ENTSCHEIDUNGSKREIS.md),
-> German). Work item: [`EVOLUTION/TASK-014-engineering-flow.md`](../../EVOLUTION/TASK-014-engineering-flow.md).
+> on the same day ([`docs/datamodel-2026/DECISION-CARD-SPEC.md`](../datamodel-2026/DECISION-CARD-SPEC.md)).
+> Work item: [`EVOLUTION/TASK-014-engineering-flow.md`](../../EVOLUTION/TASK-014-engineering-flow.md).
 > Where this chapter and the design differ, the design is the source and this chapter follows.
 
 ## 16.1 What the method is for
@@ -280,14 +280,14 @@ Before a result leaves the team:
 
 | Step | Tool today | Reference |
 |---|---|---|
-| 1 Describe the decision | a file in the draft format, listed in the system document; shown on the place "Models" | [`15-ENTSCHEIDUNGSKREIS.md`](../datamodel-2026/15-ENTSCHEIDUNGSKREIS.md), section 3 |
+| 1 Describe the decision | a file in the draft format, listed in the system document; shown on the place "Models" | [`DECISION-CARD-SPEC.md`](../datamodel-2026/DECISION-CARD-SPEC.md#1-decision-card), section 1 |
 | 2 Mark out the system | twin plan (YAML); page "System" (`/systems`); Smart Topics Studio prototype | `opentsx-twin/README.md`, [appendix B](appendix-b-rest.md) |
 | 3 Define the signals | system document; channel catalog | [chapter 6](06-windpark.md) |
 | 4 Connect the sources | page "Signals"; TS inventory; wind farm simulator; `opentsx-market` | [appendix B](appendix-b-rest.md), [chapter 9](09-retrieval.md), [chapter 6](06-windpark.md) |
 | 5 Check preparation and analysis | workbench: operators and oscilloscope; place "Models": what each analysis may claim today; twins | [chapter 14](14-saas-service-layer.md), [appendix A](appendix-a-cli.md) |
 | 6 Run in the shadow | "Publish as clean signal"; place "Flows"; vector processor | [chapter 14](14-saas-service-layer.md) |
 | 7 Compare and act | twins: shadow, what-if, forecast; records as a file | [appendix A](appendix-a-cli.md) |
-| 8 Judge the effect | records as a file | [`15-ENTSCHEIDUNGSKREIS.md`](../datamodel-2026/15-ENTSCHEIDUNGSKREIS.md), section 8 |
+| 8 Judge the effect | records as a file | [`DECISION-CARD-SPEC.md`](../datamodel-2026/DECISION-CARD-SPEC.md#3-decision-records), section 3 |
 
 What does not exist yet: editing a decision card in the web application, a state of a signal in several dimensions, values that are marked instead of removed, operators with several inputs on the processor,
 revisions for late data, the four records as events, and any comparison of strategies outside the twin. The guide

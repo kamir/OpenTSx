@@ -27,7 +27,7 @@ On 2026-10-26 the open items of TASK-011 moved into one task per topic:
 [TASK-010](../../EVOLUTION/TASK-010.md) (repository items and the credential rotation). TASK-011 itself was completed on
 2026-10-26 ([closing](../datamodel-2026/18-CLOSING-TASK-011.md), section 9). The main open items:
 
-* pair windows for cross-correlation and event synchronization in the workbench (TASK-015),
+* pair windows for cross-correlation and event synchronization in the workbench ([PAIR-WINDOWS-SPEC](../datamodel-2026/PAIR-WINDOWS-SPEC.md)),
 * Avro 1.12.2+ (`SERIALIZABLE_PACKAGES`) (TASK-019),
 * real vendor exports in the catalog (TASK-018),
 * the Python package on PyPI (TASK-010).

@@ -1,7 +1,7 @@
 /**
  * The shell around a system: a rail with its four places (System, Signals, Flows, Models) and the workbench as the
  * tool, a line that says where the system stands, and, when switched on, the guide with the seven steps of the
- * engineering method. Concept: docs/datamodel-2026/14-ENGINEERING-FLOW.md, sections 3.2 and 8.
+ * engineering method. Spec: docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 8.1.
  */
 
 import { useEffect, useState } from 'react';

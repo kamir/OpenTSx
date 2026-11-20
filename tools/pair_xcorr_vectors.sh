@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Test vectors of pair.xcorr (EVOLUTION/TASK-015-multivariate-analysis.md, phase 1c), computed by the original
+# Test vectors of pair.xcorr (docs/datamodel-2026/PAIR-WINDOWS-SPEC.md, section 11), computed by the original
 # implementation in kamir/WikiExplorer.NG (Apache License 2.0): KreuzKorrelation and CCFunction, compiled unchanged
 # except for one import. Their TimeSeriesObject came from hadoop-ts-ng; it is compiled against the renamed successor
 # in opentsx-core (org.opentsx.data.series.TimeSeriesObject). The chart, FFT and shuffle classes they import are
