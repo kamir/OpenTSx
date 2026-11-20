@@ -158,9 +158,12 @@ Vector topics are written by the vector processor (below). The server is its fro
   the processor reports per sink (state, records, how far the data goes, what it waits for). It needs no token.
 * `POST /v1/dags/deploy` (body: the DAG as YAML) checks that the processor can run the DAG and appends it to the
   control topic. `POST /v1/dags/stop?name=<dag>` appends the stop. Both exist only with `--dag-runs true`.
-* A vector topic has one writer. Before it writes, `POST /v1/dags/deploy` reads the control topic to its end; when
-  another DAG deployed there writes a vector topic of the new one, it answers 409 `conflict` and writes nothing:
+* A vector topic has one writer, and so has a signal (system and id) on the clean or the features topic of the domain.
+  Before it writes, `POST /v1/dags/deploy` reads the control topic to its end; when another DAG deployed there writes a
+  vector topic of the new one, it answers 409 `conflict` and writes nothing:
   `<dag>: sink topic <topic> is already written by DAG <other>; stop that DAG first or choose another sink`.
+  When another DAG writes the signal of a series sink of the new one to the same topic, the answer is
+  `<dag>: sink <topic> signal <id> of system <system> is already written by DAG <other>; stop that DAG first or choose another signal`.
   The same DAG name deployed again replaces its DAG and is no conflict.
 * The processor runs `align.vector` on the series of the source topic only (`in: [decode]`); any other operator
   before the vector is refused with the id of the node. `source.series` must name the series.
@@ -192,11 +195,14 @@ opentsx vectors stop   --kafscale host:9092 --domain wind --name <dag name>
 `opentsx vectors <run|deploy|stop> --help` lists the keys of each command. The options, the DAG name and the DAG file
 are checked before the first call to the broker: a missing `--name` or `--dag`, an unknown option, a misspelled command
 or a DAG the processor would refuse exits with code 2 and writes nothing. A runtime failure exits with code 1.
-`vectors deploy` then reads the control topic and refuses a DAG whose vector topic another deployed DAG writes, with
-exit code 1, the text of the 409 of `POST /v1/dags/deploy`, and nothing written.
+`vectors deploy` then reads the control topic and refuses a DAG whose vector topic or signal another deployed DAG
+writes, with exit code 1, the text of the 409 of `POST /v1/dags/deploy`, and nothing written.
 
 * Deployments live in the control topic `tsx.<domain>.dags.v1` (latest record per DAG name), so they survive a
   restart. The processor reports per sink to `tsx.<domain>.dag-status.v1`.
+* The processor decides the control records in the order of the topic, so a restart keeps the writer of each vector
+  topic and signal. A DAG refused because another DAG wrote its topic or signal at its deploy record stays refused when
+  that DAG stops later; deploy it again.
 * A tick is written when every series named in `source.series` has passed its end, plus `lateness` of the node.
   Until every named series was seen once, the sink waits; the status says for which.
 * Per series, episodes must arrive in time order. One that does not continue its series is skipped and counted.
@@ -208,9 +214,10 @@ exit code 1, the text of the 409 of `POST /v1/dags/deploy`, and nothing written.
 * A checkpoint that cannot be read, or holds no JSON object, fails the sink: the status says `failed` and names the
   file in `error`, and the file stays as it is. Repair it, or delete it to start the sink over.
 * A changed DAG starts over from the beginning of the topic (`source.start: latest`: from now).
-* A DAG whose vector topic a running sink of another DAG writes is refused: its status says `failed` with
-  `<dag>: sink topic <topic> is already written by DAG <other>; stop that DAG first or choose another sink`, and the
-  WARN line `dag refused` follows. Stop the other DAG, then deploy it again.
+* A DAG whose vector topic or signal a running sink of another DAG writes is refused: its status says `failed` with
+  `<dag>: sink topic <topic> is already written by DAG <other>; stop that DAG first or choose another sink` or
+  `<dag>: sink <topic> signal <id> of system <system> is already written by DAG <other>; stop that DAG first or choose another signal`,
+  and the WARN line `dag refused` follows. Stop the other DAG, then deploy it again.
 * `fill` of `align.vector` takes `none` (the default) or `as-of`, `emit` takes `any` (the default) or `complete`. Any
   other value refuses the DAG, for example `node n1: fill: "asof" is not allowed; expected one of none, as-of`.
 * After every round, at most once per 5 s, the processor writes the time the round ended, in seconds since the epoch,

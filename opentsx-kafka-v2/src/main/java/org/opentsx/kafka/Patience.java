@@ -36,6 +36,7 @@ public final class Patience {
     private final LongSupplier nanoClock;
     private final LongConsumer sleeper;
     private long refusedSince = -1;
+    private boolean refused;
 
     /**
      * @param limit how long refusals may last in a row before {@link #poll} gives up and throws
@@ -63,6 +64,11 @@ public final class Patience {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("interrupted while waiting for the broker", ie);
         }
+    }
+
+    /** Whether the broker refused the last {@link #poll}; false before the first. */
+    public boolean refusing() {
+        return refused;
     }
 
     /** Ten minutes of refusals, a try every five seconds: for readers that run for good. */
@@ -105,6 +111,7 @@ public final class Patience {
         Map<TopicPartition, Long> before = positions(consumer);
         try {
             ConsumerRecords<K, V> records = consumer.poll(timeout);
+            refused = false;
             if (refusedSince >= 0) {
                 LOG.info("the broker answers reads again refusedFor={}",
                         Duration.ofNanos(nanoClock.getAsLong() - refusedSince).truncatedTo(ChronoUnit.MILLIS));
@@ -115,6 +122,7 @@ public final class Patience {
             if (!isRefusal(e)) {
                 throw e;
             }
+            refused = true;
             // The client throws the refusal of one partition out of the middle of a poll: records it had already taken
             // from other partitions are gone, and their positions have moved on. Nothing of this poll reached the
             // caller, so every partition goes back to where it was.

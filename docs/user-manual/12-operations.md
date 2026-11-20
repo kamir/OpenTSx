@@ -178,12 +178,14 @@ with 1, naming each one that is not ready. On a new broker the statistics proces
 
 A readiness or liveness probe acts after 3 failures in a row. A processor whose poll loop stops is therefore not
 ready about 3 minutes after its last pass (its readiness probe runs every 30 s) and restarted about 12 minutes after
-it (its liveness probe runs every 60 s).
+it (its liveness probe runs every 60 s). The statistics processor counts only polls the broker answered: while the
+broker refuses reads it is not ready about 3 minutes after the refusals start, and after 10 minutes of refusals it
+stops itself with exit code 1.
 
-A progress file holds the time of the last pass of the poll loop in seconds since the epoch. The statistics processor
-writes it only in a continuous run with `--checkpoint`, at most every 10 s, and removes the file of an earlier run
-when it starts. A file it cannot write stops it with exit code 1 and
+A progress file holds a time in seconds since the epoch. The statistics processor writes the time of the last poll the
+broker answered, also with no records, only in a continuous run with `--checkpoint`, at most every 10 s, and removes
+the file of an earlier run when it starts. A file it cannot write stops it with exit code 1 and
 `opentsx: <checkpoint>.progress: cannot write the progress file; check that its directory exists, is writable and has space; caused by <cause>`.
-The vector processor writes it after a round, at most every 5 s, and also removes the file of an earlier run when it
-starts.
+The vector processor writes the time its last round ended, at most every 5 s, and also removes the file of an earlier
+run when it starts.
 The [operations concept](../devops/operations.md#read-the-probes) lists the probes with their limits.

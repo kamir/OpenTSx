@@ -48,17 +48,18 @@ spec:
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_STATS_WINDOWS}}
             - name: OPENTSX_STATS_ALLOWED_LATENESS
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_STATS_ALLOWED_LATENESS}}
-          # <checkpoint>.progress: the time of the last poll in seconds since the epoch, written at most every 10 s
+          # <checkpoint>.progress: the time of the last poll the broker answered, in seconds since the epoch,
+          # written at most every 10 s
           startupProbe:     # up to 10 minutes for restoring the checkpoint and assigning the partitions
             exec: {command: [/bin/sh, -c, 'test $(( $(date +%s) - $(cat /state/stats.ckpt.progress) )) -lt 120']}
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 60
-          readinessProbe:   # the poll loop passed within the last 2 minutes
+          readinessProbe:   # the broker answered a poll within the last 2 minutes
             exec: {command: [/bin/sh, -c, 'test $(( $(date +%s) - $(cat /state/stats.ckpt.progress) )) -lt 120']}
             periodSeconds: 30
             timeoutSeconds: 5
-          livenessProbe:    # 10 minutes without a pass: stuck, longer than a checkpoint waits for the broker
+          livenessProbe:    # 10 minutes without an answered poll: stuck; 10 minutes of refusals stop the processor
             exec: {command: [/bin/sh, -c, 'test $(( $(date +%s) - $(cat /state/stats.ckpt.progress) )) -lt 600']}
             periodSeconds: 60
             timeoutSeconds: 5

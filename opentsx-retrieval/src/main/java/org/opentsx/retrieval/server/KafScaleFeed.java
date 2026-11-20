@@ -140,8 +140,12 @@ final class KafScaleFeed implements RetrievalServer.Feed, AutoCloseable {
     /** Reads the logs once (blocking; fails when the broker cannot be reached), then follows them in the background. */
     static KafScaleFeed start(String bootstrap, String domain, Duration refresh, InMemorySeriesStore store,
                               int maxEpisodes, Runnable onChange) {
-        KafScaleFeed feed = new KafScaleFeed(bootstrap, domain, KafScaleClients.consumer(bootstrap), KafScaleClients::admin,
-                KafScaleClients::producer, store, maxEpisodes, onChange);
+        return start(new KafScaleFeed(bootstrap, domain, KafScaleClients.consumer(bootstrap), KafScaleClients::admin,
+                KafScaleClients::producer, store, maxEpisodes, onChange), refresh);
+    }
+
+    /** {@link #start(String, String, Duration, InMemorySeriesStore, int, Runnable)} with the clients of {@code feed}. */
+    static KafScaleFeed start(KafScaleFeed feed, Duration refresh) {
         feed.load();
         long ms = Math.max(1000, refresh.toMillis());
         feed.refreshInterval = Duration.ofMillis(ms);

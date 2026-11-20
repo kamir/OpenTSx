@@ -498,6 +498,47 @@ public class VectorProcessorTest {
         }
     }
 
+    /** The sinks that run after the processor read each control record in a round of its own, and after a restart. */
+    List<Map<String, String>> liveAndAfterARestart(Path state, List<byte[]> control) {
+        appendBlock(0);
+        Map<String, String> live;
+        try (VectorProcessor p = processor(state)) {
+            for (byte[] record : control) {
+                broker.append(LAYOUT.dags(), 0, record);
+                steps(p, 2);
+            }
+            live = p.states();
+        }
+        try (VectorProcessor p = processor(state)) {
+            steps(p, 2);
+            return List.of(live, p.states());
+        }
+    }
+
+    @Test
+    void aRestartKeepsTheDagThatHeldTheVectorTopicWhenTheOtherWasDeployedAgainAndRefused(@TempDir Path state) {
+        String copy = goodDag().replace("dag: wind-exp2-smart", "dag: wind-copy");
+        List<Map<String, String>> runs = liveAndAfterARestart(state, List.of(
+                VectorProcessor.deployRecord("wind-exp2-smart", goodDag(), "test"),
+                VectorProcessor.stopRecord("wind-exp2-smart", "test"),
+                VectorProcessor.deployRecord("wind-copy", copy, "test"),
+                VectorProcessor.deployRecord("wind-exp2-smart", goodDag(), "test")));
+        assertEquals(Map.of("wind-copy/turbine-state", "running"), runs.get(0), "the second deployment of wind-exp2-smart is refused");
+        assertEquals(runs.get(0), runs.get(1), "a restart keeps the writer");
+    }
+
+    @Test
+    void aRestartKeepsTheDagThatHeldTheVectorTopicWhenTheRefusedOneWasDeployedBeforeTheOtherStopped(@TempDir Path state) {
+        String copy = goodDag().replace("dag: wind-exp2-smart", "dag: wind-copy");
+        List<Map<String, String>> runs = liveAndAfterARestart(state, List.of(
+                VectorProcessor.deployRecord("wind-exp2-smart", goodDag(), "test"),
+                VectorProcessor.deployRecord("wind-copy", copy, "test"),
+                VectorProcessor.stopRecord("wind-exp2-smart", "test"),
+                VectorProcessor.deployRecord("wind-exp2-smart", goodDag(), "test")));
+        assertEquals(Map.of("wind-exp2-smart/turbine-state", "running"), runs.get(0), "wind-copy stays refused");
+        assertEquals(runs.get(0), runs.get(1), "a restart keeps the writer");
+    }
+
     @Test
     void waitsUntilEverySeriesWasSeenAndClosesATickOnlyWhenAllPassedIt(@TempDir Path state) throws Exception {
         // only the speed has arrived
@@ -679,7 +720,7 @@ public class VectorProcessorTest {
     static final String CLEAN_SINK = "wind-flow-7/park-T01-WTUR.W";
 
     /** An opentsx.dag.v2 document as the workbench writes it for "Publish as clean signal". */
-    static String cleanDag(String op, String extraSink) {
+    public static String cleanDag(String op, String extraSink) {
         return """
                 schema: opentsx.dag.v2
                 dag: wind-flow-7
@@ -750,6 +791,36 @@ public class VectorProcessorTest {
             steps(p, 5);
             assertEquals(3, cleanEpisodes().size(), "after the restart only the new block is written");
             assertEquals(T0 + 1200 * SECOND, org.opentsx.model.Micros.of(cleanEpisodes().get(2).getTStart()));
+        }
+    }
+
+    @Test
+    void aSecondDagThatWritesTheSignalOfARunningSeriesSinkIsRefusedNamingBoth(@TempDir Path state) throws Exception {
+        appendBlock(0);
+        deploy(cleanDag("dq.checks", ""));
+        String copy = cleanDag("dq.checks", "").replace("dag: wind-flow-7", "dag: wind-flow-8");
+        deploy(copy);
+        try (VectorProcessor p = processor(state)) {
+            List<String> lines = logged(() -> steps(p, 3));
+            assertEquals(Map.of(CLEAN_SINK, "running"), p.states());
+            String refusal = "wind-flow-8: sink tsx.wind.clean.v2 signal park/T01/WTUR.W of system h2-chain is already written"
+                    + " by DAG wind-flow-7; stop that DAG first or choose another signal";
+            assertEquals("failed", lastStatus("wind-flow-8").path("state").asText());
+            assertEquals(refusal, lastStatus("wind-flow-8").path("error").asText());
+            assertTrue(messages(lines, "WARN").contains("dag refused dag=wind-flow-8 cause=java.lang.IllegalArgumentException: " + refusal),
+                    String.join("\n", lines));
+
+            // another signal, or the same signal id of another system, on the shared topic has its own writer
+            deploy(copy.replace("id: park/T01/WTUR.W", "id: park/T02/WTUR.W"));
+            deploy(cleanDag("dq.checks", "").replace("dag: wind-flow-7", "dag: wind-flow-9").replace("system: h2-chain", "system: other"));
+            steps(p, 3);
+            assertEquals(Map.of(CLEAN_SINK, "running", "wind-flow-8/park-T02-WTUR.W", "running",
+                    "wind-flow-9/park-T01-WTUR.W", "running"), p.states());
+
+            // the same DAG deployed again under its own name keeps its signal
+            deploy(cleanDag("dq.checks", "").replace("every: PT1M", "every: PT5M"));
+            steps(p, 3);
+            assertEquals("running", p.states().get(CLEAN_SINK));
         }
     }
 

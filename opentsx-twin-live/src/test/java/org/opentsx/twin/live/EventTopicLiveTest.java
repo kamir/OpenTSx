@@ -254,9 +254,15 @@ class EventTopicLiveTest {
     static final class Deadlines extends MockAdminClient {
         final List<Integer> timeoutsMs = new ArrayList<>();
         volatile boolean silent;
+        volatile boolean closed;
 
         Deadlines() {
             super(List.of(NODE), NODE);
+        }
+
+        @Override
+        public synchronized void close(Duration timeout) {
+            closed = true;
         }
 
         @Override
@@ -302,6 +308,26 @@ class EventTopicLiveTest {
             assertEquals(List.of(2000, 2000), admin.timeoutsMs,
                     "the probe of the kubelet waits 3 s, so the lookup must end within 2 s");
         }
+    }
+
+    @Test
+    void theReadinessProbesOfTheBridgeShareOneAdminThatTheTopicsCloseAtTheStop() throws Exception {
+        List<Deadlines> made = new ArrayList<>();
+        KafkaTopics topics = new KafkaTopics("broker.invalid:9092", b -> {
+            Deadlines admin = new Deadlines();
+            made.add(admin);
+            return admin;
+        }, b -> null, b -> null, Patience::standard);
+        try (topics; EventBridge bridge = new EventBridge(topics, 0, "*", 4)) {
+            HttpClient http = HttpClient.newHttpClient();
+            URI ready = URI.create("http://localhost:" + bridge.port() + "/v1/ready");
+            for (int i = 0; i < 3; i++) {
+                assertEquals(200, http.send(HttpRequest.newBuilder(ready).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
+            }
+        }
+        assertEquals(1, made.size(), "one Admin for the life of the bridge");
+        assertEquals(List.of(2000, 2000, 2000), made.get(0).timeoutsMs, "each lookup still ends within 2 s");
+        assertTrue(made.get(0).closed, "the Admin closes with the topics of the bridge");
     }
 
     @Test

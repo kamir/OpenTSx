@@ -7,6 +7,7 @@ import org.opentsx.conf.OpenTsxConf;
 import org.opentsx.conf.OpenTsxConfException;
 import org.opentsx.conf.Registry;
 import org.opentsx.kafka.KafScaleClients;
+import org.opentsx.kafka.Patience;
 import org.opentsx.kafka.TopicLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,9 +38,10 @@ import java.util.function.Function;
  * {@code opentsx.config.v1} through {@link OpenTsxConf#load}; {@code bin/opentsx stats --help} lists them. Exit codes:
  * 0 success, 1 runtime failure, 2 usage or configuration error.
  *
- * <p>A continuous run with a checkpoint keeps the progress file {@code <checkpoint>.progress}: the time of the last pass
- * of its poll loop in seconds since the epoch, written at most every {@link Progress#EVERY}. The exec probes of the k3s
- * Deployment check its age.
+ * <p>A continuous run with a checkpoint keeps the progress file {@code <checkpoint>.progress}: the time of the last poll
+ * the broker answered, also with no records, in seconds since the epoch, written at most every {@link Progress#EVERY}.
+ * A refused read writes nothing, so the file ages while the broker refuses reads. The exec probes of the k3s Deployment
+ * check its age.
  */
 public final class StatsProcessorApp {
 
@@ -59,13 +61,14 @@ public final class StatsProcessorApp {
     static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err,
                    Function<String, Consumer<byte[], byte[]>> consumers, Function<String, Producer<String, byte[]>> producers,
                    java.util.function.Consumer<Thread> addHook, java.util.function.Consumer<Thread> removeHook) {
-        return run(args, env, out, err, consumers, producers, addHook, removeHook, Clock.systemUTC());
+        return run(args, env, out, err, consumers, producers, addHook, removeHook, Clock.systemUTC(), Patience.standard());
     }
 
-    /** {@code clock} gives the times of the progress file. */
+    /** {@code clock} gives the times of the progress file, {@code patience} waits out the reads the broker refuses. */
     static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err,
                    Function<String, Consumer<byte[], byte[]>> consumers, Function<String, Producer<String, byte[]>> producers,
-                   java.util.function.Consumer<Thread> addHook, java.util.function.Consumer<Thread> removeHook, Clock clock) {
+                   java.util.function.Consumer<Thread> addHook, java.util.function.Consumer<Thread> removeHook, Clock clock,
+                   Patience patience) {
         List<String> words = new ArrayList<>(args.size() + 1);
         words.add(COMMAND);
         words.addAll(args);
@@ -111,6 +114,7 @@ public final class StatsProcessorApp {
              Producer<String, byte[]> producer = producers.apply(bootstrap)) {
             StatsProcessor p = new StatsProcessor(consumer, producer, layout, engine, checkpoint,
                     conf.getBoolean("opentsx.stats.observations"));
+            p.patience(patience);
             if (conf.getBoolean("opentsx.stats.once")) {
                 out.println(p.runUntilCaughtUp(Duration.ofHours(1), true));
                 return written(out, err);
@@ -123,7 +127,9 @@ public final class StatsProcessorApp {
                 Progress progress = Progress.start(checkpoint.resolveSibling(checkpoint.getFileName() + ".progress"), clock);
                 // the processor asks once before its first poll and once after each poll
                 stopped = () -> {
-                    progress.passed();
+                    if (p.answered()) {
+                        progress.passed();
+                    }
                     return stop.get();
                 };
             }

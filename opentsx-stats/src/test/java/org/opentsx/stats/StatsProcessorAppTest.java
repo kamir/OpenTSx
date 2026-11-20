@@ -17,6 +17,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.conf.ConfCli;
 import org.opentsx.conf.OpenTsxConf;
 import org.opentsx.conf.Registry;
+import org.opentsx.kafka.Patience;
 import org.opentsx.kafka.TopicLayout;
 import org.slf4j.LoggerFactory;
 
@@ -362,18 +363,28 @@ class StatsProcessorAppTest {
     }
 
     @Test
-    void aContinuousRunWritesTheTimeOfItsLastPollIntoTheProgressFileNextToTheCheckpoint() throws Exception {
+    void aContinuousRunWritesTheTimeOfItsLastAnsweredPollIntoTheProgressFileNextToTheCheckpoint() throws Exception {
         Path checkpoint = tmp.resolve("stats.ckpt");
         Path progress = tmp.resolve("stats.ckpt.progress");
         Files.writeString(progress, "1735689600\n");
         MockConsumer<byte[], byte[]> consumer = emptyTopic("wind");
         List<String> seen = new ArrayList<>();
         CountDownLatch polled = new CountDownLatch(1);
-        consumer.schedulePollTask(() -> seen.add(read(progress)));
+        Runnable look = () -> seen.add(Files.exists(progress) ? read(progress) : "none");
+        // each task runs at the start of one poll; a refused poll throws what the task set
+        consumer.schedulePollTask(look);
+        for (int i = 0; i < 2; i++) {
+            consumer.schedulePollTask(() -> {
+                look.run();
+                consumer.setPollException(new org.apache.kafka.common.errors.TimeoutException("the broker refuses reads"));
+            });
+        }
+        consumer.schedulePollTask(look);
         consumer.schedulePollTask(() -> {
-            seen.add(read(progress));
+            look.run();
             polled.countDown();
         });
+        List<Long> pauses = new ArrayList<>();
         BlockingQueue<Thread> hooks = new LinkedBlockingQueue<>();
         AtomicInteger code = new AtomicInteger(-1);
         ByteArrayOutputStream err = new ByteArrayOutputStream();
@@ -384,7 +395,8 @@ class StatsProcessorAppTest {
             Thread processor = new Thread(() -> code.set(StatsProcessorApp.run(List.of("--kafscale", "mock:9092",
                     "--checkpoint", checkpoint.toString()), Map.of(), new PrintStream(new ByteArrayOutputStream()), errStream,
                     bootstrap -> consumer, bootstrap -> new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()),
-                    hooks::add, hook -> { }, ticking())));
+                    hooks::add, hook -> { }, ticking(), new Patience(Duration.ofMinutes(10), Duration.ofSeconds(5), () -> 0L,
+                            pauses::add))));
             processor.start();
             Thread hook = hooks.poll(30, TimeUnit.SECONDS);
             assertNotNull(hook, "the continuous run registers a shutdown hook");
@@ -397,8 +409,11 @@ class StatsProcessorAppTest {
         }
 
         assertEquals(0, code.get(), err.toString(StandardCharsets.UTF_8));
-        assertEquals(List.of(seconds("2026-01-01T00:01:00Z"), seconds("2026-01-01T00:02:00Z")), seen,
-                "the file of an earlier run is replaced after the partitions are assigned, and again after each poll");
+        assertEquals(List.of(5000L, 5000L), pauses, "two refused polls");
+        assertEquals(List.of("none", seconds("2026-01-01T00:01:00Z"), seconds("2026-01-01T00:01:00Z"),
+                seconds("2026-01-01T00:01:00Z"), seconds("2026-01-01T00:02:00Z")), seen,
+                "the file of an earlier run is removed at the start; the time is written after each poll the broker answered"
+                        + " and not after a refused one");
     }
 
     @Test

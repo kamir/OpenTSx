@@ -93,6 +93,7 @@ public final class StatsProcessor {
     private long statsWritten;
     /** KafScale refuses reads for about a minute at a time; the processor waits instead of ending. */
     private Patience patience = Patience.standard();
+    private boolean answered;
 
     /**
      * @param checkpoint   checkpoint file; restored if it exists, null for none (always start from the beginning)
@@ -117,6 +118,11 @@ public final class StatsProcessor {
     /** How long refused reads are waited out; the default is {@link Patience#standard()}. */
     public void patience(Patience patience) {
         this.patience = patience;
+    }
+
+    /** Whether the broker answered the last poll of {@link #run}, also with no records; false before the first. */
+    boolean answered() {
+        return answered;
     }
 
     public StatsEngine engine() {
@@ -197,6 +203,7 @@ public final class StatsProcessor {
                     handle(r);
                     records++;
                 }
+                answered = !patience.refusing();
                 if (System.nanoTime() >= next) {
                     send(engine.emitGlobal());
                     checkpoint();

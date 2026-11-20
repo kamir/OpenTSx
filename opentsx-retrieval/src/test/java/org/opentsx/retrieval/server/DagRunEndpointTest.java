@@ -12,6 +12,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
+import org.opentsx.conf.OpenTsxConf;
 import org.opentsx.retrieval.EpisodeService;
 import org.opentsx.retrieval.vector.VectorProcessorTest;
 import org.opentsx.retrieval.vector.VectorProcessorTest.FakeBroker;
@@ -27,6 +28,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
@@ -362,6 +364,35 @@ class DagRunEndpointTest {
                 }, new InMemorySeriesStore(), 100, () -> { });
     }
 
+    @Test
+    void aServerStartedOnKafScaleIsNotReadyAfterThreeFailedRefreshesOfItsFeed() throws Exception {
+        FakeBroker broker = new FakeBroker();
+        RetrievalServer.Plan plan = RetrievalServer.check(OpenTsxConf.load(List.of("retrieval-server", "--kafscale", "ks:9092",
+                "--domain", "wind", "--port", "0", "--bind", "127.0.0.1", "--refresh", "PT1H"), Map.of(), null).conf());
+        KafScaleFeed[] opened = {null};
+        RetrievalServer.Feeds overTheBrokerInMemory = (bootstrap, domain, refresh, store, maxEpisodes, onChange) ->
+                opened[0] = KafScaleFeed.start(new KafScaleFeed(bootstrap, domain, broker.consumer(),
+                        b -> new MockAdminClient(List.of(NODE), NODE),
+                        b -> new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()), store, maxEpisodes,
+                        onChange), refresh);
+        try (RetrievalServer server = RetrievalServer.start(plan, org.slf4j.LoggerFactory.getLogger(RetrievalServer.class),
+                overTheBrokerInMemory)) {
+            HttpResponse<String> ready = get(server, "/v1/ready");
+            assertEquals(200, ready.statusCode(), ready.body());
+            assertTrue(ready.body().contains("\"refreshFailures\":0"), ready.body());
+
+            broker.unreadable.put(VectorProcessorTest.LAYOUT.episodes(),
+                    new org.apache.kafka.common.errors.TimeoutException("the broker does not answer"));
+            for (int i = 0; i < 3; i++) {
+                opened[0].refresh();
+            }
+            HttpResponse<String> down = get(server, "/v1/ready");
+            assertEquals(503, down.statusCode(), down.body());
+            assertEquals("{\"error\":\"feed: 3 refreshes failed in a row, the last one that worked ended at " + opened[0].lastRefresh()
+                    + "; check that the broker is reachable and read the log of the server\",\"type\":\"unavailable\"}", down.body());
+        }
+    }
+
     /** The DAG routes of a server on KafScale, as {@link RetrievalServer#main} wires them. */
     static RetrievalServer.Dags kafscale(KafScaleFeed feed, FakeBroker broker) {
         return RetrievalServer.kafscaleDags(feed, broker::consumer, VectorProcessorTest.LAYOUT);
@@ -386,6 +417,28 @@ class DagRunEndpointTest {
             assertEquals(200, post(server, "/v1/dags/stop?name=wind-exp2-smart", "").statusCode());
             assertEquals(200, post(server, "/v1/dags/deploy", copy).statusCode(), "the topic has no writer after the stop");
             assertEquals(4, broker.log.get(control).size());
+        }
+    }
+
+    @Test
+    void aSecondDagThatWritesTheSignalOfASeriesSinkOfAnotherAnswers409AndWritesNothing() throws Exception {
+        FakeBroker broker = new FakeBroker();
+        TopicPartition control = new TopicPartition(VectorProcessorTest.LAYOUT.dags(), 0);
+        String first = VectorProcessorTest.cleanDag("dq.checks", "");
+        String copy = first.replace("dag: wind-flow-7", "dag: wind-flow-8");
+        try (KafScaleFeed feed = feed(broker); RetrievalServer server = server(kafscale(feed, broker), true, null)) {
+            assertEquals(200, post(server, "/v1/dags/deploy", first).statusCode());
+            HttpResponse<String> refused = post(server, "/v1/dags/deploy", copy);
+            assertEquals(409, refused.statusCode(), refused.body());
+            assertEquals("{\"error\":\"wind-flow-8: sink tsx.wind.clean.v2 signal park/T01/WTUR.W of system h2-chain is already"
+                    + " written by DAG wind-flow-7; stop that DAG first or choose another signal\",\"type\":\"conflict\"}", refused.body());
+            assertEquals(1, broker.log.get(control).size(), "nothing reaches the control topic");
+
+            assertEquals(200, post(server, "/v1/dags/deploy", copy.replace("id: park/T01/WTUR.W", "id: park/T02/WTUR.W")).statusCode(),
+                    "another signal on the shared clean topic");
+            HttpResponse<String> again = post(server, "/v1/dags/deploy", first.replace("every: PT1M", "every: PT5M"));
+            assertEquals(200, again.statusCode(), "a DAG deployed again under its name: " + again.body());
+            assertEquals(3, broker.log.get(control).size());
         }
     }
 }

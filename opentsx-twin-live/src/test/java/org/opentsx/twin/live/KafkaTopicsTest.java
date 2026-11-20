@@ -7,14 +7,17 @@ import org.apache.kafka.clients.admin.ListTopicsOptions;
 import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.MockAdminClient;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.admin.TopicListing;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.MockConsumer;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.clients.producer.MockProducer;
+import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.Uuid;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
@@ -30,9 +33,18 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -68,17 +80,16 @@ class KafkaTopicsTest {
 
     /** A MockAdminClient whose listTopics and createTopics never answer. */
     static final class NeverAnswers extends MockAdminClient {
+        boolean closed;
+
+        @Override
+        public synchronized void close(Duration timeout) {
+            closed = true;
+        }
 
         @Override
         public synchronized ListTopicsResult listTopics(ListTopicsOptions options) {
-            try {
-                // the constructor of ListTopicsResult is package-private
-                Constructor<ListTopicsResult> c = ListTopicsResult.class.getDeclaredConstructor(KafkaFuture.class);
-                c.setAccessible(true);
-                return c.newInstance(new KafkaFutureImpl<>());
-            } catch (ReflectiveOperationException e) {
-                throw new IllegalStateException(e);
-            }
+            return listTopicsResult(new KafkaFutureImpl<>());
         }
 
         @Override
@@ -87,6 +98,17 @@ class KafkaTopicsTest {
             topics.forEach(t -> unanswered.put(t.name(), new KafkaFutureImpl<>()));
             return new CreateTopicsResult(unanswered) {
             };
+        }
+    }
+
+    private static ListTopicsResult listTopicsResult(KafkaFuture<Map<String, TopicListing>> listings) {
+        try {
+            // the constructor of ListTopicsResult is package-private
+            Constructor<ListTopicsResult> c = ListTopicsResult.class.getDeclaredConstructor(KafkaFuture.class);
+            c.setAccessible(true);
+            return c.newInstance(listings);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
         }
     }
 
@@ -170,6 +192,120 @@ class KafkaTopicsTest {
                     "a lookup the broker does not answer ends at its timeout, not after 30 s");
             assertEquals("cannot reach the broker at mock:9092", e.getMessage());
             assertInstanceOf(java.util.concurrent.TimeoutException.class, e.getCause());
+        }
+    }
+
+    /** A MockAdminClient that records whether it was closed. */
+    static final class Closes extends MockAdminClient {
+        boolean closed;
+
+        Closes() {
+            super(List.of(BROKER), BROKER);
+        }
+
+        @Override
+        public synchronized void close(Duration timeout) {
+            closed = true;
+        }
+    }
+
+    @Test
+    void lookupsShareOneAdminThatAFailedLookupDropsAndCloseCloses() {
+        NeverAnswers silent = new NeverAnswers();
+        List<MockAdminClient> made = new ArrayList<>();
+        KafkaTopics topics = new KafkaTopics("mock:9092", b -> {
+            MockAdminClient admin = made.isEmpty() ? silent : new Closes();
+            made.add(admin);
+            return admin;
+        }, b -> producer(), b -> null, Patience::standard);
+        IllegalStateException failed = assertThrows(IllegalStateException.class, () -> topics.exists(TOPIC, Duration.ofMillis(50)));
+        assertEquals("cannot reach the broker at mock:9092", failed.getMessage());
+        assertTrue(silent.closed, "a lookup that failed leaves no client behind");
+        for (int i = 0; i < 3; i++) {
+            assertFalse(topics.exists(TOPIC, Duration.ofSeconds(2)));
+        }
+        assertEquals(2, made.size(), "the three lookups after the failed one share one Admin");
+
+        topics.close();
+        assertTrue(((Closes) made.get(1)).closed);
+        IllegalStateException closed = assertThrows(IllegalStateException.class, () -> topics.exists(TOPIC, Duration.ofSeconds(2)));
+        assertEquals("topics: closed; create a new KafkaTopics to look up a topic", closed.getMessage());
+        assertEquals(2, made.size(), "no Admin is opened after close");
+    }
+
+    /** A MockAdminClient whose lookups wait for {@link #answer}; closing it fails the waiting ones, as KafkaAdminClient does. */
+    static final class Waits extends MockAdminClient {
+        final CountDownLatch asked;
+        final List<KafkaFutureImpl<Map<String, TopicListing>>> waiting = new ArrayList<>();
+        volatile boolean closed;
+
+        Waits(CountDownLatch asked) {
+            super(List.of(BROKER), BROKER);
+            this.asked = asked;
+        }
+
+        @Override
+        public synchronized ListTopicsResult listTopics(ListTopicsOptions options) {
+            KafkaFutureImpl<Map<String, TopicListing>> listings = new KafkaFutureImpl<>();
+            waiting.add(listings);
+            asked.countDown();
+            return listTopicsResult(listings);
+        }
+
+        synchronized void answer(String topic) {
+            waiting.forEach(f -> f.complete(Map.of(topic, new TopicListing(topic, Uuid.randomUuid(), false))));
+            waiting.clear();
+        }
+
+        @Override
+        public synchronized void close(Duration timeout) {
+            closed = true;
+            waiting.forEach(f -> f.completeExceptionally(new TimeoutException("The AdminClient thread has exited.")));
+            waiting.clear();
+        }
+    }
+
+    @Test
+    void aStreamLooksItsTopicUpOnAnAdminOfItsOwnThatAFailedReadinessLookupDoesNotClose() throws Exception {
+        CountDownLatch asked = new CountDownLatch(1);
+        List<Waits> made = new CopyOnWriteArrayList<>();
+        KafkaTopics topics = new KafkaTopics("mock:9092", b -> {
+            Waits admin = new Waits(asked);
+            made.add(admin);
+            return admin;
+        }, b -> producer(), b -> new MockConsumer<>(OffsetResetStrategy.EARLIEST), Patience::standard);
+        ExecutorService browser = Executors.newSingleThreadExecutor();
+        try (topics) {
+            Future<Topics.Cursor> stream = browser.submit(() -> topics.open(TOPIC, 0));
+            assertTrue(asked.await(10, TimeUnit.SECONDS), "the stream asks the broker for its topic");
+            IllegalStateException probe = assertThrows(IllegalStateException.class, () -> topics.exists(TOPIC, Duration.ofMillis(50)));
+            assertEquals("cannot reach the broker at mock:9092", probe.getMessage());
+            Waits own = made.get(0);
+            assertFalse(own.closed, "the failed readiness lookup leaves the lookup of the stream waiting");
+            assertEquals(2, made.size(), "the readiness lookup has an Admin of its own");
+
+            own.answer(TOPIC);
+            try (Topics.Cursor cursor = stream.get(10, TimeUnit.SECONDS)) {
+                assertNotNull(cursor, "the stream opens once the broker answers");
+            }
+            assertTrue(own.closed, "the Admin of the stream closes after its lookup");
+        } finally {
+            browser.shutdownNow();
+        }
+    }
+
+    @Test
+    void anAdminThatCannotBeCreatedCountsAsAnUnreachableBroker() {
+        KafkaException cannot = new KafkaException("Failed to create new KafkaAdminClient");
+        try (KafkaTopics topics = new KafkaTopics("mock:9092", b -> {
+            throw cannot;
+        }, b -> producer(), b -> null, Patience::standard)) {
+            IllegalStateException lookup = assertThrows(IllegalStateException.class, () -> topics.exists(TOPIC, Duration.ofSeconds(2)));
+            assertEquals("cannot reach the broker at mock:9092", lookup.getMessage());
+            assertSame(cannot, lookup.getCause());
+            IllegalStateException open = assertThrows(IllegalStateException.class, () -> topics.open(TOPIC, Topics.EARLIEST));
+            assertEquals("cannot reach the broker at mock:9092", open.getMessage());
+            assertSame(cannot, open.getCause());
         }
     }
 

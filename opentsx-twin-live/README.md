@@ -41,8 +41,10 @@ bin/opentsx twin-live demo --port 8090
   events again.
 - `bridge` serves `GET /v1/topics/{topic}/events?from=latest|earliest|<offset>` as `text/event-stream`,
   `GET /v1/health` (liveness: `{"status":"ok"}` while the process answers) and `GET /v1/ready` (readiness:
-  `{"status":"ready"}` while the broker answers a lookup of a topic within 2 s, 503 when it does not). A message has the
-  offset as its id and `{"topic","offset","timestamp","key","value"}` as data.
+  `{"status":"ready"}` while the broker answers a lookup of a topic within 2 s, 503 when it does not; the readiness
+  lookups share one Admin client for the life of the bridge, and a lookup that fails closes it, so the next one opens a
+  new one; a stream looks its topic up on an Admin client of its own). A message has the offset as its id and
+  `{"topic","offset","timestamp","key","value"}` as data.
   A reconnecting browser sends `Last-Event-ID` and continues behind that offset. While KafScale refuses reads, a
   stream waits 5 s and tries again, and logs
   `WARN org.opentsx.kafka.Patience - the broker refuses reads; waiting pause=PT5S limit=PT10M cause=<causes>` once and

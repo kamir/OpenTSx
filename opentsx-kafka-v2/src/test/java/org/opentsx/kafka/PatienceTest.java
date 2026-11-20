@@ -151,6 +151,21 @@ class PatienceTest {
     }
 
     @Test
+    void tellsWhetherTheBrokerRefusedTheLastPoll() {
+        TopicPartition tp = new TopicPartition("t", 0);
+        Refusing consumer = new Refusing(refusal());
+        consumer.assign(List.of(tp));
+        consumer.updateBeginningOffsets(Map.of(tp, 0L));
+        consumer.seek(tp, 0);
+        Patience patience = new Time().patience(Duration.ofSeconds(30), Duration.ofMillis(5));
+        assertFalse(patience.refusing(), "before the first poll");
+        patience.poll(consumer, Duration.ofMillis(10));
+        assertTrue(patience.refusing(), "a refused poll");
+        assertEquals(0, patience.poll(consumer, Duration.ofMillis(10)).count());
+        assertFalse(patience.refusing(), "an answer without records is an answer");
+    }
+
+    @Test
     void givesUpWhenTheBrokerRefusesLongerThanTheLimit() {
         Refusing consumer = new Refusing(refusal(), refusal(), refusal());
         Time time = new Time();

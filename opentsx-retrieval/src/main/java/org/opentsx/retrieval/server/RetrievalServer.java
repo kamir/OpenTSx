@@ -78,8 +78,9 @@ import java.util.stream.Collectors;
  * POST /v1/dags/stop?name=    stops the DAG of that name
  *                             (both only with {@code --kafscale} and {@code --dag-runs true}, and with the run token
  *                             when the server has one; {@link #main} starts no such server without one unless
- *                             {@code --open-dag-runs} binds it to 127.0.0.1); a DAG whose vector topic another
- *                             deployed DAG writes is answered 409 {@code conflict}
+ *                             {@code --open-dag-runs} binds it to 127.0.0.1); a DAG whose vector topic, or whose
+ *                             signal on the clean or features topic, another deployed DAG writes is answered 409
+ *                             {@code conflict}
  * GET  /v1/health             liveness: 200 while the process answers, also while every request thread waits
  * GET  /v1/ready              readiness: 200 once the server listens; with {@code --kafscale} 503 {@code unavailable}
  *                             after {@value #READY_PERIODS} failed refreshes of the feed in a row or as many refresh
@@ -130,7 +131,7 @@ public final class RetrievalServer implements AutoCloseable {
         }
     }
 
-    /** The request conflicts with what the server holds, such as a vector topic another DAG writes; answered 409 {@code conflict}. */
+    /** The request conflicts with what the server holds, such as a vector topic or a signal another DAG writes; answered 409 {@code conflict}. */
     public static final class Conflict extends RuntimeException {
         public Conflict(String message) {
             super(message);
@@ -972,7 +973,7 @@ public final class RetrievalServer implements AutoCloseable {
         Logger log = LoggerFactory.getLogger(RetrievalServer.class);
         log.info(loaded.startLine());
         try {
-            RetrievalServer server = start(plan, log);
+            RetrievalServer server = start(plan, log, KafScaleFeed::start);
             String host = server.address().getAddress().getHostAddress();
             int port = server.port();
             // main adds the shutdown hook here, so a SIGTERM after the line below always finds it
@@ -1087,8 +1088,14 @@ public final class RetrievalServer implements AutoCloseable {
         return props;
     }
 
+    /** Opens the feed of a server on KafScale: {@link KafScaleFeed#start} outside tests. */
+    interface Feeds {
+        KafScaleFeed open(String bootstrap, String domain, Duration refresh, InMemorySeriesStore store, int maxEpisodes,
+                          Runnable onChange);
+    }
+
     /** Opens the store of a checked plan and starts the server on it. */
-    private static RetrievalServer start(Plan plan, Logger log) throws IOException {
+    static RetrievalServer start(Plan plan, Logger log, Feeds feeds) throws IOException {
         if (plan.systems() != null) {
             List<String> withProblems = new ArrayList<>();
             int problems = 0;
@@ -1117,7 +1124,7 @@ public final class RetrievalServer implements AutoCloseable {
             String runToken = plan.runToken();
             InMemorySeriesStore episodes = new InMemorySeriesStore();
             Runnable[] invalidate = {() -> { }};
-            KafScaleFeed feed = KafScaleFeed.start(plan.bootstrap(), domain, plan.refresh(), episodes, plan.maxEpisodes(),
+            KafScaleFeed feed = feeds.open(plan.bootstrap(), domain, plan.refresh(), episodes, plan.maxEpisodes(),
                     () -> invalidate[0].run());
             opened[0] = feed;
             // episodes of the domain plus the components of its vector topics
@@ -1171,8 +1178,9 @@ public final class RetrievalServer implements AutoCloseable {
 
     /**
      * The DAG routes of a server on KafScale. A deployment is refused with {@link Conflict} when another DAG that the
-     * control topic holds as deployed writes one of its vector topics; the control topic is read to its end first, so
-     * the refusal holds also for DAGs deployed from the command line.
+     * control topic holds as deployed writes one of its vector topics or one of the signals of its series sinks
+     * ({@link VectorProcessor#sinkConflict}); the control topic is read to its end first, so the refusal holds also for
+     * DAGs deployed from the command line.
      *
      * @param consumers a new consumer for each deployment, closed after it read the control topic
      */
@@ -1184,7 +1192,7 @@ public final class RetrievalServer implements AutoCloseable {
                 DagPlan.of(dag, layout, "");
                 Map<String, Set<String>> written;
                 try (Consumer<byte[], byte[]> consumer = consumers.get()) {
-                    written = VectorProcessor.deployedVectorTopics(consumer, layout);
+                    written = VectorProcessor.deployedWrites(consumer, layout);
                 } catch (KafkaException | IllegalStateException e) {
                     throw new Unavailable(KafScaleFeed.BROKER_UNAVAILABLE, new IllegalStateException("cannot read " + layout.dags(), e));
                 }

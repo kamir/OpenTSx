@@ -3,12 +3,23 @@ package org.opentsx.retrieval.vector;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.apache.kafka.clients.admin.MockAdminClient;
+import org.apache.kafka.clients.producer.MockProducer;
+import org.apache.kafka.common.Node;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.model.Episodes;
 import org.opentsx.model.SeriesKeys;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.model.v2.SeriesKey;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -228,5 +239,39 @@ class VectorJobTest {
         double[] power = Episodes.values(episodes.get(0));
         assertEquals(150.0, power[0]);
         assertTrue(Double.isNaN(power[3]), "null in the record is a gap in the series");
+    }
+
+    @Test
+    void vectorsDeployRefusesASeriesSinkWhoseSignalAnotherDeployedDagWritesAndExitsWith1(@TempDir Path dir) throws Exception {
+        VectorProcessorTest.FakeBroker broker = new VectorProcessorTest.FakeBroker();
+        broker.append(VectorProcessorTest.LAYOUT.dags(), 0, VectorProcessor.deployRecord("wind-flow-7",
+                VectorProcessorTest.cleanDag("dq.checks", ""), "ops"));
+        Node node = new Node(0, "127.0.0.1", 1);
+        List<MockProducer<String, byte[]>> producers = new ArrayList<>();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        java.util.function.Function<Path, Integer> deploy = file -> {
+            out.reset();
+            err.reset();
+            return VectorProcessorApp.run(List.of("deploy", "--kafscale", "ks:9092", "--dag", file.toString()), Map.of(),
+                    new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(err, true, StandardCharsets.UTF_8),
+                    b -> new MockAdminClient(List.of(node), node), b -> {
+                        producers.add(new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()));
+                        return producers.get(producers.size() - 1);
+                    }, b -> broker.consumer());
+        };
+        String copy = VectorProcessorTest.cleanDag("dq.checks", "").replace("dag: wind-flow-7", "dag: wind-flow-8");
+        assertEquals(1, deploy.apply(Files.writeString(dir.resolve("copy.dag.yaml"), copy)));
+        assertEquals("opentsx: wind-flow-8: sink tsx.wind.clean.v2 signal park/T01/WTUR.W of system h2-chain is already written"
+                + " by DAG wind-flow-7; stop that DAG first or choose another signal\n", err.toString(StandardCharsets.UTF_8));
+        assertEquals("", out.toString(StandardCharsets.UTF_8));
+        assertEquals(List.of(), producers, "nothing reaches the control topic");
+
+        Path other = Files.writeString(dir.resolve("other.dag.yaml"), copy.replace("id: park/T01/WTUR.W", "id: park/T02/WTUR.W"));
+        assertEquals(0, deploy.apply(other), err.toString(StandardCharsets.UTF_8));
+        Path again = Files.writeString(dir.resolve("again.dag.yaml"),
+                VectorProcessorTest.cleanDag("dq.checks", "").replace("every: PT1M", "every: PT5M"));
+        assertEquals(0, deploy.apply(again), err.toString(StandardCharsets.UTF_8));
+        assertEquals("deployed wind-flow-7 (control topic tsx.wind.dags.v1)\n", out.toString(StandardCharsets.UTF_8));
     }
 }

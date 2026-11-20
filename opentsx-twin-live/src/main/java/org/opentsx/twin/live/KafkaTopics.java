@@ -26,6 +26,9 @@ import java.util.function.Supplier;
  * Topics on KafScale or Apache Kafka, with the client settings of {@link KafScaleClients}. Event topics have one
  * partition. Readers assign that partition and seek; they use no consumer group, because KafScale neither commits
  * without membership nor lets a restarted member rejoin. A cursor waits out the reads KafScale refuses ({@link Patience}).
+ * The readiness lookups of {@link #exists} share one Admin client, opened at the first lookup and closed by
+ * {@link #close}; a lookup that fails closes it, and the next lookup opens a new one. {@link #open} looks its topic up on
+ * an Admin of its own, because closing the shared one ends every lookup that waits on it.
  */
 public final class KafkaTopics implements Topics {
 
@@ -36,7 +39,9 @@ public final class KafkaTopics implements Topics {
     private final Supplier<Patience> patience;
     private final Set<String> known = ConcurrentHashMap.newKeySet();
     private Producer<String, byte[]> producer;
-    private boolean closed;
+    private volatile boolean closed;
+    private final Object adminLock = new Object();
+    private Admin admin;
 
     public KafkaTopics(String bootstrap) {
         this(bootstrap, KafScaleClients::admin, KafScaleClients::producer, KafScaleClients::consumer, Patience::standard);
@@ -85,12 +90,22 @@ public final class KafkaTopics implements Topics {
         known.add(topic);
     }
 
-    /** The broker gets at most {@code timeout} to answer the lookup; the admin request ends at the same deadline. */
     @Override
     public boolean exists(String topic, Duration timeout) {
+        Admin lookup = admin();
+        try {
+            return listed(lookup, topic, timeout);
+        } catch (RuntimeException e) {
+            drop(lookup);
+            throw e;
+        }
+    }
+
+    /** The broker gets at most {@code timeout} to answer the lookup; the admin request ends at the same deadline. */
+    private boolean listed(Admin lookup, String topic, Duration timeout) {
         long ms = timeout.toMillis();
-        try (Admin admin = admins.apply(bootstrap)) {
-            return admin.listTopics(new ListTopicsOptions().timeoutMs((int) ms)).names().get(ms, TimeUnit.MILLISECONDS)
+        try {
+            return lookup.listTopics(new ListTopicsOptions().timeoutMs((int) ms)).names().get(ms, TimeUnit.MILLISECONDS)
                     .contains(topic);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -100,10 +115,43 @@ public final class KafkaTopics implements Topics {
         }
     }
 
+    /** The Admin of the lookups, opened when there is none. */
+    private Admin admin() {
+        synchronized (adminLock) {
+            if (closed) {
+                throw new IllegalStateException("topics: closed; create a new KafkaTopics to look up a topic");
+            }
+            if (admin == null) {
+                admin = newAdmin();
+            }
+            return admin;
+        }
+    }
+
+    private Admin newAdmin() {
+        try {
+            return admins.apply(bootstrap);
+        } catch (RuntimeException e) {
+            throw new IllegalStateException("cannot reach the broker at " + bootstrap, e);
+        }
+    }
+
+    /** Closes an Admin whose lookup failed, so that the next lookup opens a new one. */
+    private void drop(Admin failed) {
+        synchronized (adminLock) {
+            if (admin == failed) {
+                admin = null;
+            }
+        }
+        failed.close(Duration.ZERO);
+    }
+
     @Override
     public Cursor open(String topic, long offset) throws NoSuchTopicException {
-        if (!exists(topic, Duration.ofSeconds(30))) {
-            throw new NoSuchTopicException(topic);
+        try (Admin own = newAdmin()) {
+            if (!listed(own, topic, Duration.ofSeconds(30))) {
+                throw new NoSuchTopicException(topic);
+            }
         }
         Consumer<byte[], byte[]> consumer = consumers.apply(bootstrap);
         TopicPartition tp = new TopicPartition(topic, 0);
@@ -141,6 +189,12 @@ public final class KafkaTopics implements Topics {
         if (producer != null) {
             producer.close(Duration.ofSeconds(5));
             producer = null;
+        }
+        synchronized (adminLock) {
+            if (admin != null) {
+                admin.close(Duration.ofSeconds(5));
+                admin = null;
+            }
         }
     }
 }

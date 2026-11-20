@@ -90,7 +90,8 @@ delivery stages L1 to L5 of the concept. The approval was given on 2026-10-13.
         for minutes
       - Limits: before a series sink the processor runs exactly three operators; one chain, no merging of several
         series (so the sum over turbines does not run); "Publish" writes nothing into the system document (D42
-        open); the lock "one signal, one writer" sits in the frontend
+        open); the lock "one signal, one writer" is checked by the retrieval server (409 conflict), `vectors deploy`
+        and the vector processor, and by the workbench before it deploys
 - [x] 014.6a Review briefing processed (as of 2026-10-13): external review (engineering and complex systems) of the
       guide and the plan. The result is
       [`docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md`](../docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md): the

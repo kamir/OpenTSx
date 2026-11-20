@@ -61,8 +61,10 @@ import java.util.regex.Pattern;
  *
  * <ul>
  *   <li><b>What runs</b> comes from the control topic {@link TopicLayout#dags()}: the latest record per DAG name
- *   says deployed (with the DAG document) or stopped. A deployment survives a restart of the processor. A vector topic
- *   has one writer: a DAG whose vector topic a sink of another DAG writes is refused ({@link #sinkConflict}).</li>
+ *   says deployed (with the DAG document) or stopped. A vector topic has one writer, and so has a signal on the shared
+ *   clean or features topic: a DAG whose vector topic or signal a sink of another DAG writes is refused
+ *   ({@link #sinkConflict}). A deployment survives a restart of the processor, and so does the writer of each vector
+ *   topic and signal.</li>
  *   <li><b>One runner per vector sink</b> with its own consumer, positions and state. A new or changed DAG starts
  *   from the beginning of the source topic (or from now, {@code source.start: latest}) without touching the others.</li>
  *   <li><b>Checkpoint</b> per runner in the state directory: positions and {@link VectorStream} state, written only
@@ -281,23 +283,44 @@ public final class VectorProcessor implements AutoCloseable {
         return CONTROL_SCHEMA.equals(n.path("schema").asText()) && n.hasNonNull("dag") ? n : null;
     }
 
-    /** The vector topics a DAG document writes: the topics of its sinks of {@link VectorJob#SCHEMA}. */
-    static Set<String> vectorTopics(JsonNode dag) {
-        Set<String> topics = new TreeSet<>();
+    /**
+     * What a DAG document writes that has one writer, as a refusal names it: {@code topic <topic>} for a sink of
+     * {@link VectorJob#SCHEMA}, {@code <topic> signal <id> of system <system>} for a sink of {@link SeriesJob#SCHEMA}.
+     */
+    static Set<String> writes(JsonNode dag) {
+        Set<String> out = new TreeSet<>();
         for (JsonNode sink : dag.path("sinks")) {
-            if (VectorJob.SCHEMA.equals(sink.path("schema").asText()) && sink.hasNonNull("topic")) {
-                topics.add(sink.path("topic").asText());
+            if (!sink.hasNonNull("topic")) {
+                continue;
+            }
+            String topic = sink.path("topic").asText();
+            if (VectorJob.SCHEMA.equals(sink.path("schema").asText())) {
+                out.add(vectorWrites(topic));
+            } else if (SeriesJob.is(sink)) {
+                String system = sink.path("signal").path("system").asText("");
+                String id = sink.path("signal").path("id").asText("");
+                if (!system.isBlank() && !id.isBlank()) {
+                    out.add(signalWrites(topic, system, id));
+                }
             }
         }
-        return topics;
+        return out;
+    }
+
+    private static String vectorWrites(String topic) {
+        return "topic " + topic;
+    }
+
+    private static String signalWrites(String topic, String system, String id) {
+        return topic + " signal " + id + " of system " + system;
     }
 
     /**
-     * The vector topics of every DAG whose latest control record says deployed, by DAG name, read from the start of the
-     * control topic to its end. A document that is no YAML is left out: the processor refuses it, so it writes
-     * nothing.
+     * What every DAG whose latest control record says deployed writes ({@link #writes}), by DAG name, read from the
+     * start of the control topic to its end. A document that is no YAML is left out: the processor refuses it, so it
+     * writes nothing.
      */
-    public static Map<String, Set<String>> deployedVectorTopics(Consumer<byte[], byte[]> consumer, TopicLayout layout) {
+    public static Map<String, Set<String>> deployedWrites(Consumer<byte[], byte[]> consumer, TopicLayout layout) {
         Map<String, JsonNode> latest = new TreeMap<>();
         new LogTail(consumer, layout.dags(), Duration.ofSeconds(30)).poll(r -> {
             JsonNode n = controlRecord(r.value());
@@ -309,7 +332,7 @@ public final class VectorProcessor implements AutoCloseable {
         latest.forEach((dag, n) -> {
             if ("deployed".equals(n.path("state").asText())) {
                 try {
-                    out.put(dag, vectorTopics(YAML.readTree(n.path("spec").asText(""))));
+                    out.put(dag, writes(YAML.readTree(n.path("spec").asText(""))));
                 } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
                     // the processor refuses a document that is no YAML, so it writes nothing
                 }
@@ -319,16 +342,16 @@ public final class VectorProcessor implements AutoCloseable {
     }
 
     /**
-     * Each vector topic has one writer. The refusal when another DAG in {@code written} (vector topics by DAG name)
-     * writes a vector topic of the document {@code dag} under the name {@code name}; empty when none does. The same
-     * name deployed again is no other writer.
+     * Each vector topic has one writer, and so has each signal of a series sink on its topic. The refusal when another
+     * DAG in {@code written} ({@link #writes} by DAG name) writes what the document {@code dag} under the name
+     * {@code name} writes; empty when none does. The same name deployed again is no other writer.
      */
     public static Optional<String> sinkConflict(String name, JsonNode dag, Map<String, Set<String>> written) {
-        for (String topic : vectorTopics(dag)) {
+        for (String what : writes(dag)) {
             for (Map.Entry<String, Set<String>> other : written.entrySet()) {
-                if (!other.getKey().equals(name) && other.getValue().contains(topic)) {
-                    return Optional.of(name + ": sink topic " + topic + " is already written by DAG " + other.getKey()
-                            + "; stop that DAG first or choose another sink");
+                if (!other.getKey().equals(name) && other.getValue().contains(what)) {
+                    return Optional.of(name + ": sink " + what + " is already written by DAG " + other.getKey()
+                            + "; stop that DAG first or choose another " + (what.startsWith("topic ") ? "sink" : "signal"));
                 }
             }
         }
@@ -336,7 +359,7 @@ public final class VectorProcessor implements AutoCloseable {
     }
 
     private void readControl() {
-        Map<String, JsonNode> latest = new LinkedHashMap<>();
+        List<JsonNode> batch = new ArrayList<>();
         try {
             if (control == null) {
                 controlConsumer = consumers.get();
@@ -345,7 +368,7 @@ public final class VectorProcessor implements AutoCloseable {
             control.poll(r -> {
                 JsonNode n = controlRecord(r.value());
                 if (n != null) {
-                    latest.put(n.path("dag").asText(), n);
+                    batch.add(n);
                 } else if (++ignoredControlRecords == 1) {
                     LOG.warn("control record ignored and counted in ignoredControlRecords; later ones are only counted"
                             + " topic={} partition={} offset={}", r.topic(), r.partition(), r.offset());
@@ -367,14 +390,69 @@ public final class VectorProcessor implements AutoCloseable {
                 LOG.debug("stack trace of the failure topic={}", layout.dags(), e);
             }
         }
-        latest.forEach(this::apply);
+        decide(batch);
     }
 
-    private void apply(String dag, JsonNode record) {
+    /**
+     * Applies the latest control record of each DAG in the batch with the outcome the records have when they are read
+     * one after the other, in the order of the log: a DAG is refused when, at its deploy record, another DAG writes its
+     * vector topic or signal, and it stays refused when that DAG stops later. How the records fall into batches does
+     * not change the outcome, so a restart, which reads the whole control topic again, keeps the writers it had.
+     */
+    private void decide(List<JsonNode> batch) {
+        Map<String, Set<String>> written = new TreeMap<>();
+        runners.values().forEach(r -> written.computeIfAbsent(r.job.dag(), d -> new TreeSet<>()).add(r.job.writes()));
+        Map<String, String> hashes = new HashMap<>(deployed);
+        Map<String, JsonNode> latest = new LinkedHashMap<>();
+        Map<String, String> refused = new HashMap<>();
+        for (JsonNode record : batch) {
+            String dag = record.path("dag").asText();
+            latest.put(dag, record);
+            boolean deploy = "deployed".equals(record.path("state").asText());
+            String spec = record.path("spec").asText("");
+            String hash = deploy ? sha256(spec) : "";
+            if (hash.equals(hashes.get(dag))) {
+                continue;
+            }
+            written.remove(dag);
+            refused.remove(dag);
+            hashes.put(dag, "");
+            if (!deploy) {
+                continue;
+            }
+            try {
+                JsonNode document = YAML.readTree(spec);
+                DagPlan.of(document, layout, hash);
+                Optional<String> conflict = sinkConflict(dag, document, written);
+                if (conflict.isPresent()) {
+                    refused.put(dag, conflict.get());
+                } else {
+                    written.put(dag, writes(document));
+                    hashes.put(dag, hash);
+                }
+            } catch (IllegalArgumentException | IOException e) {
+                // apply refuses the document with the same reason
+            }
+        }
+        // first what ends, so that what runs after this batch finds its topics and signals free
+        latest.forEach((dag, record) -> {
+            if (!written.containsKey(dag)) {
+                apply(dag, record, refused.get(dag));
+            }
+        });
+        latest.forEach((dag, record) -> {
+            if (written.containsKey(dag)) {
+                apply(dag, record, null);
+            }
+        });
+    }
+
+    /** @param refusal the reason when {@link #decide} found the DAG refused for a sink of another DAG; null otherwise */
+    private void apply(String dag, JsonNode record, String refusal) {
         boolean deploy = "deployed".equals(record.path("state").asText());
         String spec = record.path("spec").asText("");
         String hash = deploy ? sha256(spec) : "";
-        if (hash.equals(deployed.get(dag))) {
+        if (refusal == null && hash.equals(deployed.get(dag))) {
             return;
         }
         // whatever ran under this name ends; a changed DAG starts again from its own beginning
@@ -393,15 +471,10 @@ public final class VectorProcessor implements AutoCloseable {
             return;
         }
         try {
-            JsonNode document = YAML.readTree(spec);
-            DagPlan plan = DagPlan.of(document, layout, hash);
-            Map<String, Set<String>> written = new TreeMap<>();
-            runners.values().stream().filter(r -> r.job.kind().equals("vector"))
-                    .forEach(r -> written.computeIfAbsent(r.job.dag(), d -> new TreeSet<>()).add(r.job.topic()));
-            Optional<String> conflict = sinkConflict(dag, document, written);
-            if (conflict.isPresent()) {
-                throw new IllegalArgumentException(conflict.get());
+            if (refusal != null) {
+                throw new IllegalArgumentException(refusal);
             }
+            DagPlan plan = DagPlan.of(YAML.readTree(spec), layout, hash);
             List<Sink> sinks = new ArrayList<>();
             plan.vectors().forEach(job -> sinks.add(new VectorSink(job, hash)));
             plan.series().forEach(job -> sinks.add(new SeriesSink(job, avro)));
@@ -438,6 +511,9 @@ public final class VectorProcessor implements AutoCloseable {
         String sourceTopic();
 
         boolean fromStart();
+
+        /** What the sink writes that has one writer, as {@link #writes(JsonNode)} names it. */
+        String writes();
 
         /** @param saved the stream state of a checkpoint, or null to begin anew */
         Work open(JsonNode saved);
@@ -478,6 +554,11 @@ public final class VectorProcessor implements AutoCloseable {
         @Override
         public String sourceTopic() {
             return null;    // the episodes topic of the domain
+        }
+
+        @Override
+        public String writes() {
+            return vectorWrites(job.topic());
         }
 
         @Override
@@ -527,6 +608,11 @@ public final class VectorProcessor implements AutoCloseable {
         @Override
         public String sourceTopic() {
             return job.sourceTopic();
+        }
+
+        @Override
+        public String writes() {
+            return signalWrites(job.topic(), job.target().system(), job.target().signal());
         }
 
         @Override

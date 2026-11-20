@@ -219,6 +219,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   (`/state/stats.ckpt.progress`, `/state/progress`). The probes fail on a file older than 2 minutes (readiness) or 10
   minutes (liveness), so a processor whose poll loop stops is not ready about 3 minutes and restarted about 12 minutes
   after its last pass; the first pass may take 10 minutes.
+- `Patience.refusing()` in `opentsx-kafka-v2` tells whether the broker refused the last poll.
 
 ### Changed
 
@@ -847,6 +848,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The public `debug` and `verbose` fields of `ReturnIntervallStatistik2` and `TSPropertyTester` and the public
   `verbose` field of `RISTool` are deprecated and have no effect; the level of the SLF4J logger of each class decides
   which DEBUG lines appear. `BucketAnalyserTool` no longer sets `ReturnIntervallStatistik2.debug`.
+- A signal on the clean or features topic of a domain has one writer, like a vector topic: `POST /v1/dags/deploy`
+  answers 409 `conflict`, `opentsx vectors deploy` exits with 1 and the vector processor refuses a DAG whose series
+  sink writes a signal (system and id) that another deployed DAG writes to the same topic, with `<dag>: sink <topic>
+  signal <id> of system <system> is already written by DAG <other>; stop that DAG first or choose another signal`.
 
 ### Removed
 
@@ -1969,6 +1974,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - opentsx-lg: `RequestResponseAnalysisConsumer` writes its latency table to `$HOME/opentsx/plots`, as
   `EventFlowAnalysisConsumer` does, instead of `./opentsx/plots` in the working directory.
 - opentsx-lg: every script has a shebang, stops when a `cd` fails and passes shellcheck.
+- The vector processor decides the records of the control topic in their order, so a restart keeps the DAG that wrote
+  each vector topic and signal before it; until now the DAG named first in the control topic won after a restart.
+- The event bridge looks up topics for its readiness probe through one Admin client for its whole life instead of a
+  new one per probe; a lookup that fails closes the client and the next one opens a new one, and a stream still looks
+  its topic up on a client of its own.
+- The statistics processor writes its progress file only after a poll the broker answered, so `opentsx-stats` is no
+  longer ready about 3 minutes after the broker starts refusing reads; until now the file stayed fresh for up to 10
+  minutes of refusals.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

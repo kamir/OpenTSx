@@ -161,7 +161,9 @@ While KafScale rates its object store as degraded, it refuses every fetch for ab
 records instead, puts every partition back to its position before the poll and pauses. `Patience.standard()` pauses
 5 s and gives up after 10 minutes of refusals in a row with `IllegalStateException`
 `the broker has refused reads for more than PT10M`, the limit written as an ISO-8601 duration. `LogReader`, `LogTail`,
-`EpisodeLogTail`, the statistics processor and the retrieval feed poll through it.
+`EpisodeLogTail`, the statistics processor and the retrieval feed poll through it. `refusing()` tells whether the broker
+refused the last poll; it is false before the first poll and after an answer without records. The statistics processor
+writes its progress file only after a poll the broker answered.
 
 The first refusal of a row is logged at WARN and the next answer at INFO, logger `org.opentsx.kafka.Patience`:
 
