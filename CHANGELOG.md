@@ -81,6 +81,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   ring buffer, an emulated space-ground link driven by computed passes, and phases P0 to P6 up to the D-T13 CPU
   fallback path. Phase P0 prepares the board with the Jetson runbook and board tools of D-T14. No implementation
   yet.
+- `tsx-runner serve --profile measurement`: an opt-in worker profile for the B4.2 board measurement. It admits
+  requests of up to 4,390,912 bytes with 16,384 series, 100,000 records, 4,000,000 samples, 64 MiB of input and
+  output and 256 MiB of state; `GET /v1/capabilities` reports the profile. Requests cannot select or widen it, and
+  the default `standard` profile keeps its ceilings (`tests/measurement_profile.rs`).
 - Shared execution-assignment contract: a source or fragment DAG text may have 524,288 UTF-8 bytes (was 32,768)
   and the envelope 2,162,688 bytes (was 65,536), equally in Java `ExecutionAssignments`, Rust `tsx-contracts`
   and the schema. A source inventory of 16,384 series ids fits, which B4.2 needs at 10,000 series. Runtime

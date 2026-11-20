@@ -85,6 +85,33 @@ The shared assignment allows a 2,162,688-byte envelope and 524,288-byte source/f
 ascending partition inventory apply unchanged.
 See the [shared contract reference](wayang-shared-contracts.md#assign-whole-topics-and-preserve-exact-internal-positions).
 
+### Raise the ceilings for a board measurement
+
+The B4.2 board measurement runs up to 10,000 series on one worker. The operator starts that worker with
+`serve ... --profile measurement`. A request cannot select or widen the profile; it still declares every limit and
+is refused when one exceeds the profile.
+
+| Ceiling | `standard` (default) | `measurement` |
+| --- | --- | --- |
+| Request text | 65,536 bytes | 4,390,912 bytes |
+| Assignment envelope | 65,536 bytes | 2,162,688 bytes |
+| Fragment text | 32,768 bytes | 524,288 bytes |
+| `records` | 10,000 | 100,000 |
+| `inputBytes`, `outputBytes` | 16,777,216 | 67,108,864 |
+| `stateBytes` | 1,048,576 | 268,435,456 |
+| `series` without and with `context` | 64 and 1,024 | 16,384 and 16,384 |
+| `samples` without and with `context` | 100,000 and 1,000,000 | 4,000,000 and 4,000,000 |
+| Prepared journal | 85,000,000 bytes | 344,326,144 bytes |
+
+`payloadBytes`, the 128 partitions and the 25,000 samples per episode are unchanged.
+`GET /v1/capabilities` reports the active profile as `profile` and its ceilings under `limits`.
+The ceilings bound what the worker reads; they are not allocations. A paced feed of 1 sample per series and
+second fills a fraction of them, which matters on a 4 GB board. Read journals back under the profile that wrote
+them: a standard worker refuses a measurement journal that exceeds its own ceilings.
+The bounded `replay` command and signed runs keep the standard ceilings.
+The UI rollout refuses a measurement worker, because its reported ceilings exceed the rollout ceilings
+(`RustRollout.java:727`); the B4.2 workload driver addresses it directly.
+
 ## Keep input, output and state together
 
 The source starts direct fixed-offset reads for every internal partition, without consumer-group subscription or commits.

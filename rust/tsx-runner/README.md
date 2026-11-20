@@ -131,6 +131,10 @@ a supplementary QEMU check.
 
 The service command is `tsx-runner serve --listen <addr> --node <id> --site <id>`
 followed by `--bootstrap <host:port> --state <directory>`.
+`--profile measurement` raises the admission ceilings for the B4.2 board measurement to 16,384 series,
+100,000 records and 256 MiB of state per request; the default is `--profile standard`. The
+[local runner guide](../../docs/devguide/integration/rust-runner-local.md#raise-the-ceilings-for-a-board-measurement)
+lists every ceiling (`tests/measurement_profile.rs`).
 `<addr>` is the HTTP listening address. The node and site identifiers must match admitted assignments.
 `<host:port>` is the fixed permitted Apache Kafka Broker or KafScale Proxy address list. Never publish directly
 to KafScale Broker. `<directory>` is the worker-owned state directory.
@@ -144,7 +148,8 @@ Use these HTTP operations:
 
 - `GET /v1/capabilities` returns the executable digest, identities, legacy operators, state ABI,
   Episode fingerprint and resource ceilings. `catalogExecution.operators` lists the separate B2 catalog.
-- `POST /v1/prepare` accepts the exact `opentsx.local-bounded-run.v1` request text, up to 65,536 bytes.
+- `POST /v1/prepare` accepts the exact `opentsx.local-bounded-run.v1` request text, up to 65,536 bytes
+  (4,390,912 bytes under the measurement profile).
   It reads the entire admitted cut, validates all input, computes output, and durably saves private output bytes
   and retained state before returning `prepared`. It publishes no Kafka output.
 - `POST /v1/activate/<requestHash>` publishes the saved bytes, waits for acknowledgements, and writes the

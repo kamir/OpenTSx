@@ -392,6 +392,14 @@ legacy profile retains its 64-series and 100,000-sample ceilings, three clean
 operations and trailing-resample restriction. Neither profile silently widens
 the caller's declared limits.
 
+A worker the operator starts with `serve --profile measurement` raises these
+ceilings for the B4.2 board measurement: 16,384 series and 4,000,000 samples with
+or without context, 100,000 records, 64 MiB of input and output, 256 MiB of state
+and a 4,390,912-byte request that can carry a full shared assignment. A request
+MUST NOT select or widen the profile, and the worker MUST still refuse every
+declared limit above it. Replay, signed runs and the default `standard` profile
+keep the ceilings above.
+
 Parameters, defaults and output semantics follow the existing processor
 descriptions. The adapter validates graph shape, typed edges, bound inventories,
 clean targets and the sink schema before broker reads. Pairing and alignment
