@@ -107,16 +107,22 @@ The signed CLI regression also checks the actual executable against the
 existing 268,435,456-byte identity-read limit. Development and test profiles
 omit dependency debug information; runner debug information is retained.
 
-The validation observer accepts a reset before a new Kafka frame only when
-no request or only metadata requests remain pending. Frame decoding rejects
-resets that interrupt a length or body, and resets with pending data requests.
+The validation observer drops a request that its client abandons by closing
+or resetting the connection. This applies to every request type. It applies
+whether the observer sees the close before the next request frame or while it
+writes a response. The observer then ends that connection and its pending
+requests without a failure. These errors fail the check: a close or reset
+inside a frame, a malformed frame, an unknown response correlation, a reset or
+other I/O error on the broker side while the client is still connected, and
+any other error while both sides are open.
 Response correlations remain pending until forwarding and flushing succeed.
-A socket error while a response is written to a closed client ends that
-connection under the same rule. The unforwarded correlation counts as
-pending, so a lost data response fails the check. Other write errors and
-unknown response correlations also fail the check.
+The signal link of the
+[B3 offline test](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/RustOfflineCatchupIntegrationTest.java)
+applies the same rule to its runner side.
 The deterministic
-[observer tests](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/LatencyProtocolObserverTest.java)
+[observer tests](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/LatencyProtocolObserverTest.java),
+[connection tests](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/LatencyProtocolObserverConnectionTest.java)
+and [signal link tests](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/SignalLinkTest.java)
 check these boundaries with streams and loopback sockets, without sleeps.
 
 Use the [conversion lesson](../../learning/ui-operators.v1.json) with its

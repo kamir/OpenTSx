@@ -13,9 +13,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
-- Accept idle Kafka frame-boundary resets and cancelled metadata requests in the
-  validation observer. Retain response correlations until forwarding succeeds;
-  keep interrupted frames and resets with data requests as errors.
+- Retain response correlations in the validation observer until forwarding
+  succeeds, and keep interrupted frames as errors.
 - Resolve Central dependencies and plugins in CI through a Google Cloud-hosted
   mirror. Verify endpoint selection and permanent errors offline, including a
   Central 404 response with a long Retry-After value.
@@ -482,10 +481,15 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
-- Accept a socket error while the validation observer writes a response to a
-  closed client when only metadata requests remain pending, and end that
-  connection. The unforwarded correlation stays pending, so lost data
-  responses, other write errors and unknown correlations still fail the check.
+- Drop a request in the validation observer when its client abandons it by
+  closing or resetting the connection, for every request type, whether the
+  observer sees the close while reading the next request or while writing a
+  response. The observer ends that connection without a failure. Malformed or
+  interrupted frames, unknown response correlations, broker-side I/O errors
+  while the client is connected and errors while both sides are open still fail
+  the check. The B3 offline signal link ends a connection without a failure when
+  its runner side closes or resets, and keeps failing on errors while both sides
+  are open.
 - Concept 20 section 6.1 and the TASK-020 B1 notes list the signed `tsx-runner`
   modes that exist. With the B3 site configuration, `agent`, `conform` and `run`
   handle signed bounded statistics. With the B1 configuration, `run` executes
