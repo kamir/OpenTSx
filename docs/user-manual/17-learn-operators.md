@@ -17,7 +17,7 @@ Read the lesson's source, manual, SPEC and test references before choosing its r
 | Java or Python library | A public numerical entry point. A library implementation alone does not supply a DAG binding or a Wayang mapping. |
 | Processor DAG | An operator accepted by the current series/vector processor, with that runtime's parameters and state rules. |
 | Wayang | An implemented mapping or infrastructure entry point, separately identified by the lesson. A pure Java kernel alone does not establish a mapping. |
-| Rust | Offline contracts, the local B2 catalog with embedded WASM conversion, isolated signed pass-through and qualified signed bounded statistics. |
+| Rust | Local catalog, embedded WASM and qualified signed profiles. |
 
 The [UI contracts](../learning/ui-operator-contracts.md) and
 [library contracts](../learning/library-operator-contracts.md) identify the actual algorithm behavior.

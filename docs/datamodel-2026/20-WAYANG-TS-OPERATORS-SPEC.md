@@ -1139,8 +1139,8 @@ beyond `plan.policy`.
    the signal cluster and the driver ([systemd.exec](https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html),
    [systemd.resource-control](https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html)).
 3. Plans MUST NOT carry code. A runtime MUST NOT load operators that are not in its signed artifact.
-4. WASM operators (Track B) MUST run in `wasmtime` with fuel or an epoch deadline, a memory limit and no
-   WASI socket or filesystem access.
+4. WASM operators (Track B) MUST run in `wasmtime` with fuel or an epoch
+   deadline, a memory limit and no WASI socket or filesystem access.
 
 <a id="s751-execute-the-embedded-b5-conversion"></a>
 

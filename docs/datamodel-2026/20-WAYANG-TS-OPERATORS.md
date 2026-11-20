@@ -230,7 +230,7 @@ Versions from crates.io on 2026-11-16.
 | Avro | `apache-avro` | 0.22.0, Apache-2.0 | `GenericSingleObjectWriter`, `SpecificSingleObjectWriter<T>`; `RabinFingerprintHeader` writes `C3 01` plus the fingerprint little-endian (`src/headers.rs`) |
 | xxHash64 | `twox-hash` | 2.1.5, MIT | `XxHash64::oneshot(seed, bytes)` |
 | DDSketch | port of `QuantileSketch` | | `sketches-ddsketch` 0.4.2 uses floor indexing and the Java DDSketch byte format; OpenTSx uses `ceil` indexing and its own format v1 (`QuantileSketch.java:13-28`, `:221`) |
-| Sandbox | `wasmtime` | 50.0.1 | embedded local conversion, Pulley on 32-bit and 64-bit targets, fuel and fixed memory/stack bounds; no WASI or host imports |
+| Sandbox | `wasmtime` | 50.0.1 | embedded conversion; see B5 |
 | Supply chain | `cargo-auditable` 0.7.7, `cargo-cyclonedx` 0.5.10, `cargo-deny` 0.20.2, cosign 3.1.4, `actions/attest-build-provenance` 4.2.2 | | embedded dependency list, CycloneDX SBOM, licence and advisory gate, Sigstore signatures, SLSA v1.0 provenance |
 
 Stream engines checked for reuse, none adopted: Arroyo (MIT or Apache-2.0, acquired by Cloudflare 2025-04-10,
@@ -657,7 +657,7 @@ Assets: raw episodes at each site, plans, the plan signing key, site credentials
 | tampered artifact | Track A: signed JAR or image from CI; Track B: `cargo-auditable`, CycloneDX SBOM, cosign signature, SLSA provenance; both report their digest in the conformance report |
 | compromised process reaches other hosts | systemd unit with `DynamicUser=yes`, `RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX`, `IPAddressDeny=any`, `IPAddressAllow=` proxy and signal cluster ([systemd.exec](https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html), [systemd.resource-control](https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html)); optional Landlock (Linux 5.13 and later) |
 | stolen broker credentials | client certificates at the TLS-terminating proxy; KafScale ACLs with prefix rules on `tsx.<domain>.` and principal source `proxy_addr` (KafScale has no SASL, see below) |
-| WASM conversion (local Track B) | artifact-embedded `convert.unit`, Wasmtime/Pulley, fixed fuel/memory/stack caps, no imports; plans carry no code |
+| WASM conversion | Embedded module with fixed limits and no imports |
 
 **KafScale security, checked in [KafScale tag v1.6.0, commit `2809a3a`](https://github.com/KafScale/platform/tree/v1.6.0)** (phase A0):
 
