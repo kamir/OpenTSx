@@ -9,12 +9,14 @@ import org.opentsx.conf.ConfCli;
 import org.opentsx.conf.OpenTsxConf;
 import org.opentsx.conf.Registry;
 import org.opentsx.twin.TwinPlan;
+import org.opentsx.twin.boat.BoatData;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,11 +24,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class TwinCliTest {
 
@@ -312,11 +317,81 @@ class TwinCliTest {
     }
 
     @Test
+    void boatRefusesADataFileOf64MiBAndOneByte() throws IOException {
+        Path data = Files.writeString(tmp.resolve("big.csv"), "time,soc_percent\n2026-07-04T10:00Z,80\n#");
+        try (RandomAccessFile f = new RandomAccessFile(data.toFile(), "rw")) {
+            f.setLength(64L * 1024 * 1024 + 1);
+        }
+        assertEquals(new Result(2, "", "opentsx: " + data + ": more than 67108864 bytes; expected a file of at most "
+                + "67108864 bytes\n"), run(BoatDemo::run, "--data", data.toString()));
+    }
+
+    @Test
+    void boatKeepsOnlyTheColumnsItReadsSoAWideFileFitsASmallHeap() throws IOException, InterruptedException {
+        Path data = tmp.resolve("wide.csv");
+        try (OutputStream o = new BufferedOutputStream(Files.newOutputStream(data))) {
+            StringBuilder header = new StringBuilder("time");
+            for (int c = 1; c <= 54; c++) {
+                header.append(",c").append(c);
+            }
+            o.write((header + "\n").getBytes(StandardCharsets.US_ASCII));
+            byte[] row = ("2026-07-04T10:00Z" + ",1".repeat(54) + "\n").getBytes(StandardCharsets.US_ASCII);
+            for (int i = 0; i < 100_000; i++) {
+                o.write(row);
+            }
+        }
+        // kept in full, 100000 rows of 55 fields take about 290 MB, more than twice the heap
+        Path out = tmp.resolve("out.txt");
+        Path err = tmp.resolve("err.txt");
+        ProcessBuilder pb = new ProcessBuilder(Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "-Xmx128m", "-XX:+UseSerialGC", "-cp", System.getProperty("surefire.test.class.path"),
+                BoatDemo.class.getName(), "--data", data.toString())
+                .redirectOutput(out.toFile()).redirectError(err.toFile());
+        pb.environment().clear();
+        Process p = pb.start();
+        if (!p.waitFor(120, TimeUnit.SECONDS)) {
+            p.destroyForcibly().waitFor();
+            fail("still running after 120 s\nstderr: " + Files.readString(err));
+        }
+        String stderr = Files.readString(err);
+        assertEquals(0, p.exitValue(), stderr.lines().limit(5).collect(Collectors.joining("\n")));
+        assertTrue(Files.readString(out).startsWith("Boat twin boot-etap22 on operating data: 100000 rows, 1 steps "
+                + "from 2026-07-04T10:00:00Z"), Files.readString(out));
+    }
+
+    @Test
+    void aFileOverTheByteBoundIsRefusedWithExitTwoBeforeItIsReadInFull() throws IOException {
+        Path blank = tmp.resolve("blank.csv");
+        try (OutputStream o = new BufferedOutputStream(Files.newOutputStream(blank))) {
+            o.write("time,soc_percent\n2026-07-04T10:00Z,80\n".getBytes(StandardCharsets.US_ASCII));
+            for (int i = 0; i < 100_000; i++) {
+                o.write('\n');
+            }
+            // not UTF-8, far beyond what the reader buffers ahead of the bound
+            o.write(new byte[]{'x', (byte) 0xFF, '\n'});
+        }
+        Main boat = (args, env, out, err) -> TwinCli.run("boat", args, env, out, err, (conf, rest) -> {
+            TwinCli.csv(blank, "operating data file", BoatData.MAX_ROWS, 4096, lines -> lines);
+            return o -> { };
+        });
+        assertEquals(new Result(2, "", "opentsx: " + blank + ": more than 4096 bytes; expected a file of at most 4096 "
+                + "bytes\n"), run(boat));
+
+        Path atTheBound = Files.writeString(tmp.resolve("bound.csv"), "a\n" + "\n".repeat(4094));
+        assertEquals(4096, Files.size(atTheBound));
+        assertEquals(4095, TwinCli.csv(atTheBound, "rows file", 1, 4096, lines -> lines).size());
+        Path overTheBound = Files.writeString(tmp.resolve("over.csv"), "a\n" + "\n".repeat(4095));
+        assertEquals(overTheBound + ": more than 4096 bytes; expected a file of at most 4096 bytes",
+                assertThrows(IllegalArgumentException.class,
+                        () -> TwinCli.csv(overTheBound, "rows file", 1, 4096, lines -> lines)).getMessage());
+    }
+
+    @Test
     void theBoundedReadKeepsAFileAtTheBoundAndFailsWhenTheParserAcceptsMore() throws IOException {
-        Path file = Files.writeString(tmp.resolve("rows.csv"), "a\n1\n# note\n\n2\n3\n4\n");
-        assertEquals(List.of("a", "1", "# note", "", "2", "3", "4"), TwinCli.csv(file, "rows file", 4, lines -> lines));
+        Path file = Files.writeString(tmp.resolve("rows.csv"), "a\n1\n# note\n  \n2\n3\n4\n");
+        assertEquals(List.of("a", "1", "#", "", "2", "3", "4"), TwinCli.csv(file, "rows file", 4, 1024, lines -> lines));
         IllegalStateException e = assertThrows(IllegalStateException.class,
-                () -> TwinCli.csv(file, "rows file", 2, lines -> lines));
+                () -> TwinCli.csv(file, "rows file", 2, 1024, lines -> lines));
         assertEquals(file + ": read up to data row 3, but the parser did not refuse more than 2 data rows",
                 e.getMessage());
     }

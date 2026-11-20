@@ -186,6 +186,8 @@ expect scenario-relative 1 "error: OPENTSX_WINDPARK_SCENARIO: \"park.yaml\" is n
   -- OPENTSX_WINDPARK_SCENARIO=park.yaml
 expect fixture-relative 1 "error: DWD_FIXTURE: \"mosmix.kml\" is not an absolute path; expected a file in the image or on a mounted volume, such as /opt/opentsx/share/dwd/MOSMIX_L_2026101209_10578.kml" \
   -- DWD_FIXTURE=mosmix.kml
+expect domain-upper-case 1 "error: OPENTSX_DOMAIN: \"Wind\" is not allowed; expected lower-case letters, digits, hyphens or underscores, starting with a letter or digit, such as wind" \
+  -- OPENTSX_DOMAIN=Wind
 expect namespace-dotted 1 "error: OPENTSX_ICEBERG_NAMESPACE: \"a.b\" is not an Iceberg namespace; expected letters, digits and _, starting with a letter or _, such as tsx" \
   -- OPENTSX_ICEBERG_NAMESPACE=a.b
 

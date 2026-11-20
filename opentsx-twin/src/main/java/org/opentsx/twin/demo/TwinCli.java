@@ -11,7 +11,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -123,21 +126,30 @@ public final class TwinCli {
     /**
      * Parses the CSV file a key names like {@link #csv(Path, String, Function)}, but stops reading at the first data
      * row over {@code maxRows}, a line after the header that is neither blank nor a comment; {@code parse} refuses
-     * that row.
+     * that row. A file of more than {@code maxBytes} bytes is refused once the reader passes them. A blank line reaches
+     * {@code parse} as {@code ""} and a comment line as {@code "#"}, so that a file of short lines fits the heap.
      */
-    static <T> T csv(Path path, String what, int maxRows, Function<List<String>, T> parse) {
+    static <T> T csv(Path path, String what, int maxRows, long maxBytes, Function<List<String>, T> parse) {
         long[] data = {-1};
         List<String> lines = read(path, what, p -> {
             List<String> head = new ArrayList<>();
-            try (BufferedReader in = Files.newBufferedReader(p, StandardCharsets.UTF_8)) {
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(
+                    new Bounded(Files.newInputStream(p), maxBytes), StandardCharsets.UTF_8.newDecoder()))) {
                 String line;
                 while (data[0] <= maxRows && (line = in.readLine()) != null) {
-                    head.add(line);
                     String l = line.strip();
-                    if (!l.isEmpty() && !l.startsWith("#")) {
+                    if (l.isEmpty()) {
+                        head.add("");
+                    } else if (l.startsWith("#")) {
+                        head.add("#");
+                    } else {
+                        head.add(line);
                         data[0]++;
                     }
                 }
+            } catch (TooLarge e) {
+                throw new IllegalArgumentException(path + ": more than " + maxBytes + " bytes; expected a file of at most "
+                        + maxBytes + " bytes", e);
             }
             return head;
         });
@@ -159,6 +171,44 @@ public final class TwinCli {
 
     private interface Reader<T> {
         T read(Path path) throws IOException;
+    }
+
+    private static final class TooLarge extends IOException {
+    }
+
+    private static final class Bounded extends FilterInputStream {
+        private final long max;
+        private long count;
+
+        Bounded(InputStream in, long max) {
+            super(in);
+            this.max = max;
+        }
+
+        @Override
+        public int read() throws IOException {
+            int b = in.read();
+            if (b >= 0) {
+                counted(1);
+            }
+            return b;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            int n = in.read(b, off, len);
+            if (n > 0) {
+                counted(n);
+            }
+            return n;
+        }
+
+        private void counted(int n) throws TooLarge {
+            count += n;
+            if (count > max) {
+                throw new TooLarge();
+            }
+        }
     }
 
     private static <T> T read(Path path, String what, Reader<T> reader) {

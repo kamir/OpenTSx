@@ -149,8 +149,10 @@ from the shell that is not the value of an option.
 
 The Job `boat` (limit 1536Mi, heap 1152 MiB) has the memory for `--data` over a year of 15-minute steps (35136
 steps) and `--calibrate`: measured peak RSS 1312 MB with one row per step and 1301 MB with 527040 rows, the most rows
-`boat` reads from one file. The Job reads your `--data` file from the Secret `opentsx-private`, mounted at `/private`,
-and Kubernetes refuses a Secret larger than 1 MiB
+`boat` reads from one file. A `--data` run on a file of 64 MiB of blank lines, the most bytes `boat` reads from one
+file, peaks at 968 MB, one on a file of 64 MiB with 527040 rows of 55 columns, 54 of them not read, at 903 MB. The
+Job reads your `--data` file from the Secret `opentsx-private`, mounted at `/private`, and Kubernetes refuses a Secret
+larger than 1 MiB
 ([Secret size limit](https://kubernetes.io/docs/concepts/configuration/secret/#restriction-data-size)). A year at one
 row per 15-minute step (35136 rows of 10 columns, 2.3 MB) does not fit into it; run
 `bin/opentsx boat --data <file> --calibrate` on a host for such a file, where `<file>` is your CSV file. The Job

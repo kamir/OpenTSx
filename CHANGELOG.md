@@ -863,6 +863,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `KafkaTopics.create` in opentsx-twin-live uses the Admin client that the topic lookups share instead of opening one
   per topic. A create that fails closes that client, and the next create opens a new one. After `close`, a create
   throws `topics: closed; create a new KafkaTopics to create a topic`.
+- The k3s scripts 70-backup.sh, 20-configure.sh and 11-import-images.sh report a missing namespace, an OPENTSX_DOMAIN
+  that is not allowed, a missing tool of the import method and a kind cluster that does not exist in the form
+  '<subject>: <problem>; <what to do>', for example `namespace opentsx: not found; nothing to back up`,
+  `OPENTSX_DOMAIN: "Wind" is not allowed; expected lower-case letters, digits, hyphens or underscores, starting with a
+  letter or digit, such as wind`, `buildah: not found; install it or choose another method with --method` and `kind
+  cluster <name>: not found; list the clusters with kind get clusters`.
 
 ### Removed
 
@@ -2035,6 +2041,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `Patience` in opentsx-kafka-v2 now compares clock readings only by their difference while it waits out refused
   reads. With a clock that reads negative values, a run of refusals logs the WARN line once and the wait still ends
   after the limit.
+- `boat --data` refuses a file of more than 67108864 bytes (64 MiB, `BoatData.MAX_BYTES`; blank and comment lines
+  count) with `<file>: more than 67108864 bytes; expected a file of at most 67108864 bytes` and exit code 2 once it
+  reads past the bound, keeps blank and comment lines without their text and keeps of each row only the columns the
+  twin reads. A file of 64 MiB of blank lines and one of 64 MiB with 527040 rows of 55 columns, 54 of them not read,
+  now fit the 1152 MiB heap of the boat Job (measured peak RSS 968 MB and 903 MB). Before, such files were read into
+  memory in full and ran out of memory.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

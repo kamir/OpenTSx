@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Tests deploy/k3s/70-backup.sh and stop_writers of deploy/k3s/lib.sh: a writer whose pods outlive the wait stops the
 # quiesce with exit 1 (and no MANIFEST says quiesced=true), a failed read of a Deployment is not taken as "not
-# deployed", and usage errors exit 2. A stand-in kubectl plays the cluster; needs no kubectl, no cluster, no network.
+# deployed", a missing namespace stops the backup with exit 1, and usage errors exit 2. A stand-in kubectl plays the
+# cluster; needs no kubectl, no cluster, no network.
 #
 #   bash deploy/k3s/test/test-70-backup.sh
 set -euo pipefail
@@ -13,9 +14,10 @@ failed() { echo "FAIL $1"; failures=$((failures + 1)); }
 
 mkdir -p "$WORK/bin"
 # kubectl: opentsx-stats runs with 1 replica and the PVC opentsx-stats-state exists; nothing else is deployed.
-# CLUSTER=down refuses every call as an unreachable API server does. PODS=stay: the pods of opentsx-stats outlive
-# the wait; PODS=none: the wait finds no pod (kubectl reports "no matching resources found"); PODS=evicted: an evicted
-# pod (phase Failed) is left, which the ReplicaSet does not delete and a field selector on the phase leaves out.
+# CLUSTER=down refuses every call as an unreachable API server does; NAMESPACE=missing answers that the namespace does
+# not exist. PODS=stay: the pods of opentsx-stats outlive the wait; PODS=none: the wait finds no pod (kubectl reports
+# "no matching resources found"); PODS=evicted: an evicted pod (phase Failed) is left, which the ReplicaSet does not
+# delete and a field selector on the phase leaves out.
 cat > "$WORK/bin/kubectl" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "$WORK/calls.log"
@@ -24,7 +26,9 @@ if [[ "${CLUSTER:-}" == down ]]; then
 fi
 [[ "$1" == -n ]] && shift 2
 case "$*" in
-  "get namespace "*|"get pvc opentsx-stats-state") exit 0 ;;
+  "get namespace "*)
+    [[ "${NAMESPACE:-}" != missing ]] || { echo "Error from server (NotFound): namespaces \"$3\" not found" >&2; exit 1; } ;;
+  "get pvc opentsx-stats-state") exit 0 ;;
   "get pvc "*) echo "Error from server (NotFound): persistentvolumeclaims \"$3\" not found" >&2; exit 1 ;;
   "get deployment opentsx-stats "*) echo 1 ;;
   "get deployment "*)
@@ -126,6 +130,17 @@ if (( rc != 0 )) || ! grep -qx 'quiesced=true' "$WORK/backup-ok/MANIFEST" 2>/dev
   failed "backup-quiesce: exit $rc, expected 0 and quiesced=true in MANIFEST"; sed 's/^/    /' "$WORK/backup-quiesce.out"
 else
   echo "ok   backup-quiesce"
+fi
+
+backup backup-no-namespace NAMESPACE=missing -- --out "$WORK/backup-no-namespace"
+message="error: namespace opentsx: not found; nothing to back up"
+if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/backup-no-namespace.out"; then
+  failed "backup-no-namespace: exit $rc, expected 1 and the message: $message"
+  sed 's/^/    /' "$WORK/backup-no-namespace.out"
+elif [[ -e "$WORK/backup-no-namespace" ]]; then
+  failed "backup-no-namespace: the backup directory was created"
+else
+  echo "ok   backup-no-namespace"
 fi
 
 # expect NAME MESSAGE ARG ...: a usage error, exit 2, before kubectl runs

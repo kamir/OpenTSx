@@ -44,7 +44,7 @@ import java.util.stream.IntStream;
  * Rows inside one plan step are averaged (mode: last value, shore power: maximum). A step without rows holds the
  * previous value for up to one hour, after that the value is missing and the model fills in (origin SYNTHETIC). The
  * rows span at most {@link #MAX_SPAN_DAYS} days and at most {@link #MAX_STEPS} steps of the plan, and a file has at
- * most {@link #MAX_ROWS} data rows.
+ * most {@link #MAX_ROWS} data rows and {@link #MAX_BYTES} bytes.
  *
  * @param plan     the template plan moved to the data period (start floored to the step, steps to cover all rows)
  * @param inputs   bindings for the twin
@@ -75,6 +75,14 @@ public record BoatData(TwinPlan plan, SeriesInputs inputs, double[] socMeas, Map
      * on three times as many rows still fits, on four times as many it runs out of memory.
      */
     public static final int MAX_ROWS = 366 * 1440;
+
+    /**
+     * The most bytes a file may have: 64 MiB, room for {@link #MAX_ROWS} rows of 127 bytes. Blank and comment lines
+     * count as well, and of a row only the columns the twin reads are kept. Measured with a heap of 1152 MiB, the heap
+     * of the boat Job of deploy/k3s: a run on a file of 64 MiB of blank lines peaks at 968 MB RSS, one on a file of
+     * 64 MiB with 527040 rows of 55 columns, 54 of them not read, at 903 MB.
+     */
+    public static final long MAX_BYTES = 64L * 1024 * 1024;
 
     private static final Map<String, String> GERMAN_COLUMNS = Map.of("zeit", "time", "modus", "mode",
             "landstrom", "shore", "soc_prozent", "soc_percent", "last_w", "load_w", "einstrahlung_wm2", "ghi_wm2",
@@ -169,6 +177,13 @@ public record BoatData(TwinPlan plan, SeriesInputs inputs, double[] socMeas, Map
             throw new IllegalArgumentException("missing column time; expected a header with time and any of mode, "
                     + "shore, soc_percent, solar_w, load_w, ghi_wm2, <device>_on, <device>_w, note");
         }
+        boolean[] read = new boolean[header.length];
+        read[timeCol] = true;
+        int lastRead = timeCol;
+        for (Column c : cols) {
+            read[c.index()] = true;
+            lastRead = Math.max(lastRead, c.index());
+        }
 
         List<long[]> times = new ArrayList<>();
         List<String[]> rows = new ArrayList<>();
@@ -191,7 +206,11 @@ public record BoatData(TwinPlan plan, SeriesInputs inputs, double[] socMeas, Map
                         + "\" is not a time; expected 2026-07-04T10:00+02:00, 2026-07-04T08:00:00Z or 2026-07-04 10:00",
                         e);
             }
-            rows.add(f);
+            String[] kept = new String[Math.min(f.length, lastRead + 1)];
+            for (int i = 0; i < kept.length; i++) {
+                kept[i] = read[i] ? f[i] : null;
+            }
+            rows.add(kept);
             rowLines.add(numbers.get(r));
         }
         if (rows.isEmpty()) {

@@ -64,7 +64,7 @@ local_ctr() {
 
 case "$METHOD" in
   docker|podman)
-    have "$METHOD" || die "$METHOD not found"
+    have "$METHOD" || die "$METHOD: not found; install it or choose another method with --method"
     local_ctr
     info "importing ${IMAGES[*]} into k3s containerd ($METHOD save | k3s ctr images import)"
     "$METHOD" save "${IMAGES[@]}" | as_root k3s ctr images import - ;;
@@ -74,7 +74,7 @@ case "$METHOD" in
     info "importing via nerdctl save"
     "${N[@]}" save "${IMAGES[@]}" | as_root k3s ctr images import - ;;
   buildah)
-    have buildah || die "buildah not found"
+    have buildah || die "buildah: not found; install it or choose another method with --method"
     local_ctr
     tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
     for img in "${IMAGES[@]}"; do
@@ -93,7 +93,8 @@ case "$METHOD" in
   kind)
     [[ -n "$KIND_CLUSTER" ]] || usage_error "--kind-cluster: missing; the method kind needs --kind-cluster <name> or KIND_CLUSTER (kind get clusters lists them)"
     have kind || die "kind: not found; install kind, or use --method ssh or --method registry for a remote k3s"
-    kind get clusters 2>/dev/null | grep -qxF "$KIND_CLUSTER" || die "kind cluster '$KIND_CLUSTER' not found (kind get clusters)"
+    kind get clusters 2>/dev/null | grep -qxF "$KIND_CLUSTER" \
+      || die "kind cluster $KIND_CLUSTER: not found; list the clusters with kind get clusters"
     info "loading ${IMAGES[*]} into kind cluster $KIND_CLUSTER (kind load docker-image)"
     kind load docker-image "${IMAGES[@]}" --name "$KIND_CLUSTER"
     echo "check on the node: docker exec ${KIND_CLUSTER}-control-plane crictl images | grep ${OPENTSX_IMAGE_REPO##*/}"

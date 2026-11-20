@@ -61,7 +61,8 @@ for key in "${CONFIG_KEYS[@]}"; do
   [[ "${!key}" != *[[:cntrl:]]* ]] || die "$key: the value holds a control character such as a line break; write it on one line"
 done
 [[ "$OPENTSX_NS" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]] || die "OPENTSX_NS=$OPENTSX_NS is not a valid namespace name"
-[[ "$OPENTSX_DOMAIN" =~ ^[a-z0-9][a-z0-9_-]*$ ]] || die "OPENTSX_DOMAIN=$OPENTSX_DOMAIN: use lower-case letters, digits, - or _"
+[[ "$OPENTSX_DOMAIN" =~ ^[a-z0-9][a-z0-9_-]*$ ]] \
+  || die "OPENTSX_DOMAIN: \"$OPENTSX_DOMAIN\" is not allowed; expected lower-case letters, digits, hyphens or underscores, starting with a letter or digit, such as wind"
 [[ "$OPENTSX_PARTITIONS" =~ ^[1-9][0-9]*$ ]] || die "OPENTSX_PARTITIONS must be a positive number"
 [[ "$KAFSCALE_BOOTSTRAP" =~ ^[^,:[:space:]]+:[0-9]+(,[^,:[:space:]]+:[0-9]+)*$ ]] \
   || die "KAFSCALE_BOOTSTRAP=$KAFSCALE_BOOTSTRAP: expected host:port[,host:port...]"

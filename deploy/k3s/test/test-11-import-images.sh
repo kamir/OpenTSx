@@ -2,7 +2,8 @@
 # Tests the arguments of deploy/k3s/11-import-images.sh: an unknown option, an option without its value, an argument,
 # a method that is not one (from --method or IMAGE_METHOD) and the methods ssh and kind without their target exit 2
 # before an image is saved or imported, --help lists the exit codes, the method registry with a repository without a
-# registry host exits 1 before an image is pushed, and the method none imports nothing. Stand-ins for docker, podman,
+# registry host exits 1 before an image is pushed, the tool of a method that is not installed and a kind cluster that
+# does not exist exit 1 before an image is saved, and the method none imports nothing. Stand-ins for docker, podman,
 # k3s, ssh and kind record any call; needs no image, no cluster, no network.
 #
 #   bash deploy/k3s/test/test-11-import-images.sh
@@ -73,6 +74,35 @@ elif [[ -s "$WORK/calls.log" ]]; then
   failed "registry-without-host: a tool was called: $(cat "$WORK/calls.log")"
 else
   echo "ok   registry-without-host"
+fi
+
+# a PATH with bash and dirname only: the tool of the method is not installed
+mkdir -p "$WORK/bare"
+for tool in bash dirname; do ln -s "$(command -v "$tool")" "$WORK/bare/$tool"; done
+for method in docker podman buildah; do
+  rc=0
+  rm -f "$WORK/calls.log"
+  env -i PATH="$WORK/bare" HOME="$WORK" WORK="$WORK" OPENTSX_ENV_FILE="$WORK/none.env" \
+    "$WORK/bare/bash" "$K3S_DIR/11-import-images.sh" --method "$method" > "$WORK/$method-missing.out" 2>&1 || rc=$?
+  message="error: $method: not found; install it or choose another method with --method"
+  if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/$method-missing.out"; then
+    failed "$method-missing: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/$method-missing.out"
+  elif [[ -s "$WORK/calls.log" ]]; then
+    failed "$method-missing: a tool was called: $(cat "$WORK/calls.log")"
+  else
+    echo "ok   $method-missing"
+  fi
+done
+
+# the stand-in kind lists no cluster
+import kind-cluster-missing -- --method kind --kind-cluster lab
+message="error: kind cluster lab: not found; list the clusters with kind get clusters"
+if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/kind-cluster-missing.out"; then
+  failed "kind-cluster-missing: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/kind-cluster-missing.out"
+elif [[ "$(cat "$WORK/calls.log")" != "kind get clusters" ]]; then
+  failed "kind-cluster-missing: expected only the call kind get clusters: $(cat "$WORK/calls.log")"
+else
+  echo "ok   kind-cluster-missing"
 fi
 
 import method-none -- --method none

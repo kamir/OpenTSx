@@ -81,14 +81,18 @@ of the plan (366 days of the 15-minute steps of `twin/boot-etap22.yaml`) and hav
 per minute for 366 days; every line after the header that is neither blank nor a comment counts, also one without a
 time), and bills span at most 87673 steps (3653 days of hourly steps from local midnight to local midnight in
 Europe/Berlin, with one more clock change in autumn than in spring). `--simulated` checks the bundled data the same
-way. A `twin` or `boat` run over 35136 steps and a `house` run over 87673 steps fit 2 GB of Java heap, the default on
-a host with 8 GB of memory. A calibrated boat run on 527040 rows over 35136 steps fits a heap of 1152 MiB (measured
-peak RSS 1301 MB), and a house calibration over 10 years of hourly steps needs more than 2 GB. Use a plan with a
-longer `baseStep`, data that span less time or rows averaged over a longer interval:
+way. A `boat --data` file has at most 67108864 bytes (64 MiB); blank and comment lines count. A `twin` or `boat` run
+over 35136 steps and a `house` run over 87673 steps fit 2 GB of Java heap, the default on a host with 8 GB of memory.
+A calibrated boat run on 527040 rows over 35136 steps fits a heap of 1152 MiB (measured peak RSS 1301 MB), so does a
+boat run on a file of 64 MiB of blank lines (measured peak RSS 968 MB) or of 527040 rows with 55 columns, 54 of them
+not read (903 MB; a row keeps only the columns the twin reads), and a house calibration over 10 years of hourly steps
+needs more than 2 GB. Use a plan with a longer `baseStep`, data that span less time or rows averaged over
+a longer interval:
 
 ```text
 opentsx: season.csv: line 3: time "2026-08-31T10:00Z" needs 83521 plan steps of PT1M from the earliest row (line 2); expected at most 35136 plan steps, from a longer baseStep or rows that span less time
 opentsx: boat.csv: line 527042: more than 527040 data rows; expected at most 527040 rows, such as one row per minute for 366 days
+opentsx: boat.csv: more than 67108864 bytes; expected a file of at most 67108864 bytes
 opentsx: my-site.yaml: steps: 50000000 is not allowed; expected a whole number from 1 to 87673
 opentsx: bills10.csv: period_from 2016-01-01 to period_to 2025-12-31 needs 5260320 plan steps of PT1M; expected at most 87673 plan steps, from a longer baseStep or bills that span less time
 ```
@@ -308,6 +312,9 @@ the levers act on measured values. For front ends, `BoatDemo` exposes `plan()`, 
 * **`demo.TwinCliTest`**, **`studio.StudioExportTest`**, **`schema.AtomSchemasTest`**, **`boat.SimulatedLogsTest`**
   * exit codes 0, 1 and 2 and the one-line messages of every command
   * a plan with more than 35136 steps is a usage error of `twin` and `boat`, one with more than 87673 steps of `house`
+  * `boat --data` reads a file only up to the first data row over 527040 and refuses a file of more than 67108864 bytes
+    once it reads past them, without reading the rest of the file
+  * `boat --data` keeps only the columns it reads, so a file of 100000 rows and 55 columns fits a heap of 128 MiB
   * the header lines of `house` and the calibration warnings it prints, word for word
   * `--help` prints the keys or the usage and writes no file
   * the k3s Jobs `twin`, `house`, `boat` and `studio-export` load their configuration in the namespace of the base

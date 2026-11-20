@@ -45,7 +45,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 load_env
-kc get namespace "$OPENTSX_NS" >/dev/null 2>&1 || die "namespace $OPENTSX_NS not found; nothing to back up"
+kc get namespace "$OPENTSX_NS" >/dev/null 2>&1 || die "namespace $OPENTSX_NS: not found; nothing to back up"
 OUT="${OUT:-$PWD/opentsx-backup-$(date -u +%Y%m%dT%H%M%SZ)}"
 [[ ! -e "$OUT" || -z "$(ls -A "$OUT" 2>/dev/null)" ]] || die "$OUT exists and is not empty"
 umask 077
