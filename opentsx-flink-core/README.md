@@ -102,5 +102,5 @@ Apache License 2.0.
 ## Related Documentation
 
 - [OpenTSx user manual](../docs/user-manual/README.md), chapter 7 (statistics) and chapter 11 (classic analytics)
-- [TASK-003: Flink integration plan (archived)](../EVOLUTION/archive/TASK-003-flink-integration.md)
+- TASK-003: Flink integration plan (archived)
 - [Apache Flink Documentation](https://flink.apache.org/docs/)

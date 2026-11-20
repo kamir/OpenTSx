@@ -155,7 +155,7 @@ Implemented in: `workbench/pairs.ts:157-166`, `wayang/ops/TsxPairXcorr.java:112-
 ## 6. Align A and B
 
 A and B are put on one clock by the rules of `align.vector`
-([11-SMART-TOPIC-PROZESSOR-DEVOPS.md](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), section 5a).
+([11-SMART-TOPIC-PROZESSOR-DEVOPS.md](VECTOR-AND-DAG-SPEC.md), section 5a).
 
 * Clock: `every` when it is greater than 0. Otherwise the larger sampling interval of A and B.
 * Sampling interval: the median spacing of consecutive sample times, element `floor(m/2)` of the `m` sorted spacings.

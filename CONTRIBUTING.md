@@ -1,14 +1,14 @@
 # Contributing to OpenTSx
 
-Thank you for your interest in OpenTSx. Bug reports, documentation fixes, tests and code are welcome.
-By taking part you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md). Security issues are not reported in
+Thank you for your interest in OpenTSx. OpenTSx is maintainer-led: issues are welcome, and pull requests are reviewed
+after the change was agreed in an issue ([GOVERNANCE.md](GOVERNANCE.md)). By taking part you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md). Security issues are not reported in
 public issues; see [SECURITY.md](SECURITY.md).
 
 ## Before you start
 
-* Open an issue for anything larger than a small fix, so the design can be discussed first.
-* The plan, decisions and backlog are in [`EVOLUTION/TASK-011-datamodel-refresher-2026.md`](EVOLUTION/TASK-011-datamodel-refresher-2026.md)
-  (German). The normative data-model specification is
+* Open an issue first and wait for agreement before you write code. A small fix (a typo, a broken link, a one-line
+  bug fix with a test) may come without an issue.
+* The normative data-model specification is
   [`docs/datamodel-2026/04-MODELL-V2-SPEC.md`](docs/datamodel-2026/04-MODELL-V2-SPEC.md).
 * The v2 modules (`opentsx-model`, `-kafka-v2`, `-store-*`, `-windpark`, `-stats`, `-openmetadata`, `-retrieval`,
   `-twin`) are where new work goes. The 2.x modules (`opentsx-data`, `-core`, `-connectors`, `-lg`, `-flink-core`)
@@ -197,8 +197,8 @@ Pull requests are squash-merged when every required check is green.
   for Java and Python (see `opentsx-model` and `python-package/tests/test_model_v2.py`).
 * Update the documentation that your change affects (module README, `docs/user-manual/`) and add an entry to
   [CHANGELOG.md](CHANGELOG.md) under "Unreleased".
-* Everything you write is in English. The design documents in `docs/datamodel-2026/` and `EVOLUTION/` are still in
-  German; a German document you change is translated to English in the same pull request.
+* Everything you write is in English. A German document you change is translated to English in the same pull
+  request.
 
 ## Configuration and data
 

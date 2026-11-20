@@ -602,7 +602,7 @@ CLI site. No bound is established for arbitrary data or other mixed workloads.
 ### D-T13: admit FPGA kernels as Tier 3
 
 Accepted by the owner on 2026-11-20 with all seven points as recommended. Evidence and design are in the study
-[`02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md`](../docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md).
+`02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md`.
 
 **Question.** May the catalog admit operator versions that execute as FPGA kernels on raw sensor data, below the
 Rust runner on an onboard computer?
@@ -610,8 +610,8 @@ Rust runner on an onboard computer?
 **Why it is asked.**
 
 - Concept 09 places FPGA work outside OpenTSx. Its row "Timed Loop, Real-Time, FPGA" reads "not a task of OpenTSx;
-  clock 1 min, supervisory" (`docs/datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md:130`). RMS, peaks and spectra per
-  run belong to the device, which publishes them as `MEASURED` edge metrics (`09:163-165`). Real-time and safety
+  clock 1 min, supervisory". RMS, peaks and spectra per
+  run belong to the device, which publishes them as `MEASURED` edge metrics. Real-time and safety
   stay at the device (`09:174`). D-T13 changes that boundary for data reduction only.
 - Raw rates exceed the downlink. An illustrative 1,000-channel, 1 kHz, 16-bit feed produces about 173 GB per day,
   about 460 times what one S-band ground station downlinks. Per-minute window statistics of the same feed need 144

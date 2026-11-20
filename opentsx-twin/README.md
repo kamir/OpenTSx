@@ -112,7 +112,7 @@ The example plan is [`twin/h2-chain.yaml`](src/main/resources/twin/h2-chain.yaml
 ## House twin (P9.7)
 
 The same method applied to a homeowner: a single-family house in the Erzgebirge (two residents, oil boiler, wood
-stove, no PV, no heat pump). Concept (German): [`08-HAUS-ZWILLING.md`](../docs/datamodel-2026/08-HAUS-ZWILLING.md).
+stove, no PV, no heat pump). Concept (German): `08-HAUS-ZWILLING.md`.
 **All house numbers are invented example assumptions** until the plan is calibrated against real bills.
 
 ```bash
@@ -153,7 +153,7 @@ scale, and it reports hot water as not determined (concept §7.6).
 
 ## Scenario "Boot": Etap 22 as an island energy system
 
-Concept (German): [`10-BOOT-ZWILLING.md`](../docs/datamodel-2026/10-BOOT-ZWILLING.md). A small sailing yacht with a
+Concept (German): `10-BOOT-ZWILLING.md`. A small sailing yacht with a
 portable power station (~1 kWh LiFePO4), 2 × 100 Wp solar and shore power, feeding two laptops, a phone, Starlink,
 a Raspberry Pi and a VHF radio. Plan: [`twin/boot-etap22.yaml`](src/main/resources/twin/boot-etap22.yaml), 15-minute
 steps over a 14-day summer trip. All numbers are assumptions until real data replace them.
