@@ -503,6 +503,9 @@ impl VectorStream {
                 });
                 if let Some(other) = layout.slots.insert(component.clone(), name.clone()) {
                     if other != name {
+                        let other = other
+                            .strip_prefix(&slot(input, ""))
+                            .ok_or("vector layout is missing a series")?;
                         return Err(format!("the series {other} and {id} both give the component \"{component}\" of one vector; choose a key that tells them apart"));
                     }
                 }

@@ -144,14 +144,12 @@ item is stamped at the centre `tc = t0 + k*S + W/2`.
 
 **Browser first, processor later**
 
-- The pair operators run in the workbench. Their OpDef has `multiInput: true` and `maxInputs: 2`
-  (opentsx-saas-frontend/src/workbench/types.ts). They sit in the tab
+- The pair operators run in the workbench. Their OpDef has `multiInput: true` and `inCatalog: false`
+  (opentsx-saas-frontend/src/workbench/types.ts:115 and 119), and `maxInputs: 2`. They sit in the tab
   "Multi-variate Analysis", which the Swing panel has but never filled
   (opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanel.java:368 to 369).
-- The plan export marks them: a pair node gets `experimental: true`, and the DAG writes
-  `# not in the stream operator catalog` next to every operator outside catalog 1
-  (systems/catalogs/tsx-catalog-1.yaml, `CATALOG_1` in opentsx-saas-frontend/src/workbench/ops.ts). Catalog 1 lists
-  `pair.xcorr` and `pair.es`, not `pair.coverage`.
+- The plan export marks them: the DAG writes `# not in the stream operator catalog` next to every operator outside
+  the catalog (opentsx-saas-frontend/src/workbench/flow.ts:713), and a pair node gets `experimental: true`.
 - The processor reads nodes only through `in`, from a sink back to the source
   (opentsx-retrieval/src/main/java/org/opentsx/retrieval/vector/SeriesJob.java:106 to 122). A pair node that no sink
   reads is never looked at. A sink behind a pair node is refused: a series chain must have one input per node

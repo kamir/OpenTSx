@@ -489,6 +489,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   catalog file.
 - The workbench preview of `align.vector` refuses two series that give the same component of one vector, with the
   rule and message of the vector processor, instead of averaging them into one value that every deployment refuses.
+  "Create a vector of the loaded series" names components as the operator does when it suggests a key, so two
+  channels with the same last metric segment, such as `wind.rotor.speed` and `wind.generator.speed`, keep one vector
+  per series. The `tsx-runner` refusal names both series by their ids, as the Java processor does.
 
 - Concept 20 section 6.1 and the TASK-020 B1 notes list the signed `tsx-runner`
   modes that exist. With the B3 site configuration, `agent`, `conform` and `run`

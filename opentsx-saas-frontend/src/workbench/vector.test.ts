@@ -369,6 +369,15 @@ describe('flow with a vector node', () => {
     expect(suggestKey(timeBucket('b', [series('x', [0], [1]), series('y', [0], [1])]))).toBe('series');
   });
 
+  it('suggests no key whose vector the operator refuses: rotor and generator speed both give the component speed', () => {
+    const s = (id: string, metric: string, turbine: string) => series(id, [0], [1], { metric, tags: { park: 'p', turbine } });
+    const speeds = timeBucket('speeds', [s('r1', 'wind.rotor.speed', 'T01'), s('g1', 'wind.generator.speed', 'T01'), s('r2', 'wind.rotor.speed', 'T02'), s('g2', 'wind.generator.speed', 'T02')]);
+    const key = suggestKey(speeds);
+    expect(align(speeds, [], { key }).vector?.components).toEqual(['speeds']);
+    expect(key).toBe('series');
+    expect(() => align(speeds, [], { key: 'turbine' })).toThrow('the series g1 and r1 both give the component "speed" of one vector; choose a key that tells them apart');
+  });
+
   it('names the further inputs in the descriptor and the Java export', () => {
     state().addInput(v, z);
     const pfd = JSON.parse(toPfdJson(state(), v));

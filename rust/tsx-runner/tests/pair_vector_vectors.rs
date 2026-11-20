@@ -439,6 +439,29 @@ fn vector_restore_and_invalid_blocks_leave_state_unchanged() {
 }
 
 #[test]
+fn vector_refuses_two_series_that_give_one_component_with_the_java_message() {
+    let p = VectorParams::parse(&json!({"every":60,"key":"all"})).unwrap();
+    let expected = vec![("x".into(), BTreeSet::from(["a".into(), "b".into()]))];
+    let mut s = VectorStream::new(expected, p, 100).unwrap();
+    let tags = |turbine: &str| BTreeMap::from([("turbine".to_string(), turbine.to_string())]);
+    s.add(
+        "x",
+        "a",
+        "wind.met.wind_speed",
+        &tags("T01"),
+        &[0],
+        &[1.0],
+        60_000_000,
+    )
+    .unwrap();
+    assert_eq!(
+        s.add("x", "b", "wind.met.wind_speed", &tags("T02"), &[0], &[2.0], 60_000_000)
+            .unwrap_err(),
+        "the series a and b both give the component \"wind_speed\" of one vector; choose a key that tells them apart"
+    );
+}
+
+#[test]
 fn vector_wire_record_uses_the_java_key_and_timestamp_contract() {
     use tsx_runner::pairs::{vector_json, vector_key, VectorPoint};
     let point = VectorPoint {

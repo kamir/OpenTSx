@@ -258,7 +258,7 @@ export function suggestKey(bucket: Bucket): string {
     const byValue = new Map<string, Set<string>>();
     for (const s of bucket.series) {
       const names = byValue.get(s.tags![key]) ?? new Set<string>();
-      names.add(s.metric ?? s.label);
+      names.add(seriesName(s));
       byValue.set(s.tags![key], names);
     }
     // every series of a group must be another channel, or two of them would claim the same component
