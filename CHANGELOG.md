@@ -67,6 +67,20 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `lascaris-space/`: home of the OpenTSx components for in-orbit computation on LASCARIS for Space, with the
+  components it holds, the modules that stay responsible for the runner, Wayang and the Workbench, and the contracts
+  it keeps. It contains no code yet. The README section "Take time series into orbit with LASCARIS for Space" states
+  the direction: series from orbit in the ground Workspace, identity by series key, provenance to the declared source,
+  and what provenance and signed downlink chunks do and do not guarantee for training data.
+- Planned task [`EVOLUTION/TASK-022-situation-center.md`](EVOLUTION/TASK-022-situation-center.md): in-orbit nodes
+  with a KafScale and `tsx-runner` sidecar, the ground station as hub and discovery point, a component state model
+  whose liveness follows predicted passes, a Workbench situation page, and later a decentralized registry and
+  cooperating situation centers. Phase L0 is an orbit profile in which a failed status report no longer stops a plan.
+- Planned task [`EVOLUTION/TASK-021-orbit-testbed.md`](EVOLUTION/TASK-021-orbit-testbed.md): a homelab testbed with a
+  Jetson Nano as onboard computer and a Synology NAS as ground station, a satellite simulator writing an onboard
+  ring buffer, an emulated space-ground link driven by computed passes, and phases P0 to P6 up to the D-T13 CPU
+  fallback path. Phase P0 prepares the board with the Jetson runbook and board tools of D-T14. No implementation
+  yet.
 - Shared execution-assignment contract: a source or fragment DAG text may have 524,288 UTF-8 bytes (was 32,768)
   and the envelope 2,162,688 bytes (was 65,536), equally in Java `ExecutionAssignments`, Rust `tsx-contracts`
   and the schema. A source inventory of 16,384 series ids fits, which B4.2 needs at 10,000 series. Runtime
@@ -459,6 +473,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   the design of pair windows for multivariate analysis.
 
 ### Removed
+
+- Files that `.gitignore` excludes are no longer tracked: `config/private/ccloud.props` (the credentials in it
+  no longer exist), `.idea/workspace.xml` and every `.DS_Store`. The unreachable commented block after `exit` in
+  `bin/010_build.sh` is gone. `tools/test_repo_hygiene.py` fails if such files are tracked again.
 
 - `TimeSeriesAnalysisJob`, the 2.x Flink example job. `StatsJob` is the v2 Flink job. `TimeSeriesAggregateFunction`
   stays, because the PFD runtime `DynamicTopologyJob` uses it.
