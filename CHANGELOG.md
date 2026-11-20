@@ -15,6 +15,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 - Execute Rust CLI prefix fixtures through the installed shell without temporary files. Regressions rerun the exact
   fixture with an unusable temporary-directory path and retain runner-prefix and spaced-argument checks.
+- Reuse separate verified caches for locked Python dependencies, the application
+  wheel and the Workbench frontend. Record their input keys with current source
+  provenance; execute package tests on every test invocation.
 - Pin all Maven CI jobs to checksum-verified Maven 3.9.8 and check the existing download retry policy against its
   bundled HTTP transport before builds. Retain Java build and classpath log files in Wayang Compose artifacts
   after failed builds.

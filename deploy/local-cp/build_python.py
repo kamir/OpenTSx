@@ -10,6 +10,8 @@ import sys
 import zipfile
 from email.parser import BytesParser
 
+from workbench import PYTHON_EXCLUDES
+
 source, output = Path("/source"), Path("/out")
 subprocess.run(
     [
@@ -29,9 +31,7 @@ subprocess.run(
 shutil.copytree(
     source / "python-package",
     "/tmp/package",
-    ignore=shutil.ignore_patterns(
-        "__pycache__", "*.egg-info", "build", "dist", ".pytest_cache"
-    ),
+    ignore=shutil.ignore_patterns(*PYTHON_EXCLUDES),
 )
 subprocess.run(
     [
