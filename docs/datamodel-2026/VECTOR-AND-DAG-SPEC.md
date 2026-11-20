@@ -404,7 +404,7 @@ This is what the vector processor holds for its two kinds of sinks: vectors (`op
 
 Implemented in: `vector/VectorStream.java:185-194,291-308`, `clean/SeriesStream.java:31-35,81-120,146-156`,
 `clean/CleanChain.java:24-25,375`, `vector/VectorJson.java:40-66`, `vector/VectorStoreBridge.java:26-34`,
-`kafka/Patience.java:69-96`, `workbench/deployments.ts:75-106`, `vector/VectorProcessor.java:258-294`,
+`kafka/Patience.java:69-96`, `workbench/deployments.ts:75-104`, `vector/VectorProcessor.java:258-294`,
 `workbench/vector.test.ts:197-224`, `workbench/clean.test.ts:22-57`,
 `opentsx-retrieval/src/test/java/org/opentsx/retrieval/clean/CleanChainTest.java:91-126`,
 `vector-tests/VectorStreamTest.java:202-258`, `opentsx-model/src/main/java/org/opentsx/model/Episodes.java:204`.
