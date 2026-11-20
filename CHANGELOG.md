@@ -51,7 +51,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `lascaris-space/`: home of the OpenTSx components for in-orbit computation on LASCARIS for Space, with the
   components it holds, the modules that stay responsible for the runner, Wayang and the Workbench, and the contracts
   it keeps. It contains no code yet. The README section "Take time series into orbit with LASCARIS for Space" states
-  the direction: series from orbit in the ground Workspace, identity by series key, provenance to the declared source.
+  the direction: series from orbit in the ground Workspace, identity by series key, provenance to the declared source,
+  and what provenance and signed downlink chunks do and do not guarantee for training data.
 - Planned task [`EVOLUTION/TASK-022-situation-center.md`](EVOLUTION/TASK-022-situation-center.md): in-orbit nodes
   with a KafScale and `tsx-runner` sidecar, the ground station as hub and discovery point, a component state model
   whose liveness follows predicted passes, a Workbench situation page, and later a decentralized registry and

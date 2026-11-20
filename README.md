@@ -163,6 +163,14 @@ records where values come from; it does not prove that they are correct. In
 orbit, raw samples stay in the onboard ring buffer only for its retention, and
 the ground receives reduced episodes.
 
+For training data this means: every value is tied to a declared source and a
+processing chain. TASK-021 plans signed downlink chunks, which prove that an
+episode is unchanged since the onboard runner signed it; the signature covers
+the path from the runner to the ground, not the path from the sensor to the
+runner. This makes training data traceable and reproducible, not automatically
+correct. Calibration, data quality, time correlation and representativeness
+need their own evidence.
+
 Complex algorithms run on the onboard CPU or on the ground. FPGA kernels reduce
 high-rate raw data near the sensor; owner decision D-T13 in
 [TASK-020](EVOLUTION/TASK-020-wayang-ts-operators.md) admits them behind the
