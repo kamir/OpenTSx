@@ -66,26 +66,13 @@ directory with that file at `/etc/opentsx/config/` when you start the container.
 [`src/main/docker/core-tool-image/README.md`](src/main/docker/core-tool-image/README.md) describes a Dockerfile for the
 same jar with Xvfb and x11vnc.
 
-### Prepare the ACLs on a Confluent Cloud cluster
+### Grant the ACLs the latency tools need
 
-`bin/bootstrap_LatencyProbe_CHECK.sh` creates the ACLs the latency tools need: CREATE, READ, WRITE, ALTER and DELETE on
-the topics with the prefix `OpenTSx_`, and READ on the consumer group `KPING-Consumer`, for one service account. You
-need the `ccloud` CLI, logged in with `ccloud login --save`. Export the ids of your environment, cluster and service
-account, then run the script from `bin/`:
-
-```bash
-cd opentsx-lg/bin
-export CCLOUDENV=<environment-id>
-export CLUSTER=<cluster-id>
-export SERVICE_ACCOUNT=<service-account-id>
-./bootstrap_LatencyProbe_CHECK.sh
-```
-
-Without one of the three variables, or with an empty one, the script calls no `ccloud` command and exits with status 2
-and one line per missing variable, for example
-`CLUSTER: missing; export the id of your Confluent Cloud cluster before you run the script`. The script stops with exit
-status 1 at the first `ccloud` command that fails, so it creates no ACL when the environment or the cluster cannot be
-selected.
+On a cluster that checks ACLs, the principal of the latency tools needs CREATE, READ, WRITE, ALTER and DELETE on the
+topics with the prefix `OpenTSx_`, and READ on the consumer group `KPING-Consumer`. Create these ACLs with the tools of
+your Kafka platform. A topic of the topic list without the prefix, such as `latency_benchmark_request` and
+`latency_benchmark_response` in `../config/topiclist.def`, the list of step (3), needs ACLs of its own, and so does the
+consumer group `LatencyTestEventConsumer` of `RequestResponseAnalysisConsumer`.
 
 ### Keep credentials out of the repository
 
@@ -95,8 +82,10 @@ A client profile named `ccloud.props` anywhere in this module is git-ignored. So
 fails when a `ccloud.props` file or the password file is tracked, for example after `git add -f`.
 
 `src/main/mqtt-example/influxdb-grafana/__run_container_01.sh` starts the container `docker-influxdb-grafana` and sets
-the Grafana admin password inside it to the value of `GRAFANA_ADMIN_PASSWORD`. Without the variable it starts no
-container and exits with status 2 and
+the Grafana admin password inside it to the value of `GRAFANA_ADMIN_PASSWORD`. It passes the password on standard input
+to `grafana-cli admin reset-admin-password --password-from-stdin` (Grafana 7.2.0 in the pinned image), so the password
+is not in the arguments of `docker exec` or `grafana-cli`. Without the variable it starts no container and exits with
+status 2 and
 `GRAFANA_ADMIN_PASSWORD: missing; export the Grafana admin password to set before you run the script`.
 
 ### Versions in the MQTT example

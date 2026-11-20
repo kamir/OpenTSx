@@ -31,6 +31,8 @@ def test_a_cloud_host_in_a_profile_fails(tmp_path, capsys):
     assert guard.main(tmp_path, paths) == 1
     out = capsys.readouterr().out
     assert f'opentsx-lg/config/cluster.props:1: bootstrap.servers: "{CLOUD_HOST}"' in out
+    assert f'opentsx-lg/config/cluster.props:1: "{CLOUD_HOST}" is a real host' in out
+    assert "checked 1 tracked files, 2 findings" in out
 
 
 def test_a_private_address_in_an_env_file_fails(tmp_path, capsys):
@@ -178,5 +180,6 @@ def test_resource_id_placeholders_and_words_with_a_prefix_pass(tmp_path, capsys)
         "docs/guide.md": "CLUSTER=lkc-xxxxx\nbootstrap.servers=pkc-xxxxx.us-east-1.aws.confluent.cloud:9092\n",
         "docs/datamodel-2026/testvectors/conf.v1.json": '{"name": "env-blank-is-unset"}\n',
         "deploy/region.yaml": "region: sa-east-1\nname: my-env-a1b2c3d\nkey: SA-ABC123\n",
+        "deploy/labels.yaml": "tag: lkc-ab12cXYZ\nuser: sa-ab12cd_suffix\n",
     })
     assert guard.main(tmp_path, paths) == 0, capsys.readouterr().out

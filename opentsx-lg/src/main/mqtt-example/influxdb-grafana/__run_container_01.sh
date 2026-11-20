@@ -37,4 +37,5 @@ docker run -d \
 
 
 docker container ls
-docker exec "$CONTAINER" grafana-cli admin reset-admin-password "$GRAFANA_ADMIN_PASSWORD"
+printf '%s\n' "$GRAFANA_ADMIN_PASSWORD" |
+  docker exec -i "$CONTAINER" grafana-cli admin reset-admin-password --password-from-stdin

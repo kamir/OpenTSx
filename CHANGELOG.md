@@ -1067,6 +1067,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   beta to chart. This is a breaking change.
 - `opentsx-core`: `TSBucket.getRecordID(String)` and `TSBucket.resetCounter()`, the static record counter that only
   `loadFromSequenceFile` used. This is a breaking change.
+- `opentsx-lg/bin/bootstrap_LatencyProbe_CHECK.sh` is deleted. It held the ids of one real Confluent Cloud
+  environment, cluster and service account, and it needed the `ccloud` CLI, which Confluent retired and which can no
+  longer log in. The opentsx-lg README lists the ACLs the latency tools need (CREATE, READ, WRITE, ALTER and DELETE on
+  the topics with the prefix `OpenTSx_`, READ on the consumer group `KPING-Consumer`) for you to create with the tools
+  of your Kafka platform.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -2029,9 +2034,6 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   527040 rows, such as one row per minute for 366 days`. It stops reading the file at the first data row over the
   bound, so a file far over the bound exits with 2 instead of running out of memory, and a calibrated run at the bound
   fits the 1536Mi boat Job. `BoatData.MAX_ROWS` holds the bound.
-- The Grafana script of the opentsx-lg MQTT example (`influxdb-grafana/__run_container_01.sh`) runs its container
-  under the name `docker-influxdb-grafana`, sets the admin password inside that container to `GRAFANA_ADMIN_PASSWORD`
-  instead of `admin`, and exits 2 without the variable.
 - The opentsx-lg Docker profile and `src/main/docker/core-tool-image/Dockerfile` build on the pinned base image
   `eclipse-temurin:21.0.8_9-jre-noble` instead of the unpinned `confluentinc/cp-base`, whose newest tag carries Java 8
   and cannot run the Java 17 jar.
@@ -2168,6 +2170,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   Before, it held two interleaved point sets, and the scaled one sat at i / scale.
 - `opentsx-core`: the header that `EntropieTest.main` prints names the three tab-separated columns of its rows:
   `length`, `bins` and `cc`. The MI column, which was always 0.0, and its series in the chart are removed.
+- The Grafana script of the opentsx-lg MQTT example (`influxdb-grafana/__run_container_01.sh`) sets the admin password
+  inside its container `docker-influxdb-grafana` from `GRAFANA_ADMIN_PASSWORD` on standard input (`grafana-cli admin
+  reset-admin-password --password-from-stdin`) and exits 2 without the variable, where it opened a shell in a
+  hard-coded container id and then ran `grafana-cli admin reset-admin-password admin` on the host.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
@@ -2252,12 +2258,6 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `02_run_mqtt_broker.sh` mounts it.
 - `.gitignore` ignores a file named `ccloud.props` anywhere in the repository, so a filled-in client profile such as
   `config/ccloud.props` is not committed.
-- `opentsx-lg/bin/bootstrap_LatencyProbe_CHECK.sh` takes the Confluent Cloud ids from `CCLOUDENV`, `CLUSTER` and
-  `SERVICE_ACCOUNT` instead of holding the ids of one real environment, cluster and service account. Without one of
-  them, or with an empty one, it calls no `ccloud` command and exits 2 with `<VARIABLE>: missing; export the id of
-  your Confluent Cloud <environment|cluster|service account> before you run the script`. It stops with exit status 1
-  at the first `ccloud` command that fails, so it creates no ACL when the environment or the cluster cannot be
-  selected.
 - `tools/check_tracked_config.py` fails on a Confluent Cloud resource id in a tracked text file (`lkc-`, `pkc-`,
   `psrc-`, `lsrc-`, `env-` or `sa-` and 5 or more lower-case letters or digits with at least one digit) with
   `<path>:<line>: <id>: looks like a Confluent Cloud resource id; write a placeholder such as lkc-xxxxx`.
