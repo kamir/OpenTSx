@@ -3,7 +3,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { DataPreview, DiagnosticBench, RecipeNotebook } from "./DeviceViews";
 import { defaultParams, OP_BY_ID } from "./ops";
 import { prepareDiagnostic } from "./DeviceDiagnostics";
-import { useFlow } from "./flow";
+import { useFlow, WORKBENCH_KIND } from "./flow";
 import type { Bucket } from "./types";
 
 function fixture(count = 32): Bucket {
@@ -211,6 +211,28 @@ describe("data and recipe views", () => {
     expect(
       within(table).getByRole("columnheader", { name: "Relative time [s]" }),
     ).toBeInTheDocument();
+  });
+
+  it("shows the recipe of a restored flow with an unknown vector fill", () => {
+    const definition = {
+      kind: WORKBENCH_KIND,
+      nodes: [
+        { id: "source", op: "source", label: "Input", params: {}, input: null },
+        {
+          id: "n1",
+          op: "align.vector",
+          label: "Vector",
+          params: { ...defaultParams(OP_BY_ID["align.vector"]), fill: "asof" },
+          input: "source",
+          sinkTopic: "tsx.demo.smart.vector.vectors.v1",
+        },
+      ],
+    };
+    expect(useFlow.getState().restore(definition, 7)).toBe(true);
+    render(
+      <RecipeNotebook bucket={null} onModelling={vi.fn()} onSnapshot={vi.fn()} />,
+    );
+    expect(screen.getByText(/agg: MEAN, fill: asof, emit: any/)).toBeInTheDocument();
   });
 
   it("opens shared modelling and snapshot workflows without fitting or changing the graph", () => {

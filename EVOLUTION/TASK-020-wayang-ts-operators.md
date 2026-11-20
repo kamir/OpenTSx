@@ -234,9 +234,10 @@ Status of A3.2 on 2026-11-16, JDK 21: `TsxPairVectorsTest` runs all 5 shared
 (peak of largest magnitude, as `xcorr.ts`), the same 5 with B in a later
 increment, a repeated delivery, and `intersect` pairing (12 tests, 0
 failures). An episode waits in `TsxState` until every series of the other
-input has passed its end. One difference to the workbench: without `every`
-the clock is the larger sampling interval of the two paired episodes, not of
-the two whole series, because a continuing input has no whole series.
+input has passed its end. Without `every` the clock is the larger sampling
+interval of the two paired episodes, because a continuing input has no whole
+series. The workbench and the Rust runner take the same clock; the timestamped
+cases of `pair-clock.v1.json` check it.
 
 
 | # | Criterion | Proof | Data | Pass |

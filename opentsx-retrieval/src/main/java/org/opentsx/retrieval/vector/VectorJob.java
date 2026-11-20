@@ -122,8 +122,12 @@ public record VectorJob(String dag, String topic, String name, List<String> seri
 
     private static VectorAligner.Params params(String node, JsonNode p) {
         try {
+            String fill = p.path("fill").asText("none");
+            if (!fill.equals("none") && !fill.equals("as-of")) {
+                throw new IllegalArgumentException("vector fill must be none or as-of");
+            }
             return new VectorAligner.Params(Duration.parse(p.path("every").asText("")), p.path("key").asText("series"),
-                    VectorAligner.Agg.valueOf(p.path("agg").asText("MEAN")), "as-of".equals(p.path("fill").asText()),
+                    VectorAligner.Agg.valueOf(p.path("agg").asText("MEAN")), fill.equals("as-of"),
                     p.hasNonNull("maxAge") ? Duration.parse(p.path("maxAge").asText()) : null,
                     "complete".equals(p.path("emit").asText()));
         } catch (java.time.format.DateTimeParseException e) {

@@ -161,7 +161,7 @@ implementations by `tools/java_operator_vectors.py`.
 | `segment.threshold` | `series` → `series` | `direction`, `enter`, `exit` (hysteresis: `exit` not beyond `enter`), `pre`, `post`, `minDuration`, `maxDuration` (`Segmenter.java:92-95`) | keyed (series) | `exact` for segment counts, `sum` | `segment-threshold.v1.json` | yes | yes |
 | `segment.extremum` | `series` → `series` | `feature`, `prominence` ≥ 0, `window`, `distance`, `pre`, `post` (`Segmenter.java:69-72`) | keyed (series) | `exact` for segment counts, `sum` | `segment-extremum.v1.json` | yes | yes |
 | `sax.word` | `series` → `series` (fills `EpisodeSummary.sax`) | `w` ≥ 1, `a` in the range of `Sax.breakpoints` (`Sax.java:16`) | none | `none` | `sax-word.v1.json` | yes | yes |
-| `pair.xcorr` | `series`, `series` → `series` | `lags` integer in [0, 1073741823] (Java array bound); pair settings `pairing`, `window`, `step`, `every`, `agg`, `maxAge`, `minCoverage` (`pairs.ts:78-88`) | windowed | `none` | `pair-xcorr.v1.json` | yes | short windows only (S1.8) |
+| `pair.xcorr` | `series`, `series` → `series` | `lags` integer in [0, 1073741823] (Java array bound); pair settings `pairing`, `window`, `step`, `every`, `agg`, `fill` (`none` or `as-of`; any other value is refused with `pair fill must be none or as-of`), `maxAge`, `minCoverage` (`pairs.ts:75-91`) | windowed | `none` | `pair-xcorr.v1.json` | yes | short windows only (S1.8) |
 | `pair.es` | `series`, `series` → `series` | finite `sigma`; `tauMax` ≥ 0 seconds, zero uncapped; `shuffles` integer in [1, 2147483647]; finite integer `seed`; shared pair settings (`es.ts`; `pair-es.v1.json`) | windowed | `none` | `pair-es.v1.json` | yes | no |
 | `dq.result` | `stats` → `events` | `checks` ⊆ `DataQuality.Check` values, expectation `min`, `max`, `expectedInterval` (`DataQuality.java:29-38`) | none | `exact` for counts per check and status, `sum` | `dq-result.v1.json` | yes | yes |
 
@@ -173,6 +173,10 @@ Catalog pair descriptions use text for `window`: `episode` or a positive
 decimal width in seconds, matching workbench text-field serialization.
 The direct pair APIs also accept numeric widths. `step` and `every` default
 to zero, selecting the window width and inferred sample clock respectively.
+The inferred clock of a pair range is the larger sampling interval of its two
+episodes, the median spacing of their sample times in epoch microseconds
+divided by 1e6, in the workbench, Wayang and the Rust runner
+(`pair-clock.v1.json`).
 
 `TsxStreamEqualsBatchTest` covers 65 shared numerical cases in chunks of 1,
 7 and all input records, in both series orders: 61 native cases and four

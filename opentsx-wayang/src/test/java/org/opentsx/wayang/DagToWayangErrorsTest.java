@@ -98,6 +98,7 @@ class DagToWayangErrorsTest {
     @Test
     void message16RejectsAnUnknownEnumValue() {
         refused("dq.checks", "{min: 0, max: 10, mode: other}", "node n1: parameter mode must be one of [gap, clip]");
+        refused("align.vector", "{every: PT1M, fill: asof}", "node n1: parameter fill must be one of [none, as-of]");
     }
 
     @Test

@@ -1,6 +1,7 @@
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
+use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use tsx_runner::model::{self, Episode, Provenance, SeriesKey, TimeEncoding};
 use tsx_runner::pairs::{
     cross_correlation, lags_of, peak_of, xcorr_windows, PairParams, PairStream, VectorParams,
@@ -168,6 +169,25 @@ fn vector_shared_case_5() {
 #[test]
 fn vector_shared_case_6() {
     vector_case(5);
+}
+
+#[test]
+fn vector_fill_other_than_none_or_as_of_is_refused() {
+    assert_eq!(
+        VectorParams::parse(&json!({"every":60,"fill":"asof"})).unwrap_err(),
+        "vector fill must be none or as-of"
+    );
+    assert!(!VectorParams::parse(&json!({"every":60})).unwrap().as_of);
+    assert!(
+        !VectorParams::parse(&json!({"every":60,"fill":null}))
+            .unwrap()
+            .as_of
+    );
+    assert!(
+        VectorParams::parse(&json!({"every":60,"fill":"as-of"}))
+            .unwrap()
+            .as_of
+    );
 }
 
 fn xcorr_case(index: usize) {
@@ -624,5 +644,145 @@ fn all_five_xcorr_vectors_match_in_six_atomic_episode_chunk_and_series_orders() 
                 );
             }
         }
+    }
+}
+
+/// An episode of pair-clock.v1.json, given in the JSON form of GET /v1/episodes.
+fn clock_episode(e: &Value) -> Episode {
+    let micros = |key: &str| {
+        let instant = OffsetDateTime::parse(e[key].as_str().unwrap(), &Rfc3339).unwrap();
+        i64::try_from(instant.unix_timestamp_nanos() / 1000).unwrap()
+    };
+    let times: Vec<i64> = e["timestampsMicros"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|t| t.as_i64().unwrap())
+        .collect();
+    let values = values(&e["values"]);
+    let interval = e["intervalMicros"].as_i64();
+    let mut deltas = Vec::new();
+    let mut previous = 0;
+    for i in 1..times.len() {
+        let delta = times[i] - times[i - 1];
+        let value = if i == 1 { delta } else { delta - previous };
+        let mut encoded = ((value << 1) ^ (value >> 63)) as u64;
+        while encoded >= 128 {
+            deltas.push(encoded as u8 | 128);
+            encoded >>= 7;
+        }
+        deltas.push(encoded as u8);
+        previous = delta;
+    }
+    let tags = BTreeMap::new();
+    let metric = e["metric"].as_str().unwrap().to_owned();
+    let episode = Episode {
+        episode_id: e["episodeId"].as_str().unwrap().into(),
+        series: SeriesKey {
+            series_id: model::series_id(&metric, &tags).unwrap(),
+            metric,
+            tags,
+            unit: None,
+        },
+        t_start: micros("tStart"),
+        t_end: micros("tEnd"),
+        count: values.len() as i32,
+        time_encoding: if interval.is_some() {
+            TimeEncoding::Regular
+        } else {
+            TimeEncoding::IrregularDelta
+        },
+        interval_micros: interval,
+        time_deltas: interval.is_none().then_some(deltas),
+        summary: model::summary(&values),
+        values,
+        quality: None,
+        segmentation: None,
+        labels: BTreeMap::new(),
+        bucket_id: None,
+        revision: 0,
+        provenance: Provenance {
+            source: "test".into(),
+            producer: "test".into(),
+            created_at: 1,
+            pipeline: None,
+            parent_episode_id: None,
+        },
+    };
+    assert_eq!(episode.timestamps().unwrap(), times);
+    episode
+}
+
+#[test]
+fn default_clock_vectors_take_the_clock_of_each_episode_pair() {
+    let all = vectors("pair-clock.v1.json");
+    assert_eq!(all["schema"], "opentsx.testvectors.pair-clock.v1");
+    let cases = all["cases"].as_array().unwrap();
+    assert_eq!(cases.len(), 3);
+    for c in cases {
+        let episodes = |side: &str| -> Vec<Episode> {
+            c[side]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(clock_episode)
+                .collect()
+        };
+        let (a, b) = (episodes("a"), episodes("b"));
+        let mut stream = PairStream::new(
+            "xc".into(),
+            PairParams::parse(&c["params"]).unwrap(),
+            BTreeSet::from([a[0].series.series_id.clone()]),
+            BTreeSet::from([b[0].series.series_id.clone()]),
+            false,
+            "c".repeat(64),
+            1,
+            100_000,
+            100_000,
+        )
+        .unwrap();
+        let mut out = Vec::new();
+        for e in &a {
+            out.extend(stream.add("a", e).unwrap());
+        }
+        for e in &b {
+            out.extend(stream.add("b", e).unwrap());
+        }
+        let ranges = c["ranges"].as_array().unwrap();
+        assert_eq!(out.len(), 3 * ranges.len(), "{}", c["name"]);
+        for e in &out {
+            let r = ranges
+                .iter()
+                .find(|r| {
+                    r["a"] == e.labels["pair.a"].as_str() && r["b"] == e.labels["pair.b"].as_str()
+                })
+                .unwrap();
+            let expected = &r["pair.xcorr"];
+            let field = e.series.metric.strip_prefix("pair.xcorr.").unwrap();
+            assert_eq!(
+                e.timestamps().unwrap(),
+                vec![r["centreMicros"].as_i64().unwrap()]
+            );
+            assert_eq!(
+                e.quality.as_deref(),
+                Some(&[expected["quality"].as_u64().unwrap() as u8][..])
+            );
+            close(e.values[0], &expected[field]);
+        }
+    }
+}
+
+#[test]
+fn default_clock_vectors_refuse_an_unknown_fill() {
+    let all = vectors("pair-clock.v1.json");
+    let refusals = all["refusals"].as_array().unwrap();
+    assert_eq!(refusals.len(), 2);
+    for r in refusals {
+        assert_eq!(
+            PairParams::parse(&r["params"]).unwrap_err(),
+            r["error"].as_str().unwrap(),
+            "{}",
+            r["name"]
+        );
     }
 }
