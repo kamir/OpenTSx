@@ -192,6 +192,10 @@ Settings: `RETRIEVAL_URL` (the retrieval server; unset means no deployments), `D
 (`superuser`, the default: administrators only; `user`: every account). Sign-up is open, so `user` lets everyone
 who can register deploy and stop.
 
+`DAG_RUN_ROLE` is the one setting for every run the backend forwards. It also decides who may run the demo
+generators (`POST /api/v1/systems/<system>/generate`) and Wayang deployments (`/api/v1/dags/wayang-rust`): with
+`user`, every account may do all three.
+
 See full API documentation at: `/docs` (Swagger UI)
 
 ## Database Setup

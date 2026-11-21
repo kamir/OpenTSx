@@ -12,6 +12,15 @@ entries before 3.0.0 are grouped by date.
 
 ### Changed
 
+- Breaking for operators: the retrieval server does not start with `--kafscale` and `--dag-runs true` without a run
+  token. Set `--dag-run-token <token>` or `OPENTSX_DAG_RUN_TOKEN`; a blank value counts as none. The server fails with
+  `--dag-runs true needs a run token: set OPENTSX_DAG_RUN_TOKEN or --dag-run-token` instead of printing
+  `dag deployments: OPEN` and accepting `POST /v1/dags/deploy`, `/v1/dags/stop` and `/v1/systems/<id>/generate` from
+  every caller. The k3s setup is unchanged: `20-configure.sh` generates the token for `RETRIEVAL_DAG_RUNS=true`. A
+  `RetrievalServer` built with `Dags` and `dagWrites` true but without a token throws an `IllegalArgumentException`;
+  `generatedSeries` on a server without a token throws an `IllegalStateException`. The startup line names DAG
+  deployments, stops and generated series. The operator docs, the backend README and SYSTEM-DOCUMENT-SPEC 7.3 say
+  that `DAG_RUN_ROLE=user` (`SAAS_DAG_RUN_ROLE` in k3s) also opens demo generators and Wayang runs to every account.
 - Documentation, comments and example files describe the current code. Chapter 15 drops the pair windows from the
   open items, links PAIR-WINDOWS-SPEC from P8 and lists the twin variants T and L as proofs of concept. The worked
   example of chapter 16 counts twelve components and sixteen signals and names the five flows that run. The `maxAge`

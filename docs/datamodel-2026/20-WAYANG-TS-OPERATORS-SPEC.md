@@ -241,7 +241,8 @@ That standalone replay fixture does not exercise the remote Wayang/UI path in S1
 The implemented local orchestration path uses `opentsx.dag.v2`, `opentsx.local-rollout.v1`, the shared assignment
 envelope and S1.9 requests. It accepts one to three complete source topics, one episode sink and only the S1.9
 cleaning subset. The UI queries target capabilities and submits explicit `flowId` and exact UTF-8 `dagText` through
-the authenticated backend. Administrator permission is required. Existing continuous deployment routes are unchanged.
+the authenticated backend. The backend admits administrators, or every signed-in user when `DAG_RUN_ROLE` is `user`,
+the setting that also admits DAG deployments and demo generators. Existing continuous deployment routes are unchanged.
 
 | Boundary | Required local behavior and implementation |
 | --- | --- |

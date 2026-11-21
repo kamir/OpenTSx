@@ -85,7 +85,7 @@ do not check that the record types of connected nodes match.
 The retrieval server answers a refused document with HTTP 400 and `{"error": "<message>"}`.
 
 Implemented in: `vector/DagPlan.java:17-132`, `vector/VectorProcessor.java:220-230,280-293`,
-`server/KafScaleFeed.java:246-249`, `server/RetrievalServer.java:219-220,261-274`,
+`server/KafScaleFeed.java:246-249`, `server/RetrievalServer.java:223-224,262-275`,
 `vector/VectorProcessorApp.java:54-58`.
 
 ### 1.3 Document hash
@@ -321,7 +321,7 @@ Deploying and stopping write a record to the control topic. There are three ways
 | Way | Who | How |
 |---|---|---|
 | Workbench, tab "Smart Topic", buttons Deploy and Stop | Signed-in administrators. Every signed-in user when the SaaS backend has `DAG_RUN_ROLE=user`. | The SaaS backend checks the account at `POST /api/v1/dags/deploy` (body: the document as YAML) and `POST /api/v1/dags/stop?name=<dag>`. It forwards to the retrieval server with the run token of the installation and the e-mail address of the account in `X-OpenTSx-By`. |
-| Retrieval server: `POST /v1/dags/deploy` (body: the document as YAML, at most 262144 bytes) and `POST /v1/dags/stop?name=<dag>` | Callers with the run token in the header `X-OpenTSx-Run-Token` when the server has a token (`--dag-run-token` or `OPENTSX_DAG_RUN_TOKEN`). Anyone who reaches the port when it has none. | The routes exist only with `--kafscale` and `--dag-runs true`; otherwise the answer is 404. A missing or wrong token gets 401. The server checks the document ([1.2](#12-checks-before-a-deployment)) and writes the record. |
+| Retrieval server: `POST /v1/dags/deploy` (body: the document as YAML, at most 262144 bytes) and `POST /v1/dags/stop?name=<dag>` | Callers with the run token of the server in the header `X-OpenTSx-Run-Token`. The token comes from `--dag-run-token` or `OPENTSX_DAG_RUN_TOKEN`. With `--dag-runs true` and no token, or a blank one, the server does not start. | The routes exist only with `--kafscale` and `--dag-runs true`; otherwise the answer is 404. A missing or wrong token gets 401. The server checks the document ([1.2](#12-checks-before-a-deployment)) and writes the record. |
 | `opentsx vectors deploy --kafscale <proxy> --domain <domain> --dag <file> [--by <who>]` and `opentsx vectors stop --kafscale <proxy> --domain <domain> --name <dag> [--by <who>]` | Whoever reaches the KafScale proxy. | The command checks the document and writes the record. |
 
 `<proxy>` is the bootstrap address of the KafScale proxy. `<domain>` defaults to `wind`. `<file>` is the DAG
@@ -332,7 +332,7 @@ state directory `<dir>` defaults to `vector-state`. Exactly one processor runs p
 the caller. It does not prove who the caller is.
 
 Implemented in: `opentsx-saas-backend/app/api/dags.py:32-113`, `opentsx-saas-backend/app/core/config.py:59`,
-`server/RetrievalServer.java:100-102,186-198,242-274,580-629`, `server/KafScaleFeed.java:246-289`,
+`server/RetrievalServer.java:100-102,123-126,190-202,246-275,584-634`, `server/KafScaleFeed.java:246-289`,
 `vector/VectorProcessorApp.java:31-76`, `workbench/DeploymentsPanel.tsx:140-168`.
 
 ### 3.4 Read the state
@@ -351,7 +351,7 @@ latest control record is left out until the processor reports for the new deploy
 "No vector processor has reported for two minutes. Is one running for this domain?" when neither the deployment nor
 any sink report is younger than 120 s.
 
-Implemented in: `server/RetrievalServer.java:178-185`, `server/KafScaleFeed.java:294-313,321-323,339-378`,
+Implemented in: `server/RetrievalServer.java:182-189`, `server/KafScaleFeed.java:294-313,321-323,339-378`,
 `workbench/deployments.ts:33-58`, `workbench/DeploymentsPanel.tsx:175`.
 
 ### 3.5 Limits

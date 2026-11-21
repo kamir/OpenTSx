@@ -52,7 +52,9 @@ topics of the domain (`tsx.<domain>.smart.<name>.vectors.v1`) up to date, with i
 `opentsx-vectors-state`. It takes its DAGs from the control topic `tsx.<domain>.dags.v1`.
 
 With `RETRIEVAL_DAG_RUNS=true` the retrieval server writes to that control topic for callers with the run token
-(`POST /v1/dags/deploy`, `/stop`); the workbench uses that for "Deploy" and "Stop" in the tab "Smart Topic".
+(`POST /v1/dags/deploy`, `/stop`); the workbench uses that for "Deploy" and "Stop" in the tab "Smart Topic". It also
+writes the series of the demo generators to `tsx.<domain>.synthetic.v2` for those callers
+(`POST /v1/systems/<id>/generate`, "Generate" on the page Signals).
 `GET /v1/dags` shows what is deployed and what the processor reports.
 
 ```bash
@@ -66,10 +68,14 @@ Keep `opentsx-vectors` at one replica (as shipped): two processors would write e
 Who may write:
 
 * `20-configure.sh` generates `RETRIEVAL_DAG_RUN_TOKEN` (kept in `.env` and the Secret `opentsx-secrets`). The
-  retrieval server deploys and stops DAGs only for callers that send it.
-* The SaaS backend knows the token and forwards for signed-in accounts (`POST /api/v1/dags/deploy`, `/stop`).
-  `SAAS_DAG_RUN_ROLE=superuser` (default) allows administrators only. `user` allows every account; anyone can
-  register, so that opens writing to everyone who reaches the page.
+  retrieval server deploys and stops DAGs and writes generated series only for callers that send it. Without the
+  token it does not start: the pod log shows
+  `--dag-runs true needs a run token: set OPENTSX_DAG_RUN_TOKEN or --dag-run-token`. Run `20-configure.sh` with
+  `RETRIEVAL_DAG_RUNS=true`, which writes the token into the Secret, and apply it with `30-deploy.sh --restart`.
+* The SaaS backend knows the token and forwards for signed-in accounts (`POST /api/v1/dags/deploy`, `/stop`,
+  `POST /api/v1/systems/<system>/generate`). `SAAS_DAG_RUN_ROLE=superuser` (default) allows administrators only.
+  `user` allows every account to deploy and stop DAGs and to run demo generators; anyone can register, so that opens
+  writing to everyone who reaches the page.
 * The frontend image answers `/retrieval/v1/dags/` with 403, so the write path of the retrieval server is not
   reachable through the node port. Reading through `/retrieval/` needs no account.
 * Inside the cluster every pod can reach the retrieval Service; the token is what keeps them from deploying. Whoever

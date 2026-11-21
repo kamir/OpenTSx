@@ -20,6 +20,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** The state of the signals of h2-chain against an inventory: what is there, what is missing, what to do next. */
@@ -415,6 +416,25 @@ class SystemsTest {
             assertEquals(200, overlay.statusCode());
             assertEquals("constant", signal(JSON.readTree(overlay.body()), "offtake.demand_kgph").path("state").asText());
         }
+    }
+
+    @Test
+    void generatedSeriesNeedARunToken() throws Exception {
+        InMemorySeriesStore store = new InMemorySeriesStore();
+        SeriesInventory inventory = new SeriesInventory(store, SeriesInventory.Source.of("demo"), null, null, Duration.ofMinutes(1));
+        HttpClient http = HttpClient.newHttpClient();
+        List<String> topics = new java.util.ArrayList<>();
+        String gen = "{\"signal\":\"offtake.demand_kgph\",\"from\":\"2026-10-01T00:00:00Z\",\"to\":\"2026-10-01T06:00:00Z\"}";
+        for (String token : new String[] {null, " "}) {
+            try (RetrievalServer server = new RetrievalServer(new EpisodeService(store), 0, inventory, null, false, token, SYSTEMS)) {
+                IllegalStateException refused = assertThrows(IllegalStateException.class,
+                        () -> server.generatedSeries("tsx.wind.synthetic.v2", (topic, episodes) -> topics.add(topic)));
+                assertTrue(refused.getMessage().contains("OPENTSX_DAG_RUN_TOKEN"), refused.getMessage());
+                assertEquals(404, http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + server.port() + "/v1/systems/h2-chain/generate"))
+                        .POST(HttpRequest.BodyPublishers.ofString(gen)).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
+            }
+        }
+        assertEquals(List.of(), topics);
     }
 
     @Test
