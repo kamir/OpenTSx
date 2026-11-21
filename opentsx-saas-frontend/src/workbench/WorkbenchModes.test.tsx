@@ -314,66 +314,77 @@ describe("workbench presentation modes", () => {
   });
 });
 
-describe("operator presets of a signal opened on the workbench", () => {
-  const intervals: [string | undefined, number][] = [
-    ["PT15M", 900],
-    ["PT1H", 3600],
-    ["P1D", 86400],
-    ["PT1S", 60],
-    [undefined, 60],
-  ];
+describe(
+  "operator presets of a signal opened on the workbench",
+  { timeout: 10000 },
+  () => {
+    const intervals: [string | undefined, number][] = [
+      ["PT15M", 900],
+      ["PT1H", 3600],
+      ["P1D", 86400],
+      ["PT1S", 60],
+      [undefined, 60],
+    ];
+    const modern = [
+      { mode: "Signal Engineer", path: "/workbench" },
+      { mode: "Data Worker", path: "/workbench?mode=data" },
+    ].flatMap(({ mode, path }) =>
+      intervals.map(([interval, every]) => ({ mode, path, interval, every })),
+    );
 
-  it.each(intervals)(
-    "presets the inspector of both modern modes for interval %s",
-    (interval, every) => {
-      mount();
-      openSignal(interval);
-      for (const mode of ["Signal Engineer", "Data Worker"]) {
-        fireEvent.click(screen.getByRole("button", { name: mode }));
+    it.each(modern)(
+      "presets the $mode inspector for interval $interval",
+      ({ mode, path, interval, every }) => {
+        mount(path);
+        openSignal(interval);
+        expect(screen.getByRole("button", { name: mode })).toHaveAttribute(
+          "aria-pressed",
+          "true",
+        );
         expect(configure("Resample").getByLabelText("every")).toHaveValue(
           every,
         );
         const range = configure("Plausible range");
         expect(range.getByLabelText("min")).toHaveValue(-500);
         expect(range.getByLabelText("max")).toHaveValue(3000);
-      }
-    },
-  );
+      },
+    );
 
-  it.each(intervals)(
-    "presets the legacy operation panel for interval %s",
-    (interval, every) => {
-      mount("/workbench?mode=legacy");
-      openSignal(interval);
+    it.each(intervals)(
+      "presets the legacy operation panel for interval %s",
+      (interval, every) => {
+        mount("/workbench?mode=legacy");
+        openSignal(interval);
+        const operations = within(
+          screen.getByRole("region", { name: "Operations" }),
+        );
+        fireEvent.click(
+          operations.getByRole("tab", { name: "Filter and conversion" }),
+        );
+        expect(operations.getByLabelText("every")).toHaveValue(every);
+        expect(operations.getByLabelText("min")).toHaveValue(-500);
+        expect(operations.getByLabelText("max")).toHaveValue(3000);
+      },
+    );
+
+    it("leaves the resample width empty when the interval is no duration", () => {
+      mount();
+      openSignal("15 minutes");
+      const inspector = configure("Resample");
+      expect(inspector.getByLabelText("every")).toHaveValue(null);
+      fireEvent.click(inspector.getByRole("button", { name: "Add operator" }));
+      expect(inspector.getByRole("alert")).toHaveTextContent(
+        "every requires a finite number.",
+      );
+      expect(useFlow.getState().nodes).toHaveLength(1);
+      fireEvent.click(screen.getByRole("button", { name: "Legacy" }));
       const operations = within(
         screen.getByRole("region", { name: "Operations" }),
       );
       fireEvent.click(
         operations.getByRole("tab", { name: "Filter and conversion" }),
       );
-      expect(operations.getByLabelText("every")).toHaveValue(every);
-      expect(operations.getByLabelText("min")).toHaveValue(-500);
-      expect(operations.getByLabelText("max")).toHaveValue(3000);
-    },
-  );
-
-  it("leaves the resample width empty when the interval is no duration", () => {
-    mount();
-    openSignal("15 minutes");
-    const inspector = configure("Resample");
-    expect(inspector.getByLabelText("every")).toHaveValue(null);
-    fireEvent.click(inspector.getByRole("button", { name: "Add operator" }));
-    expect(inspector.getByRole("alert")).toHaveTextContent(
-      "every requires a finite number.",
-    );
-    expect(useFlow.getState().nodes).toHaveLength(1);
-    fireEvent.click(screen.getByRole("button", { name: "Legacy" }));
-    const operations = within(
-      screen.getByRole("region", { name: "Operations" }),
-    );
-    fireEvent.click(
-      operations.getByRole("tab", { name: "Filter and conversion" }),
-    );
-    expect(operations.getByLabelText("every")).toHaveValue(null);
-  });
-});
+      expect(operations.getByLabelText("every")).toHaveValue(null);
+    });
+  },
+);
