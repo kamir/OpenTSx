@@ -48,6 +48,7 @@ public final class RunnerPlan {
         try { ExecutionAssignments.validate(text); }
         catch (IllegalArgumentException error) { throw SiteJson.invalid(error.getMessage()); }
         JsonNode assignment = SiteJson.parse(text.getBytes(StandardCharsets.UTF_8), 65_536);
+        if (assignment.has("outputs")) throw SiteJson.invalid("assignment outputs are not executed by this runtime yet (D-T21)");
         if (!Set.of("java", "rust").contains(assignment.path("runtime").asText()) || !assignment.path("mode").asText().equals("bounded")) {
             throw SiteJson.invalid("the site profile requires a bounded Java or Rust assignment");
         }

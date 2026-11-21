@@ -77,6 +77,19 @@ when the physical graph explicitly permits full-topic fan-out.
 The checker proves complete cursor coverage against the declared count, not against an external broker inventory.
 It does not check node-to-site membership, operator availability or a partitioner's series-placement contract.
 
+## Declare whole-topic outputs
+
+An assignment may carry `outputs` (D-T21). It is the one optional top-level field; an assignment without it keeps
+binding its outputs outside the envelope, as before. Each entry has exactly `binding`, `topic`, `partitionCount`
+(canonical positive decimal), `port` (an ID) and `kind`: `sink` for a final sink, `repartition` for a topic that a
+later fragment reads whole after a key change (D-T20). The list holds 1 to 128 entries, no topic twice, and no
+output equal to an input of the same assignment. In a set, every output topic has exactly one writer; a downstream
+fragment reads a repartition topic as an ordinary whole-topic input.
+
+No runtime writes `outputs` yet. The Rust worker, signed runs, Rust sites and JVM sites refuse an assignment that
+declares them with `assignment outputs are not executed by this runtime yet (D-T21)` until the fragment cutter
+and the runtimes implement them.
+
 ## Interpret refusal codes in a fixed order
 
 | Order | Code | Rejected condition |
@@ -95,10 +108,13 @@ It does not check node-to-site membership, operator availability or a partitione
 | 12 | `assignment.offset` | Invalid partition count, partition/start/end decimal or reversed range. |
 | 13 | `assignment.coverage` | Internal cursor inventory is not exactly the declared ascending partition set. |
 | 14 | `assignment.ownership` | Duplicate whole-topic ownership within one assignment. |
+| 15 | `assignment.output` | Invalid `outputs` list or entry, a topic written twice, or an output equal to one of the assignment's inputs. |
 
 After all individuals pass, a set rejects inconsistent deployment/fragment context with `assignment.context`,
-duplicate assignment IDs with `assignment.duplicate`, then duplicate ownership with `assignment.ownership`.
-An empty set rejects with `assignment.context`. These exact offline API codes remain unchanged. The separate
+duplicate assignment IDs with `assignment.duplicate`, then duplicate ownership with `assignment.ownership`, and
+then an output topic with two writers, also with `assignment.ownership`.
+An empty set rejects with `assignment.context`. These exact offline API codes remain unchanged; D-T21 added
+`assignment.output`, which an assignment without `outputs` never returns. The separate
 physical profile adds located deployment refusals.
 
 ## Reproduce the shared cases
