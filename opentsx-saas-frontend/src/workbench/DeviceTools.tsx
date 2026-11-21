@@ -2,6 +2,7 @@ import { useState } from "react";
 import { capabilityOf } from "./capabilities";
 import { descendants, evaluate, inputsOf, useFlow } from "./flow";
 import { OPS, OP_BY_ID, defaultParams } from "./ops";
+import { signalPresets } from "./presets";
 import type { Bucket, OpDef, ParamDef, Params, ParamValue } from "./types";
 import { checkBrowserWork } from "./workLimits";
 import "./device-tools.css";
@@ -349,7 +350,10 @@ export function DeviceInspector({
   const baseline = JSON.stringify(node?.params ?? {});
   const params = op
     ? draftOp
-      ? (drafts[op.id] ?? defaultParams(op))
+      ? (drafts[op.id] ?? {
+          ...defaultParams(op),
+          ...signalPresets(op.id, state.context),
+        })
       : node &&
           edits[node.id]?.baseline === baseline &&
           edits[node.id].source === state.source &&

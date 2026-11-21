@@ -127,7 +127,16 @@ describe('TS inventory', () => {
     expect(estimatePoints(two, { from: TO, to: FROM, resample: '', agg: 'MEAN' })).toBe(0);
     expect(durationSeconds('PT1H')).toBe(3600);
     expect(durationSeconds('PT10S')).toBe(10);
-    expect(durationSeconds('P1D')).toBeNaN();
+  });
+
+  it('reads the durations of the system document grammar', () => {
+    expect(durationSeconds('PT15M')).toBe(900);
+    expect(durationSeconds('PT1H')).toBe(3600);
+    expect(durationSeconds('P1D')).toBe(86400);
+    expect(durationSeconds('PT0.5S')).toBe(0.5);
+    expect(durationSeconds('PT1H30.5S')).toBe(3630.5);
+    expect(durationSeconds('P1DT2H30M1.25S')).toBe(95401.25);
+    for (const text of ['', 'P', 'PT', '15M', 'PT1.5M', 'P1W', 'PT-1S', 'pt1m']) expect(durationSeconds(text)).toBeNaN();
   });
 
   it('labels a selection by what tells its series apart', () => {

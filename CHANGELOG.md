@@ -582,6 +582,13 @@ entries before 3.0.0 are grouped by date.
 
 ### Fixed
 
+- A signal opened in the workbench ("Prepare" on the page Signals) presets its operators in every mode. Signal
+  Engineer and Data Worker started a new "Plausible range" at -10 and 10 and a new "Resample" at 0.05 seconds; only
+  the Legacy operation panel took the presets. "Resample" now starts with `every` set to the larger of 60 seconds and
+  the expected interval of the signal, 60 seconds when the signal states no interval, instead of 60 seconds for every
+  signal. An interval that is no duration leaves `every` empty. `durationSeconds` of the workbench reads every
+  duration of SYSTEM-DOCUMENT-SPEC.md section 1.2, including days and fractional seconds (`src/workbench/presets.ts`,
+  SYSTEM-DOCUMENT-SPEC.md section 8.3).
 - `docs/datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md` has the bytes its `manifest.json` pins again;
   the repository split had replaced its links to the raw files with plain text. `tools/check_links.py` leaves files
   that a measurement manifest pins out, and `tools/test_measurement_records.py` fails when a committed file differs

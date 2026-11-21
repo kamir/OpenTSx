@@ -49,6 +49,7 @@ import axios from 'axios';
 import { flowsAPI } from '../services/api';
 import { fetchSignalStatus } from '../systems/load';
 import { NOT_PORTED, OPS, OP_BY_ID, defaultParams, fmt, stats } from '../workbench/ops';
+import { signalPresets } from '../workbench/presets';
 import { Bucket, FlowNode, OpDef, OpGroup, ParamDef, Params, ParamValue } from '../workbench/types';
 import '../workbench/workbench.css';
 import { DeviceSources, DeviceInspector } from '../workbench/DeviceTools';
@@ -165,19 +166,9 @@ function OperationPanel({ showLabels, setShowLabels, onModel }: { showLabels: bo
   const nodes = useFlow((s) => s.nodes);
   const source = useFlow((s) => s.source);
   const context = useFlow((s) => s.context);
-  // Opened for a signal, the cleaning operators start from what the system expects of it: the plausible range is
-  // the expected range, and the resampling goes to the minute (the clock of the example systems).
   useEffect(() => {
     if (!context) return;
-    setParams((p) => ({
-      ...p,
-      'dq.plausible-range': {
-        ...p['dq.plausible-range'],
-        ...(context.expect.min !== undefined ? { min: context.expect.min } : {}),
-        ...(context.expect.max !== undefined ? { max: context.expect.max } : {}),
-      },
-      resample: { ...p.resample, every: 60 },
-    }));
+    setParams((p) => Object.fromEntries(OPS.map((o) => [o.id, { ...p[o.id], ...signalPresets(o.id, context) }])));
   }, [context]);
   const selectedId = useFlow((s) => s.selectedId);
   const selected = nodes.find((n) => n.id === selectedId);

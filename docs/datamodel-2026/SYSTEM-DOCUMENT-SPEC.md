@@ -35,7 +35,7 @@ Code cited on this page:
 | `system.py` | `opentsx-saas-backend/app/models/` |
 | `systems.py`, `dags.py` | `opentsx-saas-backend/app/api/` |
 | `signals.ts`, `SignalsPlace.tsx`, `SystemPlace.tsx` | `opentsx-saas-frontend/src/systems/` |
-| `flow.ts`, `capabilities.ts`, `deployments.ts`, `types.ts`, `PublishClean.tsx`, `FlowComposer.tsx` | `opentsx-saas-frontend/src/workbench/` |
+| `flow.ts`, `capabilities.ts`, `deployments.ts`, `types.ts`, `PublishClean.tsx`, `FlowComposer.tsx`, `DeviceTools.tsx`, `presets.ts`, `inventory.ts` | `opentsx-saas-frontend/src/workbench/` |
 | `Systems.tsx`, `Workbench.tsx` | `opentsx-saas-frontend/src/pages/` |
 
 <a id="s1-signals"></a>
@@ -773,10 +773,16 @@ Implemented in: `signals.ts:150-158,181-188,223-252,573-611`, `SignalsPlace.tsx:
   and is not saved.
 * The scope draws `expect.min` and `expect.max` while the data shown is still the quantity of the signal: the source is
   selected, or every series has the expected unit.
-* `dq.plausible-range` is preset with `expect.min` and `expect.max`. `resample` is preset with 60 seconds.
+* `dq.plausible-range` is preset with `expect.min` and `expect.max`.
+* `resample` is preset with `every` set to the larger of 60 seconds and `expect.interval`, and to 60 seconds when
+  `expect.interval` is not stated. An `expect.interval` that is no duration of
+  [section 1.2](#s12-expectation) leaves `every` empty.
+* The presets apply in every mode of the workbench: Signal Engineer and Data Worker preset a new operator in the
+  inspector, Legacy presets the operation panel.
 * The workbench MAY be used without a signal. It then has no context line.
 
-Implemented in: `Workbench.tsx:168-181,695-742,826-831,948-972`, `types.ts:139-155`.
+Implemented in: `Workbench.tsx:169-172,686-733,817-822,939-963`, `presets.ts:9-32`, `DeviceTools.tsx:351-356`,
+`inventory.ts:218-225`, `types.ts:139-155`.
 
 <a id="s84-publish-as-clean-signal"></a>
 
@@ -803,7 +809,7 @@ The button is enabled once a step other than the source is selected.
   ([section 4.4](#s44-find-the-series-of-a-signal)).
 
 Implemented in: `PublishClean.tsx:60-101`, `flow.ts:534-596,700-757`, `deployments.ts:61,80-89`,
-`Workbench.tsx:961-983`.
+`Workbench.tsx:952-974`.
 
 <a id="s9-processor-descriptions"></a>
 
