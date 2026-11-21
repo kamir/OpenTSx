@@ -12,11 +12,21 @@ public final class FakeKafScaleCluster {
         int port = Integer.parseInt(args[1]);
         switch (args[0]) {
             case "ready" -> {
+                ServerSocket proxy = new ServerSocket(port, 50, LOOPBACK);
+                print("time=2026-11-21T00:53:20.197Z level=INFO msg=\"proxy listening\" addr=127.0.0.1:" + port);
                 ServerSocket broker = new ServerSocket(0, 50, LOOPBACK);
                 print("2026/11/21 00:53:20 broker listening on 127.0.0.1:" + broker.getLocalPort());
+                while (true) proxy.accept().close();
+            }
+            case "no-broker" -> {
                 ServerSocket proxy = new ServerSocket(port, 50, LOOPBACK);
                 print("time=2026-11-21T00:53:20.197Z level=INFO msg=\"proxy listening\" addr=127.0.0.1:" + port);
                 while (true) proxy.accept().close();
+            }
+            case "foreign-proxy" -> {
+                ServerSocket broker = new ServerSocket(0, 50, LOOPBACK);
+                print("2026/11/21 00:53:20 broker listening on 127.0.0.1:" + broker.getLocalPort());
+                while (true) broker.accept().close();
             }
             case "proxy-taken" -> {
                 ServerSocket broker = new ServerSocket(0, 50, LOOPBACK);

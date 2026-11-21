@@ -678,12 +678,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   deployed; the DAG export writes the fill as stored. A missing `fill` stays `none`.
 
 - The disposable KafScale clusters of the Wayang integration tests no longer accept a port that another process
-  answers. The fixture released each reserved port before `kafscale-cluster` bound it and counted any answer on
+  answers. The fixture releases each reserved port before `kafscale-cluster` binds it and counted any answer on
   the port as ready. A cluster's broker could bind the port reserved for the next cluster; that cluster's Proxy
   then failed with `bind: address already in use` while its clients read the first cluster's records. A cluster
   now counts as ready only when its own log shows its Proxy listening on the reserved port and its broker
-  listening, and its process still runs. A lost port restarts that cluster on a new port, at most five times;
-  each retry writes `<cluster>.<n>.log` next to `<cluster>.log`.
+  listening, and its process still runs. A lost port restarts that cluster on a new port; after five attempts the
+  fixture fails. Each retry writes `<cluster>.<n>.log` next to `<cluster>.log`.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

@@ -10,6 +10,7 @@ import java.net.ServerSocket;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,7 +32,7 @@ class FederationBrokersTest {
             if (launched.size() > 1) return fake("ready", port);
             foreign.add(hold(port));
             return fake("proxy-taken", port);
-        })) {
+        }, Duration.ofSeconds(30))) {
             assertEquals(2, launched.size());
             assertEquals(launched.get(1), brokers.port("s3"));
             assertNotEquals(foreign.get(0).getLocalPort(), brokers.port("s3"));
@@ -52,7 +53,7 @@ class FederationBrokersTest {
             if (launched.size() > 1) return fake("ready", port);
             foreign.add(hold(0));
             return fake("broker-taken", port, foreign.get(0).getLocalPort());
-        })) {
+        }, Duration.ofSeconds(30))) {
             assertEquals(2, launched.size());
             assertEquals(launched.get(1), brokers.port("s2"));
             assertTrue(Files.readString(directory.resolve("s2.log")).contains("broker server error"));
@@ -70,7 +71,7 @@ class FederationBrokersTest {
                 launched.add(port);
                 foreign.add(hold(port));
                 return fake("proxy-taken", port);
-            }).close());
+            }, Duration.ofSeconds(30)).close());
             assertEquals("disposable cluster s1 lost its listener port in 5 attempts; inspect " + directory.resolve("s1.5.log"), error.getMessage());
             assertEquals(5, launched.size());
         } finally {
@@ -84,9 +85,37 @@ class FederationBrokersTest {
         IOException error = assertThrows(IOException.class, () -> new FederationBrokers(directory, List.of("s1"), (port, state) -> {
             launched.add(port);
             return fake("exit", port);
-        }).close());
+        }, Duration.ofSeconds(30)).close());
         assertEquals("disposable cluster s1 exited; inspect " + directory.resolve("s1.log"), error.getMessage());
         assertEquals(1, launched.size());
+    }
+
+    @Test
+    void aClusterWhoseLogShowsItsProxyButNoBrokerIsNotAccepted(@TempDir Path directory) {
+        List<Integer> launched = new ArrayList<>();
+        IOException error = assertThrows(IOException.class, () -> new FederationBrokers(directory, List.of("s2"), (port, state) -> {
+            launched.add(port);
+            return fake("no-broker", port);
+        }, Duration.ofSeconds(2)).close());
+        assertEquals("disposable cluster s2 did not report its Proxy and broker listeners within 2 seconds; inspect " + directory.resolve("s2.log"), error.getMessage());
+        assertEquals(1, launched.size());
+    }
+
+    @Test
+    void aClusterWhoseLogShowsItsBrokerButNoProxyIsNotAcceptedAlthoughItsPortAnswers(@TempDir Path directory) throws Exception {
+        List<Integer> launched = new ArrayList<>();
+        List<ServerSocket> foreign = new ArrayList<>();
+        try {
+            IOException error = assertThrows(IOException.class, () -> new FederationBrokers(directory, List.of("s3"), (port, state) -> {
+                launched.add(port);
+                foreign.add(hold(port));
+                return fake("foreign-proxy", port);
+            }, Duration.ofSeconds(2)).close());
+            assertEquals("disposable cluster s3 did not report its Proxy and broker listeners within 2 seconds; inspect " + directory.resolve("s3.log"), error.getMessage());
+            assertEquals(1, launched.size());
+        } finally {
+            close(foreign);
+        }
     }
 
     private static ServerSocket hold(int port) {

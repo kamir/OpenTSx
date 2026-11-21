@@ -29,13 +29,13 @@ final class FederationBrokers implements AutoCloseable {
     }
 
     FederationBrokers(Path directory, List<String> clusters) throws IOException {
-        this(directory, validated(clusters), kafscaleCluster());
+        this(directory, validated(clusters), kafscaleCluster(), Duration.ofSeconds(30));
     }
 
-    FederationBrokers(Path directory, List<String> clusters, BiFunction<Integer, Path, List<String>> command) throws IOException {
+    FederationBrokers(Path directory, List<String> clusters, BiFunction<Integer, Path, List<String>> command, Duration readiness) throws IOException {
         Files.createDirectories(directory);
         try {
-            for (String cluster : clusters) start(directory, cluster, command);
+            for (String cluster : clusters) start(directory, cluster, command, readiness);
         } catch (InterruptedException error) {
             Thread.currentThread().interrupt();
             InterruptedIOException interrupted = new InterruptedIOException("interrupted while starting disposable clusters");
@@ -65,7 +65,7 @@ final class FederationBrokers implements AutoCloseable {
                 "--broker-binary", broker, "--proxy-binary", proxy);
     }
 
-    private void start(Path directory, String cluster, BiFunction<Integer, Path, List<String>> command) throws IOException, InterruptedException {
+    private void start(Path directory, String cluster, BiFunction<Integer, Path, List<String>> command, Duration readiness) throws IOException, InterruptedException {
         for (int attempt = 1; ; attempt++) {
             String name = attempt == 1 ? cluster : cluster + "." + attempt;
             Path log = directory.resolve(name + ".log");
@@ -78,7 +78,7 @@ final class FederationBrokers implements AutoCloseable {
             builder.redirectErrorStream(true).redirectOutput(log.toFile());
             Process process = builder.start();
             processes.add(process);
-            if (ready(cluster, process, port, log)) {
+            if (ready(cluster, process, port, log, readiness)) {
                 ports.put(cluster, port);
                 return;
             }
@@ -90,9 +90,9 @@ final class FederationBrokers implements AutoCloseable {
 
     // The reserved port is released before the cluster binds it, so only the cluster's own log proves that its Proxy
     // and broker hold their listeners; an answer on the port can come from another process.
-    private static boolean ready(String cluster, Process process, int port, Path log) throws IOException, InterruptedException {
+    private static boolean ready(String cluster, Process process, int port, Path log, Duration readiness) throws IOException, InterruptedException {
         String proxyListening = " msg=\"proxy listening\" addr=127.0.0.1:" + port + "\n";
-        long deadline = System.nanoTime() + Duration.ofSeconds(30).toNanos();
+        long deadline = System.nanoTime() + readiness.toNanos();
         IOException last = null;
         while (true) {
             boolean exited = process.waitFor(10, TimeUnit.MILLISECONDS);
@@ -108,7 +108,7 @@ final class FederationBrokers implements AutoCloseable {
                 }
             }
             if (System.nanoTime() >= deadline) {
-                throw new IOException("disposable cluster " + cluster + " did not report its Proxy and broker listeners within 30 seconds; inspect " + log, last);
+                throw new IOException("disposable cluster " + cluster + " did not report its Proxy and broker listeners within " + readiness.toSeconds() + " seconds; inspect " + log, last);
             }
         }
     }

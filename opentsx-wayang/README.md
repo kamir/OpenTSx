@@ -314,6 +314,8 @@ Attempt `<n>` after the first writes `<cluster>.<n>.log` and keeps its etcd stat
 After five lost ports the fixture fails with
 `disposable cluster <cluster> lost its listener port in 5 attempts; inspect <log>`.
 Any other exit fails at once with `disposable cluster <cluster> exited; inspect <log>`.
+A cluster whose log does not show both listener lines within 30 seconds fails with
+`disposable cluster <cluster> did not report its Proxy and broker listeners within 30 seconds; inspect <log>`.
 
 The JUnit fixtures use unique directories under `opentsx-wayang/target/federation-test-logs/` with
 `ON_SUCCESS` cleanup. A fixture-construction, test or broker-shutdown failure retains the directory;
