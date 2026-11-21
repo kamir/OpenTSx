@@ -385,6 +385,40 @@ describe(
         operations.getByRole("tab", { name: "Filter and conversion" }),
       );
       expect(operations.getByLabelText("every")).toHaveValue(null);
+      fireEvent.click(operations.getByRole("button", { name: "Resample" }));
+      expect(operations.getByRole("alert")).toHaveTextContent(
+        "every requires a finite number.",
+      );
+      expect(useFlow.getState().nodes).toHaveLength(1);
     });
   },
 );
+
+describe("legacy operation panel", () => {
+  it("refuses an operator until its number parameter is finite", () => {
+    mount("/workbench?mode=legacy");
+    const operations = within(
+      screen.getByRole("region", { name: "Operations" }),
+    );
+    fireEvent.click(
+      operations.getByRole("tab", { name: "Filter and conversion" }),
+    );
+    fireEvent.change(operations.getByLabelText("every"), {
+      target: { value: "" },
+    });
+    fireEvent.click(operations.getByRole("button", { name: "Resample" }));
+    expect(operations.getByRole("alert")).toHaveTextContent(
+      "every requires a finite number.",
+    );
+    expect(useFlow.getState().nodes).toHaveLength(1);
+    fireEvent.change(operations.getByLabelText("every"), {
+      target: { value: "10" },
+    });
+    fireEvent.click(operations.getByRole("button", { name: "Resample" }));
+    expect(operations.queryByRole("alert")).toBeNull();
+    expect(useFlow.getState().nodes.map((node) => node.params.every)).toEqual([
+      undefined,
+      10,
+    ]);
+  });
+});

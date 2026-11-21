@@ -122,9 +122,10 @@ Read the [analysis guide](../docs/devguide/workbench-analysis.md) for the result
 - Open a signal: "Prepare" on the page Signals opens `/workbench?system=<id>&signal=<id>&grade=raw`. In every mode
   "Plausible range" starts from `expect.min` and `expect.max`, and "Resample" starts with `every` set to the larger
   of 60 seconds and `expect.interval`, 60 seconds when the signal states no interval. An interval that is no
-  duration of section 1.2 of `../docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md` leaves `every` empty. Signal Engineer
-  and Data Worker preset a new operator in the inspector, Legacy presets the operation panel
-  (`src/workbench/presets.ts`, section 8.3 of the same specification)
+  duration of section 1.2 of `../docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md` leaves `every` empty, and "Resample"
+  is refused with `every requires a finite number.` until a width is entered. Signal Engineer and Data Worker preset
+  a new operator in the inspector, Legacy presets the operation panel (`src/workbench/presets.ts`, section 8.3 of the
+  same specification)
 - Oscilloscope view: time base, vertical scale, cursors, trigger, measurements
 - Ground truth: the scenario events of series loaded from the inventory are drawn as bands on the time axis
   (yellow: operation, red: sensor fault); the field "Ground truth" jumps to an event

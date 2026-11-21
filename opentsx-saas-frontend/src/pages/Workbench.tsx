@@ -53,6 +53,7 @@ import { signalPresets } from '../workbench/presets';
 import { Bucket, FlowNode, OpDef, OpGroup, ParamDef, Params, ParamValue } from '../workbench/types';
 import '../workbench/workbench.css';
 import { DeviceSources, DeviceInspector } from '../workbench/DeviceTools';
+import { validateParameters } from '../workbench/parameters';
 import { DataPreview, DiagnosticBench, RecipeNotebook } from '../workbench/DeviceViews';
 import { PRESENTATION_KEY, readPresentation, type Presentation, type WorkbenchMode } from '../workbench/presentation';
 import { thermalDemo } from '../workbench/deviceSample';
@@ -158,7 +159,7 @@ const TABS: { id: string; title: string; group?: OpGroup; border?: string }[] = 
 
 function OperationPanel({ showLabels, setShowLabels, onModel }: { showLabels: boolean; setShowLabels: (v: boolean) => void; onModel: () => void }) {
   const [tab, setTab] = useState('transform');
-  const [csvError, setCsvError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [params, setParams] = useState<Record<string, Params>>(() =>
     Object.fromEntries(OPS.map((o) => [o.id, defaultParams(o)]))
   );
@@ -175,9 +176,19 @@ function OperationPanel({ showLabels, setShowLabels, onModel }: { showLabels: bo
   const current = TABS.find((t) => t.id === tab)!;
   const ready = !!selected;
 
+  const apply = (op: OpDef) => {
+    setError(null);
+    try {
+      validateParameters(op, params[op.id]);
+      applyOp(op.id, params[op.id]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
   const opButton = (op: OpDef) => (
     <span key={op.id} className="wb-op">
-      <button disabled={!ready} title={op.hint} onClick={() => applyOp(op.id, params[op.id])}>
+      <button disabled={!ready} title={op.hint} onClick={() => apply(op)}>
         {op.label}
       </button>
       {op.params.map((d) => (
@@ -193,11 +204,11 @@ function OperationPanel({ showLabels, setShowLabels, onModel }: { showLabels: bo
 
   const persist = () => {
     const b = selected && evaluate(source, nodes, selected.id);
-    setCsvError(null);
+    setError(null);
     try {
       if (b) download(`${b.name}.csv`, bucketToCsv(b), 'text/csv');
     } catch (e) {
-      setCsvError(e instanceof Error ? e.message : 'CSV export failed.');
+      setError(e instanceof Error ? e.message : 'CSV export failed.');
     }
   };
 
@@ -219,7 +230,7 @@ function OperationPanel({ showLabels, setShowLabels, onModel }: { showLabels: bo
           </button>
         ))}
       </div>
-      {csvError && <p role="alert">{csvError}</p>}
+      {error && <p role="alert">{error}</p>}
       <div className={`wb-tabpanel wb-g-${tab}`} role="tabpanel">
         {tab === 'tsb' && (
           <div className="wb-oprow">

@@ -589,6 +589,10 @@ entries before 3.0.0 are grouped by date.
   signal. An interval that is no duration leaves `every` empty. `durationSeconds` of the workbench reads every
   duration of SYSTEM-DOCUMENT-SPEC.md section 1.2, including days and fractional seconds (`src/workbench/presets.ts`,
   SYSTEM-DOCUMENT-SPEC.md section 8.3).
+- An operation button of the Legacy workbench mode checks its parameters as the inspector of the modern modes does.
+  An empty or non-finite number, a number below its minimum or an unsupported choice is refused with a message and
+  adds no step; before, "Resample" with an empty `every` added a step with an empty preview and wrote `every: PTS`
+  into the DAG document (`src/pages/Workbench.tsx`, `src/workbench/parameters.ts`).
 - `docs/datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md` has the bytes its `manifest.json` pins again;
   the repository split had replaced its links to the raw files with plain text. `tools/check_links.py` leaves files
   that a measurement manifest pins out, and `tools/test_measurement_records.py` fails when a committed file differs
