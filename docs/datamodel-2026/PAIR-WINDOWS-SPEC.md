@@ -191,7 +191,7 @@ A and B are put on one clock by the rules of `align.vector`
 
 Implemented in: `workbench/pairs.ts:99-106`, `workbench/pairs.ts:180-223`, `workbench/pairs.ts:269-288`,
 `workbench/pairs.ts:306-328`, `workbench/pairs.ts:378-390`, `workbench/workLimits.ts:46-62`,
-`workbench/vector.ts:32-93`, `wayang/JavaTsxPair.java:131-139`, `wayang/ops/TsxPairWindows.java:158-169`,
+`workbench/vector.ts:33-94`, `wayang/JavaTsxPair.java:131-139`, `wayang/ops/TsxPairWindows.java:158-169`,
 `wayang/ops/TsxPairWindows.java:180-267`, `runner/pairs.rs:1112-1176`, `runner/pairs.rs:1418-1431`.
 
 <a id="coverage"></a>
@@ -462,8 +462,8 @@ Implemented in: `workbench/workLimits.ts:6-13`, `workbench/workLimits.ts:27-68`,
   deployment path does not execute pair operators. This output is not a supported processor sink.`
 * Every runtime MUST follow sections 3 to 12 for the methods it runs.
 
-Implemented in: `workbench/ops.ts:831-847`, `workbench/ops.ts:935-946`, `workbench/flow.ts:650-651`,
-`workbench/flow.ts:726-727`, `workbench/capabilities.ts:12-26`, `wayang/JavaTsxPair.java:45-53`,
+Implemented in: `workbench/ops.ts:831-847`, `workbench/ops.ts:935-946`, `workbench/flow.ts:653-654`,
+`workbench/flow.ts:734-735`, `workbench/capabilities.ts:12-26`, `wayang/JavaTsxPair.java:45-53`,
 `systems/processors/pair.xcorr.yaml`, `systems/processors/pair.es.yaml`.
 
 <a id="test-vectors"></a>
@@ -495,4 +495,4 @@ Implemented in: `tools/pair_xcorr_vectors.sh`, `tools/pair_es_vectors.py`, `work
 `workbench/es.test.ts:50-68`, `opentsx-wayang/src/test/java/org/opentsx/wayang/ops/TsxPairXcorrVectorsTest.java`,
 `opentsx-wayang/src/test/java/org/opentsx/wayang/ops/TsxPairEsVectorsTest.java`, `tools/pair_clock_vectors.sh`,
 `workbench/pairs.test.ts:304-367`, `opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairClockVectorsTest.java`,
-`rust/tsx-runner/tests/pair_vector_vectors.rs:613-751`.
+`rust/tsx-runner/tests/pair_vector_vectors.rs:673-811`.

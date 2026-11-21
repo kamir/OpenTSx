@@ -70,8 +70,11 @@ Who may write:
 * The SaaS backend knows the token and forwards for signed-in accounts (`POST /api/v1/dags/deploy`, `/stop`).
   `SAAS_DAG_RUN_ROLE=superuser` (default) allows administrators only. `user` allows every account; anyone can
   register, so that opens writing to everyone who reaches the page.
-* The frontend image answers `/retrieval/v1/dags/` with 403, so the write path of the retrieval server is not
-  reachable through the node port. Reading through `/retrieval/` needs no account.
+* The frontend image answers 403 to `/retrieval/v1/dags/` and to `/retrieval/v1/systems/<id>/generate`, and to
+  every path below either of them, so the write routes of the retrieval server are not reachable through the node
+  port. Reading through `/retrieval/` needs no account.
+* `INGRESS=true` sends `/v1` to the retrieval Service directly, past the frontend image. There the run token is the
+  only gate on `POST /v1/dags/deploy`, `/v1/dags/stop` and `/v1/systems/<id>/generate`.
 * Inside the cluster every pod can reach the retrieval Service; the token is what keeps them from deploying. Whoever
   reaches the Proxy can write the control topic directly; KafScale has no access control here. There is no
   NetworkPolicy.

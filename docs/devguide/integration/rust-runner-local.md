@@ -110,7 +110,7 @@ second fills a fraction of them, which matters on a 4 GB board. Read journals ba
 them: a standard worker refuses a measurement journal that exceeds its own ceilings.
 The bounded `replay` command and signed runs keep the standard ceilings.
 The UI rollout refuses a measurement worker, because its reported ceilings exceed the rollout ceilings
-(`RustRollout.java:727`); the B4.2 workload driver addresses it directly.
+(`RustRollout.java:825`); the B4.2 workload driver addresses it directly.
 
 ## Keep input, output and state together
 

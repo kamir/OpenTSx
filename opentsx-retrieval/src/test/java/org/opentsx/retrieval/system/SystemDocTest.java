@@ -123,6 +123,7 @@ class SystemDocTest {
         assertEquals(CATALOG_1, versions, "catalog 1 identity/version membership");
         JsonSchema processorSchema = schema("opentsx.processor.v1.schema.json");
         Set<String> operators = new LinkedHashSet<>();
+        Set<String> regrouping = new java.util.TreeSet<>();
         for (var entry : versions.entrySet()) {
             String id = entry.getKey();
             JsonNode description = descriptions.get(id);
@@ -138,6 +139,10 @@ class SystemDocTest {
                 assertTrue(description.path("state").path("key").isTextual()
                         && !description.path("state").path("key").asText().isBlank(), "processor state key " + id);
             }
+            // D-T20: every catalog operator states how its output is keyed
+            String key = description.path("key").asText();
+            assertTrue(Set.of("preserve", "derive-1to1", "regroup").contains(key), "processor key " + id);
+            if (key.equals("regroup")) regrouping.add(id);
             String merge = description.path("merge").path("class").asText();
             assertTrue(Set.of("none", "exact", "approximate").contains(merge), "processor merge " + id);
             if (!merge.equals("none")) {
@@ -168,6 +173,7 @@ class SystemDocTest {
         while (rows.find()) assertTrue(specified.add(rows.group(1)), "duplicate S1.7 operator");
         assertEquals(16, specified.size(), "S1.7 membership");
         assertEquals(specified, operators, "catalog DAG operators must equal S1.7");
+        assertEquals(Set.of("align.vector", "pair.es", "pair.xcorr"), regrouping, "catalog 1 operators that change the key");
         assertEquals(List.of(), List.copyOf(schema("opentsx.catalog.v1.schema.json").validate(catalog)), "catalog schema");
     }
 

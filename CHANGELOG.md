@@ -17,6 +17,7 @@ entries before 3.0.0 are grouped by date.
   and S2.4 state that a site has exactly one node (D-T17) and that the local worker's capabilities are trusted-local
   without a fleet qualification claim (D-T18).
 
+- Line citations in the specs and docs point at the current code.
 - Documentation, comments and example files describe the current code. Chapter 15 drops the pair windows from the
   open items, links PAIR-WINDOWS-SPEC from P8 and lists the twin variants T and L as proofs of concept. The worked
   example of chapter 16 counts twelve components and sixteen signals and names the five flows that run. The `maxAge`
@@ -106,6 +107,11 @@ entries before 3.0.0 are grouped by date.
   unsupported MapLibre runtime releases.
 
 ### Added
+
+- Catalog cards declare `key` (D-T20, spec S1.4, `opentsx.processor.v1` schema): `preserve` for decode, segments,
+  SAX, DQ results and statistics; `derive-1to1` for the cleaning, model and feature operators; `regroup` for
+  `align.vector`, `pair.xcorr` and `pair.es`. `SystemDocTest` requires the field on every catalog 1 operator and
+  exactly these three regrouping operators. The frozen vector hashes do not change.
 
 - TASK-020 U01 data edges: tests that a Rust fragment naming a second source topic is refused
   (`a_fragment_reading_two_topics_is_refused`), that the bounded Rust lowering refuses `pair.xcorr`, `pair.es` and
@@ -608,6 +614,9 @@ entries before 3.0.0 are grouped by date.
 
 ### Fixed
 
+- `tsx-runner`: the WASM test `scoped_fixture_is_cleared_after_unwinding` unwinds with `resume_unwind`, so it no
+  longer prints a panic message. With `--nocapture 2>&1` that message could split another test's `test ... ok` line,
+  and the B3 qualification then reported `guest_stack_is_bounded_by_the_configured_limit` as not executed.
 - The Smart Topics Studio is in English. `docs/prototypes/smart-topics-studio.html` declares `lang="en"`; menus,
   views, tooltips, event texts, the scenario titles, labels, KPIs, alternatives and forecasts (`H2ChainScenario`,
   `HouseStudioScenario`, `BoatStudioScenario`) and the guides `twin/h2-chain.guide.yaml` and
@@ -624,6 +633,15 @@ entries before 3.0.0 are grouped by date.
   `requirements.lock`. With the old 0.14.6 constraint, the install in `standalone-numerics.md` failed with
   `ResolutionImpossible`, and `test_finite_service_http.py` expected 0.14.6. `statsmodels` 0.15.0 adds the pinned
   dependencies `formulaic`, `interface_meta`, `narwhals`, `typing_extensions` and `wrapt`.
+- The frontend image answers 403 to `/retrieval/v1/systems/<id>/generate` and to every path below it
+  (`opentsx-saas-frontend/nginx.conf`). The rule matched the exact path only, and the retrieval server runs the demo
+  generator for `generate/` as well, so `generate/`, `generate//`, `generate%2F` and `generate/.` reached a generator
+  past the backend; a retrieval server without a run token wrote the series. `tools/test_saas_frontend_nginx.py`
+  checks the location rules for these spellings of the generator and DAG write routes.
+  `opentsx-saas-backend/smoke-flows.sh` expects 403 for `POST /retrieval/v1/systems/x/generate/` through the frontend
+  image. SYSTEM-DOCUMENT-SPEC section 7.3 states the closed generator route. The frontend README and the k3s README
+  state both closed routes and that `INGRESS=true` sends `/v1` to the retrieval server past the frontend image, where
+  the run token is the only gate.
 
 - `docs/datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md` has the bytes its `manifest.json` pins again;
   the repository split had replaced its links to the raw files with plain text. `tools/check_links.py` leaves files
