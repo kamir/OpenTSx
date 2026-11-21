@@ -625,6 +625,17 @@ entries before 3.0.0 are grouped by date.
 - `tsx-runner`: the WASM test `scoped_fixture_is_cleared_after_unwinding` unwinds with `resume_unwind`, so it no
   longer prints a panic message. With `--nocapture 2>&1` that message could split another test's `test ... ok` line,
   and the B3 qualification then reported `guest_stack_is_bounded_by_the_configured_limit` as not executed.
+- The Smart Topics Studio is in English. `docs/prototypes/smart-topics-studio.html` declares `lang="en"`; menus,
+  views, tooltips, event texts, the scenario titles, labels, KPIs, alternatives and forecasts (`H2ChainScenario`,
+  `HouseStudioScenario`, `BoatStudioScenario`) and the guides `twin/h2-chain.guide.yaml` and
+  `twin/haus-erzgebirge.guide.yaml` are English. Numbers use English notation and dates read `1 Oct 02:29`. The
+  downloads are named `<twin>-own.yaml`, `inventory-<twin>.yaml` and `studio-own-data-<scenario>.json`. The
+  retrieval server returns the same English titles and labels in `GET /v1/systems/{id}/scenario`. Scenario ids, twin
+  names, plan parameters and run ids are unchanged. `StudioExport` leaves out the run hash: the hash chains the raw
+  bits of every value and differs between JVMs whose `Math` functions round the last bit differently, so the
+  committed page could not be rebuilt byte for byte. Section 8 of `TWIN-COUPLING-SPEC.md` limits the equal run hash to
+  runs on the same JVM. The page is rebuilt with `tools/build_studio.py`; `StudioPageTest` and
+  `tools/test_studio_page.py` check it.
 - The `statsmodels` 0.15.0 pin of `python-package` now matches `deploy/local-cp/requirements.in` and
   `requirements.lock`. With the old 0.14.6 constraint, the install in `standalone-numerics.md` failed with
   `ResolutionImpossible`, and `test_finite_service_http.py` expected 0.14.6. `statsmodels` 0.15.0 adds the pinned
