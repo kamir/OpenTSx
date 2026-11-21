@@ -375,7 +375,9 @@ metadata, retained cuts, fingerprints and complete series inventory before
 submitting its signed report. The guide identifies prior and fresh evidence.
 
 `agent` receives signed bounded decode-to-statistics plans. It retains outcomes
-before acknowledgement and advances the delivery cursor afterward. Recovery
+before acknowledgement and advances the delivery cursor afterward. A site with
+`profile` `orbit` keeps its plan running while the plan service is unreachable
+and sends the buffered status records in order at the next contact. Recovery
 retries the original acknowledgement; it does not reactivate the command.
 The driver permits a later job generation only after every previous site
 has a durable stopped status and an accepted delivery acknowledgement.

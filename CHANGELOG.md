@@ -103,6 +103,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `tsx-catalog/1` pins it; its `analysisResults` entries are now the `v2.1` vectors and the generator rebuilds it from
   `schema-history/v2.1`. The workbench result view shows the digests and says when a record has none.
 
+- `tsx-runner` site configuration field `profile` (`ground` or `orbit`). In the `orbit` profile `agent` and
+  `run --plan` keep a plan running when a status record cannot reach the plan service: the record goes to a durable
+  outbox in the state directory, bounded to 5,760 records, and buffered records are sent oldest first before newer
+  and terminal records. A full outbox stops the plan. The `ground` profile, also used without the field, still
+  stops a plan when a heartbeat fails.
+
 - The workbench Deployments panel lists the `jobs` of `GET /v1/dags` apart from the deployments: job id, track, site
   when present, state, input record count and report age. A job in any state but `stopped` or `failed` without a
   report for 120 s is flagged. Jobs have no Stop, because Track A and B do not read the control topic.
@@ -572,6 +578,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   against the Rust runner for `pair.xcorr` only; `pair.coverage` has no Wayang or Rust counterpart. All three refuse
   the unknown `fill`. Sections 2, 3, 6, 14 and 16 of
   [`PAIR-WINDOWS-SPEC.md`](docs/datamodel-2026/PAIR-WINDOWS-SPEC.md) state these rules.
+- `GET /v1/systems/{id}/signals` gives a signal that a flow computes the worst of its `expect.origin` and the
+  origins of the signals the flow reads. `park.p_potential_kw` of `h2-chain`, a power curve over the measured wind
+  of a station, is `ESTIMATED` and no longer `MEASURED`. The Signals page marks it as modelled, and the decision
+  `h2-dispatch`, which accepts estimates and forecasts, no longer blocks it when its data has no `origin` label.
+- The recommendation in `systems/decisions/h2-dispatch.records.example.yaml` no longer carries `shadow: true`,
+  because an approval and an action follow it. `SystemDocTest` refuses an approval or an action that follows a
+  recommendation in shadow operation. No component reads records at run time.
+
 - Concept 20 section 6.1 and the TASK-020 B1 notes list the signed `tsx-runner`
   modes that exist. With the B3 site configuration, `agent`, `conform` and `run`
   handle signed bounded statistics. With the B1 configuration, `run` executes
@@ -651,6 +665,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Continuous Wayang increments retain private preparations after a transient preparation failure, including a lost
   response after preparation was persisted. Identical retry keeps the admitted plan, clock and whole-topic placement;
   activation still requires every preparation and the cross-topic ownership checks. Permanent refusals remain failures.
+
+- `align.vector` refuses a `fill` other than `none` or `as-of` in the web workbench and the vector processor, as the
+  Rust runner and Wayang already did. A typo such as `fill: asof` aligned without fill in the workbench preview, was
+  dropped from the DAG export and ran without fill on the processor. The workbench preview refuses it with
+  `vector fill must be none or as-of`, the message of the Rust runner, and the processor with
+  `node <id>: vector fill must be none or as-of`. The deploy checks of the workbench and of the Flow Composer list
+  `<label>: vector fill must be none or as-of.`, so such a stored flow still opens but is neither downloaded nor
+  deployed; the DAG export writes the fill as stored. A missing `fill` stays `none`.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

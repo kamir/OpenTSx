@@ -48,7 +48,7 @@ General continuous activation, production release qualification and ownership ha
 
 1. An operator is identified by `id` and `version` of an `opentsx.processor.v1` description
    ([schema](schemas/opentsx.processor.v1.schema.json)). Descriptions live in `systems/processors/<id>.yaml`; the file
-   name MUST equal the id (checked by `SystemDocTest.java:49-57`).
+   name MUST equal the id (checked by `SystemDocTest.java:71-79`).
 2. The DAG names an operator by its `op`. When the description has `dag.op`, that value is the DAG `op`;
    otherwise the `id` is. Example: `dq.plausible-range` is written as `op: dq.checks` with
    `fixed: { checks: [PLAUSIBLE_RANGE] }` (`systems/processors/dq.plausible-range.yaml`).
@@ -1001,6 +1001,11 @@ unreachable.
    (version and digest). Every Track A and B record MUST carry `job`; the processor does not write it. Readers MUST
    NOT take a record with `job` for a processor sink report or refusal, and MUST ignore fields they do not know.
 3. A runtime MUST write a status record on every state change and at least every 30 s, as the processor does today.
+4. A Track B site agent whose site configuration selects `profile` `orbit` MUST NOT stop a plan because a `running`
+   record cannot be sent to the plan service. It MUST append that record to a bounded durable outbox, send buffered
+   records oldest first before any newer record, and send the terminal record only after the outbox is empty. When
+   the outbox is full, it MUST stop the plan. Without `profile`, or with `ground`, a heartbeat record that cannot be
+   sent stops the plan. A buffered record can be delivered more than once.
 
 ### S5.5 Refusal codes
 

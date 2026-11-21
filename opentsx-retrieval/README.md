@@ -140,6 +140,23 @@ The regression cases invoke the private body and response helpers with local `Fa
 They cover JSON shape/parsing, UTF-8 and binary payloads, request I/O failures, response header/write failures
 and exchange closure. They start no server and use no network.
 
+### Origin of a signal
+
+With `--systems`, `GET /v1/systems/{id}/signals` gives a signal an `origin` by the first rule that applies. From
+best to worst the origins are `MEASURED`, `REPORTED`, `FORECAST`, `ESTIMATED` and `SYNTHETIC`.
+
+1. The raw source states it. A generator source is `SYNTHETIC`. A manual source without an origin is `REPORTED`.
+2. A flow computes the clean grade: the worst of `expect.origin` and the origins of the signals the flow reads, when
+   any of them has one. A computed estimate is `ESTIMATED`, and a result made of `SYNTHETIC` data stays `SYNTHETIC`.
+3. Otherwise the signal has no `origin`, for example a signal without a source.
+
+In `systems/h2-chain.system.yaml`, `park.p_potential_kw` is `ESTIMATED`: a power curve computes it from the
+`MEASURED` wind of a station. From the repository root, run:
+
+```bash
+mvn -B -ntp -pl opentsx-retrieval -am test -Dtest='SystemsTest,DecisionsTest' -Dsurefire.failIfNoSpecifiedTests=false
+```
+
 ### Vector topics
 
 With `--kafscale` the server also reads the vector topics of the domain (`tsx.<domain>.smart.<name>.vectors.v1`,
@@ -155,7 +172,8 @@ Vector topics are written by the vector processor (below). The server is its fro
 * `POST /v1/dags/deploy` (body: the DAG as YAML) checks that the processor can run the DAG and appends it to the
   control topic. `POST /v1/dags/stop?name=<dag>` appends the stop. Both exist only with `--dag-runs true`.
 * The processor runs `align.vector` on the series of the source topic only (`in: [decode]`); any other operator
-  before the vector is refused with the id of the node. `source.series` must name the series.
+  before the vector is refused with the id of the node. `source.series` must name the series. A `fill` other than
+  `none` or `as-of` is refused with `node <id>: vector fill must be none or as-of`; a missing `fill` is `none`.
 * **Run token.** With `--dag-run-token <token>` or the environment variable `OPENTSX_DAG_RUN_TOKEN` the two write
   routes need the token in the header `X-OpenTSx-Run-Token`; anything else gets 401. Without a token, whoever
   reaches the port can deploy and stop. The SaaS backend holds the token and forwards for its users

@@ -171,6 +171,25 @@ fn vector_shared_case_6() {
     vector_case(5);
 }
 
+#[test]
+fn vector_fill_other_than_none_or_as_of_is_refused() {
+    assert_eq!(
+        VectorParams::parse(&json!({"every":60,"fill":"asof"})).unwrap_err(),
+        "vector fill must be none or as-of"
+    );
+    assert!(!VectorParams::parse(&json!({"every":60})).unwrap().as_of);
+    assert!(
+        !VectorParams::parse(&json!({"every":60,"fill":null}))
+            .unwrap()
+            .as_of
+    );
+    assert!(
+        VectorParams::parse(&json!({"every":60,"fill":"as-of"}))
+            .unwrap()
+            .as_of
+    );
+}
+
 fn xcorr_case(index: usize) {
     let all = vectors("pair-xcorr.v1.json");
     assert_eq!(all["cases"].as_array().unwrap().len(), 5);
