@@ -12,6 +12,9 @@ entries before 3.0.0 are grouped by date.
 
 ### Changed
 
+- `python-package`: `test_finite_service_http.py` compares the reported `statsmodels` version with the installed
+  library instead of a fixed `0.14.6`, which failed after the dependency update pinned `statsmodels==0.15.0`.
+
 - TASK-020 U01 decisions D-T16 to D-T22 (owner, 2026-11-21). `TsxCompileContext.Boundary` loses `admitsRaw` (D-T22):
   no raw series, pair or vector and no operator with merge class `none` can feed a federated sink. Spec S1.10, S2.2
   and S2.4 state that a site has exactly one node (D-T17) and that the local worker's capabilities are trusted-local

@@ -167,4 +167,7 @@ def test_example_executes_a_real_random_walk_forecast_and_two_held_out_folds():
     assert result["backtest"]["result"]["metrics"]["naive"]["mae"] == pytest.approx(
         2.5, rel=0, abs=1e-8
     )
-    assert result["runtime"]["statsmodels"] == "0.14.6"
+    # the result records the installed library, whatever version pyproject.toml pins
+    import statsmodels
+
+    assert result["runtime"]["statsmodels"] == statsmodels.__version__
