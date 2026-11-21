@@ -254,7 +254,7 @@ The server does not check that `select` matches exactly the series of the signal
 no cycle. It checks a generator source with the rules of the generator it runs, not against a processor description.
 
 Implemented in: `SystemDoc.java:200-258,262-371,375-601`, `Generators.java:57-63,79-85,105-127,137-159`; tests
-`SystemDocTest.java:387-405,478-512`.
+`SystemDocTest.java:393-411,484-518`.
 
 <a id="s26-hash"></a>
 
@@ -400,7 +400,7 @@ Rules:
 | `gen.sine` | `mean`, `amplitude` | `period` (ISO-8601 duration), default `P1D`; `phase` (share of the period), default 0; `sigma`, default 0 | `period` above zero and at most `PT2562047H47M16.854775807S` (about 292 years); `sigma` not below 0 |
 
 Implemented in: `Systems.java:119-153,161-164`, `Generators.java:36-42,57-71,79-159,176-216`; tests
-`SystemsTest.java:461-477`, `SystemDocTest.java:502-512`, `GeneratorsTest.java:117-118`.
+`SystemsTest.java:461-477`, `SystemDocTest.java:508-518`, `GeneratorsTest.java:117-118`.
 
 <a id="s43-clean-and-feature-series"></a>
 

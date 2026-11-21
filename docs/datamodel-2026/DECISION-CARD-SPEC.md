@@ -439,7 +439,7 @@ range is 0 to 3300 kW from the system document.
 
 Implemented in: `system.v1:223-266`, `SystemDoc.java:45-52`, `SystemDoc.java:399-406`, `SystemDoc.java:413-415`,
 `SystemDoc.java:438-440`, `SystemDoc.java:612-617`, `Systems.java:223-227`, `Systems.java:271-276`,
-`Systems.java:446-450`, `SystemDocTest.java:354-362`, `SystemDocTest.java:396`.
+`Systems.java:446-450`, `SystemDocTest.java:360-368`, `SystemDocTest.java:402`.
 
 <a id="5-powers-of-a-wind-park"></a>
 
