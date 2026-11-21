@@ -608,6 +608,15 @@ entries before 3.0.0 are grouped by date.
 
 ### Fixed
 
+- `GET /v1/systems/{id}/runs/{run}/compare` ranks no KPI when an input of either run has the origin `SYNTHETIC`,
+  as `DECISION-CARD-SPEC.md` section 6 requires. The KPIs keep `delta` and have no `verdict`; the new field `reasons`
+  holds `generated, not measured: <ports>; no KPI is ranked better or worse` and is empty otherwise. A run on a demo
+  demand was compared with its baseline as `better` or `worse`. The place "Simulate" shows the reason above the
+  table and colours no difference without a verdict; a difference of zero without a verdict shows as empty instead
+  of `-0`. A Python caller of `RetrievalClient.compare` that reads `verdict` must handle its absence. Notebook 4
+  (`python-package/notebooks/04-den-zwilling-fragen.ipynb`) shows such a comparison with an empty `verdict` column
+  and prints the reason above the table; it raised `KeyError` on the missing `verdict` and is now in English.
+
 - The `statsmodels` 0.15.0 pin of `python-package` now matches `deploy/local-cp/requirements.in` and
   `requirements.lock`. With the old 0.14.6 constraint, the install in `standalone-numerics.md` failed with
   `ResolutionImpossible`, and `test_finite_service_http.py` expected 0.14.6. `statsmodels` 0.15.0 adds the pinned
