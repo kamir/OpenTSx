@@ -345,7 +345,7 @@ the account. nginx matches the path after it decodes percent escapes, merges sla
 the k3s Ingress sends `/v1` to the retrieval server directly, and there the run token is the only gate
 ([deploy/k3s](../deploy/k3s/README.md#vector-smart-topics)).
 
-Check the rules from the repository root:
+You need Python 3.12. Check the rules from the repository root:
 
 ```bash
 python3 -m unittest discover -s tools -p 'test_saas_frontend_nginx.py' -v
