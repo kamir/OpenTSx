@@ -610,6 +610,9 @@ entries before 3.0.0 are grouped by date.
 
 ### Fixed
 
+- `tsx-runner`: the WASM test `scoped_fixture_is_cleared_after_unwinding` unwinds with `resume_unwind`, so it no
+  longer prints a panic message. With `--nocapture 2>&1` that message could split another test's `test ... ok` line,
+  and the B3 qualification then reported `guest_stack_is_bounded_by_the_configured_limit` as not executed.
 - The `statsmodels` 0.15.0 pin of `python-package` now matches `deploy/local-cp/requirements.in` and
   `requirements.lock`. With the old 0.14.6 constraint, the install in `standalone-numerics.md` failed with
   `ResolutionImpossible`, and `test_finite_service_http.py` expected 0.14.6. `statsmodels` 0.15.0 adds the pinned
