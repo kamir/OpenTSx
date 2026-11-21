@@ -112,7 +112,7 @@ public final class RunnerPlan {
         strings(federation.get("groupBy"), false);
         JsonNode expected = federation.get("expectedAssignments");
         if (!expected.isArray() || expected.isEmpty() || expected.size() > 128) throw SiteJson.invalid("invalid expected assignment inventory");
-        Set<String> assignmentIds = new HashSet<>(), sites = new HashSet<>();
+        Set<String> assignmentIds = new HashSet<>(), sites = new HashSet<>(), nodes = new HashSet<>();
         boolean own = false;
         for (JsonNode member : expected) {
             SiteJson.fields(member, "assignment", "site", "node", "generation", "fence", "fragmentHash");
@@ -121,7 +121,8 @@ public final class RunnerPlan {
             SiteJson.decimal(SiteJson.text(member, "fence"), true);
             if (!SiteJson.text(member, "fragmentHash").matches("[0-9a-f]{64}")
                     || !member.get("generation").equals(assignment.get("generation"))
-                    || !assignmentIds.add(member.path("assignment").asText()) || !sites.add(member.path("site").asText())) {
+                    || !assignmentIds.add(member.path("assignment").asText()) || !sites.add(member.path("site").asText())
+                    || !nodes.add(member.path("node").asText())) {
                 throw SiteJson.invalid("invalid expected assignment identity");
             }
             if (member.get("assignment").equals(assignment.get("assignment"))) {
