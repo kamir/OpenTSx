@@ -192,7 +192,7 @@ class DagRunEndpointTest {
             assertTrue(refused.getMessage().contains("OPENTSX_DAG_RUN_TOKEN"), refused.getMessage());
         }
         IllegalArgumentException atStart = assertThrows(IllegalArgumentException.class, () -> RetrievalServer.main(
-                new String[] {"--kafscale", "127.0.0.1:9", "--dag-runs", "true", "--dag-run-token", " "}));
+                new String[] {"--kafscale", "127.0.0.1:9", "--refresh", "never", "--dag-runs", "true", "--dag-run-token", " "}));
         assertEquals("--dag-runs true needs a run token: set OPENTSX_DAG_RUN_TOKEN or --dag-run-token", atStart.getMessage());
     }
 
