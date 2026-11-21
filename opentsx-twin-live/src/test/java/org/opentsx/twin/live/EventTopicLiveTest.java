@@ -7,18 +7,25 @@ import org.opentsx.twin.TwinEvent;
 import org.opentsx.twin.studio.Scenarios;
 import org.opentsx.twin.studio.StudioScenario;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -43,6 +50,20 @@ class EventTopicLiveTest {
         assertFalse(EventTopic.isEventTopic("tsx.windpark.episodes.v2"));
         assertFalse(EventTopic.isEventTopic("twin.h2-chain.run.msgs"));
         assertFalse(EventTopic.isEventTopic("twin.h2-chain.../x.events"));
+    }
+
+    /** The event topic is the only twin topic that code writes, so the docs of this module name no other. */
+    @Test
+    void docsNameOnlyTheEventTopic() throws IOException {
+        Pattern kind = Pattern.compile("twin\\.<id>\\.<run>\\.([a-z]+)|(?:`|\\{@code )\\.([a-z]+)[`}]");
+        for (String doc : List.of("README.md", "src/main/java/org/opentsx/twin/live/EventTopic.java")) {
+            Set<String> kinds = new TreeSet<>();
+            Matcher m = kind.matcher(Files.readString(Path.of(doc)));
+            while (m.find()) {
+                kinds.add(m.group(1) != null ? m.group(1) : m.group(2));
+            }
+            assertEquals(Set.of("events"), kinds, doc + " names a twin topic that no code writes");
+        }
     }
 
     @Test

@@ -10,11 +10,12 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 /**
- * The topic that carries the events of one twin run: {@code twin.<id>.<run>.events}, next to the topics of the Avro
- * contract ({@code .msgs}, {@code .barrier}, {@code .interventions}). One partition, so the log keeps the order of
- * the run. The key of a record is the atom; the value is JSON ({@link #SCHEMA}):
+ * The topic that carries the events of one twin run: {@code twin.<id>.<run>.events}, the only topic of a twin.
+ * One partition, so the log keeps the order of the run. The key of a record is the atom; the value is JSON
+ * ({@link #SCHEMA}):
  * <pre>
- * {"run_id":"h2-chain-32d1...","k":147,"atom":"line","type":"pressure_limit","t":"2026-01-10T02:27:10Z","attrs":{"p_bar":"40.0"}}
+ * {"run_id":"h2-chain-6734f91571b28b83","k":148,"atom":"buffer","type":"pressure_limit",
+ *  "t":"2025-10-01T02:28:54.367877Z","attrs":{"p_max_bar":"200.000"}}
  * </pre>
  * {@code t} is the time of the event in the run, which may lie inside a time step; {@code k} is the step that
  * detected it. The record timestamp is the time of publishing.

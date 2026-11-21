@@ -59,7 +59,7 @@ public final class AtomSchemas {
     /** One output value between atoms; id {@code run/k/phase/atom/port} is deterministic. */
     public static Schema portMessage() {
         return SchemaBuilder.record("PortMessage").namespace(NAMESPACE)
-                .doc("One output value as it travels between atoms (topic twin.<id>.<run>.msgs).")
+                .doc("One output value as it travels between atoms.")
                 .fields()
                 .requiredString("run_id")
                 .requiredInt("k")
@@ -75,7 +75,7 @@ public final class AtomSchemas {
     /** Phase end ({@code phase} set) or superstep commit with chained state hash ({@code phase} null). */
     public static Schema barrier() {
         return SchemaBuilder.record("Barrier").namespace(NAMESPACE)
-                .doc("Phase end or superstep commit (topic twin.<id>.<run>.barrier).")
+                .doc("Phase end or superstep commit.")
                 .fields()
                 .requiredString("run_id")
                 .requiredInt("k")
@@ -88,7 +88,7 @@ public final class AtomSchemas {
     /** A decision in the intervention log; {@code value} null releases the control. */
     public static Schema intervention() {
         return SchemaBuilder.record("Intervention").namespace(NAMESPACE)
-                .doc("Override of an atom control from time t on (topic twin.<id>.<run>.interventions).")
+                .doc("Override of an atom control from time t on.")
                 .fields()
                 .name("t").type(timestampMicros()).noDefault()
                 .requiredString("atom")
@@ -112,7 +112,7 @@ public final class AtomSchemas {
 
     /**
      * Snapshot of one atom instance after superstep {@code k}: state, outputs and the controls in force. The
-     * instance id is the key ({@code atom}), so one topic per atom type holds all its instances.
+     * instance id is the key ({@code atom}), so one schema per atom type covers all its instances.
      */
     public static Schema snapshot(Atom prototype) {
         String base = recordName(prototype.type()).replace("Snapshot", "");

@@ -9,18 +9,18 @@ twin run --> EventPublisher --> twin.<id>.<run>.events (KafScale) --> EventBridg
 
 ## Topic contract
 
-Name: `twin.<id>.<run>.events`, next to `.msgs`, `.barrier` and `.interventions` of the Avro contract in
-`opentsx-twin`. One partition, so the log keeps the order of the run. Key: the atom. Value: JSON, schema
-`twin.event.v1` (header `tsx-schema`):
+Name: `twin.<id>.<run>.events`. It is the only topic of a twin. Port messages, barriers and interventions of the
+Avro contract in `opentsx-twin` have no topic. One partition, so the log keeps the order of the run. Key: the atom.
+Value: JSON, schema `twin.event.v1` (header `tsx-schema`):
 
 ```json
-{"run_id":"h2-chain-32d17d33b237bf6b","k":147,"atom":"line","type":"pressure_limit",
- "t":"2026-10-01T02:27:10Z","attrs":{"p_max_bar":"40.0"}}
+{"run_id":"h2-chain-6734f91571b28b83","k":148,"atom":"buffer","type":"pressure_limit",
+ "t":"2025-10-01T02:28:54.367877Z","attrs":{"p_max_bar":"200.000"}}
 ```
 
 `t` is the time of the event in the run and may lie inside a time step; `k` is the step that detected it. The record
-timestamp is the time of publishing. The value is JSON, not Avro, because the reader is a browser; an Avro variant
-in the style of the other twin topics is open.
+timestamp is the time of publishing. The value is JSON, not Avro, because the reader is a browser. `twin.event.v1`
+has no Avro schema.
 
 ## Commands
 

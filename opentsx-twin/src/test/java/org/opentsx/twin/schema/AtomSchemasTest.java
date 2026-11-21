@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -80,6 +81,14 @@ class AtomSchemasTest {
                     }
                 }
             }
+        }
+    }
+
+    /** No code writes these records to a topic ({@code MessageLog} is the only sink), so no schema names one. */
+    @Test
+    void schemasNameNoTopic() {
+        for (Map.Entry<String, String> e : AtomSchemas.files(AtomCatalog.standard()).entrySet()) {
+            assertFalse(e.getValue().contains("topic"), e.getKey() + " names a topic that no code writes");
         }
     }
 

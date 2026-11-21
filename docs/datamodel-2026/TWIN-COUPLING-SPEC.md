@@ -304,13 +304,13 @@ The message id is `<runId>/<k>/<phase>/<atom>/<port>`.
 * Variant L emits no phase barriers. It emits one commit barrier per superstep, in superstep order, after the run.
 * The commit barrier of the last superstep equals `RunResult.hash()`.
 * `twin/avro/` holds the Avro form of the envelopes `PortMessage`, `Barrier` and `Intervention` in namespace
-  `org.opentsx.twin.v1`.
+  `org.opentsx.twin.v1`. The schemas name no topic.
 * `opentsx-twin` ships the in-memory `MessageLog` as the only sink. It has no KafScale binding for port messages and
-  barriers.
+  barriers. No topic carries port messages, barriers or interventions.
 
 Implemented in: `PortMessage.java:9-14`, `Barrier.java:7-11`, `MessageSink.java:4-18`, `MessageLog.java:8-29`,
-`TwinRunner.java:107-113,140-146,158`, `LooseRunner.java:320-323,375`, `schema/AtomSchemas.java:35,61-77`; tests:
-`TwinShadowTest.java:103-131`, `LooseRunnerTest.java:29-52`.
+`TwinRunner.java:107-113,140-146,158`, `LooseRunner.java:320-323,375`, `schema/AtomSchemas.java:35,60-100`; tests:
+`TwinShadowTest.java:103-131`, `LooseRunnerTest.java:29-52`, `schema/AtomSchemasTest.java:89-93`.
 
 <a id="8-run-identity-and-run-record"></a>
 

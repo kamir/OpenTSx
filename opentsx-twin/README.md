@@ -87,6 +87,9 @@ Every atom of the three scenarios round-trips through these schemas (Java test),
 fastavro (`python-package/tests/test_twin_schemas.py`). They are the basis for running variant L processors in other
 languages and for snapshots in Iceberg.
 
+No code writes these records to a topic, and the schemas name no topic. The only topic of a twin is the event topic
+of [`opentsx-twin-live`](../opentsx-twin-live/README.md#topic-contract).
+
 ### Origin propagation
 
 * An output gets the worst origin of the inputs it read in the same superstep.
