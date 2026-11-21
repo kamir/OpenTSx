@@ -181,7 +181,11 @@ Vector topics are written by the vector processor (below). The server is its fro
 
 The operator is `org.opentsx.retrieval.vector.VectorAligner`. It passes the test vectors shared with the web
 workbench (`docs/datamodel-2026/testvectors/align-vector.v1.json`); the rules are in
-`docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md`, section 2.
+`docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md`, section 2. `VectorAligner.align` refuses two series that give the same
+component of one vector:
+`the series <a> and <b> both give the component "<c>" of one vector; choose a key that tells them apart`. `<a>` and
+`<b>` are the ids of the two series. `<a>` comes first: inputs in their order, the series of one input in id order.
+Choose a `key` that tells them apart, such as a tag.
 
 `VectorStream` is the same operator over a continuing input. `new VectorStream(expected, params, lateness)` reads one
 set of series for every input; `new VectorStream(expectedByInput, params, lateness)` gives each input series of its
