@@ -142,8 +142,9 @@ Read the [analysis guide](../docs/devguide/workbench-analysis.md) for the result
   `../docs/datamodel-2026/PAIR-WINDOWS-SPEC.md`)
 - Deploy and Stop (tab "Smart Topic"): a list says what a deployment still needs, "Create a vector of the loaded
   series" builds the one thing the processor runs, and Deploy hands the flow to the vector processor, which keeps the vector topic up to
-  date, and shows what it reports; needs an administrator account, a retrieval server started with `--kafscale` and
-  `--dag-runs true`, and a running vector processor. A separate list shows the Track A and B jobs of `GET /v1/dags`
+  date, and shows what it reports; needs an account the backend admits (an administrator, or every account with
+  `DAG_RUN_ROLE=user`), a retrieval server started with `--kafscale`, `--dag-runs true` and a run token, and a running
+  vector processor. A separate list shows the Track A and B jobs of `GET /v1/dags`
   with job id, track, site, state, input record count and report age. It has no Stop: those jobs do not read the
   control topic
 - Vector component names: the parameter `names` of "Align to vector" names the inputs from the left, comma

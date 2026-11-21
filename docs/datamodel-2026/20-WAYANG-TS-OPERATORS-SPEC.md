@@ -243,7 +243,8 @@ envelope and S1.9 requests. It accepts one to three complete source topics, one 
 cleaning subset. The UI queries target capabilities and submits explicit `flowId` and exact UTF-8 `dagText` through
 the authenticated backend. Worker capabilities are read over the unauthenticated local HTTP interface; this profile
 is trusted-local and makes no fleet qualification claim. Fleet admission uses only the signed site path of S5.3 and
-S7 (D-T18). Administrator permission is required. Existing continuous deployment routes are unchanged.
+S7 (D-T18). The backend admits administrators, or every signed-in user when `DAG_RUN_ROLE` is `user`, the setting
+that also admits DAG deployments and demo generators. Existing continuous deployment routes are unchanged.
 
 | Boundary | Required local behavior and implementation |
 | --- | --- |

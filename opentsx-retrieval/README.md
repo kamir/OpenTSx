@@ -174,10 +174,15 @@ Vector topics are written by the vector processor (below). The server is its fro
 * The processor runs `align.vector` on the series of the source topic only (`in: [decode]`); any other operator
   before the vector is refused with the id of the node. `source.series` must name the series. A `fill` other than
   `none` or `as-of` is refused with `node <id>: vector fill must be none or as-of`; a missing `fill` is `none`.
-* **Run token.** With `--dag-run-token <token>` or the environment variable `OPENTSX_DAG_RUN_TOKEN` the two write
-  routes need the token in the header `X-OpenTSx-Run-Token`; anything else gets 401. Without a token, whoever
-  reaches the port can deploy and stop. The SaaS backend holds the token and forwards for its users
-  (`POST /api/v1/dags/deploy`, `/stop`); it names the user in `X-OpenTSx-By`, which ends up in the control record.
+* **Run token.** `--dag-runs true` needs a run token: `--dag-run-token <token>` or the environment variable
+  `OPENTSX_DAG_RUN_TOKEN`. Without one, or with a blank one, the server does not start and fails with
+  `--dag-runs true needs a run token: set OPENTSX_DAG_RUN_TOKEN or --dag-run-token`. The three write routes
+  (`POST /v1/dags/deploy`, `/v1/dags/stop` and `/v1/systems/<id>/generate`) need the token in the header
+  `X-OpenTSx-Run-Token`; anything else gets 401. The SaaS backend holds the token and forwards for its users
+  (`POST /api/v1/dags/deploy`, `/stop`, `/api/v1/systems/<system>/generate`); it names the user in `X-OpenTSx-By`,
+  which ends up in the control record. A `RetrievalServer` built with `Dags` and `dagWrites` true but without a
+  token throws an `IllegalArgumentException`; `generatedSeries` on a server without a token throws an
+  `IllegalStateException`.
 * Two inputs of one `align.vector` node with the same name are refused with
   `node <id>: two inputs of the vector are both named "<name>"; give every input its own name`. An input without an
   entry in `params.names` is named `in1`, `in2` and so on by its position. `VectorAligner.align` and
@@ -260,7 +265,7 @@ Start the server:
 java -cp … org.opentsx.retrieval.server.RetrievalServer --port 8080 --iceberg type=rest,uri=…,warehouse=… [--namespace tsx]
 java -cp … org.opentsx.retrieval.server.RetrievalServer --port 8080 --demo true      # synthetic demo store
 java -cp … org.opentsx.retrieval.server.RetrievalServer --port 8080 --kafscale host:9092 --domain wind \
-     [--refresh PT30S] [--max-episodes 20000] [--dag-runs true]                       # episodes topic on KafScale
+     [--refresh PT30S] [--max-episodes 20000] [--dag-runs true --dag-run-token <token>] # episodes topic on KafScale
 ```
 
 With `--kafscale` the server reads `tsx.<domain>.episodes.v2` into memory and follows the topic. It uses manual

@@ -3,10 +3,14 @@
 No database, no network.
 """
 
+import asyncio
+from contextlib import asynccontextmanager
+
 import httpx
 import pytest
 from fastapi.testclient import TestClient
 
+from app import main
 from app.api import dags
 from app.core.config import settings
 from app.core.deps import get_current_user
@@ -145,3 +149,41 @@ def test_stop_forwards_the_name_and_needs_the_same_rights(retrieval):
     assert client_as(PLAIN).post("/api/v1/dags/stop", params={"name": "wind-exp2-smart"}).status_code == 403
     assert client_as(ADMIN).post("/api/v1/dags/stop").status_code == 422
     assert "url" not in retrieval["seen"]
+
+
+def test_the_startup_says_what_the_run_role_user_opens(monkeypatch, capsys):
+    class Connection:
+        async def run_sync(self, fn):
+            pass
+
+    class Engine:
+        @asynccontextmanager
+        async def begin(self):
+            yield Connection()
+
+        async def dispose(self):
+            pass
+
+    @asynccontextmanager
+    async def session():
+        yield None
+
+    async def nothing(*args):
+        pass
+
+    async def start_and_stop():
+        async with main.lifespan(main.app):
+            pass
+
+    monkeypatch.setattr(main, "wait_for_db", nothing)
+    monkeypatch.setattr(main, "async_engine", Engine())
+    monkeypatch.setattr(main, "AsyncSessionLocal", session)
+    monkeypatch.setattr(main, "init_db", nothing)
+    monkeypatch.setattr(settings, "TEST_LOGIN", False)
+    monkeypatch.setattr(settings, "DAG_RUN_ROLE", "superuser")
+    asyncio.run(start_and_stop())
+    assert "DAG_RUN_ROLE" not in capsys.readouterr().out
+    monkeypatch.setattr(settings, "DAG_RUN_ROLE", "user")
+    asyncio.run(start_and_stop())
+    assert ("DAG_RUN_ROLE=user: every signed-in account may deploy and stop DAGs, run demo generators and run Wayang "
+            "deployments. Sign-up is open.") in capsys.readouterr().out.splitlines()

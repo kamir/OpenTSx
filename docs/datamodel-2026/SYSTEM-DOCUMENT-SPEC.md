@@ -30,10 +30,13 @@ Code cited on this page:
 | `Generators.java` | `opentsx-retrieval/src/main/java/org/opentsx/retrieval/generate/` |
 | `RetrievalServer.java`, `KafScaleFeed.java` | `opentsx-retrieval/src/main/java/org/opentsx/retrieval/server/` |
 | `SystemDocTest.java`, `SystemsTest.java`, `OperatorLearningAvailabilityTest.java` | `opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/` |
+| `DagRunEndpointTest.java` | `opentsx-retrieval/src/test/java/org/opentsx/retrieval/server/` |
 | `TopicLayout.java` | `opentsx-kafka-v2/src/main/java/org/opentsx/kafka/` |
 | `Origin.java` | `opentsx-twin/src/main/java/org/opentsx/twin/` |
 | `system.py` | `opentsx-saas-backend/app/models/` |
-| `systems.py`, `dags.py` | `opentsx-saas-backend/app/api/` |
+| `systems.py`, `dags.py`, `wayang.py` | `opentsx-saas-backend/app/api/` |
+| `main.py` | `opentsx-saas-backend/app/` |
+| `test_systems.py`, `test_wayang_rust.py`, `test_dags.py` | `opentsx-saas-backend/tests/` |
 | `signals.ts`, `SignalsPlace.tsx`, `SystemPlace.tsx` | `opentsx-saas-frontend/src/systems/` |
 | `flow.ts`, `capabilities.ts`, `deployments.ts`, `types.ts`, `PublishClean.tsx`, `FlowComposer.tsx` | `opentsx-saas-frontend/src/workbench/` |
 | `Systems.tsx`, `Workbench.tsx` | `opentsx-saas-frontend/src/pages/` |
@@ -132,7 +135,7 @@ The order from best to worst is `MEASURED`, `REPORTED`, `FORECAST`, `ESTIMATED`,
 * A computed signal without `expect.origin` has the worst origin of the signals its flow reads.
 * A `features` source gives no origin.
 
-Implemented in: `Systems.java:405-426`, `Origin.java:7-28`; tests `SystemsTest.java:103-111,129-133,326-343`.
+Implemented in: `Systems.java:405-426`, `Origin.java:7-28`; tests `SystemsTest.java:104-112,130-134,327-344`.
 
 <a id="s2-system-document"></a>
 
@@ -152,7 +155,7 @@ Implemented in: `Systems.java:405-426`, `Origin.java:7-28`; tests `SystemsTest.j
   [`schemas/opentsx.system.v1.schema.json`](schemas/opentsx.system.v1.schema.json) and loads
   `systems/h2-chain.system.yaml` with no problems.
 
-Implemented in: `Systems.java:57-70`, `SystemDoc.java:188-258,356-371`, `RetrievalServer.java:634-641`,
+Implemented in: `Systems.java:57-70`, `SystemDoc.java:188-258,356-371`, `RetrievalServer.java:639-646`,
 `SystemDocTest.java:58-68,345-347`.
 
 <a id="s22-top-level-fields"></a>
@@ -434,7 +437,7 @@ The status of a signal ([section 6](#s6-signal-state)) reports for each grade th
 * Several generator runs: when the series found carry more than one `run`, only the run with the newest label
   `generatedAt` counts. The others are listed under `others`.
 
-Implemented in: `Systems.java:237-253,485-612`, `RetrievalServer.java:137-148`.
+Implemented in: `Systems.java:237-253,485-612`, `RetrievalServer.java:142-153`.
 
 <a id="s5-series-sink-in-a-dag"></a>
 
@@ -556,7 +559,7 @@ DAGs. It stores no state.
 * A POST body larger than 262,144 bytes is refused with 413.
 * The [REST appendix of the user manual](../user-manual/appendix-b-rest.md) lists every route of the server.
 
-Implemented in: `RetrievalServer.java:174-177,253,420-442,474-514`, `Systems.java:80-93`.
+Implemented in: `RetrievalServer.java:178-181,254,421-443,475-515`, `Systems.java:80-93`.
 
 <a id="s62-status-document"></a>
 
@@ -616,7 +619,7 @@ A signal has exactly one state: the first row that applies.
 * `clean` does not check that a flow runs or that the data is recent.
 * A range violation is not a state. It is reported as `outOfRange` next to the state.
 
-Implemented in: `Systems.java:274-276,436-450`; tests `SystemsTest.java:71-141,210-217`.
+Implemented in: `Systems.java:274-276,436-450`; tests `SystemsTest.java:72-142,211-218`.
 
 <a id="s64-next-steps"></a>
 
@@ -687,16 +690,22 @@ Implemented in: `SystemDoc.java:196-217`, `Systems.java:95-110`, `Systems.tsx:73
 
 * The backend admits administrators, or every signed-in user when the setting `DAG_RUN_ROLE` is `user`; it answers 403
   to any other user, and 503 when `RETRIEVAL_URL` is not set. It forwards the working copy of the user, and the run
-  token `DAG_RUN_TOKEN` when it is set, to the retrieval server.
-* The retrieval server answers 404 unless it runs with `--kafscale` and `--dag-runs true`. It answers 401 when it has a
-  run token and the header `X-OpenTSx-Run-Token` does not carry it.
+  token `DAG_RUN_TOKEN` when it is set, to the retrieval server. The same setting admits DAG deployments and stops and
+  Wayang runs: `DAG_RUN_ROLE=user` opens all three to every signed-in user. With `user`, the backend prints a line at
+  startup that names the three and says that sign-up is open.
+* The retrieval server answers 404 unless it runs with `--kafscale` and `--dag-runs true`. With `--dag-runs true` it
+  MUST have a run token (`--dag-run-token` or `OPENTSX_DAG_RUN_TOKEN`); without one, or with a blank one, it does not
+  start. It answers 401 when the header `X-OpenTSx-Run-Token` does not carry its run token.
 * The document, with the working copy laid over it, MUST have no problems. The signal MUST exist, its raw source MUST
   be a generator, and it MUST state `expect.interval`. `from` and `to` are instants, for example
   `2026-10-01T00:00:00Z`.
 * The series goes to the synthetic topic of the domain ([section 4.2](#s42-generated-series)). The answer holds
   `system`, `signal`, `topic`, `generator`, `fidelity` (`demo`), `episodes`, `samples`, `from`, `to` and `run`.
 
-Implemented in: `systems.py:203-220`, `dags.py:32-55`, `RetrievalServer.java:243-250,502-511`, `Systems.java:112-156`.
+Implemented in: `systems.py:203-220`, `dags.py:32-55`, `wayang.py:40-48`, `main.py:58-60`,
+`RetrievalServer.java:123-126,247-251,503-512,520-527,589-591`, `Systems.java:112-156`; tests
+`DagRunEndpointTest.java:188-197`, `SystemsTest.java:421-438`, `test_systems.py:164-169`, `test_wayang_rust.py:155-157`,
+`test_dags.py:154-189`.
 
 <a id="s8-web-application"></a>
 
