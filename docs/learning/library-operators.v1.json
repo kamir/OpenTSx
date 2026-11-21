@@ -1094,7 +1094,7 @@
           "rust/tsx-runner/src/model.rs#bucket_checksum"
         ],
         "tests": [
-          "opentsx-model/src/test/java/org/opentsx/model/EpisodesAndWireFormatTest.java#L71",
+          "opentsx-model/src/test/java/org/opentsx/model/EpisodesAndWireFormatTest.java#L75",
           "opentsx-model/src/test/java/org/opentsx/model/SeriesIdentityTest.java#bucketChecksumMatchesSharedVectors",
           "rust/tsx-runner/src/wire.rs#episode_wire_vectors_round_trip_byte_for_byte_and_preserve_full_fields",
           "rust/tsx-runner/src/wire.rs#all_series_identity_vectors_match_without_unicode_normalization",
