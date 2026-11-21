@@ -358,7 +358,7 @@ Implemented in: `SystemDoc.java:103-105,335-354,550-583`, `Systems.java:292-297`
 * With `--kafscale`, the retrieval server follows the episodes topic, the clean topic, the features topic and the
   synthetic topic of its domain.
 
-Implemented in: `TopicLayout.java:42-44,165-181,189-206`, `KafScaleFeed.java:128-134,172-175,400-412`,
+Implemented in: `TopicLayout.java:42-44,165-181,212-229`, `KafScaleFeed.java:128-134,172-175,400-412`,
 `VectorProcessorApp.java:85-89`.
 
 <a id="s42-generated-series"></a>

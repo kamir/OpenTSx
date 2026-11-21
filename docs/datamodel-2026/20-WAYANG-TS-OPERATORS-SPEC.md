@@ -785,8 +785,8 @@ Messages are plain English and MUST be returned exactly as below, with the place
 ### S3.1 Topics
 
 1. Every topic name MUST be produced by `TopicLayout`: `"tsx." + domain + "." + kind + ".v2"` for Avro kinds
-   (`TopicLayout.java:204-206`) and the JSON kinds `dags.v1`, `dag-status.v1`, `smart.<name>.vectors.v1`
-   (`TopicLayout.java:111-140`).
+   (`TopicLayout.java:227-229`) and the JSON kinds `dags.v1`, `dag-status.v1`, `smart.<name>.vectors.v1`
+   (`TopicLayout.java:111-140`) and `twin.<twin>.<run>.events.v1` (`TopicLayout.java:183-204`).
 2. `TopicLayout.aggregates()`, `signals()` and `repartition(dag, node)` provide:
    `aggregates` (`tsx.<domain>.aggregates.v2`, Avro `SeriesStats`), `signals` (`tsx.<domain>.signals.v1`, JSON
    `opentsx.signal.v1`), `repartition.<dag>.<node>` (`tsx.<domain>.repartition.<dag>.<node>.v2`, Avro `Episode`).

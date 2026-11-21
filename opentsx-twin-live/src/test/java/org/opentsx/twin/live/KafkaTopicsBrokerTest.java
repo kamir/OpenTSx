@@ -2,6 +2,7 @@ package org.opentsx.twin.live;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.opentsx.kafka.TopicLayout;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -22,7 +23,7 @@ class KafkaTopicsBrokerTest {
 
     @Test
     void appendsAndReadsFromStartFromOffsetAndFromTheEnd() throws Exception {
-        String topic = EventTopic.name("brokertest", "run-" + System.currentTimeMillis());
+        String topic = new TopicLayout("test").twinEvents("brokertest", "run-" + System.currentTimeMillis());
         try (KafkaTopics topics = new KafkaTopics(bootstrap)) {
             assertThrows(Topics.NoSuchTopicException.class, () -> topics.open(topic, Topics.EARLIEST));
             topics.create(topic);

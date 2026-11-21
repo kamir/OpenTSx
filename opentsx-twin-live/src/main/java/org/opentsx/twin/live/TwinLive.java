@@ -1,5 +1,6 @@
 package org.opentsx.twin.live;
 
+import org.opentsx.kafka.TopicLayout;
 import org.opentsx.twin.RunResult;
 import org.opentsx.twin.studio.Scenarios;
 import org.opentsx.twin.studio.StudioScenario;
@@ -14,15 +15,16 @@ import java.util.Map;
  * Command line of the live event topic.
  *
  * <pre>
- * twin-live publish --bootstrap host:9092 [--scenario id] [--duration 120] [--loop]
- *     writes the events of the reference run(s) to their event topics; with --duration (seconds) a run is played in
- *     that time, with --loop again and again
- * twin-live bridge  --bootstrap host:9092 [--port 8090] [--allow-origin *] [--max-streams 16]
- *     serves event topics to browsers as server-sent events
- * twin-live demo    [--port 8090] [--scenario id] [--duration 120]
+ * twin-live publish --bootstrap host:9092 [--domain wind] [--scenario id] [--duration 120] [--loop]
+ *     writes the events of the reference run(s) to their event topics in the domain; with --duration (seconds) a run
+ *     is played in that time, with --loop again and again
+ * twin-live bridge  --bootstrap host:9092 [--domain wind] [--port 8090] [--allow-origin *] [--max-streams 16]
+ *     serves the event topics of the domain to browsers as server-sent events
+ * twin-live demo    [--domain wind] [--port 8090] [--scenario id] [--duration 120]
  *     both in one process on topics kept in memory: no broker, nothing is written to KafScale
  * </pre>
- * Without {@code --bootstrap} the broker comes from the environment variable {@code KAFSCALE_BOOTSTRAP}; without
+ * The event topic of a run is {@link TopicLayout#twinEvents} of the domain (default {@code wind}). Without
+ * {@code --bootstrap} the broker comes from the environment variable {@code KAFSCALE_BOOTSTRAP}; without
  * {@code --allow-origin} the allowed origin comes from {@code EVENT_BRIDGE_ALLOW_ORIGIN} (default {@code *}).
  */
 public final class TwinLive {
@@ -38,39 +40,41 @@ public final class TwinLive {
             System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "warn");
         }
         Map<String, String> o = options(args);
+        o.putIfAbsent("domain", "wind");
+        TopicLayout layout = new TopicLayout(required(o, "domain"));
         switch (args[0]) {
             case "publish" -> {
                 try (Topics topics = new KafkaTopics(required(o, "bootstrap"))) {
-                    publish(topics, o);
+                    publish(topics, layout, o);
                 }
             }
             case "bridge" -> {
                 String bootstrap = required(o, "bootstrap");
                 Topics topics = new KafkaTopics(bootstrap);
-                EventBridge bridge = bridge(topics, o);
+                EventBridge bridge = bridge(topics, layout, o);
                 System.out.println("event bridge on http://localhost:" + bridge.port() + "/v1/topics/<topic>/events, broker "
-                        + bootstrap);
+                        + bootstrap + ", domain " + layout.domain());
                 Thread.currentThread().join();
             }
             case "demo" -> {
                 o.putIfAbsent("duration", "120");
                 o.put("loop", "true");
                 Topics topics = new MemoryTopics();
-                EventBridge bridge = bridge(topics, o);
-                System.out.println("event bridge on http://localhost:" + bridge.port()
-                        + " with topics in memory (no broker, nothing reaches KafScale)");
-                publish(topics, o);
+                EventBridge bridge = bridge(topics, layout, o);
+                System.out.println("event bridge on http://localhost:" + bridge.port() + ", domain " + layout.domain()
+                        + ", with topics in memory (no broker, nothing reaches KafScale)");
+                publish(topics, layout, o);
             }
             default -> usage();
         }
     }
 
-    private static EventBridge bridge(Topics topics, Map<String, String> o) throws java.io.IOException {
-        return new EventBridge(topics, Integer.parseInt(o.getOrDefault("port", "8090")),
+    private static EventBridge bridge(Topics topics, TopicLayout layout, Map<String, String> o) throws java.io.IOException {
+        return new EventBridge(topics, layout, Integer.parseInt(o.getOrDefault("port", "8090")),
                 o.getOrDefault("allow-origin", env("EVENT_BRIDGE_ALLOW_ORIGIN", "*")), Integer.parseInt(o.getOrDefault("max-streams", "16")));
     }
 
-    private static void publish(Topics topics, Map<String, String> o) throws InterruptedException {
+    private static void publish(Topics topics, TopicLayout layout, Map<String, String> o) throws InterruptedException {
         List<StudioScenario> scenarios = new ArrayList<>(Scenarios.all());
         if (o.containsKey("scenario")) {
             scenarios.removeIf(s -> !s.id().equals(o.get("scenario")));
@@ -85,7 +89,7 @@ public final class TwinLive {
             RunResult run = EventPublisher.referenceRun(s);
             runs.put(s, run);
             System.out.println(s.id() + ": " + run.events().size() + " events -> "
-                    + EventTopic.name(s.plan().twin(), run.runId()));
+                    + layout.twinEvents(s.plan().twin(), run.runId()));
         }
         boolean loop = o.containsKey("loop");
         do {
@@ -94,7 +98,7 @@ public final class TwinLive {
             runs.forEach((s, run) -> {
                 Thread t = new Thread(() -> {
                     try {
-                        new EventPublisher(topics).publish(s.plan(), run, duration);
+                        new EventPublisher(topics, layout).publish(s.plan(), run, duration);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     } catch (RuntimeException e) {
@@ -151,9 +155,9 @@ public final class TwinLive {
 
     private static void usage() {
         System.err.println("""
-                usage: twin-live publish --bootstrap host:9092 [--scenario id] [--duration seconds] [--loop]
-                       twin-live bridge  --bootstrap host:9092 [--port 8090] [--allow-origin *] [--max-streams 16]
-                       twin-live demo    [--port 8090] [--scenario id] [--duration seconds]""");
+                usage: twin-live publish --bootstrap host:9092 [--domain wind] [--scenario id] [--duration seconds] [--loop]
+                       twin-live bridge  --bootstrap host:9092 [--domain wind] [--port 8090] [--allow-origin *] [--max-streams 16]
+                       twin-live demo    [--domain wind] [--port 8090] [--scenario id] [--duration seconds]""");
         System.exit(1);
     }
 }

@@ -41,5 +41,6 @@ Images come from that workflow only. Never build or push them by hand.
 
 - Clients connect to the KafScale proxy, never to a broker.
 - Producers come from `KafScaleClients.producer`, which sets `enable.idempotence=false`. KafScale has no `InitProducerId`.
-- Topic names come from `TopicLayout`: `tsx.<domain>.<kind>.v2`.
+- Topic names come from `TopicLayout`, the only source of topic names: `tsx.<domain>.<kind>.v<n>`, with `.v2` for
+  Avro records and `.v1` for JSON records.
 - A shared broker is changed additively. Never delete a topic you did not create.
