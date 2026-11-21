@@ -9,7 +9,7 @@ import { checkBrowserWork } from './workLimits';
 import { PROCESSOR_SERIES_OPS, capabilityOf } from './capabilities';
 import { OP_BY_ID, defaultParams, inCatalog } from './ops';
 import { Bucket, FlowNode, Params, SignalContext, SourceInfo, WayangConfig } from './types';
-import { VECTOR_OP, VECTOR_SCHEMA, componentNames } from './vector';
+import { VECTOR_OP, VECTOR_SCHEMA, componentNames, inputNameClash } from './vector';
 
 export const SOURCE_ID = 'source';
 /** `kind` of a flow definition stored in the backend by the workbench. */
@@ -683,16 +683,18 @@ export function validate(nodes: FlowNode[]): Finding[] {
       });
     }
   }
+  const used = new Set<string>();
+  for (const s of sinks) for (const n of upstream(nodes, s.id)) used.add(n.id);
   for (const n of nodes) {
+    const clash = n.op === VECTOR_OP && used.has(n.id) ? inputNameClash(vectorComponents(nodes, n)) : null;
+    if (clash) out.push({ level: 'error', text: `${n.label}: ${clash}.` });
     if (n.op === VECTOR_OP && inputsOf(n).length < 2) {
       out.push({ level: 'warning', text: `${n.label} has one input only. Add further inputs: each becomes a component of the vector.` });
     }
-    if (n.op === VECTOR_OP && !['none', 'as-of'].includes(String(n.params.fill ?? 'none'))) {
+    if (n.op === VECTOR_OP && used.has(n.id) && !['none', 'as-of'].includes(String(n.params.fill ?? 'none'))) {
       out.push({ level: 'error', text: `${n.label}: vector fill must be none or as-of.` });
     }
   }
-  const used = new Set<string>();
-  for (const s of sinks) for (const n of upstream(nodes, s.id)) used.add(n.id);
   const unused = nodes.filter((n) => n.op !== 'source' && !used.has(n.id));
   if (sinks.length > 0 && unused.length > 0) {
     out.push({ level: 'info', text: `${unused.length} node(s) feed no published topic and are left out of the DAG.` });

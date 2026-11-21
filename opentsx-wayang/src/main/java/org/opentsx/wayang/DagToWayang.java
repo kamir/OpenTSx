@@ -71,6 +71,7 @@ public final class DagToWayang {
         DagToWayangValidation.federation(normalized, normalizedNodes, catalog, context);
         DagToWayangValidation.edges(normalized, normalizedNodes, catalog);
         DagToWayangBuild.validateCleanRuns(normalized);
+        DagToWayangBuild.validateVectorNames(normalized);
         boolean legacy = true;
         for (JsonNode node : normalized.path("nodes")) {
             legacy &= node.path("op").asText().equals("decode.avro-soe") || CleanChain.OPS.contains(node.path("op").asText());

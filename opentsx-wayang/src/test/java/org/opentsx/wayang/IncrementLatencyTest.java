@@ -25,7 +25,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.time.Instant;
@@ -51,8 +50,8 @@ class IncrementLatencyTest {
         });
         assertArrayEquals(payload, LatencyProtocolObserver.readFrame(in));
         assertNull(LatencyProtocolObserver.readFrame(in));
-        assertThrows(EOFException.class, () -> LatencyProtocolObserver.readFrame(new DataInputStream(new ByteArrayInputStream(new byte[]{0, 0}))));
-        assertThrows(EOFException.class, () -> LatencyProtocolObserver.readFrame(new DataInputStream(new ByteArrayInputStream(new byte[]{0, 0, 0, 4, 1}))));
+        assertNull(LatencyProtocolObserver.readFrame(new DataInputStream(new ByteArrayInputStream(new byte[]{0, 0}))));
+        assertNull(LatencyProtocolObserver.readFrame(new DataInputStream(new ByteArrayInputStream(new byte[]{0, 0, 0, 4, 1}))));
         assertThrows(IOException.class, () -> LatencyProtocolObserver.readFrame(new DataInputStream(new ByteArrayInputStream(new byte[]{-1, -1, -1, -1}))));
     }
 

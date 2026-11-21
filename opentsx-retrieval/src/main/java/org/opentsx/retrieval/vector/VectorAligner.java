@@ -101,6 +101,10 @@ public final class VectorAligner {
         if (inputs.isEmpty()) {
             throw new IllegalArgumentException("align.vector needs at least one input");
         }
+        String clash = inputNameClash(inputs.stream().map(Input::name).toList());
+        if (clash != null) {
+            throw new IllegalArgumentException(clash);
+        }
         long every = Math.floorDiv(p.every().toNanos(), 1000);
         long maxAgeTicks = Math.floorDiv(Math.floorDiv(p.maxAge() == null ? p.every().toNanos() : p.maxAge().toNanos(), 1000), every);
         String keyBy = p.key().trim();
@@ -216,5 +220,16 @@ public final class VectorAligner {
             key.put(keyBy, s.tags().getOrDefault(keyBy, ""));
         }
         return key;
+    }
+
+    /** The refusal of a vector in which two inputs have one name, or null. Every runtime refuses it with this text. */
+    public static String inputNameClash(List<String> names) {
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (String name : names) {
+            if (!seen.add(name)) {
+                return "two inputs of the vector are both named \"" + name + "\"; give every input its own name";
+            }
+        }
+        return null;
     }
 }

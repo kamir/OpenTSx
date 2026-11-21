@@ -114,7 +114,8 @@ Read the [analysis guide](../docs/devguide/workbench-analysis.md) for the result
   `src/workbench/vector.ts`). Two series that give the same component of one vector, such as the wind speed of two
   turbines with key `all`, are refused with the message of the vector processor; choose a key that tells them apart.
   A stored flow whose `fill` is not `none` or `as-of` opens, but its preview fails with
-  `vector fill must be none or as-of` and the deploy checks list `<label>: vector fill must be none or as-of.`
+  `vector fill must be none or as-of`. When the vector feeds a published node, the deploy checks list
+  `<label>: vector fill must be none or as-of.`
 - Pair windows (tab "Multi-variate Analysis"): a pair method compares two series window by window, paired by their
   episode ranges, one result per window at its centre; "Pair coverage" shows what the methods will see,
   "Cross-correlation" gives the peak of the lagged cross-correlation, its lag and link strength (`src/workbench/xcorr.ts`,
@@ -133,6 +134,15 @@ Read the [analysis guide](../docs/devguide/workbench-analysis.md) for the result
   `--dag-runs true`, and a running vector processor. A separate list shows the Track A and B jobs of `GET /v1/dags`
   with job id, track, site, state, input record count and report age. It has no Stop: those jobs do not read the
   control topic
+- Vector component names: the parameter `names` of "Align to vector" names the inputs from the left, comma
+  separated. A typed name is written in lower-case snake case: lower case, every run of characters other than a-z
+  and 0-9 becomes `_`, and `_` at either end is dropped. A typed name is never renamed, so two typed names with the
+  same snake-case name are refused. A name left empty comes from the bucket name and gets `_2`, `_3` when another
+  input has it. The preview of a vector with two inputs of one name fails with
+  `two inputs of the vector are both named "<name>"; give every input its own name`. When the vector feeds a
+  published node, the deploy checks list
+  `<label>: two inputs of the vector are both named "<name>"; give every input its own name.`, so the flow is neither
+  downloaded nor deployed. A vector that feeds no published node is left out of the DAG and does not block the flow
 - Time series operations as buttons, recorded as a processing flow graph
 - Export: `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor, Java code. The DAG writes
   `# not in the stream operator catalog` after every operator that catalog 1

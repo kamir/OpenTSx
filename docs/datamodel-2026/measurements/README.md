@@ -17,3 +17,8 @@ OPENTSX_TRACK_A_DATA=<folder with the raw files> python3 -m unittest discover -s
 `<folder with the raw files>` contains the `federation/` and `streaming/` folders of the run
 `wayang-track-a-evaluation-2026-11-18`. Without the variable the raw-data test is skipped and the public record is
 still checked.
+
+The report of `rust-b4-mixed-20261120` stays byte for byte as the qualification tool wrote it, because its
+`manifest.json` pins the SHA-256 of `REPORT.md`. Its links name raw files that are kept outside the repository.
+`tools/check_links.py` leaves files that a manifest pins out, and `tools/test_measurement_records.py` fails when a
+committed file differs from the digest its manifest pins.
