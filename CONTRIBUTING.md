@@ -102,10 +102,11 @@ Pull requests are squash-merged when every required check is green.
   file the link points to. It does not read a tracked file below a directory that the working tree replaced by a
   link; git shows such a file as deleted. A tracked path that is not valid UTF-8 gives
   `<path>: the file name is not valid UTF-8; rename the file`, with the path as git shows it, for example
-  `"caf\351.txt"`, and that file is not read. A line that is not valid UTF-8 is also searched in its cp1252
-  decoding; the other lines of the same file are read as UTF-8 only. A deny list it cannot read, a link on its path
-  that points to nothing, or a word that holds a control or format character (a list saved as UTF-16 without a byte
-  order mark, or a byte order mark inside the list) gives
+  `"caf\351.txt"`, and that file is not read. A line that is not valid UTF-8 is also searched with its bytes that are
+  not valid UTF-8 decoded as cp1252 and its valid characters kept, so a word next to a letter such as `ä` on that line
+  is still no whole word; the other lines of the same file are read as UTF-8 only. A deny list it cannot read, a link
+  on its path that points to nothing, or a word that holds a control or format character (a list saved as UTF-16
+  without a byte order mark, or a byte order mark inside the list) gives
   `config/private/denylist.txt: cannot read it (<cause>); fix the file or remove it`, for example with the cause
   `line 1 holds the control character U+0000`. CI has no deny list and skips this check.
 * Real measurement data (plant, meter, house or boat data) stays local and out of the repository. Commit only

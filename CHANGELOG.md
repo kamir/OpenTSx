@@ -245,9 +245,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   list in the path; rename the file`. A deny list it cannot read, a link on its path that points to nothing, or a word
   that holds a control or format character (a list saved as UTF-16 without a byte order mark, or a byte order mark
   inside the list) gives `config/private/denylist.txt: cannot read it (<cause>); fix the file or remove it`. Words
-  that differ only in letter case count once, a line that is not valid UTF-8 is also searched in its cp1252 decoding,
-  and a tracked symbolic link is checked by its text. Without the file, as in CI, the guard skips this check.
-  CONTRIBUTING.md describes it.
+  that differ only in letter case count once, a line that is not valid UTF-8 is also searched with its bytes that are
+  not valid UTF-8 decoded as cp1252, and a tracked symbolic link is checked by its text. Without the file, as in CI,
+  the guard skips this check. CONTRIBUTING.md describes it.
 
 ### Changed
 
@@ -2815,9 +2815,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   saved as UTF-16 without a byte order mark or one with a byte order mark inside, as `config/private/denylist.txt:
   cannot read it (line <n> holds the control character U+0000); fix the file or remove it` (or `the format character
   U+FEFF`). Such a list used to pass with 0 findings.
-- `tools/check_tracked_config.py` also searches a line of a tracked text file that is not valid UTF-8 in its cp1252
-  decoding, so a deny list word with an umlaut is found in a Latin-1 file. Deny list words that differ only in letter
-  case give one finding.
+- `tools/check_tracked_config.py` also searches a line of a tracked text file that is not valid UTF-8 with its bytes
+  that are not valid UTF-8 decoded as cp1252, so a deny list word with an umlaut is found in a Latin-1 file. Deny list
+  words that differ only in letter case give one finding.
 - tools: `tools/test_lg_scripts.py` reads a redirection between `docker` and its subcommand like a global option, also
   one written right after `docker`, so `docker 2>/dev/null pull <image>`, `docker >log pull <image>`, `docker 2>&1
   pull <image>` and `docker>/dev/null pull <image>` give the `<image>: no exact version` finding. The check used to
@@ -2836,11 +2836,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   command word is checked in linear time; `timeout` followed by 2560 `-k timeout` pairs took 4.15 s and takes 0.03 s.
   Its test for this no longer measures the time.
 - opentsx-lg: before it connects, `mqtt-generator-gist/mqttgen.py` refuses a `mqtt.host` with an empty label, such as
-  `broker..test`, or a label of more than 63 characters with `<file>: mqtt.host: <value> is not allowed; expected a
-  non-empty JSON string, such as a host name or an IP address, of dot-separated labels with an optional dot at the
-  end, where a label of ASCII characters has 1 to 63 characters and IDNA ToASCII turns any other label into 1 to 63
-  characters`. Every refused `mqtt.host` names these allowed values. Such a host used to end in a `UnicodeError`
-  traceback at the connect.
+  `broker..test`, a label of ASCII characters of more than 63 characters or a label whose IDNA form has more than 63
+  characters with `<file>: mqtt.host: <value> is not allowed; expected a non-empty JSON string, such as a host name or
+  an IP address, of dot-separated labels with an optional dot at the end, where a label of ASCII characters has 1 to
+  63 characters and IDNA ToASCII turns any other label into 1 to 63 characters`. Every refused `mqtt.host` names these
+  allowed values. Such a host used to end in a `UnicodeError` traceback at the connect.
 - `opentsx-core`: `RISTool.addDistData` counts a scaled interval below 0 in the first scaled bin, as
   `ReturnIntervallStatistik2` does. This happens only when `RISTool.offset` is below 0 and negative intervals are
   kept: with offset -5, the intervals -3 and 1 give R_q -1 and the probability 0.5 in scaled bins 0 and 15. It threw
@@ -2895,7 +2895,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   with a `UnicodeDecodeError` traceback that named no path.
 - tools: `tools/check_tracked_config.py` run on a folder below the top level whose name is not valid UTF-8 reports a
   gitlink there without a `.gitmodules` entry as `<path at the top level>: the file name is not valid UTF-8; rename
-  the file`. Under a UTF-8 locale it used to stop with a `UnicodeEncodeError` traceback.
+  the file`. It used to stop with a `UnicodeDecodeError` traceback that named no path.
 - tools: `tools/check_tracked_config.py` no longer reads a tracked file through a directory that the working tree
   replaced by a symbolic link; git shows such a file as deleted. It used to read the file of that name outside the
   repository.
@@ -2909,10 +2909,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `deploy/k3s/README.md` names `OPENTSX_ENV_FILE`, the env file the k3s scripts use instead of `deploy/k3s/.env`, and
   says how the question of `71-restore.sh` shows it: an absolute path inside the repository relative to it, an
   absolute path outside it in full, a relative path as given.
-- tools: `tools/check_tracked_config.py` searches only the lines that are not valid UTF-8 also in their cp1252
-  decoding. A stray byte on one line used to decode the whole file as cp1252, so a deny list word glued to a letter
-  such as `ä` on a valid line was reported, and after U+2028, U+2029 or U+0085 one occurrence was reported twice at
-  different lines.
+- tools: `tools/check_tracked_config.py` searches only the lines that are not valid UTF-8 also with their bytes that
+  are not valid UTF-8 decoded as cp1252. A stray byte on one line used to decode the whole file as cp1252, so a deny
+  list word glued to a letter such as `ä` on a valid line was reported, and after U+2028, U+2029 or U+0085 one
+  occurrence was reported twice at different lines.
 - tools: `tools/check_tracked_config.py` reads the gitlinks of a repository, or of a root below its top level, whose
   folder name holds a newline. It used to cut the folder name at the newline and report a gitlink with its
   `.gitmodules` entry as missing, with advice that named a wrong path.
@@ -2943,6 +2943,25 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   value`, counts `$NAME` and `${NAME:-<default>}` as reads, finds an indented or quoted top-level `version` key, and
   finds `docker-compose` and `Xvfb` outside a comment at the start of a line or after a blank, `;`, `&`, `|`, `(`,
   `)`, a backquote, a quote or `=`, also at the end of a path that starts with `/`.
+- tools: in `tools/test_lg_scripts.py` a redirection between a docker global option that takes a value (`--config`,
+  `-c` or `--context`, `-H` or `--host`, `-l` or `--log-level`, `--tlscacert`, `--tlscert`, `--tlskey`) and its value,
+  also one written right after the option, is no value, so `docker --context 2>/dev/null <context> pull <image>` and
+  `docker -l>log debug pull <image>` give the `<image>: no exact version` finding. The check used to skip the first
+  command and to report the option of the second as `unknown docker option before the subcommand; add it to
+  DOCKER_GLOBAL in tools/test_lg_scripts.py`, although DOCKER_GLOBAL lists it.
+- tools: `tools/test_lg_scripts.py` lets a short option bundle of `sudo`, `env`, `nice`, `ionice`, `xargs` or `exec`
+  take the next word only when all its letters before the option that takes a value are options of that tool without a
+  value. So the `docker` of `nice -xn docker pull <image>` and of `xargs -in docker pull <image>`, where `-i` takes
+  `n` as its value, is read. The check used to skip these commands.
+- tools: `tools/check_tracked_config.py` decodes only the bytes of a line that are not valid UTF-8 as cp1252 and keeps
+  the valid characters of that line, so a deny list word next to a letter such as `ä` on a line with a stray byte is
+  no longer reported. It decoded the whole line as cp1252, which turned `ä` into `Ã¤`.
+- tools: the tests in `tools/test_check_tracked_config.py` that create a file or folder name that is not valid UTF-8
+  are skipped where the file system refuses such a name, as APFS on macOS does, or renames it, as HFS+ does. On APFS
+  they failed with `Illegal byte sequence` (errno 92) from Python or from `git init`.
+- The image pin check in `tools/test_lg_scripts.py` reads `-a` and `-c` of `sudo` and their long forms `--auth-type`
+  and `--login-class` as options that take the next word, as `sudo` does, so the `docker` of `sudo -a docker pull
+  <image>` is no longer read as the command.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

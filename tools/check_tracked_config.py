@@ -21,10 +21,11 @@ Checks the files `git ls-files` lists under root:
   * when root holds the private deny list config/private/denylist.txt (git-ignored; one word per line, blank lines
     and lines that start with # skipped, words that differ only in letter case counted once): no tracked path and no
     line of a tracked text file holds one of its words, in any letter case, as a whole word, that is, not next to a
-    letter or digit; a line that is not valid UTF-8 is also searched in its cp1252 decoding. A deny list that cannot
-    be read is one finding, and so is a link on its path that points to nothing and a word that holds a control or
-    format character (Unicode category Cc or Cf), as in a list saved as UTF-16 without a byte order mark or with a
-    byte order mark inside. Without the file these checks do not run.
+    letter or digit; a line that is not valid UTF-8 is also searched with its bytes that are not valid UTF-8 decoded
+    as cp1252 and its valid characters kept. A deny list that cannot be read is one finding, and so is a link on its
+    path that points to nothing and a word that holds a control or format character (Unicode category Cc or Cf), as
+    in a list saved as UTF-16 without a byte order mark or with a byte order mark inside. Without the file these
+    checks do not run.
 
 A tracked symbolic link is checked by its text, which is what git publishes; the file it points to is not read. A
 tracked file below a directory that the working tree replaced by a symbolic link is not read either: git shows it as
@@ -63,6 +64,7 @@ HOME_PATH = re.compile(r"/(?:Users|home)/([A-Za-z0-9._-]+)(?![A-Za-z0-9._-])")
 SERVICE_HOMES = {"Shared", "jovyan", "ubuntu", "ec2-user", "user"}
 DENY_LIST = "config/private/denylist.txt"
 GIT_ESCAPES = {7: "a", 8: "b", 9: "t", 10: "n", 11: "v", 12: "f", 13: "r", 34: '"', 92: "\\"}
+ESCAPED_BYTES = re.compile("[\udc80-\udcff]+")
 
 
 def tracked_files(root: pathlib.Path) -> list[str]:
@@ -263,7 +265,8 @@ def check(root: pathlib.Path, paths: list[str]) -> list[str]:
         except UnicodeDecodeError:
             text = data.decode("utf-8", errors="replace")
             # Neither U+FFFD nor an escaped byte is a line break, so these lines are the lines of text.
-            legacy = {number: line.encode("utf-8", "surrogateescape").decode("cp1252", errors="replace")
+            legacy = {number: ESCAPED_BYTES.sub(lambda run: run.group().encode("utf-8", "surrogateescape")
+                                                .decode("cp1252", errors="replace"), line)
                       for number, line in enumerate(data.decode("utf-8", "surrogateescape").splitlines(), 1)
                       if not utf8(line)}
         if is_config(path):

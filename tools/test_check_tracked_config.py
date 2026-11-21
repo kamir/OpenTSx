@@ -2,6 +2,7 @@
 
 Run from the repository root: python -m pytest -q tools
 """
+import errno
 import os
 import pathlib
 import random
@@ -9,6 +10,8 @@ import re
 import shutil
 import subprocess
 import sys
+
+import pytest
 
 import check_tracked_config as guard
 
@@ -28,6 +31,23 @@ def write(root: pathlib.Path, files: dict[str, str]) -> list[str]:
         (root / path).parent.mkdir(parents=True, exist_ok=True)
         (root / path).write_text(text, encoding="utf-8")
     return list(files)
+
+
+def non_utf8_name(parent: pathlib.Path, raw: bytes) -> str:
+    """Skips the test where the file system refuses names that are not valid UTF-8, as APFS does, or renames them, as
+    HFS+ does."""
+    name = os.fsdecode(raw)
+    try:
+        (parent / name).mkdir()
+    except OSError as error:
+        if error.errno != errno.EILSEQ:
+            raise
+        pytest.skip(f"the file system refuses names that are not valid UTF-8 ({error.strerror})")
+    kept = raw in os.listdir(os.fsencode(parent))
+    (parent / name).rmdir()
+    if not kept:
+        pytest.skip("the file system renames names that are not valid UTF-8")
+    return name
 
 
 def test_a_cloud_host_in_a_profile_fails(tmp_path, capsys):
@@ -432,7 +452,7 @@ def test_a_tracked_link_is_checked_by_its_text_and_not_by_the_file_it_points_to(
 def test_a_tracked_path_that_is_not_valid_utf8_is_one_finding_named_as_git_shows_it(tmp_path):
     repository = tmp_path / "repository"
     subprocess.run(["git", "init", "-q", str(repository)], check=True, env=git_environment())
-    (repository / os.fsdecode(b"caf\xe9.txt")).write_text("zzqword\n", encoding="utf-8")
+    (repository / non_utf8_name(repository, b"caf\xe9.txt")).write_text("zzqword\n", encoding="utf-8")
     write(repository, {".gitignore": "config/private/\n", "config/private/denylist.txt": "zzqword\n",
                        "config/cpl.props": "bootstrap.servers=192.168.3.5:9092\n"})
     subprocess.run(["git", "-C", str(repository), "add", "-A"], check=True, env=git_environment())
@@ -465,7 +485,7 @@ def test_a_gitlink_that_is_not_valid_utf8_with_its_submodule_entry_is_one_findin
 
 
 def test_a_repository_in_a_directory_whose_name_is_not_valid_utf8_is_checked(tmp_path):
-    repository = gitlink_repository(tmp_path / os.fsdecode(b"repository\xe9"), None)
+    repository = gitlink_repository(tmp_path / non_utf8_name(tmp_path, b"repository\xe9"), None)
     write(repository, {"config/cpl.props": "bootstrap.servers=192.168.3.5:9092\n"})
     subprocess.run(["git", "-C", str(repository), "add", "config"], check=True, env=git_environment())
     result = run_guard(repository)
@@ -496,8 +516,9 @@ def test_a_repository_or_a_root_whose_folder_name_holds_a_newline_reads_its_subm
 
 
 def test_a_gitlink_below_a_root_whose_folder_name_is_not_valid_utf8_is_named_as_git_shows_it(tmp_path):
-    repository, folder = tmp_path / "repository", os.fsdecode(b"d\xe9")
+    repository = tmp_path / "repository"
     subprocess.run(["git", "init", "-q", str(repository)], check=True, env=git_environment())
+    folder = non_utf8_name(repository, b"d\xe9")
     modules = b'[submodule "k"]\n\tpath = d\xe9/known\n\turl = https://example.com/k.git\n'
     (repository / ".gitmodules").write_bytes(modules)
     subprocess.run(["git", "-C", str(repository), "add", ".gitmodules"], check=True, env=git_environment())
@@ -513,6 +534,54 @@ def test_a_gitlink_below_a_root_whose_folder_name_is_not_valid_utf8_is_named_as_
     assert result.stderr == ""
     assert result.stdout.splitlines() == ['"d\\351/stray": the file name is not valid UTF-8; rename the file',
                                           "checked 2 tracked files, 1 findings"]
+
+
+NON_UTF8_CASES = pytest.mark.parametrize("case", [
+    test_a_tracked_path_that_is_not_valid_utf8_is_one_finding_named_as_git_shows_it,
+    test_a_repository_in_a_directory_whose_name_is_not_valid_utf8_is_checked,
+    test_a_gitlink_below_a_root_whose_folder_name_is_not_valid_utf8_is_named_as_git_shows_it,
+], ids=["file", "repository", "folder"])
+
+
+@NON_UTF8_CASES
+def test_a_case_with_a_name_that_is_not_valid_utf8_is_skipped_where_the_file_system_refuses_the_name(case, tmp_path,
+                                                                                                    monkeypatch):
+    mkdir = pathlib.Path.mkdir
+
+    def refuse(path, *arguments, **options):
+        if not guard.utf8(str(path)):
+            raise OSError(errno.EILSEQ, os.strerror(errno.EILSEQ), str(path))
+        mkdir(path, *arguments, **options)
+
+    monkeypatch.setattr(pathlib.Path, "mkdir", refuse)
+    with pytest.raises(pytest.skip.Exception, match="the file system refuses names that are not valid UTF-8"):
+        case(tmp_path)
+
+
+@NON_UTF8_CASES
+def test_a_case_with_a_name_that_is_not_valid_utf8_is_skipped_where_the_file_system_renames_the_name(case, tmp_path,
+                                                                                                    monkeypatch):
+    mkdir, rmdir = pathlib.Path.mkdir, pathlib.Path.rmdir
+
+    def escaped(path):
+        if guard.utf8(path.name):
+            return path
+        return path.with_name("".join(chr(b) if b < 0x80 else f"%{b:02X}" for b in os.fsencode(path.name)))
+
+    monkeypatch.setattr(pathlib.Path, "mkdir", lambda path, *arguments, **options: mkdir(escaped(path), *arguments,
+                                                                                         **options))
+    monkeypatch.setattr(pathlib.Path, "rmdir", lambda path: rmdir(escaped(path)))
+    with pytest.raises(pytest.skip.Exception, match="the file system renames names that are not valid UTF-8"):
+        case(tmp_path)
+
+
+def test_the_name_probe_raises_any_other_failure(tmp_path, monkeypatch):
+    def deny(path, *arguments, **options):
+        raise OSError(errno.EACCES, os.strerror(errno.EACCES), str(path))
+
+    monkeypatch.setattr(pathlib.Path, "mkdir", deny)
+    with pytest.raises(PermissionError):
+        non_utf8_name(tmp_path, b"d\xe9")
 
 
 def test_a_tracked_file_below_a_directory_that_the_working_tree_replaced_by_a_link_is_not_read(tmp_path):
@@ -561,6 +630,15 @@ def test_only_the_lines_that_are_not_utf8_are_also_searched_in_their_cp1252_deco
     (tmp_path / "docs" / "mixed.txt").write_bytes(
         "äzzqword, cafézzqword and \u53f8zzqword\n".encode("utf-8") + b"stray \x80 byte\nthe ZZQ\xdcWORD tool\n")
     assert guard.check(tmp_path, ["docs/mixed.txt"]) == [f"docs/mixed.txt:3: zzqüword: {DENIED}"]
+
+
+def test_a_word_glued_to_a_valid_letter_stays_glued_on_a_line_that_is_not_utf8(tmp_path):
+    write(tmp_path, {"config/private/denylist.txt": "zzqüword\nzzqword\n"})
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "mixed.txt").write_bytes(
+        "äzzqword, cafézzqword and \u53f8zzqword ".encode("utf-8") + b"\x80 byte\n"
+        + "ä ".encode("utf-8") + b"the ZZQ\xdcWORD tool\n")
+    assert guard.check(tmp_path, ["docs/mixed.txt"]) == [f"docs/mixed.txt:2: zzqüword: {DENIED}"]
 
 
 def test_a_line_break_that_cp1252_does_not_know_keeps_each_finding_once_at_its_line(tmp_path):

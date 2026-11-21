@@ -167,7 +167,14 @@ word also at the end of a bundle such as `-vk 5` or `-fk 5`, and so does every a
 no further word. In `timeout -ks 5 KILL docker pull <image>` the value of `-k` is `s`, `5` is the duration and `KILL`
 is the command, so the `docker` after it is not read. A bundle with a letter that is no option of `timeout`, as in
 `-xk`, takes no word, so the `docker` of `timeout -xk docker pull <image>` is read, although `timeout` refuses `-x` and
-runs nothing. The check does not require a duration after the options of `timeout`, so the `docker` of
+runs nothing. A bundle of short options of `sudo`, `env`, `nice`, `ionice`, `xargs` or `exec` takes the next word only
+when all its letters before the option that takes a value are options of that tool without a value, as in
+`sudo -Eu bob` or `xargs -0n 1`. A letter that is no option of the tool, as in `nice -xn`, ends the bundle without a
+word, and so do `-S` of `env`, `-h` of `sudo` and the options that take their value only in the same word: `-e`, `-i`
+and `-l` of `xargs`. So the `docker` of `xargs -in docker pull <image>` is read, and so is the one of
+`nice -xn docker pull <image>`, although `nice` refuses `-x` and runs nothing. `sudo` takes the word after `-h` as a
+remote host and then runs no command, so the `docker` of `sudo -h docker pull <image>` is read although it never
+runs. The check does not require a duration after the options of `timeout`, so the `docker` of
 `timeout -k 5 docker pull <image>` is read, although `timeout` takes it as its duration, refuses it and runs nothing.
 A `docker` that is an argument of another command, as in
 `echo docker pull <image>`, `echo $(date) docker pull <image>`, ``echo `date` docker pull <image>``,
@@ -178,9 +185,11 @@ Before the subcommand of `docker` it skips the global options `--config`, `-c` o
 or `--debug`, `-H` or `--host`, `-l` or `--log-level`, `--tls`, `--tlscacert`, `--tlscert`, `--tlskey` and
 `--tlsverify`, with their values, also a value that holds a command substitution, as in `--context $(cat c)`, and
 redirections such as `2>/dev/null`, `>log`, `2>&1` or `<<<x`, also several without a blank between them and one
-written right after `docker` or right after `-D`, `--debug`, `--tls` or `--tlsverify`. So
+written right after `docker` or right after `-D`, `--debug`, `--tls` or `--tlsverify`. A redirection between an
+option of this list and its value, also one written right after the option, is no value. So
 `docker 2>/dev/null pull <image>`, `docker 2>&1>/dev/null pull <image>`, `docker>/dev/null pull <image>`,
-`docker --debug>/dev/null pull <image>` and `docker --debug <<<x run <image>` are read. It
+`docker --debug>/dev/null pull <image>`, `docker --debug <<<x run <image>`,
+`docker --context 2>/dev/null <context> pull <image>` and `docker -l>log debug pull <image>` are read. It
 fails on any other option between `docker` and a subcommand it reads, also on the `=` form of a flag such as
 `--tlsverify=true`, except `-v`, `--version`, `-h` and `--help`, with
 `<file>:<line>: <option>: unknown docker option before the subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py`.
@@ -218,8 +227,8 @@ so `docker run>log -d img:1.2.3`, `docker run >log -d img:1.2.3` and `docker pul
 `confluent-hub` and `install` or between the words of `confluent connect plugin install`, also one written right after
 a word and several without a blank between them, is no argument either, so
 `confluent-hub 2>/dev/null install <connector>`, `confluent-hub>/dev/null install <connector>`,
-`confluent-hub 2>&1>/dev/null install <connector>` and `confluent connect >log plugin install <connector>` read the
-connector. A command inside quotes, as in
+`confluent-hub 2>&1>/dev/null install <connector>`, `confluent-hub 2>/dev/null>log install <connector>` and
+`confluent connect >log plugin install <connector>` read the connector. A command inside quotes, as in
 `echo "use docker pull x"`, is not read. A command in a command substitution or a subshell, as in
 `CID=$(docker run <image>)`, `CID="$(docker run <image>)"` or `(docker pull <image>)`, is read up to the end of the
 substitution or subshell, also after `&&`, `||`, `;`, `|` or `&` inside it, and so is each further substitution of the
@@ -269,9 +278,10 @@ Before it connects, it also checks these values:
 When a value is not allowed, it exits with status 1 and
 `<file>: <key>: <value> is not allowed; expected <allowed values>`, for example
 `config.json: misc.interval_ms: "x" is not allowed; expected a number of milliseconds from 0 to 86400000`.
-A `mqtt.host` with an empty label, as in `broker..test`, `.test` or `.`, or with a label of more than 63 characters is
-refused this way before the connect. One dot at the end, as in `broker.test.`, is allowed. IDNA also reads the full
-stops U+3002, U+FF0E and U+FF61 as dots. A label of ASCII characters is not checked further, so letter case, blanks,
+A `mqtt.host` with an empty label, as in `broker..test`, `.test` or `.`, with a label of ASCII characters of more than
+63 characters, or with a label whose IDNA form has more than 63 characters is refused this way before the connect.
+One dot at the end, as in `broker.test.`, is allowed. IDNA also reads the full stops U+3002, U+FF0E and U+FF61 as
+dots. A label of ASCII characters is not checked further, so letter case, blanks,
 `_`, `:` and brackets pass the check, as in `BROKER.test`, `my_host`, `::1` or `[::1]`. Write an IPv6 address without
 brackets: with `[::1]` the connect fails with the `cannot connect to the MQTT broker` message above. IDNA ToASCII runs
 nameprep on any other label and refuses it when nameprep refuses a character, such as a lone surrogate `\ud800` or
@@ -279,7 +289,8 @@ U+2028, when the label holds a right-to-left character together with a left-to-r
 or holds a right-to-left character but does not start and end with one, as in `"1\u05d0"`, or when nameprep turns it
 into a label that starts with `xn--` and still holds a character that is not ASCII, as in `xn--ü` or `XN--ü`. It also
 refuses such a label when nameprep leaves nothing of it, as with the soft hyphen `"\u00ad"`, or when its IDNA form, such
-as `xn--bcher-kva` for `bücher`, has more than 63 characters.
+as `xn--bcher-kva` for `bücher`, has more than 63 characters. Nameprep removes characters such as the soft hyphen and
+U+200D, so a longer label can pass: 40 times `"a\u00ad"` is a label of 80 characters whose IDNA form has 40.
 For `mqtt.password` the message names the JSON type and not the value:
 `<file>: mqtt.password: a JSON <type> is not allowed; expected a JSON string without a lone surrogate`, where `<type>`
 is `string with a lone surrogate` for a string such as `"p\ud800"`.

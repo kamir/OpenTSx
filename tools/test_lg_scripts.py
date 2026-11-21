@@ -25,8 +25,6 @@ SEPARATOR = re.compile(r"&&|\|\||(?<![<>])&(?!>)|;|(?<!>)\|")
 SUBSTITUTION = r"\$\([^()]*\)|`[^`()]*\)"
 WORD_PIECE = rf"(?:{SUBSTITUTION}|(?!{SUBSTITUTION})\S)"
 VALUE_PIECE = rf"(?:{SUBSTITUTION}|(?!{SUBSTITUTION})[^\s;&|()<>])"
-DOCKER_GLOBAL = (r"(?:(?:--(?:config|context|host|log-level|tlscacert|tlscert|tlskey)|-[cHl])(?:=|\s+)" + WORD_PIECE
-                 + r"+\s+|(?:--(?:debug|tls|tlsverify)|-D)(?:\s+|(?=[<>]|&>)))")
 DOCKER_INFO = {"-v", "--version", "-h", "--help"}
 CASE_ARM = r"\(?(?:" + SUBSTITUTION + r"|[^\s;&|()`])+\)\s*"
 NUMBER = r"[0-9][0-9.]*[smhd]?"
@@ -53,6 +51,11 @@ COMMAND_WORD = (r"(?:(?:^|(?<=[;{])|(?<=&)(?<![<>]&)|(?<=\|)(?<!>\|)|(?<=\sin\s)
                 + NUMBER + r"|(?!timeout\s)" + KEYWORD + r")\s+)*")
 REDIRECTION = r"(?:(?<!\S)[0-9]+)?(?:&>>?|[<>]&|>>|>\||<<<?|<>|[<>])"
 REDIRECTIONS = r"(?:" + REDIRECTION + r"\s*" + VALUE_PIECE + r"+)+"
+# The redirections before the value of an option are one loop and the value is no redirection, so each run of
+# redirections has one reading.
+DOCKER_GLOBAL = (r"(?:(?:--(?:config|context|host|log-level|tlscacert|tlscert|tlskey)|-[cHl])(?:=|(?:\s*" + REDIRECTION
+                 + r"\s*" + VALUE_PIECE + r"+)*\s+(?!" + REDIRECTION + r"))" + WORD_PIECE
+                 + r"+\s+|(?:--(?:debug|tls|tlsverify)|-D)(?:\s+|(?=[<>]|&>)))")
 SUBCOMMAND_END = r"(?=\s|[<>]|&>|$)"
 CONNECTOR_GAP = r"(?:\s+|(?=[<>]|&>))(?:" + REDIRECTIONS + r"\s+)*"
 INSTALL = re.compile(COMMAND_WORD + r"(?:[^\s;&|()<>]*/)?(?P<tool>docker(?:\s+|(?=[<>]|&>))(?:" + DOCKER_GLOBAL + "|"
@@ -73,8 +76,9 @@ VALUE_OPTIONS = {"-p", "--publish", "-v", "--volume", "-e", "--env", "--env-file
 FLAG_OPTIONS = {"-d", "--detach", "--rm", "-i", "--interactive", "-t", "--tty", "--init", "--privileged", "-q",
                 "--quiet", "--no-prompt", "--dry-run", "--force"}
 WRAPPER_VALUE_OPTIONS = {
-    "sudo": {"-C", "-D", "-g", "-p", "-R", "-r", "-T", "-t", "-U", "-u", "--close-from", "--chdir", "--group",
-             "--host", "--prompt", "--chroot", "--role", "--command-timeout", "--type", "--other-user", "--user"},
+    "sudo": {"-a", "-C", "-c", "-D", "-g", "-p", "-R", "-r", "-T", "-t", "-U", "-u", "--auth-type", "--close-from",
+             "--login-class", "--chdir", "--group", "--host", "--prompt", "--chroot", "--role", "--command-timeout",
+             "--type", "--other-user", "--user"},
     "env": {"-C", "-u", "--chdir", "--unset"},
     "nice": {"-n", "--adjustment"},
     "ionice": {"-c", "-n", "-P", "-p", "-u", "--class", "--classdata", "--pgid", "--pid", "--uid"},
@@ -83,6 +87,12 @@ WRAPPER_VALUE_OPTIONS = {
               "--max-procs", "--process-slot-var", "--max-chars"},
     "exec": {"-a"},
 }
+# The short options without a value, from the getopt strings of sudo 1.9, GNU env, nice and xargs, util-linux ionice
+# and bash exec. A bundle takes the next word only when its letters before the value option are among them. Any other
+# letter takes no word: the tool refuses it, reads the rest of the word as its value (-e, -i and -l of xargs), takes
+# the next word as a remote host and runs nothing (-h of sudo) or runs the next word as the command (-S of env).
+WRAPPER_FLAGS = {"sudo": "ABbEeHiKklNnPSsVv", "env": "0iv", "nice": "", "ionice": "htV", "xargs": "0oprtx",
+                 "exec": "cl"}
 PINNED = re.compile(r"(?::[\w.-]*\d+\.\d+\.\d+[\w.-]*|@sha256:[0-9a-f]{64})$")
 
 
@@ -265,6 +275,8 @@ def takes_the_next_word(prefix: str) -> bool:
             for end, letter in enumerate(word[1:], 2):
                 if "-" + letter in WRAPPER_VALUE_OPTIONS[wrapper]:
                     value = end == len(word)
+                    break
+                if letter not in WRAPPER_FLAGS[wrapper]:
                     break
     return value
 
@@ -780,6 +792,32 @@ def test_a_redirection_right_after_a_known_docker_flag_ends_the_flag(tmp_path):
     ]
 
 
+def test_a_redirection_next_to_a_known_docker_value_option_is_no_value(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "docker --context 2>/dev/null ctx pull toke/mosquitto\n"
+        "docker --log-level 2>&1>/dev/null debug pull toke/mosquitto\n"
+        "docker --context>/dev/null ctx pull toke/mosquitto\n"
+        "docker -l>log debug pull toke/mosquitto\n"
+        "docker -H>log 2>&1 unix:///x run toke/mosquitto\n"
+        "docker --config >log $(mktemp -d) pull toke/mosquitto\n"
+        "docker --context 2>/dev/null ctx pull img:1.2.3\n"
+        "docker --context=ctx>/dev/null pull toke/mosquitto\n"
+        "docker --context ctx>/dev/null pull toke/mosquitto\n"
+        "docker --context 2>/dev/null pull img\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:2: toke/mosquitto: {rest}",
+        f"run.sh:3: toke/mosquitto: {rest}",
+        f"run.sh:4: toke/mosquitto: {rest}",
+        f"run.sh:5: toke/mosquitto: {rest}",
+        f"run.sh:6: toke/mosquitto: {rest}",
+        f"run.sh:7: toke/mosquitto: {rest}",
+        f"run.sh:9: toke/mosquitto: {rest}",
+        f"run.sh:10: toke/mosquitto: {rest}",
+    ]
+
+
 def test_a_redirection_between_the_words_of_a_connector_install_is_no_argument(tmp_path):
     (tmp_path / "run.sh").write_text(
         "#!/usr/bin/env bash\n"
@@ -793,7 +831,12 @@ def test_a_redirection_between_the_words_of_a_connector_install_is_no_argument(t
         "confluent-hub 2>/dev/null install a/b:1.2.3\n"
         "confluent-hub 2>/dev/null install --no-prompt\n"
         "confluent>log connect plugin install\n"
-        "confluent-hub 2>/dev/null list\n", encoding="utf-8")
+        "confluent-hub 2>/dev/null list\n"
+        "confluent-hub 2>/dev/null>log install a/b:latest\n"
+        "confluent connect 2>&1>log plugin install a/b:latest\n"
+        "confluent-hub>/dev/null>log install\n"
+        "confluent-hub 2>/dev/null>loginstall a/b:latest\n"
+        "confluent-hub 2>/dev/null>log list\n", encoding="utf-8")
     rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
     assert image_problems(tmp_path, "run.sh") == [
         f"run.sh:2: a/b:latest: {rest}",
@@ -805,6 +848,9 @@ def test_a_redirection_between_the_words_of_a_connector_install_is_no_argument(t
         f"run.sh:8: a/b:latest: {rest}",
         "run.sh:10: confluent-hub install: no connector; name the connector",
         "run.sh:11: confluent connect plugin install: no connector; name the connector",
+        f"run.sh:13: a/b:latest: {rest}",
+        f"run.sh:14: a/b:latest: {rest}",
+        "run.sh:15: confluent-hub install: no connector; name the connector",
     ]
 
 
@@ -1140,6 +1186,40 @@ def test_a_docker_command_behind_a_wrapper_with_option_values_is_read(tmp_path):
         f"run.sh:4: toke/mosquitto: {rest}",
         f"run.sh:5: toke/mosquitto: {rest}",
     ]
+
+
+def test_a_wrapper_bundle_takes_the_next_word_only_when_the_letters_before_its_value_option_are_flags(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "nice -xn docker pull toke/mosquitto\n"
+        "sudo -xu docker pull toke/mosquitto\n"
+        "sudo -hu docker pull toke/mosquitto\n"
+        "env -xu docker pull toke/mosquitto\n"
+        "ionice -xc docker pull toke/mosquitto\n"
+        "xargs -en docker pull toke/mosquitto\n"
+        "xargs -in docker pull toke/mosquitto\n"
+        "exec -xa docker pull toke/mosquitto\n"
+        "sudo -AbEHu docker pull x\n"
+        "env -0iu docker pull x\n"
+        "ionice -tc docker pull x\n"
+        "xargs -0prtxn docker pull x\n"
+        "exec -cla docker pull x\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    assert image_problems(tmp_path, "run.sh") == [f"run.sh:{n}: toke/mosquitto: {rest}" for n in range(2, 10)]
+
+
+def test_the_auth_type_and_the_login_class_of_sudo_take_the_next_word(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "sudo -a docker pull x\n"
+        "sudo -c docker pull x\n"
+        "sudo -Ea docker pull x\n"
+        "sudo --auth-type docker pull x\n"
+        "sudo --login-class docker pull x\n"
+        "sudo -a bsd docker pull toke/mosquitto\n"
+        "sudo -adocker docker pull toke/mosquitto\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    assert image_problems(tmp_path, "run.sh") == [f"run.sh:{n}: toke/mosquitto: {rest}" for n in (7, 8)]
 
 
 def test_the_split_string_of_env_and_the_max_lines_of_xargs_are_the_command(tmp_path):

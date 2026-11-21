@@ -311,6 +311,7 @@ def test_the_generator_publishes_with_the_shipped_configuration(monkeypatch, cap
     ({"mqtt": {"host": "\u05d01\u05d0.test"}}, ("\u05d01\u05d0.test", 1883)),
     ({"mqtt": {"host": "a\u00adb.test"}}, ("a\u00adb.test", 1883)),
     ({"mqtt": {"host": "xn--ab\u00ad.test"}}, ("xn--ab\u00ad.test", 1883)),
+    ({"mqtt": {"host": "a\u00ad" * 40 + ".test"}}, ("a\u00ad" * 40 + ".test", 1883)),
 ])
 def test_the_generator_connects_with_values_at_their_bounds(tmp_path, monkeypatch, capsys, config, address):
     class Connected(Exception):
