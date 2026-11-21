@@ -480,4 +480,40 @@ class SystemDocTest {
     void theHashFollowsTheDocument(@TempDir Path dir) throws IOException {
         assertNotEquals(SystemDoc.load(H2, ROOT).hash(), changed(dir, "seed: 1", "seed: 8").hash());
     }
+
+    /** A generator source the runtime cannot run is a problem when the document loads, not first when it is generated. */
+    @Test
+    void aGeneratorTheRuntimeCannotRunIsAProblem(@TempDir Path dir) throws IOException {
+        String params = "params: { mean: 60, amplitude: 30, period: PT6H }";
+        assertProblem(changed(dir, "processor: gen.sine", "processor: gen.nope"),
+                "offtake.demand_kgph@raw: generator gen.nope is not available in this runtime: it runs [gen.ou, gen.sine]");
+        assertProblem(changed(dir, params, "params: { mean: 60, period: PT6H }"), "offtake.demand_kgph@raw: gen.sine needs the parameter amplitude");
+        assertProblem(changed(dir, "        " + params + "\n", ""), "offtake.demand_kgph@raw: gen.sine needs the parameter mean");
+        assertProblem(changed(dir, params, "params: { mean: \"60\", amplitude: 30, period: PT6H }"), "offtake.demand_kgph@raw: gen.sine needs the parameter mean");
+        assertProblem(changed(dir, params, "params: { mean: 60, amplitude: 30, period: 6h }"), "offtake.demand_kgph@raw: gen.sine: period must be a duration like P1D");
+        assertProblem(changed(dir, "{ unit: kg/h, min: 0, max: 120, interval: PT1M,", "{ unit: kg/h, min: 0, max: 120,"),
+                "offtake.demand_kgph: needs a sampling interval to be generated (expect.interval)");
+        assertProblem(changed(dir, "seed: 1\n", "seed: 1\n        select: { metric: wind.turbine.power_active }\n"),
+                "offtake.demand_kgph@raw: a generator source has no select");
+        // a working copy goes through the same checks
+        assertEquals(List.of("marketer.schedule_kw@raw: gen.ou needs the parameter sigma"), generatorBound("{\"mean\":3000}").problems());
+        assertEquals(List.of(), generatorBound("{\"mean\":3000,\"sigma\":50}").problems());
+    }
+
+    static SystemDoc generatorBound(String params) throws IOException {
+        JsonNode source = new ObjectMapper().readTree("{\"kind\":\"generator\",\"processor\":\"gen.ou\",\"params\":" + params + "}");
+        return SystemDoc.load(H2, ROOT, List.of(new SystemDoc.Binding("marketer.schedule_kw", "raw", source)));
+    }
+
+    /** A period or an interval the generator cannot count in microseconds is a problem, not an exception of the load. */
+    @Test
+    void aDurationTheGeneratorCannotCountIsAProblem(@TempDir Path dir) throws IOException {
+        assertProblem(changed(dir, "period: PT6H", "period: P200000D"),
+                "offtake.demand_kgph@raw: gen.sine: period must be above zero and at most PT2562047H47M16.854775807S, about 292 years");
+        String expect = "{ unit: kg/h, min: 0, max: 120, interval: PT1M,";
+        assertProblem(changed(dir, expect, "{ unit: kg/h, min: 0, max: 120, interval: PT0S,"),
+                "offtake.demand_kgph: expect.interval PT0S is below one microsecond");
+        assertProblem(changed(dir, expect, "{ unit: kg/h, min: 0, max: 120, interval: P200000D,"),
+                "offtake.demand_kgph: expect.interval P200000D is above PT2562047H47M16.854775807S, about 292 years");
+    }
 }
