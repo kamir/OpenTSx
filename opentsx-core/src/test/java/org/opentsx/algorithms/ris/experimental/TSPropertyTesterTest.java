@@ -5,6 +5,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -17,6 +18,7 @@ import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2T
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.failingSeries;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.intervals;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.isOpen;
+import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.pairs;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.pairsOf;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.pointsWithAShare;
 import static org.opentsx.algorithms.ris.experimental.ReturnIntervallStatistik2Test.stderrOf;
@@ -90,7 +92,79 @@ class TSPropertyTesterTest {
 
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> container.add(single));
 
-        assertEquals("add: single has 7 bins and all has 13; expected the same binning and scale", e.getMessage());
+        assertEquals("add: single has binning 6 and scale 10 and all has binning 12 and scale 10;"
+                + " expected the same binning and scale", e.getMessage());
+    }
+
+    @Test
+    void addingAResultWithAnotherScaleButAsManyBinsFailsNamingBothAndKeepsTheContainer() throws Exception {
+        TSPropertyTester single = new TSPropertyTester("single", 12, 10);
+        single.addDistData(new Vector<>(List.of(0.55)));
+        TSPropertyTester container = new TSPropertyTester("all", 12, 5);
+        container.isContainerInstanz = true;
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> container.add(single));
+
+        assertEquals("add: single has binning 12 and scale 10 and all has binning 12 and scale 5;"
+                + " expected the same binning and scale", e.getMessage());
+        assertEquals(0, Arrays.stream(container.data).sum());
+        assertEquals(List.of(), container.allRqs);
+    }
+
+    @Test
+    void aStoredSingleResultWritesEveryBinOfItsDistributionAndItsCountsShowEveryBin() throws Exception {
+        TSPropertyTester tester = new TSPropertyTester("stored", 12, 10);
+        tester.folder = dir + "/";
+        tester.label = "distribution.dat";
+        tester.addDistData(new Vector<>(List.of(0.15, 0.25, 0.25, 0.55, 3.0)));
+        tester.calcMessreihen();
+
+        tester.store();
+
+        double[] counts = {0, 1, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1};
+        assertEquals("#---------------------\n# distribution.dat\n#---------------------\n# Rq            ="
+                + tester.getRq() + "\n# Values        =5\n# Binning       =12\n# Scale         =10\n"
+                + "# [ --- distribution --- ]\n" + pairs(counts, 5.0),
+                Files.readString(dir.resolve("distribution.dat")));
+        assertEquals("#---------------------\n# distribution.dat\n#---------------------\n# Rq            ="
+                + tester.getRq() + "\n# Values        =5\n# Binning       =12\n# [ --- frequency --- ]\n"
+                + pairs(counts, 1.0), tester.toString_Haeufigkeit());
+    }
+
+    @Test
+    void aContainerPrintsItsOwnTotalsAboveTheCountsItSumsAndKeepsItsName() throws Exception {
+        TSPropertyTester first = new TSPropertyTester("first", 12, 10);
+        TSPropertyTester second = new TSPropertyTester("second", 12, 10);
+        TSPropertyTester container = new TSPropertyTester("all", 12, 10);
+        container.isContainerInstanz = true;
+        first.addDistData(new Vector<>(List.of(0.15, 0.25)));
+        second.addDistData(new Vector<>(List.of(0.25, 0.55, 3.0)));
+        container.add(first);
+        container.add(second);
+        container.calcMessreihen();
+
+        String counts = container.toString_Haeufigkeit();
+
+        assertEquals("#---------------------\n# " + TSPropertyTester.class.getName()
+                + "\n#---------------------\n# Results       =2\n# Values        =5\n# Binning       =12\n"
+                + "# [ --- frequency --- ]\n" + pairs(new double[] {0, 1, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1}, 1.0),
+                counts);
+        assertEquals("all", container.mrHaeufigkeit.getLabel());
+    }
+
+    @Test
+    void anIntervalAtTheXOfABinIsCountedInThatBinAndOneJustBelowItInTheBinBefore() throws Exception {
+        TSPropertyTester hundredths = new TSPropertyTester("hundredths", 120, 100);
+        hundredths.addDistData(new Vector<>(List.of(0.29, 0.57, 1.13)));
+        TSPropertyTester tenths = new TSPropertyTester("tenths", 12, 10);
+        tenths.addDistData(new Vector<>(List.of(0.3, Math.nextDown(0.9))));
+
+        hundredths.calcMessreihen();
+        tenths.calcMessreihen();
+
+        assertEquals(List.of(List.of(0.29, 1.0), List.of(0.57, 1.0), List.of(1.13, 1.0)),
+                pointsWithAShare(hundredths.mrHaeufigkeit));
+        assertEquals(List.of(List.of(0.3, 1.0), List.of(0.8, 1.0)), pointsWithAShare(tenths.mrHaeufigkeit));
     }
 
     @Test

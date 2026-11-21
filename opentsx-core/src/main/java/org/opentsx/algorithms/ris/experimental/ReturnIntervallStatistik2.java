@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Vector;
 
@@ -353,10 +354,7 @@ public class ReturnIntervallStatistik2 {
              else if ( index < 0 ) index = 0;
              dataSKALIERT[index]++;
 
-             int bin = (int)( dist1 * (double)scale );
-             if ( bin >= data.length ) bin = data.length-1;
-             else if ( bin < 0 ) bin = 0;
-             data[bin]++;
+             data[bin( dist1, scale, data.length )]++;
         }
         
         // probability of each bin
@@ -385,6 +383,35 @@ public class ReturnIntervallStatistik2 {
             return largest * ( scaled / values.size() );
         }
         return sum / values.size();
+    }
+
+    /**
+     * Returns the bin of width 1 / scale that holds the interval: bin i holds the intervals from i / scale, the x value
+     * calcMessreihen writes for it, up to the x value of the next bin. An interval below 0 is counted in bin 0 and an
+     * interval past the last bin in bin bins - 1.
+     */
+    public static int bin( double interval, int scale, int bins ) {
+        double product = interval * (double)scale;
+        int bin = product < 0 ? 0 : product >= bins ? bins - 1 : (int)product;
+        // the product can round across a bin edge, so the edges are compared as calcMessreihen writes them
+        if ( bin + 1 < bins && (double)( bin + 1 ) / (double)scale <= interval ) {
+            bin++;
+        }
+        else if ( bin > 0 && interval < (double)bin / (double)scale ) {
+            bin--;
+        }
+        return bin;
+    }
+
+    /**
+     * Returns every pair of the series as x, a blank and y, one pair per line.
+     */
+    public static String pairs( TimeSeriesObject series ) {
+        StringBuilder sb = new StringBuilder();
+        for ( int i = 0; i < series.xValues.size(); i++ ) {
+            sb.append( series.xValues.get( i ) ).append( ' ' ).append( series.yValues.get( i ) ).append( '\n' );
+        }
+        return sb.toString();
     }
 
     double epsilon = 1e-6; 
@@ -418,12 +445,7 @@ public class ReturnIntervallStatistik2 {
                 double vx = ((double)i + 0.5) * (double)scale / (double)binning;
                 double vy = probSKALIERT[i] / (double)dataSKALIERT[i];
                 if ( vy != 0.0 ) {
-                    if ( Double.isInfinite( vy ) || Double.isNaN( vy ) ) {
-                        LOG.debug("skipped bin without a finite value container={} x={} y={}", name, vx, vy);
-                    }
-                    else {
-                        mrVerteilungSkaliert.addValuePair( vx, vy );
-                    }
+                    mrVerteilungSkaliert.addValuePair( vx, vy );
                 }
             }
         }
@@ -520,34 +542,44 @@ public class ReturnIntervallStatistik2 {
 
     public String toString_Haeufigkeit() {
         StringBuffer sb = new StringBuffer();
-        sb.append("\n#---------------------\n# " +
+        sb.append("#---------------------\n# " +
                  label + "\n#---------------------\n");
-        sb.append("# Rq            =" + _Rq + "\n");
-        sb.append("# Values        =" + zElements + "\n");
+        if ( isContainerInstanz ) {
+            sb.append("# Results       =" + allRqs.size() + "\n");
+            sb.append("# Values        =" + Arrays.stream( data ).asLongStream().sum() + "\n");
+        }
+        else {
+            sb.append("# Rq            =" + _Rq + "\n");
+            sb.append("# Values        =" + zElements + "\n");
+        }
         sb.append("# Binning       =" + binning + "\n" );
-        sb.append("# [ --- frequency --- ]" );
-        mrHaeufigkeit.setLabel(sb.toString());
-        return mrHaeufigkeit.toString();
+        sb.append("# [ --- frequency --- ]\n" );
+        sb.append( pairs( mrHaeufigkeit ) );
+        return sb.toString();
     }
 
 
     public String toString_Verteilung() {
+        mrVerteilung.setLabel("\n" + distributionHeader());
+        return mrVerteilung.toString();
+    }
+
+    private String distributionHeader() {
         StringBuffer sb = new StringBuffer();
-        sb.append("\n#---------------------\n# " +
+        sb.append("#---------------------\n# " +
                  label + "\n#---------------------\n");
         sb.append("# Rq            =" + _Rq + "\n");
         sb.append("# Values        =" + zElements + "\n");
         sb.append("# Binning       =" +binning + "\n" );
         sb.append("# Scale         =" +scale + "\n" );
         sb.append("# [ --- distribution --- ]" );
-        mrVerteilung.setLabel(sb.toString());
-        return mrVerteilung.toString();
+        return sb.toString();
     }
 
 
     public void store() throws IOException {
         try (FileWriter fw = new FileWriter( folder + label )) {
-            fw.write( mrVerteilung.toString() );
+            fw.write( distributionHeader() + "\n" + pairs( mrVerteilung ) );
         }
 
         if ( LOG.isDebugEnabled() ) {

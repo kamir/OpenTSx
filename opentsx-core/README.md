@@ -111,17 +111,24 @@ When setting the current one back fails, it logs
 `look and feel not set, and setting back the one before failed lookAndFeel=<class> before=<class> cause=<cause>; suppressed <failure>`.
 When installing the cross-platform one fails, it logs
 `look and feel not set, and installing the cross-platform one failed lookAndFeel=<class> crossPlatform=<class> cause=<cause>; suppressed <failure>`.
-When the system property `swing.defaultlaf` names a class that is not on the class path, `MacroRecorder2` does not let
-Swing load it, logs at WARN
-`swing.defaultlaf: the default look and feel cannot load and is ignored; name a look and feel class on the class path or remove swing.defaultlaf lookAndFeel=<class> cause=Cannot load <default class>; caused by java.lang.ClassNotFoundException: <default class>`
-and sets FlatLaf; when FlatLaf fails as well, it installs the cross-platform one. When the default look and feel is on
-the class path but cannot be set, for example `java.lang.String`, Swing stops its start-up at it. `MacroRecorder2` then
-logs the same line with `cause=Cannot load <default class>` and sets FlatLaf, but a key binding of a window
-(`WHEN_IN_FOCUSED_WINDOW`) does not fire for a key event of the window itself or of a disabled component. Remove such
-a `swing.defaultlaf`. `MacroRecorder2` checks only the system property. A default that cannot load and that only
-`<java.home>/conf/swing.properties` names is ignored with the line that ends `cause=Cannot load <default class>`, and
-a key binding of a window misses the same key events. Remove that default from `swing.properties`, or set the system
-property `swing.defaultlaf` to a look and feel class on the class path, which Swing reads instead of the file.
+Swing starts with a default look and feel: the class that the system property `swing.defaultlaf` names, else the class
+that `swing.defaultlaf` in `<java.home>/conf/swing.properties` names, else on macOS the system look and feel, which
+the system property `swing.systemlaf` can name, else the cross-platform one, which the system property
+`swing.crossplatformlaf` can name. `MacroRecorder2` reads macOS from an `os.name` that contains `OS X`. Before Swing
+starts, `MacroRecorder2` loads that class, creates it and asks it whether it supports the platform. For a look and feel in a package that the JDK module `java.desktop` does not
+export, such as `com.sun.java.swing.plaf.gtk.GTKLookAndFeel` or `com.sun.java.swing.plaf.motif.MotifLookAndFeel`, it
+only loads the class and leaves creating it to Swing. When a step fails, for example for a class that is not on the
+class path, a class that is not a look and feel such as `java.lang.String` or a class whose static initializer fails,
+`MacroRecorder2` does not let Swing load the default, logs at WARN
+`<source>: the default look and feel cannot load and is ignored; name a look and feel class on the class path or remove <source> lookAndFeel=<class> cause=Cannot load <default class>; caused by <failure>`
+and sets FlatLaf; when FlatLaf fails as well, it installs the cross-platform one. `<source>` is `swing.defaultlaf`,
+`swing.defaultlaf in <java.home>/conf/swing.properties`, `swing.systemlaf` or `swing.crossplatformlaf`, the place
+that names the default.
+A default that passes these steps but fails in its `initialize()` or `getDefaults()`, or such a JDK look and feel that
+does not support the platform, for example GTK with `-Djava.awt.headless=true`, stops the start-up of Swing.
+`MacroRecorder2` then logs the same line with `cause=Cannot load <default class>`, followed by `; caused by <failure>`
+for a `LinkageError`, and sets FlatLaf, but a key binding of a window (`WHEN_IN_FOCUSED_WINDOW`) does not fire for a key
+event of the window itself or of a disabled component. Remove such a default.
 For a node without a chart, such as a source node,
 `show Chart` shows `show Chart: no chart for <node>; select an operation node` in a dialog; without a selection it
 does nothing.
@@ -394,29 +401,36 @@ and 1 / -1 counts in scaled bin 0 and -3 / -1 in scaled bin 15, and the interval
 counts in scaled bin 0 and 4 / 1.5 in scaled bin 13. It opens no window and writes nothing to standard
 output. `add(result)` adds the probabilities and the counts of a single result to a container instance.
 For a result that is not a container, `addDistData` also counts the kept intervals as they are, in
-`binning` · `scale` + 1 bins of width 1/`scale`, and `calcMessreihen()` writes these counts: `mrHaeufigkeit` holds the
-count of bin i at i / `scale`, `mrVerteilung` its share of the kept intervals, and `mrVerteilungSkaliert` the share of
-scaled bin i of the 41 scaled bins of width 1/5 at (i + 0.5) / 5, in units of R_q. The last bin also counts the longer
-intervals and the first bin the negative ones. With binning 12 and scale 10, the intervals 1, 1, 2 and 4 (R_q 2) give
-121 bins with the counts 2 at 1.0, 1 at 2.0 and 1 at 4.0, and the scaled shares 0.5 at 0.5, 0.25 at 1.1 and 0.25 at
+`binning` · `scale` + 1 bins of width 1/`scale`. Bin i counts the intervals from its x value i / `scale` up to the x
+value of the next bin, as `calcMessreihen()` writes them, so with scale 100 the interval 0.29 counts at 0.29, and with
+scale 10 the interval 0.8999999999999999 counts at 0.8. `calcMessreihen()` writes these counts: `mrHaeufigkeit` holds
+the count of bin i at i / `scale`, `mrVerteilung` its share of the kept intervals, and `mrVerteilungSkaliert` the share
+of scaled bin i of the 41 scaled bins of width 1/5 at (i + 0.5) / 5, in units of R_q. The last bin also counts the
+longer intervals and the first bin the negative ones. With binning 12 and scale 10, the intervals 1, 1, 2 and 4 (R_q 2)
+give 121 bins with the counts 2 at 1.0, 1 at 2.0 and 1 at 4.0, and the scaled shares 0.5 at 0.5, 0.25 at 1.1 and 0.25 at
 2.1. When `RISTool.offset` and R_q are above 0, `mrVerteilungSkaliert` leaves out the bins that start below
 `offset` / R_q. A result that keeps no interval has an empty `mrVerteilung` and an empty `mrVerteilungSkaliert`, and
 its `mrHaeufigkeit` holds the count 0 for each bin. Each call of `calcMessreihen()` replaces the series of the call
-before. `showData()` calls it and charts `mrVerteilung` and `mrVerteilungSkaliert`; `store()` writes `mrVerteilung`
-and `toString_Haeufigkeit()` returns `mrHaeufigkeit` as the last call left them.
+before. `showData()` calls it and charts `mrVerteilung` and `mrVerteilungSkaliert`. `store()` writes `<folder><label>`:
+lines starting with `#` that hold the label, R_q, the number of kept intervals, `binning` and `scale`, and then every
+bin of `mrVerteilung` as x, a blank and y on a line of its own. `toString_Haeufigkeit()` returns the label, R_q, the
+number of kept intervals and `binning` in lines of the same form and then every bin of `mrHaeufigkeit`. Both write the
+series as the last call left them.
 For a container, `calcMessreihen()` writes the sum of the counts of bin i of the results it added at i / `scale` to
 `mrHaeufigkeit`, named after the container, and the mean share of scaled bin i over these results at (i + 0.5) / 5 to
 `mrVerteilungSkaliert`, on the scale of a single result. It leaves out the scaled bins whose mean share is 0. With
 binning 12 and scale 10, a container of the intervals 1, 1, 2 and 4 (R_q 2) and the intervals 2 and 4 (R_q 3) counts
 2 at 1.0, 2 at 2.0 and 2 at 4.0 and gives the scaled shares 0.25 at 0.5, 0.25 at 0.7, 0.125 at 1.1, 0.25 at 1.3 and
-0.125 at 2.1. `showData()` of a container charts `mrVerteilungSkaliert`.
+0.125 at 2.1. `showData()` of a container charts `mrVerteilungSkaliert`. `toString_Haeufigkeit()` of a container
+prints the number of results it added and the number of intervals they counted, `# Results       =2` and
+`# Values        =6` for this container, above every bin of its counts.
 Errors stop the call:
 
 | Problem | Exception and message |
 |---------|-----------------------|
 | a probability of the result is NaN or infinite | `IllegalArgumentException`: `add: probability <index> of <name> is <value>; expected a finite probability` |
 | the receiver is not a container | `IllegalStateException`: `add: <name> is not a container; set isContainerInstanz to true before adding results` |
-| the binning differs | `IllegalArgumentException`: `add: <name> has <n> bins and <container> has <m>; expected the same binning and scale` |
+| the binning or the scale differs | `IllegalArgumentException`: `add: <name> has binning <binning> and scale <scale> and <container> has binning <binning> and scale <scale>; expected the same binning and scale` |
 | an interval is NaN or infinite | `IllegalArgumentException`: `addDistData: interval <k> of <name> is <value>; expected a finite interval` |
 | an interval is 0 or negative while `RISTool.offset` is 0 | `IllegalStateException`: `addDistData: <n> intervals of <name> are 0 or negative; expected positive intervals while offset is 0` |
 | intervals are added to a container | `IllegalStateException`: `addDistData: <name> is a container; add intervals to a result that is not a container` |
@@ -429,9 +443,9 @@ Errors stop the call:
 | `RISTool.projekt` has no log of that name | `IllegalStateException`: `logLine: <folder> has no log named <log>; call createLogFile with that name first` |
 | a log line cannot be written | `UncheckedIOException`: `<log>: cannot write the log line (<cause>)` |
 
-`add` checks the container, the binning, the probabilities and the setup first, so a rejected result leaves the
-container unchanged and writes no log line. A result without intervals adds nothing. For a result with 2 to 1024
-filtered intervals, `add` then writes one line per interval through `RISTool.projekt` to the log named in
+`add` checks the container, the binning and the scale, the probabilities and the setup first, so a rejected result
+leaves the container unchanged and writes no log line. A result without intervals adds nothing. For a result with 2 to
+1024 filtered intervals, `add` then writes one line per interval through `RISTool.projekt` to the log named in
 `RISTool.logFileNames` and compares each interval with `RISTool.rqMIN`. A result whose R_q is larger than 7200 hours
 divided by the lower bound of its interval range gets a line in the log `RqTooLarge` as well. Create the logs with
 `OriginProject.createLogFile`. When `RISTool.offset` is not 0, `add` counts an interval below `RISTool.rqMIN` in
@@ -449,7 +463,10 @@ Equal times give an interval of 0, which `addDistData` refuses while `RISTool.of
 probabilities of the call before.
 
 `ReturnIntervallStatistik2` and `TSPropertyTester` refuse a NaN or infinite probability, a receiver that is not a
-container, a different binning and intervals added to a container with the same exceptions and messages as `RISTool`.
+container and intervals added to a container with the same exceptions and messages as `RISTool`. `TSPropertyTester`
+refuses a different binning or scale with the `RISTool` message. `ReturnIntervallStatistik2` keeps `binning` and
+`scale` in static fields that all its instances share and refuses a result with another number of bins with
+`IllegalArgumentException`: `add: <name> has <n> bins and <container> has <m>; expected the same binning and scale`.
 They write no log files, and `ReturnIntervallStatistik2.setLofFileNameKey_1` is deprecated and has no effect. Their
 `_addData(times, rq)` adds the intervals between consecutive times with `addDistData`,
 so times 0, 2, 5 and 9 add the intervals 2, 3 and 4. The intervals replace those of an earlier call, and `rq` is not
@@ -480,10 +497,10 @@ below `offset` / `rq` when `offset` and `rq` are above 0, and a container that a
 that is NaN or infinite throws `IllegalArgumentException` with
 `addDistData: interval <k> of <name> is <value>; expected a finite interval`, and a refused call adds nothing.
 For a result that is not a container, `addDistData` also counts the kept intervals as they are, in bins of width
-1/`scale`, and `calcMessreihen()` writes these counts: `mrHaeufigkeit` holds the count of bin i at i / `scale`, and
-`mrVerteilung` holds its share of all kept intervals. The last bin also counts the longer intervals, and the first bin
-also counts the negative ones, which `ReturnIntervallStatistik2` keeps only when `offset` is below 0. With binning 12
-and scale 10, the intervals 0.15, 0.25,
+1/`scale` that start at their x values as in `RISTool`, and `calcMessreihen()` writes these counts: `mrHaeufigkeit`
+holds the count of bin i at i / `scale`, and `mrVerteilung` holds its share of all kept intervals. The last bin also
+counts the longer intervals, and the first bin also counts the negative ones, which `ReturnIntervallStatistik2` keeps
+only when `offset` is below 0. With binning 12 and scale 10, the intervals 0.15, 0.25,
 0.25, 0.55 and 3.0 give the counts 1 at 0.1, 2 at 0.2, 1 at 0.5 and 1 at 1.2. `mrVerteilungSkaliert` holds the share
 of the intervals in scaled bin i at (i + 0.5) * `scale` / `binning`, the center of the bin in units of R_q. With binning
 12 and scale 10, the intervals 0.25, 0.25, 0.5 and 3.0 (R_q 1) give the share 0.75 at 5/12, 0.25 at 35/12 and 0 at the
@@ -496,7 +513,9 @@ share 0.5 at 5/12 and at 35/12. A result that keeps no interval has an empty `mr
 `mrVerteilungSkaliert`, and its `mrHaeufigkeit` holds the count 0 for each bin. Each call of
 `calcMessreihen()` replaces the series of the call before.
 A `ReturnIntervallStatistik2` or `TSPropertyTester` container adds up these counts of the results it adds, and its
-`calcMessreihen()` writes the sum of bin i at i / `scale` to `mrHaeufigkeit`, named after the container.
+`calcMessreihen()` writes the sum of bin i at i / `scale` to `mrHaeufigkeit`, named after the container. Their
+`store()` and `toString_Haeufigkeit()` write every bin like those of `RISTool`, and `toString_Haeufigkeit()` of a
+container prints its number of results and of counted intervals.
 `ReturnIntervallStatistik2.addRow(series)` and `ReturnIntervallStatistik2.addRowB(series)` add this series of a
 container that holds their result to `mrv2` and `mrv2B`, which `main` charts:
 with binning 12 and scale 10, `addRow` of the values 0.15, 0.25, 0.25, 0.55 and 3.0 adds the counts 1 at 0.1, 2 at

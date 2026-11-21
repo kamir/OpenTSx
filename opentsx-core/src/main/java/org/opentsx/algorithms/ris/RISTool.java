@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Vector;
 
@@ -153,9 +154,10 @@ public class RISTool {
             throw new IllegalStateException( "add: " + name + " is not a container; set isContainerInstanz to true before adding results");
         }
         
-        if ( ris.data.length != data.length ) {
-            throw new IllegalArgumentException( "add: " + ris.name + " has " + ris.data.length + " bins and " + name
-                    + " has " + data.length + "; expected the same binning and scale");
+        if ( ris.binning != binning || ris.scale != scale ) {
+            throw new IllegalArgumentException( "add: " + ris.name + " has binning " + ris.binning + " and scale "
+                    + ris.scale + " and " + name + " has binning " + binning + " and scale " + scale
+                    + "; expected the same binning and scale");
         }
         
         if ( ris.dataRawFILTERED == null ) { 
@@ -406,10 +408,7 @@ public class RISTool {
              else if ( index < 0 ) index = 0;
              dataSKALIERT[index]++;
 
-             int bin = (int)( dist1 * (double)scale );
-             if ( bin >= data.length ) bin = data.length-1;
-             else if ( bin < 0 ) bin = 0;
-             data[bin]++;
+             data[ReturnIntervallStatistik2.bin( dist1, scale, data.length )]++;
         }
         
         // probability of each bin
@@ -524,34 +523,44 @@ public class RISTool {
 
     public String toString_Haeufigkeit() {
         StringBuffer sb = new StringBuffer();
-        sb.append("\n#---------------------\n# " +
+        sb.append("#---------------------\n# " +
                  label + "\n#---------------------\n");
-        sb.append("# Rq            =" + _Rq + "\n");
-        sb.append("# Values        =" + zElements + "\n");
+        if ( isContainerInstanz ) {
+            sb.append("# Results       =" + allRqs.size() + "\n");
+            sb.append("# Values        =" + Arrays.stream( data ).asLongStream().sum() + "\n");
+        }
+        else {
+            sb.append("# Rq            =" + _Rq + "\n");
+            sb.append("# Values        =" + zElements + "\n");
+        }
         sb.append("# Binning       =" + binning + "\n" );
-        sb.append("# [ --- frequency --- ]" );
-        mrHaeufigkeit.setLabel(sb.toString());
-        return mrHaeufigkeit.toString();
+        sb.append("# [ --- frequency --- ]\n" );
+        sb.append( ReturnIntervallStatistik2.pairs( mrHaeufigkeit ) );
+        return sb.toString();
     }
 
 
     public String toString_Verteilung() {
+        mrVerteilung.setLabel("\n" + distributionHeader());
+        return mrVerteilung.toString();
+    }
+
+    private String distributionHeader() {
         StringBuffer sb = new StringBuffer();
-        sb.append("\n#---------------------\n# " +
+        sb.append("#---------------------\n# " +
                  label + "\n#---------------------\n");
         sb.append("# Rq            =" + _Rq + "\n");
         sb.append("# Values        =" + zElements + "\n");
         sb.append("# Binning       =" +binning + "\n" );
         sb.append("# Scale         =" +scale + "\n" );
         sb.append("# [ --- distribution --- ]" );
-        mrVerteilung.setLabel(sb.toString());
-        return mrVerteilung.toString();
+        return sb.toString();
     }
 
 
     public void store() throws IOException {
         try (FileWriter fw = new FileWriter( folder + label )) {
-            fw.write( mrVerteilung.toString() );
+            fw.write( distributionHeader() + "\n" + ReturnIntervallStatistik2.pairs( mrVerteilung ) );
         }
 
         if ( LOG.isDebugEnabled() ) {

@@ -238,9 +238,195 @@ class MacroRecorderTest {
         assertEquals(1, log.lines().count(), log);
     }
 
+    @Test
+    void aDefaultLookAndFeelWhoseClassCannotInitializeIsIgnoredWithAWarningAndTheLookAndFeelIsSet(@TempDir Path dir)
+            throws Exception {
+        Forked run = fork(dir, List.of("-Dswing.defaultlaf=" + CannotInitialize.class.getName()),
+                SetMetalWithADefaultThatCannotLoad.class);
+
+        assertEquals(0, run.status(), run.printed() + run.log());
+        assertEquals(MetalLookAndFeel.class.getName() + "\n", run.printed(), run.log());
+        assertTrue(run.log().contains("WARN " + MacroRecorder2.class.getName() + " - swing.defaultlaf: the default look"
+                + " and feel cannot load and is ignored; name a look and feel class on the class path or remove"
+                + " swing.defaultlaf lookAndFeel=" + MetalLookAndFeel.class.getName() + " cause=Cannot load "
+                + CannotInitialize.class.getName() + "; caused by java.lang.ExceptionInInitializerError; caused by"
+                + " java.lang.NumberFormatException: For input string: \"broken\""), run.log());
+        assertEquals(1, run.log().lines().count(), run.log());
+    }
+
+    @Test
+    void aDefaultLookAndFeelThatFailsToLinkWhenItInitializesIsIgnoredWithAWarningAndTheLookAndFeelIsSet(
+            @TempDir Path dir) throws Exception {
+        Forked run = fork(dir, List.of("-Dswing.defaultlaf=" + InitializeCannotLink.class.getName()),
+                SetMetalWithADefaultThatCannotLoad.class);
+
+        assertEquals(0, run.status(), run.printed() + run.log());
+        assertEquals(MetalLookAndFeel.class.getName() + "\n", run.printed(), run.log());
+        assertTrue(run.log().contains("WARN " + MacroRecorder2.class.getName() + " - swing.defaultlaf: the default look"
+                + " and feel cannot load and is ignored; name a look and feel class on the class path or remove"
+                + " swing.defaultlaf lookAndFeel=" + MetalLookAndFeel.class.getName() + " cause=Cannot load "
+                + InitializeCannotLink.class.getName() + "; caused by java.lang.NoClassDefFoundError:"
+                + " a/missing/Dependency"), run.log());
+        assertEquals(1, run.log().lines().count(), run.log());
+    }
+
+    @Test
+    void aCrossPlatformDefaultThatCannotLoadIsNamedInTheWarningAndTheLookAndFeelIsSet(@TempDir Path dir)
+            throws Exception {
+        Path javaHome = Files.createDirectory(dir.resolve("java-home"));
+
+        Forked run = fork(dir, List.of("-Dswing.crossplatformlaf=does.not.Exist"),
+                SetMetalWithADefaultThatCannotLoad.class, javaHome.toString());
+
+        assertEquals(0, run.status(), run.printed() + run.log());
+        assertEquals(MetalLookAndFeel.class.getName() + "\n", run.printed(), run.log());
+        assertTrue(run.log().contains("WARN " + MacroRecorder2.class.getName() + " - swing.crossplatformlaf: the"
+                + " default look and feel cannot load and is ignored; name a look and feel class on the class path or"
+                + " remove swing.crossplatformlaf lookAndFeel=" + MetalLookAndFeel.class.getName()
+                + " cause=Cannot load does.not.Exist; caused by java.lang.ClassNotFoundException: does.not.Exist"),
+                run.log());
+        assertEquals(1, run.log().lines().count(), run.log());
+    }
+
+    @Test
+    void onMacOsTheDefaultIsTheSystemLookAndFeelThatSwingSystemlafNames(@TempDir Path dir) throws Exception {
+        Path javaHome = Files.createDirectory(dir.resolve("java-home"));
+
+        Forked system = fork(dir, List.of("-Djava.awt.headless=true", "-Dswing.systemlaf=does.not.Exist",
+                "-Dswing.crossplatformlaf=" + CannotInitialize.class.getName()),
+                PrintTheDefaultOnMacOsAndElsewhere.class, javaHome.toString());
+        Forked crossPlatform = fork(dir, List.of("-Djava.awt.headless=true", "-Dswing.crossplatformlaf=does.not.Exist"),
+                PrintTheDefaultOnMacOsAndElsewhere.class, javaHome.toString());
+
+        assertEquals(0, system.status(), system.printed() + system.log());
+        assertEquals("does.not.Exist swing.systemlaf\n" + CannotInitialize.class.getName() + " swing.crossplatformlaf\n",
+                system.printed(), system.log());
+        assertEquals(0, crossPlatform.status(), crossPlatform.printed() + crossPlatform.log());
+        assertEquals("does.not.Exist swing.crossplatformlaf\ndoes.not.Exist swing.crossplatformlaf\n",
+                crossPlatform.printed(), crossPlatform.log());
+    }
+
+    @Test
+    void onMacOsABrokenSystemLookAndFeelIsNamedInTheWarningAndTheLookAndFeelIsSet(@TempDir Path dir)
+            throws Exception {
+        Path javaHome = Files.createDirectory(dir.resolve("java-home"));
+
+        Forked run = fork(dir, List.of("-Djava.awt.headless=true", "-Dos.name=Mac OS X",
+                "-Dswing.systemlaf=does.not.Exist"), SetMetalWithADefaultThatCannotLoad.class, javaHome.toString());
+
+        assertEquals(0, run.status(), run.printed() + run.log());
+        assertEquals(MetalLookAndFeel.class.getName() + "\n", run.printed(), run.log());
+        assertTrue(run.log().contains("WARN " + MacroRecorder2.class.getName() + " - swing.systemlaf: the default"
+                + " look and feel cannot load and is ignored; name a look and feel class on the class path or remove"
+                + " swing.systemlaf lookAndFeel=" + MetalLookAndFeel.class.getName()
+                + " cause=Cannot load does.not.Exist; caused by java.lang.ClassNotFoundException: does.not.Exist"),
+                run.log());
+        assertEquals(1, run.log().lines().count(), run.log());
+    }
+
+    public static class PrintTheDefaultOnMacOsAndElsewhere {
+        public static void main(String[] args) throws Exception {
+            Class.forName(MacroRecorder2.class.getName());
+            System.setProperty("java.home", args[0]);
+            for (boolean macOS : new boolean[] {true, false}) {
+                MacroRecorder2.Default defaultLaf = MacroRecorder2.defaultLookAndFeel(macOS);
+                System.out.println(defaultLaf.className() + " " + defaultLaf.source());
+            }
+        }
+    }
+
+    @Test
+    void aDefaultThatOnlySwingPropertiesNamesIsNamedWithItsFileAndNotLoadedSoTheKeyBindingsOfAWindowWork(
+            @TempDir Path dir) throws Exception {
+        Path system = Path.of(System.getProperty("java.home"), "conf", "swing.properties");
+        byte[] systemBefore = Files.exists(system) ? Files.readAllBytes(system) : null;
+        Path javaHome = dir.resolve("java-home");
+        Path swingProperties = Files.createDirectories(javaHome.resolve("conf")).resolve("swing.properties");
+        Files.writeString(swingProperties, "swing.defaultlaf=does.not.Exist\n");
+
+        Forked run = fork(dir, List.of(), FireAWindowKeyBindingWithADefaultThatCannotLoad.class, javaHome.toString());
+
+        assertEquals(0, run.status(), run.printed() + run.log());
+        assertEquals("fired for the window 1, for a disabled button 1\n", run.printed(), run.log());
+        assertTrue(run.log().contains("WARN " + MacroRecorder2.class.getName() + " - swing.defaultlaf in "
+                + swingProperties + ": the default look and feel cannot load and is ignored; name a look and feel"
+                + " class on the class path or remove swing.defaultlaf in " + swingProperties + " lookAndFeel="
+                + MetalLookAndFeel.class.getName() + " cause=Cannot load does.not.Exist; caused by"
+                + " java.lang.ClassNotFoundException: does.not.Exist"), run.log());
+        assertEquals(1, run.log().lines().count(), run.log());
+        assertArrayEquals(systemBefore, Files.exists(system) ? Files.readAllBytes(system) : null);
+    }
+
+    @Test
+    void aDefaultOnTheClassPathThatIsNotALookAndFeelIsNotLoadedSoTheKeyBindingsOfAWindowWork(@TempDir Path dir)
+            throws Exception {
+        Forked run = fork(dir, List.of("-Dswing.defaultlaf=java.lang.String"),
+                FireAWindowKeyBindingWithADefaultThatCannotLoad.class);
+
+        assertEquals(0, run.status(), run.printed() + run.log());
+        assertEquals("fired for the window 1, for a disabled button 1\n", run.printed(), run.log());
+        assertTrue(run.log().contains("cause=Cannot load java.lang.String; caused by java.lang.ClassCastException:"
+                + " Cannot cast java.lang.String to javax.swing.LookAndFeel"), run.log());
+        assertEquals(1, run.log().lines().count(), run.log());
+    }
+
+    @Test
+    void aDefaultLookAndFeelOfTheJdkThatJavaDesktopDoesNotExportIsLeftToSwingWithoutAWarning(@TempDir Path dir)
+            throws Exception {
+        Forked run = fork(dir, List.of("-Dswing.defaultlaf=com.sun.java.swing.plaf.motif.MotifLookAndFeel"),
+                FireAWindowKeyBindingWithADefaultThatCannotLoad.class);
+
+        assertEquals(0, run.status(), run.printed() + run.log());
+        assertEquals("fired for the window 1, for a disabled button 1\n", run.printed(), run.log());
+        assertEquals("", run.log());
+    }
+
+    private record Forked(int status, String printed, String log) {
+    }
+
+    private static Forked fork(Path dir, List<String> options, Class<?> main, String... args) throws Exception {
+        Path output = dir.resolve("output.txt");
+        Path errors = dir.resolve("errors.txt");
+        List<String> command = new ArrayList<>();
+        command.add(Path.of(System.getProperty("java.home"), "bin", "java").toString());
+        command.addAll(options);
+        command.addAll(List.of("-cp", System.getProperty("surefire.test.class.path"), main.getName()));
+        command.addAll(List.of(args));
+        ProcessBuilder builder = new ProcessBuilder(command)
+                .directory(dir.toFile()).redirectOutput(output.toFile()).redirectError(errors.toFile());
+        builder.environment().keySet().removeAll(List.of("JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS"));
+        int status = builder.start().waitFor();
+        return new Forked(status, Files.readString(output), Files.readString(errors));
+    }
+
+    static void setMetal(String[] javaHome) throws ClassNotFoundException {
+        // the JDK opens its module image below java.home on first use, which has to happen before java.home moves
+        Class.forName(MacroRecorder2.class.getName());
+        String before = System.getProperty("java.home");
+        if (javaHome.length > 0) {
+            System.setProperty("java.home", javaHome[0]);
+        }
+        try {
+            MacroRecorder2.setLookAndFeel(new MetalLookAndFeel());
+        } finally {
+            System.setProperty("java.home", before);
+        }
+    }
+
+    public static class CannotInitialize extends MetalLookAndFeel {
+        static final int BROKEN = Integer.parseInt("broken");
+    }
+
+    public static class InitializeCannotLink extends MetalLookAndFeel {
+        @Override
+        public void initialize() {
+            throw new NoClassDefFoundError("a/missing/Dependency");
+        }
+    }
+
     public static class FireAWindowKeyBindingWithADefaultThatCannotLoad {
         public static void main(String[] args) throws Exception {
-            MacroRecorder2.setLookAndFeel(new MetalLookAndFeel());
+            setMetal(args);
             AtomicInteger fired = new AtomicInteger();
             String[] printed = new String[1];
             SwingUtilities.invokeAndWait(() -> {
@@ -298,8 +484,8 @@ class MacroRecorderTest {
     }
 
     public static class SetMetalWithADefaultThatCannotLoad {
-        public static void main(String[] args) {
-            MacroRecorder2.setLookAndFeel(new MetalLookAndFeel());
+        public static void main(String[] args) throws Exception {
+            setMetal(args);
             System.out.println(UIManager.getLookAndFeel().getClass().getName());
         }
     }

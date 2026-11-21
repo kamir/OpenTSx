@@ -534,6 +534,61 @@ class ReturnIntervallStatistik2Test {
     }
 
     @Test
+    void aStoredSingleResultWritesEveryBinOfItsDistributionAndItsCountsShowEveryBin() throws Exception {
+        ReturnIntervallStatistik2 ris = new ReturnIntervallStatistik2("stored", 12, 10);
+        ris.folder = dir + "/";
+        ris.label = "distribution.dat";
+        ris.addDistData(new Vector<>(List.of(0.15, 0.25, 0.25, 0.55, 3.0)));
+        ris.calcMessreihen();
+
+        ris.store();
+
+        double[] counts = {0, 1, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1};
+        assertEquals("#---------------------\n# distribution.dat\n#---------------------\n# Rq            ="
+                + ris.getRq() + "\n# Values        =5\n# Binning       =12\n# Scale         =10\n"
+                + "# [ --- distribution --- ]\n" + pairs(counts, 5.0),
+                Files.readString(dir.resolve("distribution.dat")));
+        assertEquals("#---------------------\n# distribution.dat\n#---------------------\n# Rq            ="
+                + ris.getRq() + "\n# Values        =5\n# Binning       =12\n# [ --- frequency --- ]\n"
+                + pairs(counts, 1.0), ris.toString_Haeufigkeit());
+    }
+
+    @Test
+    void aContainerPrintsItsOwnTotalsAboveTheCountsItSumsAndKeepsItsName() throws Exception {
+        ReturnIntervallStatistik2 first = new ReturnIntervallStatistik2("first", 12, 10);
+        ReturnIntervallStatistik2 second = new ReturnIntervallStatistik2("second", 12, 10);
+        ReturnIntervallStatistik2 container = new ReturnIntervallStatistik2("all", 12, 10);
+        container.isContainerInstanz = true;
+        first.addDistData(new Vector<>(List.of(0.15, 0.25)));
+        second.addDistData(new Vector<>(List.of(0.25, 0.55, 3.0)));
+        container.add(first);
+        container.add(second);
+        container.calcMessreihen();
+
+        String counts = container.toString_Haeufigkeit();
+
+        assertEquals("#---------------------\n# " + ReturnIntervallStatistik2.class.getName()
+                + "\n#---------------------\n# Results       =2\n# Values        =5\n# Binning       =12\n"
+                + "# [ --- frequency --- ]\n" + pairs(new double[] {0, 1, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1}, 1.0),
+                counts);
+        assertEquals("all", container.mrHaeufigkeit.getLabel());
+    }
+
+    @Test
+    void anIntervalAtTheXOfABinIsCountedInThatBinAndOneJustBelowItInTheBinBefore() throws Exception {
+        ReturnIntervallStatistik2 hundredths = new ReturnIntervallStatistik2("hundredths", 120, 100);
+        hundredths.addDistData(new Vector<>(List.of(0.29, 0.57, 1.13)));
+        hundredths.calcMessreihen();
+        List<List<Object>> atHundredths = pointsWithAShare(hundredths.mrHaeufigkeit);
+        ReturnIntervallStatistik2 tenths = new ReturnIntervallStatistik2("tenths", 12, 10);
+        tenths.addDistData(new Vector<>(List.of(0.3, Math.nextDown(0.9))));
+        tenths.calcMessreihen();
+
+        assertEquals(List.of(List.of(0.29, 1.0), List.of(0.57, 1.0), List.of(1.13, 1.0)), atHundredths);
+        assertEquals(List.of(List.of(0.3, 1.0), List.of(0.8, 1.0)), pointsWithAShare(tenths.mrHaeufigkeit));
+    }
+
+    @Test
     void aContainerNamesItsScaledSeriesWithItsResolutionInParentheses() throws Exception {
         ReturnIntervallStatistik2 container = new ReturnIntervallStatistik2("all", 12, 10);
         container.isContainerInstanz = true;
@@ -619,12 +674,28 @@ class ReturnIntervallStatistik2Test {
     }
 
     static TimeSeriesObject failingSeries() {
-        return new TimeSeriesObject() {
+        TimeSeriesObject series = new TimeSeriesObject();
+        series.xValues = new Vector<Double>(List.of(0.0)) {
             @Override
-            public String toString() {
-                throw new IllegalStateException("toString fails");
+            public synchronized Double get(int index) {
+                throw new IllegalStateException("cannot read the bin");
+            }
+
+            @Override
+            public synchronized Double elementAt(int index) {
+                throw new IllegalStateException("cannot read the bin");
             }
         };
+        series.yValues.add(0.0);
+        return series;
+    }
+
+    static String pairs(double[] counts, double total) {
+        StringBuilder pairs = new StringBuilder();
+        for (int i = 0; i < counts.length; i++) {
+            pairs.append((double) i / 10).append(' ').append(counts[i] / total).append('\n');
+        }
+        return pairs.toString();
     }
 
     static boolean isOpen(Path file) throws IOException {

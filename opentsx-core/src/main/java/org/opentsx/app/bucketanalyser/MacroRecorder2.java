@@ -9,8 +9,14 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.LookAndFeel;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 
@@ -83,27 +89,28 @@ public class MacroRecorder2 {
     @Deprecated
     public static double fitMAX = 3.5;
 
+    record Default(String className, String source) {
+    }
+
     static void setLookAndFeel(LookAndFeel lookAndFeel) {
         LookAndFeel before;
-        String defaultName = System.getProperty("swing.defaultlaf");
-        Throwable missing = notOnClassPath(defaultName);
-        if (missing != null) {
-            // a default that fails to load ends UIManager.initialize() early, so UIManager must never try it
-            LOG.warn("swing.defaultlaf: the default look and feel cannot load and is ignored; name a look and feel"
-                    + " class on the class path or remove swing.defaultlaf lookAndFeel={} cause=Cannot load {};"
-                    + " caused by {}", lookAndFeel.getClass().getName(), defaultName, missing.toString());
+        Default defaultLaf = defaultLookAndFeel(System.getProperty("os.name", "").contains("OS X"));
+        Throwable notSettable = cannotBeSet(defaultLaf.className());
+        if (notSettable != null) {
+            // a default that UIManager cannot set ends UIManager.initialize() early, so UIManager must never try it
+            ignored(defaultLaf, lookAndFeel, new Error("Cannot load " + defaultLaf.className(), notSettable));
             before = null;
         } else {
             try {
                 before = UIManager.getLookAndFeel();
-            } catch (Error defaultLaf) {
-                // UIManager throws a plain Error("Cannot load <class>") when the default look and feel cannot load
-                if (defaultLaf.getClass() != Error.class) {
-                    throw defaultLaf;
+            } catch (Error failed) {
+                // UIManager turns an exception of the default into Error("Cannot load <class>")
+                // and lets a LinkageError of the default through
+                if (failed.getClass() != Error.class && !(failed instanceof LinkageError)) {
+                    throw failed;
                 }
-                LOG.warn("swing.defaultlaf: the default look and feel cannot load and is ignored; name a look and"
-                        + " feel class on the class path or remove swing.defaultlaf lookAndFeel={} cause={}",
-                        lookAndFeel.getClass().getName(), causes(defaultLaf));
+                ignored(defaultLaf, lookAndFeel, failed.getClass() == Error.class ? failed
+                        : new Error("Cannot load " + defaultLaf.className(), failed));
                 before = null;
             }
         }
@@ -141,15 +148,74 @@ public class MacroRecorder2 {
         }
     }
 
-    private static Throwable notOnClassPath(String className) {
-        if (className == null) {
-            return null;
+    private static void ignored(Default defaultLaf, LookAndFeel lookAndFeel, Error cause) {
+        LOG.warn("{}: the default look and feel cannot load and is ignored; name a look and feel class on the class"
+                + " path or remove {} lookAndFeel={} cause={}", defaultLaf.source(), defaultLaf.source(),
+                lookAndFeel.getClass().getName(), causes(cause));
+    }
+
+    /**
+     * Returns the default look and feel UIManager.initialize() sets and where it is named: the system property
+     * swing.defaultlaf, else swing.defaultlaf in java.home/conf/swing.properties, else on macOS the system one, else
+     * the cross-platform one.
+     */
+    static Default defaultLookAndFeel(boolean macOS) {
+        String property = System.getProperty("swing.defaultlaf");
+        if (property != null) {
+            return new Default(property, "swing.defaultlaf");
         }
+        String javaHome = System.getProperty("java.home");
+        if (javaHome != null) {
+            Path file = Path.of(javaHome, "conf", "swing.properties");
+            String named = swingProperties(file).getProperty("swing.defaultlaf");
+            if (named != null) {
+                return new Default(named, "swing.defaultlaf in " + file);
+            }
+        }
+        if (macOS) {
+            String system = System.getProperty("swing.systemlaf");
+            if (system != null) {
+                return new Default(system, "swing.systemlaf");
+            }
+            String systemDefault = UIManager.getSystemLookAndFeelClassName();
+            if (!systemDefault.equals(UIManager.getCrossPlatformLookAndFeelClassName())) {
+                return new Default(systemDefault, "swing.systemlaf");
+            }
+        }
+        return new Default(UIManager.getCrossPlatformLookAndFeelClassName(), "swing.crossplatformlaf");
+    }
+
+    private static Properties swingProperties(Path file) {
+        Properties properties = new Properties();
+        if (!Files.exists(file)) {
+            return properties;
+        }
+        try (InputStream in = Files.newInputStream(file)) {
+            properties.load(in);
+        } catch (IOException | IllegalArgumentException unreadable) {
+            // UIManager ignores a swing.properties it cannot read as well
+            LOG.debug("swing.properties not read file={} cause={}", file, unreadable.toString());
+        }
+        return properties;
+    }
+
+    private static Throwable cannotBeSet(String className) {
         try {
-            Class.forName(className, false, Thread.currentThread().getContextClassLoader());
+            Class<?> type = Class.forName(className, true, Thread.currentThread().getContextClassLoader());
+            Module desktop = LookAndFeel.class.getModule();
+            if (type.getModule() == desktop && LookAndFeel.class.isAssignableFrom(type)
+                    && !desktop.isExported(type.getPackageName(), MacroRecorder2.class.getModule())) {
+                // java.desktop does not export look and feels such as GTK and Motif, which UIManager creates itself
+                return null;
+            }
+            Object instance = type.getConstructor().newInstance();
+            LookAndFeel defaultLaf = LookAndFeel.class.cast(instance);
+            if (!defaultLaf.isSupportedLookAndFeel()) {
+                return new UnsupportedLookAndFeelException(defaultLaf + " not supported on this platform");
+            }
             return null;
-        } catch (ClassNotFoundException | LinkageError notLoadable) {
-            return notLoadable;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError notSettable) {
+            return notSettable;
         }
     }
 

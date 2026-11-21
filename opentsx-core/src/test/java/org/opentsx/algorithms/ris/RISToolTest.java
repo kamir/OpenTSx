@@ -662,10 +662,82 @@ class RISToolTest {
         ris.calcMessreihen();
         ris.store();
 
-        String stored = Files.readString(dir.resolve("distribution.dat"));
-        assertTrue(stored.contains("# Nr of data points => 121"), stored);
-        String counts = ris.toString_Haeufigkeit();
-        assertTrue(counts.contains("# Nr of data points => 121"), counts);
+        double[] counts = new double[121];
+        counts[10] = 2;
+        counts[20] = 1;
+        counts[40] = 1;
+        assertEquals("#---------------------\n# distribution.dat\n#---------------------\n# Rq            =2.0\n"
+                + "# Values        =4\n# Binning       =12\n# Scale         =10\n# [ --- distribution --- ]\n"
+                + pairs(counts, 4.0, 10), Files.readString(dir.resolve("distribution.dat")));
+        assertEquals("#---------------------\n# distribution.dat\n#---------------------\n# Rq            =2.0\n"
+                + "# Values        =4\n# Binning       =12\n# [ --- frequency --- ]\n" + pairs(counts, 1.0, 10),
+                ris.toString_Haeufigkeit());
+    }
+
+    @Test
+    void aContainerPrintsItsOwnTotalsAboveTheCountsItSumsAndKeepsItsName() throws Exception {
+        RISTool.projekt = project("totals");
+        RISTool.logFileNames = names(8);
+        RISTool.initRqMIN();
+        RISTool first = new RISTool("first", 12, 10);
+        RISTool second = new RISTool("second", 12, 10);
+        RISTool container = new RISTool("all", 12, 10);
+        container.isContainerInstanz = true;
+        first.addDistData(new Vector<>(List.of(1.0, 1.0, 2.0, 4.0)));
+        second.addDistData(new Vector<>(List.of(2.0, 4.0)));
+        container.add(first);
+        container.add(second);
+        container.calcMessreihen();
+
+        String counts = container.toString_Haeufigkeit();
+
+        double[] summed = new double[121];
+        summed[10] = 2;
+        summed[20] = 2;
+        summed[40] = 2;
+        assertEquals("#---------------------\n# " + RISTool.class.getName() + "\n#---------------------\n"
+                + "# Results       =2\n# Values        =6\n# Binning       =12\n# [ --- frequency --- ]\n"
+                + pairs(summed, 1.0, 10), counts);
+        assertEquals("all", container.mrHaeufigkeit.getLabel());
+    }
+
+    @Test
+    void addingAResultWithAnotherBinningOrScaleFailsNamingBothAndKeepsTheContainer() throws Exception {
+        RISTool sameBins = new RISTool("same bins", 10, 12);
+        sameBins.addDistData(new Vector<>(List.of(1.0)));
+        RISTool fewerBins = new RISTool("fewer bins", 6, 10);
+        fewerBins.addDistData(new Vector<>(List.of(1.0)));
+        RISTool container = new RISTool("all", 12, 10);
+        container.isContainerInstanz = true;
+
+        IllegalArgumentException scale = assertThrows(IllegalArgumentException.class, () -> container.add(sameBins));
+        IllegalArgumentException binning = assertThrows(IllegalArgumentException.class, () -> container.add(fewerBins));
+
+        assertEquals("add: same bins has binning 10 and scale 12 and all has binning 12 and scale 10;"
+                + " expected the same binning and scale", scale.getMessage());
+        assertEquals("add: fewer bins has binning 6 and scale 10 and all has binning 12 and scale 10;"
+                + " expected the same binning and scale", binning.getMessage());
+        assertEquals(0, Arrays.stream(container.data).sum());
+        assertEquals(List.of(), container.allRqs);
+    }
+
+    @Test
+    void anIntervalAtTheXOfABinIsCountedInThatBinAndOneJustBelowItInTheBinBefore() throws Exception {
+        RISTool hundredths = new RISTool("hundredths", 12, 100);
+        hundredths.addDistData(new Vector<>(List.of(0.29, 0.57, 1.13)));
+        RISTool hours = new RISTool("hours", 12, 100);
+        hours._addData(times(0.0, 1044000.0));
+        RISTool tenths = new RISTool("tenths", 12, 10);
+        tenths.addDistData(new Vector<>(List.of(0.3, Math.nextDown(0.9))));
+
+        for (RISTool ris : List.of(hundredths, hours, tenths)) {
+            ris.calcMessreihen();
+        }
+
+        assertEquals(List.of(List.of(0.29, 1.0), List.of(0.57, 1.0), List.of(1.13, 1.0)),
+                pointsWithAShare(hundredths.mrHaeufigkeit));
+        assertEquals(List.of(List.of(0.29, 1.0)), pointsWithAShare(hours.mrHaeufigkeit));
+        assertEquals(List.of(List.of(0.3, 1.0), List.of(0.8, 1.0)), pointsWithAShare(tenths.mrHaeufigkeit));
     }
 
     @Test
@@ -673,16 +745,31 @@ class RISToolTest {
         RISTool ris = new RISTool("stored", 12, 10);
         ris.folder = dir + "/";
         ris.label = "distribution.dat";
-        ris.mrVerteilung = new TimeSeriesObject() {
+        ris.mrVerteilung = new TimeSeriesObject();
+        ris.mrVerteilung.xValues = new Vector<Double>(List.of(0.0)) {
             @Override
-            public String toString() {
-                throw new IllegalStateException("toString fails");
+            public synchronized Double get(int index) {
+                throw new IllegalStateException("cannot read the bin");
+            }
+
+            @Override
+            public synchronized Double elementAt(int index) {
+                throw new IllegalStateException("cannot read the bin");
             }
         };
+        ris.mrVerteilung.yValues.add(0.0);
 
         assertThrows(IllegalStateException.class, ris::store);
 
         assertFalse(isOpen(dir.resolve("distribution.dat")));
+    }
+
+    private static String pairs(double[] counts, double total, int scale) {
+        StringBuilder pairs = new StringBuilder();
+        for (int i = 0; i < counts.length; i++) {
+            pairs.append((double) i / scale).append(' ').append(counts[i] / total).append('\n');
+        }
+        return pairs.toString();
     }
 
     private static boolean isOpen(Path file) throws IOException {

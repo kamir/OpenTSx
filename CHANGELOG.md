@@ -248,6 +248,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   that differ only in letter case count once, a line that is not valid UTF-8 is also searched with its bytes that are
   not valid UTF-8 decoded as cp1252, and a tracked symbolic link is checked by its text. Without the file, as in CI,
   the guard skips this check. CONTRIBUTING.md describes it.
+- `opentsx-core`: `ReturnIntervallStatistik2.bin(interval, scale, bins)` returns the count bin of an interval and
+  `ReturnIntervallStatistik2.pairs(series)` returns every pair of a series as x, a blank and y on a line of its own;
+  `RISTool` and `TSPropertyTester` use both.
 
 ### Changed
 
@@ -2765,10 +2768,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   it logs `look and feel not set, and setting back the one before failed lookAndFeel=<class> before=<class>
   cause=<cause>; suppressed <failure>`, and when installing the cross-platform one fails, it logs `look and feel not
   set, and installing the cross-platform one failed lookAndFeel=<class> crossPlatform=<class> cause=<cause>;
-  suppressed <failure>`. When the default look and feel that `swing.defaultlaf` names cannot load, `MacroRecorder2`
-  ignores it, logs at WARN `swing.defaultlaf: the default look and feel cannot load and is ignored; name a look and
-  feel class on the class path or remove swing.defaultlaf lookAndFeel=<class> cause=Cannot load <default class>` and
-  sets FlatLaf.
+  suppressed <failure>`.
 - `opentsx-core`: `ReturnIntervallStatistik2.addRowB` bins the intervals between consecutive days with a value of at
   least 0.5. It binned the days themselves as intervals, so the days 2, 4, 6 and 8 gave R_q 5.0 instead of 2.0.
 - `opentsx-core`: the DEBUG line `mean interval series=<label> rq=<R_q>` of `TSPropertyTester.addRow` gives the R_q of
@@ -2962,6 +2962,40 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The image pin check in `tools/test_lg_scripts.py` reads `-a` and `-c` of `sudo` and their long forms `--auth-type`
   and `--login-class` as options that take the next word, as `sudo` does, so the `docker` of `sudo -a docker pull
   <image>` is no longer read as the command.
+- `opentsx-core`: `store()` of `RISTool`, `ReturnIntervallStatistik2` and `TSPropertyTester` writes lines starting
+  with `#` (label, R_q, number of intervals, binning and scale) and then every bin of `mrVerteilung` as x, a blank and
+  y, and `toString_Haeufigkeit()` returns every bin of `mrHaeufigkeit` the same way. Both wrote the console text of
+  the series, which stops after its first 5 bins, so with binning 12 and scale 10 the shares 0.5 at 1.0, 0.25 at 2.0
+  and 0.25 at 4.0 never reached the file. `toString_Haeufigkeit()` no longer renames `mrHaeufigkeit`.
+- `opentsx-core`: the count bins of `RISTool`, `ReturnIntervallStatistik2` and `TSPropertyTester` start at the x
+  values `calcMessreihen()` writes for them. Truncating the interval times the scale counted some intervals one bin
+  off: with scale 100 the intervals 0.29, 0.57 and 1.13, and the 1044000 ms that `RISTool._addData` turns into 0.29
+  hours, counted at 0.28, 0.56 and 1.12, and with scale 10 the interval 0.8999999999999999 counted at 0.9.
+- `opentsx-core`: `RISTool.add` and `TSPropertyTester.add` refuse a result with another binning or scale with
+  `IllegalArgumentException` and `add: <name> has binning <binning> and scale <scale> and <container> has binning
+  <binning> and scale <scale>; expected the same binning and scale`. They compared only the number of bins, so a
+  result with binning 10 and scale 12 was added to a container with binning 12 and scale 10 and its count at 1.0 was
+  charted at 1.2.
+- `opentsx-core`: `toString_Haeufigkeit()` of a `RISTool`, `ReturnIntervallStatistik2` or `TSPropertyTester` container
+  prints `# Results` with the number of results it added and `# Values` with the number of intervals they counted. It
+  printed the R_q and the 0 intervals of the container itself above the summed counts.
+- `opentsx-core`: `MacroRecorder2` checks the default look and feel wherever Swing takes it from: the system property
+  `swing.defaultlaf`, `swing.defaultlaf` in `<java.home>/conf/swing.properties`, or the cross-platform one of
+  `swing.crossplatformlaf`. Before Swing does, it loads and creates the class and asks whether it supports the
+  platform; a look and feel in a package that the JDK module `java.desktop` does not export, such as GTK or Motif, it
+  only loads and leaves to Swing. It ignores a default that fails, logs `<source>: the default look and feel cannot
+  load and is ignored; name a look and feel class on the class path or remove <source> lookAndFeel=<class>
+  cause=Cannot load <default class>; caused by <failure>` with the place that names it, and sets FlatLaf. A default
+  that Swing itself fails to set, for example in its `initialize()` or `getDefaults()` with an exception, gives the
+  line without `; caused by <failure>`, because Swing does not pass that failure on. A default class that failed with
+  a `LinkageError`, such as an `ExceptionInInitializerError`, stopped `MacroRecorder2`; a `swing.crossplatformlaf`
+  that could not load was blamed on `swing.defaultlaf`; and a default from `swing.properties` or a class that is not a
+  look and feel, such as `java.lang.String`, ended the start-up of Swing early, so the key bindings of a window missed
+  key events of the window itself and of disabled components.
+- On macOS, `MacroRecorder2` checks the default look and feel Swing starts with there: the system one, which the
+  system property `swing.systemlaf` can name. When that class cannot load, the WARN line names `swing.systemlaf`.
+  Before, it checked the cross-platform one. A broken `swing.crossplatformlaf` then gave a WARN that did not apply,
+  and a broken `swing.systemlaf` was blamed on `swing.crossplatformlaf`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
