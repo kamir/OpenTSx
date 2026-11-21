@@ -1661,7 +1661,7 @@
         ],
         "source": [
           "opentsx-model/src/main/java/org/opentsx/model/contracts/ExecutionAssignments.java#L58",
-          "rust/tsx-contracts/src/lib.rs#L51",
+          "rust/tsx-contracts/src/lib.rs#L53",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java#parameters",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustRollout.java#plan",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustExecutor.java#execute",

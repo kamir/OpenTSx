@@ -247,8 +247,8 @@ duplicate ownership within a deployment context
 ([admission](../../../opentsx-model/src/main/java/org/opentsx/model/contracts/ExecutionAssignments.java#L113),
 [set checks](../../../opentsx-model/src/main/java/org/opentsx/model/contracts/ExecutionAssignments.java#L58)).
 The Rust implementation exposes the same individual and set boundaries
-([admission](../../../rust/tsx-contracts/src/lib.rs#L95),
-[set checks](../../../rust/tsx-contracts/src/lib.rs#L51)).
+([admission](../../../rust/tsx-contracts/src/lib.rs#L97),
+[set checks](../../../rust/tsx-contracts/src/lib.rs#L53)).
 The generator names valid and invalid assignment, set and exact-text hashing cases
 ([fixtures](../../../tools/execution_contract_vectors.py#L69)).
 
