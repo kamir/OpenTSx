@@ -91,6 +91,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `tsx-runner` site configuration field `profile` (`ground` or `orbit`). In the `orbit` profile `agent` and
+  `run --plan` keep a plan running when a status record cannot reach the plan service: the record goes to a durable
+  outbox in the state directory, bounded to 5,760 records, and buffered records are sent oldest first before newer
+  and terminal records. A full outbox stops the plan. The `ground` profile, also used without the field, still
+  stops a plan when a heartbeat fails.
 - The workbench Deployments panel lists the `jobs` of `GET /v1/dags` apart from the deployments: job id, track, site
   when present, state, input record count and report age. A job in any state but `stopped` or `failed` without a
   report for 120 s is flagged. Jobs have no Stop, because Track A and B do not read the control topic.
@@ -566,6 +571,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The recommendation in `systems/decisions/h2-dispatch.records.example.yaml` no longer carries `shadow: true`,
   because an approval and an action follow it. `SystemDocTest` refuses an approval or an action that follows a
   recommendation in shadow operation. No component reads records at run time.
+- The web workbench takes its catalog marking from catalog 1 (`systems/catalogs/tsx-catalog-1.yaml`). The DAG export
+  writes `# not in the stream operator catalog`, and the publish check warns, only for operators that catalog 1 does
+  not list. `align.vector`, `convert.unit`, `model.wind-shear`, `model.power-curve`, `feature.lag`, `feature.rolling`,
+  `pair.xcorr` and `pair.es` are catalog operators. A test compares the list `CATALOG_1` of the workbench with the
+  catalog file. An exported flow that uses one of these operators now differs in text from its earlier export and
+  gets another `specHash`: deploying it under the name of a running DAG ends that DAG, deletes its checkpoints and
+  starts it again from `source.start`.
+- The workbench preview of `align.vector` refuses two series that give the same component of one vector, with the
+  rule and message of the vector processor, instead of aggregating them into one value that every deployment refuses.
+  "Create a vector of the loaded series" names components as the operator does when it suggests a key, so two
+  channels with the same last metric segment, such as `wind.rotor.speed` and `wind.generator.speed`, keep one vector
+  per series. The `tsx-runner` refusal names both series by their ids, as the Java processor does.
 
 - Classify the end of a validation observer connection by side. Any end of the
   client stream, a clean close or a reset, between frames or inside a frame, and
@@ -592,6 +609,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The retrieval server with `--kafscale` follows `tsx.<domain>.features.v2` like the clean and synthetic topics.
   Feature series appear in `GET /v1/inventory`, and `GET /v1/systems/{id}/signals` shows their data under the
   features grade. The inventory names the topic under `source.topics.features`.
+- `VectorAligner.align` refuses two series that give the same component of one vector instead of aggregating them
+  into one value. The message is the one of the vector processor (`VectorStream` with one set of series):
+  `the series <a> and <b> both give the component "<c>" of one vector; choose a key that tells them apart`. `<a>` and
+  `<b>` are the series ids. `<a>` comes first: inputs in their order, the series of one input in id order.
 
 - Retrieval POST routes `/v1/patterns/search`, `/v1/episodes/similar` and `/v1/segments` require a single JSON object
   and report invalid bodies as HTTP 400. Response exchanges close after success or failure while preserving the

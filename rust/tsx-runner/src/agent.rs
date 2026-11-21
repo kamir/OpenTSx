@@ -11,6 +11,10 @@ use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 const SCHEMA: &str = "opentsx.rust-agent-state.v1";
 const STATE_BYTES: usize = 32 * 1024 * 1024;
+const OUTBOX_SCHEMA: &str = "opentsx.rust-agent-status-outbox.v1";
+const OUTBOX_STATUSES: usize = 5_760;
+const OUTBOX_BYTES: usize = 8 * 1024 * 1024;
+const HEARTBEAT: Duration = Duration::from_secs(15);
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -38,6 +42,121 @@ struct Acknowledgement {
 struct Receipt {
     body: Value,
     outcome: Value,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SavedOutbox {
+    configuration: String,
+    artifact: String,
+    statuses: Vec<Value>,
+}
+
+struct Outbox {
+    store: Option<Store>,
+    configuration: String,
+    artifact: String,
+    statuses: Vec<Value>,
+    limit: usize,
+}
+
+impl Outbox {
+    fn open(config: &SiteConfig, artifact: &str) -> Result<Self, RunError> {
+        let mut outbox = Self {
+            store: None,
+            configuration: config.identity_hash().into(),
+            artifact: artifact.into(),
+            statuses: Vec::new(),
+            limit: OUTBOX_STATUSES,
+        };
+        if !config.orbit() {
+            return Ok(outbox);
+        }
+        let store = Store::open(&config.directory().join("status-outbox.json"), OUTBOX_BYTES)?;
+        if let Some(value) = store.load_document(OUTBOX_SCHEMA)? {
+            let saved: SavedOutbox = serde_json::from_value(value)
+                .map_err(|error| format!("invalid status outbox: {error}"))?;
+            if saved.configuration != outbox.configuration || saved.artifact != artifact {
+                return Err("status outbox authority differs from local configuration".into());
+            }
+            if saved.statuses.len() > outbox.limit
+                || saved.statuses.iter().any(|status| {
+                    status["schema"] != "opentsx.dag-status.v1"
+                        || status["site"] != config.site()
+                        || status["state"] != "running"
+                        || status["artifact"]["digest"] != artifact
+                        || !status["job"]
+                            .as_str()
+                            .is_some_and(|job| config.allowed_job(job))
+                })
+            {
+                return Err("status outbox contains an invalid status".into());
+            }
+            outbox.statuses = saved.statuses;
+        }
+        outbox.store = Some(store);
+        Ok(outbox)
+    }
+
+    fn deliver(
+        &mut self,
+        status: Value,
+        mut send: impl FnMut(&Value) -> Result<(), String>,
+    ) -> Result<(), String> {
+        if self.store.is_none() {
+            return send(&status);
+        }
+        let error = match self.flush(&mut send).and_then(|()| send(&status)) {
+            Ok(()) => return Ok(()),
+            Err(error) => error,
+        };
+        if self.statuses.len() >= self.limit {
+            return Err(format!(
+                "status outbox is full with {} statuses: {error}",
+                self.limit
+            ));
+        }
+        if self.statuses.is_empty() {
+            eprintln!("buffering agent status in the outbox: {error}");
+        }
+        self.statuses.push(status);
+        self.save()
+    }
+
+    fn finish(
+        &mut self,
+        status: &Value,
+        mut send: impl FnMut(&Value) -> Result<(), String>,
+    ) -> Result<(), String> {
+        self.flush(&mut send)?;
+        send(status)
+    }
+
+    fn flush(&mut self, send: &mut impl FnMut(&Value) -> Result<(), String>) -> Result<(), String> {
+        let mut sent = 0;
+        let result = self.statuses.iter().try_for_each(|status| {
+            send(status)?;
+            sent += 1;
+            Ok(())
+        });
+        if sent > 0 {
+            self.statuses.drain(..sent);
+            self.save()?;
+            if result.is_ok() {
+                eprintln!("delivered {sent} buffered agent statuses");
+            }
+        }
+        result
+    }
+
+    fn save(&self) -> Result<(), String> {
+        let store = self
+            .store
+            .as_ref()
+            .ok_or("status outbox has no durable store")?;
+        let value = json!({"configuration":self.configuration,"artifact":self.artifact,"statuses":self.statuses});
+        store.commit_document(OUTBOX_SCHEMA, &value)
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -99,12 +218,12 @@ struct Live<'a> {
     config: &'a SiteConfig,
     artifact: &'a str,
     client: SiteClient,
+    outbox: Outbox,
 }
 
 impl Runtime for Live<'_> {
     fn now(&self) -> Result<i64, String> {
-        i64::try_from(OffsetDateTime::now_utc().unix_timestamp_nanos() / 1000)
-            .map_err(|_| "agent clock exceeds supported microseconds".into())
+        now_micros()
     }
     fn wait(&mut self, stop: &StopToken, seconds: u64) -> Result<(), String> {
         let start = Instant::now();
@@ -122,8 +241,10 @@ impl Runtime for Live<'_> {
         crate::conformance::conform_once(self.config, self.artifact, job)
     }
     fn execute(&mut self, plan: &BoundedPlan, stop: &StopToken) -> Result<Value, RunError> {
-        heartbeat(self.config, self.artifact, plan, stop, 0, || {
-            serde_json::to_value(crate::federation::execute(plan, self.config, stop)?)
+        let config = self.config;
+        let report = reporter(&mut self.outbox, config, self.artifact, plan, 0)?;
+        heartbeat(stop, HEARTBEAT, report, || {
+            serde_json::to_value(crate::federation::execute(plan, config, stop)?)
                 .map_err(|error| RunError::Runtime(format!("cannot encode site outcome: {error}")))
         })
     }
@@ -133,8 +254,10 @@ impl Runtime for Live<'_> {
         stop: &StopToken,
         records: u64,
     ) -> Result<Value, RunError> {
-        heartbeat(self.config, self.artifact, plan, stop, records, || {
-            serde_json::to_value(crate::forwarder::forward(plan, self.config)?).map_err(|error| {
+        let config = self.config;
+        let report = reporter(&mut self.outbox, config, self.artifact, plan, records)?;
+        heartbeat(stop, HEARTBEAT, report, || {
+            serde_json::to_value(crate::forwarder::forward(plan, config)?).map_err(|error| {
                 RunError::Runtime(format!("cannot encode forward outcome: {error}"))
             })
         })
@@ -146,19 +269,49 @@ impl Runtime for Live<'_> {
         records: u64,
         error: Option<&str>,
     ) -> Result<(), String> {
-        publish_status(
-            &self.client,
+        let value = status_document(
             self.config,
             self.artifact,
             plan,
             state,
             records,
             error,
-        )
+            now_micros()?,
+        )?;
+        self.outbox
+            .deliver(value, |value| send_status(&self.client, self.config, value))
     }
-    fn terminal_status(&mut self, plan: &BoundedPlan, value: &Value) -> Result<(), String> {
-        send_status(&self.client, self.config, plan, value)
+    fn terminal_status(&mut self, _plan: &BoundedPlan, value: &Value) -> Result<(), String> {
+        self.outbox
+            .finish(value, |value| send_status(&self.client, self.config, value))
     }
+}
+
+fn now_micros() -> Result<i64, String> {
+    i64::try_from(OffsetDateTime::now_utc().unix_timestamp_nanos() / 1000)
+        .map_err(|_| "agent clock exceeds supported microseconds".into())
+}
+
+fn reporter<'a>(
+    outbox: &'a mut Outbox,
+    config: &'a SiteConfig,
+    artifact: &'a str,
+    plan: &'a BoundedPlan,
+    records: u64,
+) -> Result<impl FnMut() -> Result<(), String> + Send + 'a, RunError> {
+    let client = client(config)?;
+    Ok(move || {
+        let status = status_document(
+            config,
+            artifact,
+            plan,
+            "running",
+            records,
+            None,
+            now_micros()?,
+        )?;
+        outbox.deliver(status, |value| send_status(&client, config, value))
+    })
 }
 
 fn wait_with(
@@ -196,6 +349,7 @@ pub fn run(config: &SiteConfig, artifact: &str, stop: &StopToken) -> Result<Valu
         config,
         artifact,
         client: client(config)?,
+        outbox: Outbox::open(config, artifact)?,
     };
     run_with(config, artifact, stop, &mut runtime)
 }
@@ -246,6 +400,7 @@ pub fn run_signed(
         config,
         artifact,
         client: client(config)?,
+        outbox: Outbox::open(config, artifact)?,
     };
     process(
         &plan,
@@ -935,21 +1090,6 @@ fn validate_outcome(value: &Value) -> Result<(), RunError> {
     Ok(())
 }
 
-fn publish_status(
-    client: &SiteClient,
-    config: &SiteConfig,
-    artifact: &str,
-    plan: &BoundedPlan,
-    state: &str,
-    records: u64,
-    error: Option<&str>,
-) -> Result<(), String> {
-    let now = i64::try_from(OffsetDateTime::now_utc().unix_timestamp_nanos() / 1000)
-        .map_err(|_| "status clock exceeds supported microseconds")?;
-    let value = status_document(config, artifact, plan, state, records, error, now)?;
-    send_status(client, config, plan, &value)
-}
-
 #[allow(clippy::too_many_arguments)]
 fn status_document(
     config: &SiteConfig,
@@ -973,17 +1113,13 @@ fn status_document(
     Ok(value)
 }
 
-fn send_status(
-    client: &SiteClient,
-    config: &SiteConfig,
-    plan: &BoundedPlan,
-    value: &Value,
-) -> Result<(), String> {
+fn send_status(client: &SiteClient, config: &SiteConfig, value: &Value) -> Result<(), String> {
+    let job = value["job"].as_str().ok_or("agent status has no job")?;
     let bytes = serde_json::to_vec(&value)
         .map_err(|error| format!("cannot encode agent status: {error}"))?;
     let response = client.request(
         "POST",
-        &format!("/v1/sites/{}/jobs/{}/status", config.site(), plan.job()),
+        &format!("/v1/sites/{}/jobs/{job}/status", config.site()),
         &bytes,
     )?;
     if response.status != 204 || !response.body.is_empty() {
@@ -1029,25 +1165,20 @@ fn validate_terminal(
 }
 
 fn heartbeat(
-    config: &SiteConfig,
-    artifact: &str,
-    plan: &BoundedPlan,
     stop: &StopToken,
-    records: u64,
+    interval: Duration,
+    mut report: impl FnMut() -> Result<(), String> + Send,
     execution: impl FnOnce() -> Result<Value, RunError>,
 ) -> Result<Value, RunError> {
-    let client = client(config)?;
     let finished = StopToken::new();
     std::thread::scope(|scope| {
         let worker = scope.spawn(|| -> Result<(), String> {
             loop {
-                finished.wait(Duration::from_secs(15))?;
+                finished.wait(interval)?;
                 if finished.is_requested()? {
                     return Ok(());
                 }
-                if let Err(error) =
-                    publish_status(&client, config, artifact, plan, "running", records, None)
-                {
+                if let Err(error) = report() {
                     let stopping = stop.request();
                     return Err(match stopping {
                         Ok(()) => error,
@@ -1773,5 +1904,237 @@ mod tests {
         );
         assert_eq!(runtime.conformations, conformations);
         assert_eq!(std::fs::read(&runtime.intent).unwrap(), before);
+    }
+
+    struct Link {
+        down: usize,
+        state: std::sync::Mutex<(usize, Vec<u64>)>,
+        delivered: std::sync::Condvar,
+    }
+
+    impl Link {
+        fn new(down: usize) -> Self {
+            Self {
+                down,
+                state: std::sync::Mutex::new((0, Vec::new())),
+                delivered: std::sync::Condvar::new(),
+            }
+        }
+        fn send(&self, value: &Value) -> Result<(), String> {
+            let mut state = self.state.lock().unwrap();
+            state.0 += 1;
+            if state.0 <= self.down {
+                return Err("injected loss of signal".into());
+            }
+            state.1.push(value["records"].as_u64().unwrap());
+            self.delivered.notify_all();
+            Ok(())
+        }
+        fn wait_for(&self, count: usize, stop: &StopToken) -> Result<(), RunError> {
+            let deadline = Instant::now() + Duration::from_secs(60);
+            let mut state = self.state.lock().unwrap();
+            while state.1.len() < count {
+                if stop.is_requested()? {
+                    return Err("execution was stopped".into());
+                }
+                assert!(
+                    Instant::now() < deadline,
+                    "statuses did not arrive after AOS"
+                );
+                state = self
+                    .delivered
+                    .wait_timeout(state, Duration::from_millis(10))
+                    .unwrap()
+                    .0;
+            }
+            Ok(())
+        }
+        fn records(&self) -> Vec<u64> {
+            self.state.lock().unwrap().1.clone()
+        }
+    }
+
+    fn profiled(fixture: &Fixture, profile: &str) -> SiteConfig {
+        let path = fixture.directory.join("config.json");
+        let mut value: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+        value["profile"] = json!(profile);
+        std::fs::write(&path, value.to_string()).unwrap();
+        SiteConfig::load(&path).unwrap()
+    }
+
+    fn running(config: &SiteConfig, fixture: &Fixture, records: u64) -> Value {
+        status_document(
+            config,
+            ARTIFACT,
+            &fixture.plan,
+            "running",
+            records,
+            None,
+            NOW,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn orbit_plan_keeps_running_through_loss_of_signal_and_every_status_arrives_at_aos() {
+        let fixture = Fixture::new();
+        let config = profiled(&fixture, "orbit");
+        let mut outbox = Outbox::open(&config, ARTIFACT).unwrap();
+        let link = Link::new(4);
+        let stop = StopToken::new();
+        let mut records = 0;
+        let outcome = heartbeat(
+            &stop,
+            Duration::from_millis(1),
+            || {
+                records += 1;
+                outbox.deliver(running(&config, &fixture, records), |value| {
+                    link.send(value)
+                })
+            },
+            || {
+                link.wait_for(6, &stop)?;
+                Ok(json!({"state":"completed"}))
+            },
+        );
+        assert_eq!(outcome.unwrap(), json!({"state":"completed"}));
+        assert!(!stop.is_requested().unwrap());
+        let delivered = link.records();
+        assert!(delivered.len() >= 6);
+        assert_eq!(delivered, (1..=delivered.len() as u64).collect::<Vec<_>>());
+        assert!(outbox.statuses.is_empty());
+        drop(outbox);
+        assert!(Outbox::open(&config, ARTIFACT).unwrap().statuses.is_empty());
+    }
+
+    #[test]
+    fn ground_plan_still_stops_when_one_status_report_fails() {
+        let fixture = Fixture::new();
+        let config = profiled(&fixture, "ground");
+        let mut outbox = Outbox::open(&config, ARTIFACT).unwrap();
+        let link = Link::new(1);
+        let stop = StopToken::new();
+        let outcome = heartbeat(
+            &stop,
+            Duration::from_millis(1),
+            || outbox.deliver(running(&config, &fixture, 1), |value| link.send(value)),
+            || {
+                while !stop.is_requested().unwrap() {
+                    stop.wait(Duration::from_secs(1)).unwrap();
+                }
+                Ok(json!({"state":"stopped"}))
+            },
+        );
+        assert_eq!(
+            outcome.err().unwrap().to_string(),
+            "injected loss of signal"
+        );
+        assert!(stop.is_requested().unwrap());
+        assert!(link.records().is_empty());
+        assert!(!config.directory().join("status-outbox.json").exists());
+    }
+
+    #[test]
+    fn orbit_outbox_survives_a_restart_and_sends_the_terminal_status_last() {
+        let fixture = Fixture::new();
+        let config = profiled(&fixture, "orbit");
+        let mut outbox = Outbox::open(&config, ARTIFACT).unwrap();
+        for records in 1..=3 {
+            outbox
+                .deliver(running(&config, &fixture, records), |_| {
+                    Err("injected loss of signal".into())
+                })
+                .unwrap();
+        }
+        let terminal =
+            status_document(&config, ARTIFACT, &fixture.plan, "stopped", 4, None, NOW).unwrap();
+        let mut sent = Vec::new();
+        assert_eq!(
+            outbox.finish(&terminal, |value| {
+                sent.push(value["records"].as_u64().unwrap());
+                Err("injected loss of signal".to_string())
+            }),
+            Err("injected loss of signal".into())
+        );
+        assert_eq!(sent, [1]);
+        assert_eq!(outbox.statuses.len(), 3);
+        drop(outbox);
+        let mut outbox = Outbox::open(&config, ARTIFACT).unwrap();
+        let mut delivered = Vec::new();
+        outbox
+            .finish(&terminal, |value| {
+                delivered.push((value["state"].clone(), value["records"].as_u64().unwrap()));
+                Ok(())
+            })
+            .unwrap();
+        assert_eq!(
+            delivered,
+            [
+                (json!("running"), 1),
+                (json!("running"), 2),
+                (json!("running"), 3),
+                (json!("stopped"), 4)
+            ]
+        );
+        assert!(outbox.statuses.is_empty());
+    }
+
+    #[test]
+    fn full_orbit_outbox_fails_closed_without_dropping_buffered_statuses() {
+        let fixture = Fixture::new();
+        let config = profiled(&fixture, "orbit");
+        let mut outbox = Outbox::open(&config, ARTIFACT).unwrap();
+        outbox.limit = 3;
+        for records in 1..=3 {
+            outbox
+                .deliver(running(&config, &fixture, records), |_| {
+                    Err("injected loss of signal".into())
+                })
+                .unwrap();
+        }
+        assert_eq!(
+            outbox.deliver(running(&config, &fixture, 4), |_| {
+                Err("injected loss of signal".into())
+            }),
+            Err("status outbox is full with 3 statuses: injected loss of signal".into())
+        );
+        drop(outbox);
+        let reopened = Outbox::open(&config, ARTIFACT).unwrap();
+        assert_eq!(
+            reopened
+                .statuses
+                .iter()
+                .map(|status| status["records"].as_u64().unwrap())
+                .collect::<Vec<_>>(),
+            [1, 2, 3]
+        );
+    }
+
+    #[test]
+    fn orbit_outbox_refuses_other_authority_and_altered_statuses() {
+        let fixture = Fixture::new();
+        let config = profiled(&fixture, "orbit");
+        let mut outbox = Outbox::open(&config, ARTIFACT).unwrap();
+        outbox
+            .deliver(running(&config, &fixture, 1), |_| {
+                Err("injected loss of signal".into())
+            })
+            .unwrap();
+        drop(outbox);
+        let other = format!("sha256:{}", "b".repeat(64));
+        assert_eq!(
+            Outbox::open(&config, &other).err().unwrap().to_string(),
+            "status outbox authority differs from local configuration"
+        );
+        let path = config.directory().join("status-outbox.json");
+        let store = Store::open(&path, OUTBOX_BYTES).unwrap();
+        let mut saved = store.load_document(OUTBOX_SCHEMA).unwrap().unwrap();
+        saved["statuses"][0]["state"] = json!("stopped");
+        store.commit_document(OUTBOX_SCHEMA, &saved).unwrap();
+        drop(store);
+        assert_eq!(
+            Outbox::open(&config, ARTIFACT).err().unwrap().to_string(),
+            "status outbox contains an invalid status"
+        );
     }
 }

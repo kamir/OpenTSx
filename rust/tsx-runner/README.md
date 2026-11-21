@@ -39,6 +39,11 @@ Its signed fragment admits only `decode.avro-soe` followed by
 executor cannot execute a Rust assignment.
 Before publishing a later generation, the driver requires every previous
 site's durable stopped status and accepted delivery acknowledgement.
+The optional `profile` `orbit` keeps a plan running while the plan service is
+unreachable: status records go to a bounded outbox in the state directory and
+are sent in order at the next contact. The default `ground` profile stops the
+plan when a status record cannot be sent. The guide lists the bounds and
+messages.
 
 Local configuration supplies separate plan/report role keys, TLS paths,
 permitted jobs, site/signal bindings, topic policy, a private state directory,

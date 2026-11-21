@@ -91,6 +91,7 @@ are nonempty strings. Topic arrays contain unique valid `tsx` topic names.
 | `policy.catalogs` | Nonempty unique array of catalog strings; this profile requires `tsx-catalog/1` |
 | `state` | Runtime-owned private directory |
 | `limits` | Object containing all seven positive integer bounds below, with no implicit unlimited value |
+| `profile` | Optional status delivery profile: `ground` or `orbit`; without the field the profile is `ground` |
 
 | Limit | Maximum |
 | --- | ---: |
@@ -166,6 +167,38 @@ are shared with the Java plan service. A trusted but unregistered client
 certificate receives 401; a certificate for another site receives 403; an unknown
 job receives 404; stale status or aggregate versions receive 409. Malformed
 requests use `400` with `error: bad-request`.
+
+## Keep plans running through loss of signal
+
+Set `profile` to `orbit` for a site whose link to the plan service is
+interrupted by design, for example an onboard node between ground station
+passes. In the `ground` profile, a running plan stops when one status record
+cannot be sent.
+
+In the `orbit` profile, `agent` and `run --plan` keep the plan running when a
+`running` status record cannot be sent. The runtime writes one record when a
+plan starts and one every 15 seconds while it runs. A record that cannot be
+sent is appended to `status-outbox.json` in the state directory. Before the
+next record, the runtime sends every buffered record, oldest first. The
+terminal `stopped` or `failed` status is sent only after the outbox is empty,
+so the plan service receives the records in the order they were written.
+
+- The outbox holds at most 5,760 records, 24 hours at one record per 15
+  seconds, in at most 8,388,608 bytes. When it is full, the plan stops with
+  `status outbox is full with 5760 statuses: <error>`. Buffered records are
+  kept.
+- The outbox is bound to the configuration identity and the executable
+  digest. Another configuration or executable refuses it with
+  `status outbox authority differs from local configuration`.
+- After a plan ends, `agent` retries the outbox and the terminal status once
+  per 5 minutes until the plan service answers. `run --plan` exits with code 3
+  instead; run it again with the same plan to send them.
+- A record whose response was lost can be sent again.
+- Standard error shows `buffering agent status in the outbox: <error>` when the
+  first record is buffered and `delivered <n> buffered agent statuses` when
+  the outbox is empty again.
+- `profile` is part of the configuration identity. An existing state directory
+  refuses a configuration with a changed `profile`.
 
 ## Retain and forward bounded statistics
 
