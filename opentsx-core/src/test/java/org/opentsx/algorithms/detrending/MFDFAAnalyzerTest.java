@@ -56,7 +56,7 @@ class MFDFAAnalyzerTest {
     }
 
     @Test
-    void theShuffledAnalysisLeavesTheValuesOfTheSeriesInTheirOrder() throws Exception {
+    void theShuffledAnalysisChangesTheFluctuationFunctionOfEveryQAndLeavesTheSeriesInOrder() throws Exception {
         Random random = new Random(7);
         TimeSeriesObject row = new TimeSeriesObject();
         row.setLabel("noise");
@@ -70,12 +70,19 @@ class MFDFAAnalyzerTest {
         OriginProject project = new OriginProject();
         project.initBaseFolder(dir.toString());
 
+        Vector<TimeSeriesObject> original = MFDFAAnalyzer.processMFDFA(row, dfa, new StringBuffer(), "_raw", project,
+                false, false);
         Vector<TimeSeriesObject> results = MFDFAAnalyzer.processMFDFA(row, dfa, new StringBuffer(), "_shuffled", project,
                 true, false);
 
         assertEquals(values, row.yValues);
         assertEquals("noise", row.getLabel());
+        assertEquals(10, original.size());
         assertEquals(10, results.size());
+        for (int k = 0; k < results.size(); k++) {
+            assertEquals(original.get(k).xValues, results.get(k).xValues, "q index " + k);
+            assertNotEquals(original.get(k).yValues, results.get(k).yValues, "q index " + k);
+        }
     }
 
     @Test

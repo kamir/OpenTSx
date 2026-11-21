@@ -321,31 +321,6 @@ public class TSPropertyTester {
         return dat;
     }
     
-    static private double calcAverageOfDist(Vector<Double> rr1, double ts) {
-        double sum = 0.0;
-        double c = 0.0;
-
-        int t = 1;
-        
-        double last = 0;
-        double delta = 0;
-        
-        for( double l : rr1 ) { 
-        
-            if ( l > ts ) {
-                t++;
-                sum = sum + t;
-                t=1;
-                c++;
-            }
-            else {
-                t++;
-            }
-            
-        }
-        return sum / (1.0*c);
-    }
-    
 
     /** 
      *
@@ -904,13 +879,10 @@ public class TSPropertyTester {
         TSPropertyTester ris1 = new TSPropertyTester( 
                m.getLabel() , binA, scaleA);
                        
-        double ts = 0.0;
-        double rq = ris1.calcAverageOfDist(data1,ts);
-        LOG.debug("mean interval series={} rq={}", m.label, rq);
-        
         ris1.useLog = false;
         
         ris1.addDistData(data1);
+        LOG.debug("mean interval series={} rq={}", m.label, ris1.getRq());
         ris1.calcMessreihen();
 
         TSPropertyTester ris4 = new TSPropertyTester( 

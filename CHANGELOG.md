@@ -2609,8 +2609,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   finite intervals whose sum overflows, such as 1.7e308 and 1.7e308, give R_q 1.7e308 instead of Infinity. It refuses
   a NaN or infinite interval with `IllegalArgumentException` and `addDistData: interval <k> of <name> is <value>;
   expected a finite interval`, the text of `ReturnIntervallStatistik2` and `TSPropertyTester`, and keeps the result of
-  the call before. An infinite interval used to give R_q Infinity, and a NaN interval was refused with the
-  `IllegalStateException` for intervals that are 0 or negative.
+  the call before. An interval of Infinity used to give R_q Infinity. A NaN or -Infinity interval was refused with
+  the `IllegalStateException` for intervals that are 0 or negative while `offset` was 0; with any other finite
+  `offset` it was counted as an interval below the offset in the line written to the log of `setLofFileNameKey_1`
+  and left out of R_q, or the call failed with `logLineToFile: RISTool.projekt is not set` when no project was set
+  and with `logLine: <folder> has no log named <log>` when the project had no log of that name.
 - `opentsx-core`: the DEBUG line `mean interval series=<label> rq=<value>` of `ReturnIntervallStatistik2.addRow` gives
   the mean of the intervals between consecutive values, 3.0 for 0, 2, 5 and 9, where it gave the last value divided by
   the count (2.25).
@@ -2723,6 +2726,25 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   env file in use, relative to the repository, and the same four steps.
 - opentsx-connectors: the Avro event and episode producers of `TSOProducer` no longer set the consumer key
   `auto.offset.reset`, which has no effect on a producer.
+- `opentsx-core`: when the FlatLaf look and feel fails in `initialize()` or `getDefaults()`, `MacroRecorder2` sets the
+  look and feel it had before back, so the WARN line `look and feel not set; the workbench keeps the current one
+  lookAndFeel=<class> cause=<cause>` is true. Swing used to keep the failed look and feel installed. Without a look
+  and feel before, it installs the cross-platform one and logs `look and feel not set; the workbench uses the
+  cross-platform one lookAndFeel=<class> crossPlatform=<class> cause=<cause>`. When setting back the one before fails,
+  it logs `look and feel not set, and setting back the one before failed lookAndFeel=<class> before=<class>
+  cause=<cause>; suppressed <failure>`, and when installing the cross-platform one fails, it logs `look and feel not
+  set, and installing the cross-platform one failed lookAndFeel=<class> crossPlatform=<class> cause=<cause>;
+  suppressed <failure>`.
+- `opentsx-core`: `ReturnIntervallStatistik2.addRowB` bins the intervals between consecutive days with a value of at
+  least 0.5. It binned the days themselves as intervals, so the days 2, 4, 6 and 8 gave R_q 5.0 instead of 2.0.
+- `opentsx-core`: the DEBUG line `mean interval series=<label> rq=<R_q>` of `TSPropertyTester.addRow` gives the R_q of
+  the result, the mean of the intervals `addDistData` keeps. For the values 1, 2 and 6 it gave 2.0 instead of 3.0. The
+  private helper `calcAverageOfDist` is removed.
+- `opentsx-core`: `RISTool.addDistData` refuses to leave out intervals below a `RISTool.offset` that is not 0 when
+  `setLofFileNameKey_1` was not called, with `IllegalStateException` and `RISTool.addDistData: no log name set; call
+  setLofFileNameKey_1 before intervals below offset are left out`, and keeps the result of the call before. The
+  refusal used to name the log `null`, for example `logLine: <folder> has no log named null; call createLogFile with
+  that name first`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

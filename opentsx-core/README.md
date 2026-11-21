@@ -99,8 +99,15 @@ order of its values. `MacroTrackerFrame.addTransformation(t, chart)` takes the t
 `MacroTrackerFrame.addTransformation(t, dialog)` takes the chart dialog itself.
 `MacroRecorder` and `MacroRecorder2` keep the charts of their `Components` and `Shuffled` nodes; the `fitMIN` and
 `fitMAX` of `MacroRecorder` and `MacroRecorder2` are deprecated and have no effect. When `MacroRecorder2` cannot set the
-FlatLaf look and feel, it starts with the current one and logs at WARN
+FlatLaf look and feel, also when its `initialize()` or `getDefaults()` fails after Swing installed it, it sets the
+current one back and logs at WARN
 `look and feel not set; the workbench keeps the current one lookAndFeel=<class> cause=<cause>`.
+Without a current look and feel it installs the cross-platform one and logs
+`look and feel not set; the workbench uses the cross-platform one lookAndFeel=<class> crossPlatform=<class> cause=<cause>`.
+When setting the current one back fails, it logs
+`look and feel not set, and setting back the one before failed lookAndFeel=<class> before=<class> cause=<cause>; suppressed <failure>`.
+When installing the cross-platform one fails, it logs
+`look and feel not set, and installing the cross-platform one failed lookAndFeel=<class> crossPlatform=<class> cause=<cause>; suppressed <failure>`.
 For a node without a chart, such as a source node,
 `show Chart` shows `show Chart: no chart for <node>; select an operation node` in a dialog; without a selection it
 does nothing.
@@ -382,6 +389,7 @@ Errors stop the call:
 | `RISTool.logFileNames` holds fewer than 8 names | `IllegalStateException`: `add: RISTool.logFileNames has <n> names; set 8 names, one per interval range, before adding <name>, which has <n> intervals` |
 | `RISTool.initRqMIN()` was not called | `IllegalStateException`: `add: RISTool.rqMIN is not set; call RISTool.initRqMIN() before adding <name>, which has <n> intervals` |
 | `RISTool.initRqCollectors()` was not called while `RISTool.offset` is not 0 | `IllegalStateException`: `add: RISTool.debug1 is not set while RISTool.offset is <offset>; call RISTool.initRqCollectors() before adding <name>, which has <n> intervals` |
+| `setLofFileNameKey_1` was not called when `addDistData` leaves out intervals below a `RISTool.offset` that is not 0 | `IllegalStateException`: `RISTool.addDistData: no log name set; call setLofFileNameKey_1 before intervals below offset are left out` |
 | `RISTool.projekt` is not set when `addDistData` leaves out intervals below a `RISTool.offset` that is not 0 | `IllegalStateException`: `logLineToFile: RISTool.projekt is not set; set RISTool.projekt before writing to the log <log>` |
 | `RISTool.projekt` has no log of that name | `IllegalStateException`: `logLine: <folder> has no log named <log>; call createLogFile with that name first` |
 | a log line cannot be written | `UncheckedIOException`: `<log>: cannot write the log line (<cause>)` |
@@ -414,7 +422,8 @@ A time that is NaN or infinite throws `IllegalArgumentException` with
 before it throws `IllegalArgumentException` with
 `_addData: time <k> of <name> is <value>, more than Double.MAX_VALUE after time <k - 1> at <previous value>; expected times whose difference is finite`.
 `k` counts from 0, and a refused call adds nothing, also when `addDistData` refuses the intervals. No time or a single
-time adds no interval.
+time adds no interval. `ReturnIntervallStatistik2.addRowB(series)` reads one value per day and bins the intervals
+between consecutive days with a value of at least 0.5: the days 2, 4, 6 and 8 give the intervals 2, 2 and 2 and R_q 2.
 `ReturnIntervallStatistik2.addDistData` leaves out intervals that are 0 or below `offset` and sorts the others into bins
 scaled with their mean R_q. An interval below the first or past the last scaled bin is counted in that bin, so the
 probabilities of a result add up to 1. The R_q of `ReturnIntervallStatistik2` and `TSPropertyTester` stays finite when

@@ -6,6 +6,7 @@ import javax.swing.JDialog;
 import javax.swing.JTree;
 import javax.swing.LookAndFeel;
 import javax.swing.SwingUtilities;
+import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -78,6 +79,147 @@ class MacroRecorderTest {
                 + " not supported on this platform"), log);
         assertEquals(1, log.lines().count(), log);
         assertSame(current, UIManager.getLookAndFeel());
+    }
+
+    @Test
+    void aLookAndFeelWhoseDefaultsFailIsLoggedAtWarnAndTheCurrentOneIsSetBack() throws Exception {
+        LookAndFeel current = UIManager.getLookAndFeel();
+        try {
+            String log = stderrOf(() -> MacroRecorder2.setLookAndFeel(new FailingDefaults()));
+
+            assertTrue(log.contains("WARN " + MacroRecorder2.class.getName() + " - look and feel not set; the workbench"
+                    + " keeps the current one lookAndFeel=" + FailingDefaults.class.getName()
+                    + " cause=no defaults"), log);
+            assertEquals(1, log.lines().count(), log);
+            assertSame(current, UIManager.getLookAndFeel());
+        } finally {
+            UIManager.setLookAndFeel(current);
+        }
+    }
+
+    @Test
+    void aLookAndFeelThatFailsToInitializeIsLoggedAtWarnAndTheCurrentOneIsSetBack() throws Exception {
+        LookAndFeel current = UIManager.getLookAndFeel();
+        try {
+            String log = stderrOf(() -> MacroRecorder2.setLookAndFeel(new FailingInitialize()));
+
+            assertTrue(log.contains("WARN " + MacroRecorder2.class.getName() + " - look and feel not set; the workbench"
+                    + " keeps the current one lookAndFeel=" + FailingInitialize.class.getName()
+                    + " cause=cannot initialize"), log);
+            assertEquals(1, log.lines().count(), log);
+            assertSame(current, UIManager.getLookAndFeel());
+        } finally {
+            UIManager.setLookAndFeel(current);
+        }
+    }
+
+    @Test
+    void aFailingLookAndFeelWithoutOneBeforeInstallsTheCrossPlatformOne() throws Exception {
+        LookAndFeel current = UIManager.getLookAndFeel();
+        try {
+            UIManager.setLookAndFeel((LookAndFeel) null);
+
+            String log = stderrOf(() -> MacroRecorder2.setLookAndFeel(new FailingDefaults()));
+
+            assertTrue(log.contains("WARN " + MacroRecorder2.class.getName() + " - look and feel not set; the workbench"
+                    + " uses the cross-platform one lookAndFeel=" + FailingDefaults.class.getName() + " crossPlatform="
+                    + UIManager.getCrossPlatformLookAndFeelClassName() + " cause=no defaults"), log);
+            assertEquals(1, log.lines().count(), log);
+            assertEquals(UIManager.getCrossPlatformLookAndFeelClassName(),
+                    UIManager.getLookAndFeel().getClass().getName());
+        } finally {
+            UIManager.setLookAndFeel(current);
+        }
+    }
+
+    @Test
+    void aCurrentLookAndFeelThatCannotBeSetBackIsNamedWithTheFailureAsSuppressed() throws Exception {
+        LookAndFeel current = UIManager.getLookAndFeel();
+        InitializesOnce before = new InitializesOnce();
+        try {
+            UIManager.setLookAndFeel(before);
+
+            String log = stderrOf(() -> MacroRecorder2.setLookAndFeel(new FailingDefaults()));
+
+            assertTrue(log.contains("WARN " + MacroRecorder2.class.getName() + " - look and feel not set, and setting"
+                    + " back the one before failed lookAndFeel=" + FailingDefaults.class.getName() + " before="
+                    + InitializesOnce.class.getName() + " cause=no defaults; suppressed"
+                    + " java.lang.IllegalStateException: cannot initialize again"), log);
+            assertEquals(1, log.lines().count(), log);
+        } finally {
+            UIManager.setLookAndFeel(current);
+        }
+    }
+
+    @Test
+    void aCrossPlatformLookAndFeelThatCannotBeInstalledIsNamedWithTheFailureAsSuppressed() throws Exception {
+        LookAndFeel current = UIManager.getLookAndFeel();
+        String crossPlatform = System.getProperty("swing.crossplatformlaf");
+        try {
+            UIManager.setLookAndFeel((LookAndFeel) null);
+            System.setProperty("swing.crossplatformlaf", FailingCrossPlatform.class.getName());
+
+            String log = stderrOf(() -> MacroRecorder2.setLookAndFeel(new FailingDefaults()));
+
+            assertTrue(log.contains("WARN " + MacroRecorder2.class.getName() + " - look and feel not set, and"
+                    + " installing the cross-platform one failed lookAndFeel=" + FailingDefaults.class.getName()
+                    + " crossPlatform=" + FailingCrossPlatform.class.getName() + " cause=no defaults; suppressed"
+                    + " java.lang.IllegalStateException: no cross-platform defaults"), log);
+            assertEquals(1, log.lines().count(), log);
+        } finally {
+            if (crossPlatform == null) {
+                System.clearProperty("swing.crossplatformlaf");
+            } else {
+                System.setProperty("swing.crossplatformlaf", crossPlatform);
+            }
+            UIManager.setLookAndFeel(current);
+        }
+    }
+
+    public static class FailingCrossPlatform extends MetalLookAndFeel {
+        @Override
+        public UIDefaults getDefaults() {
+            throw new IllegalStateException("no cross-platform defaults");
+        }
+    }
+
+    static class FailingDefaults extends MetalLookAndFeel {
+        @Override
+        public UIDefaults getDefaults() {
+            throw new IllegalStateException("no defaults");
+        }
+    }
+
+    static class FailingInitialize extends MetalLookAndFeel {
+        @Override
+        public void initialize() {
+            throw new IllegalStateException("cannot initialize");
+        }
+    }
+
+    static class InitializesOnce extends MetalLookAndFeel {
+        private boolean initialized;
+
+        @Override
+        public void initialize() {
+            if (initialized) {
+                throw new IllegalStateException("cannot initialize again");
+            }
+            initialized = true;
+            super.initialize();
+        }
+    }
+
+    private static String stderrOf(Main action) throws Exception {
+        PrintStream err = System.err;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        System.setErr(new PrintStream(captured, true, UTF_8));
+        try {
+            action.run();
+        } finally {
+            System.setErr(err);
+        }
+        return captured.toString(UTF_8);
     }
 
     private static List<String> nodesShowingTheirOwnChart(Main main) throws Exception {

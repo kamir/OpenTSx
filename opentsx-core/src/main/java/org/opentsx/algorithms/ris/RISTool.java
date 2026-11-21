@@ -310,8 +310,8 @@ public class RISTool {
      * The existing array is cleared first.
      *
      * @throws IllegalStateException when this result is a container, when an interval is 0 or negative while offset
-     *         is 0, or when intervals are left out and RISTool.projekt is not set or has no log of the name set with
-     *         setLofFileNameKey_1
+     *         is 0, or when intervals are left out and setLofFileNameKey_1 was not called, RISTool.projekt is not set
+     *         or has no log of the name set with setLofFileNameKey_1
      * @throws IllegalArgumentException when an interval is NaN or infinite
      * @throws UncheckedIOException when the log line of the intervals left out cannot be written
      **/
@@ -354,6 +354,10 @@ public class RISTool {
         long delta = (anzahlVor-anzahlNach);
         
         if ( delta > 0) {
+            if ( logFileKey == null ) {
+                throw new IllegalStateException( "RISTool.addDistData: no log name set; call setLofFileNameKey_1 before"
+                        + " intervals below offset are left out" );
+            }
             String line = label + "\t" + anzahlVor + "\t" + anzahlNach + "\t" + delta + "\n";
             logLineToFile( logFileKey, line);
         }

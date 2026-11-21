@@ -471,6 +471,31 @@ class TSPropertyTesterTest {
     }
 
     @Test
+    void addingARowLogsTheRqOfItsResult() throws Exception {
+        TimeSeriesObject series = new TimeSeriesObject();
+        series.setLabel("row");
+        for (double y : new double[] {1.0, 2.0, 6.0}) {
+            series.addValue(y);
+        }
+        Vector<TimeSeriesObject> mrv = TSPropertyTester.mrv;
+        Vector<TimeSeriesObject> mrv2 = TSPropertyTester.mrv2;
+        Vector<TimeSeriesObject> mrvB = TSPropertyTester.mrvB;
+        TSPropertyTester.mrv = new Vector<>();
+        TSPropertyTester.mrv2 = new Vector<>();
+        TSPropertyTester.mrvB = new Vector<>();
+        try {
+            String log = stderrOf(() -> TSPropertyTester.addRow(series));
+
+            assertTrue(log.contains("mean interval series=row rq=3.0"), log);
+            assertFalse(log.contains("mean interval series=row rq=2.0"), log);
+        } finally {
+            TSPropertyTester.mrv = mrv;
+            TSPropertyTester.mrv2 = mrv2;
+            TSPropertyTester.mrvB = mrvB;
+        }
+    }
+
+    @Test
     void shiftingASeriesLogsOnTheLoggerOfTheCaller() throws Exception {
         TimeSeriesObject series = new TimeSeriesObject();
         series.setLabel("gauss");

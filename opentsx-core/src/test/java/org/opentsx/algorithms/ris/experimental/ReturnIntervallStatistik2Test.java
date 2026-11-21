@@ -492,6 +492,29 @@ class ReturnIntervallStatistik2Test {
     }
 
     @Test
+    void addingARowBBinsTheIntervalsBetweenItsPeaksAndNotTheDaysOfThePeaks() throws Exception {
+        TimeSeriesObject series = new TimeSeriesObject();
+        series.setLabel("peaks");
+        for (double y : new double[] {0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0}) {
+            series.addValue(y);
+        }
+        ReturnIntervallStatistik2.binning = 12;
+        ReturnIntervallStatistik2.scale = 10;
+        ReturnIntervallStatistik2.mrvB = new Vector<>();
+        ReturnIntervallStatistik2.mrv2B = new Vector<>();
+        try {
+            String log = stderrOf(() -> ReturnIntervallStatistik2.addRowB(series));
+
+            assertTrue(log.contains("mean interval result=peaks rqAll=2.0 rqFiltered=2.0"), log);
+            assertEquals(1, ReturnIntervallStatistik2.mrvB.size());
+            assertEquals(List.of(List.of(1.25, 1.0)), pointsWithAShare(ReturnIntervallStatistik2.mrvB.get(0)));
+        } finally {
+            ReturnIntervallStatistik2.mrvB = null;
+            ReturnIntervallStatistik2.mrv2B = null;
+        }
+    }
+
+    @Test
     void shiftingASeriesMovesItsMinimumTo0AndPrintsNothing() throws Exception {
         TimeSeriesObject series = new TimeSeriesObject();
         series.setLabel("gauss");

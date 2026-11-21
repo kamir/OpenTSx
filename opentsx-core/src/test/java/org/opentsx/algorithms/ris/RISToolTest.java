@@ -161,6 +161,30 @@ class RISToolTest {
     }
 
     @Test
+    void intervalsLeftOutWithoutALogNameAreRefusedAndKeepTheResultOfTheCallBefore() throws Exception {
+        RISTool.offset = 2.0;
+        RISTool.projekt = project("nokey");
+        RISTool ris = new RISTool("nokey", 12, 10);
+        ris.addDistData(new Vector<>(List.of(2.0, 3.0, 4.0)));
+        int[] scaled = ris.dataSKALIERT.clone();
+        int raw = RISTool.anzRowRAW.dists.size();
+        int filtered = RISTool.anzRowsFILTERED.dists.size();
+
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> ris.addDistData(new Vector<>(List.of(1.0, 3.0, 4.0))));
+
+        assertEquals("RISTool.addDistData: no log name set; call setLofFileNameKey_1 before intervals below offset are"
+                + " left out", e.getMessage());
+        assertEquals(List.of(2.0, 3.0, 4.0), ris.dataRawFILTERED);
+        assertEquals(0, ris.cutOff);
+        assertEquals(3, ris.anzFiltered);
+        assertEquals(3.0, ris.getRq());
+        assertArrayEquals(scaled, ris.dataSKALIERT);
+        assertEquals(raw, RISTool.anzRowRAW.dists.size());
+        assertEquals(filtered, RISTool.anzRowsFILTERED.dists.size());
+    }
+
+    @Test
     void aFailingLogWriteOfFilteredIntervalsKeepsTheResultOfTheCallBefore() throws Exception {
         RISTool.offset = 2.0;
         RISTool.projekt = project("kept");

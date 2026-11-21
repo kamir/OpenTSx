@@ -84,11 +84,38 @@ public class MacroRecorder2 {
     public static double fitMAX = 3.5;
 
     static void setLookAndFeel(LookAndFeel lookAndFeel) {
+        LookAndFeel before = UIManager.getLookAndFeel();
         try {
             UIManager.setLookAndFeel(lookAndFeel);
         } catch (Exception ex) {
-            LOG.warn("look and feel not set; the workbench keeps the current one lookAndFeel={} cause={}",
-                    lookAndFeel.getClass().getName(), causes(ex));
+            // UIManager installs the new look and feel before its initialize() and getDefaults() run
+            String crossPlatform = UIManager.getCrossPlatformLookAndFeelClassName();
+            try {
+                if (before == null) {
+                    UIManager.setLookAndFeel(crossPlatform);
+                } else if (UIManager.getLookAndFeel() != before) {
+                    UIManager.setLookAndFeel(before);
+                }
+            } catch (Exception restore) {
+                ex.addSuppressed(restore);
+                if (before == null) {
+                    LOG.warn("look and feel not set, and installing the cross-platform one failed lookAndFeel={}"
+                            + " crossPlatform={} cause={}", lookAndFeel.getClass().getName(), crossPlatform,
+                            causes(ex));
+                } else {
+                    LOG.warn("look and feel not set, and setting back the one before failed lookAndFeel={}"
+                            + " before={} cause={}", lookAndFeel.getClass().getName(), before.getClass().getName(),
+                            causes(ex));
+                }
+                return;
+            }
+            if (before == null) {
+                LOG.warn("look and feel not set; the workbench uses the cross-platform one lookAndFeel={}"
+                        + " crossPlatform={} cause={}", lookAndFeel.getClass().getName(), crossPlatform, causes(ex));
+            } else {
+                LOG.warn("look and feel not set; the workbench keeps the current one lookAndFeel={} cause={}",
+                        lookAndFeel.getClass().getName(), causes(ex));
+            }
         }
     }
 
@@ -98,6 +125,9 @@ public class MacroRecorder2 {
         seen.add(t);
         for (Throwable c = t.getCause(); c != null && seen.add(c); c = c.getCause()) {
             s.append("; caused by ").append(c);
+        }
+        for (Throwable suppressed : t.getSuppressed()) {
+            s.append("; suppressed ").append(suppressed);
         }
         return s.toString();
     }

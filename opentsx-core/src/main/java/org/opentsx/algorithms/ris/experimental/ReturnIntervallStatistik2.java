@@ -658,10 +658,9 @@ public class ReturnIntervallStatistik2 {
     }
     
     /**
-     * 
-     * @param m
-     * @throws Exception 
-     */     
+     * Bins the return intervals of m: the distances in days, one value per day, between consecutive values of at
+     * least 0.5. Adds the scaled distribution of a container that holds the result to mrvB.
+     */
     public static void addRowB( TimeSeriesObject m ) throws Exception {
         
         Vector<Double> data1 = m.yValues;
@@ -674,7 +673,7 @@ public class ReturnIntervallStatistik2 {
  
         
         
-        ris1.addDistData(p);
+        ris1._addData(p, 0.0);
 
         ris1.calcMessreihen(); 
 
