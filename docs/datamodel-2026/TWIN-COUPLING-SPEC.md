@@ -523,7 +523,7 @@ jitter, the lag of one atom, the step ticks of one atom or the outages of one at
 than a superstep of `h2-chain` or `haus` under lag 2 and jitter 3 alone, so the slow processor of the combined
 transport still costs ticks.
 
-Implemented in: `LooseRunner.java:143-158,161-164,279-287,324-327,410-431`, `studio/StudioExport.java:102-106`;
+Implemented in: `LooseRunner.java:143-158,161-164,279-287,324-327,410-431`, `studio/StudioExport.java:103-107`;
 tests: `LooseRunnerTest.java:28-143,224-277`.
 
 <a id="113-throughput"></a>
