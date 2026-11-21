@@ -227,6 +227,20 @@ class RustRolloutTest {
         assertThrows(RuntimeException.class, () -> unknown.rollout().execute(unknown.plan(dag())));
     }
 
+    /** TASK-020 U01 data edges: multi-input pairs and vector joins are not lowered to bounded Rust fragments. */
+    @Test
+    void pairsAndVectorJoinsAreRefusedBeforeDispatch() {
+        Fake fake = new Fake();
+        for (String op : List.of("pair.xcorr", "pair.es", "align.vector")) {
+            ObjectNode dag = dag();
+            ObjectNode node = (ObjectNode) dag.path("nodes").get(1);
+            node.put("op", op);
+            assertEquals("operator unavailable on bounded Rust: " + node.path("id").asText() + " (" + op + ")",
+                    assertThrows(IllegalArgumentException.class, () -> fake.plan(dag)).getMessage(), op);
+        }
+        assertTrue(fake.events.isEmpty());
+    }
+
     @Test
     void unqualifiedOperatorsTopicSplitsAndRetentionLossRejectBeforeDispatch() {
         Fake fake = new Fake();

@@ -99,6 +99,11 @@ entries before 3.0.0 are grouped by date.
 
 ### Added
 
+- TASK-020 U01 data edges: tests that a Rust fragment naming a second source topic is refused
+  (`a_fragment_reading_two_topics_is_refused`), that the bounded Rust lowering refuses `pair.xcorr`, `pair.es` and
+  `align.vector` with an exact message, and that a raw pair or vector cannot feed a federated sink. No production
+  code changes.
+
 - TASK-020 U01 membership: expected membership (`federation.expectedAssignments`) refuses one node listed for two
   sites, in Java `RunnerPlan` and Rust `site_plan.rs` (spec S2.4). `ConformanceMembershipTest` covers a
   report from another node, reports outside the plan or from the future, an unknown or extra check, repeated topic
