@@ -159,6 +159,8 @@ Keep private runtime checkpoint formats private unless a cross-runtime migration
 
 **Gate:** delivery of job A version 10 cannot hide job B version 1.
 Retry, reconnect and duplicate delivery select the same active assignment.
+The delivery part of this gate is met; see the
+[unified plan](wayang-unified-plan.md#resolve-the-remaining-contracts-before-production-fleet-activation).
 Checkpoint mismatch emits no output; reset and migration fixtures name the permitted state transition explicitly.
 
 ### Freeze identities without changing scientific meaning
