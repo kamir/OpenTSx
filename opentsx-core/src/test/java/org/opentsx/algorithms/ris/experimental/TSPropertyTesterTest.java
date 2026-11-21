@@ -160,6 +160,24 @@ class TSPropertyTesterTest {
     }
 
     @Test
+    void aContainerAddsUpTheCountsOfItsResultsInItsCountSeries() throws Exception {
+        TSPropertyTester first = new TSPropertyTester("first", 12, 10);
+        TSPropertyTester second = new TSPropertyTester("second", 12, 10);
+        TSPropertyTester container = new TSPropertyTester("all", 12, 10);
+        container.isContainerInstanz = true;
+        first.addDistData(new Vector<>(List.of(0.15, 0.25)));
+        second.addDistData(new Vector<>(List.of(0.25, 0.55, 3.0)));
+
+        container.add(first);
+        container.add(second);
+        container.calcMessreihen();
+        container.calcMessreihen();
+
+        assertSeries(new double[] {0, 1, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1}, 1.0, container.mrHaeufigkeit);
+        assertEquals("all", container.mrHaeufigkeit.getLabel());
+    }
+
+    @Test
     void setRQAfterAddDistDataReplacesTheMeanForCalcMessreihenAndAdd() throws Exception {
         double offset = TSPropertyTester.offset;
         TSPropertyTester.offset = 2.0;

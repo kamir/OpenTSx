@@ -1028,6 +1028,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   IDNA ToASCII turns any other label into 1 to 63 characters`. The text used to name only the label length, so a
   refused host such as `"h\ud800"` broke no rule it named. The hosts it accepts are unchanged; the module README lists
   the cases.
+- A `RISTool` container charts the mean share of each scaled bin in `mrVerteilungSkaliert`, the scale of a single
+  result, instead of the natural logarithm of that share.
 
 ### Removed
 
@@ -2926,6 +2928,21 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - tools: the read-once test of `tools/test_lg_scripts.py` checks that a `docker` that `timeout` reads as its signal is
   never read as a command word. A regex that reads a word of a `timeout` twice, such as the earlier quadratic one or
   one without the atomic group, now fails the test at once instead of passing it or running without end.
+- `RISTool` and `TSPropertyTester` containers add up the counts of the results they add, and their `calcMessreihen()`
+  writes these sums to `mrHaeufigkeit`, named after the container.
+- `MacroRecorder2` does not let Swing load a class that the system property `swing.defaultlaf` names and that is not
+  on the class path, so Swing completes its start-up and the key bindings of a window also fire for a key event of the
+  window itself or of a disabled component; the WARN line names the `ClassNotFoundException`.
+- `EventFlowAnalysisConsumer` logs each empty poll at DEBUG instead of printing three banner lines on standard output,
+  and a run without events logs one ERROR line `no latency measured topic=OpenTSx_Events cause=<message>` without a
+  stack trace and exits with status 1.
+- The banner of `run_LatencyProbe_SETUP.sh` in `opentsx-lg/bin/` and in `opentsx-lg/src/main/docker-compose/bin/` says
+  SETUP instead of PRECHECK, and `DockerImageTest` fails when the banner of a `run_LatencyProbe_<step>.sh` script in
+  either folder does not name the `EventFlowAnalysis<Step>` class it runs.
+- `DockerImageTest` finds an unread variable of the ping tool env files also after `export`, after blanks or as `NAME:
+  value`, counts `$NAME` and `${NAME:-<default>}` as reads, finds an indented or quoted top-level `version` key, and
+  finds `docker-compose` and `Xvfb` outside a comment at the start of a line or after a blank, `;`, `&`, `|`, `(`,
+  `)`, a backquote, a quote or `=`, also at the end of a path that starts with `/`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

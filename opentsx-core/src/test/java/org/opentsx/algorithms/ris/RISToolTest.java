@@ -16,6 +16,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
@@ -241,7 +242,7 @@ class RISToolTest {
     }
 
     @Test
-    void aNegativeIntervalKeptWithAnOffsetBelow0IsCountedInTheFirstScaledBin() throws Exception {
+    void aPositiveIntervalOverANegativeRqIsCountedInTheFirstScaledBin() throws Exception {
         RISTool.offset = -5;
         RISTool ris = new RISTool("negative", 12, 10);
         ris.addDistData(new Vector<>(List.of(2.0, 4.0)));
@@ -255,6 +256,78 @@ class RISToolTest {
         assertEquals(-1.0, ris.getRq());
         assertArrayEquals(scaled, ris.dataSKALIERT);
         assertEquals(1.0, Arrays.stream(ris.probSKALIERT).sum(), 1e-12);
+    }
+
+    @Test
+    void aNegativeIntervalKeptWithAnOffsetBelow0IsCountedInTheFirstScaledBin() throws Exception {
+        RISTool.offset = -5;
+        RISTool ris = new RISTool("negative", 12, 10);
+
+        ris.addDistData(new Vector<>(List.of(-1.0, 4.0)));
+
+        int[] scaled = new int[41];
+        scaled[0] = 1;
+        scaled[13] = 1;
+        assertEquals(List.of(-1.0, 4.0), ris.dataRawFILTERED);
+        assertEquals(1.5, ris.getRq());
+        assertArrayEquals(scaled, ris.dataSKALIERT);
+        assertEquals(1.0, Arrays.stream(ris.probSKALIERT).sum(), 1e-12);
+    }
+
+    @Test
+    void aContainerAddsUpTheCountsOfItsResultsAndChartsTheMeanShareOfEachScaledBin() throws Exception {
+        RISTool.projekt = project("container");
+        RISTool.logFileNames = names(8);
+        RISTool.initRqMIN();
+        RISTool first = new RISTool("first", 12, 10);
+        RISTool second = new RISTool("second", 12, 10);
+        RISTool container = new RISTool("all", 12, 10);
+        container.isContainerInstanz = true;
+        first.addDistData(new Vector<>(List.of(1.0, 1.0, 2.0, 4.0)));
+        second.addDistData(new Vector<>(List.of(2.0, 4.0)));
+
+        container.add(first);
+        container.add(second);
+        container.calcMessreihen();
+        container.calcMessreihen();
+
+        double[] counts = new double[121];
+        counts[10] = 2;
+        counts[20] = 2;
+        counts[40] = 2;
+        assertBins(counts, 1.0, 0.1, 0.0, container.mrHaeufigkeit);
+        assertEquals("all", container.mrHaeufigkeit.getLabel());
+        assertEquals(List.of(0.5, 0.7, 1.1, 1.3, 2.1), container.mrVerteilungSkaliert.xValues);
+        assertEquals(List.of(0.25, 0.25, 0.125, 0.25, 0.125), container.mrVerteilungSkaliert.yValues);
+    }
+
+    @Test
+    void aSingleResultAndAContainerHoldingItChartTheSameShareOfEachScaledBin() throws Exception {
+        RISTool.projekt = project("same");
+        RISTool.logFileNames = names(8);
+        RISTool.initRqMIN();
+        RISTool single = new RISTool("single", 12, 10);
+        single.addDistData(new Vector<>(List.of(1.0, 1.0, 2.0, 4.0)));
+        single.calcMessreihen();
+        RISTool container = new RISTool("all", 12, 10);
+        container.isContainerInstanz = true;
+        container.add(single);
+
+        container.calcMessreihen();
+
+        assertEquals(List.of(List.of(0.5, 0.5), List.of(1.1, 0.25), List.of(2.1, 0.25)),
+                pointsWithAShare(container.mrVerteilungSkaliert));
+        assertEquals(pointsWithAShare(single.mrVerteilungSkaliert), pointsWithAShare(container.mrVerteilungSkaliert));
+    }
+
+    private static List<List<Object>> pointsWithAShare(TimeSeriesObject series) {
+        List<List<Object>> points = new ArrayList<>();
+        for (int i = 0; i < series.yValues.size(); i++) {
+            if ((Double) series.yValues.get(i) != 0.0) {
+                points.add(List.of(series.xValues.get(i), series.yValues.get(i)));
+            }
+        }
+        return points;
     }
 
     private OriginProject project(String folder) throws Exception {

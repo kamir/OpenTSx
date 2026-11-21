@@ -13,8 +13,11 @@ entrypoint `/opentsx-lg/bin/run_LatencyProbe_CONS.sh` runs `org.opentsx.lg.kping
 consumer reads the topic `OpenTSx_Events` and measures the latency of each event until more than
 `kping.consumer.giveUp` polls have come back empty. It counts the empty polls over the whole run: a poll with events
 does not reset the count. Then, when at least one event arrived, it writes the table `latency-by-message-<time>`
-(`<time>` is milliseconds since the epoch). When no event arrived, it writes no table and stops with
-`getStatisticData: the series OpenTSx_Events has no values; expected at least 1 value`. While its consumer group
+(`<time>` is milliseconds since the epoch). When no event arrived, it writes no table, logs
+`no latency measured topic=OpenTSx_Events cause=getStatisticData: the series OpenTSx_Events has no values; expected at least 1 value`
+at ERROR without a stack trace and exits with status 1. While it waits it prints nothing on standard output; each
+empty poll but the last is a DEBUG line `empty poll topic=OpenTSx_Events emptyPolls=<n> giveUp=<giveUp>`, where `<n>`
+counts the empty polls so far and `<giveUp>` is the value of `kping.consumer.giveUp`. While its consumer group
 `KPING-Consumer` has no committed offset, the consumer starts at the latest offset, so events sent before it joined
 are not read. Run the consumer again and start the producer of [`../ping-tool-prod/`](../ping-tool-prod/README.md)
 while it runs. [Handle errors](../../../../README.md#handle-errors) lists the other failures.

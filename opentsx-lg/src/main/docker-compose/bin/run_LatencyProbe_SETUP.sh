@@ -2,7 +2,7 @@
 
 echo
 echo "------------------------------------------"
-echo " Start the LATENCY analysis ... PRECHECK "
+echo " Start the LATENCY analysis ... SETUP "
 echo "------------------------------------------"
 
 java -cp /opentsx-lg/opentsx-lg-3.0.1.jar org.opentsx.lg.kping.EventFlowAnalysisSetup

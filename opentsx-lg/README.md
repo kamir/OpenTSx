@@ -45,9 +45,19 @@ keys: each producer and consumer sets its own.
 plugin of Docker, and not with the standalone `docker-compose` binary. The `.env` and `.env-inhouse` files set only
 the variables their compose file reads, and the compose files have no `version` key. The image has no X server, and
 the scripts in `src/main/docker-compose/bin/` start none: the compose files set `OPENTSX_SHOW_GUI` to `false`, so no
-tool opens a chart window. `DockerImageTest` fails on a variable that the compose file does not read, on a `version`
-key, on a `docker-compose` call in `run_demo_docker_compose.sh` and on an `Xvfb` call in
-`src/main/docker-compose/bin/`.
+tool opens a chart window. `DockerImageTest` fails on a variable of `.env` or `.env-inhouse` that the compose file
+does not read, also one written after `export`, after blanks or as `MDC1: <value>`. The compose file reads `MDC1` as
+`${MDC1}`, `$MDC1` or a form with a modifier such as `${MDC1:-<default>}`, outside a `#` comment; `$$MDC1` is not a
+read. The test also fails on a top-level `version` key, also an indented or quoted one, on the word `docker-compose`
+in `run_demo_docker_compose.sh` and on the word `Xvfb` in a script of `src/main/docker-compose/bin/`. It finds each
+word outside a `#` comment at the start of a line or after a blank, `;`, `&`, `|`, `(`, `)`, a backquote, a quote or
+`=`, also as the last part of a path that starts with `/`, such as `/usr/bin/Xvfb`. The word must end the line or be
+followed by a blank, `;`, `&`, `|`, `(`, `)`, `<`, `>`, a backquote or a quote, so `docker-compose.yml` and
+`XvfbProbe` are not found. So it finds `sudo docker-compose up -d`, `x; docker-compose up`, `"$(docker-compose ps)"`
+and `nohup Xvfb :99 &`, but not `${COMPOSE:-docker-compose} up`, `./docker-compose up`, `~/bin/docker-compose up` or
+`$HOME/bin/docker-compose up`. It fails as well when the banner of a `run_LatencyProbe_<step>.sh` script in `bin/` or
+`src/main/docker-compose/bin/` does not name the `EventFlowAnalysis<Step>` class that the script runs, in capitals,
+such as `SETUP` for `EventFlowAnalysisSetup`.
 
 The scripts use the `JAVA_HOME` you set, or the `java` on your `PATH`. `run_demo.sh` prints the KSQL statements of the
 demo for the ksql CLI. `run_demo.sh`, `run_demo_container.sh`, `run_demo_docker_compose.sh`, `bin/build_all.sh`,
@@ -332,9 +342,11 @@ Each tool stops at the first failure and exits with status 1:
   cannot be listed or created, or when a topic is still missing after they created the topics. The topic check prints
   `<topic list>: topics missing on the cluster [<topic>, ...]; create them with TopicsUP` on stdout.
 * `EventFlowAnalysisConsumer` and `RequestResponseAnalysisConsumer` stop when a poll fails, and close the consumer.
-  When no record arrived before they give up, they stop with
-  `getStatisticData: the series <topic> has no values; expected at least 1 value`, where `<topic>` is
-  `OpenTSx_Events` or `latency_benchmark_response`.
+  When no record arrived before they give up, `RequestResponseAnalysisConsumer` stops with
+  `getStatisticData: the series latency_benchmark_response has no values; expected at least 1 value`, and
+  `EventFlowAnalysisConsumer` logs
+  `no latency measured topic=OpenTSx_Events cause=getStatisticData: the series OpenTSx_Events has no values; expected at least 1 value`
+  at ERROR without a stack trace and exits with status 1.
 * `EventFlowAnalysisSetup` stops when the topics cannot be created.
 
 With `OPENTSX_SHOW_GUI=true`, `EventFlowAnalysisConsumer` and `RequestResponseAnalysisConsumer` open and store the

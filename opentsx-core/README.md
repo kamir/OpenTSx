@@ -111,9 +111,17 @@ When setting the current one back fails, it logs
 `look and feel not set, and setting back the one before failed lookAndFeel=<class> before=<class> cause=<cause>; suppressed <failure>`.
 When installing the cross-platform one fails, it logs
 `look and feel not set, and installing the cross-platform one failed lookAndFeel=<class> crossPlatform=<class> cause=<cause>; suppressed <failure>`.
-When the default look and feel that `swing.defaultlaf` names cannot load, `MacroRecorder2` ignores it, logs at WARN
-`swing.defaultlaf: the default look and feel cannot load and is ignored; name a look and feel class on the class path or remove swing.defaultlaf lookAndFeel=<class> cause=Cannot load <default class>`
-and sets FlatLaf; when FlatLaf fails as well, it installs the cross-platform one.
+When the system property `swing.defaultlaf` names a class that is not on the class path, `MacroRecorder2` does not let
+Swing load it, logs at WARN
+`swing.defaultlaf: the default look and feel cannot load and is ignored; name a look and feel class on the class path or remove swing.defaultlaf lookAndFeel=<class> cause=Cannot load <default class>; caused by java.lang.ClassNotFoundException: <default class>`
+and sets FlatLaf; when FlatLaf fails as well, it installs the cross-platform one. When the default look and feel is on
+the class path but cannot be set, for example `java.lang.String`, Swing stops its start-up at it. `MacroRecorder2` then
+logs the same line with `cause=Cannot load <default class>` and sets FlatLaf, but a key binding of a window
+(`WHEN_IN_FOCUSED_WINDOW`) does not fire for a key event of the window itself or of a disabled component. Remove such
+a `swing.defaultlaf`. `MacroRecorder2` checks only the system property. A default that cannot load and that only
+`<java.home>/conf/swing.properties` names is ignored with the line that ends `cause=Cannot load <default class>`, and
+a key binding of a window misses the same key events. Remove that default from `swing.properties`, or set the system
+property `swing.defaultlaf` to a look and feel class on the class path, which Swing reads instead of the file.
 For a node without a chart, such as a source node,
 `show Chart` shows `show Chart: no chart for <node>; select an operation node` in a dialog; without a selection it
 does nothing.
@@ -382,8 +390,9 @@ is not a whole number throws `IllegalArgumentException` with
 1.7e308 and 1.7e308 give R_q 1.7e308. `addDistData` keeps negative intervals only when `RISTool.offset` is below 0,
 and then only those at or above the offset. A scaled interval below 0 is counted in the first scaled bin and one past
 the last bin in the last bin, so the probabilities add up to 1: with offset -5, the intervals -3 and 1 give R_q -1,
-and 1 / -1 counts in scaled bin 0 and -3 / -1 in scaled bin 15. It opens no window and writes nothing to standard
-output. `add(result)` adds the probabilities of a single result to a container instance.
+and 1 / -1 counts in scaled bin 0 and -3 / -1 in scaled bin 15, and the intervals -1 and 4 give R_q 1.5, and -1 / 1.5
+counts in scaled bin 0 and 4 / 1.5 in scaled bin 13. It opens no window and writes nothing to standard
+output. `add(result)` adds the probabilities and the counts of a single result to a container instance.
 For a result that is not a container, `addDistData` also counts the kept intervals as they are, in
 `binning` · `scale` + 1 bins of width 1/`scale`, and `calcMessreihen()` writes these counts: `mrHaeufigkeit` holds the
 count of bin i at i / `scale`, `mrVerteilung` its share of the kept intervals, and `mrVerteilungSkaliert` the share of
@@ -395,6 +404,12 @@ intervals and the first bin the negative ones. With binning 12 and scale 10, the
 its `mrHaeufigkeit` holds the count 0 for each bin. Each call of `calcMessreihen()` replaces the series of the call
 before. `showData()` calls it and charts `mrVerteilung` and `mrVerteilungSkaliert`; `store()` writes `mrVerteilung`
 and `toString_Haeufigkeit()` returns `mrHaeufigkeit` as the last call left them.
+For a container, `calcMessreihen()` writes the sum of the counts of bin i of the results it added at i / `scale` to
+`mrHaeufigkeit`, named after the container, and the mean share of scaled bin i over these results at (i + 0.5) / 5 to
+`mrVerteilungSkaliert`, on the scale of a single result. It leaves out the scaled bins whose mean share is 0. With
+binning 12 and scale 10, a container of the intervals 1, 1, 2 and 4 (R_q 2) and the intervals 2 and 4 (R_q 3) counts
+2 at 1.0, 2 at 2.0 and 2 at 4.0 and gives the scaled shares 0.25 at 0.5, 0.25 at 0.7, 0.125 at 1.1, 0.25 at 1.3 and
+0.125 at 2.1. `showData()` of a container charts `mrVerteilungSkaliert`.
 Errors stop the call:
 
 | Problem | Exception and message |
@@ -480,9 +495,10 @@ adds the result shows, and with `offset` 1 the `TSPropertyTester` intervals -3 a
 share 0.5 at 5/12 and at 35/12. A result that keeps no interval has an empty `mrVerteilung` and an empty
 `mrVerteilungSkaliert`, and its `mrHaeufigkeit` holds the count 0 for each bin. Each call of
 `calcMessreihen()` replaces the series of the call before.
-A `ReturnIntervallStatistik2` container adds up these counts of the results it adds, and its `calcMessreihen()`
-writes the sum of bin i at i / `scale` to `mrHaeufigkeit`, named after the container. `addRow(series)` and
-`addRowB(series)` add this series of a container that holds their result to `mrv2` and `mrv2B`, which `main` charts:
+A `ReturnIntervallStatistik2` or `TSPropertyTester` container adds up these counts of the results it adds, and its
+`calcMessreihen()` writes the sum of bin i at i / `scale` to `mrHaeufigkeit`, named after the container.
+`ReturnIntervallStatistik2.addRow(series)` and `ReturnIntervallStatistik2.addRowB(series)` add this series of a
+container that holds their result to `mrv2` and `mrv2B`, which `main` charts:
 with binning 12 and scale 10, `addRow` of the values 0.15, 0.25, 0.25, 0.55 and 3.0 adds the counts 1 at 0.1, 2 at
 0.2, 1 at 0.5 and 1 at 1.2, and `addRowB` the count 1 at 1.0 for the interval between the values 0.55 and 3.0.
 `SingleTsRISTool` passes the y values of each series as times and adds the result to `risCollector`. For each series

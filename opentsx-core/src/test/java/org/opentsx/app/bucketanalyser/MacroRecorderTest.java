@@ -3,8 +3,13 @@ package org.opentsx.app.bucketanalyser;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import javax.swing.AbstractAction;
+import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JTree;
+import javax.swing.KeyStroke;
 import javax.swing.LookAndFeel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIDefaults;
@@ -12,7 +17,11 @@ import javax.swing.UIManager;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
+import java.awt.KeyboardFocusManager;
 import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
@@ -20,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
@@ -203,6 +213,88 @@ class MacroRecorderTest {
                 + " cause=Cannot load does.not.Exist"), log);
         assertEquals(1, log.lines().count(), log);
         assertFalse(log.contains("java.lang.Error"), log);
+    }
+
+    @Test
+    void aDefaultLookAndFeelThatIsNotOnTheClassPathIsNotLoadedSoTheKeyBindingsOfAWindowWork(@TempDir Path dir)
+            throws Exception {
+        Path output = dir.resolve("output.txt");
+        Path errors = dir.resolve("errors.txt");
+        ProcessBuilder builder = new ProcessBuilder(List.of(
+                Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "-Dswing.defaultlaf=does.not.Exist",
+                "-cp", System.getProperty("surefire.test.class.path"),
+                FireAWindowKeyBindingWithADefaultThatCannotLoad.class.getName()))
+                .directory(dir.toFile()).redirectOutput(output.toFile()).redirectError(errors.toFile());
+        builder.environment().keySet().removeAll(List.of("JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS"));
+        int status = builder.start().waitFor();
+        String printed = Files.readString(output);
+        String log = Files.readString(errors);
+
+        assertEquals(0, status, printed + log);
+        assertEquals("fired for the window 1, for a disabled button 1\n", printed, log);
+        assertTrue(log.contains("cause=Cannot load does.not.Exist; caused by java.lang.ClassNotFoundException:"
+                + " does.not.Exist"), log);
+        assertEquals(1, log.lines().count(), log);
+    }
+
+    public static class FireAWindowKeyBindingWithADefaultThatCannotLoad {
+        public static void main(String[] args) throws Exception {
+            MacroRecorder2.setLookAndFeel(new MetalLookAndFeel());
+            AtomicInteger fired = new AtomicInteger();
+            String[] printed = new String[1];
+            SwingUtilities.invokeAndWait(() -> {
+                JFrame frame = new JFrame("bindings");
+                JButton button = new JButton("disabled");
+                button.setEnabled(false);
+                frame.getContentPane().add(button);
+                KeyStroke save = KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK);
+                frame.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(save, "save");
+                frame.getRootPane().getActionMap().put("save", new AbstractAction() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        fired.incrementAndGet();
+                    }
+                });
+                frame.pack();
+                frame.setVisible(true);
+                KeyboardFocusManager focus = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+                focus.dispatchKeyEvent(new KeyEvent(frame, KeyEvent.KEY_PRESSED, 0, InputEvent.CTRL_DOWN_MASK,
+                        KeyEvent.VK_S, KeyEvent.CHAR_UNDEFINED));
+                int forWindow = fired.get();
+                focus.dispatchKeyEvent(new KeyEvent(button, KeyEvent.KEY_PRESSED, 0, InputEvent.CTRL_DOWN_MASK,
+                        KeyEvent.VK_S, KeyEvent.CHAR_UNDEFINED));
+                printed[0] = "fired for the window " + forWindow + ", for a disabled button " + (fired.get() - forWindow);
+                frame.dispose();
+            });
+            System.out.println(printed[0]);
+            System.exit(0);
+        }
+    }
+
+    @Test
+    void aDefaultLookAndFeelOnTheClassPathThatCannotBeSetIsIgnoredWithAWarningAndTheLookAndFeelIsSet(@TempDir Path dir)
+            throws Exception {
+        Path output = dir.resolve("output.txt");
+        Path errors = dir.resolve("errors.txt");
+        ProcessBuilder builder = new ProcessBuilder(List.of(
+                Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "-Dswing.defaultlaf=java.lang.String",
+                "-cp", System.getProperty("surefire.test.class.path"),
+                SetMetalWithADefaultThatCannotLoad.class.getName()))
+                .directory(dir.toFile()).redirectOutput(output.toFile()).redirectError(errors.toFile());
+        builder.environment().keySet().removeAll(List.of("JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS"));
+        int status = builder.start().waitFor();
+        String printed = Files.readString(output);
+        String log = Files.readString(errors);
+
+        assertEquals(0, status, printed + log);
+        assertEquals(MetalLookAndFeel.class.getName() + "\n", printed, log);
+        assertTrue(log.contains("WARN " + MacroRecorder2.class.getName() + " - swing.defaultlaf: the default look and"
+                + " feel cannot load and is ignored; name a look and feel class on the class path or remove"
+                + " swing.defaultlaf lookAndFeel=" + MetalLookAndFeel.class.getName()
+                + " cause=Cannot load java.lang.String"), log);
+        assertEquals(1, log.lines().count(), log);
     }
 
     public static class SetMetalWithADefaultThatCannotLoad {

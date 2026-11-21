@@ -191,6 +191,9 @@ public class RISTool {
             dataSKALIERT[i] = dataSKALIERT[i] + 1;
             
         }
+        for( int i = 0; i < data.length; i++ ) {
+            data[i] = data[i] + ris.data[i];
+        }
         
         allRqs.add(ris._Rq);
         
@@ -468,19 +471,17 @@ public class RISTool {
     private void calcContainerMR() throws Exception {
         
         mrVerteilungSkaliert = new TimeSeriesObject( "dist_scaled");
+        mrHaeufigkeit = new TimeSeriesObject( name );
+
+        for (int i = 0; i < data.length; i++) {
+            mrHaeufigkeit.addValuePair( (double)i / (double)scale, data[i] );
+        }
         
         for (int i = 0; i < dataSKALIERT.length; i++) {
             if ( dataSKALIERT[i] != 0 ) {
-                double vx = ((double)i + 0.5) / scaleSKALIERT;
                 double vy = probSKALIERT[i] / (double)dataSKALIERT[i];
                 if ( vy != 0.0 ) {
-                    double logVy = Math.log(vy);
-                    if ( Double.isInfinite( logVy ) || Double.isNaN( logVy ) ) {
-                        LOG.debug("skipped bin without a finite logarithm container={} x={} y={}", name, vx, vy);
-                    }
-                    else {
-                        mrVerteilungSkaliert.addValuePair( vx, logVy );
-                    }
+                    mrVerteilungSkaliert.addValuePair( ((double)i + 0.5) / scaleSKALIERT, vy );
                 }
             }
         }

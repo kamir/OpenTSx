@@ -7,9 +7,11 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,6 +25,8 @@ class DockerImageTest {
     private static final Pattern LEGACY_ENV = Pattern.compile("(?i)ENV\\s+[^\\s=]+(\\s|$)");
     private static final Pattern SHELL_FORM = Pattern.compile("(?i)(CMD|ENTRYPOINT)\\s+[^\\s\\[]");
     private static final Pattern EMPTY_NAME = Pattern.compile("\\s*-\\s*name:\\s*");
+    private static final Pattern VARIABLE = Pattern.compile("(?m)^[ \\t]*(?:export[ \\t]+)?([A-Za-z_][A-Za-z0-9_]*)[ \\t]*[=:]");
+    private static final Pattern VERSION_KEY = Pattern.compile("(?:version|\"version\"|'version')[ \\t]*:");
 
     private static List<Path> files(String root, String name) throws Exception {
         try (Stream<Path> files = Files.walk(Path.of(root))) {
@@ -69,6 +73,72 @@ class DockerImageTest {
             if (SHELL_FORM.matcher(line).lookingAt()) {
                 problems.add(where + ":" + n + ": " + line
                         + ": shell form; write the exec form [\"<executable>\", \"<argument>\"]");
+            }
+        }
+        return problems;
+    }
+
+    private static String code(String line) {
+        char quote = 0;
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (quote == 0 && c == '#' && (i == 0 || Character.isWhitespace(line.charAt(i - 1)))) {
+                return line.substring(0, i);
+            }
+            if (c == '\\' && quote != '\'') {
+                i++;
+            } else if (quote == 0 && (c == '"' || c == '\'')) {
+                quote = c;
+            } else if (c == quote) {
+                quote = 0;
+            }
+        }
+        return line;
+    }
+
+    private static List<String> variables(String env) {
+        List<String> names = new ArrayList<>();
+        Matcher name = VARIABLE.matcher(env);
+        while (name.find()) {
+            names.add(name.group(1));
+        }
+        return names;
+    }
+
+    private static boolean reads(String compose, String name) {
+        String text = compose.lines().map(DockerImageTest::code).collect(Collectors.joining("\n"));
+        return Pattern.compile("(?<!\\$)(?:\\$\\$)*\\$(?:\\{" + name + "[}:?+-]|" + name + "(?![A-Za-z0-9_]))")
+                .matcher(text).find();
+    }
+
+    private static List<String> versionKeys(String where, String compose) {
+        List<String> problems = new ArrayList<>();
+        List<String> lines = compose.lines().toList();
+        int root = -1;
+        for (int n = 1; n <= lines.size(); n++) {
+            String line = code(lines.get(n - 1)).stripTrailing();
+            if (line.isEmpty() || line.equals("---") || line.startsWith("%")) {
+                continue;
+            }
+            int indent = line.length() - line.stripLeading().length();
+            if (root < 0) {
+                root = indent;
+            }
+            if (indent == root && VERSION_KEY.matcher(line.substring(indent)).lookingAt()) {
+                problems.add(where + ":" + n + ": version: obsolete; delete the line");
+            }
+        }
+        return problems;
+    }
+
+    private static List<String> calls(String where, String script, String command, String problem) {
+        Pattern call = Pattern.compile("(?:^|[\\s;&|()`\"'=])(?:(?:/[^\\s;&|()<>`\"'/]+)*/)?" + Pattern.quote(command)
+                + "(?=$|[\\s;&|()<>`\"'])");
+        List<String> problems = new ArrayList<>();
+        List<String> lines = script.lines().toList();
+        for (int n = 1; n <= lines.size(); n++) {
+            if (call.matcher(code(lines.get(n - 1))).find()) {
+                problems.add(where + ":" + n + ": " + command + ": " + problem);
             }
         }
         return problems;
@@ -211,19 +281,76 @@ class DockerImageTest {
     }
 
     @Test
+    void theChecksFindAnUnreadVariableAVersionKeyAndACallWhereverTheyStand() {
+        String compose = "services:\n"
+                + "  x:\n"
+                + "    labels:\n"
+                + "      version: \"1\"\n"
+                + "    extra_hosts:\n"
+                + "      - \"a:${BRACED}\"\n"
+                + "      - \"b:$PLAIN\"\n"
+                + "      - \"c:${WITH_DEFAULT:-x}\"\n"
+                + "      - \"d:$$ESCAPED $$$AFTER_ESCAPE\"\n"
+                + "      # - \"e:${COMMENTED}\"\n"
+                + "      - \"f:${PREFIX_LONGER} #${QUOTED}\" # ${TRAILING}\n";
+        String env = "BRACED=1\n"
+                + "export PLAIN=2\n"
+                + "  WITH_DEFAULT = 3\n"
+                + "ESCAPED=4\n"
+                + "AFTER_ESCAPE=5\n"
+                + "COMMENTED=6\n"
+                + "PREFIX: 7\n"
+                + "QUOTED=8\n"
+                + "TRAILING=9\n"
+                + "# NOTE=10\n";
+        String demo = "#!/usr/bin/env bash\n"
+                + "# docker-compose is gone\n"
+                + "cd src/main/docker-compose/ping-tool-cons || exit 1\n"
+                + "docker compose --env-file .env-inhouse up -d\n"
+                + "sudo docker-compose up -d\n"
+                + "cd x || exit 1; docker-compose up\n"
+                + "echo \"$(docker-compose ps)\"\n"
+                + "/usr/local/bin/docker-compose -f docker-compose.yml up\n"
+                + "COMPOSE=docker-compose\n"
+                + "ls src/main/docker-compose docker-compose.yml docker-compose-plugin\n";
+        String bin = "#!/bin/bash\n"
+                + "nohup Xvfb :99 &\n"
+                + "/usr/bin/Xvfb :99 &\n"
+                + "exec Xvfb :99\n"
+                + "export DISPLAY=:99 # Xvfb runs elsewhere\n"
+                + "java -cp app.jar XvfbProbe\n";
+
+        assertEquals(List.of("BRACED", "PLAIN", "WITH_DEFAULT", "ESCAPED", "AFTER_ESCAPE", "COMMENTED", "PREFIX",
+                "QUOTED", "TRAILING"), variables(env));
+        assertEquals(List.of("ESCAPED", "COMMENTED", "PREFIX", "TRAILING"),
+                variables(env).stream().filter(name -> !reads(compose, name)).toList());
+        assertEquals(List.of(), versionKeys("a.yml", compose));
+        assertEquals(List.of("a.yml:1: version: obsolete; delete the line"),
+                versionKeys("a.yml", "version: \"3\"\nservices: {}\n"));
+        assertEquals(List.of("a.yml:2: version: obsolete; delete the line"),
+                versionKeys("a.yml", "# version: \"3\"\n  version: '3'\n  services: {}\n"));
+        assertEquals(List.of("a.yml:3: version: obsolete; delete the line"),
+                versionKeys("a.yml", "---\nservices: {}\n\"version\" : \"3\"\n"));
+        String v1 = "docker-compose: the v1 binary; call docker compose";
+        assertEquals(List.of("run.sh:5: " + v1, "run.sh:6: " + v1, "run.sh:7: " + v1, "run.sh:8: " + v1,
+                "run.sh:9: " + v1), calls("run.sh", demo, "docker-compose", "the v1 binary; call docker compose"));
+        String xvfb = "Xvfb: not in the image; delete the line";
+        assertEquals(List.of("run.sh:2: " + xvfb, "run.sh:3: " + xvfb, "run.sh:4: " + xvfb),
+                calls("run.sh", bin, "Xvfb", "not in the image; delete the line"));
+    }
+
+    @Test
     void eachVariableOfTheEnvFilesOfThePingToolsIsReadByItsComposeFile() throws Exception {
         Path compose = Path.of("src/main/docker-compose");
-        Pattern variable = Pattern.compile("(?m)^([A-Za-z_][A-Za-z0-9_]*)=");
         List<String> unused = new ArrayList<>();
         int variables = 0;
         for (String tool : List.of("ping-tool-cons", "ping-tool-prod")) {
             String file = Files.readString(compose.resolve(tool).resolve("docker-compose.yml"));
             for (String env : List.of(".env", ".env-inhouse")) {
-                Matcher name = variable.matcher(Files.readString(compose.resolve(tool).resolve(env)));
-                while (name.find()) {
+                for (String name : variables(Files.readString(compose.resolve(tool).resolve(env)))) {
                     variables++;
-                    if (!file.contains("${" + name.group(1) + "}")) {
-                        unused.add(tool + "/" + env + ": " + name.group(1));
+                    if (!reads(file, name)) {
+                        unused.add(tool + "/" + env + ": " + name);
                     }
                 }
             }
@@ -238,23 +365,14 @@ class DockerImageTest {
         List<Path> composeFiles = files("src/main", "docker-compose.yml");
         List<String> problems = new ArrayList<>();
         for (Path file : composeFiles) {
-            List<String> lines = Files.readAllLines(file);
-            for (int n = 1; n <= lines.size(); n++) {
-                if (lines.get(n - 1).startsWith("version:")) {
-                    problems.add(file + ":" + n + ": version: obsolete; delete the line");
-                }
-            }
+            problems.addAll(versionKeys(file.toString(), Files.readString(file)));
         }
-        List<String> demo = Files.readAllLines(Path.of("run_demo_docker_compose.sh"));
-        for (int n = 1; n <= demo.size(); n++) {
-            if (demo.get(n - 1).strip().startsWith("docker-compose")) {
-                problems.add("run_demo_docker_compose.sh:" + n + ": docker-compose: the v1 binary; call docker compose");
-            }
-        }
+        String demo = Files.readString(Path.of("run_demo_docker_compose.sh"));
+        problems.addAll(calls("run_demo_docker_compose.sh", demo, "docker-compose", "the v1 binary; call docker compose"));
 
         assertEquals(2, composeFiles.size(), composeFiles.toString());
         assertEquals(List.of(), problems);
-        assertEquals(2, demo.stream().filter(line -> line.startsWith("docker compose ")).count(), demo.toString());
+        assertEquals(2, demo.lines().filter(line -> line.startsWith("docker compose ")).count(), demo);
     }
 
     @Test
@@ -262,15 +380,38 @@ class DockerImageTest {
         List<String> problems = new ArrayList<>();
         try (Stream<Path> scripts = Files.list(Path.of("src/main/docker-compose/bin"))) {
             for (Path script : scripts.filter(f -> f.toString().endsWith(".sh")).sorted().toList()) {
-                List<String> lines = Files.readAllLines(script);
-                for (int n = 1; n <= lines.size(); n++) {
-                    if (lines.get(n - 1).strip().startsWith("Xvfb")) {
-                        problems.add(script + ":" + n + ": Xvfb: not in the image; delete the line");
-                    }
-                }
+                problems.addAll(calls(script.toString(), Files.readString(script), "Xvfb", "not in the image; delete the line"));
             }
         }
 
+        assertEquals(List.of(), problems);
+    }
+
+    @Test
+    void eachLatencyProbeScriptNamesTheStepItRunsInItsBanner() throws Exception {
+        Pattern banner = Pattern.compile("(?m)^echo \" Start the LATENCY analysis \\.\\.\\. (\\S+) ?\"$");
+        Pattern step = Pattern.compile("org\\.opentsx\\.lg\\.kping\\.EventFlowAnalysis(\\w+)");
+        List<String> problems = new ArrayList<>();
+        List<Path> scripts = new ArrayList<>();
+        for (String folder : List.of("bin", "src/main/docker-compose/bin")) {
+            try (Stream<Path> files = Files.list(Path.of(folder))) {
+                files.filter(f -> f.getFileName().toString().startsWith("run_LatencyProbe_")).forEach(scripts::add);
+            }
+        }
+        scripts.sort(null);
+        for (Path script : scripts) {
+            String text = Files.readString(script);
+            Matcher named = banner.matcher(text);
+            Matcher runs = step.matcher(text);
+            assertTrue(named.find() && runs.find(), script.toString());
+            String expected = runs.group(1).toUpperCase(Locale.ROOT);
+            if (!named.group(1).equals(expected)) {
+                problems.add(script + ": " + named.group(1) + ": not the step of EventFlowAnalysis" + runs.group(1)
+                        + "; write " + expected);
+            }
+        }
+
+        assertEquals(8, scripts.size(), scripts.toString());
         assertEquals(List.of(), problems);
     }
 

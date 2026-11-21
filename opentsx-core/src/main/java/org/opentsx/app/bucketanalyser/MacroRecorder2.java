@@ -85,17 +85,27 @@ public class MacroRecorder2 {
 
     static void setLookAndFeel(LookAndFeel lookAndFeel) {
         LookAndFeel before;
-        try {
-            before = UIManager.getLookAndFeel();
-        } catch (Error defaultLaf) {
-            // UIManager throws a plain Error("Cannot load <class>") when the default look and feel cannot load
-            if (defaultLaf.getClass() != Error.class) {
-                throw defaultLaf;
-            }
+        String defaultName = System.getProperty("swing.defaultlaf");
+        Throwable missing = notOnClassPath(defaultName);
+        if (missing != null) {
+            // a default that fails to load ends UIManager.initialize() early, so UIManager must never try it
             LOG.warn("swing.defaultlaf: the default look and feel cannot load and is ignored; name a look and feel"
-                    + " class on the class path or remove swing.defaultlaf lookAndFeel={} cause={}",
-                    lookAndFeel.getClass().getName(), causes(defaultLaf));
+                    + " class on the class path or remove swing.defaultlaf lookAndFeel={} cause=Cannot load {};"
+                    + " caused by {}", lookAndFeel.getClass().getName(), defaultName, missing.toString());
             before = null;
+        } else {
+            try {
+                before = UIManager.getLookAndFeel();
+            } catch (Error defaultLaf) {
+                // UIManager throws a plain Error("Cannot load <class>") when the default look and feel cannot load
+                if (defaultLaf.getClass() != Error.class) {
+                    throw defaultLaf;
+                }
+                LOG.warn("swing.defaultlaf: the default look and feel cannot load and is ignored; name a look and"
+                        + " feel class on the class path or remove swing.defaultlaf lookAndFeel={} cause={}",
+                        lookAndFeel.getClass().getName(), causes(defaultLaf));
+                before = null;
+            }
         }
         try {
             UIManager.setLookAndFeel(lookAndFeel);
@@ -128,6 +138,18 @@ public class MacroRecorder2 {
                 LOG.warn("look and feel not set; the workbench keeps the current one lookAndFeel={} cause={}",
                         lookAndFeel.getClass().getName(), causes(ex));
             }
+        }
+    }
+
+    private static Throwable notOnClassPath(String className) {
+        if (className == null) {
+            return null;
+        }
+        try {
+            Class.forName(className, false, Thread.currentThread().getContextClassLoader());
+            return null;
+        } catch (ClassNotFoundException | LinkageError notLoadable) {
+            return notLoadable;
         }
     }
 

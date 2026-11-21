@@ -365,6 +365,9 @@ public class TSPropertyTester {
             probSKALIERT[i] = probSKALIERT[i] + ris.probSKALIERT[i];
             dataSKALIERT[i] = dataSKALIERT[i] + 1;
         }
+        for( int i = 0; i < data.length; i++ ) {
+            data[i] = data[i] + ris.data[i];
+        }
         
         allRqs.add(ris._Rq);
         
@@ -557,7 +560,11 @@ public class TSPropertyTester {
     private void calcContainerMR() throws Exception {
         
         mrVerteilungSkaliert = new TimeSeriesObject( name + " (res=" + ((double)scale/(double)binning) + ")");
-        
+        mrHaeufigkeit = new TimeSeriesObject( name );
+
+        for (int i = 0; i < data.length; i++) {
+            mrHaeufigkeit.addValuePair( (double)i / (double)scale, data[i] );
+        }
         
         for (int i = 0; i < dataSKALIERT.length; i++) {
             if ( dataSKALIERT[i] != 0 ) {

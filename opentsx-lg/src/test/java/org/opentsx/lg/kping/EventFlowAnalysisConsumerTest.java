@@ -15,13 +15,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.connectors.kafka.OpenTSxClusterLink;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -121,7 +124,58 @@ class EventFlowAnalysisConsumerTest {
     }
 
     @Test
+    void anEmptyRunPrintsNothingAndExitsWith1AfterOneLogLineWithoutAStackTrace() throws Exception {
+        MockConsumer<String, GenericRecord> consumer = consumerWith(0);
+        int[] status = {-1};
+
+        String[] printed = outAndErrOf(
+                () -> status[0] = EventFlowAnalysisConsumer.run(consumer, null, dir.resolve("plots").toString()));
+
+        assertEquals(1, status[0]);
+        assertEquals("", printed[0]);
+        assertEquals(1, printed[1].lines().count(), printed[1]);
+        assertTrue(printed[1].contains("ERROR " + EventFlowAnalysisConsumer.class.getName() + " - no latency measured"
+                + " topic=OpenTSx_Events cause=getStatisticData: the series OpenTSx_Events has no values; expected at"
+                + " least 1 value"), printed[1]);
+        assertTrue(consumer.closed());
+        assertTrue(Files.notExists(dir.resolve("plots")));
+    }
+
+    @Test
+    void aRunWithEventsExitsWith0() throws Exception {
+        MockConsumer<String, GenericRecord> consumer = consumerWith(3);
+        int[] status = {-1};
+
+        String[] printed = outAndErrOf(
+                () -> status[0] = EventFlowAnalysisConsumer.run(consumer, null, dir.resolve("plots").toString()));
+
+        assertEquals(0, status[0]);
+        assertEquals("", printed[1]);
+        assertTrue(printed[0].endsWith("DONE\n"), printed[0]);
+    }
+
+    @Test
     void thePlotsGoToTheHomeDirectory() {
         assertEquals(System.getProperty("user.home") + "/opentsx/plots", EventFlowAnalysisConsumer.PLOT_FOLDER);
+    }
+
+    interface Action {
+        void run() throws Exception;
+    }
+
+    private static String[] outAndErrOf(Action action) throws Exception {
+        PrintStream out = System.out;
+        PrintStream err = System.err;
+        ByteArrayOutputStream capturedOut = new ByteArrayOutputStream();
+        ByteArrayOutputStream capturedErr = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(capturedOut, true, UTF_8));
+        System.setErr(new PrintStream(capturedErr, true, UTF_8));
+        try {
+            action.run();
+        } finally {
+            System.setOut(out);
+            System.setErr(err);
+        }
+        return new String[] {capturedOut.toString(UTF_8), capturedErr.toString(UTF_8)};
     }
 }

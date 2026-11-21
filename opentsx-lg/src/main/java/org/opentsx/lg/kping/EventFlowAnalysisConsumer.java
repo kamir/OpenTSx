@@ -39,8 +39,26 @@ public class EventFlowAnalysisConsumer {
         GIVE_UP = Integer.parseInt( OpenTSxClusterLink.getClientProperties().getProperty( "kping.consumer.giveUp") );
         NR_OF_SAMPLES = Integer.parseInt( OpenTSxClusterLink.getClientProperties().getProperty( "kping.consumer.nrOfSamples") );
 
-        runConsumer(TSOEventAnalysisConsumer.createConsumer( TOPIC ), System.getenv("OPENTSX_SHOW_GUI"), PLOT_FOLDER);
+        int status = run(TSOEventAnalysisConsumer.createConsumer( TOPIC ), System.getenv("OPENTSX_SHOW_GUI"), PLOT_FOLDER);
+        if (status != 0) {
+            System.exit(status);
+        }
 
+    }
+
+    /**
+     * Runs {@link #runConsumer} and returns 0, or 1 after one ERROR line when it throws IllegalStateException, as it
+     * does when no event arrived.
+     */
+    static int run(Consumer<String, GenericRecord> consumer, String showGui, String folder) {
+        try {
+            runConsumer(consumer, showGui, folder);
+            return 0;
+        } catch (IllegalStateException failed) {
+            LOG.error("no latency measured topic={} cause={}", TOPIC, failed.getMessage());
+            LOG.debug("no latency measured topic={}", TOPIC, failed);
+            return 1;
+        }
     }
 
     /**
@@ -71,9 +89,7 @@ public class EventFlowAnalysisConsumer {
                     noRecordsCount++;
                     if (noRecordsCount > giveUp) break;
                     else {
-                        System.out.println( "---------------------------------------------------------------------- ");
-                        System.out.println( ">>> " + (100.0 * ((double)noRecordsCount / (double)giveUp)) + " % of IDLE TIME IS OVER " + giveUp + " - " + noRecordsCount + " . ");
-                        System.out.println( "---------------------------------------------------------------------- ");
+                        LOG.debug("empty poll topic={} emptyPolls={} giveUp={}", TOPIC, noRecordsCount, giveUp);
                         continue;
                     }
                 }
