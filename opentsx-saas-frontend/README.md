@@ -111,7 +111,9 @@ Read the [analysis guide](../docs/devguide/workbench-analysis.md) for the result
 - Ground truth: the scenario events of series loaded from the inventory are drawn as bands on the time axis
   (yellow: operation, red: sensor fault); the field "Ground truth" jumps to an event
 - Align to vector: several nodes on one clock, one measuring point per tick (`opentsx.vector.v1`, a draft;
-  `src/workbench/vector.ts`). A stored flow whose `fill` is not `none` or `as-of` opens, but its preview fails with
+  `src/workbench/vector.ts`). Two series that give the same component of one vector, such as the wind speed of two
+  turbines with key `all`, are refused with the message of the vector processor; choose a key that tells them apart.
+  A stored flow whose `fill` is not `none` or `as-of` opens, but its preview fails with
   `vector fill must be none or as-of` and the deploy checks list `<label>: vector fill must be none or as-of.`
 - Pair windows (tab "Multi-variate Analysis"): a pair method compares two series window by window, paired by their
   episode ranges, one result per window at its centre; "Pair coverage" shows what the methods will see,
@@ -122,7 +124,8 @@ Read the [analysis guide](../docs/devguide/workbench-analysis.md) for the result
   `../docs/datamodel-2026/testvectors/pair-clock.v1.json`). A `fill` other than `none` or `as-of` is refused with
   `pair fill must be none or as-of`. A series whose times are not in increasing order is refused with
   `<label> has times out of order. A pair method needs them in increasing order.`, where `<label>` is the label of
-  the series. Workbench only, not in the stream operator catalog (`src/workbench/pairs.ts`, design in
+  the series. The vector processor does not run them. Catalog 1 lists `pair.xcorr` and `pair.es`, not `pair.coverage`;
+  the DAG export marks every pair node `experimental: true` (`src/workbench/pairs.ts`, design in
   `../docs/datamodel-2026/PAIR-WINDOWS-SPEC.md`)
 - Deploy and Stop (tab "Smart Topic"): a list says what a deployment still needs, "Create a vector of the loaded
   series" builds the one thing the processor runs, and Deploy hands the flow to the vector processor, which keeps the vector topic up to
@@ -131,7 +134,9 @@ Read the [analysis guide](../docs/devguide/workbench-analysis.md) for the result
   with job id, track, site, state, input record count and report age. It has no Stop: those jobs do not read the
   control topic
 - Time series operations as buttons, recorded as a processing flow graph
-- Export: `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor, Java code
+- Export: `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor, Java code. The DAG writes
+  `# not in the stream operator catalog` after every operator that catalog 1
+  (`../systems/catalogs/tsx-catalog-1.yaml`, list `CATALOG_1` in `src/workbench/ops.ts`) does not list
 - Code in `src/workbench/`
 
 ### State Management
