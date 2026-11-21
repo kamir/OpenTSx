@@ -58,6 +58,25 @@ final class DagToWayangBuild {
         }
     }
 
+    static void validateVectorNames(JsonNode dag) {
+        for (JsonNode node : dag.path("nodes")) {
+            if (node.path("op").asText().equals("align.vector")) vectorNames(node);
+        }
+    }
+
+    private static List<String> vectorNames(JsonNode node) {
+        String id = node.path("id").asText();
+        List<String> names = new ArrayList<>();
+        node.path("params").path("names").forEach(n -> names.add(n.asText()));
+        if (names.isEmpty()) for (int i = 0; i < node.path("in").size(); i++) names.add("in" + (i + 1));
+        if (names.size() != node.path("in").size() || names.stream().anyMatch(String::isBlank)) {
+            throw new IllegalArgumentException("node " + id + ": names must uniquely name every input");
+        }
+        String clash = VectorAligner.inputNameClash(names);
+        if (clash != null) throw new IllegalArgumentException("node " + id + ": " + clash);
+        return names;
+    }
+
     Map<String, Operator> outputs() {
         for (JsonNode sink : dag.path("sinks")) node(sink.path("from").asText());
         return Map.copyOf(built);
@@ -141,11 +160,7 @@ final class DagToWayangBuild {
                     p.has("max") ? p.path("max").asDouble() : null, p.has("expectedInterval") ? duration(p, "expectedInterval") : null);
             result = unary(node, new TsxDqResult(dag.path("dag").asText(), context.site(), specHash, expectation, checks, context.nowMicros()));
         } else if (op.equals("align.vector")) {
-            List<String> names = new ArrayList<>();
-            p.path("names").forEach(n -> names.add(n.asText()));
-            if (names.isEmpty()) for (int i = 0; i < node.path("in").size(); i++) names.add("in" + (i + 1));
-            if (names.size() != node.path("in").size() || names.stream().anyMatch(String::isBlank)
-                    || new LinkedHashSet<>(names).size() != names.size()) throw new IllegalArgumentException("node " + id + ": names must uniquely name every input");
+            List<String> names = vectorNames(node);
             Map<String, Set<String>> expected = new LinkedHashMap<>();
             List<Operator> tagged = new ArrayList<>();
             for (int i = 0; i < names.size(); i++) {

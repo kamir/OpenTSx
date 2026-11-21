@@ -559,6 +559,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- `docs/datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md` has the bytes its `manifest.json` pins again;
+  the repository split had replaced its links to the raw files with plain text. `tools/check_links.py` leaves files
+  that a measurement manifest pins out, and `tools/test_measurement_records.py` fails when a committed file differs
+  from the digest its manifest pins.
+
 - The web workbench takes the default clock of `pair.coverage`, `pair.xcorr` and `pair.es` per pair range: the larger
   sampling interval of the two paired episodes, on their sample times in epoch microseconds. Wayang and the Rust
   runner use the same rule. The note names the smallest and the largest clock. A pair method refuses a series whose
@@ -613,6 +618,19 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   control record has that name. A record that carries `job` is a job record. It is not shown as a refusal of the
   processor and does not replace a refusal under the same key. Specification S5.4 requires `job` in every Track A
   and B record.
+- Every runtime refuses an `align.vector` node in which two inputs have the same name, with one message:
+  `node <id>: two inputs of the vector are both named "<name>"; give every input its own name`. The vector processor
+  (`VectorJob`, `DagPlan`), Wayang when it compiles the DAG and the Rust runner use it as written. `VectorAligner.align`,
+  `new VectorStream(inputNames, ...)`, `VectorStream::new` of the Rust runner and the workbench preview use the text
+  after `node <id>: `. `VectorAligner.align` filled one component with the samples of both inputs, so `COUNT` gave
+  `2.0` where `VectorStream` gave `1.0`, and the processor accepted `names: [a, a]`. Wayang refused only when it
+  built the plan, and Rust gave a generic message. The workbench renamed a repeated typed name to `<name>_2`. It now
+  writes a typed name in lower-case snake case (lower case, every run of characters other than a-z and 0-9 becomes
+  `_`, and `_` at either end is dropped) and never renames it, so two typed names with the same snake-case name are
+  refused. It gives a derived name `_2` when another input has it, fails the preview and, for a vector that feeds a
+  published node, lists `<label>: two inputs of the vector are both named "<name>"; give every input its own name.`
+  in the deploy checks. A vector that feeds no published node is left out of the DAG and does not block the flow;
+  the deploy check for an unknown `fill` follows the same rule.
 - The retrieval server with `--kafscale` follows `tsx.<domain>.features.v2` like the clean and synthetic topics.
   Feature series appear in `GET /v1/inventory`, and `GET /v1/systems/{id}/signals` shows their data under the
   features grade. The inventory names the topic under `source.topics.features`.
@@ -696,6 +714,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `node <id>: vector fill must be none or as-of`. The deploy checks of the workbench and of the Flow Composer list
   `<label>: vector fill must be none or as-of.`, so such a stored flow still opens but is neither downloaded nor
   deployed; the DAG export writes the fill as stored. A missing `fill` stays `none`.
+
+- The disposable KafScale clusters of the Wayang integration tests no longer accept a port that another process
+  answers. The fixture releases each reserved port before `kafscale-cluster` binds it and counted any answer on
+  the port as ready. A cluster's broker could bind the port reserved for the next cluster; that cluster's Proxy
+  then failed with `bind: address already in use` while its clients read the first cluster's records. A cluster
+  now counts as ready only when its own log shows its Proxy listening on the reserved port and its broker
+  listening, and its process still runs. A lost port restarts that cluster on a new port; after five attempts the
+  fixture fails. Each retry writes `<cluster>.<n>.log` next to `<cluster>.log`.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

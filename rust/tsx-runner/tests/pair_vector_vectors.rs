@@ -502,6 +502,24 @@ fn vector_wire_record_uses_the_java_key_and_timestamp_contract() {
 }
 
 #[test]
+fn vector_refuses_two_inputs_with_one_name_with_the_java_message() {
+    let p = VectorParams::parse(&json!({"every":60,"key":"all"})).unwrap();
+    let twice = vec![
+        ("a".into(), BTreeSet::from(["s".into()])),
+        ("a".into(), BTreeSet::from(["t".into()])),
+    ];
+    assert_eq!(
+        VectorStream::new(twice, p.clone(), 100).unwrap_err(),
+        "two inputs of the vector are both named \"a\"; give every input its own name"
+    );
+    let unnamed = vec![("".into(), BTreeSet::from(["s".into()]))];
+    assert_eq!(
+        VectorStream::new(unnamed, p, 100).unwrap_err(),
+        "a vector that keeps running needs the ids of the series of every input"
+    );
+}
+
+#[test]
 fn lag_error_number_formatting_matches_the_workbench() {
     for (raw, text) in [
         (json!(1e-7), "1e-7"),
