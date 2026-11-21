@@ -39,7 +39,7 @@ and the overpressure, at the cost of an earlier deviation from the schedule.
 | Runner (variant T) | `TwinRunner` | layered bulk-synchronous execution, see below |
 | Inputs | `Inputs`, `SeriesInputs` | measurements, schedules and forecasts bound to unwired input ports; the binding decides the mode |
 | Origin | `Origin` | `MEASURED > REPORTED > FORECAST > ESTIMATED > SYNTHETIC` (see below) |
-| Topic contract | `PortMessage`, `Barrier`, `MessageSink`, `MessageLog` | deterministic ids `run/k/phase/atom/port`; phase barriers with counts; superstep commit with state hash |
+| Message contract | `PortMessage`, `Barrier`, `MessageSink`, `MessageLog` | deterministic ids `run/k/phase/atom/port`; phase barriers with counts; superstep commit with state hash |
 | Result | `RunResult`, `Snapshot` | series per `atom.port` / `atom.state.var`, events, KPIs, snapshots, export as v2 episodes |
 | Modes | `Twin` | `shadow`, `whatIf` (baseline vs. alternative log), `forecast` (from a snapshot, policies replaceable) |
 
@@ -74,9 +74,9 @@ feedback cycle of the plan (strongly connected component) in one processor.
   the design rule (cycles in one processor, BSP between processors) are in
   [TWIN-COUPLING-SPEC §11](../docs/datamodel-2026/TWIN-COUPLING-SPEC.md#11-coupling-results-and-design-rule).
 
-### Topic contract as Avro
+### Message contract as Avro
 
-`twin/avro/` holds the Avro schemas of the topic contract, generated from the atom catalog by `AtomSchemas`
+`twin/avro/` holds the Avro schemas of the message contract, generated from the atom catalog by `AtomSchemas`
 (`bin/opentsx twin-schemas` regenerates them; a test fails if the checked-in files are stale):
 
 * envelopes `PortMessage`, `Barrier`, `Intervention` (namespace `org.opentsx.twin.v1`);
@@ -88,6 +88,10 @@ feedback cycle of the plan (strongly connected component) in one processor.
 Every atom of the three scenarios round-trips through these schemas (Java test), and Python reads them with
 fastavro (`python-package/tests/test_twin_schemas.py`). They are the basis for running variant L processors in other
 languages and for snapshots in Iceberg.
+
+No code writes these records to a topic, and the schemas name no topic. The only topic a twin run writes is the
+event topic of [`opentsx-twin-live`](../opentsx-twin-live/README.md#topic-contract). An applied intervention appears
+there only as an event of type `intervention`.
 
 ### Origin propagation
 

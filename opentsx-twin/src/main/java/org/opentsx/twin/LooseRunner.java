@@ -15,7 +15,7 @@ import java.util.TreeMap;
 
 /**
  * Execution variant L: every atom is its own processor with its own superstep clock, coupled only through port
- * messages (the {@link PortMessage} topic contract). There is no global barrier. An atom may step as soon as each
+ * messages (the {@link PortMessage} message contract). There is no global barrier. An atom may step as soon as each
  * wired input has a <em>visible</em> upstream value that is at most {@code staleness} supersteps older than the one
  * variant T would use:
  *
