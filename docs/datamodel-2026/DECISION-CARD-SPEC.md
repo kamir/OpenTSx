@@ -72,7 +72,7 @@ them.
   an analysis of the card.
 
 Implemented in: `system.v1:106-112`, `SystemDoc.java:233-242`, `SystemDoc.java:356-371`,
-`SystemDocTest.java:407-430`.
+`SystemDocTest.java:413-436`.
 
 <a id="12-fields-of-a-card"></a>
 
@@ -154,7 +154,7 @@ Implemented in: `decision.v1:309-416`, `Decisions.java:158-215`.
 * An alternative SHOULD name an analysis of its card in `analysis`. The build checks this for the example card. At
   run time an alternative that names no analysis of its card has the status `blocked`.
 
-Implemented in: `decision.v1:201-244`, `Decisions.java:95-100`, `SystemDocTest.java:427-431`.
+Implemented in: `decision.v1:201-244`, `Decisions.java:95-100`, `SystemDocTest.java:433-437`.
 
 <a id="2-decision-status"></a>
 
@@ -297,7 +297,7 @@ run time. The build validates the four records of the example file against the s
 `follows` is the `id` of the record before it, and checks that no approval or action follows a recommendation in
 shadow operation ([section 3.3](#33-chain-revision-and-shadow-operation)).
 
-Implemented in: `decision-record.v1:1-375`, `SystemDocTest.java:432-441`, `SystemDocTest.java:444-454`.
+Implemented in: `decision-record.v1:1-375`, `SystemDocTest.java:438-447`, `SystemDocTest.java:450-460`.
 
 <a id="31-kinds"></a>
 
@@ -369,7 +369,7 @@ Implemented in: `decision-record.v1:28-301`, `decision-record.v1:369-374`.
   recommendation has no `shadow`, and an approval, an action and an outcome follow it.
 
 Implemented in: `decision-record.v1:60-75`, `decision-record.v1:153-178`, `decision-record.v1:264-300`,
-`SystemDocTest.java:432-441`, `SystemDocTest.java:444-454`, `SystemDocTest.java:456-471`.
+`SystemDocTest.java:438-447`, `SystemDocTest.java:450-460`, `SystemDocTest.java:462-477`.
 
 <a id="4-signal-role-meaning-and-ranges"></a>
 
@@ -397,7 +397,7 @@ The same unit does not mean the same quantity. `role` says what kind of quantity
 * The server returns `role` and `meaning` per signal in `opentsx.signal-status.v1`.
 
 Implemented in: `system.v1:188-197`, `SystemDoc.java:42`, `SystemDoc.java:395-398`, `Systems.java:228-229`,
-`SystemDocTest.java:363-367`, `SystemDocTest.java:395`, `SystemsTest.java:100-102`.
+`SystemDocTest.java:369-373`, `SystemDocTest.java:401`, `SystemsTest.java:100-102`.
 
 <a id="42-confirm-the-meaning-of-a-binding"></a>
 
@@ -472,7 +472,7 @@ Implemented in: `WindPark.java:13-23`, `WindPark.java:49-59`, `WindPark.java:61-
 `h2-chain.yaml:26-28`, `h2-chain.yaml:55-56`, `h2-chain.system.yaml:116-136`,
 [`systems/flows/park-power.flow.yaml`](../../systems/flows/park-power.flow.yaml),
 [`systems/flows/park-potential.flow.yaml`](../../systems/flows/park-potential.flow.yaml),
-`SystemDocTest.java:365-367`, `SystemsTest.java:100-102`, `SystemsTest.java:104-109`.
+`SystemDocTest.java:371-373`, `SystemsTest.java:100-102`, `SystemsTest.java:104-109`.
 
 <a id="6-demo-generators-and-scenario-models"></a>
 

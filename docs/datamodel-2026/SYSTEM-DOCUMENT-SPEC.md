@@ -158,7 +158,7 @@ Implemented in: `Systems.java:399-420`, `Origin.java:7-28`; tests `SystemsTest.j
   `systems/h2-chain.system.yaml` with no problems.
 
 Implemented in: `Systems.java:57-70`, `SystemDoc.java:188-258,356-371`, `RetrievalServer.java:639-646`,
-`SystemDocTest.java:58-68,345-347`.
+`SystemDocTest.java:58-68,351-353`.
 
 <a id="s22-top-level-fields"></a>
 
@@ -270,7 +270,7 @@ Implemented in: `SystemDoc.java:200-258,262-371,375-601`, `Generators.java:57-63
 * A working copy ([section 7](#s7-working-copy)) does not change the hash.
 * Generated episodes carry the hash as label `systemHash` ([section 4.2](#s42-generated-series)).
 
-Implemented in: `SystemDoc.java:183-186,220-233,369`; test `SystemDocTest.java:474`.
+Implemented in: `SystemDoc.java:183-186,220-233,369`; test `SystemDocTest.java:480`.
 
 <a id="s27-example"></a>
 
@@ -403,7 +403,7 @@ Rules:
 | `gen.sine` | `mean`, `amplitude` | `period` (ISO-8601 duration), default `P1D`; `phase` (share of the period), default 0; `sigma`, default 0 | `period` above zero and at most `PT2562047H47M16.854775807S` (about 292 years); `sigma` not below 0 |
 
 Implemented in: `Systems.java:119-153,161-164`, `Generators.java:36-42,57-71,79-159,176-216`; tests
-`SystemsTest.java:461-477`, `SystemDocTest.java:508-518`, `GeneratorsTest.java:117-118`.
+`SystemsTest.java:481-497`, `SystemDocTest.java:508-518`, `GeneratorsTest.java:117-118`.
 
 <a id="s43-clean-and-feature-series"></a>
 
