@@ -699,7 +699,8 @@ run the signature and conformance checks before the first fetch.
 `tsx.<domain>.dag-status.v1` on each state change and at least every 30 s. Track A repeats every 30 s
 (`TsxStatus.java:92`), the Rust `run` profile every 15 s (`run_loop.rs:20`). The Kafka key is the job id
 (`TsxStatus.java:79`, `run_loop.rs:310`). Site agents of both tracks send the same record to the plan service
-instead (S5.3; `SiteStatus.java:76-83`, `agent.rs:967`).
+instead (S5.3; `SiteStatus.java:76-83`, `agent.rs:1107`). A Rust site agent in the `orbit` profile buffers records
+it cannot send and delivers them in order at the next contact (S5.4).
 
 A job record has the processor fields `dag`, `state`, `specHash`, `records`, `watermark`, `waitingFor`,
 `skippedBlocks`, `error` and `at`, plus `job`, `planVersion` and `track` (S5.4). `dag` equals `job`. The Rust runner

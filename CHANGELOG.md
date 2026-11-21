@@ -92,6 +92,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `tsx-runner` site configuration field `profile` (`ground` or `orbit`). In the `orbit` profile `agent` and
+  `run --plan` keep a plan running when a status record cannot reach the plan service: the record goes to a durable
+  outbox in the state directory, bounded to 5,760 records, and buffered records are sent oldest first before newer
+  and terminal records. A full outbox stops the plan. The `ground` profile, also used without the field, still
+  stops a plan when a heartbeat fails.
 - The workbench Deployments panel lists the `jobs` of `GET /v1/dags` apart from the deployments: job id, track, site
   when present, state, input record count and report age. A job in any state but `stopped` or `failed` without a
   report for 120 s is flagged. Jobs have no Stop, because Track A and B do not read the control topic.
