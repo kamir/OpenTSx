@@ -54,7 +54,8 @@
     three colours, what the document assumes about the plant, and a link to the Smart Topics Studio (`/studio/`).
     "Simulate": ask the twin what happens when a decision changes (a control set at a time, a policy, a forecast
     from a time on); the answer is a run shown next to the reference, with the difference in every KPI, and it
-    says how far it may be trusted. The
+    says how far it may be trusted. When an input of either run is generated, no difference is marked better or
+    worse, and the reason stands above the table. The
     switch "Guide" shows the seven steps of the method of [chapter 16](16-engineering-method.md) with the state of
     the system in each. The data comes from the retrieval server (`GET /v1/systems`).
   * the earlier visual flow builder (`/flow-builder`); its flows cannot be opened in the workbench.

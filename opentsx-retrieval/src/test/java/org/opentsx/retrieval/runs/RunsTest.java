@@ -174,6 +174,11 @@ class RunsTest {
 
     /** As {@link #signalsOfTheNight()}, with the origin the series of the potential names. */
     static SignalInputs.Source signalsOfTheNight(String potentialData) {
+        return signalsOfTheNight(potentialData, true);
+    }
+
+    /** As {@link #signalsOfTheNight(String)}; without {@code demandGenerated} the demand is a reported series, not a demo generator. */
+    static SignalInputs.Source signalsOfTheNight(String potentialData, boolean demandGenerated) {
         long t0 = java.time.Instant.parse("2025-10-01T00:00:00Z").toEpochMilli() * 1000;
         long min = 60_000_000L;
         org.opentsx.model.v2.SeriesKey price = org.opentsx.model.SeriesKeys.of("market.price.day_ahead", java.util.Map.of("area", "DE-LU"), "EUR/MWh");
@@ -191,14 +196,16 @@ class RunsTest {
                 org.opentsx.model.Episodes.regular(price, t0, 15 * min, p).source("t").build(),
                 org.opentsx.model.Episodes.regular(wind, t0, 10 * min, w).source("t").build(),
                 org.opentsx.model.Episodes.regular(demand, t0, min, d).source("t").build());
+        String demandOrigin = demandGenerated ? "SYNTHETIC" : "REPORTED";
         String status = """
                 {"signals":[
                  {"id":"market.price_eur_mwh","origin":"REPORTED","grades":{"raw":{"source":{"kind":"topic"},"data":{"series":["%s"],"intervalMicros":900000000,"origin":"REPORTED"}}}},
                  {"id":"park.p_potential_kw","origin":"ESTIMATED","grades":{"clean":{"source":{"kind":"flow"},"data":{"series":["%s"],"intervalMicros":600000000,"origin":"%s","madeOf":"park/DWD-01759/wind_speed@clean (MEASURED)"}}}},
-                 {"id":"offtake.demand_kgph","origin":"SYNTHETIC","grades":{"raw":{"source":{"kind":"generator"},"data":{"series":["%s"],"intervalMicros":60000000,"origin":"SYNTHETIC","fidelity":"demo"}}}},
+                 {"id":"offtake.demand_kgph","origin":"%s","grades":{"raw":{"source":{"kind":"%s"},"data":{"series":["%s"],"intervalMicros":60000000,"origin":"%s"%s}}}},
                  {"id":"ely.setpoint_kw","origin":"REPORTED","grades":{"raw":{"source":{"kind":"manual","value":5000,"origin":"REPORTED"}}}},
                  {"id":"marketer.schedule_kw","grades":{}}
-                ]}""".formatted(price.getSeriesId(), wind.getSeriesId(), potentialData, demand.getSeriesId());
+                ]}""".formatted(price.getSeriesId(), wind.getSeriesId(), potentialData,
+                demandOrigin, demandGenerated ? "generator" : "topic", demand.getSeriesId(), demandOrigin, demandGenerated ? ",\"fidelity\":\"demo\"" : "");
         return new SignalInputs.Source() {
             @Override
             public JsonNode signals(String system, JsonNode bindings) {
@@ -262,6 +269,43 @@ class RunsTest {
             potential = in.path("port").asText().equals("park.p_potential_kw") ? in : potential;
         }
         assertEquals("FORECAST", potential.path("origin").asText());
+    }
+
+    @Test
+    void whatRestsOnADemoGeneratorIsNotRanked() throws Exception {
+        String reopen = """
+                {"inputs": "signals", "interventions": [{"at": "02:00", "atom": "handover", "control": "valve", "value": 1}]}""";
+        Runs runs = Runs.standard();
+        runs.signals(signalsOfTheNight());
+        JsonNode run = runs.run("h2-chain", body(reopen));
+        JsonNode c = runs.compare("h2-chain", run.path("run").asText(), run.path("baseline").asText());
+        assertEquals(10, c.path("kpis").size());
+        for (JsonNode k : c.path("kpis")) {
+            assertTrue(k.has("delta"), k.toString());
+            assertFalse(k.has("verdict"), k.toString());
+        }
+        assertEquals(70.0, kpi(c, "handover.delivered_kg").path("delta").asDouble(), 1e-9, "the difference stays: it shows the mechanism");
+        assertEquals("[\"generated, not measured: offtake.demand_kgph; no KPI is ranked better or worse\"]", c.path("reasons").toString());
+        // one generated side is enough: a run on the signals against one on the invented inputs of the scenario, either way
+        String scenarioRun = runs.run("h2-chain", body("""
+                {"interventions": [{"at": "02:00", "atom": "handover", "control": "valve", "value": 1}]}""")).path("run").asText();
+        assertFalse(kpi(runs.compare("h2-chain", run.path("run").asText(), runs.reference("h2-chain")), "ely.trips").has("verdict"));
+        assertFalse(kpi(runs.compare("h2-chain", scenarioRun, run.path("baseline").asText()), "ely.trips").has("verdict"));
+        assertEquals("better", kpi(runs.compare("h2-chain", scenarioRun, runs.reference("h2-chain")), "ely.trips").path("verdict").asText());
+
+        // the same night with a reported demand is ranked
+        Runs reported = Runs.standard();
+        reported.signals(signalsOfTheNight("ESTIMATED", false));
+        JsonNode control = reported.run("h2-chain", body(reopen));
+        JsonNode r = reported.compare("h2-chain", control.path("run").asText(), control.path("baseline").asText());
+        assertEquals(10, r.path("kpis").size());
+        for (JsonNode k : r.path("kpis")) {
+            assertTrue(k.has("verdict"), k.toString());
+        }
+        assertEquals("better", kpi(r, "handover.delivered_kg").path("verdict").asText());
+        assertEquals("better", kpi(r, "handover.shortfall_kg").path("verdict").asText());
+        assertEquals("worse", kpi(r, "buffer.p_max_bar").path("verdict").asText());
+        assertEquals(0, r.path("reasons").size());
     }
 
     @Test

@@ -360,17 +360,14 @@ public final class Runs {
         ArrayNode reasons = status.putArray("reasons");
         if (k.inputs() != null) {
             o.put("inputsFrom", "signals");
-            List<String> generated = new ArrayList<>();
             for (ObjectNode in : k.inputs()) {
                 inputs.add(in);
-                if ("SYNTHETIC".equals(in.path("origin").asText())) {
-                    generated.add(in.path("port").asText());
-                }
                 if (in.path("coverage").asDouble(1) < 1) {
                     reasons.add(String.format(Locale.ROOT, "%s covers %.0f %% of the run; where it is missing the atom uses its default",
                             in.path("port").asText(), 100 * in.path("coverage").asDouble()));
                 }
             }
+            List<String> generated = generated(k);
             if (!generated.isEmpty()) {
                 reasons.add("generated, not measured: " + String.join(", ", generated) + "; the run shows the mechanism, not an effect");
             }
@@ -456,11 +453,13 @@ public final class Runs {
     /**
      * Two runs next to each other: the KPIs of the scenario with their difference (the run minus the base), and the
      * series the scenario compares. Both runs have the same plan and the same inputs; they differ in the decisions.
+     * When an input of either run is generated, no KPI gets a verdict, and {@code reasons} names those inputs.
      */
     public synchronized JsonNode compare(String system, String run, String base) {
         Kept a = find(system, run);
         Kept b = find(system, base);
         StudioScenario s = scenarios.get(system);
+        List<String> generated = generated(b, a);
         ObjectNode o = JSON.objectNode();
         o.put("schema", "opentsx.run-compare.v1");
         o.put("system", system);
@@ -468,6 +467,10 @@ public final class Runs {
         head(left, system, b);
         ObjectNode right = o.putObject("run");
         head(right, system, a);
+        ArrayNode reasons = o.putArray("reasons");
+        if (!generated.isEmpty()) {
+            reasons.add("generated, not measured: " + String.join(", ", generated) + "; no KPI is ranked better or worse");
+        }
         ArrayNode kpis = o.putArray("kpis");
         for (StudioScenario.Kpi k : s.kpis()) {
             Double vb = b.result().kpis().get(k.key());
@@ -478,9 +481,11 @@ public final class Runs {
             ObjectNode row = kpis.addObject();
             row.put("key", k.key()).put("label", k.label()).put("unit", k.unit()).put("decimals", k.decimals()).put("better", k.better());
             row.put("base", vb).put("run", va).put("delta", va - vb);
-            // better, worse or the same, by the direction the scenario gives the KPI
-            double d = (va - vb) * k.better();
-            row.put("verdict", Math.abs(va - vb) < 1e-9 || k.better() == 0 ? "same" : d > 0 ? "better" : "worse");
+            if (generated.isEmpty()) {
+                // better, worse or the same, by the direction the scenario gives the KPI
+                double d = (va - vb) * k.better();
+                row.put("verdict", Math.abs(va - vb) < 1e-9 || k.better() == 0 ? "same" : d > 0 ? "better" : "worse");
+            }
         }
         ArrayNode ends = o.putArray("endStocks");
         // what is left in the stores at the end: a run must not look better because it emptied them
@@ -501,6 +506,23 @@ public final class Runs {
             s.limits().getOrDefault(key, List.of()).forEach(l -> limits.addObject().put("label", l.label()).put("value", l.value()));
         }
         return o;
+    }
+
+    /** The ports whose input has the origin SYNTHETIC in any of the runs, each once; a run on the scenario has none. */
+    private static List<String> generated(Kept... runs) {
+        List<String> out = new ArrayList<>();
+        for (Kept k : runs) {
+            if (k.inputs() == null) {
+                continue;
+            }
+            for (ObjectNode in : k.inputs()) {
+                String port = in.path("port").asText();
+                if ("SYNTHETIC".equals(in.path("origin").asText()) && !out.contains(port)) {
+                    out.add(port);
+                }
+            }
+        }
+        return out;
     }
 
     /** A series over the whole horizon of the plan; the steps before a forecast begins are empty. */
