@@ -21,10 +21,10 @@ Checks the files `git ls-files` lists under root:
   * when root holds the private deny list config/private/denylist.txt (git-ignored; one word per line, blank lines
     and lines that start with # skipped, words that differ only in letter case counted once): no tracked path and no
     line of a tracked text file holds one of its words, in any letter case, as a whole word, that is, not next to a
-    letter or digit; a text file that is not valid UTF-8 is also searched in its cp1252 decoding. A deny list that
-    cannot be read is one finding, and so is a link on its path that points to nothing and a word that holds a
-    control or format character (Unicode category Cc or Cf), as in a list saved as UTF-16 without a byte order mark
-    or with a byte order mark inside. Without the file these checks do not run.
+    letter or digit; a line that is not valid UTF-8 is also searched in its cp1252 decoding. A deny list that cannot
+    be read is one finding, and so is a link on its path that points to nothing and a word that holds a control or
+    format character (Unicode category Cc or Cf), as in a list saved as UTF-16 without a byte order mark or with a
+    byte order mark inside. Without the file these checks do not run.
 
 A tracked symbolic link is checked by its text, which is what git publishes; the file it points to is not read. A
 tracked file below a directory that the working tree replaced by a symbolic link is not read either: git shows it as
@@ -92,9 +92,10 @@ class UnreadableModules(Exception):
 
 
 def submodule_paths(root: pathlib.Path) -> tuple[str, set[str]]:
-    location = subprocess.run(["git", "-C", str(root), "rev-parse", "--show-toplevel", "--show-prefix"],
-                              capture_output=True, check=True)
-    top, prefix = location.stdout.decode("utf-8", "surrogateescape").split("\n")[:2]
+    # git ends each answer with a newline that a folder name may also hold, so one call per answer.
+    top, prefix = (subprocess.run(["git", "-C", str(root), "rev-parse", option], capture_output=True, check=True)
+                   .stdout.decode("utf-8", "surrogateescape").removesuffix("\n")
+                   for option in ("--show-toplevel", "--show-prefix"))
     if not (pathlib.Path(top) / ".gitmodules").is_file():
         return prefix, set()
     command = ["git", "-C", top, "config", "-z", "-f", ".gitmodules", "--get-regexp", r"^submodule\..*\.path$"]
@@ -256,10 +257,15 @@ def check(root: pathlib.Path, paths: list[str]) -> list[str]:
             continue
         if b"\0" in data:
             continue
+        legacy = {}
         try:
-            text, legacy = data.decode("utf-8"), []
+            text = data.decode("utf-8")
         except UnicodeDecodeError:
-            text, legacy = data.decode("utf-8", errors="replace"), data.decode("cp1252", errors="replace").splitlines()
+            text = data.decode("utf-8", errors="replace")
+            # Neither U+FFFD nor an escaped byte is a line break, so these lines are the lines of text.
+            legacy = {number: line.encode("utf-8", "surrogateescape").decode("cp1252", errors="replace")
+                      for number, line in enumerate(data.decode("utf-8", "surrogateescape").splitlines(), 1)
+                      if not utf8(line)}
         if is_config(path):
             findings.extend(config_findings(path, text))
         for number, line in enumerate(text.splitlines(), 1):
@@ -274,7 +280,7 @@ def check(root: pathlib.Path, paths: list[str]) -> list[str]:
                 if home.group(1) not in SERVICE_HOMES:
                     findings.append(f"{path}:{number}: \"{home.group(0)}\" is a personal home path; "
                                     "use $HOME or a placeholder such as <home>")
-            other = [legacy[number - 1]] if number <= len(legacy) else []
+            other = [legacy[number]] if number in legacy else []
             for word in denied_words(combined, denied, line, *other):
                 findings.append(f"{path}:{number}: {word}: a word of the private deny list; "
                                 "remove it or write a placeholder")

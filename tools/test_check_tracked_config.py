@@ -479,6 +479,22 @@ def test_a_repository_in_a_directory_whose_name_is_not_valid_utf8_is_checked(tmp
         "checked 2 tracked files, 2 findings"]
 
 
+def test_a_repository_or_a_root_whose_folder_name_holds_a_newline_reads_its_submodule_entries(tmp_path):
+    entry = '[submodule "s"]\n\tpath = dir/sub\n\turl = https://example.com/s.git\n'
+    repository = gitlink_repository(tmp_path / "repo\nsitory", entry)
+    result = run_guard(repository)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.splitlines() == ["checked 2 tracked files, 0 findings"]
+    folder = repository / "d\nx"
+    folder.mkdir()
+    git(repository, "config", "-f", ".gitmodules", "submodule.k.path", "d\nx/known")
+    git(repository, "add", ".gitmodules")
+    git(repository, "update-index", "--add", "--cacheinfo", f"160000,{'1' * 40},d\nx/known")
+    result = run_guard(folder)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.splitlines() == ["checked 1 tracked files, 0 findings"]
+
+
 def test_a_gitlink_below_a_root_whose_folder_name_is_not_valid_utf8_is_named_as_git_shows_it(tmp_path):
     repository, folder = tmp_path / "repository", os.fsdecode(b"d\xe9")
     subprocess.run(["git", "init", "-q", str(repository)], check=True, env=git_environment())
@@ -537,6 +553,24 @@ def test_a_text_file_that_is_not_utf8_is_also_searched_in_its_cp1252_decoding(tm
     (tmp_path / "docs" / "stations.txt").write_bytes(b"caf\xe9\x85 first\nthe ZZQ\xdcWORD tool\nzzqword \xe9\n")
     assert guard.check(tmp_path, ["docs/stations.txt"]) == [
         f"docs/stations.txt:2: zzqüword: {DENIED}", f"docs/stations.txt:3: zzqword: {DENIED}"]
+
+
+def test_only_the_lines_that_are_not_utf8_are_also_searched_in_their_cp1252_decoding(tmp_path):
+    write(tmp_path, {"config/private/denylist.txt": "zzqüword\nzzqword\n"})
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "mixed.txt").write_bytes(
+        "äzzqword, cafézzqword and \u53f8zzqword\n".encode("utf-8") + b"stray \x80 byte\nthe ZZQ\xdcWORD tool\n")
+    assert guard.check(tmp_path, ["docs/mixed.txt"]) == [f"docs/mixed.txt:3: zzqüword: {DENIED}"]
+
+
+def test_a_line_break_that_cp1252_does_not_know_keeps_each_finding_once_at_its_line(tmp_path):
+    write(tmp_path, {"config/private/denylist.txt": "zzqüword\nzzqword\n"})
+    (tmp_path / "docs").mkdir()
+    for separator in ("\u2028", "\u2029", "\u0085"):
+        (tmp_path / "docs" / "a.txt").write_bytes(f"a{separator}b\n".encode("utf-8")
+                                                  + b"zzqword \xe9\nthe ZZQ\xdcWORD tool\n")
+        assert guard.check(tmp_path, ["docs/a.txt"]) == [
+            f"docs/a.txt:3: zzqword: {DENIED}", f"docs/a.txt:4: zzqüword: {DENIED}"], repr(separator)
 
 
 def test_deny_words_that_differ_only_in_letter_case_give_one_finding(tmp_path):

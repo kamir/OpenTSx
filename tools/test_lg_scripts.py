@@ -26,7 +26,7 @@ SUBSTITUTION = r"\$\([^()]*\)|`[^`()]*\)"
 WORD_PIECE = rf"(?:{SUBSTITUTION}|(?!{SUBSTITUTION})\S)"
 VALUE_PIECE = rf"(?:{SUBSTITUTION}|(?!{SUBSTITUTION})[^\s;&|()<>])"
 DOCKER_GLOBAL = (r"(?:(?:--(?:config|context|host|log-level|tlscacert|tlscert|tlskey)|-[cHl])(?:=|\s+)" + WORD_PIECE
-                 + r"+|(?:--(?:debug|tls|tlsverify)|-D)(?=\s))\s+")
+                 + r"+\s+|(?:--(?:debug|tls|tlsverify)|-D)(?:\s+|(?=[<>]|&>)))")
 DOCKER_INFO = {"-v", "--version", "-h", "--help"}
 CASE_ARM = r"\(?(?:" + SUBSTITUTION + r"|[^\s;&|()`])+\)\s*"
 NUMBER = r"[0-9][0-9.]*[smhd]?"
@@ -52,16 +52,17 @@ COMMAND_WORD = (r"(?:(?:^|(?<=[;{])|(?<=&)(?<![<>]&)|(?<=\|)(?<!>\|)|(?<=\sin\s)
                 + r"+(?:\s+(?!-|(?:" + NUMBER + "|" + KEYWORD + r")\s|" + ASSIGNMENT + r")" + VALUE_PIECE + r"+)?|"
                 + NUMBER + r"|(?!timeout\s)" + KEYWORD + r")\s+)*")
 REDIRECTION = r"(?:(?<!\S)[0-9]+)?(?:&>>?|[<>]&|>>|>\||<<<?|<>|[<>])"
+REDIRECTIONS = r"(?:" + REDIRECTION + r"\s*" + VALUE_PIECE + r"+)+"
 SUBCOMMAND_END = r"(?=\s|[<>]|&>|$)"
-CONNECTOR_GAP = r"(?:\s+|(?=[<>]|&>))(?:" + REDIRECTION + r"\s*" + VALUE_PIECE + r"+\s+)*"
+CONNECTOR_GAP = r"(?:\s+|(?=[<>]|&>))(?:" + REDIRECTIONS + r"\s+)*"
 INSTALL = re.compile(COMMAND_WORD + r"(?:[^\s;&|()<>]*/)?(?P<tool>docker(?:\s+|(?=[<>]|&>))(?:" + DOCKER_GLOBAL + "|"
-                     + REDIRECTION + r"\s*" + VALUE_PIECE + r"+\s+)*(?P<word>" + VALUE_PIECE
+                     + REDIRECTIONS + r"\s+)*(?P<word>" + VALUE_PIECE
                      + r"+)|confluent-hub" + CONNECTOR_GAP + "install" + SUBCOMMAND_END + "|confluent" + CONNECTOR_GAP
                      + "connect" + CONNECTOR_GAP + "plugin" + CONNECTOR_GAP + "install" + SUBCOMMAND_END + ")")
 DOCKER_INSTALL = r"(?:(?:container\s+)?(?:run|create)|(?:image\s+)?pull)" + SUBCOMMAND_END
 SUBCOMMAND = re.compile(DOCKER_INSTALL)
 OPTIONS_BEFORE_SUBCOMMAND = re.compile(r"(?:(?:-[^\s=]+(?:=\S*|(?:\s+(?!" + REDIRECTION + r")[^\s-]\S*)?)|"
-                                       + REDIRECTION + r"\s*" + VALUE_PIECE + r"+)\s+)+" + DOCKER_INSTALL)
+                                       + REDIRECTIONS + r")\s+)+" + DOCKER_INSTALL)
 ARGUMENT_PIECE = re.compile(r"(?P<redirection>" + REDIRECTION + r"\s*" + VALUE_PIECE + r"*)|" + SUBSTITUTION + r"|.",
                             re.S)
 LITERAL = re.compile(r"[\w.-]+")
@@ -77,7 +78,7 @@ WRAPPER_VALUE_OPTIONS = {
     "env": {"-C", "-u", "--chdir", "--unset"},
     "nice": {"-n", "--adjustment"},
     "ionice": {"-c", "-n", "-P", "-p", "-u", "--class", "--classdata", "--pgid", "--pid", "--uid"},
-    "timeout": {"-k", "-s"} | TIMEOUT_LONG_VALUE_OPTIONS,
+    "timeout": TIMEOUT_LONG_VALUE_OPTIONS,
     "xargs": {"-a", "-d", "-E", "-I", "-L", "-n", "-P", "-s", "--arg-file", "--delimiter", "--max-args",
               "--max-procs", "--process-slot-var", "--max-chars"},
     "exec": {"-a"},
@@ -258,6 +259,8 @@ def takes_the_next_word(prefix: str) -> bool:
             wrapper = None
         elif word.startswith("--"):
             value = word in WRAPPER_VALUE_OPTIONS[wrapper]
+        elif wrapper == "timeout":
+            value = re.fullmatch(TIMEOUT_VALUE_OPTION, word) is not None
         else:
             for end, letter in enumerate(word[1:], 2):
                 if "-" + letter in WRAPPER_VALUE_OPTIONS[wrapper]:
@@ -726,6 +729,57 @@ def test_a_redirection_between_docker_and_its_subcommand_stands_where_a_global_o
     ]
 
 
+def test_redirections_in_a_row_between_docker_and_its_subcommand_are_read(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "docker 2>&1>/dev/null pull toke/mosquitto\n"
+        "docker 2>/dev/null>log pull toke/mosquitto\n"
+        "docker>/dev/null<&- pull toke/mosquitto\n"
+        "docker --context x 2>&1>/dev/null<<<x container run toke/mosquitto\n"
+        "docker --foo 2>&1>/dev/null pull img:1.2.3\n"
+        "docker 2>&1>/dev/null pull img:1.2.3\n"
+        "docker 2>&1>/dev/null info\n"
+        "confluent-hub 2>&1>/dev/null install a/b:latest\n"
+        "confluent-hub>/dev/null<&- install a/b:latest\n"
+        "confluent 2>&1>/dev/null connect plugin install a/b:latest\n"
+        "confluent connect>log<&- plugin 2>&1>>log install a/b:latest\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    unknown = "unknown docker option before the subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:2: toke/mosquitto: {rest}",
+        f"run.sh:3: toke/mosquitto: {rest}",
+        f"run.sh:4: toke/mosquitto: {rest}",
+        f"run.sh:5: toke/mosquitto: {rest}",
+        f"run.sh:6: --foo: {unknown}",
+        f"run.sh:9: a/b:latest: {rest}",
+        f"run.sh:10: a/b:latest: {rest}",
+        f"run.sh:11: a/b:latest: {rest}",
+        f"run.sh:12: a/b:latest: {rest}",
+    ]
+
+
+def test_a_redirection_right_after_a_known_docker_flag_ends_the_flag(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "docker --debug>/dev/null pull img:1.2.3\n"
+        "docker -D>/dev/null pull img:1.2.3\n"
+        "docker --tls>>log pull img:1.2.3\n"
+        "docker --tlsverify<<<x pull img:1.2.3\n"
+        "docker -D&>log 2>&1 pull img:1.2.3\n"
+        "docker --debug>&2 pull toke/mosquitto\n"
+        "docker --tls>log --context x pull toke/mosquitto\n"
+        "docker --debug2>/dev/null pull img:1.2.3\n"
+        "docker --tlsverify=true>log pull img:1.2.3\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    unknown = "unknown docker option before the subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:7: toke/mosquitto: {rest}",
+        f"run.sh:8: toke/mosquitto: {rest}",
+        f"run.sh:9: --debug2: {unknown}",
+        f"run.sh:10: --tlsverify=true: {unknown}",
+    ]
+
+
 def test_a_redirection_between_the_words_of_a_connector_install_is_no_argument(tmp_path):
     (tmp_path / "run.sh").write_text(
         "#!/usr/bin/env bash\n"
@@ -926,6 +980,28 @@ def test_timeout_reads_bundled_and_abbreviated_options_as_timeout_does(tmp_path)
     ]
 
 
+def test_a_docker_that_timeout_reads_as_its_duration_or_after_an_option_timeout_refuses_is_read(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "timeout -k 5 docker pull toke/mosquitto\n"
+        "timeout --kill 5 docker pull toke/mosquitto\n"
+        "timeout -k 5 5 docker pull toke/mosquitto\n"
+        "timeout -xk docker pull toke/mosquitto\n"
+        "timeout -vxs docker pull toke/mosquitto\n"
+        "timeout -kx docker pull toke/mosquitto\n"
+        "timeout -vk docker pull x\n"
+        "timeout -fpvs docker pull x\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:2: toke/mosquitto: {rest}",
+        f"run.sh:3: toke/mosquitto: {rest}",
+        f"run.sh:4: toke/mosquitto: {rest}",
+        f"run.sh:5: toke/mosquitto: {rest}",
+        f"run.sh:6: toke/mosquitto: {rest}",
+        f"run.sh:7: toke/mosquitto: {rest}",
+    ]
+
+
 def test_a_clobber_redirection_is_no_separator(tmp_path):
     (tmp_path / "run.sh").write_text(
         "#!/usr/bin/env bash\n"
@@ -945,12 +1021,16 @@ def test_a_clobber_redirection_is_no_separator(tmp_path):
 
 
 def test_option_and_number_words_without_a_command_word_are_read_once(tmp_path):
+    timeouts = ["timeout -k $(cat t) " * 40, "timeout -k $T " * 40, "timeout $Ts " * 40, "timeout -k $T -s $T " * 40,
+                'timeout -k "a" -s "b" ' * 40, "timeout -k $(a) -s $(b) " * 40, "timeout " + "-k timeout " * 40,
+                "timeout -vk $T --sig $(a) " * 40]
+    # The docker at the end is the signal of the last timeout. A regex that reads a word of a timeout a second time,
+    # in a backtracking or quadratic reading, finds it as a command word at once.
+    assert [line for line in timeouts if INSTALL.search(line + "timeout -s docker pull toke/mosquitto")] == []
     (tmp_path / "run.sh").write_text(
         "#!/usr/bin/env bash\nnice " + "-n 5 " * 40 + "foo\nsudo " + "-u env " * 40 + "foo\n"
-        + "timeout -k $(cat t) " * 40 + "foo\n" + "timeout -k $T " * 40 + "foo\n" + "X=$(a | b; c && d) " * 40
-        + "foo\n" + "$(a " * 40 + "foo\n" + "timeout $Ts " * 40 + "foo\n" + "timeout -k $T -s $T " * 40 + "foo\n"
-        + 'timeout -k "a" -s "b" ' * 40 + "foo\n" + "timeout -k $(a) -s $(b) " * 40 + "foo\n"
-        + "timeout " + "-k timeout " * 40 + "foo\n" + "timeout -vk $T --sig $(a) " * 40 + "foo\n", encoding="utf-8")
+        + "X=$(a | b; c && d) " * 40 + "foo\n" + "$(a " * 40 + "foo\n" + "".join(line + "foo\n" for line in timeouts),
+        encoding="utf-8")
     assert image_problems(tmp_path, "run.sh") == []
     reading = INSTALL.search("timeout -k timeout -s timeout docker pull toke/mosquitto")
     assert reading.group("timeout") == "timeout -k timeout -s timeout"

@@ -242,12 +242,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   word per line, blank lines and `#` lines skipped). It fails on every tracked path and every line of a tracked text
   file that holds one of its words, in any letter case and as a whole word. The messages are `<path>:<line>: <word>: a
   word of the private deny list; remove it or write a placeholder` and `<path>: <word>: a word of the private deny
-  list in the path; rename the file`. A deny list it cannot read, a link on its path that points to nothing, or a
-  word that holds a control or format character (a list saved as UTF-16 without a byte order mark, or a byte order
-  mark inside the list) gives `config/private/denylist.txt: cannot read it (<cause>); fix the file or remove it`.
-  Words that differ only in letter case count once, a text file that is not valid UTF-8 is also searched in its
-  cp1252 decoding, and a tracked symbolic link is checked by its text. Without the file, as in CI, the guard skips
-  this check. CONTRIBUTING.md describes it.
+  list in the path; rename the file`. A deny list it cannot read, a link on its path that points to nothing, or a word
+  that holds a control or format character (a list saved as UTF-16 without a byte order mark, or a byte order mark
+  inside the list) gives `config/private/denylist.txt: cannot read it (<cause>); fix the file or remove it`. Words
+  that differ only in letter case count once, a line that is not valid UTF-8 is also searched in its cp1252 decoding,
+  and a tracked symbolic link is checked by its text. Without the file, as in CI, the guard skips this check.
+  CONTRIBUTING.md describes it.
 
 ### Changed
 
@@ -1022,6 +1022,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   intervals add up to more than 7200 hours to the log `LENGTH`, which needs `RISTool.projekt`.
 - opentsx-lg: `run_demo_docker_compose.sh` starts the ping tools with `docker compose` (the Compose plugin of Docker)
   instead of the standalone `docker-compose` binary.
+- opentsx-lg: `mqtt-generator-gist/mqttgen.py` names the `mqtt.host` rule as its IDNA check applies it: `<file>:
+  mqtt.host: <value> is not allowed; expected a non-empty JSON string, such as a host name or an IP address, of
+  dot-separated labels with an optional dot at the end, where a label of ASCII characters has 1 to 63 characters and
+  IDNA ToASCII turns any other label into 1 to 63 characters`. The text used to name only the label length, so a
+  refused host such as `"h\ud800"` broke no rule it named. The hosts it accepts are unchanged; the module README lists
+  the cases.
 
 ### Removed
 
@@ -2807,9 +2813,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   saved as UTF-16 without a byte order mark or one with a byte order mark inside, as `config/private/denylist.txt:
   cannot read it (line <n> holds the control character U+0000); fix the file or remove it` (or `the format character
   U+FEFF`). Such a list used to pass with 0 findings.
-- `tools/check_tracked_config.py` also searches a tracked text file that is not valid UTF-8 in its cp1252 decoding, so
-  a deny list word with an umlaut is found in a Latin-1 file. Deny list words that differ only in letter case give one
-  finding.
+- `tools/check_tracked_config.py` also searches a line of a tracked text file that is not valid UTF-8 in its cp1252
+  decoding, so a deny list word with an umlaut is found in a Latin-1 file. Deny list words that differ only in letter
+  case give one finding.
 - tools: `tools/test_lg_scripts.py` reads a redirection between `docker` and its subcommand like a global option, also
   one written right after `docker`, so `docker 2>/dev/null pull <image>`, `docker >log pull <image>`, `docker 2>&1
   pull <image>` and `docker>/dev/null pull <image>` give the `<image>: no exact version` finding. The check used to
@@ -2829,8 +2835,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   Its test for this no longer measures the time.
 - opentsx-lg: before it connects, `mqtt-generator-gist/mqttgen.py` refuses a `mqtt.host` with an empty label, such as
   `broker..test`, or a label of more than 63 characters with `<file>: mqtt.host: <value> is not allowed; expected a
-  host name or an IP address as a JSON string whose dot-separated labels have 1 to 63 characters`. Every refused
-  `mqtt.host` names these allowed values. Such a host used to end in a `UnicodeError` traceback at the connect.
+  non-empty JSON string, such as a host name or an IP address, of dot-separated labels with an optional dot at the
+  end, where a label of ASCII characters has 1 to 63 characters and IDNA ToASCII turns any other label into 1 to 63
+  characters`. Every refused `mqtt.host` names these allowed values. Such a host used to end in a `UnicodeError`
+  traceback at the connect.
 - `opentsx-core`: `RISTool.addDistData` counts a scaled interval below 0 in the first scaled bin, as
   `ReturnIntervallStatistik2` does. This happens only when `RISTool.offset` is below 0 and negative intervals are
   kept: with offset -5, the intervals -3 and 1 give R_q -1 and the probability 0.5 in scaled bins 0 and 15. It threw
@@ -2899,6 +2907,25 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `deploy/k3s/README.md` names `OPENTSX_ENV_FILE`, the env file the k3s scripts use instead of `deploy/k3s/.env`, and
   says how the question of `71-restore.sh` shows it: an absolute path inside the repository relative to it, an
   absolute path outside it in full, a relative path as given.
+- tools: `tools/check_tracked_config.py` searches only the lines that are not valid UTF-8 also in their cp1252
+  decoding. A stray byte on one line used to decode the whole file as cp1252, so a deny list word glued to a letter
+  such as `ä` on a valid line was reported, and after U+2028, U+2029 or U+0085 one occurrence was reported twice at
+  different lines.
+- tools: `tools/check_tracked_config.py` reads the gitlinks of a repository, or of a root below its top level, whose
+  folder name holds a newline. It used to cut the folder name at the newline and report a gitlink with its
+  `.gitmodules` entry as missing, with advice that named a wrong path.
+- tools: `tools/test_lg_scripts.py` reads several redirections without a blank between them before a subcommand, as in
+  `docker 2>&1>/dev/null pull <image>` or `confluent-hub 2>&1>/dev/null install <connector>`. It used to skip such a
+  command, so an image or connector without an exact version passed the check.
+- tools: in `tools/test_lg_scripts.py` a redirection right after `-D`, `--debug`, `--tls` or `--tlsverify` ends the
+  flag, so `docker --debug>/dev/null pull <image>` is read. It used to report `--debug: unknown docker option before
+  the subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py`, although DOCKER_GLOBAL lists the flag.
+- tools: `tools/test_lg_scripts.py` lets a short option bundle of `timeout` take the next word only when all its
+  letters are options of `timeout`, so the `docker` of `timeout -xk docker pull <image>` is read. It used to skip that
+  command.
+- tools: the read-once test of `tools/test_lg_scripts.py` checks that a `docker` that `timeout` reads as its signal is
+  never read as a command word. A regex that reads a word of a `timeout` twice, such as the earlier quadratic one or
+  one without the atomic group, now fails the test at once instead of passing it or running without end.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

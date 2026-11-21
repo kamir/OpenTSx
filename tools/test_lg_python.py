@@ -300,6 +300,17 @@ def test_the_generator_publishes_with_the_shipped_configuration(monkeypatch, cap
     ({"mqtt": {"host": "::1"}}, ("::1", 1883)),
     ({"mqtt": {"host": "a" * 63 + ".test."}}, ("a" * 63 + ".test.", 1883)),
     ({"mqtt": {"host": "b\u00fccher.test"}}, ("b\u00fccher.test", 1883)),
+    ({"mqtt": {"host": "broker.test."}}, ("broker.test.", 1883)),
+    ({"mqtt": {"host": "BROKER.Test"}}, ("BROKER.Test", 1883)),
+    ({"mqtt": {"host": "B\u00dcCHER.test"}}, ("B\u00dcCHER.test", 1883)),
+    ({"mqtt": {"host": "\u00fc" * 57 + ".test"}}, ("\u00fc" * 57 + ".test", 1883)),
+    ({"mqtt": {"host": "broker\u3002test"}}, ("broker\u3002test", 1883)),
+    ({"mqtt": {"host": "[::1]"}}, ("[::1]", 1883)),
+    ({"mqtt": {"host": "my host"}}, ("my host", 1883)),
+    ({"mqtt": {"host": "my_host"}}, ("my_host", 1883)),
+    ({"mqtt": {"host": "\u05d01\u05d0.test"}}, ("\u05d01\u05d0.test", 1883)),
+    ({"mqtt": {"host": "a\u00adb.test"}}, ("a\u00adb.test", 1883)),
+    ({"mqtt": {"host": "xn--ab\u00ad.test"}}, ("xn--ab\u00ad.test", 1883)),
 ])
 def test_the_generator_connects_with_values_at_their_bounds(tmp_path, monkeypatch, capsys, config, address):
     class Connected(Exception):
@@ -320,7 +331,9 @@ def test_the_generator_connects_with_values_at_their_bounds(tmp_path, monkeypatc
 INTERVAL = "a number of milliseconds from 0 to 86400000"
 PORT = "a whole number from 1 to 65535"
 TOPIC = "a non-empty JSON string of at most 65535 UTF-8 bytes without +, # or a lone surrogate"
-HOST = "a host name or an IP address as a JSON string whose dot-separated labels have 1 to 63 characters"
+HOST = ("a non-empty JSON string, such as a host name or an IP address, of dot-separated labels with an optional dot "
+        "at the end, where a label of ASCII characters has 1 to 63 characters and IDNA ToASCII turns any other label "
+        "into 1 to 63 characters")
 LOGIN = "a JSON string without a lone surrogate"
 
 
@@ -341,6 +354,17 @@ LOGIN = "a JSON string without a lone surrogate"
     ("mqtt", "host", ".test", HOST),
     ("mqtt", "host", "a" * 64 + ".test", HOST),
     ("mqtt", "host", "\u00fc" * 60 + ".test", HOST),
+    ("mqtt", "host", "\u00fc" * 58 + ".test", HOST),
+    ("mqtt", "host", ".", HOST),
+    ("mqtt", "host", "broker.test..", HOST),
+    ("mqtt", "host", "broker\u3002\u3002test", HOST),
+    ("mqtt", "host", "a\u2028b.test", HOST),
+    ("mqtt", "host", "\u05d0a.test", HOST),
+    ("mqtt", "host", "1\u05d0.test", HOST),
+    ("mqtt", "host", "\u05d01.test", HOST),
+    ("mqtt", "host", "\u00ad.test", HOST),
+    ("mqtt", "host", "xn--\u00fc.test", HOST),
+    ("mqtt", "host", "XN--\u00fc.test", HOST),
     ("mqtt", "port", "1883", PORT),
     ("mqtt", "port", 0, PORT),
     ("mqtt", "port", 65536, PORT),
@@ -365,6 +389,11 @@ def test_the_generator_exits_1_before_the_connect_on_a_value_it_cannot_use(tmp_p
         load(MQTTGEN, "mqttgen").main(str(path))
     assert stop.value.code == f"{path}: {section}.{key}: {json.dumps(value)} is not allowed; expected {expected}"
     assert capsys.readouterr().out == ""
+
+
+def test_the_readme_states_the_mqtt_host_rule_as_the_refusal_names_it():
+    text = (LG / "README.md").read_text(encoding="utf-8")
+    assert f"| `mqtt.host` | {HOST} | `\"localhost\"` |" in text.splitlines()
 
 
 @pytest.mark.parametrize("topic, size", [("t" * 65536, 65536), ("\u20ac" * 21846, 65538)])

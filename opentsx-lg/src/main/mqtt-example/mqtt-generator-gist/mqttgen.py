@@ -33,7 +33,7 @@ def lone_surrogate(text):
 
 
 def host_name(value):
-    # The connect resolves the host with the idna codec, which refuses an empty label and a label of over 63 characters.
+    # The connect resolves the host with the idna codec; a host the codec refuses would stop it with a UnicodeError.
     try:
         return isinstance(value, str) and value.encode("idna") != b""
     except UnicodeError:
@@ -133,7 +133,9 @@ def main(config_path):
              "a number of milliseconds from 0 to 86400000"),
             ("misc.verbose", verbose, isinstance(verbose, bool), "true or false"),
             ("mqtt.host", host, host_name(host),
-             "a host name or an IP address as a JSON string whose dot-separated labels have 1 to 63 characters"),
+             "a non-empty JSON string, such as a host name or an IP address, of dot-separated labels with an optional "
+             "dot at the end, where a label of ASCII characters has 1 to 63 characters and IDNA ToASCII turns any "
+             "other label into 1 to 63 characters"),
             ("mqtt.port", port, isinstance(port, int) and not isinstance(port, bool) and 1 <= port <= 65535,
              "a whole number from 1 to 65535"),
             ("mqtt.topic", topic, isinstance(topic, str) and topic != "" and "+" not in topic and "#" not in topic
