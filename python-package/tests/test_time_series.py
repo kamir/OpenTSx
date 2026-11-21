@@ -71,7 +71,7 @@ def test_from_pandas_keeps_values_and_order():
     assert np.all(np.diff(ts.timestamps) > 0)
 
 
-@pytest.mark.xfail(strict=True, reason="Known gap (TASK-011): pandas timezone/time unit is not preserved")
+@pytest.mark.xfail(strict=True, reason="Known gap: pandas timezone/time unit is not preserved")
 def test_pandas_roundtrip_preserves_datetime_index():
     idx = pd.date_range("2026-01-01", periods=3, freq="10min", tz="UTC")
     s = pd.Series([1.0, 2.0, 3.0], index=idx)

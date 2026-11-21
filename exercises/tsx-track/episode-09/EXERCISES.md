@@ -402,9 +402,9 @@ public class BonusExercise_SeasonalDecomposition {
 
 ## Resources
 
-- [Statistical Analysis](../../docs/manual/statistical-analysis/README.md)
-- [R/Python Translation Guide](../../docs/manual/appendix/r-python-translation.md)
-- [Advanced Algorithms](../../FEATURES.md)
+- [Statistical Analysis](https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/manual-v1/statistical-analysis/README.md)
+- [R/Python Translation Guide](https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/manual-v1/appendix/r-python-translation.md)
+- [Advanced Algorithms](https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/devguide-2025/guides/FEATURES.md)
 
 ---
 

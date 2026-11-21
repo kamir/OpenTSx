@@ -38,9 +38,9 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Success criterion 2 of TASK-011: {@code TimeSeriesObject -> Episode -> Kafka (both wire formats) -> Episode ->
- * TimeSeriesObject} without loss, time axis included. OpenTSx writes single-object encoding; Confluent framing is
- * what a registry-based producer writes, and OpenTSx reads it with a schema resolver (D10).
+ * {@code TimeSeriesObject -> Episode -> Kafka (both wire formats) -> Episode -> TimeSeriesObject} without loss, time
+ * axis included (04-MODELL-V2-SPEC.md, sections 5 and 10). OpenTSx writes single-object encoding; Confluent framing is
+ * what a registry-based producer writes, and OpenTSx reads it with a schema resolver.
  */
 class WireRoundTripTest {
 

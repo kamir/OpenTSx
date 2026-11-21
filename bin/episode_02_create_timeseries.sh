@@ -113,8 +113,7 @@ echo "  • Continue to Episode 3: Basic Operations"
 echo "    ./bin/episode_03_basic_operations.sh"
 echo
 echo -e "${BLUE}Documentation:${NC}"
-echo "  • Core Concepts: docs/manual/core-concepts/timeseries-object.md"
-echo "  • Data Operations: docs/manual/data-operations/creating-timeseries.md"
-echo "  • API Reference: docs/manual/appendix/api-reference.md"
+echo "  • Core Concepts: https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/manual-v1/core-concepts/timeseries-object.md"
+echo "  • API Reference: https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/manual-v1/appendix/api-reference.md"
 echo
 echo -e "${GREEN}════════════════════════════════════════════════════════════════${NC}"

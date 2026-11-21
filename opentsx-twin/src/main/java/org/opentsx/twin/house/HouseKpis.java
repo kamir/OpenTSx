@@ -8,7 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Efficiency KPIs of a house-twin run (concept 08 §5). Final energy of heating = oil litres × lower heating value +
+ * Efficiency KPIs of a house-twin run. Final energy of heating = oil litres × lower heating value +
  * wood Ster × energy per Ster. The weather-normalized value scales only the weather-dependent part (space heating)
  * with {@code G_ref / G} (heating degree days G20/15); hot water and boiler standby stay as they are.
  * CO2 uses the emission factors of GEG Annex 9 (heating oil 310, electricity 560, wood 20 g/kWh) as assumptions.

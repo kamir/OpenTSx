@@ -108,7 +108,7 @@ export interface OpDef {
   group: OpGroup;
   /** Prefix of the derived bucket name, as in the Swing macro recorder ("FFT_", "Diff_"). */
   prefix: string;
-  /** Operation name written into the Processing Flow Descriptor (TASK-005). */
+  /** Operation name written into the Processing Flow Descriptor preview; the executable schema accepts only NORMALIZE. */
   pfdOperation: string;
   hint: string;
   params: ParamDef[];

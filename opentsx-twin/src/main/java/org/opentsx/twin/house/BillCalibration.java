@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 /**
- * Calibrates the house twin against bills (concept 08 §7). Each bill row covers a period and carries whatever is
+ * Calibrates the house twin against bills. Each bill row covers a period and carries whatever is
  * known: electricity kWh, heating oil delivered (and tank levels at start/end, if read), firewood in Ster. The
  * twin is run over the whole bill horizon; per period it yields modelled electricity and oil consumption. A small
  * parameter vector (default: building heat-loss coefficient H, hot-water scale, appliance scale) is fitted by

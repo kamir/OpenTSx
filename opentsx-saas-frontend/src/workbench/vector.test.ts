@@ -152,7 +152,7 @@ describe('align.vector', () => {
   });
 
   it('writes records with the fields of the JSON schema in docs/datamodel-2026/schemas', () => {
-    // vitest runs in opentsx-saas-frontend; the schema lives with the design documents
+    // vitest runs in opentsx-saas-frontend; the schema lives with the normative specifications
     const schema = JSON.parse(readFileSync(resolve(process.cwd(), '../docs/datamodel-2026/schemas/opentsx.vector.v1.schema.json'), 'utf8'));
     const a = timeBucket('a_s', [series('s', [0, 60], [1, 2], { tags: { turbine: 'T01' } })]);
     const b = timeBucket('b_s', [series('s', [60], [9])]);

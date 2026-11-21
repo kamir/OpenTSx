@@ -3,9 +3,10 @@
 Each folder holds the report of one measurement run (`REPORT.md`, some with a `README.md`) and its record
 (`metadata.json`, and for the Rust runs `manifest.json` and `test-evidence.json`).
 
-The raw files of a run (CSV samples, per-case JSON, resource traces) are not in this repository. The record lists the
-SHA-256 of every raw file (`artifactsSha256` in `metadata.json`, or `manifest.json`), so a copy of the raw data can be
-checked against it.
+The raw files of a run (CSV samples, per-case JSON, resource traces) are not in this repository. The records of
+`rust-b4-mixed-20261120`, `wayang-federation-2026-11-17` and `wayang-track-a-evaluation-2026-11-18` list the SHA-256
+of every raw file (`manifest.json`, or `artifactsSha256` in `metadata.json`), so a copy of the raw data can be checked
+against it. The record of `wayang-increment-latency-2026-11-17` lists no raw-file hashes.
 
 Check the Track A raw data against its record:
 

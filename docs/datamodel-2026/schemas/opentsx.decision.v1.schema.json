@@ -273,7 +273,7 @@
         },
         "maxAge": {
           "$ref": "#/$defs/duration",
-          "description": "How old the newest value may be when the decision is taken."
+          "description": "How long the data of this signal may end before the newest data among all signals the decision needs."
         },
         "maxQuestionable": {
           "type": "number",
