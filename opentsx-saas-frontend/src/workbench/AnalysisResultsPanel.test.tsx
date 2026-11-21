@@ -7,14 +7,16 @@ import { resultId } from "./resultIds";
 
 afterEach(cleanup);
 const EPISODES = ["episode-A", "episode-B"];
+const DIGESTS = ["a".repeat(64), "b".repeat(64)];
 function record() {
   return {
-    resultId: resultId("es", "1.0.0", { seed: 7n }, EPISODES),
+    resultId: resultId("es", "1.0.0", { seed: 7n }, EPISODES, DIGESTS),
     method: "es",
     methodVersion: "1.0.0",
     params: { seed: { long: "7" } },
     inputEpisodeIds: EPISODES,
     inputSeriesIds: ["wind", "load"],
+    inputDigests: DIGESTS,
     tStart: 1700000000000000,
     tEnd: 1700000010000000,
     scalars: [
@@ -76,9 +78,8 @@ describe("AnalysisResultsPanel", () => {
   it("reads scalar, non-time curve and row-major matrix with verified identity", async () => {
     await show();
     load(record());
-    expect(
-      screen.getByText(/Result identity matches method/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/and their content digests/)).toBeInTheDocument();
+    expect(screen.getByText(DIGESTS[1])).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Scalar Q" })).toHaveTextContent(
       "0.8",
     );
@@ -98,17 +99,23 @@ describe("AnalysisResultsPanel", () => {
     ).toBeInTheDocument();
   });
 
-  it("reads both shared AnalysisResult vector records with their existing identities", async () => {
+  it("reads the shared v2.1 and v2.2 AnalysisResult vector records with their existing identities", async () => {
     await show();
-    const file = resolve(
+    const vectorDir = resolve(
       process.cwd(),
-      "../opentsx-model/src/test/resources/testvectors/wire-format.json",
+      "../opentsx-model/src/test/resources/testvectors",
     );
-    const wire = readFileSync(file, "utf8");
+    const wire = readFileSync(resolve(vectorDir, "wire-format.json"), "utf8");
     const section = wire.indexOf('"analysisResults"');
     expect(section).toBeGreaterThan(0);
-    const vectors = JSON.parse("{" + wire.slice(section)).analysisResults;
-    expect(vectors).toHaveLength(2);
+    const current = JSON.parse(
+      readFileSync(resolve(vectorDir, "analysis-result-wire.json"), "utf8"),
+    );
+    const vectors = [
+      ...JSON.parse("{" + wire.slice(section)).analysisResults,
+      ...current.analysisResults,
+    ];
+    expect(vectors).toHaveLength(4);
     for (const vector of vectors) {
       const s = vector.spec;
       load({
@@ -130,6 +137,35 @@ describe("AnalysisResultsPanel", () => {
     expect(
       screen.getByRole("table", { name: "Matrix q_directed" }),
     ).toHaveTextContent("Undefined");
+  });
+
+  it("reads a record written before v2.2 without content digests", async () => {
+    await show();
+    const r: Record<string, unknown> = {
+      ...record(),
+      resultId: resultId("es", "1.0.0", { seed: 7n }, EPISODES, []),
+    };
+    delete r.inputDigests;
+    load(r);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/does not bind the input contents/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByText("Not recorded (written before v2.2)"),
+    ).toHaveLength(2);
+  });
+
+  it("rejects a record whose input digests changed after its id was computed", async () => {
+    await show();
+    load({ ...record(), inputDigests: ["c".repeat(64), DIGESTS[1]] });
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "resultId does not match",
+    );
+    load({ ...record(), inputDigests: [DIGESTS[0]] });
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "1 inputDigests for 2 inputEpisodeIds.",
+    );
   });
 
   it("rejects an identity mismatch and clears an earlier result", async () => {

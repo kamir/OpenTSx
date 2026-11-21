@@ -1,0 +1,13 @@
+{
+  "type": "record",
+  "name": "Provenance",
+  "namespace": "org.opentsx.model.v2",
+  "doc": "Where an episode comes from.",
+  "fields": [
+    {"name": "source", "type": "string", "doc": "Origin system, e.g. scada:park-ber-01, simulator:scenario-7, legacy:tsbucket."},
+    {"name": "producer", "type": "string", "doc": "Component that created the record, e.g. opentsx-legacy-bridge/3.0.0."},
+    {"name": "createdAt", "type": {"type": "long", "logicalType": "timestamp-micros"}},
+    {"name": "pipeline", "type": ["null", "string"], "default": null},
+    {"name": "parentEpisodeId", "type": ["null", "string"], "default": null}
+  ]
+}

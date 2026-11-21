@@ -35,7 +35,7 @@ dependencies = [
 
 [project.optional-dependencies]
 forecasting = [
-    "statsmodels==0.14.6",
+    "statsmodels==0.15.0",
 ]
 kafka = [
     "confluent-kafka[avro]>=2.3.0",
@@ -84,7 +84,7 @@ where = ["."]
 include = ["opentsx*"]
 
 [tool.setuptools.package-data]
-"opentsx.model" = ["schemas/*.avsc"]
+"opentsx.model" = ["schemas/*.avsc", "schemas/*/*.avsc"]
 
 [tool.black]
 line-length = 100

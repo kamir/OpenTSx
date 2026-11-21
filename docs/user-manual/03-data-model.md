@@ -102,8 +102,10 @@ name, ep2 = m.decode(payload)
 * The build checks **BACKWARD_TRANSITIVE**: the current reader must read all published versions, and new fields need
   defaults.
 * Changing a schema requires a new history version.
-* Released versions: `v2.0` and `v2.1`. `v2.1` adds `AnalysisResult`, `ResultScalar`, `ResultCurve` and
-  `ResultMatrix`; the records of `v2.0` are unchanged.
+* Released versions: `v2.0`, `v2.1` and `v2.2`. `v2.1` adds `AnalysisResult`, `ResultScalar`, `ResultCurve` and
+  `ResultMatrix`; the records of `v2.0` are unchanged. `v2.2` adds `AnalysisResult.inputDigests`; the other records
+  are unchanged.
+* Java and Python read `AnalysisResult` payloads written with `v2.1`. They decode with an empty `inputDigests`.
 
 ## 3.6 Analysis results
 
@@ -117,19 +119,21 @@ n series.
 | `method`, `methodVersion` | for example `dfa` and `1.0.0` |
 | `params` | typed parameters: long, double, string or array of doubles |
 | `inputEpisodeIds`, `inputSeriesIds` | the inputs in a fixed order, one series id per episode |
+| `inputDigests` | the content digest of each input episode, in the same order; empty in records written with `v2.1` |
 | `tStart`, `tEnd` | earliest start and latest end of the inputs |
 | `scalars` | `ResultScalar`: name, value, optional standard error, unit and fit range (`fitFrom`, `fitTo`) |
 | `curves` | `ResultCurve`: name, x name and unit, `x[]`, `y[]` of equal length, unit of y |
 | `matrices` | `ResultMatrix`: name, row and column keys (usually series ids), row-major values, unit; NaN marks an undefined entry |
 | `labels`, `provenance` | as for episodes |
 
-**Result identity.** The same method with the same parameters on the same episodes gets the same id, in Java,
+**Result identity.** The same method with the same parameters on the same episode contents gets the same id, in Java,
 Python and TypeScript:
 
 ```
 canonical = escape(method) + "@" + escape(methodVersion)
           + "(" + join(",", escape(k) + "=" + value(v) for k in params sorted by UTF-8 bytes) + ")"
           + "[" + join(",", escape(e) for e in inputEpisodeIds) + "]"
+          + "{" + join(",", inputDigests) + "}"           only when inputDigests is not empty
 value:    long "l<decimal>", double "d<16 hex digits of the IEEE 754 bits, big-endian>",
           string "s<escaped>", array of doubles "a<hex>;<hex>" ("a" when empty)
 escape:   prefix \ { } , = ( ) [ ] @ with a backslash
@@ -139,9 +143,23 @@ resultId = lower-hex( xxHash64(utf8(canonical), seed 0) )
 * Parameter order does not change the id. Input order does: `es` over (A, B) and over (B, A) are different results.
 * The type is part of the id: the long `5` and the double `5.0` give different ids.
 * NaN is not allowed in parameters. Boolean parameters are not supported.
-* Shared vectors: `opentsx-model/src/test/resources/testvectors/result-id.json` (identity) and the
-  `analysisResults` entries of `wire-format.json` (bytes). Java (`AnalysisResults`), Python (`opentsx.model.analysis`)
-  and the workbench (`resultIds.ts`) check against them.
+* The content of the inputs is part of the id. A later revision of an episode keeps its episode id but changes its
+  content digest, so a result on the revised episode gets another id.
+* A record without `inputDigests` keeps the id it had in `v2.1`. Its id does not bind the input contents.
+* The id does not cover the outputs. Two records with the same id can hold different `scalars`, `curves` or
+  `matrices`.
+* xxHash64 is not cryptographic. Use the id for identity and deduplication, not as protection against manipulation.
+  The SHA-256 digests detect changed inputs; they do not authenticate who wrote a record.
+* Shared vectors in `opentsx-model/src/test/resources/testvectors`: `result-id.json` (identity),
+  `analysis-result-wire.json` (bytes of `v2.2` records), the `analysisResults` entries of `wire-format.json` (bytes of
+  `v2.1` records, which must stay readable) and `episode-digest.json` (content digests). `wire-format.json` does not
+  change: catalog `tsx-catalog/1` pins its SHA-256 as the vectors of `decode.avro-soe`. Java (`AnalysisResults`, `Episodes.contentDigest`), Python (`opentsx.model.analysis`,
+  `opentsx.model.content_digest`) and the workbench (`resultIds.ts`) check against them.
+
+**Content digest.** SHA-256 over what a method reads from an episode: the canonical series key, the unit, `tStart`,
+`tEnd`, the decoded timestamps, the values and the quality bytes. Episode id, time encoding, labels, bucket, revision,
+summary, segmentation and provenance do not change it. Every NaN counts as the same value; `-0.0` and `0.0` differ.
+The byte layout is in the [specification](../datamodel-2026/04-MODELL-V2-SPEC.md#4-values-quality-summary).
 
 ```python
 from opentsx.algorithms.dfa import DFA
@@ -150,8 +168,12 @@ from opentsx.algorithms.results import dfa_result, event_sync_result
 
 r = dfa_result(DFA(polynom_order=1), episode, source="notebook")        # scalars alpha, intercept, r_squared; curve F(s)
 q = event_sync_result(EventSynchronization(tau_max=5.0), [e1, e2, e3], source="notebook")  # matrices Q and q_directed
+assert r["inputDigests"] == [m.content_digest(episode)]
 payload = m.encode("AnalysisResult", q)
 ```
+
+To build a result for another method, pass `input_digests` to `m.analysis_result`, one `m.content_digest` per input
+episode. The builder raises `ValueError: 0 inputDigests for 1 inputEpisodeIds` when they are missing.
 
 `event_sync_result` writes `Q` (symmetric) and `q_directed` (q_ij minus q_ji, positive when row i leads column j);
 the diagonal is NaN.
