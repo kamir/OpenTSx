@@ -272,6 +272,19 @@ class DagToWayangCatalogTest {
         assertEquals(local.size() - 2, federated.size());
     }
 
+    /** TASK-020 U01 data edges, S2.2 step 8: raw pairs and vectors cannot cross a site boundary without a movement contract. */
+    @Test
+    void rawPairsAndVectorsCannotFeedAFederatedSink() throws Exception {
+        for (String op : List.of("pair.xcorr", "pair.es", "align.vector")) {
+            JsonNode dag = dag(op, cases().get(op));
+            String sink = dag.path("sinks").get(0).path("topic").asText();
+            TsxCompileContext context = context(Map.of(sink, new TsxCompileContext.Boundary(Set.of(), false)));
+            assertEquals("node n1: operator " + op + " is not mergeable and cannot feed the federated sink " + sink,
+                    assertThrows(IllegalArgumentException.class, () -> DagToWayang.compile(dag, LAYOUT, HASH, CATALOG, context)).getMessage(), op);
+            assertNotNull(DagToWayang.compile(dag, LAYOUT, HASH, CATALOG, context(Map.of())), op + " compiles without a site boundary");
+        }
+    }
+
     @Test
     void aSignalCollectorPreservesLocalDqFindingsWithoutMergingUpstreamStatistics() throws Exception {
         JsonNode dag = dag("dq.result", cases().get("dq.result"));
