@@ -106,6 +106,13 @@ Open **Analysis results** to paste or load a JSON representation of an
 scalar values, standard errors, fit ranges, non-time curves, matrices, input
 episodes and provenance. Download the inspected JSON from the view.
 
+The identity includes `inputDigests`, the content digest of each input episode.
+The view lists each digest next to its input episode. A record written before
+data model v2.2 has no `inputDigests`; the view accepts it, shows
+`Not recorded (written before v2.2)` and states that its identity does not bind
+the input contents. The view does not recompute digests, because it does not
+receive the input episodes.
+
 The import uses the
 [shared result contract](../datamodel-2026/04-MODELL-V2-SPEC.md#8-analysis-results).
 Parameter types matter to identity. Encode long, double, string and double-array

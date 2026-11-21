@@ -23,7 +23,11 @@ public record TsxCompileContext(Map<String, List<Runtime>> assignments, Map<Stri
         }
     }
 
-    public record Boundary(Set<String> statisticsWindows, boolean admitsRaw) {
+    /**
+     * A federated sink: only mergeable outputs cross it. There is no movement contract for raw series, pairs or
+     * vectors (D-T22), so none can be admitted here.
+     */
+    public record Boundary(Set<String> statisticsWindows) {
         public Boundary {
             statisticsWindows = Set.copyOf(statisticsWindows);
         }

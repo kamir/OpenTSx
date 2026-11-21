@@ -45,6 +45,10 @@ try (KafkaProducer<String, byte[]> producer = KafScaleClients.producer(bootstrap
 A bucket is sealed only if every episode was acknowledged. Otherwise the writer throws `BucketWriteException` and the
 bucket stays OPEN.
 
+The SEALED manifest holds the content checksum: `sha256:` and the SHA-256 over every episode id with the content
+digest of its series key, time axis, values and quality. `append` throws `IllegalArgumentException: episode <id> is
+already in bucket <bucketId> with other content` when an episode id comes back with other values; nothing is sent.
+
 ## 4.4 Replay
 
 ```java
@@ -62,6 +66,10 @@ How replay behaves:
 * Memory is bounded.
 * The index is derived state: `EpisodeIndexer.rebuild(...)` recreates it from the log.
 * `BucketCatalog.load(...)` lists the buckets.
+* `verified()` compares the delivered episodes with the manifest checksum. A manifest with a `sha256:` checksum is
+  verified against the episode contents: an episode that came back with other values under the same id fails it. A
+  manifest whose checksum has no `sha256:` prefix was sealed with the id-only checksum; for it `verified()` checks the
+  episode ids, not their contents.
 * `IcebergEpisodeIndex` keeps the index durably in Iceberg ([chapter 5](05-stores.md)).
 
 ## 4.5 Storage cost (measured)

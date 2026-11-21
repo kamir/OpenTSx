@@ -26,14 +26,17 @@ class AnalysisResultTest {
     @Test
     void canonicalFormAndResultIdMatchSharedVectors() {
         JsonNode cases = TestVectors.load("result-id.json");
-        assertEquals(9, cases.size());
+        assertEquals(12, cases.size());
         for (JsonNode v : cases) {
             String method = v.get("method").asText();
             String version = v.get("methodVersion").asText();
             Map<String, Object> params = typed(v.get("params"));
             List<String> inputs = TestVectors.strings(v.get("inputEpisodeIds"));
-            assertEquals(v.get("canonical").asText(), AnalysisResults.canonical(method, version, params, inputs));
-            assertEquals(v.get("resultId").asText(), AnalysisResults.resultId(method, version, params, inputs));
+            List<String> digests = TestVectors.strings(v.get("inputDigests"));
+            assertEquals(v.get("canonical").asText(),
+                    AnalysisResults.canonical(method, version, params, inputs, digests));
+            assertEquals(v.get("resultId").asText(),
+                    AnalysisResults.resultId(method, version, params, inputs, digests));
         }
     }
 
@@ -44,6 +47,23 @@ class AnalysisResultTest {
         assertEquals(ids.get(0), ids.get(1));
         assertNotEquals(ids.get(2), ids.get(3));
         assertNotEquals(ids.get(2), ids.get(4));
+    }
+
+    @Test
+    void identityBindsTheContentOfTheInputEpisodes() {
+        JsonNode cases = TestVectors.load("result-id.json");
+        JsonNode idsOnly = cases.get(0);
+        JsonNode bound = cases.get(9);
+        JsonNode changed = cases.get(10);
+        assertEquals(idsOnly.get("inputEpisodeIds"), bound.get("inputEpisodeIds"));
+        assertEquals(bound.get("inputEpisodeIds"), changed.get("inputEpisodeIds"));
+        assertEquals(idsOnly.get("canonical").asText() + "{" + bound.get("inputDigests").get(0).asText() + "}",
+                bound.get("canonical").asText());
+        assertNotEquals(idsOnly.get("resultId").asText(), bound.get("resultId").asText());
+        assertNotEquals(bound.get("resultId").asText(), changed.get("resultId").asText());
+        JsonNode episodes = TestVectors.load("episode-digest.json");
+        assertEquals(episodes.get(0).get("contentDigest"), bound.get("inputDigests").get(0));
+        assertEquals(episodes.get(2).get("contentDigest"), changed.get("inputDigests").get(0));
     }
 
     @Test
@@ -58,14 +78,14 @@ class AnalysisResultTest {
         assertEquals(1L, normalized.get("order"));
         assertEquals(List.of(16.0, 32.0, 64.0, 128.0, 256.0), normalized.get("scales"));
         String expected = TestVectors.load("result-id.json").get(0).get("resultId").asText();
-        assertEquals(expected, AnalysisResults.resultId("dfa", "1.0.0", params, List.of("01HF7Z1Y4X0000000000000000")));
+        assertEquals(expected,
+                AnalysisResults.resultId("dfa", "1.0.0", params, List.of("01HF7Z1Y4X0000000000000000"), List.of()));
     }
 
     @Test
     void analysisResultsEncodeToTheSameBytesAsPython() {
-        JsonNode wire = TestVectors.load("wire-format.json");
-        assertEquals(wire.get("fingerprints").get("AnalysisResult").asText(),
-                XxHash64.hex(OpenTsxAvro.fingerprint(AnalysisResult.getClassSchema())));
+        JsonNode wire = TestVectors.load("analysis-result-wire.json");
+        assertEquals(wire.get("fingerprint").asText(), XxHash64.hex(OpenTsxAvro.fingerprint(AnalysisResult.getClassSchema())));
         JsonNode vectors = wire.get("analysisResults");
         assertEquals(2, vectors.size());
         for (JsonNode v : vectors) {
@@ -79,34 +99,74 @@ class AnalysisResultTest {
     }
 
     @Test
+    void payloadsWrittenWithV21DecodeWithoutDigestsAndKeepTheirIds() {
+        JsonNode vectors = TestVectors.load("wire-format.json").get("analysisResults");
+        assertEquals(2, vectors.size());
+        for (JsonNode v : vectors) {
+            AnalysisResult decoded = avro.decode(TestVectors.bytes(v.get("hex").asText()), AnalysisResult.class);
+            assertEquals(List.of(), decoded.getInputDigests());
+            assertEquals(v.get("resultId").asText(), decoded.getResultId());
+            assertEquals(fromSpec(v.get("spec")), decoded);
+            AnalysisResults.verify(decoded);
+        }
+    }
+
+    @Test
     void rejectsBadParameters() {
         List<String> inputs = List.of("e1");
+        List<String> none = List.of();
         assertMessage("NaN is not allowed in analysis parameters",
-                () -> AnalysisResults.resultId("dfa", "1.0.0", Map.of("x", Double.NaN), inputs));
+                () -> AnalysisResults.resultId("dfa", "1.0.0", Map.of("x", Double.NaN), inputs, none));
         assertMessage("NaN is not allowed in analysis parameters",
-                () -> AnalysisResults.resultId("dfa", "1.0.0", Map.of("x", List.of(1.0, Double.NaN)), inputs));
+                () -> AnalysisResults.resultId("dfa", "1.0.0", Map.of("x", List.of(1.0, Double.NaN)), inputs, none));
         assertMessage("boolean parameters are not supported; use a long (0 or 1) or a string",
-                () -> AnalysisResults.resultId("dfa", "1.0.0", Map.of("x", true), inputs));
+                () -> AnalysisResults.resultId("dfa", "1.0.0", Map.of("x", true), inputs, none));
         assertMessage("unsupported parameter type: Float",
-                () -> AnalysisResults.resultId("dfa", "1.0.0", Map.of("x", 1.5f), inputs));
+                () -> AnalysisResults.resultId("dfa", "1.0.0", Map.of("x", 1.5f), inputs, none));
         assertMessage("parameter names must not be empty",
-                () -> AnalysisResults.resultId("dfa", "1.0.0", Map.of("", 1L), inputs));
-        assertMessage("method must not be empty", () -> AnalysisResults.resultId("", "1.0.0", Map.of(), inputs));
-        assertMessage("methodVersion must not be empty", () -> AnalysisResults.resultId("dfa", "", Map.of(), inputs));
+                () -> AnalysisResults.resultId("dfa", "1.0.0", Map.of("", 1L), inputs, none));
+        assertMessage("method must not be empty", () -> AnalysisResults.resultId("", "1.0.0", Map.of(), inputs, none));
+        assertMessage("methodVersion must not be empty",
+                () -> AnalysisResults.resultId("dfa", "", Map.of(), inputs, none));
         assertMessage("an analysis result needs at least one input episode",
-                () -> AnalysisResults.resultId("dfa", "1.0.0", Map.of(), List.of()));
+                () -> AnalysisResults.resultId("dfa", "1.0.0", Map.of(), List.of(), none));
         assertMessage("input episode ids must not be empty",
-                () -> AnalysisResults.resultId("dfa", "1.0.0", Map.of(), List.of("e1", "")));
+                () -> AnalysisResults.resultId("dfa", "1.0.0", Map.of(), List.of("e1", ""), none));
+    }
+
+    @Test
+    void rejectsBadDigests() {
+        String d = "a".repeat(64);
+        List<String> inputs = List.of("e1", "e2");
+        assertMessage("1 inputDigests for 2 inputEpisodeIds",
+                () -> AnalysisResults.resultId("dfa", "1.0.0", Map.of(), inputs, List.of(d)));
+        assertMessage("input digest 1 is not 64 lower-case hex characters",
+                () -> AnalysisResults.resultId("dfa", "1.0.0", Map.of(), inputs, List.of(d, "A".repeat(64))));
+        assertMessage("input digest 0 is not 64 lower-case hex characters",
+                () -> AnalysisResults.resultId("dfa", "1.0.0", Map.of(), inputs, List.of("a".repeat(63), d)));
+        assertMessage("inputDigests must not be null",
+                () -> AnalysisResults.resultId("dfa", "1.0.0", Map.of(), inputs, null));
     }
 
     @Test
     void verifyRejectsInconsistentRecords() {
-        JsonNode vectors = TestVectors.load("wire-format.json").get("analysisResults");
+        JsonNode vectors = TestVectors.load("analysis-result-wire.json").get("analysisResults");
         JsonNode dfa = vectors.get(0).get("spec");
         JsonNode es = vectors.get(1).get("spec");
+        String resultId = vectors.get(0).get("resultId").asText();
+        List<String> digests = TestVectors.strings(dfa.get("inputDigests"));
         String tamperedId = AnalysisResults.resultId("dfa", "1.0.0",
-                Map.of("order", 2L, "scales", List.of(16.0, 32.0, 64.0, 128.0, 256.0)), List.of("01HF7Z1Y4X0000000000000000"));
-        assertRejected(dfa, r -> r.getParams().put("order", 2L), "resultId 52d238b4de5f8107 does not match " + tamperedId);
+                Map.of("order", 2L, "scales", List.of(16.0, 32.0, 64.0, 128.0, 256.0)), List.of("01HF7Z1Y4X0000000000000000"),
+                digests);
+        assertRejected(dfa, r -> r.getParams().put("order", 2L), "resultId " + resultId + " does not match " + tamperedId);
+        String changed = TestVectors.load("episode-digest.json").get(2).get("contentDigest").asText();
+        String changedId = AnalysisResults.resultId("dfa", "1.0.0", AnalysisResults.params(typed(dfa.get("params"))),
+                List.of("01HF7Z1Y4X0000000000000000"), List.of(changed));
+        assertRejected(dfa, r -> r.setInputDigests(List.of(changed)),
+                "resultId " + resultId + " does not match " + changedId);
+        assertRejected(dfa, r -> r.setInputDigests(List.of()), "resultId " + resultId + " does not match "
+                + AnalysisResults.resultId("dfa", "1.0.0", AnalysisResults.params(typed(dfa.get("params"))),
+                        List.of("01HF7Z1Y4X0000000000000000"), List.of()));
         assertRejected(dfa, r -> r.setInputSeriesIds(List.of("a", "b")), "2 inputSeriesIds for 1 inputEpisodeIds");
         assertRejected(dfa, r -> r.setTEnd(r.getTStart()),
                 "tStart 1700000000000000 must be before tEnd 1700000000000000");
@@ -148,6 +208,7 @@ class AnalysisResultTest {
         String version = s.get("methodVersion").asText();
         Map<String, Object> params = typed(s.get("params"));
         List<String> inputs = TestVectors.strings(s.get("inputEpisodeIds"));
+        List<String> digests = s.has("inputDigests") ? TestVectors.strings(s.get("inputDigests")) : List.of();
         List<ResultScalar> scalars = new ArrayList<>();
         for (JsonNode x : s.get("scalars")) {
             scalars.add(ResultScalar.newBuilder()
@@ -181,12 +242,13 @@ class AnalysisResultTest {
                     .build());
         }
         AnalysisResult r = AnalysisResult.newBuilder()
-                .setResultId(AnalysisResults.resultId(method, version, params, inputs))
+                .setResultId(AnalysisResults.resultId(method, version, params, inputs, digests))
                 .setMethod(method)
                 .setMethodVersion(version)
                 .setParams(AnalysisResults.params(params))
                 .setInputEpisodeIds(inputs)
                 .setInputSeriesIds(TestVectors.strings(s.get("inputSeriesIds")))
+                .setInputDigests(digests)
                 .setTStart(Micros.toInstant(s.get("tStartUs").asLong()))
                 .setTEnd(Micros.toInstant(s.get("tEndUs").asLong()))
                 .setScalars(scalars)

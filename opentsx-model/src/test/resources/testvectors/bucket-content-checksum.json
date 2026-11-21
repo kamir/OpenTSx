@@ -1,0 +1,58 @@
+[
+  {
+    "name": "empty bucket",
+    "episodeIds": [],
+    "contentDigests": [],
+    "checksum": "sha256:f2203a2d2723852d0335f936ad3f165830613112b90ab902e59649b45bfb768c"
+  },
+  {
+    "name": "one episode",
+    "episodeIds": [
+      "01HF7Z1Y4X0000000000000000"
+    ],
+    "contentDigests": [
+      "24dc3f98e1738b85e2233f3cae81999629186c522ae29f8fd83ecae1ec28040c"
+    ],
+    "checksum": "sha256:8e57677cb26433fb2566c1c0ebb6ecbae4f0e46e8db057a41f2defb7f810c8e0"
+  },
+  {
+    "name": "the same episode id with changed content",
+    "episodeIds": [
+      "01HF7Z1Y4X0000000000000000"
+    ],
+    "contentDigests": [
+      "42b69ad12be88895566cb4ec5f03f79ecfb547178f7c9e1a902d3da65e316ce1"
+    ],
+    "checksum": "sha256:73ffad78250611ebe23a8c51a10b8bae03e7a1e1f1b6faa4ac98993f30ce0cd8"
+  },
+  {
+    "name": "order of writing and a repeated episode do not matter",
+    "episodeIds": [
+      "01HF7Z1Y4X0000000000000002",
+      "01HF7Z1Y4X0000000000000001",
+      "01HF7Z1Y4X0000000000000000",
+      "01HF7Z1Y4X0000000000000002"
+    ],
+    "contentDigests": [
+      "de061a78e6410bdb082c9dcd8f87363a5bf78bd0d8bf27eb87dc2d9123e8b297",
+      "15bbab30f5f0e8877d2f4f5fbb408c740060afbe80d8c6aef02017d6329266ed",
+      "24dc3f98e1738b85e2233f3cae81999629186c522ae29f8fd83ecae1ec28040c",
+      "de061a78e6410bdb082c9dcd8f87363a5bf78bd0d8bf27eb87dc2d9123e8b297"
+    ],
+    "checksum": "sha256:01f2e5f6b513d7863dfc5557556b1551cf4479c4d375724d51807987c76e6fce"
+  },
+  {
+    "name": "ids sorted by UTF-8 bytes: Z < b < ä",
+    "episodeIds": [
+      "ä",
+      "b",
+      "Z"
+    ],
+    "contentDigests": [
+      "24dc3f98e1738b85e2233f3cae81999629186c522ae29f8fd83ecae1ec28040c",
+      "15bbab30f5f0e8877d2f4f5fbb408c740060afbe80d8c6aef02017d6329266ed",
+      "de061a78e6410bdb082c9dcd8f87363a5bf78bd0d8bf27eb87dc2d9123e8b297"
+    ],
+    "checksum": "sha256:5f37ec3e5430907a99e304134c48a921c6e384e9f8dcb64767d4efc083d5d292"
+  }
+]
