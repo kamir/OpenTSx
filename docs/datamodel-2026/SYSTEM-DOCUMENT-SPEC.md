@@ -134,7 +134,7 @@ The order from best to worst is `MEASURED`, `REPORTED`, `FORECAST`, `ESTIMATED`,
 * A computed signal without `expect.origin` has the worst origin of the signals its flow reads.
 * A `features` source gives no origin.
 
-Implemented in: `Systems.java:405-426`, `Origin.java:7-28`; tests `SystemsTest.java:103-111,129-133,326-343`.
+Implemented in: `Systems.java:405-426`, `Origin.java:7-28`; tests `SystemsTest.java:104-112,130-134,327-344`.
 
 <a id="s2-system-document"></a>
 
@@ -618,7 +618,7 @@ A signal has exactly one state: the first row that applies.
 * `clean` does not check that a flow runs or that the data is recent.
 * A range violation is not a state. It is reported as `outOfRange` next to the state.
 
-Implemented in: `Systems.java:274-276,436-450`; tests `SystemsTest.java:71-141,210-217`.
+Implemented in: `Systems.java:274-276,436-450`; tests `SystemsTest.java:72-142,211-218`.
 
 <a id="s64-next-steps"></a>
 

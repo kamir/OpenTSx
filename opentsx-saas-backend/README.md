@@ -4,7 +4,8 @@ FastAPI backend with JWT authentication, async SQLAlchemy, and PostgreSQL.
 
 ## Admit physical deployments
 
-You need the configured PostgreSQL journal, the existing administrator role and an authenticated Wayang driver.
+You need the configured PostgreSQL journal, an account the run role admits (`DAG_RUN_ROLE`: administrators, or
+every account with `user`) and an authenticated Wayang driver.
 The opt-in `physical` profile uses the existing `/api/v1/dags/wayang-rust/deploy` request with `flowId`, `dagText`
 and `profile: "physical"`. The default host provider returns `deployment.incarnation` because authoritative
 incarnation facts are unavailable. This API path does not establish production qualification or publication fencing.
