@@ -610,7 +610,8 @@ entries before 3.0.0 are grouped by date.
   `<signal>: the share of questionable values is not evaluated by this server`, and an analysis with
   `uncertainty.blockAbove` adds `the width of the uncertainty is not evaluated by this server`. Either makes the
   analysis at best `restricted`. Both fields stay in `opentsx.decision.v1`. No status of the example card
-  `h2-dispatch` changes; `price-following` lists the uncertainty reason last. Sections 1.3, 1.4 and 2.3 of
+  `h2-dispatch` changes; `price-following` lists the uncertainty reason last. The place "Models" of the web
+  application names every cause of `restricted` in its legend, this one included. Sections 1.3, 1.4 and 2.3 of
   [`DECISION-CARD-SPEC.md`](docs/datamodel-2026/DECISION-CARD-SPEC.md) and the retrieval README describe the rule.
 
 - The `statsmodels` 0.15.0 pin of `python-package` now matches `deploy/local-cp/requirements.in` and
