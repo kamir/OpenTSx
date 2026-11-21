@@ -54,9 +54,10 @@ Each superstep runs these phases in order:
 * **Multirate.** An atom can step only every n supersteps (`every`), for example a 15-minute market.
 * **Events.** Atoms report events at their exact time, such as the moment the pressure limit is crossed.
 * **Determinism.** The same plan, inputs, interventions and code give a bit-identical run and the same
-  `RunResult.hash()` on every conforming JVM: Java 17 and 21, any vendor and processor, interpreted or compiled, with
-  or without the JVM's libm intrinsics. Code whose values reach the hash uses `StrictMath` for transcendental
-  functions and nothing else whose result the JDK leaves open
+  `RunResult.hash()` on every JVM that implements Java SE 17 or later. Code whose values reach the hash uses
+  `StrictMath` for transcendental functions and nothing else whose result the JDK or the default locale leaves open.
+  Checked with OpenJDK 17 and 21 on x86_64, interpreted, with C1 only and with C2, each with and without the JVM's
+  libm intrinsics; other vendors and processors were not run
   ([TWIN-COUPLING-SPEC section 8](../docs/datamodel-2026/TWIN-COUPLING-SPEC.md#8-run-identity-and-run-record)).
 
 ### Runner (variant L)
@@ -213,7 +214,8 @@ The page, the scenario texts and the guides ([`twin/h2-chain.guide.yaml`](src/ma
 names and plan parameters, such as the appliance names of the house, are not translated: they are part of the plan
 hash and the run ids. The scenario ids `haus` and `boot` are not translated either: the page uses them in URL
 fragments and browser storage keys, and `twin-live --scenario` takes them. The export carries the run id and the
-run hash of every run. It is byte-identical on every JVM, so `StudioPageTest` compares the committed page with it.
+run hash of every run. It is byte-identical on every JVM and with every default locale, so `StudioPageTest` compares
+the committed page with it.
 
 ## Tests
 
@@ -261,18 +263,20 @@ run hash of every run. It is byte-identical on every JVM, so `StudioPageTest` co
   * determinism, forecast from a snapshot, origins
   * what-ifs (+100 Wp, Starlink 3 h/day, shore power every third day) and the scenario API
   * CSV import (resampling, holding, origins) and calibration that recovers known parameters
-* **`PortableRunHashTest`**, **`SplitMix64Test`**
-  * no hash-relevant source of `opentsx-twin` and `opentsx-model` calls a `java.lang.Math` function whose result
-    may differ between JVMs, a `SplittableRandom` or a floating-point stream reduction
+* **`PortableRunHashTest`**, **`SplitMix64Test`**, **`demo.BoatDemoTest`**
+  * no hash-relevant source of `opentsx-twin` and `opentsx-model` calls, outside comments, a `java.lang.Math`
+    function whose result may differ between JVMs, a `SplittableRandom`, a floating-point stream reduction, or a
+    `String.format`, `printf`, `formatted`, `toUpperCase()` or `toLowerCase()` that reads the default locale
   * the runs of `src/test/resources/twin/run-hashes.v1.json` give the pinned run ids and run hashes
   * a child JVM without the libm intrinsics (`-XX:-UseLibmIntrinsic`, x86_64 HotSpot) gives the same run hashes
-  * the plan hash and the delivery reasons write `2e23` as `2.0E23` on Java 17 and 21
+  * the plan hash, the delivery reasons and the boat lever reasons write `2e23` as `2.0E23` on Java 17 and 21
   * `SplitMix64` gives the values of OpenJDK's `SplittableRandom`
 * **`boat.SimulatedLogsTest`**: the bundled simulated logs equal the generator output; calibration on them recovers
   the hidden parameters, and unmet demand and autonomy on the logs match the hidden true run
 * **`studio.StudioGuideTest`**, **`studio.StudioPageTest`**
   * every guide explains its plan completely and nothing else
   * the Studio export carries the run hash of every run
+  * the names of the H2 chain alternatives and forecasts do not change with the default locale
   * the committed Studio page carries the export of the current scenarios
 
 ## Not yet

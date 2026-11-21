@@ -645,16 +645,23 @@ entries before 3.0.0 are grouped by date.
   Hash-relevant code now uses `StrictMath` for transcendental functions and multiplies by `Math.PI / 180` instead of
   calling `Math.toRadians`. The synthetic weather noise, the variant L jitter and the simulated bills draw from
   `SplitMix64`, which gives the values of OpenJDK's `SplittableRandom`, whose values the JDK fixes only within one
-  program. The balance node and the bill calibration add in a fixed order instead of with `DoubleStream`.
-  `TwinPlan.hash()`, the delivery reasons of `HouseScenario`, the lever reasons of `BoatDemo` and `StudioExport` write
-  doubles with Jackson's shortest-decimal writer, because `Double.toString` writes some doubles with other digits on
-  Java 17 (`2e23` as `1.9999999999999998E23`). Run ids are unchanged, apart from plans calibrated on bills, whose run id
-  no longer depends on the JVM. Run hashes change where the JVM's `Math` differed from fdlibm, for example the house and
-  boat reference runs in `docs/devops/demos.md`; against `-XX:-UseLibmIntrinsic` only the H2 chain forecasts
-  `now-90-aware` and `now-130-aware` change, through the order of additions in the balance node. Section 8 of
-  `TWIN-COUPLING-SPEC.md` states the rules. `PortableRunHashTest` checks the sources, the run hashes pinned in
-  `twin/run-hashes.v1.json` and a child JVM without libm intrinsics. `StudioExport` writes the run hash of every run
-  again, and `StudioPageTest` checks it.
+  program. The balance node and the bill calibration add with `+` in a fixed order instead of with `DoubleStream`,
+  whose summation the JDK leaves open. `TwinPlan.hash()`, the delivery reasons of `HouseScenario`, the lever reasons of
+  `BoatDemo` and `StudioExport` write doubles with Jackson's shortest-decimal writer, because `Double.toString` writes
+  some doubles with other digits on Java 17 (`2e23` as `1.9999999999999998E23`). Run ids are unchanged, apart from
+  plans calibrated on bills, whose run id no longer depends on the JVM. Run hashes change where the JVM's `Math`
+  differed from fdlibm, for example the house and boat reference runs in `docs/devops/demos.md`. Compared with the
+  old code without libm intrinsics (`-XX:-UseLibmIntrinsic`), H2 chain runs change too where the balance sum of
+  OpenJDK's `DoubleStream.sum`, a compensated summation, differed from plain addition in the same order: the forecasts
+  `now-90-aware` and `now-130-aware` and variant L runs such as async with jitter 3 and seed 1 or -5. The names of the
+  H2 chain alternatives and forecasts in the Studio export are formatted with `Locale.ROOT`; with the default locale
+  `ar-EG` their times had Arabic-Indic digits. Section 8 of `TWIN-COUPLING-SPEC.md` states the rules.
+  `PortableRunHashTest` checks the code of the sources outside comments, the run hashes pinned in
+  `twin/run-hashes.v1.json` and a child JVM without libm intrinsics; `BoatDemoTest` checks the lever reason.
+  `StudioExport` writes the run hash of every run again, and `StudioPageTest` checks it and the names under `ar-EG`.
+- The simulated example bills of the house twin (`twin/beispiel/haus-abrechnungen-simuliert.csv` and
+  `haus-tagesmittel-simuliert.csv`) have English notes and header lines; every note starts with `SIMULATED` instead of
+  `SIMULIERT`. The values and the column names are unchanged. `SimulatedBills` generates them.
 - `tsx-runner`: the WASM test `scoped_fixture_is_cleared_after_unwinding` unwinds with `resume_unwind`, so it no
   longer prints a panic message. With `--nocapture 2>&1` that message could split another test's `test ... ok` line,
   and the B3 qualification then reported `guest_stack_is_bounded_by_the_configured_limit` as not executed.

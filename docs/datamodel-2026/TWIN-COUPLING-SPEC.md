@@ -333,8 +333,11 @@ twin-1|<plan hash>|<mode>|<inputs fingerprint>|<steps>[|<intervention>...][|poli
 The run hash chains every superstep: the seed is the XxHash64 of the run id; each superstep hashes the previous
 value, `k`, and for every atom in plan order its id, its state variables (name, double bits) and its outputs (name,
 double bits, origin). Two runs with the same run id and the same code are bit-identical and have the same
-`RunResult.hash()` on every conforming JVM: Java 17 and 21, any vendor and processor, interpreted or compiled, with or
-without the JVM's libm intrinsics. The Studio export carries the run hash of every run.
+`RunResult.hash()` on every conforming JVM. A conforming JVM implements Java SE 17 or later; Java SE fixes the result
+of `StrictMath` and of the double arithmetic to the bit, so the hash does not depend on the vendor, the processor, the
+compiler or the JVM's libm intrinsics. This was checked with OpenJDK 17 and 21 on x86_64: interpreted, with C1 only
+and with C2, each with and without the libm intrinsics. Other vendors and processors were not run. The Studio export
+carries the run hash of every run.
 
 The run hash is portable only if every value it chains is. Code whose results reach a hashed value, the order of
 hashed values or the run id (atoms, policies, runners, `TwinPlan`, `SeriesInputs`, and the plans, inputs and
@@ -361,20 +364,25 @@ treated as hash-relevant. Hash-relevant code:
   doubles with other digits than Java 21 (`2e23` as `1.9999999999999998E23` instead of `2.0E23`). `TwinPlan.hash()`
   writes doubles with Jackson's shortest-decimal writer (`StreamWriteFeature.USE_FAST_DOUBLE_WRITER`), and the
   reasons built by `HouseScenario` and `BoatDemo` use `NumberOutput.toString(value, true)`.
-* MUST NOT read the wall clock, an unseeded random source, the default locale, charset or time zone, or run work in
-  parallel whose results are combined in the order the threads finish. Local time uses a named zone; its rules come
-  from the time-zone database of the JVM, so a run over a period whose rules differ between two database versions
-  gives different hashes on JVMs with these versions.
+* MUST NOT read the wall clock or an unseeded random source, and MUST NOT run work in parallel whose results are
+  combined in the order the threads finish.
+* MUST NOT let the default locale, charset or time zone change a value or text. `String.format` and `printf` get
+  `Locale.ROOT`; `formatted`, `toUpperCase()` and `toLowerCase()` are not used, because they read the default locale.
+  Local time uses a named zone; its rules come from the time-zone database of the JVM, so a run over a period whose
+  rules differ between two database versions gives different hashes on JVMs with these versions.
 
 Inputs computed outside `opentsx-twin` are data: the hash is equal for equal input values. A module that computes
 input values with `Math` functions can bind other values, and so get another run id and run hash, on another JVM.
 
-`PortableRunHashTest` fails when a main source of `opentsx-twin` or `opentsx-model` calls one of these `Math`
-functions, `SplittableRandom` or a floating-point stream reduction; when a run of `twin/run-hashes.v1.json` (the
+`PortableRunHashTest` fails when code outside the comments of a main source of `opentsx-twin` or `opentsx-model`
+calls one of these `Math` functions, `SplittableRandom`, a floating-point stream reduction, `String.format` or `printf`
+without a `Locale`, `formatted`, `toUpperCase()` or `toLowerCase()`; when a run of `twin/run-hashes.v1.json` (the
 reference run of every Studio scenario, a what-if, a forecast and a variant L run with jitter) gives another run id
 or run hash; when a child JVM started with `-XX:-UseLibmIntrinsic` gives other run hashes than the JVM of the test;
-and when the plan hash or a delivery reason writes `2e23` with other digits than `2.0E23`. `StudioPageTest` compares
-the committed Studio page, with the run hashes of all its runs, with the export. CI runs both on Java 17 and 21.
+and when the plan hash or a delivery reason writes `2e23` with other digits than `2.0E23`. `BoatDemoTest` checks the
+same for the reason of a `BoatDemo` lever. `StudioPageTest` compares the committed Studio page, with the run hashes of
+all its runs, with the export, and checks that the names of the H2 chain alternatives and forecasts do not change
+with the default locale. CI runs these tests on Java 17 and 21.
 
 `RunResult`:
 
@@ -387,11 +395,12 @@ the committed Studio page, with the run hashes of all its runs, with the export.
 Implemented in: `RunSetup.java:110,163-179,195-233`, `RunResult.java:61-64,159-212`, `Snapshot.java:9-10`,
 `TwinPlan.java:117-131`, `SplitMix64.java:8-52`, `LooseRunner.java:548-553`, `atoms/Weather.java:29,61,152-193`,
 `atoms/Appliances.java:126`, `atoms/H2Compressor.java:53`, `atoms/BalanceNode.java:90-93`, `boat/Solar.java:33,141-157`,
-`demo/H2ChainDemo.java:56`, `demo/BoatDemo.java:411`, `house/HouseScenario.java:44-60`,
-`house/BillCalibration.java:308,567-575,659-668`, `house/SimulatedBills.java:79,98`,
-`studio/StudioExport.java:50-58,150-155,203`; tests: `TwinShadowTest.java:92-101,133-147`,
-`PortableRunHashTest.java:30-131`, `RunHashVectors.java:12-68`, `SplitMix64Test.java:8-22`,
-`studio/StudioPageTest.java:24-51`, `opentsx-twin/src/test/resources/twin/run-hashes.v1.json`.
+`demo/H2ChainDemo.java:56`, `demo/BoatDemo.java:410-412`, `house/HouseScenario.java:44-60`,
+`house/BillCalibration.java:308,567-575,659-668`, `house/SimulatedBills.java:79,100`,
+`studio/H2ChainScenario.java:64-65,75`, `studio/StudioExport.java:51-59,151-156,204`; tests:
+`TwinShadowTest.java:92-101,133-147`, `PortableRunHashTest.java:30-190`, `RunHashVectors.java:12-68`,
+`SplitMix64Test.java:8-22`, `demo/BoatDemoTest.java:9-16`, `studio/StudioPageTest.java:25-65`,
+`opentsx-twin/src/test/resources/twin/run-hashes.v1.json`.
 
 <a id="9-operating-modes"></a>
 
@@ -559,7 +568,7 @@ jitter, the lag of one atom, the step ticks of one atom or the outages of one at
 than a superstep of `h2-chain` or `haus` under lag 2 and jitter 3 alone, so the slow processor of the combined
 transport still costs ticks.
 
-Implemented in: `LooseRunner.java:142-157,160-163,278-286,323-326,409-430`, `studio/StudioExport.java:105-109`;
+Implemented in: `LooseRunner.java:142-157,160-163,278-286,323-326,409-430`, `studio/StudioExport.java:106-110`;
 tests: `LooseRunnerTest.java:28-143,224-277`.
 
 <a id="113-throughput"></a>
