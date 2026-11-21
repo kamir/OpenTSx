@@ -781,46 +781,46 @@ const PAIR_HINT =
 
 export const OPS: OpDef[] = [
   // Tab "Transformations" of the Swing panel
-  { id: 'shuffle', label: 'Shuffle', group: 'transform', prefix: 'Shuffle_', pfdOperation: 'shuffleYValues', inCatalog: false,
+  { id: 'shuffle', label: 'Shuffle', group: 'transform', prefix: 'Shuffle_', pfdOperation: 'shuffleYValues',
     hint: 'Shuffles the y values. Seeded, so the flow is reproducible (Java uses Collections.shuffle).',
     params: [
       { key: 'rounds', label: 'rounds', type: 'number', default: 1, min: 1 },
       { key: 'seed', label: 'seed', type: 'number', default: 1 },
     ], apply: shuffle },
-  { id: 'norm.max', label: 'NORM max=1', group: 'transform', prefix: 'NormMAX_', pfdOperation: 'NORMALIZE', inCatalog: false,
+  { id: 'norm.max', label: 'NORM max=1', group: 'transform', prefix: 'NormMAX_', pfdOperation: 'NORMALIZE',
     hint: 'Divides each series by its maximum.', params: [], apply: normMax },
-  { id: 'norm.zscore', label: 'NORM std=1, avg=0', group: 'transform', prefix: 'Standardized_', pfdOperation: 'NORMALIZE', inCatalog: false,
+  { id: 'norm.zscore', label: 'NORM std=1, avg=0', group: 'transform', prefix: 'Standardized_', pfdOperation: 'NORMALIZE',
     hint: 'Subtracts the mean and divides by the standard deviation.', params: [], apply: normZ },
-  { id: 'log', label: 'Log', group: 'transform', prefix: 'LOG_', pfdOperation: 'LOG', inCatalog: false,
+  { id: 'log', label: 'Log', group: 'transform', prefix: 'LOG_', pfdOperation: 'LOG',
     hint: 'Natural logarithm. Points without a finite logarithm are dropped.', params: [], apply: logY },
-  { id: 'logreturn', label: 'Returns (Rel-Diff)', group: 'transform', prefix: 'LogRETURN_', pfdOperation: 'LOGRETURN', inCatalog: false,
+  { id: 'logreturn', label: 'Returns (Rel-Diff)', group: 'transform', prefix: 'LogRETURN_', pfdOperation: 'LOGRETURN',
     hint: 'ln(y[i]) minus ln(y[i-1]).', params: [], apply: logReturn },
-  { id: 'diff', label: 'Diffs', group: 'transform', prefix: 'Diff_', pfdOperation: 'DIFF', inCatalog: false,
+  { id: 'diff', label: 'Diffs', group: 'transform', prefix: 'Diff_', pfdOperation: 'DIFF',
     hint: 'y[i] minus y[i-1].', params: [], apply: diff },
-  { id: 'profile', label: 'Profile', group: 'transform', prefix: 'Profile_', pfdOperation: 'PROFILE', inCatalog: false,
+  { id: 'profile', label: 'Profile', group: 'transform', prefix: 'Profile_', pfdOperation: 'PROFILE',
     hint: 'Cumulated sum of the deviations from the mean.', params: [], apply: profile },
-  { id: 'fft', label: 'FFT', group: 'transform', prefix: 'FFT_', pfdOperation: 'FFT', inCatalog: false,
+  { id: 'fft', label: 'FFT', group: 'transform', prefix: 'FFT_', pfdOperation: 'FFT',
     hint: 'One-sided amplitude spectrum. Mean removed, zero-padded to a power of two.', params: [], apply: fft },
 
   // Tab "Uni-variate. Analysis"
-  { id: 'histogram', label: 'Histogram per series', group: 'univariate', prefix: 'PDF_', pfdOperation: 'PDF', inCatalog: false,
+  { id: 'histogram', label: 'Histogram per series', group: 'univariate', prefix: 'PDF_', pfdOperation: 'PDF',
     hint: 'Relative frequency of the y values per series.', params: HIST_PARAMS, apply: histogram },
-  { id: 'histogram.crosscut', label: 'Histogram cross-cut', group: 'univariate', prefix: 'PDF_cross_', pfdOperation: 'PDF_CROSS', inCatalog: false,
+  { id: 'histogram.crosscut', label: 'Histogram cross-cut', group: 'univariate', prefix: 'PDF_cross_', pfdOperation: 'PDF_CROSS',
     hint: 'One histogram per time slice over all series. At most 16 slices.',
     params: [...HIST_PARAMS, { key: 'window', label: 'window l', type: 'number', default: 100, min: 2 }], apply: histogramCrossCut },
-  { id: 'cdf', label: 'CDF', group: 'univariate', prefix: 'CDF_', pfdOperation: 'CDF', inCatalog: false,
+  { id: 'cdf', label: 'CDF', group: 'univariate', prefix: 'CDF_', pfdOperation: 'CDF',
     hint: 'Cumulated distribution of the y values between min and max of each series.',
     params: [{ key: 'bins', label: 'bins', type: 'number', default: 30, min: 2 }], apply: cdf },
-  { id: 'entropy.window', label: 'ENTROPY', group: 'univariate', prefix: 'H_', pfdOperation: 'H', inCatalog: false,
+  { id: 'entropy.window', label: 'ENTROPY', group: 'univariate', prefix: 'H_', pfdOperation: 'H',
     hint: 'Shannon entropy in a sliding window, step length/4. Binning over the value range of the series; the Java binning may differ.',
     params: [
       { key: 'length', label: 'length', type: 'number', default: 20, min: 4 },
       { key: 'bins', label: 'bins', type: 'number', default: 16, min: 2 },
     ], apply: entropyWindow },
-  { id: 'acf', label: 'Auto-Correlation', group: 'univariate', prefix: 'AC_', pfdOperation: 'AC', inCatalog: false,
+  { id: 'acf', label: 'Auto-Correlation', group: 'univariate', prefix: 'AC_', pfdOperation: 'AC',
     hint: 'Autocorrelation up to half the series length, capped at maxLag.',
     params: [{ key: 'maxLag', label: 'max lag', type: 'number', default: 1000, min: 1 }], apply: autoCorrelation },
-  { id: 'dfa', label: 'DFA', group: 'univariate', prefix: 'DFA_', pfdOperation: 'DFA', inCatalog: false,
+  { id: 'dfa', label: 'DFA', group: 'univariate', prefix: 'DFA_', pfdOperation: 'DFA',
     hint: 'Detrended fluctuation analysis. The exponent alpha is the slope of log F(s) over log s across all scales.',
     params: [
       { key: 'order', label: 'order', type: 'number', default: 2, min: 1 },
@@ -828,14 +828,14 @@ export const OPS: OpDef[] = [
     ], apply: dfaOp },
 
   // Tab "Multi-variate Analysis": pair methods (docs/datamodel-2026/PAIR-WINDOWS-SPEC.md)
-  { id: PAIR_COVERAGE.id, label: 'Pair coverage', group: 'multivariate', prefix: PAIR_COVERAGE.prefix, pfdOperation: 'PAIR_COVERAGE', inCatalog: false, multiInput: true, maxInputs: 2,
+  { id: PAIR_COVERAGE.id, label: 'Pair coverage', group: 'multivariate', prefix: PAIR_COVERAGE.prefix, pfdOperation: 'PAIR_COVERAGE', multiInput: true, maxInputs: 2,
     hint: `${PAIR_HINT} This method gives the coverage itself and the number of ticks per window: what the other pair methods will see.`,
     params: pairParams(0), apply: (b, p, others) => pairWindows(PAIR_COVERAGE, b, p, others) },
-  { id: PAIR_XCORR.id, label: 'Cross-correlation', group: 'multivariate', prefix: PAIR_XCORR.prefix, pfdOperation: 'PAIR_XCORR', inCatalog: false, multiInput: true, maxInputs: 2,
+  { id: PAIR_XCORR.id, label: 'Cross-correlation', group: 'multivariate', prefix: PAIR_XCORR.prefix, pfdOperation: 'PAIR_XCORR', multiInput: true, maxInputs: 2,
     hint: `${PAIR_HINT} Per window: CC(k) for k from -lags to lags clock ticks. max is the peak of |CC| with its sign, lag its shift in seconds (lag > 0: B follows A), strength (|max| - mean) / std of CC over the lags. Port of KreuzKorrelation and CCFunction of WikiExplorer.NG.`,
     params: [...pairParams(0.8), { key: 'lags', label: 'max lag [ticks]', type: 'number', default: 10, min: 0 }],
     apply: (b, p, others) => pairWindows(PAIR_XCORR, b, p, others) },
-  { id: PAIR_ES.id, label: 'Event synchronisation', group: 'multivariate', prefix: PAIR_ES.prefix, pfdOperation: 'PAIR_ES', inCatalog: false, multiInput: true, maxInputs: 2,
+  { id: PAIR_ES.id, label: 'Event synchronisation', group: 'multivariate', prefix: PAIR_ES.prefix, pfdOperation: 'PAIR_ES', multiInput: true, maxInputs: 2,
     hint: `${PAIR_HINT} Per window: events are local maxima above mean + sigma std; two events count as synchronous within half the distance to their neighbours (capped by tauMax when set). q_total is the share of synchronous events, q_ab the share where B follows A, q_ba where A follows B, q_rand q_total for B with its event intervals shuffled: the level chance gives. Port of event_sync.py (Quiroga, Kreuz and Grassberger).`,
     params: [
       ...pairParams(0.8),
@@ -847,41 +847,41 @@ export const OPS: OpDef[] = [
     apply: (b, p, others) => pairWindows(PAIR_ES, b, p, others) },
 
   // Tab "Group Operations"
-  { id: 'sigma.band', label: 'Sigma Band', group: 'group', prefix: 'AVG_', pfdOperation: 'AVG', inCatalog: false,
+  { id: 'sigma.band', label: 'Sigma Band', group: 'group', prefix: 'AVG_', pfdOperation: 'AVG',
     hint: 'Mean over all series with a band of one standard deviation.', params: [], apply: sigmaBand },
 
   // Filter and conversion, the operators a Smart Topic runs in the stream
-  { id: 'select', label: 'Select series', group: 'stream', prefix: 'Select_', pfdOperation: 'FILTER', inCatalog: false,
+  { id: 'select', label: 'Select series', group: 'stream', prefix: 'Select_', pfdOperation: 'FILTER',
     hint: 'Keeps the series whose label matches the pattern (regular expression).',
     params: [{ key: 'pattern', label: 'pattern', type: 'text', default: '.*' }], apply: selectSeries },
-  { id: 'dq.plausible-range', dagOp: 'dq.checks', label: 'Plausible range', group: 'stream', prefix: 'Range_', pfdOperation: 'FILTER_RANGE', inCatalog: true,
+  { id: 'dq.plausible-range', dagOp: 'dq.checks', label: 'Plausible range', group: 'stream', prefix: 'Range_', pfdOperation: 'FILTER_RANGE',
     hint: 'Values outside [min, max] become gaps or are clipped. Catalog operator dq.checks, check PLAUSIBLE_RANGE.',
     params: [
       { key: 'min', label: 'min', type: 'number', default: -10 },
       { key: 'max', label: 'max', type: 'number', default: 10 },
       { key: 'mode', label: 'mode', type: 'select', default: 'gap', options: ['gap', 'clip'] },
     ], apply: plausibleRange },
-  { id: 'convert.unit', label: 'Convert unit', group: 'stream', prefix: 'Convert_', pfdOperation: 'CONVERT', inCatalog: false,
+  { id: 'convert.unit', label: 'Convert unit', group: 'stream', prefix: 'Convert_', pfdOperation: 'CONVERT',
     hint: 'y * factor + offset, with a new unit.',
     params: [
       { key: 'factor', label: 'factor', type: 'number', default: 1 },
       { key: 'offset', label: 'offset', type: 'number', default: 0 },
       { key: 'unit', label: 'unit', type: 'text', default: '' },
     ], apply: convertUnit },
-  { id: 'resample', label: 'Resample', group: 'stream', prefix: 'Resample_', pfdOperation: 'WINDOW_AGGREGATE', inCatalog: true,
+  { id: 'resample', label: 'Resample', group: 'stream', prefix: 'Resample_', pfdOperation: 'WINDOW_AGGREGATE',
     hint: 'Aggregates into windows of the given width, in units of the x axis.',
     params: [
       { key: 'every', label: 'every', type: 'number', default: 0.05, min: 0 },
       { key: 'agg', label: 'agg', type: 'select', default: 'MEAN', options: ['MEAN', 'MIN', 'MAX', 'LAST'] },
     ], apply: resample },
-  { id: 'model.wind-shear', label: 'Wind shear', group: 'stream', prefix: 'Hub_', pfdOperation: 'MODEL', inCatalog: false,
+  { id: 'model.wind-shear', label: 'Wind shear', group: 'stream', prefix: 'Hub_', pfdOperation: 'MODEL',
     hint: 'Carries the wind of a measuring height to the hub height by the power law: v * (to / from)^alpha. A model with one exponent for every weather; about 0.1 over open sea, 0.14 over flat land.',
     params: [
       { key: 'fromM', label: 'from [m]', type: 'number', default: 10, min: 0 },
       { key: 'toM', label: 'to [m]', type: 'number', default: 120, min: 0 },
       { key: 'alpha', label: 'alpha', type: 'number', default: 0.11, min: 0 },
     ], apply: windShear },
-  { id: 'model.power-curve', label: 'Power curve', group: 'stream', prefix: 'Potential_', pfdOperation: 'MODEL', inCatalog: false,
+  { id: 'model.power-curve', label: 'Power curve', group: 'stream', prefix: 'Potential_', pfdOperation: 'MODEL',
     hint: 'From wind speed to the power the wind offers a turbine: zero below cut-in and above cut-out, rated power from the rated wind. A model, not a measurement: it does not fall when the turbine is curtailed.',
     params: [
       { key: 'ratedKw', label: 'rated [kW]', type: 'number', default: 3000, min: 0 },
@@ -890,25 +890,25 @@ export const OPS: OpDef[] = [
       { key: 'cutOut', label: 'cut-out [m/s]', type: 'number', default: 25, min: 0 },
       { key: 'count', label: 'turbines', type: 'number', default: 1, min: 0 },
     ], apply: powerCurve },
-  { id: 'feature.lag', label: 'Lag', group: 'stream', prefix: 'Lag_', pfdOperation: 'FEATURE', inCatalog: false,
+  { id: 'feature.lag', label: 'Lag', group: 'stream', prefix: 'Lag_', pfdOperation: 'FEATURE',
     hint: 'A feature for models: the value a number of samples earlier.',
     params: [{ key: 'steps', label: 'samples', type: 'number', default: 1, min: 1 }], apply: featureLag },
-  { id: 'feature.rolling', label: 'Rolling', group: 'stream', prefix: 'Roll_', pfdOperation: 'FEATURE', inCatalog: false,
+  { id: 'feature.rolling', label: 'Rolling', group: 'stream', prefix: 'Roll_', pfdOperation: 'FEATURE',
     hint: 'A feature for models: mean, spread, minimum or maximum of the last window, in units of the x axis.',
     params: [
       { key: 'window', label: 'window', type: 'number', default: 3600, min: 0 },
       { key: 'fn', label: 'fn', type: 'select', default: 'MEAN', options: ['MEAN', 'STD', 'MIN', 'MAX'] },
     ], apply: featureRolling },
-  { id: 'smooth.movavg', label: 'Moving average', group: 'stream', prefix: 'Smooth_', pfdOperation: 'SMOOTH', inCatalog: false,
+  { id: 'smooth.movavg', label: 'Moving average', group: 'stream', prefix: 'Smooth_', pfdOperation: 'SMOOTH',
     hint: 'Trailing moving average over the given number of samples.',
     params: [{ key: 'window', label: 'samples', type: 'number', default: 25, min: 1 }], apply: movingAverage },
-  { id: 'stats.window', dagOp: 'stats.welford-ddsketch', label: 'Window statistics', group: 'stream', prefix: 'Stats_', pfdOperation: 'WINDOW_AGGREGATE', inCatalog: true,
+  { id: 'stats.window', dagOp: 'stats.welford-ddsketch', label: 'Window statistics', group: 'stream', prefix: 'Stats_', pfdOperation: 'WINDOW_AGGREGATE',
     hint: 'One statistic per window. Catalog operator stats.welford-ddsketch.',
     params: [
       { key: 'window', label: 'window', type: 'number', default: 0.25, min: 0 },
       { key: 'field', label: 'field', type: 'select', default: 'STD', options: ['MEAN', 'STD', 'MIN', 'MAX'] },
     ], apply: windowStats },
-  { id: 'segment.threshold', label: 'Segment at threshold', group: 'stream', prefix: 'Segments_', pfdOperation: 'SEGMENT_THRESHOLD', inCatalog: true,
+  { id: 'segment.threshold', label: 'Segment at threshold', group: 'stream', prefix: 'Segments_', pfdOperation: 'SEGMENT_THRESHOLD',
     hint: 'Cuts one episode per level crossing. The scope trigger sets these parameters.',
     params: [
       { key: 'enter', label: 'level', type: 'number', default: 0 },
@@ -916,7 +916,7 @@ export const OPS: OpDef[] = [
       { key: 'pre', label: 'pre', type: 'number', default: 20, min: 0 },
       { key: 'post', label: 'post', type: 'number', default: 80, min: 1 },
     ], apply: segmentThreshold },
-  { id: VECTOR_OP, label: 'Align to vector', group: 'stream', prefix: 'Vector_', pfdOperation: 'ALIGN_VECTOR', inCatalog: false, multiInput: true,
+  { id: VECTOR_OP, label: 'Align to vector', group: 'stream', prefix: 'Vector_', pfdOperation: 'ALIGN_VECTOR', multiInput: true,
     hint: 'Brings this bucket and further inputs onto one clock: one measuring point per tick with one component per input. "vector per" is series (same series in every input), all (everything in one vector) or a tag name such as turbine. Add the inputs in the Properties tab or draw a connection onto the node. "lateness" only matters once the flow is deployed: how long a tick waits for series that lag behind.',
     params: [
       { key: 'every', label: 'clock [s]', type: 'number', default: 60, min: 0 },
@@ -931,6 +931,19 @@ export const OPS: OpDef[] = [
 ];
 
 export const OP_BY_ID: Record<string, OpDef> = Object.fromEntries(OPS.map((o) => [o.id, o]));
+
+/** Operator ids of catalog 1, systems/catalogs/tsx-catalog-1.yaml, in its order. */
+export const CATALOG_1 = [
+  'decode.avro-soe', 'dq.plausible-range', 'convert.unit', 'resample', 'model.wind-shear', 'model.power-curve', 'feature.lag',
+  'feature.rolling', 'stats.welford-ddsketch', 'align.vector', 'segment.threshold', 'segment.extremum', 'sax.word', 'pair.xcorr',
+  'pair.es', 'dq.result',
+];
+
+/** True when catalog 1 lists the operator under its id or under the operator it writes into the DAG. */
+export function inCatalog(opId: string): boolean {
+  const op = OP_BY_ID[opId];
+  return !!op && (CATALOG_1.includes(op.id) || CATALOG_1.includes(op.dagOp ?? op.id));
+}
 
 /** Operations that have a button in the Swing panel but no implementation here. */
 export const NOT_PORTED: { label: string; group: 'univariate'; reason: string }[] = [

@@ -7,7 +7,7 @@
 import { create } from 'zustand';
 import { checkBrowserWork } from './workLimits';
 import { PROCESSOR_SERIES_OPS, capabilityOf } from './capabilities';
-import { OP_BY_ID, defaultParams } from './ops';
+import { OP_BY_ID, defaultParams, inCatalog } from './ops';
 import { Bucket, FlowNode, Params, SignalContext, SourceInfo, WayangConfig } from './types';
 import { VECTOR_OP, VECTOR_SCHEMA, componentNames } from './vector';
 
@@ -504,8 +504,11 @@ function dagParams(nodes: FlowNode[], node: FlowNode, seconds = false): Params |
   }
   if (node.op === VECTOR_OP) {
     const p = node.params;
-    const fill = (p.fill === 'as-of' ? `, fill: as-of, maxAge: PT${p.maxAge}S` : '') + (Number(p.lateness) > 0 ? `, lateness: PT${p.lateness}S` : '');
-    return `{ every: PT${p.every}S, key: ${p.key}, agg: ${p.agg}${fill}, emit: ${p.emit}, names: [${vectorComponents(nodes, node).join(', ')}] }`;
+    const fill = String(p.fill ?? 'none');
+    // An unknown fill is written as stored: validate() blocks its export and every runtime refuses it.
+    const extra = (fill === 'as-of' ? `, fill: as-of, maxAge: PT${p.maxAge}S` : fill === 'none' ? '' : `, fill: ${yamlScalar(fill)}`)
+      + (Number(p.lateness) > 0 ? `, lateness: PT${p.lateness}S` : '');
+    return `{ every: PT${p.every}S, key: ${p.key}, agg: ${p.agg}${extra}, emit: ${p.emit}, names: [${vectorComponents(nodes, node).join(', ')}] }`;
   }
   return node.params;
 }
@@ -672,7 +675,7 @@ export function validate(nodes: FlowNode[]): Finding[] {
     const other = topics.get(s.sinkTopic!);
     if (other) out.push({ level: 'error', text: `${other} and ${s.label} write to the same topic ${s.sinkTopic}.` });
     topics.set(s.sinkTopic!, s.label);
-    const missing = upstream(nodes, s.id).filter((n) => n.op !== 'source' && !OP_BY_ID[n.op]?.inCatalog);
+    const missing = upstream(nodes, s.id).filter((n) => n.op !== 'source' && !inCatalog(n.op));
     if (missing.length > 0) {
       out.push({
         level: 'warning',
@@ -683,6 +686,9 @@ export function validate(nodes: FlowNode[]): Finding[] {
   for (const n of nodes) {
     if (n.op === VECTOR_OP && inputsOf(n).length < 2) {
       out.push({ level: 'warning', text: `${n.label} has one input only. Add further inputs: each becomes a component of the vector.` });
+    }
+    if (n.op === VECTOR_OP && !['none', 'as-of'].includes(String(n.params.fill ?? 'none'))) {
+      out.push({ level: 'error', text: `${n.label}: vector fill must be none or as-of.` });
     }
   }
   const used = new Set<string>();
@@ -723,7 +729,7 @@ export function toDagYaml(s: FlowDoc): string {
     const op = OP_BY_ID[n.op];
     const params = dagParams(s.nodes, n, toSeries.has(n.id));
     lines.push(`  - id: ${n.id}`);
-    lines.push(`    op: ${op?.dagOp ?? n.op}${op?.inCatalog ? '' : '   # not in the stream operator catalog'}`);
+    lines.push(`    op: ${op?.dagOp ?? n.op}${inCatalog(n.op) ? '' : '   # not in the stream operator catalog'}`);
     if (n.op.startsWith('pair.')) lines.push('    experimental: true');
     lines.push(`    in: [${inputsOf(n).map((i) => (i === SOURCE_ID ? 'decode' : i)).join(', ')}]`);
     if (typeof params === 'string') lines.push(`    params: ${params}`);

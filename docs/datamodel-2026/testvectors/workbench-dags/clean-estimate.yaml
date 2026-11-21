@@ -11,7 +11,7 @@ nodes:
   - id: decode
     op: decode.avro-soe
   - id: n1
-    op: model.power-curve   # not in the stream operator catalog
+    op: model.power-curve
     in: [decode]
     params: { ratedKw: 3000, cutIn: 3, ratedWind: 12.5, cutOut: 25, count: 4 }
 sinks:

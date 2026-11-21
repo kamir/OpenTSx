@@ -114,16 +114,25 @@ Implemented in: `SystemDoc.java:43,417-430,454-481`.
 
 ### 1.4 Origin of a signal
 
-The origin of a signal is computed, not declared. The first rule that applies gives it:
+The server computes the origin of a signal from its sources and, for a signal that a flow computes, from
+`expect.origin`. The first rule that applies gives it:
 
 1. The raw source has an origin: that origin.
-2. The clean source is a flow: the worst origin of the signals the flow reads, the signal itself left out, each
-   computed by these rules. A signal already on the path of the computation gives no origin.
-3. Otherwise the signal has no origin.
+2. The clean source is a flow: the worst of `expect.origin` and the origins of the signals the flow reads, the
+   signal itself left out, each computed by these rules. A missing origin does not count; when none is present, the
+   signal has no origin. A signal already on the path of the computation gives no origin.
+3. Otherwise the signal has no origin, for example a signal without a source.
 
 The order from best to worst is `MEASURED`, `REPORTED`, `FORECAST`, `ESTIMATED`, `SYNTHETIC`.
 
-Implemented in: `Systems.java:405-422`, `Origin.java:7-28`.
+* `expect.origin` can make a computed signal worse than its inputs, never better. In `h2-chain`,
+  `park.p_potential_kw` expects `ESTIMATED`, and a power curve computes it from the `MEASURED` wind of a station: it
+  is `ESTIMATED`. `park.p_gen_kw` expects `MEASURED` and sums the active power of the turbines, which the document
+  binds to the output of a simulator (`SYNTHETIC`): it is `SYNTHETIC`.
+* A computed signal without `expect.origin` has the worst origin of the signals its flow reads.
+* A `features` source gives no origin.
+
+Implemented in: `Systems.java:405-426`, `Origin.java:7-28`; tests `SystemsTest.java:103-111,129-133,326-343`.
 
 <a id="s2-system-document"></a>
 
@@ -144,7 +153,7 @@ Implemented in: `Systems.java:405-422`, `Origin.java:7-28`.
   `systems/h2-chain.system.yaml` with no problems.
 
 Implemented in: `Systems.java:57-70`, `SystemDoc.java:188-258,356-371`, `RetrievalServer.java:634-641`,
-`SystemDocTest.java:57-67,344-346`.
+`SystemDocTest.java:58-68,345-347`.
 
 <a id="s22-top-level-fields"></a>
 
@@ -239,7 +248,7 @@ The server checks what the schema cannot. Each failed check adds one problem, un
 The server does not check that `select` matches exactly the series of the signal, that a generator `processor` has a
 processor description, or that several flows together form no cycle.
 
-Implemented in: `SystemDoc.java:200-258,262-371,375-436,500-583`; tests `SystemDocTest.java:386-404`.
+Implemented in: `SystemDoc.java:200-258,262-371,375-436,500-583`; tests `SystemDocTest.java:387-405`.
 
 <a id="s26-hash"></a>
 
@@ -252,7 +261,7 @@ Implemented in: `SystemDoc.java:200-258,262-371,375-436,500-583`; tests `SystemD
 * A working copy ([section 7](#s7-working-copy)) does not change the hash.
 * Generated episodes carry the hash as label `systemHash` ([section 4.2](#s42-generated-series)).
 
-Implemented in: `SystemDoc.java:183-186,220-233,369`; test `SystemDocTest.java:443`.
+Implemented in: `SystemDoc.java:183-186,220-233,369`; test `SystemDocTest.java:474`.
 
 <a id="s27-example"></a>
 
@@ -425,7 +434,7 @@ The status of a signal ([section 6](#s6-signal-state)) reports for each grade th
 * Several generator runs: when the series found carry more than one `run`, only the run with the newest label
   `generatedAt` counts. The others are listed under `others`.
 
-Implemented in: `Systems.java:237-253,481-608`, `RetrievalServer.java:137-148`.
+Implemented in: `Systems.java:237-253,485-612`, `RetrievalServer.java:137-148`.
 
 <a id="s5-series-sink-in-a-dag"></a>
 
@@ -586,7 +595,7 @@ One entry of `signals`:
 | `next` | [section 6.4](#s64-next-steps) |
 | `usedBy` | the ids of the flows that read any grade of the signal |
 
-Implemented in: `Systems.java:183-309,392-403,448-452`.
+Implemented in: `Systems.java:183-309,392-403,452-456`.
 
 <a id="s63-state"></a>
 
@@ -607,7 +616,7 @@ A signal has exactly one state: the first row that applies.
 * `clean` does not check that a flow runs or that the data is recent.
 * A range violation is not a state. It is reported as `outOfRange` next to the state.
 
-Implemented in: `Systems.java:274-276,432-446`; tests `SystemsTest.java:69-136,205-212`.
+Implemented in: `Systems.java:274-276,436-450`; tests `SystemsTest.java:71-141,210-217`.
 
 <a id="s64-next-steps"></a>
 
@@ -767,7 +776,7 @@ Implemented in: `signals.ts:150-158,181-188,223-252,573-611`, `SignalsPlace.tsx:
 * `dq.plausible-range` is preset with `expect.min` and `expect.max`. `resample` is preset with 60 seconds.
 * The workbench MAY be used without a signal. It then has no context line.
 
-Implemented in: `Workbench.tsx:168-181,695-742,826-831,948-972`, `types.ts:144-160`.
+Implemented in: `Workbench.tsx:168-181,695-742,826-831,948-972`, `types.ts:139-155`.
 
 <a id="s84-publish-as-clean-signal"></a>
 
@@ -809,4 +818,4 @@ Implemented in: `PublishClean.tsx:60-101`, `flow.ts:534-596,698-755`, `deploymen
 * Identity, versions and the frozen catalog follow
   [S1.1 of the operator specification](20-WAYANG-TS-OPERATORS-SPEC.md#s11-identity).
 
-Implemented in: `SystemDocTest.java:69-79`, `OperatorLearningAvailabilityTest.java:17-31`.
+Implemented in: `SystemDocTest.java:70-80`, `OperatorLearningAvailabilityTest.java:17-31`.

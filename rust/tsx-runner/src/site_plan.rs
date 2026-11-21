@@ -74,6 +74,32 @@ mod tests {
     }
 
     #[test]
+    fn profile_selects_orbit_status_delivery_and_binds_the_configuration_identity() {
+        let fixture = Fixture::new();
+        assert!(!fixture.config.orbit());
+        let path = fixture.directory.join("config.json");
+        let original: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        for (profile, orbit) in [("ground", false), ("orbit", true)] {
+            let mut value = original.clone();
+            value["profile"] = json!(profile);
+            fs::write(&path, value.to_string()).unwrap();
+            let config = SiteConfig::load(&path).unwrap();
+            assert_eq!(config.orbit(), orbit);
+            assert_ne!(config.identity_hash(), fixture.config.identity_hash());
+        }
+        for (profile, message) in [
+            (json!(null), "site configuration profile is invalid"),
+            (json!("Orbit"), "site configuration profile is invalid"),
+            (json!(1), "site configuration fields are invalid"),
+        ] {
+            let mut value = original.clone();
+            value["profile"] = profile;
+            fs::write(&path, value.to_string()).unwrap();
+            assert_eq!(SiteConfig::load(&path).err().unwrap().message, message);
+        }
+    }
+
+    #[test]
     fn signed_statistics_require_status_permission_in_the_local_policy() {
         let fixture = Fixture::new();
         let path = fixture.directory.join("config.json");
@@ -115,6 +141,7 @@ struct Configuration {
     policy: Value,
     state: PathBuf,
     limits: Limits,
+    profile: Option<String>,
 }
 
 pub struct SiteConfig {
@@ -131,6 +158,7 @@ pub struct SiteConfig {
     identity_hash: String,
     tls_pins: [String; 3],
     qualification: crate::site_qualification::Qualification,
+    orbit: bool,
 }
 
 impl SiteConfig {
@@ -157,6 +185,12 @@ impl SiteConfig {
             ));
         }
         admission::validate_run_limits(&document.limits).map_err(invalid)?;
+        let orbit = match document.profile.as_deref() {
+            None if value.get("profile").is_none() => false,
+            Some("ground") => false,
+            Some("orbit") => true,
+            _ => return Err(invalid("site configuration profile is invalid")),
+        };
         if document.bindings.len() > 16
             || !document.bindings.contains_key("site")
             || !document.bindings.contains_key("signal")
@@ -300,6 +334,7 @@ impl SiteConfig {
             identity_hash,
             tls_pins,
             qualification,
+            orbit,
         })
     }
 
@@ -323,6 +358,9 @@ impl SiteConfig {
     }
     pub fn limits(&self) -> &Limits {
         &self.limits
+    }
+    pub fn orbit(&self) -> bool {
+        self.orbit
     }
     pub fn directory(&self) -> &Path {
         &self.directory

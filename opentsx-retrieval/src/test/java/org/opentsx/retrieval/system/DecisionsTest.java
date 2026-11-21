@@ -32,7 +32,9 @@ class DecisionsTest {
         ((ObjectNode) s.get("tags")).put("system", "h2-chain").put("signal", signal);
         ObjectNode labels = (ObjectNode) s.get("labels");
         labels.putArray("grade").add("clean");
-        labels.putArray("origin").add(origin);
+        if (origin != null) {
+            labels.putArray("origin").add(origin);
+        }
         if (madeOf != null) {
             labels.putArray("madeOf").add(madeOf);
         }
@@ -98,6 +100,17 @@ class DecisionsTest {
         JsonNode demand = byId(dispatch(inv).path("needs"), "signal", "offtake.demand_kgph");
         assertFalse(demand.path("ok").asBoolean());
         assertEquals("offtake.demand_kgph is synthetic; the decision accepts reported, forecast", texts(demand.path("reasons")).get(0));
+    }
+
+    @Test
+    void anEstimateWhoseDataDoesNotNameItsOriginIsStillAnEstimate() {
+        ObjectNode inv = windFarm();
+        // a flow that writes no origin label: the origin of the signal counts, and a power curve computes the potential
+        clean(inv, "p1", "park.p_potential_kw", "h2-chain.park.p_potential_kw", 0, 9000, null, null);
+        JsonNode avail = byId(dispatch(inv).path("needs"), "signal", "park.p_potential_kw");
+        assertEquals("ESTIMATED", avail.path("found").path("origin").asText());
+        assertTrue(avail.path("ok").asBoolean(), avail.path("reasons").toString());
+        assertFalse(avail.path("containsSynthetic").asBoolean());
     }
 
     @Test

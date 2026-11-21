@@ -52,7 +52,7 @@ class VectorJobTest {
 
     static final String VECTOR_NODE = """
             - id: n1
-              op: align.vector   # not in the stream operator catalog
+              op: align.vector
               in: [decode]
               params: { every: PT60S, key: turbine, agg: MEAN, emit: any, names: [state] }
             """;
@@ -174,5 +174,15 @@ class VectorJobTest {
         double[] power = Episodes.values(episodes.get(0));
         assertEquals(150.0, power[0]);
         assertTrue(Double.isNaN(power[3]), "null in the record is a gap in the series");
+    }
+
+    @Test
+    void refusesAFillOtherThanNoneOrAsOfAsTheRustRunnerDoes() throws Exception {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> plan(dag(VECTOR_NODE.replace("emit: any", "fill: asof, emit: any"), VECTOR_SINK)));
+        assertEquals("node n1: vector fill must be none or as-of", e.getMessage());
+        assertTrue(plan(dag(VECTOR_NODE.replace("emit: any", "fill: as-of, emit: any"), VECTOR_SINK)).jobs().get(0).params().asOf());
+        assertEquals(false, plan(dag(VECTOR_NODE.replace("emit: any", "fill: none, emit: any"), VECTOR_SINK)).jobs().get(0).params().asOf());
+        assertEquals(false, plan(dag(VECTOR_NODE.replace("emit: any", "fill: ~, emit: any"), VECTOR_SINK)).jobs().get(0).params().asOf());
     }
 }

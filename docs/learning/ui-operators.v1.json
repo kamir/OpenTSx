@@ -3503,8 +3503,10 @@
       ],
       "pitfalls": [
         "Both inputs must carry a time axis.",
+        "Two series that give the same component of one vector are refused, as the vector processor refuses them; choose a key that tells them apart.",
         "Lateness configures the running processor and does not delay this batch apply call.",
-        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights."
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights.",
+        "A missing fill is none. A fill other than none or as-of, such as asof, is refused with the message \"vector fill must be none or as-of\", as the Rust runner and the vector processor refuse it."
       ],
       "parameterKeys": [
         "every",
@@ -3566,10 +3568,12 @@
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#align-vector",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1",
+          "docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md"
         ],
         "source": [
           "opentsx-saas-frontend/src/workbench/vector.ts#alignVector",
+          "opentsx-saas-frontend/src/workbench/vector.ts#fillsAsOf",
           "rust/tsx-runner/src/pairs.rs",
           "rust/tsx-runner/src/catalog.rs",
           "systems/processors/align.vector.yaml"
@@ -3578,7 +3582,9 @@
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
           "opentsx-saas-frontend/src/workbench/vector.test.ts",
           "rust/tsx-runner/tests/pair_vector_vectors.rs",
-          "rust/tsx-runner/tests/catalog_flow.rs"
+          "rust/tsx-runner/tests/catalog_flow.rs",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/vector/VectorJobTest.java#refusesAFillOtherThanNoneOrAsOfAsTheRustRunnerDoes",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangErrorsTest.java#message16RejectsAnUnknownEnumValue"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/align-vector.v1.json"
