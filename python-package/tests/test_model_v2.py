@@ -242,3 +242,25 @@ def test_bucket_checksum_vectors_ignore_order_and_duplicates():
     for v in load("bucket-checksum.json"):
         assert m.bucket_checksum(v["episodeIds"]) == v["checksum"]
         assert m.bucket_checksum(reversed(v["episodeIds"])) == v["checksum"]
+
+
+def test_bucket_content_checksum_vectors():
+    vectors = load("bucket-content-checksum.json")
+    assert len(vectors) == 5
+    for v in vectors:
+        assert m.bucket_content_checksum(v["episodeIds"], v["contentDigests"]) == v["checksum"], v["name"]
+        pairs = list(zip(v["episodeIds"], v["contentDigests"]))[::-1]
+        assert m.bucket_content_checksum([i for i, _ in pairs], [d for _, d in pairs]) == v["checksum"], v["name"]
+    assert vectors[1]["episodeIds"] == vectors[2]["episodeIds"]
+    assert vectors[1]["checksum"] != vectors[2]["checksum"]
+
+
+@pytest.mark.parametrize("ids, digests, error", [
+    (["e1", "e2"], ["a" * 64], "1 content digests for 2 episode ids"),
+    (["e1", "e1"], ["a" * 64, "b" * 64], "episode e1 appears with two contents"),
+    (["e1"], ["A" * 64], "content digest of episode e1 is not 64 lower-case hex characters"),
+    ([""], ["a" * 64], "episode ids must not be empty"),
+])
+def test_bucket_content_checksum_rejects_inconsistent_input(ids, digests, error):
+    with pytest.raises(ValueError, match=error):
+        m.bucket_content_checksum(ids, digests)

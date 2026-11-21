@@ -571,6 +571,13 @@ entries before 3.0.0 are grouped by date.
   `tsx-catalog/1` pins it; its `analysisResults` entries are now the `v2.1` vectors and the generator rebuilds it from
   `schema-history/v2.1`. The workbench result view shows the digests and says when a record has none.
 
+- Sealed buckets carry a content checksum. `BucketWriter` seals with `Buckets.contentChecksum`: `sha256:` and the
+  SHA-256 over every episode id with its content digest. It rejects an episode id that is already in the bucket with
+  other content before sending it. `ReplayService` verifies a bucket replay against the episode contents, so an episode
+  that comes back with other values under the same id no longer passes as verified. Manifests sealed with the id-only
+  `Buckets.checksum` (no `sha256:` prefix) still verify, by their ids. Python gets `bucket_content_checksum`; new
+  vectors `bucket-content-checksum.json`. `bucket-checksum.json` and the Rust id-only helper are unchanged.
+
 ### Changed
 
 - User manual 11.3 no longer lists `overall_sync` above 1 as a known issue of `EventSynchronization`: the local

@@ -3,6 +3,7 @@ package org.opentsx.kafka;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.TopicPartition;
 import org.opentsx.model.Buckets;
+import org.opentsx.model.Episodes;
 import org.opentsx.model.Micros;
 import org.opentsx.model.OpenTsxAvro;
 import org.opentsx.model.v2.BucketManifest;
@@ -50,6 +51,7 @@ public final class ReplayService {
                 : index.find(request.seriesIds(), request.fromMicros(), request.toMicros());
 
         List<String> deliveredIds = new ArrayList<>();
+        List<String> contentDigests = new ArrayList<>();
         long missing = 0;
         Pacer pacer = new Pacer(request.speed());
         int chunk = request.maxEpisodesInMemory();
@@ -59,16 +61,22 @@ public final class ReplayService {
             missing += part.size() - episodes.size();
             episodes.sort(Comparator.comparing(Episode::getTStart).thenComparing(Episode::getEpisodeId));
             for (Episode e : episodes) {
+                String digest = Episodes.contentDigest(e);
                 pacer.await(Micros.of(e.getTStart()));
                 sink.accept(e);
                 deliveredIds.add(e.getEpisodeId());
+                contentDigests.add(digest);
             }
         }
 
-        String checksum = Buckets.checksum(deliveredIds);
+        String checksum = Buckets.contentChecksum(deliveredIds, contentDigests);
         boolean verified = false;
         if (request.bucketId() != null) {
             BucketManifest manifest = BucketCatalog.load(consumer, layout, timeout).get(request.bucketId());
+            if (manifest != null && manifest.getChecksum() != null
+                    && !manifest.getChecksum().startsWith(Buckets.CONTENT_PREFIX)) {
+                checksum = Buckets.checksum(deliveredIds);
+            }
             verified = manifest != null
                     && manifest.getState() == BucketState.SEALED
                     && manifest.getEpisodeCount() == deliveredIds.size()

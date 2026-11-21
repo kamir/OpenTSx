@@ -12,7 +12,7 @@ the v2 data model. The Python twin is `opentsx.model` in `python-package`, and i
 | `Summaries` | Welford summaries; exact merge |
 | `OpenTsxAvro`, `WireFormat` | single-object encoding (default), Confluent framing on read |
 | `kafka.OpenTsxSerializer` / `OpenTsxDeserializer` | Kafka value serde |
-| `Buckets` | bucket manifest helpers and checksum |
+| `Buckets` | bucket checksums: `contentChecksum` (`sha256:`, binds episode contents), id-only `checksum` |
 | `Ulid` | sortable ids; `Ulid.deterministic(millis, seed)` for reproducible jobs |
 | `SchemaHistory` | frozen schema versions with a BACKWARD_TRANSITIVE check |
 
