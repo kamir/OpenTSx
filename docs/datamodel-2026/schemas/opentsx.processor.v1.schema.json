@@ -197,6 +197,14 @@
         }
       }
     },
+    "key": {
+      "enum": [
+        "preserve",
+        "derive-1to1",
+        "regroup"
+      ],
+      "description": "How the output is keyed relative to the input (20-WAYANG-TS-OPERATORS-SPEC.md, S1.4; D-T20): preserve keeps the series key, derive-1to1 derives one output series per input series, regroup keys the output by a new key over several inputs."
+    },
     "merge": {
       "type": "object",
       "required": [

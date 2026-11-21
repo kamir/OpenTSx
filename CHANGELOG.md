@@ -108,6 +108,11 @@ entries before 3.0.0 are grouped by date.
 
 ### Added
 
+- Catalog cards declare `key` (D-T20, spec S1.4, `opentsx.processor.v1` schema): `preserve` for decode, segments,
+  SAX, DQ results and statistics; `derive-1to1` for the cleaning, model and feature operators; `regroup` for
+  `align.vector`, `pair.xcorr` and `pair.es`. `SystemDocTest` requires the field on every catalog 1 operator and
+  exactly these three regrouping operators. The frozen vector hashes do not change.
+
 - TASK-020 U01 data edges: tests that a Rust fragment naming a second source topic is refused
   (`a_fragment_reading_two_topics_is_refused`), that the bounded Rust lowering refuses `pair.xcorr`, `pair.es` and
   `align.vector` with an exact message, and that a raw pair or vector cannot feed a federated sink. No production
@@ -609,6 +614,9 @@ entries before 3.0.0 are grouped by date.
 
 ### Fixed
 
+- `tsx-runner`: the WASM test `scoped_fixture_is_cleared_after_unwinding` unwinds with `resume_unwind`, so it no
+  longer prints a panic message. With `--nocapture 2>&1` that message could split another test's `test ... ok` line,
+  and the B3 qualification then reported `guest_stack_is_bounded_by_the_configured_limit` as not executed.
 - The `statsmodels` 0.15.0 pin of `python-package` now matches `deploy/local-cp/requirements.in` and
   `requirements.lock`. With the old 0.14.6 constraint, the install in `standalone-numerics.md` failed with
   `ResolutionImpossible`, and `test_finite_service_http.py` expected 0.14.6. `statsmodels` 0.15.0 adds the pinned

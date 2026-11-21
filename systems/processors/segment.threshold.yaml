@@ -21,5 +21,6 @@ runtimes:
   wayang: { status: available, class: org.opentsx.wayang.TsxSegment }
   rust: { status: available, class: tsx_runner::catalog::Pipeline, note: "tsx-runner 0.1.0 isolated local B2 context. Per-series detector and sample state; bounded completion flushes open segments. No fleet qualification." }
 state: { kind: keyed, key: series }
+key: preserve
 merge: { class: exact, function: sum }
 testvectors: docs/datamodel-2026/testvectors/segment-threshold.v1.json
