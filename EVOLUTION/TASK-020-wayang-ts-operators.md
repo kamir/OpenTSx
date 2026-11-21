@@ -48,7 +48,7 @@ Each operator still requires its reference vectors and admission gate before use
   `agent_cursor_follows_the_site_sequence_across_jobs_through_restart_and_duplicate_ack` in `rust/tsx-runner/src/agent.rs`).
   Membership and capabilities are met on that path except measured capacities (`ConformanceMembershipTest`); see the
   unified plan for what remains open. Data edges hold by construction while each fragment reads one whole topic.
-  D-T16 to D-T22 decide the rest: D-T17, D-T18 and D-T22 are in force; D-T16, D-T19, D-T20 and D-T21 are to implement.
+  D-T16 to D-T22 decide the rest: D-T17, D-T18, D-T20 and D-T22 are in force; the D-T21 contract is in force while runtimes refuse outputs until the fragment cutter lands; D-T16 and D-T19 are to implement.
 - [x] U02 local bounded stage: `RustPlugin` maps connected topic sources, unions, optional fused chain and sink to
   `RustPlatform`; `RustExecutor` invokes one complete stage action with no raw-payload channel or Java fallback.
 - [x] U03 local bounded control: authenticated backend PostgreSQL journal and standalone advisory-lock coordinator,

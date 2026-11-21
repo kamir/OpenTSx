@@ -2,6 +2,8 @@ import { useState } from "react";
 import { capabilityOf } from "./capabilities";
 import { descendants, evaluate, inputsOf, useFlow } from "./flow";
 import { OPS, OP_BY_ID, defaultParams } from "./ops";
+import { parameterLabel, validateParameters } from "./parameters";
+import { signalPresets } from "./presets";
 import type { Bucket, OpDef, ParamDef, Params, ParamValue } from "./types";
 import { checkBrowserWork } from "./workLimits";
 import "./device-tools.css";
@@ -36,17 +38,6 @@ const SUMMARIES: Record<string, string> = {
   fft: "Inspect the one-sided amplitude spectrum.",
   acf: "Measure dependence on earlier samples.",
 };
-const VECTOR_LABELS: Record<string, string> = {
-  every: "Sample interval [s]",
-  agg: "Aggregation",
-  key: "Vector grouping",
-  fill: "Missing samples",
-  maxAge: "Maximum age [s]",
-  emit: "Emit rule",
-  names: "Component names",
-  lateness: "Allowed lateness [s]",
-};
-
 function groupOf(op: OpDef): string {
   if (op.id.startsWith("model.")) return "Model";
   if (PREPARATION.has(op.id)) return "Prepare";
@@ -57,12 +48,6 @@ function groupOf(op: OpDef): string {
 
 function labelOf(op: OpDef): string {
   return LABELS[op.id] ?? op.label;
-}
-
-function parameterLabel(op: OpDef, field: ParamDef): string {
-  return op.id === "align.vector"
-    ? (VECTOR_LABELS[field.key] ?? field.label)
-    : field.label;
 }
 
 function originLabel(kind: string | undefined, synthetic: boolean): string {
@@ -292,31 +277,6 @@ function ParameterField({
   );
 }
 
-function validateParameters(op: OpDef, params: Params): void {
-  if (op.id === "select") {
-    try {
-      RegExp(String(params.pattern), "i");
-    } catch {
-      throw new Error("Pattern is not a valid regular expression.");
-    }
-  }
-  for (const field of op.params) {
-    const value = params[field.key];
-    const label = parameterLabel(op, field);
-    if (field.type === "number") {
-      if (typeof value !== "number" || !Number.isFinite(value))
-        throw new Error(`${label} requires a finite number.`);
-      if (field.min !== undefined && value < field.min)
-        throw new Error(`${label} must be at least ${field.min}.`);
-    } else if (
-      typeof value !== "string" ||
-      (field.type === "select" && !field.options?.includes(value))
-    ) {
-      throw new Error(`${label} has an unsupported value.`);
-    }
-  }
-}
-
 export function DeviceInspector({
   draftOp,
   onApplied,
@@ -349,7 +309,10 @@ export function DeviceInspector({
   const baseline = JSON.stringify(node?.params ?? {});
   const params = op
     ? draftOp
-      ? (drafts[op.id] ?? defaultParams(op))
+      ? (drafts[op.id] ?? {
+          ...defaultParams(op),
+          ...signalPresets(op.id, state.context),
+        })
       : node &&
           edits[node.id]?.baseline === baseline &&
           edits[node.id].source === state.source &&
