@@ -13,8 +13,11 @@ deploy/k3s/40-demo.sh all     # kafscale-check, windpark-sim, stats, metadata, t
 [operations](operations.md#try-it-locally-first-the-probe)).
 
 The outputs below are real outputs of the same commands (taken from the staged image content on a JDK 21 machine).
-The twin outputs are deterministic, so you should see the same numbers and run hashes. Lines such as
-`Picked up JAVA_TOOL_OPTIONS` and SLF4J logging are left out.
+The twin outputs are deterministic: you see the same numbers and run ids. The run hashes shown are those of that
+JDK 21 machine. Another JVM can print other run hashes, because the hash chains the raw bits of every value
+([TWIN-COUPLING-SPEC section 8](../datamodel-2026/TWIN-COUPLING-SPEC.md#8-run-identity-and-run-record)). The
+attributes of an event in braces can appear in another order. Lines such as `Picked up JAVA_TOOL_OPTIONS` and SLF4J
+logging are left out.
 
 | Demo | Needs | Typical runtime |
 |------|-------|-----------------|
@@ -358,9 +361,8 @@ The Studio page is generated while building `opentsx/studio` (StudioExport over 
 deploy/k3s/40-demo.sh studio        # port-forward -> http://localhost:8088  (Ctrl-C to stop)
 ```
 
-You see the three scenarios H2 chain, house and boat in the three views (statistics, process, data flow). With
-`INGRESS=true` it is also served at
-`http://<node>/` by Traefik.
+You see the three scenarios H2 chain, house and boat in the views Overview, Compare, System diagram and Series, and
+their events in the tab Event topic. With `INGRESS=true` it is also served at `http://<node>/` by Traefik.
 
 The export also runs in the cluster as a Job:
 
@@ -368,11 +370,14 @@ The export also runs in the cluster as a Job:
 deploy/k3s/40-demo.sh studio-export
 ```
 
-It prints the file (1,174,215 bytes for this commit) and its SHA-256
-(`ffbd57478ce8d2fb5fd689900ca5ed08b7bc2333cc02d18b18891e267b5f94dd` for this commit).
+It prints the file (1,344,491 bytes for this commit) and its SHA-256
+(`856fe16de938c0e26e6f4d4d2cd06225ec63f217b2d9feea50bce7dfba410b41` for this commit).
 
 The export is deterministic: the same code gives the same checksum, and the page built from it is byte-identical to
-`docs/prototypes/smart-topics-studio.html` (checked for this commit).
+`docs/prototypes/smart-topics-studio.html` (checked for this commit with Java 21 on x86_64, with and without the
+JVM's libm intrinsics). The export leaves out the run hash, because the hash chains the raw bits of every value and
+differs between JVMs whose `Math` functions round the last bit differently. `StudioPageTest` fails when the page and
+the export differ.
 
 ## Retrieval server
 

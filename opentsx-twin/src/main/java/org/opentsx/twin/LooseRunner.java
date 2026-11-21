@@ -19,8 +19,8 @@ import java.util.TreeMap;
  * variant T would use:
  *
  * <ul>
- *   <li>{@code staleness = 0}: bulk-synchronous. The atom waits for exactly the value T uses; the result is
- *       bit-identical to T for any latency, jitter or outage (only the wall time differs).</li>
+ *   <li>{@code staleness = 0}: bulk-synchronous. The atom waits for exactly the value T uses. In every mode the
+ *       result is bit-identical to T for any latency, jitter, step ticks or outage; only the wall time differs.</li>
  *   <li>{@code staleness = s > 0}: stale-synchronous (SSP). The atom uses the newest visible value, at most
  *       {@code s} steps old, and waits only if none is.</li>
  *   <li>{@link Coupling#async()}: never waits; uses the newest visible value or the resting output.</li>

@@ -20,6 +20,17 @@ entries before 3.0.0 are grouped by date.
   example event in the twin-live README and in `EventTopic` is the record the h2-chain reference run writes. The
   `opentsx-twin` docs call the envelopes the message contract, as TWIN-COUPLING-SPEC section 7 does, and the
   twin-live README names the Studio controls by their element ids.
+- `LooseRunnerTest` checks variant L conformance for every scenario in the modes `SHADOW`, `WHAT_IF` and `FORECAST`:
+  staleness 0 gives the run id, hash, events, KPIs, port messages and commit barriers of variant T and no stale read,
+  for every what-if alternative, a forecast from mid-run and every Studio forecast, not only the run hash of
+  `h2-chain`. Its per-atom transports stress atoms that exist and slow the run. Of the replaced transports, one put a
+  slow processor on `balance`, which is an atom type and not an atom, and an outage on `market`, which delays no
+  reader in `h2-chain` and is not an atom of `haus` and `boot`; it took the ticks of `bsp()` in every scenario.
+  Another put a lag on `ely`, which is not an atom of `haus` and `boot`, so that lag added no tick there. A combined
+  transport applies lag, jitter, a slow processor and an outage at once. The test fails when a stressor names no atom
+  of the plan or adds no tick. TWIN-COUPLING-SPEC §10 states that `lag`, `stepTicks` and `outages` keys that are not
+  atoms are not rejected and slow no atom, and a test covers it. `LooseRunner` behavior is unchanged.
+
 - TASK-020 U01 decisions D-T16 to D-T22 (owner, 2026-11-21). `TsxCompileContext.Boundary` loses `admitsRaw` (D-T22):
   no raw series, pair or vector and no operator with merge class `none` can feed a federated sink. Spec S1.10, S2.2
   and S2.4 state that a site has exactly one node (D-T17) and that the local worker's capabilities are trusted-local
@@ -631,6 +642,17 @@ entries before 3.0.0 are grouped by date.
 - `tsx-runner`: the WASM test `scoped_fixture_is_cleared_after_unwinding` unwinds with `resume_unwind`, so it no
   longer prints a panic message. With `--nocapture 2>&1` that message could split another test's `test ... ok` line,
   and the B3 qualification then reported `guest_stack_is_bounded_by_the_configured_limit` as not executed.
+- The Smart Topics Studio is in English. `docs/prototypes/smart-topics-studio.html` declares `lang="en"`; menus,
+  views, tooltips, event texts, the scenario titles, labels, KPIs, alternatives and forecasts (`H2ChainScenario`,
+  `HouseStudioScenario`, `BoatStudioScenario`) and the guides `twin/h2-chain.guide.yaml` and
+  `twin/haus-erzgebirge.guide.yaml` are English. Numbers use English notation and dates read `1 Oct 02:29`. The
+  downloads are named `<twin>-own.yaml`, `inventory-<twin>.yaml` and `studio-own-data-<scenario>.json`. The
+  retrieval server returns the same English titles and labels in `GET /v1/systems/{id}/scenario`. Scenario ids, twin
+  names, plan parameters and run ids are unchanged. `StudioExport` leaves out the run hash: the hash chains the raw
+  bits of every value and differs between JVMs whose `Math` functions round the last bit differently, so the
+  committed page could not be rebuilt byte for byte. Section 8 of `TWIN-COUPLING-SPEC.md` limits the equal run hash to
+  runs on the same JVM. The page is rebuilt with `tools/build_studio.py`; `StudioPageTest` and
+  `tools/test_studio_page.py` check it.
 - The `statsmodels` 0.15.0 pin of `python-package` now matches `deploy/local-cp/requirements.in` and
   `requirements.lock`. With the old 0.14.6 constraint, the install in `standalone-numerics.md` failed with
   `ResolutionImpossible`, and `test_finite_service_http.py` expected 0.14.6. `statsmodels` 0.15.0 adds the pinned

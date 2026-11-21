@@ -21,13 +21,14 @@ public final class BoatStudioScenario implements StudioScenario {
 
     @Override
     public String title() {
-        return "Boot Etap 22 (Powerstation, Solar, Landstrom)";
+        return "Boat Etap 22 (power station, solar, shore power)";
     }
 
     @Override
     public String description() {
-        return "14-tägiger Sommertörn in der Kieler Bucht im 15-Minuten-Takt: Hafen, Segeln, Ankern. Verbraucher: "
-                + "2 Laptops, Pixel 10, Starlink Mini, Raspberry Pi, UKW. Alle Zahlen sind Annahmen; Hebel sind modelliert.";
+        return "A 14-day summer trip in Kiel Bay in 15-minute steps: harbour, sailing, anchoring. Consumers: "
+                + "2 laptops, Pixel 10, Starlink Mini, Raspberry Pi, VHF radio. All numbers are assumptions; levers are "
+                + "modelled.";
     }
 
     @Override
@@ -56,14 +57,14 @@ public final class BoatStudioScenario implements StudioScenario {
     }
 
     private static final Map<String, String> LABELS = Map.of(
-            "solar300", "+100 Wp Solar (300 Wp)",
-            "starlink3h", "Starlink nur 3 h am Tag",
-            "station2kwh", "Powerstation 2 kWh",
-            "shore3d", "Landstrom nur jeden 3. Tag",
-            "laptopsSun", "Laptops laden nur 10–16 Uhr",
-            "starlinkAc", "Starlink über Wechselrichter (230 V)",
-            "starlinkStd", "Starlink Standard statt Mini",
-            "weekends", "Wochenendnutzung statt Urlaubstörn");
+            "solar300", "+100 Wp solar (300 Wp)",
+            "starlink3h", "Starlink only 3 h a day",
+            "station2kwh", "Power station 2 kWh",
+            "shore3d", "Shore power only every 3rd day",
+            "laptopsSun", "Laptops charge only 10:00 to 16:00",
+            "starlinkAc", "Starlink via inverter (230 V)",
+            "starlinkStd", "Starlink Standard instead of Mini",
+            "weekends", "Weekend use instead of a holiday trip");
 
     @Override
     public List<String> smartMetrics() {
@@ -86,29 +87,29 @@ public final class BoatStudioScenario implements StudioScenario {
     @Override
     public List<Kpi> kpis() {
         return List.of(
-                new Kpi("kpi.unmet_wh", "Ungedeckter Bedarf", "Wh", 0, -1),
-                new Kpi("kpi.soc_min_pct", "niedrigster Ladezustand", "%", 1, 1),
-                new Kpi("kpi.autonomy_h_mean", "mittlere Autonomie", "h", 1, 1),
-                new Kpi("kpi.solar_used_wh", "genutzte Solarenergie", "Wh", 0, 1),
-                new Kpi("kpi.shore_wh", "Landstrom", "Wh", 0, -1),
-                new Kpi("kpi.solar_share_pct", "Solaranteil", "%", 0, 1),
-                new Kpi("kpi.load_wh_per_day", "Verbrauch je Tag", "Wh/d", 0, -1),
-                new Kpi("kpi.starlink_wh_per_day", "davon Starlink je Tag", "Wh/d", 0, -1),
-                new Kpi("kpi.cycles", "Vollzyklen", "", 2, -1));
+                new Kpi("kpi.unmet_wh", "Unmet demand", "Wh", 0, -1),
+                new Kpi("kpi.soc_min_pct", "Lowest state of charge", "%", 1, 1),
+                new Kpi("kpi.autonomy_h_mean", "Mean autonomy", "h", 1, 1),
+                new Kpi("kpi.solar_used_wh", "Solar energy used", "Wh", 0, 1),
+                new Kpi("kpi.shore_wh", "Shore power", "Wh", 0, -1),
+                new Kpi("kpi.solar_share_pct", "Solar share", "%", 0, 1),
+                new Kpi("kpi.load_wh_per_day", "Consumption per day", "Wh/d", 0, -1),
+                new Kpi("kpi.starlink_wh_per_day", "Of which Starlink per day", "Wh/d", 0, -1),
+                new Kpi("kpi.cycles", "Full cycles", "", 2, -1));
     }
 
     @Override
     public Map<String, String> labels() {
         Map<String, String> m = new LinkedHashMap<>();
-        m.put("station.soc", "Ladezustand Powerstation");
-        m.put("station.p_unmet_w", "Ungedeckte Last");
-        m.put("station.autonomy_h", "Autonomie bei aktueller Last");
-        m.put("solar.p_avail_w", "Solar verfügbar");
-        m.put("station.p_load_w", "Last gesamt");
-        m.put("station.solar_used_w", "Solar genutzt");
-        m.put("station.shore_used_w", "Landstrom genutzt");
+        m.put("station.soc", "Power station state of charge");
+        m.put("station.p_unmet_w", "Unmet load");
+        m.put("station.autonomy_h", "Autonomy at the current load");
+        m.put("solar.p_avail_w", "Solar available");
+        m.put("station.p_load_w", "Total load");
+        m.put("station.solar_used_w", "Solar used");
+        m.put("station.shore_used_w", "Shore power used");
         m.put("starlink.p_w", "Starlink");
-        m.put("boat.mode", "Betriebsmodus");
+        m.put("boat.mode", "Operating mode");
         return m;
     }
 
