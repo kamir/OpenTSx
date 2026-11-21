@@ -30,6 +30,7 @@ Code cited on this page:
 | `Generators.java` | `opentsx-retrieval/src/main/java/org/opentsx/retrieval/generate/` |
 | `RetrievalServer.java`, `KafScaleFeed.java` | `opentsx-retrieval/src/main/java/org/opentsx/retrieval/server/` |
 | `SystemDocTest.java`, `SystemsTest.java`, `OperatorLearningAvailabilityTest.java` | `opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/` |
+| `GeneratorsTest.java` | `opentsx-retrieval/src/test/java/org/opentsx/retrieval/generate/` |
 | `TopicLayout.java` | `opentsx-kafka-v2/src/main/java/org/opentsx/kafka/` |
 | `Origin.java` | `opentsx-twin/src/main/java/org/opentsx/twin/` |
 | `system.py` | `opentsx-saas-backend/app/models/` |
@@ -252,7 +253,7 @@ The server checks what the schema cannot. Each failed check adds one problem, un
 The server does not check that `select` matches exactly the series of the signal or that several flows together form
 no cycle. It checks a generator source with the rules of the generator it runs, not against a processor description.
 
-Implemented in: `SystemDoc.java:200-258,262-371,375-443,445-505,518-601`, `Generators.java:57-63,79-159`; tests
+Implemented in: `SystemDoc.java:200-258,262-371,375-601`, `Generators.java:57-63,79-85,105-127,137-159`; tests
 `SystemDocTest.java:387-405,478-512`.
 
 <a id="s26-hash"></a>
@@ -398,8 +399,8 @@ Rules:
 | `gen.ou` | `mean`, `sigma` | `reversion`, default 0.1 | `sigma` not below 0; `reversion` above 0 and at most 1 |
 | `gen.sine` | `mean`, `amplitude` | `period` (ISO-8601 duration), default `P1D`; `phase` (share of the period), default 0; `sigma`, default 0 | `period` above zero and at most `PT2562047H47M16.854775807S` (about 292 years); `sigma` not below 0 |
 
-Implemented in: `Systems.java:119-164`, `Generators.java:36-42,57-68,79-159,176-216`; tests `SystemsTest.java:461-477`,
-`SystemDocTest.java:502-512`, `GeneratorsTest.java:117-118`.
+Implemented in: `Systems.java:119-153,161-164`, `Generators.java:36-42,57-71,79-159,176-216`; tests
+`SystemsTest.java:461-477`, `SystemDocTest.java:502-512`, `GeneratorsTest.java:117-118`.
 
 <a id="s43-clean-and-feature-series"></a>
 

@@ -437,9 +437,9 @@ Two ranges answer two questions.
 Example: for `park/T02/WTUR.W` the plausible range is -100 to 10000 kW from the channel catalog and the operating
 range is 0 to 3300 kW from the system document.
 
-Implemented in: `system.v1:223-266`, `SystemDoc.java:45-52`, `SystemDoc.java:399-440`, `SystemDoc.java:612-617`,
-`Systems.java:223-227`, `Systems.java:271-276`, `Systems.java:446-450`, `SystemDocTest.java:354-362`,
-`SystemDocTest.java:396`.
+Implemented in: `system.v1:223-266`, `SystemDoc.java:45-52`, `SystemDoc.java:399-406`, `SystemDoc.java:413-415`,
+`SystemDoc.java:438-440`, `SystemDoc.java:612-617`, `Systems.java:223-227`, `Systems.java:271-276`,
+`Systems.java:446-450`, `SystemDocTest.java:354-362`, `SystemDocTest.java:396`.
 
 <a id="5-powers-of-a-wind-park"></a>
 
@@ -499,6 +499,6 @@ states its `fidelity`:
   `generated, not measured: <ports>; the run shows the mechanism, not an effect`.
 
 Implemented in: `processor.v1:172-178`, `systems/processors/gen.ou.yaml:6`, `systems/processors/gen.sine.yaml:6`,
-`Generators.java:17-22`, `Generators.java:64-71`, `Generators.java:204-212`, `TopicLayout.java:173-176`,
+`Generators.java:17-22`, `Generators.java:64-71`, `Generators.java:208-212`, `TopicLayout.java:173-176`,
 `TopicLayout.java:204-206`, `KafScaleFeed.java:173-174`, `Decisions.java:144-145`, `Decisions.java:175-177`,
 `SignalInputs.java:98-99`, `Runs.java:359`, `Runs.java:375`.
