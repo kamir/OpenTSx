@@ -15,12 +15,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** The DAG routes of the retrieval server: who may deploy and stop, what reaches the control topic, what is listed. */
 class DagRunEndpointTest {
 
     static final HttpClient HTTP = HttpClient.newHttpClient();
+    static final String TOKEN = "s3cret-run-token";
 
     /** Stands in for the feed: remembers what was asked. */
     static final class Recorder implements RetrievalServer.Dags {
@@ -159,27 +161,39 @@ class DagRunEndpointTest {
     @Test
     void deploysAndStopsAndReportsARefusal() throws Exception {
         Recorder dags = new Recorder();
-        try (RetrievalServer server = server(dags, true, null)) {
+        try (RetrievalServer server = server(dags, true, TOKEN)) {
             HttpResponse<String> ok = post(server, "/v1/dags/deploy", "dag: wind-exp2-smart\nnodes: []\n",
-                    RetrievalServer.BY_HEADER, "admin@example.com");
+                    RetrievalServer.BY_HEADER, "admin@example.com", RetrievalServer.RUN_TOKEN_HEADER, TOKEN);
             assertEquals(200, ok.statusCode());
             assertEquals("deployed", EpisodeJson.JSON.readTree(ok.body()).path("state").asText());
-            assertEquals(200, post(server, "/v1/dags/stop?name=wind-exp2-smart", "").statusCode());
+            assertEquals(200, post(server, "/v1/dags/stop?name=wind-exp2-smart", "", RetrievalServer.RUN_TOKEN_HEADER, TOKEN).statusCode());
             assertEquals(List.of("deploy wind-exp2-smart by admin@example.com (31 bytes)", "stop wind-exp2-smart by unknown"), dags.calls);
             assertEquals(true, EpisodeJson.JSON.readTree(get(server, "/v1/dags").body()).path("writes").asBoolean());
 
-            HttpResponse<String> refused = post(server, "/v1/dags/deploy", "dag: bad\n");
+            HttpResponse<String> refused = post(server, "/v1/dags/deploy", "dag: bad\n", RetrievalServer.RUN_TOKEN_HEADER, TOKEN);
             assertEquals(400, refused.statusCode());
             assertTrue(refused.body().contains("norm.zscore"), refused.body());
-            assertEquals(400, post(server, "/v1/dags/stop", "").statusCode(), "no name");
+            assertEquals(400, post(server, "/v1/dags/stop", "", RetrievalServer.RUN_TOKEN_HEADER, TOKEN).statusCode(), "no name");
 
-            HttpResponse<String> broken = post(server, "/v1/dags/deploy", "dag: [unclosed\n");
+            HttpResponse<String> broken = post(server, "/v1/dags/deploy", "dag: [unclosed\n", RetrievalServer.RUN_TOKEN_HEADER, TOKEN);
             assertEquals(400, broken.statusCode());
             assertTrue(broken.body().contains("no valid YAML"), broken.body());
-            HttpResponse<String> large = post(server, "/v1/dags/deploy", "x: " + "a".repeat(300 * 1024) + "\n");
+            HttpResponse<String> large = post(server, "/v1/dags/deploy", "x: " + "a".repeat(300 * 1024) + "\n",
+                    RetrievalServer.RUN_TOKEN_HEADER, TOKEN);
             assertEquals(400, large.statusCode());
             assertTrue(large.body().contains("larger than"), large.body());
         }
+    }
+
+    @Test
+    void aServerThatWritesNeedsARunToken() {
+        for (String token : new String[] {null, " "}) {
+            IllegalArgumentException refused = assertThrows(IllegalArgumentException.class, () -> server(new Recorder(), true, token));
+            assertTrue(refused.getMessage().contains("OPENTSX_DAG_RUN_TOKEN"), refused.getMessage());
+        }
+        IllegalArgumentException atStart = assertThrows(IllegalArgumentException.class, () -> RetrievalServer.main(
+                new String[] {"--kafscale", "127.0.0.1:9", "--refresh", "never", "--dag-runs", "true", "--dag-run-token", " "}));
+        assertEquals("--dag-runs true needs a run token: set OPENTSX_DAG_RUN_TOKEN or --dag-run-token", atStart.getMessage());
     }
 
     @Test

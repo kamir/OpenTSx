@@ -4,7 +4,8 @@ FastAPI backend with JWT authentication, async SQLAlchemy, and PostgreSQL.
 
 ## Admit physical deployments
 
-You need the configured PostgreSQL journal, the existing administrator role and an authenticated Wayang driver.
+You need the configured PostgreSQL journal, an account the run role admits (`DAG_RUN_ROLE`: administrators, or
+every account with `user`) and an authenticated Wayang driver.
 The opt-in `physical` profile uses the existing `/api/v1/dags/wayang-rust/deploy` request with `flowId`, `dagText`
 and `profile: "physical"`. The default host provider returns `deployment.incarnation` because authoritative
 incarnation facts are unavailable. This API path does not establish production qualification or publication fencing.
@@ -191,6 +192,14 @@ Settings: `RETRIEVAL_URL` (the retrieval server; unset means no deployments), `D
 `X-OpenTSx-Run-Token`, must match `OPENTSX_DAG_RUN_TOKEN` of the retrieval server) and `DAG_RUN_ROLE`
 (`superuser`, the default: administrators only; `user`: every account). Sign-up is open, so `user` lets everyone
 who can register deploy and stop.
+
+`DAG_RUN_ROLE` is the one setting for every run the backend forwards. It also decides who may run the demo
+generators (`POST /api/v1/systems/<system>/generate`) and Wayang deployments (`/api/v1/dags/wayang-rust`): with
+`user`, every account may do all three. The backend then prints at startup:
+
+```text
+DAG_RUN_ROLE=user: every signed-in account may deploy and stop DAGs, run demo generators and run Wayang deployments. Sign-up is open.
+```
 
 ### System working copies
 

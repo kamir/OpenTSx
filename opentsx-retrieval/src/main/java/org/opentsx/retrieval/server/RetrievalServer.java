@@ -55,8 +55,8 @@ import java.util.concurrent.Executors;
  *                             reports per sink (only with {@code --kafscale})
  * POST /v1/dags/deploy        opentsx.dag.v1 as YAML: hands the DAG to the vector processor (control topic)
  * POST /v1/dags/stop?name=    stops the DAG of that name
- *                             (both only with {@code --kafscale} and {@code --dag-runs true}, and with the run token
- *                             when the server has one)
+ *                             (both only with {@code --kafscale} and {@code --dag-runs true}, and only for callers
+ *                             with the run token)
  * GET  /v1/health
  * </pre>
  * Episode responses are JSON by default; with {@code Accept: application/x-opentsx-avro-stream} they are a stream of
@@ -96,7 +96,7 @@ public final class RetrievalServer implements AutoCloseable {
         JsonNode list();
     }
 
-    /** Header a caller of the DAG write routes proves itself with when the server has a run token. */
+    /** Header a caller of the write routes proves itself with: the run token of the server. */
     public static final String RUN_TOKEN_HEADER = "X-OpenTSx-Run-Token";
     /** Header that names who asked for a deployment or a stop; kept in the control record. */
     public static final String BY_HEADER = "X-OpenTSx-By";
@@ -104,7 +104,8 @@ public final class RetrievalServer implements AutoCloseable {
     /**
      * @param dags        behind {@code /v1/dags}; null when the server has no DAGs (no KafScale)
      * @param dagWrites   whether {@code POST /v1/dags/deploy} and {@code /stop} are offered
-     * @param dagRunToken when not blank, the write routes need this value in the header {@link #RUN_TOKEN_HEADER}
+     * @param dagRunToken the write routes need this value in the header {@link #RUN_TOKEN_HEADER}; a server that
+     *                    writes refuses to start when it is null or blank
      */
     public RetrievalServer(EpisodeService service, int port, SeriesInventory inventory, Dags dags, boolean dagWrites,
                            String dagRunToken) throws IOException {
@@ -119,6 +120,10 @@ public final class RetrievalServer implements AutoCloseable {
         this.inventory = inventory;
         this.dags = dags;
         this.dagWrites = dagWrites && dags != null;
+        this.dagRunToken = dagRunToken == null || dagRunToken.isBlank() ? null : dagRunToken.getBytes(StandardCharsets.UTF_8);
+        if (this.dagWrites && this.dagRunToken == null) {
+            throw new IllegalArgumentException("a server that deploys DAGs needs a run token (--dag-run-token or OPENTSX_DAG_RUN_TOKEN)");
+        }
         if (systems != null) {
             // runs on the series of the signals read what this server holds
             runs.signals(new org.opentsx.retrieval.runs.SignalInputs.Source() {
@@ -146,7 +151,6 @@ public final class RetrievalServer implements AutoCloseable {
                 return names;
             });
         }
-        this.dagRunToken = dagRunToken == null || dagRunToken.isBlank() ? null : dagRunToken.getBytes(StandardCharsets.UTF_8);
         this.http = HttpServer.create(new InetSocketAddress(port), 0);
         http.setExecutor(Executors.newFixedThreadPool(4));
         http.createContext("/v1/", this::handle);
@@ -241,12 +245,9 @@ public final class RetrievalServer implements AutoCloseable {
     }
 
     private boolean mayRun(HttpExchange ex) {
-        if (dagRunToken == null) {
-            return true;
-        }
         String given = ex.getRequestHeaders().getFirst(RUN_TOKEN_HEADER);
         // constant time, so the answer does not tell how much of a guess was right
-        return given != null && java.security.MessageDigest.isEqual(dagRunToken, given.getBytes(StandardCharsets.UTF_8));
+        return dagRunToken != null && given != null && java.security.MessageDigest.isEqual(dagRunToken, given.getBytes(StandardCharsets.UTF_8));
     }
 
     /** A DAG document is small; anything larger is not one. */
@@ -516,8 +517,11 @@ public final class RetrievalServer implements AutoCloseable {
     private volatile Systems.Writer signalWriter;
     private volatile String syntheticTopic;
 
-    /** Lets the server write generated series: only to this topic, and only for callers the write routes admit. */
+    /** Lets the server write generated series: only to this topic, and only for callers with its run token. */
     public void generatedSeries(String topic, Systems.Writer writer) {
+        if (dagRunToken == null) {
+            throw new IllegalStateException("a server that writes generated series needs a run token (--dag-run-token or OPENTSX_DAG_RUN_TOKEN)");
+        }
         this.syntheticTopic = topic;
         this.signalWriter = writer;
     }
@@ -541,11 +545,11 @@ public final class RetrievalServer implements AutoCloseable {
      * <p>The demo store holds three deterministic synthetic series (6 h at 1 Hz, 10-minute episodes) with a planted
      * pattern; used by the Python client tests in CI. With {@code --kafscale} the server reads the episodes topic
      * {@code tsx.<domain>.episodes.v2} into memory and follows it, and it reads the vector topics of the domain.
-     * {@code --dag-runs true} offers {@code POST /v1/dags/deploy} and {@code /stop}: they write to the control topic
-     * of the vector processor, which then writes the vector topics. With a run token
-     * ({@code --dag-run-token} or the environment variable {@code OPENTSX_DAG_RUN_TOKEN}) a run needs it in the header
-     * {@code X-OpenTSx-Run-Token}; without one, anyone who reaches the port can write. {@code --scenario} and {@code --catalog} are handed out unchanged in
-     * {@code GET /v1/inventory}.
+     * {@code --dag-runs true} offers {@code POST /v1/dags/deploy} and {@code /stop}, which write to the control topic
+     * of the vector processor, and {@code POST /v1/systems/<id>/generate}, which writes the synthetic topic. It needs a
+     * run token ({@code --dag-run-token} or the environment variable {@code OPENTSX_DAG_RUN_TOKEN}); without one the
+     * server does not start. The three routes need the token in the header {@code X-OpenTSx-Run-Token}.
+     * {@code --scenario} and {@code --catalog} are handed out unchanged in {@code GET /v1/inventory}.
      */
     public static void main(String[] args) throws Exception {
         Map<String, String> a = new LinkedHashMap<>();
@@ -582,6 +586,9 @@ public final class RetrievalServer implements AutoCloseable {
         if (a.containsKey("kafscale")) {
             String domain = a.getOrDefault("domain", "wind");
             boolean dagRuns = Boolean.parseBoolean(a.getOrDefault("dag-runs", "false"));
+            if (dagRuns && runToken.isBlank()) {
+                throw new IllegalArgumentException("--dag-runs true needs a run token: set OPENTSX_DAG_RUN_TOKEN or --dag-run-token");
+            }
             Runnable[] invalidate = {() -> { }};
             KafScaleFeed feed = KafScaleFeed.start(a.get("kafscale"), domain, Duration.parse(a.getOrDefault("refresh", "PT30S")),
                     (InMemorySeriesStore) store, Integer.parseInt(a.getOrDefault("max-episodes", "20000")), () -> invalidate[0].run());
@@ -595,7 +602,7 @@ public final class RetrievalServer implements AutoCloseable {
             inventory.sourceDetails(src -> {
                 src.put("dagRuns", dagRuns);
                 if (dagRuns) {
-                    src.put("dagRunAuth", runToken.isBlank() ? "none" : "token");
+                    src.put("dagRunAuth", "token");
                 }
                 ArrayNode vt = src.putArray("vectorTopics");
                 feed.vectorTopics().forEach(vt::add);
@@ -624,9 +631,7 @@ public final class RetrievalServer implements AutoCloseable {
             if (dagRuns) {
                 generated[0] = new TopicLayout(domain).synthetic();
                 writer[0] = feed::writeGenerated;
-                System.out.println(runToken.isBlank()
-                        ? "dag deployments: OPEN, anyone who reaches this port can deploy and stop DAGs (set OPENTSX_DAG_RUN_TOKEN)"
-                        : "dag deployments: for callers with the run token");
+                System.out.println("dag deployments, stops and generated series: for callers with the run token only");
             }
         } else {
             inventory = new SeriesInventory(store, source, scenario, catalog, Duration.ofSeconds(60));

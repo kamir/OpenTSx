@@ -162,6 +162,14 @@ def test_generating_writes_to_the_broker_and_is_for_administrators(store, retrie
     assert "url" not in retrieval["seen"]
 
 
+def test_the_run_role_user_also_opens_generators(store, retrieval, monkeypatch):
+    monkeypatch.setattr(settings, "DAG_RUN_ROLE", "user")
+    answer = client_as(PLAIN, store).post("/api/v1/systems/h2-chain/generate",
+                                          json={"signal": "market.price_eur_mwh", "from": "2026-10-01T00:00:00Z", "to": "2026-10-01T06:00:00Z"})
+    assert answer.status_code == 200
+    assert retrieval["seen"]["token"] == "run-token"
+
+
 def test_a_refusal_of_the_retrieval_server_reaches_the_person(store, retrieval):
     retrieval["status"] = 400
     retrieval["json"] = {"error": "ely.setpoint_kw is not bound to a generator"}

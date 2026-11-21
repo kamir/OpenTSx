@@ -260,7 +260,10 @@ class RetrievalClient:
         return df
 
     def compare(self, system: str, run: str, base: Optional[str] = None) -> dict:
-        """A run next to another (by default the reference): KPIs with difference and verdict, end stocks, series."""
+        """A run next to another (by default the reference): KPIs with difference and verdict, end stocks, series.
+
+        A KPI has no ``verdict`` when an input of either run is generated; ``reasons`` then names those inputs.
+        """
         q = "" if base is None else "?base=" + urllib.parse.quote(base)
         return self._json("GET", f"/v1/systems/{urllib.parse.quote(system)}/runs/{urllib.parse.quote(run)}/compare{q}")
 

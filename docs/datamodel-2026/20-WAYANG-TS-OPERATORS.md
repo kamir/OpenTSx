@@ -472,7 +472,8 @@ Topology channels carry no episode payloads in the driver. Node placement follow
 placeholder costs are not a measured placement model. All workers must match the artifact digest and state ABI.
 
 The PostgreSQL journal accepts exact source text once per installation and persists the accepted clock and plan.
-Normal authentication and administrator permission apply. A standalone coordinator owns a database advisory lock;
+Normal authentication and the run role of the backend (`DAG_RUN_ROLE`) apply.
+A standalone coordinator owns a database advisory lock;
 PostgreSQL owns deployment control while the Java driver keeps a separate private publication ledger.
 Driver control and worker publication bind separate internal networks; a private token protects control.
 This is not the signed runner-plan protocol or production authorization in sections 8 to 11.

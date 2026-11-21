@@ -86,12 +86,15 @@ export interface KpiRow {
   base: number;
   run: number;
   delta: number;
-  verdict: 'better' | 'worse' | 'same';
+  /** absent when an input of either run is generated: the difference is not ranked */
+  verdict?: 'better' | 'worse' | 'same';
 }
 
 export interface CompareDoc {
   base: { run: string; label: string };
   run: { run: string; label: string; kind: string };
+  /** why the KPIs carry no verdict; empty when they are ranked */
+  reasons: string[];
   kpis: KpiRow[];
   endStocks: { key: string; base: number; run: number }[];
   start: string;
@@ -166,8 +169,8 @@ export function kpiText(value: number, decimals: number, unit: string): string {
 }
 
 /** The difference of a KPI with its sign; nothing when the two runs agree. */
-export function deltaText(row: Pick<KpiRow, 'delta' | 'decimals' | 'unit' | 'verdict'>): string {
-  if (row.verdict === 'same' && Math.abs(row.delta) < 1e-9) return '';
+export function deltaText(row: Pick<KpiRow, 'delta' | 'decimals' | 'unit'>): string {
+  if (Math.abs(row.delta) < 1e-9) return '';
   const text = kpiText(Math.abs(row.delta), row.decimals, row.unit);
   return `${row.delta > 0 ? '+' : '-'}${text}`;
 }

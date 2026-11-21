@@ -222,6 +222,11 @@ export default function SimulatePlace({ system, base }: { system: string; base: 
               </div>
 
               <h4>{isReference ? 'What happens' : 'Against the reference'}</h4>
+              {!isReference && compare.reasons.length > 0 && (
+                <p className="wb-muted" role="note" aria-label="Why no figure is ranked">
+                  {compare.reasons.join('. ')}.
+                </p>
+              )}
               <table className="wb-table wb-kpis">
                 <thead>
                   <tr><th>figure</th><th>reference</th>{!isReference && <><th>this run</th><th>difference</th></>}</tr>

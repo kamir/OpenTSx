@@ -2,7 +2,10 @@
 
 This page specifies the decision card (`opentsx.decision.v1`), the decision status the retrieval server derives from
 it (`opentsx.decision-status.v1`), the decision record (`opentsx.decision-record.v1`) and the signal rules they rely
-on, verified against commit `a513aa98`.
+on; sections 1.3, 1.4 and 2.3 were verified against the code that restricts an analysis whose card states a limit the
+server does not evaluate (fix of 2026-11-21), section 6 against the code that ranks no KPI of a comparison when an
+input of either run is generated (fix of 2026-11-21), sections 1.1, 1.5, 2.1, 2.2, 3, 3.3, 4.1, 4.2, 4.3 and 5
+against commit `bd0b9139`, the others against commit `a513aa98`.
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are used as in
 [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) and [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174) when they
@@ -24,12 +27,15 @@ The "Implemented in" lines cite these files by short name:
 | `SystemDocTest.java` | `opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java` |
 | `SystemsTest.java` | `opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemsTest.java` |
 | `DecisionsTest.java` | `opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/DecisionsTest.java` |
+| `RunsTest.java` | `opentsx-retrieval/src/test/java/org/opentsx/retrieval/runs/RunsTest.java` |
 | `WindPark.java` | `opentsx-twin/src/main/java/org/opentsx/twin/atoms/WindPark.java` |
 | `h2-chain.yaml` | `opentsx-twin/src/main/resources/twin/h2-chain.yaml` (the twin plan) |
 | `h2-chain.system.yaml` | [`systems/h2-chain.system.yaml`](../../systems/h2-chain.system.yaml) (the system document) |
 | `systems.py` | `opentsx-saas-backend/app/api/systems.py` |
 | `signals.ts` | `opentsx-saas-frontend/src/systems/signals.ts` |
 | `ModelsPlace.tsx` | `opentsx-saas-frontend/src/systems/ModelsPlace.tsx` |
+| `runs.ts` | `opentsx-saas-frontend/src/systems/runs.ts` |
+| `SimulatePlace.tsx` | `opentsx-saas-frontend/src/systems/SimulatePlace.tsx` |
 | `decision.v1` | [`schemas/opentsx.decision.v1.schema.json`](schemas/opentsx.decision.v1.schema.json) |
 | `decision-record.v1` | [`schemas/opentsx.decision-record.v1.schema.json`](schemas/opentsx.decision-record.v1.schema.json) |
 | `system.v1` | [`schemas/opentsx.system.v1.schema.json`](schemas/opentsx.system.v1.schema.json) |
@@ -72,7 +78,7 @@ them.
   an analysis of the card.
 
 Implemented in: `system.v1:106-112`, `SystemDoc.java:233-242`, `SystemDoc.java:356-371`,
-`SystemDocTest.java:407-430`.
+`SystemDocTest.java:413-437`.
 
 <a id="12-fields-of-a-card"></a>
 
@@ -114,12 +120,13 @@ enough is a property of the need, not of the signal.
 | `signal` | string | yes | id of a signal of the system |
 | `grade` | `raw`, `clean`, `features` | yes | grade whose data the decision reads. The server reads `clean` when the field is absent |
 | `maxAge` | duration | no | the longest time the data of this signal may end before the newest data among all signals the decision needs ([section 2.2](#22-evaluate-a-need)) |
-| `maxQuestionable` | number, 0 to 1 | no | share of values with a questionable measurement that is still acceptable. The server does not evaluate it |
+| `maxQuestionable` | number, 0 to 1 | no | share of values with a questionable measurement that is still acceptable. The server does not evaluate the share: an analysis the need applies to is at best `restricted` ([section 2.3](#23-evaluate-an-analysis)) |
 | `origins` | array of `MEASURED`, `REPORTED`, `FORECAST`, `ESTIMATED`, `SYNTHETIC` | no | origins the decision accepts. Without the field every origin is accepted |
 | `for` | array of analysis ids | no | the analyses that need the signal. Without the field every analysis of the card needs it |
 | `optional` | boolean | no | `true`: the need is evaluated and shown, but it never blocks or restricts an analysis |
 
-Implemented in: `decision.v1:255-308`, `Decisions.java:104-152`, `Decisions.java:164-174`.
+Implemented in: `decision.v1:255-308`, `Decisions.java:104-152`, `Decisions.java:164-177`,
+`DecisionsTest.java:140-181`.
 
 <a id="14-analyses"></a>
 
@@ -137,12 +144,12 @@ inputs it was checked in and what it was checked with.
 | `version` | string | no | |
 | `validity` | array | yes | each `{signal, min, max, note}`, `signal` required: the range of an input in which the analysis was checked. An empty array states no range |
 | `evidence` | array | yes | each `{what, result}` required, `period`, `against` (the reference it was compared with), `date` and `synthetic` optional. An empty array means: not validated |
-| `uncertainty` | object | no | `method`, `blockAbove` (width of the interval above which a result does not carry the decision), `unit`. The server does not evaluate it |
+| `uncertainty` | object | no | `method`, `blockAbove` (width of the interval above which a result does not carry the decision), `unit`. The server does not evaluate the width: an analysis that states `blockAbove` is at best `restricted` ([section 2.3](#23-evaluate-an-analysis)) |
 
 `synthetic: true` on an evidence entry means the check ran on generated data. It shows that the mechanism works, not
 that the analysis is right.
 
-Implemented in: `decision.v1:309-416`, `Decisions.java:158-215`.
+Implemented in: `decision.v1:309-416`, `Decisions.java:158-221`, `DecisionsTest.java:140-191`.
 
 <a id="15-alternatives"></a>
 
@@ -154,7 +161,7 @@ Implemented in: `decision.v1:309-416`, `Decisions.java:158-215`.
 * An alternative SHOULD name an analysis of its card in `analysis`. The build checks this for the example card. At
   run time an alternative that names no analysis of its card has the status `blocked`.
 
-Implemented in: `decision.v1:201-244`, `Decisions.java:95-100`, `SystemDocTest.java:427-431`.
+Implemented in: `decision.v1:201-244`, `Decisions.java:95-100`, `SystemDocTest.java:433-437`.
 
 <a id="2-decision-status"></a>
 
@@ -181,7 +188,7 @@ condition, not a proof: an analysis without evidence is `restricted` however goo
 | 404 | `no such system or route: <path>` | unknown system or route |
 | 413 | `the request is larger than 262144 bytes` | POST body too large |
 
-Implemented in: `RetrievalServer.java:174-177`, `RetrievalServer.java:424-443`, `RetrievalServer.java:478-499`,
+Implemented in: `RetrievalServer.java:178-181`, `RetrievalServer.java:425-444`, `RetrievalServer.java:479-500`,
 `Systems.java:104-110`, `Systems.java:380-384`.
 
 <a id="22-evaluate-a-need"></a>
@@ -232,17 +239,24 @@ applies. What is missing blocks exactly the analyses that need it.
 | Status | When |
 |---|---|
 | `blocked` | an applying need has a reason |
-| `restricted` | not blocked, and at least one of: an applying need has `containsSynthetic`; an input lies outside a `validity` range; `evidence` is missing or empty; every evidence entry has `synthetic: true` |
+| `restricted` | not blocked, and at least one of: an applying need states `maxQuestionable`; an applying need has `containsSynthetic`; an input lies outside a `validity` range; `evidence` is missing or empty; every evidence entry has `synthetic: true`; the analysis states `uncertainty.blockAbove` |
 | `usable` | neither |
 
 `reasons` lists the reasons of the applying needs first, then these, in this order:
 
 | Condition | Reason |
 |---|---|
+| an applying need states `maxQuestionable`, one reason per such need in the order of the needs | `<signal>: the share of questionable values is not evaluated by this server` |
 | an applying need has `containsSynthetic` | `an input is generated or made of generated data: the result shows the mechanism, not an effect` |
 | an input lies outside a `validity` range | `<signal> holds values from <min> to <max>, outside the range the analysis was checked in` |
 | `evidence` is missing or empty | `the analysis has no evidence: it was not checked against anything` |
 | every evidence entry has `synthetic: true` | `the analysis was checked on generated data only` |
+| the analysis states `uncertainty.blockAbove` | `the width of the uncertainty is not evaluated by this server` |
+
+The server does not evaluate `maxQuestionable` or `blockAbove`. An analysis with an applying need that states
+`maxQuestionable`, or with `uncertainty.blockAbove`, is never `usable`. A need that states `maxQuestionable` keeps
+`ok: true` when the checks of [section 2.2](#22-evaluate-a-need) find no reason: `ok` covers only the checks that
+ran.
 
 Validity check, for each `validity` entry:
 
@@ -256,8 +270,8 @@ Validity check, for each `validity` entry:
 
 An alternative takes the status of the analysis it names.
 
-Implemented in: `Decisions.java:88-100`, `Decisions.java:158-221`, `DecisionsTest.java:51-93`,
-`DecisionsTest.java:128-138`.
+Implemented in: `Decisions.java:88-100`, `Decisions.java:158-227`, `DecisionsTest.java:51-93`,
+`DecisionsTest.java:128-191`.
 
 <a id="24-fields-of-the-status"></a>
 
@@ -297,7 +311,7 @@ run time. The build validates the four records of the example file against the s
 `follows` is the `id` of the record before it, and checks that no approval or action follows a recommendation in
 shadow operation ([section 3.3](#33-chain-revision-and-shadow-operation)).
 
-Implemented in: `decision-record.v1:1-375`, `SystemDocTest.java:432-441`, `SystemDocTest.java:444-454`.
+Implemented in: `decision-record.v1:1-375`, `SystemDocTest.java:438-447`, `SystemDocTest.java:450-460`.
 
 <a id="31-kinds"></a>
 
@@ -369,7 +383,7 @@ Implemented in: `decision-record.v1:28-301`, `decision-record.v1:369-374`.
   recommendation has no `shadow`, and an approval, an action and an outcome follow it.
 
 Implemented in: `decision-record.v1:60-75`, `decision-record.v1:153-178`, `decision-record.v1:264-300`,
-`SystemDocTest.java:432-441`, `SystemDocTest.java:444-454`, `SystemDocTest.java:456-471`.
+`SystemDocTest.java:438-447`, `SystemDocTest.java:450-460`, `SystemDocTest.java:462-477`.
 
 <a id="4-signal-role-meaning-and-ranges"></a>
 
@@ -397,7 +411,7 @@ The same unit does not mean the same quantity. `role` says what kind of quantity
 * The server returns `role` and `meaning` per signal in `opentsx.signal-status.v1`.
 
 Implemented in: `system.v1:188-197`, `SystemDoc.java:42`, `SystemDoc.java:395-398`, `Systems.java:228-229`,
-`SystemDocTest.java:363-367`, `SystemDocTest.java:395`, `SystemsTest.java:99-101`.
+`SystemDocTest.java:369-373`, `SystemDocTest.java:401`, `SystemsTest.java:100-102`.
 
 <a id="42-confirm-the-meaning-of-a-binding"></a>
 
@@ -472,7 +486,7 @@ Implemented in: `WindPark.java:13-23`, `WindPark.java:49-59`, `WindPark.java:61-
 `h2-chain.yaml:26-28`, `h2-chain.yaml:55-56`, `h2-chain.system.yaml:116-136`,
 [`systems/flows/park-power.flow.yaml`](../../systems/flows/park-power.flow.yaml),
 [`systems/flows/park-potential.flow.yaml`](../../systems/flows/park-potential.flow.yaml),
-`SystemDocTest.java:365-367`, `SystemsTest.java:99-101`, `SystemsTest.java:103-108`.
+`SystemDocTest.java:371-373`, `SystemsTest.java:100-102`, `SystemsTest.java:104-109`.
 
 <a id="6-demo-generators-and-scenario-models"></a>
 
@@ -497,8 +511,15 @@ states its `fidelity`:
   it is at best `restricted` ([section 2.3](#23-evaluate-an-analysis)). A twin run on the series of the signals takes
   such an input as `SYNTHETIC`, keeps the run `restricted` and gives the reason
   `generated, not measured: <ports>; the run shows the mechanism, not an effect`.
+* The comparison of two runs (`opentsx.run-compare.v1`) ranks no KPI when an input of either run has the origin
+  `SYNTHETIC`. Every KPI keeps `base`, `run` and `delta` and has no `verdict`. `reasons` holds
+  `generated, not measured: <ports>; no KPI is ranked better or worse`, where `<ports>` lists those inputs of the
+  base, then of the run, each once. Otherwise `reasons` is empty and every KPI has a `verdict`. The place "Simulate"
+  shows `reasons` above the table of KPIs and colours no difference without a `verdict`.
 
 Implemented in: `processor.v1:172-178`, `systems/processors/gen.ou.yaml:6`, `systems/processors/gen.sine.yaml:6`,
 `Generators.java:17-22`, `Generators.java:64-71`, `Generators.java:208-212`, `TopicLayout.java:173-176`,
-`TopicLayout.java:204-206`, `KafScaleFeed.java:173-174`, `Decisions.java:144-145`, `Decisions.java:175-177`,
-`SignalInputs.java:98-99`, `Runs.java:359`, `Runs.java:375`.
+`TopicLayout.java:204-206`, `KafScaleFeed.java:173-174`, `Decisions.java:144-145`, `Decisions.java:178-180`,
+`SignalInputs.java:98-99`, `Runs.java:359`, `Runs.java:370-373`, `Runs.java:462`, `Runs.java:470-473`,
+`Runs.java:484-488`, `Runs.java:512-526`, `runs.ts:89-90`, `runs.ts:96-97`, `SimulatePlace.tsx:225-229`,
+`SimulatePlace.tsx:242`, `RunsTest.java:275-309`.
