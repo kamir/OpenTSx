@@ -13,8 +13,11 @@ deploy/k3s/40-demo.sh all     # kafscale-check, windpark-sim, stats, metadata, t
 [operations](operations.md#try-it-locally-first-the-probe)).
 
 The outputs below are real outputs of the same commands (taken from the staged image content on a JDK 21 machine).
-The twin outputs are deterministic, so you should see the same numbers and run hashes. Lines such as
-`Picked up JAVA_TOOL_OPTIONS` and SLF4J logging are left out.
+The twin outputs are deterministic: you see the same numbers and run ids. The run hashes shown are those of that
+JDK 21 machine. Another JVM can print other run hashes, because the hash chains the raw bits of every value
+([TWIN-COUPLING-SPEC section 8](../datamodel-2026/TWIN-COUPLING-SPEC.md#8-run-identity-and-run-record)). The
+attributes of an event in braces can appear in another order. Lines such as `Picked up JAVA_TOOL_OPTIONS` and SLF4J
+logging are left out.
 
 | Demo | Needs | Typical runtime |
 |------|-------|-----------------|

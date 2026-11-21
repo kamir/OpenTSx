@@ -53,8 +53,9 @@ Each superstep runs these phases in order:
   delivers the previous superstep's value, so feedback loops always cross the superstep boundary.
 * **Multirate.** An atom can step only every n supersteps (`every`), for example a 15-minute market.
 * **Events.** Atoms report events at their exact time, such as the moment the pressure limit is crossed.
-* **Determinism.** The same plan, inputs, interventions and code give a bit-identical run, and therefore the same
-  `RunResult.hash()`.
+* **Determinism.** On the same JVM, the same plan, inputs, interventions and code give a bit-identical run and the
+  same `RunResult.hash()`. Another JVM can round its `Math` functions differently in the last bit and give another
+  hash for the same run id ([TWIN-COUPLING-SPEC section 8](../docs/datamodel-2026/TWIN-COUPLING-SPEC.md#8-run-identity-and-run-record)).
 
 ### Runner (variant L)
 
@@ -200,10 +201,12 @@ python3 tools/build_studio.py /tmp/studio.json
 ```
 
 The page, the scenario texts and the guides ([`twin/h2-chain.guide.yaml`](src/main/resources/twin/h2-chain.guide.yaml),
-[`twin/haus-erzgebirge.guide.yaml`](src/main/resources/twin/haus-erzgebirge.guide.yaml)) are in English. Scenario
-ids, twin names and plan parameters, such as the appliance names of the house, are not translated: they are part of
-the plan hash and the run ids. The export leaves out the run hash, because the hash chains the raw bits of every
-value and differs between JVMs whose `Math` functions round the last bit differently.
+[`twin/haus-erzgebirge.guide.yaml`](src/main/resources/twin/haus-erzgebirge.guide.yaml)) are in English. Twin
+names and plan parameters, such as the appliance names of the house, are not translated: they are part of the plan
+hash and the run ids. The scenario ids `haus` and `boot` are not translated either: the page uses them in URL
+fragments and browser storage keys, and `twin-live --scenario` takes them. The export leaves out the run hash,
+because the hash chains the raw bits of every value and differs between JVMs whose `Math` functions round the last
+bit differently.
 
 ## Tests
 
