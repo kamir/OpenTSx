@@ -3,7 +3,10 @@
 
 Usage: python3 tools/check_links.py [root]   - exits 1 if a link target does not exist.
 External links (http, https, mailto) are not fetched; anchors are not checked.
+A file whose bytes a measurement manifest pins is generated evidence and stays as generated; its links name raw files
+that are kept outside the repository, so it is not checked.
 """
+import json
 import pathlib
 import re
 import sys
@@ -15,9 +18,19 @@ LINK = re.compile(r"(?<!!)\[[^\]]*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 FENCE = re.compile(r"```.*?```", re.S)
 
 
+def pinned(root: pathlib.Path) -> set:
+    files = set()
+    for manifest in root.glob("docs/datamodel-2026/measurements/*/manifest.json"):
+        for name in json.loads(manifest.read_text(encoding="utf-8")).get("files", {}):
+            files.add((manifest.parent / name).resolve())
+    return files
+
+
 def main(root: pathlib.Path) -> int:
     broken = []
-    files = [p for p in root.rglob("*.md") if not (set(p.relative_to(root).parts[:-1]) & SKIP_DIRS)]
+    skip = pinned(root)
+    files = [p for p in root.rglob("*.md")
+             if not (set(p.relative_to(root).parts[:-1]) & SKIP_DIRS) and p.resolve() not in skip]
     for md in files:
         text = FENCE.sub("", md.read_text(encoding="utf-8", errors="replace"))
         for target in LINK.findall(text):

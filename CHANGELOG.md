@@ -552,6 +552,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- `docs/datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md` has the bytes its `manifest.json` pins again;
+  the repository split had replaced its links to the raw files with plain text. `tools/check_links.py` leaves files
+  that a measurement manifest pins out, and `tools/test_measurement_records.py` fails when a committed file differs
+  from the digest its manifest pins.
+
 - The web workbench takes the default clock of `pair.coverage`, `pair.xcorr` and `pair.es` per pair range: the larger
   sampling interval of the two paired episodes, on their sample times in epoch microseconds. Wayang and the Rust
   runner use the same rule. The note names the smallest and the largest clock. A pair method refuses a series whose
