@@ -2,9 +2,10 @@
 
 This page specifies the decision card (`opentsx.decision.v1`), the decision status the retrieval server derives from
 it (`opentsx.decision-status.v1`), the decision record (`opentsx.decision-record.v1`) and the signal rules they rely
-on; sections 1.3, 1.4, 2.3 and 6 were verified against the code that restricts an analysis whose card states a limit
-the server does not evaluate (fix of 2026-11-21), sections 1.1, 1.5, 2.1, 2.2, 3, 3.3, 4.1, 4.2, 4.3 and 5 against
-commit `bd0b9139`, the others against commit `a513aa98`.
+on; sections 1.3, 1.4 and 2.3 were verified against the code that restricts an analysis whose card states a limit the
+server does not evaluate (fix of 2026-11-21), section 6 against the code that ranks no KPI of a comparison when an
+input of either run is generated (fix of 2026-11-21), sections 1.1, 1.5, 2.1, 2.2, 3, 3.3, 4.1, 4.2, 4.3 and 5
+against commit `bd0b9139`, the others against commit `a513aa98`.
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are used as in
 [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) and [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174) when they
@@ -520,5 +521,5 @@ Implemented in: `processor.v1:172-178`, `systems/processors/gen.ou.yaml:6`, `sys
 `Generators.java:17-22`, `Generators.java:64-71`, `Generators.java:208-212`, `TopicLayout.java:173-176`,
 `TopicLayout.java:204-206`, `KafScaleFeed.java:173-174`, `Decisions.java:144-145`, `Decisions.java:178-180`,
 `SignalInputs.java:98-99`, `Runs.java:359`, `Runs.java:370-373`, `Runs.java:462`, `Runs.java:470-473`,
-`Runs.java:484-488`, `Runs.java:512-526`, `runs.ts:172-173`, `SimulatePlace.tsx:225-229`,
+`Runs.java:484-488`, `Runs.java:512-526`, `runs.ts:89-90`, `runs.ts:96-97`, `SimulatePlace.tsx:225-229`,
 `SimulatePlace.tsx:242`, `RunsTest.java:275-309`.
