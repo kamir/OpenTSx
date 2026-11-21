@@ -12,6 +12,7 @@ entries before 3.0.0 are grouped by date.
 
 ### Changed
 
+- Line citations in the specs and docs point at the current code.
 - Documentation, comments and example files describe the current code. Chapter 15 drops the pair windows from the
   open items, links PAIR-WINDOWS-SPEC from P8 and lists the twin variants T and L as proofs of concept. The worked
   example of chapter 16 counts twelve components and sixteen signals and names the five flows that run. The `maxAge`

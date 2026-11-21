@@ -1322,7 +1322,7 @@
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s55-refusal-codes"
         ],
         "source": [
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxTopicSink.java#L14",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxTopicSink.java#L13",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxTopicSink.java#L1",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxTopicSink.java#write",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustTopicSink.java#RustTopicSink",
@@ -1597,8 +1597,8 @@
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s55-refusal-codes"
         ],
         "source": [
-          "opentsx-model/src/main/java/org/opentsx/model/contracts/ExecutionAssignments.java#L56",
-          "rust/tsx-contracts/src/lib.rs#L38",
+          "opentsx-model/src/main/java/org/opentsx/model/contracts/ExecutionAssignments.java#L58",
+          "rust/tsx-contracts/src/lib.rs#L51",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java#parameters",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustRollout.java#plan",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustExecutor.java#execute",
