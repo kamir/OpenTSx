@@ -331,6 +331,26 @@ npm run lint
 
 ## Deployment
 
+### Serve the frontend image
+
+`deploy/docker/saas-frontend.Dockerfile` serves the static build with nginx and [`nginx.conf`](nginx.conf) on port
+8080. The image forwards `/api/` to the SaaS backend and `/retrieval/` to the retrieval server. Reading through
+`/retrieval/` needs no account.
+
+The image answers 403 to the write routes of the retrieval server: `/retrieval/v1/dags/` and
+`/retrieval/v1/systems/<id>/generate`, and every path below either of them. `<id>` is the id of a system. Deploy,
+Stop and generating a series go through the backend (`/api/v1/dags/`, `/api/v1/systems/<id>/generate`), which checks
+the account. nginx matches the path after it decodes percent escapes, merges slashes and resolves `.` and `..`, so
+`generate/`, `generate//` and `generate%2F` get 403 as well. The image is not the only way in: with `INGRESS=true`
+the k3s Ingress sends `/v1` to the retrieval server directly, and there the run token is the only gate
+([deploy/k3s](../deploy/k3s/README.md#vector-smart-topics)).
+
+Check the rules from the repository root:
+
+```bash
+python3 -m unittest discover -s tools -p 'test_saas_frontend_nginx.py' -v
+```
+
 ### Production Build
 
 ```bash
