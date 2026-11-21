@@ -502,11 +502,11 @@ reference run and for every forecast of the scenario. `h2-chain` has eight forec
 The scenario forecasts run as the Studio export runs them: inputs labelled as forecasts, from the snapshot after
 step `nowStep - 1`, to the end of the reference run.
 
-Every stressor of these transports names an atom of the plan and costs wall time. Each transport takes more ticks
-than `bsp()`, and more ticks than the same transport without any one of its stressors: the lag, the jitter, the lag
-of one atom, the step ticks of one atom or the outages of one atom. A step of 10 ticks takes longer than a
-superstep of `h2-chain` or `haus` under lag 2 and jitter 3 alone, so the slow processor of the combined transport
-still costs ticks.
+Every stressor of these transports names an atom of the plan and costs wall time. Each transport other than `bsp()`
+takes more ticks than `bsp()`, and more ticks than the same transport without any one of its stressors: the lag, the
+jitter, the lag of one atom, the step ticks of one atom or the outages of one atom. A step of 10 ticks takes longer
+than a superstep of `h2-chain` or `haus` under lag 2 and jitter 3 alone, so the slow processor of the combined
+transport still costs ticks.
 
 Implemented in: `LooseRunner.java:143-158,161-164,279-287,324-327,410-431`, `studio/StudioExport.java:102-106`;
 tests: `LooseRunnerTest.java:28-143,213-268`.

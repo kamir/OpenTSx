@@ -69,8 +69,8 @@ class LooseRunnerTest {
 
     /**
      * Conformance: L with staleness 0 equals T bit for bit, whatever the transport does. Every stressor of a transport
-     * names an atom of the plan and costs wall time: each transport takes more ticks than {@code bsp()}, and more than
-     * the same transport without any one of its stressors.
+     * names an atom of the plan and costs wall time: each transport other than {@code bsp()} takes more ticks than
+     * {@code bsp()}, and more than the same transport without any one of its stressors.
      */
     @Test
     void bspIsBitIdenticalToTightForAllScenariosAndTransports() {
