@@ -8,6 +8,14 @@ appear in capitals.
 
 Module: [`opentsx-twin`](../../opentsx-twin/README.md). Paths in "Implemented in" lines are relative to
 `opentsx-twin/src/main/java/org/opentsx/twin/`; test paths are relative to `opentsx-twin/src/test/java/org/opentsx/twin/`.
+Paths in other modules start with a short path that stands for one of these folders:
+
+| Short path | Folder |
+|---|---|
+| `live/` | `opentsx-twin-live/src/main/java/org/opentsx/twin/live/` |
+| `live-tests/` | `opentsx-twin-live/src/test/java/org/opentsx/twin/live/` |
+| `kafka/` | `opentsx-kafka-v2/src/main/java/org/opentsx/kafka/` |
+| `kafka-tests/` | `opentsx-kafka-v2/src/test/java/org/opentsx/kafka/` |
 
 Terms:
 
@@ -312,9 +320,10 @@ The message id is `<runId>/<k>/<phase>/<atom>/<port>`.
 
 Implemented in: `PortMessage.java:8-13`, `Barrier.java:7-11`, `MessageSink.java:4-18`, `MessageLog.java:8-29`,
 `TwinRunner.java:107-113,140-146,158`, `LooseRunner.java:320-323,375`, `schema/AtomSchemas.java:35,60-100`,
-`RunSetup.java:134-136`, `EventPublisher.java:55,57,70`, `TopicLayout.java:183-192`; tests:
+`RunSetup.java:134-136`, `live/EventPublisher.java:55,57,70`, `kafka/TopicLayout.java:183-192`; tests:
 `TwinShadowTest.java:103-131`, `LooseRunnerTest.java:41-45,70-106,224-233,274-277`,
-`schema/AtomSchemasTest.java:90-95`, `EventTopicLiveTest.java:111-129`, `TopicLayoutTwinEventsTest.java:14-23`.
+`schema/AtomSchemasTest.java:90-95`, `live-tests/EventTopicLiveTest.java:114-132`,
+`kafka-tests/TopicLayoutTwinEventsTest.java:14-23`.
 
 <a id="8-run-identity-and-run-record"></a>
 
