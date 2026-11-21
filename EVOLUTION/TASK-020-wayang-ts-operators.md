@@ -24,10 +24,10 @@ Every criterion below names its data with one of these labels.
 | **V** | shared test vectors: `opentsx-model/src/test/resources/testvectors/*.json`, `docs/datamodel-2026/testvectors/*.json`, `QuantileSketchTest.testVector` |
 | **W** | wind-park scenario `opentsx-windpark/scenarios/ostsee-demo.yaml`: park `ost-01`, turbines T01 to T10, seed 42, 6 h at 1 Hz from 2026-10-01T00:00:00Z, episodes of 10 min; written to KafScale with `WindparkSim --kafscale` ([`opentsx-windpark/README.md`](../opentsx-windpark/README.md), section CLI) |
 | **W3** | W split into three sites by turbine: `s1` = T01 to T03, `s2` = T04 to T06, `s3` = T07 to T10; `groupBy: [park]` |
-| **K** | KafScale conformance setup of the CI job "KafScale conformance" (`.github/workflows/ci.yml:145-180`): KafScale v1.6.0 built from source, in-memory S3, `127.0.0.1:39092` |
+| **K** | KafScale conformance setup of the CI job "KafScale conformance" (`.github/workflows/ci.yml:783-876`): KafScale v1.6.0 built from source, in-memory S3, `127.0.0.1:39092` |
 
 A criterion that runs against K is accepted only when the surefire report shows the named test as executed, with
-zero failures, errors and skips, as the existing streaming acceptance requires (`ci.yml:180`).
+zero failures, errors and skips, as the existing streaming acceptance requires (`ci.yml:877`).
 
 ## Phases and milestones
 
