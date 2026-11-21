@@ -27,12 +27,14 @@ import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -95,8 +97,10 @@ final class LatencyProtocolObserver implements AutoCloseable {
                     sockets.add(client);
                     sockets.add(broker);
                     Map<Integer, Pending> pending = new ConcurrentHashMap<>();
-                    threads.submit(() -> requests(client, broker, pending));
-                    threads.submit(() -> responses(broker, client, pending));
+                    AtomicBoolean clientEnded = new AtomicBoolean();
+                    DataOutputStream toClient = new DataOutputStream(client.getOutputStream());
+                    threads.submit(() -> requests(client, broker, pending, clientEnded));
+                    threads.submit(() -> responses(broker, client, toClient, pending, clientEnded));
                 } catch (IOException e) {
                     if (!closing) failure.compareAndSet(null, e);
                 }
@@ -123,12 +127,12 @@ final class LatencyProtocolObserver implements AutoCloseable {
         if (failure.get() != null) throw new IllegalStateException("protocol observer failed", failure.get());
     }
 
-    private void requests(Socket client, Socket broker, Map<Integer, Pending> pending) {
+    private void requests(Socket client, Socket broker, Map<Integer, Pending> pending, AtomicBoolean clientEnded) {
         try {
             DataInputStream in = new DataInputStream(client.getInputStream());
             DataOutputStream out = new DataOutputStream(broker.getOutputStream());
             byte[] frame;
-            while ((frame = readFrame(in, pending)) != null) {
+            while ((frame = readFrame(in)) != null) {
                 long nanos = System.nanoTime();
                 Instant at = Instant.now();
                 ByteBuffer buffer = ByteBuffer.wrap(frame);
@@ -153,31 +157,61 @@ final class LatencyProtocolObserver implements AutoCloseable {
         } catch (Exception e) {
             if (!closing && !client.isClosed() && !broker.isClosed()) failure.compareAndSet(null, e);
         } finally {
+            clientEnded.set(true);
             closeSocket(client);
-            closeSocket(broker);
+            // Half-close so the response thread reads the remaining responses; closing with unread data would reset the broker.
+            try {
+                broker.shutdownOutput();
+            } catch (IOException ended) {
+                closeSocket(broker);
+            }
+            synchronized (pending) {
+                pending.clear();
+            }
         }
     }
 
-    private void responses(Socket broker, Socket client, Map<Integer, Pending> pending) {
+    private void responses(Socket broker, Socket client, DataOutputStream toClient, Map<Integer, Pending> pending, AtomicBoolean clientEnded) {
         try {
             DataInputStream in = new DataInputStream(broker.getInputStream());
-            DataOutputStream out = new DataOutputStream(client.getOutputStream());
+            boolean clientGone = false;
             byte[] frame;
-            while ((frame = readFrame(in, pending)) != null) {
+            while ((frame = readBrokerFrame(in)) != null) {
+                int correlation = ByteBuffer.wrap(frame).getInt();
+                Pending request;
                 synchronized (pending) {
-                    int correlation = ByteBuffer.wrap(frame).getInt();
-                    Pending request = pending.get(correlation);
-                    if (request == null) throw new IllegalStateException("unknown response correlation " + correlation);
-                    if (request.header.apiKey() == ApiKeys.METADATA) {
-                        frame = metadata(frame, request.header, server.getLocalPort(), topics);
-                    } else if (request.produce != null) {
-                        if (recordTopics != null) acknowledgeRecords(frame, request, System.nanoTime(), recordEntries, recordTopics);
-                        else if (decodeEpisodes) acknowledge(frame, request, System.nanoTime(), entries);
-                        else produceErrors.addAndGet(acknowledge(frame, request, System.nanoTime(), entries, false));
-                    }
-                    forwardResponse(out, frame, pending);
+                    if (clientEnded.get()) continue;
+                    request = pending.get(correlation);
+                }
+                if (request == null) throw new IllegalStateException("unknown response correlation " + correlation);
+                // After a failed write to the client, later responses are dropped without being recorded.
+                if (clientGone) {
+                    pending.remove(correlation);
+                    continue;
+                }
+                long acknowledged = System.nanoTime();
+                Map<Uuid, String> learned = new HashMap<>();
+                List<Entry> acknowledgedEntries = new ArrayList<>();
+                List<RecordEntry> acknowledgedRecords = new ArrayList<>();
+                long errors = 0;
+                if (request.header.apiKey() == ApiKeys.METADATA) {
+                    frame = metadata(frame, request.header, server.getLocalPort(), learned);
+                } else if (request.produce != null) {
+                    if (recordTopics != null) acknowledgeRecords(frame, request, acknowledged, acknowledgedRecords, recordTopics);
+                    else if (decodeEpisodes) acknowledge(frame, request, acknowledged, acknowledgedEntries);
+                    else errors = acknowledge(frame, request, acknowledged, acknowledgedEntries, false);
+                }
+                if (forwardResponse(toClient, frame, pending)) {
+                    topics.putAll(learned);
+                    entries.addAll(acknowledgedEntries);
+                    recordEntries.addAll(acknowledgedRecords);
+                    produceErrors.addAndGet(errors);
+                } else {
+                    clientGone = true;
+                    pending.remove(correlation);
                 }
             }
+            throw new EOFException("broker closed the connection; pending requests: " + pending.size());
         } catch (Exception e) {
             if (!closing && !client.isClosed() && !broker.isClosed()) failure.compareAndSet(null, e);
         } finally {
@@ -283,27 +317,22 @@ final class LatencyProtocolObserver implements AutoCloseable {
     }
 
     static byte[] readFrame(DataInputStream in) throws IOException {
-        return readFrame(in, Collections.emptyMap());
+        try {
+            return readBrokerFrame(in);
+        } catch (SocketException reset) {
+            return null;
+        }
     }
 
-    static byte[] readFrame(DataInputStream in, Map<Integer, Pending> pending) throws IOException {
-        int first;
-        try {
-            first = in.read();
-        } catch (SocketException error) {
-            synchronized (pending) {
-                if (pending.values().stream().allMatch(request -> request.header.apiKey() == ApiKeys.METADATA)) return null;
-            }
-            throw error;
-        }
+    static byte[] readBrokerFrame(DataInputStream in) throws IOException {
+        int first = in.read();
         if (first < 0) return null;
         byte[] rest = in.readNBytes(3);
-        if (rest.length != 3) throw new EOFException("incomplete Kafka frame length");
+        if (rest.length != 3) return null;
         int length = (first << 24) | ((rest[0] & 255) << 16) | ((rest[1] & 255) << 8) | (rest[2] & 255);
         if (length < 4 || length > 64 * 1024 * 1024) throw new IOException("invalid Kafka frame length " + length);
         byte[] frame = in.readNBytes(length);
-        if (frame.length != length) throw new EOFException("incomplete Kafka frame body");
-        return frame;
+        return frame.length == length ? frame : null;
     }
 
     static void writeFrame(DataOutputStream out, byte[] frame) throws IOException {
@@ -312,13 +341,14 @@ final class LatencyProtocolObserver implements AutoCloseable {
         out.flush();
     }
 
-    static void forwardResponse(DataOutputStream out, byte[] frame, Map<Integer, Pending> pending) throws IOException {
-        synchronized (pending) {
-            int correlation = ByteBuffer.wrap(frame).getInt();
-            if (!pending.containsKey(correlation)) throw new IllegalStateException("unknown response correlation " + correlation);
+    static boolean forwardResponse(DataOutputStream out, byte[] frame, Map<Integer, Pending> pending) throws IOException {
+        try {
             writeFrame(out, frame);
-            pending.remove(correlation);
+        } catch (SocketException closedClient) {
+            return false;
         }
+        pending.remove(ByteBuffer.wrap(frame).getInt());
+        return true;
     }
 
     private void closeSocket(Socket socket) {

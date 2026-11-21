@@ -30,9 +30,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   physical ARM64 measurement open and ARMv7 outside hardware qualification.
   Bind the verified library-learning version to the current release.
   Keep conversion expressions copyable as inline code in generated lessons.
-- Accept idle Kafka frame-boundary resets and cancelled metadata requests in the
-  validation observer. Retain response correlations until forwarding succeeds;
-  keep interrupted frames and resets with data requests as errors.
+- Retain a response correlation in the validation observer until its response
+  is forwarded and flushed or its client has ended the connection.
 - Resolve Central dependencies and plugins in CI through a Google Cloud-hosted
   mirror. Verify endpoint selection and permanent errors offline, including a
   Central 404 response with a long Retry-After value.
@@ -585,6 +584,20 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   channels with the same last metric segment, such as `wind.rotor.speed` and `wind.generator.speed`, keep one vector
   per series. The `tsx-runner` refusal names both series by their ids, as the Java processor does.
 
+- Classify the end of a validation observer connection by side. Any end of the
+  client stream, a clean close or a reset, between frames or inside a frame, and
+  a socket error while writing a response to the client, are abandonment and do
+  not fail the check. The observer records a response only after writing and
+  flushing it to the client. It reads the client stream to its end, then closes
+  the client side, also while a response write is blocked, half-closes the
+  broker side and drops the pending requests. Broker responses that arrive
+  after that end or after a failed client write are dropped without being
+  recorded. Before that end, a complete client frame that fails validation, an
+  unknown response correlation, and a close, reset or other I/O error on the
+  broker side, with or without pending requests, fail the check. The B3
+  offline signal link ends a connection without a failure when its runner side
+  closes or resets, half-closes toward the observer on a clean runner end, and
+  fails on errors while both sides are open.
 - Concept 20 section 6.1 and the TASK-020 B1 notes list the signed `tsx-runner`
   modes that exist. With the B3 site configuration, `agent`, `conform` and `run`
   handle signed bounded statistics. With the B1 configuration, `run` executes
