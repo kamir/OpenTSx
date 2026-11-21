@@ -114,6 +114,8 @@ class GeneratorsTest {
                 .getMessage().contains("needs the parameter mean"));
         assertTrue(assertThrows(IllegalArgumentException.class, () -> Generators.values("gen.ou", params("{\"mean\":1,\"sigma\":1,\"reversion\":2}"), 1, MINUTE, 0, 1, null, null))
                 .getMessage().contains("reversion"));
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> Generators.values("gen.sine", params("{\"mean\":1,\"amplitude\":1,\"period\":\"P200000D\"}"), 1, MINUTE, 0, 1, null, null))
+                .getMessage().contains("at most PT2562047H47M16.854775807S"));
         assertTrue(assertThrows(IllegalArgumentException.class, () -> Generators.episodes(price(), ok, MINUTE, T0, T0))
                 .getMessage().contains("ends before it begins"));
         assertTrue(assertThrows(IllegalArgumentException.class, () -> Generators.episodes(price(), ok, 1000, T0, T0 + 3_000_000_000_000L))

@@ -182,7 +182,7 @@ condition, not a proof: an analysis without evidence is `restricted` however goo
 | 413 | `the request is larger than 262144 bytes` | POST body too large |
 
 Implemented in: `RetrievalServer.java:174-177`, `RetrievalServer.java:424-443`, `RetrievalServer.java:478-499`,
-`Systems.java:104-110`, `Systems.java:386-390`.
+`Systems.java:104-110`, `Systems.java:380-384`.
 
 <a id="22-evaluate-a-need"></a>
 
@@ -219,7 +219,7 @@ the origins of the signals the flow reads
 `ESTIMATED`, so its need in `h2-dispatch.decision.yaml`, with `origins: [ESTIMATED, FORECAST]`, accepts data that
 has no `origin` label.
 
-Implemented in: `Decisions.java:50-66`, `Decisions.java:104-156`, `Systems.java:270-273`, `Systems.java:410-426`,
+Implemented in: `Decisions.java:50-66`, `Decisions.java:104-156`, `Systems.java:264-267`, `Systems.java:404-420`,
 `DecisionsTest.java:95-126`.
 
 <a id="23-evaluate-an-analysis"></a>
@@ -396,7 +396,7 @@ The same unit does not mean the same quantity. `role` says what kind of quantity
   `<id>: role must be one of [command, estimate, exogenous, limit, observation]`.
 * The server returns `role` and `meaning` per signal in `opentsx.signal-status.v1`.
 
-Implemented in: `system.v1:188-197`, `SystemDoc.java:42`, `SystemDoc.java:395-398`, `Systems.java:234-235`,
+Implemented in: `system.v1:188-197`, `SystemDoc.java:42`, `SystemDoc.java:395-398`, `Systems.java:228-229`,
 `SystemDocTest.java:363-367`, `SystemDocTest.java:395`, `SystemsTest.java:99-101`.
 
 <a id="42-confirm-the-meaning-of-a-binding"></a>
@@ -411,7 +411,7 @@ Implemented in: `system.v1:188-197`, `SystemDoc.java:42`, `SystemDoc.java:395-39
   with `Confirm that the series is the quantity the signal means before binding it.`
 * A `generator` or `manual` source needs no confirmation.
 
-Implemented in: `system.v1:198-201`, `systems.py:38-46`, `systems.py:138-157`, `systems.py:178-185`,
+Implemented in: `system.v1:198-201`, `systems.py:38-46`, `systems.py:138-157`, `systems.py:180-187`,
 `signals.ts:568-588`.
 
 <a id="43-plausible-range-and-operating-range"></a>
@@ -437,9 +437,9 @@ Two ranges answer two questions.
 Example: for `park/T02/WTUR.W` the plausible range is -100 to 10000 kW from the channel catalog and the operating
 range is 0 to 3300 kW from the system document.
 
-Implemented in: `system.v1:223-266`, `SystemDoc.java:45-52`, `SystemDoc.java:399-433`, `SystemDoc.java:594-599`,
-`Systems.java:229-233`, `Systems.java:277-282`, `Systems.java:452-456`, `SystemDocTest.java:354-362`,
-`SystemDocTest.java:396`.
+Implemented in: `system.v1:223-266`, `SystemDoc.java:45-52`, `SystemDoc.java:399-406`, `SystemDoc.java:413-415`,
+`SystemDoc.java:438-440`, `SystemDoc.java:612-617`, `Systems.java:223-227`, `Systems.java:271-276`,
+`Systems.java:446-450`, `SystemDocTest.java:360-368`, `SystemDocTest.java:402`.
 
 <a id="5-powers-of-a-wind-park"></a>
 
@@ -499,6 +499,6 @@ states its `fidelity`:
   `generated, not measured: <ports>; the run shows the mechanism, not an effect`.
 
 Implemented in: `processor.v1:172-178`, `systems/processors/gen.ou.yaml:6`, `systems/processors/gen.sine.yaml:6`,
-`Generators.java:17-22`, `Generators.java:64-71`, `Generators.java:178-186`, `TopicLayout.java:173-176`,
+`Generators.java:17-22`, `Generators.java:64-71`, `Generators.java:208-212`, `TopicLayout.java:173-176`,
 `TopicLayout.java:204-206`, `KafScaleFeed.java:173-174`, `Decisions.java:144-145`, `Decisions.java:175-177`,
 `SignalInputs.java:98-99`, `Runs.java:359`, `Runs.java:375`.

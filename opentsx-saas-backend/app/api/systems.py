@@ -162,6 +162,8 @@ def check(binding: Binding) -> None:
             raise HTTPException(bad, "The parameters of a generator are an object.")
         if "seed" in source and not isinstance(source["seed"], int):
             raise HTTPException(bad, "The seed of a generator is a whole number.")
+        if "select" in source:
+            raise HTTPException(bad, "A generator source has no select. Its series has the metric <system>.<signal id>.")
     else:
         if not isinstance(source.get("value"), (int, float)) or isinstance(source.get("value"), bool):
             raise HTTPException(bad, "A manual source needs a value.")
