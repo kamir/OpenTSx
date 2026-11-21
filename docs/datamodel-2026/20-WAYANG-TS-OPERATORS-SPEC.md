@@ -113,7 +113,7 @@ Every operator whose output may leave a site (S4) MUST declare `merge.class`:
 
 | Vector file | Comparison | Source |
 |---|---|---|
-| `opentsx-model/src/test/resources/testvectors/wire-format.json` | byte-identical hex | `opentsx-model` tests |
+| `opentsx-model/src/test/resources/testvectors/wire-format.json` | byte-identical hex; its `v2.1` analysis results decode with their ids | `opentsx-model` tests |
 | `series-id.json`, `xxh64.json`, `time-deltas.json`, `bucket-checksum.json` | identical values | same |
 | `docs/datamodel-2026/testvectors/clean-ops.v1.json` | `\|expected - actual\| <= 1e-12 * max(1, \|expected\|)`; a gap must be a gap | `CleanChainTest.java:76-85` |
 | `align-vector.v1.json` | exact equality | `VectorAlignerTest.java:83` |
@@ -241,8 +241,10 @@ That standalone replay fixture does not exercise the remote Wayang/UI path in S1
 The implemented local orchestration path uses `opentsx.dag.v2`, `opentsx.local-rollout.v1`, the shared assignment
 envelope and S1.9 requests. It accepts one to three complete source topics, one episode sink and only the S1.9
 cleaning subset. The UI queries target capabilities and submits explicit `flowId` and exact UTF-8 `dagText` through
-the authenticated backend. The backend admits administrators, or every signed-in user when `DAG_RUN_ROLE` is `user`,
-the setting that also admits DAG deployments and demo generators. Existing continuous deployment routes are unchanged.
+the authenticated backend. Worker capabilities are read over the unauthenticated local HTTP interface; this profile
+is trusted-local and makes no fleet qualification claim. Fleet admission uses only the signed site path of S5.3 and
+S7 (D-T18). The backend admits administrators, or every signed-in user when `DAG_RUN_ROLE` is `user`, the setting
+that also admits DAG deployments and demo generators. Existing continuous deployment routes are unchanged.
 
 | Boundary | Required local behavior and implementation |
 | --- | --- |
@@ -632,8 +634,9 @@ The driver MUST validate in this order and MUST stop at the first error. Steps 1
 6. Parameters (S1.3).
 7. Topics: every source and sink topic follows `tsx.<domain>.<kind>.v<n>` of the job's domain (S3.1).
 8. Federation: validate the value crossing each site boundary and its ownership dependencies. A local cleaning
-   chain may precede mergeable statistics. Cross-site raw pairing or alignment requires an explicitly admitted
-   movement contract. Federated statistics use tumbling windows and the sink kind is `aggregates` or `signals`.
+   chain may precede mergeable statistics. No movement contract for raw series, pairs or vectors exists (D-T22), so
+   a raw output or an operator with merge class `none` MUST NOT feed a federated sink, and cross-site raw pairing
+   or alignment is refused. Federated statistics use tumbling windows and the sink kind is `aggregates` or `signals`.
 
 ### S2.3 Wayang plan
 
@@ -681,7 +684,7 @@ The site plan is an `opentsx.runner-plan.v1` document ([schema](schemas/opentsx.
 | `inputContracts[]` | one `(binding, topic)` per whole input, with allowed writer fingerprints |
 | `outputs[]` | one typed output with DAG sink identity and writer contract |
 | `federation.route` | JVM only: `signal-cluster` or `job-state` |
-| `federation.expectedAssignments[]` | exact admitted assignment membership; one aggregate-producing member per site; assignment, site and node IDs each unique, so a node belongs to one site |
+| `federation.expectedAssignments[]` | exact admitted assignment membership; one aggregate-producing member per site; assignment, site and node IDs each unique, so a node belongs to one site. A site has exactly one node (D-T17): the site certificate identifies the site, and the site's one qualified runtime pin names its node; a second pin with another node is refused |
 | `federation.scopes[]` | at most 1024 unique admitted windows on the epoch grid |
 | `federation.groupBy`, `federation.maxDelay` | restricted tag names and explicit ISO 8601 duration |
 
@@ -809,7 +812,7 @@ version or catalog.
 
 | Check id | Pass condition |
 |---|---|
-| `vectors.wire` | every record of `wire-format.json` encodes byte-identically |
+| `vectors.wire` | the episodes and the observation of `wire-format.json` encode byte-identically, its `v2.1` analysis results decode with their ids, and every record of `analysis-result-wire.json` encodes byte-identically |
 | `vectors.series-id` | `series-id.json` and `xxh64.json` pass |
 | `vectors.operators` | every operator of the catalog version passes its vectors (S1.6) |
 | `kafscale.required` | the required tests of `opentsx-kafscale-conformance` pass against the site broker |

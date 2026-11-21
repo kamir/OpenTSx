@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "PatternMatch",
+  "namespace": "org.opentsx.model.v2",
+  "doc": "A hit of a pattern query inside an episode.",
+  "fields": [
+    {"name": "queryId", "type": "string"},
+    {"name": "episodeId", "type": "string"},
+    {"name": "seriesId", "type": "string"},
+    {"name": "offset", "type": "int"},
+    {"name": "length", "type": "int"},
+    {"name": "distance", "type": "double"},
+    {"name": "metric", "type": "string", "doc": "Distance measure, e.g. zED or DTW(w=0.1)."}
+  ]
+}

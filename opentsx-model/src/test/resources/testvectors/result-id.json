@@ -25,6 +25,7 @@
     "inputEpisodeIds": [
       "01HF7Z1Y4X0000000000000000"
     ],
+    "inputDigests": [],
     "canonical": "dfa@1.0.0(fitFrom=d4030000000000000,fitTo=d4070000000000000,order=l1,scales=a4030000000000000;4040000000000000;4050000000000000;4060000000000000;4070000000000000)[01HF7Z1Y4X0000000000000000]",
     "resultId": "869c57e7ea4d153c"
   },
@@ -54,6 +55,7 @@
     "inputEpisodeIds": [
       "01HF7Z1Y4X0000000000000000"
     ],
+    "inputDigests": [],
     "canonical": "dfa@1.0.0(fitFrom=d4030000000000000,fitTo=d4070000000000000,order=l1,scales=a4030000000000000;4040000000000000;4050000000000000;4060000000000000;4070000000000000)[01HF7Z1Y4X0000000000000000]",
     "resultId": "869c57e7ea4d153c"
   },
@@ -73,6 +75,7 @@
       "01HF7Z1Y4X0000000000000011",
       "01HF7Z1Y4X0000000000000012"
     ],
+    "inputDigests": [],
     "canonical": "es@1.0.0(tauMax=d4014000000000000,threshold=sstd)[01HF7Z1Y4X0000000000000010,01HF7Z1Y4X0000000000000011,01HF7Z1Y4X0000000000000012]",
     "resultId": "4138beb7fb0cc410"
   },
@@ -92,6 +95,7 @@
       "01HF7Z1Y4X0000000000000011",
       "01HF7Z1Y4X0000000000000010"
     ],
+    "inputDigests": [],
     "canonical": "es@1.0.0(tauMax=d4014000000000000,threshold=sstd)[01HF7Z1Y4X0000000000000012,01HF7Z1Y4X0000000000000011,01HF7Z1Y4X0000000000000010]",
     "resultId": "6ff1ccaca9d75615"
   },
@@ -111,6 +115,7 @@
       "01HF7Z1Y4X0000000000000011",
       "01HF7Z1Y4X0000000000000012"
     ],
+    "inputDigests": [],
     "canonical": "es@1.0.0(tauMax=l5,threshold=sstd)[01HF7Z1Y4X0000000000000010,01HF7Z1Y4X0000000000000011,01HF7Z1Y4X0000000000000012]",
     "resultId": "edf0c6b5265dae99"
   },
@@ -129,6 +134,7 @@
       "e[1]",
       "e,2"
     ],
+    "inputDigests": [],
     "canonical": "a\\@b\\{c\\}@1\\(2\\)(back\\\\slash=s\\@,k\\=1=sx\\,y\\])[e\\[1\\],e\\,2]",
     "resultId": "bedcbd6822845e95"
   },
@@ -152,6 +158,7 @@
     "inputEpisodeIds": [
       "01HF7Z1Y4X0000000000000000"
     ],
+    "inputDigests": [],
     "canonical": "dfa@1.0.0(Zone=l-1,a=d0000000000000000,zone=d8000000000000000,ä=a)[01HF7Z1Y4X0000000000000000]",
     "resultId": "789204459fe7abcd"
   },
@@ -169,6 +176,7 @@
     "inputEpisodeIds": [
       "x"
     ],
+    "inputDigests": [],
     "canonical": "ris@1.0.0(big=l9007199254740993,cap=d7ff0000000000000)[x]",
     "resultId": "7fbf0cfd7cc01eab"
   },
@@ -179,7 +187,96 @@
     "inputEpisodeIds": [
       "01HF7Z1Y4X0000000000000000"
     ],
+    "inputDigests": [],
     "canonical": "dfa@1.0.0()[01HF7Z1Y4X0000000000000000]",
     "resultId": "85bb1632f41faf72"
+  },
+  {
+    "method": "dfa",
+    "methodVersion": "1.0.0",
+    "params": {
+      "order": {
+        "long": "1"
+      },
+      "scales": {
+        "array": [
+          16,
+          32,
+          64,
+          128,
+          256
+        ]
+      },
+      "fitFrom": {
+        "double": 16.0
+      },
+      "fitTo": {
+        "double": 256.0
+      }
+    },
+    "inputEpisodeIds": [
+      "01HF7Z1Y4X0000000000000000"
+    ],
+    "inputDigests": [
+      "24dc3f98e1738b85e2233f3cae81999629186c522ae29f8fd83ecae1ec28040c"
+    ],
+    "canonical": "dfa@1.0.0(fitFrom=d4030000000000000,fitTo=d4070000000000000,order=l1,scales=a4030000000000000;4040000000000000;4050000000000000;4060000000000000;4070000000000000)[01HF7Z1Y4X0000000000000000]{24dc3f98e1738b85e2233f3cae81999629186c522ae29f8fd83ecae1ec28040c}",
+    "resultId": "c2562f0c0d74e19c"
+  },
+  {
+    "method": "dfa",
+    "methodVersion": "1.0.0",
+    "params": {
+      "order": {
+        "long": "1"
+      },
+      "scales": {
+        "array": [
+          16,
+          32,
+          64,
+          128,
+          256
+        ]
+      },
+      "fitFrom": {
+        "double": 16.0
+      },
+      "fitTo": {
+        "double": 256.0
+      }
+    },
+    "inputEpisodeIds": [
+      "01HF7Z1Y4X0000000000000000"
+    ],
+    "inputDigests": [
+      "42b69ad12be88895566cb4ec5f03f79ecfb547178f7c9e1a902d3da65e316ce1"
+    ],
+    "canonical": "dfa@1.0.0(fitFrom=d4030000000000000,fitTo=d4070000000000000,order=l1,scales=a4030000000000000;4040000000000000;4050000000000000;4060000000000000;4070000000000000)[01HF7Z1Y4X0000000000000000]{42b69ad12be88895566cb4ec5f03f79ecfb547178f7c9e1a902d3da65e316ce1}",
+    "resultId": "0ca3551cc7e5612e"
+  },
+  {
+    "method": "es",
+    "methodVersion": "1.0.0",
+    "params": {
+      "threshold": {
+        "string": "std"
+      },
+      "tauMax": {
+        "double": 5.0
+      }
+    },
+    "inputEpisodeIds": [
+      "01HF7Z1Y4X0000000000000010",
+      "01HF7Z1Y4X0000000000000011",
+      "01HF7Z1Y4X0000000000000012"
+    ],
+    "inputDigests": [
+      "24dc3f98e1738b85e2233f3cae81999629186c522ae29f8fd83ecae1ec28040c",
+      "15bbab30f5f0e8877d2f4f5fbb408c740060afbe80d8c6aef02017d6329266ed",
+      "de061a78e6410bdb082c9dcd8f87363a5bf78bd0d8bf27eb87dc2d9123e8b297"
+    ],
+    "canonical": "es@1.0.0(tauMax=d4014000000000000,threshold=sstd)[01HF7Z1Y4X0000000000000010,01HF7Z1Y4X0000000000000011,01HF7Z1Y4X0000000000000012]{24dc3f98e1738b85e2233f3cae81999629186c522ae29f8fd83ecae1ec28040c,15bbab30f5f0e8877d2f4f5fbb408c740060afbe80d8c6aef02017d6329266ed,de061a78e6410bdb082c9dcd8f87363a5bf78bd0d8bf27eb87dc2d9123e8b297}",
+    "resultId": "491d5a3a36680f79"
   }
 ]

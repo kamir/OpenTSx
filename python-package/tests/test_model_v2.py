@@ -3,12 +3,14 @@
 import json
 import math
 import pathlib
+import struct
 
 import numpy as np
 import pandas as pd
 import pytest
 
 from opentsx import model as m
+from opentsx.model import serde
 from opentsx.model.pandas_io import episode_to_series, episodes_to_frame, series_to_episode
 from opentsx.model.series_key import sorted_by_utf8
 
@@ -27,6 +29,76 @@ def test_schema_copies_are_identical_to_the_java_module():
     assert java == sorted(p.name for p in PY_SCHEMAS.glob("*.avsc"))
     for name in java:
         assert (JAVA_SCHEMAS / name).read_bytes() == (PY_SCHEMAS / name).read_bytes(), name
+
+
+def test_released_writer_schemas_are_copies_of_the_java_history():
+    history = JAVA_SCHEMAS.parent / "resources" / "schema-history"
+    for frozen in sorted(p for p in PY_SCHEMAS.iterdir() if p.is_dir()):
+        for f in frozen.glob("*.avsc"):
+            assert (history / frozen.name / f.name).read_bytes() == f.read_bytes(), f"{frozen.name}/{f.name}"
+
+
+def test_every_released_top_level_schema_decodes():
+    from fastavro.schema import parse_schema
+
+    history = JAVA_SCHEMAS.parent / "resources" / "schema-history"
+    serde._load()
+    known = set(serde._by_fp)
+    for version in (history / "versions.txt").read_text(encoding="utf-8").split():
+        named = {}
+        for file in (history / version / "index.txt").read_text(encoding="utf-8").split():
+            parsed = parse_schema(json.loads((history / version / file).read_text(encoding="utf-8")),
+                                  named_schemas=named)
+            if file[:-5] in serde._TOP_LEVEL:
+                assert serde._fingerprint(parsed) in known, f"{version}/{file} cannot be decoded"
+
+
+def test_content_digest_vectors():
+    vectors = load("episode-digest.json")
+    assert len(vectors) == 5
+    for v in vectors:
+        s = v["spec"]
+        key = m.series_key(s["metric"], s["tags"], s["unit"])
+        quality = None if s["qualityHex"] is None else bytes.fromhex(s["qualityHex"])
+        common = dict(episode_id=s["episodeId"], labels=s["labels"], quality=quality, t_end_us=s["tEndUs"])
+        ep = (m.regular(key, s["tStartUs"], s["intervalUs"], s["values"], **common) if s["kind"] == "regular"
+              else m.irregular(key, s["timestampsUs"], s["values"], **common))
+        assert m.content_digest(ep) == v["contentDigest"], v["name"]
+        assert m.content_digest(m.decode(m.encode("Episode", ep))[1]) == v["contentDigest"], v["name"]
+    assert vectors[0]["contentDigest"] == vectors[1]["contentDigest"]
+    assert vectors[0]["contentDigest"] != vectors[2]["contentDigest"]
+
+
+def test_every_nan_gives_the_same_content_digest():
+    key = m.series_key("wind.turbine.power_active", {"park": "ber-01"}, "kW")
+    canonical = m.content_digest(m.regular(key, 0, 1_000, [1.0, float("nan")]))
+    for bits in (0x7FF0000000000001, 0xFFF8000000000000, 0x7FFFFFFFFFFFFFFF):
+        nan = struct.unpack("<d", struct.pack("<Q", bits))[0]
+        ep = m.regular(key, 0, 1_000, [1.0, nan])
+        assert struct.pack("<d", ep["values"][1]) == struct.pack("<Q", bits)
+        assert m.content_digest(ep) == canonical, hex(bits)
+
+
+def test_content_digest_ignores_metadata_but_not_content():
+    key = m.series_key("wind.turbine.power_active", {"park": "ber-01"}, "kW")
+    plain = m.content_digest(m.regular(key, 0, 1_000, [1.0, 0.0], created_at_us=1))
+    decorated = m.regular(key, 0, 1_000, [1.0, 0.0], episode_id="other", labels={"a": "b"}, bucket_id="bucket",
+                          revision=3, source="elsewhere", pipeline="p", parent_episode_id="parent", created_at_us=2)
+    assert m.content_digest(decorated) == plain
+    others = [
+        m.regular(key, 0, 1_000, [1.0, -0.0]),
+        m.regular(key, 1, 1_000, [1.0, 0.0]),
+        m.regular(key, 0, 1_001, [1.0, 0.0]),
+        m.regular(key, 0, 1_000, [1.0, 0.0], t_end_us=5_000),
+        m.regular(key, 0, 1_000, [1.0, 0.0], quality=bytes(2)),
+        m.regular(m.series_key(key["metric"], key["tags"], "W"), 0, 1_000, [1.0, 0.0]),
+        m.regular(m.series_key(key["metric"], key["tags"], None), 0, 1_000, [1.0, 0.0]),
+        m.regular(m.series_key(key["metric"], {"park": "ber-02"}, "kW"), 0, 1_000, [1.0, 0.0]),
+    ]
+    digests = {plain} | {m.content_digest(e) for e in others}
+    assert len(digests) == len(others) + 1
+    with pytest.raises(ValueError, match="count 2 != values 1"):
+        m.content_digest({**m.regular(key, 0, 1_000, [1.0, 0.0]), "values": [1.0]})
 
 
 def test_xxh64_reference_vectors():
@@ -77,8 +149,12 @@ def test_summary_counts_nan_separately():
 
 
 def test_fingerprints_match_java():
-    for name, fp in load("wire-format.json")["fingerprints"].items():
+    frozen = load("wire-format.json")["fingerprints"]
+    current = {**frozen, "AnalysisResult": load("analysis-result-wire.json")["fingerprint"]}
+    for name, fp in current.items():
         assert f"{m.fingerprint(name):016x}" == fp
+    serde._load()
+    assert serde._by_fp[int(frozen["AnalysisResult"], 16)][0] == "AnalysisResult"
 
 
 def _build(spec):
@@ -166,3 +242,25 @@ def test_bucket_checksum_vectors_ignore_order_and_duplicates():
     for v in load("bucket-checksum.json"):
         assert m.bucket_checksum(v["episodeIds"]) == v["checksum"]
         assert m.bucket_checksum(reversed(v["episodeIds"])) == v["checksum"]
+
+
+def test_bucket_content_checksum_vectors():
+    vectors = load("bucket-content-checksum.json")
+    assert len(vectors) == 5
+    for v in vectors:
+        assert m.bucket_content_checksum(v["episodeIds"], v["contentDigests"]) == v["checksum"], v["name"]
+        pairs = list(zip(v["episodeIds"], v["contentDigests"]))[::-1]
+        assert m.bucket_content_checksum([i for i, _ in pairs], [d for _, d in pairs]) == v["checksum"], v["name"]
+    assert vectors[1]["episodeIds"] == vectors[2]["episodeIds"]
+    assert vectors[1]["checksum"] != vectors[2]["checksum"]
+
+
+@pytest.mark.parametrize("ids, digests, error", [
+    (["e1", "e2"], ["a" * 64], "1 content digests for 2 episode ids"),
+    (["e1", "e1"], ["a" * 64, "b" * 64], "episode e1 appears with two contents"),
+    (["e1"], ["A" * 64], "content digest of episode e1 is not 64 lower-case hex characters"),
+    ([""], ["a" * 64], "episode ids must not be empty"),
+])
+def test_bucket_content_checksum_rejects_inconsistent_input(ids, digests, error):
+    with pytest.raises(ValueError, match=error):
+        m.bucket_content_checksum(ids, digests)

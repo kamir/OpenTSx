@@ -167,9 +167,11 @@ export default function AnalysisResultsPanel() {
             {result.method} {result.methodVersion}
           </h2>
           <p>
-            Result identity matches method, version, typed parameters and input
-            episode IDs. This identity check does not authenticate the output
-            values or their author.
+            {result.inputDigests.length > 0
+              ? "Result identity matches method, version, typed parameters, input episode IDs and their content digests."
+              : "Result identity matches method, version, typed parameters and input episode IDs. The record has no content digests, so its identity does not bind the input contents."}{" "}
+            This identity check does not authenticate the output values or their
+            author.
           </p>
           <dl>
             <dt>Result ID</dt>
@@ -202,6 +204,7 @@ export default function AnalysisResultsPanel() {
               <tr>
                 <th>Input episode</th>
                 <th>Input series</th>
+                <th>Content digest</th>
               </tr>
             </thead>
             <tbody>
@@ -209,6 +212,10 @@ export default function AnalysisResultsPanel() {
                 <tr key={i}>
                   <td>{id}</td>
                   <td>{result.inputSeriesIds[i]}</td>
+                  <td>
+                    {result.inputDigests[i] ??
+                      "Not recorded (written before v2.2)"}
+                  </td>
                 </tr>
               ))}
             </tbody>

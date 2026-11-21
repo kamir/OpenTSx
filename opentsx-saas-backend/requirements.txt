@@ -1,10 +1,10 @@
 # FastAPI and server
-fastapi==0.162.0
+fastapi==0.163.2
 uvicorn[standard]==0.54.0
-python-multipart==0.0.33
+python-multipart==0.0.34
 
 # Database
-sqlalchemy==2.1.8
+sqlalchemy==2.1.9
 alembic==1.20.1
 psycopg2-binary==2.9.13
 asyncpg==0.32.0
@@ -21,19 +21,19 @@ redis==5.3.1
 hiredis==2.4.0
 
 # Email
-email-validator==2.3.0
+email-validator==2.4.0
 emails==0.6.0
 
 # WebSocket
 python-socketio==5.18.1
 
 # Time series (use local opentsx package)
-numpy==2.5.4
-pandas==3.1.0
+numpy==2.5.5
+pandas==3.1.1
 
 # Utilities
-pydantic==2.14.2
-pydantic-settings==2.16.2
+pydantic==2.14.3
+pydantic-settings==2.16.3
 httpx==0.28.1
 
 # Monitoring
