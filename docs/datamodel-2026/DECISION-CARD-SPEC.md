@@ -114,12 +114,13 @@ enough is a property of the need, not of the signal.
 | `signal` | string | yes | id of a signal of the system |
 | `grade` | `raw`, `clean`, `features` | yes | grade whose data the decision reads. The server reads `clean` when the field is absent |
 | `maxAge` | duration | no | the longest time the data of this signal may end before the newest data among all signals the decision needs ([section 2.2](#22-evaluate-a-need)) |
-| `maxQuestionable` | number, 0 to 1 | no | share of values with a questionable measurement that is still acceptable. The server does not evaluate it |
+| `maxQuestionable` | number, 0 to 1 | no | share of values with a questionable measurement that is still acceptable. The server does not evaluate the share: an analysis the need applies to is at best `restricted` ([section 2.3](#23-evaluate-an-analysis)) |
 | `origins` | array of `MEASURED`, `REPORTED`, `FORECAST`, `ESTIMATED`, `SYNTHETIC` | no | origins the decision accepts. Without the field every origin is accepted |
 | `for` | array of analysis ids | no | the analyses that need the signal. Without the field every analysis of the card needs it |
 | `optional` | boolean | no | `true`: the need is evaluated and shown, but it never blocks or restricts an analysis |
 
-Implemented in: `decision.v1:255-308`, `Decisions.java:104-152`, `Decisions.java:164-174`.
+Implemented in: `decision.v1:255-308`, `Decisions.java:104-152`, `Decisions.java:164-177`,
+`DecisionsTest.java:140-181`.
 
 <a id="14-analyses"></a>
 
@@ -137,12 +138,12 @@ inputs it was checked in and what it was checked with.
 | `version` | string | no | |
 | `validity` | array | yes | each `{signal, min, max, note}`, `signal` required: the range of an input in which the analysis was checked. An empty array states no range |
 | `evidence` | array | yes | each `{what, result}` required, `period`, `against` (the reference it was compared with), `date` and `synthetic` optional. An empty array means: not validated |
-| `uncertainty` | object | no | `method`, `blockAbove` (width of the interval above which a result does not carry the decision), `unit`. The server does not evaluate it |
+| `uncertainty` | object | no | `method`, `blockAbove` (width of the interval above which a result does not carry the decision), `unit`. The server does not evaluate the width: an analysis that states `blockAbove` is at best `restricted` ([section 2.3](#23-evaluate-an-analysis)) |
 
 `synthetic: true` on an evidence entry means the check ran on generated data. It shows that the mechanism works, not
 that the analysis is right.
 
-Implemented in: `decision.v1:309-416`, `Decisions.java:158-215`.
+Implemented in: `decision.v1:309-416`, `Decisions.java:158-221`, `DecisionsTest.java:140-191`.
 
 <a id="15-alternatives"></a>
 
@@ -232,17 +233,24 @@ applies. What is missing blocks exactly the analyses that need it.
 | Status | When |
 |---|---|
 | `blocked` | an applying need has a reason |
-| `restricted` | not blocked, and at least one of: an applying need has `containsSynthetic`; an input lies outside a `validity` range; `evidence` is missing or empty; every evidence entry has `synthetic: true` |
+| `restricted` | not blocked, and at least one of: an applying need states `maxQuestionable`; an applying need has `containsSynthetic`; an input lies outside a `validity` range; `evidence` is missing or empty; every evidence entry has `synthetic: true`; the analysis states `uncertainty.blockAbove` |
 | `usable` | neither |
 
 `reasons` lists the reasons of the applying needs first, then these, in this order:
 
 | Condition | Reason |
 |---|---|
+| an applying need states `maxQuestionable`, one reason per such need in the order of the needs | `<signal>: the share of questionable values is not evaluated by this server` |
 | an applying need has `containsSynthetic` | `an input is generated or made of generated data: the result shows the mechanism, not an effect` |
 | an input lies outside a `validity` range | `<signal> holds values from <min> to <max>, outside the range the analysis was checked in` |
 | `evidence` is missing or empty | `the analysis has no evidence: it was not checked against anything` |
 | every evidence entry has `synthetic: true` | `the analysis was checked on generated data only` |
+| the analysis states `uncertainty.blockAbove` | `the width of the uncertainty is not evaluated by this server` |
+
+The server does not evaluate `maxQuestionable` or `blockAbove`. An analysis with an applying need that states
+`maxQuestionable`, or with `uncertainty.blockAbove`, is never `usable`. A need that states `maxQuestionable` keeps
+`ok: true` when the checks of [section 2.2](#22-evaluate-a-need) find no reason: `ok` covers only the checks that
+ran.
 
 Validity check, for each `validity` entry:
 
@@ -256,8 +264,8 @@ Validity check, for each `validity` entry:
 
 An alternative takes the status of the analysis it names.
 
-Implemented in: `Decisions.java:88-100`, `Decisions.java:158-221`, `DecisionsTest.java:51-93`,
-`DecisionsTest.java:128-138`.
+Implemented in: `Decisions.java:88-100`, `Decisions.java:158-227`, `DecisionsTest.java:51-93`,
+`DecisionsTest.java:128-191`.
 
 <a id="24-fields-of-the-status"></a>
 
@@ -500,5 +508,5 @@ states its `fidelity`:
 
 Implemented in: `processor.v1:172-178`, `systems/processors/gen.ou.yaml:6`, `systems/processors/gen.sine.yaml:6`,
 `Generators.java:17-22`, `Generators.java:64-71`, `Generators.java:178-186`, `TopicLayout.java:173-176`,
-`TopicLayout.java:204-206`, `KafScaleFeed.java:171-172`, `Decisions.java:144-145`, `Decisions.java:175-177`,
+`TopicLayout.java:204-206`, `KafScaleFeed.java:171-172`, `Decisions.java:144-145`, `Decisions.java:178-180`,
 `SignalInputs.java:98-99`, `Runs.java:360`, `Runs.java:376`.

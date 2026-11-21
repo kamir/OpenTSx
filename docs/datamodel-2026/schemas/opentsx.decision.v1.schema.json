@@ -279,7 +279,7 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "Share of values with a questionable measurement that is still acceptable."
+          "description": "Share of values with a questionable measurement that is still acceptable. The retrieval server does not evaluate the share: an analysis the need applies to is at best restricted."
         },
         "origins": {
           "type": "array",
@@ -405,7 +405,7 @@
             },
             "blockAbove": {
               "type": "number",
-              "description": "Width of the interval above which a result does not carry the decision."
+              "description": "Width of the interval above which a result does not carry the decision. The retrieval server does not evaluate the width: an analysis that states it is at best restricted."
             },
             "unit": {
               "type": "string"
