@@ -12,6 +12,11 @@ entries before 3.0.0 are grouped by date.
 
 ### Changed
 
+- TASK-020 U01 decisions D-T16 to D-T22 (owner, 2026-11-21). `TsxCompileContext.Boundary` loses `admitsRaw` (D-T22):
+  no raw series, pair or vector and no operator with merge class `none` can feed a federated sink. Spec S1.10, S2.2
+  and S2.4 state that a site has exactly one node (D-T17) and that the local worker's capabilities are trusted-local
+  without a fleet qualification claim (D-T18).
+
 - Documentation, comments and example files describe the current code. Chapter 15 drops the pair windows from the
   open items, links PAIR-WINDOWS-SPEC from P8 and lists the twin variants T and L as proofs of concept. The worked
   example of chapter 16 counts twelve components and sixteen signals and names the five flows that run. The `maxAge`
