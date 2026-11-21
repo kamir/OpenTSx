@@ -26,12 +26,17 @@ Checks the files `git ls-files` lists under root:
     control or format character (Unicode category Cc or Cf), as in a list saved as UTF-16 without a byte order mark
     or with a byte order mark inside. Without the file these checks do not run.
 
-A tracked symbolic link is checked by its text, which is what git publishes; the file it points to is not read.
+A tracked symbolic link is checked by its text, which is what git publishes; the file it points to is not read. A
+tracked file below a directory that the working tree replaced by a symbolic link is not read either: git shows it as
+deleted and adds nothing beyond a link. A tracked path that is not valid UTF-8 is one finding,
+`<path as git shows it>: the file name is not valid UTF-8; rename the file`, and the file is not read.
 
 When it reads the git listing itself (no paths given), it also fails on a gitlink, an index entry of mode 160000,
 whose path has no submodule.<name>.path entry in the .gitmodules file at the top level of the repository (no file
-means no entries). A root below the top level compares the paths below it. A .gitmodules file that git cannot read,
-for example one with conflict markers, is one finding with git's reason; the other checks still run.
+means no entries). A root below the top level compares the paths below it; when such a gitlink has no entry and its
+path at the top level is not valid UTF-8, the finding is the file name finding above with that path. A .gitmodules
+file that git cannot read, for example one with conflict markers, is one finding with git's reason; the other checks
+still run.
 """
 import ipaddress
 import os
@@ -57,17 +62,29 @@ MQTT_PASSWORD_FILE = "opentsx-lg/src/main/mqtt-example/volume1/docker/mqtt/confi
 HOME_PATH = re.compile(r"/(?:Users|home)/([A-Za-z0-9._-]+)(?![A-Za-z0-9._-])")
 SERVICE_HOMES = {"Shared", "jovyan", "ubuntu", "ec2-user", "user"}
 DENY_LIST = "config/private/denylist.txt"
+GIT_ESCAPES = {7: "a", 8: "b", 9: "t", 10: "n", 11: "v", 12: "f", 13: "r", 34: '"', 92: "\\"}
 
 
 def tracked_files(root: pathlib.Path) -> list[str]:
     listing = subprocess.run(["git", "-C", str(root), "ls-files", "-z"], capture_output=True, check=True)
-    return [p for p in listing.stdout.decode("utf-8").split("\0") if p]
+    return [p for p in listing.stdout.decode("utf-8", "surrogateescape").split("\0") if p]
 
 
 def gitlinks(root: pathlib.Path) -> list[str]:
     listing = subprocess.run(["git", "-C", str(root), "ls-files", "-s", "-z"], capture_output=True, check=True)
-    entries = (entry.partition("\t") for entry in listing.stdout.decode("utf-8").split("\0") if entry)
+    entries = (entry.partition("\t") for entry in listing.stdout.decode("utf-8", "surrogateescape").split("\0")
+               if entry)
     return [path for info, _, path in entries if info.startswith("160000 ")]
+
+
+def utf8(path: str) -> bool:
+    return not any("\udc80" <= c <= "\udcff" for c in path)
+
+
+def shown_by_git(path: str) -> str:
+    data = path.encode("utf-8", "surrogateescape")
+    return '"' + "".join("\\" + GIT_ESCAPES[b] if b in GIT_ESCAPES else chr(b) if 0x20 <= b < 0x7f else f"\\{b:03o}"
+                         for b in data) + '"'
 
 
 class UnreadableModules(Exception):
@@ -77,7 +94,7 @@ class UnreadableModules(Exception):
 def submodule_paths(root: pathlib.Path) -> tuple[str, set[str]]:
     location = subprocess.run(["git", "-C", str(root), "rev-parse", "--show-toplevel", "--show-prefix"],
                               capture_output=True, check=True)
-    top, prefix = location.stdout.decode("utf-8").split("\n")[:2]
+    top, prefix = location.stdout.decode("utf-8", "surrogateescape").split("\n")[:2]
     if not (pathlib.Path(top) / ".gitmodules").is_file():
         return prefix, set()
     command = ["git", "-C", top, "config", "-z", "-f", ".gitmodules", "--get-regexp", r"^submodule\..*\.path$"]
@@ -87,7 +104,8 @@ def submodule_paths(root: pathlib.Path) -> tuple[str, set[str]]:
                            if line.strip())
         raise UnreadableModules(f".gitmodules: git cannot read it ({reason}); fix the file, for example resolve "
                                 "its conflict markers")
-    return prefix, {entry.partition("\n")[2] for entry in result.stdout.decode("utf-8").split("\0") if entry}
+    return prefix, {entry.partition("\n")[2] for entry in result.stdout.decode("utf-8", "surrogateescape").split("\0")
+                    if entry}
 
 
 def gitlink_findings(root: pathlib.Path) -> list[str]:
@@ -98,7 +116,11 @@ def gitlink_findings(root: pathlib.Path) -> list[str]:
     findings = []
     for path in gitlinks(root):
         top = prefix + path
-        if top not in known:
+        if not utf8(path) or top in known:
+            continue
+        if not utf8(top):
+            findings.append(f"{shown_by_git(top)}: the file name is not valid UTF-8; rename the file")
+        else:
             findings.append(f"{path}: gitlink without a .gitmodules entry; at the top level of the repository, add "
                             f"one with git config -f .gitmodules submodule.{top}.path {top}, git config -f "
                             f".gitmodules submodule.{top}.url <url> and git add .gitmodules, or remove it with git rm "
@@ -200,6 +222,9 @@ def config_findings(path: str, text: str) -> list[str]:
 def check(root: pathlib.Path, paths: list[str]) -> list[str]:
     combined, denied, findings = deny_list(root)
     for path in paths:
+        if not utf8(path):
+            findings.append(f"{shown_by_git(path)}: the file name is not valid UTF-8; rename the file")
+            continue
         for word in denied_words(combined, denied, path):
             findings.append(f"{path}: {word}: a word of the private deny list in the path; rename the file")
         parts = pathlib.PurePosixPath(path).parts
@@ -221,6 +246,8 @@ def check(root: pathlib.Path, paths: list[str]) -> list[str]:
             findings.append(f"{path}: measurement output is tracked; untrack it, {output_dir} is git-ignored")
             continue
         file = root / path
+        if any((root / parent).is_symlink() for parent in pathlib.PurePosixPath(path).parents[:-1]):
+            continue
         if file.is_symlink():
             data = os.fsencode(os.readlink(file))
         elif file.is_file():

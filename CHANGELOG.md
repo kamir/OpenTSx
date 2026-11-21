@@ -2779,7 +2779,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   once, at any depth, so `X=$(docker pull <image> | tee log) docker pull <image>` gives one finding for each image. It
   reads a `timeout` duration that is a variable, a positional parameter, a variable with a default value or a value
   with a unit, as in `timeout $T`, `timeout ${T:-30}`, `timeout $1`, `timeout "${T}"` and `timeout $(cat t)s`. It
-  always reads `-k`, `-s`, `--kill-after` and `--signal` of `timeout` with their value. It treats `>|` as a
+  always reads `-k`, `-s`, `--kill-after` and `--signal` of `timeout` with their value, also `-k` or `-s` at the end
+  of a bundle such as `-vk` or `-fk` and every abbreviation such as `--kill` or `--sig`. It treats `>|` as a
   redirection, also in the `cd` check, so `cd x >| log || exit 1` passes and `echo a >|cd x` is no `cd`.
 - tools: `tools/check_tracked_config.py` says where to run the commands it suggests for a gitlink without a
   `.gitmodules` entry: `<path>: gitlink without a .gitmodules entry; at the top level of the repository, add one with
@@ -2862,6 +2863,29 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `opentsx-core`: `TimeSeriesObject.shuffleXValues()` draws the new order from `RNGWrapper`, as `shuffleYValues()`
   does, so `RNGWrapper.init(seed)` before the shuffle gives the same order again. It used the unseeded generator of
   `Collections.shuffle`.
+- tools: `tools/test_lg_scripts.py` reads the options of `timeout` as GNU `timeout` does: `-k` or `-s` at the end of a
+  bundle of the flags `-f`, `-p` and `-v`, such as `-vk 5`, `-fk 5` or `-vs KILL`, and every abbreviation of
+  `--kill-after` and `--signal`, such as `--kill 5` or `--sig KILL`, take the next word as their value. `timeout -vk 5
+  $(cat t) docker pull <image>`, `timeout -fk 5 $T docker pull <image>` and `timeout --sig KILL $T docker pull
+  <image>` give the `<image>: no exact version` finding again, and `timeout --kill docker pull x`, where `docker` is
+  the value of `--kill`, gives none. The check used to skip the first three.
+- tools: `tools/test_lg_scripts.py` reads a redirection between `confluent-hub` and `install` and between the words of
+  `confluent connect plugin install`, so `confluent-hub 2>/dev/null install <connector>`, `confluent-hub>/dev/null
+  install <connector>` and `confluent connect >log plugin install <connector>` give the `<connector>: no exact
+  version` finding. The check used to skip these commands.
+- tools: `tools/test_lg_scripts.py` reports a Dockerfile `FROM` without an image, as in `FROM` or `FROM
+  --platform=linux/amd64`, as `<file>:<line>: FROM: no image; name the image`. It reported `<file>:<line>: : no exact
+  version` with an empty reference.
+- tools: `tools/check_tracked_config.py` reports a tracked path that is not valid UTF-8, also a gitlink with its
+  `.gitmodules` entry, as `<path>: the file name is not valid UTF-8; rename the file`, with the path as git shows it,
+  such as `"caf\351.txt"`, and it runs in a repository whose folder name is not valid UTF-8. The guard used to stop
+  with a `UnicodeDecodeError` traceback that named no path.
+- tools: `tools/check_tracked_config.py` run on a folder below the top level whose name is not valid UTF-8 reports a
+  gitlink there without a `.gitmodules` entry as `<path at the top level>: the file name is not valid UTF-8; rename
+  the file`. Under a UTF-8 locale it used to stop with a `UnicodeEncodeError` traceback.
+- tools: `tools/check_tracked_config.py` no longer reads a tracked file through a directory that the working tree
+  replaced by a symbolic link; git shows such a file as deleted. It used to read the file of that name outside the
+  repository.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

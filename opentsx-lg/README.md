@@ -150,8 +150,13 @@ An option of `sudo`, `env`, `nice`, `ionice`, `timeout`, `xargs` or `exec` that 
 such as `-u` of `sudo` or `-n` of `nice`, takes the next word as its value, so `sudo -u docker pull <image>`, which
 runs `pull` as the user `docker`, is not read. `-S` and `--split-string` of `env` take the command as their value, so
 `env -S docker pull <image>` is read. `--max-lines` of `xargs` takes its optional value only with `=`, as in
-`--max-lines=2`, so `xargs --max-lines docker pull <image>` is read. A `docker` that is an argument of another
-command, as in `echo docker pull <image>`, `echo $(date) docker pull <image>`, ``echo `date` docker pull <image>``,
+`--max-lines=2`, so `xargs --max-lines docker pull <image>` is read. It reads the options of `timeout` as `timeout`
+does: its short flags are `-f`, `-p` and `-v` (`-f` and `-p` since GNU coreutils 9.6), so `-k` and `-s` take the next
+word also at the end of a bundle such as `-vk 5` or `-fk 5`, and so does every abbreviation of `--kill-after` and
+`--signal`, such as `--kill 5` or `--sig KILL`. A value in the same word, as in `-k5`, `-vsKILL` or `--kill=5`, takes
+no further word. In `timeout -ks 5 KILL docker pull <image>` the value of `-k` is `s`, `5` is the duration and `KILL`
+is the command, so the `docker` after it is not read. A `docker` that is an argument of another command, as in
+`echo docker pull <image>`, `echo $(date) docker pull <image>`, ``echo `date` docker pull <image>``,
 `$(date) docker pull <image>`, `` `date` docker pull <image> `` or `docker exec <container> docker pull <image>`, is
 not read, and neither is the `docker` of `command -v docker`, `command -V docker` or
 `command -p -v docker`, which do not run it.
@@ -183,7 +188,8 @@ It fails on an install without an image, as in `docker pull >/dev/null`, `docker
 `<file>:<line>: docker <subcommand>: no image; name the image`, where `<subcommand>` is, for example, `pull` or
 `container run`, and on one without a connector, as in `confluent-hub install` at the end of a command, with
 `<file>:<line>: <command>: no connector; name the connector`, where `<command>` is `confluent-hub install` or
-`confluent connect plugin install`.
+`confluent connect plugin install`. It fails on a Dockerfile `FROM` without an image, as in `FROM` or
+`FROM --platform=linux/amd64`, with `<file>:<line>: FROM: no image; name the image`.
 It also fails on an option before the image that it does not know, with
 `<file>:<line>: <option>: unknown option before the image; add it to the option lists of tools/test_lg_scripts.py`,
 on a command whose arguments do not split into words, for example at a quote that is not closed, with
@@ -192,7 +198,11 @@ and on a Dockerfile `RUN` that runs `apt-get update` without `apt-get install`. 
 in an argument, as in `docker run -e X=$(date +%s) <image>`, is one word for the check. A redirection such as `>out`,
 `>|out`, `2>&1` or `<<<x` is no argument, also directly after the subcommand, before the image or directly after it,
 so `docker run>log -d img:1.2.3`, `docker run >log -d img:1.2.3` and `docker pull img:1.2.3>out` read the image
-`img:1.2.3`, and `confluent-hub install>/dev/null <connector>` reads the connector. A command inside quotes, as in
+`img:1.2.3`, and `confluent-hub install>/dev/null <connector>` reads the connector. A redirection between
+`confluent-hub` and `install` or between the words of `confluent connect plugin install`, also one written right after
+a word, is no argument either, so `confluent-hub 2>/dev/null install <connector>`,
+`confluent-hub>/dev/null install <connector>` and `confluent connect >log plugin install <connector>` read the
+connector. A command inside quotes, as in
 `echo "use docker pull x"`, is not read. A command in a command substitution or a subshell, as in
 `CID=$(docker run <image>)`, `CID="$(docker run <image>)"` or `(docker pull <image>)`, is read up to the end of the
 substitution or subshell, also after `&&`, `||`, `;`, `|` or `&` inside it, and so is each further substitution of the

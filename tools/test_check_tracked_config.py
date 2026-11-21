@@ -6,6 +6,7 @@ import os
 import pathlib
 import random
 import re
+import shutil
 import subprocess
 import sys
 
@@ -426,6 +427,95 @@ def test_a_tracked_link_is_checked_by_its_text_and_not_by_the_file_it_points_to(
         f'lib/home:1: "/home/{PERSON}" is a personal home path; use $HOME or a placeholder such as <home>',
         f"lib/opt:1: zzqword: {DENIED}",
         "checked 5 tracked files, 3 findings"]
+
+
+def test_a_tracked_path_that_is_not_valid_utf8_is_one_finding_named_as_git_shows_it(tmp_path):
+    repository = tmp_path / "repository"
+    subprocess.run(["git", "init", "-q", str(repository)], check=True, env=git_environment())
+    (repository / os.fsdecode(b"caf\xe9.txt")).write_text("zzqword\n", encoding="utf-8")
+    write(repository, {".gitignore": "config/private/\n", "config/private/denylist.txt": "zzqword\n",
+                       "config/cpl.props": "bootstrap.servers=192.168.3.5:9092\n"})
+    subprocess.run(["git", "-C", str(repository), "add", "-A"], check=True, env=git_environment())
+    subprocess.run(["git", "-C", str(repository), "update-index", "--add", "--cacheinfo",
+                    f"160000,{'1' * 40}," + os.fsdecode(b"sub\xe9")], check=True, env=git_environment())
+    shown = git(repository, "-c", "core.quotepath=true", "ls-files").splitlines()
+    assert shown == [".gitignore", '"caf\\351.txt"', "config/cpl.props", '"sub\\351"']
+    result = run_guard(repository)
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert result.stderr == ""
+    assert result.stdout.splitlines() == [
+        f"{shown[1]}: the file name is not valid UTF-8; rename the file",
+        'config/cpl.props:1: bootstrap.servers: "192.168.3.5" is not localhost or a placeholder',
+        f"{shown[3]}: the file name is not valid UTF-8; rename the file",
+        "checked 4 tracked files, 3 findings"]
+
+
+def test_a_gitlink_that_is_not_valid_utf8_with_its_submodule_entry_is_one_finding(tmp_path):
+    repository = tmp_path / "repository"
+    subprocess.run(["git", "init", "-q", str(repository)], check=True, env=git_environment())
+    (repository / ".gitmodules").write_bytes(b'[submodule "s"]\n\tpath = sub\xe9\n\turl = https://example.com/s.git\n')
+    subprocess.run(["git", "-C", str(repository), "add", ".gitmodules"], check=True, env=git_environment())
+    subprocess.run(["git", "-C", str(repository), "update-index", "--add", "--cacheinfo",
+                    f"160000,{'1' * 40}," + os.fsdecode(b"sub\xe9")], check=True, env=git_environment())
+    result = run_guard(repository)
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert result.stderr == ""
+    assert result.stdout.splitlines() == ['"sub\\351": the file name is not valid UTF-8; rename the file',
+                                          "checked 2 tracked files, 1 findings"]
+
+
+def test_a_repository_in_a_directory_whose_name_is_not_valid_utf8_is_checked(tmp_path):
+    repository = gitlink_repository(tmp_path / os.fsdecode(b"repository\xe9"), None)
+    write(repository, {"config/cpl.props": "bootstrap.servers=192.168.3.5:9092\n"})
+    subprocess.run(["git", "-C", str(repository), "add", "config"], check=True, env=git_environment())
+    result = run_guard(repository)
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert result.stderr == ""
+    assert result.stdout.splitlines() == [
+        "dir/sub: gitlink without a .gitmodules entry; at the top level of the repository, add one with git config "
+        "-f .gitmodules submodule.dir/sub.path dir/sub, git config -f .gitmodules submodule.dir/sub.url <url> and "
+        "git add .gitmodules, or remove it with git rm --cached dir/sub",
+        'config/cpl.props:1: bootstrap.servers: "192.168.3.5" is not localhost or a placeholder',
+        "checked 2 tracked files, 2 findings"]
+
+
+def test_a_gitlink_below_a_root_whose_folder_name_is_not_valid_utf8_is_named_as_git_shows_it(tmp_path):
+    repository, folder = tmp_path / "repository", os.fsdecode(b"d\xe9")
+    subprocess.run(["git", "init", "-q", str(repository)], check=True, env=git_environment())
+    modules = b'[submodule "k"]\n\tpath = d\xe9/known\n\turl = https://example.com/k.git\n'
+    (repository / ".gitmodules").write_bytes(modules)
+    subprocess.run(["git", "-C", str(repository), "add", ".gitmodules"], check=True, env=git_environment())
+    for name in ("known", "stray"):
+        subprocess.run(["git", "-C", str(repository), "update-index", "--add", "--cacheinfo",
+                        f"160000,{'1' * 40},{folder}/{name}"], check=True, env=git_environment())
+    (repository / folder).mkdir()
+    # A UTF-8 locale such as en_US.UTF-8 gives standard output the strict error handler.
+    result = subprocess.run([sys.executable, str(pathlib.Path(guard.__file__)), str(repository / folder)],
+                            capture_output=True, text=True, check=False,
+                            env={**git_environment(), "PYTHONIOENCODING": "utf-8:strict"})
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert result.stderr == ""
+    assert result.stdout.splitlines() == ['"d\\351/stray": the file name is not valid UTF-8; rename the file',
+                                          "checked 2 tracked files, 1 findings"]
+
+
+def test_a_tracked_file_below_a_directory_that_the_working_tree_replaced_by_a_link_is_not_read(tmp_path):
+    repository, outside = tmp_path / "repository", tmp_path / "outside"
+    subprocess.run(["git", "init", "-q", str(repository)], check=True, env=git_environment())
+    write(repository, {".gitignore": "config/private/\n", "config/private/denylist.txt": "zzqword\n",
+                       "docs/notes.txt": "ok\n", "lib/notes.txt": "zzqword\n", "lib/sub/more.txt": "ok\n"})
+    subprocess.run(["git", "-C", str(repository), "add", ".gitignore", "docs", "lib"], check=True,
+                   env=git_environment())
+    write(outside, {"notes.txt": f"zzqword in /home/{PERSON}/x\n", "sub/more.txt": "zzqword\n"})
+    shutil.rmtree(repository / "docs")
+    (repository / "docs").symlink_to(outside, target_is_directory=True)
+    shutil.rmtree(repository / "lib" / "sub")
+    (repository / "lib" / "sub").symlink_to(outside / "sub", target_is_directory=True)
+    status = git(repository, "status", "--porcelain").splitlines()
+    assert "AD docs/notes.txt" in status and "AD lib/sub/more.txt" in status
+    result = run_guard(repository)
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert result.stdout.splitlines() == [f"lib/notes.txt:1: zzqword: {DENIED}", "checked 4 tracked files, 1 findings"]
 
 
 def test_a_deny_list_with_a_control_or_format_character_in_a_word_is_one_finding(tmp_path, capsys):

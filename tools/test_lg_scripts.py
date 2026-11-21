@@ -1,6 +1,6 @@
 """The opentsx-lg Grafana script takes its password from the caller and passes it on standard input, the scripts
 start with a shebang, guard every cd, are checked by CI, the scripts and Dockerfiles pin every image and connector,
-and the module README names scripts that exist.
+the module README names scripts that exist, and the consumer entrypoint runs only the consumer.
 
 Run from the repository root: python -m pytest -q tools
 """
@@ -15,6 +15,7 @@ LG = ROOT / "opentsx-lg"
 GRAFANA = LG / "src" / "main" / "mqtt-example" / "influxdb-grafana" / "__run_container_01.sh"
 GRAFANA_CONTAINER = "docker-influxdb-grafana"
 GRAFANA_PASSWORD = "test-password-0x1"
+CONSUMER_ENTRYPOINT = LG / "src" / "main" / "docker-compose" / "bin" / "run_LatencyProbe_CONS.sh"
 CI = ROOT / ".github" / "workflows" / "ci.yml"
 CD = re.compile(r"(?:^|[;({]|(?<![<>])&|(?<!>)\||\b(?:then|do|else)\s)\s*(?:(?:!|command|builtin|time)\s+)*cd(?=\s|$)")
 CD_GUARD = re.compile(r"(?:[<>]&|&>|>\||[^;&|])*\|\|\s*(?:exit|return)\b")
@@ -32,7 +33,11 @@ NUMBER = r"[0-9][0-9.]*[smhd]?"
 KEYWORD = (r"(?:!|time|command(?!(?:\s+-[pvV]+)*\s+-[pvV]*[vV][pvV]*\s)|builtin|exec|nohup|sudo|env|nice|ionice"
            r"|timeout|xargs|if|elif|then|else|do|while|until)")
 ASSIGNMENT = r"[A-Za-z_][A-Za-z0-9_]*="
-TIMEOUT_VALUE_OPTION = r"(?:-[ks]|--(?:kill-after|signal))"
+# GNU timeout has the short flags -f, -p and -v (-f and -p since coreutils 9.6), so a bundle of them that ends in k or
+# s takes the next word, and it accepts every abbreviation of --kill-after and --signal, which no other option of it
+# shares.
+TIMEOUT_LONG_VALUE_OPTIONS = {f"--{name[:end]}" for name in ("kill-after", "signal") for end in range(1, len(name) + 1)}
+TIMEOUT_VALUE_OPTION = r"(?:-[fpv]*[ks]|" + "|".join(sorted(TIMEOUT_LONG_VALUE_OPTIONS)) + ")"
 OPTION = (r"(?:" + TIMEOUT_VALUE_OPTION + r"\s+" + VALUE_PIECE + r"+|(?!" + TIMEOUT_VALUE_OPTION + r"\s)-" + WORD_PIECE
           + r"+)")
 VARIABLE = r"\$(?:[A-Za-z_][A-Za-z0-9_]*(?![A-Za-z0-9_])|[0-9]+|\{[^{}\s]+\})"
@@ -48,10 +53,11 @@ COMMAND_WORD = (r"(?:(?:^|(?<=[;{])|(?<=&)(?<![<>]&)|(?<=\|)(?<!>\|)|(?<=\sin\s)
                 + NUMBER + r"|(?!timeout\s)" + KEYWORD + r")\s+)*")
 REDIRECTION = r"(?:(?<!\S)[0-9]+)?(?:&>>?|[<>]&|>>|>\||<<<?|<>|[<>])"
 SUBCOMMAND_END = r"(?=\s|[<>]|&>|$)"
+CONNECTOR_GAP = r"(?:\s+|(?=[<>]|&>))(?:" + REDIRECTION + r"\s*" + VALUE_PIECE + r"+\s+)*"
 INSTALL = re.compile(COMMAND_WORD + r"(?:[^\s;&|()<>]*/)?(?P<tool>docker(?:\s+|(?=[<>]|&>))(?:" + DOCKER_GLOBAL + "|"
                      + REDIRECTION + r"\s*" + VALUE_PIECE + r"+\s+)*(?P<word>" + VALUE_PIECE
-                     + r"+)|confluent-hub\s+install" + SUBCOMMAND_END + r"|confluent\s+connect\s+plugin\s+install"
-                     + SUBCOMMAND_END + ")")
+                     + r"+)|confluent-hub" + CONNECTOR_GAP + "install" + SUBCOMMAND_END + "|confluent" + CONNECTOR_GAP
+                     + "connect" + CONNECTOR_GAP + "plugin" + CONNECTOR_GAP + "install" + SUBCOMMAND_END + ")")
 DOCKER_INSTALL = r"(?:(?:container\s+)?(?:run|create)|(?:image\s+)?pull)" + SUBCOMMAND_END
 SUBCOMMAND = re.compile(DOCKER_INSTALL)
 OPTIONS_BEFORE_SUBCOMMAND = re.compile(r"(?:(?:-[^\s=]+(?:=\S*|(?:\s+(?!" + REDIRECTION + r")[^\s-]\S*)?)|"
@@ -71,7 +77,7 @@ WRAPPER_VALUE_OPTIONS = {
     "env": {"-C", "-u", "--chdir", "--unset"},
     "nice": {"-n", "--adjustment"},
     "ionice": {"-c", "-n", "-P", "-p", "-u", "--class", "--classdata", "--pgid", "--pid", "--uid"},
-    "timeout": {"-k", "-s", "--kill-after", "--signal"},
+    "timeout": {"-k", "-s"} | TIMEOUT_LONG_VALUE_OPTIONS,
     "xargs": {"-a", "-d", "-E", "-I", "-L", "-n", "-P", "-s", "--arg-file", "--delimiter", "--max-args",
               "--max-procs", "--process-slot-var", "--max-chars"},
     "exec": {"-a"},
@@ -311,6 +317,9 @@ def image_problems(root: pathlib.Path, name: str) -> list[str]:
             instruction, _, rest = line.partition(" ")
             run_line = instruction.upper() == "RUN"
             references = [first_operand(rest.split())] if instruction.upper() == "FROM" else []
+            if references == [("", "")]:
+                problems.append(f"{name}:{number}: FROM: no image; name the image")
+                references = []
             if run_line and "apt-get update" in rest and "apt-get install" not in rest:
                 problems.append(f"{name}:{number}: apt-get update: no apt-get install in the same RUN; "
                                 "run update and install in one RUN")
@@ -367,7 +376,8 @@ def image_problems(root: pathlib.Path, name: str) -> list[str]:
                 if reference != ("", ""):
                     references.append(reference)
                 elif install.group("word") is None:
-                    tool = " ".join(install.group("tool").split())
+                    tool = ("confluent-hub install" if install.group("tool").startswith("confluent-hub")
+                            else "confluent connect plugin install")
                     problems.append(f"{name}:{number}: {tool}: no connector; name the connector")
                 else:
                     tool = " ".join(["docker"] + subcommand.group().split())
@@ -417,6 +427,14 @@ def test_the_grafana_script_passes_the_password_on_standard_input_inside_the_nam
     assert stdin == GRAFANA_PASSWORD + "\n"
     assert [c for c in calls if GRAFANA_PASSWORD in c] == []
     assert not [c for c in calls if c.startswith("grafana-cli")]
+
+
+def test_the_consumer_entrypoint_runs_only_the_consumer(tmp_path):
+    result, calls, _ = run(CONSUMER_ENTRYPOINT, tmp_path, ("java",), DISPLAY=":99")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert calls == ["java -Djava.awt.headless=true -cp /opentsx-lg/opentsx-lg-3.0.1.jar "
+                     "org.opentsx.lg.kping.EventFlowAnalysisConsumer"]
+    assert "DISPLAY" not in result.stdout
 
 
 def test_the_readme_names_only_scripts_that_exist():
@@ -708,6 +726,34 @@ def test_a_redirection_between_docker_and_its_subcommand_stands_where_a_global_o
     ]
 
 
+def test_a_redirection_between_the_words_of_a_connector_install_is_no_argument(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "confluent-hub 2>/dev/null install a/b:latest\n"
+        "confluent-hub >log install a/b:latest\n"
+        "confluent-hub>/dev/null install a/b:latest\n"
+        "confluent-hub 2>&1 install>log a/b:latest\n"
+        "confluent-hub install>log a/b:latest\n"
+        "confluent 2>/dev/null connect plugin install a/b:latest\n"
+        "confluent connect >log plugin 2>&1 install a/b:latest\n"
+        "confluent-hub 2>/dev/null install a/b:1.2.3\n"
+        "confluent-hub 2>/dev/null install --no-prompt\n"
+        "confluent>log connect plugin install\n"
+        "confluent-hub 2>/dev/null list\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:2: a/b:latest: {rest}",
+        f"run.sh:3: a/b:latest: {rest}",
+        f"run.sh:4: a/b:latest: {rest}",
+        f"run.sh:5: a/b:latest: {rest}",
+        f"run.sh:6: a/b:latest: {rest}",
+        f"run.sh:7: a/b:latest: {rest}",
+        f"run.sh:8: a/b:latest: {rest}",
+        "run.sh:10: confluent-hub install: no connector; name the connector",
+        "run.sh:11: confluent connect plugin install: no connector; name the connector",
+    ]
+
+
 def test_an_install_without_an_image_or_connector_names_the_command(tmp_path):
     (tmp_path / "run.sh").write_text(
         "#!/usr/bin/env bash\n"
@@ -851,6 +897,35 @@ def test_a_variable_or_a_substitution_with_a_unit_is_the_duration_of_timeout(tmp
     ]
 
 
+def test_timeout_reads_bundled_and_abbreviated_options_as_timeout_does(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "timeout -vk 5 $(cat t) docker pull toke/mosquitto\n"
+        "timeout --kill 5 $(cat t) docker pull toke/mosquitto\n"
+        "timeout -vs KILL $T docker pull toke/mosquitto\n"
+        "timeout --sig KILL $T docker pull toke/mosquitto\n"
+        "timeout --k 5 --s KILL -vvk 5 $T docker pull toke/mosquitto\n"
+        "timeout -k5 -vsKILL --kill=5 $T docker pull toke/mosquitto\n"
+        "timeout -ks 5 KILL docker pull x\n"
+        "timeout --kill docker pull x\n"
+        "timeout -vs docker pull x\n"
+        "timeout --kill-after 5 --signal KILL $T docker pull toke/mosquitto\n"
+        "timeout -fk 5 $T docker pull toke/mosquitto\n"
+        "timeout -pvs KILL $(cat t) docker pull toke/mosquitto\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:2: toke/mosquitto: {rest}",
+        f"run.sh:3: toke/mosquitto: {rest}",
+        f"run.sh:4: toke/mosquitto: {rest}",
+        f"run.sh:5: toke/mosquitto: {rest}",
+        f"run.sh:6: toke/mosquitto: {rest}",
+        f"run.sh:7: toke/mosquitto: {rest}",
+        f"run.sh:11: toke/mosquitto: {rest}",
+        f"run.sh:12: toke/mosquitto: {rest}",
+        f"run.sh:13: toke/mosquitto: {rest}",
+    ]
+
+
 def test_a_clobber_redirection_is_no_separator(tmp_path):
     (tmp_path / "run.sh").write_text(
         "#!/usr/bin/env bash\n"
@@ -875,7 +950,7 @@ def test_option_and_number_words_without_a_command_word_are_read_once(tmp_path):
         + "timeout -k $(cat t) " * 40 + "foo\n" + "timeout -k $T " * 40 + "foo\n" + "X=$(a | b; c && d) " * 40
         + "foo\n" + "$(a " * 40 + "foo\n" + "timeout $Ts " * 40 + "foo\n" + "timeout -k $T -s $T " * 40 + "foo\n"
         + 'timeout -k "a" -s "b" ' * 40 + "foo\n" + "timeout -k $(a) -s $(b) " * 40 + "foo\n"
-        + "timeout " + "-k timeout " * 40 + "foo\n", encoding="utf-8")
+        + "timeout " + "-k timeout " * 40 + "foo\n" + "timeout -vk $T --sig $(a) " * 40 + "foo\n", encoding="utf-8")
     assert image_problems(tmp_path, "run.sh") == []
     reading = INSTALL.search("timeout -k timeout -s timeout docker pull toke/mosquitto")
     assert reading.group("timeout") == "timeout -k timeout -s timeout"
@@ -1130,6 +1205,15 @@ def test_a_dockerfile_with_an_unpinned_base_or_apt_get_update_in_its_own_run_fai
         "Dockerfile:3: apt-get install: --force-yes is deprecated; write apt-get install -y --no-install-recommends",
         "Dockerfile:3: apt-get install: the package lists stay in the image; "
         "end the RUN with rm -rf /var/lib/apt/lists/*",
+    ]
+
+
+def test_a_dockerfile_from_without_an_image_names_the_instruction(tmp_path):
+    (tmp_path / "Dockerfile").write_text(
+        "FROM\nFROM --platform=linux/amd64\nfrom eclipse-temurin:21.0.8_9-jre-noble\n", encoding="utf-8")
+    assert image_problems(tmp_path, "Dockerfile") == [
+        "Dockerfile:1: FROM: no image; name the image",
+        "Dockerfile:2: FROM: no image; name the image",
     ]
 
 
