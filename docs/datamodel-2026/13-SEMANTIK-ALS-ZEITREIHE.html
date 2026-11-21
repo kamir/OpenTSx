@@ -171,13 +171,14 @@ footer.colophon p + p { margin-top: 0.7rem; }
   <div class="eyebrow">OpenTSx · Data model 2026 · Concept 13</div>
   <h1>Semantics as a time series</h1>
   <p class="standfirst">
-    OpenTSx computes on numbers. ER1 is made of text. This document describes seven method families that
+    OpenTSx computes on numbers. N1, an internal notes system that is not public, is made of text. N1 and the names
+    of its topics and services in this document are placeholders. This document describes seven method families that
     turn meaning into series that can be evaluated numerically, and the one rule without which none of them
     yields a time series.
   </p>
   <div class="meta">
     <span><b>As of</b> 2026-10-13</span>
-    <span><b>Subject</b> ER1 → OpenTSx v2</span>
+    <span><b>Subject</b> N1 → OpenTSx v2</span>
     <span><b>Status</b> concept, not implemented</span>
     <span><b>Related</b> 04, 05, 11 · TASK-011 P8.1 · TASK-013</span>
   </div>
@@ -191,8 +192,8 @@ footer.colophon p + p { margin-top: 0.7rem; }
     Euclidean distance, and event synchronization compares event trains.
   </p>
   <p class="prose">
-    ER1, by contrast, carries titles, full text, categories and tags. None of it has an order on which a mean
-    could be formed. If you point OpenTSx directly at ER1, you get count curves and nothing else: items per
+    N1, by contrast, carries titles, full text, categories and tags. None of it has an order on which a mean
+    could be formed. If you point OpenTSx directly at N1, you get count curves and nothing else: items per
     day, items per context. That is not wrong, but it is activity measurement and not an analysis of the content.
   </p>
   <p class="prose">
@@ -205,7 +206,7 @@ footer.colophon p + p { margin-top: 0.7rem; }
     <h4>What this document does not propose</h4>
     <p>
       OpenTSx is not meant to handle semantics. Our semantic search exists separately as a local RAG and as a
-      think-through pipeline, and our relationship graph as KafGraph. This document describes the third,
+      think-through pipeline, and our relationship graph as a graph service. This document describes the third,
       complementary layer: derived numbers over the same source, joined through <code>memory_id</code>.
       Three layers, one key. None of them replaces the others.
     </p>
@@ -215,8 +216,8 @@ footer.colophon p + p { margin-top: 0.7rem; }
 <section>
   <h2>The contract everything builds on</h2>
   <p class="lede">
-    ER1 items exist as the Avro record <code>Er1Item</code>, registered in the Schema Registry as subject
-    <code>events.er1_items-value</code>, version 1. That is the whole available surface. Anything not listed
+    N1 items exist as the Avro record <code>N1Item</code>, registered in the Schema Registry as subject
+    <code>events.n1_items-value</code>, version 1. That is the whole available surface. Anything not listed
     here has to be produced first.
   </p>
   <div class="scroll">
@@ -256,13 +257,13 @@ footer.colophon p + p { margin-top: 0.7rem; }
 <section>
   <h2>Where the series come from</h2>
   <p class="lede">
-    The pipeline from ER1 to KafScale exists as code and is deployed. Nothing flows through it at the moment:
+    The pipeline from N1 to KafScale exists as code and is deployed. Nothing flows through it at the moment:
     the source topic holds zero records, and the unfolder has processed nothing since it started. The missing
     stage is the source connector, not the evaluation.
   </p>
   <figure>
     <div class="figframe">
-      <svg viewBox="0 0 1040 400" role="img" aria-label="The ER1 pipeline: the source connector er1-source is stopped, so the topic er1a.events.er1_items is empty; leg B to the graph and the proposed leg C to the time series topics hang off it.">
+      <svg viewBox="0 0 1040 400" role="img" aria-label="The N1 pipeline: the source connector n1-source is stopped, so the topic n1.events.n1_items is empty; leg B to the graph and the proposed leg C to the time series topics hang off it.">
         <defs>
           <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <polygon points="0,1 9,5 0,9" fill="currentColor"></polygon>
@@ -286,20 +287,20 @@ footer.colophon p + p { margin-top: 0.7rem; }
           <rect x="884" y="288" width="142" height="58" fill="var(--flow-soft)"></rect>
         </g>
         <g font-family="JetBrains Mono, monospace" font-size="12" fill="currentColor" text-anchor="middle">
-          <text x="89" y="196">ER1</text>
+          <text x="89" y="196">N1</text>
           <text x="89" y="213" font-size="10.5" fill="var(--muted)">backend</text>
-          <text x="293" y="196" fill="var(--stale)">er1-source</text>
+          <text x="293" y="196" fill="var(--stale)">n1-source</text>
           <text x="293" y="213" font-size="10.5" fill="var(--stale)">Kafka Connect · stopped</text>
-          <text x="520" y="190">er1a.events.er1_items</text>
-          <text x="520" y="207" font-size="10.5" fill="var(--muted)">KafScale · Avro Er1Item</text>
+          <text x="520" y="190">n1.events.n1_items</text>
+          <text x="520" y="207" font-size="10.5" fill="var(--muted)">KafScale · Avro N1Item</text>
           <text x="520" y="222" font-size="10.5" fill="var(--stale)">0 records</text>
-          <text x="769" y="83">er1-unfolder</text>
+          <text x="769" y="83">n1-unfolder</text>
           <text x="769" y="100" font-size="10.5" fill="var(--muted)">Go · franz-go</text>
-          <text x="955" y="83">KafGraph</text>
+          <text x="955" y="83">graph service</text>
           <text x="955" y="100" font-size="10.5" fill="var(--muted)">nodes, edges</text>
-          <text x="769" y="313" fill="var(--flow)">er1-metrics</text>
+          <text x="769" y="313" fill="var(--flow)">n1-metrics</text>
           <text x="769" y="330" font-size="10.5" fill="var(--flow)">proposal</text>
-          <text x="955" y="310" fill="var(--flow)">tsx.er1.*</text>
+          <text x="955" y="310" fill="var(--flow)">tsx.n1.*</text>
           <text x="955" y="327" font-size="10.5" fill="var(--flow)">observations</text>
           <text x="955" y="340" font-size="10.5" fill="var(--flow)">vectors.v1</text>
         </g>
@@ -326,7 +327,7 @@ footer.colophon p + p { margin-top: 0.7rem; }
     <figcaption>
       <b>One source, two projections.</b> Leg B unfolds items into nodes and edges, leg C into measuring points.
       Both read the same topic and do not interfere with each other. The dashed red edge is the reason why
-      nothing flows today: as long as <code>er1-source</code> is stopped, leg C has no input either. First make
+      nothing flows today: as long as <code>n1-source</code> is stopped, leg C has no input either. First make
       it flow, then measure, then model.
     </figcaption>
   </figure>
@@ -551,7 +552,7 @@ newterm_t = | terms in t, never seen before | / | terms in t |</div>
         <span class="badges"><span class="badge free">model-free</span><span class="badge gran">per item</span></span>
       </div>
       <p class="prose">
-        Because <code>tags</code> carries the typed links and KafGraph already materializes the edges,
+        Because <code>tags</code> carries the typed links and the graph service already materializes the edges,
         structural quantities can be measured per interval: out-degree, number of components, depth of the
         longest chain, share of follow-ups versus root items.
       </p>
@@ -950,7 +951,7 @@ agree_d = spread from repeated rating of the same items</div>
   <div class="note">
     <h4>Before all of that: measure, do not build</h4>
     <p>
-      As long as <code>er1a.events.er1_items</code> is empty, any series modeling is speculation. The first
+      As long as <code>n1.events.n1_items</code> is empty, any series modeling is speculation. The first
       step is not family A but restoring the source connector and then reading the topic once from the start:
       items per day per <code>ctx_id</code>, per <code>category</code>, per <code>source</code> and per
       non-<code>link/</code> tag. Read-only, no new topics. Only these cardinalities tell what the series key
@@ -992,19 +993,18 @@ agree_d = spread from repeated rating of the same items</div>
 <section>
   <h2>What this document does not claim</h2>
   <ul class="tight">
-    <li><strong>As of 2026-10-13, outdated:</strong> five of the seven families have since been implemented and run over the ER1 corpus. A, B, C, E and F exist as tools in a private notes repository, family D as a cross-section. Still open are the second D variant with dwell times, which lacks the state transitions in the export, and family G, which lacks the reviewer stage.</li>
-    <li><strong>Outdated:</strong> the latency table in family F and the numbers in the fourth rule come from runs over 5119 ER1 items. Everything else in this document is still specification and not measurement. Where a value is measured, its date is given with it.</li>
+    <li><strong>As of 2026-10-13, outdated:</strong> five of the seven families have since been implemented and run over the N1 corpus. A, B, C, E and F exist as tools in a private notes repository, family D as a cross-section. Still open are the second D variant with dwell times, which lacks the state transitions in the export, and family G, which lacks the reviewer stage.</li>
+    <li><strong>Outdated:</strong> the latency table in family F and the numbers in the fourth rule come from runs over 5119 N1 items. Everything else in this document is still specification and not measurement. Where a value is measured, its date is given with it.</li>
     <li><strong>Answered, and mostly in the negative.</strong> Over eight months and 25 ISO weeks, none of the nine anchor series shows a trend, and drift, spread and participation ratio show none either. Anchor projections only hold up after centering per item: 95.9 % of what raw values measure is a common factor, namely the text length. One finding is established, namely that drift and spread are uncorrelated, so the cloud shifts and does not widen.</li>
-    <li>The description of the ER1 memory layer itself, that is <code>doc_id</code>, contexts and the link convention, comes from the tool descriptions and is not checked against the source code of the ER1 backend. The Avro contract, by contrast, is read from the running Schema Registry.</li>
+    <li>The description of the N1 memory layer itself, that is <code>doc_id</code>, contexts and the link convention, comes from the tool descriptions and is not checked against the source code of the N1 backend. The Avro contract, by contrast, is read from the running Schema Registry.</li>
     <li>The event taxonomy in family G and in the channel section is taken from a draft note, not from a specification. It is not implemented anywhere yet, and the names can change. What remains is the split: classifying belongs in a stage of its own with an event of its own, not in the metrics pipeline.</li>
-    <li>For the term "JEV" named in this context, there is no definition in the corpus. Three occurrences are on record: a draft note from 2026-09-22 with the wording "ER1 → Kafka/KafScale → JEV-like classification → topics", and two YouTube items from 2026-09-28 that carry the tag. Their transcript describes a cheap, fast <em>decision model</em> whose decision is read off from the layers instead of being generated. The automatic subtitles spell the same spoken name alternately "Laya" and "LLaMA", so the spelling in the corpus is not reliable evidence. Family G is therefore still described by the requirement, namely an externally defined, verifiable classification stage, and not by a particular method.</li>
   </ul>
 </section>
 
 <footer class="colophon">
   <p>
     <b>Sources of the information.</b> The Avro contract was read from the Schema Registry on 2026-10-13
-    (subject <code>events.er1_items-value</code>, version 1). The state of the pipeline, that is the empty topic
+    (subject <code>events.n1_items-value</code>, version 1). The state of the pipeline, that is the empty topic
     and the unfolder without processing, was taken from the running system on the same day. The index figures
     come from the configuration and the state of the local RAG index, as of 2026-10-12. <code>opentsx.vector.v1</code>,
     <code>align.vector</code> and <code>VectorAligner</code> are the state of TASK-013 on <code>master</code>.

@@ -3106,6 +3106,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `MQTT broker <host>:<port>, user <username>`.
 - deploy/k3s: git ignores `deploy/k3s/.env.before-restore` and `deploy/k3s/.env.restoring`, the copies of `.env` with
   its secrets that `71-restore.sh` writes next to it, so `git add -A` does not stage them.
+- docs: the design and task documents no longer name an internal notes system, its topics, services and schema, a
+  related graph service, a lab host or a person's initials. `docs/datamodel-2026/13-SEMANTIK-ALS-ZEITREIHE.html` calls
+  the notes system N1 and says that N1 and the names of its parts are placeholders, and a caveat that quoted private
+  notes is removed. The examples of `09` and `12` use `operator:op1`.
 
 ## [3.0.1] - 2026-10-16
 

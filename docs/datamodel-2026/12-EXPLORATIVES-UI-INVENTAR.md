@@ -344,7 +344,7 @@ only the latest state). This is also the **audit trail**: who changed what, when
   "parts": [ { "article": "Fett, 400 g", "qty": 2 } ],
   "laborH": 3.5,
   "by": "techniker:extern-1",
-  "approvedBy": "operator:mk",
+  "approvedBy": "operator:op1",
   "ts": "2026-10-14T11:05:00.000000Z",
   "reason": ""
 }

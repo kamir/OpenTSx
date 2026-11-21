@@ -165,7 +165,7 @@ reference to its old place. TASK-011 itself is translated to English in the same
 | Phase 7, Smart Topics (lines 108 to 131) | 8 | TASK-016 |
 | Phase 8, reconstruction and coupling (lines 132 to 197) | 24 | TASK-015 |
 | Phase 9, digital twin (lines 198 to 295) | 39 | TASK-017 |
-| Backlog, owner decisions (lines 379 to 386) | 6 | Credentials to TASK-010; D6 to TASK-018; D14 to D17 and ER1 to TASK-015; D18 to D24 and D30 to D36 to TASK-017 |
+| Backlog, owner decisions (lines 379 to 386) | 6 | Credentials to TASK-010; D6 to TASK-018; D14 to D17 and the content interaction data to TASK-015; D18 to D24 and D30 to D36 to TASK-017 |
 | Backlog, project environment (lines 387 to 394) | 6 | TASK-017 |
 | Backlog, repository and open source (lines 395 to 402) | 4 | TASK-010 |
 | Backlog, errors and quality (lines 404 to 408) | 3 | Avro to TASK-019. The OpenMetadata part of line 407 stays (WP2); its Iceberg REST and MinIO part and the records per second of line 408 go to TASK-018. |

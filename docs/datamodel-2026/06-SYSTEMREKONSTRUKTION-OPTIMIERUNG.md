@@ -3,8 +3,8 @@
 > Status: **concept and research basis**, 2026-10-12. Result of the deep research on the chain *sources → time series →
 > reconstructed structure → simulation → optimization (classical, later quantum)*, methodological reference: Kämpf (2017).
 > Implementation as **phase P8** in [TASK-011](../../EVOLUTION/TASK-011-datamodel-refresher-2026.md); control plane:
-> Personal Service Layer ([05-SMART-TOPICS, section 11](05-SMART-TOPICS.md)). ER1 is an internal system and is treated
-> only as a data class (accesses, edits, feedback).
+> Personal Service Layer ([05-SMART-TOPICS, section 11](05-SMART-TOPICS.md)). An internal notes system is treated only
+> as a data class (accesses, edits, feedback).
 
 ---
 
@@ -134,9 +134,9 @@ For Wikipedia the individual parts exist:
 
 A published multivariate Hawkes model on the Wikipedia page network was **not found**. Feedback loops are proven by experiment. A single early upvote raises final ratings by about 25 % (Muchnik 2013, summarized in [arXiv 2604.10360](https://arxiv.org/pdf/2604.10360)). Simulations show that recommendation loops amplify popularity bias ([arXiv 2007.13019](https://alphaxiv.org/abs/2007.13019)).
 
-### What ER1 contributes, without statements about the system itself
+### What an internal notes system contributes, without statements about the system itself
 
-Kämpf's internal ER1 system is not public. This report therefore makes **no** statements about its data or results. Conceptually only this holds: if ER1 records access and edit time series together with user feedback, it provides exactly the combination the literature lacks. Dense attention series suit CC/PCMCI. Sparse edit and feedback events suit ECA/Hawkes. Feedback events act as **quasi-interventional inputs** into the dynamics. Such a dataset would be an internal counterpart to the wind simulator and a touchstone for the content side of the pipeline. This part cannot be fully validated against wiki data from 2009.
+The internal notes system is not public. This report therefore makes **no** statements about its data or results. Conceptually only this holds: if such a system records access and edit time series together with user feedback, it provides exactly the combination the literature lacks. Dense attention series suit CC/PCMCI. Sparse edit and feedback events suit ECA/Hawkes. Feedback events act as **quasi-interventional inputs** into the dynamics. Such a dataset would be an internal counterpart to the wind simulator and a touchstone for the content side of the pipeline. This part cannot be fully validated against wiki data from 2009.
 
 ### Identifiability needs a variety of regimes or excitation
 
@@ -200,7 +200,7 @@ The concept arranges existing and planned OpenTSx building blocks into a closed 
 flowchart LR
   subgraph S1["1 Sources and connectors"]
     A1["Sensors / SCADA<br/>IEC 61400-25-2 catalog"]
-    A2["Content interaction<br/>accesses, edits, feedback<br/>(for example ER1, internal)"]
+    A2["Content interaction<br/>accesses, edits, feedback<br/>(for example an internal notes system)"]
     A3["Wind farm simulator<br/>with ground truth"]
   end
   subgraph S2["2 Episodes and replay"]
@@ -318,7 +318,7 @@ The second step is the **edge table schema** with significance fields. It fixes 
 
 The third step is a **reference implementation of lagged CC with l_norm/l_trans and ECA** in `opentsx-stats`, measured against the exported graph. These three building blocks produce the first publishable artifact. They depend on no GPL library and no quantum access.
 
-For the content side, it should be clarified in parallel whether an anonymized or synthetic extract of ER1-like data (access, edit, feedback) can serve as a second touchstone. Without it, validation stays limited to public Wikipedia pageviews.
+For the content side, it should be clarified in parallel whether an anonymized or synthetic extract of content interaction data (access, edit, feedback) can serve as a second touchstone. Without it, validation stays limited to public Wikipedia pageviews.
 
 ## Grades of evidence kept apart
 

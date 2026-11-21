@@ -188,7 +188,7 @@ Moved from TASK-011 (commit 551815a3), lines 132 to 197.
 
 ### Phase 8: System reconstruction, simulation and optimization (concept: [`06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md`](../docs/datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md))
 
-Chain: *sources (sensors, content interaction such as ER1/Wikipedia with feedback) → episodes → network reconstruction
+Chain: *sources (sensors, content interaction such as an internal notes system or Wikipedia with feedback) → episodes → network reconstruction
 (Kämpf 2017 + state of 2026) → simulation on the reconstructed structure → optimization (classical, quantum only as an
 object of measurement)*, controlled through the Personal Service Layer (P7e). Each step is accepted against the ground
 truth of the wind farm simulator.
@@ -247,15 +247,15 @@ and technical limits, grid restrictions, field work, bat protection shutdowns an
 - [ ] Publication of versioned, simulator-generated QUBO/MILP instances with known optima.
 - [ ] Federated structure discovery across operators (Wayang, mergeable sketches, shared IEC catalog); semantic alignment first, because inter-farm learning suffers from heterogeneity.
 
-**P8.x: Content interaction / ER1**
-- [ ] Clarify whether an anonymized or synthetic extract of ER1-like data (access, edit, feedback) can be provided as a second test case; otherwise validation with public Wikipedia pageviews/clickstream.
+**P8.x: Content interaction**
+- [ ] Clarify whether an anonymized or synthetic extract of content interaction data (access, edit, feedback) can be provided as a second test case; otherwise validation with public Wikipedia pageviews/clickstream.
 - [ ] Synthetic generator for content interaction with known coupling and feedback (counterpart to the wind farm simulator).
 
 ## Open decisions (moved from TASK-011)
 Moved from TASK-011 (commit 551815a3), lines 382 to 383.
 
 - [ ] Confirm D14 to D17 (P8 proposals).
-- [ ] ER1: provision of anonymized/synthetic content interaction data (P8.x).
+- [ ] Content interaction: provision of anonymized/synthetic content interaction data (P8.x).
 
 ## Streaming screening (moved from TASK-011)
 Moved from TASK-011 (commit 551815a3), line 418 (part).

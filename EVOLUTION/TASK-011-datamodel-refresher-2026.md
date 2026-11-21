@@ -197,7 +197,7 @@ The backlog moved on 2026-10-26 (D90) to the tasks in this table (line numbers r
 
 | Backlog block | Source lines | Open items moved to |
 |---------------|--------------|---------------------|
-| Owner decisions | 379 to 385 | Credentials (line 380): [TASK-010](TASK-010.md). D6 (line 381): [TASK-018](TASK-018-analytics-storage-extensions.md). D14 to D17 and ER1 (lines 382 to 383): [TASK-015](TASK-015-multivariate-analysis.md). D18, D19, D21 to D24 and D30 to D36 (lines 384 to 385): [TASK-017](TASK-017-digital-twin.md). |
+| Owner decisions | 379 to 385 | Credentials (line 380): [TASK-010](TASK-010.md). D6 (line 381): [TASK-018](TASK-018-analytics-storage-extensions.md). D14 to D17 and the content interaction data (lines 382 to 383): [TASK-015](TASK-015-multivariate-analysis.md). D18, D19, D21 to D24 and D30 to D36 (lines 384 to 385): [TASK-017](TASK-017-digital-twin.md). |
 | Energy system and project environment | 387 to 393 | [TASK-017](TASK-017-digital-twin.md) |
 | Repository and open source | 395 to 402 | Open items (lines 397, 398, 400, 401): [TASK-010](TASK-010.md). Lines 396, 399 and 402 were already done. |
 | Errors and quality | 404 to 408 | Line 405 was already done. Avro 1.12.2+ (line 406): [TASK-019](TASK-019-major-upgrades.md). Line 407: the OpenMetadata smoke test stays in phase 4 here; its Iceberg REST catalog and MinIO part: [TASK-018](TASK-018-analytics-storage-extensions.md). Line 408: [TASK-018](TASK-018-analytics-storage-extensions.md). |

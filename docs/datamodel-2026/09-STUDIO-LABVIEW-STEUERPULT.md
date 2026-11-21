@@ -285,7 +285,7 @@ provenance). OpenTSx takes over the data management: KafScale, Iceberg, statisti
   "validFrom": "2026-10-12T10:00:00Z",
   "validUntil": "2026-10-12T10:15:00Z",
   "issuedBy": "twin:test-rig-3@run-…",
-  "approvedBy": "operator:mk",
+  "approvedBy": "operator:op1",
   "reason": "what-if W3 approved"
 }
 ```

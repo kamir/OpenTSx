@@ -81,12 +81,12 @@ delivery stages L1 to L5 of the concept. The approval was given on 2026-10-13.
         saved flow brings its signal back along
       - Shared test vectors `docs/datamodel-2026/testvectors/clean-ops.v1.json` for Java and TypeScript, as a whole
         and as a stream in arbitrary pieces
-      - **Finding during the run on master2:** the clean signal lacked the first of 36 episodes. Very likely
+      - **Finding during the run on the lab cluster:** the clean signal lacked the first of 36 episodes. Very likely
         cause: when the broker refuses a partition, the Kafka client throws the refusal from the middle of a fetch
         and loses the records already fetched from the other partitions, whose read positions have already moved
         on. The source code of the client does not prove this; only the behavior does. Fixed in `Patience`: after
         a refusal, back to the positions before the fetch; this holds for the processor, the retrieval feed and
-        the statistics. The proof on master2 is outstanding, because the broker then refused reading and writing
+        the statistics. The proof on the lab cluster is outstanding, because the broker then refused reading and writing
         for minutes
       - Limits: before a series sink the processor runs exactly three operators; one chain, no merging of several
         series (so the sum over turbines does not run); "Publish" writes nothing into the system document (D42
