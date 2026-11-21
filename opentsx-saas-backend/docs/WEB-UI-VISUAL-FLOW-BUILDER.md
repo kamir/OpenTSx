@@ -30,7 +30,7 @@ Create a professional, intuitive web-based interface that enables researchers, a
 │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────┐ │
 │  │  Flow Canvas     │  │  Live Chart      │  │  Operator    │ │
 │  │  (React Flow)    │  │  (Oscilloscope)  │  │  Library     │ │
-│  │                  │  │  (Plotly/D3)     │  │              │ │
+│  │                  │  │  (Canvas/SVG)    │  │              │ │
 │  │  • Drag & Drop   │  │  • Real-time     │  │  • DFA       │ │
 │  │  • Node Graph    │  │  • Multi-series  │  │  • MFDFA     │ │
 │  │  • Connections   │  │  • Zoom/Pan      │  │  • Filters   │ │
@@ -117,9 +117,11 @@ Create a professional, intuitive web-based interface that enables researchers, a
 - **Event markers** for detected patterns
 
 **Technology Stack:**
-- **Plotly.js** for interactive charts (primary)
-- **uPlot** for ultra-fast real-time plotting (alternative)
-- **D3.js** for custom visualizations
+
+- Browser Canvas for the [oscilloscope](../../opentsx-saas-frontend/src/workbench/Scope.tsx)
+- SVG for [device charts](../../opentsx-saas-frontend/src/workbench/DeviceViews.tsx)
+  and analysis
+  [results](../../opentsx-saas-frontend/src/workbench/AnalysisResultsPanel.tsx)
 
 **Chart Modes:**
 1. **Time Domain**: Classic oscilloscope view
@@ -731,7 +733,8 @@ class StreamProcessor:
 ### Phase 2: Live Data & Visualization (2 weeks)
 
 **Week 3: Chart Component**
-- [ ] Integrate Plotly.js for charts
+
+- [x] Canvas oscilloscope and SVG analysis charts
 - [ ] Real-time data streaming via WebSocket
 - [ ] Multi-series display
 - [ ] Zoom, pan, autoscale controls
@@ -813,7 +816,7 @@ class StreamProcessor:
   "framework": "React 18 + TypeScript",
   "state": "Zustand (lightweight, fast)",
   "canvas": "React Flow (visual flow editor)",
-  "charts": "Plotly.js (interactive charts)",
+  "charts": "Browser Canvas and SVG",
   "ui": "Tailwind CSS + shadcn/ui",
   "build": "Vite (fast builds)",
   "websocket": "Socket.IO client"
@@ -1020,56 +1023,12 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ node, onUpdate, onClose }
 
 ### Chart Component
 
-```typescript
-interface ChartProps {
-  nodeId: string;
-  liveData: TimeSeriesData[];
-  mode: 'time' | 'frequency' | 'phase';
-}
-
-const OscilloscopeChart: React.FC<ChartProps> = ({ nodeId, liveData, mode }) => {
-  const chartRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    // Initialize Plotly chart
-    const layout = {
-      title: `Live Data: ${nodeId}`,
-      xaxis: { title: 'Time' },
-      yaxis: { title: 'Amplitude' },
-      showlegend: true
-    };
-
-    Plotly.newPlot(chartRef.current, liveData, layout, {
-      responsive: true,
-      displayModeBar: true
-    });
-  }, []);
-
-  useEffect(() => {
-    // Update chart with live data
-    Plotly.react(chartRef.current, liveData, layout);
-  }, [liveData]);
-
-  return (
-    <div className="chart-container">
-      <div className="chart-controls">
-        <button onClick={() => setMode('time')}>Time</button>
-        <button onClick={() => setMode('frequency')}>FFT</button>
-        <button onClick={() => setMode('phase')}>Phase</button>
-      </div>
-
-      <div ref={chartRef} className="chart" />
-
-      <div className="chart-stats">
-        <StatDisplay label="Mean" value={calculateMean(liveData)} />
-        <StatDisplay label="Std" value={calculateStd(liveData)} />
-        <StatDisplay label="Min" value={calculateMin(liveData)} />
-        <StatDisplay label="Max" value={calculateMax(liveData)} />
-      </div>
-    </div>
-  );
-};
-```
+The [Canvas oscilloscope](../../opentsx-saas-frontend/src/workbench/Scope.tsx)
+draws the loaded bucket with channel controls, cursors and event bands.
+[Device views](../../opentsx-saas-frontend/src/workbench/DeviceViews.tsx)
+and analysis
+[results](../../opentsx-saas-frontend/src/workbench/AnalysisResultsPanel.tsx)
+render SVG charts.
 
 ---
 
@@ -1313,7 +1272,8 @@ async def test_stream_processor_executes_pipeline():
 - [ ] WebSocket server
 
 ### Sprint 2: Visualization (Week 3-4)
-- [ ] Plotly chart component
+
+- [x] Canvas oscilloscope and SVG chart components
 - [ ] Real-time data streaming
 - [ ] Multi-series display
 - [ ] Chart controls
@@ -1344,7 +1304,9 @@ async def test_stream_processor_executes_pipeline():
 ### For Developers
 
 - **React Flow**: https://reactflow.dev/
-- **Plotly.js**: https://plotly.com/javascript/
+- **Workbench charts**:
+  [Canvas oscilloscope](../../opentsx-saas-frontend/src/workbench/Scope.tsx) and
+  [SVG device views](../../opentsx-saas-frontend/src/workbench/DeviceViews.tsx)
 - **FastAPI**: https://fastapi.tiangolo.com/
 - **Socket.IO**: https://socket.io/
 - **Apache Kafka**: https://kafka.apache.org/

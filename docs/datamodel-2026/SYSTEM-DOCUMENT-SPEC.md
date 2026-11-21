@@ -37,6 +37,7 @@ Code cited on this page:
 | `signals.ts`, `SignalsPlace.tsx`, `SystemPlace.tsx` | `opentsx-saas-frontend/src/systems/` |
 | `flow.ts`, `capabilities.ts`, `deployments.ts`, `types.ts`, `PublishClean.tsx`, `FlowComposer.tsx`, `DeviceTools.tsx`, `presets.ts`, `inventory.ts`, `parameters.ts` | `opentsx-saas-frontend/src/workbench/` |
 | `Systems.tsx`, `Workbench.tsx` | `opentsx-saas-frontend/src/pages/` |
+| `nginx.conf` | `opentsx-saas-frontend/` |
 
 <a id="s1-signals"></a>
 
@@ -475,7 +476,7 @@ The source of a DAG document with a series sink:
 | `source.series` | one or more series ids; only these series are read |
 | `source.start` | `earliest` (default): begin at the start of the topic; `latest`: begin with what arrives from now on |
 
-Implemented in: `SeriesJob.java:13-141`, `flow.ts:700-757`.
+Implemented in: `SeriesJob.java:13-141`, `flow.ts:706-763`.
 
 <a id="s52-validation"></a>
 
@@ -690,13 +691,16 @@ Implemented in: `SystemDoc.java:196-217`, `Systems.java:95-110`, `Systems.tsx:73
   token `DAG_RUN_TOKEN` when it is set, to the retrieval server.
 * The retrieval server answers 404 unless it runs with `--kafscale` and `--dag-runs true`. It answers 401 when it has a
   run token and the header `X-OpenTSx-Run-Token` does not carry it.
+* The frontend image answers 403 to `/retrieval/v1/systems/<system>/generate` and to every path below it, so a caller
+  of the frontend image reaches the generator only through the backend.
 * The document, with the working copy laid over it, MUST have no problems. The signal MUST exist, its raw source MUST
   be a generator, and it MUST state `expect.interval`. `from` and `to` are instants, for example
   `2026-10-01T00:00:00Z`.
 * The series goes to the synthetic topic of the domain ([section 4.2](#s42-generated-series)). The answer holds
   `system`, `signal`, `topic`, `generator`, `fidelity` (`demo`), `episodes`, `samples`, `from`, `to` and `run`.
 
-Implemented in: `systems.py:203-220`, `dags.py:32-55`, `RetrievalServer.java:243-250,502-511`, `Systems.java:112-156`.
+Implemented in: `systems.py:203-220`, `dags.py:32-55`, `RetrievalServer.java:243-250,502-511`, `Systems.java:112-156`,
+`nginx.conf:20-25`.
 
 <a id="s8-web-application"></a>
 
@@ -809,7 +813,7 @@ The button is enabled once a step other than the source is selected.
 * The system document in the repository is not changed. The page Signals finds the clean series by its tags
   ([section 4.4](#s44-find-the-series-of-a-signal)).
 
-Implemented in: `PublishClean.tsx:60-101`, `flow.ts:534-596,700-757`, `deployments.ts:61,80-89`,
+Implemented in: `PublishClean.tsx:60-101`, `flow.ts:537-597,706-763`, `deployments.ts:115,134-143`,
 `Workbench.tsx:963-985`.
 
 <a id="s9-processor-descriptions"></a>

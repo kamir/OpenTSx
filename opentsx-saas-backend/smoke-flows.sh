@@ -127,6 +127,8 @@ CODE="$(curl -s -m 10 -o "$OUT" -w '%{http_code}' "${BASE%/}/retrieval/v1/health
 if [[ "$CODE" == 200 ]]; then
   CODE="$(curl -s -m 10 -o "$OUT" -w '%{http_code}' -X POST --data-binary 'dag: smoke' "${BASE%/}/retrieval/v1/dags/deploy" || true)"
   check "the retrieval write routes are closed at the frontend" 403 "$CODE"
+  CODE="$(curl -s -m 10 -o "$OUT" -w '%{http_code}' -X POST "${BASE%/}/retrieval/v1/systems/x/generate/" || true)"
+  check "the retrieval generator is closed at the frontend, generate/ too" 403 "$CODE"
   CODE="$(curl -s -m 10 -o "$OUT" -w '%{http_code}' "${BASE%/}/retrieval/v1/dags" || true)"
   [[ "$CODE" == 200 || "$CODE" == 404 ]] && CODE=answered     # 404: the retrieval server does not read KafScale
   check "the state of the deployments is readable" answered "$CODE"

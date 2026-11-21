@@ -1094,7 +1094,7 @@
           "rust/tsx-runner/src/model.rs#bucket_checksum"
         ],
         "tests": [
-          "opentsx-model/src/test/java/org/opentsx/model/EpisodesAndWireFormatTest.java#L71",
+          "opentsx-model/src/test/java/org/opentsx/model/EpisodesAndWireFormatTest.java#L75",
           "opentsx-model/src/test/java/org/opentsx/model/SeriesIdentityTest.java#bucketChecksumMatchesSharedVectors",
           "rust/tsx-runner/src/wire.rs#episode_wire_vectors_round_trip_byte_for_byte_and_preserve_full_fields",
           "rust/tsx-runner/src/wire.rs#all_series_identity_vectors_match_without_unicode_normalization",
@@ -1343,7 +1343,7 @@
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s115-admit-a-physical-deployment"
         ],
         "source": [
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxTopicSink.java#L14",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxTopicSink.java#L13",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxTopicSink.java#L1",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxTopicSink.java#write",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustTopicSink.java#RustTopicSink",
@@ -1660,8 +1660,8 @@
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s115-admit-a-physical-deployment"
         ],
         "source": [
-          "opentsx-model/src/main/java/org/opentsx/model/contracts/ExecutionAssignments.java#L56",
-          "rust/tsx-contracts/src/lib.rs#L38",
+          "opentsx-model/src/main/java/org/opentsx/model/contracts/ExecutionAssignments.java#L58",
+          "rust/tsx-contracts/src/lib.rs#L53",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java#parameters",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustRollout.java#plan",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustExecutor.java#execute",
