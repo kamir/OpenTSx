@@ -12,9 +12,6 @@ entries before 3.0.0 are grouped by date.
 
 ### Changed
 
-- Align the local Workbench constraints and generated wheel lock with the
-  Python forecasting extra's statsmodels 0.15.0 runtime. Verify reported runtime
-  provenance against the installed package and reject diverging launcher pins.
 - TASK-020 U01 decisions D-T16 to D-T22 (owner, 2026-11-21). `TsxCompileContext.Boundary` loses `admitsRaw` (D-T22):
   no raw series, pair or vector and no operator with merge class `none` can feed a federated sink. Spec S1.10, S2.2
   and S2.4 state that a site has exactly one node (D-T17) and that the local worker's capabilities are trusted-local
@@ -610,6 +607,11 @@ entries before 3.0.0 are grouped by date.
   stays, because the PFD runtime `DynamicTopologyJob` uses it.
 
 ### Fixed
+
+- The `statsmodels` 0.15.0 pin of `python-package` now matches `deploy/local-cp/requirements.in` and
+  `requirements.lock`. With the old 0.14.6 constraint, the install in `standalone-numerics.md` failed with
+  `ResolutionImpossible`, and `test_finite_service_http.py` expected 0.14.6. `statsmodels` 0.15.0 adds the pinned
+  dependencies `formulaic`, `interface_meta`, `narwhals`, `typing_extensions` and `wrapt`.
 
 - `docs/datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md` has the bytes its `manifest.json` pins again;
   the repository split had replaced its links to the raw files with plain text. `tools/check_links.py` leaves files

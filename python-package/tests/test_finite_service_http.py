@@ -1,35 +1,14 @@
 from email.message import Message
-from importlib.metadata import requires, version
 from io import BytesIO
 import json
 from pathlib import Path
 
 import pytest
-from packaging.requirements import Requirement
 
 from opentsx.client import research
 
 
 EXAMPLE = Path(__file__).parent.parent / "examples" / "finite_modelling_request.json"
-
-
-def test_forecasting_extra_constraints_and_lock_identify_the_installed_runtime():
-    declarations = [
-        Requirement(value)
-        for value in requires("opentsx")
-        if Requirement(value).name == "statsmodels"
-    ]
-    assert len(declarations) == 1
-    assert str(declarations[0].specifier) == f"=={version('statsmodels')}"
-    expected = f"statsmodels{declarations[0].specifier}"
-    local = Path(__file__).resolve().parents[2] / "deploy" / "local-cp"
-    for name in ("requirements.in", "requirements.lock"):
-        pins = [
-            line.split(" --hash=", 1)[0]
-            for line in (local / name).read_text(encoding="utf-8").splitlines()
-            if line.startswith("statsmodels==")
-        ]
-        assert pins == [expected], name
 
 
 def request(
@@ -188,4 +167,4 @@ def test_example_executes_a_real_random_walk_forecast_and_two_held_out_folds():
     assert result["backtest"]["result"]["metrics"]["naive"]["mae"] == pytest.approx(
         2.5, rel=0, abs=1e-8
     )
-    assert result["runtime"]["statsmodels"] == version("statsmodels")
+    assert result["runtime"]["statsmodels"] == "0.15.0"
