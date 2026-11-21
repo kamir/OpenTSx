@@ -119,6 +119,8 @@ public final class Generators {
             period = java.time.Duration.parse(p.path("period").asText("P1D")).toNanos() / 1000;
         } catch (java.time.format.DateTimeParseException e) {
             throw new IllegalArgumentException("gen.sine: period must be a duration like P1D");
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException("gen.sine: period must be above zero and at most PT2562047H47M16.854775807S, about 292 years");
         }
         if (period <= 0 || sigma < 0) {
             throw new IllegalArgumentException("gen.sine: period must be above zero and sigma not below it");
@@ -130,6 +132,30 @@ public final class Generators {
             out[i] = mean + amplitude * Math.sin(angle) + sigma * noise(seed, first + i);
         }
         return out;
+    }
+
+    /**
+     * The sampling interval of a generated series in microseconds, from {@code expect.interval} of its signal.
+     *
+     * @throws IllegalArgumentException with a message for the user when the interval is missing, no duration, below one
+     *                                  microsecond or above {@code PT2562047H47M16.854775807S}
+     */
+    public static long intervalMicros(String interval) {
+        if (interval == null) {
+            throw new IllegalArgumentException("needs a sampling interval to be generated (expect.interval)");
+        }
+        long micros;
+        try {
+            micros = java.time.Duration.parse(interval).toNanos() / 1000;
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new IllegalArgumentException("expect.interval " + interval + " is no duration like PT1M");
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException("expect.interval " + interval + " is above PT2562047H47M16.854775807S, about 292 years");
+        }
+        if (micros <= 0) {
+            throw new IllegalArgumentException("expect.interval " + interval + " is below one microsecond");
+        }
+        return micros;
     }
 
     /**
