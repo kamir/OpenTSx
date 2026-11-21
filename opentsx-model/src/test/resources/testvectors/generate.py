@@ -3,18 +3,26 @@
     python opentsx-model/src/test/resources/testvectors/generate.py
 
 Only rerun when the specification changes intentionally - both test suites compare against these files.
-xxHash64 reference values come from the ``xxhash`` package (independent of both implementations).
+xxHash64 reference values come from the ``xxhash`` package and episode content digests from ``reference_digest``
+below (independent of both implementations).
 """
 
+import hashlib
+import io
 import json
 import pathlib
+import struct
 
+import fastavro
 import xxhash
+from fastavro.schema import expand_schema, parse_schema, to_parsing_canonical_form
 
 from opentsx import model as m
+from opentsx.model.serde import _crc64_avro
 from opentsx.model.series_key import sorted_by_utf8
 
 HERE = pathlib.Path(__file__).parent
+HISTORY = HERE.parents[2] / "main" / "resources" / "schema-history"
 
 
 def write(name, data):
@@ -100,6 +108,74 @@ def build(spec):
 observation = {"seriesId": power["seriesId"], "ts": 1_700_000_000_000_000, "value": 1520.5, "quality": None}
 
 
+# --- episode content digest ---------------------------------------------------------------------------
+def reference_digest(episode):
+    """Straight transcription of the specification with struct and hashlib."""
+    def i64(v):
+        return struct.pack("<q", v)
+
+    def text(s):
+        return i64(len(s.encode("utf-8"))) + s.encode("utf-8")
+
+    series = episode["series"]
+    out = b"opentsx.episode.content.v1\n" + text(m.canonical(series["metric"], series["tags"]))
+    out += b"\x00" if series["unit"] is None else b"\x01" + text(series["unit"])
+    out += i64(episode["tStart"]) + i64(episode["tEnd"]) + i64(episode["count"])
+    out += b"".join(i64(int(t)) for t in m.timestamps_us(episode))
+    out += b"".join(struct.pack("<Q", 0x7FF8000000000000) if v != v else struct.pack("<d", v)
+                    for v in episode["values"])
+    out += b"\x00" if episode["quality"] is None else b"\x01" + episode["quality"]
+    return hashlib.sha256(out).hexdigest()
+
+
+def build_plain(spec):
+    key = m.series_key(spec["metric"], spec["tags"], spec["unit"])
+    quality = None if spec["qualityHex"] is None else bytes.fromhex(spec["qualityHex"])
+    common = dict(episode_id=spec["episodeId"], labels=spec["labels"], quality=quality, source="testvectors",
+                  producer="testvectors", created_at_us=1_700_000_100_000_000)
+    if spec["kind"] == "regular":
+        return m.regular(key, spec["tStartUs"], spec["intervalUs"], spec["values"], t_end_us=spec["tEndUs"], **common)
+    return m.irregular(key, spec["timestampsUs"], spec["values"], t_end_us=spec["tEndUs"], **common)
+
+
+power_values = [1520.5, 1498.25, float("nan"), 1601.0, -0.0]
+digest_cases = [
+    ("regular with NaN and -0.0",
+     {"kind": "regular", "metric": power["metric"], "tags": power["tags"], "unit": "kW",
+      "tStartUs": 1_700_000_000_000_000, "intervalUs": 600_000_000, "tEndUs": None, "values": power_values,
+      "qualityHex": None, "episodeId": "01HF7Z1Y4X0000000000000000", "labels": {"experiment": "e1"}}),
+    ("the same samples as an irregular episode with another id and labels: same digest",
+     {"kind": "irregular", "metric": power["metric"], "tags": power["tags"], "unit": "kW",
+      "timestampsUs": [1_700_000_000_000_000 + i * 600_000_000 for i in range(5)],
+      "tEndUs": 1_700_003_000_000_000, "values": power_values, "qualityHex": None,
+      "episodeId": "01HF7Z1Y4X0000000000000099", "labels": {"regime": "partial-load"}}),
+    ("the same samples with one value changed",
+     {"kind": "regular", "metric": power["metric"], "tags": power["tags"], "unit": "kW",
+      "tStartUs": 1_700_000_000_000_000, "intervalUs": 600_000_000, "tEndUs": None,
+      "values": [1520.5, 1498.25, float("nan"), 1601.5, -0.0], "qualityHex": None,
+      "episodeId": "01HF7Z1Y4X0000000000000000", "labels": {"experiment": "e1"}}),
+    ("irregular with quality",
+     {"kind": "irregular", "metric": speed["metric"], "tags": speed["tags"], "unit": "m/s",
+      "timestampsUs": irregular_spec["timestampsUs"], "tEndUs": irregular_spec["tEndUs"],
+      "values": irregular_spec["values"], "qualityHex": irregular_spec["qualityHex"],
+      "episodeId": "01HF7Z1Y4X0000000000000001", "labels": {}}),
+    ("empty regular episode without unit",
+     {"kind": "regular", "metric": "rotor.rpm", "tags": {}, "unit": None, "tStartUs": 0, "intervalUs": 1_000,
+      "tEndUs": None, "values": [], "qualityHex": None, "episodeId": "01HF7Z1Y4X0000000000000002", "labels": {}}),
+]
+digest_vectors = []
+for name, spec in digest_cases:
+    episode = build_plain(spec)
+    digest = reference_digest(episode)
+    if m.content_digest(episode) != digest:
+        raise SystemExit(f"content_digest differs from the reference for: {name}")
+    digest_vectors.append({"name": name, "spec": spec, "contentDigest": digest})
+if digest_vectors[0]["contentDigest"] != digest_vectors[1]["contentDigest"]:
+    raise SystemExit("time encoding, id and labels must not change the content digest")
+write("episode-digest.json", digest_vectors)
+d_power, _, d_power_changed, d_speed, d_empty = (v["contentDigest"] for v in digest_vectors)
+
+
 # --- analysis results ---------------------------------------------------------------------------------
 # Parameters are written with their Avro type, {"long": "2"} or {"double": 2.0}, because JSON numbers lose it.
 # Longs are decimal strings (exact beyond 2^53 in every language).
@@ -135,15 +211,23 @@ result_cases = [
     ("ris", "1.0.0", {"cap": {"double": float("inf")}, "big": {"long": 9_007_199_254_740_993}}, ["x"]),
     ("dfa", "1.0.0", {}, ["01HF7Z1Y4X0000000000000000"]),
 ]
+result_cases = [case + ([],) for case in result_cases] + [
+    # same method, parameters and episode id as the first case, bound to the episode content
+    result_cases[0] + ([d_power],),
+    # same episode id with changed content, for example a later revision
+    result_cases[0] + ([d_power_changed],),
+    result_cases[2] + ([d_power, d_speed, d_empty],),
+]
 write("result-id.json", [
     {"method": method, "methodVersion": version,
      "params": {k: {kind: (jsonable(v) if kind == "double" else str(v) if kind == "long" else v)
                     for kind, v in typed_value.items()} for k, typed_value in params.items()},
      "inputEpisodeIds": inputs,
-     "canonical": m.result_canonical(method, version, typed(params), inputs),
-     "resultId": xxhash.xxh64_hexdigest(m.result_canonical(method, version, typed(params), inputs).encode("utf-8"),
-                                        seed=0)}
-    for method, version, params, inputs in result_cases
+     "inputDigests": digests,
+     "canonical": m.result_canonical(method, version, typed(params), inputs, digests),
+     "resultId": xxhash.xxh64_hexdigest(
+         m.result_canonical(method, version, typed(params), inputs, digests).encode("utf-8"), seed=0)}
+    for method, version, params, inputs, digests in result_cases
 ])
 
 dfa_spec = {
@@ -180,7 +264,7 @@ def build_result(spec):
                 for x in spec["matrices"]]
     return m.analysis_result(
         spec["method"], spec["methodVersion"], typed(spec["params"]), spec["inputEpisodeIds"], spec["inputSeriesIds"],
-        spec["tStartUs"], spec["tEndUs"],
+        spec["tStartUs"], spec["tEndUs"], input_digests=spec["inputDigests"],
         scalars=[m.scalar(x["name"], x["value"], std_error=x["stdError"], unit=x["unit"], fit_from=x["fitFrom"],
                           fit_to=x["fitTo"]) for x in spec["scalars"]],
         curves=[m.curve(x["name"], x["xName"], x["x"], x["y"], x_unit=x["xUnit"], unit=x["unit"]) for x in spec["curves"]],
@@ -188,13 +272,54 @@ def build_result(spec):
         created_at_us=spec["createdAtUs"], pipeline=spec["pipeline"])
 
 
-write("wire-format.json", {
-    "fingerprints": {name: f"{m.fingerprint(name):016x}" for name in
-                     ["Episode", "Observation", "SeriesKey", "BucketManifest", "SeriesStats", "PatternMatch",
-                      "AnalysisResult"]},
-    "episodes": [{"spec": spec, "hex": m.encode("Episode", build(spec)).hex()} for spec in (regular_spec, irregular_spec)],
-    "observation": {"record": observation, "hex": m.encode("Observation", observation).hex()},
+def frozen(version, name):
+    """Parsed schema of a record as released in schema-history/<version>."""
+    named = {}
+    for file in (HISTORY / version / "index.txt").read_text(encoding="utf-8").split():
+        parsed = parse_schema(json.loads((HISTORY / version / file).read_text(encoding="utf-8")), named_schemas=named)
+        if file == f"{name}.avsc":
+            return parsed
+    raise SystemExit(f"{name} is not in schema-history/{version}")
+
+
+def encode_frozen(version, name, record):
+    schema = frozen(version, name)
+    buf = io.BytesIO()
+    buf.write(b"\xc3\x01" + struct.pack("<Q", _crc64_avro(to_parsing_canonical_form(expand_schema(schema)).encode())))
+    fastavro.schemaless_writer(buf, schema, record)
+    return buf.getvalue()
+
+
+def legacy_result(spec):
+    """The record as v2.1 wrote it: no inputDigests, the id over method, parameters and episode ids only."""
+    record = build_result(spec)
+    del record["inputDigests"]
+    record["resultId"] = m.result_id(spec["method"], spec["methodVersion"], record["params"], spec["inputEpisodeIds"])
+    return record
+
+
+current_specs = [{**dfa_spec, "inputDigests": [d_power]}, {**es_spec, "inputDigests": [d_power, d_speed, d_empty]}]
+
+# wire-format.json is the v2.1 wire format. Catalog tsx-catalog/1 pins its bytes as the vectors of decode.avro-soe
+# (systems/catalogs/tsx-catalog-1.yaml), so it is generated from schema-history/v2.1 and must not change.
+wire = HERE / "wire-format.json"
+frozen_wire = json.dumps({
+    "fingerprints": {name: f"{_crc64_avro(to_parsing_canonical_form(expand_schema(frozen('v2.1', name))).encode()):016x}"
+                     for name in ["Episode", "Observation", "SeriesKey", "BucketManifest", "SeriesStats",
+                                  "PatternMatch", "AnalysisResult"]},
+    "episodes": [{"spec": spec, "hex": encode_frozen("v2.1", "Episode", build(spec)).hex()}
+                 for spec in (regular_spec, irregular_spec)],
+    "observation": {"record": observation, "hex": encode_frozen("v2.1", "Observation", observation).hex()},
+    "analysisResults": [{"spec": spec, "resultId": legacy_result(current)["resultId"],
+                         "hex": encode_frozen("v2.1", "AnalysisResult", legacy_result(current)).hex()}
+                        for spec, current in zip((dfa_spec, es_spec), current_specs)],
+}, indent=2, ensure_ascii=False) + "\n"
+if wire.read_text(encoding="utf-8") != frozen_wire:
+    raise SystemExit("wire-format.json would change; it is frozen by systems/catalogs/tsx-catalog-1.yaml")
+
+write("analysis-result-wire.json", {
+    "fingerprint": f"{m.fingerprint('AnalysisResult'):016x}",
     "analysisResults": [{"spec": spec, "resultId": build_result(spec)["resultId"],
-                         "hex": m.encode("AnalysisResult", build_result(spec)).hex()} for spec in (dfa_spec, es_spec)],
+                         "hex": m.encode("AnalysisResult", build_result(spec)).hex()} for spec in current_specs],
 })
 print("test vectors written to", HERE)

@@ -1,0 +1,19 @@
+{
+  "type": "record",
+  "name": "Segmentation",
+  "namespace": "org.opentsx.model.v2",
+  "doc": "How an episode was cut out of its series.",
+  "fields": [
+    {"name": "strategy", "type": {
+      "type": "enum", "name": "SegmentationStrategy",
+      "symbols": ["FIXED_DURATION", "FIXED_COUNT", "FEATURE_EXTREMUM", "FEATURE_THRESHOLD", "MANUAL"],
+      "default": "MANUAL"
+    }},
+    {"name": "params", "type": {"type": "map", "values": "string"}, "default": {},
+     "doc": "Strategy parameters, ISO-8601 durations or counts, e.g. {duration: PT10M} or {feature: MAX, pre: PT5M, post: PT10M}."},
+    {"name": "anchorTs", "type": ["null", {"type": "long", "logicalType": "timestamp-micros"}], "default": null,
+     "doc": "Extremum or threshold-crossing instant the episode is anchored on."},
+    {"name": "sourceEpisodeId", "type": ["null", "string"], "default": null,
+     "doc": "Episode this segment was derived from (lineage)."}
+  ]
+}

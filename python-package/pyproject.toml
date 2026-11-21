@@ -84,7 +84,7 @@ where = ["."]
 include = ["opentsx*"]
 
 [tool.setuptools.package-data]
-"opentsx.model" = ["schemas/*.avsc"]
+"opentsx.model" = ["schemas/*.avsc", "schemas/*/*.avsc"]
 
 [tool.black]
 line-length = 100

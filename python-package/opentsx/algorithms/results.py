@@ -24,7 +24,7 @@ def dfa_result(dfa: DFA, episode: Mapping, *, source: str, created_at_us: Option
     params = {"order": int(dfa.polynom_order), "scales": scales}
     return analysis_result(
         "dfa", DFA_VERSION, params, [episode["episodeId"]], [episode["series"]["seriesId"]],
-        episode["tStart"], episode["tEnd"],
+        episode["tStart"], episode["tEnd"], input_digests=[ep.content_digest(episode)],
         scalars=[scalar("alpha", out["alpha"], fit_from=min(scales), fit_to=max(scales)),
                  scalar("intercept", out["intercept"]),
                  scalar("r_squared", out["r_squared"])],
@@ -56,5 +56,6 @@ def event_sync_result(es: EventSynchronization, episodes: Sequence[Mapping], *, 
     return analysis_result(
         "es", ES_VERSION, params, [e["episodeId"] for e in episodes], keys,
         min(e["tStart"] for e in episodes), max(e["tEnd"] for e in episodes),
+        input_digests=[ep.content_digest(e) for e in episodes],
         matrices=[matrix("Q", keys, keys, q.ravel()), matrix("q_directed", keys, keys, delay.ravel())],
         source=source, created_at_us=created_at_us, pipeline=pipeline)

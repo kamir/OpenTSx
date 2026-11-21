@@ -11,13 +11,16 @@ import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Analysis result identity.
  *
  * <p>Canonical form: {@code escape(method) + "@" + escape(methodVersion) + "(" + k1=v1,k2=v2,... + ")"
- * + "[" + e1,e2,... + "]"} with parameter keys sorted by their UTF-8 bytes (unsigned), input episode ids in their
- * given order and {@code \ { } , = ( ) [ ] @} escaped with a backslash. Values carry their Avro type: long
+ * + "[" + e1,e2,... + "]" + "{" + d1,d2,... + "}"} with parameter keys sorted by their UTF-8 bytes (unsigned), input
+ * episode ids in their given order and {@code \ { } , = ( ) [ ] @} escaped with a backslash. The digest section holds
+ * the {@link Episodes#contentDigest} of each input in the same order; it is left out when there are no digests (records
+ * written before v2.2), which keeps their ids. Values carry their Avro type: long
  * {@code l<decimal>}, double {@code d<16 hex digits of the IEEE 754 bits>}, string {@code s<escaped>}, array of
  * doubles {@code a<hex>;<hex>} ({@code a} when empty). NaN is not allowed in parameters.
  * {@code resultId = hex(xxHash64(utf8(canonical), 0))}.
@@ -25,18 +28,19 @@ import java.util.Map;
 public final class AnalysisResults {
 
     private static final HexFormat HEX = HexFormat.of();
+    private static final Pattern DIGEST = Pattern.compile("[0-9a-f]{64}");
 
     private AnalysisResults() {
     }
 
     public static String resultId(String method, String methodVersion, Map<String, ?> params,
-                                  List<String> inputEpisodeIds) {
-        return XxHash64.hex(XxHash64.hash(
-                canonical(method, methodVersion, params, inputEpisodeIds).getBytes(StandardCharsets.UTF_8)));
+                                  List<String> inputEpisodeIds, List<String> inputDigests) {
+        return XxHash64.hex(XxHash64.hash(canonical(method, methodVersion, params, inputEpisodeIds, inputDigests)
+                .getBytes(StandardCharsets.UTF_8)));
     }
 
     public static String canonical(String method, String methodVersion, Map<String, ?> params,
-                                   List<String> inputEpisodeIds) {
+                                   List<String> inputEpisodeIds, List<String> inputDigests) {
         if (method == null || method.isEmpty()) {
             throw new IllegalArgumentException("method must not be empty");
         }
@@ -82,7 +86,29 @@ public final class AnalysisResults {
             }
             sb.append(escape(id));
         }
-        return sb.append(']').toString();
+        sb.append(']');
+        if (inputDigests == null) {
+            throw new IllegalArgumentException("inputDigests must not be null");
+        }
+        if (inputDigests.isEmpty()) {
+            return sb.toString();
+        }
+        if (inputDigests.size() != inputEpisodeIds.size()) {
+            throw new IllegalArgumentException(inputDigests.size() + " inputDigests for " + inputEpisodeIds.size()
+                    + " inputEpisodeIds");
+        }
+        sb.append('{');
+        for (int i = 0; i < inputDigests.size(); i++) {
+            String d = inputDigests.get(i);
+            if (d == null || !DIGEST.matcher(d).matches()) {
+                throw new IllegalArgumentException("input digest " + i + " is not 64 lower-case hex characters");
+            }
+            if (i > 0) {
+                sb.append(',');
+            }
+            sb.append(d);
+        }
+        return sb.append('}').toString();
     }
 
     /**
@@ -118,9 +144,10 @@ public final class AnalysisResults {
         return out;
     }
 
-    /** Throws if resultId, input lists, time range, curves or matrices are inconsistent. */
+    /** Throws if resultId, input lists, input digests, time range, curves or matrices are inconsistent. */
     public static void verify(AnalysisResult r) {
-        String expected = resultId(r.getMethod(), r.getMethodVersion(), r.getParams(), r.getInputEpisodeIds());
+        String expected = resultId(r.getMethod(), r.getMethodVersion(), r.getParams(), r.getInputEpisodeIds(),
+                r.getInputDigests());
         if (!expected.equals(r.getResultId())) {
             throw new IllegalArgumentException("resultId " + r.getResultId() + " does not match " + expected);
         }
