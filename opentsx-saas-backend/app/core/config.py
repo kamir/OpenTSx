@@ -52,7 +52,7 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_EMAIL: str = "admin@opentsx.com"
     FIRST_SUPERUSER_PASSWORD: str = "admin123"
 
-    # DAG runs (app/api/dags.py): the retrieval server that writes vector topics, and who may ask for it
+    # DAG runs, demo generators and Wayang runs: where they go, and who may ask for them (may_run in app/api/dags.py)
     RETRIEVAL_URL: Optional[str] = None       # e.g. http://opentsx-retrieval:8080; unset: no runs
     WAYANG_URL: Optional[str] = None
     DAG_RUN_TOKEN: Optional[str] = None       # sent as X-OpenTSx-Run-Token; must match the server's token

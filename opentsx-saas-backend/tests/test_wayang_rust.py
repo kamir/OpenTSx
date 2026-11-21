@@ -152,6 +152,11 @@ def test_capabilities_require_auth_and_role_without_retrieval_dependency(databas
     assert "endpoint" not in result["workers"][0]
 
 
+def test_the_run_role_user_also_opens_wayang_runs(database, driver, monkeypatch):
+    monkeypatch.setattr(settings, "DAG_RUN_ROLE", "user")
+    assert client(database, PLAIN).get("/api/v1/dags/wayang-rust/capabilities").json()["canRun"] is True
+
+
 def test_admission_persists_exact_plan_before_any_execution_and_reuses_frozen_identity(database, driver):
     api = client(database)
     first = submit(api)
