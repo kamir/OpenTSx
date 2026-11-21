@@ -636,7 +636,6 @@ entries before 3.0.0 are grouped by date.
   committed page could not be rebuilt byte for byte. Section 8 of `TWIN-COUPLING-SPEC.md` limits the equal run hash to
   runs on the same JVM. The page is rebuilt with `tools/build_studio.py`; `StudioPageTest` and
   `tools/test_studio_page.py` check it.
-
 - The `statsmodels` 0.15.0 pin of `python-package` now matches `deploy/local-cp/requirements.in` and
   `requirements.lock`. With the old 0.14.6 constraint, the install in `standalone-numerics.md` failed with
   `ResolutionImpossible`, and `test_finite_service_http.py` expected 0.14.6. `statsmodels` 0.15.0 adds the pinned
