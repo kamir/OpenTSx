@@ -196,9 +196,10 @@ who can register deploy and stop.
 
 `PUT /api/v1/systems/<system>/bindings` stores the source of one grade of one signal in the working copy of the
 signed-in user. A binding that cannot be a source answers 422 with the reason. A generator source names `gen.ou` or
-`gen.sine`, has `params` as an object, a whole-number `seed` and no `select`. The backend does not check the
-parameters of a generator; the retrieval server reports a broken rule as a problem of the system document. The routes
-and rules are in [SYSTEM-DOCUMENT-SPEC.md, section 7](../docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md#s7-working-copy).
+`gen.sine` and has no `select`. `params` is optional and, when given, an object. `seed` is optional and, when given, a
+whole number. The backend does not check the parameters of a generator; the retrieval server reports a broken rule as
+a problem of the system document. The routes and rules are in
+[SYSTEM-DOCUMENT-SPEC.md, section 7](../docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md#s7-working-copy).
 
 See full API documentation at: `/docs` (Swagger UI)
 

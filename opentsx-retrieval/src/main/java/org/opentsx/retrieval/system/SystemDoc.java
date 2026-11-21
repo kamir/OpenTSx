@@ -428,8 +428,12 @@ public final class SystemDoc {
         if (raw != null && "flow".equals(raw.kind())) {
             problems.add(id + "@raw: a flow gives clean data or features");
         }
-        if (raw != null && "generator".equals(raw.kind()) && expect.interval() == null) {
-            problems.add(id + ": needs a sampling interval to be generated (expect.interval)");
+        if (raw != null && "generator".equals(raw.kind())) {
+            try {
+                org.opentsx.retrieval.generate.Generators.intervalMicros(expect.interval());
+            } catch (IllegalArgumentException e) {
+                problems.add(id + ": " + e.getMessage());
+            }
         }
         if (expect.operatingMin() != null && expect.operatingMax() != null && expect.operatingMin() > expect.operatingMax()) {
             problems.add(id + ": the operating range has its min above its max");

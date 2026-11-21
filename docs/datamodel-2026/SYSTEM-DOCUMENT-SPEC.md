@@ -61,7 +61,7 @@ A signal id is unique within its system. It has one of two forms:
   the system `h2-chain` it is `h2-chain/park/T02`.
 * One grade of a signal is written `<signal id>@<grade>`, for example `park/T02/WTUR.W@raw`.
 
-Implemented in: `SystemDoc.java:38-39,74-81,377-379,540`.
+Implemented in: `SystemDoc.java:38-39,74-81,377-379,544`.
 
 <a id="s12-expectation"></a>
 
@@ -87,7 +87,7 @@ The expectation says what the data of a signal should look like. A field that is
 * `interval` MUST match
   `P(\d+D(T(\d+H)?(\d+M)?(\d+(\.\d+)?S)?)?|T(\d+H(\d+M)?(\d+(\.\d+)?S)?|\d+M(\d+(\.\d+)?S)?|\d+(\.\d+)?S))`.
 
-Implemented in: `SystemDoc.java:40-41,45-52,399-415,434-436`.
+Implemented in: `SystemDoc.java:40-41,45-52,399-415,438-440`.
 
 <a id="s13-grades-and-sources"></a>
 
@@ -108,7 +108,7 @@ A signal has up to three grades. Each grade has at most one source.
 | `flow` | the output of a flow listed in `flows` | none; the signal origin is derived ([section 1.4](#s14-origin-of-a-signal)) |
 | `manual` | a constant `value` or a `table` reference; no series | as stated; `REPORTED` when not stated |
 
-Implemented in: `SystemDoc.java:43,417-430,457-495`.
+Implemented in: `SystemDoc.java:43,417-430,461-499`.
 
 <a id="s14-origin-of-a-signal"></a>
 
@@ -198,7 +198,7 @@ Implemented in: `SystemDoc.java:121-128,221-242,262-333`.
 
 A signal with neither a `raw` nor a `clean` source is open. Open signals are allowed.
 
-Implemented in: `SystemDoc.java:375-439`.
+Implemented in: `SystemDoc.java:375-443`.
 
 <a id="s24-source-fields"></a>
 
@@ -211,7 +211,7 @@ Implemented in: `SystemDoc.java:375-439`.
 | `flow` | `flow`, `output` | `flow` MUST be an `id` in `flows`; `output` names the node whose result is this grade |
 | `manual` | `value`, `table`, `origin` | exactly one of `value` (number) and `table` (reference to a table of time and value) |
 
-Implemented in: `SystemDoc.java:441-501`, `Systems.java:139-140,160-164`.
+Implemented in: `SystemDoc.java:445-505`, `Systems.java:139-140,161-164`.
 
 <a id="s25-checks"></a>
 
@@ -232,7 +232,8 @@ The server checks what the schema cannot. Each failed check adds one problem, un
    `operating.min` is not above `operating.max`.
 10. Sources follow [section 1.3](#s13-grades-and-sources) and [section 2.4](#s24-source-fields). A generator source
     names a generator of [section 4.2](#s42-generated-series), its `params` meet the parameter rules of that generator,
-    and it has no `select`. A signal whose raw source is a generator states `expect.interval`.
+    and it has no `select`. A signal whose raw source is a generator states `expect.interval` within the limits of
+    [section 4.2](#s42-generated-series).
 11. With a plan, the atom of every signal exists in the plan. A port signal names an input or output of its atom.
     When its expectation states a unit, that unit MUST equal the unit of the port.
 12. A sensor channel without `channel` MUST state `unit` and `kind` in `expect`.
@@ -250,8 +251,8 @@ The server checks what the schema cannot. Each failed check adds one problem, un
 The server does not check that `select` matches exactly the series of the signal or that several flows together form
 no cycle. It checks a generator source with the rules of the generator it runs, not against a processor description.
 
-Implemented in: `SystemDoc.java:200-258,262-371,375-439,441-501,514-597`, `Generators.java:57-63,79-133`; tests
-`SystemDocTest.java:387-405,478-500`.
+Implemented in: `SystemDoc.java:200-258,262-371,375-443,445-505,518-601`, `Generators.java:57-63,79-159`; tests
+`SystemDocTest.java:387-405,478-512`.
 
 <a id="s26-hash"></a>
 
@@ -335,7 +336,7 @@ topics. The system document lists flow documents in `flows`.
   runs a flow only as the DAG document the web workbench writes ([section 5](#s5-series-sink-in-a-dag),
   [section 8.4](#s84-publish-as-clean-signal)).
 
-Implemented in: `SystemDoc.java:103-105,335-354,564-597`, `Systems.java:286-291`.
+Implemented in: `SystemDoc.java:103-105,335-354,568-601`, `Systems.java:286-291`.
 
 <a id="s4-topics-and-series"></a>
 
@@ -386,17 +387,18 @@ Rules:
 * The same signal, generator, seed, parameters and period give the same series and the same episode ids. A repeated
   run replaces itself for a reader. Another period or other parameters give another series.
 * Values are clamped to `expect.min` and `expect.max`.
-* The signal MUST state `expect.interval`. The period MUST end after it begins. A run MUST NOT exceed 2,000,000
-  samples.
+* The signal MUST state `expect.interval`, at least one microsecond and at most `PT2562047H47M16.854775807S`
+  (about 292 years). The period MUST end after it begins. A run MUST NOT exceed 2,000,000 samples.
 * The available generators are `gen.ou` and `gen.sine`. Their parameters follow the table below. A required parameter
   MUST be a number. A broken rule is a problem of the document ([section 2.5](#s25-checks)).
 
 | Generator | Required parameters | Optional parameters | Rule |
 |---|---|---|---|
 | `gen.ou` | `mean`, `sigma` | `reversion`, default 0.1 | `sigma` not below 0; `reversion` above 0 and at most 1 |
-| `gen.sine` | `mean`, `amplitude` | `period` (ISO-8601 duration), default `P1D`; `phase` (share of the period), default 0; `sigma`, default 0 | `period` above zero; `sigma` not below 0 |
+| `gen.sine` | `mean`, `amplitude` | `period` (ISO-8601 duration), default `P1D`; `phase` (share of the period), default 0; `sigma`, default 0 | `period` above zero and at most `PT2562047H47M16.854775807S` (about 292 years); `sigma` not below 0 |
 
-Implemented in: `Systems.java:119-164`, `Generators.java:36-42,57-68,79-133,150-190`; test `SystemsTest.java:461-477`.
+Implemented in: `Systems.java:119-164`, `Generators.java:36-42,57-68,79-159,176-216`; tests `SystemsTest.java:461-477`,
+`SystemDocTest.java:502-512`, `GeneratorsTest.java:117-118`.
 
 <a id="s43-clean-and-feature-series"></a>
 
@@ -666,7 +668,7 @@ of one grade of one signal. The routes need a signed-in user.
 | `grade` | `raw` (default) or `clean` |
 | `source.kind` | `topic`, `generator` or `manual`; a flow becomes a source only by publishing it ([section 8.4](#s84-publish-as-clean-signal)) |
 | topic source | `topic`, `select` with `metric`, `tags` or `series`, and `origin` are required; `meaningConfirmed` MUST be true: the person confirms that the series is the quantity the signal means |
-| generator source | `processor` MUST be `gen.ou` or `gen.sine`; `params` an object; `seed` an integer; `select` MUST NOT be present |
+| generator source | `processor` MUST be `gen.ou` or `gen.sine`; `params`, when given, an object; `seed`, when given, an integer; `select` MUST NOT be present |
 | manual source | `value` a number; `origin` an origin, default `REPORTED` |
 | `baseHash` | the hash of the system document the binding was made against; at most 64 characters; stored, not compared |
 
@@ -702,9 +704,9 @@ Implemented in: `SystemDoc.java:196-217`, `Systems.java:95-110`, `Systems.tsx:73
 * The retrieval server answers 404 unless it runs with `--kafscale` and `--dag-runs true`. It answers 401 when it has a
   run token and the header `X-OpenTSx-Run-Token` does not carry it.
 * The document, with the working copy laid over it, MUST have no problems ([section 2.5](#s25-checks)). A generator
-  the server does not run, a missing or invalid parameter, a `select` and a missing `expect.interval` are such
-  problems. The signal MUST exist and its raw source MUST be a generator. `from` and `to` are instants, for example
-  `2026-10-01T00:00:00Z`.
+  the server does not run, a missing or invalid parameter, a `select` and a missing `expect.interval` or one outside
+  the limits of [section 4.2](#s42-generated-series) are such problems. The signal MUST exist and its raw source MUST
+  be a generator. `from` and `to` are instants, for example `2026-10-01T00:00:00Z`.
 * The series goes to the synthetic topic of the domain ([section 4.2](#s42-generated-series)). The answer holds
   `system`, `signal`, `topic`, `generator`, `fidelity` (`demo`), `episodes`, `samples`, `from`, `to` and `run`.
 

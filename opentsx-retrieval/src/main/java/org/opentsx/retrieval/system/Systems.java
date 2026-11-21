@@ -135,7 +135,7 @@ public final class Systems {
         } catch (java.time.format.DateTimeParseException e) {
             throw new IllegalArgumentException("from and to must be instants like 2026-10-01T00:00:00Z");
         }
-        long interval = java.time.Duration.parse(s.expect().interval()).toNanos() / 1000;
+        long interval = Generators.intervalMicros(s.expect().interval());
         Generators.Target target = new Generators.Target(d.system(), s.id(), metric(d, s), s.expect().unit(), s.raw().processor(),
                 s.raw().seed() == null ? 0 : s.raw().seed(), s.expect().min(), s.expect().max(), d.hash());
         List<Episode> episodes = Generators.episodes(target, s.raw().params() == null ? JSON.objectNode() : s.raw().params(),
