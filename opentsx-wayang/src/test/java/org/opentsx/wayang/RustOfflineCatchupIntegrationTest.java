@@ -27,6 +27,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -331,7 +332,7 @@ class RustOfflineCatchupIntegrationTest {
         Files.writeString(path, value); Files.setPosixFilePermissions(path, PosixFilePermissions.fromString("rw-------"));
     }
 
-    private static final class SignalLink implements AutoCloseable {
+    static final class SignalLink implements AutoCloseable {
         private final ServerSocket server = new ServerSocket(0, 50, InetAddress.getLoopbackAddress());
         private final java.util.concurrent.ExecutorService threads = Executors.newCachedThreadPool(r -> { var t = new Thread(r, "b3-signal-link"); t.setDaemon(true); return t; });
         private final Set<Socket> sockets = ConcurrentHashMap.newKeySet();
@@ -348,17 +349,34 @@ class RustOfflineCatchupIntegrationTest {
                     if (!online) { denied.incrementAndGet(); client.close(); continue; }
                     Socket remote = new Socket(InetAddress.getLoopbackAddress(), port);
                     sockets.add(client); sockets.add(remote);
-                    threads.submit(() -> copy(client, remote)); threads.submit(() -> copy(remote, client));
+                    threads.submit(() -> fromRunner(client, remote)); threads.submit(() -> toRunner(remote, client));
                 } catch (IOException error) { if (!closed) failure.compareAndSet(null, error); }
             });
         }
 
         String bootstrap() { return "127.0.0.1:" + server.getLocalPort(); }
         void check() { if (failure.get() != null) throw new IllegalStateException("B3 signal link failed", failure.get()); }
-        private void copy(Socket source, Socket destination) {
-            try { source.getInputStream().transferTo(destination.getOutputStream()); }
-            catch (IOException error) { if (!closed && !source.isClosed() && !destination.isClosed()) failure.compareAndSet(null, error); }
-            finally { closeSocket(source); closeSocket(destination); }
+        private void fromRunner(Socket runner, Socket remote) {
+            try {
+                byte[] buffer = new byte[8192];
+                for (int count; (count = readRunner(runner, buffer)) >= 0; ) remote.getOutputStream().write(buffer, 0, count);
+                remote.shutdownOutput();
+            } catch (IOException error) {
+                if (!closed && !runner.isClosed() && !remote.isClosed()) failure.compareAndSet(null, error);
+                closeSocket(runner); closeSocket(remote);
+            }
+        }
+        private void toRunner(Socket remote, Socket runner) {
+            try {
+                byte[] buffer = new byte[8192];
+                for (int count; (count = remote.getInputStream().read(buffer)) >= 0; ) {
+                    try { runner.getOutputStream().write(buffer, 0, count); } catch (SocketException ended) { return; }
+                }
+            } catch (IOException error) { if (!closed && !runner.isClosed() && !remote.isClosed()) failure.compareAndSet(null, error); }
+            finally { closeSocket(runner); closeSocket(remote); }
+        }
+        private static int readRunner(Socket runner, byte[] buffer) throws IOException {
+            try { return runner.getInputStream().read(buffer); } catch (SocketException reset) { return -1; }
         }
         private void closeSocket(Socket socket) {
             try { socket.close(); } catch (IOException error) { if (!closed) failure.compareAndSet(null, error); }

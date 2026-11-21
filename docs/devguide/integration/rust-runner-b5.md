@@ -107,14 +107,6 @@ The signed CLI regression also checks the actual executable against the
 existing 268,435,456-byte identity-read limit. Development and test profiles
 omit dependency debug information; runner debug information is retained.
 
-The validation observer accepts a reset before a new Kafka frame only when
-no request or only metadata requests remain pending. Frame decoding rejects
-resets that interrupt a length or body, and resets with pending data requests.
-Response correlations remain pending until forwarding and flushing succeed.
-The deterministic
-[observer tests](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/LatencyProtocolObserverTest.java)
-check these boundaries with streams rather than sockets or waits.
-
 Use the [conversion lesson](../../learning/ui-operators.v1.json) with its
 existing Celsius/Fahrenheit starter. Trace its WASM and resource-limit test
 references separately from the browser workload.
