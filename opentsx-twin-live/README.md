@@ -4,7 +4,7 @@ The events of a twin run as records of a topic, and a bridge that hands the topi
 Studio (`docs/prototypes/smart-topics-studio.html`, view `topic`, labelled "Event topic") follows the topic through
 the bridge.
 
-```
+```text
 twin run --> EventPublisher --> tsx.<domain>.twin.<twin>.<run>.events.v1 (KafScale) --> EventBridge (SSE) --> Studio
 ```
 
@@ -34,7 +34,7 @@ An applied intervention appears on the event topic only as an event of type `int
 
 ## Commands
 
-```
+```text
 bin/opentsx twin-live publish --bootstrap host:9092 [--domain wind] [--scenario id] [--duration 120] [--loop]
 bin/opentsx twin-live bridge  --bootstrap host:9092 [--domain wind] [--port 8090] [--allow-origin *] [--max-streams 16]
 bin/opentsx twin-live demo    [--domain wind] [--port 8090] [--scenario id] [--duration 120]
@@ -61,32 +61,31 @@ source.
 
 ## Move consumers to the domain topic
 
-`publish` and `demo` write `tsx.<domain>.twin.<twin>.<run>.events.v1`. They do not write `twin.<id>.<run>.events`,
+`publish` and `demo` write `tsx.<domain>.twin.<twin>.<run>.events.v1`. They do not write `twin.<twin>.<run>.events`,
 and the bridge answers 400 for that name. Topics with the old name stay on the broker with the records they hold;
 delete them only on a broker where you created them.
 
 You need the domain the publisher runs with: its `--domain`, `wind` without it, `OPENTSX_DOMAIN` on k3s.
 
-1. Map the name. The twin id and the run id stay the same: `twin.<id>.<run>.events` becomes
-   `tsx.<domain>.twin.<id>.<run>.events.v1`.
-2. Or let `demo` print the names. It needs no broker and prints the topic of every scenario before it plays the
-   runs; stop it with Ctrl-C. `publish` prints the same lines before it writes.
+The twin id and the run id stay the same: `twin.<twin>.<run>.events` becomes
+`tsx.<domain>.twin.<twin>.<run>.events.v1`. `demo` prints the new names. It needs no broker and prints the topic of
+every scenario before it plays the runs; stop it with Ctrl-C. `publish` prints the same lines before it writes.
 
-   ```bash
-   bin/opentsx twin-live demo --domain wind
-   ```
+```bash
+bin/opentsx twin-live demo --domain wind
+```
 
-   ```
-   event bridge on http://localhost:8090, domain wind, with topics in memory (no broker, nothing reaches KafScale)
-   h2-chain: 9 events -> tsx.wind.twin.h2-chain.h2-chain-6734f91571b28b83.events.v1
-   haus: 7 events -> tsx.wind.twin.haus-erzgebirge.haus-erzgebirge-e0b53b1a33881fa8.events.v1
-   boot: 26 events -> tsx.wind.twin.boot-etap22.boot-etap22-e9c037dcea05c21a.events.v1
-   ```
+```text
+event bridge on http://localhost:8090, domain wind, with topics in memory (no broker, nothing reaches KafScale)
+h2-chain: 9 events -> tsx.wind.twin.h2-chain.h2-chain-6734f91571b28b83.events.v1
+haus: 7 events -> tsx.wind.twin.haus-erzgebirge.haus-erzgebirge-e0b53b1a33881fa8.events.v1
+boot: 26 events -> tsx.wind.twin.boot-etap22.boot-etap22-e9c037dcea05c21a.events.v1
+```
 
-3. Start the bridge with the same `--domain` as the publisher. On k3s the component `event-bridge` passes
-   `OPENTSX_DOMAIN`.
-4. Point every consumer at the new name. Open the Studio with `?domain=<domain>` or enter the domain in the field
-   "Domain" of the view Event topic.
+- Start the bridge with the same `--domain` as the publisher. On k3s the component `event-bridge` passes
+  `OPENTSX_DOMAIN`.
+- Point every consumer at the new name. Open the Studio with `?domain=<domain>` or enter the domain in the field
+  "Domain" of the view Event topic.
 
 ## Limits
 

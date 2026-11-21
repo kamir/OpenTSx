@@ -100,7 +100,7 @@ The Smart Topics Studio follows a topic through it: open the page with
 `opentsx twin-live publish --domain <domain>` (see `opentsx-twin-live/README.md`). `<domain>` is `OPENTSX_DOMAIN`.
 The bridge is read-only, serves only event topics of twin runs in its domain and has no authentication;
 `EVENT_BRIDGE_ALLOW_ORIGIN` narrows the origin it answers browsers from. It answers 400 for every other topic name,
-also for `twin.<id>.<run>.events`; see
+also for `twin.<twin>.<run>.events`; see
 [Move consumers to the domain topic](../../opentsx-twin-live/README.md#move-consumers-to-the-domain-topic).
 
 ## SaaS module: web workbench, accounts, stored flows

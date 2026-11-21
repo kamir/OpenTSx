@@ -24,9 +24,9 @@ entries before 3.0.0 are grouped by date.
   `EventTopicLiveTest` pin the name, and `tools/test_twin_topic_names.py` fails when code other than `TopicLayout`
   and the Studio builds a twin event topic name. CLAUDE.md states the topic rule as `tsx.<domain>.<kind>.v<n>` and
   names `TopicLayout` as the only source of topic names.
-  Migration: `twin.<id>.<run>.events` is no longer written, and the bridge no longer serves it. Topics with that
+  Migration: `twin.<twin>.<run>.events` is no longer written, and the bridge no longer serves it. Topics with that
   name stay on the broker; delete them only on a broker where you created them. The new name keeps the twin id and
-  the run id: `twin.<id>.<run>.events` becomes `tsx.<domain>.twin.<id>.<run>.events.v1`, where `<domain>` is the
+  the run id: `twin.<twin>.<run>.events` becomes `tsx.<domain>.twin.<twin>.<run>.events.v1`, where `<domain>` is the
   `--domain` of the publisher (`wind` without it, `OPENTSX_DOMAIN` on k3s).
   `bin/opentsx twin-live demo --domain <domain>` prints the topic of every scenario without a broker. Start the
   bridge with the publisher's domain, open the Studio with `?domain=<domain>`, and point every consumer that reads
