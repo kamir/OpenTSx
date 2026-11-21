@@ -92,6 +92,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- TASK-020 U01 delivery cursor: `TsxPlanServiceDeliveryCursorTest` and the Rust agent test
+  `agent_cursor_follows_the_site_sequence_across_jobs_through_restart_and_duplicate_ack` deliver job A at version 10
+  and then job B at version 1 to one site, restart, and repeat the acknowledgement. Job B is delivered and run, the
+  cursor is the site's delivery sequence, and a repeated identical acknowledgement is accepted while a changed one is
+  refused. Both tests fail when the cursor follows `planVersion`. No production code changes.
+
 - The workbench Deployments panel lists the `jobs` of `GET /v1/dags` apart from the deployments: job id, track, site
   when present, state, input record count and report age. A job in any state but `stopped` or `failed` without a
   report for 120 s is flagged. Jobs have no Stop, because Track A and B do not read the control topic.

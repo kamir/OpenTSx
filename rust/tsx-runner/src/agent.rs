@@ -1525,6 +1525,94 @@ mod tests {
             json!(tsx_contracts::sha256(signed));
     }
 
+    /// The fixture plan as job `job` at `version`, signed by the driver.
+    fn job_version(fixture: &Fixture, job: &str, version: i32) -> String {
+        let mut document = fixture.plan.document().clone();
+        document["job"] = json!(job);
+        document["planVersion"] = json!(version);
+        let mut assignment: Value =
+            serde_json::from_str(document["assignmentText"].as_str().unwrap()).unwrap();
+        assignment["deployment"] = json!(job);
+        assignment["generation"] = json!(version.to_string());
+        document["assignmentText"] = json!(assignment.to_string());
+        document["federation"]["expectedAssignments"][0]["generation"] = json!(version.to_string());
+        fixture.sign_document(&document)
+    }
+
+    fn deliver_job(runtime: &mut Fake, signed: &str, job: &str, version: i32, sequence: &str) {
+        runtime.pages.push_back(json!({"deliveries":[{"sequence":sequence,"job":job,"planVersion":version,"plan":signed}],"next":sequence}));
+        runtime.challenge["challenge"]["contract"] =
+            json!({"job":job,"planVersion":version,"commandHash":tsx_contracts::sha256(signed)});
+    }
+
+    /// TASK-020 U01 delivery cursor: the site cursor is the delivery sequence, not a job's plan version.
+    #[test]
+    fn agent_cursor_follows_the_site_sequence_across_jobs_through_restart_and_duplicate_ack() {
+        let fixture = Fixture::with_jobs(&["bounded-test", "bounded-other"]);
+        let mut runtime = Fake::new(&fixture);
+        let a10 = job_version(&fixture, "bounded-test", 10);
+        deliver_job(&mut runtime, &a10, "bounded-test", 10, "1");
+        assert_eq!(ok(poll(&fixture, &mut runtime))["state"], "completed");
+        let accepted_a = runtime.acknowledge();
+        assert_eq!(
+            (accepted_a["job"].clone(), accepted_a["planVersion"].clone()),
+            (json!("bounded-test"), json!(10))
+        );
+
+        // job B at version 1 after job A at version 10: delivered and run, not refused as an older version
+        let b1 = job_version(&fixture, "bounded-other", 1);
+        deliver_job(&mut runtime, &b1, "bounded-other", 1, "2");
+        runtime.failed_acks = 1;
+        assert!(matches!(
+            poll(&fixture, &mut runtime),
+            Err(Failure::Control(_))
+        ));
+        let (_, state) = load(&fixture.config, ARTIFACT).unwrap();
+        assert_eq!(
+            state.cursor, "1",
+            "the cursor moves only after the acknowledgement"
+        );
+        assert!(state.pending.is_some());
+
+        // restart: the next poll loads the saved state and repeats the identical acknowledgement before paging
+        let lost = runtime
+            .requests
+            .iter()
+            .rev()
+            .find(|(_, path, _)| path.ends_with("/ack"))
+            .unwrap()
+            .clone();
+        assert!(lost.1.ends_with("/deliveries/2/ack"));
+        assert_eq!(ok(poll(&fixture, &mut runtime))["state"], "completed");
+        let last = runtime.requests.last().unwrap();
+        assert_eq!(
+            (&last.1, &last.2),
+            (&lost.1, &lost.2),
+            "the repeated acknowledgement is byte-identical"
+        );
+        assert_eq!(
+            runtime.executions, 2,
+            "the repeated acknowledgement does not run job B again"
+        );
+        // the next page is requested after sequence 2, not after any plan version
+        runtime.pages.push_back(json!({"deliveries":[],"next":"2"}));
+        assert!(matches!(poll(&fixture, &mut runtime), Ok(None)));
+        assert!(runtime
+            .requests
+            .last()
+            .unwrap()
+            .1
+            .ends_with("/plans?after=2"));
+
+        let (_, state) = load(&fixture.config, ARTIFACT).unwrap();
+        assert_eq!(state.cursor, "2");
+        assert!(state.pending.is_none());
+        assert_eq!(
+            (state.latest["bounded-test"], state.latest["bounded-other"]),
+            (10, 1)
+        );
+    }
+
     #[test]
     fn agent_retains_older_identical_outcome_but_refuses_unseen_stale_activation() {
         let fixture = Fixture::new();
