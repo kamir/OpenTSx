@@ -164,8 +164,8 @@ A wire is **delayed** when the phase of its source atom is not earlier than the 
 wire delivers the value of the previous superstep (§5). The plan is not checked for cycles: every cycle contains at
 least one delayed wire, so every feedback loop crosses the superstep boundary.
 
-`TwinPlan.hash()` is the lower-case hex XxHash64 of the plan serialized as JSON with map keys sorted. It is part of
-every run id (§8).
+`TwinPlan.hash()` is the lower-case hex XxHash64 of the plan serialized as JSON with map keys sorted and doubles in
+their shortest decimal form (`2e23` as `2.0E23` on every JVM). It is part of every run id (§8).
 
 Implemented in: `TwinPlan.java:33-131,141-146,160-172`, `TwinRunner.java:65-73`, `Policies.java:31-37`; tests:
 `TwinPlanTest.java:28-47,65-79`.
