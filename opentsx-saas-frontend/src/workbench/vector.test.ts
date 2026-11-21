@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SOURCE_ID, deployChecks, evaluate, parseNodes, runBlocker, toDagYaml, toDefinition, toJavaCode, toPfdJson, useFlow, validate, vectorComponents } from './flow';
 import { OP_BY_ID, defaultParams } from './ops';
-import { Bucket, Series } from './types';
+import { Bucket, FlowNode, Series } from './types';
 import { VECTOR_OP, VECTOR_SCHEMA, alignVector, componentNames, suggestKey, vectorRecords } from './vector';
 
 const T0 = Date.parse('2026-10-01T00:00:00Z');
@@ -183,6 +183,17 @@ describe('align.vector', () => {
     expect(() => align(a, [spectrum])).toThrow(/FFT_a has a frequency axis/);
     expect(() => align(a, [], { every: 0 })).toThrow(/greater than 0/);
   });
+
+  it('refuses two series that give one component of one vector, with the rule and message of the processor', () => {
+    const anemometer = (id: string, turbine: string, y: number) => series(id, [0], [y], { metric: 'wind.met.wind_speed', tags: { turbine } });
+    const wind = timeBucket('wind', [anemometer('b', 'T02', 2), anemometer('a', 'T01', 1)]);
+    const nodes: FlowNode[] = [
+      { id: SOURCE_ID, op: 'source', params: {}, input: null, label: 'wind' },
+      { id: 'n1', op: VECTOR_OP, params: { ...defaultParams(OP_BY_ID[VECTOR_OP]), key: 'all' }, input: SOURCE_ID, inputs: [], label: 'Vector_wind' },
+    ];
+    expect(() => evaluate(wind, nodes, 'n1')).toThrow('the series a and b both give the component "wind_speed" of one vector; choose a key that tells them apart');
+    expect(vectorRecords(align(wind, [], { key: 'turbine' }), 'v').map((r) => [r.key, r.values])).toEqual([[{ turbine: 'T01' }, [1]], [{ turbine: 'T02' }, [2]]]);
+  });
 });
 
 interface VectorCase {
@@ -286,7 +297,7 @@ describe('flow with a vector node', () => {
     expect(label).toBe('Vector_ws_T05');
     state().setSink(v, 'tsx.wind.smart.vector-ws-t05.vectors.v1');
     const yaml = toDagYaml(state());
-    expect(yaml).toContain(`  - id: ${v}\n    op: align.vector   # not in the stream operator catalog\n    in: [decode, ${z}, ${sm}]\n`);
+    expect(yaml).toContain(`  - id: ${v}\n    op: align.vector\n    in: [decode, ${z}, ${sm}]\n`);
     expect(yaml).toContain('params: { every: PT60S, key: series, agg: MEAN, emit: any, names: [raw, standardized, smooth] }');
     expect(yaml).toContain(`  - { from: ${v}, topic: tsx.wind.smart.vector-ws-t05.vectors.v1, schema: opentsx.vector.v1 }`);
     expect(yaml).toContain(`  - id: ${z}\n`);
@@ -372,6 +383,15 @@ describe('flow with a vector node', () => {
     // several channels of one turbine: one vector of that turbine
     expect(suggestKey(timeBucket('b', [s('a', 'ws', 'T01'), s('b', 'pa', 'T01')]))).toMatch(/^(turbine|park)$/);
     expect(suggestKey(timeBucket('b', [series('x', [0], [1]), series('y', [0], [1])]))).toBe('series');
+  });
+
+  it('suggests no key whose vector the operator refuses: rotor and generator speed both give the component speed', () => {
+    const s = (id: string, metric: string, turbine: string) => series(id, [0], [1], { metric, tags: { park: 'p', turbine } });
+    const speeds = timeBucket('speeds', [s('r1', 'wind.rotor.speed', 'T01'), s('g1', 'wind.generator.speed', 'T01'), s('r2', 'wind.rotor.speed', 'T02'), s('g2', 'wind.generator.speed', 'T02')]);
+    const key = suggestKey(speeds);
+    expect(align(speeds, [], { key }).vector?.components).toEqual(['speeds']);
+    expect(key).toBe('series');
+    expect(() => align(speeds, [], { key: 'turbine' })).toThrow('the series g1 and r1 both give the component "speed" of one vector; choose a key that tells them apart');
   });
 
   it('names the further inputs in the descriptor and the Java export', () => {

@@ -3503,6 +3503,7 @@
       ],
       "pitfalls": [
         "Both inputs must carry a time axis.",
+        "Two series that give the same component of one vector are refused, as the vector processor refuses them; choose a key that tells them apart.",
         "Lateness configures the running processor and does not delay this batch apply call.",
         "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights.",
         "A missing fill is none. A fill other than none or as-of, such as asof, is refused with the message \"vector fill must be none or as-of\", as the Rust runner and the vector processor refuse it."

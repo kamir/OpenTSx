@@ -7,7 +7,7 @@
 import { create } from 'zustand';
 import { checkBrowserWork } from './workLimits';
 import { PROCESSOR_SERIES_OPS, capabilityOf } from './capabilities';
-import { OP_BY_ID, defaultParams } from './ops';
+import { OP_BY_ID, defaultParams, inCatalog } from './ops';
 import { Bucket, FlowNode, Params, SignalContext, SourceInfo, WayangConfig } from './types';
 import { VECTOR_OP, VECTOR_SCHEMA, componentNames } from './vector';
 
@@ -675,7 +675,7 @@ export function validate(nodes: FlowNode[]): Finding[] {
     const other = topics.get(s.sinkTopic!);
     if (other) out.push({ level: 'error', text: `${other} and ${s.label} write to the same topic ${s.sinkTopic}.` });
     topics.set(s.sinkTopic!, s.label);
-    const missing = upstream(nodes, s.id).filter((n) => n.op !== 'source' && !OP_BY_ID[n.op]?.inCatalog);
+    const missing = upstream(nodes, s.id).filter((n) => n.op !== 'source' && !inCatalog(n.op));
     if (missing.length > 0) {
       out.push({
         level: 'warning',
@@ -729,7 +729,7 @@ export function toDagYaml(s: FlowDoc): string {
     const op = OP_BY_ID[n.op];
     const params = dagParams(s.nodes, n, toSeries.has(n.id));
     lines.push(`  - id: ${n.id}`);
-    lines.push(`    op: ${op?.dagOp ?? n.op}${op?.inCatalog ? '' : '   # not in the stream operator catalog'}`);
+    lines.push(`    op: ${op?.dagOp ?? n.op}${inCatalog(n.op) ? '' : '   # not in the stream operator catalog'}`);
     if (n.op.startsWith('pair.')) lines.push('    experimental: true');
     lines.push(`    in: [${inputsOf(n).map((i) => (i === SOURCE_ID ? 'decode' : i)).join(', ')}]`);
     if (typeof params === 'string') lines.push(`    params: ${params}`);

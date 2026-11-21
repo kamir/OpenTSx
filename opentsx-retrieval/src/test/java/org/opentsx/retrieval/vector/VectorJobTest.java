@@ -52,7 +52,7 @@ class VectorJobTest {
 
     static final String VECTOR_NODE = """
             - id: n1
-              op: align.vector   # not in the stream operator catalog
+              op: align.vector
               in: [decode]
               params: { every: PT60S, key: turbine, agg: MEAN, emit: any, names: [state] }
             """;

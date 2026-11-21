@@ -13,7 +13,7 @@ Read the lesson's source, manual, SPEC and test references before choosing its r
 
 | Surface | Meaning |
 | --- | --- |
-| UI operator | An executable `OPS` entry in the workbench. Membership in an older streaming catalog is a separate property. |
+| UI operator | An executable `OPS` entry in the workbench. Membership in the frozen [catalog 1](../../systems/catalogs/tsx-catalog-1.yaml) is a separate property; the DAG export marks operators outside it. |
 | Java or Python library | A public numerical entry point. A library implementation alone does not supply a DAG binding or a Wayang mapping. |
 | Processor DAG | An operator accepted by the current series/vector processor, with that runtime's parameters and state rules. |
 | Wayang | An implemented mapping or infrastructure entry point, separately identified by the lesson. A pure Java kernel alone does not establish a mapping. |
