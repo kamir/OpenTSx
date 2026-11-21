@@ -1431,7 +1431,8 @@
         "Lose a terminal-status response, keep the job generation current until its delivery acknowledgement is durable, then replay that acknowledgement after a driver restart.",
         "Inspect how a qualified Rust runtime version, executable digest and state ABI enter the aggregate inventory fingerprint and prevent silent reuse of incompatible completeness state.",
         "Reject changed or stale physical admission facts after preparation and verify that publication and acknowledged checkpoint progress remain unchanged.",
-        "Compare exact retained physical-plan retry with substitution of a different topic incarnation; preserve the original source bytes and accepted clock."
+        "Compare exact retained physical-plan retry with substitution of a different topic incarnation; preserve the original source bytes and accepted clock.",
+        "On the signed site path, deliver job A at version 10, then job B at version 1 to one site; preserve delivery sequences 1 and 2 across restart, repeat the identical acknowledgement without another execution, and reject a changed acknowledgement."
       ],
       "starter": {
         "language": "java",
@@ -1560,7 +1561,9 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPhysicalDeploymentTest.java",
           "rust/tsx-contracts/tests/physical_vectors.rs",
           "rust/tsx-runner/tests/physical_deployment.rs",
-          "opentsx-saas-backend/tests/test_wayang_physical.py"
+          "opentsx-saas-backend/tests/test_wayang_physical.py",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceDeliveryCursorTest.java#jobBVersionOneFollowsJobAVersionTenThroughRestartAndDuplicateAcknowledgement",
+          "rust/tsx-runner/src/agent.rs#agent_cursor_follows_the_site_sequence_across_jobs_through_restart_and_duplicate_ack"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/physical-deployment.v1.json"
@@ -1601,7 +1604,8 @@
         "Compare separate trusted host facts with pinned capabilities, topic incarnations and permitted sites before preparation and activation.",
         "Run the offline ownership upgrade against synthetic completed history; retain history and refuse active or ambiguous legacy ownership. Reject a partial persisted journal at startup without recreating missing tables, and keep a control for a new journal.",
         "Compare successful injected-provider execution with the default Rust provider deployment.incarnation refusal; do not interpret passing schema validation as live recreation fencing.",
-        "Inspect the opentsx.computation.v1 frame inside computationText; reject a missing or unknown encoding version before interpreting its inner tagged value."
+        "Inspect the opentsx.computation.v1 frame inside computationText; reject a missing or unknown encoding version before interpreting its inner tagged value.",
+        "On the signed site path, deliver job A at version 10, then job B at version 1 to one site; preserve delivery sequences 1 and 2 across restart, repeat the identical acknowledgement without another execution, and reject a changed acknowledgement."
       ],
       "starter": {
         "language": "java",
@@ -1721,7 +1725,9 @@
           "rust/tsx-contracts/tests/physical_vectors.rs",
           "rust/tsx-runner/tests/physical_deployment.rs",
           "opentsx-saas-backend/tests/test_wayang_physical.py",
-          "opentsx-saas-frontend/src/workbench/WayangRunPanel.test.tsx"
+          "opentsx-saas-frontend/src/workbench/WayangRunPanel.test.tsx",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceDeliveryCursorTest.java#jobBVersionOneFollowsJobAVersionTenThroughRestartAndDuplicateAcknowledgement",
+          "rust/tsx-runner/src/agent.rs#agent_cursor_follows_the_site_sequence_across_jobs_through_restart_and_duplicate_ack"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/execution-contracts.v1.json",

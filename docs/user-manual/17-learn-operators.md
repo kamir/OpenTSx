@@ -147,7 +147,11 @@ These operational exercises add admission and delivery checks:
    retained-cut, fingerprint and complete-series checks in `conform`.
 3. Follow a delivery through persisted outcome, acknowledgement and cursor
    advancement. Retry a lost acknowledgement after conformance expires and
-   distinguish that recovery from a fresh activation.
+   distinguish that recovery from a fresh activation. Deliver job A at version 10, then job B at version 1 to the
+   same site. Use
+   [`TsxPlanServiceDeliveryCursorTest`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceDeliveryCursorTest.java)
+   and the Rust cursor regression in [`agent.rs`](../../rust/tsx-runner/src/agent.rs) to check durable sequences 1
+   and 2 across restart, identical acknowledgement replay and changed acknowledgement refusal.
 4. Run the linked complete-W offline fixture. Keep the signal path unreachable
    during site execution, then inspect full partial records and closed-cut
    evidence through forwarding, target-acknowledgement loss, restart and
