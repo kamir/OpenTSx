@@ -191,7 +191,10 @@ public class ReturnIntervallStatistik2 {
             probSKALIERT[i] = probSKALIERT[i] + ris.probSKALIERT[i];
             dataSKALIERT[i] = dataSKALIERT[i] + 1;
         }
-        
+        for( int i = 0; i < data.length; i++ ) {
+            data[i] = data[i] + ris.data[i];
+        }
+
         allRqs.add(ris._Rq);
         
         if ( LOG.isDebugEnabled() ) {
@@ -404,8 +407,12 @@ public class ReturnIntervallStatistik2 {
     private void calcContainerMR() throws Exception {
         
         mrVerteilungSkaliert = new TimeSeriesObject( name + " (res=" + ((double)scale/(double)binning) );
-        
-        
+        mrHaeufigkeit = new TimeSeriesObject( name );
+
+        for (int i = 0; i < data.length; i++) {
+            mrHaeufigkeit.addValuePair( (double)i / (double)scale, data[i] );
+        }
+
         for (int i = 0; i < dataSKALIERT.length; i++) {
             if ( dataSKALIERT[i] != 0 ) {
                 double vx = ((double)i + 0.5) * (double)scale / (double)binning;
@@ -659,11 +666,9 @@ public class ReturnIntervallStatistik2 {
     
     /**
      * Bins the return intervals of m: the distances in days, one value per day, between consecutive values of at
-     * least 0.5. Adds the scaled distribution of a container that holds the result to mrvB.
+     * least 0.5. Adds the scaled distribution and the counts of a container that holds the result to mrvB and mrv2B.
      */
     public static void addRowB( TimeSeriesObject m ) throws Exception {
-        
-        Vector<Double> data1 = m.yValues;
         
         ReturnIntervallStatistik2 ris1 = new ReturnIntervallStatistik2( 
                m.getLabel() , binning, scale);

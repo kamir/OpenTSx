@@ -1006,8 +1006,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `DockerImageTest` fails when `ENV_CONTEXT` names a file that is not in `src/main/docker-compose/config/`, and it
   checks every YAML file under `src/main/` for a list entry `- name:` without a value.
 - `opentsx-core`, `opentsx-connectors`, `opentsx-lg`: the READMEs say that `mvn -q` sets the JVM system property
-  `org.slf4j.simpleLogger.defaultLogLevel` to `error`, which wins over `conf/simplelogger.properties` and hides the
-  INFO and WARN lines of `mvn exec:java`; run it without `-q` to see them.
+  `org.slf4j.simpleLogger.defaultLogLevel` to `error`, which wins over the default level in
+  `conf/simplelogger.properties` and hides the INFO and WARN lines that `mvn exec:java` writes for the OpenTSx
+  loggers. The loggers that file sets to `warn` (`org.apache.kafka`, `org.apache.iceberg`, `org.apache.hadoop`,
+  `org.apache.parquet` and `software.amazon`) keep that level and print their WARN lines also with `-q`.
 - docs: the business documents in `docs/business/` (the market research on digital twins that couple live and
   simulated data, customers and benefits, the marketing campaign and the campaign briefing page
   `kampagnen-briefing.html`) are in English. Their file names stay until the German file names are renamed.
@@ -1015,6 +1017,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `tools/check_tracked_config.py` searches each line once for all deny list words together and runs the per-word
   search only on lines that match. With 300 words that share no prefix it takes 12 s instead of 98 s over the
   repository.
+- `opentsx-core`: the README and the `RISTool._addData` Javadoc name the second cause of `logLineToFile:
+  RISTool.projekt is not set; set RISTool.projekt before writing to the log LENGTH`. `_addData` writes a series whose
+  intervals add up to more than 7200 hours to the log `LENGTH`, which needs `RISTool.projekt`.
 
 ### Removed
 
@@ -1222,6 +1227,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   ConfigMap templates) or `src/main/docker-compose/krake-metrics-provider` (Prometheus and Grafana for that demo).
 - `archive/demos/opentsx-clusters/cp-multiregion/docker-compose.yml.orig`, a leftover copy of the compose file. The
   cp-multiregion README no longer links the missing logo and the removed `multi-datacenter` demo.
+- `opentsx-core`: the unused local `data1` of `ReturnIntervallStatistik2.addRowB`.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -2812,6 +2818,20 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `broker..test`, or a label of more than 63 characters with `<file>: mqtt.host: <value> is not allowed; expected a
   host name or an IP address as a JSON string whose dot-separated labels have 1 to 63 characters`. Every refused
   `mqtt.host` names these allowed values. Such a host used to end in a `UnicodeError` traceback at the connect.
+- `opentsx-core`: `RISTool.addDistData` counts a scaled interval below 0 in the first scaled bin, as
+  `ReturnIntervallStatistik2` does. This happens only when `RISTool.offset` is below 0 and negative intervals are
+  kept: with offset -5, the intervals -3 and 1 give R_q -1 and the probability 0.5 in scaled bins 0 and 15. It threw
+  `ArrayIndexOutOfBoundsException` after it had already replaced the result.
+- `opentsx-core`: a `ReturnIntervallStatistik2` container adds up the interval counts of the results it adds, and its
+  `calcMessreihen()` writes them to `mrHaeufigkeit`, named after the container. The count charts that
+  `ReturnIntervallStatistik2.main` opens from `addRow` and `addRowB` (`mrv2`, `mrv2B`) now show the counts of each
+  row. They held empty series before.
+- `opentsx-core`: `TimeSeriesObject.shuffleYValues()` and `shuffleYValues(rounds)` draw the new order from
+  `RNGWrapper`, so calling `RNGWrapper.init(seed)` before a shuffle gives the same order again. This also applies to
+  `MFDFAAnalyzer.processMFDFA` with `doShuffle` true; `MFDFAAnalyzer.process` calls `RNGWrapper.init()` first and so
+  shuffles in the same order on every call. Without `RNGWrapper.init`, a program gets the same orders on every run, as
+  it does for the other `RNGWrapper` draws. Before, they used the unseeded generator of `Collections.shuffle`, so even
+  a seeded run was not reproducible.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

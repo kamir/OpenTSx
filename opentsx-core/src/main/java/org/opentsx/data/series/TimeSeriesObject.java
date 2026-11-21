@@ -1749,24 +1749,24 @@ public class TimeSeriesObject implements Serializable {
     }
     
     /**
-     * Use Collections for shuffelfing the content of
-     * the yValues Vector.
+     * Puts the y values into a random order drawn from RNGWrapper, so RNGWrapper.init(seed) before the call gives
+     * the same order again.
      */
     public void shuffleYValues() {
-        Collections.shuffle( this.yValues );
-        
+        for ( int i = this.yValues.size(); i > 1; i-- ) {
+            Collections.swap( this.yValues, i - 1, (int) RNGWrapper.getStdRandomUniform( 0, i ) );
+        }
     }
-    
-        /**
-     * Use Collections for shuffelfing the content of
-     * the yValues Vector.
+
+    /**
+     * Shuffles the y values max times with shuffleYValues() and appends " (s<max>)" to the label.
      */
     public void shuffleYValues( int max ) {
         String label = this.getLabel();
         this.setLabel(label+" (s"+max+")");
         int i = 0;
         while( i < max ) {
-            Collections.shuffle( this.yValues );
+            shuffleYValues();
             i++;
         }
     }

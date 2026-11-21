@@ -16,6 +16,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
 import java.util.stream.Stream;
@@ -220,6 +221,40 @@ class RISToolTest {
         UncheckedIOException e = assertThrows(UncheckedIOException.class, () -> ris._addData(times));
 
         assertEquals("LENGTH: cannot write the log line (" + e.getCause() + ")", e.getMessage());
+    }
+
+    @Test
+    void aSeriesThatIsTooLongIsRefusedNamingTheLogLengthWhenTheProjectIsNotSet() {
+        RISTool.offset = 0;
+        RISTool.projekt = null;
+        RISTool ris = new RISTool("long", 12, 10);
+        int tooLong = RISTool.errosLENGTH;
+
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> ris._addData(times(0.0, 7201.0 * 60 * 60 * 1000)));
+
+        assertEquals("logLineToFile: RISTool.projekt is not set; set RISTool.projekt before writing to the log LENGTH",
+                e.getMessage());
+        assertEquals(List.of(), ris.dataRawTIMES);
+        assertEquals(List.of(), ris.dataRawFILTERED);
+        assertEquals(tooLong, RISTool.errosLENGTH);
+    }
+
+    @Test
+    void aNegativeIntervalKeptWithAnOffsetBelow0IsCountedInTheFirstScaledBin() throws Exception {
+        RISTool.offset = -5;
+        RISTool ris = new RISTool("negative", 12, 10);
+        ris.addDistData(new Vector<>(List.of(2.0, 4.0)));
+
+        ris.addDistData(new Vector<>(List.of(-3.0, 1.0)));
+
+        int[] scaled = new int[41];
+        scaled[0] = 1;
+        scaled[15] = 1;
+        assertEquals(List.of(-3.0, 1.0), ris.dataRawFILTERED);
+        assertEquals(-1.0, ris.getRq());
+        assertArrayEquals(scaled, ris.dataSKALIERT);
+        assertEquals(1.0, Arrays.stream(ris.probSKALIERT).sum(), 1e-12);
     }
 
     private OriginProject project(String folder) throws Exception {

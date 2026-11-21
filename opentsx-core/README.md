@@ -32,8 +32,11 @@ that logger decides which lines appear. The public `debug` fields of `DFACore`, 
 `verbose` fields of `RISTool`, `ReturnIntervallStatistik2` and `TSPropertyTester` are deprecated and have no effect.
 `bin/opentsx` and `mvn -f opentsx-core/pom.xml exec:java`, which `bin/000_launch_tsa_workbench.sh` runs when Maven is
 on `PATH`, put `slf4j-simple` and `conf/simplelogger.properties` on the class path, so the default level is `info`.
-`mvn -q` sets the JVM system property `org.slf4j.simpleLogger.defaultLogLevel` to `error`, which wins over
-`conf/simplelogger.properties` and hides the INFO and WARN lines; run `exec:java` without `-q` to see them.
+`mvn -q` sets the JVM system property `org.slf4j.simpleLogger.defaultLogLevel` to `error`, which wins over the
+default level in `conf/simplelogger.properties` and hides the INFO and WARN lines of the OpenTSx loggers and of every
+other logger without its own level in that file; run `exec:java` without `-q` to see them. The loggers that file sets
+to `warn` (`org.apache.kafka`, `org.apache.iceberg`, `org.apache.hadoop`, `org.apache.parquet` and `software.amazon`)
+keep that level and print their WARN lines also with `-q`.
 Raise the level of one class with a JVM system property:
 
 ```bash
@@ -373,8 +376,11 @@ is not a whole number throws `IllegalArgumentException` with
 
 `RISTool.addDistData(intervals)` sorts the intervals into bins scaled with their mean R_q. It computes R_q with
 `ReturnIntervallStatistik2.meanOf(values)`, which stays finite when the sum of the values overflows, so the intervals
-1.7e308 and 1.7e308 give R_q 1.7e308. It opens no window and writes nothing to standard output. `add(result)` adds the
-probabilities of a single result to a container instance.
+1.7e308 and 1.7e308 give R_q 1.7e308. `addDistData` keeps negative intervals only when `RISTool.offset` is below 0,
+and then only those at or above the offset. A scaled interval below 0 is counted in the first scaled bin and one past
+the last bin in the last bin, so the probabilities add up to 1: with offset -5, the intervals -3 and 1 give R_q -1,
+and 1 / -1 counts in scaled bin 0 and -3 / -1 in scaled bin 15. It opens no window and writes nothing to standard
+output. `add(result)` adds the probabilities of a single result to a container instance.
 Errors stop the call:
 
 | Problem | Exception and message |
@@ -390,7 +396,7 @@ Errors stop the call:
 | `RISTool.initRqMIN()` was not called | `IllegalStateException`: `add: RISTool.rqMIN is not set; call RISTool.initRqMIN() before adding <name>, which has <n> intervals` |
 | `RISTool.initRqCollectors()` was not called while `RISTool.offset` is not 0 | `IllegalStateException`: `add: RISTool.debug1 is not set while RISTool.offset is <offset>; call RISTool.initRqCollectors() before adding <name>, which has <n> intervals` |
 | `setLofFileNameKey_1` was not called when `addDistData` leaves out intervals below a `RISTool.offset` that is not 0 | `IllegalStateException`: `RISTool.addDistData: no log name set; call setLofFileNameKey_1 before intervals below offset are left out` |
-| `RISTool.projekt` is not set when `addDistData` leaves out intervals below a `RISTool.offset` that is not 0 | `IllegalStateException`: `logLineToFile: RISTool.projekt is not set; set RISTool.projekt before writing to the log <log>` |
+| `RISTool.projekt` is not set when `addDistData` leaves out intervals below a `RISTool.offset` that is not 0, or when `_addData` writes a series whose intervals add up to more than 7200 hours to the log `LENGTH` | `IllegalStateException`: `logLineToFile: RISTool.projekt is not set; set RISTool.projekt before writing to the log <log>` |
 | `RISTool.projekt` has no log of that name | `IllegalStateException`: `logLine: <folder> has no log named <log>; call createLogFile with that name first` |
 | a log line cannot be written | `UncheckedIOException`: `<log>: cannot write the log line (<cause>)` |
 
@@ -404,7 +410,10 @@ divided by the lower bound of its interval range gets a line in the log `RqTooLa
 to the log named by `setLofFileNameKey_1`, which needs `RISTool.projekt` as well. `RISTool._addData(times)` adds the
 intervals between consecutive times in milliseconds as hours with `addDistData`, so times 0, 3600000 and 10800000 add
 the intervals 1.0 and 2.0. It writes a series whose intervals add up to more than 7200 hours to the log `LENGTH`
-instead. It refuses a time that is NaN or infinite, a time before the time before it and a time more than
+instead, which needs `RISTool.projekt` as well: without it, times 0 and 25923600000 (7201 hours) throw
+`IllegalStateException` with
+`logLineToFile: RISTool.projekt is not set; set RISTool.projekt before writing to the log LENGTH`.
+It refuses a time that is NaN or infinite, a time before the time before it and a time more than
 `Double.MAX_VALUE` after it with the `IllegalArgumentException` messages of `ReturnIntervallStatistik2._addData` below.
 Equal times give an interval of 0, which `addDistData` refuses while `RISTool.offset` is 0. A call that `_addData` or
 `addDistData` refuses, or whose log line cannot be written, adds nothing: the result keeps the intervals, R_q and
@@ -457,6 +466,11 @@ adds the result shows, and with `offset` 1 the `TSPropertyTester` intervals -3 a
 share 0.5 at 5/12 and at 35/12. A result that keeps no interval has an empty `mrVerteilung` and an empty
 `mrVerteilungSkaliert`, and its `mrHaeufigkeit` holds the count 0 for each bin. Each call of
 `calcMessreihen()` replaces the series of the call before.
+A `ReturnIntervallStatistik2` container adds up these counts of the results it adds, and its `calcMessreihen()`
+writes the sum of bin i at i / `scale` to `mrHaeufigkeit`, named after the container. `addRow(series)` and
+`addRowB(series)` add this series of a container that holds their result to `mrv2` and `mrv2B`, which `main` charts:
+with binning 12 and scale 10, `addRow` of the values 0.15, 0.25, 0.25, 0.55 and 3.0 adds the counts 1 at 0.1, 2 at
+0.2, 1 at 0.5 and 1 at 1.2, and `addRowB` the count 1 at 1.0 for the interval between the values 0.55 and 3.0.
 `SingleTsRISTool` passes the y values of each series as times and adds the result to `risCollector`. For each series
 it writes one line: the label, two tabs, the R_q of the result and a tab. R_q is the mean of the kept intervals, so the
 values 0, 2, 5 and 9 give 3.0. A series that keeps no interval, for example the values 3, 3 and 3, a single value or
@@ -531,8 +545,12 @@ An empty or blank `OPENTSX_LOG_LEVEL` counts as unset, and blanks around a level
 `RNGWrapper` draws from one `java.util.Random` with the seed `RNGWrapper.DEFAULT_SEED` (1), so a program gets the
 same numbers in the same order on every run. It needs no init call. `RNGWrapper.init(seed)` starts the sequence again
 with that seed, and `RNGWrapper.init()` with seed 1. `TimeSeriesObject.getGaussianDistribution(n, mean, sd)` and the
-other random series of `TimeSeriesObject` draw from it. `RNGWrapper.getStdPoisson(lambda)` draws a Poisson number with
-mean `lambda`.
+other random series of `TimeSeriesObject` draw from it. `TimeSeriesObject.shuffleYValues()` draws the new order of the
+y values from it as well, so `RNGWrapper.init(seed)` before a shuffle gives the same order again; this also holds for
+`shuffleYValues(rounds)`, which shuffles `rounds` times and appends ` (s<rounds>)` to the label, and for
+`MFDFAAnalyzer.processMFDFA` with `doShuffle` true. `MFDFAAnalyzer.process` calls `RNGWrapper.init()` first, so its
+shuffled analysis uses seed 1 and gives the same orders for the same rows on every call, whatever seed the caller set.
+`RNGWrapper.getStdPoisson(lambda)` draws a Poisson number with mean `lambda`.
 
 ## Configure the 2.x tools
 

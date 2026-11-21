@@ -820,7 +820,7 @@ const PAIR_HINT =
 export const OPS: OpDef[] = [
   // Tab "Transformations" of the Swing panel
   { id: 'shuffle', label: 'Shuffle', group: 'transform', prefix: 'Shuffle_', pfdOperation: 'shuffleYValues', inCatalog: false,
-    hint: 'Shuffles the y values. Seeded, so the flow is reproducible (Java uses Collections.shuffle).',
+    hint: 'Shuffles the y values. Seeded, so the flow is reproducible (Java draws from RNGWrapper, so its order for the same seed differs from this one).',
     params: [
       { key: 'rounds', label: 'rounds', type: 'number', default: 1, min: 1 },
       { key: 'seed', label: 'seed', type: 'number', default: 1 },

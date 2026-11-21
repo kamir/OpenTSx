@@ -471,7 +471,7 @@ class ReturnIntervallStatistik2Test {
     void addingARowLogsTheRqOfItsResultAndNotTheMeanOfTheValuesReadAsTimes() throws Exception {
         TimeSeriesObject series = new TimeSeriesObject();
         series.setLabel("row");
-        for (double y : new double[] {1.0, 2.0, 6.0}) {
+        for (double y : new double[] {0.0, 1.0, 2.0, 6.0}) {
             series.addValue(y);
         }
         ReturnIntervallStatistik2.mrv = new Vector<>();
@@ -482,7 +482,8 @@ class ReturnIntervallStatistik2Test {
             String log = stderrOf(() -> ReturnIntervallStatistik2.addRow(series));
 
             assertTrue(log.contains("mean interval series=row rq=3.0"), log);
-            assertFalse(log.contains("mean interval series=row rq=2.5"), log);
+            assertFalse(log.contains("mean interval series=row rq=2.0"), log);
+            assertFalse(log.contains("mean interval series=row rq=2.25"), log);
         } finally {
             ReturnIntervallStatistik2.mrv = null;
             ReturnIntervallStatistik2.mrv2 = null;
@@ -509,6 +510,52 @@ class ReturnIntervallStatistik2Test {
             assertEquals(1, ReturnIntervallStatistik2.mrvB.size());
             assertEquals(List.of(List.of(1.25, 1.0)), pointsWithAShare(ReturnIntervallStatistik2.mrvB.get(0)));
         } finally {
+            ReturnIntervallStatistik2.mrvB = null;
+            ReturnIntervallStatistik2.mrv2B = null;
+        }
+    }
+
+    @Test
+    void aContainerAddsUpTheCountsOfItsResultsInItsCountSeries() throws Exception {
+        ReturnIntervallStatistik2 first = new ReturnIntervallStatistik2("first", 12, 10);
+        ReturnIntervallStatistik2 second = new ReturnIntervallStatistik2("second", 12, 10);
+        ReturnIntervallStatistik2 container = new ReturnIntervallStatistik2("all", 12, 10);
+        container.isContainerInstanz = true;
+        first.addDistData(new Vector<>(List.of(0.15, 0.25)));
+        second.addDistData(new Vector<>(List.of(0.25, 0.55, 3.0)));
+
+        container.add(first);
+        container.add(second);
+        container.calcMessreihen();
+        container.calcMessreihen();
+
+        assertSeries(new double[] {0, 1, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1}, 1.0, container.mrHaeufigkeit);
+        assertEquals("all", container.mrHaeufigkeit.getLabel());
+    }
+
+    @Test
+    void addingARowChartsTheCountsOfItsIntervalsAndOfTheIntervalsBetweenItsPeaks() throws Exception {
+        TimeSeriesObject series = new TimeSeriesObject();
+        series.setLabel("counts");
+        for (double y : new double[] {0.15, 0.25, 0.25, 0.55, 3.0}) {
+            series.addValue(y);
+        }
+        ReturnIntervallStatistik2.binning = 12;
+        ReturnIntervallStatistik2.scale = 10;
+        ReturnIntervallStatistik2.mrv = new Vector<>();
+        ReturnIntervallStatistik2.mrv2 = new Vector<>();
+        ReturnIntervallStatistik2.mrvB = new Vector<>();
+        ReturnIntervallStatistik2.mrv2B = new Vector<>();
+        try {
+            ReturnIntervallStatistik2.addRow(series);
+
+            assertEquals(1, ReturnIntervallStatistik2.mrv2.size());
+            assertEquals(1, ReturnIntervallStatistik2.mrv2B.size());
+            assertSeries(new double[] {0, 1, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1}, 1.0, ReturnIntervallStatistik2.mrv2.get(0));
+            assertSeries(new double[] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0}, 1.0, ReturnIntervallStatistik2.mrv2B.get(0));
+        } finally {
+            ReturnIntervallStatistik2.mrv = null;
+            ReturnIntervallStatistik2.mrv2 = null;
             ReturnIntervallStatistik2.mrvB = null;
             ReturnIntervallStatistik2.mrv2B = null;
         }

@@ -2172,7 +2172,7 @@ Puts the values of each series into a random order (Fisher-Yates from the last v
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | available | operator `shuffle` | Drops the ground-truth marks of the bucket: the values have left their place in time. |
-| java | available (2.x) | `org.opentsx.data.series.TimeSeriesObject#shuffleYValues` | 2.x model in opentsx-core: shuffleYValues(rounds) shuffles in place with Collections.shuffle and no seed, so every call gives another order. No automated test. Surrogates by shuffling in a clean-room Java library are planned in TASK-015 P8.1. |
+| java | available (2.x) | `org.opentsx.data.series.TimeSeriesObject#shuffleYValues` | 2.x model in opentsx-core: shuffleYValues(rounds) shuffles in place rounds times, Fisher-Yates from the last value down, with numbers drawn from RNGWrapper (java.util.Random, seed 1 until RNGWrapper.init(seed)), so RNGWrapper.init(seed) before the call gives the same order again. The order differs from the workbench, which draws from Mulberry32. TimeSeriesObjectShuffleTest checks that the same seed gives the same order. Surrogates by shuffling in a clean-room Java library are planned in TASK-015 P8.1. |
 | python | none |  | isi_shuffle in opentsx.algorithms.event_sync shuffles the intervals between events, not the values (operator surrogate.isi-shuffle). |
 | processor | none |  |  |
 | go | none |  |  |

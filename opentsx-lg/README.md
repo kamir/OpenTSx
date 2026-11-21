@@ -314,5 +314,8 @@ rounds end. It prints one line per round on stdout:
 
 The tools log through SLF4J. `mvn exec:java` in this module and the jar of the `SimpleTimeSeriesProducer` profile carry
 slf4j-simple with [`conf/simplelogger.properties`](../conf/simplelogger.properties), so INFO and higher lines go to
-stderr. `mvn -q` sets the JVM system property `org.slf4j.simpleLogger.defaultLogLevel` to `error`, which wins over that
-file and hides the INFO and WARN lines of `mvn exec:java`; run it without `-q` to see them.
+stderr. `mvn -q` sets the JVM system property `org.slf4j.simpleLogger.defaultLogLevel` to `error`, which wins over the
+default level in that file and hides the INFO and WARN lines that `mvn exec:java` writes for the OpenTSx loggers and
+for every other logger without its own level there; run it without `-q` to see them. The loggers that file sets to
+`warn` (`org.apache.kafka`, `org.apache.iceberg`, `org.apache.hadoop`, `org.apache.parquet` and `software.amazon`) keep
+that level, so the Kafka clients print their WARN lines also with `-q`.

@@ -24,9 +24,11 @@ runtimes:
     status: available
     class: "org.opentsx.data.series.TimeSeriesObject#shuffleYValues"
     note: >-
-      2.x model in opentsx-core: shuffleYValues(rounds) shuffles in place with Collections.shuffle and no seed, so
-      every call gives another order. No automated test. Surrogates by shuffling in a clean-room Java library are
-      planned in TASK-015 P8.1.
+      2.x model in opentsx-core: shuffleYValues(rounds) shuffles in place rounds times, Fisher-Yates from the last
+      value down, with numbers drawn from RNGWrapper (java.util.Random, seed 1 until RNGWrapper.init(seed)), so
+      RNGWrapper.init(seed) before the call gives the same order again. The order differs from the workbench, which
+      draws from Mulberry32. TimeSeriesObjectShuffleTest checks that the same seed gives the same order. Surrogates by
+      shuffling in a clean-room Java library are planned in TASK-015 P8.1.
   python: { status: none, note: "isi_shuffle in opentsx.algorithms.event_sync shuffles the intervals between events, not the values (operator surrogate.isi-shuffle)." }
   processor: { status: none }
   go: { status: none }

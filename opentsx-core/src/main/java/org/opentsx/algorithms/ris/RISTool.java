@@ -231,6 +231,10 @@ public class RISTool {
      *  
      * @throws IllegalArgumentException when a time is not finite, is before the time before it or is more than
      *         Double.MAX_VALUE after it
+     * @throws IllegalStateException when this result is a container, when the intervals add up to more than 7200
+     *         hours and RISTool.projekt is not set or has no log LENGTH, or when addDistData refuses the intervals
+     * @throws UncheckedIOException when the line of the log LENGTH, or the line addDistData writes for the intervals
+     *         left out, cannot be written
      **/
     public void _addData( Vector<Double> times ) throws Exception {
 
@@ -396,6 +400,7 @@ public class RISTool {
              double v = dist1  / (double)Rq_filtered;
              int index = (int)(v * (double)scaleSKALIERT);
              if ( index >= dataSKALIERT.length ) index = dataSKALIERT.length-1;
+             else if ( index < 0 ) index = 0;
              dataSKALIERT[index]++;
         }
         
