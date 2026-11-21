@@ -187,9 +187,9 @@ Unknown identity or canonicalization versions reject rather than fall back.
 ### Make UI admission authoritative without changing unrelated routes
 
 The UI currently warns about unavailable runtime operators
-([validation](../../../opentsx-saas-frontend/src/workbench/flow.ts#L662)).
+([validation](../../../opentsx-saas-frontend/src/workbench/flow.ts#L678)).
 Its exporter writes the DAG from the selected flow
-([export](../../../opentsx-saas-frontend/src/workbench/flow.ts#L685)).
+([export](../../../opentsx-saas-frontend/src/workbench/flow.ts#L706)).
 Introduce server-authoritative deployment admission against pinned catalog and capability contracts.
 Normalize aliases and parameters before acceptance; the specification identifies the `stats.window` mismatch
 ([alias](https://github.com/kamir/OpenTSx/blob/dc5f05043158a7ddf80ac156f9690ca92cf93788/docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#L123)).
@@ -244,13 +244,13 @@ Production approval remains conditional on implemented controls, executed integr
 The source review also covers the new offline assignment validators and their shared synthetic fixture generator.
 The Java implementation checks exact source and fragment hashes, canonical decimal bounds, input shape and
 duplicate ownership within a deployment context
-([admission](../../../opentsx-model/src/main/java/org/opentsx/model/contracts/ExecutionAssignments.java#L106),
-[set checks](../../../opentsx-model/src/main/java/org/opentsx/model/contracts/ExecutionAssignments.java#L55)).
+([admission](../../../opentsx-model/src/main/java/org/opentsx/model/contracts/ExecutionAssignments.java#L113),
+[set checks](../../../opentsx-model/src/main/java/org/opentsx/model/contracts/ExecutionAssignments.java#L58)).
 The Rust implementation exposes the same individual and set boundaries
-([admission](../../../rust/tsx-contracts/src/lib.rs#L83),
-[set checks](../../../rust/tsx-contracts/src/lib.rs#L38)).
+([admission](../../../rust/tsx-contracts/src/lib.rs#L97),
+[set checks](../../../rust/tsx-contracts/src/lib.rs#L53)).
 The generator names valid and invalid assignment, set and exact-text hashing cases
-([fixtures](../../../tools/execution_contract_vectors.py#L61)).
+([fixtures](../../../tools/execution_contract_vectors.py#L69)).
 
 Accept the corrected foundation conditionally within that offline scope, subject to source review and regression
 gates for whole-topic ownership and complete internal positions.
@@ -260,7 +260,7 @@ content hashes, parsed fragment shape and set consistency
 Passing the schema alone does not establish assignment admission.
 The fragment check admits shape without validating operators or the relation to the original logical DAG;
 the Java test makes that limitation explicit
-([scope](../../../opentsx-model/src/test/java/org/opentsx/model/contracts/ExecutionAssignmentsTest.java#L104)).
+([scope](../../../opentsx-model/src/test/java/org/opentsx/model/contracts/ExecutionAssignmentsTest.java#L105)).
 No sealed Iceberg adapter, authenticated deployment, complete physical-plan coverage or distributed fencing is
 established by these functions. Generation and fence fields undergo value validation only.
 This additional assessment is based on source inspection, without a separate execution of the test suites.
@@ -272,12 +272,12 @@ An object whose key is `$serde_json::private::Number` must remain an ordinary ob
 The Rust dependency uses `serde_json` without its `arbitrary_precision` feature
 ([dependency](../../../rust/tsx-contracts/Cargo.toml#L9)).
 Java recursively rejects parsed numeric values that are nonfinite in binary64
-([scalar check](../../../opentsx-model/src/main/java/org/opentsx/model/contracts/ExecutionAssignments.java#L221)).
+([scalar check](../../../opentsx-model/src/main/java/org/opentsx/model/contracts/ExecutionAssignments.java#L245)).
 Original source text remains opaque and is hashed without numeric interpretation.
 
 The shared generator contains explicit ordinary-key, preserved-object, outer-number, fragment-number and
 opaque-source cases
-([parser fixtures](../../../tools/execution_contract_vectors.py#L136)).
+([parser fixtures](../../../tools/execution_contract_vectors.py#L183)).
 Keep those cases in both language gates. Do not accept a dependency-feature change that converts user JSON
 objects into numbers or makes the refusal phase depend on the chosen runtime.
 This correction supports the narrow offline acceptance recommendation; it does not satisfy network deployment,

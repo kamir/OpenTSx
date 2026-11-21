@@ -477,4 +477,22 @@ class SystemsTest {
             assertEquals(404, http.send(HttpRequest.newBuilder(URI.create(none)).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
         }
     }
+
+    @Test
+    void aGeneratedSeriesKeepsTheMetricOfItsSignal() throws Exception {
+        List<org.opentsx.model.v2.Episode> written = new java.util.ArrayList<>();
+        Systems.Writer writer = (topic, episodes) -> written.addAll(episodes);
+        String request = """
+                {"signal":"park/T02/WTUR.W","from":"2026-10-01T00:00:00Z","to":"2026-10-01T00:01:00Z",
+                 "bindings":[{"signal":"park/T02/WTUR.W","grade":"raw","source":{"kind":"generator","processor":"gen.sine","seed":1,
+                   "params":{"mean":1500,"amplitude":500,"period":"PT1H"}%s}}]}""";
+        assertEquals(60, SYSTEMS.generate("h2-chain", body(request.formatted("")), "tsx.wind.synthetic.v2", writer).path("samples").asInt());
+        assertEquals("h2-chain.park_T02_WTUR.W", written.get(0).getSeries().getMetric().toString());
+        assertEquals("kW", written.get(0).getSeries().getUnit().toString());
+        // a demo series cannot take the metric of the measured channel through select
+        IllegalArgumentException refused = org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> SYSTEMS.generate("h2-chain",
+                body(request.formatted(",\"select\":{\"metric\":\"wind.turbine.power_active\"}")), "tsx.wind.synthetic.v2", writer));
+        assertTrue(refused.getMessage().contains("park/T02/WTUR.W@raw: a generator source has no select"), refused.getMessage());
+        assertEquals(1, written.size());
+    }
 }

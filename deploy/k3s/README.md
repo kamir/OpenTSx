@@ -77,8 +77,11 @@ Who may write:
   `user` allows every account to deploy and stop DAGs and to run demo generators; anyone can register, so that opens
   writing to everyone who reaches the page. The backend log then holds a line that begins with
   `DAG_RUN_ROLE=user: every signed-in account may deploy and stop DAGs`.
-* The frontend image answers `/retrieval/v1/dags/` with 403, so the write path of the retrieval server is not
-  reachable through the node port. Reading through `/retrieval/` needs no account.
+* The frontend image answers 403 to `/retrieval/v1/dags/` and to `/retrieval/v1/systems/<id>/generate`, and to
+  every path below either of them, so the write routes of the retrieval server are not reachable through the node
+  port. Reading through `/retrieval/` needs no account.
+* `INGRESS=true` sends `/v1` to the retrieval Service directly, past the frontend image. There the run token is the
+  only gate on `POST /v1/dags/deploy`, `/v1/dags/stop` and `/v1/systems/<id>/generate`.
 * Inside the cluster every pod can reach the retrieval Service; the token is what keeps them from deploying. Whoever
   reaches the Proxy can write the control topic directly; KafScale has no access control here. There is no
   NetworkPolicy.
@@ -99,7 +102,7 @@ curl -N "http://<node>:30312/v1/topics/<topic>/events?from=earliest"
 ```
 
 The Smart Topics Studio follows a topic through it: open the page with `?bridge=http://<node>:30312`, tab
-"Ereignis-Topic", "Verbinden". Events get into the topics with `opentsx twin-live publish` (see
+"Event topic", "Connect". Events get into the topics with `opentsx twin-live publish` (see
 `opentsx-twin-live/README.md`). The bridge is read-only, serves only event topics of twins and has no authentication;
 `EVENT_BRIDGE_ALLOW_ORIGIN` narrows the origin it answers browsers from.
 

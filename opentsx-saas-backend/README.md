@@ -201,6 +201,15 @@ generators (`POST /api/v1/systems/<system>/generate`) and Wayang deployments (`/
 DAG_RUN_ROLE=user: every signed-in account may deploy and stop DAGs, run demo generators and run Wayang deployments. Sign-up is open.
 ```
 
+### System working copies
+
+`PUT /api/v1/systems/<system>/bindings` stores the source of one grade of one signal in the working copy of the
+signed-in user. A binding that cannot be a source answers 422 with the reason. A generator source names `gen.ou` or
+`gen.sine` and has no `select`. `params` is optional and, when given, an object. `seed` is optional and, when given, a
+whole number. The backend does not check the parameters of a generator; the retrieval server reports a broken rule as
+a problem of the system document. The routes and rules are in
+[SYSTEM-DOCUMENT-SPEC.md, section 7](../docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md#s7-working-copy).
+
 See full API documentation at: `/docs` (Swagger UI)
 
 ## Database Setup
@@ -239,7 +248,8 @@ python -m pytest tests
 ```
 
 `tests/test_dags.py` covers the DAG routes without a database or a network: the user comes from a dependency
-override, the retrieval server from an httpx mock transport. Accounts and stored flows are checked against a running
+override, the retrieval server from an httpx mock transport. `tests/test_systems.py` covers the working copies and
+the generate route the same way. Accounts and stored flows are checked against a running
 instance with `smoke-flows.sh`.
 
 ## Production Deployment

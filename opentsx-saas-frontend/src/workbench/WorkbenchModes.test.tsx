@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import Workbench from "../pages/Workbench";
 import { useFlow } from "./flow";
@@ -46,6 +46,32 @@ function selectedLayout() {
     "Workspace layout",
   ) as HTMLSelectElement;
   return selector.selectedOptions[0].textContent;
+}
+
+function openSignal(interval?: string) {
+  act(() => {
+    useFlow.getState().setContext({
+      system: "demo-plant",
+      systemTitle: "Demo plant",
+      signal: "market.price",
+      grade: "raw",
+      expect: {
+        unit: "EUR/MWh",
+        min: -500,
+        max: 3000,
+        ...(interval === undefined ? {} : { interval }),
+      },
+      origin: "REPORTED",
+      synthetic: false,
+    });
+  });
+}
+
+function configure(name: string) {
+  fireEvent.click(screen.getByRole("button", { name: `Configure ${name}` }));
+  return within(
+    screen.getByRole("complementary", { name: "Operator inspector" }),
+  );
 }
 
 function flowSnapshot() {
@@ -285,5 +311,114 @@ describe("workbench presentation modes", () => {
       /preference could not be saved/i,
     );
     expect(flowSnapshot()).toBe(before);
+  });
+});
+
+describe(
+  "operator presets of a signal opened on the workbench",
+  { timeout: 10000 },
+  () => {
+    const intervals: [string | undefined, number][] = [
+      ["PT15M", 900],
+      ["PT1H", 3600],
+      ["P1D", 86400],
+      ["PT1S", 60],
+      [undefined, 60],
+    ];
+    const modern = [
+      { mode: "Signal Engineer", path: "/workbench" },
+      { mode: "Data Worker", path: "/workbench?mode=data" },
+    ].flatMap(({ mode, path }) =>
+      intervals.map(([interval, every]) => ({ mode, path, interval, every })),
+    );
+
+    it.each(modern)(
+      "presets the $mode inspector for interval $interval",
+      ({ mode, path, interval, every }) => {
+        mount(path);
+        openSignal(interval);
+        expect(screen.getByRole("button", { name: mode })).toHaveAttribute(
+          "aria-pressed",
+          "true",
+        );
+        expect(configure("Resample").getByLabelText("every")).toHaveValue(
+          every,
+        );
+        const range = configure("Plausible range");
+        expect(range.getByLabelText("min")).toHaveValue(-500);
+        expect(range.getByLabelText("max")).toHaveValue(3000);
+      },
+    );
+
+    it.each(intervals)(
+      "presets the legacy operation panel for interval %s",
+      (interval, every) => {
+        mount("/workbench?mode=legacy");
+        openSignal(interval);
+        const operations = within(
+          screen.getByRole("region", { name: "Operations" }),
+        );
+        fireEvent.click(
+          operations.getByRole("tab", { name: "Filter and conversion" }),
+        );
+        expect(operations.getByLabelText("every")).toHaveValue(every);
+        expect(operations.getByLabelText("min")).toHaveValue(-500);
+        expect(operations.getByLabelText("max")).toHaveValue(3000);
+      },
+    );
+
+    it("leaves the resample width empty when the interval is no duration", () => {
+      mount();
+      openSignal("15 minutes");
+      const inspector = configure("Resample");
+      expect(inspector.getByLabelText("every")).toHaveValue(null);
+      fireEvent.click(inspector.getByRole("button", { name: "Add operator" }));
+      expect(inspector.getByRole("alert")).toHaveTextContent(
+        "every requires a finite number.",
+      );
+      expect(useFlow.getState().nodes).toHaveLength(1);
+      fireEvent.click(screen.getByRole("button", { name: "Legacy" }));
+      const operations = within(
+        screen.getByRole("region", { name: "Operations" }),
+      );
+      fireEvent.click(
+        operations.getByRole("tab", { name: "Filter and conversion" }),
+      );
+      expect(operations.getByLabelText("every")).toHaveValue(null);
+      fireEvent.click(operations.getByRole("button", { name: "Resample" }));
+      expect(operations.getByRole("alert")).toHaveTextContent(
+        "every requires a finite number.",
+      );
+      expect(useFlow.getState().nodes).toHaveLength(1);
+    });
+  },
+);
+
+describe("legacy operation panel", () => {
+  it("refuses an operator until its number parameter is finite", () => {
+    mount("/workbench?mode=legacy");
+    const operations = within(
+      screen.getByRole("region", { name: "Operations" }),
+    );
+    fireEvent.click(
+      operations.getByRole("tab", { name: "Filter and conversion" }),
+    );
+    fireEvent.change(operations.getByLabelText("every"), {
+      target: { value: "" },
+    });
+    fireEvent.click(operations.getByRole("button", { name: "Resample" }));
+    expect(operations.getByRole("alert")).toHaveTextContent(
+      "every requires a finite number.",
+    );
+    expect(useFlow.getState().nodes).toHaveLength(1);
+    fireEvent.change(operations.getByLabelText("every"), {
+      target: { value: "10" },
+    });
+    fireEvent.click(operations.getByRole("button", { name: "Resample" }));
+    expect(operations.queryByRole("alert")).toBeNull();
+    expect(useFlow.getState().nodes.map((node) => node.params.every)).toEqual([
+      undefined,
+      10,
+    ]);
   });
 });

@@ -24,10 +24,10 @@ Every criterion below names its data with one of these labels.
 | **V** | shared test vectors: `opentsx-model/src/test/resources/testvectors/*.json`, `docs/datamodel-2026/testvectors/*.json`, `QuantileSketchTest.testVector` |
 | **W** | wind-park scenario `opentsx-windpark/scenarios/ostsee-demo.yaml`: park `ost-01`, turbines T01 to T10, seed 42, 6 h at 1 Hz from 2026-10-01T00:00:00Z, episodes of 10 min; written to KafScale with `WindparkSim --kafscale` ([`opentsx-windpark/README.md`](../opentsx-windpark/README.md), section CLI) |
 | **W3** | W split into three sites by turbine: `s1` = T01 to T03, `s2` = T04 to T06, `s3` = T07 to T10; `groupBy: [park]` |
-| **K** | KafScale conformance setup of the CI job "KafScale conformance" (`.github/workflows/ci.yml:145-180`): KafScale v1.6.0 built from source, in-memory S3, `127.0.0.1:39092` |
+| **K** | KafScale conformance setup of the CI job "KafScale conformance" (`.github/workflows/ci.yml:783-876`): KafScale v1.6.0 built from source, in-memory S3, `127.0.0.1:39092` |
 
 A criterion that runs against K is accepted only when the surefire report shows the named test as executed, with
-zero failures, errors and skips, as the existing streaming acceptance requires (`ci.yml:180`).
+zero failures, errors and skips, as the existing streaming acceptance requires (`ci.yml:877`).
 
 ## Phases and milestones
 
@@ -48,7 +48,7 @@ Each operator still requires its reference vectors and admission gate before use
   `agent_cursor_follows_the_site_sequence_across_jobs_through_restart_and_duplicate_ack` in `rust/tsx-runner/src/agent.rs`).
   Membership and capabilities are met on that path except measured capacities (`ConformanceMembershipTest`); see the
   unified plan for what remains open. Data edges hold by construction while each fragment reads one whole topic.
-  D-T16 to D-T22 decide the rest: D-T17, D-T18 and D-T22 are in force; D-T16, D-T19, D-T20 and D-T21 are to implement.
+  D-T16 to D-T22 decide the rest: D-T17, D-T18, D-T20 and D-T22 are in force; the D-T21 contract is in force while runtimes refuse outputs until the fragment cutter lands; D-T16 and D-T19 are to implement.
 - [x] U02 local bounded stage: `RustPlugin` maps connected topic sources, unions, optional fused chain and sink to
   `RustPlatform`; `RustExecutor` invokes one complete stage action with no raw-payload channel or Java fallback.
 - [x] U03 local bounded control: authenticated backend PostgreSQL journal and standalone advisory-lock coordinator,

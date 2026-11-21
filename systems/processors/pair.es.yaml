@@ -29,6 +29,7 @@ semantics: { needs: window, deterministic: true, origin: INHERIT }
 runtimes:
   wayang: { status: available, class: org.opentsx.wayang.TsxPair }
 state: { kind: windowed, key: series }
+key: regroup
 merge: { class: none }
 testvectors: docs/datamodel-2026/testvectors/pair-es.v1.json
 tolerance: { abs: 5.0e-13 }

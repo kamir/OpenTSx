@@ -23,7 +23,7 @@ Terms:
 | node | one registered Java or Rust runtime instance assigned complete fragments and whole source topics |
 | driver | the central Wayang process that translates DAGs and sends site plans |
 | signal cluster | the central KafScale cluster that receives site aggregates and signals |
-| DAG document | the `opentsx.dag.v1` or `opentsx.dag.v2` document the web workbench exports (`opentsx-saas-frontend/src/workbench/flow.ts:684-745`) |
+| DAG document | the `opentsx.dag.v1` or `opentsx.dag.v2` document the web workbench exports (`opentsx-saas-frontend/src/workbench/flow.ts:706-763`) |
 | `specHash` | lower-case hex SHA-256 of the UTF-8 text of the DAG document, as the processor computes it today (`VectorProcessor.java:261`, `:797-803`) |
 
 ## S1. Operator catalog
@@ -92,6 +92,17 @@ Every catalog operator MUST declare `state.kind`:
 | `windowed` | state per key and per window on the epoch grid: window k covers `[k * w, (k + 1) * w)` microseconds since 1970-01-01T00:00:00Z | open windows per key |
 
 An operator MUST NOT keep state outside the checkpoint (S6.3).
+
+Every catalog operator MUST also declare `key`, how its output is keyed relative to its input (D-T20):
+
+| `key` | Meaning | Fragment |
+|---|---|---|
+| `preserve` | the output keeps the input's series key | stays in the fragment of its input |
+| `derive-1to1` | one output series per input series, with a derived series id (a clean or feature series) | stays in the fragment of its input |
+| `regroup` | the output is keyed by a new key over several inputs (`align.vector`, `pair.*`) | a fragment ends here or continues through a new whole topic |
+
+Federated statistics regroup at the site boundary by the group series id (S4.1); `stats.welford-ddsketch` itself
+preserves the series key.
 
 ### S1.5 Mergeability
 
@@ -163,7 +174,7 @@ implementations by `tools/java_operator_vectors.py`.
 | `sax.word` | `series` → `series` (fills `EpisodeSummary.sax`) | `w` ≥ 1, `a` in the range of `Sax.breakpoints` (`Sax.java:16`) | none | `none` | `sax-word.v1.json` | yes | yes |
 | `pair.xcorr` | `series`, `series` → `series` | `lags` integer in [0, 1073741823] (Java array bound); pair settings `pairing`, `window`, `step`, `every`, `agg`, `fill` (`none` or `as-of`; any other value is refused with `pair fill must be none or as-of`), `maxAge`, `minCoverage` (`pairs.ts:75-91`) | windowed | `none` | `pair-xcorr.v1.json` | yes | short windows only (S1.8) |
 | `pair.es` | `series`, `series` → `series` | finite `sigma`; `tauMax` ≥ 0 seconds, zero uncapped; `shuffles` integer in [1, 2147483647]; finite integer `seed`; shared pair settings (`es.ts`; `pair-es.v1.json`) | windowed | `none` | `pair-es.v1.json` | yes | no |
-| `dq.result` | `stats` → `events` | `checks` ⊆ `DataQuality.Check` values, expectation `min`, `max`, `expectedInterval` (`DataQuality.java:29-38`) | none | `exact` for counts per check and status, `sum` | `dq-result.v1.json` | yes | yes |
+| `dq.result` | `stats` → `events` | `checks` ⊆ `DataQuality.Check` values, expectation `min`, `max`, `expectedInterval` (`DataQuality.java:30-39`) | none | `exact` for counts per check and status, `sum` | `dq-result.v1.json` | yes | yes |
 
 The workbench operator `stats.window` maps to `stats.welford-ddsketch` (`ops.ts:905-910`) but has the
 parameters `window` (seconds) and `field`, not `windows` and `alpha`. The workbench MUST write the catalog
@@ -625,7 +636,7 @@ The driver MUST validate in this order and MUST stop at the first error. Steps 1
 `DagPlan.of` makes today and MUST keep its messages.
 
 1. Structure: `nodes` is an array.
-2. Nodes: ids, decoder, inputs, cycles (`DagPlan.java:64-118`).
+2. Nodes: ids, decoder, inputs, cycles (`DagPlan.java:79-132`).
 3. Sinks: non-empty array, supported schema.
 4. Sink identities unique.
 5. Catalog: every `op` belongs to the job catalog. Check runtime, state and resource support at every node
@@ -651,7 +662,7 @@ The driver MUST validate in this order and MUST stop at the first error. Steps 1
 2. `decode.avro-soe` with the DAG `source` MUST become one `TsxTopicSource` per source topic. Each sink MUST become
    one typed sink: `TsxVectorSink` for vectors and `TsxTopicSink` for supported Avro and signal records.
 3. The driver MUST NOT use `wayang-api-json`: it compiles Scala source received in the request
-   (`SerializableLambda.scala:23-29` at Wayang `main`).
+   (`SerializableLambda.scala:25-30` at Wayang `main`).
 4. On a single site the plan runs with `TsxJavaPlugin`. The plugin supplies the
    Java platform, mappings, and channel conversions without the cloud mappings
    whose SDKs are excluded (`TsxJavaPlugin.java`).
@@ -747,18 +758,18 @@ Messages are plain English and MUST be returned exactly as below, with the place
 
 | # | Message | Origin |
 |---|---|---|
-| 1 | `the document is no opentsx.dag DAG (no nodes)` | `DagPlan.java:19` |
-| 2 | `every node needs a non-empty string id` | `DagPlan.java:71` |
-| 3 | `duplicate node id <id>` | `DagPlan.java:74` |
-| 4 | `node <id>: unsupported decoder <op>` | `DagPlan.java:78` |
-| 5 | `decoder <id> must read the source without node inputs` | `DagPlan.java:82` |
-| 6 | `node <id> needs an operator and a non-empty input array` | `DagPlan.java:85` |
-| 7 | `node <id>: missing input <input>` | `DagPlan.java:92` |
-| 8 | `the DAG contains a cycle` | `DagPlan.java:114` |
-| 9 | `sinks must be a non-empty array` | `DagPlan.java:23` |
-| 10 | `duplicate sink identity <name>` | `DagPlan.java:58` |
-| 10a | `unsupported sink <topic>: schema must be <schemas>`; the driver lists the sink schemas of the catalog | `DagPlan.java:29-30`, extended |
-| 10b | `unsupported sink <topic>: a vector sink must read align.vector` | `DagPlan.java:35-36` |
+| 1 | `the document is no opentsx.dag DAG (no nodes)` | `DagPlan.java:37` |
+| 2 | `every node needs a non-empty string id` | `DagPlan.java:86` |
+| 3 | `duplicate node id <id>` | `DagPlan.java:89` |
+| 4 | `node <id>: unsupported decoder <op>` | `DagPlan.java:93` |
+| 5 | `decoder <id> must read the source without node inputs` | `DagPlan.java:97` |
+| 6 | `node <id> needs an operator and a non-empty input array` | `DagPlan.java:100` |
+| 7 | `node <id>: missing input <input>` | `DagPlan.java:107` |
+| 8 | `the DAG contains a cycle` | `DagPlan.java:129` |
+| 9 | `sinks must be a non-empty array` | `DagPlan.java:41` |
+| 10 | `duplicate sink identity <name>` | `DagPlan.java:73` |
+| 10a | `unsupported sink <topic>: schema must be <schemas>`; the driver lists the sink schemas of the catalog | `DagPlan.java:46-47`, extended |
+| 10b | `unsupported sink <topic>: a vector sink must read align.vector` | `DagPlan.java:52-53` |
 | 11 | `node <id>: operator <op> is not in catalog <catalog>` | new |
 | 12 | `node <id>: operator <op> version <version> has no runtime for track <A or B>` | new |
 | 13 | `node <id>: parameter <name> is required` | new |
@@ -787,7 +798,7 @@ Messages are plain English and MUST be returned exactly as below, with the place
 ### S3.2 Schema fingerprints
 
 1. A fingerprint is the CRC-64-AVRO fingerprint of the writer schema, written as 16 lower-case hex digits
-   (`OpenTsxAvro.fingerprint`, `OpenTsxAvro.java:71`).
+   (`OpenTsxAvro.fingerprint`, `OpenTsxAvro.java:73`).
 2. The fingerprints of the catalog are those of `wire-format.json` (`Episode` = `8985f02b48c77195`, `SeriesStats` =
    `e51b48188baa6606`, `SeriesKey` = `ec4b59937d77bd89`, `Observation` = `ca0e771818e53a71`).
 3. A runtime MUST stop a task with state `failed` when it reads a record whose fingerprint is not in the site plan,

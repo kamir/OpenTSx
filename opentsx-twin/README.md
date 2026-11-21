@@ -39,7 +39,7 @@ and the overpressure, at the cost of an earlier deviation from the schedule.
 | Runner (variant T) | `TwinRunner` | layered bulk-synchronous execution, see below |
 | Inputs | `Inputs`, `SeriesInputs` | measurements, schedules and forecasts bound to unwired input ports; the binding decides the mode |
 | Origin | `Origin` | `MEASURED > REPORTED > FORECAST > ESTIMATED > SYNTHETIC` (see below) |
-| Topic contract | `PortMessage`, `Barrier`, `MessageSink`, `MessageLog` | deterministic ids `run/k/phase/atom/port`; phase barriers with counts; superstep commit with state hash |
+| Message contract | `PortMessage`, `Barrier`, `MessageSink`, `MessageLog` | deterministic ids `run/k/phase/atom/port`; phase barriers with counts; superstep commit with state hash |
 | Result | `RunResult`, `Snapshot` | series per `atom.port` / `atom.state.var`, events, KPIs, snapshots, export as v2 episodes |
 | Modes | `Twin` | `shadow`, `whatIf` (baseline vs. alternative log), `forecast` (from a snapshot, policies replaceable) |
 
@@ -53,8 +53,9 @@ Each superstep runs these phases in order:
   delivers the previous superstep's value, so feedback loops always cross the superstep boundary.
 * **Multirate.** An atom can step only every n supersteps (`every`), for example a 15-minute market.
 * **Events.** Atoms report events at their exact time, such as the moment the pressure limit is crossed.
-* **Determinism.** The same plan, inputs, interventions and code give a bit-identical run, and therefore the same
-  `RunResult.hash()`.
+* **Determinism.** On the same JVM, the same plan, inputs, interventions and code give a bit-identical run and the
+  same `RunResult.hash()`. Another JVM can round its `Math` functions differently in the last bit and give another
+  hash for the same run id ([TWIN-COUPLING-SPEC section 8](../docs/datamodel-2026/TWIN-COUPLING-SPEC.md#8-run-identity-and-run-record)).
 
 ### Runner (variant L)
 
@@ -64,17 +65,19 @@ sets the staleness bound (`bsp()` = 0, `ssp(s)`, `async()`), transport latency a
 slow processors and outages, explicit processor groups (`withGroup`) and `colocatingCycles()`, which runs every
 feedback cycle of the plan (strongly connected component) in one processor.
 
-* Staleness 0 gives a run that is bit-identical to variant T (same run id, hash, events, messages) for any
-  transport; a coupling that can change the result becomes part of the run id.
+* Staleness 0 gives a run that is bit-identical to variant T (same run id, hash, events, KPIs, messages and commit
+  barriers) in the modes `SHADOW`, `WHAT_IF` and `FORECAST`, for any lag, jitter, slow processor or outage; a
+  coupling that can change the result becomes part of the run id. The transports that `LooseRunnerTest` checks are
+  in [TWIN-COUPLING-SPEC §11.2](../docs/datamodel-2026/TWIN-COUPLING-SPEC.md#112-conformance).
 * `LooseRun.stats()` reports simulated wall time (ticks), wait and down ticks per atom and the staleness used per
   wire.
 * `bin/opentsx twin-coupling [--csv out.csv] [--scenario id]` runs the coupling grid over all scenarios. Results and
   the design rule (cycles in one processor, BSP between processors) are in
   [TWIN-COUPLING-SPEC §11](../docs/datamodel-2026/TWIN-COUPLING-SPEC.md#11-coupling-results-and-design-rule).
 
-### Topic contract as Avro
+### Message contract as Avro
 
-`twin/avro/` holds the Avro schemas of the topic contract, generated from the atom catalog by `AtomSchemas`
+`twin/avro/` holds the Avro schemas of the message contract, generated from the atom catalog by `AtomSchemas`
 (`bin/opentsx twin-schemas` regenerates them; a test fails if the checked-in files are stale):
 
 * envelopes `PortMessage`, `Barrier`, `Intervention` (namespace `org.opentsx.twin.v1`);
@@ -86,6 +89,10 @@ feedback cycle of the plan (strongly connected component) in one processor.
 Every atom of the three scenarios round-trips through these schemas (Java test), and Python reads them with
 fastavro (`python-package/tests/test_twin_schemas.py`). They are the basis for running variant L processors in other
 languages and for snapshots in Iceberg.
+
+No code writes these records to a topic, and the schemas name no topic. The only topic a twin run writes is the
+event topic of [`opentsx-twin-live`](../opentsx-twin-live/README.md#topic-contract). An applied intervention appears
+there only as an event of type `intervention`.
 
 ### Origin propagation
 
@@ -187,6 +194,26 @@ measured SoC, the measured output power and (with irradiance) the measured solar
 the levers act on measured values. For front ends, `BoatDemo` exposes `plan()`, `observed()`, `reference()`, `alternatives()`, `KEY_SERIES`,
 `KEY_KPIS` and `kpis(RunResult)`.
 
+## Smart Topics Studio
+
+`studio.StudioExport` computes the reference run, the alternatives and the forecasts of every `StudioScenario` (H2
+chain, house, boat) and writes them as one JSON file. `tools/build_studio.py` puts that file into
+`docs/prototypes/smart-topics-studio.template.html` and writes `docs/prototypes/smart-topics-studio.html`. The order
+matters:
+
+```bash
+java -cp "$(bin/opentsx classpath opentsx-twin)" org.opentsx.twin.studio.StudioExport /tmp/studio.json
+python3 tools/build_studio.py /tmp/studio.json
+```
+
+The page, the scenario texts and the guides ([`twin/h2-chain.guide.yaml`](src/main/resources/twin/h2-chain.guide.yaml),
+[`twin/haus-erzgebirge.guide.yaml`](src/main/resources/twin/haus-erzgebirge.guide.yaml)) are in English. Twin
+names and plan parameters, such as the appliance names of the house, are not translated: they are part of the plan
+hash and the run ids. The scenario ids `haus` and `boot` are not translated either: the page uses them in URL
+fragments and browser storage keys, and `twin-live --scenario` takes them. The export leaves out the run hash,
+because the hash chains the raw bits of every value and differs between JVMs whose `Math` functions round the last
+bit differently.
+
 ## Tests
 
 * **`TwinShadowTest`**
@@ -197,6 +224,17 @@ the levers act on measured values. For front ends, `BoatDemo` exposes `plan()`, 
   * bit-identical repetition
   * the message contract
   * the episode export
+* **`LooseRunnerTest`**
+  * staleness 0 equals variant T for every scenario: in `SHADOW` mode under six transports, and under a transport
+    with lag, jitter, a slow processor and an outage for every what-if alternative, a forecast from mid-run and
+    every forecast of the scenario
+  * every stressor of these transports names an atom of the plan and costs ticks
+  * lag costs wall time but not the result
+  * staleness 2 is faster than staleness 0, has its own run id and is reproducible; `async()` never waits, even
+    while an atom is down
+  * colocated cycles keep the result at pipeline throughput; an explicit group reads without staleness
+  * a `lag`, `stepTicks` or `outages` key that is not an atom slows nothing; with staleness 1 it changes the run id
+  * strongly connected components (Tarjan)
 * **`TwinModesTest`**
   * two what-ifs
   * a forecast from a snapshot that reproduces the shadow run exactly
@@ -224,6 +262,10 @@ the levers act on measured values. For front ends, `BoatDemo` exposes `plan()`, 
   * CSV import (resampling, holding, origins) and calibration that recovers known parameters
 * **`boat.SimulatedLogsTest`**: the bundled simulated logs equal the generator output; calibration on them recovers
   the hidden parameters, and unmet demand and autonomy on the logs match the hidden true run
+* **`studio.StudioGuideTest`**, **`studio.StudioPageTest`**
+  * every guide explains its plan completely and nothing else
+  * the Studio export carries no run hash
+  * the committed Studio page carries the export of the current scenarios
 
 ## Not yet
 

@@ -41,6 +41,9 @@ Each input names `binding`, `topic`, positive `partitionCount` and the complete 
 Positions must cover every declared partition exactly once, in ascending order from zero.
 Bounded positions require exclusive end offsets; continuous positions forbid them.
 A positions array that omits, repeats or reorders declared partitions returns `assignment.coverage`.
+Optional `outputs` (D-T21) are checked after the inputs: an invalid entry, a topic written twice or an output equal
+to an input returns `assignment.output`, and `validate_set` returns `assignment.ownership` when two assignments
+write one output topic.
 Positions describe internal recovery state and cannot split a topic between deployment owners.
 Ownership is exclusive per `(binding, topic)` within an assignment and per `(fragment, binding, topic)` in a set.
 These checks prove consistency with the declared inventory; broker inventory and durable ownership need separate checks.

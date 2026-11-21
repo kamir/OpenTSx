@@ -49,9 +49,11 @@ import axios from 'axios';
 import { flowsAPI } from '../services/api';
 import { fetchSignalStatus } from '../systems/load';
 import { NOT_PORTED, OPS, OP_BY_ID, defaultParams, fmt, stats } from '../workbench/ops';
+import { signalPresets } from '../workbench/presets';
 import { Bucket, FlowNode, OpDef, OpGroup, ParamDef, Params, ParamValue } from '../workbench/types';
 import '../workbench/workbench.css';
 import { DeviceSources, DeviceInspector } from '../workbench/DeviceTools';
+import { validateParameters } from '../workbench/parameters';
 import { DataPreview, DiagnosticBench, RecipeNotebook } from '../workbench/DeviceViews';
 import { PRESENTATION_KEY, readPresentation, type Presentation, type WorkbenchMode } from '../workbench/presentation';
 import { thermalDemo } from '../workbench/deviceSample';
@@ -157,7 +159,7 @@ const TABS: { id: string; title: string; group?: OpGroup; border?: string }[] = 
 
 function OperationPanel({ showLabels, setShowLabels, onModel }: { showLabels: boolean; setShowLabels: (v: boolean) => void; onModel: () => void }) {
   const [tab, setTab] = useState('transform');
-  const [csvError, setCsvError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [params, setParams] = useState<Record<string, Params>>(() =>
     Object.fromEntries(OPS.map((o) => [o.id, defaultParams(o)]))
   );
@@ -165,28 +167,28 @@ function OperationPanel({ showLabels, setShowLabels, onModel }: { showLabels: bo
   const nodes = useFlow((s) => s.nodes);
   const source = useFlow((s) => s.source);
   const context = useFlow((s) => s.context);
-  // Opened for a signal, the cleaning operators start from what the system expects of it: the plausible range is
-  // the expected range, and the resampling goes to the minute (the clock of the example systems).
   useEffect(() => {
     if (!context) return;
-    setParams((p) => ({
-      ...p,
-      'dq.plausible-range': {
-        ...p['dq.plausible-range'],
-        ...(context.expect.min !== undefined ? { min: context.expect.min } : {}),
-        ...(context.expect.max !== undefined ? { max: context.expect.max } : {}),
-      },
-      resample: { ...p.resample, every: 60 },
-    }));
+    setParams((p) => Object.fromEntries(OPS.map((o) => [o.id, { ...p[o.id], ...signalPresets(o.id, context) }])));
   }, [context]);
   const selectedId = useFlow((s) => s.selectedId);
   const selected = nodes.find((n) => n.id === selectedId);
   const current = TABS.find((t) => t.id === tab)!;
   const ready = !!selected;
 
+  const apply = (op: OpDef) => {
+    setError(null);
+    try {
+      validateParameters(op, params[op.id]);
+      applyOp(op.id, params[op.id]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
   const opButton = (op: OpDef) => (
     <span key={op.id} className="wb-op">
-      <button disabled={!ready} title={op.hint} onClick={() => applyOp(op.id, params[op.id])}>
+      <button disabled={!ready} title={op.hint} onClick={() => apply(op)}>
         {op.label}
       </button>
       {op.params.map((d) => (
@@ -202,11 +204,11 @@ function OperationPanel({ showLabels, setShowLabels, onModel }: { showLabels: bo
 
   const persist = () => {
     const b = selected && evaluate(source, nodes, selected.id);
-    setCsvError(null);
+    setError(null);
     try {
       if (b) download(`${b.name}.csv`, bucketToCsv(b), 'text/csv');
     } catch (e) {
-      setCsvError(e instanceof Error ? e.message : 'CSV export failed.');
+      setError(e instanceof Error ? e.message : 'CSV export failed.');
     }
   };
 
@@ -228,7 +230,7 @@ function OperationPanel({ showLabels, setShowLabels, onModel }: { showLabels: bo
           </button>
         ))}
       </div>
-      {csvError && <p role="alert">{csvError}</p>}
+      {error && <p role="alert">{error}</p>}
       <div className={`wb-tabpanel wb-g-${tab}`} role="tabpanel">
         {tab === 'tsb' && (
           <div className="wb-oprow">

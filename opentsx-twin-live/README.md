@@ -1,7 +1,8 @@
 # opentsx-twin-live
 
 The events of a twin run as records of a topic, and a bridge that hands the topic to a browser. The Smart Topics
-Studio (`docs/prototypes/smart-topics-studio.html`, tab "Ereignis-Topic") follows the topic through the bridge.
+Studio (`docs/prototypes/smart-topics-studio.html`, view `topic`, labelled "Event topic") follows the topic through
+the bridge.
 
 ```
 twin run --> EventPublisher --> twin.<id>.<run>.events (KafScale) --> EventBridge (SSE) --> Studio
@@ -9,18 +10,21 @@ twin run --> EventPublisher --> twin.<id>.<run>.events (KafScale) --> EventBridg
 
 ## Topic contract
 
-Name: `twin.<id>.<run>.events`, next to `.msgs`, `.barrier` and `.interventions` of the Avro contract in
-`opentsx-twin`. One partition, so the log keeps the order of the run. Key: the atom. Value: JSON, schema
-`twin.event.v1` (header `tsx-schema`):
+Name: `twin.<id>.<run>.events`. It is the only topic a twin run writes. One partition, so the log keeps the order
+of the run. Key: the atom. Value: JSON, schema `twin.event.v1` (header `tsx-schema`):
 
 ```json
-{"run_id":"h2-chain-32d17d33b237bf6b","k":147,"atom":"line","type":"pressure_limit",
- "t":"2026-10-01T02:27:10Z","attrs":{"p_max_bar":"40.0"}}
+{"run_id":"h2-chain-6734f91571b28b83","k":148,"atom":"buffer","type":"pressure_limit",
+ "t":"2025-10-01T02:28:54.367877Z","attrs":{"p_max_bar":"200.000"}}
 ```
 
 `t` is the time of the event in the run and may lie inside a time step; `k` is the step that detected it. The record
-timestamp is the time of publishing. The value is JSON, not Avro, because the reader is a browser; an Avro variant
-in the style of the other twin topics is open.
+timestamp is the time of publishing. The value is JSON, not Avro, because the reader is a browser. `twin.event.v1`
+has no Avro schema.
+
+Port messages, barriers and the `Intervention` record of the Avro message contract in `opentsx-twin` have no topic.
+An applied intervention appears on the event topic only as an event of type `intervention` with the attributes
+`control`, `value`, `author` and `reason`.
 
 ## Commands
 
@@ -38,8 +42,9 @@ bin/opentsx twin-live demo    [--port 8090] [--scenario id] [--duration 120]
   A reconnecting browser sends `Last-Event-ID` and continues behind that offset.
 - `demo` runs both in one process on topics kept in memory. No broker is involved and nothing reaches KafScale.
 
-In the Studio: tab "Ereignis-Topic", source "Live aus dem Topic", address of the bridge, "Verbinden". The address
-can be passed as `?bridge=http://host:8090`.
+In the Studio, open the `topic` view (button `dt-topic`, "Event topic"), select the live source (`tp-src-live`,
+"Live from the topic"), enter the address of the bridge (`tp-url`, "Bridge address") and connect (`tp-connect`,
+"Connect"). The address can be passed as `?bridge=http://host:8090`; the Studio then selects the live source.
 
 ## Limits
 

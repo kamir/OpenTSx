@@ -304,13 +304,16 @@ The message id is `<runId>/<k>/<phase>/<atom>/<port>`.
 * Variant L emits no phase barriers. It emits one commit barrier per superstep, in superstep order, after the run.
 * The commit barrier of the last superstep equals `RunResult.hash()`.
 * `twin/avro/` holds the Avro form of the envelopes `PortMessage`, `Barrier` and `Intervention` in namespace
-  `org.opentsx.twin.v1`.
+  `org.opentsx.twin.v1`. The schemas name no topic.
 * `opentsx-twin` ships the in-memory `MessageLog` as the only sink. It has no KafScale binding for port messages and
-  barriers.
+  barriers. No topic carries port messages or barriers, and no topic carries the `Intervention` record. An applied
+  intervention reaches the event topic of `opentsx-twin-live` only as an event of type `intervention` (§4).
 
-Implemented in: `PortMessage.java:9-14`, `Barrier.java:7-11`, `MessageSink.java:4-18`, `MessageLog.java:8-29`,
-`TwinRunner.java:107-113,140-146,158`, `LooseRunner.java:320-323,375`, `schema/AtomSchemas.java:35,61-77`; tests:
-`TwinShadowTest.java:103-131`, `LooseRunnerTest.java:29-52`.
+Implemented in: `PortMessage.java:8-13`, `Barrier.java:7-11`, `MessageSink.java:4-18`, `MessageLog.java:8-29`,
+`TwinRunner.java:107-113,140-146,158`, `LooseRunner.java:320-323,375`, `schema/AtomSchemas.java:35,60-100`,
+`RunSetup.java:134-136`, `EventPublisher.java:51,53,66`; tests: `TwinShadowTest.java:103-131`,
+`LooseRunnerTest.java:41-45,70-106,224-233,274-277`, `schema/AtomSchemasTest.java:90-95`,
+`EventTopicLiveTest.java:98-116`.
 
 <a id="8-run-identity-and-run-record"></a>
 
@@ -329,7 +332,9 @@ twin-1|<plan hash>|<mode>|<inputs fingerprint>|<steps>[|<intervention>...][|poli
 
 The run hash chains every superstep: the seed is the XxHash64 of the run id; each superstep hashes the previous
 value, `k`, and for every atom in plan order its id, its state variables (name, double bits) and its outputs (name,
-double bits, origin). Two runs with the same run id are bit-identical and have the same `RunResult.hash()`.
+double bits, origin). On the same JVM, two runs with the same run id are bit-identical and have the same
+`RunResult.hash()`. A JVM whose `Math` functions round the last bit differently can give other double bits and so
+another hash for the same run id; the Studio export leaves the hash out for this reason.
 
 `RunResult`:
 
@@ -339,8 +344,8 @@ double bits, origin). Two runs with the same run id are bit-identical and have t
 * `toEpisodes()` exports every series as a v2 episode: metric `twin.<type>.<var>`, tags `twin`, `atom`, `run`,
   labels `twin.mode`, `twin.kind` (`state` or `output`) and, for outputs, `twin.origin` (worst origin of the run).
 
-Implemented in: `RunSetup.java:110,163-179,195-233`, `RunResult.java:61-64,159-212`, `Snapshot.java:9-10`; tests:
-`TwinShadowTest.java:92-101,133-147`.
+Implemented in: `RunSetup.java:110,163-179,195-233`, `RunResult.java:61-64,159-212`, `Snapshot.java:9-10`,
+`studio/StudioExport.java:147-151`; tests: `TwinShadowTest.java:92-101,133-147`, `studio/StudioPageTest.java:25-37`.
 
 <a id="9-operating-modes"></a>
 
@@ -400,6 +405,8 @@ Rules:
 * **Groups.** Processors are, in this order of precedence: explicit groups, then the strongly connected components
   of the wire graph (iterative Tarjan) if `colocateCycles` is set, else one processor per atom. A group member that
   is not an atom is rejected with `group member is not an atom: <id>`.
+* **Unknown atoms.** An entry of `lag`, `stepTicks` or `outages` whose key is not an atom of the plan is not
+  rejected. It slows no atom. With staleness other than 0 it is still part of the run id.
 * **Deadlock.** If no atom can progress and nothing is busy, down or about to become visible, the run fails with
   `variant L deadlock at tick <tick> (plan has a same-step cycle?)`.
 * **Record.** States, outputs and events are assembled in variant T order, and the run hash is computed as in §8.
@@ -411,7 +418,7 @@ Rules:
 `staleReads` (age > 0), `meanAge` and `maxAge`, where age is the targeted step minus the step read.
 
 Implemented in: `LooseRunner.java:39-197,213-389,395-458,464-554`, `RunSetup.java:20-26`; tests:
-`LooseRunnerTest.java:29-147`.
+`LooseRunnerTest.java:28-277`.
 
 <a id="11-coupling-results-and-design-rule"></a>
 
@@ -467,14 +474,47 @@ Implemented in: `demo/CouplingStudy.java:41-171`, `studio/Scenarios.java:11-13`,
 
 ### 11.2 Conformance
 
-Variant L with staleness 0 is bit-identical to variant T: same run id, same run hash, same events, same KPIs, the
-same set of port messages (compared by id, value bits and origin), the same commit barriers and no stale read.
-This holds for all three scenarios in `SHADOW` mode under each of these transports: `bsp()`; lag 3; jitter 5 with
-seed 42 and lag 7 on `ely`; step ticks 3 on `balance` and an outage of `market` in ticks `[10, 60)`. It also holds
-for every what-if alternative and for a forecast from a snapshot of `h2-chain`. The transport changes only the
+Variant L with staleness 0 is bit-identical to variant T in the modes `SHADOW`, `WHAT_IF` and `FORECAST`
+([§9](#9-operating-modes)): same run id, same run hash, same events, same KPIs, the same set of port messages
+(compared by id, value bits and origin), the same commit barriers and no stale read. The transport changes only the
 wall time.
 
-Implemented in: `LooseRunner.java:161-164,410-431`; tests: `LooseRunnerTest.java:29-79`.
+The conformance test stresses one slow atom and one remote atom per scenario:
+
+| Scenario | Slow atom | Remote atom |
+|---|---|---|
+| `h2-chain` | `grid` | `ely` |
+| `haus` | `building` | `boiler` |
+| `boot` | `boat` | `boat` |
+
+`boot` is a pipeline. Its slow processor absorbs an outage of any other atom, so its slow atom is also its remote
+atom.
+
+The equality holds for all three scenarios in `SHADOW` mode under each of these transports:
+
+| Transport | Lag | Jitter | Step ticks | Outage |
+|---|---|---|---|---|
+| `bsp()` | 0 | 0 | 1 | none |
+| lag | 3 | 0 | 1 | none |
+| late remote atom | 7 on the remote atom | 5 (seed 42) | 1 | none |
+| slow processor | 0 | 0 | 3 on the slow atom | none |
+| outage | 0 | 0 | 1 | remote atom in ticks `[10, 60)` |
+| combined | 2 | 3 (seed 7) | 10 on the slow atom | remote atom in ticks `[10, 60)` |
+
+Under the combined transport it also holds for all three scenarios in `WHAT_IF` mode, for every alternative of the
+scenario, and in `FORECAST` mode, for a 60-step forecast from the snapshot after the middle superstep of the
+reference run and for every forecast of the scenario. `h2-chain` has eight forecasts; `haus` and `boot` have none.
+The scenario forecasts run as the Studio export runs them: inputs labelled as forecasts, from the snapshot after
+step `nowStep - 1`, to the end of the reference run.
+
+Every stressor of these transports names an atom of the plan and costs wall time. Each transport other than `bsp()`
+takes more ticks than `bsp()`, and more ticks than the same transport without any one of its stressors: the lag, the
+jitter, the lag of one atom, the step ticks of one atom or the outages of one atom. A step of 10 ticks takes longer
+than a superstep of `h2-chain` or `haus` under lag 2 and jitter 3 alone, so the slow processor of the combined
+transport still costs ticks.
+
+Implemented in: `LooseRunner.java:143-158,161-164,279-287,324-327,410-431`, `studio/StudioExport.java:102-106`;
+tests: `LooseRunnerTest.java:28-143,224-277`.
 
 <a id="113-throughput"></a>
 
@@ -554,4 +594,4 @@ Feedback loops belong in one processor; between processors, bulk-synchronous cou
 * The cut between tight and loose coupling follows from the wiring plan: the strongly connected components are the
   tight parts.
 
-Implemented in: `LooseRunner.java:135-141,464-490`; tests: `LooseRunnerTest.java:110-134`.
+Implemented in: `LooseRunner.java:135-141,464-490`; tests: `LooseRunnerTest.java:173-198`.

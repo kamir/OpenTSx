@@ -119,6 +119,13 @@ Read the [analysis guide](../docs/devguide/workbench-analysis.md) for the result
   (dev proxy `/retrieval`, target `OPENTSX_RETRIEVAL_URL`, default `http://localhost:8080`)
 - TS Inventory: browse the series of a retrieval server (`GET /v1/inventory`) by tag, channel and scenario event,
   pick series, window and resolution; needs a retrieval server started with `--kafscale`, `--iceberg` or `--demo`
+- Open a signal: "Prepare" on the page Signals opens `/workbench?system=<id>&signal=<id>&grade=raw`. In every mode
+  "Plausible range" starts from `expect.min` and `expect.max`, and "Resample" starts with `every` set to the larger
+  of 60 seconds and `expect.interval`, 60 seconds when the signal states no interval. An interval that is no
+  duration of section 1.2 of `../docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md` leaves `every` empty, and "Resample"
+  is refused with `every requires a finite number.` until a width is entered. Signal Engineer and Data Worker preset
+  a new operator in the inspector, Legacy presets the operation panel (`src/workbench/presets.ts`, section 8.3 of the
+  same specification)
 - Oscilloscope view: time base, vertical scale, cursors, trigger, measurements
 - Ground truth: the scenario events of series loaded from the inventory are drawn as bands on the time axis
   (yellow: operation, red: sensor fault); the field "Ground truth" jumps to an event
@@ -331,6 +338,26 @@ npm run lint
 ```
 
 ## Deployment
+
+### Serve the frontend image
+
+`deploy/docker/saas-frontend.Dockerfile` serves the static build with nginx and [`nginx.conf`](nginx.conf) on port
+8080. The image forwards `/api/` to the SaaS backend and `/retrieval/` to the retrieval server. Reading through
+`/retrieval/` needs no account.
+
+The image answers 403 to the write routes of the retrieval server: `/retrieval/v1/dags/` and
+`/retrieval/v1/systems/<id>/generate`, and every path below either of them. `<id>` is the id of a system. Deploy,
+Stop and generating a series go through the backend (`/api/v1/dags/`, `/api/v1/systems/<id>/generate`), which checks
+the account. nginx matches the path after it decodes percent escapes, merges slashes and resolves `.` and `..`, so
+`generate/`, `generate//` and `generate%2F` get 403 as well. The image is not the only way in: with `INGRESS=true`
+the k3s Ingress sends `/v1` to the retrieval server directly, and there the run token is the only gate
+([deploy/k3s](../deploy/k3s/README.md#vector-smart-topics)).
+
+You need Python 3.12. Check the rules from the repository root:
+
+```bash
+python3 -m unittest discover -s tools -p 'test_saas_frontend_nginx.py' -v
+```
 
 ### Production Build
 

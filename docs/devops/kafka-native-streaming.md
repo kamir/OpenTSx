@@ -7,7 +7,7 @@ Use the OpenTSx 3.1.0 Kafka-client path to maintain derived topics on KafScale. 
 You need a reachable broker, the OpenTSx Java modules and one processor for each domain. Keep processor checkpoint files on persistent storage. The Kafka bootstrap and advertised broker addresses must be reachable from every client.
 
 The workbench exports a DAG. The SaaS backend forwards an authorized deployment to the retrieval server, which validates it and writes its desired state to the control topic. The processor reads that topic, follows source episodes, writes derived records and publishes status. The retrieval server offers vector components as series in the inventory. See the
-[deployment and feed implementation](../../opentsx-retrieval/src/main/java/org/opentsx/retrieval/server/KafScaleFeed.java#L246).
+[deployment and feed implementation](../../opentsx-retrieval/src/main/java/org/opentsx/retrieval/server/KafScaleFeed.java#L248).
 
 This integration uses Kafka clients. It does not use a native S3 segment reader. It uses manual partition assignment, explicit offsets and local checkpoints. It does not require timestamp seek, log compaction, transactional writes or idempotent producers. The
 [client settings](../../opentsx-kafka-v2/src/main/java/org/opentsx/kafka/KafScaleClients.java#L14) define this boundary.
