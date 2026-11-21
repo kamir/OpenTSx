@@ -475,7 +475,7 @@ The source of a DAG document with a series sink:
 | `source.series` | one or more series ids; only these series are read |
 | `source.start` | `earliest` (default): begin at the start of the topic; `latest`: begin with what arrives from now on |
 
-Implemented in: `SeriesJob.java:13-141`, `flow.ts:700-757`.
+Implemented in: `SeriesJob.java:13-141`, `flow.ts:706-763`.
 
 <a id="s52-validation"></a>
 
@@ -802,7 +802,7 @@ The button is enabled once a step other than the source is selected.
 * The system document in the repository is not changed. The page Signals finds the clean series by its tags
   ([section 4.4](#s44-find-the-series-of-a-signal)).
 
-Implemented in: `PublishClean.tsx:60-101`, `flow.ts:534-596,700-757`, `deployments.ts:61,80-89`,
+Implemented in: `PublishClean.tsx:60-101`, `flow.ts:537-597,706-763`, `deployments.ts:115,134-143`,
 `Workbench.tsx:961-983`.
 
 <a id="s9-processor-descriptions"></a>
