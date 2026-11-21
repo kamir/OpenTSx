@@ -12,9 +12,6 @@ entries before 3.0.0 are grouped by date.
 
 ### Changed
 
-- `python-package`: `test_finite_service_http.py` compares the reported `statsmodels` version with the installed
-  library instead of a fixed `0.14.6`, which failed after the dependency update pinned `statsmodels==0.15.0`.
-
 - TASK-020 U01 decisions D-T16 to D-T22 (owner, 2026-11-21). `TsxCompileContext.Boundary` loses `admitsRaw` (D-T22):
   no raw series, pair or vector and no operator with merge class `none` can feed a federated sink. Spec S1.10, S2.2
   and S2.4 state that a site has exactly one node (D-T17) and that the local worker's capabilities are trusted-local
@@ -579,6 +576,13 @@ entries before 3.0.0 are grouped by date.
   `tsx-catalog/1` pins it; its `analysisResults` entries are now the `v2.1` vectors and the generator rebuilds it from
   `schema-history/v2.1`. The workbench result view shows the digests and says when a record has none.
 
+- Sealed buckets carry a content checksum. `BucketWriter` seals with `Buckets.contentChecksum`: `sha256:` and the
+  SHA-256 over every episode id with its content digest. It rejects an episode id that is already in the bucket with
+  other content before sending it. `ReplayService` verifies a bucket replay against the episode contents, so an episode
+  that comes back with other values under the same id no longer passes as verified. Manifests sealed with the id-only
+  `Buckets.checksum` (no `sha256:` prefix) still verify, by their ids. Python gets `bucket_content_checksum`; new
+  vectors `bucket-content-checksum.json`. `bucket-checksum.json` and the Rust id-only helper are unchanged.
+
 ### Changed
 
 - User manual 11.3 no longer lists `overall_sync` above 1 as a known issue of `EventSynchronization`: the local
@@ -605,6 +609,11 @@ entries before 3.0.0 are grouped by date.
   stays, because the PFD runtime `DynamicTopologyJob` uses it.
 
 ### Fixed
+
+- The `statsmodels` 0.15.0 pin of `python-package` now matches `deploy/local-cp/requirements.in` and
+  `requirements.lock`. With the old 0.14.6 constraint, the install in `standalone-numerics.md` failed with
+  `ResolutionImpossible`, and `test_finite_service_http.py` expected 0.14.6. `statsmodels` 0.15.0 adds the pinned
+  dependencies `formulaic`, `interface_meta`, `narwhals`, `typing_extensions` and `wrapt`.
 
 - `docs/datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md` has the bytes its `manifest.json` pins again;
   the repository split had replaced its links to the raw files with plain text. `tools/check_links.py` leaves files

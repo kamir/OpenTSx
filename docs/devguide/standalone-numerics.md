@@ -1,7 +1,7 @@
 # Run finite numerical analyses without a broker
 
 Run the local snapshot-analysis API from this checkout. Verified with Python
-3.12.9 and statsmodels 0.14.6.
+3.12.3 and statsmodels 0.15.0.
 
 You need an active Python 3.12 virtual environment and this source checkout.
 Run the commands from the repository root. The finite API runs independently
