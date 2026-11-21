@@ -241,7 +241,9 @@ That standalone replay fixture does not exercise the remote Wayang/UI path in S1
 The implemented local orchestration path uses `opentsx.dag.v2`, `opentsx.local-rollout.v1`, the shared assignment
 envelope and S1.9 requests. It accepts one to three complete source topics, one episode sink and only the S1.9
 cleaning subset. The UI queries target capabilities and submits explicit `flowId` and exact UTF-8 `dagText` through
-the authenticated backend. Administrator permission is required. Existing continuous deployment routes are unchanged.
+the authenticated backend. Worker capabilities are read over the unauthenticated local HTTP interface; this profile
+is trusted-local and makes no fleet qualification claim. Fleet admission uses only the signed site path of S5.3 and
+S7 (D-T18). Administrator permission is required. Existing continuous deployment routes are unchanged.
 
 | Boundary | Required local behavior and implementation |
 | --- | --- |
@@ -631,8 +633,9 @@ The driver MUST validate in this order and MUST stop at the first error. Steps 1
 6. Parameters (S1.3).
 7. Topics: every source and sink topic follows `tsx.<domain>.<kind>.v<n>` of the job's domain (S3.1).
 8. Federation: validate the value crossing each site boundary and its ownership dependencies. A local cleaning
-   chain may precede mergeable statistics. Cross-site raw pairing or alignment requires an explicitly admitted
-   movement contract. Federated statistics use tumbling windows and the sink kind is `aggregates` or `signals`.
+   chain may precede mergeable statistics. No movement contract for raw series, pairs or vectors exists (D-T22), so
+   a raw output or an operator with merge class `none` MUST NOT feed a federated sink, and cross-site raw pairing
+   or alignment is refused. Federated statistics use tumbling windows and the sink kind is `aggregates` or `signals`.
 
 ### S2.3 Wayang plan
 
@@ -680,7 +683,7 @@ The site plan is an `opentsx.runner-plan.v1` document ([schema](schemas/opentsx.
 | `inputContracts[]` | one `(binding, topic)` per whole input, with allowed writer fingerprints |
 | `outputs[]` | one typed output with DAG sink identity and writer contract |
 | `federation.route` | JVM only: `signal-cluster` or `job-state` |
-| `federation.expectedAssignments[]` | exact admitted assignment membership; one aggregate-producing member per site; assignment, site and node IDs each unique, so a node belongs to one site |
+| `federation.expectedAssignments[]` | exact admitted assignment membership; one aggregate-producing member per site; assignment, site and node IDs each unique, so a node belongs to one site. A site has exactly one node (D-T17): the site certificate identifies the site, and the site's one qualified runtime pin names its node; a second pin with another node is refused |
 | `federation.scopes[]` | at most 1024 unique admitted windows on the epoch grid |
 | `federation.groupBy`, `federation.maxDelay` | restricted tag names and explicit ISO 8601 duration |
 
