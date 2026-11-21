@@ -787,7 +787,7 @@ Implemented in: `signals.ts:150-158,181-188,223-252,573-611`, `SignalsPlace.tsx:
 * The workbench MAY be used without a signal. It then has no context line.
 
 Implemented in: `Workbench.tsx:170-173,179-187,233,697-744,828-833,950-974`, `presets.ts:9-32`,
-`DeviceTools.tsx:310-315`, `parameters.ts:20-43`, `inventory.ts:218-225`, `types.ts:139-155`.
+`DeviceTools.tsx:310-315,373-377`, `parameters.ts:20-43`, `inventory.ts:218-225`, `types.ts:139-155`.
 
 <a id="s84-publish-as-clean-signal"></a>
 
