@@ -5,6 +5,7 @@ import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.MockConsumer;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.common.TopicPartition;
@@ -17,6 +18,7 @@ import org.opentsx.connectors.kafka.OpenTSxClusterLink;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -79,6 +81,30 @@ class EventFlowAnalysisConsumerTest {
         assertEquals(1, tables.length);
         assertTrue(Files.readString(tables[0].toPath()).contains(TOPIC));
         assertTrue(consumer.closed());
+    }
+
+    @Test
+    void theEmptyPollsCountOverTheWholeRunSoAPollWithEventsDoesNotResetThem() {
+        int[] polls = {0};
+        MockConsumer<String, GenericRecord> consumer = new MockConsumer<>(OffsetResetStrategy.EARLIEST) {
+            @Override
+            public synchronized ConsumerRecords<String, GenericRecord> poll(Duration timeout) {
+                polls[0]++;
+                return super.poll(timeout);
+            }
+        };
+        TopicPartition partition = new TopicPartition(TOPIC, 0);
+        consumer.assign(List.of(partition));
+        consumer.updateBeginningOffsets(Map.of(partition, 0L));
+        GenericRecord event = new GenericData.Record(EVENT);
+        event.put("timestamp", 0L);
+        event.put("producer_timestamp", 0L);
+        consumer.scheduleNopPollTask();
+        consumer.schedulePollTask(() -> consumer.addRecord(new ConsumerRecord<>(TOPIC, 0, 0L, "probe", event)));
+
+        EventFlowAnalysisConsumer.runConsumer(consumer, null, dir.resolve("plots").toString());
+
+        assertEquals(4, polls[0]);
     }
 
     @Test

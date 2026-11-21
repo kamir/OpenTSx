@@ -10,14 +10,15 @@
 # Order of a full restore on a new cluster:
 #   cp DIR/env deploy/k3s/.env      (or: 71-restore.sh DIR --only env)    then 20-configure.sh, 10/11 images, 30-deploy.sh
 #   deploy/k3s/71-restore.sh DIR     (the PVCs must exist: run 30-deploy.sh first)
-# What it does: checks the namespace and the PVCs of the current .env (env alone needs no cluster), keeps the current
-# .env as .env.before-restore (and stops when an earlier .env.before-restore differs from .env), stops the writers
-# (opentsx-stats, opentsx-iceberg-rest, opentsx-minio scaled to 0), starts a helper pod with the PVCs mounted
-# read-write, REPLACES each PVC's content with the archive (ownership as in the backup), replaces .env with the
-# backup's env last and scales the writers back. With env and volumes, the namespace= line of the MANIFEST and
-# OPENTSX_NS of the backup's env must both name OPENTSX_NS as the shell or the current .env sets it. A failed step
-# leaves the configuration as it was, and that namespace check keeps the rerun in the same namespace. A .env that
-# already equals the backup's env stays, and so does the kept copy.
+# What it does: checks the namespace and the PVCs of the current .env (env alone needs no cluster), stops when an
+# earlier .env.before-restore differs from .env, stops the writers (opentsx-stats, opentsx-iceberg-rest, opentsx-minio
+# scaled to 0), starts a helper pod with the PVCs mounted read-write, REPLACES each PVC's content with the archive
+# (ownership as in the backup), keeps the current .env as .env.before-restore and replaces .env with the backup's env
+# last, and scales the writers back. With env and volumes, the namespace= line of the MANIFEST and OPENTSX_NS of the
+# backup's env must both name OPENTSX_NS as the shell or the current .env sets it. A failed step leaves .env as it was
+# and no partial .env.before-restore; a failed volume step keeps no copy of .env at all, so the rerun also works after
+# .env changed. That namespace check keeps the rerun in the same namespace. A .env that already equals the backup's
+# env stays, and so does the kept copy.
 # The KafScale topics are not touched.
 # Caution: the statistics checkpoint holds positions (offsets) in tsx.<domain>.episodes.v2. Restore it only against the
 # SAME topics; if the topics were deleted and recreated, skip stats-state (the processor then re-reads from the start).
@@ -126,7 +127,7 @@ if (( ${#PARTS[@]} )); then
   done
 fi
 
-REPLACE_ENV=false
+REPLACE_ENV=false; KEEP_ENV=false
 if $RESTORE_ENV; then
   if [[ -f "$ENV_FILE" ]] && cmp -s "$ENV_FILE" "$DIR/env"; then
     if [[ -e "$ENV_FILE.before-restore" || -L "$ENV_FILE.before-restore" ]]; then
@@ -138,28 +139,36 @@ if $RESTORE_ENV; then
     if [[ -f "$ENV_FILE" ]]; then
       [[ ! -e "$ENV_FILE.before-restore" ]] || cmp -s "$ENV_FILE" "$ENV_FILE.before-restore" \
         || die "$ENV_FILE.before-restore: holds the .env from before an earlier restore; leave env out of --only, or move that file away first"
-      cp -p "$ENV_FILE" "$ENV_FILE.before-restore" \
-        || die "$ENV_FILE.before-restore: cannot keep the current .env there; see the error above, nothing was restored"
-      warn "previous .env kept as $ENV_FILE.before-restore"
+      KEEP_ENV=true
     fi
     REPLACE_ENV=true
   fi
 fi
-# .env goes last: a failed volume step leaves the configuration as it was
+# .env is kept and replaced last: a failed volume step leaves .env as it was and writes no kept copy, so the rerun
+# also passes the kept-copy check after a change of .env
 replace_env() {
   $REPLACE_ENV || return 0
-  local after="" target="$ENV_FILE"
+  local after="" target="$ENV_FILE" keep="$ENV_FILE.before-restore"
   (( ${#PVCS[@]} )) && after=" after the PVCs ${PVCS[*]} were restored"
   local msg="$ENV_FILE: cannot replace it with $DIR/env$after; see the error above, then run 71-restore.sh $DIR --only env"
+  local keep_msg="$keep: cannot keep the current .env there; see the error above, nothing was restored"
+  (( ${#PVCS[@]} )) \
+    && keep_msg="$keep: cannot keep the current .env there$after; see the error above, then run 71-restore.sh $DIR --only env"
   # a copy renamed over the file: a failed copy leaves .env as it was, so the rerun passes the kept-copy check; a .env
   # that is a link stays one
   if [[ -L "$ENV_FILE" ]]; then
     target="$(readlink -f -- "$ENV_FILE")" \
       || die "$ENV_FILE: cannot replace it with $DIR/env$after; it links to $(readlink -- "$ENV_FILE"), which cannot be resolved (a directory on its path is missing or is a file, or the links form a loop); fix the link, then run 71-restore.sh $DIR --only env"
   fi
-  { (umask 077; cp "$DIR/env" "$target.restoring") && chmod 600 "$target.restoring" \
-    && mv -f "$target.restoring" "$target"; } \
+  { (umask 077; cp "$DIR/env" "$target.restoring") && chmod 600 "$target.restoring"; } \
     || { rm -f -- "$target.restoring" || true; die "$msg"; }
+  if $KEEP_ENV; then
+    # a partial copy would fail the kept-copy check of the rerun; a kept copy that is a link belongs to the operator
+    cp -p "$ENV_FILE" "$keep" \
+      || { [[ -L "$keep" ]] || rm -f -- "$keep" || true; rm -f -- "$target.restoring" || true; die "$keep_msg"; }
+    warn "previous .env kept as $keep"
+  fi
+  mv -f "$target.restoring" "$target" || { rm -f -- "$target.restoring" || true; die "$msg"; }
   ok "${ENV_FILE#"$ROOT"/}: restored; run 20-configure.sh (re-renders the overlay), 10-build.sh, 11-import-images.sh and 30-deploy.sh"
 }
 if (( ! ${#PARTS[@]} )); then replace_env; exit 0; fi

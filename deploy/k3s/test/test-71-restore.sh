@@ -12,17 +12,19 @@
 # copy of the .env from before the restore, and restoring env again then stops before it changes .env or that copy,
 # with or without volumes; a namespace that cannot be read, a missing namespace or PVC and a failed volume step leave
 # .env as it is; env alone needs no cluster; a MANIFEST of file= lines only restores; a current .env that cannot be kept
-# exits 1 and stays as it is; the rerun after a failed volume step restores into the same namespace; a .env that
-# already equals the backup's env stays, and the message names the kept copy only when there is one; with env and
-# volumes a backup whose MANIFEST names another namespace than the current .env, or none, or whose env names another
-# namespace than its MANIFEST, exits 1 before the question and before anything changes, naming the env file that sets
-# OPENTSX_NS or else env.example, and so does a backup of another namespace than OPENTSX_NS of the shell, naming the
-# shell; volumes alone restore into the namespace of the current .env; a .env that cannot be replaced exits 1 and names
-# the restored PVCs; a copy of the backup's env that fails halfway leaves .env as it was, and the rerun the message
-# names restores it; a .env that is a link stays a link, and one that links to a path that cannot be resolved exits
-# 1, stays as it is and the message names that path; git ignores deploy/k3s/.env.before-restore and
-# deploy/k3s/.env.restoring. A stand-in kubectl records any call, a stand-in cp fails on request; needs git, no kubectl,
-# no cluster, no network.
+# exits 1, stays as it is and leaves no partial kept copy (a kept copy that is a link stays), with volumes the message
+# names the restored PVCs, and the rerun the message names restores env; the rerun after a failed volume step restores
+# into the same namespace; a failed volume step keeps no copy of .env, so the rerun after a change of .env keeps the
+# changed .env; a .env that already equals the backup's env stays, and the message names the kept copy only when there
+# is one; with env and volumes a backup whose MANIFEST names another namespace than the current .env, or none, or whose
+# env names another namespace than its MANIFEST, exits 1 before the question and before anything changes, naming the
+# env file that sets OPENTSX_NS or else env.example, and so does a backup of another namespace than OPENTSX_NS of the
+# shell, naming the shell; volumes alone restore into the namespace of the current .env; a .env that cannot be replaced
+# exits 1 and names the restored PVCs; a copy of the backup's env that fails halfway leaves .env as it was and no kept
+# copy, and the rerun the message names restores it; a .env that is a link stays a link, and one that links to a path
+# that cannot be resolved exits 1, stays as it is and the message names that path; git ignores
+# deploy/k3s/.env.before-restore and deploy/k3s/.env.restoring. A stand-in kubectl records any call, a stand-in cp
+# fails on request; needs git, no kubectl, no cluster, no network.
 #
 #   bash deploy/k3s/test/test-71-restore.sh
 set -euo pipefail
@@ -269,6 +271,8 @@ if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/env-not-kept.out"; then
   failed "env-not-kept: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/env-not-kept.out"
 elif [[ "$(cat "$WORK/current.env")" != OPENTSX_DOMAIN=previous ]]; then
   failed "env-not-kept: the current .env was replaced"; sed 's/^/    /' "$WORK/current.env"
+elif [[ "$(readlink -- "$WORK/current.env.before-restore")" != "$WORK/nowhere/env" || -e "$WORK/current.env.restoring" ]]; then
+  failed "env-not-kept: the link .env.before-restore was removed or changed, or .env.restoring was left"
 else
   echo "ok   env-not-kept"
 fi
@@ -417,6 +421,29 @@ elif ! cmp -s "$WORK/rerun.env" "$WORK/other-ns/env" || [[ "$(cat "$WORK/rerun.e
   failed "rerun: .env is not the backup's, or the kept copy is not the previous .env"; sed 's/^/    /' "$WORK/rerun-second.out"
 else
   echo "ok   rerun"
+fi
+
+# a failed volume step keeps no copy of .env, so the rerun after a change of .env (20-configure.sh OPENTSX_TAG=<tag>
+# for the image of the helper pod) restores and keeps the changed .env
+printf 'OPENTSX_NS=current\n' > "$WORK/volume-fails.env"
+STUB_ENV=(CLUSTER=up EXEC=unpack-fails OPENTSX_ENV_FILE="$WORK/volume-fails.env")
+restore volume-fails-first "$WORK/other-ns" --only env,data --yes
+first=$rc
+left="$(cd "$WORK" && compgen -G 'volume-fails.env.*' || true)"
+changed=$'OPENTSX_NS=current\nOPENTSX_TAG=fixed'
+printf '%s\n' "$changed" > "$WORK/volume-fails.env"
+STUB_ENV=(CLUSTER=up OPENTSX_ENV_FILE="$WORK/volume-fails.env")
+restore volume-fails-rerun "$WORK/other-ns" --only env,data --yes
+STUB_ENV=()
+if (( first != 1 )) || [[ -n "$left" ]]; then
+  failed "volume-fails: exit $first, expected 1 and no file next to .env; left: $left"
+  sed 's/^/    /' "$WORK/volume-fails-first.out"
+elif (( rc != 0 )) || ! cmp -s "$WORK/volume-fails.env" "$WORK/other-ns/env" \
+  || [[ "$(cat "$WORK/volume-fails.env.before-restore")" != "$changed" ]]; then
+  failed "volume-fails: the rerun exit $rc, expected 0, the backup's env in .env and the changed .env in the kept copy"
+  sed 's/^/    /' "$WORK/volume-fails-rerun.out"
+else
+  echo "ok   volume-fails"
 fi
 
 STUB_ENV=(CLUSTER=up OPENTSX_ENV_FILE="$WORK/rerun.env")
@@ -586,15 +613,15 @@ STUB_ENV=(CP_FAILS_ON="$WORK/env-data/env" OPENTSX_ENV_FILE="$WORK/partial.env")
 restore env-copy-fails "$WORK/env-data" --only env --yes
 first=$rc
 first_env="$(cat "$WORK/partial.env")"
-left="$(cd "$WORK" && echo partial.env.*)"
+left="$(cd "$WORK" && compgen -G 'partial.env.*' || true)"
 STUB_ENV=(OPENTSX_ENV_FILE="$WORK/partial.env")
 restore env-copy-rerun "$WORK/env-data" --only env --yes
 STUB_ENV=()
 message="error: $WORK/partial.env: cannot replace it with $WORK/env-data/env; see the error above, then run 71-restore.sh $WORK/env-data --only env"
 if (( first != 1 )) || ! grep -qxF -- "$message" "$WORK/env-copy-fails.out"; then
   failed "env-copy-fails: exit $first, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/env-copy-fails.out"
-elif [[ "$first_env" != OPENTSX_DOMAIN=original || "$left" != partial.env.before-restore ]]; then
-  failed "env-copy-fails: .env is [$first_env], expected OPENTSX_DOMAIN=original; files left next to it: $left"
+elif [[ "$first_env" != OPENTSX_DOMAIN=original || -n "$left" ]]; then
+  failed "env-copy-fails: .env is [$first_env], expected OPENTSX_DOMAIN=original and no file next to it; left: $left"
 elif (( rc != 0 )) || ! cmp -s "$WORK/partial.env" "$WORK/env-data/env" \
   || [[ "$(cat "$WORK/partial.env.before-restore")" != OPENTSX_DOMAIN=original ]]; then
   failed "env-copy-fails: the rerun exit $rc, expected 0, the backup's env in .env and the original in the kept copy"
@@ -604,6 +631,35 @@ elif [[ "$(stat -c %a "$WORK/partial.env")" != 600 ]]; then
 else
   echo "ok   env-copy-fails"
 fi
+
+# a copy of .env to .env.before-restore that fails halfway leaves .env as it was and no partial kept copy, so the rerun
+# the message names restores env; with volumes the message names the restored PVCs
+for case in "env|CLUSTER=down|; see the error above, nothing was restored" \
+  "env,data|CLUSTER=up| after the PVCs opentsx-data were restored; see the error above, then run 71-restore.sh $WORK/env-data --only env"; do
+  IFS='|' read -r parts cluster tail <<< "$case"
+  name="keep-fails-${parts//,/-}"
+  printf 'OPENTSX_DOMAIN=original\n' > "$WORK/$name.env"
+  STUB_ENV=("$cluster" CP_FAILS_ON="$WORK/$name.env" OPENTSX_ENV_FILE="$WORK/$name.env")
+  restore "$name" "$WORK/env-data" --only "$parts" --yes
+  first=$rc
+  first_env="$(cat "$WORK/$name.env")"
+  left="$(cd "$WORK" && compgen -G "$name.env.*" || true)"
+  STUB_ENV=(OPENTSX_ENV_FILE="$WORK/$name.env")
+  restore "$name-rerun" "$WORK/env-data" --only env --yes
+  STUB_ENV=()
+  message="error: $WORK/$name.env.before-restore: cannot keep the current .env there$tail"
+  if (( first != 1 )) || ! grep -qxF -- "$message" "$WORK/$name.out"; then
+    failed "$name: exit $first, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/$name.out"
+  elif [[ "$first_env" != OPENTSX_DOMAIN=original || -n "$left" ]]; then
+    failed "$name: .env is [$first_env], expected OPENTSX_DOMAIN=original and no file next to it; left: $left"
+  elif (( rc != 0 )) || ! cmp -s "$WORK/$name.env" "$WORK/env-data/env" \
+    || [[ "$(cat "$WORK/$name.env.before-restore")" != OPENTSX_DOMAIN=original ]]; then
+    failed "$name: the rerun exit $rc, expected 0, the backup's env in .env and the original in the kept copy"
+    sed 's/^/    /' "$WORK/$name-rerun.out"
+  else
+    echo "ok   $name"
+  fi
+done
 
 # a .env that is a link stays a link, and the file it points to holds the backup's env
 printf 'OPENTSX_DOMAIN=original\n' > "$WORK/link-target.env"

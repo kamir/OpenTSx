@@ -1214,6 +1214,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   198.51.100.10.
 - opentsx-lg no longer has `src/main/k8s` (the Krake demo manifests `lg-demo.yaml` and `echo-demo.yaml` with their
   ConfigMap templates) or `src/main/docker-compose/krake-metrics-provider` (Prometheus and Grafana for that demo).
+- `archive/demos/opentsx-clusters/cp-multiregion/docker-compose.yml.orig`, a leftover copy of the compose file. The
+  cp-multiregion README no longer links the missing logo and the removed `multi-datacenter` demo.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -2765,6 +2767,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   git config -f .gitmodules submodule.<top>.path <top>, git config -f .gitmodules submodule.<top>.url <url> and git
   add .gitmodules, or remove it with git rm --cached <top>`. Before, the commands failed when run in a directory below
   the top level, which the guard checks by default.
+- `deploy/k3s/71-restore.sh` with `env` copies the current `.env` to `.env.before-restore` after the volumes, right
+  before it renames the backup's env over `.env`. A failed volume step leaves no kept copy, so the rerun also works
+  after `.env` changed, for example after `20-configure.sh` set another `OPENTSX_TAG`. When that copy fails, for
+  example on a full disk, the script removes the partial copy (a `.env.before-restore` that is a link stays), so the
+  plain rerun restores env. Before, the rerun was refused with `<env file>.before-restore: holds the .env from before
+  an earlier restore`. With volumes among the parts the message is `<env file>.before-restore: cannot keep the current
+  .env there after the PVCs <pvcs> were restored; see the error above, then run 71-restore.sh <dir> --only env`.
+- The READMEs of `opentsx-lg/src/main/docker-compose/ping-tool-cons/` and `ping-tool-prod/` describe the one container
+  each compose file starts, its mounts and host names, and the env file it reads: `.env`, or `.env-inhouse` with
+  `--env-file .env-inhouse`. The consumer README says the latency consumer stops after more than
+  `kping.consumer.giveUp` empty polls counted over the whole run, and the producer README no longer says the
+  entrypoint starts `Xvfb`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

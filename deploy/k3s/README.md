@@ -165,8 +165,10 @@ error: PVC opentsx-stats-state: the backup into stats-state.tar.gz failed; see t
 
 `71-restore.sh` with `env` keeps the current `.env` as `deploy/k3s/.env.before-restore` and replaces `.env` with the
 backup's env as the last step. With volumes among the parts, it checks the namespace and the PVCs of the current
-`.env` first and restores the volumes before it replaces `.env`. A failed volume step leaves the configuration as it
-was, and the namespace check described below keeps the rerun of the same command in the same namespace. `--only env`
+`.env` first and restores the volumes before it keeps and replaces `.env`. A failed volume step leaves `.env` as it
+was and writes no `.env.before-restore`, so the rerun of the same command also works after `.env` changed, for
+example when `20-configure.sh` set another `OPENTSX_TAG` for the image of the helper pod. The namespace check
+described below keeps that rerun in the same namespace. `--only env`
 alone replaces `.env`, needs no cluster and ends with
 `<path of .env>: restored; run 20-configure.sh (re-renders the overlay), 10-build.sh, 11-import-images.sh and 30-deploy.sh`.
 The script copies the backup's env to `<path of .env>.restoring` and
@@ -180,7 +182,14 @@ to a path that cannot be resolved, because a directory on it does not exist or i
 stops the step before the copy with exit 1 and
 `<path of .env>: cannot replace it with <dir>/env after the PVCs <pvcs> were restored; it links to <link target>, which cannot be resolved (a directory on its path is missing or is a file, or the links form a loop); fix the link, then run 71-restore.sh <dir> --only env`,
 again without `after the PVCs <pvcs> were restored` when no volume is among the parts.
-As `.env` is unchanged, the rerun the message names passes the check of `.env.before-restore` described below.
+The script copies the current `.env` to `.env.before-restore` after the copy of the backup's env and right before the
+rename. When that copy fails, for example on a full disk, the script removes the partial `.env.before-restore` (one
+that is a link stays), leaves `.env` as it was and exits with 1 after the error of `cp` with
+`<path of .env>.before-restore: cannot keep the current .env there after the PVCs <pvcs> were restored; see the error above, then run 71-restore.sh <dir> --only env`.
+Without volumes among the parts, the message is
+`<path of .env>.before-restore: cannot keep the current .env there; see the error above, nothing was restored`.
+As `.env` is unchanged and no partial copy is left, the rerun the message names passes the check of
+`.env.before-restore` described below.
 
 On a new cluster, restore `env` first. With `env` among the parts, a namespace or PVC that does not exist stops the
 restore with exit 1 before it changes anything:

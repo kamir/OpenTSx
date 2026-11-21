@@ -286,13 +286,16 @@ deploy/k3s/71-restore.sh DIR --only stats-state --yes
   (written to a temporary file and renamed).
 * `71-restore.sh` verifies the checksums first, asks for confirmation (unless `--yes`; an answer that does not start
   with `y` or `Y`, or standard input that ends before an answer, exits with 1), checks the namespace and the PVCs of
-  the current `.env`, keeps the current `.env` as `.env.before-restore` when it restores `env`, stops the writers,
-  **replaces** the PVC contents, replaces `.env` with the backup's env last and scales the writers back. An earlier
+  the current `.env`, stops the writers, **replaces** the PVC contents, keeps the current `.env` as
+  `.env.before-restore` and replaces `.env` with the backup's env last when it restores `env`, and scales the writers
+  back. An earlier
   `.env.before-restore` that differs from `.env` stops a restore with `env` with exit 1 before it changes either file,
   so the copy of the `.env` from before the first restore is kept. With `env` and volumes, the `namespace=` line of
   the backup's `MANIFEST` and `OPENTSX_NS` of the backup's env must both name `OPENTSX_NS` as the shell or the current
   `.env` sets it; otherwise, or without a `namespace=` line, it exits with 1 before the question and changes nothing.
-  A failed step leaves the configuration as it was, and that namespace check keeps the rerun in the same namespace.
+  A failed step leaves `.env` as it was and no partial `.env.before-restore`. A failed volume step writes no
+  `.env.before-restore` at all, so the rerun also works after `.env` changed, for example by `20-configure.sh`. That
+  namespace check keeps the rerun in the same namespace.
   On a new cluster, restore `env` first (`71-restore.sh DIR --only env`, needs no cluster), then run
   `20-configure.sh`, `10-build.sh`, `11-import-images.sh` and `30-deploy.sh`, then restore the volumes without `env`
   (`71-restore.sh DIR`). For a backup of another namespace, restore `env` alone first, or, when the `MANIFEST` and the

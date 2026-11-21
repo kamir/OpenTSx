@@ -1,21 +1,48 @@
-# Docker Compose Demo Project
+# Run the latency consumer
 
-This module is used for running the demo scenario using in a docker container
-using docker-compose with a "docker-compose-YAML" file.
+This compose file starts the latency consumer of the ping tool in one container. Verified on 3.0.1 with
+`docker compose config`.
 
-## The Environment
-The .env file contains the variables which specify the 3 MDC hosts and also
-runtime parameters for our example scenario.
+You need the image `opentsx/time-series-generator:3.0.1`, built with the `Docker` profile as step (2) of
+[`opentsx-lg/README.md`](../../../../README.md) describes, and Docker Compose.
 
-## The Scenario
-This example scenario is using our multi data center setup.
+## What it starts
 
-### It contains:
-- 3 MDC cluster
-- 1 KSQL server for metrics collection
-- 1 KPING container
+`docker-compose.yml` starts one service, `lg-west-CONS`, from the image `opentsx/time-series-generator:3.0.1`. Its
+entrypoint `/opentsx-lg/bin/run_LatencyProbe_CONS.sh` runs `org.opentsx.lg.kping.EventFlowAnalysisConsumer`. The
+consumer reads the topic `OpenTSx_Events` and measures the latency of each event until more than
+`kping.consumer.giveUp` polls have come back empty. It counts the empty polls over the whole run: a poll with events
+does not reset the count. Then it writes the table `latency-by-message-<time>` (`<time>` is milliseconds since the epoch).
 
-### Workload 
-Ping-DEMO.
+The container mounts:
 
+* `../config/` at `/etc/opentsx/config/`: the client profiles and `topiclist.def`
+* `../bin/` at `/opentsx-lg/bin/`: the entrypoint scripts
+* `../output` at `/root/opentsx/plots`: the folder the table goes to; git ignores it
 
+The compose file sets `OPENTSX_TOPIC_MAP_FILE_NAME` to `/etc/opentsx/config/topiclist.def`,
+`OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME` to the value of `ENV_CONTEXT` and `OPENTSX_SHOW_GUI` to `false`. It
+maps these host names to the addresses in `MDC1`, `MDC2` and `MDC3`:
+
+| Variable | Host names |
+|----------|------------|
+| `MDC1` | `broker-west-5`, `broker-west-6`, `broker-west-7` |
+| `MDC2` | `broker-west-1`, `broker-west-2`, `broker-east-3`, `broker-east-4`, `zookeeper-central`, `zookeeper-east`, `zookeeper-west`, `schema-registry-west-1` |
+| `MDC3` | `broker-east-8`, `broker-east-9`, `broker-east-10` |
+
+## Choose the env file
+
+Docker Compose reads `.env` next to the compose file. With `--env-file .env-inhouse` it reads `.env-inhouse`
+instead. The compose file takes `MDC1`, `MDC2`, `MDC3` and `ENV_CONTEXT` from that file and no other line of it.
+`ENV_CONTEXT` names the client profile: `.env` names `/etc/opentsx/config/opentsx-local.props`, `.env-inhouse` names
+`/etc/opentsx/config/cpl.props`.
+
+Replace the placeholders `<mdc1-address>`, `<mdc2-address>` and `<mdc3-address>` in that file with the addresses of
+your three clusters. Then check what Docker Compose starts, from this folder:
+
+```bash
+docker compose --env-file .env-inhouse config
+```
+
+`opentsx-lg/run_demo_docker_compose.sh` starts this service and the one of `../ping-tool-prod/` with
+`docker-compose --env-file .env-inhouse up -d`.
