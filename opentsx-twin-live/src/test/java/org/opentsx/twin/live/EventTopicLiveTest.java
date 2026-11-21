@@ -68,7 +68,10 @@ class EventTopicLiveTest {
     /** The event topic is the only twin topic that code writes, so the docs of this module name no other. */
     @Test
     void docsNameOnlyTheEventTopic() throws IOException {
-        Pattern kind = Pattern.compile("twin\\.<twin>\\.<run>\\.([a-z]+)|(?:`|\\{@code )\\.([a-z]+)[`}]");
+        Pattern kind = Pattern.compile("twin\\.<(?:id|twin)>\\.<run>\\.([a-z]+)|(?:`|\\{@code )\\.([a-z]+)[`}]");
+        for (String name : List.of("twin.<id>.<run>.msgs", "tsx.<domain>.twin.<twin>.<run>.msgs.v1")) {
+            assertTrue(kind.matcher(name).find(), "the check misses " + name);
+        }
         for (String doc : List.of("README.md", "src/main/java/org/opentsx/twin/live/EventTopic.java")) {
             Set<String> kinds = new TreeSet<>();
             Matcher m = kind.matcher(Files.readString(Path.of(doc)));
