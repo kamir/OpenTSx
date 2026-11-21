@@ -304,6 +304,17 @@ The fixture starts four independent clusters, each with private etcd metadata, a
 broker and a Proxy endpoint. Producers use the Proxy. Read the
 [bundle instructions](../opentsx-kafscale-conformance/README.md#build-the-pinned-transport-bundle).
 
+The fixture starts the clusters one after another. Each gets a newly reserved loopback port as
+`--listen 127.0.0.1:<port>` and writes `<cluster>.log` in the fixture's `brokers/` directory. A cluster is ready
+only when its own log shows `msg="proxy listening" addr=127.0.0.1:<port>` and
+`broker listening on 127.0.0.1:<broker-port>`, its process still runs and the port accepts a connection.
+An answer on the port alone does not count, because another process can take a released port.
+A cluster whose log shows `bind: address already in use` is stopped and started on a new port.
+Attempt `<n>` after the first writes `<cluster>.<n>.log` and keeps its etcd state in `<cluster>.<n>-state`.
+After five lost ports the fixture fails with
+`disposable cluster <cluster> lost its listener port in 5 attempts; inspect <log>`.
+Any other exit fails at once with `disposable cluster <cluster> exited; inspect <log>`.
+
 The JUnit fixtures use unique directories under `opentsx-wayang/target/federation-test-logs/` with
 `ON_SUCCESS` cleanup. A fixture-construction, test or broker-shutdown failure retains the directory;
 successful tests delete it. The [CI diagnostic artifacts](../docs/user-manual/12-operations.md#124-testing-and-ci)
