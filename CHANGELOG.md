@@ -100,6 +100,11 @@ entries before 3.0.0 are grouped by date.
 
 ### Added
 
+- TASK-020 U01 membership: expected membership (`federation.expectedAssignments`) refuses one node listed for two
+  sites, in Java `RunnerPlan` and Rust `site_plan.rs` (spec S2.4). `ConformanceMembershipTest` covers a
+  report from another node, reports outside the plan or from the future, an unknown or extra check, repeated topic
+  rows and repeated or unsorted series IDs.
+
 - TASK-020 U01 delivery cursor: `TsxPlanServiceDeliveryCursorTest` and the Rust agent test
   `agent_cursor_follows_the_site_sequence_across_jobs_through_restart_and_duplicate_ack` deliver job A at version 10
   and then job B at version 1 to one site, restart, and repeat the acknowledgement. Job B is delivered and run, the

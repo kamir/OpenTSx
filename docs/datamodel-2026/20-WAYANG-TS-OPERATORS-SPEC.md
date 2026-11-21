@@ -576,7 +576,7 @@ The site plan is an `opentsx.runner-plan.v1` document ([schema](schemas/opentsx.
 | `inputContracts[]` | one `(binding, topic)` per whole input, with allowed writer fingerprints |
 | `outputs[]` | one typed output with DAG sink identity and writer contract |
 | `federation.route` | JVM only: `signal-cluster` or `job-state` |
-| `federation.expectedAssignments[]` | exact admitted assignment membership; one aggregate-producing member per site |
+| `federation.expectedAssignments[]` | exact admitted assignment membership; one aggregate-producing member per site; assignment, site and node IDs each unique, so a node belongs to one site |
 | `federation.scopes[]` | at most 1024 unique admitted windows on the epoch grid |
 | `federation.groupBy`, `federation.maxDelay` | restricted tag names and explicit ISO 8601 duration |
 

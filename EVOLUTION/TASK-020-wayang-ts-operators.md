@@ -42,6 +42,8 @@ Each operator still requires its reference vectors and admission gate before use
   The delivery cursor gate is met for the signed site path (S5.3): job B at version 1 after job A at version 10 on
   one site, a restart and a repeated acknowledgement (`TsxPlanServiceDeliveryCursorTest`,
   `agent_cursor_follows_the_site_sequence_across_jobs_through_restart_and_duplicate_ack` in `rust/tsx-runner/src/agent.rs`).
+  Membership and capabilities are met on that path except measured capacities (`ConformanceMembershipTest`); see the
+  unified plan for what remains open.
 - [x] U02 local bounded stage: `RustPlugin` maps connected topic sources, unions, optional fused chain and sink to
   `RustPlatform`; `RustExecutor` invokes one complete stage action with no raw-payload channel or Java fallback.
 - [x] U03 local bounded control: authenticated backend PostgreSQL journal and standalone advisory-lock coordinator,
