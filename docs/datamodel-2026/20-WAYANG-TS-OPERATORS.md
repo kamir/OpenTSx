@@ -312,9 +312,9 @@ writes a new checkpoint. Latency is the increment interval plus the job start ti
 | `decode.avro-soe`, encode | `OpenTsxAvro.java:92-123`; `SeriesKeys.java:37-41` | `wire-format.json`, `series-id.json`, `xxh64.json` | wrap |
 | `stats.welford-ddsketch` (`stats.window` in the workbench) | `StatsEngine.java:48-153` (`onEpisode`, `onObservation`), `StatsAccumulator.java:62-86` (merge), `QuantileSketch.java:101-110` (merge) | `stats-window.v1.json`, `QuantileSketchTest.testVector` | wrap |
 | `dq.checks` | clean chain `dq.checks` in `CleanChain.java:35` | `clean-ops.v1.json` | wrap |
-| `dq.result` | `DataQuality.java:67-71` (`evaluate`) | `dq-result.v1.json` | wrap |
+| `dq.result` | `DataQuality.java:67-126` (`evaluate`) | `dq-result.v1.json` | wrap |
 | `convert.unit`, `resample`, `model.wind-shear`, `model.power-curve`, `feature.lag`, `feature.rolling` | `CleanChain.java:35`, `:112` (`of`), `:290-326` (`newState`, `restore`, `apply`); `Resampling.java:20` | `clean-ops.v1.json` | wrap; `CleanChain` state already serializes to JSON (`restore`), which fits the checkpoint |
-| `segment.threshold`, `segment.extremum`, fixed duration and count | `Segmenter.java:38-92`, `StreamingSegmenter.java:54-83` (`onEpisode`, `flush`) | `segment-threshold.v1.json`, `segment-extremum.v1.json` for threshold and extremum | wrap |
+| `segment.threshold`, `segment.extremum`, fixed duration and count | `Segmenter.java:38-92`, `StreamingSegmenter.java:66-92` (`onEpisode`, `flush`) | `segment-threshold.v1.json`, `segment-extremum.v1.json` for threshold and extremum | wrap |
 | SAX word | `Sax.java:16-49` (`breakpoints`, `word`, `mindist`), `Paa.java:9`; fills `EpisodeSummary.sax` | `sax-word.v1.json` | wrap |
 | `align.vector` | `VectorAligner.java:100` (`align`); streaming in `VectorStream` | `align-vector.v1.json` | wrap |
 | `pair.xcorr` | `TsxPairXcorr` in `opentsx-wayang` follows the workbench port of `KreuzKorrelation` and `CCFunction` of kamir/WikiExplorer.NG, Apache License 2.0 | `pair-xcorr.v1.json`, read directly by `TsxPairXcorrVectorsTest` | pure Java kernel; execution mapping is outside the kernel |
@@ -708,7 +708,7 @@ and the site agents also write `site` and `artifact` (version and digest). Neith
 `opentsx.dag-control.v1` on `tsx.<domain>.dags.v1`.
 
 `GET /v1/dags` lists every status record that carries `job` under `jobs`: the latest record per key, as written, with
-or without a control record of that name (`KafScaleFeed.java:321`, `:375`). The processor never writes `job`.
+or without a control record of that name (`KafScaleFeed.java:321`, `:376`). The processor never writes `job`.
 `dags` holds the control records with the processor's sink reports (key `<dag>/<sink>`) and refusals (key `<dag>`).
 Job records do not appear under `dags`. The workbench Deployments panel shows them in a separate list below the
 deployments: job id, track, site when present, state, input record count and report age

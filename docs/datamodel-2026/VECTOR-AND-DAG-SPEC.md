@@ -258,7 +258,7 @@ addition to [1.2](#12-checks-before-a-deployment):
 | Derived episodes | Episodes cut out of other episodes, with a parent episode id or a source episode id, are ignored. | none |
 
 Implemented in: `vector/VectorJob.java:53-121`, `vector/VectorProcessor.java:378-391,602-606`,
-`workbench/flow.ts:686-689,724`, `vector/VectorAligner.java:104-107,225-234`, `vector/VectorStream.java:106-109`,
+`workbench/flow.ts:686-690,724`, `vector/VectorAligner.java:104-107,225-234`, `vector/VectorStream.java:106-109`,
 `workbench/vector.ts:100-130,151-152`, `opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayangBuild.java:61-78`,
 `opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java:74`, `rust/tsx-runner/src/pairs.rs:333-340,1789-1794`,
 `rust/tsx-runner/src/catalog.rs:519-541,1206-1210`.
