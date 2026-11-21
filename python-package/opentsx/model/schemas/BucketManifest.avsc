@@ -11,7 +11,7 @@
     {"name": "tMin", "type": ["null", {"type": "long", "logicalType": "timestamp-micros"}], "default": null},
     {"name": "tMax", "type": ["null", {"type": "long", "logicalType": "timestamp-micros"}], "default": null},
     {"name": "episodeCount", "type": "long", "default": 0},
-    {"name": "checksum", "type": ["null", "string"], "default": null, "doc": "xxHash64 hex over the sorted episodeIds joined by newline."},
+    {"name": "checksum", "type": ["null", "string"], "default": null, "doc": "Buckets.contentChecksum: sha256: + SHA-256 over the episode ids and their content digests. A value without the sha256: prefix is the id-only xxHash64 of Buckets.checksum."},
     {"name": "createdAt", "type": {"type": "long", "logicalType": "timestamp-micros"}}
   ]
 }

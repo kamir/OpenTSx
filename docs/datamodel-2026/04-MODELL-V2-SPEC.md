@@ -80,6 +80,26 @@ contentDigest = lower_hex_64( SHA-256(bytes) )
 * `-0.0` and `0.0` give different digests. NaN payloads do not.
 * Vectors: `episode-digest.json`. Implementations: Java `Episodes.contentDigest`, Python
   `opentsx.model.content_digest`.
+* Bucket checksum: a SEALED `BucketManifest` holds the content checksum of its episodes. `n` and `str` are as for
+  the content digest: signed 64-bit little-endian integers and length-prefixed UTF-8.
+
+```
+bytes          = ascii("opentsx.bucket.content.v1\n") + n
+               + for each of the n distinct episode ids, sorted by UTF-8 bytes:
+                   str(episodeId) + ascii(contentDigest)
+contentChecksum = "sha256:" + lower_hex_64( SHA-256(bytes) )
+```
+
+* Order of writing and a repeated episode with the same content do not change it. One episode id with two contents
+  is rejected.
+* A checksum without the `sha256:` prefix is the id-only checksum: lower-case hex xxHash64 (seed 0) of the distinct
+  episode ids, sorted by UTF-8 bytes and joined with `\n`. It does not cover the contents. Readers use it only to
+  check manifests that hold it.
+* `BucketWriter` seals with the content checksum and rejects an episode id that is already in the bucket with other
+  content. `ReplayService` verifies a bucket replay against the form its manifest holds.
+* Vectors: `bucket-content-checksum.json` (content) and `bucket-checksum.json` (id-only). Implementations: Java
+  `Buckets.contentChecksum` and `Buckets.checksum`, Python `opentsx.model.bucket_content_checksum` and
+  `bucket_checksum`. Rust implements the id-only checksum only.
 
 ## 5. Wire format
 
