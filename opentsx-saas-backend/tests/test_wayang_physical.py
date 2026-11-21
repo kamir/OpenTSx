@@ -8,9 +8,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.wayang import WayangDeployment, WayangTopicOwner
+from app.db.upgrade_wayang_ownership import TABLES
 from app.services import wayang_contract as contract
 from app.services import wayang_service as service
 from test_wayang_rust import DAG, cleanup, client, database, driver, plan_for
+from test_wayang_continuous import continuous_driver
 
 
 DEFAULT_ADMISSION_FACTS = contract.admission_facts
@@ -478,26 +480,29 @@ def test_unversioned_computation_encoding_is_refused():
     assert caught.value.refusal["field"] == "/computationText"
 
 
-def test_startup_refuses_missing_owner_table_in_an_existing_active_journal(database):
+@pytest.mark.parametrize("missing_table", TABLES)
+def test_startup_refuses_every_partial_active_journal(database, continuous_driver, missing_table):
     from sqlalchemy import inspect, text
     from app.db.base import Base
     from app.db.upgrade_wayang_ownership import check_schema
-    with Session(database) as session:
-        plan = plan_for({"deployment": "active", "dagText": DAG, "createdAtMicros": "42"})
-        session.add(WayangDeployment(id="active", owner_id=1, flow_id=1, spec_hash=service.digest(DAG),
-                    dag_text=DAG, created_at_micros="42", plan_hash=plan["planHash"], plan_text=json.dumps(plan), state="running"))
-        session.add(WayangTopicOwner(topic="tsx.test.input.v2", deployment_id="active"))
-        session.commit()
+    response = client(database).post("/api/v1/dags/wayang-rust/deploy",
+                                    json={"flowId": 1, "dagText": DAG, "profile": "continuous"})
+    assert response.status_code == 202, response.text
+    assert response.json()["state"] == "queued"
     with database.begin() as connection:
-        before = tuple(connection.execute(text("SELECT * FROM wayang_deployments")).first())
-        connection.execute(text("DROP TABLE wayang_topic_owners"))
+        assert connection.execute(text("SELECT count(*) FROM wayang_cycles")).scalar_one() == 1
+        assert connection.execute(text("SELECT count(*) FROM wayang_topic_owners")).scalar_one() == 4
+        before = {table: connection.execute(text(f"SELECT * FROM {table}")).all()
+                  for table in TABLES if table != missing_table}
+        connection.execute(text(f"DROP TABLE {missing_table}"))
     with pytest.raises(RuntimeError, match="explicit offline upgrade"):
         with database.begin() as connection:
             check_schema(connection)
             Base.metadata.create_all(connection)
     with database.connect() as connection:
-        assert "wayang_topic_owners" not in inspect(connection).get_table_names()
-        assert tuple(connection.execute(text("SELECT * FROM wayang_deployments")).first()) == before
+        assert missing_table not in inspect(connection).get_table_names()
+        assert {table: connection.execute(text(f"SELECT * FROM {table}")).all()
+                for table in TABLES if table != missing_table} == before
 
 
 @pytest.mark.parametrize("unrelated_table", [False, True])

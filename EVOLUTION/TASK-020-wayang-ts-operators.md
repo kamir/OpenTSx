@@ -38,7 +38,11 @@ Each operator still requires its reference vectors and admission gate before use
 
 - [x] U00 offline foundation: shared execution-assignment schema, exact source/fragment identities, Java/Rust
   preflight validators and generated cross-runtime cases. This establishes no deployed runner or live fencing.
-- [ ] U01 physical deployment, complete ownership, channels, capabilities and structured refusal contract.
+- [x] U01 bounded Rust API-only physical contract: unchanged assignment v1, independently versioned computation
+  identity, complete resolved topic ownership, original node/port channels, pinned capabilities and located
+  refusals. Shared 54-case Java/Rust vectors and injected-provider lifecycle regressions cover admission and
+  identical retries. Live incarnation-provider qualification, production migrations and U06 remain open;
+  the physical ARM64 B4.2 measurement remains open.
 - [x] U02 local bounded stage: `RustPlugin` maps connected topic sources, unions, optional fused chain and sink to
   `RustPlatform`; `RustExecutor` invokes one complete stage action with no raw-payload channel or Java fallback.
 - [x] U03 local bounded control: authenticated backend PostgreSQL journal and standalone advisory-lock coordinator,

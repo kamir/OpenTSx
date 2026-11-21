@@ -24,8 +24,8 @@ messages contain only the fixed code, original node and field location. See the
 
 While the API and coordinator are running, complete or stop their deployments and wait for final reconciliation,
 retired publication authority and released topic owners. Then stop both services and back up the database using
-your existing PostgreSQL procedure. Startup refuses the legacy or a partial ownership-table shape instead of
-upgrading it. A missing owner table alongside existing Wayang journal tables also refuses startup.
+your existing PostgreSQL procedure. Startup refuses legacy ownership shapes and any partial Wayang journal instead
+of recreating missing tables. A new journal is created only when none of the six Wayang journal tables exists.
 The sole `wayang_topic_owners` table uses typed legacy rows or the physical
 `(fragment, cluster, incarnation, topic)` key for every input and sink topic channel.
 Legacy rows contain no trusted physical identity and conservatively
@@ -57,8 +57,8 @@ python -m app.db.upgrade_wayang_ownership --offline
 ```
 
 The first successful upgrade prints `Wayang ownership schema upgraded.` The repeated check prints
-`Wayang ownership schema is current.` A missing owner table in an existing journal requires restoring its recorded
-ownership from the verified backup before resolving or upgrading that journal; do not create an empty replacement.
+`Wayang ownership schema is current.` A partial existing journal requires restoration from a consistent, verified
+backup before resolving or upgrading it. Do not recreate missing journal tables as empty replacements.
 
 ## Quick Start
 

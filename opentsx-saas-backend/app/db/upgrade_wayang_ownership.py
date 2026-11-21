@@ -15,10 +15,10 @@ TABLES = ("wayang_deployments", "wayang_topic_owners", "wayang_continuous", "way
 def check_schema(connection):
     inspector = inspect(connection)
     tables = set(inspector.get_table_names())
-    if "wayang_topic_owners" not in tables:
-        if tables.intersection(TABLES):
-            raise RuntimeError("The Wayang ownership schema requires an explicit offline upgrade.")
+    if not tables.intersection(TABLES):
         return
+    if not set(TABLES).issubset(tables):
+        raise RuntimeError("The Wayang ownership schema requires an explicit offline upgrade.")
     columns = {column["name"] for column in inspector.get_columns("wayang_topic_owners")}
     keys = inspector.get_pk_constraint("wayang_topic_owners")["constrained_columns"]
     checks = {check["name"] for check in inspector.get_check_constraints("wayang_topic_owners")}

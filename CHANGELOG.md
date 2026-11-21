@@ -17,8 +17,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   complete typed channels and scoped whole-topic ownership. Compare pinned capabilities, topic incarnations and
   residency with host-owned facts before work, and retain located refusals through the UI. The default Rust
   provider refuses unavailable incarnation evidence. Shared Java/Rust vectors, execution/admission regressions,
-  an explicit offline ownership upgrade and generated lessons cover the contract. U06 production operation and
-  the physical ARM64 B4.2 measurement remain open.
+  an explicit offline ownership upgrade, startup refusal for partial journals and generated lessons cover the contract.
+  U06 production operation and the physical ARM64 B4.2 measurement remain open.
 
 - OpenTSx is maintainer-led: issues are welcome, pull requests are reviewed after the change was agreed in an
   issue ([`GOVERNANCE.md`](GOVERNANCE.md), `CONTRIBUTING.md`, `.github/CODEOWNERS`).

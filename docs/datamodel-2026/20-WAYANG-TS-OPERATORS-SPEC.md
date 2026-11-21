@@ -593,8 +593,9 @@ The current physical profile MUST refuse a configured publication gateway; that 
 
 The backend journal remains authoritative. Ownership keys MUST distinguish legacy scope from resolved physical
 cluster/topic incarnations. Cross-profile ambiguity MUST refuse. An explicit offline schema upgrade MUST refuse
-active or ambiguous legacy ownership and preserve deployment history. Startup table creation MUST NOT silently
-migrate existing ownership. This contract authorizes no production database migration.
+active or ambiguous legacy ownership and preserve deployment history. Startup MUST refuse any partial existing
+Wayang journal before table creation. A new journal MAY be created only when no Wayang journal tables exist.
+Startup MUST NOT silently migrate existing ownership. This contract authorizes no production database migration.
 
 #### Return located refusals
 

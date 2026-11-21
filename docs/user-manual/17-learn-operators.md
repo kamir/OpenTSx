@@ -69,7 +69,8 @@ unchanged. The API-only bounded `physical` profile supplies a separate admission
 4. Change a pinned capability report, validity interval, permitted site or topic incarnation. Verify refusal
    before preparation, publication and checkpoint advancement, including activation after preparation.
 5. Inspect the explicit offline ownership upgrade. Active or ambiguous legacy ownership blocks the upgrade;
-   completed deployment history remains intact. Do not run this exercise against a production database.
+   completed deployment history remains intact. Remove one table from a synthetic persisted journal and verify
+   startup refuses without recreating missing history. Keep a control for a new journal. Use disposable databases.
 6. Compare an injected trusted provider's successful execution with the default Rust adapter's
    `deployment.incarnation` refusal. The adapter has no authoritative topic UUID and does not fall back to
    a local profile. Passing injected-provider tests does not qualify a live production provider.
