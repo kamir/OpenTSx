@@ -96,7 +96,7 @@ legacy Java UI admission or signed B1 pass-through profile.
 | Streaming runtime that runs today | Java processor in `opentsx-retrieval`: manual assignment, explicit offsets, checkpoint per runner written after the broker acknowledged the output, control topic `tsx.<domain>.dags.v1`, status topic `tsx.<domain>.dag-status.v1` | [kafka-native-streaming.md](../devops/kafka-native-streaming.md); `VectorProcessor.java:46-59`; `TopicLayout.java:119-125` |
 | DAG validation | unique node ids, existing inputs, no cycles, supported sinks only, before the control record is written | `opentsx-retrieval/src/main/java/org/opentsx/retrieval/vector/DagPlan.java:17` |
 | Go processor proposal | `opentsx.dag.v1`, Go core on the KafScale processor template, shared vectors, at-least-once plus deterministic ids (D25 to D29) | [11](VECTOR-AND-DAG-SPEC.md), sections 5, 6, 7, 10 |
-| Processor description | `opentsx.processor.v1`: operator id, kind, ports, params, semantics, `runtimes` with `workbench`, `java`, `python`, `go`, `processor`; instances in `systems/processors/`, validated by `SystemDocTest` | `docs/datamodel-2026/schemas/opentsx.processor.v1.schema.json`; `opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java:49-57` |
+| Processor description | `opentsx.processor.v1`: operator id, kind, ports, params, semantics, `runtimes` with `workbench`, `java`, `python`, `go`, `processor`; instances in `systems/processors/`, validated by `SystemDocTest` | `docs/datamodel-2026/schemas/opentsx.processor.v1.schema.json`; `opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java:71-79` |
 | DAG export | the workbench writes `opentsx.dag.v1`, or `opentsx.dag.v2` (with `schema: opentsx.dag.v2`) when the flow has a series sink; `source.kind: kafscale-broker`, `checkpoint: { backend: file }` | `opentsx-saas-frontend/src/workbench/flow.ts:684-745`; [SYSTEM-DOCUMENT-SPEC](SYSTEM-DOCUMENT-SPEC.md#s51-sink-fields), section 5.1 |
 | Series identity | `seriesId` = lower-case hex of xxHash64, seed 0, over the canonical form of metric and tags | `SeriesKey.avsc`; `SeriesKeys.java:37-41` |
 | Episode | `[tStart, tEnd)` in microseconds, values, optional quality byte per value, mergeable `EpisodeSummary`, `revision`, `Provenance` | `Episode.avsc`, `EpisodeSummary.avsc`, `Provenance.avsc` |
@@ -316,7 +316,7 @@ writes a new checkpoint. Latency is the increment interval plus the job start ti
 | `convert.unit`, `resample`, `model.wind-shear`, `model.power-curve`, `feature.lag`, `feature.rolling` | `CleanChain.java:35`, `:112` (`of`), `:290-326` (`newState`, `restore`, `apply`); `Resampling.java:20` | `clean-ops.v1.json` | wrap; `CleanChain` state already serializes to JSON (`restore`), which fits the checkpoint |
 | `segment.threshold`, `segment.extremum`, fixed duration and count | `Segmenter.java:38-92`, `StreamingSegmenter.java:43-72` (`onEpisode`, `flush`) | `segment-threshold.v1.json`, `segment-extremum.v1.json` for threshold and extremum | wrap |
 | SAX word | `Sax.java:16-49` (`breakpoints`, `word`, `mindist`), `Paa.java:9`; fills `EpisodeSummary.sax` | `sax-word.v1.json` | wrap |
-| `align.vector` | `VectorAligner.java:99` (`align`); streaming in `VectorStream` | `align-vector.v1.json` | wrap |
+| `align.vector` | `VectorAligner.java:100` (`align`); streaming in `VectorStream` | `align-vector.v1.json` | wrap |
 | `pair.xcorr` | `TsxPairXcorr` in `opentsx-wayang` follows the workbench port of `KreuzKorrelation` and `CCFunction` of kamir/WikiExplorer.NG, Apache License 2.0 | `pair-xcorr.v1.json`, read directly by `TsxPairXcorrVectorsTest` | pure Java kernel; execution mapping is outside the kernel |
 | `pair.es` | `TsxPairEs` and `Mulberry32` in `opentsx-wayang` port `event_sync.py` and `es.ts`, including surrogate shuffles, without depending on `opentsx-core` | `pair-es.v1.json`, read directly by `TsxPairEsVectorsTest` | pure Java kernel; execution mapping is outside the kernel |
 | DFA | `opentsx-core/src/main/java/org/opentsx/algorithms/detrending/methods/DFA.java:5` (`extends DFACore`, `calc()`), stateful legacy API | none | later; needs vectors and a stateless entry point |
@@ -699,7 +699,8 @@ run the signature and conformance checks before the first fetch.
 `tsx.<domain>.dag-status.v1` on each state change and at least every 30 s. Track A repeats every 30 s
 (`TsxStatus.java:92`), the Rust `run` profile every 15 s (`run_loop.rs:20`). The Kafka key is the job id
 (`TsxStatus.java:79`, `run_loop.rs:310`). Site agents of both tracks send the same record to the plan service
-instead (S5.3; `SiteStatus.java:76-83`, `agent.rs:967`).
+instead (S5.3; `SiteStatus.java:76-83`, `agent.rs:1107`). A Rust site agent in the `orbit` profile buffers records
+it cannot send and delivers them in order at the next contact (S5.4).
 
 A job record has the processor fields `dag`, `state`, `specHash`, `records`, `watermark`, `waitingFor`,
 `skippedBlocks`, `error` and `at`, plus `job`, `planVersion` and `track` (S5.4). `dag` equals `job`. The Rust runner

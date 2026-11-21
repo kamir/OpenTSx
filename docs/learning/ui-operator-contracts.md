@@ -8,8 +8,8 @@ encodes a missing value and the test reader turns it into NaN. Time coordinates 
 `t0Ms = 0` . The DFA starter uses the existing Mulberry32 generator with the recorded seed and count instead of storing
 8192 numbers.
 
-The runtime authority is [`OPS`](../../opentsx-saas-frontend/src/workbench/ops.ts#L782) , including entries with
-`inCatalog: false` . The [`learning manifest`](ui-operators.v1.json) adds teaching links and concrete workloads, not
+The runtime authority is [`OPS`](../../opentsx-saas-frontend/src/workbench/ops.ts#L782) , including operators that
+catalog 1 does not list. The [`learning manifest`](ui-operators.v1.json) adds teaching links and concrete workloads, not
 another implementation catalog. Each lesson calls the real `apply` function. Expected results are hand-derived small
 examples or the existing white-noise DFA reference interval; the numerical algorithms are not reimplemented in the
 checker.
@@ -523,8 +523,10 @@ Groups by series ID, all, or a tag. Fill none leaves missing components; as-of u
 missing fill is none. Any other fill is refused with `vector fill must be none or as-of` , as the Rust runner and the
 vector processor refuse it. Emit
 any retains ticks with at least one component, complete requires all. Preserves per-component units, creates vector
-metadata, and ignores lateness in batch evaluation. VectorAligner and VectorProcessor provide existing Java
-implementations tested with shared vectors.
+metadata, and ignores lateness in batch evaluation. Refuses two series that give the same component of one vector,
+as the vector processor does, with its message:
+`the series a and b both give the component "wind_speed" of one vector; choose a key that tells them apart` .
+VectorAligner and VectorProcessor provide existing Java implementations tested with shared vectors.
 
 Two inputs with one name, such as `names="speed,Speed"` , are refused with
 `two inputs of the vector are both named "speed"; give every input its own name` , as the vector processor, Wayang and

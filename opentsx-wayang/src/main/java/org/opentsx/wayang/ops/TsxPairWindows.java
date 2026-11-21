@@ -226,7 +226,7 @@ public final class TsxPairWindows {
         };
     }
 
-    /** Ticks lo to lo + n - 1, one aggregate per tick, fill as-of up to maxAgeTicks; nothing before lo (vector.ts:78-93). */
+    /** Ticks lo to lo + n - 1, one aggregate per tick, fill as-of up to maxAgeTicks; nothing before lo (vector.ts:79-94). */
     private static double[] column(Map<Long, Cell> cells, long lo, int n, String agg, long maxAgeTicks) {
         double[] col = new double[Math.max(0, n)];
         long lastTick = Long.MIN_VALUE / 2;

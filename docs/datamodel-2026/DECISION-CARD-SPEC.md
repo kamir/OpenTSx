@@ -72,7 +72,7 @@ them.
   an analysis of the card.
 
 Implemented in: `system.v1:106-112`, `SystemDoc.java:233-242`, `SystemDoc.java:356-371`,
-`SystemDocTest.java:406-429`.
+`SystemDocTest.java:407-430`.
 
 <a id="12-fields-of-a-card"></a>
 
@@ -154,7 +154,7 @@ Implemented in: `decision.v1:309-416`, `Decisions.java:158-215`.
 * An alternative SHOULD name an analysis of its card in `analysis`. The build checks this for the example card. At
   run time an alternative that names no analysis of its card has the status `blocked`.
 
-Implemented in: `decision.v1:201-244`, `Decisions.java:95-100`, `SystemDocTest.java:425-429`.
+Implemented in: `decision.v1:201-244`, `Decisions.java:95-100`, `SystemDocTest.java:427-431`.
 
 <a id="2-decision-status"></a>
 
@@ -213,11 +213,14 @@ Then it evaluates every need. The order matters.
 7. `ok` is true when the need has no reason.
 
 The origin of a signal whose clean grade a flow writes, and that has no raw origin of its own, is the origin that
-comes last in the order `MEASURED`, `REPORTED`, `FORECAST`, `ESTIMATED`, `SYNTHETIC` among the origins of the
-signals the flow reads.
+comes last in the order `MEASURED`, `REPORTED`, `FORECAST`, `ESTIMATED`, `SYNTHETIC` among its `expect.origin` and
+the origins of the signals the flow reads
+([SYSTEM-DOCUMENT-SPEC.md, section 1.4](SYSTEM-DOCUMENT-SPEC.md#s14-origin-of-a-signal)). `park.p_potential_kw` is
+`ESTIMATED`, so its need in `h2-dispatch.decision.yaml`, with `origins: [ESTIMATED, FORECAST]`, accepts data that
+has no `origin` label.
 
-Implemented in: `Decisions.java:50-66`, `Decisions.java:104-156`, `Systems.java:270-273`, `Systems.java:406-422`,
-`DecisionsTest.java:93-113`.
+Implemented in: `Decisions.java:50-66`, `Decisions.java:104-156`, `Systems.java:270-273`, `Systems.java:410-426`,
+`DecisionsTest.java:95-126`.
 
 <a id="23-evaluate-an-analysis"></a>
 
@@ -253,8 +256,8 @@ Validity check, for each `validity` entry:
 
 An alternative takes the status of the analysis it names.
 
-Implemented in: `Decisions.java:88-100`, `Decisions.java:158-221`, `DecisionsTest.java:49-91`,
-`DecisionsTest.java:115-125`.
+Implemented in: `Decisions.java:88-100`, `Decisions.java:158-221`, `DecisionsTest.java:51-93`,
+`DecisionsTest.java:128-138`.
 
 <a id="24-fields-of-the-status"></a>
 
@@ -290,10 +293,11 @@ A decision record is one event in the life of a decision: a recommendation, what
 carried out, and what was observed afterwards. OpenTSx recommends and records. It carries out nothing.
 
 The record format is the schema `decision-record.v1`. No component of OpenTSx writes, reads or stores records at
-run time. The build validates the four records of the example file against the schema and checks that each record's
-`follows` is the `id` of the record before it.
+run time. The build validates the four records of the example file against the schema, checks that each record's
+`follows` is the `id` of the record before it, and checks that no approval or action follows a recommendation in
+shadow operation ([section 3.3](#33-chain-revision-and-shadow-operation)).
 
-Implemented in: `decision-record.v1:1-375`, `SystemDocTest.java:431-439`.
+Implemented in: `decision-record.v1:1-375`, `SystemDocTest.java:432-441`, `SystemDocTest.java:444-454`.
 
 <a id="31-kinds"></a>
 
@@ -360,11 +364,12 @@ Implemented in: `decision-record.v1:28-301`, `decision-record.v1:369-374`.
   record shows the mechanism, not an effect.
 * In shadow operation the analysis runs without anyone acting on it: recommendations carry `shadow: true`, no
   approval or action SHOULD follow them, and the outcome `follows` the recommendation and compares it with what
-  happened without it. The example file does not show shadow operation: its recommendation has `shadow: true` and
-  an approval and an action follow it.
+  happened without it. The build refuses the example file when an approval or an action follows a recommendation
+  with `shadow: true`, directly or later in its chain. The example file does not show shadow operation: its
+  recommendation has no `shadow`, and an approval, an action and an outcome follow it.
 
 Implemented in: `decision-record.v1:60-75`, `decision-record.v1:153-178`, `decision-record.v1:264-300`,
-`SystemDocTest.java:431-439`.
+`SystemDocTest.java:432-441`, `SystemDocTest.java:444-454`, `SystemDocTest.java:456-471`.
 
 <a id="4-signal-role-meaning-and-ranges"></a>
 
@@ -392,7 +397,7 @@ The same unit does not mean the same quantity. `role` says what kind of quantity
 * The server returns `role` and `meaning` per signal in `opentsx.signal-status.v1`.
 
 Implemented in: `system.v1:188-197`, `SystemDoc.java:42`, `SystemDoc.java:395-398`, `Systems.java:234-235`,
-`SystemDocTest.java:362-366`, `SystemDocTest.java:394`, `SystemsTest.java:97-99`.
+`SystemDocTest.java:363-367`, `SystemDocTest.java:395`, `SystemsTest.java:99-101`.
 
 <a id="42-confirm-the-meaning-of-a-binding"></a>
 
@@ -433,8 +438,8 @@ Example: for `park/T02/WTUR.W` the plausible range is -100 to 10000 kW from the 
 range is 0 to 3300 kW from the system document.
 
 Implemented in: `system.v1:223-266`, `SystemDoc.java:45-52`, `SystemDoc.java:399-433`, `SystemDoc.java:594-599`,
-`Systems.java:229-233`, `Systems.java:277-282`, `Systems.java:448-452`, `SystemDocTest.java:353-361`,
-`SystemDocTest.java:395`.
+`Systems.java:229-233`, `Systems.java:277-282`, `Systems.java:452-456`, `SystemDocTest.java:354-362`,
+`SystemDocTest.java:396`.
 
 <a id="5-powers-of-a-wind-park"></a>
 
@@ -456,7 +461,9 @@ of the twin has three powers that say why energy was not generated:
   `curtailed_dispatch_kwh` (available minus generated). A kilowatt hour lost to a restriction is never also counted
   as dispatched away.
 * `park.p_potential_kw` is written by the flow `park-potential` from the clean wind speed of the DWD station near the
-  park (`model.wind-shear`, then `model.power-curve`). Its `expect.origin` is `ESTIMATED`.
+  park (`model.wind-shear`, then `model.power-curve`). Its `expect.origin` is `ESTIMATED`, so its origin is
+  `ESTIMATED` and not the `MEASURED` of the wind
+  ([SYSTEM-DOCUMENT-SPEC.md, section 1.4](SYSTEM-DOCUMENT-SPEC.md#s14-origin-of-a-signal)).
 * `park.p_gen_kw` is the sum of the clean active power of the turbines (flow `park-power`, node `agg.sum`). It is an
   output of the plan: the measurement is compared with what the twin computes and is not an input of the twin. No
   processor implements `agg.sum`.
@@ -465,7 +472,7 @@ Implemented in: `WindPark.java:13-23`, `WindPark.java:49-59`, `WindPark.java:61-
 `h2-chain.yaml:26-28`, `h2-chain.yaml:55-56`, `h2-chain.system.yaml:116-136`,
 [`systems/flows/park-power.flow.yaml`](../../systems/flows/park-power.flow.yaml),
 [`systems/flows/park-potential.flow.yaml`](../../systems/flows/park-potential.flow.yaml),
-`SystemDocTest.java:364-366`, `SystemsTest.java:97-99`.
+`SystemDocTest.java:365-367`, `SystemsTest.java:99-101`, `SystemsTest.java:103-108`.
 
 <a id="6-demo-generators-and-scenario-models"></a>
 
