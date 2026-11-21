@@ -242,9 +242,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   word per line, blank lines and `#` lines skipped). It fails on every tracked path and every line of a tracked text
   file that holds one of its words, in any letter case and as a whole word. The messages are `<path>:<line>: <word>: a
   word of the private deny list; remove it or write a placeholder` and `<path>: <word>: a word of the private deny
-  list in the path; rename the file`. A deny list it cannot read, or a link on its path that points to nothing, gives
-  `config/private/denylist.txt: cannot read it (<cause>); fix the file or remove it`. Without the file, as in CI, the
-  guard skips this check. CONTRIBUTING.md describes it.
+  list in the path; rename the file`. A deny list it cannot read, a link on its path that points to nothing, or a
+  word that holds a control or format character (a list saved as UTF-16 without a byte order mark, or a byte order
+  mark inside the list) gives `config/private/denylist.txt: cannot read it (<cause>); fix the file or remove it`.
+  Words that differ only in letter case count once, a text file that is not valid UTF-8 is also searched in its
+  cp1252 decoding, and a tracked symbolic link is checked by its text. Without the file, as in CI, the guard skips
+  this check. CONTRIBUTING.md describes it.
 
 ### Changed
 
@@ -1009,6 +1012,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   simulated data, customers and benefits, the marketing campaign and the campaign briefing page
   `kampagnen-briefing.html`) are in English. Their file names stay until the German file names are renamed.
   `README.md` and `docs/README.md` no longer call them German.
+- `tools/check_tracked_config.py` searches each line once for all deny list words together and runs the per-word
+  search only on lines that match. With 300 words that share no prefix it takes 12 s instead of 98 s over the
+  repository.
 
 ### Removed
 
@@ -2779,6 +2785,16 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `--env-file .env-inhouse`. The consumer README says the latency consumer stops after more than
   `kping.consumer.giveUp` empty polls counted over the whole run, and the producer README no longer says the
   entrypoint starts `Xvfb`.
+- `tools/check_tracked_config.py` checks a tracked symbolic link by its text, which is what git publishes. A link to a
+  personal home path, a deny list word or a Confluent Cloud resource id is now reported even when it points to
+  nothing, and the guard no longer reads a file outside the repository through a link.
+- `tools/check_tracked_config.py` reports a deny list whose word holds a control or format character, such as a list
+  saved as UTF-16 without a byte order mark or one with a byte order mark inside, as `config/private/denylist.txt:
+  cannot read it (line <n> holds the control character U+0000); fix the file or remove it` (or `the format character
+  U+FEFF`). Such a list used to pass with 0 findings.
+- `tools/check_tracked_config.py` also searches a tracked text file that is not valid UTF-8 in its cp1252 decoding, so
+  a deny list word with an umlaut is found in a Latin-1 file. Deny list words that differ only in letter case give one
+  finding.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

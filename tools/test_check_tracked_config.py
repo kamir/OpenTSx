@@ -4,6 +4,8 @@ Run from the repository root: python -m pytest -q tools
 """
 import os
 import pathlib
+import random
+import re
 import subprocess
 import sys
 
@@ -402,3 +404,91 @@ def test_the_guard_reads_the_deny_list_below_the_root_and_not_the_ignored_list_i
     result = run_guard(repository)
     assert result.returncode == 1, result.stdout + result.stderr
     assert result.stdout.splitlines() == [f"docs/notes.md:2: zzqword: {DENIED}", "checked 2 tracked files, 1 findings"]
+
+
+def test_a_tracked_link_is_checked_by_its_text_and_not_by_the_file_it_points_to(tmp_path):
+    repository, outside = tmp_path / "repository", tmp_path / "outside"
+    subprocess.run(["git", "init", "-q", str(repository)], check=True, env=git_environment())
+    write(repository, {".gitignore": "config/private/\n", "config/private/denylist.txt": "zzqword\n"})
+    write(outside, {"notes.txt": f"zzqword in /home/{PERSON}/x\n"})
+    cluster = "lkc-" + "0test1"
+    links = {"lib/opt": "/opt/zzqword/x", "lib/home": f"/home/{PERSON}/x", "lib/cluster": f"/opt/{cluster}/x",
+             "lib/outside": "../../outside/notes.txt"}
+    (repository / "lib").mkdir()
+    for path, target in links.items():
+        (repository / path).symlink_to(target)
+    subprocess.run(["git", "-C", str(repository), "add", ".gitignore", "lib"], check=True, env=git_environment())
+    assert git(repository, "ls-files", "-s", "lib").count("120000 ") == 4
+    result = run_guard(repository)
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert result.stdout.splitlines() == [
+        f"lib/cluster:1: {cluster}: looks like a Confluent Cloud resource id; write a placeholder such as lkc-xxxxx",
+        f'lib/home:1: "/home/{PERSON}" is a personal home path; use $HOME or a placeholder such as <home>',
+        f"lib/opt:1: zzqword: {DENIED}",
+        "checked 5 tracked files, 3 findings"]
+
+
+def test_a_deny_list_with_a_control_or_format_character_in_a_word_is_one_finding(tmp_path, capsys):
+    paths = write(tmp_path, {"docs/notes.md": "zzqword and zzqother\n"})
+    deny_list = tmp_path / "config" / "private" / "denylist.txt"
+    deny_list.parent.mkdir(parents=True)
+    for data, cause in (("zzqword\nzzqother\n".encode("utf-16-le"), "line 1 holds the control character U+0000"),
+                        (b"zzqword\n\xef\xbb\xbfzzqother\n", "line 2 holds the format character U+FEFF")):
+        deny_list.write_bytes(data)
+        assert guard.main(tmp_path, paths) == 1
+        assert capsys.readouterr().out.splitlines() == [
+            f"config/private/denylist.txt: cannot read it ({cause}); fix the file or remove it",
+            "checked 1 tracked files, 1 findings"]
+
+
+def test_a_text_file_that_is_not_utf8_is_also_searched_in_its_cp1252_decoding(tmp_path):
+    write(tmp_path, {"config/private/denylist.txt": "zzqüword\nzzqword\n"})
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "stations.txt").write_bytes(b"caf\xe9\x85 first\nthe ZZQ\xdcWORD tool\nzzqword \xe9\n")
+    assert guard.check(tmp_path, ["docs/stations.txt"]) == [
+        f"docs/stations.txt:2: zzqüword: {DENIED}", f"docs/stations.txt:3: zzqword: {DENIED}"]
+
+
+def test_deny_words_that_differ_only_in_letter_case_give_one_finding(tmp_path):
+    write(tmp_path, {"config/private/denylist.txt": "zzqword\nZZQWORD\nZzqWord\n"})
+    paths = write(tmp_path, {"docs/notes.md": "use zzqword here\n", "zzqword/run.sh": "echo ok\n"})
+    assert guard.check(tmp_path, paths) == [f"docs/notes.md:1: zzqword: {DENIED}",
+                                            f"zzqword/run.sh: zzqword: {DENIED_PATH}"]
+
+
+def test_deny_words_that_lower_case_joins_but_a_case_insensitive_match_tells_apart_both_stay(tmp_path):
+    dotted, combining = "zzqİx", "zzqi̇x"
+    write(tmp_path, {"config/private/denylist.txt": f"{dotted}\n{combining}\n"})
+    paths = write(tmp_path, {"docs/notes.md": f"{combining}\nzzqix\n"})
+    assert guard.check(tmp_path, paths) == [f"docs/notes.md:1: {combining}: {DENIED}",
+                                            f"docs/notes.md:2: {dotted}: {DENIED}"]
+
+
+def test_deny_words_that_a_case_insensitive_match_joins_give_one_finding(tmp_path):
+    write(tmp_path, {"config/private/denylist.txt": "zzqİx\nZZQIX\nzzqſword\nzzqsword\n"})
+    paths = write(tmp_path, {"docs/notes.md": "zzqix and zzqsword\n"})
+    assert guard.check(tmp_path, paths) == [f"docs/notes.md:1: zzqİx: {DENIED}",
+                                            f"docs/notes.md:1: zzqſword: {DENIED}"]
+
+
+def test_many_deny_words_give_the_findings_of_one_search_per_word(tmp_path):
+    words = [f"zzq{n:03d}" for n in range(296)] + ["zzqa", "zzqa-zzqb", "zzqa zzqb", "zzqb"]
+    generator = random.Random(30)
+    tokens = words + [w.upper() for w in words[:40]] + ["lorem", "ipsum", "-", "_", "7", "x", "zzq", "zzqa-"]
+    lines = ["the zzqa-zzqb pair"]
+    for _ in range(3999):
+        line = ""
+        for _ in range(generator.randrange(8)):
+            line += generator.choice(tokens) + generator.choice(["", " ", " ", "-", "_", "7", "x", "."])
+        lines.append(line)
+    write(tmp_path, {"config/private/denylist.txt": "\n".join(words) + "\n", "docs/many.txt": "\n".join(lines) + "\n"})
+    paths = ["zzq007/a.txt", "a/ZZQA-zzqb.md", "a/xzzq001.md", "docs/many.txt"]
+    patterns = [(w, re.compile(rf"(?<![^\W_]){re.escape(w)}(?![^\W_])", re.I)) for w in words]
+    expected = [f"{path}: {w}: {DENIED_PATH}" for path in paths for w, p in patterns if p.search(path)]
+    expected += [f"docs/many.txt:{n}: {w}: {DENIED}" for n, line in enumerate(lines, 1) for w, p in patterns
+                 if p.search(line)]
+    findings = guard.check(tmp_path, paths)
+    assert [f for f in findings if f.startswith("docs/many.txt:1: ")] == [
+        f"docs/many.txt:1: {w}: {DENIED}" for w in ("zzqa", "zzqa-zzqb", "zzqb")]
+    assert len(findings) > 1000
+    assert findings == expected

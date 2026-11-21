@@ -97,10 +97,13 @@ Pull requests are squash-merged when every required check is green.
   `python3 tools/check_tracked_config.py` in the repository root. It exits with status 1 and reports each tracked path
   and each line of a tracked text file that holds one of these words, in any letter case and as a whole word (not next
   to a letter or digit), with `<path>:<line>: <word>: a word of the private deny list; remove it or write a placeholder`
-  or `<path>: <word>: a word of the private deny list in the path; rename the file`. A deny list it cannot read, or a
-  link on its path that points to nothing, gives
-  `config/private/denylist.txt: cannot read it (<cause>); fix the file or remove it`. CI has no deny list and skips
-  this check.
+  or `<path>: <word>: a word of the private deny list in the path; rename the file`. Words that differ only in letter
+  case count once. For a tracked symbolic link it checks the link text, which git publishes, and does not read the
+  file the link points to. A text file that is not valid UTF-8 is also searched in its cp1252 decoding. A deny list it
+  cannot read, a link on its path that points to nothing, or a word that holds a control or format character (a list
+  saved as UTF-16 without a byte order mark, or a byte order mark inside the list) gives
+  `config/private/denylist.txt: cannot read it (<cause>); fix the file or remove it`, for example with the cause
+  `line 1 holds the control character U+0000`. CI has no deny list and skips this check.
 * Real measurement data (plant, meter, house or boat data) stays local and out of the repository. Commit only
   synthetic or simulated data, and mark it as such.
 * `deploy/k3s/.env` and `deploy/k3s/overlays/local/` are generated and git-ignored.

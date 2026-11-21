@@ -19,9 +19,14 @@ Checks the files `git ls-files` lists under root:
     with at least one digit, not inside a word) and no personal home path, a directory below /Users or /home other
     than the service account homes Shared, jovyan, ubuntu, ec2-user and user;
   * when root holds the private deny list config/private/denylist.txt (git-ignored; one word per line, blank lines
-    and lines that start with # skipped): no tracked path and no line of a tracked text file holds one of its words,
-    in any letter case, as a whole word, that is, not next to a letter or digit. A deny list that cannot be read is
-    one finding, and so is a link on its path that points to nothing. Without the file these checks do not run.
+    and lines that start with # skipped, words that differ only in letter case counted once): no tracked path and no
+    line of a tracked text file holds one of its words, in any letter case, as a whole word, that is, not next to a
+    letter or digit; a text file that is not valid UTF-8 is also searched in its cp1252 decoding. A deny list that
+    cannot be read is one finding, and so is a link on its path that points to nothing and a word that holds a
+    control or format character (Unicode category Cc or Cf), as in a list saved as UTF-16 without a byte order mark
+    or with a byte order mark inside. Without the file these checks do not run.
+
+A tracked symbolic link is checked by its text, which is what git publishes; the file it points to is not read.
 
 When it reads the git listing itself (no paths given), it also fails on a gitlink, an index entry of mode 160000,
 whose path has no submodule.<name>.path entry in the .gitmodules file at the top level of the repository (no file
@@ -29,10 +34,12 @@ means no entries). A root below the top level compares the paths below it. A .gi
 for example one with conflict markers, is one finding with git's reason; the other checks still run.
 """
 import ipaddress
+import os
 import pathlib
 import re
 import subprocess
 import sys
+import unicodedata
 
 CONFIG_SUFFIXES = (".props", ".properties")
 ENV_NAME = re.compile(r"^\.env(?:[.-].+)?$")
@@ -99,21 +106,45 @@ def gitlink_findings(root: pathlib.Path) -> list[str]:
     return findings
 
 
-def deny_list(root: pathlib.Path) -> tuple[list[tuple[str, re.Pattern]], list[str]]:
+def deny_list(root: pathlib.Path) -> tuple[re.Pattern | None, list[tuple[str, re.Pattern]], list[str]]:
     try:
         text = (root / DENY_LIST).read_text(encoding="utf-8-sig")
     except FileNotFoundError as error:
         parts = pathlib.PurePosixPath(DENY_LIST).parts
         links = (root.joinpath(*parts[:n]) for n in range(1, len(parts) + 1))
         if not any(link.is_symlink() and not link.exists() for link in links):
-            return [], []
-        return [], [f"{DENY_LIST}: cannot read it ({error.strerror}); fix the file or remove it"]
+            return None, [], []
+        return None, [], [f"{DENY_LIST}: cannot read it ({error.strerror}); fix the file or remove it"]
     except (OSError, UnicodeDecodeError) as error:
         cause = getattr(error, "strerror", None) or str(error)
-        return [], [f"{DENY_LIST}: cannot read it ({cause}); fix the file or remove it"]
-    words = dict.fromkeys(line.strip() for line in text.splitlines())
-    return [(word, re.compile(rf"(?<![^\W_]){re.escape(word)}(?![^\W_])", re.I)) for word in words
-            if word and not word.startswith("#")], []
+        return None, [], [f"{DENY_LIST}: cannot read it ({cause}); fix the file or remove it"]
+    words, kept = [], []
+    for number, line in enumerate(text.splitlines(), 1):
+        word = line.strip()
+        if not word or word.startswith("#"):
+            continue
+        hidden = next((c for c in word if unicodedata.category(c) in ("Cc", "Cf")), None)
+        if hidden is not None:
+            kind = "control" if unicodedata.category(hidden) == "Cc" else "format"
+            return None, [], [f"{DENY_LIST}: cannot read it (line {number} holds the {kind} character "
+                              f"U+{ord(hidden):04X}); fix the file or remove it"]
+        if not any(pattern.fullmatch(word) for pattern in kept):
+            kept.append(re.compile(re.escape(word), re.I))
+            words.append(word)
+    if not words:
+        return None, [], []
+    patterns = [(word, re.compile(rf"(?<![^\W_]){re.escape(word)}(?![^\W_])", re.I)) for word in words]
+    alternatives = "|".join(re.escape(word) for word in words)
+    return re.compile(rf"(?<![^\W_])(?:{alternatives})(?![^\W_])", re.I), patterns, []
+
+
+def denied_words(combined: re.Pattern | None, patterns: list[tuple[str, re.Pattern]], *texts: str) -> list[str]:
+    if combined is None:
+        return []
+    texts = tuple(text for text in texts if combined.search(text))
+    if not texts:
+        return []
+    return [word for word, pattern in patterns if any(pattern.search(text) for text in texts)]
 
 
 def is_config(path: str) -> bool:
@@ -167,11 +198,10 @@ def config_findings(path: str, text: str) -> list[str]:
 
 
 def check(root: pathlib.Path, paths: list[str]) -> list[str]:
-    denied, findings = deny_list(root)
+    combined, denied, findings = deny_list(root)
     for path in paths:
-        for word, pattern in denied:
-            if pattern.search(path):
-                findings.append(f"{path}: {word}: a word of the private deny list in the path; rename the file")
+        for word in denied_words(combined, denied, path):
+            findings.append(f"{path}: {word}: a word of the private deny list in the path; rename the file")
         parts = pathlib.PurePosixPath(path).parts
         if ".idea" in parts:
             findings.append(f"{path}: IDE state is tracked; untrack it, .idea/ is git-ignored")
@@ -191,12 +221,18 @@ def check(root: pathlib.Path, paths: list[str]) -> list[str]:
             findings.append(f"{path}: measurement output is tracked; untrack it, {output_dir} is git-ignored")
             continue
         file = root / path
-        if not file.is_file():
+        if file.is_symlink():
+            data = os.fsencode(os.readlink(file))
+        elif file.is_file():
+            data = file.read_bytes()
+        else:
             continue
-        data = file.read_bytes()
         if b"\0" in data:
             continue
-        text = data.decode("utf-8", errors="replace")
+        try:
+            text, legacy = data.decode("utf-8"), []
+        except UnicodeDecodeError:
+            text, legacy = data.decode("utf-8", errors="replace"), data.decode("cp1252", errors="replace").splitlines()
         if is_config(path):
             findings.extend(config_findings(path, text))
         for number, line in enumerate(text.splitlines(), 1):
@@ -211,10 +247,10 @@ def check(root: pathlib.Path, paths: list[str]) -> list[str]:
                 if home.group(1) not in SERVICE_HOMES:
                     findings.append(f"{path}:{number}: \"{home.group(0)}\" is a personal home path; "
                                     "use $HOME or a placeholder such as <home>")
-            for word, pattern in denied:
-                if pattern.search(line):
-                    findings.append(f"{path}:{number}: {word}: a word of the private deny list; "
-                                    "remove it or write a placeholder")
+            other = [legacy[number - 1]] if number <= len(legacy) else []
+            for word in denied_words(combined, denied, line, *other):
+                findings.append(f"{path}:{number}: {word}: a word of the private deny list; "
+                                "remove it or write a placeholder")
     return findings
 
 
