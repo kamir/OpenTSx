@@ -45,7 +45,10 @@ class PortableRunHashTest {
             Pattern.compile("\\bSplittableRandom\\b"),
             "floating-point stream reduction without a specified order of additions", Pattern.compile(
                     "\\.average\\s*\\(|summaryStatistics|summingDouble|averagingDouble|\\bDoubleStream\\b"
-                            + "|mapToDouble\\s*\\([^;]*\\.sum\\s*\\(", Pattern.DOTALL));
+                            + "|mapToDouble\\s*\\([^;]*\\.sum\\s*\\(", Pattern.DOTALL),
+            "text formatted with the default locale", Pattern.compile(
+                    "\\bString\\s*\\.\\s*format\\s*\\(\\s*(?!(java\\.util\\.)?Locale\\b)|\\.formatted\\s*\\("
+                            + "|\\bprintf\\s*\\(\\s*(?!(java\\.util\\.)?Locale\\b)|\\bto(Upper|Lower)Case\\s*\\(\\s*\\)"));
 
     private static JsonNode computed;
 
@@ -67,17 +70,33 @@ class PortableRunHashTest {
             }
             assertTrue(java.size() > 10, root + " has only " + java.size() + " sources");
             for (Path p : java) {
-                String code = withoutCommentLines(Files.readString(p, StandardCharsets.UTF_8));
-                NOT_PORTABLE.forEach((why, pattern) -> {
-                    Matcher m = pattern.matcher(code);
-                    while (m.find()) {
-                        int line = code.substring(0, m.start()).split("\n", -1).length;
-                        found.add(root.relativize(p) + ":" + line + " " + why + ": " + m.group().strip());
-                    }
-                });
+                found.addAll(notPortable(root.relativize(p).toString(), Files.readString(p, StandardCharsets.UTF_8)));
             }
         }
-        assertEquals(List.of(), found.stream().sorted().toList());
+        assertEquals(List.of(), found);
+    }
+
+    /** The guard reads code on every line, also after a line break inside an expression, and skips only comments. */
+    @Test
+    void guardChecksCodeAndSkipsComments() {
+        String source = String.join("\n",
+                "/** Math.cos(x) in a doc comment */",
+                "class F {",
+                "    double f(double mean, double a, double x) {",
+                "        String s = \"// no comment\" + 'x' + \"\\\" /*\" + Math.tan(x); // Math.sin(x)",
+                "        return mean - a / 2",
+                "                * Math.cos(x); /* Math.exp(x)",
+                "        Math.log(x) */",
+                "    }",
+                "",
+                "    String g(int m) {",
+                "        return String.format(\"%02d\", m) + String.format(Locale.ROOT, \"%02d\", m);",
+                "    }",
+                "}");
+        assertEquals(List.of("F.java:11 text formatted with the default locale: String.format(",
+                "F.java:4 java.lang.Math function that may round differently between JVMs: Math.tan",
+                "F.java:6 java.lang.Math function that may round differently between JVMs: Math.cos"),
+                notPortable("F.java", source));
     }
 
     @Test
@@ -120,11 +139,51 @@ class PortableRunHashTest {
                 .get(0).reason());
     }
 
-    private static String withoutCommentLines(String source) {
-        StringBuilder sb = new StringBuilder();
-        for (String line : source.split("\n", -1)) {
-            String t = line.strip();
-            sb.append(t.startsWith("*") || t.startsWith("/*") || t.startsWith("//") ? "" : line).append('\n');
+    /** Every call of {@code source} that {@link #NOT_PORTABLE} names, as {@code name:line why: call}, sorted. */
+    private static List<String> notPortable(String name, String source) {
+        String code = withoutComments(source);
+        List<String> found = new ArrayList<>();
+        NOT_PORTABLE.forEach((why, pattern) -> {
+            Matcher m = pattern.matcher(code);
+            while (m.find()) {
+                int line = code.substring(0, m.start()).split("\n", -1).length;
+                found.add(name + ":" + line + " " + why + ": " + m.group().strip());
+            }
+        });
+        return found.stream().sorted().toList();
+    }
+
+    /** {@code source} with every comment blanked out; line breaks and string, text block and char literals stay. */
+    private static String withoutComments(String source) {
+        StringBuilder sb = new StringBuilder(source.length());
+        int n = source.length();
+        int i = 0;
+        while (i < n) {
+            char c = source.charAt(i);
+            if (c == '/' && source.startsWith("//", i)) {
+                for (; i < n && source.charAt(i) != '\n'; i++) {
+                    sb.append(' ');
+                }
+            } else if (c == '/' && source.startsWith("/*", i)) {
+                int end = source.indexOf("*/", i + 2);
+                assertTrue(end >= 0, "unterminated comment at character " + i);
+                for (; i < end + 2; i++) {
+                    sb.append(source.charAt(i) == '\n' ? '\n' : ' ');
+                }
+            } else if (c == '"' || c == '\'') {
+                String quote = source.startsWith("\"\"\"", i) ? "\"\"\"" : String.valueOf(c);
+                int j = i + quote.length();
+                while (j < n && !source.startsWith(quote, j)) {
+                    j += source.charAt(j) == '\\' ? 2 : 1;
+                }
+                assertTrue(j < n, "unterminated literal at character " + i);
+                j += quote.length();
+                sb.append(source, i, j);
+                i = j;
+            } else {
+                sb.append(c);
+                i++;
+            }
         }
         return sb.toString();
     }
