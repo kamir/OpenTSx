@@ -271,6 +271,25 @@ fn assignment_runtime_identity_hash_and_partition_mutations_are_refused() {
     }
 }
 
+/// D-T21: a signed run whose assignment declares outputs is refused until runtimes write them.
+#[test]
+fn assignment_outputs_are_refused_until_runtimes_write_them() {
+    let fixture = Fixture::new();
+    let mut value = fixture.plan_document();
+    assignment(&mut value, |document| {
+        document["outputs"] = json!([{"binding":"site","topic":"tsx.runtest.repartition.flow.vector.v2",
+            "partitionCount":"1","port":"out","kind":"repartition"}]);
+    });
+    let error = SignedPlan::verify(&fixture.sign(&value), &config(&fixture), ARTIFACT_DIGEST)
+        .err()
+        .expect("refused");
+    assert_eq!(error.code, "plan.invalid");
+    assert_eq!(
+        error.message,
+        "assignment outputs are not executed by this runtime yet (D-T21)"
+    );
+}
+
 #[test]
 fn unknown_fields_and_hidden_endpoint_injection_are_refused() {
     let fixture = Fixture::new();

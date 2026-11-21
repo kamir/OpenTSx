@@ -104,6 +104,12 @@ entries before 3.0.0 are grouped by date.
 
 ### Added
 
+- Shared execution assignment: optional `outputs` (D-T21) with `binding`, `topic`, `partitionCount`, `port` and
+  `kind` (`sink` or `repartition`), in the schema, Java `ExecutionAssignments`, Rust `tsx-contracts` and 14 new
+  shared vectors (91 in total). New refusal code `assignment.output`; a set refuses an output topic with two
+  writers as `assignment.ownership`. The Rust worker, signed runs, Rust sites and JVM sites refuse assignments with
+  `outputs` until the fragment cutter and the runtimes write them.
+
 - Catalog cards declare `key` (D-T20, spec S1.4, `opentsx.processor.v1` schema): `preserve` for decode, segments,
   SAX, DQ results and statistics; `derive-1to1` for the cleaning, model and feature operators; `regroup` for
   `align.vector`, `pair.xcorr` and `pair.es`. `SystemDocTest` requires the field on every catalog 1 operator and

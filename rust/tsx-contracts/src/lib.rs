@@ -91,6 +91,15 @@ pub fn validate_set(inputs: &[&str]) -> Result<(), &'static str> {
             }
         }
     }
+    // D-T21: every output topic has exactly one writer in the set
+    let mut writers = HashSet::new();
+    for assignment in &assignments {
+        for output in assignment["outputs"].as_array().into_iter().flatten() {
+            if !writers.insert((text(output, "binding"), text(output, "topic"))) {
+                return Err("assignment.ownership");
+            }
+        }
+    }
     Ok(())
 }
 
@@ -100,7 +109,9 @@ fn admit(input: &str) -> Result<Value, &'static str> {
     }
     let assignment = strict_json(input).map_err(|_| "assignment.json")?;
     let object = assignment.as_object().ok_or("assignment.json")?;
-    if object.len() != FIELDS.len() || !FIELDS.iter().all(|field| object.contains_key(*field)) {
+    // D-T21: `outputs` is the one optional top-level field
+    let expected = FIELDS.len() + usize::from(object.contains_key("outputs"));
+    if object.len() != expected || !FIELDS.iter().all(|field| object.contains_key(*field)) {
         return Err("assignment.fields");
     }
     if text(&assignment, "schema") != "opentsx.execution-assignment.v1" {
@@ -216,6 +227,31 @@ fn admit(input: &str) -> Result<Value, &'static str> {
     for input in inputs {
         if !owners.insert((text(input, "binding"), text(input, "topic"))) {
             return Err("assignment.ownership");
+        }
+    }
+    if let Some(outputs) = assignment.get("outputs") {
+        let outputs = outputs
+            .as_array()
+            .filter(|outputs| !outputs.is_empty() && outputs.len() <= MAX_INPUTS)
+            .ok_or("assignment.output")?;
+        let mut written = HashSet::new();
+        for output in outputs {
+            let fields = output.as_object().ok_or("assignment.output")?;
+            let required = ["binding", "topic", "partitionCount", "port", "kind"];
+            if fields.len() != required.len()
+                || !required.iter().all(|field| fields.contains_key(*field))
+                || !identifier(text(output, "binding"))
+                || !valid_topic(text(output, "topic"))
+                || !identifier(text(output, "port"))
+                || !matches!(text(output, "kind"), "sink" | "repartition")
+            {
+                return Err("assignment.output");
+            }
+            decimal(&output["partitionCount"], i32::MAX as u64, true).ok_or("assignment.output")?;
+            let key = (text(output, "binding"), text(output, "topic"));
+            if owners.contains(&key) || !written.insert(key) {
+                return Err("assignment.output");
+            }
         }
     }
     Ok(assignment)

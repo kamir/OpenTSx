@@ -30,7 +30,10 @@ public final class ExecutionAssignments {
     private static final Set<String> FIELDS = Set.of("schema", "deployment", "generation", "assignment", "attempt",
             "fence", "fragment", "site", "node", "runtime", "catalog", "artifactDigest", "specHash", "sourceDagText",
             "fragmentHash", "fragmentText", "mode", "inputs");
+    private static final Set<String> WITH_OUTPUTS = withOutputs();
     private static final Set<String> INPUT = Set.of("binding", "topic", "partitionCount", "positions");
+    /** An output topic (D-T21): a sink or a repartition topic that a later fragment reads whole. */
+    private static final Set<String> OUTPUT = Set.of("binding", "topic", "partitionCount", "port", "kind");
     private static final Set<String> BOUNDED_POSITION = Set.of("partition", "from", "to");
     private static final Set<String> CONTINUOUS_POSITION = Set.of("partition", "from");
     private static final List<String> CONTEXT = List.of("deployment", "generation", "specHash", "mode", "catalog");
@@ -49,6 +52,12 @@ public final class ExecutionAssignments {
             .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS).build();
 
     private ExecutionAssignments() {
+    }
+
+    private static Set<String> withOutputs() {
+        Set<String> fields = new HashSet<>(FIELDS);
+        fields.add("outputs");
+        return Set.copyOf(fields);
     }
 
     public static void validate(String text) {
@@ -92,6 +101,15 @@ public final class ExecutionAssignments {
                 }
             }
         }
+        // D-T21: every output topic has exactly one writer in the set
+        Set<Input> writers = new HashSet<>();
+        for (JsonNode document : assignments) {
+            for (JsonNode output : document.path("outputs")) {
+                if (!writers.add(inputKey(output))) {
+                    throw invalid("assignment.ownership");
+                }
+            }
+        }
     }
 
     public static String sha256(String text) {
@@ -115,7 +133,7 @@ public final class ExecutionAssignments {
             throw invalid("assignment.limit");
         }
         JsonNode document = parse(text, "assignment.json");
-        exactFields(document, FIELDS, "assignment.fields");
+        exactFields(document, document.has("outputs") ? WITH_OUTPUTS : FIELDS, "assignment.fields");
         if (!textEquals(document.get("schema"), "opentsx.execution-assignment.v1")) {
             throw invalid("assignment.version");
         }
@@ -190,6 +208,26 @@ public final class ExecutionAssignments {
         for (JsonNode input : inputs) {
             if (!claimed.add(inputKey(input))) {
                 throw invalid("assignment.ownership");
+            }
+        }
+        if (document.has("outputs")) {
+            JsonNode outputs = document.get("outputs");
+            if (!outputs.isArray() || outputs.isEmpty() || outputs.size() > 128) {
+                throw invalid("assignment.output");
+            }
+            Set<Input> written = new HashSet<>();
+            for (JsonNode output : outputs) {
+                exactFields(output, OUTPUT, "assignment.output");
+                if (!matches(output.get("binding"), ID) || !output.get("topic").isTextual()
+                        || !validTopic(output.get("topic").textValue()) || !matches(output.get("port"), ID)
+                        || !(textEquals(output.get("kind"), "sink") || textEquals(output.get("kind"), "repartition"))) {
+                    throw invalid("assignment.output");
+                }
+                decimal(output.get("partitionCount"), "2147483647", true, "assignment.output");
+                Input key = inputKey(output);
+                if (claimed.contains(key) || !written.add(key)) {
+                    throw invalid("assignment.output");
+                }
             }
         }
         return document;
