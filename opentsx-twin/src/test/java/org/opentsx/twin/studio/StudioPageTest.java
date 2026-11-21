@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,6 +33,19 @@ class StudioPageTest {
         for (Object run : runs) {
             Map<?, ?> r = (Map<?, ?>) run;
             assertTrue(String.valueOf(r.get("hash")).matches("[0-9a-f]{16}"), "run " + r.get("runId") + " has no hash");
+        }
+    }
+
+    @Test
+    void scenarioNamesDoNotDependOnTheDefaultLocale() {
+        Locale format = Locale.getDefault(Locale.Category.FORMAT);
+        Locale.setDefault(Locale.Category.FORMAT, Locale.forLanguageTag("ar-EG"));
+        try {
+            H2ChainScenario s = new H2ChainScenario();
+            assertEquals("Valve open again at 01:20 · operating policy unchanged", s.alternatives().get(0).name());
+            assertEquals("from 01:10 · operating policy unchanged", s.forecasts().get(0).name());
+        } finally {
+            Locale.setDefault(Locale.Category.FORMAT, format);
         }
     }
 

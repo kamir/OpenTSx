@@ -8,6 +8,7 @@ import org.opentsx.twin.demo.H2ChainDemo;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /** Scenario S1, the H2 chain, for the Studio. */
@@ -60,9 +61,8 @@ public final class H2ChainScenario implements StudioScenario {
                 List<Intervention> log = new ArrayList<>(reference());
                 log.add(Intervention.set(H2ChainDemo.START.plusSeconds(minute * 60L), "handover", "valve", 1,
                         "h2-handover", "valve reopened"));
-                out.add(new Alternative("reopen-" + minute + "-" + policy,
-                        String.format("Valve open again at %02d:%02d · %s", minute / 60, minute % 60, pName),
-                        log, pol, null));
+                out.add(new Alternative("reopen-" + minute + "-" + policy, String.format(Locale.ROOT,
+                        "Valve open again at %02d:%02d · %s", minute / 60, minute % 60, pName), log, pol, null));
             }
         }
         return out;
@@ -72,7 +72,7 @@ public final class H2ChainScenario implements StudioScenario {
     public List<Forecast> forecasts() {
         List<Forecast> out = new ArrayList<>();
         for (int now : new int[]{70, 90, 110, 130}) {
-            String t = String.format("%02d:%02d", now / 60, now % 60);
+            String t = String.format(Locale.ROOT, "%02d:%02d", now / 60, now % 60);
             out.add(new Forecast("now-" + now + "-follow", "from " + t + " · operating policy unchanged", now,
                     Map.of()));
             out.add(new Forecast("now-" + now + "-aware", "from " + t + " · electrolyzer throttles as the pressure rises",

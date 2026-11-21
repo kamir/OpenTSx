@@ -26,8 +26,9 @@ import java.util.Map;
 /**
  * Runs every {@link StudioScenario} (reference, alternatives, forecasts) and writes one JSON file for the Smart
  * Topics Studio ({@code docs/prototypes}). Long runs are downsampled to at most {@link #MAX_POINTS} points per series
- * (bucket means). The output, the run hashes included, is the same on every JVM: doubles are written by Jackson's
- * shortest-decimal writer, not by {@link Double#toString(double)}, whose digits differ between Java 17 and 21.
+ * (bucket means). The output, the run hashes included, is the same on every JVM and with every default locale:
+ * doubles are written by Jackson's shortest-decimal writer, not by {@link Double#toString(double)}, whose digits
+ * differ between Java 17 and 21, and texts are formatted with {@code Locale.ROOT}.
  * <p>
  * Usage: {@code java -cp "$(bin/opentsx classpath opentsx-twin)" org.opentsx.twin.studio.StudioExport out.json}
  */
