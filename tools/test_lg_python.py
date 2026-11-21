@@ -129,10 +129,11 @@ def test_the_generator_exits_1_and_names_the_broker_when_it_cannot_connect(tmp_p
                                "start the broker first, for example with 02_run_mqtt_broker.sh")
 
 
-def test_the_generator_exits_1_with_one_line_when_the_host_is_no_valid_name(tmp_path, monkeypatch):
+def test_the_generator_exits_1_with_one_line_before_the_connect_when_the_host_is_no_valid_name(tmp_path, monkeypatch,
+                                                                                               capsys):
     class Client:
         def connect(self, host, port):
-            raise UnicodeError("label empty or too long")
+            raise AssertionError(f"connected to {host}:{port}")
 
     stub_paho(monkeypatch, Client)
     config = tmp_path / "config.json"
@@ -140,8 +141,8 @@ def test_the_generator_exits_1_with_one_line_when_the_host_is_no_valid_name(tmp_
                                   "sensors": {"s1": {"range": [0, 1]}}}), encoding="utf-8")
     with pytest.raises(SystemExit) as stop:
         load(MQTTGEN, "mqttgen").main(str(config))
-    assert stop.value.code == ("broker..test:1884: cannot connect to the MQTT broker (label empty or too long); "
-                               "start the broker first, for example with 02_run_mqtt_broker.sh")
+    assert stop.value.code == f'{config}: mqtt.host: "broker..test" is not allowed; expected {HOST}'
+    assert capsys.readouterr().out == ""
 
 
 def test_the_generator_prints_the_broker_and_the_user_but_not_the_password(tmp_path, monkeypatch, capsys):
@@ -295,6 +296,10 @@ def test_the_generator_publishes_with_the_shipped_configuration(monkeypatch, cap
     ({"misc": {"interval_ms": 0.5}}, ("localhost", 1883)),
     ({"mqtt": {"topic": "t" * 65535}}, ("localhost", 1883)),
     ({"mqtt": {"topic": "\u20ac" * 21845}}, ("localhost", 1883)),
+    ({"mqtt": {"host": "127.0.0.1"}}, ("127.0.0.1", 1883)),
+    ({"mqtt": {"host": "::1"}}, ("::1", 1883)),
+    ({"mqtt": {"host": "a" * 63 + ".test."}}, ("a" * 63 + ".test.", 1883)),
+    ({"mqtt": {"host": "b\u00fccher.test"}}, ("b\u00fccher.test", 1883)),
 ])
 def test_the_generator_connects_with_values_at_their_bounds(tmp_path, monkeypatch, capsys, config, address):
     class Connected(Exception):
@@ -315,7 +320,7 @@ def test_the_generator_connects_with_values_at_their_bounds(tmp_path, monkeypatc
 INTERVAL = "a number of milliseconds from 0 to 86400000"
 PORT = "a whole number from 1 to 65535"
 TOPIC = "a non-empty JSON string of at most 65535 UTF-8 bytes without +, # or a lone surrogate"
-HOST = "a non-empty JSON string without a lone surrogate"
+HOST = "a host name or an IP address as a JSON string whose dot-separated labels have 1 to 63 characters"
 LOGIN = "a JSON string without a lone surrogate"
 
 
@@ -332,6 +337,10 @@ LOGIN = "a JSON string without a lone surrogate"
     ("mqtt", "host", 5, HOST),
     ("mqtt", "host", "", HOST),
     ("mqtt", "host", "h\ud800", HOST),
+    ("mqtt", "host", "broker..test", HOST),
+    ("mqtt", "host", ".test", HOST),
+    ("mqtt", "host", "a" * 64 + ".test", HOST),
+    ("mqtt", "host", "\u00fc" * 60 + ".test", HOST),
     ("mqtt", "port", "1883", PORT),
     ("mqtt", "port", 0, PORT),
     ("mqtt", "port", 65536, PORT),

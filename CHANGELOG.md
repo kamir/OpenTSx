@@ -2718,9 +2718,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `The client is not currently connected.` after the broker closed the connection. It used to keep printing payload
   lines while every publish was dropped.
 - opentsx-lg: `mqtt-generator-gist/mqttgen.py` runs and publishes when its standard output is closed at the start; it
-  used to stop with an `AttributeError` traceback. A `mqtt.host` that is not a valid host name, such as
-  `broker..test`, gives `<host>:<port>: cannot connect to the MQTT broker (<cause>); start the broker first, for
-  example with 02_run_mqtt_broker.sh` instead of a `UnicodeError` traceback.
+  used to stop with an `AttributeError` traceback.
 - `opentsx-core`: the DEBUG line `mean interval series=<label> rq=<R_q>` of `ReturnIntervallStatistik2.addRow` gives
   the R_q of the result, the mean of the intervals `addDistData` keeps. It gave the mean of the differences between
   the values, which `addRow` reads as intervals and not as times. The package-private helper `calcAverageOfDist`,
@@ -2764,10 +2762,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   once, at any depth, so `X=$(docker pull <image> | tee log) docker pull <image>` gives one finding for each image. It
   reads a `timeout` duration that is a variable, a positional parameter, a variable with a default value or a value
   with a unit, as in `timeout $T`, `timeout ${T:-30}`, `timeout $1`, `timeout "${T}"` and `timeout $(cat t)s`. It
-  always reads `-k`, `-s`, `--kill-after` and `--signal` of `timeout` with their value, so a long line of `timeout`
-  options without a command word, such as `timeout -k $(cat t) -s $(cat t)` repeated, is checked in linear time. It
-  treats `>|` as a redirection, also in the `cd` check, so `cd x >| log || exit 1` passes and `echo a >|cd x` is no
-  `cd`.
+  always reads `-k`, `-s`, `--kill-after` and `--signal` of `timeout` with their value. It treats `>|` as a
+  redirection, also in the `cd` check, so `cd x >| log || exit 1` passes and `echo a >|cd x` is no `cd`.
 - tools: `tools/check_tracked_config.py` says where to run the commands it suggests for a gitlink without a
   `.gitmodules` entry: `<path>: gitlink without a .gitmodules entry; at the top level of the repository, add one with
   git config -f .gitmodules submodule.<top>.path <top>, git config -f .gitmodules submodule.<top>.url <url> and git
@@ -2795,6 +2791,27 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `tools/check_tracked_config.py` also searches a tracked text file that is not valid UTF-8 in its cp1252 decoding, so
   a deny list word with an umlaut is found in a Latin-1 file. Deny list words that differ only in letter case give one
   finding.
+- tools: `tools/test_lg_scripts.py` reads a redirection between `docker` and its subcommand like a global option, also
+  one written right after `docker`, so `docker 2>/dev/null pull <image>`, `docker >log pull <image>`, `docker 2>&1
+  pull <image>` and `docker>/dev/null pull <image>` give the `<image>: no exact version` finding. The check used to
+  skip these commands. `docker --debug <<<x run <image>` no longer reports `--debug` as an unknown docker option, and
+  `docker --foo bar >log pull <image>` reports `--foo`.
+- tools: `tools/test_lg_scripts.py` reports an install without an image as `<file>:<line>: docker pull: no image; name
+  the image` (with the subcommand it reads, such as `container run`) and one without a connector as `<file>:<line>:
+  confluent-hub install: no connector; name the connector`. For `docker pull >/dev/null` it reported `<file>:<line>: :
+  no exact version` with an empty reference. It reads a `run`, `create`, `pull` or `install` subcommand also at the
+  end of a command, as in `docker pull`, `docker run; echo x`, `X=$(docker image pull)` or `confluent-hub install`,
+  which it used to skip, so `docker --foo pull` reports `--foo`. `confluent-hub install>/dev/null <connector>` reads
+  the connector.
+- tools: in `tools/test_lg_scripts.py` the `&` of `>&` or `<&` starts no command, so `echo >&docker pull x` gives no
+  image finding and `echo a >&cd x` no `cd` finding. It reads `timeout $10 docker pull <image>`, as bash reads `$10`
+  as `${1}0`. It reads a `timeout` with its options and duration once, so a line of `timeout` options without a
+  command word is checked in linear time; `timeout` followed by 2560 `-k timeout` pairs took 4.15 s and takes 0.03 s.
+  Its test for this no longer measures the time.
+- opentsx-lg: before it connects, `mqtt-generator-gist/mqttgen.py` refuses a `mqtt.host` with an empty label, such as
+  `broker..test`, or a label of more than 63 characters with `<file>: mqtt.host: <value> is not allowed; expected a
+  host name or an IP address as a JSON string whose dot-separated labels have 1 to 63 characters`. Every refused
+  `mqtt.host` names these allowed values. Such a host used to end in a `UnicodeError` traceback at the connect.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

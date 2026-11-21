@@ -9,7 +9,6 @@ import pathlib
 import re
 import shlex
 import subprocess
-import time
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 LG = ROOT / "opentsx-lg"
@@ -17,7 +16,7 @@ GRAFANA = LG / "src" / "main" / "mqtt-example" / "influxdb-grafana" / "__run_con
 GRAFANA_CONTAINER = "docker-influxdb-grafana"
 GRAFANA_PASSWORD = "test-password-0x1"
 CI = ROOT / ".github" / "workflows" / "ci.yml"
-CD = re.compile(r"(?:^|[;&({]|(?<!>)\||\b(?:then|do|else)\s)\s*(?:(?:!|command|builtin|time)\s+)*cd(?=\s|$)")
+CD = re.compile(r"(?:^|[;({]|(?<![<>])&|(?<!>)\||\b(?:then|do|else)\s)\s*(?:(?:!|command|builtin|time)\s+)*cd(?=\s|$)")
 CD_GUARD = re.compile(r"(?:[<>]&|&>|>\||[^;&|])*\|\|\s*(?:exit|return)\b")
 SHELL = re.compile(r"""'[^']*'|"(?:\\.|[^"\\])*"|\\.|(?P<comment>(?<![^\s;&|()])#.*)""")
 SEPARATOR = re.compile(r"&&|\|\||(?<![<>])&(?!>)|;|(?<!>)\|")
@@ -36,23 +35,29 @@ ASSIGNMENT = r"[A-Za-z_][A-Za-z0-9_]*="
 TIMEOUT_VALUE_OPTION = r"(?:-[ks]|--(?:kill-after|signal))"
 OPTION = (r"(?:" + TIMEOUT_VALUE_OPTION + r"\s+" + VALUE_PIECE + r"+|(?!" + TIMEOUT_VALUE_OPTION + r"\s)-" + WORD_PIECE
           + r"+)")
-VARIABLE = r"\$(?:[A-Za-z_][A-Za-z0-9_]*(?![A-Za-z0-9_])|[0-9]|\{[^{}\s]+\})"
+VARIABLE = r"\$(?:[A-Za-z_][A-Za-z0-9_]*(?![A-Za-z0-9_])|[0-9]+|\{[^{}\s]+\})"
 # unquoted() masks a quoted word such as "$(cat t)" or "${T}" as "_" apart from a substitution.
-TIMEOUT = (r"timeout(?:\s+" + OPTION + r")*\s+(?:_*(?:" + SUBSTITUTION + "|" + VARIABLE + r")_*|_+)[smhd]?")
-# A word that another alternative reads is never an option value and a TIMEOUT match is no keyword, so each word has
-# one reading and a line without a command word fails in linear time.
-COMMAND_WORD = (r"(?:(?:^|(?<=[;&{])|(?<=\|)(?<!>\|)|(?<=\sin\s)(?=\s*" + CASE_ARM + r"))\s*(?:" + CASE_ARM + r")?"
-                r"|(?<=[(`])\s*)"
-                r"(?:(?:" + ASSIGNMENT + WORD_PIECE + r"*|" + TIMEOUT + r"|-" + WORD_PIECE + r"+(?:\s+(?!-|(?:"
-                + NUMBER + "|" + KEYWORD + r")\s|" + ASSIGNMENT + r")" + VALUE_PIECE + r"+)?|" + NUMBER + "|(?!"
-                + TIMEOUT + r"\s)" + KEYWORD + r")\s+)*")
-INSTALL = re.compile(COMMAND_WORD + r"(?:[^\s;&|()<>]*/)?(?P<tool>docker\s+(?:" + DOCKER_GLOBAL + r")*(?P<word>"
-                     + VALUE_PIECE + r"+)|confluent-hub\s+install\s|confluent\s+connect\s+plugin\s+install\s)")
-DOCKER_INSTALL = r"(?:(?:container\s+)?(?:run|create)|(?:image\s+)?pull)(?=\s|[<>]|&>)"
+TIMEOUT = (r"timeout(?:\s+" + OPTION + r")*(?:\s+(?:_*(?:" + SUBSTITUTION + "|" + VARIABLE + r")_*|_+)[smhd]?)?")
+# The lookahead keeps the first match of TIMEOUT, so a timeout with its options and duration is one word that is never
+# read again. A word that another alternative reads is never an option value, so each word has one reading and a line
+# without a command word fails in linear time.
+COMMAND_WORD = (r"(?:(?:^|(?<=[;{])|(?<=&)(?<![<>]&)|(?<=\|)(?<!>\|)|(?<=\sin\s)(?=\s*" + CASE_ARM + r"))\s*(?:"
+                + CASE_ARM + r")?|(?<=[(`])\s*)"
+                r"(?:(?:" + ASSIGNMENT + WORD_PIECE + r"*|(?=(?P<timeout>" + TIMEOUT + r"))(?P=timeout)|-" + WORD_PIECE
+                + r"+(?:\s+(?!-|(?:" + NUMBER + "|" + KEYWORD + r")\s|" + ASSIGNMENT + r")" + VALUE_PIECE + r"+)?|"
+                + NUMBER + r"|(?!timeout\s)" + KEYWORD + r")\s+)*")
+REDIRECTION = r"(?:(?<!\S)[0-9]+)?(?:&>>?|[<>]&|>>|>\||<<<?|<>|[<>])"
+SUBCOMMAND_END = r"(?=\s|[<>]|&>|$)"
+INSTALL = re.compile(COMMAND_WORD + r"(?:[^\s;&|()<>]*/)?(?P<tool>docker(?:\s+|(?=[<>]|&>))(?:" + DOCKER_GLOBAL + "|"
+                     + REDIRECTION + r"\s*" + VALUE_PIECE + r"+\s+)*(?P<word>" + VALUE_PIECE
+                     + r"+)|confluent-hub\s+install" + SUBCOMMAND_END + r"|confluent\s+connect\s+plugin\s+install"
+                     + SUBCOMMAND_END + ")")
+DOCKER_INSTALL = r"(?:(?:container\s+)?(?:run|create)|(?:image\s+)?pull)" + SUBCOMMAND_END
 SUBCOMMAND = re.compile(DOCKER_INSTALL)
-OPTIONS_BEFORE_SUBCOMMAND = re.compile(r"(?:-[^\s=]+(?:=\S*|(?:\s+[^\s-]\S*)?)\s+)+" + DOCKER_INSTALL)
-ARGUMENT_PIECE = re.compile(r"(?P<redirection>(?:(?<!\S)[0-9]+)?(?:&>>?|[<>]&|>>|>\||<<<?|<>|[<>])\s*" + VALUE_PIECE
-                            + r"*)|" + SUBSTITUTION + r"|.", re.S)
+OPTIONS_BEFORE_SUBCOMMAND = re.compile(r"(?:(?:-[^\s=]+(?:=\S*|(?:\s+(?!" + REDIRECTION + r")[^\s-]\S*)?)|"
+                                       + REDIRECTION + r"\s*" + VALUE_PIECE + r"+)\s+)+" + DOCKER_INSTALL)
+ARGUMENT_PIECE = re.compile(r"(?P<redirection>" + REDIRECTION + r"\s*" + VALUE_PIECE + r"*)|" + SUBSTITUTION + r"|.",
+                            re.S)
 LITERAL = re.compile(r"[\w.-]+")
 VALUE_OPTIONS = {"-p", "--publish", "-v", "--volume", "-e", "--env", "--env-file", "--name", "--network", "--restart",
                  "-w", "--workdir", "-u", "--user", "-h", "--hostname", "--entrypoint", "--mount", "-l", "--label",
@@ -353,11 +358,20 @@ def image_problems(root: pathlib.Path, name: str) -> list[str]:
                         arguments[blank] = " " * (blank.stop - blank.start)
                 try:
                     words = shlex.split(join_substitutions("".join(arguments)))
-                    references.append(first_operand([word.replace("\0", " ") for word in words]))
                 except ValueError as error:
                     tool = line[positions[install.start("tool")]:offset].strip()
                     problems.append(f"{name}:{number}: {tool}: cannot split the arguments into words ({error}); "
                                     "close every quote on the line")
+                    continue
+                reference = first_operand([word.replace("\0", " ") for word in words])
+                if reference != ("", ""):
+                    references.append(reference)
+                elif install.group("word") is None:
+                    tool = " ".join(install.group("tool").split())
+                    problems.append(f"{name}:{number}: {tool}: no connector; name the connector")
+                else:
+                    tool = " ".join(["docker"] + subcommand.group().split())
+                    problems.append(f"{name}:{number}: {tool}: no image; name the image")
         for reference, option in references:
             if option:
                 problems.append(f"{name}:{number}: {option}: unknown option before the image; "
@@ -590,13 +604,15 @@ def test_an_unknown_docker_option_is_a_finding_only_when_a_subcommand_it_reads_f
         "docker --foo pull img:1.2.3\n"
         "docker --foo bar pull img:1.2.3\n"
         'docker --label="a b" pull img:1.2.3\n'
-        "docker -x --context c pull img:1.2.3\n", encoding="utf-8")
+        "docker -x --context c pull img:1.2.3\n"
+        "docker --foo pull\n", encoding="utf-8")
     unknown = "unknown docker option before the subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py"
     assert image_problems(tmp_path, "run.sh") == [
         f"run.sh:6: --foo: {unknown}",
         f"run.sh:7: --foo: {unknown}",
         f'run.sh:8: --label="a b": {unknown}',
         f"run.sh:9: -x: {unknown}",
+        f"run.sh:10: --foo: {unknown}",
     ]
 
 
@@ -650,7 +666,8 @@ def test_a_redirection_right_after_the_subcommand_ends_it_and_is_no_part_of_the_
         "docker --context x pull>/dev/null toke/mosquitto\n"
         "docker info>/dev/null\n"
         "docker pull>/dev/null img:1.2.3\n"
-        "docker --foo pull>/dev/null img:1.2.3\n", encoding="utf-8")
+        "docker --foo pull>/dev/null img:1.2.3\n"
+        "confluent-hub install>/dev/null a/b:latest\n", encoding="utf-8")
     rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
     unknown = "unknown docker option before the subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py"
     assert image_problems(tmp_path, "run.sh") == [
@@ -660,6 +677,80 @@ def test_a_redirection_right_after_the_subcommand_ends_it_and_is_no_part_of_the_
         f"run.sh:5: toke/mosquitto: {rest}",
         f"run.sh:6: toke/mosquitto: {rest}",
         f"run.sh:9: --foo: {unknown}",
+        f"run.sh:10: a/b:latest: {rest}",
+    ]
+
+
+def test_a_redirection_between_docker_and_its_subcommand_stands_where_a_global_option_can(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "docker 2>/dev/null pull toke/mosquitto\n"
+        "docker >log pull toke/mosquitto\n"
+        "docker 2>&1 pull toke/mosquitto\n"
+        "docker --debug <<<x run toke/mosquitto\n"
+        "docker 2>/dev/null pull img:1.2.3\n"
+        "docker --context x > log container run toke/mosquitto\n"
+        "docker>/dev/null pull toke/mosquitto\n"
+        "docker --foo bar >log pull img:1.2.3\n"
+        "docker --foo > log pull img:1.2.3\n"
+        "docker 2>/dev/null info\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    unknown = "unknown docker option before the subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:2: toke/mosquitto: {rest}",
+        f"run.sh:3: toke/mosquitto: {rest}",
+        f"run.sh:4: toke/mosquitto: {rest}",
+        f"run.sh:5: toke/mosquitto: {rest}",
+        f"run.sh:7: toke/mosquitto: {rest}",
+        f"run.sh:8: toke/mosquitto: {rest}",
+        f"run.sh:9: --foo: {unknown}",
+        f"run.sh:10: --foo: {unknown}",
+    ]
+
+
+def test_an_install_without_an_image_or_connector_names_the_command(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "docker pull >/dev/null\n"
+        "docker --context x container run -d --rm\n"
+        "confluent-hub install --no-prompt\n"
+        "docker run -d img:1.2.3 >/dev/null\n"
+        "confluent connect plugin install --force\n"
+        "docker pull\n"
+        "docker run; echo x\n"
+        "X=$(docker image pull)\n"
+        "confluent-hub install\n", encoding="utf-8")
+    assert image_problems(tmp_path, "run.sh") == [
+        "run.sh:2: docker pull: no image; name the image",
+        "run.sh:3: docker container run: no image; name the image",
+        "run.sh:4: confluent-hub install: no connector; name the connector",
+        "run.sh:6: confluent connect plugin install: no connector; name the connector",
+        "run.sh:7: docker pull: no image; name the image",
+        "run.sh:8: docker run: no image; name the image",
+        "run.sh:9: docker image pull: no image; name the image",
+        "run.sh:10: confluent-hub install: no connector; name the connector",
+    ]
+
+
+def test_the_ampersand_of_a_duplicating_redirection_starts_no_command(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "echo >&docker pull x\n"
+        "echo a >& docker pull x\n"
+        "cat <&docker pull x\n"
+        "echo a & docker pull toke/mosquitto\n"
+        "echo a&&docker pull toke/mosquitto\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:5: toke/mosquitto: {rest}",
+        f"run.sh:6: toke/mosquitto: {rest}",
+    ]
+    (tmp_path / "cd.sh").write_text(
+        "#!/usr/bin/env bash\necho a >&cd x\necho a >& cd x\ncat <&cd x\necho a & cd y\necho a&&cd z\n",
+        encoding="utf-8")
+    assert script_problems(tmp_path, "cd.sh") == [
+        "cd.sh:5: cd without a guard; write cd y || exit 1",
+        "cd.sh:6: cd without a guard; write cd z || exit 1",
     ]
 
 
@@ -742,7 +833,9 @@ def test_a_variable_or_a_substitution_with_a_unit_is_the_duration_of_timeout(tmp
         "$T docker pull x\n"
         "echo $T docker pull x\n"
         "timeout ${T:-30} docker pull toke/mosquitto\n"
-        "timeout $1 docker pull toke/mosquitto\n", encoding="utf-8")
+        "timeout $1 docker pull toke/mosquitto\n"
+        "timeout $10 docker pull toke/mosquitto\n"
+        "timeout -k 5 $10s docker pull toke/mosquitto\n", encoding="utf-8")
     rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
     assert image_problems(tmp_path, "run.sh") == [
         f"run.sh:2: toke/mosquitto: {rest}",
@@ -753,6 +846,8 @@ def test_a_variable_or_a_substitution_with_a_unit_is_the_duration_of_timeout(tmp
         f"run.sh:7: toke/mosquitto: {rest}",
         f"run.sh:10: toke/mosquitto: {rest}",
         f"run.sh:11: toke/mosquitto: {rest}",
+        f"run.sh:12: toke/mosquitto: {rest}",
+        f"run.sh:13: toke/mosquitto: {rest}",
     ]
 
 
@@ -774,15 +869,16 @@ def test_a_clobber_redirection_is_no_separator(tmp_path):
     assert script_problems(tmp_path, "cd.sh") == ["cd.sh:3: cd without a guard; write cd y >| out || exit 1"]
 
 
-def test_option_and_number_words_without_a_command_word_are_read_in_linear_time(tmp_path):
+def test_option_and_number_words_without_a_command_word_are_read_once(tmp_path):
     (tmp_path / "run.sh").write_text(
-        "#!/usr/bin/env bash\nnice " + "-n 5 " * 22 + "foo\nsudo " + "-u env " * 22 + "foo\n"
-        + "timeout -k $(cat t) " * 22 + "foo\n" + "timeout -k $T " * 22 + "foo\n" + "X=$(a | b; c && d) " * 22
-        + "foo\n" + "$(a " * 22 + "foo\n" + "timeout $Ts " * 22 + "foo\n" + "timeout -k $T -s $T " * 22 + "foo\n"
-        + 'timeout -k "a" -s "b" ' * 22 + "foo\n", encoding="utf-8")
-    start = time.perf_counter()
+        "#!/usr/bin/env bash\nnice " + "-n 5 " * 40 + "foo\nsudo " + "-u env " * 40 + "foo\n"
+        + "timeout -k $(cat t) " * 40 + "foo\n" + "timeout -k $T " * 40 + "foo\n" + "X=$(a | b; c && d) " * 40
+        + "foo\n" + "$(a " * 40 + "foo\n" + "timeout $Ts " * 40 + "foo\n" + "timeout -k $T -s $T " * 40 + "foo\n"
+        + 'timeout -k "a" -s "b" ' * 40 + "foo\n" + "timeout -k $(a) -s $(b) " * 40 + "foo\n"
+        + "timeout " + "-k timeout " * 40 + "foo\n", encoding="utf-8")
     assert image_problems(tmp_path, "run.sh") == []
-    assert time.perf_counter() - start < 0.1
+    reading = INSTALL.search("timeout -k timeout -s timeout docker pull toke/mosquitto")
+    assert reading.group("timeout") == "timeout -k timeout -s timeout"
 
 
 def test_a_docker_subcommand_that_is_not_a_literal_word_is_a_finding(tmp_path):

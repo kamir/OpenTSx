@@ -32,6 +32,14 @@ def lone_surrogate(text):
     return any("\ud800" <= c <= "\udfff" for c in text)
 
 
+def host_name(value):
+    # The connect resolves the host with the idna codec, which refuses an empty label and a label of over 63 characters.
+    try:
+        return isinstance(value, str) and value.encode("idna") != b""
+    except UnicodeError:
+        return False
+
+
 def stdout_closed(message):
     # Python flushes stdout again at exit; point it at devnull so that flush cannot fail a second time.
     os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
@@ -47,7 +55,7 @@ def generate(host, port, username, password, topic, sensors, interval_ms, verbos
 
     try:
         mqttc.connect(host, port)
-    except (OSError, UnicodeError) as error:
+    except OSError as error:
         sys.exit("%s:%s: cannot connect to the MQTT broker (%s); start the broker first, for example with "
                  "02_run_mqtt_broker.sh" % (host, port, error))
     mqttc.loop_start()
@@ -124,8 +132,8 @@ def main(config_path):
              and not isinstance(interval_ms, bool) and 0 <= interval_ms <= 86400000,
              "a number of milliseconds from 0 to 86400000"),
             ("misc.verbose", verbose, isinstance(verbose, bool), "true or false"),
-            ("mqtt.host", host, isinstance(host, str) and host != "" and not lone_surrogate(host),
-             "a non-empty JSON string without a lone surrogate"),
+            ("mqtt.host", host, host_name(host),
+             "a host name or an IP address as a JSON string whose dot-separated labels have 1 to 63 characters"),
             ("mqtt.port", port, isinstance(port, int) and not isinstance(port, bool) and 1 <= port <= 65535,
              "a whole number from 1 to 65535"),
             ("mqtt.topic", topic, isinstance(topic, str) and topic != "" and "+" not in topic and "#" not in topic

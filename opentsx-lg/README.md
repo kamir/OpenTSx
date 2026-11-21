@@ -57,8 +57,9 @@ the quotes inside the substitution, so `DIR="$(cd "$(dirname "$0")" || exit 1; p
 at the end of the substitution or subshell, so `X="$(cd b)"` gives
 `<file>:<line>: cd without a guard; write cd b || exit 1`. The `&` of a redirection, as in `2>&1`, `>&2` or
 `&>/dev/null`, and the `|` of `>|` do not end the `cd`, so `cd x 2>&1 || exit 1` and `cd x >| log || exit 1` pass and
-`cd x 2>&1` gives `<file>:<line>: cd without a guard; write cd x 2>&1 || exit 1`. The `|` of `>|` starts no `cd`
-either, so in `echo a >|cd x` the `cd` is the file that `>|` writes.
+`cd x 2>&1` gives `<file>:<line>: cd without a guard; write cd x 2>&1 || exit 1`. The `&` of `>&` or `<&` and the
+`|` of `>|` start no `cd` either, so in `echo a >&cd x` and `echo a >|cd x` the `cd` is the file that `>&` or `>|`
+writes.
 `tools/test_lg_python.py` fails on a Python script (`*.py`) of this module that
 does not compile or does not start with `#!/usr/bin/env python3`.
 
@@ -122,7 +123,8 @@ digest. `tools/test_lg_scripts.py` reads the image or connector of every `docker
 `docker container run`, `docker container create`, `docker image pull`, `confluent-hub install` and
 `confluent connect plugin install` in the scripts of this module, also after `&&`, `||`, `;`, `|` or a single `&` on
 the same line, and of every `FROM` in its Dockerfiles. The `&` of a redirection, as in `2>&1`, `>&2` or `&>log`, and
-the `|` of `>|` do not end a command. A `&&`, `||`, `;`, `|` or `&` inside a command substitution ends only the
+the `|` of `>|` do not end a command, and the `&` of `>&` or `<&` starts none, so in `echo >&docker pull <image>` the
+`docker` is the file that `>&` writes. A `&&`, `||`, `;`, `|` or `&` inside a command substitution ends only the
 command inside it, so `X=$(cat f | head -1) docker pull <image>` is read. It reads `docker`, `confluent-hub` and
 `confluent` only as the command word, also with a path
 such as `/usr/bin/docker`: at the start of a command, of a `case` arm such as `start)`, `(start)` or
@@ -136,6 +138,7 @@ substitution, also one that holds further substitutions, as in `X=$(cat f) docke
 one with a default value, or a command substitution, also in double quotes or with a unit, as in
 `timeout $T docker pull <image>`, `timeout ${T:-30} docker pull <image>`, `timeout $1 docker pull <image>`,
 `timeout "${T}" docker pull <image>`, `timeout $(cat t) docker pull <image>` or `timeout $(cat t)s docker pull <image>`.
+A positional parameter may be followed by digits, as in `timeout $10 docker pull <image>`, which bash reads as `${1}0`.
 An option of `sudo`, `env`, `nice`, `ionice`, `timeout`, `xargs` or `exec` that takes a value,
 such as `-u` of `sudo` or `-n` of `nice`, takes the next word as its value, so `sudo -u docker pull <image>`, which
 runs `pull` as the user `docker`, is not read. `-S` and `--split-string` of `env` take the command as their value, so
@@ -147,13 +150,16 @@ not read, and neither is the `docker` of `command -v docker`, `command -V docker
 `command -p -v docker`, which do not run it.
 Before the subcommand of `docker` it skips the global options `--config`, `-c` or `--context`, `-D`
 or `--debug`, `-H` or `--host`, `-l` or `--log-level`, `--tls`, `--tlscacert`, `--tlscert`, `--tlskey` and
-`--tlsverify`, with their values, also a value that holds a command substitution, as in `--context $(cat c)`. It
+`--tlsverify`, with their values, also a value that holds a command substitution, as in `--context $(cat c)`, and
+redirections such as `2>/dev/null`, `>log`, `2>&1` or `<<<x`, also one written right after `docker`. So
+`docker 2>/dev/null pull <image>`, `docker>/dev/null pull <image>` and `docker --debug <<<x run <image>` are read. It
 fails on any other option between `docker` and a subcommand it reads, also on the `=` form of a flag such as
 `--tlsverify=true`, except `-v`, `--version`, `-h` and `--help`, with
 `<file>:<line>: <option>: unknown docker option before the subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py`.
-It reads each such option with at most one value word, a word that does not start with `-`, and with none when the
-option has `=`. A command substitution is one value word, also with blanks or further substitutions inside, as in
-`docker --foo $(cat v) pull <image>`, ``docker --foo `date +%s` pull <image>`` or
+It reads each such option with at most one value word, a word that does not start with `-` and is no redirection,
+and with none when the option has `=`. A redirection may stand between such options, so
+`docker --foo bar >log pull <image>` is a finding. A command substitution is one value word, also with blanks or
+further substitutions inside, as in `docker --foo $(cat v) pull <image>`, ``docker --foo `date +%s` pull <image>`` or
 `docker --foo $(echo $(id -u)) pull <image>`. So `docker --foo pull <image>` and
 `docker --foo bar pull <image>` are a finding, and `docker -x foo bar pull <image>`, whose subcommand is `bar`, and
 `docker --x=1 ps pull <image>` are not. The finding names the option as the line writes it, as in `--label="a b"`.
@@ -165,6 +171,12 @@ so `[ "$(docker info)" ]`, `` IDS=`docker ps` `` and `docker info>/dev/null` hav
 `ps`, and `docker pull>/dev/null <image>` reads the subcommand `pull` and the image. A command substitution in the
 subcommand is named whole, as in `$(echo pull)`.
 It fails when an image or connector has no exact version, such as `1.2.3`, and no sha256 digest.
+It fails on an install without an image, as in `docker pull >/dev/null`, `docker pull` at the end of a command or
+`X=$(docker image pull)`, with
+`<file>:<line>: docker <subcommand>: no image; name the image`, where `<subcommand>` is, for example, `pull` or
+`container run`, and on one without a connector, as in `confluent-hub install` at the end of a command, with
+`<file>:<line>: <command>: no connector; name the connector`, where `<command>` is `confluent-hub install` or
+`confluent connect plugin install`.
 It also fails on an option before the image that it does not know, with
 `<file>:<line>: <option>: unknown option before the image; add it to the option lists of tools/test_lg_scripts.py`,
 on a command whose arguments do not split into words, for example at a quote that is not closed, with
@@ -173,7 +185,7 @@ and on a Dockerfile `RUN` that runs `apt-get update` without `apt-get install`. 
 in an argument, as in `docker run -e X=$(date +%s) <image>`, is one word for the check. A redirection such as `>out`,
 `>|out`, `2>&1` or `<<<x` is no argument, also directly after the subcommand, before the image or directly after it,
 so `docker run>log -d img:1.2.3`, `docker run >log -d img:1.2.3` and `docker pull img:1.2.3>out` read the image
-`img:1.2.3`. A command inside quotes, as in
+`img:1.2.3`, and `confluent-hub install>/dev/null <connector>` reads the connector. A command inside quotes, as in
 `echo "use docker pull x"`, is not read. A command in a command substitution or a subshell, as in
 `CID=$(docker run <image>)`, `CID="$(docker run <image>)"` or `(docker pull <image>)`, is read up to the end of the
 substitution or subshell, also after `&&`, `||`, `;`, `|` or `&` inside it, and so is each further substitution of the
@@ -188,7 +200,7 @@ exact version.
 `mqtt-generator-gist/mqttgen.py` uses the 1.x client API of `paho-mqtt`. With paho-mqtt 2.0.0 it stops with
 `TypeError: Client.__init__() missing 1 required positional argument: 'callback_api_version'`. Before it connects, it
 prints `MQTT broker <host>:<port>, user <username>` (`None` without a `username`) and no password. When it cannot
-connect to the broker, also when `mqtt.host` is no valid host name such as `broker..test`, it exits with status 1 and
+connect to the broker, it exits with status 1 and
 `<host>:<port>: cannot connect to the MQTT broker (<cause>); start the broker first, for example with 02_run_mqtt_broker.sh`.
 It writes its output line by line. When the reader of its output closes it, for example `head` after its last line,
 the next line it prints makes it exit with status 1 and `stdout: closed by its reader; read the whole output`, also
@@ -214,7 +226,7 @@ Before it connects, it also checks these values:
 |-----|----------------|---------|
 | `misc.interval_ms` | a number of milliseconds from 0 to 86400000 | `500` |
 | `misc.verbose` | `true` or `false` | `false` |
-| `mqtt.host` | a non-empty JSON string without a lone surrogate | `"localhost"` |
+| `mqtt.host` | a host name or an IP address as a JSON string whose dot-separated labels have 1 to 63 characters | `"localhost"` |
 | `mqtt.port` | a whole number from 1 to 65535 | `1883` |
 | `mqtt.topic` | a non-empty JSON string of at most 65535 UTF-8 bytes without `+`, `#` or a lone surrogate such as `\ud800` | `"mqttgen"` |
 | `mqtt.username` | a JSON string without a lone surrogate | none |
@@ -223,6 +235,8 @@ Before it connects, it also checks these values:
 When a value is not allowed, it exits with status 1 and
 `<file>: <key>: <value> is not allowed; expected <allowed values>`, for example
 `config.json: misc.interval_ms: "x" is not allowed; expected a number of milliseconds from 0 to 86400000`.
+A `mqtt.host` with an empty label, as in `broker..test`, or a label of more than 63 characters is refused this way
+before the connect. A label with characters outside ASCII counts in its IDNA form, which starts with `xn--`.
 For `mqtt.password` the message names the JSON type and not the value:
 `<file>: mqtt.password: a JSON <type> is not allowed; expected a JSON string without a lone surrogate`, where `<type>`
 is `string with a lone surrogate` for a string such as `"p\ud800"`.
