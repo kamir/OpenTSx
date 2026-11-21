@@ -37,6 +37,8 @@ try (KafkaProducer<String, byte[]> producer = KafScaleClients.producer(bootstrap
 ```
 
 A bucket whose episodes did not all get acknowledged is **not sealed** (`BucketWriteException`).
+The SEALED manifest holds `Buckets.contentChecksum` (`sha256:` + SHA-256 over the episode ids and their content
+digests). `append` rejects an episode id that is already in the bucket with other content before anything is sent.
 
 ## Replay
 
@@ -45,13 +47,15 @@ try (KafkaConsumer<byte[], byte[]> consumer = KafScaleClients.consumer(bootstrap
     ReplayService replay = new ReplayService(consumer, layout, index);
 
     ReplayResult r = replay.replay(ReplayRequest.bucket(bucketId).withSpeed(60.0), sink); // 1 h of data per minute
-    r.verified();   // SEALED, and delivered count + checksum match the manifest
+    r.verified();   // SEALED, and delivered count + content checksum match the manifest
 
     replay.replay(ReplayRequest.range(Set.of(seriesId), fromMicros, toMicros), sink);     // episodes overlapping a window
 }
 ```
 
 Episodes arrive in event-time order (`tStart`, `episodeId`); memory is bounded by `maxEpisodesInMemory`.
+`verified()` covers the episode contents when the manifest holds a `sha256:` checksum. A manifest without that prefix
+holds the id-only `Buckets.checksum`; for it `verified()` covers the episode ids only.
 The index is derived state: `EpisodeIndexer.rebuild(consumer, layout, index, timeout)` recreates it from the log,
 and `BucketCatalog.load(...)` lists all buckets with their current manifest.
 

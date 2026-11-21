@@ -1,0 +1,137 @@
+[
+  {
+    "name": "regular with NaN and -0.0",
+    "spec": {
+      "kind": "regular",
+      "metric": "wind.turbine.power_active",
+      "tags": {
+        "park": "ber-01",
+        "turbine": "T07"
+      },
+      "unit": "kW",
+      "tStartUs": 1700000000000000,
+      "intervalUs": 600000000,
+      "tEndUs": null,
+      "values": [
+        1520.5,
+        1498.25,
+        NaN,
+        1601.0,
+        -0.0
+      ],
+      "qualityHex": null,
+      "episodeId": "01HF7Z1Y4X0000000000000000",
+      "labels": {
+        "experiment": "e1"
+      }
+    },
+    "contentDigest": "24dc3f98e1738b85e2233f3cae81999629186c522ae29f8fd83ecae1ec28040c"
+  },
+  {
+    "name": "the same samples as an irregular episode with another id and labels: same digest",
+    "spec": {
+      "kind": "irregular",
+      "metric": "wind.turbine.power_active",
+      "tags": {
+        "park": "ber-01",
+        "turbine": "T07"
+      },
+      "unit": "kW",
+      "timestampsUs": [
+        1700000000000000,
+        1700000600000000,
+        1700001200000000,
+        1700001800000000,
+        1700002400000000
+      ],
+      "tEndUs": 1700003000000000,
+      "values": [
+        1520.5,
+        1498.25,
+        NaN,
+        1601.0,
+        -0.0
+      ],
+      "qualityHex": null,
+      "episodeId": "01HF7Z1Y4X0000000000000099",
+      "labels": {
+        "regime": "partial-load"
+      }
+    },
+    "contentDigest": "24dc3f98e1738b85e2233f3cae81999629186c522ae29f8fd83ecae1ec28040c"
+  },
+  {
+    "name": "the same samples with one value changed",
+    "spec": {
+      "kind": "regular",
+      "metric": "wind.turbine.power_active",
+      "tags": {
+        "park": "ber-01",
+        "turbine": "T07"
+      },
+      "unit": "kW",
+      "tStartUs": 1700000000000000,
+      "intervalUs": 600000000,
+      "tEndUs": null,
+      "values": [
+        1520.5,
+        1498.25,
+        NaN,
+        1601.5,
+        -0.0
+      ],
+      "qualityHex": null,
+      "episodeId": "01HF7Z1Y4X0000000000000000",
+      "labels": {
+        "experiment": "e1"
+      }
+    },
+    "contentDigest": "42b69ad12be88895566cb4ec5f03f79ecfb547178f7c9e1a902d3da65e316ce1"
+  },
+  {
+    "name": "irregular with quality",
+    "spec": {
+      "kind": "irregular",
+      "metric": "wind.met.wind_speed",
+      "tags": {
+        "park": "ber-01",
+        "turbine": "T07"
+      },
+      "unit": "m/s",
+      "timestampsUs": [
+        1700000000000000,
+        1700000000250000,
+        1700000000500000,
+        1700000001750000
+      ],
+      "tEndUs": 1700000002000000,
+      "values": [
+        7.25,
+        7.5,
+        12.0,
+        6.75
+      ],
+      "qualityHex": "00000102",
+      "episodeId": "01HF7Z1Y4X0000000000000001",
+      "labels": {}
+    },
+    "contentDigest": "15bbab30f5f0e8877d2f4f5fbb408c740060afbe80d8c6aef02017d6329266ed"
+  },
+  {
+    "name": "empty regular episode without unit",
+    "spec": {
+      "kind": "regular",
+      "metric": "rotor.rpm",
+      "tags": {},
+      "unit": null,
+      "tStartUs": 0,
+      "intervalUs": 1000,
+      "tEndUs": null,
+      "values": [],
+      "qualityHex": null,
+      "episodeId": "01HF7Z1Y4X0000000000000002",
+      "labels": {}
+    },
+    "contentDigest": "de061a78e6410bdb082c9dcd8f87363a5bf78bd0d8bf27eb87dc2d9123e8b297"
+  }
+]

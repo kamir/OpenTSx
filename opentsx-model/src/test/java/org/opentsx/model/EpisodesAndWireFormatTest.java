@@ -61,10 +61,14 @@ class EpisodesAndWireFormatTest {
     @Test
     void fingerprintsMatchPython() {
         JsonNode fps = TestVectors.load("wire-format.json").get("fingerprints");
+        String analysisResult = TestVectors.load("analysis-result-wire.json").get("fingerprint").asText();
         for (Class<? extends org.apache.avro.specific.SpecificRecord> type : OpenTsxAvro.TOP_LEVEL_TYPES) {
             Schema s = org.apache.avro.specific.SpecificData.get().getSchema(type);
-            assertEquals(fps.get(s.getName()).asText(), XxHash64.hex(OpenTsxAvro.fingerprint(s)), s.getName());
+            String expected = s.getName().equals("AnalysisResult") ? analysisResult : fps.get(s.getName()).asText();
+            assertEquals(expected, XxHash64.hex(OpenTsxAvro.fingerprint(s)), s.getName());
         }
+        assertEquals(fps.get("AnalysisResult").asText(),
+                XxHash64.hex(OpenTsxAvro.fingerprint(SchemaHistory.schemas("v2.1").get("AnalysisResult"))));
     }
 
     @Test

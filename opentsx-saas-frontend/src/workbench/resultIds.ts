@@ -1,7 +1,9 @@
 /**
  * Result identity of the v2 model in the browser, the same as python-package/opentsx/model/analysis.py:
- * canonical form `escape(method)@escape(methodVersion)(k1=v1,k2=v2,...)[e1,e2,...]` with the parameter keys sorted by
- * their UTF-8 bytes, the input episode ids in their given order and `\ { } , = ( ) [ ] @` escaped with a backslash.
+ * canonical form `escape(method)@escape(methodVersion)(k1=v1,k2=v2,...)[e1,e2,...]{d1,d2,...}` with the parameter keys
+ * sorted by their UTF-8 bytes, the input episode ids in their given order and `\ { } , = ( ) [ ] @` escaped with a
+ * backslash. The digest section holds the content digest of each input; records written before v2.2 have none and
+ * leave it out.
  * A bigint is a long `l<decimal>`, a number a double `d<16 hex digits of the IEEE 754 bits, big-endian>`, a string
  * `s<escaped>`, a number[] an array of doubles `a<hex>;<hex>`. The result id is xxHash64 over the UTF-8 bytes.
  * Shared test vectors: opentsx-model/src/test/resources/testvectors/result-id.json.
@@ -15,6 +17,7 @@ const LONG_MIN = -(1n << 63n);
 const LONG_MAX = (1n << 63n) - 1n;
 
 const utf8 = new TextEncoder();
+const DIGEST = /^[0-9a-f]{64}$/;
 
 function escape(s: string): string {
   return s.replace(/[\\{},=()[\]@]/g, (c) => `\\${c}`);
@@ -44,6 +47,7 @@ export function resultCanonical(
   methodVersion: string,
   params: Record<string, ResultParam>,
   inputEpisodeIds: readonly string[],
+  inputDigests: readonly string[],
 ): string {
   if (!method) throw new Error('An analysis result needs a method.');
   if (!methodVersion) throw new Error('An analysis result needs a methodVersion.');
@@ -53,7 +57,14 @@ export function resultCanonical(
     return `${escape(k)}=${canonicalValue(params[k])}`;
   });
   if (inputEpisodeIds.some((e) => !e)) throw new Error('Input episode ids must not be empty.');
-  return `${escape(method)}@${escape(methodVersion)}(${parts.join(',')})[${inputEpisodeIds.map(escape).join(',')}]`;
+  const out = `${escape(method)}@${escape(methodVersion)}(${parts.join(',')})[${inputEpisodeIds.map(escape).join(',')}]`;
+  if (inputDigests.length === 0) return out;
+  if (inputDigests.length !== inputEpisodeIds.length)
+    throw new Error(`${inputDigests.length} inputDigests for ${inputEpisodeIds.length} inputEpisodeIds.`);
+  inputDigests.forEach((d, i) => {
+    if (!DIGEST.test(d)) throw new Error(`Input digest ${i} is not 64 lower-case hex characters.`);
+  });
+  return `${out}{${inputDigests.join(',')}}`;
 }
 
 export function resultId(
@@ -61,6 +72,7 @@ export function resultId(
   methodVersion: string,
   params: Record<string, ResultParam>,
   inputEpisodeIds: readonly string[],
+  inputDigests: readonly string[],
 ): string {
-  return xxh64Hex(utf8.encode(resultCanonical(method, methodVersion, params, inputEpisodeIds)));
+  return xxh64Hex(utf8.encode(resultCanonical(method, methodVersion, params, inputEpisodeIds, inputDigests)));
 }

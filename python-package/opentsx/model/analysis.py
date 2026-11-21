@@ -5,6 +5,7 @@ Result identity: ``resultId = hex(xxHash64(utf8(canonical)))`` with::
     canonical = escape(method) + "@" + escape(methodVersion)
               + "(" + "k1=v1,k2=v2" + ")"          keys sorted by their UTF-8 bytes
               + "[" + "e1,e2" + "]"                input episode ids in their given order
+              + "{" + "d1,d2" + "}"                content digest of each input, left out when there are none
 
 Parameter values carry their Avro type: long ``l<decimal>``, double ``d<16 hex digits of the IEEE 754 bits,
 big-endian>``, string ``s<escaped>``, array of doubles ``a<hex>;<hex>`` (``a`` when empty).
@@ -13,6 +14,7 @@ big-endian>``, string ``s<escaped>``, array of doubles ``a<hex>;<hex>`` (``a`` w
 
 from __future__ import annotations
 
+import re
 import struct
 from typing import Iterable, Mapping, Optional, Sequence
 
@@ -21,6 +23,7 @@ from opentsx.model.series_key import sorted_by_utf8
 from opentsx.model.xxh64 import xxh64_hex
 
 _SPECIAL = set("\\{},=()[]@")
+_DIGEST = re.compile(r"[0-9a-f]{64}")
 _LONG_MIN = -(1 << 63)
 _LONG_MAX = (1 << 63) - 1
 
@@ -71,7 +74,8 @@ def _canonical_value(value) -> str:
 
 
 def result_canonical(method: str, method_version: str, params: Optional[Mapping] = None,
-                     input_episode_ids: Sequence[str] = ()) -> str:
+                     input_episode_ids: Sequence[str] = (), input_digests: Sequence[str] = ()) -> str:
+    """Canonical form of a result. ``input_digests`` is empty only for records written before v2.2."""
     if not method:
         raise ValueError("method must not be empty")
     if not method_version:
@@ -87,13 +91,22 @@ def result_canonical(method: str, method_version: str, params: Optional[Mapping]
     for e in input_episode_ids:
         if not e:
             raise ValueError("input episode ids must not be empty")
-    return (_escape(method) + "@" + _escape(method_version) + "(" + ",".join(parts) + ")"
-            + "[" + ",".join(_escape(e) for e in input_episode_ids) + "]")
+    out = (_escape(method) + "@" + _escape(method_version) + "(" + ",".join(parts) + ")"
+           + "[" + ",".join(_escape(e) for e in input_episode_ids) + "]")
+    if not input_digests:
+        return out
+    if len(input_digests) != len(input_episode_ids):
+        raise ValueError(f"{len(input_digests)} inputDigests for {len(input_episode_ids)} inputEpisodeIds")
+    for i, d in enumerate(input_digests):
+        if not isinstance(d, str) or not _DIGEST.fullmatch(d):
+            raise ValueError(f"input digest {i} is not 64 lower-case hex characters")
+    return out + "{" + ",".join(input_digests) + "}"
 
 
 def result_id(method: str, method_version: str, params: Optional[Mapping] = None,
-              input_episode_ids: Sequence[str] = ()) -> str:
-    return xxh64_hex(result_canonical(method, method_version, params, input_episode_ids).encode("utf-8"))
+              input_episode_ids: Sequence[str] = (), input_digests: Sequence[str] = ()) -> str:
+    return xxh64_hex(result_canonical(method, method_version, params, input_episode_ids, input_digests)
+                     .encode("utf-8"))
 
 
 def scalar(name: str, value: float, *, std_error: Optional[float] = None, unit: Optional[str] = None,
@@ -122,19 +135,25 @@ def matrix(name: str, row_keys: Sequence[str], col_keys: Sequence[str], values: 
 
 
 def analysis_result(method: str, method_version: str, params: Optional[Mapping], input_episode_ids: Sequence[str],
-                    input_series_ids: Sequence[str], t_start_us: int, t_end_us: int, *,
+                    input_series_ids: Sequence[str], t_start_us: int, t_end_us: int, *, input_digests: Sequence[str],
                     scalars: Sequence[dict] = (), curves: Sequence[dict] = (), matrices: Sequence[dict] = (),
                     labels: Optional[Mapping[str, str]] = None, source: str, producer: str = PRODUCER,
                     created_at_us: Optional[int] = None, pipeline: Optional[str] = None) -> dict:
-    """Builds a checked ``AnalysisResult`` record with its resultId and maps in UTF-8 key order."""
+    """Builds a checked ``AnalysisResult`` record with its resultId and maps in UTF-8 key order.
+
+    ``input_digests`` holds ``content_digest`` of each input episode, so the id binds the input contents.
+    """
+    if len(input_digests) != len(input_episode_ids):
+        raise ValueError(f"{len(input_digests)} inputDigests for {len(input_episode_ids)} inputEpisodeIds")
     normalized = {k: param_value(v) for k, v in (params or {}).items()}
     record = {
-        "resultId": result_id(method, method_version, normalized, input_episode_ids),
+        "resultId": result_id(method, method_version, normalized, input_episode_ids, input_digests),
         "method": method,
         "methodVersion": method_version,
         "params": {k: normalized[k] for k in sorted(normalized, key=lambda k: k.encode("utf-8"))},
         "inputEpisodeIds": list(input_episode_ids),
         "inputSeriesIds": list(input_series_ids),
+        "inputDigests": list(input_digests),
         "tStart": int(t_start_us),
         "tEnd": int(t_end_us),
         "scalars": list(scalars),
@@ -148,8 +167,9 @@ def analysis_result(method: str, method_version: str, params: Optional[Mapping],
 
 
 def verify_analysis_result(record: Mapping) -> None:
-    """Raises ValueError if resultId, input lists, time range, curves or matrices are inconsistent."""
-    expected = result_id(record["method"], record["methodVersion"], record["params"], record["inputEpisodeIds"])
+    """Raises ValueError if resultId, input lists, input digests, time range, curves or matrices are inconsistent."""
+    expected = result_id(record["method"], record["methodVersion"], record["params"], record["inputEpisodeIds"],
+                         record["inputDigests"])
     if record["resultId"] != expected:
         raise ValueError(f"resultId {record['resultId']} does not match {expected}")
     if len(record["inputSeriesIds"]) != len(record["inputEpisodeIds"]):
