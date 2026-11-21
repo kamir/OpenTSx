@@ -407,7 +407,7 @@ public final class BoatDemo {
         return new Alternative(name, label, List.of(ivs), Map.of(), inputs);
     }
 
-    private static Intervention set(Instant t, String atom, String control, double v) {
+    static Intervention set(Instant t, String atom, String control, double v) {
         return Intervention.set(t, atom, control, v, "what-if", control + "=" + NumberOutput.toString(v, true));
     }
 
