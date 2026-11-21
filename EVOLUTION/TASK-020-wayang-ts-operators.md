@@ -43,11 +43,15 @@ Each operator still requires its reference vectors and admission gate before use
   refusals. Shared 54-case Java/Rust vectors and injected-provider lifecycle regressions cover admission and
   identical retries. Live incarnation-provider qualification, production migrations and U06 remain open;
   the physical ARM64 B4.2 measurement remains open.
+  The delivery cursor gate is met for the signed site path (S5.3): job B at version 1 after job A at version 10 on
+  one site, a restart and a repeated acknowledgement (`TsxPlanServiceDeliveryCursorTest`,
+  `agent_cursor_follows_the_site_sequence_across_jobs_through_restart_and_duplicate_ack` in `rust/tsx-runner/src/agent.rs`).
 - [x] U02 local bounded stage: `RustPlugin` maps connected topic sources, unions, optional fused chain and sink to
   `RustPlatform`; `RustExecutor` invokes one complete stage action with no raw-payload channel or Java fallback.
 - [x] U03 local bounded control: authenticated backend PostgreSQL journal and standalone advisory-lock coordinator,
   frozen UI text/cut/clock/plan, whole-topic ownership, private worker preparation and identical activation retry.
-  Production migrations, per-site delivery sequence, restore fencing and general retire remain open.
+  Production migrations, restore fencing and general retire remain open. This local rollout dispatches to workers
+  directly; the per-site delivery sequence belongs to the signed site path (S5.3) and is qualified under U01.
 - [x] U05 local bounded acceptance: run the actual UI-to-Wayang-to-three-worker Compose helper, retain public
   deployment/receipt and Java parity evidence after initial execution, exact retry and worker/coordinator restart.
 - [x] U03/U04 local continuous control and execution: persist successor plans before dispatch, restore worker-local

@@ -916,6 +916,11 @@ pub(crate) mod tests {
 
     impl Fixture {
         pub(crate) fn new() -> Self {
+            Self::with_jobs(&["bounded-test"])
+        }
+
+        /// A fixture whose site configuration permits `jobs`; the signed plan is for `bounded-test`.
+        pub(crate) fn with_jobs(jobs: &[&str]) -> Self {
             let directory = std::env::temp_dir().join(format!(
                 "tsx-b3-fed-{}-{}",
                 std::process::id(),
@@ -961,7 +966,7 @@ pub(crate) mod tests {
             }
             let config_doc = json!({"schema":"opentsx.rust-site-config.v1","site":"s1","node":"node-1",
                 "driver":{"url":"https://localhost:18443","ca":"ca.crt","certificate":"client.crt","privateKey":"client.key"},
-                "driverPublicKey":"driver.pem","sitePrivateKey":"site.pem","qualification":"qualification.json","jobs":["bounded-test"],
+                "driverPublicKey":"driver.pem","sitePrivateKey":"site.pem","qualification":"qualification.json","jobs":jobs,
                 "bindings":{"site":{"bootstrap":"127.0.0.1:39092","inputs":[INPUT],"outputs":[OUTPUT,"tsx.b3test.dag-status.v1"]},
                     "signal":{"bootstrap":"127.0.0.1:39093","inputs":[],"outputs":[OUTPUT]}},
                 "policy":{"domains":["b3test"],"inputs":{"site":[INPUT]},"outputs":{"site":["aggregates","dag-status"],"signal":["aggregates"]},"catalogs":["tsx-catalog/1"]},

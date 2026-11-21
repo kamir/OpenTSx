@@ -99,6 +99,11 @@ entries before 3.0.0 are grouped by date.
 
 ### Added
 
+- TASK-020 U01 delivery cursor: `TsxPlanServiceDeliveryCursorTest` and the Rust agent test
+  `agent_cursor_follows_the_site_sequence_across_jobs_through_restart_and_duplicate_ack` deliver job A at version 10
+  and then job B at version 1 to one site, restart, and repeat the acknowledgement. Job B is delivered and run, the
+  cursor is the site's delivery sequence, and a repeated identical acknowledgement is accepted while a changed one is
+  refused. Both tests fail when the cursor follows `planVersion`. No production code changes.
 - `tsx-runner` site configuration field `profile` (`ground` or `orbit`). In the `orbit` profile `agent` and
   `run --plan` keep a plan running when a status record cannot reach the plan service: the record goes to a durable
   outbox in the state directory, bounded to 5,760 records, and buffered records are sent oldest first before newer
