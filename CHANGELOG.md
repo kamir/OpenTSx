@@ -109,6 +109,9 @@ entries before 3.0.0 are grouped by date.
 - Require a verified Proxy bundle and private MinIO environment before the k3s probe starts local KafScale.
 - Show the plant explorer prototype (`docs/prototypes/anlagen-explorer.html`) in English. The page no longer links
   to the removed concept document.
+- Remove unused frontend plotting packages and their mapping dependencies.
+  Workbench charts use browser Canvas and SVG; the lockfile regression rejects
+  unsupported MapLibre runtime releases.
 
 ### Added
 
