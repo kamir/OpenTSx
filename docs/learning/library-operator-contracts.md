@@ -507,6 +507,15 @@ every declared fragment source needs an input, and no admitted input may remain
 unused. Matching multiple topics may use a different inventory order. This gate
 belongs to `RunnerPlan`, not the shared offline assignment validator.
 
+The opt-in bounded physical profile wraps those exact assignments with separate computation and placement
+identity, complete channels and host-owned admission facts. The
+[physical admission exercise](../user-manual/17-learn-operators.md#trace-physical-deployment-admission)
+adds source, sink, checkpoint and assignment traceability without changing their starters.
+[`PhysicalDeploymentsVectorsTest`](../../opentsx-model/src/test/java/org/opentsx/model/contracts/PhysicalDeploymentsVectorsTest.java)
+loads the same physical vectors as Rust. The driver, worker and backend regressions separately check admission,
+activation, retained identity and ownership upgrade. The default Rust provider refuses unavailable authoritative
+topic incarnations; injected-provider execution does not qualify a live provider, U06 or physical ARM64 hardware.
+
 ## Generate mean-reverting demo values
 
 `Generators.IDS` is the implemented generator registry: `gen.ou` and `gen.sine`. Each has a learning lesson,

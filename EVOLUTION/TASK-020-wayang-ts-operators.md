@@ -38,7 +38,11 @@ Each operator still requires its reference vectors and admission gate before use
 
 - [x] U00 offline foundation: shared execution-assignment schema, exact source/fragment identities, Java/Rust
   preflight validators and generated cross-runtime cases. This establishes no deployed runner or live fencing.
-- [ ] U01 physical deployment, complete ownership, channels, capabilities and structured refusal contract.
+- [x] U01 bounded Rust API-only physical contract: unchanged assignment v1, independently versioned computation
+  identity, complete resolved topic ownership, original node/port channels, pinned capabilities and located
+  refusals. Shared 54-case Java/Rust vectors and injected-provider lifecycle regressions cover admission and
+  identical retries. Live incarnation-provider qualification, production migrations and U06 remain open;
+  the physical ARM64 B4.2 measurement remains open.
   The delivery cursor gate is met for the signed site path (S5.3): job B at version 1 after job A at version 10 on
   one site, a restart and a repeated acknowledgement (`TsxPlanServiceDeliveryCursorTest`,
   `agent_cursor_follows_the_site_sequence_across_jobs_through_restart_and_duplicate_ack` in `rust/tsx-runner/src/agent.rs`).

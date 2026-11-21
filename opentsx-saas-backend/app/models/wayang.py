@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, JSON, String, Text, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, CheckConstraint, Column, DateTime, ForeignKey, Integer, JSON, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
@@ -33,7 +33,15 @@ class WayangDeployment(Base):
 
 class WayangTopicOwner(Base):
     __tablename__ = "wayang_topic_owners"
+    __table_args__ = (CheckConstraint(
+        "(scope = 'legacy' AND fragment = '' AND cluster = '' AND incarnation = '') OR "
+        "(scope = 'physical' AND fragment <> '' AND cluster <> '' AND incarnation <> '')",
+        name="ck_wayang_owner_scope"),)
 
+    scope = Column(String(8), primary_key=True, default="legacy")
+    fragment = Column(String(256), primary_key=True, default="")
+    cluster = Column(String(256), primary_key=True, default="")
+    incarnation = Column(String(256), primary_key=True, default="")
     topic = Column(String(249), primary_key=True)
     deployment_id = Column(String(63), ForeignKey("wayang_deployments.id"), nullable=False, index=True)
 

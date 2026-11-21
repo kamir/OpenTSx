@@ -275,3 +275,32 @@ it('keeps a retired deployment terminal when its output topic changes', async ()
   expect(screen.queryByRole('button', { name: 'Run continuously with Wayang' })).not.toBeInTheDocument();
   expect(screen.getByText('This deployment is retired. Replacement is unavailable after Stop.')).toBeInTheDocument();
 });
+
+it('shows a public located refusal with its original node and field without exposing transport details', async () => {
+  vi.mocked(wayangAPI.deploy).mockRejectedValue({ isAxiosError: true, response: { data: { detail: {
+    schema: 'opentsx.plan-refusal.v1', code: 'deployment.incarnation', node: 'n1',
+    field: '/ownership/0/incarnation', message: 'Physical deployment refused: deployment.incarnation.',
+  }, error: 'http://private-worker/input' } } });
+  render(<WayangRunPanel onSave={vi.fn(async () => 9)} />);
+  const run = screen.getByRole('button', { name: 'Run bounded with Wayang' });
+  await waitFor(() => expect(run).toBeEnabled());
+  fireEvent.click(run);
+  const alert = await screen.findByRole('alert');
+  expect(alert).toHaveTextContent('Physical deployment refused: deployment.incarnation.');
+  expect(alert).toHaveTextContent('n1');
+  expect(alert).toHaveTextContent('/ownership/0/incarnation');
+  expect(alert).not.toHaveTextContent('private-worker');
+});
+
+it('rejects malformed located refusals instead of displaying untrusted message text', async () => {
+  vi.mocked(wayangAPI.deploy).mockRejectedValue({ isAxiosError: true, response: { data: { detail: {
+    schema: 'opentsx.plan-refusal.v1', code: 'deployment.incarnation', node: 'n1',
+    field: '/ownership', message: 'http://private-worker/input',
+  } } } });
+  render(<WayangRunPanel onSave={vi.fn(async () => 9)} />);
+  const run = screen.getByRole('button', { name: 'Run bounded with Wayang' });
+  await waitFor(() => expect(run).toBeEnabled());
+  fireEvent.click(run);
+  expect(await screen.findByRole('alert')).toHaveTextContent('The deployment service returned an invalid located refusal.');
+  expect(screen.getByRole('alert')).not.toHaveTextContent('private-worker');
+});

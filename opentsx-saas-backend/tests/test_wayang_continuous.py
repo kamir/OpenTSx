@@ -31,7 +31,7 @@ def continuous_plan(data, previous=None):
                 position.update({"from": old_position["to"], "to": str(int(old_position["to"]) + 2)})
         request["assignmentText"] = json.dumps(assignment)
         item["requestText"] = json.dumps(request)
-    value["planHash"] = service.digest(json.dumps(value, sort_keys=True))
+    value["planHash"] = service.legacy_plan_hash(value)
     return value
 
 

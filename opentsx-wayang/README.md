@@ -132,6 +132,25 @@ a distinct fresh output after revocation. Its private ledger has one process own
 Read [SPEC S1.12](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment).
 This is no gateway high-availability or signed production-fleet qualification.
 
+## Admit a bounded physical deployment
+
+The opt-in `physical` profile adds a versioned physical envelope around exact assignment v1 texts.
+This profile is API-only; the Workbench retains its existing target controls.
+It separates the original source hash, default-expanded computation hash and physical `planHash`.
+Original nodes and ports, typed channels, whole-topic ownership, residency and exact capability observations
+are checked against separate host-owned facts before preparation and activation.
+Read the [shared contract guide](../docs/devguide/integration/wayang-shared-contracts.md#admit-a-bounded-physical-deployment)
+and [SPEC S1.15](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s115-admit-a-physical-deployment).
+
+The positive assignment runtime is Rust, in bounded mode with the local cleaning subset. The current metadata adapter
+has no authoritative topic UUID; its default physical provider refuses with `deployment.incarnation` before
+broker access. Injected-provider regressions exercise real preparation and activation without claiming live
+provider qualification. Existing bounded, continuous and signed profiles retain their distinct admission rules.
+The physical profile refuses a configured publication gateway before admission.
+The backend owns the admitted bytes and scoped topic ownership; its explicit offline upgrade refuses active or
+ambiguous legacy state. Located refusals reach the UI without private endpoints. U06 production operation and
+the physical ARM64 B4.2 measurement remain open.
+
 ## Use the plugin
 
 Register `TsxJavaPlugin`, not `Java.basicPlugin()`:

@@ -6,7 +6,7 @@ import uuid
 from datetime import timedelta
 
 import httpx
-from sqlalchemy import and_, delete, or_, select
+from sqlalchemy import and_, delete, or_, select, text
 from sqlalchemy.exc import IntegrityError
 
 from app.core.config import settings
@@ -15,10 +15,15 @@ from app.models.wayang import WayangContinuous, WayangCycle, WayangDeployment, W
 
 
 class WayangError(Exception):
-    def __init__(self, status, message):
+    def __init__(self, status, message, refusal=None):
         self.status = status
         self.message = message
+        self.refusal = refusal
         super().__init__(message)
+
+    @property
+    def detail(self):
+        return self.refusal if self.refusal is not None else self.message
 
 
 def strict_json(text):
@@ -58,6 +63,19 @@ def digest(text):
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def legacy_plan_hash(plan):
+    def encode(value):
+        if isinstance(value, dict):
+            return "{" + ",".join(encode(key) + ":" + encode(value[key])
+                                  for key in sorted(value, key=lambda key: key.encode("utf-16-be"))) + "}"
+        if isinstance(value, list):
+            return "[" + ",".join(encode(entry) for entry in value) + "]"
+        text = json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+        return re.sub(r"\\u00[0-9a-f]{2}", lambda match: match.group().upper().replace("\\U", "\\u"), text)
+
+    return digest(encode({key: value for key, value in plan.items() if key != "planHash"}))
+
+
 def decimal(value, minimum=0):
     if (not isinstance(value, str) or not re.fullmatch(r"0|[1-9][0-9]{0,18}", value)
             or not minimum <= int(value) <= 9_223_372_036_854_775_807):
@@ -69,7 +87,7 @@ def http_client():
     return httpx.AsyncClient(timeout=httpx.Timeout(1200.0, connect=5.0))
 
 
-async def driver(path, body=None):
+async def driver(path, body=None, physical=False):
     if not settings.WAYANG_URL:
         raise WayangError(503, "This installation has no Wayang service configured.")
     try:
@@ -84,10 +102,24 @@ async def driver(path, body=None):
         raise WayangError(502, "The Wayang response exceeds its byte limit.")
     try:
         text = response.content.decode("utf-8")
-        value = strict_json(text)
+        if physical:
+            from app.services.wayang_contract import parse_document
+            value = parse_document(text)
+        else:
+            value = strict_json(text)
     except (ValueError, UnicodeError, RecursionError) as error:
         raise WayangError(502, "The Wayang service returned invalid JSON.") from error
+    if physical and not isinstance(value, dict):
+        from app.services.wayang_contract import refuse
+        refuse("deployment.fields", "/")
     if response.status_code != 200:
+        if isinstance(value, dict) and "refusal" in value:
+            from app.services.wayang_contract import public_refusal
+            refusal = public_refusal(value["refusal"])
+            if refusal is None:
+                raise WayangError(502, "The Wayang service returned an invalid located refusal.")
+            raise WayangError(response.status_code if response.status_code in (400, 409) else 502,
+                              refusal["message"], refusal)
         message = value.get("error") if isinstance(value, dict) else None
         raise WayangError(response.status_code if response.status_code in (400, 409) else 502,
                           message if isinstance(message, str) else "The Wayang service refused the request.")
@@ -108,6 +140,9 @@ async def publication_fencing():
 
 
 def plan_assignments(plan):
+    if plan.get("schema") == "opentsx.physical-deployment.v1":
+        from app.services.wayang_contract import assignments
+        return assignments(plan)
     assignments = plan.get("assignments")
     if not isinstance(assignments, list) or not 1 <= len(assignments) <= 3:
         raise WayangError(502, "The Wayang plan has an invalid worker inventory.")
@@ -160,11 +195,15 @@ def plan_assignments(plan):
 
 
 def validate_plan(plan, deployment, dag_text, created_at, profile="bounded", previous=None):
+    if profile == "physical":
+        from app.services.wayang_contract import validate
+        return validate(plan, deployment, dag_text, created_at)
     schema = "opentsx.local-continuous-rollout.v1" if profile == "continuous" else "opentsx.local-rollout.v1"
     if (plan.get("schema") != schema or plan.get("deployment") != deployment
             or plan.get("sourceDagText") != dag_text or plan.get("specHash") != digest(dag_text)
             or plan.get("createdAtMicros") != created_at
-            or not isinstance(plan.get("planHash"), str) or not re.fullmatch(r"[0-9a-f]{64}", plan["planHash"])):
+            or not isinstance(plan.get("planHash"), str) or not re.fullmatch(r"[0-9a-f]{64}", plan["planHash"])
+            or plan["planHash"] != legacy_plan_hash(plan)):
         raise WayangError(502, "The Wayang plan does not match the submitted graph and clock.")
     assignments = plan_assignments(plan)
     if profile == "continuous":
@@ -223,15 +262,20 @@ def validate_replacement(old, new):
 
 
 def public_deployment(row, operation=None):
-    assignments = plan_assignments(strict_json(row.plan_text))
+    plan = strict_json(row.plan_text)
+    assignments = plan_assignments(plan)
     statuses = row.result.get("assignments", []) if row.result else []
     by_node = {item.get("node"): item for item in statuses if isinstance(item, dict)}
     for item in assignments:
         status = by_node.get(item["node"], {})
         item.update({key: status[key] for key in ("state", "receipt", "error") if key in status})
+        if plan.get("schema") == "opentsx.physical-deployment.v1" and isinstance(status.get("receipt"), dict):
+            item["requestHash"] = status["receipt"]["requestHash"]
     result = {"id": row.id, "flowId": row.flow_id, "specHash": row.spec_hash, "planHash": row.plan_hash,
             "createdAtMicros": row.created_at_micros, "state": row.state, "error": row.error,
             "assignments": assignments}
+    if plan.get("schema") == "opentsx.physical-deployment.v1":
+        result["profile"] = "physical"
     control = row.continuous
     if control is not None:
         result.update(profile="continuous", currentCycle=str(control.current_cycle),
@@ -278,6 +322,17 @@ class Journal:
 
     async def accept(self, row, assignments, profile="bounded", fenced=False):
         topics = {topic for item in assignments for topic in (item["inputTopic"], item["outputTopic"])}
+        await self.lock_owners()
+        owners = (await self.db.execute(select(WayangTopicOwner).where(
+            WayangTopicOwner.topic.in_(sorted(topics))))).scalars().all()
+        if profile == "physical":
+            from app.services.wayang_contract import ownership_claims
+            claims = ownership_claims(strict_json(row.plan_text))
+            if any(owner.scope == "legacy" or (owner.fragment, owner.cluster, owner.incarnation, owner.topic) in claims
+                   for owner in owners):
+                raise WayangError(409, "The deployment conflicts with an existing source identity or whole-topic owner.")
+        elif owners:
+            raise WayangError(409, "The deployment conflicts with an existing source identity or whole-topic owner.")
         row.continuous = WayangContinuous(deployment_id=row.id) if profile == "continuous" else None
         row.publication = WayangPublication(deployment_id=row.id, operation=None) if fenced else None
         self.db.add(row)
@@ -286,17 +341,31 @@ class Journal:
             if profile == "continuous":
                 self.db.add(WayangCycle(deployment_id=row.id, number=1, plan_hash=row.plan_hash,
                                        plan_text=row.plan_text, state="queued"))
-            for topic in sorted(topics):
-                self.db.add(WayangTopicOwner(topic=topic, deployment_id=row.id))
+            if profile == "physical":
+                for fragment, cluster, incarnation, topic in claims:
+                    self.db.add(WayangTopicOwner(scope="physical", fragment=fragment, cluster=cluster,
+                                                incarnation=incarnation, topic=topic, deployment_id=row.id))
+            else:
+                for topic in sorted(topics):
+                    self.db.add(WayangTopicOwner(topic=topic, deployment_id=row.id))
             await self.db.commit()
         except IntegrityError as error:
             await self.db.rollback()
             existing = await self.existing(row.owner_id, row.spec_hash)
             if (existing and existing.flow_id == row.flow_id and existing.dag_text == row.dag_text
-                    and ("continuous" if existing.continuous is not None else "bounded") == profile):
+                    and public_deployment(existing).get("profile", "bounded") == profile):
                 return existing
             raise WayangError(409, "The deployment conflicts with an existing source identity or whole-topic owner.") from error
         return row
+
+    async def lock_owners(self):
+        bind = self.db.get_bind() if hasattr(self.db, "get_bind") else self.db.session.get_bind()
+        if bind.dialect.name == "postgresql":
+            await self.db.execute(text("LOCK TABLE wayang_topic_owners IN SHARE ROW EXCLUSIVE MODE"))
+        elif bind.dialect.name == "sqlite":
+            await self.db.execute(text("UPDATE wayang_topic_owners SET deployment_id = deployment_id WHERE 0"))
+        else:
+            raise WayangError(503, "The Wayang ownership database does not support admission locking.")
 
     async def next(self):
         return (await self.db.execute(select(WayangDeployment).outerjoin(
@@ -335,9 +404,10 @@ class Journal:
             WayangDeployment.id == operation.replacement_id).execution_options(populate_existing=True))).scalar_one()
 
     async def output_available(self, topic):
-        return (await self.db.execute(select(WayangTopicOwner).where(WayangTopicOwner.topic == topic))).scalar_one_or_none() is None
+        return (await self.db.execute(select(WayangTopicOwner).where(WayangTopicOwner.topic == topic).limit(1))).scalar_one_or_none() is None
 
     async def replace(self, row, expected_epoch, mode, body_hash, replacement=None):
+        await self.lock_owners()
         control = await self.control(row) if row.continuous is not None else None
         publication = await self.publication(row)
         existing = await self.switch(row, expected_epoch)
@@ -365,6 +435,8 @@ class Journal:
                 self.db.add(WayangCycle(deployment_id=replacement.id, number=1, plan_hash=replacement.plan_hash,
                                         plan_text=replacement.plan_text, state="queued"))
                 output = plan_assignments(strict_json(replacement.plan_text))[0]["outputTopic"]
+                if not await self.output_available(output):
+                    raise WayangError(409, "The replacement output topic is already owned.")
                 self.db.add(WayangTopicOwner(topic=output, deployment_id=replacement.id))
             publication.operation = operation
             row.state, row.error = "switching", None
@@ -419,6 +491,9 @@ def validate_result(plan, result):
         if (len(statuses) != len(expected) or {item.get("node") for item in statuses} != expected
                 or any(item.get("state") != "completed" or not isinstance(item.get("receipt"), dict) for item in statuses)):
             raise WayangError(502, "The Wayang completion omits a verified worker receipt.")
+    if plan.get("schema") == "opentsx.physical-deployment.v1":
+        from app.services.wayang_contract import validate_receipts
+        validate_receipts(plan, statuses)
 
 
 def accumulate(control, plan, result):
@@ -629,7 +704,11 @@ async def reconcile_once(journal):
     if row is None:
         return False
     try:
-        if row.publication is None and await publication_fencing():
+        plan = strict_json(row.plan_text)
+        physical = plan.get("schema") == "opentsx.physical-deployment.v1"
+        if physical:
+            validate_plan(plan, row.id, row.dag_text, row.created_at_micros, "physical")
+        if not physical and row.publication is None and await publication_fencing():
             row.publication = WayangPublication(deployment_id=row.id, epoch=0, operation=None)
             await journal.save(row)
         if row.continuous is not None:
@@ -638,7 +717,7 @@ async def reconcile_once(journal):
         row.state = "running"
         if row.result is None:
             await journal.save(row)
-            _, result = await driver("/v1/execute", row.plan_text)
+            _, result = await driver("/v1/execute", row.plan_text, physical=physical)
         else:
             result = row.result
         validate_result(strict_json(row.plan_text), result)
