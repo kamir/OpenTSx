@@ -4,7 +4,7 @@ This page specifies the decision card (`opentsx.decision.v1`), the decision stat
 it (`opentsx.decision-status.v1`), the decision record (`opentsx.decision-record.v1`) and the signal rules they rely
 on; sections 1.3, 1.4, 2.3 and 6 were verified against the code that restricts an analysis whose card states a limit
 the server does not evaluate (fix of 2026-11-21), sections 1.1, 1.5, 2.1, 2.2, 3, 3.3, 4.1, 4.2, 4.3 and 5 against
-commit `49c91c1b`, the others against commit `a513aa98`.
+commit `bd0b9139`, the others against commit `a513aa98`.
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are used as in
 [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) and [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174) when they
@@ -184,7 +184,7 @@ condition, not a proof: an analysis without evidence is `restricted` however goo
 | 404 | `no such system or route: <path>` | unknown system or route |
 | 413 | `the request is larger than 262144 bytes` | POST body too large |
 
-Implemented in: `RetrievalServer.java:174-177`, `RetrievalServer.java:424-443`, `RetrievalServer.java:478-499`,
+Implemented in: `RetrievalServer.java:178-181`, `RetrievalServer.java:425-444`, `RetrievalServer.java:479-500`,
 `Systems.java:104-110`, `Systems.java:380-384`.
 
 <a id="22-evaluate-a-need"></a>
@@ -407,7 +407,7 @@ The same unit does not mean the same quantity. `role` says what kind of quantity
 * The server returns `role` and `meaning` per signal in `opentsx.signal-status.v1`.
 
 Implemented in: `system.v1:188-197`, `SystemDoc.java:42`, `SystemDoc.java:395-398`, `Systems.java:228-229`,
-`SystemDocTest.java:369-373`, `SystemDocTest.java:401`, `SystemsTest.java:99-101`.
+`SystemDocTest.java:369-373`, `SystemDocTest.java:401`, `SystemsTest.java:100-102`.
 
 <a id="42-confirm-the-meaning-of-a-binding"></a>
 
@@ -482,7 +482,7 @@ Implemented in: `WindPark.java:13-23`, `WindPark.java:49-59`, `WindPark.java:61-
 `h2-chain.yaml:26-28`, `h2-chain.yaml:55-56`, `h2-chain.system.yaml:116-136`,
 [`systems/flows/park-power.flow.yaml`](../../systems/flows/park-power.flow.yaml),
 [`systems/flows/park-potential.flow.yaml`](../../systems/flows/park-potential.flow.yaml),
-`SystemDocTest.java:371-373`, `SystemsTest.java:99-101`, `SystemsTest.java:103-108`.
+`SystemDocTest.java:371-373`, `SystemsTest.java:100-102`, `SystemsTest.java:104-109`.
 
 <a id="6-demo-generators-and-scenario-models"></a>
 

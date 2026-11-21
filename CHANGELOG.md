@@ -30,6 +30,17 @@ entries before 3.0.0 are grouped by date.
   transport applies lag, jitter, a slow processor and an outage at once. The test fails when a stressor names no atom
   of the plan or adds no tick. TWIN-COUPLING-SPEC §10 states that `lag`, `stepTicks` and `outages` keys that are not
   atoms are not rejected and slow no atom, and a test covers it. `LooseRunner` behavior is unchanged.
+- Breaking for operators: the retrieval server does not start with `--kafscale` and `--dag-runs true` without a run
+  token. Set `--dag-run-token <token>` or `OPENTSX_DAG_RUN_TOKEN`; a blank value counts as none. The server fails with
+  `--dag-runs true needs a run token: set OPENTSX_DAG_RUN_TOKEN or --dag-run-token` instead of printing
+  `dag deployments: OPEN` and accepting `POST /v1/dags/deploy`, `/v1/dags/stop` and `/v1/systems/<id>/generate` from
+  every caller. The k3s setup is unchanged: `20-configure.sh` generates the token for `RETRIEVAL_DAG_RUNS=true`. A
+  `RetrievalServer` built with `Dags` and `dagWrites` true but without a token throws an `IllegalArgumentException`;
+  `generatedSeries` on a server without a token throws an `IllegalStateException`. The startup line names DAG
+  deployments, stops and generated series. The operator docs, the backend README and SYSTEM-DOCUMENT-SPEC 7.3 say
+  that `DAG_RUN_ROLE=user` (`SAAS_DAG_RUN_ROLE` in k3s) also opens demo generators and Wayang runs to every account.
+  With `DAG_RUN_ROLE=user` the SaaS backend prints at startup that every signed-in account may deploy and stop DAGs,
+  run demo generators and run Wayang deployments, and that sign-up is open.
 
 - TASK-020 U01 decisions D-T16 to D-T22 (owner, 2026-11-21). `TsxCompileContext.Boundary` loses `admitsRaw` (D-T22):
   no raw series, pair or vector and no operator with merge class `none` can feed a federated sink. Spec S1.10, S2.2
