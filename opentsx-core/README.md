@@ -111,6 +111,9 @@ When setting the current one back fails, it logs
 `look and feel not set, and setting back the one before failed lookAndFeel=<class> before=<class> cause=<cause>; suppressed <failure>`.
 When installing the cross-platform one fails, it logs
 `look and feel not set, and installing the cross-platform one failed lookAndFeel=<class> crossPlatform=<class> cause=<cause>; suppressed <failure>`.
+When the default look and feel that `swing.defaultlaf` names cannot load, `MacroRecorder2` ignores it, logs at WARN
+`swing.defaultlaf: the default look and feel cannot load and is ignored; name a look and feel class on the class path or remove swing.defaultlaf lookAndFeel=<class> cause=Cannot load <default class>`
+and sets FlatLaf; when FlatLaf fails as well, it installs the cross-platform one.
 For a node without a chart, such as a source node,
 `show Chart` shows `show Chart: no chart for <node>; select an operation node` in a dialog; without a selection it
 does nothing.
@@ -381,6 +384,17 @@ and then only those at or above the offset. A scaled interval below 0 is counted
 the last bin in the last bin, so the probabilities add up to 1: with offset -5, the intervals -3 and 1 give R_q -1,
 and 1 / -1 counts in scaled bin 0 and -3 / -1 in scaled bin 15. It opens no window and writes nothing to standard
 output. `add(result)` adds the probabilities of a single result to a container instance.
+For a result that is not a container, `addDistData` also counts the kept intervals as they are, in
+`binning` · `scale` + 1 bins of width 1/`scale`, and `calcMessreihen()` writes these counts: `mrHaeufigkeit` holds the
+count of bin i at i / `scale`, `mrVerteilung` its share of the kept intervals, and `mrVerteilungSkaliert` the share of
+scaled bin i of the 41 scaled bins of width 1/5 at (i + 0.5) / 5, in units of R_q. The last bin also counts the longer
+intervals and the first bin the negative ones. With binning 12 and scale 10, the intervals 1, 1, 2 and 4 (R_q 2) give
+121 bins with the counts 2 at 1.0, 1 at 2.0 and 1 at 4.0, and the scaled shares 0.5 at 0.5, 0.25 at 1.1 and 0.25 at
+2.1. When `RISTool.offset` and R_q are above 0, `mrVerteilungSkaliert` leaves out the bins that start below
+`offset` / R_q. A result that keeps no interval has an empty `mrVerteilung` and an empty `mrVerteilungSkaliert`, and
+its `mrHaeufigkeit` holds the count 0 for each bin. Each call of `calcMessreihen()` replaces the series of the call
+before. `showData()` calls it and charts `mrVerteilung` and `mrVerteilungSkaliert`; `store()` writes `mrVerteilung`
+and `toString_Haeufigkeit()` returns `mrHaeufigkeit` as the last call left them.
 Errors stop the call:
 
 | Problem | Exception and message |
@@ -545,8 +559,9 @@ An empty or blank `OPENTSX_LOG_LEVEL` counts as unset, and blanks around a level
 `RNGWrapper` draws from one `java.util.Random` with the seed `RNGWrapper.DEFAULT_SEED` (1), so a program gets the
 same numbers in the same order on every run. It needs no init call. `RNGWrapper.init(seed)` starts the sequence again
 with that seed, and `RNGWrapper.init()` with seed 1. `TimeSeriesObject.getGaussianDistribution(n, mean, sd)` and the
-other random series of `TimeSeriesObject` draw from it. `TimeSeriesObject.shuffleYValues()` draws the new order of the
-y values from it as well, so `RNGWrapper.init(seed)` before a shuffle gives the same order again; this also holds for
+other random series of `TimeSeriesObject` draw from it. `TimeSeriesObject.shuffleXValues()` and `shuffleYValues()` draw
+the new order of the x or y values from it as well, so `RNGWrapper.init(seed)` before a shuffle gives the same order
+again; this also holds for
 `shuffleYValues(rounds)`, which shuffles `rounds` times and appends ` (s<rounds>)` to the label, and for
 `MFDFAAnalyzer.processMFDFA` with `doShuffle` true. `MFDFAAnalyzer.process` calls `RNGWrapper.init()` first, so its
 shuffled analysis uses seed 1 and gives the same orders for the same rows on every call, whatever seed the caller set.

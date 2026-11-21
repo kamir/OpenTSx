@@ -1,6 +1,7 @@
 package org.opentsx.app.bucketanalyser;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import javax.swing.JDialog;
 import javax.swing.JTree;
@@ -15,6 +16,8 @@ import java.awt.Window;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -173,6 +176,39 @@ class MacroRecorderTest {
                 System.setProperty("swing.crossplatformlaf", crossPlatform);
             }
             UIManager.setLookAndFeel(current);
+        }
+    }
+
+    @Test
+    void aDefaultLookAndFeelThatCannotLoadIsIgnoredWithAWarningAndTheLookAndFeelIsSet(@TempDir Path dir)
+            throws Exception {
+        Path output = dir.resolve("output.txt");
+        Path errors = dir.resolve("errors.txt");
+        ProcessBuilder builder = new ProcessBuilder(List.of(
+                Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "-Dswing.defaultlaf=does.not.Exist",
+                "-cp", System.getProperty("surefire.test.class.path"),
+                SetMetalWithADefaultThatCannotLoad.class.getName()))
+                .directory(dir.toFile()).redirectOutput(output.toFile()).redirectError(errors.toFile());
+        builder.environment().keySet().removeAll(List.of("JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS"));
+        int status = builder.start().waitFor();
+        String printed = Files.readString(output);
+        String log = Files.readString(errors);
+
+        assertEquals(0, status, printed + log);
+        assertEquals(MetalLookAndFeel.class.getName() + "\n", printed, log);
+        assertTrue(log.contains("WARN " + MacroRecorder2.class.getName() + " - swing.defaultlaf: the default look and"
+                + " feel cannot load and is ignored; name a look and feel class on the class path or remove"
+                + " swing.defaultlaf lookAndFeel=" + MetalLookAndFeel.class.getName()
+                + " cause=Cannot load does.not.Exist"), log);
+        assertEquals(1, log.lines().count(), log);
+        assertFalse(log.contains("java.lang.Error"), log);
+    }
+
+    public static class SetMetalWithADefaultThatCannotLoad {
+        public static void main(String[] args) {
+            MacroRecorder2.setLookAndFeel(new MetalLookAndFeel());
+            System.out.println(UIManager.getLookAndFeel().getClass().getName());
         }
     }
 

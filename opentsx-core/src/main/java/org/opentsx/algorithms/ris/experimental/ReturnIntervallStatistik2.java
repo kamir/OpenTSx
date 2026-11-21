@@ -406,7 +406,7 @@ public class ReturnIntervallStatistik2 {
     
     private void calcContainerMR() throws Exception {
         
-        mrVerteilungSkaliert = new TimeSeriesObject( name + " (res=" + ((double)scale/(double)binning) );
+        mrVerteilungSkaliert = new TimeSeriesObject( name + " (res=" + ((double)scale/(double)binning) + ")");
         mrHaeufigkeit = new TimeSeriesObject( name );
 
         for (int i = 0; i < data.length; i++) {

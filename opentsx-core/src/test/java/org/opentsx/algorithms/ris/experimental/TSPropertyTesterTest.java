@@ -478,10 +478,8 @@ class TSPropertyTesterTest {
             series.addValue(y);
         }
         Vector<TimeSeriesObject> mrv = TSPropertyTester.mrv;
-        Vector<TimeSeriesObject> mrv2 = TSPropertyTester.mrv2;
         Vector<TimeSeriesObject> mrvB = TSPropertyTester.mrvB;
         TSPropertyTester.mrv = new Vector<>();
-        TSPropertyTester.mrv2 = new Vector<>();
         TSPropertyTester.mrvB = new Vector<>();
         try {
             String log = stderrOf(() -> TSPropertyTester.addRow(series));
@@ -490,7 +488,6 @@ class TSPropertyTesterTest {
             assertFalse(log.contains("mean interval series=row rq=2.0"), log);
         } finally {
             TSPropertyTester.mrv = mrv;
-            TSPropertyTester.mrv2 = mrv2;
             TSPropertyTester.mrvB = mrvB;
         }
     }

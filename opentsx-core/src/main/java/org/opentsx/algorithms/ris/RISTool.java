@@ -393,7 +393,7 @@ public class RISTool {
         
         
         
-        // count the filtered intervals scaled with their Rq
+        // count the filtered intervals as they are and scaled with their Rq
         Enumeration en = dataRawFILTERED.elements();
         while( en.hasMoreElements() ) {
              double dist1 = (Double) en.nextElement();
@@ -402,6 +402,11 @@ public class RISTool {
              if ( index >= dataSKALIERT.length ) index = dataSKALIERT.length-1;
              else if ( index < 0 ) index = 0;
              dataSKALIERT[index]++;
+
+             int bin = (int)( dist1 * (double)scale );
+             if ( bin >= data.length ) bin = data.length-1;
+             else if ( bin < 0 ) bin = 0;
+             data[bin]++;
         }
         
         // probability of each bin
@@ -428,6 +433,35 @@ public class RISTool {
     public void calcMessreihen() throws Exception {
         if ( this.isContainerInstanz ) { 
             calcContainerMR();
+        }
+        else {
+            calcSingleMR();
+        }
+    }
+
+    private void calcSingleMR() {
+
+        for ( TimeSeriesObject series : new TimeSeriesObject[] { mrHaeufigkeit, mrVerteilung, mrVerteilungSkaliert } ) {
+            series.xValues.clear();
+            series.yValues.clear();
+        }
+
+        for (int i = 0; i < data.length; i++) {
+            mrHaeufigkeit.addValuePair( (double)i / (double)scale, data[i] );
+            if ( zElements != 0 ) {
+                mrVerteilung.addValuePair( (double)i / (double)scale, (double) data[i] / (double) zElements );
+            }
+        }
+
+        if ( zElements == 0 ) {
+            return;
+        }
+        for (int i = 0; i < dataSKALIERT.length; i++) {
+            boolean belowOffset = offset > 0 && _Rq > 0 && i < offset * scaleSKALIERT / _Rq;
+            if ( !belowOffset ) {
+                mrVerteilungSkaliert.addValuePair( ((double)i + 0.5) / scaleSKALIERT,
+                        (double) dataSKALIERT[i] / (double) zElements );
+            }
         }
     }
     

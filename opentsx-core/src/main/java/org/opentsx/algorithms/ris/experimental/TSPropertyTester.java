@@ -719,10 +719,8 @@ public class TSPropertyTester {
     
     static FileWriter fw;
     
-    static Vector<TimeSeriesObject> mrv2 = new Vector<TimeSeriesObject>();
     static Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
 
-    static Vector<TimeSeriesObject> mrv2B = null;
     static Vector<TimeSeriesObject> mrvB = new Vector<TimeSeriesObject>();
 
     static int maxB = 5; // number of input files
@@ -765,10 +763,8 @@ public class TSPropertyTester {
         RNGWrapper.init();
 
         mrv = new Vector<TimeSeriesObject>();
-        mrv2 = new Vector<TimeSeriesObject>();
         
         mrvB = new Vector<TimeSeriesObject>();
-        mrv2B = new Vector<TimeSeriesObject>();
         
         TimeSeriesObject mr1 = null;
         
@@ -892,7 +888,6 @@ public class TSPropertyTester {
         ris4.calcMessreihen();
 
         mrv.add( ris4.mrVerteilungSkaliert ); 
-        mrv2.add( ris4.mrHaeufigkeit ); 
     }
     
     public static int ZZZ = 0;

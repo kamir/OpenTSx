@@ -534,6 +534,68 @@ class RISToolTest {
     }
 
     @Test
+    void aSingleResultGivesTheCountsTheDistributionAndTheScaledSharesOfItsIntervals() throws Exception {
+        RISTool ris = new RISTool("single", 12, 10);
+        ris.addDistData(new Vector<>(List.of(1.0, 1.0, 2.0, 4.0)));
+
+        ris.calcMessreihen();
+        ris.calcMessreihen();
+
+        double[] counts = new double[121];
+        counts[10] = 2;
+        counts[20] = 1;
+        counts[40] = 1;
+        assertBins(counts, 1.0, 0.1, 0.0, ris.mrHaeufigkeit);
+        assertBins(counts, 4.0, 0.1, 0.0, ris.mrVerteilung);
+        double[] scaled = new double[41];
+        scaled[2] = 2;
+        scaled[5] = 1;
+        scaled[10] = 1;
+        assertBins(scaled, 4.0, 0.2, 0.1, ris.mrVerteilungSkaliert);
+    }
+
+    @Test
+    void aPositiveOffsetLeavesOutTheScaledBinsThatStartBelowOffsetOverRq() throws Exception {
+        RISTool.offset = 0.5;
+        RISTool ris = new RISTool("offset", 12, 10);
+        ris.addDistData(new Vector<>(List.of(1.0, 1.0, 2.0, 4.0)));
+
+        ris.calcMessreihen();
+
+        assertEquals(39, ris.mrVerteilungSkaliert.yValues.size());
+        assertEquals(0.5, (Double) ris.mrVerteilungSkaliert.xValues.get(0), 1e-12);
+        assertEquals(0.5, (Double) ris.mrVerteilungSkaliert.yValues.get(0), 1e-12);
+    }
+
+    @Test
+    void aSingleResultWithoutIntervalsCountsNothingAndHasNoDistribution() throws Exception {
+        RISTool ris = new RISTool("none", 12, 10);
+        ris.addDistData(new Vector<>());
+
+        ris.calcMessreihen();
+
+        assertBins(new double[121], 1.0, 0.1, 0.0, ris.mrHaeufigkeit);
+        assertEquals(List.of(), ris.mrVerteilung.yValues);
+        assertEquals(List.of(), ris.mrVerteilungSkaliert.yValues);
+    }
+
+    @Test
+    void aStoredSingleResultWritesItsDistributionAndItsCountsHaveTheirBins() throws Exception {
+        RISTool ris = new RISTool("stored", 12, 10);
+        ris.folder = dir + "/";
+        ris.label = "distribution.dat";
+        ris.addDistData(new Vector<>(List.of(1.0, 1.0, 2.0, 4.0)));
+
+        ris.calcMessreihen();
+        ris.store();
+
+        String stored = Files.readString(dir.resolve("distribution.dat"));
+        assertTrue(stored.contains("# Nr of data points => 121"), stored);
+        String counts = ris.toString_Haeufigkeit();
+        assertTrue(counts.contains("# Nr of data points => 121"), counts);
+    }
+
+    @Test
     void aFailingStoreClosesItsFile() throws Exception {
         RISTool ris = new RISTool("stored", 12, 10);
         ris.folder = dir + "/";
@@ -564,6 +626,14 @@ class RISToolTest {
             return fd.resolveSibling(Files.readSymbolicLink(fd));
         } catch (IOException gone) {
             return null;
+        }
+    }
+
+    private static void assertBins(double[] counts, double total, double width, double shift, TimeSeriesObject series) {
+        assertEquals(counts.length, series.yValues.size(), series.toString());
+        for (int i = 0; i < counts.length; i++) {
+            assertEquals(i * width + shift, (Double) series.xValues.get(i), 1e-12);
+            assertEquals(counts[i] / total, (Double) series.yValues.get(i), 1e-12);
         }
     }
 

@@ -1744,8 +1744,14 @@ public class TimeSeriesObject implements Serializable {
    
     }
 
+    /**
+     * Puts the x values into a random order drawn from RNGWrapper, so RNGWrapper.init(seed) before the call gives
+     * the same order again.
+     */
     public void shuffleXValues() {
-        Collections.shuffle( this.xValues );
+        for ( int i = this.xValues.size(); i > 1; i-- ) {
+            Collections.swap( this.xValues, i - 1, (int) RNGWrapper.getStdRandomUniform( 0, i ) );
+        }
     }
     
     /**

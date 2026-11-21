@@ -1234,6 +1234,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `CONFLUENT_DOCKER_TAG` and `REPOSITORY`, which the compose files did not read; the compose files lose the obsolete
   `version` key; `run_LatencyProbe_PROD.sh` and `executor-script.sh` no longer start `Xvfb`, which the image does not
   contain. `DockerImageTest` fails when any of these comes back.
+- `opentsx-core`: the package-private lists `mrv2` and `mrv2B` of `TSPropertyTester`, which nothing charted or read;
+  `TSPropertyTester.addRow` added an empty count series to `mrv2`.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -2753,7 +2755,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   it logs `look and feel not set, and setting back the one before failed lookAndFeel=<class> before=<class>
   cause=<cause>; suppressed <failure>`, and when installing the cross-platform one fails, it logs `look and feel not
   set, and installing the cross-platform one failed lookAndFeel=<class> crossPlatform=<class> cause=<cause>;
-  suppressed <failure>`.
+  suppressed <failure>`. When the default look and feel that `swing.defaultlaf` names cannot load, `MacroRecorder2`
+  ignores it, logs at WARN `swing.defaultlaf: the default look and feel cannot load and is ignored; name a look and
+  feel class on the class path or remove swing.defaultlaf lookAndFeel=<class> cause=Cannot load <default class>` and
+  sets FlatLaf.
 - `opentsx-core`: `ReturnIntervallStatistik2.addRowB` bins the intervals between consecutive days with a value of at
   least 0.5. It binned the days themselves as intervals, so the days 2, 4, 6 and 8 gave R_q 5.0 instead of 2.0.
 - `opentsx-core`: the DEBUG line `mean interval series=<label> rq=<R_q>` of `TSPropertyTester.addRow` gives the R_q of
@@ -2847,6 +2852,16 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - When the rename of `<env>.restoring` over `.env` fails, `deploy/k3s/71-restore.sh` removes the `.env.before-restore`
   it wrote (one that is a link stays), so the rerun works after `.env` changed; the line `previous .env kept as
   <file>` appears only after the rename succeeded.
+- `opentsx-core`: for a result that is not a container, `RISTool.calcMessreihen()` writes `mrHaeufigkeit`,
+  `mrVerteilung` and `mrVerteilungSkaliert`. `addDistData` counts the kept intervals in bins of width 1/`scale`, and
+  the scaled series holds the share of each scaled bin at (i + 0.5) / 5. With binning 12 and scale 10, the intervals
+  1, 1, 2 and 4 give the counts 2 at 1.0, 1 at 2.0 and 1 at 4.0. These series stayed empty, so `showData()`, `store()`
+  and `toString_Haeufigkeit()` of a single result showed no values.
+- `opentsx-core`: the scaled series of a `ReturnIntervallStatistik2` container is named `<name> (res=<scale /
+  binning>)` with its closing parenthesis, as in `TSPropertyTester`.
+- `opentsx-core`: `TimeSeriesObject.shuffleXValues()` draws the new order from `RNGWrapper`, as `shuffleYValues()`
+  does, so `RNGWrapper.init(seed)` before the shuffle gives the same order again. It used the unseeded generator of
+  `Collections.shuffle`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

@@ -534,6 +534,17 @@ class ReturnIntervallStatistik2Test {
     }
 
     @Test
+    void aContainerNamesItsScaledSeriesWithItsResolutionInParentheses() throws Exception {
+        ReturnIntervallStatistik2 container = new ReturnIntervallStatistik2("all", 12, 10);
+        container.isContainerInstanz = true;
+        container.add(filled("first"));
+
+        container.calcMessreihen();
+
+        assertEquals("all (res=0.8333333333333334)", container.mrVerteilungSkaliert.getLabel());
+    }
+
+    @Test
     void addingARowChartsTheCountsOfItsIntervalsAndOfTheIntervalsBetweenItsPeaks() throws Exception {
         TimeSeriesObject series = new TimeSeriesObject();
         series.setLabel("counts");

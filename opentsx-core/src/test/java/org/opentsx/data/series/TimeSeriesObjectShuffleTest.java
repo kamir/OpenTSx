@@ -43,6 +43,22 @@ class TimeSeriesObjectShuffleTest {
         assertEquals("values (s3)", first.getLabel());
     }
 
+    @Test
+    void aShuffleOfTheXValuesAfterTheSameSeedGivesTheSameOrder() {
+        TimeSeriesObject first = series(100);
+        TimeSeriesObject second = series(100);
+
+        RNGWrapper.init(7);
+        first.shuffleXValues();
+        RNGWrapper.init(7);
+        second.shuffleXValues();
+
+        assertEquals(first.xValues, second.xValues);
+        assertNotEquals(series(100).xValues, first.xValues);
+        assertEquals(series(100).xValues, sorted(first.xValues));
+        assertEquals(series(100).yValues, first.yValues);
+    }
+
     private static List<Double> sorted(List<Double> values) {
         List<Double> sorted = new ArrayList<>(values);
         Collections.sort(sorted);
