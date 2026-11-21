@@ -13,7 +13,7 @@ Normative specification: [04-MODELL-V2-SPEC](../datamodel-2026/04-MODELL-V2-SPEC
 | `Segmentation` | how the episode was cut: strategy, parameters, anchor, source episode |
 | `Provenance` | source, producer, creation time, pipeline, parent episode |
 | `Observation` | a single live value |
-| `BucketManifest` | a logical bucket: OPEN → SEALED, episode count, time range, checksum |
+| `BucketManifest` | a logical bucket: OPEN → SEALED, episode count, time range, content checksum |
 | `SeriesStats` | windowed or running statistics (from `opentsx-stats`) |
 | `PatternMatch` | hit of a pattern search |
 | `AnalysisResult` | result of one analysis run on fixed input episodes: method, typed parameters, inputs, scalars, curves, matrices |

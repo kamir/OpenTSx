@@ -7,6 +7,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.model.Buckets;
+import org.opentsx.model.Episodes;
 import org.opentsx.model.Micros;
 import org.opentsx.model.OpenTsxAvro;
 import org.opentsx.model.v2.BucketManifest;
@@ -50,7 +51,8 @@ class BucketWriterTest {
 
         assertEquals(BucketState.SEALED, sealed.getState());
         assertEquals(episodes.size(), sealed.getEpisodeCount());
-        assertEquals(Buckets.checksum(episodes.stream().map(Episode::getEpisodeId).toList()), sealed.getChecksum());
+        assertEquals(Buckets.contentChecksum(episodes.stream().map(Episode::getEpisodeId).toList(),
+                episodes.stream().map(Episodes::contentDigest).toList()), sealed.getChecksum());
         assertEquals(episodes.get(0).getTStart(), sealed.getTMin());
 
         ProducerRecord<String, byte[]> first = sent.get(1);
@@ -85,6 +87,26 @@ class BucketWriterTest {
         producer.errorNext(new RuntimeException("broker gone"));
         assertThrows(BucketWriter.BucketWriteException.class, w::seal);
         assertEquals(1, index.size());
+    }
+
+    @Test
+    void rejectsAnEpisodeIdThatIsAlreadyInTheBucketWithOtherContent() {
+        MockProducer<String, byte[]> producer = new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer());
+        Episode first = WindData.episodes(1, List.of("rpm"), 1, 10, 4).get(0);
+        List<Double> values = new java.util.ArrayList<>(first.getValues());
+        values.set(0, values.get(0) + 1.0);
+        Episode revised = Episode.newBuilder(first).setValues(values).setRevision(1).build();
+        BucketManifest sealed;
+        try (BucketWriter w = BucketWriter.open(producer, layout, new InMemoryEpisodeIndex(), "b-4", "exp", Map.of())) {
+            w.append(first);
+            w.append(first);
+            assertEquals("episode " + first.getEpisodeId() + " is already in bucket b-4 with other content",
+                    assertThrows(IllegalArgumentException.class, () -> w.append(revised)).getMessage());
+            sealed = w.seal();
+        }
+        assertEquals(4, producer.history().size(), "OPEN, the episode twice, SEALED; the revised episode is not sent");
+        assertEquals(Buckets.contentChecksum(List.of(first.getEpisodeId()), List.of(Episodes.contentDigest(first))),
+                sealed.getChecksum());
     }
 
     @Test
