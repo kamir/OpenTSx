@@ -30,6 +30,7 @@ import java.util.Map;
 public final class Solar extends Atom {
 
     private static final List<Double> DEFAULT_CLEARNESS = List.of(0.85, 0.6, 0.9, 0.45, 0.75, 0.95, 0.55);
+    private static final double RAD_PER_DEG = Math.PI / 180;
 
     private final double latitude;
     private final double longitude;
@@ -142,15 +143,16 @@ public final class Solar extends Atom {
         double days = tMicros / 86_400e6;
         int doy = java.time.LocalDate.ofEpochDay((long) Math.floor(days)).getDayOfYear();
         double utcHours = (days - Math.floor(days)) * 24;
-        double decl = Math.toRadians(23.45 * Math.sin(2 * Math.PI * (284 + doy) / 365.0));
-        double omega = Math.toRadians(15 * (utcHours + longitudeDeg / 15.0 - 12));
-        double phi = Math.toRadians(latitudeDeg);
-        double sinH = Math.sin(phi) * Math.sin(decl) + Math.cos(phi) * Math.cos(decl) * Math.cos(omega);
+        double decl = 23.45 * StrictMath.sin(2 * Math.PI * (284 + doy) / 365.0) * RAD_PER_DEG;
+        double omega = 15 * (utcHours + longitudeDeg / 15.0 - 12) * RAD_PER_DEG;
+        double phi = latitudeDeg * RAD_PER_DEG;
+        double sinH = StrictMath.sin(phi) * StrictMath.sin(decl)
+                + StrictMath.cos(phi) * StrictMath.cos(decl) * StrictMath.cos(omega);
         if (sinH <= 0.01) {
             return 0;
         }
         double am = 1 / sinH;
-        double dni = 1353 * Math.pow(0.7, Math.pow(am, 0.678));
+        double dni = 1353 * StrictMath.pow(0.7, StrictMath.pow(am, 0.678));
         return 1.1 * dni * sinH;
     }
 }

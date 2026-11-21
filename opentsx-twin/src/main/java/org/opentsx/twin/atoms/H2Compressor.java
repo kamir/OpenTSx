@@ -50,7 +50,7 @@ public final class H2Compressor extends Atom {
         if (!(pOutBar > pInBar)) {
             return 0;
         }
-        return CP_H2 * tempK / etaIs * (Math.pow(pOutBar / pInBar, EXPONENT) - 1) / 3.6e6;
+        return CP_H2 * tempK / etaIs * (StrictMath.pow(pOutBar / pInBar, EXPONENT) - 1) / 3.6e6;
     }
 
     @Override

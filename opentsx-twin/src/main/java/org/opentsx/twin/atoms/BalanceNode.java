@@ -87,7 +87,10 @@ public final class BalanceNode extends Atom {
         load.put("self", ctx.has("p_self_kw") ? ctx.in("p_self_kw").getAsDouble() : 0);
         load.put("ely", ctx.has("p_ely_kw") ? ctx.in("p_ely_kw").getAsDouble() : 0);
         load.put("bat", ctx.has("p_bat_kw") ? ctx.in("p_bat_kw").getAsDouble() : 0);
-        double total = load.values().stream().mapToDouble(Double::doubleValue).sum();
+        double total = 0;
+        for (double l : load.values()) {
+            total += l;
+        }
         double grid = gen - total;
         double left = Math.max(0, gen);
         double direct = 0;

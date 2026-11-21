@@ -5,6 +5,7 @@ import org.opentsx.twin.Mode;
 import org.opentsx.twin.Params;
 import org.opentsx.twin.RunResult;
 import org.opentsx.twin.SeriesInputs;
+import org.opentsx.twin.SplitMix64;
 import org.opentsx.twin.TwinPlan;
 import org.opentsx.twin.TwinRunner;
 import org.opentsx.twin.atoms.Weather;
@@ -23,7 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.SplittableRandom;
 
 /**
  * <b>Simulated</b> example bills for the house twin, so the calibration pipeline can be shown end to end before real
@@ -76,7 +76,7 @@ public final class SimulatedBills {
     }
 
     public static Data generate(TwinPlan plan, long seed) {
-        SplittableRandom rnd = new SplittableRandom(seed);
+        SplitMix64 rnd = new SplitMix64(seed);
         int days = (int) ChronoUnit.DAYS.between(FROM, TO) + 1;
 
         // 1. weather: synthetic climate of the plan plus a winter anomaly per heating year, rounded like station data
@@ -95,7 +95,7 @@ public final class SimulatedBills {
                 sum += climate.syntheticTemperature(t0 + h * 3_600_000_000L + 1_800_000_000L);
             }
             int heatingYear = day.getMonthValue() >= 7 ? day.getYear() : day.getYear() - 1;
-            double w = Math.max(0, Math.cos(2 * Math.PI * (day.getDayOfYear() - 15) / 365.25));
+            double w = Math.max(0, StrictMath.cos(2 * Math.PI * (day.getDayOfYear() - 15) / 365.25));
             double mean = sum / 24 + WINTER.getOrDefault(heatingYear, 0.0) * w;
             temps.add(day + "," + String.format(Locale.ROOT, "%.1f", mean));
         }
@@ -288,12 +288,12 @@ public final class SimulatedBills {
     }
 
     /** Gauge reading: ±25 l error, rounded to 10 l. */
-    private static String reading(double litres, SplittableRandom rnd) {
+    private static String reading(double litres, SplitMix64 rnd) {
         return fmt0(Math.round((litres + (rnd.nextDouble() * 2 - 1) * 25) / 10) * 10.0);
     }
 
     /** Heating-oil price in EUR/l: 2022 crisis peak, then easing; small noise per delivery. */
-    private static double oilPrice(LocalDate d, SplittableRandom rnd) {
+    private static double oilPrice(LocalDate d, SplitMix64 rnd) {
         double base = switch (d.getYear()) {
             case 2022 -> d.getMonthValue() < 3 ? 0.95 : 1.45;
             case 2023 -> 1.08;

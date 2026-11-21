@@ -1,6 +1,8 @@
 package org.opentsx.twin;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.StreamWriteFeature;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -112,10 +114,14 @@ public record TwinPlan(String twin, Instant start, Duration baseStep, int steps,
         return out;
     }
 
-    /** Stable hash of the plan, part of every run id. */
+    /**
+     * Stable hash of the plan, part of every run id. Doubles are written by Jackson's shortest-decimal writer, not by
+     * {@link Double#toString(double)}, whose digits differ between Java 17 and 21 for some values.
+     */
     public String hash() {
         try {
-            ObjectMapper m = new ObjectMapper().registerModule(new JavaTimeModule())
+            JsonFactory f = JsonFactory.builder().enable(StreamWriteFeature.USE_FAST_DOUBLE_WRITER).build();
+            ObjectMapper m = new ObjectMapper(f).registerModule(new JavaTimeModule())
                     .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
                     .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
             return XxHash64.hex(XxHash64.hash(m.writeValueAsString(this).getBytes(StandardCharsets.UTF_8)));

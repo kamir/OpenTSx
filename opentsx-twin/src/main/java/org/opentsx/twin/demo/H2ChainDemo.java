@@ -53,7 +53,7 @@ public final class H2ChainDemo {
     public static SeriesInputs observed() {
         double[] price = new double[STEPS / 15];
         for (int i = 0; i < price.length; i++) {
-            price[i] = 60 + 20 * Math.sin(i / 4.0);
+            price[i] = 60 + 20 * StrictMath.sin(i / 4.0);
         }
         return new SeriesInputs()
                 .bind("park.p_potential_kw", T0, MIN, constant(STEPS, 8000), Origin.MEASURED)
