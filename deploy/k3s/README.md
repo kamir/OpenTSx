@@ -92,7 +92,7 @@ curl -N "http://<node>:30312/v1/topics/<topic>/events?from=earliest"
 ```
 
 The Smart Topics Studio follows a topic through it: open the page with `?bridge=http://<node>:30312`, tab
-"Ereignis-Topic", "Verbinden". Events get into the topics with `opentsx twin-live publish` (see
+"Event topic", "Connect". Events get into the topics with `opentsx twin-live publish` (see
 `opentsx-twin-live/README.md`). The bridge is read-only, serves only event topics of twins and has no authentication;
 `EVENT_BRIDGE_ALLOW_ORIGIN` narrows the origin it answers browsers from.
 

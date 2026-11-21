@@ -187,6 +187,24 @@ measured SoC, the measured output power and (with irradiance) the measured solar
 the levers act on measured values. For front ends, `BoatDemo` exposes `plan()`, `observed()`, `reference()`, `alternatives()`, `KEY_SERIES`,
 `KEY_KPIS` and `kpis(RunResult)`.
 
+## Smart Topics Studio
+
+`studio.StudioExport` computes the reference run, the alternatives and the forecasts of every `StudioScenario` (H2
+chain, house, boat) and writes them as one JSON file. `tools/build_studio.py` puts that file into
+`docs/prototypes/smart-topics-studio.template.html` and writes `docs/prototypes/smart-topics-studio.html`. The order
+matters:
+
+```bash
+java -cp "$(bin/opentsx classpath opentsx-twin)" org.opentsx.twin.studio.StudioExport /tmp/studio.json
+python3 tools/build_studio.py /tmp/studio.json
+```
+
+The page, the scenario texts and the guides ([`twin/h2-chain.guide.yaml`](src/main/resources/twin/h2-chain.guide.yaml),
+[`twin/haus-erzgebirge.guide.yaml`](src/main/resources/twin/haus-erzgebirge.guide.yaml)) are in English. Scenario
+ids, twin names and plan parameters, such as the appliance names of the house, are not translated: they are part of
+the plan hash and the run ids. The export leaves out the run hash, because the hash chains the raw bits of every
+value and differs between JVMs whose `Math` functions round the last bit differently.
+
 ## Tests
 
 * **`TwinShadowTest`**
@@ -224,6 +242,10 @@ the levers act on measured values. For front ends, `BoatDemo` exposes `plan()`, 
   * CSV import (resampling, holding, origins) and calibration that recovers known parameters
 * **`boat.SimulatedLogsTest`**: the bundled simulated logs equal the generator output; calibration on them recovers
   the hidden parameters, and unmet demand and autonomy on the logs match the hidden true run
+* **`studio.StudioGuideTest`**, **`studio.StudioPageTest`**
+  * every guide explains its plan completely and nothing else
+  * the Studio export carries no run hash
+  * the committed Studio page carries the export of the current scenarios
 
 ## Not yet
 
