@@ -351,9 +351,8 @@ After completing these exercises:
 
 ## Resources
 
-- [Data Operations Guide](../../docs/manual/data-operations/transformations.md)
-- [Best Practices](../../docs/manual/best-practices/README.md)
-- [API Reference](../../docs/manual/appendix/api-reference.md)
+- [Best Practices](https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/manual-v1/best-practices/README.md)
+- [API Reference](https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/manual-v1/appendix/api-reference.md)
 
 ---
 

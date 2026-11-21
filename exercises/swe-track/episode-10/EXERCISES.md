@@ -442,9 +442,9 @@ When deploying to production, ensure:
 
 ## Resources
 
-- [Best Practices](../../docs/manual/best-practices/README.md)
-- [Production Deployment](../../DEPLOYMENT.md)
-- [Local Development Guide](../../docs/devguide/infrastructure/local-development.md)
+- [Best Practices](https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/manual-v1/best-practices/README.md)
+- [Production Deployment](https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/devguide-2025/guides/DEPLOYMENT.md)
+- [Local Development Guide](../../../docs/devguide/infrastructure/local-development.md)
 
 ---
 

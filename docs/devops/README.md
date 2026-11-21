@@ -15,7 +15,7 @@ The local probe checks these prerequisites before invoking Compose. Read its rep
 | [Setup plan](setup-plan.md) | prerequisites, network path to KafScale, step-by-step installation with checks after each step, configuration reference, upgrade, teardown |
 | [Sizing plan](sizing-plan.md) | resources per component, storage formula and worked examples (wind farm, house, boat), what still has to be measured |
 | [Demos](demos.md) | how to run each example on k3s and what output to expect |
-| [Today vs. planned](today-vs-planned.md) | what is deployable now, and where the Go Smart Topic processor, DAG and MLflow (concept 11) will slot in |
+| [Today vs. planned](today-vs-planned.md) | what is deployable now, and where the planned Go Smart Topic processor and MLflow training will slot in |
 | [Troubleshooting](troubleshooting.md) | symptoms, causes, fixes |
 | [History archive](history-archive.md) | market and weather history: one-off backfill, daily forward archiving of day-ahead data and MOSMIX as k3s CronJobs (`deploy/k3s/history/`) |
 

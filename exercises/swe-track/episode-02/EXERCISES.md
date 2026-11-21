@@ -277,9 +277,8 @@ After completing these exercises:
 
 ## Resources
 
-- [Core Concepts Documentation](../../docs/manual/core-concepts/timeseries-object.md)
-- [Data Operations Guide](../../docs/manual/data-operations/creating-timeseries.md)
-- [API Reference](../../docs/manual/appendix/api-reference.md)
+- [Core Concepts Documentation](https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/manual-v1/core-concepts/timeseries-object.md)
+- [API Reference](https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/manual-v1/appendix/api-reference.md)
 
 ---
 

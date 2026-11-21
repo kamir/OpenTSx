@@ -360,8 +360,8 @@ execution. Its result directory contains `bytes.csv`, `windows.csv`, `run.json`,
 `metadata.json`, logs and a generated `REPORT.md`. Results are written from the
 executed workload and validated before report generation.
 
-The [A4.9 report and raw samples](../docs/datamodel-2026/measurements/wayang-federation-2026-11-17/REPORT.md)
-record nine site/route measurements, 420 reference windows and 2,520 exact
+The [A4.9 report](../docs/datamodel-2026/measurements/wayang-federation-2026-11-17/REPORT.md)
+records nine site/route measurements, 420 reference windows and 2,520 exact
 merge-order comparisons. Use the
 [measurement instructions](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md#143-measure-bounded-jvm-federation)
 to rerun the bounded profile. Kafka frames, HTTP bodies and TLS client-stream
@@ -403,8 +403,8 @@ applies no performance threshold. Its backlog results remain distinct from
 the [paced A1.7 measurements](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md#141-measure-track-a-increments),
 the 30-kill recovery protocol and the Track B small-device matrix.
 
-The [A5 report and raw samples](../docs/datamodel-2026/measurements/wayang-track-a-evaluation-2026-11-18/REPORT.md)
-record the complete 63-condition run on 2026-11-18. All nine federation
+The [A5 report](../docs/datamodel-2026/measurements/wayang-track-a-evaluation-2026-11-18/REPORT.md)
+records the complete 63-condition run on 2026-11-18. All nine federation
 conditions and all 54 streaming conditions passed their received-record,
 reference, checkpoint and clock checks. Federation retains 3,780 window
 comparisons, 17,640 partials and 126 site/route byte rows. This qualification
@@ -558,7 +558,7 @@ run sequentially with a fresh JVM and disposable in-memory KafScale broker.
 Read the [operations instructions](../docs/user-manual/12-operations.md#127-measure-wayang-increment-latency)
 for the command, metric definitions and isolation limits. The generated
 [measurement report](../docs/datamodel-2026/measurements/wayang-increment-latency-2026-11-17/REPORT.md)
-identifies the hardware, versions, exact commands and raw samples. Produce ingress
+identifies the hardware, versions and exact commands; the raw samples are not in this repository. Produce ingress
 clocks measure transport latency; Kafka record timestamps retain event time.
 These measurements cover A1.7, not the broader throughput or Track B matrix.
 
@@ -685,5 +685,5 @@ regenerate all five files. You need JDK 17 or 21, Maven, and Python.
 The generator is verified with JDK 21 and Python 3.12 on 2026-11-16.
 
 The [bounded mixed W3 report](../docs/datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md)
-retains actual per-window and per-partial data, source/runtime identities and
-executed test evidence. The physical ARM64 board measurement remains open.
+records source/runtime identities and executed test evidence; its manifest lists the SHA-256 of the per-window and
+per-partial raw files, which are not in this repository. The physical ARM64 board measurement remains open.

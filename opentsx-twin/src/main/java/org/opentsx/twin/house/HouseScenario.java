@@ -64,7 +64,7 @@ public final class HouseScenario {
         return log;
     }
 
-    /** The efficiency levers of the concept (08 §6), each as alternative to the reference. */
+    /** The efficiency levers, each as alternative to the reference. */
     public static List<Lever> levers(TwinPlan plan) {
         Instant t0 = plan.start();
         String b = id(plan, "building");

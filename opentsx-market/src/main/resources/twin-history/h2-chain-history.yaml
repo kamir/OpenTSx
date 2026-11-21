@@ -1,6 +1,6 @@
 # Scenario S1 (H2 chain) for runs on archived history: the plan of opentsx-twin twin/h2-chain.yaml in its second
 # form (compressor, high-pressure buffer, pipeline with two pressures, handover station) with a 15-minute base step
-# (decided 2026-10-13, D78). The market steps every superstep, MTU 15 min; hourly prices before 2025-10-01 are held.
+# (decided 2026-10-13). The market steps every superstep, MTU 15 min; hourly prices before 2025-10-01 are held.
 # Start and number of steps are replaced per run (HistoryTwins); inputs come from the history archive:
 #   market.price_eur_mwh   day-ahead DE-LU (REPORTED)
 #   park.p_potential_kw    wind: national onshore generation scaled to the park, or a DWD station carried to hub

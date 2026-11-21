@@ -180,7 +180,7 @@ echo "Next Steps:"
 echo "  • Explore the GUI and time series visualization"
 echo "  • Try loading sample data"
 echo "  • Run analysis demos: ./bin/120_run_demo.sh"
-echo "  • Learn more: see ONBOARDING-PATH-SWE.md or ONBOARDING-PATH-TSx.md"
+echo "  • Learn more: see docs/user-manual/README.md"
 echo
 
 exit $EXIT_CODE

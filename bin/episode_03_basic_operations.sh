@@ -130,8 +130,7 @@ echo "  • Continue to Episode 9: Statistical Analysis"
 echo "    ./bin/episode_09_analysis.sh"
 echo
 echo -e "${BLUE}Documentation:${NC}"
-echo "  • Data Operations: docs/manual/data-operations/transformations.md"
-echo "  • Best Practices: docs/manual/best-practices/README.md"
-echo "  • API Reference: docs/manual/appendix/api-reference.md"
+echo "  • Best Practices: https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/manual-v1/best-practices/README.md"
+echo "  • API Reference: https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/manual-v1/appendix/api-reference.md"
 echo
 echo -e "${GREEN}════════════════════════════════════════════════════════════════${NC}"

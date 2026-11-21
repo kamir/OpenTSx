@@ -354,10 +354,10 @@ Implemented in: `SystemDoc.java:103-105,335-354,550-583`, `Systems.java:292-297`
 * A generator MUST NOT write to any topic other than the synthetic topic of its domain.
 * Topic names come from `TopicLayout`. A missing synthetic, clean or features topic is created when it is first
   written: one partition, `compression.type=zstd`, `cleanup.policy=delete`.
-* With `--kafscale`, the retrieval server follows the episodes topic, the clean topic and the synthetic topic of its
-  domain. It does not read the features topic.
+* With `--kafscale`, the retrieval server follows the episodes topic, the clean topic, the features topic and the
+  synthetic topic of its domain.
 
-Implemented in: `TopicLayout.java:42-44,165-181,189-206`, `KafScaleFeed.java:126-132,163-178`,
+Implemented in: `TopicLayout.java:42-44,165-181,189-206`, `KafScaleFeed.java:128-134,172-175,400-412`,
 `VectorProcessorApp.java:85-89`.
 
 <a id="s42-generated-series"></a>

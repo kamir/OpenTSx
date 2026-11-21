@@ -162,7 +162,7 @@ Implemented in: `workbench/pairs.ts:159-168`, `wayang/ops/TsxPairXcorr.java:115-
 ## 6. Align A and B
 
 A and B are put on one clock by the rules of `align.vector`
-([11-SMART-TOPIC-PROZESSOR-DEVOPS.md](VECTOR-AND-DAG-SPEC.md), section 5a).
+([VECTOR-AND-DAG-SPEC.md](VECTOR-AND-DAG-SPEC.md#2-vector-measuring-points), sections 2.1 and 2.2).
 
 * Clock: `every` when it is greater than 0. Otherwise each pair range takes its own clock: the larger of the sampling
   intervals of its episode of A and its episode of B. The pair ranges of one pair can run on different clocks.

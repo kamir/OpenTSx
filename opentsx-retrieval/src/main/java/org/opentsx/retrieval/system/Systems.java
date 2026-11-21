@@ -161,7 +161,7 @@ public final class Systems {
         return v.isArray() && !v.isEmpty() ? v.get(v.size() - 1).asText("") : "";
     }
 
-    /** Metric of a series written by rule: that of the channel, else {@code <system>.<atom>.<port>}. */
+    /** Metric of a generated series: the raw source's {@code select.metric}, else {@code <system>.<signal id>}. */
     private static String metric(SystemDoc d, Signal s) {
         if (s.raw() != null && s.raw().metric() != null) {
             return s.raw().metric();
@@ -174,7 +174,7 @@ public final class Systems {
 
     /**
      * Tells which deployments run. A signal written by several flows, one after the other, then shows the series of
-     * the flow that runs and names the others (decision D84).
+     * the flow that runs and names the others (SYSTEM-DOCUMENT-SPEC.md, section 4.4).
      */
     public void runningFlows(java.util.function.Supplier<java.util.Set<String>> running) {
         this.running = running;
@@ -519,7 +519,7 @@ public final class Systems {
             return null;
         }
         // several flows wrote this grade, one after the other: the series of the flow that runs counts, and the others
-        // are named, not added to it (D84). A series from before the flow became part of its identity has no tag.
+        // are named, not added to it. A series from before the flow became part of its identity has no tag.
         List<JsonNode> others = new ArrayList<>();
         if (!byTopic && running != null && hits.stream().anyMatch(e -> running.contains(e.path("tags").path("flow").asText(""))
                 && hits.stream().anyMatch(x -> !running.contains(x.path("tags").path("flow").asText(""))))) {
@@ -530,7 +530,7 @@ public final class Systems {
                 }
             }
         }
-        // several runs of a generator wrote this grade: the run generated last counts, the others are named (D85)
+        // several runs of a generator wrote this grade: the run generated last counts, the others are named
         if (!byTopic && hits.stream().map(e -> e.path("tags").path("run").asText("")).distinct().count() > 1) {
             String newest = hits.stream().map(Systems::generatedAt).max(String::compareTo).orElse("");
             String keep = hits.stream().filter(e -> generatedAt(e).equals(newest)).findFirst().orElseThrow().path("tags").path("run").asText("");

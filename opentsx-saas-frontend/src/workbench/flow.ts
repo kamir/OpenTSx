@@ -763,7 +763,9 @@ export function toDagYaml(s: FlowDoc): string {
 }
 
 /**
- * Processing Flow Descriptor of TASK-005 for the path down to one node.
+ * Processing Flow Descriptor in the layout of the desktop PFD recorder, for the path down to one node. Like a
+ * PFDRecorder preview it can hold operations and parameters that
+ * docs/devguide/schemas/processing-flow-descriptor-schema.json rejects, and its KAFKA output is rejected there too.
  * The descriptor is a linear list of steps, so it describes one branch.
  */
 export function toPfdJson(s: Pick<FlowState, 'track' | 'sourceTopic' | 'nodes'>, nodeId: string): string {
