@@ -151,6 +151,12 @@ preserves state; changed-DAG restart replays complete topics into a distinct
 fresh output after revocation. Unknown broker outcomes halt replacement.
 This capped single-owner gateway has no automatic failover.
 
+The opt-in [physical deployment contract](docs/devguide/integration/wayang-shared-contracts.md#admit-a-bounded-physical-deployment)
+binds exact assignments, computation identity, typed channels, whole-topic ownership and current host facts.
+Its bounded profile refuses unavailable topic-incarnation evidence before broker access. Shared validation and
+injected-provider execution tests do not qualify a live production provider; U06 and the physical ARM64
+measurement remain open.
+
 The [federation measurement report](docs/datamodel-2026/measurements/wayang-federation-2026-11-17/REPORT.md)
 records executed comparisons and data movement. It distinguishes observed
 results from performance claims.

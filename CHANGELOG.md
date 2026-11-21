@@ -110,6 +110,11 @@ entries before 3.0.0 are grouped by date.
   `tsx-catalog/1` pins it; its `analysisResults` entries are now the `v2.1` vectors and the generator rebuilds it from
   `schema-history/v2.1`. The workbench result view shows the digests and says when a record has none.
 
+- TASK-020 U01 membership: expected membership (`federation.expectedAssignments`) refuses one node listed for two
+  sites, in Java `RunnerPlan` and Rust `site_plan.rs` (spec S2.4). `ConformanceMembershipTest` covers a
+  report from another node, reports outside the plan or from the future, an unknown or extra check, repeated topic
+  rows and repeated or unsorted series IDs.
+
 - TASK-020 U01 delivery cursor: `TsxPlanServiceDeliveryCursorTest` and the Rust agent test
   `agent_cursor_follows_the_site_sequence_across_jobs_through_restart_and_duplicate_ack` deliver job A at version 10
   and then job B at version 1 to one site, restart, and repeat the acknowledgement. Job B is delivered and run, the
@@ -455,6 +460,13 @@ entries before 3.0.0 are grouped by date.
   UI-to-Wayang-to-Rust orchestration and a separate
   bounded storage profile. The validators perform no network deployment or production fencing; the separate
   Rust runner and local Wayang rollout execute only their trusted-local bounded profiles.
+
+- Add the bounded `physical` deployment profile with unchanged assignment v1 texts, separate computation identity,
+  complete typed channels and scoped whole-topic ownership. Compare pinned capabilities, topic incarnations and
+  residency with host-owned facts before work, and retain located refusals through the UI. The default Rust
+  provider refuses unavailable incarnation evidence. Shared Java/Rust vectors, execution/admission regressions,
+  an explicit offline ownership upgrade, startup refusal for partial journals and generated lessons cover the contract.
+  U06 production operation and the physical ARM64 B4.2 measurement remain open.
 
 - Versioned learning workloads for all 30 executable UI/DAG operators and 25 documented library/infrastructure
   families, including MFDFA and RIS. Tests execute UI workloads and numerical library examples. Student lessons

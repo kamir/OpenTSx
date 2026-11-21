@@ -87,9 +87,11 @@ def plan_for(data):
                    "sink": {"topic": "tsx.test.output.v2"}}
         assignments.append({"node": assignment["node"], "inputTopic": topic, "endpoint": "http://private-worker",
                             "requestText": json.dumps(request)})
-    return {"schema": "opentsx.local-rollout.v1", "deployment": data["deployment"],
+    plan = {"schema": "opentsx.local-rollout.v1", "deployment": data["deployment"],
             "sourceDagText": data["dagText"], "specHash": service.digest(data["dagText"]),
-            "createdAtMicros": data["createdAtMicros"], "assignments": assignments, "planHash": "a" * 64}
+            "createdAtMicros": data["createdAtMicros"], "assignments": assignments}
+    plan["planHash"] = service.legacy_plan_hash(plan)
+    return plan
 
 
 @pytest.fixture
