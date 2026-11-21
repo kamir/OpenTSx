@@ -21,7 +21,7 @@ entries before 3.0.0 are grouped by date.
   Another put a lag on `ely`, which is not an atom of `haus` and `boot`, so that lag added no tick there. A combined
   transport applies lag, jitter, a slow processor and an outage at once. The test fails when a stressor names no atom
   of the plan or adds no tick. TWIN-COUPLING-SPEC §10 states that `lag`, `stepTicks` and `outages` keys that are not
-  atoms are not rejected. `LooseRunner` behavior is unchanged.
+  atoms are not rejected and slow no atom, and a test covers it. `LooseRunner` behavior is unchanged.
 
 - TASK-020 U01 decisions D-T16 to D-T22 (owner, 2026-11-21). `TsxCompileContext.Boundary` loses `admitsRaw` (D-T22):
   no raw series, pair or vector and no operator with merge class `none` can feed a federated sink. Spec S1.10, S2.2

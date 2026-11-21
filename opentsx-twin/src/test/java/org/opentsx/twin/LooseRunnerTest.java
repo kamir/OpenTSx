@@ -198,6 +198,17 @@ class LooseRunnerTest {
     }
 
     @Test
+    void keysThatAreNoAtomsSlowNothingButEnterTheRunId() {
+        StudioScenario s = Scenarios.all().get(0);
+        LooseRunner loose = new LooseRunner(new TwinRunner(s.plan()));
+        LooseRunner.LooseRun known = loose.run(reference(s, null), Coupling.ssp(1));
+        LooseRunner.LooseRun unknown = loose.run(reference(s, null), Coupling.ssp(1).withLag("no-such-atom", 5)
+                .withStepTicks("no-such-atom", 3).withOutage("no-such-atom", 10, 60));
+        assertEquals(known.stats().ticks(), unknown.stats().ticks());
+        assertNotEquals(known.result().runId(), unknown.result().runId());
+    }
+
+    @Test
     void tarjanFindsCycles() {
         // 0 -> 1 -> 2 -> 0, 2 -> 3, 3 -> 4 -> 3, 5 alone
         List<List<Integer>> succ = List.of(List.of(1), List.of(2), List.of(0, 3), List.of(4), List.of(3), List.of());
@@ -210,7 +221,6 @@ class LooseRunnerTest {
         assertNotEquals(c[5], c[3]);
     }
 
-    /** Same run id, hash, events, KPIs, port messages and commit barriers as T, and no stale read. */
     private static void assertSameRun(RunResult t, List<String> tMessages, List<String> tCommits,
                                       LooseRunner.LooseRun l, MessageLog lLog, String what) {
         assertEquals(t.runId(), l.result().runId(), what);
@@ -230,7 +240,6 @@ class LooseRunnerTest {
         assertSameRun(t, messages(tLog), commits(tLog), loose.run(spec.apply(lLog), c), lLog, what);
     }
 
-    /** The transport without each one of its stressors, keyed by the stressor. */
     private static Map<String, Coupling> withoutEachStressor(Coupling c) {
         Map<String, Coupling> m = new LinkedHashMap<>();
         if (c.defaultLag() > 0) {

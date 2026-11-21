@@ -310,7 +310,7 @@ The message id is `<runId>/<k>/<phase>/<atom>/<port>`.
 
 Implemented in: `PortMessage.java:9-14`, `Barrier.java:7-11`, `MessageSink.java:4-18`, `MessageLog.java:8-29`,
 `TwinRunner.java:107-113,140-146,158`, `LooseRunner.java:320-323,375`, `schema/AtomSchemas.java:35,61-77`; tests:
-`TwinShadowTest.java:103-131`, `LooseRunnerTest.java:41-45,70-106,213-223,265-268`.
+`TwinShadowTest.java:103-131`, `LooseRunnerTest.java:41-45,70-106,224-233,274-277`.
 
 <a id="8-run-identity-and-run-record"></a>
 
@@ -413,7 +413,7 @@ Rules:
 `staleReads` (age > 0), `meanAge` and `maxAge`, where age is the targeted step minus the step read.
 
 Implemented in: `LooseRunner.java:39-197,213-389,395-458,464-554`, `RunSetup.java:20-26`; tests:
-`LooseRunnerTest.java:28-268`.
+`LooseRunnerTest.java:28-277`.
 
 <a id="11-coupling-results-and-design-rule"></a>
 
@@ -509,7 +509,7 @@ than a superstep of `h2-chain` or `haus` under lag 2 and jitter 3 alone, so the 
 transport still costs ticks.
 
 Implemented in: `LooseRunner.java:143-158,161-164,279-287,324-327,410-431`, `studio/StudioExport.java:102-106`;
-tests: `LooseRunnerTest.java:28-143,213-268`.
+tests: `LooseRunnerTest.java:28-143,224-277`.
 
 <a id="113-throughput"></a>
 

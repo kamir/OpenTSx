@@ -208,6 +208,7 @@ the levers act on measured values. For front ends, `BoatDemo` exposes `plan()`, 
   * staleness 2 is faster than staleness 0, has its own run id and is reproducible; `async()` never waits, even
     while an atom is down
   * colocated cycles keep the result at pipeline throughput; an explicit group reads without staleness
+  * a `lag`, `stepTicks` or `outages` key that is not an atom slows nothing; with staleness 1 it changes the run id
   * strongly connected components (Tarjan)
 * **`TwinModesTest`**
   * two what-ifs
