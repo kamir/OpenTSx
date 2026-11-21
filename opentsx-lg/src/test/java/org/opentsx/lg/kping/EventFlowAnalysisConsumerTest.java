@@ -155,6 +155,49 @@ class EventFlowAnalysisConsumerTest {
     }
 
     @Test
+    void mainLogsEachEmptyPollButTheLastAtDebugPrintsNothingAndExitsWith1() throws Exception {
+        Path profile = dir.resolve("main.props");
+        Files.writeString(profile, "bootstrap.servers=127.0.0.1:1\nkping.consumer.giveUp=2\nkping.consumer.nrOfSamples=1\n");
+        String logger = EventFlowAnalysisConsumer.class.getName();
+
+        String[] run = mainOf(EmptyTopic.class, logger, profile);
+
+        assertEquals("1", run[0], run[2]);
+        assertEquals("", run[1]);
+        assertEquals(List.of(
+                "[main] INFO " + logger + " - starting EventFlowAnalysisConsumer",
+                "[main] DEBUG " + logger + " - empty poll topic=OpenTSx_Events emptyPolls=1 giveUp=2",
+                "[main] DEBUG " + logger + " - empty poll topic=OpenTSx_Events emptyPolls=2 giveUp=2",
+                "[main] ERROR " + logger + " - no latency measured topic=OpenTSx_Events cause=getStatisticData: the"
+                        + " series OpenTSx_Events has no values; expected at least 1 value",
+                "[main] DEBUG " + logger + " - no latency measured topic=OpenTSx_Events"),
+                run[2].lines().filter(line -> line.startsWith("[main] ")).toList(), run[2]);
+    }
+
+    public static class EmptyTopic {
+        public static void main(String[] args) {
+            EventFlowAnalysisConsumer.consumers = topic -> consumerWith(0);
+            EventFlowAnalysisConsumer.main(args);
+        }
+    }
+
+    /** Runs {@code launcher} in a new JVM with {@code logger} at DEBUG; returns the exit status, stdout and stderr. */
+    private String[] mainOf(Class<?> launcher, String logger, Path profile) throws Exception {
+        Path out = dir.resolve("main.out");
+        Path err = dir.resolve("main.err");
+        ProcessBuilder builder = new ProcessBuilder(Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "-Djava.awt.headless=true", "-Duser.home=" + dir.resolve("home"),
+                "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn", "-Dorg.slf4j.simpleLogger.log." + logger + "=debug",
+                "-cp", System.getProperty("surefire.test.class.path"), launcher.getName())
+                .redirectOutput(out.toFile()).redirectError(err.toFile());
+        builder.environment().put("OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME", profile.toString());
+        builder.environment().remove("OPENTSX_TOPIC_MAP_FILE_NAME");
+        builder.environment().remove("OPENTSX_SHOW_GUI");
+        int status = builder.start().waitFor();
+        return new String[] {String.valueOf(status), Files.readString(out), Files.readString(err)};
+    }
+
+    @Test
     void thePlotsGoToTheHomeDirectory() {
         assertEquals(System.getProperty("user.home") + "/opentsx/plots", EventFlowAnalysisConsumer.PLOT_FOLDER);
     }

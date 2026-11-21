@@ -1033,6 +1033,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   the cases.
 - A `RISTool` container charts the mean share of each scaled bin in `mrVerteilungSkaliert`, the scale of a single
   result, instead of the natural logarithm of that share.
+- opentsx-lg: `RequestResponseAnalysisConsumer` logs each empty poll but the last at DEBUG as `empty poll
+  topic=latency_benchmark_response emptyPolls=<n> giveUp=<giveUp>`, instead of printing three banner lines on standard
+  output. When no response arrived, it logs `no latency measured topic=latency_benchmark_response cause=<cause>` at
+  ERROR without a stack trace, writes no table and exits with status 1, as `EventFlowAnalysisConsumer` does.
 
 ### Removed
 
@@ -2996,6 +3000,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   system property `swing.systemlaf` can name. When that class cannot load, the WARN line names `swing.systemlaf`.
   Before, it checked the cross-platform one. A broken `swing.crossplatformlaf` then gave a WARN that did not apply,
   and a broken `swing.systemlaf` was blamed on `swing.crossplatformlaf`.
+- deploy/k3s: the scripts now read a relative `OPENTSX_ENV_FILE` without a slash from the working directory. Before,
+  bash looked such a name up on `PATH` first. A script could then check and replace the file in the working directory
+  but take its settings, including `OPENTSX_NS`, from a file of the same name on `PATH`.
+- opentsx-lg: `DockerImageTest` reads a `#` after an apostrophe in a compose value as a comment. In a script it reads
+  a `#` after `;`, `&`, `|`, `(`, `)`, `<` or `>` as a comment. It finds `docker-compose` and `Xvfb` after the default
+  operator of a variable, as in `${COMPOSE:-docker-compose}`, and at the end of a path that starts with `./`, `../`,
+  `~` or a variable, as in `$HOME/bin/docker-compose`.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

@@ -9,7 +9,8 @@
 # 71-restore.sh <dir> --only env and before 71-restore.sh <dir> (with the --only of the run) when the backup holds env
 # and there is no env file, and so does a missing PVC, which names 30-deploy.sh otherwise; the question and a restored
 # env name the env file in use, relative to the repository when it lies in it, the question a relative
-# OPENTSX_ENV_FILE as given, and the restored env the same four steps; with env
+# OPENTSX_ENV_FILE as given, and the restored env the same four steps; a relative OPENTSX_ENV_FILE without a slash is
+# read from the working directory, not from a file of that name on PATH; with env
 # among the parts a missing namespace or PVC says how to restore env first (env, 20-configure.sh, 10-build.sh,
 # 11-import-images.sh, 30-deploy.sh, the volumes), following that hint after 20-configure.sh rewrote .env keeps the
 # copy of the .env from before the restore, and restoring env again then stops before it changes .env or that copy,
@@ -368,8 +369,9 @@ for case in "env-first-with-env-file|NAMESPACE=missing|namespace opentsx: not fo
 done
 
 # the question names the env file it replaces: OPENTSX_ENV_FILE as given (run from $WORK), or deploy/k3s/.env relative
-# to the repository
+# to the repository; a relative name without a slash is read from the working directory, not from the copy on PATH
 printf 'OPENTSX_DOMAIN=original\n' > "$WORK/question.env"
+printf 'OPENTSX_NS=elsewhere\n' > "$WORK/bin/question.env"
 for case in "question-env-file|$K3S_DIR/71-restore.sh|$WORK/question.env|$WORK/question.env" \
   "question-relative-env-file|$K3S_DIR/71-restore.sh|question.env|question.env" \
   "question-default-env|$WORK/repo/deploy/k3s/71-restore.sh||deploy/k3s/.env"; do
@@ -388,6 +390,7 @@ for case in "question-env-file|$K3S_DIR/71-restore.sh|$WORK/question.env|$WORK/q
     echo "ok   $name"
   fi
 done
+rm "$WORK/bin/question.env"
 
 hint="nothing was restored; run 71-restore.sh $WORK/env-data --only env, then 20-configure.sh, 10-build.sh, 11-import-images.sh and 30-deploy.sh, then 71-restore.sh $WORK/env-data --only data"
 for case in "NAMESPACE=missing|error: namespace opentsx: not found; $hint" \

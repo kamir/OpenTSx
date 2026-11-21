@@ -168,8 +168,10 @@ error: --logs: the logs of 1 Deployment(s) cannot be read; see the warn lines ab
 
 `71-restore.sh` and `90-teardown.sh` ask before they change anything. The question of `71-restore.sh` names the
 parts and, with `env` among them, the env file it replaces: `deploy/k3s/.env`, or the file that the environment
-variable `OPENTSX_ENV_FILE` names. An absolute path inside the repository is shown relative to the repository. An
-absolute `OPENTSX_ENV_FILE` outside the repository is shown as that absolute path, a relative one as given:
+variable `OPENTSX_ENV_FILE` names. The scripts read a relative `OPENTSX_ENV_FILE` from the working directory, a name
+without a slash included, never from a file of that name on `PATH`. An absolute path inside the repository is shown
+relative to the repository. An absolute `OPENTSX_ENV_FILE` outside the repository is shown as that absolute path, a
+relative one as given:
 
 ```text
 This REPLACES the content of: data and deploy/k3s/.env in namespace opentsx.

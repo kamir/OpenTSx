@@ -48,16 +48,24 @@ the scripts in `src/main/docker-compose/bin/` start none: the compose files set 
 tool opens a chart window. `DockerImageTest` fails on a variable of `.env` or `.env-inhouse` that the compose file
 does not read, also one written after `export`, after blanks or as `MDC1: <value>`. The compose file reads `MDC1` as
 `${MDC1}`, `$MDC1` or a form with a modifier such as `${MDC1:-<default>}`, outside a `#` comment; `$$MDC1` is not a
-read. The test also fails on a top-level `version` key, also an indented or quoted one, on the word `docker-compose`
-in `run_demo_docker_compose.sh` and on the word `Xvfb` in a script of `src/main/docker-compose/bin/`. It finds each
-word outside a `#` comment at the start of a line or after a blank, `;`, `&`, `|`, `(`, `)`, a backquote, a quote or
-`=`, also as the last part of a path that starts with `/`, such as `/usr/bin/Xvfb`. The word must end the line or be
-followed by a blank, `;`, `&`, `|`, `(`, `)`, `<`, `>`, a backquote or a quote, so `docker-compose.yml` and
-`XvfbProbe` are not found. So it finds `sudo docker-compose up -d`, `x; docker-compose up`, `"$(docker-compose ps)"`
-and `nohup Xvfb :99 &`, but not `${COMPOSE:-docker-compose} up`, `./docker-compose up`, `~/bin/docker-compose up` or
-`$HOME/bin/docker-compose up`. It fails as well when the banner of a `run_LatencyProbe_<step>.sh` script in `bin/` or
-`src/main/docker-compose/bin/` does not name the `EventFlowAnalysis<Step>` class that the script runs, in capitals,
-such as `SETUP` for `EventFlowAnalysisSetup`.
+read. In the compose file a `#` after a blank starts a comment outside a quoted value. A quote opens a quoted value
+only after the indentation of a line or after `- `, `: `, `? `, `[`, `{` or `,`, so `${OLD}` in
+`command: echo it's up # ${OLD}` is in a comment, but `${OLD}` in `command: echo a, 'b # ${OLD}'` counts as a read,
+although YAML reads `# ${OLD}'` as a comment. The test also
+fails on a top-level `version` key, also an indented or quoted one, on the word `docker-compose` in
+`run_demo_docker_compose.sh` and on the word `Xvfb` in a script of `src/main/docker-compose/bin/`. In a script a `#`
+outside quotes starts a comment at the start of a line or after a blank, `;`, `&`, `|`, `(`, `)`, `<` or `>`, as in
+bash. The test finds each word outside a comment at the start of a line or after a blank, `;`, `&`, `|`, `(`, `)`, a
+backquote, a quote, `=` or the `:-`, `:=`, `:+` or `:?` of a variable, also without the colon, as in
+`${COMPOSE:-docker-compose}`. It also finds the word as the last part of a path that starts with `/`, `./`, `../`,
+`~` or a variable, such as `/usr/bin/Xvfb`, `./docker-compose` or `$HOME/bin/docker-compose`. The word must end the
+line or be followed by a blank, `;`, `&`, `|`, `(`, `)`, `<`, `>`, a backquote, a quote or `}`, so
+`docker-compose.yml` and `XvfbProbe` are not found. So it finds `sudo docker-compose up -d`, `x; docker-compose up`,
+`"$(docker-compose ps)"`, `${COMPOSE:-docker-compose} up`, `./docker-compose up`, `~/bin/docker-compose up`,
+`$HOME/bin/docker-compose up` and `nohup Xvfb :99 &`, but not `true;# docker-compose was replaced` or
+`ls src/main/docker-compose`, a path that starts with a name. It fails as well when the banner of a
+`run_LatencyProbe_<step>.sh` script in `bin/` or `src/main/docker-compose/bin/` does not name the
+`EventFlowAnalysis<Step>` class that the script runs, in capitals, such as `SETUP` for `EventFlowAnalysisSetup`.
 
 The scripts use the `JAVA_HOME` you set, or the `java` on your `PATH`. `run_demo.sh` prints the KSQL statements of the
 demo for the ksql CLI. `run_demo.sh`, `run_demo_container.sh`, `run_demo_docker_compose.sh`, `bin/build_all.sh`,
@@ -353,11 +361,12 @@ Each tool stops at the first failure and exits with status 1:
   cannot be listed or created, or when a topic is still missing after they created the topics. The topic check prints
   `<topic list>: topics missing on the cluster [<topic>, ...]; create them with TopicsUP` on stdout.
 * `EventFlowAnalysisConsumer` and `RequestResponseAnalysisConsumer` stop when a poll fails, and close the consumer.
-  When no record arrived before they give up, `RequestResponseAnalysisConsumer` stops with
-  `getStatisticData: the series latency_benchmark_response has no values; expected at least 1 value`, and
-  `EventFlowAnalysisConsumer` logs
-  `no latency measured topic=OpenTSx_Events cause=getStatisticData: the series OpenTSx_Events has no values; expected at least 1 value`
-  at ERROR without a stack trace and exits with status 1.
+  They log each empty poll but the last at DEBUG as `empty poll topic=<topic> emptyPolls=<n> giveUp=<giveUp>`.
+  `<topic>` is `OpenTSx_Events` for `EventFlowAnalysisConsumer` and `latency_benchmark_response` for
+  `RequestResponseAnalysisConsumer`; `<giveUp>` is `kping.consumer.giveUp` or `klatency.consumer.giveUp` of the client
+  profile. When no record arrived before they give up, they log
+  `no latency measured topic=<topic> cause=getStatisticData: the series <topic> has no values; expected at least 1 value`
+  at ERROR without a stack trace, write no table and exit with status 1. Standard output stays empty.
 * `EventFlowAnalysisSetup` stops when the topics cannot be created.
 
 With `OPENTSX_SHOW_GUI=true`, `EventFlowAnalysisConsumer` and `RequestResponseAnalysisConsumer` open and store the

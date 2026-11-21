@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Vector;
+import java.util.function.Function;
 
 public class RequestResponseAnalysisConsumer {
 
@@ -25,6 +26,8 @@ public class RequestResponseAnalysisConsumer {
     static int GIVE_UP = 100;
 
     static int NR_OF_SAMPLES = 1000;
+
+    static Function<String, Consumer<String, String>> consumers = LatencyTestEventConsumer::createConsumer;
 
     public static void main(String[] args) {
 
@@ -38,7 +41,10 @@ public class RequestResponseAnalysisConsumer {
         GIVE_UP = Integer.parseInt( OpenTSxClusterLink.getClientProperties().getProperty( "klatency.consumer.giveUp") );
         NR_OF_SAMPLES = Integer.parseInt( OpenTSxClusterLink.getClientProperties().getProperty( "klatency.consumer.nrOfSamples") );
 
-        runConsumer(LatencyTestEventConsumer.createConsumer( TOPIC ), System.getenv("OPENTSX_SHOW_GUI"), plotFolder());
+        int status = run(consumers.apply( TOPIC ), System.getenv("OPENTSX_SHOW_GUI"), plotFolder());
+        if (status != 0) {
+            System.exit(status);
+        }
 
     }
 
@@ -47,8 +53,24 @@ public class RequestResponseAnalysisConsumer {
     }
 
     /**
+     * Runs {@link #runConsumer} and returns 0, or 1 after one ERROR line when it throws IllegalStateException, as it
+     * does when no response arrived.
+     */
+    static int run(Consumer<String, String> consumer, String showGui, String folder) {
+        try {
+            runConsumer(consumer, showGui, folder);
+            return 0;
+        } catch (IllegalStateException failed) {
+            LOG.error("no latency measured topic={} cause={}", TOPIC, failed.getMessage());
+            LOG.debug("no latency measured topic={}", TOPIC, failed);
+            return 1;
+        }
+    }
+
+    /**
      * Measures the end-to-end latency of the responses until more than {@link #GIVE_UP} polls in total are empty, then
-     * writes the table to {@code folder} or, with {@code showGui} true, opens and stores the chart.
+     * writes the table to {@code folder} or, with {@code showGui} true, opens and stores the chart. When no response
+     * arrived, getStatisticData throws IllegalStateException and nothing is written.
      */
     static void runConsumer(Consumer<String, String> consumer, String showGui, String folder) {
 
@@ -75,9 +97,7 @@ public class RequestResponseAnalysisConsumer {
                     noRecordsCount++;
                     if (noRecordsCount > giveUp) break;
                     else {
-                        System.out.println( "---------------------------------------------------------------------- ");
-                        System.out.println( ">>> " + (100.0 * ((double)noRecordsCount / (double)giveUp)) + " % of IDLE TIME IS OVER " + giveUp + " - " + noRecordsCount + " . ");
-                        System.out.println( "---------------------------------------------------------------------- ");
+                        LOG.debug("empty poll topic={} emptyPolls={} giveUp={}", TOPIC, noRecordsCount, giveUp);
                         continue;
                     }
                 }

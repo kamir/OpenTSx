@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Vector;
+import java.util.function.Function;
 
 public class EventFlowAnalysisConsumer {
 
@@ -26,6 +27,8 @@ public class EventFlowAnalysisConsumer {
     static int NR_OF_SAMPLES = 1000;
 
     static final String PLOT_FOLDER = System.getProperty("user.home") + "/opentsx/plots";
+
+    static Function<String, Consumer<String, GenericRecord>> consumers = TSOEventAnalysisConsumer::createConsumer;
 
     public static void main(String[] args) {
 
@@ -39,7 +42,7 @@ public class EventFlowAnalysisConsumer {
         GIVE_UP = Integer.parseInt( OpenTSxClusterLink.getClientProperties().getProperty( "kping.consumer.giveUp") );
         NR_OF_SAMPLES = Integer.parseInt( OpenTSxClusterLink.getClientProperties().getProperty( "kping.consumer.nrOfSamples") );
 
-        int status = run(TSOEventAnalysisConsumer.createConsumer( TOPIC ), System.getenv("OPENTSX_SHOW_GUI"), PLOT_FOLDER);
+        int status = run(consumers.apply( TOPIC ), System.getenv("OPENTSX_SHOW_GUI"), PLOT_FOLDER);
         if (status != 0) {
             System.exit(status);
         }

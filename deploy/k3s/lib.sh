@@ -61,8 +61,11 @@ load_env() {
   source "$K3S_DIR/env.example"
   if [[ -f "$ENV_FILE" ]]; then
     check_env_file "$ENV_FILE"
+    # source looks a name without a slash up on PATH first; the checks and writes use the file in the working directory
+    local src="$ENV_FILE"
+    [[ "$src" == */* ]] || src="./$src"
     # shellcheck disable=SC1090
-    source "$ENV_FILE"
+    source "$src"
   fi
   for k in "${!from_env[@]}"; do printf -v "$k" '%s' "${from_env[$k]}"; done
   TOOLS_IMAGE="$OPENTSX_IMAGE_REPO/tools:$OPENTSX_TAG"

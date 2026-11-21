@@ -78,11 +78,12 @@ class DockerImageTest {
         return problems;
     }
 
-    private static String code(String line) {
+    private static String bashCode(String line) {
         char quote = 0;
         for (int i = 0; i < line.length(); i++) {
             char c = line.charAt(i);
-            if (quote == 0 && c == '#' && (i == 0 || Character.isWhitespace(line.charAt(i - 1)))) {
+            if (quote == 0 && c == '#' && (i == 0 || Character.isWhitespace(line.charAt(i - 1))
+                    || ";&|()<>".indexOf(line.charAt(i - 1)) >= 0)) {
                 return line.substring(0, i);
             }
             if (c == '\\' && quote != '\'') {
@@ -91,6 +92,40 @@ class DockerImageTest {
                 quote = c;
             } else if (c == quote) {
                 quote = 0;
+            }
+        }
+        return line;
+    }
+
+    /**
+     * The line without its YAML comment: a # after a blank outside a quoted scalar. A quote opens a scalar only where
+     * one starts (after the indentation, "- ", ": ", "? ", "[", "{" or ","); elsewhere, as in it's, it is a character.
+     */
+    private static String yamlCode(String line) {
+        char quote = 0;
+        boolean scalarStarts = true;
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (quote == 0) {
+                if (c == '#' && (i == 0 || Character.isWhitespace(line.charAt(i - 1)))) {
+                    return line.substring(0, i);
+                }
+                if (scalarStarts && (c == '"' || c == '\'')) {
+                    quote = c;
+                } else if (!Character.isWhitespace(c)) {
+                    boolean indicator = "-?:".indexOf(c) >= 0
+                            && (i + 1 == line.length() || Character.isWhitespace(line.charAt(i + 1)));
+                    scalarStarts = indicator || "[{,".indexOf(c) >= 0;
+                }
+            } else if (quote == '"' && c == '\\') {
+                i++;
+            } else if (c == quote) {
+                if (quote == '\'' && i + 1 < line.length() && line.charAt(i + 1) == '\'') {
+                    i++;
+                } else {
+                    quote = 0;
+                    scalarStarts = false;
+                }
             }
         }
         return line;
@@ -106,7 +141,7 @@ class DockerImageTest {
     }
 
     private static boolean reads(String compose, String name) {
-        String text = compose.lines().map(DockerImageTest::code).collect(Collectors.joining("\n"));
+        String text = compose.lines().map(DockerImageTest::yamlCode).collect(Collectors.joining("\n"));
         return Pattern.compile("(?<!\\$)(?:\\$\\$)*\\$(?:\\{" + name + "[}:?+-]|" + name + "(?![A-Za-z0-9_]))")
                 .matcher(text).find();
     }
@@ -116,7 +151,7 @@ class DockerImageTest {
         List<String> lines = compose.lines().toList();
         int root = -1;
         for (int n = 1; n <= lines.size(); n++) {
-            String line = code(lines.get(n - 1)).stripTrailing();
+            String line = yamlCode(lines.get(n - 1)).stripTrailing();
             if (line.isEmpty() || line.equals("---") || line.startsWith("%")) {
                 continue;
             }
@@ -132,12 +167,13 @@ class DockerImageTest {
     }
 
     private static List<String> calls(String where, String script, String command, String problem) {
-        Pattern call = Pattern.compile("(?:^|[\\s;&|()`\"'=])(?:(?:/[^\\s;&|()<>`\"'/]+)*/)?" + Pattern.quote(command)
-                + "(?=$|[\\s;&|()<>`\"'])");
+        Pattern call = Pattern.compile("(?:^|[\\s;&|()`\"'=]|\\$\\{[A-Za-z_][A-Za-z0-9_]*:?[-=?+])"
+                + "(?:(?:/|\\.\\.?/|~[^\\s;&|()<>`\"'/]*/|\\$\\{?[A-Za-z_][A-Za-z0-9_]*}?/)(?:[^\\s;&|()<>`\"'/]+/)*)?"
+                + Pattern.quote(command) + "(?=$|[\\s;&|()<>`\"'}])");
         List<String> problems = new ArrayList<>();
         List<String> lines = script.lines().toList();
         for (int n = 1; n <= lines.size(); n++) {
-            if (call.matcher(code(lines.get(n - 1))).find()) {
+            if (call.matcher(bashCode(lines.get(n - 1))).find()) {
                 problems.add(where + ":" + n + ": " + command + ": " + problem);
             }
         }
@@ -292,7 +328,10 @@ class DockerImageTest {
                 + "      - \"c:${WITH_DEFAULT:-x}\"\n"
                 + "      - \"d:$$ESCAPED $$$AFTER_ESCAPE\"\n"
                 + "      # - \"e:${COMMENTED}\"\n"
-                + "      - \"f:${PREFIX_LONGER} #${QUOTED}\" # ${TRAILING}\n";
+                + "      - \"f:${PREFIX_LONGER} #${QUOTED}\" # ${TRAILING}\n"
+                + "    command: echo it's up # ${OLD}\n"
+                + "    entrypoint: 'sh -c \"echo #${IN_SINGLE}\"'\n"
+                + "    working_dir: 'it''s #${IN_ESCAPED}'\n";
         String env = "BRACED=1\n"
                 + "export PLAIN=2\n"
                 + "  WITH_DEFAULT = 3\n"
@@ -302,7 +341,10 @@ class DockerImageTest {
                 + "PREFIX: 7\n"
                 + "QUOTED=8\n"
                 + "TRAILING=9\n"
-                + "# NOTE=10\n";
+                + "# NOTE=10\n"
+                + "OLD=11\n"
+                + "IN_SINGLE=12\n"
+                + "IN_ESCAPED=13\n";
         String demo = "#!/usr/bin/env bash\n"
                 + "# docker-compose is gone\n"
                 + "cd src/main/docker-compose/ping-tool-cons || exit 1\n"
@@ -312,17 +354,30 @@ class DockerImageTest {
                 + "echo \"$(docker-compose ps)\"\n"
                 + "/usr/local/bin/docker-compose -f docker-compose.yml up\n"
                 + "COMPOSE=docker-compose\n"
-                + "ls src/main/docker-compose docker-compose.yml docker-compose-plugin\n";
+                + "ls src/main/docker-compose docker-compose.yml docker-compose-plugin\n"
+                + "true;# docker-compose was replaced\n"
+                + "ls x|# docker-compose\n"
+                + "${COMPOSE:-docker-compose} up\n"
+                + "./docker-compose up\n"
+                + "~/bin/docker-compose up\n"
+                + "$HOME/bin/docker-compose up\n"
+                + "\"${HOME}\"/bin/docker-compose up\n"
+                + "../docker-compose up\n";
         String bin = "#!/bin/bash\n"
                 + "nohup Xvfb :99 &\n"
                 + "/usr/bin/Xvfb :99 &\n"
                 + "exec Xvfb :99\n"
                 + "export DISPLAY=:99 # Xvfb runs elsewhere\n"
-                + "java -cp app.jar XvfbProbe\n";
+                + "java -cp app.jar XvfbProbe\n"
+                + "wait;# Xvfb stopped\n"
+                + "${XVFB:-Xvfb} :99 &\n"
+                + "$BIN/Xvfb :99 &\n"
+                + "./Xvfb :99 &\n"
+                + "ls opt/Xvfb\n";
 
         assertEquals(List.of("BRACED", "PLAIN", "WITH_DEFAULT", "ESCAPED", "AFTER_ESCAPE", "COMMENTED", "PREFIX",
-                "QUOTED", "TRAILING"), variables(env));
-        assertEquals(List.of("ESCAPED", "COMMENTED", "PREFIX", "TRAILING"),
+                "QUOTED", "TRAILING", "OLD", "IN_SINGLE", "IN_ESCAPED"), variables(env));
+        assertEquals(List.of("ESCAPED", "COMMENTED", "PREFIX", "TRAILING", "OLD"),
                 variables(env).stream().filter(name -> !reads(compose, name)).toList());
         assertEquals(List.of(), versionKeys("a.yml", compose));
         assertEquals(List.of("a.yml:1: version: obsolete; delete the line"),
@@ -333,9 +388,12 @@ class DockerImageTest {
                 versionKeys("a.yml", "---\nservices: {}\n\"version\" : \"3\"\n"));
         String v1 = "docker-compose: the v1 binary; call docker compose";
         assertEquals(List.of("run.sh:5: " + v1, "run.sh:6: " + v1, "run.sh:7: " + v1, "run.sh:8: " + v1,
-                "run.sh:9: " + v1), calls("run.sh", demo, "docker-compose", "the v1 binary; call docker compose"));
+                "run.sh:9: " + v1, "run.sh:13: " + v1, "run.sh:14: " + v1, "run.sh:15: " + v1, "run.sh:16: " + v1,
+                "run.sh:17: " + v1, "run.sh:18: " + v1),
+                calls("run.sh", demo, "docker-compose", "the v1 binary; call docker compose"));
         String xvfb = "Xvfb: not in the image; delete the line";
-        assertEquals(List.of("run.sh:2: " + xvfb, "run.sh:3: " + xvfb, "run.sh:4: " + xvfb),
+        assertEquals(List.of("run.sh:2: " + xvfb, "run.sh:3: " + xvfb, "run.sh:4: " + xvfb, "run.sh:8: " + xvfb,
+                "run.sh:9: " + xvfb, "run.sh:10: " + xvfb),
                 calls("run.sh", bin, "Xvfb", "not in the image; delete the line"));
     }
 
