@@ -332,7 +332,9 @@ twin-1|<plan hash>|<mode>|<inputs fingerprint>|<steps>[|<intervention>...][|poli
 
 The run hash chains every superstep: the seed is the XxHash64 of the run id; each superstep hashes the previous
 value, `k`, and for every atom in plan order its id, its state variables (name, double bits) and its outputs (name,
-double bits, origin). Two runs with the same run id are bit-identical and have the same `RunResult.hash()`.
+double bits, origin). On the same JVM, two runs with the same run id are bit-identical and have the same
+`RunResult.hash()`. A JVM whose `Math` functions round the last bit differently can give other double bits and so
+another hash for the same run id; the Studio export leaves the hash out for this reason.
 
 `RunResult`:
 
@@ -342,8 +344,8 @@ double bits, origin). Two runs with the same run id are bit-identical and have t
 * `toEpisodes()` exports every series as a v2 episode: metric `twin.<type>.<var>`, tags `twin`, `atom`, `run`,
   labels `twin.mode`, `twin.kind` (`state` or `output`) and, for outputs, `twin.origin` (worst origin of the run).
 
-Implemented in: `RunSetup.java:110,163-179,195-233`, `RunResult.java:61-64,159-212`, `Snapshot.java:9-10`; tests:
-`TwinShadowTest.java:92-101,133-147`.
+Implemented in: `RunSetup.java:110,163-179,195-233`, `RunResult.java:61-64,159-212`, `Snapshot.java:9-10`,
+`studio/StudioExport.java:147-151`; tests: `TwinShadowTest.java:92-101,133-147`, `studio/StudioPageTest.java:25-37`.
 
 <a id="9-operating-modes"></a>
 

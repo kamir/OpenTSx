@@ -1,7 +1,8 @@
 # opentsx-twin-live
 
 The events of a twin run as records of a topic, and a bridge that hands the topic to a browser. The Smart Topics
-Studio (`docs/prototypes/smart-topics-studio.html`, view `topic`) follows the topic through the bridge.
+Studio (`docs/prototypes/smart-topics-studio.html`, view `topic`, labelled "Event topic") follows the topic through
+the bridge.
 
 ```
 twin run --> EventPublisher --> twin.<id>.<run>.events (KafScale) --> EventBridge (SSE) --> Studio
@@ -41,9 +42,9 @@ bin/opentsx twin-live demo    [--port 8090] [--scenario id] [--duration 120]
   A reconnecting browser sends `Last-Event-ID` and continues behind that offset.
 - `demo` runs both in one process on topics kept in memory. No broker is involved and nothing reaches KafScale.
 
-In the Studio, open the `topic` view (button `dt-topic`), select the live source (`tp-src-live`), enter the address
-of the bridge (`tp-url`) and connect (`tp-connect`). The Studio labels these controls in German. The address can be
-passed as `?bridge=http://host:8090`; the Studio then selects the live source.
+In the Studio, open the `topic` view (button `dt-topic`, "Event topic"), select the live source (`tp-src-live`,
+"Live from the topic"), enter the address of the bridge (`tp-url`, "Bridge address") and connect (`tp-connect`,
+"Connect"). The address can be passed as `?bridge=http://host:8090`; the Studio then selects the live source.
 
 ## Limits
 

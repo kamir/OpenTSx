@@ -24,7 +24,8 @@ import java.util.Map;
 /**
  * Runs every {@link StudioScenario} (reference, alternatives, forecasts) and writes one JSON file for the Smart
  * Topics Studio ({@code docs/prototypes}). Long runs are downsampled to at most {@link #MAX_POINTS} points per series
- * (bucket means). The output is deterministic.
+ * (bucket means). The output is deterministic. It leaves out {@link RunResult#hash()}: the hash chains the raw double
+ * bits of every value, and those differ between JVMs whose {@code Math} functions round the last bit differently.
  * <p>
  * Usage: {@code java -cp "$(bin/opentsx classpath opentsx-twin)" org.opentsx.twin.studio.StudioExport out.json}
  */
@@ -148,7 +149,6 @@ public final class StudioExport {
         Map<String, Object> x = new LinkedHashMap<>();
         x.put("runId", r.runId());
         x.put("mode", r.mode().name());
-        x.put("hash", r.hash());
         Map<String, Object> series = new LinkedHashMap<>();
         Map<String, Object> origin = new LinkedHashMap<>();
         for (String k : keys) {
