@@ -332,7 +332,7 @@ state directory `<dir>` defaults to `vector-state`. Exactly one processor runs p
 the caller. It does not prove who the caller is.
 
 Implemented in: `opentsx-saas-backend/app/api/dags.py:32-113`, `opentsx-saas-backend/app/core/config.py:59`,
-`server/RetrievalServer.java:100-102,123-126,190-202,246-275,584-634`, `server/KafScaleFeed.java:248-291`,
+`server/RetrievalServer.java:100-102,123-126,190-201,247-275,584-634`, `server/KafScaleFeed.java:248-291`,
 `vector/VectorProcessorApp.java:31-76`, `workbench/DeploymentsPanel.tsx:140-170`.
 
 ### 3.4 Read the state
