@@ -60,7 +60,7 @@ public final class TsxPairWindows {
         };
     }
 
-    /** {@code pair.es} (es.ts:132-166): fields q_total, q_ab, q_ba, q_rand; the cap tauMax in seconds. */
+    /** {@code pair.es} (es.ts:131-165): fields q_total, q_ab, q_ba, q_rand; the cap tauMax in seconds. */
     public static Method es(Map<String, ?> params) {
         double sigma = number(params.get("sigma"), 2);
         if (!Double.isFinite(sigma)) {

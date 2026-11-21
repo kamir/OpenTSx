@@ -17,6 +17,7 @@ entries before 3.0.0 are grouped by date.
   and S2.4 state that a site has exactly one node (D-T17) and that the local worker's capabilities are trusted-local
   without a fleet qualification claim (D-T18).
 
+- Line citations in the specs and docs point at the current code.
 - Documentation, comments and example files describe the current code. Chapter 15 drops the pair windows from the
   open items, links PAIR-WINDOWS-SPEC from P8 and lists the twin variants T and L as proofs of concept. The worked
   example of chapter 16 counts twelve components and sixteen signals and names the five flows that run. The `maxAge`
@@ -101,6 +102,9 @@ entries before 3.0.0 are grouped by date.
 - Require a verified Proxy bundle and private MinIO environment before the k3s probe starts local KafScale.
 - Show the plant explorer prototype (`docs/prototypes/anlagen-explorer.html`) in English. The page no longer links
   to the removed concept document.
+- Remove unused frontend plotting packages and their mapping dependencies.
+  Workbench charts use browser Canvas and SVG; the lockfile regression rejects
+  unsupported MapLibre runtime releases.
 
 ### Added
 
@@ -609,6 +613,15 @@ entries before 3.0.0 are grouped by date.
   `requirements.lock`. With the old 0.14.6 constraint, the install in `standalone-numerics.md` failed with
   `ResolutionImpossible`, and `test_finite_service_http.py` expected 0.14.6. `statsmodels` 0.15.0 adds the pinned
   dependencies `formulaic`, `interface_meta`, `narwhals`, `typing_extensions` and `wrapt`.
+- The frontend image answers 403 to `/retrieval/v1/systems/<id>/generate` and to every path below it
+  (`opentsx-saas-frontend/nginx.conf`). The rule matched the exact path only, and the retrieval server runs the demo
+  generator for `generate/` as well, so `generate/`, `generate//`, `generate%2F` and `generate/.` reached a generator
+  past the backend; a retrieval server without a run token wrote the series. `tools/test_saas_frontend_nginx.py`
+  checks the location rules for these spellings of the generator and DAG write routes.
+  `opentsx-saas-backend/smoke-flows.sh` expects 403 for `POST /retrieval/v1/systems/x/generate/` through the frontend
+  image. SYSTEM-DOCUMENT-SPEC section 7.3 states the closed generator route. The frontend README and the k3s README
+  state both closed routes and that `INGRESS=true` sends `/v1` to the retrieval server past the frontend image, where
+  the run token is the only gate.
 - The retrieval server reports a generator source it cannot run as a problem of the system document when it loads
   the document, also with a working copy laid over it: a `processor` other than `gen.ou` and `gen.sine`, a missing or
   invalid parameter, a `select`, and a raw generator source on a signal without `expect.interval` or with one below
