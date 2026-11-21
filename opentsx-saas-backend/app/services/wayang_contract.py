@@ -373,8 +373,11 @@ def validate_document(plan, deployment, dag_text, created_at, now):
     expected_edges = {}
     for identifier, assignment in inventory.items():
         fragment = strict_json(assignment["fragmentText"])
+        fragment_ids = set(placement[identifier])
         for node in fragment["nodes"]:
             for port, source in enumerate(node.get("in", [])):
+                if source not in fragment_ids:
+                    refuse("deployment.channel", "/channels", node["id"])
                 expected_edges[(identifier, source, "0", node["id"], str(port))] = None
             if node["op"] == "decode.avro-soe":
                 for source in assignment["inputs"]:

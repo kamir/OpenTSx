@@ -625,15 +625,29 @@ fn validate_channels(
     let mut expected = BTreeSet::new();
     for (assignment, fragment) in fragments {
         let fragment_nodes = nodes(fragment, "/placements")?;
+        let local_nodes: BTreeSet<_> = fragment_nodes
+            .iter()
+            .map(|node| string(node, "id"))
+            .collect();
         let decoder = fragment_nodes
             .iter()
             .find(|node| node["op"] == "decode.avro-soe")
             .ok_or_else(|| refusal("deployment.channel", "/channels"))?;
         for node in fragment_nodes {
             for (port, input) in incoming(node).iter().enumerate() {
+                let producer = input.as_str().ok_or_else(|| {
+                    Refusal::new("deployment.channel", Some(string(node, "id")), "/channels")
+                })?;
+                if !local_nodes.contains(producer) {
+                    return Err(Refusal::new(
+                        "deployment.channel",
+                        Some(string(node, "id")),
+                        "/channels",
+                    ));
+                }
                 expected.insert((
                     assignment.to_string(),
-                    input.as_str().unwrap_or("").to_string(),
+                    producer.to_string(),
                     "0".into(),
                     string(node, "id").to_string(),
                     port.to_string(),

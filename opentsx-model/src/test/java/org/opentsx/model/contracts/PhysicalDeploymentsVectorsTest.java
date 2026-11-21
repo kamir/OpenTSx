@@ -25,7 +25,7 @@ class PhysicalDeploymentsVectorsTest {
     List<DynamicTest> reproducesEverySharedCase() throws Exception {
         JsonNode vectors = new ObjectMapper().readTree(Path.of("..", "docs", "datamodel-2026", "testvectors", "physical-deployment.v1.json").toFile());
         assertEquals("opentsx.physical-deployment-vectors.v1", vectors.path("schema").asText());
-        assertEquals(53, vectors.path("cases").size());
+        assertEquals(54, vectors.path("cases").size());
         List<DynamicTest> tests = new ArrayList<>();
         for (JsonNode vector : vectors.path("cases")) tests.add(DynamicTest.dynamicTest(vector.path("name").asText(), () -> {
             String kind = vector.path("kind").asText();

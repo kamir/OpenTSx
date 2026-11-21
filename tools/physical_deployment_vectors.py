@@ -286,6 +286,55 @@ sinks:
 
     replicated_fragment("alias-resolves-duplicate-whole-topic-owner", "fragment-1", refusal("deployment.coverage", "/ownership"))
     replicated_fragment("distinct-fragment-preserves-original-nodes-and-ports", "replica-2", None)
+
+    split_plan, split_facts = copy.deepcopy(base())
+    logical = json.loads(split_plan["sourceDagText"])
+    logical["nodes"][1]["id"] = "a"
+    downstream = copy.deepcopy(logical["nodes"][1])
+    downstream.update({"id": "b", "in": ["a"]})
+    logical["nodes"].append(downstream)
+    logical["sinks"][0]["from"] = "b"
+    source_text = encoded(logical)
+    computation_text = canonical(computation(logical))
+    split_plan.update(sourceDagText=source_text, specHash=digest(source_text),
+                      computationText=computation_text, computationHash=digest(computation_text))
+    first = json.loads(split_plan["assignmentTexts"][0])
+    first.update(sourceDagText=source_text, specHash=digest(source_text),
+                 fragmentText=source_text, fragmentHash=digest(source_text))
+    fragment = copy.deepcopy(logical)
+    second = copy.deepcopy(first)
+    second.update(assignment="assignment-2", node="worker-2", fragment="fragment-2")
+    fragment["nodes"] = [logical["nodes"][0], logical["nodes"][2]]
+    fragment_text = encoded(fragment)
+    second.update(fragmentText=fragment_text, fragmentHash=digest(fragment_text))
+    split_plan["assignmentTexts"] = [encoded(first), encoded(second)]
+    split_plan["placements"] = [{"assignment": "assignment-1", "nodes": ["decode", "a", "b"]},
+                                {"assignment": "assignment-2", "nodes": ["decode", "b"]}]
+    owner = copy.deepcopy(split_plan["ownership"][0])
+    owner["assignment"] = "assignment-2"
+    split_plan["ownership"].append(owner)
+    capability = copy.deepcopy(split_plan["capabilities"][0])
+    report = json.loads(capability["reportText"])
+    report["node"] = "worker-2"
+    capability.update(assignment="assignment-2", reportText=encoded(report), digest=digest(encoded(report)))
+    split_plan["capabilities"].append(capability)
+    split_facts["capabilities"] = copy.deepcopy(split_plan["capabilities"])
+    split_facts["residency"].append({"assignment": "assignment-2", "sites": ["compose"]})
+    channels = split_plan["channels"]
+    channels[1]["to"] = "a"
+    channels[2]["from"] = "b"
+    second_channels = copy.deepcopy(channels)
+    for channel in second_channels:
+        channel["assignment"] = "assignment-2"
+    second_channels[1].update({"from": "a", "to": "b"})
+    internal = copy.deepcopy(channels[1])
+    internal.update({"from": "a", "to": "b"})
+    channels.insert(2, internal)
+    split_plan["channels"].extend(second_channels)
+    split_plan["planHash"] = plan_hash(split_plan)
+    cases.append({"name": "cross-fragment-memory-producer", "kind": "physical", "input": encoded(split_plan),
+                  "facts": split_facts, "nowMicros": "120", "refusal": refusal("deployment.channel", "/channels", "b")})
+
     original = copy.deepcopy(plan)
     assignment = json.loads(plan["assignmentTexts"][0])
     assignment["node"] = "worker-2"

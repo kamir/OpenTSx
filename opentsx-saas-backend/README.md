@@ -15,14 +15,17 @@ The physical response exposes `assignmentHash`; its opaque worker `requestHash` 
 Physical admission also binds exact assignment bytes, effective computation, original nodes and channels to trusted
 capability, residency and topic-incarnation observations. Computation identity uses the required
 `["opentsx.computation.v1", taggedValue]` frame; missing or unknown versions are refused.
-Retries retain the existing journal's exact plan bytes and revalidate the observations before execution. Located refusals use `opentsx.plan-refusal.v1` in HTTP `detail`;
+Retries retain the existing journal's exact plan bytes and revalidate the observations before execution.
+Located refusals use `opentsx.plan-refusal.v1` in HTTP `detail`;
 messages contain only the fixed code, original node and field location. See the
 [physical deployment contract](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s115-admit-a-physical-deployment).
 
 ## Upgrade the offline ownership journal
 
-Stop the API and Wayang coordinator before upgrading an existing journal. Back up the database using your existing
-PostgreSQL procedure. Startup refuses the legacy or a partial ownership-table shape instead of upgrading it.
+While the API and coordinator are running, complete or stop their deployments and wait for final reconciliation,
+retired publication authority and released topic owners. Then stop both services and back up the database using
+your existing PostgreSQL procedure. Startup refuses the legacy or a partial ownership-table shape instead of
+upgrading it. A missing owner table alongside existing Wayang journal tables also refuses startup.
 The sole `wayang_topic_owners` table uses typed legacy rows or the physical
 `(fragment, cluster, incarnation, topic)` key for every input and sink topic channel.
 Legacy rows contain no trusted physical identity and conservatively
@@ -30,8 +33,10 @@ conflict with physical claims on the same topic name.
 
 The offline upgrade requires an empty legacy ownership table, terminal deployments and cycles, retired publication
 authority and no pending switch or orphan history. It preserves all deployment, plan, result and history rows.
-Active or ambiguous ownership produces `The Wayang journal has active or ambiguous legacy ownership; upgrade refused.`
-Resolve ownership through the existing stop and reconciliation paths; do not delete reservations or invent incarnations.
+Active or ambiguous ownership reports
+`The Wayang journal has active or ambiguous legacy ownership; upgrade refused.`
+Resolve ownership through the running services' stop and reconciliation paths; do not delete reservations or
+invent incarnations.
 Run from `opentsx-saas-backend` with its pinned requirements installed:
 
 ```bash
@@ -39,10 +44,21 @@ python -m app.db.upgrade_wayang_ownership --help
 python -m pytest -q tests/test_wayang_physical.py -k offline
 ```
 
-The module's required `--offline` option confirms that both services are stopped. It uses the existing `POSTGRES_*`
-configuration. The regression command executes the entry point against a disposable SQLite fixture, proves refusal
-without mutation and verifies byte-preserved completed history. It does not change the configured deployment database.
-After an operator runs the module with `--offline`, rerunning it prints `Wayang ownership schema is current.`
+The regression command executes the entry point against a disposable SQLite fixture, proves refusal without mutation
+and verifies byte-preserved completed history. It does not change the configured deployment database.
+
+With both services stopped and the backup verified, upgrade the configured journal and repeat the command to check
+the installed shape. The required `--offline` option records your confirmation that both services are stopped;
+it does not stop or inspect them. The module uses the existing `POSTGRES_*` configuration.
+
+```bash
+python -m app.db.upgrade_wayang_ownership --offline
+python -m app.db.upgrade_wayang_ownership --offline
+```
+
+The first successful upgrade prints `Wayang ownership schema upgraded.` The repeated check prints
+`Wayang ownership schema is current.` A missing owner table in an existing journal requires restoring its recorded
+ownership from the verified backup before resolving or upgrading that journal; do not create an empty replacement.
 
 ## Quick Start
 

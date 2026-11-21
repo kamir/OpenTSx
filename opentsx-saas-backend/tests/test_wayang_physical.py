@@ -315,14 +315,15 @@ def test_cross_profile_topic_overlap_is_conservative(database, physical_driver, 
 
 
 def test_offline_command_runs_against_disposable_fixture(database, monkeypatch, capsys):
+    import runpy
     from app.db import session as db_session
-    from app.db.upgrade_wayang_ownership import main
+    from app.db import upgrade_wayang_ownership
     legacy_journal(database)
     monkeypatch.setattr(db_session, "sync_engine", database)
     monkeypatch.setattr("sys.argv", ["app.db.upgrade_wayang_ownership", "--offline"])
-    main()
+    runpy.run_path(upgrade_wayang_ownership.__file__, run_name="__main__")
     assert capsys.readouterr().out == "Wayang ownership schema upgraded.\n"
-    main()
+    runpy.run_path(upgrade_wayang_ownership.__file__, run_name="__main__")
     assert capsys.readouterr().out == "Wayang ownership schema is current.\n"
 
 
@@ -475,3 +476,43 @@ def test_unversioned_computation_encoding_is_refused():
         contract.decode_computation('["f64","8000000000000000"]')
     assert caught.value.refusal["code"] == "deployment.computation"
     assert caught.value.refusal["field"] == "/computationText"
+
+
+def test_startup_refuses_missing_owner_table_in_an_existing_active_journal(database):
+    from sqlalchemy import inspect, text
+    from app.db.base import Base
+    from app.db.upgrade_wayang_ownership import check_schema
+    with Session(database) as session:
+        plan = plan_for({"deployment": "active", "dagText": DAG, "createdAtMicros": "42"})
+        session.add(WayangDeployment(id="active", owner_id=1, flow_id=1, spec_hash=service.digest(DAG),
+                    dag_text=DAG, created_at_micros="42", plan_hash=plan["planHash"], plan_text=json.dumps(plan), state="running"))
+        session.add(WayangTopicOwner(topic="tsx.test.input.v2", deployment_id="active"))
+        session.commit()
+    with database.begin() as connection:
+        before = tuple(connection.execute(text("SELECT * FROM wayang_deployments")).first())
+        connection.execute(text("DROP TABLE wayang_topic_owners"))
+    with pytest.raises(RuntimeError, match="explicit offline upgrade"):
+        with database.begin() as connection:
+            check_schema(connection)
+            Base.metadata.create_all(connection)
+    with database.connect() as connection:
+        assert "wayang_topic_owners" not in inspect(connection).get_table_names()
+        assert tuple(connection.execute(text("SELECT * FROM wayang_deployments")).first()) == before
+
+
+@pytest.mark.parametrize("unrelated_table", [False, True])
+def test_startup_creates_a_genuinely_new_wayang_journal(unrelated_table):
+    from sqlalchemy import create_engine, inspect, text
+    from app.db.base import Base
+    from app.db.upgrade_wayang_ownership import TABLES, check_schema
+    engine = create_engine("sqlite://")
+    try:
+        with engine.begin() as connection:
+            if unrelated_table:
+                connection.execute(text("CREATE TABLE existing_application (id INTEGER PRIMARY KEY)"))
+            check_schema(connection)
+            Base.metadata.create_all(connection)
+            assert set(TABLES).issubset(inspect(connection).get_table_names())
+            assert connection.execute(text("SELECT count(*) FROM wayang_topic_owners")).scalar_one() == 0
+    finally:
+        engine.dispose()
