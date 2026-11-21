@@ -598,7 +598,9 @@ entries before 3.0.0 are grouped by date.
   holds `generated, not measured: <ports>; no KPI is ranked better or worse` and is empty otherwise. A run on a demo
   demand was compared with its baseline as `better` or `worse`. The place "Simulate" shows the reason above the
   table and colours no difference without a verdict; a difference of zero without a verdict shows as empty instead
-  of `-0`. A Python caller of `RetrievalClient.compare` that reads `verdict` must handle its absence.
+  of `-0`. A Python caller of `RetrievalClient.compare` that reads `verdict` must handle its absence. Notebook 4
+  (`python-package/notebooks/04-den-zwilling-fragen.ipynb`) shows such a comparison with an empty `verdict` column
+  and prints the reason above the table; it raised `KeyError` on the missing `verdict` and is now in English.
 - `docs/datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md` has the bytes its `manifest.json` pins again;
   the repository split had replaced its links to the raw files with plain text. `tools/check_links.py` leaves files
   that a measurement manifest pins out, and `tools/test_measurement_records.py` fails when a committed file differs
