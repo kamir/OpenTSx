@@ -2,7 +2,9 @@
 
 This page specifies the decision card (`opentsx.decision.v1`), the decision status the retrieval server derives from
 it (`opentsx.decision-status.v1`), the decision record (`opentsx.decision-record.v1`) and the signal rules they rely
-on, verified against commit `a513aa98`.
+on; sections 1.3, 1.4, 2.3 and 6 were verified against the code that restricts an analysis whose card states a limit
+the server does not evaluate (fix of 2026-11-21), sections 1.1, 1.5, 2.2, 3, 3.3, 4.1 and 4.3 against commit
+`61168e2b`, the others against commit `a513aa98`.
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are used as in
 [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) and [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174) when they
@@ -508,5 +510,5 @@ states its `fidelity`:
 
 Implemented in: `processor.v1:172-178`, `systems/processors/gen.ou.yaml:6`, `systems/processors/gen.sine.yaml:6`,
 `Generators.java:17-22`, `Generators.java:64-71`, `Generators.java:178-186`, `TopicLayout.java:173-176`,
-`TopicLayout.java:204-206`, `KafScaleFeed.java:171-172`, `Decisions.java:144-145`, `Decisions.java:178-180`,
-`SignalInputs.java:98-99`, `Runs.java:360`, `Runs.java:376`.
+`TopicLayout.java:204-206`, `KafScaleFeed.java:173-174`, `Decisions.java:144-145`, `Decisions.java:178-180`,
+`SignalInputs.java:98-99`, `Runs.java:359`, `Runs.java:375`.
