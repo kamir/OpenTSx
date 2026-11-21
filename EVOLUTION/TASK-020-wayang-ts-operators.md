@@ -47,7 +47,8 @@ Each operator still requires its reference vectors and admission gate before use
   one site, a restart and a repeated acknowledgement (`TsxPlanServiceDeliveryCursorTest`,
   `agent_cursor_follows_the_site_sequence_across_jobs_through_restart_and_duplicate_ack` in `rust/tsx-runner/src/agent.rs`).
   Membership and capabilities are met on that path except measured capacities (`ConformanceMembershipTest`); see the
-  unified plan for what remains open.
+  unified plan for what remains open. Data edges hold by construction while each fragment reads one whole topic;
+  edge and port names, key-changing stages, new topics and the movement contract need decisions.
 - [x] U02 local bounded stage: `RustPlugin` maps connected topic sources, unions, optional fused chain and sink to
   `RustPlatform`; `RustExecutor` invokes one complete stage action with no raw-payload channel or Java fallback.
 - [x] U03 local bounded control: authenticated backend PostgreSQL journal and standalone advisory-lock coordinator,

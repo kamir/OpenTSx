@@ -99,16 +99,10 @@ entries before 3.0.0 are grouped by date.
 
 ### Added
 
-- Data model `v2.2`: the `resultId` of an `AnalysisResult` binds the content of its input episodes. The new field
-  `inputDigests` holds a SHA-256 content digest per input episode over the series key, unit, time range, timestamps,
-  values and quality (Java `Episodes.contentDigest`, Python `opentsx.model.content_digest`). The digests enter the
-  canonical form as a `{...}` section, so a result on a revised episode with the same episode id gets another id.
-  `opentsx.algorithms.results` fills the digests; the Python builder `analysis_result` requires `input_digests`.
-  Records written with `v2.1` decode in Java, Python and the workbench with empty `inputDigests` and keep their ids.
-  Python now ships the `v2.1` writer schema of `AnalysisResult` to read them. New vectors `episode-digest.json` and
-  `analysis-result-wire.json` (`v2.2` bytes). `wire-format.json` stays byte-identical because catalog
-  `tsx-catalog/1` pins it; its `analysisResults` entries are now the `v2.1` vectors and the generator rebuilds it from
-  `schema-history/v2.1`. The workbench result view shows the digests and says when a record has none.
+- TASK-020 U01 data edges: tests that a Rust fragment naming a second source topic is refused
+  (`a_fragment_reading_two_topics_is_refused`), that the bounded Rust lowering refuses `pair.xcorr`, `pair.es` and
+  `align.vector` with an exact message, and that a raw pair or vector cannot feed a federated sink. No production
+  code changes.
 
 - TASK-020 U01 membership: expected membership (`federation.expectedAssignments`) refuses one node listed for two
   sites, in Java `RunnerPlan` and Rust `site_plan.rs` (spec S2.4). `ConformanceMembershipTest` covers a
@@ -560,6 +554,17 @@ entries before 3.0.0 are grouped by date.
 
 - The KafScale conformance suite probes `Admin.listOffsets` with `OffsetSpec.earliest()` and `OffsetSpec.latest()`,
   which the Flink Kafka source uses for end offsets and bounded runs. Both answer correctly on KafScale v1.6.0.
+
+- Data model `v2.2`: the `resultId` of an `AnalysisResult` binds the content of its input episodes. The new field
+  `inputDigests` holds a SHA-256 content digest per input episode over the series key, unit, time range, timestamps,
+  values and quality (Java `Episodes.contentDigest`, Python `opentsx.model.content_digest`). The digests enter the
+  canonical form as a `{...}` section, so a result on a revised episode with the same episode id gets another id.
+  `opentsx.algorithms.results` fills the digests; the Python builder `analysis_result` requires `input_digests`.
+  Records written with `v2.1` decode in Java, Python and the workbench with empty `inputDigests` and keep their ids.
+  Python now ships the `v2.1` writer schema of `AnalysisResult` to read them. New vectors `episode-digest.json` and
+  `analysis-result-wire.json` (`v2.2` bytes). `wire-format.json` stays byte-identical because catalog
+  `tsx-catalog/1` pins it; its `analysisResults` entries are now the `v2.1` vectors and the generator rebuilds it from
+  `schema-history/v2.1`. The workbench result view shows the digests and says when a record has none.
 
 ### Changed
 
