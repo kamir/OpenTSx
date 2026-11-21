@@ -75,7 +75,7 @@ frontend/
 - **Axios** - HTTP client
 - **React Flow** - Visual flow builder
 - **Tailwind CSS** - Utility-first CSS
-- **Plotly.js** - Interactive charts
+- **Browser Canvas and SVG** - Oscilloscope and analysis charts
 
 ## Key Features
 
