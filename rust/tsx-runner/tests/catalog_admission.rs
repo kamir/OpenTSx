@@ -574,3 +574,19 @@ fn a_fragment_reading_two_topics_is_refused() {
         );
     }
 }
+
+/// D-T21: an assignment may declare whole-topic outputs, but no runtime writes them yet, so the worker refuses it.
+#[test]
+fn an_assignment_with_outputs_is_refused_until_runtimes_write_them() {
+    let mut value = request();
+    let mut assignment: Value =
+        serde_json::from_str(value["assignmentText"].as_str().unwrap()).unwrap();
+    assignment["outputs"] = json!([{"binding":"local","topic":"tsx.learning.repartition.flow.vector.v2",
+        "partitionCount":"1","port":"out","kind":"repartition"}]);
+    value["assignmentText"] = assignment.to_string().into();
+    assert!(tsx_contracts::validate(value["assignmentText"].as_str().unwrap()).is_ok());
+    assert_eq!(
+        admit(&value.to_string(), ARTIFACT_DIGEST).err().as_deref(),
+        Some("assignment outputs are not executed by this runtime yet (D-T21)")
+    );
+}

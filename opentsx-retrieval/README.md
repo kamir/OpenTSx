@@ -176,6 +176,32 @@ The need itself keeps `ok: true` when every check that ran passed. In `systems/d
 mvn -B -ntp -pl opentsx-retrieval -am test -Dtest=DecisionsTest -Dsurefire.failIfNoSpecifiedTests=false
 ```
 
+### Check a generator source
+
+With `--systems`, the server checks every generator source when it loads a system document. Each of these adds one
+entry to `problems`:
+
+* a `processor` other than `gen.ou` and `gen.sine`, for example
+  `offtake.demand_kgph@raw: generator gen.nope is not available in this runtime: it runs [gen.ou, gen.sine]`;
+* a required parameter that is missing or not a number, or a parameter that breaks a rule of the generator, for
+  example `offtake.demand_kgph@raw: gen.sine needs the parameter amplitude`. A `period` of `gen.sine` above
+  `PT2562047H47M16.854775807S` (about 292 years) breaks a rule;
+* a `select` on the generator source;
+* a raw generator source on a signal without `expect.interval`, or with one below one microsecond or above
+  `PT2562047H47M16.854775807S`, for example `offtake.demand_kgph: expect.interval PT0S is below one microsecond`.
+
+`GET /v1/systems/{id}/signals` shows the problems of the document in the `--systems` directory.
+`POST /v1/systems/{id}/signals` with the body `{bindings: [{signal, grade, source}]}` shows the problems of the document
+with that working copy laid over it. The check uses the rules of `Generators`, the code that generates the series.
+With such a problem, `POST /v1/systems/{id}/generate` answers 400 with `the system document has problems`. A
+generated series always has the metric `<system>.<signal id>`. The rules are in
+[SYSTEM-DOCUMENT-SPEC.md, section 4.2](../docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md#s42-generated-series). From
+the repository root, run:
+
+```bash
+mvn -B -ntp -pl opentsx-retrieval -am test -Dtest='SystemDocTest,SystemsTest,GeneratorsTest' -Dsurefire.failIfNoSpecifiedTests=false
+```
+
 ### Vector topics
 
 With `--kafscale` the server also reads the vector topics of the domain (`tsx.<domain>.smart.<name>.vectors.v1`,

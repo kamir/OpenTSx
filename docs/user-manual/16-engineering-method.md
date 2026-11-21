@@ -139,8 +139,10 @@ are in. A manually confirmed action closes the loop: nothing here needs the plan
 * **Pitfalls:** cleaning until everything is green. Tuning the preparation on one stretch of data. And taking clean
   inputs for a good model: where the data comes from says nothing about whether the analysis is right.
 * **Today:** the workbench ([chapter 14](14-saas-service-layer.md)). "Prepare" on the page "Signals" opens it for
-  one signal: its raw series, a line that names system, signal, expectation and origin, the plausible range on the
-  screen, and the cleaning operators preset from the expectation. Ground truth of the scenario shows as bands.
+  one signal: its raw series, a line that names system, signal, expectation and origin, and the plausible range on
+  the screen. In every workbench mode the plausible-range operator starts from the expected range, and resample
+  starts from the expected interval, at least 60 seconds; without an expected interval it starts from 60 seconds.
+  Ground truth of the scenario shows as bands.
   The plausible-range operator today removes or clips what lies outside. **Planned:** every clean signal is written
   in two variants, one that keeps each value with a verdict on it and one with the questionable values removed;
   the operating range on the screen; release of an analysis for a purpose.

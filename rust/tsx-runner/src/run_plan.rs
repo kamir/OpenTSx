@@ -336,6 +336,11 @@ impl SignedPlan {
             .map_err(|code| Refusal::invalid(format!("invalid execution assignment: {code}")))?;
         let assignment = tsx_contracts::parse_json(&document.assignment_text, 65_536)
             .map_err(|_| Refusal::invalid("execution assignment JSON is invalid"))?;
+        if assignment.get("outputs").is_some() {
+            return Err(Refusal::invalid(
+                "assignment outputs are not executed by this runtime yet (D-T21)",
+            ));
+        }
         if assignment["runtime"] != "rust" || assignment["mode"] != "continuous" {
             return Err(Refusal::invalid(
                 "signed run requires a continuous Rust assignment",

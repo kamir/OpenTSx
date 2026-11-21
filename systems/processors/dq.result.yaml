@@ -18,5 +18,6 @@ runtimes:
   wayang: { status: available, class: org.opentsx.wayang.TsxDqResult }
   rust: { status: available, class: tsx_runner::catalog::Pipeline, note: "tsx-runner 0.1.0 isolated local B2 context. opentsx.signal.v1 JSON with check/window identity; no freshness evaluation clock. No fleet qualification." }
 state: { kind: none }
+key: preserve
 merge: { class: exact, function: sum }
 testvectors: docs/datamodel-2026/testvectors/dq-result.v1.json

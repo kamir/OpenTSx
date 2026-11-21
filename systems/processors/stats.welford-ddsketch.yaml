@@ -16,5 +16,6 @@ runtimes:
   wayang: { status: available, class: org.opentsx.wayang.TsxStatsWindow }
   rust: { status: available, class: tsx_runner::catalog::Pipeline, note: "tsx-runner 0.1.0 isolated local B2 context. Episode input and Avro SeriesStats output; private per-series window state. No fleet qualification." }
 state: { kind: windowed, key: series }
+key: preserve
 merge: { class: approximate, function: stats.chan-ddsketch, bound: relative error alpha }
 testvectors: docs/datamodel-2026/testvectors/stats-window.v1.json

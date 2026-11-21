@@ -12,11 +12,31 @@ entries before 3.0.0 are grouped by date.
 
 ### Changed
 
+- The `doc` of the Avro envelopes `PortMessage`, `Barrier` and `Intervention` (`opentsx-twin`, `twin/avro/`) names
+  no topic, and the `opentsx-twin-live` docs no longer list `.msgs`, `.barrier` and `.interventions` next to the event
+  topic: no code writes these records to a topic. `twin.<id>.<run>.events` is the only topic a twin run writes; an
+  applied intervention appears there only as an event of type `intervention`. Fields and the wire format are
+  unchanged. `AtomSchemasTest` and `EventTopicLiveTest` fail when these docs name a topic that no code writes. The
+  example event in the twin-live README and in `EventTopic` is the record the h2-chain reference run writes. The
+  `opentsx-twin` docs call the envelopes the message contract, as TWIN-COUPLING-SPEC section 7 does, and the
+  twin-live README names the Studio controls by their element ids.
+- `LooseRunnerTest` checks variant L conformance for every scenario in the modes `SHADOW`, `WHAT_IF` and `FORECAST`:
+  staleness 0 gives the run id, hash, events, KPIs, port messages and commit barriers of variant T and no stale read,
+  for every what-if alternative, a forecast from mid-run and every Studio forecast, not only the run hash of
+  `h2-chain`. Its per-atom transports stress atoms that exist and slow the run. Of the replaced transports, one put a
+  slow processor on `balance`, which is an atom type and not an atom, and an outage on `market`, which delays no
+  reader in `h2-chain` and is not an atom of `haus` and `boot`; it took the ticks of `bsp()` in every scenario.
+  Another put a lag on `ely`, which is not an atom of `haus` and `boot`, so that lag added no tick there. A combined
+  transport applies lag, jitter, a slow processor and an outage at once. The test fails when a stressor names no atom
+  of the plan or adds no tick. TWIN-COUPLING-SPEC §10 states that `lag`, `stepTicks` and `outages` keys that are not
+  atoms are not rejected and slow no atom, and a test covers it. `LooseRunner` behavior is unchanged.
+
 - TASK-020 U01 decisions D-T16 to D-T22 (owner, 2026-11-21). `TsxCompileContext.Boundary` loses `admitsRaw` (D-T22):
   no raw series, pair or vector and no operator with merge class `none` can feed a federated sink. Spec S1.10, S2.2
   and S2.4 state that a site has exactly one node (D-T17) and that the local worker's capabilities are trusted-local
   without a fleet qualification claim (D-T18).
 
+- Line citations in the specs and docs point at the current code.
 - Documentation, comments and example files describe the current code. Chapter 15 drops the pair windows from the
   open items, links PAIR-WINDOWS-SPEC from P8 and lists the twin variants T and L as proofs of concept. The worked
   example of chapter 16 counts twelve components and sixteen signals and names the five flows that run. The `maxAge`
@@ -106,6 +126,17 @@ entries before 3.0.0 are grouped by date.
   unsupported MapLibre runtime releases.
 
 ### Added
+
+- Shared execution assignment: optional `outputs` (D-T21) with `binding`, `topic`, `partitionCount`, `port` and
+  `kind` (`sink` or `repartition`), in the schema, Java `ExecutionAssignments`, Rust `tsx-contracts` and 14 new
+  shared vectors (91 in total). New refusal code `assignment.output`; a set refuses an output topic with two
+  writers as `assignment.ownership`. The Rust worker, signed runs, Rust sites and JVM sites refuse assignments with
+  `outputs` until the fragment cutter and the runtimes write them.
+
+- Catalog cards declare `key` (D-T20, spec S1.4, `opentsx.processor.v1` schema): `preserve` for decode, segments,
+  SAX, DQ results and statistics; `derive-1to1` for the cleaning, model and feature operators; `regroup` for
+  `align.vector`, `pair.xcorr` and `pair.es`. `SystemDocTest` requires the field on every catalog 1 operator and
+  exactly these three regrouping operators. The frozen vector hashes do not change.
 
 - TASK-020 U01 data edges: tests that a Rust fragment naming a second source topic is refused
   (`a_fragment_reading_two_topics_is_refused`), that the bounded Rust lowering refuses `pair.xcorr`, `pair.es` and
@@ -608,6 +639,20 @@ entries before 3.0.0 are grouped by date.
 
 ### Fixed
 
+- `tsx-runner`: the WASM test `scoped_fixture_is_cleared_after_unwinding` unwinds with `resume_unwind`, so it no
+  longer prints a panic message. With `--nocapture 2>&1` that message could split another test's `test ... ok` line,
+  and the B3 qualification then reported `guest_stack_is_bounded_by_the_configured_limit` as not executed.
+- The Smart Topics Studio is in English. `docs/prototypes/smart-topics-studio.html` declares `lang="en"`; menus,
+  views, tooltips, event texts, the scenario titles, labels, KPIs, alternatives and forecasts (`H2ChainScenario`,
+  `HouseStudioScenario`, `BoatStudioScenario`) and the guides `twin/h2-chain.guide.yaml` and
+  `twin/haus-erzgebirge.guide.yaml` are English. Numbers use English notation and dates read `1 Oct 02:29`. The
+  downloads are named `<twin>-own.yaml`, `inventory-<twin>.yaml` and `studio-own-data-<scenario>.json`. The
+  retrieval server returns the same English titles and labels in `GET /v1/systems/{id}/scenario`. Scenario ids, twin
+  names, plan parameters and run ids are unchanged. `StudioExport` leaves out the run hash: the hash chains the raw
+  bits of every value and differs between JVMs whose `Math` functions round the last bit differently, so the
+  committed page could not be rebuilt byte for byte. Section 8 of `TWIN-COUPLING-SPEC.md` limits the equal run hash to
+  runs on the same JVM. The page is rebuilt with `tools/build_studio.py`; `StudioPageTest` and
+  `tools/test_studio_page.py` check it.
 - `GET /v1/systems/{id}/decisions` no longer shows an analysis as `usable` when its decision card states a limit
   the retrieval server does not evaluate. An applying need with `maxQuestionable` adds the reason
   `<signal>: the share of questionable values is not evaluated by this server`, and an analysis with
@@ -621,7 +666,35 @@ entries before 3.0.0 are grouped by date.
   `requirements.lock`. With the old 0.14.6 constraint, the install in `standalone-numerics.md` failed with
   `ResolutionImpossible`, and `test_finite_service_http.py` expected 0.14.6. `statsmodels` 0.15.0 adds the pinned
   dependencies `formulaic`, `interface_meta`, `narwhals`, `typing_extensions` and `wrapt`.
+- The frontend image answers 403 to `/retrieval/v1/systems/<id>/generate` and to every path below it
+  (`opentsx-saas-frontend/nginx.conf`). The rule matched the exact path only, and the retrieval server runs the demo
+  generator for `generate/` as well, so `generate/`, `generate//`, `generate%2F` and `generate/.` reached a generator
+  past the backend; a retrieval server without a run token wrote the series. `tools/test_saas_frontend_nginx.py`
+  checks the location rules for these spellings of the generator and DAG write routes.
+  `opentsx-saas-backend/smoke-flows.sh` expects 403 for `POST /retrieval/v1/systems/x/generate/` through the frontend
+  image. SYSTEM-DOCUMENT-SPEC section 7.3 states the closed generator route. The frontend README and the k3s README
+  state both closed routes and that `INGRESS=true` sends `/v1` to the retrieval server past the frontend image, where
+  the run token is the only gate.
+- The retrieval server reports a generator source it cannot run as a problem of the system document when it loads
+  the document, also with a working copy laid over it: a `processor` other than `gen.ou` and `gen.sine`, a missing or
+  invalid parameter, a `select`, and a raw generator source on a signal without `expect.interval` or with one below
+  one microsecond or above `PT2562047H47M16.854775807S`. The check uses the rules of `Generators`. These mistakes
+  failed only at `POST /v1/systems/{id}/generate`; a `gen.sine` `period` or an `expect.interval` above that bound
+  failed there with HTTP 500. A `select.metric` could give a generated series the metric of a measured channel. A
+  generated series always has the metric `<system>.<signal id>`. The backend answers 422 to a generator binding with
+  `select` (SYSTEM-DOCUMENT-SPEC.md, sections 2.4, 2.5, 4.2, 7.1 and 7.3).
 
+- A signal opened in the workbench ("Prepare" on the page Signals) presets its operators in every mode. Signal
+  Engineer and Data Worker started a new "Plausible range" at -10 and 10 and a new "Resample" at 0.05 seconds; only
+  the Legacy operation panel took the presets. "Resample" now starts with `every` set to the larger of 60 seconds and
+  the expected interval of the signal, 60 seconds when the signal states no interval, instead of 60 seconds for every
+  signal. An interval that is no duration leaves `every` empty. `durationSeconds` of the workbench reads every
+  duration of SYSTEM-DOCUMENT-SPEC.md section 1.2, including days and fractional seconds (`src/workbench/presets.ts`,
+  SYSTEM-DOCUMENT-SPEC.md section 8.3).
+- An operation button of the Legacy workbench mode checks its parameters as the inspector of the modern modes does.
+  An empty or non-finite number, a number below its minimum or an unsupported choice is refused with a message and
+  adds no step; before, "Resample" with an empty `every` added a step with an empty preview and wrote `every: PTS`
+  into the DAG document (`src/pages/Workbench.tsx`, `src/workbench/parameters.ts`).
 - `docs/datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md` has the bytes its `manifest.json` pins again;
   the repository split had replaced its links to the raw files with plain text. `tools/check_links.py` leaves files
   that a measurement manifest pins out, and `tools/test_measurement_records.py` fails when a committed file differs
