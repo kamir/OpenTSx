@@ -504,8 +504,11 @@ function dagParams(nodes: FlowNode[], node: FlowNode, seconds = false): Params |
   }
   if (node.op === VECTOR_OP) {
     const p = node.params;
-    const fill = (p.fill === 'as-of' ? `, fill: as-of, maxAge: PT${p.maxAge}S` : '') + (Number(p.lateness) > 0 ? `, lateness: PT${p.lateness}S` : '');
-    return `{ every: PT${p.every}S, key: ${p.key}, agg: ${p.agg}${fill}, emit: ${p.emit}, names: [${vectorComponents(nodes, node).join(', ')}] }`;
+    const fill = String(p.fill ?? 'none');
+    // An unknown fill is written as stored: validate() blocks its export and every runtime refuses it.
+    const extra = (fill === 'as-of' ? `, fill: as-of, maxAge: PT${p.maxAge}S` : fill === 'none' ? '' : `, fill: ${yamlScalar(fill)}`)
+      + (Number(p.lateness) > 0 ? `, lateness: PT${p.lateness}S` : '');
+    return `{ every: PT${p.every}S, key: ${p.key}, agg: ${p.agg}${extra}, emit: ${p.emit}, names: [${vectorComponents(nodes, node).join(', ')}] }`;
   }
   return node.params;
 }
@@ -683,6 +686,9 @@ export function validate(nodes: FlowNode[]): Finding[] {
   for (const n of nodes) {
     if (n.op === VECTOR_OP && inputsOf(n).length < 2) {
       out.push({ level: 'warning', text: `${n.label} has one input only. Add further inputs: each becomes a component of the vector.` });
+    }
+    if (n.op === VECTOR_OP && !['none', 'as-of'].includes(String(n.params.fill ?? 'none'))) {
+      out.push({ level: 'error', text: `${n.label}: vector fill must be none or as-of.` });
     }
   }
   const used = new Set<string>();

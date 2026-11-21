@@ -15,7 +15,7 @@ import java.util.Map;
  */
 public final class TsxPairWindows {
 
-    /** Half a microsecond: the v2 model keeps times to the microsecond (pairs.ts:30). */
+    /** Half a microsecond: the v2 model keeps times to the microsecond (pairs.ts:29). */
     public static final double TOL = 5e-7;
 
     private TsxPairWindows() {
@@ -141,7 +141,7 @@ public final class TsxPairWindows {
     public record Result(Range range, double every, double[] centres, double[][] values, byte[] quality) {
     }
 
-    /** The pair range of two episodes, or null (pairs.ts:125-148, for one episode of A and one of B). */
+    /** The pair range of two episodes, or null (pairs.ts:127-150, for one episode of A and one of B). */
     public static Range pair(Piece a, Piece b, String pairing, Double window) {
         if (pairing.equals("same")) {
             boolean same = Math.round(a.start / (2 * TOL)) == Math.round(b.start / (2 * TOL))
@@ -154,7 +154,7 @@ public final class TsxPairWindows {
         return end - start > TOL && end - start >= minLength - TOL ? new Range(start, end, a, b) : null;
     }
 
-    /** Median spacing of the times: the sampling interval (pairs.ts:97-104). */
+    /** Median spacing of the times: the sampling interval (pairs.ts:99-106). */
     public static double samplingInterval(double[] x) {
         if (x.length < 2) {
             return 1;
@@ -168,7 +168,7 @@ public final class TsxPairWindows {
         return m > 0 ? m : 1;
     }
 
-    /** Tag value of a duration (pairs.ts:91-94). */
+    /** Tag value of a duration (pairs.ts:93-96). */
     public static String durationTag(Double seconds) {
         if (seconds == null) {
             return "episode";
@@ -244,7 +244,7 @@ public final class TsxPairWindows {
         return col;
     }
 
-    /** Runs the method over the windows of one pair range (pairs.ts:244-288); null when the range is shorter than a window. */
+    /** Runs the method over the windows of one pair range (pairs.ts:306-349); null when the range is shorter than a window. */
     public static Result run(Method method, TsxPairXcorr.PairSettings st, Range range) {
         double every = st.every() != null ? st.every()
                 : Math.max(samplingInterval(range.a().x()), samplingInterval(range.b().x()));

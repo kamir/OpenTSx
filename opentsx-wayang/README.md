@@ -420,7 +420,9 @@ input `a` and those of B with input `b` (`TsxTagged`). Every series of `a` is co
 `pairing` `same` pairs episodes with equal ranges, `intersect` overlapping episodes on their intersection. Each pair
 range gives one episode per field, series `pair.<method>.<field>` with the tags `a`, `b`, `window` and `step`, parent
 the episode of A. An episode waits in `TsxState` until every series of the other input has passed its end. Without
-`every` the clock is the larger sampling interval of the two paired episodes.
+`every` the clock is the larger sampling interval of the two paired episodes, as in the workbench and the Rust runner
+(`TsxPairClockVectorsTest` runs `docs/datamodel-2026/testvectors/pair-clock.v1.json`). A `fill` other than `none` or
+`as-of` is refused with `pair fill must be none or as-of`.
 
 ```java
 TsxPair xcorr = new TsxPair("x", "pair.xcorr", Map.of("lags", 5, "window", 32, "step", 8),
@@ -542,7 +544,9 @@ measurement (TASK-020, D-T15). It writes JSON lines to standard output.
 `passthrough` writes the episodes to `tsx.<domain>.synthetic.v2`, `clean` runs
 `dq.checks` and `resample PT1M` into `tsx.<domain>.clean.v2`, and `stats` runs
 `stats.welford-ddsketch` with one-minute windows into
-`tsx.<domain>.series-stats.v2`. The `started` event carries the process id to
+`tsx.<domain>.series-stats.v2`. With `--lag-file`, `track-a` and `track-b` write
+the run's lag (input records minus processed records) to that file twice per
+second for `tools/board_lag.py`. The `started` event carries the process id to
 sample (the JVM for Track A, `tsx-runner` for Track B). `firstFetch` is written
 when the first increment over a non-empty input range starts, and `firstOutput`
 when the end offsets of the output topic first grow, polled every 100 ms.

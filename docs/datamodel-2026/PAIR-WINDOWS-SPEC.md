@@ -1,6 +1,6 @@
 # Pair windows and pair methods
 
-This page specifies how OpenTSx compares two series window by window and what the pair methods `pair.xcorr`, `pair.es` and `pair.coverage` write; it was verified against commit `a513aa98`.
+This page specifies how OpenTSx compares two series window by window and what the pair methods `pair.xcorr`, `pair.es` and `pair.coverage` write; sections 1 to 9, 11, 13, 14 and 16 were verified against the code with the per-episode pair clock (fix of 2026-11-20), the others against commit `a513aa98`.
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are used as in
 [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) and [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174) when they
@@ -56,11 +56,12 @@ A pair method pairs episodes by their time ranges. The web workbench keeps the r
   milliseconds.
 * `Bucket.episodes` is sorted by `seriesId`, then by `start`. An episode without samples gives no range.
 * A series without episode ranges (a generated or file bucket) counts as one range from its first sample to its last
-  sample plus one sampling interval ([section 6](#alignment)). Its episode id is `<Series.id>@<first x>`.
+  sample plus one sampling interval, taken on its x values ([section 6](#alignment)). Its episode id is
+  `<Series.id>@<first x>`.
 * Operators that keep the time axis hand `Bucket.episodes` on. Operators that build a new axis drop them.
 
 Implemented in: `workbench/loaders.ts:128-219`, `workbench/types.ts:49-62`, `workbench/episodes.ts:9-11`,
-`workbench/pairs.ts:97-112`.
+`workbench/pairs.ts:99-114`.
 
 <a id="parameters"></a>
 
@@ -73,18 +74,19 @@ Every pair method reads the same pair parameters. The method parameters are in s
 | `pairing` | text | `same`, `intersect` | `same` | `same` | how episodes of A and B form pair ranges ([section 4](#pairing)) |
 | `window` | text | `episode`, empty, or a width in seconds greater than 0 | `episode` | `episode` | empty means `episode` |
 | `step` | number, seconds | any number | `0` | width | a value of 0 or less sets the step to the width; ignored for `window: episode` |
-| `every` | number, seconds | any number | `0` | larger sampling interval | a value of 0 or less selects the larger sampling interval of A and B |
+| `every` | number, seconds | any number | `0` | the clock of each pair range | a value of 0 or less selects, per pair range, the larger sampling interval of its two episodes ([section 6](#alignment)) |
 | `agg` | text | `MEAN`, `LAST`, `FIRST`, `MIN`, `MAX`, `SUM`, `COUNT` | `MEAN` | `MEAN` | aggregate of the samples in one tick |
-| `fill` | text | `none`, `as-of` | `none` | `none` | the workbench and Wayang treat any other value as `none`; the Rust runner refuses it with `pair fill must be none or as-of` |
+| `fill` | text | `none`, `as-of` | `none` | `none` | any other value is refused with `pair fill must be none or as-of` |
 | `maxAge` | number, seconds | any number | `60` | `0` | used with `fill: as-of` only; negative or non-numeric values become 0 |
 | `minCoverage` | number | `[0, 1]` | `0.8`; `0` for `pair.coverage` | `0.8` | non-numeric values become 0.8 |
 
-* An implementation MUST refuse an unknown `pairing`, an unknown `agg`, a `window` that is neither `episode` nor a
-  width greater than 0, and a `minCoverage` outside `[0, 1]`. The messages are in [section 14](#limits-errors).
+* An implementation MUST refuse an unknown `pairing`, an unknown `agg`, a `fill` other than `none` or `as-of`, a
+  `window` that is neither `episode` nor a width greater than 0, and a `minCoverage` outside `[0, 1]`. The workbench,
+  Wayang and the Rust runner refuse each of them. The messages are in [section 14](#limits-errors).
 * "Operator default" is the value the workbench form starts with. "Value when absent" is what the parser takes when
   the key is missing.
 
-Implemented in: `workbench/pairs.ts:75-89`, `workbench/ops.ts:764-775`, `wayang/ops/TsxPairXcorr.java:29-57`,
+Implemented in: `workbench/pairs.ts:75-91`, `workbench/ops.ts:764-775`, `wayang/ops/TsxPairXcorr.java:29-60`,
 `runner/pairs.rs:741-847`.
 
 <a id="pairs"></a>
@@ -98,10 +100,15 @@ Implemented in: `workbench/pairs.ts:75-89`, `workbench/ops.ts:764-775`, `wayang/
   `t0Ms`, the shift is 0.
 * The workbench MUST NOT compare more than 200 pairs in one run (`MAX_PAIRS`). Above that it refuses the run and asks
   for a selection of series first.
+* The workbench MUST refuse an input series whose times are out of order: a sample after the first whose time is not
+  greater than or equal to the time before it, which includes a time that is not a number. Equal times are allowed.
+  Wayang and the Rust runner read episodes, whose timestamps are strictly increasing
+  ([04-MODELL-V2-SPEC.md, section 3](04-MODELL-V2-SPEC.md#3-time-axis-of-an-episode)).
 * The Wayang operator `TsxPair` pairs every series of input `a` with every series of input `b`. With one input it
   pairs the declared series in their declared order.
 
-Implemented in: `workbench/pairs.ts:186-205`, `workbench/workLimits.ts:101`, `wayang/JavaTsxPair.java:76-104`.
+Implemented in: `workbench/pairs.ts:233-252`, `workbench/pairs.ts:258-265`, `workbench/workLimits.ts:103`,
+`wayang/JavaTsxPair.java:76-104`.
 
 <a id="pairing"></a>
 
@@ -123,7 +130,7 @@ A pair range is the time range that one episode of A and one episode of B both c
   series it can skip pairs.
 * The pair ranges of one pair are sorted by start.
 
-Implemented in: `workbench/pairs.ts:125-148`, `wayang/ops/TsxPairWindows.java:145-155`, `runner/pairs.rs:1399-1415`.
+Implemented in: `workbench/pairs.ts:127-150`, `wayang/ops/TsxPairWindows.java:145-155`, `runner/pairs.rs:1399-1415`.
 
 <a id="windows"></a>
 
@@ -148,7 +155,7 @@ n         = floor((L-W)/S + 1e-9) + 1     when L >= W-TOL, otherwise 0
 * A pair range shorter than the window gives no item. The workbench counts these ranges in the note of the result
   bucket (`<n> pair range(s) shorter than the window`).
 
-Implemented in: `workbench/pairs.ts:157-166`, `wayang/ops/TsxPairXcorr.java:112-134`, `runner/pairs.rs:982-1014`.
+Implemented in: `workbench/pairs.ts:159-168`, `wayang/ops/TsxPairXcorr.java:115-137`, `runner/pairs.rs:982-1014`.
 
 <a id="alignment"></a>
 
@@ -157,10 +164,19 @@ Implemented in: `workbench/pairs.ts:157-166`, `wayang/ops/TsxPairXcorr.java:112-
 A and B are put on one clock by the rules of `align.vector`
 ([11-SMART-TOPIC-PROZESSOR-DEVOPS.md](VECTOR-AND-DAG-SPEC.md), section 5a).
 
-* Clock: `every` when it is greater than 0. Otherwise the larger sampling interval of A and B.
-* Sampling interval: the median spacing of consecutive sample times, element `floor(m/2)` of the `m` sorted spacings.
-  It is 1 s when a series has fewer than two samples or the median is not greater than 0. The workbench takes it over
-  all loaded samples of each series. Wayang and the Rust runner take it over the samples of the two paired episodes.
+* Clock: `every` when it is greater than 0. Otherwise each pair range takes its own clock: the larger of the sampling
+  intervals of its episode of A and its episode of B. The pair ranges of one pair can run on different clocks.
+* Sampling interval of an episode: the median spacing of the consecutive times of its samples, element `floor(m/2)`
+  of the `m` sorted spacings. A sample time is its time in epoch microseconds divided by `1e6`, a binary64 number of
+  seconds. The interval is 1 s when the episode has fewer than two samples or the median is not greater than 0.
+* The workbench, Wayang and the Rust runner MUST get the same clock to the bit. Wayang and the Rust runner take the
+  timestamps of the episode. The workbench takes the samples of the series whose time on the axis of A lies in
+  `[start-TOL, end-TOL)` of the episode range, as epoch microseconds `round(x*1e6)+round(t0Ms*1000)`, with `x` in
+  seconds on the axis of A and `t0Ms` of A.
+* The work limits of the workbench ([section 14](#limits-errors)) count the ticks of each pair range on its clock.
+* The note of the workbench result bucket names the clocks of the pair ranges that have a window, to 6 significant
+  digits: `clock <c> s` when they all show the same value, `clock <smallest> to <largest> s` otherwise. Without such a
+  pair range the note names no clock.
 * Ticks are multiples of `every` seconds since the epoch. Tick `k` covers `[k*every, (k+1)*every)`.
 * Value of a tick: the aggregate `agg` of the finite samples of the series in the tick. A tick without a finite sample
   has no value (NaN).
@@ -173,9 +189,10 @@ A and B are put on one clock by the rules of `align.vector`
 * A method receives two arrays of equal length, one value per tick of the window for A and for B, NaN where a side
   has no value, and the clock `every`.
 
-Implemented in: `workbench/pairs.ts:97-104`, `workbench/pairs.ts:169-176`, `workbench/pairs.ts:239-266`,
-`workbench/vector.ts:33-94`, `wayang/ops/TsxPairWindows.java:158-169`, `wayang/ops/TsxPairWindows.java:180-267`,
-`runner/pairs.rs:1112-1176`, `runner/pairs.rs:1428-1431`.
+Implemented in: `workbench/pairs.ts:99-106`, `workbench/pairs.ts:180-223`, `workbench/pairs.ts:269-288`,
+`workbench/pairs.ts:306-328`, `workbench/pairs.ts:378-390`, `workbench/workLimits.ts:46-62`,
+`workbench/vector.ts:32-93`, `wayang/JavaTsxPair.java:131-139`, `wayang/ops/TsxPairWindows.java:158-169`,
+`wayang/ops/TsxPairWindows.java:180-267`, `runner/pairs.rs:1112-1176`, `runner/pairs.rs:1418-1431`.
 
 <a id="coverage"></a>
 
@@ -194,7 +211,7 @@ Implemented in: `workbench/pairs.ts:97-104`, `workbench/pairs.ts:169-176`, `work
 * In the workbench the quality bytes are `Series.quality`. They belong to the x values they were computed for. An
   operator that builds a new x array (resample, FFT, histogram) drops the quality bytes of its input.
 
-Implemented in: `workbench/pairs.ts:264-279`, `workbench/flow.ts:426-434`, `workbench/types.ts:23-27`,
+Implemented in: `workbench/pairs.ts:326-341`, `workbench/flow.ts:426-434`, `workbench/types.ts:23-27`,
 `wayang/ops/TsxPairWindows.java:264-284`.
 
 <a id="result-series"></a>
@@ -219,7 +236,7 @@ A pair method gives one or more fields per window. Each field of each pair is a 
 * The workbench result bucket has the name `<prefix><name of the first input>`, a time axis, and `t0Ms` and `marks`
   of the first input. The prefixes are `Coverage_`, `XCorr_` and `ES_`.
 
-Implemented in: `workbench/pairs.ts:91-94`, `workbench/pairs.ts:288-329`, `workbench/seriesKeys.ts:84-92`,
+Implemented in: `workbench/pairs.ts:93-96`, `workbench/pairs.ts:350-393`, `workbench/seriesKeys.ts:84-92`,
 `wayang/ops/TsxPairWindows.java:172-178`, `wayang/JavaTsxPair.java:146-154`, `runner/pairs.rs:1178`,
 `runner/pairs.rs:1487-1503`.
 
@@ -259,7 +276,7 @@ Lineage:
 * Episode id in Wayang and the Rust runner: `p` followed by the lower-case hex of xxHash64 over the UTF-8 bytes of
   `<series id>|<episode id of A>|<episode id of B>|<specHash>`. `Provenance.source` is `opentsx-wayang`.
 
-Implemented in: `workbench/pairs.ts:280-312`, `wayang/JavaTsxPair.java:145-172`, `runner/pairs.rs:1503-1583`.
+Implemented in: `workbench/pairs.ts:342-374`, `wayang/JavaTsxPair.java:145-172`, `runner/pairs.rs:1503-1583`.
 
 <a id="lag-sign"></a>
 
@@ -310,7 +327,7 @@ Origin: `KreuzKorrelation.calcKRCoeffizient`, `KreuzKorrelation.calcKR_SLIDINGWI
 * Every window that fits is computed. With `lags: 0`, a step of one tick and the same width, the first `n-1` values
   equal the output of `calcKR_SLIDINGWINDOW`, which stops one window early.
 
-Implemented in: `workbench/xcorr.ts:35-114`, `wayang/ops/TsxPairXcorr.java:59-110`,
+Implemented in: `workbench/xcorr.ts:35-114`, `wayang/ops/TsxPairXcorr.java:62-113`,
 `wayang/ops/TsxPairWindows.java:37-61`, `runner/pairs.rs:752-767`, `runner/pairs.rs:908-980`.
 
 <a id="pair-es"></a>
@@ -379,13 +396,14 @@ Implemented in: `workbench/es.ts:26-165`, `workbench/random.ts:5-14`, `wayang/op
   a value.
 * `pair.coverage` runs in the workbench only.
 
-Implemented in: `workbench/pairs.ts:333-339`, `workbench/ops.ts:831-833`.
+Implemented in: `workbench/pairs.ts:397-403`, `workbench/ops.ts:831-833`.
 
 <a id="limits-errors"></a>
 
 ## 14. Handle limits and errors
 
-Browser limits of the workbench. A run above a limit is refused before it starts.
+Browser limits of the workbench. A run above a limit is refused before it starts. The limits count the ticks of each
+pair range on its clock ([section 6](#alignment)).
 
 | Limit | Value |
 |---|---|
@@ -408,9 +426,11 @@ Errors:
 | `One of the two inputs has no series.` | Load series into both inputs. |
 | `A pair method reads two inputs at most: A and B.` | Remove the third input. |
 | `<name> has a <kind> axis. A pair method needs inputs with a time axis.` | Use inputs with a time axis. |
+| `<label> has times out of order. A pair method needs them in increasing order.` | Put the samples of the series `<label>` in increasing time order. |
 | `Pairing "<value>" is unknown. Use same or intersect.` | Set `pairing` to `same` or `intersect`. |
 | `The window "<value>" is neither episode nor a width in seconds greater than 0.` | Set `window` to `episode` or a positive number of seconds. |
 | `Aggregate "<value>" is unknown.` | Use one of the `agg` values of [section 2](#parameters). |
+| `pair fill must be none or as-of` | Set `fill` to `none` or `as-of`. |
 | `The minimum coverage is a share between 0 and 1.` | Set `minCoverage` in `[0, 1]`. |
 | `lags "<value>" is not a whole number of clock ticks, 0 or more.` | Set `lags` to a whole number of 0 or more. |
 | `sigma "<value>" is not a number.` | Set `sigma` to a finite number. |
@@ -418,8 +438,9 @@ Errors:
 | `shuffles "<value>" is not a whole number of 1 or more.` | Set `shuffles` to a whole number of 1 or more. |
 | `seed "<value>" is not a whole number.` | Set `seed` to a whole number. |
 
-Implemented in: `workbench/workLimits.ts:6-13`, `workbench/workLimits.ts:27-66`, `workbench/workLimits.ts:98-103`,
-`workbench/pairs.ts:75-89`, `workbench/pairs.ts:186-212`, `workbench/xcorr.ts:95-99`, `workbench/es.ts:131-141`.
+Implemented in: `workbench/workLimits.ts:6-13`, `workbench/workLimits.ts:27-68`, `workbench/workLimits.ts:100-105`,
+`workbench/pairs.ts:75-91`, `workbench/pairs.ts:233-265`, `workbench/xcorr.ts:95-99`, `workbench/es.ts:131-141`,
+`wayang/ops/TsxPairXcorr.java:48-51`, `runner/pairs.rs:816-819`.
 
 <a id="runtimes"></a>
 
@@ -453,13 +474,25 @@ Implemented in: `workbench/ops.ts:831-847`, `workbench/ops.ts:935-946`, `workben
 |---|---|---|---|---|
 | [`testvectors/pair-xcorr.v1.json`](testvectors/pair-xcorr.v1.json) | 5 | `tools/pair_xcorr_vectors.sh`, from the original code of kamir/WikiExplorer.NG at `7b56e3d` | `workbench/xcorr.test.ts`, `TsxPairXcorrVectorsTest`, `rust/tsx-runner/tests/pair_vector_vectors.rs` | `5e-13` |
 | [`testvectors/pair-es.v1.json`](testvectors/pair-es.v1.json) | 8 | `tools/pair_es_vectors.py`, from the Python reference | `workbench/es.test.ts`, `python-package/tests/test_event_sync.py`, `TsxPairEsVectorsTest` | `5e-13`; the Python test uses `1e-12` |
+| [`testvectors/pair-clock.v1.json`](testvectors/pair-clock.v1.json) | 3, and 2 refusals | `tools/pair_clock_vectors.sh`, from the Wayang kernel `TsxPairWindows` | `workbench/pairs.test.ts`, `TsxPairClockVectorsTest`, `rust/tsx-runner/tests/pair_vector_vectors.rs` | `5e-13` for values; clocks and centres exactly |
 
 * `tools/pair_xcorr_vectors.sh` compiles `KreuzKorrelation` and `CCFunction` unchanged except for the import of
   `TimeSeriesObject`, which it takes from `opentsx-core`. The chart, FFT and shuffle classes they import are stubbed
   and not called.
 * An implementation of `pair.xcorr` or `pair.es` MUST reproduce every case of its file within the tolerance.
+* `pair-clock.v1.json` holds episodes without `every` whose sampling interval changes from 1 s to 10 s between
+  episodes or whose samples lie up to 0.2 s off the middle of each second, with the clock of each pair range
+  ([section 6](#alignment)), the `pair.xcorr` and `pair.es` values of each pair range, and two `fill` values that
+  every runtime refuses with `pair fill must be none or as-of`.
+* `workbench/pairs.test.ts` checks the clock of each pair range, the `pair.xcorr` and `pair.es` values, the clocks in
+  the note of `pair.coverage`, and the refusals for `pair.coverage`, `pair.xcorr` and `pair.es`.
+  `TsxPairClockVectorsTest` checks the clock of each pair range, the `pair.xcorr` and `pair.es` values through a
+  Wayang plan, and the refusals. `pair_vector_vectors.rs` checks the `pair.xcorr` values and the refusals; the Rust
+  runner has no `pair.es`. `pair.coverage` runs in the workbench only.
 * The rules of sections 3 to 9 are tested in `workbench/pairs.test.ts`.
 
 Implemented in: `tools/pair_xcorr_vectors.sh`, `tools/pair_es_vectors.py`, `workbench/xcorr.test.ts:60-95`,
 `workbench/es.test.ts:50-68`, `opentsx-wayang/src/test/java/org/opentsx/wayang/ops/TsxPairXcorrVectorsTest.java`,
-`opentsx-wayang/src/test/java/org/opentsx/wayang/ops/TsxPairEsVectorsTest.java`.
+`opentsx-wayang/src/test/java/org/opentsx/wayang/ops/TsxPairEsVectorsTest.java`, `tools/pair_clock_vectors.sh`,
+`workbench/pairs.test.ts:304-367`, `opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairClockVectorsTest.java`,
+`rust/tsx-runner/tests/pair_vector_vectors.rs:613-751`.

@@ -76,6 +76,7 @@ public final class VectorAligner {
     private static final class KeyState {
         final Map<String, String> key;
         final Map<String, TreeMap<Long, Cell>> cells = new LinkedHashMap<>();
+        final Map<String, String> seriesByComponent = new LinkedHashMap<>();
 
         KeyState(Map<String, String> key) {
             this.key = key;
@@ -122,9 +123,14 @@ public final class VectorAligner {
                     !several ? in.name() : inputs.size() == 1 ? seriesName(s) : in.name() + "." + seriesName(s);
             // the components of one input in name order, so the vector does not depend on the order the series arrive in
             in.series().stream().map(componentOf).distinct().sorted().filter(c -> !components.contains(c)).forEach(components::add);
-            for (Series s : in.series()) {
+            for (Series s : in.series().stream().sorted(java.util.Comparator.comparing(Series::id)).toList()) {
                 String component = componentOf.apply(s);
                 KeyState k = keys.computeIfAbsent(keyText(s, bySeries, all, keyBy), t -> new KeyState(keyOf(s, bySeries, all, keyBy)));
+                String other = k.seriesByComponent.put(component, s.id());
+                if (other != null && !other.equals(s.id())) {
+                    throw new IllegalArgumentException("the series " + other + " and " + s.id() + " both give the component \""
+                            + component + "\" of one vector; choose a key that tells them apart");
+                }
                 TreeMap<Long, Cell> cells = k.cells.computeIfAbsent(component, c -> new TreeMap<>());
                 for (int i = 0; i < s.values().length; i++) {
                     double v = s.values()[i];

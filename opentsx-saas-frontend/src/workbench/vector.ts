@@ -131,7 +131,7 @@ export function alignVector(first: Bucket, p: Params, others: Bucket[] = []): Bu
     if (b.xKind !== 'time') throw new Error(`${b.name} has a ${b.xKind} axis. A vector needs inputs with a time axis.`);
   }
   const agg = String(p.agg ?? 'MEAN');
-  const asOf = String(p.fill ?? 'none') === 'as-of';
+  const asOf = fillsAsOf(p);
   const maxAgeTicks = Math.floor((Number(p.maxAge) >= 0 ? Number(p.maxAge) : every) / every);
   const complete = String(p.emit ?? 'any') === 'complete';
   const keyBy = String(p.key ?? 'series').trim() || 'series';
@@ -322,4 +322,11 @@ export function vectorRecords(bucket: Bucket, name: string, limit = Infinity): V
     }
   }
   return out;
+}
+
+/** Whether `fill` is as-of; a missing fill is none. Any other value is refused with the message of the Rust runner. */
+export function fillsAsOf(p: Params): boolean {
+  const fill = String(p.fill ?? 'none');
+  if (fill !== 'none' && fill !== 'as-of') throw new Error('vector fill must be none or as-of');
+  return fill === 'as-of';
 }

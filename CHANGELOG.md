@@ -92,6 +92,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `tsx-runner` site configuration field `profile` (`ground` or `orbit`). In the `orbit` profile `agent` and
+  `run --plan` keep a plan running when a status record cannot reach the plan service: the record goes to a durable
+  outbox in the state directory, bounded to 5,760 records, and buffered records are sent oldest first before newer
+  and terminal records. A full outbox stops the plan. The `ground` profile, also used without the field, still
+  stops a plan when a heartbeat fails.
+- The workbench Deployments panel lists the `jobs` of `GET /v1/dags` apart from the deployments: job id, track, site
+  when present, state, input record count and report age. A job in any state but `stopped` or `failed` without a
+  report for 120 s is flagged. Jobs have no Stop, because Track A and B do not read the control topic.
 - English normative specifications for the rules that code, tests and `systems/` cite:
   [`VECTOR-AND-DAG-SPEC.md`](docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md),
   [`SYSTEM-DOCUMENT-SPEC.md`](docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md),
@@ -115,6 +123,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   ring buffer, an emulated space-ground link driven by computed passes, and phases P0 to P6 up to the D-T13 CPU
   fallback path. Phase P0 prepares the board with the Jetson runbook and board tools of D-T14. No implementation
   yet.
+- Lag for the B4.2 board sampler: `BoardWorkload track-a` and `track-b` take `--lag-file` and write the run's lag,
+  input records minus processed records, twice per second. `tools/board_lag.py` (Python 3.6) prints it for
+  `board_resource_sampler.py --lag-command` and fails on a stale or malformed value.
 - `opentsx-wayang`: output proof for the B4.2 board measurement. `BoardOutputProofTest` reads a condition's output
   topic, requires that every output series equals the first records of the reference output of the same feed, field
   for field (`BoardOutputs`, `BoardReference`), checks the input digest, and only then writes JUnit XML with the
@@ -542,6 +553,25 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- The web workbench takes the default clock of `pair.coverage`, `pair.xcorr` and `pair.es` per pair range: the larger
+  sampling interval of the two paired episodes, on their sample times in epoch microseconds. Wayang and the Rust
+  runner use the same rule. The note names the smallest and the largest clock. A pair method refuses a series whose
+  times are out of order.
+- The web workbench and the Wayang pair API (`TsxPairXcorr.pairSettings`) refuse a `fill` other than `none` or
+  `as-of` with `pair fill must be none or as-of`, the message of the Rust runner.
+- `docs/datamodel-2026/testvectors/pair-clock.v1.json` (`tools/pair_clock_vectors.sh`) holds pair cases with
+  timestamps, a sampling interval that changes between episodes and jittered samples, expected values from the Wayang
+  kernel and the `fill` refusal. The workbench results are checked against Wayang for `pair.xcorr` and `pair.es` and
+  against the Rust runner for `pair.xcorr` only; `pair.coverage` has no Wayang or Rust counterpart. All three refuse
+  the unknown `fill`. Sections 2, 3, 6, 14 and 16 of
+  [`PAIR-WINDOWS-SPEC.md`](docs/datamodel-2026/PAIR-WINDOWS-SPEC.md) state these rules.
+- `GET /v1/systems/{id}/signals` gives a signal that a flow computes the worst of its `expect.origin` and the
+  origins of the signals the flow reads. `park.p_potential_kw` of `h2-chain`, a power curve over the measured wind
+  of a station, is `ESTIMATED` and no longer `MEASURED`. The Signals page marks it as modelled, and the decision
+  `h2-dispatch`, which accepts estimates and forecasts, no longer blocks it when its data has no `origin` label.
+- The recommendation in `systems/decisions/h2-dispatch.records.example.yaml` no longer carries `shadow: true`,
+  because an approval and an action follow it. `SystemDocTest` refuses an approval or an action that follows a
+  recommendation in shadow operation. No component reads records at run time.
 - The web workbench takes its catalog marking from catalog 1 (`systems/catalogs/tsx-catalog-1.yaml`). The DAG export
   writes `# not in the stream operator catalog`, and the publish check warns, only for operators that catalog 1 does
   not list. `align.vector`, `convert.unit`, `model.wind-shear`, `model.power-curve`, `feature.lag`, `feature.rolling`,
@@ -566,6 +596,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The retrieval server with `--kafscale` follows `tsx.<domain>.features.v2` like the clean and synthetic topics.
   Feature series appear in `GET /v1/inventory`, and `GET /v1/systems/{id}/signals` shows their data under the
   features grade. The inventory names the topic under `source.topics.features`.
+- `VectorAligner.align` refuses two series that give the same component of one vector instead of aggregating them
+  into one value. The message is the one of the vector processor (`VectorStream` with one set of series):
+  `the series <a> and <b> both give the component "<c>" of one vector; choose a key that tells them apart`. `<a>` and
+  `<b>` are the series ids. `<a>` comes first: inputs in their order, the series of one input in id order.
 
 - Retrieval POST routes `/v1/patterns/search`, `/v1/episodes/similar` and `/v1/segments` require a single JSON object
   and report invalid bodies as HTTP 400. Response exchanges close after success or failure while preserving the
@@ -634,6 +668,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Continuous Wayang increments retain private preparations after a transient preparation failure, including a lost
   response after preparation was persisted. Identical retry keeps the admitted plan, clock and whole-topic placement;
   activation still requires every preparation and the cross-topic ownership checks. Permanent refusals remain failures.
+
+- `align.vector` refuses a `fill` other than `none` or `as-of` in the web workbench and the vector processor, as the
+  Rust runner and Wayang already did. A typo such as `fill: asof` aligned without fill in the workbench preview, was
+  dropped from the DAG export and ran without fill on the processor. The workbench preview refuses it with
+  `vector fill must be none or as-of`, the message of the Rust runner, and the processor with
+  `node <id>: vector fill must be none or as-of`. The deploy checks of the workbench and of the Flow Composer list
+  `<label>: vector fill must be none or as-of.`, so such a stored flow still opens but is neither downloaded nor
+  deployed; the DAG export writes the fill as stored. A missing `fill` stays `none`.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

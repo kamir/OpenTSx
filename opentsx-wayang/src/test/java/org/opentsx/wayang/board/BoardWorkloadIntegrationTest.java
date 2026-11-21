@@ -55,13 +55,16 @@ class BoardWorkloadIntegrationTest {
         TopicLayout a = feed(bootstrap);
         ByteArrayOutputStream aLines = new ByteArrayOutputStream();
         BoardTrackA.run(bootstrap, a, chain, SERIES, 7, Path.of("..", "systems", "processors"), dir.resolve("a.json"),
-                Duration.ofSeconds(2), Duration.ofSeconds(6), events(aLines));
+                Duration.ofSeconds(2), Duration.ofSeconds(6), dir.resolve("a.lag"), events(aLines));
 
         TopicLayout b = feed(bootstrap);
         ByteArrayOutputStream bLines = new ByteArrayOutputStream();
         Files.createDirectories(dir.resolve("state"));
         BoardTrackB.run(Path.of(runner), "127.0.0.1:" + freePort(), dir.resolve("state"), "measurement", bootstrap, b,
-                chain, SERIES, 7, Duration.ofSeconds(2), Duration.ofSeconds(6), dir.resolve("runner.log"), events(bLines));
+                chain, SERIES, 7, Duration.ofSeconds(2), Duration.ofSeconds(6), dir.resolve("runner.log"), dir.resolve("b.lag"),
+                events(bLines));
+        // every record was written before the runs started, so both runs end without lag
+        for (String lag : List.of("a.lag", "b.lag")) assertEquals("0", Files.readString(dir.resolve(lag)).strip(), chain + " " + lag);
 
         Class<? extends SpecificRecord> type = chain.equals("stats") ? SeriesStats.class : Episode.class;
         BoardFeed feed = new BoardFeed(SERIES, 7);

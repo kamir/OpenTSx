@@ -1,7 +1,8 @@
 # Vector and DAG rules
 
 This page specifies the DAG document `opentsx.dag.v1`, the operator `align.vector`, the record `opentsx.vector.v1`
-and the vector processor that runs them, verified against commit `a513aa98`.
+and the vector processor that runs them; section 4 was verified against the code with the per-episode pair clock
+(fix of 2026-11-20), the others against commit `a513aa98`.
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are used as in
 [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) and [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174) when they
@@ -25,7 +26,7 @@ writes it. The vector processor, the retrieval server and the command `opentsx v
 series sink (a sink with `schema: opentsx.episode.v2`) is an `opentsx.dag.v2` document. This page does not specify
 series sinks.
 
-Implemented in: `workbench/flow.ts:698-755` (write), `vector/DagPlan.java:17-132` and `vector/VectorJob.java:53-130`
+Implemented in: `workbench/flow.ts:698-755` (write), `vector/DagPlan.java:17-132` and `vector/VectorJob.java:53-134`
 (read), `vector/SeriesJob.java:56-140` (series sinks).
 
 ### 1.1 Fields
@@ -137,7 +138,7 @@ with one value per component. The processor writes the points as `opentsx.vector
 The web workbench and Java implement the operator. Both pass the shared test vectors in
 [testvectors/align-vector.v1.json](testvectors/align-vector.v1.json).
 
-Implemented in: `workbench/vector.ts:126-245`, `vector/VectorAligner.java:99-213`, `vector/VectorStream.java:149-348`.
+Implemented in: `workbench/vector.ts:126-245`, `vector/VectorAligner.java:100-219`, `vector/VectorStream.java:149-348`.
 
 ### 2.1 Parameters
 
@@ -146,7 +147,7 @@ Implemented in: `workbench/vector.ts:126-245`, `vector/VectorAligner.java:99-213
 | `every` | ISO-8601 duration | none | Length of a tick. Required. MUST be greater than 0. |
 | `key` | string | `series` | `series`, `all` or a tag name. See [2.2](#22-clock-components-and-key). |
 | `agg` | enum | `MEAN` | `MEAN`, `LAST`, `FIRST`, `MIN`, `MAX`, `SUM` or `COUNT`. |
-| `fill` | enum | `none` | `as-of` fills a missing value with the last one. Any other value means `none`. |
+| `fill` | enum | `none` | `as-of` fills a missing value with the last one. A missing `fill` is `none`. Any other string is refused, see below. |
 | `maxAge` | ISO-8601 duration | the value of `every` | How old a value may be that `fill: as-of` takes. |
 | `emit` | enum | `any` | `complete` writes only ticks in which every component has a value. Any other value means `any`. |
 | `names` | list of strings | `in1`, `in2` and so on | One component name per input, in the order of `in`. |
@@ -155,11 +156,19 @@ Implemented in: `workbench/vector.ts:126-245`, `vector/VectorAligner.java:99-213
 `every`, `maxAge` and `lateness` MUST be ISO-8601 durations such as `PT60S`. A number such as `60` is refused with
 `node <id>: every and maxAge must be durations like PT60S` or `node <id>: lateness must be a duration like PT2M`.
 
+A `fill` other than `none` or `as-of`, such as `asof`, is refused. The workbench preview and the Rust runner refuse it
+with `vector fill must be none or as-of`. The deploy checks of the workbench and of the Flow Composer list
+`<label>: vector fill must be none or as-of.`, where `<label>` is the name of the node, so the workbench neither
+downloads nor deploys the flow. Its DAG export writes the fill as stored. The processor refuses it with
+`node <id>: vector fill must be none or as-of`. Wayang refuses it with
+`node <id>: parameter fill must be one of [none, as-of]`.
+
 The workbench edits seconds and writes `PT<seconds>S`. It writes `maxAge` only with `fill: as-of`, and `lateness`
 only when it is greater than 0.
 
-Implemented in: `vector/VectorJob.java:83-104,119-130`, `vector/VectorAligner.java:21,29-38,104`,
-`vector/VectorStream.java:110-111`, `workbench/flow.ts:505-509`.
+Implemented in: `vector/VectorJob.java:83-104,119-134`, `vector/VectorAligner.java:21,29-38,105`,
+`vector/VectorStream.java:110-111`, `workbench/flow.ts:505-512,690-692`, `workbench/vector.ts:320-325`,
+`rust/tsx-runner/src/pairs.rs:182-185`, `opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java:235-244`.
 
 ### 2.2 Clock, components and key
 
@@ -172,11 +181,11 @@ Implemented in: `vector/VectorJob.java:83-104,119-130`, `vector/VectorAligner.ja
 | Missing value | A component without a value in the tick is `null`. With `fill: as-of` it takes the last value of the component when that value lies at most floor(maxAge / every) ticks back. |
 | Ticks | Per key the ticks run from the first to the last tick in which any component of the key has a value. With `emit: any` a tick is written when at least one component has a value, filled values included. With `emit: complete` it is written only when every component has one. |
 | Time axis | Every input MUST have a time axis. The workbench refuses spectra, histograms and other axes with `<bucket> has a <kind> axis. A vector needs inputs with a time axis.` |
-| One series per component | The key MUST tell apart the series that give the same component. The processor, the workbench preview and the Rust runner `tsx-runner` refuse data in which two series give the same component of one vector: `the series <a> and <b> both give the component "<c>" of one vector; choose a key that tells them apart`. `<a>` and `<b>` are the ids of the two series, `<a>` the first in id order. `VectorAligner`, the Java batch aligner, aggregates both series into one value; no runtime calls it. |
+| One series per component | The key MUST tell apart the series that give the same component. The processor, `VectorAligner`, the workbench preview and the Rust runner `tsx-runner` refuse data in which two series give the same component of one vector: `the series <a> and <b> both give the component "<c>" of one vector; choose a key that tells them apart`. `<a>` and `<b>` are the ids of the two series, `<a>` the first in id order. |
 
-Implemented in: `vector/VectorAligner.java:88-97,103-198,200-213`, `workbench/vector.ts:57-94,126-185`,
+Implemented in: `vector/VectorAligner.java:89-98,104-204,206-219`, `workbench/vector.ts:57-94,126-185`,
 `vector/VectorStream.java:240-282`, `rust/tsx-runner/src/pairs.rs:461-519`, `workbench/vector.test.ts:187-196`,
-`rust/tsx-runner/tests/pair_vector_vectors.rs:441-462`.
+`rust/tsx-runner/tests/pair_vector_vectors.rs:461-482`.
 
 ### 2.3 Record
 
@@ -397,7 +406,7 @@ Implemented in: `workbench/ops.ts:834,838,857,864,871,877,884,893,896,905,911,91
 `workbench/vector.test.ts:208-235`, `vector-tests/VectorAlignerTest.java:23`,
 `vector-tests/VectorStreamTest.java:202`,
 `opentsx-wayang/src/test/java/org/opentsx/wayang/TsxVectorVectorsTest.java:46`,
-`rust/tsx-runner/tests/pair_vector_vectors.rs:39`.
+`rust/tsx-runner/tests/pair_vector_vectors.rs:40`.
 
 ## 5. Streaming contract
 
