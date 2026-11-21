@@ -310,7 +310,7 @@ The message id is `<runId>/<k>/<phase>/<atom>/<port>`.
 
 Implemented in: `PortMessage.java:9-14`, `Barrier.java:7-11`, `MessageSink.java:4-18`, `MessageLog.java:8-29`,
 `TwinRunner.java:107-113,140-146,158`, `LooseRunner.java:320-323,375`, `schema/AtomSchemas.java:35,61-77`; tests:
-`TwinShadowTest.java:103-131`, `LooseRunnerTest.java:29-52`.
+`TwinShadowTest.java:103-131`, `LooseRunnerTest.java:41-45,70-106,213-223,265-268`.
 
 <a id="8-run-identity-and-run-record"></a>
 
@@ -400,6 +400,8 @@ Rules:
 * **Groups.** Processors are, in this order of precedence: explicit groups, then the strongly connected components
   of the wire graph (iterative Tarjan) if `colocateCycles` is set, else one processor per atom. A group member that
   is not an atom is rejected with `group member is not an atom: <id>`.
+* **Unknown atoms.** An entry of `lag`, `stepTicks` or `outages` whose key is not an atom of the plan is not
+  rejected. It slows no atom. With staleness other than 0 it is still part of the run id.
 * **Deadlock.** If no atom can progress and nothing is busy, down or about to become visible, the run fails with
   `variant L deadlock at tick <tick> (plan has a same-step cycle?)`.
 * **Record.** States, outputs and events are assembled in variant T order, and the run hash is computed as in §8.
@@ -411,7 +413,7 @@ Rules:
 `staleReads` (age > 0), `meanAge` and `maxAge`, where age is the targeted step minus the step read.
 
 Implemented in: `LooseRunner.java:39-197,213-389,395-458,464-554`, `RunSetup.java:20-26`; tests:
-`LooseRunnerTest.java:29-147`.
+`LooseRunnerTest.java:28-268`.
 
 <a id="11-coupling-results-and-design-rule"></a>
 
@@ -467,14 +469,47 @@ Implemented in: `demo/CouplingStudy.java:41-171`, `studio/Scenarios.java:11-13`,
 
 ### 11.2 Conformance
 
-Variant L with staleness 0 is bit-identical to variant T: same run id, same run hash, same events, same KPIs, the
-same set of port messages (compared by id, value bits and origin), the same commit barriers and no stale read.
-This holds for all three scenarios in `SHADOW` mode under each of these transports: `bsp()`; lag 3; jitter 5 with
-seed 42 and lag 7 on `ely`; step ticks 3 on `balance` and an outage of `market` in ticks `[10, 60)`. It also holds
-for every what-if alternative and for a forecast from a snapshot of `h2-chain`. The transport changes only the
+Variant L with staleness 0 is bit-identical to variant T in the modes `SHADOW`, `WHAT_IF` and `FORECAST`
+([§9](#9-operating-modes)): same run id, same run hash, same events, same KPIs, the same set of port messages
+(compared by id, value bits and origin), the same commit barriers and no stale read. The transport changes only the
 wall time.
 
-Implemented in: `LooseRunner.java:161-164,410-431`; tests: `LooseRunnerTest.java:29-79`.
+The conformance test stresses one slow atom and one remote atom per scenario:
+
+| Scenario | Slow atom | Remote atom |
+|---|---|---|
+| `h2-chain` | `grid` | `ely` |
+| `haus` | `building` | `boiler` |
+| `boot` | `boat` | `boat` |
+
+`boot` is a pipeline. Its slow processor absorbs an outage of any other atom, so its slow atom is also its remote
+atom.
+
+The equality holds for all three scenarios in `SHADOW` mode under each of these transports:
+
+| Transport | Lag | Jitter | Step ticks | Outage |
+|---|---|---|---|---|
+| `bsp()` | 0 | 0 | 1 | none |
+| lag | 3 | 0 | 1 | none |
+| late remote atom | 7 on the remote atom | 5 (seed 42) | 1 | none |
+| slow processor | 0 | 0 | 3 on the slow atom | none |
+| outage | 0 | 0 | 1 | remote atom in ticks `[10, 60)` |
+| combined | 2 | 3 (seed 7) | 10 on the slow atom | remote atom in ticks `[10, 60)` |
+
+Under the combined transport it also holds for all three scenarios in `WHAT_IF` mode, for every alternative of the
+scenario, and in `FORECAST` mode, for a 60-step forecast from the snapshot after the middle superstep of the
+reference run and for every forecast of the scenario. `h2-chain` has eight forecasts; `haus` and `boot` have none.
+The scenario forecasts run as the Studio export runs them: inputs labelled as forecasts, from the snapshot after
+step `nowStep - 1`, to the end of the reference run.
+
+Every stressor of these transports names an atom of the plan and costs wall time. Each transport takes more ticks
+than `bsp()`, and more ticks than the same transport without any one of its stressors: the lag, the jitter, the lag
+of one atom, the step ticks of one atom or the outages of one atom. A step of 10 ticks takes longer than a
+superstep of `h2-chain` or `haus` under lag 2 and jitter 3 alone, so the slow processor of the combined transport
+still costs ticks.
+
+Implemented in: `LooseRunner.java:143-158,161-164,279-287,324-327,410-431`, `studio/StudioExport.java:102-106`;
+tests: `LooseRunnerTest.java:28-143,213-268`.
 
 <a id="113-throughput"></a>
 
@@ -554,4 +589,4 @@ Feedback loops belong in one processor; between processors, bulk-synchronous cou
 * The cut between tight and loose coupling follows from the wiring plan: the strongly connected components are the
   tight parts.
 
-Implemented in: `LooseRunner.java:135-141,464-490`; tests: `LooseRunnerTest.java:110-134`.
+Implemented in: `LooseRunner.java:135-141,464-490`; tests: `LooseRunnerTest.java:173-198`.

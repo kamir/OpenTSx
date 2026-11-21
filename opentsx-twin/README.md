@@ -64,8 +64,10 @@ sets the staleness bound (`bsp()` = 0, `ssp(s)`, `async()`), transport latency a
 slow processors and outages, explicit processor groups (`withGroup`) and `colocatingCycles()`, which runs every
 feedback cycle of the plan (strongly connected component) in one processor.
 
-* Staleness 0 gives a run that is bit-identical to variant T (same run id, hash, events, messages) for any
-  transport; a coupling that can change the result becomes part of the run id.
+* Staleness 0 gives a run that is bit-identical to variant T (same run id, hash, events, KPIs, messages and commit
+  barriers) in the modes `SHADOW`, `WHAT_IF` and `FORECAST`, for any lag, jitter, slow processor or outage; a
+  coupling that can change the result becomes part of the run id. The transports that `LooseRunnerTest` checks are
+  in [TWIN-COUPLING-SPEC §11.2](../docs/datamodel-2026/TWIN-COUPLING-SPEC.md#112-conformance).
 * `LooseRun.stats()` reports simulated wall time (ticks), wait and down ticks per atom and the staleness used per
   wire.
 * `bin/opentsx twin-coupling [--csv out.csv] [--scenario id]` runs the coupling grid over all scenarios. Results and
@@ -197,6 +199,16 @@ the levers act on measured values. For front ends, `BoatDemo` exposes `plan()`, 
   * bit-identical repetition
   * the message contract
   * the episode export
+* **`LooseRunnerTest`**
+  * staleness 0 equals variant T for every scenario: in `SHADOW` mode under six transports, and under a transport
+    with lag, jitter, a slow processor and an outage for every what-if alternative, a forecast from mid-run and
+    every forecast of the scenario
+  * every stressor of these transports names an atom of the plan and costs ticks
+  * lag costs wall time but not the result
+  * staleness 2 is faster than staleness 0, has its own run id and is reproducible; `async()` never waits, even
+    while an atom is down
+  * colocated cycles keep the result at pipeline throughput; an explicit group reads without staleness
+  * strongly connected components (Tarjan)
 * **`TwinModesTest`**
   * two what-ifs
   * a forecast from a snapshot that reproduces the shadow run exactly

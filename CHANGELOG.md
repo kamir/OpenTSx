@@ -12,6 +12,15 @@ entries before 3.0.0 are grouped by date.
 
 ### Changed
 
+- `LooseRunnerTest` checks variant L conformance for every scenario in the modes `SHADOW`, `WHAT_IF` and `FORECAST`:
+  staleness 0 gives the run id, hash, events, KPIs, port messages and commit barriers of variant T and no stale read,
+  for every what-if alternative, a forecast from mid-run and every Studio forecast, not only the run hash of
+  `h2-chain`. Its per-atom transports stress atoms that exist and slow the run. The replaced ones named the atom type
+  `balance`, the `h2-chain` atoms `ely` and `market` in `haus` and `boot`, and an outage of `market` that delays no
+  reader, so they took the ticks of `bsp()`. A combined transport applies lag, jitter, a slow processor and an outage
+  at once. The test fails when a stressor names no atom of the plan or adds no tick. TWIN-COUPLING-SPEC §10 states
+  that `lag`, `stepTicks` and `outages` keys that are not atoms are not rejected. `LooseRunner` behavior is unchanged.
+
 - TASK-020 U01 decisions D-T16 to D-T22 (owner, 2026-11-21). `TsxCompileContext.Boundary` loses `admitsRaw` (D-T22):
   no raw series, pair or vector and no operator with merge class `none` can feed a federated sink. Spec S1.10, S2.2
   and S2.4 state that a site has exactly one node (D-T17) and that the local worker's capabilities are trusted-local
