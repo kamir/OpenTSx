@@ -47,8 +47,8 @@ public class RequestResponseAnalysisConsumer {
     }
 
     /**
-     * Measures the end-to-end latency of the responses until {@link #GIVE_UP} polls in a row are empty, then writes the
-     * table to {@code folder} or, with {@code showGui} true, opens and stores the chart.
+     * Measures the end-to-end latency of the responses until more than {@link #GIVE_UP} polls in total are empty, then
+     * writes the table to {@code folder} or, with {@code showGui} true, opens and stores the chart.
      */
     static void runConsumer(Consumer<String, String> consumer, String showGui, String folder) {
 

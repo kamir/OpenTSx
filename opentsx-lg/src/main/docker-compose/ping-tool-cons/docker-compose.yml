@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   lg-west-CONS:
     image: opentsx/time-series-generator:3.0.1

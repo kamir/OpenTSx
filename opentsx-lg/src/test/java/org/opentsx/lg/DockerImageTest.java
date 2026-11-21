@@ -210,6 +210,70 @@ class DockerImageTest {
         assertEquals(List.of("opentsx-local.props", "cpl.props", "opentsx-local.props", "cpl.props"), profiles);
     }
 
+    @Test
+    void eachVariableOfTheEnvFilesOfThePingToolsIsReadByItsComposeFile() throws Exception {
+        Path compose = Path.of("src/main/docker-compose");
+        Pattern variable = Pattern.compile("(?m)^([A-Za-z_][A-Za-z0-9_]*)=");
+        List<String> unused = new ArrayList<>();
+        int variables = 0;
+        for (String tool : List.of("ping-tool-cons", "ping-tool-prod")) {
+            String file = Files.readString(compose.resolve(tool).resolve("docker-compose.yml"));
+            for (String env : List.of(".env", ".env-inhouse")) {
+                Matcher name = variable.matcher(Files.readString(compose.resolve(tool).resolve(env)));
+                while (name.find()) {
+                    variables++;
+                    if (!file.contains("${" + name.group(1) + "}")) {
+                        unused.add(tool + "/" + env + ": " + name.group(1));
+                    }
+                }
+            }
+        }
+
+        assertEquals(16, variables - unused.size());
+        assertEquals(List.of(), unused);
+    }
+
+    @Test
+    void theComposeFilesHaveNoVersionKeyAndTheDemoScriptRunsDockerCompose() throws Exception {
+        List<Path> composeFiles = files("src/main", "docker-compose.yml");
+        List<String> problems = new ArrayList<>();
+        for (Path file : composeFiles) {
+            List<String> lines = Files.readAllLines(file);
+            for (int n = 1; n <= lines.size(); n++) {
+                if (lines.get(n - 1).startsWith("version:")) {
+                    problems.add(file + ":" + n + ": version: obsolete; delete the line");
+                }
+            }
+        }
+        List<String> demo = Files.readAllLines(Path.of("run_demo_docker_compose.sh"));
+        for (int n = 1; n <= demo.size(); n++) {
+            if (demo.get(n - 1).strip().startsWith("docker-compose")) {
+                problems.add("run_demo_docker_compose.sh:" + n + ": docker-compose: the v1 binary; call docker compose");
+            }
+        }
+
+        assertEquals(2, composeFiles.size(), composeFiles.toString());
+        assertEquals(List.of(), problems);
+        assertEquals(2, demo.stream().filter(line -> line.startsWith("docker compose ")).count(), demo.toString());
+    }
+
+    @Test
+    void theScriptsThePingToolsRunStartNoXvfb() throws Exception {
+        List<String> problems = new ArrayList<>();
+        try (Stream<Path> scripts = Files.list(Path.of("src/main/docker-compose/bin"))) {
+            for (Path script : scripts.filter(f -> f.toString().endsWith(".sh")).sorted().toList()) {
+                List<String> lines = Files.readAllLines(script);
+                for (int n = 1; n <= lines.size(); n++) {
+                    if (lines.get(n - 1).strip().startsWith("Xvfb")) {
+                        problems.add(script + ":" + n + ": Xvfb: not in the image; delete the line");
+                    }
+                }
+            }
+        }
+
+        assertEquals(List.of(), problems);
+    }
+
     private static void assertPinned(String image, String where) {
         int tag = image.lastIndexOf(':');
         assertTrue(tag > image.lastIndexOf('/') && tag < image.length() - 1, where + ": " + image);

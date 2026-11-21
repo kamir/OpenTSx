@@ -41,6 +41,13 @@ and `MDC3`. Set the three variables in the `.env` file next to the compose file.
 `cpl.props`. Both profiles name `localhost:9092` and `http://localhost:8081`. They hold no serializer or deserializer
 keys: each producer and consumer sets its own.
 `DockerImageTest` fails when `ENV_CONTEXT` names a file that is not in `src/main/docker-compose/config/`.
+`run_demo_docker_compose.sh` starts both services with `docker compose --env-file .env-inhouse up -d`, the Compose
+plugin of Docker, and not with the standalone `docker-compose` binary. The `.env` and `.env-inhouse` files set only
+the variables their compose file reads, and the compose files have no `version` key. The image has no X server, and
+the scripts in `src/main/docker-compose/bin/` start none: the compose files set `OPENTSX_SHOW_GUI` to `false`, so no
+tool opens a chart window. `DockerImageTest` fails on a variable that the compose file does not read, on a `version`
+key, on a `docker-compose` call in `run_demo_docker_compose.sh` and on an `Xvfb` call in
+`src/main/docker-compose/bin/`.
 
 The scripts use the `JAVA_HOME` you set, or the `java` on your `PATH`. `run_demo.sh` prints the KSQL statements of the
 demo for the ksql CLI. `run_demo.sh`, `run_demo_container.sh`, `run_demo_docker_compose.sh`, `bin/build_all.sh`,

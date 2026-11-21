@@ -94,6 +94,14 @@ error: namespace opentsx: not found; check OPENTSX_NS in deploy/k3s/.env and the
 error: namespace opentsx: not found; run 20-configure.sh, 10-build.sh, 11-import-images.sh and 30-deploy.sh first
 ```
 
+When the backup holds `env` and `deploy/k3s/.env` does not exist, the hint restores `env` first, so that
+`20-configure.sh` starts from the configuration of the backup and not from `env.example`. It ends with the command of
+the run, with `--only <volume parts>` when the run named `--only`:
+
+```text
+error: namespace opentsx: not found; run 71-restore.sh ./opentsx-backup-20261012T021700Z --only env, then 20-configure.sh, 10-build.sh, 11-import-images.sh and 30-deploy.sh, then 71-restore.sh ./opentsx-backup-20261012T021700Z
+```
+
 `30-deploy.sh` and `90-teardown.sh` take a namespace that does not exist as nothing to clean up. Any other failure,
 for example an API server that cannot be reached, is not reported as a missing namespace by any of these scripts.
 `30-deploy.sh` reads the nodes first and stops with `cluster not reachable with 'kubectl' (see 00-prereqs.sh)` when
@@ -145,8 +153,16 @@ other Deployments are still shown, then the script exits with 1:
 error: --logs: the logs of 1 Deployment(s) cannot be read; see the warn lines above
 ```
 
-`71-restore.sh` and `90-teardown.sh` ask before they change anything. Without `--yes`, an answer that does not start
-with `y` or `Y` exits with 1, and so does standard input that ends before an answer, for example in CI:
+`71-restore.sh` and `90-teardown.sh` ask before they change anything. The question of `71-restore.sh` names the
+parts and, with `env` among them, the env file it replaces: an absolute path inside the repository relative to the
+repository, any other path as the script was given it:
+
+```text
+This REPLACES the content of: data and deploy/k3s/.env in namespace opentsx.
+```
+
+Without `--yes`, an answer that does not start with `y` or `Y` exits with 1, and so does standard input that ends
+before an answer, for example in CI:
 
 ```text
 error: 90-teardown.sh: no answer on standard input; pass --yes to run without the question
@@ -177,7 +193,9 @@ env. Git ignores `deploy/k3s/.env.before-restore` and `deploy/k3s/.env.restoring
 its secrets, as it ignores `deploy/k3s/.env`. When `.env` cannot be replaced, the script removes the partial copy,
 leaves `.env` as it was and exits with 1 after the error of `cp` or `mv` with
 `<path of .env>: cannot replace it with <dir>/env after the PVCs <pvcs> were restored; see the error above, then run 71-restore.sh <dir> --only env`.
-Without volumes among the parts, the message leaves out `after the PVCs <pvcs> were restored`. A `.env` that links
+Without volumes among the parts, the message leaves out `after the PVCs <pvcs> were restored`. When the rename fails,
+the script also removes the `.env.before-restore` it wrote right before (one that is a link stays), so the rerun the
+message names also works after `.env` changed. A `.env` that links
 to a path that cannot be resolved, because a directory on it does not exist or is a file, or the links form a loop,
 stops the step before the copy with exit 1 and
 `<path of .env>: cannot replace it with <dir>/env after the PVCs <pvcs> were restored; it links to <link target>, which cannot be resolved (a directory on its path is missing or is a file, or the links form a loop); fix the link, then run 71-restore.sh <dir> --only env`,

@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
 
-Xvfb :99 -screen 0 640x480x8 -nolisten tcp &
-
 echo "*****************************"
 echo "OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME: $OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME"
 echo "OPENTSX_SHOW_GUI:                             $OPENTSX_SHOW_GUI"

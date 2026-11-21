@@ -10,8 +10,8 @@ fi
 confluent local status
 
 cd src/main/docker-compose/ping-tool-cons || exit 1
-docker-compose --env-file .env-inhouse up -d
+docker compose --env-file .env-inhouse up -d
 cd ../../../.. || exit 1
 
 cd src/main/docker-compose/ping-tool-prod || exit 1
-docker-compose --env-file .env-inhouse up -d
+docker compose --env-file .env-inhouse up -d

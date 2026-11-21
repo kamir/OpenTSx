@@ -33,7 +33,7 @@ maps these host names to the addresses in `MDC1`, `MDC2` and `MDC3`:
 ## Choose the env file
 
 Docker Compose reads `.env` next to the compose file. With `--env-file .env-inhouse` it reads `.env-inhouse`
-instead. The compose file takes `MDC1`, `MDC2`, `MDC3` and `ENV_CONTEXT` from that file and no other line of it.
+instead. That file sets `MDC1`, `MDC2`, `MDC3` and `ENV_CONTEXT`, the variables the compose file reads.
 `ENV_CONTEXT` names the client profile: `.env` names `/etc/opentsx/config/opentsx-local.props`, `.env-inhouse` names
 `/etc/opentsx/config/cpl.props`.
 
@@ -45,4 +45,4 @@ docker compose --env-file .env-inhouse config
 ```
 
 `opentsx-lg/run_demo_docker_compose.sh` starts this service and the one of `../ping-tool-prod/` with
-`docker-compose --env-file .env-inhouse up -d`.
+`docker compose --env-file .env-inhouse up -d`, the Compose plugin of Docker.

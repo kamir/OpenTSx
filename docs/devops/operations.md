@@ -293,13 +293,14 @@ deploy/k3s/71-restore.sh DIR --only stats-state --yes
   so the copy of the `.env` from before the first restore is kept. With `env` and volumes, the `namespace=` line of
   the backup's `MANIFEST` and `OPENTSX_NS` of the backup's env must both name `OPENTSX_NS` as the shell or the current
   `.env` sets it; otherwise, or without a `namespace=` line, it exits with 1 before the question and changes nothing.
-  A failed step leaves `.env` as it was and no partial `.env.before-restore`. A failed volume step writes no
-  `.env.before-restore` at all, so the rerun also works after `.env` changed, for example by `20-configure.sh`. That
-  namespace check keeps the rerun in the same namespace.
+  A failed step leaves `.env` as it was and removes the `.env.before-restore` it wrote (one that is a link stays). A
+  failed volume step writes no `.env.before-restore` at all. So the rerun also works after `.env` changed, for example
+  by `20-configure.sh`. That namespace check keeps the rerun in the same namespace.
   On a new cluster, restore `env` first (`71-restore.sh DIR --only env`, needs no cluster), then run
   `20-configure.sh`, `10-build.sh`, `11-import-images.sh` and `30-deploy.sh`, then restore the volumes without `env`
-  (`71-restore.sh DIR`). For a backup of another namespace, restore `env` alone first, or, when the `MANIFEST` and the
-  env of the backup name the same namespace, set `OPENTSX_NS` to it. For a `MANIFEST` without a `namespace=` line,
+  (`71-restore.sh DIR`). A restore without `env` and without `.env` names these steps when the backup holds `env` and
+  the namespace does not exist. For a backup of another namespace, restore `env` alone first, or, when the `MANIFEST`
+  and the env of the backup name the same namespace, set `OPENTSX_NS` to it. For a `MANIFEST` without a `namespace=` line,
   only restoring `env` alone first helps. `OPENTSX_NS` set in the shell wins over `.env`, and restoring `env` does not
   change it: unset it or set it to the namespace of the backup. `70-backup.sh` stops with exit 1 before it writes
   anything when `OPENTSX_NS` set in the shell differs from the namespace of `.env` (or of `env.example` when `.env`

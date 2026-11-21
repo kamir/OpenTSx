@@ -1020,6 +1020,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `opentsx-core`: the README and the `RISTool._addData` Javadoc name the second cause of `logLineToFile:
   RISTool.projekt is not set; set RISTool.projekt before writing to the log LENGTH`. `_addData` writes a series whose
   intervals add up to more than 7200 hours to the log `LENGTH`, which needs `RISTool.projekt`.
+- opentsx-lg: `run_demo_docker_compose.sh` starts the ping tools with `docker compose` (the Compose plugin of Docker)
+  instead of the standalone `docker-compose` binary.
 
 ### Removed
 
@@ -1228,6 +1230,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `archive/demos/opentsx-clusters/cp-multiregion/docker-compose.yml.orig`, a leftover copy of the compose file. The
   cp-multiregion README no longer links the missing logo and the removed `multi-datacenter` demo.
 - `opentsx-core`: the unused local `data1` of `ReturnIntervallStatistik2.addRowB`.
+- opentsx-lg ping tools: the `.env` and `.env-inhouse` files no longer set `OPENTSX_TOPIC_MAP_FILE_NAME`,
+  `CONFLUENT_DOCKER_TAG` and `REPOSITORY`, which the compose files did not read; the compose files lose the obsolete
+  `version` key; `run_LatencyProbe_PROD.sh` and `executor-script.sh` no longer start `Xvfb`, which the image does not
+  contain. `DockerImageTest` fails when any of these comes back.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -2785,8 +2791,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The READMEs of `opentsx-lg/src/main/docker-compose/ping-tool-cons/` and `ping-tool-prod/` describe the one container
   each compose file starts, its mounts and host names, and the env file it reads: `.env`, or `.env-inhouse` with
   `--env-file .env-inhouse`. The consumer README says the latency consumer stops after more than
-  `kping.consumer.giveUp` empty polls counted over the whole run, and the producer README no longer says the
-  entrypoint starts `Xvfb`.
+  `kping.consumer.giveUp` empty polls counted over the whole run.
 - `tools/check_tracked_config.py` checks a tracked symbolic link by its text, which is what git publishes. A link to a
   personal home path, a deny list word or a Confluent Cloud resource id is now reported even when it points to
   nothing, and the guard no longer reads a file outside the repository through a link.
@@ -2832,6 +2837,16 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   shuffles in the same order on every call. Without `RNGWrapper.init`, a program gets the same orders on every run, as
   it does for the other `RNGWrapper` draws. Before, they used the unseeded generator of `Collections.shuffle`, so even
   a seeded run was not reproducible.
+- `deploy/k3s/71-restore.sh` without `env` among the parts names `71-restore.sh <dir> --only env` first when the
+  namespace does not exist, `deploy/k3s/.env` is missing and the backup holds `env`, then `20-configure.sh`,
+  `10-build.sh`, `11-import-images.sh` and `30-deploy.sh`, then `71-restore.sh <dir>` with the `--only` of the run, so
+  a new cluster is configured from the backup and not from `env.example`; with `deploy/k3s/.env` present the hint
+  names the four steps only.
+- The question of `deploy/k3s/71-restore.sh` names the env file it replaces, relative to the repository, instead of
+  always `deploy/k3s/.env`.
+- When the rename of `<env>.restoring` over `.env` fails, `deploy/k3s/71-restore.sh` removes the `.env.before-restore`
+  it wrote (one that is a link stays), so the rerun works after `.env` changed; the line `previous .env kept as
+  <file>` appears only after the rename succeeded.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
