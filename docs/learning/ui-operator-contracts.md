@@ -528,5 +528,12 @@ as the vector processor does, with its message:
 `the series a and b both give the component "wind_speed" of one vector; choose a key that tells them apart` .
 VectorAligner and VectorProcessor provide existing Java implementations tested with shared vectors.
 
+Two inputs with one name, such as `names="speed,Speed"` , are refused with
+`two inputs of the vector are both named "speed"; give every input its own name` , as the vector processor, Wayang and
+the Rust runner refuse them. A typed name is written in lower-case snake case: lower case, every run of characters
+other than a-z and 0-9 becomes `_`, and `_` at either end is dropped. A typed name is never renamed, so two typed
+names with the same snake-case name are refused. A name derived from a bucket name gets `_2` when another input has
+it.
+
 Source: [vector.ts#alignVector](../../opentsx-saas-frontend/src/workbench/vector.ts#alignVector) . Executable exercise:
 `ui.align.vector` .

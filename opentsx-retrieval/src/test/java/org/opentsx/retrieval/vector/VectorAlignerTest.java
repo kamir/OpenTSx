@@ -95,6 +95,19 @@ class VectorAlignerTest {
     }
 
     @Test
+    void refusesTwoInputsWithOneNameAsTheStreamDoes() {
+        VectorAligner.Params count = new VectorAligner.Params(Duration.ofSeconds(60), "series", VectorAligner.Agg.COUNT, false, null, false);
+        VectorAligner.Series s = new VectorAligner.Series("s", "wind.met.wind_speed", Map.of(), new long[]{0}, new double[]{1});
+        String message = "two inputs of the vector are both named \"a\"; give every input its own name";
+        assertEquals(message, assertThrows(IllegalArgumentException.class, () -> VectorAligner.align(
+                List.of(new VectorAligner.Input("a", List.of(s)), new VectorAligner.Input("a", List.of(s))), count)).getMessage());
+        assertEquals(message, assertThrows(IllegalArgumentException.class,
+                () -> new VectorStream(List.of("a", "a"), count, java.util.Set.of("s"), 0)).getMessage());
+        assertEquals(List.of(1.0, 1.0), VectorAligner.align(
+                List.of(new VectorAligner.Input("a", List.of(s)), new VectorAligner.Input("b", List.of(s))), count).get(0).values());
+    }
+
+    @Test
     void refusesAnUnknownTagAndAClockOfZero() {
         VectorAligner.Series s = new VectorAligner.Series("a", "m.x", Map.of("turbine", "T01"), new long[]{0}, new double[]{1});
         List<VectorAligner.Input> in = List.of(new VectorAligner.Input("x", List.of(s)));

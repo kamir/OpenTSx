@@ -69,6 +69,8 @@ distinguishes target membership from qualified execution.
 budget bounds `(2 * lags + 1) * window / every`. The rejection text is
 `node <id>: pair.xcorr exceeds the limit of this site (<n> products per window)`.
 Here `<id>` is the DAG node ID and `<n>` is its configured budget.
+An `align.vector` node whose inputs share a name is refused with
+`node <id>: two inputs of the vector are both named "<name>"; give every input its own name`.
 
 ## Preserve operator state and record identity
 
