@@ -99,6 +99,31 @@ mod tests {
         }
     }
 
+    /// TASK-020 U01 membership: a node belongs to one site, so expected membership may not list it for two sites.
+    #[test]
+    fn expected_membership_refuses_one_node_for_two_sites() {
+        let fixture = Fixture::new();
+        let artifact = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        let member = |node: &str| {
+            let mut document = fixture.plan.document().clone();
+            let mut other = document["federation"]["expectedAssignments"][0].clone();
+            other["assignment"] = json!("a2");
+            other["site"] = json!("s2");
+            other["node"] = json!(node);
+            document["federation"]["expectedAssignments"]
+                .as_array_mut()
+                .unwrap()
+                .push(other);
+            fixture.sign_document(&document)
+        };
+        assert!(BoundedPlan::verify(&member("node-2"), &fixture.config, artifact).is_ok());
+        let own = fixture.plan.document()["federation"]["expectedAssignments"][0]["node"]
+            .as_str()
+            .unwrap()
+            .to_string();
+        assert!(BoundedPlan::verify(&member(&own), &fixture.config, artifact).is_err());
+    }
+
     #[test]
     fn signed_statistics_require_status_permission_in_the_local_policy() {
         let fixture = Fixture::new();
@@ -710,6 +735,7 @@ impl BoundedPlan {
         let mut own = false;
         let mut assignments = BTreeSet::new();
         let mut sites = BTreeSet::new();
+        let mut nodes = BTreeSet::new();
         for member in members {
             fields(
                 member,
@@ -736,6 +762,7 @@ impl BoundedPlan {
             }
             if !assignments.insert(text_field(member, "assignment")?)
                 || !sites.insert(text_field(member, "site")?)
+                || !nodes.insert(text_field(member, "node")?)
                 || member["generation"] != assignment["generation"]
             {
                 return Err(invalid("expected assignment inventory conflicts"));
