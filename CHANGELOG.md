@@ -582,6 +582,14 @@ entries before 3.0.0 are grouped by date.
 
 ### Fixed
 
+- The retrieval server reports a generator source it cannot run as a problem of the system document when it loads
+  the document, also with a working copy laid over it: a `processor` other than `gen.ou` and `gen.sine`, a missing or
+  invalid parameter, a `select`, and a raw generator source on a signal without `expect.interval`. The check uses the
+  parameter rules of `Generators`. These mistakes failed only at `POST /v1/systems/{id}/generate`, and a
+  `select.metric` could give a generated series the metric of a measured channel. A generated series always has the
+  metric `<system>.<signal id>`. The backend answers 422 to a generator binding with `select`
+  (SYSTEM-DOCUMENT-SPEC.md, sections 2.4, 2.5, 4.2, 7.1 and 7.3).
+
 - `docs/datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md` has the bytes its `manifest.json` pins again;
   the repository split had replaced its links to the raw files with plain text. `tools/check_links.py` leaves files
   that a measurement manifest pins out, and `tools/test_measurement_records.py` fails when a committed file differs

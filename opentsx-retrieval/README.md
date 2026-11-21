@@ -157,6 +157,28 @@ In `systems/h2-chain.system.yaml`, `park.p_potential_kw` is `ESTIMATED`: a power
 mvn -B -ntp -pl opentsx-retrieval -am test -Dtest='SystemsTest,DecisionsTest' -Dsurefire.failIfNoSpecifiedTests=false
 ```
 
+### Check a generator source
+
+With `--systems`, the server checks every generator source when it loads a system document, also one a working copy
+lays over it. Each of these adds one entry to `problems` of `GET /v1/systems/{id}/signals`:
+
+* a `processor` other than `gen.ou` and `gen.sine`, for example
+  `offtake.demand_kgph@raw: generator gen.nope is not available in this runtime: it runs [gen.ou, gen.sine]`;
+* a required parameter that is missing or not a number, or a parameter that breaks a rule of the generator, for
+  example `offtake.demand_kgph@raw: gen.sine needs the parameter amplitude`;
+* a `select` on the generator source;
+* a raw generator source on a signal without `expect.interval`.
+
+The check uses the parameter rules of `Generators`, the code that generates the series.
+`POST /v1/systems/{id}/generate` then answers 400 with `the system document has problems`. A generated series always
+has the metric `<system>.<signal id>`. The rules are in
+[SYSTEM-DOCUMENT-SPEC.md, section 4.2](../docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md#s42-generated-series). From
+the repository root, run:
+
+```bash
+mvn -B -ntp -pl opentsx-retrieval -am test -Dtest='SystemDocTest,SystemsTest' -Dsurefire.failIfNoSpecifiedTests=false
+```
+
 ### Vector topics
 
 With `--kafscale` the server also reads the vector topics of the domain (`tsx.<domain>.smart.<name>.vectors.v1`,

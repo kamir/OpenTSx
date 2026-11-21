@@ -428,6 +428,9 @@ public final class SystemDoc {
         if (raw != null && "flow".equals(raw.kind())) {
             problems.add(id + "@raw: a flow gives clean data or features");
         }
+        if (raw != null && "generator".equals(raw.kind()) && expect.interval() == null) {
+            problems.add(id + ": needs a sampling interval to be generated (expect.interval)");
+        }
         if (expect.operatingMin() != null && expect.operatingMax() != null && expect.operatingMin() > expect.operatingMax()) {
             problems.add(id + ": the operating range has its min above its max");
         }
@@ -458,8 +461,19 @@ public final class SystemDoc {
                 }
             }
             case "generator" -> {
-                if (s.path("processor").asText("").isBlank()) {
+                String processor = s.path("processor").asText("");
+                if (processor.isBlank()) {
                     problems.add(at + ": a generator source needs processor");
+                } else {
+                    try {
+                        // zero samples: the runtime checks the processor and its parameters and generates nothing
+                        org.opentsx.retrieval.generate.Generators.values(processor, s.path("params"), 0, 1, 0, 0, null, null);
+                    } catch (IllegalArgumentException e) {
+                        problems.add(at + ": " + e.getMessage());
+                    }
+                }
+                if (s.has("select")) {
+                    problems.add(at + ": a generator source has no select; its series has the metric <system>.<signal id>");
                 }
                 origin = Origin.SYNTHETIC.name();
             }
