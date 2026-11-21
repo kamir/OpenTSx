@@ -15,6 +15,14 @@ entries before 3.0.0 are grouped by date.
 - Remove unused frontend plotting packages and their mapping dependencies.
   Workbench charts use browser Canvas and SVG; the lockfile regression rejects
   unsupported MapLibre runtime releases.
+- Align the local Workbench constraints and generated wheel lock with the
+  Python forecasting extra's statsmodels 0.15.0 runtime. Verify reported runtime
+  provenance against the installed package and reject diverging launcher pins.
+- TASK-020 U01 decisions D-T16 to D-T22 (owner, 2026-11-21). `TsxCompileContext.Boundary` loses `admitsRaw` (D-T22):
+  no raw series, pair or vector and no operator with merge class `none` can feed a federated sink. Spec S1.10, S2.2
+  and S2.4 state that a site has exactly one node (D-T17) and that the local worker's capabilities are trusted-local
+  without a fleet qualification claim (D-T18).
+
 - Documentation, comments and example files describe the current code. Chapter 15 drops the pair windows from the
   open items, links PAIR-WINDOWS-SPEC from P8 and lists the twin variants T and L as proofs of concept. The worked
   example of chapter 16 counts twelve components and sixteen signals and names the five flows that run. The `maxAge`
@@ -557,6 +565,24 @@ entries before 3.0.0 are grouped by date.
 
 - The KafScale conformance suite probes `Admin.listOffsets` with `OffsetSpec.earliest()` and `OffsetSpec.latest()`,
   which the Flink Kafka source uses for end offsets and bounded runs. Both answer correctly on KafScale v1.6.0.
+
+- Data model `v2.2`: the `resultId` of an `AnalysisResult` binds the content of its input episodes. The new field
+  `inputDigests` holds a SHA-256 content digest per input episode over the series key, unit, time range, timestamps,
+  values and quality (Java `Episodes.contentDigest`, Python `opentsx.model.content_digest`). The digests enter the
+  canonical form as a `{...}` section, so a result on a revised episode with the same episode id gets another id.
+  `opentsx.algorithms.results` fills the digests; the Python builder `analysis_result` requires `input_digests`.
+  Records written with `v2.1` decode in Java, Python and the workbench with empty `inputDigests` and keep their ids.
+  Python now ships the `v2.1` writer schema of `AnalysisResult` to read them. New vectors `episode-digest.json` and
+  `analysis-result-wire.json` (`v2.2` bytes). `wire-format.json` stays byte-identical because catalog
+  `tsx-catalog/1` pins it; its `analysisResults` entries are now the `v2.1` vectors and the generator rebuilds it from
+  `schema-history/v2.1`. The workbench result view shows the digests and says when a record has none.
+
+- Sealed buckets carry a content checksum. `BucketWriter` seals with `Buckets.contentChecksum`: `sha256:` and the
+  SHA-256 over every episode id with its content digest. It rejects an episode id that is already in the bucket with
+  other content before sending it. `ReplayService` verifies a bucket replay against the episode contents, so an episode
+  that comes back with other values under the same id no longer passes as verified. Manifests sealed with the id-only
+  `Buckets.checksum` (no `sha256:` prefix) still verify, by their ids. Python gets `bucket_content_checksum`; new
+  vectors `bucket-content-checksum.json`. `bucket-checksum.json` and the Rust id-only helper are unchanged.
 
 ### Changed
 

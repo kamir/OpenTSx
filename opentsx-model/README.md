@@ -6,13 +6,13 @@ the v2 data model. The Python twin is `opentsx.model` in `python-package`, and i
 | Class | Purpose |
 |-------|---------|
 | `SeriesKeys` | series identity: canonical form, xxHash64 `seriesId` |
-| `Episodes` | build episodes (`regular`, `irregular`), values, timestamps, validation |
-| `AnalysisResults` | analysis result identity: canonical form, xxHash64 `resultId`, parameter normalization, `verify` |
+| `Episodes` | build episodes (`regular`, `irregular`), values, timestamps, validation, SHA-256 `contentDigest` |
+| `AnalysisResults` | analysis result identity: canonical form with input content digests, xxHash64 `resultId`, parameter normalization, `verify` |
 | `TimeAxis`, `Micros` | REGULAR / IRREGULAR_DELTA time axis; epoch-microsecond helpers |
 | `Summaries` | Welford summaries; exact merge |
 | `OpenTsxAvro`, `WireFormat` | single-object encoding (default), Confluent framing on read |
 | `kafka.OpenTsxSerializer` / `OpenTsxDeserializer` | Kafka value serde |
-| `Buckets` | bucket manifest helpers and checksum |
+| `Buckets` | bucket checksums: `contentChecksum` (`sha256:`, binds episode contents), id-only `checksum` |
 | `Ulid` | sortable ids; `Ulid.deterministic(millis, seed)` for reproducible jobs |
 | `SchemaHistory` | frozen schema versions with a BACKWARD_TRANSITIVE check |
 
@@ -23,19 +23,21 @@ the v2 data model. The Python twin is `opentsx.model` in `python-package`, and i
 ## Build an analysis result
 
 `AnalysisResults` computes the `resultId` of an `AnalysisResult` and checks a record. Java and Python compute the same
-id. The canonical form is in the user guide, section
-[3.6 Analysis results](../docs/user-manual/03-data-model.md#36-analysis-results).
+id. The id binds the content of the inputs through `Episodes.contentDigest`. The canonical form is in the user guide,
+section [3.6 Analysis results](../docs/user-manual/03-data-model.md#36-analysis-results).
 
 ```java
 Map<String, Object> params = AnalysisResults.params(Map.of("order", 1, "scales", List.of(16, 32, 64, 128, 256)));
 List<String> inputs = List.of(episode.getEpisodeId());
+List<String> digests = List.of(Episodes.contentDigest(episode));
 AnalysisResult result = AnalysisResult.newBuilder()
-        .setResultId(AnalysisResults.resultId("dfa", "1.0.0", params, inputs))
+        .setResultId(AnalysisResults.resultId("dfa", "1.0.0", params, inputs, digests))
         .setMethod("dfa")
         .setMethodVersion("1.0.0")
         .setParams(params)
         .setInputEpisodeIds(inputs)
         .setInputSeriesIds(List.of(episode.getSeries().getSeriesId()))
+        .setInputDigests(digests)
         .setTStart(episode.getTStart())
         .setTEnd(episode.getTEnd())
         .setScalars(List.of(ResultScalar.newBuilder().setName("alpha").setValue(0.75).build()))
@@ -53,7 +55,12 @@ byte[] payload = new OpenTsxAvro().encode(result);
   `IllegalArgumentException`. A `Boolean` throws `boolean parameters are not supported; use a long (0 or 1) or a
   string`. A `Float` throws `unsupported parameter type: Float`.
 * NaN in a parameter throws `IllegalArgumentException: NaN is not allowed in analysis parameters`.
-* `verify` throws `IllegalArgumentException` when `resultId` does not match, when `inputSeriesIds` and
-  `inputEpisodeIds` differ in length, when `tStart` is not before `tEnd`, when a curve has `x` and `y` of different
-  length, or when a matrix does not have `rowKeys.size() * colKeys.size()` values.
+* Pass one `Episodes.contentDigest` per input episode, in the order of `inputs`. A different count throws
+  `IllegalArgumentException: 1 inputDigests for 2 inputEpisodeIds`. A digest that is not 64 lower-case hex characters
+  throws `IllegalArgumentException: input digest 0 is not 64 lower-case hex characters`.
+* An empty digest list gives the id without content binding. Use it only to check records written with `v2.1`.
+* `verify` throws `IllegalArgumentException` when `resultId` does not match (also when `inputDigests` changed), when
+  `inputDigests` has the wrong count or form, when `inputSeriesIds` and `inputEpisodeIds` differ in length, when
+  `tStart` is not before `tEnd`, when a curve has `x` and `y` of different length, or when a matrix does not have
+  `rowKeys.size() * colKeys.size()` values.
 * `OpenTsxAvro` reads and writes `AnalysisResult` like the other top-level records.

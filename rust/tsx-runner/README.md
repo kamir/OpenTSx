@@ -147,7 +147,8 @@ The service holds one exclusive directory lock and accepts one unfinished whole-
 Worker and checkpoint owners explicitly unlock in the acquiring process when
 they close. Inherited descriptors do not postpone that release or authorize
 another process to unlock the owner.
-Keep this unauthenticated HTTP interface inside a trusted local network.
+Keep this unauthenticated HTTP interface inside a trusted local network. It is a trusted-local profile: fleet
+admission uses only the signed site path (`agent`), not `GET /v1/capabilities` (D-T18 in TASK-020).
 
 Use these HTTP operations:
 

@@ -71,10 +71,10 @@ deploy/k3s/40-demo.sh windpark-sim
 Runs `opentsx windpark-sim --scenario /opt/opentsx/share/scenarios/ostsee-demo.yaml --kafscale … --domain wind
 --partitions 6 --index /data/wind-index.tsv --ground-truth /data/ground-truth.json` (lake profile: plus
 `--iceberg … --namespace tsx`): 10 turbines × 10 channels, 6 h at 1 Hz, with curtailment, a fault, maintenance and
-five sensor faults. Then it restarts `opentsx-stats` so the processor assigns the partitions. Output:
+five sensor faults. Then it restarts `opentsx-stats` so the processor assigns the partitions. The first output line,
+trimmed below, is `bucket <bucketId> sealed: <count> episodes, checksum sha256:<64 hex characters>`. Output:
 
 ```text
-bucket 01M4QZS8J3CT5Q37CH8B2X56VE sealed: 3600 episodes, checksum 848ac31ffbf595a0
 scenario ostsee-demo: 3,600 episodes, 2,160,000 values, 17 ground-truth events
   T01    4538.4 kWh  mean wind  7.51 m/s  states {1=21310, 2=1, 3=289}
   T02    2927.4 kWh  mean wind  6.50 m/s  states {1=21503, 2=97}

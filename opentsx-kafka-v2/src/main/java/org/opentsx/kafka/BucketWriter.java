@@ -4,6 +4,7 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.opentsx.model.Buckets;
+import org.opentsx.model.Episodes;
 import org.opentsx.model.Micros;
 import org.opentsx.model.OpenTsxAvro;
 import org.opentsx.model.Ulid;
@@ -24,8 +25,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Writes one bucket: an OPEN manifest, its episodes (async, key = seriesId, record timestamp = tStart), and a
- * SEALED manifest with episode count, time range and checksum once every episode is acknowledged.
- * Index entries are taken from the producer acknowledgements.
+ * SEALED manifest with episode count, time range and {@link Buckets#contentChecksum} once every episode is
+ * acknowledged. Index entries are taken from the producer acknowledgements.
  *
  * <pre>{@code
  * try (BucketWriter w = BucketWriter.open(producer, layout, index, "exp-2026-10-ffmlrc", descriptor)) {
@@ -43,6 +44,7 @@ public final class BucketWriter implements AutoCloseable {
     private final OpenTsxAvro avro = new OpenTsxAvro();
     private final BucketManifest openManifest;
     private final List<String> episodeIds = new ArrayList<>();
+    private final Map<String, String> contentDigests = new LinkedHashMap<>();
     private final List<CompletableFuture<IndexEntry>> pending = new ArrayList<>();
     private final AtomicReference<Exception> failure = new AtomicReference<>();
     private final AtomicLong payloadBytes = new AtomicLong();
@@ -84,7 +86,11 @@ public final class BucketWriter implements AutoCloseable {
         return openManifest.getBucketId();
     }
 
-    /** Sends one episode of this bucket. An episode without bucketId is assigned to this bucket. */
+    /**
+     * Sends one episode of this bucket. An episode without bucketId is assigned to this bucket. An invalid episode,
+     * or an episode id already in this bucket with other content, throws {@code IllegalArgumentException} before
+     * anything is sent.
+     */
     public synchronized CompletableFuture<IndexEntry> append(Episode episode) {
         if (sealed != null) {
             throw new IllegalStateException("bucket " + bucketId() + " is sealed");
@@ -94,6 +100,12 @@ public final class BucketWriter implements AutoCloseable {
             e = Episode.newBuilder(episode).setBucketId(bucketId()).build();
         } else if (!e.getBucketId().equals(bucketId())) {
             throw new IllegalArgumentException("episode " + e.getEpisodeId() + " belongs to bucket " + e.getBucketId());
+        }
+        String digest = Episodes.contentDigest(e);
+        String earlier = contentDigests.putIfAbsent(e.getEpisodeId(), digest);
+        if (earlier != null && !earlier.equals(digest)) {
+            throw new IllegalArgumentException("episode " + e.getEpisodeId() + " is already in bucket " + bucketId()
+                    + " with other content");
         }
         byte[] payload = avro.encode(e);
         payloadBytes.addAndGet(payload.length);
@@ -152,7 +164,8 @@ public final class BucketWriter implements AutoCloseable {
                 .setEpisodeCount(episodeIds.size())
                 .setTMin(episodeIds.isEmpty() ? null : Micros.toInstant(tMin))
                 .setTMax(episodeIds.isEmpty() ? null : Micros.toInstant(tMax))
-                .setChecksum(Buckets.checksum(episodeIds))
+                .setChecksum(Buckets.contentChecksum(List.copyOf(contentDigests.keySet()),
+                        List.copyOf(contentDigests.values())))
                 .build();
         sendManifest(manifest);
         sealed = manifest;
