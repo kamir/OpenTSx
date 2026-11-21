@@ -2,7 +2,7 @@
 
 > Status: **implemented** in `opentsx-model` (Java) and `opentsx.model` (Python); the result identity also in the web
 > workbench (`opentsx-saas-frontend/src/workbench/resultIds.ts`).
-> Design and rationale: 02-ZIELMODELL.md (German). This file is the normative specification.
+> This file is the normative specification.
 > Java, Python and TypeScript are checked against shared test vectors
 > (`opentsx-model/src/test/resources/testvectors`).
 

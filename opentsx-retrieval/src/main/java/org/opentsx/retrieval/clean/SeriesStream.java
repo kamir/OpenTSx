@@ -27,7 +27,7 @@ import java.util.TreeMap;
  * <ul>
  *   <li><b>The clean series</b> has the metric of the raw series and its tags, plus {@code system},
  *   {@code signal}, {@code grade} and {@code flow}, the deployment that writes it. Two flows that write the same
- *   signal therefore write two series, and what one wrote never mixes with what the other wrote (decision D84). Its
+ *   signal therefore write two series, and what one wrote never mixes with what the other wrote. Its
  *   unit is that of the raw series unless the chain converts it.</li>
  *   <li><b>Series arrive in time order.</b> A block that begins before the end of the previous block of its series
  *   is skipped and counted: a duplicate, or data out of order.</li>

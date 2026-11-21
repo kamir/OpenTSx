@@ -185,6 +185,21 @@ fn alignment_emits_typed_vectors_from_distinct_whole_topic_series() {
 }
 
 #[test]
+fn alignment_refuses_two_inputs_with_one_name() {
+    let episodes = pair_input();
+    let value = paired_request(
+        "align.vector",
+        json!({"every":1,"key":"all","names":["same","same"]}),
+        "opentsx.vector.v1",
+        &episodes,
+    );
+    assert_eq!(
+        admit(&value.to_string(), ARTIFACT_DIGEST).err().as_deref(),
+        Some("node result: two inputs of the vector are both named \"same\"; give every input its own name")
+    );
+}
+
+#[test]
 fn cross_correlation_executes_and_enforces_the_exact_product_limit() {
     let episodes = pair_input();
     let value = paired_request(

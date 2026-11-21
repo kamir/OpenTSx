@@ -4,7 +4,7 @@ Flink 1.20.5 jobs for OpenTSx:
 
 * `stats.StatsJob` runs the v2 statistics engine of [`opentsx-stats`](../opentsx-stats/README.md) on the episode
   and observation topics and writes `SeriesStats`, the same records as the KafScale processor.
-* `pfd.DynamicTopologyJob` runs processing-flow descriptors (TASK-005) on the legacy `TimeSeriesObject` API.
+* `pfd.DynamicTopologyJob` runs processing-flow descriptors ([schema](../docs/devguide/schemas/processing-flow-descriptor-schema.json), [validation](../docs/devguide/validation/PFD_VALIDATION_PLAN.md)) on the legacy `TimeSeriesObject` API.
 
 ## StatsJob
 
@@ -102,5 +102,4 @@ Apache License 2.0.
 ## Related Documentation
 
 - [OpenTSx user manual](../docs/user-manual/README.md), chapter 7 (statistics) and chapter 11 (classic analytics)
-- TASK-003: Flink integration plan (archived)
 - [Apache Flink Documentation](https://flink.apache.org/docs/)

@@ -1,6 +1,7 @@
-# Example flow in the form a person writes, opentsx.flow.v1 (proposal, no schema yet): it names signals, not
-# series ids or topics. A translation step turns it into the DAG of the processor (docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 3).
-# The processor cannot run it today: it runs align.vector only and writes vectors only (docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 5).
+# Example flow in the form a person writes, opentsx.flow.v1 (no JSON schema): it names signals, not series ids or
+# topics. No code translates it into a DAG (docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 3). The vector
+# processor runs this chain (plausible range, then the mean per minute) as the opentsx.dag.v2 document the workbench
+# writes (docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 5).
 schema: opentsx.flow.v1
 flow: turbine-power-clean
 reads: ["park/T02/WTUR.W@raw"]

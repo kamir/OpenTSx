@@ -7,9 +7,9 @@
 import { create } from 'zustand';
 import { checkBrowserWork } from './workLimits';
 import { PROCESSOR_SERIES_OPS, capabilityOf } from './capabilities';
-import { OP_BY_ID, defaultParams } from './ops';
+import { OP_BY_ID, defaultParams, inCatalog } from './ops';
 import { Bucket, FlowNode, Params, SignalContext, SourceInfo, WayangConfig } from './types';
-import { VECTOR_OP, VECTOR_SCHEMA, componentNames } from './vector';
+import { VECTOR_OP, VECTOR_SCHEMA, componentNames, inputNameClash } from './vector';
 
 export const SOURCE_ID = 'source';
 /** `kind` of a flow definition stored in the backend by the workbench. */
@@ -675,7 +675,7 @@ export function validate(nodes: FlowNode[]): Finding[] {
     const other = topics.get(s.sinkTopic!);
     if (other) out.push({ level: 'error', text: `${other} and ${s.label} write to the same topic ${s.sinkTopic}.` });
     topics.set(s.sinkTopic!, s.label);
-    const missing = upstream(nodes, s.id).filter((n) => n.op !== 'source' && !OP_BY_ID[n.op]?.inCatalog);
+    const missing = upstream(nodes, s.id).filter((n) => n.op !== 'source' && !inCatalog(n.op));
     if (missing.length > 0) {
       out.push({
         level: 'warning',
@@ -683,16 +683,18 @@ export function validate(nodes: FlowNode[]): Finding[] {
       });
     }
   }
+  const used = new Set<string>();
+  for (const s of sinks) for (const n of upstream(nodes, s.id)) used.add(n.id);
   for (const n of nodes) {
+    const clash = n.op === VECTOR_OP && used.has(n.id) ? inputNameClash(vectorComponents(nodes, n)) : null;
+    if (clash) out.push({ level: 'error', text: `${n.label}: ${clash}.` });
     if (n.op === VECTOR_OP && inputsOf(n).length < 2) {
       out.push({ level: 'warning', text: `${n.label} has one input only. Add further inputs: each becomes a component of the vector.` });
     }
-    if (n.op === VECTOR_OP && !['none', 'as-of'].includes(String(n.params.fill ?? 'none'))) {
+    if (n.op === VECTOR_OP && used.has(n.id) && !['none', 'as-of'].includes(String(n.params.fill ?? 'none'))) {
       out.push({ level: 'error', text: `${n.label}: vector fill must be none or as-of.` });
     }
   }
-  const used = new Set<string>();
-  for (const s of sinks) for (const n of upstream(nodes, s.id)) used.add(n.id);
   const unused = nodes.filter((n) => n.op !== 'source' && !used.has(n.id));
   if (sinks.length > 0 && unused.length > 0) {
     out.push({ level: 'info', text: `${unused.length} node(s) feed no published topic and are left out of the DAG.` });
@@ -729,7 +731,7 @@ export function toDagYaml(s: FlowDoc): string {
     const op = OP_BY_ID[n.op];
     const params = dagParams(s.nodes, n, toSeries.has(n.id));
     lines.push(`  - id: ${n.id}`);
-    lines.push(`    op: ${op?.dagOp ?? n.op}${op?.inCatalog ? '' : '   # not in the stream operator catalog'}`);
+    lines.push(`    op: ${op?.dagOp ?? n.op}${inCatalog(n.op) ? '' : '   # not in the stream operator catalog'}`);
     if (n.op.startsWith('pair.')) lines.push('    experimental: true');
     lines.push(`    in: [${inputsOf(n).map((i) => (i === SOURCE_ID ? 'decode' : i)).join(', ')}]`);
     if (typeof params === 'string') lines.push(`    params: ${params}`);
@@ -761,7 +763,9 @@ export function toDagYaml(s: FlowDoc): string {
 }
 
 /**
- * Processing Flow Descriptor of TASK-005 for the path down to one node.
+ * Processing Flow Descriptor in the layout of the desktop PFD recorder, for the path down to one node. Like a
+ * PFDRecorder preview it can hold operations and parameters that
+ * docs/devguide/schemas/processing-flow-descriptor-schema.json rejects, and its KAFKA output is rejected there too.
  * The descriptor is a linear list of steps, so it describes one branch.
  */
 export function toPfdJson(s: Pick<FlowState, 'track' | 'sourceTopic' | 'nodes'>, nodeId: string): string {

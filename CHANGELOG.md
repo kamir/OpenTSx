@@ -3,8 +3,7 @@
 All notable changes to OpenTSx are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Releases are tagged `v<version>`;
-entries before 3.0.0 are grouped by date. The detailed progress log is in
-`EVOLUTION/TASK-011-datamodel-refresher-2026.md`.
+entries before 3.0.0 are grouped by date.
 
 ## [Unreleased]
 
@@ -13,6 +12,15 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Documentation, comments and example files describe the current code. Chapter 15 drops the pair windows from the
+  open items, links PAIR-WINDOWS-SPEC from P8 and lists the twin variants T and L as proofs of concept. The worked
+  example of chapter 16 counts twelve components and sixteen signals and names the five flows that run. The `maxAge`
+  description of `opentsx.decision.v1`, rule C7 of the Wayang concept, the javadoc of `TopicLayout.clean()`, `jobs[]`
+  of `GET /v1/dags`, the features topic of the KafScale feed and the five places of the Systems shell match the code.
+  References to the removed German drafts, task files and their decision ids point to the English specifications or
+  are removed. Links to the 2025 documentation point to the tag `v3.0.1`; the 2025 release summary of
+  `opentsx-saas-backend` is removed and stays at that tag. Pages about measurement runs say that the raw files are not
+  in this repository.
 - OpenTSx is maintainer-led: issues are welcome, pull requests are reviewed after the change was agreed in an
   issue ([`GOVERNANCE.md`](GOVERNANCE.md), `CONTRIBUTING.md`, `.github/CODEOWNERS`).
 - `tools/test_wayang_track_a_results.py` checks the public Track A record (matrix, 306 raw-file names and SHA-256
@@ -30,9 +38,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   physical ARM64 measurement open and ARMv7 outside hardware qualification.
   Bind the verified library-learning version to the current release.
   Keep conversion expressions copyable as inline code in generated lessons.
-- Accept idle Kafka frame-boundary resets and cancelled metadata requests in the
-  validation observer. Retain response correlations until forwarding succeeds;
-  keep interrupted frames and resets with data requests as errors.
+- Retain a response correlation in the validation observer until its response
+  is forwarded and flushed or its client has ended the connection.
 - Resolve Central dependencies and plugins in CI through a Google Cloud-hosted
   mirror. Verify endpoint selection and permanent errors offline, including a
   Central 404 response with a long Retry-After value.
@@ -103,16 +110,19 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `tsx-catalog/1` pins it; its `analysisResults` entries are now the `v2.1` vectors and the generator rebuilds it from
   `schema-history/v2.1`. The workbench result view shows the digests and says when a record has none.
 
+- TASK-020 U01 delivery cursor: `TsxPlanServiceDeliveryCursorTest` and the Rust agent test
+  `agent_cursor_follows_the_site_sequence_across_jobs_through_restart_and_duplicate_ack` deliver job A at version 10
+  and then job B at version 1 to one site, restart, and repeat the acknowledgement. Job B is delivered and run, the
+  cursor is the site's delivery sequence, and a repeated identical acknowledgement is accepted while a changed one is
+  refused. Both tests fail when the cursor follows `planVersion`. No production code changes.
 - `tsx-runner` site configuration field `profile` (`ground` or `orbit`). In the `orbit` profile `agent` and
   `run --plan` keep a plan running when a status record cannot reach the plan service: the record goes to a durable
   outbox in the state directory, bounded to 5,760 records, and buffered records are sent oldest first before newer
   and terminal records. A full outbox stops the plan. The `ground` profile, also used without the field, still
   stops a plan when a heartbeat fails.
-
 - The workbench Deployments panel lists the `jobs` of `GET /v1/dags` apart from the deployments: job id, track, site
   when present, state, input record count and report age. A job in any state but `stopped` or `failed` without a
   report for 120 s is flagged. Jobs have no Stop, because Track A and B do not read the control topic.
-
 - English normative specifications for the rules that code, tests and `systems/` cite:
   [`VECTOR-AND-DAG-SPEC.md`](docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md),
   [`SYSTEM-DOCUMENT-SPEC.md`](docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md),
@@ -566,6 +576,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- `docs/datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md` has the bytes its `manifest.json` pins again;
+  the repository split had replaced its links to the raw files with plain text. `tools/check_links.py` leaves files
+  that a measurement manifest pins out, and `tools/test_measurement_records.py` fails when a committed file differs
+  from the digest its manifest pins.
+
 - The web workbench takes the default clock of `pair.coverage`, `pair.xcorr` and `pair.es` per pair range: the larger
   sampling interval of the two paired episodes, on their sample times in epoch microseconds. Wayang and the Rust
   runner use the same rule. The note names the smallest and the largest clock. A pair method refuses a series whose
@@ -585,7 +600,33 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - The recommendation in `systems/decisions/h2-dispatch.records.example.yaml` no longer carries `shadow: true`,
   because an approval and an action follow it. `SystemDocTest` refuses an approval or an action that follows a
   recommendation in shadow operation. No component reads records at run time.
+- The web workbench takes its catalog marking from catalog 1 (`systems/catalogs/tsx-catalog-1.yaml`). The DAG export
+  writes `# not in the stream operator catalog`, and the publish check warns, only for operators that catalog 1 does
+  not list. `align.vector`, `convert.unit`, `model.wind-shear`, `model.power-curve`, `feature.lag`, `feature.rolling`,
+  `pair.xcorr` and `pair.es` are catalog operators. A test compares the list `CATALOG_1` of the workbench with the
+  catalog file. An exported flow that uses one of these operators now differs in text from its earlier export and
+  gets another `specHash`: deploying it under the name of a running DAG ends that DAG, deletes its checkpoints and
+  starts it again from `source.start`.
+- The workbench preview of `align.vector` refuses two series that give the same component of one vector, with the
+  rule and message of the vector processor, instead of aggregating them into one value that every deployment refuses.
+  "Create a vector of the loaded series" names components as the operator does when it suggests a key, so two
+  channels with the same last metric segment, such as `wind.rotor.speed` and `wind.generator.speed`, keep one vector
+  per series. The `tsx-runner` refusal names both series by their ids, as the Java processor does.
 
+- Classify the end of a validation observer connection by side. Any end of the
+  client stream, a clean close or a reset, between frames or inside a frame, and
+  a socket error while writing a response to the client, are abandonment and do
+  not fail the check. The observer records a response only after writing and
+  flushing it to the client. It reads the client stream to its end, then closes
+  the client side, also while a response write is blocked, half-closes the
+  broker side and drops the pending requests. Broker responses that arrive
+  after that end or after a failed client write are dropped without being
+  recorded. Before that end, a complete client frame that fails validation, an
+  unknown response correlation, and a close, reset or other I/O error on the
+  broker side, with or without pending requests, fail the check. The B3
+  offline signal link ends a connection without a failure when its runner side
+  closes or resets, half-closes toward the observer on a clean runner end, and
+  fails on errors while both sides are open.
 - Concept 20 section 6.1 and the TASK-020 B1 notes list the signed `tsx-runner`
   modes that exist. With the B3 site configuration, `agent`, `conform` and `run`
   handle signed bounded statistics. With the B1 configuration, `run` executes
@@ -594,9 +635,26 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   control record has that name. A record that carries `job` is a job record. It is not shown as a refusal of the
   processor and does not replace a refusal under the same key. Specification S5.4 requires `job` in every Track A
   and B record.
+- Every runtime refuses an `align.vector` node in which two inputs have the same name, with one message:
+  `node <id>: two inputs of the vector are both named "<name>"; give every input its own name`. The vector processor
+  (`VectorJob`, `DagPlan`), Wayang when it compiles the DAG and the Rust runner use it as written. `VectorAligner.align`,
+  `new VectorStream(inputNames, ...)`, `VectorStream::new` of the Rust runner and the workbench preview use the text
+  after `node <id>: `. `VectorAligner.align` filled one component with the samples of both inputs, so `COUNT` gave
+  `2.0` where `VectorStream` gave `1.0`, and the processor accepted `names: [a, a]`. Wayang refused only when it
+  built the plan, and Rust gave a generic message. The workbench renamed a repeated typed name to `<name>_2`. It now
+  writes a typed name in lower-case snake case (lower case, every run of characters other than a-z and 0-9 becomes
+  `_`, and `_` at either end is dropped) and never renames it, so two typed names with the same snake-case name are
+  refused. It gives a derived name `_2` when another input has it, fails the preview and, for a vector that feeds a
+  published node, lists `<label>: two inputs of the vector are both named "<name>"; give every input its own name.`
+  in the deploy checks. A vector that feeds no published node is left out of the DAG and does not block the flow;
+  the deploy check for an unknown `fill` follows the same rule.
 - The retrieval server with `--kafscale` follows `tsx.<domain>.features.v2` like the clean and synthetic topics.
   Feature series appear in `GET /v1/inventory`, and `GET /v1/systems/{id}/signals` shows their data under the
   features grade. The inventory names the topic under `source.topics.features`.
+- `VectorAligner.align` refuses two series that give the same component of one vector instead of aggregating them
+  into one value. The message is the one of the vector processor (`VectorStream` with one set of series):
+  `the series <a> and <b> both give the component "<c>" of one vector; choose a key that tells them apart`. `<a>` and
+  `<b>` are the series ids. `<a>` comes first: inputs in their order, the series of one input in id order.
 
 - Retrieval POST routes `/v1/patterns/search`, `/v1/episodes/similar` and `/v1/segments` require a single JSON object
   and report invalid bodies as HTTP 400. Response exchanges close after success or failure while preserving the
@@ -673,6 +731,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `node <id>: vector fill must be none or as-of`. The deploy checks of the workbench and of the Flow Composer list
   `<label>: vector fill must be none or as-of.`, so such a stored flow still opens but is neither downloaded nor
   deployed; the DAG export writes the fill as stored. A missing `fill` stays `none`.
+
+- The disposable KafScale clusters of the Wayang integration tests no longer accept a port that another process
+  answers. The fixture releases each reserved port before `kafscale-cluster` binds it and counted any answer on
+  the port as ready. A cluster's broker could bind the port reserved for the next cluster; that cluster's Proxy
+  then failed with `bind: address already in use` while its clients read the first cluster's records. A cluster
+  now counts as ready only when its own log shows its Proxy listening on the reserved port and its broker
+  listening, and its process still runs. A lost port restarts that cluster on a new port; after five attempts the
+  fixture fails. Each retry writes `<cluster>.<n>.log` next to `<cluster>.log`.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

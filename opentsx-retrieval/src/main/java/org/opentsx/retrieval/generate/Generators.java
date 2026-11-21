@@ -143,9 +143,9 @@ public final class Generators {
 
     /**
      * As {@link #episodes(Target, JsonNode, long, long, long)}, with the time of the run in the label
-     * {@code generatedAt}. A run is part of the identity of its series (tag {@code run}, decision D85): the same
-     * generator with the same parameters over the same period gives the same series and replaces itself; another
-     * period or other parameters give another series, so two runs never mix in one series.
+     * {@code generatedAt}. A run is part of the identity of its series (tag {@code run}, SYSTEM-DOCUMENT-SPEC.md,
+     * section 4.2): the same generator with the same parameters over the same period gives the same series and
+     * replaces itself; another period or other parameters give another series, so two runs never mix in one series.
      */
     public static List<Episode> episodes(Target target, JsonNode params, long intervalMicros, long fromMicros, long toMicros,
                                          java.time.Instant generatedAt) {

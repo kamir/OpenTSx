@@ -3,7 +3,8 @@
 # 120 m, and the power curve of four turbines of 3 MW turns it into power. An estimate: it does not fall when the
 # park is restricted or curtailed, as the measured power does. Both models are simple and named: one exponent for
 # every weather, no air density, no wake losses, a station 23 km away. Runs in the vector processor
-# ("model.wind-shear", "model.power-curve"); this authoring form is not read by code yet.
+# ("model.wind-shear", "model.power-curve"). The retrieval server reads this file for its checks; no code translates
+# it into a DAG (docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 3).
 schema: opentsx.flow.v1
 flow: park-potential
 reads: ["park/DWD-01759/wind_speed@clean"]

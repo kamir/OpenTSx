@@ -95,6 +95,19 @@ class VectorAlignerTest {
     }
 
     @Test
+    void refusesTwoInputsWithOneNameAsTheStreamDoes() {
+        VectorAligner.Params count = new VectorAligner.Params(Duration.ofSeconds(60), "series", VectorAligner.Agg.COUNT, false, null, false);
+        VectorAligner.Series s = new VectorAligner.Series("s", "wind.met.wind_speed", Map.of(), new long[]{0}, new double[]{1});
+        String message = "two inputs of the vector are both named \"a\"; give every input its own name";
+        assertEquals(message, assertThrows(IllegalArgumentException.class, () -> VectorAligner.align(
+                List.of(new VectorAligner.Input("a", List.of(s)), new VectorAligner.Input("a", List.of(s))), count)).getMessage());
+        assertEquals(message, assertThrows(IllegalArgumentException.class,
+                () -> new VectorStream(List.of("a", "a"), count, java.util.Set.of("s"), 0)).getMessage());
+        assertEquals(List.of(1.0, 1.0), VectorAligner.align(
+                List.of(new VectorAligner.Input("a", List.of(s)), new VectorAligner.Input("b", List.of(s))), count).get(0).values());
+    }
+
+    @Test
     void refusesAnUnknownTagAndAClockOfZero() {
         VectorAligner.Series s = new VectorAligner.Series("a", "m.x", Map.of("turbine", "T01"), new long[]{0}, new double[]{1});
         List<VectorAligner.Input> in = List.of(new VectorAligner.Input("x", List.of(s)));
@@ -105,5 +118,30 @@ class VectorAlignerTest {
                 () -> new VectorAligner.Params(Duration.ZERO, "series", VectorAligner.Agg.MEAN, false, null, false));
         assertEquals(1, VectorAligner.align(in, new VectorAligner.Params(Duration.ofSeconds(60), "turbine",
                 VectorAligner.Agg.MEAN, false, null, false)).get(0).missing() + 1);
+    }
+
+    @Test
+    void refusesTwoSeriesThatGiveOneComponentAsTheStreamDoes() {
+        VectorAligner.Params all = new VectorAligner.Params(Duration.ofSeconds(60), "all", VectorAligner.Agg.MEAN, false, null, false);
+        VectorAligner.Series a = new VectorAligner.Series("a", "wind.met.wind_speed", Map.of("turbine", "T01"), new long[]{0}, new double[]{1});
+        VectorAligner.Series b = new VectorAligner.Series("b", "wind.met.wind_speed", Map.of("turbine", "T02"), new long[]{0}, new double[]{2});
+        List<VectorAligner.Input> in = List.of(new VectorAligner.Input("x", List.of(b, a)));
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> VectorAligner.align(in, all));
+        assertEquals("the series a and b both give the component \"wind_speed\" of one vector; choose a key that tells them apart",
+                e.getMessage());
+
+        VectorStream v = new VectorStream(List.of("x"), all, java.util.Set.of("a", "b"), 0);
+        v.add(b.id(), b.metric(), b.tags(), b.timesMicros(), b.values(), 60_000_000L);
+        IllegalArgumentException streamed = assertThrows(IllegalArgumentException.class,
+                () -> v.add(a.id(), a.metric(), a.tags(), a.timesMicros(), a.values(), 60_000_000L));
+        assertEquals(streamed.getMessage(), e.getMessage());
+
+        assertEquals(2, VectorAligner.align(in, new VectorAligner.Params(Duration.ofSeconds(60), "turbine",
+                VectorAligner.Agg.MEAN, false, null, false)).size());
+
+        List<VectorAligner.Input> twoInputs = List.of(new VectorAligner.Input("x.wind_speed", List.of(b)),
+                new VectorAligner.Input("x", List.of(a, b)));
+        assertEquals("the series b and a both give the component \"x.wind_speed\" of one vector; choose a key that tells them apart",
+                assertThrows(IllegalArgumentException.class, () -> VectorAligner.align(twoInputs, all)).getMessage());
     }
 }

@@ -747,7 +747,7 @@ function drawHouse(level) {
   if (level === "eg") { const [dx, dy] = P(4.2, 8); s += `<path class="p-door" d="M${dx} ${dy} a54 54 0 0 1 54 -54 v54"/><text class="p-text" x="${dx}" y="${dy + 22}">Front door</text>`; }
   if (level === "kg") { const [tx, ty] = P(4.6, 0.6); s += `<rect class="p-tower" x="${tx}" y="${ty}" width="150" height="70" rx="12"/><rect class="p-tower" x="${tx + 170}" y="${ty}" width="150" height="70" rx="12"/><text class="p-text" x="${tx}" y="${ty + 128}">2 × 2,000 l tank battery, containment tray</text>`; }
   s += `<g transform="translate(${x0} ${y0 + 500})"><path class="p-ink" d="M0 0 h120 M0 -5 v10 M120 -5 v10"/><text class="p-text" x="0" y="20">0</text><text class="p-text" x="104" y="20">2 m</text></g>`;
-  s += `<text class="p-text" x="${x0 + 200}" y="${y0 + 520}">Floor plan schematic, areas from the example house (08 §3)</text>`;
+  s += `<text class="p-text" x="${x0 + 200}" y="${y0 + 520}">Floor plan schematic, invented example areas</text>`;
   return s;
 }
 function drawBoat(view) {

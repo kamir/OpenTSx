@@ -350,7 +350,7 @@ if [[ "$ERRORS" -eq 0 ]] && [[ "$WARNINGS" -eq 0 ]]; then
     echo "Next steps:"
     echo "  1. Build the project: ./bin/010_build.sh"
     echo "  2. Launch GUI: ./bin/000_launch_tsa_workbench.sh"
-    echo "  3. Start onboarding: see ONBOARDING-PATH-SWE.md or ONBOARDING-PATH-TSx.md"
+    echo "  3. Start onboarding: see docs/user-manual/README.md"
     exit 0
 elif [[ "$ERRORS" -eq 0 ]]; then
     echo -e "${YELLOW}⚠ Environment has minor issues (warnings only)${NC}"

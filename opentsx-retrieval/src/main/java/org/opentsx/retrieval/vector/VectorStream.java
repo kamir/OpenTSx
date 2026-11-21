@@ -103,6 +103,10 @@ public final class VectorStream {
         if (expected.isEmpty()) {
             throw new IllegalArgumentException("a vector that keeps running needs the ids of its series (source.series)");
         }
+        String clash = VectorAligner.inputNameClash(inputNames);
+        if (clash != null) {
+            throw new IllegalArgumentException(clash);
+        }
         this.inputNames = List.copyOf(inputNames);
         this.expectedByInput = null;
         this.params = params;

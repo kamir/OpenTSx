@@ -1,6 +1,7 @@
 # Example flow, opentsx.flow.v1 (proposal): features of the clean active power of a turbine, for models to share.
 # Every written node is one feature; its id is the name of the feature and becomes the tag "feature".
-# The processors feature.lag and feature.rolling do not exist yet (docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 5.3).
+# The vector processor runs feature.lag and feature.rolling before a series sink with grade features
+# (docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 5.3).
 schema: opentsx.flow.v1
 flow: turbine-power-features
 reads: ["park/T02/WTUR.W@clean"]

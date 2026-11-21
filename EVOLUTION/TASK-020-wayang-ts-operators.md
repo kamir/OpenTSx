@@ -39,11 +39,15 @@ Each operator still requires its reference vectors and admission gate before use
 - [x] U00 offline foundation: shared execution-assignment schema, exact source/fragment identities, Java/Rust
   preflight validators and generated cross-runtime cases. This establishes no deployed runner or live fencing.
 - [ ] U01 physical deployment, complete ownership, channels, capabilities and structured refusal contract.
+  The delivery cursor gate is met for the signed site path (S5.3): job B at version 1 after job A at version 10 on
+  one site, a restart and a repeated acknowledgement (`TsxPlanServiceDeliveryCursorTest`,
+  `agent_cursor_follows_the_site_sequence_across_jobs_through_restart_and_duplicate_ack` in `rust/tsx-runner/src/agent.rs`).
 - [x] U02 local bounded stage: `RustPlugin` maps connected topic sources, unions, optional fused chain and sink to
   `RustPlatform`; `RustExecutor` invokes one complete stage action with no raw-payload channel or Java fallback.
 - [x] U03 local bounded control: authenticated backend PostgreSQL journal and standalone advisory-lock coordinator,
   frozen UI text/cut/clock/plan, whole-topic ownership, private worker preparation and identical activation retry.
-  Production migrations, per-site delivery sequence, restore fencing and general retire remain open.
+  Production migrations, restore fencing and general retire remain open. This local rollout dispatches to workers
+  directly; the per-site delivery sequence belongs to the signed site path (S5.3) and is qualified under U01.
 - [x] U05 local bounded acceptance: run the actual UI-to-Wayang-to-three-worker Compose helper, retain public
   deployment/receipt and Java parity evidence after initial execution, exact retry and worker/coordinator restart.
 - [x] U03/U04 local continuous control and execution: persist successor plans before dispatch, restore worker-local
@@ -575,7 +579,7 @@ Criteria per milestone: A0 5, A1 7, A2 6, A3 6, A4 9, A5 2, B1 6, B2 3, B3 4, B4
 
 | Id | Question | Options | Recommendation | Decision |
 |---|---|---|---|---|
-| D-T1 | Edge runtime | Rust (Track B); Go (concept 11, D25); none, JVM only | Rust: `apache-avro` supports single-object encoding, `wasmtime` for later user operators; one non-JVM runtime only | as recommended, owner, 2026-11-16 |
+| D-T1 | Edge runtime | Rust (Track B); Go (the Go processor proposal, section 17 of 20-WAYANG-TS-OPERATORS.md); none, JVM only | Rust: `apache-avro` supports single-object encoding, `wasmtime` for later user operators; one non-JVM runtime only | as recommended, owner, 2026-11-16 |
 | D-T2 | Tolerance for federated moments | See qualification below | See qualification below | Owner, 2026-11-17 |
 | D-T3 | Default federation route | signal cluster; job state; both | signal cluster: works with offline sites and continuous jobs | as recommended, owner, 2026-11-16 |
 | D-T4 | Plan delivery | pull agent (S5.3); push agent with an inbound port; SSH only | pull agent; SSH for sites that require it | as recommended, owner, 2026-11-16 |
@@ -602,18 +606,16 @@ CLI site. No bound is established for arbitrary data or other mixed workloads.
 
 ### D-T13: admit FPGA kernels as Tier 3
 
-Accepted by the owner on 2026-11-20 with all seven points as recommended. Evidence and design are in the study
-`02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md`.
+Accepted by the owner on 2026-11-20 with all seven points as recommended.
 
 **Question.** May the catalog admit operator versions that execute as FPGA kernels on raw sensor data, below the
 Rust runner on an onboard computer?
 
 **Why it is asked.**
 
-- Concept 09 places FPGA work outside OpenTSx. Its row "Timed Loop, Real-Time, FPGA" reads "not a task of OpenTSx;
-  clock 1 min, supervisory". RMS, peaks and spectra per
-  run belong to the device, which publishes them as `MEASURED` edge metrics. Real-time and safety
-  stay at the device (`09:174`). D-T13 changes that boundary for data reduction only.
+- OpenTSx does not run timed-loop, real-time or FPGA work; RMS, peaks and spectra per run belong to the device,
+  which publishes them as `MEASURED` edge metrics. Real-time and safety stay at the device. D-T13 changes that
+  boundary for data reduction only.
 - Raw rates exceed the downlink. An illustrative 1,000-channel, 1 kHz, 16-bit feed produces about 173 GB per day,
   about 460 times what one S-band ground station downlinks. Per-minute window statistics of the same feed need 144
   to 288 MB per day (study, section "Raw sensor rates exceed a day of S-band downlink by 460 times").
@@ -627,8 +629,8 @@ Rust runner on an onboard computer?
 
 1. Kernels run only behind the Rust runner of Track B. The runner keeps Kafka transport, Avro framing, keyed state,
    checkpoints and publication. Kernels never read or write a topic (C3, C4).
-2. Kernels reduce data. They do not command actuators, close control loops or carry a safety function. `09:174`
-   stays true.
+2. Kernels reduce data. They do not command actuators, close control loops or carry a safety function. Real-time
+   and safety stay at the device.
 3. The catalog marks FPGA support with an `fpga` key in the existing `runtimes` map of `opentsx.processor.v1`
    (`docs/datamodel-2026/schemas/opentsx.processor.v1.schema.json:102-130`), using the existing `status`, `class`
    and `note` fields (`:390-411`). There is no second registry. A `planned` entry does not establish a deployed
@@ -660,8 +662,8 @@ Rust runner on an onboard computer?
 
 **Consequences.**
 
-- The delivery of the first kernel carries the contract changes in one pull request: the concept 09 row at line 130
-  and an English translation of concept 09; Tier 3 in sections 1 and 15 of concept 20; `runtimes.fpga`, the `raw`
+- The delivery of the first kernel carries the contract changes in one pull request: an English normative statement
+  of the device boundary; Tier 3 in sections 1 and 15 of concept 20; `runtimes.fpga`, the `raw`
   port and tolerance classes in S1 of the SPEC and in the processor schema. Until then no runtime key, port or
   tolerance class for FPGA exists.
 - Each kernel is an operator addition under `AGENTS.md` section 14: manual, SPEC, learning metadata, student
@@ -672,7 +674,7 @@ Rust runner on an onboard computer?
 - A separate FPGA track reached from Wayang repeats the transport, checkpoint and publication logic that the Rust
   runner already holds, and adds a third runtime to keep in parity. D-T1 chose one non-JVM runtime.
 - Not admitting keeps the boundary: FPGA results enter OpenTSx as `MEASURED` edge metrics with the computing device
-  as provenance (`09:163-165`). The reduction that decides what reaches the ground then has no catalog version, no
+  as provenance. The reduction that decides what reaches the ground then has no catalog version, no
   shared vectors and no parity check.
 
 **Not decided by D-T13.** The FPGA family and board; the HLS or HDL toolchain; partial reconfiguration; the onboard

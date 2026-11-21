@@ -7,6 +7,7 @@
  * - Clock: ticks are multiples of `every` seconds since the epoch. Tick k covers [k * every, (k + 1) * every).
  * - Component: one per input node, in the order of the inputs. Its value in a tick is the aggregate of the samples
  *   of that node in the tick. An input with several series per key gives one component per series, in name order.
+ *   Two series that give the same component of one vector are refused, as the processor refuses them.
  * - Key: what forms one vector per tick. `series`: the same series id in every input. `all`: everything in one
  *   vector. A tag name (`turbine`): the series with the same value of that tag.
  * - Missing: a component without a sample in the tick is missing, or (fill as-of) takes its last value when that is
@@ -98,22 +99,34 @@ function snake(text: string): string {
 
 /**
  * Component names from the bucket names of the inputs: what the names have in common at the end (the source they
- * all derive from) is dropped. `custom` (comma separated) replaces names from the left.
+ * all derive from) is dropped. `custom` (comma separated) replaces names from the left. A typed name is written in
+ * lower-case snake case and is never renamed, so two typed names with the same snake-case name are refused
+ * ({@link inputNameClash}). A derived name that another input has gets `_2`, `_3` and so on.
  */
 export function componentNames(labels: string[], custom = ''): string[] {
   let common = labels.length > 1 ? labels[0] : '';
   for (const l of labels) {
     while (common && !l.endsWith(common)) common = common.slice(1);
   }
-  const given = custom.split(',').map((s) => snake(s));
+  const given = custom.split(',').map((s) => snake(s)).slice(0, labels.length);
   const out: string[] = [];
   labels.forEach((l, i) => {
-    const base = given[i] || snake(common ? l.slice(0, l.length - common.length) : l) || 'raw';
+    if (given[i]) {
+      out.push(given[i]);
+      return;
+    }
+    const base = snake(common ? l.slice(0, l.length - common.length) : l) || 'raw';
     let name = base;
-    for (let k = 2; out.includes(name); k++) name = `${base}_${k}`;
+    for (let k = 2; out.includes(name) || given.includes(name); k++) name = `${base}_${k}`;
     out.push(name);
   });
   return out;
+}
+
+/** The refusal of a vector in which two inputs have one name, or null. Every runtime refuses it with this text. */
+export function inputNameClash(names: string[]): string | null {
+  const name = names.find((n, i) => names.indexOf(n) !== i);
+  return name === undefined ? null : `two inputs of the vector are both named "${name}"; give every input its own name`;
 }
 
 /** Name of a series inside its input: the metric when the source carried one, otherwise the label. */
@@ -135,6 +148,8 @@ export function alignVector(first: Bucket, p: Params, others: Bucket[] = []): Bu
   const complete = String(p.emit ?? 'any') === 'complete';
   const keyBy = String(p.key ?? 'series').trim() || 'series';
   const names = componentNames(inputs.map((b) => b.name), String(p.names ?? ''));
+  const clash = inputNameClash(names);
+  if (clash) throw new Error(clash);
   const originMs = first.t0Ms ?? 0;
   const originS = originMs / 1000;
 
@@ -146,7 +161,7 @@ export function alignVector(first: Bucket, p: Params, others: Bucket[] = []): Bu
 
   // key -> component -> tick -> cell
   const components: string[] = [];
-  const keys = new Map<string, { sample: Series; cells: Map<string, Map<number, Cell>>; units: Map<string, string | undefined> }>();
+  const keys = new Map<string, { sample: Series; cells: Map<string, Map<number, Cell>>; units: Map<string, string | undefined>; seriesOf: Map<string, string> }>();
   inputs.forEach((b, c) => {
     const shift = ((b.t0Ms ?? originMs) - originMs) / 1000 + originS;
     // an input with several series per key contributes one component per series, named after the series
@@ -159,14 +174,20 @@ export function alignVector(first: Bucket, p: Params, others: Bucket[] = []): Bu
     for (const name of [...new Set(b.series.map(componentOf))].sort()) {
       if (!components.includes(name)) components.push(name);
     }
-    for (const s of b.series) {
+    // in id order, as the processor lays the series out, so a refusal names the same two series
+    for (const s of [...b.series].sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0))) {
       const key = keyOf(s);
       const component = componentOf(s);
       let k = keys.get(key);
       if (!k) {
-        k = { sample: s, cells: new Map(), units: new Map() };
+        k = { sample: s, cells: new Map(), units: new Map(), seriesOf: new Map() };
         keys.set(key, k);
       }
+      const other = k.seriesOf.get(component);
+      if (other !== undefined && other !== s.id) {
+        throw new Error(`the series ${other} and ${s.id} both give the component "${component}" of one vector; choose a key that tells them apart`);
+      }
+      k.seriesOf.set(component, s.id);
       let cells = k.cells.get(component);
       if (!cells) {
         cells = new Map<number, Cell>();
@@ -251,7 +272,7 @@ export function suggestKey(bucket: Bucket): string {
     const byValue = new Map<string, Set<string>>();
     for (const s of bucket.series) {
       const names = byValue.get(s.tags![key]) ?? new Set<string>();
-      names.add(s.metric ?? s.label);
+      names.add(seriesName(s));
       byValue.set(s.tags![key], names);
     }
     // every series of a group must be another channel, or two of them would claim the same component

@@ -131,8 +131,8 @@ echo "  • Episode 10: Production Configuration"
 echo "    ./bin/episode_10_production_config.sh"
 echo
 echo -e "${BLUE}Documentation:${NC}"
-echo "  • Statistical Analysis: docs/manual/statistical-analysis/README.md"
-echo "  • R/Python Translation: docs/manual/appendix/r-python-translation.md"
-echo "  • Algorithms: FEATURES.md (advanced methods)"
+echo "  • Statistical Analysis: https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/manual-v1/statistical-analysis/README.md"
+echo "  • R/Python Translation: https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/manual-v1/appendix/r-python-translation.md"
+echo "  • Algorithms: https://github.com/kamir/OpenTSx/blob/v3.0.1/archive/docs/devguide-2025/guides/FEATURES.md (advanced methods)"
 echo
 echo -e "${GREEN}════════════════════════════════════════════════════════════════${NC}"

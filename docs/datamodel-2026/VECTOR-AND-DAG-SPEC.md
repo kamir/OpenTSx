@@ -54,8 +54,8 @@ The workbench also writes sinks that the processor refuses: `schema: org.opentsx
 published `stats.window` node, and `schema: opentsx.episode.v2` without a `signal` for other published nodes. A
 series sink without a signal gets `a series sink names the signal it writes: signal: { system, id, grade }`.
 
-Implemented in: `vector/VectorProcessor.java:220-230`, `vector/VectorJob.java:57-63,105-108`,
-`vector/DagPlan.java:25-29,43-48,79-111`, `vector/SeriesJob.java:73-82`, `workbench/flow.ts:709-731,751-752`.
+Implemented in: `vector/VectorProcessor.java:220-230`, `vector/VectorJob.java:57-63,109-112`,
+`vector/DagPlan.java:25-29,43-48,79-111`, `vector/SeriesJob.java:73-82`, `workbench/flow.ts:711-733,753-754`.
 
 ### 1.2 Checks before a deployment
 
@@ -118,7 +118,7 @@ nodes:
   - id: decode
     op: decode.avro-soe
   - id: n1
-    op: align.vector   # not in the stream operator catalog
+    op: align.vector
     in: [decode]
     params: { every: PT60S, key: turbine, agg: MEAN, emit: any, names: [state] }
 sinks:
@@ -128,7 +128,7 @@ sinks:
 The vector is `turbine-state`. The one input carries two series per turbine, so its components are `power_active`
 and `wind_speed`. The Kafka key of turbine `T01` is `turbine=T01`.
 
-Implemented in: `vector-tests/VectorJobTest.java:28-59,66-78,133-154`.
+Implemented in: `vector-tests/VectorJobTest.java:28-59,66-78,144-165`.
 
 ## 2. Vector measuring points
 
@@ -138,7 +138,7 @@ with one value per component. The processor writes the points as `opentsx.vector
 The web workbench and Java implement the operator. Both pass the shared test vectors in
 [testvectors/align-vector.v1.json](testvectors/align-vector.v1.json).
 
-Implemented in: `workbench/vector.ts:125-238`, `vector/VectorAligner.java:99-213`, `vector/VectorStream.java:149-348`.
+Implemented in: `workbench/vector.ts:126-245`, `vector/VectorAligner.java:100-219`, `vector/VectorStream.java:149-348`.
 
 ### 2.1 Parameters
 
@@ -150,23 +150,28 @@ Implemented in: `workbench/vector.ts:125-238`, `vector/VectorAligner.java:99-213
 | `fill` | enum | `none` | `as-of` fills a missing value with the last one. A missing `fill` is `none`. Any other string is refused, see below. |
 | `maxAge` | ISO-8601 duration | the value of `every` | How old a value may be that `fill: as-of` takes. |
 | `emit` | enum | `any` | `complete` writes only ticks in which every component has a value. Any other value means `any`. |
-| `names` | list of strings | `in1`, `in2` and so on | One component name per input, in the order of `in`. |
+| `names` | list of strings | `in1`, `in2` and so on | One component name per input, in the order of `in`. Two inputs MUST NOT have the same name ([2.5](#25-what-the-processor-runs)). |
 | `lateness` | ISO-8601 duration | `PT0S` | Processor only: how long a tick stays open after every series has passed its end. A negative value counts as 0. |
 
 `every`, `maxAge` and `lateness` MUST be ISO-8601 durations such as `PT60S`. A number such as `60` is refused with
 `node <id>: every and maxAge must be durations like PT60S` or `node <id>: lateness must be a duration like PT2M`.
 
 A `fill` other than `none` or `as-of`, such as `asof`, is refused. The workbench preview and the Rust runner refuse it
-with `vector fill must be none or as-of`. The deploy checks of the workbench and of the Flow Composer list
-`<label>: vector fill must be none or as-of.`, where `<label>` is the name of the node, so the workbench neither
-downloads nor deploys the flow. Its DAG export writes the fill as stored. The processor refuses it with
+with `vector fill must be none or as-of`. For a vector that feeds a published node, the deploy checks of the workbench
+and of the Flow Composer list `<label>: vector fill must be none or as-of.`, where `<label>` is the name of the node,
+so the workbench neither downloads nor deploys the flow; a vector left out of the DAG does not block it. Its DAG export writes the fill as stored. The processor refuses it with
 `node <id>: vector fill must be none or as-of`. Wayang refuses it with
 `node <id>: parameter fill must be one of [none, as-of]`.
 
 The workbench edits seconds and writes `PT<seconds>S`. It writes `maxAge` only with `fill: as-of`, and `lateness`
 only when it is greater than 0.
+It writes a name typed in its comma-separated parameter `names` in lower-case snake case: lower case, every run of
+characters other than a-z and 0-9 becomes `_`, and `_` at either end is dropped. A typed name is never renamed, so
+two typed names with the same snake-case name are refused. A typed name without a letter or digit counts as left
+empty. It derives a name left empty from the bucket name and appends `_2`, `_3` and so on when another input has
+that name.
 
-Implemented in: `vector/VectorJob.java:83-104,119-134`, `vector/VectorAligner.java:21,29-38,104`,
+Implemented in: `vector/VectorJob.java:83-104,119-134`, `vector/VectorAligner.java:21,29-38,105`,
 `vector/VectorStream.java:110-111`, `workbench/flow.ts:505-512,690-692`, `workbench/vector.ts:320-325`,
 `rust/tsx-runner/src/pairs.rs:182-185`, `opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java:235-244`.
 
@@ -181,10 +186,11 @@ Implemented in: `vector/VectorJob.java:83-104,119-134`, `vector/VectorAligner.ja
 | Missing value | A component without a value in the tick is `null`. With `fill: as-of` it takes the last value of the component when that value lies at most floor(maxAge / every) ticks back. |
 | Ticks | Per key the ticks run from the first to the last tick in which any component of the key has a value. With `emit: any` a tick is written when at least one component has a value, filled values included. With `emit: complete` it is written only when every component has one. |
 | Time axis | Every input MUST have a time axis. The workbench refuses spectra, histograms and other axes with `<bucket> has a <kind> axis. A vector needs inputs with a time axis.` |
-| One series per component | The key MUST tell apart the series that give the same component. The processor refuses data in which two series give the same component of one vector: `the series <a> and <b> both give the component "<c>" of one vector; choose a key that tells them apart`. The workbench and `VectorAligner` aggregate both series into one value. |
+| One series per component | The key MUST tell apart the series that give the same component. The processor, `VectorAligner`, the workbench preview and the Rust runner `tsx-runner` refuse data in which two series give the same component of one vector: `the series <a> and <b> both give the component "<c>" of one vector; choose a key that tells them apart`. `<a>` and `<b>` are the ids of the two series, `<a>` the first in id order. |
 
-Implemented in: `vector/VectorAligner.java:88-97,103-198,200-213`, `workbench/vector.ts:56-93,125-178`,
-`vector/VectorStream.java:240-282`.
+Implemented in: `vector/VectorAligner.java:89-98,104-204,206-219`, `workbench/vector.ts:57-94,126-185`,
+`vector/VectorStream.java:240-282`, `rust/tsx-runner/src/pairs.rs:461-519`, `workbench/vector.test.ts:187-196`,
+`rust/tsx-runner/tests/pair_vector_vectors.rs:461-482`.
 
 ### 2.3 Record
 
@@ -217,9 +223,9 @@ A vector topic holds one `opentsx.vector.v1` JSON record per measuring point. JS
   the measuring points in the order they were written.
 * The processor does not check component names against the pattern. `params.names` of a document MUST follow it.
 
-Implemented in: `vector/VectorJson.java:28-66`, `workbench/vector.ts:274-318`,
+Implemented in: `vector/VectorJson.java:28-66`, `workbench/vector.ts:281-325`,
 `kafka/TopicLayout.java:27,107-116,183-200`, `vector/VectorProcessor.java:385-391`,
-`vector/VectorProcessorApp.java:85-89`, `vector-tests/VectorJobTest.java:146-154`.
+`vector/VectorProcessorApp.java:85-89`, `vector-tests/VectorJobTest.java:157-165`.
 
 ### 2.4 Read vectors back as series
 
@@ -245,13 +251,17 @@ addition to [1.2](#12-checks-before-a-deployment):
 | Point | Rule | Message |
 |---|---|---|
 | Inputs | Every input of the `align.vector` node MUST be the decoder node. Another operator before the vector is refused and named. | `node <id> (<op>) is not available in this runtime: it executes align.vector on the series of the source topic only. Build the vector from the source bucket.` |
+| Names | Two inputs of the `align.vector` node MUST NOT have the same name. Without `names`, the input at position `<i>` from 1 is named `in<i>`. The vector processor also names an input `in<i>` when `names` has no entry or a blank entry for it. Wayang refuses a `names` list whose length differs from `in`, or that holds a blank name, with `node <id>: names must uniquely name every input`. The Rust runner refuses such a length with `vector names must uniquely name every input` and a blank name with `vector input name must be a nonempty string`. Wayang and the Rust runner refuse two inputs with one name with the same message as the processor. `VectorAligner.align`, `new VectorStream(inputNames, ...)`, `VectorStream::new` of the Rust runner and the workbench preview refuse it with the text after `node <id>: `. For a vector node that feeds a published node, the deploy checks of the workbench list `<label>: two inputs of the vector are both named "<name>"; give every input its own name.`, where `<label>` is the name of the node, so the workbench neither downloads nor deploys the flow. A vector node that feeds no published node is left out of the DAG and is not checked. | `node <id>: two inputs of the vector are both named "<name>"; give every input its own name` |
 | Source topic | `source.topics` MUST be `[tsx.<domain>.episodes.v2]` of the domain of the processor. A vector over several topics is not supported. | `the DAG reads <topics>; this server holds <topic>` |
 | Series | Every input reads every series named in `source.series`. The workbench writes the series chosen in the TS inventory. | see [1.2](#12-checks-before-a-deployment) |
 | Sink topic | MUST be `tsx.<domain>.smart.<name>.vectors.v1` of the domain of the processor. | `sink topic <topic> must be tsx.<domain>.smart.<name>.vectors.v1 (lower-case letters, digits and hyphens in <name>)` |
 | Derived episodes | Episodes cut out of other episodes, with a parent episode id or a source episode id, are ignored. | none |
 
-Implemented in: `vector/VectorJob.java:53-117`, `vector/VectorProcessor.java:378-391,602-606`,
-`workbench/flow.ts:716`.
+Implemented in: `vector/VectorJob.java:53-121`, `vector/VectorProcessor.java:378-391,602-606`,
+`workbench/flow.ts:683-686,718`, `vector/VectorAligner.java:103-106,219-228`, `vector/VectorStream.java:106-109`,
+`workbench/vector.ts:99-129,150-151`, `opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayangBuild.java:61-78`,
+`opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java:74`, `rust/tsx-runner/src/pairs.rs:333-340,1786-1791`,
+`rust/tsx-runner/src/catalog.rs:519-541,1206-1210`.
 
 ## 3. Vector processor
 
@@ -278,7 +288,7 @@ topics have one partition. The retrieval server and `opentsx vectors` create the
 the number of records the runner has sent.
 
 Implemented in: `kafka/TopicLayout.java:130-160`, `vector/VectorProcessor.java:67-81,137-150,203-256,296-301,763-788`,
-`vector/VectorStream.java:218-229`, `server/KafScaleFeed.java:270-275`, `vector/VectorProcessorApp.java:48-50`.
+`vector/VectorStream.java:222-233`, `server/KafScaleFeed.java:270-275`, `vector/VectorProcessorApp.java:48-50`.
 
 ### 3.2 Runners
 
@@ -296,11 +306,11 @@ Implemented in: `kafka/TopicLayout.java:130-160`, `vector/VectorProcessor.java:6
 | Refused reads | A fetch the broker refuses is tried again every 5 s. The consumer goes back to its positions before that fetch, so no record is skipped. After 10 minutes of refusals the runner reports `failed`. |
 | Missing confirmations | A send retries up to the delivery timeout of 3 minutes. When a send fails, or a confirmation is still missing 3 minutes 30 s after the snapshot, the runner reports `failed`. It starts again 60 s later from its last checkpoint, with a new producer and a new consumer. |
 | One producer per runner | Every runner writes only to its sink topic, with its own producer. Status records use one more producer, replaced after a failed send. Waiting for confirmations does not stop the loop. A sink whose writes the broker does not confirm holds up neither the other sinks nor the status. |
-| Equality with the one-shot operator | Fed with all data, `VectorStream` gives the measuring points that `VectorAligner` gives, whatever the order in which the series arrive. |
+| Equality with the one-shot operator | Fed with all data in which no two series give the same component of one vector, `VectorStream` gives the measuring points that `VectorAligner` gives, whatever the order in which the series arrive. On data in which two series give one component, `VectorStream` refuses ([2.2](#22-clock-components-and-key)) and `VectorAligner` aggregates them into one value. |
 | Shutdown | On an orderly stop every runner writes a last checkpoint when the broker confirms within 30 s. `opentsx vectors` waits up to 60 s for this. |
 
 Implemented in: `vector/VectorProcessor.java:73-81,83-87,102-105,176-199,258-294,492-761`,
-`vector/VectorStream.java:178-211,218-229,284-348,360-438`, `kafka/Patience.java:40-42,69-110`,
+`vector/VectorStream.java:182-215,222-233,288-352,364-442`, `kafka/Patience.java:40-42,69-110`,
 `kafka/KafScaleClients.java:31,46`, `vector/VectorProcessorApp.java:90-101`, `vector-tests/VectorStreamTest.java:95-114`,
 `vector-tests/VectorProcessorTest.java:334`.
 
@@ -334,13 +344,14 @@ Implemented in: `opentsx-saas-backend/app/api/dags.py:32-113`, `opentsx-saas-bac
 | `now` | Server time, to judge how old a report is. |
 | `writes` | Whether the write routes of [3.3](#33-deploy-and-stop) exist. |
 | `dags[]` | Per DAG name: `dag`, `desired` (`deployed` or `stopped`), `by`, `at`, `sinks[]` (the latest status record per sink) and `refused` (the error of a refusal). |
+| `jobs[]` | The latest `opentsx.dag-status.v1` record per key among the records that carry `job`: the status of Track A and Track B jobs, as written, with or without a control record of that name. The vector processor never writes `job`; its records appear under `dags[]`. |
 
 Under a stopped DAG every sink report is shown with `state` `stopped`. Under a deployed DAG a report older than the
 latest control record is left out until the processor reports for the new deployment. The workbench shows
 "No vector processor has reported for two minutes. Is one running for this domain?" when neither the deployment nor
 any sink report is younger than 120 s.
 
-Implemented in: `server/RetrievalServer.java:178-185`, `server/KafScaleFeed.java:291-362`,
+Implemented in: `server/RetrievalServer.java:178-185`, `server/KafScaleFeed.java:294-313,321-323,339-378`,
 `workbench/deployments.ts:33-58`, `workbench/DeploymentsPanel.tsx:175`.
 
 ### 3.5 Limits
@@ -355,36 +366,54 @@ Implemented in: `server/RetrievalServer.java:178-185`, `server/KafScaleFeed.java
   with a large offset between them hold many open ticks.
 
 Implemented in: `vector/VectorProcessor.java:63,565-587`,
-`deploy/k3s/components/vector-processor/vector-processor.yaml:1-14`, `vector/VectorStream.java:223-229,291-342`.
+`deploy/k3s/components/vector-processor/vector-processor.yaml:1-14`, `vector/VectorStream.java:227-233,295-346`.
 
 ## 4. Stream operator catalog
 
-The stream operator catalog is the set of operators that the web workbench writes into a DAG without a warning. The
-workbench maps its operators to catalog names:
+The stream operator catalog is catalog 1,
+[`systems/catalogs/tsx-catalog-1.yaml`](../../systems/catalogs/tsx-catalog-1.yaml), specified in S1.7 of
+[20-WAYANG-TS-OPERATORS-SPEC.md](20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1). The web workbench holds its operator
+ids in the list `CATALOG_1`, in the order of the file. A workbench operator is a catalog operator when catalog 1
+lists its id or the `op` it writes into the DAG. These workbench operators are catalog operators:
 
 | Workbench operator | `op` in the DAG | Parameters in the DAG |
 |---|---|---|
 | `dq.plausible-range` | `dq.checks` | `{ checks: [PLAUSIBLE_RANGE], min, max, mode }` |
+| `convert.unit` | `convert.unit` | the parameters of the node |
 | `resample` | `resample` | `{ every: PT<seconds>S, agg }` |
+| `model.wind-shear` | `model.wind-shear` | the parameters of the node |
+| `model.power-curve` | `model.power-curve` | the parameters of the node |
+| `feature.lag` | `feature.lag` | the parameters of the node |
+| `feature.rolling` | `feature.rolling` | `{ window: PT<seconds>S, fn }` when the node feeds a series sink with a `signal`, otherwise the parameters of the node |
 | `stats.window` | `stats.welford-ddsketch` | `{ windows: [PT<seconds>S] }` |
+| `align.vector` | `align.vector` | see [2.1](#21-parameters) |
 | `segment.threshold` | `segment.threshold` | the parameters of the node |
+| `pair.xcorr` | `pair.xcorr` | the parameters of the node; the node also gets `experimental: true` |
+| `pair.es` | `pair.es` | the parameters of the node; the node also gets `experimental: true` |
 
-The decoder `decode.avro-soe` stands for the source bucket in every DAG. Every other operator, `align.vector`
-included, is written with the comment `# not in the stream operator catalog` after its `op`. When a published node
-is or reads from such an operator, the workbench warns:
+The decoder `decode.avro-soe` stands for the source bucket in every DAG. No workbench operator writes the catalog
+operators `segment.extremum`, `sax.word` and `dq.result`.
+
+Every other workbench operator is written with the comment `# not in the stream operator catalog` after its `op`:
+`shuffle`, `norm.max`, `norm.zscore`, `log`, `logreturn`, `diff`, `profile`, `fft`, `histogram`,
+`histogram.crosscut`, `cdf`, `entropy.window`, `acf`, `dfa`, `pair.coverage`, `sigma.band`, `select` and
+`smooth.movavg`. When a published node is or reads from such an operator, the workbench warns:
 `<label> uses <operators>: not in the stream operator catalog, a runtime must provide them.`
 
-The catalog does not say which runtime runs an operator. The vector processor runs `align.vector` for vector sinks
-([2.5](#25-what-the-processor-runs)) and the operators of `CleanChain` for series sinks. Each operator declares the
-runtimes that offer it under `runtimes` in `systems/processors/<id>.yaml`, for example
-[align.vector](../../systems/processors/align.vector.yaml). The fleet catalog of the Wayang and Rust runtimes is
-S1.7 of [20-WAYANG-TS-OPERATORS-SPEC.md](20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1).
+A workbench test reads the catalog file and fails when `CATALOG_1` differs from its operator ids, or when the DAG
+export or the warning marks an operator that catalog 1 lists or leaves out one that it does not list.
+
+Catalog membership does not say which runtime runs an operator. The vector processor runs `align.vector` for vector
+sinks ([2.5](#25-what-the-processor-runs)) and the operators of `CleanChain` for series sinks. Each operator declares
+the runtimes that offer it under `runtimes` in `systems/processors/<id>.yaml`, for example
+[align.vector](../../systems/processors/align.vector.yaml).
 
 The shared test vectors of `align.vector` run in TypeScript, in Java as a whole and as a stream, on Wayang and in
 Rust.
 
-Implemented in: `workbench/ops.ts:857,871,905,911,919`, `workbench/flow.ts:493-510,675-681,719-726`,
-`workbench/types.ts:113-117`, `workbench/vector.test.ts:197-224`, `vector-tests/VectorAlignerTest.java:23`,
+Implemented in: `workbench/ops.ts:834,838,857,864,871,877,884,893,896,905,911,919,935-946`,
+`workbench/flow.ts:493-510,675-681,719-727`, `workbench/workbench.test.ts:386-400`,
+`workbench/vector.test.ts:208-235`, `vector-tests/VectorAlignerTest.java:23`,
 `vector-tests/VectorStreamTest.java:202`,
 `opentsx-wayang/src/test/java/org/opentsx/wayang/TsxVectorVectorsTest.java:46`,
 `rust/tsx-runner/tests/pair_vector_vectors.rs:40`.
@@ -411,9 +440,9 @@ This is what the vector processor holds for its two kinds of sinks: vectors (`op
 | Quality per value | The processor does not read or pass on the quality byte of an input episode. A plausible range turns a value outside [min, max] into a gap (`mode: gap`) or into the bound (`mode: clip`). |
 | Kind of quantity | The processor aggregates every series as it gets it. It does not check whether a signal is analog, a status or a counter. |
 
-Implemented in: `vector/VectorStream.java:185-194,291-308`, `clean/SeriesStream.java:31-35,81-120,146-156`,
+Implemented in: `vector/VectorStream.java:189-198,295-312`, `clean/SeriesStream.java:31-35,81-120,146-156`,
 `clean/CleanChain.java:24-25,375`, `vector/VectorJson.java:40-66`, `vector/VectorStoreBridge.java:26-34`,
 `kafka/Patience.java:69-96`, `workbench/deployments.ts:75-104`, `vector/VectorProcessor.java:258-294`,
-`workbench/vector.test.ts:197-224`, `workbench/clean.test.ts:22-57`,
+`workbench/vector.test.ts:208-235`, `workbench/clean.test.ts:22-57`,
 `opentsx-retrieval/src/test/java/org/opentsx/retrieval/clean/CleanChainTest.java:91-126`,
 `vector-tests/VectorStreamTest.java:202-258`, `opentsx-model/src/main/java/org/opentsx/model/Episodes.java:204`.

@@ -201,7 +201,7 @@ class SystemsTest {
             wired |= "park.p_gen_kw".equals(in.path("from").asText());
         }
         assertTrue(wired);
-        // every input from outside has a signal; three of the signals are still open
+        // every input from outside has a signal; two of the signals are still open
         assertEquals(9, plan.path("counts").path("inputsFromOutside").asInt());
         assertEquals(0, plan.path("counts").path("inputsWithoutSignal").asInt());
     }

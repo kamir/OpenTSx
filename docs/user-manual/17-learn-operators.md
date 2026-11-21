@@ -13,7 +13,7 @@ Read the lesson's source, manual, SPEC and test references before choosing its r
 
 | Surface | Meaning |
 | --- | --- |
-| UI operator | An executable `OPS` entry in the workbench. Membership in an older streaming catalog is a separate property. |
+| UI operator | An executable `OPS` entry in the workbench. Membership in the frozen [catalog 1](../../systems/catalogs/tsx-catalog-1.yaml) is a separate property; the DAG export marks operators outside it. |
 | Java or Python library | A public numerical entry point. A library implementation alone does not supply a DAG binding or a Wayang mapping. |
 | Processor DAG | An operator accepted by the current series/vector processor, with that runtime's parameters and state rules. |
 | Wayang | An implemented mapping or infrastructure entry point, separately identified by the lesson. A pure Java kernel alone does not establish a mapping. |
@@ -363,10 +363,13 @@ Use the [federation measurement instructions](../datamodel-2026/20-WAYANG-TS-OPE
 with a clean checkout, JDK 17 or 21, Maven, Git, Python and the pinned Go
 toolchain. The harness owns four disposable KafScale brokers and records three
 site instances in one execution JVM. Its
-[report and raw files](../datamodel-2026/measurements/wayang-federation-2026-11-17/REPORT.md)
-include hardware, versions, commands, all 420 reference windows and per-site
-transport counters. Kafka frames, HTTP bodies and TLS streams remain separate
-metrics. The route clocks cover different work and do not compare latency.
+[report](../datamodel-2026/measurements/wayang-federation-2026-11-17/REPORT.md)
+gives hardware, versions and per-route transport counters, and its
+[metadata](../datamodel-2026/measurements/wayang-federation-2026-11-17/metadata.json)
+records the commands. The per-site counters (`bytes.csv`) and the 420 reference window comparisons
+(`windows.csv`) are not in this repository; `artifactsSha256` in the metadata lists their SHA-256.
+Kafka frames, HTTP bodies and TLS streams remain separate metrics. The route clocks cover different work and do
+not compare latency.
 
 ## Work through a lesson
 

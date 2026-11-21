@@ -1,9 +1,9 @@
 # Today vs. planned
 
-What this guide deploys exists and runs today (Java 17/21 CLIs and services). The stream architecture of
-[concept 11](../datamodel-2026/VECTOR-AND-DAG-SPEC.md) (German) — a Go Smart Topic processor executing a
-declarative YAML DAG, training via MLflow — is a **proposal**; none of it is implemented yet. This page separates the
-two and shows where the planned parts will fit into the same namespace, images and scripts.
+What this guide deploys exists and runs today (Java 17/21 CLIs and services). The Java vector processor runs
+`opentsx.dag.v1` documents ([Vector and DAG rules, section 3](../datamodel-2026/VECTOR-AND-DAG-SPEC.md#3-vector-processor)).
+A Go Smart Topic processor that triggers training via MLflow is a **proposal**; it is not implemented. This page
+separates the two and shows where the planned parts will fit into the same namespace, images and scripts.
 
 ## Deployable now
 
@@ -22,7 +22,7 @@ two and shows where the planned parts will fit into the same namespace, images a
 | Smart Topics Studio | static prototype | nginx Deployment, page built into the image |
 | Python package / client | done | outside the cluster (port-forward); not containerized |
 
-## Planned (concept 11) and how it slots in
+## Planned and how it slots in
 
 ```mermaid
 flowchart LR
@@ -45,15 +45,14 @@ flowchart LR
   ML -- "model-events" --> GO
 ```
 
-| Planned part | Concept 11 | How it will be deployed here |
-|--------------|-----------|------------------------------|
-| **Go TSx processor** (stream core: decode, episodes, stats/sketches, DQ, segmentation, resampling, scoring) | §1, §4, §6 | a third image (distroless, ~20 MB, amd64 + arm64) and a Deployment per DAG; one lease per partition (etcd in the cluster) or a checkpoint file at the edge. Takes the place of `opentsx-stats` once the operator conformance tests (Go ↔ Java, shared test vectors) pass — the Java processor stays as reference |
-| **DAG spec `opentsx.dag.v1`** | §5 | a ConfigMap per DAG, rendered by `20-configure.sh` from `deploy/k3s/dags/*.yaml`; CI validates it (schema, operator availability, replay test) |
-| **Java/Python sidecar** (pattern search, twin step, causal analysis) | §1.5 | second container in the processor pod (`opentsx/tools` image), gRPC on localhost |
-| **training** (`train.trigger` → Python job → MLflow → `model-events`) | §1.4, §8 | a Job/CronJob template for the trainer and an MLflow Deployment (lake profile, artifacts on S3) |
-| **shadow rollout** (`…shadow` topics, comparison job, switch by config) | §8 | a second processor Deployment with the new DAG version; switch = ConfigMap change + `30-deploy.sh --restart` |
-| **edge** (boat Pi, lab PC) | §9 | the Go binary as a systemd unit with a checkpoint file, or the same Deployment on a single-node k3s with `hostnetwork` and local storage |
-| **observability** (Prometheus metrics: lag per partition, time per operator, DQ rates) | §8 | ServiceMonitor/annotations once the processor exposes `/metrics`; the Java tools expose none today. Until then: synthetic check and kube-state-metrics rules ([operations](operations.md#monitoring-and-alerting)) |
+| Planned part | How it will be deployed here |
+|--------------|------------------------------|
+| **Go TSx processor** (stream core: decode, episodes, stats/sketches, DQ, segmentation, resampling, scoring) | a third image (distroless, ~20 MB, amd64 + arm64) and a Deployment per DAG; one lease per partition (etcd in the cluster) or a checkpoint file at the edge. Takes the place of `opentsx-stats` once the operator conformance tests (Go ↔ Java, shared test vectors) pass; the Java processor stays as reference |
+| **Java/Python sidecar** (pattern search, twin step, causal analysis) | second container in the processor pod (`opentsx/tools` image), gRPC on localhost |
+| **training** (`train.trigger` → Python job → MLflow → `model-events`) | a Job/CronJob template for the trainer and an MLflow Deployment (lake profile, artifacts on S3) |
+| **shadow rollout** (`…shadow` topics, comparison job, switch by config) | a second processor Deployment with the new DAG version; switch = ConfigMap change + `30-deploy.sh --restart` |
+| **edge** (boat Pi, lab PC) | the Go binary as a systemd unit with a checkpoint file, or the same Deployment on a single-node k3s with `hostnetwork` and local storage |
+| **observability** (Prometheus metrics: lag per partition, time per operator, DQ rates) | ServiceMonitor/annotations once the processor exposes `/metrics`; the Java tools expose none today. Until then: synthetic check and kube-state-metrics rules ([operations](operations.md#monitoring-and-alerting)) |
 
 Until then, the KafScale constraints apply as implemented in the Java tools: no consumer groups (manual assignment),
 no transactions or idempotent producer (deduplication by `episodeId`), no compaction (append-only, latest record

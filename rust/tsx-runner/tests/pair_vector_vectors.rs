@@ -459,6 +459,29 @@ fn vector_restore_and_invalid_blocks_leave_state_unchanged() {
 }
 
 #[test]
+fn vector_refuses_two_series_that_give_one_component_with_the_java_message() {
+    let p = VectorParams::parse(&json!({"every":60,"key":"all"})).unwrap();
+    let expected = vec![("x".into(), BTreeSet::from(["a".into(), "b".into()]))];
+    let mut s = VectorStream::new(expected, p, 100).unwrap();
+    let tags = |turbine: &str| BTreeMap::from([("turbine".to_string(), turbine.to_string())]);
+    s.add(
+        "x",
+        "a",
+        "wind.met.wind_speed",
+        &tags("T01"),
+        &[0],
+        &[1.0],
+        60_000_000,
+    )
+    .unwrap();
+    assert_eq!(
+        s.add("x", "b", "wind.met.wind_speed", &tags("T02"), &[0], &[2.0], 60_000_000)
+            .unwrap_err(),
+        "the series a and b both give the component \"wind_speed\" of one vector; choose a key that tells them apart"
+    );
+}
+
+#[test]
 fn vector_wire_record_uses_the_java_key_and_timestamp_contract() {
     use tsx_runner::pairs::{vector_json, vector_key, VectorPoint};
     let point = VectorPoint {
@@ -475,6 +498,24 @@ fn vector_wire_record_uses_the_java_key_and_timestamp_contract() {
         "schema":"opentsx.vector.v1","vector":"v","key":{"a":"x,y","z":"a=b"},"ts":"1970-01-01T00:00:00.001Z",
         "window":{"from":"1969-12-31T23:59:59.999999Z","to":"1970-01-01T00:00:00.001Z"},"clock":"PT0.001001S",
         "components":["a","b"],"values":[1.25,null],"missing":1,"provenance":{"dag":"dag","specHash":"a".repeat(64)}})
+    );
+}
+
+#[test]
+fn vector_refuses_two_inputs_with_one_name_with_the_java_message() {
+    let p = VectorParams::parse(&json!({"every":60,"key":"all"})).unwrap();
+    let twice = vec![
+        ("a".into(), BTreeSet::from(["s".into()])),
+        ("a".into(), BTreeSet::from(["t".into()])),
+    ];
+    assert_eq!(
+        VectorStream::new(twice, p.clone(), 100).unwrap_err(),
+        "two inputs of the vector are both named \"a\"; give every input its own name"
+    );
+    let unnamed = vec![("".into(), BTreeSet::from(["s".into()]))];
+    assert_eq!(
+        VectorStream::new(unnamed, p, 100).unwrap_err(),
+        "a vector that keeps running needs the ids of the series of every input"
     );
 }
 
