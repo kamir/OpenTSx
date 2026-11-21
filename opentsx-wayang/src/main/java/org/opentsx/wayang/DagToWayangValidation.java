@@ -210,7 +210,7 @@ final class DagToWayangValidation {
         }
         JsonNode card = catalog.get(op);
         boolean raw = output(card).equals("series") || output(card).equals("vector");
-        if ((!boundary.admitsRaw() && raw) || card.path("merge").path("class").asText().equals("none") && !boundary.admitsRaw()) {
+        if (raw || card.path("merge").path("class").asText().equals("none")) {
             throw new IllegalArgumentException("node " + id + ": operator " + op + " is not mergeable and cannot feed the federated sink " + topic);
         }
         if (!raw) for (JsonNode input : node.path("in")) federated(input.asText(), topic, nodes, catalog, boundary);

@@ -290,7 +290,7 @@ final class FederationFixture implements AutoCloseable {
             long started = System.nanoTime();
             long cpu = ProcessHandle.current().info().totalCpuDuration().orElseThrow().toNanos();
             TsxCompileContext context = new TsxCompileContext(Map.of(), Map.of(layout.aggregates(),
-                    new TsxCompileContext.Boundary(Set.of("PT10M", "PT1H"), false)), OptionalLong.empty(),
+                    new TsxCompileContext.Boundary(Set.of("PT10M", "PT1H"))), OptionalLong.empty(),
                     Map.of(), Map.of(), Map.of(), "central", OptionalLong.empty(), true);
             DagToWayang compiled = DagToWayang.compile(dagText, layout, ROOT.resolve("systems/processors"), context);
             Operator output = compiled.outputs(Map.of(layout.episodes(), new TsxTopicSource(read)), new TsxState(Map.of())).get("stats");
@@ -533,7 +533,7 @@ final class FederationFixture implements AutoCloseable {
                     TsxSiteAgent agent = agents.get(site);
                     if (agent == null) throw new IllegalStateException("site is stopped");
                     TsxCompileContext context = new TsxCompileContext(Map.of(), Map.of(layout.aggregates(),
-                            new TsxCompileContext.Boundary(Set.of("PT10M", "PT1H"), false)), OptionalLong.empty(), Map.of(), Map.of(), Map.of(), site, OptionalLong.empty(), true);
+                            new TsxCompileContext.Boundary(Set.of("PT10M", "PT1H"))), OptionalLong.empty(), Map.of(), Map.of(), Map.of(), site, OptionalLong.empty(), true);
                     TsxBoundedSiteExecution execution = new TsxBoundedSiteExecution(agent, Map.of("site-" + site, brokers.bootstrap(site)),
                             ROOT.resolve("systems/processors"), this::publish);
                     JsonNode outcome = agent.pollOnce(clients.get(site), plan -> execution.run(plan, context)).orElseThrow();

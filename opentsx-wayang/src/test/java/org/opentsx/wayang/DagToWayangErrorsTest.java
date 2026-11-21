@@ -52,7 +52,7 @@ class DagToWayangErrorsTest {
         }
         Map<String, TsxCompileContext.Boundary> boundaries = c.path("federated").asBoolean()
                 ? Map.of(c.path("document").path("sinks").get(0).path("topic").asText(),
-                        new TsxCompileContext.Boundary(c.has("statisticWindow") ? Set.of(c.path("statisticWindow").asText()) : Set.of(), false))
+                        new TsxCompileContext.Boundary(c.has("statisticWindow") ? Set.of(c.path("statisticWindow").asText()) : Set.of()))
                 : Map.of();
         return new TsxCompileContext(assignments, boundaries,
                 c.has("productsLimit") ? OptionalLong.of(c.path("productsLimit").asLong()) : OptionalLong.empty(),

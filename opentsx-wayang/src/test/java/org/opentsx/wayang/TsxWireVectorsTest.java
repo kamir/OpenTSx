@@ -57,6 +57,7 @@ class TsxWireVectorsTest {
         JsonNode fps = load("wire-format.json").get("fingerprints");
         Map<String, String> expected = new TreeMap<>();
         fps.fields().forEachRemaining(f -> expected.put(f.getKey(), f.getValue().asText()));
+        expected.put("AnalysisResult", load("analysis-result-wire.json").get("fingerprint").asText());
         Map<String, String> actual = new TreeMap<>();
         for (Class<? extends SpecificRecord> type : OpenTsxAvro.TOP_LEVEL_TYPES) {
             org.apache.avro.Schema s = org.apache.avro.specific.SpecificData.get().getSchema(type);

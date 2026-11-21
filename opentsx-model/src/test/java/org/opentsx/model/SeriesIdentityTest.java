@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SeriesIdentityTest {
@@ -66,5 +67,36 @@ class SeriesIdentityTest {
             v.get("episodeIds").forEach(n -> ids.add(n.asText()));
             assertEquals(v.get("checksum").asText(), Buckets.checksum(ids));
         }
+    }
+
+    @Test
+    void bucketContentChecksumMatchesSharedVectors() {
+        JsonNode vectors = TestVectors.load("bucket-content-checksum.json");
+        assertEquals(5, vectors.size());
+        for (JsonNode v : vectors) {
+            assertEquals(v.get("checksum").asText(), Buckets.contentChecksum(
+                    TestVectors.strings(v.get("episodeIds")), TestVectors.strings(v.get("contentDigests"))),
+                    v.get("name").asText());
+        }
+        assertNotEquals(vectors.get(1).get("checksum"), vectors.get(2).get("checksum"));
+        assertEquals(vectors.get(1).get("episodeIds"), vectors.get(2).get("episodeIds"));
+    }
+
+    @Test
+    void bucketContentChecksumRejectsInconsistentInput() {
+        String a = "a".repeat(64);
+        String b = "b".repeat(64);
+        assertMessage("1 content digests for 2 episode ids",
+                () -> Buckets.contentChecksum(java.util.List.of("e1", "e2"), java.util.List.of(a)));
+        assertMessage("episode e1 appears with two contents",
+                () -> Buckets.contentChecksum(java.util.List.of("e1", "e1"), java.util.List.of(a, b)));
+        assertMessage("content digest of episode e1 is not 64 lower-case hex characters",
+                () -> Buckets.contentChecksum(java.util.List.of("e1"), java.util.List.of("A".repeat(64))));
+        assertMessage("episode ids must not be empty",
+                () -> Buckets.contentChecksum(java.util.List.of(""), java.util.List.of(a)));
+    }
+
+    private static void assertMessage(String message, org.junit.jupiter.api.function.Executable call) {
+        assertEquals(message, assertThrows(IllegalArgumentException.class, call).getMessage());
     }
 }

@@ -125,7 +125,7 @@ class DagToWayangCatalogTest {
     @Test
     void aFederatedBoundaryKeepsBothConfiguredTumblingWidthsAndDropsGlobal() throws Exception {
         JsonNode dag = dag("stats.welford-ddsketch", cases().get("stats.welford-ddsketch"));
-        TsxCompileContext context = context(Map.of("tsx.wind.aggregates.v2", new TsxCompileContext.Boundary(Set.of(), false)));
+        TsxCompileContext context = context(Map.of("tsx.wind.aggregates.v2", new TsxCompileContext.Boundary(Set.of())));
         List<Object> out = execute(DagToWayang.compile(dag, LAYOUT, HASH, CATALOG, context), INPUT);
         Set<String> windows = new java.util.HashSet<>();
         out.forEach(r -> windows.add(((SeriesStats) r).getWindowType()));
@@ -245,7 +245,7 @@ class DagToWayangCatalogTest {
                   - {id: stats, op: stats.welford-ddsketch, in: [n1], params: {windows: [PT4S, PT8S]}}
                 sinks: [{from: stats, topic: tsx.wind.aggregates.v2, schema: org.opentsx.model.v2.SeriesStats}]
                 """);
-        TsxCompileContext context = context(Map.of("tsx.wind.aggregates.v2", new TsxCompileContext.Boundary(Set.of(), false)));
+        TsxCompileContext context = context(Map.of("tsx.wind.aggregates.v2", new TsxCompileContext.Boundary(Set.of())));
         List<Object> out = execute(DagToWayang.compile(dag, LAYOUT, HASH, CATALOG, context), INPUT);
         assertFalse(out.isEmpty());
         assertTrue(out.stream().map(SeriesStats.class::cast).noneMatch(s -> s.getWindowType().equals("GLOBAL")));
@@ -256,7 +256,7 @@ class DagToWayangCatalogTest {
         JsonNode dag = dag("stats.welford-ddsketch", cases().get("stats.welford-ddsketch"));
         ((com.fasterxml.jackson.databind.node.ArrayNode) dag.path("sinks")).addObject().put("from", "n1")
                 .put("topic", LAYOUT.seriesStats()).put("schema", "org.opentsx.model.v2.SeriesStats");
-        TsxCompileContext context = context(Map.of("tsx.wind.aggregates.v2", new TsxCompileContext.Boundary(Set.of(), false)));
+        TsxCompileContext context = context(Map.of("tsx.wind.aggregates.v2", new TsxCompileContext.Boundary(Set.of())));
         DagToWayang compiled = DagToWayang.compile(dag, LAYOUT, HASH, CATALOG, context);
         CollectionSource<SpecificRecord> source = new CollectionSource<>(new ArrayList<SpecificRecord>(INPUT), SpecificRecord.class);
         Map<String, Operator> outputs = compiled.outputsBySink(Map.of(LAYOUT.episodes(), source), new TsxState(Map.of()));
@@ -278,7 +278,7 @@ class DagToWayangCatalogTest {
         for (String op : List.of("pair.xcorr", "pair.es", "align.vector")) {
             JsonNode dag = dag(op, cases().get(op));
             String sink = dag.path("sinks").get(0).path("topic").asText();
-            TsxCompileContext context = context(Map.of(sink, new TsxCompileContext.Boundary(Set.of(), false)));
+            TsxCompileContext context = context(Map.of(sink, new TsxCompileContext.Boundary(Set.of())));
             assertEquals("node n1: operator " + op + " is not mergeable and cannot feed the federated sink " + sink,
                     assertThrows(IllegalArgumentException.class, () -> DagToWayang.compile(dag, LAYOUT, HASH, CATALOG, context)).getMessage(), op);
             assertNotNull(DagToWayang.compile(dag, LAYOUT, HASH, CATALOG, context(Map.of())), op + " compiles without a site boundary");
@@ -289,7 +289,7 @@ class DagToWayangCatalogTest {
     void aSignalCollectorPreservesLocalDqFindingsWithoutMergingUpstreamStatistics() throws Exception {
         JsonNode dag = dag("dq.result", cases().get("dq.result"));
         List<Object> local = execute(DagToWayang.compile(dag, LAYOUT, HASH, CATALOG, context(Map.of())), INPUT);
-        TsxCompileContext context = context(Map.of("tsx.wind.signals.v2", new TsxCompileContext.Boundary(Set.of(), false)));
+        TsxCompileContext context = context(Map.of("tsx.wind.signals.v2", new TsxCompileContext.Boundary(Set.of())));
         List<Object> collected = execute(DagToWayang.compile(dag, LAYOUT, HASH, CATALOG, context), INPUT);
         assertFalse(local.isEmpty());
         assertEquals(local, collected);
