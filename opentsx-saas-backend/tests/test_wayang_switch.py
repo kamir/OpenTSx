@@ -104,6 +104,7 @@ def fenced_driver(monkeypatch, continuous_driver):
                 unit["requestText"] = json.dumps(run)
             if state.get("planMutation"):
                 state["planMutation"](value)
+            value["planHash"] = service.legacy_plan_hash(value)
         return httpx.Response(response.status_code, json=value)
 
     monkeypatch.setattr(service, "http_client", lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler)))
@@ -494,7 +495,7 @@ def test_restart_ownership_failure_keeps_every_remaining_topic_and_switch_pendin
     assert response.status_code == 202
     target = response.json()["switch"]["deployment"]
     with Session(database) as session:
-        reservation = session.get(WayangTopicOwner, "tsx.test.replacement.v2")
+        reservation = session.get(WayangTopicOwner, ("legacy", "", "", "", "tsx.test.replacement.v2"))
         session.delete(reservation)
         session.commit()
     assert reconcile(database)

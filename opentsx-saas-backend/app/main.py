@@ -25,6 +25,7 @@ from app.db.base import Base  # Import from base.py to ensure all models are loa
 from app.db.init_db import init_db
 from app.db.session import AsyncSessionLocal
 from app.db.utils import wait_for_db
+from app.db.upgrade_wayang_ownership import check_schema
 from app.db.session import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
@@ -45,6 +46,7 @@ async def lifespan(app: FastAPI):
 
     # Startup: Create tables and initialize database
     async with async_engine.begin() as conn:
+        await conn.run_sync(check_schema)
         await conn.run_sync(Base.metadata.create_all)
 
     async with AsyncSessionLocal() as session:

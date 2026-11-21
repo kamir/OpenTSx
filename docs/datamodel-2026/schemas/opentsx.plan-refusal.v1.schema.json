@@ -1,0 +1,277 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentsx.org/schemas/opentsx.plan-refusal.v1.schema.json",
+  "title": "OpenTSx located plan refusal v1",
+  "description": "Public refusal with a fixed English message, original logical node or null, and JSON pointer field.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "code",
+    "node",
+    "field",
+    "message"
+  ],
+  "properties": {
+    "schema": {
+      "const": "opentsx.plan-refusal.v1"
+    },
+    "code": {
+      "enum": [
+        "deployment.json",
+        "deployment.fields",
+        "deployment.version",
+        "deployment.identity",
+        "deployment.hash",
+        "deployment.computation",
+        "deployment.assignment",
+        "deployment.coverage",
+        "deployment.channel",
+        "deployment.capability",
+        "deployment.freshness",
+        "deployment.incarnation",
+        "deployment.facts",
+        "deployment.limit"
+      ]
+    },
+    "node": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "field": {
+      "type": "string",
+      "pattern": "^/"
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "deployment.json"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "message": {
+            "const": "Physical deployment refused: deployment.json."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "deployment.fields"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "message": {
+            "const": "Physical deployment refused: deployment.fields."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "deployment.version"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "message": {
+            "const": "Physical deployment refused: deployment.version."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "deployment.identity"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "message": {
+            "const": "Physical deployment refused: deployment.identity."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "deployment.hash"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "message": {
+            "const": "Physical deployment refused: deployment.hash."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "deployment.computation"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "message": {
+            "const": "Physical deployment refused: deployment.computation."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "deployment.assignment"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "message": {
+            "const": "Physical deployment refused: deployment.assignment."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "deployment.coverage"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "message": {
+            "const": "Physical deployment refused: deployment.coverage."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "deployment.channel"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "message": {
+            "const": "Physical deployment refused: deployment.channel."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "deployment.capability"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "message": {
+            "const": "Physical deployment refused: deployment.capability."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "deployment.freshness"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "message": {
+            "const": "Physical deployment refused: deployment.freshness."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "deployment.incarnation"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "message": {
+            "const": "Physical deployment refused: deployment.incarnation."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "deployment.facts"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "message": {
+            "const": "Physical deployment refused: deployment.facts."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "deployment.limit"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "message": {
+            "const": "Physical deployment refused: deployment.limit."
+          }
+        }
+      }
+    }
+  ]
+}

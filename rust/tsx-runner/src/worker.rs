@@ -106,6 +106,7 @@ pub struct Worker {
     lock_owner_pid: u32,
     controller: Option<IpAddr>,
     profile: Profile,
+    admission_facts: Box<dyn crate::physical::AdmissionFacts>,
 }
 
 impl Drop for Worker {
@@ -126,6 +127,14 @@ impl Worker {
     /// Opens the worker with the admission ceilings of `profile`. Journals written under one profile are
     /// read back only under a profile at least as large.
     pub fn open_profiled(config: Config, profile: Profile) -> Result<Self, String> {
+        Self::open_with_facts(config, profile, Box::new(crate::physical::UnavailableFacts))
+    }
+
+    pub fn open_with_facts(
+        config: Config,
+        profile: Profile,
+        admission_facts: Box<dyn crate::physical::AdmissionFacts>,
+    ) -> Result<Self, String> {
         if !identifier(&config.node)
             || !identifier(&config.site)
             || !config
@@ -150,6 +159,7 @@ impl Worker {
             lock_owner_pid: std::process::id(),
             controller: None,
             profile,
+            admission_facts,
         };
         for entry in fs::read_dir(&worker.config.state)
             .map_err(|e| format!("cannot list worker state: {e}"))?
@@ -210,6 +220,7 @@ impl Worker {
 
     pub fn prepare(&mut self, text: &str, broker: &mut impl Broker) -> Result<Status, String> {
         let mut run = self.admit(text)?;
+        self.verify_physical(text, broker.fenced())?;
         if run.increment.is_some() {
             return self.increment_prepare(text, run, broker);
         }
@@ -243,6 +254,23 @@ impl Worker {
         match prepared {
             Ok(prepared) => {
                 runner::validate_prepared(&run, &prepared)?;
+                if let Some(request) = crate::physical::request(text, self.profile.request_bytes)? {
+                    for channel in request.plan["channels"].as_array().ok_or_else(|| {
+                        crate::physical::refused("deployment.channel", "/channels")
+                    })? {
+                        if channel["assignment"] == run.assignment["assignment"]
+                            && channel["bufferRecords"]
+                                .as_str()
+                                .and_then(|text| text.parse::<usize>().ok())
+                                .is_none_or(|records| prepared.records.len() > records)
+                        {
+                            return Err(crate::physical::refused(
+                                "deployment.channel",
+                                "/channels/bufferRecords",
+                            ));
+                        }
+                    }
+                }
                 journal.prepared = Some(prepared);
                 journal.phase = "prepared".into();
             }
@@ -263,6 +291,8 @@ impl Worker {
         if self.increment_contains(request_hash)? {
             return self.increment_activate(request_hash, broker);
         }
+        let (journal, _) = self.load(request_hash)?;
+        self.verify_physical(&journal.request_text, broker.fenced())?;
         let (mut journal, run) = self.recover(request_hash)?;
         if journal.phase == "completed" {
             return self.status(request_hash);
@@ -327,14 +357,127 @@ impl Worker {
     }
 
     fn admit(&self, text: &str) -> Result<Admitted, String> {
-        let run = admission::admit_profiled(text, &self.config.artifact_digest, &self.profile)?;
+        let physical = crate::physical::request(text, self.profile.request_bytes)?;
+        let mut run = admission::admit_profiled(
+            physical
+                .as_ref()
+                .map_or(text, |request| &request.local_text),
+            &self.config.artifact_digest,
+            &self.profile,
+        )
+        .map_err(|error| {
+            if physical.is_some() {
+                crate::physical::refused("deployment.assignment", "/requestText")
+            } else {
+                error
+            }
+        })?;
+        if physical.is_some() {
+            run.request_text = text.into();
+            run.request_hash = tsx_contracts::sha256(text);
+        }
         if run.assignment["node"] != self.config.node
             || run.assignment["site"] != self.config.site
             || run.bootstrap != self.config.bootstrap
         {
+            if physical.is_some() {
+                return Err(crate::physical::refused(
+                    "deployment.capability",
+                    "/assignmentTexts",
+                ));
+            }
             return Err("assignment node, site or broker does not match this worker".into());
         }
         Ok(run)
+    }
+
+    fn verify_physical(&mut self, text: &str, fenced: bool) -> Result<(), String> {
+        let Some(request) = crate::physical::request(text, self.profile.request_bytes)? else {
+            return Ok(());
+        };
+        if fenced || self.controller.is_some() {
+            return Err(crate::physical::refused(
+                "deployment.capability",
+                "/capabilities/publicationFencing",
+            ));
+        }
+        let observation = self
+            .admission_facts
+            .observe(&request.plan)
+            .map_err(|error| error.to_string())?;
+        tsx_contracts::physical::admit(
+            &request.physical_text,
+            &observation.facts,
+            &observation.now_micros,
+        )
+        .map_err(|error| error.to_string())?;
+        let current = self.capabilities();
+        let run = admission::admit_profiled(
+            &request.local_text,
+            &self.config.artifact_digest,
+            &self.profile,
+        )?;
+        if run.request.context.is_some() {
+            return Err(crate::physical::refused(
+                "deployment.capability",
+                "/requestText/context",
+            ));
+        }
+        let assignment = &run.assignment;
+        for (index, channel) in request.plan["channels"]
+            .as_array()
+            .ok_or_else(|| crate::physical::refused("deployment.channel", "/channels"))?
+            .iter()
+            .enumerate()
+        {
+            if channel["assignment"] == assignment["assignment"]
+                && channel["bufferRecords"]
+                    .as_str()
+                    .and_then(|text| text.parse::<usize>().ok())
+                    .is_none_or(|records| {
+                        records < run.request.limits.records || records < run.request.limits.samples
+                    })
+            {
+                return Err(crate::physical::refused(
+                    "deployment.channel",
+                    &format!("/channels/{index}/bufferRecords"),
+                ));
+            }
+            if channel["assignment"] == assignment["assignment"]
+                && channel["to"] == "$sink"
+                && (channel["topic"] != run.request.sink.topic
+                    || channel["binding"] != run.request.sink.binding
+                    || channel["partitionCount"] != run.request.sink.partition_count
+                    || run.pipeline.schema_name() != crate::wire::SCHEMA_NAME)
+            {
+                return Err(crate::physical::refused(
+                    "deployment.channel",
+                    &format!("/channels/{index}"),
+                ));
+            }
+        }
+        let capability = request.plan["capabilities"]
+            .as_array()
+            .and_then(|capabilities| {
+                capabilities
+                    .iter()
+                    .find(|capability| capability["assignment"] == assignment["assignment"])
+            })
+            .ok_or_else(|| crate::physical::refused("deployment.capability", "/capabilities"))?;
+        let report = tsx_contracts::parse_json(
+            capability["reportText"].as_str().ok_or_else(|| {
+                crate::physical::refused("deployment.capability", "/capabilities")
+            })?,
+            self.profile.request_bytes,
+        )
+        .map_err(|_| crate::physical::refused("deployment.capability", "/capabilities"))?;
+        if report != current {
+            return Err(crate::physical::refused(
+                "deployment.capability",
+                "/capabilities",
+            ));
+        }
+        Ok(())
     }
 
     fn job_path(&self, request_hash: &str) -> Result<PathBuf, String> {
@@ -1124,12 +1267,24 @@ impl Worker {
                 Err(error) => (409, json!({"error":error})),
             };
         }
-        if method == Method::Post && route == "/v1/prepare" {
+        if method == Method::Post && (route == "/v1/prepare" || route == "/v1/prepare-physical") {
             let text = match std::str::from_utf8(&body) {
                 Ok(text) => text,
                 Err(_) => return (400, json!({"error":"request is not UTF-8"})),
             };
-            let result = self.prepare(text, broker);
+            let physical = crate::physical::request(text, self.profile.request_bytes);
+            let result = match physical {
+                Ok(Some(_)) if route == "/v1/prepare-physical" => self.prepare(text, broker),
+                Ok(None) if route == "/v1/prepare" => self.prepare(text, broker),
+                Ok(_) => Err(crate::physical::refused("deployment.version", "/schema")),
+                Err(error)
+                    if route == "/v1/prepare-physical"
+                        && crate::physical::refusal_value(&error).is_none() =>
+                {
+                    Err(crate::physical::refused("deployment.json", "/"))
+                }
+                Err(error) => Err(error),
+            };
             return json_result(result, 422);
         }
         if !body.is_empty() {
@@ -1206,14 +1361,20 @@ fn json_result(result: Result<Status, String>, error_status: u16) -> (u16, Value
                 json!({"error":format!("cannot encode worker status: {error}")}),
             ),
         },
-        Err(error) => (
-            if error.contains("busy") {
-                409
-            } else {
-                error_status
-            },
-            json!({"error":error}),
-        ),
+        Err(error) => match crate::physical::refusal_value(&error) {
+            Some(refusal) => (
+                error_status,
+                json!({"error":refusal["message"],"refusal":refusal}),
+            ),
+            None => (
+                if error.contains("busy") {
+                    409
+                } else {
+                    error_status
+                },
+                json!({"error":error}),
+            ),
+        },
     }
 }
 

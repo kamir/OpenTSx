@@ -455,6 +455,13 @@ entries before 3.0.0 are grouped by date.
   bounded storage profile. The validators perform no network deployment or production fencing; the separate
   Rust runner and local Wayang rollout execute only their trusted-local bounded profiles.
 
+- Add the bounded `physical` deployment profile with unchanged assignment v1 texts, separate computation identity,
+  complete typed channels and scoped whole-topic ownership. Compare pinned capabilities, topic incarnations and
+  residency with host-owned facts before work, and retain located refusals through the UI. The default Rust
+  provider refuses unavailable incarnation evidence. Shared Java/Rust vectors, execution/admission regressions,
+  an explicit offline ownership upgrade, startup refusal for partial journals and generated lessons cover the contract.
+  U06 production operation and the physical ARM64 B4.2 measurement remain open.
+
 - Versioned learning workloads for all 30 executable UI/DAG operators and 25 documented library/infrastructure
   families, including MFDFA and RIS. Tests execute UI workloads and numerical library examples. Student lessons
   are generated with source-content hashes; synchronization rejects missing, edited or stale material.

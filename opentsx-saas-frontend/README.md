@@ -2,6 +2,18 @@
 
 React + TypeScript frontend with visual flow builder, authentication, and real-time data visualization.
 
+## Read deployment refusals
+
+The Workbench bounded and continuous Wayang targets display validated `opentsx.plan-refusal.v1` errors with their
+fixed public message, original node and JSON-pointer field. Malformed refusal records show
+`The deployment service returned an invalid located refusal.` Transport errors and private worker endpoints are
+excluded from these records. Authentication and administrator-role checks remain on the backend.
+
+The physical deployment profile is API-only. The target selector retains the existing local execution profiles;
+physical execution requires independently observed host facts and the default provider refuses unavailable topic
+incarnations. See [backend admission and offline upgrade](../opentsx-saas-backend/README.md#admit-physical-deployments)
+and the [physical deployment contract](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s115-admit-a-physical-deployment).
+
 ## Quick Start
 
 ```bash
