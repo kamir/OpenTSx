@@ -93,6 +93,17 @@ Every catalog operator MUST declare `state.kind`:
 
 An operator MUST NOT keep state outside the checkpoint (S6.3).
 
+Every catalog operator MUST also declare `key`, how its output is keyed relative to its input (D-T20):
+
+| `key` | Meaning | Fragment |
+|---|---|---|
+| `preserve` | the output keeps the input's series key | stays in the fragment of its input |
+| `derive-1to1` | one output series per input series, with a derived series id (a clean or feature series) | stays in the fragment of its input |
+| `regroup` | the output is keyed by a new key over several inputs (`align.vector`, `pair.*`) | a fragment ends here or continues through a new whole topic |
+
+Federated statistics regroup at the site boundary by the group series id (S4.1); `stats.welford-ddsketch` itself
+preserves the series key.
+
 ### S1.5 Mergeability
 
 Every operator whose output may leave a site (S4) MUST declare `merge.class`:

@@ -104,6 +104,11 @@ entries before 3.0.0 are grouped by date.
 
 ### Added
 
+- Catalog cards declare `key` (D-T20, spec S1.4, `opentsx.processor.v1` schema): `preserve` for decode, segments,
+  SAX, DQ results and statistics; `derive-1to1` for the cleaning, model and feature operators; `regroup` for
+  `align.vector`, `pair.xcorr` and `pair.es`. `SystemDocTest` requires the field on every catalog 1 operator and
+  exactly these three regrouping operators. The frozen vector hashes do not change.
+
 - TASK-020 U01 data edges: tests that a Rust fragment naming a second source topic is refused
   (`a_fragment_reading_two_topics_is_refused`), that the bounded Rust lowering refuses `pair.xcorr`, `pair.es` and
   `align.vector` with an exact message, and that a raw pair or vector cannot feed a federated sink. No production
