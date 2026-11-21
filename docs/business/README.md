@@ -1,82 +1,82 @@
-# OpenTSx – Business-Unterlagen: Markt, Kunden, Kampagne
+# OpenTSx: Business documents on market, customers and campaign
 
-> Stand: **12.10.2026** (Abrufdatum aller Webquellen). Sprache: Deutsch. Diese Unterlagen beantworten eine Frage des
-> Owners und sind Arbeitsgrundlage, keine veröffentlichungsfertigen Texte. Vor jeder Veröffentlichung gilt der
-> [Claims-Leitfaden](03-MARKETING-KAMPAGNE.md).
+> As of: **2026-10-12** (retrieval date of all web sources). Language: English. These documents answer a question from
+> the owner and are a working basis, not texts ready for publication. Before any publication, the
+> [claims guide](03-MARKETING-KAMPAGNE.md) applies.
 
-## 1. Die Frage
+## 1. The question
 
-> „Mache eine tiefe Recherche nach Anbietern von Digital Twins, gibt es da eine direkte Ankopplung von Live-Daten und
-> simulierten Daten wie in unserem Modell? Mache daraus eine Marketing-Kampagne. Wer sind die Kunden dafür? Welchen
-> Nutzen bieten wir denen?“
+> "Do deep research on vendors of digital twins: is there a direct coupling of live data and simulated data as in our
+> model? Turn this into a marketing campaign. Who are the customers for it? What benefit do we offer them?"
 
-## 2. Kurzantworten
+## 2. Short answers
 
-1. **Gibt es die Kopplung von Live- und Simulationsdaten bei anderen?** Ja, verbreitet und oft reifer als bei OpenTSx.
-   Beispiele sind Zustandsschätzung in Netzwerkzeugen (DIgSILENT, ETAP, VENIOS, envelio, Siemens Gridscale X),
-   Prozesszwillinge mit Live-Daten (AVEVA mit PI System, Cognite Simulator Integration, Siemens Hydrogen Performance
-   Suite seit 08.10.2026) und Komponentenzwillinge mit Kalman-Filter oder Kalibrierung (Siemens xDT, Ansys Twin Builder).
-   **Nicht gefunden** haben wir die Kombination, die OpenTSx verfolgt: dieselben Bausteine in drei Betriebsarten mit
-   austauschbarer Fahrweise, Herkunft je Wert bis in die Kennzahlen, bitgleiches Replay auf einem offenen Log,
-   föderierbare Ausführung über Eigentümergrenzen, offen unter Apache 2.0.
-   → [Teil 1: Marktrecherche](01-MARKTRECHERCHE-DIGITAL-TWINS.md)
-2. **Wer sind die Kunden?** Vorrang haben (1) Verbünde aus Windpark, Elektrolyseur, Speicher, Abnehmer und
-   Vermarktung, (2) Stadtwerke und über sie Energiegemeinschaften, (3) Forschung, Labore und Ingenieurbüros. Haus und
-   Boot sind Erzählanker. → [Teil 2: Kunden und Nutzen](02-KUNDEN-UND-NUTZEN.md)
-3. **Welchen Nutzen bieten wir?** Das Koordinationspotenzial wird beziffert (koordinierte Alternative minus
-   Referenzbetrieb, gleiche Information), Entscheidungen werden vor dem Handeln durchgerechnet, jede Zahl trägt ihre
-   Herkunft, Läufe sind bitgleich nachvollziehbar, die Datenhoheit bleibt beim Eigentümer und der Einstieg ist klein
-   (Stufe A ohne Simulation). → [Teil 2](02-KUNDEN-UND-NUTZEN.md)
-4. **Die Kampagne:** „Erst rechnen, dann schalten.“ Drei Phasen (Glaubwürdigkeit, Leuchttürme, Skalierung), ein
-   90-Tage-Plan ab 19.10.2026 mit Wochenkalender, Botschaftshaus, Claims-Leitfaden, drei Beispielbeiträge und eine
-   Gliederung der Landingpage. → [Teil 3: Marketing-Kampagne](03-MARKETING-KAMPAGNE.md)
+1. **Do others offer the coupling of live and simulation data?** Yes. It is widespread and often more mature than in
+   OpenTSx. Examples are state estimation in grid tools (DIgSILENT, ETAP, VENIOS, envelio, Siemens Gridscale X),
+   process twins with live data (AVEVA with PI System, Cognite Simulator Integration, Siemens Hydrogen Performance
+   Suite since 2026-10-08) and component twins with a Kalman filter or calibration (Siemens xDT, Ansys Twin Builder).
+   We did **not find** the combination OpenTSx pursues: the same building blocks in three operating modes with an
+   exchangeable operating policy, provenance per value down to the KPIs, bit-identical replay on an open log, federable
+   execution across ownership boundaries, open under Apache 2.0.
+   → [Part 1: Market research](01-MARKTRECHERCHE-DIGITAL-TWINS.md)
+2. **Who are the customers?** Priority goes to (1) clusters of wind farm, electrolyzer, storage, offtaker and
+   marketing, (2) municipal utilities, and through them energy communities, (3) research, labs and engineering
+   consultancies. The house and the boat are narrative anchors.
+   → [Part 2: Customers and benefits](02-KUNDEN-UND-NUTZEN.md)
+3. **What benefit do we offer?** The coordination potential is quantified (coordinated alternative minus reference
+   operation, same information), decisions are played through before anyone acts, every number carries its
+   provenance, runs are reproducible bit for bit, data sovereignty stays with the asset owner and the first step is
+   small (stage A without simulation). → [Part 2](02-KUNDEN-UND-NUTZEN.md)
+4. **The campaign:** "Compute first, then switch." Three phases (credibility, lighthouses, scaling), a 90-day plan from
+   2026-10-19 with a weekly calendar, a message house, a claims guide, three sample posts and an outline of the landing
+   page. → [Part 3: Marketing campaign](03-MARKETING-KAMPAGNE.md)
 
-## 3. Dokumente
+## 3. Documents
 
-| Dokument | Inhalt |
+| Document | Content |
 |----------|--------|
-| [01-MARKTRECHERCHE-DIGITAL-TWINS](01-MARKTRECHERCHE-DIGITAL-TWINS.md) | Prüfkriterien a–h, OpenTSx-Stand, Anbieterprofile, Vergleichsmatrix, Forschung und Standards, ehrliche Einordnung, nicht Verifiziertes, Quellen |
-| [02-KUNDEN-UND-NUTZEN](02-KUNDEN-UND-NUTZEN.md) | Nutzenbausteine, belegte Marktzahlen und Regeln, elf Segmente mit Personas, Einwänden, Zahlungsbereitschaft und Einkaufsentscheidern, Priorisierung, Geschäftsmodelle |
-| [03-MARKETING-KAMPAGNE](03-MARKETING-KAMPAGNE.md) | Kampagne auf einer Seite, Positionierung, Kategoriename, Taglines, Botschaftshaus, Pitches, Claims-Leitfaden, Phasen, 90-Tage-Plan, Assets, Kanäle mit geprüften Messeterminen, Funnel und KPIs, Budget, Partner, Risiken, drei LinkedIn-Beiträge, Landingpage |
-| [kampagnen-briefing.html](kampagnen-briefing.html) | Kampagnen-Briefing als Seite (Stand 12.10.2026): Ehrlichkeitsleiste, Anbietermatrix, Unterschiede, Zielgruppen, Botschaftshaus, Claims, 90-Tage-Plan, Messen, erster Beitrag, offene Entscheidungen; im Browser öffnen |
+| [01-MARKTRECHERCHE-DIGITAL-TWINS](01-MARKTRECHERCHE-DIGITAL-TWINS.md) | Assessment criteria a to h, OpenTSx status, vendor profiles, comparison matrix, research and standards, honest assessment, items not verified, sources |
+| [02-KUNDEN-UND-NUTZEN](02-KUNDEN-UND-NUTZEN.md) | Benefit building blocks, sourced market figures and rules, eleven segments with personas, objections, willingness to pay and buying decision makers, prioritization, business models |
+| [03-MARKETING-KAMPAGNE](03-MARKETING-KAMPAGNE.md) | The campaign on one page, positioning, category name, taglines, message house, pitches, claims guide, phases, 90-day plan, assets, channels with checked trade fair dates, funnel and KPIs, budget, partners, risks, three LinkedIn posts, landing page |
+| [kampagnen-briefing.html](kampagnen-briefing.html) | Campaign briefing as a page (as of 2026-10-12): honesty bar, vendor matrix, differences, target groups, message house, claims, 90-day plan, trade fairs, first post, open decisions; open in a browser |
 
-## 4. Methode
+## 4. Method
 
-- **Projektstand** aus dem Repository: README, Konzepte [05](../datamodel-2026/05-SMART-TOPICS.md) bis
-  [11](../datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md), [DevOps-Leitfaden](../devops/README.md),
-  [TASK-011](../../EVOLUTION/TASK-011-datamodel-refresher-2026.md) und Code von `opentsx-twin`. Arbeitszweige, die
-  noch nicht in `master` sind (lose Kopplung mit Messung, DWD-Sammler, Anlagen-Explorer), sind als solche
-  gekennzeichnet.
-- **Webrecherche** am 12.10.2026: Websuche und Abruf von Primärquellen (Produktseiten, Dokumentation,
-  Pressemitteilungen, Standards, Fachartikel, amtliche und Verbandsstatistiken). Wo nur Sekundärquellen vorlagen, ist
-  das vermerkt.
-- **Bewertung** je Anbieter nach acht Kriterien (a–h) mit der Skala ● belegt, ◐ teilweise, ○ nicht gefunden,
-  ? nicht verifiziert ([Teil 1 §2](01-MARKTRECHERCHE-DIGITAL-TWINS.md)).
-- **Marktzahlen** nur mit Quelle und Stichtag; eigene Rechnungen sind markiert.
+- **Project status** from the repository: README, concepts [05](../datamodel-2026/05-SMART-TOPICS.md) to
+  [11](../datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md), [DevOps guide](../devops/README.md),
+  [TASK-011](../../EVOLUTION/TASK-011-datamodel-refresher-2026.md) and the code of `opentsx-twin`. Work branches that
+  are not yet in `master` (loose coupling with measurement, DWD collector, asset explorer) are marked as such.
+- **Web research** on 2026-10-12: web search and retrieval of primary sources (product pages, documentation,
+  press releases, standards, technical articles, official and association statistics). Where only secondary sources
+  were available, this is noted.
+- **Rating** of each vendor against eight criteria (a to h) on the scale ● documented, ◐ partial, ○ not found,
+  ? not verified ([Part 1, section 2](01-MARKTRECHERCHE-DIGITAL-TWINS.md)).
+- **Market figures** only with a source and a reference date; own calculations are marked.
 
-## 5. Grenzen und Vorbehalte
+## 5. Limits and caveats
 
-- **Selbstauskünfte:** Die Bewertung der Anbieter beruht auf deren eigenen Veröffentlichungen. Es gab keine Tests,
-  Demos oder Gespräche. „Nicht gefunden“ heißt „in den geprüften Quellen nicht gefunden“.
-- **OpenTSx-Reifegrad:** Proof of Concept auf synthetischen und simulierten Daten, **kein Produktivkunde**. Ein
-  Projektumfeld mit Windpark, Elektrolyseur und Direktvermarktung ist in Vorbereitung; Partner erscheinen nur als
-  Rollen.
-- **Nachtrag 12.10.2026, nachmittags:** Die in den Unterlagen als Arbeitszweige genannten Teile (lose Kopplung mit
-  Messung und Avro-Schemas, DWD-Sammler, Anlagen-Explorer, Repository-Hygiene) sind inzwischen in `master`
-  (Integration #116), ebenso der Modbus-Sammler (#115), das Betriebskonzept mit Probelauf (#137) und die
-  Abhängigkeitspflege (#131). Die Bewertungen bleiben gültig: alles läuft weiterhin auf synthetischen und simulierten
-  Daten. Damit ist das erste Arbeitspaket von Phase 0 („Merge der Arbeitszweige“) erledigt.
-- **Hypothesen:** Schmerzpunkte, Zahlungsbereitschaft, Einkaufsentscheider, KPI-Ziele und Budgetbeträge sind Annahmen
-  und mit Gesprächen bzw. Angeboten zu prüfen.
-- **Zeitbezug:** Regeln (GModG seit 29.07.2026, Energy Sharing seit 01.06.2026, § 14a seit 01.01.2024) und
-  Messetermine ändern sich; vor Verwendung erneut prüfen.
-- **Keine Rechtsberatung:** Aussagen zu Gesetzen, vergleichender Werbung und Begriffen sind Hinweise, keine
-  rechtliche Prüfung. Eine Marken- und Namensrecherche wurde nicht durchgeführt.
+- **Self-reported information:** The rating of the vendors is based on their own publications. There were no tests,
+  demos or conversations. "Not found" means "not found in the sources checked".
+- **OpenTSx maturity:** Proof of concept on synthetic and simulated data, **no production customer**. A project
+  setting with a wind farm, an electrolyzer and direct marketing of the power is in preparation; partners appear only
+  as roles.
+- **Addendum 2026-10-12, afternoon:** The parts these documents name as work branches (loose coupling with
+  measurement and Avro schemas, DWD collector, asset explorer, repository hygiene) are now in `master`
+  (integration #116). So are the Modbus collector (#115), the operations concept with probe run (#137) and the
+  dependency maintenance (#131). The ratings remain valid: everything still runs on synthetic and simulated data.
+  This completes the first work package of phase 0 ("merge of the work branches").
+- **Hypotheses:** Pain points, willingness to pay, buying decision makers, KPI targets and budget amounts are
+  assumptions. They are to be checked through conversations or quotes.
+- **Time reference:** Rules and trade fair dates change. The GModG (building modernization law) has applied since
+  2026-07-29, energy sharing since 2026-06-01 and Section 14a EnWG (Energy Industry Act) since 2024-01-01. Check them
+  again before use.
+- **No legal advice:** Statements on laws, comparative advertising and terms are pointers, not a legal review. A
+  trademark and name search was not done.
 
-## 6. Entscheidungen beim Owner
+## 6. Decisions for the owner
 
-1. Kategoriename: „Entscheidungszwilling“ (Markt) und „Digital Twins on Logs“ (Technik)? Vorher Markenrecherche.
-2. Budgetstufe für die 90 Tage („niedrig“ oder „mittel“, Teil 3 §10).
-3. Ansprache der Pilotpartner (Verbund, Stadtwerk, Labor) und Umfang des Stufe-A-Angebots.
-4. Merge der Arbeitszweige vor dem Start, damit Demos und Beiträge auf `master` verweisen.
-5. Freigabe von Whitepaper, Preprint und den drei Beispielbeiträgen.
+1. Category name: "decision twin" (market) and "Digital Twins on Logs" (technology)? A trademark search comes first.
+2. Budget tier for the 90 days ("low" or "medium", Part 3, section 10).
+3. Outreach to the pilot partners (cluster, municipal utility, lab) and the scope of the stage A offer.
+4. Merge of the work branches before the start, so that demos and posts refer to `master`.
+5. Approval of the white paper, the preprint and the three sample posts.

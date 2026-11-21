@@ -1,490 +1,494 @@
-# OpenTSx – Marketing-Kampagne „Erst rechnen, dann schalten“
+# OpenTSx: Marketing campaign "Compute first, then switch"
 
-> Status: **Kampagnenentwurf zur Entscheidung**, Stand 12.10.2026. Teil 3 der Business-Unterlagen
-> ([Übersicht](README.md)); baut auf [Teil 1: Marktrecherche](01-MARKTRECHERCHE-DIGITAL-TWINS.md) und
-> [Teil 2: Kunden und Nutzen](02-KUNDEN-UND-NUTZEN.md) auf. Messetermine wurden am 12.10.2026 geprüft (§8.4).
-> Budget- und Zielwerte sind **Planannahmen** und vor Beauftragung mit Angeboten bzw. Basiswerten zu prüfen.
+> Status: **campaign draft for decision**, as of 2026-10-12. Part 3 of the business documents
+> ([Overview](README.md)); builds on [Part 1: Market research](01-MARKTRECHERCHE-DIGITAL-TWINS.md) and
+> [Part 2: Customers and benefits](02-KUNDEN-UND-NUTZEN.md). Trade fair dates were checked on 2026-10-12 (section 8.4).
+> Budget and target values are **planning assumptions** and are to be checked against quotes or baselines before
+> commissioning.
 
 ---
 
-## 0. Die Kampagne auf einer Seite
+## 0. The campaign on one page
 
-| Feld | Inhalt |
+| Field | Content |
 |------|--------|
-| **Leitsatz** | „Erst rechnen, dann schalten.“ |
-| **Ziel (90 Tage, 19.10.2026–17.01.2027)** | Glaubwürdigkeit herstellen; aus qualifizierten Gesprächen einen unterschriebenen Pilot der Stufe A gewinnen; Preprint „Digital Twins on Logs“ einreichen |
-| **Zielgruppen** | 1) Verbund aus Windpark, Elektrolyseur, Speicher und Vermarktung; 2) Stadtwerke, über sie Energiegemeinschaften; 3) Forschung, Labore und Ingenieurbüros. Erzählanker: Haus und Boot |
-| **Kernbotschaft** | OpenTSx macht das Zusammenspiel gekoppelter Energiesysteme sichtbar und Entscheidungen prüfbar, bevor sie getroffen werden – offen, nachvollziehbar und mit Herkunft jeder Zahl |
-| **Angebot** | Potenzialbericht Stufe A (Festpreis, ohne Simulation, mit Wertschranke); Forschungskooperation; Open-Source-Schnellstart |
-| **Phasen** | 0 Glaubwürdigkeit (Woche 1–6) · 1 Leuchttürme (Woche 4–13, fortgesetzt bis Q2 2027) · 2 Skalierung (2027: E-world, Hannover Messe, The smarter E, HUSUM Wind) |
-| **Kanäle** | LinkedIn (Owner-Profil als Hauptstimme), GitHub und Open-Source-Communities, Direktansprache, Messebesuche (Hamburg, Wien), Wissenschaft, Fachmedien |
-| **Budget** | Stufe „niedrig“: Eigenleistung plus kleiner vierstelliger Sachbetrag; Stufe „mittel“: plus Video, Design, Anzeigen, Messeauftritt, niedriger bis mittlerer fünfstelliger Betrag (Annahmen, §10) |
-| **KPIs (Zielannahmen)** | 12 qualifizierte Erstgespräche, 3 Pilotangebote, 1 unterschriebener Pilot, 2 Laborpartner mit Absichtserklärung, 1 Preprint |
-| **Hauptrisiko** | Überversprechen. Gegenmittel: Claims-Leitfaden (§4) und ein Ehrlichkeitskasten „heute · in Arbeit · geplant“ auf jedem Medium |
-| **Entscheidungen beim Owner** | Kategoriename, Budgetstufe, Ansprache der Pilotpartner, Freigabe von Paper und Posts, Merge der Arbeitszweige |
+| **Campaign line** | "Compute first, then switch." |
+| **Goal (90 days, 2026-10-19 to 2027-01-17)** | Establish credibility; win one signed stage A pilot from qualified conversations; submit the preprint "Digital Twins on Logs" |
+| **Target groups** | 1) cluster of wind farm, electrolyzer, storage and power marketing; 2) municipal utilities, and through them energy communities; 3) research, labs and engineering consultancies. Narrative anchors: house and boat |
+| **Core message** | OpenTSx makes the interplay of coupled energy systems visible and decisions testable before they are made: open, traceable and with the provenance of every number |
+| **Offer** | Stage A potential report (fixed price, without simulation, with a value gate); research cooperation; open source quickstart |
+| **Phases** | 0 Credibility (weeks 1 to 6) · 1 Lighthouses (weeks 4 to 13, continued until Q2 2027) · 2 Scaling (2027: E-world, Hannover Messe, The smarter E, HUSUM Wind) |
+| **Channels** | LinkedIn (the owner's profile as the main voice), GitHub and open source communities, direct outreach, trade fair visits (Hamburg, Vienna), science, trade media |
+| **Budget** | Tier "low": own work plus a low four-digit non-staff amount; tier "medium": plus video, design, ads, a trade fair presence, a low to mid five-digit amount (assumptions, section 10) |
+| **KPIs (target assumptions)** | 12 qualified first conversations, 3 pilot proposals, 1 signed pilot, 2 lab partners with a letter of intent, 1 preprint |
+| **Main risk** | Overpromising. Remedy: the claims guide (section 4) and an honesty box "today · in progress · planned" on every medium |
+| **Decisions for the owner** | Category name, budget tier, outreach to the pilot partners, approval of the paper and the posts, merge of the work branches |
 
 ---
 
-## 1. Positionierung
+## 1. Positioning
 
-### 1.1 Positionierungsstatement
+### 1.1 Positioning statement
 
-**Deutsch.** Für Betreiber gekoppelter Energiesysteme, vom Windpark mit Elektrolyseur über das Stadtwerk bis zum
-Forschungslabor, die Entscheidungen über Anlagen- und Eigentümergrenzen hinweg treffen und begründen müssen, ist
-OpenTSx der **offene Entscheidungszwilling auf dem Datenlog**. Er rechnet eine Entscheidung durch, bevor sie getroffen
-wird. Er zeigt bei jeder Zahl, ob sie gemessen, gemeldet, prognostiziert, geschätzt oder synthetisch ist. Und er macht
-jeden Lauf bitgleich nachvollziehbar. Anders als die Plattformen großer Hersteller ist OpenTSx herstellerneutral und
-unter Apache 2.0 lizenziert, läuft auf offenen Logs und Tabellenformaten und lässt jede Partei ihren Teil selbst
-betreiben.
+**German version (translated).** For operators of coupled energy systems, from the wind farm with an electrolyzer
+through the municipal utility to the research lab, who must make and justify decisions across asset and ownership
+boundaries, OpenTSx is the **open decision twin on a data log**. It plays a decision through before it is made. It
+shows for every number whether it is measured, reported, forecast, estimated or synthetic. And it makes every run
+reproducible bit for bit. Unlike the platforms of large vendors, OpenTSx is vendor-neutral and licensed under Apache
+2.0, runs on open logs and table formats and lets each party operate its own part itself.
 
-**English.** For operators of coupled energy systems – from a wind farm with an electrolyzer to a municipal utility or
-a research lab – who must make and justify decisions across asset and ownership boundaries, OpenTSx is the **open
-decision twin on a data log**. It plays a decision through before it is taken, shows for every number whether it was
-measured, reported, forecast, estimated or synthetic, and makes every run reproducible bit for bit. Unlike the
+**English version.** For operators of coupled energy systems, from a wind farm with an electrolyzer to a municipal
+utility or a research lab, who must make and justify decisions across asset and ownership boundaries, OpenTSx is the
+**open decision twin on a data log**. It plays a decision through before it is taken, shows for every number whether it
+was measured, reported, forecast, estimated or synthetic, and makes every run reproducible bit for bit. Unlike the
 platforms of large vendors, OpenTSx is vendor-neutral and Apache-2.0 licensed, runs on open logs and table formats,
 and lets each party operate its own part.
 
-### 1.2 Kategoriename
+### 1.2 Category name
 
-| Kandidat | Stärke | Schwäche | Einsatz |
+| Candidate | Strength | Weakness | Use |
 |----------|--------|----------|---------|
-| **Entscheidungszwilling** (Decision Twin) | sagt den Nutzen; auf Deutsch sofort verständlich | Begriff wird möglicherweise schon verwendet (**nicht geprüft**); darf nicht nach „KI entscheidet“ klingen | **Marktkommunikation (Empfehlung)** |
-| **Digital Twins on Logs** | technisch präzise; Titel des Papers; spricht Entwickler an | für Fachabteilungen sperrig | Paper, GitHub, Entwickler-Communities (**Empfehlung, technisch**) |
-| Verbundzwilling | trifft den Fall Wind plus H2 | zu eng für Haus, Boot, Labor | Segment Verbund |
-| Koordinationszwilling | betont das Koordinationspotenzial | abstrakt | intern, Methode |
-| „Zwilling mit Herkunftsnachweis“ | betont Vertrauen | **nicht verwenden**: „Herkunftsnachweis“ ist im Energierecht belegt (Nachweise für Strom aus erneuerbaren Energien im Register des Umweltbundesamts, [UBA](https://www.umweltbundesamt.de/themen/klima-energie/erneuerbare-energien/herkunftsnachweisregister-hknr)) | – |
+| **Decision twin** | states the benefit; the German term is immediately understandable to German speakers | the term may already be in use (**not checked**); must not sound like "AI decides" | **Market communication (recommendation)** |
+| **Digital Twins on Logs** | technically precise; title of the paper; appeals to developers | unwieldy for business departments | Paper, GitHub, developer communities (**recommendation, technical**) |
+| Cluster twin | fits the case of wind plus H2 | too narrow for house, boat, lab | Cluster segment |
+| Coordination twin | emphasizes the coordination potential | abstract | Internal, method |
+| "Twin with guarantee of origin" | emphasizes trust | **do not use**: "guarantee of origin" is already a defined term in energy law (certificates for electricity from renewable energy in the register of the German Environment Agency, [UBA](https://www.umweltbundesamt.de/themen/klima-energie/erneuerbare-energien/herkunftsnachweisregister-hknr)) | none |
 
-**Empfehlung:** „Entscheidungszwilling“ für den Markt, „Digital Twins on Logs“ für Technik und Wissenschaft. Vor der
-Nutzung eine Marken- und Namensrecherche (DPMA, EUIPO, Web) durchführen; sie wurde für diese Unterlage nicht gemacht.
-Durchgängig „Herkunft“ oder „Herkunftsklasse“ sagen, nie „Herkunftsnachweis“.
+**Recommendation:** "decision twin" for the market, "Digital Twins on Logs" for technology and science. Before use,
+carry out a trademark and name search (DPMA, the German Patent and Trade Mark Office; EUIPO; web); it was not done for
+this document. Always say "provenance" or "provenance class", never "guarantee of origin".
 
 ### 1.3 Taglines
 
-| Deutsch | Englisch |
+| German line (translated) | English line |
 |---------|----------|
-| **Erst rechnen, dann schalten.** (Kampagnenleitsatz) | **Decide before you switch.** |
-| Jede Zahl mit Herkunft. | **Every number knows where it came from.** |
-| Was wäre, wenn – bevor es ist. | What if – before it is. |
-| Das Zusammenspiel sichtbar. Die Entscheidung belegbar. | See the interplay. Prove the decision. |
-| Offen gerechnet. Bitgleich nachvollziehbar. | Digital twins on logs: open, replayable, explainable. |
+| **Compute first, then switch.** (campaign line) | **Decide before you switch.** |
+| Every number with its provenance. | **Every number knows where it came from.** |
+| What if: before it happens. | What if: before it is. |
+| The interplay made visible. The decision made provable. | See the interplay. Prove the decision. |
+| Computed in the open. Reproducible bit for bit. | Digital twins on logs: open, replayable, explainable. |
 
-**Empfehlung:** Leitsatz „Erst rechnen, dann schalten.“ auf Deutsch, „Every number knows where it came from.“ für
-englische Kanäle und GitHub.
+**Recommendation:** in German-language channels, use the German original of the campaign line (translated above as
+"Compute first, then switch."); for English channels and GitHub, use "Every number knows where it came from."
 
 ---
 
-## 2. Botschaftshaus
+## 2. Message house
 
-**Dach (Kernbotschaft):** OpenTSx macht das Zusammenspiel gekoppelter Energiesysteme sichtbar und Entscheidungen
-prüfbar, bevor sie getroffen werden – offen, nachvollziehbar und mit Herkunft jeder Zahl.
+**Roof (core message):** OpenTSx makes the interplay of coupled energy systems visible and decisions testable before
+they are made: open, traceable and with the provenance of every number.
 
-| | Säule 1: Durchrechnen statt Bauchgefühl | Säule 2: Vertrauen durch Herkunft | Säule 3: Nachvollziehbar bis aufs Bit | Säule 4: Offen und föderiert |
+| | Pillar 1: Computation, not gut feeling | Pillar 2: Trust through provenance | Pillar 3: Reproducible to the bit | Pillar 4: Open and federated |
 |---|---|---|---|---|
-| **Botschaft** | Dieselben Bausteine rechnen Gegenwart, Alternative und Zukunft. | Jede Zahl sagt, woher sie kommt. Modelliert ist nicht nachgewiesen. | Derselbe Lauf, dasselbe Ergebnis, derselbe Hash. | Jede Partei betreibt ihren Teil, geteilt werden nur Ports. Lokale Sicherheit hat Vorrang. |
-| **Belege heute** | H2-Kette S1 mit What-if und Prognose; neun Haus-Hebel; Boot-Hebel; Koordinationspotenzial als Bewertungsprinzip | Herkunftsleiter mit Taint-Propagation; Kalibrierung meldet Warmwasser offen als „nicht bestimmbar“ | verketteter Zustands-Hash; Episoden-Replay gegen KafScale v1.6.0 und Apache Kafka 3.9.1 getestet; 2,18 Byte je Wert gemessen | Apache 2.0; Kafka-Protokoll, Iceberg, OpenMetadata; Variante L bitgleich zu T (Arbeitszweig, simuliert) |
-| **Gründe zu glauben** | Atomvertrag mit Modell, Sichten, Dynamik und austauschbarer Policy; geschichtetes BSP, deterministisch | Regel „modelliert ≠ nachgewiesen“ ist in Methode und Oberfläche verankert | deterministische Ids, Prüfsummen, Lauf-Id aus Plan, Eingängen, Eingriffen und Version | gemessene Entwurfsregel „Schleifen in einen Prozessor, dazwischen BSP“; DevOps-Leitfaden für k3s |
+| **Message** | The same building blocks compute the present, the alternative and the future. | Every number says where it comes from. Modeled is not proven. | The same run, the same result, the same hash. | Each party operates its own part, only ports are shared. Local safety takes precedence. |
+| **Evidence today** | H2 chain S1 with what-if and forecast; nine house levers; boat levers; coordination potential as an evaluation principle | provenance ladder with taint propagation; calibration openly reports hot water as "not identifiable" | chained state hash; episode replay tested against KafScale v1.6.0 and Apache Kafka 3.9.1; 2.18 bytes per value measured | Apache 2.0; Kafka protocol, Iceberg, OpenMetadata; variant L bit-identical to T (work branch, simulated) |
+| **Reasons to believe** | atom contract with model, views, dynamics and an exchangeable policy; layered BSP, deterministic | the rule "modeled ≠ proven" is anchored in the method and the user interface | deterministic ids, checksums, run id from plan, inputs, interventions and version | measured design rule "loops in one processor, BSP in between"; DevOps guide for k3s |
 
-**Fundament (Werte):** Ehrlichkeit vor Effekt · Sicherheit bleibt lokal · Datenhoheit beim Eigentümer · Offenheit von
-Code und Formaten.
+**Foundation (values):** Honesty before effect · Safety stays local · Data sovereignty stays with the owner · Open code
+and formats.
 
-**Allgemeine Gründe zu glauben:** öffentliche Codebasis mit CI und Tests; Forschungslinie seit Hadoop.TS
-([IJCA 2013](https://www.ijcaonline.org/archives/volume74/number17/12974-0233)) und zu Kontextnetzwerken aus
-Zeitreihen ([PLOS ONE 2015](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0141892)); offen
-kommunizierter Reifegrad ([DevOps: heute vs. geplant](../devops/today-vs-planned.md)).
+**General reasons to believe:** a public code base with CI and tests; a line of research since Hadoop.TS
+([IJCA 2013](https://www.ijcaonline.org/archives/volume74/number17/12974-0233)) and on context networks from
+time series ([PLOS ONE 2015](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0141892)); openly
+communicated maturity ([DevOps: today vs. planned](../devops/today-vs-planned.md)).
 
-**Tonalität:** sachlich, konkret, Sprache von Ingenieurinnen und Ingenieuren. Zahlen nur mit Herkunft. Keine
-Superlative, keine Schlagworte ohne Substanz. Lieber eine ehrliche Grenze als ein glänzendes Versprechen.
-
----
-
-## 3. Elevator Pitches je Segment
-
-**Verbund aus Windpark, Elektrolyseur, Speicher und Vermarktung.** Ihr Windpark, der Elektrolyseur nebenan, der
-Speicher und der Direktvermarkter entscheiden heute getrennt. OpenTSx rechnet aus Ihren vorhandenen Daten aus, was
-diese Trennung kostet und was Abstimmung bringen würde, mit Herkunftsangabe für jede Zahl. Schließt der Abnehmer einen
-Schieber, sehen Sie vorher, wann der Elektrolyseur abregelt und was das für den Fahrplan bedeutet. Wir beginnen mit
-einem Potenzialbericht ohne Simulation, der an einer klaren Wertschranke endet.
-
-**Direktvermarkter.** Ihre Prognose sieht den Windpark, aber nicht den Elektrolyseur und den Abnehmer dahinter. In
-einem Schattenbetrieb läuft Ihr Fahrplan gegen die tatsächliche Erzeugung, Abweichung und Kosten je Viertelstunde
-inklusive. So üben Sie eine neue Belieferung, bevor das Messkonzept umgestellt ist. Ihr Baustein kann bei Ihnen laufen,
-geteilt werden nur Ports.
-
-**H2-Projekt.** Mindestlast, Rampen, Leitungsdruck: Ihr Elektrolyseur hängt an Entscheidungen anderer. OpenTSx warnt,
-wie lange der Puffer noch reicht, und rechnet die Gegenmaßnahme durch, bevor Sie eingreifen. Ein Replay mit Herkunft je
-Wert macht Fahrweise und Strombezug für alle Beteiligten nachvollziehbar. Lokale Schutzlogik behält immer das letzte
-Wort.
-
-**Stadtwerk.** Sie betreiben Netz, Vertrieb, Erzeugung und Wärme, oft in getrennten Systemen. OpenTSx ist ein offener
-Verbundzwilling für Ihr Haus: Er rechnet Fahrweisen, Tarife und Energy-Sharing-Produkte durch und zeigt, welche Zahl
-gemessen und welche geschätzt ist. Ihre Netzplattform bleibt, ihre Ergebnisse werden zu Eingängen. Die Daten bleiben
-bei Ihnen.
-
-**Energiegemeinschaft.** Energy Sharing ist seit Juni 2026 möglich, aber Vertrauen entsteht erst, wenn jedes Mitglied
-nachvollziehen kann, wer wie viel Strom aus welcher Quelle bekommen hat. OpenTSx macht genau das sichtbar und rechnet
-vorher durch, was ein Speicher oder neue Mitglieder ändern würden. Offen und kostenlos nutzbar, gern über Ihr Stadtwerk.
-
-**Industriestandort.** PV, BHKW, Speicher und Produktion: Wo liegt das Potenzial, wenn alles abgestimmt läuft? OpenTSx
-beziffert es gegen Ihren heutigen Betrieb, mit denselben Daten und derselben Information, bevor Sie investieren.
-
-**Ingenieurbüro und Integrator.** Hören Sie auf, für jedes Projekt eine neue Datenpipeline zu bauen. OpenTSx liefert
-Standardbausteine, Schaltpläne als YAML und reproduzierbare Läufe, die Sie in Ihre Leistungen einbetten dürfen. Apache
-2.0, keine Lizenzfalle.
-
-**Forschung und Labor.** Ihre Prüfstandsdaten verdienen Herkunft und Wiederholbarkeit. OpenTSx speichert Episoden mit
-Prüfsummen, spielt sie bitgleich wieder ab und verbindet Labor und Modell. Und wir suchen Partner, die unsere Messung
-zu eng und lose gekoppelten Zwillingen mit echten Prüfständen überprüfen.
-
-**Energieberaterin.** Ein Hausmodell, kalibriert an den Abrechnungen Ihrer Kunden, das offen sagt, was es nicht weiß.
-Jeder Hebel erscheint als modellierte Alternative zur Referenz, nachgewiesen wird erst mit gemessenem Vorher und
-Nachher. Ein Werkzeug zum Erklären, kein Ersatz für normgerechte Berechnungen.
-
-**Hauseigentümer.** Welche Maßnahme lohnt sich in Ihrem Haus zuerst, und reicht das Öl bis März? Der Haus-Zwilling
-rechnet es aus Ihren Abrechnungen. Er sagt dazu ehrlich, wie sicher die Zahl ist.
-
-**Boot und Off-Grid.** Reicht die Powerstation für zwei Wochen Törn mit Starlink? Der Boot-Zwilling rechnet Autonomie
-und ungedeckten Bedarf und lernt aus Ihren Loggerdaten.
-
-**Hersteller kleiner Energiesysteme.** „Welche Größe brauche ich?“ und „Warum war der Akku leer?“ sind Ihre teuersten
-Supportfragen. Ein kalibrierter Zwilling beantwortet beide nachvollziehbar und lässt sich unter Apache 2.0 einbetten.
+**Tone of voice:** factual, concrete, the language of engineers. Numbers only with their provenance. No superlatives,
+no buzzwords without substance. Rather an honest limit than a shiny promise.
 
 ---
 
-## 4. Claims-Leitfaden
+## 3. Elevator pitches per segment
 
-Grundsatz: **Modelliert ist nicht nachgewiesen.** Jede Zahl in der Kommunikation braucht eine Herkunft und, wo sie
-modelliert ist, dieses Wort.
+**Cluster of wind farm, electrolyzer, storage and power marketing.** Your wind farm, the electrolyzer next door, the
+storage and the direct marketer decide separately today. From your existing data, OpenTSx calculates what this
+separation costs and what coordination would bring, with a provenance label for every number. If the offtaker closes a
+valve, you see in advance when the electrolyzer curtails and what that means for the schedule. We start with a
+potential report without simulation that ends at a clear value gate.
 
-| Thema | So sagen wir es | So nicht | Warum |
+**Direct marketer.** Your forecast sees the wind farm, but not the electrolyzer and the offtaker behind it. In shadow
+operation, your schedule runs against the actual generation, including the deviation and the costs per quarter hour.
+This lets you rehearse a new supply arrangement before the metering concept is switched over. Your building block can
+run on your premises; only ports are shared.
+
+**H2 project.** Minimum load, ramps, line pressure: your electrolyzer depends on the decisions of others. OpenTSx warns
+you how long the buffer will still last and plays the countermeasure through before you intervene. A replay with
+provenance per value makes the operating policy and the power procurement traceable for all parties involved. Local
+protection logic always has the last word.
+
+**Municipal utility.** You run grid, retail, generation and heat, often in separate systems. OpenTSx is an open
+cluster twin for your organization: it plays through operating policies, tariffs and energy sharing products and shows
+which number is measured and which is estimated. Your grid platform stays; its results become inputs. The data stays
+with you.
+
+**Energy community.** Energy sharing has been possible since June 2026, but trust only develops when every member can
+trace who received how much electricity from which source. OpenTSx makes exactly that visible and calculates in advance
+what a storage system or new members would change. Open and free to use, preferably through your municipal utility.
+
+**Industrial site.** PV, CHP unit, storage and production: where is the potential if everything runs in coordination?
+OpenTSx quantifies it against your current operation, with the same data and the same information, before you invest.
+
+**Engineering consultancy and integrator.** Stop building a new data pipeline for every project. OpenTSx supplies
+standard building blocks, wiring plans as YAML and reproducible runs that you may embed in your services. Apache
+2.0, no license trap.
+
+**Research and lab.** Your test bench data deserves provenance and repeatability. OpenTSx stores episodes with
+checksums, replays them bit-identically and connects lab and model. And we are looking for partners who check our
+measurement on tightly and loosely coupled twins against real test benches.
+
+**Energy advisor.** A house model, calibrated against your clients' bills, that openly says what it does not know.
+Every lever appears as a modeled alternative to the reference; it is proven only with a measured before and
+after. A tool for explaining, not a substitute for standards-compliant calculations.
+
+**Homeowner.** Which measure pays off first in your house, and will the oil last until March? The house twin
+calculates it from your bills. It also says honestly how certain the number is.
+
+**Boat and off-grid.** Will the power station last for a two-week sailing trip with Starlink? The boat twin computes
+autonomy and unmet demand and learns from your logger data.
+
+**Manufacturers of small energy systems.** "What size do I need?" and "Why was the battery empty?" are your most
+expensive support questions. A calibrated twin answers both traceably and can be embedded under Apache 2.0.
+
+---
+
+## 4. Claims guide
+
+Principle: **Modeled is not proven.** Every number in our communication needs a provenance and, where it is
+modeled, that word.
+
+| Topic | How we say it | Not like this | Why |
 |-------|-----------------|----------|-------|
-| Reifegrad | „Proof of Concept auf synthetischen und simulierten Daten; ein Pilot ist in Vorbereitung.“ | „produktionsreif“, „im Einsatz bei …“, „bewährt“ | kein Produktivkunde |
-| Einsparungen | „modelliertes Potenzial: −151 l Heizöl im Jahr bei −1 K (Beispielhaus, erfundene Annahmen)“ | „spart 15 %“, „garantierte Einsparung“ | Bewertungsprinzip; Gefahr irreführender Werbung |
-| Nachweis | „nachgewiesen erst nach gemessenem Vorher und Nachher, witterungsbereinigt, größer als die Kalibrierunsicherheit“ | „bewiesen“, „belegt“ für Modellwerte | Methode ([08 §8](../datamodel-2026/08-HAUS-ZWILLING.md)) |
-| Replay | „bitgleich wiederholbar bei gleichem Schaltplan, gleichen Eingängen, gleichem Eingriffslog und gleicher Code-Version“ | „manipulationssicher“, „revisionssicher“, „fälschungssicher“ | Rechtsbegriffe; nicht geprüft |
-| Steuerung | „schlägt Fahrweisen vor; der Rückweg erfolgt nur nach Freigabe; lokale Schutzlogik hat Vorrang“ | „steuert Ihre Anlage automatisch“, „Echtzeitregelung“ | Sicherheitsprinzip; nicht umgesetzt |
-| Föderation | „im Arbeitszweig auf simulierter Wandzeit gemessen“ | „föderierter Betrieb erprobt“ | Stand Teil 1 §3 |
-| Leistung | „bis Faktor 6 mehr Durchsatz gegenüber BSP ohne Kolokation, gemessen in simulierten Ticks“ | „6-mal schneller als Kafka Streams“ o. Ä. | kein solcher Vergleich gemessen |
-| Wettbewerb | Kategorien vergleichen, Quellen nennen, „in den geprüften Quellen nicht gefunden“ | „Kein Anbieter kann …“, abwertende Aussagen über benannte Firmen | Fairness; vergleichende Werbung vorher rechtlich prüfen |
-| Herkunft | „Herkunft je Wert“, „Herkunftsklasse“ | „Herkunftsnachweis“ | Begriff im Energierecht belegt |
-| Sicherheit, Zertifikate | „Sicherheitskonzept für den Rückweg ist in Arbeit“ | „IEC-62443-konform“, „KRITIS-ready“, „zertifiziert“ | keine Nachweise |
-| KI, Quanten | „klassische Optimierung; Quantenrechnen nur als Messobjekt“ | „KI-gestützt“ ohne Substanz, „Quantenvorteil“ | [06](../datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md): kein belegter Vorteil |
-| Haus | „Beispielhaus; kein Ersatz für Energieausweis oder geförderte Energieberatung“ | „Energieberatung“, „GModG-konform“ | Haftung, Abgrenzung |
-| Partner | nur Rollen („ein Elektrolyseurbetreiber“), bis eine schriftliche Freigabe vorliegt | Namen von Gesprächs- oder Projektpartnern | Vertraulichkeit ([07, Kopf](../datamodel-2026/07-DIGITAL-TWIN-BSP.md)) |
-| Open Source | „Apache 2.0; Betrieb und Support als Dienstleistung“ | „kostenlos inklusive Support“ | Erwartungsmanagement |
-| Daten | „Betrieb im eigenen Haus möglich; geteilt werden nur Ports“ | „DSGVO-zertifiziert“ | es gibt keine solche Zertifizierung des Produkts |
+| Maturity | "Proof of concept on synthetic and simulated data; a pilot is in preparation." | "production-ready", "in use at …", "proven in practice" | no production customer |
+| Savings | "modeled potential: −151 l of heating oil a year at −1 K (example house, invented assumptions)" | "saves 15 %", "guaranteed savings" | evaluation principle; risk of misleading advertising |
+| Proof | "proven only after a measured before and after, weather-adjusted, larger than the calibration uncertainty" | "proven", "demonstrated" for model values | method ([08, section 8](../datamodel-2026/08-HAUS-ZWILLING.md)) |
+| Replay | "repeatable bit for bit with the same wiring plan, the same inputs, the same intervention log and the same code version" | "tamper-proof", "audit-proof", "forgery-proof" | legal terms; not checked |
+| Control | "proposes operating policies; the return path is used only after approval; local protection logic takes precedence" | "controls your plant automatically", "real-time control" | safety principle; not implemented |
+| Federation | "measured in the work branch on simulated wall-clock time" | "federated operation tested in practice" | status per Part 1, section 3 |
+| Performance | "up to factor 6 more throughput than BSP without colocation, measured in simulated ticks" | "6 times faster than Kafka Streams" or similar | no such comparison measured |
+| Competition | compare categories, name sources, "not found in the sources checked" | "No vendor can …", disparaging statements about named companies | fairness; have comparative advertising checked legally beforehand |
+| Provenance | "provenance per value", "provenance class" | "guarantee of origin" | the term is already defined in energy law |
+| Security, certificates | "a security concept for the return path is in progress" | "IEC 62443 compliant", "KRITIS-ready", "certified" | no evidence |
+| AI, quantum | "classical optimization; quantum computing only as an object of measurement" | "AI-powered" without substance, "quantum advantage" | [06](../datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md): no demonstrated advantage |
+| House | "example house; no substitute for an energy performance certificate or subsidized energy advice" | "energy advice", "GModG compliant" | liability, boundaries |
+| Partners | roles only ("an electrolyzer operator") until written approval is given | names of conversation or project partners | confidentiality ([07, header](../datamodel-2026/07-DIGITAL-TWIN-BSP.md)) |
+| Open source | "Apache 2.0; operation and support as a service" | "free including support" | managing expectations |
+| Data | "in-house operation possible; only ports are shared" | "GDPR-certified" | no such certification of the product exists |
 
-**Freigabeprozess:** Jede öffentliche Zahl wird gegen die Quelle im Repository geprüft (Dokument und Abschnitt).
-Vergleichende Aussagen über benannte Wettbewerber gehen vor der Veröffentlichung an eine rechtliche Prüfung. Diese
-Unterlage ist keine Rechtsberatung.
+**Approval process:** Every public number is checked against its source in the repository (document and section).
+Comparative statements about named competitors go to a legal review before publication. This document is not legal
+advice.
 
 ---
 
-## 5. Kampagnenarchitektur
+## 5. Campaign architecture
 
-### 5.1 Phasen
+### 5.1 Phases
 
-| Phase | Zeitraum | Ziel | Arbeitspakete | Abschlusskriterium |
+| Phase | Period | Goal | Work packages | Exit criterion |
 |-------|----------|------|---------------|--------------------|
-| **0 – Glaubwürdigkeit** | Woche 1–6 (19.10.–29.11.2026) | Ein Fremder kann den H2-Fall in 30 Minuten laufen lassen und versteht, was heute geht | Review und Merge der Arbeitszweige (lose Kopplung, DWD, Explorer, Repository-Hygiene mit LICENSE und Community-Dateien); Schnellstart „H2-Kette in 5 Minuten“; drei Demo-Videos; Landingpage; Ehrlichkeitsseite; Whitepaper und Preprint-Entwurf; Claims-Leitfaden verbindlich | zwei Externe durchlaufen den Schnellstart ohne Hilfe; Landingpage online; Whitepaper freigegeben |
-| **1 – Leuchttürme** | Woche 4–13, fortgesetzt bis Q2 2027 | ein unterschriebener Pilot, zwei Laborpartner, Preprint | Pilot A Verbund, Pilot B Stadtwerk, Pilot C Labor (§5.2); Haus des Owners mit echten Abrechnungen als Geschichte | Pilot A unterschrieben; Preprint eingereicht; Absichtserklärungen der Labore |
-| **2 – Skalierung** | ab Q1 2027 | Referenz nutzen, Kanäle öffnen | Fallstudie aus Pilot A (nur mit Freigabe); Partnerprogramm für Integratoren; Angebot „betriebener Zwilling“; Messen 2027 (§8.4) | zwei zahlende Kunden; ein Integrationspartner |
+| **0: Credibility** | weeks 1 to 6 (2026-10-19 to 2026-11-29) | A stranger can run the H2 case in 30 minutes and understands what works today | review and merge of the work branches (loose coupling, DWD (German Meteorological Service), explorer, repository hygiene with LICENSE and community files); quickstart "H2 chain in 5 minutes"; three demo videos; landing page; honesty page; white paper and preprint draft; claims guide made binding | two outsiders complete the quickstart without help; landing page online; white paper approved |
+| **1: Lighthouses** | weeks 4 to 13, continued until Q2 2027 | one signed pilot, two lab partners, preprint | pilot A cluster, pilot B municipal utility, pilot C lab (section 5.2); the owner's house with real bills as a story | pilot A signed; preprint submitted; letters of intent from the labs |
+| **2: Scaling** | from Q1 2027 | use the reference, open up channels | case study from pilot A (only with approval); partner program for integrators; "operated twin" offer; trade fairs 2027 (section 8.4) | two paying customers; one integration partner |
 
-### 5.2 Leuchtturm-Piloten
+### 5.2 Lighthouse pilots
 
-| Pilot | Umfang | Daten | Ergebnis | Erfolgskriterium (Wertschranke) |
+| Pilot | Scope | Data | Result | Success criterion (value gate) |
 |-------|--------|-------|----------|---------------------------------|
-| **A – Verbund Wind + H2 + Vermarktung** | Stufe A, danach Stufe B (Schatten und Replay, PPA-Schattenbetrieb S3) | Netzbetreiber-Zähler über Modbus, Fahrpläne und Prognosen des Vermarkters, DWD, Marktdaten; später IEC 104 zum Elektrolyseurbetreiber | Potenzialbericht mit Größenordnung in €/a und Herkunftsanteilen | Schranke A: Größenordnung des Mehrwerts belastbar genug für die Entscheidung über Stufe B |
-| **B – Stadtwerk** | Quartier oder Energy-Sharing-Gemeinschaft im Schattenbetrieb; zwei Produktvarianten als What-if | Smart-Meter- und EDM-Exporte, Erzeugungsdaten, Tarife | Schattenlauf, Variantenvergleich, Herkunftsanteile | Stadtwerk entscheidet auf Basis des Vergleichs über ein Produkt oder einen Ausbau |
-| **C – Labor** | LabVIEW-Brücke oder Kosimulationsexperiment eng gegen lose | Prüfstandsdaten, Testvektoren | gemeinsamer Datensatz, Experiment, Paperbeitrag | Experiment reproduziert; gemeinsame Veröffentlichung oder gemeinsamer Förderantrag |
+| **A: cluster wind + H2 + marketing** | stage A, then stage B (shadow and replay, PPA shadow operation S3) | grid operator meters over Modbus, the marketer's schedules and forecasts, DWD, market data; later IEC 104 to the electrolyzer operator | potential report with the order of magnitude in EUR/a and provenance shares | gate A: order of magnitude of the added value reliable enough for the decision on stage B |
+| **B: municipal utility** | neighborhood or energy sharing community in shadow operation; two product variants as what-if | smart meter and EDM (energy data management) exports, generation data, tariffs | shadow run, variant comparison, provenance shares | the municipal utility decides on a product or an expansion based on the comparison |
+| **C: lab** | LabVIEW bridge or co-simulation experiment tight versus loose | test bench data, test vectors | shared data set, experiment, paper contribution | experiment reproduced; joint publication or joint funding application |
 
 ---
 
-## 6. 90-Tage-Plan mit Wochen-Contentkalender
+## 6. 90-day plan with weekly content calendar
 
-Rhythmus: zwei LinkedIn-Beiträge je Woche (Dienstag und Donnerstag), alle zwei Wochen ein GitHub-Release bzw. eine
-Discussion, ein Video alle zwei bis drei Wochen. Feiertage bewusst ruhig.
+Cadence: two LinkedIn posts per week (Tuesday and Thursday), a GitHub release or a discussion every two weeks, a video
+every two to three weeks. Holidays deliberately quiet.
 
-| Woche | Zeitraum (KW) | Schwerpunkt | LinkedIn | GitHub / Community | Direktansprache / Termine | Ergebnis |
+| Week | Period (CW) | Focus | LinkedIn | GitHub / community | Direct outreach / appointments | Result |
 |-------|---------------|-------------|----------|--------------------|---------------------------|----------|
-| 0 | 12.–18.10. (42) | Vorbereitung | – | Schnellstart-Entwurf | Zielliste mit 30 Organisationen in den drei Segmenten; Basiswerte für Reichweite messen; Messebesuch Hamburg planen | Zielliste, Basiswerte |
-| 1 | 19.–25.10. (43) | Start: H2-Kette | **Post 1** „Der Schieber geht zu.“ (§13); Messenotiz | README-Abschnitt „H2-Kette in 5 Minuten“ | **Hydrogen Technology World Expo, Hamburg, 20.–22.10.**: Gespräche mit Projektbetreibern und Integratoren | 5 Messegespräche |
-| 2 | 26.10.–01.11. (44) | Verbund | Video 1 (H2-Kette, 3 min); Kurzpost „Koordinationspotenzial in einem Satz“ | Release mit Video-Link | Pilot A: Termin zum Stufe-A-Umfang | Termin Pilot A |
-| 3 | 02.–08.11. (45) | Herkunft | „Jede Zahl mit Herkunft“ (Studio-Ausschnitt); Frage an die Community | Discussion „Herkunftsleiter“ | 5 Stadtwerke (Digitalisierung, Energiedaten) anschreiben | 2 Termine Stadtwerke |
-| 4 | 09.–15.11. (46) | Netze und Stadtwerke | „Warum ein Zwilling auf einem Log?“; Messenotiz Wien | Landingpage online | **Enlit Europe, Wien, 10.–12.11.** besuchen | Landingpage, Messegespräche |
-| 5 | 16.–22.11. (47) | Haus | **Post 2** „−151 Liter Heizöl. Modelliert.“; Video 2 (Haus) | Discussion „Kalibrierung an Abrechnungen“ | Energieberater-Netzwerk (DEN) um Feedbackrunde bitten | 1 Feedbackrunde vereinbart |
-| 6 | 23.–29.11. (48) | Forschung | **Post 3** „Rückkopplungsschleifen gehören in einen Prozessor.“ | Messprogramm dokumentiert (nach Merge) | 6 Lehrstühle und Institute (Energieinformatik, Kosimulation) anschreiben | Preprint-Entwurf; Review Phase 0 |
-| 7 | 30.11.–06.12. (49) | Verbund vertiefen | Einladung und Nachbericht Webinar | Webinar-Aufzeichnung verlinken | **Webinar** „Der Verbund-Zwilling in 30 Minuten“ (Live-Demo); Pilotangebot Stufe A an Pilot A | Angebot Pilot A |
-| 8 | 07.–13.12. (50) | Boot | Boot-Geschichte mit Video 3 (Starlink, Autonomie) | Discussion „Loggerdaten einspielen“ | Workshop bei einem Stadtwerk (Pilot B); Segel-Community ansprechen | Workshop durchgeführt |
-| 9 | 14.–20.12. (51) | Ehrlicher Jahresrückblick | „Was 2026 geht – und was noch nicht“ | Preprint auf arXiv (nach Freigabe) | Absichtserklärung eines Labors | Preprint, 1 Laborpartner |
-| 10 | 21.–27.12. (52) | ruhig | ein kurzer Beitrag | Issues pflegen | – | – |
-| 11 | 28.12.–03.01. (53) | ruhig | – | – | Planung Q1; Terminanfragen für E-world vorbereiten | Q1-Plan |
-| 12 | 04.–10.01.2027 (1) | Methode | „Die eine Zahl, die getrennter Betrieb kostet“ (Koordinationspotenzial erklärt) | Release | E-world-Termine mit Stadtwerken und Vermarktern anfragen; Pilot B abgrenzen | 4 E-world-Termine |
-| 13 | 11.–17.01.2027 (2) | Bilanz | Ergebnisse der 90 Tage (Pilot nur als Rolle, falls Freigabe) | Roadmap-Update | Review aller KPIs; Vorbereitung boot (23.–31.01.) und E-world (16.–18.02.) | Entscheidung Phase 2 |
+| 0 | 2026-10-12 to 2026-10-18 (42) | Preparation | none | quickstart draft | target list of 30 organizations in the three segments; measure reach baselines; plan the trade fair visit to Hamburg | target list, baselines |
+| 1 | 2026-10-19 to 2026-10-25 (43) | Launch: H2 chain | **Post 1** "The valve closes." (section 13); trade fair note | README section "H2 chain in 5 minutes" | **Hydrogen Technology World Expo, Hamburg, 2026-10-20 to 2026-10-22**: conversations with project operators and integrators | 5 trade fair conversations |
+| 2 | 2026-10-26 to 2026-11-01 (44) | Cluster | video 1 (H2 chain, 3 min); short post "Coordination potential in one sentence" | release with video link | pilot A: meeting on the stage A scope | pilot A meeting |
+| 3 | 2026-11-02 to 2026-11-08 (45) | Provenance | "Every number with its provenance" (Studio excerpt); question to the community | discussion "Provenance ladder" | write to 5 municipal utilities (digitalization, energy data) | 2 meetings with municipal utilities |
+| 4 | 2026-11-09 to 2026-11-15 (46) | Grids and municipal utilities | "Why a twin on a log?"; trade fair note from Vienna | landing page online | visit **Enlit Europe, Vienna, 2026-11-10 to 2026-11-12** | landing page, trade fair conversations |
+| 5 | 2026-11-16 to 2026-11-22 (47) | House | **Post 2** "−151 liters of heating oil. Modeled."; video 2 (house) | discussion "Calibration against bills" | ask the Deutsches Energieberater-Netzwerk (DEN) for a feedback round | 1 feedback round agreed |
+| 6 | 2026-11-23 to 2026-11-29 (48) | Research | **Post 3** "Feedback loops belong in one processor." | measurement program documented (after the merge) | write to 6 university chairs and institutes (energy informatics, co-simulation) | preprint draft; review of phase 0 |
+| 7 | 2026-11-30 to 2026-12-06 (49) | Cluster in depth | webinar invitation and follow-up report | link the webinar recording | **Webinar** "The cluster twin in 30 minutes" (live demo); stage A pilot proposal to pilot A | pilot A proposal |
+| 8 | 2026-12-07 to 2026-12-13 (50) | Boat | boat story with video 3 (Starlink, autonomy) | discussion "Importing logger data" | workshop at a municipal utility (pilot B); approach the sailing community | workshop held |
+| 9 | 2026-12-14 to 2026-12-20 (51) | Honest year in review | "What works in 2026, and what does not yet" | preprint on arXiv (after approval) | letter of intent from a lab | preprint, 1 lab partner |
+| 10 | 2026-12-21 to 2026-12-27 (52) | quiet | one short post | maintain issues | none | none |
+| 11 | 2026-12-28 to 2027-01-03 (53) | quiet | none | none | Q1 planning; prepare meeting requests for E-world | Q1 plan |
+| 12 | 2027-01-04 to 2027-01-10 (1) | Method | "The one number that separate operation costs" (coordination potential explained) | release | request E-world meetings with municipal utilities and marketers; define the scope of pilot B | 4 E-world meetings |
+| 13 | 2027-01-11 to 2027-01-17 (2) | Results | results of the 90 days (pilot only as a role, if approved) | roadmap update | review of all KPIs; preparation for boot (2027-01-23 to 2027-01-31) and E-world (2027-02-16 to 2027-02-18) | decision on phase 2 |
 
 ---
 
 ## 7. Assets
 
-| Asset | Inhalt | Status | Aufwand (Schätzung) | Zweck |
+| Asset | Content | Status | Effort (estimate) | Purpose |
 |-------|--------|--------|---------------------|-------|
-| Video H2-Kette (3 min) | Bildschirmaufnahme von `bin/opentsx twin` und Studio; Kette, What-if, Prognose | zu erstellen | 1–2 Tage | Verbund, H2, Vermarkter |
-| Video Haus (3 min) | Referenzjahr, Hebel, Kalibrierung, „nicht bestimmbar“ | zu erstellen | 1–2 Tage | Haus, Energieberater, Reichweite |
-| Video Boot (3 min) | Törn, Starlink, Autonomie, Loggerdaten | zu erstellen | 1–2 Tage | Reichweite, Hersteller |
-| Smart Topics Studio | Statistik, Prognose und What-if, Node-Graph für alle drei Systeme | vorhanden: [Prototyp](../prototypes/smart-topics-studio.html) | Hosting einrichten | Demo auf Landingpage |
-| Anlagen-Explorer | Karte, Grundriss, Deckplan, Inventar | vorhanden im Arbeitszweig `opentsx/2026-explorer` (`docs/prototypes/anlagen-explorer.html`), nach Merge nutzbar | – | Demo, Messe |
-| Whitepaper „Digital Twins on Logs“ (8–10 Seiten) | Atome, drei Betriebsarten, Herkunft, Replay, eng gegen lose, Entwurfsregel, Grenzen | zu schreiben, Grundlage [07 §10](../datamodel-2026/07-DIGITAL-TWIN-BSP.md) | 5–8 Tage | Forschung, Technikentscheider |
-| Preprint | wissenschaftliche Fassung mit Bezug zur Iterationsschranke (Teil 1 §6.4) | zu schreiben | mit Whitepaper | Glaubwürdigkeit |
-| Geschichten Haus und Boot | je eine Seite, Text aus [08](../datamodel-2026/08-HAUS-ZWILLING.md) und [10](../datamodel-2026/10-BOOT-ZWILLING.md) | zu redigieren | 1 Tag | Erzählanker |
-| Interaktive Rechner | (a) **Koordinationsrechner**: Erzeugungsprofil, Elektrolyseur, Abnehmer → Überlappung und Direktbelieferungsanteil; (b) „Reicht das Öl?“; (c) „Autonomie an Bord“ – jeweils mit Beispieldaten im Browser, **jede Zahl mit Herkunftsmarke**, Hinweis „modelliert“ | Idee | 3–6 Tage je Rechner | Landingpage, Leadgewinnung |
-| One-Pager je Top-Segment | Problem, Nutzen, Stufe-A-Angebot, Ehrlichkeitskasten | zu erstellen | 1 Tag je Segment | Direktansprache, Messe |
-| Angebotsblatt Stufe A | Inhalt, benötigte Daten, Dauer, Ergebnis, Wertschranke | zu erstellen | 0,5 Tage | Pilot |
-| Ehrlichkeitsseite | „heute · in Arbeit · geplant“ | Grundlage vorhanden: [today-vs-planned](../devops/today-vs-planned.md) | 0,5 Tage | Vertrauen |
-| Foliensatz (10 Folien) | für Vorträge und Webinar | zu erstellen | 1–2 Tage | Webinar, Messe |
+| H2 chain video (3 min) | screen recording of `bin/opentsx twin` and Studio; chain, what-if, forecast | to be created | 1 to 2 days | cluster, H2, marketers |
+| House video (3 min) | reference year, levers, calibration, "not identifiable" | to be created | 1 to 2 days | house, energy advisors, reach |
+| Boat video (3 min) | sailing trip, Starlink, autonomy, logger data | to be created | 1 to 2 days | reach, manufacturers |
+| Smart Topics Studio | statistics, forecast and what-if, node graph for all three systems | available: [prototype](../prototypes/smart-topics-studio.html) | set up hosting | demo on the landing page |
+| Asset explorer | map, floor plan, deck plan, inventory | available in the work branch `opentsx/2026-explorer` (`docs/prototypes/anlagen-explorer.html`), usable after the merge | none | demo, trade fair |
+| White paper "Digital Twins on Logs" (8 to 10 pages) | atoms, three operating modes, provenance, replay, tight versus loose, design rule, limits | to be written, basis [07, section 10](../datamodel-2026/07-DIGITAL-TWIN-BSP.md) | 5 to 8 days | research, technical decision makers |
+| Preprint | scientific version with reference to the iteration bound (Part 1, section 6.4) | to be written | with the white paper | credibility |
+| House and boat stories | one page each, text from [08](../datamodel-2026/08-HAUS-ZWILLING.md) and [10](../datamodel-2026/10-BOOT-ZWILLING.md) | to be edited | 1 day | narrative anchors |
+| Interactive calculators | (a) **coordination calculator**: generation profile, electrolyzer, offtaker → overlap and direct supply share; (b) "Will the oil last?"; (c) "Autonomy on board". Each with sample data in the browser, **every number with a provenance mark**, note "modeled" | idea | 3 to 6 days per calculator | landing page, lead generation |
+| One-pager per top segment | problem, benefit, stage A offer, honesty box | to be created | 1 day per segment | direct outreach, trade fair |
+| Stage A offer sheet | content, required data, duration, result, value gate | to be created | 0.5 days | pilot |
+| Honesty page | "today · in progress · planned" | basis available: [today-vs-planned](../devops/today-vs-planned.md) | 0.5 days | trust |
+| Slide deck (10 slides) | for talks and the webinar | to be created | 1 to 2 days | webinar, trade fair |
 
 ---
 
-## 8. Kanäle
+## 8. Channels
 
 ### 8.1 LinkedIn
 
-Hauptstimme ist das persönliche Profil des Owners (Deutsch), ergänzt um eine Projektseite. Formate: Geschichte mit
-einer Zahl, Datenausschnitt mit Herkunft, ehrliche Lernnotiz, kurzer Demo-Clip. Dazu gehören Kommentare bei
-Zielaccounts (Stadtwerke, H2-Projekte, Energieinformatik). Bezahlte Reichweite nur in Budgetstufe „mittel“ und gezielt
-(Stadtwerke, H2).
+The main voice is the owner's personal profile (in German), complemented by a project page. Formats: a story with
+one number, a data excerpt with provenance, an honest learning note, a short demo clip. Comments on target accounts
+(municipal utilities, H2 projects, energy informatics) are part of it. Paid reach only in budget tier "medium" and
+targeted (municipal utilities, H2).
 
-### 8.2 GitHub und Open-Source-Communities
+### 8.2 GitHub and open source communities
 
-README mit Schnellstart und Ehrlichkeitskasten, GitHub Discussions, „good first issues“, Release-Notizen mit Videos.
-Präsenz dort, wo die Bausteine herkommen: KafScale, Apache Iceberg, OpenMetadata; Kosimulation (mosaik, HELICS);
-Energiesystemmodellierung. Beiträge sind technische Notizen, keine Werbung.
+README with quickstart and honesty box, GitHub Discussions, "good first issues", release notes with videos. Presence
+where the building blocks come from: KafScale, Apache Iceberg, OpenMetadata; co-simulation (mosaik, HELICS); energy
+system modeling. Contributions are technical notes, not advertising.
 
-### 8.3 Fachmedien, Wissenschaft, Netzwerke
+### 8.3 Trade media, science, networks
 
-- **Fachmedien:** Gastbeiträge erst mit Pilotergebnis, z. B. ZfK, energate messenger, pv magazine, ERNEUERBARE
-  ENERGIEN (Konditionen **nicht geprüft**).
-- **Wissenschaft:** arXiv-Preprint; Einreichungen bei ACM e-Energy (der Call 2027 war nicht auffindbar; 2026 lag die
-  Frist am 22.01.2026, [Übersicht](https://www.myhuiban.com/conference/1637?lang=en-us)), IEEE/ACM DS-RT (2026: 16.–18.09.
-  in Padua, 2027 noch nicht angekündigt, [Call 2026](https://lists.mcs.anl.gov/pipermail/hpc-announce/2026-April/011948.html)),
-  DACH+ Energy Informatics (2026: 21.–23.09. in Linz, [Energieinstitut Linz](https://energieinstitut-linz.at/en/15th-dach-conference-on-energy-informatics/)).
-  Für 2027 sind die Termine zu prüfen.
-- **Energieberater:** Deutsches Energieberater-Netzwerk (DEN) e. V.
+- **Trade media:** guest articles only once there is a pilot result, for example ZfK, energate messenger, pv magazine,
+  ERNEUERBARE ENERGIEN (terms **not checked**).
+- **Science:** arXiv preprint; submissions to ACM e-Energy (the 2027 call could not be found; in 2026 the deadline was
+  2026-01-22, [overview](https://www.myhuiban.com/conference/1637?lang=en-us)), IEEE/ACM DS-RT (2026: 2026-09-16 to
+  2026-09-18 in Padua, 2027 not yet announced, [2026 call](https://lists.mcs.anl.gov/pipermail/hpc-announce/2026-April/011948.html)),
+  DACH+ Energy Informatics (2026: 2026-09-21 to 2026-09-23 in Linz, [Energieinstitut Linz](https://energieinstitut-linz.at/en/15th-dach-conference-on-energy-informatics/)).
+  The dates for 2027 are still to be checked.
+- **Energy advisors:** Deutsches Energieberater-Netzwerk (DEN) e. V.
   ([DEN](https://deutsches-energieberaternetzwerk.de/wp-content/uploads/2026/04/6PM26_Energieeffizenzexpertenliste-Light.pdf));
-  weitere Verbände **nicht geprüft**. Zielgröße: 22.800 Einträge der dena-Expertenliste.
-- **Segel- und Off-Grid-Community:** boot Düsseldorf, Segelmagazine und Foren (**nicht geprüft**), Communities rund um
-  Powerstations und Victron.
+  other associations **not checked**. Target size: 22,800 entries in the expert list of dena (German Energy Agency).
+- **Sailing and off-grid community:** boot Düsseldorf, sailing magazines and forums (**not checked**), communities around
+  power stations and Victron.
 
-### 8.4 Messen und Veranstaltungen (geprüft am 12.10.2026)
+### 8.4 Trade fairs and events (checked on 2026-10-12)
 
-| Termin | Veranstaltung | Ort | Relevanz | Empfehlung | Quelle |
+| Date | Event | Location | Relevance | Recommendation | Source |
 |--------|---------------|-----|----------|------------|--------|
-| 20.–22.10.2026 | Hydrogen Technology World Expo (auch „Hydrogen Technology Expo Europe“) | Messe Hamburg | H2-Projekte, Elektrolyseure | besuchen (Woche 1) | [WKO](https://www.wko.at/veranstaltungen/577188a4-68c8-49c4-9935-002b83c92c98), [Bremen](https://www.bremen-innovativ.de/en/veranstaltungen/hydrogen-technology-worldexpo-2026/) |
-| 10.–12.11.2026 | Enlit Europe | Messe Wien | Netze, Stadtwerke, Digitalisierung | besuchen (Woche 4) | [Trade Commissioner Kanada](https://www.tradecommissioner.gc.ca/en/trade-events-training/2026/10/enlit-europe.html) |
-| 23.–31.01.2027 | boot Düsseldorf | Düsseldorf | Boot-Geschichte, Hersteller kleiner Systeme | optional besuchen | [boot.com](https://www.boot.com/en/Media_News/Press/Press_Material/Press_Releases/Cast_off_for_boot_D%C3%BCsseldorf_2027) |
-| 16.–18.02.2027 | E-world energy & water | Essen | Stadtwerke, Vermarkter, Energiedaten | besuchen; Vortrag oder Gemeinschaftsstand prüfen | [E-world](https://e-world-essen.com/downloads/infobroschuere/) |
-| 05.–08.04.2027 | Hannover Messe | Hannover | Industrie, Energie, Zwillinge | besuchen | [Hannover Messe](https://www.hannovermesse.de/en/for-visitors/opening-hours/) |
-| Mai 2027 (geschätzt, nicht bestätigt) | Berliner Energietage | Berlin | Kommunen, Politik | Termin prüfen | [messen.de](https://www.messen.de/de/15715/berlin/berliner-energietage/info) |
-| 08.–10.06.2027 | The smarter E Europe | München | Speicher, PV, EMS, Hersteller | besuchen | [The smarter E](https://www.thesmartere.de/for-exhibitors/application) |
-| 14.–17.09.2027 | HUSUM Wind | Husum | Windbetreiber, H2 | Auftritt mit Pilotergebnis prüfen | [HUSUM Wind](https://www.husumwind.com/en/e/husum-wind-2027.72809) |
-| Ende 09/2028 (vorläufig) | WindEnergy Hamburg (2026 fand am 22.–25.09. statt) | Hamburg | Wind | später | [AHK Indien](https://indien.ahk.de/en/events2/windenergy-hamburg-2026-22-25-september-hamburg-germany) |
+| 2026-10-20 to 2026-10-22 | Hydrogen Technology World Expo (also "Hydrogen Technology Expo Europe") | Hamburg Messe | H2 projects, electrolyzers | visit (week 1) | [WKO](https://www.wko.at/veranstaltungen/577188a4-68c8-49c4-9935-002b83c92c98), [Bremen](https://www.bremen-innovativ.de/en/veranstaltungen/hydrogen-technology-worldexpo-2026/) |
+| 2026-11-10 to 2026-11-12 | Enlit Europe | Messe Wien | grids, municipal utilities, digitalization | visit (week 4) | [Canadian Trade Commissioner Service](https://www.tradecommissioner.gc.ca/en/trade-events-training/2026/10/enlit-europe.html) |
+| 2027-01-23 to 2027-01-31 | boot Düsseldorf | Düsseldorf | boat story, manufacturers of small systems | optional visit | [boot.com](https://www.boot.com/en/Media_News/Press/Press_Material/Press_Releases/Cast_off_for_boot_D%C3%BCsseldorf_2027) |
+| 2027-02-16 to 2027-02-18 | E-world energy & water | Essen | municipal utilities, marketers, energy data | visit; consider a talk or a joint stand | [E-world](https://e-world-essen.com/downloads/infobroschuere/) |
+| 2027-04-05 to 2027-04-08 | Hannover Messe | Hanover | industry, energy, twins | visit | [Hannover Messe](https://www.hannovermesse.de/en/for-visitors/opening-hours/) |
+| May 2027 (estimated, not confirmed) | Berliner Energietage | Berlin | municipalities, politics | check the date | [messen.de](https://www.messen.de/de/15715/berlin/berliner-energietage/info) |
+| 2027-06-08 to 2027-06-10 | The smarter E Europe | Munich | storage, PV, EMS, manufacturers | visit | [The smarter E](https://www.thesmartere.de/for-exhibitors/application) |
+| 2027-09-14 to 2027-09-17 | HUSUM Wind | Husum | wind operators, H2 | consider exhibiting with a pilot result | [HUSUM Wind](https://www.husumwind.com/en/e/husum-wind-2027.72809) |
+| end of 2028-09 (provisional) | WindEnergy Hamburg (the 2026 edition took place from 2026-09-22 to 2026-09-25) | Hamburg | wind | later | [AHK India](https://indien.ahk.de/en/events2/windenergy-hamburg-2026-22-25-september-hamburg-germany) |
 
 ---
 
-## 9. Lead-Funnel und KPIs
+## 9. Lead funnel and KPIs
 
-| Stufe | Messgröße | Zielannahme 90 Tage | Messung |
+| Stage | Metric | Target assumption, 90 days | How measured |
 |-------|-----------|---------------------|---------|
-| Reichweite | Impressionen, neue Follower, Besuche der Landingpage | Basiswert in Woche 0 messen; Ziel nach vier Wochen festlegen | LinkedIn-Statistik, datensparsame Webanalyse |
-| Interesse | Videoaufrufe, Whitepaper-Downloads, GitHub-Stars, -Forks und -Klone | Basiswert plus Trend | GitHub Insights, Downloadzähler |
-| Prüfung | externe Schnellstart-Durchläufe, Issues und Discussions von Externen | 10 Durchläufe, 5 externe Issues oder Discussions | Discussions, Umfrage nach dem Schnellstart |
-| Gespräch | qualifizierte Erstgespräche | **12** | einfache Kontaktliste |
-| Workshop | Workshops oder Webinar-Teilnehmende aus Zielsegmenten | 3 Workshops oder 30 Teilnehmende | Anmeldungen |
-| Angebot | Pilotangebote Stufe A | **3** | Angebotsliste |
-| Abschluss | unterschriebene Piloten; Absichtserklärungen von Laboren | **1**; **2** | Verträge |
-| Wissenschaft | Preprint eingereicht | **1** | arXiv |
+| Reach | impressions, new followers, landing page visits | measure the baseline in week 0; set the target after four weeks | LinkedIn analytics, privacy-friendly web analytics |
+| Interest | video views, white paper downloads, GitHub stars, forks and clones | baseline plus trend | GitHub Insights, download counter |
+| Evaluation | external quickstart runs, issues and discussions by outsiders | 10 runs, 5 external issues or discussions | Discussions, survey after the quickstart |
+| Conversation | qualified first conversations | **12** | simple contact list |
+| Workshop | workshops or webinar participants from target segments | 3 workshops or 30 participants | registrations |
+| Proposal | stage A pilot proposals | **3** | proposal list |
+| Closing | signed pilots; letters of intent from labs | **1**; **2** | contracts |
+| Science | preprint submitted | **1** | arXiv |
 
-**Qualifizierung eines Gesprächs:** (1) Es gibt einen Verbund oder Verantwortung über mindestens zwei Anlagen oder
-Parteien. (2) Daten sind innerhalb von vier Wochen zugänglich. (3) Eine Entscheiderin ist benannt. (4) Budget oder
-Förderweg ist erkennbar. Mindestens drei von vier müssen erfüllt sein.
+**Qualifying a conversation:** (1) There is a cluster or responsibility for at least two assets or parties. (2) Data
+is accessible within four weeks. (3) A decision maker is named. (4) A budget or funding route is visible. At least
+three of the four must be met.
 
 ---
 
-## 10. Budget (Planannahmen)
+## 10. Budget (planning assumptions)
 
-| Posten | Stufe „niedrig“ | Stufe „mittel“ |
+| Item | Tier "low" | Tier "medium" |
 |--------|-----------------|----------------|
-| Eigenleistung Owner | etwa 1–2 Tage je Woche für Inhalte, Gespräche, Demos | wie „niedrig“ |
-| Videos | Bildschirmaufnahme in Eigenleistung | professioneller Schnitt für drei Videos |
-| Design | Vorlagen in Eigenleistung | Landingpage, One-Pager und Whitepaper-Layout durch Designer |
-| Reichweite | organisch | gezielte LinkedIn-Anzeigen (Stadtwerke, H2) |
-| Messen | Besucherkarten und Reisen (Hamburg, Wien, Essen) | zusätzlich Vortrag oder Gemeinschaftsstand auf der E-world (Kosten prüfen) |
-| Webinar und Workshops | Online-Werkzeug | Vor-Ort-Workshop mit Bewirtung |
-| Übersetzung | eigene englische Fassung | Lektorat Englisch |
-| **Summe Sachkosten (Annahme)** | **kleiner vierstelliger Euro-Betrag** | **niedriger bis mittlerer fünfstelliger Euro-Betrag** |
+| Own work (owner) | about 1 to 2 days per week for content, conversations, demos | as for "low" |
+| Videos | screen recording as own work | professional editing for three videos |
+| Design | templates as own work | landing page, one-pagers and white paper layout by a designer |
+| Reach | organic | targeted LinkedIn ads (municipal utilities, H2) |
+| Trade fairs | visitor tickets and travel (Hamburg, Vienna, Essen) | in addition, a talk or a joint stand at E-world (check the costs) |
+| Webinar and workshops | online tool | on-site workshop with catering |
+| Translation | own English version | English copy editing |
+| **Total non-staff costs (assumption)** | **low four-digit EUR amount** | **low to mid five-digit EUR amount** |
 
-Die Beträge sind grobe Planannahmen ohne Angebote. **Empfehlung:** mit Stufe „niedrig“ starten. Die Stufe „mittel“
-erst freigeben, wenn ein Pilot A in Sicht ist (Ende Woche 7).
+The amounts are rough planning assumptions without quotes. **Recommendation:** start with tier "low". Approve tier
+"medium" only when a pilot A is in sight (end of week 7).
 
 ---
 
-## 11. Partnerstrategie
+## 11. Partner strategy
 
-| Partner | Rolle | Nutzen für OpenTSx | Nutzen für den Partner | Nächster Schritt |
+| Partner | Role | Benefit for OpenTSx | Benefit for the partner | Next step |
 |---------|-------|--------------------|------------------------|------------------|
-| **KafScale** (Kafka-kompatibles Log auf S3, Apache 2.0) | Log-Plattform | gemeinsame Demo „Zwilling auf einem S3-Log“; Konformitätssuite existiert | Anwendungsfall jenseits von ETL und Logs | Demo und Blogbeitrag abstimmen |
-| **infinimesh** (IoT-Plattform mit Device Shadow) | Geräteschicht für Labor und Bordrechner | Rückweg über `desired` mit Freigabe | Anwendungsfall Energie und Labor | Brücke als Pilot C nutzen |
-| Apache Iceberg, OpenMetadata | Daten- und Metadatenbasis | Sichtbarkeit in deren Communities | Referenzanwendung | technische Notizen einreichen |
-| Systemintegratoren (Zähler, SCADA, IEC 104, OPC UA) | Umsetzung beim Kunden | Reichweite, Kapazität | neues Leistungsangebot | Partnerprofil definieren, zwei Gespräche |
-| Hochschulen (Energieinformatik, Kosimulation, Regelung) | Forschung, Lehre | Glaubwürdigkeit, Prüfstände, Förderanträge | offene Referenzimplementierung, Daten | Pilot C, Ansprache in Woche 6 |
-| TwinEU-Umfeld (Fraunhofer, Netzbetreiber) | Föderation | Anschluss an europäische Ansätze | Baustein für Anlagen- und Verbundebene | Kontakt zum Projektende 12/2026 suchen |
-| OpenEMS Association | Edge-EMS | Ergänzung am Rand; keine Doppelentwicklung | Bewertungsschicht über dem EMS | Austausch suchen |
-| Netzplattformen (envelio, VENIOS, PowerFactory-Nutzer) | Netzergebnisse als Ports | Ergänzung statt Konkurrenz | Verbundsicht für ihre Kunden | erst nach Pilot B ansprechen |
-| DGRV, Stadtwerke-Netzwerke | Kanal zu Energiegemeinschaften | Zugang zu Bürgerenergie | Werkzeug für Energy Sharing | nach Pilot B |
-| Deutsches Energieberater-Netzwerk | Feedback, Kanal | Rückmeldung zum Haus-Zwilling | Werkzeug zum Erklären | Feedbackrunde Woche 5 |
+| **KafScale** (Kafka-compatible log on S3, Apache 2.0) | log platform | joint demo "twin on an S3 log"; a conformance suite exists | a use case beyond ETL and logs | agree on the demo and a blog post |
+| **infinimesh** (IoT platform with device shadow) | device layer for the lab and the on-board computer | return path via `desired` with approval | a use case in energy and labs | use the bridge as pilot C |
+| Apache Iceberg, OpenMetadata | data and metadata basis | visibility in their communities | reference application | submit technical notes |
+| System integrators (meters, SCADA, IEC 104, OPC UA) | implementation at the customer's site | reach, capacity | a new service offering | define a partner profile, two conversations |
+| Universities (energy informatics, co-simulation, control engineering) | research, teaching | credibility, test benches, funding applications | an open reference implementation, data | pilot C, outreach in week 6 |
+| TwinEU environment (Fraunhofer, grid operators) | federation | connection to European approaches | a building block for the asset and cluster level | seek contact at the end of the project (2026-12) |
+| OpenEMS Association | edge EMS | a complement at the edge; no duplicate development | an evaluation layer above the EMS | seek an exchange |
+| Grid platforms (envelio, VENIOS, PowerFactory users) | grid results as ports | complement, not competition | a cluster view for their customers | approach only after pilot B |
+| DGRV (German Cooperative and Raiffeisen Confederation), networks of municipal utilities | channel to energy communities | access to citizen energy | a tool for energy sharing | after pilot B |
+| Deutsches Energieberater-Netzwerk | feedback, channel | feedback on the house twin | a tool for explaining | feedback round in week 5 |
 
-Es bestehen heute **keine** formalen Partnerschaften. Kommunikation über Partner nur nach schriftlicher Zustimmung.
+There are **no** formal partnerships today. Communication about partners only after written consent.
 
 ---
 
-## 12. Risiken
+## 12. Risks
 
-| Risiko | Wirkung | Gegenmaßnahme |
+| Risk | Impact | Countermeasure |
 |--------|---------|---------------|
-| Überversprechen | Vertrauensverlust, rechtliche Risiken | Claims-Leitfaden (§4), Ehrlichkeitskasten, Freigabe jeder Zahl |
-| Keine Produktivreferenz | lange Verkaufszyklen | Stufe A als kleiner, begrenzter Einstieg; Forschungspartner als frühe Belege |
-| Kapazität des Owners | Kampagne und Entwicklung konkurrieren | Budgetstufe „niedrig“, klarer Rhythmus, Ruhewochen |
-| Bündelung durch große Anbieter (Siemens im H2-Segment, E.ON mit envelio und gridX) | Kunden kaufen Lösungen aus einer Hand | als neutrale Verbundschicht positionieren, die deren Ergebnisse übernimmt |
-| OT-Sicherheit und KRITIS-Anforderungen | Ausschluss bei Netzbetreibern | Beraten statt Steuern; Sicherheitskonzept für den Rückweg vor Phase 2 |
-| Datenzugang hängt von Partnern ab | Piloten verzögern sich | Herkunftsleiter mit Schätzern und Profilen; Stufe A mit vorhandenen Zählerdaten |
-| Politische und regulatorische Wechsel (GModG, EEG 2027, § 14a) | Botschaften veralten | Botschaften auf Methode statt Paragraf stützen; Daten mit Stand angeben |
-| Trittbrettfahrer bei Open Source | Andere verdienen am Code | Dienstleistung, Betrieb, Marke; Markenrichtlinie |
-| Begriffsverwirrung „digitaler Zwilling“ | Erwartung „3D-Grafik“ | Kategoriename „Entscheidungszwilling“; mit einer Zahl beginnen, nicht mit einem Bild |
-| Namens- und Markenkonflikte | erzwungene Umbenennung | Recherche vor dem Start (DPMA, EUIPO) |
-| Datenschutz bei Haus- und Bootsdaten | Vertrauensverlust | echte Daten nur lokal (`config/private/`), Einwilligungen, Datensparsamkeit auf der Landingpage |
+| Overpromising | loss of trust, legal risks | claims guide (section 4), honesty box, approval of every number |
+| No production reference | long sales cycles | stage A as a small, bounded entry; research partners as early evidence |
+| The owner's capacity | campaign and development compete | budget tier "low", a clear cadence, quiet weeks |
+| Bundling by large vendors (Siemens in the H2 segment, E.ON with envelio and gridX) | customers buy solutions from a single source | position OpenTSx as a neutral cluster layer that takes in their results |
+| OT security and KRITIS (critical infrastructure) requirements | being excluded by grid operators | Advise, do not control; security concept for the return path before phase 2 |
+| Data access depends on partners | pilots are delayed | provenance ladder with estimators and profiles; stage A with existing meter data |
+| Political and regulatory changes (GModG, the building modernization law; EEG 2027, the Renewable Energy Sources Act; Section 14a) | messages become outdated | base messages on the method, not on a legal section; state data with its as-of date |
+| Free riders in open source | others earn money from the code | services, operation, brand; trademark policy |
+| Term confusion around "digital twin" | expectation of "3D graphics" | category name "decision twin"; start with a number, not with a picture |
+| Name and trademark conflicts | forced renaming | name and trademark search before the launch (DPMA, EUIPO) |
+| Data protection for house and boat data | loss of trust | real data only locally (`config/private/`), consents, data minimization on the landing page |
 
 ---
 
-## 13. Drei Beispielbeiträge (LinkedIn)
+## 13. Three sample posts (LinkedIn)
 
-Alle Zahlen stammen aus dem Repository (Quelle in Klammern, nicht Teil des Beitrags). Post 3 erst nach dem Merge des
-Arbeitszweigs `opentsx/2026-p9-loose` veröffentlichen.
+All numbers come from the repository (source in parentheses, not part of the post). Publish post 3 only after the
+merge of the work branch `opentsx/2026-p9-loose`.
 
-### Beitrag 1 – Verbund (Quelle: [`opentsx-twin`](../../opentsx-twin/README.md), Szenario S1)
+### Post 1: Cluster (source: [`opentsx-twin`](../../opentsx-twin/README.md), scenario S1)
 
-> **Der Schieber geht zu.**
+> **The valve closes.**
 >
-> 01:00 Uhr. Der Wasserstoff-Abnehmer schließt seinen Schieber. Eigentlich nichts Dramatisches.
+> 01:00. The hydrogen offtaker closes its valve. Nothing dramatic, really.
 >
-> Aber die Leitung füllt sich weiter, der Druck steigt. Der Zwilling meldet: weniger als eine Stunde Puffer. Bei
-> 40 bar regelt der Elektrolyseur zum Selbstschutz ab. Sein Fahrplan ist verletzt, und der Direktvermarkter muss
-> plötzlich rund 5 MW mehr Strom unterbringen.
+> But the pipeline keeps filling up, and the pressure rises. The twin reports: less than one hour of buffer. At
+> 40 bar the electrolyzer curtails to protect itself. Its schedule is violated, and the direct marketer suddenly has
+> to place about 5 MW more power.
 >
-> Vier Parteien, vier Systeme, eine Kette. Niemand hat etwas falsch gemacht, und trotzdem kostet es.
+> Four parties, four systems, one chain. Nobody did anything wrong, and it still costs money.
 >
-> Mit OpenTSx rechnen wir diese Kette durch, bevor sie passiert:
-> → What-if: Der Schieber geht um 02:00 wieder auf, die Abschaltung entfällt.
-> → Prognose ab 01:10 mit einer druckbewussten Fahrweise: keine Abschaltung, kein Überdruck, dafür eine frühere
-> Abweichung vom Fahrplan.
-> → Jede Zahl zeigt, ob sie gemessen, gemeldet, prognostiziert, geschätzt oder synthetisch ist.
+> With OpenTSx we play this chain through before it happens:
+> → What-if: the valve opens again at 02:00, and the shutdown does not happen.
+> → Forecast from 01:10 with a pressure-aware policy: no shutdown, no overpressure, but an earlier
+> deviation from the schedule instead.
+> → Every number shows whether it is measured, reported, forecast, estimated or synthetic.
 >
-> Ehrlich gesagt: Das läuft heute auf synthetischen Daten. Der Code ist offen (Apache 2.0), der Fall lässt sich mit
-> einem Befehl nachrechnen.
+> To be honest: this runs on synthetic data today. The code is open (Apache 2.0), and the case can be recomputed
+> with one command.
 >
-> Sie betreiben einen Verbund aus Wind, Elektrolyse, Speicher oder Direktbelieferung und wollen wissen, was getrennter
-> Betrieb kostet? Wir beginnen mit einem Potenzialbericht aus Ihren vorhandenen Daten, ganz ohne Simulation.
+> Do you operate a cluster of wind, electrolysis, storage or direct supply and want to know what separate
+> operation costs? We start with a potential report from your existing data, entirely without simulation.
 >
-> #Wasserstoff #Windenergie #DigitalerZwilling #Energiewende #OpenSource
+> #Hydrogen #WindEnergy #DigitalTwin #EnergyTransition #OpenSource
 
-### Beitrag 2 – Haus (Quelle: [08-HAUS-ZWILLING §7–8](../datamodel-2026/08-HAUS-ZWILLING.md))
+### Post 2: House (source: [08-HAUS-ZWILLING, sections 7 to 8](../datamodel-2026/08-HAUS-ZWILLING.md))
 
-> **−151 Liter Heizöl im Jahr. Modelliert.**
+> **−151 liters of heating oil a year. Modeled.**
 >
-> So viel spart unser Beispielhaus im Erzgebirge, wenn die Raumtemperatur von 21 auf 20 °C sinkt: Baujahr 1978,
-> Ölkessel, Kaminofen, zwei Bewohner. Alle Annahmen sind erfunden.
+> That is how much our example house in the Ore Mountains (Erzgebirge) saves when the room temperature drops from
+> 21 to 20 °C: built in 1978, oil boiler, wood stove, two occupants. All assumptions are invented.
 >
-> Das Wort „modelliert“ ist kein Kleingedrucktes. Es ist der Kern.
+> The word "modeled" is not small print. It is the core.
 >
-> Unser Haus-Zwilling rechnet Heizung, Warmwasser und Geräte ein Jahr lang in Stundenschritten. Kalibriert wird er an
-> dem, was Eigentümer wirklich haben: Strom- und Ölabrechnungen, Lieferscheine, Peilstab-Ablesungen.
+> Our house twin computes heating, hot water and appliances over one year in hourly steps. It is calibrated against
+> what owners really have: electricity and oil bills, delivery notes, dipstick readings.
 >
-> Und er sagt offen, was er nicht weiß. Auf simulierten Testabrechnungen findet die Kalibrierung den Wärmeverlust des
-> Hauses wieder, den Warmwasserverbrauch aber nicht: Der Ablesefehler des Peilstabs ist größer als das Signal eines
-> Sommermonats. Also steht im Bericht „nicht bestimmbar“ statt einer erfundenen Zahl.
+> And it says openly what it does not know. On simulated test bills, the calibration recovers the heat loss of the
+> house, but not the hot water consumption: the reading error of the dipstick is larger than the signal of a
+> summer month. So the report says "not identifiable" instead of giving an invented number.
 >
-> Drei Dinge, die der Zwilling sichtbar macht:
-> → Eine tiefere Nachtabsenkung bringt im schweren Haus fast nichts.
-> → Standby abschalten spart Strom, kostet im Winter aber ein wenig mehr Öl.
-> → Der Kessel ist überdimensioniert; Bereitschafts- und Taktverluste liegen bei rund 4.200 kWh im Jahr.
+> Three things the twin makes visible:
+> → A deeper night setback brings almost nothing in a heavy house.
+> → Switching off standby saves electricity, but costs a little more oil in winter.
+> → The boiler is oversized; standby and cycling losses are about 4,200 kWh a year.
 >
-> Nachgewiesen ist eine Einsparung erst, wenn gemessene Zeiträume vor und nach der Maßnahme witterungsbereinigt
-> verglichen sind.
+> A saving is proven only when measured periods before and after the measure have been compared on a
+> weather-adjusted basis.
 >
-> Frage an Energieberaterinnen und Energieberater: Würde Ihnen ein kalibrierter Zwilling mit ehrlicher
-> Unsicherheitsangabe in der Beratung helfen, oder eher stören? Ich freue mich über Widerspruch.
+> A question to energy advisors: would a calibrated twin with an honest statement of uncertainty help you in your
+> advisory work, or rather get in the way? I welcome disagreement.
 >
-> #Energieberatung #Heizung #Gebäudeenergie #DigitalerZwilling #OpenSource
+> #EnergyAdvice #Heating #BuildingEnergy #DigitalTwin #OpenSource
 
-### Beitrag 3 – Forschung (Quelle: [07 §10](../datamodel-2026/07-DIGITAL-TWIN-BSP.md), Messung §10a im Arbeitszweig)
+### Post 3: Research (source: [07, section 10](../datamodel-2026/07-DIGITAL-TWIN-BSP.md), measurement section 10a in the work branch)
 
-> **Rückkopplungsschleifen gehören in einen Prozessor.**
+> **Feedback loops belong in one processor.**
 >
-> Das ist die Entwurfsregel aus unserer ersten Messung zu eng und lose gekoppelten digitalen Zwillingen.
+> That is the design rule from our first measurement on tightly and loosely coupled digital twins.
 >
-> Die Frage: Ein Zwilling aus vielen Bausteinen (Windpark, Elektrolyseur, Leitung, Speicher, Vermarkter) kann als ein
-> deterministischer Prozess laufen. Oder verteilt: jeder Baustein dort, wo seine Daten und sein Eigentümer sind,
-> gekoppelt nur über ein Log mit Kafka-Protokoll. Was kostet die Verteilung?
+> The question: a twin made of many building blocks (wind farm, electrolyzer, pipeline, storage, marketer) can run as
+> one deterministic process. Or distributed: each building block where its data and its owner are, coupled only
+> through a log with the Kafka protocol. What does distribution cost?
 >
-> Was wir gemessen haben, auf simulierter Wandzeit in drei Szenarien:
-> 1. Ohne Veraltung ist die lose Variante bitgleich zur engen: gleicher Lauf, gleicher Hash, auch mit Latenz,
-> Jitter und Ausfällen.
-> 2. Den Durchsatz begrenzen die Rückkopplungsschleifen, nicht die Länge der Kette.
-> 3. Veraltung in schnellen Regelkreisen ist teuer: bis Faktor 6 mehr Durchsatz, aber mit deutlichen Abweichungen.
-> 4. Legt man jede Schleife in einen Prozessor und koppelt nur dazwischen lose, bekommt man beides: das exakte
-> Ergebnis und volle Fließband-Leistung.
+> What we measured, on simulated wall-clock time in three scenarios:
+> 1. Without staleness the loose variant is bit-identical to the tight one: same run, same hash, even with latency,
+> jitter and failures.
+> 2. Throughput is limited by the feedback loops, not by the length of the chain.
+> 3. Staleness in fast control loops is expensive: up to factor 6 more throughput, but with clear deviations.
+> 4. If you put each loop in one processor and couple loosely only in between, you get both: the exact
+> result and full pipeline throughput.
 >
-> Das passt zur Iterationsschranke aus der Datenflussanalyse. Als Theorie ist es also nicht neu. Neu ist die
-> Übertragung auf Zwillinge über einem Log: Konformität bis aufs Bit und Herkunft je Wert.
+> This fits the iteration bound from dataflow analysis. As theory, it is therefore not new. What is new is the
+> transfer to twins on top of a log: conformance down to the bit and provenance per value.
 >
-> Wir schreiben das als Paper auf („Digital Twins on Logs“) und suchen Labore und Lehrstühle aus Energieinformatik,
-> Kosimulation und verteilten Systemen, die mit echten Prüfständen gegenhalten. Code und Messprogramm sind offen.
+> We are writing this up as a paper ("Digital Twins on Logs") and are looking for labs and university chairs in energy
+> informatics, co-simulation and distributed systems that challenge it with real test benches. Code and measurement
+> program are open.
 >
-> #Kosimulation #DigitalTwin #Energieinformatik #StreamProcessing #OpenSource
-
----
-
-## 14. Landingpage (Gliederung)
-
-1. **Kopfbereich.** Überschrift „Erst rechnen, dann schalten.“ Unterzeile: „OpenTSx ist der offene
-   Entscheidungszwilling für gekoppelte Energiesysteme: Dieselben Bausteine rechnen Gegenwart, Alternative und Zukunft
-   – jede Zahl mit Herkunft, jeder Lauf bitgleich nachvollziehbar.“ Zwei Handlungsaufforderungen: „Demo in 5 Minuten
-   (GitHub)“ und „Potenzialbericht anfragen“.
-2. **Problem: „Getrennt entschieden, gemeinsam bezahlt.“** Die H2-Kette als animierte Kette (Schieber → Druck →
-   Abregelung → Fahrplan → Vermarktung) mit dem Hinweis „synthetische Daten“.
-3. **So funktioniert es.** Atome und Schaltplan; drei Betriebsarten (Schatten, What-if, Prognose); Herkunftsleiter;
-   Replay; eng oder lose gekoppelt. Eine Grafik je Punkt, kein Fachjargon ohne Erklärung.
-4. **Drei Systeme, ein Baukasten.** Karten für H2-Verbund, Haus und Boot mit Video, Kernzahl und Marke „modelliert“.
-5. **Für wen.** Kacheln für Verbund, Stadtwerke, Forschung; darunter „auch für“ Energieberater und Hersteller.
-6. **Ehrlichkeitskasten „heute · in Arbeit · geplant“.** Drei Spalten aus Teil 1 §3.
-7. **Offen.** Apache 2.0, Kafka-Protokoll, Iceberg, OpenMetadata; ein Codeblock mit dem Schnellstart; Link zum
-   Repository.
-8. **Angebot.** Potenzialbericht Stufe A: was Sie bekommen, welche Daten wir brauchen, Dauer, Wertschranke.
-   Forschungskooperation: was wir anbieten.
-9. **Wissen.** Whitepaper „Digital Twins on Logs“, Konzeptdokumente, Studio-Prototyp, interaktive Rechner (§7).
-10. **Häufige Fragen.** Steuert OpenTSx meine Anlage? Wo laufen meine Daten? Was kostet es? Wie genau ist das Modell?
-    Was unterscheidet OpenTSx von Netzzwillingen und APM-Systemen?
-11. **Kontakt und Fußzeile.** Kontaktformular mit Datenschutzhinweis, Impressum, Datenschutzerklärung, Lizenz.
-    Webanalyse nur datensparsam und mit Einwilligung, wo nötig.
-
-Technik: statische Seite (z. B. GitHub Pages), Studio und Rechner als statische Dateien, keine Tracking-Cookies ohne
-Einwilligung. Suchbegriffe: „digitaler Zwilling Energie“, „Windpark Elektrolyseur Kopplung“,
-„Koordinationspotenzial“, „Energy Sharing Zwilling“, „Open Source Energiezwilling“.
+> #CoSimulation #DigitalTwin #EnergyInformatics #StreamProcessing #OpenSource
 
 ---
 
-## 15. Quellen (Abruf 12.10.2026)
+## 14. Landing page (outline)
 
-Messetermine und wissenschaftliche Venues: Links in §8.3 und §8.4. Marktzahlen und Regeln:
-[Teil 2 §3](02-KUNDEN-UND-NUTZEN.md). Wettbewerb: [Teil 1](01-MARKTRECHERCHE-DIGITAL-TWINS.md). Projektgrundlagen:
-[07](../datamodel-2026/07-DIGITAL-TWIN-BSP.md), [08](../datamodel-2026/08-HAUS-ZWILLING.md),
+1. **Header.** Headline "Compute first, then switch." Subline: "OpenTSx is the open decision twin for coupled
+   energy systems: the same building blocks compute the present, the alternative and the future. Every number with its
+   provenance, every run reproducible bit for bit." Two calls to action: "Demo in 5 minutes (GitHub)" and "Request a
+   potential report".
+2. **Problem: "Decided separately, paid for together."** The H2 chain as an animated chain (valve → pressure →
+   curtailment → schedule → power marketing) with the note "synthetic data".
+3. **How it works.** Atoms and wiring plan; three operating modes (shadow, what-if, forecast); provenance ladder;
+   replay; tightly or loosely coupled. One graphic per point, no jargon without an explanation.
+4. **Three systems, one toolkit.** Cards for the H2 cluster, the house and the boat with a video, a key number and the
+   mark "modeled".
+5. **Who it is for.** Tiles for cluster, municipal utilities, research; below them "also for" energy advisors and
+   manufacturers.
+6. **Honesty box "today · in progress · planned".** Three columns from Part 1, section 3.
+7. **Open.** Apache 2.0, Kafka protocol, Iceberg, OpenMetadata; a code block with the quickstart; a link to the
+   repository.
+8. **Offer.** Stage A potential report: what you get, which data we need, duration, value gate.
+   Research cooperation: what we offer.
+9. **Knowledge.** White paper "Digital Twins on Logs", concept documents, Studio prototype, interactive calculators
+   (section 7).
+10. **Frequently asked questions.** Does OpenTSx control my plant? Where does my data run? What does it cost? How
+    accurate is the model? What distinguishes OpenTSx from grid twins and APM systems?
+11. **Contact and footer.** Contact form with privacy notice, legal notice (Impressum), privacy policy, license.
+    Web analytics only with data minimization and with consent where needed.
+
+Technology: static site (for example GitHub Pages), Studio and calculators as static files, no tracking cookies
+without consent. Search terms: "digital twin energy", "wind farm electrolyzer coupling", "coordination potential",
+"energy sharing twin", "open source energy twin".
+
+---
+
+## 15. Sources (retrieved 2026-10-12)
+
+Trade fair dates and scientific venues: links in sections 8.3 and 8.4. Market figures and rules:
+[Part 2, section 3](02-KUNDEN-UND-NUTZEN.md). Competition: [Part 1](01-MARKTRECHERCHE-DIGITAL-TWINS.md). Project
+foundations: [07](../datamodel-2026/07-DIGITAL-TWIN-BSP.md), [08](../datamodel-2026/08-HAUS-ZWILLING.md),
 [09](../datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md), [10](../datamodel-2026/10-BOOT-ZWILLING.md),
 [11](../datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md), [DevOps](../devops/README.md),
 [TASK-011](../../EVOLUTION/TASK-011-datamodel-refresher-2026.md).

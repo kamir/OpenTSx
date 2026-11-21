@@ -1004,6 +1004,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `opentsx-core`, `opentsx-connectors`, `opentsx-lg`: the READMEs say that `mvn -q` sets the JVM system property
   `org.slf4j.simpleLogger.defaultLogLevel` to `error`, which wins over `conf/simplelogger.properties` and hides the
   INFO and WARN lines of `mvn exec:java`; run it without `-q` to see them.
+- docs: the business documents in `docs/business/` (the market research on digital twins that couple live and
+  simulated data, customers and benefits, the marketing campaign and the campaign briefing page
+  `kampagnen-briefing.html`) are in English. Their file names stay until the German file names are renamed.
+  `README.md` and `docs/README.md` no longer call them German.
 
 ### Removed
 

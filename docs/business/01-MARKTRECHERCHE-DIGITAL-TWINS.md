@@ -1,669 +1,668 @@
-# OpenTSx – Marktrecherche: Digitale Zwillinge und die Kopplung von Live- und Simulationsdaten
+# OpenTSx: Market research on digital twins and the coupling of live and simulation data
 
-> Status: **Recherchebericht**, Stand 12.10.2026. Alle Quellen wurden am **12.10.2026** abgerufen, sofern nicht anders
-> angegeben. Teil 1 der Business-Unterlagen ([Übersicht](README.md)); Teil 2: [Kunden und Nutzen](02-KUNDEN-UND-NUTZEN.md),
-> Teil 3: [Marketing-Kampagne](03-MARKETING-KAMPAGNE.md).
+> Status: **research report**, as of 2026-10-12. All sources were retrieved on **2026-10-12** unless stated otherwise.
+> Part 1 of the business documents ([Overview](README.md)); Part 2: [Customers and benefits](02-KUNDEN-UND-NUTZEN.md),
+> Part 3: [Marketing campaign](03-MARKETING-KAMPAGNE.md).
 >
-> **Was hier bewertet wird:** die Selbstbeschreibung der Anbieter in Primärquellen (Produktseiten, Dokumentation,
-> Pressemitteilungen), ergänzt um Standards und Fachliteratur. Es wurden keine Produkte getestet und keine Gespräche mit
-> Anbietern geführt. Herstellerangaben sind Herstelleraussagen, keine unabhängigen Belege. Was sich an keiner
-> Primärquelle prüfen ließ, ist als **nicht verifiziert** markiert. Ein „nicht gefunden“ ist ein Negativbefund in den
-> geprüften Quellen, kein Beweis, dass es etwas nicht gibt.
+> **What is rated here:** the vendors' own descriptions in primary sources (product pages, documentation, press
+> releases), supplemented by standards and technical literature. No products were tested and no conversations with
+> vendors took place. Vendor statements are claims by the vendor, not independent evidence. Whatever could not be
+> checked against a primary source is marked as **not verified**. A "not found" is a negative finding in the sources
+> checked, not proof that something does not exist.
 
 ---
 
-## 1. Kurzfassung
+## 1. Summary
 
-Die Frage des Owners lautet: *„Gibt es bei Anbietern von Digital Twins eine direkte Ankopplung von Live-Daten und
-simulierten Daten wie in unserem Modell?“*
+The owner's question is: *"Do vendors of digital twins offer a direct coupling of live data and simulated data as in
+our model?"*
 
-**Antwort: Ja. Die Kopplung selbst ist verbreitet und bei mehreren Anbietern reifer als bei OpenTSx. Die Kombination,
-die OpenTSx verfolgt, haben wir in den geprüften Quellen dagegen nicht gefunden.**
+**Answer: Yes. The coupling itself is widespread, and at several vendors it is more mature than at OpenTSx. By
+contrast, we did not find the combination OpenTSx pursues in the sources checked.**
 
-1. **Live-getriebene Simulation ist Stand der Technik**, aber jeweils in einer Domäne und in einem Herstellerstack.
-   Netze: Zustandsschätzung online am Leitsystem (DIgSILENT PowerFactory über OPC, ETAP) und Verteilnetz-Zwillinge
-   aus Smart-Meter- und GIS-Daten (Siemens Gridscale X, envelio, VENIOS). Prozessindustrie: AVEVA Process Simulation
-   mit Live-Daten aus dem PI System, Cognite Simulator Integration. Wasserstoff: Siemens Hydrogen Performance Suite mit
-   physikbasiertem Prozesszwilling und Echtzeitoptimierung, angekündigt am 08.10.2026 für eine 100-MW-Anlage.
-   Maschinen und Komponenten: Siemens Simcenter Executable Digital Twin mit Kalman-Filter, Ansys Twin Builder mit
-   Kalibrierung an Sensoren. Wind: DNV WindGEMINI (SCADA plus aeroelastische Lebensdauerrechnung, Stand 2017).
-2. **What-if und Prognose aus demselben Modell** bieten ebenfalls mehrere Anbieter. ETAP nennt Zustandsschätzung,
-   *Predictive Simulation*, What-if und Ereignis-Playback auf einer Plattform. Das ist das nächstliegende Gegenstück zu
-   den drei Betriebsarten von OpenTSx, allerdings auf elektrische Netze beschränkt.
-3. **Herkunft je Wert:** Qualitätskennzeichen je Messwert sind Standard (OPC UA StatusCodes, IEC-61850-Qualität mit
-   `source = process | substituted`). Eine durchgängige Herkunftsklasse je Wert (gemessen, gemeldet, prognostiziert,
-   geschätzt, synthetisch), die durch eine Modellkette bis in die Kennzahlen propagiert wird, haben wir in keiner
-   geprüften Produktdokumentation gefunden.
-4. **Reproduzierbares Replay:** Ereignis-Playback (ETAP), Historien in Historian-Systemen und versionierte Modelle und
-   Routinen (Cognite) gibt es. Ein bitgleich wiederholbarer Lauf des ganzen Zwillings, dessen Kennung sich aus Plan,
-   Eingängen, Eingriffen und Code-Version ergibt, ist in den geprüften Quellen kein dokumentiertes Produktmerkmal.
-5. **Offenheit:** Die kommerziellen Plattformen sind proprietär; einige unterstützen FMI. Offene Bausteine (mosaik,
-   HELICS, pandapower, PyPSA, OpenEMS, Eclipse Ditto, Eclipse BaSyx, OpenTwins) decken jeweils Teile ab. In den
-   geprüften Quellen verbindet keiner live gekoppelten Betrieb, Herkunft je Wert und Replay auf einem Log.
-6. **Klein bis groß:** Die Angebote sind auf eine Größenklasse und Domäne zugeschnitten: Netz, Prozessanlage, Turbine
-   oder Haus. Ein gemeinsamer Bausteinkatalog vom Boot bis zum Verbund aus Windpark und Elektrolyseur ist ungewöhnlich.
-   Bei OpenTSx ist er aber nur als Proof of Concept belegt.
-7. **Über Eigentümergrenzen:** Datenräume (Catena-X mit Verwaltungsschale und Dataspace Connector) und das
-   Forschungsprojekt TwinEU (föderiertes Ökosystem von Netzzwillingen, Laufzeit bis 12/2026) adressieren
-   Datenhoheit und Austausch. VPP-Plattformen steuern Anlagen vieler Eigentümer, aber zentral. Eine föderierte
-   Ausführung eines gemeinsamen Zwillings mit nachgewiesener Ergebnisgleichheit zur engen Kopplung haben wir außerhalb
-   der Kosimulationsforschung nicht gefunden. Bei OpenTSx existiert sie nur im Arbeitszweig und auf simulierter
-   Wandzeit (§3).
-8. **Der Markt konsolidiert sich.** PTC hat ThingWorx und Kepware an TPG verkauft (03/2026), Hexagon hat Octave
-   abgespalten (05/2026), Emerson hält AspenTech vollständig (03/2025) und NI mit LabVIEW (10/2023), Bosch will Uptake
-   übernehmen (03/2026), E.ON hält envelio und gridX. AWS hat 2025/2026 mehrere IoT-Dienste eingestellt; IoT
-   TwinMaker selbst ist in den geprüften AWS-Mitteilungen nicht betroffen.
+1. **Live-driven simulation is state of the art**, but in each case within one domain and one vendor stack.
+   Grids: online state estimation at the control system (DIgSILENT PowerFactory via OPC, ETAP) and distribution grid
+   twins built from smart meter and GIS data (Siemens Gridscale X, envelio, VENIOS). Process industry: AVEVA Process
+   Simulation with live data from the PI System, Cognite Simulator Integration. Hydrogen: Siemens Hydrogen Performance
+   Suite with a physics-based process twin and real-time optimization, announced on 2026-10-08 for a 100 MW plant.
+   Machines and components: Siemens Simcenter Executable Digital Twin with a Kalman filter, Ansys Twin Builder with
+   calibration against sensors. Wind: DNV WindGEMINI (SCADA plus aeroelastic lifetime calculation, as of 2017).
+2. **What-if and forecast from the same model** are also offered by several vendors. ETAP lists state estimation,
+   *Predictive Simulation*, what-if and event playback on one platform. This is the closest counterpart to the three
+   operating modes of OpenTSx, but it is limited to electrical grids.
+3. **Provenance per value:** quality flags per measured value are standard (OPC UA StatusCodes, IEC 61850 quality with
+   `source = process | substituted`). We did not find an end-to-end provenance class per value (measured, reported,
+   forecast, estimated, synthetic) that is propagated through a model chain down to the KPIs in any of the product
+   documentation checked.
+4. **Reproducible replay:** event playback (ETAP), histories in historian systems and versioned models and routines
+   (Cognite) exist. A run of the whole twin that is repeatable bit for bit, with an identifier derived from the plan,
+   inputs, interventions and code version, is not a documented product feature in the sources checked.
+5. **Openness:** the commercial platforms are proprietary; some support FMI. Open building blocks (mosaik, HELICS,
+   pandapower, PyPSA, OpenEMS, Eclipse Ditto, Eclipse BaSyx, OpenTwins) each cover parts. In the sources checked, none
+   of them combines live-coupled operation, provenance per value and replay on a log.
+6. **Small to large:** the offerings are tailored to one size class and domain: grid, process plant, turbine or house.
+   A shared building-block catalog from the boat to the cluster of wind farm and electrolyzer is unusual. At OpenTSx,
+   however, it is shown only as a proof of concept.
+7. **Across ownership boundaries:** data spaces (Catena-X with the Asset Administration Shell and Dataspace Connector)
+   and the research project TwinEU (a federated ecosystem of grid twins, running until 2026-12) address data
+   sovereignty and exchange. VPP platforms control assets of many owners, but centrally. Outside co-simulation
+   research, we did not find a federated execution of a shared twin with results proven equal to those of tight
+   coupling. At OpenTSx it exists only in the work branch and on simulated wall-clock time (section 3).
+8. **The market is consolidating.** PTC sold ThingWorx and Kepware to TPG (2026-03), Hexagon spun off Octave
+   (2026-05), Emerson fully owns AspenTech (2025-03) and NI with LabVIEW (2023-10), Bosch intends to acquire Uptake
+   (2026-03), E.ON owns envelio and gridX. AWS discontinued several IoT services in 2025/2026; IoT TwinMaker itself is
+   not affected in the AWS announcements checked.
 
-**Folgerung:** OpenTSx sollte nicht mit „Wir koppeln Live-Daten und Simulation“ werben. Das können andere, oft besser.
-Tragfähig ist die Kombination: **dieselben Bausteine in drei Betriebsarten mit austauschbarer Fahrweise, Herkunft je
-Wert bis in jede Kennzahl, bitgleiches Replay auf einem offenen Log, föderierbare Ausführung über Eigentümergrenzen,
-offen unter Apache 2.0, und das Bewertungsprinzip „koordiniert minus Referenz, gleiche Information“.** Diese
-Kombination ist heute ein Proof of Concept auf synthetischen und simulierten Daten, ohne Produktivkunden (§3).
-
----
-
-## 2. Begriffe und Prüfkriterien
-
-### 2.1 Was „direkte Kopplung“ bedeutet
-
-| Quelle | Kernaussage | Bezug zur Frage |
-|--------|-------------|-----------------|
-| ISO/IEC 30173:2023 | Ein Digital Twin ist „the digital representation of a target entity with data connections that enable convergence between the physical and digital states at an appropriate rate of synchronization“ ([ISO](https://www.iso.org/standard/81442.html)) | Kopplung gehört zur Definition; die Synchronisationsrate ist Teil der Auslegung |
-| Kritzinger et al. 2018 | Unterscheidung *Digital Model*, *Digital Shadow* und *Digital Twin* nach Richtung und Automatisierung des Datenflusses ([DOI 10.1016/j.ifacol.2018.08.474](https://doi.org/10.1016/j.ifacol.2018.08.474)) | Shadow = automatischer Fluss real → digital; Twin = in beide Richtungen |
-| National Academies (Bericht 2024) | Die bidirektionale Wechselwirkung zwischen virtuell und physisch ist zentral, automatisiert oder mit dem Menschen in der Schleife; dazu VVUQ (Verifikation, Validierung, Unsicherheitsquantifizierung) ([NASEM](https://www.nationalacademies.org/news/2023/12/new-report-urges-multiagency-action-to-support-potentially-transformative-digital-twins-research)) | stützt die OpenTSx-Regel: Mensch und Optimierer an derselben Schnittstelle, Freigabe vor dem Rückweg |
-| AWS „L4 Living Digital Twin“ | Modellparameter werden mit realen Daten laufend aktualisiert, probabilistisch (bayesianisch) kalibriert ([AWS IoT Blog](https://aws.amazon.com/blogs/iot/l4-living-digital-twins/), [AWS HPC Blog](https://aws.amazon.com/blogs/hpc/deploying-level-4-digital-twin-self-calibrating-virtual-sensors-on-aws)) | Kalibrierung als Teil der Kopplung |
-| ISO/IEC 30186:2025 | Reifegradmodell und Leitfaden zur Reifegradbewertung für Digital Twins ([BSI-Eintrag](https://knowledge.bsigroup.com/products/bs-iso-iec-30186-digital-twin-maturity-model-and-guidance-for-a-maturity-assessment)) | Inhalt kostenpflichtig, **nicht eingesehen** |
-
-### 2.2 Die acht Prüfkriterien
-
-| Krit. | Frage | „●“ verlangt in der Primärquelle |
-|-------|-------|-----------------------------------|
-| **a** | Wird die Simulation laufend von Live-Messungen getrieben oder korrigiert (Schatten, Nowcast, Zustandsschätzung, Kalibrierung)? | ausdrückliche Beschreibung des Live-Betriebs eines Modells, nicht nur Visualisierung von Messwerten |
-| **b** | Lassen sich What-if-Varianten vom aktuellen (Live-)Zustand aus rechnen? | dokumentierte Szenario- oder What-if-Funktion auf dem betriebenen Modell |
-| **c** | Gibt es Prognose oder modellprädiktive Optimierung aus demselben Zustand? | Vorhersage, Fahrplan- oder Optimierungsfunktion auf dem Zwilling |
-| **d** | Ist die Herkunft je Wert (gemessen, geschätzt, simuliert) für Nutzer sichtbar? | Kennzeichnung je Wert, über Berechnungen hinweg |
-| **e** | Ist ein Lauf reproduzierbar wiederholbar (Replay)? | deterministische Wiederholung oder versionierte, wiederholbare Läufe |
-| **f** | Offen und herstellerneutral? | offene Lizenz oder offener Standard; „◐“ bei proprietär mit offenen Schnittstellen |
-| **g** | Skaliert dasselbe Konzept von kleinen Systemen (Haus, Boot) bis Windpark plus Elektrolyseur? | belegte Anwendungen über Größenklassen |
-| **h** | Funktioniert der Zwilling über Eigentümergrenzen hinweg (föderiert)? | Teile laufen bei verschiedenen Eigentümern, gekoppelt über definierte Schnittstellen |
-
-**Skala:** ● belegt (Primärquelle, meist Herstellerangabe) · ◐ teilweise oder eingeschränkt · ○ in den geprüften
-Quellen nicht gefunden · ? nicht verifiziert oder unklar.
+**Conclusion:** OpenTSx should not use "We couple live data and simulation" as an advertising claim. Others can do that,
+often better. What holds up is the combination: **the same building blocks in three operating modes with an exchangeable
+operating policy, provenance per value down to every KPI, bit-identical replay on an open log, federable execution
+across ownership boundaries, open under Apache 2.0, and the evaluation principle "coordinated minus reference, same
+information".** Today this combination is a proof of concept on synthetic and simulated data, without production
+customers (section 3).
 
 ---
 
-## 3. Referenzpunkt: OpenTSx heute
+## 2. Terms and assessment criteria
 
-Die folgende Tabelle trennt, was auf `master` existiert, was in Arbeitszweigen liegt (Stand 12.10.2026, noch nicht in
-`master`) und was geplant ist. Grundlage: [07-DIGITAL-TWIN-BSP](../datamodel-2026/07-DIGITAL-TWIN-BSP.md),
+### 2.1 What "direct coupling" means
+
+| Source | Key statement | Relevance to the question |
+|--------|---------------|---------------------------|
+| ISO/IEC 30173:2023 | A digital twin is "the digital representation of a target entity with data connections that enable convergence between the physical and digital states at an appropriate rate of synchronization" ([ISO](https://www.iso.org/standard/81442.html)) | Coupling is part of the definition; the synchronization rate is part of the design |
+| Kritzinger et al. 2018 | Distinction between *Digital Model*, *Digital Shadow* and *Digital Twin* by direction and automation of the data flow ([DOI 10.1016/j.ifacol.2018.08.474](https://doi.org/10.1016/j.ifacol.2018.08.474)) | Shadow = automatic flow real → digital; Twin = in both directions |
+| National Academies (2024 report) | The bidirectional interaction between virtual and physical is central, automated or with a human in the loop; plus VVUQ (verification, validation, uncertainty quantification) ([NASEM](https://www.nationalacademies.org/news/2023/12/new-report-urges-multiagency-action-to-support-potentially-transformative-digital-twins-research)) | supports the OpenTSx rule: human and optimizer at the same interface, approval before the return path |
+| AWS "L4 Living Digital Twin" | Model parameters are continuously updated with real data and calibrated probabilistically (Bayesian) ([AWS IoT Blog](https://aws.amazon.com/blogs/iot/l4-living-digital-twins/), [AWS HPC Blog](https://aws.amazon.com/blogs/hpc/deploying-level-4-digital-twin-self-calibrating-virtual-sensors-on-aws)) | Calibration as part of the coupling |
+| ISO/IEC 30186:2025 | Maturity model and guidance for maturity assessment of digital twins ([BSI entry](https://knowledge.bsigroup.com/products/bs-iso-iec-30186-digital-twin-maturity-model-and-guidance-for-a-maturity-assessment)) | Content requires payment, **not seen** |
+
+### 2.2 The eight assessment criteria
+
+| Crit. | Question | What "●" requires in the primary source |
+|-------|----------|------------------------------------------|
+| **a** | Is the simulation continuously driven or corrected by live measurements (shadow, nowcast, state estimation, calibration)? | explicit description of the live operation of a model, not only a visualization of measured values |
+| **b** | Can what-if variants be computed from the current (live) state? | documented scenario or what-if function on the operated model |
+| **c** | Is there a forecast or model predictive optimization from the same state? | prediction, schedule or optimization function on the twin |
+| **d** | Is the provenance per value (measured, estimated, simulated) visible to users? | labeling per value, across calculations |
+| **e** | Can a run be repeated reproducibly (replay)? | deterministic repetition or versioned, repeatable runs |
+| **f** | Open and vendor-neutral? | open license or open standard; "◐" for proprietary with open interfaces |
+| **g** | Does the same concept scale from small systems (house, boat) to a wind farm plus electrolyzer? | documented applications across size classes |
+| **h** | Does the twin work across ownership boundaries (federated)? | parts run at different owners, coupled via defined interfaces |
+
+**Scale:** ● documented (primary source, mostly a vendor statement) · ◐ partial or limited · ○ not found in the sources
+checked · ? not verified or unclear.
+
+---
+
+## 3. Reference point: OpenTSx today
+
+The following table separates what exists on `master`, what sits in work branches (as of 2026-10-12, not yet in
+`master`) and what is planned. Basis: [07-DIGITAL-TWIN-BSP](../datamodel-2026/07-DIGITAL-TWIN-BSP.md),
 [`opentsx-twin`](../../opentsx-twin/README.md), [TASK-011](../../EVOLUTION/TASK-011-datamodel-refresher-2026.md),
-[DevOps: heute vs. geplant](../devops/today-vs-planned.md).
+[DevOps: today vs. planned](../devops/today-vs-planned.md).
 
-| Krit. | Stand `master` | Arbeitszweige (noch nicht gemergt) | geplant | Bewertung |
-|-------|----------------|------------------------------------|---------|-----------|
-| a | Betriebsart *Shadow* in Variante T; Residuum Messung − Sensorsicht im Bilanzknoten; Kalibrierung Haus (Abrechnungen) und Boot (Loggerdaten) **auf simulierten Daten**; Modbus-Poller, getestet gegen einen Zählersimulator | DWD-Sammler (MOSMIX, Messungen; `opentsx/2026-dwd`) | Live-Bindung über KafScale-Topics; IEC 60870-5-104; Marktdaten-Sammler (in Arbeit) | ◐ |
-| b | `Twin.whatIf`: Referenz- gegen Alternativ-Eingriffslog auf derselben Historie; Hebel für Haus und Boot | – | What-if-Endpunkt der Prediction-API | ● |
-| c | `Twin.forecast` ab Snapshot mit austauschbarer Policy (Regel `pressure-aware` mit rollierendem Horizont) | – | Optimierer als Policy-Atom (MPC, P8.4) | ◐ |
-| d | Herkunftsleiter `MEASURED > REPORTED > FORECAST > ESTIMATED > SYNTHETIC` je Portwert und Schritt, Taint-Propagation; jede Reihe trägt ihre schlechteste Herkunft, das Studio zeigt sie an | – | Messanteil in Prozent je Kennzahl (Vorschlag D21); Herkunft im produktiven Studio | ● |
-| e | bitgleiche Wiederholung über verketteten Zustands-Hash; Lauf-Id aus Plan-, Eingangs- und Eingriffs-Hash plus Version; Episoden-Replay auf KafScale verifiziert (P2) | – | Zwillings-Topics auf KafScale, Zustand in Iceberg | ● |
-| f | Apache 2.0; Kafka-Protokoll (KafScale), Apache Iceberg, OpenMetadata; Java und Python | – | – | ● |
-| g | drei Szenarien mit denselben Bausteinen: H2-Kette (1-min-Takt), Einfamilienhaus (1 h, 8.760 Schritte), Boot (15 min, 14 Tage) | Inventar und Anlagen-Explorer (`opentsx/2026-explorer`) | WEA-, Wake-, Wetter- und Zähler-Atome im Zwilling; Skalierungstests | ◐ |
-| h | Topic-Vertrag (`PortMessage`, `Barrier`) als Code | Variante L (lose, `opentsx/2026-p9-loose`): mit Veraltung 0 bitgleich zu T; gemessene Entwurfsregel (§6.4) – **auf simulierter Wandzeit** | echte Prozessoren über KafScale, Betrieb bei verschiedenen Eigentümern | ◐ |
+| Crit. | Status on `master` | Work branches (not yet merged) | Planned | Rating |
+|-------|--------------------|--------------------------------|---------|--------|
+| a | *shadow* mode in variant T; residual of measurement − sensor view in the balance node; calibration of the house (bills) and the boat (logger data) **on simulated data**; Modbus poller, tested against a meter simulator | DWD collector (MOSMIX, measurements; `opentsx/2026-dwd`) | live binding via KafScale topics; IEC 60870-5-104; market data collector (in progress) | ◐ |
+| b | `Twin.whatIf`: reference versus alternative intervention log on the same history; levers for house and boat | none | what-if endpoint of the Prediction API | ● |
+| c | `Twin.forecast` from a snapshot with an exchangeable policy (rule `pressure-aware` with a rolling horizon) | none | optimizer as a policy atom (MPC, P8.4) | ◐ |
+| d | provenance ladder `MEASURED > REPORTED > FORECAST > ESTIMATED > SYNTHETIC` per port value and step, taint propagation; every series carries its worst provenance, and the Studio displays it | none | measured share in percent per KPI (proposal D21); provenance in the production Studio | ● |
+| e | bit-identical repetition via a chained state hash; run id from the plan, input and intervention hashes plus version; episode replay verified on KafScale (P2) | none | twin topics on KafScale, state in Iceberg | ● |
+| f | Apache 2.0; Kafka protocol (KafScale), Apache Iceberg, OpenMetadata; Java and Python | none | none | ● |
+| g | three scenarios with the same building blocks: H2 chain (1 min time step), single-family house (1 h, 8,760 steps), boat (15 min, 14 days) | inventory and asset explorer (`opentsx/2026-explorer`) | turbine, wake, weather and meter atoms in the twin; scaling tests | ◐ |
+| h | topic contract (`PortMessage`, `Barrier`) as code | variant L (loose, `opentsx/2026-p9-loose`): with staleness 0 bit-identical to T; measured design rule (section 6.4), **on simulated wall-clock time** | real processors via KafScale, operation at different owners | ◐ |
 
-**Was es heute nicht gibt:** keinen Produktivkunden, keine Läufe auf echten Live-Daten, keine Zertifizierungen, keine
-Anbindung an ein Leitsystem, keinen Optimierer jenseits einer Regel-Policy, keine produktive Oberfläche (das Studio ist
-eine statische Seite: [Prototyp](../prototypes/smart-topics-studio.html)). Ein Projektumfeld mit Windpark,
-Elektrolyseur und Direktvermarktung ist in Vorbereitung; der Datenzugang (Zähler über Modbus, IEC 104 zum
-Elektrolyseurbetreiber, Fahrpläne des Vermarkters) wird erst vereinbart
-([TASK-011, Backlog](../../EVOLUTION/TASK-011-datamodel-refresher-2026.md)).
+**What does not exist today:** no production customer, no runs on real live data, no certifications, no connection to
+a control system, no optimizer beyond a rule policy, no production user interface (the Studio is a static page:
+[prototype](../prototypes/smart-topics-studio.html)). A project setting with a wind farm, an electrolyzer and direct
+marketing is in preparation; the data access (meters via Modbus, IEC 104 to the electrolyzer operator, the marketer's
+schedules) is yet to be agreed ([TASK-011, backlog](../../EVOLUTION/TASK-011-datamodel-refresher-2026.md)).
 
 ---
 
-## 4. Anbieterlandschaft
+## 4. Vendor landscape
 
-Die Profile nennen, was die Primärquelle belegt, und wo sie schweigt. Die Bewertung je Kriterium steht in §5.
+The profiles state what the primary source confirms and where it is silent. The rating per criterion is in section 5.
 
-### 4.1 Industrie- und Energieplattformen
+### 4.1 Industrial and energy platforms
 
 **Siemens.**
-- *Simcenter Executable Digital Twin (xDT)*: ein in sich geschlossenes, ausführbares Modell, im Kern ein Reduced
-  Order Model; lauffähig in der Cloud, am Rand, auf Prüfständen oder eingebettet. *Smart Virtual Sensing* verschmilzt
-  Messung und Simulation mit einem Kalman-Filter. Ein xDT-Gateway verwaltet die Zwillinge auf Industrial Edge
+- *Simcenter Executable Digital Twin (xDT)*: a self-contained, executable model, at its core a reduced order model;
+  runs in the cloud, at the edge, on test benches or embedded. *Smart Virtual Sensing* fuses measurement and
+  simulation with a Kalman filter. An xDT gateway manages the twins on Industrial Edge
   ([arXiv 2210.17402](https://arxiv.org/pdf/2210.17402),
-  [Simcenter-Blog](https://blogs.sw.siemens.com/simcenter/simcenter-3d-smart-virtual-sensing-unveiling-the-magic/),
-  [Produktseite](https://www.siemens.com/en-us/products/simcenter/engineering-data-science-ai/executable-digital-twin-gateway/)).
-  Starke Live-Kopplung auf Komponentenebene, kein Energieverbund.
-- *Hydrogen Performance Suite* (Pressemitteilung vom 08.10.2026): ein „digital cockpit“ mit einem physikbasierten
-  Hochgenauigkeitsmodell, Echtzeitoptimierung, Live-Anlagendaten und externen Quellen wie Netzbetreibern und
-  Energiemärkten; Einsatz im GalpH2Park in Sines (100 MW, bis 15.000 t H2/a)
+  [Simcenter blog](https://blogs.sw.siemens.com/simcenter/simcenter-3d-smart-virtual-sensing-unveiling-the-magic/),
+  [product page](https://www.siemens.com/en-us/products/simcenter/engineering-data-science-ai/executable-digital-twin-gateway/)).
+  Strong live coupling at component level, no energy cluster.
+- *Hydrogen Performance Suite* (press release of 2026-10-08): a "digital cockpit" with a physics-based high-fidelity
+  model, real-time optimization, live plant data and external sources such as grid operators and energy markets;
+  for use at the GalpH2Park in Sines (100 MW, up to 15,000 t H2/a)
   ([Siemens](https://press.siemens.com/global/en/pressrelease/siemens-will-digitalize-100-mw-hydrogen-plant-sines-portugal)).
-  Dazu gPROMS-Zwillinge und SIMIT-Inbetriebnahme für Elektrolyseure
-  ([Hystar-Webinar](https://resources.sw.siemens.com/en-US/green-hydrogen-digital-twin-for-hystar-electrolyzer-excellence/)).
-  Eine Siemens-Kurzschrift fordert ausdrücklich einen Zwilling, der online läuft und ständig mit Daten aktualisiert
-  wird ([Brief](https://assets.new.siemens.com/siemens/assets/api/uuid:e2190682-94a3-4933-8f45-8d1faf717832/DI-PA-Simplifying-Green-H2-Production-Brief.pdf)).
-  **Der direkteste Wettbewerber im Wasserstoffsegment.**
-- *Gridscale X (LV Insights)*: SaaS-Zwilling des Niederspannungsnetzes aus GIS- und Zählerdaten mit laufend
-  aktualisierter Sicht auf Topologie und Netzzustand
-  ([Produktseite](https://www.siemens.com/en-us/products/gridscale-x/lv-insights-x/)); Einsatz in Triest seit 2025
-  ([Pressemitteilung](https://press.siemens.com/global/en/pressrelease/acegasapsamga-leverages-siemens-gridscale-x-build-digital-twin-triestes-energy-grid));
-  Gridscale X verbindet Planung und Echtzeitbetrieb in einem Netzmodell
-  ([Pressemitteilung](https://press.siemens.com/global/en/pressrelease/siemens-gridscale-x-redefines-system-operations-and-agentic-transmission-planning)).
-  Ein Zustandsschätzer wird nicht namentlich beschrieben (**nicht verifiziert**).
-- *Digital Twin Composer* (CES, 06.01.2026): photorealistische 3D-Zwillinge auf NVIDIA-Omniverse-Bibliotheken,
-  verbunden mit MES-, QMS-, SPS- und IIoT-Daten; Early Access
-  ([Pressemitteilung](https://news.siemens.com/en-us/digital-twin-composer-ces-2026)). *Insights Hub* ist das frühere
+  In addition, gPROMS twins and SIMIT commissioning for electrolyzers
+  ([Hystar webinar](https://resources.sw.siemens.com/en-US/green-hydrogen-digital-twin-for-hystar-electrolyzer-excellence/)).
+  A Siemens brief explicitly calls for a twin that runs online and is constantly updated with data
+  ([brief](https://assets.new.siemens.com/siemens/assets/api/uuid:e2190682-94a3-4933-8f45-8d1faf717832/DI-PA-Simplifying-Green-H2-Production-Brief.pdf)).
+  **The most direct competitor in the hydrogen segment.**
+- *Gridscale X (LV Insights)*: SaaS twin of the low-voltage grid built from GIS and meter data, with a continuously
+  updated view of topology and grid state
+  ([product page](https://www.siemens.com/en-us/products/gridscale-x/lv-insights-x/)); in use in Trieste since 2025
+  ([press release](https://press.siemens.com/global/en/pressrelease/acegasapsamga-leverages-siemens-gridscale-x-build-digital-twin-triestes-energy-grid));
+  Gridscale X connects planning and real-time operation in one grid model
+  ([press release](https://press.siemens.com/global/en/pressrelease/siemens-gridscale-x-redefines-system-operations-and-agentic-transmission-planning)).
+  A state estimator is not described by name (**not verified**).
+- *Digital Twin Composer* (CES, 2026-01-06): photorealistic 3D twins on NVIDIA Omniverse libraries, connected to MES,
+  QMS, PLC and IIoT data; Early Access
+  ([press release](https://news.siemens.com/en-us/digital-twin-composer-ces-2026)). *Insights Hub* is the former
   MindSphere ([Siemens](https://www.siemens.com/in/en/products/software/mindsphere.html)).
 
-**GE Vernova.** SmartSignal nutzt „AI/ML Digital Twins“ auf Basis von *similarity-based modeling* mit
-Sensordaten nahe Echtzeit; APM Performance Intelligence nutzt physikbasierte Zwillinge; GridOS-Zwillinge simulieren
-das Netz über verschiedene Zeithorizonte; die FAQ nennt What-if-Szenarien und Verhaltensprognosen
-([GE Vernova](https://www.gevernova.com/software/innovation/digital-twin-technology)). Das „Digital Wind Farm“-Konzept
-stammt von 2015 ([Pressemitteilung](https://www.ge.com/news/press-releases/ge-launches-next-evolution-wind-energy-making-renewables-more-efficient-economic));
-der heutige Stand im Windgeschäft ist **nicht verifiziert**.
+**GE Vernova.** SmartSignal uses "AI/ML Digital Twins" based on *similarity-based modeling* with near real-time sensor
+data; APM Performance Intelligence uses physics-based twins; GridOS twins simulate the grid over different time
+horizons; the FAQ names what-if scenarios and behavior forecasts
+([GE Vernova](https://www.gevernova.com/software/innovation/digital-twin-technology)). The "Digital Wind Farm" concept
+dates from 2015 ([press release](https://www.ge.com/news/press-releases/ge-launches-next-evolution-wind-energy-making-renewables-more-efficient-economic));
+the current status in the wind business is **not verified**.
 
-**AVEVA und ETAP.**
-- *AVEVA Process Simulation*: „Create a high-fidelity process model as a digital twin to monitor, simulate, and
-  optimize plant performance in real-time by integrating with live data systems like AVEVA PI System“; Kennzahlen,
-  die nicht messbar sind, werden aus dem Modell überwacht; What-if über Betriebszustände, Ausfälle und
-  Einsatzstoffe ([AVEVA](https://www.aveva.com/en/solutions/engineering/operator-training/)).
-- *ETAP* (Integration mit Schneiders EcoStruxure Power Operation für Bedienertraining,
-  [Pressemitteilung](https://www.se.com/ww/en/about-us/newsroom/news/press-releases/schneider-electric-and-etap-announce-new-digital-twin-integration-enabling-operator-training-and-simulations-greatly-reducing-risk-to-operations-6294ae4877bcea5360479e84)):
-  „integrated Electrical Digital Twin platform“, „unified engineering and real-time platform“ mit „State Estimation &
-  Load Allocation“, „Predictive Simulation“, What-if („Probe alternative actions“) und „Sequence of Events Playback“
-  ([ETAP](https://etap.com/products/etap-digital-twin)). **Funktional das nächste Gegenstück zu den drei
-  Betriebsarten**, beschränkt auf elektrische Systeme und proprietär.
+**AVEVA and ETAP.**
+- *AVEVA Process Simulation*: "Create a high-fidelity process model as a digital twin to monitor, simulate, and
+  optimize plant performance in real-time by integrating with live data systems like AVEVA PI System"; KPIs that
+  cannot be measured are monitored from the model; what-if over operating states, failures and feedstocks
+  ([AVEVA](https://www.aveva.com/en/solutions/engineering/operator-training/)).
+- *ETAP* (integration with Schneider's EcoStruxure Power Operation for operator training,
+  [press release](https://www.se.com/ww/en/about-us/newsroom/news/press-releases/schneider-electric-and-etap-announce-new-digital-twin-integration-enabling-operator-training-and-simulations-greatly-reducing-risk-to-operations-6294ae4877bcea5360479e84)):
+  "integrated Electrical Digital Twin platform", "unified engineering and real-time platform" with "State Estimation &
+  Load Allocation", "Predictive Simulation", what-if ("Probe alternative actions") and "Sequence of Events Playback"
+  ([ETAP](https://etap.com/products/etap-digital-twin)). **Functionally the closest counterpart to the three operating
+  modes**, limited to electrical systems and proprietary.
 
-**Emerson und AspenTech.** Der Ovation Digital Twin ist ein eingebetteter Hochgenauigkeitssimulator parallel zum
-Leitsystem, um Fahrweisen vor der Anlage zu testen
+**Emerson and AspenTech.** The Ovation Digital Twin is an embedded high-fidelity simulator that runs in parallel to the
+control system and tests operating policies before they reach the plant
 ([Emerson](https://www.emerson.com/en-us/automation/control-and-safety-systems/distributed-control-systems-dcs/ovation-distributed-control-system/power-plant-simulator)).
-Eine laufend mit der Anlage synchronisierte Simulation galt 2022 noch als Pilot und „holy grail“
-([Emerson-Blog](https://www.emersonautomationexperts.com/2022/industry/power-generation/ovation-users-conference-reimagining-a-more-sustainable-tomorrow/));
-der Stand 2026 ist **nicht verifiziert**. Emerson hält AspenTech seit 12.03.2025 vollständig
+In 2022, a simulation continuously synchronized with the plant was still considered a pilot and a "holy grail"
+([Emerson blog](https://www.emersonautomationexperts.com/2022/industry/power-generation/ovation-users-conference-reimagining-a-more-sustainable-tomorrow/));
+the status in 2026 is **not verified**. Emerson has fully owned AspenTech since 2025-03-12
 ([Emerson](https://www.emerson.com/en-us/news/2025/emerson-completes-acquisition-of-remaining-outstanding-shares-of-aspentech));
-AspenTech bietet mit OSI monarch SCADA, EMS, ADMS und ein Microgrid-Managementsystem
+with OSI monarch, AspenTech offers SCADA, EMS, ADMS and a microgrid management system
 ([AspenTech](https://www.aspentech.com/en/resources/press-releases/aspen-technology-launches-microgrid-management-system)).
-Seit 10/2023 gehört auch NI (LabVIEW) zu Emerson
+NI (LabVIEW) has also belonged to Emerson since 2023-10
 ([eeNews](https://www.eenewseurope.com/en/farewell-ni-as-emerson-acquisition-completes/)).
 
-**ABB.** Im Fall Boliden Aitik läuft ein Dymola-Prozessmodell gegen eine Kopie des Leitsystems 800xA über OPC
-(rund 35 Signale); die APC-Optimierung liegt getrennt in Expert Optimizer; das Modell wurde nach Sprungversuchen neu
-parametriert. ABB nennt die Modelltreue als Hauptschwierigkeit
-([ABB-Fallstudie](https://new.abb.com/mining/digital-applications/advanced-process-control/case-study-the-use-of-a-digital-twin-with-advanced-process-control-at-boliden-aitik-mine)).
+**ABB.** In the Boliden Aitik case, a Dymola process model runs against a copy of the 800xA control system via OPC
+(about 35 signals); the APC optimization sits separately in Expert Optimizer; the model was re-parameterized after step
+tests. ABB names model fidelity as the main difficulty
+([ABB case study](https://new.abb.com/mining/digital-applications/advanced-process-control/case-study-the-use-of-a-digital-twin-with-advanced-process-control-at-boliden-aitik-mine)).
 
-**Hitachi Energy.** HMAX Energy (03/2026) mit dem HGÜ-Zwilling IdentiQ; Herstellerangabe: bis zu 90 % schnellere
-Reaktion auf Störungen ([Hitachi Energy](https://www.hitachienergy.com/us/en/news-and-events/press-releases/2026/03/hitachi-launches-hmax-energy-a-pioneering-ai-powered-service-and-solution-suite-for-critical-energy-infrastructure)).
-Details zur Kopplung **nicht verifiziert**.
+**Hitachi Energy.** HMAX Energy (2026-03) with the HVDC twin IdentiQ; vendor statement: up to 90 % faster response to
+disturbances ([Hitachi Energy](https://www.hitachienergy.com/us/en/news-and-events/press-releases/2026/03/hitachi-launches-hmax-energy-a-pioneering-ai-powered-service-and-solution-suite-for-critical-energy-infrastructure)).
+Details of the coupling **not verified**.
 
-**Ansys Twin Builder (Synopsys).** Reduced Order Models aus den Ansys-Solvern; „Calibrate and tune your simulation
-model parameters by combining physical and virtual sensors“; Bereitstellung über Twin Deployer in Cloud, Edge oder
-offline; FMI-Unterstützung ([Synopsys](https://ansys.synopsys.com/products/digital-twin/ansys-twin-builder)).
+**Ansys Twin Builder (Synopsys).** Reduced order models from the Ansys solvers; "Calibrate and tune your simulation
+model parameters by combining physical and virtual sensors"; deployment via Twin Deployer in the cloud, at the edge or
+offline; FMI support ([Synopsys](https://ansys.synopsys.com/products/digital-twin/ansys-twin-builder)).
 
-**Bentley Systems.** iTwin IoT erfasst und validiert Sensordaten in Infrastrukturzwillingen
-([Bentley](https://www.bentley.com/software/itwin-iot/)). iTwin.js steht unter MIT-Lizenz, das native Modul ist nicht
-quelloffen ([GitHub](https://github.com/iTwin/itwinjs-core)). Simulation auf Live-Daten **nicht verifiziert**.
+**Bentley Systems.** iTwin IoT collects and validates sensor data in infrastructure twins
+([Bentley](https://www.bentley.com/software/itwin-iot/)). iTwin.js is under the MIT license; the native module is not
+open source ([GitHub](https://github.com/iTwin/itwinjs-core)). Simulation on live data **not verified**.
 
-**Dassault Systèmes.** Die Plattform verspricht, dass Echtzeitdaten aus dem Betrieb in den „virtual twin“ zurückfließen
-([3DS-Blog Wind](https://blog.3ds.com/industries/infrastructure-energy-materials/how-virtual-twins-can-make-wind-farms-fit-for-the-future/)).
-Das Energiebeispiel Red Eléctrica (12/2024) betrifft Design und Zusammenarbeit von über 1.500 Beteiligten, keinen
-belegten Live-Betrieb ([Pressemitteilung](https://www.3ds.com/newsroom/press-releases/electrical-grid-operator-red-electrica-transforms-its-design-process-and-collaboration-dassault-systemes-3dexperience-platform)).
+**Dassault Systèmes.** The platform promises that real-time data from operation flows back into the "virtual twin"
+([3DS blog on wind](https://blog.3ds.com/industries/infrastructure-energy-materials/how-virtual-twins-can-make-wind-farms-fit-for-the-future/)).
+The energy example Red Eléctrica (2024-12) concerns design and collaboration among more than 1,500 participants, not a
+documented live operation ([press release](https://www.3ds.com/newsroom/press-releases/electrical-grid-operator-red-electrica-transforms-its-design-process-and-collaboration-dassault-systemes-3dexperience-platform)).
 
-**Octave (früher Hexagon-Software).** Abspaltung am 28.05.2026 abgeschlossen
-([Hexagon](https://investors.hexagon.com/share-information/octave-separation)); HxGN SDx heißt jetzt InConcert und
-verwaltet Engineering- und Betriebsinformationen ([Octave](https://www.octave.com/products/engineering-information-management/inconcert)).
-Kein Simulationsbezug gefunden.
+**Octave (formerly Hexagon software).** Spin-off completed on 2026-05-28
+([Hexagon](https://investors.hexagon.com/share-information/octave-separation)); HxGN SDx is now called InConcert and
+manages engineering and operations information ([Octave](https://www.octave.com/products/engineering-information-management/inconcert)).
+No link to simulation found.
 
-**PTC ThingWorx.** Verkauf von Kepware und ThingWorx an TPG am 16.03.2026 abgeschlossen
+**PTC ThingWorx.** Sale of Kepware and ThingWorx to TPG completed on 2026-03-16
 ([PTC](https://www.ptc.com/en/news/2026/ptc-completes-divestiture-of-kepware-and-thingworx-businesses)).
 
-**IBM Maximo.** Monitor liefert Zustandsüberwachung, Predict Ausfallwahrscheinlichkeiten je Fehlermodus
-([IBM-Doku](https://www.ibm.com/docs/en/mhmpmh-and-p-u/cd?topic=overview-maximo-predict)). Keine physikalische
-Simulation belegt.
+**IBM Maximo.** Monitor provides condition monitoring; Predict provides failure probabilities per failure mode
+([IBM docs](https://www.ibm.com/docs/en/mhmpmh-and-p-u/cd?topic=overview-maximo-predict)). No physical simulation
+documented.
 
-**Cognite Data Fusion.** Die *Simulator Integration* ist allgemein verfügbar: Simulationen laufen automatisch mit
-Betriebsdaten nahe Echtzeit, Modelle und Routinen sind versioniert, Ergebnisse werden über die Zeit verfolgt;
-Konnektoren für PROSPER, GAP, Petro-SIM, Symmetry und DWSIM
+**Cognite Data Fusion.** The *Simulator Integration* is generally available: simulations run automatically with near
+real-time operating data, models and routines are versioned, and results are tracked over time; connectors for
+PROSPER, GAP, Petro-SIM, Symmetry and DWSIM
 ([Cognite Hub](https://hub.cognite.com/simulator-integration-388/simulator-integration-service-now-generally-available-in-cognite-data-fusion-4304),
-[Cognite-Doku](https://docs.cognite.com/cdf/integration/guides/simulators)). **Das sauberste Muster „Datenplattform
-treibt fremde Simulatoren“**, Schwerpunkt Öl und Gas.
+[Cognite docs](https://docs.cognite.com/cdf/integration/guides/simulators)). **The cleanest example of the pattern
+"data platform drives third-party simulators"**, with a focus on oil and gas.
 
 ### 4.2 Wind
 
-- **DNV WindGEMINI** (2017): SCADA-Signale als Eingang, Echtzeitanalyse und Prognose, aeroelastische Modellierung der
-  Ermüdung zur Restlebensdauer ([DNV](https://www.dnv.com/news/2017/new-windgemini-advances-wind-turbine-operations-104699/)).
-  Aktueller Produktstatus **nicht verifiziert**.
-- **Akselos**: Strukturzwillinge auf Basis reduzierter FE-Modelle (RB-FEA), aktualisiert mit Inspektions- und
-  Sensordaten ([Akselos](https://akselos.com/digital-twins-a-comprehensive-guide/)); Offshore-Schwerpunkt.
-- **Power Factors**: Unity REMS und Unity APM (10/2024) vereinen Drive und Greenbyte; Herstellerangabe über 300 GW
+- **DNV WindGEMINI** (2017): SCADA signals as input, real-time analysis and forecast, aeroelastic modeling of fatigue
+  to estimate the remaining useful life
+  ([DNV](https://www.dnv.com/news/2017/new-windgemini-advances-wind-turbine-operations-104699/)).
+  Current product status **not verified**.
+- **Akselos**: structural twins based on reduced FE models (RB-FEA), updated with inspection and sensor data
+  ([Akselos](https://akselos.com/digital-twins-a-comprehensive-guide/)); offshore focus.
+- **Power Factors**: Unity REMS and Unity APM (2024-10) combine Drive and Greenbyte; vendor statement: more than 300 GW
   ([Power Factors](https://www.powerfactors.com/news/power-factors-launches-next-generation-ai-powered-asset-performance-management-application-on-unity-platform)).
-  Asset-Performance-Analytik, kein Simulationszwilling gefunden. Bazefield: **nicht geprüft**.
-- **Envision EnOS Wind**: IoT-Betriebssystem für Windparks mit Datenerfassung, Verlustanalyse, ML-Zustandsbewertung,
-  Leistungsprognose und AGC/AVC; Zwilling auf Turbinenebene ([Envision](https://www.envision-group.com/en/windsoftware.html)).
-- **Siemens Gamesa mit NVIDIA** (2022): Wake-Surrogat, Herstellerangabe bis zu 4.000-mal schneller
-  ([NVIDIA](https://blogs.nvidia.com/blog/siemens-gamesa-wind-farms-digital-twins)). Produktivstand **nicht
-  verifiziert**.
-- **Sentient Science DigitalClone**: physikbasierte und ML-Prognostik für Getriebe; „DigitalClone Live“ aktualisiert
-  Vorhersagen mit Live-Daten ([Windpower Engineering](https://www.windpowerengineering.com/extending-life-wind-turbines-prognostics-data-modeling/)).
-  Ältere Quellen, Stand 2026 **nicht verifiziert**.
-- **Vestas, Nordex**: In den geprüften Quellen keine öffentlich dokumentierten Zwillingsprodukte für Betreiber
-  (**nicht verifiziert**).
+  Asset performance analytics, no simulation twin found. Bazefield: **not checked**.
+- **Envision EnOS Wind**: IoT operating system for wind farms with data acquisition, loss analysis, ML condition
+  assessment, power forecast and AGC/AVC; twin at turbine level ([Envision](https://www.envision-group.com/en/windsoftware.html)).
+- **Siemens Gamesa with NVIDIA** (2022): wake surrogate, vendor statement: up to 4,000 times faster
+  ([NVIDIA](https://blogs.nvidia.com/blog/siemens-gamesa-wind-farms-digital-twins)). Production status **not
+  verified**.
+- **Sentient Science DigitalClone**: physics-based and ML prognostics for gearboxes; "DigitalClone Live" updates
+  predictions with live data ([Windpower Engineering](https://www.windpowerengineering.com/extending-life-wind-turbines-prognostics-data-modeling/)).
+  Older sources, status in 2026 **not verified**.
+- **Vestas, Nordex**: no publicly documented twin products for operators in the sources checked
+  (**not verified**).
 
-### 4.3 Wasserstoff und Elektrolyse
+### 4.3 Hydrogen and electrolysis
 
-- **Siemens**: Hydrogen Performance Suite und gPROMS-Zwillinge (§4.1), der am weitesten dokumentierte Ansatz.
-- **thyssenkrupp nucera**: nennt „Digital Twins“ neben *nucera evaluator* und *nucera load balancer* sowie APC und
-  *pulsewatch* im Service ([thyssenkrupp nucera](https://www.thyssenkrupp-nucera.com/technologies/alkaline-water-electrolysis)).
-  Funktionsumfang **nicht verifiziert**.
-- **Sunfire, ITM Power, Plug Power**: keine veröffentlichten Zwillingsprodukte gefunden.
-- **Forschung**: Sicherheitszwilling mit CFD-Ausbreitungsrechnung für die NREL-ARIES-Anlage
-  ([OSTI](https://www.osti.gov/biblio/3011897)), Plattformarchitektur für einen industriellen Elektrolyseur
+- **Siemens**: Hydrogen Performance Suite and gPROMS twins (section 4.1), the most extensively documented approach.
+- **thyssenkrupp nucera**: names "Digital Twins" alongside *nucera evaluator* and *nucera load balancer*, as well as
+  APC and *pulsewatch* in its service offering ([thyssenkrupp nucera](https://www.thyssenkrupp-nucera.com/technologies/alkaline-water-electrolysis)).
+  Functional scope **not verified**.
+- **Sunfire, ITM Power, Plug Power**: no published twin products found.
+- **Research**: safety twin with a CFD dispersion calculation for the NREL ARIES facility
+  ([OSTI](https://www.osti.gov/biblio/3011897)), platform architecture for an industrial electrolyzer
   ([ACM Energy Informatics Review](https://energy.acm.org/eir/poster-abstract-a-digital-twin-platform-applied-to-hydrogen-electrolyzers/)).
 
-In den geprüften Quellen beschreibt kein Anbieter die Kette **Abnehmer → Leitungsdruck → Elektrolyseur → Fahrplan →
-Vermarktung** ausdrücklich als ein Modell über die Grenzen der Anlage und ihrer Eigentümer hinweg. Die Siemens-Suite
-bindet Netzbetreiber und Märkte als externe Quellen ein; wie weit sie Abnehmer und Vermarktungsfahrplan als gekoppelte
-Bausteine rechnet, ist **nicht verifiziert**. Genau diese Kette ist Szenario S1 von OpenTSx.
+In the sources checked, no vendor explicitly describes the chain **offtaker → line pressure → electrolyzer → schedule →
+marketing** as one model across the boundaries of the plant and its owners. The Siemens suite integrates grid operators
+and markets as external sources; how far it computes offtakers and the marketing schedule as coupled building blocks
+is **not verified**. Exactly this chain is scenario S1 of OpenTSx.
 
-### 4.4 Netze und Stadtwerke
+### 4.4 Grids and municipal utilities
 
-- **DIgSILENT PowerFactory**: Zustandsschätzung für symmetrische und unsymmetrische Netze mit Fehlerdatenerkennung
-  und Beobachtbarkeitsanalyse ([DIgSILENT](https://www.digsilent.de/en/state-estimation.html)); die OPC-Schnittstelle
-  wird für die Echtzeitintegration mit SCADA genutzt, von Online-Zustandsschätzung bis zum Trainingssimulator
-  ([DIgSILENT IT-Projekte](https://www.digsilent.de/en/it-projects.html)).
-- **envelio Intelligent Grid Platform** (E.ON-Mehrheit seit 12/2021,
-  [Startbase](https://www.startbase.de/news/exit-von-envelio/)): Netzzwilling, der vorhandene Daten verarbeitet und
-  korrigiert; Netzplanung, Netzbetrieb mit Live-Daten und §-14a-Steuerung auf einer Datenbasis
+- **DIgSILENT PowerFactory**: state estimation for balanced and unbalanced grids with bad data detection and
+  observability analysis ([DIgSILENT](https://www.digsilent.de/en/state-estimation.html)); the OPC interface is used
+  for real-time integration with SCADA, from online state estimation to the training simulator
+  ([DIgSILENT IT projects](https://www.digsilent.de/en/it-projects.html)).
+- **envelio Intelligent Grid Platform** (E.ON majority since 2021-12,
+  [Startbase](https://www.startbase.de/news/exit-von-envelio/)): a grid twin that processes and corrects existing data;
+  grid planning, grid operation with live data and Section 14a control on one data basis
   ([ZfK](https://www.zfk.de/digitalisierung/smart-city-energy/digitaler-zwilling-fuer-meister-und-monteure-envelio-startet-mobile-netzservices),
   [Presseportal](https://www.presseportal.de/pm/108695/6073125)).
-- **VENIOS Energy Platform**: Cloud-Zwilling, der per Zustandsschätzung trotz weniger Messwerte ein hoch aufgelöstes
-  Netzabbild erzeugt; Referenz Stadtwerke Schwäbisch Hall
+- **VENIOS Energy Platform**: a cloud twin that uses state estimation to produce a high-resolution grid model despite
+  few measured values; reference: Stadtwerke Schwäbisch Hall
   ([ZfK](https://www.zfk.de/digitalisierung/smart-city-energy/stadtwerke-schwaebisch-hall-machen-ihr-stromverteilnetz-transparent)).
-- **PSIcontrol**: Leitsystem für Überwachung, Steuerung und Simulation; prädiktive Netzsimulation bei N-ERGIE Netz
+- **PSIcontrol**: control system for monitoring, control and simulation; predictive grid simulation at N-ERGIE Netz
   ([PSI](https://www.psi.de/en/solutions/products/psicontrol),
   [Industry Press](https://industry-press.com/psi-software-se-erneuert-netzleitsystem-fuer-n-ergie-netz-gmbh/)).
-- **DNV Synergi Electric**: Planungs- und Analysewerkzeug mit Anbindung von GIS, SCADA und AMI; kein Live-Zwilling
-  belegt ([DNV](https://www.dnv.com/software/energy/synergi-electric)).
-- **Tapestry (X, Alphabet)**: Planungswerkzeug für langfristige, stündlich aufgelöste Netzsimulation
-  ([X](https://X.Company/projects/tapestry/)); bei Vector (Neuseeland) im täglichen Betrieb
+- **DNV Synergi Electric**: planning and analysis tool with connections to GIS, SCADA and AMI; no live twin
+  documented ([DNV](https://www.dnv.com/software/energy/synergi-electric)).
+- **Tapestry (X, Alphabet)**: planning tool for long-term grid simulation at hourly resolution
+  ([X](https://X.Company/projects/tapestry/)); in daily operation at Vector (New Zealand)
   ([Latitude Media](https://www.latitudemedia.com/news/exclusive-googles-grid-moonshot-is-now-tackling-distribution/)).
 
-Netzzwillinge rechnen Lastfluss und Netzzustand. OpenTSx rechnet dagegen Anlagen, Verträge und Fahrweisen eines
-Verbunds. Beides ergänzt sich (Teil 2, §4.4).
+Grid twins compute load flow and grid state. OpenTSx, by contrast, computes the assets, contracts and operating
+policies of a cluster. The two complement each other (Part 2, section 4.4).
 
-### 4.5 VPP, Flexibilität und Energiegemeinschaften
+### 4.5 VPP, flexibility and energy communities
 
-- **Next Kraftwerke** (seit 2021 Teil von Shell): SaaS-Plattform NEMOCS; Prognosen aus Anlagen-, Wetter-, Preis- und
-  Netzdaten ([Next Kraftwerke](https://www.next-kraftwerke.com/energy-blog/spotlight-nemocs-setting-up-a-vpp-with-ecotricity)).
-- **gridX** (E.ON, vollständig seit 12/2022): gridBox mit lokaler Echtzeitoptimierung, Cloud-Plattform XENON
+- **Next Kraftwerke** (part of Shell since 2021): SaaS platform NEMOCS; forecasts from asset, weather, price and grid
+  data ([Next Kraftwerke](https://www.next-kraftwerke.com/energy-blog/spotlight-nemocs-setting-up-a-vpp-with-ecotricity)).
+- **gridX** (E.ON, fully owned since 2022-12): gridBox with local real-time optimization, cloud platform XENON
   ([gridX](https://www.gridx.ai/press-releases/e-on-acquires-majority-stake-in-leading-smart-grid-company-gridx)).
-- **Entrix**: Optimierung und Vermarktung von Batteriespeichern; 3 GW / 8,5 GWh unter Vertrag (03/2026)
+- **Entrix**: optimization and marketing of battery storage; 3 GW / 8.5 GWh under contract (2026-03)
   ([TaiyangNews](https://taiyangnews.info/technology/optimization-trading-platform-for-grid-scale-batteries-from-entrix)).
-- **Kraken Flex** (Octopus Energy Group): ML- und KI-Steuerung dezentraler Anlagen; Partnerschaft mit Schneider
-  Electric (06/2026); über 2 GW Flexibilität aus Haushalten ([Kraken](https://www.kraken.tech/press-releases/schneider-electric-and-kraken-partner-to-boost-grid-flexibility)).
+- **Kraken Flex** (Octopus Energy Group): ML and AI control of distributed assets; partnership with Schneider
+  Electric (2026-06); more than 2 GW of flexibility from households ([Kraken](https://www.kraken.tech/press-releases/schneider-electric-and-kraken-partner-to-boost-grid-flexibility)).
 
-Diese Plattformen prognostizieren und optimieren auf Live-Daten (Kriterium c), simulieren aber keine Anlagenphysik
-und arbeiten zentral über die Anlagen vieler Eigentümer, nicht föderiert.
+These platforms forecast and optimize on live data (criterion c), but they do not simulate asset physics, and they
+work centrally across the assets of many owners, not federated.
 
-### 4.6 Hyperscaler und Datenplattformen
+### 4.6 Hyperscalers and data platforms
 
-- **Azure Digital Twins**: weiterhin allgemein verfügbar; Zwillingsgraph mit DTDL-Modellen; Abrechnung nach
-  Operationen, Nachrichten und Query Units ([Microsoft Learn](https://learn.microsoft.com/en-us/azure/digital-twins/overview),
-  [Preise](https://azure.microsoft.com/en-us/pricing/details/digital-twins/)). Davon getrennt: **Fabric digital twin
-  builder** (Preview, ontologiebasierte Modellierung in Real-Time Intelligence,
+- **Azure Digital Twins**: still generally available; twin graph with DTDL models; billing by operations, messages
+  and Query Units ([Microsoft Learn](https://learn.microsoft.com/en-us/azure/digital-twins/overview),
+  [pricing](https://azure.microsoft.com/en-us/pricing/details/digital-twins/)). Separate from this: **Fabric digital
+  twin builder** (preview, ontology-based modeling in Real-Time Intelligence,
   [Microsoft Learn](https://learn.microsoft.com/en-us/fabric/real-time-intelligence/digital-twin-builder/overview));
-  laut Drittquelle ohne Simulationsmaschine ([Drittquelle](https://fgarofalo56.github.io/Suppercharge_Microsoft_Fabric/features/digital-twin-builder/),
-  **nicht verifiziert**).
-- **AWS IoT TwinMaker**: Wissensgraph, 3D-Szenen und Grafana-Plugin; nutzungsbasierte Preise; laut Dokumentation
-  nicht für den Betrieb kritischer Systeme gedacht ([AWS-Doku](https://docs.aws.amazon.com/iot-twinmaker/latest/guide/what-is-twinmaker.html),
-  [Preise](https://aws.amazon.com/iot-twinmaker/pricing/)). **Status:** In den AWS-Verfügbarkeitsmitteilungen vom
-  Oktober 2025 ([AWS](https://aws.amazon.com/about-aws/whats-new/2025/10/aws-service-availability/)) sowie März und
-  Juni 2026 (Zusammenfassung: [Classmethod](https://dev.classmethod.jp/en/articles/aws-service-lifecycle-summary-20260630/))
-  ist TwinMaker **nicht** aufgeführt; die Preisseite enthält keinen Hinweis auf ein Supportende. Eine Drittquelle
-  behauptet eine Einstellung ([innFactory](https://innfactory.de/en/cloud/aws/products/iot-twinmaker/)) – **nicht
-  verifiziert**. Im Umfeld eingestellt oder in Wartung: IoT Analytics (Ende 15.12.2025), IoT Events (Ende 20.05.2026),
-  SiteWise Monitor (Wartung seit 07.11.2025), FleetWise (Wartung seit 30.04.2026), Greengrass v1 (Ende 07.10.2026)
-  ([Übersicht](https://thingshost.de/en/blog/aws-iot-service-retirements-2026)). Für Kunden ist das ein Argument für
-  offene Formate.
-- **NVIDIA Omniverse und PhysicsNeMo**: PhysicsNeMo (früher Modulus) ist ein quelloffenes PyTorch-Framework für
-  Physik-ML unter Apache 2.0 ([GitHub](https://github.com/NVIDIA/physicsnemo)); trainierte Surrogate rechnen neues
-  Verhalten in Echtzeit ([NVIDIA](https://blogs.nvidia.com/blog/siemens-gamesa-wind-farms-digital-twins)).
-- **Google**: Tapestry (§4.4). **Databricks**: **nicht geprüft**.
+  according to a third-party source, it has no simulation engine ([third-party source](https://fgarofalo56.github.io/Suppercharge_Microsoft_Fabric/features/digital-twin-builder/),
+  **not verified**).
+- **AWS IoT TwinMaker**: knowledge graph, 3D scenes and a Grafana plugin; usage-based pricing; according to the
+  documentation, not intended for operating critical systems ([AWS docs](https://docs.aws.amazon.com/iot-twinmaker/latest/guide/what-is-twinmaker.html),
+  [pricing](https://aws.amazon.com/iot-twinmaker/pricing/)). **Status:** TwinMaker is **not** listed in the AWS
+  service availability announcements of October 2025 ([AWS](https://aws.amazon.com/about-aws/whats-new/2025/10/aws-service-availability/))
+  and of March and June 2026 (summary: [Classmethod](https://dev.classmethod.jp/en/articles/aws-service-lifecycle-summary-20260630/));
+  the pricing page contains no notice of an end of support. A third-party source claims a discontinuation
+  ([innFactory](https://innfactory.de/en/cloud/aws/products/iot-twinmaker/)); this is **not verified**. Related
+  services that are discontinued or in maintenance mode: IoT Analytics (end of support 2025-12-15), IoT Events (end of
+  support 2026-05-20), SiteWise Monitor (maintenance mode since 2025-11-07), FleetWise (maintenance mode since
+  2026-04-30), Greengrass v1 (end of support 2026-10-07)
+  ([overview](https://thingshost.de/en/blog/aws-iot-service-retirements-2026)). For customers, this is an argument for
+  open formats.
+- **NVIDIA Omniverse and PhysicsNeMo**: PhysicsNeMo (formerly Modulus) is an open source PyTorch framework for physics
+  ML under Apache 2.0 ([GitHub](https://github.com/NVIDIA/physicsnemo)); trained surrogates compute new behavior in
+  real time ([NVIDIA](https://blogs.nvidia.com/blog/siemens-gamesa-wind-farms-digital-twins)).
+- **Google**: Tapestry (section 4.4). **Databricks**: **not checked**.
 
-### 4.7 Open Source und Standards
+### 4.7 Open source and standards
 
-- **Eclipse Ditto** (EPL-2.0): Zwilling als Zustandsspiegel von Geräten (gemeldet, gewünscht), Anbindung über Kafka,
-  MQTT, AMQP; keine Simulation ([GitHub](https://github.com/eclipse-ditto/ditto), [Projekt](https://eclipse.dev/ditto/)).
-- **Verwaltungsschale (AAS) und Eclipse BaSyx** (BaSyx Java SDK unter MIT, [GitHub](https://github.com/eclipse-basyx/basyx-java-server-sdk)):
-  Das IDTA-Teilmodell 02005 *Provision of Simulation Models* beschreibt Simulationsmodelle wie FMUs an der
-  Verwaltungsschale des Assets ([IDTA 02005](https://industrialdigitaltwin.org/wp-content/uploads/2023/01/IDTA-02005-1-0_Submodel_ProvisionOfSimulationModels.pdf)).
-  Es beschreibt Modelle, führt sie nicht aus.
-- **Catena-X**: Zwillinge als Verwaltungsschalen in einem Digital Twin Registry, souveräner Austausch über Eclipse
+- **Eclipse Ditto** (EPL-2.0): twin as a state mirror of devices (reported, desired), connection via Kafka, MQTT,
+  AMQP; no simulation ([GitHub](https://github.com/eclipse-ditto/ditto), [project](https://eclipse.dev/ditto/)).
+- **Asset Administration Shell (AAS) and Eclipse BaSyx** (BaSyx Java SDK under MIT, [GitHub](https://github.com/eclipse-basyx/basyx-java-server-sdk)):
+  the IDTA submodel 02005 *Provision of Simulation Models* describes simulation models such as FMUs on the Asset
+  Administration Shell of the asset ([IDTA 02005](https://industrialdigitaltwin.org/wp-content/uploads/2023/01/IDTA-02005-1-0_Submodel_ProvisionOfSimulationModels.pdf)).
+  It describes models; it does not execute them.
+- **Catena-X**: twins as Asset Administration Shells in a Digital Twin Registry, sovereign exchange via the Eclipse
   Dataspace Connector ([CX-0002](https://catena-x.net/fileadmin/user_upload/Standard-Bibliothek/Update_Januar_2024/CX-0002-DigitalTwinsInCatenaX-v2.1.0.pdf)).
-  Das Vorbild für Datenhoheit über Unternehmensgrenzen.
-- **FIWARE**: Kontextbroker nach NGSI-LD und Smart Data Models für Zwillingsklassen, auch für Energie
-  ([arXiv 2309.12358](https://arxiv.org/pdf/2309.12358)). Lizenz von Orion-LD **nicht verifiziert**.
-- **mosaik 3** (OFFIS, LGPL-2.1): Kosimulation für Smart Grids, verbindet zeitgetaktete und ereignisdiskrete Simulation;
-  FMI und OPC UA ([arXiv 2410.16937](https://arxiv.org/html/2410.16937v1), [GitHub](https://github.com/OFFIS-mosaik)).
-- **HELICS** (BSD-3-Clause): Federates fordern Zeit an, der Core gewährt sie erst, wenn kein Federate in die
-  Vergangenheit rechnen müsste; Zielgröße über 100.000 Federates
-  ([Doku](https://docs.helics.org/en/main/user-guide/fundamental_topics/timing_configuration.html),
+  The model to follow for data sovereignty across company boundaries.
+- **FIWARE**: context broker based on NGSI-LD and Smart Data Models for twin classes, including energy
+  ([arXiv 2309.12358](https://arxiv.org/pdf/2309.12358)). License of Orion-LD **not verified**.
+- **mosaik 3** (OFFIS, LGPL-2.1): co-simulation for smart grids, combines time-stepped and discrete-event simulation;
+  FMI and OPC UA ([arXiv 2410.16937](https://arxiv.org/html/2410.16937v1), [GitHub](https://github.com/OFFIS-mosaik)).
+- **HELICS** (BSD-3-Clause): federates request time, and the core grants it only when no federate would have to
+  compute into the past; target size more than 100,000 federates
+  ([docs](https://docs.helics.org/en/main/user-guide/fundamental_topics/timing_configuration.html),
   [GitHub](https://github.com/GMLC-TDC/HELICS)).
-- **FMI 3.0**: Co-Simulation, Model Exchange und Scheduled Execution, Clocks und Event Mode
-  ([FMI-FAQ](https://fmi-standard.org/faq/), [Modelica 2021](https://ecp.ep.liu.se/index.php/modelica/article/view/179)).
-  SSP: **nicht geprüft**. OpenModelica: **nicht geprüft**.
-- **pandapower** (BSD-3-Clause): WLS-Zustandsschätzung mit Chi-Quadrat- und Residuentest; die Doku warnt, die
-  Fehlerdatenentfernung sei „not very robust“ ([Doku](https://pandapower.readthedocs.io/en/latest/estimation.html)).
-- **PyPSA** (MIT): Optimierung und Simulation von Einsatz und Ausbau ([GitHub](https://github.com/PyPSA/PyPSA)).
-  Planung, kein Live-Betrieb.
-- **OpenEMS**: Edge und Backend unter EPL-2.0, Oberfläche unter AGPL-3.0; simulierte Entwicklungsumgebung
-  ([GitHub](https://github.com/OpenEMS/openems)); Referenzimplementierung mit Fraunhofer ISE und FENECON (06/2026,
+- **FMI 3.0**: Co-Simulation, Model Exchange and Scheduled Execution, Clocks and Event Mode
+  ([FMI FAQ](https://fmi-standard.org/faq/), [Modelica 2021](https://ecp.ep.liu.se/index.php/modelica/article/view/179)).
+  SSP: **not checked**. OpenModelica: **not checked**.
+- **pandapower** (BSD-3-Clause): WLS state estimation with chi-squared and residual tests; the docs warn that bad data
+  removal is "not very robust" ([docs](https://pandapower.readthedocs.io/en/latest/estimation.html)).
+- **PyPSA** (MIT): optimization and simulation of dispatch and expansion ([GitHub](https://github.com/PyPSA/PyPSA)).
+  Planning, no live operation.
+- **OpenEMS**: Edge and Backend under EPL-2.0, user interface under AGPL-3.0; simulated development environment
+  ([GitHub](https://github.com/OpenEMS/openems)); reference implementation with Fraunhofer ISE and FENECON (2026-06,
   [OpenMUC](https://openmuc.org/news/jeebus-and-openems-open-source-solution/)).
-- **Home Assistant mit EMHASS** (EMHASS unter MIT): lineare Optimierung mit PV- und Lastprognosen, MPC-Betrieb
-  ([Doku](https://emhass.readthedocs.io/en/latest/), [GitHub](https://github.com/davidusb-geek/emhass)).
-- **Victron VRM, Dynamic ESS**: stündlicher Lade- und Entladeplan aus Preisen, Solarprognose und Verbrauchsmustern,
-  offenbar in der VRM-Cloud gerechnet; ohne Verbindung nach 12 h Rückfall auf normales ESS
-  ([Victron](https://www.victronenergy.com/live/drafts:dynamic_ess)). Relevant für den Boot-Fall.
-- **OpenTwins** (Universität Málaga, Apache 2.0): offene Plattform für zusammengesetzte Zwillinge, FMI- und
-  ML-Integration; laut Projekt nicht für den Produktivbetrieb empfohlen ([GitHub](https://github.com/ertis-research/OpenTwins)).
+- **Home Assistant with EMHASS** (EMHASS under MIT): linear optimization with PV and load forecasts, MPC operation
+  ([docs](https://emhass.readthedocs.io/en/latest/), [GitHub](https://github.com/davidusb-geek/emhass)).
+- **Victron VRM, Dynamic ESS**: hourly charge and discharge plan from prices, solar forecast and consumption patterns,
+  apparently computed in the VRM cloud; without a connection, it falls back to normal ESS after 12 h
+  ([Victron](https://www.victronenergy.com/live/drafts:dynamic_ess)). Relevant for the boat case.
+- **OpenTwins** (University of Málaga, Apache 2.0): open platform for composite twins, FMI and ML integration;
+  according to the project, not recommended for production use ([GitHub](https://github.com/ertis-research/OpenTwins)).
 
-### 4.8 Haus und Endkunden
+### 4.8 House and end customers
 
-- **ENTER**: 3D-Modell („digitaler Zwilling“) des Hauses aus Vor-Ort-Daten, Simulation von Sanierungsszenarien,
-  individueller Sanierungsfahrplan ([ENTER](https://www.enter.de/blog/enter-vs-lokale-energieberater)). Kein laufender
-  Abgleich mit Verbrauchsdaten belegt.
-- **Rahmen in Deutschland**: Smart-Meter-Quote 5,9 % aller Messlokationen im ersten Halbjahr 2026
+- **ENTER**: 3D model ("digital twin") of the house from on-site data, simulation of renovation scenarios, individual
+  renovation roadmap ([ENTER](https://www.enter.de/blog/enter-vs-lokale-energieberater)). No ongoing comparison with
+  consumption data documented.
+- **Framework in Germany**: smart meter rate of 5.9 % of all metering locations in the first half of 2026
   ([ZfK](https://www.zfk.de/digitalisierung/smart-city-energy/smart-meter-fortschritt-im-ersten-halbjahr-weiter-viele-nachzuegler));
-  §-14a-Steuerung seit 01.01.2024 ([Finanztip](https://finanztip.de/stromtarife/steuerbare-verbrauchseinrichtungen-14a-enwg/));
-  Gebäudemodernisierungsgesetz seit 29.07.2026 in Kraft (65-%-Regel gestrichen,
+  Section 14a control since 2024-01-01 ([Finanztip](https://finanztip.de/stromtarife/steuerbare-verbrauchseinrichtungen-14a-enwg/));
+  the Gebäudemodernisierungsgesetz (building modernization law) in force since 2026-07-29 (65 % rule removed,
   [Haufe](https://www.haufe.de/immobilien/wirtschaft-politik/gebaeudemodernisierungsgesetz-gmg_84342_683694.html)).
-  Details in Teil 2.
-- **Heizungs-Apps (ViCare, tado und ähnliche) und Energieberater-Software**: **nicht geprüft**.
+  Details in Part 2.
+- **Heating apps (ViCare, tado and similar) and energy advisor software**: **not checked**.
 
-Kalibrierte Gebäudemodelle sind in der Bauphysik verbreitet; die Gütemaße CV(RMSE) und NMBE, die der Haus-Zwilling
-nutzt ([08-HAUS-ZWILLING](../datamodel-2026/08-HAUS-ZWILLING.md)), folgen dieser Praxis. Ein Produkt, das ein
-kalibriertes Hausmodell aus Abrechnungen mit einem Identifizierbarkeitsbericht verbindet, haben wir nicht gefunden.
+Calibrated building models are common in building physics; the goodness-of-fit measures CV(RMSE) and NMBE that the
+house twin uses ([08-HAUS-ZWILLING](../datamodel-2026/08-HAUS-ZWILLING.md)) follow this practice. We did not find a
+product that combines a house model calibrated against bills with an identifiability report.
 
-### 4.9 Marktbewegungen 2025/2026
+### 4.9 Market moves 2025/2026
 
-| Datum | Ereignis | Quelle |
-|-------|----------|--------|
-| 12.03.2025 | Emerson übernimmt die restlichen AspenTech-Anteile | [Emerson](https://www.emerson.com/en-us/news/2025/emerson-completes-acquisition-of-remaining-outstanding-shares-of-aspentech) |
-| 07.11.2025 | AWS IoT SiteWise Monitor in Wartung; weitere IoT-Dienste folgen 2026 | [AWS](https://aws.amazon.com/about-aws/whats-new/2025/10/aws-service-availability/) |
-| 06.01.2026 | Siemens Digital Twin Composer (Early Access) | [Siemens](https://news.siemens.com/en-us/digital-twin-composer-ces-2026) |
-| 16.03.2026 | PTC verkauft ThingWorx und Kepware an TPG | [PTC](https://www.ptc.com/en/news/2026/ptc-completes-divestiture-of-kepware-and-thingworx-businesses) |
-| ca. 20.03.2026 | Bosch kündigt die Übernahme von Uptake an (Flotten-Instandhaltung) | [Bosch](https://www.bosch-presse.de/pressportal/us/en/press-release-30080.html) |
-| 03/2026 | Hitachi Energy startet HMAX Energy | [Hitachi Energy](https://www.hitachienergy.com/us/en/news-and-events/press-releases/2026/03/hitachi-launches-hmax-energy-a-pioneering-ai-powered-service-and-solution-suite-for-critical-energy-infrastructure) |
-| 28.05.2026 | Octave von Hexagon abgespalten | [Hexagon](https://investors.hexagon.com/share-information/octave-separation) |
-| 06/2026 | Schneider Electric und Kraken: Partnerschaft für Netzflexibilität | [Kraken](https://www.kraken.tech/press-releases/schneider-electric-and-kraken-partner-to-boost-grid-flexibility) |
-| 08.10.2026 | Siemens Hydrogen Performance Suite für den GalpH2Park | [Siemens](https://press.siemens.com/global/en/pressrelease/siemens-will-digitalize-100-mw-hydrogen-plant-sines-portugal) |
+| Date | Event | Source |
+|------|-------|--------|
+| 2025-03-12 | Emerson acquires the remaining AspenTech shares | [Emerson](https://www.emerson.com/en-us/news/2025/emerson-completes-acquisition-of-remaining-outstanding-shares-of-aspentech) |
+| 2025-11-07 | AWS IoT SiteWise Monitor in maintenance mode; more IoT services follow in 2026 | [AWS](https://aws.amazon.com/about-aws/whats-new/2025/10/aws-service-availability/) |
+| 2026-01-06 | Siemens Digital Twin Composer (Early Access) | [Siemens](https://news.siemens.com/en-us/digital-twin-composer-ces-2026) |
+| 2026-03-16 | PTC sells ThingWorx and Kepware to TPG | [PTC](https://www.ptc.com/en/news/2026/ptc-completes-divestiture-of-kepware-and-thingworx-businesses) |
+| about 2026-03-20 | Bosch announces the acquisition of Uptake (fleet maintenance) | [Bosch](https://www.bosch-presse.de/pressportal/us/en/press-release-30080.html) |
+| 2026-03 | Hitachi Energy launches HMAX Energy | [Hitachi Energy](https://www.hitachienergy.com/us/en/news-and-events/press-releases/2026/03/hitachi-launches-hmax-energy-a-pioneering-ai-powered-service-and-solution-suite-for-critical-energy-infrastructure) |
+| 2026-05-28 | Octave spun off from Hexagon | [Hexagon](https://investors.hexagon.com/share-information/octave-separation) |
+| 2026-06 | Schneider Electric and Kraken: partnership for grid flexibility | [Kraken](https://www.kraken.tech/press-releases/schneider-electric-and-kraken-partner-to-boost-grid-flexibility) |
+| 2026-10-08 | Siemens Hydrogen Performance Suite for the GalpH2Park | [Siemens](https://press.siemens.com/global/en/pressrelease/siemens-will-digitalize-100-mw-hydrogen-plant-sines-portugal) |
 
-Große Anbieter bündeln Zwilling, Leitsystem und Anlage. Energiekonzerne kaufen Netz- und Flexibilitätssoftware.
-Hyperscaler bereinigen ihre IoT-Portfolios. Daraus lässt sich eine Nachfrage nach **herstellerneutralen, offenen**
-Lösungen ableiten, die Kunden selbst betreiben können. Das ist eine Hypothese; in den Quellen ist diese Nachfrage
-nicht gemessen.
-
----
-
-## 5. Vergleichsmatrix
-
-Kriterien a–h wie in §2.2; Skala ● ◐ ○ ?. Lizenz und Preis nach Primärquelle; „Anfrage“ heißt, die Quelle nennt
-keine Preise. Die Bewertung beruht auf den verlinkten Quellen vom 12.10.2026. Reine Simulations- und
-Planungswerkzeuge erhalten bei **b** ein „◐“: Sie rechnen Szenarien, aber nicht ausdrücklich vom laufenden
-Live-Zustand aus.
-
-### 5.1 Kommerzielle Industrie- und Energieangebote
-
-| Anbieter / Produkt | a | b | c | d | e | f | g | h | Lizenz / Preis | Zielmarkt | Beleg |
-|--------------------|---|---|---|---|---|---|---|---|----------------|-----------|-------|
-| Siemens Simcenter xDT | ● | ? | ? | ? | ? | ○ | ◐ | ○ | kommerziell, Anfrage | Maschinen, Komponenten, OEM | [arXiv](https://arxiv.org/pdf/2210.17402), [Siemens](https://www.siemens.com/en-us/products/simcenter/engineering-data-science-ai/executable-digital-twin-gateway/) |
-| Siemens Hydrogen Performance Suite (gPROMS) | ● | ? | ● | ? | ? | ○ | ○ | ◐ | kommerziell, Anfrage | Elektrolyseanlagen | [Siemens](https://press.siemens.com/global/en/pressrelease/siemens-will-digitalize-100-mw-hydrogen-plant-sines-portugal) |
-| Siemens Gridscale X LV Insights | ● | ? | ? | ? | ? | ○ | ○ | ○ | SaaS, Anfrage | Verteilnetzbetreiber | [Siemens](https://www.siemens.com/en-us/products/gridscale-x/lv-insights-x/) |
-| GE Vernova SmartSignal / APM / GridOS | ● | ● | ◐ | ? | ? | ○ | ○ | ○ | kommerziell, Anfrage | Erzeuger, Netzbetreiber | [GE Vernova](https://www.gevernova.com/software/innovation/digital-twin-technology) |
-| AVEVA Process Simulation mit PI System | ● | ● | ◐ | ? | ? | ○ | ○ | ○ | kommerziell, Anfrage | Prozessindustrie | [AVEVA](https://www.aveva.com/en/solutions/engineering/operator-training/) |
-| ETAP Digital Twin / Real-Time | ● | ● | ● | ? | ◐ | ○ | ◐ | ○ | kommerziell, Anfrage | elektrische Netze, Industrie, Rechenzentren | [ETAP](https://etap.com/products/etap-digital-twin) |
-| Emerson Ovation Digital Twin | ◐ | ● | ? | ? | ? | ○ | ○ | ○ | kommerziell, mit Leitsystem | Kraftwerke | [Emerson](https://www.emerson.com/en-us/automation/control-and-safety-systems/distributed-control-systems-dcs/ovation-distributed-control-system/power-plant-simulator) |
-| ABB (Fall Boliden: Dymola + 800xA + APC) | ◐ | ● | ◐ | ? | ? | ◐ | ○ | ○ | Projekt | Bergbau, Prozess | [ABB](https://new.abb.com/mining/digital-applications/advanced-process-control/case-study-the-use-of-a-digital-twin-with-advanced-process-control-at-boliden-aitik-mine) |
-| Ansys Twin Builder (Synopsys) | ● | ◐ | ◐ | ? | ? | ◐ | ◐ | ○ | kommerziell, Anfrage | Maschinen, Komponenten | [Synopsys](https://ansys.synopsys.com/products/digital-twin/ansys-twin-builder) |
-| Cognite Data Fusion, Simulator Integration | ● | ◐ | ? | ? | ◐ | ◐ | ○ | ○ | SaaS, Anfrage | Öl und Gas, Prozess | [Cognite](https://docs.cognite.com/cdf/integration/guides/simulators) |
-| DIgSILENT PowerFactory | ● | ◐ | ◐ | ? | ? | ○ | ○ | ○ | kommerziell, Anfrage | Netzbetreiber, Planer | [DIgSILENT](https://www.digsilent.de/en/state-estimation.html) |
-| envelio Intelligent Grid Platform | ● | ◐ | ? | ? | ? | ○ | ○ | ○ | SaaS, Anfrage | Verteilnetzbetreiber | [ZfK](https://www.zfk.de/digitalisierung/smart-city-energy/digitaler-zwilling-fuer-meister-und-monteure-envelio-startet-mobile-netzservices) |
-| VENIOS Energy Platform | ● | ◐ | ? | ? | ? | ○ | ○ | ○ | SaaS, Anfrage | Verteilnetzbetreiber | [ZfK](https://www.zfk.de/digitalisierung/smart-city-energy/stadtwerke-schwaebisch-hall-machen-ihr-stromverteilnetz-transparent) |
-| PSIcontrol | ◐ | ◐ | ◐ | ? | ? | ○ | ○ | ○ | kommerziell, Anfrage | Netzleitsysteme | [PSI](https://www.psi.de/en/solutions/products/psicontrol) |
-| DNV WindGEMINI (Stand 2017) | ● | ? | ● | ? | ? | ○ | ○ | ○ | kommerziell, Anfrage | Wind | [DNV](https://www.dnv.com/news/2017/new-windgemini-advances-wind-turbine-operations-104699/) |
-| Akselos | ◐ | ◐ | ◐ | ? | ? | ○ | ○ | ○ | kommerziell, Anfrage | Offshore-Strukturen | [Akselos](https://akselos.com/digital-twins-a-comprehensive-guide/) |
-| Power Factors Unity | ◐ | ○ | ◐ | ? | ? | ○ | ○ | ○ | SaaS, Anfrage | Wind-, PV-, Speicherportfolios | [Power Factors](https://www.powerfactors.com/news/power-factors-launches-next-generation-ai-powered-asset-performance-management-application-on-unity-platform) |
-| Envision EnOS Wind | ◐ | ? | ◐ | ? | ? | ○ | ○ | ○ | kommerziell, Anfrage | Windparks | [Envision](https://www.envision-group.com/en/windsoftware.html) |
-| Bentley iTwin IoT | ◐ | ? | ? | ? | ? | ◐ | ○ | ○ | kommerziell; iTwin.js MIT | Infrastruktur | [Bentley](https://www.bentley.com/software/itwin-iot/) |
-| Dassault 3DEXPERIENCE | ? | ◐ | ? | ? | ? | ○ | ◐ | ◐ | kommerziell, Anfrage | Engineering, Design | [3DS](https://www.3ds.com/newsroom/press-releases/electrical-grid-operator-red-electrica-transforms-its-design-process-and-collaboration-dassault-systemes-3dexperience-platform) |
-| IBM Maximo Monitor / Predict | ◐ | ○ | ◐ | ? | ? | ○ | ○ | ○ | kommerziell, Anfrage | Instandhaltung | [IBM](https://www.ibm.com/docs/en/mhmpmh-and-p-u/cd?topic=overview-maximo-predict) |
-| VPP- und Flexplattformen (NEMOCS, gridX, Entrix, Kraken Flex) | ◐ | ○ | ● | ? | ? | ○ | ◐ | ◐ | SaaS, Erlösbeteiligung (Modell je Anbieter nicht verifiziert) | Aggregation, Speicher, Haushalte | [Next Kraftwerke](https://www.next-kraftwerke.com/energy-blog/spotlight-nemocs-setting-up-a-vpp-with-ecotricity), [gridX](https://www.gridx.ai/press-releases/e-on-acquires-majority-stake-in-leading-smart-grid-company-gridx) |
-
-### 5.2 Hyperscaler und Plattformen
-
-| Anbieter / Produkt | a | b | c | d | e | f | g | h | Lizenz / Preis | Zielmarkt | Beleg |
-|--------------------|---|---|---|---|---|---|---|---|----------------|-----------|-------|
-| Azure Digital Twins | ◐ | ○ | ○ | ? | ? | ◐ | ◐ | ○ | Verbrauch (Operationen, Nachrichten, Query Units) | Gebäude, IoT | [Microsoft](https://learn.microsoft.com/en-us/azure/digital-twins/overview) |
-| Microsoft Fabric digital twin builder (Preview) | ◐ | ? | ? | ? | ? | ○ | ◐ | ○ | Fabric-Kapazität | Industrie, Daten | [Microsoft](https://learn.microsoft.com/en-us/fabric/real-time-intelligence/digital-twin-builder/overview) |
-| AWS IoT TwinMaker | ◐ | ○ | ○ | ? | ? | ○ | ◐ | ○ | nutzungsbasiert (Entitäten, API-Aufrufe, Abfragen) | Industrie, Gebäude | [AWS](https://aws.amazon.com/iot-twinmaker/pricing/) |
-| NVIDIA Omniverse + PhysicsNeMo | ◐ | ◐ | ◐ | ? | ? | ◐ | ◐ | ○ | PhysicsNeMo Apache 2.0; Omniverse kommerziell (nicht verifiziert) | Physik-ML, 3D | [GitHub](https://github.com/NVIDIA/physicsnemo) |
-| Siemens Digital Twin Composer | ◐ | ? | ? | ? | ? | ○ | ? | ○ | Early Access | Fabriken | [Siemens](https://news.siemens.com/en-us/digital-twin-composer-ces-2026) |
-| Tapestry (X, Alphabet) | ◐ | ◐ | ◐ | ? | ? | ○ | ○ | ○ | Partnerschaften | Übertragungs-, Verteilnetze | [X](https://X.Company/projects/tapestry/) |
-| PTC ThingWorx (seit 03/2026 TPG) | ◐ | ? | ? | ? | ? | ○ | ◐ | ○ | kommerziell | IIoT | [PTC](https://www.ptc.com/en/news/2026/ptc-completes-divestiture-of-kepware-and-thingworx-businesses) |
-
-### 5.3 Open Source, Standards und Forschung
-
-| Projekt | a | b | c | d | e | f | g | h | Lizenz | Zielmarkt | Beleg |
-|---------|---|---|---|---|---|---|---|---|--------|-----------|-------|
-| Eclipse Ditto | ○ | ○ | ○ | ? | ? | ● | ◐ | ? | EPL-2.0 | Gerätezustände (IoT) | [GitHub](https://github.com/eclipse-ditto/ditto) |
-| AAS / Eclipse BaSyx + IDTA 02005 | ○ | ○ | ○ | ? | ○ | ● | ◐ | ◐ | MIT (BaSyx Java SDK); IDTA-Spezifikation | Industrie 4.0 | [IDTA](https://industrialdigitaltwin.org/wp-content/uploads/2023/01/IDTA-02005-1-0_Submodel_ProvisionOfSimulationModels.pdf) |
-| Catena-X (AAS + EDC) | ○ | ○ | ○ | ? | ? | ◐ | ○ | ● | Standards offen; Betrieb über Dienstleister | Automobil-Lieferkette | [Catena-X](https://catena-x.net/fileadmin/user_upload/Standard-Bibliothek/Update_Januar_2024/CX-0002-DigitalTwinsInCatenaX-v2.1.0.pdf) |
-| FIWARE (NGSI-LD) | ○ | ○ | ○ | ? | ? | ● | ◐ | ◐ | quelloffen (Lizenz Orion-LD nicht verifiziert) | Smart City, Energie | [arXiv](https://arxiv.org/pdf/2309.12358) |
-| mosaik 3 | ◐ | ◐ | ◐ | ○ | ◐ | ● | ◐ | ◐ | LGPL-2.1 | Smart-Grid-Forschung | [arXiv](https://arxiv.org/html/2410.16937v1) |
-| HELICS | ◐ | ◐ | ◐ | ○ | ◐ | ● | ◐ | ◐ | BSD-3-Clause | Netz-Kosimulation | [HELICS](https://docs.helics.org/en/main/user-guide/co-simulation_overview.html) |
-| FMI 3.0 (Standard) | ◐ | ◐ | ◐ | ○ | ◐ | ● | ◐ | ○ | offener Standard | Kosimulation | [FMI](https://fmi-standard.org/faq/) |
-| pandapower | ◐ | ◐ | ◐ | ? | ? | ● | ○ | ○ | BSD-3-Clause | Netzberechnung | [Doku](https://pandapower.readthedocs.io/en/latest/estimation.html) |
-| PyPSA | ○ | ◐ | ◐ | ○ | ◐ | ● | ◐ | ○ | MIT | Energiesystemplanung | [GitHub](https://github.com/PyPSA/PyPSA) |
-| OpenEMS | ◐ | ? | ◐ | ? | ? | ● | ◐ | ◐ | EPL-2.0 / AGPL-3.0 (UI) | Speicher, Gebäude, Gewerbe | [GitHub](https://github.com/OpenEMS/openems) |
-| Home Assistant + EMHASS | ◐ | ◐ | ● | ○ | ○ | ● | ○ | ○ | EMHASS MIT | Haushalte | [EMHASS](https://emhass.readthedocs.io/en/latest/) |
-| Victron VRM Dynamic ESS | ◐ | ○ | ● | ○ | ○ | ◐ | ○ | ○ | Teil des Victron-Ökosystems (Konditionen nicht verifiziert) | Heim, Off-Grid, Boot | [Victron](https://www.victronenergy.com/live/drafts:dynamic_ess) |
-| OpenTwins (Univ. Málaga) | ◐ | ◐ | ◐ | ? | ? | ● | ? | ○ | Apache 2.0 | Forschung | [GitHub](https://github.com/ertis-research/OpenTwins) |
-| TwinEU (Horizon Europe, bis 12/2026) | ? | ? | ? | ? | ? | ◐ | ○ | ● | Forschungsprojekt | Übertragungs-, Verteilnetzbetreiber | [TU Dortmund](https://ie3.etit.tu-dortmund.de/research/third-party-projects/distribution-grid-planning-operation/twineu/) |
-
-### 5.4 Haus und Referenz
-
-| Angebot | a | b | c | d | e | f | g | h | Lizenz / Preis | Zielmarkt | Beleg |
-|---------|---|---|---|---|---|---|---|---|----------------|-----------|-------|
-| ENTER (Haus-Zwilling, Sanierungsfahrplan) | ○ | ◐ | ○ | ? | ? | ○ | ○ | ○ | Beratungsleistung (BAFA-gefördert) | Hauseigentümer | [ENTER](https://www.enter.de/blog/enter-vs-lokale-energieberater) |
-| **OpenTSx** (Stand 12.10.2026, Proof of Concept) | ◐ | ● | ◐ | ● | ● | ● | ◐ | ◐ | Apache 2.0 | noch kein Produktivkunde | [Repo](../../README.md), §3 |
-
-**Lesehilfe.** Kein Anbieter ist in allen Spalten belegt. Die Spalte **d** (Herkunft je Wert) ist bei allen
-kommerziellen Angeboten „?“: Die Primärquellen äußern sich nicht dazu. Daraus folgt nicht, dass es diese Funktion
-nicht gibt. Bevor OpenTSx damit wirbt, sollten die drei nächsten Wettbewerber (ETAP, AVEVA, Cognite) in Demos gezielt
-danach gefragt werden (§8).
+Large vendors bundle twin, control system and plant. Energy companies buy grid and flexibility software. Hyperscalers
+are cleaning up their IoT portfolios. From this, one can infer a demand for **vendor-neutral, open** solutions that
+customers can operate themselves. This is a hypothesis; the sources do not measure this demand.
 
 ---
 
-## 6. Forschung und Standards
+## 5. Comparison matrix
 
-### 6.1 Definitionen und Reifegrade
+Criteria a to h as in section 2.2; scale ● ◐ ○ ?. License and price according to the primary source; "on request"
+means the source gives no prices. The rating is based on the linked sources as of 2026-10-12. Pure simulation and
+planning tools get a "◐" for **b**: they compute scenarios, but not explicitly from the current live state.
 
-- **ISO/IEC 30173:2023** definiert die Kopplung über die „appropriate rate of synchronization“
-  ([ISO](https://www.iso.org/standard/81442.html)); **ISO/IEC 30186:2025** liefert ein Reifegradmodell
+### 5.1 Commercial industrial and energy offerings
+
+| Vendor / product | a | b | c | d | e | f | g | h | License / price | Target market | Source |
+|------------------|---|---|---|---|---|---|---|---|-----------------|---------------|--------|
+| Siemens Simcenter xDT | ● | ? | ? | ? | ? | ○ | ◐ | ○ | commercial, on request | machines, components, OEM | [arXiv](https://arxiv.org/pdf/2210.17402), [Siemens](https://www.siemens.com/en-us/products/simcenter/engineering-data-science-ai/executable-digital-twin-gateway/) |
+| Siemens Hydrogen Performance Suite (gPROMS) | ● | ? | ● | ? | ? | ○ | ○ | ◐ | commercial, on request | electrolysis plants | [Siemens](https://press.siemens.com/global/en/pressrelease/siemens-will-digitalize-100-mw-hydrogen-plant-sines-portugal) |
+| Siemens Gridscale X LV Insights | ● | ? | ? | ? | ? | ○ | ○ | ○ | SaaS, on request | distribution system operators (DSOs) | [Siemens](https://www.siemens.com/en-us/products/gridscale-x/lv-insights-x/) |
+| GE Vernova SmartSignal / APM / GridOS | ● | ● | ◐ | ? | ? | ○ | ○ | ○ | commercial, on request | generators, grid operators | [GE Vernova](https://www.gevernova.com/software/innovation/digital-twin-technology) |
+| AVEVA Process Simulation with PI System | ● | ● | ◐ | ? | ? | ○ | ○ | ○ | commercial, on request | process industry | [AVEVA](https://www.aveva.com/en/solutions/engineering/operator-training/) |
+| ETAP Digital Twin / Real-Time | ● | ● | ● | ? | ◐ | ○ | ◐ | ○ | commercial, on request | electrical grids, industry, data centers | [ETAP](https://etap.com/products/etap-digital-twin) |
+| Emerson Ovation Digital Twin | ◐ | ● | ? | ? | ? | ○ | ○ | ○ | commercial, with the control system | power plants | [Emerson](https://www.emerson.com/en-us/automation/control-and-safety-systems/distributed-control-systems-dcs/ovation-distributed-control-system/power-plant-simulator) |
+| ABB (Boliden case: Dymola + 800xA + APC) | ◐ | ● | ◐ | ? | ? | ◐ | ○ | ○ | project | mining, process | [ABB](https://new.abb.com/mining/digital-applications/advanced-process-control/case-study-the-use-of-a-digital-twin-with-advanced-process-control-at-boliden-aitik-mine) |
+| Ansys Twin Builder (Synopsys) | ● | ◐ | ◐ | ? | ? | ◐ | ◐ | ○ | commercial, on request | machines, components | [Synopsys](https://ansys.synopsys.com/products/digital-twin/ansys-twin-builder) |
+| Cognite Data Fusion, Simulator Integration | ● | ◐ | ? | ? | ◐ | ◐ | ○ | ○ | SaaS, on request | oil and gas, process | [Cognite](https://docs.cognite.com/cdf/integration/guides/simulators) |
+| DIgSILENT PowerFactory | ● | ◐ | ◐ | ? | ? | ○ | ○ | ○ | commercial, on request | grid operators, planners | [DIgSILENT](https://www.digsilent.de/en/state-estimation.html) |
+| envelio Intelligent Grid Platform | ● | ◐ | ? | ? | ? | ○ | ○ | ○ | SaaS, on request | distribution system operators | [ZfK](https://www.zfk.de/digitalisierung/smart-city-energy/digitaler-zwilling-fuer-meister-und-monteure-envelio-startet-mobile-netzservices) |
+| VENIOS Energy Platform | ● | ◐ | ? | ? | ? | ○ | ○ | ○ | SaaS, on request | distribution system operators | [ZfK](https://www.zfk.de/digitalisierung/smart-city-energy/stadtwerke-schwaebisch-hall-machen-ihr-stromverteilnetz-transparent) |
+| PSIcontrol | ◐ | ◐ | ◐ | ? | ? | ○ | ○ | ○ | commercial, on request | grid control systems | [PSI](https://www.psi.de/en/solutions/products/psicontrol) |
+| DNV WindGEMINI (as of 2017) | ● | ? | ● | ? | ? | ○ | ○ | ○ | commercial, on request | wind | [DNV](https://www.dnv.com/news/2017/new-windgemini-advances-wind-turbine-operations-104699/) |
+| Akselos | ◐ | ◐ | ◐ | ? | ? | ○ | ○ | ○ | commercial, on request | offshore structures | [Akselos](https://akselos.com/digital-twins-a-comprehensive-guide/) |
+| Power Factors Unity | ◐ | ○ | ◐ | ? | ? | ○ | ○ | ○ | SaaS, on request | wind, PV and storage portfolios | [Power Factors](https://www.powerfactors.com/news/power-factors-launches-next-generation-ai-powered-asset-performance-management-application-on-unity-platform) |
+| Envision EnOS Wind | ◐ | ? | ◐ | ? | ? | ○ | ○ | ○ | commercial, on request | wind farms | [Envision](https://www.envision-group.com/en/windsoftware.html) |
+| Bentley iTwin IoT | ◐ | ? | ? | ? | ? | ◐ | ○ | ○ | commercial; iTwin.js MIT | infrastructure | [Bentley](https://www.bentley.com/software/itwin-iot/) |
+| Dassault 3DEXPERIENCE | ? | ◐ | ? | ? | ? | ○ | ◐ | ◐ | commercial, on request | engineering, design | [3DS](https://www.3ds.com/newsroom/press-releases/electrical-grid-operator-red-electrica-transforms-its-design-process-and-collaboration-dassault-systemes-3dexperience-platform) |
+| IBM Maximo Monitor / Predict | ◐ | ○ | ◐ | ? | ? | ○ | ○ | ○ | commercial, on request | maintenance | [IBM](https://www.ibm.com/docs/en/mhmpmh-and-p-u/cd?topic=overview-maximo-predict) |
+| VPP and flexibility platforms (NEMOCS, gridX, Entrix, Kraken Flex) | ◐ | ○ | ● | ? | ? | ○ | ◐ | ◐ | SaaS, revenue share (model per vendor not verified) | aggregation, storage, households | [Next Kraftwerke](https://www.next-kraftwerke.com/energy-blog/spotlight-nemocs-setting-up-a-vpp-with-ecotricity), [gridX](https://www.gridx.ai/press-releases/e-on-acquires-majority-stake-in-leading-smart-grid-company-gridx) |
+
+### 5.2 Hyperscalers and platforms
+
+| Vendor / product | a | b | c | d | e | f | g | h | License / price | Target market | Source |
+|------------------|---|---|---|---|---|---|---|---|-----------------|---------------|--------|
+| Azure Digital Twins | ◐ | ○ | ○ | ? | ? | ◐ | ◐ | ○ | consumption-based (operations, messages, Query Units) | buildings, IoT | [Microsoft](https://learn.microsoft.com/en-us/azure/digital-twins/overview) |
+| Microsoft Fabric digital twin builder (Preview) | ◐ | ? | ? | ? | ? | ○ | ◐ | ○ | Fabric capacity | industry, data | [Microsoft](https://learn.microsoft.com/en-us/fabric/real-time-intelligence/digital-twin-builder/overview) |
+| AWS IoT TwinMaker | ◐ | ○ | ○ | ? | ? | ○ | ◐ | ○ | usage-based (entities, API calls, queries) | industry, buildings | [AWS](https://aws.amazon.com/iot-twinmaker/pricing/) |
+| NVIDIA Omniverse + PhysicsNeMo | ◐ | ◐ | ◐ | ? | ? | ◐ | ◐ | ○ | PhysicsNeMo Apache 2.0; Omniverse commercial (not verified) | physics ML, 3D | [GitHub](https://github.com/NVIDIA/physicsnemo) |
+| Siemens Digital Twin Composer | ◐ | ? | ? | ? | ? | ○ | ? | ○ | Early Access | factories | [Siemens](https://news.siemens.com/en-us/digital-twin-composer-ces-2026) |
+| Tapestry (X, Alphabet) | ◐ | ◐ | ◐ | ? | ? | ○ | ○ | ○ | partnerships | transmission and distribution grids | [X](https://X.Company/projects/tapestry/) |
+| PTC ThingWorx (TPG since 2026-03) | ◐ | ? | ? | ? | ? | ○ | ◐ | ○ | commercial | IIoT | [PTC](https://www.ptc.com/en/news/2026/ptc-completes-divestiture-of-kepware-and-thingworx-businesses) |
+
+### 5.3 Open source, standards and research
+
+| Project | a | b | c | d | e | f | g | h | License | Target market | Source |
+|---------|---|---|---|---|---|---|---|---|---------|---------------|--------|
+| Eclipse Ditto | ○ | ○ | ○ | ? | ? | ● | ◐ | ? | EPL-2.0 | device states (IoT) | [GitHub](https://github.com/eclipse-ditto/ditto) |
+| AAS / Eclipse BaSyx + IDTA 02005 | ○ | ○ | ○ | ? | ○ | ● | ◐ | ◐ | MIT (BaSyx Java SDK); IDTA specification | Industrie 4.0 | [IDTA](https://industrialdigitaltwin.org/wp-content/uploads/2023/01/IDTA-02005-1-0_Submodel_ProvisionOfSimulationModels.pdf) |
+| Catena-X (AAS + EDC) | ○ | ○ | ○ | ? | ? | ◐ | ○ | ● | open standards; operation via service providers | automotive supply chain | [Catena-X](https://catena-x.net/fileadmin/user_upload/Standard-Bibliothek/Update_Januar_2024/CX-0002-DigitalTwinsInCatenaX-v2.1.0.pdf) |
+| FIWARE (NGSI-LD) | ○ | ○ | ○ | ? | ? | ● | ◐ | ◐ | open source (Orion-LD license not verified) | smart city, energy | [arXiv](https://arxiv.org/pdf/2309.12358) |
+| mosaik 3 | ◐ | ◐ | ◐ | ○ | ◐ | ● | ◐ | ◐ | LGPL-2.1 | smart grid research | [arXiv](https://arxiv.org/html/2410.16937v1) |
+| HELICS | ◐ | ◐ | ◐ | ○ | ◐ | ● | ◐ | ◐ | BSD-3-Clause | grid co-simulation | [HELICS](https://docs.helics.org/en/main/user-guide/co-simulation_overview.html) |
+| FMI 3.0 (standard) | ◐ | ◐ | ◐ | ○ | ◐ | ● | ◐ | ○ | open standard | co-simulation | [FMI](https://fmi-standard.org/faq/) |
+| pandapower | ◐ | ◐ | ◐ | ? | ? | ● | ○ | ○ | BSD-3-Clause | grid calculation | [docs](https://pandapower.readthedocs.io/en/latest/estimation.html) |
+| PyPSA | ○ | ◐ | ◐ | ○ | ◐ | ● | ◐ | ○ | MIT | energy system planning | [GitHub](https://github.com/PyPSA/PyPSA) |
+| OpenEMS | ◐ | ? | ◐ | ? | ? | ● | ◐ | ◐ | EPL-2.0 / AGPL-3.0 (UI) | storage, buildings, commercial | [GitHub](https://github.com/OpenEMS/openems) |
+| Home Assistant + EMHASS | ◐ | ◐ | ● | ○ | ○ | ● | ○ | ○ | EMHASS MIT | households | [EMHASS](https://emhass.readthedocs.io/en/latest/) |
+| Victron VRM Dynamic ESS | ◐ | ○ | ● | ○ | ○ | ◐ | ○ | ○ | part of the Victron ecosystem (terms not verified) | home, off-grid, boat | [Victron](https://www.victronenergy.com/live/drafts:dynamic_ess) |
+| OpenTwins (Univ. Málaga) | ◐ | ◐ | ◐ | ? | ? | ● | ? | ○ | Apache 2.0 | research | [GitHub](https://github.com/ertis-research/OpenTwins) |
+| TwinEU (Horizon Europe, until 2026-12) | ? | ? | ? | ? | ? | ◐ | ○ | ● | research project | transmission and distribution system operators | [TU Dortmund](https://ie3.etit.tu-dortmund.de/research/third-party-projects/distribution-grid-planning-operation/twineu/) |
+
+### 5.4 House and reference
+
+| Offering | a | b | c | d | e | f | g | h | License / price | Target market | Source |
+|----------|---|---|---|---|---|---|---|---|-----------------|---------------|--------|
+| ENTER (house twin, renovation roadmap) | ○ | ◐ | ○ | ? | ? | ○ | ○ | ○ | advisory service (subsidized by BAFA, the Federal Office for Economic Affairs and Export Control) | homeowners | [ENTER](https://www.enter.de/blog/enter-vs-lokale-energieberater) |
+| **OpenTSx** (as of 2026-10-12, proof of concept) | ◐ | ● | ◐ | ● | ● | ● | ◐ | ◐ | Apache 2.0 | no production customer yet | [Repo](../../README.md), section 3 |
+
+**How to read the matrix.** No vendor is documented in all columns. Column **d** (provenance per value) is "?" for
+all commercial offerings: the primary sources do not address it. This does not mean that the function does not exist.
+Before OpenTSx uses this in its advertising, the three closest competitors (ETAP, AVEVA, Cognite) should be asked about
+it specifically in demos (section 8).
+
+---
+
+## 6. Research and standards
+
+### 6.1 Definitions and maturity levels
+
+- **ISO/IEC 30173:2023** defines the coupling via the "appropriate rate of synchronization"
+  ([ISO](https://www.iso.org/standard/81442.html)); **ISO/IEC 30186:2025** provides a maturity model
   ([BSI](https://knowledge.bsigroup.com/products/bs-iso-iec-30186-digital-twin-maturity-model-and-guidance-for-a-maturity-assessment),
-  Inhalt nicht eingesehen); **ISO 23247** (Teile 1–4, 2021) beschreibt ein Rahmenwerk für die Fertigung
+  content not seen); **ISO 23247** (parts 1 to 4, 2021) describes a framework for manufacturing
   ([ISO](https://committee.iso.org/standard/75066.html)).
-- Das **Digital Twin Capabilities Periodic Table** des Digital Twin Consortium (v1.1, 04/2024) ist ein
-  technologieneutrales Anforderungsraster für Fähigkeiten von Zwillingen
+- The **Digital Twin Capabilities Periodic Table** of the Digital Twin Consortium (v1.1, 2024-04) is a
+  technology-neutral requirements grid for the capabilities of twins
   ([DTC User Guide](https://www.digitaltwinconsortium.org/wp-content/uploads/sites/3/2022/06/Digital-Twin-Capabilities-Periodic-Table-User-Guide.pdf)).
-  Es eignet sich, um OpenTSx-Fähigkeiten in Ausschreibungen gegenüber Anbietern abzubilden.
-- **Kritzinger et al. (2018)**: Viele als „Twin“ bezeichnete Systeme sind nach dieser Klassifikation nur Modelle oder
-  Schatten ([DOI](https://doi.org/10.1016/j.ifacol.2018.08.474)). OpenTSx' Betriebsart Shadow ist ein Schatten; zum
-  Twin wird es erst mit dem freigegebenen Rückweg ([09-STUDIO-LABVIEW-STEUERPULT](../datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md)).
+  It is suitable for mapping OpenTSx capabilities against vendors in tenders.
+- **Kritzinger et al. (2018)**: by this classification, many systems called a "twin" are only models or shadows
+  ([DOI](https://doi.org/10.1016/j.ifacol.2018.08.474)). The shadow mode of OpenTSx is a shadow; it becomes a twin
+  only with the approved return path ([09-STUDIO-LABVIEW-STEUERPULT](../datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md)).
 
-### 6.2 Datenassimilation, Zustandsschätzung, Schattenbetrieb
+### 6.2 Data assimilation, state estimation, shadow operation
 
-- **Kalman-Filter für virtuelle Sensoren** sind im Produkt angekommen (Siemens Smart Virtual Sensing, §4.1).
-- **Zustandsschätzung** ist in Netzwerkzeugen Standard (PowerFactory, ETAP, VENIOS; pandapower als offene Bibliothek).
-- **Bayesianische Kalibrierung** im Betrieb beschreibt AWS als Stufe 4 („Living Twin“, §2.1).
-- **Ensemble-Kalman-Filter** werden für Zwillinge in Kerntechnik und Thermohydraulik erforscht
-  ([ScienceDirect](https://www.sciencedirect.com/science/article/abs/pii/S0149197026000703)). Eine aktuelle Übersicht
-  speziell zu Energiesystemen haben wir nicht gefunden.
+- **Kalman filters for virtual sensors** have arrived in products (Siemens Smart Virtual Sensing, section 4.1).
+- **State estimation** is standard in grid tools (PowerFactory, ETAP, VENIOS; pandapower as an open library).
+- **Bayesian calibration** in operation is what AWS describes as level 4 ("Living Twin", section 2.1).
+- **Ensemble Kalman filters** are being researched for twins in nuclear engineering and thermal hydraulics
+  ([ScienceDirect](https://www.sciencedirect.com/science/article/abs/pii/S0149197026000703)). We did not find a
+  current review specifically on energy systems.
 
-**Konsequenz für OpenTSx:** Die Kalibrierung über kleinste Quadrate (Haus, Boot) und das Residuum Messung −
-Sensorsicht sind solide, aber einfache Formen der Datenassimilation. Eine sequentielle Zustandsschätzung (Kalman) im
-Shadow-Betrieb fehlt und ist ein naheliegender Ausbau.
+**Consequence for OpenTSx:** the least-squares calibration (house, boat) and the residual of measurement − sensor view
+are solid but simple forms of data assimilation. A sequential state estimation (Kalman) in shadow operation is missing
+and is an obvious extension.
 
-### 6.3 Kosimulation und Synchronisation: eng oder lose
+### 6.3 Co-simulation and synchronization: tight or loose
 
-- **Jacobi- und Gauss-Seidel-Kopplung**: Jacobi rechnet parallel, ist aber in der Regel ungenauer
-  ([Tutorial, arXiv 1809.08463](https://arxiv.org/pdf/1809.08463); Übersicht [arXiv 1702.00686](https://arxiv.org/pdf/1702.00686)).
-  Schwache Kopplung führt zwangsläufig Verzögerungen an den Schnittstellen ein
+- **Jacobi and Gauss-Seidel coupling**: Jacobi computes in parallel but is usually less accurate
+  ([Tutorial, arXiv 1809.08463](https://arxiv.org/pdf/1809.08463); overview [arXiv 1702.00686](https://arxiv.org/pdf/1702.00686)).
+  Weak coupling necessarily introduces delays at the interfaces
   ([Modelica 2014](https://2014.international.conference.modelica.org/proceedings/html/submissions/ECP14096213_Viel.pdf)).
-  Das geschichtete BSP von OpenTSx ist eine Gauss-Seidel-artige Ordnung innerhalb des Superschritts;
-  Rückkopplungen kreuzen die Schrittgrenze ([07 §4.1](../datamodel-2026/07-DIGITAL-TWIN-BSP.md)).
-- **Konservative Zeitsynchronisation** wie in HELICS (Zeit wird erst gewährt, wenn niemand in die Vergangenheit
-  rechnen müsste) ähnelt der Variante L mit Veraltung 0.
-- **Bounded Staleness (SSP)** stammt aus dem verteilten maschinellen Lernen
+  The layered BSP of OpenTSx is a Gauss-Seidel-like order within the superstep; feedback paths cross the step boundary
+  ([07, section 4.1](../datamodel-2026/07-DIGITAL-TWIN-BSP.md)).
+- **Conservative time synchronization** as in HELICS (time is granted only when nobody would have to compute into the
+  past) resembles variant L with staleness 0.
+- **Bounded staleness (SSP)** comes from distributed machine learning
   ([Ho et al., NeurIPS 2013](https://proceedings.nips.cc/paper_files/paper/2013/file/b7bb35b9c6ca2aee2df08cf09d7016c2-Paper.pdf)).
-- **FMI 3.0** bringt Clocks und Scheduled Execution für ereignis- und echtzeitnahe Kopplung (§4.7).
+- **FMI 3.0** brings Clocks and Scheduled Execution for event-based and near real-time coupling (section 4.7).
 
-### 6.4 Einordnung der eigenen Messung
+### 6.4 How our own measurement compares
 
-Im Arbeitszweig `opentsx/2026-p9-loose` (noch nicht in `master`) misst OpenTSx Variante L gegen Variante T auf
-simulierter Wandzeit:
+In the work branch `opentsx/2026-p9-loose` (not yet in `master`), OpenTSx measures variant L against variant T on
+simulated wall-clock time:
 
-- L mit Veraltung 0 ist für H2-Kette, Haus und Boot **bitgleich** mit T.
-- Der Durchsatz folgt der Formel „Ticks je Schritt = max über alle Schleifen Σ(1 + lag) / Σ(d + s)“.
-- Die Entwurfsregel lautet: *Rückkopplungsschleifen gehören in einen Prozessor; zwischen Prozessoren reicht BSP.*
-  Damit liefert L das Ergebnis von T bei voller Fließband-Leistung (bei `lag = 2` Faktor 5,9 bei der H2-Kette und
-  6,0 beim Haus gegenüber BSP ohne Kolokation).
+- With staleness 0, L is **bit-identical** to T for the H2 chain, the house and the boat.
+- Throughput follows the formula "ticks per step = max over all loops Σ(1 + lag) / Σ(d + s)".
+- The design rule is: *Feedback loops belong in one processor; between processors BSP is enough.*
+  With it, L delivers the result of T at full pipeline throughput (at `lag = 2`, factor 5.9 for the H2 chain and
+  6.0 for the house compared to BSP without colocation).
 
-**Ehrliche Einordnung:** Die Formel entspricht der aus der Datenflussanalyse bekannten **Iterationsschranke**: das
-Maximum über alle Schleifen aus Rechenzeit geteilt durch die Zahl der Verzögerungen
-([York University, Vorlesung](https://www.eecs.yorku.ca/course_archive/2011-12/W/4210/L4_it_bound.pdf)). Das stützt
-die Messung. Neu ist sie als Theorie nicht. Der Beitrag liegt in der Übertragung auf Zwillinge über einem Log:
-Konformität bis aufs Bit, Herkunftspropagation und Betrieb über Eigentümergrenzen. Das Paper „Digital Twins on Logs“
-sollte die Iterationsschranke ausdrücklich zitieren.
+**Honest assessment:** the formula matches the **iteration bound** known from dataflow analysis: the maximum over all
+loops of computation time divided by the number of delays
+([York University, lecture](https://www.eecs.yorku.ca/course_archive/2011-12/W/4210/L4_it_bound.pdf)). This supports
+the measurement. As theory, it is not new. The contribution lies in applying it to twins on a log: conformance down to
+the bit, provenance propagation and operation across ownership boundaries. The paper "Digital Twins on Logs" should
+cite the iteration bound explicitly.
 
-### 6.5 Föderation über Eigentümergrenzen
+### 6.5 Federation across ownership boundaries
 
-- **TwinEU** (Horizon Europe, 01/2024–12/2026, Koordination Fraunhofer, 77 Partner aus 15 Ländern): „a federated
-  ecosystem of DT solutions“. Jeder Betreiber entscheidet über seine Implementierung; Standardschnittstellen und offene
-  APIs sichern die Interoperabilität. Der deutsche Demonstrator mit Amprion und Westnetz zielt auf den
-  Datenaustausch zwischen Übertragungs- und Verteilnetzbetreibern
+- **TwinEU** (Horizon Europe, 2024-01 to 2026-12, coordinated by Fraunhofer, 77 partners from 15 countries): "a
+  federated ecosystem of DT solutions". Each operator decides on its own implementation; standard interfaces and open
+  APIs ensure interoperability. The German demonstrator with Amprion and Westnetz targets data exchange between
+  transmission system operators (TSOs) and distribution system operators (DSOs)
   ([TU Dortmund](https://ie3.etit.tu-dortmund.de/research/third-party-projects/distribution-grid-planning-operation/twineu/)).
-  **Wichtigster Anknüpfungspunkt** für die Variante L.
-- **Catena-X** zeigt, wie Datenhoheit über Unternehmensgrenzen technisch und vertraglich funktioniert (AAS, Registry,
-  Dataspace Connector, §4.7).
+  **The most important link** for variant L.
+- **Catena-X** shows how data sovereignty across company boundaries works technically and contractually (AAS,
+  registry, Dataspace Connector, section 4.7).
 
-### 6.6 Herkunft und Provenienz
+### 6.6 Origin and provenance
 
-- **OPC UA StatusCodes** kennen u. a. `Uncertain_SubstituteValue` (manuell überschriebener Wert) und
+- **OPC UA StatusCodes** include, among others, `Uncertain_SubstituteValue` (manually overwritten value) and
   `Good_LocalOverride` ([OPC Foundation](https://reference.opcfoundation.org/Core/Part8/v104/docs/?r=A.7&t=1)).
-- **IEC-61850-Qualität** kennt `source = process | substituted`, `test` und `operatorBlocked` (hier über das
-  CIM-Modell `Quality61850` belegt, Normtext nicht eingesehen,
+- **IEC 61850 quality** has `source = process | substituted`, `test` and `operatorBlocked` (documented here via the
+  CIM model `Quality61850`, standard text not seen,
   [CIM](https://modellen.netbeheernederland.nl/tc57cim/cim17/schema/class/Quality61850.html)).
-- **W3C PROV** modelliert Entitäten, Aktivitäten und Agenten ([arXiv 2507.01075](https://arxiv.org/pdf/2507.01075)).
-  Eine Arbeit, die PROV auf die Unterscheidung „gemessen vs. simuliert“ in Zwillingen anwendet, haben wir nicht
-  gefunden.
+- **W3C PROV** models entities, activities and agents ([arXiv 2507.01075](https://arxiv.org/pdf/2507.01075)).
+  We did not find a paper that applies PROV to the distinction "measured vs. simulated" in twins.
 
-Die Herkunftsleiter von OpenTSx ist damit anschlussfähig: `MEASURED` und `REPORTED` lassen sich aus OPC-UA- und
-IEC-61850-Qualitäten ableiten. `FORECAST`, `ESTIMATED` und `SYNTHETIC` sowie die Propagation durch die Modellkette
-gehen darüber hinaus.
-
----
-
-## 7. Ehrliche Einordnung
-
-### 7.1 Wo Anbieter stärker sind
-
-| Feld | Stärke der Anbieter | OpenTSx heute |
-|------|---------------------|---------------|
-| **Reife und Betriebserfahrung** | installierte Basis, z. B. PSIcontrol mit Systemen über 20.000 Fernwirkstationen ([PSI](https://www.psi.de/en/solutions/products/psicontrol)); envelio mit Kunden von 7.000 bis 4,8 Mio. Entnahmestellen ([ZfK](https://www.zfk.de/digitalisierung/smart-city-energy/digitaler-zwilling-fuer-meister-und-monteure-envelio-startet-mobile-netzservices)) | kein Produktivkunde |
-| **Physiktiefe** | Prozessmodelle (gPROMS, AVEVA), reduzierte FE- und Strukturmodelle (Ansys, Akselos), aeroelastische Lebensdauer (DNV), Netzberechnung mit Zustandsschätzung (PowerFactory) | einfache Atome: Kennlinien, Ein-Zonen-Haus (1R1C), ideales Gas in der H2-Leitung |
-| **Sicherheit und Nachweise** | Kunden in KRITIS-nahen Bereichen erwarten Nachweise, etwa nach IEC 62443 oder ISO/IEC 27001 (welche Anbieter welche besitzen, nicht einzeln verifiziert) | keine Zertifizierung, kein Sicherheitskonzept für den Rückweg jenseits des Freigabeprinzips |
-| **Integration in Leitsysteme** | DCS- und SCADA-Hersteller liefern Zwilling und Leitsystem aus einer Hand (Emerson, ABB, Siemens, PSI) | Modbus-Leser; IEC 104 und OPC UA geplant |
-| **Support und Ökosystem** | Service, SLA, Schulungen, Partnernetze, Marktplätze | kleines Projektteam, Community im Aufbau |
-| **Oberfläche** | 3D und photorealistische Szenen (Omniverse, iTwin), ausgereifte Bedienoberflächen | statischer Studio-Prototyp |
-| **Finanzkraft und Bündelung** | Siemens im H2-Segment; E.ON mit envelio und gridX | Open-Source-Projekt |
-
-### 7.2 Wo OpenTSx sich unterscheidet
-
-1. **Ein Bausteinsatz, drei Bindungen.** Dieselben Atome laufen als Schatten, als What-if und als Prognose. Die
-   Fahrweise (Fahrplan, Mensch, Optimierer) ist über dieselbe Schnittstelle austauschbar. Ein Vorschlag lässt sich
-   vor der Freigabe im Zwilling durchspielen. ETAP kommt dem am nächsten; ob dort Fahrweisen als austauschbare
-   Policy modelliert werden, ist nicht verifiziert (§8).
-2. **Herkunft je Wert bis in jede Kennzahl.** Fünf Klassen mit Taint-Propagation; jede Reihe trägt ihre Herkunft je
-   Schritt, daraus lässt sich der Messanteil jeder Kennzahl ausweisen (als Prozentanzeige vorgeschlagen, D21). In den
-   geprüften Quellen ohne Gegenstück.
-3. **Bitgleiches Replay auf einem offenen Log.** Lauf-Id aus Schaltplan, Eingängen, Eingriffen und Code-Version;
-   Episoden mit Prüfsummen auf KafScale. Damit lassen sich Streitfälle und Audits nachrechnen.
-4. **Föderierbar mit Entwurfsregel.** Atome können bei verschiedenen Eigentümern laufen; die gemessene Regel sagt,
-   was eng bleiben muss. Belegt bisher nur im Arbeitszweig auf simulierter Wandzeit.
-5. **Bewertungsprinzip als Produktregel.** Koordinationspotenzial = koordinierte Alternative − Referenzbetrieb, mit
-   denselben Randbedingungen und derselben Information. Modelliertes Potenzial und nachgewiesener Nutzen bleiben
-   getrennt, auch in der Oberfläche.
-6. **Offen und klein anfangen.** Apache 2.0, Kafka-Protokoll, Iceberg, OpenMetadata; Stufe A (Daten und Potenzial)
-   braucht keine Simulation; dieselbe Methode vom Haus bis zum Verbund.
-7. **Zeitreihen-Fundament.** Episoden, Streaming-Statistik, Datenqualität, Mustersuche und ein Windpark-Simulator mit
-   Ground Truth sind vorhanden und bieten einen Prüfstand, den Zwillingsanbieter selten mitliefern.
-
-### 7.3 Was kein Alleinstellungsmerkmal ist
-
-- Live-Daten und Simulation koppeln (§1, Punkt 1).
-- What-if-Szenarien und Prognosen.
-- Zustandsschätzung und Kalibrierung.
-- „Offen“ allein: offene Kosimulations- und IoT-Bausteine gibt es reichlich.
-
-### 7.4 Konsequenzen
-
-- **Positionierung** über die Kombination und den Entscheidungsnutzen, nicht über die Kopplung (Teil 3).
-- **Ergänzen statt ersetzen:** Netzzwillinge, APM-Systeme, Elektrolyseur-Suiten und Leitsysteme liefern Ports an den
-  Verbundzwilling. OpenTSx konkurriert nicht mit ihrem Kern.
-- **Lücken schließen, die Kunden zuerst prüfen:** echte Daten (Stufe A), Sicherheitskonzept für den Rückweg,
-  IEC 104 und OPC UA, Kalman-basierter Schatten, Skalierungstest.
+The provenance ladder of OpenTSx is therefore compatible: `MEASURED` and `REPORTED` can be derived from OPC UA and
+IEC 61850 qualities. `FORECAST`, `ESTIMATED` and `SYNTHETIC`, as well as the propagation through the model chain, go
+beyond them.
 
 ---
 
-## 8. Nicht verifiziert und offene Punkte
+## 7. Honest assessment
 
-- Herkunft je Wert bei ETAP, AVEVA, Cognite und Siemens (Kriterium d): in Demos gezielt erfragen.
-- Ob ETAPs *Predictive Simulation* vom aktuellen Live-Zustand aus verzweigt und ob Fahrweisen austauschbar sind.
-- Aktueller Stand von DNV WindGEMINI, GE Digital Wind Farm, Sentient Science und Siemens Gamesa mit NVIDIA.
-- Zwillingsangebote von Vestas, Nordex und Bazefield.
-- Inhalt von ISO/IEC 30186:2025 (kostenpflichtig), SSP-Standard, OpenModelica, Databricks.
-- Zustandsschätzer in Siemens Gridscale X (nicht namentlich beschrieben).
-- Status AWS IoT TwinMaker: keine offizielle Ankündigung gefunden, Drittquelle widerspricht.
-- Fabric digital twin builder ohne Simulationsmaschine (nur Drittquelle).
-- Lizenz von FIWARE Orion-LD; Konditionen von Omniverse und Victron Dynamic ESS.
-- Abschluss der Uptake-Übernahme durch Bosch (angekündigt, Abschluss nicht bestätigt).
+### 7.1 Where vendors are stronger
+
+| Area | Vendor strength | OpenTSx today |
+|------|-----------------|---------------|
+| **Maturity and operating experience** | installed base, for example PSIcontrol with systems of more than 20,000 telecontrol stations ([PSI](https://www.psi.de/en/solutions/products/psicontrol)); envelio with customers from 7,000 to 4.8 million withdrawal points ([ZfK](https://www.zfk.de/digitalisierung/smart-city-energy/digitaler-zwilling-fuer-meister-und-monteure-envelio-startet-mobile-netzservices)) | no production customer |
+| **Depth of physics** | process models (gPROMS, AVEVA), reduced FE and structural models (Ansys, Akselos), aeroelastic lifetime (DNV), grid calculation with state estimation (PowerFactory) | simple atoms: characteristic curves, single-zone house (1R1C), ideal gas in the H2 line |
+| **Security and attestations** | customers in areas close to critical infrastructure expect attestations, for example to IEC 62443 or ISO/IEC 27001 (which vendors hold which ones was not verified individually) | no certification, no security concept for the return path beyond the approval principle |
+| **Integration into control systems** | DCS and SCADA vendors deliver twin and control system from a single source (Emerson, ABB, Siemens, PSI) | Modbus reader; IEC 104 and OPC UA planned |
+| **Support and ecosystem** | service, SLA, training, partner networks, marketplaces | small project team, community being built |
+| **User interface** | 3D and photorealistic scenes (Omniverse, iTwin), mature operator interfaces | static Studio prototype |
+| **Financial strength and bundling** | Siemens in the H2 segment; E.ON with envelio and gridX | open source project |
+
+### 7.2 Where OpenTSx differs
+
+1. **One set of building blocks, three bindings.** The same atoms run as shadow, as what-if and as forecast. The
+   operating policy (schedule, human, optimizer) is exchangeable via the same interface. A proposal can be played
+   through in the twin before approval. ETAP comes closest to this; whether ETAP models operating policies so that they
+   are exchangeable is not verified (section 8).
+2. **Provenance per value down to every KPI.** Five classes with taint propagation; every series carries its
+   provenance per step, and from this the measured share of every KPI can be reported (proposed as a percentage
+   display, D21). No counterpart in the sources checked.
+3. **Bit-identical replay on an open log.** Run id from the wiring plan, inputs, interventions and code version;
+   episodes with checksums on KafScale. This makes it possible to recompute disputed cases and audits.
+4. **Federable with a design rule.** Atoms can run at different owners; the measured rule says what must stay tightly
+   coupled. So far shown only in the work branch on simulated wall-clock time.
+5. **Evaluation principle as a product rule.** Coordination potential = coordinated alternative − reference
+   operation, with the same boundary conditions and the same information. Modeled potential and proven benefit stay
+   separate, including in the user interface.
+6. **Start open and small.** Apache 2.0, Kafka protocol, Iceberg, OpenMetadata; stage A (data and potential)
+   needs no simulation; the same method from the house to the cluster.
+7. **Time series foundation.** Episodes, streaming statistics, data quality, pattern search and a wind farm simulator
+   with ground truth exist and provide a test bench that twin vendors rarely include.
+
+### 7.3 What is not a unique selling point
+
+- Coupling live data and simulation (section 1, item 1).
+- What-if scenarios and forecasts.
+- State estimation and calibration.
+- "Open" alone: open co-simulation and IoT building blocks are plentiful.
+
+### 7.4 Consequences
+
+- **Positioning** through the combination and the decision benefit, not through the coupling (Part 3).
+- **Complement, do not replace:** grid twins, APM systems, electrolyzer suites and control systems deliver ports to
+  the cluster twin. OpenTSx does not compete with their core.
+- **Close the gaps that customers check first:** real data (stage A), security concept for the return path, IEC 104
+  and OPC UA, Kalman-based shadow, scaling test.
 
 ---
 
-## 9. Quellen (Abruf 12.10.2026)
+## 8. Not verified and open points
 
-**Normen, Definitionen, Forschung**
-- ISO/IEC 30173:2023 – https://www.iso.org/standard/81442.html
-- ISO/IEC 30186:2025 – https://knowledge.bsigroup.com/products/bs-iso-iec-30186-digital-twin-maturity-model-and-guidance-for-a-maturity-assessment
-- ISO 23247 – https://committee.iso.org/standard/75066.html
-- DTC Capabilities Periodic Table – https://www.digitaltwinconsortium.org/wp-content/uploads/sites/3/2022/06/Digital-Twin-Capabilities-Periodic-Table-User-Guide.pdf
-- Kritzinger et al. 2018 – https://doi.org/10.1016/j.ifacol.2018.08.474
-- National Academies – https://www.nationalacademies.org/news/2023/12/new-report-urges-multiagency-action-to-support-potentially-transformative-digital-twins-research
-- AWS L4 Living Twin – https://aws.amazon.com/blogs/iot/l4-living-digital-twins/ · https://aws.amazon.com/blogs/hpc/deploying-level-4-digital-twin-self-calibrating-virtual-sensors-on-aws
-- Executable Digital Twin – https://arxiv.org/pdf/2210.17402
-- Kosimulation – https://arxiv.org/pdf/1702.00686 · https://arxiv.org/pdf/1809.08463 · https://2014.international.conference.modelica.org/proceedings/html/submissions/ECP14096213_Viel.pdf
-- SSP – https://proceedings.nips.cc/paper_files/paper/2013/file/b7bb35b9c6ca2aee2df08cf09d7016c2-Paper.pdf
-- Iterationsschranke – https://www.eecs.yorku.ca/course_archive/2011-12/W/4210/L4_it_bound.pdf
-- FMI 3.0 – https://fmi-standard.org/faq/ · https://ecp.ep.liu.se/index.php/modelica/article/view/179
-- EnKF-Zwilling – https://www.sciencedirect.com/science/article/abs/pii/S0149197026000703
-- OPC UA – https://reference.opcfoundation.org/Core/Part8/v104/docs/?r=A.7&t=1
-- IEC 61850 über CIM – https://modellen.netbeheernederland.nl/tc57cim/cim17/schema/class/Quality61850.html
-- W3C PROV – https://arxiv.org/pdf/2507.01075
-- TwinEU – https://ie3.etit.tu-dortmund.de/research/third-party-projects/distribution-grid-planning-operation/twineu/
-- Catena-X – https://catena-x.net/fileadmin/user_upload/Standard-Bibliothek/Update_Januar_2024/CX-0002-DigitalTwinsInCatenaX-v2.1.0.pdf
+- Provenance per value at ETAP, AVEVA, Cognite and Siemens (criterion d): ask specifically in demos.
+- Whether ETAP's *Predictive Simulation* branches from the current live state and whether operating policies are
+  exchangeable.
+- Current status of DNV WindGEMINI, GE Digital Wind Farm, Sentient Science and Siemens Gamesa with NVIDIA.
+- Twin offerings of Vestas, Nordex and Bazefield.
+- Content of ISO/IEC 30186:2025 (requires payment), SSP standard, OpenModelica, Databricks.
+- State estimator in Siemens Gridscale X (not described by name).
+- Status of AWS IoT TwinMaker: no official announcement found; a third-party source says otherwise.
+- Fabric digital twin builder without a simulation engine (third-party source only).
+- License of FIWARE Orion-LD; terms of Omniverse and Victron Dynamic ESS.
+- Completion of the Uptake acquisition by Bosch (announced, completion not confirmed).
 
-**Anbieter** – alle Links in §4 und §5; zusätzlich:
-- Siemens Simcenter Smart Virtual Sensing – https://blogs.sw.siemens.com/simcenter/simcenter-3d-smart-virtual-sensing-unveiling-the-magic/
-- Siemens Gridscale X (Triest, Planung + Betrieb) – https://press.siemens.com/global/en/pressrelease/acegasapsamga-leverages-siemens-gridscale-x-build-digital-twin-triestes-energy-grid · https://press.siemens.com/global/en/pressrelease/siemens-gridscale-x-redefines-system-operations-and-agentic-transmission-planning
-- Siemens H2 – https://resources.sw.siemens.com/en-US/green-hydrogen-digital-twin-for-hystar-electrolyzer-excellence/ · https://assets.new.siemens.com/siemens/assets/api/uuid:e2190682-94a3-4933-8f45-8d1faf717832/DI-PA-Simplifying-Green-H2-Production-Brief.pdf
-- Cognite – https://hub.cognite.com/simulator-integration-388/simulator-integration-service-now-generally-available-in-cognite-data-fusion-4304
-- AWS-Lebenszyklus – https://aws.amazon.com/about-aws/whats-new/2025/10/aws-service-availability/ · https://dev.classmethod.jp/en/articles/aws-service-lifecycle-summary-20260630/ · https://thingshost.de/en/blog/aws-iot-service-retirements-2026 · https://docs.aws.amazon.com/iot-twinmaker/latest/guide/what-is-twinmaker.html
+---
+
+## 9. Sources (retrieved 2026-10-12)
+
+**Standards, definitions, research**
+- ISO/IEC 30173:2023: https://www.iso.org/standard/81442.html
+- ISO/IEC 30186:2025: https://knowledge.bsigroup.com/products/bs-iso-iec-30186-digital-twin-maturity-model-and-guidance-for-a-maturity-assessment
+- ISO 23247: https://committee.iso.org/standard/75066.html
+- DTC Capabilities Periodic Table: https://www.digitaltwinconsortium.org/wp-content/uploads/sites/3/2022/06/Digital-Twin-Capabilities-Periodic-Table-User-Guide.pdf
+- Kritzinger et al. 2018: https://doi.org/10.1016/j.ifacol.2018.08.474
+- National Academies: https://www.nationalacademies.org/news/2023/12/new-report-urges-multiagency-action-to-support-potentially-transformative-digital-twins-research
+- AWS L4 Living Twin: https://aws.amazon.com/blogs/iot/l4-living-digital-twins/ · https://aws.amazon.com/blogs/hpc/deploying-level-4-digital-twin-self-calibrating-virtual-sensors-on-aws
+- Executable Digital Twin: https://arxiv.org/pdf/2210.17402
+- Co-simulation: https://arxiv.org/pdf/1702.00686 · https://arxiv.org/pdf/1809.08463 · https://2014.international.conference.modelica.org/proceedings/html/submissions/ECP14096213_Viel.pdf
+- SSP: https://proceedings.nips.cc/paper_files/paper/2013/file/b7bb35b9c6ca2aee2df08cf09d7016c2-Paper.pdf
+- Iteration bound: https://www.eecs.yorku.ca/course_archive/2011-12/W/4210/L4_it_bound.pdf
+- FMI 3.0: https://fmi-standard.org/faq/ · https://ecp.ep.liu.se/index.php/modelica/article/view/179
+- EnKF twin: https://www.sciencedirect.com/science/article/abs/pii/S0149197026000703
+- OPC UA: https://reference.opcfoundation.org/Core/Part8/v104/docs/?r=A.7&t=1
+- IEC 61850 via CIM: https://modellen.netbeheernederland.nl/tc57cim/cim17/schema/class/Quality61850.html
+- W3C PROV: https://arxiv.org/pdf/2507.01075
+- TwinEU: https://ie3.etit.tu-dortmund.de/research/third-party-projects/distribution-grid-planning-operation/twineu/
+- Catena-X: https://catena-x.net/fileadmin/user_upload/Standard-Bibliothek/Update_Januar_2024/CX-0002-DigitalTwinsInCatenaX-v2.1.0.pdf
+
+**Vendors**: all links in sections 4 and 5; in addition:
+- Siemens Simcenter Smart Virtual Sensing: https://blogs.sw.siemens.com/simcenter/simcenter-3d-smart-virtual-sensing-unveiling-the-magic/
+- Siemens Gridscale X (Trieste, planning + operation): https://press.siemens.com/global/en/pressrelease/acegasapsamga-leverages-siemens-gridscale-x-build-digital-twin-triestes-energy-grid · https://press.siemens.com/global/en/pressrelease/siemens-gridscale-x-redefines-system-operations-and-agentic-transmission-planning
+- Siemens H2: https://resources.sw.siemens.com/en-US/green-hydrogen-digital-twin-for-hystar-electrolyzer-excellence/ · https://assets.new.siemens.com/siemens/assets/api/uuid:e2190682-94a3-4933-8f45-8d1faf717832/DI-PA-Simplifying-Green-H2-Production-Brief.pdf
+- Cognite: https://hub.cognite.com/simulator-integration-388/simulator-integration-service-now-generally-available-in-cognite-data-fusion-4304
+- AWS lifecycle: https://aws.amazon.com/about-aws/whats-new/2025/10/aws-service-availability/ · https://dev.classmethod.jp/en/articles/aws-service-lifecycle-summary-20260630/ · https://thingshost.de/en/blog/aws-iot-service-retirements-2026 · https://docs.aws.amazon.com/iot-twinmaker/latest/guide/what-is-twinmaker.html
