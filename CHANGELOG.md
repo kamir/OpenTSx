@@ -15,6 +15,11 @@ entries before 3.0.0 are grouped by date.
 - Align the local Workbench constraints and generated wheel lock with the
   Python forecasting extra's statsmodels 0.15.0 runtime. Verify reported runtime
   provenance against the installed package and reject diverging launcher pins.
+- TASK-020 U01 decisions D-T16 to D-T22 (owner, 2026-11-21). `TsxCompileContext.Boundary` loses `admitsRaw` (D-T22):
+  no raw series, pair or vector and no operator with merge class `none` can feed a federated sink. Spec S1.10, S2.2
+  and S2.4 state that a site has exactly one node (D-T17) and that the local worker's capabilities are trusted-local
+  without a fleet qualification claim (D-T18).
+
 - Documentation, comments and example files describe the current code. Chapter 15 drops the pair windows from the
   open items, links PAIR-WINDOWS-SPEC from P8 and lists the twin variants T and L as proofs of concept. The worked
   example of chapter 16 counts twelve components and sixteen signals and names the five flows that run. The `maxAge`
@@ -568,6 +573,13 @@ entries before 3.0.0 are grouped by date.
   `analysis-result-wire.json` (`v2.2` bytes). `wire-format.json` stays byte-identical because catalog
   `tsx-catalog/1` pins it; its `analysisResults` entries are now the `v2.1` vectors and the generator rebuilds it from
   `schema-history/v2.1`. The workbench result view shows the digests and says when a record has none.
+
+- Sealed buckets carry a content checksum. `BucketWriter` seals with `Buckets.contentChecksum`: `sha256:` and the
+  SHA-256 over every episode id with its content digest. It rejects an episode id that is already in the bucket with
+  other content before sending it. `ReplayService` verifies a bucket replay against the episode contents, so an episode
+  that comes back with other values under the same id no longer passes as verified. Manifests sealed with the id-only
+  `Buckets.checksum` (no `sha256:` prefix) still verify, by their ids. Python gets `bucket_content_checksum`; new
+  vectors `bucket-content-checksum.json`. `bucket-checksum.json` and the Rust id-only helper are unchanged.
 
 ### Changed
 

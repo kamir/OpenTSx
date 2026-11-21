@@ -176,6 +176,37 @@ write("episode-digest.json", digest_vectors)
 d_power, _, d_power_changed, d_speed, d_empty = (v["contentDigest"] for v in digest_vectors)
 
 
+# --- bucket content checksum --------------------------------------------------------------------------
+def reference_bucket_checksum(episode_ids, digests):
+    """Straight transcription of the specification with struct and hashlib."""
+    by_id = {}
+    for episode_id, digest in zip(episode_ids, digests):
+        by_id.setdefault(episode_id.encode("utf-8"), digest)
+    out = b"opentsx.bucket.content.v1\n" + struct.pack("<q", len(by_id))
+    for key in sorted(by_id):
+        out += struct.pack("<q", len(key)) + key + by_id[key].encode("ascii")
+    return "sha256:" + hashlib.sha256(out).hexdigest()
+
+
+content_cases = [
+    ("empty bucket", [], []),
+    ("one episode", ["01HF7Z1Y4X0000000000000000"], [d_power]),
+    ("the same episode id with changed content", ["01HF7Z1Y4X0000000000000000"], [d_power_changed]),
+    ("order of writing and a repeated episode do not matter",
+     ["01HF7Z1Y4X0000000000000002", "01HF7Z1Y4X0000000000000001", "01HF7Z1Y4X0000000000000000",
+      "01HF7Z1Y4X0000000000000002"],
+     [d_empty, d_speed, d_power, d_empty]),
+    ("ids sorted by UTF-8 bytes: Z < b < \u00e4", ["\u00e4", "b", "Z"], [d_power, d_speed, d_empty]),
+]
+content_vectors = []
+for name, ids, digests in content_cases:
+    checksum = reference_bucket_checksum(ids, digests)
+    if m.bucket_content_checksum(ids, digests) != checksum:
+        raise SystemExit(f"bucket_content_checksum differs from the reference for: {name}")
+    content_vectors.append({"name": name, "episodeIds": ids, "contentDigests": digests, "checksum": checksum})
+write("bucket-content-checksum.json", content_vectors)
+
+
 # --- analysis results ---------------------------------------------------------------------------------
 # Parameters are written with their Avro type, {"long": "2"} or {"double": 2.0}, because JSON numbers lose it.
 # Longs are decimal strings (exact beyond 2^53 in every language).
