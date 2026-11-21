@@ -1037,6 +1037,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   topic=latency_benchmark_response emptyPolls=<n> giveUp=<giveUp>`, instead of printing three banner lines on standard
   output. When no response arrived, it logs `no latency measured topic=latency_benchmark_response cause=<cause>` at
   ERROR without a stack trace, writes no table and exits with status 1, as `EventFlowAnalysisConsumer` does.
+- docs: the design documents `docs/datamodel-2026/` 02, 04, 05, 06, 07, 12, 13, 14, 15 and 17,
+  `EVOLUTION/TASK-013-web-workbench.md`, the roadmap briefing `docs/roadmap/infographic-briefing.html` and the
+  prototype `docs/prototypes/anlagen-explorer.html` are in English, so no German document is left outside `archive/`.
+  Their file names stay until the German file names are renamed, and code, keys and values that are German stay as the
+  code has them. `README.md`, `docs/README.md`, `docs/user-manual/README.md`, `EVOLUTION/README.md`,
+  `deploy/k3s/notebook/README.md` and CONTRIBUTING.md no longer call them German.
 
 ### Removed
 

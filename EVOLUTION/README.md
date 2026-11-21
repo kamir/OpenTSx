@@ -86,7 +86,7 @@ When creating a new task, use this structure:
 
 - [Main README](../README.md)
 - [User manual](../docs/user-manual/README.md)
-- [Design documents 2026](../docs/datamodel-2026/) (German; 01, 03, 08, 09, 10, 11, 16, 18 and 19 are English)
+- [Design documents 2026](../docs/datamodel-2026/) (English)
 - Archived 2025 material: [onboarding tracks, guides, decisions](../archive/docs/README.md), [archived tasks](archive/)
 
 ## Contributing

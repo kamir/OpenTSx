@@ -41,9 +41,9 @@ OpenTSx is a toolkit for time-series data on event-streaming infrastructure. It 
 * Timestamps are UTC, in **epoch microseconds** (`timestamp-micros`).
 * Commands assume the repository root as working directory.
 * `bin/opentsx <command>` runs the command-line tools (see [Appendix A](appendix-a-cli.md)).
-* Design documents with the full rationale are in German in
+* Design documents with the full rationale are in
   [`docs/datamodel-2026/`](../datamodel-2026/). [04-MODELL-V2-SPEC](../datamodel-2026/04-MODELL-V2-SPEC.md) is the
-  normative data-model specification. The manual summarizes them in English.
+  normative data-model specification. The manual summarizes them.
 
 ## Contents
 

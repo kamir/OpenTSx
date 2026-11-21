@@ -1,235 +1,235 @@
-# OpenTSx – Systemrekonstruktion, Simulation & Optimierung (Konzept, P8)
+# OpenTSx: System reconstruction, simulation and optimization (concept, P8)
 
-> Status: **Konzept und Recherchegrundlage**, 2026-10-12. Ergebnis der Deep Research zur Kette *Quellen → Zeitreihen →
-> rekonstruierte Struktur → Simulation → Optimierung (klassisch, später Quanten)*, Methodikbezug: Kämpf (2017).
-> Umsetzung als **Phase P8** in [TASK-011](../../EVOLUTION/TASK-011-datamodel-refresher-2026.md); Control Plane:
-> Personal Service Layer ([05-SMART-TOPICS §11](05-SMART-TOPICS.md)). ER1 ist ein internes System und wird nur als
-> Datenklasse (Zugriffe, Edits, Feedback) behandelt.
+> Status: **concept and research basis**, 2026-10-12. Result of the deep research on the chain *sources → time series →
+> reconstructed structure → simulation → optimization (classical, later quantum)*, methodological reference: Kämpf (2017).
+> Implementation as **phase P8** in [TASK-011](../../EVOLUTION/TASK-011-datamodel-refresher-2026.md); control plane:
+> Personal Service Layer ([05-SMART-TOPICS, section 11](05-SMART-TOPICS.md)). ER1 is an internal system and is treated
+> only as a data class (accesses, edits, feedback).
 
 ---
 
 
-Die Kette „Zeitreihen → rekonstruiertes Netzwerk → Simulation → Optimierung“ lässt sich für OpenTSx als **solver- und methodenneutrale Pipeline über versionierte Kantentabellen** bauen. Die Methodik dafür liegt größtenteils schon vor. Mirko Kämpfs Dissertation (MLU Halle-Wittenberg, verteidigt am 29. Mai 2017, nicht „ca. 2015“) liefert eine formale Rekonstruktions-Grammatik (Gl. 9.1–9.7), eine ausgearbeitete Signifikanzschicht und kontextsensitive Normalisierungen. Die Forschung von 2020 bis 2026 ergänzt kausale Bestätigung (PCMCI-Familie, multivariate Transferentropie, Hawkes-Granger), bessere Ereignismaße (ECA statt klassischer Event Synchronization) und stärkere Nullmodelle. Was fehlt, ist die **Verbindung**. Kein gefundenes Produkt verknüpft replay-verifizierte Episoden, entdeckte Graphen, kalibrierte Simulation und Optimierungsinstanzen mit durchgehender Provenienz. Kein gefundener Benchmark bietet Energie- oder Winddaten mit bekannter Ground-Truth-Struktur, und kein gefundenes Produkt rechnet Strukturentdeckung im Streaming. Bei der Optimierung ist das Urteil eindeutig. Klassische MIP-Solver und GPU-Heuristiken sind produktionsreif. Ein **praktischer Quantenvorteil bei Optimierung ist Stand Oktober 2026 nicht belegt**: Jede prominente Behauptung hat eine veröffentlichte klassische Gegenrechnung. Der Windpark-Simulator mit Ground Truth ist daher der stärkste Hebel von OpenTSx. Er macht die Plattform zum Ort, an dem Rekonstruktionsmethoden und klassische wie quantenbasierte Solver auf denselben, nachvollziehbaren Instanzen fair verglichen werden. Das ist ein Beitrag, den derzeit niemand leistet.
+The chain "time series → reconstructed network → simulation → optimization" can be built for OpenTSx as a **solver-neutral and method-neutral pipeline over versioned edge tables**. Most of the methodology for it already exists. Mirko Kämpf's dissertation (MLU Halle-Wittenberg, defended on 2017-05-29, not "about 2015") provides a formal reconstruction grammar (Eq. 9.1 to 9.7), a worked-out significance layer and context-sensitive normalizations. Research from 2020 to 2026 adds causal confirmation (PCMCI family, multivariate transfer entropy, Hawkes-Granger), better event measures (ECA instead of classical Event Synchronization) and stronger null models. What is missing is the **connection**. No product found links replay-verified episodes, discovered graphs, calibrated simulation and optimization instances with provenance throughout. No benchmark found offers energy or wind data with a known ground truth structure, and no product found computes structure discovery in streaming. For optimization the verdict is clear. Classical MIP solvers and GPU heuristics are ready for production. A **practical quantum advantage in optimization is not proven as of October 2026**: every prominent claim has a published classical counter-calculation. The wind farm simulator with ground truth is therefore the strongest lever of OpenTSx. It makes the platform the place where reconstruction methods and classical and quantum-based solvers are compared fairly on the same traceable instances. That is a contribution nobody makes at present.
 
-## Kämpfs Dissertation liefert eine siebenstufige Rekonstruktions-Grammatik, aber keinen Optimierungsschritt
+## Kämpf's dissertation provides a seven-step reconstruction grammar, but no optimization step
 
-Die Arbeit heißt **„Time-Series-Based Reconstruction and Analysis of Complex Networks – Methods for Quantitative Comparison of Dynamic Processes“**. Sie ist eine Dissertation zum Dr. rer. nat. an der Naturwissenschaftlichen Fakultät II (Physik) der MLU Halle-Wittenberg, mit den Gutachtern J. W. Kantelhardt, S. Trimper und H. Kantz, URN urn:nbn:de:gbv:3:4-21151 ([DNB-Archivkopie](https://d-nb.info/1142920550/34); [DNB-Katalog](https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&query=per%3DK%C3%A4mpf%20and%20per%3DMirko&recordSchema=oai_dc&maximumRecords=20)). Eine DOI hat sie nicht. Für Zitate eignen sich daneben die begutachteten Kernpublikationen: Physica A 2012 zu Fluktuationen in Wikipedia-Zugriffs- und Edit-Daten ([RePEc](https://ideas.repec.org/a/eee/phsmap/v391y2012i23p6101-6111.html)), PLOS ONE 2015 zur Trenderkennung mit Kontextnetzwerken ([PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC4699901/)) und IJCA 2013 zu Hadoop.TS ([IJCA](https://ijcaonline.org/archives/volume74/number17/12974-0233/)). Eine Vortragsfolie bezeichnet Hadoop.TS ausdrücklich als Vorgänger von OpenTSx ([SlideShare](https://www.slideshare.net/slideshow/time-seriesanalysisusinganeventstreamingplatform-v3final/228829017)).
+The work is titled **"Time-Series-Based Reconstruction and Analysis of Complex Networks: Methods for Quantitative Comparison of Dynamic Processes"**. It is a dissertation for the Dr. rer. nat. at the Faculty of Natural Sciences II (Physics) of MLU Halle-Wittenberg, with the reviewers J. W. Kantelhardt, S. Trimper and H. Kantz, URN urn:nbn:de:gbv:3:4-21151 ([DNB archive copy](https://d-nb.info/1142920550/34); [DNB catalog](https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&query=per%3DK%C3%A4mpf%20and%20per%3DMirko&recordSchema=oai_dc&maximumRecords=20)). It has no DOI. The peer-reviewed core publications are also suitable for citation: Physica A 2012 on fluctuations in Wikipedia access and edit data ([RePEc](https://ideas.repec.org/a/eee/phsmap/v391y2012i23p6101-6111.html)), PLOS ONE 2015 on trend detection with context networks ([PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC4699901/)) and IJCA 2013 on Hadoop.TS ([IJCA](https://ijcaonline.org/archives/volume74/number17/12974-0233/)). A talk slide explicitly calls Hadoop.TS the predecessor of OpenTSx ([SlideShare](https://www.slideshare.net/slideshow/time-seriesanalysisusinganeventstreamingplatform-v3final/228829017)).
 
-### Der methodische Kern ist eine Pipeline, die sich direkt als Modul-DSL umsetzen lässt
+### The methodological core is a pipeline that can be built directly as a module DSL
 
-Kapitel 9.1 formalisiert sieben Schritte ([Diss.](https://d-nb.info/1142920550/34)):
+Chapter 9.1 formalizes seven steps ([Diss.](https://d-nb.info/1142920550/34)):
 
-1. Aggregation von Rohereignissen zu Zeitreihen, X(t) = A(E(t)). Messungen dürfen ausdrücklich durch Simulation ersetzt werden.
-2. Eine Erzeugungsfunktion, etwa Filter oder Peak- und Ereignisdetektion. Sie liefert „time series buckets“ mit gleicher Auflösung und Länge.
-3. Gruppierung, die den Analysekontext definiert.
-4. Eine Link-Creation-Funktion je Maß.
-5. Ein Link-Filter.
-6. Eine **Connectivity-Projection-Funktion**, die mehrere Schichten kombiniert, linear als l_c = Σ c_i·l_i.
-7. Graphmetriken S_m. Über Episoden berechnet, werden sie selbst wieder zu Zeitreihen S_m(t).
+1. Aggregation of raw events into time series, X(t) = A(E(t)). Measurements may explicitly be replaced by simulation.
+2. A generation function, for example a filter or peak and event detection. It delivers "time series buckets" of equal resolution and length.
+3. Grouping, which defines the analysis context.
+4. A link creation function per measure.
+5. A link filter.
+6. A **connectivity projection function** that combines several layers, linearly as l_c = Σ c_i·l_i.
+7. Graph metrics S_m. Computed over episodes, they become time series S_m(t) themselves.
 
-Diese Rückführung der Struktur in eine Zeitreihe ist der Punkt, an dem Simulation und Optimierung andocken können. Die Arbeit sieht die rekonstruierten Netze explizit als Basis, um „das Systemverhalten zu simulieren und die Zeitentwicklung aus extrahierten Modellen zu studieren“. Einen Optimierungsschritt enthält sie **nicht**. Diese Brücke muss aus anderer Literatur kommen.
+Turning the structure back into a time series is the point where simulation and optimization can attach. The work explicitly sees the reconstructed networks as a basis "to simulate the system behavior and to study the time evolution from extracted models". It does **not** contain an optimization step. This bridge must come from other literature.
 
-### Die Signifikanzschicht ist der unterschätzte Teil der Arbeit
+### The significance layer is the underrated part of the work
 
-Die Dissertation definiert drei Linkstärken für Kreuzkorrelationen:
+The dissertation defines three link strengths for cross-correlations:
 
-- **adjustierte Linkstärke** l_adj: Verhältnis zum Mittel aus zehn Shuffles, nach Paluš
-- **normalisierte Linkstärke** l_norm: Peak über dem Mittel, geteilt durch die Streuung der CC(τ)-Funktion, nach Berezin et al.
-- **transformierte Linkstärke** l_trans: trennt Einzelpeaks von breiter Struktur
+- **adjusted link strength** l_adj: ratio to the mean of ten shuffles, after Paluš
+- **normalized link strength** l_norm: peak above the mean, divided by the spread of the CC(τ) function, after Berezin et al.
+- **transformed link strength** l_trans: separates single peaks from broad structure
 
-Kalibrierungssimulationen zeigen, dass Einzelpeaks l_norm-Werte zwischen 2,25 und 5 erzeugen. Werte **über 5** gelten deshalb als signifikant ([Diss., Kap. 9–10](https://d-nb.info/1142920550/34)).
+Calibration simulations show that single peaks produce l_norm values between 2.25 and 5. Values **above 5** therefore count as significant ([Diss., ch. 9 to 10](https://d-nb.info/1142920550/34)).
 
-Für Event Synchronization (ES) nach Quiroga liefert die Arbeit eine Kalibrierung, die in der späteren Literatur so nicht auftaucht:
+For Event Synchronization (ES) after Quiroga the work provides a calibration that does not appear in this form in later literature:
 
-- Zufällige Ereignisreihen erzeugen bereits Q ≈ 0,28.
-- Die Dichteabhängigkeit folgt **Q_rand = 0,6/(5 + max(x, 1/x))**.
-- Links werden nur bei Q/Q_rand ≥ t_f akzeptiert.
-- Die Richtung q ist nur bei relativen Verschiebungen < 0,5 verlässlich.
+- Random event series already produce Q ≈ 0.28.
+- The density dependence follows **Q_rand = 0.6/(5 + max(x, 1/x))**.
+- Links are accepted only at Q/Q_rand ≥ t_f.
+- The direction q is reliable only at relative shifts < 0.5.
 
-Auf Systemebene vergleicht ein Zwei-Stichproben-KS-Test die Linkstärkeverteilung echter Daten gegen geshuffelte Daten und gegen Reihen aus anderen Zeiträumen. Damit prüft er, ob sich ein Prozess überhaupt sinnvoll als Netzwerk modellieren lässt.
+At system level, a two-sample KS test compares the distribution of link strengths of real data against shuffled data and against series from other periods. With it, the test checks whether a process can be modeled as a network in a meaningful way at all.
 
-Ein **adaptiver Schwellwert** zerlegt die logarithmierte Linkstärke-Verteilung in einen Parabel-Anteil (zufällig) und einen Geraden-Anteil (relevant). Die Fitparameter werden selbst zur Systemzeitreihe. Eine k-Means-Klassifikation in den Ebenen der drei Linkstärken trennt starke, „schwache aber signifikante“ und zufällige Links. Das ist das explizite Argument der Arbeit, *weak ties* nicht wegzuschneiden ([Diss., Sec. 10.6](https://d-nb.info/1142920550/34)).
+An **adaptive threshold** splits the log-transformed distribution of link strengths into a parabola part (random) and a straight-line part (relevant). The fit parameters become a system time series themselves. A k-means classification in the planes of the three link strengths separates strong, "weak but significant" and random links. This is the explicit argument of the work for not cutting away *weak ties* ([Diss., Sec. 10.6](https://d-nb.info/1142920550/34)).
 
-### Kontext- und Strukturmaße sind für Content-Interaktionsdaten zugeschnitten
+### Context and structure measures are tailored to content interaction data
 
-Drei Maße zielen auf Daten aus reiner Content-Interaktion:
+Three measures aim at data from pure content interaction:
 
-- **Context Cohesive Force** CCF = ⟨C⟩/⟨ρ_partial⟩ verallgemeinert Kenetts Index Cohesive Force. Sie trennt Kopplung durch einen gemeinsamen Kontexttreiber, etwa eine Indexseite oder einen Aktienindex, von direkter Kopplung.
-- Die **zeitaufgelösten Relevanzindizes** L.TRRI und G.TRRI normalisieren die Aktivität eines Zentralknotens gegen seine lokale und seine sprachübergreifende Nachbarschaft.
-- **Structure Induced Stress** (SIS) misst über Knotenverschiebungen in einem Force-Layout, wie stark ein funktionales Netz das strukturelle „verzerrt“ ([Diss., Kap. 11–12](https://d-nb.info/1142920550/34); [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC4699901/)).
+- **Context Cohesive Force** CCF = ⟨C⟩/⟨ρ_partial⟩ generalizes Kenett's Index Cohesive Force. It separates coupling through a shared context driver, for example an index page or a stock index, from direct coupling.
+- The **time-resolved relevance indices** L.TRRI and G.TRRI normalize the activity of a central node against its local and its cross-language neighborhood.
+- **Structure Induced Stress** (SIS) measures through node displacements in a force layout how strongly a functional network "distorts" the structural one ([Diss., ch. 11 to 12](https://d-nb.info/1142920550/34); [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC4699901/)).
 
-SIS ist billig zu berechnen und liefert eine skalare Lücke zwischen Struktur und Funktion. Das macht es zu einem natürlichen Kandidaten für eine Optimierungszielgröße.
+SIS is cheap to compute and provides a scalar gap between structure and function. That makes it a natural candidate for an optimization objective.
 
-### Die empirischen Befunde bestimmen die Methodenwahl
+### The empirical findings decide the choice of methods
 
-Wikipedia-Zugriffsreihen sind stark langzeitkorreliert (DFA α ≈ 0,9, gestreckt-exponentielle Wiederkehrintervalle). Edit-Ereignisse sind nahezu poissonsch ([RePEc](https://ideas.repec.org/a/eee/phsmap/v391y2012i23p6101-6111.html)). Daraus folgt eine harte Designregel: Dichte, langzeitkorrelierte Reihen brauchen Kreuzkorrelation mit LRC-erhaltenden Surrogaten (Fourier-Filter nach Schreiber/Schmitz). Dünne Ereignisreihen brauchen ES oder ihre Nachfolger. Die Arbeit zeigt selbst, dass langreichweitige Korrelationen Linkstärken aufblähen und dass Trends Scheinkorrelationen erzeugen ([Diss., Sec. 10.5.3](https://d-nb.info/1142920550/34)).
+Wikipedia access series are strongly long-term correlated (DFA α ≈ 0.9, stretched exponential return intervals). Edit events are nearly Poissonian ([RePEc](https://ideas.repec.org/a/eee/phsmap/v391y2012i23p6101-6111.html)). A hard design rule follows from this: dense, long-term correlated series need cross-correlation with LRC-preserving surrogates (Fourier filter after Schreiber/Schmitz). Sparse event series need ES or its successors. The work itself shows that long-range correlations inflate link strengths and that trends produce spurious correlations ([Diss., Sec. 10.5.3](https://d-nb.info/1142920550/34)).
 
-Die Autoren benennen ihre Grenzen offen. Kausalität wurde „noch nicht untersucht“. TRRI-Änderungen sind „nicht als Ursache“ interpretierbar. Die Gewichte der Schichtprojektion sind unbekannt. Sliding-Window-Netze berühren Keoghs Kritik am Subsequence-Clustering ([Diss., Kap. 14](https://d-nb.info/1142920550/34); [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC4699901/)).
+The authors name their limits openly. Causality was "not yet studied". TRRI changes cannot be interpreted "as a cause". The weights of the layer projection are unknown. Sliding-window networks touch Keogh's critique of subsequence clustering ([Diss., ch. 14](https://d-nb.info/1142920550/34); [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC4699901/)).
 
-Die Rezeption hat vor allem den Anwendungsfall aufgegriffen: Wikipedia-Aufmerksamkeit als Proxy für Konflikte, Gesundheit und Märkte. Den methodischen Kern (signifikanzgefilterte Funktionsnetze, CCF, SIS) hat sie kaum aufgenommen ([Semantic Scholar](https://api.semanticscholar.org/graph/v1/paper/DOI:10.1371/journal.pone.0141892/citations?fields=title,year,venue,externalIds,authors&limit=100)). Genau dieser Kern ist unterausgeschöpft und für OpenTSx sofort verwertbar.
+The reception has mostly taken up the use case: Wikipedia attention as a proxy for conflicts, health and markets. It has hardly adopted the methodological core (significance-filtered functional networks, CCF, SIS) ([Semantic Scholar](https://api.semanticscholar.org/graph/v1/paper/DOI:10.1371/journal.pone.0141892/citations?fields=title,year,venue,externalIds,authors&limit=100)). This very core is underused and of immediate use for OpenTSx.
 
-## Kausale Strukturentdeckung ist gereift, aber batch-gebunden und an Baselines zu messen
+## Causal structure discovery has matured, but is bound to batch and must be measured against baselines
 
-### PCMCI ist der Referenzrahmen, ECA und Hawkes sind die Antwort auf Ereignisdaten
+### PCMCI is the reference framework, ECA and Hawkes are the answer to event data
 
-Für kontinuierliche Sensordaten ist Runges **PCMCI-Familie** der Stand der Technik ([Runge et al., Nat. Rev. Earth Environ. 2023](https://producciocientifica.uv.es/documentos/64c85d3aacdc40244331ee04?lang=en)). PCMCI kombiniert eine PC-artige Elternvorauswahl mit MCI-Tests ([Sci. Adv. 2019](https://elib.dlr.de/131630/1/Runge_ScienceAdvances_2019.pdf)). Die Varianten ergänzen jeweils eine Fähigkeit:
+For continuous sensor data, Runge's **PCMCI family** is the state of the art ([Runge et al., Nat. Rev. Earth Environ. 2023](https://producciocientifica.uv.es/documentos/64c85d3aacdc40244331ee04?lang=en)). PCMCI combines a PC-like parent preselection with MCI tests ([Sci. Adv. 2019](https://elib.dlr.de/131630/1/Runge_ScienceAdvances_2019.pdf)). Each variant adds one capability:
 
-- PCMCI+ fügt kontemporäre Links hinzu und kalibriert CI-Tests unter Autokorrelation besser ([PMLR 2020](https://proceedings.mlr.press/v124/runge20a.html)).
-- LPCMCI erlaubt latente Konfounder ([arXiv 2007.01884](https://arxiv.org/pdf/2007.01884)).
-- RPCMCI behandelt Regime.
-- J-PCMCI+ behandelt mehrere Kontexte ([tigramite](https://github.com/jakobrunge/tigramite)).
+- PCMCI+ adds contemporaneous links and calibrates CI tests better under autocorrelation ([PMLR 2020](https://proceedings.mlr.press/v124/runge20a.html)).
+- LPCMCI allows latent confounders ([arXiv 2007.01884](https://arxiv.org/pdf/2007.01884)).
+- RPCMCI handles regimes.
+- J-PCMCI+ handles several contexts ([tigramite](https://github.com/jakobrunge/tigramite)).
 
-Multivariate Transferentropie (IDTxl) erreicht auf synthetischen Netzen bis 100 Knoten bei T = 10.000 **über 98 % Precision und Recall**. Bivariate Verfahren verlieren dagegen mit wachsender Datenmenge die Kontrolle über Falsch-Positive ([Novelli et al. 2019](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6663300/); [Novelli & Lizier 2021](https://arxiv.org/abs/2007.07500v1)).
+Multivariate transfer entropy (IDTxl) reaches **over 98 % precision and recall** on synthetic networks of up to 100 nodes at T = 10,000. Bivariate methods, in contrast, lose control over false positives as the amount of data grows ([Novelli et al. 2019](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6663300/); [Novelli & Lizier 2021](https://arxiv.org/abs/2007.07500v1)).
 
-Für Ereignisdaten hat sich die Lage seit der Dissertation verschoben. Odenweller & Donner (PRE 2020) zeigen, dass klassisches ES Synchronität strukturell schlecht von serieller Abhängigkeit (Burstiness) trennt. **Event Coincidence Analysis (ECA)** ist dagegen „weitgehend robust“ ([arXiv 1910.12343](https://arxiv.org/pdf/1910.12343)). Wolf et al. 2020 bestätigen, dass ES Ereignisse an aufeinanderfolgenden Zeitschritten falsch behandelt ([PIK](https://publications.pik-potsdam.de/pubman/item/item_23895)). Boers et al. (Nature 2019) haben ES mit dynamischen Verzögerungen und einer Korrektur für multiples Testen großskalig eingesetzt ([PIK](https://publications.pik-potsdam.de/pubman/item/item_23141)). Für kausale Aussagen über Ereignisströme ist **multivariates Hawkes-Granger** der prinzipielle Weg. Es modelliert Selbstanregung explizit, statt sie als Störgröße zu behandeln ([Xu et al., ICML 2016](https://www.arxiv.org/pdf/1602.04511); [ISAHP, AISTATS 2024](https://proceedings.mlr.press/v238/wu24a.html)).
+For event data the situation has shifted since the dissertation. Odenweller & Donner (PRE 2020) show that classical ES structurally separates synchrony poorly from serial dependence (burstiness). **Event Coincidence Analysis (ECA)**, in contrast, is "largely robust" ([arXiv 1910.12343](https://arxiv.org/pdf/1910.12343)). Wolf et al. 2020 confirm that ES handles events at consecutive time steps wrongly ([PIK](https://publications.pik-potsdam.de/pubman/item/item_23895)). Boers et al. (Nature 2019) used ES with dynamic delays and a correction for multiple testing at large scale ([PIK](https://publications.pik-potsdam.de/pubman/item/item_23141)). For causal statements about event streams, **multivariate Hawkes-Granger** is the principled way. It models self-excitation explicitly instead of treating it as a nuisance factor ([Xu et al., ICML 2016](https://www.arxiv.org/pdf/1602.04511); [ISAHP, AISTATS 2024](https://proceedings.mlr.press/v238/wu24a.html)).
 
-Für die Dissertation heißt das: Ihre ES-Kalibrierung bleibt als Baseline wertvoll. Ihre Nullmodelle müssen aber die Ereignis-Clusterung innerhalb jeder Reihe erhalten, und ECA sollte als Standard daneben stehen.
+For the dissertation this means: its ES calibration stays valuable as a baseline. Its null models, however, must preserve the event clustering within each series, and ECA should stand next to that ES calibration as the standard.
 
-### Autokorrelation ist die dominante Quelle von Scheinlinks
+### Autocorrelation is the dominant source of spurious links
 
-Autokorrelation erzeugt Scheinlinks. Das ist empirisch gut belegt: Guez et al. zeigen es mit DFA und Surrogaten an Klimanetzen ([arXiv 1407.6243](https://arxiv.org/pdf/1407.6243)). Haas, Goswami und von Luxburg (2023) zeigen, dass bei lokal kohärenter Korrelationsstruktur **„spurious link bundle teleconnections“** zu erwarten sind und gängige Resampling-Verfahren für Signifikanz ungeeignet sind ([arXiv 2211.02888](https://arxiv.org/abs/2211.02888v2)). Bagging von PCMCI+ liefert Konfidenzmaße pro Link ([arXiv 2306.08946](https://arxiv.org/pdf/2306.08946)).
+Autocorrelation produces spurious links. This is well proven empirically: Guez et al. show it with DFA and surrogates on climate networks ([arXiv 1407.6243](https://arxiv.org/pdf/1407.6243)). Haas, Goswami and von Luxburg (2023) show that with a locally coherent correlation structure **"spurious link bundle teleconnections"** are to be expected and that common resampling methods are unsuitable for significance ([arXiv 2211.02888](https://arxiv.org/abs/2211.02888v2)). Bagging of PCMCI+ provides confidence measures per link ([arXiv 2306.08946](https://arxiv.org/pdf/2306.08946)).
 
-Das deckt sich mit Kämpfs Befund zur LRC-Inflation. Die Plattform muss Signifikanz deshalb als **Erstklasse-Ausgabe** führen: Score, p-Wert, Nullmodell und Korrekturverfahren an jeder Kante.
+This matches Kämpf's finding on LRC inflation. The platform must therefore carry significance as a **first-class output**: score, p-value, null model and correction method on every edge.
 
-### Benchmarks zeigen: Kreuzkorrelation ist oft gleich gut
+### Benchmarks show: cross-correlation is often just as good
 
-Der ernüchterndste Befund kommt aus realen Benchmarks. Auf **CausalRivers** (ICLR 2025) schneiden Kreuzkorrelations- und „Reverse-Physics“-Baselines vergleichbar mit mehreren Kausalverfahren ab ([arXiv 2503.17452](https://arxiv.org/html/2503.17452v1)). CausalTime argumentiert, dass synthetische Daten die Leistung auf realen Daten schlecht vorhersagen ([arXiv 2310.01753](https://arxiv.org/pdf/2310.01753)). PCMCI-Baselines degradieren deutlich, wenn Daten fehlen ([arXiv 2507.03310](https://arxiv.org/pdf/2507.03310)).
+The most sobering finding comes from real benchmarks. On **CausalRivers** (ICLR 2025), cross-correlation and "reverse physics" baselines perform comparably to several causal methods ([arXiv 2503.17452](https://arxiv.org/html/2503.17452v1)). CausalTime argues that synthetic data predict the performance on real data poorly ([arXiv 2310.01753](https://arxiv.org/pdf/2310.01753)). PCMCI baselines degrade markedly when data are missing ([arXiv 2507.03310](https://arxiv.org/pdf/2507.03310)).
 
-Konvergentes Cross-Mapping (CCM) versagt unter Synchronisation und starkem gemeinsamem Antrieb ([PMC9126924](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9126924/)). Beides ist bei Wake-Kopplung im Windpark typisch, deshalb taugt CCM nicht als Primärmethode.
+Convergent cross mapping (CCM) fails under synchronization and a strong common driver ([PMC9126924](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9126924/)). Both are typical of wake coupling in a wind farm, so CCM is not suitable as a primary method.
 
-Daraus folgt eine klare Regel: Kreuzkorrelation bleibt **Pflicht-Baseline**, und jede neue Methode muss sie auf domänennahen Daten schlagen.
+A clear rule follows from this: cross-correlation stays the **mandatory baseline**, and every new method must beat it on data close to the domain.
 
-### Skalierung und Lizenzen erzwingen eine Screen-then-Confirm-Architektur
+### Scaling and licenses force a screen-then-confirm architecture
 
-Paarweise Maße skalieren mit O(N²·τ·T), sind aber trivial parallelisierbar und inkrementell als laufende Summen über Fenster pflegbar. Bedingte Verfahren (PCMCI, mTE) sind für etwa 10 bis 200 Variablen validiert. Peer-reviewte Streaming-Varianten von PCMCI oder mTE gibt es nicht. GPU-Ports wie jax-pcmci oder Causal-TS sind selbstberichtet und ungeprüft ([PyPI jax-pcmci](https://pypi.org/project/jax-pcmci/); [Causal-TS](https://causal-ts.readthedocs.io/en/latest/)).
+Pairwise measures scale with O(N²·τ·T), but are trivially parallelizable and maintainable incrementally as running sums over windows. Conditional methods (PCMCI, mTE) are validated for about 10 to 200 variables. There are no peer-reviewed streaming variants of PCMCI or mTE. GPU ports such as jax-pcmci or Causal-TS are self-reported and unchecked ([PyPI jax-pcmci](https://pypi.org/project/jax-pcmci/); [Causal-TS](https://causal-ts.readthedocs.io/en/latest/)).
 
-Zur Lizenzfrage: **tigramite und JIDT stehen unter GPL-3.0** ([tigramite](https://github.com/jakobrunge/tigramite); [JIDT](https://github.com/jlizier/jidt)). OpenTSx steht laut `pom.xml` unter Apache 2.0. Das spricht dafür, GPL-Bibliotheken nur hinter einer Prozessgrenze anzubinden, etwa als Python-Worker, der Iceberg liest und Kantentabellen zurückschreibt. Einfache Maße (CC, ECA, ES, Gauß-TE) sollte OpenTSx sauber in Java nachimplementieren. Das ist eine Ableitung aus gängiger GPL-Auslegung, keine Rechtsberatung.
+On the license question: **tigramite and JIDT are under GPL-3.0** ([tigramite](https://github.com/jakobrunge/tigramite); [JIDT](https://github.com/jlizier/jidt)). According to `pom.xml`, OpenTSx is under Apache 2.0. This argues for connecting GPL libraries only behind a process boundary, for example as a Python worker that reads Iceberg and writes edge tables back. OpenTSx should reimplement simple measures (CC, ECA, ES, Gaussian TE) cleanly in Java. This is a conclusion from the common reading of the GPL, not legal advice.
 
-Die folgende Tabelle ordnet Methoden den Datentypen zu.
+The following table maps methods to data types.
 
-| Datentyp | Screening (Stream, Java) | Bestätigung (Batch, Python) | Nullmodell |
+| Data type | Screening (stream, Java) | Confirmation (batch, Python) | Null model |
 |---|---|---|---|
-| Dichte Sensorreihen (SCADA 1 s–10 min) | Lagged CC, l_norm/l_trans (Kämpf) | PCMCI+ (ParCorr), CMIknn/GPDC auf reduzierter Menge, mTE bei T ≥ 10³–10⁴ | IAAFT / Block-Bootstrap, LRC-erhaltende Fourier-Surrogate |
-| Dichte Content-Reihen (Zugriffe, α ≈ 0,9) | CC nach Wochenzyklus-Normalisierung, CCF | PCMCI+ je Regime (RPCMCI), Kontextknoten als Konditionierung | Fourier-Filter-Surrogate (LRC-erhaltend) |
-| Dünne Ereignisse (Edits, Tickets, Feedback) | ECA, ES mit Q_rand-Kalibrierung | Multivariates Hawkes-Granger | ISI-Shuffle / Jitter, Clusterung erhaltend |
-| Univariate Charakterisierung | DFA, RIS (Kämpf) | Rekurrenznetze, Visibility Graphs (pyunicorn) | Shuffle vs. FFM |
+| Dense sensor series (SCADA 1 s to 10 min) | Lagged CC, l_norm/l_trans (Kämpf) | PCMCI+ (ParCorr), CMIknn/GPDC on a reduced set, mTE at T ≥ 10³ to 10⁴ | IAAFT / block bootstrap, LRC-preserving Fourier surrogates |
+| Dense content series (accesses, α ≈ 0.9) | CC after weekly cycle normalization, CCF | PCMCI+ per regime (RPCMCI), context nodes as conditioning | Fourier filter surrogates (LRC-preserving) |
+| Sparse events (edits, tickets, feedback) | ECA, ES with Q_rand calibration | Multivariate Hawkes-Granger | ISI shuffle / jitter, preserving clustering |
+| Univariate characterization | DFA, RIS (Kämpf) | Recurrence networks, visibility graphs (pyunicorn) | Shuffle vs. FFM |
 
-## Digitale Zwillinge setzen Struktur heute meist voraus, statt sie zu lernen
+## Digital twins today mostly assume structure instead of learning it
 
-### Im Wind ist die validierte Kette physikbasiert, nicht netzwerkgelernt
+### In wind the validated chain is physics-based, not learned as a network
 
-Die am besten belegte Kette im Windbereich lautet: SCADA-kalibriertes FLORIS → Yaw-Offset-Optimierung → Feldversuch. NREL/NextEra haben damit Wake-Verluste in den Betriebsbereichen um **etwa 6,6 %** gesenkt. Das ist rund die Hälfte des statischen Optimums ([Fleming et al., WES 2020](https://wes.copernicus.org/articles/5/945/2020/)). In einem kommerziellen Park lagen die geschätzten AEP-Gewinne bei **3,8 % bzw. 2,8 %** ([Simley et al., WES 2021](https://wes.copernicus.org/articles/6/1427/2021/)).
+The best-proven chain in the wind domain is: SCADA-calibrated FLORIS → yaw offset optimization → field test. With it, NREL/NextEra lowered wake losses in the operating ranges by **about 6.6 %**. That is roughly half of the static optimum ([Fleming et al., WES 2020](https://wes.copernicus.org/articles/5/945/2020/)). In a commercial park the estimated AEP gains were **3.8 % and 2.8 %** ([Simley et al., WES 2021](https://wes.copernicus.org/articles/6/1427/2021/)).
 
-Gelernte Graphen liefern bessere Vorhersagen, sind aber kaum in Regelkreise geschlossen. Ein LSTM-GNN auf 30-s-SCADA senkt den MAE um **ca. 30 %** gegenüber Leistungskurven ([Daenens et al., WES 2025](https://wes.copernicus.org/articles/10/1137/2025/)). Ein Gutachter fragt dort allerdings, ob der Gewinn echte Wake-Kopplung abbildet, denn jede Turbine misst ihre Windgeschwindigkeit selbst ([WES-Diskussion](https://wes.copernicus.org/articles/10/1137/2025/wes-10-1137-2025-discussion.html)). Der Graph ist in solchen Arbeiten meist aus Geometrie oder Windrichtung **vorgegeben**, nicht inferiert. Kausalentdeckung auf SCADA arbeitet bisher auf Sensorebene innerhalb einer Turbine, für die Fehlerdiagnose ([Chatterjee & Dethlefs 2020](https://iopscience.iop.org/article/10.1088/1742-6596/1618/2/022022)). Datengetriebene Inferenz windrichtungsabhängiger Turbine-zu-Turbine-Graphen ist deshalb eine offene Nische. Sie passt zu einer Plattform, die Episoden bereits nach Sektoren segmentieren kann.
+Learned graphs give better predictions, but are rarely part of a closed control loop. An LSTM-GNN on 30 s SCADA lowers the MAE by **about 30 %** compared with power curves ([Daenens et al., WES 2025](https://wes.copernicus.org/articles/10/1137/2025/)). A reviewer there asks, however, whether the gain reflects real wake coupling, because every turbine measures its own wind speed ([WES discussion](https://wes.copernicus.org/articles/10/1137/2025/wes-10-1137-2025-discussion.html)). In such work the graph is mostly **given** by geometry or wind direction, not inferred. Causal discovery on SCADA so far works at sensor level within one turbine, for fault diagnosis ([Chatterjee & Dethlefs 2020](https://iopscience.iop.org/article/10.1088/1742-6596/1618/2/022022)). Data-driven inference of wind-direction-dependent turbine-to-turbine graphs is therefore an open niche. It fits a platform that can already segment episodes by sectors.
 
-Koopman-MPC für Wake-Steuerung ist bisher nur in geschlossener Simulation kleiner Parks gezeigt ([TUHH](https://tore.tuhh.de/handle/11420/14669); [arXiv 2409.06523](https://www.arxiv.org/abs/2409.06523)). GNN-Wake-Surrogate werden gegen PyWake validiert, nicht gegen Messungen ([arXiv 2311.12750](https://arxiv.org/pdf/2311.12750)).
+Koopman MPC for wake steering has so far been shown only in closed simulation of small parks ([TUHH](https://tore.tuhh.de/handle/11420/14669); [arXiv 2409.06523](https://www.arxiv.org/abs/2409.06523)). GNN wake surrogates are validated against PyWake, not against measurements ([arXiv 2311.12750](https://arxiv.org/pdf/2311.12750)).
 
-### Im Content-Bereich existieren die Bausteine, aber nicht ihre Kopplung
+### In the content domain the building blocks exist, but not their coupling
 
-Für Wikipedia gibt es die Einzelteile:
+For Wikipedia the individual parts exist:
 
-- **Struktur:** Klickstrom-Netze mit nachgewiesenem Aufmerksamkeits-Spillover ([J. Comp. Soc. Sci. 2023](https://link.springer.com/article/10.1007/s42001-023-00215-w)).
-- **Knotendynamik:** Antizipations- und Abklingmodelle, die bis 14 Tage voraus besser prognostizieren als Baselines ([ICWSM 2022](https://arxiv.org/abs/2105.10900)).
-- **Exogene Eingänge:** Hawkes-Modelle mit Promotion-Input, die „viral potential“ als Antwort auf externe Anregung quantifizieren ([Rizoiu et al.](https://arxiv.org/pdf/1703.01012)).
+- **Structure:** clickstream networks with proven attention spillover ([J. Comp. Soc. Sci. 2023](https://link.springer.com/article/10.1007/s42001-023-00215-w)).
+- **Node dynamics:** anticipation and decay models that forecast better than baselines up to 14 days ahead ([ICWSM 2022](https://arxiv.org/abs/2105.10900)).
+- **Exogenous inputs:** Hawkes models with promotion input that quantify "viral potential" as the response to external excitation ([Rizoiu et al.](https://arxiv.org/pdf/1703.01012)).
 
-Ein veröffentlichtes multivariates Hawkes-Modell auf dem Wikipedia-Seitennetz wurde **nicht gefunden**. Feedback-Schleifen sind experimentell belegt. Eine einzige frühe Aufwertung hebt Endbewertungen um rund 25 % (Muchnik 2013, zusammengefasst in [arXiv 2604.10360](https://arxiv.org/pdf/2604.10360)). Simulationen zeigen, dass Empfehlungsschleifen Popularitäts-Bias verstärken ([arXiv 2007.13019](https://alphaxiv.org/abs/2007.13019)).
+A published multivariate Hawkes model on the Wikipedia page network was **not found**. Feedback loops are proven by experiment. A single early upvote raises final ratings by about 25 % (Muchnik 2013, summarized in [arXiv 2604.10360](https://arxiv.org/pdf/2604.10360)). Simulations show that recommendation loops amplify popularity bias ([arXiv 2007.13019](https://alphaxiv.org/abs/2007.13019)).
 
-### Was ER1 einbringt, ohne dass Aussagen über das System selbst möglich sind
+### What ER1 contributes, without statements about the system itself
 
-Kämpfs internes ER1-System ist nicht öffentlich. Dieser Bericht trifft deshalb **keine** Aussagen über seine Daten oder Ergebnisse. Konzeptionell gilt nur: Wenn ER1 Zugriffs- und Edit-Zeitreihen zusammen mit Nutzerfeedback erfasst, liefert es genau die Kombination, die der Literatur fehlt. Dichte Aufmerksamkeitsreihen eignen sich für CC/PCMCI. Dünne Edit- und Feedback-Ereignisse eignen sich für ECA/Hawkes. Feedback-Ereignisse wirken als **quasi-interventionelle Eingänge** in die Dynamik. Ein solcher Datensatz wäre ein internes Gegenstück zum Wind-Simulator und ein Prüfstein für die Content-Seite der Pipeline. Gegen Wiki-Daten von 2009 lässt sich dieser Teil nicht vollständig validieren.
+Kämpf's internal ER1 system is not public. This report therefore makes **no** statements about its data or results. Conceptually only this holds: if ER1 records access and edit time series together with user feedback, it provides exactly the combination the literature lacks. Dense attention series suit CC/PCMCI. Sparse edit and feedback events suit ECA/Hawkes. Feedback events act as **quasi-interventional inputs** into the dynamics. Such a dataset would be an internal counterpart to the wind simulator and a touchstone for the content side of the pipeline. This part cannot be fully validated against wiki data from 2009.
 
-### Identifizierbarkeit verlangt Regimevielfalt oder Anregung
+### Identifiability needs a variety of regimes or excitation
 
-Alle Domänen zeigen dieselben Fehlerbilder:
+All domains show the same failure patterns:
 
-- überparametrisierte, nicht identifizierbare Wake-Modelle ([van Beek et al. 2021](https://www.mdpi.com/1996-1073/14/5/1293))
-- Kalibrierparameter, die Modellfehler kompensieren ([wes-2023-98](https://wes.copernicus.org/preprints/wes-2023-98))
-- Scheinlinks durch korrupte Datenströme ([UMN/IEEE TAC](https://ar5iv.labs.arxiv.org/html/2006.04690))
-- Inferenz, die nur in passenden Kopplungsregimen fehlerfrei ist ([Sci. Rep. 2015](https://link.springer.com/article/10.1038/srep10829))
+- overparameterized, non-identifiable wake models ([van Beek et al. 2021](https://www.mdpi.com/1996-1073/14/5/1293))
+- calibration parameters that compensate for model errors ([wes-2023-98](https://wes.copernicus.org/preprints/wes-2023-98))
+- spurious links from corrupted data streams ([UMN/IEEE TAC](https://ar5iv.labs.arxiv.org/html/2006.04690))
+- inference that is free of errors only in suitable coupling regimes ([Sci. Rep. 2015](https://link.springer.com/article/10.1038/srep10829))
 
-Industrielle PCMCI-Anwendungen begegnen Nichtstationarität durch Segmentierung in Betriebsmodi ([arXiv 2501.11545](https://arxiv.org/pdf/2501.11545)). Adaptive Koopman-MPC hält das Modell durch ein kleines Testsignal identifizierbar ([TUHH](https://tore.tuhh.de/handle/11420/14669)).
+Industrial PCMCI applications counter non-stationarity by segmentation into operating modes ([arXiv 2501.11545](https://arxiv.org/pdf/2501.11545)). Adaptive Koopman MPC keeps the model identifiable through a small test signal ([TUHH](https://tore.tuhh.de/handle/11420/14669)).
 
-Eine glaubwürdige Validierungsleiter hat drei Stufen: (1) synthetische Ground Truth, (2) zurückgehaltene Messdaten, (3) Interventionstests im Feld. Die meisten veröffentlichten ML-Zwillinge enden bei Stufe 1 oder 2. Mit Episodenmodell, Replay und Simulator kann OpenTSx alle drei Stufen organisatorisch abbilden.
+A credible validation ladder has three stages: (1) synthetic ground truth, (2) held-out measurement data, (3) intervention tests in the field. Most published ML twins stop at stage 1 or 2. With the episode model, replay and the simulator, OpenTSx can map all three stages organizationally.
 
-## Klassische Solver liefern, Quantenvorteil bleibt unbewiesen
+## Classical solvers deliver, quantum advantage stays unproven
 
-### Zwei Problemklassen liegen auf rekonstruierten Netzen
+### Two classes of problems sit on reconstructed networks
 
-Auf rekonstruierten Kopplungsmatrizen entstehen zwei Arten von Optimierungsproblemen.
+Two kinds of optimization problems arise on reconstructed coupling matrices.
 
-Die erste Klasse sind **graph-native Binärprobleme**. Die Kopplungsmatrix wird direkt zur QUBO-Matrix:
+The first class is **graph-native binary problems**. The coupling matrix becomes the QUBO matrix directly:
 
-- Max-Cut und Modularitäts-Partitionierung. Zwei Communities passen laut Negre et al. „fast ohne Umformulierung“ auf einen Annealer ([PLoS ONE 2020](https://arxiv.org/pdf/1901.09756)).
-- Auswahl repräsentativer Sensoren oder Turbinen: Abdeckung maximieren, Redundanz über |C_ij| bestrafen, analog zur Portfolio-Diversifikation.
-- MIS auf schwellwertgefilterten Graphen.
+- Max-Cut and modularity partitioning. According to Negre et al., two communities fit onto an annealer "almost without reformulation" ([PLoS ONE 2020](https://arxiv.org/pdf/1901.09756)).
+- Selection of representative sensors or turbines: maximize coverage, penalize redundancy through |C_ij|, analogous to portfolio diversification.
+- MIS on threshold-filtered graphs.
 
-Die zweite Klasse sind **physik- und betriebsnahe Probleme**: Unit Commitment, Wartungsplanung, Yaw-Steuerung, Netzdesign. Sie sind von Natur aus MILP/MIQCP/NLP. Als QUBO lassen sie sich nur über Strafterme, Schlupfvariablen und Diskretisierung formulieren. Das kostet viele Qubits und Lösungsqualität ([UC-Survey, arXiv 2601.01777](https://arxiv.org/html/2601.01777v1); [Müller et al., IEEE TPS 2025](https://cris.maastrichtuniversity.nl/en/publications/quantum-annealing-for-optimizing-unit-scheduling-in-renewable-ene/)). Klassisch wird Yaw-Steuerung als Integerprogramm gelöst ([Bestehorn et al., WES 2025](https://wes.copernicus.org/articles/10/1637/2025/wes-10-1637-2025.pdf)).
+The second class is **problems close to physics and operation**: unit commitment, maintenance planning, yaw control, network design. By nature they are MILP/MIQCP/NLP. As a QUBO they can be formulated only through penalty terms, slack variables and discretization. That costs many qubits and solution quality ([UC survey, arXiv 2601.01777](https://arxiv.org/html/2601.01777v1); [Müller et al., IEEE TPS 2025](https://cris.maastrichtuniversity.nl/en/publications/quantum-annealing-for-optimizing-unit-scheduling-in-renewable-ene/)). Classically, yaw control is solved as an integer program ([Bestehorn et al., WES 2025](https://wes.copernicus.org/articles/10/1637/2025/wes-10-1637-2025.pdf)).
 
-Eine QUBO-Formulierung speziell für ein Event-Synchronization-Netz wurde **nicht gefunden**. Beispiele mit Korrelationsnetzen stammen fast nur aus der Finanzwelt ([arXiv 2509.07766](https://arxiv.org/html/2509.07766v2); [arXiv 2602.23976](https://arxiv.org/abs/2602.23976)).
+A QUBO formulation specifically for an Event Synchronization network was **not found**. Examples with correlation networks come almost only from finance ([arXiv 2509.07766](https://arxiv.org/html/2509.07766v2); [arXiv 2602.23976](https://arxiv.org/abs/2602.23976)).
 
-### Energieanwendungen bleiben im Proof-of-Concept-Maßstab
+### Energy applications stay at proof-of-concept scale
 
-Gate-basierte Windpark-Layouts laufen in der Simulation mit **16 Qubits** auf 4×4-Gittern ([Plymouth/arXiv 2312.13123](https://arxiv.org/pdf/2312.13123)), Folgearbeiten mit bis zu 20 Qubits auf 9×9-Gittern, ebenfalls simuliert ([arXiv 2512.17582](https://www.arxiv.org/abs/2512.17582)). Ein APS-Abstract von 2025 fasst den Vergleich so zusammen: D-Wave liefert in Sekunden nahezu optimale Lösungen ohne Garantie, Gurobi höhere Qualität mit Garantie ([APS](https://archive.aps.org/smt/2025/mar-x22/14)). Unit Commitment auf IEEE-118-Bus gelingt nur über Dekomposition, bei der der klassische Master die Hauptarbeit leistet ([arXiv 2502.15917](https://arxiv.org/html/2502.15917v2)). Das deutsche Q-GRID-Projekt schließt, dass „jeglicher Nachweis potenzieller Quanten-Utility im Energiesektor“ noch weiter untersucht werden muss ([arXiv 2403.17495](https://arxiv.org/pdf/2403.17495)).
+Gate-based wind farm layouts run in simulation with **16 qubits** on 4×4 grids ([Plymouth/arXiv 2312.13123](https://arxiv.org/pdf/2312.13123)), follow-up work with up to 20 qubits on 9×9 grids, also simulated ([arXiv 2512.17582](https://www.arxiv.org/abs/2512.17582)). An APS abstract from 2025 sums up the comparison like this: D-Wave delivers near-optimal solutions in seconds without a guarantee, Gurobi higher quality with a guarantee ([APS](https://archive.aps.org/smt/2025/mar-x22/14)). Unit commitment on IEEE 118-bus succeeds only through decomposition, in which the classical master does the main work ([arXiv 2502.15917](https://arxiv.org/html/2502.15917v2)). The German Q-GRID project concludes that "any evidence of potential quantum utility in the energy sector" still needs further study ([arXiv 2403.17495](https://arxiv.org/pdf/2403.17495)).
 
-### Jede prominente Vorteilsbehauptung hat eine klassische Gegenrechnung
+### Every prominent claim of advantage has a classical counter-calculation
 
-| Behauptung | Ursprung, Grad | Gegenbefund, Grad | Stand |
+| Claim | Source, grade | Counter-finding, grade | Status |
 |---|---|---|---|
-| Superlineare Beschleunigung bei MIS auf Rydberg-Arrays (289 Qubits) | Ebadi et al., Science 2022 — peer-reviewed ([arXiv 2202.09372](https://www.arxiv.org/abs/2202.09372)) | Andrist et al., PRR 2023: klassisch exakt für Tausende Knoten in Minuten — peer-reviewed ([PRR](https://link.aps.org/doi/10.1103/PhysRevResearch.5.043277)) | neutralisiert |
-| Skalierungsvorteil bei approximativer Optimierung (QAC, >1.300 log. Qubits) | Munoz-Bauza & Lidar, PRL 2025 — peer-reviewed; von D-Wave beworben ([arXiv 2401.07184](https://arxiv.org/pdf/2401.07184)) | Pawłowski et al., Phys. Rev. Applied: GPU-Simulated-Bifurcation skaliert gleich gut oder besser ([arXiv 2505.22514](https://arxiv.org/pdf/2505.22514)) | umstritten |
-| BF-DCQO auf IBM Heron „bis 80× schneller als CPLEX“ | Kipu/IBM — Preprint + Pressemitteilung ([arXiv 2505.08663](https://arxiv.org/html/2505.08663v1)) | D-Wave-Forscher: Quantenteil trägt wenig bei — Preprint, Wettbewerber ([arXiv 2509.14358](https://arxiv.org/abs/2509.14358)); Kipus eigener Benchmark 2026: Parallel Tempering und GPU-ABS3 erreichen oder übertreffen ([arXiv 2603.13607](https://arxiv.org/pdf/2603.13607)) | widerlegt als „Vorteil“, Parität bestenfalls |
-| QAOA mit besserer Skalierung als Branch-and-Bound (LABS) | Shaydulin et al., Sci. Adv. 2024 — peer-reviewed ([PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC11135426)) | gilt nur rauschfrei simuliert bis 40 Qubits | kein praktischer Vorteil |
+| Superlinear speedup for MIS on Rydberg arrays (289 qubits) | Ebadi et al., Science 2022, peer-reviewed ([arXiv 2202.09372](https://www.arxiv.org/abs/2202.09372)) | Andrist et al., PRR 2023: classically exact for thousands of nodes in minutes, peer-reviewed ([PRR](https://link.aps.org/doi/10.1103/PhysRevResearch.5.043277)) | neutralized |
+| Scaling advantage in approximate optimization (QAC, >1,300 logical qubits) | Munoz-Bauza & Lidar, PRL 2025, peer-reviewed; promoted by D-Wave ([arXiv 2401.07184](https://arxiv.org/pdf/2401.07184)) | Pawłowski et al., Phys. Rev. Applied: GPU simulated bifurcation scales as well or better ([arXiv 2505.22514](https://arxiv.org/pdf/2505.22514)) | disputed |
+| BF-DCQO on IBM Heron "up to 80× faster than CPLEX" | Kipu/IBM, preprint + press release ([arXiv 2505.08663](https://arxiv.org/html/2505.08663v1)) | D-Wave researchers: the quantum part contributes little, preprint by a competitor ([arXiv 2509.14358](https://arxiv.org/abs/2509.14358)); Kipu's own benchmark 2026: parallel tempering and GPU ABS3 match or exceed it ([arXiv 2603.13607](https://arxiv.org/pdf/2603.13607)) | refuted as an "advantage", parity at best |
+| QAOA with better scaling than branch-and-bound (LABS) | Shaydulin et al., Sci. Adv. 2024, peer-reviewed ([PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC11135426)) | holds only in noise-free simulation up to 40 qubits | no practical advantage |
 
-IBM selbst erklärt, dass die Community den Vorteil **noch nicht erreicht** hat. Es hat einen Advantage-Tracker gestartet, der bislang keine Optimierungseinträge führt ([IBM QDC 2025](https://www.ibm.com/quantum/blog/qdc-2025)). Die Benchmark-Bibliothek QOBLIB (Nature Computational Science) verlangt den Vergleich gegen die **stärksten** klassischen Verfahren ([IBM-Blog QOBLIB](https://www.ibm.com/quantum/blog/qoblib); [ZIB](https://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/9998)).
+IBM itself states that the community has **not yet reached** the advantage. It has started an advantage tracker that so far holds no optimization entries ([IBM QDC 2025](https://www.ibm.com/quantum/blog/qdc-2025)). The benchmark library QOBLIB (Nature Computational Science) requires the comparison against the **strongest** classical methods ([IBM blog QOBLIB](https://www.ibm.com/quantum/blog/qoblib); [ZIB](https://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/9998)).
 
-Klassisch ist der Fortschritt dagegen real. Die GPU-LP-Familie PDLP ist in HiGHS und in NVIDIA cuOpt angekommen, das inzwischen in COIN-OR liegt ([arXiv 2506.02174](https://arxiv.org/pdf/2506.02174); [Edinburgh](https://maths.ed.ac.uk/highs-and-nvidia-cuopt-driving-open-source-innovation-in-optimization)). NVIDIAs „über 5.000× schneller“ ist allerdings eine Herstelleraussage für sehr große LPs, nicht für Branch-and-Bound bei MIP. Quanten-inspirierte Solver (Digital Annealer, SBM) zeigen problemabhängige Rangfolgen ohne klaren Sieger ([Oshiyama & Ohzeki 2022](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8828756/)).
+On the classical side, in contrast, the progress is real. The GPU LP family PDLP has arrived in HiGHS and in NVIDIA cuOpt, which now lives in COIN-OR ([arXiv 2506.02174](https://arxiv.org/pdf/2506.02174); [Edinburgh](https://maths.ed.ac.uk/highs-and-nvidia-cuopt-driving-open-source-innovation-in-optimization)). NVIDIA's "over 5,000× faster", however, is a vendor statement for very large LPs, not for branch-and-bound in MIP. Quantum-inspired solvers (Digital Annealer, SBM) show problem-dependent rankings without a clear winner ([Oshiyama & Ohzeki 2022](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8828756/)).
 
-Für OpenTSx folgt daraus eine Hierarchie:
+For OpenTSx a hierarchy follows from this:
 
-1. HiGHS (offen) oder Gurobi für MILP/MIQP.
-2. CP-SAT für Scheduling.
-3. SA, Tabu oder Parallel Tempering für Korrelations-QUBOs.
-4. Leiden für Modularität.
-5. Quantenbackends nur als **experimentelles Backend** mit vorab fixiertem Benchmarkprotokoll.
+1. HiGHS (open) or Gurobi for MILP/MIQP.
+2. CP-SAT for scheduling.
+3. SA, tabu or parallel tempering for correlation QUBOs.
+4. Leiden for modularity.
+5. Quantum backends only as an **experimental backend** with a benchmark protocol fixed in advance.
 
-## Das End-to-End-Konzept verbindet sechs Schichten über eine gemeinsame Kantentabelle
+## The end-to-end concept connects six layers through a shared edge table
 
-Das Konzept ordnet vorhandene und geplante OpenTSx-Bausteine in eine geschlossene Schleife. Der zentrale Integrationsvertrag ist eine **versionierte Iceberg-Kantentabelle**. Ihre Felder sind `src, dst, layer, method, lag, score, p_value, null_model, correction, episode_id, window, replay_offsets, run_id`. Jede Methode schreibt in dieses Schema, jede Simulation und jede Optimierung liest daraus. Damit ist Kämpfs Schritt 4/5 (Link-Creation plus Filter) austauschbar, ohne dass sich die nachgelagerten Schichten ändern.
+The concept arranges existing and planned OpenTSx building blocks into a closed loop. The central integration contract is a **versioned Iceberg edge table**. Its fields are `src, dst, layer, method, lag, score, p_value, null_model, correction, episode_id, window, replay_offsets, run_id`. Every method writes into this schema, every simulation and every optimization reads from it. This makes Kämpf's step 4/5 (link creation plus filter) exchangeable without changes to the downstream layers.
 
 ```mermaid
 flowchart LR
-  subgraph S1["1 Quellen & Konnektoren"]
-    A1["Sensoren / SCADA<br/>IEC 61400-25-2 Katalog"]
-    A2["Content-Interaktion<br/>Zugriffe, Edits, Feedback<br/>(z. B. ER1, intern)"]
-    A3["Windpark-Simulator<br/>mit Ground Truth"]
+  subgraph S1["1 Sources and connectors"]
+    A1["Sensors / SCADA<br/>IEC 61400-25-2 catalog"]
+    A2["Content interaction<br/>accesses, edits, feedback<br/>(for example ER1, internal)"]
+    A3["Wind farm simulator<br/>with ground truth"]
   end
-  subgraph S2["2 Episoden & Replay"]
-    B1["KafScale Topics<br/>verifizierter Replay"]
-    B2["Iceberg Episoden<br/>Time-Series Buckets"]
-    B3["Streaming-Statistik<br/>Datenqualität, Sketches"]
-    B4["Segmentierung<br/>Regime / Sektoren"]
+  subgraph S2["2 Episodes and replay"]
+    B1["KafScale topics<br/>verified replay"]
+    B2["Iceberg episodes<br/>time series buckets"]
+    B3["Streaming statistics<br/>data quality, sketches"]
+    B4["Segmentation<br/>regimes / sectors"]
   end
-  subgraph S3["3 Rekonstruktion"]
-    C1["Screening (Java, Stream)<br/>Lagged CC, ECA, ES+Q_rand<br/>DFA, RIS"]
-    C2["Signifikanzschicht<br/>l_adj, l_norm, l_trans<br/>Surrogate, FDR, KS-Test"]
-    C3["Bestätigung (Python, Batch)<br/>PCMCI+, mTE, Hawkes-Granger"]
-    C4[("Kantentabelle<br/>Multilayer, versioniert")]
+  subgraph S3["3 Reconstruction"]
+    C1["Screening (Java, stream)<br/>lagged CC, ECA, ES+Q_rand<br/>DFA, RIS"]
+    C2["Significance layer<br/>l_adj, l_norm, l_trans<br/>surrogates, FDR, KS test"]
+    C3["Confirmation (Python, batch)<br/>PCMCI+, mTE, Hawkes-Granger"]
+    C4[("Edge table<br/>multilayer, versioned")]
   end
   subgraph S4["4 Simulation"]
-    D1["Netzwerkdynamik<br/>VAR, Hawkes, Koopman"]
-    D2["Physikmodell<br/>Wake / FLORIS-artig"]
-    D3["Szenarien & Interventionen"]
+    D1["Network dynamics<br/>VAR, Hawkes, Koopman"]
+    D2["Physics model<br/>wake / FLORIS-like"]
+    D3["Scenarios and interventions"]
   end
-  subgraph S5["5 Optimierung"]
-    E1["Problem-Builder<br/>MILP / QUBO aus Graph"]
-    E2["Klassisch<br/>HiGHS, Gurobi, CP-SAT, SA/PT"]
-    E3["Quanten-Backends<br/>experimentell"]
-    E4["Benchmark-Harness<br/>Zeit-bis-Ziel, Gap"]
+  subgraph S5["5 Optimization"]
+    E1["Problem builder<br/>MILP / QUBO from the graph"]
+    E2["Classical<br/>HiGHS, Gurobi, CP-SAT, SA/PT"]
+    E3["Quantum backends<br/>experimental"]
+    E4["Benchmark harness<br/>time to target, gap"]
   end
-  subgraph S6["6 Governance & Steuerung"]
-    F1["OpenMetadata + OpenLineage<br/>Replay-Provenienz"]
-    F2["Smart Topics<br/>MLflow, Wayang föderiert"]
-    F3["Personal Service Layer<br/>Control Plane"]
+  subgraph S6["6 Governance and control"]
+    F1["OpenMetadata + OpenLineage<br/>replay provenance"]
+    F2["Smart Topics<br/>MLflow, Wayang federated"]
+    F3["Personal Service Layer<br/>control plane"]
   end
   A1 --> B1
   A2 --> B1
@@ -247,112 +247,112 @@ flowchart LR
   E1 --> E2 --> E4
   E1 --> E3 --> E4
   E4 --> F3
-  F3 -->|"Steuerentscheid / Intervention"| A3
-  F3 -->|"Feedback als Ereignis"| A2
-  A3 -.->|"Ground Truth"| E4
-  A3 -.->|"Ground Truth"| C2
+  F3 -->|"control decision / intervention"| A3
+  F3 -->|"feedback as an event"| A2
+  A3 -.->|"ground truth"| E4
+  A3 -.->|"ground truth"| C2
   C4 -.-> F1
   E4 -.-> F1
   D3 -.-> F2
   F2 -.-> C3
 ```
 
-**Legende.**
+**Legend.**
 
-- **Durchgezogene Pfeile** sind Datenflüsse über Kafka-Topics oder Iceberg-Tabellen.
-- **Gestrichelte Pfeile** sind Validierung, Provenienz oder Modellrückfluss.
-- Der **Zylinder** markiert die Kantentabelle als zentralen Vertrag.
+- **Solid arrows** are data flows through Kafka topics or Iceberg tables.
+- **Dashed arrows** are validation, provenance or the flow of models back.
+- The **cylinder** marks the edge table as the central contract.
 
-Die sechs Schichten im Einzelnen:
+The six layers in detail:
 
-- **Schicht 1** führt heterogene Quellen in das Episodenmodell. Sensoren tragen IEC-Semantik, Content-Daten tragen Ereignistypen, und der Simulator tritt als gleichberechtigte Quelle auf. So läuft Kämpfs Gl. 9.1, nach der Messung durch Simulation ersetzbar ist, wörtlich durch dieselbe Pipeline.
-- **Schicht 2** liefert byte-identischen Replay, Datenqualitätsmetriken und Segmentierung. Segmentierung ist die Standardantwort auf Nichtstationarität.
-- **Schicht 3** trennt billiges Streaming-Screening von teurer Batch-Bestätigung. Die Signifikanzschicht kombiniert Kämpfs Linkstärken mit modernen Nullmodellen und FDR/FWER-Korrektur.
-- **Schicht 4** simuliert auf rekonstruierten Graphen. Für Content-Netze eignen sich Hawkes-Prozesse auf dem Graphen, für Sensorsysteme VAR oder Koopman. Im Wind kommen hybride Modelle aus Wake-Physik plus gelernter Restkopplung hinzu. Für den Energieverbund (Windpark, Elektrolyse, Speicher, Vermarktung) konkretisiert [07-DIGITAL-TWIN-BSP](07-DIGITAL-TWIN-BSP.md) diese Schicht als Zwilling aus atomaren Elementen.
-- **Schicht 5** formuliert Optimierungsprobleme direkt aus Graph und Simulation. Graph-native Probleme werden als QUBO formuliert, Betriebsprobleme als MILP. Ein Harness misst jedes Backend gegen dieselben Instanzen.
-- **Schicht 6** verbucht jeden Schritt als OpenLineage-Lauf in OpenMetadata, wo der vorhandene Kafka-Konnektor ihn aufnimmt ([OM-Doku](https://docs.open-metadata.org/v2.0.x/connectors/pipeline/openlineage)). Smart Topics trainieren Modelle (MLflow) und führen sie föderiert über Wayang aus. Der Personal Service Layer schließt die Schleife: Entscheidungen werden zu Interventionen im Simulator oder zu Feedback-Ereignissen im Content-System, deren Wirkung die nächste Rekonstruktion misst.
+- **Layer 1** brings heterogeneous sources into the episode model. Sensors carry IEC semantics, content data carry event types, and the simulator appears as a source of equal standing. In this way Kämpf's Eq. 9.1, under which measurement can be replaced by simulation, runs literally through the same pipeline.
+- **Layer 2** provides byte-identical replay, data quality metrics and segmentation. Segmentation is the standard answer to non-stationarity.
+- **Layer 3** separates cheap streaming screening from expensive batch confirmation. The significance layer combines Kämpf's link strengths with modern null models and FDR/FWER correction.
+- **Layer 4** simulates on reconstructed graphs. Hawkes processes on the graph suit content networks, VAR or Koopman suit sensor systems. In wind, hybrid models of wake physics plus learned residual coupling are added. For the energy system (wind farm, electrolysis, storage, marketing), [07-DIGITAL-TWIN-BSP](07-DIGITAL-TWIN-BSP.md) makes this layer concrete as a twin of atomic elements.
+- **Layer 5** formulates optimization problems directly from the graph and the simulation. Graph-native problems are formulated as QUBO, operational problems as MILP. A harness measures every backend against the same instances.
+- **Layer 6** records every step as an OpenLineage run in OpenMetadata, where the existing Kafka connector picks it up ([OM docs](https://docs.open-metadata.org/v2.0.x/connectors/pipeline/openlineage)). Smart Topics train models (MLflow) and run them federated through Wayang. The Personal Service Layer closes the loop: decisions become interventions in the simulator or feedback events in the content system, whose effect the next reconstruction measures.
 
-### Die Zustandsevolution entsteht als rollierende Schleife
+### The evolution of the state comes from a rolling loop
 
-Optimierung „berechnet die Evolution des Systemzustands“ nicht in einem Schritt. Sie tut es als **rollierende Schleife** im Stil von MPC. Je Episode wird die Struktur neu geschätzt, die Strukturzeitreihe S_m(t) fortgeschrieben, das Modell simuliert und die nächste Steuergröße optimiert. Kämpfs SIS und die Fitparameter des adaptiven Schwellwerts dienen dabei als Zustandsindikatoren, die bei Strukturbrüchen (Burst, Regimewechsel, Fehler) einen Neu-Fit auslösen.
+Optimization does not "compute the evolution of the system state" in one step. It does so as a **rolling loop** in the style of MPC. Per episode the structure is estimated anew, the structure time series S_m(t) is extended, the model is simulated and the next control variable is optimized. Kämpf's SIS and the fit parameters of the adaptive threshold serve as state indicators that trigger a refit on structural breaks (burst, regime change, fault).
 
-Die Feldversuche zur Wake-Steuerung zeigen, warum diese Schleife Interventionen braucht: Messbare Gewinne lagen bei rund der Hälfte des modellierten Optimums ([WES 2020](https://wes.copernicus.org/articles/5/945/2020/)). Erst Interventionen kalibrieren den Zwilling. Für Wikipedia-artige Systeme übernimmt Nutzerfeedback diese Rolle, wenn es als Ereignis mit Zeitstempel erfasst wird. Mit Feedback ist allerdings Vorsicht nötig: Ranking- und Empfehlungsschleifen können kausale Links verdecken oder umkehren.
+The field tests of wake steering show why this loop needs interventions: measurable gains were about half of the modeled optimum ([WES 2020](https://wes.copernicus.org/articles/5/945/2020/)). Only interventions calibrate the twin. For Wikipedia-like systems, user feedback takes this role when it is recorded as an event with a timestamp. Feedback needs care, however: ranking and recommendation loops can hide or reverse causal links.
 
-## Fünf Lücken, in denen OpenTSx eine Alleinstellung hat
+## Five gaps in which OpenTSx stands alone
 
-Die Landschaftsanalyse findet keinen Wettbewerber, der die Kette schließt:
+The landscape analysis finds no competitor that closes the chain:
 
-- **Streaming-Plattformen** bieten univariate Anomalieerkennung und Prognosen. Kusto zerlegt Reihen und wendet Tukey-Zäune an ([Microsoft Learn](https://learn.microsoft.com/en-us/kusto/query/anomaly-detection)). Flink ML hat seit Juni 2023 kein Release mehr ([ASF](https://release-catalog.apache.org/flink-ml/index.html)). Keine dieser Plattformen hat einen eingebauten Operator für Kausal- oder Netzwerkentdeckung.
-- **Causal-AI-Anbieter** sind geschlossen und domänenagnostisch. causaLens verspricht „von Rohdaten zum Kausalgraphen“ (Herstelleraussage, [causaLens](https://causalens.com/?p=1762)), Causely zielt auf Kubernetes-Root-Cause ([VentureBeat](https://venturebeat.com/ai/causely-launches-causal-ai-for-kubernetes-raises-8-8m-in-seed-funding)).
-- **Twin-Plattformen** modellieren Struktur von Hand. AWS hat IoT Analytics und IoT Events abgekündigt ([AWS](https://docs.aws.amazon.com/iotevents/latest/developerguide/iotevents-end-of-support.html)).
-- **Quantendienste** beginnen bei einem fertigen QUBO ([IBM Qiskit Functions](https://quantum.cloud.ibm.com/docs/en/guides/q-ctrl-optimization-solver)).
+- **Streaming platforms** offer univariate anomaly detection and forecasts. Kusto decomposes series and applies Tukey fences ([Microsoft Learn](https://learn.microsoft.com/en-us/kusto/query/anomaly-detection)). Flink ML has had no release since June 2023 ([ASF](https://release-catalog.apache.org/flink-ml/index.html)). None of these platforms has a built-in operator for causal or network discovery.
+- **Causal AI vendors** are closed and domain-agnostic. causaLens promises "from raw data to the causal graph" (vendor statement, [causaLens](https://causalens.com/?p=1762)), Causely aims at root causes in Kubernetes ([VentureBeat](https://venturebeat.com/ai/causely-launches-causal-ai-for-kubernetes-raises-8-8m-in-seed-funding)).
+- **Twin platforms** model structure by hand. AWS has discontinued IoT Analytics and IoT Events ([AWS](https://docs.aws.amazon.com/iotevents/latest/developerguide/iotevents-end-of-support.html)).
+- **Quantum services** start from a finished QUBO ([IBM Qiskit Functions](https://quantum.cloud.ibm.com/docs/en/guides/q-ctrl-optimization-solver)).
 
-| Lücke | Belege | OpenTSx-Beitrag | Reifegrad des Beitrags |
+| Gap | Evidence | OpenTSx contribution | Maturity of the contribution |
 |---|---|---|---|
-| Domänen-Benchmark mit Ground-Truth-Struktur für Energie/Wind | CauseMe ist klimalastig ([causeme](https://causeme.uv.es/)); CausalTime/CausalRivers zeigen Transferproblem ([arXiv 2310.01753](https://arxiv.org/pdf/2310.01753)) | Simulator erzeugt Wake-Graph als gerichtete Wahrheit, plus Fehler, Regime, IEC-Katalog, Replay | hoch, Simulator existiert |
-| Provenienz von Episode bis Optimierungsergebnis | OM/OpenLineage decken Simulation, Graph, QUBO nicht als Entitäten ab ([OM SDK](https://docs.open-metadata.org/v2.0.x/sdk/python/entities/ml-model)) | Custom-Facet „Replay-Provenienz“ (Topic, Offsets, Episoden-Hash) | mittel, OM-Modul existiert |
-| Streaming-zu-Batch-Brücke für Strukturentdeckung | keine peer-reviewte Streaming-PCMCI; TU/e benennt die O(N²)-Lücke ([TU/e](https://dai.win.tue.nl/masterprojects/38)) | Sketch- und CC/ECA-Screening im Stream, PCMCI/mTE auf replayten Episoden | hoch, `opentsx-stats` vorhanden |
-| Föderierte Strukturentdeckung über Betreiber | WINDWISE macht föderiertes Condition Monitoring, nicht Struktur ([CORDIS](https://cordis.europa.eu/project/id/101276753)); Inter-Farm-FL leidet unter Heterogenität ([arXiv 2409.03672](https://arxiv.org/abs/2409.03672)) | Mergebare Sketches + gemeinsamer IEC-Katalog + Wayang | Forschung, nicht trivial |
-| Solver-neutrale Optimierungsinstanzen mit bekannten Optima | Q-GRID: Utility offen ([arXiv 2403.17495](https://arxiv.org/pdf/2403.17495)); Layout-Studien auf 16 Qubits | Simulator-erzeugte, versionierte QUBO/MILP-Instanzen, QOBLIB-kompatibel berichtet | mittel |
+| Domain benchmark with a ground truth structure for energy/wind | CauseMe is weighted toward climate ([causeme](https://causeme.uv.es/)); CausalTime/CausalRivers show a transfer problem ([arXiv 2310.01753](https://arxiv.org/pdf/2310.01753)) | The simulator produces the wake graph as directed truth, plus faults, regimes, IEC catalog, replay | high, simulator exists |
+| Provenance from episode to optimization result | OM/OpenLineage do not cover simulation, graph, QUBO as entities ([OM SDK](https://docs.open-metadata.org/v2.0.x/sdk/python/entities/ml-model)) | Custom facet "replay provenance" (topic, offsets, episode hash) | medium, OM module exists |
+| Streaming-to-batch bridge for structure discovery | no peer-reviewed streaming PCMCI; TU/e names the O(N²) gap ([TU/e](https://dai.win.tue.nl/masterprojects/38)) | Sketch and CC/ECA screening in the stream, PCMCI/mTE on replayed episodes | high, `opentsx-stats` exists |
+| Federated structure discovery across operators | WINDWISE does federated condition monitoring, not structure ([CORDIS](https://cordis.europa.eu/project/id/101276753)); inter-farm FL suffers from heterogeneity ([arXiv 2409.03672](https://arxiv.org/abs/2409.03672)) | Mergeable sketches + shared IEC catalog + Wayang | research, not trivial |
+| Solver-neutral optimization instances with known optima | Q-GRID: utility open ([arXiv 2403.17495](https://arxiv.org/pdf/2403.17495)); layout studies on 16 qubits | Simulator-generated, versioned QUBO/MILP instances, reported in a QOBLIB-compatible form | medium |
 
-Eine sechste, kleinere Lücke betrifft die Methodik selbst. Kämpfs Signifikanzschicht (l_trans, adaptive Schwelle, Q_rand-Kalibrierung, CCF, SIS) ist nirgends als wiederverwendbare Bibliothek verfügbar. Als Apache-lizenziertes Java-Modul neben einer sauberen ECA-Implementierung würde sie eine echte Lücke im JVM-Ökosystem füllen. Dort ist JIDT (GPL, letztes Release August 2023) die einzige reife Bibliothek ([JIDT](https://github.com/jlizier/jidt)).
+A sixth, smaller gap concerns the methodology itself. Kämpf's significance layer (l_trans, adaptive threshold, Q_rand calibration, CCF, SIS) is available nowhere as a reusable library. As an Apache-licensed Java module next to a clean ECA implementation, it would fill a real gap in the JVM ecosystem. There, JIDT (GPL, last release August 2023) is the only mature library ([JIDT](https://github.com/jlizier/jidt)).
 
-## Die Roadmap beginnt mit dem Benchmark, nicht mit dem Quantenrechner
+## The roadmap starts with the benchmark, not with the quantum computer
 
-Die Reihenfolge folgt dem Evidenzstand. Der höchste Erkenntnis- und Alleinstellungswert liegt in reproduzierbarer Rekonstruktion gegen Ground Truth. Quantenbackends kommen zuletzt und nur als Messobjekt.
+The order follows the state of the evidence. Reproducible reconstruction against ground truth offers the most insight and the strongest unique position. Quantum backends come last and only as an object of measurement.
 
-| Stufe | Ziel | Konkrete Schritte | Abnahmekriterium |
+| Stage | Goal | Concrete steps | Acceptance criterion |
 |---|---|---|---|
-| **0 – Fundament (≈ 1–2 Monate)** | Gemeinsamer Vertrag | Iceberg-Schema der Kantentabelle in `opentsx-store-iceberg`; OpenLineage-Facet „Replay-Provenienz“ in `opentsx-openmetadata`; Szenario im `opentsx-windpark` (z. B. Erweiterung von `ostsee-demo.yaml`) exportiert den wahren Wake-Graphen je Windrichtungssektor als Kantentabelle | Eine Ground-Truth-Kantentabelle mit Lineage ist in OM sichtbar |
-| **1 – Klassische Rekonstruktion (≈ 2–4 Monate)** | Kämpf-Methodik als Java-Bibliothek | Clean-Room-Implementierung in `opentsx-stats`: lagged CC mit l_adj/l_norm/l_trans, ES mit Q_rand-Kalibrierung, ECA, DFA, RIS, Fourier-Filter-Surrogate; Streaming-Variante als laufende Fenstersummen in `opentsx-flink-core`; Wochenzyklus-Normalisierung und CCF für Content-Daten | Precision/Recall gegen Simulator-Ground-Truth je Sektor; CC-Baseline dokumentiert |
-| **2 – Kausale Bestätigung (≈ 3–6 Monate)** | Screen-then-Confirm | Python-Worker (`python-package/opentsx/algorithms`) liest Episoden via pyiceberg, ruft tigramite (PCMCI+, RPCMCI) und IDTxl hinter Prozessgrenze auf, schreibt Kanten zurück; Bagging für Konfidenz; Hawkes-Granger für Ereignisströme; Vergleichsbericht im CauseMe-Stil | Bestätigung schlägt CC-Baseline auf Ground Truth messbar, sonst wird sie nicht Standard |
-| **3 – Simulation auf rekonstruierter Struktur (≈ 4–8 Monate)** | Zwilling aus Daten | VAR/Koopman-Modelle auf bestätigten Kanten; für Content multivariater Hawkes auf Graph; Szenario-Replay gegen zurückgehaltene Episoden; SIS und Schwellwertparameter als Strukturbruch-Detektor | Out-of-sample-Prognose besser als strukturfreies Modell; Interventionsszenarien im Simulator reproduzierbar |
-| **4 – Optimierung, klassisch (≈ 6–10 Monate)** | Entscheidungen aus Struktur | Problem-Builder: Sensor-/Turbinenauswahl und Partitionierung als QUBO (dimod-Format), Yaw/Wartung als MILP; Backends HiGHS, OR-Tools CP-SAT (Java), SA/PT; Ergebnisse als Smart-Topic-Ereignisse | Optimalitätslücke gegen MIP-Schranke protokolliert; geschlossene Schleife im Simulator verbessert Zielgröße |
-| **5 – Quanten- und föderierte Experimente (ab ≈ 12 Monaten)** | Faire Messung | Quantenbackends (D-Wave Leap Hybrid, Qiskit Functions) nur über Python-Sidecar; Protokoll: Zeit-bis-Ziel inkl. Embedding und Warteschlange, beste getunte klassische Baseline, QOBLIB-Berichtsformat; Veröffentlichung der Instanzen; föderierte Rekonstruktion über Wayang mit Sketch-Austausch | Öffentlicher, reproduzierbarer Benchmark; Aussage „Parität/kein Vorteil“ ist ein gültiges Ergebnis |
+| **0: Foundation (≈ 1 to 2 months)** | Shared contract | Iceberg schema of the edge table in `opentsx-store-iceberg`; OpenLineage facet "replay provenance" in `opentsx-openmetadata`; a scenario in `opentsx-windpark` (for example an extension of `ostsee-demo.yaml`) exports the true wake graph per wind direction sector as an edge table | A ground truth edge table with lineage is visible in OM |
+| **1: Classical reconstruction (≈ 2 to 4 months)** | Kämpf methodology as a Java library | Clean-room implementation in `opentsx-stats`: lagged CC with l_adj/l_norm/l_trans, ES with Q_rand calibration, ECA, DFA, RIS, Fourier filter surrogates; streaming variant as running window sums in `opentsx-flink-core`; weekly cycle normalization and CCF for content data | Precision/recall against the simulator ground truth per sector; CC baseline documented |
+| **2: Causal confirmation (≈ 3 to 6 months)** | Screen-then-confirm | Python worker (`python-package/opentsx/algorithms`) reads episodes via pyiceberg, calls tigramite (PCMCI+, RPCMCI) and IDTxl behind a process boundary, writes edges back; bagging for confidence; Hawkes-Granger for event streams; comparison report in CauseMe style | Confirmation measurably beats the CC baseline on ground truth, otherwise it does not become the standard |
+| **3: Simulation on the reconstructed structure (≈ 4 to 8 months)** | Twin from data | VAR/Koopman models on confirmed edges; for content, multivariate Hawkes on the graph; scenario replay against held-out episodes; SIS and threshold parameters as a structural break detector | Out-of-sample forecast better than a structure-free model; intervention scenarios reproducible in the simulator |
+| **4: Optimization, classical (≈ 6 to 10 months)** | Decisions from structure | Problem builder: sensor or turbine selection and partitioning as QUBO (dimod format), yaw/maintenance as MILP; backends HiGHS, OR-Tools CP-SAT (Java), SA/PT; results as Smart Topic events | Optimality gap against the MIP bound logged; closed loop in the simulator improves the objective |
+| **5: Quantum and federated experiments (from ≈ 12 months)** | Fair measurement | Quantum backends (D-Wave Leap Hybrid, Qiskit Functions) only through a Python sidecar; protocol: time to target including embedding and queue, best tuned classical baseline, QOBLIB report format; publication of the instances; federated reconstruction through Wayang with sketch exchange | Public, reproducible benchmark; the statement "parity/no advantage" is a valid result |
 
-### Drei erste Schritte für die nächsten vier Wochen
+### Three first steps for the next four weeks
 
-Der erste Schritt ist der **Ground-Truth-Export aus dem Windpark-Simulator**. Ohne bekannte Struktur ist jede Methodenwahl Geschmackssache. CausalRivers hat gezeigt, wie leicht Kausalverfahren hinter Kreuzkorrelation zurückfallen ([arXiv 2503.17452](https://arxiv.org/html/2503.17452v1)).
+The first step is the **ground truth export from the wind farm simulator**. Without a known structure, every choice of method is a matter of taste. CausalRivers has shown how easily causal methods fall behind cross-correlation ([arXiv 2503.17452](https://arxiv.org/html/2503.17452v1)).
 
-Der zweite Schritt ist das **Kantentabellen-Schema** mit Signifikanzfeldern. Es legt den Vertrag fest, an dem alle späteren Schichten hängen.
+The second step is the **edge table schema** with significance fields. It fixes the contract that all later layers depend on.
 
-Der dritte Schritt ist eine **Referenzimplementierung von lagged CC mit l_norm/l_trans und ECA** in `opentsx-stats`, gemessen gegen den exportierten Graphen. Diese drei Bausteine erzeugen das erste publizierbare Artefakt. Sie hängen von keiner GPL-Bibliothek und keinem Quantenzugang ab.
+The third step is a **reference implementation of lagged CC with l_norm/l_trans and ECA** in `opentsx-stats`, measured against the exported graph. These three building blocks produce the first publishable artifact. They depend on no GPL library and no quantum access.
 
-Für die Content-Seite sollte parallel geklärt werden, ob ein anonymisierter oder synthetischer Auszug aus ER1-artigen Daten (Zugriff, Edit, Feedback) als zweiter Prüfstein dienen kann. Ohne ihn bleibt die Validierung auf öffentliche Wikipedia-Pageviews beschränkt.
+For the content side, it should be clarified in parallel whether an anonymized or synthetic extract of ER1-like data (access, edit, feedback) can serve as a second touchstone. Without it, validation stays limited to public Wikipedia pageviews.
 
-## Evidenzgrade sauber getrennt
+## Grades of evidence kept apart
 
-Die folgende Übersicht trennt die tragenden Aussagen nach Evidenzqualität. „Peer-reviewed“ bedeutet in Fachzeitschrift oder Konferenz begutachtet. „Preprint“ bedeutet arXiv oder Diskussionsstadium. „Herstelleraussage“ umfasst Pressemitteilungen, Produktseiten und herstellerverfasste Studien, auch wenn sie als Preprint erscheinen.
+The following overview separates the load-bearing statements by quality of evidence. "Peer-reviewed" means reviewed in a journal or at a conference. "Preprint" means arXiv or the discussion stage. "Vendor statement" covers press releases, product pages and studies written by vendors, also when they appear as a preprint.
 
-| Aussage | Peer-reviewed | Preprint | Herstelleraussage |
+| Statement | Peer-reviewed | Preprint | Vendor statement |
 |---|---|---|---|
-| Rekonstruktionsformalismus, Linkstärken, ES-Kalibrierung, CCF, TRRI, SIS | Dissertation 2017 (begutachtet durch Kommission); Physica A 2012; PLOS ONE 2015 | — | — |
-| PCMCI/PCMCI+/LPCMCI kontrollieren Falsch-Positive unter Autokorrelation | Sci. Adv. 2019; UAI 2020; NeurIPS 2020 | Bagged PCMCI+ (2023) | — |
-| ECA robuster als ES bei Burstiness | PRE 2020; Chaos 2020 | — | — |
-| Kreuzkorrelation konkurriert mit Kausalverfahren auf realen Daten | CausalRivers, ICLR 2025 | — | — |
-| mTE > 98 % Precision/Recall bis 100 Knoten (synthetisch) | Network Neuroscience 2019 | — | — |
-| GPU-PCMCI-Beschleunigung | — | — | jax-pcmci, Causal-TS (selbstberichtet) |
-| FLORIS-Wake-Steuerung im Feld: ca. 6,6 % weniger Wake-Verluste | WES 2020, WES 2021 | — | — |
-| SCADA-GNN senkt MAE um ca. 30 % | WES 2025 (mit Gutachter-Vorbehalt zur Attribution) | — | — |
-| KI-Wake-Surrogate „bis 10.000× schneller als CFD“ | — | — | NVIDIA/Siemens Gamesa |
-| Kausalgraph „aus Rohdaten“ als Plattform | — | — | causaLens |
-| Praktischer Quantenvorteil bei Optimierung | **nicht belegt** | — | IBM erwartet ihn, bestätigt ihn aber nicht |
-| Skalierungsvorteil Annealing (QAC) | PRL 2025 — durch Phys. Rev. Applied bestritten | — | D-Wave-Kommunikation |
-| BF-DCQO-Vorteil auf IBM Heron | — | Kipu 2025/2026; D-Wave-Gegenrechnung 2025 | Pressemeldungen „80× schneller“ |
-| Energie-QUBOs (UC, Layout) nur im Kleinmaßstab | IEEE TPS 2025; Plymouth 2025 | UC-Survey 2026; arXiv 2512.17582 | — |
-| GPU-LP „über 5.000× schneller“ | — | Übersicht arXiv 2506.02174 ordnet ein | NVIDIA |
+| Reconstruction formalism, link strengths, ES calibration, CCF, TRRI, SIS | Dissertation 2017 (reviewed by a committee); Physica A 2012; PLOS ONE 2015 | n/a | n/a |
+| PCMCI/PCMCI+/LPCMCI control false positives under autocorrelation | Sci. Adv. 2019; UAI 2020; NeurIPS 2020 | Bagged PCMCI+ (2023) | n/a |
+| ECA more stable than ES under burstiness | PRE 2020; Chaos 2020 | n/a | n/a |
+| Cross-correlation competes with causal methods on real data | CausalRivers, ICLR 2025 | n/a | n/a |
+| mTE > 98 % precision/recall up to 100 nodes (synthetic) | Network Neuroscience 2019 | n/a | n/a |
+| GPU PCMCI speedup | n/a | n/a | jax-pcmci, Causal-TS (self-reported) |
+| FLORIS wake steering in the field: about 6.6 % lower wake losses | WES 2020, WES 2021 | n/a | n/a |
+| SCADA GNN lowers MAE by about 30 % | WES 2025 (with a reviewer's reservation about attribution) | n/a | n/a |
+| AI wake surrogates "up to 10,000× faster than CFD" | n/a | n/a | NVIDIA/Siemens Gamesa |
+| Causal graph "from raw data" as a platform | n/a | n/a | causaLens |
+| Practical quantum advantage in optimization | **not proven** | n/a | IBM expects it, but does not confirm it |
+| Scaling advantage of annealing (QAC) | PRL 2025, disputed by Phys. Rev. Applied | n/a | D-Wave communication |
+| BF-DCQO advantage on IBM Heron | n/a | Kipu 2025/2026; D-Wave counter-calculation 2025 | Press releases "80× faster" |
+| Energy QUBOs (UC, layout) only at small scale | IEEE TPS 2025; Plymouth 2025 | UC survey 2026; arXiv 2512.17582 | n/a |
+| GPU LP "over 5,000× faster" | n/a | Survey arXiv 2506.02174 puts it in context | NVIDIA |
 
-Offen bleiben mehrere Punkte. Nicht geprüft wurden:
+Several points stay open. These were not checked:
 
-- Lizenzen von IDTxl, pyunicorn, causal-learn und netrd
-- aktuelle Releases von qiskit-optimization und OpenQAOA
-- der offizielle AWS-Status von TwinMaker
-- Leaderboard-Zahlen von CauseMe und QOBLIB
+- licenses of IDTxl, pyunicorn, causal-learn and netrd
+- current releases of qiskit-optimization and OpenQAOA
+- the official AWS status of TwinMaker
+- leaderboard figures of CauseMe and QOBLIB
 
-Für Ereignis-Netzwerkinferenz auf Clickstream-artigen Daten wurde kein direkter Vergleich zwischen ES/ECA und Hawkes gefunden. Ebenso wenig wurde ein Hawkes-Modell auf dem Wikipedia-Seitennetz gefunden. Beides sind Forschungslücken, die OpenTSx mit eigenen Daten schließen kann.
+For event network inference on clickstream-like data, no direct comparison between ES/ECA and Hawkes was found. Nor was a Hawkes model on the Wikipedia page network found. Both are research gaps that OpenTSx can close with its own data.
 
-## Fazit
+## Conclusion
 
-Die zentrale Einsicht: Der Engpass liegt nicht mehr bei Algorithmen, sondern bei **Vergleichbarkeit und Rückkopplung**. Rekonstruktionsmethoden gibt es reichlich, und sie widersprechen sich auf realen Daten. Optimierungssolver gibt es reichlich, und Quantenbehauptungen fallen regelmäßig gegen besser getunte klassische Baselines. In beiden Fällen entscheidet, wer reproduzierbare Instanzen mit bekannter Wahrheit und lückenloser Provenienz bereitstellt. OpenTSx bringt dafür eine seltene Kombination mit: byte-identischen Replay, ein Episodenmodell, einen IEC-semantischen Katalog und einen Simulator mit Ground Truth. Damit kann OpenTSx diese Rolle für Energie und Content-Systeme übernehmen, statt im Wettbewerb der Einzelmethoden mitzulaufen.
+The central insight: the bottleneck no longer lies in algorithms, but in **comparability and feedback**. Reconstruction methods are plentiful, and they contradict each other on real data. Optimization solvers are plentiful, and quantum claims regularly lose to better-tuned classical baselines. In both cases the deciding factor is who provides reproducible instances with a known truth and complete provenance. For this, OpenTSx brings a rare combination: byte-identical replay, an episode model, an IEC-semantic catalog and a simulator with ground truth. With it, OpenTSx can take on this role for energy and content systems instead of joining the race between single methods.
 
-Kämpfs Dissertation erweist sich dabei weniger als historischer Vorläufer denn als **fehlende Mittelschicht**. Ihre Signifikanz- und Kontextmaße füllen genau die Lücke zwischen billigem Screening und teurer Kausalbestätigung. Ihre Strukturzeitreihen S_m(t) liefern die Zustandsvariablen, auf denen eine rollierende Optimierung aufsetzen kann. Die realistische Erwartung an Quantencomputing ist, dass OpenTSx der Ort wird, an dem sein Nutzen ehrlich gemessen wird, nicht der Ort, an dem es Nutzen stiftet. Ein publiziertes Ergebnis „Parität, kein Vorteil auf realen Windpark-Instanzen“ wäre für die Community wertvoller als jede weitere Vorteilsbehauptung auf Spielzeugproblemen.
+Kämpf's dissertation proves to be less a historical forerunner than the **missing middle layer**. Its significance and context measures fill exactly the gap between cheap screening and expensive causal confirmation. Its structure time series S_m(t) provide the state variables on which a rolling optimization can build. The realistic expectation for quantum computing is that OpenTSx becomes the place where its benefit is measured honestly, not the place where it creates benefit. A published result "parity, no advantage on real wind farm instances" would be worth more to the community than any further claim of advantage on toy problems.

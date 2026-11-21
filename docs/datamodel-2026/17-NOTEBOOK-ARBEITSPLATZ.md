@@ -1,174 +1,173 @@
-# 17. Notebook-Arbeitsplatz: Reihen laden, ansehen, verproben
+# 17. Notebook workplace: load, view and check series
 
-> Stand: 2026-10-14. **Entschieden am 2026-10-13 sind D80 bis D82 (Abschnitt 7); Stufe N1 ist gebaut und im Stack
-> der Demo eingehängt (Abschnitt 8).** Dieses Dokument plant
-> ein Subsystem: Notebooks als weitere OpenTSx-Anwendung, in denen jemand die Reihen des Systems direkt lädt und von
-> Hand damit arbeitet. Es baut auf [16](16-DEMO-UND-SIMULATIONSEXPERTEN.md) auf. Arbeitspaket:
+> As of 2026-10-14. **D80 to D82 were decided on 2026-10-13 (section 7); stage N1 is built and hooked into the stack
+> of the demo (section 8).** This document plans
+> a subsystem: notebooks as a further OpenTSx application, in which someone loads the series of the system directly
+> and works with them by hand. It builds on [16](16-DEMO-UND-SIMULATIONSEXPERTEN.md). Work package:
 > [TASK-014](../../EVOLUTION/TASK-014-engineering-flow.md), 014.18.
 >
-> Der Name eines Kunden, Rechner und Adressen stehen hier nicht: Das Repository ist öffentlich. "Der Stack" meint die
-> Installation, in der OpenTSx neben dem Broker läuft und die ein Notebook mitbringt.
+> The name of a customer, computers and addresses are not in here: the repository is public. "The stack" means the
+> installation in which OpenTSx runs next to the broker and which comes with a notebook.
 
-## 1. Wozu
+## 1. What for
 
-Die Web-Anwendung zeigt, was vorgesehen ist: Signale, Flows, Läufe. Wer einen Betreiber gewinnen will, braucht
-daneben einen Ort für das, was nicht vorgesehen ist: eine Reihe des Betreibers hochladen, neben das Erwartete legen,
-eine Frage stellen, die noch niemand als Ansicht gebaut hat. Das ist kundenspezifische Arbeit, und sie ist der
-Moment, in dem ein Betreiber seine eigenen Daten im System sieht.
+The web application shows what is provided for: signals, flows, runs. Whoever wants to win an operator also needs
+a place for what is not provided for: upload a series of the operator, put it next to what is expected, ask a
+question that nobody has built as a view yet. That is customer-specific work, and it is the moment in which an
+operator sees their own data in the system.
 
-Drei Tätigkeiten, in dieser Reihenfolge wichtig:
+Three activities, in this order of importance:
 
-1. **Ansehen.** Was liegt vor? Das Zeitreihen-Inventar als Tabelle, eine Reihe als Kurve, Abdeckung und Lücken.
-2. **Verproben.** Passt eine neue Reihe zu dem, was das System erwartet? Einheit, Takt, Wertebereich, Lücken,
-   Vergleich mit einer verwandten Reihe. Das Ergebnis ist ein Urteil und ein Vorschlag, woran die Reihe zu binden
-   wäre.
-3. **Rechnen.** Den Zwilling eine Frage rechnen lassen und das Ergebnis selbst weiterverarbeiten, etwa über viele
-   Varianten.
+1. **Viewing.** What is there? The time series inventory as a table, a series as a curve, coverage and gaps.
+2. **Checking.** Does a new series fit what the system expects? Unit, interval, value range, gaps, comparison with a
+   related series. The result is a verdict and a proposal for what the series should be bound to.
+3. **Computing.** Let the twin compute a question and process the result further yourself, for example over many
+   variants.
 
-## 2. Was es gibt
+## 2. What exists
 
-Am 2026-10-13 nachgesehen, nur lesend.
+Looked at on 2026-10-13, read-only.
 
-| Baustein | Stand |
+| Part | State |
 |---|---|
-| Notebook im Stack | JupyterLab 4 mit Python 3.13, pandas, numpy, scipy, matplotlib, plotly und pyarrow; zwei Kafka-Klienten; ein eigenes Verzeichnis je Installation, das Neustarts übersteht; Beispiele kommen beim Start aus einem eigenen Image dazu. Das Notebook gehört zum Stack, nicht zu OpenTSx |
-| Weg zum Broker | **offen:** Das Notebook darf über den Proxy des Stacks lesen und schreiben; die Adresse steht in seiner Umgebung |
-| Weg zum Retrieval-Server | **zu:** Der Namensraum des Notebooks lässt nur freigegebene Ziele zu, und OpenTSx gehört nicht dazu. Weder der Dienst noch die Web-Anwendung sind von dort erreichbar |
-| Python-Paket `opentsx` | liest und schreibt das v2-Modell byte-gleich zu Java, hat einen Klienten für den Retrieval-Server (Episoden, Mustersuche, Segmente) und wandelt Episoden in pandas. **Es fehlt:** Inventar, Systeme und Signale, Läufe des Zwillings; im Notebook des Stacks ist das Paket nicht installiert |
-| Daten | Inventar mit über 150 Reihen, seit heute darunter das Jahr 2025 für Wind, Temperatur, Luftdruck (DWD, gemessen) und Preis (gemeldet) |
-| Läufe | Lauf-Dienst mit Register (16, Abschnitt 4, Punkte 1 und 2) |
+| Notebook in the stack | JupyterLab 4 with Python 3.13, pandas, numpy, scipy, matplotlib, plotly and pyarrow; two Kafka clients; a directory of its own per installation that survives restarts; examples are added at start from an image of their own. The notebook belongs to the stack, not to OpenTSx |
+| Way to the broker | **open:** the notebook may read and write through the proxy of the stack; the address is in its environment |
+| Way to the retrieval server | **closed:** the namespace of the notebook allows only approved targets, and OpenTSx is not among them. Neither the service nor the web application can be reached from there |
+| Python package `opentsx` | reads and writes the v2 model byte-identical to Java, has a client for the retrieval server (episodes, pattern search, segments) and converts episodes into pandas. **Missing:** inventory, systems and signals, runs of the twin; the package is not installed in the notebook of the stack |
+| Data | inventory with over 150 series, since today including the year 2025 for wind, temperature, air pressure (DWD, measured) and price (reported) |
+| Runs | run service with a register (16, section 4, points 1 and 2) |
 
-## 3. Das Subsystem
+## 3. The subsystem
 
 ```
-                 +--------------------+        liest         +---------------------+
-  Fachperson --> | Notebook des Stacks| -------------------> | Retrieval-Server    |  Inventar, Episoden,
-                 |  + Paket opentsx   |   (Weg A, REST)      | (Systeme, Läufe)    |  Signale, Läufe
-                 |  + OpenTSx-Hefte   |                      +---------------------+
-                 |                    | -------------------> +---------------------+
-                 +--------------------+   (Weg B, Topic)     | Broker (Proxy)      |  Episoden roh
-                          |                                  +---------------------+
-                          | schreibt nur in sein eigenes Verzeichnis (Stufe N1 und N2)
-                          v
-                 Hefte, Auswertungen, Bindungsvorschläge als Dateien
+                    +--------------------+        reads         +---------------------+
+  domain expert --> | notebook of the    | -------------------> | retrieval server    |  inventory, episodes,
+                    | stack              |   (way A, REST)      | (systems, runs)     |  signals, runs
+                    | + package opentsx  |                      +---------------------+
+                    | + OpenTSx notebooks| -------------------> +---------------------+
+                    +--------------------+   (way B, topic)     | broker (proxy)      |  raw episodes
+                             |                                  +---------------------+
+                             | writes only into its own directory (stages N1 and N2)
+                             v
+                    notebooks, evaluations, binding proposals as files
 ```
 
-Zwei Wege zu den Daten, mit verschiedenem Zweck:
+Two ways to the data, with different purposes:
 
-| Weg | Wozu | Stand | Preis |
+| Way | What for | State | Cost |
 |---|---|---|---|
-| **A, über den Retrieval-Server** | alles, was OpenTSx schon geordnet hat: Inventar, Signale mit Zustand, Entscheidungsstatus, Läufe | zu: braucht eine Freigabe im Namensraum des Notebooks | eine Regel im Stack, die dessen Betreiber setzt; der Server hat keine Konten, die Freigabe gilt also für jeden, der das Notebook öffnen kann |
-| **B, direkt aus dem Topic** | die rohen Episoden, so wie die Flows sie lesen; unabhängig davon, was der Server gerade kennt | offen | das Paket `opentsx` muss ins Notebook; ein Leser, der ein Topic von vorn liest, belastet den Broker |
+| **A, through the retrieval server** | everything OpenTSx has already put in order: inventory, signals with state, decision status, runs | closed: needs an approval in the namespace of the notebook | one rule in the stack, set by its operator; the server has no accounts, so the approval applies to everyone who can open the notebook |
+| **B, directly from the topic** | the raw episodes, as the flows read them; independent of what the server knows at the moment | open | the package `opentsx` must go into the notebook; a reader that reads a topic from the start puts load on the broker |
 
-Beide werden gebraucht. A ist der Normalfall und der schonende. B ist der direkte Zugriff, den die Aufgabe nennt,
-und der Beweis, dass die Daten dem Betreiber gehören und nicht hinter einer Oberfläche liegen.
+Both are needed. A is the normal case and the gentle one. B is the direct access that the task names, and the proof
+that the data belongs to the operator and does not sit behind a user interface.
 
-### 3.1 Was OpenTSx dazu liefert
+### 3.1 What OpenTSx contributes
 
-| Teil | Inhalt |
+| Part | Content |
 |---|---|
-| **Paket** | `opentsx` wird um drei Dinge erweitert: `inventory()` (das Inventar als Tabelle), `systems()`, `signals(system)` und `decisions(system)`, und `runs` (Szenario lesen, Lauf starten, Lauf und Vergleich als Tabellen). Dazu ein Leser für Weg B: Episoden eines Topics nach Metrik und Zeitraum, mit einer Obergrenze, die er nicht stillschweigend überschreitet |
-| **Hefte** | vier Notebooks, die laufen, wie sie geliefert werden (Abschnitt 4) |
-| **Auslieferung** | die Hefte und das Paket als ein kleines Image, das der Stack beim Start des Notebooks einhängt, so wie er es mit seinen eigenen Beispielen tut. OpenTSx ändert das Notebook des Stacks nicht |
-| **Verweis** | in der Web-Anwendung am Ort Signals und am Ort Simulate: "Im Notebook öffnen", mit dem Namen der Reihe oder des Laufs |
+| **Package** | `opentsx` is extended by three things: `inventory()` (the inventory as a table), `systems()`, `signals(system)` and `decisions(system)`, and `runs` (read a scenario, start a run, run and comparison as tables). In addition a reader for way B: episodes of a topic by metric and period, with an upper limit that it does not exceed silently |
+| **Notebooks** | four notebooks that run as they are delivered (section 4) |
+| **Delivery** | the notebooks and the package as a small image that the stack hooks in when the notebook starts, the same way it does with its own examples. OpenTSx does not change the notebook of the stack |
+| **Link** | in the web application at the place Signals and at the place Simulate: "Open in notebook", with the name of the series or of the run |
 
-### 3.2 Regeln
+### 3.2 Rules
 
-1. **Lesen ist frei, Schreiben nicht.** In den Stufen N1 und N2 schreibt ein Notebook nichts in den Broker und
-   nichts in das System. Was es erzeugt, bleibt in seinem Verzeichnis.
-2. **Herkunft bleibt sichtbar.** Jede Tabelle, die das Paket liefert, trägt die Herkunft der Reihe als Spalte.
-   Simuliertes heißt im Notebook simuliert.
-3. **Zahlen aus Läufen tragen die Kennung des Laufs** (16, Abschnitt 3.1). Eine Tabelle aus einem Lauf hat sie als
-   Spalte.
-4. **Lücken werden nicht gefüllt.** Eine Lücke ist `NaN` und eine Zeile in der Lückenliste.
-5. **Der Broker wird geschont.** Der Leser für Weg B nimmt einen Zeitraum und eine Obergrenze; "alles von vorn" ist
-   eine ausdrückliche Angabe und keine Vorgabe.
-6. **Daten des Betreibers bleiben im Stack.** Ein Heft lädt nichts nach außen; das Paket hat keinen Aufruf dafür.
+1. **Reading is free, writing is not.** In stages N1 and N2 a notebook writes nothing into the broker and
+   nothing into the system. What it produces stays in its directory.
+2. **Origin stays visible.** Every table that the package delivers carries the origin of the series as a column.
+   What is simulated is called simulated in the notebook.
+3. **Numbers from runs carry the id of the run** (16, section 3.1). A table from a run has it as a column.
+4. **Gaps are not filled.** A gap is `NaN` and a row in the gap list.
+5. **The broker is spared.** The reader for way B takes a period and an upper limit; "everything from the start" is
+   an explicit setting, not a default.
+6. **Data of the operator stays in the stack.** A notebook uploads nothing to the outside; the package has no call
+   for that.
 
-## 4. Die Hefte
+## 4. The notebooks
 
-| Heft | Frage | Zeigt | Weg |
+| Notebook | Question | Shows | Way |
 |---|---|---|---|
-| **1 Inventar** | Was liegt vor? | das Inventar als Tabelle (Metrik, Tags, Zeitraum, Werte, Lücken, Herkunft), filterbar; eine gewählte Reihe als Kurve; Abdeckung je Tag als Karte; die Lücken als Liste | A; als Ersatz B, solange A zu ist |
-| **2 Ein Signal** | Was erwartet das System, und was ist da? | ein Signal von `h2-chain` mit Erwartung und Betriebsbereich, roh und bereinigt übereinander, die Werte außerhalb des Bereichs markiert | A |
-| **3 Verproben** | Passt meine Reihe? | eine CSV-Datei des Betreibers gegen die Erwartung eines Signals: Einheit, Takt, Bereich, Lücken, Zeitzone; daneben eine verwandte Reihe (etwa der Wind der Station gegen den Wind an der Gondel); am Ende ein Urteil und die Zeilen für die Bindung | A, Datei aus dem Verzeichnis |
-| **4 Den Zwilling fragen** | Was wäre, wenn? | das Szenario lesen, eine Frage als Lauf rechnen, Kennzahlen und Verläufe gegen die Referenz; dann dieselbe Frage über zwanzig Uhrzeiten als Tabelle | A |
+| **1 Inventory** | What is there? | the inventory as a table (metric, tags, period, values, gaps, origin), filterable; a chosen series as a curve; coverage per day as a map; the gaps as a list | A; B as a fallback while A is closed |
+| **2 A signal** | What does the system expect, and what is there? | a signal of `h2-chain` with expectation and operating range, raw and clean on top of each other, the values outside the range marked | A |
+| **3 Check** | Does my series fit? | a CSV file of the operator against the expectation of a signal: unit, interval, range, gaps, time zone; next to it a related series (for example the wind of the station against the wind at the nacelle); at the end a verdict and the lines for the binding | A, file from the directory |
+| **4 Ask the twin** | What if? | read the scenario, compute a question as a run, key figures and curves against the reference; then the same question over twenty times of day as a table | A |
 
-Heft 1 ist das erste, das gebaut wird: Es braucht am wenigsten, und es ist das, was jemand zuerst sehen will.
+Notebook 1 is the first one to be built: it needs the least, and it is what someone wants to see first.
 
-## 5. Was fehlt
+## 5. What is missing
 
-| Nr. | Was fehlt | Größe | Wer |
+| No. | What is missing | Size | Who |
 |---|---|---|---|
-| 1 | Paket `opentsx`: Inventar, Systeme, Signale, Entscheidungen, Läufe; Leser für Weg B mit Obergrenze | mittel | OpenTSx |
-| 2 | Die vier Hefte, mit Tests, die sie gegen einen Server im Speicher durchlaufen lassen | mittel | OpenTSx |
-| 3 | Das Image mit Paket und Heften, und die Zeilen, mit denen ein Stack es einhängt | klein | OpenTSx, eingehängt vom Betreiber des Stacks |
-| 4 | **Freigabe für Weg A** im Namensraum des Notebooks | eine Regel | Betreiber des Stacks; nicht in diesem Repository |
-| 5 | **Wer darf was sehen.** Der Retrieval-Server hat keine Konten. Solange das so ist, sieht jeder, der das Notebook öffnen kann, alle Reihen des Servers | Entscheidung, später Bau | Auftraggeber |
-| 6 | Verweis aus der Web-Anwendung ins Notebook | klein | OpenTSx |
-| 7 | Schreiben aus dem Notebook: eine verprobte Reihe als Kandidat ins System, mit Konto und Herkunft | mittel, bewusst später | OpenTSx |
-| 8 | Mehrere Personen: heute ein Notebook, ein Verzeichnis, ein Zugang | Entscheidung | Betreiber des Stacks |
-| 9 | Last am Broker durch Leser, die von vorn lesen | Prüfung vor Stufe N2 | Betrieb des Brokers |
+| 1 | Package `opentsx`: inventory, systems, signals, decisions, runs; reader for way B with an upper limit | medium | OpenTSx |
+| 2 | The four notebooks, with tests that run them end to end against an in-memory server | medium | OpenTSx |
+| 3 | The image with package and notebooks, and the lines with which a stack hooks it in | small | OpenTSx, hooked in by the operator of the stack |
+| 4 | **Approval for way A** in the namespace of the notebook | one rule | operator of the stack; not in this repository |
+| 5 | **Who may see what.** The retrieval server has no accounts. As long as that is so, everyone who can open the notebook sees all series of the server | decision, building later | the owner |
+| 6 | Link from the web application into the notebook | small | OpenTSx |
+| 7 | Writing from the notebook: a checked series as a candidate into the system, with account and origin | medium, deliberately later | OpenTSx |
+| 8 | Several people: today one notebook, one directory, one login | decision | operator of the stack |
+| 9 | Load on the broker from readers that read from the start | check before stage N2 | broker operations |
 
-## 6. Stufen
+## 6. Stages
 
-| Stufe | Inhalt | Abgenommen, wenn |
+| Stage | Content | Accepted when |
 |---|---|---|
-| **N1 Inventar im Notebook** | Paket mit `inventory()` und dem Leser für Weg B; Heft 1; Image; im Stack der Demo eingehängt | eine Person öffnet das Notebook des Stacks, lässt Heft 1 laufen und sieht das Inventar als Tabelle und eine Reihe des Jahres 2025 als Kurve, mit Lücken und Herkunft; nichts wurde geschrieben |
-| **N2 Signal und Verproben** | Paket mit Systemen und Signalen; Hefte 2 und 3; Freigabe für Weg A ist gesetzt | eine CSV-Datei wird gegen ein Signal geprüft, und das Heft sagt, woran sie zu binden wäre und warum nicht |
-| **N3 Zwilling und Rückweg** | Paket mit Läufen; Heft 4; Verweis aus der Web-Anwendung; Schreiben eines Kandidaten mit Konto | eine Frage wird im Notebook über viele Varianten gerechnet; eine verprobte Reihe erscheint in der Web-Anwendung als Kandidat |
+| **N1 Inventory in the notebook** | package with `inventory()` and the reader for way B; notebook 1; image; hooked into the stack of the demo | a person opens the notebook of the stack, runs notebook 1 and sees the inventory as a table and a series of the year 2025 as a curve, with gaps and origin; nothing was written |
+| **N2 Signal and checking** | package with systems and signals; notebooks 2 and 3; approval for way A is set | a CSV file is checked against a signal, and the notebook says what it should be bound to and, if not, why not |
+| **N3 Twin and way back** | package with runs; notebook 4; link from the web application; writing a candidate with an account | a question is computed in the notebook over many variants; a checked series appears in the web application as a candidate |
 
-N1 kommt ohne Änderung am Stack aus, wenn Heft 1 über Weg B liest. Das ist der Grund, es zuerst zu bauen.
+N1 needs no change to the stack if notebook 1 reads through way B. That is the reason to build it first.
 
-## 7. Entscheidungen
+## 7. Decisions
 
-| Nr. | Frage | Entscheidung | Stand |
+| No. | Question | Decision | State |
 |---|---|---|---|
-| D80 | Womit beginnt das Subsystem? | mit N1: Inventar im Notebook | wie vorgeschlagen |
-| D81 | Wie kommen Paket und Hefte ins Notebook? | **gleich als eigenes Image**, das der Stack beim Start einhängt | **geändert** (Vorschlag war: für die erste Demo von Hand ins Verzeichnis gelegt) |
-| D82 | Wird Weg A freigegeben, obwohl der Server keine Konten hat? | **jetzt**, mit einer Netzwerkregel im Namensraum des Notebooks | **geändert** (Vorschlag war: mit N2) |
-| D83 | Darf ein Notebook schreiben? | offen; Vorschlag: in N1 und N2 nein, in N3 nur über die Web-Anwendung mit Konto, nie direkt ins Topic | offen |
+| D80 | What does the subsystem start with? | with N1: inventory in the notebook | as proposed |
+| D81 | How do package and notebooks get into the notebook? | **right away as an image of its own**, which the stack hooks in at start | **changed** (the proposal was: put into the directory by hand for the first demo) |
+| D82 | Is way A opened although the server has no accounts? | **now**, with a network rule in the namespace of the notebook | **changed** (the proposal was: with N2) |
+| D83 | May a notebook write? | open; proposal: in N1 and N2 no, in N3 only through the web application with an account, never directly into the topic | open |
 
-## 8. Stand von N1
+## 8. State of N1
 
-Gebaut und am 2026-10-14 im Stack der Demo eingehängt.
+Built and hooked into the stack of the demo on 2026-10-14.
 
-* **Paket `opentsx`:** `RetrievalClient` hat `inventory()`, `systems()`, `signals()`, `decisions()`,
-  `scenario()`, `run()`, `runs()`, `run_series()` und `compare()`. `TopicReader` liest die Episoden eines Topics
-  einmal von vorn bis zum Ende, ohne Konsumentengruppe und ohne Commit, filtert nach Metrik, Tags und Zeitraum,
-  behält jede Episode einmal und hält vor dem Lesen an, wenn das Topic mehr Datensätze hat, als er lesen darf.
-* **Heft 1** (`python-package/notebooks/01-zeitreihen-inventar.ipynb`): Inventar als Tabelle, die gemessenen und
-  gemeldeten Reihen, eine Reihe als Kurve mit Tagesmittel, Abdeckung je Tag als Karte, Lückenliste, der Preis 2025
-  mit dem Wechsel der Auflösung. Wählt Weg A und fällt auf Weg B zurück.
-* **Image** `opentsx/notebook-content` (`deploy/docker/notebook-content.Dockerfile`): Paket mit fastavro und
-  xxhash für Python 3.13 und die Hefte; ein Init-Container kopiert sie bei jedem Start nach `~/opentsx`.
-* **Im Stack** (`deploy/k3s/notebook/`): Patch der Notebook-Bereitstellung und eine Netzwerkregel, die nur den
-  Retrieval-Server zusätzlich erlaubt. Die vorherige Bereitstellung ist gesichert; zurück geht es mit
-  `rollout undo` und dem Löschen der Regel.
-* **Geprüft im Notebook des Stacks:** Heft 1 läuft über Weg A durch (154 Reihen; Wind der Station 2025 mit 52.360
-  Werten und zwei Lücken im Juni, zusammen 200 fehlende Werte; 724 Intervalle mit negativem Preis). Weg B erreicht
-  den Broker und hält bei einer Grenze von 10 Datensätzen an, ohne zu lesen.
+* **Package `opentsx`:** `RetrievalClient` has `inventory()`, `systems()`, `signals()`, `decisions()`,
+  `scenario()`, `run()`, `runs()`, `run_series()` and `compare()`. `TopicReader` reads the episodes of a topic
+  once from the start to the end, without a consumer group and without a commit, filters by metric, tags and period,
+  keeps each episode once and stops before reading if the topic has more records than it may read.
+* **Notebook 1** (`python-package/notebooks/01-zeitreihen-inventar.ipynb`): inventory as a table, the measured and
+  reported series, a series as a curve with a daily mean, coverage per day as a map, gap list, the price of 2025
+  with the change of resolution. Chooses way A and falls back to way B.
+* **Image** `opentsx/notebook-content` (`deploy/docker/notebook-content.Dockerfile`): package with fastavro and
+  xxhash for Python 3.13 and the notebooks; an init container copies them to `~/opentsx` at every start.
+* **In the stack** (`deploy/k3s/notebook/`): patch of the notebook deployment and a network rule that additionally
+  allows only the retrieval server. The previous deployment is backed up; going back works with `rollout undo` and
+  deleting the rule.
+* **Checked in the notebook of the stack:** notebook 1 runs to the end through way A (154 series; wind of the station
+  2025 with 52,360 values and two gaps in June, 200 missing values in total; 724 intervals with a negative price).
+  Way B reaches the broker and stops at a limit of 10 records without reading.
 
-**Grenzen.** Der Retrieval-Server hat keine Konten: Wer das Notebook öffnen kann, liest jede Reihe. Das
-Verzeichnis `~/opentsx` wird bei jedem Start ersetzt.
+**Limits.** The retrieval server has no accounts: whoever can open the notebook reads every series. The directory
+`~/opentsx` is replaced at every start.
 
-**Hefte 2 und 4 (2026-10-14).**
+**Notebooks 2 and 4 (2026-10-14).**
 
-* **Heft 2 "Ein Signal"** (`02-ein-signal.ipynb`): die Signale der Wasserstoffkette mit Erwartung und
-  Betriebsbereich; für ein gewähltes Signal (vorgewählt der Wind der DWD-Station) Roh- und bereinigte Reihe
-  übereinander, der Betriebsbereich als Band, Werte außerhalb des plausiblen Bereichs markiert, was die Bereinigung
-  geändert hat; zuletzt der Stand der Entscheidung mit ihren Eingängen.
-* **Heft 4 "Den Zwilling fragen"** (`04-den-zwilling-fragen.ipynb`): das Szenario, eine Frage auf den Reihen der
-  Signale ("Ventil um 02:00 wieder offen") mit Kennzahlen und Verläufen gegen die Referenz auf denselben Eingängen,
-  dann dieselbe Frage von 01:10 bis 03:00 in Schritten von zehn Minuten. Ergebnis auf dem Laborsystem: Ohne
-  Schutzabschaltung geht es, wenn das Ventil bis 01:50 wieder offen ist. Jeder Lauf heißt `restricted`, weil der
-  Bedarf ein Demo-Generator ist und Fahrplan und Netzzähler fehlen.
-* Ein Lauf rechnet auf dem Server und wird dort im Speicher gehalten; in den Broker schreiben die Hefte nichts.
-* **Heft 3 "Verproben"** (`03-verproben.ipynb`, 2026-10-14): eine CSV-Datei gegen ein Signal. Es liest
-  Ortszeit mit Zeitumstellung, Dezimalkomma und zwei Zeitspalten, prüft Einheit, Takt, Zeitzone, Bedeutung des
-  Zeitpunkts, doppelte Zeitpunkte, plausiblen und Betriebsbereich und Lücken, legt die Datei neben die Reihe des
-  Signals (Korrelation, mittlere Abweichung) und fällt ein Urteil. Es schreibt eine aufbereitete Kopie in UTC und
-  der Einheit des Signals in sein eigenes Verzeichnis und nennt die Befehle für Archiv und Topic und die Zeilen
-  der Bindung; ausführen muss sie jemand, der es darf. Mitgeliefert ist `beispiel-windmessung.csv`: Wind der
-  DWD-Station im Oktober 2025 in km/h, Ortszeit, mit einem Ausreißer und einer Lücke. Das Heft findet alle
-  Eigenheiten und sagt "bindbar, mit Warnungen".
+* **Notebook 2 "A signal"** (`02-ein-signal.ipynb`): the signals of the hydrogen chain with expectation and
+  operating range; for a chosen signal (preselected: the wind of the DWD station) raw and clean series on top of
+  each other, the operating range as a band, values outside the plausible range marked, what the cleaning changed;
+  finally the state of the decision with its inputs.
+* **Notebook 4 "Ask the twin"** (`04-den-zwilling-fragen.ipynb`): the scenario, a question on the series of the
+  signals ("valve open again at 02:00") with key figures and curves against the reference on the same inputs, then
+  the same question from 01:10 to 03:00 in steps of ten minutes. Result on the lab system: it works without a
+  protective shutdown if the valve is open again by 01:50. Every run is marked `restricted`, because the demand is a
+  demo generator and the schedule and the grid meter are missing.
+* A run is computed on the server and kept there in memory; the notebooks write nothing into the broker.
+* **Notebook 3 "Check"** (`03-verproben.ipynb`, 2026-10-14): a CSV file against a signal. It reads local time with
+  clock change, decimal comma and two time columns, checks unit, interval, time zone, meaning of the timestamp,
+  duplicate timestamps, plausible and operating range and gaps, puts the file next to the series of the signal
+  (correlation, mean deviation) and reaches a verdict. It writes a prepared copy in UTC and in the unit of the signal
+  into its own directory and names the commands for the archive and the topic and the lines of the binding; they must
+  be run by someone who has the right to do so. Shipped with it is `beispiel-windmessung.csv`: wind of the DWD station
+  in October 2025 in km/h, local time, with one outlier and one gap. The notebook finds all peculiarities and says
+  "bindable, with warnings".

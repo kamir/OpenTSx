@@ -1,84 +1,84 @@
-# OpenTSx Datenmodell v2 – Zielbild (Entwurf)
+# OpenTSx data model v2: target design (draft)
 
-> Status: **Entwurf**. Das Datenmodell (§2) ist seit 2026-10-09 implementiert – verbindlich ist
-> [04-MODELL-V2-SPEC.md](04-MODELL-V2-SPEC.md); die übrigen Abschnitte sind noch Planung. Offene Entscheidungen sind
-> mit **[ENTSCHEIDUNG]** markiert und in `EVOLUTION/TASK-011-datamodel-refresher-2026.md` gesammelt.
+> Status: **draft**. The data model (section 2) has been implemented since 2026-10-09;
+> [04-MODELL-V2-SPEC.md](04-MODELL-V2-SPEC.md) is binding; the other sections are still a plan. Open decisions are
+> marked with **[DECISION]** and collected in `EVOLUTION/TASK-011-datamodel-refresher-2026.md`.
 
-## 1. Leitprinzipien
+## 1. Guiding principles
 
-1. **Ein Vertrag, viele Projektionen** – Avro-Schemas in einem Modul (`opentsx-model`) sind die einzige Quelle. Java, Python (fastavro), Flink, ksqlDB und die Stores leiten daraus ab.
-2. **SeriesKey ist die Identität** – nie wieder freie Label-Strings als Schlüssel.
-3. **Episode ist die Austauscheinheit** – Punkt-Events nur für Live-Streams; Archiv, Replay und Retrieval arbeiten auf Episoden.
-4. **Unveränderlichkeit** – Episoden werden nicht editiert, sondern neu geschrieben (Revision). Das macht Kafka-Ablage, Iceberg-Snapshots und Pattern-Indizes trivial konsistent.
-5. **Kompatibilität ist geprüft, nicht gehofft** – CI prüft jede Schemaänderung gegen die Vorversion (BACKWARD_TRANSITIVE).
+1. **One contract, many projections**: Avro schemas in one module (`opentsx-model`) are the only source. Java, Python (fastavro), Flink, ksqlDB and the stores derive from them.
+2. **SeriesKey is the identity**: never again free-form label strings as keys.
+3. **The episode is the unit of exchange**: point events only for live streams; archive, replay and retrieval work on episodes.
+4. **Immutability**: episodes are not edited, they are written anew (revision). This makes Kafka storage, Iceberg snapshots and pattern indexes trivially consistent.
+5. **Compatibility is checked, not hoped for**: CI checks every schema change against the previous version (BACKWARD_TRANSITIVE).
 
-## 2. Kernentitäten
+## 2. Core entities
 
 ```
-SeriesKey ──< Observation          (Live-Stream, ein Punkt)
-SeriesKey ──< Episode              (Abschnitt; REGULAR | IRREGULAR Encoding; Summary-Stats)
+SeriesKey ──< Observation          (live stream, one point)
+SeriesKey ──< Episode              (piece; REGULAR | IRREGULAR encoding; summary stats)
 Bucket    ──< BucketManifest ──< EpisodeRef
-SeriesKey ──< SeriesStats          (laufend, vom Streaming-Prozessor)
+SeriesKey ──< SeriesStats          (running, from the streaming processor)
 Episode   ──< Annotation / PatternMatch
 ```
 
-### 2.1 Schema-Entwürfe (Avro IDL-nah, Namespace `org.opentsx.model.v2`)
+### 2.1 Schema drafts (close to Avro IDL, namespace `org.opentsx.model.v2`)
 
 ```avro
 record SeriesKey {
-  string metric;                       // z.B. "sensor.temperature"
-  map<string> tags = {};               // kanonisch: Keys sortiert beim Hashen
-  union{null,string} unit = null;      // UCUM, z.B. "Cel", "ms"
-  string seriesId;                     // stabil: hex(xxHash64(metric + sortierte tags))  [ENTSCHEIDUNG Hash]
+  string metric;                       // for example "sensor.temperature"
+  map<string> tags = {};               // canonical: keys sorted when hashing
+  union{null,string} unit = null;      // UCUM, for example "Cel", "ms"
+  string seriesId;                     // stable: hex(xxHash64(metric + sorted tags))  [DECISION hash]
 }
 
-record Observation {                   // Live-Punkt
+record Observation {                   // live point
   string seriesId;
-  timestamp_micros ts;                 // [ENTSCHEIDUNG Präzision: millis vs micros]
+  timestamp_micros ts;                 // [DECISION precision: millis vs micros]
   double value;
-  union{null,int} quality = null;      // Bitmaske: 0=ok, 1=interpoliert, 2=geschätzt, ...
+  union{null,int} quality = null;      // bit mask: 0=ok, 1=interpolated, 2=estimated, ...
 }
 
 enum TimeEncoding { REGULAR, IRREGULAR_DELTA }
 
 record Episode {
-  string episodeId;                    // ULID; sortierbar nach Erzeugung
+  string episodeId;                    // ULID; sortable by creation
   SeriesKey series;
   timestamp_micros tStart;
-  timestamp_micros tEnd;               // exklusiv
+  timestamp_micros tEnd;               // exclusive
   int count;
   TimeEncoding timeEncoding;
-  union{null,long} intervalMicros = null;      // nur REGULAR
-  union{null,bytes} timeDeltas = null;         // nur IRREGULAR: zigzag-varint delta-of-delta
-  array<double> values;                // Phase 1 unkomprimiert; Kompression über Kafka/Parquet-Codec
+  union{null,long} intervalMicros = null;      // REGULAR only
+  union{null,bytes} timeDeltas = null;         // IRREGULAR only: zigzag varint delta-of-delta
+  array<double> values;                // phase 1 uncompressed; compression through the Kafka/Parquet codec
   union{null,bytes} quality = null;            // optional, bitpacked
-  EpisodeSummary summary;              // min/max/mean/m2/nanCount -> Prefilter ohne Payload-Scan
-  map<string> labels = {};             // fachliche Labels (Experiment, Regime, ...)
+  EpisodeSummary summary;              // min/max/mean/m2/nanCount -> prefilter without a payload scan
+  map<string> labels = {};             // domain labels (experiment, regime, ...)
   union{null,string} bucketId = null;
   int revision = 0;
   Provenance provenance;
 }
 
 record EpisodeSummary { double min; double max; double mean; double m2; long nanCount;
-                        union{null,string} sax = null; }   // SAX-Wort für Pattern-Prefilter
+                        union{null,string} sax = null; }   // SAX word for the pattern prefilter
 
 record Provenance { string source; string producer; timestamp_millis createdAt;
                     union{null,string} parentEpisodeId = null; union{null,string} pipeline = null; }
 
-record BucketManifest {                // Bucket = logische Sammlung, kein Dateiformat
+record BucketManifest {                // bucket = logical collection, not a file format
   string bucketId;
   string name;
-  map<string> descriptor = {};         // Nachfolger ExperimentDescriptor (author, topics, tags, ...)
+  map<string> descriptor = {};         // successor of ExperimentDescriptor (author, topics, tags, ...)
   timestamp_micros tMin; timestamp_micros tMax;
   long episodeCount;
   enum BucketState { OPEN, SEALED } state;
-  union{null,string} checksum = null;  // über sortierte episodeIds -> Replay-Verifikation
+  union{null,string} checksum = null;  // over sorted episodeIds -> replay verification
 }
 
-record SeriesStats {                   // Output des Streaming-Prozessors (compacted topic)
+record SeriesStats {                   // output of the streaming processor (compacted topic)
   string seriesId; timestamp_micros windowStart; timestamp_micros windowEnd; string windowType;
   long count; double min; double max; double mean; double m2;   // Welford -> var = m2/(n-1)
-  union{null,bytes} quantileSketch = null;                       // t-digest / KLL serialisiert
+  union{null,bytes} quantileSketch = null;                       // t-digest / KLL serialized
   long gapCount; double meanRatePerSec; timestamp_micros lastSeen;
 }
 
@@ -86,64 +86,64 @@ record PatternMatch { string queryId; string episodeId; int offset; int length;
                       double distance; string metric; }   // "zED" | "DTW(w=..)"
 ```
 
-### 2.2 Bewusste Designentscheidungen
+### 2.2 Deliberate design decisions
 
-* **Kein `uri` pro Punkt** – Herkunft steht einmal in `Provenance`, Identität in `SeriesKey`.
-* **`SeriesKey` in jeder Episode eingebettet** (statt nur `seriesId`): kostet ein paar Bytes, macht jeden Record selbstbeschreibend – wichtig für Replay ohne Lookup-Service. Für Live-`Observation` nur `seriesId` (Dimension separat als compacted Topic `…series.v2`).
-* **Summary in der Episode**: ermöglicht Filter/Prefilter (Retrieval, Pattern-Matching, OpenMetadata-Profil) ohne die Werte zu dekodieren.
-* **Mergebare Statistik (count/mean/m2, Sketch)** statt fertiger Varianz: Episoden-, Fenster- und Bucket-Statistiken lassen sich verlustfrei zusammenführen.
+* **No `uri` per point**: provenance is stated once in `Provenance`, the identity in `SeriesKey`.
+* **`SeriesKey` embedded in every episode** (instead of only `seriesId`): it costs a few bytes and makes every record self-describing, which is important for replay without a lookup service. A live `Observation` carries only `seriesId`; the dimension is kept separately in the compacted topic `…series.v2`.
+* **Summary in the episode**: allows filters and prefilters (retrieval, pattern matching, OpenMetadata profile) without decoding the values.
+* **Mergeable statistics (count/mean/m2, sketch)** instead of a finished variance: episode, window and bucket statistics can be merged without loss.
 
-## 3. Serialisierung & Ablage in KafScale
+## 3. Serialization and storage in KafScale
 
-> **Korrektur nach KafScale-Recherche (v1.6.0, siehe [03-GAP-ANALYSE §5](03-GAP-ANALYSE.md)):**
-> keine Compaction → die als `compact` markierten Topics unten werden reine Append-Logs, der „latest“-Zustand liegt in Iceberg;
-> kein idempotenter Producer → `enable.idempotence=false`, Dedup über `episodeId`;
-> **ListOffsets ignoriert Zeitstempel** → zeitbasiertes Replay über einen eigenen Episoden-Index statt `offsetsForTimes`;
-> keine Schema Registry → Default-Wire-Format `SELF_DESCRIBING`; Header nicht tragend, bis ein Conformance-Test sie bestätigt.
+> **Correction after the KafScale research (v1.6.0, see [03-GAP-ANALYSE, section 5](03-GAP-ANALYSE.md)):**
+> no compaction → the topics marked `compact` below become plain append-only logs, the "latest" state lives in Iceberg;
+> no idempotent producer → `enable.idempotence=false`, dedup by `episodeId`;
+> **ListOffsets ignores timestamps** → time-based replay through a separate episode index instead of `offsetsForTimes`;
+> no Schema Registry → default wire format `SELF_DESCRIBING`; headers not load-bearing until a conformance test confirms them.
 
-### 3.1 Wire-Format – zweistufig
+### 3.1 Wire format: two levels
 
-| Modus | Wann | Format |
+| Mode | When | Format |
 |-------|------|--------|
-| `REGISTRY` | Schema-Registry verfügbar | Confluent-Wire-Format (Magic 0 + Schema-ID) |
-| `SELF_DESCRIBING` | kein Registry (günstigster Betrieb, Archive, Offline-Replay) | **Avro Single-Object-Encoding** (`C3 01` + 8-Byte-Fingerprint); Schemas aus Classpath / Schema-Topic `_opentsx_schemas` |
+| `REGISTRY` | Schema Registry available | Confluent wire format (magic 0 + schema ID) |
+| `SELF_DESCRIBING` | no registry (cheapest operation, archives, offline replay) | **Avro single-object encoding** (`C3 01` + 8-byte fingerprint); schemas from the classpath / schema topic `_opentsx_schemas` |
 
-Eine `OpenTsxSerde`-Fassade erkennt beim Lesen beide Formate am ersten Byte → Consumer (Java, Flink, Python) müssen nicht wissen, wie geschrieben wurde. Das behebt zugleich den heutigen Flink-Bruch.
+An `OpenTsxSerde` facade recognizes both formats by the first byte when reading → consumers (Java, Flink, Python) do not need to know how the data was written. This also fixes today's Flink break.
 
-### 3.2 Topic-Layout
+### 3.2 Topic layout
 
 | Topic | Key | Value | Policy |
 |-------|-----|-------|--------|
-| `tsx.<domain>.observations.v2` | seriesId | `Observation` | delete, kurze Retention (Live) |
-| `tsx.<domain>.episodes.v2` | seriesId | `Episode` | delete, lange/unendliche Retention (Archiv, Tiered) |
+| `tsx.<domain>.observations.v2` | seriesId | `Observation` | delete, short retention (live) |
+| `tsx.<domain>.episodes.v2` | seriesId | `Episode` | delete, long or infinite retention (archive, tiered) |
 | `tsx.<domain>.series.v2` | seriesId | `SeriesKey` | compact |
 | `tsx.<domain>.buckets.v2` | bucketId | `BucketManifest` | compact |
 | `tsx.<domain>.series-stats.v2` | seriesId + windowType | `SeriesStats` | compact |
 
-Header pro Record: `tsx-schema` (Full-Name + Version), `tsx-bucket` (bucketId), `tsx-encoding`. **Record-Timestamp = `tStart` der Episode** (CreateTime), damit `offsetsForTimes()` zeitbasiertes Replay erlaubt.
+Headers per record: `tsx-schema` (full name + version), `tsx-bucket` (bucketId), `tsx-encoding`. **Record timestamp = `tStart` of the episode** (CreateTime), so that `offsetsForTimes()` allows time-based replay.
 
-### 3.3 „Preiswert“ – Kostenhebel
+### 3.3 "Cheap": cost levers
 
-* Episoden statt Punkte: typischerweise 1 Record pro 10³–10⁴ Werte → Overhead pro Record (Key, Header, Batch-Header) amortisiert.
-* Producer: `compression.type=zstd`, `linger.ms` 50–200, `batch.size` 256 KB–1 MB, `enable.idempotence=false` (KafScale), **asynchron** (kein `send().get()`).
-* Delta-of-Delta für unregelmäßige Zeitachsen, `REGULAR` braucht gar keine Zeitstempel.
-* Optional Phase 2: Werte-Kompression (Gorilla-XOR) als `bytes` – erst nach Messung mit zstd, sonst unnötige Komplexität.
+* Episodes instead of points: typically 1 record per 10³ to 10⁴ values → the overhead per record (key, headers, batch header) is amortized.
+* Producer: `compression.type=zstd`, `linger.ms` 50 to 200, `batch.size` 256 KB to 1 MB, `enable.idempotence=false` (KafScale), **asynchronous** (no `send().get()`).
+* Delta-of-delta for irregular time axes; `REGULAR` needs no timestamps at all.
+* Optional phase 2: value compression (Gorilla XOR) as `bytes`, only after a measurement with zstd; otherwise it is needless complexity.
 
-### 3.4 Bucket-Write & Replay
+### 3.4 Bucket write and replay
 
 ```java
-try (BucketWriter w = tsx.buckets().open("exp-2026-10-ffmlrc", descriptor)) {   // schreibt Manifest OPEN
+try (BucketWriter w = tsx.buckets().open("exp-2026-10-ffmlrc", descriptor)) {   // writes manifest OPEN
     for (TimeSeriesObject tso : legacyBucket) w.append(Episodes.from(tso, seriesKeyOf(tso)));
-}                                                                                  // schreibt Manifest SEALED + checksum
+}                                                                                  // writes manifest SEALED + checksum
 
-ReplayRequest r = ReplayRequest.bucket("exp-2026-10-ffmlrc")          // oder: .series(selector).between(t0, t1)
-                     .pace(Pace.ASAP | Pace.realtime(10.0));            // 10x Echtzeit
+ReplayRequest r = ReplayRequest.bucket("exp-2026-10-ffmlrc")          // or: .series(selector).between(t0, t1)
+                     .pace(Pace.ASAP | Pace.realtime(10.0));            // 10x real time
 tsx.replay(r).into(Sink.topic("tsx.lab.episodes.replay") | Sink.callback(ep -> ...) | Sink.tsBucket());
 ```
 
-Replay-Strategie: Zeitfenster → `offsetsForTimes` pro Partition; Bucket → Header-Filter `tsx-bucket` (Phase 1) bzw. Iceberg-Index (Phase 3, wenn Episoden auch in Iceberg liegen). Abschluss-Verifikation über `episodeCount` + `checksum` aus dem Manifest.
+Replay strategy: time window → `offsetsForTimes` per partition; bucket → header filter `tsx-bucket` (phase 1) or Iceberg index (phase 3, when episodes also live in Iceberg). Final verification through `episodeCount` + `checksum` from the manifest.
 
-## 4. Store-Abstraktion (SPI)
+## 4. Store abstraction (SPI)
 
 ```java
 public interface SeriesStore extends AutoCloseable {
@@ -154,25 +154,25 @@ public interface SeriesStore extends AutoCloseable {
 }
 ```
 
-### 4.1 OpenTSDB-Adapter (`opentsx-store-opentsdb`, refaktoriert)
+### 4.1 OpenTSDB adapter (`opentsx-store-opentsdb`, refactored)
 
 | v2 | OpenTSDB |
 |----|----------|
-| `SeriesKey.metric` | `metric` (Zeichen-Validierung `[a-zA-Z0-9-_./]`) |
-| `SeriesKey.tags` | `tags` (≤ 8 Default-Limit, Validierung, `unit` optional als Tag) |
-| `Episode` | aufgelöst in Datenpunkte → HTTP `/api/put?details` gebatcht (statt Telnet) |
-| `EpisodeQuery` | `/api/query` mit `start/end` (ms), `m=<agg>:<downsample>:metric{tags}`; Antwort → Episoden (Chunking nach `maxEpisodeLength`) |
+| `SeriesKey.metric` | `metric` (character validation `[a-zA-Z0-9-_./]`) |
+| `SeriesKey.tags` | `tags` (≤ 8 default limit, validation, `unit` optional as a tag) |
+| `Episode` | resolved into data points → HTTP `/api/put?details` batched (instead of Telnet) |
+| `EpisodeQuery` | `/api/query` with `start/end` (ms), `m=<agg>:<downsample>:metric{tags}`; response → episodes (chunking by `maxEpisodeLength`) |
 
-Capabilities: `RAW_POINTS, DOWNSAMPLING, TAG_INDEX`; kein `EPISODES` → Episoden-Grenzen werden beim Lesen rekonstruiert, Labels/Provenance gehen verloren (dokumentiert, ggf. OpenTSDB-Annotations-API für Episode-Marker).
+Capabilities: `RAW_POINTS, DOWNSAMPLING, TAG_INDEX`; no `EPISODES` → episode boundaries are reconstructed on read, labels and Provenance are lost (documented; if needed, the OpenTSDB annotations API for episode markers).
 
-### 4.2 Iceberg-Adapter (`opentsx-store-iceberg`, neu)
+### 4.2 Iceberg adapter (`opentsx-store-iceberg`, new)
 
 ```sql
 -- Dimension
 CREATE TABLE tsx.series (series_id string, metric string, tags map<string,string>, unit string,
                          first_seen timestamp, last_seen timestamp);
 
--- Episoden: Archiv, Replay-Quelle, Retrieval, Pattern-Prefilter
+-- Episodes: archive, replay source, retrieval, pattern prefilter
 CREATE TABLE tsx.episodes (
   episode_id string, series_id string, t_start timestamp, t_end timestamp, count int,
   time_encoding string, interval_us bigint, time_deltas binary, values array<double>,
@@ -181,47 +181,47 @@ CREATE TABLE tsx.episodes (
 PARTITIONED BY (days(t_start), bucket(32, series_id))
 -- WRITE ORDERED BY series_id, t_start
 
--- Optional: Punkte für SQL-Analytik (aus Episoden abgeleitet, z.B. via Flink/Spark)
+-- Optional: points for SQL analytics (derived from episodes, for example via Flink/Spark)
 CREATE TABLE tsx.observations (series_id string, ts timestamp, value double, quality int)
 PARTITIONED BY (days(ts), bucket(32, series_id));
 ```
 
-Schreibpfade: (a) direkt über den Adapter (Batch, Iceberg Java API), (b) Kafka → Iceberg via Flink-Iceberg-Sink oder Iceberg-Kafka-Connect-Sink aus `episodes.v2`. **[ENTSCHEIDUNG]** Catalog (REST / Nessie / Glue / JDBC / Hadoop) und Object Store.
+Write paths: (a) directly through the adapter (batch, Iceberg Java API), (b) Kafka → Iceberg via the Flink Iceberg sink or the Iceberg Kafka Connect sink from `episodes.v2`. **[DECISION]** Catalog (REST / Nessie / Glue / JDBC / Hadoop) and object store.
 
-Capabilities: `EPISODES, SQL, TIME_TRAVEL`; Pattern-Prefilter über `sax`, `s_min/s_max`, Partition-Pruning über Zeit + Serie.
+Capabilities: `EPISODES, SQL, TIME_TRAVEL`; pattern prefilter on `sax`, `s_min/s_max`; partition pruning by time + series.
 
-### 4.3 Legacy-Brücke
+### 4.3 Legacy bridge
 
-`LegacyBridge`: `TimeSeriesObject ⇄ Episode`, `TSBucket(SequenceFile) → BucketWriter`, `EpisodesRecord(v1) → Episode(v2)`. Damit laufen alle bestehenden Algorithmen unverändert auf v2-Daten.
+`LegacyBridge`: `TimeSeriesObject ⇄ Episode`, `TSBucket(SequenceFile) → BucketWriter`, `EpisodesRecord(v1) → Episode(v2)`. With it, all existing algorithms run unchanged on v2 data.
 
-## 5. Metadaten → OpenMetadata
+## 5. Metadata → OpenMetadata
 
-| OpenTSx | OpenMetadata-Entity |
+| OpenTSx | OpenMetadata entity |
 |---------|---------------------|
-| `tsx.<domain>.*.v2` Topics | `Topic` inkl. `messageSchema` (Avro) |
-| Iceberg-Tabellen | `Table` (über Iceberg/Lakehouse-Connector oder per API) |
-| Flink-Stats-Job, Replay-Jobs | `Pipeline` + Lineage-Kanten Topic → Pipeline → Topic/Table |
-| `BucketManifest` | `Container` bzw. Custom Properties auf Table/Topic (Experiment-Deskriptor) |
-| `SeriesStats` (aggregiert) | Profiler-/Custom-Metrics bzw. Data-Quality `TestCaseResult` (Gaps, NaN-Rate, Wertebereich) |
+| `tsx.<domain>.*.v2` topics | `Topic` including `messageSchema` (Avro) |
+| Iceberg tables | `Table` (through the Iceberg/lakehouse connector or by API) |
+| Flink stats job, replay jobs | `Pipeline` + lineage edges Topic → Pipeline → Topic/Table |
+| `BucketManifest` | `Container` or custom properties on Table/Topic (experiment descriptor) |
+| `SeriesStats` (aggregated) | profiler or custom metrics, or data quality `TestCaseResult` (gaps, NaN rate, value range) |
 
-Ingestion: kleines Java-Modul `opentsx-openmetadata` (REST-Client), das (1) Schemas/Topics/Tabellen einmalig registriert und (2) aus `series-stats.v2` **rate-limitiert** (z.B. stündlich je Dataset, nicht je Event) Profile aktualisiert. **[ENTSCHEIDUNG]** OpenMetadata-Version & Auth (JWT/Bot-Token); Granularität: Statistik pro Topic/Tabelle (empfohlen) vs. pro Serie (nur Top-N / Custom-Entity).
+Ingestion: a small Java module `opentsx-openmetadata` (REST client) that (1) registers schemas, topics and tables once and (2) updates profiles from `series-stats.v2` **rate-limited** (for example hourly per dataset, not per event). **[DECISION]** OpenMetadata version and auth (JWT/bot token); granularity: statistics per topic/table (recommended) vs. per series (only top N / custom entity).
 
-> Stand 2026-10-11 – umgesetzt in [`opentsx-stats`](../../opentsx-stats/README.md) und [`opentsx-openmetadata`](../../opentsx-openmetadata/README.md): OpenMetadata 2.0.5, Bot-JWT; Granularität **je Kanal und Fenster über alle Turbinen** (Profile und DQ-Ergebnisse auf einer Signal-View je Park), Detail je Serie bleibt in `series-stats.v2`. KafScale kennt keine Compaction → `series-stats.v2` ist append-only, Leser nehmen den neuesten Record je Schlüssel.
+> As of 2026-10-11, implemented in [`opentsx-stats`](../../opentsx-stats/README.md) and [`opentsx-openmetadata`](../../opentsx-openmetadata/README.md): OpenMetadata 2.0.5, bot JWT; granularity **per channel and window across all turbines** (profiles and DQ results on one signal view per park); the detail per series stays in `series-stats.v2`. KafScale has no compaction → `series-stats.v2` is append-only; readers take the newest record per key.
 
-## 6. Streaming-Statistikprozessor (Flink)
+## 6. Streaming statistics processor (Flink)
 
-* Quelle: `observations.v2` und/oder `episodes.v2` (Episode = vorverdichteter Batch → `EpisodeSummary` direkt mergen).
-* `keyBy(seriesId)`; Zustand: Welford (count/mean/m2), min/max, t-digest oder KLL-Sketch, letzter Zeitstempel, Gap-Zähler (Δt > k·erwartetes Intervall).
-* Ausgaben: (a) laufend (global, „seit Start“) mit Emission alle N Sekunden, (b) Tumbling-Fenster (1 min / 1 h / 1 d, konfigurierbar) → `series-stats.v2`; (c) Aggregat je Topic/Bucket für OpenMetadata.
-* Event-Time mit Watermarks + erlaubter Verspätung; Late Data → Side Output.
-* Ersetzt den heutigen `TimeSeriesAggregateFunction`-Ansatz (der alle Punkte puffert) durch O(1)-Zustand je Serie.
+* Source: `observations.v2` and/or `episodes.v2` (episode = pre-aggregated batch → merge `EpisodeSummary` directly).
+* `keyBy(seriesId)`; state: Welford (count/mean/m2), min/max, t-digest or KLL sketch, last timestamp, gap counter (Δt > k·expected interval).
+* Outputs: (a) running (global, "since start"), emitted every N seconds, (b) tumbling windows (1 min / 1 h / 1 d, configurable) → `series-stats.v2`; (c) aggregate per topic/bucket for OpenMetadata.
+* Event time with watermarks and allowed lateness; late data → side output.
+* Replaces today's `TimeSeriesAggregateFunction` approach (which buffers all points) with O(1) state per series.
 
-## 7. Retrieval-API & Pattern Matching
+## 7. Retrieval API and pattern matching
 
-### 7.1 Öffentliche, einfache API
+### 7.1 Public, simple API
 
 ```java
-EpisodeService svc = OpenTsx.connect(config);           // wählt Store(s) nach Capabilities
+EpisodeService svc = OpenTsx.connect(config);           // picks store(s) by capabilities
 
 List<Episode> eps = svc.episodes()
     .metric("sensor.temperature").tag("site", "ber-01")
@@ -232,19 +232,19 @@ List<Episode> eps = svc.episodes()
 
 Optional<Episode> one = svc.episode("01JA...ULID");
 
-List<PatternMatch> hits = svc.similarTo(queryEpisode)    // oder double[] / episodeId + Offset/Länge
+List<PatternMatch> hits = svc.similarTo(queryEpisode)    // or double[] / episodeId + offset/length
     .in(SeriesSelector.metric("sensor.temperature"))
-    .distance(Distance.zNormalizedEuclidean())           // oder Distance.dtw(band = 0.1)
+    .distance(Distance.zNormalizedEuclidean())           // or Distance.dtw(band = 0.1)
     .topK(20)
     .fetch();
 ```
 
-REST-Spiegel (dünn, Phase 5b): `GET /v1/episodes?metric=&tag.site=&from=&to=`, `GET /v1/episodes/{id}`, `POST /v1/patterns/search`. Python-Client über dieselben Avro-Schemas.
+REST mirror (thin, phase 5b): `GET /v1/episodes?metric=&tag.site=&from=&to=`, `GET /v1/episodes/{id}`, `POST /v1/patterns/search`. Python client based on the same Avro schemas.
 
-### 7.2 Interne Pattern-Engine (zweistufig)
+### 7.2 Internal pattern engine (two stages)
 
-1. **Kandidaten (Index)**: PAA → SAX-Wort je Episode bzw. je gleitendem Fenster fester Länge; gespeichert in `EpisodeSummary.sax` (Iceberg-Spalte) bzw. In-Memory-Index (iSAX-Baum) für heiße Daten. Zusätzlich Prefilter über `s_min/s_max/s_mean`.
-2. **Exakte Verifikation**: MASS (FFT-basierte z-normalisierte Distanzprofile; nutzt die vorhandene FFT-Basis) für Euklid; für DTW Kaskade LB_Kim → LB_Keogh → DTW mit Sakoe-Chiba-Band (UCR-Suite-Prinzip).
-3. **Ergebnis** als `PatternMatch` (Episode + Offset + Länge + Distanz); optional als Annotation zurück nach Kafka/Iceberg – die Fortsetzung von `MarkableTimeSeriesObject`.
+1. **Candidates (index)**: PAA → SAX word per episode or per sliding window of fixed length; stored in `EpisodeSummary.sax` (Iceberg column) or in an in-memory index (iSAX tree) for hot data. In addition, a prefilter on `s_min/s_max/s_mean`.
+2. **Exact verification**: MASS (FFT-based z-normalized distance profiles; builds on the existing FFT code) for the Euclidean distance; for DTW the cascade LB_Kim → LB_Keogh → DTW with a Sakoe-Chiba band (UCR suite principle).
+3. **Result** as `PatternMatch` (episode + offset + length + distance); optionally as an annotation back to Kafka/Iceberg; this is the continuation of `MarkableTimeSeriesObject`.
 
-Später möglich: Matrix-Profile für Motif-/Discord-Discovery über Buckets; Embedding-basierte ANN-Suche als weitere `Distance`-Implementierung.
+Possible later: matrix profiles for motif and discord discovery across buckets; embedding-based ANN search as another `Distance` implementation.

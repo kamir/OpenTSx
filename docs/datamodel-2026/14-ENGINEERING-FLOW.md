@@ -1,167 +1,167 @@
-# OpenTSx: Engineering-Ablauf vom System zum Modell (Konzept und Entwurf)
+# OpenTSx: Engineering flow from the system to the model (concept and draft)
 
-> Stand: 2026-10-13, dritte Fassung. **Freigegeben am 2026-10-13** mit zwei Änderungen gegenüber dem Vorschlag
-> (D43: drei Güten statt zwei; D50: zusätzlich ein geführter Modus). Umgesetzt sind die Lieferstufen L1 und L2
-> (Abschnitt 10): Systemdokument mit Prüfung, Zustand der Signale, die Hülle mit ihren vier Orten und dem geführten
-> Modus, Sprung auf den Schirm, dazu L3 mit Grenzen. **Mehrere Festlegungen dieses Dokuments sind durch
-> [15](15-ENTSCHEIDUNGSKREIS.md) geändert** (Zustand des Signals, Herkunft, Bedeutung von `clean`); dort steht, was
-> gilt. L4 und L5 werden wie hier geplant gebaut, danach folgen die Stufen E1 bis E3 aus 15. Arbeitspaket:
-> [TASK-014](../../EVOLUTION/TASK-014-engineering-flow.md); dort stehen auch die Befunde der beiden Reviews.
+> As of 2026-10-13, third version. **Approved on 2026-10-13** with two changes from the proposal
+> (D43: three grades instead of two; D50: a guided mode in addition). Delivery stages L1 and L2 are implemented
+> (section 10): system document with checks, state of the signals, the shell with its four places and the guided
+> mode, jump to the scope, plus L3 with limits. **Several definitions of this document have been changed by
+> [15](15-ENTSCHEIDUNGSKREIS.md)** (state of the signal, origin, meaning of `clean`); what applies is stated there.
+> L4 and L5 are built as planned here, followed by the stages E1 to E3 from 15. Work package:
+> [TASK-014](../../EVOLUTION/TASK-014-engineering-flow.md); the findings of the two reviews are there too.
 
-## 1. Kurzfassung
+## 1. Summary
 
-OpenTSx hat heute zwei Enden eines Arbeitsablaufs und keine Mitte. Das **Smart Topics Studio** beschreibt ein
-System von oben: Bausteine, Ports, Verbindungen, Ereignisse. Die **Workbench** arbeitet von unten an Reihen:
-laden, Operatoren anwenden, auf dem Oszilloskop prüfen, als Smart Topic bereitstellen. Dazwischen fehlt, was die
-Ingenieurarbeit ausmacht: festhalten, welche Messgrößen ein System **erwartet**, welche davon **vorhanden** sind,
-welche **simuliert** werden müssen, und wie aus Rohdaten **bereinigte Reihen** für Modelle werden.
+Today OpenTSx has two ends of a workflow and no middle. The **Smart Topics Studio** describes a system from above:
+building blocks, ports, connections, events. The **workbench** works on series from below: load them, apply
+operators, check them on the oscilloscope, deploy them as a Smart Topic. Missing in between is what makes up
+engineering work: recording which measured quantities a system **expects**, which of them **exist**, which must be
+**simulated**, and how raw data becomes **clean series** for models.
 
-Der Vorschlag:
+The proposal:
 
-1. **Vier Orte und ein Werkzeug** statt einzelner Seiten: System, Signals, Flows, Models; dazu die Workbench
-   (Abschnitt 3).
-2. Das **Signal** als gemeinsamer Schlüssel: eine erwartete Messgröße mit Rohdaten, bereinigten Daten und
-   Merkmalen für Modelle (Abschnitt 4).
-3. Zwei neue deklarative Dokumente: `opentsx.system.v1` beschreibt das ganze System, `opentsx.processor.v1` einen
-   Zeitreihen-Prozessor, ob Generator, Transformator oder Modell (Abschnitte 5 und 7).
-4. Eine **feste Regel, wo die Daten eines Signals liegen**, und ein Übersetzungsschritt vom Flow, wie ihn ein
-   Mensch schreibt, zum DAG, wie ihn der Prozessor liest (Abschnitt 6).
-5. Eine **gemeinsame Hülle** in der Web-Anwendung (Abschnitt 8).
+1. **Four places and one tool** instead of separate pages: System, Signals, Flows, Models; plus the Workbench
+   (section 3).
+2. The **signal** as the shared key: an expected measured quantity with raw data, clean data and features for
+   models (section 4).
+3. Two new declarative documents: `opentsx.system.v1` describes the whole system, `opentsx.processor.v1` a time
+   series processor, whether generator, transformer or model (sections 5 and 7).
+4. A **fixed rule for where the data of a signal lives**, and a translation step from the flow as a person writes it
+   to the DAG as the processor reads it (section 6).
+5. A **shared shell** in the web application (section 8).
 
-Bestehende Entwürfe bleiben gültig und werden eingebunden: Schaltplan des Zwillings (`twin/*.yaml`), Kanal-Katalog,
-Inventar (`opentsx.inventory.v1`, [12](12-EXPLORATIVES-UI-INVENTAR.md)), DAG (`opentsx.dag.v1`,
-[11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md)), Smart-Topic-Spezifikation ([05](05-SMART-TOPICS.md)). Wo sie sich
-ändern müssen, steht es ausdrücklich da (Abschnitt 6.3 und 9).
+Existing drafts stay valid and are included: the wiring plan of the twin (`twin/*.yaml`), the channel catalog, the
+inventory (`opentsx.inventory.v1`, [12](12-EXPLORATIVES-UI-INVENTAR.md)), the DAG (`opentsx.dag.v1`,
+[11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md)), the Smart Topic specification ([05](05-SMART-TOPICS.md)). Where they
+must change, this is stated explicitly (sections 6.3 and 9).
 
-## 2. Begriffe
+## 2. Terms
 
-Ein Wort je Sache. Die Oberfläche und die Dokumente halten sich daran.
+One word per thing. The user interface and the documents stick to it.
 
-| Begriff | Bedeutung | Nicht verwechseln mit |
+| Term | Meaning | Not to be confused with |
 |---|---|---|
-| **System** | die Anlage: Bausteine, Ports, Verbindungen | **Szenario**: ein Fall oder Lauf des Systems (Zeitraum, Eingriffe) |
-| **Signal** | eine Messgröße, die das System erwartet, ob Daten da sind oder nicht | **Reihe** (series): die Daten eines Signals; **Kanal** (channel): Eintrag im Kanal-Katalog |
-| **Güte** (grade) | `raw` (wie angeliefert oder erzeugt), `clean` (bereinigt, auf dem Takt, in der Einheit des Systems) oder `features` (Merkmale für Modelle, aus `clean` berechnet) | Ansicht der Oberfläche, Lieferstufe der Umsetzung |
-| **Herkunft** (origin) | `MEASURED`, `REPORTED`, `FORECAST`, `ESTIMATED`, `SYNTHETIC`, wie `Origin` im Zwilling | Art der Quelle (Topic, Generator, Flow, von Hand) |
-| **Flow** | das Rezept: Prozessoren und ihre Verbindung | **laufender Flow**: ein gestarteter Flow; **Smart Topic**: sein veröffentlichtes Ergebnis |
-| **Prozessor** | ein Baustein eines Flows oder ein Generator | Vektor-Prozessor: die Laufzeit, die Flows ausführt |
+| **System** | the plant: building blocks, ports, connections | **Scenario**: one case or run of the system (period, interventions) |
+| **Signal** | a quantity the system expects, whether data exists or not | **Series**: the data of a signal; **Channel**: an entry in the channel catalog |
+| **Grade** | `raw` (as delivered or generated), `clean` (cleaned, on the clock, in the unit of the system) or `features` (features for models, computed from `clean`) | view of the user interface, delivery stage of the implementation |
+| **Origin** | `MEASURED`, `REPORTED`, `FORECAST`, `ESTIMATED`, `SYNTHETIC`, as `Origin` in the twin | kind of source (topic, generator, flow, by hand) |
+| **Flow** | the recipe: processors and their connection | **running flow**: a started flow; **Smart Topic**: its published result |
+| **Processor** | a building block of a flow, or a generator | vector processor: the runtime that executes flows |
 
-## 3. Ist-Stand und Zielbild
+## 3. Current state and target design
 
-### 3.1 Bausteine und Brüche
+### 3.1 Building blocks and breaks
 
-| Schritt der Ingenieurarbeit | Vorhanden | Bruch |
+| Step of the engineering work | Exists | Break |
 |---|---|---|
-| System definieren | Studio, Ansicht "Systembild", aus `twin/*.yaml` | statische HTML-Seite mit Beispieldaten, getrennt von der Web-Anwendung |
-| Erwartete Messgrößen festhalten | Kanal-Katalog (Einheit, Wertebereich, Abtastung, IEC-Bezug); Ports im Schaltplan | Ports und Kanäle sind nicht aufeinander bezogen |
-| Vorhandene Daten kennen | TS-Inventar (`GET /v1/inventory`): Reihen, Zeitraum, Wertebereich, Lücken, Ground Truth | kein Abgleich "erwartet gegen vorhanden" |
-| Messung anbinden oder simulieren | Zwilling bindet Reihen je Lauf an Eingangsports (`SeriesInputs`); Windpark-Simulator; `opentsx-market`; Sinus-Mix der Workbench | nirgends deklariert, welcher Port woher kommt; kein Generator schreibt fortlaufend in ein Topic |
-| Rohdaten bereinigen | Workbench: 23 Operatoren, interaktiv | der Prozessor führt nur `align.vector` aus und schreibt nur Vektoren; es gibt kein Topic für bereinigte Reihen |
-| Modellieren, trainieren, optimieren | Zwilling (Was-wäre-wenn, Prognose); Smart-Topic-Spezifikation als Entwurf | keine Schleife auf bereinigten Reihen |
-| Ergebnis zurück ins System | Studio "Messreihen" und "Vergleich" | gespeist vom Zwillingslauf, nicht von Smart Topics |
+| Define the system | Studio, view "System diagram", from `twin/*.yaml` | static HTML page with example data, separate from the web application |
+| Record the expected quantities | channel catalog (unit, value range, sampling, IEC reference); ports in the wiring plan | ports and channels are not related to each other |
+| Know the existing data | TS inventory (`GET /v1/inventory`): series, period, value range, gaps, ground truth | no comparison "expected against existing" |
+| Bind or simulate a measurement | the twin binds series per run to input ports (`SeriesInputs`); wind farm simulator; `opentsx-market`; sine mix of the workbench | nowhere is it declared which port comes from where; no generator writes continuously into a topic |
+| Clean raw data | workbench: 23 operators, interactive | the processor only executes `align.vector` and only writes vectors; there is no topic for clean series |
+| Model, train, optimize | twin (what-if, forecast); Smart Topic specification as a draft | no loop on clean series |
+| Result back into the system | Studio "Series" and "Compare" | fed by the twin run, not by Smart Topics |
 
-### 3.2 Vier Orte und ein Werkzeug
+### 3.2 Four places and one tool
 
-Die erste Fassung hatte sechs nummerierte Stufen. Das Review hat gezeigt: "Anbinden oder simulieren" ist eine
-Spalte der Signalliste, "Betrieb" ist der Flow Composer mit Filter, und Nummern behaupten eine Reihenfolge, die es
-nicht gibt. Es bleiben vier Orte, ohne Nummern, jeder mit einer Zahl, die sagt, was zu tun ist.
+The first version had six numbered stages. The review showed: "Bind or simulate" is a column of the signal list,
+"Operation" is the Flow Composer with a filter, and numbers claim an order that does not exist. Four places remain,
+without numbers, each with a count that says what there is to do.
 
-| Ort | Frage | Inhalt | Baut auf |
+| Place | Question | Content | Builds on |
 |---|---|---|---|
-| **System** | Woraus besteht die Anlage, was hängt wovon ab? | Schaltplan; ein Klick auf einen Port führt zu seinem Signal | Studio "Systembild" |
-| **Signals** | Welche Messgrößen erwartet das System, was ist da, was ist als Nächstes zu tun? | je Signal: Erwartung, Herkunft, Zustand, nächster Schritt; Anbinden, Simulieren und Erwartung ändern sind Aktionen hier | Kanal-Katalog, TS-Inventar |
-| **Flows** | Was bereitet die Daten auf, was läuft? | der Flow Composer, gefiltert auf das System; je Flow das Signal, das er bedient | Flow Composer |
-| **Models** | Was sagt das System voraus, was wäre wenn? | Modelle auf bereinigten Signalen; fehlt eines, steht es da | Smart-Topic-Spezifikation, Zwilling, Studio "Vergleich" |
-| **Workbench** (Werkzeug) | Wie wird aus dieser Rohreihe eine brauchbare? | Oszilloskop und Operatoren, geöffnet für ein Signal | Workbench |
+| **System** | What does the plant consist of, what depends on what? | wiring plan; a click on a port leads to its signal | Studio "System diagram" |
+| **Signals** | Which measured quantities does the system expect, what is there, what is to be done next? | per signal: expectation, origin, state, next step; Bind, Simulate and Change expectation are actions here | channel catalog, TS inventory |
+| **Flows** | What prepares the data, what is running? | the Flow Composer, filtered to the system; per flow the signal it serves | Flow Composer |
+| **Models** | What does the system predict, what if? | models on clean signals; if one is missing, that is shown | Smart Topic specification, twin, Studio "Compare" |
+| **Workbench** (tool) | How does this raw series become a usable one? | oscilloscope and operators, opened for a signal | Workbench |
 
-Der glatte Weg:
+The smooth path:
 
-1. **System** wählen. Der Schaltplan liefert die Ports.
-2. **Signals** zeigt alle Signale mit Zustand. Die Zeile sagt den nächsten Schritt.
-3. Ein offenes Signal: "Bind" schlägt Reihen aus dem TS-Inventar vor (gleiche Metrik, passende Einheit). Gibt es
-   keine, belegt "Simulate" einen Generator aus der Erwartung vor (Einheit, Wertebereich, Abtastung).
-4. Ein Signal mit Rohdaten: "Prepare" öffnet die Workbench mit diesen Reihen. Der Schirm zeigt den erwarteten
-   Wertebereich. "Publish as clean signal" macht den Flow zur Quelle der bereinigten Daten.
-5. **Flows** startet und stoppt, was laufen soll.
-6. **Models** nimmt nur bereinigte Signale an.
+1. Choose the **System**. The wiring plan provides the ports.
+2. **Signals** shows all signals with their state. The row says the next step.
+3. An open signal: "Bind" proposes series from the TS inventory (same metric, matching unit). If there are none,
+   "Simulate" prefills a generator from the expectation (unit, value range, sampling).
+4. A signal with raw data: "Prepare" opens the workbench with these series. The scope shows the expected value
+   range. "Publish as clean signal" makes the flow the source of the clean data.
+5. **Flows** starts and stops what should run.
+6. **Models** accepts only clean signals.
 
-## 4. Das Signal
+## 4. The signal
 
-* **Kennung**, eindeutig innerhalb des Systems:
-  * `<baustein>.<port>` für einen Port des Schaltplans, zum Beispiel `park.p_avail_kw`. Die Kennung **ist** der
-    Port; ein zweites Feld dafür gibt es nicht.
-  * `<baustein>/<asset>/<kanal>` für einen Sensorkanal unter einem Baustein, zum Beispiel `park/T02/WTUR.W`.
-    `<system>/<baustein>/<asset>` ist die Asset-Kennung des Inventars, `<kanal>` die Kanal-Kennung des Katalogs.
-  * Nach außen (Adressen, Tags) steht das System davor: `h2-chain/park.p_avail_kw`.
-* **Erwartung:** Einheit, Wertebereich, Abtastintervall, Art (`ANALOG`, `STATUS`, `COUNTER` wie im Katalog),
-  erwartete Herkunft. Bei einem Sensorkanal kommt sie aus dem Katalog (dort heißt das Intervall `sampling`) und
-  kann überschrieben werden.
-* **Güte:** `raw`, `clean` und `features`. Ein abgeleitetes Signal hat kein `raw`. `features` sind Merkmale für
-  Modelle: verzögerte Werte, gleitende Kennwerte, abgeleitete Größen. Sie werden immer per Flow aus `clean`
-  berechnet, tragen je Merkmal einen Namen und lassen sich von mehreren Modellen nutzen.
-* **Quelle je Güte:**
+* **Id**, unique within the system:
+  * `<block>.<port>` for a port of the wiring plan, for example `park.p_avail_kw`. The id **is** the port; there is
+    no second field for it.
+  * `<block>/<asset>/<channel>` for a sensor channel under a building block, for example `park/T02/WTUR.W`.
+    `<system>/<block>/<asset>` is the asset id of the inventory, `<channel>` the channel id of the catalog.
+  * In external references (addresses, tags) the system comes first: `h2-chain/park.p_avail_kw`.
+* **Expectation:** unit, value range, sampling interval, kind (`ANALOG`, `STATUS`, `COUNTER` as in the catalog),
+  expected origin. For a sensor channel it comes from the catalog (where the interval is called `sampling`) and can
+  be overridden.
+* **Grade:** `raw`, `clean` and `features`. A derived signal has no `raw`. `features` are features for models:
+  lagged values, rolling statistics, derived quantities. They are always computed by a flow from `clean`, carry a
+  name per feature and can be used by several models.
+* **Source per grade:**
 
-  | `kind` | Bedeutung | Herkunft |
+  | `kind` | Meaning | Origin |
   |---|---|---|
-  | `topic` | Reihen in einem Topic, per Metrik und Tags gewählt | steht an der Quelle; jede ist möglich, auch `SYNTHETIC` (Daten eines Simulators) |
-  | `generator` | ein Generator-Prozessor mit Parametern und Startwert | immer `SYNTHETIC` |
-  | `flow` | Ausgang eines Flows | die schlechteste Herkunft der Eingänge |
-  | `manual` | Konstante oder Tabelle | steht an der Quelle; Vorgabe `REPORTED` (ein Fahrplan ist keine Simulation) |
+  | `topic` | series in a topic, chosen by metric and tags | stated at the source; any origin is possible, including `SYNTHETIC` (data of a simulator) |
+  | `generator` | a generator processor with parameters and seed | always `SYNTHETIC` |
+  | `flow` | output of a flow | the worst origin of the inputs |
+  | `manual` | constant or table | stated at the source; default `REPORTED` (a schedule is not a simulation) |
 
-* **Zustand**, berechnet aus Deklaration, TS-Inventar und Liste der laufenden Flows, genau einer:
+* **State**, computed from the declaration, the TS inventory and the list of running flows, exactly one:
 
-  | Zustand | Bedeutung | Nächster Schritt |
+  | State | Meaning | Next step |
   |---|---|---|
-  | `open` | keine Quelle | Bind, Simulate |
-  | `bound, no data` | Quelle da, keine Reihe gefunden | Quelle prüfen |
-  | `raw only` | Rohdaten da, nichts Bereinigtes | Prepare |
-  | `clean, not running` | Flow deklariert, läuft nicht | Start |
-  | `clean, running` | Flow läuft, Daten aktuell | n/a |
-  | `stale` | letzter Wert älter als erwartet | Flow oder Quelle prüfen |
-  | `out of range` | Werte außerhalb der Erwartung über einer Schwelle | Prepare oder Erwartung prüfen |
-  | `constant` | von Hand gesetzt | n/a |
+  | `open` | no source | Bind, Simulate |
+  | `bound, no data` | source there, no series found | check the source |
+  | `raw only` | raw data there, nothing clean | Prepare |
+  | `clean, not running` | flow declared, not running | Start |
+  | `clean, running` | flow running, data current | n/a |
+  | `stale` | last value older than expected | check the flow or the source |
+  | `out of range` | values outside the expectation above a threshold | Prepare or check the expectation |
+  | `constant` | set by hand | n/a |
 
-  Der Zustand beschreibt den Weg bis `clean`. Daneben stehen zwei eigene Angaben: ob Merkmale deklariert sind
-  und laufen, und wer das Signal nutzt (Flows, Modelle, Zwilling). Beides ist kein Fortschritt des Signals; ein
-  Signal ohne Merkmale ist vollständig.
+  The state describes the path up to `clean`. Beside it there are two separate items: whether features are
+  declared and running, and who uses the signal (flows, models, twin). Neither is progress of the signal; a signal
+  without features is complete.
 
-Simulierte und gemessene Daten dürfen nie gleich aussehen. Es gilt die Regel des Studios, mit seinen
-Herkunfts-Marken als einzigem Vokabular: `SYNTHETIC` trägt in Liste und Schirm eine eigene Marke mit Generator und
-Startwert, eine gestrichelte Kurve, und die Marke vererbt sich auf jedes abgeleitete Signal und jedes Modell.
+Simulated and measured data must never look the same. The rule of the Studio applies, with its origin marks as the
+only vocabulary: in the list and on the scope, `SYNTHETIC` carries a mark of its own with generator and seed, plus a
+dashed curve; the mark is inherited by every derived signal and every model.
 
-## 5. Deklarative Darstellung des Systems: `opentsx.system.v1`
+## 5. Declarative representation of the system: `opentsx.system.v1`
 
-Ein Dokument je System. Schema: [`schemas/opentsx.system.v1.schema.json`](schemas/opentsx.system.v1.schema.json),
-Beispiel: [`systems/h2-chain.system.yaml`](../../systems/h2-chain.system.yaml).
+One document per system. Schema: [`schemas/opentsx.system.v1.schema.json`](schemas/opentsx.system.v1.schema.json),
+example: [`systems/h2-chain.system.yaml`](../../systems/h2-chain.system.yaml).
 
 ```yaml
 schema: opentsx.system.v1
 system: h2-chain
 version: 1
 title: Wasserstoffkette am Windpark
-domain: wind                               # Namensraum der Topics: tsx.<domain>...
+domain: wind                               # namespace of the topics: tsx.<domain>...
 plan: { ref: opentsx-twin/src/main/resources/twin/h2-chain.yaml }
 inventory: { ref: opentsx-twin/src/main/resources/twin/inventar-beispiel.yaml, system: h2-chain }
 catalogs:
   - { id: wind, ref: opentsx-windpark/src/main/resources/windpark/channel-catalog.yaml, version: 1.0.0 }
 signals:
-  - id: park/T02/WTUR.W                    # Sensorkanal unter dem Baustein "park"
-    channel: wind/WTUR.W                   # Erwartung aus dem Katalog
+  - id: park/T02/WTUR.W                    # sensor channel under the building block "park"
+    channel: wind/WTUR.W                   # expectation from the catalog
     raw:
       source: { kind: topic, topic: tsx.wind.episodes.v2, origin: SYNTHETIC,
                 select: { metric: wind.turbine.power_active, tags: { turbine: T02 } } }
     clean:
       source: { kind: flow, flow: turbine-power-clean, output: clean }
-  - id: park.p_avail_kw                    # Port des Schaltplans, abgeleitet
+  - id: park.p_avail_kw                    # port of the wiring plan, derived
     expect: { unit: kW, min: 0, max: 12000, interval: PT1M, kind: ANALOG }
     clean:
       source: { kind: flow, flow: park-power, output: sum }
-  - id: market.price_eur_mwh               # keine Daten angebunden: simuliert
+  - id: market.price_eur_mwh               # no data bound: simulated
     expect: { unit: EUR/MWh, min: -500, max: 3000, interval: PT15M, kind: ANALOG }
     raw:
       source: { kind: generator, processor: gen.ou, seed: 7,
                 params: { mean: 62.8, reversion: 0.08, sigma: 9.0 } }
-  - id: ely.setpoint_kw                    # von Hand
+  - id: ely.setpoint_kw                    # by hand
     expect: { unit: kW, min: 0, max: 5000, interval: PT1M, kind: ANALOG }
     raw:
       source: { kind: manual, value: 5000, origin: REPORTED }
@@ -170,102 +170,105 @@ flows:
   - { id: park-power, ref: systems/flows/park-power.flow.yaml }
 ```
 
-Regeln:
+Rules:
 
-* **Eine Wahrheit je Frage.** Bausteine und Ports stehen im Schaltplan, die Bedeutung eines Kanals im Katalog, das
-  Gerät im Inventar. Das Systemdokument sagt, **welches Signal woher kommt**. Das Inventar nennt heute je Asset
-  auch Reihen (`series`) und Ports; bis es von Code gelesen wird, prüft das Werkzeug, dass beide Angaben
-  übereinstimmen. Danach entfällt `series` im Inventar zugunsten des Systemdokuments (Vorschlag, D47).
-* **Generatoren stehen nur als Quelle eines Signals da,** nie als Knoten eines Flows.
-* **Prüfung.** Kennung eindeutig; der Baustein und, bei Ports, der Port stehen im Schaltplan; `channel` endet auf
-  dieselbe Kanal-Kennung wie die Signalkennung und steht im Katalog; das Asset steht im Inventar; eine Auswahl
-  `select` trifft genau die Reihen des Signals; jeder `flow` steht in der Liste, jeder `processor` hat eine
-  Beschreibung; ein Flow als Quelle von `clean` liest nur `raw` desselben Signals oder `clean` anderer, ein Flow
-  als Quelle von `features` liest nur `clean`; Zyklen sind ein Fehler. Was ein JSON-Schema nicht prüfen kann (Eindeutigkeit, Verweise), prüft das Werkzeug.
-* **Hash.** Der Hash eines Systems wird vom Werkzeug berechnet: über das Dokument und den Inhalt aller Dateien,
-  auf die es verweist, wie der Plan-Hash des Zwillings. Er geht in die Provenienz der erzeugten Reihen ein.
-* **Offene Signale sind erlaubt.** Die Oberfläche zählt sie.
+* **One truth per question.** Building blocks and ports are in the wiring plan, the meaning of a channel is in the
+  catalog, the device is in the inventory. The system document says **which signal comes from where**. Today the
+  inventory also names series (`series`) and ports per asset; until it is read by code, the tool checks that both
+  statements match. After that, `series` in the inventory is dropped in favor of the system document (proposal,
+  D47).
+* **Generators appear only as the source of a signal,** never as a node of a flow.
+* **Check.** The id is unique; the building block and, for ports, the port are in the wiring plan; `channel` ends
+  in the same channel id as the signal id and is in the catalog; the asset is in the inventory; a selection `select`
+  matches exactly the series of the signal; every `flow` is in the list, every `processor` has a description; a
+  flow as the source of `clean` reads only `raw` of the same signal or `clean` of other signals, a flow as the
+  source of `features` reads only `clean`; cycles are an error. What a JSON schema cannot check (uniqueness,
+  references), the tool checks.
+* **Hash.** The hash of a system is computed by the tool: over the document and the content of all files it refers
+  to, like the plan hash of the twin. It goes into the provenance of the generated series.
+* **Open signals are allowed.** The user interface counts them.
 
-## 6. Wo die Daten liegen, und wie ein Flow zum Prozessor kommt
+## 6. Where the data lives, and how a flow gets to the processor
 
-Das war die größte Lücke der ersten Fassung: Sie sagte nicht, in welchem Topic simulierte und bereinigte Reihen
-stehen, und ihre Beispiel-Flows kann der heutige Prozessor nicht lesen.
+This was the biggest gap of the first version: it did not say in which topic simulated and clean series are
+stored, and today's processor cannot read its example flows.
 
-### 6.1 Regel für Topic und Reihe
+### 6.1 Rule for topic and series
 
-| Quelle der Güte | Topic | Format |
+| Source of the grade | Topic | Format |
 |---|---|---|
-| `topic` | wie an der Quelle angegeben | wie dort |
-| `generator` | `tsx.<domain>.synthetic.v2` | v2-Episoden |
-| `flow`, Güte `clean` | `tsx.<domain>.clean.v2` | v2-Episoden |
-| `flow`, Güte `features` | `tsx.<domain>.features.v2` | v2-Episoden, eine Reihe je Merkmal |
-| `manual` | keines; der Wert steht im Dokument | n/a |
+| `topic` | as given at the source | as there |
+| `generator` | `tsx.<domain>.synthetic.v2` | v2 episodes |
+| `flow`, grade `clean` | `tsx.<domain>.clean.v2` | v2 episodes |
+| `flow`, grade `features` | `tsx.<domain>.features.v2` | v2 episodes, one series per feature |
+| `manual` | none; the value is in the document | n/a |
 
-Je Domain gibt es also **ein** Topic für simulierte, **eines** für bereinigte Reihen und **eines** für Merkmale,
-nicht eines je Signal.
-Die Reihe darin ist bestimmt durch:
+So per domain there is **one** topic for simulated series, **one** for clean series and **one** for features, not
+one per signal.
+The series in it is determined by:
 
-* **Metrik:** die Metrik des Kanals, wenn das Signal auf einen verweist, sonst `<system>.<baustein>.<port>`.
-* **Tags:** `system`, `signal` (die Kennung) und `grade` (`raw` für Erzeugtes, `clean`, `features`); bei
-  Sensorkanälen dazu die Tags der Rohreihe; bei Merkmalen dazu `feature` mit dem Namen des Merkmals. `grade` kam mit
-  L4 dazu, weil eine erzeugte Rohreihe und die bereinigte Reihe desselben Signals sonst dieselbe Reihe wären.
-  `flow` (der Name der Bereitstellung) kam am 2026-10-14 dazu (D84, 15, Abschnitt 13.5): Schreiben zwei Flows
-  nacheinander dasselbe Signal, entstehen zwei Reihen. Die Ansicht eines Signals zeigt die Reihe des Flows, der
-  läuft, und nennt die anderen, ohne sie mitzuzählen. Ebenso trägt eine erzeugte Rohreihe den Lauf ihres
-  Generators (`run`, D85); gezählt wird der zuletzt erzeugte Lauf.
-* **Reihen-Id:** wie überall aus Metrik und Tags (`SeriesKeys`).
-* **Labels der Episoden:** `origin`, `grade`, Hash des Systems.
+* **Metric:** the metric of the channel if the signal refers to one, otherwise `<system>.<block>.<port>`.
+* **Tags:** `system`, `signal` (the id) and `grade` (`raw` for generated data, `clean`, `features`); for sensor
+  channels also the tags of the raw series; for features also `feature` with the name of the feature. `grade` was
+  added with L4, because a generated raw series and the clean series of the same signal would otherwise be the same
+  series. `flow` (the name of the deployment) was added on 2026-10-14 (D84, 15, section 13.5): if two flows write
+  the same signal one after the other, two series result. The view of a signal shows the series of the flow that is
+  running, and names the others without counting them. In the same way a generated raw series carries the run of
+  its generator (`run`, D85); the run generated last is the one counted.
+* **Series id:** as everywhere, from metric and tags (`SeriesKeys`).
+* **Labels of the episodes:** `origin`, `grade`, hash of the system.
 
-Damit findet das TS-Inventar die Reihen eines Signals ohne weitere Angabe, und der Zustand lässt sich berechnen.
-Voraussetzung: `TopicLayout` kennt die drei Topics, und der Retrieval-Server liest sie wie das Episoden-Topic.
+With this the TS inventory finds the series of a signal without any further information, and the state can be
+computed. Prerequisite: `TopicLayout` knows the three topics, and the retrieval server reads them like the episode
+topic.
 
-### 6.2 Flow, wie ihn ein Mensch schreibt, und DAG, wie ihn der Prozessor liest
+### 6.2 The flow as a person writes it, and the DAG as the processor reads it
 
-Ein Flow im Systemdokument nennt **Signale**, keine Reihen-Ids und keine Topics:
+A flow in the system document names **signals**, not series ids and not topics:
 
 ```yaml
-schema: opentsx.flow.v1                    # Schreibform; wird zu opentsx.dag übersetzt
+schema: opentsx.flow.v1                    # written form; translated into opentsx.dag
 flow: turbine-power-clean
 reads: ["park/T02/WTUR.W@raw"]
 nodes:
-  - { id: range, op: dq.plausible-range, in: [source], params: { mode: gap } }   # min, max aus der Erwartung
+  - { id: range, op: dq.plausible-range, in: [source], params: { mode: gap } }   # min, max from the expectation
   - { id: clean, op: resample,           in: [range],  params: { every: PT1M, agg: MEAN } }
 writes: [ { from: clean, signal: "park/T02/WTUR.W@clean" } ]
 ```
 
-Ein **Übersetzungsschritt** macht daraus den DAG für den Prozessor: Er löst Signale zu Topic und Reihen-Id auf
-(Regel 6.1), belegt Parameter aus der Erwartung, ersetzt Prozessor-Kennungen durch die Operatoren des DAG
-(Abschnitt 7) und setzt den `decode`-Knoten davor. Der Prozessor sieht nie einen Signalnamen. Die Workbench
-erzeugt dieselbe Schreibform, wenn sie mit einem Signal geöffnet wurde.
+A **translation step** turns this into the DAG for the processor: it resolves signals to topic and series id
+(rule 6.1), fills parameters from the expectation, replaces processor ids with the operators of the DAG
+(section 7) and puts the `decode` node in front. The processor never sees a signal name. The workbench produces the
+same written form when it was opened with a signal.
 
-### 6.3 Was sich am DAG und am Prozessor ändern muss
+### 6.3 What must change in the DAG and in the processor
 
-`opentsx.dag.v1`, wie `VectorJob` ihn heute liest, reicht nicht. Nötig ist eine Fassung `opentsx.dag.v2` mit drei
-Erweiterungen:
+`opentsx.dag.v1`, as `VectorJob` reads it today, is not enough. What is needed is a version `opentsx.dag.v2` with
+three extensions:
 
-1. **Senke für Reihen:** ein Sink, der v2-Episoden in das Topic der bereinigten Reihen schreibt. Heute sind nur
-   Vektor-Topics erlaubt.
-2. **Quelle aus mehr als einem Topic gleichen Formats:** Episoden-Topic, `synthetic` und `clean` sind alle
-   v2-Episoden. Ein Verbund über Topics verschiedener Formate bleibt ausgeschlossen
-   ([11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), Abschnitt 5a).
-3. **Operatoren vor der Senke:** der Prozessor führt Transformatoren aus, nicht nur `align.vector` (TASK-013,
+1. **Sink for series:** a sink that writes v2 episodes into the topic of the clean series. Today only vector topics
+   are allowed.
+2. **Source from more than one topic of the same format:** the episode topic, `synthetic` and `clean` are all v2
+   episodes. A combination of topics of different formats stays excluded
+   ([11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), section 5a).
+3. **Operators before the sink:** the processor executes transformers, not only `align.vector` (TASK-013,
    013.5).
 
-Bis dahin bleiben Flows mit Transformatoren interaktiv, und die Oberfläche sagt das.
+Until then, flows with transformers stay interactive, and the user interface says so.
 
-## 7. Deklarative Beschreibung der Prozessoren: `opentsx.processor.v1`
+## 7. Declarative description of the processors: `opentsx.processor.v1`
 
-Heute steht die Bedeutung eines Operators an drei Stellen: in `ops.ts`, im Java-Code und in der Tabelle in
-[11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), Abschnitt 6. Schema:
-[`schemas/opentsx.processor.v1.schema.json`](schemas/opentsx.processor.v1.schema.json), Beispiele:
+Today the meaning of an operator is stated in three places: in `ops.ts`, in the Java code and in the table in
+[11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), section 6. Schema:
+[`schemas/opentsx.processor.v1.schema.json`](schemas/opentsx.processor.v1.schema.json), examples:
 [`gen.ou`](../../systems/processors/gen.ou.yaml), [`dq.plausible-range`](../../systems/processors/dq.plausible-range.yaml),
 [`align.vector`](../../systems/processors/align.vector.yaml).
 
-| `kind` | Eingänge | Beispiele |
+| `kind` | Inputs | Examples |
 |---|---|---|
-| `generator` | keine | Ornstein-Uhlenbeck (Preise, Bedarf), Sinus-Mix, Wiedergabe einer Aufzeichnung |
-| `transformer` | eine oder mehrere Reihen | Plausibilitätsprüfung, Resampling, Glättung, FFT, `align.vector` |
-| `model` | Reihen und ein trainiertes Artefakt | Prognose, Anomalie-Score, Schritt des Zwillings |
+| `generator` | none | Ornstein-Uhlenbeck (prices, demand), sine mix, playback of a recording |
+| `transformer` | one or more series | plausibility check, resampling, smoothing, FFT, `align.vector` |
+| `model` | series and a trained artifact | forecast, anomaly score, step of the twin |
 
 ```yaml
 schema: opentsx.processor.v1
@@ -288,31 +291,31 @@ runtimes:
 ui: { group: stream, label: Plausible range }
 ```
 
-Was die Beschreibung trägt:
+What the description carries:
 
-* **`from: expect.<feld>`** belegt einen Parameter aus der Erwartung des Signals, dessen Daten der Prozessor
-  erzeugt. So entsteht "simuliert gemäß erwarteten Eigenschaften".
-* **`dag`** nennt den Operator des DAG, wenn er anders heißt als der Prozessor (`dq.plausible-range` ist
-  `dq.checks` mit der Prüfung `PLAUSIBLE_RANGE`).
-* **`semantics.needs`** sagt, wie viel Eingabe ein Ausgabewert braucht: `point`, `window` oder `series` (die ganze
-  Reihe). Ein Prozessor mit `series`, etwa Normierung auf das Maximum, kann nicht fortlaufend laufen.
-* **Ausgang `xy`** steht für Ergebnisse über einer anderen Achse als der Zeit (Spektrum, Histogramm, Verteilung).
-  Sie lassen sich ansehen, aber nicht als Signal veröffentlichen.
-* **`runtimes`** sagt, wo ein Prozessor läuft. Daraus leitet die Workbench ab, ob ein Flow gestartet werden kann;
-  die Liste "was fehlt" wird nicht mehr von Hand gepflegt.
-* **`ui`** nennt Gruppe und Beschriftung in der Operatorleiste. Dauern stehen als ISO-Dauer; `editAs: seconds`
-  sagt, dass die Workbench sie in Sekunden eingeben lässt.
+* **`from: expect.<field>`** fills a parameter from the expectation of the signal whose data the processor
+  produces. This is how "simulated according to the expected properties" comes about.
+* **`dag`** names the operator of the DAG when its name differs from that of the processor (`dq.plausible-range` is
+  `dq.checks` with the check `PLAUSIBLE_RANGE`).
+* **`semantics.needs`** says how much input one output value needs: `point`, `window` or `series` (the whole
+  series). A processor with `series`, such as normalization to the maximum, cannot run continuously.
+* **Output `xy`** stands for results over an axis other than time (spectrum, histogram, distribution). They can be
+  viewed, but not published as a signal.
+* **`runtimes`** says where a processor runs. From this the workbench derives whether a flow can be started; the
+  list "what is missing" is no longer maintained by hand.
+* **`ui`** names the group and the label in the operator bar. Durations are written as ISO durations;
+  `editAs: seconds` says that the workbench lets the user enter them in seconds.
 
-Die Beschreibungen entstehen nicht alle auf einmal. Jede Lieferstufe beschreibt die Prozessoren, die sie braucht;
-ein Test prüft, dass ein beschriebener Prozessor mit `ops.ts` übereinstimmt (Kennung, Parameter, Vorgaben).
+The descriptions are not all written at once. Each delivery stage describes the processors it needs; a test checks
+that a described processor matches `ops.ts` (id, parameters, defaults).
 
-## 8. Oberfläche
+## 8. User interface
 
-### 8.1 Die Hülle
+### 8.1 The shell
 
-Rahmen ist die Web-Anwendung, in englischer Sprache. Sie übernimmt den Aufbau des Studios (Leiste links, Pfad
-oben, Statuszeile unten) in React, mit einer gemeinsamen Datei für Farben und Abstände, aus der auch die Workbench
-schöpft. Die Workbench behält ihre Dichte.
+The frame is the web application, in English. It takes over the layout of the Studio (rail on the left, path at the
+top, status bar at the bottom) in React, with a shared file for colors and spacing that the workbench draws from
+too. The workbench keeps its density.
 
 ```
 +------------------------------------------------------------------------------------------+
@@ -321,7 +324,7 @@ schöpft. Die Workbench behält ihre Dichte.
 +------------+-----------------------------------------------------------------------------+
 | System     |                                                                             |
 |   8 ports  |                                                                             |
-| Signals    |   (Inhalt des Orts)                                                         |
+| Signals    |   (content of the place)                                                    |
 |   2 open   |                                                                             |
 | Flows      |                                                                             |
 |   2, 0 run |                                                                             |
@@ -334,13 +337,13 @@ schöpft. Die Workbench behält ihre Dichte.
 +------------------------------------------------------------------------------------------+
 ```
 
-Adressen: `/systems`, `/systems/<id>/system|signals|flows|models`. Die Zahlen der Skizze entsprechen dem Beispiel.
+Addresses: `/systems`, `/systems/<id>/system|signals|flows|models`. The numbers in the sketch match the example.
 
-**Geführter Modus (wahlweise).** Die vier Orte sind die Grundlage. Wer neu ist oder ein System von vorn aufbaut,
-schaltet "Guide" ein. Dann steht über dem Inhalt die Folge der sieben Schritte der Methode
-([Benutzerhandbuch, Kapitel 16](../user-manual/16-engineering-method.md)), nummeriert, mit dem Stand je Schritt
-und einem Sprung an den Ort, an dem der Schritt getan wird. Der Modus ändert nichts an den Orten und erzwingt
-keine Reihenfolge; er zeigt den nächsten sinnvollen Schritt.
+**Guided mode (optional).** The four places are the basis. Anyone who is new or builds a system from scratch
+switches on "Guide". Then the sequence of the seven steps of the method
+([user manual, chapter 16](../user-manual/16-engineering-method.md)) appears above the content, numbered, with the
+state per step and a jump to the place where the step is done. The mode changes nothing about the places and forces
+no order; it shows the next sensible step.
 
 ```
  Guide:  1 System ok | 2 Signals ok | 3 Stock ok | 4 Bind 2 open | 5 Prepare 1 of 3 | 6 Run 0 | 7 Model blocked
@@ -348,8 +351,8 @@ keine Reihenfolge; er zeigt den nächsten sinnvollen Schritt.
 
 ### 8.2 Signals
 
-Eine Zeile sagt, was das Signal ist, woher es kommt, wie es ihm geht und was als Nächstes zu tun ist. Gruppiert
-wird nach Baustein und Asset; eine Gruppe lässt sich einklappen, damit ein Park mit vielen Turbinen lesbar bleibt.
+A row says what the signal is, where it comes from, how it is doing and what is to be done next. Rows are grouped
+by building block and asset; a group can be collapsed so that a park with many turbines stays readable.
 
 ```
  park
@@ -365,103 +368,102 @@ wird nach Baustein und Asset; eine Gruppe lässt sich einklappen, damit ein Park
    demand_kgph         kg/h 0..120 1 min    n/a         open                     [Bind] [Simulate]
 ```
 
-Ein Klick auf eine Zeile öffnet rechts: Erwartung (änderbar), Quelle je Güte, Zeitraum, ein kleiner Verlauf mit
-dem erwarteten Wertebereich, wer das Signal nutzt, und die Aktionen Bind, Simulate, Replace with measurement,
+A click on a row opens on the right: the expectation (editable), the source per grade, the period, a small trend
+plot with the expected value range, who uses the signal, and the actions Bind, Simulate, Replace with measurement,
 Prepare, Open on scope.
 
-### 8.3 Übergabe in die Workbench und zurück
+### 8.3 Handover to the workbench and back
 
-Die Workbench hält heute genau einen Flow; ein zweiter ersetzt ihn. Deshalb:
+Today the workbench holds exactly one flow; a second one replaces it. Therefore:
 
-* **Vor der Übergabe** fragt die Hülle nach, wenn die Workbench ungespeicherte Arbeit hält.
-* **In der Workbench** steht eine Kontextzeile:
+* **Before the handover** the shell asks for confirmation when the workbench holds unsaved work.
+* **In the workbench** there is a context line:
 
   ```
   < Signals | h2-chain > park/T02/WTUR.W > raw -> clean          [Publish as clean signal]
   expected kW -100..10000, 1 s | synthetic | unsaved changes
   ```
 
-  Der Schirm zeigt den erwarteten Wertebereich als Linien, Parameter mit `from: expect.*` sind vorbelegt.
-* **"Publish as clean signal"** ersetzt die drei Handgriffe von heute (Haken "Publish as Smart Topic", "Save
-  flow", "Deploy") durch einen Dialog, der sagt: welches Signal, welcher Ausgang des Flows, dass die Änderung in
-  der eigenen Arbeitskopie steht und noch nicht im Repository (D42), dass der Flow noch nicht läuft und wo er
-  gestartet wird, und welche Schritte der Prozessor nicht ausführen kann.
-* **Danach** führt die Workbench zurück zur Zeile des Signals, die hervorgehoben ist.
-* Ohne System bleibt die Workbench benutzbar wie heute.
+  The scope shows the expected value range as lines; parameters with `from: expect.*` are prefilled.
+* **"Publish as clean signal"** replaces today's three manual steps (check box "Publish as Smart Topic", "Save
+  flow", "Deploy") with a dialog that says: which signal, which output of the flow, that the change is in the
+  user's own working copy and not yet in the repository (D42), that the flow is not running yet and where it is
+  started, and which steps the processor cannot execute.
+* **After that** the workbench leads back to the row of the signal, which is highlighted.
+* Without a system the workbench stays usable as it is today.
 
-### 8.4 Bestehende Beschriftungen, die sich ändern
+### 8.4 Existing labels that change
 
-| Heute | Künftig | Grund |
+| Today | In future | Reason |
 |---|---|---|
-| Link "Editor" (Composer-Seite), Link "Composer page" (Workbench) | "Workbench", "Flows" | zwei Namen für dieselben Orte |
-| Spalte "buckets" im Composer | "steps" | sie zählt Schritte |
-| Reiter "Input bucket" | bleibt | der Name ist ein ausdrücklicher Wunsch des Auftraggebers; der Vorschlag "Steps" aus dem Review entfällt |
-| "Create a vector of the loaded series" | "Align series to a common clock" | sagt, was geschieht |
-| zwei Zustandsspalten im Composer ("status", "Smart Topic") | eine | derselbe Sachverhalt |
-| Reiter "TS-Model" in der Workbench | bleibt | er spiegelt die Swing-Workbench und sagt selbst, dass seine Knöpfe dort auch nichts tun |
+| link "Editor" (composer page), link "Composer page" (workbench) | "Workbench", "Flows" | two names for the same places |
+| column "buckets" in the composer | "steps" | it counts steps |
+| tab "Input bucket" | stays | the name is an explicit wish of the owner; the proposal "Steps" from the review is dropped |
+| "Create a vector of the loaded series" | "Align series to a common clock" | says what happens |
+| two state columns in the composer ("status", "Smart Topic") | one | the same fact |
+| tab "TS-Model" in the workbench | stays | it mirrors the Swing workbench and says itself that its buttons do nothing there either |
 
-### 8.5 Die Studio-Ansichten
+### 8.5 The Studio views
 
-"Systembild" wird der Ort System, "Messreihen" geht in Signals auf, "Überblick" und "Vergleich" werden Models.
+"System diagram" becomes the place System, "Series" merges into Signals, "Overview" and "Compare" become Models.
 
-**Stand L2, abweichend vom Entwurf:** Der Ort System bettet den Prototyp nicht ein. Er zeigt den Schaltplan als
-Tabelle: je Baustein die Eingänge mit Einheit und dem, was sie speist (Ausgang eines anderen Bausteins, Signal mit
-Zustand oder nichts), und die Ausgänge. Der Grund: Der Prototyp ist eine erzeugte HTML-Datei außerhalb der
-Web-Anwendung, und von seinen Ports führt kein Weg zu einem Signal. Die Tabelle leistet genau diese Verbindung und
-zeigt nebenbei, welche Eingänge von außen noch kein Signal haben. Das Bild mit den Verbindungen bleibt Aufgabe von
-L5 (Systembild in React).
+**State at L2, differing from the draft:** The place System does not embed the prototype. It shows the wiring plan
+as a table: per building block the inputs with their unit and what feeds them (the output of another building
+block, a signal with its state, or nothing), and the outputs. The reason: the prototype is a generated HTML file
+outside the web application, and no path leads from its ports to a signal. The table provides exactly this
+connection and shows along the way which inputs from outside have no signal yet. The picture with the connections
+stays the task of L5 (system diagram in React).
 
-## 9. Was der Entwurf nicht löst
+## 9. What the draft does not solve
 
-* **Kein Generator schreibt heute fortlaufend in ein Topic.** Eine Laufzeit dafür ist neu. Sie schreibt auf einen
-  gemeinsam genutzten Broker; sie darf nur in das Topic `synthetic` ihrer Domain schreiben, nie in ein
-  Episoden-Topic, und braucht ein eigenes Recht (heute gilt ein Token für alles).
-* **Der Prozessor führt nur `align.vector` aus und schreibt nur Vektoren** (Abschnitt 6.3).
-* **Die Smart-Topic-Spezifikation ([05](05-SMART-TOPICS.md)) wählt ihr Ziel per Metrik und Tags** und kann kein
-  Signal nennen. Für Models braucht sie `target.signal`; ihr eigenes `resample` wird dann überflüssig. Ihr Abschnitt
-  `features` überschneidet sich mit der Güte `features` (D43): Merkmale, die mehrere Modelle brauchen, stehen am
-  Signal, die eines einzelnen Modells bleiben in dessen Spezifikation. Die Abgrenzung ist mit L5 festzulegen.
-* **Prozessoren für Merkmale gibt es nicht.** Das Beispiel nennt `feature.lags` und `feature.rolling`; beide sind
-  zu bauen.
-* **Der Zwilling rechnet einen Lauf als Ganzes.** Models zeigt zunächst gerechnete Läufe.
-* **Viele gleichartige Assets.** Das Beispiel nennt eine Turbine von sechs. Eine Schablone "für jedes Asset dieser
-  Art" fehlt im Schema; ohne sie wird ein Dokument für einen großen Park lang.
-* **Gleichzeitige Änderungen.** Die Arbeitskopie je Konto (D42) braucht eine Regel: Jede Änderung trägt den Hash
-  der Fassung, von der sie ausging; passt er nicht mehr, wird abgelehnt statt überschrieben.
-* **Die Portliste des Schaltplans kennt nur der Java-Code** (`AtomCatalog`). Das Prüfwerkzeug braucht Java oder
-  den Export des Studios.
+* **No generator writes continuously into a topic today.** A runtime for this would be new. It writes to a shared
+  broker; it may only write into the topic `synthetic` of its domain, never into an episode topic, and needs a right
+  of its own (today one token applies to everything).
+* **The processor only executes `align.vector` and only writes vectors** (section 6.3).
+* **The Smart Topic specification ([05](05-SMART-TOPICS.md)) chooses its target by metric and tags** and cannot name
+  a signal. For Models it needs `target.signal`; its own `resample` then becomes unnecessary. Its section `features`
+  overlaps with the grade `features` (D43): features that several models need belong to the signal, those of a
+  single model stay in that model's specification. The boundary is to be set with L5.
+* **There are no processors for features.** The example names `feature.lags` and `feature.rolling`; both have to be
+  built.
+* **The twin computes a run as a whole.** Models shows computed runs at first.
+* **Many assets of the same kind.** The example names one turbine out of six. A template "for every asset of this
+  kind" is missing in the schema; without it a document for a large park gets long.
+* **Concurrent changes.** The working copy per account (D42) needs a rule: every change carries the hash of the
+  version it started from; if that hash no longer matches, the change is refused instead of overwritten.
+* **Only the Java code knows the port list of the wiring plan** (`AtomCatalog`). The check tool needs Java or the
+  export of the Studio.
 
-## 10. Lieferstufen (nach Freigabe)
+## 10. Delivery stages (after approval)
 
-Die erste Fassung begann mit Verträgen für alle Operatoren, ohne sichtbares Ergebnis. Die Reihenfolge ist jetzt
-vom kleinsten Stand her gebaut, der die Idee von Anfang bis Ende zeigt.
+The first version began with contracts for all operators, without a visible result. The order is now built up from
+the smallest state that shows the idea from start to end.
 
-| Stufe | Inhalt | Sichtbar |
+| Stage | Content | Visible |
 |---|---|---|
-| L1 (**umgesetzt** 2026-10-13) | Systemdokument mit an Topics gebundenen und offenen Signalen; Prüfung im Build; `GET /v1/systems` und `/v1/systems/<id>/signals` mit berechnetem Zustand; Ort Signals; "Open on scope" mit Kontextzeile und erwartetem Wertebereich | Katalog "erwartet gegen vorhanden" für `h2-chain`, mit Sprung auf den Schirm |
-| L2 (**umgesetzt** 2026-10-13) | Hülle: Leiste, Statuszeile, gemeinsame Farben; geführter Modus; Beschriftungen nach 8.4; Ort Flows (Composer mit Filter); Ort System als Tabelle der Bausteine und Ports (statt des eingebetteten Prototyps, siehe 8.5); Ort Models als Vorschau | ein Rahmen statt drei Seiten |
-| L3 (**umgesetzt** 2026-10-13, mit Grenzen) | Topic `clean`, Senke für Reihen (`opentsx.dag.v2`), drei Operatoren im Prozessor (Plausibilitätsbereich, Einheit, Resampling), "Publish as clean signal". Nicht umgesetzt: die Schreibform `opentsx.flow.v1` mit Übersetzungsschritt (die Workbench schreibt den DAG direkt), das Zusammenführen mehrerer Reihen, das Zurückschreiben ins Systemdokument | Rohdaten einer Reihe werden fortlaufend zu einer bereinigten Reihe |
-| L4 (**umgesetzt** 2026-10-13, mit Grenzen) | Topic `synthetic`; zwei Demo-Generatoren (`gen.ou`, `gen.sine`) als Einmal-Lauf über einen Zeitraum, nur für Administratoren und nur in dieses Topic (D61); Aktionen Bind, Simulate und Generate auf der Seite Signals; Binden erst nach bestätigter Bedeutung (D53); Arbeitskopie je Konto über dem Systemdokument, mit Export der Zeilen für die Datei (D42). Nicht umgesetzt: ein Generator, der fortlaufend schreibt; das Zurückschreiben in die Datei | offene Signale werden gebunden oder simuliert |
-| L5 (**umgesetzt** 2026-10-13, mit Grenzen) | Models: Topic `features`, Operatoren für Merkmale (`feature.lag`, `feature.rolling`) und ein erstes Modell (`model.power-curve`), Senke in ein anderes Signal mit `origin` und `madeOf`; Freigabe je Zweck aus der Entscheidungskarte mit Gültigkeitsbereich und Nachweis (D59, `GET /v1/systems/<id>/decisions`); Ort Models; Systembild als Graph in React. Nicht umgesetzt: der Vergleich von Alternativen (folgt mit E3), `target.signal` in der Vektor-Spezifikation | Prognose und Was-wäre-wenn im selben Rahmen |
+| L1 (**implemented** 2026-10-13) | system document with signals bound to topics and open signals; check in the build; `GET /v1/systems` and `/v1/systems/<id>/signals` with computed state; place Signals; "Open on scope" with context line and expected value range | catalog "expected against existing" for `h2-chain`, with a jump to the scope |
+| L2 (**implemented** 2026-10-13) | shell: rail, status bar, shared colors; guided mode; labels as in 8.4; place Flows (composer with filter); place System as a table of the building blocks and ports (instead of the embedded prototype, see 8.5); place Models as a preview | one frame instead of three pages |
+| L3 (**implemented** 2026-10-13, with limits) | topic `clean`, sink for series (`opentsx.dag.v2`), three operators in the processor (plausible range, unit, resampling), "Publish as clean signal". Not implemented: the written form `opentsx.flow.v1` with a translation step (the workbench writes the DAG directly), merging several series, writing back into the system document | raw data of a series continuously becomes a clean series |
+| L4 (**implemented** 2026-10-13, with limits) | topic `synthetic`; two demo generators (`gen.ou`, `gen.sine`) as a one-off run over a period, only for administrators and only into this topic (D61); actions Bind, Simulate and Generate on the Signals page; binding only after the meaning is confirmed (D53); working copy per account on top of the system document, with export of the lines for the file (D42). Not implemented: a generator that writes continuously; writing back into the file | open signals are bound or simulated |
+| L5 (**implemented** 2026-10-13, with limits) | Models: topic `features`, operators for features (`feature.lag`, `feature.rolling`) and a first model (`model.power-curve`), sink into another signal with `origin` and `madeOf`; approval per purpose from the decision card with range of validity and evidence (D59, `GET /v1/systems/<id>/decisions`); place Models; system diagram as a graph in React. Not implemented: the comparison of alternatives (follows with E3), `target.signal` in the vector specification | forecast and what-if in the same frame |
 
-Prozessor-Beschreibungen kommen mit der Stufe, die sie braucht: L3 die Transformatoren der Bereinigung, L4 die
-Generatoren.
+Processor descriptions come with the stage that needs them: L3 the transformers for cleaning, L4 the generators.
 
-## 11. Entscheidungen
+## 11. Decisions
 
-Entschieden vom Auftraggeber am 2026-10-13.
+Decided by the owner on 2026-10-13.
 
-| Nr. | Thema | Entscheidung | Stand |
+| No. | Topic | Decision | State |
 |---|---|---|---|
-| D40 | Rahmen | die Web-Anwendung ist die Hülle, im Aufbau des Studios; dessen Ansichten werden eingebettet und später nachgebaut | wie vorgeschlagen |
-| D41 | Schlüssel | das Signal verbindet alles; Kennung `<baustein>.<port>` oder `<baustein>/<asset>/<kanal>`, eindeutig im System | wie vorgeschlagen |
-| D42 | Ablage | Systemdokumente und Prozessor-Beschreibungen liegen als Dateien im Repository; der Retrieval-Server liefert sie aus; die Oberfläche schreibt in eine Arbeitskopie je Konto, mit Hash der Ausgangsfassung, und erzeugt daraus die Datei | wie vorgeschlagen |
-| D43 | Güte | **drei:** `raw`, `clean` und `features`. Merkmale sind eine Güte des Signals und lassen sich zwischen Modellen teilen | **geändert** (Vorschlag war zwei) |
-| D44 | Prozessoren | eine Beschreibung je Prozessor, Art Generator, Transformator oder Modell; sie entstehen stufenweise und werden gegen `ops.ts` geprüft | wie vorgeschlagen |
-| D45 | Sprache | Englisch; Texte der Szenarien bleiben in ihrer Sprache | wie vorgeschlagen |
-| D46 | Beispielsystem | `h2-chain`: Es hat ein Systembild, und sein Windpark steht auf den Daten in `tsx.wind.episodes.v2` | wie vorgeschlagen |
-| D47 | Ort der Bindung | welche Reihen zu einem Signal gehören, steht im Systemdokument; `series` im Inventar entfällt, wenn das Inventar von Code gelesen wird | wie vorgeschlagen |
-| D48 | Topics | je Domain ein Topic `tsx.<domain>.synthetic.v2` und eines `tsx.<domain>.clean.v2`, beide v2-Episoden; die Reihe folgt der Regel in 6.1 | wie vorgeschlagen |
-| D49 | Flow und DAG | Flows nennen Signale (`opentsx.flow.v1`); ein Übersetzungsschritt erzeugt den DAG; der Prozessor bekommt `opentsx.dag.v2` mit Senke für Reihen | wie vorgeschlagen |
-| D50 | Orte | vier Orte ohne Nummern (System, Signals, Flows, Models) und die Workbench als Werkzeug als Grundlage; **dazu wahlweise ein geführter Modus** mit den nummerierten Schritten der Methode | **ergänzt** |
-| D51 | Topic für Merkmale | `tsx.<domain>.features.v2`, v2-Episoden, eine Reihe je Merkmal mit Tag `feature` | **Folge aus D43 und D48, nicht eigens entschieden**; bei Widerspruch vor L5 ändern |
+| D40 | Frame | the web application is the shell, in the layout of the Studio; its views are embedded and rebuilt later | as proposed |
+| D41 | Key | the signal connects everything; id `<block>.<port>` or `<block>/<asset>/<channel>`, unique in the system | as proposed |
+| D42 | Storage | system documents and processor descriptions live as files in the repository; the retrieval server serves them; the user interface writes into a working copy per account, with the hash of the starting version, and produces the file from it | as proposed |
+| D43 | Grade | **three:** `raw`, `clean` and `features`. Features are a grade of the signal and can be shared between models | **changed** (the proposal was two) |
+| D44 | Processors | one description per processor, of the kind generator, transformer or model; they are written stage by stage and checked against `ops.ts` | as proposed |
+| D45 | Language | English; texts of the scenarios stay in their language | as proposed |
+| D46 | Example system | `h2-chain`: it has a system diagram, and its wind farm is based on the data in `tsx.wind.episodes.v2` | as proposed |
+| D47 | Place of the binding | which series belong to a signal is stated in the system document; `series` in the inventory is dropped when the inventory is read by code | as proposed |
+| D48 | Topics | per domain one topic `tsx.<domain>.synthetic.v2` and one `tsx.<domain>.clean.v2`, both v2 episodes; the series follows the rule in 6.1 | as proposed |
+| D49 | Flow and DAG | flows name signals (`opentsx.flow.v1`); a translation step produces the DAG; the processor gets `opentsx.dag.v2` with a sink for series | as proposed |
+| D50 | Places | four places without numbers (System, Signals, Flows, Models) and the Workbench as a tool as the basis; **plus an optional guided mode** with the numbered steps of the method | **extended** |
+| D51 | Topic for features | `tsx.<domain>.features.v2`, v2 episodes, one series per feature with the tag `feature` | **consequence of D43 and D48, not decided on its own**; change before L5 if anyone objects |

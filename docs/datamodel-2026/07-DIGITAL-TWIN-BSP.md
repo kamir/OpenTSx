@@ -1,139 +1,136 @@
-# OpenTSx – Digitaler Zwilling als Verbund atomarer Elemente (Konzept, P9)
+# OpenTSx: Digital twin as a cluster of atomic elements (concept, P9)
 
-> Status: **Vorschlag zur Diskussion**, 2026-10-12. **Der Zwilling mit seinen drei Betriebsarten ist der Kern der
-> Roadmap**; alle drei Betriebsarten werden in beiden Ausführungsvarianten ermöglicht (§4.3, §10). Ausgangspunkt: Projektgespräch zum Verbund aus Windpark,
-> Elektrolyseur, H2-Leitung, Speicher, Eigenverbrauch und Vermarktung. Baut auf
-> [05-SMART-TOPICS](05-SMART-TOPICS.md) (Smart Topics, Personal Service Layer) und
-> [06-SYSTEMREKONSTRUKTION-OPTIMIERUNG](06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md) (Rekonstruktion, Simulation,
-> Optimierung) auf. Umsetzung als **Phase P9** in [TASK-011](../../EVOLUTION/TASK-011-datamodel-refresher-2026.md).
-> Personen, Vertragspartner und Förderfragen aus dem Gespräch sind bewusst nicht Teil dieses Dokuments; Partner
-> erscheinen nur als Rollen.
-
----
-
-## 1. Kurzfassung
-
-Der Zwilling ist **kein ML-Modell**, sondern ein **Anlagenmodell**: eine Verschaltung von Standardbauteilen
-(„atomare Elemente“), deren Zustände sich in festen Takten durch Wechselwirkung ändern. Eine menschliche
-Entscheidung muss sich darin kausal durch die Kette fortpflanzen. Beispiel: Der H2-Abnehmer schließt den Schieber,
-der Leitungsdruck steigt, nach etwa einer Stunde muss der Elektrolyseur abregeln, der Fahrplan wird verletzt, der
-Direktvermarkter muss mehr Strom vermarkten.
-
-Vorschlag in vier Sätzen:
-
-1. **Jedes Element ist ein Atom mit Modell, Sichten und Steuerung (MVC)**. Die Steuerung wird getrennt in
-   *Dynamik* (wie die Anlage physikalisch bzw. regelbasiert reagiert, fest) und *Policy* (wie sie gefahren wird,
-   austauschbar zwischen Fahrplan, Mensch und Optimierer). Wir nennen das **MVC+P**.
-2. **Der Zwilling ist ein Schaltplan**: ein YAML, das Atome aus einem Katalog über typisierte Ports verbindet. Die
-   Bauteile sind Standard, die Verschaltung ist je Anlage individuell. Das ist der Hebel für die Übertragbarkeit auf
-   andere Parks.
-3. **Ausführung als geschichtetes BSP** (Bulk Synchronous Parallel): Superschritte im Basistakt 1 min, innerhalb
-   eines Superschritts feste Phasen in topologischer Ordnung, Barriere über ein Kontroll-Topic, deterministisch und
-   damit replaybar.
-4. **Zwei Ausführungsvarianten, beide gleichrangig**: *eng gekoppelt* als ein Prozess (Twin-Runner, alle Atome im
-   Prozess, harte Barriere) und *lose gekoppelt* über Smart Topics (Atome als eigenständige Prozessoren, Kopplung nur
-   über Topics und Ereigniszeit). Alle drei Betriebsarten (Shadow, What-if, Prognose/MPC) laufen in beiden. Gelernte
-   Teilmodelle sind ohnehin Smart Topics, und der Zwilling publiziert als abgeleitetes Smart Topic. Wann die lose
-   Kopplung dasselbe Ergebnis liefert wie die enge, und was sie dafür kostet, ist eine eigene Forschungsfrage (§10).
+> Status: **proposal for discussion**, 2026-10-12. **The twin with its three operating modes is the core of the
+> roadmap**; all three operating modes are supported in both execution variants (sections 4.3 and 10). Starting
+> point: a project conversation about the cluster of wind farm, electrolyzer, H2 line, storage, self-consumption and
+> marketing. It builds on [05-SMART-TOPICS](05-SMART-TOPICS.md) (Smart Topics, Personal Service Layer) and
+> [06-SYSTEMREKONSTRUKTION-OPTIMIERUNG](06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md) (reconstruction, simulation,
+> optimization). Implementation as **phase P9** in [TASK-011](../../EVOLUTION/TASK-011-datamodel-refresher-2026.md).
+> People, contract partners and funding questions from the conversation are deliberately not part of this document;
+> partners appear only as roles.
 
 ---
 
-## 2. Atomare Elemente
+## 1. Summary
 
-### 2.1 Was ein Atom ist
+The twin is **not an ML model** but a **plant model**: a wiring of standard components ("atomic elements") whose
+states change through interaction in fixed steps. In it, a human decision must propagate causally through the chain.
+Example: The H2 offtaker closes the valve, the line pressure rises, after about one hour the electrolyzer must
+curtail, the schedule is violated, the direct marketer must sell more power.
 
-Ein Atom `a` ist das kleinste Element mit eigenem Zustand, eigenen Parametern und eigener Verantwortung für seine
-Bilanz. Formal, pro Superschritt `k` mit Schrittweite `Δt`:
+The proposal in four sentences:
+
+1. **Every element is an atom with a model, views and control (MVC)**. The control is split into *dynamics* (how
+   the plant responds physically or by rules, fixed) and *policy* (how it is operated, exchangeable between schedule,
+   human and optimizer). We call this **MVC+P**.
+2. **The twin is a wiring plan**: a YAML file that connects atoms from a catalog through typed ports. The components
+   are standard, the wiring is individual per plant. That is the lever for transferability to other parks.
+3. **Execution as layered BSP** (Bulk Synchronous Parallel): supersteps at a base step of 1 min, fixed phases in
+   topological order within a superstep, a barrier through a control topic, deterministic and therefore replayable.
+4. **Two execution variants, both of equal rank**: *tightly coupled* as one process (twin runner, all atoms in the
+   process, hard barrier) and *loosely coupled* through Smart Topics (atoms as independent processors, coupling only
+   through topics and event time). All three operating modes (Shadow, What-if, Forecast/MPC) run in both. Learned
+   submodels are Smart Topics anyway, and the twin publishes as a derived Smart Topic. When loose coupling gives the
+   same result as tight coupling, and what that costs, is a research question of its own (section 10).
+
+---
+
+## 2. Atomic elements
+
+### 2.1 What an atom is
+
+An atom `a` is the smallest element with its own state, its own parameters and its own responsibility for its
+balance. Formally, per superstep `k` with step size `Δt`:
 
 ```
-u_a(k)   = gather( y_b(k)  für Verdrahtungen b → a, die in einer früheren Phase von k liegen,
-                   y_b(k-1) für alle übrigen Verdrahtungen,
+u_a(k)   = gather( y_b(k)  for wires b → a that lie in an earlier phase of k,
+                   y_b(k-1) for all other wires,
                    obs_a(t_k), forecast_a(t_k), intervention_a(k) )
-x_a(k+1) = δ_a( x_a(k), u_a(k), π_a(k), θ_a, Δt )        Dynamik (Controller, Teil 1)
-π_a(k)   = policy_a( x_a(k), u_a(k), Ziele )                Policy  (Controller, Teil 2)
-y_a(k)   = h_a( x_a(k), u_a(k) )                            Ausgänge an Nachbarn
-v_a(k)   = { view_i( x_a(0..k) ) }                          Sichten (View)
+x_a(k+1) = δ_a( x_a(k), u_a(k), π_a(k), θ_a, Δt )        dynamics (controller, part 1)
+π_a(k)   = policy_a( x_a(k), u_a(k), goals )                policy   (controller, part 2)
+y_a(k)   = h_a( x_a(k), u_a(k) )                            outputs to neighbors
+v_a(k)   = { view_i( x_a(0..k) ) }                          views (view)
 ```
 
-Drei Arten von Größen werden unterschieden:
+Three kinds of quantities are distinguished:
 
-| Art | Beispiele | Regel |
+| Kind | Examples | Rule |
 |-----|-----------|-------|
-| **Bestand** (stock) | SoC, Linepack/Druck, Zählerstände, Stapeltemperatur | nur das Atom selbst ändert ihn, durch Integration über `Δt` |
-| **Fluss** (flow) | kW, kg H2/h, m³/h | über Ports ausgetauscht; Bilanzknoten prüfen Erhaltung |
-| **Signal** | Preis, Sollwert, Fahrplan, Prognose, Status | über Ports ausgetauscht, keine Erhaltung |
+| **Stock** | SoC, linepack/pressure, meter readings, stack temperature | only the atom itself changes it, by integration over `Δt` |
+| **Flow** | kW, kg H2/h, m³/h | exchanged over ports; balance nodes check conservation |
+| **Signal** | price, setpoint, schedule, forecast, status | exchanged over ports, no conservation |
 
-### 2.2 MVC+P je Atom
+### 2.2 MVC+P per atom
 
 ```mermaid
 flowchart LR
-  subgraph Atom["Atom (Typ aus Katalog, Instanz aus Schaltplan)"]
+  subgraph Atom["Atom (type from the catalog, instance from the wiring plan)"]
     direction TB
-    M["<b>Model</b><br/>Zustand x (Bestände, Betriebszustand)<br/>Parameter θ (Kennlinien, Grenzen)<br/>Invarianten (Bilanz, Grenzen)"]
-    C["<b>Controller · Dynamik δ</b><br/>Integration über Δt,<br/>Zustandsautomat, Schutzlogik,<br/>Schwellen-/Ereigniserkennung"]
-    P["<b>Controller · Policy π</b><br/>Fahrplan | Mensch | Optimierer<br/>(austauschbar, gleiche Schnittstelle)"]
-    V["<b>Views</b><br/>Smart Metrics/KPIs · Sensorsicht h(x)<br/>OpenMetadata-Entität · Kachel im<br/>Personal Service Layer"]
+    M["<b>Model</b><br/>state x (stocks, operating state)<br/>parameters θ (characteristic curves, limits)<br/>invariants (balance, limits)"]
+    C["<b>Controller · dynamics δ</b><br/>integration over Δt,<br/>state machine, protection logic,<br/>threshold and event detection"]
+    P["<b>Controller · policy π</b><br/>schedule | human | optimizer<br/>(exchangeable, same interface)"]
+    V["<b>Views</b><br/>smart metrics/KPIs · sensor view h(x)<br/>OpenMetadata entity · tile in the<br/>Personal Service Layer"]
   end
-  IN["Eingangs-Ports<br/>Nachbarn · Messungen ·<br/>Prognosen · Eingriffe"] --> C
+  IN["Input ports<br/>neighbors · measurements ·<br/>forecasts · interventions"] --> C
   P --> C
   C --> M
   M --> V
-  M --> OUT["Ausgangs-Ports<br/>Flüsse · Signale · Ereignisse"]
-  V -. Residuum zu Messung .-> CAL["Kalibrierung /<br/>Anomalie"]
+  M --> OUT["Output ports<br/>flows · signals · events"]
+  V -. residual to measurement .-> CAL["Calibration /<br/>anomaly"]
 ```
 
-| Teil | Inhalt | Persistenz in OpenTSx |
+| Part | Content | Persistence in OpenTSx |
 |------|--------|-----------------------|
-| **Model** | Zustand, Parameter, Invarianten; Avro-Schema je Atomtyp | Zustandsreihen als v2-Episoden (`twin.<atom>.<var>`, Tags `twin`, `run`), Snapshots in Iceberg |
-| **View** | reine Funktionen der Zustandshistorie. Wichtigste Sicht ist die **Sensorsicht `h(x)`**: Was würde ein Zähler/Sensor messen? Das Residuum *Messung − Sensorsicht* treibt Kalibrierung und Anomalieerkennung. | Smart Metrics, Statistik (P4), OpenMetadata (Lineage zum Lauf) |
-| **Controller · Dynamik** | physikalische bzw. regelbasierte Reaktion: Integration, Rampen, Schutzabschaltung, Ereignisse mit exaktem Zeitpunkt (Nulldurchgang innerhalb von `Δt`) | Code im Atomtyp, versioniert; Ereignisse als Episoden mit `segmentation=FEATURE_THRESHOLD` |
-| **Controller · Policy** | wer entscheidet: Fahrplan, Mensch, Optimierer (P8.4) | Eingriffslog (Topic), jeder Eingriff mit Urheber und Begründung |
+| **Model** | state, parameters, invariants; Avro schema per atom type | state series as v2 episodes (`twin.<atom>.<var>`, tags `twin`, `run`), snapshots in Iceberg |
+| **View** | pure functions of the state history. The most important view is the **sensor view `h(x)`**: What would a meter or sensor measure? The residual *measurement − sensor view* drives calibration and anomaly detection. | smart metrics, statistics (P4), OpenMetadata (lineage to the run) |
+| **Controller · dynamics** | physical or rule-based response: integration, ramps, protective shutdown, events at their exact time (zero crossing within `Δt`) | code in the atom type, versioned; events as episodes with `segmentation=FEATURE_THRESHOLD` |
+| **Controller · policy** | who decides: schedule, human, optimizer (P8.4) | intervention log (topic), every intervention with author and reason |
 
-Warum MVC hier passt, und wo es gestreckt wird:
+Why MVC fits here, and where it is stretched:
 
-* **Single Source of Truth.** Das Modell ist die einzige Stelle mit Zustand. Sichten sind billig und beliebig viele.
-  Das ist genau der klassische MVC-Gewinn.
-* **„Controller“ heißt hier Nachrichtenverarbeitung**, nicht UI-Eingabe. Die UI im Personal Service Layer ist nur
-  *eine* Quelle von Eingriffen.
-* **Die Trennung Dynamik/Policy ist der eigentliche Mehrwert.** Nur so ist die Forderung aus dem Gespräch erfüllbar,
-  dass sich bei einer menschlichen Entscheidung die Zahlen konsistent ändern: Die Entscheidung tauscht bzw. übersteuert
-  die Policy, die Dynamik bleibt dieselbe. Mensch und Optimierer sind über dieselbe Schnittstelle austauschbar, und
-  ein Optimierervorschlag kann vor der Freigabe im Zwilling durchgespielt werden.
+* **Single source of truth.** The model is the only place with state. Views are cheap, and there can be any number of
+  them. That is exactly the classic MVC gain.
+* **"Controller" means message processing here**, not UI input. The UI in the Personal Service Layer is only
+  *one* source of interventions.
+* **The split of dynamics and policy is the real added value.** Only this split can meet the requirement from the
+  conversation that the numbers change consistently when a human decides: the decision replaces or overrides the
+  policy, the dynamics stay the same. Human and optimizer are exchangeable through the same interface, and an
+  optimizer proposal can be played through in the twin before approval.
 
-### 2.3 Atomkatalog (Vorschlag für den PoC-Verbund)
+### 2.3 Atom catalog (proposal for the PoC cluster)
 
-| # | Atom | Model (Zustand · Parameter) | Dynamik δ | Policy π | Views | Datenquelle |
+| # | Atom | Model (state · parameters) | Dynamics δ | Policy π | Views | Data source |
 |---|------|-----------------------------|-----------|----------|-------|-------------|
-| A1 | **WEA** | Status, P, v_eff, Gier-/Pitchwinkel, Ct · Leistungs-/Ct-Kennlinie, Position | Kennlinie mit Wake-Defizit, Sollwertfolge, Rampen | Abregelung, Gierversatz (Wake-Steering) | Leistungskurvenabweichung, Verfügbarkeit, PI (P5) | SCADA (IEC 61400-25), Simulator |
-| A2 | **Wake-Kopplung** (Relationsatom) | sektorabhängige Defizitmatrix · Wake-Decay | Defizite aus Richtung und Ct der Oberlieger | – | Wake-Graph je Sektor; Vergleich Ground Truth vs. rekonstruiert (P8) | Simulator (Wahrheit), Rekonstruktion (Schätzung) |
-| A3 | **Parkregler** | Park-Sollwert, Netzvorgaben · Grenzwerte | verteilt Sollwerte auf WEA, hält Netzanschlussgrenzen | Vorgaben Netzbetreiber, Vermarkter | Park-P, Abregelverluste | Leitsystem-/Parkreglerschnittstelle |
-| A4 | **Wetter** | gemessene und prognostizierte Felder je Ort und Vorlaufzeit | Auswahl jüngster Prognose, Bias-Korrektur | – | Prognosegüte je Vorlaufzeit | DWD Open Data, Parkmast |
-| A5 | **Zähler / Messpunkt** | Zählerstände, P, Q · Registerkarte, Wandlerfaktoren, OBIS-Kennzahl | Zählerstand → Leistung, Plausibilität, Lückenbehandlung | – | abrechnungsrelevante Energie | Modbus (Netzbetreiber-Zähler) |
-| A6 | **Bilanzknoten / Messkonzept** | Verteilregel (Prioritäten) | löst die Leistungsbilanz **innerhalb** des Schritts: Erzeugung = Eigenverbrauch + Direktbelieferung + Elektrolyse + Speicher + Netz | Prioritätenfolge (Eigenverbrauch vor Markt) | Direktbelieferungsanteil, Einspeisung, Bilanzfehler | abgeleitet |
-| A7 | **Eigenverbraucher / Direktabnehmer** | Lastgang, Flexibilität · Anschlussleistung | Last aus Messung oder Profil | Lastverschiebung (falls flexibel) | Deckungsgrad aus Eigenerzeugung | Zähler, historische Lastgänge |
-| A8 | **Batteriespeicher** | SoC, P, SoH · Kapazität, Wirkungsgrade, C-Rate | SoC-Integration mit Grenzen und Verlusten | Lade-/Entladefahrplan | Zyklen, SoC-Verlauf, Erlösbeitrag | Speicher-EMS (falls vorhanden) |
-| A9 | **Elektrolyseur** | Betriebszustand (aus/Standby/warm/Rampe/Betrieb), P_el, H2-Fluss, Stapeltemperatur · Mindestlast, Rampenraten, spez. Verbrauch kWh/kg | Zustandsautomat, Rampen, **Schutzabregelung bei Leitungsdruck > Grenze** | Fahrplan (vom Betreiber oder selbst erzeugt) | Fahrplantreue, spez. Verbrauch, kg H2 | Steuerung des Betreibers (S7-SPS) über vereinbarte Schnittstelle |
-| A10 | **H2-Leitung / Puffer** | Druck p, Masse (Linepack) · Volumen, p_min/p_max, Temperatur | `dp/dt = (ṁ_in − ṁ_out)·R·T/V`; **Zeit-bis-Grenze** als Ereignis | – | Pufferfüllstand, Zeit bis Auswirkung | Druckmessung des Betreibers |
-| A11 | **H2-Abnehmer** | Abnahme, Schieberstellung | Abnahme nach Messung/Profil; Störung = Schieber zu | Abnahmeprofil | gelieferte kg, Störungsdauer | Betreiber/Abnehmer |
-| A12 | **Markt** | Day-Ahead-/Intraday-Preise, Ausgleichsenergiepreis | Preisreihe (gemessen, Szenario oder Prognose) | – | Erlös, Preisprofil | Börsen-/Transparenzdaten |
-| A13 | **Direktvermarkter / Fahrplan / PPA** | Fahrplan (15 min), Prognose, Vertragspflichten | Abweichung, Ausgleichsenergie, Nachhandel | Vermarktungsstrategie | Abweichungskosten, PPA-Erlös | Prognose- und Fahrplandaten des Vermarkters |
-| A14 | **Bediener** (Mensch) | – | – | Eingriffe: Sollwerte, Fahrplanübersteuerung, Freigaben | Entscheidungslog mit Wirkung | Personal Service Layer |
-| A15 | **Optimierer** (Policy-Atom) | Horizont, Ziel, Nebenbedingungen | – | rollierender Horizont (MPC), schreibt Sollwerte/Fahrpläne | Optimalitätslücke, Mehrerlös gegen Referenz | P8.4 |
+| A1 | **Wind turbine** | status, P, v_eff, yaw and pitch angle, Ct · power and Ct curve, position | curve with wake deficit, setpoint tracking, ramps | curtailment, yaw offset (wake steering) | power curve deviation, availability, PI (P5) | SCADA (IEC 61400-25), simulator |
+| A2 | **Wake coupling** (relation atom) | sector-dependent deficit matrix · wake decay | deficits from direction and Ct of the upstream turbines | n/a | wake graph per sector; comparison of ground truth vs. reconstructed (P8) | simulator (truth), reconstruction (estimate) |
+| A3 | **Park controller** | park setpoint, grid requirements · limits | distributes setpoints to the turbines, keeps the grid connection limits | requirements of the grid operator, the marketer | park P, curtailment losses | control system or park controller interface |
+| A4 | **Weather** | measured and forecast fields per location and lead time | choice of the latest forecast, bias correction | n/a | forecast quality per lead time | DWD Open Data, park mast |
+| A5 | **Meter / metering point** | meter readings, P, Q · register map, transformer ratios, OBIS code | meter reading → power, plausibility, gap handling | n/a | billing-relevant energy | Modbus (grid operator meters) |
+| A6 | **Balance node / metering concept** | allocation rule (priorities) | solves the power balance **within** the step: generation = self-consumption + direct supply + electrolysis + storage + grid | order of priorities (self-consumption before market) | direct supply share, grid feed-in, balance error | derived |
+| A7 | **Self-consumer / direct customer** | load profile, flexibility · connected load | load from measurement or profile | load shifting (if flexible) | share covered by own generation | meters, historical load profiles |
+| A8 | **Battery storage** | SoC, P, SoH · capacity, efficiencies, C-rate | SoC integration with limits and losses | charge and discharge schedule | cycles, SoC course, revenue contribution | storage EMS (if present) |
+| A9 | **Electrolyzer** | operating state (off/standby/warm/ramp/running), P_el, H2 flow, stack temperature · minimum load, ramp rates, specific consumption kWh/kg | state machine, ramps, **protective curtailment at line pressure > limit** | schedule (from the operator or self-generated) | schedule adherence, specific consumption, kg H2 | the operator's control (S7 PLC) through the agreed interface |
+| A10 | **H2 line / buffer** | pressure p, mass (linepack) · volume, p_min/p_max, temperature | `dp/dt = (ṁ_in − ṁ_out)·R·T/V`; **time to limit** as an event | n/a | buffer level, time to impact | pressure measurement of the operator |
+| A11 | **H2 offtaker** | offtake, valve position | offtake from measurement or profile; fault = valve closed | offtake profile | delivered kg, fault duration | operator/offtaker |
+| A12 | **Market** | day-ahead and intraday prices, balancing energy price | price series (measured, scenario or forecast) | n/a | revenue, price profile | exchange and transparency data |
+| A13 | **Direct marketer / schedule / PPA** | schedule (15 min), forecast, contractual obligations | deviation, balancing energy, follow-up trading | marketing strategy | deviation costs, PPA revenue | forecast and schedule data of the marketer |
+| A14 | **Operator** (human) | n/a | n/a | interventions: setpoints, schedule override, approvals | decision log with effect | Personal Service Layer |
+| A15 | **Optimizer** (policy atom) | horizon, objective, constraints | n/a | rolling horizon (MPC), writes setpoints and schedules | optimality gap, extra revenue against the reference | P8.4 |
 
-Spätere Erweiterungen bleiben im selben Schema: PV-Anlage, CMS-Daten (Schwingungsüberwachung) als zusätzliche
-WEA-Ports, weitere Parks.
+Later extensions stay in the same scheme: PV system, CMS data (vibration monitoring) as extra turbine ports, more
+parks.
 
-**Reflexion zur Granularität.** Ein Atom ist so klein, dass es eine eigene Bilanz und eigene Parameter hat, und so
-groß, dass seine Ports fachlich benennbar sind. Die WEA ist ein Atom, ihr Getriebe nicht (das wäre ein CMS-View).
-Die **Wake-Kopplung wird ein eigenes Relationsatom**, weil sie lernbare Parameter hat und der Gegenstand der
-Rekonstruktion (P8) ist. Ein bloßer Draht im Schaltplan wäre dafür zu wenig.
+**Reflection on granularity.** An atom is small enough that it has its own balance and its own parameters, and large
+enough that its ports can be named in domain terms. The wind turbine is an atom, its gearbox is not (that would be a
+CMS view). The **wake coupling becomes a relation atom of its own**, because it has learnable parameters and is the
+subject of the reconstruction (P8). A mere wire in the wiring plan would be too little for that.
 
 ---
 
-## 3. Der Schaltplan (Twin-Konfiguration)
+## 3. The wiring plan (twin configuration)
 
-Bauteile aus dem Katalog, Verschaltung je Anlage, typisierte Ports mit Einheit. Der Plan wird wie ein
-`Scenario`-YAML des Windpark-Simulators versioniert und gehasht. Der Hash geht in die Lineage jedes Laufs ein.
+Components from the catalog, wiring per plant, typed ports with a unit. The plan is versioned and hashed like a
+`Scenario` YAML of the wind farm simulator. The hash goes into the lineage of every run.
 
 ```yaml
 twin: verbund-poc
@@ -154,350 +151,349 @@ wiring:
   - bilanz.p_grid     -> vermarkter.p_actual
   - ely.h2_out        -> leitung.m_in
   - abnehmer.m_out    -> leitung.m_out
-  - leitung.p         -> ely.p_downstream          # Schutzabregelung
+  - leitung.p         -> ely.p_downstream          # protective curtailment
   - wetter.wind_fc    -> park.wind_fc
   - markt.price       -> vermarkter.price
-  - nvp.p_meas        -> bilanz.p_grid_meas        # Sensorsicht vs. Messung
+  - nvp.p_meas        -> bilanz.p_grid_meas        # sensor view vs. measurement
 ```
 
 ```mermaid
 flowchart LR
-  W[Wetter A4] --> PK[Parkregler A3 + WEA A1 + Wake A2]
-  PK -->|P_gen| B[Bilanzknoten A6]
-  B -->|P_ely| E[Elektrolyseur A9]
-  B -->|P_bat| S[Speicher A8]
-  B -->|P_eigen| L[Eigenverbraucher A7]
-  B -->|P_netz| DV[Direktvermarkter / PPA A13]
-  E -->|ṁ H2| HL[H2-Leitung A10]
-  HL -->|ṁ| HA[H2-Abnehmer A11]
-  HL -.->|Druck p| E
-  M[Markt A12] -->|Preis| DV
-  Z[Zähler A5] -.->|Messung| B
-  DV -.->|Fahrplan| E
-  OP[Bediener A14 / Optimierer A15] -.->|Policy| E & S & PK & DV
+  W[Weather A4] --> PK[Park controller A3 + turbine A1 + wake A2]
+  PK -->|P_gen| B[Balance node A6]
+  B -->|P_ely| E[Electrolyzer A9]
+  B -->|P_bat| S[Storage A8]
+  B -->|P_self| L[Self-consumer A7]
+  B -->|P_grid| DV[Direct marketer / PPA A13]
+  E -->|ṁ H2| HL[H2 line A10]
+  HL -->|ṁ| HA[H2 offtaker A11]
+  HL -.->|pressure p| E
+  M[Market A12] -->|price| DV
+  Z[Meter A5] -.->|measurement| B
+  DV -.->|schedule| E
+  OP[Operator A14 / optimizer A15] -.->|Policy| E & S & PK & DV
 ```
 
-Das ist die Antwort auf die Frage aus dem Gespräch nach der Übertragbarkeit. Die Plattform und der Atomkatalog sind
-Standard, ein neues Projekt braucht einen neuen Schaltplan, Registerkarten und Quellen-Mappings. Für die Bewertung
-eines neuen Parks mit Direktleitung reichen historische Lastgänge des Abnehmers, eine Ertragsprognose und der
-Bilanzknoten (Stufe A, §6).
+This is the answer to the question from the conversation about transferability. The platform and the atom catalog are
+standard; a new project needs a new wiring plan, register maps and source mappings. To assess a new park with a direct
+line, historical load profiles of the offtaker, a yield forecast and the balance node are enough (stage A,
+section 6).
 
 ---
 
-## 4. Ausführung: geschichtetes BSP
+## 4. Execution: layered BSP
 
-### 4.1 Superschritt
+### 4.1 Superstep
 
-Reines BSP (alle Atome parallel, Nachrichten wirken erst im nächsten Schritt) entspricht einer Jacobi-Kosimulation.
-Das ist für Bestände unkritisch, für die **Leistungsbilanz aber falsch**: Erzeugung, Verbrauch und Netzbezug müssen
-im *selben* Schritt aufgehen. Deshalb schlage ich ein **geschichtetes BSP** vor. Ein Superschritt besteht aus festen
-Phasen in topologischer Ordnung der Verdrahtung, jede Phase endet mit einer Barriere. Zyklen im Schaltplan sind nur
-über Schrittgrenzen erlaubt (Verzögerung `Δt`, z. B. Leitungsdruck → Elektrolyseur). Der Runner prüft das beim
-Laden.
+Plain BSP (all atoms in parallel, messages take effect only in the next step) is equivalent to a Jacobi co-simulation.
+That is not critical for stocks, **but wrong for the power balance**: generation, consumption and grid import must
+balance in the *same* step. That is why I propose a **layered BSP**. A superstep consists of fixed phases in the
+topological order of the wires, and each phase ends with a barrier. Cycles in the wiring plan are allowed only across
+step boundaries (delay `Δt`, for example line pressure → electrolyzer). The runner checks this on load.
 
-| Phase | Atome | Ergebnis |
+| Phase | Atoms | Result |
 |-------|-------|----------|
-| 0 · Quellen (`SOURCES`) | Markt, Abnehmer, Betriebsvorgaben, Zähler | exogene Werte; Messungen, Prognosen und Eingriffe des Intervalls `[t_k, t_k+Δt)` sind gebunden |
-| 1 · Policy (`POLICY`) | eigenständige Policy-Atome (Fahrplan, Optimierer) | Sollwerte für diesen Schritt |
-| 2 · Anlagen (`ASSETS`) | Erzeugung, Elektrolyseur, Speicher | Arbeitspunkt aus Sollwert, Grenzen, Rampen, Schutzlogik; die Atom-Policy läuft unmittelbar vor der Dynamik |
-| 3 · Bilanz (`BALANCE`) | Bilanzknoten | Netzsaldo, Direktbelieferung nach Prioritäten, Residuum zur Messung |
-| 4 · Flüsse (`FLOWS`) | H2-Leitung, Vermarkter | neue Bestände und Konten, Ereignisse mit exaktem Zeitpunkt |
-| 5 · Views (`VIEWS`) | abgeleitete Sichten | Smart Metrics |
+| 0 · Sources (`SOURCES`) | market, offtaker, operating rules, meter | exogenous values; measurements, forecasts and interventions of the interval `[t_k, t_k+Δt)` are bound |
+| 1 · Policy (`POLICY`) | standalone policy atoms (schedule, optimizer) | setpoints for this step |
+| 2 · Assets (`ASSETS`) | generation, electrolyzer, storage | operating point from setpoint, limits, ramps, protection logic; the atom policy runs right before the dynamics |
+| 3 · Balance (`BALANCE`) | balance node | grid balance, direct supply by priorities, residual to the measurement |
+| 4 · Flows (`FLOWS`) | H2 line, marketer | new stocks and accounts, events at their exact time |
+| 5 · Views (`VIEWS`) | derived views | smart metrics |
 
-*Umgesetzt (PoC, `opentsx-twin`):* Die Phasen sind so benannt wie im Code. Ein Eingang erhält den Wert desselben
-Schritts, wenn seine Quelle in einer früheren Phase liegt, sonst den des vorigen Schritts; Rückkopplungen kreuzen
-damit immer die Schrittgrenze. Ein Wert bei Schritt `k` beschreibt das Ende des Intervalls `[t_k, t_k+Δt)`.
+*Implemented (PoC, `opentsx-twin`):* The phases are named as in the code. An input gets the value of the same step
+when its source lies in an earlier phase, otherwise the value of the previous step; feedback therefore always crosses
+the step boundary. A value at step `k` describes the end of the interval `[t_k, t_k+Δt)`.
 
-Die Ausführung ist **mehrratig**. Der Basistakt beträgt 1 min, das reicht für Linepack, Elektrolyseurrampen und
-Speicher. Jedes Atom hat einen Takt als ganzzahliges Vielfaches davon: Markt und Fahrplan 15 min, Wetter 1 h. Die
-WEA-Dynamik im Sekundenbereich wird nicht im Zwilling gerechnet. Sie kommt als 1-min-Aggregat aus der Statistik (P4)
-bzw. aus dem Simulator. Ereignisse innerhalb eines Schritts (Druckgrenze erreicht) werden mit exaktem Zeitpunkt
-gemeldet und wirken ab dem nächsten Schritt. Die maximale Reaktionsverzögerung von `Δt` wird dokumentiert.
+The execution is **multirate**. The base step is 1 min, which is enough for linepack, electrolyzer ramps and storage.
+Every atom has a step that is an integer multiple of it: market and schedule 15 min, weather 1 h. The turbine
+dynamics in the range of seconds are not computed in the twin. They come as a 1-min aggregate from the statistics
+(P4) or from the simulator. Events within a step (pressure limit reached) are reported at their exact time and take
+effect from the next step. The maximum response delay of `Δt` is documented.
 
-### 4.2 Topics und Barriere unter KafScale-Bedingungen
+### 4.2 Topics and barrier under KafScale conditions
 
 ```mermaid
 sequenceDiagram
-  participant Q as Quellen-Topics
-  participant R as Twin-Runner (Atome)
+  participant Q as source topics
+  participant R as twin runner (atoms)
   participant T as twin.ID.RUN.msgs
   participant B as twin.ID.RUN.barrier
   participant I as twin.ID.RUN.interventions
-  Q->>R: Beobachtungen bis t_k+Δt (Ereigniszeit)
-  I->>R: Eingriffe für Schritt k
-  loop Phasen 1..5
-    R->>T: Ausgänge (key = atomId, k, phase)
-    R->>B: phase-done(k, p, Anzahl)
+  Q->>R: observations up to t_k+Δt (event time)
+  I->>R: interventions for step k
+  loop phases 1..5
+    R->>T: outputs (key = atomId, k, phase)
+    R->>B: phase-done(k, p, count)
   end
-  R->>B: superstep-commit(k, Zustands-Hash)
-  Note over T,B: Leser sehen nur Nachrichten ≤ commit(k)
+  R->>B: superstep-commit(k, state hash)
+  Note over T,B: readers see only messages ≤ commit(k)
 ```
 
-* **Ohne Transaktionen und idempotenten Producer**: Jede Nachricht hat eine deterministische Id
-  `(run, k, phase, atom)`, Duplikate werden beim Lesen verworfen. Der Commit-Datensatz enthält die erwartete Anzahl
-  und einen Zustands-Hash. Das entspricht dem Muster aus P2 (manuelle Zuweisung, Checkpoint-Dateien).
-* **Determinismus**: gleicher Schaltplan, gleiche Eingangsepisoden, gleiches Eingriffslog und gleiche Code-Version
-  ergeben bitgleiche Zustände. Ein Lauf ist damit eine Lineage-Einheit
-  (`schaltplanHash × eingangsHash × eingriffsHash × version`). Replay-Verifikation wie bei den Episoden.
-* **Zustand**: Snapshots alle N Schritte in Iceberg (`twin_state`). KafScale kennt keine Compaction, der neueste
-  Zustand wird über den Checkpoint gelesen.
+* **Without transactions and without an idempotent producer**: Every message has a deterministic id
+  `(run, k, phase, atom)`; duplicates are discarded on read. The commit record holds the expected count and a state
+  hash. This matches the pattern from P2 (manual assignment, checkpoint files).
+* **Determinism**: The same wiring plan, the same input episodes, the same intervention log and the same code version
+  give bit-identical states. A run is therefore a unit of lineage
+  (`schaltplanHash × eingangsHash × eingriffsHash × version`). Replay verification works as for the episodes.
+* **State**: Snapshots every N steps in Iceberg (`twin_state`). KafScale has no compaction; the newest state is read
+  through the checkpoint.
 
-### 4.3 Wo Smart Topics hingehören
+### 4.3 Where Smart Topics belong
 
-Beide Varianten werden gebaut. Sie teilen Atomvertrag, Schaltplan und Topic-Vertrag, sodass dasselbe Atom ohne
-Änderung in beiden läuft.
+Both variants are built. They share the atom contract, the wiring plan and the topic contract, so the same atom runs
+in both without change.
 
-| Variante | Kopplung | Synchronisation | Stärken | Grenzen |
+| Variant | Coupling | Synchronization | Strengths | Limits |
 |----------|----------|-----------------|---------|---------|
-| **T – eng, ein Prozess** („im Kleinen“) | Methodenaufruf im Prozess; Topics nur für Ein-/Ausgabe | geschichtetes BSP mit harter Barriere (§4.1) | deterministisch, bitgleiches Replay, Bilanz exakt im Schritt, schnell für Experimente und What-if-Läufe | ein Eigentümer, ein Ausfallbereich, skaliert nur vertikal |
-| **L – lose, Smart Topics** | jedes Atom (bzw. jeder Atomtyp, Instanzen als Schlüssel) ist ein Smart-Topic-Prozessor; Kopplung nur über Port-Topics | Ereigniszeit-Watermarks statt globaler Barriere; begrenzte Veraltung (*bounded staleness*, SSP) bis asynchron; Bilanzknoten als eigener Prozessor mit Ausgleichsschritt | Atome können bei verschiedenen Eigentümern laufen (z. B. der Elektrolyseur beim Betreiber, nur Ports werden geteilt), unabhängig deploybar, ausfalltolerant, horizontal skalierbar, Datenhoheit | Ergebnis kann von T abweichen; Erhaltung und Kausalordnung müssen explizit gesichert werden |
+| **T: tight, one process** ("in the small") | method call in the process; topics only for input and output | layered BSP with a hard barrier (section 4.1) | deterministic, bit-identical replay, exact balance within the step, fast for experiments and what-if runs | one owner, one failure domain, scales only vertically |
+| **L: loose, Smart Topics** | every atom (or every atom type, with instances as keys) is a Smart Topic processor; coupling only through port topics | event time watermarks instead of a global barrier; bounded staleness (SSP) up to asynchronous; balance node as a processor of its own with a balancing step | atoms can run at different owners (for example the electrolyzer at its operator, only ports are shared), independently deployable, fault-tolerant, horizontally scalable, data sovereignty | the result can differ from T; conservation and causal order must be secured explicitly |
 
-Eine Variante je Atom-*Instanz* als eigenes Topic wird nicht verfolgt: Instanzen sind Schlüssel innerhalb des
-Topics ihres Atomtyps.
+A variant with one topic per atom *instance* is not pursued: instances are keys within the topic of their atom type.
 
-Gerade die lose Kopplung passt zur Realität des Verbunds: Elektrolyseur, Zähler und Vermarktung gehören
-verschiedenen Parteien. Ein Zwilling, dessen Atome dort laufen, wo die Daten liegen, und der nur Ports austauscht,
-setzt die Föderationsidee aus P7d/P8.5 auf der Ebene des Anlagenmodells fort.
+Loose coupling in particular fits the reality of the cluster: electrolyzer, meters and marketing belong to different
+parties. A twin whose atoms run where the data lives, and that exchanges only ports, continues the federation idea from
+P7d/P8.5 at the level of the plant model.
 
-Smart Topics übernehmen in beiden Varianten drei Rollen:
+Smart Topics take on three roles in both variants:
 
-1. **Prognose-Ports**: Wind- und Leistungsprognose, Last, Preise. Das sind P7-Modelle mit MLflow-Alias.
-2. **Schätzer für fehlende Daten**: Elektrolyseurlast, solange keine Betriebsdaten fließen; Abnahmeprofil. Damit lässt
-   sich, wie im Gespräch gefordert, *„plausibel rechnen, als ob man echte Daten hätte“*.
-3. **Der Zwilling als Smart Topic**: Zustandsreihen und Smart Metrics als abgeleitetes Topic, die Prediction-API wird
-   um **What-if** erweitert: Eingriffsfolge rein, Zustandsverlauf und KPI-Differenz raus.
+1. **Forecast ports**: wind and power forecast, load, prices. These are P7 models with an MLflow alias.
+2. **Estimators for missing data**: electrolyzer load as long as no operating data flows; offtake profile. As
+   requested in the conversation, this makes it possible to *"compute plausibly, as if one had real data"*.
+3. **The twin as a Smart Topic**: state series and smart metrics as a derived topic; the prediction API is extended
+   with **What-if**: a sequence of interventions goes in, the state trajectory and the KPI difference come out.
 
-### 4.4 Datenqualitätsleiter und Provenienz
+### 4.4 Data quality ladder and provenance
 
-Jeder Portwert trägt eine Herkunftsklasse. Fehlt die höhere Klasse, greift die nächste:
+Every port value carries an origin class. When the higher class is missing, the next one applies:
 
-`MEASURED > REPORTED (Partner, Fahrplan) > FORECAST > ESTIMATED (Smart Topic) > SYNTHETIC (Simulator/Profil)`
+`MEASURED > REPORTED (partner, schedule) > FORECAST > ESTIMATED (Smart Topic) > SYNTHETIC (simulator/profile)`
 
-Die Klasse eines Ausgangs ist das Minimum seiner Eingänge (Taint-Propagation). Jede KPI zeigt damit, zu welchem Anteil
-sie auf Messung beruht. Erst so lässt sich eine Potenzialabschätzung ehrlich berichten.
+The class of an output is the minimum of its inputs (taint propagation). Every KPI therefore shows what share of it
+rests on measurement. Only this way can a potential estimate be reported honestly.
 
 ---
 
-## 5. Betriebsarten: ein Zwilling, drei Bindungen
+## 5. Operating modes: one twin, three bindings
 
-Dieselben Atome, unterschiedlich gebundene Eingänge:
+The same atoms, with inputs bound differently:
 
-| Modus | Eingänge | Zweck | Beispiel aus dem Gespräch |
+| Mode | Inputs | Purpose | Example from the conversation |
 |-------|----------|-------|---------------------------|
-| **Shadow** (Nowcast) | Live-Messungen, Rest geschätzt | Zustandsschätzung, Residuen, Anomalien | nicht gemessene Größen sichtbar machen, Zählerplausibilität |
-| **Replay / What-if** | historische Episoden + geändertes Eingriffslog | kontrafaktische Fahrweisen | Belieferung nach PPA-Fahrweise schon vor der offiziellen Umstellung des Messkonzepts „üben“, inkl. Prognose- und Fahrplandaten des Vermarkters |
-| **Prognose / MPC** | Prognosen, Optimierer als Policy | Fahrplanvorschläge, Frühwarnung | Druckanstieg → „noch ~1 h bis Abregelung“ → Fahrplananpassung vorschlagen |
+| **Shadow** (nowcast) | live measurements, the rest estimated | state estimation, residuals, anomalies | make unmeasured quantities visible, meter plausibility |
+| **Replay / what-if** | historical episodes + changed intervention log | counterfactual operating policies | "practice" supply under the PPA operating policy even before the official change of the metering concept, including forecast and schedule data of the marketer |
+| **Forecast / MPC** | forecasts, optimizer as the policy | schedule proposals, early warning | pressure rise → "~1 h left until curtailment" → propose a schedule adjustment |
 
-### Abnahmeszenarien
+### Acceptance scenarios
 
-| Id | Szenario | Abnahmekriterium |
+| Id | Scenario | Acceptance criterion |
 |----|----------|------------------|
-| S1 | **H2-Kette**: Abnehmer schließt Schieber → Druck steigt → Zeit-bis-Grenze → Elektrolyseur regelt ab → Fahrplanabweichung → Mehrvermarktung | Kette mit Zeitstempeln reproduziert; ein Eingriff (z. B. Speicher laden, Abregelung vorziehen) ändert alle nachgelagerten Zahlen konsistent; Bilanzfehler 0 |
-| S2 | **Potenzial** aus historischen Daten: Überlappung von Erzeugung und Verbrauch, Direktbelieferungsanteil vs. Einspeisung | nur Zähler, Bilanzknoten, Markt; Bericht mit Herkunftsanteilen (§4.4) |
-| S3 | **PPA-Schattenbetrieb**: Fahrplan und Prognose des Vermarkters gegen tatsächliche Erzeugung | Abweichungsstatistik je 15 min, Kosten der Abweichung |
-| S4 | **Wake**: Park-Atom mit Jensen-Kopplung reproduziert die Simulator-Ground-Truth; rekonstruierter Graph (P8) dagegen geprüft | Precision/Recall je Sektor (P8.1) |
+| S1 | **H2 chain**: offtaker closes the valve → pressure rises → time to limit → electrolyzer curtails → schedule deviation → extra sales | chain reproduced with timestamps; an intervention (for example charge the storage, bring curtailment forward) changes all downstream numbers consistently; balance error 0 |
+| S2 | **Potential** from historical data: overlap of generation and consumption, direct supply share vs. grid feed-in | only meter, balance node, market; report with origin shares (section 4.4) |
+| S3 | **PPA shadow operation**: schedule and forecast of the marketer against actual generation | deviation statistics per 15 min, cost of the deviation |
+| S4 | **Wake**: park atom with Jensen coupling reproduces the simulator ground truth; reconstructed graph (P8) checked against it | precision/recall per sector (P8.1) |
 
 ---
 
-## 6. Stufen mit Wertschranke (gegen „zu groß für das Ziel“)
+## 6. Stages with a value gate (against "too big for the goal")
 
-Im Gespräch kam die berechtigte Sorge, das Vorhaben könnte größer sein als sein Nutzen, solange der Mehrwert nicht
-abschätzbar ist und der Elektrolyseur nicht in eigener Hand liegt. Darum wird gestuft. Jede Stufe liefert für sich
-einen Nutzen und endet an einer Entscheidungsschranke.
+The conversation raised the justified concern that the project could be bigger than its benefit, as long as the added
+value cannot be estimated and the electrolyzer is not in one's own hands. That is why the work is staged. Every stage
+delivers a benefit on its own and ends at a decision gate.
 
-| Stufe | Inhalt | braucht Simulation? | Schranke |
+| Stage | Content | Needs simulation? | Gate |
 |-------|--------|---------------------|----------|
-| **A – Daten & Potenzial** | Adapter (Modbus, DWD, Markt, Partnerdaten), Metrikkatalog, Spiegelung mit Validierung; S2 | nein | Größenordnung des Mehrwerts in €/a mit Herkunftsanteilen |
-| **B – Shadow & Replay** | Atomvertrag, Runner, einfache Atommodelle; S3 | ja, regelbasiert | Abweichungsstatistik belastbar |
-| **C – Kausalketten** | Elektrolyseur-, Leitungs-, Abnehmer-Atome mit Betriebsdaten; S1 | ja | Kette mit echten Daten bestätigt |
-| **D – Optimierung** | Optimierer als Policy (P8.4), MPC, Vorschläge im Service Layer | ja | Mehrerlös gegen Referenzfahrweise im Replay |
+| **A: data and potential** | adapters (Modbus, DWD, market, partner data), metric catalog, mirroring with validation; S2 | no | order of magnitude of the added value in €/a with origin shares |
+| **B: shadow and replay** | atom contract, runner, simple atom models; S3 | yes, rule-based | deviation statistics reliable |
+| **C: causal chains** | electrolyzer, line and offtaker atoms with operating data; S1 | yes | chain confirmed with real data |
+| **D: optimization** | optimizer as the policy (P8.4), MPC, proposals in the Service Layer | yes | extra revenue against the reference operating policy in replay |
 
-Zusätzlich ist vor Stufe B ein **Screening Stand der Technik** vorgesehen, wie im Gespräch empfohlen. Zu prüfen sind
-Kosimulations-Frameworks und -Standards wie mosaik, HELICS und FMI 3.0 (Atome als FMUs?) sowie
-Energiesystemwerkzeuge wie pandapower, PyPSA und oemof. Erst danach fällt die Entscheidung, ob der Runner selbst
-gebaut oder ein bestehender Kosimulationskern angebunden wird. Der Atomvertrag (§2) bleibt in beiden Fällen gleich.
+In addition, a **screening of the state of the art** is planned before stage B, as recommended in the conversation.
+The screening will check co-simulation frameworks and standards such as mosaik, HELICS and FMI 3.0 (atoms as FMUs?)
+and energy system tools such as pandapower, PyPSA and oemof. Only then is the decision made whether the runner is
+built in-house or an existing co-simulation core is connected. The atom contract (section 2) stays the same in both
+cases.
 
 ---
 
-## 7. Datenzugang aus dem Gespräch (Stufe A)
+## 7. Data access from the conversation (stage A)
 
-| Baustein | Inhalt | Anschluss an OpenTSx |
+| Building block | Content | Connection to OpenTSx |
 |----------|--------|----------------------|
-| **Modbus-Modul** (generisch) | Modbus TCP/RTU, Registerkarten als YAML (Adresse, Typ, Skalierung, Einheit, OBIS-Kennzahl), Pollintervall | `RawReading` → Normalizer (wie Windpark-`SourceMapping`) → Episoden |
-| **IEC 60870-5-101/-104** | Datenaustausch über die Parkrechner-Schnittstelle, die für den Elektrolyseurbetreiber vorgesehen ist; Gegenrichtung: dessen Betriebsdaten (Last, Druck, Abnahme) | eigener Adapter, gleiche Normalisierung |
-| **Elektrolyseur-Steuerung** | Daten laufen beim Betreiber auf einer S7-SPS zusammen; Zugriff nur über eine vereinbarte Schnittstelle (104, OPC UA oder Export) | Quelle mit Herkunft `REPORTED` |
-| **DWD-Sammler** | Open-Data-Prognosen (MOSMIX/ICON) und Messungen, automatischer Abruf, Stationsauswahl je Standort, optional deutschlandweit vorhalten | Wetter-Atom, Episoden je Station/Variable/Vorlaufzeit |
-| **Markt- und Partnerdaten** | Preise; Prognosen und Fahrpläne des Direktvermarkters; Leitsystem-API (Schnittstellenbeschreibung ausstehend) | Abruf per API; wo keine API existiert, zeitgesteuerter Abruf mit Formatkonvertierung |
-| **Einzelne Datenpakete** | punktuell eingespielte historische Reihen mit Quelle und Zeitraum | Batch-Import-CLI mit Herkunftsmetadaten |
-| **Metrik-Metadatendienst** | Katalog für neue Kanäle (Zähler, Elektrolyse, Speicher, H2) analog zum IEC-Katalog | OpenMetadata-Publisher (P4) |
-| **Spiegelung zur lokalen Analyse** | Kafka-Spiegelung über einen temporären SSH-Tunnel; **technische Validierung** (Offsets, Anzahl, Bytes, Hash) und **fachliche Validierung** (je Metrik identische Sketches/Statistiken, mergebar aus P4) | Replay-Verifikation (P2), Statistik (P4) |
-| **OpenTSDB-Projektion** | optionale Darstellungsschicht | vorhandener Store-Adapter (P3) |
+| **Modbus module** (generic) | Modbus TCP/RTU, register maps as YAML (address, type, scaling, unit, OBIS code), poll interval | `RawReading` → normalizer (like the wind farm `SourceMapping`) → episodes |
+| **IEC 60870-5-101/-104** | data exchange through the park computer interface that is intended for the electrolyzer operator; opposite direction: its operating data (load, pressure, offtake) | a separate adapter, the same normalization |
+| **Electrolyzer control** | at the electrolyzer operator, the data comes together on an S7 PLC; access only through an agreed interface (104, OPC UA or export) | source with origin `REPORTED` |
+| **DWD collector** | Open Data forecasts (MOSMIX/ICON) and measurements, automatic fetch, station selection per site, optionally keep for all of Germany | weather atom, episodes per station/variable/lead time |
+| **Market and partner data** | prices; forecasts and schedules of the direct marketer; control system API (interface description pending) | fetch by API; where no API exists, scheduled fetch with format conversion |
+| **Single data packages** | historical series loaded as one-off imports, with source and period | batch import CLI with origin metadata |
+| **Metric metadata service** | catalog for new channels (meters, electrolysis, storage, H2) analogous to the IEC catalog | OpenMetadata publisher (P4) |
+| **Mirroring for local analysis** | Kafka mirroring through a temporary SSH tunnel; **technical validation** (offsets, count, bytes, hash) and **domain validation** (identical sketches/statistics per metric, mergeable from P4) | replay verification (P2), statistics (P4) |
+| **OpenTSDB projection** | optional presentation layer | existing store adapter (P3) |
 
-**Sprache (Reflexion zum Neubau in Go/Rust).** Die Verträge (Avro v2, Topic-Layout, Kantentabelle, Atomvertrag) sind
-sprachneutral. Kleine Edge-Sammler (Modbus, 104, DWD) als Go- oder Rust-Binaries sind sinnvoll: geringer Footprint und
-einfach zu verteilen. Ein Neubau des Kerns lohnt sich erst, wenn Stufe B den Nutzen gezeigt hat. Bis dahin bindet er
-Kraft, die für Datenzugang und Potenzialabschätzung gebraucht wird.
+**Language (reflection on a rebuild in Go/Rust).** The contracts (Avro v2, topic layout, edge table, atom contract)
+are language-neutral. Small edge collectors (Modbus, 104, DWD) as Go or Rust binaries make sense: small footprint and
+simple to distribute. A rebuild of the core pays off only once stage B has shown the benefit. Until then it ties up
+effort that is needed for data access and the potential estimate.
 
 ---
 
-## 8. Wake-Graph als Simulationsreferenz (präzisiert)
+## 8. Wake graph as a simulation reference (made precise)
 
-„Wahrer Wake-Graph“ heißt in P8.0: **der Graph, den der Simulator zur Erzeugung der Daten verwendet hat**. Er ist
-eine Simulationsreferenz, kein Messergebnis. `opentsx-windpark` rechnet die Wakes bereits mit dem Jensen-Modell
-(`WakeModel`, alle 10 s aus Richtung und Ct der laufenden Anlagen neu). Der Export braucht also kein neues Modell,
-nur eine Offenlegung.
+In P8.0, "true wake graph" means **the graph that the simulator used to generate the data**. It is a simulation
+reference, not a measurement result. `opentsx-windpark` already computes the wakes with the Jensen model
+(`WakeModel`, recomputed every 10 s from direction and Ct of the running turbines). The export therefore needs no new
+model, only a disclosure.
 
-| Festlegung | Vorschlag |
+| Definition | Proposal |
 |------------|-----------|
-| Richtungskonvention | meteorologisch: Richtung, *aus der* der Wind kommt, Grad im Uhrzeigersinn ab Nord |
-| Sektoren | 12 × 30°, Mitten 0°, 30°, …; Sektor = `[Mitte − 15°, Mitte + 15°)` |
-| Kante `A → B` | B liegt für mindestens eine Richtung des Sektors (1°-Raster) im Wake-Kegel von A (`lateral < D/2 + k·s`, `s > 0`) |
-| Kantengewichte | mittleres Defizit über die Sektorrichtungen, Maximum, Abdeckungsanteil (Anteil der Richtungen mit Wirkung), Abstand in Rotordurchmessern |
-| Referenz-Ct | Ct bei 8 m/s (Teillast). Ct-Abhängigkeit als zusätzliche Tabelle für 4, 8 und 12 m/s |
-| Dynamische Wahrheit | zusätzlich das tatsächlich verwendete Kantenlog des Laufs: je 10-s-Schritt die aktiven Paare mit Defizit > Schwelle, als Kantenepisoden. Das ist die strengste Referenz, weil Stillstände und Abregelung (Ct = 0) Kanten abschalten. |
-| Kennzeichnung | `gt.source=simulator`, `gt.kind=wake`, Szenario-Hash, Anlagen-Ids aus dem Katalog |
-| Format | Kantentabelle nach P8.0-Schema (Iceberg), zusätzlich CSV |
+| Direction convention | meteorological: the direction *from which* the wind comes, degrees clockwise from north |
+| Sectors | 12 × 30°, centers 0°, 30°, …; sector = `[center − 15°, center + 15°)` |
+| Edge `A → B` | B lies in the wake cone of A (`lateral < D/2 + k·s`, `s > 0`) for at least one direction of the sector (1° grid) |
+| Edge weights | mean deficit over the sector directions, maximum, coverage share (share of directions with an effect), distance in rotor diameters |
+| Reference Ct | Ct at 8 m/s (part load). Ct dependence as an extra table for 4, 8 and 12 m/s |
+| Dynamic truth | in addition the edge log actually used in the run: per 10 s step the active pairs with deficit > threshold, as edge episodes. This is the strictest reference, because standstills and curtailment (Ct = 0) switch edges off. |
+| Labeling | `gt.source=simulator`, `gt.kind=wake`, scenario hash, turbine ids from the catalog |
+| Format | edge table following the P8.0 schema (Iceberg), plus CSV |
 
-Grenzen dieser Wahrheit: Das Jensen-Modell kennt weder atmosphärische Stabilität noch Wake-Mäander, Teilüberdeckung
-der Rotorfläche oder vertikale Profile. Ein Graph je Sektor ist für einen realen Park eine Vereinfachung, denn die
-Kopplung hängt auch von Betriebszustand und Atmosphäre ab. Für reale Daten bleibt der Graph daher eine Schätzung (P8),
-die gegen diese Referenz nur auf Simulatordaten geprüft werden kann.
+Limits of this truth: The Jensen model does not capture atmospheric stability, wake meandering, partial overlap of the
+rotor area or vertical profiles. One graph per sector is a simplification for a real park, because the coupling also
+depends on the operating state and the atmosphere. For real data the graph therefore stays an estimate (P8) that can
+be checked against this reference only on simulator data.
 
 ---
 
-## 9. Offene Entscheidungen (Vorschläge)
+## 9. Open decisions (proposals)
 
-| Nr. | Thema | Vorschlag |
+| No. | Topic | Proposal |
 |-----|-------|-----------|
-| D18 | Atomvertrag | MVC+P, Avro-Schema je Atomtyp für Zustand und Ports, Atomkatalog als Standardbauteile, Schaltplan-YAML je Anlage |
-| D19 | Ausführung | geschichtetes BSP, Basistakt 1 min, Mehrrate als ganzzahlige Vielfache, deterministisch, Barriere-Topic |
-| D20 | Einbettung | **Entschieden (2026-10-12):** beide Varianten gleichrangig – eng gekoppelt als ein Prozess (T) und lose gekoppelt über Smart Topics (L); alle drei Betriebsarten in beiden; gemeinsamer Atom-, Schaltplan- und Topic-Vertrag |
-| D21 | Datenqualität | Herkunftsleiter mit Taint-Propagation; KPIs zeigen Messanteil |
-| D22 | Vorgehen | Stufen A–D mit Wertschranke; Stufe A ohne Simulation |
-| D23 | Sprache | Kern bleibt Java; Edge-Sammler dürfen Go/Rust sein; kein Kern-Neubau vor Schranke B |
-| D24 | Kosimulation | Screening (mosaik, HELICS, FMI 3.0) vor dem Bau eines eigenen Runners |
+| D18 | Atom contract | MVC+P, Avro schema per atom type for state and ports, atom catalog as standard components, wiring plan YAML per plant |
+| D19 | Execution | layered BSP, base step 1 min, multirate as integer multiples, deterministic, barrier topic |
+| D20 | Embedding | **Decided (2026-10-12):** both variants with equal rank, tightly coupled as one process (T) and loosely coupled through Smart Topics (L); all three operating modes in both; a shared atom, wiring plan and topic contract |
+| D21 | Data quality | origin ladder with taint propagation; KPIs show the measured share |
+| D22 | Approach | stages A to D with a value gate; stage A without simulation |
+| D23 | Language | the core stays Java; edge collectors may be Go/Rust; no rebuild of the core before gate B |
+| D24 | Co-simulation | screening (mosaik, HELICS, FMI 3.0) before building a runner of our own |
 
 ---
 
-## 9a. Umsetzungsstand (PoC)
+## 9a. State of implementation (PoC)
 
-Modul [`opentsx-twin`](../../opentsx-twin/README.md): Atomvertrag MVC+P, Schaltplan-YAML mit Validierung,
-Variante T mit geschichtetem BSP, Topic-Vertrag (`PortMessage`, `Barrier`) als Code, Herkunftsleiter,
-Snapshots, alle drei Betriebsarten, Export der Zustandsreihen als v2-Episoden. Bausteine: Erzeugung, Markt,
-H2-Abnehmer, Elektrolyseur, Batterie, Bilanzknoten, H2-Leitung, Direktvermarkter, Betriebsvorgaben. Szenario S1
-läuft auf synthetischen Daten (`bin/opentsx twin`). **Variante L** (`LooseRunner`) läuft mit demselben Atomcode;
-erste Messungen in §10a. Avro-Schemas je Atomtyp (`twin/avro/`) liegen vor. Offen: KafScale-Binding, WEA/Wake/Wetter/Zähler-Atome,
-Optimierer (P8.4), echte Daten.
+Module [`opentsx-twin`](../../opentsx-twin/README.md): atom contract MVC+P, wiring plan YAML with validation,
+variant T with layered BSP, topic contract (`PortMessage`, `Barrier`) as code, origin ladder,
+snapshots, all three operating modes, export of the state series as v2 episodes. Building blocks: generation, market,
+H2 offtaker, electrolyzer, battery, balance node, H2 line, direct marketer, operating rules. Scenario S1
+runs on synthetic data (`bin/opentsx twin`). **Variant L** (`LooseRunner`) runs with the same atom code;
+first measurements in section 10a. Avro schemas per atom type (`twin/avro/`) exist. Open: KafScale binding,
+turbine/wake/weather/meter atoms, optimizer (P8.4), real data.
 
-Oberfläche und LabVIEW-Brücke: [09-STUDIO-LABVIEW-STEUERPULT](09-STUDIO-LABVIEW-STEUERPULT.md). Visuelles Inventar,
-Navigation durch die Anlage und Wartung am selben Atom-Anker: [12-EXPLORATIVES-UI-INVENTAR](12-EXPLORATIVES-UI-INVENTAR.md).
+User interface and LabVIEW bridge: [09-STUDIO-LABVIEW-STEUERPULT](09-STUDIO-LABVIEW-STEUERPULT.md). Visual inventory,
+navigation through the plant and maintenance on the same atom anchor:
+[12-EXPLORATIVES-UI-INVENTAR](12-EXPLORATIVES-UI-INVENTAR.md).
 
-*Siehe auch:* [08-HAUS-ZWILLING](08-HAUS-ZWILLING.md) überträgt die Methode (Atomvertrag, drei Betriebsarten,
-Herkunftsleiter, Stufen A–D, Alternative − Referenz) auf ein Einfamilienhaus mit Öl-Holz-Heizung, inklusive
-Kalibrierung an Abrechnungen (P9.7).
+*See also:* [08-HAUS-ZWILLING](08-HAUS-ZWILLING.md) transfers the method (atom contract, three operating modes,
+origin ladder, stages A to D, alternative − reference) to a single-family house with oil and wood heating, including
+calibration against bills (P9.7).
 
-Siehe auch: [10-BOOT-ZWILLING](10-BOOT-ZWILLING.md) – drittes Szenario, ein Boot (Etap 22) als Insel-Energiesystem
-mit Powerstation, Solar und Landstrom, mit CSV-Import echter Betriebsdaten und Kalibrierung.
+See also: [10-BOOT-ZWILLING](10-BOOT-ZWILLING.md), the third scenario, a boat (Etap 22) as an island energy system
+with a power station, solar and shore power, with CSV import of real operating data and calibration.
 
-## 10. Forschungsfrage: eng vs. lose gekoppelte Zwillinge (Paper-Skizze)
+## 10. Research question: tightly vs. loosely coupled twins (paper outline)
 
-**Arbeitstitel:** *Digital Twins on Logs – Synchronization Semantics from Bulk-Synchronous to Loosely Coupled Smart
+**Working title:** *Digital Twins on Logs: Synchronization Semantics from Bulk-Synchronous to Loosely Coupled Smart
 Topics.*
 
-**These.** Ein Zwilling aus atomaren Elementen lässt sich als ein deterministischer Prozess (BSP) oder als lose
-gekoppelter Verbund von Stream-Prozessoren über ein Log (Kafka/KafScale) ausführen. Die lose Kopplung bringt
-Eigentümergrenzen, Datenhoheit, unabhängige Deployments und Ausfalltoleranz, kostet aber Genauigkeit und
-Reproduzierbarkeit. Wie viel, hängt messbar von der Kopplungsstärke und den Zeitkonstanten der Atome ab. Daraus
-lässt sich eine Entwurfsregel ableiten, welche Kopplungen eng bleiben müssen.
+**Thesis.** A twin of atomic elements can run as one deterministic process (BSP) or as a loosely coupled cluster of
+stream processors over a log (Kafka/KafScale). Loose coupling brings ownership boundaries, data sovereignty,
+independent deployments and fault tolerance, but costs accuracy and reproducibility. How much depends measurably on
+the coupling strength and the time constants of the atoms. From this, a design rule can be derived that says which
+couplings must stay tight.
 
-**Einordnung (verwandte Arbeiten, zu prüfen):**
-* BSP (Valiant 1990), Pregel; Stale Synchronous Parallel und asynchrone Parameter-Server aus dem verteilten ML.
-* Parallele diskrete Ereignissimulation: konservativ (Chandy-Misra-Bryant) vs. optimistisch (Time Warp,
-  Jefferson); HLA-Zeitmanagement (IEEE 1516).
-* Kosimulation: FMI 3.0, mosaik, HELICS; Jacobi- vs. Gauss-Seidel-Kopplung, Fehlerabschätzungen der
-  Kopplungsschrittweite.
-* Stream Processing: Ereigniszeit und Watermarks (Dataflow-Modell), exactly-once über Logs.
-* Digital Twins in Energiesystemen; föderiertes Lernen und Föderation über Betreibergrenzen.
+**Context (related work, to be checked):**
+* BSP (Valiant 1990), Pregel; Stale Synchronous Parallel and asynchronous parameter servers from distributed ML.
+* Parallel discrete event simulation: conservative (Chandy-Misra-Bryant) vs. optimistic (Time Warp,
+  Jefferson); HLA time management (IEEE 1516).
+* Co-simulation: FMI 3.0, mosaik, HELICS; Jacobi vs. Gauss-Seidel coupling, error estimates of the
+  coupling step size.
+* Stream processing: event time and watermarks (Dataflow model), exactly-once over logs.
+* Digital twins in energy systems; federated learning and federation across operator boundaries.
 
-**Forschungsfragen:**
+**Research questions:**
 
-| Nr. | Frage | Messgröße |
+| No. | Question | Metric |
 |-----|-------|-----------|
-| RQ1 | Wann liefert die lose Kopplung (L) dasselbe Ergebnis wie die enge (T)? Fehlerschranke als Funktion von Veraltung `s`, Kopplungsstärke und Zeitkonstanten | Zustandsabweichung gegen T, KPI-Abweichung |
-| RQ2 | Wie bleiben Erhaltungsgrößen (Leistungsbilanz, H2-Masse) unter loser Kopplung erhalten? Ausgleichsschritt, Bilanzknoten, Konservativ-Protokoll | Bilanzfehler je Schritt und kumuliert |
-| RQ3 | Wie bleibt die Kausalordnung von Ereignissen und Eingriffen erhalten (z. B. „Schieber zu“ vor „Abregelung“)? | Anzahl Kausalverletzungen, Reaktionsverzögerung |
-| RQ4 | Ist Replay ohne Transaktionen und idempotenten Producer (KafScale) reproduzierbar? Deterministische Ids, Watermark-Protokoll | bitgleiche Wiederholbarkeit, Abweichungsrate |
-| RQ5 | Was kostet und bringt L: Latenz, Durchsatz, Erholung nach Ausfall eines Atoms, Betrieb über Eigentümergrenzen | End-to-end-Latenz, Erholungszeit, Datenbewegung |
-| RQ6 | Funktionieren alle drei Betriebsarten (Shadow, What-if, MPC) in L? Insbesondere What-if-Verzweigungen und MPC-Horizonte über verteilte Atome | Laufzeit je Szenario, Ergebnisgleichheit mit T |
+| RQ1 | When does loose coupling (L) give the same result as tight coupling (T)? Error bound as a function of staleness `s`, coupling strength and time constants | state deviation against T, KPI deviation |
+| RQ2 | How do conserved quantities (power balance, H2 mass) stay conserved under loose coupling? Balancing step, balance node, conservative protocol | balance error per step and cumulative |
+| RQ3 | How is the causal order of events and interventions kept (for example "valve closed" before "curtailment")? | number of causal violations, response delay |
+| RQ4 | Is replay without transactions and without an idempotent producer (KafScale) reproducible? Deterministic ids, watermark protocol | bit-identical repeatability, deviation rate |
+| RQ5 | What does L cost and what does it bring: latency, throughput, recovery after the failure of an atom, operation across ownership boundaries | end-to-end latency, recovery time, data movement |
+| RQ6 | Do all three operating modes (Shadow, What-if, MPC) work in L? In particular what-if branches and MPC horizons over distributed atoms | runtime per scenario, equal results with T |
 
-**Versuchsaufbau.** Gleicher Schaltplan, gleiche Eingänge, beide Varianten. Szenarien S1 (H2-Kette) und S3
-(PPA-Schattenbetrieb), dazu synthetische Verbünde mit gesteuerter Kopplungsstärke, Störungen (verzögerte, fehlende,
-doppelte Nachrichten, Atomausfall) und Größenskalierung. Referenz ist T, Ground Truth kommt aus dem Simulator.
+**Experimental setup.** The same wiring plan, the same inputs, both variants. Scenarios S1 (H2 chain) and S3
+(PPA shadow operation), plus synthetic clusters with controlled coupling strength, disturbances (delayed, missing,
+duplicate messages, atom failure) and size scaling. The reference is T; ground truth comes from the simulator.
 
-**Erwarteter Beitrag.**
-1. Synchronisationssemantik für Zwillinge auf einem Log, mit Entwurfsregel „was muss eng gekoppelt sein“.
-2. Fehlerschranken und Messungen für BSP vs. SSP vs. asynchron an einem realistischen Energieverbund.
-3. Offene Referenzimplementierung (OpenTSx) mit beiden Varianten und reproduzierbaren Szenarien.
+**Expected contribution.**
+1. Synchronization semantics for twins on a log, with a design rule "what must be tightly coupled".
+2. Error bounds and measurements for BSP vs. SSP vs. asynchronous on a realistic energy system.
+3. Open reference implementation (OpenTSx) with both variants and reproducible scenarios.
 
 
-## 10a. Erste Messungen: Variante L gegen Variante T (RQ1, RQ5)
+## 10a. First measurements: variant L against variant T (RQ1, RQ5)
 
-**Aufbau.** `LooseRunner` führt jedes Atom als eigenen Prozessor mit eigener Superschritt-Uhr aus. Kopplung nur
-über Port-Nachrichten (`PortMessage`), keine globale Barriere. Ein Atom darf rechnen, sobald jeder verdrahtete
-Eingang einen *sichtbaren* Wert hat, der höchstens `s` Superschritte älter ist als der Wert, den T verwenden würde.
-`s = 0` ist BSP, `s > 0` SSP, „async“ wartet nie. Die Wandzeit wird in Ticks simuliert: ein echter Schritt kostet
-einen Tick (einstellbar je Atom), eine Nachricht aus Tick `w` ist ab Tick `w + 1 + lag (+ jitter)` sichtbar;
-Ausfälle sperren ein Atom für ein Tick-Intervall. Atomcode, Policies, Eingriffe, Laufprotokoll und Hash teilen
-beide Varianten (`RunSetup`). Messprogramm: `bin/opentsx twin-coupling [--csv datei]`, Szenarien H2-Kette
-(360 Schritte), Haus (8 760 Schritte), Boot (1 344 Schritte).
+**Setup.** `LooseRunner` runs every atom as a processor of its own with its own superstep clock. Coupling runs only
+through port messages (`PortMessage`), with no global barrier. An atom may compute as soon as every wired input has a
+*visible* value that is at most `s` supersteps older than the value T would use. `s = 0` is BSP, `s > 0` is SSP,
+"async" never waits. The wall-clock time is simulated in ticks: a real step costs one tick (adjustable per atom), a
+message from tick `w` is visible from tick `w + 1 + lag (+ jitter)`; outages block an atom for a tick interval. Both
+variants share atom code, policies, interventions, run log and hash (`RunSetup`). Measurement program:
+`bin/opentsx twin-coupling [--csv file]`, scenarios H2 chain (360 steps), house (8,760 steps), boat
+(1,344 steps).
 
-**Ergebnis 1 – Konformität.** L mit `s = 0` ist für alle drei Szenarien bitgleich mit T (gleicher Lauf-Id,
-gleicher verketteter Zustands-Hash, gleiche Ereignisse, gleiche Nachrichtenmenge), auch mit Latenz, Jitter,
-langsamen Prozessoren und Ausfällen, in allen drei Betriebsarten (Test `LooseRunnerTest`). Die Transportschicht
-ändert dann nur die Wandzeit, nie das Ergebnis.
+**Result 1: conformance.** L with `s = 0` is bit-identical with T for all three scenarios (same run id, same chained
+state hash, same events, same set of messages), also with latency, jitter, slow processors and outages, in all three
+operating modes (test `LooseRunnerTest`). The transport layer then changes only the wall-clock time, never the result.
 
-**Ergebnis 2 – Durchsatz bestimmen die Rückkopplungen, nicht die Kettentiefe.** Ohne Rückkopplung arbeiten die
-Atome im Fließband: das Boot braucht unter BSP 1 346 Ticks für 1 344 Schritte. Jede Rückkopplungsschleife begrenzt
-dagegen den Takt. Gemessen gilt genau
+**Result 2: feedback loops decide the throughput, not the depth of the chain.** Without feedback the atoms work as a
+pipeline: under BSP the boat needs 1,346 ticks for 1,344 steps. Every feedback loop, in contrast, limits the step rate.
+The measurements give exactly
 
-> Ticks je Schritt = max(1, max über alle Schleifen Σ(1 + lag) / Σ(d + s)),
+> Ticks per step = max(1, max over all loops Σ(1 + lag) / Σ(d + s)),
 
-mit `d = 1` für eine verzögerte (Rückkopplungs-)Kante und `d = 0` sonst. Beispiel Haus (Schleife Gebäude ↔ Kessel,
-zwei Kanten): `lag = 0` → 2 Ticks je Schritt; `lag = 2` → 6; mit `s = 1` → 2; `s = 2` → 1,2; ab `s = 4` → 1.
+with `d = 1` for a delayed (feedback) edge and `d = 0` otherwise. Example for the house (loop building ↔ boiler, two
+edges): `lag = 0` → 2 ticks per step; `lag = 2` → 6; with `s = 1` → 2; `s = 2` → 1.2; from `s = 4` → 1.
 
-Einordnung: Das ist die aus der Datenfluss-Analyse bekannte *Iterationsschranke* (maximales Zyklusverhältnis aus
-Bearbeitungszeit und Verzögerungen je Schleife; Reiter 1968 für Rechengraphen, Renfors/Neuvo 1981 für digitale
-Filter, Parhi/Messerschmitt 1991 für iterative Datenflussprogramme – Literaturangaben vor der Veröffentlichung
-prüfen). Neu ist nicht die Formel, sondern ihre Anwendung auf Zwillinge über einem Log: Veraltung `s` wirkt wie
-zusätzliche Verzögerungen auf den Kanten, und die Kolokalisierung von Schleifen hält das Ergebnis bitgleich zu T.
+Context: This is the *iteration bound* known from dataflow analysis (maximum cycle ratio of processing time and delays
+per loop; Reiter 1968 for computation graphs, Renfors/Neuvo 1981 for digital filters, Parhi/Messerschmitt 1991 for
+iterative dataflow programs; check the references before publication). What is new is not the formula but its
+application to twins over a log: staleness `s` acts like extra delays on the edges, and the colocation of loops keeps
+the result bit-identical to T.
 
-**Ergebnis 3 – Veraltung in schnellen Regelkreisen ist teuer.** Gewonnen wird bis Faktor 6, bezahlt mit
-Abweichung (Auszug, `lag = 2`, ohne Jitter; NRMSE normiert auf die Spannweite der T-Reihe):
+**Result 3: staleness in fast control loops is expensive.** The gain is up to a factor of 6, paid for with deviation
+(excerpt, `lag = 2`, without jitter; NRMSE normalized to the range of the T series):
 
-| Szenario | Kopplung | Ticks | Faktor | NRMSE (schlechteste Reihe) | max. KPI-Abweichung | Ereignisse anders |
+| Scenario | Coupling | Ticks | Factor | NRMSE (worst series) | max. KPI deviation | Events differ |
 |---|---|---|---|---|---|---|
-| H2-Kette | BSP | 2 164 | 1,0 | 0 | 0 | 0 |
-| H2-Kette | SSP `s = 2` | 433 | 5,0 | 0,14 (Abweichung Fahrplan) | 1,9 % | 2 |
-| H2-Kette | async | 360 | 6,0 | 0,19 | 3,9 % | 2 |
-| Haus | BSP | 52 561 | 1,0 | 0 | 0 | 0 |
-| Haus | SSP `s = 2` | 10 513 | 5,0 | 0,28 (Ölverbrauch) | 386 % (Unterschreitungsstunden) | 0 |
-| Haus | async | 8 760 | 6,0 | 0,32 (Raumtemperatur) | 461 % | 0 |
-| Boot | async | 1 344 | 1,0 | 0,16 (Landstrom) | 12 % | 0 |
-| **H2-Kette** | **BSP, Schleifen kolokalisiert** | **369** | **5,9** | **0** | **0** | **0** |
-| **Haus** | **BSP, Schleifen kolokalisiert** | **8 766** | **6,0** | **0** | **0** | **0** |
+| H2 chain | BSP | 2,164 | 1.0 | 0 | 0 | 0 |
+| H2 chain | SSP `s = 2` | 433 | 5.0 | 0.14 (schedule deviation) | 1.9 % | 2 |
+| H2 chain | async | 360 | 6.0 | 0.19 | 3.9 % | 2 |
+| House | BSP | 52,561 | 1.0 | 0 | 0 | 0 |
+| House | SSP `s = 2` | 10,513 | 5.0 | 0.28 (oil consumption) | 386 % (hours below setpoint) | 0 |
+| House | async | 8,760 | 6.0 | 0.32 (room temperature) | 461 % | 0 |
+| Boat | async | 1,344 | 1.0 | 0.16 (shore power) | 12 % | 0 |
+| **H2 chain** | **BSP, loops colocated** | **369** | **5.9** | **0** | **0** | **0** |
+| **House** | **BSP, loops colocated** | **8,766** | **6.0** | **0** | **0** | **0** |
 
-Beim Boot bringt Veraltung gar nichts (keine Schleife, Fließband ohnehin voll), kostet aber 12 % KPI-Abweichung.
+For the boat, staleness brings nothing at all (no loop, the pipeline is full anyway), but it costs 12 % KPI deviation.
 
-**Ergebnis 4 – Entwurfsregel.** *Rückkopplungsschleifen gehören in einen Prozessor; zwischen Prozessoren reicht
-BSP.* `Coupling.colocatingCycles()` legt jede stark zusammenhängende Komponente des Schaltplans (Tarjan) in einen
-Prozessor und koppelt nur die azyklischen Kanten lose. Ergebnis: bitgleich mit T **und** volle Fließband-Leistung.
-Veraltung (`s > 0`) bringt danach keinen Durchsatz mehr, nur noch Fehler. Sie bleibt ein Werkzeug für Ausfälle und
-Eigentümergrenzen (ein Atom beim Betreiber, das zeitweise nicht liefert), nicht für Geschwindigkeit. Für D20 heißt
-das: Variante L wird als **Hybrid** betrieben, T innerhalb einer Schleife, L dazwischen. Die Schnittlinie folgt aus
-dem Schaltplan, nicht aus Vorlieben.
+**Result 4: design rule.** *Feedback loops belong in one processor; between processors BSP is enough.*
+`Coupling.colocatingCycles()` puts every strongly connected component of the wiring plan (Tarjan) into one processor
+and couples only the acyclic edges loosely. Result: bit-identical with T **and** full pipeline throughput. After that,
+staleness (`s > 0`) brings no more throughput, only errors. It stays a tool for outages and ownership boundaries (an
+atom that runs at its operator and does not deliver for a while), not for speed. For D20 this means: variant L is
+operated as a **hybrid**, T within a loop, L in between. The cut line follows from the wiring plan, not from
+preferences.
 
-**Grenzen dieser Messung.** Simulierte Wandzeit statt echter Prozessoren; ein Tick je Schritt für alle Atome;
-Abweichungen nur gegen T, nicht gegen Messdaten; Erhaltungsgrößen (RQ2) und Kausalverletzungen (RQ3) noch nicht
-eigens gezählt; die Haus-KPI „Unterschreitungsstunden“ ist klein, relative Abweichungen wirken dort groß. Nächste
-Schritte: Ausfallversuche (Erholungszeit, RQ5), Bilanzfehler je Schritt (RQ2), echte Prozessoren über KafScale
-(RQ4), synthetische Verbünde mit gesteuerter Kopplungsstärke.
+**Limits of this measurement.** Simulated wall-clock time instead of real processors; one tick per step for all atoms;
+deviations only against T, not against measured data; conserved quantities (RQ2) and causal violations (RQ3) not yet
+counted separately; the house KPI "hours below setpoint" is small, and relative deviations look large there. Next
+steps: failure experiments (recovery time, RQ5), balance error per step (RQ2), real processors over KafScale (RQ4),
+synthetic clusters with controlled coupling strength.

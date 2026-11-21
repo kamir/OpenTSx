@@ -99,8 +99,8 @@ The full walk-through, including KafScale, statistics and OpenMetadata, is in
 | Document | Content |
 |----------|---------|
 | [User manual](docs/user-manual/README.md) | concepts, every module, Python, operations, migration, configuration, CLI and REST reference |
-| [Data model v2 specification](docs/datamodel-2026/04-MODELL-V2-SPEC.md) (German) | normative spec |
-| [Design documents](docs/datamodel-2026/) (German; 01, 03, 08, 09, 10, 11, 16, 18 and 19 are English) | analysis, target model, gap analysis, Smart Topics (05), interplay & coordination potential (06), digital twin (07), house (08), Studio & LabVIEW (09), boat (10), Smart Topic processor & DevOps (11), Explorer (12): visual inventory & maintenance |
+| [Data model v2 specification](docs/datamodel-2026/04-MODELL-V2-SPEC.md) (English) | normative spec |
+| [Design documents](docs/datamodel-2026/) (English) | analysis, target model, gap analysis, Smart Topics (05), interplay & coordination potential (06), digital twin (07), house (08), Studio & LabVIEW (09), boat (10), Smart Topic processor & DevOps (11), Explorer (12): visual inventory & maintenance |
 | [Plan and progress](EVOLUTION/TASK-011-datamodel-refresher-2026.md) | phases, decisions, progress log |
 | Module READMEs | details per module, e.g. [kafka-v2](opentsx-kafka-v2/README.md), [windpark](opentsx-windpark/README.md), [retrieval](opentsx-retrieval/README.md) |
 | [Developer guide](docs/devguide/README.md) | PDF build, processing-flow descriptor schema, local infrastructure |
